@@ -156,6 +156,40 @@ function Get-FormalCadenceSeconds
     return $script:FormalOfflineCadenceSeconds
 }
 
+function Get-FormalRealSafetyEnvironmentValues
+{
+    return [ordered]@{
+        NQ_LIVE_ENABLED = 'false'
+        NQ_REAL_ORDER_SUBMISSION_ENABLED = 'false'
+        NQ_TRANSFER_ENABLED = 'false'
+        NQ_WITHDRAW_ENABLED = 'false'
+        NQ_AI_ENABLED = 'false'
+        NQ_DH_RUNTIME_ENABLED = 'false'
+        NQ_REAL_PROVIDER_ENABLED = 'false'
+        NQ_REAL_CLIENT_ENABLED = 'false'
+        NQ_REAL_EXCHANGE_ENABLED = 'false'
+    }
+}
+
+function Get-FormalRealWorkerEnvironmentValues
+{
+    $values = [ordered]@{ }
+    foreach ($name in @(
+        'SPRING_PROFILES_ACTIVE', 'NQ_GATEW_OKX_READONLY_SOAK_ENABLED', 'CI', 'NQ_NO_OUTBOUND',
+        'NQ_GATEW_SOAK_OWNER_ID', 'NQ_GATEW_SOAK_ACCOUNT_ID', 'NQ_GATEW_SOAK_CURRENCIES'
+    ))
+    {
+        $value = [Environment]::GetEnvironmentVariable($name, 'Process')
+        Assert-LiteralValue ([string]$value)
+        $values[$name] = [string]$value
+    }
+    foreach ($entry in (Get-FormalRealSafetyEnvironmentValues).GetEnumerator())
+    {
+        $values[[string]$entry.Key] = [string]$entry.Value
+    }
+    return $values
+}
+
 function Assert-RunId
 {
     param([Parameter(Mandatory = $true)][string]$Value)
@@ -1702,15 +1736,6 @@ function Invoke-PreCreateJavaReadback
         NQ_GATEW_RUN_MODE = 'REAL_READONLY_SOAK'
         CI = 'false'
         NQ_NO_OUTBOUND = 'false'
-        NQ_LIVE_ENABLED = 'false'
-        NQ_REAL_ORDER_SUBMISSION_ENABLED = 'false'
-        NQ_TRANSFER_ENABLED = 'false'
-        NQ_WITHDRAW_ENABLED = 'false'
-        NQ_AI_ENABLED = 'false'
-        NQ_DH_RUNTIME_ENABLED = 'false'
-        NQ_REAL_PROVIDER_ENABLED = 'false'
-        NQ_REAL_CLIENT_ENABLED = 'false'
-        NQ_REAL_EXCHANGE_ENABLED = 'false'
         NQ_GATEW_SOAK_DB_URL = Get-PreCreateDatabaseUrl $Descriptor
         NQ_GATEW_SOAK_DB_USER = [string]$Descriptor.databaseUser
         NQ_GATEW_SOAK_DB_PASSWORD = $password
@@ -1729,6 +1754,10 @@ function Invoke-PreCreateJavaReadback
         NQ_OKX_REAL_API_KEY = $null
         NQ_OKX_REAL_API_SECRET = $null
         NQ_OKX_REAL_API_PASSPHRASE = $null
+    }
+    foreach ($entry in (Get-FormalRealSafetyEnvironmentValues).GetEnumerator())
+    {
+        $values[[string]$entry.Key] = [string]$entry.Value
     }
     $previous = @{ }
     $launcherExitCode = -1L
@@ -2180,17 +2209,10 @@ function Prepare-FormalRun
     }
     if ($RunMode -eq 'REAL_READONLY_SOAK')
     {
-        foreach ($name in @(
-            'SPRING_PROFILES_ACTIVE', 'NQ_GATEW_OKX_READONLY_SOAK_ENABLED', 'CI', 'NQ_NO_OUTBOUND',
-            'NQ_LIVE_ENABLED', 'NQ_REAL_ORDER_SUBMISSION_ENABLED', 'NQ_TRANSFER_ENABLED', 'NQ_WITHDRAW_ENABLED',
-            'NQ_AI_ENABLED', 'NQ_DH_RUNTIME_ENABLED', 'NQ_REAL_PROVIDER_ENABLED', 'NQ_REAL_CLIENT_ENABLED',
-            'NQ_REAL_EXCHANGE_ENABLED', 'NQ_GATEW_SOAK_OWNER_ID', 'NQ_GATEW_SOAK_ACCOUNT_ID',
-            'NQ_GATEW_SOAK_CURRENCIES'
-        ))
+        $realWorkerValues = Get-FormalRealWorkerEnvironmentValues
+        foreach ($name in $realWorkerValues.Keys)
         {
-            $value = [Environment]::GetEnvironmentVariable($name, 'Process')
-            Assert-LiteralValue ([string]$value)
-            $workerValues[$name] = [string]$value
+            $workerValues[[string]$name] = [string]$realWorkerValues[$name]
         }
     }
     $failCloseValues = @{
@@ -3040,8 +3062,8 @@ function New-AcceptanceClockRecord
     {
         throw 'FAIL / ACCEPTANCE_CLOCK_PREREQUISITE_ORDER_INVALID'
     }
-    # config/balance/fresh SSH 只决定能否启动时钟；冻结合同规定起点始终是首条有效 heartbeat。
-    $acceptanceAt = $firstHeartbeat
+    # The frozen clock starts at the first valid heartbeat; other probes are prerequisites only.
+    $plannedAcceptance = $firstHeartbeat.AddHours(168)
     return [ordered]@{
         schemaVersion = 'gatew-soak-acceptance-clock-v2'
         runId = $Value
@@ -3056,8 +3078,8 @@ function New-AcceptanceClockRecord
         forbiddenEndpointCount = 0
         rawResponseCount = 0
         secretExposureCount = 0
-        acceptanceStartAt = $acceptanceAt.UtcDateTime.ToString('o')
-        plannedAcceptanceAt = $acceptanceAt.AddHours(168).UtcDateTime.ToString('o')
+        acceptanceStartAt = $firstHeartbeat.UtcDateTime.ToString('o')
+        plannedAcceptanceAt = $plannedAcceptance.UtcDateTime.ToString('o')
         acceptanceClockStarted = $true
     }
 }
@@ -4274,6 +4296,37 @@ function Invoke-ControlSelfTest
             (Get-FormalCadenceSeconds 'OFFLINE_ISOLATED_ACCEPTANCE') -ne 60)
     {
         throw 'formal cadence contract self-test failed'
+    }
+    $caseCount++
+    $safetyValues = Get-FormalRealSafetyEnvironmentValues
+    if ($safetyValues.Count -ne 9 -or
+            @($safetyValues.Values | Where-Object { [string]$_ -cne 'false' }).Count -ne 0)
+    {
+        throw 'formal REAL safety environment contract self-test failed'
+    }
+    $previousSafetyValues = @{ }
+    try
+    {
+        foreach ($name in $safetyValues.Keys)
+        {
+            $previousSafetyValues[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+            [Environment]::SetEnvironmentVariable($name, 'true', 'Process')
+        }
+        $workerValues = Get-FormalRealWorkerEnvironmentValues
+        foreach ($name in $safetyValues.Keys)
+        {
+            if ([string]$workerValues[$name] -cne 'false')
+            {
+                throw 'formal REAL worker safety environment self-test failed'
+            }
+        }
+    }
+    finally
+    {
+        foreach ($name in $safetyValues.Keys)
+        {
+            [Environment]::SetEnvironmentVariable($name, $previousSafetyValues[$name], 'Process')
+        }
     }
     $caseCount++
     if ( [IO.File]::ReadAllText($PSCommandPath).Contains('$' + 'matches = @()'))

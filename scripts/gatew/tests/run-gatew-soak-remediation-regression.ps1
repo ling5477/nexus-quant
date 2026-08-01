@@ -621,7 +621,15 @@ try
             -not $workerText.Contains('gatew-soak-acceptance-clock-v2') -or
             -not $failCloseText.Contains('gatew-soak-acceptance-clock-v2') -or
             -not $controlText.Contains('firstValidHeartbeatAt = ConvertTo-UtcRfc3339') -or
-            -not $controlText.Contains('$acceptanceAt = $firstHeartbeat') -or
+            -not $controlText.Contains(
+                    'acceptanceStartAt = $firstHeartbeat.UtcDateTime.ToString'
+            ) -or
+            -not $controlText.Contains(
+                    '$plannedAcceptance = $firstHeartbeat.AddHours(168)'
+            ) -or
+            -not $controlText.Contains(
+                    'plannedAcceptanceAt = $plannedAcceptance.UtcDateTime.ToString'
+            ) -or
             -not $controlText.Contains('[int]$evidence.rawResponseCount -ne 0') -or
             -not $workerText.Contains('[int]$clock.rawResponseCount -ne 0') -or
             -not $failCloseText.Contains('[long]$Clock.rawResponseCount -ne 0') -or
@@ -632,7 +640,34 @@ try
     }
     Complete-Case 34 'acceptance-starts-at-first-valid-heartbeat-with-raw-response-zero'
 
-    if ($script:Cases.Count -ne 34)
+    $prepareStart = $controlText.IndexOf(
+            'function Prepare-FormalRun',
+            [StringComparison]::Ordinal
+    )
+    $prepareEnd = $controlText.IndexOf(
+            'function ConvertFrom-SystemctlShow',
+            $prepareStart,
+            [StringComparison]::Ordinal
+    )
+    if ($prepareStart -lt 0 -or $prepareEnd -le $prepareStart)
+    {
+        throw 'REGRESSION_FORMAL_PREPARE_SOURCE_NOT_FOUND'
+    }
+    $prepareText = $controlText.Substring($prepareStart, $prepareEnd - $prepareStart)
+    if (-not $controlText.Contains('function Get-FormalRealSafetyEnvironmentValues') -or
+            -not $controlText.Contains('function Get-FormalRealWorkerEnvironmentValues') -or
+            -not $prepareText.Contains(
+                    '$realWorkerValues = Get-FormalRealWorkerEnvironmentValues'
+            ) -or
+            $prepareText.Contains(
+                    "'NQ_LIVE_ENABLED', 'NQ_REAL_ORDER_SUBMISSION_ENABLED'"
+            ))
+    {
+        throw 'REGRESSION_FORMAL_REAL_SAFETY_ENVIRONMENT_NOT_FROZEN'
+    }
+    Complete-Case 35 'formal-real-worker-safety-flags-frozen-false-before-run-creation'
+
+    if ($script:Cases.Count -ne 35)
     {
         throw "REGRESSION_CASE_COUNT_INVALID actual=$( $script:Cases.Count )"
     }
