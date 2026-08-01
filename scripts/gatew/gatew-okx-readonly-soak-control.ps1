@@ -94,6 +94,8 @@ $script:JavaProcessTimeoutSeconds = 30
 $script:JavaTerminationWaitSeconds = 5
 $script:SystemdCredsPath = '/usr/bin/systemd-creds'
 $script:DatabasePasswordCredentialName = 'db-password'
+$script:FormalRealCadenceSeconds = 900
+$script:FormalOfflineCadenceSeconds = 60
 $script:SystemctlPath = '/usr/bin/systemctl'
 $script:ChownPath = '/usr/bin/chown'
 $script:ChmodPath = '/usr/bin/chmod'
@@ -137,6 +139,21 @@ function Test-LinuxPlatform
 function Get-UtcNow
 {
     return [DateTimeOffset]::UtcNow
+}
+
+function Get-FormalCadenceSeconds
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('REAL_READONLY_SOAK', 'OFFLINE_ISOLATED_ACCEPTANCE')]
+        [string]$Mode
+    )
+
+    if ($Mode -eq 'REAL_READONLY_SOAK')
+    {
+        return $script:FormalRealCadenceSeconds
+    }
+    return $script:FormalOfflineCadenceSeconds
 }
 
 function Assert-RunId
@@ -2229,7 +2246,7 @@ function Prepare-FormalRun
         acceptanceStartAt = $null
         plannedAcceptanceAt = $null
         durationHours = 168
-        cadenceSeconds = 60
+        cadenceSeconds = Get-FormalCadenceSeconds $RunMode
         maxTransientRetries = 2
         maxConsecutiveAuthFailures = 3
         venue = 'OKX'
@@ -4158,6 +4175,12 @@ function Record-ExitFact
 function Invoke-ControlSelfTest
 {
     $caseCount = 0
+    if ((Get-FormalCadenceSeconds 'REAL_READONLY_SOAK') -ne 900 -or
+            (Get-FormalCadenceSeconds 'OFFLINE_ISOLATED_ACCEPTANCE') -ne 60)
+    {
+        throw 'formal cadence contract self-test failed'
+    }
+    $caseCount++
     if ( [IO.File]::ReadAllText($PSCommandPath).Contains('$' + 'matches = @()'))
     {
         throw 'automatic Matches collision self-test failed'
@@ -4866,6 +4889,8 @@ switch ($Mode)
         releaseVerifierParameters = 'PASS / HASHTABLE_SPLATTING'
         automaticMatchesCollision = 'PASS / FORBIDDEN'
         preCreatePrerequisite = 'PASS / BEFORE_RUN_ID_AND_DIRECTORY / CLOSED_SCHEMA'
+        realCadenceSeconds = $script:FormalRealCadenceSeconds
+        offlineCadenceSeconds = $script:FormalOfflineCadenceSeconds
         javaProcessTimeout = "$( $script:JavaProcessTimeoutSeconds )s / PROCESS_TREE_CLEANED"
         javaProcessOutput = 'PASS / ASYNC_STDOUT_STDERR'
         noNetworkCalled = $true

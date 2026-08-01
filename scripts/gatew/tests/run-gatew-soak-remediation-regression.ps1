@@ -606,7 +606,16 @@ try
     }
     Complete-Case 32 'attempt-10-not-created-and-runtime-boundaries-preserved'
 
-    if ($script:Cases.Count -ne 32)
+    if (-not $controlText.Contains('$script:FormalRealCadenceSeconds = 900') -or
+            -not $controlText.Contains('$script:FormalOfflineCadenceSeconds = 60') -or
+            -not $controlText.Contains('cadenceSeconds = Get-FormalCadenceSeconds $RunMode') -or
+            -not $controlText.Contains("(Get-FormalCadenceSeconds 'REAL_READONLY_SOAK') -ne 900"))
+    {
+        throw 'REGRESSION_FORMAL_CADENCE_CONTRACT_INVALID'
+    }
+    Complete-Case 33 'formal-real-cadence-fixed-900-offline-60'
+
+    if ($script:Cases.Count -ne 33)
     {
         throw "REGRESSION_CASE_COUNT_INVALID actual=$( $script:Cases.Count )"
     }
