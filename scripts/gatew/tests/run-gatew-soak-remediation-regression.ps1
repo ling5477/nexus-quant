@@ -14,6 +14,7 @@ $script:WorkerPath = Join-Path $script:GateWRoot 'gatew-okx-readonly-soak.ps1'
 $script:FailClosePath = Join-Path $script:GateWRoot 'gatew-okx-readonly-soak-failclose.ps1'
 $script:BuilderPath = Join-Path $script:GateWRoot 'build-gatew-release-bundle.ps1'
 $script:VerifierPath = Join-Path $script:GateWRoot 'verify-gatew-release.ps1'
+$script:InstallerPath = Join-Path $script:GateWRoot 'install-gatew-release.ps1'
 $script:WorkerUnitPath = Join-Path $script:RepoRoot 'deploy\systemd\nq-gatew-soak@.service'
 $script:FailCloseUnitPath = Join-Path $script:RepoRoot 'deploy\systemd\nq-gatew-soak-failclose@.service'
 $script:Cases = [Collections.Generic.List[object]]::new()
@@ -335,6 +336,7 @@ try
     $failCloseText = [IO.File]::ReadAllText($script:FailClosePath)
     $builderText = [IO.File]::ReadAllText($script:BuilderPath)
     $verifierText = [IO.File]::ReadAllText($script:VerifierPath)
+    $installerText = [IO.File]::ReadAllText($script:InstallerPath)
     $workerUnitText = [IO.File]::ReadAllText($script:WorkerUnitPath)
     $failCloseUnitText = [IO.File]::ReadAllText($script:FailCloseUnitPath)
     Assert-TextDoesNotMatch $failCloseText @(
@@ -667,7 +669,59 @@ try
     }
     Complete-Case 35 'formal-real-worker-safety-flags-frozen-false-before-run-creation'
 
-    if ($script:Cases.Count -ne 35)
+    $workerEnvironmentStart = $controlText.IndexOf(
+            'function Get-FormalRealWorkerEnvironmentValues',
+            [StringComparison]::Ordinal
+    )
+    $workerEnvironmentEnd = $controlText.IndexOf(
+            'function Assert-RunId',
+            $workerEnvironmentStart,
+            [StringComparison]::Ordinal
+    )
+    if ($workerEnvironmentStart -lt 0 -or $workerEnvironmentEnd -le $workerEnvironmentStart)
+    {
+        throw 'REGRESSION_FORMAL_WORKER_ENVIRONMENT_SOURCE_NOT_FOUND'
+    }
+    $workerEnvironmentText = $controlText.Substring(
+            $workerEnvironmentStart,
+            $workerEnvironmentEnd - $workerEnvironmentStart
+    )
+    if ($workerEnvironmentText.Contains('GetEnvironmentVariable') -or
+            -not $workerEnvironmentText.Contains(
+                    'param([Parameter(Mandatory = $true)]$Descriptor)'
+            ) -or
+            -not $workerEnvironmentText.Contains(
+                    "SPRING_PROFILES_ACTIVE = 'gatew-okx-readonly-soak'"
+            ) -or
+            -not $workerEnvironmentText.Contains(
+                    "NQ_GATEW_OKX_READONLY_SOAK_ENABLED = 'true'"
+            ) -or
+            -not $workerEnvironmentText.Contains("CI = 'false'") -or
+            -not $workerEnvironmentText.Contains("NQ_NO_OUTBOUND = 'false'") -or
+            -not $workerEnvironmentText.Contains(
+                    'NQ_GATEW_SOAK_OWNER_ID = [string]$validatedDescriptor.soakOwnerId'
+            ) -or
+            -not $workerEnvironmentText.Contains(
+                    'NQ_GATEW_SOAK_ACCOUNT_ID = [string]$validatedDescriptor.soakAccountId'
+            ) -or
+            -not $workerEnvironmentText.Contains(
+                    'NQ_GATEW_SOAK_CURRENCIES = [string]$validatedDescriptor.soakCurrencies'
+            ) -or
+            -not $prepareText.Contains(
+                    '$realWorkerValues = Get-FormalRealWorkerEnvironmentValues $preCreateDescriptor'
+            ) -or
+            -not $controlText.Contains("'gatew-precreate-prerequisite-v2'") -or
+            -not $installerText.Contains("'gatew-precreate-prerequisite-v2'") -or
+            -not $installerText.Contains('function Assert-LegacyPreCreateDescriptorValue') -or
+            -not $installerText.Contains(
+                    "'NQ_GATEW_SOAK_OWNER_ID', 'NQ_GATEW_SOAK_ACCOUNT_ID', 'NQ_GATEW_SOAK_CURRENCIES'"
+            ))
+    {
+        throw 'REGRESSION_FORMAL_REAL_OPERATIONAL_ENVIRONMENT_NOT_FROZEN'
+    }
+    Complete-Case 36 'formal-real-worker-operational-values-frozen-from-root-owned-v2-descriptor'
+
+    if ($script:Cases.Count -ne 36)
     {
         throw "REGRESSION_CASE_COUNT_INVALID actual=$( $script:Cases.Count )"
     }

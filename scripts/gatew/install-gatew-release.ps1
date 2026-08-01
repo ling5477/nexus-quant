@@ -176,7 +176,8 @@ function Read-PreCreateSourceValues
     }
     $required = @(
         'NQ_GATEW_SOAK_DB_URL', 'NQ_GATEW_SOAK_DB_USER', 'NQ_GATEW_SOAK_DB_PASSWORD',
-        'NQ_DB_URL', 'NQ_DB_USER', 'NQ_DB_PASSWORD'
+        'NQ_DB_URL', 'NQ_DB_USER', 'NQ_DB_PASSWORD',
+        'NQ_GATEW_SOAK_OWNER_ID', 'NQ_GATEW_SOAK_ACCOUNT_ID', 'NQ_GATEW_SOAK_CURRENCIES'
     )
     $seen = @{ }
     $values = @{ }
@@ -229,7 +230,46 @@ function Read-PreCreateSourceValues
     return $values
 }
 
-function Assert-PreCreateDescriptorValue
+function Test-PositiveInt64Literal
+{
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Value)
+
+    $parsed = 0L
+    return [long]::TryParse(
+            $Value,
+            [Globalization.NumberStyles]::None,
+            [Globalization.CultureInfo]::InvariantCulture,
+            [ref]$parsed
+    ) -and $parsed -gt 0
+}
+
+function ConvertTo-SoakCurrenciesLiteral
+{
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Value)
+
+    $tokens = @($Value.Split(',') | ForEach-Object { $_.Trim().ToUpperInvariant() })
+    if ($tokens.Count -lt 1 -or $tokens.Count -gt 3 -or
+            @($tokens | Where-Object { $_ -cnotmatch '^[A-Z0-9]{2,12}$' }).Count -ne 0 -or
+            @($tokens | Select-Object -Unique).Count -ne $tokens.Count)
+    {
+        throw 'BLOCKED / PRECREATE_SOURCE_CONFIG_INVALID'
+    }
+    return ($tokens -join ',')
+}
+
+function Test-SoakCurrenciesLiteral
+{
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Value)
+
+    if ($Value -cnotmatch '^[A-Z0-9]{2,12}(,[A-Z0-9]{2,12}){0,2}$')
+    {
+        return $false
+    }
+    $tokens = @($Value.Split(','))
+    return @($tokens | Select-Object -Unique).Count -eq $tokens.Count
+}
+
+function Assert-LegacyPreCreateDescriptorValue
 {
     param([Parameter(Mandatory = $true)]$Descriptor)
 
@@ -254,6 +294,35 @@ function Assert-PreCreateDescriptorValue
     return $Descriptor
 }
 
+function Assert-PreCreateDescriptorValue
+{
+    param([Parameter(Mandatory = $true)]$Descriptor)
+
+    $fields = @(
+        'schemaVersion', 'databaseHost', 'databasePort', 'databaseName', 'databaseUser',
+        'passwordSecretFile', 'managementLoopbackUrl', 'expectedCredentialType', 'expectedEnvironment',
+        'soakOwnerId', 'soakAccountId', 'soakCurrencies'
+    )
+    if ((@($Descriptor.PSObject.Properties.Name) -join '|') -cne ($fields -join '|') -or
+            [string]$Descriptor.schemaVersion -cne 'gatew-precreate-prerequisite-v2' -or
+            [string]$Descriptor.databaseHost -notin @('127.0.0.1', 'localhost') -or
+            ($Descriptor.databasePort -isnot [int] -and $Descriptor.databasePort -isnot [long]) -or
+            [long]$Descriptor.databasePort -lt 1 -or [long]$Descriptor.databasePort -gt 65535 -or
+            [string]$Descriptor.databaseName -cnotmatch '^[A-Za-z][A-Za-z0-9_]{0,62}$' -or
+            [string]$Descriptor.databaseUser -cnotmatch '^[A-Za-z_][A-Za-z0-9_-]{0,62}$' -or
+            [string]$Descriptor.passwordSecretFile -cne $script:DatabasePasswordSecretPath -or
+            [string]$Descriptor.managementLoopbackUrl -cne 'http://127.0.0.1:18889/actuator/health' -or
+            [string]$Descriptor.expectedCredentialType -cne 'OKX_API_V5' -or
+            [string]$Descriptor.expectedEnvironment -cne 'LIVE' -or
+            -not (Test-PositiveInt64Literal ([string]$Descriptor.soakOwnerId)) -or
+            -not (Test-PositiveInt64Literal ([string]$Descriptor.soakAccountId)) -or
+            -not (Test-SoakCurrenciesLiteral ([string]$Descriptor.soakCurrencies)))
+    {
+        throw 'BLOCKED / PRECREATE_DESCRIPTOR_INVALID'
+    }
+    return $Descriptor
+}
+
 function New-PreCreateDescriptor
 {
     param(
@@ -262,6 +331,12 @@ function New-PreCreateDescriptor
     )
 
     $values = Read-PreCreateSourceValues $ManagementEnvironment
+    if (-not (Test-PositiveInt64Literal ([string]$values.NQ_GATEW_SOAK_OWNER_ID)) -or
+            -not (Test-PositiveInt64Literal ([string]$values.NQ_GATEW_SOAK_ACCOUNT_ID)))
+    {
+        throw 'BLOCKED / PRECREATE_SOURCE_CONFIG_INVALID'
+    }
+    $soakCurrencies = ConvertTo-SoakCurrenciesLiteral ([string]$values.NQ_GATEW_SOAK_CURRENCIES)
     $url = [string]$values.NQ_DB_URL
     if (-not $url.StartsWith('jdbc:postgresql://', [StringComparison]::Ordinal))
     {
@@ -288,7 +363,7 @@ function New-PreCreateDescriptor
         throw 'BLOCKED / PRECREATE_SOURCE_CONFIG_INVALID'
     }
     return Assert-PreCreateDescriptorValue ([pscustomobject][ordered]@{
-        schemaVersion = 'gatew-precreate-prerequisite-v1'
+        schemaVersion = 'gatew-precreate-prerequisite-v2'
         databaseHost = $uri.Host
         databasePort = [int]$uri.Port
         databaseName = $databaseName
@@ -297,6 +372,9 @@ function New-PreCreateDescriptor
         managementLoopbackUrl = 'http://127.0.0.1:18889/actuator/health'
         expectedCredentialType = 'OKX_API_V5'
         expectedEnvironment = 'LIVE'
+        soakOwnerId = [string]$values.NQ_GATEW_SOAK_OWNER_ID
+        soakAccountId = [string]$values.NQ_GATEW_SOAK_ACCOUNT_ID
+        soakCurrencies = $soakCurrencies
     })
 }
 
@@ -330,8 +408,15 @@ function Configure-PreCreateDescriptor
         {
             throw 'BLOCKED / PRECREATE_DESCRIPTOR_INVALID'
         }
-        Assert-PreCreateDescriptorValue `
-            (Get-Content -LiteralPath $script:PreCreateDescriptorPath -Raw | ConvertFrom-Json) | Out-Null
+        $existingDescriptor = Get-Content -LiteralPath $script:PreCreateDescriptorPath -Raw | ConvertFrom-Json
+        if ([string]$existingDescriptor.schemaVersion -ceq 'gatew-precreate-prerequisite-v1')
+        {
+            Assert-LegacyPreCreateDescriptorValue $existingDescriptor | Out-Null
+        }
+        else
+        {
+            Assert-PreCreateDescriptorValue $existingDescriptor | Out-Null
+        }
     }
     $temporary = "$( $script:GateWConfigRoot )/.precreate-prerequisite-$PID-$([Guid]::NewGuid().ToString('N') ).json"
     try
@@ -758,13 +843,70 @@ NQ_GATEW_SOAK_DB_PASSWORD=${NQ_DB_PASSWORD}
 NQ_DB_URL=jdbc:postgresql://127.0.0.1:5432/nexus_quant
 NQ_DB_USER=nq_runtime
 NQ_DB_PASSWORD=fixture-only
+NQ_GATEW_SOAK_OWNER_ID=7
+NQ_GATEW_SOAK_ACCOUNT_ID=9
+NQ_GATEW_SOAK_CURRENCIES=btc,USDT
 IGNORED_FIELD=value
 '@,[Text.UTF8Encoding]::new($false))
         $descriptor = New-PreCreateDescriptor $fixture $script:DatabasePasswordSecretPath
         if ([string]$descriptor.databaseName -cne 'nexus_quant' -or
-                [string]$descriptor.databaseUser -cne 'nq_runtime')
+                [string]$descriptor.databaseUser -cne 'nq_runtime' -or
+                [string]$descriptor.soakOwnerId -cne '7' -or
+                [string]$descriptor.soakAccountId -cne '9' -or
+                [string]$descriptor.soakCurrencies -cne 'BTC,USDT')
         {
             throw 'precreate descriptor source self-test failed'
+        }
+        $legacyDescriptor = [pscustomobject][ordered]@{
+            schemaVersion = 'gatew-precreate-prerequisite-v1'
+            databaseHost = '127.0.0.1'
+            databasePort = 5432
+            databaseName = 'nexus_quant'
+            databaseUser = 'nq_runtime'
+            passwordSecretFile = $script:DatabasePasswordSecretPath
+            managementLoopbackUrl = 'http://127.0.0.1:18889/actuator/health'
+            expectedCredentialType = 'OKX_API_V5'
+            expectedEnvironment = 'LIVE'
+        }
+        Assert-LegacyPreCreateDescriptorValue $legacyDescriptor | Out-Null
+        $legacyAcceptedByRuntime = $true
+        try
+        {
+            Assert-PreCreateDescriptorValue $legacyDescriptor | Out-Null
+        }
+        catch
+        {
+            $legacyAcceptedByRuntime = $false
+        }
+        if ($legacyAcceptedByRuntime)
+        {
+            throw 'legacy precreate descriptor runtime rejection self-test failed'
+        }
+        foreach ($mutation in @(
+            @('NQ_GATEW_SOAK_OWNER_ID=7', 'NQ_GATEW_SOAK_OWNER_ID=0'),
+            @('NQ_GATEW_SOAK_ACCOUNT_ID=9', 'NQ_GATEW_SOAK_ACCOUNT_ID=9223372036854775808'),
+            @('NQ_GATEW_SOAK_CURRENCIES=btc,USDT', 'NQ_GATEW_SOAK_CURRENCIES=BTC,BTC'),
+            @('NQ_GATEW_SOAK_CURRENCIES=btc,USDT', 'NQ_GATEW_SOAK_CURRENCIES=BTC,ETH,USDT,SOL')
+        ))
+        {
+            $candidate = (Get-Content -LiteralPath $fixture -Raw).Replace(
+                    [string]$mutation[0], [string]$mutation[1]
+            )
+            $unsafeFixture = Join-Path $fixtureRoot ([Guid]::NewGuid().ToString('N') + '.env')
+            [IO.File]::WriteAllText($unsafeFixture, $candidate, [Text.UTF8Encoding]::new($false))
+            $blocked = $false
+            try
+            {
+                New-PreCreateDescriptor $unsafeFixture $script:DatabasePasswordSecretPath | Out-Null
+            }
+            catch
+            {
+                $blocked = $true
+            }
+            if (-not $blocked)
+            {
+                throw 'precreate operational scope rejection self-test failed'
+            }
         }
         foreach ($unsafe in @(
             '${UNRESOLVED}', '$(whoami)', '`whoami`', 'nq_runtime|id'

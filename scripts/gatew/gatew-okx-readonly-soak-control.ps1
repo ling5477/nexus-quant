@@ -173,15 +173,17 @@ function Get-FormalRealSafetyEnvironmentValues
 
 function Get-FormalRealWorkerEnvironmentValues
 {
-    $values = [ordered]@{ }
-    foreach ($name in @(
-        'SPRING_PROFILES_ACTIVE', 'NQ_GATEW_OKX_READONLY_SOAK_ENABLED', 'CI', 'NQ_NO_OUTBOUND',
-        'NQ_GATEW_SOAK_OWNER_ID', 'NQ_GATEW_SOAK_ACCOUNT_ID', 'NQ_GATEW_SOAK_CURRENCIES'
-    ))
-    {
-        $value = [Environment]::GetEnvironmentVariable($name, 'Process')
-        Assert-LiteralValue ([string]$value)
-        $values[$name] = [string]$value
+    param([Parameter(Mandatory = $true)]$Descriptor)
+
+    $validatedDescriptor = Assert-PreCreateDescriptorValue $Descriptor
+    $values = [ordered]@{
+        SPRING_PROFILES_ACTIVE = 'gatew-okx-readonly-soak'
+        NQ_GATEW_OKX_READONLY_SOAK_ENABLED = 'true'
+        CI = 'false'
+        NQ_NO_OUTBOUND = 'false'
+        NQ_GATEW_SOAK_OWNER_ID = [string]$validatedDescriptor.soakOwnerId
+        NQ_GATEW_SOAK_ACCOUNT_ID = [string]$validatedDescriptor.soakAccountId
+        NQ_GATEW_SOAK_CURRENCIES = [string]$validatedDescriptor.soakCurrencies
     }
     foreach ($entry in (Get-FormalRealSafetyEnvironmentValues).GetEnumerator())
     {
@@ -822,10 +824,11 @@ function Assert-PreCreateDescriptorValue
 
     $fields = @(
         'schemaVersion', 'databaseHost', 'databasePort', 'databaseName', 'databaseUser',
-        'passwordSecretFile', 'managementLoopbackUrl', 'expectedCredentialType', 'expectedEnvironment'
+        'passwordSecretFile', 'managementLoopbackUrl', 'expectedCredentialType', 'expectedEnvironment',
+        'soakOwnerId', 'soakAccountId', 'soakCurrencies'
     )
     if ((@($Descriptor.PSObject.Properties.Name) -join '|') -cne ($fields -join '|') -or
-            [string]$Descriptor.schemaVersion -cne 'gatew-precreate-prerequisite-v1' -or
+            [string]$Descriptor.schemaVersion -cne 'gatew-precreate-prerequisite-v2' -or
             [string]$Descriptor.databaseHost -notin @('127.0.0.1', 'localhost') -or
             ($Descriptor.databasePort -isnot [int] -and $Descriptor.databasePort -isnot [long]) -or
             [long]$Descriptor.databasePort -lt 1 -or [long]$Descriptor.databasePort -gt 65535 -or
@@ -834,18 +837,47 @@ function Assert-PreCreateDescriptorValue
             [string]$Descriptor.passwordSecretFile -cne "$( $script:CredentialRoot )/db-password.cred" -or
             [string]$Descriptor.managementLoopbackUrl -cne 'http://127.0.0.1:18889/actuator/health' -or
             [string]$Descriptor.expectedCredentialType -cne 'OKX_API_V5' -or
-            [string]$Descriptor.expectedEnvironment -cne 'LIVE')
+            [string]$Descriptor.expectedEnvironment -cne 'LIVE' -or
+            -not (Test-PositiveInt64Literal ([string]$Descriptor.soakOwnerId)) -or
+            -not (Test-PositiveInt64Literal ([string]$Descriptor.soakAccountId)) -or
+            -not (Test-SoakCurrenciesLiteral ([string]$Descriptor.soakCurrencies)))
     {
         throw 'BLOCKED / PRECREATE_DESCRIPTOR_INVALID'
     }
     foreach ($field in @(
         'databaseHost', 'databaseName', 'databaseUser', 'passwordSecretFile',
-        'managementLoopbackUrl', 'expectedCredentialType', 'expectedEnvironment'
+        'managementLoopbackUrl', 'expectedCredentialType', 'expectedEnvironment',
+        'soakOwnerId', 'soakAccountId', 'soakCurrencies'
     ))
     {
         Assert-LiteralValue ([string]$Descriptor.PSObject.Properties[$field].Value)
     }
     return $Descriptor
+}
+
+function Test-PositiveInt64Literal
+{
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Value)
+
+    $parsed = 0L
+    return [long]::TryParse(
+            $Value,
+            [Globalization.NumberStyles]::None,
+            [Globalization.CultureInfo]::InvariantCulture,
+            [ref]$parsed
+    ) -and $parsed -gt 0
+}
+
+function Test-SoakCurrenciesLiteral
+{
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Value)
+
+    if ($Value -cnotmatch '^[A-Z0-9]{2,12}(,[A-Z0-9]{2,12}){0,2}$')
+    {
+        return $false
+    }
+    $tokens = @($Value.Split(','))
+    return @($tokens | Select-Object -Unique).Count -eq $tokens.Count
 }
 
 function Read-PreCreateDescriptor
@@ -2209,7 +2241,7 @@ function Prepare-FormalRun
     }
     if ($RunMode -eq 'REAL_READONLY_SOAK')
     {
-        $realWorkerValues = Get-FormalRealWorkerEnvironmentValues
+        $realWorkerValues = Get-FormalRealWorkerEnvironmentValues $preCreateDescriptor
         foreach ($name in $realWorkerValues.Keys)
         {
             $workerValues[[string]$name] = [string]$realWorkerValues[$name]
@@ -4298,44 +4330,8 @@ function Invoke-ControlSelfTest
         throw 'formal cadence contract self-test failed'
     }
     $caseCount++
-    $safetyValues = Get-FormalRealSafetyEnvironmentValues
-    if ($safetyValues.Count -ne 9 -or
-            @($safetyValues.Values | Where-Object { [string]$_ -cne 'false' }).Count -ne 0)
-    {
-        throw 'formal REAL safety environment contract self-test failed'
-    }
-    $previousSafetyValues = @{ }
-    try
-    {
-        foreach ($name in $safetyValues.Keys)
-        {
-            $previousSafetyValues[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
-            [Environment]::SetEnvironmentVariable($name, 'true', 'Process')
-        }
-        $workerValues = Get-FormalRealWorkerEnvironmentValues
-        foreach ($name in $safetyValues.Keys)
-        {
-            if ([string]$workerValues[$name] -cne 'false')
-            {
-                throw 'formal REAL worker safety environment self-test failed'
-            }
-        }
-    }
-    finally
-    {
-        foreach ($name in $safetyValues.Keys)
-        {
-            [Environment]::SetEnvironmentVariable($name, $previousSafetyValues[$name], 'Process')
-        }
-    }
-    $caseCount++
-    if ( [IO.File]::ReadAllText($PSCommandPath).Contains('$' + 'matches = @()'))
-    {
-        throw 'automatic Matches collision self-test failed'
-    }
-    $caseCount++
     $descriptorFixture = [pscustomobject][ordered]@{
-        schemaVersion = 'gatew-precreate-prerequisite-v1'
+        schemaVersion = 'gatew-precreate-prerequisite-v2'
         databaseHost = '127.0.0.1'
         databasePort = 5432
         databaseName = 'nexus_quant'
@@ -4344,7 +4340,63 @@ function Invoke-ControlSelfTest
         managementLoopbackUrl = 'http://127.0.0.1:18889/actuator/health'
         expectedCredentialType = 'OKX_API_V5'
         expectedEnvironment = 'LIVE'
+        soakOwnerId = '7'
+        soakAccountId = '9'
+        soakCurrencies = 'BTC,USDT'
     }
+    $safetyValues = Get-FormalRealSafetyEnvironmentValues
+    if ($safetyValues.Count -ne 9 -or
+            @($safetyValues.Values | Where-Object { [string]$_ -cne 'false' }).Count -ne 0)
+    {
+        throw 'formal REAL safety environment contract self-test failed'
+    }
+    $workerExpected = [ordered]@{
+        SPRING_PROFILES_ACTIVE = 'gatew-okx-readonly-soak'
+        NQ_GATEW_OKX_READONLY_SOAK_ENABLED = 'true'
+        CI = 'false'
+        NQ_NO_OUTBOUND = 'false'
+        NQ_GATEW_SOAK_OWNER_ID = '7'
+        NQ_GATEW_SOAK_ACCOUNT_ID = '9'
+        NQ_GATEW_SOAK_CURRENCIES = 'BTC,USDT'
+    }
+    foreach ($entry in $safetyValues.GetEnumerator())
+    {
+        $workerExpected[[string]$entry.Key] = [string]$entry.Value
+    }
+    $previousWorkerProcessValues = @{ }
+    try
+    {
+        foreach ($name in $workerExpected.Keys)
+        {
+            $previousWorkerProcessValues[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+            [Environment]::SetEnvironmentVariable($name, 'true', 'Process')
+        }
+        $workerValues = Get-FormalRealWorkerEnvironmentValues $descriptorFixture
+        if ($workerValues.Count -ne $workerExpected.Count)
+        {
+            throw 'formal REAL worker environment count self-test failed'
+        }
+        foreach ($name in $workerExpected.Keys)
+        {
+            if ([string]$workerValues[$name] -cne [string]$workerExpected[$name])
+            {
+                throw 'formal REAL worker environment freeze self-test failed'
+            }
+        }
+    }
+    finally
+    {
+        foreach ($name in $workerExpected.Keys)
+        {
+            [Environment]::SetEnvironmentVariable($name, $previousWorkerProcessValues[$name], 'Process')
+        }
+    }
+    $caseCount++
+    if ( [IO.File]::ReadAllText($PSCommandPath).Contains('$' + 'matches = @()'))
+    {
+        throw 'automatic Matches collision self-test failed'
+    }
+    $caseCount++
     Assert-PreCreateDescriptorValue $descriptorFixture | Out-Null
     if ((Get-PreCreateDatabaseUrl $descriptorFixture) -cne
             'jdbc:postgresql://127.0.0.1:5432/nexus_quant')
@@ -4354,11 +4406,16 @@ function Invoke-ControlSelfTest
     $caseCount += 2
     foreach ($mutation in @(
         @{ unknownField = 'forbidden' },
+        @{ schemaVersion = 'gatew-precreate-prerequisite-v1' },
         @{ databaseHost = '${DB_HOST}' },
         @{ databaseName = '$(whoami)' },
         @{ databaseUser = 'user`id' },
         @{ managementLoopbackUrl = 'http://127.0.0.1:18889/actuator/health|id' },
-        @{ passwordSecretFile = '/tmp/db-password' }
+        @{ passwordSecretFile = '/tmp/db-password' },
+        @{ soakOwnerId = '0' },
+        @{ soakAccountId = '9223372036854775808' },
+        @{ soakCurrencies = 'BTC,BTC' },
+        @{ soakCurrencies = 'BTC,ETH,USDT,SOL' }
     ))
     {
         $candidate = (ConvertTo-CompactJson $descriptorFixture | ConvertFrom-Json)
