@@ -55,6 +55,22 @@ $script:LauncherFields = @(
     'accountConfigProbeStatus', 'balanceProbeStatus', 'traceId'
 )
 $script:SupervisorCycleFields = @($script:LauncherFields + 'realCycleOutcomeProven')
+$script:PrerequisiteReadbackFields = @(
+    'killSwitchEngaged', 'credentialConfigured', 'activeCredentialCount', 'credentialType',
+    'credentialLocalStatus', 'permissionFactPresent', 'permissionFactFresh', 'readPermissionStatus',
+    'tradePermissionExpectedDisabled', 'withdrawPermissionExpectedDisabled', 'ipAllowlistStatus',
+    'postgresReachable', 'managementHealthy', 'blockerCodes', 'failureStage', 'failureCode',
+    'configurationLoaded', 'datasourceConfigured', 'jdbcDriverLoaded',
+    'postgresConnectionAttempted', 'queryExecuted', 'resultMapped', 'diagnosticId'
+)
+$script:PrerequisiteBlockerCodes = @(
+    'MANAGEMENT_UNREACHABLE', 'POSTGRES_UNREACHABLE', 'ACCOUNT_SCOPE_MISMATCH',
+    'CREDENTIAL_NOT_CONFIGURED', 'ACTIVE_CREDENTIAL_COUNT_INVALID', 'CREDENTIAL_TYPE_MISMATCH',
+    'CREDENTIAL_LOCAL_STATUS_NOT_ACTIVE', 'PERMISSION_FACT_MISSING', 'PERMISSION_FACT_STALE',
+    'READ_PERMISSION_NOT_VERIFIED', 'TRADE_PERMISSION_NOT_DISABLED',
+    'WITHDRAW_PERMISSION_NOT_DISABLED', 'IP_ALLOWLIST_NOT_VERIFIED',
+    'INTERNAL_SANITIZED_READBACK_FAILURE', 'KILL_SWITCH_NOT_ENGAGED'
+)
 $script:SampleFieldsV1 = @(
     'sequence', 'observedAt', 'durationMs', 'resultStatus', 'reasonCode', 'httpStatusCategory',
     'permissionClassification', 'killSwitchObservedState', 'credentialAccessed', 'networkCalled',
@@ -346,6 +362,70 @@ function Assert-ExactFields
     {
         throw "$Category schema is invalid"
     }
+}
+
+function Assert-SanitizedPrerequisiteReadback
+{
+    param([Parameter(Mandatory = $true)]$Result)
+
+    try
+    {
+        Assert-ExactFields -Value $Result -Expected $script:PrerequisiteReadbackFields `
+            -Category 'prerequisite readback'
+        foreach ($field in @(
+            'killSwitchEngaged', 'credentialConfigured', 'permissionFactPresent',
+            'permissionFactFresh', 'tradePermissionExpectedDisabled',
+            'withdrawPermissionExpectedDisabled', 'postgresReachable', 'managementHealthy',
+            'configurationLoaded', 'datasourceConfigured', 'jdbcDriverLoaded',
+            'postgresConnectionAttempted', 'queryExecuted', 'resultMapped'
+        ))
+        {
+            if ($Result.PSObject.Properties[$field].Value -isnot [bool])
+            {
+                throw 'schema'
+            }
+        }
+        $blockerCodes = @($Result.blockerCodes)
+        if (-not (Test-IntegralNumber $Result.activeCredentialCount) -or
+                [long]$Result.activeCredentialCount -lt 0 -or
+                [string]$Result.credentialType -notin @('OKX_API_V5', 'UNKNOWN', 'CONFLICT') -or
+                [string]$Result.credentialLocalStatus -notin @(
+                    'ACTIVE', 'DISABLED', 'REVOKED', 'EXPIRED', 'ROTATED', 'UNKNOWN', 'CONFLICT'
+                ) -or
+                [string]$Result.readPermissionStatus -notin @('VERIFIED', 'NOT_VERIFIED', 'UNKNOWN') -or
+                [string]$Result.ipAllowlistStatus -notin @('VERIFIED', 'FAILED', 'UNKNOWN') -or
+                @($blockerCodes | Where-Object {
+                    $_ -isnot [string] -or $script:PrerequisiteBlockerCodes -cnotcontains [string]$_
+                }).Count -ne 0 -or
+                @($blockerCodes | Select-Object -Unique).Count -ne $blockerCodes.Count -or
+                [string]$Result.failureStage -notin @(
+                    'CONFIGURATION_LOADING', 'DATASOURCE_CONFIGURATION', 'JDBC_DRIVER_LOADING',
+                    'POSTGRES_CONNECTION', 'QUERY_EXECUTION', 'RESULT_MAPPING',
+                    'INTERNAL_READBACK', 'COMPLETED'
+                ) -or
+                [string]$Result.failureCode -notin @(
+                    'NONE', 'CONFIGURATION_NOT_LOADED', 'DATASOURCE_NOT_CONFIGURED',
+                    'JDBC_DRIVER_NOT_FOUND', 'POSTGRES_CONNECTION_FAILED',
+                    'QUERY_EXECUTION_FAILED', 'RESULT_MAPPING_FAILED',
+                    'INTERNAL_SANITIZED_READBACK_FAILURE'
+                ) -or
+                (([string]$Result.failureStage -ceq 'COMPLETED') -ne
+                        ([string]$Result.failureCode -ceq 'NONE')) -or
+                [string]$Result.diagnosticId -cnotmatch '^gatew-precreate-[a-f0-9]{32}$')
+        {
+            throw 'schema'
+        }
+        $serialized = ConvertTo-CompactJson $Result
+        if ($serialized -match '(?i)https?://|api[-_]?key|passphrase|signature|encrypted[_-]?payload|jdbc[^\"]*password')
+        {
+            throw 'schema'
+        }
+    }
+    catch
+    {
+        throw 'FAIL / PREREQUISITE_READBACK_SCHEMA_INVALID'
+    }
+    return $Result
 }
 
 function Assert-LauncherCycleResult
@@ -947,42 +1027,23 @@ function Invoke-SanitizedPrerequisiteReadback
         {
             throw 'FAIL / PREREQUISITE_READBACK_UNAVAILABLE'
         }
-        $result = Read-JsonFile $resultFile
-        Assert-ExactFields -Value $result -Expected @(
-            'killSwitchEngaged', 'credentialConfigured', 'activeCredentialCount', 'credentialType',
-            'credentialLocalStatus', 'tradePermissionExpectedDisabled',
-            'withdrawPermissionExpectedDisabled', 'postgresReachable', 'managementHealthy'
-        ) -Category 'prerequisite readback'
-        foreach ($field in @(
-            'killSwitchEngaged', 'credentialConfigured', 'tradePermissionExpectedDisabled',
-            'withdrawPermissionExpectedDisabled', 'postgresReachable', 'managementHealthy'
-        ))
-        {
-            if ($result.PSObject.Properties[$field].Value -isnot [bool])
-            {
-                throw 'FAIL / PREREQUISITE_READBACK_SCHEMA_INVALID'
-            }
-        }
-        $serialized = ConvertTo-CompactJson $result
-        if (-not (Test-IntegralNumber $result.activeCredentialCount) -or
-                [int]$result.activeCredentialCount -lt 0 -or
-                [string]$result.credentialType -notin @('OKX_API_V5', 'UNKNOWN', 'CONFLICT') -or
-                [string]$result.credentialLocalStatus -notin @(
-                    'ACTIVE', 'DISABLED', 'REVOKED', 'EXPIRED', 'ROTATED', 'UNKNOWN', 'CONFLICT'
-                ) -or
-                $serialized -match '(?i)https?://|api[-_]?key|passphrase|signature|encrypted[_-]?payload|jdbc[^\"]*password')
-        {
-            throw 'FAIL / PREREQUISITE_READBACK_SCHEMA_INVALID'
-        }
+        $result = Assert-SanitizedPrerequisiteReadback (Read-JsonFile $resultFile)
         if (-not [bool]$result.killSwitchEngaged -or
                 -not [bool]$result.credentialConfigured -or
                 [int]$result.activeCredentialCount -ne 1 -or
                 [string]$result.credentialType -ne 'OKX_API_V5' -or
                 [string]$result.credentialLocalStatus -ne 'ACTIVE' -or
+                -not [bool]$result.permissionFactPresent -or
+                -not [bool]$result.permissionFactFresh -or
+                [string]$result.readPermissionStatus -ne 'VERIFIED' -or
                 -not [bool]$result.tradePermissionExpectedDisabled -or
                 -not [bool]$result.withdrawPermissionExpectedDisabled -or
+                [string]$result.ipAllowlistStatus -ne 'VERIFIED' -or
                 -not [bool]$result.postgresReachable -or
-                -not [bool]$result.managementHealthy)
+                -not [bool]$result.managementHealthy -or
+                @($result.blockerCodes).Count -ne 0 -or
+                [string]$result.failureStage -ne 'COMPLETED' -or
+                [string]$result.failureCode -ne 'NONE')
         {
             throw 'FAIL / PREREQUISITE_READBACK_NOT_READY'
         }
@@ -2569,6 +2630,66 @@ function Invoke-SelfTest
             throw 'invalid release identity self-test failed'
         }
         $caseCount += 2
+
+        $prerequisiteFixture = [pscustomobject][ordered]@{
+            killSwitchEngaged = $true
+            credentialConfigured = $true
+            activeCredentialCount = 1
+            credentialType = 'OKX_API_V5'
+            credentialLocalStatus = 'ACTIVE'
+            permissionFactPresent = $true
+            permissionFactFresh = $true
+            readPermissionStatus = 'VERIFIED'
+            tradePermissionExpectedDisabled = $true
+            withdrawPermissionExpectedDisabled = $true
+            ipAllowlistStatus = 'VERIFIED'
+            postgresReachable = $true
+            managementHealthy = $true
+            blockerCodes = @()
+            failureStage = 'COMPLETED'
+            failureCode = 'NONE'
+            configurationLoaded = $true
+            datasourceConfigured = $true
+            jdbcDriverLoaded = $true
+            postgresConnectionAttempted = $true
+            queryExecuted = $true
+            resultMapped = $true
+            diagnosticId = 'gatew-precreate-0123456789abcdef0123456789abcdef'
+        }
+        Assert-SanitizedPrerequisiteReadback $prerequisiteFixture | Out-Null
+        $caseCount++
+        foreach ($mutation in @('extra-field', 'missing-field', 'invalid-type'))
+        {
+            $candidate = ConvertFrom-JsonPreservingTimestamps `
+                (ConvertTo-CompactJson $prerequisiteFixture)
+            switch ($mutation)
+            {
+                'extra-field' {
+                    $candidate | Add-Member -NotePropertyName unexpected -NotePropertyValue 'forbidden'
+                }
+                'missing-field' {
+                    $candidate.PSObject.Properties.Remove('diagnosticId')
+                }
+                'invalid-type' {
+                    $candidate.permissionFactFresh = 'true'
+                }
+            }
+            $rejected = $false
+            try
+            {
+                Assert-SanitizedPrerequisiteReadback $candidate | Out-Null
+            }
+            catch
+            {
+                $rejected = $_.Exception.Message -eq 'FAIL / PREREQUISITE_READBACK_SCHEMA_INVALID'
+            }
+            if (-not $rejected)
+            {
+                throw "prerequisite readback mutation was not rejected: $mutation"
+            }
+            $caseCount++
+        }
+
         [IO.File]::WriteAllText((Join-Path $directory 'samples.jsonl'), '', $script:Utf8NoBom)
         [IO.File]::WriteAllText((Join-Path $directory 'failures.jsonl'), '', $script:Utf8NoBom)
         Write-JsonAtomic (Join-Path $directory 'manifest.json') ([ordered]@{

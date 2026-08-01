@@ -17,6 +17,8 @@ $script:VerifierPath = Join-Path $script:GateWRoot 'verify-gatew-release.ps1'
 $script:InstallerPath = Join-Path $script:GateWRoot 'install-gatew-release.ps1'
 $script:WorkerUnitPath = Join-Path $script:RepoRoot 'deploy\systemd\nq-gatew-soak@.service'
 $script:FailCloseUnitPath = Join-Path $script:RepoRoot 'deploy\systemd\nq-gatew-soak-failclose@.service'
+$script:JavaCyclePath = Join-Path $script:RepoRoot `
+    'backend\nq-app\src\test\java\com\guidinglight\nexusquant\app\gatew\GateWOkxReadonlySoakCycleTest.java'
 $script:Cases = [Collections.Generic.List[object]]::new()
 
 Import-Module $script:ContractPath -Force
@@ -139,7 +141,7 @@ try
     foreach ($required in @(
         $script:ContractPath, $script:FixturePath, $script:ControlPath, $script:WorkerPath,
         $script:FailClosePath, $script:BuilderPath, $script:VerifierPath,
-        $script:WorkerUnitPath, $script:FailCloseUnitPath
+        $script:WorkerUnitPath, $script:FailCloseUnitPath, $script:JavaCyclePath
     ))
     {
         if (-not (Test-Path -LiteralPath $required -PathType Leaf))
@@ -339,6 +341,7 @@ try
     $installerText = [IO.File]::ReadAllText($script:InstallerPath)
     $workerUnitText = [IO.File]::ReadAllText($script:WorkerUnitPath)
     $failCloseUnitText = [IO.File]::ReadAllText($script:FailCloseUnitPath)
+    $javaCycleText = [IO.File]::ReadAllText($script:JavaCyclePath)
     Assert-TextDoesNotMatch $failCloseText @(
         'Invoke-EvidenceVerify', 'evidence-verify', 'verify-gatew-release\.ps1',
         '(?i)\bjava\b', '(?i)\bjdbc\b'
@@ -721,7 +724,38 @@ try
     }
     Complete-Case 36 'formal-real-worker-operational-values-frozen-from-root-owned-v2-descriptor'
 
-    if ($script:Cases.Count -ne 36)
+    $workerSchemaMatch = [regex]::Match(
+        $workerText,
+        '(?s)\$script:PrerequisiteReadbackFields\s*=\s*@\((?<body>.*?)\)'
+    )
+    $javaSchemaMatch = [regex]::Match(
+        $javaCycleText,
+        '(?s)@JsonPropertyOrder\(\{(?<body>.*?)\}\)\s*record\s+PrerequisiteReadback'
+    )
+    if (-not $workerSchemaMatch.Success -or -not $javaSchemaMatch.Success)
+    {
+        throw 'REGRESSION_PREREQUISITE_SCHEMA_SOURCE_NOT_FOUND'
+    }
+    $workerPrerequisiteFields = @(
+        [regex]::Matches($workerSchemaMatch.Groups['body'].Value, "'(?<name>[A-Za-z][A-Za-z0-9]+)'") |
+            ForEach-Object { $_.Groups['name'].Value }
+    )
+    $javaPrerequisiteFields = @(
+        [regex]::Matches($javaSchemaMatch.Groups['body'].Value, '"(?<name>[A-Za-z][A-Za-z0-9]+)"') |
+            ForEach-Object { $_.Groups['name'].Value }
+    )
+    if ($workerPrerequisiteFields.Count -ne 23 -or
+            ($workerPrerequisiteFields -join '|') -cne ($javaPrerequisiteFields -join '|') -or
+            -not $workerText.Contains(
+                    '$result = Assert-SanitizedPrerequisiteReadback (Read-JsonFile $resultFile)'
+            ) -or
+            -not $workerText.Contains("throw 'FAIL / PREREQUISITE_READBACK_SCHEMA_INVALID'"))
+    {
+        throw 'REGRESSION_PREREQUISITE_SCHEMA_CONTRACT_MISMATCH'
+    }
+    Complete-Case 37 'worker-prerequisite-exact-schema-matches-java-sanitized-contract'
+
+    if ($script:Cases.Count -ne 37)
     {
         throw "REGRESSION_CASE_COUNT_INVALID actual=$( $script:Cases.Count )"
     }
