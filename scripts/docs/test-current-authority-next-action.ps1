@@ -660,28 +660,53 @@ if ($null -eq $currentAuthority -or
 }
 $currentNextAction = [string]$currentAuthority.next_action
 
-$canonicalRoadmapAttemptClause = 'Attempt-10=`NOT_CREATED / AUTHORIZED`; production deployment=`NOT_STARTED`'
-if (-not $script:roadmapFixture.Contains($canonicalRoadmapAttemptClause)) {
+$canonicalRoadmapAttemptPattern = '(?m)^\s*-\s*[^\r\n]*?(?<clause>Attempt-(?<attemptId>[1-9][0-9]*)=`(?<attemptState>[A-Z_]+) / (?<authorizationState>[A-Z0-9_]+)`; production deployment=`(?<deploymentState>[A-Z_]+)`)[^\r\n]*$'
+$canonicalRoadmapAttemptMatches = [regex]::Matches(
+    $script:roadmapFixture,
+    $canonicalRoadmapAttemptPattern)
+if ($canonicalRoadmapAttemptMatches.Count -ne 1) {
     throw 'CROSS_DOCUMENT_ROADMAP_FIXTURE_INVALID'
 }
+$canonicalRoadmapAttemptMatch = $canonicalRoadmapAttemptMatches[0]
+$canonicalRoadmapAttemptClause = $canonicalRoadmapAttemptMatch.Groups['clause'].Value
+$canonicalAttemptId = [int]$canonicalRoadmapAttemptMatch.Groups['attemptId'].Value
+$canonicalAttemptState = $canonicalRoadmapAttemptMatch.Groups['attemptState'].Value
+$canonicalAuthorizationState = $canonicalRoadmapAttemptMatch.Groups['authorizationState'].Value
+$canonicalDeploymentState = $canonicalRoadmapAttemptMatch.Groups['deploymentState'].Value
 Assert-CrossDocumentAuthorityCase `
-    'attempt-10-authorized-aligned' $script:statusFixture $script:roadmapFixture $true
+    'attempt-authority-aligned' $script:statusFixture $script:roadmapFixture $true
 
+$mismatchedAuthorizationState = if ($canonicalAuthorizationState -ceq 'NOT_AUTHORIZED') {
+    'AUTHORIZED'
+} else {
+    'NOT_AUTHORIZED'
+}
 $authorizationMismatchRoadmap = $script:roadmapFixture.Replace(
     $canonicalRoadmapAttemptClause,
-    'Attempt-10=`NOT_CREATED / NOT_AUTHORIZED`; production deployment=`NOT_STARTED`')
+    ('Attempt-{0}=`{1} / {2}`; production deployment=`{3}`' -f
+        $canonicalAttemptId, $canonicalAttemptState, $mismatchedAuthorizationState,
+        $canonicalDeploymentState))
 Assert-CrossDocumentAuthorityCase `
     'authorization-mismatch' $script:statusFixture $authorizationMismatchRoadmap $false
 
 $attemptIdMismatchRoadmap = $script:roadmapFixture.Replace(
     $canonicalRoadmapAttemptClause,
-    'Attempt-11=`NOT_CREATED / AUTHORIZED`; production deployment=`NOT_STARTED`')
+    ('Attempt-{0}=`{1} / {2}`; production deployment=`{3}`' -f
+        ($canonicalAttemptId + 1), $canonicalAttemptState, $canonicalAuthorizationState,
+        $canonicalDeploymentState))
 Assert-CrossDocumentAuthorityCase `
     'attempt-id-mismatch' $script:statusFixture $attemptIdMismatchRoadmap $false
 
+$mismatchedDeploymentState = if ($canonicalDeploymentState -ceq 'STARTED') {
+    'STOPPED'
+} else {
+    'STARTED'
+}
 $deploymentMismatchRoadmap = $script:roadmapFixture.Replace(
     $canonicalRoadmapAttemptClause,
-    'Attempt-10=`NOT_CREATED / AUTHORIZED`; production deployment=`STARTED`')
+    ('Attempt-{0}=`{1} / {2}`; production deployment=`{3}`' -f
+        $canonicalAttemptId, $canonicalAttemptState, $canonicalAuthorizationState,
+        $mismatchedDeploymentState))
 Assert-CrossDocumentAuthorityCase `
     'production-deployment-mismatch' $script:statusFixture $deploymentMismatchRoadmap $false
 
@@ -693,13 +718,14 @@ Assert-CrossDocumentAuthorityCase `
 
 $missingAttemptRoadmap = $script:roadmapFixture.Replace(
     $canonicalRoadmapAttemptClause,
-    'Attempt-10 authority declaration missing')
+    ("Attempt-{0} authority declaration missing" -f $canonicalAttemptId))
 Assert-CrossDocumentAuthorityCase `
     'roadmap-attempt-missing' $script:statusFixture $missingAttemptRoadmap $false
 
 $unknownAuthorizationRoadmap = $script:roadmapFixture.Replace(
     $canonicalRoadmapAttemptClause,
-    'Attempt-10=`NOT_CREATED / MAYBE_AUTHORIZED`; production deployment=`NOT_STARTED`')
+    ('Attempt-{0}=`{1} / MAYBE_AUTHORIZED`; production deployment=`{2}`' -f
+        $canonicalAttemptId, $canonicalAttemptState, $canonicalDeploymentState))
 Assert-CrossDocumentAuthorityCase `
     'unknown-authorization-token' $script:statusFixture $unknownAuthorizationRoadmap $false
 

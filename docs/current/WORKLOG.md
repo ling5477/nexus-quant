@@ -18025,3 +18025,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：production SSH/private key/credential/OKX/生产 DB/deployment/systemd/current/Attempt-10/RunId/worker/168h clock/LIVE/交易写侧=`0`；未触达 freeze/archive/tag。
 - result：`PASS / CURRENT_AUTHORITY_RECONCILED / ROADMAP_STATUS_ALIGNED / ATTEMPT_02_EVIDENCE_PATH_AUTHORIZED / CHECKER_COVERAGE_FIXED / FULL_GOVERNANCE_REGRESSION_GREEN / READY_TO_COMMIT / PRODUCTION_NOT_ACCESSED`。
 - next：提交并推送 `fix(governance): reconcile Attempt-10 deployment authority`，取得 exact-head 10/10 CI GREEN 后，唯一下一动作仍为 `NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START`。
+
+## 2026-08-01 — GateW Attempt-10 preparation and start attempt-02
+
+- task：`NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START`；NQ-only、L 级 production read-only deployment / immutable release verification / Attempt creation / worker start。
+- release：final source `f06a38f2269445c544169cede1092ce70168913b`，exact-head CI `30694580482 / completed / success / 10 of 10`；manifest=`9bf1bb6c...1d1ee`，bundle=`d1456713...8e29`，`131/122/132`，Windows PS5.1/PS7 bytes identical，服务器 staging/installed verifier、root/POSIX/worker write denial 全部通过。
+- precreate：PostgreSQL、management、release binding、kill switch、credential metadata、persisted read permission、trade/withdraw disabled 与 IP allowlist 全部通过；`readyForAttemptCreation=true`，但该检查没有实时调用 OKX。
+- attempt：创建唯一 RunId `gatew-soak-20260801T102353Z-932e26a4`；启动前发现 `worker.env` 九个 safety flags 为空而非精确 `false`，因失败 RunId 不允许就地修改，未调用 `start`。
+- fail-close：worker 从未启动，MainPID=`0`、NRestarts=`0`、OKX calls=`0`，first heartbeat/hash chain/acceptance clock 均不存在；run 已 terminalize 为 `BLOCKED / REJECTED_UNAUTHORIZED_OR_UNKNOWN_STOP`。Current/unit links 已 canonical 回滚至 `c16f27c3...`；失败 release 与 RunId evidence 保留，任务专用远程 upload/staging/tar 已精确清理。
+- findings：P0=0/P1=1/P2=2/P3=1。P1 为 `Prepare-FormalRun` safety flag 读取时序缺陷；P2 为 pre-start failure taxonomy 缺口和 no-exit-fact stop attribution 缺口。本任务只记录 blocker，不修复。
+- validation RCA：首轮 PS5.1/PS7 current-authority regression 因测试 fixture 硬编码旧 `NOT_CREATED / AUTHORIZED / NOT_STARTED` 快照而返回 `CROSS_DOCUMENT_ROADMAP_FIXTURE_INVALID`。仅将 fixture 改为从 ROADMAP 当前唯一声明动态派生对齐正例和负例；checker、schema、status/action mapping 与 runtime taxonomy 不变。修复后双引擎 `CURRENT_AUTHORITY_NEXT_ACTION_REGRESSION` PASS，六类负例继续 fail-closed。
+- result：`BLOCKED / ATTEMPT_10_START_CONTRACT_FAILED / WORKER_NOT_STARTED / OKX_NOT_CALLED / 168H_SOAK_NOT_STARTED / ROLLED_BACK / LIVE_DISABLED / KILL_SWITCH_ENGAGED`。
+- next：当前 authority 只能标记 `NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START-BLOCKED`；必须由后续独立 authority/remediation 决策定义合法路线。禁止复用 RunId、创建 Attempt-11、自动重试、启动 168h 监控、触碰 LIVE/交易写侧或 freeze/archive/tag。

@@ -12525,3 +12525,24 @@ clock、LIVE、交易写侧、freeze/archive/tag。Review exact-head CI 已满�
 - 已知失败/RCA：一次非正式内嵌 AST 命令因双层 PowerShell 引号展开失败；正式回归先后暴露并修复 PS5.1 no-BOM 非 ASCII fixture、错误输出污染成功流、lifecycle fixture 缺少 ROADMAP。最终所有正式命令均已重跑通过。
 - 未运行：Maven、frontend、Python 产品测试未运行，因为本轮不改产品代码；生产 SSH、OKX、生产 DB、deployment、Attempt-10、worker、168h clock 均未运行。
 - 结论：本地 `PASS / FULL_GOVERNANCE_REGRESSION_GREEN / READY_TO_COMMIT`；exact-head CI=`NOT_RUN`，提交后 CI 为生产前阻断条件。
+
+## 2026-08-01 — GateW Attempt-10 preparation and start attempt-02
+
+当前结论：`BLOCKED / ATTEMPT_10_START_CONTRACT_FAILED / ATTEMPT_10_TERMINALIZED / WORKER_NOT_STARTED / OKX_NOT_CALLED / 168H_SOAK_NOT_STARTED / ROLLED_BACK / LIVE_DISABLED / KILL_SWITCH_ENGAGED`。
+
+| Command / evidence | Result | Scope / environment |
+| --- | --- | --- |
+| cadence remediation exact-head CI | PASS | commit `0e29e00d2126e9b8377cca35fff10ef2346720a9`；run `30693727633 / completed / success / 10 of 10` |
+| acceptance-clock remediation exact-head CI | PASS | final release commit `f06a38f2269445c544169cede1092ce70168913b`；run `30694580482 / completed / success / 10 of 10 / bad=0` |
+| Windows exact build | PASS | PowerShell 5.1/7 bytes identical；manifest=`9bf1bb6c...1d1ee`；bundle=`d1456713...8e29`；61,220,864 bytes；artifact/JAR/USTAR=`131/122/132` |
+| server staging / installed canonical verifier | PASS | 122/122 JAR；37,551 entries / 133,989,252 bytes full-stream/CRC；duplicate empty dirs=4；root:root/0755；`nqgatewWritable=false` |
+| production preflight / activation | PASS | active units/jobs/processes/run dirs=`0/0/0/0`；NTP、disk、PostgreSQL、credential metadata 通过；current 从 `c16f27c3...` 原子切换至 `f06a38f2...`，units started=`0` |
+| canonical precreate-prerequisite | PASS | `readyForAttemptCreation=true`；persisted permission fact/read permission/IP allowlist 验证通过；trade/withdraw expected disabled；`credentialMaterialExposed=false`；未发起 OKX 请求 |
+| Attempt-10 prepare | PASS | RunId=`gatew-soak-20260801T102353Z-932e26a4`；cadence=900s；duration=168h；acceptance clock not started |
+| pre-start frozen worker contract | BLOCKED | 九个 safety flags 为空字符串，不是 worker contract 要求的精确 `false`；未调用 `start` |
+| worker / heartbeat / hash chain / clock / OKX | NOT STARTED | MainPID=`0`；NRestarts=`0`；sample/failure records=`0/0`；OKX config/balance/forbidden/order/cancel/transfer/withdraw calls 全部为 `0` |
+| canonical fail-close / rollback | SAFE BLOCKED | lifecycle=`BLOCKED`；terminal=`REJECTED_UNAUTHORIZED_OR_UNKNOWN_STOP`；active units/jobs/residual=`0/0/0`；current/unit links 已回滚到 `c16f27c3...` |
+
+P0=0/P1=1/P2=2/P3=1。P1 是 `Prepare-FormalRun` 在 precreate evaluation 恢复 process environment 后才读取 safety flags；P2 为 governance 缺少 pre-start-failure taxonomy，以及从未启动的 unit 无 exit-fact 时 canonical stop 无法证明 controlled abort。本任务不修复这些问题，不修改失败 RunId，不创建 Attempt-11，不启动 168h 监控或进入 freeze/archive/tag。
+
+首轮 current-authority 正式回归中，PS5.1/PS7 的 `test-current-authority-next-action.ps1` 均在执行跨文档负例前以 `CROSS_DOCUMENT_ROADMAP_FIXTURE_INVALID` 失败；RCA 为 fixture 硬编码了旧 pre-start authority clause。最小修复仅从 ROADMAP 当前唯一 Attempt/deployment 声明动态派生正例与负例，不改 checker/contract/taxonomy；修复后 PS5.1/PS7 双引擎均为 `PASS / CURRENT_AUTHORITY_NEXT_ACTION_REGRESSION`，对齐正例 PASS，六类负例继续 `FAIL_CLOSED`。本次 evidence/current-docs 提交的 exact-head CI 在写入时为 `NOT_RUN`，提交推送后必须取得 10/10 GREEN。

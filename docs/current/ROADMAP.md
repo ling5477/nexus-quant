@@ -53,9 +53,9 @@ GateW Attempt-10 release candidate stabilization fix attempt-02 IMPLEMENTED / CI
   ↓
 GateW Attempt-10 release candidate review attempt-03 ACCEPTED / CI GREEN / DEPLOYMENT AUTHORIZED
   ↓
-NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START
-  ↓
-GateW-FREEZE NOT STARTED / FUTURE
+NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START attempt-02 BLOCKED / ATTEMPT CREATED / START CONTRACT FAILED / TERMINALIZED / ROLLED BACK
+
+GateW-FREEZE NOT STARTED / FUTURE / NOT AUTHORIZED
 ```
 
 ## 下一允许动作
@@ -82,8 +82,9 @@ GateW-FREEZE NOT STARTED / FUTURE
 - GateW Attempt-10 internal readback RCA/fix 与旧 release candidate stabilization：固定 RC `5e7a9c4e...` 的实现与 CI 历史证据保留，但独立 review 结论为 `REVIEW REJECTED / REMEDIATION REQUIRED`（审查已拒绝 / 需要整改）。该旧 RC 与废弃提交 `f54cdc81...` 均不得进入生产部署。
 - GateW Attempt-10 release candidate stabilization fix attempt-02：`IMPLEMENTED / CI GREEN / RC REVIEW PENDING`。Commit A `5a7e824e...` 的 exact-head CI run `30632959743` 为 `completed / success / 10 of 10`；Windows PowerShell 5.1/7 与 no-egress Linux exact builds 得到相同 manifest `d82ae4fc...0c6`、bundle `9feda6a8...add0` 与 131 artifacts / 122 JAR / 132 USTAR。Verifier 已固定 64 KiB full-stream read、独立 CRC32、duplicate/path collision 与资源上限 hard gate；37,551 entries / 133,989,252 bytes 全量读取，4 个合法空目录 duplicate 允许并计数。该新 RC 只可进入独立审查，尚未接受或部署。
 - GateW Attempt-10 release candidate review attempt-03：`ACCEPTED / CI GREEN / DEPLOYMENT AUTHORIZED`。Commit `15ee2ee2774019f9abf4b238f989b4c7b30db04c` 的 exact-head CI run `30653141014` 为 `completed / success / 10 jobs / bad=0`。Fixture timestamp P1 经授权最小修复，PS5.1/PS7/Linux pwsh7 各 3 次 34/34，平台内 hashes 稳定；真实 RC 的 artifact identity、122/122 JAR full-stream/CRC、tamper、Windows/Linux exact build 与 focused Maven 全部通过。P0=0/P1=0/P2=0/P3=0；runtime RC source=`5a7e824e...`。
-- GateW-FREEZE：`NOT_STARTED / FUTURE`；GateW 尚未 freeze、archive 或 tag。Attempt-09 已不可恢复且已拒绝；Attempt-10=`NOT_CREATED / AUTHORIZED`; production deployment=`NOT_STARTED`。
-- 当前唯一治理动作是 `NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START`；只允许独立任务按固定 runtime event order 执行受控 production preflight、permission verify、immutable deployment、Attempt-10 create、worker/heartbeat/clock start。失败必须 fail-closed；禁止恢复 Attempt-09、复用旧 RunId/clock、自动重试、手工 SQL、扩大 OKX endpoint、触碰 LIVE/交易写侧或进入 freeze/archive/tag。
+- GateW Attempt-10 preparation attempt-02：`BLOCKED / ATTEMPT CREATED / START CONTRACT FAILED / TERMINALIZED / ROLLED BACK`。Final release `f06a38f2...` 的 exact-head CI run `30694580482` 10/10 success，服务器 immutable/root/POSIX verifier 与 persisted permission pre-create 均通过；唯一 RunId `gatew-soak-20260801T102353Z-932e26a4` 创建后发现九个 safety flags 为空而非精确 `false`。Worker、OKX、first heartbeat、hash chain 与 168h clock 均未启动；run 已 fail-close，current/unit links 已回滚到 `c16f27c3...`。
+- GateW-FREEZE：`NOT_STARTED / FUTURE`；GateW 尚未 freeze、archive 或 tag。Attempt-09 已不可恢复且已拒绝；Attempt-10=`FAILED / STOPPED`; production deployment=`STOPPED`。
+- 当前唯一治理动作是 `NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START-BLOCKED`；该状态只表达 pre-start safety contract 已阻断当前 batch，不授权 remediation、重试、RunId 复用、Attempt-11、production 切换、168h acceptance 或 freeze/archive/tag。后续必须先由独立 authority/remediation 决策定义合法路线。
 
 ## 路线边界
 
@@ -94,5 +95,5 @@ GateW-FREEZE NOT STARTED / FUTURE
 - GateW-3 reconciliation 只允许 OKX Spot、最多 3 symbols、每类每 symbol 1 page/100 records、24h window 的显式 typed `Read` snapshot；无 controller/scheduler/repair/persistence，默认不装配。即使全量 matched，也仅表示 `SNAPSHOT_MATCHED_AT_EVALUATION_TIME`，`executionReadiness=BLOCKED`。
 - GateW-3 risk preflight 仅组合 immutable results/snapshots；不得调用完整 risk chain、stateful rule、order command、network、credential 或任何 write。UNKNOWN/NOT_EVALUATED 必须保留，execution readiness 永久 BLOCKED。
 - GateW-4 accepted 不等于 GateW frozen；GateW-FREEZE `NOT_STARTED` 不等于 freeze implementation 已开始。Freeze readiness review、archive manifest、authority、links 与 known residual 裁决必须先行。
-- 修复版 release `c16f27c3...` 仍是服务器 current 与 unit links 的 last-known-good immutable release；失败 release `1561eb60...` 已安装并保留但未运行。旧 RC `5e7a9c4e...` 与 `ef803568...` 已被拒绝；新 RC `5a7e824e...` 已达到 `DEPLOYMENT_AUTHORIZED`，但尚未部署。Attempt-10 仍未创建；只有下一独立任务的全部生产 hard gates 依次通过后才能启动，不得手工切换或直接重试。
+- `c16f27c3...` 仍是服务器 current 与 unit links 的 last-known-good immutable release；Attempt-10 attempt-02 的 final release `f06a38f2...` 已验证并安装，但启动前合同失败后已回滚且保留未运行。唯一 RunId 已 terminalize，禁止就地修改、复用或直接重试；当前没有已授权的新 Attempt 或 remediation 路线。
 - LIVE、Shadow trading、AI、DH runtime、Integration runtime、real provider 与 private trading 的状态由 `STATUS.md` 统一定义。
