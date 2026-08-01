@@ -44,14 +44,19 @@ function Test-StatusPhrase {
 }
 
 function Read-AttemptDeploymentAuthority {
-    param([string] $Content, [string] $SourceName)
+    param([string] $Content, [string] $SourceName, [Nullable[int]] $ExpectedAttemptId)
 
     $pattern = '(?im)^\s*-\s*[^\r\n]*?Attempt-(?<attemptId>[1-9][0-9]*)\s*(?:=|\x3a|\uff1a)\s*`(?<attemptState>[A-Z_]+)\s*/\s*(?<authorizationState>[A-Z0-9_]+)`[^\r\n]*?production deployment\s*=\s*`(?<deploymentState>[A-Z_]+)`'
-    $matches = [regex]::Matches($Content, $pattern)
+    $matches = @([regex]::Matches($Content, $pattern))
+    if ($null -ne $ExpectedAttemptId) {
+        $matches = @($matches | Where-Object {
+            [int]$_.Groups['attemptId'].Value -eq [int]$ExpectedAttemptId
+        })
+    }
     if ($matches.Count -ne 1) {
         return [pscustomobject]@{
             IsValid = $false
-            Reason = "field=attempt_declaration expected=1 actual=$($matches.Count)"
+            Reason = "field=attempt_declaration attempt=$ExpectedAttemptId expected=1 actual=$($matches.Count)"
         }
     }
 
@@ -288,8 +293,18 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
                 Add-AuthorityError "CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH source=ROADMAP field=file path=$RoadmapPath"
             } else {
                 $roadmapContent = Read-Utf8File $resolvedRoadmap
-                $statusAttemptAuthority = Read-AttemptDeploymentAuthority $statusBody 'STATUS'
-                $roadmapAttemptAuthority = Read-AttemptDeploymentAuthority $roadmapContent 'ROADMAP'
+                $expectedAttemptId = $null
+                $attemptActionMatch = [regex]::Match(
+                    $authority.next_action,
+                    '(?-i:^NQ-GATEW-ATTEMPT-(?<attemptId>[1-9][0-9]*)-)'
+                )
+                if ($attemptActionMatch.Success) {
+                    $expectedAttemptId = [int]$attemptActionMatch.Groups['attemptId'].Value
+                }
+                $statusAttemptAuthority = Read-AttemptDeploymentAuthority `
+                    $statusBody 'STATUS' $expectedAttemptId
+                $roadmapAttemptAuthority = Read-AttemptDeploymentAuthority `
+                    $roadmapContent 'ROADMAP' $expectedAttemptId
                 if (-not $statusAttemptAuthority.IsValid) {
                     Add-AuthorityError "CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH source=STATUS $($statusAttemptAuthority.Reason)"
                 }

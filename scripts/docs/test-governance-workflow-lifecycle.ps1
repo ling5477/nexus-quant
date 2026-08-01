@@ -36,17 +36,17 @@ function Assert-ContextTransition {
     Write-Output "PASS fixture=$Scenario lifecycle=$Lifecycle from=$From to=$To catchUp=$AuthorityCatchUp allowed=$actual"
 }
 function Assert-RuntimeState {
-    param([string]$Name,[object]$State,[bool]$Expected,[string]$Scenario)
-    $actual=Test-GovernanceAttempt10RuntimeState $contract $Name $State
+    param([string]$Name,[object]$State,[bool]$Expected,[string]$Scenario,[string]$RuntimeName='attempt10Runtime')
+    $actual=Test-GovernanceAttemptRuntimeState $contract $RuntimeName $Name $State
     Assert-Condition ($actual -eq $Expected) "runtime-state=$Scenario expected=$Expected actual=$actual"
     Write-Output "PASS fixture=$Scenario runtimeState=$Name allowed=$actual"
 }
 function Assert-RuntimeTransition {
     param(
         [string]$From,[string]$To,[object]$FromState,[object]$ToState,
-        [string[]]$Events,[bool]$Expected,[string]$Scenario
+        [string[]]$Events,[bool]$Expected,[string]$Scenario,[string]$RuntimeName='attempt10Runtime'
     )
-    $actual=Test-GovernanceAttempt10RuntimeTransition $contract $From $To $FromState $ToState $Events
+    $actual=Test-GovernanceAttemptRuntimeTransition $contract $RuntimeName $From $To $FromState $ToState $Events
     Assert-Condition ($actual -eq $Expected) "runtime-transition=$Scenario expected=$Expected actual=$actual"
     Write-Output "PASS fixture=$Scenario runtimeFrom=$From runtimeTo=$To allowed=$actual"
 }
@@ -134,8 +134,11 @@ nq-current-authority:end -->
 - ${WorkBatch}: $display.
 - Next action: $Action.
 "@
-    $attemptLine = '- Attempt-10: `{0} / {1}`; production deployment=`{2}`.' -f `
-        $AttemptState,$AuthorizationState,$DeploymentState
+    $attemptId = 10
+    $attemptMatch = [regex]::Match($Action, '(?-i:^NQ-GATEW-ATTEMPT-(?<attemptId>[1-9][0-9]*)-)')
+    if ($attemptMatch.Success) { $attemptId = [int]$attemptMatch.Groups['attemptId'].Value }
+    $attemptLine = '- Attempt-{0}: `{1} / {2}`; production deployment=`{3}`.' -f `
+        $attemptId,$AttemptState,$AuthorizationState,$DeploymentState
     $content = $content.TrimEnd() + "`n$attemptLine`n"
     Write-Utf8File (Join-Path $Root 'docs/current/STATUS.md') $content
 
@@ -144,8 +147,8 @@ nq-current-authority:end -->
     $roadmapContent = @(
         '# Fixture Roadmap',
         '',
-        ('- Attempt-10=`{0} / {1}`; production deployment=`{2}`.' -f
-            $AttemptState,$AuthorizationState,$DeploymentState),
+        ('- Attempt-{0}=`{1} / {2}`; production deployment=`{3}`.' -f
+            $attemptId,$AttemptState,$AuthorizationState,$DeploymentState),
         ('- {0} `{1}`; fixture.' -f $currentUniqueGovernanceActionIs,$Action)
     ) -join "`n"
     Write-Utf8File (Join-Path $Root 'docs/current/ROADMAP.md') $roadmapContent
@@ -365,6 +368,66 @@ try {
     Assert-RuntimeTransition 'PREFLIGHT_BLOCKED' 'SOAK_RUNNING' $preflightBlockedRuntime $soakRunningRuntime $soakStartEvents $false 'attempt-10-not-authorized-to-running-rejected'
     Assert-RuntimeTransition 'DEPLOYMENT_AUTHORIZED' 'SOAK_RUNNING' $deploymentAuthorizedRuntime $soakRunningRuntime @('PRODUCTION_PREFLIGHT_PASSED','PERMISSION_VERIFIED') $false 'attempt-10-incomplete-start-sequence-rejected'
 
+    $attempt10FailedBatch='GateW-ATTEMPT-10-PREPARATION-AND-START'
+    $attempt10RemediationBatch='GateW-ATTEMPT-10-START-CONTRACT-REMEDIATION'
+    $attempt11PreparationBatch='GateW-ATTEMPT-11-PREPARATION-AND-START'
+    $attempt11SoakBatch='GateW-OKX-READONLY-SOAK-ATTEMPT-11'
+    $attempt11StartAction='NQ-GATEW-ATTEMPT-11-PREPARATION-AND-START'
+    $attempt11AcceptanceAction='NQ-GATEW-ATTEMPT-11-168H-ACCEPTANCE'
+    $blockedCommit='8888888888888888888888888888888888888888'
+    $remediationCommit='9999999999999999999999999999999999999999'
+
+    foreach ($runtimeCase in @(
+        @{Name='DEPLOYMENT_AUTHORIZED';State=$deploymentAuthorizedRuntime},
+        @{Name='PREFLIGHT_BLOCKED';State=$preflightBlockedRuntime},
+        @{Name='PERMISSION_BLOCKED';State=$permissionBlockedRuntime},
+        @{Name='SOAK_RUNNING';State=$soakRunningRuntime},
+        @{Name='STARTUP_FAILED';State=$startupFailedRuntime}
+    )) {
+        Assert-RuntimeState $runtimeCase.Name $runtimeCase.State $true `
+            ("attempt-11-runtime-{0}" -f $runtimeCase.Name.ToLowerInvariant()) 'attempt11Runtime'
+    }
+
+    $attempt11AuthorizationContext=[pscustomobject]@{
+        mode='POST_ATTEMPT_10_START_CONTRACT_REMEDIATION_CI_SUCCESS_AUTHORIZATION'
+        fromWorkBatch=$attempt10FailedBatch;toWorkBatch=$attempt11PreparationBatch
+        fromAcceptedBatch='GateW-4';toAcceptedBatch=$attempt10RemediationBatch
+        toNextAction=$attempt11StartAction;externalEvidence=$successEvidence
+        toRuntimeState=$deploymentAuthorizedRuntime
+    }
+    Assert-ContextTransition 'highRisk' 'BLOCKED' $deploymentAuthorizedStatus `
+        $blockedCommit '301' $remediationCommit '302' $true $true `
+        'attempt-11-authorized-after-exact-remediation-ci' $attempt11AuthorizationContext
+    $wrongAcceptedBatchContext=$attempt11AuthorizationContext.PSObject.Copy()
+    $wrongAcceptedBatchContext.toAcceptedBatch='GateW-4'
+    Assert-ContextTransition 'highRisk' 'BLOCKED' $deploymentAuthorizedStatus `
+        $blockedCommit '301' $remediationCommit '302' $true $false `
+        'attempt-11-authorization-requires-remediation-accepted-batch' $wrongAcceptedBatchContext
+
+    $attempt11StartEvents=@(
+        'PRODUCTION_PREFLIGHT_PASSED','PERMISSION_VERIFIED','IMMUTABLE_RELEASE_DEPLOYED',
+        'ATTEMPT_11_CREATED','WORKER_STARTED','FIRST_VALID_HEARTBEAT_CONFIRMED','ACCEPTANCE_CLOCK_STARTED'
+    )
+    $attempt11StartContext=[pscustomobject]@{
+        fromWorkBatch=$attempt11PreparationBatch;toWorkBatch=$attempt11SoakBatch
+        toNextAction=$attempt11AcceptanceAction;fromRuntimeState=$deploymentAuthorizedRuntime
+        toRuntimeState=$soakRunningRuntime;runtimeEvents=$attempt11StartEvents
+    }
+    Assert-ContextTransition 'highRisk' $deploymentAuthorizedStatus $attempt10RunningStatus `
+        $remediationCommit '302' $remediationCommit '302' $false $true `
+        'attempt-11-start-runtime-sequence' $attempt11StartContext
+    Assert-RuntimeTransition 'DEPLOYMENT_AUTHORIZED' 'SOAK_RUNNING' `
+        $deploymentAuthorizedRuntime $soakRunningRuntime $attempt11StartEvents $true `
+        'attempt-11-soak-runtime-transition' 'attempt11Runtime'
+    $crossAttempt11Events=@($attempt11StartEvents)
+    $crossAttempt11Events[3]='ATTEMPT_10_CREATED'
+    Assert-RuntimeTransition 'DEPLOYMENT_AUTHORIZED' 'SOAK_RUNNING' `
+        $deploymentAuthorizedRuntime $soakRunningRuntime $crossAttempt11Events $false `
+        'attempt-11-cross-attempt-created-event-rejected' 'attempt11Runtime'
+    Assert-RuntimeTransition 'DEPLOYMENT_AUTHORIZED' 'SOAK_RUNNING' `
+        $deploymentAuthorizedRuntime $soakRunningRuntime @('PRODUCTION_PREFLIGHT_PASSED','PERMISSION_VERIFIED') $false `
+        'attempt-11-incomplete-start-sequence-rejected' 'attempt11Runtime'
+
     Assert-Condition (-not [bool]$contract.lifecycles.freeze.authorityReviewCommitRequired) 'freeze authority review commit must not be required'
     Assert-Condition (@($contract.lifecycles.freeze.candidateEntryStatuses) -contains 'IMPLEMENTED|PENDING_REVIEW') 'freeze pending-review candidate entry missing'
     Assert-Condition (@($contract.lifecycles.freeze.candidateEntryStatuses) -cnotcontains 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED') 'green continuation was accepted as freeze/archive candidate'
@@ -435,6 +498,16 @@ try {
         Write-AuthorityFixture $authorityRoot $case.Status $case.Action $case.Commit $case.Ci 'IN_PROGRESS|NOT_FROZEN' 'GateV-FREEZE' $case.Batch
         Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $true 'PASS / CURRENT_AUTHORITY_CONSISTENT' $case.Name
     }
+    Write-AuthorityFixture $authorityRoot $deploymentAuthorizedStatus $attempt11StartAction `
+        $remediationCommit '302' 'IN_PROGRESS|NOT_FROZEN' $attempt10RemediationBatch `
+        $attempt11PreparationBatch 'NOT_CREATED' 'AUTHORIZED' 'NOT_STARTED'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $true `
+        'PASS / CURRENT_AUTHORITY_CONSISTENT' 'authority-attempt-11-deployment-authorized'
+    Write-AuthorityFixture $authorityRoot $deploymentAuthorizedStatus $attempt10StartAction `
+        $remediationCommit '302' 'IN_PROGRESS|NOT_FROZEN' $attempt10RemediationBatch `
+        $attempt11PreparationBatch 'NOT_CREATED' 'AUTHORIZED' 'NOT_STARTED'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false `
+        'NEXT_ACTION_WORK_BATCH_MISMATCH' 'authority-attempt-11-cross-ordinal-action-rejected'
     Write-AuthorityFixture $authorityRoot 'IMPLEMENTED|SELF_REVIEWED' 'NQ-GATEW-FIXTURE-REVIEW' 'UNCOMMITTED' 'NOT_RUN'
     Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false 'NEXT_ACTION_TYPE_MISMATCH' 'authority-illegal-status-action'
     Write-AuthorityFixture $authorityRoot 'NOT_STARTED' 'NQ-GATEW-FIXTURE-IMPLEMENTATION' 'NONE' 'NOT_RUN' 'PLAN|NOT_STARTED'

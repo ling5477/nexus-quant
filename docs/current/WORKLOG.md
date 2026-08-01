@@ -18037,3 +18037,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - validation RCA：首轮 PS5.1/PS7 current-authority regression 因测试 fixture 硬编码旧 `NOT_CREATED / AUTHORIZED / NOT_STARTED` 快照而返回 `CROSS_DOCUMENT_ROADMAP_FIXTURE_INVALID`。仅将 fixture 改为从 ROADMAP 当前唯一声明动态派生对齐正例和负例；checker、schema、status/action mapping 与 runtime taxonomy 不变。修复后双引擎 `CURRENT_AUTHORITY_NEXT_ACTION_REGRESSION` PASS，六类负例继续 fail-closed。
 - result：`BLOCKED / ATTEMPT_10_START_CONTRACT_FAILED / WORKER_NOT_STARTED / OKX_NOT_CALLED / 168H_SOAK_NOT_STARTED / ROLLED_BACK / LIVE_DISABLED / KILL_SWITCH_ENGAGED`。
 - next：当前 authority 只能标记 `NQ-GATEW-ATTEMPT-10-PREPARATION-AND-START-BLOCKED`；必须由后续独立 authority/remediation 决策定义合法路线。禁止复用 RunId、创建 Attempt-11、自动重试、启动 168h 监控、触碰 LIVE/交易写侧或 freeze/archive/tag。
+
+## 2026-08-01 — GateW Attempt-10 start contract remediation and Attempt-11 authorization
+
+- task：`NQ-GATEW-ATTEMPT-10-START-CONTRACT-REMEDIATION-AND-ATTEMPT-11-AUTHORIZATION`；NQ-only、L 级 production read-only start contract remediation / governance authority sync。
+- remediation：Commit `aeacfebd688c6329368d4e43140043fbf9688103` 将正式 REAL worker 九项 safety flags 固定为字面量 `false`，pre-create Java 与 worker 共用 fail-closed helper；Attempt-10 唯一 RunId `gatew-soak-20260801T102353Z-932e26a4` 保持 terminalized 且不可修改/复用。
+- CI：runtime exact-head run `30697734316` 为 `completed / success / 10 jobs / bad=0`。
+- validation：双引擎 control/worker/fail-close=`76/59/8`，remediation/security/release=`35/12/34`，builder/installer PASS，GateW AST=`12 files / 0 errors`；focused Maven=`50 tests / 0 failures / 0 errors / 1 skipped`；canonical offline package PASS；治理 next-action/lifecycle/task-evidence/current-authority 双引擎 PASS。
+- failure/RCA：保留初始 remediation RED、首轮并行 control self-test、PS5.1 acceptance-clock 注释/代码页、AST 聚合参数、doc-link `-Roots`、focused Maven `-D` 引号、本地 PostgreSQL unavailable、PS5 `[Nullable[int]].Value` 与 lifecycle 负例错误码预期不一致记录；均未描述为首轮通过。本地全量 Maven 的 3 个 context errors 由 `localhost:5432` 未运行导致，exact-head CI 对应 PostgreSQL jobs 已通过。
+- authority：accepted batch=`GateW-ATTEMPT-10-START-CONTRACT-REMEDIATION / ACCEPTED|CI_GREEN`；work batch=`GateW-ATTEMPT-11-PREPARATION-AND-START / ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED`；Attempt-11=`NOT_CREATED / AUTHORIZED`，production deployment=`NOT_STARTED`。
+- boundary：production SSH/deploy/systemd/DB write/OKX/worker/heartbeat/clock=`0`；credential/raw response/order/cancel/transfer/withdraw exposure/calls=`0`；LIVE=`DISABLED`，kill switch=`ENGAGED`；未进入 freeze/archive/tag。
+- result：`PASS / START_CONTRACT_REMEDIATED / RUNTIME_EXACT_HEAD_CI_GREEN / ATTEMPT_10_IMMUTABLE / ATTEMPT_11_AUTHORIZED / AUTHORITY_SYNC_READY_TO_COMMIT / PRODUCTION_NOT_ACCESSED`。
+- next：提交并推送治理/authority-sync，取得该 exact head 的 10/10 CI GREEN；之后才允许从 clean exact commit 构建新 immutable release，并执行 `NQ-GATEW-ATTEMPT-11-PREPARATION-AND-START` hard-gated production preflight。

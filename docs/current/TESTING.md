@@ -12546,3 +12546,22 @@ clock、LIVE、交易写侧、freeze/archive/tag。Review exact-head CI 已满�
 P0=0/P1=1/P2=2/P3=1。P1 是 `Prepare-FormalRun` 在 precreate evaluation 恢复 process environment 后才读取 safety flags；P2 为 governance 缺少 pre-start-failure taxonomy，以及从未启动的 unit 无 exit-fact 时 canonical stop 无法证明 controlled abort。本任务不修复这些问题，不修改失败 RunId，不创建 Attempt-11，不启动 168h 监控或进入 freeze/archive/tag。
 
 首轮 current-authority 正式回归中，PS5.1/PS7 的 `test-current-authority-next-action.ps1` 均在执行跨文档负例前以 `CROSS_DOCUMENT_ROADMAP_FIXTURE_INVALID` 失败；RCA 为 fixture 硬编码了旧 pre-start authority clause。最小修复仅从 ROADMAP 当前唯一 Attempt/deployment 声明动态派生正例与负例，不改 checker/contract/taxonomy；修复后 PS5.1/PS7 双引擎均为 `PASS / CURRENT_AUTHORITY_NEXT_ACTION_REGRESSION`，对齐正例 PASS，六类负例继续 `FAIL_CLOSED`。本次 evidence/current-docs 提交的 exact-head CI 在写入时为 `NOT_RUN`，提交推送后必须取得 10/10 GREEN。
+
+## 2026-08-01 — GateW Attempt-10 start contract remediation 与 Attempt-11 authorization
+
+| Command / check | Result | Scope / environment / warning |
+| --- | --- | --- |
+| `gatew-okx-readonly-soak-control.ps1 -SelfTest` | PASS | Windows PowerShell 5.1 / 7，各 76 cases；首次并行 control self-test 曾失败，改为隔离执行并完成 RCA 后通过 |
+| worker / fail-close self-test | PASS | 双引擎各 `59 / 8` cases |
+| remediation / security regression | PASS | 双引擎各 `35 / 12` cases；初始 remediation RED 为 `REGRESSION_FORMAL_REAL_SAFETY_ENVIRONMENT_NOT_FROZEN`，最小修复后 GREEN |
+| release reproducibility regression | PASS | 双引擎各 34 cases；builder / installer self-test 同步通过 |
+| GateW PowerShell AST | PASS | 双引擎 12 files / 0 errors；AST 聚合命令首次参数封装失败，修正调用后重跑通过 |
+| focused Maven | PASS | 50 tests / 0 failures / 0 errors / 1 skipped；首次 `-D` 参数引号错误，修正参数后重跑 |
+| canonical offline Maven package | PASS | 离线 package 通过 |
+| full local Maven | NON-BLOCKING LOCAL ENVIRONMENT FAILURE | `localhost:5432` 未运行，3 个 `nq-app` integration context errors；非断言失败。Exact-head CI run `30697734316` 的 Backend Maven 与 PostgreSQL/Flyway jobs 均通过 |
+| runtime exact-head CI | PASS | Commit `aeacfebd688c6329368d4e43140043fbf9688103`；run `30697734316`；`completed / success / 10 jobs / bad=0` |
+| `test-current-authority-next-action.ps1` | PASS | PowerShell 5.1 / 7；Attempt-10/11 exact mappings 与 cross-document ordinal fail-close 通过 |
+| `test-governance-workflow-lifecycle.ps1` | PASS | PowerShell 5.1 / 7；Attempt-11 runtime、cross-attempt event rejection、incomplete sequence rejection 与 task-evidence policy 通过。PS5 曾因 `[Nullable[int]].Value` 兼容性失败；另一次负例实际返回 `NEXT_ACTION_WORK_BATCH_MISMATCH` 与旧预期不一致，修正兼容写法/精确预期后重跑通过 |
+| `check-current-authority.ps1` | PASS | PowerShell 5.1 / 7；schema 3、Attempt-11 `NOT_CREATED / AUTHORIZED`、deployment `NOT_STARTED` 一致 |
+
+已知未执行项：本段治理同步写入时，authority-sync 提交尚未创建，因此该待提交 head 的 exact-head CI 为 `NOT_RUN`；必须提交推送后取得 10/10 GREEN 才能进入 Attempt-11 production preflight。doc-link 首次曾遗漏 `-Roots` 参数，最终验证必须使用 `-Roots docs/current`。LIVE 保持 `DISABLED`，kill switch 保持 `ENGAGED`；本轮生产 SSH、OKX、DB write、worker 与 acceptance clock 均未执行。

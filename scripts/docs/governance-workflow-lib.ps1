@@ -19,6 +19,7 @@ function Get-GovernanceWorkflowContract {
     if ($contract.schemaVersion -ne '1.3.0' -or $contract.authoritySchema -ne '3' -or
         -not $contract.authority -or -not $contract.lifecycles -or
         -not $contract.lifecycles.transitionPolicies -or -not $contract.lifecycles.attempt10Runtime -or
+        -not $contract.lifecycles.attempt11Runtime -or
         -not $contract.evidence -or -not $contract.release) {
         throw "GOVERNANCE_CONTRACT_INVALID path=$Path"
     }
@@ -197,6 +198,16 @@ function Test-GovernanceLifecycleTransitionContext {
     $policies = @($Contract.lifecycles.transitionPolicies | Where-Object {
         $_.from -ceq $FromStatus -and $_.to -ceq $ToStatus
     })
+    if ($policies.Count -gt 1 -and $null -ne $Context) {
+        $contextFromWorkBatch = [string](Get-GovernanceContextValue $Context 'fromWorkBatch')
+        $contextToWorkBatch = [string](Get-GovernanceContextValue $Context 'toWorkBatch')
+        $exactPairPolicies = @($policies | Where-Object {
+            [string](Get-GovernancePropertyValue $_ 'workBatchRelation') -ceq 'EXACT_PAIR' -and
+            [string](Get-GovernancePropertyValue $_ 'fromWorkBatch') -ceq $contextFromWorkBatch -and
+            [string](Get-GovernancePropertyValue $_ 'toWorkBatch') -ceq $contextToWorkBatch
+        })
+        if ($exactPairPolicies.Count -gt 0) { $policies = $exactPairPolicies }
+    }
     if ($policies.Count -ne 1) { return $false }
     $policy = $policies[0]
 
@@ -282,6 +293,14 @@ function Test-GovernanceLifecycleTransitionContext {
                 if ([string]::IsNullOrWhiteSpace($fromAcceptedBatch) -or
                     -not [string]::Equals($fromAcceptedBatch, $toAcceptedBatch, [System.StringComparison]::Ordinal)) { return $false }
             }
+            'EXACT_PAIR' {
+                $fromAcceptedBatch = [string](Get-GovernanceContextValue $Context 'fromAcceptedBatch')
+                $toAcceptedBatch = [string](Get-GovernanceContextValue $Context 'toAcceptedBatch')
+                $expectedFromAcceptedBatch = [string](Get-GovernancePropertyValue $policy 'fromAcceptedBatch')
+                $expectedToAcceptedBatch = [string](Get-GovernancePropertyValue $policy 'toAcceptedBatch')
+                if (-not [string]::Equals($fromAcceptedBatch, $expectedFromAcceptedBatch, [System.StringComparison]::Ordinal) -or
+                    -not [string]::Equals($toAcceptedBatch, $expectedToAcceptedBatch, [System.StringComparison]::Ordinal)) { return $false }
+            }
             default { return $false }
         }
     }
@@ -323,14 +342,37 @@ function Test-GovernanceLifecycleTransitionContext {
                 ([string]$attempt10RuntimeTransition.from) ([string]$attempt10RuntimeTransition.to) `
                 $fromRuntimeState $toRuntimeState $runtimeEvents)) { return $false }
     }
+
+    $attempt11RuntimeState = Get-GovernancePropertyValue $policy 'attempt11RuntimeState'
+    if ($null -ne $attempt11RuntimeState) {
+        $toRuntimeState = Get-GovernanceContextValue $Context 'toRuntimeState'
+        if (-not (Test-GovernanceAttemptRuntimeState $Contract 'attempt11Runtime' `
+                ([string]$attempt11RuntimeState) $toRuntimeState)) { return $false }
+    }
+
+    $attempt11RuntimeTransition = Get-GovernancePropertyValue $policy 'attempt11RuntimeTransition'
+    if ($null -ne $attempt11RuntimeTransition) {
+        $fromRuntimeState = Get-GovernanceContextValue $Context 'fromRuntimeState'
+        $toRuntimeState = Get-GovernanceContextValue $Context 'toRuntimeState'
+        $runtimeEvents = @(Get-GovernanceContextValue $Context 'runtimeEvents')
+        if (-not (Test-GovernanceAttemptRuntimeTransition $Contract 'attempt11Runtime' `
+                ([string]$attempt11RuntimeTransition.from) ([string]$attempt11RuntimeTransition.to) `
+                $fromRuntimeState $toRuntimeState $runtimeEvents)) { return $false }
+    }
     return $true
 }
 
-function Test-GovernanceAttempt10RuntimeState {
-    param([object] $Contract, [string] $Name, [object] $State)
+function Test-GovernanceAttemptRuntimeState {
+    param(
+        [object] $Contract,
+        [string] $RuntimeName,
+        [string] $Name,
+        [object] $State
+    )
 
-    if ($null -eq $State -or [string]::IsNullOrWhiteSpace($Name)) { return $false }
-    $runtime = Get-GovernancePropertyValue $Contract.lifecycles 'attempt10Runtime'
+    if ($null -eq $State -or [string]::IsNullOrWhiteSpace($Name) -or
+        [string]::IsNullOrWhiteSpace($RuntimeName)) { return $false }
+    $runtime = Get-GovernancePropertyValue $Contract.lifecycles $RuntimeName
     if ($null -eq $runtime) { return $false }
     $definitions = @($runtime.states | Where-Object { [string]$_.name -ceq $Name })
     if ($definitions.Count -ne 1) { return $false }
@@ -340,6 +382,40 @@ function Test-GovernanceAttempt10RuntimeState {
         if ($null -eq $expected -or $null -eq $actual -or [string]$actual -cne [string]$expected) { return $false }
     }
     return $true
+}
+
+function Test-GovernanceAttemptRuntimeTransition {
+    param(
+        [object] $Contract,
+        [string] $RuntimeName,
+        [string] $From,
+        [string] $To,
+        [object] $FromState,
+        [object] $ToState,
+        [string[]] $Events
+    )
+
+    $runtime = Get-GovernancePropertyValue $Contract.lifecycles $RuntimeName
+    if ($null -eq $runtime -or
+        -not (Test-GovernanceAttemptRuntimeState $Contract $RuntimeName $From $FromState) -or
+        -not (Test-GovernanceAttemptRuntimeState $Contract $RuntimeName $To $ToState)) { return $false }
+    $transitions = @($runtime.transitions | Where-Object {
+        [string]$_.from -ceq $From -and [string]$_.to -ceq $To
+    })
+    if ($transitions.Count -ne 1) { return $false }
+    $requiredEvents = @($transitions[0].requiredEvents)
+    $actualEvents = @($Events)
+    if ($requiredEvents.Count -ne $actualEvents.Count) { return $false }
+    for ($index = 0; $index -lt $requiredEvents.Count; $index++) {
+        if ([string]$requiredEvents[$index] -cne [string]$actualEvents[$index]) { return $false }
+    }
+    return $true
+}
+
+function Test-GovernanceAttempt10RuntimeState {
+    param([object] $Contract, [string] $Name, [object] $State)
+
+    return Test-GovernanceAttemptRuntimeState $Contract 'attempt10Runtime' $Name $State
 }
 
 function Test-GovernanceAttempt10RuntimeTransition {
@@ -352,21 +428,8 @@ function Test-GovernanceAttempt10RuntimeTransition {
         [string[]] $Events
     )
 
-    $runtime = Get-GovernancePropertyValue $Contract.lifecycles 'attempt10Runtime'
-    if ($null -eq $runtime -or
-        -not (Test-GovernanceAttempt10RuntimeState $Contract $From $FromState) -or
-        -not (Test-GovernanceAttempt10RuntimeState $Contract $To $ToState)) { return $false }
-    $transitions = @($runtime.transitions | Where-Object {
-        [string]$_.from -ceq $From -and [string]$_.to -ceq $To
-    })
-    if ($transitions.Count -ne 1) { return $false }
-    $requiredEvents = @($transitions[0].requiredEvents)
-    $actualEvents = @($Events)
-    if ($requiredEvents.Count -ne $actualEvents.Count) { return $false }
-    for ($index = 0; $index -lt $requiredEvents.Count; $index++) {
-        if ([string]$requiredEvents[$index] -cne [string]$actualEvents[$index]) { return $false }
-    }
-    return $true
+    return Test-GovernanceAttemptRuntimeTransition $Contract 'attempt10Runtime' `
+        $From $To $FromState $ToState $Events
 }
 
 function Test-GovernanceEvidencePath {
