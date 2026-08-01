@@ -1297,17 +1297,44 @@ function Write-Heartbeat
         [Parameter(Mandatory = $true)][string]$State,
         [Parameter(Mandatory = $true)][string]$ReasonCode,
         [long]$Sequence = 0,
-        [int]$ConsecutiveAuthenticationFailures = 0
+        [int]$ConsecutiveAuthenticationFailures = 0,
+        [AllowEmptyString()][string]$ObservedAt = ''
     )
 
+    if ([string]::IsNullOrWhiteSpace($ObservedAt))
+    {
+        $ObservedAt = (Get-UtcNow).ToString('o')
+    }
     Write-JsonAtomic (Join-Path $Directory 'heartbeat.json') ([ordered]@{
         runId = Get-EvidenceRunId $Directory
         state = $State
         reasonCode = $ReasonCode
-        observedAt = (Get-UtcNow).ToString('o')
+        observedAt = $ObservedAt
         lastSequence = $Sequence
         consecutiveAuthenticationFailures = $ConsecutiveAuthenticationFailures
     })
+}
+
+function Write-FirstValidHeartbeat
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$Directory,
+        [Parameter(Mandatory = $true)][string]$ReasonCode,
+        [Parameter(Mandatory = $true)][long]$Sequence
+    )
+
+    # heartbeat.json 会持续被覆盖；单独冻结首条有效 heartbeat，才能让 168h 起点可审计且不可漂移。
+    $observedAt = (Get-UtcNow).ToString('o')
+    Write-JsonCreateOnce (Join-Path $Directory 'first-valid-heartbeat.json') ([ordered]@{
+        schemaVersion = 'gatew-soak-first-valid-heartbeat-v1'
+        runId = Get-EvidenceRunId $Directory
+        state = 'RUNNING'
+        reasonCode = $ReasonCode
+        observedAt = $observedAt
+        lastSequence = $Sequence
+        consecutiveAuthenticationFailures = 0
+    })
+    Write-Heartbeat $Directory 'RUNNING' $ReasonCode $Sequence 0 $observedAt
 }
 
 function Get-FormalOfflineAcceptanceState
@@ -1808,28 +1835,32 @@ function Read-FormalAcceptanceClock
     $clock = Read-JsonFile $path
     Assert-ExactFields -Value $clock -Expected @(
         'schemaVersion', 'runId', 'firstValidConfigPassAt', 'firstValidBalancePassAt',
-        'freshSshVerificationAt', 'mainPid', 'sameMainPid', 'heartbeatAdvanced',
-        'hashChainValid', 'forbiddenEndpointCount', 'secretExposureCount',
+        'firstValidHeartbeatAt', 'freshSshVerificationAt', 'mainPid', 'sameMainPid',
+        'heartbeatAdvanced', 'hashChainValid', 'forbiddenEndpointCount',
+        'rawResponseCount', 'secretExposureCount',
         'acceptanceStartAt', 'plannedAcceptanceAt', 'acceptanceClockStarted'
     ) -Category 'acceptance clock'
     $configAt = [DateTimeOffset]::MinValue
     $balanceAt = [DateTimeOffset]::MinValue
+    $firstHeartbeatAt = [DateTimeOffset]::MinValue
     $freshAt = [DateTimeOffset]::MinValue
     $startAt = [DateTimeOffset]::MinValue
     $plannedAt = [DateTimeOffset]::MinValue
-    $schemaInvalid = [string]$clock.schemaVersion -ne 'gatew-soak-acceptance-clock-v1' -or
+    $schemaInvalid = [string]$clock.schemaVersion -ne 'gatew-soak-acceptance-clock-v2' -or
             [string]$clock.runId -ne $RunId -or [long]$clock.mainPid -ne [long]$PID -or
             -not [bool]$clock.sameMainPid -or -not [bool]$clock.heartbeatAdvanced -or
             -not [bool]$clock.hashChainValid -or [int]$clock.forbiddenEndpointCount -ne 0 -or
-            [int]$clock.secretExposureCount -ne 0 -or -not [bool]$clock.acceptanceClockStarted -or
+            [int]$clock.rawResponseCount -ne 0 -or [int]$clock.secretExposureCount -ne 0 -or
+            -not [bool]$clock.acceptanceClockStarted -or
             -not [DateTimeOffset]::TryParse([string]$clock.firstValidConfigPassAt, [ref]$configAt) -or
             -not [DateTimeOffset]::TryParse([string]$clock.firstValidBalancePassAt, [ref]$balanceAt) -or
+            -not [DateTimeOffset]::TryParse([string]$clock.firstValidHeartbeatAt, [ref]$firstHeartbeatAt) -or
             -not [DateTimeOffset]::TryParse([string]$clock.freshSshVerificationAt, [ref]$freshAt) -or
             -not [DateTimeOffset]::TryParse([string]$clock.acceptanceStartAt, [ref]$startAt) -or
             -not [DateTimeOffset]::TryParse([string]$clock.plannedAcceptanceAt, [ref]$plannedAt)
-    $latestPrerequisite = @($configAt, $balanceAt, $freshAt) |
-            Sort-Object -Descending | Select-Object -First 1
-    if ($schemaInvalid -or $startAt -ne $latestPrerequisite -or
+    if ($schemaInvalid -or $configAt -gt $firstHeartbeatAt -or
+            $balanceAt -gt $firstHeartbeatAt -or $freshAt -lt $firstHeartbeatAt -or
+            $startAt -ne $firstHeartbeatAt -or
             $plannedAt -ne $startAt.AddHours(168))
     {
         throw 'BLOCKED / ACCEPTANCE_CLOCK_RECORD_INVALID'
@@ -1991,7 +2022,14 @@ function Run-FormalOfflineAcceptance
             Write-Heartbeat $Directory 'FAILURE_STOPPING' 'OFFLINE_PASS_PROVENANCE_INVALID' $record.sequence
             throw 'FAIL / OFFLINE_PASS_PROVENANCE_INVALID'
         }
-        Write-Heartbeat $Directory 'RUNNING' 'OFFLINE_READONLY_FIXTURE_ACCEPTED' $record.sequence
+        if ($sequence -eq 1)
+        {
+            Write-FirstValidHeartbeat $Directory 'OFFLINE_READONLY_FIXTURE_ACCEPTED' $record.sequence
+        }
+        else
+        {
+            Write-Heartbeat $Directory 'RUNNING' 'OFFLINE_READONLY_FIXTURE_ACCEPTED' $record.sequence
+        }
     }
 
     Wait-ForFormalAcceptanceClock $Directory 2L $heartbeatSeconds | Out-Null
@@ -2039,7 +2077,7 @@ function Run-FormalRealSoak
         Write-Heartbeat $Directory 'FAILURE_STOPPING' ([string]$first.reasonCode) $firstRecord.sequence
         throw "FAIL / $( [string]$first.reasonCode )"
     }
-    Write-Heartbeat $Directory 'RUNNING' 'READ_ONLY_SAMPLE_ACCEPTED' $firstRecord.sequence
+    Write-FirstValidHeartbeat $Directory 'READ_ONLY_SAMPLE_ACCEPTED' $firstRecord.sequence
 
     $clock = Wait-ForFormalAcceptanceClock $Directory $firstRecord.sequence
     $plannedEndAt = [DateTimeOffset]::Parse([string]$clock.plannedAcceptanceAt)

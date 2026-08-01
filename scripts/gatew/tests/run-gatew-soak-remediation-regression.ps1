@@ -615,7 +615,24 @@ try
     }
     Complete-Case 33 'formal-real-cadence-fixed-900-offline-60'
 
-    if ($script:Cases.Count -ne 33)
+    if (-not $controlText.Contains('gatew-soak-first-valid-heartbeat-v1') -or
+            -not $controlText.Contains('gatew-soak-acceptance-clock-v2') -or
+            -not $workerText.Contains('gatew-soak-first-valid-heartbeat-v1') -or
+            -not $workerText.Contains('gatew-soak-acceptance-clock-v2') -or
+            -not $failCloseText.Contains('gatew-soak-acceptance-clock-v2') -or
+            -not $controlText.Contains('firstValidHeartbeatAt = ConvertTo-UtcRfc3339') -or
+            -not $controlText.Contains('$acceptanceAt = $firstHeartbeat') -or
+            -not $controlText.Contains('[int]$evidence.rawResponseCount -ne 0') -or
+            -not $workerText.Contains('[int]$clock.rawResponseCount -ne 0') -or
+            -not $failCloseText.Contains('[long]$Clock.rawResponseCount -ne 0') -or
+            -not $controlText.Contains('FRESH_SESSION_FIRST_VALID_HEARTBEAT_MISMATCH') -or
+            -not $controlText.Contains('ACCEPTANCE_CLOCK_FIRST_VALID_HEARTBEAT_MISMATCH'))
+    {
+        throw 'REGRESSION_FIRST_VALID_HEARTBEAT_CLOCK_CONTRACT_INVALID'
+    }
+    Complete-Case 34 'acceptance-starts-at-first-valid-heartbeat-with-raw-response-zero'
+
+    if ($script:Cases.Count -ne 34)
     {
         throw "REGRESSION_CASE_COUNT_INVALID actual=$( $script:Cases.Count )"
     }

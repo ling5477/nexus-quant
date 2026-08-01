@@ -402,24 +402,32 @@ function Assert-AcceptanceClock
 
     Assert-ExactFields $Clock @(
         'schemaVersion', 'runId', 'firstValidConfigPassAt', 'firstValidBalancePassAt',
-        'freshSshVerificationAt', 'mainPid', 'sameMainPid', 'heartbeatAdvanced',
-        'hashChainValid', 'forbiddenEndpointCount', 'secretExposureCount',
+        'firstValidHeartbeatAt', 'freshSshVerificationAt', 'mainPid', 'sameMainPid',
+        'heartbeatAdvanced', 'hashChainValid', 'forbiddenEndpointCount',
+        'rawResponseCount', 'secretExposureCount',
         'acceptanceStartAt', 'plannedAcceptanceAt', 'acceptanceClockStarted'
     ) 'FAILCLOSE_CLOCK_INVALID'
+    $firstHeartbeat = [DateTimeOffset]::MinValue
     $start = [DateTimeOffset]::MinValue
     $planned = [DateTimeOffset]::MinValue
-    if ([string]$Clock.schemaVersion -cne 'gatew-soak-acceptance-clock-v1' -or
+    if ([string]$Clock.schemaVersion -cne 'gatew-soak-acceptance-clock-v2' -or
             [string]$Clock.runId -cne $Value -or [long]$Clock.mainPid -le 0 -or
             $Clock.sameMainPid -isnot [bool] -or -not [bool]$Clock.sameMainPid -or
             $Clock.heartbeatAdvanced -isnot [bool] -or -not [bool]$Clock.heartbeatAdvanced -or
             $Clock.hashChainValid -isnot [bool] -or -not [bool]$Clock.hashChainValid -or
             [long]$Clock.forbiddenEndpointCount -ne 0 -or
+            [long]$Clock.rawResponseCount -ne 0 -or
             [long]$Clock.secretExposureCount -ne 0 -or
             $Clock.acceptanceClockStarted -isnot [bool] -or
             -not [bool]$Clock.acceptanceClockStarted -or
+            -not [DateTimeOffset]::TryParse(
+                [string]$Clock.firstValidHeartbeatAt, [ref]$firstHeartbeat
+            ) -or
             -not [DateTimeOffset]::TryParse([string]$Clock.acceptanceStartAt, [ref]$start) -or
             -not [DateTimeOffset]::TryParse([string]$Clock.plannedAcceptanceAt, [ref]$planned) -or
+            $firstHeartbeat.Offset -ne [TimeSpan]::Zero -or
             $start.Offset -ne [TimeSpan]::Zero -or $planned.Offset -ne [TimeSpan]::Zero -or
+            $start -ne $firstHeartbeat -or
             ($planned - $start).TotalSeconds -ne 604800.0)
     {
         throw 'FAIL / FAILCLOSE_CLOCK_INVALID'
@@ -876,19 +884,21 @@ function New-SelfTestClock
     param([Parameter(Mandatory = $true)][string]$Value)
 
     return [pscustomobject][ordered]@{
-        schemaVersion = 'gatew-soak-acceptance-clock-v1'
+        schemaVersion = 'gatew-soak-acceptance-clock-v2'
         runId = $Value
         firstValidConfigPassAt = '2026-07-22T11:19:50.0000000Z'
         firstValidBalancePassAt = '2026-07-22T11:19:51.0000000Z'
+        firstValidHeartbeatAt = '2026-07-22T11:19:52.0000000Z'
         freshSshVerificationAt = '2026-07-22T11:19:59.5201964Z'
         mainPid = 4074358L
         sameMainPid = $true
         heartbeatAdvanced = $true
         hashChainValid = $true
         forbiddenEndpointCount = 0
+        rawResponseCount = 0
         secretExposureCount = 0
-        acceptanceStartAt = '2026-07-22T11:19:59.5201964Z'
-        plannedAcceptanceAt = '2026-07-29T11:19:59.5201964Z'
+        acceptanceStartAt = '2026-07-22T11:19:52.0000000Z'
+        plannedAcceptanceAt = '2026-07-29T11:19:52.0000000Z'
         acceptanceClockStarted = $true
     }
 }

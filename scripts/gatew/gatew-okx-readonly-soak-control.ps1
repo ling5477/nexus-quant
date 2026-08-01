@@ -2426,6 +2426,41 @@ function Get-HeartbeatSequence
     return [long]$property.Value
 }
 
+function Assert-FirstValidHeartbeatRecord
+{
+    param(
+        [Parameter(Mandatory = $true)]$Record,
+        [Parameter(Mandatory = $true)][string]$Value,
+        [Parameter(Mandatory = $true)][string]$Mode
+    )
+
+    $fields = @(
+        'schemaVersion', 'runId', 'state', 'reasonCode', 'observedAt',
+        'lastSequence', 'consecutiveAuthenticationFailures'
+    )
+    $observedAt = [DateTimeOffset]::MinValue
+    $expectedReason = if ($Mode -eq 'REAL_READONLY_SOAK')
+    {
+        'READ_ONLY_SAMPLE_ACCEPTED'
+    }
+    else
+    {
+        'OFFLINE_READONLY_FIXTURE_ACCEPTED'
+    }
+    if ((@($Record.PSObject.Properties.Name) -join '|') -cne ($fields -join '|') -or
+            [string]$Record.schemaVersion -cne 'gatew-soak-first-valid-heartbeat-v1' -or
+            [string]$Record.runId -cne $Value -or [string]$Record.state -cne 'RUNNING' -or
+            [string]$Record.reasonCode -cne $expectedReason -or
+            [long]$Record.lastSequence -ne 1 -or
+            [long]$Record.consecutiveAuthenticationFailures -ne 0 -or
+            -not [DateTimeOffset]::TryParse([string]$Record.observedAt, [ref]$observedAt) -or
+            $observedAt.Offset -ne [TimeSpan]::Zero)
+    {
+        throw 'FAIL / FIRST_VALID_HEARTBEAT_INVALID'
+    }
+    return $Record
+}
+
 function Wait-ForWorkerReady
 {
     param(
@@ -2448,10 +2483,17 @@ function Wait-ForWorkerReady
             continue
         }
         $heartbeat = Read-JsonFile "$( Get-EvidenceRoot $Value )/heartbeat.json"
+        $firstPath = "$( Get-EvidenceRoot $Value )/first-valid-heartbeat.json"
         if ((Get-HeartbeatSequence $heartbeat) -ge $RequiredSequence -and
-                [string]$heartbeat.state -eq 'RUNNING')
+                [string]$heartbeat.state -eq 'RUNNING' -and
+                (Test-Path -LiteralPath $firstPath -PathType Leaf))
         {
-            return $heartbeat
+            $config = Read-JsonFile "$( Get-ControlRoot $Value )/frozen-config.json"
+            $first = Read-JsonFile $firstPath
+            Assert-FirstValidHeartbeatRecord $first $Value ([string]$config.runMode) | Out-Null
+            Set-OwnerMode $firstPath 'root:root' '600'
+            Assert-PosixContract $firstPath 'regular file' '600' 'root' 'root'
+            return $first
         }
         Start-Sleep -Milliseconds 250
     }
@@ -2496,15 +2538,21 @@ function Assert-UnitStartSnapshot
 
     $fields = @(
         'schemaVersion', 'runId', 'releaseCommit', 'mainPid', 'nRestarts',
-        'execMainStartTimestampMonotonic', 'recordedAt', 'checksum'
+        'execMainStartTimestampMonotonic', 'firstValidHeartbeatAt',
+        'firstValidHeartbeatSequence', 'recordedAt', 'checksum'
     )
+    $firstHeartbeatAt = [DateTimeOffset]::MinValue
     $recordedAt = [DateTimeOffset]::MinValue
     if ((@($Snapshot.PSObject.Properties.Name) -join '|') -cne ($fields -join '|') -or
-            [string]$Snapshot.schemaVersion -cne 'gatew-soak-unit-start-v1' -or
+            [string]$Snapshot.schemaVersion -cne 'gatew-soak-unit-start-v2' -or
             [string]$Snapshot.runId -cne $Value -or
             [string]$Snapshot.releaseCommit -cne $ReleaseCommit -or
             [long]$Snapshot.mainPid -le 0 -or [long]$Snapshot.nRestarts -ne 0 -or
             [long]$Snapshot.execMainStartTimestampMonotonic -le 0 -or
+            [long]$Snapshot.firstValidHeartbeatSequence -ne 1 -or
+            -not [DateTimeOffset]::TryParse(
+                [string]$Snapshot.firstValidHeartbeatAt, [ref]$firstHeartbeatAt
+            ) -or $firstHeartbeatAt.Offset -ne [TimeSpan]::Zero -or
             -not [DateTimeOffset]::TryParse([string]$Snapshot.recordedAt, [ref]$recordedAt) -or
             [string]$Snapshot.checksum -cnotmatch '^[a-f0-9]{64}$')
     {
@@ -2512,7 +2560,8 @@ function Assert-UnitStartSnapshot
     }
     $expectedChecksum = Get-GateWRecordChecksum $Snapshot @(
         'schemaVersion', 'runId', 'releaseCommit', 'mainPid', 'nRestarts',
-        'execMainStartTimestampMonotonic', 'recordedAt'
+        'execMainStartTimestampMonotonic', 'firstValidHeartbeatAt',
+        'firstValidHeartbeatSequence', 'recordedAt'
     )
     if ([string]$Snapshot.checksum -cne $expectedChecksum)
     {
@@ -2526,7 +2575,8 @@ function Record-UnitStartSnapshot
     param(
         [Parameter(Mandatory = $true)][string]$Value,
         [Parameter(Mandatory = $true)]$State,
-        [Parameter(Mandatory = $true)]$Config
+        [Parameter(Mandatory = $true)]$Config,
+        [Parameter(Mandatory = $true)]$FirstValidHeartbeat
     )
 
     if ([long]$State.MainPID -le 0 -or [long]$State.NRestarts -ne 0 -or
@@ -2541,20 +2591,25 @@ function Record-UnitStartSnapshot
     {
         throw 'FAIL / UNIT_START_SNAPSHOT_INVALID'
     }
+    Assert-FirstValidHeartbeatRecord `
+        $FirstValidHeartbeat $Value ([string]$Config.runMode) | Out-Null
     Set-OwnerMode $workerStartPath 'root:root' '600'
     Assert-PosixContract $workerStartPath 'regular file' '600' 'root' 'root'
     $record = [ordered]@{
-        schemaVersion = 'gatew-soak-unit-start-v1'
+        schemaVersion = 'gatew-soak-unit-start-v2'
         runId = $Value
         releaseCommit = [string]$Config.sourceCommit
         mainPid = [long]$State.MainPID
         nRestarts = [long]$State.NRestarts
         execMainStartTimestampMonotonic = [long]$State.ExecMainStartTimestampMonotonic
+        firstValidHeartbeatAt = ConvertTo-UtcRfc3339 $FirstValidHeartbeat.observedAt
+        firstValidHeartbeatSequence = [long]$FirstValidHeartbeat.lastSequence
         recordedAt = (Get-UtcNow).ToString('o')
     }
     $record.checksum = Get-GateWRecordChecksum ([pscustomobject]$record) @(
         'schemaVersion', 'runId', 'releaseCommit', 'mainPid', 'nRestarts',
-        'execMainStartTimestampMonotonic', 'recordedAt'
+        'execMainStartTimestampMonotonic', 'firstValidHeartbeatAt',
+        'firstValidHeartbeatSequence', 'recordedAt'
     )
     $created = Commit-CreateOnceJsonIdempotent `
         (Get-UnitStartSnapshotPath $Value) $record 'UNIT_START_SNAPSHOT_CONFLICT'
@@ -2588,10 +2643,10 @@ function Start-FormalRun
     {
         1L
     }
-    $heartbeat = Wait-ForWorkerReady $RunId $requiredSequence
+    $firstValidHeartbeat = Wait-ForWorkerReady $RunId $requiredSequence
     $state = Get-UnitState (Get-WorkerUnitName $RunId)
     Assert-FormalWorkerState $state $RunId
-    $unitStart = Record-UnitStartSnapshot $RunId $state $config
+    $unitStart = Record-UnitStartSnapshot $RunId $state $config $firstValidHeartbeat
     Set-LifecycleState $RunId 'RUNNING' 'FORMAL_WORKER_RUNNING' | Out-Null
     return [pscustomobject]@{
         decision = 'PASS / FORMAL_SYSTEMD_SOAK_STARTED'
@@ -2604,8 +2659,10 @@ function Start-FormalRun
         nRestarts = $state.NRestarts
         execMainStartTimestampMonotonic = $state.ExecMainStartTimestampMonotonic
         unitStartSnapshotChecksum = $unitStart.checksum
-        heartbeatSequence = Get-HeartbeatSequence $heartbeat
-        heartbeatObservedAt = $heartbeat.observedAt
+        heartbeatSequence = Get-HeartbeatSequence $firstValidHeartbeat
+        heartbeatObservedAt = $firstValidHeartbeat.observedAt
+        firstValidHeartbeatSequence = Get-HeartbeatSequence $firstValidHeartbeat
+        firstValidHeartbeatAt = $firstValidHeartbeat.observedAt
         acceptanceClockStarted = $false
         acceptanceStartAt = $null
         plannedAcceptanceAt = $null
@@ -2639,29 +2696,33 @@ function Assert-AcceptanceClockRecord
 
     $expected = @(
         'schemaVersion', 'runId', 'firstValidConfigPassAt', 'firstValidBalancePassAt',
-        'freshSshVerificationAt', 'mainPid', 'sameMainPid', 'heartbeatAdvanced',
-        'hashChainValid', 'forbiddenEndpointCount', 'secretExposureCount',
+        'firstValidHeartbeatAt', 'freshSshVerificationAt', 'mainPid', 'sameMainPid',
+        'heartbeatAdvanced', 'hashChainValid', 'forbiddenEndpointCount',
+        'rawResponseCount', 'secretExposureCount',
         'acceptanceStartAt', 'plannedAcceptanceAt', 'acceptanceClockStarted'
     )
     $firstConfig = [DateTimeOffset]::MinValue
     $firstBalance = [DateTimeOffset]::MinValue
+    $firstHeartbeat = [DateTimeOffset]::MinValue
     $freshSsh = [DateTimeOffset]::MinValue
     $acceptanceStart = [DateTimeOffset]::MinValue
     $plannedAcceptance = [DateTimeOffset]::MinValue
     $schemaInvalid = (@($Record.PSObject.Properties.Name) -join '|') -cne ($expected -join '|') -or
-            [string]$Record.schemaVersion -ne 'gatew-soak-acceptance-clock-v1' -or
+            [string]$Record.schemaVersion -ne 'gatew-soak-acceptance-clock-v2' -or
             [string]$Record.runId -ne $Value -or [long]$Record.mainPid -le 0 -or
             -not [bool]$Record.sameMainPid -or -not [bool]$Record.heartbeatAdvanced -or
             -not [bool]$Record.hashChainValid -or [int]$Record.forbiddenEndpointCount -ne 0 -or
-            [int]$Record.secretExposureCount -ne 0 -or -not [bool]$Record.acceptanceClockStarted -or
+            [int]$Record.rawResponseCount -ne 0 -or [int]$Record.secretExposureCount -ne 0 -or
+            -not [bool]$Record.acceptanceClockStarted -or
             -not [DateTimeOffset]::TryParse([string]$Record.firstValidConfigPassAt, [ref]$firstConfig) -or
             -not [DateTimeOffset]::TryParse([string]$Record.firstValidBalancePassAt, [ref]$firstBalance) -or
+            -not [DateTimeOffset]::TryParse([string]$Record.firstValidHeartbeatAt, [ref]$firstHeartbeat) -or
             -not [DateTimeOffset]::TryParse([string]$Record.freshSshVerificationAt, [ref]$freshSsh) -or
             -not [DateTimeOffset]::TryParse([string]$Record.acceptanceStartAt, [ref]$acceptanceStart) -or
             -not [DateTimeOffset]::TryParse([string]$Record.plannedAcceptanceAt, [ref]$plannedAcceptance)
-    $latestPrerequisite = @($firstConfig, $firstBalance, $freshSsh) |
-            Sort-Object -Descending | Select-Object -First 1
-    if ($schemaInvalid -or $acceptanceStart -ne $latestPrerequisite -or
+    if ($schemaInvalid -or $firstConfig -gt $firstHeartbeat -or
+            $firstBalance -gt $firstHeartbeat -or $freshSsh -lt $firstHeartbeat -or
+            $acceptanceStart -ne $firstHeartbeat -or
             $plannedAcceptance -ne $acceptanceStart.AddHours(168))
     {
         throw 'BLOCKED / ACCEPTANCE_CLOCK_RECORD_INVALID'
@@ -2836,6 +2897,16 @@ function Record-FreshSshVerification
     {
         throw 'FAIL / FRESH_SESSION_MAIN_PID_CHANGED'
     }
+    $config = Read-JsonFile "$( Get-ControlRoot $RunId )/frozen-config.json"
+    $unitStart = Read-JsonFile (Get-UnitStartSnapshotPath $RunId)
+    Assert-UnitStartSnapshot $unitStart $RunId ([string]$config.sourceCommit) | Out-Null
+    if ($PreviousMainPid -ne [long]$unitStart.mainPid -or
+            $MinimumHeartbeatSequence -ne [long]$unitStart.firstValidHeartbeatSequence -or
+            (ConvertTo-UtcRfc3339 $PreviousHeartbeatObservedAt) -cne
+                    [string]$unitStart.firstValidHeartbeatAt)
+    {
+        throw 'FAIL / FRESH_SESSION_FIRST_VALID_HEARTBEAT_MISMATCH'
+    }
     $heartbeat = Read-JsonFile "$( Get-EvidenceRoot $RunId )/heartbeat.json"
     $sequence = Get-HeartbeatSequence $heartbeat
     $previousHeartbeat = [DateTimeOffset]::MinValue
@@ -2926,17 +2997,20 @@ function New-AcceptanceClockRecord
         [Parameter(Mandatory = $true)][string]$Value,
         [AllowNull()][string]$FirstConfigAt,
         [AllowNull()][string]$FirstBalanceAt,
+        [AllowNull()][string]$FirstHeartbeatAt,
         [AllowNull()][string]$FreshSshAt,
         [long]$MainPid,
         [bool]$SameMainPid,
         [bool]$HeartbeatAdvanced,
         [bool]$HashChainValid,
         [int]$ForbiddenEndpointCount,
+        [int]$RawResponseCount,
         [int]$SecretExposureCount
     )
 
     if ([string]::IsNullOrWhiteSpace($FirstConfigAt) -or
-            [string]::IsNullOrWhiteSpace($FirstBalanceAt))
+            [string]::IsNullOrWhiteSpace($FirstBalanceAt) -or
+            [string]::IsNullOrWhiteSpace($FirstHeartbeatAt))
     {
         throw 'BLOCKED / ACCEPTANCE_CLOCK_VALID_SAMPLES_REQUIRED'
     }
@@ -2952,26 +3026,35 @@ function New-AcceptanceClockRecord
     {
         throw 'FAIL / ACCEPTANCE_CLOCK_HEARTBEAT_NOT_ADVANCED'
     }
-    if (-not $HashChainValid -or $ForbiddenEndpointCount -ne 0 -or $SecretExposureCount -ne 0)
+    if (-not $HashChainValid -or $ForbiddenEndpointCount -ne 0 -or
+            $RawResponseCount -ne 0 -or $SecretExposureCount -ne 0)
     {
         throw 'FAIL / ACCEPTANCE_CLOCK_EVIDENCE_INVALID'
     }
     $configAt = [DateTimeOffset]::Parse((ConvertTo-UtcRfc3339 $FirstConfigAt))
     $balanceAt = [DateTimeOffset]::Parse((ConvertTo-UtcRfc3339 $FirstBalanceAt))
+    $firstHeartbeat = [DateTimeOffset]::Parse((ConvertTo-UtcRfc3339 $FirstHeartbeatAt))
     $freshAt = [DateTimeOffset]::Parse((ConvertTo-UtcRfc3339 $FreshSshAt))
-    $acceptanceAt = @($configAt, $balanceAt, $freshAt) |
-            Sort-Object -Descending | Select-Object -First 1
+    if ($configAt -gt $firstHeartbeat -or $balanceAt -gt $firstHeartbeat -or
+            $freshAt -lt $firstHeartbeat)
+    {
+        throw 'FAIL / ACCEPTANCE_CLOCK_PREREQUISITE_ORDER_INVALID'
+    }
+    # config/balance/fresh SSH 只决定能否启动时钟；冻结合同规定起点始终是首条有效 heartbeat。
+    $acceptanceAt = $firstHeartbeat
     return [ordered]@{
-        schemaVersion = 'gatew-soak-acceptance-clock-v1'
+        schemaVersion = 'gatew-soak-acceptance-clock-v2'
         runId = $Value
         firstValidConfigPassAt = $configAt.UtcDateTime.ToString('o')
         firstValidBalancePassAt = $balanceAt.UtcDateTime.ToString('o')
+        firstValidHeartbeatAt = $firstHeartbeat.UtcDateTime.ToString('o')
         freshSshVerificationAt = $freshAt.UtcDateTime.ToString('o')
         mainPid = $MainPid
         sameMainPid = $true
         heartbeatAdvanced = $true
         hashChainValid = $true
         forbiddenEndpointCount = 0
+        rawResponseCount = 0
         secretExposureCount = 0
         acceptanceStartAt = $acceptanceAt.UtcDateTime.ToString('o')
         plannedAcceptanceAt = $acceptanceAt.AddHours(168).UtcDateTime.ToString('o')
@@ -3021,10 +3104,19 @@ function Start-AcceptanceClock
     }
     $state = Get-UnitState (Get-WorkerUnitName $RunId)
     Assert-FormalWorkerState $state $RunId
+    $unitStart = Read-JsonFile (Get-UnitStartSnapshotPath $RunId)
+    Assert-UnitStartSnapshot $unitStart $RunId ([string]$config.sourceCommit) | Out-Null
     $workerStart = Read-JsonFile "$( Get-EvidenceRoot $RunId )/worker-start.json"
     if ($state.MainPID -ne [long]$fresh.mainPid -or $state.MainPID -ne [long]$workerStart.mainPid)
     {
         throw 'FAIL / ACCEPTANCE_CLOCK_MAIN_PID_CHANGED'
+    }
+    if ([string]$fresh.baselineHeartbeatObservedAt -cne
+            [string]$unitStart.firstValidHeartbeatAt -or
+            [long]$fresh.baselineHeartbeatSequence -ne
+                    [long]$unitStart.firstValidHeartbeatSequence)
+    {
+        throw 'FAIL / ACCEPTANCE_CLOCK_FIRST_VALID_HEARTBEAT_MISMATCH'
     }
     $heartbeat = Read-JsonFile "$( Get-EvidenceRoot $RunId )/heartbeat.json"
     $heartbeatAt = [DateTimeOffset]::MinValue
@@ -3037,7 +3129,9 @@ function Start-AcceptanceClock
     }
     $evidence = Invoke-WorkerEvidenceVerify $RunId
     if ([string]$evidence.result -ne 'PASS / HASH_CHAIN_VERIFIED' -or
-            [int]$evidence.forbiddenEndpointCount -ne 0 -or [int]$evidence.secretExposureCount -ne 0)
+            [int]$evidence.forbiddenEndpointCount -ne 0 -or
+            [int]$evidence.rawResponseCount -ne 0 -or
+            [int]$evidence.secretExposureCount -ne 0)
     {
         throw 'FAIL / ACCEPTANCE_CLOCK_EVIDENCE_INVALID'
     }
@@ -3048,8 +3142,9 @@ function Start-AcceptanceClock
     }
     $record = New-AcceptanceClockRecord `
         $RunId ([string]$passes.firstConfig) ([string]$passes.firstBalance) `
-        ([string]$fresh.freshSshVerificationAt) $state.MainPID $true $true $true `
-        ([int]$evidence.forbiddenEndpointCount) ([int]$evidence.secretExposureCount)
+        ([string]$unitStart.firstValidHeartbeatAt) ([string]$fresh.freshSshVerificationAt) `
+        $state.MainPID $true $true $true ([int]$evidence.forbiddenEndpointCount) `
+        ([int]$evidence.rawResponseCount) ([int]$evidence.secretExposureCount)
     $created = Commit-CreateOnceJsonIdempotent $clockPath $record `
         'ACCEPTANCE_CLOCK_ALREADY_STARTED_DIFFERENT' "root:$( $script:LinuxRuntimeGroup )" '640'
     Set-OwnerMode $clockPath "root:$( $script:LinuxRuntimeGroup )" '640'
@@ -4690,26 +4785,61 @@ switch ($Mode)
         $caseCount++
 
         $clockRunId = 'gatew-soak-20260718T000002Z-2345abcd'
+        $firstHeartbeatFixture = [pscustomobject][ordered]@{
+            schemaVersion = 'gatew-soak-first-valid-heartbeat-v1'
+            runId = $clockRunId
+            state = 'RUNNING'
+            reasonCode = 'READ_ONLY_SAMPLE_ACCEPTED'
+            observedAt = '2026-07-18T00:00:02.5000000Z'
+            lastSequence = 1L
+            consecutiveAuthenticationFailures = 0
+        }
+        Assert-FirstValidHeartbeatRecord `
+            $firstHeartbeatFixture $clockRunId 'REAL_READONLY_SOAK' | Out-Null
+        $caseCount++
+        $invalidFirstHeartbeat = $firstHeartbeatFixture | ConvertTo-Json | ConvertFrom-Json
+        $invalidFirstHeartbeat.observedAt = '2026-07-18T00:00:02.5000000+01:00'
+        $invalidFirstHeartbeatRejected = $false
+        try
+        {
+            Assert-FirstValidHeartbeatRecord `
+                $invalidFirstHeartbeat $clockRunId 'REAL_READONLY_SOAK' | Out-Null
+        }
+        catch
+        {
+            $invalidFirstHeartbeatRejected = $_.Exception.Message -eq
+                    'FAIL / FIRST_VALID_HEARTBEAT_INVALID'
+        }
+        if (-not $invalidFirstHeartbeatRejected)
+        {
+            throw 'first-valid heartbeat schema self-test failed'
+        }
+        $caseCount++
+
         $clockBase = @{
             Value = $clockRunId
             FirstConfigAt = '2026-07-18T00:00:01Z'
             FirstBalanceAt = '2026-07-18T00:00:02Z'
+            FirstHeartbeatAt = '2026-07-18T00:00:02.5000000Z'
             FreshSshAt = '2026-07-18T00:00:03Z'
             MainPid = 123L
             SameMainPid = $true
             HeartbeatAdvanced = $true
             HashChainValid = $true
             ForbiddenEndpointCount = 0
+            RawResponseCount = 0
             SecretExposureCount = 0
         }
         foreach ($failureCase in @(
             @{ FirstBalanceAt = $null },
             @{ FirstConfigAt = $null },
+            @{ FirstHeartbeatAt = $null },
             @{ FreshSshAt = $null },
             @{ SameMainPid = $false },
             @{ HeartbeatAdvanced = $false },
             @{ HashChainValid = $false },
             @{ ForbiddenEndpointCount = 1 },
+            @{ RawResponseCount = 1 },
             @{ SecretExposureCount = 1 }
         ))
         {
@@ -4735,11 +4865,11 @@ switch ($Mode)
         }
         $clockRecord = New-AcceptanceClockRecord @clockBase
         Assert-AcceptanceClockRecord ([pscustomobject]$clockRecord) $clockRunId
-        if ([string]$clockRecord.acceptanceStartAt -ne '2026-07-18T00:00:03.0000000Z' -or
+        if ([string]$clockRecord.acceptanceStartAt -ne '2026-07-18T00:00:02.5000000Z' -or
                 ([DateTimeOffset]::Parse([string]$clockRecord.plannedAcceptanceAt) -
                         [DateTimeOffset]::Parse([string]$clockRecord.acceptanceStartAt)).TotalHours -ne 168)
         {
-            throw 'acceptance clock max/+168h self-test failed'
+            throw 'acceptance clock first-heartbeat/+168h self-test failed'
         }
         $caseCount += 2
 
