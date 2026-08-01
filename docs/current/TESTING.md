@@ -12607,3 +12607,16 @@ P0=0/P1=1/P2=2/P3=1。P1 是七项 operational runtime values 从 prepare 进程
 已知失败/RCA：runtime remediation 初次 installer validator 语义对调、AST 外层变量展开及首次较宽 Maven 范围均已保留并按精确基线重跑。Authority sync 首次 link checker 调用遗漏 mandatory `-Roots`，exit 1 且未开始扫描；正确参数双引擎重跑通过。首次同步后的 authority checker 因 STATUS 同时存在两条 Attempt-12 canonical declaration 返回 `CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH`；删除重复声明、保持单一 canonical source 后双引擎全量重跑通过，未放宽 checker。Formatter 回滚后 current Markdown 使用 CRLF，cross-document ROADMAP fixture 的行尾正则只接受 LF，导致 PS5.1/PS7 均返回 `CROSS_DOCUMENT_ROADMAP_FIXTURE_INVALID`；仅将 fixture 行尾修正为显式兼容 LF/CRLF 后双引擎重跑通过，authority/checker 语义未改变。
 
 未运行：Maven/frontend/Python 产品测试未在本 governance sync 重跑，因为本轮仅修改治理 PowerShell 与 current docs，runtime remediation 已由 exact-head CI 及前序专项验证覆盖。Production SSH、release build/upload/install/activation、systemd/current、生产 DB、credential、OKX、Attempt-12、RunId、worker、heartbeat/hash chain/168h clock、LIVE、交易写侧、freeze/archive/tag 均未执行。Authority-sync 提交与其 exact-head CI 在本段写入时为 `NOT_RUN`；这是进入生产前的阻断条件。
+
+## 2026-08-02 — GateW Attempt-12 schema remediation 与 Attempt-13 authorization
+
+| Command / evidence | Result | Scope / environment / warning |
+| --- | --- | --- |
+| Attempt-12 release exact-head CI | PASS | commit `d45fa921eccfe56e4c107037818749b971e28317`；run `30705301218 / completed / success / 10 jobs / bad=0` |
+| Attempt-12 canonical start | FAIL / SAFE STOP | RunId=`gatew-soak-20260801T164322Z-79ed8c0b`；PID=`470754`；exit=`exited/2`；error=`prerequisite readback schema is invalid`；heartbeat/hash-chain/clock absent，samples/failures=`0/0` |
+| production rollback | PASS | current/unit links=`c16f27c3...`；active GateW units=`0`；失败 release/evidence保留 |
+| schema remediation exact-head CI | PASS | commit `e8c334886ae6614133b0bf3f0083bc1893a11e01`；run `30709995836 / completed / success / 10 jobs / bad=0` |
+| GateW runtime regression | PASS | PS5.1/PS7：worker=`63`、control=`81`、remediation=`37`、security=`12`、fail-close=`8`、release reproducibility=`34` |
+| governance next-action/lifecycle | PASS | Attempt-13 exact triples、authorization/start/startup-failed 与 cross-attempt/order/batch/LIVE/kill-switch negatives 通过 |
+
+未运行：本 authority-sync 提交的 exact-head CI 尚为 `NOT_RUN`；因此 Attempt-13 production SSH/deploy/start 尚未授权执行。168h 期满 acceptance 明确不属于本启动任务，将在 `plannedAcceptanceAt` 后由独立任务执行。

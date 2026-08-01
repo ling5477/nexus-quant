@@ -18078,3 +18078,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：production SSH/release/deploy/systemd/current/DB/credential/OKX/Attempt-12/RunId/worker/heartbeat/clock=`0`；order/cancel/transfer/withdraw=`0`；LIVE=`DISABLED`，kill switch=`ENGAGED`；未进入 freeze/archive/tag。
 - result：`PASS / OPERATIONAL_SCOPE_REMEDIATED / RUNTIME_EXACT_HEAD_CI_GREEN / ATTEMPT_10_11_IMMUTABLE / ATTEMPT_12_AUTHORIZED / AUTHORITY_SYNC_READY_TO_COMMIT / PRODUCTION_NOT_ACCESSED`；P0=0/P1=0，Attempt-11 transport/diagnostic residual 不得用于放宽 hard gate。
 - next：提交并推送 authority-sync，取得该 exact head 的 10/10 CI GREEN；之后才允许从 clean exact commit 构建并验证新的 immutable release，再执行 `NQ-GATEW-ATTEMPT-12-PREPARATION-AND-START`。任一 hard gate 失败必须停止且不得创建或复用 Attempt/RunId。
+
+## 2026-08-02 — GateW Attempt-12 prerequisite schema remediation and Attempt-13 authorization
+
+- task：`NQ-GATEW-ATTEMPT-12-PREREQUISITE-SCHEMA-REMEDIATION-AND-ATTEMPT-13-AUTHORIZATION`；NQ-only、L 级 startup failure evidence / minimal remediation / governance authority sync。
+- Attempt-12：release/source `d45fa921...`、CI `30705301218`；唯一 RunId `gatew-soak-20260801T164322Z-79ed8c0b` 的 worker PID `470754` 在首 heartbeat 前以 `exited/2` fail-close；samples/failures=`0/0`，clock 未启动，current/unit links 回滚 `c16f27c3...`。
+- root cause：Java `PrerequisiteMain` 输出 23-field sanitized contract，worker 仍校验旧 9-field exact schema；发生在 credential/network/OKX 调用前。
+- remediation：commit `e8c334886ae6614133b0bf3f0083bc1893a11e01`，exact-head CI `30709995836 / completed / success / 10 jobs / bad=0`；worker/control/remediation/security/fail-close/release regression=`63/81/37/12/8/34`，PS5.1/PS7 均通过。
+- governance：新增 Attempt-13 preparation/running/blocked exact triples、`attempt13Runtime` 与 `ATTEMPT_13_CREATED` 有序事件；Attempt-12/RunId 保持终态不可变。
+- authority：accepted batch=`GateW-ATTEMPT-12-PREREQUISITE-SCHEMA-REMEDIATION / ACCEPTED|CI_GREEN`；work batch=`GateW-ATTEMPT-13-PREPARATION-AND-START / ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED`；Attempt-13=`NOT_CREATED / AUTHORIZED`。
+- boundary：LIVE=`DISABLED`、kill switch=`ENGAGED`；order/cancel/transfer/withdraw=`0`；本治理同步未连接生产或创建 Attempt-13。
+- result：`PASS / ATTEMPT_12_TERMINALIZED / ROOT_CAUSE_CONFIRMED / SCHEMA_ALIGNED / CI_GREEN / ATTEMPT_13_AUTHORIZED`；P0=0/P1=0。
+- next：提交推送并取得 authority-sync exact-head 10/10 CI；随后只执行 Attempt-13 启动闭环。168h 仅建立时间基准，期满验收由后续独立任务执行，不要求本任务连续守候。

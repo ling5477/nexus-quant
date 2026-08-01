@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatev-freeze
 last_frozen_gate_commit=530ce4e2bde416aa61944262cbfbadca556656cb
 active_gate=GateW
 active_gate_status=IN_PROGRESS|NOT_FROZEN
-accepted_batch=GateW-ATTEMPT-11-OPERATIONAL-SCOPE-REMEDIATION
+accepted_batch=GateW-ATTEMPT-12-PREREQUISITE-SCHEMA-REMEDIATION
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=eb51fe5b3ac50215fec404e76edd113439ff5ce1
-accepted_batch_acceptance_head=eb51fe5b3ac50215fec404e76edd113439ff5ce1
-accepted_batch_ci_run=30703645365
-work_batch=GateW-ATTEMPT-12-PREPARATION-AND-START
+accepted_batch_implementation_commit=e8c334886ae6614133b0bf3f0083bc1893a11e01
+accepted_batch_acceptance_head=e8c334886ae6614133b0bf3f0083bc1893a11e01
+accepted_batch_ci_run=30709995836
+work_batch=GateW-ATTEMPT-13-PREPARATION-AND-START
 work_batch_status=ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED
-work_batch_commit=eb51fe5b3ac50215fec404e76edd113439ff5ce1
-work_batch_ci_run=30703645365
-next_action=NQ-GATEW-ATTEMPT-12-PREPARATION-AND-START
+work_batch_commit=e8c334886ae6614133b0bf3f0083bc1893a11e01
+work_batch_ci_run=30709995836
+next_action=NQ-GATEW-ATTEMPT-13-PREPARATION-AND-START
 live=DISABLED
 shadow_trading=NOT_ENABLED
 ai=NOT_STARTED
@@ -57,8 +57,10 @@ nq-current-authority:end -->
 - GateW-ATTEMPT-10-START-CONTRACT-REMEDIATION：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Commit `aeacfebd688c6329368d4e43140043fbf9688103` 将正式 REAL worker 的九项 safety flags 在 run 创建前固定为字面量 `false`，并使 pre-create Java 与 worker 共用同一 fail-closed helper；exact-head CI run `30697734316` 为 `completed / success / 10 jobs / bad=0`。双引擎 control `76`、remediation `35`、security `12`、worker `59`、fail-close `8`、release reproducibility `34` 及 focused Maven `50` 均通过。
 - GateW-ATTEMPT-11-PREPARATION-AND-START：`BLOCKED / STARTUP FAILED / TERMINALIZED / ROLLED BACK`（阻断 / 启动失败 / 已终态化 / 已回滚）。Commit `bfc68b89e81213ad2b240bf26b4118676abfd75e` 的 exact-head CI run `30698530051` 为 `completed / success / 10 jobs / bad=0`；immutable release、生产 preflight 与 persisted permission fact 均通过，但唯一 worker 在首条有效 heartbeat 前因 operational runtime values 未冻结而退出。Attempt-11 已 fail-close，禁止修改、复用或自动重试。
 - GateW-ATTEMPT-11-OPERATIONAL-SCOPE-REMEDIATION：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Commit `eb51fe5b3ac50215fec404e76edd113439ff5ce1` 冻结正式 worker 的四项 control-owned operational switches，并只从 root-owned `gatew-precreate-prerequisite-v2` 读取 owner/account/currencies；exact-head CI run `30703645365` 为 `completed / success / 10 jobs / bad=0`。Attempt-10/11 与历史 RunId 均未修改。
-- GateW-ATTEMPT-12-PREPARATION-AND-START：`ACCEPTED / CI GREEN / DEPLOYMENT AUTHORIZED`（已接受 / CI 已通过 / 已授权受控部署准备）。Attempt-12=`NOT_CREATED / AUTHORIZED`；production deployment=`NOT_STARTED`。该授权只允许从 clean exact authority commit 构建并验证新的 immutable release，再执行 fail-closed production preflight；不表示已部署、已调用 OKX、已创建 RunId、已启动 worker 或 168h clock。
-- GateW-FREEZE：`NOT STARTED`（未开始）。GateW 尚未 archive、freeze 或 tag；Attempt-09 已拒绝，Attempt-10 与 Attempt-11 均失败并已终态化，Attempt-12 尚未创建，168h 未启动或完成；不得提前进入 freeze/archive/tag。
+- GateW-ATTEMPT-12-PREPARATION-AND-START：`BLOCKED / STARTUP FAILED / TERMINALIZED / ROLLED BACK`（阻断 / 启动失败 / 已终态化 / 已回滚）。Release/source `d45fa921eccfe56e4c107037818749b971e28317` 的 exact-head CI run `30705301218` 为 `completed / success / 10 jobs / bad=0`；唯一 RunId `gatew-soak-20260801T164322Z-79ed8c0b`、worker PID `470754` 在首 heartbeat 前因 `prerequisite readback schema is invalid` 退出，lifecycle=`FAILURE_STOPPED`、exit=`exited/2`、samples/failures=`0/0`，acceptance clock 未启动。Current/unit links 已回滚到 `c16f27c3...`，Attempt-12 与 RunId 禁止复用。
+- GateW-ATTEMPT-12-PREREQUISITE-SCHEMA-REMEDIATION：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Commit `e8c334886ae6614133b0bf3f0083bc1893a11e01` 将 worker 的 exact schema 校验与 Java `PrerequisiteMain` 的 23-field sanitized contract 对齐；exact-head CI run `30709995836` 为 `completed / success / 10 jobs / bad=0`。修复只发生在 credential/network/OKX 调用前的本地 readback contract，不扩大 endpoint、权限或运行范围。
+- GateW-ATTEMPT-13-PREPARATION-AND-START：`ACCEPTED / CI GREEN / DEPLOYMENT AUTHORIZED`（已接受 / CI 已通过 / 已授权受控部署准备）。Attempt-13=`NOT_CREATED / AUTHORIZED`；production deployment=`NOT_STARTED`。仅允许从 clean exact authority commit 构建并验证新 immutable release，再创建唯一新 RunId 并单次启动；首条有效 heartbeat 后只建立 168h 计时基准，本任务不承担连续守候或期满验收。
+- GateW-FREEZE：`NOT STARTED`（未开始）。GateW 尚未 archive、freeze 或 tag；Attempt-09 已拒绝，Attempt-10/11/12 均失败并已终态化，Attempt-13 尚未创建，168h 尚未启动或完成；不得提前进入 freeze/archive/tag。
 - GateW-3 dry-run order preview：只包含 OKX Spot、BUY/SELL、LIMIT、internal application、local persisted facts、read-only diagnostic；minimum notional、fee、远端 permission 与 runtime balance/risk 继续保持显式 UNKNOWN / NOT_EVALUATED，`executionReadiness=BLOCKED`，不得推导交易授权。
 - GateW-3 read-only reconciliation：只包含 OKX Spot、最多 3 个 allowlisted symbols、1 page/100 records/24h typed private `Read` snapshot、bounded local SELECT 与 pure comparator；默认不装配，无 real smoke/credential/network/repair/persistence/scheduler，`executionReadiness=BLOCKED`。CI acceptance 只接受该 side-effect-free contract，不证明真实 permission 或账户健康。
 - GateW-3 risk preflight：只消费 immutable preview/reconciliation result 与显式 local metadata snapshots；不调用 `PreTradeRiskService`/registry/stateful rules，不构造 `PlaceOrderCommand`，无 DB/network/write。minimum notional、fee、remote permission 保持 UNKNOWN，stateful risk/balance/position 等保持 NOT_EVALUATED，`executionReadiness=BLOCKED`、`tradingAuthorized=false`。
@@ -85,10 +87,11 @@ updated_commit=530ce4e2bde416aa61944262cbfbadca556656cb
 - Attempt-09：`REJECTED / FAILED_INSUFFICIENT_DURATION`（已拒绝 / 有效时长不足）。初始 MainPID=`4074358`；事件窗口内 systemd 明确执行 stop、另一次 start（PID=`301042`）和第二次 stop，最终 worker unit inactive、MainPID=`0`，continuity 不可恢复。终止分类=`OPERATOR_OR_AUTOMATION_STOP`，精确发起者=`UNKNOWN`；finalizer 分类=`FINALIZER_SYSTEMD_TIMEOUT`，`terminal-status.json=false`。
 - Attempt-10：`FAILED / STOPPED`（失败 / 已停止）；production deployment=`STOPPED`。唯一 RunId=`gatew-soak-20260801T102353Z-932e26a4` 已 terminalize；worker 实际从未启动，MainPID=`0`、NRestarts=`0`、residual=`0`，first heartbeat/hash chain/acceptance clock 均不存在，OKX calls=`0`。Kill switch=`ENGAGED`、RunId reuse=`FORBIDDEN`、auto retry=`DISABLED`、LIVE=`DISABLED`；禁止就地修改或复用该失败 run，Attempt-11 必须使用独立新 RunId。
 - Attempt-11：`FAILED / STOPPED`（失败 / 已停止）；production deployment=`STOPPED`。唯一 RunId=`gatew-soak-20260801T125700Z-cb211abb` 已 terminalize 为 `FAILURE_STOPPED / WORKER_EXIT_WITHOUT_EXPLICIT_ACCEPTANCE`；worker MainPID=`456996`、NRestarts=`0`、exit=`exited/2`，首 heartbeat、unit-start snapshot、hash-chain 起点与 acceptance clock 均不存在，samples/failures=`0/0`。Credential/network/OKX calls=`0/0/0`；kill switch=`ENGAGED`、LIVE=`DISABLED`、RunId reuse=`FORBIDDEN`、auto retry=`DISABLED`。
-- Attempt-12 runtime boundary：准备状态以第 1 节唯一 canonical Attempt/deployment 声明为准。Runtime contract 只接受 `attempt12Runtime` 的有序事件，创建事件必须为 `ATTEMPT_12_CREATED`；LIVE=`DISABLED`、kill switch=`ENGAGED`、RunId reuse=`FORBIDDEN`、auto retry=`DISABLED`。
+- Attempt-12：`FAILED / STOPPED`（失败 / 已停止）；production deployment=`STOPPED`。唯一 RunId=`gatew-soak-20260801T164322Z-79ed8c0b` 已 terminalize；worker MainPID=`470754`、exit=`exited/2`，首 heartbeat/hash chain/acceptance clock 均不存在，samples/failures=`0/0`。Credential/network/OKX calls=`0/0/0`；kill switch=`ENGAGED`、LIVE=`DISABLED`、RunId reuse=`FORBIDDEN`、auto retry=`DISABLED`。
+- Attempt-13 runtime boundary：准备状态以第 1 节唯一 canonical Attempt/deployment 声明为准。Runtime contract 只接受 `attempt13Runtime` 的有序事件，创建事件必须为 `ATTEMPT_13_CREATED`；LIVE=`DISABLED`、kill switch=`ENGAGED`、RunId reuse=`FORBIDDEN`、auto retry=`DISABLED`。
 - Python ML readiness / Python live execution readiness：`NO`（否）。
 - `acknowledge`、`escalate`、`resolve`、`close` 只表示本地人工诊断复核；不构成交易授权、LIVE/Shadow 放行，亦不批准下单、撤单、转账或提现。
 
 ## 4. 下一允许动作
 
-治理 authority 中唯一动作精确为 `NQ-GATEW-ATTEMPT-12-PREPARATION-AND-START`。只能从 clean exact authority commit 构建并复核 immutable release；生产 preflight 任一 hard gate 失败必须停止且不得创建 Attempt-12。只有 preflight、release、persisted permission 与 descriptor v2 全部通过后，才允许创建唯一新 RunId 并只调用一次 canonical start；首条有效 heartbeat 前不得启动 acceptance clock。该授权不允许修改/复用 Attempt-10/11、开启 LIVE、下单、撤单、转账、提现或进入 freeze/archive/tag。
+治理 authority 中唯一动作精确为 `NQ-GATEW-ATTEMPT-13-PREPARATION-AND-START`。只能从 clean exact authority commit 构建并复核 immutable release；生产 preflight 任一 hard gate 失败必须停止且不得创建 Attempt-13。只有 preflight、release、persisted permission 与 descriptor v2 全部通过后，才允许创建唯一新 RunId 并只调用一次 canonical start；首条有效 heartbeat 前不得启动 acceptance clock。首 heartbeat 后仅记录 `acceptanceStartAt` 与 `plannedAcceptanceAt`，168h 期满验收由后续独立任务执行，不要求本任务连续在线观察。该授权不允许修改/复用 Attempt-10/11/12、开启 LIVE、下单、撤单、转账、提现或进入 freeze/archive/tag。

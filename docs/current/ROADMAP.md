@@ -63,7 +63,11 @@ NQ-GATEW-ATTEMPT-11-PREPARATION-AND-START BLOCKED / STARTUP FAILED / TERMINALIZE
   ↓
 GateW Attempt-11 operational scope remediation ACCEPTED / CI GREEN
   ↓
-NQ-GATEW-ATTEMPT-12-PREPARATION-AND-START ACCEPTED / CI GREEN / DEPLOYMENT AUTHORIZED
+NQ-GATEW-ATTEMPT-12-PREPARATION-AND-START BLOCKED / STARTUP FAILED / TERMINALIZED / ROLLED BACK
+  ↓
+GateW Attempt-12 prerequisite schema remediation ACCEPTED / CI GREEN
+  ↓
+NQ-GATEW-ATTEMPT-13-PREPARATION-AND-START ACCEPTED / CI GREEN / DEPLOYMENT AUTHORIZED
 
 GateW-FREEZE NOT STARTED / FUTURE / NOT AUTHORIZED
 ```
@@ -96,9 +100,11 @@ GateW-FREEZE NOT STARTED / FUTURE / NOT AUTHORIZED
 - GateW Attempt-10 start contract remediation：`ACCEPTED / CI GREEN`。Commit `aeacfebd688c6329368d4e43140043fbf9688103` 将正式 REAL worker 九项 safety flags 冻结为字面量 `false`；exact-head CI run `30697734316 / completed / success / 10 jobs / bad=0`。旧 Attempt-10 与 RunId 不可变，该接受仅允许进入独立 Attempt-11 路线。
 - GateW Attempt-11 preparation/start：`BLOCKED / STARTUP FAILED / TERMINALIZED / ROLLED BACK`。Attempt-11=`FAILED / STOPPED`; production deployment=`STOPPED`。Release `bfc68b89...` 的 supply-chain/preflight/persisted permission gates 通过，但 worker 因 operational runtime values 未冻结返回 `PREREQUISITE_READBACK_UNAVAILABLE`，在首 heartbeat 前退出；唯一 RunId `gatew-soak-20260801T125700Z-cb211abb` 禁止修改、复用或自动重试。
 - GateW Attempt-11 operational scope remediation：`ACCEPTED / CI GREEN`。Commit `eb51fe5b3ac50215fec404e76edd113439ff5ce1` 的 exact-head CI run `30703645365 / completed / success / 10 jobs / bad=0`；四项 operational switches 由 control 固定，owner/account/currencies 只从 root-owned descriptor v2 读取，legacy v1 仅能经 closed-schema installer 原子升级。生产访问、Attempt/RunId 创建与 OKX 调用均为 0。
-- GateW Attempt-12 preparation/start：`ACCEPTED / CI GREEN / DEPLOYMENT AUTHORIZED`。Attempt-12=`NOT_CREATED / AUTHORIZED`; production deployment=`NOT_STARTED`。只允许从 clean exact authority commit 构建、验证 immutable release，并在全部 preflight hard gates 通过后创建唯一新 RunId；canonical start 只能调用一次。
-- GateW-FREEZE：`NOT_STARTED / FUTURE`；GateW 尚未 freeze、archive 或 tag。Attempt-09 已不可恢复且已拒绝；Attempt-10 与 Attempt-11 均为 `FAILED / STOPPED`，Attempt-12 尚未创建。
-- 当前唯一治理动作是 `NQ-GATEW-ATTEMPT-12-PREPARATION-AND-START`；不授权修改/复用失败 RunId、跳过 preflight、提前启动 acceptance clock、开启 LIVE/交易写侧或进入 freeze/archive/tag。
+- GateW Attempt-12 preparation/start：`BLOCKED / STARTUP FAILED / TERMINALIZED / ROLLED BACK`。唯一 RunId `gatew-soak-20260801T164322Z-79ed8c0b` 的 worker PID `470754` 在首 heartbeat 前因旧 9-field/新 23-field sanitized readback schema 不一致而 `exited/2`；clock 未启动，current/unit links 已回滚，失败 Attempt/RunId 禁止复用。
+- GateW Attempt-12 prerequisite schema remediation：`ACCEPTED / CI GREEN`。Commit `e8c334886ae6614133b0bf3f0083bc1893a11e01` 的 exact-head CI run `30709995836 / completed / success / 10 jobs / bad=0`；仅对齐 worker 与 Java sanitized schema，未扩大生产或交易边界。
+- GateW Attempt-13 preparation/start：`ACCEPTED / CI GREEN / DEPLOYMENT AUTHORIZED`。Attempt-13=`NOT_CREATED / AUTHORIZED`; production deployment=`NOT_STARTED`。只允许从 clean exact authority commit 构建、验证 immutable release，并在全部 hard gates 通过后创建唯一新 RunId；canonical start 只能调用一次。
+- GateW-FREEZE：`NOT_STARTED / FUTURE`；GateW 尚未 freeze、archive 或 tag。Attempt-09 已拒绝；Attempt-10/11/12 均为 `FAILED / STOPPED`，Attempt-13 尚未创建。
+- 当前唯一治理动作是 `NQ-GATEW-ATTEMPT-13-PREPARATION-AND-START`；成功启动只建立首 heartbeat/hash-chain 与 168h 时间基准，不要求本任务连续在线观察，期满验收由后续独立任务执行。禁止修改/复用失败 RunId、跳过 preflight、提前启动 acceptance clock、开启 LIVE/交易写侧或进入 freeze/archive/tag。
 
 ## 路线边界
 
@@ -109,5 +115,5 @@ GateW-FREEZE NOT STARTED / FUTURE / NOT AUTHORIZED
 - GateW-3 reconciliation 只允许 OKX Spot、最多 3 symbols、每类每 symbol 1 page/100 records、24h window 的显式 typed `Read` snapshot；无 controller/scheduler/repair/persistence，默认不装配。即使全量 matched，也仅表示 `SNAPSHOT_MATCHED_AT_EVALUATION_TIME`，`executionReadiness=BLOCKED`。
 - GateW-3 risk preflight 仅组合 immutable results/snapshots；不得调用完整 risk chain、stateful rule、order command、network、credential 或任何 write。UNKNOWN/NOT_EVALUATED 必须保留，execution readiness 永久 BLOCKED。
 - GateW-4 accepted 不等于 GateW frozen；GateW-FREEZE `NOT_STARTED` 不等于 freeze implementation 已开始。Freeze readiness review、archive manifest、authority、links 与 known residual 裁决必须先行。
-- `c16f27c3...` 仍是服务器 current 与 unit links 的 last-known-good immutable release；Attempt-10 release `f06a38f2...` 与 Attempt-11 release `bfc68b89...` 均保留。Attempt-11 worker 曾启动但在首 heartbeat 前退出，失败 RunId 已 terminalize；Attempt-12 必须使用全新 immutable release 与唯一新 RunId，任一 hard gate 失败都不得复用或自动重试。
+- `c16f27c3...` 仍是服务器 current 与 unit links 的 last-known-good immutable release；Attempt-10/11/12 的失败 release 与 evidence 均保留。Attempt-12 worker 曾启动但在首 heartbeat 前退出，失败 RunId 已 terminalize；Attempt-13 必须使用全新 immutable release 与唯一新 RunId，任一 hard gate 失败都不得复用或自动重试。
 - LIVE、Shadow trading、AI、DH runtime、Integration runtime、real provider 与 private trading 的状态由 `STATUS.md` 统一定义。

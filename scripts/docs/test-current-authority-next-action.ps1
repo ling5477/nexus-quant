@@ -534,6 +534,40 @@ foreach ($case in @(
 }
 Write-Output 'PASS canonical-attempt-12-preparation-acceptance-and-blocked exact-triples=true'
 
+$attempt13PreparationWorkBatch = 'GateW-ATTEMPT-13-PREPARATION-AND-START'
+$attempt13Preparation = 'NQ-GATEW-ATTEMPT-13-PREPARATION-AND-START'
+$attempt13WorkBatch = 'GateW-OKX-READONLY-SOAK-ATTEMPT-13'
+$attempt13Acceptance = 'NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE'
+$attempt13Blocked = 'NQ-GATEW-ATTEMPT-13-PREPARATION-AND-START-BLOCKED'
+Assert-ActionType $attempt13Preparation 'ATTEMPT_PREPARATION_AND_START'
+Assert-ActionType $attempt13Acceptance 'SOAK_ACCEPTANCE'
+Assert-ActionType $attempt13Blocked 'BLOCKED'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $releaseCandidateDeploymentAuthorizedStatus `
+        $attempt13PreparationWorkBatch $attempt13Preparation)) {
+    throw 'CANONICAL_ATTEMPT_13_PREPARATION_REJECTED'
+}
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $attempt10RunningStatus $attempt13WorkBatch $attempt13Acceptance)) {
+    throw 'CANONICAL_ATTEMPT_13_ACCEPTANCE_REJECTED'
+}
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract 'BLOCKED' $attempt13PreparationWorkBatch $attempt13Blocked)) {
+    throw 'CANONICAL_ATTEMPT_13_BLOCKED_REJECTED'
+}
+foreach ($case in @(
+    @{Status=$releaseCandidateDeploymentAuthorizedStatus;Batch=$attempt13PreparationWorkBatch;Action=$attempt12Preparation},
+    @{Status=$releaseCandidateDeploymentAuthorizedStatus;Batch=$attempt12PreparationWorkBatch;Action=$attempt13Preparation},
+    @{Status=$attempt10RunningStatus;Batch=$attempt13WorkBatch;Action=$attempt12Acceptance},
+    @{Status=$attempt10RunningStatus;Batch=$attempt12WorkBatch;Action=$attempt13Acceptance},
+    @{Status='BLOCKED';Batch=$attempt13PreparationWorkBatch;Action=$attempt12Blocked}
+)) {
+    if (Test-GovernanceNextActionForWorkBatch $contract $case.Status $case.Batch $case.Action) {
+        throw "CROSS_ATTEMPT_13_MAPPING_ACCEPTED batch=$($case.Batch) action=$($case.Action)"
+    }
+}
+Write-Output 'PASS canonical-attempt-13-preparation-acceptance-and-blocked exact-triples=true'
+
 $releaseCandidateReviewRemediation =
         'NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-REMEDIATION'
 Assert-ActionType $releaseCandidateReviewRemediation 'RELEASE_CANDIDATE_STABILIZATION_FIX'

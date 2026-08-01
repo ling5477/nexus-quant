@@ -20,6 +20,7 @@ function Get-GovernanceWorkflowContract {
         -not $contract.authority -or -not $contract.lifecycles -or
         -not $contract.lifecycles.transitionPolicies -or -not $contract.lifecycles.attempt10Runtime -or
         -not $contract.lifecycles.attempt11Runtime -or -not $contract.lifecycles.attempt12Runtime -or
+        -not $contract.lifecycles.attempt13Runtime -or
         -not $contract.evidence -or -not $contract.release) {
         throw "GOVERNANCE_CONTRACT_INVALID path=$Path"
     }
@@ -374,6 +375,23 @@ function Test-GovernanceLifecycleTransitionContext {
         $runtimeEvents = @(Get-GovernanceContextValue $Context 'runtimeEvents')
         if (-not (Test-GovernanceAttemptRuntimeTransition $Contract 'attempt12Runtime' `
                 ([string]$attempt12RuntimeTransition.from) ([string]$attempt12RuntimeTransition.to) `
+                $fromRuntimeState $toRuntimeState $runtimeEvents)) { return $false }
+    }
+
+    $attempt13RuntimeState = Get-GovernancePropertyValue $policy 'attempt13RuntimeState'
+    if ($null -ne $attempt13RuntimeState) {
+        $toRuntimeState = Get-GovernanceContextValue $Context 'toRuntimeState'
+        if (-not (Test-GovernanceAttemptRuntimeState $Contract 'attempt13Runtime' `
+                ([string]$attempt13RuntimeState) $toRuntimeState)) { return $false }
+    }
+
+    $attempt13RuntimeTransition = Get-GovernancePropertyValue $policy 'attempt13RuntimeTransition'
+    if ($null -ne $attempt13RuntimeTransition) {
+        $fromRuntimeState = Get-GovernanceContextValue $Context 'fromRuntimeState'
+        $toRuntimeState = Get-GovernanceContextValue $Context 'toRuntimeState'
+        $runtimeEvents = @(Get-GovernanceContextValue $Context 'runtimeEvents')
+        if (-not (Test-GovernanceAttemptRuntimeTransition $Contract 'attempt13Runtime' `
+                ([string]$attempt13RuntimeTransition.from) ([string]$attempt13RuntimeTransition.to) `
                 $fromRuntimeState $toRuntimeState $runtimeEvents)) { return $false }
     }
     return $true

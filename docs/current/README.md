@@ -7,7 +7,7 @@
 - GateU：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）。
 - GateV：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；release tag `nq-gatev-freeze`，durable archive 为 [../gates/gate-v/README.md](../gates/gate-v/README.md)。
 - GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-1 至 GateW-4 均为 `ACCEPTED / CI GREEN`。GateW-4 implementation/acceptance head `07b94f89...` 的 run `29339016784` 已成功；GateW-FREEZE 仅初始化为 `NOT STARTED`。
-- GateW Attempt-11 operational scope remediation commit `eb51fe5b...` 的 exact-head CI run `30703645365` 为 10/10 GREEN；Attempt-10/11 保持终态不可变，Attempt-12 尚未创建。当前唯一动作是 `NQ-GATEW-ATTEMPT-12-PREPARATION-AND-START`。
+- GateW Attempt-12 已在首 heartbeat 前因 sanitized readback schema mismatch fail-close 并回滚；修复 commit `e8c33488...` 的 exact-head CI run `30709995836` 为 10/10 GREEN。Attempt-10/11/12 保持终态不可变，Attempt-13 尚未创建。当前唯一动作是 `NQ-GATEW-ATTEMPT-13-PREPARATION-AND-START`；本任务只完成启动与计时基准，168h 期满验收另行执行。
 - 最近 accepted batch、当前 work batch 与唯一下一动作均动态读取 [STATUS.md](STATUS.md) 和 [ROADMAP.md](ROADMAP.md)，本入口不复制 batch authority。
 - LIVE：`DISABLED`；Shadow trading：`NOT ENABLED`；AI：`NOT STARTED`；DH runtime：`NOT INTEGRATED`。
 
