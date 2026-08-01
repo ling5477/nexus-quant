@@ -18090,3 +18090,14 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：LIVE=`DISABLED`、kill switch=`ENGAGED`；order/cancel/transfer/withdraw=`0`；本治理同步未连接生产或创建 Attempt-13。
 - result：`PASS / ATTEMPT_12_TERMINALIZED / ROOT_CAUSE_CONFIRMED / SCHEMA_ALIGNED / CI_GREEN / ATTEMPT_13_AUTHORIZED`；P0=0/P1=0。
 - next：提交推送并取得 authority-sync exact-head 10/10 CI；随后只执行 Attempt-13 启动闭环。168h 仅建立时间基准，期满验收由后续独立任务执行，不要求本任务连续守候。
+
+## 2026-08-02 — GateW Attempt-13 preparation and start
+
+- task：`NQ-GATEW-ATTEMPT-13-PREPARATION-AND-START`；NQ-only、L 级 production read-only deployment / immutable release / Attempt create / worker start / RUNNING authority sync。
+- release：source=`b103069d8bfcecccba0b4d590317ddccc66898b9`，起始 exact-head CI=`30710943874 / completed / success / 10 jobs / bad=0`；双引擎 release manifest=`f5b891e0...e4cb`、bundle=`e4e0264e...79d9`、artifact/JAR/USTAR=`131/122/132`，服务器 root/POSIX/worker-write-denial 与 canonical verifier 通过。
+- start：descriptor v2 与 23-field sanitized precreate 通过；唯一 RunId=`gatew-soak-20260801T180544Z-140bbcd1`；canonical start 只调用一次；unit=`active/running`，PID=`478613`，`NRestarts=0`，lifecycle=`RUNNING`。
+- evidence：首 heartbeat=`2026-08-01T18:13:13.9139125Z`；fresh-SSH same PID/heartbeat advanced；clock=`STARTED`，`plannedAcceptanceAt=2026-08-08T18:13:13.9139125Z`；`FORMAL_EVIDENCE_VERIFIED`，sample/hash-chain=`1/PASS`，forbidden/fallback/raw/secret=`0/0/0/0`。
+- RCA：此前 7h44m 未完成不是 168h 部署步骤，而是 Attempt-10/11/12 分别由 safety flags、operational scope 与 prerequisite schema drift fail-close，加上本轮客户端 SSH timeout/CRLF 造成状态读回延迟。Attempt-13 本体未发生修复循环；已有 control 在首样本后完成 `RUNNING`，未重放 start。
+- boundary：LIVE=`DISABLED`、kill switch=`ENGAGED`；order/cancel/transfer/withdraw=`0`；未运行 168h acceptance/finalize，未进入 freeze/archive/tag，未修改 DH/Integration runtime。
+- result：`PASS / ATTEMPT_13_CREATED / STARTUP_COMPLETE / FRESH_SSH_VERIFIED / HASH_CHAIN_VALID / ACCEPTANCE_CLOCK_STARTED / SOAK_RUNNING / PENDING_168H`；P0=0/P1=0。
+- next：提交、推送并取得本 authority/evidence sync exact-head CI GREEN。之后本任务结束；现有 worker 自动采证，不要求持续在线。到 `2026-08-08T18:13:13.9139125Z` 后另开 `NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE`。

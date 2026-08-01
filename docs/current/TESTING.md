@@ -12620,3 +12620,22 @@ P0=0/P1=1/P2=2/P3=1。P1 是七项 operational runtime values 从 prepare 进程
 | governance next-action/lifecycle | PASS | Attempt-13 exact triples、authorization/start/startup-failed 与 cross-attempt/order/batch/LIVE/kill-switch negatives 通过 |
 
 未运行：本 authority-sync 提交的 exact-head CI 尚为 `NOT_RUN`；因此 Attempt-13 production SSH/deploy/start 尚未授权执行。168h 期满 acceptance 明确不属于本启动任务，将在 `plannedAcceptanceAt` 后由独立任务执行。
+
+## 2026-08-02 — GateW Attempt-13 preparation and start
+
+| Command / evidence | Result | Scope / environment / warning |
+| --- | --- | --- |
+| 起始 Git / authority / exact-head CI | PASS | branch=`dev`，tracked/staged clean，`HEAD == origin/dev == b103069d8bfcecccba0b4d590317ddccc66898b9`；起始 CI run `30710943874 / completed / success / 10 jobs / bad=0` |
+| 双引擎 immutable release | PASS | source/release=`b103069d...`；manifest=`f5b891e0d5547f25077a165a636ca6b40600bc8deedfe78f1110f7bddb44e4cb`；bundle=`e4e0264e78d0cc35598af7dddd4f41c59da44cba452abdce6814ab44cd3e79d9`；bytes=`61,236,224`；artifact/JAR/USTAR=`131/122/132`；JAR=`122/122`、37,551 entries、133,989,252 bytes；descriptor diff=`0` |
+| 生产 install / precreate | PASS | `/opt/nexus-quant/current` 指向 root-owned/POSIX release `b103069d...`；worker write denial 通过；descriptor v2、23-field sanitized readback、persisted read permission 与 kill switch hard gates 通过；credential material exposure=`false` |
+| Attempt-13 create / canonical start | PASS | 唯一 RunId=`gatew-soak-20260801T180544Z-140bbcd1`；canonical `start` 只调用一次；worker PID=`478613`；unit=`active/running`；`NRestarts=0`；lifecycle=`RUNNING` |
+| first heartbeat / fresh-SSH / clock | PASS | first heartbeat=`2026-08-01T18:13:13.9139125Z`；fresh-SSH=`2026-08-01T18:24:06.8814000Z`；same PID/heartbeat advanced；clock=`STARTED`；planned acceptance=`2026-08-08T18:13:13.9139125Z` |
+| canonical `verify-evidence` | PASS | `PASS / FORMAL_EVIDENCE_VERIFIED`；sampleCount=`1`；hash-chain=`PASS / HASH_CHAIN_VERIFIED`；last hash=`cdb43355791a3977bac2e12bf7b70a1540074121bf4aa984482f32472f405bda`；forbidden/fallback/raw/secret=`0/0/0/0` |
+
+Environment / scope：NQ-only production read-only deployment；Windows PowerShell 本地控制端 + Linux systemd 生产端。只执行冻结的 OKX account config/balance read-only allowlist；LIVE=`DISABLED`、kill switch=`ENGAGED`。
+
+Known warnings / RCA：首次 status 只读命令误用了非正式 unit 前缀，未影响 worker；一次远端脚本尾部 parser error 发生在元数据读回末尾；首次 fresh-SSH 调用使用了错误 release 子路径，在脚本加载前退出；两次 clock wrapper 分别因 SSH timeout 与 RunId CRLF 被 fail-closed 拒绝。未重放 canonical `start`，未修改运行状态文件。最终使用正确 unit/path、无 CR 直接参数与 5 分钟客户端等待完成 create-once clock 读回；这些是客户端包装问题，不是 worker、OKX 或部署流程缺陷。
+
+What was not run：未执行 `verify-acceptance`、`finalize-acceptance`、连续 168 小时人工/Codex 在线观察、Maven、frontend 或 Python 产品测试；本轮未修改产品代码。168h 期间由现有 worker 自动采证，期满后另开独立验收任务。
+
+Blocking status：无启动阻断。Attempt-13=`RUNNING / SOAK_IN_PROGRESS`，但 168h acceptance 仍为 `PENDING`；不得提前写为 accepted/completed/frozen。本次 authority/evidence sync 的最终 exact-head CI 在本段写入时尚为 `NOT_RUN`，需在 commit/push 后取得 GREEN 才完成本任务。
