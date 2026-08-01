@@ -19,7 +19,7 @@ function Get-GovernanceWorkflowContract {
     if ($contract.schemaVersion -ne '1.3.0' -or $contract.authoritySchema -ne '3' -or
         -not $contract.authority -or -not $contract.lifecycles -or
         -not $contract.lifecycles.transitionPolicies -or -not $contract.lifecycles.attempt10Runtime -or
-        -not $contract.lifecycles.attempt11Runtime -or
+        -not $contract.lifecycles.attempt11Runtime -or -not $contract.lifecycles.attempt12Runtime -or
         -not $contract.evidence -or -not $contract.release) {
         throw "GOVERNANCE_CONTRACT_INVALID path=$Path"
     }
@@ -357,6 +357,23 @@ function Test-GovernanceLifecycleTransitionContext {
         $runtimeEvents = @(Get-GovernanceContextValue $Context 'runtimeEvents')
         if (-not (Test-GovernanceAttemptRuntimeTransition $Contract 'attempt11Runtime' `
                 ([string]$attempt11RuntimeTransition.from) ([string]$attempt11RuntimeTransition.to) `
+                $fromRuntimeState $toRuntimeState $runtimeEvents)) { return $false }
+    }
+
+    $attempt12RuntimeState = Get-GovernancePropertyValue $policy 'attempt12RuntimeState'
+    if ($null -ne $attempt12RuntimeState) {
+        $toRuntimeState = Get-GovernanceContextValue $Context 'toRuntimeState'
+        if (-not (Test-GovernanceAttemptRuntimeState $Contract 'attempt12Runtime' `
+                ([string]$attempt12RuntimeState) $toRuntimeState)) { return $false }
+    }
+
+    $attempt12RuntimeTransition = Get-GovernancePropertyValue $policy 'attempt12RuntimeTransition'
+    if ($null -ne $attempt12RuntimeTransition) {
+        $fromRuntimeState = Get-GovernanceContextValue $Context 'fromRuntimeState'
+        $toRuntimeState = Get-GovernanceContextValue $Context 'toRuntimeState'
+        $runtimeEvents = @(Get-GovernanceContextValue $Context 'runtimeEvents')
+        if (-not (Test-GovernanceAttemptRuntimeTransition $Contract 'attempt12Runtime' `
+                ([string]$attempt12RuntimeTransition.from) ([string]$attempt12RuntimeTransition.to) `
                 $fromRuntimeState $toRuntimeState $runtimeEvents)) { return $false }
     }
     return $true

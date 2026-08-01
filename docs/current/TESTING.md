@@ -12587,3 +12587,23 @@ P0=0/P1=1/P2=2/P3=1。P1 是 `Prepare-FormalRun` 在 precreate evaluation 恢复
 P0=0/P1=1/P2=2/P3=1。P1 是七项 operational runtime values 从 prepare 进程环境继承为空，未从 persisted/pre-create facts 冻结，导致 Java prerequisite 在配置加载阶段退出。P2 为 SSH/SCP reset/timeout 与脱离 systemd 上下文的手工 unit-preflight 可诊断性；P3 为一次 broad journal grep 输出范围过宽。整包 SCP、批处理 parser、staging 参数与 install SSH 断线均保留 RCA；不描述为首轮通过。
 
 本段收口提交的 exact-head CI 在写入时为 `NOT_RUN`，提交推送后必须取得 10/10 GREEN。失败 Attempt-11 不得修改、复用或自动重试；不得创建后续 Attempt、启动 168h clock、进入 freeze/archive/tag 或触碰 LIVE/交易写侧。
+
+## 2026-08-01 — GateW Attempt-11 operational scope remediation 与 Attempt-12 authorization
+
+当前结论：`PASS / OPERATIONAL_SCOPE_REMEDIATED / DESCRIPTOR_V2_FROZEN / RUNTIME_EXACT_HEAD_CI_GREEN / ATTEMPT_12_GOVERNANCE_AUTHORIZED / FULL_GOVERNANCE_REGRESSION_GREEN / AUTHORITY_SYNC_READY_TO_COMMIT / PRODUCTION_NOT_ACCESSED`。
+
+| Command / evidence | Result | Scope / environment / warning |
+| --- | --- | --- |
+| runtime remediation exact-head CI | PASS | commit `eb51fe5b3ac50215fec404e76edd113439ff5ce1`；run `30703645365 / completed / success / 10 jobs / bad=0` |
+| runtime PowerShell regression | PASS | PS5.1/PS7：control=`81`、installer、worker=`59`、fail-close=`8`、remediation=`36`、security=`12`、release=`34`、builder |
+| GateW AST / Maven | PASS | AST=`12 files / 0 errors`（双引擎）；focused Maven=`50 tests / 0 failures / 0 errors / 1 skipped`；wider focused=`72`；canonical offline package=`23 modules` |
+| JSON contract parse | PASS | schema `1.3.0`、authority schema `3`；Attempt-12 states/transitions=`5/4` |
+| `test-current-authority-next-action.ps1` | PASS | PowerShell 5.1 / 7；Attempt-12 preparation/running/blocked exact triples 与 cross-attempt negatives 通过 |
+| `test-governance-workflow-lifecycle.ps1` | PASS | PowerShell 5.1 / 7；Attempt-12 authorization/start/startup-failed 及 wrong event/batch/order/LIVE/kill-switch negatives 通过；`TASK_EVIDENCE_POLICY_VALID` |
+| `test-gate-archive-manifest.ps1` | PASS | PowerShell 5.1 / 7；`GATE_ARCHIVE_MANIFEST_REGRESSION` 与 task-evidence policy 通过 |
+| `check-current-authority.ps1` | PASS | PowerShell 5.1 / 7；Attempt-12 `NOT_CREATED / AUTHORIZED`、deployment `NOT_STARTED`，STATUS/ROADMAP 单一 canonical declaration 一致 |
+| `check-doc-links.ps1 -Roots docs/current` | PASS | PowerShell 5.1 / 7；checked=`156`、errors=`0`、warnings=`1`；warning 为既有 `TESTING.md -> GATEJ_TEST_PLAN.md` historical ledger link |
+
+已知失败/RCA：runtime remediation 初次 installer validator 语义对调、AST 外层变量展开及首次较宽 Maven 范围均已保留并按精确基线重跑。Authority sync 首次 link checker 调用遗漏 mandatory `-Roots`，exit 1 且未开始扫描；正确参数双引擎重跑通过。首次同步后的 authority checker 因 STATUS 同时存在两条 Attempt-12 canonical declaration 返回 `CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH`；删除重复声明、保持单一 canonical source 后双引擎全量重跑通过，未放宽 checker。Formatter 回滚后 current Markdown 使用 CRLF，cross-document ROADMAP fixture 的行尾正则只接受 LF，导致 PS5.1/PS7 均返回 `CROSS_DOCUMENT_ROADMAP_FIXTURE_INVALID`；仅将 fixture 行尾修正为显式兼容 LF/CRLF 后双引擎重跑通过，authority/checker 语义未改变。
+
+未运行：Maven/frontend/Python 产品测试未在本 governance sync 重跑，因为本轮仅修改治理 PowerShell 与 current docs，runtime remediation 已由 exact-head CI 及前序专项验证覆盖。Production SSH、release build/upload/install/activation、systemd/current、生产 DB、credential、OKX、Attempt-12、RunId、worker、heartbeat/hash chain/168h clock、LIVE、交易写侧、freeze/archive/tag 均未执行。Authority-sync 提交与其 exact-head CI 在本段写入时为 `NOT_RUN`；这是进入生产前的阻断条件。

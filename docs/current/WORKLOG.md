@@ -18065,3 +18065,16 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - governance：新增 Attempt-11 `DEPLOYMENT_AUTHORIZED -> STARTUP_FAILED` 到同 batch `BLOCKED` 的 exact policy，要求六个有序 runtime events；wrong attempt event、缺事件、错 batch、错 runtime state永久负例均 fail-closed。
 - result：`BLOCKED / ATTEMPT_11_STARTUP_FAILED / TERMINALIZED / FIRST_HEARTBEAT_ABSENT / OKX_NOT_CALLED / 168H_SOAK_NOT_STARTED / ROLLED_BACK / LIVE_DISABLED / KILL_SWITCH_ENGAGED`；P0=0/P1=1/P2=2/P3=1。
 - next：`NQ-GATEW-ATTEMPT-11-PREPARATION-AND-START-BLOCKED`；只等待独立 authority/code-remediation 决策。禁止修改/复用失败 RunId、自动重试、创建后续 Attempt、生产重启或进入 acceptance/freeze/archive/tag。
+
+## 2026-08-01 — GateW Attempt-11 operational scope remediation and Attempt-12 authorization
+
+- task：`NQ-GATEW-ATTEMPT-11-OPERATIONAL-SCOPE-REMEDIATION-AND-ATTEMPT-12-AUTHORIZATION`；NQ-only、L 级 operational runtime scope remediation / descriptor v2 / governance authority sync。
+- remediation：commit `eb51fe5b3ac50215fec404e76edd113439ff5ce1` 固定四项 control-owned switches；owner/account/currencies 仅从 root-owned descriptor v2 读取；installer 对 management.env 与 v1→v2 closed-schema upgrade fail-close，control 拒绝 v1；Attempt-10/11 未修改。
+- CI：runtime exact-head run `30703645365 / completed / success / 10 jobs / bad=0`。
+- runtime validation：双引擎 control/worker/fail-close=`81/59/8`，installer PASS，remediation/security/release=`36/12/34`，builder PASS，AST=`12/0`；focused Maven=`50 tests / 0 failures / 0 errors / 1 skipped`，wider focused 72 tests，canonical offline package 23 modules。
+- governance：新增 Attempt-12 preparation/running/blocked exact triples、独立 `attempt12Runtime` 与三条 authority policy；PS5.1/PS7 next-action、lifecycle、task-evidence、archive-policy、current-authority、docs links 全部 PASS。Wrong attempt event、wrong batch、缺事件、错 ordinal、LIVE enabled、kill switch disengaged 与 non-exact-head evidence 均 fail-closed。
+- RCA：保留 runtime installer validator 初次语义对调、AST 外层展开、较宽 Maven；治理首次 link checker 漏 `-Roots` 未启动扫描；STATUS 初次重复 Attempt-12 canonical declaration 被 checker 拒绝；formatter 回滚后的 CRLF 暴露 next-action fixture 只接受 LF 的缺口。均完成最小修复并双引擎重跑，未描述为首轮通过。
+- authority：accepted batch=`GateW-ATTEMPT-11-OPERATIONAL-SCOPE-REMEDIATION / ACCEPTED|CI_GREEN`；work batch=`GateW-ATTEMPT-12-PREPARATION-AND-START / ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED`；Attempt-12=`NOT_CREATED / AUTHORIZED`，production deployment=`NOT_STARTED`。
+- boundary：production SSH/release/deploy/systemd/current/DB/credential/OKX/Attempt-12/RunId/worker/heartbeat/clock=`0`；order/cancel/transfer/withdraw=`0`；LIVE=`DISABLED`，kill switch=`ENGAGED`；未进入 freeze/archive/tag。
+- result：`PASS / OPERATIONAL_SCOPE_REMEDIATED / RUNTIME_EXACT_HEAD_CI_GREEN / ATTEMPT_10_11_IMMUTABLE / ATTEMPT_12_AUTHORIZED / AUTHORITY_SYNC_READY_TO_COMMIT / PRODUCTION_NOT_ACCESSED`；P0=0/P1=0，Attempt-11 transport/diagnostic residual 不得用于放宽 hard gate。
+- next：提交并推送 authority-sync，取得该 exact head 的 10/10 CI GREEN；之后才允许从 clean exact commit 构建并验证新的 immutable release，再执行 `NQ-GATEW-ATTEMPT-12-PREPARATION-AND-START`。任一 hard gate 失败必须停止且不得创建或复用 Attempt/RunId。

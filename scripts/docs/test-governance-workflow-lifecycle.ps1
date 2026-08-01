@@ -474,6 +474,122 @@ try {
         $remediationCommit '302' $remediationCommit '302' $false $false `
         'attempt-11-startup-failure-wrong-runtime-rejected' $wrongAttempt11FailureRuntimeContext
 
+    $attempt11OperationalRemediationBatch='GateW-ATTEMPT-11-OPERATIONAL-SCOPE-REMEDIATION'
+    $attempt12PreparationBatch='GateW-ATTEMPT-12-PREPARATION-AND-START'
+    $attempt12SoakBatch='GateW-OKX-READONLY-SOAK-ATTEMPT-12'
+    $attempt12StartAction='NQ-GATEW-ATTEMPT-12-PREPARATION-AND-START'
+    $attempt12AcceptanceAction='NQ-GATEW-ATTEMPT-12-168H-ACCEPTANCE'
+    $attempt12BlockedAction='NQ-GATEW-ATTEMPT-12-PREPARATION-AND-START-BLOCKED'
+    $operationalRemediationCommit='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+
+    foreach ($runtimeCase in @(
+        @{Name='DEPLOYMENT_AUTHORIZED';State=$deploymentAuthorizedRuntime},
+        @{Name='PREFLIGHT_BLOCKED';State=$preflightBlockedRuntime},
+        @{Name='PERMISSION_BLOCKED';State=$permissionBlockedRuntime},
+        @{Name='SOAK_RUNNING';State=$soakRunningRuntime},
+        @{Name='STARTUP_FAILED';State=$startupFailedRuntime}
+    )) {
+        Assert-RuntimeState $runtimeCase.Name $runtimeCase.State $true `
+            ("attempt-12-runtime-{0}" -f $runtimeCase.Name.ToLowerInvariant()) 'attempt12Runtime'
+    }
+
+    $attempt12AuthorizationContext=[pscustomobject]@{
+        mode='POST_ATTEMPT_11_OPERATIONAL_SCOPE_REMEDIATION_CI_SUCCESS_AUTHORIZATION'
+        fromWorkBatch=$attempt11PreparationBatch;toWorkBatch=$attempt12PreparationBatch
+        fromAcceptedBatch=$attempt10RemediationBatch;toAcceptedBatch=$attempt11OperationalRemediationBatch
+        toNextAction=$attempt12StartAction;externalEvidence=$successEvidence
+        toRuntimeState=$deploymentAuthorizedRuntime
+    }
+    Assert-ContextTransition 'highRisk' 'BLOCKED' $deploymentAuthorizedStatus `
+        $blockedCommit '302' $operationalRemediationCommit '303' $true $true `
+        'attempt-12-authorized-after-exact-operational-remediation-ci' $attempt12AuthorizationContext
+    $wrongAttempt12AcceptedBatchContext=$attempt12AuthorizationContext.PSObject.Copy()
+    $wrongAttempt12AcceptedBatchContext.toAcceptedBatch=$attempt10RemediationBatch
+    Assert-ContextTransition 'highRisk' 'BLOCKED' $deploymentAuthorizedStatus `
+        $blockedCommit '302' $operationalRemediationCommit '303' $true $false `
+        'attempt-12-authorization-requires-operational-remediation-accepted-batch' $wrongAttempt12AcceptedBatchContext
+    $wrongAttempt12SourceBatchContext=$attempt12AuthorizationContext.PSObject.Copy()
+    $wrongAttempt12SourceBatchContext.fromWorkBatch=$attempt10FailedBatch
+    Assert-ContextTransition 'highRisk' 'BLOCKED' $deploymentAuthorizedStatus `
+        $blockedCommit '302' $operationalRemediationCommit '303' $true $false `
+        'attempt-12-authorization-wrong-source-batch-rejected' $wrongAttempt12SourceBatchContext
+    $badAttempt12EvidenceContext=$attempt12AuthorizationContext.PSObject.Copy()
+    $badAttempt12EvidenceContext.externalEvidence=[pscustomobject]@{exactHeadMatch=$false;ciConclusion='success'}
+    Assert-ContextTransition 'highRisk' 'BLOCKED' $deploymentAuthorizedStatus `
+        $blockedCommit '302' $operationalRemediationCommit '303' $true $false `
+        'attempt-12-authorization-exact-head-required' $badAttempt12EvidenceContext
+
+    $attempt12StartEvents=@(
+        'PRODUCTION_PREFLIGHT_PASSED','PERMISSION_VERIFIED','IMMUTABLE_RELEASE_DEPLOYED',
+        'ATTEMPT_12_CREATED','WORKER_STARTED','FIRST_VALID_HEARTBEAT_CONFIRMED','ACCEPTANCE_CLOCK_STARTED'
+    )
+    $attempt12StartContext=[pscustomobject]@{
+        fromWorkBatch=$attempt12PreparationBatch;toWorkBatch=$attempt12SoakBatch
+        toNextAction=$attempt12AcceptanceAction;fromRuntimeState=$deploymentAuthorizedRuntime
+        toRuntimeState=$soakRunningRuntime;runtimeEvents=$attempt12StartEvents
+    }
+    Assert-ContextTransition 'highRisk' $deploymentAuthorizedStatus $attempt10RunningStatus `
+        $operationalRemediationCommit '303' $operationalRemediationCommit '303' $false $true `
+        'attempt-12-start-runtime-sequence' $attempt12StartContext
+    Assert-RuntimeTransition 'DEPLOYMENT_AUTHORIZED' 'SOAK_RUNNING' `
+        $deploymentAuthorizedRuntime $soakRunningRuntime $attempt12StartEvents $true `
+        'attempt-12-soak-runtime-transition' 'attempt12Runtime'
+    Assert-RuntimeTransition 'DEPLOYMENT_AUTHORIZED' 'PREFLIGHT_BLOCKED' `
+        $deploymentAuthorizedRuntime $preflightBlockedRuntime @('PRODUCTION_PREFLIGHT_BLOCKED') $true `
+        'attempt-12-preflight-blocked' 'attempt12Runtime'
+    Assert-RuntimeTransition 'DEPLOYMENT_AUTHORIZED' 'PERMISSION_BLOCKED' `
+        $deploymentAuthorizedRuntime $permissionBlockedRuntime @('PRODUCTION_PREFLIGHT_PASSED','PERMISSION_VERIFICATION_BLOCKED') $true `
+        'attempt-12-permission-blocked' 'attempt12Runtime'
+
+    $wrongAttempt12Events=@($attempt12StartEvents)
+    $wrongAttempt12Events[3]='ATTEMPT_11_CREATED'
+    Assert-RuntimeTransition 'DEPLOYMENT_AUTHORIZED' 'SOAK_RUNNING' `
+        $deploymentAuthorizedRuntime $soakRunningRuntime $wrongAttempt12Events $false `
+        'attempt-12-cross-attempt-created-event-rejected' 'attempt12Runtime'
+    Assert-RuntimeTransition 'DEPLOYMENT_AUTHORIZED' 'SOAK_RUNNING' `
+        $deploymentAuthorizedRuntime $soakRunningRuntime @('PRODUCTION_PREFLIGHT_PASSED','PERMISSION_VERIFIED') $false `
+        'attempt-12-incomplete-start-sequence-rejected' 'attempt12Runtime'
+    $wrongAttempt12OrdinalEvents=@($attempt12StartEvents)
+    $wrongAttempt12OrdinalEvents[3]='WORKER_STARTED'
+    $wrongAttempt12OrdinalEvents[4]='ATTEMPT_12_CREATED'
+    Assert-RuntimeTransition 'DEPLOYMENT_AUTHORIZED' 'SOAK_RUNNING' `
+        $deploymentAuthorizedRuntime $soakRunningRuntime $wrongAttempt12OrdinalEvents $false `
+        'attempt-12-wrong-event-ordinal-rejected' 'attempt12Runtime'
+    $wrongAttempt12StartBatchContext=$attempt12StartContext.PSObject.Copy()
+    $wrongAttempt12StartBatchContext.toWorkBatch=$attempt11SoakBatch
+    Assert-ContextTransition 'highRisk' $deploymentAuthorizedStatus $attempt10RunningStatus `
+        $operationalRemediationCommit '303' $operationalRemediationCommit '303' $false $false `
+        'attempt-12-start-wrong-batch-rejected' $wrongAttempt12StartBatchContext
+    $attempt12LiveEnabledRuntime=$soakRunningRuntime.PSObject.Copy()
+    $attempt12LiveEnabledRuntime.live='ENABLED'
+    Assert-RuntimeState 'SOAK_RUNNING' $attempt12LiveEnabledRuntime $false `
+        'attempt-12-running-live-enabled-rejected' 'attempt12Runtime'
+    $attempt12KillSwitchDisengagedRuntime=$soakRunningRuntime.PSObject.Copy()
+    $attempt12KillSwitchDisengagedRuntime.killSwitch='DISENGAGED'
+    Assert-RuntimeState 'SOAK_RUNNING' $attempt12KillSwitchDisengagedRuntime $false `
+        'attempt-12-running-kill-switch-disengaged-rejected' 'attempt12Runtime'
+
+    $attempt12StartupFailedEvents=@(
+        'PRODUCTION_PREFLIGHT_PASSED','PERMISSION_VERIFIED','IMMUTABLE_RELEASE_DEPLOYED',
+        'ATTEMPT_12_CREATED','WORKER_STARTED','FIRST_VALID_HEARTBEAT_FAILED'
+    )
+    $attempt12StartupFailedContext=[pscustomobject]@{
+        fromWorkBatch=$attempt12PreparationBatch;toWorkBatch=$attempt12PreparationBatch
+        toNextAction=$attempt12BlockedAction;fromRuntimeState=$deploymentAuthorizedRuntime
+        toRuntimeState=$startupFailedRuntime;runtimeEvents=$attempt12StartupFailedEvents
+    }
+    Assert-ContextTransition 'highRisk' $deploymentAuthorizedStatus 'BLOCKED' `
+        $operationalRemediationCommit '303' $operationalRemediationCommit '303' $false $true `
+        'attempt-12-startup-failure-blocks-same-batch' $attempt12StartupFailedContext
+    Assert-RuntimeTransition 'DEPLOYMENT_AUTHORIZED' 'STARTUP_FAILED' `
+        $deploymentAuthorizedRuntime $startupFailedRuntime $attempt12StartupFailedEvents $true `
+        'attempt-12-startup-failed-runtime-transition' 'attempt12Runtime'
+    $wrongAttempt12FailureBatchContext=$attempt12StartupFailedContext.PSObject.Copy()
+    $wrongAttempt12FailureBatchContext.toWorkBatch=$attempt12SoakBatch
+    Assert-ContextTransition 'highRisk' $deploymentAuthorizedStatus 'BLOCKED' `
+        $operationalRemediationCommit '303' $operationalRemediationCommit '303' $false $false `
+        'attempt-12-startup-failure-wrong-batch-rejected' $wrongAttempt12FailureBatchContext
+
     Assert-Condition (-not [bool]$contract.lifecycles.freeze.authorityReviewCommitRequired) 'freeze authority review commit must not be required'
     Assert-Condition (@($contract.lifecycles.freeze.candidateEntryStatuses) -contains 'IMPLEMENTED|PENDING_REVIEW') 'freeze pending-review candidate entry missing'
     Assert-Condition (@($contract.lifecycles.freeze.candidateEntryStatuses) -cnotcontains 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED') 'green continuation was accepted as freeze/archive candidate'

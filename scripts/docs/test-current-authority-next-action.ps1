@@ -499,6 +499,41 @@ foreach ($case in @(
 }
 Write-Output 'PASS canonical-attempt-11-preparation-acceptance-and-blocked exact-triples=true'
 
+$attempt12PreparationWorkBatch = 'GateW-ATTEMPT-12-PREPARATION-AND-START'
+$attempt12Preparation = 'NQ-GATEW-ATTEMPT-12-PREPARATION-AND-START'
+$attempt12WorkBatch = 'GateW-OKX-READONLY-SOAK-ATTEMPT-12'
+$attempt12Acceptance = 'NQ-GATEW-ATTEMPT-12-168H-ACCEPTANCE'
+$attempt12Blocked = 'NQ-GATEW-ATTEMPT-12-PREPARATION-AND-START-BLOCKED'
+Assert-ActionType $attempt12Preparation 'ATTEMPT_PREPARATION_AND_START'
+Assert-ActionType $attempt12Acceptance 'SOAK_ACCEPTANCE'
+Assert-ActionType $attempt12Blocked 'BLOCKED'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $releaseCandidateDeploymentAuthorizedStatus `
+        $attempt12PreparationWorkBatch $attempt12Preparation)) {
+    throw 'CANONICAL_ATTEMPT_12_PREPARATION_REJECTED'
+}
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $attempt10RunningStatus $attempt12WorkBatch $attempt12Acceptance)) {
+    throw 'CANONICAL_ATTEMPT_12_ACCEPTANCE_REJECTED'
+}
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract 'BLOCKED' $attempt12PreparationWorkBatch $attempt12Blocked)) {
+    throw 'CANONICAL_ATTEMPT_12_BLOCKED_REJECTED'
+}
+foreach ($case in @(
+    @{Status=$releaseCandidateDeploymentAuthorizedStatus;Batch=$attempt12PreparationWorkBatch;Action=$attempt11Preparation},
+    @{Status=$releaseCandidateDeploymentAuthorizedStatus;Batch=$attempt11PreparationWorkBatch;Action=$attempt12Preparation},
+    @{Status=$attempt10RunningStatus;Batch=$attempt12WorkBatch;Action=$attempt11Acceptance},
+    @{Status=$attempt10RunningStatus;Batch=$attempt11WorkBatch;Action=$attempt12Acceptance},
+    @{Status='BLOCKED';Batch=$attempt12PreparationWorkBatch;Action=$attempt11Blocked},
+    @{Status=$releaseCandidateDeploymentAuthorizedStatus;Batch=$attempt12PreparationWorkBatch;Action='NQ-GATEW-ATTEMPT-13-PREPARATION-AND-START'}
+)) {
+    if (Test-GovernanceNextActionForWorkBatch $contract $case.Status $case.Batch $case.Action) {
+        throw "CROSS_ATTEMPT_12_MAPPING_ACCEPTED batch=$($case.Batch) action=$($case.Action)"
+    }
+}
+Write-Output 'PASS canonical-attempt-12-preparation-acceptance-and-blocked exact-triples=true'
+
 $releaseCandidateReviewRemediation =
         'NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-REMEDIATION'
 Assert-ActionType $releaseCandidateReviewRemediation 'RELEASE_CANDIDATE_STABILIZATION_FIX'
@@ -703,7 +738,7 @@ if (-not $currentAttemptActionMatch.Success) {
 }
 $currentAttemptId = [int]$currentAttemptActionMatch.Groups['attemptId'].Value
 
-$canonicalRoadmapAttemptPattern = '(?m)^\s*-\s*[^\r\n]*?(?<clause>Attempt-(?<attemptId>[1-9][0-9]*)=`(?<attemptState>[A-Z_]+) / (?<authorizationState>[A-Z0-9_]+)`; production deployment=`(?<deploymentState>[A-Z_]+)`)[^\r\n]*$'
+$canonicalRoadmapAttemptPattern = '(?m)^\s*-\s*[^\r\n]*?(?<clause>Attempt-(?<attemptId>[1-9][0-9]*)=`(?<attemptState>[A-Z_]+) / (?<authorizationState>[A-Z0-9_]+)`; production deployment=`(?<deploymentState>[A-Z_]+)`)[^\r\n]*\r?$'
 $canonicalRoadmapAttemptMatches = @([regex]::Matches(
     $script:roadmapFixture,
     $canonicalRoadmapAttemptPattern) | Where-Object {

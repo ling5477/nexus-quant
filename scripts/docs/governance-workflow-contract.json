@@ -264,6 +264,24 @@
       },
       {
         "scope": "WORK_BATCH",
+        "workBatchStatus": "ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED",
+        "workBatch": "GateW-ATTEMPT-12-PREPARATION-AND-START",
+        "nextAction": "NQ-GATEW-ATTEMPT-12-PREPARATION-AND-START"
+      },
+      {
+        "scope": "WORK_BATCH",
+        "workBatchStatus": "RUNNING|PENDING_168H",
+        "workBatch": "GateW-OKX-READONLY-SOAK-ATTEMPT-12",
+        "nextAction": "NQ-GATEW-ATTEMPT-12-168H-ACCEPTANCE"
+      },
+      {
+        "scope": "WORK_BATCH",
+        "workBatchStatus": "BLOCKED",
+        "workBatch": "GateW-ATTEMPT-12-PREPARATION-AND-START",
+        "nextAction": "NQ-GATEW-ATTEMPT-12-PREPARATION-AND-START-BLOCKED"
+      },
+      {
+        "scope": "WORK_BATCH",
         "workBatchStatus": "REVIEW_REJECTED|REMEDIATION_REQUIRED",
         "workBatch": "GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW",
         "nextAction": "NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-REMEDIATION"
@@ -278,7 +296,7 @@
     "nextActionTypes": [
       {
         "name": "ATTEMPT_PREPARATION_AND_START",
-        "pattern": "(?-i:^NQ-GATEW-ATTEMPT-(?:10|11)-PREPARATION-AND-START$)"
+        "pattern": "(?-i:^NQ-GATEW-ATTEMPT-(?:10|11|12)-PREPARATION-AND-START$)"
       },
       {
         "name": "PRECREATE_PREREQUISITE_REMEDIATION_DEPLOYMENT_VERIFICATION",
@@ -314,7 +332,7 @@
       },
       {
         "name": "SOAK_ACCEPTANCE",
-        "pattern": "(?-i:^NQ-GATEW-(?:OKX-READONLY-SOAK-ATTEMPT-09|ATTEMPT-(?:10|11))-168H-ACCEPTANCE$)"
+        "pattern": "(?-i:^NQ-GATEW-(?:OKX-READONLY-SOAK-ATTEMPT-09|ATTEMPT-(?:10|11|12))-168H-ACCEPTANCE$)"
       },
       {
         "name": "CI_BLOCKER_FIX",
@@ -543,6 +561,56 @@
         "toWorkBatch": "GateW-ATTEMPT-11-PREPARATION-AND-START",
         "nextActionRelation": "TO_STATUS_SAME_WORK_BATCH",
         "attempt11RuntimeTransition": {
+          "from": "DEPLOYMENT_AUTHORIZED",
+          "to": "STARTUP_FAILED"
+        }
+      },
+      {
+        "from": "BLOCKED",
+        "to": "ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED",
+        "mode": "POST_ATTEMPT_11_OPERATIONAL_SCOPE_REMEDIATION_CI_SUCCESS_AUTHORIZATION",
+        "authorityCatchUp": "REQUIRED",
+        "commitRelation": "CHANGED",
+        "ciRelation": "CHANGED_TO_CONCRETE",
+        "workBatchRelation": "EXACT_PAIR",
+        "fromWorkBatch": "GateW-ATTEMPT-11-PREPARATION-AND-START",
+        "toWorkBatch": "GateW-ATTEMPT-12-PREPARATION-AND-START",
+        "acceptedBatchRelation": "EXACT_PAIR",
+        "fromAcceptedBatch": "GateW-ATTEMPT-10-START-CONTRACT-REMEDIATION",
+        "toAcceptedBatch": "GateW-ATTEMPT-11-OPERATIONAL-SCOPE-REMEDIATION",
+        "nextActionRelation": "TO_STATUS_SAME_WORK_BATCH",
+        "attempt12RuntimeState": "DEPLOYMENT_AUTHORIZED",
+        "evidenceRequirements": {
+          "exactHeadMatch": true,
+          "ciConclusion": "success"
+        }
+      },
+      {
+        "from": "ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED",
+        "to": "RUNNING|PENDING_168H",
+        "authorityCatchUp": "FORBIDDEN",
+        "commitRelation": "SAME",
+        "ciRelation": "SAME",
+        "workBatchRelation": "EXACT_PAIR",
+        "fromWorkBatch": "GateW-ATTEMPT-12-PREPARATION-AND-START",
+        "toWorkBatch": "GateW-OKX-READONLY-SOAK-ATTEMPT-12",
+        "nextActionRelation": "TO_STATUS_SAME_WORK_BATCH",
+        "attempt12RuntimeTransition": {
+          "from": "DEPLOYMENT_AUTHORIZED",
+          "to": "SOAK_RUNNING"
+        }
+      },
+      {
+        "from": "ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED",
+        "to": "BLOCKED",
+        "authorityCatchUp": "FORBIDDEN",
+        "commitRelation": "SAME",
+        "ciRelation": "SAME",
+        "workBatchRelation": "EXACT_PAIR",
+        "fromWorkBatch": "GateW-ATTEMPT-12-PREPARATION-AND-START",
+        "toWorkBatch": "GateW-ATTEMPT-12-PREPARATION-AND-START",
+        "nextActionRelation": "TO_STATUS_SAME_WORK_BATCH",
+        "attempt12RuntimeTransition": {
           "from": "DEPLOYMENT_AUTHORIZED",
           "to": "STARTUP_FAILED"
         }
@@ -838,6 +906,117 @@
             "PERMISSION_VERIFIED",
             "IMMUTABLE_RELEASE_DEPLOYED",
             "ATTEMPT_11_CREATED",
+            "WORKER_STARTED",
+            "FIRST_VALID_HEARTBEAT_CONFIRMED",
+            "ACCEPTANCE_CLOCK_STARTED"
+          ]
+        }
+      ]
+    },
+    "attempt12Runtime": {
+      "fields": [
+        "attemptStatus",
+        "productionDeployment",
+        "live",
+        "killSwitch",
+        "worker",
+        "acceptanceClock",
+        "runIdReuse",
+        "autoRetry"
+      ],
+      "states": [
+        {
+          "name": "DEPLOYMENT_AUTHORIZED",
+          "attemptStatus": "NOT_CREATED|AUTHORIZED",
+          "productionDeployment": "NOT_STARTED",
+          "live": "DISABLED",
+          "killSwitch": "ENGAGED",
+          "worker": "NOT_STARTED",
+          "acceptanceClock": "NOT_STARTED",
+          "runIdReuse": "FORBIDDEN",
+          "autoRetry": "DISABLED"
+        },
+        {
+          "name": "PREFLIGHT_BLOCKED",
+          "attemptStatus": "NOT_CREATED|NOT_AUTHORIZED",
+          "productionDeployment": "NOT_STARTED",
+          "live": "DISABLED",
+          "killSwitch": "ENGAGED",
+          "worker": "NOT_STARTED",
+          "acceptanceClock": "NOT_STARTED",
+          "runIdReuse": "FORBIDDEN",
+          "autoRetry": "DISABLED"
+        },
+        {
+          "name": "PERMISSION_BLOCKED",
+          "attemptStatus": "NOT_CREATED|NOT_AUTHORIZED",
+          "productionDeployment": "NOT_STARTED",
+          "live": "DISABLED",
+          "killSwitch": "ENGAGED",
+          "worker": "NOT_STARTED",
+          "acceptanceClock": "NOT_STARTED",
+          "runIdReuse": "FORBIDDEN",
+          "autoRetry": "DISABLED"
+        },
+        {
+          "name": "SOAK_RUNNING",
+          "attemptStatus": "RUNNING|SOAK_IN_PROGRESS",
+          "productionDeployment": "STARTED",
+          "live": "DISABLED",
+          "killSwitch": "ENGAGED",
+          "worker": "RUNNING",
+          "acceptanceClock": "STARTED",
+          "runIdReuse": "FORBIDDEN",
+          "autoRetry": "DISABLED"
+        },
+        {
+          "name": "STARTUP_FAILED",
+          "attemptStatus": "FAILED|STOPPED",
+          "productionDeployment": "STARTED",
+          "live": "DISABLED",
+          "killSwitch": "ENGAGED",
+          "worker": "STOPPED",
+          "acceptanceClock": "NOT_STARTED",
+          "runIdReuse": "FORBIDDEN",
+          "autoRetry": "DISABLED"
+        }
+      ],
+      "transitions": [
+        {
+          "from": "DEPLOYMENT_AUTHORIZED",
+          "to": "PREFLIGHT_BLOCKED",
+          "requiredEvents": [
+            "PRODUCTION_PREFLIGHT_BLOCKED"
+          ]
+        },
+        {
+          "from": "DEPLOYMENT_AUTHORIZED",
+          "to": "PERMISSION_BLOCKED",
+          "requiredEvents": [
+            "PRODUCTION_PREFLIGHT_PASSED",
+            "PERMISSION_VERIFICATION_BLOCKED"
+          ]
+        },
+        {
+          "from": "DEPLOYMENT_AUTHORIZED",
+          "to": "STARTUP_FAILED",
+          "requiredEvents": [
+            "PRODUCTION_PREFLIGHT_PASSED",
+            "PERMISSION_VERIFIED",
+            "IMMUTABLE_RELEASE_DEPLOYED",
+            "ATTEMPT_12_CREATED",
+            "WORKER_STARTED",
+            "FIRST_VALID_HEARTBEAT_FAILED"
+          ]
+        },
+        {
+          "from": "DEPLOYMENT_AUTHORIZED",
+          "to": "SOAK_RUNNING",
+          "requiredEvents": [
+            "PRODUCTION_PREFLIGHT_PASSED",
+            "PERMISSION_VERIFIED",
+            "IMMUTABLE_RELEASE_DEPLOYED",
+            "ATTEMPT_12_CREATED",
             "WORKER_STARTED",
             "FIRST_VALID_HEARTBEAT_CONFIRMED",
             "ACCEPTANCE_CLOCK_STARTED"
