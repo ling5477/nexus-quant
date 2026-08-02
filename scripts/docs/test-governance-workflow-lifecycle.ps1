@@ -164,12 +164,14 @@ nq-current-authority:end -->
         '# Current Docs',
         '',
         '<!-- nq-current-summary:start -->',
+        '- GateW: `IN PROGRESS / NOT FROZEN`.',
         ('- Attempt-{0}=`{1} / {2}`; production deployment=`{3}`.' -f
             $attemptId,$AttemptState,$AuthorizationState,$DeploymentState),
         ('- {0} `{1}`; fixture.' -f $currentUniqueActionIs,$Action),
         '<!-- nq-current-summary:end -->'
     ) -join "`n"
     Write-Utf8File (Join-Path $Root 'docs/current/README.md') $readmeContent
+    Write-Utf8File (Join-Path $Root 'README.md') $readmeContent
 }
 
 try {

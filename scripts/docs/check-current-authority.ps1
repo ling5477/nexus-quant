@@ -10,6 +10,7 @@ param(
     [string] $PlanPath = 'docs/current/GATEV_PLAN.md',
     [string] $RoadmapPath = 'docs/current/ROADMAP.md',
     [string] $ReadmePath = 'docs/current/README.md',
+    [string] $RootReadmePath = 'README.md',
     [string] $CurrentDocsPath = 'docs/current',
     [ValidateSet('NONE', 'ARCHIVE_FREEZE', 'RELEASE')]
     [string] $ReadinessMode = 'NONE'
@@ -150,6 +151,95 @@ function Read-CurrentSummaryNextAction {
         Reason = ''
         Value = $matches[0].Groups['action'].Value
     }
+}
+
+function Read-CurrentSummaryActiveGate {
+    param([string] $Content)
+
+    $pattern = '(?im)^\s*-\s*(?<gate>Gate[A-Z0-9]+)\s*(?:\x3a|\uff1a|=)\s*`(?<status>[A-Z][A-Z0-9_ ]*(?:\s*/\s*[A-Z][A-Z0-9_ ]*)+)`'
+    $matches = [regex]::Matches($Content, $pattern)
+    if ($matches.Count -ne 1) {
+        return [pscustomobject]@{
+            IsValid = $false
+            Reason = "field=active_gate expected=1 actual=$($matches.Count)"
+            Gate = ''
+            Status = ''
+        }
+    }
+    $normalizedStatus = @($matches[0].Groups['status'].Value -split '/' | ForEach-Object {
+        $_.Trim() -replace '\s+', '_'
+    }) -join '|'
+    return [pscustomobject]@{
+        IsValid = $true
+        Reason = ''
+        Gate = $matches[0].Groups['gate'].Value
+        Status = $normalizedStatus
+    }
+}
+
+function Get-ProseLinesOutsideCurrentSummary {
+    param([string] $Content)
+
+    $withoutSummary = [regex]::Replace(
+        $Content,
+        '(?s)<!--\s*nq-current-summary:start.*?nq-current-summary:end\s*-->',
+        '')
+    $lines = [regex]::Split($withoutSummary, '\r?\n')
+    $result = New-Object System.Collections.Generic.List[object]
+    $inFence = $false
+    $fenceCharacter = $null
+
+    for ($index = 0; $index -lt $lines.Count; $index++) {
+        $line = $lines[$index]
+        $fenceMatch = [regex]::Match($line, '^\s*(?<fence>`{3,}|~{3,})')
+        if ($fenceMatch.Success) {
+            $currentFenceCharacter = $fenceMatch.Groups['fence'].Value.Substring(0, 1)
+            if (-not $inFence) {
+                $inFence = $true
+                $fenceCharacter = $currentFenceCharacter
+            } elseif ($currentFenceCharacter -ceq $fenceCharacter) {
+                $inFence = $false
+                $fenceCharacter = $null
+            }
+            continue
+        }
+        if ($inFence) { continue }
+        if ($line -match '^\s*\[[^\]]+\]:\s*\S+') { continue }
+
+        # Link destinations and HTML comments are references, not prose claims.
+        $prose = [regex]::Replace($line, '\]\([^\r\n)]*\)', ']')
+        $prose = [regex]::Replace($prose, '<!--.*?-->', '')
+        $result.Add([pscustomobject]@{
+            Line = $index + 1
+            Text = $prose
+        })
+    }
+
+    return $result.ToArray()
+}
+
+function Get-VolatileCurrentClaimsOutsideSummary {
+    param([string] $Content)
+
+    $patterns = @(
+        @{ Kind = 'attempt_status'; Pattern = '(?i)\bAttempt-[1-9][0-9]*\s*(?:=|\x3a|\uff1a)\s*`?\s*(?:NOT_CREATED|CREATED|RUNNING|FAILED|STOPPED|ACCEPTED)\b' },
+        @{ Kind = 'runtime_release'; Pattern = '(?i)(?:\bcurrent\s+(?:runtime\s+)?release\s*(?:=|\x3a|\uff1a|is\b)|(?:\bcommit\s+`?[0-9a-f]{7,40}`?|\bruntime\s+release)[^\r\n]{0,100}(?:\u670d\u52a1\u5668|server)[^\r\n]{0,40}\bcurrent\b)' },
+        @{ Kind = 'current_work_commit'; Pattern = '(?i)\bcurrent\s+work\s+commit\s*(?:=|\x3a|\uff1a|is\b)' },
+        @{ Kind = 'next_action'; Pattern = '(?i)(?:\bnext_action\s*=|\bcanonical\s+next_action\s*(?:=|\x3a|\uff1a)|\u5f53\u524d\u552f\u4e00(?:\u5141\u8bb8|\u6cbb\u7406|\u4e0b\u4e00)?\u52a8\u4f5c(?:\u7cbe\u786e)?(?:\u4e3a|\u662f|\x3a|\uff1a))' },
+        @{ Kind = 'active_gate_status'; Pattern = '(?i)\bGate[A-Z0-9]+\s*(?:=|\x3a|\uff1a)\s*`[A-Z][A-Z0-9_ ]*(?:\s*/\s*[A-Z][A-Z0-9_ ]*)+`' }
+    )
+    $claims = New-Object System.Collections.Generic.List[object]
+    foreach ($line in @(Get-ProseLinesOutsideCurrentSummary $Content)) {
+        foreach ($candidate in $patterns) {
+            if ($line.Text -match $candidate.Pattern) {
+                $claims.Add([pscustomobject]@{
+                    Kind = $candidate.Kind
+                    Line = $line.Line
+                })
+            }
+        }
+    }
+    return $claims.ToArray()
 }
 
 function Read-MachineCurrentAttemptAuthority {
@@ -380,42 +470,70 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
                 Add-AuthorityError "CURRENT_ATTEMPT_STATUS_CONFLICT source=STATUS_MACHINE $($machineAttemptAuthority.Reason)"
             }
 
-            $resolvedReadme = Resolve-RepoPath $ReadmePath
-            if (-not (Test-Path -LiteralPath $resolvedReadme -PathType Leaf)) {
-                Add-AuthorityError "CURRENT_SUMMARY_INVALID source=README field=file path=$ReadmePath"
-            } else {
+            foreach ($readmeSpec in @(
+                @{ Source = 'ROOT_README'; Path = $RootReadmePath },
+                @{ Source = 'README'; Path = $ReadmePath }
+            )) {
+                $resolvedReadme = Resolve-RepoPath $readmeSpec.Path
+                if (-not (Test-Path -LiteralPath $resolvedReadme -PathType Leaf)) {
+                    Add-AuthorityError "CURRENT_SUMMARY_INVALID source=$($readmeSpec.Source) field=file path=$($readmeSpec.Path)"
+                    continue
+                }
+
                 $readmeContent = Read-Utf8File $resolvedReadme
                 $currentSummary = Read-CurrentSummaryBlock $readmeContent
                 if (-not $currentSummary.IsValid) {
-                    Add-AuthorityError "CURRENT_SUMMARY_INVALID source=README $($currentSummary.Reason)"
+                    Add-AuthorityError "CURRENT_SUMMARY_INVALID source=$($readmeSpec.Source) $($currentSummary.Reason)"
                 } else {
+                    $summaryGate = Read-CurrentSummaryActiveGate $currentSummary.Body
+                    if (-not $summaryGate.IsValid) {
+                        Add-AuthorityError "CURRENT_SUMMARY_INVALID source=$($readmeSpec.Source) $($summaryGate.Reason)"
+                    } elseif (-not [string]::Equals(
+                            $authority.active_gate,
+                            $summaryGate.Gate,
+                            [System.StringComparison]::Ordinal) -or
+                        -not [string]::Equals(
+                            $authority.active_gate_status,
+                            $summaryGate.Status,
+                            [System.StringComparison]::Ordinal)) {
+                        Add-AuthorityError ("CURRENT_ACTIVE_GATE_CONFLICT source={0} status={1}|{2} readme={3}|{4}" -f
+                            $readmeSpec.Source, $authority.active_gate, $authority.active_gate_status,
+                            $summaryGate.Gate, $summaryGate.Status)
+                    }
+
                     $summaryNextAction = Read-CurrentSummaryNextAction $currentSummary.Body
                     if (-not $summaryNextAction.IsValid) {
-                        Add-AuthorityError "CURRENT_SUMMARY_INVALID source=README $($summaryNextAction.Reason)"
+                        Add-AuthorityError "CURRENT_SUMMARY_INVALID source=$($readmeSpec.Source) $($summaryNextAction.Reason)"
                     } elseif (-not [string]::Equals(
                             $authority.next_action,
                             $summaryNextAction.Value,
                             [System.StringComparison]::Ordinal)) {
-                        Add-AuthorityError "CURRENT_NEXT_ACTION_CONFLICT source=README status=$($authority.next_action) readme=$($summaryNextAction.Value)"
+                        Add-AuthorityError "CURRENT_NEXT_ACTION_CONFLICT source=$($readmeSpec.Source) status=$($authority.next_action) readme=$($summaryNextAction.Value)"
                     }
 
                     if ($machineAttemptAuthority.IsApplicable -and $machineAttemptAuthority.IsValid) {
                         $readmeAttemptAuthority = Read-AttemptDeploymentAuthority `
-                            $currentSummary.Body 'README' $machineAttemptAuthority.AttemptId
+                            $currentSummary.Body $readmeSpec.Source $machineAttemptAuthority.AttemptId
                         if (-not $readmeAttemptAuthority.IsValid) {
-                            Add-AuthorityError "CURRENT_ATTEMPT_STATUS_CONFLICT source=README $($readmeAttemptAuthority.Reason)"
+                            Add-AuthorityError "CURRENT_ATTEMPT_STATUS_CONFLICT source=$($readmeSpec.Source) $($readmeAttemptAuthority.Reason)"
                         } else {
                             foreach ($field in @('AttemptId', 'AttemptState', 'AuthorizationState')) {
                                 if (-not [string]::Equals(
                                         [string]$machineAttemptAuthority.$field,
                                         [string]$readmeAttemptAuthority.$field,
                                         [System.StringComparison]::Ordinal)) {
-                                    Add-AuthorityError ("CURRENT_ATTEMPT_STATUS_CONFLICT source=README field={0} status={1} readme={2}" -f
-                                        $field, $machineAttemptAuthority.$field, $readmeAttemptAuthority.$field)
+                                    Add-AuthorityError ("CURRENT_ATTEMPT_STATUS_CONFLICT source={0} field={1} status={2} readme={3}" -f
+                                        $readmeSpec.Source, $field, $machineAttemptAuthority.$field,
+                                        $readmeAttemptAuthority.$field)
                                 }
                             }
                         }
                     }
+                }
+
+                foreach ($claim in @(Get-VolatileCurrentClaimsOutsideSummary $readmeContent)) {
+                    Add-AuthorityError ("VOLATILE_CURRENT_CLAIM_OUTSIDE_SUMMARY source={0} kind={1} line={2}" -f
+                        $readmeSpec.Source, $claim.Kind, $claim.Line)
                 }
             }
 

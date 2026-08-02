@@ -27,7 +27,8 @@ function Assert-CurrentDocsAuthorityCase {
         [string] $Name,
         [string] $ReadmeContent,
         [bool] $ExpectSuccess,
-        [string] $ExpectedErrorPattern = ''
+        [string] $ExpectedErrorPattern = '',
+        [string] $RootReadmeContent = ''
     )
 
     $caseRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("nq-current-authority-{0}-{1}" -f $Name, [guid]::NewGuid().ToString('N'))
@@ -37,6 +38,10 @@ function Assert-CurrentDocsAuthorityCase {
         Write-Utf8File (Join-Path $currentDocsRoot 'STATUS.md') $script:statusFixture
         Write-Utf8File (Join-Path $currentDocsRoot 'ROADMAP.md') $script:roadmapFixture
         Write-Utf8File (Join-Path $currentDocsRoot 'README.md') $ReadmeContent
+        if ([string]::IsNullOrWhiteSpace($RootReadmeContent)) {
+            $RootReadmeContent = $ReadmeContent
+        }
+        Write-Utf8File (Join-Path $caseRoot 'README.md') $RootReadmeContent
 
         $shellPath = (Get-Process -Id $PID).Path
         $checkerOutput = @(& $shellPath -NoProfile -ExecutionPolicy Bypass `
@@ -44,6 +49,7 @@ function Assert-CurrentDocsAuthorityCase {
             -StatusPath (Join-Path $currentDocsRoot 'STATUS.md') `
             -RoadmapPath (Join-Path $currentDocsRoot 'ROADMAP.md') `
             -ReadmePath (Join-Path $currentDocsRoot 'README.md') `
+            -RootReadmePath (Join-Path $caseRoot 'README.md') `
             -CurrentDocsPath $currentDocsRoot 2>&1)
         $exitCode = $LASTEXITCODE
 
@@ -92,6 +98,7 @@ function Assert-CrossDocumentAuthorityCase {
         Write-Utf8File (Join-Path $currentDocsRoot 'STATUS.md') $StatusContent
         Write-Utf8File (Join-Path $currentDocsRoot 'ROADMAP.md') $RoadmapContent
         Write-Utf8File (Join-Path $currentDocsRoot 'README.md') $script:readmeFixture
+        Write-Utf8File (Join-Path $caseRoot 'README.md') $script:rootReadmeFixture
 
         $shellPath = (Get-Process -Id $PID).Path
         $checkerOutput = @(& $shellPath -NoProfile -ExecutionPolicy Bypass `
@@ -99,6 +106,7 @@ function Assert-CrossDocumentAuthorityCase {
             -StatusPath (Join-Path $currentDocsRoot 'STATUS.md') `
             -RoadmapPath (Join-Path $currentDocsRoot 'ROADMAP.md') `
             -ReadmePath (Join-Path $currentDocsRoot 'README.md') `
+            -RootReadmePath (Join-Path $caseRoot 'README.md') `
             -CurrentDocsPath $currentDocsRoot 2>&1)
         $exitCode = $LASTEXITCODE
 
@@ -760,6 +768,9 @@ $script:roadmapFixture = [System.IO.File]::ReadAllText(
 $script:readmeFixture = [System.IO.File]::ReadAllText(
     (Join-Path $repoRoot 'docs/current/README.md'),
     (New-Object System.Text.UTF8Encoding($false)))
+$script:rootReadmeFixture = [System.IO.File]::ReadAllText(
+    (Join-Path $repoRoot 'README.md'),
+    (New-Object System.Text.UTF8Encoding($false)))
 $currentAuthority = Read-GovernanceAuthorityBlock $script:statusFixture
 if ($null -eq $currentAuthority -or
         [string]::IsNullOrWhiteSpace([string]$currentAuthority.next_action)) {
@@ -863,6 +874,7 @@ function New-CurrentSummaryReadme {
         '# Current Docs',
         '',
         '<!-- nq-current-summary:start -->',
+        '- GateW: `IN PROGRESS / NOT FROZEN`.',
         ('- GateW current Attempt-{0}=`{1} / {2}`; production deployment=`{3}`.' -f
             $AttemptId, $AttemptState, $AuthorizationState, $DeploymentState),
         ('- {0} `{1}`; canonical.' -f $currentUniqueActionIs, $NextAction),
@@ -889,6 +901,75 @@ $canonicalReadme = New-CurrentSummaryReadme `
     $canonicalAttemptId $canonicalAttemptState $canonicalAuthorizationState `
     $canonicalDeploymentState $currentNextAction
 Assert-CurrentDocsAuthorityCase 'readme-consistent' $canonicalReadme $true
+
+$staleAttemptOutsideSummaryReadme = @(
+    $canonicalReadme,
+    '',
+    '## Stale prose',
+    '',
+    '- Attempt-12: `NOT_CREATED / AUTHORIZED`; production deployment=`NOT_STARTED`.'
+) -join "`n"
+Assert-CurrentDocsAuthorityCase `
+    'readme-attempt-outside-summary' $canonicalReadme $false `
+    'VOLATILE_CURRENT_CLAIM_OUTSIDE_SUMMARY.*kind=attempt_status' `
+    $staleAttemptOutsideSummaryReadme
+Assert-CurrentDocsAuthorityCase `
+    'current-readme-attempt-outside-summary' $staleAttemptOutsideSummaryReadme $false `
+    'VOLATILE_CURRENT_CLAIM_OUTSIDE_SUMMARY.*kind=attempt_status' `
+    $canonicalReadme
+
+$staleRuntimeOutsideSummaryReadme = @(
+    $canonicalReadme,
+    '',
+    '## Stale prose',
+    '',
+    '- Commit `1111111111111111111111111111111111111111` remains the server current runtime release.'
+) -join "`n"
+Assert-CurrentDocsAuthorityCase `
+    'readme-runtime-outside-summary' $canonicalReadme $false `
+    'VOLATILE_CURRENT_CLAIM_OUTSIDE_SUMMARY.*kind=runtime_release' `
+    $staleRuntimeOutsideSummaryReadme
+
+$historicalLinkReadme = @(
+    $canonicalReadme,
+    '',
+    '## Historical Evidence',
+    '',
+    '- [Attempt-09 evidence](evidence/NQ-GATEW-OKX-READONLY-SOAK-ATTEMPT-09-START.attempt-03.md)'
+) -join "`n"
+Assert-CurrentDocsAuthorityCase `
+    'readme-historical-attempt-link' $historicalLinkReadme $true
+
+$fencedExampleReadme = @(
+    $canonicalReadme,
+    '',
+    '```text',
+    '- Attempt-12: `NOT_CREATED / AUTHORIZED`; production deployment=`NOT_STARTED`.',
+    '- canonical next_action=NQ-GATEW-ATTEMPT-12-PREPARATION-AND-START',
+    '```'
+) -join "`n"
+Assert-CurrentDocsAuthorityCase 'readme-fenced-example' $fencedExampleReadme $true
+
+$activeGateOutsideSummaryReadme = @(
+    $canonicalReadme,
+    '',
+    '- GateV: `FROZEN / ACCEPTED / TAGGED`.'
+) -join "`n"
+Assert-CurrentDocsAuthorityCase `
+    'readme-active-gate-outside-summary' $canonicalReadme $false `
+    'VOLATILE_CURRENT_CLAIM_OUTSIDE_SUMMARY.*kind=active_gate_status' `
+    $activeGateOutsideSummaryReadme
+
+$duplicateSummaryReadme = @(
+    $canonicalReadme,
+    '',
+    '<!-- nq-current-summary:start -->',
+    '- GateW: `IN PROGRESS / NOT FROZEN`.',
+    '<!-- nq-current-summary:end -->'
+) -join "`n"
+Assert-CurrentDocsAuthorityCase `
+    'readme-summary-duplicate' $canonicalReadme $false `
+    'CURRENT_SUMMARY_INVALID.*expected=1 actual=2' $duplicateSummaryReadme
 
 $staleAttemptStatusReadme = New-CurrentSummaryReadme `
     $canonicalAttemptId 'NOT_CREATED' 'AUTHORIZED' 'NOT_STARTED' $currentNextAction
