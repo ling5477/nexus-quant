@@ -26,7 +26,8 @@ function Assert-CurrentDocsAuthorityCase {
     param(
         [string] $Name,
         [string] $ReadmeContent,
-        [bool] $ExpectSuccess
+        [bool] $ExpectSuccess,
+        [string] $ExpectedErrorPattern = ''
     )
 
     $caseRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("nq-current-authority-{0}-{1}" -f $Name, [guid]::NewGuid().ToString('N'))
@@ -42,6 +43,7 @@ function Assert-CurrentDocsAuthorityCase {
             -File $script:authorityChecker `
             -StatusPath (Join-Path $currentDocsRoot 'STATUS.md') `
             -RoadmapPath (Join-Path $currentDocsRoot 'ROADMAP.md') `
+            -ReadmePath (Join-Path $currentDocsRoot 'README.md') `
             -CurrentDocsPath $currentDocsRoot 2>&1)
         $exitCode = $LASTEXITCODE
 
@@ -52,7 +54,8 @@ function Assert-CurrentDocsAuthorityCase {
             throw "CURRENT_DOC_CASE_UNEXPECTED_PASS case=$Name output=$($checkerOutput -join ' | ')"
         }
         if (-not $ExpectSuccess -and
-            -not ($checkerOutput -match 'CURRENT_DOC_NEXT_ACTION_MISMATCH')) {
+            -not [string]::IsNullOrWhiteSpace($ExpectedErrorPattern) -and
+            -not ($checkerOutput -match $ExpectedErrorPattern)) {
             throw "CURRENT_DOC_CASE_MISSING_CONFLICT case=$Name output=$($checkerOutput -join ' | ')"
         }
 
@@ -78,7 +81,8 @@ function Assert-CrossDocumentAuthorityCase {
         [string] $Name,
         [string] $StatusContent,
         [string] $RoadmapContent,
-        [bool] $ExpectSuccess
+        [bool] $ExpectSuccess,
+        [string] $ExpectedErrorPattern = 'CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH'
     )
 
     $caseRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("nq-cross-doc-authority-{0}-{1}" -f $Name, [guid]::NewGuid().ToString('N'))
@@ -87,18 +91,14 @@ function Assert-CrossDocumentAuthorityCase {
     try {
         Write-Utf8File (Join-Path $currentDocsRoot 'STATUS.md') $StatusContent
         Write-Utf8File (Join-Path $currentDocsRoot 'ROADMAP.md') $RoadmapContent
-        $readmeContent = @(
-            '# Current Docs',
-            '',
-            'This test fixture does not duplicate the current next action.'
-        ) -join "`n"
-        Write-Utf8File (Join-Path $currentDocsRoot 'README.md') $readmeContent
+        Write-Utf8File (Join-Path $currentDocsRoot 'README.md') $script:readmeFixture
 
         $shellPath = (Get-Process -Id $PID).Path
         $checkerOutput = @(& $shellPath -NoProfile -ExecutionPolicy Bypass `
             -File $script:authorityChecker `
             -StatusPath (Join-Path $currentDocsRoot 'STATUS.md') `
             -RoadmapPath (Join-Path $currentDocsRoot 'ROADMAP.md') `
+            -ReadmePath (Join-Path $currentDocsRoot 'README.md') `
             -CurrentDocsPath $currentDocsRoot 2>&1)
         $exitCode = $LASTEXITCODE
 
@@ -109,7 +109,7 @@ function Assert-CrossDocumentAuthorityCase {
             throw "CROSS_DOCUMENT_CASE_UNEXPECTED_PASS case=$Name output=$($checkerOutput -join ' | ')"
         }
         if (-not $ExpectSuccess -and
-            -not ($checkerOutput -match 'CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH')) {
+            -not ($checkerOutput -match $ExpectedErrorPattern)) {
             throw "CROSS_DOCUMENT_CASE_MISSING_CONFLICT case=$Name output=$($checkerOutput -join ' | ')"
         }
 
@@ -757,6 +757,9 @@ $script:statusFixture = [System.IO.File]::ReadAllText(
 $script:roadmapFixture = [System.IO.File]::ReadAllText(
     (Join-Path $repoRoot 'docs/current/ROADMAP.md'),
     (New-Object System.Text.UTF8Encoding($false)))
+$script:readmeFixture = [System.IO.File]::ReadAllText(
+    (Join-Path $repoRoot 'docs/current/README.md'),
+    (New-Object System.Text.UTF8Encoding($false)))
 $currentAuthority = Read-GovernanceAuthorityBlock $script:statusFixture
 if ($null -eq $currentAuthority -or
         [string]::IsNullOrWhiteSpace([string]$currentAuthority.next_action)) {
@@ -828,7 +831,8 @@ $nextActionMismatchRoadmap = $script:roadmapFixture.Replace(
     $currentNextAction,
     'NQ-GATEW-ATTEMPT-10-168H-ACCEPTANCE')
 Assert-CrossDocumentAuthorityCase `
-    'next-action-mismatch' $script:statusFixture $nextActionMismatchRoadmap $false
+    'next-action-mismatch' $script:statusFixture $nextActionMismatchRoadmap $false `
+    'CURRENT_NEXT_ACTION_CONFLICT'
 
 $missingAttemptRoadmap = $script:roadmapFixture.Replace(
     $canonicalRoadmapAttemptClause,
@@ -844,52 +848,85 @@ Assert-CrossDocumentAuthorityCase `
     'unknown-authorization-token' $script:statusFixture $unknownAuthorizationRoadmap $false
 
 $currentUniqueAllowedActionIs = [regex]::Unescape('\u5F53\u524D\u552F\u4E00\u5141\u8BB8\u52A8\u4F5C\u662F')
-$canonicalReadme = @(
-    '# Current Docs',
-    '',
-    ('- {0} `{1}`; canonical.' -f
-        $currentUniqueAllowedActionIs, $currentNextAction)
-) -join "`n"
+$currentUniqueActionIs = [regex]::Unescape('\u5F53\u524D\u552F\u4E00\u52A8\u4F5C\u662F')
+function New-CurrentSummaryReadme {
+    param(
+        [int] $AttemptId,
+        [string] $AttemptState,
+        [string] $AuthorizationState,
+        [string] $DeploymentState,
+        [string] $NextAction,
+        [bool] $IncludeHistoricalAttempt = $false
+    )
+
+    $lines = @(
+        '# Current Docs',
+        '',
+        '<!-- nq-current-summary:start -->',
+        ('- GateW current Attempt-{0}=`{1} / {2}`; production deployment=`{3}`.' -f
+            $AttemptId, $AttemptState, $AuthorizationState, $DeploymentState),
+        ('- {0} `{1}`; canonical.' -f $currentUniqueActionIs, $NextAction),
+        '<!-- nq-current-summary:end -->'
+    )
+    if ($IncludeHistoricalAttempt) {
+        $lines += @(
+            '',
+            '## Historical Evidence',
+            '',
+            ('Attempt-09 is `REJECTED`; historical action `{0}` is not current.' -f
+                $canonicalAttempt09Acceptance),
+            '',
+            '```text',
+            ('- {0} `{1}`; historical code example.' -f
+                $currentUniqueAllowedActionIs, $canonicalAttempt09Acceptance),
+            '```'
+        )
+    }
+    return $lines -join "`n"
+}
+
+$canonicalReadme = New-CurrentSummaryReadme `
+    $canonicalAttemptId $canonicalAttemptState $canonicalAuthorizationState `
+    $canonicalDeploymentState $currentNextAction
 Assert-CurrentDocsAuthorityCase 'readme-consistent' $canonicalReadme $true
 
-$staleSecurityReviewReadme = @(
-    '# Current Docs',
-    '',
-    ('- {0} `{1}`; stale.' -f $currentUniqueAllowedActionIs, $remediationSecurityReview)
-) -join "`n"
-Assert-CurrentDocsAuthorityCase 'readme-stale-security-review' $staleSecurityReviewReadme $false
+$staleAttemptStatusReadme = New-CurrentSummaryReadme `
+    $canonicalAttemptId 'NOT_CREATED' 'AUTHORIZED' 'NOT_STARTED' $currentNextAction
+Assert-CurrentDocsAuthorityCase `
+    'readme-attempt-status-conflict' $staleAttemptStatusReadme $false `
+    'CURRENT_ATTEMPT_STATUS_CONFLICT'
 
-$oldAcceptanceReadme = @(
-    '# Current Docs',
-    '',
-    ('- {0} `{1}`; stale.' -f $currentUniqueAllowedActionIs, $canonicalAttempt09Acceptance)
-) -join "`n"
-Assert-CurrentDocsAuthorityCase 'readme-old-acceptance' $oldAcceptanceReadme $false
+$staleSecurityReviewReadme = New-CurrentSummaryReadme `
+    $canonicalAttemptId $canonicalAttemptState $canonicalAuthorizationState `
+    $canonicalDeploymentState $remediationSecurityReview
+Assert-CurrentDocsAuthorityCase `
+    'readme-stale-security-review' $staleSecurityReviewReadme $false `
+    'CURRENT_NEXT_ACTION_CONFLICT'
 
-$lowercaseReadme = @(
-    '# Current Docs',
-    '',
-    ('- {0} `{1}`; case error.' -f
-        $currentUniqueAllowedActionIs, $currentNextAction.ToLowerInvariant())
-) -join "`n"
-Assert-CurrentDocsAuthorityCase 'readme-action-case-error' $lowercaseReadme $false
+$oldAcceptanceReadme = New-CurrentSummaryReadme `
+    $canonicalAttemptId $canonicalAttemptState $canonicalAuthorizationState `
+    $canonicalDeploymentState $canonicalAttempt09Acceptance
+Assert-CurrentDocsAuthorityCase `
+    'readme-old-acceptance' $oldAcceptanceReadme $false `
+    'CURRENT_NEXT_ACTION_CONFLICT'
 
-$attempt10Readme = @(
-    '# Current Docs',
-    '',
-    ('- {0} `NQ-GATEW-ATTEMPT-10-START`; forbidden attempt.' -f $currentUniqueAllowedActionIs)
-) -join "`n"
-Assert-CurrentDocsAuthorityCase 'readme-attempt-10' $attempt10Readme $false
+$lowercaseReadme = New-CurrentSummaryReadme `
+    $canonicalAttemptId $canonicalAttemptState $canonicalAuthorizationState `
+    $canonicalDeploymentState $currentNextAction.ToLowerInvariant()
+Assert-CurrentDocsAuthorityCase `
+    'readme-action-case-error' $lowercaseReadme $false `
+    'CURRENT_NEXT_ACTION_CONFLICT'
 
-$historicalReadme = @(
-    '# Current Docs',
-    '',
-    ('Historical action `{0}`; this is not a current declaration.' -f $canonicalAttempt09Acceptance),
-    '',
-    '```text',
-    ('- {0} `{1}`; historical code example.' -f $currentUniqueAllowedActionIs, $canonicalAttempt09Acceptance),
-    '```'
-) -join "`n"
+$attempt10Readme = New-CurrentSummaryReadme `
+    $canonicalAttemptId $canonicalAttemptState $canonicalAuthorizationState `
+    $canonicalDeploymentState 'NQ-GATEW-ATTEMPT-10-START'
+Assert-CurrentDocsAuthorityCase `
+    'readme-attempt-10' $attempt10Readme $false `
+    'CURRENT_NEXT_ACTION_CONFLICT'
+
+$historicalReadme = New-CurrentSummaryReadme `
+    $canonicalAttemptId $canonicalAttemptState $canonicalAuthorizationState `
+    $canonicalDeploymentState $currentNextAction $true
 Assert-CurrentDocsAuthorityCase 'readme-historical-and-code' $historicalReadme $true
 
 $missingDeclarationReadme = @(
@@ -897,6 +934,8 @@ $missingDeclarationReadme = @(
     '',
     'This index references STATUS and does not duplicate the current action.'
 ) -join "`n"
-Assert-CurrentDocsAuthorityCase 'readme-declaration-missing' $missingDeclarationReadme $true
+Assert-CurrentDocsAuthorityCase `
+    'readme-declaration-missing' $missingDeclarationReadme $false `
+    'CURRENT_SUMMARY_INVALID'
 
 Write-Output 'PASS / CURRENT_AUTHORITY_NEXT_ACTION_REGRESSION'

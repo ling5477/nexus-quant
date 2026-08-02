@@ -99,6 +99,11 @@ function Write-AuthorityFixture {
         'ACCEPTED|CI_GREEN' { 'ACCEPTED / CI GREEN' }
         default { $Status }
     }
+    if ($Status -ceq 'RUNNING|PENDING_168H') {
+        if (-not $PSBoundParameters.ContainsKey('AttemptState')) { $AttemptState = 'RUNNING' }
+        if (-not $PSBoundParameters.ContainsKey('AuthorizationState')) { $AuthorizationState = 'PENDING_168H' }
+        if (-not $PSBoundParameters.ContainsKey('DeploymentState')) { $DeploymentState = 'STARTED' }
+    }
     $content = @"
 # Fixture Status
 <!-- nq-current-authority:start
@@ -152,6 +157,19 @@ nq-current-authority:end -->
         ('- {0} `{1}`; fixture.' -f $currentUniqueGovernanceActionIs,$Action)
     ) -join "`n"
     Write-Utf8File (Join-Path $Root 'docs/current/ROADMAP.md') $roadmapContent
+
+    $currentUniqueActionIs = [regex]::Unescape(
+        '\u5F53\u524D\u552F\u4E00\u52A8\u4F5C\u662F')
+    $readmeContent = @(
+        '# Current Docs',
+        '',
+        '<!-- nq-current-summary:start -->',
+        ('- Attempt-{0}=`{1} / {2}`; production deployment=`{3}`.' -f
+            $attemptId,$AttemptState,$AuthorizationState,$DeploymentState),
+        ('- {0} `{1}`; fixture.' -f $currentUniqueActionIs,$Action),
+        '<!-- nq-current-summary:end -->'
+    ) -join "`n"
+    Write-Utf8File (Join-Path $Root 'docs/current/README.md') $readmeContent
 }
 
 try {

@@ -9,6 +9,7 @@ param(
     [string] $StatusPath = 'docs/current/STATUS.md',
     [string] $PlanPath = 'docs/current/GATEV_PLAN.md',
     [string] $RoadmapPath = 'docs/current/ROADMAP.md',
+    [string] $ReadmePath = 'docs/current/README.md',
     [string] $CurrentDocsPath = 'docs/current',
     [ValidateSet('NONE', 'ARCHIVE_FREEZE', 'RELEASE')]
     [string] $ReadinessMode = 'NONE'
@@ -110,6 +111,92 @@ function Read-RoadmapNextAction {
         IsValid = $true
         Reason = ''
         Value = $matches[0].Groups['action'].Value
+    }
+}
+
+function Read-CurrentSummaryBlock {
+    param([string] $Content)
+
+    $pattern = '(?s)<!--\s*nq-current-summary:start\s*(?<body>.*?)\s*nq-current-summary:end\s*-->'
+    $matches = [regex]::Matches($Content, $pattern)
+    if ($matches.Count -ne 1) {
+        return [pscustomobject]@{
+            IsValid = $false
+            Reason = "field=current_summary expected=1 actual=$($matches.Count)"
+            Body = ''
+        }
+    }
+    return [pscustomobject]@{
+        IsValid = $true
+        Reason = ''
+        Body = $matches[0].Groups['body'].Value
+    }
+}
+
+function Read-CurrentSummaryNextAction {
+    param([string] $Content)
+
+    $pattern = '(?im)^\s*-\s*\u5F53\u524D\u552F\u4E00(?:\u4E0B\u4E00)?\u52A8\u4F5C\u662F\s*`(?<action>[^`\r\n]+)`'
+    $matches = [regex]::Matches($Content, $pattern)
+    if ($matches.Count -ne 1) {
+        return [pscustomobject]@{
+            IsValid = $false
+            Reason = "field=next_action expected=1 actual=$($matches.Count)"
+            Value = ''
+        }
+    }
+    return [pscustomobject]@{
+        IsValid = $true
+        Reason = ''
+        Value = $matches[0].Groups['action'].Value
+    }
+}
+
+function Read-MachineCurrentAttemptAuthority {
+    param([hashtable] $Authority)
+
+    $workBatchMatch = [regex]::Match(
+        $Authority.work_batch,
+        '(?-i:^Gate[A-Z0-9]+(?:-[A-Z0-9_]+)*-ATTEMPT-(?<attemptId>[1-9][0-9]*)$)'
+    )
+    if (-not $workBatchMatch.Success) {
+        return [pscustomobject]@{
+            IsApplicable = $false
+            IsValid = $true
+            Reason = ''
+        }
+    }
+
+    $statusTokens = @($Authority.work_batch_status -split '\|')
+    if ($statusTokens.Count -ne 2) {
+        return [pscustomobject]@{
+            IsApplicable = $false
+            IsValid = $true
+            Reason = ''
+        }
+    }
+
+    $allowedAttemptStates = @('NOT_CREATED', 'CREATED', 'RUNNING', 'FAILED', 'STOPPED', 'ACCEPTED')
+    $allowedAuthorizationStates = @(
+        'AUTHORIZED', 'NOT_AUTHORIZED', 'PENDING_168H', 'FAILED', 'STOPPED',
+        'ACCEPTED', 'COMPLETED_168H'
+    )
+    if ($allowedAttemptStates -cnotcontains $statusTokens[0] -or
+        $allowedAuthorizationStates -cnotcontains $statusTokens[1]) {
+        return [pscustomobject]@{
+            IsApplicable = $false
+            IsValid = $true
+            Reason = ''
+        }
+    }
+
+    return [pscustomobject]@{
+        IsApplicable = $true
+        IsValid = $true
+        Reason = ''
+        AttemptId = [int]$workBatchMatch.Groups['attemptId'].Value
+        AttemptState = $statusTokens[0]
+        AuthorizationState = $statusTokens[1]
     }
 }
 
@@ -288,6 +375,50 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
             }
 
             $statusBody = [regex]::Replace($statusContent, '(?s)<!--\s*nq-current-authority:start.*?nq-current-authority:end\s*-->', '')
+            $machineAttemptAuthority = Read-MachineCurrentAttemptAuthority $authority
+            if ($machineAttemptAuthority.IsApplicable -and -not $machineAttemptAuthority.IsValid) {
+                Add-AuthorityError "CURRENT_ATTEMPT_STATUS_CONFLICT source=STATUS_MACHINE $($machineAttemptAuthority.Reason)"
+            }
+
+            $resolvedReadme = Resolve-RepoPath $ReadmePath
+            if (-not (Test-Path -LiteralPath $resolvedReadme -PathType Leaf)) {
+                Add-AuthorityError "CURRENT_SUMMARY_INVALID source=README field=file path=$ReadmePath"
+            } else {
+                $readmeContent = Read-Utf8File $resolvedReadme
+                $currentSummary = Read-CurrentSummaryBlock $readmeContent
+                if (-not $currentSummary.IsValid) {
+                    Add-AuthorityError "CURRENT_SUMMARY_INVALID source=README $($currentSummary.Reason)"
+                } else {
+                    $summaryNextAction = Read-CurrentSummaryNextAction $currentSummary.Body
+                    if (-not $summaryNextAction.IsValid) {
+                        Add-AuthorityError "CURRENT_SUMMARY_INVALID source=README $($summaryNextAction.Reason)"
+                    } elseif (-not [string]::Equals(
+                            $authority.next_action,
+                            $summaryNextAction.Value,
+                            [System.StringComparison]::Ordinal)) {
+                        Add-AuthorityError "CURRENT_NEXT_ACTION_CONFLICT source=README status=$($authority.next_action) readme=$($summaryNextAction.Value)"
+                    }
+
+                    if ($machineAttemptAuthority.IsApplicable -and $machineAttemptAuthority.IsValid) {
+                        $readmeAttemptAuthority = Read-AttemptDeploymentAuthority `
+                            $currentSummary.Body 'README' $machineAttemptAuthority.AttemptId
+                        if (-not $readmeAttemptAuthority.IsValid) {
+                            Add-AuthorityError "CURRENT_ATTEMPT_STATUS_CONFLICT source=README $($readmeAttemptAuthority.Reason)"
+                        } else {
+                            foreach ($field in @('AttemptId', 'AttemptState', 'AuthorizationState')) {
+                                if (-not [string]::Equals(
+                                        [string]$machineAttemptAuthority.$field,
+                                        [string]$readmeAttemptAuthority.$field,
+                                        [System.StringComparison]::Ordinal)) {
+                                    Add-AuthorityError ("CURRENT_ATTEMPT_STATUS_CONFLICT source=README field={0} status={1} readme={2}" -f
+                                        $field, $machineAttemptAuthority.$field, $readmeAttemptAuthority.$field)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             $resolvedRoadmap = Resolve-RepoPath $RoadmapPath
             if (-not (Test-Path -LiteralPath $resolvedRoadmap -PathType Leaf)) {
                 Add-AuthorityError "CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH source=ROADMAP field=file path=$RoadmapPath"
@@ -323,6 +454,24 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
                     }
                 }
 
+                if ($machineAttemptAuthority.IsApplicable -and $machineAttemptAuthority.IsValid) {
+                    foreach ($source in @(
+                        @{ Name = 'STATUS'; Value = $statusAttemptAuthority },
+                        @{ Name = 'ROADMAP'; Value = $roadmapAttemptAuthority }
+                    )) {
+                        if (-not $source.Value.IsValid) { continue }
+                        foreach ($field in @('AttemptId', 'AttemptState', 'AuthorizationState')) {
+                            if (-not [string]::Equals(
+                                    [string]$machineAttemptAuthority.$field,
+                                    [string]$source.Value.$field,
+                                    [System.StringComparison]::Ordinal)) {
+                                Add-AuthorityError ("CURRENT_ATTEMPT_STATUS_CONFLICT source={0} field={1} machine={2} document={3}" -f
+                                    $source.Name, $field, $machineAttemptAuthority.$field, $source.Value.$field)
+                            }
+                        }
+                    }
+                }
+
                 $roadmapNextAction = Read-RoadmapNextAction $roadmapContent
                 if (-not $roadmapNextAction.IsValid) {
                     Add-AuthorityError "CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH source=ROADMAP $($roadmapNextAction.Reason)"
@@ -331,7 +480,7 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
                         $authority.next_action,
                         $roadmapNextAction.Value,
                         [System.StringComparison]::Ordinal)) {
-                    Add-AuthorityError "CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH field=next_action status=$($authority.next_action) roadmap=$($roadmapNextAction.Value)"
+                    Add-AuthorityError "CURRENT_NEXT_ACTION_CONFLICT source=ROADMAP status=$($authority.next_action) roadmap=$($roadmapNextAction.Value)"
                 }
             }
             if (-not (Test-StatusPhrase $statusBody $authority.last_frozen_gate 'FROZEN\s*/\s*ACCEPTED\s*/\s*TAGGED')) {
