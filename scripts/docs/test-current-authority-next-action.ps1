@@ -929,14 +929,12 @@ if ($null -eq $currentAuthority -or
     throw 'CURRENT_AUTHORITY_FIXTURE_INVALID'
 }
 $currentNextAction = [string]$currentAuthority.next_action
-$currentAttemptActionMatch = [regex]::Match(
-    $currentNextAction,
-    '(?-i:^NQ-GATEW-ATTEMPT-(?<attemptId>[1-9][0-9]*)-)'
-)
-if (-not $currentAttemptActionMatch.Success) {
-    throw 'CURRENT_ATTEMPT_ACTION_FIXTURE_INVALID'
+$currentMachineAttemptAuthority = Read-MachineCurrentAttemptAuthority $currentAuthority
+if (-not $currentMachineAttemptAuthority.IsApplicable -or
+    -not $currentMachineAttemptAuthority.IsValid) {
+    throw "CURRENT_MACHINE_ATTEMPT_FIXTURE_INVALID reason=$($currentMachineAttemptAuthority.Reason)"
 }
-$currentAttemptId = [int]$currentAttemptActionMatch.Groups['attemptId'].Value
+$currentAttemptId = [int]$currentMachineAttemptAuthority.AttemptId
 
 $canonicalRoadmapAttemptPattern = '(?m)^\s*-\s*[^\r\n]*?(?<clause>Attempt-(?<attemptId>[1-9][0-9]*)=`(?<attemptState>[A-Z_]+) / (?<authorizationState>[A-Z0-9_]+)`; production deployment=`(?<deploymentState>[A-Z_]+)`)[^\r\n]*\r?$'
 $canonicalRoadmapAttemptMatches = @([regex]::Matches(

@@ -525,12 +525,16 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
             } else {
                 $roadmapContent = Read-Utf8File $resolvedRoadmap
                 $expectedAttemptId = $null
-                $attemptActionMatch = [regex]::Match(
-                    $authority.next_action,
-                    '(?-i:^NQ-GATEW-ATTEMPT-(?<attemptId>[1-9][0-9]*)-)'
-                )
-                if ($attemptActionMatch.Success) {
-                    $expectedAttemptId = [int]$attemptActionMatch.Groups['attemptId'].Value
+                if ($machineAttemptAuthority.IsApplicable -and $machineAttemptAuthority.IsValid) {
+                    $expectedAttemptId = [int]$machineAttemptAuthority.AttemptId
+                } else {
+                    $attemptActionMatch = [regex]::Match(
+                        $authority.next_action,
+                        '(?-i:^NQ-GATEW-ATTEMPT-(?<attemptId>[1-9][0-9]*)-)'
+                    )
+                    if ($attemptActionMatch.Success) {
+                        $expectedAttemptId = [int]$attemptActionMatch.Groups['attemptId'].Value
+                    }
                 }
                 $statusAttemptAuthority = Read-AttemptDeploymentAuthority `
                     $statusBody 'STATUS' $expectedAttemptId

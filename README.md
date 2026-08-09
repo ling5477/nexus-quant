@@ -7,7 +7,7 @@ NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/
 <!-- nq-current-summary:start -->
 - GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）。
 - GateW 当前 Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE-COMMIT-AND-PUSH`；exact transition 以 [STATUS.md](docs/current/STATUS.md) 为准。
+- 当前唯一动作是 `NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION`；GateW 仍未冻结，exact transition 以 [STATUS.md](docs/current/STATUS.md) 为准。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
 

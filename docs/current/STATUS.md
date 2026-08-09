@@ -14,10 +14,10 @@ accepted_batch_implementation_commit=e8c334886ae6614133b0bf3f0083bc1893a11e01
 accepted_batch_acceptance_head=e8c334886ae6614133b0bf3f0083bc1893a11e01
 accepted_batch_ci_run=30709995836
 work_batch=GateW-ATTEMPT-13-168H-ACCEPTANCE
-work_batch_status=ACCEPTED|READY_TO_COMMIT
-work_batch_commit=UNCOMMITTED
-work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE-COMMIT-AND-PUSH
+work_batch_status=ACCEPTED|CI_GREEN|FREEZE_READY
+work_batch_commit=20cf7970dfb414868da3e42dddaefc5965246570
+work_batch_ci_run=31295184056
+next_action=NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION
 attempt=Attempt-13
 attempt_status=COMPLETED|ACCEPTED
 production_soak=COMPLETED
@@ -63,8 +63,8 @@ nq-current-authority:end -->
 - GateW-ATTEMPT-11-OPERATIONAL-SCOPE-REMEDIATION：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Commit `eb51fe5b3ac50215fec404e76edd113439ff5ce1` 冻结正式 worker 的四项 control-owned operational switches，并只从 root-owned `gatew-precreate-prerequisite-v2` 读取 owner/account/currencies；exact-head CI run `30703645365` 为 `completed / success / 10 jobs / bad=0`。Attempt-10/11 与历史 RunId 均未修改。
 - GateW-ATTEMPT-12-PREPARATION-AND-START：`BLOCKED / STARTUP FAILED / TERMINALIZED / ROLLED BACK`（阻断 / 启动失败 / 已终态化 / 已回滚）。Release/source `d45fa921eccfe56e4c107037818749b971e28317` 的 exact-head CI run `30705301218` 为 `completed / success / 10 jobs / bad=0`；唯一 RunId `gatew-soak-20260801T164322Z-79ed8c0b`、worker PID `470754` 在首 heartbeat 前因 `prerequisite readback schema is invalid` 退出，lifecycle=`FAILURE_STOPPED`、exit=`exited/2`、samples/failures=`0/0`，acceptance clock 未启动。Current/unit links 已回滚到 `c16f27c3...`，Attempt-12 与 RunId 禁止复用。
 - GateW-ATTEMPT-12-PREREQUISITE-SCHEMA-REMEDIATION：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Commit `e8c334886ae6614133b0bf3f0083bc1893a11e01` 将 worker 的 exact schema 校验与 Java `PrerequisiteMain` 的 23-field sanitized contract 对齐；exact-head CI run `30709995836` 为 `completed / success / 10 jobs / bad=0`。修复只发生在 credential/network/OKX 调用前的本地 readback contract，不扩大 endpoint、权限或运行范围。
-- GateW-ATTEMPT-13-168H-ACCEPTANCE：`ACCEPTED / READY TO COMMIT`（已接受 / 可进入提交）；Attempt-13=`COMPLETED / ACCEPTED`；production deployment=`STOPPED`；production soak=`COMPLETED`。唯一 RunId=`gatew-soak-20260801T180544Z-140bbcd1` 已完成 168h read-only acceptance；656 条样本从 sequence 1 到 656 连续唯一，final sample=`2026-08-08T18:13:34.4112272Z`，observed duration=`604820.4973147s`；hash-chain=`PASS / HASH_CHAIN_VERIFIED`，forbidden/fallback/raw/secret=`0/0/0/0`。Canonical acceptance/finalizer/terminal 均通过，worker/fail-close=`inactive/dead`、MainPID/residual=`0/0`、NRestarts=`0`；LIVE=`DISABLED`，kill switch=`ENGAGED`。Acceptance commit 与 exact-head CI 尚为 `NOT_RUN`。
-- GateW-FREEZE：`NOT STARTED`（未开始）。GateW 尚未 archive、freeze 或 tag；Attempt-09 已拒绝，Attempt-10/11/12 均失败并已终态化，Attempt-13 已 accepted/sealed，但必须先完成 acceptance commit/push 与 exact-head CI，再按 schema `1.4.0` 进入 `FREEZE_READY`；不得提前进入 freeze/archive/tag。
+- GateW-ATTEMPT-13-168H-ACCEPTANCE：`ACCEPTED / CI GREEN / FREEZE READY`（已接受 / CI 已通过 / 冻结准备就绪）；Attempt-13=`COMPLETED / ACCEPTED`；production deployment=`STOPPED`；production soak=`COMPLETED`。唯一 RunId=`gatew-soak-20260801T180544Z-140bbcd1` 已完成 168h read-only acceptance；656 条样本从 sequence 1 到 656 连续唯一，final sample=`2026-08-08T18:13:34.4112272Z`，observed duration=`604820.4973147s`；hash-chain=`PASS / HASH_CHAIN_VERIFIED`，forbidden/fallback/raw/secret=`0/0/0/0`。Canonical seal 后 worker/fail-close=`inactive/dead`、MainPID/residual=`0/0`、NRestarts=`0`；LIVE=`DISABLED`，kill switch=`ENGAGED`。Acceptance/parser-fix commit=`20cf7970dfb414868da3e42dddaefc5965246570`，exact-head `NQ CI Baseline` run `31295184056` 为 `completed / success / 10 jobs / bad=0`。
+- GateW-FREEZE：`NOT STARTED`（未开始）。GateW 尚未 archive、freeze 或 tag；Attempt-09 已拒绝，Attempt-10/11/12 均失败并已终态化，Attempt-13 已 accepted/sealed 且 acceptance exact-head CI 已通过。Schema `1.4.0` 当前为 `FREEZE_READY`，只授权进入独立 freeze closeout implementation，不表示 GateW 已冻结、已归档或已打 tag。
 - GateW-3 dry-run order preview：只包含 OKX Spot、BUY/SELL、LIMIT、internal application、local persisted facts、read-only diagnostic；minimum notional、fee、远端 permission 与 runtime balance/risk 继续保持显式 UNKNOWN / NOT_EVALUATED，`executionReadiness=BLOCKED`，不得推导交易授权。
 - GateW-3 read-only reconciliation：只包含 OKX Spot、最多 3 个 allowlisted symbols、1 page/100 records/24h typed private `Read` snapshot、bounded local SELECT 与 pure comparator；默认不装配，无 real smoke/credential/network/repair/persistence/scheduler，`executionReadiness=BLOCKED`。CI acceptance 只接受该 side-effect-free contract，不证明真实 permission 或账户健康。
 - GateW-3 risk preflight：只消费 immutable preview/reconciliation result 与显式 local metadata snapshots；不调用 `PreTradeRiskService`/registry/stateful rules，不构造 `PlaceOrderCommand`，无 DB/network/write。minimum notional、fee、remote permission 保持 UNKNOWN，stateful risk/balance/position 等保持 NOT_EVALUATED，`executionReadiness=BLOCKED`、`tradingAuthorized=false`。
@@ -98,4 +98,4 @@ updated_commit=530ce4e2bde416aa61944262cbfbadca556656cb
 
 ## 4. 下一允许动作
 
-治理 authority 中唯一下一动作精确为 `NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE-COMMIT-AND-PUSH`。只允许精确暂存本任务 evidence/current docs、提交并 push；随后等待该 exact head 的 `NQ CI Baseline`。CI 未达到 `completed / success / 10 jobs / bad=0` 前不得写为 `FREEZE_READY`，不得进入 freeze/archive/tag。该边界继续禁止重放 `start`、创建 Attempt-14、修改/复用历史 RunId、开启 LIVE、下单、撤单、转账或提现。
+治理 authority 中唯一下一动作精确为 `NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION`。该动作必须在独立任务中按 archive manifest、authority 与 links hard gates 实施；当前不得把 GateW 写成 `FROZEN`/`TAGGED`，不得创建或推送 freeze tag。该边界继续禁止重放 `start`、创建 Attempt-14、修改/复用历史 RunId、开启 LIVE、下单、撤单、转账或提现。

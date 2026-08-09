@@ -71,9 +71,9 @@ NQ-GATEW-ATTEMPT-13-PREPARATION-AND-START PASS / STARTUP COMPLETE
   ↓
 GateW-OKX-READONLY-SOAK-ATTEMPT-13 RUNNING / PENDING 168H
   ↓
-NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE ACCEPTED / READY TO COMMIT / SOAK SEALED
+NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE ACCEPTED / CI GREEN / FREEZE READY / SOAK SEALED
 
-GateW-FREEZE NOT STARTED / FUTURE / NOT AUTHORIZED
+GateW-FREEZE NOT STARTED / NEXT AUTHORIZED IMPLEMENTATION
 ```
 
 ## 下一允许动作
@@ -106,9 +106,9 @@ GateW-FREEZE NOT STARTED / FUTURE / NOT AUTHORIZED
 - GateW Attempt-11 operational scope remediation：`ACCEPTED / CI GREEN`。Commit `eb51fe5b3ac50215fec404e76edd113439ff5ce1` 的 exact-head CI run `30703645365 / completed / success / 10 jobs / bad=0`；四项 operational switches 由 control 固定，owner/account/currencies 只从 root-owned descriptor v2 读取，legacy v1 仅能经 closed-schema installer 原子升级。生产访问、Attempt/RunId 创建与 OKX 调用均为 0。
 - GateW Attempt-12 preparation/start：`BLOCKED / STARTUP FAILED / TERMINALIZED / ROLLED BACK`。唯一 RunId `gatew-soak-20260801T164322Z-79ed8c0b` 的 worker PID `470754` 在首 heartbeat 前因旧 9-field/新 23-field sanitized readback schema 不一致而 `exited/2`；clock 未启动，current/unit links 已回滚，失败 Attempt/RunId 禁止复用。
 - GateW Attempt-12 prerequisite schema remediation：`ACCEPTED / CI GREEN`。Commit `e8c334886ae6614133b0bf3f0083bc1893a11e01` 的 exact-head CI run `30709995836 / completed / success / 10 jobs / bad=0`；仅对齐 worker 与 Java sanitized schema，未扩大生产或交易边界。
-- GateW Attempt-13 168h acceptance：`ACCEPTED / READY TO COMMIT / SOAK SEALED`；Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`。唯一 RunId=`gatew-soak-20260801T180544Z-140bbcd1`；release/source=`b103069d...`；656 条样本连续唯一，final sample 超过 planned time `20.4973147s`；hash-chain/security/credential/permission/DB/systemd continuity hard gates 均通过。Canonical seal 后 worker/fail-close=`inactive/dead`、MainPID/residual=`0/0`、NRestarts=`0`；LIVE=`DISABLED`，kill switch=`ENGAGED`。
-- GateW-FREEZE：`NOT_STARTED / FUTURE`；GateW 尚未 freeze、archive 或 tag。Attempt-09 已拒绝；Attempt-10/11/12 均为 `FAILED / STOPPED`；Attempt-13 已 accepted/sealed，但 acceptance commit 与 exact-head CI 尚未完成，当前不具备 `FREEZE_READY`。
-- 当前唯一治理动作是 `NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE-COMMIT-AND-PUSH`；只允许提交/push 本任务 evidence 与 current authority，并等待 exact-head CI。禁止创建 Attempt-14、重放 start、修改/复用历史 RunId、开启 LIVE/交易写侧或提前进入 freeze/archive/tag。
+- GateW Attempt-13 168h acceptance：`ACCEPTED / CI GREEN / FREEZE READY / SOAK SEALED`；Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`。唯一 RunId=`gatew-soak-20260801T180544Z-140bbcd1`；release/source=`b103069d...`；656 条样本连续唯一，final sample 超过 planned time `20.4973147s`；hash-chain/security/credential/permission/DB/systemd continuity hard gates 均通过。Canonical seal 后 worker/fail-close=`inactive/dead`、MainPID/residual=`0/0`、NRestarts=`0`；acceptance/parser-fix commit=`20cf7970dfb414868da3e42dddaefc5965246570`，exact-head CI run `31295184056 / completed / success / 10 jobs / bad=0`；LIVE=`DISABLED`，kill switch=`ENGAGED`。
+- GateW-FREEZE：`NOT_STARTED / NEXT AUTHORIZED IMPLEMENTATION`；GateW 尚未 freeze、archive 或 tag。Attempt-09 已拒绝；Attempt-10/11/12 均为 `FAILED / STOPPED`；Attempt-13 已 accepted/sealed，schema `1.4.0` 已达到 `FREEZE_READY`，但这只授权独立 freeze closeout task，不构成已冻结事实。
+- 当前唯一治理动作是 `NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION`；必须在独立任务中运行 archive manifest、authority 与 links hard gates。禁止创建 Attempt-14、重放 start、修改/复用历史 RunId、开启 LIVE/交易写侧或提前写入 frozen/tagged 事实。
 
 ## 路线边界
 

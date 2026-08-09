@@ -12681,3 +12681,20 @@ Environment：Windows PowerShell 控制端 + Linux systemd/PostgreSQL 生产端�
 Known limitation：transport bundle 未作为服务器期满重哈希输入；使用启动 evidence 的 bundle SHA-256，并由 installed immutable verifier 对同一 manifest/artifact closed set 复核。Credential `verification_status=PENDING` 是既有非 acceptance 字段；冻结 GateW contract 使用 `credential_status=ACTIVE` 与 persisted permission facts，本轮未修改。
 
 Blocking status：P0=0/P1=0/P2=1/P3=0；P2 是冻结 checker 没有独立 maximum-gap threshold，已按冻结 loop semantics 明确披露，不在验收任务临时增设 grace。Attempt-13 已 sealed；唯一下一动作是 acceptance commit/push 与 exact-head CI。
+
+## 2026-08-09 — GateW Attempt-13 acceptance parser fix / exact-head CI / freeze-ready sync
+
+| Command / evidence | Result | Scope / environment / warning |
+| --- | --- | --- |
+| parser baseline reproduction | PASS（缺陷已复现） | checker exit `0`，PS5.1 regression exit `1`：`readme-attempt-status-conflict` 意外 PASS |
+| `test-current-authority-next-action.ps1` | PASS | PowerShell 5.1 / 7；4 个正向 segment、9 个 malformed/cross-Attempt negatives；README/ROADMAP status conflict 均 fail-closed |
+| `test-governance-workflow-lifecycle.ps1` | PASS | PowerShell 5.1 / 7；Attempt-10 compatibility、Attempt-13 success/failure、freeze hard gate、task-evidence policy |
+| `test-gate-archive-manifest.ps1` | PASS | PowerShell 5.1 / 7；archive regression 与 task-evidence policy |
+| GateV archive compatibility | PASS | `ARCHIVE_MANIFEST_COMPLETE`；warnings=`0`，errors=`0` |
+| `check-doc-links.ps1 -Roots docs/current` | PASS | PowerShell 5.1 / 7；errors=`0`；1 个既有 GateJ historical ledger warning |
+| JSON / PowerShell AST / diff / scope | PASS | contract schema=`1.4.0` 未改；三个变更脚本 AST errors=`0`；backend/frontend/research/deploy/.github diff=`0` |
+| acceptance exact-head CI | PASS | commit=`20cf7970dfb414868da3e42dddaefc5965246570`；run=`31295184056`；`completed / success / 10 jobs / bad=0` |
+
+Environment：Windows PowerShell 5.1 / PowerShell 7 本地治理回归 + GitHub Actions `NQ CI Baseline`。Acceptance evidence 仅规范化一个 EOF 多余空行以通过 cached whitespace gate；RunId、samples、elapsed、maximum gap、PID/NRestarts、security counters、hash-chain 与 seal facts 均保持不变。Production/SSH/OKX/credential/生产 DB/systemd/worker/heartbeat/release/symlink operations=`0`。
+
+Blocking status：P0=0/P1=0/P2=1/P3=0；parser P1 已关闭。P2 仍为既有 maximum-gap threshold 限制；GateW=`IN_PROGRESS|NOT_FROZEN`，当前只达到 `FREEZE_READY`，authority-sync commit 的第二次 exact-head CI 在本文写入时为 `PENDING`，不提前描述为通过。

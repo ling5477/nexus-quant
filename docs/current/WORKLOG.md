@@ -18124,3 +18124,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - authority：Attempt-13=`COMPLETED|ACCEPTED`、production soak=`COMPLETED`；work batch=`GateW-ATTEMPT-13-168H-ACCEPTANCE / ACCEPTED|READY_TO_COMMIT`；commit/CI=`UNCOMMITTED/NOT_RUN`；GateW=`IN_PROGRESS|NOT_FROZEN`；LIVE=`DISABLED`；唯一下一动作=`NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE-COMMIT-AND-PUSH`。
 - findings：P0=0/P1=0/P2=1/P3=0。P2 为冻结 checker 无独立 max-gap threshold；transport bundle 期满不重哈希、credential `verification_status=PENDING` 均按既有合同边界透明记录，不改为未验证的正向事实。
 - boundary：未改治理合同/checker/代码/API/migration；未创建 Attempt-14；未 freeze/archive/tag；未开启 LIVE 或交易写侧。Acceptance commit/push 与 exact-head CI 尚未执行。
+
+## 2026-08-09 — GateW Attempt-13 machine-attempt parser fix and closeout
+
+- task：`NQ-GATEW-ATTEMPT-13-ACCEPTANCE-MACHINE-ATTEMPT-PARSER-FIX-AND-CLOSEOUT`；NQ-only、L 级 governance checker remediation / acceptance evidence preservation / permanent regression / acceptance commit / exact-head CI / authority sync。
+- root cause：旧 suffix-only parser 只识别末尾 `ATTEMPT-<id>`，使 `GateW-ATTEMPT-13-168H-ACCEPTANCE` 静默 `IsApplicable=false`，`readme-attempt-status-conflict` 因而意外 PASS；同时旧 parser 把 acceptance work-batch status 误作 Attempt runtime status。
+- implementation：parser 移入 shared governance lib；仅在显式 machine fields 或 legacy runtime status 下适用；唯一、大小写严格、完整 `ATTEMPT-<digits>` segment 与 `attempt/attempt_status` 精确绑定；malformed/duplicate/cross-Attempt 全部 fail-closed。Contract schema `1.4.0` 未修改。
+- validation：PS5.1/PS7 current-authority、lifecycle、archive/task-evidence regression 全部 PASS；GateV archive `warnings=0/errors=0`；docs links `errors=0`；JSON/AST/diff/scope PASS。`readme-attempt-status-conflict` 与 `roadmap-attempt-status-conflict` 均按预期 fail-closed。
+- commit/CI：acceptance/parser-fix commit=`20cf7970dfb414868da3e42dddaefc5965246570` 已 push `dev`；exact-head `NQ CI Baseline` run `31295184056` 为 `completed / success / 10 jobs / bad=0`。
+- authority：Attempt-13=`COMPLETED|ACCEPTED`、production soak=`COMPLETED`、work batch=`ACCEPTED|CI_GREEN|FREEZE_READY`；GateW=`IN_PROGRESS|NOT_FROZEN`；LIVE=`DISABLED`；kill switch=`ENGAGED`。
+- findings：P0=0/P1=0/P2=1/P3=0；P1 parser defect 已关闭。P2 为既有 maximum gap=`1797s` 且冻结合同无独立 threshold，本任务不补造阈值、不改写 production PASS。
+- boundary：production/SSH/OKX/credential/生产 DB/systemd/worker/heartbeat/release/symlink/Attempt/RunId mutation=`0`；未 freeze/archive/tag，未创建 Attempt-14，未开启 LIVE 或交易写侧。
+- next：提交并 push authority sync，等待第二次 exact-head CI；成功后唯一下一动作=`NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION`。
