@@ -2,7 +2,7 @@
 .SYNOPSIS
 Regresses strict manifest roles, links, and archive task evidence in a disposable repository.
 .NOTES
-The test does not access real archives, tags, remotes, or current authority.
+The test does not access real archives, remotes, or current authority. Release delegation uses only a disposable local tag.
 #>
 [CmdletBinding()]
 param()
@@ -18,6 +18,14 @@ $fixtureRoot = Join-Path $tempRoot 'fixture-repo'
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
 function Assert-Condition { param([bool]$Condition,[string]$Message); if (-not $Condition) { throw "ASSERTION_FAILED $Message" } }
+function Invoke-FixtureGit {
+    param([string[]]$Arguments)
+    $previous=$ErrorActionPreference; $ErrorActionPreference='Continue'
+    $output=& git -C $fixtureRoot @Arguments 2>&1
+    $exit=$LASTEXITCODE; $ErrorActionPreference=$previous
+    if ($exit -ne 0) { throw "FIXTURE_GIT_FAILED args=$($Arguments -join ' ') output=$($output -join ' | ')" }
+    return (($output | ForEach-Object { $_.ToString() }) -join "`n").Trim()
+}
 function Write-Utf8File {
     param([string]$Path,[string]$Content)
     [System.IO.Directory]::CreateDirectory((Split-Path -Parent $Path)) | Out-Null
@@ -129,6 +137,46 @@ try {
     Assert-Checker (Invoke-Checker 'gate-v') $true 'PASS / ARCHIVE_MANIFEST_COMPLETE' 'posttag-structure-positive'
     Assert-Checker (Invoke-Checker 'gate-w' @('-PreTag')) $true 'PASS / GATE_ARCHIVE_PRETAG_VALID' 'gatew-pretag-structure-positive'
     Assert-Checker (Invoke-Checker 'gate-w') $true 'PASS / ARCHIVE_MANIFEST_COMPLETE' 'gatew-posttag-structure-positive'
+
+    Invoke-FixtureGit @('init','-q') | Out-Null
+    Invoke-FixtureGit @('config','user.name','NQ Governance Fixture') | Out-Null
+    Invoke-FixtureGit @('config','user.email','nq-governance-fixture@example.invalid') | Out-Null
+    Invoke-FixtureGit @('add','.') | Out-Null
+    Invoke-FixtureGit @('commit','-q','-m','fixture') | Out-Null
+    $fixtureCommit = Invoke-FixtureGit @('rev-parse','HEAD')
+    Invoke-FixtureGit @('tag','-a','nq-gatew-freeze','-m','fixture GateW freeze') | Out-Null
+    $expectedCommitPath = Join-Path $fixtureRoot 'expected-release-commit.txt'
+    Write-Utf8File $expectedCommitPath $fixtureCommit
+    $delegatedReleaseChecker = @'
+[CmdletBinding()]
+param([string]$Gate,[string]$ExpectedTag,[string]$ExpectedCommit)
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+$requiredCommit = (Get-Content -Raw (Join-Path $repoRoot 'expected-release-commit.txt')).Trim()
+if ($Gate -cne 'gate-w' -or $ExpectedTag -cne 'nq-gatew-freeze' -or $ExpectedCommit -cne $requiredCommit) {
+    Write-Output 'BLOCKED / GATE_RELEASE_INVALID'
+    exit 1
+}
+Write-Output "RELEASE_CHECK gate=$Gate tag=$ExpectedTag commit=$ExpectedCommit errors=0"
+Write-Output 'PASS / GATE_RELEASE_VALID'
+exit 0
+'@
+    Write-Utf8File (Join-Path $scripts 'check-gate-release.ps1') $delegatedReleaseChecker
+    Assert-Checker `
+        (Invoke-Checker 'gate-w' @('-ExpectedTag','nq-gatew-freeze','-RequireRemoteTag','-RequireCi')) `
+        $true 'PASS / GATE_RELEASE_VALID' 'gatew-release-expected-commit-delegated'
+
+    Write-Utf8File $expectedCommitPath ('f' * 40)
+    Assert-Checker `
+        (Invoke-Checker 'gate-w' @('-ExpectedTag','nq-gatew-freeze','-RequireRemoteTag','-RequireCi')) `
+        $false 'DELEGATED_RELEASE_CHECK_FAILED' 'gatew-release-expected-commit-mismatch'
+    Write-Utf8File $expectedCommitPath $fixtureCommit
+    Assert-Checker `
+        (Invoke-Checker 'gate-w' @('-ExpectedTag','nq-gatex-freeze','-RequireRemoteTag','-RequireCi')) `
+        $false 'DELEGATED_RELEASE_CHECK_FAILED' 'gatew-release-illegal-tag'
+    Invoke-FixtureGit @('tag','-d','nq-gatew-freeze') | Out-Null
+    Assert-Checker `
+        (Invoke-Checker 'gate-w' @('-ExpectedTag','nq-gatew-freeze','-RequireRemoteTag','-RequireCi')) `
+        $false 'CANONICAL_TAG_PEELED_COMMIT_INVALID' 'gatew-release-missing-tag'
 
     $fixtureManifestPath = Join-Path $scripts 'gate-archive-manifest.json'
     $missingOverrideManifest = Copy-ManifestObject $manifest

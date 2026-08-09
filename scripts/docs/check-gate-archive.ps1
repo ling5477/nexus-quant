@@ -212,12 +212,26 @@ if (-not (Test-Path -LiteralPath $resolvedManifest -PathType Leaf)) {
 
 if ($errors.Count -eq 0 -and -not $PreTag -and ($RequireRemoteTag -or $RequireCi)) {
     # Compatibility orchestration delegates the complete release contract; archive code never reimplements partial tag/CI checks.
+    $canonicalTag = 'nq-{0}-freeze' -f $Gate.Replace('-', '')
+    $previous = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    $peeledOutput = & git -C $repoRoot rev-parse --verify "$canonicalTag^{}" 2>&1
+    $peeledExit = $LASTEXITCODE
+    $ErrorActionPreference = $previous
+    $peeledCommit = (($peeledOutput | ForEach-Object { $_.ToString() }) -join "`n").Trim()
+    if ($peeledExit -ne 0 -or $peeledCommit -notmatch '^[0-9a-f]{40}$') {
+        Add-ArchiveError 'GATE_RELEASE_INVALID' "CANONICAL_TAG_PEELED_COMMIT_INVALID tag=$canonicalTag"
+    }
+
     $releaseArguments = @('-Gate', $Gate)
     if ($ExpectedTag) { $releaseArguments += @('-ExpectedTag', $ExpectedTag) }
-    $releaseOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'check-gate-release.ps1') @releaseArguments 2>&1
-    $releaseExit = $LASTEXITCODE
-    $releaseOutput | Write-Output
-    if ($releaseExit -ne 0) { Add-ArchiveError 'GATE_RELEASE_INVALID' 'DELEGATED_RELEASE_CHECK_FAILED' }
+    if ($errors.Count -eq 0) {
+        $releaseArguments += @('-ExpectedCommit', $peeledCommit)
+        $releaseOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'check-gate-release.ps1') @releaseArguments 2>&1
+        $releaseExit = $LASTEXITCODE
+        $releaseOutput | Write-Output
+        if ($releaseExit -ne 0) { Add-ArchiveError 'GATE_RELEASE_INVALID' 'DELEGATED_RELEASE_CHECK_FAILED' }
+    }
 }
 
 Write-Output ("ARCHIVE_CHECK gate={0} warnings={1} errors={2}" -f $Gate, $warnings.Count, $errors.Count)

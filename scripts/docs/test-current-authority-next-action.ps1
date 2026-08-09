@@ -81,6 +81,33 @@ if ($unrelatedMachineAttemptAuthority.IsApplicable -or -not $unrelatedMachineAtt
 }
 Write-Output 'PASS machine-attempt-case=unrelated-work-batch result=NOT_APPLICABLE'
 
+$gateXPlanAuthority = @{
+    work_batch = 'GateX-PLAN'
+    work_batch_status = 'NOT_STARTED'
+    next_action = 'NQ-GATEX-PLAN-IMPLEMENTATION'
+}
+$gateXPlanMachineAttempt = Read-MachineCurrentAttemptAuthority $gateXPlanAuthority
+if ($gateXPlanMachineAttempt.IsApplicable -or -not $gateXPlanMachineAttempt.IsValid) {
+    throw 'GATEX_PLAN_MACHINE_ATTEMPT_MUST_BE_NOT_APPLICABLE'
+}
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $gateXPlanAuthority.work_batch_status `
+        $gateXPlanAuthority.work_batch $gateXPlanAuthority.next_action)) {
+    throw 'GATEX_PLAN_CANONICAL_TRIPLE_REJECTED'
+}
+foreach ($case in @(
+    @{ Status='UNKNOWN'; Batch='GateX-PLAN'; Action='NQ-GATEX-PLAN-IMPLEMENTATION' },
+    @{ Status='NOT_STARTED'; Batch='GateX-UNKNOWN'; Action='NQ-GATEX-PLAN-IMPLEMENTATION' },
+    @{ Status='NOT_STARTED'; Batch='GateX-PLAN'; Action='NQ-GATEX-UNKNOWN' },
+    @{ Status='NOT_STARTED'; Batch='GateX-PLAN'; Action='NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION' }
+)) {
+    if (Test-GovernanceNextActionForWorkBatch $contract $case.Status $case.Batch $case.Action) {
+        throw ("GATEX_PLAN_NON_CANONICAL_TRIPLE_ACCEPTED status={0} batch={1} action={2}" -f
+            $case.Status, $case.Batch, $case.Action)
+    }
+}
+Write-Output 'PASS machine-attempt-case=gatex-plan result=NOT_APPLICABLE ordinary-canonical-validation=PASS'
+
 function Assert-CurrentDocsAuthorityCase {
     param(
         [string] $Name,
@@ -930,9 +957,28 @@ if ($null -eq $currentAuthority -or
 }
 $currentNextAction = [string]$currentAuthority.next_action
 $currentMachineAttemptAuthority = Read-MachineCurrentAttemptAuthority $currentAuthority
-if (-not $currentMachineAttemptAuthority.IsApplicable -or
-    -not $currentMachineAttemptAuthority.IsValid) {
+if (-not $currentMachineAttemptAuthority.IsValid) {
     throw "CURRENT_MACHINE_ATTEMPT_FIXTURE_INVALID reason=$($currentMachineAttemptAuthority.Reason)"
+}
+if (-not $currentMachineAttemptAuthority.IsApplicable) {
+    if (-not (Test-GovernanceNextActionForWorkBatch `
+            $contract $currentAuthority.work_batch_status `
+            $currentAuthority.work_batch $currentNextAction)) {
+        throw 'CURRENT_NON_ATTEMPT_CANONICAL_TRIPLE_REJECTED'
+    }
+    Assert-CrossDocumentAuthorityCase `
+        'non-attempt-authority-aligned' $script:statusFixture $script:roadmapFixture $true
+    $nonAttemptNextActionMismatchRoadmap = $script:roadmapFixture.Replace(
+        $currentNextAction,
+        'NQ-GATEW-ATTEMPT-10-168H-ACCEPTANCE')
+    Assert-CrossDocumentAuthorityCase `
+        'non-attempt-next-action-mismatch' $script:statusFixture `
+        $nonAttemptNextActionMismatchRoadmap $false 'CURRENT_NEXT_ACTION_CONFLICT'
+    Assert-CurrentDocsAuthorityCase `
+        'non-attempt-readmes-consistent' $script:readmeFixture $true '' $script:rootReadmeFixture
+    Write-Output 'PASS current-machine-attempt result=NOT_APPLICABLE ordinary-canonical-validation=PASS'
+    Write-Output 'PASS / CURRENT_AUTHORITY_NEXT_ACTION_REGRESSION'
+    exit 0
 }
 $currentAttemptId = [int]$currentMachineAttemptAuthority.AttemptId
 
