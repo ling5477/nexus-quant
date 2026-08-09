@@ -15,7 +15,9 @@ GateW strict archive + freeze exact-head CI + annotated tag VERIFIED
   ↓
 GateX IN PROGRESS / NOT FROZEN
   ↓
-GateX-PLAN NOT STARTED
+GateX-PLAN BASELINE ESTABLISHED / READY TO COMMIT
+  ↓
+GateX-0A NOT STARTED
 ```
 
 ## 下一允许动作
@@ -25,8 +27,9 @@ GateX-PLAN NOT STARTED
 - GateW Attempt-13=`COMPLETED / ACCEPTED`（已完成 / 已接受）；production deployment=`STOPPED`；production soak=`COMPLETED`。656 条样本与 hash chain 已接受并 sealed，worker 已停止。
 - GateW acceptance batch：`GateW-ATTEMPT-13-168H-ACCEPTANCE / ACCEPTED / CI GREEN`；acceptance head=`20cf7970dfb414868da3e42dddaefc5965246570`，CI run=`31295184056`。
 - GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；这不表示 GateX implementation started。
-- GateX-PLAN：`NOT STARTED`（未开始）。
-- 当前唯一治理动作是 `NQ-GATEX-PLAN-IMPLEMENTATION`；Post-GateW 分支回收、dev fast-forward 合入与 exact-head CI 已完成。该任务只能形成 GateX plan 与审查边界，不得启动 GateX implementation。
+- GateX-PLAN：`BASELINE ESTABLISHED / READY TO COMMIT`（基线已建立 / 可进入提交前复核）；实施基线见 [GATEX_PLAN.md](GATEX_PLAN.md)。
+- GateX-0A：`NOT STARTED`（未开始）；只允许 architecture ownership 与 bounded-context guardrails，不允许拆 Maven module 或大搬 `nq-core`。
+- 当前唯一治理动作是 `NQ-GATEX-0A-ARCHITECTURE-BOUNDARY-GUARDRAILS-IMPLEMENTATION`；必须先关闭 Strategy↔Trading 与 audit port ownership 的 P1，并补齐 ArchUnit regression，不能直接进入 Strategy Release productionization。
 
 ## GateW 已冻结边界
 
@@ -36,9 +39,11 @@ GateX-PLAN NOT STARTED
 - Attempt-09 的拒绝、Attempt-10/11/12 的失败终态与全部 remediation evidence 均已进入 GateW archive，不得删除、覆盖或复用。
 - `nq-gatew-freeze` 不得删除、移动、覆盖或 force update；问题只能通过 forward remediation 或 superseding tag 处理。
 
-## GateX planning 边界
+## GateX implementation 边界
 
-- 只允许 `PLAN / NOT_STARTED`；在独立计划被审查和授权前，不得创建 GateX implementation batch。
+- 唯一实施顺序为 0A → 0B → 0C → 0D → 条件性 0E；GateX-0 总量控制在 3～5 个代码任务、3～7 工程日。
+- GateX-0 只处理 P1 与 GateX 触达区域的低风险 P2；不得演化为 Maven 全量拆分或全仓架构重构。
+- GateX-1～5 与 FREEZE 的前置、范围和验收以 [GATEX_PLAN.md](GATEX_PLAN.md) 为准；计划不得被解释为 capability 已实现。
 - 不得把 GateW diagnostic/read-only/soak 证据推导为远端交易 permission、账户健康、余额充分、private trading 或 unattended execution readiness。
 - 不得开启 LIVE、真实下单/撤单、转账/提现、AI trading、DH runtime、Integration runtime、RealClient 或 real provider。
 - NQ-only 任务不得修改或声明 DH current authority；DH/Integration 状态继续只表达 NQ 侧 no-real 边界。

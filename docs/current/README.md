@@ -6,9 +6,9 @@
 
 <!-- nq-current-summary:start -->
 - 最近冻结 Gate 为 GateW：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-w/](../gates/gate-w/)。
-- GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateX-PLAN=`NOT STARTED`，implementation 尚未开始。
+- GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateX-PLAN=`BASELINE ESTABLISHED / READY TO COMMIT`（基线已建立 / 可进入提交前复核），production capability 尚未实现。
 - Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEX-PLAN-IMPLEMENTATION`；GateX implementation 仍未开始，exact transition 以 [STATUS.md](STATUS.md) 为准。
+- 当前唯一动作是 `NQ-GATEX-0A-ARCHITECTURE-BOUNDARY-GUARDRAILS-IMPLEMENTATION`；GateX 必须先完成有限工程治理，exact transition 以 [STATUS.md](STATUS.md) 为准。
 - 当前 runtime release、current work commit 与精确 runtime 标识只从 [STATUS.md](STATUS.md) 获取，本索引不复制其值。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
@@ -19,6 +19,7 @@
 | --- | --- | --- |
 | 唯一阶段状态 | [STATUS.md](STATUS.md) | 是 |
 | 下一允许动作 | [ROADMAP.md](ROADMAP.md) | 否 |
+| GateX 实施基线 | [GATEX_PLAN.md](GATEX_PLAN.md) | 否；只定义批次、边界与验收，不代表 capability 已实现 |
 | Authority 分层 | [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md) | 否；必须服从 STATUS |
 | Gate 治理 workflow | [GOVERNANCE_WORKFLOW.md](GOVERNANCE_WORKFLOW.md) | 否；定义 checker、lifecycle、evidence 与 release contract |
 | Post-tag current evidence | [evidence/gate-w/README.md](evidence/gate-w/README.md) | 否；只保留 current 导航与 closeout evidence |
