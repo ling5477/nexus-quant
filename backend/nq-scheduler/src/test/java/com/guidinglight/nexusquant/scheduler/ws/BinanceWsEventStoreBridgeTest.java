@@ -13,7 +13,7 @@ import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsEventMapper;
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsRawMessage;
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsRawMessageListener;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
-import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
+import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.eventstore.infra.EventStoreAppender;
 import com.guidinglight.nexusquant.scheduler.service.BinanceWsOrderAccelerationService;
 

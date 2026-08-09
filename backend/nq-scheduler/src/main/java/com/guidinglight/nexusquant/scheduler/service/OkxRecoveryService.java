@@ -56,7 +56,7 @@ public class OkxRecoveryService implements RecoveryService {
     private final OrderLifecycleService orderLifecycleService;
     private final OkxExchangeAdapter okxExchangeAdapter;
     private final OkxRestReconcileService okxRestReconcileService;
-    private final com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository auditLogRepository;
+    private final com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository auditLogRepository;
     private final EventPublisherPort eventPublisherPort;
     private final boolean recoveryEnabled;
     private final Clock clock;
@@ -75,7 +75,7 @@ public class OkxRecoveryService implements RecoveryService {
             OrderLifecycleService orderLifecycleService,
             OkxExchangeAdapter okxExchangeAdapter,
             OkxRestReconcileService okxRestReconcileService,
-            com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository auditLogRepository,
+            com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository auditLogRepository,
             EventPublisherPort eventPublisherPort,
             @Value("${nq.okx.recovery.enabled:true}") boolean recoveryEnabled
     ) {

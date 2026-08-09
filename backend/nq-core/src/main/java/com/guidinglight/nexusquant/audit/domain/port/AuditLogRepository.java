@@ -1,9 +1,9 @@
-package com.guidinglight.nexusquant.trading.domain.port;
+package com.guidinglight.nexusquant.audit.domain.port;
 
 import java.util.Map;
 
 /**
- * AuditLogRepository 定义审计日志落库端口。
+ * AuditLogRepository 定义平台审计日志的稳定落库端口。
  */
 public interface AuditLogRepository {
 
@@ -18,4 +18,3 @@ public interface AuditLogRepository {
      */
     void append(String domain, String action, String actorId, String traceId, Map<String, Object> detail);
 }
-

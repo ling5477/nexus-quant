@@ -1,5 +1,9 @@
 package com.guidinglight.nexusquant.app.architecture;
 
+import com.guidinglight.nexusquant.app.architecture.fixture.strategy.InvalidStrategyTradingDependency;
+import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionGateway;
+import com.tngtech.archunit.core.domain.JavaClasses;
+import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
@@ -17,7 +21,9 @@ import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
 
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -33,6 +39,58 @@ class PackageBoundaryArchTest {
     static final ArchRule domain_packages_should_not_depend_on_spring_framework = noClasses()
             .that().resideInAPackage("..domain..")
             .should().dependOnClassesThat().resideInAnyPackage("org.springframework..");
+
+    @ArchTest
+    static final ArchRule strategy_should_not_depend_on_trading_application_or_infrastructure = noClasses()
+            .that().resideInAPackage("..strategy..")
+            .and().resideOutsideOfPackage("..app.architecture.fixture..")
+            .should().dependOnClassesThat().resideInAnyPackage(
+                    "..trading.application..",
+                    "..trading.infra..",
+                    "..trading.infrastructure.."
+            );
+
+    @ArchTest
+    static final ArchRule validation_should_not_depend_on_trading_owned_audit_port = noClasses()
+            .that().resideInAnyPackage("..validation..", "..validationreview..")
+            .should().dependOnClassesThat().haveFullyQualifiedName(
+                    "com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository"
+            );
+
+    @ArchTest
+    static final ArchRule domain_should_not_depend_on_jdbc_infra_or_controller = noClasses()
+            .that().resideInAPackage("..domain..")
+            .should().dependOnClassesThat().resideInAnyPackage(
+                    "org.springframework.jdbc..",
+                    "..infra..",
+                    "..controller..",
+                    "..api.web.."
+            );
+
+    @ArchTest
+    static final ArchRule only_order_command_adapter_should_depend_on_strategy_port = noClasses()
+            .that().resideInAPackage("..trading.application..")
+            .and().doNotHaveFullyQualifiedName(
+                    "com.guidinglight.nexusquant.trading.application.port.OrderCommandStrategyExecutionGateway"
+            )
+            .should().dependOnClassesThat().resideInAPackage("..strategy.domain.port..");
+
+    @ArchTest
+    static final ArchRule order_command_adapter_should_implement_strategy_port = classes()
+            .that().haveFullyQualifiedName(
+                    "com.guidinglight.nexusquant.trading.application.port.OrderCommandStrategyExecutionGateway"
+            )
+            .should().implement(StrategyExecutionGateway.class);
+
+    @Test
+    void strategy_boundary_rule_should_reject_negative_fixture() {
+        JavaClasses fixtureClasses = new ClassFileImporter().importClasses(InvalidStrategyTradingDependency.class);
+
+        assertThrows(AssertionError.class, () -> noClasses()
+                .that().resideInAPackage("..strategy..")
+                .should().dependOnClassesThat().resideInAnyPackage("..trading.application..")
+                .check(fixtureClasses));
+    }
 
     @Test
     void main_source_packages_should_have_single_module_owner() throws IOException {

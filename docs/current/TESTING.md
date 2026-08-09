@@ -12717,3 +12717,25 @@ Blocking status：P0=0/P1=0/P2=1/P3=0；parser P1 已关闭。P2 仍为既有 ma
 首轮 fixture 调用遗漏与首轮 link checker `-Roots` 聚合参数错误均已记录、最小修正并重跑，未写成首轮通过。未运行 Maven、frontend 或 Python：本任务未修改这些模块。未创建 GateW archive，未 freeze/tag；production/SSH/OKX/credential/生产 DB/systemd/worker operations=`0`。本任务 commit/exact-head CI 仍为 `PENDING`，将在提交推送后核验。
 
 Blocking status：P0=0/P1=0，任务特定 P2=0/P3=0；既有 GateW maximum-gap threshold P2 不变。唯一下一动作在本任务 exact-head CI green 后仍为 `NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION`。
+
+## 2026-08-09 — GateX-0A architecture boundary guardrails implementation attempt-01
+
+结论：backend implementation 与回归为 `PASS`（通过）；current authority sync 为 `BLOCKED / AUTHORITY_MAPPING_MISMATCH`（阻断 / authority 映射不一致）。
+
+| Command / evidence | Result | Scope / environment / warning |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-core -am test` | PASS | 419 tests / 0 failures / 0 errors / 3 skipped |
+| focused `PackageBoundaryArchTest` | PASS | 8 tests / 0 failures / 0 errors；negative fixture 证明 Strategy → Trading application 会被拒绝 |
+| static import checks | PASS | Strategy → Trading application/infra=`0`；旧 Trading-owned audit port import=`0`；新 audit port references=`32` files |
+| CI-equivalent PostgreSQL fixture | PASS | 临时 PostgreSQL 17.7；Flyway 35；legacy account=`1`、exchange account=`0`、credential rows=`0` |
+| 三个 local Spring context tests | PASS | 3 tests / 0 failures / 0 errors |
+| `mvn -f backend/pom.xml test` | PASS | 23 modules；1277 tests / 0 failures / 0 errors / 18 existing skipped；46.904s |
+| `check-current-authority.ps1` | PASS | 当前 authority 未推进；`AUTHORITY_CHECK errors=0` |
+| `git diff --check` | PASS | whitespace errors=`0` |
+| governance mapping pure checks | BLOCKED（阻断） | 0B implementation candidate：expected=`COMMIT_AND_PUSH`、actual=`IMPLEMENTATION`、valid=`False`；0A commit-and-push candidate valid=`True` |
+
+Environment：Windows + Java 21 + Maven；完整回归使用临时、可删除 PostgreSQL 容器并复刻 `.github/workflows/ci.yml` 的 Flyway/legacy fixture 前置。首轮本地全量 Maven 因 `localhost:5432` 未运行失败；启动既有容器后又确认 legacy fixture 缺失，最终改用隔离临时库通过，不污染持久化本地数据库。
+
+Known warnings：18 个既有 skipped；Mockito dynamic-agent 与部分 module 的 SLF4J no-provider warning；均未导致 failure。未运行 frontend、Python 或 migration 专项验证，因为本任务未修改这些区域。API、schema、SQL、LIVE、真实交易、credential、AI/DH runtime 均未触达。
+
+Blocking status：架构 P1 已关闭；authority sync P1 未关闭。治理合同要求 `IMPLEMENTED|SELF_REVIEWED` 后先执行 GateX-0A `COMMIT_AND_PUSH`，与用户指定直接进入 GateX-0B 的动作冲突；任务 allowlist 又不包含同步 ROADMAP/current README 所需文件，因此 `STATUS.md` 保持不变。

@@ -2,7 +2,7 @@ package com.guidinglight.nexusquant.audit.infra.jdbc;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
+import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 
 import java.util.Map;
 import java.util.Objects;

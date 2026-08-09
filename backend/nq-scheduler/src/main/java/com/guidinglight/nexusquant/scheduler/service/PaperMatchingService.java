@@ -11,7 +11,7 @@ import com.guidinglight.nexusquant.contracts.model.OrderType;
 import com.guidinglight.nexusquant.trading.application.port.TradingOrderStatusSnapshot;
 import com.guidinglight.nexusquant.trading.application.port.TradingVenueGateway;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
-import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
+import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
 import com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest;

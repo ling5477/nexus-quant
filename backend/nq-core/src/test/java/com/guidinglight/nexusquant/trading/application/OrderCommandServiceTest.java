@@ -9,7 +9,7 @@ import com.guidinglight.nexusquant.risk.model.RiskDecisionResult;
 import com.guidinglight.nexusquant.risk.service.RiskGate;
 import com.guidinglight.nexusquant.trading.application.port.*;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
-import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
+import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
 import com.guidinglight.nexusquant.trading.domain.state.InMemoryOrderStateMachine;
 import org.junit.jupiter.api.Test;

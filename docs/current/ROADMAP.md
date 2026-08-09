@@ -17,7 +17,7 @@ GateX IN PROGRESS / NOT FROZEN
   ↓
 GateX-PLAN BASELINE ESTABLISHED / READY TO COMMIT
   ↓
-GateX-0A NOT STARTED
+GateX-0A IMPLEMENTED / SELF-REVIEWED
 ```
 
 ## 下一允许动作
@@ -26,10 +26,10 @@ GateX-0A NOT STARTED
 - GateW freeze commit=`16376de28be78eea58afbe1374847ee07ca2ccc7`；exact-head CI run=`31299729114 / completed / success / 10 jobs / bad=0`。
 - GateW Attempt-13=`COMPLETED / ACCEPTED`（已完成 / 已接受）；production deployment=`STOPPED`；production soak=`COMPLETED`。656 条样本与 hash chain 已接受并 sealed，worker 已停止。
 - GateW acceptance batch：`GateW-ATTEMPT-13-168H-ACCEPTANCE / ACCEPTED / CI GREEN`；acceptance head=`20cf7970dfb414868da3e42dddaefc5965246570`，CI run=`31295184056`。
-- GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；这不表示 GateX implementation started。
+- GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateX-0A 已实现，不表示 GateX production capability 已完成。
 - GateX-PLAN：`BASELINE ESTABLISHED / READY TO COMMIT`（基线已建立 / 可进入提交前复核）；实施基线见 [GATEX_PLAN.md](GATEX_PLAN.md)。
-- GateX-0A：`NOT STARTED`（未开始）；只允许 architecture ownership 与 bounded-context guardrails，不允许拆 Maven module 或大搬 `nq-core`。
-- 当前唯一治理动作是 `NQ-GATEX-0A-ARCHITECTURE-BOUNDARY-GUARDRAILS-IMPLEMENTATION`；必须先关闭 Strategy↔Trading 与 audit port ownership 的 P1，并补齐 ArchUnit regression，不能直接进入 Strategy Release productionization。
+- GateX-0A：`IMPLEMENTED / SELF-REVIEWED`（已实现 / 已自审）；Strategy↔Trading 与 audit port ownership P1 已关闭，ArchUnit 与 backend regression 已通过，尚未 commit/push。
+- 当前唯一治理动作是 `NQ-GATEX-0A-COMMIT-AND-PUSH`；只允许提交并推送已验证的 GateX-0A staged diff，再等待 exact-head CI，不能启动 GateX-0B 或进入 Strategy Release productionization。
 
 ## GateW 已冻结边界
 

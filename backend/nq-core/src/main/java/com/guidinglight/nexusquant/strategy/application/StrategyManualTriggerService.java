@@ -1,13 +1,13 @@
 package com.guidinglight.nexusquant.strategy.application;
 
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
-import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
-import com.guidinglight.nexusquant.trading.application.PlaceOrderResult;
 import com.guidinglight.nexusquant.strategy.domain.StrategyDefinition;
 import com.guidinglight.nexusquant.strategy.domain.StrategyRun;
 import com.guidinglight.nexusquant.strategy.domain.StrategyRunStatus;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyDefinitionRepository;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionGateway;
+import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionIntent;
+import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionResult;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyRunRepository;
 
 import java.time.Clock;
@@ -76,7 +76,7 @@ public class StrategyManualTriggerService {
         strategyRunRepository.insert(createdRun);
         strategyRunRepository.updateStatus(strategyRunId, StrategyRunStatus.DISPATCHING, null, null);
 
-        PlaceOrderResult placeOrderResult = strategyExecutionGateway.placeOrder(new PlaceOrderRequest(
+        StrategyExecutionResult executionResult = strategyExecutionGateway.execute(new StrategyExecutionIntent(
                 requestId,
                 definition.accountId(),
                 strategyRunId,
@@ -93,11 +93,11 @@ public class StrategyManualTriggerService {
                 request.traceId()
         ));
 
-        StrategyRunStatus finalStatus = isTriggerAccepted(placeOrderResult.status())
+        StrategyRunStatus finalStatus = isTriggerAccepted(executionResult.status())
                 ? StrategyRunStatus.RUNNING
                 : StrategyRunStatus.FAILED;
         String errorMessage = finalStatus == StrategyRunStatus.FAILED
-                ? "order_status=" + placeOrderResult.status().name()
+                ? "order_status=" + executionResult.status().name()
                 : null;
         strategyRunRepository.updateStatus(
                 strategyRunId,
@@ -110,10 +110,10 @@ public class StrategyManualTriggerService {
                 definition.strategyId(),
                 strategyRunId,
                 requestId,
-                placeOrderResult.orderId(),
-                placeOrderResult.status(),
+                executionResult.orderId(),
+                executionResult.status(),
                 finalStatus,
-                placeOrderResult.idempotentHit()
+                executionResult.idempotentHit()
         );
     }
 

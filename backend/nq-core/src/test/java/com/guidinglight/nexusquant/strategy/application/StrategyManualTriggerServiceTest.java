@@ -14,9 +14,9 @@ import com.guidinglight.nexusquant.strategy.domain.StrategyRun;
 import com.guidinglight.nexusquant.strategy.domain.StrategyRunStatus;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyDefinitionRepository;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionGateway;
+import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionIntent;
+import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionResult;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyRunRepository;
-import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
-import com.guidinglight.nexusquant.trading.application.PlaceOrderResult;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -32,7 +32,7 @@ class StrategyManualTriggerServiceTest {
         InMemoryStrategyDefinitionRepository definitionRepository = new InMemoryStrategyDefinitionRepository();
         InMemoryStrategyRunRepository runRepository = new InMemoryStrategyRunRepository();
         CapturingStrategyExecutionGateway executionGateway = new CapturingStrategyExecutionGateway(
-                new PlaceOrderResult("ord-trigger-1", OrderStatus.ACCEPTED, false)
+                new StrategyExecutionResult("ord-trigger-1", OrderStatus.ACCEPTED, false)
         );
         StrategyManualTriggerService service = new StrategyManualTriggerService(
                 definitionRepository,
@@ -71,7 +71,7 @@ class StrategyManualTriggerServiceTest {
         StrategyManualTriggerService service = new StrategyManualTriggerService(
                 definitionRepository,
                 runRepository,
-                request -> new PlaceOrderResult("ord-trigger-2", OrderStatus.ACCEPTED, false)
+                intent -> new StrategyExecutionResult("ord-trigger-2", OrderStatus.ACCEPTED, false)
         );
         definitionRepository.insert(disabledDefinition("str-2", "disabled-grid"));
 
@@ -92,7 +92,7 @@ class StrategyManualTriggerServiceTest {
         StrategyManualTriggerService service = new StrategyManualTriggerService(
                 new InMemoryStrategyDefinitionRepository(),
                 new InMemoryStrategyRunRepository(),
-                request -> new PlaceOrderResult("ord-trigger-3", OrderStatus.ACCEPTED, false)
+                intent -> new StrategyExecutionResult("ord-trigger-3", OrderStatus.ACCEPTED, false)
         );
 
         assertThrows(IllegalArgumentException.class, () -> service.trigger(new StrategyManualTriggerRequest(
@@ -114,7 +114,7 @@ class StrategyManualTriggerServiceTest {
         StrategyManualTriggerService service = new StrategyManualTriggerService(
                 definitionRepository,
                 runRepository,
-                request -> new PlaceOrderResult("ord-trigger-4", OrderStatus.REJECTED, false)
+                intent -> new StrategyExecutionResult("ord-trigger-4", OrderStatus.REJECTED, false)
         );
         StrategyDefinition definition = enabledDefinition("str-4", "failing-grid");
         definitionRepository.insert(definition);
@@ -258,17 +258,17 @@ class StrategyManualTriggerServiceTest {
 
     private static final class CapturingStrategyExecutionGateway implements StrategyExecutionGateway {
 
-        private final PlaceOrderResult placeOrderResult;
-        private PlaceOrderRequest lastRequest;
+        private final StrategyExecutionResult executionResult;
+        private StrategyExecutionIntent lastRequest;
 
-        private CapturingStrategyExecutionGateway(PlaceOrderResult placeOrderResult) {
-            this.placeOrderResult = placeOrderResult;
+        private CapturingStrategyExecutionGateway(StrategyExecutionResult executionResult) {
+            this.executionResult = executionResult;
         }
 
         @Override
-        public PlaceOrderResult placeOrder(PlaceOrderRequest request) {
-            this.lastRequest = request;
-            return placeOrderResult;
+        public StrategyExecutionResult execute(StrategyExecutionIntent intent) {
+            this.lastRequest = intent;
+            return executionResult;
         }
     }
 }

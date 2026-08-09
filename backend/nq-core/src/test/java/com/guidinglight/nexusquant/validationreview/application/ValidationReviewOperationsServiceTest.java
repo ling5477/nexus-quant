@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
+import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewCase;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewCaseQuery;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewEvent;
