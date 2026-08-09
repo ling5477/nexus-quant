@@ -536,29 +536,28 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
                         $expectedAttemptId = [int]$attemptActionMatch.Groups['attemptId'].Value
                     }
                 }
-                $statusAttemptAuthority = Read-AttemptDeploymentAuthority `
-                    $statusBody 'STATUS' $expectedAttemptId
-                $roadmapAttemptAuthority = Read-AttemptDeploymentAuthority `
-                    $roadmapContent 'ROADMAP' $expectedAttemptId
-                if (-not $statusAttemptAuthority.IsValid) {
-                    Add-AuthorityError "CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH source=STATUS $($statusAttemptAuthority.Reason)"
-                }
-                if (-not $roadmapAttemptAuthority.IsValid) {
-                    Add-AuthorityError "CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH source=ROADMAP $($roadmapAttemptAuthority.Reason)"
-                }
-                if ($statusAttemptAuthority.IsValid -and $roadmapAttemptAuthority.IsValid) {
-                    foreach ($field in @('AttemptId', 'AttemptState', 'AuthorizationState', 'DeploymentState')) {
-                        if (-not [string]::Equals(
-                                [string]$statusAttemptAuthority.$field,
-                                [string]$roadmapAttemptAuthority.$field,
-                                [System.StringComparison]::Ordinal)) {
-                            Add-AuthorityError ("CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH field={0} status={1} roadmap={2}" -f
-                                $field, $statusAttemptAuthority.$field, $roadmapAttemptAuthority.$field)
+                if ($machineAttemptAuthority.IsApplicable -and $machineAttemptAuthority.IsValid) {
+                    $statusAttemptAuthority = Read-AttemptDeploymentAuthority `
+                        $statusBody 'STATUS' $expectedAttemptId
+                    $roadmapAttemptAuthority = Read-AttemptDeploymentAuthority `
+                        $roadmapContent 'ROADMAP' $expectedAttemptId
+                    if (-not $statusAttemptAuthority.IsValid) {
+                        Add-AuthorityError "CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH source=STATUS $($statusAttemptAuthority.Reason)"
+                    }
+                    if (-not $roadmapAttemptAuthority.IsValid) {
+                        Add-AuthorityError "CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH source=ROADMAP $($roadmapAttemptAuthority.Reason)"
+                    }
+                    if ($statusAttemptAuthority.IsValid -and $roadmapAttemptAuthority.IsValid) {
+                        foreach ($field in @('AttemptId', 'AttemptState', 'AuthorizationState', 'DeploymentState')) {
+                            if (-not [string]::Equals(
+                                    [string]$statusAttemptAuthority.$field,
+                                    [string]$roadmapAttemptAuthority.$field,
+                                    [System.StringComparison]::Ordinal)) {
+                                Add-AuthorityError ("CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH field={0} status={1} roadmap={2}" -f
+                                    $field, $statusAttemptAuthority.$field, $roadmapAttemptAuthority.$field)
+                            }
                         }
                     }
-                }
-
-                if ($machineAttemptAuthority.IsApplicable -and $machineAttemptAuthority.IsValid) {
                     foreach ($source in @(
                         @{ Name = 'STATUS'; Value = $statusAttemptAuthority },
                         @{ Name = 'ROADMAP'; Value = $roadmapAttemptAuthority }

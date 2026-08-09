@@ -174,17 +174,25 @@ function Assert-CrossDocumentAuthorityCase {
         [string] $StatusContent,
         [string] $RoadmapContent,
         [bool] $ExpectSuccess,
-        [string] $ExpectedErrorPattern = 'CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH'
+        [string] $ExpectedErrorPattern = 'CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH',
+        [string] $ReadmeContent = '',
+        [string] $RootReadmeContent = ''
     )
 
     $caseRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("nq-cross-doc-authority-{0}-{1}" -f $Name, [guid]::NewGuid().ToString('N'))
     $currentDocsRoot = Join-Path $caseRoot 'docs/current'
     [System.IO.Directory]::CreateDirectory($currentDocsRoot) | Out-Null
     try {
+        if ([string]::IsNullOrWhiteSpace($ReadmeContent)) {
+            $ReadmeContent = $script:readmeFixture
+        }
+        if ([string]::IsNullOrWhiteSpace($RootReadmeContent)) {
+            $RootReadmeContent = $script:rootReadmeFixture
+        }
         Write-Utf8File (Join-Path $currentDocsRoot 'STATUS.md') $StatusContent
         Write-Utf8File (Join-Path $currentDocsRoot 'ROADMAP.md') $RoadmapContent
-        Write-Utf8File (Join-Path $currentDocsRoot 'README.md') $script:readmeFixture
-        Write-Utf8File (Join-Path $caseRoot 'README.md') $script:rootReadmeFixture
+        Write-Utf8File (Join-Path $currentDocsRoot 'README.md') $ReadmeContent
+        Write-Utf8File (Join-Path $caseRoot 'README.md') $RootReadmeContent
 
         $shellPath = (Get-Process -Id $PID).Path
         $checkerOutput = @(& $shellPath -NoProfile -ExecutionPolicy Bypass `
@@ -960,6 +968,75 @@ $currentMachineAttemptAuthority = Read-MachineCurrentAttemptAuthority $currentAu
 if (-not $currentMachineAttemptAuthority.IsValid) {
     throw "CURRENT_MACHINE_ATTEMPT_FIXTURE_INVALID reason=$($currentMachineAttemptAuthority.Reason)"
 }
+
+$nonAttemptGovernanceActionLabel = [regex]::Unescape(
+    '\u6CBB\u7406 authority \u4E2D\u552F\u4E00\u4E0B\u4E00\u52A8\u4F5C\u7CBE\u786E\u4E3A')
+$nonAttemptRoadmapActionLabel = [regex]::Unescape(
+    '\u5F53\u524D\u552F\u4E00\u6CBB\u7406\u52A8\u4F5C\u662F')
+$nonAttemptSummaryActionLabel = [regex]::Unescape(
+    '\u5F53\u524D\u552F\u4E00\u52A8\u4F5C\u662F')
+$nonAttemptStatusFixture = @(
+    '# Current Status',
+    '',
+    '<!-- nq-current-authority:start',
+    'authority_schema=3',
+    'last_frozen_gate=GateW',
+    'last_frozen_gate_status=FROZEN|ACCEPTED|TAGGED',
+    'last_frozen_gate_tag=nq-gatew-freeze',
+    'last_frozen_gate_commit=1111111111111111111111111111111111111111',
+    'active_gate=GateX',
+    'active_gate_status=IN_PROGRESS|NOT_FROZEN',
+    'accepted_batch=GateW-ATTEMPT-13-168H-ACCEPTANCE',
+    'accepted_batch_status=ACCEPTED|CI_GREEN',
+    'accepted_batch_implementation_commit=2222222222222222222222222222222222222222',
+    'accepted_batch_acceptance_head=2222222222222222222222222222222222222222',
+    'accepted_batch_ci_run=123',
+    'work_batch=GateX-PLAN',
+    'work_batch_status=NOT_STARTED',
+    'work_batch_commit=NONE',
+    'work_batch_ci_run=NOT_RUN',
+    'next_action=NQ-GATEX-PLAN-IMPLEMENTATION',
+    'live=DISABLED',
+    'shadow_trading=NOT_ENABLED',
+    'ai=NOT_STARTED',
+    'dh_runtime=NOT_INTEGRATED',
+    'integration_runtime=NOT_STARTED',
+    'real_provider=NOT_IMPLEMENTED',
+    'private_trading=NOT_IMPLEMENTED',
+    'nq-current-authority:end -->',
+    '',
+    '- GateW: `FROZEN / ACCEPTED / TAGGED`.',
+    '- GateX: `IN PROGRESS / NOT FROZEN`.',
+    '- GateW-ATTEMPT-13-168H-ACCEPTANCE: `ACCEPTED / CI GREEN`.',
+    '- GateX-PLAN: `NOT STARTED`.',
+    '- Historical Attempt-10: `FAILED / STOPPED`; production deployment=`STOPPED`.',
+    '- Historical Attempt-11: `FAILED / STOPPED`; production deployment=`STOPPED`.',
+    '- Historical Attempt-12: `FAILED / STOPPED`; production deployment=`STOPPED`.',
+    '- Historical Attempt-13: `COMPLETED / ACCEPTED`; production deployment=`STOPPED`.',
+    '',
+    ('{0} `NQ-GATEX-PLAN-IMPLEMENTATION`.' -f $nonAttemptGovernanceActionLabel)
+) -join "`n"
+$nonAttemptRoadmapFixture = @(
+    '# Roadmap',
+    '',
+    '- Historical Attempt-10=`FAILED / STOPPED`; production deployment=`STOPPED`.',
+    '- Historical Attempt-11=`FAILED / STOPPED`; production deployment=`STOPPED`.',
+    '- Historical Attempt-12=`FAILED / STOPPED`; production deployment=`STOPPED`.',
+    '- Historical Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`.',
+    ('- {0} `NQ-GATEX-PLAN-IMPLEMENTATION`.' -f $nonAttemptRoadmapActionLabel)
+) -join "`n"
+$nonAttemptReadmeFixture = @(
+    '# Current Docs',
+    '',
+    '<!-- nq-current-summary:start -->',
+    '- GateX: `IN PROGRESS / NOT FROZEN`.',
+    ('- {0} `NQ-GATEX-PLAN-IMPLEMENTATION`.' -f $nonAttemptSummaryActionLabel),
+    '<!-- nq-current-summary:end -->'
+) -join "`n"
+Assert-CrossDocumentAuthorityCase `
+    'non-attempt-ignores-historical-attempts' $nonAttemptStatusFixture `
+    $nonAttemptRoadmapFixture $true '' $nonAttemptReadmeFixture $nonAttemptReadmeFixture
+
 if (-not $currentMachineAttemptAuthority.IsApplicable) {
     if (-not (Test-GovernanceNextActionForWorkBatch `
             $contract $currentAuthority.work_batch_status `
