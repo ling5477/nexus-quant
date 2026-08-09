@@ -17,7 +17,7 @@ work_batch=GateX-PLAN
 work_batch_status=NOT_STARTED
 work_batch_commit=NONE
 work_batch_ci_run=NOT_RUN
-next_action=NQ-POST-GATEW-BRANCH-CONSOLIDATION-AND-DEV-REBASE
+next_action=NQ-GATEX-PLAN-IMPLEMENTATION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -98,4 +98,4 @@ updated_commit=16376de28be78eea58afbe1374847ee07ca2ccc7
 
 ## 4. 下一允许动作
 
-治理 authority 中唯一下一动作精确为 `NQ-POST-GATEW-BRANCH-CONSOLIDATION-AND-DEV-REBASE`。该动作只授权后续独立任务执行 Post-GateW 分支回收与 dev rebase；本轮不执行 rebase、merge、branch/worktree cleanup，也不启动 GateX implementation，不得创建 Attempt-14、开启 LIVE、下单、撤单、转账或提现。
+Post-GateW 分支回收、dev fast-forward 合入与 exact-head CI 已完成。治理 authority 中唯一下一动作精确为 `NQ-GATEX-PLAN-IMPLEMENTATION`；该动作只允许在独立任务中创建和审查 GateX plan，不表示 GateX implementation 已开始，不得创建 Attempt-14、开启 LIVE、下单、撤单、转账或提现。

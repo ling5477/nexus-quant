@@ -26,7 +26,7 @@ GateX-PLAN NOT STARTED
 - GateW acceptance batch：`GateW-ATTEMPT-13-168H-ACCEPTANCE / ACCEPTED / CI GREEN`；acceptance head=`20cf7970dfb414868da3e42dddaefc5965246570`，CI run=`31295184056`。
 - GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；这不表示 GateX implementation started。
 - GateX-PLAN：`NOT STARTED`（未开始）。
-- 当前唯一治理动作是 `NQ-POST-GATEW-BRANCH-CONSOLIDATION-AND-DEV-REBASE`；该任务只授权后续独立任务执行 Post-GateW 分支回收与 dev rebase，本轮不执行相关 Git 操作，也不得启动 GateX implementation。
+- 当前唯一治理动作是 `NQ-GATEX-PLAN-IMPLEMENTATION`；Post-GateW 分支回收、dev fast-forward 合入与 exact-head CI 已完成。该任务只能形成 GateX plan 与审查边界，不得启动 GateX implementation。
 
 ## GateW 已冻结边界
 
