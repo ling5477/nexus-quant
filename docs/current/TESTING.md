@@ -12698,3 +12698,22 @@ Blocking status：P0=0/P1=0/P2=1/P3=0；P2 是冻结 checker 没有独立 maximu
 Environment：Windows PowerShell 5.1 / PowerShell 7 本地治理回归 + GitHub Actions `NQ CI Baseline`。Acceptance evidence 仅规范化一个 EOF 多余空行以通过 cached whitespace gate；RunId、samples、elapsed、maximum gap、PID/NRestarts、security counters、hash-chain 与 seal facts 均保持不变。Production/SSH/OKX/credential/生产 DB/systemd/worker/heartbeat/release/symlink operations=`0`。
 
 Blocking status：P0=0/P1=0/P2=1/P3=0；parser P1 已关闭。P2 仍为既有 maximum-gap threshold 限制；GateW=`IN_PROGRESS|NOT_FROZEN`，当前只达到 `FREEZE_READY`，authority-sync commit 的第二次 exact-head CI 在本文写入时为 `PENDING`，不提前描述为通过。
+
+## 2026-08-09 — GateW archive manifest strict override fix
+
+结论：`PASS / GATEW_STRICT_ARCHIVE_OVERRIDE_DEFINED / CANONICAL_TAG_DEFINED / ARCHIVE_MANIFEST_REGRESSION_GREEN / GATEU_GATEV_COMPATIBILITY_GREEN / CURRENT_AUTHORITY_UNCHANGED / READY_TO_COMMIT / CI_PENDING / PRODUCTION_NOT_ACCESSED`（通过 / GateW strict archive override 已定义 / canonical tag 已定义 / archive manifest 回归通过 / GateU、GateV 兼容性通过 / current authority 未改变 / 可提交 / CI 待运行 / 未访问生产）。
+
+| Command / evidence | Result | Scope / environment / warning |
+| --- | --- | --- |
+| `test-gate-archive-manifest.ps1` | PASS | PowerShell 5.1 / 7；GateW pre/post-tag fixture、tag/role/evidence 正负例、GateU/GateV fixture compatibility；task-evidence policy PASS |
+| `check-gate-archive.ps1 -Gate gate-u` | PASS | `ARCHIVE_MANIFEST_COMPLETE`；warnings=`0`，errors=`0` |
+| `check-gate-archive.ps1 -Gate gate-v` | PASS | `ARCHIVE_MANIFEST_COMPLETE`；warnings=`0`，errors=`0` |
+| `test-current-authority-next-action.ps1` | PASS | PowerShell 5.1 / 7；next action 与 freeze-ready hard gate 未回归 |
+| `test-governance-workflow-lifecycle.ps1` | PASS | PowerShell 5.1 / 7；`GOVERNANCE_LIFECYCLE_REGRESSION`、`TASK_EVIDENCE_POLICY_VALID` |
+| `check-current-authority.ps1` | PASS | errors=`0`；GateW=`IN_PROGRESS|NOT_FROZEN`，next action 不变 |
+| `check-doc-links.ps1` | PASS | current=`166 checked / 1 existing warning / 0 errors`；GateU/GateV 各 `12/0/0` |
+| JSON / PowerShell AST | PASS | archive manifest schema=`1.0.0`、governance contract schema=`1.4.0` 均未改；测试脚本 AST errors=`0` |
+
+首轮 fixture 调用遗漏与首轮 link checker `-Roots` 聚合参数错误均已记录、最小修正并重跑，未写成首轮通过。未运行 Maven、frontend 或 Python：本任务未修改这些模块。未创建 GateW archive，未 freeze/tag；production/SSH/OKX/credential/生产 DB/systemd/worker operations=`0`。本任务 commit/exact-head CI 仍为 `PENDING`，将在提交推送后核验。
+
+Blocking status：P0=0/P1=0，任务特定 P2=0/P3=0；既有 GateW maximum-gap threshold P2 不变。唯一下一动作在本任务 exact-head CI green 后仍为 `NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION`。

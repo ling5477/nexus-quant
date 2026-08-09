@@ -95,6 +95,17 @@
         "runtime-scheduling-evidence"
       ],
       "allowPreTagArchiveState": true
+    },
+    "gate-w": {
+      "expectedTag": "nq-gatew-freeze",
+      "expectedTagTarget": null,
+      "conditionalRoles": [
+        "backend-db-evidence",
+        "api-evidence",
+        "frontend-evidence",
+        "runtime-scheduling-evidence"
+      ],
+      "allowPreTagArchiveState": true
     }
   },
   "warningPolicies": {

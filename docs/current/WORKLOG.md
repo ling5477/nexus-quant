@@ -18136,3 +18136,13 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - findings：P0=0/P1=0/P2=1/P3=0；P1 parser defect 已关闭。P2 为既有 maximum gap=`1797s` 且冻结合同无独立 threshold，本任务不补造阈值、不改写 production PASS。
 - boundary：production/SSH/OKX/credential/生产 DB/systemd/worker/heartbeat/release/symlink/Attempt/RunId mutation=`0`；未 freeze/archive/tag，未创建 Attempt-14，未开启 LIVE 或交易写侧。
 - next：提交并 push authority sync，等待第二次 exact-head CI；成功后唯一下一动作=`NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION`。
+
+## 2026-08-09 — GateW archive manifest strict override fix
+
+- task：`NQ-GATEW-ARCHIVE-MANIFEST-STRICT-OVERRIDE-FIX`；NQ-only、L 级 governance manifest strict contract / permanent regression。
+- root cause：GateW 为 post-legacy strict Gate，但 `gate-archive-manifest.json` 缺少 `gate-w` override，导致未来 archive candidate 固定报 `STRICT_GATE_OVERRIDE_MISSING / ARCHIVE_MANIFEST_INCOMPLETE`。
+- implementation：复用 GateU/GateV schema，定义 canonical tag=`nq-gatew-freeze`、8 个 mandatory roles 与 GateW 实际需要的 backend/DB、API、frontend、runtime 四个 conditional roles；task evidence 保持 `source/task-evidence/**` 非 role policy；checker、contract 与 schema 语义未修改。
+- validation：PS5.1/PS7 manifest、next-action、lifecycle/task-evidence 回归全部 PASS；GateW disposable pre/post-tag fixture PASS；真实 GateU/GateV archive `warnings=0/errors=0`；authority、docs links、JSON、AST PASS。首轮 fixture 指向与 link `-Roots` 封装错误已最小修正并重跑，未记为首轮通过。
+- authority/boundary：GateW=`IN_PROGRESS|NOT_FROZEN`，Attempt-13=`COMPLETED|ACCEPTED`，work batch=`ACCEPTED|CI_GREEN|FREEZE_READY`，LIVE=`DISABLED`，kill switch=`ENGAGED`，next action 不变；production access=`0`，未创建 archive、freeze/tag，未修改 Attempt-13。
+- result：`PASS / GATEW_STRICT_ARCHIVE_OVERRIDE_DEFINED / CANONICAL_TAG_DEFINED / ARCHIVE_MANIFEST_REGRESSION_GREEN / GATEU_GATEV_COMPATIBILITY_GREEN / CURRENT_AUTHORITY_UNCHANGED / READY_TO_COMMIT / CI_PENDING / PRODUCTION_NOT_ACCESSED`；P0=0/P1=0，任务特定 P2=0/P3=0。
+- next：精确暂存 allowlist，提交 `fix(governance): define GateW strict archive manifest` 并推送 `dev`；exact-head `NQ CI Baseline` 必须 `completed / success / 10 jobs / bad=0`，之后唯一下一动作=`NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION`。
