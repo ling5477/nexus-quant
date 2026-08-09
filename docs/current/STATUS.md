@@ -2,24 +2,22 @@
 
 <!-- nq-current-authority:start
 authority_schema=3
-last_frozen_gate=GateV
+last_frozen_gate=GateW
 last_frozen_gate_status=FROZEN|ACCEPTED|TAGGED
-last_frozen_gate_tag=nq-gatev-freeze
-last_frozen_gate_commit=530ce4e2bde416aa61944262cbfbadca556656cb
-active_gate=GateW
+last_frozen_gate_tag=nq-gatew-freeze
+last_frozen_gate_commit=16376de28be78eea58afbe1374847ee07ca2ccc7
+active_gate=GateX
 active_gate_status=IN_PROGRESS|NOT_FROZEN
-accepted_batch=GateW-ATTEMPT-12-PREREQUISITE-SCHEMA-REMEDIATION
+accepted_batch=GateW-ATTEMPT-13-168H-ACCEPTANCE
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=e8c334886ae6614133b0bf3f0083bc1893a11e01
-accepted_batch_acceptance_head=e8c334886ae6614133b0bf3f0083bc1893a11e01
-accepted_batch_ci_run=30709995836
-work_batch=GateW-ATTEMPT-13-168H-ACCEPTANCE
-work_batch_status=ACCEPTED|CI_GREEN|FREEZE_READY
-work_batch_commit=20cf7970dfb414868da3e42dddaefc5965246570
-work_batch_ci_run=31295184056
-next_action=NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION
-attempt=Attempt-13
-attempt_status=COMPLETED|ACCEPTED
+accepted_batch_implementation_commit=20cf7970dfb414868da3e42dddaefc5965246570
+accepted_batch_acceptance_head=20cf7970dfb414868da3e42dddaefc5965246570
+accepted_batch_ci_run=31295184056
+work_batch=GateX-PLAN
+work_batch_status=NOT_STARTED
+work_batch_commit=NONE
+work_batch_ci_run=NOT_RUN
+next_action=NQ-GATEX-PLAN-IMPLEMENTATION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -39,7 +37,7 @@ nq-current-authority:end -->
 - GateV-FREEZE：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；freeze candidate、implementation commit 与 acceptance head 均为 `7117bb0abc2113c0957ce9c4a0d7c2b57320b1a6`，`NQ CI Baseline` run `29191014596` 为 `completed / success`。
 - GateV release closeout exact-HEAD CI：`NQ CI Baseline` run `29191677441`，`completed / success`，`headSha=530ce4e2bde416aa61944262cbfbadca556656cb`。
 - GateV durable archive：[../gates/gate-v/README.md](../gates/gate-v/README.md)。它是历史证据，不覆盖本 authority。
-- GateW：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateW-4 operational safety implementation/acceptance head `07b94f89903b0ee62e3ee9d76d31d1a3d9351a7c` 的 exact-head run `29339016784` 已 `completed / success`，10 个实际 jobs 全部成功。GateW-4 已整体 `ACCEPTED / CI GREEN`（已接受 / CI 已通过）；GateW 尚未冻结。
+- GateW：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-w/README.md](../gates/gate-w/README.md)，release tag=`nq-gatew-freeze`，annotated tag object=`1fd434ada697136d51636a3040587704ec2ae1d9`，peeled commit=`16376de28be78eea58afbe1374847ee07ca2ccc7`。
 - GateW-PLAN：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head 为 `5661a13e236ce067edad9ae5789c97ae3ae2e7bb`，`NQ CI Baseline` run `29199785253` 为 `completed / success`。
 - GateW-1：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head 为 `31c8171df26bc1eb9f93da19cf0576c0ac48116b`，`NQ CI Baseline` run `29219687588` 为 `completed / success`。该批次只建立 typed capability matrix、default-deny endpoint guard 与 GateW profile Bean 边界。
 - GateW-2：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head 为 `6543e0965fe1f1b8c31b87ea75b9d20bc9d9d553`，`NQ CI Baseline` run `29230512781` 为 `completed / success`。该接受只覆盖两个 typed private read-only diagnostic operation；`REAL_SMOKE=NOT_RUN`，不表示远端 permission 已验证、LIVE 或交易授权。
@@ -64,19 +62,21 @@ nq-current-authority:end -->
 - GateW-ATTEMPT-12-PREPARATION-AND-START：`BLOCKED / STARTUP FAILED / TERMINALIZED / ROLLED BACK`（阻断 / 启动失败 / 已终态化 / 已回滚）。Release/source `d45fa921eccfe56e4c107037818749b971e28317` 的 exact-head CI run `30705301218` 为 `completed / success / 10 jobs / bad=0`；唯一 RunId `gatew-soak-20260801T164322Z-79ed8c0b`、worker PID `470754` 在首 heartbeat 前因 `prerequisite readback schema is invalid` 退出，lifecycle=`FAILURE_STOPPED`、exit=`exited/2`、samples/failures=`0/0`，acceptance clock 未启动。Current/unit links 已回滚到 `c16f27c3...`，Attempt-12 与 RunId 禁止复用。
 - GateW-ATTEMPT-12-PREREQUISITE-SCHEMA-REMEDIATION：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Commit `e8c334886ae6614133b0bf3f0083bc1893a11e01` 将 worker 的 exact schema 校验与 Java `PrerequisiteMain` 的 23-field sanitized contract 对齐；exact-head CI run `30709995836` 为 `completed / success / 10 jobs / bad=0`。修复只发生在 credential/network/OKX 调用前的本地 readback contract，不扩大 endpoint、权限或运行范围。
 - GateW-ATTEMPT-13-168H-ACCEPTANCE：`ACCEPTED / CI GREEN / FREEZE READY`（已接受 / CI 已通过 / 冻结准备就绪）；Attempt-13=`COMPLETED / ACCEPTED`；production deployment=`STOPPED`；production soak=`COMPLETED`。唯一 RunId=`gatew-soak-20260801T180544Z-140bbcd1` 已完成 168h read-only acceptance；656 条样本从 sequence 1 到 656 连续唯一，final sample=`2026-08-08T18:13:34.4112272Z`，observed duration=`604820.4973147s`；hash-chain=`PASS / HASH_CHAIN_VERIFIED`，forbidden/fallback/raw/secret=`0/0/0/0`。Canonical seal 后 worker/fail-close=`inactive/dead`、MainPID/residual=`0/0`、NRestarts=`0`；LIVE=`DISABLED`，kill switch=`ENGAGED`。Acceptance/parser-fix commit=`20cf7970dfb414868da3e42dddaefc5965246570`，exact-head `NQ CI Baseline` run `31295184056` 为 `completed / success / 10 jobs / bad=0`。
-- GateW-FREEZE：`NOT STARTED`（未开始）。GateW 尚未 archive、freeze 或 tag；Attempt-09 已拒绝，Attempt-10/11/12 均失败并已终态化，Attempt-13 已 accepted/sealed 且 acceptance exact-head CI 已通过。Schema `1.4.0` 当前为 `FREEZE_READY`，只授权进入独立 freeze closeout implementation，不表示 GateW 已冻结、已归档或已打 tag。
+- GateW-FREEZE：`ACCEPTED / CI GREEN / TAGGED`（已接受 / CI 已通过 / 已打 tag）；freeze commit=`16376de28be78eea58afbe1374847ee07ca2ccc7`，exact-head CI run=`31299729114 / completed / success / 10 jobs / bad=0`。Strict archive 与 release post-tag verification 均通过；tag 不得删除、移动、覆盖或 force update。
+- GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；仅表示下一 planning container 已选定，不表示 GateX implementation 已开始。
+- GateX-PLAN：`NOT STARTED`（未开始）；work commit=`NONE`，CI=`NOT_RUN`。
 - GateW-3 dry-run order preview：只包含 OKX Spot、BUY/SELL、LIMIT、internal application、local persisted facts、read-only diagnostic；minimum notional、fee、远端 permission 与 runtime balance/risk 继续保持显式 UNKNOWN / NOT_EVALUATED，`executionReadiness=BLOCKED`，不得推导交易授权。
 - GateW-3 read-only reconciliation：只包含 OKX Spot、最多 3 个 allowlisted symbols、1 page/100 records/24h typed private `Read` snapshot、bounded local SELECT 与 pure comparator；默认不装配，无 real smoke/credential/network/repair/persistence/scheduler，`executionReadiness=BLOCKED`。CI acceptance 只接受该 side-effect-free contract，不证明真实 permission 或账户健康。
 - GateW-3 risk preflight：只消费 immutable preview/reconciliation result 与显式 local metadata snapshots；不调用 `PreTradeRiskService`/registry/stateful rules，不构造 `PlaceOrderCommand`，无 DB/network/write。minimum notional、fee、remote permission 保持 UNKNOWN，stateful risk/balance/position 等保持 NOT_EVALUATED，`executionReadiness=BLOCKED`、`tradingAuthorized=false`。
 
 ## 2. Archive Compatibility Verification
 
-以下三项只供已冻结 archive checker 校验 GateV tag 事实，不属于 `nq-current-authority` schema，也不将 GateW 写成 tagged：
+以下三项只供已冻结 archive checker 校验 GateW tag 事实，不属于 `nq-current-authority` schema：
 
 ```text
 current_gate_status=FROZEN|ACCEPTED|TAGGED
-current_gate_tag=nq-gatev-freeze
-updated_commit=530ce4e2bde416aa61944262cbfbadca556656cb
+current_gate_tag=nq-gatew-freeze
+updated_commit=16376de28be78eea58afbe1374847ee07ca2ccc7
 ```
 
 ## 3. 安全与运行边界
@@ -98,4 +98,4 @@ updated_commit=530ce4e2bde416aa61944262cbfbadca556656cb
 
 ## 4. 下一允许动作
 
-治理 authority 中唯一下一动作精确为 `NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION`。该动作必须在独立任务中按 archive manifest、authority 与 links hard gates 实施；当前不得把 GateW 写成 `FROZEN`/`TAGGED`，不得创建或推送 freeze tag。该边界继续禁止重放 `start`、创建 Attempt-14、修改/复用历史 RunId、开启 LIVE、下单、撤单、转账或提现。
+治理 authority 中唯一下一动作精确为 `NQ-GATEX-PLAN-IMPLEMENTATION`。该动作只允许在独立任务中创建和审查 GateX plan；不得把 GateX plan 写成 implementation started，不得创建 Attempt-14、开启 LIVE、下单、撤单、转账或提现。
