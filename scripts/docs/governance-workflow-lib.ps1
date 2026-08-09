@@ -16,8 +16,9 @@ function Get-GovernanceWorkflowContract {
     $contract = $content | ConvertFrom-Json
     # A checker must understand the exact contract shape before it can use any policy from it.
     # Unknown versions fail closed instead of being treated as a forward-compatible extension.
-    if ($contract.schemaVersion -ne '1.3.0' -or $contract.authoritySchema -ne '3' -or
-        -not $contract.authority -or -not $contract.lifecycles -or
+    if ($contract.schemaVersion -ne '1.4.0' -or $contract.authoritySchema -ne '3' -or
+        -not $contract.authority -or -not $contract.authority.strictActionFamilyPatterns -or
+        -not $contract.authority.strictNextActions -or -not $contract.lifecycles -or
         -not $contract.lifecycles.transitionPolicies -or -not $contract.lifecycles.attempt10Runtime -or
         -not $contract.lifecycles.attempt11Runtime -or -not $contract.lifecycles.attempt12Runtime -or
         -not $contract.lifecycles.attempt13Runtime -or
@@ -53,6 +54,17 @@ function Test-GovernanceExactTokenSet {
 function Get-GovernanceNextActionType {
     param([object] $Contract, [string] $Action)
 
+    $isStrictFamily = @($Contract.authority.strictActionFamilyPatterns | Where-Object {
+        $Action -match [string]$_
+    }).Count -gt 0
+    if ($isStrictFamily) {
+        $strictMatches = @($Contract.authority.strictNextActions | Where-Object {
+            [string]$_.action -ceq $Action
+        })
+        if ($strictMatches.Count -ne 1) { return 'UNKNOWN' }
+        return [string]$strictMatches[0].type
+    }
+
     foreach ($definition in @($Contract.authority.nextActionTypes)) {
         if ($Action -match [string]$definition.pattern) { return [string]$definition.name }
     }
@@ -80,15 +92,32 @@ function Get-GovernanceContextValue {
     return Get-GovernancePropertyValue $Context $Name
 }
 
+function Test-GovernanceMappingAuthorityRequirements {
+    param([object] $Mapping, [object] $Context)
+
+    $requirements = Get-GovernancePropertyValue $Mapping 'authorityRequirements'
+    if ($null -eq $requirements) { return $true }
+    if ($null -eq $Context) { return $false }
+    foreach ($requirement in @($requirements.PSObject.Properties)) {
+        $actual = Get-GovernanceContextValue $Context ([string]$requirement.Name)
+        if ($null -eq $actual -or [string]$actual -cne [string]$requirement.Value) { return $false }
+    }
+    return $true
+}
+
 function Test-GovernanceExactNextActionMapping {
-    param([object] $Contract, [string] $Status, [string] $WorkBatch, [string] $Action)
+    param(
+        [object] $Contract, [string] $Status, [string] $WorkBatch, [string] $Action,
+        [object] $Context = $null
+    )
 
     $mappings = Get-GovernancePropertyValue $Contract.authority 'exactNextActionMappings'
     if ($null -eq $mappings) { return $false }
     foreach ($mapping in @($mappings)) {
         if ([string]$mapping.workBatchStatus -ceq $Status -and
             [string]$mapping.workBatch -ceq $WorkBatch -and
-            [string]$mapping.nextAction -ceq $Action) {
+            [string]$mapping.nextAction -ceq $Action -and
+            (Test-GovernanceMappingAuthorityRequirements $mapping $Context)) {
             return $true
         }
     }
@@ -96,7 +125,10 @@ function Test-GovernanceExactNextActionMapping {
 }
 
 function Test-GovernanceScopedNextActionMapping {
-    param([object] $Contract, [string] $Status, [string] $WorkBatch, [string] $Action)
+    param(
+        [object] $Contract, [string] $Status, [string] $WorkBatch, [string] $Action,
+        [object] $Context = $null
+    )
 
     $mappings = Get-GovernancePropertyValue $Contract.authority 'exactNextActionMappings'
     if ($null -eq $mappings) { return $false }
@@ -104,7 +136,8 @@ function Test-GovernanceScopedNextActionMapping {
         if ([string](Get-GovernancePropertyValue $mapping 'scope') -ceq 'WORK_BATCH' -and
             [string]$mapping.workBatchStatus -ceq $Status -and
             [string]$mapping.workBatch -ceq $WorkBatch -and
-            [string]$mapping.nextAction -ceq $Action) {
+            [string]$mapping.nextAction -ceq $Action -and
+            (Test-GovernanceMappingAuthorityRequirements $mapping $Context)) {
             return $true
         }
     }
@@ -112,7 +145,10 @@ function Test-GovernanceScopedNextActionMapping {
 }
 
 function Test-GovernanceNextActionForWorkBatch {
-    param([object] $Contract, [string] $Status, [string] $WorkBatch, [string] $Action)
+    param(
+        [object] $Contract, [string] $Status, [string] $WorkBatch, [string] $Action,
+        [object] $Context = $null
+    )
 
     if ([string]::IsNullOrWhiteSpace($WorkBatch) -or [string]::IsNullOrWhiteSpace($Action)) { return $false }
     $expectedType = Get-GovernanceExpectedNextActionType $Contract $Status
@@ -127,7 +163,7 @@ function Test-GovernanceNextActionForWorkBatch {
     })
     if ($scopedMappings.Count -gt 0) {
         return $actualType -ceq $expectedType -and
-            (Test-GovernanceScopedNextActionMapping $Contract $Status $WorkBatch $Action)
+            (Test-GovernanceScopedNextActionMapping $Contract $Status $WorkBatch $Action $Context)
     }
 
     $statusMappings = @($exactMappings | Where-Object {
@@ -136,7 +172,7 @@ function Test-GovernanceNextActionForWorkBatch {
     })
     if ($statusMappings.Count -gt 0) {
         return $actualType -ceq $expectedType -and
-            (Test-GovernanceExactNextActionMapping $Contract $Status $WorkBatch $Action)
+            (Test-GovernanceExactNextActionMapping $Contract $Status $WorkBatch $Action $Context)
     }
 
     if ($actualType -cne $expectedType) { return $false }
@@ -312,7 +348,9 @@ function Test-GovernanceLifecycleTransitionContext {
             'TO_STATUS_SAME_WORK_BATCH' {
                 $toWorkBatch = [string](Get-GovernanceContextValue $Context 'toWorkBatch')
                 $toNextAction = [string](Get-GovernanceContextValue $Context 'toNextAction')
-                if (-not (Test-GovernanceNextActionForWorkBatch $Contract $ToStatus $toWorkBatch $toNextAction)) { return $false }
+                $toAuthority = Get-GovernanceContextValue $Context 'toAuthority'
+                if (-not (Test-GovernanceNextActionForWorkBatch `
+                        $Contract $ToStatus $toWorkBatch $toNextAction $toAuthority)) { return $false }
             }
             default { return $false }
         }

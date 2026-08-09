@@ -72,7 +72,7 @@ function Read-AttemptDeploymentAuthority {
         DeploymentState = $match.Groups['deploymentState'].Value
     }
 
-    $allowedAttemptStates = @('NOT_CREATED', 'CREATED', 'RUNNING', 'FAILED', 'STOPPED', 'ACCEPTED')
+    $allowedAttemptStates = @('NOT_CREATED', 'CREATED', 'RUNNING', 'FAILED', 'STOPPED', 'ACCEPTED', 'COMPLETED')
     $allowedAuthorizationStates = @(
         'AUTHORIZED', 'NOT_AUTHORIZED', 'PENDING_168H', 'FAILED', 'STOPPED',
         'ACCEPTED', 'COMPLETED_168H'
@@ -266,7 +266,7 @@ function Read-MachineCurrentAttemptAuthority {
         }
     }
 
-    $allowedAttemptStates = @('NOT_CREATED', 'CREATED', 'RUNNING', 'FAILED', 'STOPPED', 'ACCEPTED')
+    $allowedAttemptStates = @('NOT_CREATED', 'CREATED', 'RUNNING', 'FAILED', 'STOPPED', 'ACCEPTED', 'COMPLETED')
     $allowedAuthorizationStates = @(
         'AUTHORIZED', 'NOT_AUTHORIZED', 'PENDING_168H', 'FAILED', 'STOPPED',
         'ACCEPTED', 'COMPLETED_168H'
@@ -407,6 +407,35 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
                 Add-AuthorityError "WORK_BATCH_ACTIVE_GATE_MISMATCH active_gate=$($authority.active_gate) work_batch=$($authority.work_batch)"
             }
 
+            $attempt13AcceptanceBatch = 'GateW-ATTEMPT-13-168H-ACCEPTANCE'
+            $attempt13AcceptanceStatuses = @(
+                'ACCEPTED|READY_TO_COMMIT',
+                'COMMITTED|CI_PENDING',
+                'COMMITTED|CI_FAILED|FIX_REQUIRED',
+                'ACCEPTED|CI_GREEN|FREEZE_READY'
+            )
+            if ($authority.work_batch -ceq $attempt13AcceptanceBatch) {
+                if ($attempt13AcceptanceStatuses -cnotcontains $authority.work_batch_status) {
+                    Add-AuthorityError "ATTEMPT_13_ACCEPTANCE_STATUS_INVALID status=$($authority.work_batch_status)"
+                }
+                foreach ($requiredAcceptanceFact in @{
+                    attempt = 'Attempt-13'
+                    attempt_status = 'COMPLETED|ACCEPTED'
+                    production_soak = 'COMPLETED'
+                    kill_switch = 'ENGAGED'
+                }.GetEnumerator()) {
+                    if (-not $authority.ContainsKey($requiredAcceptanceFact.Key) -or
+                        $authority[$requiredAcceptanceFact.Key] -cne $requiredAcceptanceFact.Value) {
+                        Add-AuthorityError ("ATTEMPT_13_ACCEPTANCE_AUTHORITY_INVALID key={0} expected={1} actual={2}" -f
+                            $requiredAcceptanceFact.Key, $requiredAcceptanceFact.Value,
+                            $(if ($authority.ContainsKey($requiredAcceptanceFact.Key)) { $authority[$requiredAcceptanceFact.Key] } else { 'MISSING' }))
+                    }
+                }
+            } elseif ($authority.work_batch_status -ceq 'ACCEPTED|READY_TO_COMMIT' -or
+                $authority.work_batch_status -ceq 'ACCEPTED|CI_GREEN|FREEZE_READY') {
+                Add-AuthorityError "ATTEMPT_13_ACCEPTANCE_WORK_BATCH_INVALID work_batch=$($authority.work_batch) status=$($authority.work_batch_status)"
+            }
+
             foreach ($field in @('last_frozen_gate_commit', 'accepted_batch_implementation_commit', 'accepted_batch_acceptance_head')) {
                 if ($authority[$field] -notmatch '^[0-9a-f]{40}$') { Add-AuthorityError "COMMIT_FIELD_FORMAT_INVALID field=$field value=$($authority[$field])" }
             }
@@ -430,12 +459,13 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
             $actualActionType = Get-GovernanceNextActionType $contract $authority.next_action
             if ($expectedActionType -eq 'UNKNOWN' -or $actualActionType -ne $expectedActionType) {
                 Add-AuthorityError "NEXT_ACTION_TYPE_MISMATCH status=$($authority.work_batch_status) expected=$expectedActionType actual=$actualActionType action=$($authority.next_action)"
-            } elseif (-not (Test-GovernanceNextActionForWorkBatch $contract $authority.work_batch_status $authority.work_batch $authority.next_action)) {
+            } elseif (-not (Test-GovernanceNextActionForWorkBatch `
+                    $contract $authority.work_batch_status $authority.work_batch $authority.next_action $authority)) {
                 Add-AuthorityError "NEXT_ACTION_WORK_BATCH_MISMATCH work_batch=$($authority.work_batch) action=$($authority.next_action)"
             }
 
             $hasScopedExactNextAction = Test-GovernanceScopedNextActionMapping `
-                $contract $authority.work_batch_status $authority.work_batch $authority.next_action
+                $contract $authority.work_batch_status $authority.work_batch $authority.next_action $authority
             if (-not $hasScopedExactNextAction -and
                 ($authority.work_batch_status -ceq 'COMMITTED|CI_FAILED|FIX_REQUIRED' -or
                     $authority.work_batch_status -ceq 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED')) {

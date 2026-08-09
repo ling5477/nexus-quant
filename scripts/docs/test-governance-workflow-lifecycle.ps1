@@ -82,7 +82,11 @@ function Write-AuthorityFixture {
         [string]$WorkBatch='GateW-FIXTURE',
         [string]$AttemptState='NOT_CREATED',
         [string]$AuthorizationState='AUTHORIZED',
-        [string]$DeploymentState='NOT_STARTED'
+        [string]$DeploymentState='NOT_STARTED',
+        [string]$MachineAttempt='',
+        [string]$MachineAttemptStatus='',
+        [string]$ProductionSoak='',
+        [string]$KillSwitch=''
     )
     $display = switch ($Status) {
         'NOT_STARTED' { 'NOT STARTED' }
@@ -94,6 +98,8 @@ function Write-AuthorityFixture {
         'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' { 'COMMITTED / CI GREEN / CONTINUE REQUIRED' }
         'IMPLEMENTED|CI_GREEN|RC_REVIEW_PENDING' { 'IMPLEMENTED / CI GREEN / RC REVIEW PENDING' }
         'RUNNING|PENDING_168H' { 'RUNNING / PENDING 168H' }
+        'ACCEPTED|READY_TO_COMMIT' { 'ACCEPTED / READY TO COMMIT' }
+        'ACCEPTED|CI_GREEN|FREEZE_READY' { 'ACCEPTED / CI GREEN / FREEZE READY' }
         'REVIEW_REJECTED|REMEDIATION_REQUIRED' { 'REVIEW REJECTED / REMEDIATION REQUIRED' }
         'ACCEPTED|CI_GREEN|DEPLOYMENT_AUTHORIZED' { 'ACCEPTED / CI GREEN / DEPLOYMENT AUTHORIZED' }
         'ACCEPTED|CI_GREEN' { 'ACCEPTED / CI GREEN' }
@@ -103,6 +109,15 @@ function Write-AuthorityFixture {
         if (-not $PSBoundParameters.ContainsKey('AttemptState')) { $AttemptState = 'RUNNING' }
         if (-not $PSBoundParameters.ContainsKey('AuthorizationState')) { $AuthorizationState = 'PENDING_168H' }
         if (-not $PSBoundParameters.ContainsKey('DeploymentState')) { $DeploymentState = 'STARTED' }
+    }
+    $acceptanceAuthorityLines = ''
+    if (-not [string]::IsNullOrWhiteSpace($MachineAttempt)) {
+        $acceptanceAuthorityLines = @(
+            "attempt=$MachineAttempt",
+            "attempt_status=$MachineAttemptStatus",
+            "production_soak=$ProductionSoak",
+            "kill_switch=$KillSwitch"
+        ) -join "`n"
     }
     $content = @"
 # Fixture Status
@@ -124,6 +139,7 @@ work_batch_status=$Status
 work_batch_commit=$Commit
 work_batch_ci_run=$Ci
 next_action=$Action
+$acceptanceAuthorityLines
 live=DISABLED
 shadow_trading=NOT_ENABLED
 ai=NOT_STARTED
@@ -142,6 +158,8 @@ nq-current-authority:end -->
     $attemptId = 10
     $attemptMatch = [regex]::Match($Action, '(?-i:^NQ-GATEW-ATTEMPT-(?<attemptId>[1-9][0-9]*)-)')
     if ($attemptMatch.Success) { $attemptId = [int]$attemptMatch.Groups['attemptId'].Value }
+    $machineAttemptMatch = [regex]::Match($MachineAttempt, '(?-i:^Attempt-(?<attemptId>[1-9][0-9]*)$)')
+    if ($machineAttemptMatch.Success) { $attemptId = [int]$machineAttemptMatch.Groups['attemptId'].Value }
     $attemptLine = '- Attempt-{0}: `{1} / {2}`; production deployment=`{3}`.' -f `
         $attemptId,$AttemptState,$AuthorizationState,$DeploymentState
     $content = $content.TrimEnd() + "`n$attemptLine`n"
@@ -176,7 +194,7 @@ nq-current-authority:end -->
 
 try {
     $unsupportedContractPath = Join-Path $tempRoot 'unsupported-contract.json'
-    $unsupportedContract = (Get-Content -Raw $contractPath).Replace('"schemaVersion": "1.3.0"', '"schemaVersion": "9.0.0"')
+    $unsupportedContract = (Get-Content -Raw $contractPath).Replace('"schemaVersion": "1.4.0"', '"schemaVersion": "9.0.0"')
     Write-Utf8File $unsupportedContractPath $unsupportedContract
     $unsupportedRejected = $false
     try { $null = Get-GovernanceWorkflowContract $unsupportedContractPath } catch { $unsupportedRejected = $true }
@@ -618,12 +636,31 @@ try {
     $attempt13BlockedAction='NQ-GATEW-ATTEMPT-13-PREPARATION-AND-START-BLOCKED'
     $schemaRemediationCommit='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
 
+    Add-Member -InputObject $deploymentAuthorizedRuntime -NotePropertyName productionSoak -NotePropertyValue 'NOT_STARTED'
+    Add-Member -InputObject $preflightBlockedRuntime -NotePropertyName productionSoak -NotePropertyValue 'NOT_STARTED'
+    Add-Member -InputObject $permissionBlockedRuntime -NotePropertyName productionSoak -NotePropertyValue 'NOT_STARTED'
+    Add-Member -InputObject $soakRunningRuntime -NotePropertyName productionSoak -NotePropertyValue 'RUNNING'
+    $soakRunningRuntime.attemptStatus='RUNNING|PENDING_168H'
+    Add-Member -InputObject $startupFailedRuntime -NotePropertyName productionSoak -NotePropertyValue 'NOT_STARTED'
+    $soakCompletedRuntime=[pscustomobject]@{
+        attemptStatus='COMPLETED|ACCEPTED';productionDeployment='STOPPED';productionSoak='COMPLETED'
+        live='DISABLED';killSwitch='ENGAGED';worker='STOPPED';acceptanceClock='COMPLETED'
+        runIdReuse='FORBIDDEN';autoRetry='DISABLED'
+    }
+    $soakRejectedRuntime=[pscustomobject]@{
+        attemptStatus='FAILED|ACCEPTANCE_REJECTED';productionDeployment='STOPPED';productionSoak='REJECTED'
+        live='DISABLED';killSwitch='ENGAGED';worker='STOPPED';acceptanceClock='COMPLETED'
+        runIdReuse='FORBIDDEN';autoRetry='DISABLED'
+    }
+
     foreach ($runtimeCase in @(
         @{Name='DEPLOYMENT_AUTHORIZED';State=$deploymentAuthorizedRuntime},
         @{Name='PREFLIGHT_BLOCKED';State=$preflightBlockedRuntime},
         @{Name='PERMISSION_BLOCKED';State=$permissionBlockedRuntime},
         @{Name='SOAK_RUNNING';State=$soakRunningRuntime},
-        @{Name='STARTUP_FAILED';State=$startupFailedRuntime}
+        @{Name='STARTUP_FAILED';State=$startupFailedRuntime},
+        @{Name='SOAK_COMPLETED';State=$soakCompletedRuntime},
+        @{Name='SOAK_REJECTED';State=$soakRejectedRuntime}
     )) {
         Assert-RuntimeState $runtimeCase.Name $runtimeCase.State $true `
             ("attempt-13-runtime-{0}" -f $runtimeCase.Name.ToLowerInvariant()) 'attempt13Runtime'
@@ -726,9 +763,130 @@ try {
         $schemaRemediationCommit '304' $schemaRemediationCommit '304' $false $false `
         'attempt-13-startup-failure-wrong-batch-rejected' $wrongAttempt13FailureBatchContext
 
+    $attempt13AcceptanceBatch='GateW-ATTEMPT-13-168H-ACCEPTANCE'
+    $attempt13AcceptedReadyStatus='ACCEPTED|READY_TO_COMMIT'
+    $attempt13AcceptedReadyAction='NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE-COMMIT-AND-PUSH'
+    $attempt13AcceptanceCiAction='NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE-CI-ACCEPTANCE'
+    $attempt13FreezeReadyStatus='ACCEPTED|CI_GREEN|FREEZE_READY'
+    $attempt13FreezeCloseoutAction='NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION'
+    $attempt13FailureStatus='FAILED|ACCEPTANCE_REJECTED|INCIDENT_REVIEW_COMPLETED'
+    $attempt13FailureAction='NQ-GATEW-ATTEMPT-13-FAILURE-REMEDIATION-IMPLEMENTATION'
+    $attempt13AcceptedAuthority=@{
+        active_gate='GateW';active_gate_status='IN_PROGRESS|NOT_FROZEN';attempt='Attempt-13'
+        attempt_status='COMPLETED|ACCEPTED';production_soak='COMPLETED'
+        live='DISABLED';kill_switch='ENGAGED'
+    }
+    $attempt13AcceptanceEvents=@(
+        'ATTEMPT_13_168H_ACCEPTANCE_PASSED','ACCEPTANCE_VERDICT_RECORDED',
+        'WORKER_GRACEFULLY_STOPPED','SOAK_SEALED'
+    )
+    $attempt13AcceptanceContext=[pscustomobject]@{
+        mode='ATTEMPT_13_168H_ACCEPTANCE_SUCCESS'
+        fromWorkBatch=$attempt13SoakBatch;toWorkBatch=$attempt13AcceptanceBatch
+        toNextAction=$attempt13AcceptedReadyAction;toAuthority=$attempt13AcceptedAuthority
+        fromRuntimeState=$soakRunningRuntime;toRuntimeState=$soakCompletedRuntime
+        runtimeEvents=$attempt13AcceptanceEvents
+    }
+    Assert-Transition 'highRisk' $attempt10RunningStatus $attempt13AcceptedReadyStatus $true `
+        'attempt-13-running-to-accepted-ready'
+    Assert-ContextTransition 'highRisk' $attempt10RunningStatus $attempt13AcceptedReadyStatus `
+        $schemaRemediationCommit '304' 'UNCOMMITTED' 'NOT_RUN' $false $true `
+        'attempt-13-168h-acceptance-success' $attempt13AcceptanceContext
+    Assert-RuntimeTransition 'SOAK_RUNNING' 'SOAK_COMPLETED' `
+        $soakRunningRuntime $soakCompletedRuntime $attempt13AcceptanceEvents $true `
+        'attempt-13-soak-completed' 'attempt13Runtime'
+    Assert-RuntimeTransition 'SOAK_RUNNING' 'SOAK_COMPLETED' `
+        $soakRunningRuntime $soakCompletedRuntime @('ATTEMPT_13_168H_ACCEPTANCE_PASSED') $false `
+        'attempt-13-incomplete-acceptance-events-rejected' 'attempt13Runtime'
+
+    $acceptanceCommit='cccccccccccccccccccccccccccccccccccccccc'
+    $acceptanceCommitContext=[pscustomobject]@{
+        fromWorkBatch=$attempt13AcceptanceBatch;toWorkBatch=$attempt13AcceptanceBatch
+        toNextAction=$attempt13AcceptanceCiAction;toAuthority=$attempt13AcceptedAuthority
+        toRuntimeState=$soakCompletedRuntime
+    }
+    Assert-Transition 'highRisk' $attempt13AcceptedReadyStatus 'COMMITTED|CI_PENDING' $true `
+        'attempt-13-acceptance-commit-pending'
+    Assert-ContextTransition 'highRisk' $attempt13AcceptedReadyStatus 'COMMITTED|CI_PENDING' `
+        'UNCOMMITTED' 'NOT_RUN' $acceptanceCommit 'PENDING' $false $true `
+        'attempt-13-acceptance-commit-exact' $acceptanceCommitContext
+
+    $acceptanceCiContext=[pscustomobject]@{
+        mode='POST_ATTEMPT_13_ACCEPTANCE_CI_SUCCESS_FREEZE_AUTHORIZATION'
+        fromWorkBatch=$attempt13AcceptanceBatch;toWorkBatch=$attempt13AcceptanceBatch
+        toNextAction=$attempt13FreezeCloseoutAction;toAuthority=$attempt13AcceptedAuthority
+        externalEvidence=$successEvidence;toRuntimeState=$soakCompletedRuntime
+    }
+    Assert-Transition 'highRisk' 'COMMITTED|CI_PENDING' $attempt13FreezeReadyStatus $true `
+        'attempt-13-acceptance-ci-green-freeze-ready'
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_PENDING' $attempt13FreezeReadyStatus `
+        $acceptanceCommit 'PENDING' $acceptanceCommit '305' $false $true `
+        'attempt-13-exact-head-ci-freeze-authorization' $acceptanceCiContext
+    $badAcceptanceCiContext=$acceptanceCiContext.PSObject.Copy()
+    $badAcceptanceCiContext.externalEvidence=[pscustomobject]@{exactHeadMatch=$false;ciConclusion='success'}
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_PENDING' $attempt13FreezeReadyStatus `
+        $acceptanceCommit 'PENDING' $acceptanceCommit '305' $false $false `
+        'attempt-13-freeze-requires-exact-head-ci' $badAcceptanceCiContext
+
+    foreach ($safetyCase in @(
+        @{Field='attempt';Value='Attempt-12'},
+        @{Field='attempt_status';Value='RUNNING|PENDING_168H'},
+        @{Field='production_soak';Value='RUNNING'},
+        @{Field='live';Value='ENABLED'},
+        @{Field='kill_switch';Value='DISENGAGED'},
+        @{Field='active_gate_status';Value='FROZEN|ACCEPTED|TAGGED'}
+    )) {
+        $badAuthority=@{}+$attempt13AcceptedAuthority
+        $badAuthority[$safetyCase.Field]=$safetyCase.Value
+        Assert-Condition (-not (Test-GovernanceNextActionForWorkBatch `
+            $contract $attempt13FreezeReadyStatus $attempt13AcceptanceBatch `
+            $attempt13FreezeCloseoutAction $badAuthority)) `
+            "freeze hard gate accepted invalid $($safetyCase.Field)"
+    }
+    Assert-Transition 'highRisk' $attempt10RunningStatus $attempt13FreezeReadyStatus $false `
+        'attempt-13-running-direct-freeze-rejected'
+    Assert-Transition 'highRisk' $attempt10RunningStatus 'FROZEN|ACCEPTED|TAGGED' $false `
+        'attempt-13-running-direct-tag-rejected'
+    Assert-Condition (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $attempt10RunningStatus $attempt13SoakBatch 'NQ-GATEX-PLAN-IMPLEMENTATION')) `
+        'attempt-13 running entered GateX'
+    Assert-Transition 'highRisk' $attempt13AcceptedReadyStatus $attempt13FreezeReadyStatus $false `
+        'attempt-13-uncommitted-direct-freeze-rejected'
+    Assert-Condition (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract 'COMMITTED|CI_PENDING' $attempt13AcceptanceBatch `
+        $attempt13FreezeCloseoutAction $attempt13AcceptedAuthority)) `
+        'attempt-13 ci-pending entered freeze without CI acceptance transition'
+    Assert-Transition 'highRisk' 'COMMITTED|CI_FAILED|FIX_REQUIRED' $attempt13FreezeReadyStatus $false `
+        'attempt-13-ci-failed-direct-freeze-rejected'
+
+    $attempt13RejectedEvents=@(
+        'ATTEMPT_13_168H_ACCEPTANCE_REJECTED','WORKER_STOPPED','INCIDENT_EVIDENCE_PRESERVED'
+    )
+    Assert-Transition 'highRisk' $attempt10RunningStatus $attempt13FailureStatus $true `
+        'attempt-13-running-to-acceptance-rejected'
+    Assert-RuntimeTransition 'SOAK_RUNNING' 'SOAK_REJECTED' `
+        $soakRunningRuntime $soakRejectedRuntime $attempt13RejectedEvents $true `
+        'attempt-13-soak-rejected' 'attempt13Runtime'
+    $rejectedReuseRuntime=$soakRejectedRuntime.PSObject.Copy()
+    $rejectedReuseRuntime.runIdReuse='ALLOWED'
+    Assert-RuntimeState 'SOAK_REJECTED' $rejectedReuseRuntime $false `
+        'attempt-13-rejected-run-id-reuse-rejected' 'attempt13Runtime'
+    $rejectedRetryRuntime=$soakRejectedRuntime.PSObject.Copy()
+    $rejectedRetryRuntime.autoRetry='ENABLED'
+    Assert-RuntimeState 'SOAK_REJECTED' $rejectedRetryRuntime $false `
+        'attempt-13-rejected-auto-retry-rejected' 'attempt13Runtime'
+    Assert-Condition (Test-GovernanceNextActionForWorkBatch `
+        $contract $attempt13FailureStatus $attempt13SoakBatch $attempt13FailureAction) `
+        'attempt-13 failure remediation action rejected'
+    Assert-Condition (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $attempt13FailureStatus $attempt13SoakBatch $attempt13FreezeCloseoutAction `
+        $attempt13AcceptedAuthority)) 'attempt-13 failed state entered freeze'
+    Write-Output 'PASS fixture=attempt-13-acceptance-full-success-failure-and-freeze-hard-gates'
+
     Assert-Condition (-not [bool]$contract.lifecycles.freeze.authorityReviewCommitRequired) 'freeze authority review commit must not be required'
     Assert-Condition (@($contract.lifecycles.freeze.candidateEntryStatuses) -contains 'IMPLEMENTED|PENDING_REVIEW') 'freeze pending-review candidate entry missing'
     Assert-Condition (@($contract.lifecycles.freeze.candidateEntryStatuses) -cnotcontains 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED') 'green continuation was accepted as freeze/archive candidate'
+    Assert-Condition (@($contract.lifecycles.freeze.candidateEntryStatuses) -ccontains $attempt13FreezeReadyStatus) 'attempt-13 freeze-ready status missing from freeze candidates'
     Assert-Condition (@($contract.authority.acceptedBatchStatuses) -cnotcontains 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED') 'green continuation was accepted as release-ready batch status'
     Write-Output 'PASS fixture=freeze-without-review-authority-commit'
     Write-Output 'PASS fixture=green-continuation-archive-freeze-readiness-rejected'
@@ -738,7 +896,8 @@ try {
         'docs/current/evidence/gate-w/README.md',
         'docs/current/evidence/gate-w/NQ-GOVERNANCE-WORKFLOW-CONSOLIDATION.attempt-01.md',
         'docs/current/evidence/gate-w/NQ-GOVERNANCE-WORKFLOW-CONSOLIDATION-REVIEW.attempt-01.md',
-        'docs/current/evidence/gate-w/NQ-GOVERNANCE-POST-FIX-CI-GREEN-CONTINUATION-HARDENING.attempt-01.md'
+        'docs/current/evidence/gate-w/NQ-GOVERNANCE-POST-FIX-CI-GREEN-CONTINUATION-HARDENING.attempt-01.md',
+        'docs/current/evidence/gate-w/NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE-TRANSITION-CONTRACT-FIX.attempt-01.md'
     )) {
         Assert-Condition (Test-GovernanceEvidencePath $contract 'current' $path) "current evidence rejected path=$path"
         $currentItem = Get-Item -LiteralPath (Join-Path (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path $path)
@@ -796,6 +955,78 @@ try {
         Write-AuthorityFixture $authorityRoot $case.Status $case.Action $case.Commit $case.Ci 'IN_PROGRESS|NOT_FROZEN' 'GateV-FREEZE' $case.Batch
         Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $true 'PASS / CURRENT_AUTHORITY_CONSISTENT' $case.Name
     }
+    $acceptanceAcceptedBatch='GateW-ATTEMPT-12-PREREQUISITE-SCHEMA-REMEDIATION'
+    foreach ($case in @(
+        @{Status=$attempt13AcceptedReadyStatus;Action=$attempt13AcceptedReadyAction;Commit='UNCOMMITTED';Ci='NOT_RUN';Name='authority-attempt-13-acceptance-ready'},
+        @{Status='COMMITTED|CI_PENDING';Action=$attempt13AcceptanceCiAction;Commit=$acceptanceCommit;Ci='PENDING';Name='authority-attempt-13-acceptance-ci-pending'},
+        @{Status=$attempt13FreezeReadyStatus;Action=$attempt13FreezeCloseoutAction;Commit=$acceptanceCommit;Ci='305';Name='authority-attempt-13-freeze-ready'}
+    )) {
+        Write-AuthorityFixture -Root $authorityRoot -Status $case.Status -Action $case.Action `
+            -Commit $case.Commit -Ci $case.Ci -AcceptedBatch $acceptanceAcceptedBatch `
+            -WorkBatch $attempt13AcceptanceBatch -AttemptState 'COMPLETED' `
+            -AuthorizationState 'ACCEPTED' -DeploymentState 'STOPPED' `
+            -MachineAttempt 'Attempt-13' -MachineAttemptStatus 'COMPLETED|ACCEPTED' `
+            -ProductionSoak 'COMPLETED' -KillSwitch 'ENGAGED'
+        Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $true `
+            'PASS / CURRENT_AUTHORITY_CONSISTENT' $case.Name
+    }
+    Assert-Checker (Invoke-Checker $authorityChecker @('-ReadinessMode','ARCHIVE_FREEZE') $authorityRoot) `
+        $true 'PASS / CURRENT_AUTHORITY_CONSISTENT' 'authority-attempt-13-freeze-ready-archive-mode'
+
+    Write-AuthorityFixture -Root $authorityRoot -Status $attempt13AcceptedReadyStatus `
+        -Action $attempt13FreezeCloseoutAction -Commit 'UNCOMMITTED' -Ci 'NOT_RUN' `
+        -AcceptedBatch $acceptanceAcceptedBatch -WorkBatch $attempt13AcceptanceBatch `
+        -AttemptState 'COMPLETED' -AuthorizationState 'ACCEPTED' -DeploymentState 'STOPPED' `
+        -MachineAttempt 'Attempt-13' -MachineAttemptStatus 'COMPLETED|ACCEPTED' `
+        -ProductionSoak 'COMPLETED' -KillSwitch 'ENGAGED'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false `
+        'NEXT_ACTION_TYPE_MISMATCH' 'authority-attempt-13-uncommitted-direct-freeze-rejected'
+    Assert-Checker (Invoke-Checker $authorityChecker @('-ReadinessMode','ARCHIVE_FREEZE') $authorityRoot) `
+        $false 'GATE_READINESS_STATUS_INVALID' 'authority-attempt-13-uncommitted-freeze-readiness-rejected'
+
+    Write-AuthorityFixture -Root $authorityRoot -Status 'COMMITTED|CI_PENDING' `
+        -Action $attempt13FreezeCloseoutAction -Commit $acceptanceCommit -Ci 'PENDING' `
+        -AcceptedBatch $acceptanceAcceptedBatch -WorkBatch $attempt13AcceptanceBatch `
+        -AttemptState 'COMPLETED' -AuthorizationState 'ACCEPTED' -DeploymentState 'STOPPED' `
+        -MachineAttempt 'Attempt-13' -MachineAttemptStatus 'COMPLETED|ACCEPTED' `
+        -ProductionSoak 'COMPLETED' -KillSwitch 'ENGAGED'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false `
+        'NEXT_ACTION_TYPE_MISMATCH' 'authority-attempt-13-ci-pending-direct-freeze-rejected'
+
+    foreach ($safetyCase in @(
+        @{MachineAttempt='Attempt-12';MachineAttemptStatus='COMPLETED|ACCEPTED';ProductionSoak='COMPLETED';KillSwitch='ENGAGED';Name='wrong-attempt'},
+        @{MachineAttempt='Attempt-13';MachineAttemptStatus='RUNNING|PENDING_168H';ProductionSoak='COMPLETED';KillSwitch='ENGAGED';Name='attempt-running'},
+        @{MachineAttempt='Attempt-13';MachineAttemptStatus='COMPLETED|ACCEPTED';ProductionSoak='RUNNING';KillSwitch='ENGAGED';Name='soak-running'},
+        @{MachineAttempt='Attempt-13';MachineAttemptStatus='COMPLETED|ACCEPTED';ProductionSoak='COMPLETED';KillSwitch='DISENGAGED';Name='kill-switch-disengaged'}
+    )) {
+        Write-AuthorityFixture -Root $authorityRoot -Status $attempt13FreezeReadyStatus `
+            -Action $attempt13FreezeCloseoutAction -Commit $acceptanceCommit -Ci '305' `
+            -AcceptedBatch $acceptanceAcceptedBatch -WorkBatch $attempt13AcceptanceBatch `
+            -AttemptState 'COMPLETED' -AuthorizationState 'ACCEPTED' -DeploymentState 'STOPPED' `
+            -MachineAttempt $safetyCase.MachineAttempt -MachineAttemptStatus $safetyCase.MachineAttemptStatus `
+            -ProductionSoak $safetyCase.ProductionSoak -KillSwitch $safetyCase.KillSwitch
+        Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false `
+            'ATTEMPT_13_ACCEPTANCE_AUTHORITY_INVALID' ("authority-attempt-13-{0}-freeze-rejected" -f $safetyCase.Name)
+    }
+
+    Write-AuthorityFixture -Root $authorityRoot -Status 'COMMITTED|CI_FAILED|FIX_REQUIRED' `
+        -Action $attempt13FreezeCloseoutAction -Commit $acceptanceCommit -Ci '305' `
+        -AcceptedBatch $acceptanceAcceptedBatch -WorkBatch $attempt13AcceptanceBatch `
+        -AttemptState 'COMPLETED' -AuthorizationState 'ACCEPTED' -DeploymentState 'STOPPED' `
+        -MachineAttempt 'Attempt-13' -MachineAttemptStatus 'COMPLETED|ACCEPTED' `
+        -ProductionSoak 'COMPLETED' -KillSwitch 'ENGAGED'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false `
+        'NEXT_ACTION_TYPE_MISMATCH' 'authority-attempt-13-ci-failed-direct-freeze-rejected'
+
+    Write-AuthorityFixture -Root $authorityRoot -Status $attempt13FreezeReadyStatus `
+        -Action $attempt13FreezeCloseoutAction -Commit $acceptanceCommit -Ci '305' `
+        -AcceptedBatch $acceptanceAcceptedBatch -WorkBatch 'GateW-ATTEMPT-14-168H-ACCEPTANCE' `
+        -AttemptState 'COMPLETED' -AuthorizationState 'ACCEPTED' -DeploymentState 'STOPPED' `
+        -MachineAttempt 'Attempt-13' -MachineAttemptStatus 'COMPLETED|ACCEPTED' `
+        -ProductionSoak 'COMPLETED' -KillSwitch 'ENGAGED'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false `
+        'ATTEMPT_13_ACCEPTANCE_WORK_BATCH_INVALID' 'authority-attempt-13-wrong-work-batch-freeze-rejected'
+
     Write-AuthorityFixture $authorityRoot $deploymentAuthorizedStatus $attempt11StartAction `
         $remediationCommit '302' 'IN_PROGRESS|NOT_FROZEN' $attempt10RemediationBatch `
         $attempt11PreparationBatch 'NOT_CREATED' 'AUTHORIZED' 'NOT_STARTED'

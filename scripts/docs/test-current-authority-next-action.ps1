@@ -576,6 +576,99 @@ foreach ($case in @(
 }
 Write-Output 'PASS canonical-attempt-13-preparation-acceptance-and-blocked exact-triples=true'
 
+$attempt13AcceptanceWorkBatch = 'GateW-ATTEMPT-13-168H-ACCEPTANCE'
+$attempt13AcceptedReadyStatus = 'ACCEPTED|READY_TO_COMMIT'
+$attempt13AcceptedReadyAction = 'NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE-COMMIT-AND-PUSH'
+$attempt13AcceptanceCiAction = 'NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE-CI-ACCEPTANCE'
+$attempt13FreezeReadyStatus = 'ACCEPTED|CI_GREEN|FREEZE_READY'
+$attempt13FreezeCloseoutAction = 'NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION'
+$attempt13FailureStatus = 'FAILED|ACCEPTANCE_REJECTED|INCIDENT_REVIEW_COMPLETED'
+$attempt13FailureAction = 'NQ-GATEW-ATTEMPT-13-FAILURE-REMEDIATION-IMPLEMENTATION'
+$attempt13AcceptedAuthority = @{
+    active_gate = 'GateW'
+    active_gate_status = 'IN_PROGRESS|NOT_FROZEN'
+    attempt = 'Attempt-13'
+    attempt_status = 'COMPLETED|ACCEPTED'
+    production_soak = 'COMPLETED'
+    live = 'DISABLED'
+    kill_switch = 'ENGAGED'
+}
+
+Assert-ActionType $attempt13AcceptedReadyAction 'COMMIT_AND_PUSH'
+Assert-ActionType $attempt13AcceptanceCiAction 'CI_WAIT_OR_INVESTIGATION'
+Assert-ActionType $attempt13FreezeCloseoutAction 'GATE_FREEZE_CLOSEOUT'
+Assert-ActionType $attempt13FailureAction 'FAILURE_REMEDIATION_IMPLEMENTATION'
+foreach ($case in @(
+    @{Status=$attempt13AcceptedReadyStatus;Action=$attempt13AcceptedReadyAction;Name='accepted-ready-to-commit'},
+    @{Status='COMMITTED|CI_PENDING';Action=$attempt13AcceptanceCiAction;Name='committed-to-ci-acceptance'},
+    @{Status=$attempt13FreezeReadyStatus;Action=$attempt13FreezeCloseoutAction;Name='ci-green-to-freeze-closeout'}
+)) {
+    if (-not (Test-GovernanceNextActionForWorkBatch `
+            $contract $case.Status $attempt13AcceptanceWorkBatch $case.Action $attempt13AcceptedAuthority)) {
+        throw "ATTEMPT_13_ACCEPTANCE_MAPPING_REJECTED case=$($case.Name)"
+    }
+}
+if (Test-GovernanceNextActionForWorkBatch `
+        $contract $attempt13FreezeReadyStatus $attempt13AcceptanceWorkBatch $attempt13FreezeCloseoutAction) {
+    throw 'ATTEMPT_13_FREEZE_MAPPING_ACCEPTED_WITHOUT_AUTHORITY_CONTEXT'
+}
+foreach ($fact in @('attempt','attempt_status','production_soak','live','kill_switch','active_gate_status')) {
+    $badAuthority = @{} + $attempt13AcceptedAuthority
+    $badAuthority[$fact] = switch ($fact) {
+        'attempt' { 'Attempt-12' }
+        'attempt_status' { 'RUNNING|PENDING_168H' }
+        'production_soak' { 'RUNNING' }
+        'live' { 'ENABLED' }
+        'kill_switch' { 'DISENGAGED' }
+        default { 'FROZEN|ACCEPTED|TAGGED' }
+    }
+    if (Test-GovernanceNextActionForWorkBatch `
+            $contract $attempt13FreezeReadyStatus $attempt13AcceptanceWorkBatch `
+            $attempt13FreezeCloseoutAction $badAuthority) {
+        throw "ATTEMPT_13_FREEZE_SAFETY_GATE_BYPASSED fact=$fact"
+    }
+}
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $attempt13FailureStatus $attempt13WorkBatch $attempt13FailureAction)) {
+    throw 'ATTEMPT_13_FAILURE_REMEDIATION_MAPPING_REJECTED'
+}
+foreach ($crossAttemptCommitAction in @(
+    'NQ-GATEW-ATTEMPT-12-168H-ACCEPTANCE-COMMIT-AND-PUSH',
+    'NQ-GATEW-ATTEMPT-14-168H-ACCEPTANCE-COMMIT-AND-PUSH'
+)) {
+    Assert-ActionType $crossAttemptCommitAction 'COMMIT_AND_PUSH'
+    if (Test-GovernanceNextActionForWorkBatch `
+            $contract $attempt13AcceptedReadyStatus $attempt13AcceptanceWorkBatch `
+            $crossAttemptCommitAction $attempt13AcceptedAuthority) {
+        throw "CROSS_ATTEMPT_13_COMMIT_MAPPING_ACCEPTED action=$crossAttemptCommitAction"
+    }
+}
+foreach ($crossAttemptWorkBatch in @(
+    'GateW-ATTEMPT-12-168H-ACCEPTANCE',
+    'GateW-ATTEMPT-14-168H-ACCEPTANCE'
+)) {
+    if (Test-GovernanceNextActionForWorkBatch `
+            $contract $attempt13AcceptedReadyStatus $crossAttemptWorkBatch `
+            $attempt13AcceptedReadyAction $attempt13AcceptedAuthority) {
+        throw "ATTEMPT_13_ACTION_ACCEPTED_FOR_CROSS_ATTEMPT_BATCH batch=$crossAttemptWorkBatch"
+    }
+}
+if (Test-GovernanceNextActionForWorkBatch `
+        $contract 'RUNNING|PENDING_168H' $attempt13WorkBatch `
+        'NQ-GATEX-PLAN-IMPLEMENTATION') {
+    throw 'ATTEMPT_13_RUNNING_ACCEPTED_DIRECT_GATEX_ACTION'
+}
+foreach ($invalidAction in @(
+    'NQ-GATEW-ATTEMPT-12-168H-ACCEPTANCE-CI-ACCEPTANCE',
+    'NQ-GATEW-ATTEMPT-14-168H-ACCEPTANCE-CI-ACCEPTANCE',
+    'NQ-GATEW-FREEZE-CLOSEOUT',
+    'NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION-LATER',
+    'nq-gatew-freeze-closeout-implementation'
+)) {
+    Assert-ActionType $invalidAction 'UNKNOWN'
+}
+Write-Output 'PASS canonical-attempt-13-acceptance-success-and-failure-mappings exact=true'
+
 $releaseCandidateReviewRemediation =
         'NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-REMEDIATION'
 Assert-ActionType $releaseCandidateReviewRemediation 'RELEASE_CANDIDATE_STABILIZATION_FIX'

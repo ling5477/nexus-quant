@@ -12639,3 +12639,21 @@ Known warnings / RCA：首次 status 只读命令误用了非正式 unit 前缀�
 What was not run：未执行 `verify-acceptance`、`finalize-acceptance`、连续 168 小时人工/Codex 在线观察、Maven、frontend 或 Python 产品测试；本轮未修改产品代码。168h 期间由现有 worker 自动采证，期满后另开独立验收任务。
 
 Blocking status：无启动阻断。Attempt-13=`RUNNING / SOAK_IN_PROGRESS`，但 168h acceptance 仍为 `PENDING`；不得提前写为 accepted/completed/frozen。本次 authority/evidence sync 的最终 exact-head CI 在本段写入时尚为 `NOT_RUN`，需在 commit/push 后取得 GREEN 才完成本任务。
+
+## 2026-08-09 — GateW Attempt-13 168h acceptance transition contract fix
+
+当前本地结论：`PASS / ATTEMPT_13_ACCEPTANCE_TRANSITION_DEFINED / RUNTIME_COMPLETION_TRANSITION_DEFINED / FREEZE_CLOSEOUT_ACTION_DEFINED / FULL_LIFECYCLE_REGRESSION_GREEN / CURRENT_AUTHORITY_UNCHANGED / READY_TO_COMMIT / CI_PENDING / PRODUCTION_NOT_ACCESSED`。
+
+| Command / evidence | Result | Scope / environment / warning |
+| --- | --- | --- |
+| contract JSON parse/scoped assertions | PASS | schema=`1.4.0`；Attempt-13 success/failure runtime 与 strict action family；Attempt-10/11/12 runtime shape 未扩展 |
+| `test-current-authority-next-action.ps1` | PASS | PowerShell 5.1 / 7；exact acceptance/commit/CI/freeze/failure mappings 与近似/cross-Attempt action negatives |
+| `test-governance-workflow-lifecycle.ps1` | PASS | PowerShell 5.1 / 7；`GOVERNANCE_LIFECYCLE_REGRESSION`、`TASK_EVIDENCE_POLICY_VALID`；success/failure/freeze hard gates |
+| `test-gate-archive-manifest.ps1` | PASS | PowerShell 5.1 / 7；archive strict override 与 task-evidence policy |
+| real GateV archive/release checker | PASS | `ARCHIVE_MANIFEST_COMPLETE`、`GATE_RELEASE_VALID`；run `29191677441` exact-head success |
+| `check-current-authority.ps1` | PASS | current `GateW / RUNNING|PENDING_168H / NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE` 未改变 |
+| `check-doc-links.ps1 -Roots docs/current` | PASS | 162 checked / 0 errors / 1 个既有 GateJ historical warning |
+
+Known warning / RCA：首次 link checker 调用遗漏 mandatory `-Roots`，exit 1 且未执行扫描；修正参数后通过。Maven、frontend、Python 产品测试未运行，因为本任务仅修改治理合同/回归与 evidence ledger。Production SSH、OKX、credential、生产 DB、systemd、worker stop/restart、current symlink、Attempt/RunId/heartbeat、acceptance/finalize、freeze/archive/tag 均为 0。
+
+Blocking status：本地治理回归无 blocker；commit/push 与本提交 exact-head `NQ CI Baseline` 尚为 `PENDING`，不得预写为 GREEN。CI 达到 `completed / success / exact head / 10 jobs / bad=0` 后，唯一下一动作仍为 `NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE`。

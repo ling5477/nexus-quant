@@ -18101,3 +18101,13 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：LIVE=`DISABLED`、kill switch=`ENGAGED`；order/cancel/transfer/withdraw=`0`；未运行 168h acceptance/finalize，未进入 freeze/archive/tag，未修改 DH/Integration runtime。
 - result：`PASS / ATTEMPT_13_CREATED / STARTUP_COMPLETE / FRESH_SSH_VERIFIED / HASH_CHAIN_VALID / ACCEPTANCE_CLOCK_STARTED / SOAK_RUNNING / PENDING_168H`；P0=0/P1=0。
 - next：提交、推送并取得本 authority/evidence sync exact-head CI GREEN。之后本任务结束；现有 worker 自动采证，不要求持续在线。到 `2026-08-08T18:13:13.9139125Z` 后另开 `NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE`。
+
+## 2026-08-09 — GateW Attempt-13 168h acceptance transition contract fix
+
+- task：`NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE-TRANSITION-CONTRACT-FIX`；NQ-only、L 级 governance contract / runtime completion / freeze-closeout authorization / permanent regression。
+- root cause：合同只有 `RUNNING|PENDING_168H -> acceptance action` 与 rejection 方向，缺少 `COMPLETED|ACCEPTED`、acceptance commit/CI 和 exact-head CI 后 freeze-ready 的完整成功链；通用 classifier 还可能误接收近似 action。
+- implementation：schema 升至 `1.4.0`；新增 `SOAK_COMPLETED`/`SOAK_REJECTED`、三段成功 work-batch transition、失败 remediation mapping、严格 action family、authority safety requirements 与 freeze hard gate；复用既有 `NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION`。
+- validation：PS5.1/PS7 next-action、lifecycle、task-evidence、archive manifest 全部 PASS；真实 GateV archive/release、当前 authority、docs links、contract JSON 与 `git diff --check` PASS。Link checker 首次缺 `-Roots` exit 1，修正后 162 checked / 0 errors / 1 个既有 warning。
+- boundary：production SSH/OKX/credential/生产 DB/systemd/worker stop-restart/current symlink/Attempt/RunId/heartbeat/acceptance/finalize/freeze/archive/tag=`0`；`STATUS.md`/`ROADMAP.md` 与业务 authority 未修改。
+- result：`PASS / ATTEMPT_13_ACCEPTANCE_TRANSITION_DEFINED / RUNTIME_COMPLETION_TRANSITION_DEFINED / FREEZE_CLOSEOUT_ACTION_DEFINED / FULL_LIFECYCLE_REGRESSION_GREEN / CURRENT_AUTHORITY_UNCHANGED / READY_TO_COMMIT / CI_PENDING / PRODUCTION_NOT_ACCESSED`；P0=0/P1=0/P2=0/P3=0。
+- next：精确暂存 allowlist，提交 `fix(governance): define GateW 168h acceptance transition` 并推送 `dev`；取得 exact-head `NQ CI Baseline` 10/10 GREEN 后，唯一下一动作是 `NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE`。
