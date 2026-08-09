@@ -18169,3 +18169,14 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：API/DB schema/migration/SQL/订单状态机/risk algorithm/ledger/frontend/research/CI/deploy/LIVE/credential/真实交易/AI/DH runtime 变更=`0`。
 - result：`IMPLEMENTED / SELF_REVIEWED / STAGE_SEMANTICS_CLEANED / BACKEND_REGRESSION_GREEN / READY_TO_COMMIT`；P0=0/P1=0/P2=0/P3=0。
 - next：唯一下一动作=`NQ-GATEX-0B-COMMIT-AND-PUSH`；本任务不 commit、不 push、不启动 GateX-0C。
+
+## 2026-08-10 — GateX-0C Strategy Validation 前端拆分 implementation attempt-01
+
+- task：`NQ-GATEX-0C-VALIDATION-FRONTEND-DECOMPOSITION-IMPLEMENTATION`；NQ-only、L 级 frontend refactor / behavior preservation / targeted E2E / self-review。
+- baseline：`HEAD == origin/dev == 108a14d14906d6fa354349c66d35a2ae6967cebf`；GateX-0B exact-head CI run=`31321821962 / completed / success`，已收口为 `ACCEPTED|CI_GREEN`。
+- implementation：`StrategyValidationPage.tsx` 从 6,412 LOC 降为 39 LOC，只保留 URL、submitted query 页面状态与 composition；新增 feature workspace、集中 query hook 和 review section，原有 panel/状态/错误/视觉语义保持。
+- contract：route、search params、API endpoint/DTO、query key/cache、RBAC、review lifecycle、Paper/Shadow、分页筛选、按钮行为均未改；0D 状态与颜色语义原样迁移。
+- validation：frontend build PASS；runner support 10/10；定向 Chromium smoke 6/6。authority 初始化 checker 首轮因 sentinel/入口摘要不一致失败，最小同步 root/current README 与 ROADMAP 后 `errors=0`。
+- boundary：backend/research/scripts/.github/migration/dependency/router/LIVE/credential/real provider/AI/DH runtime 变更=`0`；未 commit、未 push，远端 0C CI=`NOT_RUN`。
+- result：`IMPLEMENTED / SELF_REVIEWED / VALIDATION_FRONTEND_DECOMPOSED / FRONTEND_REGRESSION_GREEN / READY_TO_COMMIT`；P0=0/P1=0/P2=1（workspace 仍约 6.3k LOC 的渐进结构债）/P3=0。
+- next：唯一下一动作=`NQ-GATEX-0C-COMMIT-AND-PUSH`；不得提前初始化 GateX-0D。

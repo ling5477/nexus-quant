@@ -12755,3 +12755,14 @@ Blocking status：架构 P1 已关闭；authority sync P1 未关闭。治理合�
 Environment：Windows + Java 21 + Maven + 仓库既有本地 `nexusquant-postgres`。首轮因 5432 未运行失败；容器 healthy 后又定位到 CI-only legacy account fixture 缺失。按 CI 前置插入唯一 PAPER/ACTIVE 本地 fixture 后两条必跑回归通过；fixture 已精确删除且容器恢复停止状态。
 
 Known warnings：Mockito dynamic-agent 与部分 module 的 SLF4J no-provider warning；未导致 failure。未运行 frontend、Python、migration 专项或远端 CI，因为任务仅修改 backend naming/config compatibility，且当前 work batch 尚未提交。Blocking status：无本地回归 blocker；CI=`NOT_RUN`，下一步仅为 `NQ-GATEX-0B-COMMIT-AND-PUSH`。
+
+## 2026-08-10 — GateX-0C Strategy Validation 前端拆分 attempt-01
+
+| Command / Check | Result | Scope / Environment / Warning |
+| --- | --- | --- |
+| `npm run build` | PASS（通过） | Windows；TypeScript + Vite production build 通过；仅有既存 chunk size warning |
+| 定向 validation Chromium smoke | PASS | runner support 10/10；Playwright 6/6，覆盖 Paper/Shadow 主页面、主要 sections、reviewCaseId URL、drawer、mutation/invalidation、权限与错误态 |
+| 0C 初始化 `check-current-authority.ps1` 首轮 | FAIL（失败） | `NOT_STARTED` commit sentinel 与 root/current README、ROADMAP next action 不一致；最小修正后重跑，不改治理合同 |
+| 0C 初始化 `check-current-authority.ps1` 重跑 | PASS | `AUTHORITY_CHECK errors=0` |
+
+Known warnings：E2E 有既存 Ant Design v5 / React 19 compatibility console warning，未导致 failure；build 有既存大 chunk warning。未运行 Maven、Python、全量 frontend E2E 或远端 CI：本轮只修改 frontend validation feature 与 current authority/evidence，附件要求 targeted smoke，且 work batch 尚未提交。

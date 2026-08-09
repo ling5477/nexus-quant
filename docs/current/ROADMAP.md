@@ -19,7 +19,9 @@ GateX-PLAN BASELINE ESTABLISHED / READY TO COMMIT
   ↓
 GateX-0A ACCEPTED / CI GREEN
   ↓
-GateX-0B IMPLEMENTED / SELF REVIEWED / UNCOMMITTED
+GateX-0B ACCEPTED / CI GREEN
+  ↓
+GateX-0C IMPLEMENTED / SELF REVIEWED / UNCOMMITTED
 ```
 
 ## 下一允许动作
@@ -28,11 +30,12 @@ GateX-0B IMPLEMENTED / SELF REVIEWED / UNCOMMITTED
 - GateW freeze commit=`16376de28be78eea58afbe1374847ee07ca2ccc7`；exact-head CI run=`31299729114 / completed / success / 10 jobs / bad=0`。
 - GateW Attempt-13=`COMPLETED / ACCEPTED`（已完成 / 已接受）；production deployment=`STOPPED`；production soak=`COMPLETED`。656 条样本与 hash chain 已接受并 sealed，worker 已停止。
 - GateW acceptance batch：`GateW-ATTEMPT-13-168H-ACCEPTANCE / ACCEPTED / CI GREEN`；acceptance head=`20cf7970dfb414868da3e42dddaefc5965246570`，CI run=`31295184056`。
-- GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateX-0A 已接受，GateX-0B 已实现并完成本地自审但尚未提交，不表示 GateX production capability 已完成。
+- GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateX-0A/0B 已接受，GateX-0C 已实现并完成本地自审但尚未提交，不表示 GateX production capability 已完成。
 - GateX-PLAN：`BASELINE ESTABLISHED / READY TO COMMIT`（基线已建立 / 可进入提交前复核）；实施基线见 [GATEX_PLAN.md](GATEX_PLAN.md)。
 - GateX-0A：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；Strategy↔Trading 与 audit port ownership P1 已关闭，merge acceptance head 的 exact-head CI 已成功。
-- GateX-0B：`IMPLEMENTED / SELF REVIEWED / UNCOMMITTED`（已实现 / 已自审 / 尚未提交）；生产 class/package 已使用稳定 capability/domain naming，`nq.gatew.*` 作为 legacy alias 保留，模块级与全后端回归已通过。
-- 当前唯一治理动作是 `NQ-GATEX-0B-COMMIT-AND-PUSH`；不能启动 GateX-0C 或进入 Strategy Release productionization。
+- GateX-0B：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；acceptance head=`108a14d14906d6fa354349c66d35a2ae6967cebf`，exact-head CI run=`31321821962 / completed / success`。
+- GateX-0C：`IMPLEMENTED / SELF REVIEWED / UNCOMMITTED`（已实现 / 已自审 / 尚未提交）；Strategy Validation 页面已收敛为 URL/页面状态/composition 层，本地 build 与定向 smoke 已通过。
+- 当前唯一治理动作是 `NQ-GATEX-0C-COMMIT-AND-PUSH`；不能提前初始化 GateX-0D 或进入 Strategy Release productionization。
 
 ## GateW 已冻结边界
 
