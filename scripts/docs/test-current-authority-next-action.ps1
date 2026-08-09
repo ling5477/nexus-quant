@@ -86,6 +86,7 @@ $gateXPlanAuthority = @{
     work_batch_status = 'NOT_STARTED'
     next_action = 'NQ-GATEX-PLAN-IMPLEMENTATION'
 }
+$gateXConsolidationAction = 'NQ-POST-GATEW-BRANCH-CONSOLIDATION-AND-DEV-REBASE'
 $gateXPlanMachineAttempt = Read-MachineCurrentAttemptAuthority $gateXPlanAuthority
 if ($gateXPlanMachineAttempt.IsApplicable -or -not $gateXPlanMachineAttempt.IsValid) {
     throw 'GATEX_PLAN_MACHINE_ATTEMPT_MUST_BE_NOT_APPLICABLE'
@@ -95,11 +96,20 @@ if (-not (Test-GovernanceNextActionForWorkBatch `
         $gateXPlanAuthority.work_batch $gateXPlanAuthority.next_action)) {
     throw 'GATEX_PLAN_CANONICAL_TRIPLE_REJECTED'
 }
+Assert-ActionType $gateXPlanAuthority.next_action 'IMPLEMENTATION'
+Assert-ActionType $gateXConsolidationAction 'IMPLEMENTATION'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $gateXPlanAuthority.work_batch_status `
+        $gateXPlanAuthority.work_batch $gateXConsolidationAction)) {
+    throw 'GATEX_BRANCH_CONSOLIDATION_TRIPLE_REJECTED'
+}
 foreach ($case in @(
     @{ Status='UNKNOWN'; Batch='GateX-PLAN'; Action='NQ-GATEX-PLAN-IMPLEMENTATION' },
     @{ Status='NOT_STARTED'; Batch='GateX-UNKNOWN'; Action='NQ-GATEX-PLAN-IMPLEMENTATION' },
     @{ Status='NOT_STARTED'; Batch='GateX-PLAN'; Action='NQ-GATEX-UNKNOWN' },
-    @{ Status='NOT_STARTED'; Batch='GateX-PLAN'; Action='NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION' }
+    @{ Status='NOT_STARTED'; Batch='GateX-PLAN'; Action='NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION' },
+    @{ Status='NOT_STARTED'; Batch='GateX-PLAN'; Action='NQ-POST-GATEW-BRANCH-CONSOLIDATION-AND-DEV-REBASE-REVIEW' },
+    @{ Status='NOT_STARTED'; Batch='GateX-PLAN'; Action='NQ-POST-GATEW-UNAUTHORIZED-IMPLEMENTATION' }
 )) {
     if (Test-GovernanceNextActionForWorkBatch $contract $case.Status $case.Batch $case.Action) {
         throw ("GATEX_PLAN_NON_CANONICAL_TRIPLE_ACCEPTED status={0} batch={1} action={2}" -f
@@ -1036,6 +1046,38 @@ $nonAttemptReadmeFixture = @(
 Assert-CrossDocumentAuthorityCase `
     'non-attempt-ignores-historical-attempts' $nonAttemptStatusFixture `
     $nonAttemptRoadmapFixture $true '' $nonAttemptReadmeFixture $nonAttemptReadmeFixture
+
+$gateXConsolidationStatusFixture = $nonAttemptStatusFixture.Replace(
+    'NQ-GATEX-PLAN-IMPLEMENTATION',
+    $gateXConsolidationAction)
+$gateXConsolidationRoadmapFixture = $nonAttemptRoadmapFixture.Replace(
+    'NQ-GATEX-PLAN-IMPLEMENTATION',
+    $gateXConsolidationAction)
+$gateXConsolidationReadmeFixture = $nonAttemptReadmeFixture.Replace(
+    'NQ-GATEX-PLAN-IMPLEMENTATION',
+    $gateXConsolidationAction)
+Assert-CrossDocumentAuthorityCase `
+    'gatex-branch-consolidation-exact-action' $gateXConsolidationStatusFixture `
+    $gateXConsolidationRoadmapFixture $true '' `
+    $gateXConsolidationReadmeFixture $gateXConsolidationReadmeFixture
+
+$gateXNonImplementationAction = 'NQ-POST-GATEW-BRANCH-CONSOLIDATION-AND-DEV-REBASE-REVIEW'
+Assert-CrossDocumentAuthorityCase `
+    'gatex-branch-consolidation-non-implementation-rejected' `
+    ($nonAttemptStatusFixture.Replace('NQ-GATEX-PLAN-IMPLEMENTATION', $gateXNonImplementationAction)) `
+    ($nonAttemptRoadmapFixture.Replace('NQ-GATEX-PLAN-IMPLEMENTATION', $gateXNonImplementationAction)) `
+    $false 'NEXT_ACTION_TYPE_MISMATCH' `
+    ($nonAttemptReadmeFixture.Replace('NQ-GATEX-PLAN-IMPLEMENTATION', $gateXNonImplementationAction)) `
+    ($nonAttemptReadmeFixture.Replace('NQ-GATEX-PLAN-IMPLEMENTATION', $gateXNonImplementationAction))
+
+$gateXWildcardImplementationAction = 'NQ-POST-GATEW-UNAUTHORIZED-IMPLEMENTATION'
+Assert-CrossDocumentAuthorityCase `
+    'gatex-branch-consolidation-wildcard-rejected' `
+    ($nonAttemptStatusFixture.Replace('NQ-GATEX-PLAN-IMPLEMENTATION', $gateXWildcardImplementationAction)) `
+    ($nonAttemptRoadmapFixture.Replace('NQ-GATEX-PLAN-IMPLEMENTATION', $gateXWildcardImplementationAction)) `
+    $false 'NEXT_ACTION_WORK_BATCH_MISMATCH' `
+    ($nonAttemptReadmeFixture.Replace('NQ-GATEX-PLAN-IMPLEMENTATION', $gateXWildcardImplementationAction)) `
+    ($nonAttemptReadmeFixture.Replace('NQ-GATEX-PLAN-IMPLEMENTATION', $gateXWildcardImplementationAction))
 
 if (-not $currentMachineAttemptAuthority.IsApplicable) {
     if (-not (Test-GovernanceNextActionForWorkBatch `

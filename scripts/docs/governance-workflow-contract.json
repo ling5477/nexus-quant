@@ -186,6 +186,18 @@
     },
     "exactNextActionMappings": [
       {
+        "scope": "WORK_BATCH",
+        "workBatchStatus": "NOT_STARTED",
+        "workBatch": "GateX-PLAN",
+        "nextAction": "NQ-GATEX-PLAN-IMPLEMENTATION"
+      },
+      {
+        "scope": "WORK_BATCH",
+        "workBatchStatus": "NOT_STARTED",
+        "workBatch": "GateX-PLAN",
+        "nextAction": "NQ-POST-GATEW-BRANCH-CONSOLIDATION-AND-DEV-REBASE"
+      },
+      {
         "workBatchStatus": "FAILED|ACCEPTANCE_REJECTED|INCIDENT_REVIEW_COMPLETED",
         "workBatch": "GateW-OKX-READONLY-SOAK-ATTEMPT-09",
         "nextAction": "NQ-GATEW-ATTEMPT-09-FAILURE-REMEDIATION-IMPLEMENTATION"
@@ -392,11 +404,16 @@
       }
     ],
     "strictActionFamilyPatterns": [
+      "(?-i:^NQ-POST-GATEW-BRANCH-CONSOLIDATION-AND-DEV-REBASE$)",
       "(?i)^NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE(?:-|$)",
       "(?i)^NQ-GATEW-ATTEMPT-13-FAILURE-REMEDIATION(?:-|$)",
       "(?i)^NQ-GATEW-FREEZE-CLOSEOUT(?:-|$)"
     ],
     "strictNextActions": [
+      {
+        "action": "NQ-POST-GATEW-BRANCH-CONSOLIDATION-AND-DEV-REBASE",
+        "type": "IMPLEMENTATION"
+      },
       {
         "action": "NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE",
         "type": "SOAK_ACCEPTANCE"

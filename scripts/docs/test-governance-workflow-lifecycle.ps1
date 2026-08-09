@@ -207,6 +207,17 @@ try {
     Assert-Condition (-not (Test-GovernanceLifecycleTransition $contract 'highRisk' 'committed|ci_pending' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED')) 'lowercase lifecycle status was accepted by library'
     Write-Output 'PASS fixture=green-continuation-unique-and-strict-token'
 
+    $gateXPlanImplementationAction = 'NQ-GATEX-PLAN-IMPLEMENTATION'
+    $gateXConsolidationAction = 'NQ-POST-GATEW-BRANCH-CONSOLIDATION-AND-DEV-REBASE'
+    Assert-Condition ((Get-GovernanceExpectedNextActionType $contract 'NOT_STARTED') -ceq 'IMPLEMENTATION') 'not-started action type changed'
+    Assert-Condition ((Get-GovernanceNextActionType $contract $gateXPlanImplementationAction) -ceq 'IMPLEMENTATION') 'GateX plan implementation action type changed'
+    Assert-Condition ((Get-GovernanceNextActionType $contract $gateXConsolidationAction) -ceq 'IMPLEMENTATION') 'GateX consolidation action type was not recognized'
+    Assert-Condition (Test-GovernanceNextActionForWorkBatch $contract 'NOT_STARTED' 'GateX-PLAN' $gateXPlanImplementationAction) 'GateX plan implementation action was rejected'
+    Assert-Condition (Test-GovernanceNextActionForWorkBatch $contract 'NOT_STARTED' 'GateX-PLAN' $gateXConsolidationAction) 'GateX consolidation action was rejected'
+    Assert-Condition (-not (Test-GovernanceNextActionForWorkBatch $contract 'NOT_STARTED' 'GateX-PLAN' 'NQ-POST-GATEW-BRANCH-CONSOLIDATION-AND-DEV-REBASE-REVIEW')) 'non-implementation GateX consolidation action was accepted'
+    Assert-Condition (-not (Test-GovernanceNextActionForWorkBatch $contract 'NOT_STARTED' 'GateX-PLAN' 'NQ-POST-GATEW-UNAUTHORIZED-IMPLEMENTATION')) 'wildcard GateX consolidation action was accepted'
+    Write-Output 'PASS fixture=gatex-consolidation-exact-action lifecycleType=IMPLEMENTATION wildcardRejected=true'
+
     # Ordinary lifecycle: review states are intentionally absent.
     Assert-Transition 'ordinary' 'NOT_STARTED' 'IMPLEMENTED|SELF_REVIEWED' $true 'ordinary-not-started'
     Assert-Transition 'ordinary' 'IMPLEMENTED|SELF_REVIEWED' 'COMMITTED|CI_PENDING' $true 'ordinary-self-reviewed'
