@@ -2,8 +2,8 @@ package com.guidinglight.nexusquant.app.config.account;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
-import com.guidinglight.nexusquant.account.infra.gatew.OkxPrivateCredentialExecutor;
-import com.guidinglight.nexusquant.account.infra.gatew.OkxPrivateReadonlyProbeService;
+import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
+import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateReadonlyProbeService;
 import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadTransport;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
@@ -32,25 +32,38 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-class GateWOkxPrivateReadonlyConfigurationTest {
+class OkxPrivateReadOnlyDiagnosticsConfigurationTest {
+
+    private static final String STABLE_PREFIX = "nq.okx.private-readonly-diagnostics";
+    private static final String LEGACY_PREFIX = "nq.gatew.okx-private-readonly";
 
     @Test
     void defaultProfileDoesNotCreatePrivateTransportOrDecryptor() {
-        try (AnnotationConfigApplicationContext context = context(null, false, false)) {
+        try (AnnotationConfigApplicationContext context = context(null, STABLE_PREFIX, false, false)) {
             assertPrivateBeansAbsent(context);
         }
     }
 
     @Test
     void explicitProfileWithFlagFalseDoesNotCreatePrivateTransportOrDecryptor() {
-        try (AnnotationConfigApplicationContext context = context("gatew-okx-readonly", false, false)) {
+        try (AnnotationConfigApplicationContext context = context(
+                "okx-private-readonly-diagnostics",
+                STABLE_PREFIX,
+                false,
+                false
+        )) {
             assertPrivateBeansAbsent(context);
         }
     }
 
     @Test
     void explicitProfileAndFlagCreateOnlyReadonlyComponentsWithoutStartupNetwork() {
-        try (AnnotationConfigApplicationContext context = context("gatew-okx-readonly", true, false)) {
+        try (AnnotationConfigApplicationContext context = context(
+                "okx-private-readonly-diagnostics",
+                STABLE_PREFIX,
+                true,
+                false
+        )) {
             assertFalse(context.getBeansOfType(OkxPrivateReadTransport.class).isEmpty());
             assertFalse(context.getBeansOfType(OkxPrivateCredentialExecutor.class).isEmpty());
             assertFalse(context.getBeansOfType(OkxPrivateReadonlyProbeService.class).isEmpty());
@@ -60,31 +73,88 @@ class GateWOkxPrivateReadonlyConfigurationTest {
     }
 
     @Test
+    void legacyProfileAndKeysStillCreateReadOnlyComponents() {
+        try (AnnotationConfigApplicationContext context = context(
+                "gatew-okx-readonly",
+                LEGACY_PREFIX,
+                true,
+                false
+        )) {
+            assertFalse(context.getBeansOfType(OkxPrivateReadTransport.class).isEmpty());
+            assertFalse(context.getBeansOfType(OkxPrivateCredentialExecutor.class).isEmpty());
+            assertFalse(context.getBeansOfType(OkxPrivateReadonlyProbeService.class).isEmpty());
+        }
+    }
+
+    @Test
+    void conflictingEnableKeysFailClosed() {
+        try (AnnotationConfigApplicationContext context = context(
+                "okx-private-readonly-diagnostics",
+                STABLE_PREFIX,
+                true,
+                false,
+                Map.of(LEGACY_PREFIX + ".enabled", false)
+        )) {
+            assertPrivateBeansAbsent(context);
+        }
+    }
+
+    @Test
     void liveTrueFailsClosedByNotCreatingPrivateComponents() {
-        try (AnnotationConfigApplicationContext context = context("gatew-okx-readonly", true, true)) {
+        try (AnnotationConfigApplicationContext context = context(
+                "okx-private-readonly-diagnostics",
+                STABLE_PREFIX,
+                true,
+                true
+        )) {
             assertPrivateBeansAbsent(context);
         }
     }
 
     @Test
     void missingOrInvalidLivePropertyFailsClosed() {
-        try (AnnotationConfigApplicationContext missing = context("gatew-okx-readonly", true, null);
-             AnnotationConfigApplicationContext invalid = context("gatew-okx-readonly", true, "invalid")) {
+        try (AnnotationConfigApplicationContext missing = context(
+                "okx-private-readonly-diagnostics",
+                STABLE_PREFIX,
+                true,
+                null
+        );
+             AnnotationConfigApplicationContext invalid = context(
+                     "okx-private-readonly-diagnostics",
+                     STABLE_PREFIX,
+                     true,
+                     "invalid"
+             )) {
             assertPrivateBeansAbsent(missing);
             assertPrivateBeansAbsent(invalid);
         }
     }
 
-    private static AnnotationConfigApplicationContext context(String profile, boolean enabled, Object live) {
+    private static AnnotationConfigApplicationContext context(
+            String profile,
+            String prefix,
+            boolean enabled,
+            Object live
+    ) {
+        return context(profile, prefix, enabled, live, Map.of());
+    }
+
+    private static AnnotationConfigApplicationContext context(
+            String profile,
+            String prefix,
+            boolean enabled,
+            Object live,
+            Map<String, Object> overrides
+    ) {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
         if (profile != null) {
             context.getEnvironment().setActiveProfiles(profile);
         }
         Map<String, Object> properties = new HashMap<>();
-        properties.put("nq.gatew.okx-private-readonly.enabled", enabled);
-        properties.put("nq.gatew.okx-private-readonly.order-submission-enabled", false);
-        properties.put("nq.gatew.okx-private-readonly.transfer-enabled", false);
-        properties.put("nq.gatew.okx-private-readonly.withdraw-enabled", false);
+        properties.put(prefix + ".enabled", enabled);
+        properties.put(prefix + ".order-submission-enabled", false);
+        properties.put(prefix + ".transfer-enabled", false);
+        properties.put(prefix + ".withdraw-enabled", false);
         properties.put("nq.env-safety.ci", false);
         properties.put("nq.env-safety.real-exchange-enabled", false);
         properties.put("nq.env-safety.real-client-enabled", false);
@@ -93,9 +163,10 @@ class GateWOkxPrivateReadonlyConfigurationTest {
         if (live != null) {
             properties.put("nq.env-safety.live-enabled", live);
         }
-        context.getEnvironment().getPropertySources().addFirst(new MapPropertySource("gatew-test", properties));
+        properties.putAll(overrides);
+        context.getEnvironment().getPropertySources().addFirst(new MapPropertySource("readonly-diagnostics-test", properties));
         context.register(
-                GateWOkxPrivateReadonlyConfiguration.class,
+                OkxPrivateReadOnlyDiagnosticsConfiguration.class,
                 ExchangeAdapterConfiguration.class,
                 Dependencies.class
         );

@@ -12,11 +12,12 @@ import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository
 import com.guidinglight.nexusquant.account.domain.port.ExchangeCredentialPermissionProbePort;
 import com.guidinglight.nexusquant.account.infra.jdbc.JdbcExchangeAccountCredentialRepository;
 import com.guidinglight.nexusquant.account.infra.jdbc.JdbcExchangeAccountRepository;
-import com.guidinglight.nexusquant.account.infra.gatew.JdbcOkxPrivateCredentialExecutor;
-import com.guidinglight.nexusquant.account.infra.gatew.OkxPrivateCredentialExecutor;
+import com.guidinglight.nexusquant.account.infra.okx.readonly.JdbcOkxPrivateCredentialExecutor;
+import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.probe.NoRealExchangeCredentialPermissionProbePort;
 import com.guidinglight.nexusquant.account.infra.probe.OkxRealReadonlyPermissionProbePort;
 import com.guidinglight.nexusquant.account.infra.verification.StructuralExchangeAccountCredentialVerifier;
+import com.guidinglight.nexusquant.app.config.CapabilityPropertyResolver;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.beans.factory.ObjectProvider;
@@ -34,11 +35,11 @@ import java.time.Clock;
  * AccountModuleConfiguration 负责 exchange account 域内 Bean 装配。
  */
 @Configuration
-@EnableConfigurationProperties({
-        AccountCredentialRuntimeProperties.class,
-        GateWOkxPermissionProbeProperties.class
-})
+@EnableConfigurationProperties(AccountCredentialRuntimeProperties.class)
 public class AccountModuleConfiguration {
+
+    private static final String STABLE_READ_ONLY_PREFIX = "nq.okx.private-readonly-diagnostics";
+    private static final String LEGACY_READ_ONLY_PREFIX = "nq.gatew.okx-private-readonly";
 
     @Bean
     public ExchangeAccountRepository exchangeAccountRepository(JdbcTemplate jdbcTemplate) {
@@ -102,35 +103,58 @@ public class AccountModuleConfiguration {
     @Bean
     public ExchangeCredentialPermissionProbePort exchangeCredentialPermissionProbePort(
             ObjectProvider<OkxPrivateCredentialExecutor> credentialExecutorProvider,
-            GateWOkxPermissionProbeProperties permissionProperties,
+            OkxPrivateReadOnlyPermissionProbeProperties permissionProperties,
             Environment environment
     ) {
         OkxPrivateCredentialExecutor executor = credentialExecutorProvider.getIfAvailable();
-        if (!permissionProperties.isEnabled()
+        if (!permissionProperties.enabled()
                 || !(executor instanceof JdbcOkxPrivateCredentialExecutor)
-                || !environment.acceptsProfiles(Profiles.of("gatew-okx-readonly-soak"))
+                || !environment.acceptsProfiles(Profiles.of(
+                "okx-private-readonly-diagnostics",
+                "gatew-okx-readonly-soak"
+        ))
                 || !exactBoolean(environment, "nq.env-safety.ci", false)
                 || !exactBoolean(environment, "nq.env-safety.real-exchange-enabled", false)
                 || !exactBoolean(environment, "nq.env-safety.live-enabled", false)
                 || !exactBoolean(environment, "nq.env-safety.real-client-enabled", false)
                 || !exactBoolean(environment, "nq.env-safety.real-provider-enabled", false)
                 || !exactBoolean(environment, "nq.env-safety.no-outbound", false)
-                || !exactBoolean(environment,
-                "nq.gatew.okx-private-readonly.order-submission-enabled", false)
-                || !exactBoolean(environment, "nq.gatew.okx-private-readonly.transfer-enabled", false)
-                || !exactBoolean(environment, "nq.gatew.okx-private-readonly.withdraw-enabled", false)) {
+                || !exactReadOnlyBoolean(environment, "order-submission-enabled", false)
+                || !exactReadOnlyBoolean(environment, "transfer-enabled", false)
+                || !exactReadOnlyBoolean(environment, "withdraw-enabled", false)) {
             return new NoRealExchangeCredentialPermissionProbePort();
         }
         try {
             return new OkxRealReadonlyPermissionProbePort(
                     executor,
-                    permissionProperties.getExpectedIp(),
+                    permissionProperties.expectedIp(),
                     Clock.systemUTC()
             );
         } catch (IllegalArgumentException ex) {
             // expectedIp 缺失/非法时回落 NoReal；错误信息不得回显配置原值。
             return new NoRealExchangeCredentialPermissionProbePort();
         }
+    }
+
+    @Bean
+    public OkxPrivateReadOnlyPermissionProbeProperties okxPrivateReadOnlyPermissionProbeProperties(
+            Environment environment
+    ) {
+        String stablePrefix = STABLE_READ_ONLY_PREFIX + ".permission-probe";
+        String legacyPrefix = LEGACY_READ_ONLY_PREFIX + ".permission-probe";
+        boolean enabled = CapabilityPropertyResolver.matchesExactBoolean(
+                environment,
+                stablePrefix + ".enabled",
+                legacyPrefix + ".enabled",
+                true
+        );
+        String expectedIp = CapabilityPropertyResolver.failClosed(
+                environment,
+                stablePrefix + ".expected-ip",
+                legacyPrefix + ".expected-ip",
+                null
+        );
+        return new OkxPrivateReadOnlyPermissionProbeProperties(enabled, expectedIp);
     }
 
     @Bean
@@ -153,5 +177,14 @@ public class AccountModuleConfiguration {
     private static boolean exactBoolean(Environment environment, String name, boolean required) {
         String value = environment.getProperty(name);
         return value != null && Boolean.toString(required).equalsIgnoreCase(value.trim());
+    }
+
+    private static boolean exactReadOnlyBoolean(Environment environment, String name, boolean required) {
+        return CapabilityPropertyResolver.matchesExactBoolean(
+                environment,
+                STABLE_READ_ONLY_PREFIX + "." + name,
+                LEGACY_READ_ONLY_PREFIX + "." + name,
+                required
+        );
     }
 }

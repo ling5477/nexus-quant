@@ -10,7 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import com.guidinglight.nexusquant.account.infra.gatew.OkxPrivateCredentialExecutor;
+import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateEnvironment;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateOrderSnapshot;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadOperation;
@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;

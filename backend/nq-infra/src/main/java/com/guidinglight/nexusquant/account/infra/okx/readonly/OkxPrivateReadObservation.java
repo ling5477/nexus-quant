@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.account.infra.gatew;
+package com.guidinglight.nexusquant.account.infra.okx.readonly;
 
 import java.time.Instant;
 import java.util.List;
@@ -40,7 +40,9 @@ public record OkxPrivateReadObservation(
         orderSubmitted = false;
     }
 
-    /** 兼容既有调用方；未显式提供 account-config 事实时按未配置 fail-closed。 */
+    /**
+     * 兼容既有调用方；未显式提供 account-config 事实时按未配置 fail-closed。
+     */
     public OkxPrivateReadObservation(
             OkxPrivateProbeStatus probeStatus,
             Instant observedAt,

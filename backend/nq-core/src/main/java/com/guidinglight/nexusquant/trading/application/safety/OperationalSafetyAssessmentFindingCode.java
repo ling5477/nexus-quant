@@ -5,7 +5,7 @@ package com.guidinglight.nexusquant.trading.application.safety;
  *
  * <p>这些值只解释诊断结果；不表示交易、LIVE、订单或资金操作获得授权。</p>
  */
-public enum GateW4OperationalSafetyFindingCode {
+public enum OperationalSafetyAssessmentFindingCode {
     KILL_SWITCH_ENGAGED,
     KILL_SWITCH_UNKNOWN,
     KILL_SWITCH_STORAGE_FAILURE,

@@ -2,7 +2,7 @@ package com.guidinglight.nexusquant.account.infra.probe;
 
 import com.guidinglight.nexusquant.account.domain.ExchangeCredentialPermissionProbeRequest;
 import com.guidinglight.nexusquant.account.domain.ExchangeCredentialPermissionProbeResult;
-import com.guidinglight.nexusquant.account.infra.gatew.OkxPrivateCredentialExecutor;
+import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxIpAllowlistStatus;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateEnvironment;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadError;

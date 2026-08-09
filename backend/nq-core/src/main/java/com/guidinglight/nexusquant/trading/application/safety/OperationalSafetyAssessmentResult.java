@@ -8,19 +8,19 @@ import java.util.Objects;
  *
  * <p>所有 boolean boundary 均固定为安全值；即使 {@code overallStatus=PASS}，也不产生交易授权。</p>
  */
-public record GateW4OperationalSafetyResult(
-        GateW4OperationalSafetyStatus killSwitchStatus,
-        GateW4OperationalSafetyStatus humanReviewEvidenceStatus,
-        GateW4OperationalSafetyStatus persistenceRetentionStatus,
-        GateW4OperationalSafetyStatus backupRestoreStatus,
-        GateW4OperationalSafetyStatus incidentDrillStatus,
-        GateW4OperationalSafetyStatus localSoakStatus,
-        GateW4OperationalSafetyStatus realReadonlySoakStatus,
-        GateW4OperationalSafetyStatus overallStatus,
-        List<GateW4OperationalSafetyFindingCode> blockers,
-        List<GateW4OperationalSafetyFindingCode> warnings,
-        List<GateW4OperationalSafetyFindingCode> unknowns,
-        List<GateW4OperationalSafetyFindingCode> notEvaluated,
+public record OperationalSafetyAssessmentResult(
+        OperationalSafetyAssessmentStatus killSwitchStatus,
+        OperationalSafetyAssessmentStatus humanReviewEvidenceStatus,
+        OperationalSafetyAssessmentStatus persistenceRetentionStatus,
+        OperationalSafetyAssessmentStatus backupRestoreStatus,
+        OperationalSafetyAssessmentStatus incidentDrillStatus,
+        OperationalSafetyAssessmentStatus localSoakStatus,
+        OperationalSafetyAssessmentStatus realReadonlySoakStatus,
+        OperationalSafetyAssessmentStatus overallStatus,
+        List<OperationalSafetyAssessmentFindingCode> blockers,
+        List<OperationalSafetyAssessmentFindingCode> warnings,
+        List<OperationalSafetyAssessmentFindingCode> unknowns,
+        List<OperationalSafetyAssessmentFindingCode> notEvaluated,
         boolean diagnosticOnly,
         boolean readOnly,
         boolean noSideEffect,
@@ -29,8 +29,10 @@ public record GateW4OperationalSafetyResult(
         boolean liveDisabled
 ) {
 
-    /** 校验不可变列表与固定安全边界，拒绝构造可授权或有副作用结果。 */
-    public GateW4OperationalSafetyResult {
+    /**
+     * 校验不可变列表与固定安全边界，拒绝构造可授权或有副作用结果。
+     */
+    public OperationalSafetyAssessmentResult {
         Objects.requireNonNull(killSwitchStatus, "killSwitchStatus must not be null");
         Objects.requireNonNull(humanReviewEvidenceStatus, "humanReviewEvidenceStatus must not be null");
         Objects.requireNonNull(persistenceRetentionStatus, "persistenceRetentionStatus must not be null");
@@ -44,7 +46,9 @@ public record GateW4OperationalSafetyResult(
         unknowns = List.copyOf(Objects.requireNonNull(unknowns, "unknowns must not be null"));
         notEvaluated = List.copyOf(Objects.requireNonNull(notEvaluated, "notEvaluated must not be null"));
         if (!diagnosticOnly || !readOnly || !noSideEffect || orderSubmitted || tradingAuthorized || !liveDisabled) {
-            throw new IllegalArgumentException("GateW-4 result must preserve fixed no-side-effect safety boundaries");
+            throw new IllegalArgumentException(
+                    "Operational safety assessment result must preserve fixed no-side-effect safety boundaries"
+            );
         }
     }
 }

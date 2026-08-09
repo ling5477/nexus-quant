@@ -1,8 +1,8 @@
 package com.guidinglight.nexusquant.app.config.account;
 
 import com.guidinglight.nexusquant.account.domain.port.ExchangeCredentialPermissionProbePort;
-import com.guidinglight.nexusquant.account.infra.gatew.JdbcOkxPrivateCredentialExecutor;
-import com.guidinglight.nexusquant.account.infra.gatew.OkxPrivateCredentialExecutor;
+import com.guidinglight.nexusquant.account.infra.okx.readonly.JdbcOkxPrivateCredentialExecutor;
+import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.probe.NoRealExchangeCredentialPermissionProbePort;
 import com.guidinglight.nexusquant.account.infra.probe.OkxRealReadonlyPermissionProbePort;
 import org.junit.jupiter.api.Test;
@@ -20,7 +20,7 @@ class AccountPermissionProbeCompositionTest {
 
     @Test
     void defaultsToNoRealWhenPermissionFlagOrExecutorIsMissing() {
-        GateWOkxPermissionProbeProperties disabled = properties(false, "203.0.113.8");
+        OkxPrivateReadOnlyPermissionProbeProperties disabled = properties(false, "203.0.113.8");
         assertInstanceOf(NoRealExchangeCredentialPermissionProbePort.class,
                 select(provider(executor), disabled, safeEnvironment()));
         assertInstanceOf(NoRealExchangeCredentialPermissionProbePort.class,
@@ -63,22 +63,19 @@ class AccountPermissionProbeCompositionTest {
 
     private ExchangeCredentialPermissionProbePort select(
             ObjectProvider<OkxPrivateCredentialExecutor> provider,
-            GateWOkxPermissionProbeProperties properties,
+            OkxPrivateReadOnlyPermissionProbeProperties properties,
             MockEnvironment environment
     ) {
         return configuration.exchangeCredentialPermissionProbePort(provider, properties, environment);
     }
 
-    private static GateWOkxPermissionProbeProperties properties(boolean enabled, String expectedIp) {
-        GateWOkxPermissionProbeProperties properties = new GateWOkxPermissionProbeProperties();
-        properties.setEnabled(enabled);
-        properties.setExpectedIp(expectedIp);
-        return properties;
+    private static OkxPrivateReadOnlyPermissionProbeProperties properties(boolean enabled, String expectedIp) {
+        return new OkxPrivateReadOnlyPermissionProbeProperties(enabled, expectedIp);
     }
 
     private static MockEnvironment safeEnvironment() {
         MockEnvironment environment = new MockEnvironment();
-        environment.setActiveProfiles("gatew-okx-readonly-soak");
+        environment.setActiveProfiles("okx-private-readonly-diagnostics");
         return environment
                 .withProperty("nq.env-safety.ci", "false")
                 .withProperty("nq.env-safety.real-exchange-enabled", "false")
@@ -86,9 +83,9 @@ class AccountPermissionProbeCompositionTest {
                 .withProperty("nq.env-safety.real-client-enabled", "false")
                 .withProperty("nq.env-safety.real-provider-enabled", "false")
                 .withProperty("nq.env-safety.no-outbound", "false")
-                .withProperty("nq.gatew.okx-private-readonly.order-submission-enabled", "false")
-                .withProperty("nq.gatew.okx-private-readonly.transfer-enabled", "false")
-                .withProperty("nq.gatew.okx-private-readonly.withdraw-enabled", "false");
+                .withProperty("nq.okx.private-readonly-diagnostics.order-submission-enabled", "false")
+                .withProperty("nq.okx.private-readonly-diagnostics.transfer-enabled", "false")
+                .withProperty("nq.okx.private-readonly-diagnostics.withdraw-enabled", "false");
     }
 
     @SuppressWarnings("unchecked")

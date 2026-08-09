@@ -15,31 +15,41 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.convert.DurationStyle;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Condition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
+import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
- * GateWOkxVenueRuleConfiguration 是 GateW-3 public-only venue-rule sync 的装配边界。
+ * OKX public-only venue-rule sync 的装配边界。
  *
  * <p>默认/test/CI 不装配 reader 或 sync service，因此保持 no-egress。只有显式
- * `gatew-venue-rules-manual` profile 与 enabled=true 同时满足时才构造 public client；构造和启动不发请求，
+ * okx-venue-rule-sync-manual profile（或 legacy profile）与 enabled=true 同时满足时才构造 public client；构造和启动不发请求，
  * 实际网络读取仍只能由 operator 直接调用 service。该配置不读取 API key/secret/passphrase，不装配
  * Controller、scheduler、runner、private transport 或 trading adapter。</p>
  */
 @Configuration
-public class GateWOkxVenueRuleConfiguration {
+public class OkxVenueRuleSyncConfiguration {
+
+    static final String STABLE_PREFIX = "nq.okx.venue-rule-sync";
+    static final String LEGACY_PREFIX = "nq.gatew.okx-venue-rules";
 
     /**
      * 新鲜度 evaluator 始终可用，但配置缺失/非数字/越界时由 evaluator 返回 UNKNOWN/BLOCKED。
      */
     @Bean
-    public VenueRuleFreshnessEvaluator venueRuleFreshnessEvaluator(
-            @Value("${nq.gatew.okx-venue-rules.stale-after-seconds:}") String staleAfterSeconds
-    ) {
+    public VenueRuleFreshnessEvaluator venueRuleFreshnessEvaluator(Environment environment) {
+        String staleAfterSeconds = CapabilityPropertyResolver.stableFirst(
+                environment,
+                STABLE_PREFIX + ".stale-after-seconds",
+                LEGACY_PREFIX + ".stale-after-seconds",
+                ""
+        );
         return new VenueRuleFreshnessEvaluator(Clock.systemUTC(), parseLongOrNull(staleAfterSeconds));
     }
 
@@ -47,17 +57,24 @@ public class GateWOkxVenueRuleConfiguration {
      * 构造固定 public instruments endpoint reader；base URL 必须显式注入，默认仅为不可连接的 localhost。
      */
     @Bean
-    @Profile("gatew-venue-rules-manual")
-    @ConditionalOnProperty(
-            prefix = "nq.gatew.okx-venue-rules",
-            name = "enabled",
-            havingValue = "true"
-    )
+    @Profile({"okx-venue-rule-sync-manual", "gatew-venue-rules-manual"})
+    @Conditional(OkxVenueRuleSyncEnabledCondition.class)
     public OkxVenueRuleFactsReader okxVenueRuleFactsReader(
             ObjectMapper objectMapper,
-            @Value("${nq.gatew.okx-venue-rules.base-url:http://127.0.0.1:0}") String baseUrl,
-            @Value("${nq.gatew.okx-venue-rules.timeout:PT5S}") String timeout
+            Environment environment
     ) {
+        String baseUrl = CapabilityPropertyResolver.stableFirst(
+                environment,
+                STABLE_PREFIX + ".base-url",
+                LEGACY_PREFIX + ".base-url",
+                "http://127.0.0.1:0"
+        );
+        String timeout = CapabilityPropertyResolver.stableFirst(
+                environment,
+                STABLE_PREFIX + ".timeout",
+                LEGACY_PREFIX + ".timeout",
+                "PT5S"
+        );
         URI validatedBaseUrl = validateBaseUrl(baseUrl);
         Duration requestTimeout = DurationStyle.detectAndParse(timeout);
         OkxHttpClient publicClient = new OkxHttpClient(
@@ -73,17 +90,19 @@ public class GateWOkxVenueRuleConfiguration {
      * 装配无 HTTP 入口的 operator-triggered bounded application service。
      */
     @Bean
-    @Profile("gatew-venue-rules-manual")
-    @ConditionalOnProperty(
-            prefix = "nq.gatew.okx-venue-rules",
-            name = "enabled",
-            havingValue = "true"
-    )
+    @Profile({"okx-venue-rule-sync-manual", "gatew-venue-rules-manual"})
+    @Conditional(OkxVenueRuleSyncEnabledCondition.class)
     public OkxVenueRuleFactsSyncService okxVenueRuleFactsSyncService(
             InstrumentCatalogService instrumentCatalogService,
             OkxVenueRuleFactsReader venueRuleFactsReader,
-            @Value("${nq.gatew.okx-venue-rules.allowlist:}") String allowlist
+            Environment environment
     ) {
+        String allowlist = CapabilityPropertyResolver.stableFirst(
+                environment,
+                STABLE_PREFIX + ".allowlist",
+                LEGACY_PREFIX + ".allowlist",
+                ""
+        );
         return new OkxVenueRuleFactsSyncService(
                 instrumentCatalogService,
                 venueRuleFactsReader,
@@ -125,5 +144,18 @@ public class GateWOkxVenueRuleConfiguration {
         }
         String normalized = uri.toString();
         return normalized.endsWith("/") ? URI.create(normalized.substring(0, normalized.length() - 1)) : uri;
+    }
+
+    static final class OkxVenueRuleSyncEnabledCondition implements Condition {
+
+        @Override
+        public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+            return CapabilityPropertyResolver.matchesExactBoolean(
+                    context.getEnvironment(),
+                    STABLE_PREFIX + ".enabled",
+                    LEGACY_PREFIX + ".enabled",
+                    true
+            );
+        }
     }
 }

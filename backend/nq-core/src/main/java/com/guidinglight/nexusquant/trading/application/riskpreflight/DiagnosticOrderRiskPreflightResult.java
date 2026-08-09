@@ -12,31 +12,31 @@ import java.util.Set;
  * <p>结果强制 executionReadiness=BLOCKED、tradingAuthorized=false，且四类 finding 互斥。
  * UNKNOWN/NOT_EVALUATED 永远不能被调用方折叠为交易就绪。</p>
  */
-public record GateW3RiskPreflightResult(
+public record DiagnosticOrderRiskPreflightResult(
         Instant evaluatedAt,
-        GateW3RiskPreflightStatus structuralStatus,
-        GateW3RiskPreflightStatus venueFactStatus,
-        GateW3RiskPreflightStatus reconciliationStatus,
-        GateW3RiskPreflightStatus localAccountStatus,
-        GateW3RiskPreflightStatus credentialMetadataStatus,
-        GateW3RiskPreflightStatus marketdataQualityStatus,
-        GateW3RiskPreflightStatus pureRiskStatus,
-        GateW3RiskPreflightStatus statefulRiskStatus,
-        GateW3RiskPreflightStatus balanceStatus,
-        GateW3RiskPreflightStatus permissionStatus,
-        GateW3RiskPreflightStatus executionReadiness,
+        DiagnosticOrderRiskPreflightStatus structuralStatus,
+        DiagnosticOrderRiskPreflightStatus venueFactStatus,
+        DiagnosticOrderRiskPreflightStatus reconciliationStatus,
+        DiagnosticOrderRiskPreflightStatus localAccountStatus,
+        DiagnosticOrderRiskPreflightStatus credentialMetadataStatus,
+        DiagnosticOrderRiskPreflightStatus marketdataQualityStatus,
+        DiagnosticOrderRiskPreflightStatus pureRiskStatus,
+        DiagnosticOrderRiskPreflightStatus statefulRiskStatus,
+        DiagnosticOrderRiskPreflightStatus balanceStatus,
+        DiagnosticOrderRiskPreflightStatus permissionStatus,
+        DiagnosticOrderRiskPreflightStatus executionReadiness,
         boolean diagnosticOnly,
         boolean readOnly,
         boolean noSideEffect,
         boolean orderSubmitted,
         boolean tradingAuthorized,
-        List<GateW3RiskPreflightFindingCode> blockers,
-        List<GateW3RiskPreflightFindingCode> warnings,
-        List<GateW3RiskPreflightFindingCode> unknowns,
-        List<GateW3RiskPreflightFindingCode> notEvaluated
+        List<DiagnosticOrderRiskPreflightFindingCode> blockers,
+        List<DiagnosticOrderRiskPreflightFindingCode> warnings,
+        List<DiagnosticOrderRiskPreflightFindingCode> unknowns,
+        List<DiagnosticOrderRiskPreflightFindingCode> notEvaluated
 ) {
 
-    public GateW3RiskPreflightResult {
+    public DiagnosticOrderRiskPreflightResult {
         Objects.requireNonNull(evaluatedAt, "evaluatedAt must not be null");
         requireStatuses(
                 structuralStatus,
@@ -51,7 +51,7 @@ public record GateW3RiskPreflightResult(
                 permissionStatus,
                 executionReadiness
         );
-        if (executionReadiness != GateW3RiskPreflightStatus.BLOCKED) {
+        if (executionReadiness != DiagnosticOrderRiskPreflightStatus.BLOCKED) {
             throw new IllegalArgumentException("executionReadiness must remain BLOCKED");
         }
         if (!diagnosticOnly || !readOnly || !noSideEffect || orderSubmitted || tradingAuthorized) {
@@ -64,17 +64,17 @@ public record GateW3RiskPreflightResult(
         requireDisjoint(blockers, warnings, unknowns, notEvaluated);
     }
 
-    private static void requireStatuses(GateW3RiskPreflightStatus... statuses) {
-        for (GateW3RiskPreflightStatus status : statuses) {
+    private static void requireStatuses(DiagnosticOrderRiskPreflightStatus... statuses) {
+        for (DiagnosticOrderRiskPreflightStatus status : statuses) {
             Objects.requireNonNull(status, "status must not be null");
         }
     }
 
     @SafeVarargs
-    private static void requireDisjoint(List<GateW3RiskPreflightFindingCode>... groups) {
-        Set<GateW3RiskPreflightFindingCode> seen = new HashSet<>();
-        for (List<GateW3RiskPreflightFindingCode> group : groups) {
-            for (GateW3RiskPreflightFindingCode code : group) {
+    private static void requireDisjoint(List<DiagnosticOrderRiskPreflightFindingCode>... groups) {
+        Set<DiagnosticOrderRiskPreflightFindingCode> seen = new HashSet<>();
+        for (List<DiagnosticOrderRiskPreflightFindingCode> group : groups) {
+            for (DiagnosticOrderRiskPreflightFindingCode code : group) {
                 Objects.requireNonNull(code, "finding code must not be null");
                 if (!seen.add(code)) {
                     throw new IllegalArgumentException("finding groups must be disjoint: " + code);

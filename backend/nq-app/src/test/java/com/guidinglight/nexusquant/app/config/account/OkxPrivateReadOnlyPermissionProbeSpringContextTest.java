@@ -27,18 +27,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 /**
- * GateW real permission probe 的 Spring composition 回归。
+ * OKX private read-only permission probe 的 Spring composition 回归。
  *
  * <p>只构造 Bean，不调用 probe；因此即使 Real port 被选择也不会访问网络、解密 credential、
  * 启动 scheduler 或触达交易写侧。</p>
  */
-class GateWOkxPermissionProbeSpringContextTest {
+class OkxPrivateReadOnlyPermissionProbeSpringContextTest {
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(JacksonAutoConfiguration.class))
             .withUserConfiguration(
                     AccountModuleConfiguration.class,
-                    GateWOkxPrivateReadonlyConfiguration.class,
+                    OkxPrivateReadOnlyDiagnosticsConfiguration.class,
                     Dependencies.class
             )
             .withPropertyValues("nq.account.credentials.master-key=test-master-key");
@@ -65,6 +65,18 @@ class GateWOkxPermissionProbeSpringContextTest {
     }
 
     @Test
+    void legacyProfileAndKeysRemainCompatible() {
+        legacyCandidateRunner().run(context -> assertSelected(context, OkxRealReadonlyPermissionProbePort.class));
+    }
+
+    @Test
+    void conflictingStableAndLegacyPermissionKeysFailClosed() {
+        realCandidateRunner(
+                "nq.gatew.okx-private-readonly.permission-probe.expected-ip=203.0.113.9"
+        ).run(context -> assertSelected(context, NoRealExchangeCredentialPermissionProbePort.class));
+    }
+
+    @Test
     void liveTrueRejectsRealComposition() {
         realCandidateRunner("nq.env-safety.live-enabled=true")
                 .run(context -> assertSelected(context, NoRealExchangeCredentialPermissionProbePort.class));
@@ -88,6 +100,28 @@ class GateWOkxPermissionProbeSpringContextTest {
 
     private ApplicationContextRunner realCandidateRunner(String... overrides) {
         ApplicationContextRunner runner = contextRunner
+                .withInitializer(context -> context.getEnvironment().setActiveProfiles(
+                        "okx-private-readonly-diagnostics"
+                ))
+                .withPropertyValues(
+                        "nq.okx.private-readonly-diagnostics.enabled=true",
+                        "nq.okx.private-readonly-diagnostics.order-submission-enabled=false",
+                        "nq.okx.private-readonly-diagnostics.transfer-enabled=false",
+                        "nq.okx.private-readonly-diagnostics.withdraw-enabled=false",
+                        "nq.okx.private-readonly-diagnostics.permission-probe.enabled=true",
+                        "nq.okx.private-readonly-diagnostics.permission-probe.expected-ip=203.0.113.8",
+                        "nq.env-safety.ci=false",
+                        "nq.env-safety.live-enabled=false",
+                        "nq.env-safety.real-exchange-enabled=false",
+                        "nq.env-safety.real-client-enabled=false",
+                        "nq.env-safety.real-provider-enabled=false",
+                        "nq.env-safety.no-outbound=false"
+                );
+        return overrides.length == 0 ? runner : runner.withPropertyValues(overrides);
+    }
+
+    private ApplicationContextRunner legacyCandidateRunner() {
+        return contextRunner
                 .withInitializer(context -> context.getEnvironment().setActiveProfiles("gatew-okx-readonly-soak"))
                 .withPropertyValues(
                         "nq.gatew.okx-private-readonly.enabled=true",
@@ -103,7 +137,6 @@ class GateWOkxPermissionProbeSpringContextTest {
                         "nq.env-safety.real-provider-enabled=false",
                         "nq.env-safety.no-outbound=false"
                 );
-        return overrides.length == 0 ? runner : runner.withPropertyValues(overrides);
     }
 
     private static void assertSelected(

@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.account.infra.gatew;
+package com.guidinglight.nexusquant.account.infra.okx.readonly;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

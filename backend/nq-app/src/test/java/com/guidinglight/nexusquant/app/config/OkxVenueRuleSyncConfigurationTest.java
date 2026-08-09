@@ -19,10 +19,10 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
-class GateWOkxVenueRuleConfigurationTest {
+class OkxVenueRuleSyncConfigurationTest {
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-            .withUserConfiguration(GateWOkxVenueRuleConfiguration.class)
+            .withUserConfiguration(OkxVenueRuleSyncConfiguration.class)
             .withBean(ObjectMapper.class, ObjectMapper::new)
             .withBean(
                     InstrumentCatalogService.class,
@@ -41,7 +41,7 @@ class GateWOkxVenueRuleConfigurationTest {
     @Test
     void enabledFlagWithoutManualProfileShouldStillRemainNoEgress() {
         contextRunner
-                .withPropertyValues("nq.gatew.okx-venue-rules.enabled=true")
+                .withPropertyValues("nq.okx.venue-rule-sync.enabled=true")
                 .run(context -> {
                     assertFalse(context.containsBean("okxVenueRuleFactsReader"));
                     assertFalse(context.containsBean("okxVenueRuleFactsSyncService"));
@@ -51,13 +51,13 @@ class GateWOkxVenueRuleConfigurationTest {
     @Test
     void manualProfileAndFlagShouldConstructReaderAndBoundedServiceWithoutFetching() {
         contextRunner
-                .withInitializer(context -> context.getEnvironment().setActiveProfiles("gatew-venue-rules-manual"))
+                .withInitializer(context -> context.getEnvironment().setActiveProfiles("okx-venue-rule-sync-manual"))
                 .withPropertyValues(
-                        "nq.gatew.okx-venue-rules.enabled=true",
-                        "nq.gatew.okx-venue-rules.base-url=http://127.0.0.1:65535",
-                        "nq.gatew.okx-venue-rules.timeout=PT2S",
-                        "nq.gatew.okx-venue-rules.allowlist=BTC-USDT,ETH-USDT",
-                        "nq.gatew.okx-venue-rules.stale-after-seconds=600"
+                        "nq.okx.venue-rule-sync.enabled=true",
+                        "nq.okx.venue-rule-sync.base-url=http://127.0.0.1:65535",
+                        "nq.okx.venue-rule-sync.timeout=PT2S",
+                        "nq.okx.venue-rule-sync.allowlist=BTC-USDT,ETH-USDT",
+                        "nq.okx.venue-rule-sync.stale-after-seconds=600"
                 )
                 .run(context -> {
                     assertNotNull(context.getBean(OkxVenueRuleFactsReader.class));
@@ -67,9 +67,39 @@ class GateWOkxVenueRuleConfigurationTest {
     }
 
     @Test
+    void legacyProfileAndKeysShouldRemainCompatible() {
+        contextRunner
+                .withInitializer(context -> context.getEnvironment().setActiveProfiles("gatew-venue-rules-manual"))
+                .withPropertyValues(
+                        "nq.gatew.okx-venue-rules.enabled=true",
+                        "nq.gatew.okx-venue-rules.base-url=http://127.0.0.1:65535",
+                        "nq.gatew.okx-venue-rules.timeout=PT2S",
+                        "nq.gatew.okx-venue-rules.allowlist=BTC-USDT"
+                )
+                .run(context -> {
+                    assertNotNull(context.getBean(OkxVenueRuleFactsReader.class));
+                    assertNotNull(context.getBean(OkxVenueRuleFactsSyncService.class));
+                });
+    }
+
+    @Test
+    void conflictingEnableKeysShouldFailClosed() {
+        contextRunner
+                .withInitializer(context -> context.getEnvironment().setActiveProfiles("okx-venue-rule-sync-manual"))
+                .withPropertyValues(
+                        "nq.okx.venue-rule-sync.enabled=true",
+                        "nq.gatew.okx-venue-rules.enabled=false"
+                )
+                .run(context -> {
+                    assertFalse(context.containsBean("okxVenueRuleFactsReader"));
+                    assertFalse(context.containsBean("okxVenueRuleFactsSyncService"));
+                });
+    }
+
+    @Test
     void invalidOrMissingFreshnessThresholdShouldYieldUnknownInsteadOfStartupFailure() {
         contextRunner
-                .withPropertyValues("nq.gatew.okx-venue-rules.stale-after-seconds=invalid")
+                .withPropertyValues("nq.okx.venue-rule-sync.stale-after-seconds=invalid")
                 .run(context -> {
                     VenueRuleFreshnessEvaluator evaluator = context.getBean(VenueRuleFreshnessEvaluator.class);
                     assertNotNull(evaluator);

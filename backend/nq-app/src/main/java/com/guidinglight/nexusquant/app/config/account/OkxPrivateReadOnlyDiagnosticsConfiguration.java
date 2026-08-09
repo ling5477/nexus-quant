@@ -2,34 +2,36 @@ package com.guidinglight.nexusquant.app.config.account;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
-import com.guidinglight.nexusquant.account.infra.gatew.JdbcOkxPrivateCredentialExecutor;
-import com.guidinglight.nexusquant.account.infra.gatew.OkxPrivateCredentialExecutor;
-import com.guidinglight.nexusquant.account.infra.gatew.OkxPrivateReadonlyProbeService;
+import com.guidinglight.nexusquant.account.infra.okx.readonly.JdbcOkxPrivateCredentialExecutor;
+import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
+import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateReadonlyProbeService;
 import com.guidinglight.nexusquant.adapter.okx.service.JdkOkxPrivateReadTransport;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadTransport;
+import com.guidinglight.nexusquant.app.config.CapabilityPropertyResolver;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 
 import java.time.Clock;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Condition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * GateW-2 显式 composition root。
+ * OKX private read-only diagnostics 的显式 composition root。
  *
  * <p>只有受控 read-only profile、feature flag=true，且 CI/no-outbound/LIVE/交易写侧全部显式关闭时装配；
  * Bean 创建不读取 credential、不执行 probe、不访问网络，也不注册 scheduler/runner/mutating adapter。</p>
  */
 @Configuration
-@Profile({"gatew-okx-readonly", "gatew-okx-readonly-soak"})
-@ConditionalOnProperty(
-        prefix = "nq.gatew.okx-private-readonly",
-        name = "enabled",
-        havingValue = "true",
-        matchIfMissing = false
+@Profile({"okx-private-readonly-diagnostics", "gatew-okx-readonly", "gatew-okx-readonly-soak"})
+@Conditional(
+        OkxPrivateReadOnlyDiagnosticsConfiguration.OkxPrivateReadOnlyDiagnosticsEnabledCondition.class
 )
 @ConditionalOnProperty(
         prefix = "nq.env-safety",
@@ -43,21 +45,18 @@ import org.springframework.jdbc.core.JdbcTemplate;
         havingValue = "false",
         matchIfMissing = false
 )
-@ConditionalOnProperty(
-        prefix = "nq.gatew.okx-private-readonly",
-        name = {"order-submission-enabled", "transfer-enabled", "withdraw-enabled"},
-        havingValue = "false",
-        matchIfMissing = false
-)
-public class GateWOkxPrivateReadonlyConfiguration {
+public class OkxPrivateReadOnlyDiagnosticsConfiguration {
+
+    static final String STABLE_PREFIX = "nq.okx.private-readonly-diagnostics";
+    static final String LEGACY_PREFIX = "nq.gatew.okx-private-readonly";
 
     @Bean
-    public OkxPrivateReadTransport gateWOkxPrivateReadTransport(ObjectMapper objectMapper) {
+    public OkxPrivateReadTransport okxPrivateReadOnlyTransport(ObjectMapper objectMapper) {
         return new JdkOkxPrivateReadTransport(objectMapper, Clock.systemUTC());
     }
 
     @Bean
-    public OkxPrivateCredentialExecutor gateWOkxPrivateCredentialExecutor(
+    public OkxPrivateCredentialExecutor okxPrivateReadOnlyCredentialExecutor(
             JdbcTemplate jdbcTemplate,
             ObjectMapper objectMapper,
             AccountCredentialRuntimeProperties properties,
@@ -72,7 +71,7 @@ public class GateWOkxPrivateReadonlyConfiguration {
     }
 
     @Bean
-    public OkxPrivateReadonlyProbeService gateWOkxPrivateReadonlyProbeService(
+    public OkxPrivateReadonlyProbeService okxPrivateReadOnlyProbeService(
             ExchangeAccountRepository exchangeAccountRepository,
             OkxPrivateCredentialExecutor credentialExecutor,
             KillSwitchService killSwitchService
@@ -83,5 +82,25 @@ public class GateWOkxPrivateReadonlyConfiguration {
                 killSwitchService,
                 Clock.systemUTC()
         );
+    }
+
+    static final class OkxPrivateReadOnlyDiagnosticsEnabledCondition implements Condition {
+
+        @Override
+        public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+            return matches(context, "enabled", true)
+                    && matches(context, "order-submission-enabled", false)
+                    && matches(context, "transfer-enabled", false)
+                    && matches(context, "withdraw-enabled", false);
+        }
+
+        private static boolean matches(ConditionContext context, String name, boolean required) {
+            return CapabilityPropertyResolver.matchesExactBoolean(
+                    context.getEnvironment(),
+                    STABLE_PREFIX + "." + name,
+                    LEGACY_PREFIX + "." + name,
+                    required
+            );
+        }
     }
 }

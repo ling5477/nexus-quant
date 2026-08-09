@@ -13,14 +13,14 @@ import java.util.Objects;
  * <p>preview/reconciliation 允许为 null，以显式表达 NOT_EVALUATED。该对象不是 Controller DTO，
  * 不包含 PlaceOrderCommand、credential material、provider endpoint 或 mutable entity。</p>
  *
- * @param traceId                 调用链标识，不得包含敏感信息
- * @param evaluationTime          显式 deterministic 评估时间
- * @param diagnosticEnvironment   请求的本地 diagnostic environment，SIM 或 LIVE
- * @param orderPreviewResult      已生成的 immutable preview result；null 表示未评估
- * @param reconciliationResult    已生成的 immutable reconciliation result；null 表示未评估
- * @param facts                   credential-material-free 本地事实快照
+ * @param traceId               调用链标识，不得包含敏感信息
+ * @param evaluationTime        显式 deterministic 评估时间
+ * @param diagnosticEnvironment 请求的本地 diagnostic environment，SIM 或 LIVE
+ * @param orderPreviewResult    已生成的 immutable preview result；null 表示未评估
+ * @param reconciliationResult  已生成的 immutable reconciliation result；null 表示未评估
+ * @param facts                 credential-material-free 本地事实快照
  */
-public record GateW3RiskPreflightRequest(
+public record DiagnosticOrderRiskPreflightRequest(
         String traceId,
         Instant evaluationTime,
         String diagnosticEnvironment,
@@ -29,7 +29,7 @@ public record GateW3RiskPreflightRequest(
         RiskPreflightFactBundle facts
 ) {
 
-    public GateW3RiskPreflightRequest {
+    public DiagnosticOrderRiskPreflightRequest {
         if (traceId == null || traceId.isBlank()) {
             throw new IllegalArgumentException("traceId must not be blank");
         }

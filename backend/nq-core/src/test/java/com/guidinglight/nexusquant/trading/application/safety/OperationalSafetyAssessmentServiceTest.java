@@ -1,11 +1,11 @@
 package com.guidinglight.nexusquant.trading.application.safety;
 
-import static com.guidinglight.nexusquant.trading.application.safety.GateW4OperationalSafetyFactBundle.HUMAN_REVIEW_EVIDENCE_TYPE;
-import static com.guidinglight.nexusquant.trading.application.safety.GateW4OperationalSafetyFactBundle.HUMAN_REVIEW_SUBJECT;
-import static com.guidinglight.nexusquant.trading.application.safety.GateW4OperationalSafetyStatus.BLOCKED;
-import static com.guidinglight.nexusquant.trading.application.safety.GateW4OperationalSafetyStatus.NOT_EVALUATED;
-import static com.guidinglight.nexusquant.trading.application.safety.GateW4OperationalSafetyStatus.PASS;
-import static com.guidinglight.nexusquant.trading.application.safety.GateW4OperationalSafetyStatus.UNKNOWN;
+import static com.guidinglight.nexusquant.trading.application.safety.OperationalSafetyAssessmentFactBundle.HUMAN_REVIEW_EVIDENCE_TYPE;
+import static com.guidinglight.nexusquant.trading.application.safety.OperationalSafetyAssessmentFactBundle.HUMAN_REVIEW_SUBJECT;
+import static com.guidinglight.nexusquant.trading.application.safety.OperationalSafetyAssessmentStatus.BLOCKED;
+import static com.guidinglight.nexusquant.trading.application.safety.OperationalSafetyAssessmentStatus.NOT_EVALUATED;
+import static com.guidinglight.nexusquant.trading.application.safety.OperationalSafetyAssessmentStatus.PASS;
+import static com.guidinglight.nexusquant.trading.application.safety.OperationalSafetyAssessmentStatus.UNKNOWN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,8 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.guidinglight.nexusquant.risk.service.KillSwitchScope;
 import com.guidinglight.nexusquant.risk.service.KillSwitchSnapshot;
 import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
-import com.guidinglight.nexusquant.trading.application.safety.GateW4OperationalSafetyFactBundle.HumanReviewEvidence;
-import com.guidinglight.nexusquant.trading.application.safety.GateW4OperationalSafetyFactBundle.HumanReviewEvidenceStatus;
+import com.guidinglight.nexusquant.trading.application.safety.OperationalSafetyAssessmentFactBundle.HumanReviewEvidence;
+import com.guidinglight.nexusquant.trading.application.safety.OperationalSafetyAssessmentFactBundle.HumanReviewEvidenceStatus;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewCase;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewEvent;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewEventType;
@@ -40,25 +40,27 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-/** GateW-4 incident matrix、human-review binding 与 10,000 次 no-egress soak 回归。 */
-class GateW4OperationalSafetyAssessmentServiceTest {
+/**
+ * GateW-4 incident matrix、human-review binding 与 10,000 次 no-egress soak 回归。
+ */
+class OperationalSafetyAssessmentServiceTest {
 
     private static final Instant NOW = Instant.parse("2030-01-01T00:00:00Z");
-    private static final GateW4OperationalSafetyAssessmentService SERVICE =
-            new GateW4OperationalSafetyAssessmentService();
+    private static final OperationalSafetyAssessmentService SERVICE =
+            new OperationalSafetyAssessmentService();
 
     @Test
     void engagedBaselineRemainsBlockedAndNeverAuthorizesTrading() {
-        GateW4OperationalSafetyResult result = SERVICE.assess(request(
+        OperationalSafetyAssessmentResult result = SERVICE.assess(request(
                 snapshot(KillSwitchStatus.ENGAGED, "OPERATOR_ENGAGE"),
                 facts(PASS, PASS, PASS, PASS, NOT_EVALUATED, Set.of())
         ));
 
         assertEquals(BLOCKED, result.killSwitchStatus());
         assertEquals(BLOCKED, result.overallStatus());
-        assertTrue(result.blockers().contains(GateW4OperationalSafetyFindingCode.KILL_SWITCH_ENGAGED));
+        assertTrue(result.blockers().contains(OperationalSafetyAssessmentFindingCode.KILL_SWITCH_ENGAGED));
         assertTrue(result.warnings().contains(
-                GateW4OperationalSafetyFindingCode.REAL_READONLY_SOAK_CREDENTIAL_REQUIRED));
+                OperationalSafetyAssessmentFindingCode.REAL_READONLY_SOAK_CREDENTIAL_REQUIRED));
         assertTrue(result.diagnosticOnly());
         assertTrue(result.readOnly());
         assertTrue(result.noSideEffect());
@@ -70,11 +72,11 @@ class GateW4OperationalSafetyAssessmentServiceTest {
     @ParameterizedTest
     @MethodSource("incidentScenarios")
     void incidentDrillAlwaysReturnsBlockedOrUnknown(
-            GateW4OperationalSafetyFindingCode scenario,
+            OperationalSafetyAssessmentFindingCode scenario,
             KillSwitchSnapshot snapshot,
-            GateW4OperationalSafetyStatus incidentStatus
+            OperationalSafetyAssessmentStatus incidentStatus
     ) {
-        GateW4OperationalSafetyResult result = SERVICE.assess(request(
+        OperationalSafetyAssessmentResult result = SERVICE.assess(request(
                 snapshot,
                 facts(PASS, PASS, incidentStatus, PASS, NOT_EVALUATED, EnumSet.of(scenario))
         ));
@@ -88,7 +90,7 @@ class GateW4OperationalSafetyAssessmentServiceTest {
 
     @Test
     void unknownKillSwitchNeverBecomesPass() {
-        GateW4OperationalSafetyResult result = SERVICE.assess(request(
+        OperationalSafetyAssessmentResult result = SERVICE.assess(request(
                 snapshot(KillSwitchStatus.UNKNOWN, "KILL_SWITCH_STATE_READ_FAILED"),
                 facts(PASS, PASS, PASS, PASS, NOT_EVALUATED, Set.of())
         ));
@@ -96,7 +98,7 @@ class GateW4OperationalSafetyAssessmentServiceTest {
         assertEquals(UNKNOWN, result.killSwitchStatus());
         assertEquals(UNKNOWN, result.overallStatus());
         assertTrue(result.unknowns().contains(
-                GateW4OperationalSafetyFindingCode.KILL_SWITCH_STORAGE_FAILURE));
+                OperationalSafetyAssessmentFindingCode.KILL_SWITCH_STORAGE_FAILURE));
     }
 
     @Test
@@ -108,9 +110,9 @@ class GateW4OperationalSafetyAssessmentServiceTest {
         );
 
         for (HumanReviewEvidence evidence : invalid) {
-            GateW4OperationalSafetyFactBundle facts = new GateW4OperationalSafetyFactBundle(
+            OperationalSafetyAssessmentFactBundle facts = new OperationalSafetyAssessmentFactBundle(
                     evidence, PASS, PASS, PASS, PASS, NOT_EVALUATED, Set.of());
-            GateW4OperationalSafetyResult result = SERVICE.assess(request(
+            OperationalSafetyAssessmentResult result = SERVICE.assess(request(
                     snapshot(KillSwitchStatus.DISENGAGED, "TEST_ONLY_DISENGAGED"), facts));
             assertEquals(BLOCKED, result.humanReviewEvidenceStatus());
             assertFalse(result.tradingAuthorized());
@@ -135,17 +137,17 @@ class GateW4OperationalSafetyAssessmentServiceTest {
 
     @Test
     void boundedConcurrentNoEgressSoakIsDeterministicAndReleasesExecutor() throws Exception {
-        GateW4OperationalSafetyRequest request = request(
+        OperationalSafetyAssessmentRequest request = request(
                 snapshot(KillSwitchStatus.ENGAGED, "OPERATOR_ENGAGE"),
                 facts(PASS, PASS, PASS, PASS, NOT_EVALUATED, Set.of())
         );
-        GateW4OperationalSafetyResult expected = SERVICE.assess(request);
+        OperationalSafetyAssessmentResult expected = SERVICE.assess(request);
         ExecutorService executor = Executors.newFixedThreadPool(8);
         try {
-            List<Callable<GateW4OperationalSafetyResult>> workers = new ArrayList<>();
+            List<Callable<OperationalSafetyAssessmentResult>> workers = new ArrayList<>();
             for (int worker = 0; worker < 8; worker++) {
                 workers.add(() -> {
-                    GateW4OperationalSafetyResult last = null;
+                    OperationalSafetyAssessmentResult last = null;
                     for (int iteration = 0; iteration < 1_250; iteration++) {
                         last = SERVICE.assess(request);
                         assertEquals(expected, last);
@@ -153,8 +155,8 @@ class GateW4OperationalSafetyAssessmentServiceTest {
                     return last;
                 });
             }
-            List<Future<GateW4OperationalSafetyResult>> futures = executor.invokeAll(workers);
-            for (Future<GateW4OperationalSafetyResult> future : futures) {
+            List<Future<OperationalSafetyAssessmentResult>> futures = executor.invokeAll(workers);
+            for (Future<OperationalSafetyAssessmentResult> future : futures) {
                 assertEquals(expected, future.get());
             }
         } finally {
@@ -163,7 +165,7 @@ class GateW4OperationalSafetyAssessmentServiceTest {
         }
 
         assertTrue(executor.isTerminated());
-        assertEquals(0, GateW4OperationalSafetyAssessmentService.class.getDeclaredFields().length);
+        assertEquals(0, OperationalSafetyAssessmentService.class.getDeclaredFields().length);
         assertEquals(BLOCKED, expected.overallStatus());
         assertTrue(expected.noSideEffect());
     }
@@ -176,37 +178,37 @@ class GateW4OperationalSafetyAssessmentServiceTest {
         KillSwitchSnapshot disengaged = snapshot(
                 KillSwitchStatus.DISENGAGED, "TEST_ONLY_DISENGAGED");
         return Stream.of(
-                Arguments.of(GateW4OperationalSafetyFindingCode.KILL_SWITCH_ENGAGED, engaged, PASS),
-                Arguments.of(GateW4OperationalSafetyFindingCode.KILL_SWITCH_UNKNOWN, unknown, UNKNOWN),
-                Arguments.of(GateW4OperationalSafetyFindingCode.KILL_SWITCH_STORAGE_FAILURE,
+                Arguments.of(OperationalSafetyAssessmentFindingCode.KILL_SWITCH_ENGAGED, engaged, PASS),
+                Arguments.of(OperationalSafetyAssessmentFindingCode.KILL_SWITCH_UNKNOWN, unknown, UNKNOWN),
+                Arguments.of(OperationalSafetyAssessmentFindingCode.KILL_SWITCH_STORAGE_FAILURE,
                         storageFailure, UNKNOWN),
-                Arguments.of(GateW4OperationalSafetyFindingCode.DATABASE_UNAVAILABLE, disengaged, BLOCKED),
-                Arguments.of(GateW4OperationalSafetyFindingCode.RECONCILIATION_STALE, disengaged, BLOCKED),
-                Arguments.of(GateW4OperationalSafetyFindingCode.RECONCILIATION_PARTIAL, disengaged, BLOCKED),
-                Arguments.of(GateW4OperationalSafetyFindingCode.PRIVATE_PROBE_FAILURE, disengaged, BLOCKED),
-                Arguments.of(GateW4OperationalSafetyFindingCode.CREDENTIAL_UNAVAILABLE, disengaged, BLOCKED),
-                Arguments.of(GateW4OperationalSafetyFindingCode.CREDENTIAL_CONFLICT, disengaged, BLOCKED),
-                Arguments.of(GateW4OperationalSafetyFindingCode.RESTORE_FAILURE, disengaged, BLOCKED),
-                Arguments.of(GateW4OperationalSafetyFindingCode.MARKETDATA_STALE, disengaged, BLOCKED)
+                Arguments.of(OperationalSafetyAssessmentFindingCode.DATABASE_UNAVAILABLE, disengaged, BLOCKED),
+                Arguments.of(OperationalSafetyAssessmentFindingCode.RECONCILIATION_STALE, disengaged, BLOCKED),
+                Arguments.of(OperationalSafetyAssessmentFindingCode.RECONCILIATION_PARTIAL, disengaged, BLOCKED),
+                Arguments.of(OperationalSafetyAssessmentFindingCode.PRIVATE_PROBE_FAILURE, disengaged, BLOCKED),
+                Arguments.of(OperationalSafetyAssessmentFindingCode.CREDENTIAL_UNAVAILABLE, disengaged, BLOCKED),
+                Arguments.of(OperationalSafetyAssessmentFindingCode.CREDENTIAL_CONFLICT, disengaged, BLOCKED),
+                Arguments.of(OperationalSafetyAssessmentFindingCode.RESTORE_FAILURE, disengaged, BLOCKED),
+                Arguments.of(OperationalSafetyAssessmentFindingCode.MARKETDATA_STALE, disengaged, BLOCKED)
         );
     }
 
-    private static GateW4OperationalSafetyRequest request(
+    private static OperationalSafetyAssessmentRequest request(
             KillSwitchSnapshot snapshot,
-            GateW4OperationalSafetyFactBundle facts
+            OperationalSafetyAssessmentFactBundle facts
     ) {
-        return new GateW4OperationalSafetyRequest(snapshot, facts, NOW);
+        return new OperationalSafetyAssessmentRequest(snapshot, facts, NOW);
     }
 
-    private static GateW4OperationalSafetyFactBundle facts(
-            GateW4OperationalSafetyStatus persistence,
-            GateW4OperationalSafetyStatus backup,
-            GateW4OperationalSafetyStatus incident,
-            GateW4OperationalSafetyStatus soak,
-            GateW4OperationalSafetyStatus realSoak,
-            Set<GateW4OperationalSafetyFindingCode> incidentFindings
+    private static OperationalSafetyAssessmentFactBundle facts(
+            OperationalSafetyAssessmentStatus persistence,
+            OperationalSafetyAssessmentStatus backup,
+            OperationalSafetyAssessmentStatus incident,
+            OperationalSafetyAssessmentStatus soak,
+            OperationalSafetyAssessmentStatus realSoak,
+            Set<OperationalSafetyAssessmentFindingCode> incidentFindings
     ) {
-        return new GateW4OperationalSafetyFactBundle(
+        return new OperationalSafetyAssessmentFactBundle(
                 humanReview(HumanReviewEvidenceStatus.HUMAN_REVIEW_EVIDENCE_PRESENT,
                         true, NOW.plusSeconds(86_400)),
                 persistence,

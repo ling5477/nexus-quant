@@ -18157,3 +18157,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - authority：普通 completion 必须映射 `IMPLEMENTED|SELF_REVIEWED -> COMMIT_AND_PUSH`；直接指向 GateX-0B implementation 的候选映射为 `False`。本轮 allowlist 不允许同步 ROADMAP/current README，故 `STATUS.md` 未改，未声明 GateX-0B 已授权。
 - result：`IMPLEMENTED / SELF_REVIEWED / ARCHITECTURE_BOUNDARIES_HARDENED / BACKEND_REGRESSION_GREEN / AUTHORITY_SYNC_BLOCKED`；P0=0，architecture P1=0，authority P1=1，P2=0，P3=0。
 - next：需要用户授权按现有治理合同先同步 GateX-0A `COMMIT_AND_PUSH` authority（并允许同时更新 ROADMAP/current README），或另行授权治理合同变更；在此之前不得宣称 GateX-0B 已开始。
+
+## 2026-08-09 — GateX-0B stage semantic naming cleanup implementation attempt-01
+
+- task：`NQ-GATEX-0B-STAGE-SEMANTIC-NAMING-CLEANUP-IMPLEMENTATION`；NQ-only、L 级 backend refactor / config compatibility / regression / self-review。
+- baseline：`HEAD == origin/dev == 61d9292b0b77d9c25f36232bee9512b87ac256c6`；GateX-0A canonical implementation=`49851276...`，exact-head CI run=`31318868410 / completed / success`；0A 已同步为 `ACCEPTED|CI_GREEN` 后进入 0B。
+- implementation：risk-preflight、operational safety、OKX venue-rule/private-readonly configuration 改为稳定 capability/domain naming；`account.infra.gatew` 移至 `account.infra.okx.readonly`；新增 main-source `.gatew` package guard。
+- compatibility：新增 `nq.okx.venue-rule-sync` 与 `nq.okx.private-readonly-diagnostics`；保留 `nq.gatew.*` alias。普通参数 stable-first；安全开关/expected IP 冲突 fail closed；warning 不输出值或凭证。
+- validation：changed-test focused suites 全绿；`nq-app -am` 与全后端 23-module Maven 均 `BUILD SUCCESS`。首轮 5432/fixture 环境失败完成 RCA；本地测试 fixture 已删除、既有容器已恢复停止。
+- residual：production old class/package declaration/import=`0`；legacy key/profile、GateW evidence identity、历史注释、V34/V35 migration 与 soak/drill tests 按类别保留，未为 0 hits 改写历史。
+- boundary：API/DB schema/migration/SQL/订单状态机/risk algorithm/ledger/frontend/research/CI/deploy/LIVE/credential/真实交易/AI/DH runtime 变更=`0`。
+- result：`IMPLEMENTED / SELF_REVIEWED / STAGE_SEMANTICS_CLEANED / BACKEND_REGRESSION_GREEN / READY_TO_COMMIT`；P0=0/P1=0/P2=0/P3=0。
+- next：唯一下一动作=`NQ-GATEX-0B-COMMIT-AND-PUSH`；本任务不 commit、不 push、不启动 GateX-0C。

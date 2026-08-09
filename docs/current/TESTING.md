@@ -12739,3 +12739,19 @@ Environment：Windows + Java 21 + Maven；完整回归使用临时、可删除 P
 Known warnings：18 个既有 skipped；Mockito dynamic-agent 与部分 module 的 SLF4J no-provider warning；均未导致 failure。未运行 frontend、Python 或 migration 专项验证，因为本任务未修改这些区域。API、schema、SQL、LIVE、真实交易、credential、AI/DH runtime 均未触达。
 
 Blocking status：架构 P1 已关闭；authority sync P1 未关闭。治理合同要求 `IMPLEMENTED|SELF_REVIEWED` 后先执行 GateX-0A `COMMIT_AND_PUSH`，与用户指定直接进入 GateX-0B 的动作冲突；任务 allowlist 又不包含同步 ROADMAP/current README 所需文件，因此 `STATUS.md` 保持不变。
+
+## 2026-08-09 — GateX-0B stage semantic naming cleanup implementation attempt-01
+
+| Command / Check | Result | Scope / Evidence |
+| --- | --- | --- |
+| changed-test focused Maven（12 个 suite） | PASS（通过） | risk/safety 47、moved infra 26、nq-app targeted 37；0 failures / 0 errors / 0 skipped |
+| `mvn -f backend/pom.xml -pl nq-app -am test` | PASS | 23 个 reactor modules 全部成功；Spring local profile 与新/旧配置兼容装配通过 |
+| `mvn -f backend/pom.xml test` | PASS | 全后端 23 个 modules 全部成功；0 failures / 0 errors |
+| focused `OperationalSafetyAssessmentServiceTest` | PASS | 16 tests / 0 failures / 0 errors / 0 skipped；覆盖最后一次异常文案语义清理 |
+| old production name/package scan | PASS | `GateW3RiskPreflight*`、`GateW4OperationalSafety*`、`GateWOkx*` 与 `account.infra.gatew` 的 production declaration/import=`0` |
+| residual GateW classification | PASS | legacy key/profile、历史 evidence identity/comment、migration 与 soak/drill test 均完成分类；`REVIEW_REQUIRED=0` |
+| authority / docs links / diff checks | PASS | authority errors=`0`；links 195 checked / 0 errors / 1 existing warning；worktree diff whitespace errors=`0` |
+
+Environment：Windows + Java 21 + Maven + 仓库既有本地 `nexusquant-postgres`。首轮因 5432 未运行失败；容器 healthy 后又定位到 CI-only legacy account fixture 缺失。按 CI 前置插入唯一 PAPER/ACTIVE 本地 fixture 后两条必跑回归通过；fixture 已精确删除且容器恢复停止状态。
+
+Known warnings：Mockito dynamic-agent 与部分 module 的 SLF4J no-provider warning；未导致 failure。未运行 frontend、Python、migration 专项或远端 CI，因为任务仅修改 backend naming/config compatibility，且当前 work batch 尚未提交。Blocking status：无本地回归 blocker；CI=`NOT_RUN`，下一步仅为 `NQ-GATEX-0B-COMMIT-AND-PUSH`。

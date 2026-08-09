@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.account.infra.gatew;
+package com.guidinglight.nexusquant.account.infra.okx.readonly;
 
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateEnvironment;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadRequest;

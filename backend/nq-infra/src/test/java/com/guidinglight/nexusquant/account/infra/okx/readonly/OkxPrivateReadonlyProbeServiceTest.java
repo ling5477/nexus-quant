@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.account.infra.gatew;
+package com.guidinglight.nexusquant.account.infra.okx.readonly;
 
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;

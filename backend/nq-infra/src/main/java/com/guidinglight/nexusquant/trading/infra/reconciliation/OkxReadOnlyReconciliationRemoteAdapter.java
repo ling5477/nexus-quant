@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.trading.infra.reconciliation;
 
-import com.guidinglight.nexusquant.account.infra.gatew.OkxPrivateCredentialExecutor;
+import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateEnvironment;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateFillSnapshot;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateOrderSnapshot;

@@ -30,100 +30,102 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
-/** GateW-3 risk preflight 的 safety、taxonomy、determinism 与 zero-call 回归。 */
-class GateW3RiskPreflightServiceTest {
+/**
+ * GateW-3 risk preflight 的 safety、taxonomy、determinism 与 zero-call 回归。
+ */
+class DiagnosticOrderRiskPreflightServiceTest {
 
     private static final Instant EVALUATION_TIME = Instant.parse("2026-07-14T12:00:00Z");
     private static final Clock CLOCK = Clock.fixed(EVALUATION_TIME, ZoneOffset.UTC);
 
     @Test
     void shouldCombineCleanPreviewAndReconciliationWithoutAuthorizingExecution() {
-        GateW3RiskPreflightResult result = service().evaluate(request(
+        DiagnosticOrderRiskPreflightResult result = service().evaluate(request(
                 preview(OrderPreviewStatus.PASS, OrderPreviewStatus.PASS),
                 cleanReconciliation(),
                 healthyFacts()
         ));
 
-        assertEquals(GateW3RiskPreflightStatus.PASS, result.structuralStatus());
-        assertEquals(GateW3RiskPreflightStatus.PASS, result.venueFactStatus());
-        assertEquals(GateW3RiskPreflightStatus.PASS, result.reconciliationStatus());
-        assertEquals(GateW3RiskPreflightStatus.PASS, result.localAccountStatus());
-        assertEquals(GateW3RiskPreflightStatus.PASS, result.credentialMetadataStatus());
-        assertEquals(GateW3RiskPreflightStatus.PASS, result.marketdataQualityStatus());
-        assertEquals(GateW3RiskPreflightStatus.PASS, result.pureRiskStatus());
-        assertEquals(GateW3RiskPreflightStatus.BLOCKED, result.executionReadiness());
+        assertEquals(DiagnosticOrderRiskPreflightStatus.PASS, result.structuralStatus());
+        assertEquals(DiagnosticOrderRiskPreflightStatus.PASS, result.venueFactStatus());
+        assertEquals(DiagnosticOrderRiskPreflightStatus.PASS, result.reconciliationStatus());
+        assertEquals(DiagnosticOrderRiskPreflightStatus.PASS, result.localAccountStatus());
+        assertEquals(DiagnosticOrderRiskPreflightStatus.PASS, result.credentialMetadataStatus());
+        assertEquals(DiagnosticOrderRiskPreflightStatus.PASS, result.marketdataQualityStatus());
+        assertEquals(DiagnosticOrderRiskPreflightStatus.PASS, result.pureRiskStatus());
+        assertEquals(DiagnosticOrderRiskPreflightStatus.BLOCKED, result.executionReadiness());
         assertTrue(result.diagnosticOnly());
         assertTrue(result.readOnly());
         assertTrue(result.noSideEffect());
         assertFalse(result.orderSubmitted());
         assertFalse(result.tradingAuthorized());
-        assertTrue(result.blockers().contains(GateW3RiskPreflightFindingCode.EXECUTION_NOT_AUTHORIZED));
+        assertTrue(result.blockers().contains(DiagnosticOrderRiskPreflightFindingCode.EXECUTION_NOT_AUTHORIZED));
     }
 
     @Test
     void shouldKeepMinimumNotionalFeeAndRemotePermissionUnknown() {
-        GateW3RiskPreflightResult result = evaluateHealthy();
+        DiagnosticOrderRiskPreflightResult result = evaluateHealthy();
 
-        assertTrue(result.unknowns().contains(GateW3RiskPreflightFindingCode.MIN_NOTIONAL_UNKNOWN));
-        assertTrue(result.unknowns().contains(GateW3RiskPreflightFindingCode.FEE_UNKNOWN));
-        assertTrue(result.unknowns().contains(GateW3RiskPreflightFindingCode.REMOTE_PERMISSION_UNKNOWN));
-        assertEquals(GateW3RiskPreflightStatus.UNKNOWN, result.permissionStatus());
-        assertEquals(GateW3RiskPreflightStatus.BLOCKED, result.executionReadiness());
+        assertTrue(result.unknowns().contains(DiagnosticOrderRiskPreflightFindingCode.MIN_NOTIONAL_UNKNOWN));
+        assertTrue(result.unknowns().contains(DiagnosticOrderRiskPreflightFindingCode.FEE_UNKNOWN));
+        assertTrue(result.unknowns().contains(DiagnosticOrderRiskPreflightFindingCode.REMOTE_PERMISSION_UNKNOWN));
+        assertEquals(DiagnosticOrderRiskPreflightStatus.UNKNOWN, result.permissionStatus());
+        assertEquals(DiagnosticOrderRiskPreflightStatus.BLOCKED, result.executionReadiness());
     }
 
     @Test
     void shouldKeepAllStatefulRiskDimensionsNotEvaluated() {
-        GateW3RiskPreflightResult result = evaluateHealthy();
-        List<GateW3RiskPreflightFindingCode> expected = List.of(
-                GateW3RiskPreflightFindingCode.BALANCE_NOT_EVALUATED,
-                GateW3RiskPreflightFindingCode.POSITION_NOT_EVALUATED,
-                GateW3RiskPreflightFindingCode.DAILY_LOSS_NOT_EVALUATED,
-                GateW3RiskPreflightFindingCode.OPEN_ORDERS_RISK_NOT_EVALUATED,
-                GateW3RiskPreflightFindingCode.KILL_SWITCH_NOT_EVALUATED,
-                GateW3RiskPreflightFindingCode.DUPLICATE_REQUEST_NOT_EVALUATED,
-                GateW3RiskPreflightFindingCode.RATE_LIMIT_NOT_EVALUATED,
-                GateW3RiskPreflightFindingCode.STATEFUL_RISK_PIPELINE_NOT_EVALUATED
+        DiagnosticOrderRiskPreflightResult result = evaluateHealthy();
+        List<DiagnosticOrderRiskPreflightFindingCode> expected = List.of(
+                DiagnosticOrderRiskPreflightFindingCode.BALANCE_NOT_EVALUATED,
+                DiagnosticOrderRiskPreflightFindingCode.POSITION_NOT_EVALUATED,
+                DiagnosticOrderRiskPreflightFindingCode.DAILY_LOSS_NOT_EVALUATED,
+                DiagnosticOrderRiskPreflightFindingCode.OPEN_ORDERS_RISK_NOT_EVALUATED,
+                DiagnosticOrderRiskPreflightFindingCode.KILL_SWITCH_NOT_EVALUATED,
+                DiagnosticOrderRiskPreflightFindingCode.DUPLICATE_REQUEST_NOT_EVALUATED,
+                DiagnosticOrderRiskPreflightFindingCode.RATE_LIMIT_NOT_EVALUATED,
+                DiagnosticOrderRiskPreflightFindingCode.STATEFUL_RISK_PIPELINE_NOT_EVALUATED
         );
 
         assertTrue(result.notEvaluated().containsAll(expected));
-        assertEquals(GateW3RiskPreflightStatus.NOT_EVALUATED, result.statefulRiskStatus());
-        assertEquals(GateW3RiskPreflightStatus.NOT_EVALUATED, result.balanceStatus());
+        assertEquals(DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED, result.statefulRiskStatus());
+        assertEquals(DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED, result.balanceStatus());
     }
 
     @Test
     void shouldBlockWhenPreviewIsBlocked() {
-        GateW3RiskPreflightResult result = service().evaluate(request(
+        DiagnosticOrderRiskPreflightResult result = service().evaluate(request(
                 preview(OrderPreviewStatus.PASS, OrderPreviewStatus.BLOCKED),
                 cleanReconciliation(),
                 healthyFacts()
         ));
 
-        assertEquals(GateW3RiskPreflightStatus.BLOCKED, result.venueFactStatus());
-        assertEquals(GateW3RiskPreflightStatus.BLOCKED, result.pureRiskStatus());
-        assertTrue(result.blockers().contains(GateW3RiskPreflightFindingCode.ORDER_PREVIEW_BLOCKED));
+        assertEquals(DiagnosticOrderRiskPreflightStatus.BLOCKED, result.venueFactStatus());
+        assertEquals(DiagnosticOrderRiskPreflightStatus.BLOCKED, result.pureRiskStatus());
+        assertTrue(result.blockers().contains(DiagnosticOrderRiskPreflightFindingCode.ORDER_PREVIEW_BLOCKED));
     }
 
     @Test
     void shouldMarkMissingPreviewNotEvaluated() {
-        GateW3RiskPreflightResult result = service().evaluate(request(null, cleanReconciliation(), healthyFacts()));
+        DiagnosticOrderRiskPreflightResult result = service().evaluate(request(null, cleanReconciliation(), healthyFacts()));
 
-        assertEquals(GateW3RiskPreflightStatus.NOT_EVALUATED, result.structuralStatus());
-        assertEquals(GateW3RiskPreflightStatus.NOT_EVALUATED, result.venueFactStatus());
-        assertEquals(GateW3RiskPreflightStatus.NOT_EVALUATED, result.pureRiskStatus());
-        assertTrue(result.blockers().contains(GateW3RiskPreflightFindingCode.ORDER_PREVIEW_NOT_EVALUATED));
+        assertEquals(DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED, result.structuralStatus());
+        assertEquals(DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED, result.venueFactStatus());
+        assertEquals(DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED, result.pureRiskStatus());
+        assertTrue(result.blockers().contains(DiagnosticOrderRiskPreflightFindingCode.ORDER_PREVIEW_NOT_EVALUATED));
     }
 
     @Test
     void shouldPreservePreviewNotEvaluatedStatus() {
-        GateW3RiskPreflightResult result = service().evaluate(request(
+        DiagnosticOrderRiskPreflightResult result = service().evaluate(request(
                 preview(OrderPreviewStatus.PASS, OrderPreviewStatus.NOT_EVALUATED),
                 cleanReconciliation(),
                 healthyFacts()
         ));
 
-        assertEquals(GateW3RiskPreflightStatus.NOT_EVALUATED, result.venueFactStatus());
-        assertEquals(GateW3RiskPreflightStatus.NOT_EVALUATED, result.pureRiskStatus());
-        assertTrue(result.blockers().contains(GateW3RiskPreflightFindingCode.ORDER_PREVIEW_NOT_EVALUATED));
+        assertEquals(DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED, result.venueFactStatus());
+        assertEquals(DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED, result.pureRiskStatus());
+        assertTrue(result.blockers().contains(DiagnosticOrderRiskPreflightFindingCode.ORDER_PREVIEW_NOT_EVALUATED));
     }
 
     @Test
@@ -139,15 +141,15 @@ class GateW3RiskPreflightServiceTest {
                 EVALUATION_TIME
         );
 
-        GateW3RiskPreflightResult result = service().evaluate(request(
+        DiagnosticOrderRiskPreflightResult result = service().evaluate(request(
                 preview(OrderPreviewStatus.PASS, OrderPreviewStatus.PASS),
                 reconciliation,
                 healthyFacts()
         ));
 
-        assertEquals(GateW3RiskPreflightStatus.BLOCKED, result.reconciliationStatus());
-        assertTrue(result.blockers().contains(GateW3RiskPreflightFindingCode.RECONCILIATION_BLOCKED));
-        assertTrue(result.blockers().contains(GateW3RiskPreflightFindingCode.RECONCILIATION_MISMATCH));
+        assertEquals(DiagnosticOrderRiskPreflightStatus.BLOCKED, result.reconciliationStatus());
+        assertTrue(result.blockers().contains(DiagnosticOrderRiskPreflightFindingCode.RECONCILIATION_BLOCKED));
+        assertTrue(result.blockers().contains(DiagnosticOrderRiskPreflightFindingCode.RECONCILIATION_MISMATCH));
     }
 
     @Test
@@ -163,14 +165,14 @@ class GateW3RiskPreflightServiceTest {
                 EVALUATION_TIME
         );
 
-        GateW3RiskPreflightResult result = service().evaluate(request(
+        DiagnosticOrderRiskPreflightResult result = service().evaluate(request(
                 preview(OrderPreviewStatus.PASS, OrderPreviewStatus.PASS),
                 reconciliation,
                 healthyFacts()
         ));
 
-        assertEquals(GateW3RiskPreflightStatus.BLOCKED, result.reconciliationStatus());
-        assertTrue(result.blockers().contains(GateW3RiskPreflightFindingCode.RECONCILIATION_BLOCKED));
+        assertEquals(DiagnosticOrderRiskPreflightStatus.BLOCKED, result.reconciliationStatus());
+        assertTrue(result.blockers().contains(DiagnosticOrderRiskPreflightFindingCode.RECONCILIATION_BLOCKED));
     }
 
     @Test
@@ -189,13 +191,13 @@ class GateW3RiskPreflightServiceTest {
                 EVALUATION_TIME
         );
 
-        GateW3RiskPreflightResult result = service().evaluate(request(
+        DiagnosticOrderRiskPreflightResult result = service().evaluate(request(
                 preview(OrderPreviewStatus.PASS, OrderPreviewStatus.PASS),
                 reconciliation,
                 healthyFacts()
         ));
 
-        assertEquals(GateW3RiskPreflightStatus.BLOCKED, result.reconciliationStatus());
+        assertEquals(DiagnosticOrderRiskPreflightStatus.BLOCKED, result.reconciliationStatus());
     }
 
     @Test
@@ -205,25 +207,25 @@ class GateW3RiskPreflightServiceTest {
                 "SNAPSHOT_MATCHED_AT_EVALUATION_TIME", EVALUATION_TIME.plusSeconds(1)
         );
 
-        GateW3RiskPreflightResult result = service().evaluate(request(
+        DiagnosticOrderRiskPreflightResult result = service().evaluate(request(
                 preview(OrderPreviewStatus.PASS, OrderPreviewStatus.PASS),
                 future,
                 healthyFacts()
         ));
 
-        assertEquals(GateW3RiskPreflightStatus.BLOCKED, result.reconciliationStatus());
+        assertEquals(DiagnosticOrderRiskPreflightStatus.BLOCKED, result.reconciliationStatus());
     }
 
     @Test
     void shouldMarkMissingReconciliationNotEvaluated() {
-        GateW3RiskPreflightResult result = service().evaluate(request(
+        DiagnosticOrderRiskPreflightResult result = service().evaluate(request(
                 preview(OrderPreviewStatus.PASS, OrderPreviewStatus.PASS),
                 null,
                 healthyFacts()
         ));
 
-        assertEquals(GateW3RiskPreflightStatus.NOT_EVALUATED, result.reconciliationStatus());
-        assertTrue(result.notEvaluated().contains(GateW3RiskPreflightFindingCode.RECONCILIATION_NOT_EVALUATED));
+        assertEquals(DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED, result.reconciliationStatus());
+        assertTrue(result.notEvaluated().contains(DiagnosticOrderRiskPreflightFindingCode.RECONCILIATION_NOT_EVALUATED));
     }
 
     @Test
@@ -234,19 +236,19 @@ class GateW3RiskPreflightServiceTest {
                 Quality.OK
         );
 
-        GateW3RiskPreflightResult result = service().evaluate(request(
+        DiagnosticOrderRiskPreflightResult result = service().evaluate(request(
                 preview(OrderPreviewStatus.PASS, OrderPreviewStatus.PASS), cleanReconciliation(), facts
         ));
 
-        assertEquals(GateW3RiskPreflightStatus.BLOCKED, result.localAccountStatus());
-        assertTrue(result.blockers().contains(GateW3RiskPreflightFindingCode.LOCAL_ACCOUNT_UNCONFIGURED));
+        assertEquals(DiagnosticOrderRiskPreflightStatus.BLOCKED, result.localAccountStatus());
+        assertTrue(result.blockers().contains(DiagnosticOrderRiskPreflightFindingCode.LOCAL_ACCOUNT_UNCONFIGURED));
     }
 
     @Test
     void shouldBlockDisabledLocalAccount() {
         assertAccountBlock(
                 new LocalAccountMetadataSnapshot(true, "OKX", "SPOT", "SIM", "DISABLED"),
-                GateW3RiskPreflightFindingCode.LOCAL_ACCOUNT_DISABLED
+                DiagnosticOrderRiskPreflightFindingCode.LOCAL_ACCOUNT_DISABLED
         );
     }
 
@@ -254,7 +256,7 @@ class GateW3RiskPreflightServiceTest {
     void shouldBlockLocalAccountExchangeMismatch() {
         assertAccountBlock(
                 new LocalAccountMetadataSnapshot(true, "OTHER", "SPOT", "SIM", "ACTIVE"),
-                GateW3RiskPreflightFindingCode.LOCAL_ACCOUNT_SCOPE_MISMATCH
+                DiagnosticOrderRiskPreflightFindingCode.LOCAL_ACCOUNT_SCOPE_MISMATCH
         );
     }
 
@@ -262,7 +264,7 @@ class GateW3RiskPreflightServiceTest {
     void shouldBlockLocalAccountMarketTypeMismatch() {
         assertAccountBlock(
                 new LocalAccountMetadataSnapshot(true, "OKX", "SWAP", "SIM", "ACTIVE"),
-                GateW3RiskPreflightFindingCode.LOCAL_ACCOUNT_SCOPE_MISMATCH
+                DiagnosticOrderRiskPreflightFindingCode.LOCAL_ACCOUNT_SCOPE_MISMATCH
         );
     }
 
@@ -270,7 +272,7 @@ class GateW3RiskPreflightServiceTest {
     void shouldBlockLocalAccountEnvironmentMismatch() {
         assertAccountBlock(
                 new LocalAccountMetadataSnapshot(true, "OKX", "SPOT", "LIVE", "ACTIVE"),
-                GateW3RiskPreflightFindingCode.LOCAL_ACCOUNT_SCOPE_MISMATCH
+                DiagnosticOrderRiskPreflightFindingCode.LOCAL_ACCOUNT_SCOPE_MISMATCH
         );
     }
 
@@ -281,12 +283,12 @@ class GateW3RiskPreflightServiceTest {
                 new CredentialMetadataSummary(false, 0, List.of(), List.of(), List.of()),
                 Quality.OK
         );
-        GateW3RiskPreflightResult result = service().evaluate(request(
+        DiagnosticOrderRiskPreflightResult result = service().evaluate(request(
                 preview(OrderPreviewStatus.PASS, OrderPreviewStatus.PASS), cleanReconciliation(), facts
         ));
 
-        assertEquals(GateW3RiskPreflightStatus.BLOCKED, result.credentialMetadataStatus());
-        assertTrue(result.blockers().contains(GateW3RiskPreflightFindingCode.CREDENTIAL_METADATA_UNCONFIGURED));
+        assertEquals(DiagnosticOrderRiskPreflightStatus.BLOCKED, result.credentialMetadataStatus());
+        assertTrue(result.blockers().contains(DiagnosticOrderRiskPreflightFindingCode.CREDENTIAL_METADATA_UNCONFIGURED));
     }
 
     @Test
@@ -296,12 +298,12 @@ class GateW3RiskPreflightServiceTest {
                 credential(2, List.of("API_KEY", "API_KEY")),
                 Quality.OK
         );
-        GateW3RiskPreflightResult result = service().evaluate(request(
+        DiagnosticOrderRiskPreflightResult result = service().evaluate(request(
                 preview(OrderPreviewStatus.PASS, OrderPreviewStatus.PASS), cleanReconciliation(), facts
         ));
 
-        assertEquals(GateW3RiskPreflightStatus.BLOCKED, result.credentialMetadataStatus());
-        assertTrue(result.blockers().contains(GateW3RiskPreflightFindingCode.CREDENTIAL_METADATA_CONFLICT));
+        assertEquals(DiagnosticOrderRiskPreflightStatus.BLOCKED, result.credentialMetadataStatus());
+        assertTrue(result.blockers().contains(DiagnosticOrderRiskPreflightFindingCode.CREDENTIAL_METADATA_CONFLICT));
     }
 
     @Test
@@ -311,43 +313,43 @@ class GateW3RiskPreflightServiceTest {
                 credential(2, List.of("API_KEY", "READ_ONLY_KEY")),
                 Quality.OK
         );
-        GateW3RiskPreflightResult result = service().evaluate(request(
+        DiagnosticOrderRiskPreflightResult result = service().evaluate(request(
                 preview(OrderPreviewStatus.PASS, OrderPreviewStatus.PASS), cleanReconciliation(), facts
         ));
 
-        assertEquals(GateW3RiskPreflightStatus.PASS, result.credentialMetadataStatus());
-        assertFalse(result.blockers().contains(GateW3RiskPreflightFindingCode.CREDENTIAL_METADATA_CONFLICT));
+        assertEquals(DiagnosticOrderRiskPreflightStatus.PASS, result.credentialMetadataStatus());
+        assertFalse(result.blockers().contains(DiagnosticOrderRiskPreflightFindingCode.CREDENTIAL_METADATA_CONFLICT));
     }
 
     @Test
     void shouldKeepMarketdataWarningDiagnosticOnly() {
-        GateW3RiskPreflightResult result = evaluateWithMarketdata(Quality.WARNING);
+        DiagnosticOrderRiskPreflightResult result = evaluateWithMarketdata(Quality.WARNING);
 
-        assertEquals(GateW3RiskPreflightStatus.UNKNOWN, result.marketdataQualityStatus());
-        assertTrue(result.warnings().contains(GateW3RiskPreflightFindingCode.MARKETDATA_QUALITY_NOT_OK));
-        assertEquals(GateW3RiskPreflightStatus.BLOCKED, result.executionReadiness());
+        assertEquals(DiagnosticOrderRiskPreflightStatus.UNKNOWN, result.marketdataQualityStatus());
+        assertTrue(result.warnings().contains(DiagnosticOrderRiskPreflightFindingCode.MARKETDATA_QUALITY_NOT_OK));
+        assertEquals(DiagnosticOrderRiskPreflightStatus.BLOCKED, result.executionReadiness());
     }
 
     @Test
     void shouldBlockMarketdataBlockedStatus() {
-        GateW3RiskPreflightResult result = evaluateWithMarketdata(Quality.BLOCKED);
+        DiagnosticOrderRiskPreflightResult result = evaluateWithMarketdata(Quality.BLOCKED);
 
-        assertEquals(GateW3RiskPreflightStatus.BLOCKED, result.marketdataQualityStatus());
-        assertTrue(result.blockers().contains(GateW3RiskPreflightFindingCode.MARKETDATA_QUALITY_NOT_OK));
+        assertEquals(DiagnosticOrderRiskPreflightStatus.BLOCKED, result.marketdataQualityStatus());
+        assertTrue(result.blockers().contains(DiagnosticOrderRiskPreflightFindingCode.MARKETDATA_QUALITY_NOT_OK));
     }
 
     @Test
     void shouldKeepUnknownMarketdataOutOfPass() {
-        GateW3RiskPreflightResult result = evaluateWithMarketdata(Quality.UNKNOWN);
+        DiagnosticOrderRiskPreflightResult result = evaluateWithMarketdata(Quality.UNKNOWN);
 
-        assertEquals(GateW3RiskPreflightStatus.UNKNOWN, result.marketdataQualityStatus());
-        assertTrue(result.unknowns().contains(GateW3RiskPreflightFindingCode.MARKETDATA_QUALITY_NOT_OK));
-        assertEquals(GateW3RiskPreflightStatus.BLOCKED, result.executionReadiness());
+        assertEquals(DiagnosticOrderRiskPreflightStatus.UNKNOWN, result.marketdataQualityStatus());
+        assertTrue(result.unknowns().contains(DiagnosticOrderRiskPreflightFindingCode.MARKETDATA_QUALITY_NOT_OK));
+        assertEquals(DiagnosticOrderRiskPreflightStatus.BLOCKED, result.executionReadiness());
     }
 
     @Test
     void shouldReturnDeterministicResultForRepeatedEvaluation() {
-        GateW3RiskPreflightRequest request = request(
+        DiagnosticOrderRiskPreflightRequest request = request(
                 preview(OrderPreviewStatus.PASS, OrderPreviewStatus.PASS),
                 cleanReconciliation(),
                 healthyFacts()
@@ -358,7 +360,7 @@ class GateW3RiskPreflightServiceTest {
 
     @Test
     void shouldRejectFutureEvaluationTimeUsingInjectedClock() {
-        GateW3RiskPreflightRequest future = new GateW3RiskPreflightRequest(
+        DiagnosticOrderRiskPreflightRequest future = new DiagnosticOrderRiskPreflightRequest(
                 "trace-risk-preflight",
                 EVALUATION_TIME.plusSeconds(1),
                 "SIM",
@@ -373,14 +375,14 @@ class GateW3RiskPreflightServiceTest {
 
     @Test
     void shouldExposeImmutableResultCollections() {
-        GateW3RiskPreflightResult result = evaluateHealthy();
+        DiagnosticOrderRiskPreflightResult result = evaluateHealthy();
 
         assertThrows(UnsupportedOperationException.class,
-                () -> result.blockers().add(GateW3RiskPreflightFindingCode.ORDER_PREVIEW_BLOCKED));
+                () -> result.blockers().add(DiagnosticOrderRiskPreflightFindingCode.ORDER_PREVIEW_BLOCKED));
         assertThrows(UnsupportedOperationException.class,
-                () -> result.unknowns().add(GateW3RiskPreflightFindingCode.MARKETDATA_QUALITY_NOT_OK));
+                () -> result.unknowns().add(DiagnosticOrderRiskPreflightFindingCode.MARKETDATA_QUALITY_NOT_OK));
         assertThrows(UnsupportedOperationException.class,
-                () -> result.notEvaluated().add(GateW3RiskPreflightFindingCode.RECONCILIATION_NOT_EVALUATED));
+                () -> result.notEvaluated().add(DiagnosticOrderRiskPreflightFindingCode.RECONCILIATION_NOT_EVALUATED));
     }
 
     @Test
@@ -395,8 +397,8 @@ class GateW3RiskPreflightServiceTest {
 
     @Test
     void shouldKeepFindingGroupsDisjoint() {
-        GateW3RiskPreflightResult result = evaluateWithMarketdata(Quality.WARNING);
-        Set<GateW3RiskPreflightFindingCode> all = new java.util.HashSet<>();
+        DiagnosticOrderRiskPreflightResult result = evaluateWithMarketdata(Quality.WARNING);
+        Set<DiagnosticOrderRiskPreflightFindingCode> all = new java.util.HashSet<>();
 
         assertTrue(result.blockers().stream().allMatch(all::add));
         assertTrue(result.warnings().stream().allMatch(all::add));
@@ -406,7 +408,7 @@ class GateW3RiskPreflightServiceTest {
 
     @Test
     void shouldHaveOnlyClockAsRuntimeDependency() {
-        List<? extends Class<?>> fieldTypes = Arrays.stream(GateW3RiskPreflightService.class.getDeclaredFields())
+        List<? extends Class<?>> fieldTypes = Arrays.stream(DiagnosticOrderRiskPreflightService.class.getDeclaredFields())
                 .filter(field -> !Modifier.isStatic(field.getModifiers()))
                 .map(field -> (Class<?>) field.getType())
                 .toList();
@@ -416,7 +418,7 @@ class GateW3RiskPreflightServiceTest {
 
     @Test
     void shouldNotReferenceForbiddenRiskOrOrderChainTypes() throws IOException {
-        String classBytes = classBytes(GateW3RiskPreflightService.class);
+        String classBytes = classBytes(DiagnosticOrderRiskPreflightService.class);
         List<String> forbidden = List.of(
                 "PlaceOrderCommand",
                 "PreTradeRiskService",
@@ -432,7 +434,7 @@ class GateW3RiskPreflightServiceTest {
 
     @Test
     void shouldNotReferenceNetworkDatabaseOrWritePorts() throws IOException {
-        String classBytes = classBytes(GateW3RiskPreflightService.class);
+        String classBytes = classBytes(DiagnosticOrderRiskPreflightService.class);
         List<String> forbidden = List.of(
                 "java/net/",
                 "Jdbc",
@@ -459,19 +461,19 @@ class GateW3RiskPreflightServiceTest {
 
     private void assertAccountBlock(
             LocalAccountMetadataSnapshot account,
-            GateW3RiskPreflightFindingCode expected
+            DiagnosticOrderRiskPreflightFindingCode expected
     ) {
-        GateW3RiskPreflightResult result = service().evaluate(request(
+        DiagnosticOrderRiskPreflightResult result = service().evaluate(request(
                 preview(OrderPreviewStatus.PASS, OrderPreviewStatus.PASS),
                 cleanReconciliation(),
                 facts(account, credential(1, List.of("API_KEY")), Quality.OK)
         ));
 
-        assertEquals(GateW3RiskPreflightStatus.BLOCKED, result.localAccountStatus());
+        assertEquals(DiagnosticOrderRiskPreflightStatus.BLOCKED, result.localAccountStatus());
         assertTrue(result.blockers().contains(expected));
     }
 
-    private GateW3RiskPreflightResult evaluateHealthy() {
+    private DiagnosticOrderRiskPreflightResult evaluateHealthy() {
         return service().evaluate(request(
                 preview(OrderPreviewStatus.PASS, OrderPreviewStatus.PASS),
                 cleanReconciliation(),
@@ -479,7 +481,7 @@ class GateW3RiskPreflightServiceTest {
         ));
     }
 
-    private GateW3RiskPreflightResult evaluateWithMarketdata(Quality quality) {
+    private DiagnosticOrderRiskPreflightResult evaluateWithMarketdata(Quality quality) {
         return service().evaluate(request(
                 preview(OrderPreviewStatus.PASS, OrderPreviewStatus.PASS),
                 cleanReconciliation(),
@@ -487,16 +489,16 @@ class GateW3RiskPreflightServiceTest {
         ));
     }
 
-    private GateW3RiskPreflightService service() {
-        return new GateW3RiskPreflightService(CLOCK);
+    private DiagnosticOrderRiskPreflightService service() {
+        return new DiagnosticOrderRiskPreflightService(CLOCK);
     }
 
-    private GateW3RiskPreflightRequest request(
+    private DiagnosticOrderRiskPreflightRequest request(
             DryRunOrderPreviewResult preview,
             ReconciliationResult reconciliation,
             RiskPreflightFactBundle facts
     ) {
-        return new GateW3RiskPreflightRequest(
+        return new DiagnosticOrderRiskPreflightRequest(
                 "trace-risk-preflight",
                 EVALUATION_TIME,
                 "SIM",

@@ -5,7 +5,7 @@ package com.guidinglight.nexusquant.trading.application.riskpreflight;
  *
  * <p>这些 code 只描述本地诊断事实，不能表示真实风控通过或交易授权。</p>
  */
-public enum GateW3RiskPreflightFindingCode {
+public enum DiagnosticOrderRiskPreflightFindingCode {
     ORDER_PREVIEW_BLOCKED,
     ORDER_PREVIEW_NOT_EVALUATED,
     RECONCILIATION_BLOCKED,

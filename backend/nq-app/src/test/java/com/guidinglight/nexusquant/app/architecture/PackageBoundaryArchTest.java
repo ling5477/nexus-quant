@@ -33,6 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PackageBoundaryArchTest {
 
     private static final Pattern PACKAGE_PATTERN = Pattern.compile("^package\\s+(.+);");
+    private static final Pattern GATE_STAGE_PACKAGE_PATTERN =
+            Pattern.compile("^(package|import)\\s+.*\\.gatew(?:\\.|;).*");
     private static final Path BACKEND_SOURCE_ROOT = Path.of("..").normalize();
 
     @ArchTest
@@ -114,6 +116,23 @@ class PackageBoundaryArchTest {
         assertTrue(offenders.isEmpty(), () -> "main source split packages detected: " + offenders);
     }
 
+    @Test
+    void main_source_should_not_depend_on_gate_stage_packages() throws IOException {
+        List<String> offenders;
+        try (var paths = Files.walk(BACKEND_SOURCE_ROOT)) {
+            offenders = paths
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("src" + File.separator + "main" + File.separator + "java"))
+                    .flatMap(path -> readLines(path).stream()
+                            .map(String::trim)
+                            .filter(line -> GATE_STAGE_PACKAGE_PATTERN.matcher(line).matches())
+                            .map(line -> path.normalize() + ": " + line))
+                    .sorted()
+                    .toList();
+        }
+        assertTrue(offenders.isEmpty(), () -> "main source Gate stage package dependencies detected: " + offenders);
+    }
+
     private String readPackageName(Path path) {
         try {
             return Files.readAllLines(path).stream()
@@ -125,6 +144,14 @@ class PackageBoundaryArchTest {
                     .orElse(null);
         } catch (IOException ex) {
             throw new IllegalStateException("failed to inspect package declaration: " + path, ex);
+        }
+    }
+
+    private List<String> readLines(Path path) {
+        try {
+            return Files.readAllLines(path);
+        } catch (IOException ex) {
+            throw new IllegalStateException("failed to inspect source file: " + path, ex);
         }
     }
 }

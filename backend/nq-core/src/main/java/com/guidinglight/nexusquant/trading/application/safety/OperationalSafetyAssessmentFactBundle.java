@@ -21,21 +21,23 @@ import java.util.UUID;
  * 也不持久化 assessment result。Human-review 绑定固定为 case id/version/type/subject/reference、
  * lifecycle、完整 event chain、retention 与 observedAt。</p>
  */
-public record GateW4OperationalSafetyFactBundle(
+public record OperationalSafetyAssessmentFactBundle(
         HumanReviewEvidence humanReviewEvidence,
-        GateW4OperationalSafetyStatus persistenceRetentionStatus,
-        GateW4OperationalSafetyStatus backupRestoreStatus,
-        GateW4OperationalSafetyStatus incidentDrillStatus,
-        GateW4OperationalSafetyStatus localSoakStatus,
-        GateW4OperationalSafetyStatus realReadonlySoakStatus,
-        Set<GateW4OperationalSafetyFindingCode> incidentFindings
+        OperationalSafetyAssessmentStatus persistenceRetentionStatus,
+        OperationalSafetyAssessmentStatus backupRestoreStatus,
+        OperationalSafetyAssessmentStatus incidentDrillStatus,
+        OperationalSafetyAssessmentStatus localSoakStatus,
+        OperationalSafetyAssessmentStatus realReadonlySoakStatus,
+        Set<OperationalSafetyAssessmentFindingCode> incidentFindings
 ) {
 
     public static final String HUMAN_REVIEW_EVIDENCE_TYPE = "GATEW4_OPERATIONAL_SAFETY";
     public static final String HUMAN_REVIEW_SUBJECT = "NQ-GATEW-4";
 
-    /** 校验各 hard-gate fact 非空，并固定 incident code 的 enum 顺序。 */
-    public GateW4OperationalSafetyFactBundle {
+    /**
+     * 校验各 hard-gate fact 非空，并固定 incident code 的 enum 顺序。
+     */
+    public OperationalSafetyAssessmentFactBundle {
         Objects.requireNonNull(humanReviewEvidence, "humanReviewEvidence must not be null");
         Objects.requireNonNull(persistenceRetentionStatus, "persistenceRetentionStatus must not be null");
         Objects.requireNonNull(backupRestoreStatus, "backupRestoreStatus must not be null");
@@ -43,13 +45,15 @@ public record GateW4OperationalSafetyFactBundle(
         Objects.requireNonNull(localSoakStatus, "localSoakStatus must not be null");
         Objects.requireNonNull(realReadonlySoakStatus, "realReadonlySoakStatus must not be null");
         Objects.requireNonNull(incidentFindings, "incidentFindings must not be null");
-        EnumSet<GateW4OperationalSafetyFindingCode> ordered = incidentFindings.isEmpty()
-                ? EnumSet.noneOf(GateW4OperationalSafetyFindingCode.class)
+        EnumSet<OperationalSafetyAssessmentFindingCode> ordered = incidentFindings.isEmpty()
+                ? EnumSet.noneOf(OperationalSafetyAssessmentFindingCode.class)
                 : EnumSet.copyOf(incidentFindings);
         incidentFindings = Collections.unmodifiableSet(ordered);
     }
 
-    /** Human-review evidence 只允许这四种存在性/新鲜度结论。 */
+    /**
+     * Human-review evidence 只允许这四种存在性/新鲜度结论。
+     */
     public enum HumanReviewEvidenceStatus {
         HUMAN_REVIEW_EVIDENCE_PRESENT,
         HUMAN_REVIEW_EVIDENCE_MISSING,
@@ -99,7 +103,9 @@ public record GateW4OperationalSafetyFactBundle(
             }
         }
 
-        /** 构造不存在 evidence 的显式事实，避免用 null 或 Optional 混淆语义。 */
+        /**
+         * 构造不存在 evidence 的显式事实，避免用 null 或 Optional 混淆语义。
+         */
         public static HumanReviewEvidence missing(Instant observedAt) {
             return new HumanReviewEvidence(
                     null, 0, null, null, null, null, false, null, observedAt,
@@ -115,7 +121,7 @@ public record GateW4OperationalSafetyFactBundle(
          * 缺失、过期或冲突只返回封闭四态，不抛出原始 payload。</p>
          *
          * @param reviewCase SQL scope 内可见的 case；empty 明确表示缺失
-         * @param events repository 按 createdAt/id 升序返回的 append-only events
+         * @param events     repository 按 createdAt/id 升序返回的 append-only events
          * @param observedAt 本次 read-model 观测时间
          * @return 由 durable facts 推导的只读 evidence binding
          */

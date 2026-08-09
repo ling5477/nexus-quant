@@ -12,7 +12,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
@@ -24,14 +23,14 @@ import java.util.Set;
  * 本类不是 Spring bean，只有 injected Clock 依赖；没有 repository、HTTP、credential、risk registry、
  * order、ledger、audit 或 event port，也不会构造 PlaceOrderCommand。实例无共享可变状态且线程安全。</p>
  */
-public final class GateW3RiskPreflightService {
+public final class DiagnosticOrderRiskPreflightService {
 
     private static final String OKX = "OKX";
     private static final String SPOT = "SPOT";
 
     private final Clock clock;
 
-    public GateW3RiskPreflightService(Clock clock) {
+    public DiagnosticOrderRiskPreflightService(Clock clock) {
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
     }
 
@@ -45,7 +44,7 @@ public final class GateW3RiskPreflightService {
      * @return execution 永久 blocked 的 immutable result
      * @throws IllegalArgumentException evaluationTime 晚于 injected Clock 时抛出稳定、无敏感信息的异常
      */
-    public GateW3RiskPreflightResult evaluate(GateW3RiskPreflightRequest request) {
+    public DiagnosticOrderRiskPreflightResult evaluate(DiagnosticOrderRiskPreflightRequest request) {
         Objects.requireNonNull(request, "request must not be null");
         Instant clockNow = clock.instant();
         if (request.evaluationTime().isAfter(clockNow)) {
@@ -67,10 +66,10 @@ public final class GateW3RiskPreflightService {
 
     private static void evaluatePreview(DryRunOrderPreviewResult preview, Evaluation evaluation) {
         if (preview == null) {
-            evaluation.structuralStatus = GateW3RiskPreflightStatus.NOT_EVALUATED;
-            evaluation.venueFactStatus = GateW3RiskPreflightStatus.NOT_EVALUATED;
-            evaluation.pureRiskStatus = GateW3RiskPreflightStatus.NOT_EVALUATED;
-            evaluation.blocker(GateW3RiskPreflightFindingCode.ORDER_PREVIEW_NOT_EVALUATED);
+            evaluation.structuralStatus = DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED;
+            evaluation.venueFactStatus = DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED;
+            evaluation.pureRiskStatus = DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED;
+            evaluation.blocker(DiagnosticOrderRiskPreflightFindingCode.ORDER_PREVIEW_NOT_EVALUATED);
             return;
         }
         evaluation.structuralStatus = map(preview.structuralStatus());
@@ -82,22 +81,22 @@ public final class GateW3RiskPreflightService {
         if (unsafeContract
                 || preview.structuralStatus() == OrderPreviewStatus.BLOCKED
                 || preview.venueFactStatus() == OrderPreviewStatus.BLOCKED) {
-            evaluation.pureRiskStatus = GateW3RiskPreflightStatus.BLOCKED;
-            evaluation.blocker(GateW3RiskPreflightFindingCode.ORDER_PREVIEW_BLOCKED);
+            evaluation.pureRiskStatus = DiagnosticOrderRiskPreflightStatus.BLOCKED;
+            evaluation.blocker(DiagnosticOrderRiskPreflightFindingCode.ORDER_PREVIEW_BLOCKED);
             return;
         }
         if (preview.structuralStatus() == OrderPreviewStatus.NOT_EVALUATED
                 || preview.venueFactStatus() == OrderPreviewStatus.NOT_EVALUATED) {
-            evaluation.pureRiskStatus = GateW3RiskPreflightStatus.NOT_EVALUATED;
-            evaluation.blocker(GateW3RiskPreflightFindingCode.ORDER_PREVIEW_NOT_EVALUATED);
+            evaluation.pureRiskStatus = DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED;
+            evaluation.blocker(DiagnosticOrderRiskPreflightFindingCode.ORDER_PREVIEW_NOT_EVALUATED);
             return;
         }
         if (preview.structuralStatus() == OrderPreviewStatus.UNKNOWN
                 || preview.venueFactStatus() == OrderPreviewStatus.UNKNOWN) {
-            evaluation.pureRiskStatus = GateW3RiskPreflightStatus.UNKNOWN;
+            evaluation.pureRiskStatus = DiagnosticOrderRiskPreflightStatus.UNKNOWN;
             return;
         }
-        evaluation.pureRiskStatus = GateW3RiskPreflightStatus.PASS;
+        evaluation.pureRiskStatus = DiagnosticOrderRiskPreflightStatus.PASS;
     }
 
     private static void evaluateReconciliation(
@@ -106,8 +105,8 @@ public final class GateW3RiskPreflightService {
             Evaluation evaluation
     ) {
         if (reconciliation == null) {
-            evaluation.reconciliationStatus = GateW3RiskPreflightStatus.NOT_EVALUATED;
-            evaluation.notEvaluated(GateW3RiskPreflightFindingCode.RECONCILIATION_NOT_EVALUATED);
+            evaluation.reconciliationStatus = DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED;
+            evaluation.notEvaluated(DiagnosticOrderRiskPreflightFindingCode.RECONCILIATION_NOT_EVALUATED);
             return;
         }
         boolean safeContract = reconciliation.diagnosticOnly()
@@ -127,13 +126,13 @@ public final class GateW3RiskPreflightService {
                 && onlyExecutionBlocker
                 && "SNAPSHOT_MATCHED_AT_EVALUATION_TIME".equals(reconciliation.snapshotAssessment());
         if (clean) {
-            evaluation.reconciliationStatus = GateW3RiskPreflightStatus.PASS;
+            evaluation.reconciliationStatus = DiagnosticOrderRiskPreflightStatus.PASS;
             return;
         }
-        evaluation.reconciliationStatus = GateW3RiskPreflightStatus.BLOCKED;
-        evaluation.blocker(GateW3RiskPreflightFindingCode.RECONCILIATION_BLOCKED);
+        evaluation.reconciliationStatus = DiagnosticOrderRiskPreflightStatus.BLOCKED;
+        evaluation.blocker(DiagnosticOrderRiskPreflightFindingCode.RECONCILIATION_BLOCKED);
         if (!reconciliation.differences().isEmpty()) {
-            evaluation.blocker(GateW3RiskPreflightFindingCode.RECONCILIATION_MISMATCH);
+            evaluation.blocker(DiagnosticOrderRiskPreflightFindingCode.RECONCILIATION_MISMATCH);
         }
     }
 
@@ -143,24 +142,24 @@ public final class GateW3RiskPreflightService {
             Evaluation evaluation
     ) {
         if (!account.configured()) {
-            evaluation.localAccountStatus = GateW3RiskPreflightStatus.BLOCKED;
-            evaluation.blocker(GateW3RiskPreflightFindingCode.LOCAL_ACCOUNT_UNCONFIGURED);
+            evaluation.localAccountStatus = DiagnosticOrderRiskPreflightStatus.BLOCKED;
+            evaluation.blocker(DiagnosticOrderRiskPreflightFindingCode.LOCAL_ACCOUNT_UNCONFIGURED);
             return;
         }
         boolean scopeMatches = OKX.equals(normalize(account.exchange()))
                 && SPOT.equals(normalize(account.marketType()))
                 && diagnosticEnvironment.equals(normalize(account.tradeEnvironment()));
         if (!scopeMatches) {
-            evaluation.localAccountStatus = GateW3RiskPreflightStatus.BLOCKED;
-            evaluation.blocker(GateW3RiskPreflightFindingCode.LOCAL_ACCOUNT_SCOPE_MISMATCH);
+            evaluation.localAccountStatus = DiagnosticOrderRiskPreflightStatus.BLOCKED;
+            evaluation.blocker(DiagnosticOrderRiskPreflightFindingCode.LOCAL_ACCOUNT_SCOPE_MISMATCH);
             return;
         }
         if (!"ACTIVE".equals(normalize(account.localStatus()))) {
-            evaluation.localAccountStatus = GateW3RiskPreflightStatus.BLOCKED;
-            evaluation.blocker(GateW3RiskPreflightFindingCode.LOCAL_ACCOUNT_DISABLED);
+            evaluation.localAccountStatus = DiagnosticOrderRiskPreflightStatus.BLOCKED;
+            evaluation.blocker(DiagnosticOrderRiskPreflightFindingCode.LOCAL_ACCOUNT_DISABLED);
             return;
         }
-        evaluation.localAccountStatus = GateW3RiskPreflightStatus.PASS;
+        evaluation.localAccountStatus = DiagnosticOrderRiskPreflightStatus.PASS;
     }
 
     private static void evaluateCredentialMetadata(
@@ -168,22 +167,22 @@ public final class GateW3RiskPreflightService {
             Evaluation evaluation
     ) {
         if (!credential.configured() || credential.activeSummaryCount() == 0) {
-            evaluation.credentialMetadataStatus = GateW3RiskPreflightStatus.BLOCKED;
-            evaluation.blocker(GateW3RiskPreflightFindingCode.CREDENTIAL_METADATA_UNCONFIGURED);
+            evaluation.credentialMetadataStatus = DiagnosticOrderRiskPreflightStatus.BLOCKED;
+            evaluation.blocker(DiagnosticOrderRiskPreflightFindingCode.CREDENTIAL_METADATA_UNCONFIGURED);
             return;
         }
         long distinctTypes = credential.credentialTypes().stream()
-                .map(GateW3RiskPreflightService::normalize)
+                .map(DiagnosticOrderRiskPreflightService::normalize)
                 .filter(Objects::nonNull)
                 .distinct()
                 .count();
         if (credential.activeSummaryCount() != credential.credentialTypes().size()
                 || distinctTypes != credential.credentialTypes().size()) {
-            evaluation.credentialMetadataStatus = GateW3RiskPreflightStatus.BLOCKED;
-            evaluation.blocker(GateW3RiskPreflightFindingCode.CREDENTIAL_METADATA_CONFLICT);
+            evaluation.credentialMetadataStatus = DiagnosticOrderRiskPreflightStatus.BLOCKED;
+            evaluation.blocker(DiagnosticOrderRiskPreflightFindingCode.CREDENTIAL_METADATA_CONFLICT);
             return;
         }
-        evaluation.credentialMetadataStatus = GateW3RiskPreflightStatus.PASS;
+        evaluation.credentialMetadataStatus = DiagnosticOrderRiskPreflightStatus.PASS;
     }
 
     private static void evaluateMarketdataQuality(
@@ -191,28 +190,28 @@ public final class GateW3RiskPreflightService {
             Evaluation evaluation
     ) {
         switch (marketdata.quality()) {
-            case OK -> evaluation.marketdataQualityStatus = GateW3RiskPreflightStatus.PASS;
+            case OK -> evaluation.marketdataQualityStatus = DiagnosticOrderRiskPreflightStatus.PASS;
             case WARNING -> {
-                evaluation.marketdataQualityStatus = GateW3RiskPreflightStatus.UNKNOWN;
-                evaluation.warning(GateW3RiskPreflightFindingCode.MARKETDATA_QUALITY_NOT_OK);
+                evaluation.marketdataQualityStatus = DiagnosticOrderRiskPreflightStatus.UNKNOWN;
+                evaluation.warning(DiagnosticOrderRiskPreflightFindingCode.MARKETDATA_QUALITY_NOT_OK);
             }
             case BLOCKED -> {
-                evaluation.marketdataQualityStatus = GateW3RiskPreflightStatus.BLOCKED;
-                evaluation.blocker(GateW3RiskPreflightFindingCode.MARKETDATA_QUALITY_NOT_OK);
+                evaluation.marketdataQualityStatus = DiagnosticOrderRiskPreflightStatus.BLOCKED;
+                evaluation.blocker(DiagnosticOrderRiskPreflightFindingCode.MARKETDATA_QUALITY_NOT_OK);
             }
             case UNKNOWN -> {
-                evaluation.marketdataQualityStatus = GateW3RiskPreflightStatus.UNKNOWN;
-                evaluation.unknown(GateW3RiskPreflightFindingCode.MARKETDATA_QUALITY_NOT_OK);
+                evaluation.marketdataQualityStatus = DiagnosticOrderRiskPreflightStatus.UNKNOWN;
+                evaluation.unknown(DiagnosticOrderRiskPreflightFindingCode.MARKETDATA_QUALITY_NOT_OK);
             }
         }
     }
 
-    private static GateW3RiskPreflightStatus map(OrderPreviewStatus status) {
+    private static DiagnosticOrderRiskPreflightStatus map(OrderPreviewStatus status) {
         return switch (status) {
-            case PASS -> GateW3RiskPreflightStatus.PASS;
-            case BLOCKED -> GateW3RiskPreflightStatus.BLOCKED;
-            case UNKNOWN -> GateW3RiskPreflightStatus.UNKNOWN;
-            case NOT_EVALUATED -> GateW3RiskPreflightStatus.NOT_EVALUATED;
+            case PASS -> DiagnosticOrderRiskPreflightStatus.PASS;
+            case BLOCKED -> DiagnosticOrderRiskPreflightStatus.BLOCKED;
+            case UNKNOWN -> DiagnosticOrderRiskPreflightStatus.UNKNOWN;
+            case NOT_EVALUATED -> DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED;
         };
     }
 
@@ -222,17 +221,17 @@ public final class GateW3RiskPreflightService {
 
     private static final class Evaluation {
         private final Instant evaluationTime;
-        private final Set<GateW3RiskPreflightFindingCode> blockers = new LinkedHashSet<>();
-        private final Set<GateW3RiskPreflightFindingCode> warnings = new LinkedHashSet<>();
-        private final Set<GateW3RiskPreflightFindingCode> unknowns = new LinkedHashSet<>();
-        private final Set<GateW3RiskPreflightFindingCode> notEvaluated = new LinkedHashSet<>();
-        private GateW3RiskPreflightStatus structuralStatus = GateW3RiskPreflightStatus.NOT_EVALUATED;
-        private GateW3RiskPreflightStatus venueFactStatus = GateW3RiskPreflightStatus.NOT_EVALUATED;
-        private GateW3RiskPreflightStatus reconciliationStatus = GateW3RiskPreflightStatus.NOT_EVALUATED;
-        private GateW3RiskPreflightStatus localAccountStatus = GateW3RiskPreflightStatus.NOT_EVALUATED;
-        private GateW3RiskPreflightStatus credentialMetadataStatus = GateW3RiskPreflightStatus.NOT_EVALUATED;
-        private GateW3RiskPreflightStatus marketdataQualityStatus = GateW3RiskPreflightStatus.NOT_EVALUATED;
-        private GateW3RiskPreflightStatus pureRiskStatus = GateW3RiskPreflightStatus.NOT_EVALUATED;
+        private final Set<DiagnosticOrderRiskPreflightFindingCode> blockers = new LinkedHashSet<>();
+        private final Set<DiagnosticOrderRiskPreflightFindingCode> warnings = new LinkedHashSet<>();
+        private final Set<DiagnosticOrderRiskPreflightFindingCode> unknowns = new LinkedHashSet<>();
+        private final Set<DiagnosticOrderRiskPreflightFindingCode> notEvaluated = new LinkedHashSet<>();
+        private DiagnosticOrderRiskPreflightStatus structuralStatus = DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED;
+        private DiagnosticOrderRiskPreflightStatus venueFactStatus = DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED;
+        private DiagnosticOrderRiskPreflightStatus reconciliationStatus = DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED;
+        private DiagnosticOrderRiskPreflightStatus localAccountStatus = DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED;
+        private DiagnosticOrderRiskPreflightStatus credentialMetadataStatus = DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED;
+        private DiagnosticOrderRiskPreflightStatus marketdataQualityStatus = DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED;
+        private DiagnosticOrderRiskPreflightStatus pureRiskStatus = DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED;
 
         private Evaluation(Instant evaluationTime) {
             this.evaluationTime = evaluationTime;
@@ -240,40 +239,40 @@ public final class GateW3RiskPreflightService {
 
         private static Evaluation create(Instant evaluationTime) {
             Evaluation evaluation = new Evaluation(evaluationTime);
-            evaluation.unknown(GateW3RiskPreflightFindingCode.MIN_NOTIONAL_UNKNOWN);
-            evaluation.unknown(GateW3RiskPreflightFindingCode.FEE_UNKNOWN);
-            evaluation.unknown(GateW3RiskPreflightFindingCode.REMOTE_PERMISSION_UNKNOWN);
-            evaluation.notEvaluated(GateW3RiskPreflightFindingCode.BALANCE_NOT_EVALUATED);
-            evaluation.notEvaluated(GateW3RiskPreflightFindingCode.POSITION_NOT_EVALUATED);
-            evaluation.notEvaluated(GateW3RiskPreflightFindingCode.DAILY_LOSS_NOT_EVALUATED);
-            evaluation.notEvaluated(GateW3RiskPreflightFindingCode.OPEN_ORDERS_RISK_NOT_EVALUATED);
-            evaluation.notEvaluated(GateW3RiskPreflightFindingCode.KILL_SWITCH_NOT_EVALUATED);
-            evaluation.notEvaluated(GateW3RiskPreflightFindingCode.DUPLICATE_REQUEST_NOT_EVALUATED);
-            evaluation.notEvaluated(GateW3RiskPreflightFindingCode.RATE_LIMIT_NOT_EVALUATED);
-            evaluation.notEvaluated(GateW3RiskPreflightFindingCode.STATEFUL_RISK_PIPELINE_NOT_EVALUATED);
-            evaluation.blocker(GateW3RiskPreflightFindingCode.EXECUTION_NOT_AUTHORIZED);
+            evaluation.unknown(DiagnosticOrderRiskPreflightFindingCode.MIN_NOTIONAL_UNKNOWN);
+            evaluation.unknown(DiagnosticOrderRiskPreflightFindingCode.FEE_UNKNOWN);
+            evaluation.unknown(DiagnosticOrderRiskPreflightFindingCode.REMOTE_PERMISSION_UNKNOWN);
+            evaluation.notEvaluated(DiagnosticOrderRiskPreflightFindingCode.BALANCE_NOT_EVALUATED);
+            evaluation.notEvaluated(DiagnosticOrderRiskPreflightFindingCode.POSITION_NOT_EVALUATED);
+            evaluation.notEvaluated(DiagnosticOrderRiskPreflightFindingCode.DAILY_LOSS_NOT_EVALUATED);
+            evaluation.notEvaluated(DiagnosticOrderRiskPreflightFindingCode.OPEN_ORDERS_RISK_NOT_EVALUATED);
+            evaluation.notEvaluated(DiagnosticOrderRiskPreflightFindingCode.KILL_SWITCH_NOT_EVALUATED);
+            evaluation.notEvaluated(DiagnosticOrderRiskPreflightFindingCode.DUPLICATE_REQUEST_NOT_EVALUATED);
+            evaluation.notEvaluated(DiagnosticOrderRiskPreflightFindingCode.RATE_LIMIT_NOT_EVALUATED);
+            evaluation.notEvaluated(DiagnosticOrderRiskPreflightFindingCode.STATEFUL_RISK_PIPELINE_NOT_EVALUATED);
+            evaluation.blocker(DiagnosticOrderRiskPreflightFindingCode.EXECUTION_NOT_AUTHORIZED);
             return evaluation;
         }
 
-        private void blocker(GateW3RiskPreflightFindingCode code) {
+        private void blocker(DiagnosticOrderRiskPreflightFindingCode code) {
             moveTo(code, blockers);
         }
 
-        private void warning(GateW3RiskPreflightFindingCode code) {
+        private void warning(DiagnosticOrderRiskPreflightFindingCode code) {
             moveTo(code, warnings);
         }
 
-        private void unknown(GateW3RiskPreflightFindingCode code) {
+        private void unknown(DiagnosticOrderRiskPreflightFindingCode code) {
             moveTo(code, unknowns);
         }
 
-        private void notEvaluated(GateW3RiskPreflightFindingCode code) {
+        private void notEvaluated(DiagnosticOrderRiskPreflightFindingCode code) {
             moveTo(code, notEvaluated);
         }
 
         private void moveTo(
-                GateW3RiskPreflightFindingCode code,
-                Set<GateW3RiskPreflightFindingCode> target
+                DiagnosticOrderRiskPreflightFindingCode code,
+                Set<DiagnosticOrderRiskPreflightFindingCode> target
         ) {
             blockers.remove(code);
             warnings.remove(code);
@@ -282,8 +281,8 @@ public final class GateW3RiskPreflightService {
             target.add(code);
         }
 
-        private GateW3RiskPreflightResult result() {
-            return new GateW3RiskPreflightResult(
+        private DiagnosticOrderRiskPreflightResult result() {
+            return new DiagnosticOrderRiskPreflightResult(
                     evaluationTime,
                     structuralStatus,
                     venueFactStatus,
@@ -292,10 +291,10 @@ public final class GateW3RiskPreflightService {
                     credentialMetadataStatus,
                     marketdataQualityStatus,
                     pureRiskStatus,
-                    GateW3RiskPreflightStatus.NOT_EVALUATED,
-                    GateW3RiskPreflightStatus.NOT_EVALUATED,
-                    GateW3RiskPreflightStatus.UNKNOWN,
-                    GateW3RiskPreflightStatus.BLOCKED,
+                    DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED,
+                    DiagnosticOrderRiskPreflightStatus.NOT_EVALUATED,
+                    DiagnosticOrderRiskPreflightStatus.UNKNOWN,
+                    DiagnosticOrderRiskPreflightStatus.BLOCKED,
                     true,
                     true,
                     true,
