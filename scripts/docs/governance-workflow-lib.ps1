@@ -560,3 +560,116 @@ function Read-GovernanceAuthorityBlock {
     }
     return $authority
 }
+
+function Read-MachineCurrentAttemptAuthority {
+    param([hashtable] $Authority)
+
+    $allowedAttemptStates = @('NOT_CREATED', 'CREATED', 'RUNNING', 'FAILED', 'STOPPED', 'ACCEPTED', 'COMPLETED')
+    $allowedAuthorizationStates = @(
+        'AUTHORIZED', 'NOT_AUTHORIZED', 'PENDING_168H', 'FAILED', 'STOPPED',
+        'ACCEPTED', 'COMPLETED_168H'
+    )
+    $workBatch = if ($Authority.ContainsKey('work_batch')) {
+        [string]$Authority.work_batch
+    } else {
+        ''
+    }
+    $workBatchStatusTokens = @()
+    if ($Authority.ContainsKey('work_batch_status')) {
+        $workBatchStatusTokens = @([string]$Authority.work_batch_status -split '\|')
+    }
+    $hasLegacyAttemptStatus = $workBatchStatusTokens.Count -eq 2 -and
+        $allowedAttemptStates -ccontains $workBatchStatusTokens[0] -and
+        $allowedAuthorizationStates -ccontains $workBatchStatusTokens[1]
+    $hasMachineAttemptFields = $Authority.ContainsKey('attempt') -or
+        $Authority.ContainsKey('attempt_status')
+    if (-not $hasMachineAttemptFields -and -not $hasLegacyAttemptStatus) {
+        return [pscustomobject]@{
+            IsApplicable = $false
+            IsValid = $true
+            Reason = ''
+        }
+    }
+
+    $attemptIntentMatches = @([regex]::Matches(
+        $workBatch,
+        '(?i)(?:^|-)ATTEMPT(?=-|$)'
+    ))
+    $attemptSegmentMatches = @([regex]::Matches(
+        $workBatch,
+        '(?-i)(?:^|-)ATTEMPT-(?<attemptId>[1-9][0-9]*)(?=-|$)'
+    ))
+
+    if ($attemptIntentMatches.Count -ne 1 -or $attemptSegmentMatches.Count -ne 1) {
+        return [pscustomobject]@{
+            IsApplicable = $true
+            IsValid = $false
+            Reason = "field=work_batch expected=one_canonical_attempt_segment actual=$workBatch"
+        }
+    }
+
+    $workBatchAttemptId = [int]$attemptSegmentMatches[0].Groups['attemptId'].Value
+    $statusTokens = $workBatchStatusTokens
+    if ($hasMachineAttemptFields) {
+        if (-not $Authority.ContainsKey('attempt')) {
+            return [pscustomobject]@{
+                IsApplicable = $true
+                IsValid = $false
+                Reason = 'field=attempt expected=Attempt-<id> actual=MISSING'
+            }
+        }
+        $machineAttemptMatch = [regex]::Match(
+            [string]$Authority.attempt,
+            '(?-i:^Attempt-(?<attemptId>[1-9][0-9]*)$)'
+        )
+        if (-not $machineAttemptMatch.Success) {
+            return [pscustomobject]@{
+                IsApplicable = $true
+                IsValid = $false
+                Reason = "field=attempt expected=Attempt-$workBatchAttemptId actual=$($Authority.attempt)"
+            }
+        }
+
+        $machineAttemptId = [int]$machineAttemptMatch.Groups['attemptId'].Value
+        if ($machineAttemptId -ne $workBatchAttemptId) {
+            return [pscustomobject]@{
+                IsApplicable = $true
+                IsValid = $false
+                Reason = "field=attempt_id work_batch=$workBatchAttemptId machine=$machineAttemptId"
+            }
+        }
+        if (-not $Authority.ContainsKey('attempt_status')) {
+            return [pscustomobject]@{
+                IsApplicable = $true
+                IsValid = $false
+                Reason = 'field=attempt_status expected=<state>|<authorization> actual=MISSING'
+            }
+        }
+        $statusTokens = @([string]$Authority.attempt_status -split '\|')
+    }
+    if ($statusTokens.Count -ne 2) {
+        return [pscustomobject]@{
+            IsApplicable = $true
+            IsValid = $false
+            Reason = "field=attempt_status expected=<state>|<authorization> actual=$($Authority.attempt_status)"
+        }
+    }
+
+    if ($allowedAttemptStates -cnotcontains $statusTokens[0] -or
+        $allowedAuthorizationStates -cnotcontains $statusTokens[1]) {
+        return [pscustomobject]@{
+            IsApplicable = $true
+            IsValid = $false
+            Reason = "field=attempt_status state=$($statusTokens[0]) authorization=$($statusTokens[1])"
+        }
+    }
+
+    return [pscustomobject]@{
+        IsApplicable = $true
+        IsValid = $true
+        Reason = ''
+        AttemptId = $workBatchAttemptId
+        AttemptState = $statusTokens[0]
+        AuthorizationState = $statusTokens[1]
+    }
+}

@@ -22,6 +22,65 @@ function Write-Utf8File {
     [System.IO.File]::WriteAllText($Path, $Content, (New-Object System.Text.UTF8Encoding($false)))
 }
 
+function Assert-MachineAttemptAuthorityCase {
+    param(
+        [string] $Name,
+        [string] $WorkBatch,
+        [string] $MachineAttempt,
+        [bool] $ExpectApplicable,
+        [bool] $ExpectValid,
+        [Nullable[int]] $ExpectedAttemptId = $null
+    )
+
+    $actual = Read-MachineCurrentAttemptAuthority @{
+        work_batch = $WorkBatch
+        attempt = $MachineAttempt
+        attempt_status = 'COMPLETED|ACCEPTED'
+    }
+    if ([bool]$actual.IsApplicable -ne $ExpectApplicable -or
+        [bool]$actual.IsValid -ne $ExpectValid) {
+        throw ("MACHINE_ATTEMPT_CASE_MISMATCH case={0} applicable={1}/{2} valid={3}/{4} reason={5}" -f
+            $Name, $actual.IsApplicable, $ExpectApplicable, $actual.IsValid, $ExpectValid, $actual.Reason)
+    }
+    if ($ExpectValid -and $null -ne $ExpectedAttemptId -and
+        [int]$actual.AttemptId -ne [int]$ExpectedAttemptId) {
+        throw "MACHINE_ATTEMPT_ID_MISMATCH case=$Name expected=$ExpectedAttemptId actual=$($actual.AttemptId)"
+    }
+
+    $result = if (-not $ExpectApplicable) { 'NOT_APPLICABLE' } elseif ($ExpectValid) { 'PASS' } else { 'FAIL_CLOSED' }
+    Write-Output "PASS machine-attempt-case=$Name result=$result"
+}
+
+foreach ($workBatch in @(
+    'GateW-ATTEMPT-13',
+    'GateW-ATTEMPT-13-168H-ACCEPTANCE',
+    'GateW-ATTEMPT-13-PREPARATION-AND-START',
+    'GateW-ATTEMPT-13-FAILURE-REMEDIATION-IMPLEMENTATION'
+)) {
+    Assert-MachineAttemptAuthorityCase $workBatch $workBatch 'Attempt-13' $true $true 13
+}
+foreach ($case in @(
+    @{ Name='attempt-12-docs-13'; Batch='GateW-ATTEMPT-12-168H-ACCEPTANCE' },
+    @{ Name='attempt-14-docs-13'; Batch='GateW-ATTEMPT-14-168H-ACCEPTANCE' },
+    @{ Name='attempt-suffix-alpha'; Batch='GateW-ATTEMPT-13X-168H-ACCEPTANCE' },
+    @{ Name='attempt-lowercase'; Batch='GateW-attempt-13-168H-ACCEPTANCE' },
+    @{ Name='attempt-duplicate'; Batch='GateW-ATTEMPT-13-ATTEMPT-14-168H-ACCEPTANCE' },
+    @{ Name='attempt-double-hyphen'; Batch='GateW-ATTEMPT--13-168H-ACCEPTANCE' },
+    @{ Name='attempt-missing-id'; Batch='GateW-ATTEMPT-' },
+    @{ Name='attempt-nondigit'; Batch='GateW-ATTEMPT-X' },
+    @{ Name='attempt-leading-zero'; Batch='GateW-ATTEMPT-013-168H-ACCEPTANCE' }
+)) {
+    Assert-MachineAttemptAuthorityCase $case.Name $case.Batch 'Attempt-13' $true $false
+}
+$unrelatedMachineAttemptAuthority = Read-MachineCurrentAttemptAuthority @{
+    work_batch = 'GateW-4'
+    work_batch_status = 'NOT_STARTED'
+}
+if ($unrelatedMachineAttemptAuthority.IsApplicable -or -not $unrelatedMachineAttemptAuthority.IsValid) {
+    throw 'MACHINE_ATTEMPT_UNRELATED_WORK_BATCH_APPLICABLE'
+}
+Write-Output 'PASS machine-attempt-case=unrelated-work-batch result=NOT_APPLICABLE'
+
 function Assert-CurrentDocsAuthorityCase {
     param(
         [string] $Name,
@@ -909,6 +968,19 @@ $authorizationMismatchRoadmap = $script:roadmapFixture.Replace(
         $canonicalDeploymentState))
 Assert-CrossDocumentAuthorityCase `
     'authorization-mismatch' $script:statusFixture $authorizationMismatchRoadmap $false
+
+$mismatchedAttemptState = if ($canonicalAttemptState -ceq 'COMPLETED') {
+    'RUNNING'
+} else {
+    'COMPLETED'
+}
+$attemptStateMismatchRoadmap = $script:roadmapFixture.Replace(
+    $canonicalRoadmapAttemptClause,
+    ('Attempt-{0}=`{1} / {2}`; production deployment=`{3}`' -f
+        $canonicalAttemptId, $mismatchedAttemptState, $canonicalAuthorizationState,
+        $canonicalDeploymentState))
+Assert-CrossDocumentAuthorityCase `
+    'roadmap-attempt-status-conflict' $script:statusFixture $attemptStateMismatchRoadmap $false
 
 $attemptIdMismatchRoadmap = $script:roadmapFixture.Replace(
     $canonicalRoadmapAttemptClause,

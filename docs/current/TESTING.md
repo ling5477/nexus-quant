@@ -12657,3 +12657,27 @@ Blocking status：无启动阻断。Attempt-13=`RUNNING / SOAK_IN_PROGRESS`，�
 Known warning / RCA：首次 link checker 调用遗漏 mandatory `-Roots`，exit 1 且未执行扫描；修正参数后通过。Maven、frontend、Python 产品测试未运行，因为本任务仅修改治理合同/回归与 evidence ledger。Production SSH、OKX、credential、生产 DB、systemd、worker stop/restart、current symlink、Attempt/RunId/heartbeat、acceptance/finalize、freeze/archive/tag 均为 0。
 
 Blocking status：本地治理回归无 blocker；commit/push 与本提交 exact-head `NQ CI Baseline` 尚为 `PENDING`，不得预写为 GREEN。CI 达到 `completed / success / exact head / 10 jobs / bad=0` 后，唯一下一动作仍为 `NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE`。
+
+## 2026-08-09 — GateW Attempt-13 168h production read-only acceptance
+
+当前结论：`PASS / ATTEMPT_13_168H_ACCEPTED / CONTINUOUS_RUNTIME_VERIFIED / HASH_CHAIN_VERIFIED / ZERO_FORBIDDEN_ENDPOINT / ZERO_SECRET_EXPOSURE / SOAK_SEALED / READY_TO_COMMIT`。
+
+| Command / evidence | Result | Scope / environment / warning |
+| --- | --- | --- |
+| local hard gate | PASS | branch=`dev`、clean、`HEAD == origin/dev == 2fdeadfdc988bbdac9a858466948ccfa0a4acce1`；authority/next-action regression PASS；starting CI `31292449178 / completed / success / 10 jobs / bad=0`；governance schema=`1.4.0` |
+| server UTC/NTP/release identity | PASS | serverNow=`2026-08-09T03:40:25.791470105Z`；NTP synchronized；current/release/source=`b103069d...`；manifest=`f5b891e0...e4cb`；cadence=`900s`；allowlist=`gatew-okx-private-readonly-v1` |
+| systemd/journal continuity | PASS | initial/final PID=`478613/478613`；NRestarts=`0`；monotonic start match；journal invocation/boot=`1/1`；无 exit/restart/stop-start/OOM/crash/auth/hash/write/DB error |
+| complete sample stream | PASS WITH EXPLICIT CONTRACT LIMITATION | count=`656`；sequence=`1..656` 连续唯一；timestamps strictly increasing；first=`2026-08-01T18:13:13.9139125Z`；final=`2026-08-08T18:13:34.4112272Z`；max gap=`1797s / 1->2`，由冻结 fresh-SSH/clock handoff + 首个 900s wait 形成；冻结合同无独立 max-gap tolerance，不临时新造阈值 |
+| canonical `verify-evidence` | PASS | `PASS / FORMAL_EVIDENCE_VERIFIED`；hash-chain=`PASS / HASH_CHAIN_VERIFIED`；last hash=`1debcf6c...7249b`；evidence manifest=`3ec42822...003`；forbidden/fallback/raw/secret=`0/0/0/0` |
+| endpoint/security boundary | PASS | 656/656=`ACCOUNT_CONFIG_AND_BALANCE_READ / PASSED_READ_ONLY / READ_ONLY_WITH_IP_ALLOWLIST / kill switch ENGAGED`；order/cancel/transfer/withdraw/LIVE execution=`0/0/0/0/0`；九项安全开关字面量 `false` |
+| credential/permission/DB metadata | PASS | active credential=`1`；窗口 row lifecycle change/rotation/lifecycle audit=`0/0/0`；status=`ACTIVE`、permission=`READ_ONLY`、withdraw=`false`、IP allowlist probe=`PASSED`、failed auth=`0`；DB/schema/Flyway 35 match；未选择或输出 credential material/tenant id/连接串 |
+| canonical `verify-acceptance` | PASS | observed=`604820.4973147s >= 604800s`；proof checksum=`0cbb037c...a1d8`；final sample 与 final chain hash create-once 绑定 |
+| canonical `finalize-acceptance` / `verify-terminal` | PASS | result=`ACCEPTED_168H_READONLY_SOAK`；terminal=`d61c18a...6734`；authorized controlled stop；worker/fail-close=`inactive/dead`；MainPID/residual=`0/0`；NRestarts=`0`；Result=`success` |
+| current authority checker after docs sync | PENDING | 写入后运行；未运行前不得描述为 PASS |
+| acceptance commit / exact-head CI | NOT_RUN | 当前 authority 只到 `ACCEPTED|READY_TO_COMMIT`；不得预写 `FREEZE_READY` |
+
+Environment：Windows PowerShell 控制端 + Linux systemd/PostgreSQL 生产端；只读 OKX account config/balance allowlist。未运行 Maven/frontend/Python 产品测试，因为本轮不修改产品代码；提交后由 `NQ CI Baseline` 执行完整 10-job exact-head 验证。
+
+Known limitation：transport bundle 未作为服务器期满重哈希输入；使用启动 evidence 的 bundle SHA-256，并由 installed immutable verifier 对同一 manifest/artifact closed set 复核。Credential `verification_status=PENDING` 是既有非 acceptance 字段；冻结 GateW contract 使用 `credential_status=ACTIVE` 与 persisted permission facts，本轮未修改。
+
+Blocking status：P0=0/P1=0/P2=1/P3=0；P2 是冻结 checker 没有独立 maximum-gap threshold，已按冻结 loop semantics 明确披露，不在验收任务临时增设 grace。Attempt-13 已 sealed；唯一下一动作是 acceptance commit/push 与 exact-head CI。

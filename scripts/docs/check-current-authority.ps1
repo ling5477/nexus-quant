@@ -242,54 +242,6 @@ function Get-VolatileCurrentClaimsOutsideSummary {
     return $claims.ToArray()
 }
 
-function Read-MachineCurrentAttemptAuthority {
-    param([hashtable] $Authority)
-
-    $workBatchMatch = [regex]::Match(
-        $Authority.work_batch,
-        '(?-i:^Gate[A-Z0-9]+(?:-[A-Z0-9_]+)*-ATTEMPT-(?<attemptId>[1-9][0-9]*)$)'
-    )
-    if (-not $workBatchMatch.Success) {
-        return [pscustomobject]@{
-            IsApplicable = $false
-            IsValid = $true
-            Reason = ''
-        }
-    }
-
-    $statusTokens = @($Authority.work_batch_status -split '\|')
-    if ($statusTokens.Count -ne 2) {
-        return [pscustomobject]@{
-            IsApplicable = $false
-            IsValid = $true
-            Reason = ''
-        }
-    }
-
-    $allowedAttemptStates = @('NOT_CREATED', 'CREATED', 'RUNNING', 'FAILED', 'STOPPED', 'ACCEPTED', 'COMPLETED')
-    $allowedAuthorizationStates = @(
-        'AUTHORIZED', 'NOT_AUTHORIZED', 'PENDING_168H', 'FAILED', 'STOPPED',
-        'ACCEPTED', 'COMPLETED_168H'
-    )
-    if ($allowedAttemptStates -cnotcontains $statusTokens[0] -or
-        $allowedAuthorizationStates -cnotcontains $statusTokens[1]) {
-        return [pscustomobject]@{
-            IsApplicable = $false
-            IsValid = $true
-            Reason = ''
-        }
-    }
-
-    return [pscustomobject]@{
-        IsApplicable = $true
-        IsValid = $true
-        Reason = ''
-        AttemptId = [int]$workBatchMatch.Groups['attemptId'].Value
-        AttemptState = $statusTokens[0]
-        AuthorizationState = $statusTokens[1]
-    }
-}
-
 function Get-CurrentNextActionDeclarations {
     param([string] $RootPath)
 

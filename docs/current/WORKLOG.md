@@ -18111,3 +18111,16 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：production SSH/OKX/credential/生产 DB/systemd/worker stop-restart/current symlink/Attempt/RunId/heartbeat/acceptance/finalize/freeze/archive/tag=`0`；`STATUS.md`/`ROADMAP.md` 与业务 authority 未修改。
 - result：`PASS / ATTEMPT_13_ACCEPTANCE_TRANSITION_DEFINED / RUNTIME_COMPLETION_TRANSITION_DEFINED / FREEZE_CLOSEOUT_ACTION_DEFINED / FULL_LIFECYCLE_REGRESSION_GREEN / CURRENT_AUTHORITY_UNCHANGED / READY_TO_COMMIT / CI_PENDING / PRODUCTION_NOT_ACCESSED`；P0=0/P1=0/P2=0/P3=0。
 - next：精确暂存 allowlist，提交 `fix(governance): define GateW 168h acceptance transition` 并推送 `dev`；取得 exact-head `NQ CI Baseline` 10/10 GREEN 后，唯一下一动作是 `NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE`。
+
+## 2026-08-09 — GateW Attempt-13 168h acceptance
+
+- task：`NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE`；NQ-only、L 级 production read-only soak acceptance / continuity / hash-chain / security / canonical seal / authority transition。
+- baseline：`dev` clean；`HEAD == origin/dev == 2fdeadfdc988bbdac9a858466948ccfa0a4acce1`；starting exact-head CI `31292449178 / completed / success / 10 jobs / bad=0`；authority/next-action/schema `1.4.0` hard gates通过。
+- runtime：RunId=`gatew-soak-20260801T180544Z-140bbcd1`；release/source=`b103069d...`；initial/final PID=`478613/478613`，NRestarts=`0`，journal invocation/boot=`1/1`，无 restart/exit/replacement/OOM/crash；NTP/clock monotonic通过。
+- stream：656 条 samples，sequence `1..656` 连续唯一，timestamp 单调；first=`2026-08-01T18:13:13.9139125Z`，final=`2026-08-08T18:13:34.4112272Z`，elapsed=`604820.4973147s`；max gap=`1797s / 1->2`，按冻结 fresh-SSH/clock handoff 与 900s wait 语义披露，未新造 tolerance。
+- integrity/security：canonical evidence/hash-chain PASS；final hash=`1debcf6c...7249b`；forbidden/fallback/raw/secret=`0/0/0/0`；656/656 只执行 account config/balance read-only，order/cancel/transfer/withdraw/LIVE execution=`0`，kill switch全程`ENGAGED`，九项安全开关为`false`。
+- credential/DB：credential reference稳定，同一窗口 credential row lifecycle change/rotation/lifecycle audit=`0/0/0`；active/read-only/withdraw false/IP allowlist passed/failed auth 0；DB/schema/Flyway 35 identity一致；未读取或输出 credential material、tenant ID、连接串或账户数据。
+- acceptance/seal：`verify-acceptance=PASS`；proof=`0cbb037c...a1d8`；`finalize-acceptance=PASS`；terminal result=`ACCEPTED_168H_READONLY_SOAK`、terminal=`d61c18a...6734`；`verify-terminal=PASS`。Seal 后 worker/fail-close=`inactive/dead`、MainPID/residual=`0/0`、Result=`success`，release/DB/journal/evidence保留。
+- authority：Attempt-13=`COMPLETED|ACCEPTED`、production soak=`COMPLETED`；work batch=`GateW-ATTEMPT-13-168H-ACCEPTANCE / ACCEPTED|READY_TO_COMMIT`；commit/CI=`UNCOMMITTED/NOT_RUN`；GateW=`IN_PROGRESS|NOT_FROZEN`；LIVE=`DISABLED`；唯一下一动作=`NQ-GATEW-ATTEMPT-13-168H-ACCEPTANCE-COMMIT-AND-PUSH`。
+- findings：P0=0/P1=0/P2=1/P3=0。P2 为冻结 checker 无独立 max-gap threshold；transport bundle 期满不重哈希、credential `verification_status=PENDING` 均按既有合同边界透明记录，不改为未验证的正向事实。
+- boundary：未改治理合同/checker/代码/API/migration；未创建 Attempt-14；未 freeze/archive/tag；未开启 LIVE 或交易写侧。Acceptance commit/push 与 exact-head CI 尚未执行。
