@@ -19,7 +19,7 @@ import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.application.port.TradingCancelGatewayResult;
 import com.guidinglight.nexusquant.trading.application.port.TradingGatewayFailure;
 import com.guidinglight.nexusquant.trading.application.port.TradingPlaceGatewayResult;
-import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
+import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
 import com.guidinglight.nexusquant.core.service.port.RiskEventRepository;
 import com.guidinglight.nexusquant.trading.domain.state.OrderStateMachine;

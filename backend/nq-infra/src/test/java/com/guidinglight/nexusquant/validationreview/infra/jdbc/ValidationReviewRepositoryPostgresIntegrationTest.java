@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.guidinglight.nexusquant.audit.infra.jdbc.JdbcAuditLogRepository;
-import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
+import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.validationreview.application.ValidationReviewAction;
 import com.guidinglight.nexusquant.validationreview.application.ValidationReviewActor;
 import com.guidinglight.nexusquant.validationreview.application.ValidationReviewOperationalAuditService;

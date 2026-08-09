@@ -18146,3 +18146,14 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - authority/boundary：GateW=`IN_PROGRESS|NOT_FROZEN`，Attempt-13=`COMPLETED|ACCEPTED`，work batch=`ACCEPTED|CI_GREEN|FREEZE_READY`，LIVE=`DISABLED`，kill switch=`ENGAGED`，next action 不变；production access=`0`，未创建 archive、freeze/tag，未修改 Attempt-13。
 - result：`PASS / GATEW_STRICT_ARCHIVE_OVERRIDE_DEFINED / CANONICAL_TAG_DEFINED / ARCHIVE_MANIFEST_REGRESSION_GREEN / GATEU_GATEV_COMPATIBILITY_GREEN / CURRENT_AUTHORITY_UNCHANGED / READY_TO_COMMIT / CI_PENDING / PRODUCTION_NOT_ACCESSED`；P0=0/P1=0，任务特定 P2=0/P3=0。
 - next：精确暂存 allowlist，提交 `fix(governance): define GateW strict archive manifest` 并推送 `dev`；exact-head `NQ CI Baseline` 必须 `completed / success / 10 jobs / bad=0`，之后唯一下一动作=`NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION`。
+
+## 2026-08-09 — GateX-0A architecture boundary guardrails implementation attempt-01
+
+- task：`NQ-GATEX-0A-ARCHITECTURE-BOUNDARY-GUARDRAILS-IMPLEMENTATION`；NQ-only、L 级行为保持型 backend architecture hardening。
+- implementation：Strategy 新增 owned intent/result contract；唯一 Trading adapter 逐字段映射到既有下单链。`AuditLogRepository` ownership 从 Trading 移至 Audit，32 个 consumers 仅更新 import。既有 ArchUnit suite 增加 Strategy/Trading、Validation/Audit、Domain/Infra 与唯一 bridge 规则，并补 negative fixture。
+- validation：`nq-core -am` 419 tests 通过；focused architecture 8 tests 通过；CI-equivalent 临时 PostgreSQL/Flyway 35/legacy fixture 前置通过；完整 backend 23 modules、1277 tests、0 failures、0 errors、18 existing skipped；forbidden imports=`0`，`git diff --check` 通过。
+- RCA：首轮全量回归的 3 个 Spring context errors 来自本地 5432 未运行；第三个 test 在数据库可用后仍因缺 CI legacy account fixture 失败。使用隔离临时容器复刻 CI 前置后目标测试与全量回归均通过，未修改测试或业务代码掩盖环境问题。
+- boundary：API/migration/schema/SQL/订单状态机/risk/ledger/frontend/research/scripts/.github/deploy/LIVE/credential/真实交易/AI/DH runtime 变更=`0`；临时容器完成后删除，持久化本地数据库未写入 fixture。
+- authority：普通 completion 必须映射 `IMPLEMENTED|SELF_REVIEWED -> COMMIT_AND_PUSH`；直接指向 GateX-0B implementation 的候选映射为 `False`。本轮 allowlist 不允许同步 ROADMAP/current README，故 `STATUS.md` 未改，未声明 GateX-0B 已授权。
+- result：`IMPLEMENTED / SELF_REVIEWED / ARCHITECTURE_BOUNDARIES_HARDENED / BACKEND_REGRESSION_GREEN / AUTHORITY_SYNC_BLOCKED`；P0=0，architecture P1=0，authority P1=1，P2=0，P3=0。
+- next：需要用户授权按现有治理合同先同步 GateX-0A `COMMIT_AND_PUSH` authority（并允许同时更新 ROADMAP/current README），或另行授权治理合同变更；在此之前不得宣称 GateX-0B 已开始。

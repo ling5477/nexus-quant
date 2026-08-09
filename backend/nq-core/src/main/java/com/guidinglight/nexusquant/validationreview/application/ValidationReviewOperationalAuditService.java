@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.validationreview.application;
 
-import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
+import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewState;
 
 import java.util.LinkedHashMap;

@@ -3,7 +3,7 @@ package com.guidinglight.nexusquant.scheduler.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.guidinglight.nexusquant.trading.domain.port.AuditLogRepository;
+import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.scheduler.model.LedgerReconcileDiff;
 
 import java.math.BigDecimal;
