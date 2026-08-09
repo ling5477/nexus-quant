@@ -8,7 +8,7 @@
 - 最近冻结 Gate 为 GateW：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-w/](../gates/gate-w/)。
 - GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateX-PLAN=`NOT STARTED`，implementation 尚未开始。
 - Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEX-PLAN-IMPLEMENTATION`；exact transition 以 [STATUS.md](STATUS.md) 为准。
+- 当前唯一动作是 `NQ-POST-GATEW-BRANCH-CONSOLIDATION-AND-DEV-REBASE`；GateX implementation 仍未开始，exact transition 以 [STATUS.md](STATUS.md) 为准。
 - 当前 runtime release、current work commit 与精确 runtime 标识只从 [STATUS.md](STATUS.md) 获取，本索引不复制其值。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
