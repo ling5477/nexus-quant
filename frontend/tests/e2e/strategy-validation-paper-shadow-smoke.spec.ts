@@ -1306,7 +1306,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         const view = page.getByTestId('strategy-validation-page');
         await expect(view).toBeVisible();
         await expect(view).toContainText('Validation Operations Workbench');
-        await expect(view).toContainText('GateT-5 · 只读运营复核');
+        await expect(view).toContainText('只读运营复核 sections');
         await expect(view).toContainText('只读验证');
         await expect(view).toContainText('不代表交易授权');
         await expect(view).toContainText('不代表 LIVE 已启用');

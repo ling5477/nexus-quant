@@ -62,7 +62,7 @@ export function ValidationReviewWorkbench() {
                     <Title level={3} style={{marginBottom: 4}}>Validation Review Workbench</Title>
                     <Text strong>本地验证审查工作台</Text>
                     <Paragraph type="secondary" style={{marginTop: 8, marginBottom: 0}}>
-                        查询 GateV-2 durable review cases，查看安全详情和 lifecycle events，并执行四类有限人工动作。
+                        查询持久化人工复核 cases，查看安全详情和 lifecycle events，并执行四类有限人工动作。
                     </Paragraph>
                 </div>
                 <Alert

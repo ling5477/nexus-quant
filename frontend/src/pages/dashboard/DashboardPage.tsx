@@ -24,7 +24,7 @@ import {formatDateTime} from '@/utils/formatters';
  * 目标：打开系统就能回答“现在是否安全”。
  * 数据边界：只复用既有 paper-trading 查询接口；除 run 列表外，其余指标
  * 聚焦在一个“焦点 run”（最近活跃的 RUNNING run）上，避免对全部 run 做 N+1 轮询。
- * 当前阶段口径：GateJ completed，仅 Paper Trading，LIVE 能力 disabled。
+ * 当前产品口径：仅 Paper Trading，LIVE 能力 disabled。
  */
 export function DashboardPage() {
     const navigate = useNavigate();
@@ -141,7 +141,7 @@ export function DashboardPage() {
                         <NqRiskBanner
                             level={banner.level}
                             message={banner.message}
-                            description={`${banner.description} 环境：${appEnv.envLabel} · LIVE 交易未开启 · 阶段：GateJ completed（Paper Trading）。`}
+                            description={`${banner.description} 环境：${appEnv.envLabel} · LIVE 交易未开启 · 交易模式：Paper Trading（模拟交易）。`}
                         />
                     )}
                 />

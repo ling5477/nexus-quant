@@ -12,7 +12,7 @@ import {formatDateTime} from '@/utils/formatters';
  *
  * 职责：生成并展示稳定性验收（默认最近 24h 窗口）。
  * 边界：复用既有稳定性接口，不新增 API；第一版口径为有心跳 + 无 CRITICAL 未处理告警 + 无失败触发 = PASSED，
- * 非 GateJ-FREEZE 7 天最终验收，文案如实标注，不夸大为最终验收通过。
+ * 24 小时检查不等同于正式 7 天稳定性验收，文案必须如实标注，不夸大为最终通过。
  */
 interface NqStabilityCheckPanelProps {
     paperRunId: string;
@@ -51,7 +51,7 @@ export function NqStabilityCheckPanel({paperRunId}: NqStabilityCheckPanelProps) 
         >
             <Space direction="vertical" size={8} style={{display: 'flex'}}>
                 <Typography.Text type="secondary" style={{fontSize: 12}}>
-                    第一版口径：有心跳 + 无 CRITICAL 未处理告警 + 无失败触发 = PASSED；非 GateJ-FREEZE 7 天最终验收。
+                    第一版口径：有心跳 + 无 CRITICAL 未处理告警 + 无失败触发 = PASSED；不等同于正式 7 天稳定性验收。
                 </Typography.Text>
                 {stabilityChecksQuery.isFetching && data.length === 0 ? (
                     <NqLoadingState/>

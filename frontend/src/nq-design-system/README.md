@@ -25,7 +25,7 @@ index.ts                  统一导出
 ## 单一来源原则
 
 颜色只在 `nq-tokens.ts` 定义。AntD 读它、CSS 变量由它生成、ECharts/Lightweight Charts 由它派生。
-业务自定义组件只读 `var(--nq-*)`,不得私配 hex。`up/down` 永远独立于 `success/danger`。
+业务自定义组件只读 `var(--nq-*)`,不得私配 hex。NQ 业务 UI 固定 `up=红色上涨/正收益`、`down=绿色下跌/负收益`；`up/down` 永远独立于 `success/danger`。
 
 ## B0 接线范围(scoped to demo route)
 

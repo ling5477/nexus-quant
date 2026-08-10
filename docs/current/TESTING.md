@@ -12766,3 +12766,15 @@ Known warnings：Mockito dynamic-agent 与部分 module 的 SLF4J no-provider wa
 | 0C 初始化 `check-current-authority.ps1` 重跑 | PASS | `AUTHORITY_CHECK errors=0` |
 
 Known warnings：E2E 有既存 Ant Design v5 / React 19 compatibility console warning，未导致 failure；build 有既存大 chunk warning。未运行 Maven、Python、全量 frontend E2E 或远端 CI：本轮只修改 frontend validation feature 与 current authority/evidence，附件要求 targeted smoke，且 work batch 尚未提交。
+
+## 2026-08-10 — GateX-0D 前端语义统一 attempt-01
+
+| Command / Check | Result | Scope / Environment / Warning |
+| --- | --- | --- |
+| `npm run build` | PASS（通过） | Windows；TypeScript + Vite production build；仅有既存 chunk size warning |
+| 首轮 expanded 7-spec Chromium smoke | FAIL（失败） | 10 passed / 2 failed；wrapper 默认 title 造成 review locator 回归；Paper stability 因本地 backend `127.0.0.1:18888` 未启动而在登录前失败 |
+| wrapper compatibility fix | PASS | `NqStatusTag` 显式 `title=""`，恢复旧组件无 title 行为 |
+| 6-spec targeted Chromium smoke | PASS | runner support 10/10；Playwright 11/11；Design System、Dashboard/Runtime、Paper 边界、Shadow、Strategy Validation、review 全绿 |
+| static semantic contract | PASS | canonical StatusTag=1；wrapper mapping=0；红涨绿跌；success/danger 独立；用户 UI pollution=0；合法 Gate residual=48；`REVIEW_REQUIRED=0`；tabular nums 保持 |
+
+Environment：Windows + Node.js + Vite 8.0.3 + Chromium。Known warnings：既存 Ant Design deprecated、React 19 compatibility 与 one disconnected form console warning；均不阻断。未运行全量 frontend E2E、Maven、Python 或远端 CI：本轮未修改对应模块，且 work batch 尚未提交。Blocking status：P0=0/P1=0/P2=0/P3=0；本地回归无 blocker，CI=`NOT_RUN`，唯一下一动作=`NQ-GATEX-0D-COMMIT-AND-PUSH`。

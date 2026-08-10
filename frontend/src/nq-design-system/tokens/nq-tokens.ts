@@ -23,5 +23,6 @@ export const nqTokens = {
 } as const;
 
 export type MarketConvention = 'CN_STOCK' | 'INTL_CRYPTO';
-export const DEFAULT_MARKET_CONVENTION: MarketConvention = 'INTL_CRYPTO';
+/** NQ 业务 UI 固定红涨绿跌；显式 convention 参数仅保留给开发诊断与兼容图表。 */
+export const DEFAULT_MARKET_CONVENTION: MarketConvention = 'CN_STOCK';
 export const marketColors = (c: MarketConvention = DEFAULT_MARKET_CONVENTION) => nqTokens.market[c];

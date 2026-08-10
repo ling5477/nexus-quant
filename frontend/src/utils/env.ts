@@ -12,6 +12,6 @@ export interface AppEnv {
  */
 export const appEnv: AppEnv = {
     appTitle: import.meta.env.VITE_APP_TITLE?.trim() || 'NexusQuant Console',
-    envLabel: import.meta.env.VITE_APP_ENV_LABEL?.trim() || (import.meta.env.DEV ? 'DEV' : 'GateJ-FREEZE'),
+    envLabel: import.meta.env.VITE_APP_ENV_LABEL?.trim() || (import.meta.env.DEV ? 'DEV' : 'PAPER'),
     apiBaseUrl: import.meta.env.VITE_API_BASE_URL?.trim() || '/api',
 };

@@ -13,8 +13,8 @@ export function ValidationReviewSection() {
                 <PageHero
                     title="Validation Operations Workbench"
                     description="整合本地 validation evidence 与 durable review lifecycle，用于人工复核排序、证据检查和有限状态流转。"
-                    badge="GateV-4 · 本地验证审查"
-                    tip="诊断审查不构成交易授权；下方保留 GateT-5 · 只读运营复核 sections，本页不会启动 LIVE、Shadow trading、runner、Python 或交易入口。"
+                    badge="验证运营 · 本地人工复核"
+                    tip="诊断审查不构成交易授权；下方保留只读运营复核 sections，本页不会启动 LIVE、Shadow trading、runner、Python 或交易入口。"
                 />
             </Card>
             <ValidationReviewWorkbench/>

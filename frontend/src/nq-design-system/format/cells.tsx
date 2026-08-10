@@ -81,22 +81,6 @@ export function ChangeCell({value, precision = 2, percent = false, ratio = false
  * 状态列:把后端原始状态值映射为 StatusTag 的语义色(success/info/neutral/warning/danger)。
  * 渲染文本保持后端原值(审计 / E2E 依赖原文);同名状态语义冲突时用 tone 显式覆盖。
  */
-const STATUS_TONE: Record<string, StatusTone> = {
-  // 运行 / 成功
-  RUNNING: 'success', ACTIVE: 'success', SUCCEEDED: 'success', PASSED: 'success', OK: 'success',
-  ENABLED: 'success', FILLED: 'success', RESOLVED: 'success', GENERATED: 'success',
-  // 等待 / 新建
-  PENDING: 'info', CREATED: 'info', NEW: 'info', SUBMITTED: 'info', QUEUED: 'info',
-  // 暂停 / 终止(中性)
-  PAUSED: 'neutral', SKIPPED: 'neutral', DISABLED: 'neutral', STOPPED: 'neutral',
-  CANCELLED: 'neutral', CANCELED: 'neutral', EXPIRED: 'neutral', CLOSED: 'neutral',
-  // 风险提示
-  WARNING: 'warning', DEGRADED: 'warning', PARTIAL: 'warning', LAGGING: 'warning',
-  ACKED: 'warning', RETRYING: 'warning', RECOVERING: 'warning',
-  // 失败 / 阻断
-  FAILED: 'danger', BLOCKED: 'danger', REJECTED: 'danger', CRITICAL: 'danger', ERROR: 'danger',
-};
-
 export interface StatusCellProps {
   status: string | null | undefined;
   /** 语义冲突时显式覆盖(例如告警的 OPEN 应为 danger)。 */
@@ -109,6 +93,5 @@ export function StatusCell({status, tone, variant = 'dot'}: StatusCellProps) {
     return <span style={{color: 'var(--nq-text-tertiary)'}}>-</span>;
   }
 
-  const resolved = tone ?? STATUS_TONE[status.toUpperCase()] ?? 'neutral';
-  return <StatusTag label={status} tone={resolved} variant={variant}/>;
+  return <StatusTag status={status} tone={tone} variant={variant}/>;
 }

@@ -24,6 +24,7 @@ import {Link} from 'react-router-dom';
 
 import {formatApiError} from '@/api/errors';
 import {DataFreshness, type FreshnessState} from '@/nq-design-system/status/DataFreshness';
+import {StatusTag as CanonicalStatusTag} from '@/nq-design-system/status/StatusTag';
 import {useStrategyValidationWorkspaceQueries} from '@/features/validation/hooks/useStrategyValidationWorkspaceQueries';
 import {ValidationReviewSection} from '@/features/validation/review/ValidationReviewSection';
 import type {AppApiError} from '@/types/api';
@@ -2669,9 +2670,12 @@ function validationOperationsOperatorQueueRows(
 function StatusTag({status}: { status?: string | null }) {
     const presentation = statusPresentation(status);
     return (
-        <Tag color={TONE_TO_COLOR[presentation.tone]}>
-            {statusText(status)}
-        </Tag>
+        <CanonicalStatusTag
+            status={normalizeStatus(status)}
+            label={statusText(status)}
+            tone={presentation.tone}
+            variant="pill"
+        />
     );
 }
 
@@ -2922,9 +2926,20 @@ function workflowStatusPresentation(status: string | null | undefined): {
 function WorkflowStatusTag({status}: { status?: string | null }) {
     const normalized = normalizeStatus(status);
     const presentation = workflowStatusPresentation(normalized);
+    const tone = presentation.color === 'error'
+        ? 'danger'
+        : presentation.color === 'warning'
+            ? 'warning'
+            : presentation.color === 'processing' ? 'info' : 'neutral';
     return (
         <Tooltip title={presentation.tooltip}>
-            <Tag color={presentation.color}>{`${normalized}（${presentation.label}）`}</Tag>
+            <CanonicalStatusTag
+                status={normalized}
+                label={`${normalized}（${presentation.label}）`}
+                tone={tone}
+                title={presentation.tooltip}
+                variant="pill"
+            />
         </Tooltip>
     );
 }
@@ -4765,7 +4780,7 @@ function resolveEvaluationArtifactPreviewState(
         return {
             level: 'warning',
             message: '当前未配置 artifact source',
-            description: 'GateT-4 当前是 No-file baseline：不读取 artifact 文件或 manifest，不接受路径或上传，不执行 Python，不导入 DB。',
+            description: '当前评估产物预览采用 No-file baseline：不读取 artifact 文件或 manifest，不接受路径或上传，不执行 Python，不导入 DB。',
         };
     }
     if (evaluationArtifactPreviewHasChecksumMissing(overview)) {
@@ -5683,7 +5698,7 @@ function ValidationOperationsWorkbench({queries}: { queries: ValidationOperation
                         type="warning"
                         showIcon
                         message="Partial data / 部分数据"
-                        description="缺少任一 GateT / GateS overview 时，Workbench 只展示已返回事实；不会补造 evidence、review decision 或 artifact readiness。"
+                        description="缺少任一验证运营或影子运行 overview 时，Workbench 只展示已返回事实；不会补造 evidence、review decision 或 artifact readiness。"
                     />
                 ) : null}
                 <ValidationOperationsTopSummary queries={queries}/>
@@ -5693,7 +5708,7 @@ function ValidationOperationsWorkbench({queries}: { queries: ValidationOperation
                     type="info"
                     showIcon
                     message="Detail sections 保留"
-                    description="下方保留现有 GateS / GateT 只读 panel，用于查看每条主线的原始 summary、blockers、warnings、nextSteps、traceId 和 evidence anchors。"
+                    description="下方保留现有影子运行与验证运营只读 panel，用于查看每条主线的原始 summary、blockers、warnings、nextSteps、traceId 和 evidence anchors。"
                 />
             </Space>
         </Card>

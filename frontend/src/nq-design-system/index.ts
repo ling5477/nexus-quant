@@ -4,7 +4,7 @@ export * from './tokens/nq-css-vars';
 export { nqAntdTheme } from './theme/nqAntdTheme';
 export { registerNqEchartsTheme } from './theme/nqEchartsTheme';
 export { nqLwcOptions, nqCandleColors } from './theme/nqLwcOptions';
-export { StatusTag } from './status/StatusTag';
+export { StatusTag, statusToneOf } from './status/StatusTag';
 export type { StatusTagProps, StatusTone } from './status/StatusTag';
 export { EnvironmentBadge } from './status/EnvironmentBadge';
 export type { EnvironmentBadgeProps, NqEnv } from './status/EnvironmentBadge';

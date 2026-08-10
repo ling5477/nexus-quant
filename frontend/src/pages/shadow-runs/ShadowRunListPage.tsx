@@ -650,7 +650,7 @@ export function ShadowRunListPage() {
                 <NqPageHeader
                     title="Shadow Run 列表"
                     description="只读查看本地 Shadow Run diagnostic facts，并从列表进入 detail / replay 页面。"
-                    badge="GateR-8 · Read-only list"
+                    badge="影子运行 · 只读列表"
                     extra={(
                         <Button icon={<ReloadOutlined/>} loading={listQuery.isFetching}
                                 onClick={() => listQuery.refetch()}>

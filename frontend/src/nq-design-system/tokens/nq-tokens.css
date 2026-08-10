@@ -1,5 +1,5 @@
 /* nq-tokens.css — 静态 CSS 变量基线(B0 / Design Tokens v2)
-   默认 INTL_CRYPTO(绿涨红跌)。运行时切换惯例请用 applyNqCssVars('CN_STOCK')。
+   NQ 业务 UI 固定红涨绿跌；up/down 与 success/danger 是两套独立语义。
    这是 SSR/首屏的静态兜底;JS 注入(nq-css-vars.ts)是单一来源,二者保持默认一致。
 
    注意(B0 scoped wiring):本文件作为全局 :root 兜底交付,但当前阶段未在应用入口全局
@@ -26,9 +26,9 @@
   --nq-danger: #ff6166;
   --nq-info: #56c7f5;
 
-  /* 行情方向:默认 INTL_CRYPTO(绿涨红跌)。CN_STOCK 时由 JS 翻转。 */
-  --nq-up: #33d6a6;
-  --nq-down: #ff5c6c;
+  /* 行情方向：红涨绿跌；不得复用系统 success/danger。 */
+  --nq-up: #ff5c6c;
+  --nq-down: #33d6a6;
   --nq-flat: #93a1ba;
 
   --nq-env-paper: #3b82f6;

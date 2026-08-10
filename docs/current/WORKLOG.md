@@ -18180,3 +18180,14 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：backend/research/scripts/.github/migration/dependency/router/LIVE/credential/real provider/AI/DH runtime 变更=`0`；未 commit、未 push，远端 0C CI=`NOT_RUN`。
 - result：`IMPLEMENTED / SELF_REVIEWED / VALIDATION_FRONTEND_DECOMPOSED / FRONTEND_REGRESSION_GREEN / READY_TO_COMMIT`；P0=0/P1=0/P2=1（workspace 仍约 6.3k LOC 的渐进结构债）/P3=0。
 - next：唯一下一动作=`NQ-GATEX-0C-COMMIT-AND-PUSH`；不得提前初始化 GateX-0D。
+
+## 2026-08-10 — GateX-0D 前端语义统一 implementation attempt-01
+
+- task：`NQ-GATEX-0D-FRONTEND-SEMANTIC-UNIFICATION-IMPLEMENTATION`；NQ-only、L 级 frontend refactor / design semantics / regression / self-review。
+- baseline：`HEAD == origin/dev == 46392213495652f6a09005148cc160fd2882adb9`；GateX-0C exact-head CI run=`31325824949 / completed / success`，已收口为 `ACCEPTED|CI_GREEN`。
+- implementation：`frontend/src/nq-design-system/status/StatusTag.tsx` 成为唯一 canonical mapping；`NqStatusTag` 保留 deprecated 薄 wrapper；`StatusCell` 删除重复映射；Strategy Validation 领域 adapter 委托 canonical。v2 默认固定 `CN_STOCK` 红涨绿跌，且与 `success/danger` 系统语义解耦。
+- labels：普通用户 UI 共 11 处工程阶段标签改为稳定业务语义；最终 48 行 Gate 命中均为 identifier/API/type/hook/comment/debug/evidence/history 合法残留，用户 UI pollution=`0`、`REVIEW_REQUIRED=0`。
+- validation：frontend build PASS；首轮 expanded smoke 的 wrapper title 回归完成 RCA 与最小修复，Paper stability 失败归因本地 backend 未启动；最终 runner support 10/10、6-spec Chromium 11/11、static semantic contract PASS。
+- boundary：route/API/DTO/query/cache/RBAC/backend/research/scripts/.github/migration/dependency/业务流程/LIVE/credential/real provider/AI/DH runtime 变更=`0`；未继续拆 workspace，未进入 0E/1，未 commit、未 push，远端 0D CI=`NOT_RUN`。
+- result：`IMPLEMENTED / SELF_REVIEWED / FRONTEND_SEMANTICS_UNIFIED / FRONTEND_REGRESSION_GREEN / READY_TO_COMMIT`；P0=0/P1=0/P2=0/P3=0。
+- next：唯一下一动作=`NQ-GATEX-0D-COMMIT-AND-PUSH`；不得提前初始化 GateX-0E。

@@ -1075,7 +1075,7 @@ export function ShadowRunDetailPage() {
                 <NqPageHeader
                     title="Shadow Run detail / replay"
                     description="只读查看 Shadow Run 基本信息、Paper vs Shadow consistency drilldown、events 时间线、snapshots 和 latest consistency report。"
-                    badge="GateR-7 / GateS-2 · Read-only"
+                    badge="影子运行详情 · 只读诊断"
                     extra={(
                         <Space size={8} wrap>
                             <Button icon={<ArrowLeftOutlined/>} onClick={() => navigate('/strategies/shadow-runs')}>
