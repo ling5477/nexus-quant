@@ -19,6 +19,7 @@ public record ShadowRun(
         UUID datasetId,
         String evaluationId,
         String publishId,
+        String artifactDigest,
         String paperRunId,
         ShadowRunStatus status,
         Instant windowStart,
@@ -49,6 +50,7 @@ public record ShadowRun(
         Objects.requireNonNull(id, "id must not be null");
         requireText(strategyVersionId, "strategyVersionId");
         Objects.requireNonNull(datasetId, "datasetId must not be null");
+        ShadowRunReleaseBindingMode.derive(publishId, artifactDigest);
         Objects.requireNonNull(status, "status must not be null");
         ShadowRunJsonRules.validateWindow(windowStart, windowEnd);
         ShadowRunSensitiveDataGuard.validateJson("sideEffectPolicy", sideEffectPolicy);
@@ -75,6 +77,83 @@ public record ShadowRun(
         }
         Objects.requireNonNull(createdAt, "createdAt must not be null");
         Objects.requireNonNull(updatedAt, "updatedAt must not be null");
+    }
+
+    /**
+     * 兼容 GateX-2 之前的创建路径；旧路径没有已验证 artifact digest，因此只能创建
+     * {@link ShadowRunReleaseBindingMode#LEGACY_UNBOUND} 或
+     * {@link ShadowRunReleaseBindingMode#LEGACY_PUBLISH_ONLY} 事实，不能推测为 release-bound。
+     */
+    public ShadowRun(
+            UUID id,
+            String strategyVersionId,
+            UUID datasetId,
+            String evaluationId,
+            String publishId,
+            String paperRunId,
+            ShadowRunStatus status,
+            Instant windowStart,
+            Instant windowEnd,
+            JsonNode sideEffectPolicy,
+            boolean noOrderSubmission,
+            boolean noCredentialAccess,
+            boolean noPrivateEndpoint,
+            boolean noLedgerMutation,
+            boolean noAccountMutation,
+            boolean noExternalPrivateIo,
+            ShadowRunAuthorizationBoundary authorizationBoundary,
+            String requestId,
+            String idempotencyKey,
+            String traceId,
+            JsonNode blockers,
+            JsonNode warnings,
+            JsonNode nextSteps,
+            long version,
+            Instant createdAt,
+            Instant updatedAt,
+            Instant startedAt,
+            Instant stoppedAt,
+            Instant completedAt
+    ) {
+        this(
+                id,
+                strategyVersionId,
+                datasetId,
+                evaluationId,
+                publishId,
+                null,
+                paperRunId,
+                status,
+                windowStart,
+                windowEnd,
+                sideEffectPolicy,
+                noOrderSubmission,
+                noCredentialAccess,
+                noPrivateEndpoint,
+                noLedgerMutation,
+                noAccountMutation,
+                noExternalPrivateIo,
+                authorizationBoundary,
+                requestId,
+                idempotencyKey,
+                traceId,
+                blockers,
+                warnings,
+                nextSteps,
+                version,
+                createdAt,
+                updatedAt,
+                startedAt,
+                stoppedAt,
+                completedAt
+        );
+    }
+
+    /**
+     * 返回由不可变 provenance 字段派生的绑定模式；该值不单独持久化。
+     */
+    public ShadowRunReleaseBindingMode releaseBindingMode() {
+        return ShadowRunReleaseBindingMode.derive(publishId, artifactDigest);
     }
 
     private static void requireNoSideEffects(

@@ -17,6 +17,7 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRun;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunAuthorizationBoundary;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunEvent;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunEventType;
+import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunIdempotencyConflictException;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunOptimisticLockException;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunSnapshot;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunSnapshotType;
@@ -44,6 +45,7 @@ class JdbcShadowRunFactRepositoryTest {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Instant NOW = Instant.parse("2026-07-06T00:00:00Z");
+    private static final String ARTIFACT_DIGEST = "a".repeat(64);
 
     @Test
     void shouldCreateShadowRunWithIdempotencyKeyAndReturnExistingFact() {
@@ -57,6 +59,30 @@ class JdbcShadowRunFactRepositoryTest {
         assertEquals(run.id(), created.id());
         assertTrue(jdbcTemplate.updateSqls.getFirst().contains("ON CONFLICT (idempotency_key) DO NOTHING"));
         assertTrue(jdbcTemplate.updateSqls.getFirst().contains("CAST(? AS JSONB)"));
+        assertTrue(jdbcTemplate.updateSqls.getFirst().contains("publish_id, artifact_digest, paper_run_id"));
+        assertEquals(ARTIFACT_DIGEST, jdbcTemplate.updateArgs.getFirst()[5]);
+    }
+
+    @Test
+    void shouldRejectIdempotencyReplayWithDifferentReleaseProvenance() {
+        ShadowRun existing = run(ShadowRunStatus.CREATED, 0);
+        for (ShadowRun conflicting : List.of(
+                copyWithProvenance(existing, "pub-2", ARTIFACT_DIGEST),
+                copyWithProvenance(existing, existing.publishId(), "b".repeat(64))
+        )) {
+            RecordingJdbcTemplate jdbcTemplate = new RecordingJdbcTemplate();
+            jdbcTemplate.updateCounts.add(0);
+            jdbcTemplate.queryResults.add(List.of(existing));
+            JdbcShadowRunFactRepository repository = repository(jdbcTemplate);
+
+            ShadowRunIdempotencyConflictException exception = assertThrows(
+                    ShadowRunIdempotencyConflictException.class,
+                    () -> repository.create(conflicting)
+            );
+
+            assertEquals("SHADOW_RUN_IDEMPOTENCY_PROVENANCE_CONFLICT", exception.reasonCode());
+            assertFalse(exception.getMessage().contains(ARTIFACT_DIGEST));
+        }
     }
 
     @Test
@@ -71,6 +97,7 @@ class JdbcShadowRunFactRepositoryTest {
         assertEquals(Optional.of(run), repository.findByIdempotencyKey(run.idempotencyKey()));
         assertTrue(jdbcTemplate.querySqls.get(0).contains("WHERE id = ?"));
         assertTrue(jdbcTemplate.querySqls.get(1).contains("WHERE idempotency_key = ?"));
+        assertTrue(jdbcTemplate.querySqls.stream().allMatch(sql -> sql.contains("artifact_digest")));
     }
 
     @Test
@@ -114,6 +141,8 @@ class JdbcShadowRunFactRepositoryTest {
         assertEquals(1, result.newVersion());
         assertTrue(jdbcTemplate.updateSqls.get(0).contains("version = version + 1"));
         assertTrue(jdbcTemplate.updateSqls.get(0).contains("AND version = ?"));
+        assertFalse(jdbcTemplate.updateSqls.get(0).contains("publish_id"));
+        assertFalse(jdbcTemplate.updateSqls.get(0).contains("artifact_digest"));
         assertEquals(ShadowRunEventType.RUN_STARTED.name(), jdbcTemplate.updateArgs.get(1)[2]);
         assertFalse(jdbcTemplate.updateArgs.stream()
                 .anyMatch(args -> ShadowRunEventType.ILLEGAL_STATE_TRANSITION_ATTEMPT.name().equals(args[2])));
@@ -269,6 +298,7 @@ class JdbcShadowRunFactRepositoryTest {
         String sql = String.join("\n", jdbcTemplate.queryForObjectSqls) + "\n" + String.join("\n", jdbcTemplate.querySqls);
         String normalized = sql.toLowerCase(Locale.ROOT);
         assertTrue(normalized.contains("from shadow_runs"));
+        assertTrue(normalized.contains("artifact_digest"));
         assertTrue(normalized.contains("from shadow_run_events"));
         assertTrue(normalized.contains("from shadow_run_snapshots"));
         assertTrue(normalized.contains("from shadow_consistency_reports"));
@@ -342,6 +372,7 @@ class JdbcShadowRunFactRepositoryTest {
                 UUID.randomUUID(),
                 "eval-1",
                 "pub-1",
+                ARTIFACT_DIGEST,
                 "paper-1",
                 status,
                 NOW,
@@ -366,6 +397,41 @@ class JdbcShadowRunFactRepositoryTest {
                 null,
                 null,
                 null
+        );
+    }
+
+    private ShadowRun copyWithProvenance(ShadowRun source, String publishId, String artifactDigest) {
+        return new ShadowRun(
+                UUID.randomUUID(),
+                source.strategyVersionId(),
+                source.datasetId(),
+                source.evaluationId(),
+                publishId,
+                artifactDigest,
+                source.paperRunId(),
+                source.status(),
+                source.windowStart(),
+                source.windowEnd(),
+                source.sideEffectPolicy(),
+                source.noOrderSubmission(),
+                source.noCredentialAccess(),
+                source.noPrivateEndpoint(),
+                source.noLedgerMutation(),
+                source.noAccountMutation(),
+                source.noExternalPrivateIo(),
+                source.authorizationBoundary(),
+                source.requestId(),
+                source.idempotencyKey(),
+                source.traceId(),
+                source.blockers(),
+                source.warnings(),
+                source.nextSteps(),
+                source.version(),
+                source.createdAt(),
+                source.updatedAt(),
+                source.startedAt(),
+                source.stoppedAt(),
+                source.completedAt()
         );
     }
 

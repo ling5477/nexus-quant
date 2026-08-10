@@ -38,7 +38,7 @@ import org.springframework.stereotype.Repository;
 public class JdbcShadowRunOverviewQueryRepository implements ShadowRunOverviewQueryPort {
 
     private static final String RUN_SELECT = """
-            SELECT id, strategy_version_id, dataset_id, evaluation_id, publish_id, paper_run_id,
+            SELECT id, strategy_version_id, dataset_id, evaluation_id, publish_id, artifact_digest, paper_run_id,
                    status, window_start, window_end, side_effect_policy::text AS side_effect_policy,
                    no_order_submission, no_credential_access, no_private_endpoint, no_ledger_mutation,
                    no_account_mutation, no_external_private_io, authorization_boundary, request_id,
@@ -148,6 +148,7 @@ public class JdbcShadowRunOverviewQueryRepository implements ShadowRunOverviewQu
                 rs.getObject("dataset_id", UUID.class),
                 rs.getString("evaluation_id"),
                 rs.getString("publish_id"),
+                rs.getString("artifact_digest"),
                 rs.getString("paper_run_id"),
                 ShadowRunStatus.fromDatabase(rs.getString("status")),
                 toInstant(rs.getTimestamp("window_start")),

@@ -11,6 +11,7 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRun;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunAuthorizationBoundary;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunEvent;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunEventType;
+import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunIdempotencyConflictException;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunOptimisticLockException;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunSnapshot;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunSnapshotType;
@@ -45,7 +46,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
 
     private static final String RUN_SELECT = """
-            SELECT id, strategy_version_id, dataset_id, evaluation_id, publish_id, paper_run_id,
+            SELECT id, strategy_version_id, dataset_id, evaluation_id, publish_id, artifact_digest, paper_run_id,
                    status, window_start, window_end, side_effect_policy::text AS side_effect_policy,
                    no_order_submission, no_credential_access, no_private_endpoint, no_ledger_mutation,
                    no_account_mutation, no_external_private_io, authorization_boundary, request_id,
@@ -109,14 +110,14 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
         jdbcTemplate.update(
                 """
                         INSERT INTO shadow_runs (
-                            id, strategy_version_id, dataset_id, evaluation_id, publish_id, paper_run_id,
+                            id, strategy_version_id, dataset_id, evaluation_id, publish_id, artifact_digest, paper_run_id,
                             status, window_start, window_end, side_effect_policy,
                             no_order_submission, no_credential_access, no_private_endpoint,
                             no_ledger_mutation, no_account_mutation, no_external_private_io,
                             authorization_boundary, request_id, idempotency_key, trace_id,
                             blockers, warnings, next_steps, version,
                             created_at, updated_at, started_at, stopped_at, completed_at
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS JSONB),
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS JSONB),
                                   ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                                   CAST(? AS JSONB), CAST(? AS JSONB), CAST(? AS JSONB), ?,
                                   ?, ?, ?, ?, ?)
@@ -127,6 +128,7 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
                 run.datasetId(),
                 run.evaluationId(),
                 run.publishId(),
+                run.artifactDigest(),
                 run.paperRunId(),
                 run.status().name(),
                 toTimestamp(run.windowStart()),
@@ -152,8 +154,10 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
                 toTimestamp(run.stoppedAt()),
                 toTimestamp(run.completedAt())
         );
-        return findByIdempotencyKey(run.idempotencyKey())
+        ShadowRun persisted = findByIdempotencyKey(run.idempotencyKey())
                 .orElseThrow(() -> new IllegalStateException("failed to create or load shadow run"));
+        requireSameReleaseProvenance(run, persisted);
+        return persisted;
     }
 
     @Override
@@ -387,6 +391,16 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
         };
     }
 
+    /**
+     * 幂等键只允许复用同一 release provenance；否则静默返回旧行会让调用方误认错误绑定已创建。
+     */
+    private static void requireSameReleaseProvenance(ShadowRun requested, ShadowRun persisted) {
+        if (!Objects.equals(requested.publishId(), persisted.publishId())
+                || !Objects.equals(requested.artifactDigest(), persisted.artifactDigest())) {
+            throw new ShadowRunIdempotencyConflictException();
+        }
+    }
+
     private RowMapper<ShadowRun> runRowMapper() {
         return this::mapRun;
     }
@@ -433,6 +447,7 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
                 rs.getObject("dataset_id", UUID.class),
                 rs.getString("evaluation_id"),
                 rs.getString("publish_id"),
+                rs.getString("artifact_digest"),
                 rs.getString("paper_run_id"),
                 ShadowRunStatus.fromDatabase(rs.getString("status")),
                 toInstant(rs.getTimestamp("window_start")),

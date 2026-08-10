@@ -12825,3 +12825,47 @@ Boundary：未修改 governance contract、checker、governance tests、backend�
 RCA：首次 compile 因错误使用不存在的 `IOException` 四参数构造器失败，已改为安全无消息构造并重跑；首次 focused 命令因 PowerShell 未正确引用 `-Dsurefire.failIfNoSpecifiedTests`，Maven lifecycle 未开始，引用参数后重跑通过。首次 module full 的 1 个失败来自 Windows 目录 size/mtime 被误当作稳定 identity；收敛为目录仅比较 type/fileKey、普通文件仍比较 fileKey/size/mtime，并保留前后目录快照、文件集、real path 与逐文件双重 stat 后，focused、module 与全后端回归全部通过。未把失败轮次写成通过。
 
 Security / boundary：实际 Windows symlink escape、path traversal/absolute path、missing/extra file、digest/size/count、敏感内容、TOCTOU replacement 均有回归；verifier 使用双重 metadata/snapshot 检查但不宣称获得 OS 原子 stable handle。未访问 credential、private endpoint、生产数据库、Shadow 或交易写侧；LIVE=`DISABLED`。Blocking status：P0=0/P1=0/P2=1/P3=1；P2 为 OS/JDK 无原子 stable-handle 保证的剩余 TOCTOU 风险，P3 为既有 Maven settings profile warning，不阻断 commit。
+
+## 2026-08-10 — GateX-2 provenance persistence migration implementation attempt-01
+
+| Command / Check | Result | Scope / Environment / Warning |
+| --- | --- | --- |
+| branch/worktree/HEAD preflight + `git fetch origin` | PASS（通过） | 开始时 `dev` clean、staged empty；`HEAD == origin/dev == 2655f5144ba27cc88c2786de7f76633df3df462d` |
+| exact-head CI lookup | PASS（通过） | GateX-1 `NQ CI Baseline` run `31358676688 / completed / success`；headSha 精确匹配 starting HEAD |
+| migration/domain/JDBC focused suites | PASS（通过） | binding mode 2、migration contract 1、JDBC fact repository 10；合计 13 tests，0 failures / 0 errors / 0 skipped |
+| migration contract after lock-safety adjustment | PASS（通过） | 1 test；确认 `NOT VALID` + 两次 `VALIDATE CONSTRAINT`、无 backfill、无 unique |
+| explicit real PostgreSQL integration | PASS（通过） | PostgreSQL 17.7；fresh `V1→V36` 与 upgrade `V35→V36`；2 tests，0 failures / 0 errors / 0 skipped；随机 `gatex2_*` schema 残留 0 |
+| `mvn -f backend/pom.xml -pl nq-infra -am test` | PASS（通过） | reactor 16 modules；`nq-core` 439、`nq-infra` 100（3 existing opt-in skipped）；BUILD SUCCESS |
+| `mvn -f backend/pom.xml test` | PASS（通过） | 后端 23 modules；1312 tests，0 failures / 0 errors / 17 existing/opt-in skipped；BUILD SUCCESS，2m14s |
+| local Flyway startup path | PASS（通过） | 全量回归按既有 `local` profile 将本机开发库 `nexus_quant.public` 从 V35 迁到 V36；第二次启动确认 schema up to date；未访问生产数据库 |
+| frontend / Python / API E2E | NOT RUN（未运行） | 本批不改 frontend、Python 或 HTTP API；后端 API 模块已包含在全量 Maven 中 |
+
+Negative/compatibility coverage：63/65 位、大写、非 hex、空字符串、digest 缺少 publish 均在 domain/DB 层 fail-closed；legacy unbound、legacy publish-only 与 release-bound 三种派生模式通过；同一 release 可创建多个 run；`STOP_REQUESTED→STOPPED` 与 `RUNNING→COMPLETED` 更新后 `publish_id/artifact_digest` 原值和 optimistic-lock version 语义正确。
+
+RCA：一次 focused Maven 因 PowerShell 未引用 `-Dsurefire.failIfNoSpecifiedTests`，在 lifecycle 解析阶段失败，引用后通过；一次 PostgreSQL rerun 将测试要求的 `.user` 误写为 `.username`，测试在连接前以 `missing required local disposable PostgreSQL properties` 失败，修正唯一配置键后同版本 migration 重跑通过。另一次 cleanup SQL 的 `ESCAPE` quoting 无效，改用 anchored schema-name regex 后确认残留 0。这些失败均未写成 migration/test 通过。
+
+Warnings：Maven 全局 settings line 227 的既有 unrecognised `profiles` warning、SLF4J NOP、Mockito dynamic-agent 与现有 opt-in tests skip 继续存在；均未由本批引入。迁移虽以 `NOT VALID` + `VALIDATE` 降低历史扫描期间锁强度，但新增 column/constraint 仍需要锁；未在生产规模数据上测量等待时间，按 P2 留给独立迁移 review。
+
+完整证据：[evidence/gate-x/NQ-GATEX-2-PROVENANCE-PERSISTENCE-MIGRATION-IMPLEMENTATION.attempt-01.md](evidence/gate-x/NQ-GATEX-2-PROVENANCE-PERSISTENCE-MIGRATION-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-10 — GateX-2 provenance persistence migration review attempt-01
+
+| Command / Check | Result | Scope / Environment / Warning |
+| --- | --- | --- |
+| branch/worktree/HEAD preflight | PASS（通过） | `dev`；starting `HEAD == origin/dev == 2655f5144ba27cc88c2786de7f76633df3df462d`；进入时只有 19 个 GateX-2 staged files |
+| migration / domain / JDBC static audit | PASS WITH FIX（修复后通过） | V36 forward-only、无历史 migration 修改、无 backfill/default/unique；发现并关闭 idempotency provenance collision P1 |
+| focused review suites | PASS（通过） | binding mode 2、migration contract 1、JDBC fact repository 11；14 tests，0 failures / 0 errors / 0 skipped |
+| explicit disposable PostgreSQL integration | PASS（通过） | PostgreSQL 17.7；fresh `V1→V36` 与 upgrade `V35→V36`；2 tests，0 failures / 0 errors / 0 skipped；覆盖幂等冲突 fail-closed 与原行不变 |
+| PostgreSQL 10,000-row lock probe | PASS / RISK CONFIRMED（通过 / 风险已确认） | 同一事务完成 add-column/add-check/validate 后同时持有 `AccessExclusiveLock=true`、`ShareUpdateExclusiveLock=true`；事务 rollback，容器删除 |
+| `mvn -f backend/pom.xml test` | PASS（通过） | 23 modules；1313 tests，0 failures / 0 errors / 17 existing/opt-in skipped；BUILD SUCCESS，2m32s |
+| frontend / Python / API E2E | NOT RUN（未运行） | 本轮不改 frontend、Python 或 HTTP API；后端 API 模块已包含在 Maven reactor |
+
+P1 regression：同一 `idempotencyKey` 命中既有行时，repository 现在比较 `publish_id` 与 `artifact_digest`；任一不同均抛出 `SHADOW_RUN_IDEMPOTENCY_PROVENANCE_CONFLICT`，错误消息不含 digest，请求不会改写旧行。unit test 覆盖 publish 与 digest 两类冲突；真实 PostgreSQL 覆盖 digest 冲突并重新读取原行证明 provenance 未变化。
+
+Migration / deployment：nullable no-default column、两个 `NOT VALID` CHECK、后续 validate 与无 backfill/no unique 均正确；但 Flyway 默认单事务使前序 `AccessExclusiveLock` 延续到提交，validation 扫描期间不能宣称整体弱锁。该项为 P2、非本地验收 blocker；部署前必须按真实 `shadow_runs` 行数/关系大小、长事务、锁队列与写入速率选择维护窗口，并设置环境侧 `lock_timeout` / `statement_timeout`。V36 一旦进入共享环境不得修改或删除，只能以 V37+ forward remediation。
+
+RCA：首次 focused Maven 因 PowerShell 未引用 `-Dsurefire.failIfNoSpecifiedTests` 而在 lifecycle 前失败，引用后通过；首次显式本机 PostgreSQL 尝试因通用测试凭据认证失败且未创建 schema，随后使用 `--pull=never` 的 disposable PostgreSQL 17.7 完成验证。Docker Desktop 首次启动误在仓库生成 `%SystemDrive%` 缓存目录，确认精确路径和内容后已删除；目录不在 staged scope。
+
+Boundary：GateX-3 admission、API、scheduler、runner 新行为、frontend、交易状态机、LIVE、credential/private endpoint、真实交易、AI/DH runtime 变更均为 0。Blocking status：P0=0/P1=0（1 个已关闭）/P2=1/P3=1；P2 为部署锁窗口，P3 为既有 Maven settings profile warning。
+
+完整证据：[evidence/gate-x/NQ-GATEX-2-PROVENANCE-PERSISTENCE-MIGRATION-REVIEW.attempt-01.md](evidence/gate-x/NQ-GATEX-2-PROVENANCE-PERSISTENCE-MIGRATION-REVIEW.attempt-01.md)。

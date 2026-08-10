@@ -626,3 +626,23 @@ GateW-3 新增 forward-only Flyway migration：
 - 保留既有两个 unique constraints 与 status lookup index，不新增重复索引。
 
 disposable PostgreSQL 16.14 验证：fresh V1→V34 与 V33→V34 均到 version 34；V33 legacy row 新列保持 null，precision、约束、中文 comments、既有 key/index 与 repository lifecycle 通过。单行、73,728-byte 样本在 V34 后 `pg_relation_filepath` 变化，表明本样本发生 table rewrite；独立 lock observation 确认 `ALTER TABLE ... TYPE` 请求 `AccessExclusiveLock`。该风险按 P2 保留，部署前必须按目标表规模与维护窗口复核，不能把 disposable 结果外推成生产无锁结论。
+
+## GateX-2 Shadow Run Strategy Release Provenance
+
+GateX-2 新增 forward-only Flyway migration：
+
+- `V36__gate_x2_shadow_run_provenance.sql`
+
+当前状态为 `REVIEW ACCEPTED / READY TO COMMIT`（复核已接受 / 可进入提交前复核）。该状态只表示 provenance schema、domain/JDBC persistence 与 PostgreSQL 回归已通过独立迁移复核，不表示 committed、CI green、Release-to-Shadow admission、LIVE ready 或交易授权。
+
+- `shadow_runs.artifact_digest` 为 `VARCHAR(64) NULL`，保存 Shadow Run 创建时已经验证的 Strategy Release artifact-set SHA-256。
+- `chk_shadow_runs_artifact_digest_sha256` 允许 `NULL` 或严格 64 位 lowercase hex；空字符串、大写、63/65 位和非十六进制值均拒绝。
+- `chk_shadow_runs_artifact_requires_publish` 要求 digest 非空时 `publish_id` 必须非空；允许历史无绑定与仅 `publish_id` 绑定。
+- 两个 CHECK 先以 `NOT VALID` 创建，再通过 `VALIDATE CONSTRAINT` 扫描历史行；迁移结束时均为已验证约束。`VALIDATE` 自身使用 `ShareUpdateExclusiveLock`，但 PostgreSQL 17.7 实测表明 Flyway 默认单事务会同时保留前序 `ALTER TABLE` 的 `AccessExclusiveLock` 到提交，因此不能把验证扫描描述为整体弱锁。部署前必须检查目标表行数/大小、长事务、锁队列和写入速率，并配置受控 `lock_timeout` / `statement_timeout`；超时值由部署环境观测决定，不在 migration 中硬编码。
+- 不为 `(publish_id, artifact_digest)` 增加 unique constraint；同一已验证 release 可以产生多个 Shadow Run。
+- 不执行 `UPDATE`，不推测、不计算、不回填历史 digest。迁移前的 legacy row 在升级后保持 `artifact_digest=NULL`。
+- domain 只由持久化事实派生 `LEGACY_UNBOUND / LEGACY_PUBLISH_ONLY / RELEASE_BOUND`；不新增独立 binding-mode 列，避免冗余状态漂移。
+- repository 只在 create 时写入 `publish_id` 与 `artifact_digest`；同一 `idempotency_key` 仅在两个 provenance anchor 均一致时返回既有行，冲突使用 `SHADOW_RUN_IDEMPOTENCY_PROVENANCE_CONFLICT` fail-closed；lifecycle update SQL 不触碰两个 provenance 字段，保证状态流转不能改写已绑定 provenance。
+- 字段和约束均有中文 COMMENT，明确 digest 不表示 admission、交易批准或 LIVE ready。
+
+disposable PostgreSQL 17.7 验证覆盖 fresh `V1→V36`、upgrade `V35→V36`、legacy 无绑定、legacy publish-only、release-bound create/read、幂等冲突拒绝、非法值拒绝、同一 release 多 run与状态生命周期 provenance immutability；upgrade 中 V36 执行约 `0.012s`，仅代表小样本。独立 10,000 行 lock probe 在同一事务完成 add-column/add-check/validate 后同时观察到 `AccessExclusiveLock=true` 与 `ShareUpdateExclusiveLock=true`，容器随后删除。全量 Maven 还按既有 local profile 将本机开发库 `nexus_quant.public` 从 V35 正常迁到 V36；未访问生产数据库。

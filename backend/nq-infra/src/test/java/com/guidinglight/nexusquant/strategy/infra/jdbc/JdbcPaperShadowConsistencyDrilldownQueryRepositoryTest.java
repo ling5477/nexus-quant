@@ -90,6 +90,7 @@ class JdbcPaperShadowConsistencyDrilldownQueryRepositoryTest {
                 + String.join("\n", jdbcTemplate.queryForObjectSqls);
         String normalized = sql.toLowerCase(Locale.ROOT);
         assertTrue(normalized.contains("from shadow_runs"));
+        assertTrue(normalized.contains("artifact_digest"));
         assertTrue(normalized.contains("from shadow_consistency_reports"));
         assertTrue(normalized.contains("from shadow_run_snapshots"));
         assertTrue(normalized.contains("from shadow_run_events"));

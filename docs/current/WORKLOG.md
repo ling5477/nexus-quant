@@ -18227,3 +18227,27 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - authority：GateX-1=`IMPLEMENTED|SELF_REVIEWED`；commit=`UNCOMMITTED`；CI=`NOT_RUN`；不得初始化 GateX-2。
 - result：`IMPLEMENTED / SELF_REVIEWED / STRATEGY_RELEASE_ARTIFACT_PRODUCTIONIZED / BACKEND_REGRESSION_GREEN / READY_TO_COMMIT`；P0=0/P1=0/P2=1/P3=1。
 - next：唯一下一动作=`NQ-GATEX-1-COMMIT-AND-PUSH`；本任务不 commit、不 push。
+
+## 2026-08-10 — GateX-2 provenance persistence migration implementation attempt-01
+
+- task：`NQ-GATEX-2-PROVENANCE-PERSISTENCE-MIGRATION-IMPLEMENTATION`；NQ-only、L 级 forward-only Flyway migration / domain-JDBC persistence / real PostgreSQL regression / self-review。
+- baseline：开始时 `dev` clean、staged empty；`HEAD == origin/dev == 2655f5144ba27cc88c2786de7f76633df3df462d`；GateX-1 exact-head CI run=`31358676688 / completed / success`，已收口为 `ACCEPTED|CI_GREEN`。
+- migration：新增 `V36__gate_x2_shadow_run_provenance.sql`；`shadow_runs.artifact_digest VARCHAR(64) NULL`，lowercase SHA-256 与 digest-requires-publish 两项 CHECK，先 `NOT VALID` 后 `VALIDATE`；无 `UPDATE`、无 backfill、无 unique、未修改历史 migration。
+- persistence：`ShadowRun` 增加 nullable digest 与派生 `LEGACY_UNBOUND / LEGACY_PUBLISH_ONLY / RELEASE_BOUND`；JDBC create/select/overview/drilldown 持久化并回载 provenance，lifecycle update 不触碰 `publish_id/artifact_digest`。
+- validation：focused 13/13；真实 PostgreSQL 17.7 fresh/upgrade 2/2；`nq-infra -am` BUILD SUCCESS；全后端 23 modules、1312 tests、0 failures、0 errors、17 existing/opt-in skipped。全量 local profile 将本机开发库从 V35 迁至 V36，未访问生产。
+- compatibility/security：legacy rows 不回填；invalid digest、digest without publish 均 fail-closed；同一 release 多 run 合法；两个 lifecycle sequence 证明 provenance immutable；随机 test schemas 全部清理。
+- boundary：API/frontend/Python/scheduler/runner admission/Release-to-Shadow admission/交易状态机/LIVE/credential/private endpoint/真实交易/AI/DH runtime 变更=`0`；未 commit、未 push，远端 GateX-2 CI=`NOT_RUN`。
+- result：`IMPLEMENTED / PROVENANCE_PERSISTENCE_COMPLETE / POSTGRESQL_REGRESSION_GREEN / PENDING_INDEPENDENT_MIGRATION_REVIEW`；P0=0/P1=0/P2=1/P3=1。P2 为目标规模 lock duration 未测；P3 为既有 Maven settings warning。
+- next：唯一下一动作=`NQ-GATEX-2-PROVENANCE-PERSISTENCE-MIGRATION-REVIEW`；不得提前初始化 GateX-3。
+
+## 2026-08-10 — GateX-2 provenance persistence migration review attempt-01
+
+- task：`NQ-GATEX-2-PROVENANCE-PERSISTENCE-MIGRATION-REVIEW`；NQ-only、L 级独立 migration/domain/JDBC review，允许仅修复明确 P0/P1。
+- baseline：`dev`；starting `HEAD == origin/dev == 2655f5144ba27cc88c2786de7f76633df3df462d`；进入时 19 个 GateX-2 staged files；authority=`IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`。
+- finding/fix：P1 为 idempotency collision 静默返回不同 release provenance 的旧行；新增 `ShadowRunIdempotencyConflictException`，create conflict 比较 `publish_id/artifact_digest` 并 fail-closed，unit/真实 PostgreSQL regression 证明旧行不变且错误不泄露 digest。
+- migration：V36 forward-only、nullable/no-default、无 backfill、无 unique、legacy 保持 null、约束与 multiplicity 正确。PostgreSQL 17.7 lock probe 证明 Flyway 单事务在 validate 后仍同时持有 `AccessExclusiveLock` 与 `ShareUpdateExclusiveLock`；记录为部署 P2。
+- validation：focused 14/14；disposable PostgreSQL fresh/upgrade 2/2；10,000-row lock probe rollback；全后端 23 modules、1313 tests、0 failures、0 errors、17 existing/opt-in skipped，BUILD SUCCESS。
+- boundary：GateX-3 admission/API/scheduler/runner/frontend/交易状态机/LIVE/credential/private endpoint/真实交易/AI/DH runtime 变更=`0`；未 commit、未 push，CI=`NOT_RUN`。
+- result：`PASS / MIGRATION_REVIEW_ACCEPTED / PROVENANCE_INVARIANTS_VERIFIED / POSTGRESQL_COMPATIBILITY_VERIFIED / READY_TO_COMMIT`；P0=0/P1=0（1 closed）/P2=1/P3=1。
+- authority：GateX-2=`REVIEW_ACCEPTED|READY_TO_COMMIT`；commit=`UNCOMMITTED`；CI=`NOT_RUN`。
+- next：唯一下一动作=`NQ-GATEX-2-COMMIT-AND-PUSH`；不得提前初始化 GateX-3。
