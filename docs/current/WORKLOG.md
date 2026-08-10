@@ -18191,3 +18191,27 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：route/API/DTO/query/cache/RBAC/backend/research/scripts/.github/migration/dependency/业务流程/LIVE/credential/real provider/AI/DH runtime 变更=`0`；未继续拆 workspace，未进入 0E/1，未 commit、未 push，远端 0D CI=`NOT_RUN`。
 - result：`IMPLEMENTED / SELF_REVIEWED / FRONTEND_SEMANTICS_UNIFIED / FRONTEND_REGRESSION_GREEN / READY_TO_COMMIT`；P0=0/P1=0/P2=0/P3=0。
 - next：唯一下一动作=`NQ-GATEX-0D-COMMIT-AND-PUSH`；不得提前初始化 GateX-0E。
+
+## 2026-08-10 — GateX-0E scoped query/config hygiene conditional audit attempt-01
+
+- task：`NQ-GATEX-0E-SCOPED-QUERY-CONFIG-HYGIENE-CONDITIONAL-IMPLEMENTATION`；NQ-only、post-CI authority reconciliation、定向 Query/Configuration 审计、条件实施。
+- baseline：`dev` clean；`HEAD == origin/dev == 885ed23375d0d8a58d9d10d2c4768f390322af93`；GateX-0D exact-head CI run=`31344357225 / completed / success`。
+- audit：strategy/validation/shadow/publish 已使用集中 query-key factory 与 feature hooks；未发现 key collision、漏 invalidation、重复 fetch 或 GateX-1 configuration ownership/type-safety blocker。
+- decision：代码层为 `SKIP / NOT_REQUIRED`，业务代码改动=`0`；validation scheduler annotation 的 key/default 局部重复仅列为非阻断 deferred hygiene。
+- blocker：governance contract schema `1.4.0` 不支持 `SKIPPED|NOT_REQUIRED` transition，且任务禁止修改 contract；allowlist 也不覆盖完整 current-control 同步文件，因此未制造 checker 失败的半 authority transition。
+- validation：Git preflight、exact-head CI、scoped inventory 通过；未运行 frontend/Maven（无业务代码变更）；authority/diff check 在收尾执行。
+- boundary：API/DTO/cache semantics/Spring assembly/config key/default/profile/backend/frontend/research/migration/LIVE/credential/real provider/AI/DH runtime 变更=`0`。
+- result：`BLOCKED / AUTHORITY_SKIP_TRANSITION_REQUIRED / NO_ARTIFICIAL_REFACTOR / GATEX_1_NOT_AUTHORIZED`；P0=0/P1=1/P2=1/P3=0。
+- next：独立治理任务增加并回归验证 GateX-0E skip transition，同时授权完整 current-control 同步；在其 exact-head CI green 前不得启动 GateX-1 productionization。
+
+## 2026-08-10 — GateX-0D post-CI acceptance 与 GateX-1 authority transition attempt-01
+
+- task：`NQ-GATEX-0D-POST-CI-ACCEPTANCE-AND-GATEX1-AUTHORITY-TRANSITION`；NQ-only、post-CI authority reconciliation、conditional batch closeout、fact-source sync。
+- baseline：`dev`；`HEAD == origin/dev == 885ed23375d0d8a58d9d10d2c4768f390322af93`；GateX-0D exact-head CI run=`31344357225 / completed / success / 10 jobs`。
+- 0D：正式接受为 `ACCEPTED|CI_GREEN`，implementation/acceptance head 均为 `885ed233...`。
+- 0E：保留上一轮 attempt-01 历史事实；最终按条件项记录为 `AUDITED / IMPLEMENTATION NOT REQUIRED`，不新增 `SKIPPED|NOT_REQUIRED` machine 状态，不制造代码重构。
+- authority：accepted batch 推进为 GateX-0D；work batch 直接初始化为 `GateX-1 / NOT_STARTED / NONE / NOT_RUN`；next action=`NQ-GATEX-1-STRATEGY-RELEASE-ARTIFACT-PRODUCTIONIZATION-IMPLEMENTATION`。
+- boundary：本轮只同步 current-control/evidence；Strategy Release service、artifact verifier、migration、persistence、admission、LIVE、credential、real provider、AI/DH runtime 变更=`0`。
+- validation：exact-head CI 已核验；PowerShell 5.1/7 authority checker 均 `errors=0`，next action 解析为 `IMPLEMENTATION`；`git diff --check` 通过。首轮 ROADMAP canonical 句式不匹配已完成 RCA、最小修正并重跑。
+- result：`PASS / GATEX_0D_ACCEPTED / GATEX_0E_CONDITIONAL_ITEM_NOT_REQUIRED / NO_NEW_LIFECYCLE_STATE / GATEX_1_AUTHORIZED / READY_TO_COMMIT`；P0=0/P1=0/P2=1/P3=0。
+- next：`NQ-GATEX-1-STRATEGY-RELEASE-ARTIFACT-PRODUCTIONIZATION-IMPLEMENTATION`；本轮只授权后续独立任务，未开始 production code。

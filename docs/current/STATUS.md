@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatew-freeze
 last_frozen_gate_commit=16376de28be78eea58afbe1374847ee07ca2ccc7
 active_gate=GateX
 active_gate_status=IN_PROGRESS|NOT_FROZEN
-accepted_batch=GateX-0C
+accepted_batch=GateX-0D
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=46392213495652f6a09005148cc160fd2882adb9
-accepted_batch_acceptance_head=46392213495652f6a09005148cc160fd2882adb9
-accepted_batch_ci_run=31325824949
-work_batch=GateX-0D
-work_batch_status=IMPLEMENTED|SELF_REVIEWED
-work_batch_commit=UNCOMMITTED
+accepted_batch_implementation_commit=885ed23375d0d8a58d9d10d2c4768f390322af93
+accepted_batch_acceptance_head=885ed23375d0d8a58d9d10d2c4768f390322af93
+accepted_batch_ci_run=31344357225
+work_batch=GateX-1
+work_batch_status=NOT_STARTED
+work_batch_commit=NONE
 work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEX-0D-COMMIT-AND-PUSH
+next_action=NQ-GATEX-1-STRATEGY-RELEASE-ARTIFACT-PRODUCTIONIZATION-IMPLEMENTATION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -68,7 +68,9 @@ nq-current-authority:end -->
 - GateX-0A：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；canonical implementation commit=`49851276cdbbe7daf49506cc3af327e42973788b`，merge acceptance head=`61d9292b0b77d9c25f36232bee9512b87ac256c6`，exact-head `NQ CI Baseline` run=`31318868410 / completed / success`。Strategy↔Trading 与 audit port ownership 已修复，bounded-context ArchUnit guardrails 与 backend regression 已由该 CI 接受。
 - GateX-0B：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`108a14d14906d6fa354349c66d35a2ae6967cebf`，exact-head `NQ CI Baseline` run=`31321821962 / completed / success`。生产 class/package 已改用稳定 capability/domain naming，新配置 key 与 `nq.gatew.*` legacy alias 的确定性兼容已覆盖测试；未改变公开 API、数据库、交易状态机、LIVE 或真实交易边界。
 - GateX-0C：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`46392213495652f6a09005148cc160fd2882adb9`，exact-head `NQ CI Baseline` run=`31325824949 / completed / success`。`StrategyValidationPage.tsx` 已收敛为 URL、提交态与 feature composition 层，既有 API、query/cache、RBAC、review lifecycle 与视觉行为保持不变。
-- GateX-0D：`IMPLEMENTED / SELF REVIEWED / UNCOMMITTED`（已实现 / 已自审 / 尚未提交）；状态展示已收敛到 canonical `StatusTag`，兼容 wrapper 不再维护独立映射；NQ 业务 UI 固定红涨绿跌且与系统成功/危险色解耦，普通用户 UI 的工程阶段标签污染已关闭。本地 frontend build、定向 Chromium smoke 与静态语义检查均通过。
+- GateX-0D：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`885ed23375d0d8a58d9d10d2c4768f390322af93`，exact-head `NQ CI Baseline` run=`31344357225 / completed / success / 10 jobs`。状态展示已收敛到 canonical `StatusTag`，兼容 wrapper 不再维护独立映射；NQ 业务 UI 固定红涨绿跌且与系统成功/危险色解耦，普通用户 UI 的工程阶段标签污染已关闭。
+- GateX-0E：`AUDITED / IMPLEMENTATION NOT REQUIRED`（已审计 / 无需实施）。定向审计未发现 GateX-1 会复制的错误 Query 模式、cache correctness blocker 或 release/shadow configuration ownership blocker；validation scheduler 的局部 `@Scheduled`/default 重复保留为后置 hygiene。0E 是条件性治理项，不进入 machine lifecycle，未新增 skip 状态。
+- GateX-1：`NOT STARTED`（未开始）。只已完成 authority 初始化；Strategy Release / Artifact production code、migration、persistence 与 Release-to-Shadow admission 均尚未实施。
 - GateW-3 dry-run order preview：只包含 OKX Spot、BUY/SELL、LIMIT、internal application、local persisted facts、read-only diagnostic；minimum notional、fee、远端 permission 与 runtime balance/risk 继续保持显式 UNKNOWN / NOT_EVALUATED，`executionReadiness=BLOCKED`，不得推导交易授权。
 - GateW-3 read-only reconciliation：只包含 OKX Spot、最多 3 个 allowlisted symbols、1 page/100 records/24h typed private `Read` snapshot、bounded local SELECT 与 pure comparator；默认不装配，无 real smoke/credential/network/repair/persistence/scheduler，`executionReadiness=BLOCKED`。CI acceptance 只接受该 side-effect-free contract，不证明真实 permission 或账户健康。
 - GateW-3 risk preflight：只消费 immutable preview/reconciliation result 与显式 local metadata snapshots；不调用 `PreTradeRiskService`/registry/stateful rules，不构造 `PlaceOrderCommand`，无 DB/network/write。minimum notional、fee、remote permission 保持 UNKNOWN，stateful risk/balance/position 等保持 NOT_EVALUATED，`executionReadiness=BLOCKED`、`tradingAuthorized=false`。
@@ -102,4 +104,4 @@ updated_commit=16376de28be78eea58afbe1374847ee07ca2ccc7
 
 ## 4. 下一允许动作
 
-GateX-0C 已由 exact-head CI 接受；GateX-0D 已实现、自审并完成本地前端回归，但尚未提交且 CI 未运行。治理 authority 中唯一下一动作精确为 `NQ-GATEX-0D-COMMIT-AND-PUSH`；不得提前初始化 GateX-0E、进入 GateX-1 或 Strategy Release productionization，不得创建 Attempt-14、开启 LIVE、下单、撤单、转账或提现。
+GateX-0D 已由 exact-head CI 接受；GateX-0E 条件项已完成定向审计且无需实施，不进入 machine lifecycle。治理 authority 中唯一下一动作精确为 `NQ-GATEX-1-STRATEGY-RELEASE-ARTIFACT-PRODUCTIONIZATION-IMPLEMENTATION`；该动作只授权后续独立任务开始 GateX-1，不表示本轮已实现 Strategy Release / Artifact production capability。不得创建 Attempt-14、开启 LIVE、下单、撤单、转账或提现。

@@ -12778,3 +12778,31 @@ Known warnings：E2E 有既存 Ant Design v5 / React 19 compatibility console wa
 | static semantic contract | PASS | canonical StatusTag=1；wrapper mapping=0；红涨绿跌；success/danger 独立；用户 UI pollution=0；合法 Gate residual=48；`REVIEW_REQUIRED=0`；tabular nums 保持 |
 
 Environment：Windows + Node.js + Vite 8.0.3 + Chromium。Known warnings：既存 Ant Design deprecated、React 19 compatibility 与 one disconnected form console warning；均不阻断。未运行全量 frontend E2E、Maven、Python 或远端 CI：本轮未修改对应模块，且 work batch 尚未提交。Blocking status：P0=0/P1=0/P2=0/P3=0；本地回归无 blocker，CI=`NOT_RUN`，唯一下一动作=`NQ-GATEX-0D-COMMIT-AND-PUSH`。
+
+## 2026-08-10 — GateX-0E scoped query/config hygiene conditional audit attempt-01
+
+| Command / Check | Result | Scope / Environment / Warning |
+| --- | --- | --- |
+| `git fetch origin` + branch/worktree/HEAD preflight | PASS（通过） | `dev` clean；`HEAD == origin/dev == 885ed23375d0d8a58d9d10d2c4768f390322af93` |
+| `gh run list --commit 885ed233...` | PASS（通过） | GateX-0D exact-head `NQ CI Baseline` run `31344357225 / completed / success` |
+| scoped Query inventory | PASS（通过） | strategy/validation/shadow/publish 使用集中 query-key factory 与 feature hooks；无 GateX-1 cache correctness blocker |
+| scoped Configuration inventory | PASS（通过） | validation scheduler 已使用 typed properties；annotation key/default 重复为非阻断 deferred hygiene |
+| governance skip-transition inspection | BLOCKED（阻断） | contract schema `1.4.0` 不支持 `SKIPPED|NOT_REQUIRED`，任务禁止修改 governance contract |
+| frontend build/smoke、backend Maven | NOT RUN（未运行） | 无业务代码修改，按任务不人为制造测试 |
+
+Blocking status：P0=0/P1=1/P2=1/P3=0。P1 为 `AUTHORITY_SKIP_TRANSITION_REQUIRED`；GateX-0D CI 事实已核验，但本轮未执行不完整 authority transition，GateX-1 未获授权。完整证据见 `docs/current/evidence/gate-x/NQ-GATEX-0E-SCOPED-QUERY-CONFIG-HYGIENE-CONDITIONAL-IMPLEMENTATION.attempt-01.md`。
+
+## 2026-08-10 — GateX-0D post-CI acceptance 与 GateX-1 authority transition attempt-01
+
+| Command / Check | Result | Scope / Environment / Warning |
+| --- | --- | --- |
+| `git fetch origin` + branch/worktree/HEAD preflight | PASS（通过） | `dev`；仅存在已授权的上一轮 0E evidence/ledger；`HEAD == origin/dev == 885ed23375d0d8a58d9d10d2c4768f390322af93` |
+| `gh run view 31344357225 --json ...` | PASS（通过） | `NQ CI Baseline / completed / success / 10 jobs`；headSha 精确匹配 GateX-0D commit |
+| Windows PowerShell 5.1 authority checker | PASS（通过） | `AUTHORITY_CHECK errors=0`；next action 解析为合法 `IMPLEMENTATION` |
+| PowerShell 7 authority checker | PASS（通过） | `AUTHORITY_CHECK errors=0`；authority 与 ROADMAP/README 一致 |
+| `git diff --check` | PASS（通过） | whitespace errors=`0`；仅有既有 Git LF→CRLF working-copy warning |
+| frontend/backend/Python product tests | NOT RUN（未运行） | 本轮不修改业务代码；复用 GateX-0D exact-head CI 的完整 10-job evidence |
+
+首轮 authority checker 返回 `CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH source=ROADMAP field=next_action expected=1 actual=0`；根因为 ROADMAP 未使用 checker 既有 canonical “当前唯一治理动作是”独立 bullet。只调整该句式后，PowerShell 5.1/7 均重跑通过，未修改 checker 或 governance contract。
+
+Boundary：未修改 governance contract、checker、governance tests、backend、frontend、research、migration、deploy、CI workflow 或 GateW archive；LIVE=`DISABLED`。Blocking status：P0=0/P1=0/P2=1/P3=0；P2 为既有 validation scheduler 后置 hygiene，不阻断 GateX-1。
