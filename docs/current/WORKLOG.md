@@ -18251,3 +18251,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - result：`PASS / MIGRATION_REVIEW_ACCEPTED / PROVENANCE_INVARIANTS_VERIFIED / POSTGRESQL_COMPATIBILITY_VERIFIED / READY_TO_COMMIT`；P0=0/P1=0（1 closed）/P2=1/P3=1。
 - authority：GateX-2=`REVIEW_ACCEPTED|READY_TO_COMMIT`；commit=`UNCOMMITTED`；CI=`NOT_RUN`。
 - next：唯一下一动作=`NQ-GATEX-2-COMMIT-AND-PUSH`；不得提前初始化 GateX-3。
+
+## 2026-08-10 — GateX-3 Release-to-Shadow admission implementation attempt-01
+
+- task：`NQ-GATEX-3-RELEASE-TO-SHADOW-ADMISSION-IMPLEMENTATION`；NQ-only、L 级 backend pure decision / provenance enforcement / regression / self-review。
+- baseline：开始时 `dev` clean、staged empty；`HEAD == origin/dev == 894e76bf69dbcf1574be6c993f18ca7913033564`；GateX-2 exact-head CI run=`31379536899 / completed / success`，已收口为 `ACCEPTED|CI_GREEN`。
+- implementation：新增 immutable admission request/decision/creation plan 与无依赖 `ReleaseToShadowAdmissionService`；仅 `ELIGIBLE/BLOCKED`，任何缺失、UNKNOWN、legacy binding、provenance/verification/safety mismatch 均 fail-closed；eligible 只生成 plan，四项 runtime/trading side-effect facts 固定为 false。
+- integration：复用 production `StrategyRelease`、artifact verification result、`StrategyValidationDecision` 与 `ShadowRunReleaseBindingMode.derive(...)`；固定字段顺序、UTF-8、四字节长度前缀 SHA-256 生成确定性 idempotency key，trace 不参与 key。
+- validation：focused 11/11；`nq-core -am` 450 tests、0 failures / 0 errors / 4 skipped；disposable PostgreSQL 17 + CI legacy fixture 下全后端 23 modules、1324 tests、0 failures / 0 errors / 21 existing/opt-in skipped；两项 ArchUnit canonical suites 各 6/6；IDE 无 error。
+- RCA/environment：初始 5432 未运行导致 3 个 local context failures；Windows service 无控制权限，改用一次性本地 cluster。首轮连库全量仅因缺 CI fixture 失败，按既有 workflow 补齐唯一无凭证 PAPER/ACTIVE fixture 后重跑通过；cluster 已停止并删除，本机 service 保持 stopped。
+- boundary：persistence/migration/schema/API/frontend/research/scheduler/runner/Shadow Run creation/交易状态机/LIVE/credential/private endpoint/真实交易/AI/DH runtime 变更=`0`；prototype evidence 保留。
+- result：`IMPLEMENTED / SELF_REVIEWED / RELEASE_TO_SHADOW_ADMISSION_PRODUCTIONIZED / NO_SIDE_EFFECTS_VERIFIED / BACKEND_REGRESSION_GREEN / READY_TO_COMMIT`；P0=0/P1=0/P2=1/P3=1。
+- next：唯一下一动作=`NQ-GATEX-3-COMMIT-AND-PUSH`；不得提前初始化 GateX-4。

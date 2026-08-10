@@ -6,9 +6,9 @@
 
 <!-- nq-current-summary:start -->
 - 最近冻结 Gate 为 GateW：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-w/](../gates/gate-w/)。
-- GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateX-0A/0B/0C/0D/1=`ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateX-0E=`AUDITED / IMPLEMENTATION NOT REQUIRED`（已审计 / 无需实施），GateX-2=`REVIEW ACCEPTED / READY TO COMMIT`（复核已接受 / 可进入提交前复核）。
+- GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateX-0A/0B/0C/0D/1/2=`ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateX-0E=`AUDITED / IMPLEMENTATION NOT REQUIRED`（已审计 / 无需实施），GateX-3=`IMPLEMENTED / SELF REVIEWED`（已实现 / 已自审），尚未 commit/push 或运行远端 CI。
 - Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEX-2-COMMIT-AND-PUSH`；不得提前实现 GateX-3 admission，exact transition 以 [STATUS.md](STATUS.md) 为准。
+- 当前唯一动作是 `NQ-GATEX-3-COMMIT-AND-PUSH`；不得提前初始化 GateX-4，exact transition 以 [STATUS.md](STATUS.md) 为准。
 - 当前 runtime release、current work commit 与精确 runtime 标识只从 [STATUS.md](STATUS.md) 获取，本索引不复制其值。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->

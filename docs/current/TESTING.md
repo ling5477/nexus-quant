@@ -12869,3 +12869,24 @@ RCA：首次 focused Maven 因 PowerShell 未引用 `-Dsurefire.failIfNoSpecifie
 Boundary：GateX-3 admission、API、scheduler、runner 新行为、frontend、交易状态机、LIVE、credential/private endpoint、真实交易、AI/DH runtime 变更均为 0。Blocking status：P0=0/P1=0（1 个已关闭）/P2=1/P3=1；P2 为部署锁窗口，P3 为既有 Maven settings profile warning。
 
 完整证据：[evidence/gate-x/NQ-GATEX-2-PROVENANCE-PERSISTENCE-MIGRATION-REVIEW.attempt-01.md](evidence/gate-x/NQ-GATEX-2-PROVENANCE-PERSISTENCE-MIGRATION-REVIEW.attempt-01.md)。
+
+## 2026-08-10 — GateX-3 Release-to-Shadow admission implementation attempt-01
+
+| Command / Check | Result | Scope / Environment / Warning |
+| --- | --- | --- |
+| branch/worktree/HEAD + GateX-2 exact-head CI preflight | PASS（通过） | 开始时 `dev` clean、staged empty；`HEAD == origin/dev == 894e76bf69dbcf1574be6c993f18ca7913033564`；GateX-2 CI run=`31379536899 / completed / success` |
+| focused `ReleaseToShadowAdmissionServiceTest` | PASS（通过） | 11 tests，0 failures / 0 errors / 0 skipped；覆盖 eligible、provenance/verification/safety blockers、确定性和无依赖证明 |
+| `mvn -f backend/pom.xml -pl nq-core -am test` | PASS（通过） | 450 tests，0 failures / 0 errors / 4 skipped；BUILD SUCCESS |
+| 首轮 `mvn -f backend/pom.xml test` | FAIL（失败） | 本机 5432 未运行；3 个既有 local Spring context tests 因 PostgreSQL connection refused 失败，admission compile/unit tests 已通过 |
+| disposable PostgreSQL 首轮全后端 | FAIL（失败） | PostgreSQL 17 一次性本地集群已连通并完成 Flyway；仅 `ResearchBacktestHappyPathLocalTest` 因缺 CI legacy account fixture 返回 `EmptyResultDataAccessException` |
+| disposable PostgreSQL + CI legacy fixture 全后端重跑 | PASS（通过） | 23 modules；1324 tests，0 failures / 0 errors / 21 existing/opt-in skipped；BUILD SUCCESS；fixture 仅有一条 PAPER/ACTIVE account，exchange account/credential rows 均为 0 |
+| `PackageBoundaryArchTest` / `ModuleBoundaryArchTest` | PASS（通过） | 显式 Maven 命令 BUILD SUCCESS；最终两个 canonical suite reports 各 6 tests，0 failures / 0 errors / 0 skipped |
+| IDE reformat / problems | PASS WITH WARNINGS（通过但有警告） | 5 个新增 Java 文件格式化成功；无 error，只有 1 个冗余 null 条件、2 个重复片段 weak warning 和 1 个 test helper data-flow warning，不影响行为 |
+| authority / current link / diff checks | PASS（通过） | authority `errors=0`；current/root Markdown 199 links checked、0 errors、1 个既有 `GATEJ_TEST_PLAN.md` warning；tracked diff whitespace errors=0 |
+| frontend / Python / migration /远端 CI | NOT RUN（未运行） | 本轮不改 frontend、Python、schema/migration；远端 CI 必须在 commit/push 后按 exact-head 运行 |
+
+RCA：Windows PostgreSQL service 初始为 `Stopped/Manual`，当前会话无服务控制权限；Docker engine 未运行。随后使用本机 PostgreSQL 17 binaries 在用户临时目录创建仅监听 `127.0.0.1:5432` 的 disposable cluster。第一次连库回归暴露 CI workflow 的既有 legacy account fixture 前置，按 `.github/workflows/ci.yml` 插入唯一 PAPER/ACTIVE fixture 后全量重跑通过。测试完成后停止集群并删除全部临时数据；本机 service 恢复并保持 `Stopped/Manual`。链接 checker 首次遗漏 mandatory `Roots` 参数且未执行检查；按脚本 contract 显式传入 root/current roots 后重跑通过，未把失败轮次写成通过。
+
+Known warnings：Maven 既有 SLF4J no-provider、Mockito dynamic-agent/JDK warning 与 21 个 existing/opt-in skipped tests；IDE 仅报非阻断 data-flow/duplicate warnings。Blocking status：P0=0/P1=0/P2=1/P3=1；P2 为未来 GateX-4 创建侧必须消费 admission plan 且不得把 ELIGIBLE 解释为交易授权，P3 为既有工具链 warnings。本地实现与回归无 blocker，CI=`NOT_RUN`。
+
+完整证据：[evidence/gate-x/NQ-GATEX-3-RELEASE-TO-SHADOW-ADMISSION-IMPLEMENTATION.attempt-01.md](evidence/gate-x/NQ-GATEX-3-RELEASE-TO-SHADOW-ADMISSION-IMPLEMENTATION.attempt-01.md)。

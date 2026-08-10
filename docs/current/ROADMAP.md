@@ -29,7 +29,9 @@ GateX-0E AUDITED / IMPLEMENTATION NOT REQUIRED
   ↓
 GateX-1 ACCEPTED / CI GREEN
   ↓
-GateX-2 REVIEW ACCEPTED / READY TO COMMIT / UNCOMMITTED / CI NOT RUN
+GateX-2 ACCEPTED / CI GREEN
+  ↓
+GateX-3 IMPLEMENTED / SELF REVIEWED / UNCOMMITTED / CI NOT RUN
 ```
 
 ## 下一允许动作
@@ -38,7 +40,7 @@ GateX-2 REVIEW ACCEPTED / READY TO COMMIT / UNCOMMITTED / CI NOT RUN
 - GateW freeze commit=`16376de28be78eea58afbe1374847ee07ca2ccc7`；exact-head CI run=`31299729114 / completed / success / 10 jobs / bad=0`。
 - GateW Attempt-13=`COMPLETED / ACCEPTED`（已完成 / 已接受）；production deployment=`STOPPED`；production soak=`COMPLETED`。656 条样本与 hash chain 已接受并 sealed，worker 已停止。
 - GateW acceptance batch：`GateW-ATTEMPT-13-168H-ACCEPTANCE / ACCEPTED / CI GREEN`；acceptance head=`20cf7970dfb414868da3e42dddaefc5965246570`，CI run=`31295184056`。
-- GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateX-0A/0B/0C/0D/1 已接受，GateX-0E 条件项已审计且无需实施；GateX-2 独立迁移复核已接受并可进入提交前复核。
+- GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateX-0A/0B/0C/0D/1/2 已接受，GateX-0E 条件项已审计且无需实施；GateX-3 已实现并自审，尚未 commit/push 或运行远端 CI。
 - GateX-PLAN：`BASELINE ESTABLISHED / READY TO COMMIT`（基线已建立 / 可进入提交前复核）；实施基线见 [GATEX_PLAN.md](GATEX_PLAN.md)。
 - GateX-0A：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；Strategy↔Trading 与 audit port ownership P1 已关闭，merge acceptance head 的 exact-head CI 已成功。
 - GateX-0B：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；acceptance head=`108a14d14906d6fa354349c66d35a2ae6967cebf`，exact-head CI run=`31321821962 / completed / success`。
@@ -46,8 +48,9 @@ GateX-2 REVIEW ACCEPTED / READY TO COMMIT / UNCOMMITTED / CI NOT RUN
 - GateX-0D：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`885ed23375d0d8a58d9d10d2c4768f390322af93`，exact-head CI run=`31344357225 / completed / success / 10 jobs`。
 - GateX-0E：`AUDITED / IMPLEMENTATION NOT REQUIRED`（已审计 / 无需实施）；未发现 GateX-1 Query/cache/config blocker，条件项不进入 machine lifecycle，未新增 skip 状态。
 - GateX-1：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`2655f5144ba27cc88c2786de7f76633df3df462d`，exact-head CI run=`31358676688 / completed / success`。production capability 只覆盖 Strategy Release aggregate、artifact verifier、只读 provenance service/JDBC adapter，不包含 migration、persistence write 或 admission。
-- GateX-2：`REVIEW ACCEPTED / READY TO COMMIT / UNCOMMITTED / CI NOT RUN`（复核已接受 / 可进入提交前复核 / 未提交 / CI 未运行）；idempotency provenance collision 的 P1 已关闭，`V36`、domain/JDBC persistence、真实 PostgreSQL fresh/upgrade、锁观察与全后端回归均完成；保留 Flyway 单事务锁持有的部署 P2，不表示 committed 或 CI green。
-- 当前唯一治理动作是 `NQ-GATEX-2-COMMIT-AND-PUSH`。
+- GateX-2：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`894e76bf69dbcf1574be6c993f18ca7913033564`，exact-head CI run=`31379536899 / completed / success`；保留 Flyway 单事务锁持有的部署 P2。
+- GateX-3：`IMPLEMENTED / SELF REVIEWED / UNCOMMITTED / CI NOT RUN`（已实现 / 已自审 / 未提交 / CI 未运行）；production capability 只覆盖 fail-closed Release-to-Shadow admission 纯决策与不可变 `ShadowRunCreationPlan`，不创建 Shadow Run，不引入持久化、外部 IO 或交易副作用。
+- 当前唯一治理动作是 `NQ-GATEX-3-COMMIT-AND-PUSH`。
 
 ## GateW 已冻结边界
 
