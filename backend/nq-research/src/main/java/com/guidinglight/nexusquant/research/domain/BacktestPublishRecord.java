@@ -23,8 +23,58 @@ public record BacktestPublishRecord(
         String failureMessage,
         Instant publishedAt,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        String artifactStorageKey,
+        String manifestStorageKey
 ) {
+    public BacktestPublishRecord {
+        new BacktestPublishArtifactLocator(artifactStorageKey, manifestStorageKey);
+    }
+
+    public BacktestPublishRecord(
+            String publishRecordId,
+            String backtestRunId,
+            String researchConfigId,
+            String backtestConfigId,
+            String sourceStrategyId,
+            String evalReportId,
+            String targetStrategyDefinitionId,
+            String strategyVersionId,
+            PublishStatus publishStatus,
+            String publishName,
+            String publishSnapshotJson,
+            String versionSnapshotJson,
+            String evaluationSummaryJson,
+            String failureCode,
+            String failureMessage,
+            Instant publishedAt,
+            Instant createdAt,
+            Instant updatedAt
+    ) {
+        this(
+                publishRecordId,
+                backtestRunId,
+                researchConfigId,
+                backtestConfigId,
+                sourceStrategyId,
+                evalReportId,
+                targetStrategyDefinitionId,
+                strategyVersionId,
+                publishStatus,
+                publishName,
+                publishSnapshotJson,
+                versionSnapshotJson,
+                evaluationSummaryJson,
+                failureCode,
+                failureMessage,
+                publishedAt,
+                createdAt,
+                updatedAt,
+                null,
+                null
+        );
+    }
+
     public BacktestPublishRecord(
             String publishRecordId,
             String backtestRunId,
@@ -61,8 +111,16 @@ public record BacktestPublishRecord(
                 failureMessage,
                 publishedAt,
                 createdAt,
-                updatedAt
+                updatedAt,
+                null,
+                null
         );
+    }
+
+    public ArtifactLocatorBindingStatus artifactLocatorBindingStatus() {
+        return artifactStorageKey == null
+                ? ArtifactLocatorBindingStatus.LEGACY_ARTIFACT_UNBOUND
+                : ArtifactLocatorBindingStatus.PERSISTENT_ARTIFACT_BOUND;
     }
 
     public PublishSummary toSummary() {
@@ -74,5 +132,9 @@ public record BacktestPublishRecord(
                 backtestRunId
         );
     }
-}
 
+    public enum ArtifactLocatorBindingStatus {
+        LEGACY_ARTIFACT_UNBOUND,
+        PERSISTENT_ARTIFACT_BOUND
+    }
+}

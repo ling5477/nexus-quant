@@ -12890,3 +12890,96 @@ RCA：Windows PostgreSQL service 初始为 `Stopped/Manual`，当前会话无服
 Known warnings：Maven 既有 SLF4J no-provider、Mockito dynamic-agent/JDK warning 与 21 个 existing/opt-in skipped tests；IDE 仅报非阻断 data-flow/duplicate warnings。Blocking status：P0=0/P1=0/P2=1/P3=1；P2 为未来 GateX-4 创建侧必须消费 admission plan 且不得把 ELIGIBLE 解释为交易授权，P3 为既有工具链 warnings。本地实现与回归无 blocker，CI=`NOT_RUN`。
 
 完整证据：[evidence/gate-x/NQ-GATEX-3-RELEASE-TO-SHADOW-ADMISSION-IMPLEMENTATION.attempt-01.md](evidence/gate-x/NQ-GATEX-3-RELEASE-TO-SHADOW-ADMISSION-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-10 — GateX-4 minimal API/UI closure implementation attempt-01
+
+| Command / Check | Result | Scope / Environment / Warning |
+| --- | --- | --- |
+| Git / exact-head CI preflight | PASS（通过） | `dev` clean、staged empty；`HEAD == origin/dev == 5f4824eecaac5cffbbc314fb8f767bd6ba45c29f`；GateX-3 run=`31391541813 / completed / success` |
+| existing API/UI + artifact-root inventory | BLOCKED（阻断） | production service 需要 caller 提供 `trustedRoot + manifest`；publish provenance/config/API 无服务端受控绑定，命中 `SAFE_ARTIFACT_ROOT_BINDING_MISSING` |
+| `scripts/docs/check-current-authority.ps1` | PASS（通过） | GateX-3=`ACCEPTED|CI_GREEN`；GateX-4=`BLOCKED`；`errors=0` |
+| `scripts/docs/check-doc-links.ps1 -Roots @('README.md','docs/current')` | PASS WITH WARNING（通过但有警告） | 200 links checked、0 errors、1 个既有 `GATEJ_TEST_PLAN.md` warning；首次数组参数误传为单字符串而检查 0 links，修正调用后重跑通过 |
+| `git diff --check` | PASS（通过） | whitespace errors=`0`；仅既有 LF→CRLF warning |
+| backend focused/full/ArchUnit | NOT RUN（未运行） | 未修改 product code；mandatory safety prerequisite 阻断后停止 |
+| frontend build / targeted Playwright | NOT RUN（未运行） | 未修改 frontend；未用 mock 绕过 production artifact binding 缺口 |
+
+Boundary：endpoint/DTO/query/UI/mutation/migration/DB write/Shadow creation/scheduler/runner/trading/LIVE/credential/private endpoint/真实交易所/AI/DH runtime 变更均为 0。Blocking status：P0=0/P1=1（`SAFE_ARTIFACT_ROOT_BINDING_MISSING` 未关闭）/P2=0/P3=1（工具降级，不影响结论可信度）。
+
+完整证据：[evidence/gate-x/NQ-GATEX-4-MINIMAL-API-UI-CLOSURE-IMPLEMENTATION.attempt-01.md](evidence/gate-x/NQ-GATEX-4-MINIMAL-API-UI-CLOSURE-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-10 — GateX-4 safe artifact root binding implementation attempt-01
+
+| Command / Check | Result | Scope / Environment / Warning |
+| --- | --- | --- |
+| special staged baseline / Git / authority | PASS（通过） | 仅保留允许的 7 个 staged blocker/current docs；`dev`；`HEAD == origin/dev == 5f4824e...`；GateX-3 accepted、GateX-4 blocked、LIVE disabled、authority `errors=0` |
+| required artifact storage search | BLOCKED（阻断） | backend/research/current/drafts 无 production server-owned locator、固定 artifact layout、production manifest filename 或 trusted-root configuration |
+| publish metadata audit | BLOCKED（阻断） | `backtest_publish_records` 与三类 snapshot 只保存发布映射、策略版本和评估摘要，不含 artifact/storage locator |
+| Python artifact writer audit | NOT A PRODUCTION LOCATOR（不是 production locator） | `write_evaluation_artifact(path, ...)` 接受 caller-supplied `Path` 并创建父目录；没有固定输出根或 publish identity binding |
+| path/verifier/Maven/ArchUnit regression | NOT RUN（未运行） | 选择 C 后按任务立即 fail-fast；未写 product code、typed config、migration 或 tests，不能把设计目标写成已验证行为 |
+| authority / docs links / diff checks | PASS WITH WARNING（通过但有警告） | authority `errors=0`；202 links checked、0 errors、1 个既有 `GATEJ_TEST_PLAN.md` warning；tracked diff whitespace errors=0，另有既有 LF→CRLF warning |
+
+Blocking status：P0=0/P1=1（原 `SAFE_ARTIFACT_ROOT_BINDING_MISSING` 未关闭，根因收敛为 `PERSISTENT_ARTIFACT_LOCATOR_REQUIRED`）/P2=0/P3=1（工程 MCP 不可用，已按规则降级到 PowerShell + `rg`）。API/frontend/Shadow/trading/LIVE/credential/private endpoint/真实交易所/AI/DH runtime 变更均为 0。
+
+完整证据：[evidence/gate-x/NQ-GATEX-4-SAFE-ARTIFACT-ROOT-BINDING-IMPLEMENTATION.attempt-01.md](evidence/gate-x/NQ-GATEX-4-SAFE-ARTIFACT-ROOT-BINDING-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-10 — GateX-4 persistent artifact locator design-blocker authority transition attempt-01
+
+| Command / Check | Result | Scope / Environment / Warning |
+| --- | --- | --- |
+| `git fetch origin` + special staged baseline | PASS（通过） | `dev`；`HEAD == origin/dev == 5f4824e...`；仅允许的 9 个 GateX-4 blocker/current evidence baseline，无 mixed worktree |
+| GateX-4A evidence review | PASS（通过） | schema/security review=`PASS`、`SELECTED DESIGN=A`、P0=0；确认 design resolved 但 V37/repository/config/resolver/runtime 均未实现 |
+| governance mapping probe | PASS（通过） | `NOT_STARTED → IMPLEMENTATION`；candidate action type=`IMPLEMENTATION`；`GateX-4B` work-batch mapping=`True` |
+| Windows PowerShell 5.1 authority checker | PASS（通过） | `GateX-4B / NOT_STARTED / NONE / NOT_RUN`；next action=`NQ-GATEX-4B-PERSISTENT-ARTIFACT-LOCATOR-MIGRATION-IMPLEMENTATION`；`errors=0` |
+| PowerShell 7 authority checker | PASS（通过） | 与 Windows PowerShell 5.1 结果一致；`errors=0` |
+| `git diff --check` | PASS（通过） | whitespace errors=0；仅 LF→CRLF warning |
+| cached diff / staged scope / docs links | PASS WITH WARNING（通过但有警告） | `git diff --cached --check` PASS；10 个 staged 路径均在 allowlist，unexpected/unstaged/forbidden=`0/0/0`；203 links、0 errors、1 个既有 historical-ledger warning |
+| backend/frontend/Python/PostgreSQL tests | NOT RUN（未运行） | docs-only authority sync；未创建 V37、未改 product code、未连接数据库 |
+
+Boundary：只同步 current authority/ledger/entry summary 并新增 evidence；governance/backend/frontend/research/migration/deploy/CI/LIVE/交易变更均为 0。GateX-4 原 API/UI 仍未完成；本次只把设计整改切换为 `GateX-4B / NOT_STARTED`。
+
+完整证据：[evidence/gate-x/NQ-GATEX-4-PERSISTENT-ARTIFACT-LOCATOR-REQUIRED-BLOCKED.attempt-01.md](evidence/gate-x/NQ-GATEX-4-PERSISTENT-ARTIFACT-LOCATOR-REQUIRED-BLOCKED.attempt-01.md)。
+
+## 2026-08-10 — GateX-4B persistent artifact locator migration implementation attempt-01
+
+| Command / Check | Result | Scope / Environment / Warning |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-research,nq-infra -am '-Dtest=BacktestPublishServiceTest,BacktestPublishArtifactLocatorMigrationContractTest' '-Dsurefire.failIfNoSpecifiedTests=false' test` | PASS（通过） | service 3/3；migration contract 1/1；`BUILD SUCCESS` |
+| localhost disposable PostgreSQL 17.7 focused integration | PASS（通过） | 显式 `nq.artifact-locator.postgres.required=true`；fresh `V1→V37` 与 upgrade `V36→V37` 2/2，`Flyway.validate` 通过；仅创建/删除随机 `gatex4b_*` schema |
+| PostgreSQL constraints / JDBC / trigger | PASS（通过） | legacy no-backfill/read、valid pair、partial/null/invalid format rejection、129 chars、empty、slash/backslash/colon/`..` rejection、JDBC idempotent/conflict、FAILED→SUCCEEDED first bind、rebind/clear rejection、无 UNIQUE 时跨 release duplicate 均通过 |
+| `mvn -f backend/pom.xml -pl nq-research,nq-infra,nq-app -am test` | PASS（通过） | 23-module focused reactor；`nq-app` 246 tests、0 failures、0 errors、15 skipped；`BUILD SUCCESS` |
+| `mvn -f backend/pom.xml test` | PASS（通过） | 全后端 23 modules `BUILD SUCCESS`；`nq-app` 246 tests、0 failures、0 errors、15 skipped |
+| `ModuleBoundaryArchTest` / `PackageBoundaryArchTest` | PASS（通过） | canonical suites 各 6/6 |
+| IDEA `build_project` | PASS WITH WARNING（通过但有警告） | `isSuccess=true`；3 个与本轮无关的既有 Jackson `JsonNode.fields()` deprecation warning |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/docs/check-current-authority.ps1` | PASS（通过） | `errors=0`；`GateX-4B / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`，next action 为独立 migration review；checker 首轮要求同步两个 README 与 ROADMAP，最小修正后重跑通过 |
+| `git diff --check` | PASS（通过） | whitespace errors=0；仅 LF→CRLF working-copy warning |
+
+Environment / RCA：focused reactor 初次因 `localhost:5432` 无数据库失败；随机端口不满足既有 local profile，随后又发现缺少 `nexus_quant` DB 与既有测试所需 account fixture。仅在 `127.0.0.1:5432`、无持久卷的 disposable PostgreSQL 补齐两个本地 test DB 与一条无凭证 fixture 后重跑通过，未修改业务代码或既有测试。SLF4J NOP、Mockito dynamic agent、CDS 与 Maven settings warning 均为既有非阻断提示。
+
+Capacity / lock：fresh 与 upgrade 样本均为 2 rows、relation 8,192 bytes、indexes 65,536 bytes、long transactions 0、lock waits 0。该结果不能外推生产；生产表规模、写入速率和实际锁窗口未测，部署前必须只读核对并设置受控窗口/停止条件，按 P2 保留。
+
+Blocking status：P0=0/P1=0/P2=1（生产规模与锁窗口未实测）/P3=1（IDE SQL inspection 绑定旧 V36 数据源会对新列报 unresolved；真实 PostgreSQL/Flyway/Maven 已验证，非编译错误）。GateX-4 API/UI、trusted-root resolver、Shadow/LIVE、交易、credential/private endpoint、AI/DH runtime 影响均为 0。
+
+完整证据：[evidence/gate-x/NQ-GATEX-4B-PERSISTENT-ARTIFACT-LOCATOR-MIGRATION-IMPLEMENTATION.attempt-01.md](evidence/gate-x/NQ-GATEX-4B-PERSISTENT-ARTIFACT-LOCATOR-MIGRATION-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-10 — GateX-4B persistent artifact locator migration review attempt-01
+
+| Command / Check | Result | Scope / Environment / Warning |
+| --- | --- | --- |
+| Git/authority preflight | PASS（通过） | `dev`；`HEAD == origin/dev == 5f4824e...`；进入时 21 个允许 staged 路径、unstaged/untracked=`0/0`；authority `errors=0` |
+| V37 / lifecycle / all-writer static review | PASS（通过） | V37 forward-only、V1～V36 staged diff=0、V37 unique；唯一 production writer 为 JDBC repository；HTTP DTO 无 locator/path/key |
+| focused service/contract/PostgreSQL suites | PASS（通过） | 23-module reactor `BUILD SUCCESS`；service 3、migration contract 1、required PostgreSQL integration 3，0 failures / 0 errors / 0 skipped |
+| fresh / upgrade / Flyway validate | PASS（通过） | PostgreSQL 17.7；fresh V1→V37、upgrade V36→V37、三个 schema validate 均通过；legacy rows 无 backfill |
+| concurrent competing first bind | PASS（通过） | 同一 FAILED/null row，different pair 两个独立 JDBC transaction：1 success / 1 stable conflict；最终完整 A 或 B，mixed/overwrite=0；statement/future/test timeout 均生效 |
+| concurrent same-pair bind | PASS（通过） | 两个独立 transaction：2 success；最终 exact same pair，等价幂等 |
+| constraints/immutability/NO UNIQUE | PASS（通过） | partial/invalid/URI/control/whitespace/129-char rejection、late bind/rebind/clear conflict、same-pair replay、跨 release duplicate pair 全部通过 |
+| `mvn -f backend/pom.xml test` with required PostgreSQL | PASS（通过） | 23 个 reactor module 全部 `SUCCESS`；`nq-app` module summary 247 tests、0 failures、0 errors、13 existing/opt-in skipped；mandatory PostgreSQL 3/3 未 skip；52.026s |
+| disposable PostgreSQL cleanup | PASS（通过） | 随机 `gatex4b_*` schema 残留=0；loopback-only container 按精确 name/label 删除；未连接或修改原本机 5432 |
+| frontend / Python / remote CI | NOT RUN（未运行） | 本轮不改 frontend/Python；commit/push/远端 CI 明确禁止 |
+
+Table/lock evidence：fresh/upgrade/concurrency 小样本均为 rows=2、relation=8,192 bytes、indexes=65,536 bytes、long transactions=0、lock waits=0；不外推生产。Flyway 单事务使 `ADD COLUMN` 的强锁延续到三次全表 validation 与 commit；V37 的 5 秒 `lock_timeout` 只限制锁获取，不限制扫描/持锁时长，按 P2 保留，生产 timeout 必须由目标环境变更策略判断。
+
+RCA：首次 focused invocation 因 PowerShell 未引用 JDBC `-D` 参数，在 Maven lifecycle 前失败并误尝试一次阿里云 Maven plugin 解析；逐个引用参数后重跑通过。未把失败轮次写成测试通过。
+
+Boundary / findings：P0=0/P1=0/P2=2（生产锁窗口未测；provider 全局唯一 invariant 未冻结）/P3=1（工具降级与既有 build warnings）。GateX-4 API/UI、producer/resolver、Shadow create/start、交易/LIVE、credential/private endpoint、AI/DH runtime 变更均为 0。
+
+完整证据：[evidence/gate-x/NQ-GATEX-4B-PERSISTENT-ARTIFACT-LOCATOR-MIGRATION-REVIEW.attempt-01.md](evidence/gate-x/NQ-GATEX-4B-PERSISTENT-ARTIFACT-LOCATOR-MIGRATION-REVIEW.attempt-01.md)。

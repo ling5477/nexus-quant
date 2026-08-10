@@ -30,14 +30,14 @@ public class JdbcBacktestPublishRecordRepository implements BacktestPublishRecor
 
     @Override
     public void upsert(BacktestPublishRecord record) {
-        jdbcTemplate.update(
+        int updated = jdbcTemplate.update(
                 """
                         INSERT INTO backtest_publish_records (
                             publish_record_id, backtest_run_id, research_config_id, backtest_config_id, source_strategy_id,
                             eval_report_id, target_strategy_definition_id, strategy_version_id, publish_status, publish_name,
                             publish_snapshot_json, version_snapshot_json, evaluation_summary_json, failure_code, failure_message,
-                            published_at, created_at, updated_at
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS JSONB), CAST(? AS JSONB), CAST(? AS JSONB), ?, ?, ?, ?, ?)
+                            published_at, created_at, updated_at, artifact_storage_key, manifest_storage_key
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS JSONB), CAST(? AS JSONB), CAST(? AS JSONB), ?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT (backtest_run_id) DO UPDATE
                         SET publish_record_id = EXCLUDED.publish_record_id,
                             research_config_id = EXCLUDED.research_config_id,
@@ -54,7 +54,24 @@ public class JdbcBacktestPublishRecordRepository implements BacktestPublishRecor
                             failure_code = EXCLUDED.failure_code,
                             failure_message = EXCLUDED.failure_message,
                             published_at = EXCLUDED.published_at,
-                            updated_at = EXCLUDED.updated_at
+                            updated_at = EXCLUDED.updated_at,
+                            artifact_storage_key = CASE
+                                WHEN backtest_publish_records.artifact_storage_key IS NULL
+                                    THEN EXCLUDED.artifact_storage_key
+                                ELSE backtest_publish_records.artifact_storage_key
+                            END,
+                            manifest_storage_key = CASE
+                                WHEN backtest_publish_records.manifest_storage_key IS NULL
+                                    THEN EXCLUDED.manifest_storage_key
+                                ELSE backtest_publish_records.manifest_storage_key
+                            END
+                        WHERE (
+                            backtest_publish_records.artifact_storage_key IS NULL
+                            AND backtest_publish_records.manifest_storage_key IS NULL
+                        ) OR (
+                            backtest_publish_records.artifact_storage_key IS NOT DISTINCT FROM EXCLUDED.artifact_storage_key
+                            AND backtest_publish_records.manifest_storage_key IS NOT DISTINCT FROM EXCLUDED.manifest_storage_key
+                        )
                         """,
                 record.publishRecordId(),
                 record.backtestRunId(),
@@ -73,8 +90,13 @@ public class JdbcBacktestPublishRecordRepository implements BacktestPublishRecor
                 record.failureMessage(),
                 toTimestamp(record.publishedAt()),
                 Timestamp.from(record.createdAt()),
-                Timestamp.from(record.updatedAt())
+                Timestamp.from(record.updatedAt()),
+                record.artifactStorageKey(),
+                record.manifestStorageKey()
         );
+        if (updated != 1) {
+            throw new IllegalStateException("backtest publish artifact locator conflict");
+        }
     }
 
     @Override
@@ -86,7 +108,8 @@ public class JdbcBacktestPublishRecordRepository implements BacktestPublishRecor
                                publish_snapshot_json::text AS publish_snapshot_json,
                                version_snapshot_json::text AS version_snapshot_json,
                                evaluation_summary_json::text AS evaluation_summary_json,
-                               failure_code, failure_message, published_at, created_at, updated_at
+                               failure_code, failure_message, published_at, created_at, updated_at,
+                               artifact_storage_key, manifest_storage_key
                         FROM backtest_publish_records
                         WHERE backtest_run_id = ?
                         """,
@@ -105,7 +128,8 @@ public class JdbcBacktestPublishRecordRepository implements BacktestPublishRecor
                                publish_snapshot_json::text AS publish_snapshot_json,
                                version_snapshot_json::text AS version_snapshot_json,
                                evaluation_summary_json::text AS evaluation_summary_json,
-                               failure_code, failure_message, published_at, created_at, updated_at
+                               failure_code, failure_message, published_at, created_at, updated_at,
+                               artifact_storage_key, manifest_storage_key
                         FROM backtest_publish_records
                         ORDER BY updated_at DESC, publish_record_id DESC
                         """,
@@ -122,7 +146,8 @@ public class JdbcBacktestPublishRecordRepository implements BacktestPublishRecor
                                publish_snapshot_json::text AS publish_snapshot_json,
                                version_snapshot_json::text AS version_snapshot_json,
                                evaluation_summary_json::text AS evaluation_summary_json,
-                               failure_code, failure_message, published_at, created_at, updated_at
+                               failure_code, failure_message, published_at, created_at, updated_at,
+                               artifact_storage_key, manifest_storage_key
                         FROM backtest_publish_records
                         WHERE publish_record_id = ?
                         """,
@@ -152,7 +177,9 @@ public class JdbcBacktestPublishRecordRepository implements BacktestPublishRecor
                 resultSet.getString("failure_message"),
                 publishedAt == null ? null : publishedAt.toInstant(),
                 resultSet.getTimestamp("created_at").toInstant(),
-                resultSet.getTimestamp("updated_at").toInstant()
+                resultSet.getTimestamp("updated_at").toInstant(),
+                resultSet.getString("artifact_storage_key"),
+                resultSet.getString("manifest_storage_key")
         );
     }
 
@@ -160,5 +187,4 @@ public class JdbcBacktestPublishRecordRepository implements BacktestPublishRecor
         return value == null ? null : Timestamp.from(value);
     }
 }
-
 

@@ -18263,3 +18263,64 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：persistence/migration/schema/API/frontend/research/scheduler/runner/Shadow Run creation/交易状态机/LIVE/credential/private endpoint/真实交易/AI/DH runtime 变更=`0`；prototype evidence 保留。
 - result：`IMPLEMENTED / SELF_REVIEWED / RELEASE_TO_SHADOW_ADMISSION_PRODUCTIONIZED / NO_SIDE_EFFECTS_VERIFIED / BACKEND_REGRESSION_GREEN / READY_TO_COMMIT`；P0=0/P1=0/P2=1/P3=1。
 - next：唯一下一动作=`NQ-GATEX-3-COMMIT-AND-PUSH`；不得提前初始化 GateX-4。
+
+## 2026-08-10 — GateX-4 minimal API/UI closure implementation attempt-01
+
+- task：`NQ-GATEX-4-MINIMAL-API-UI-CLOSURE-IMPLEMENTATION`；NQ-only、L 级 backend read-only API / frontend minimal integration / post-CI authority reconciliation。
+- baseline：进入时 `dev` clean、staged empty；`HEAD == origin/dev == 5f4824eecaac5cffbbc314fb8f767bd6ba45c29f`；GateX-3 exact-head run=`31391541813 / completed / success`，已收口为 `ACCEPTED|CI_GREEN`。
+- inventory：现有 `StrategyReleaseProductionService` 需要受信 caller 提供 `trustedRoot + artifactManifest`；publish provenance/JDBC/config/API 未提供服务端受控的 `publishRecordId → trusted root + manifest` 绑定，也不存在等价 admission preview GET endpoint。
+- blocker：`BLOCKED / SAFE_ARTIFACT_ROOT_BINDING_MISSING`；禁止接受客户端 filesystem path、仅凭 digest/fixture/UNKNOWN 推导 `VERIFIED / RELEASE_BOUND / ELIGIBLE`，因此未创建 endpoint、DTO、query、UI 或测试替身。
+- validation：Git/CI preflight PASS；authority checker `errors=0`；`git diff --check` PASS。backend/frontend 产品回归未运行，因为 product code 变更为 0 且 mandatory safety prerequisite 已阻断。
+- boundary：migration/DB write/Shadow create/start/scheduler/runner/trading/LIVE/credential/private endpoint/真实交易所/AI/DH runtime 变更=`0`；P0=0/P1=1/P2=0/P3=1。
+- authority：GateX-3=`ACCEPTED|CI_GREEN / 5f4824e... / 31391541813`；GateX-4=`BLOCKED / NONE / NOT_RUN`。
+- next：唯一下一动作=`NQ-GATEX-4-SAFE-ARTIFACT-ROOT-BINDING-MISSING-BLOCKED`；必须先形成服务端受控 artifact locator/root + manifest 绑定方案并单独审查。
+
+## 2026-08-10 — GateX-4 safe artifact root binding implementation attempt-01
+
+- task：`NQ-GATEX-4-SAFE-ARTIFACT-ROOT-BINDING-IMPLEMENTATION`；NQ-only、P1 security remediation / backend artifact-storage audit。
+- baseline：允许并保留上一轮 7 个 staged blocker/current docs；无其他 dirty path；`dev`、`HEAD == origin/dev == 5f4824e...`、GateX-3 accepted、GateX-4 blocked、LIVE disabled。
+- inventory：不存在 production server-owned locator；publish record/snapshot 无 artifact location；Python writer 使用 caller-supplied arbitrary local `Path`；Strategy Release manifest filename/layout 仅见于 test resources；typed configuration/application profiles 无 trusted artifact root。
+- decision：按任务优先级选择 C；安全映射需要新增持久化 locator/storage key 等事实，命中 `BLOCKED / PERSISTENT_ARTIFACT_LOCATOR_REQUIRED / NO_UNSAFE_PATH_FALLBACK`。不得发明 deterministic layout，不新增 migration，不写 backend implementation/test。
+- boundary：API/frontend/Shadow create/start/scheduler/runner/trading/LIVE/credential/private endpoint/真实交易所/AI/DH runtime 变更=`0`；原 blocker evidence 保留且不回写为成功。
+- validation：artifact storage/publish/Python/config 定向审计完成；authority checker `errors=0`；docs links 202 checked/0 errors/1 个既有 warning；tracked diff whitespace errors=0。Maven/ArchUnit 未运行，因为 fail-fast 后 product code diff 为 0。
+- authority：GateX-4 保持 `BLOCKED / NONE / NOT_RUN`；next action 收敛为 `NQ-GATEX-4-PERSISTENT-ARTIFACT-LOCATOR-REQUIRED-BLOCKED`。
+- next：另行发起 GateX-4A schema review，定义最小 locator 字段、约束、迁移/回滚与安全边界；本轮不初始化新 batch。
+
+## 2026-08-10 — GateX-4 persistent artifact locator design-blocker authority transition attempt-01
+
+- task：`NQ-GATEX-4-PERSISTENT-ARTIFACT-LOCATOR-REQUIRED-BLOCKED`；NQ-only、blocker resolution / post-review authority transition / fact-source sync。
+- baseline：保留并核对 9 个允许 staged baseline；`dev`，`HEAD == origin/dev == 5f4824e...`；GateX-3=`ACCEPTED|CI_GREEN`、GateX-4=`BLOCKED`、LIVE=`DISABLED`、authority `errors=0`。
+- review：4A schema/security review=`PASS`、方案 A、P0=0；固定未来两个 nullable paired opaque storage key、server-configured trusted root、publish 后 immutable 与 `NO FAKE BACKFILL`，但字段/V37/runtime 均未实现。
+- transition：使用现有 lifecycle 初始化 `GateX-4B / NOT_STARTED / NONE / NOT_RUN`；next action=`NQ-GATEX-4B-PERSISTENT-ARTIFACT-LOCATOR-MIGRATION-IMPLEMENTATION`，action type=`IMPLEMENTATION`、work-batch mapping=`True`。
+- validation：Windows PowerShell 5.1 与 PowerShell 7 authority checker 均 `errors=0 / PASS`；tracked/cached whitespace PASS；10 个 staged 路径均在 allowlist，unexpected/unstaged/forbidden=`0/0/0`；docs links 203 checked/0 errors/1 个既有 warning。
+- boundary：governance/backend/frontend/research/migration/deploy/CI/LIVE/交易变更=`0`；GateX-4 原 API/UI 保持 `BLOCKED / WAITING_FOR_ARTIFACT_LOCATOR_REMEDIATION`。
+- result：`PASS / GATEX_4_DESIGN_BLOCKER_RESOLVED / GATEX_4B_MIGRATION_AUTHORIZED / NO_GOVERNANCE_CHANGE / READY_FOR_IMPLEMENTATION`；未 commit、未 push。
+- next：最终 staged validation 通过后，唯一下一动作=`NQ-GATEX-4B-PERSISTENT-ARTIFACT-LOCATOR-MIGRATION-IMPLEMENTATION`。
+
+## 2026-08-10 — GateX-4B persistent artifact locator migration implementation attempt-01
+
+- task：`NQ-GATEX-4B-PERSISTENT-ARTIFACT-LOCATOR-MIGRATION-IMPLEMENTATION`；NQ-only、L 级 forward-only Flyway migration / publish locator persistence / SQL immutability / real PostgreSQL regression。
+- baseline：保留并核对既有 10 个 staged GateX-4 blocker/4A/authority evidence；`dev`，starting `HEAD == origin/dev == 5f4824eecaac5cffbbc314fb8f767bd6ba45c29f`；进入时 `GateX-4B / NOT_STARTED / NONE / NOT_RUN`、LIVE=`DISABLED`。
+- migration：新增 `V37__gate_x4b_persistent_artifact_locator.sql`；`backtest_publish_records` 增加 nullable paired `artifact_storage_key` / `manifest_storage_key`，受限为 128 字符单段 opaque ASCII key 并禁止 `..`；无 `UPDATE`、无 backfill、无 guessed locator、未修改 V1-V36。
+- uniqueness/immutability：重新判断后未增加 partial UNIQUE，因为当前 provider contract 不能证明 key 永久全局独占；增加 trigger 保护直接 SQL，只允许 `FAILED + NULL pair → SUCCEEDED + valid pair` 首次绑定，已绑定 pair 不可清空/重绑。JDBC 同 pair 幂等，不同 pair fail-closed。
+- persistence：domain 增加 `LEGACY_ARTIFACT_UNBOUND / PERSISTENT_ARTIFACT_BOUND` 派生语义；repository/JDBC 映射新列；service 增加内部 typed `publishWithArtifactLocator(...)`，HTTP request 未变，普通 publish 仍 unbound。producer 状态=`PERSISTENCE_READY / PRODUCER_NOT_YET_CONNECTED`，未从 ID/digest/path 伪造 key。
+- validation：focused service+contract 4/4；disposable PostgreSQL 17.7 fresh/upgrade 2/2 与 `Flyway.validate` 通过；focused reactor 23 modules `BUILD SUCCESS`，`nq-app` 246 tests、0 failures、0 errors、15 skipped；全后端 23 modules `BUILD SUCCESS`；两个 canonical ArchUnit suites 各 6/6；IDE build success；authority checker 最小同步 README/ROADMAP 后 `errors=0`，`git diff --check` 通过。
+- environment/RCA：初次 focused reactor 因 localhost DB、端口/profile、DB 名和既有 account fixture 依次失败；仅调整无持久卷 disposable PostgreSQL 测试环境并重跑，未改业务逻辑或既有测试。小样本 metrics 为 rows=2、relation=8,192 bytes、indexes=65,536 bytes、long transactions=0、lock waits=0，不外推生产。
+- boundary：GateX-4 API/UI、typed trusted-root resolver、Shadow Run creation、scheduler/runner、frontend、Python、交易状态机、LIVE、credential/private endpoint、真实交易、AI/DH runtime 变更=`0`；未初始化 GateX-4C，未 commit、未 push。
+- result：`IMPLEMENTED / PERSISTENT_ARTIFACT_LOCATOR_SCHEMA_COMPLETE / POSTGRESQL_REGRESSION_GREEN / PENDING_INDEPENDENT_MIGRATION_REVIEW`；P0=0/P1=0/P2=1（生产表规模/锁窗口仍需部署前只读核对）/P3=1（旧 IDE 数据源 inspection 与既有 build warnings，非阻断）。
+- authority：`GateX-4B / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`。
+- next：唯一下一动作=`NQ-GATEX-4B-PERSISTENT-ARTIFACT-LOCATOR-MIGRATION-REVIEW`；不得恢复 GateX-4 API/UI 或初始化 4C。
+
+## 2026-08-10 — GateX-4B persistent artifact locator migration review attempt-01
+
+- task：`NQ-GATEX-4B-PERSISTENT-ARTIFACT-LOCATOR-MIGRATION-REVIEW`；NQ-only、高风险独立 migration/concurrency/immutability/lifecycle/security review。
+- baseline：`dev`；starting `HEAD == origin/dev == 5f4824e...`；进入时 21 个允许 staged remediation 路径、unstaged/untracked=`0/0`；authority=`GateX-4B / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`。
+- static review：V37 nullable pair、opaque syntax、NO BACKFILL、V1～V36 unchanged、trigger lifecycle、JDBC column/null mapping、唯一 production writer 与 HTTP no-key/path boundary 通过；当前 provider contract 无 global uniqueness invariant，`NO UNIQUE=ACCEPTED`。
+- mandatory test addition：只扩展既有 PostgreSQL integration test，新增 competing/same-pair 两类并发事务、statement/future/JUnit timeout，以及 URI/control/leading/trailing whitespace rejection；V37/domain/repository/JDBC/service 生产实现未修改。
+- validation：focused service/contract/PostgreSQL 7/7；fresh V1→V37、upgrade V36→V37、Flyway validate、competing 1 success/1 conflict、same-pair 2 success 全部通过；全后端 23 modules `BUILD SUCCESS`，`nq-app` 247 tests、0 failures、0 errors、13 existing/opt-in skipped，mandatory PostgreSQL 3/3 未 skip。
+- environment：PostgreSQL 17.7 loopback-only disposable container；phase metrics 均为 rows=2、relation=8,192 bytes、indexes=65,536 bytes、long transactions=0、lock waits=0；随机 schema 与 container 已删除，原本机 5432 未连接/未修改。
+- findings：P0=0/P1=0/P2=2（生产规模/锁窗口未测；provider uniqueness invariant 未冻结）/P3=1（MCP 降级与既有 warnings）。V37 固定 5 秒 `lock_timeout` 只限制获取锁，不能作为生产 sizing；本地规模不外推生产。
+- boundary：GateX-4 API/UI、producer/resolver、Shadow create/start、frontend/Python、交易状态机、LIVE、credential/private endpoint、真实交易、AI/DH runtime 变更=`0`；未初始化 GateX-4C，未 commit、未 push。
+- result：`PASS / MIGRATION_REVIEW_ACCEPTED / LOCATOR_IMMUTABILITY_VERIFIED / CONCURRENT_FIRST_BIND_VERIFIED / POSTGRESQL_COMPATIBILITY_VERIFIED / READY_TO_COMMIT`。
+- authority：`GateX-4B / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
+- next：唯一下一动作=`NQ-GATEX-4B-COMMIT-AND-PUSH`；不得启动 GateX-4C。

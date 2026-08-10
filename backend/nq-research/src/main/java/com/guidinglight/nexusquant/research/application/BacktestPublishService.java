@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.research.application;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.research.domain.publish.BacktestEvaluationView;
+import com.guidinglight.nexusquant.research.domain.BacktestPublishArtifactLocator;
 import com.guidinglight.nexusquant.research.domain.BacktestPublishRecord;
 import com.guidinglight.nexusquant.research.application.command.BacktestPublishRequest;
 import com.guidinglight.nexusquant.research.domain.ExecutionStrategyDefinitionDraft;
@@ -119,14 +120,31 @@ public class BacktestPublishService {
     }
 
     public BacktestPublishRecord publish(BacktestPublishRequest request) {
+        return publishWithArtifactLocator(request, BacktestPublishArtifactLocator.unbound());
+    }
+
+    /**
+     * 供受控 server artifact pipeline 使用的 typed publish 边界。
+     *
+     * <p>locator 不能来自 HTTP client、filesystem path、digest 或 publishRecordId 推导。producer 未接入时
+     * 调用普通 {@link #publish(BacktestPublishRequest)}，并明确持久化为 LEGACY_ARTIFACT_UNBOUND。
+     */
+    public BacktestPublishRecord publishWithArtifactLocator(
+            BacktestPublishRequest request,
+            BacktestPublishArtifactLocator artifactLocator
+    ) {
         Objects.requireNonNull(request, "request must not be null");
+        Objects.requireNonNull(artifactLocator, "artifactLocator must not be null");
         Instant now = Instant.now(clock);
         BacktestPublishRecord existing = backtestPublishRecordRepository.findByBacktestRunId(request.backtestRunId()).orElse(null);
-        if (existing != null && existing.publishStatus() == PublishStatus.SUCCEEDED
+        boolean idempotentSucceeded = existing != null && existing.publishStatus() == PublishStatus.SUCCEEDED
                 && existing.targetStrategyDefinitionId() != null && !existing.targetStrategyDefinitionId().isBlank()
-                && sameStrategyVersion(existing.strategyVersionId(), request.strategyVersionId())) {
+                && sameStrategyVersion(existing.strategyVersionId(), request.strategyVersionId());
+        if (idempotentSucceeded) {
+            validateIdempotentLocator(existing, artifactLocator);
             return existing;
         }
+        validateLocatorWrite(existing, artifactLocator);
 
         var backtestRun = backtestRunService.getByBacktestRunId(request.backtestRunId());
         if (backtestRun.status() != com.guidinglight.nexusquant.research.domain.BacktestRunStatus.SUCCEEDED) {
@@ -174,7 +192,9 @@ public class BacktestPublishService {
                     null,
                     now,
                     existing == null ? now : existing.createdAt(),
-                    now
+                    now,
+                    artifactLocator.artifactStorageKey(),
+                    artifactLocator.manifestStorageKey()
             );
             backtestPublishRecordRepository.upsert(record);
             return record;
@@ -227,7 +247,9 @@ public class BacktestPublishService {
                 failureMessage,
                 null,
                 existing == null ? now : existing.createdAt(),
-                now
+                now,
+                existing == null ? null : existing.artifactStorageKey(),
+                existing == null ? null : existing.manifestStorageKey()
         );
         backtestPublishRecordRepository.upsert(failed);
         throw new IllegalStateException("backtest publish failed: " + failureMessage);
@@ -283,6 +305,34 @@ public class BacktestPublishService {
         return requestedStrategyVersionId.trim().equals(existingStrategyVersionId);
     }
 
+    private void validateIdempotentLocator(
+            BacktestPublishRecord existing,
+            BacktestPublishArtifactLocator requested
+    ) {
+        if (!requested.isBound()) {
+            return;
+        }
+        if (!requested.artifactStorageKey().equals(existing.artifactStorageKey())
+                || !requested.manifestStorageKey().equals(existing.manifestStorageKey())) {
+            throw new IllegalStateException("published release artifact locator cannot be bound or changed");
+        }
+    }
+
+    private void validateLocatorWrite(
+            BacktestPublishRecord existing,
+            BacktestPublishArtifactLocator requested
+    ) {
+        if (existing == null) {
+            return;
+        }
+        if (existing.artifactStorageKey() != null || existing.manifestStorageKey() != null) {
+            throw new IllegalStateException("published release artifact locator is immutable");
+        }
+        if (existing.publishStatus() == PublishStatus.SUCCEEDED && requested.isBound()) {
+            throw new IllegalStateException("legacy successful publish cannot be retroactively bound");
+        }
+    }
+
     private String versionSnapshotJson(StrategyVersionSnapshotView snapshot) {
         ObjectNode node = objectMapper.createObjectNode();
         node.put("strategyVersionId", snapshot.strategyVersionId());
@@ -315,6 +365,5 @@ public class BacktestPublishService {
                 : exception.getMessage();
     }
 }
-
 
 

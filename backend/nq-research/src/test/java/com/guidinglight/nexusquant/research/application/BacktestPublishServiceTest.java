@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.guidinglight.nexusquant.research.domain.BacktestConfig;
 import com.guidinglight.nexusquant.research.domain.publish.BacktestEvaluationView;
+import com.guidinglight.nexusquant.research.domain.BacktestPublishArtifactLocator;
 import com.guidinglight.nexusquant.research.domain.BacktestPublishRecord;
 import com.guidinglight.nexusquant.research.application.command.BacktestPublishRequest;
 import com.guidinglight.nexusquant.research.domain.BacktestRun;
@@ -22,7 +23,6 @@ import com.guidinglight.nexusquant.research.application.config.BacktestConfigSer
 import com.guidinglight.nexusquant.research.application.backtest.command.BacktestConfigCreateRequest;
 import com.guidinglight.nexusquant.research.application.backtest.command.BacktestRunStartRequest;
 import com.guidinglight.nexusquant.research.application.command.ResearchConfigCreateRequest;
-import com.guidinglight.nexusquant.research.domain.publish.port.BacktestEvaluationQueryPort;
 import com.guidinglight.nexusquant.research.domain.port.BacktestPublishRecordRepository;
 import com.guidinglight.nexusquant.research.domain.port.BacktestConfigRepository;
 import com.guidinglight.nexusquant.research.domain.port.BacktestRunRepository;
@@ -65,6 +65,43 @@ class BacktestPublishServiceTest {
         assertEquals(first.publishRecordId(), second.publishRecordId());
         assertEquals(1, scenario.publishRecordRepository.storage.size());
         assertEquals(1, scenario.executionWriter.insertCount);
+        assertEquals(
+                BacktestPublishRecord.ArtifactLocatorBindingStatus.LEGACY_ARTIFACT_UNBOUND,
+                first.artifactLocatorBindingStatus()
+        );
+    }
+
+    @Test
+    void shouldPersistOnlyTypedServerOwnedLocatorAndRejectLateOrConflictingBinding() {
+        Scenario scenario = createScenario(BacktestRunStatus.SUCCEEDED, succeededEvaluation());
+        BacktestPublishArtifactLocator locator = BacktestPublishArtifactLocator.bound(
+                "artifact_release_01",
+                "manifest_release_01.json"
+        );
+
+        BacktestPublishRecord first = scenario.service.publishWithArtifactLocator(
+                new BacktestPublishRequest(scenario.run.backtestRunId(), "Published Demo", "sv-active"),
+                locator
+        );
+        BacktestPublishRecord replay = scenario.service.publishWithArtifactLocator(
+                new BacktestPublishRequest(scenario.run.backtestRunId(), "Ignored", "sv-active"),
+                locator
+        );
+
+        assertEquals("artifact_release_01", first.artifactStorageKey());
+        assertEquals("manifest_release_01.json", first.manifestStorageKey());
+        assertEquals(
+                BacktestPublishRecord.ArtifactLocatorBindingStatus.PERSISTENT_ARTIFACT_BOUND,
+                first.artifactLocatorBindingStatus()
+        );
+        assertEquals(first.publishRecordId(), replay.publishRecordId());
+        assertEquals(1, scenario.executionWriter.insertCount);
+        assertThrows(IllegalStateException.class, () -> scenario.service.publishWithArtifactLocator(
+                new BacktestPublishRequest(scenario.run.backtestRunId(), "Conflict", "sv-active"),
+                BacktestPublishArtifactLocator.bound("artifact_release_02", "manifest_release_02.json")
+        ));
+        assertThrows(IllegalArgumentException.class,
+                () -> BacktestPublishArtifactLocator.bound("../artifact", "manifest"));
     }
 
     @Test
@@ -229,27 +266,71 @@ class BacktestPublishServiceTest {
 
     private static final class InMemoryResearchConfigRepository implements ResearchConfigRepository {
         private final Map<String, ResearchConfig> storage = new LinkedHashMap<>();
-        @Override public void insert(ResearchConfig researchConfig) { storage.put(researchConfig.researchConfigId(), researchConfig); }
-        @Override public Optional<ResearchConfig> findByResearchConfigId(String researchConfigId) { return Optional.ofNullable(storage.get(researchConfigId)); }
-        @Override public List<ResearchConfig> listAll() { return new ArrayList<>(storage.values()); }
+
+        @Override
+        public void insert(ResearchConfig researchConfig) {
+            storage.put(researchConfig.researchConfigId(), researchConfig);
+        }
+
+        @Override
+        public Optional<ResearchConfig> findByResearchConfigId(String researchConfigId) {
+            return Optional.ofNullable(storage.get(researchConfigId));
+        }
+
+        @Override
+        public List<ResearchConfig> listAll() {
+            return new ArrayList<>(storage.values());
+        }
     }
 
     private static final class InMemoryBacktestConfigRepository implements BacktestConfigRepository {
         private final Map<String, BacktestConfig> storage = new LinkedHashMap<>();
-        @Override public void insert(BacktestConfig backtestConfig) { storage.put(backtestConfig.backtestConfigId(), backtestConfig); }
-        @Override public Optional<BacktestConfig> findByBacktestConfigId(String backtestConfigId) { return Optional.ofNullable(storage.get(backtestConfigId)); }
-        @Override public List<BacktestConfig> listAll() { return new ArrayList<>(storage.values()); }
-        @Override public List<BacktestConfig> listByResearchConfigId(String researchConfigId) { return storage.values().stream().filter(item -> item.researchConfigId().equals(researchConfigId)).toList(); }
+
+        @Override
+        public void insert(BacktestConfig backtestConfig) {
+            storage.put(backtestConfig.backtestConfigId(), backtestConfig);
+        }
+
+        @Override
+        public Optional<BacktestConfig> findByBacktestConfigId(String backtestConfigId) {
+            return Optional.ofNullable(storage.get(backtestConfigId));
+        }
+
+        @Override
+        public List<BacktestConfig> listAll() {
+            return new ArrayList<>(storage.values());
+        }
+
+        @Override
+        public List<BacktestConfig> listByResearchConfigId(String researchConfigId) {
+            return storage.values().stream().filter(item -> item.researchConfigId().equals(researchConfigId)).toList();
+        }
     }
 
     private static final class InMemoryBacktestRunRepository implements BacktestRunRepository {
         private final Map<String, BacktestRun> storage = new LinkedHashMap<>();
-        @Override public void insert(BacktestRun backtestRun) { storage.put(backtestRun.backtestRunId(), backtestRun); }
-        @Override public Optional<BacktestRun> findByBacktestRunId(String backtestRunId) { return Optional.ofNullable(storage.get(backtestRunId)); }
-        @Override public List<BacktestRun> list(String researchConfigId, String backtestConfigId) { return storage.values().stream().toList(); }
-        @Override public boolean updateExecution(String backtestRunId, BacktestRunStatus status, Instant startedAt, Instant finishedAt, String failureCode, String failureMessage, String summaryJson, Instant updatedAt) {
+
+        @Override
+        public void insert(BacktestRun backtestRun) {
+            storage.put(backtestRun.backtestRunId(), backtestRun);
+        }
+
+        @Override
+        public Optional<BacktestRun> findByBacktestRunId(String backtestRunId) {
+            return Optional.ofNullable(storage.get(backtestRunId));
+        }
+
+        @Override
+        public List<BacktestRun> list(String researchConfigId, String backtestConfigId) {
+            return storage.values().stream().toList();
+        }
+
+        @Override
+        public boolean updateExecution(String backtestRunId, BacktestRunStatus status, Instant startedAt, Instant finishedAt, String failureCode, String failureMessage, String summaryJson, Instant updatedAt) {
             BacktestRun current = storage.get(backtestRunId);
-            if (current == null) { return false; }
+            if (current == null) {
+                return false;
+            }
             storage.put(backtestRunId, new BacktestRun(
                     current.backtestRunId(), current.backtestConfigId(), current.researchConfigId(), current.sourceStrategyId(),
                     current.strategySnapshot(), current.backtestConfigSnapshot(), status, current.requestedAt(), startedAt, finishedAt,
@@ -261,19 +342,36 @@ class BacktestPublishServiceTest {
 
     private static final class InMemoryBacktestPublishRecordRepository implements BacktestPublishRecordRepository {
         private final Map<String, BacktestPublishRecord> storage = new LinkedHashMap<>();
-        @Override public void upsert(BacktestPublishRecord record) { storage.put(record.backtestRunId(), record); }
-        @Override public Optional<BacktestPublishRecord> findByBacktestRunId(String backtestRunId) { return Optional.ofNullable(storage.get(backtestRunId)); }
-        @Override public List<BacktestPublishRecord> listAll() { return new ArrayList<>(storage.values()); }
-        @Override public Optional<BacktestPublishRecord> findByPublishRecordId(String publishRecordId) {
+
+        @Override
+        public void upsert(BacktestPublishRecord record) {
+            storage.put(record.backtestRunId(), record);
+        }
+
+        @Override
+        public Optional<BacktestPublishRecord> findByBacktestRunId(String backtestRunId) {
+            return Optional.ofNullable(storage.get(backtestRunId));
+        }
+
+        @Override
+        public List<BacktestPublishRecord> listAll() {
+            return new ArrayList<>(storage.values());
+        }
+
+        @Override
+        public Optional<BacktestPublishRecord> findByPublishRecordId(String publishRecordId) {
             return storage.values().stream().filter(item -> item.publishRecordId().equals(publishRecordId)).findFirst();
         }
     }
 
     private static final class InMemoryExecutionStrategyDefinitionWriter implements ExecutionStrategyDefinitionWriter {
         private int insertCount = 0;
-        @Override public String publish(ExecutionStrategyDefinitionDraft draft) { insertCount++; return draft.targetStrategyDefinitionId(); }
+
+        @Override
+        public String publish(ExecutionStrategyDefinitionDraft draft) {
+            insertCount++;
+            return draft.targetStrategyDefinitionId();
+        }
     }
 }
-
-
 

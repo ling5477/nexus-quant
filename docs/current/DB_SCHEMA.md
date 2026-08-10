@@ -646,3 +646,21 @@ GateX-2 新增 forward-only Flyway migration：
 - 字段和约束均有中文 COMMENT，明确 digest 不表示 admission、交易批准或 LIVE ready。
 
 disposable PostgreSQL 17.7 验证覆盖 fresh `V1→V36`、upgrade `V35→V36`、legacy 无绑定、legacy publish-only、release-bound create/read、幂等冲突拒绝、非法值拒绝、同一 release 多 run与状态生命周期 provenance immutability；upgrade 中 V36 执行约 `0.012s`，仅代表小样本。独立 10,000 行 lock probe 在同一事务完成 add-column/add-check/validate 后同时观察到 `AccessExclusiveLock=true` 与 `ShareUpdateExclusiveLock=true`，容器随后删除。全量 Maven 还按既有 local profile 将本机开发库 `nexus_quant.public` 从 V35 正常迁到 V36；未访问生产数据库。
+
+## GateX-4B Persistent Artifact Locator
+
+GateX-4B 新增 forward-only Flyway migration：
+
+- `V37__gate_x4b_persistent_artifact_locator.sql`
+
+当前状态为 `IMPLEMENTED / PENDING REVIEW`（已实现 / 待独立复核）。该状态只表示 locator schema、domain/JDBC persistence、内部 publish typed input 与真实 disposable PostgreSQL 回归已完成；不表示 committed、CI green、artifact producer、trusted-root resolver、GateX-4 API/UI、Shadow Run creation、LIVE ready 或交易授权。
+
+- `backtest_publish_records.artifact_storage_key` 与 `manifest_storage_key` 均为 `VARCHAR(128) NULL`。二者必须同时为 `NULL` 或同时非 `NULL`；历史 `NULL/NULL` 派生为 `LEGACY_ARTIFACT_UNBOUND`。
+- 非空 key 必须匹配 `^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`，并额外禁止任意 `..`；因此 slash、backslash、colon、空串、absolute path、URI 和 129 字符值均被拒绝。key 是 server-owned opaque identifier，不是 filesystem path、trusted root、digest 或客户端输入。
+- V37 不执行 `UPDATE`，不 backfill，也不从 publish ID、digest、cwd、临时目录或历史目录布局猜测 locator。
+- 三个 CHECK 先以 `NOT VALID` 创建再执行 `VALIDATE CONSTRAINT`；字段与约束均有中文 COMMENT，说明 legacy、敏感边界与允许值。
+- 数据库 trigger 保护 SQL 级不可变边界：只允许 `FAILED + NULL/NULL` row 在转为 `SUCCEEDED` 时完成一次有效 pair 绑定；已绑定 pair 的 rebind、清空均以 SQLSTATE `23514` fail-closed。repository 不暴露普通 locator update/rebind API；同 pair 可幂等重放，不同 pair 冲突拒绝且不覆盖旧值。
+- 未增加 `UNIQUE artifact_storage_key` 或 `UNIQUE manifest_storage_key`。当前 storage/provider contract 不能证明“一个 key 永远全局唯一属于一个 publish release”，因此不引入缺乏正式业务 invariant 的索引扫描和写约束；PostgreSQL 回归明确验证跨 release 重复 pair 当前允许。
+- publish HTTP contract 未变；普通 publish 继续写入 unbound pair。内部 `publishWithArtifactLocator(...)` 只接受已验证 typed locator，供未来受控 artifact pipeline 使用；当前状态为 `PERSISTENCE_READY / PRODUCER_NOT_YET_CONNECTED`，不得伪造 key。
+
+disposable PostgreSQL 17.7 验证覆盖 fresh `V1→V37`、upgrade `V36→V37`、`Flyway.validate`、历史 row no-backfill/可读、合法 pair 写读、partial pair 与非法格式拒绝、JDBC 幂等/冲突、trigger 首次绑定与不可变、无 UNIQUE 下 duplicate behavior。fresh 与 upgrade 小样本均为 2 rows、relation 8,192 bytes、indexes 65,536 bytes、long transactions 0、lock waits 0；这些数据只描述 localhost disposable database，不能外推生产安全。生产部署仍保留 P2：必须在受控窗口只读核对目标表行数/大小、长事务、锁等待和写入速率，并为 `ADD COLUMN` / `ADD CHECK` / `VALIDATE` / trigger DDL 配置停止条件；本轮未实测生产表规模或锁窗口。
