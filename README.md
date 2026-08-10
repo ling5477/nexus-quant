@@ -6,9 +6,9 @@ NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/
 
 <!-- nq-current-summary:start -->
 - 最近冻结 Gate 为 GateW：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；archive 为 [docs/gates/gate-w/](docs/gates/gate-w/)，release tag=`nq-gatew-freeze`。
-- GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateX-0A/0B/0C/0D=`ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateX-0E=`AUDITED / IMPLEMENTATION NOT REQUIRED`（已审计 / 无需实施），GateX-1=`NOT STARTED`（未开始），production capability 尚未完成。
+- GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateX-0A/0B/0C/0D=`ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateX-0E=`AUDITED / IMPLEMENTATION NOT REQUIRED`（已审计 / 无需实施），GateX-1=`IMPLEMENTED / SELF REVIEWED`（已实现 / 已自审），尚未 commit/push 或运行远端 CI。
 - Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEX-1-STRATEGY-RELEASE-ARTIFACT-PRODUCTIONIZATION-IMPLEMENTATION`；只授权后续独立任务开始 GateX-1，不表示 productionization 已实施，exact transition 以 [STATUS.md](docs/current/STATUS.md) 为准。
+- 当前唯一动作是 `NQ-GATEX-1-COMMIT-AND-PUSH`；不得提前初始化 GateX-2，exact transition 以 [STATUS.md](docs/current/STATUS.md) 为准。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
 

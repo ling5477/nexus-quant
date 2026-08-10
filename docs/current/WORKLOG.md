@@ -18215,3 +18215,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - validation：exact-head CI 已核验；PowerShell 5.1/7 authority checker 均 `errors=0`，next action 解析为 `IMPLEMENTATION`；`git diff --check` 通过。首轮 ROADMAP canonical 句式不匹配已完成 RCA、最小修正并重跑。
 - result：`PASS / GATEX_0D_ACCEPTED / GATEX_0E_CONDITIONAL_ITEM_NOT_REQUIRED / NO_NEW_LIFECYCLE_STATE / GATEX_1_AUTHORIZED / READY_TO_COMMIT`；P0=0/P1=0/P2=1/P3=0。
 - next：`NQ-GATEX-1-STRATEGY-RELEASE-ARTIFACT-PRODUCTIONIZATION-IMPLEMENTATION`；本轮只授权后续独立任务，未开始 production code。
+
+## 2026-08-10 — GateX-1 Strategy Release / Artifact productionization implementation attempt-01
+
+- task：`NQ-GATEX-1-STRATEGY-RELEASE-ARTIFACT-PRODUCTIONIZATION-IMPLEMENTATION`；NQ-only、L 级 backend productionization / trusted-root security hardening / regression / self-review。
+- baseline：开始时 `dev` clean、staged empty；`HEAD == origin/dev == 83e6161ed34da9a71f510680ad46b4584502cd82`；exact-head `NQ CI Baseline` run=`31352595870 / completed / success`；GateX-1=`NOT_STARTED`，LIVE=`DISABLED`。
+- implementation：新增最小 Strategy Release aggregate、`strategy-release-manifest.v1` contract、确定性 artifact-set digest、trusted-root fail-closed verifier、只读 production service 与一次有界 SELECT 的 JDBC provenance adapter。canonical identity 固定为 `releaseAnchorId == publishRecordId == backtest_publish_records.publish_record_id`。
+- security：拒绝 absolute/traversal/backslash/drive path、symlink/reparse/非普通文件、missing/extra file、digest/size/count 超限、敏感 metadata/content 与验证期间文件替换；限制 64 files、单文件 1 GiB、总计 4 GiB。双重 stat/目录快照降低 TOCTOU，但不伪称 OS 原子 stable handle。
+- validation：focused 19/19；`nq-core -am` 437/437；全后端 23 modules、1307 tests、0 failures、0 errors、15 existing skipped；两个 architecture suites 各 6/6。首轮构造器、PowerShell quoting 与目录 identity 失败均完成 RCA、最小修复及重跑。
+- boundary：migration/schema/persistence write/API/frontend/Python/scheduler/Shadow admission/Shadow Run/LIVE/credential/private endpoint/交易写侧/AI/DH runtime 变更=`0`；prototype evidence 未删除。
+- authority：GateX-1=`IMPLEMENTED|SELF_REVIEWED`；commit=`UNCOMMITTED`；CI=`NOT_RUN`；不得初始化 GateX-2。
+- result：`IMPLEMENTED / SELF_REVIEWED / STRATEGY_RELEASE_ARTIFACT_PRODUCTIONIZED / BACKEND_REGRESSION_GREEN / READY_TO_COMMIT`；P0=0/P1=0/P2=1/P3=1。
+- next：唯一下一动作=`NQ-GATEX-1-COMMIT-AND-PUSH`；本任务不 commit、不 push。

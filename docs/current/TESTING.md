@@ -12806,3 +12806,22 @@ Blocking status：P0=0/P1=1/P2=1/P3=0。P1 为 `AUTHORITY_SKIP_TRANSITION_REQUIR
 首轮 authority checker 返回 `CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH source=ROADMAP field=next_action expected=1 actual=0`；根因为 ROADMAP 未使用 checker 既有 canonical “当前唯一治理动作是”独立 bullet。只调整该句式后，PowerShell 5.1/7 均重跑通过，未修改 checker 或 governance contract。
 
 Boundary：未修改 governance contract、checker、governance tests、backend、frontend、research、migration、deploy、CI workflow 或 GateW archive；LIVE=`DISABLED`。Blocking status：P0=0/P1=0/P2=1/P3=0；P2 为既有 validation scheduler 后置 hygiene，不阻断 GateX-1。
+
+## 2026-08-10 — GateX-1 Strategy Release / Artifact productionization attempt-01
+
+| Command / Check | Result | Scope / Environment / Warning |
+| --- | --- | --- |
+| `git fetch origin` + branch/worktree/HEAD preflight | PASS（通过） | `dev`；开始时 worktree clean、staged empty；`HEAD == origin/dev == 83e6161ed34da9a71f510680ad46b4584502cd82` |
+| `gh run view 31352595870 --json ...` | PASS（通过） | `NQ CI Baseline / completed / success`；`headSha` 精确匹配 starting HEAD |
+| focused Strategy Release suites | PASS（通过） | core service 16、trusted-root verifier 2、JDBC provenance 1；合计 19 tests，0 failures / 0 errors / 0 skipped |
+| `mvn -f backend/pom.xml -pl nq-core -am test` | PASS（通过） | 437 tests，0 failures / 0 errors / 0 skipped |
+| `mvn -f backend/pom.xml test` | PASS（通过） | 后端 23 modules；1307 tests，0 failures / 0 errors / 15 existing skipped；新增 19 tests 无 skip |
+| `PackageBoundaryArchTest` | PASS（通过） | 6 tests，0 failures / 0 errors / 0 skipped |
+| `ModuleBoundaryArchTest` | PASS（通过） | 6 tests，0 failures / 0 errors / 0 skipped |
+| Windows PowerShell 5.1 authority checker | PASS（通过） | 首次 post-sync 因 root/current README 与 ROADMAP 仍复制旧 next action 返回 5 errors；仅同步 checker 要求的入口摘要后重跑 `errors=0` |
+| current documentation link checker | PASS（通过） | 196 links checked / 0 errors / 1 个既有 `GATEJ_TEST_PLAN.md` historical-ledger warning |
+| frontend / Python / migration tests | NOT RUN（未运行） | 本批次未修改 frontend、Python、migration/schema；未启动数据库或外部服务 |
+
+RCA：首次 compile 因错误使用不存在的 `IOException` 四参数构造器失败，已改为安全无消息构造并重跑；首次 focused 命令因 PowerShell 未正确引用 `-Dsurefire.failIfNoSpecifiedTests`，Maven lifecycle 未开始，引用参数后重跑通过。首次 module full 的 1 个失败来自 Windows 目录 size/mtime 被误当作稳定 identity；收敛为目录仅比较 type/fileKey、普通文件仍比较 fileKey/size/mtime，并保留前后目录快照、文件集、real path 与逐文件双重 stat 后，focused、module 与全后端回归全部通过。未把失败轮次写成通过。
+
+Security / boundary：实际 Windows symlink escape、path traversal/absolute path、missing/extra file、digest/size/count、敏感内容、TOCTOU replacement 均有回归；verifier 使用双重 metadata/snapshot 检查但不宣称获得 OS 原子 stable handle。未访问 credential、private endpoint、生产数据库、Shadow 或交易写侧；LIVE=`DISABLED`。Blocking status：P0=0/P1=0/P2=1/P3=1；P2 为 OS/JDK 无原子 stable-handle 保证的剩余 TOCTOU 风险，P3 为既有 Maven settings profile warning，不阻断 commit。
