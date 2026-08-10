@@ -31,6 +31,8 @@ class JdbcStrategyReleaseProvenanceRepositoryTest {
         assertTrue(normalizedSql.contains("FROM BACKTEST_PUBLISH_RECORDS P"));
         assertTrue(normalizedSql.contains("WHERE P.PUBLISH_RECORD_ID = ?"));
         assertTrue(jdbcTemplate.lastSql.contains("r.dataset_snapshot_json ->> 'datasetId'"));
+        assertTrue(normalizedSql.contains("P.ARTIFACT_STORAGE_KEY"));
+        assertTrue(normalizedSql.contains("P.MANIFEST_STORAGE_KEY"));
         assertFalse(normalizedSql.contains(" INSERT "));
         assertFalse(normalizedSql.contains(" UPDATE "));
         assertFalse(normalizedSql.contains(" DELETE "));

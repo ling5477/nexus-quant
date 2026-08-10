@@ -23,7 +23,9 @@ public record StrategyReleaseProvenanceFacts(
         boolean strategyVersionPresent,
         boolean datasetPresent,
         Instant createdAt,
-        Instant publishedAt
+        Instant publishedAt,
+        String artifactStorageKey,
+        String manifestStorageKey
 ) {
     public static StrategyReleaseProvenanceFacts missing(String publishRecordId) {
         return new StrategyReleaseProvenanceFacts(
@@ -39,6 +41,8 @@ public record StrategyReleaseProvenanceFacts(
                 null,
                 false,
                 false,
+                null,
+                null,
                 null,
                 null
         );

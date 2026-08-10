@@ -7,7 +7,6 @@ import com.guidinglight.nexusquant.strategy.strategyrelease.artifact.TrustedRoot
 import com.guidinglight.nexusquant.strategy.strategyrelease.domain.StrategyRelease;
 import com.guidinglight.nexusquant.strategy.strategyrelease.domain.StrategyReleaseStatus;
 
-import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -30,15 +29,21 @@ public class StrategyReleaseProductionService {
     private static final String INVALID_ANCHOR = "<invalid-release-anchor>";
 
     private final StrategyReleaseProvenanceRepository provenanceRepository;
+    private final StrategyReleaseArtifactBindingResolver artifactBindingResolver;
     private final TrustedRootStrategyArtifactVerifier artifactVerifier;
 
     public StrategyReleaseProductionService(
             StrategyReleaseProvenanceRepository provenanceRepository,
+            StrategyReleaseArtifactBindingResolver artifactBindingResolver,
             TrustedRootStrategyArtifactVerifier artifactVerifier
     ) {
         this.provenanceRepository = Objects.requireNonNull(
                 provenanceRepository,
                 "provenanceRepository must not be null"
+        );
+        this.artifactBindingResolver = Objects.requireNonNull(
+                artifactBindingResolver,
+                "artifactBindingResolver must not be null"
         );
         this.artifactVerifier = Objects.requireNonNull(artifactVerifier, "artifactVerifier must not be null");
     }
@@ -46,12 +51,12 @@ public class StrategyReleaseProductionService {
     /**
      * 验证一条 publish-anchored Strategy Release。
      *
-     * @param command canonical publish anchor、trusted root 与 manifest；只读且可重复执行
+     * @param publishRecordId canonical publish anchor；artifact location 与 manifest 只从服务端事实解析
      * @return immutable aggregate；同一稳定事实、manifest 与 artifact 内容得到相同业务结果
      * @implNote 不保存结果、不启动 Shadow、不执行 artifact；repository 异常统一 fail-closed 为安全 reason code
      */
-    public StrategyRelease verify(VerificationCommand command) {
-        if (command == null) {
+    public StrategyRelease verify(String publishRecordId) {
+        if (publishRecordId == null) {
             StrategyArtifactManifest empty = StrategyArtifactManifest.empty();
             return rejected(
                     INVALID_ANCHOR,
@@ -61,10 +66,8 @@ public class StrategyReleaseProductionService {
             );
         }
 
-        String requestedAnchor = normalizeAnchor(command.releaseAnchorId());
-        StrategyArtifactManifest manifest = command.artifactManifest() == null
-                ? StrategyArtifactManifest.empty()
-                : command.artifactManifest();
+        String requestedAnchor = normalizeAnchor(publishRecordId);
+        StrategyArtifactManifest emptyManifest = StrategyArtifactManifest.empty();
 
         StrategyReleaseProvenanceFacts facts;
         try {
@@ -73,7 +76,7 @@ public class StrategyReleaseProductionService {
             return rejected(
                     requestedAnchor,
                     StrategyReleaseProvenanceFacts.missing(requestedAnchor),
-                    manifest,
+                    emptyManifest,
                     StrategyArtifactVerificationResult.rejected(
                             FindingCode.PROVENANCE_LOAD_FAILED,
                             "<publish-record>"
@@ -84,17 +87,45 @@ public class StrategyReleaseProductionService {
             facts = StrategyReleaseProvenanceFacts.missing(requestedAnchor);
         }
 
+        StrategyArtifactVerificationResult baseFailure = validateBaseProvenance(requestedAnchor, facts);
+        if (baseFailure != null) {
+            return rejected(requestedAnchor, facts, emptyManifest, baseFailure);
+        }
+
+        StrategyReleaseArtifactBindingResolver.ArtifactBindingResolution binding;
+        try {
+            binding = artifactBindingResolver.resolve(facts.artifactStorageKey(), facts.manifestStorageKey());
+        } catch (RuntimeException exception) {
+            binding = StrategyReleaseArtifactBindingResolver.ArtifactBindingResolution.rejected(
+                    FindingCode.ARTIFACT_LOCATION_UNSAFE,
+                    "<artifact-binding>"
+            );
+        }
+        if (binding == null || !binding.resolved()) {
+            FindingCode code = binding == null
+                    ? FindingCode.ARTIFACT_LOCATION_UNSAFE
+                    : binding.reasonCode();
+            String identifier = binding == null ? "<artifact-binding>" : binding.safeStorageIdentifier();
+            return rejected(
+                    requestedAnchor,
+                    facts,
+                    emptyManifest,
+                    StrategyArtifactVerificationResult.rejected(code, identifier)
+            );
+        }
+        StrategyArtifactManifest manifest = binding.manifest();
+
         Optional<StrategyArtifactVerificationResult> manifestFailure = artifactVerifier.validateManifest(manifest);
         if (manifestFailure.isPresent()) {
             return rejected(requestedAnchor, facts, manifest, manifestFailure.get());
         }
 
-        StrategyArtifactVerificationResult provenanceFailure = validateProvenance(requestedAnchor, manifest, facts);
+        StrategyArtifactVerificationResult provenanceFailure = validateManifestIdentity(manifest, facts);
         if (provenanceFailure != null) {
             return rejected(requestedAnchor, facts, manifest, provenanceFailure);
         }
 
-        StrategyArtifactVerificationResult verification = artifactVerifier.verify(command.trustedRoot(), manifest);
+        StrategyArtifactVerificationResult verification = artifactVerifier.verify(binding.artifactRoot(), manifest);
         String canonicalPublishId = canonicalPublishId(requestedAnchor, facts);
         return new StrategyRelease(
                 canonicalPublishId,
@@ -113,9 +144,8 @@ public class StrategyReleaseProductionService {
         );
     }
 
-    private StrategyArtifactVerificationResult validateProvenance(
+    private StrategyArtifactVerificationResult validateBaseProvenance(
             String requestedAnchor,
-            StrategyArtifactManifest manifest,
             StrategyReleaseProvenanceFacts facts
     ) {
         if (!facts.present()) {
@@ -132,24 +162,35 @@ public class StrategyReleaseProductionService {
                 || !hasOpaqueId(facts.runStrategyVersionId())) {
             return rejection(FindingCode.PROVENANCE_INCOMPLETE, "<strategy-version>");
         }
-        if (!facts.publishStrategyVersionId().equals(facts.runStrategyVersionId())
-                || !facts.publishStrategyVersionId().equals(manifest.strategyVersionId())) {
-            return rejection(FindingCode.STRATEGY_VERSION_MISMATCH, "<strategy-version>");
+        if (!facts.publishStrategyVersionId().equals(facts.runStrategyVersionId())) {
+            return rejection(FindingCode.PROVENANCE_INCOMPLETE, "<strategy-version>");
         }
         if (!facts.datasetPresent() || facts.datasetId() == null) {
             return rejection(FindingCode.PROVENANCE_INCOMPLETE, "<dataset>");
-        }
-        if (!facts.datasetId().equals(manifest.datasetId())) {
-            return rejection(FindingCode.DATASET_MISMATCH, "<dataset>");
         }
         if (!hasOpaqueId(facts.evaluationId())
                 || !hasOpaqueId(facts.backtestRunId())
                 || !facts.backtestRunId().equals(facts.evaluationBacktestRunId())) {
             return rejection(FindingCode.PROVENANCE_INCOMPLETE, "<evaluation>");
         }
-        if (!facts.evaluationId().equals(manifest.evaluationId())
-                || !"SUCCEEDED".equalsIgnoreCase(facts.evaluationStatus())) {
+        if (!"SUCCEEDED".equalsIgnoreCase(facts.evaluationStatus())) {
             return rejection(FindingCode.EVALUATION_MISMATCH, "<evaluation>");
+        }
+        return null;
+    }
+
+    private StrategyArtifactVerificationResult validateManifestIdentity(
+            StrategyArtifactManifest manifest,
+            StrategyReleaseProvenanceFacts facts
+    ) {
+        if (!facts.publishStrategyVersionId().equals(manifest.strategyVersionId())) {
+            return rejection(FindingCode.ARTIFACT_RELEASE_IDENTITY_MISMATCH, "<strategy-version>");
+        }
+        if (!facts.datasetId().equals(manifest.datasetId())) {
+            return rejection(FindingCode.ARTIFACT_RELEASE_IDENTITY_MISMATCH, "<dataset>");
+        }
+        if (!facts.evaluationId().equals(manifest.evaluationId())) {
+            return rejection(FindingCode.ARTIFACT_RELEASE_IDENTITY_MISMATCH, "<evaluation>");
         }
         return null;
     }
@@ -202,13 +243,4 @@ public class StrategyReleaseProductionService {
         return fallback == null || fallback.isBlank() ? null : fallback.trim();
     }
 
-    /**
-     * 只读验证命令；trustedRoot 由受信调用方提供，manifest 不能覆盖 releaseAnchorId。
-     */
-    public record VerificationCommand(
-            String releaseAnchorId,
-            Path trustedRoot,
-            StrategyArtifactManifest artifactManifest
-    ) {
-    }
 }

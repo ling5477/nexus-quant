@@ -37,7 +37,9 @@ GateX-4 BLOCKED / WAITING_FOR_ARTIFACT_LOCATOR_REMEDIATION
   ↓
 GateX-4A SCHEMA/SECURITY REVIEW PASS / DESIGN BLOCKER RESOLVED
   ↓
-GateX-4B REVIEW ACCEPTED / READY TO COMMIT
+GateX-4B ACCEPTED / CI GREEN
+  ↓
+GateX-4C REVIEW ACCEPTED / READY TO COMMIT
 ```
 
 ## 下一允许动作
@@ -58,8 +60,9 @@ GateX-4B REVIEW ACCEPTED / READY TO COMMIT
 - GateX-3：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`5f4824eecaac5cffbbc314fb8f767bd6ba45c29f`，exact-head CI run=`31391541813 / completed / success`。production capability 只覆盖 fail-closed Release-to-Shadow admission 纯决策与不可变 `ShadowRunCreationPlan`，不创建 Shadow Run，不引入持久化、外部 IO 或交易副作用。
 - GateX-4：`BLOCKED / WAITING FOR SERVER-CONTROLLED ARTIFACT BINDING`（阻断 / 等待服务端受控 artifact 绑定）；原 API/UI 未实现，不得写成 accepted。
 - GateX-4A：`PASS / DESIGN BLOCKER RESOLVED`（通过 / 设计阻断已解决）；方案 A 固定在 `backtest_publish_records` 增加 nullable pair `artifact_storage_key` / `manifest_storage_key`，使用受限 opaque key、绑定后不可变、trusted root 只来自服务端配置且 `NO FAKE BACKFILL`。4B 已按当前 provider contract 重新判断并未增加缺乏正式 invariant 的 partial UNIQUE。
-- GateX-4B：`REVIEW ACCEPTED / READY TO COMMIT`（审查已接受 / 可进入提交前复核）；独立 review 为 P0=0/P1=0，V37、domain/repository/JDBC、内部 typed publish input、trigger immutability 与 disposable PostgreSQL fresh/upgrade/并发回归均通过，producer 尚未接线。typed trusted-root resolver、legacy fail-closed API/admission 与 GateX-4 API/UI 仍未实现。
-- 当前唯一治理动作是 `NQ-GATEX-4B-COMMIT-AND-PUSH`；不得在 commit/push 前初始化 GateX-4C 或恢复 GateX-4 API/UI。
+- GateX-4B：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`92043c37dad96d984d5e55a1e5170c97d335d6d4`，exact-head CI run=`31403529376 / completed / success`。Producer 仍为 `PERSISTENCE_READY / PRODUCER_NOT_YET_CONNECTED`。
+- GateX-4C：`REVIEW ACCEPTED / READY TO COMMIT`（审查已接受 / 可进入提交前复核）；duplicate manifest identity key 的 P1 已最小关闭，trusted-root/path/reparse/TOCTOU/cross-release/parser/assembly 边界经独立审查，P0=0/P1=0，仍为 `UNCOMMITTED / CI NOT RUN`。
+- 当前唯一治理动作是 `NQ-GATEX-4C-COMMIT-AND-PUSH`；不得伪造 producer、恢复 GateX-4 API/UI、创建或启动 Shadow Run、开启 LIVE 或触达交易写侧。
 
 ## GateW 已冻结边界
 

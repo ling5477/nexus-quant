@@ -12983,3 +12983,40 @@ RCA：首次 focused invocation 因 PowerShell 未引用 JDBC `-D` 参数，在 
 Boundary / findings：P0=0/P1=0/P2=2（生产锁窗口未测；provider 全局唯一 invariant 未冻结）/P3=1（工具降级与既有 build warnings）。GateX-4 API/UI、producer/resolver、Shadow create/start、交易/LIVE、credential/private endpoint、AI/DH runtime 变更均为 0。
 
 完整证据：[evidence/gate-x/NQ-GATEX-4B-PERSISTENT-ARTIFACT-LOCATOR-MIGRATION-REVIEW.attempt-01.md](evidence/gate-x/NQ-GATEX-4B-PERSISTENT-ARTIFACT-LOCATOR-MIGRATION-REVIEW.attempt-01.md)。
+
+## 2026-08-10 — GateX-4C server-controlled artifact binding implementation attempt-01
+
+| Command / Check | Result | Scope / Environment / Warning |
+| --- | --- | --- |
+| GateX-4B exact-head preflight | PASS（通过） | `dev` clean；`HEAD == origin/dev == 92043c37...`；CI run `31403529376 / completed / success`；LIVE=`DISABLED` |
+| focused five-suite reactor | PASS（通过） | production service 17/17、GateX-1 verifier 2（1 symlink privilege skip）、resolver/JDBC 9（1 symlink privilege skip）、typed config 3/3；0 failure / 0 error |
+| Windows junction / root replacement | PASS（通过） | `mklink /J` junction escape 实际构造并拒绝；root replacement hook 实际执行并 fail-closed；未把 symlink privilege skip 写成通过 |
+| `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-app -am test` | PASS（通过） | 23-module focused reactor；`nq-app` 250 tests、0 failures、0 errors、16 skipped；`BUILD SUCCESS` |
+| `mvn -f backend/pom.xml test` | PASS（通过） | 全后端 23 modules；汇总 1420 tests、0 failures、0 errors、25 skipped；`BUILD SUCCESS` |
+| `ModuleBoundaryArchTest` / `PackageBoundaryArchTest` | PASS（通过） | canonical suites 各 6/6 |
+| authority / diff / scope checks | PASS（通过） | authority checker `errors=0`；`git diff --check` 通过；migration/frontend/Python/deploy/HTTP diff=0 |
+
+RCA：首次 focused 命令的未引用 `-D` 参数被 PowerShell 误解析，未进入 lifecycle；随后 testCompile 的 `resolver(null)` 重载歧义、Windows `fileKey=null` 过严判断与 missing-root reason code 分类先后失败。均按最小根因修复并重跑到通过；失败轮次未写成测试通过。既有 SLF4J NOP、Mockito dynamic-agent、CDS 与编译 warning 保留为非阻断提示。
+
+Boundary / findings：P0=0/P1=0/P2=1（Java NIO 不提供目录句柄绑定，NOFOLLOW/real-path/file identity 只能缩小而不能数学消除 TOCTOU 窗口）/P3=1（symlink privilege test 1 个环境 skip；junction 实测通过）。Producer=`PERSISTENCE_READY / PRODUCER_NOT_YET_CONNECTED`；migration/API/UI/frontend/Python/Shadow create/start/交易/LIVE/credential/private endpoint/AI/DH runtime 变更均为 0。
+
+完整证据：[evidence/gate-x/NQ-GATEX-4C-SERVER-CONTROLLED-ARTIFACT-BINDING-IMPLEMENTATION.attempt-01.md](evidence/gate-x/NQ-GATEX-4C-SERVER-CONTROLLED-ARTIFACT-BINDING-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-11 — GateX-4C server-controlled artifact binding security review attempt-01
+
+| Command / Check | Result | Scope / Environment / Warning |
+| --- | --- | --- |
+| resolver duplicate-key red test | FAIL（预期失败） | 原 reader 对重复 `strategyVersionId` 后值覆盖；9 tests 中 1 failure，确认 P1 后才实施最小修复 |
+| resolver suite after fix | PASS（通过） | 12 tests、0 failures、0 errors、1 Windows symlink privilege skip；duplicate/parser/key/cross-release/mixed-locator/root/target/junction 覆盖通过 |
+| five security-focused suites | PASS（通过） | service 17、verifier 2（1 skip）、resolver 12（1 skip）、JDBC 1、config 3；合计 35 tests、0 failures、0 errors、2 skipped；23 modules `BUILD SUCCESS` |
+| `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-app -am test` | PASS（通过） | 23 modules `BUILD SUCCESS`；`nq-app` 250 tests、0 failures、0 errors、16 skipped；两项 canonical ArchUnit suites 各 6/6 |
+| `mvn -f backend/pom.xml test` | PASS（通过） | 本次生成的 278 份 Surefire XML 汇总 1345 tests、0 failures、0 errors、25 skipped；23 modules `BUILD SUCCESS` |
+| stale-report audit | PASS（通过） | 排除 7 份 2026-08-09 旧包名报告（79 tests）；直接汇总全部历史 XML 会误报 1424，前序 implementation 记录的 1420 属同一陈旧口径，本次不沿用 |
+| Linux symlink proof | NOT RUN（未运行） | WSL Ubuntu 无 Java/Maven；Docker server 查询无响应后终止；未安装 runtime、未拉镜像/建容器，保留 P2 |
+| authority / diff / staged scope | PASS（通过） | authority `errors=0`；tracked/cached whitespace 与精确 staged scope 最终检查通过；未 commit/push |
+
+RCA / fix：duplicate JSON identity key 可 shadow `strategyVersionId` 并被后值覆盖，定级 P1；在既有 `ObjectReader` 增加 `StreamReadFeature.STRICT_DUPLICATE_DETECTION` 后 fail-closed，未改 schema/API/provider/verifier contract。新增 same-digest cross-release、mixed locator、unknown/trailing/malformed encoding 与 artifact replacement 回归。
+
+Boundary / findings：P0=0/P1=0（1 个 duplicate-key P1 已关闭）/P2=4（OS atomic stable handle、Linux symlink proof、trusted-root breadth policy、provider platform/encoding contract）/P3=0。Producer=`PERSISTENCE_READY / PRODUCER_NOT_YET_CONNECTED`；migration/API/UI/frontend/Python/Shadow create/start/交易/LIVE/credential/private endpoint/AI/DH runtime 变更均为 0。
+
+完整证据：[evidence/gate-x/NQ-GATEX-4C-SERVER-CONTROLLED-ARTIFACT-BINDING-SECURITY-REVIEW.attempt-01.md](evidence/gate-x/NQ-GATEX-4C-SERVER-CONTROLLED-ARTIFACT-BINDING-SECURITY-REVIEW.attempt-01.md)。

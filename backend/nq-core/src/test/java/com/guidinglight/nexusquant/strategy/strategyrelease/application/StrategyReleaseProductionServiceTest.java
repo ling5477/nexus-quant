@@ -45,7 +45,7 @@ class StrategyReleaseProductionServiceTest {
     void shouldVerifyCanonicalPublishAnchoredRelease() throws Exception {
         StrategyArtifactManifest manifest = manifest(tempDir, "artifacts/evaluation.json", "{\"score\":1}");
 
-        StrategyRelease result = service(facts()).verify(command(tempDir, manifest));
+        StrategyRelease result = service(facts(), tempDir, manifest).verify(PUBLISH_ID);
 
         assertEquals(
                 StrategyReleaseStatus.VERIFIED,
@@ -75,7 +75,10 @@ class StrategyReleaseProductionServiceTest {
                 EVALUATION_ID
         );
 
-        assertRejected(service(mismatched).verify(command(tempDir, manifest)), FindingCode.PUBLISH_IDENTITY_MISMATCH);
+        assertRejected(
+                service(mismatched, tempDir, manifest).verify(PUBLISH_ID),
+                FindingCode.PUBLISH_IDENTITY_MISMATCH
+        );
     }
 
     @Test
@@ -89,7 +92,10 @@ class StrategyReleaseProductionServiceTest {
                 null
         );
 
-        assertRejected(service(facts()).verify(command(tempDir, manifest)), FindingCode.STRATEGY_VERSION_MISMATCH);
+        assertRejected(
+                service(facts(), tempDir, manifest).verify(PUBLISH_ID),
+                FindingCode.ARTIFACT_RELEASE_IDENTITY_MISMATCH
+        );
     }
 
     @Test
@@ -103,7 +109,10 @@ class StrategyReleaseProductionServiceTest {
                 null
         );
 
-        assertRejected(service(facts()).verify(command(tempDir, manifest)), FindingCode.DATASET_MISMATCH);
+        assertRejected(
+                service(facts(), tempDir, manifest).verify(PUBLISH_ID),
+                FindingCode.ARTIFACT_RELEASE_IDENTITY_MISMATCH
+        );
     }
 
     @Test
@@ -117,7 +126,10 @@ class StrategyReleaseProductionServiceTest {
                 null
         );
 
-        assertRejected(service(facts()).verify(command(tempDir, manifest)), FindingCode.EVALUATION_MISMATCH);
+        assertRejected(
+                service(facts(), tempDir, manifest).verify(PUBLISH_ID),
+                FindingCode.ARTIFACT_RELEASE_IDENTITY_MISMATCH
+        );
     }
 
     @Test
@@ -131,7 +143,7 @@ class StrategyReleaseProductionServiceTest {
                 null
         );
 
-        assertRejected(service(facts()).verify(command(tempDir, manifest)), FindingCode.UNSUPPORTED_SCHEMA_VERSION);
+        assertRejected(service(facts(), tempDir, manifest).verify(PUBLISH_ID), FindingCode.UNSUPPORTED_SCHEMA_VERSION);
     }
 
     @Test
@@ -148,7 +160,7 @@ class StrategyReleaseProductionServiceTest {
                 valid.generatorVersion()
         );
 
-        assertRejected(service(facts()).verify(command(tempDir, manifest)), FindingCode.MANIFEST_FIELD_MISSING);
+        assertRejected(service(facts(), tempDir, manifest).verify(PUBLISH_ID), FindingCode.MANIFEST_FIELD_MISSING);
     }
 
     @Test
@@ -162,7 +174,7 @@ class StrategyReleaseProductionServiceTest {
                 "INVALID"
         );
 
-        assertRejected(service(facts()).verify(command(tempDir, manifest)), FindingCode.INVALID_DIGEST);
+        assertRejected(service(facts(), tempDir, manifest).verify(PUBLISH_ID), FindingCode.INVALID_DIGEST);
     }
 
     @Test
@@ -170,7 +182,7 @@ class StrategyReleaseProductionServiceTest {
         StrategyArtifactManifest manifest = manifest(tempDir, "artifact.json", "{\"score\":1}");
         Files.delete(tempDir.resolve("artifact.json"));
 
-        assertRejected(service(facts()).verify(command(tempDir, manifest)), FindingCode.ARTIFACT_NOT_FOUND);
+        assertRejected(service(facts(), tempDir, manifest).verify(PUBLISH_ID), FindingCode.ARTIFACT_NOT_FOUND);
     }
 
     @Test
@@ -178,7 +190,7 @@ class StrategyReleaseProductionServiceTest {
         StrategyArtifactManifest manifest = manifest(tempDir, "artifact.json", "{\"score\":1}");
         Files.writeString(tempDir.resolve("extra.json"), "{\"extra\":true}", StandardCharsets.UTF_8);
 
-        assertRejected(service(facts()).verify(command(tempDir, manifest)), FindingCode.UNDECLARED_ARTIFACT);
+        assertRejected(service(facts(), tempDir, manifest).verify(PUBLISH_ID), FindingCode.UNDECLARED_ARTIFACT);
     }
 
     @Test
@@ -187,7 +199,7 @@ class StrategyReleaseProductionServiceTest {
         ArtifactFile unsafe = copyArtifact(valid.artifactFiles().getFirst(), "../outside.json");
         StrategyArtifactManifest manifest = withArtifacts(valid, List.of(unsafe));
 
-        assertRejected(service(facts()).verify(command(tempDir, manifest)), FindingCode.PATH_ESCAPES_TRUSTED_ROOT);
+        assertRejected(service(facts(), tempDir, manifest).verify(PUBLISH_ID), FindingCode.PATH_ESCAPES_TRUSTED_ROOT);
     }
 
     @Test
@@ -196,7 +208,7 @@ class StrategyReleaseProductionServiceTest {
         ArtifactFile unsafe = copyArtifact(valid.artifactFiles().getFirst(), "C:/outside.json");
         StrategyArtifactManifest manifest = withArtifacts(valid, List.of(unsafe));
 
-        assertRejected(service(facts()).verify(command(tempDir, manifest)), FindingCode.INVALID_RELATIVE_PATH);
+        assertRejected(service(facts(), tempDir, manifest).verify(PUBLISH_ID), FindingCode.INVALID_RELATIVE_PATH);
     }
 
     @Test
@@ -207,7 +219,7 @@ class StrategyReleaseProductionServiceTest {
                 "{\"apiKey\":\"synthetic-sensitive-value\"}"
         );
 
-        StrategyRelease result = service(facts()).verify(command(tempDir, manifest));
+        StrategyRelease result = service(facts(), tempDir, manifest).verify(PUBLISH_ID);
 
         assertRejected(result, FindingCode.SENSITIVE_ARTIFACT_VALUE);
         assertEquals("artifact.json", result.verificationResult().safeRelativeIdentifier());
@@ -219,10 +231,12 @@ class StrategyReleaseProductionServiceTest {
         StrategyArtifactManifest manifest = manifest(tempDir, "artifact.json", "12345");
         StrategyReleaseProductionService service = service(
                 facts(),
+                tempDir,
+                manifest,
                 new StrategyArtifactVerificationPolicy(4, 4, 16)
         );
 
-        assertRejected(service.verify(command(tempDir, manifest)), FindingCode.ARTIFACT_TOO_LARGE);
+        assertRejected(service.verify(PUBLISH_ID), FindingCode.ARTIFACT_TOO_LARGE);
     }
 
     @Test
@@ -236,43 +250,83 @@ class StrategyReleaseProductionServiceTest {
         );
         StrategyReleaseProductionService service = service(
                 facts(),
+                tempDir,
+                manifest,
                 new StrategyArtifactVerificationPolicy(1, 1024, 2048)
         );
 
-        assertRejected(service.verify(command(tempDir, manifest)), FindingCode.ARTIFACT_COUNT_LIMIT_EXCEEDED);
+        assertRejected(service.verify(PUBLISH_ID), FindingCode.ARTIFACT_COUNT_LIMIT_EXCEEDED);
     }
 
     @Test
     void shouldReturnDeterministicResultForStableInputs() throws Exception {
         StrategyArtifactManifest manifest = manifest(tempDir, "artifact.json", "{\"score\":1}");
-        StrategyReleaseProductionService service = service(facts());
+        StrategyReleaseProductionService service = service(facts(), tempDir, manifest);
 
-        StrategyRelease first = service.verify(command(tempDir, manifest));
-        StrategyRelease second = service.verify(command(tempDir, manifest));
+        StrategyRelease first = service.verify(PUBLISH_ID);
+        StrategyRelease second = service.verify(PUBLISH_ID);
 
         assertEquals(first, second);
         assertNotNull(first.verificationResult().artifactDigest());
     }
 
-    private StrategyReleaseProductionService service(StrategyReleaseProvenanceFacts facts) {
-        return service(facts, new StrategyArtifactVerificationPolicy(8, 1024 * 1024, 4 * 1024 * 1024));
+    @Test
+    void shouldRejectLegacyUnboundRelease() throws Exception {
+        StrategyArtifactManifest manifest = manifest(tempDir, "artifact.json", "{\"score\":1}");
+        StrategyReleaseProvenanceFacts unbound = new StrategyReleaseProvenanceFacts(
+                true,
+                PUBLISH_ID,
+                RUN_ID,
+                STRATEGY_VERSION_ID,
+                STRATEGY_VERSION_ID,
+                DATASET_ID,
+                EVALUATION_ID,
+                RUN_ID,
+                "SUCCEEDED",
+                "SUCCEEDED",
+                true,
+                true,
+                CREATED_AT,
+                PUBLISHED_AT,
+                null,
+                null
+        );
+
+        assertRejected(
+                service(unbound, tempDir, manifest).verify(PUBLISH_ID),
+                FindingCode.ARTIFACT_LOCATION_UNBOUND
+        );
     }
 
     private StrategyReleaseProductionService service(
             StrategyReleaseProvenanceFacts facts,
+            Path root,
+            StrategyArtifactManifest manifest
+    ) {
+        return service(
+                facts,
+                root,
+                manifest,
+                new StrategyArtifactVerificationPolicy(8, 1024 * 1024, 4 * 1024 * 1024)
+        );
+    }
+
+    private StrategyReleaseProductionService service(
+            StrategyReleaseProvenanceFacts facts,
+            Path root,
+            StrategyArtifactManifest manifest,
             StrategyArtifactVerificationPolicy policy
     ) {
         return new StrategyReleaseProductionService(
                 ignored -> facts,
+                (artifactStorageKey, manifestStorageKey) -> artifactStorageKey == null || manifestStorageKey == null
+                        ? StrategyReleaseArtifactBindingResolver.ArtifactBindingResolution.rejected(
+                        FindingCode.ARTIFACT_LOCATION_UNBOUND,
+                        "<artifact-binding>"
+                )
+                        : StrategyReleaseArtifactBindingResolver.ArtifactBindingResolution.resolved(root, manifest),
                 new TrustedRootStrategyArtifactVerifier(policy)
         );
-    }
-
-    private StrategyReleaseProductionService.VerificationCommand command(
-            Path root,
-            StrategyArtifactManifest manifest
-    ) {
-        return new StrategyReleaseProductionService.VerificationCommand(PUBLISH_ID, root, manifest);
     }
 
     private StrategyArtifactManifest manifest(Path root, String relativePath, String content) throws IOException {
@@ -380,7 +434,9 @@ class StrategyReleaseProductionServiceTest {
                 true,
                 true,
                 CREATED_AT,
-                PUBLISHED_AT
+                PUBLISHED_AT,
+                "artifact_release_01",
+                "manifest_release_01.json"
         );
     }
 

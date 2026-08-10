@@ -49,7 +49,9 @@ public class JdbcStrategyReleaseProvenanceRepository implements StrategyReleaseP
                                (sv.strategy_version_id IS NOT NULL) AS strategy_version_present,
                                (d.dataset_id IS NOT NULL) AS dataset_present,
                                p.created_at,
-                               p.published_at
+                               p.published_at,
+                               p.artifact_storage_key,
+                               p.manifest_storage_key
                         FROM backtest_publish_records p
                         LEFT JOIN backtest_runs r ON r.backtest_run_id = p.backtest_run_id
                         LEFT JOIN backtest_eval_reports e ON e.eval_report_id = p.eval_report_id
@@ -80,7 +82,9 @@ public class JdbcStrategyReleaseProvenanceRepository implements StrategyReleaseP
                 resultSet.getBoolean("strategy_version_present"),
                 resultSet.getBoolean("dataset_present"),
                 toInstant(resultSet.getTimestamp("created_at")),
-                toInstant(resultSet.getTimestamp("published_at"))
+                toInstant(resultSet.getTimestamp("published_at")),
+                resultSet.getString("artifact_storage_key"),
+                resultSet.getString("manifest_storage_key")
         );
     }
 

@@ -18324,3 +18324,32 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - result：`PASS / MIGRATION_REVIEW_ACCEPTED / LOCATOR_IMMUTABILITY_VERIFIED / CONCURRENT_FIRST_BIND_VERIFIED / POSTGRESQL_COMPATIBILITY_VERIFIED / READY_TO_COMMIT`。
 - authority：`GateX-4B / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
 - next：唯一下一动作=`NQ-GATEX-4B-COMMIT-AND-PUSH`；不得启动 GateX-4C。
+
+## 2026-08-10 — GateX-4C server-controlled artifact binding implementation attempt-01
+
+- task：`NQ-GATEX-4C-SERVER-CONTROLLED-ARTIFACT-BINDING-IMPLEMENTATION`；NQ-only、L 级 backend security / server-controlled filesystem trust boundary / typed config / regression。
+- baseline：`dev` clean、staged empty；`HEAD == origin/dev == 92043c37dad96d984d5e55a1e5170c97d335d6d4`；GateX-4B exact-head CI run=`31403529376 / completed / success`，进入前已收口为 `ACCEPTED|CI_GREEN`。
+- implementation：新增 `nq.strategy-release.artifacts.trusted-root` typed properties，无 cwd/home/temp default；opaque key 只按 GateX-4A 已冻结合同解析为 configured root 的 direct child；逐级 NOFOLLOW、real-path containment、regular file/directory、bounded 1 MiB manifest、前后 file identity 与 root replacement 检查全部 fail-closed。
+- integration：`StrategyReleaseProductionService` 现在唯一接收 `publishRecordId`，一次 JDBC provenance SELECT 回载 locator pair；删除 caller-supplied `Path + manifest` command；manifest 的 schema/strategyVersionId/datasetId/evaluationId/artifactDigest 经现有 GateX-1 verifier 与 release facts 绑定后才返回 VERIFIED。
+- validation：focused five-suite 通过；Windows junction 与 root replacement 实测通过；focused reactor 与 full backend 均 23 modules `BUILD SUCCESS`；全后端汇总 1420 tests、0 failures / 0 errors / 25 skipped；两项 ArchUnit 各 6/6；authority/diff/scope checks 通过。
+- RCA：修复 PowerShell `-D` 引用、test helper overload、过严 non-null fileKey 与 missing-root reason mapping；每次修复均重跑，最终全部通过。
+- boundary：V37/其他 migration、producer、HTTP/API/UI、frontend、Python、scheduler/runner、Shadow create/start、交易状态机、LIVE、credential/private endpoint、真实交易、AI/DH runtime 变更=`0`；artifact root 默认保持 `UNCONFIGURED / DISABLED`。
+- findings：P0=0/P1=0/P2=1（Java NIO TOCTOU residual，已用 NOFOLLOW/identity/snapshot fail-closed 缩小）/P3=1（symlink privilege 环境 skip；Windows junction 实测通过）。
+- result：`IMPLEMENTED / SERVER_CONTROLLED_ARTIFACT_BINDING_COMPLETE / TRUSTED_ROOT_BOUNDARY_HARDENED / PENDING_INDEPENDENT_SECURITY_REVIEW`；未 commit、未 push、CI 未运行。
+- authority：`GateX-4C / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`。
+- next：唯一下一动作=`NQ-GATEX-4C-SERVER-CONTROLLED-ARTIFACT-BINDING-SECURITY-REVIEW`；不得恢复 GateX-4 API/UI。
+
+## 2026-08-11 — GateX-4C server-controlled artifact binding security review attempt-01
+
+- task：`NQ-GATEX-4C-SERVER-CONTROLLED-ARTIFACT-BINDING-SECURITY-REVIEW`；NQ-only、高风险独立 filesystem/path/cross-release/TOCTOU/config/assembly security review。
+- baseline：`dev`；starting `HEAD == origin/dev == 92043c37dad96d984d5e55a1e5170c97d335d6d4`；进入时 19 个允许 staged implementation 路径、unstaged/untracked=`0/0`；authority=`GateX-4C / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`。
+- chain：确认 production 唯一链路为 `publishRecordId → JDBC persisted locator pair → internal resolver → server configured root → bounded manifest → GateX-1 verifier → production service`；main/API/contract/Spring 无 caller `Path`/manifest 或 fallback resolver 旁路。
+- P1 RCA/fix：真实 regression 证明 duplicate `strategyVersionId` 会被 Jackson 后值覆盖并错误 resolved；在既有 reader 启用 `STRICT_DUPLICATE_DETECTION` 后拒绝为 `ARTIFACT_MANIFEST_INVALID`，未改变 schema/API/provider/verifier contract。
+- security coverage：12-case resolver suite 覆盖 key 攻击矩阵、unknown/trailing/malformed encoding、same-digest cross-release、mixed locator、Windows junction、root 与 artifact target replacement；普通 symlink 因 Windows privilege skip，Ubuntu WSL 无 Java/Maven，Linux proof 明确保留 P2。
+- validation：five focused suites 35 tests、0 failures、0 errors、2 skipped；focused/full backend 均 23 modules `BUILD SUCCESS`，`nq-app` 250 tests、0 failures、0 errors、16 skipped；full run 278 份当前 Surefire XML 汇总 1345 tests、0 failures、0 errors、25 skipped；两项 ArchUnit 各 6/6。
+- report hygiene：发现 target 中 7 份 2026-08-09 旧包名陈旧 XML（79 tests）；全部历史报告相加会误报 1424，前序 implementation 的 1420 也使用了该陈旧口径，本轮证据只采用当前 run 产物并明确纠正。
+- findings：P0=0/P1=0（duplicate-key P1 已关闭）/P2=4（OS atomic stable handle、Linux symlink proof、trusted-root breadth policy、provider platform/encoding contract）/P3=0。
+- boundary：producer 保持 `PERSISTENCE_READY / PRODUCER_NOT_YET_CONNECTED`；GateX-4 API/UI 继续 blocked；migration/frontend/Python/Shadow create/start/scheduler/runner/交易状态机/LIVE/credential/private endpoint/真实交易/AI/DH runtime 变更=`0`。
+- result：`PASS / SECURITY_REVIEW_ACCEPTED / SERVER_CONTROLLED_ARTIFACT_BOUNDARY_VERIFIED / CROSS_RELEASE_ISOLATION_VERIFIED / READY_TO_COMMIT`；未 commit、未 push、CI 未运行。
+- authority：`GateX-4C / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
+- next：唯一下一动作=`NQ-GATEX-4C-COMMIT-AND-PUSH`；不得恢复 GateX-4 API/UI。
