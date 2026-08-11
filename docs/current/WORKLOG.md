@@ -18353,3 +18353,17 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - result：`PASS / SECURITY_REVIEW_ACCEPTED / SERVER_CONTROLLED_ARTIFACT_BOUNDARY_VERIFIED / CROSS_RELEASE_ISOLATION_VERIFIED / READY_TO_COMMIT`；未 commit、未 push、CI 未运行。
 - authority：`GateX-4C / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
 - next：唯一下一动作=`NQ-GATEX-4C-COMMIT-AND-PUSH`；不得恢复 GateX-4 API/UI。
+
+## 2026-08-11 — GateX-4 minimal API/UI closure implementation attempt-02
+
+- task：`NQ-GATEX-4-MINIMAL-API-UI-CLOSURE-IMPLEMENTATION`；NQ-only、read-only backend API / release admission query orchestration / minimal frontend closure / self-review / regression。
+- baseline：`dev` clean、staged empty；starting `HEAD == origin/dev == b4e5406fbb9de5432f79f9ef8ef76c95002e0e56`；GateX-4C exact-head CI run `31409595743` 为 `completed / success / bad jobs=0`，先收口 `accepted_batch=GateX-4C / ACCEPTED|CI_GREEN`，再恢复 `GateX-4 / NOT_STARTED`。
+- fact audit：仅凭 `publishRecordId` 已可由 production provenance/JDBC、persistent locator、server-configured trusted-root resolver、strict manifest/artifact verifier、immutable backtest window、canonical validation evaluator 与 GateX-3 admission service 组装全部事实；客户端不能提交 digest/path/root/storage key/manifest/validation/safety truth，missing/exception 均 fail-closed。
+- backend：新增 `StrategyReleaseAdmissionPreviewService` 与 SELECT-only facts port/JDBC adapter；复用 `StrategyReleaseProductionService.verify(...)`、`StrategyValidationOverviewQueryService.evaluateDecision(...)`、`ReleaseToShadowAdmissionService.admit(...)`。新增 GET `/api/strategy-releases/{publishRecordId}/shadow-admission-preview` 与最小安全 DTO；404 只表示 publish missing，legacy/rejected/policy blocked 均 200 + BLOCKED。
+- frontend：在既有 `StrategyValidationWorkspace` 增加小型“Shadow 准入预览”区块；使用 centralized `strategyReleaseQueryKeys.admissionPreview(publishRecordId)`、TanStack Query 与 canonical `StatusTag`；交互只有刷新/查看 provenance，无创建、启动、执行、重绑、上传、交易按钮。
+- validation：focused backend 16/16；scoped/full backend 均 23 modules `BUILD SUCCESS`；最终 `nq-app` 252 tests、0 failures、0 errors、16 skipped；ArchUnit 12/12；frontend build PASS；targeted Playwright 9/9；authority `errors=0`；doc links 210 checked/0 errors/1 existing warning。初始 Maven 参数/测试依赖/matcher/loading assertion、Windows reserved port 与 doc-links CLI array 问题均完成 RCA、最小修正和重跑，未掩盖失败。
+- self-review：无循环外部 API/DB、无 N+1、无无界读取；Shadow CTE 通过 exact selected publish + strategy index anchor 收敛，全部子查询 `LIMIT 1`；事务只读，异常映射 fail-closed；无敏感响应/日志、无外部调用超时重试问题、无幂等写需求、无资源释放风险；失败/边界/RBAC/响应安全/E2E 状态已覆盖。
+- findings：P0=0/P1=0/P2=0（自审发现的未索引 Shadow publish 扫描风险已通过 indexed strategy anchor 最小修复并回归）/P3=1（既有 Maven settings、Mockito future agent、Ant Design React 19 compatibility 与 Vite chunk warning，均非本轮引入或阻断）。
+- boundary：migration/V37、artifact producer、filesystem upload/import、locator registration API、Shadow create/start、scheduler/runner、order/risk/ledger write、private exchange API、credential、LIVE、AI/DH/Integration 与大规模 frontend 重构变更=`0`。
+- authority：治理 contract 不包含 `IMPLEMENTED|READY_TO_COMMIT`；按普通 implementation canonical lifecycle 使用 `GateX-4 / IMPLEMENTED|SELF_REVIEWED / UNCOMMITTED / NOT_RUN`，其唯一 COMMIT_AND_PUSH action 为 `NQ-GATEX-4-COMMIT-AND-PUSH`。
+- result：`IMPLEMENTED / GATEX_4_MINIMAL_API_UI_CLOSURE_COMPLETE / READ_ONLY_ADMISSION_PREVIEW_VERIFIED / READY_TO_COMMIT`；未 commit、未 push。

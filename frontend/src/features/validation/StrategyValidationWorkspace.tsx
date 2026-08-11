@@ -26,6 +26,7 @@ import {formatApiError} from '@/api/errors';
 import {DataFreshness, type FreshnessState} from '@/nq-design-system/status/DataFreshness';
 import {StatusTag as CanonicalStatusTag} from '@/nq-design-system/status/StatusTag';
 import {useStrategyValidationWorkspaceQueries} from '@/features/validation/hooks/useStrategyValidationWorkspaceQueries';
+import {StrategyReleaseAdmissionPreviewPanel} from '@/features/validation/StrategyReleaseAdmissionPreviewPanel';
 import {ValidationReviewSection} from '@/features/validation/review/ValidationReviewSection';
 import type {AppApiError} from '@/types/api';
 import type {ReadModelEvidenceMetadata} from '@/types/read-model-evidence';
@@ -6314,6 +6315,7 @@ export function StrategyValidationWorkspace({
         evaluationGateQuery,
         paperShadowQuery,
         shadowLivePreviewQuery,
+        releaseAdmissionPreviewQuery,
         selectedShadowRunId,
         consistencyDrilldownQuery,
         loading,
@@ -6351,6 +6353,10 @@ export function StrategyValidationWorkspace({
             </ValidationOperationsDetailSections>
             <QueryForm initialValues={initialQuery} onSubmit={onSubmit} onReset={onReset} loading={loading}/>
             <StatusSemantics/>
+            <StrategyReleaseAdmissionPreviewPanel
+                publishRecordId={submittedQuery?.publishId?.trim() || null}
+                query={releaseAdmissionPreviewQuery}
+            />
             <TraceabilityChain
                 submittedQuery={submittedQuery}
                 gate={evaluationGateQuery.data}

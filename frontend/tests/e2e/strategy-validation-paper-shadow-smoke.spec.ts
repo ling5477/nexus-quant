@@ -1141,6 +1141,21 @@ const UNKNOWN_GATE_FIXTURE = {
     nextSteps: ['Resolve missing dataset facts before review.'],
 };
 
+const RELEASE_ADMISSION_PREVIEW_FIXTURE = {
+    publishRecordId: 'pub-gateq-5',
+    releaseAnchorId: 'pub-gateq-5',
+    strategyVersionId: 'sv-gateq-5',
+    datasetId: '11111111-1111-4111-8111-111111111111',
+    evaluationId: 'eval-gateq-5',
+    bindingMode: 'RELEASE_BOUND',
+    releaseStatus: 'VERIFIED',
+    artifactVerificationStatus: 'VERIFIED',
+    validationDecision: 'APPROVED',
+    admissionDecision: 'ELIGIBLE',
+    reasonCodes: ['ELIGIBLE_FOR_CREATION_PLAN_ONLY'],
+    artifactDigest: 'a'.repeat(64),
+};
+
 async function seedAuthAndGateQStubs(
     page: Page,
     overrides: {
@@ -1150,6 +1165,9 @@ async function seedAuthAndGateQStubs(
         consistencyEvidence?: Record<string, unknown>;
         incidentReplayReview?: Record<string, unknown>;
         runtimeEvidence?: Record<string, unknown>;
+        releaseAdmissionPreview?: Record<string, unknown>;
+        releaseAdmissionStatus?: number;
+        releaseAdmissionDelayMs?: number;
     } = {},
 ): Promise<string[]> {
     const requests: string[] = [];
@@ -1259,6 +1277,20 @@ async function seedAuthAndGateQStubs(
         status: 200,
         json: overrides.preview ?? SHADOW_PREVIEW_FIXTURE,
     }));
+
+    await page.route('**/api/strategy-releases/*/shadow-admission-preview', async (route: Route) => {
+        expect(route.request().method()).toBe('GET');
+        if (overrides.releaseAdmissionDelayMs) {
+            await new Promise((resolve) => setTimeout(resolve, overrides.releaseAdmissionDelayMs));
+        }
+        const status = overrides.releaseAdmissionStatus ?? 200;
+        return route.fulfill({
+            status,
+            json: status >= 400
+                ? {status, code: status === 404 ? 'NOT_FOUND' : 'INTERNAL_ERROR', message: 'synthetic preview error'}
+                : overrides.releaseAdmissionPreview ?? RELEASE_ADMISSION_PREVIEW_FIXTURE,
+        });
+    });
 
     return requests;
 }
@@ -1713,5 +1745,116 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expectNoForbiddenCopy(page);
         await expectNoSuccessTagForStatuses(page, ['UNKNOWN', 'NOT_AVAILABLE', 'NOT_IMPLEMENTED']);
         expectNoForbiddenRequests(requests);
+    });
+
+    test('Shadow 准入预览展示 loading 且不出现写操作', async ({page}) => {
+        await seedAuthAndGateQStubs(page, {releaseAdmissionDelayMs: 10_000});
+
+        await page.goto(validationUrl());
+
+        const panel = page.getByTestId('strategy-release-admission-preview');
+        await expect(panel).toBeVisible();
+        await expect(panel.locator('.ant-skeleton')).toBeVisible();
+        await expect(panel.getByRole('button', {name: /刷新预览/})).toHaveClass(/ant-btn-loading/);
+        await expect(panel.getByRole('button', {name: /创建|启动|执行|下单|重绑|上传/i})).toHaveCount(0);
+    });
+
+    test('Shadow 准入预览区分 publish not found', async ({page}) => {
+        await seedAuthAndGateQStubs(page, {releaseAdmissionStatus: 404});
+
+        await page.goto(validationUrl());
+
+        const panel = page.getByTestId('strategy-release-admission-preview');
+        await expect(panel).toContainText('未找到发布记录');
+        await expect(panel).toContainText('准入保持不可用');
+    });
+
+    test('Shadow 准入预览 fail-closed 展示 legacy unbound', async ({page}) => {
+        await seedAuthAndGateQStubs(page, {
+            releaseAdmissionPreview: {
+                ...RELEASE_ADMISSION_PREVIEW_FIXTURE,
+                bindingMode: 'LEGACY_PUBLISH_ONLY',
+                releaseStatus: 'REJECTED',
+                artifactVerificationStatus: 'REJECTED',
+                admissionDecision: 'BLOCKED',
+                artifactDigest: null,
+                reasonCodes: ['ARTIFACT_LOCATION_UNBOUND', 'RELEASE_BINDING_REQUIRED'],
+            },
+        });
+
+        await page.goto(validationUrl());
+
+        const panel = page.getByTestId('strategy-release-admission-preview');
+        await expect(panel).toContainText('历史未绑定');
+        await expect(panel).toContainText('ARTIFACT_LOCATION_UNBOUND');
+        await expect(panel).toContainText('缺少已验证的 Release 绑定');
+    });
+
+    test('Shadow 准入预览展示 artifact verification rejected', async ({page}) => {
+        await seedAuthAndGateQStubs(page, {
+            releaseAdmissionPreview: {
+                ...RELEASE_ADMISSION_PREVIEW_FIXTURE,
+                releaseStatus: 'REJECTED',
+                artifactVerificationStatus: 'REJECTED',
+                admissionDecision: 'BLOCKED',
+                reasonCodes: ['ARTIFACT_RELEASE_IDENTITY_MISMATCH', 'ARTIFACT_NOT_VERIFIED'],
+            },
+        });
+
+        await page.goto(validationUrl());
+
+        const panel = page.getByTestId('strategy-release-admission-preview');
+        await expect(panel).toContainText('制品验证');
+        await expect(panel).toContainText('已拒绝');
+        await expect(panel).toContainText('制品身份与发布记录不一致');
+    });
+
+    test('Shadow 准入预览展示 admission blocked 与原因', async ({page}) => {
+        await seedAuthAndGateQStubs(page, {
+            releaseAdmissionPreview: {
+                ...RELEASE_ADMISSION_PREVIEW_FIXTURE,
+                validationDecision: 'NEEDS_REVIEW',
+                admissionDecision: 'BLOCKED',
+                reasonCodes: ['VALIDATION_NOT_APPROVED', 'SIDE_EFFECT_POLICY_MISSING'],
+            },
+        });
+
+        await page.goto(validationUrl());
+
+        const panel = page.getByTestId('strategy-release-admission-preview');
+        await expect(panel).toContainText('准入已阻断');
+        await expect(panel).toContainText('需要复核');
+        await expect(panel).toContainText('验证结论未通过');
+        await expect(panel).toContainText('无副作用策略缺失');
+    });
+
+    test('Shadow 准入预览展示 eligible 但不提供创建或交易动作', async ({page}) => {
+        const requests = await seedAuthAndGateQStubs(page);
+
+        await page.goto(validationUrl());
+
+        const panel = page.getByTestId('strategy-release-admission-preview');
+        await expect(panel).toContainText('可进入 Shadow（仅预览）');
+        await expect(panel).toContainText('不会创建或启动 Shadow Run');
+        await expect(panel).toContainText('不构成交易授权');
+        await expect(panel).toContainText('pub-gateq-5');
+        await expect(panel).toContainText('eval-gateq-5');
+        await expect(panel.getByRole('button', {name: /创建|启动|执行|下单|重绑|上传/i})).toHaveCount(0);
+        await expect(panel).not.toContainText(/GateX|GateW|IMPLEMENTED\|PENDING_REVIEW/);
+        const eligibleStatus = panel.locator('span[title="可进入 Shadow"]');
+        await expect(eligibleStatus).toHaveAttribute('style', /--nq-success/);
+        await expect(eligibleStatus).not.toHaveAttribute('style', /market-(up|down)/);
+        expect(requests.some((url) => url.includes('/api/strategy-releases/pub-gateq-5/shadow-admission-preview'))).toBeTruthy();
+        expectNoForbiddenRequests(requests);
+    });
+
+    test('Shadow 准入预览请求失败时保持不可用', async ({page}) => {
+        await seedAuthAndGateQStubs(page, {releaseAdmissionStatus: 500});
+
+        await page.goto(validationUrl());
+
+        const panel = page.getByTestId('strategy-release-admission-preview');
+        await expect(panel).toContainText('准入预览请求失败');
+        await expect(panel).toContainText('不会推断为可进入 Shadow');
     });
 });

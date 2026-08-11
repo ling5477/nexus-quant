@@ -13020,3 +13020,20 @@ RCA / fix：duplicate JSON identity key 可 shadow `strategyVersionId` 并被后
 Boundary / findings：P0=0/P1=0（1 个 duplicate-key P1 已关闭）/P2=4（OS atomic stable handle、Linux symlink proof、trusted-root breadth policy、provider platform/encoding contract）/P3=0。Producer=`PERSISTENCE_READY / PRODUCER_NOT_YET_CONNECTED`；migration/API/UI/frontend/Python/Shadow create/start/交易/LIVE/credential/private endpoint/AI/DH runtime 变更均为 0。
 
 完整证据：[evidence/gate-x/NQ-GATEX-4C-SERVER-CONTROLLED-ARTIFACT-BINDING-SECURITY-REVIEW.attempt-01.md](evidence/gate-x/NQ-GATEX-4C-SERVER-CONTROLLED-ARTIFACT-BINDING-SECURITY-REVIEW.attempt-01.md)。
+
+## 2026-08-11 — GateX-4 minimal API/UI closure implementation attempt-02
+
+| 验证项 | 结果 | 证据摘要 |
+| --- | --- | --- |
+| GateX-4C exact-head preflight | PASS（通过） | `dev`；starting `HEAD == origin/dev == b4e5406fbb9de5432f79f9ef8ef76c95002e0e56`；GitHub Actions run `31409595743 / completed / success / bad jobs=0`；进入时 clean、staged empty、LIVE=`DISABLED`。 |
+| Backend focused suites | PASS（通过） | `StrategyReleaseAdmissionPreviewServiceTest` 10、JDBC repository 1、Controller 3、Security WebMvc 2；合计 16 tests，0 failures / 0 errors。 |
+| Scoped backend regression | PASS（通过） | `mvn -f backend/pom.xml -pl nq-core,nq-research,nq-infra,nq-app -am test`；23 modules `SUCCESS`，`BUILD SUCCESS`。 |
+| Full backend regression | PASS（通过） | 最终代码执行 `mvn -f backend/pom.xml test`；23 modules `SUCCESS`，`nq-app` 252 tests、0 failures / 0 errors / 16 skipped，`BUILD SUCCESS`。 |
+| Architecture | PASS（通过） | 最终 full run 中 `ModuleBoundaryArchTest` 6/6、`PackageBoundaryArchTest` 6/6。 |
+| Frontend build | PASS（通过） | `npm run build`；Vite 处理 3910 modules 并完成 production build；仅保留既有 chunk-size warning。 |
+| Targeted Playwright | PASS（通过） | `strategy-validation-paper-shadow-smoke.spec.ts` 9/9：既有 workspace 2 条，以及 loading、404、legacy unbound、verification rejected、admission blocked/reasons、eligible/no-write-actions、request failure 7 条。 |
+| Authority / docs / diff | PASS（通过） | authority checker=`errors=0 / CURRENT_AUTHORITY_CONSISTENT`；doc links=`210 checked / 0 errors / 1 existing warning`；`git diff --check` 通过，cached diff 与 exact staged scope 在本任务收尾复核。 |
+
+Retry / RCA：首个 focused Maven 命令因 PowerShell 未引用逗号参数而仅发生 CLI parse failure；随后 nq-core test 因模块无 Mockito 依赖失败，测试改为 in-memory fakes，未新增依赖；Controller matcher mix 修正后 focused 16/16 通过。Playwright loading 断言先后收紧为真实 `.ant-btn-loading` 状态；完整重跑首次因 Windows 保留端口覆盖默认 `51888` 而在 webServer 启动前 `EACCES`，未终止未知进程，改用项目已有 external-server contract 与未保留本地端口 `52340` 后 9/9 通过，临时 Vite 已关闭。doc-links 首次调用因嵌套 `powershell` 丢失数组边界未开始扫描，改用当前 shell 显式 array invocation 后通过。上述失败均未被记录为产品通过。
+
+边界：SELECT-only JDBC、read-only transaction、GET-only Controller 与无 mutation UI；migration、artifact producer、locator API、Shadow create/start、scheduler/runner、order/risk/ledger write、credential/private exchange API、LIVE、AI/DH/Integration 变更或调用均为 0。

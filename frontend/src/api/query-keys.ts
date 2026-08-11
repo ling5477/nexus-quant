@@ -54,6 +54,16 @@ export const strategyValidationQueryKeys = {
     shadowLivePreview: (query: unknown) => [...strategyValidationQueryKeys.all, 'shadow-live-preview', query ?? 'idle'] as const,
 };
 
+/** Strategy Release 查询按 publishRecordId 隔离缓存，不接受 path/digest 等客户端事实。 */
+export const strategyReleaseQueryKeys = {
+    all: ['strategy-releases'] as const,
+    admissionPreview: (publishRecordId: string | null) => [
+        ...strategyReleaseQueryKeys.all,
+        'shadow-admission-preview',
+        publishRecordId ?? 'idle',
+    ] as const,
+};
+
 export const shadowValidationWorkflowQueryKeys = {
     all: ['shadow-validation'] as const,
     workflow: () => [...shadowValidationWorkflowQueryKeys.all, 'workflow'] as const,

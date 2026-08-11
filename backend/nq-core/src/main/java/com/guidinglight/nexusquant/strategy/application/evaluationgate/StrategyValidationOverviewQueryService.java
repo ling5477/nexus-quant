@@ -107,7 +107,7 @@ public class StrategyValidationOverviewQueryService {
     }
 
     private LatestDecision latestDecision(LatestDecisionFact fact, String traceId) {
-        StrategyValidationDecision decision = decision(fact);
+        StrategyValidationDecision decision = evaluateDecision(fact);
         return new LatestDecision(
                 fact.strategyVersionId(),
                 fact.datasetId(),
@@ -123,7 +123,16 @@ public class StrategyValidationOverviewQueryService {
         );
     }
 
-    private StrategyValidationDecision decision(LatestDecisionFact fact) {
+    /**
+     * 复用 canonical validation 规则评估一条服务端已读取的 immutable fact。
+     *
+     * <p>该方法不读取 repository、不写库，也不产生交易授权；供按 publish anchor 的只读编排复用，
+     * 避免 Release admission 再维护第二套 validation taxonomy 或判断分支。
+     *
+     * @param fact 同一 publish/release anchor 的 validation fact；null 按 NO_EVIDENCE fail-closed
+     * @return 既有 {@link StrategyValidationDecision}，其中 APPROVED 仍只表示 validation 层面通过
+     */
+    public StrategyValidationDecision evaluateDecision(LatestDecisionFact fact) {
         if (fact == null || !fact.hasEvaluationReport()) {
             return StrategyValidationDecision.NO_EVIDENCE;
         }

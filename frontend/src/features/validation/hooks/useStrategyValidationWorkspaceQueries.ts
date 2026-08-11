@@ -9,6 +9,7 @@ import {
     useShadowRunOverview,
 } from '@/hooks/useShadowRunQueries';
 import {useShadowValidationWorkflowOverview} from '@/hooks/useShadowValidationWorkflowQueries';
+import {useStrategyReleaseAdmissionPreview} from '@/hooks/useStrategyReleaseQueries';
 import {
     usePaperShadowComparisonQuery,
     useShadowLivePreviewQuery,
@@ -51,6 +52,9 @@ export function useStrategyValidationWorkspaceQueries(submittedQuery: StrategyVa
     const evaluationGateQuery = useStrategyEvaluationGateQuery(submittedQuery);
     const paperShadowQuery = usePaperShadowComparisonQuery(submittedQuery);
     const shadowLivePreviewQuery = useShadowLivePreviewQuery(submittedQuery);
+    const releaseAdmissionPreviewQuery = useStrategyReleaseAdmissionPreview(
+        firstText(submittedQuery?.publishId),
+    );
     const selectedShadowRunId = useMemo(
         () => resolveShadowRunId(submittedQuery, overviewQuery.data, shadowOverviewQuery.data),
         [submittedQuery, overviewQuery.data, shadowOverviewQuery.data],
@@ -66,7 +70,8 @@ export function useStrategyValidationWorkspaceQueries(submittedQuery: StrategyVa
         || consistencyDrilldownQuery.isFetching
         || evaluationGateQuery.isFetching
         || paperShadowQuery.isFetching
-        || shadowLivePreviewQuery.isFetching;
+        || shadowLivePreviewQuery.isFetching
+        || releaseAdmissionPreviewQuery.isFetching;
 
     return {
         overviewQuery,
@@ -80,6 +85,7 @@ export function useStrategyValidationWorkspaceQueries(submittedQuery: StrategyVa
         evaluationGateQuery,
         paperShadowQuery,
         shadowLivePreviewQuery,
+        releaseAdmissionPreviewQuery,
         selectedShadowRunId,
         consistencyDrilldownQuery,
         loading,

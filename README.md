@@ -6,9 +6,9 @@ NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/
 
 <!-- nq-current-summary:start -->
 - 最近冻结 Gate 为 GateW：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；archive 为 [docs/gates/gate-w/](docs/gates/gate-w/)，release tag=`nq-gatew-freeze`。
-- GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateX-0A/0B/0C/0D/1/2/3/4B=`ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateX-0E=`AUDITED / IMPLEMENTATION NOT REQUIRED`（已审计 / 无需实施），GateX-4 原 API/UI=`BLOCKED / WAITING FOR SERVER-CONTROLLED ARTIFACT BINDING`（阻断 / 等待服务端受控 artifact 绑定），GateX-4A schema review=`PASS`（通过），GateX-4C=`REVIEW ACCEPTED / READY TO COMMIT`（审查已接受 / 可进入提交前复核）。
+- GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateX-0A/0B/0C/0D/1/2/3/4B/4C=`ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateX-0E=`AUDITED / IMPLEMENTATION NOT REQUIRED`（已审计 / 无需实施），GateX-4 只读 admission preview=`IMPLEMENTED / SELF-REVIEWED`（已实现 / 已自审），尚未提交或由 CI 接受。
 - Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEX-4C-COMMIT-AND-PUSH`；GateX-4C security review 已接受但仍为 `UNCOMMITTED / CI NOT RUN`，artifact producer、API/UI 与 GateX-4 仍未完成，exact transition 以 [STATUS.md](docs/current/STATUS.md) 为准。
+- 当前唯一动作是 `NQ-GATEX-4-COMMIT-AND-PUSH`；只允许提交并推送已暂存的只读 admission preview API/UI，不能扩大到 Shadow 创建/启动或交易写侧，exact transition 以 [STATUS.md](docs/current/STATUS.md) 为准。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
 
