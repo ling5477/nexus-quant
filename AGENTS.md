@@ -372,7 +372,7 @@ git status --short
 
 #### 7.1 Active skills（唯一默认启用集合）
 
-当前 active skills 仅允许以下 10 个：
+当前 active skills 仅允许以下 11 个：
 
 1. `nq-dh-workflow-router`
 2. `nq-docs-writer`
@@ -384,6 +384,7 @@ git status --short
 8. `java-backend-regression-tests`
 9. `db-schema-migration-review`
 10. `python-ops-tooling`
+11. `python-project-development`
 
 使用原则：
 
@@ -422,6 +423,9 @@ frontend-product-ui-design
 - JUnit、golden cases、Controller / Service / Repository 集成回归、bug 修复后回归测试：使用 `java-backend-regression-tests`。
 - Flyway / Liquibase migration、DDL、索引、约束、默认值、COMMENT、schema 审查、回填脚本审查：使用 `db-schema-migration-review`。
 - Python 运维脚本、批处理、数据清洗、导入导出、迁移辅助、pytest、ruff、mypy：使用 `python-ops-tooling`。
+- 正式 Python package/library/service/CLI、多模块工程、`pyproject.toml`、实现与 tests 联动、依赖管理、typing、async、持久化/网络 adapter、正式 research/backtest framework：使用 `python-project-development`。
+
+Python 任务先按工程边界路由：单一独立脚本、一次性处理、临时分析和 migration/helper script 使用 `python-ops-tooling`；形成长期维护 package 或命中多模块、实现与测试、依赖、架构、service/CLI/async/adapter 任一工程特征时使用 `python-project-development`。
 
 做后端 DB 相关改动时，默认按以下顺序思考，但只激活本轮需要的 skill：
 

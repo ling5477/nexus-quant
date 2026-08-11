@@ -1,0 +1,4 @@
+interface:
+  display_name: "Python Project Development"
+  short_description: "Build and maintain tested, typed Python projects"
+  default_prompt: "Use $python-project-development to implement a minimal, well-tested change in this Python project."

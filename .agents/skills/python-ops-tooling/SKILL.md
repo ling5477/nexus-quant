@@ -1,8 +1,6 @@
 ---
 name: python-ops-tooling
-description: 编写 Python 批处理、数据修复、导入导出、离线清洗、迁移辅助、运维脚本，并补齐 pytest 回归。适用于一次性脚本、可重复执行脚本、定时任务和小型工具模块。
-user-invocable: true
-argument-hint: "[script, data task, or tool]"
+description: 编写 Python 批处理、数据修复、导入导出、离线清洗、迁移辅助、运维脚本，并补齐 pytest 回归。用于单一独立脚本、少量简单 .py 文件、一次性任务、临时分析、简单数据转换、开发辅助脚本和不形成长期维护 package 的小工具；存在 pyproject.toml/package architecture、跨多个正式 modules、implementation + tests、依赖管理、service/CLI package、async、persistence/network adapter 或正式 research/backtest framework 时改用 python-project-development。
 ---
 # Python Ops Tooling Skill
 
@@ -19,6 +17,12 @@ argument-hint: "[script, data task, or tool]"
 - API 批处理调用
 - 小型 CLI 工具
 - pytest 回归测试
+
+## 路由边界
+
+- 保留在本 Skill：单一独立脚本、一次性处理、临时诊断、migration/helper script 和不形成正式 package 的小工具。
+- 路由到 `python-project-development`：正式 package/library/service/CLI、多模块工程、`pyproject.toml`、实现与 tests 联动、依赖或架构变更、async service、持久化/网络 adapter、正式 research/backtest framework。
+- 不把两个 Skill 合并，也不因脚本逐步增长而静默跨越工程边界；先重新分类任务。
 
 ## 脚本要求
 
