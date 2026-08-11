@@ -6,6 +6,8 @@ import com.guidinglight.nexusquant.auth.application.AdminNotInitializedException
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunReadOnlyNotFoundException;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunIdempotencyConflictException;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionGuardUninitializedException;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionStaleException;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunMaterializationAuthorizationException;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunMaterializationRejectedException;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewException;
@@ -140,8 +142,34 @@ public class ApiExceptionHandler {
     ) {
         return build(
                 HttpStatus.UNPROCESSABLE_ENTITY,
-                "SHADOW_MATERIALIZATION_ADMISSION_BLOCKED",
+                "ADMISSION_BLOCKED",
                 "release is not eligible for Shadow materialization",
+                request,
+                List.of()
+        );
+    }
+
+    /** facts generation 变化时返回稳定 409；不暴露 revision、fingerprint 或 SQL。 */
+    @ExceptionHandler(AdmissionStaleException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiErrorResponse handleAdmissionStale(
+            AdmissionStaleException ex,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.CONFLICT, "ADMISSION_STALE", "admission facts changed", request, List.of());
+    }
+
+    /** verified identity 尚未完成 first-binding 时 fail-closed。 */
+    @ExceptionHandler(AdmissionGuardUninitializedException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiErrorResponse handleAdmissionGuardUninitialized(
+            AdmissionGuardUninitializedException ex,
+            HttpServletRequest request
+    ) {
+        return build(
+                HttpStatus.CONFLICT,
+                "ADMISSION_GUARD_UNINITIALIZED",
+                "release admission guard is not initialized",
                 request,
                 List.of()
         );

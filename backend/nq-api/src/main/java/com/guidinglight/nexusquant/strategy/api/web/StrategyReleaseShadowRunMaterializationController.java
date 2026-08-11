@@ -81,7 +81,7 @@ public class StrategyReleaseShadowRunMaterializationController {
             @ApiResponse(responseCode = "401", description = "未认证", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "403", description = "写权限不足", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "publish record 不存在", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-            @ApiResponse(responseCode = "409", description = "幂等 provenance 冲突", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "admission 已过期或幂等 provenance 冲突", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "422", description = "当前 admission 为 BLOCKED", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
     public StrategyReleaseShadowRunMaterializationResponse materialize(

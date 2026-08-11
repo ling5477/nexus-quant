@@ -85,10 +85,17 @@ public class StrategyReleaseShadowRunMaterializationService {
                     admission.reasonCodes().stream().map(Enum::name).toList()
             );
         }
+        if (evaluation.guard() == null) {
+            throw new AdmissionStaleException();
+        }
 
         ShadowRunCreationPlan materializationPlan = admission.creationPlan()
                 .bindMaterializationCommand(commandIdentity);
-        ShadowRunMaterializationResult result = materializationSink.materialize(materializationPlan, actor.actorId());
+        ShadowRunMaterializationResult result = materializationSink.materialize(
+                materializationPlan,
+                evaluation.guard(),
+                actor.actorId()
+        );
         log.info(
                 "shadow release materialization completed, publishRecordId={}, shadowRunId={}, status={}, idempotentReplay={}, traceId={}",
                 result.publishRecordId(),
@@ -110,6 +117,6 @@ public class StrategyReleaseShadowRunMaterializationService {
 
     @FunctionalInterface
     interface MaterializationSink {
-        ShadowRunMaterializationResult materialize(ShadowRunCreationPlan plan, long actorId);
+        ShadowRunMaterializationResult materialize(ShadowRunCreationPlan plan, AdmissionGuard guard, long actorId);
     }
 }

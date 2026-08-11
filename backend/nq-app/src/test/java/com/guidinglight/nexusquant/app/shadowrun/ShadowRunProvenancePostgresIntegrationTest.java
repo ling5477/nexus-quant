@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunFactRepository;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRun;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunAuthorizationBoundary;
@@ -15,9 +16,21 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunReleaseBin
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
 import com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcShadowRunFactRepository;
 import com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcShadowRunIllegalTransitionAuditWriter;
+import com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcAdmissionMutationCoordinator;
+import com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcStrategyReleaseAdmissionPreviewFactsRepository;
+import com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcStrategyReleaseAdmissionStateRepository;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyValidationOverviewQueryService;
+import com.guidinglight.nexusquant.strategy.domain.port.StrategyValidationOverviewFacts;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionGuard;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionGuardDecisionService;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionGuardFingerprinter;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionStaleException;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunCreationPlan;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunMaterializationResult;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunMaterializationWriter;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionPreviewFactsRepository;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionStateRepository;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.VerifiedStrategyReleaseIdentity;
 
 import java.net.URI;
 import java.lang.reflect.InvocationTargetException;
@@ -29,6 +42,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.Optional;
 
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
@@ -37,7 +51,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * GateX-2 provenance migration 在显式本地 disposable PostgreSQL 上的 fresh/upgrade 回归。
@@ -55,13 +68,13 @@ class ShadowRunProvenancePostgresIntegrationTest {
     private static final Instant START = Instant.parse("2026-08-10T00:00:00Z");
 
     @Test
-    void freshDatabaseShouldMigrateFromV1ToV36AndPreserveProvenanceAcrossLifecycleUpdates() {
+    void freshDatabaseShouldMigrateFromV1ToV38AndPreserveProvenanceAcrossLifecycleUpdates() {
         PostgresConfig config = requireLocalDisposableConfig();
         String schema = randomSchema("fresh");
         try {
             migrate(config, schema, null);
             JdbcTemplate jdbc = jdbc(config, schema);
-            assertEquals("36", currentFlywayVersion(jdbc));
+            assertEquals("38", currentFlywayVersion(jdbc));
             assertSchemaContract(jdbc);
 
             Fixture fixture = seedFixture(jdbc, "fresh");
@@ -110,7 +123,7 @@ class ShadowRunProvenancePostgresIntegrationTest {
 
             migrate(config, schema, null);
             JdbcTemplate upgraded = jdbc(config, schema);
-            assertEquals("36", currentFlywayVersion(upgraded));
+            assertEquals("38", currentFlywayVersion(upgraded));
             assertSchemaContract(upgraded);
             assertEquals(2, upgraded.queryForObject(
                     "SELECT COUNT(*) FROM shadow_runs WHERE artifact_digest IS NULL",
@@ -137,17 +150,13 @@ class ShadowRunProvenancePostgresIntegrationTest {
             JdbcTemplate jdbc = jdbc(config, schema);
             Fixture fixture = seedFixture(jdbc, "materialization");
             JdbcShadowRunFactRepository repository = repository(jdbc);
-            DataSourceTransactionManager transactionManager = transactionManager(jdbc);
-            TransactionTemplate transaction = new TransactionTemplate(transactionManager);
-            ShadowRunMaterializationWriter writer = new ShadowRunMaterializationWriter(repository, new ObjectMapper());
+            prepareEligibleAdmissionFacts(jdbc, fixture);
+            WriterHarness harness = writerHarness(jdbc, repository, fixture);
+            ShadowRunMaterializationWriter writer = harness.writer();
 
             ShadowRunCreationPlan singlePlan = materializationPlan(fixture, "single-command");
-            ShadowRunMaterializationResult created = transaction.execute(
-                    status -> writer.materialize(singlePlan, 41L)
-            );
-            ShadowRunMaterializationResult replay = transaction.execute(
-                    status -> writer.materialize(singlePlan, 41L)
-            );
+            ShadowRunMaterializationResult created = writer.materialize(singlePlan, harness.guard(), 41L);
+            ShadowRunMaterializationResult replay = writer.materialize(singlePlan, harness.guard(), 41L);
             assertTrue(created != null && replay != null);
             assertEquals(created.shadowRunId(), replay.shadowRunId());
             assertEquals(false, created.idempotentReplay());
@@ -157,20 +166,30 @@ class ShadowRunProvenancePostgresIntegrationTest {
             ShadowRunCreationPlan concurrentPlan = materializationPlan(fixture, "concurrent-command");
             CountDownLatch ready = new CountDownLatch(2);
             CountDownLatch start = new CountDownLatch(1);
-            Future<ShadowRunMaterializationResult> first = executor.submit(
-                    () -> concurrentMaterialize(transaction, writer, concurrentPlan, ready, start)
+            AdmissionGuard concurrentGuard = harness.guard();
+            Future<Object> first = executor.submit(
+                    () -> concurrentMaterialize(writer, concurrentPlan, concurrentGuard, ready, start)
             );
-            Future<ShadowRunMaterializationResult> second = executor.submit(
-                    () -> concurrentMaterialize(transaction, writer, concurrentPlan, ready, start)
+            Future<Object> second = executor.submit(
+                    () -> concurrentMaterialize(writer, concurrentPlan, concurrentGuard, ready, start)
             );
             ready.await();
             start.countDown();
-            ShadowRunMaterializationResult firstResult = first.get();
-            ShadowRunMaterializationResult secondResult = second.get();
-            assertEquals(firstResult.shadowRunId(), secondResult.shadowRunId());
-            assertEquals(1, List.of(firstResult, secondResult).stream()
-                    .filter(ShadowRunMaterializationResult::idempotentReplay)
-                    .count());
+            List<Object> concurrentResults = List.of(first.get(), second.get());
+            assertEquals(1, concurrentResults.stream().filter(ShadowRunMaterializationResult.class::isInstance).count());
+            assertEquals(1, concurrentResults.stream().filter(AdmissionStaleException.class::isInstance).count());
+            ShadowRunMaterializationResult firstResult = concurrentResults.stream()
+                    .filter(ShadowRunMaterializationResult.class::isInstance)
+                    .map(ShadowRunMaterializationResult.class::cast)
+                    .findFirst()
+                    .orElseThrow();
+            ShadowRunMaterializationResult concurrentReplay = writer.materialize(
+                    concurrentPlan,
+                    harness.guard(),
+                    41L
+            );
+            assertEquals(firstResult.shadowRunId(), concurrentReplay.shadowRunId());
+            assertTrue(concurrentReplay.idempotentReplay());
             assertEquals(1, jdbc.queryForObject(
                     "SELECT COUNT(*) FROM shadow_runs WHERE idempotency_key = ?",
                     Integer.class,
@@ -183,40 +202,151 @@ class ShadowRunProvenancePostgresIntegrationTest {
             ));
 
             ShadowRunCreationPlan conflicting = copyWithWindowConflict(concurrentPlan);
-            assertThrows(ShadowRunIdempotencyConflictException.class, () -> transaction.execute(
-                    status -> writer.materialize(conflicting, 41L)
-            ));
+            assertThrows(AdmissionStaleException.class, () -> writer.materialize(conflicting, harness.guard(), 41L));
 
             ShadowRunCreationPlan rollbackPlan = materializationPlan(fixture, "rollback-command");
             ShadowRunFactRepository failingAuditRepository = failingAuditRepository(repository);
-            ShadowRunMaterializationWriter failingWriter = new ShadowRunMaterializationWriter(
-                    failingAuditRepository,
-                    new ObjectMapper()
-            );
-            assertThrows(IllegalStateException.class, () -> transaction.execute(
-                    status -> failingWriter.materialize(rollbackPlan, 41L)
+            ShadowRunMaterializationWriter failingWriter = harness.writerFor(failingAuditRepository);
+            long revisionBeforeRollback = harness.stateRepository()
+                    .loadByPublishRecordId(fixture.publishId())
+                    .admissionRevision();
+            assertThrows(IllegalStateException.class, () -> failingWriter.materialize(
+                    rollbackPlan,
+                    harness.guard(),
+                    41L
             ));
             assertEquals(0, jdbc.queryForObject(
                     "SELECT COUNT(*) FROM shadow_runs WHERE idempotency_key = ?",
                     Integer.class,
                     rollbackPlan.shadowRunIdempotencyKey()
             ));
+            assertEquals(0, jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM shadow_run_events e JOIN shadow_runs s ON s.id = e.shadow_run_id "
+                            + "WHERE s.idempotency_key = ?",
+                    Integer.class,
+                    rollbackPlan.shadowRunIdempotencyKey()
+            ));
+            assertEquals(revisionBeforeRollback, harness.stateRepository()
+                    .loadByPublishRecordId(fixture.publishId())
+                    .admissionRevision());
         } finally {
             executor.shutdownNow();
             dropSchema(config, schema);
         }
     }
 
-    private static ShadowRunMaterializationResult concurrentMaterialize(
-            TransactionTemplate transaction,
+    private static Object concurrentMaterialize(
             ShadowRunMaterializationWriter writer,
             ShadowRunCreationPlan plan,
+            AdmissionGuard guard,
             CountDownLatch ready,
             CountDownLatch start
     ) throws InterruptedException {
         ready.countDown();
         start.await();
-        return transaction.execute(status -> writer.materialize(plan, 41L));
+        try {
+            return writer.materialize(plan, guard, 41L);
+        } catch (AdmissionStaleException exception) {
+            return exception;
+        }
+    }
+
+    @Test
+    void idempotencyConflictMatrixShouldPreserveExistingPostgresFacts() {
+        PostgresConfig config = requireLocalDisposableConfig();
+        String schema = randomSchema("fresh");
+        try {
+            migrate(config, schema, null);
+            JdbcTemplate jdbc = jdbc(config, schema);
+            Fixture fixture = seedFixture(jdbc, "conflict-base");
+            Fixture other = seedFixture(jdbc, "conflict-other");
+            JdbcShadowRunFactRepository repository = repository(jdbc);
+            ShadowRun existing = repository.create(provenanceMatrixRun(fixture, "shared-command"));
+            jdbc.update(
+                    "INSERT INTO shadow_run_events (id, shadow_run_id, event_type, to_status, reason_code, message, "
+                            + "metadata, request_id, trace_id, created_at) "
+                            + "VALUES (?, ?, 'CREATED', 'CREATED', 'TEST_CREATED', 'fixture', '{}'::jsonb, ?, ?, ?)",
+                    UUID.randomUUID(),
+                    existing.id(),
+                    existing.requestId(),
+                    existing.traceId(),
+                    java.sql.Timestamp.from(existing.createdAt())
+            );
+
+            ObjectNode policyConflict = (ObjectNode) existing.sideEffectPolicy().deepCopy();
+            policyConflict.put("policyVersion", "gate-x5-release-materialization.v2");
+            ObjectNode provenanceConflict = (ObjectNode) existing.sideEffectPolicy().deepCopy();
+            provenanceConflict.put("provenanceReference", "publish:other");
+            ObjectNode inputConflict = (ObjectNode) existing.sideEffectPolicy().deepCopy();
+            inputConflict.put("inputReference", "dataset:other");
+            List<ShadowRun> conflicts = List.of(
+                    copyMatrixRun(existing, other.publishId(), existing.artifactDigest(),
+                            existing.strategyVersionId(), existing.datasetId(), existing.evaluationId(),
+                            existing.windowStart(), existing.windowEnd(), existing.sideEffectPolicy(),
+                            existing.authorizationBoundary()),
+                    copyMatrixRun(existing, existing.publishId(), "b".repeat(64),
+                            existing.strategyVersionId(), existing.datasetId(), existing.evaluationId(),
+                            existing.windowStart(), existing.windowEnd(), existing.sideEffectPolicy(),
+                            existing.authorizationBoundary()),
+                    copyMatrixRun(existing, existing.publishId(), existing.artifactDigest(),
+                            other.strategyVersionId(), existing.datasetId(), existing.evaluationId(),
+                            existing.windowStart(), existing.windowEnd(), existing.sideEffectPolicy(),
+                            existing.authorizationBoundary()),
+                    copyMatrixRun(existing, existing.publishId(), existing.artifactDigest(),
+                            existing.strategyVersionId(), other.datasetId(), existing.evaluationId(),
+                            existing.windowStart(), existing.windowEnd(), existing.sideEffectPolicy(),
+                            existing.authorizationBoundary()),
+                    copyMatrixRun(existing, existing.publishId(), existing.artifactDigest(),
+                            existing.strategyVersionId(), existing.datasetId(), other.evaluationId(),
+                            existing.windowStart(), existing.windowEnd(), existing.sideEffectPolicy(),
+                            existing.authorizationBoundary()),
+                    copyMatrixRun(existing, existing.publishId(), existing.artifactDigest(),
+                            existing.strategyVersionId(), existing.datasetId(), existing.evaluationId(),
+                            existing.windowStart().minusSeconds(1), existing.windowEnd(), existing.sideEffectPolicy(),
+                            existing.authorizationBoundary()),
+                    copyMatrixRun(existing, existing.publishId(), existing.artifactDigest(),
+                            existing.strategyVersionId(), existing.datasetId(), existing.evaluationId(),
+                            existing.windowStart(), existing.windowEnd().plusSeconds(1), existing.sideEffectPolicy(),
+                            existing.authorizationBoundary()),
+                    copyMatrixRun(existing, existing.publishId(), existing.artifactDigest(),
+                            existing.strategyVersionId(), existing.datasetId(), existing.evaluationId(),
+                            existing.windowStart(), existing.windowEnd(), policyConflict,
+                            existing.authorizationBoundary()),
+                    copyMatrixRun(existing, existing.publishId(), existing.artifactDigest(),
+                            existing.strategyVersionId(), existing.datasetId(), existing.evaluationId(),
+                            existing.windowStart(), existing.windowEnd(), provenanceConflict,
+                            existing.authorizationBoundary()),
+                    copyMatrixRun(existing, existing.publishId(), existing.artifactDigest(),
+                            existing.strategyVersionId(), existing.datasetId(), existing.evaluationId(),
+                            existing.windowStart(), existing.windowEnd(), inputConflict,
+                            existing.authorizationBoundary()),
+                    copyMatrixRun(existing, existing.publishId(), existing.artifactDigest(),
+                            existing.strategyVersionId(), existing.datasetId(), existing.evaluationId(),
+                            existing.windowStart(), existing.windowEnd(), existing.sideEffectPolicy(),
+                            ShadowRunAuthorizationBoundary.REVIEW_ONLY)
+            );
+
+            for (ShadowRun conflict : conflicts) {
+                ShadowRunIdempotencyConflictException exception = assertThrows(
+                        ShadowRunIdempotencyConflictException.class,
+                        () -> repository.create(conflict)
+                );
+                assertEquals("IDEMPOTENCY_CONFLICT", exception.reasonCode());
+                assertEquals(existing, repository.findByIdempotencyKey(existing.idempotencyKey()).orElseThrow());
+                assertEquals(1, jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM shadow_runs WHERE idempotency_key = ?",
+                        Integer.class,
+                        existing.idempotencyKey()
+                ));
+                assertEquals(1, jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM shadow_run_events WHERE shadow_run_id = ? AND event_type = 'CREATED'",
+                        Integer.class,
+                        existing.id()
+                ));
+            }
+        } finally {
+            dropSchema(config, schema);
+        }
     }
 
     private static void assertMaterializedFacts(
@@ -595,12 +725,227 @@ class ShadowRunProvenancePostgresIntegrationTest {
         return new JdbcShadowRunFactRepository(
                 jdbc,
                 objectMapper,
-                new JdbcShadowRunIllegalTransitionAuditWriter(jdbc, objectMapper, transactionManager)
+                new JdbcShadowRunIllegalTransitionAuditWriter(jdbc, objectMapper, transactionManager),
+                new com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcAdmissionMutationCoordinator(
+                        jdbc,
+                        transactionManager,
+                        256
+                )
+        );
+    }
+
+    private static void prepareEligibleAdmissionFacts(JdbcTemplate jdbc, Fixture fixture) {
+        jdbc.update(
+                "UPDATE backtest_runs SET strategy_version_id = ?, "
+                        + "config_snapshot_json = jsonb_build_object('startTime', ?, 'endTime', ?), "
+                        + "dataset_snapshot_json = jsonb_build_object('datasetId', ?) WHERE backtest_run_id = ("
+                        + "SELECT backtest_run_id FROM backtest_publish_records WHERE publish_record_id = ?)",
+                fixture.strategyVersionId(),
+                START.toString(),
+                START.plusSeconds(60).toString(),
+                fixture.datasetId().toString(),
+                fixture.publishId()
+        );
+        jdbc.update(
+                "UPDATE backtest_publish_records SET publish_status = 'FAILED' WHERE publish_record_id = ?",
+                fixture.publishId()
+        );
+        jdbc.update(
+                "UPDATE backtest_publish_records SET publish_status = 'SUCCEEDED', "
+                        + "artifact_storage_key = ?, manifest_storage_key = ? "
+                        + "WHERE publish_record_id = ?",
+                "artifact_" + fixture.publishId(),
+                "manifest_" + fixture.publishId(),
+                fixture.publishId()
+        );
+        jdbc.update(
+                "INSERT INTO paper_trading_runs (paper_run_id, publish_id, strategy_version_id, status, trade_env, "
+                        + "exchange_code, market_type, symbol, interval_code, created_by, created_at, updated_at) "
+                        + "VALUES (?, ?, ?, 'STOPPED', 'SIM', 'OKX', 'SPOT', 'BTC-USDT', '1m', 'test', ?, ?)",
+                "paper-" + fixture.publishId(),
+                fixture.publishId(),
+                fixture.strategyVersionId(),
+                java.sql.Timestamp.from(START),
+                java.sql.Timestamp.from(START)
+        );
+    }
+
+    private static ShadowRun provenanceMatrixRun(Fixture fixture, String commandIdentity) {
+        ObjectNode policy = JsonNodeFactory.instance.objectNode()
+                .put("policyVersion", "gate-x5-release-materialization.v1")
+                .put("inputReference", "dataset:" + fixture.datasetId())
+                .put("provenanceReference", "publish:" + fixture.publishId())
+                .put("noOrderSubmission", true)
+                .put("noCredentialAccess", true)
+                .put("noPrivateEndpoint", true)
+                .put("noLedgerMutation", true)
+                .put("noAccountMutation", true)
+                .put("noExternalPrivateIo", true);
+        return new ShadowRun(
+                UUID.randomUUID(),
+                fixture.strategyVersionId(),
+                fixture.datasetId(),
+                fixture.evaluationId(),
+                fixture.publishId(),
+                DIGEST,
+                null,
+                ShadowRunStatus.CREATED,
+                START,
+                START.plusSeconds(60),
+                policy,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                ShadowRunAuthorizationBoundary.DIAGNOSTIC_ONLY,
+                commandIdentity,
+                commandIdentity,
+                "trace-gatex5b-conflict",
+                JsonNodeFactory.instance.arrayNode(),
+                JsonNodeFactory.instance.arrayNode(),
+                JsonNodeFactory.instance.arrayNode(),
+                0,
+                START,
+                START,
+                null,
+                null,
+                null
+        );
+    }
+
+    private static ShadowRun copyMatrixRun(
+            ShadowRun source,
+            String publishId,
+            String artifactDigest,
+            String strategyVersionId,
+            UUID datasetId,
+            String evaluationId,
+            Instant windowStart,
+            Instant windowEnd,
+            com.fasterxml.jackson.databind.JsonNode sideEffectPolicy,
+            ShadowRunAuthorizationBoundary authorizationBoundary
+    ) {
+        return new ShadowRun(
+                UUID.randomUUID(),
+                strategyVersionId,
+                datasetId,
+                evaluationId,
+                publishId,
+                artifactDigest,
+                source.paperRunId(),
+                source.status(),
+                windowStart,
+                windowEnd,
+                sideEffectPolicy,
+                source.noOrderSubmission(),
+                source.noCredentialAccess(),
+                source.noPrivateEndpoint(),
+                source.noLedgerMutation(),
+                source.noAccountMutation(),
+                source.noExternalPrivateIo(),
+                authorizationBoundary,
+                source.requestId(),
+                source.idempotencyKey(),
+                source.traceId(),
+                source.blockers(),
+                source.warnings(),
+                source.nextSteps(),
+                source.version(),
+                source.createdAt(),
+                source.updatedAt(),
+                source.startedAt(),
+                source.stoppedAt(),
+                source.completedAt()
+        );
+    }
+
+    private static WriterHarness writerHarness(
+            JdbcTemplate jdbc,
+            ShadowRunFactRepository repository,
+            Fixture fixture
+    ) {
+        DataSourceTransactionManager transactionManager = transactionManager(jdbc);
+        JdbcAdmissionMutationCoordinator coordinator = new JdbcAdmissionMutationCoordinator(
+                jdbc,
+                transactionManager,
+                256
+        );
+        JdbcStrategyReleaseAdmissionStateRepository stateRepository =
+                new JdbcStrategyReleaseAdmissionStateRepository(jdbc, coordinator);
+        stateRepository.bindVerifiedReleaseIdentity(new VerifiedStrategyReleaseIdentity(
+                fixture.publishId(),
+                fixture.strategyVersionId(),
+                fixture.datasetId(),
+                fixture.evaluationId(),
+                DIGEST,
+                "c".repeat(64),
+                "strategy-release-manifest.v1"
+        ));
+        JdbcStrategyReleaseAdmissionPreviewFactsRepository factsRepository =
+                new JdbcStrategyReleaseAdmissionPreviewFactsRepository(jdbc);
+        AdmissionGuardDecisionService decisionService = new AdmissionGuardDecisionService(
+                new StrategyValidationOverviewQueryService(() -> new StrategyValidationOverviewFacts(
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        Optional.empty()
+                ))
+        );
+        AdmissionGuardFingerprinter fingerprinter = new AdmissionGuardFingerprinter();
+        return new WriterHarness(
+                repository,
+                coordinator,
+                stateRepository,
+                factsRepository,
+                decisionService,
+                fingerprinter,
+                new ObjectMapper(),
+                fixture.publishId()
         );
     }
 
     private static DataSourceTransactionManager transactionManager(JdbcTemplate jdbc) {
         return new DataSourceTransactionManager(jdbc.getDataSource());
+    }
+
+    private record WriterHarness(
+            ShadowRunFactRepository repository,
+            JdbcAdmissionMutationCoordinator coordinator,
+            StrategyReleaseAdmissionStateRepository stateRepository,
+            StrategyReleaseAdmissionPreviewFactsRepository factsRepository,
+            AdmissionGuardDecisionService decisionService,
+            AdmissionGuardFingerprinter fingerprinter,
+            ObjectMapper objectMapper,
+            String publishRecordId
+    ) {
+        ShadowRunMaterializationWriter writer() {
+            return writerFor(repository);
+        }
+
+        ShadowRunMaterializationWriter writerFor(ShadowRunFactRepository targetRepository) {
+            return new ShadowRunMaterializationWriter(
+                    targetRepository,
+                    objectMapper,
+                    coordinator,
+                    stateRepository,
+                    factsRepository,
+                    decisionService,
+                    fingerprinter
+            );
+        }
+
+        AdmissionGuard guard() {
+            return fingerprinter.issue(
+                    stateRepository.loadByPublishRecordId(publishRecordId),
+                    factsRepository.loadByPublishRecordId(publishRecordId),
+                    START.plusSeconds(120)
+            );
+        }
     }
 
     private static void migrate(PostgresConfig config, String schema, MigrationVersion target) {

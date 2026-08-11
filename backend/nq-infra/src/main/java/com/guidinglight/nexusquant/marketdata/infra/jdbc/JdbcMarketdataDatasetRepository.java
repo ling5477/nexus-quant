@@ -9,6 +9,7 @@ import com.guidinglight.nexusquant.marketdata.domain.MarketdataDatasetCoverage;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataDatasetStatus;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityStatus;
 import com.guidinglight.nexusquant.marketdata.domain.port.MarketdataDatasetRepository;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionMutationCoordinator;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -43,10 +44,16 @@ public class JdbcMarketdataDatasetRepository implements MarketdataDatasetReposit
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
+    private final AdmissionMutationCoordinator admissionMutationCoordinator;
 
-    public JdbcMarketdataDatasetRepository(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
+    public JdbcMarketdataDatasetRepository(
+            JdbcTemplate jdbcTemplate,
+            ObjectMapper objectMapper,
+            AdmissionMutationCoordinator admissionMutationCoordinator
+    ) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
+        this.admissionMutationCoordinator = admissionMutationCoordinator;
     }
 
     @Override
@@ -189,7 +196,20 @@ public class JdbcMarketdataDatasetRepository implements MarketdataDatasetReposit
             long gapCount,
             Instant updatedAt
     ) {
-        return jdbcTemplate.update(
+        List<String> publishIds = jdbcTemplate.query(
+                """
+                        SELECT DISTINCT p.publish_record_id
+                        FROM backtest_publish_records p
+                        JOIN backtest_runs r ON r.backtest_run_id = p.backtest_run_id
+                        WHERE r.dataset_snapshot_json ->> 'datasetId' = ?
+                        ORDER BY p.publish_record_id
+                        LIMIT ?
+                        """,
+                (resultSet, rowNum) -> resultSet.getString("publish_record_id"),
+                datasetId.toString(),
+                AdmissionMutationCoordinator.HARD_MAX_FAN_OUT + 1
+        );
+        return admissionMutationCoordinator.withLockedAdmissionStates(publishIds, () -> jdbcTemplate.update(
                 """
                         UPDATE marketdata_datasets
                         SET status = ?,
@@ -205,7 +225,7 @@ public class JdbcMarketdataDatasetRepository implements MarketdataDatasetReposit
                 gapCount,
                 Timestamp.from(updatedAt),
                 datasetId
-        ) > 0;
+        ) > 0);
     }
 
     private RowMapper<MarketdataDataset> rowMapper() {

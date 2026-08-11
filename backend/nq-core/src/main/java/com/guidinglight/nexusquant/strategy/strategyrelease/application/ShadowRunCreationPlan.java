@@ -112,8 +112,7 @@ public record ShadowRunCreationPlan(
             throw new IllegalArgumentException("commandIdentity must be 1..128 characters without control characters");
         }
         String materializationKey = deterministicSha256(List.of(
-                "shadow-run-materialization.v1",
-                shadowRunIdempotencyKey,
+                "shadow-run-materialization-command.v1",
                 normalized
         ));
         return new ShadowRunCreationPlan(

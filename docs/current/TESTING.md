@@ -13055,3 +13055,24 @@ Retry / RCA：首个 focused Maven 命令因 PowerShell 未引用逗号参数而
 RCA：Security WebMvc 首次缺少 `AuthUserRepository` slice mock，补齐后 3/3；focused reactor 首次发现新增 service 双构造器装配歧义，production 构造器增加 `@Autowired` 后定向 6/6、focused 与 full backend 全部重跑通过。`postgres:17-alpine` pull 无进展后终止，使用本机已有官方 `postgres:17` 完成真实 disposable PostgreSQL 验证，未以 mock DB 替代。doc-links 首次遗漏 mandatory `-Roots`，未开始扫描；修正参数后 211 links / 0 errors。
 
 边界：materialization 只创建 `CREATED / RELEASE_BOUND` Shadow fact 与既有 `CREATED` audit event；runner/scheduler/order/risk/ledger/account/credential/private exchange/network invocation 均为 0；migration/frontend/LIVE/AI/DH/Python 变更为 0。
+
+## 2026-08-11 — GateX-5 Release-to-Shadow materialization final review attempt-02
+
+结论：`PASS / RELEASE_TO_SHADOW_MATERIALIZATION_REVIEW_ACCEPTED / ADMISSION_MATERIALIZATION_FACT_TEAR_CLOSED / GUARDED_MATERIALIZATION_VERIFIED / READY_TO_COMMIT`（通过 / 审查已接受 / 事实撕裂已关闭 / 受 Guard 保护的物化已验证 / 可进入提交前复核）。
+
+| 验证项 | 结果 | 范围 / 环境 / 说明 |
+| --- | --- | --- |
+| remote/current authority preflight | PASS（通过） | `dev`；`HEAD == origin/dev == ac4b1ba10f7ac10f973707e97c52b56a6b5aec6f`；50 个既有 staged 路径；unstaged/untracked=`0/0`；authority checker `errors=0` |
+| mandatory PostgreSQL 17 race matrix | PASS（通过） | loopback-only disposable `postgres:17`，server 17.10；3 suites、12 tests、0 failures/errors/skips；r0/r1、六类 stale race、same/different-command concurrency/rerun、provenance conflict、rollback、unknown schema、V38 lifecycle |
+| focused backend final rerun | PASS（通过） | `mvn -f backend/pom.xml -pl nq-core,nq-research,nq-infra,nq-api,nq-app -am test`；no-outbound 与 disposable `nqtest`；exit 0 |
+| full backend final | PASS（通过） | `mvn -f backend/pom.xml test`；同一安全环境；23 modules，exit 0 |
+| WebMvc / ArchUnit targeted | PASS（通过） | WebMvc 7/7；canonical `ModuleBoundaryArchTest` 6/6、`PackageBoundaryArchTest` 6/6；0 failures/errors/skips |
+| frontend build | PASS（通过） | `npm run build`；TypeScript + Vite exit 0；3910 modules；保留既有 chunk-size warning |
+| GateX-5B targeted Playwright | PASS（通过） | 11/11 Chromium；command identity retry/rerun、STALE refresh/no auto POST、ELIGIBLE/RBAC/loading/error/blocked 状态 |
+| disposable cleanup | PASS（通过） | GateX test schema residual=0；容器 stop 后因 `--rm` 删除；未连接本机未知 `5432` 数据库 |
+
+RCA：首次 mandatory Maven 命令因 PowerShell 未整体引用 JDBC `-D` 参数而在 lifecycle 前退出；修正后 12/12。focused 首轮未注入 datasource，第二轮使用空 `nqtest` 时既有 `ResearchBacktestHappyPathLocalTest` 缺明确要求的 legacy account fixture；仅在 disposable DB 加入一条 SIM fixture 后最终 focused 与 full backend 均通过。doc-links 首次嵌套调用丢失 `-Roots` 数组边界，改用当前 PowerShell 直接数组调用后 212 checked / 0 errors / 1 existing warning。失败轮次均未写成产品通过。
+
+Findings：P0=0；P1=0；P2=2（V38 生产锁窗口/规模未测；GateX-4C filesystem stable-handle residual 继承且未扩大到 writer transaction）；P3=1（既有 Mockito/SLF4J、Vite chunk 与 Ant Design v5/React 19 warnings）。
+
+Boundary：V38 增量=0；migration/schema/code 增量=0；Runner/Scheduler/Matching/OrderCommandService/TradingVenueGateway/risk/ledger/account/credential/private exchange/external network invocation=`0`；LIVE=`DISABLED`，Shadow trading=`NOT_ENABLED`。完整证据：[evidence/gate-x/NQ-GATEX-5-RELEASE-TO-SHADOW-MATERIALIZATION-FINAL-REVIEW.attempt-02.md](evidence/gate-x/NQ-GATEX-5-RELEASE-TO-SHADOW-MATERIALIZATION-FINAL-REVIEW.attempt-02.md)。

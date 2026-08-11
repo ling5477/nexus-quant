@@ -4,6 +4,9 @@ import com.guidinglight.nexusquant.strategy.domain.port.StrategyValidationOvervi
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunAuthorizationBoundary;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunCreationPlan;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionPreviewFacts;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionPreviewFacts.ConsistencyEvidenceIdentity;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionPreviewFacts.PaperEvidenceIdentity;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionPreviewFacts.ShadowEvidenceIdentity;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionPreviewFactsRepository;
 
 import java.sql.ResultSet;
@@ -35,6 +38,7 @@ public class JdbcStrategyReleaseAdmissionPreviewFactsRepository
     private static final String SELECT_FACTS = """
             WITH selected_publish AS (
                 SELECT p.publish_record_id,
+                       p.backtest_run_id,
                        p.strategy_version_id,
                        p.eval_report_id,
                        p.publish_status,
@@ -70,18 +74,22 @@ public class JdbcStrategyReleaseAdmissionPreviewFactsRepository
                 JOIN selected_publish sp
                   ON sp.strategy_version_id = sr.strategy_version_id
                  AND sp.publish_record_id = sr.publish_id
+                WHERE sr.status <> 'CREATED'
                 ORDER BY sr.updated_at DESC, sr.created_at DESC, sr.id DESC
                 LIMIT 1
             ),
             latest_consistency AS (
-                SELECT scr.comparison_status,
+                SELECT scr.id,
+                       scr.shadow_run_id,
+                       scr.comparison_status,
                        scr.generated_at
                 FROM shadow_consistency_reports scr
                 JOIN latest_shadow ls ON ls.id = scr.shadow_run_id
                 ORDER BY scr.generated_at DESC, scr.created_at DESC, scr.id DESC
                 LIMIT 1
             )
-            SELECT sp.strategy_version_id,
+            SELECT sp.backtest_run_id,
+                   sp.strategy_version_id,
                    sp.dataset_id,
                    sp.eval_report_id,
                    sp.publish_record_id,
@@ -92,8 +100,13 @@ public class JdbcStrategyReleaseAdmissionPreviewFactsRepository
                    sp.publish_status,
                    lp.paper_run_status,
                    lp.trade_env,
+                   lp.updated_at AS paper_updated_at,
                    ls.shadow_run_status,
+                   ls.updated_at AS shadow_updated_at,
+                   lc.id AS consistency_report_id,
+                   lc.shadow_run_id AS consistency_shadow_run_id,
                    lc.comparison_status AS consistency_status,
+                   lc.generated_at AS consistency_generated_at,
                    sp.window_start,
                    sp.window_end,
                    COALESCE(
@@ -154,11 +167,44 @@ public class JdbcStrategyReleaseAdmissionPreviewFactsRepository
                 evidenceUpdatedAt
         );
         return new StrategyReleaseAdmissionPreviewFacts(
+                resultSet.getString("backtest_run_id"),
                 validationFact,
                 parseInstant(resultSet.getString("window_start")),
                 parseInstant(resultSet.getString("window_end")),
+                paperIdentity(resultSet),
+                shadowIdentity(resultSet),
+                consistencyIdentity(resultSet),
                 ShadowRunAuthorizationBoundary.DIAGNOSTIC_ONLY,
                 DIAGNOSTIC_NO_SIDE_EFFECTS
+        );
+    }
+
+    private static PaperEvidenceIdentity paperIdentity(ResultSet resultSet) throws SQLException {
+        String paperRunId = resultSet.getString("paper_run_id");
+        return paperRunId == null ? null : new PaperEvidenceIdentity(
+                paperRunId,
+                normalizeStatus(resultSet.getString("paper_run_status")),
+                normalizeStatus(resultSet.getString("trade_env")),
+                toInstant(resultSet.getTimestamp("paper_updated_at"))
+        );
+    }
+
+    private static ShadowEvidenceIdentity shadowIdentity(ResultSet resultSet) throws SQLException {
+        UUID shadowRunId = resultSet.getObject("shadow_run_id", UUID.class);
+        return shadowRunId == null ? null : new ShadowEvidenceIdentity(
+                shadowRunId,
+                normalizeStatus(resultSet.getString("shadow_run_status")),
+                toInstant(resultSet.getTimestamp("shadow_updated_at"))
+        );
+    }
+
+    private static ConsistencyEvidenceIdentity consistencyIdentity(ResultSet resultSet) throws SQLException {
+        UUID reportId = resultSet.getObject("consistency_report_id", UUID.class);
+        return reportId == null ? null : new ConsistencyEvidenceIdentity(
+                reportId,
+                resultSet.getObject("consistency_shadow_run_id", UUID.class),
+                normalizeStatus(resultSet.getString("consistency_status")),
+                toInstant(resultSet.getTimestamp("consistency_generated_at"))
         );
     }
 

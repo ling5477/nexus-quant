@@ -9,9 +9,12 @@ import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
 import com.guidinglight.nexusquant.observability.config.ObservabilityAutoConfiguration;
 import com.guidinglight.nexusquant.security.token.TokenClaims;
 import com.guidinglight.nexusquant.strategy.api.web.StrategyReleaseShadowRunMaterializationController;
+import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunIdempotencyConflictException;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunReleaseBindingMode;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionStaleException;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunMaterializationActor;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunMaterializationRejectedException;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunMaterializationResult;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseShadowRunMaterializationService;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,12 +36,13 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** Shadow materialization POST 必须执行 anonymous/VIEWER/OPERATOR 三层 RBAC 回归。 */
+/** Shadow materialization POST 的 RBAC 与稳定 error envelope 回归。 */
 @ActiveProfiles("test")
 @Import({ApiExceptionHandler.class, ObservabilityAutoConfiguration.class, SecurityConfiguration.class})
 @TestPropertySource(properties = {
@@ -120,6 +124,116 @@ class StrategyReleaseShadowRunMaterializationSecurityWebMvcTest {
                 .andExpect(jsonPath("$.bindingMode").value("RELEASE_BOUND"))
                 .andExpect(jsonPath("$.status").value("CREATED"))
                 .andExpect(jsonPath("$.idempotentReplay").value(false));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    void shouldAllowAdminAndReturnCreatedWithoutStart() throws Exception {
+        setUpActor("admin", 42L, List.of("ADMIN"));
+        when(materializationService.materialize(
+                eq(PUBLISH_ID),
+                eq("admin-action-001"),
+                any(ShadowRunMaterializationActor.class),
+                anyString()
+        )).thenReturn(Optional.of(result()));
+
+        mockMvc.perform(post(ROUTE).header("Idempotency-Key", "admin-action-001"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CREATED"))
+                .andExpect(jsonPath("$.bindingMode").value("RELEASE_BOUND"));
+    }
+
+    @Test
+    @WithMockUser(username = "operator", roles = "OPERATOR")
+    void shouldReturnBadRequestForMissingOrMalformedIdempotencyKey() throws Exception {
+        when(materializationService.materialize(
+                eq(PUBLISH_ID),
+                isNull(),
+                any(ShadowRunMaterializationActor.class),
+                anyString()
+        )).thenThrow(new IllegalArgumentException("invalid Idempotency-Key"));
+        when(materializationService.materialize(
+                eq(PUBLISH_ID),
+                eq(" "),
+                any(ShadowRunMaterializationActor.class),
+                anyString()
+        )).thenThrow(new IllegalArgumentException("invalid Idempotency-Key"));
+
+        mockMvc.perform(post(ROUTE))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
+        mockMvc.perform(post(ROUTE).header("Idempotency-Key", " "))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
+    }
+
+    @Test
+    @WithMockUser(username = "operator", roles = "OPERATOR")
+    void shouldReturnNotFoundForMissingPublish() throws Exception {
+        when(materializationService.materialize(
+                eq(PUBLISH_ID),
+                eq("operator-action-404"),
+                any(ShadowRunMaterializationActor.class),
+                anyString()
+        )).thenReturn(Optional.empty());
+
+        mockMvc.perform(post(ROUTE).header("Idempotency-Key", "operator-action-404"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+    }
+
+    @Test
+    @WithMockUser(username = "operator", roles = "OPERATOR")
+    void shouldReturnStableConflictAndBlockedErrors() throws Exception {
+        when(materializationService.materialize(
+                eq(PUBLISH_ID),
+                eq("operator-action-stale"),
+                any(ShadowRunMaterializationActor.class),
+                anyString()
+        )).thenThrow(new AdmissionStaleException());
+        when(materializationService.materialize(
+                eq(PUBLISH_ID),
+                eq("operator-action-conflict"),
+                any(ShadowRunMaterializationActor.class),
+                anyString()
+        )).thenThrow(new ShadowRunIdempotencyConflictException());
+        when(materializationService.materialize(
+                eq(PUBLISH_ID),
+                eq("operator-action-blocked"),
+                any(ShadowRunMaterializationActor.class),
+                anyString()
+        )).thenThrow(new ShadowRunMaterializationRejectedException(List.of("ADMISSION_BLOCKED")));
+
+        mockMvc.perform(post(ROUTE).header("Idempotency-Key", "operator-action-stale"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("ADMISSION_STALE"))
+                .andExpect(jsonPath("$.message").value("admission facts changed"));
+        mockMvc.perform(post(ROUTE).header("Idempotency-Key", "operator-action-conflict"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("IDEMPOTENCY_CONFLICT"));
+        mockMvc.perform(post(ROUTE).header("Idempotency-Key", "operator-action-blocked"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("ADMISSION_BLOCKED"));
+    }
+
+    private void setUpActor(String username, long userId, List<String> roles) {
+        Instant now = Instant.parse("2026-08-11T00:00:00Z");
+        when(gatewayAuthFacade.currentUser()).thenReturn(Optional.of(new TokenClaims(
+                "sub-" + username,
+                username,
+                roles,
+                now,
+                now.plusSeconds(60),
+                "issuer",
+                "jti-" + username
+        )));
+        when(currentUserProfileService.findByUsername(username)).thenReturn(Optional.of(new AuthUserProfile(
+                userId,
+                username,
+                "hash",
+                roles,
+                true
+        )));
     }
 
     private static ShadowRunMaterializationResult result() {

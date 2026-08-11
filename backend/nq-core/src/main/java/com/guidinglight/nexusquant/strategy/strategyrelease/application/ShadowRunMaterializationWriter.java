@@ -12,6 +12,7 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -33,20 +34,58 @@ public class ShadowRunMaterializationWriter {
 
     private final ShadowRunFactRepository repository;
     private final ObjectMapper objectMapper;
+    private final AdmissionMutationCoordinator admissionMutationCoordinator;
+    private final StrategyReleaseAdmissionStateRepository admissionStateRepository;
+    private final StrategyReleaseAdmissionPreviewFactsRepository factsRepository;
+    private final AdmissionGuardDecisionService guardDecisionService;
+    private final AdmissionGuardFingerprinter guardFingerprinter;
     private final Clock clock;
 
     @Autowired
-    public ShadowRunMaterializationWriter(ShadowRunFactRepository repository, ObjectMapper objectMapper) {
-        this(repository, objectMapper, Clock.systemUTC());
+    public ShadowRunMaterializationWriter(
+            ShadowRunFactRepository repository,
+            ObjectMapper objectMapper,
+            AdmissionMutationCoordinator admissionMutationCoordinator,
+            StrategyReleaseAdmissionStateRepository admissionStateRepository,
+            StrategyReleaseAdmissionPreviewFactsRepository factsRepository,
+            AdmissionGuardDecisionService guardDecisionService,
+            AdmissionGuardFingerprinter guardFingerprinter
+    ) {
+        this(
+                repository,
+                objectMapper,
+                admissionMutationCoordinator,
+                admissionStateRepository,
+                factsRepository,
+                guardDecisionService,
+                guardFingerprinter,
+                Clock.systemUTC()
+        );
     }
 
     ShadowRunMaterializationWriter(
             ShadowRunFactRepository repository,
             ObjectMapper objectMapper,
+            AdmissionMutationCoordinator admissionMutationCoordinator,
+            StrategyReleaseAdmissionStateRepository admissionStateRepository,
+            StrategyReleaseAdmissionPreviewFactsRepository factsRepository,
+            AdmissionGuardDecisionService guardDecisionService,
+            AdmissionGuardFingerprinter guardFingerprinter,
             Clock clock
     ) {
         this.repository = Objects.requireNonNull(repository, "repository must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
+        this.admissionMutationCoordinator = Objects.requireNonNull(
+                admissionMutationCoordinator,
+                "admissionMutationCoordinator must not be null"
+        );
+        this.admissionStateRepository = Objects.requireNonNull(
+                admissionStateRepository,
+                "admissionStateRepository must not be null"
+        );
+        this.factsRepository = Objects.requireNonNull(factsRepository, "factsRepository must not be null");
+        this.guardDecisionService = Objects.requireNonNull(guardDecisionService, "guardDecisionService must not be null");
+        this.guardFingerprinter = Objects.requireNonNull(guardFingerprinter, "guardFingerprinter must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
     }
 
@@ -58,10 +97,51 @@ public class ShadowRunMaterializationWriter {
      * @return 新建或幂等命中的同一 Shadow Run
      */
     @Transactional
-    public ShadowRunMaterializationResult materialize(ShadowRunCreationPlan plan, long actorId) {
+    public ShadowRunMaterializationResult materialize(
+            ShadowRunCreationPlan plan,
+            AdmissionGuard guard,
+            long actorId
+    ) {
         Objects.requireNonNull(plan, "plan must not be null");
+        Objects.requireNonNull(guard, "guard must not be null");
         if (actorId <= 0) {
             throw new IllegalArgumentException("actorId must be positive");
+        }
+
+        return admissionMutationCoordinator.withLockedAdmissionStates(
+                List.of(plan.publishRecordId()),
+                () -> materializeUnderAdmissionLock(plan, guard, actorId)
+        );
+    }
+
+    private ShadowRunMaterializationResult materializeUnderAdmissionLock(
+            ShadowRunCreationPlan plan,
+            AdmissionGuard guard,
+            long actorId
+    ) {
+        StrategyReleaseAdmissionState currentState = admissionStateRepository.loadByPublishRecordId(
+                plan.publishRecordId()
+        );
+        if (!guard.hasSupportedSchema()
+                || currentState.guardSchemaVersion() != AdmissionGuard.SUPPORTED_GUARD_SCHEMA_VERSION
+                || !guard.matchesState(currentState)
+                || !planMatchesGuard(plan, guard)) {
+            throw new AdmissionStaleException();
+        }
+
+        StrategyReleaseAdmissionPreviewFacts currentFacts = factsRepository.loadByPublishRecordId(
+                plan.publishRecordId()
+        );
+        String currentFingerprint = guardFingerprinter.fingerprint(
+                currentState,
+                currentFacts,
+                guard.evaluatedAt()
+        );
+        if (!Objects.equals(currentFingerprint, guard.admissionFingerprint())) {
+            throw new AdmissionStaleException();
+        }
+        if (guardDecisionService.evaluate(currentFacts) != ReleaseToShadowAdmissionDecision.Decision.ELIGIBLE) {
+            throw new ShadowRunMaterializationRejectedException(List.of("ADMISSION_BLOCKED"));
         }
 
         Instant now = Instant.now(clock);
@@ -86,6 +166,9 @@ public class ShadowRunMaterializationWriter {
         ArrayNode empty = objectMapper.createArrayNode();
         ObjectNode policy = objectMapper.createObjectNode()
                 .put("policyVersion", POLICY_VERSION)
+                .put("inputReference", plan.inputReference())
+                .put("provenanceReference", plan.provenanceReference())
+                .put("manifestSchemaVersion", plan.manifestSchemaVersion())
                 .put("noOrderSubmission", plan.sideEffectPolicy().noOrderSubmission())
                 .put("noCredentialAccess", plan.sideEffectPolicy().noCredentialAccess())
                 .put("noPrivateEndpoint", plan.sideEffectPolicy().noPrivateEndpoint())
@@ -124,6 +207,19 @@ public class ShadowRunMaterializationWriter {
                 null,
                 null
         );
+    }
+
+    private boolean planMatchesGuard(ShadowRunCreationPlan plan, AdmissionGuard guard) {
+        return Objects.equals(plan.publishRecordId(), guard.publishRecordId())
+                && Objects.equals(plan.artifactDigest(), guard.releaseArtifactDigest())
+                && Objects.equals(plan.manifestSchemaVersion(), guard.manifestSchemaVersion())
+                && Objects.equals(plan.strategyVersionId(), guard.strategyVersionId())
+                && Objects.equals(plan.datasetId(), guard.datasetId())
+                && Objects.equals(plan.evaluationId(), guard.evaluationId())
+                && Objects.equals(plan.windowStart(), guard.windowStart())
+                && Objects.equals(plan.windowEnd(), guard.windowEnd())
+                && plan.authorizationBoundary() == guard.authorizationBoundary()
+                && Objects.equals(plan.sideEffectPolicy(), guard.sideEffectPolicy());
     }
 
     private ShadowRunEvent createdEvent(

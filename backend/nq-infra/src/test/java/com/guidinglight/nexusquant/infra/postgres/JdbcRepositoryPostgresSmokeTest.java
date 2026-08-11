@@ -178,7 +178,12 @@ class JdbcRepositoryPostgresSmokeTest {
         JdbcShadowRunFactRepository repository = new JdbcShadowRunFactRepository(
                 jdbcTemplate,
                 objectMapper,
-                new JdbcShadowRunIllegalTransitionAuditWriter(jdbcTemplate, objectMapper, transactionManager)
+                new JdbcShadowRunIllegalTransitionAuditWriter(jdbcTemplate, objectMapper, transactionManager),
+                new com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcAdmissionMutationCoordinator(
+                        jdbcTemplate,
+                        transactionManager,
+                        256
+                )
         );
         String suffix = smokeRunId.substring(Math.max(0, smokeRunId.length() - 12));
         Long accountId = null;

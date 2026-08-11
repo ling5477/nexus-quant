@@ -1168,20 +1168,22 @@ async function seedAuthAndGateQStubs(
         releaseAdmissionPreview?: Record<string, unknown>;
         releaseAdmissionStatus?: number;
         releaseAdmissionDelayMs?: number;
+        roles?: string[];
     } = {},
 ): Promise<string[]> {
     const requests: string[] = [];
+    const roles = overrides.roles ?? ['ADMIN'];
 
-    // Why: GateQ-5 smoke 只验证前端只读展示，不启动后端、不外联、不读取真实 credential。
-    await page.addInitScript(() => {
+    // Why: smoke 只使用浏览器内本地 stub，不启动后端、不外联、不读取真实 credential。
+    await page.addInitScript(({sessionRoles}) => {
         window.localStorage.setItem('nexus-quant.console.auth', JSON.stringify({
             accessToken: 'strategy-validation-smoke-session',
             tokenType: 'Bearer',
             expiresAt: '2999-01-01T00:00:00Z',
             username: 'e2e-operator',
-            roles: ['ADMIN'],
+            roles: sessionRoles,
         }));
-    });
+    }, {sessionRoles: roles});
 
     page.on('request', (request) => requests.push(request.url()));
 
@@ -1192,7 +1194,7 @@ async function seedAuthAndGateQStubs(
         json: {
             userId: 1,
             username: 'e2e-operator',
-            roles: ['ADMIN'],
+            roles,
             authenticated: true,
             defaultExchangeAccountId: 101,
             defaultExchangeCode: 'BINANCE',
@@ -1828,24 +1830,134 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(panel).toContainText('无副作用策略缺失');
     });
 
-    test('Shadow 准入预览展示 eligible 但不提供创建或交易动作', async ({page}) => {
+    test('Shadow 准入预览展示 eligible 并提供受控创建入口', async ({page}) => {
         const requests = await seedAuthAndGateQStubs(page);
 
         await page.goto(validationUrl());
 
         const panel = page.getByTestId('strategy-release-admission-preview');
-        await expect(panel).toContainText('可进入 Shadow（仅预览）');
-        await expect(panel).toContainText('不会创建或启动 Shadow Run');
+        await expect(panel).toContainText('可创建未启动的 Shadow Run');
+        await expect(panel).toContainText('创建不会启动、不会下单');
         await expect(panel).toContainText('不构成交易授权');
         await expect(panel).toContainText('pub-gateq-5');
         await expect(panel).toContainText('eval-gateq-5');
-        await expect(panel.getByRole('button', {name: /创建|启动|执行|下单|重绑|上传/i})).toHaveCount(0);
+        await expect(panel.getByRole('button', {name: '创建 Shadow Run'})).toBeVisible();
+        await expect(panel.getByRole('button', {name: /启动|执行|下单|重绑|上传/i})).toHaveCount(0);
         await expect(panel).not.toContainText(/GateX|GateW|IMPLEMENTED\|PENDING_REVIEW/);
         const eligibleStatus = panel.locator('span[title="可进入 Shadow"]');
         await expect(eligibleStatus).toHaveAttribute('style', /--nq-success/);
         await expect(eligibleStatus).not.toHaveAttribute('style', /market-(up|down)/);
         expect(requests.some((url) => url.includes('/api/strategy-releases/pub-gateq-5/shadow-admission-preview'))).toBeTruthy();
         expectNoForbiddenRequests(requests);
+    });
+
+    test('Shadow 创建确认保持同命令 retry，并为显式 rerun 生成新 identity', async ({page}) => {
+        await seedAuthAndGateQStubs(page);
+        const commandKeys: string[] = [];
+        let responseIndex = 0;
+        await page.route('**/api/strategy-releases/*/shadow-runs', async (route: Route) => {
+            expect(route.request().method()).toBe('POST');
+            commandKeys.push(route.request().headers()['idempotency-key'] ?? '');
+            responseIndex++;
+            return route.fulfill({
+                status: 200,
+                json: {
+                    shadowRunId: responseIndex <= 2
+                        ? '22222222-2222-4222-8222-222222222222'
+                        : '33333333-3333-4333-8333-333333333333',
+                    publishRecordId: 'pub-gateq-5',
+                    artifactDigest: 'a'.repeat(64),
+                    bindingMode: 'RELEASE_BOUND',
+                    status: 'CREATED',
+                    createdAt: '2026-08-11T00:00:00Z',
+                    idempotentReplay: responseIndex === 2,
+                },
+            });
+        });
+
+        await page.goto(validationUrl());
+        const panel = page.getByTestId('strategy-release-admission-preview');
+        await panel.getByRole('button', {name: '创建 Shadow Run'}).click();
+        const createModal = page.getByRole('dialog', {name: '确认创建 Shadow Run'});
+        await expect(createModal).toContainText('仅创建 CREATED Shadow Run');
+        await expect(createModal).toContainText('不会启动 Runner 或 Scheduler');
+        await expect(createModal).toContainText('不会下单');
+        await expect(createModal).toContainText('不构成交易授权');
+        await createModal.getByRole('button', {name: '确认创建'}).click();
+
+        await expect(panel.getByTestId('shadow-materialization-result')).toContainText('CREATED');
+        await expect(panel.getByTestId('shadow-materialization-result')).toContainText(
+            '22222222-2222-4222-8222-222222222222',
+        );
+        await panel.getByRole('button', {name: '重试同一创建命令'}).click();
+        await page.getByRole('dialog', {name: '重新确认同一创建命令'})
+            .getByRole('button', {name: '确认重试'}).click();
+        await expect(panel.getByTestId('shadow-materialization-notice')).toContainText('同一创建命令已安全重放');
+
+        await panel.getByRole('button', {name: '创建新的 Shadow Run'}).click();
+        await page.getByRole('dialog', {name: '确认创建 Shadow Run'})
+            .getByRole('button', {name: '确认创建'}).click();
+        await expect(panel.getByTestId('shadow-materialization-result')).toContainText(
+            '33333333-3333-4333-8333-333333333333',
+        );
+        expect(commandKeys).toHaveLength(3);
+        expect(commandKeys[0]).toBeTruthy();
+        expect(commandKeys[1]).toBe(commandKeys[0]);
+        expect(commandKeys[2]).not.toBe(commandKeys[0]);
+    });
+
+    test('ADMISSION_STALE 只提示并刷新 preview，不自动再次 POST', async ({page}) => {
+        const requests = await seedAuthAndGateQStubs(page);
+        let postCount = 0;
+        await page.route('**/api/strategy-releases/*/shadow-runs', async (route: Route) => {
+            postCount++;
+            return route.fulfill({
+                status: 409,
+                json: {status: 409, code: 'ADMISSION_STALE', message: 'admission facts changed'},
+            });
+        });
+
+        await page.goto(validationUrl());
+        const panel = page.getByTestId('strategy-release-admission-preview');
+        await panel.getByRole('button', {name: '创建 Shadow Run'}).click();
+        await page.getByRole('dialog', {name: '确认创建 Shadow Run'})
+            .getByRole('button', {name: '确认创建'}).click();
+
+        await expect(panel.getByTestId('shadow-materialization-notice')).toContainText('准入事实已变化');
+        await expect(panel.getByTestId('shadow-materialization-notice')).toContainText('不会自动再次创建');
+        await expect.poll(() => requests.filter(
+            (url) => url.includes('/api/strategy-releases/pub-gateq-5/shadow-admission-preview'),
+        ).length).toBeGreaterThan(1);
+        await page.waitForTimeout(200);
+        expect(postCount).toBe(1);
+        await expect(panel.getByRole('button', {name: '重试同一创建命令'})).toBeVisible();
+    });
+
+    test('BLOCKED 与 VIEWER 均不展示写入口', async ({page}) => {
+        await seedAuthAndGateQStubs(page, {
+            roles: ['VIEWER'],
+            releaseAdmissionPreview: {
+                ...RELEASE_ADMISSION_PREVIEW_FIXTURE,
+                admissionDecision: 'BLOCKED',
+                reasonCodes: ['VALIDATION_NOT_APPROVED'],
+            },
+        });
+
+        await page.goto(validationUrl());
+        const panel = page.getByTestId('strategy-release-admission-preview');
+        await expect(panel).toContainText('准入已阻断');
+        await expect(panel.getByRole('button', {name: /创建 Shadow Run|创建新的 Shadow Run|重试同一创建命令/}))
+            .toHaveCount(0);
+    });
+
+    test('ELIGIBLE 的 VIEWER 仍不展示写入口', async ({page}) => {
+        await seedAuthAndGateQStubs(page, {roles: ['VIEWER']});
+
+        await page.goto(validationUrl());
+        const panel = page.getByTestId('strategy-release-admission-preview');
+        await expect(panel).toContainText('可创建未启动的 Shadow Run');
+        await expect(panel.getByRole('button', {name: /创建 Shadow Run|创建新的 Shadow Run|重试同一创建命令/}))
+            .toHaveCount(0);
     });
 
     test('Shadow 准入预览请求失败时保持不可用', async ({page}) => {

@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.research.infra.jdbc;
 import com.guidinglight.nexusquant.research.domain.BacktestPublishRecord;
 import com.guidinglight.nexusquant.research.domain.PublishStatus;
 import com.guidinglight.nexusquant.research.domain.port.BacktestPublishRecordRepository;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionMutationCoordinator;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -23,14 +24,24 @@ public class JdbcBacktestPublishRecordRepository implements BacktestPublishRecor
     private static final RowMapper<BacktestPublishRecord> ROW_MAPPER = JdbcBacktestPublishRecordRepository::mapRow;
 
     private final JdbcTemplate jdbcTemplate;
+    private final AdmissionMutationCoordinator admissionMutationCoordinator;
 
-    public JdbcBacktestPublishRecordRepository(JdbcTemplate jdbcTemplate) {
+    public JdbcBacktestPublishRecordRepository(
+            JdbcTemplate jdbcTemplate,
+            AdmissionMutationCoordinator admissionMutationCoordinator
+    ) {
         this.jdbcTemplate = jdbcTemplate;
+        this.admissionMutationCoordinator = admissionMutationCoordinator;
     }
 
     @Override
     public void upsert(BacktestPublishRecord record) {
-        int updated = jdbcTemplate.update(
+        List<String> existingPublishIds = jdbcTemplate.query(
+                "SELECT publish_record_id FROM backtest_publish_records WHERE backtest_run_id = ?",
+                (resultSet, rowNum) -> resultSet.getString("publish_record_id"),
+                record.backtestRunId()
+        );
+        int updated = admissionMutationCoordinator.withLockedAdmissionStates(existingPublishIds, () -> jdbcTemplate.update(
                 """
                         INSERT INTO backtest_publish_records (
                             publish_record_id, backtest_run_id, research_config_id, backtest_config_id, source_strategy_id,
@@ -93,7 +104,7 @@ public class JdbcBacktestPublishRecordRepository implements BacktestPublishRecor
                 Timestamp.from(record.updatedAt()),
                 record.artifactStorageKey(),
                 record.manifestStorageKey()
-        );
+        ));
         if (updated != 1) {
             throw new IllegalStateException("backtest publish artifact locator conflict");
         }

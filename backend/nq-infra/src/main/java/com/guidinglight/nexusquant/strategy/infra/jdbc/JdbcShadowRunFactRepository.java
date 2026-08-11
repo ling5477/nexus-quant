@@ -19,6 +19,7 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStateMachi
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStateTransitionException;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatusUpdateResult;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionMutationCoordinator;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -79,21 +80,30 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
     private final ObjectMapper objectMapper;
     private final ShadowRunStateMachine stateMachine;
     private final JdbcShadowRunIllegalTransitionAuditWriter illegalTransitionAuditWriter;
+    private final AdmissionMutationCoordinator admissionMutationCoordinator;
 
     @Autowired
     public JdbcShadowRunFactRepository(
             JdbcTemplate jdbcTemplate,
             ObjectMapper objectMapper,
-            JdbcShadowRunIllegalTransitionAuditWriter illegalTransitionAuditWriter
+            JdbcShadowRunIllegalTransitionAuditWriter illegalTransitionAuditWriter,
+            AdmissionMutationCoordinator admissionMutationCoordinator
     ) {
-        this(jdbcTemplate, objectMapper, new ShadowRunStateMachine(), illegalTransitionAuditWriter);
+        this(
+                jdbcTemplate,
+                objectMapper,
+                new ShadowRunStateMachine(),
+                illegalTransitionAuditWriter,
+                admissionMutationCoordinator
+        );
     }
 
     JdbcShadowRunFactRepository(
             JdbcTemplate jdbcTemplate,
             ObjectMapper objectMapper,
             ShadowRunStateMachine stateMachine,
-            JdbcShadowRunIllegalTransitionAuditWriter illegalTransitionAuditWriter
+            JdbcShadowRunIllegalTransitionAuditWriter illegalTransitionAuditWriter,
+            AdmissionMutationCoordinator admissionMutationCoordinator
     ) {
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
@@ -102,11 +112,22 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
                 illegalTransitionAuditWriter,
                 "illegalTransitionAuditWriter must not be null"
         );
+        this.admissionMutationCoordinator = Objects.requireNonNull(
+                admissionMutationCoordinator,
+                "admissionMutationCoordinator must not be null"
+        );
     }
 
     @Override
     public ShadowRun create(ShadowRun run) {
         Objects.requireNonNull(run, "run must not be null");
+        return admissionMutationCoordinator.withLockedAdmissionStates(
+                run.publishId() == null ? List.of() : List.of(run.publishId()),
+                () -> createUnderAdmissionLock(run)
+        );
+    }
+
+    private ShadowRun createUnderAdmissionLock(ShadowRun run) {
         jdbcTemplate.update(
                 """
                         INSERT INTO shadow_runs (
@@ -259,6 +280,13 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
     @Override
     public ShadowConsistencyReport createConsistencyReport(ShadowConsistencyReport report) {
         Objects.requireNonNull(report, "report must not be null");
+        return admissionMutationCoordinator.withLockedAdmissionStates(
+                publishIdsForShadow(report.shadowRunId()),
+                () -> createConsistencyReportUnderAdmissionLock(report)
+        );
+    }
+
+    private ShadowConsistencyReport createConsistencyReportUnderAdmissionLock(ShadowConsistencyReport report) {
         jdbcTemplate.update(
                 """
                         INSERT INTO shadow_consistency_reports (
@@ -283,6 +311,29 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
     @Transactional
     @Override
     public ShadowRunStatusUpdateResult updateStatus(
+            UUID shadowRunId,
+            ShadowRunStatus toStatus,
+            long expectedVersion,
+            String reasonCode,
+            String message,
+            String requestId,
+            String traceId
+    ) {
+        return admissionMutationCoordinator.withLockedAdmissionStates(
+                publishIdsForShadow(shadowRunId),
+                () -> updateStatusUnderAdmissionLock(
+                        shadowRunId,
+                        toStatus,
+                        expectedVersion,
+                        reasonCode,
+                        message,
+                        requestId,
+                        traceId
+                )
+        );
+    }
+
+    private ShadowRunStatusUpdateResult updateStatusUnderAdmissionLock(
             UUID shadowRunId,
             ShadowRunStatus toStatus,
             long expectedVersion,
@@ -346,6 +397,14 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
                 updatedAt
         ));
         return new ShadowRunStatusUpdateResult(shadowRunId, current.status(), toStatus, expectedVersion, expectedVersion + 1);
+    }
+
+    private List<String> publishIdsForShadow(UUID shadowRunId) {
+        return jdbcTemplate.query(
+                "SELECT publish_id FROM shadow_runs WHERE id = ? AND publish_id IS NOT NULL",
+                (resultSet, rowNum) -> resultSet.getString("publish_id"),
+                shadowRunId
+        );
     }
 
     @Override

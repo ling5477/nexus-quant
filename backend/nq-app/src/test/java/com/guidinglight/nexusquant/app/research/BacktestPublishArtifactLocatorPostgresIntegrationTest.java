@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import com.guidinglight.nexusquant.research.domain.BacktestPublishRecord;
 import com.guidinglight.nexusquant.research.domain.PublishStatus;
 import com.guidinglight.nexusquant.research.infra.jdbc.JdbcBacktestPublishRecordRepository;
+import com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcAdmissionMutationCoordinator;
 
 import java.net.URI;
 import java.time.Instant;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.Timeout;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 /**
  * GateX-4B locator migration 在显式 localhost disposable PostgreSQL 上的 fresh/upgrade 回归。
@@ -44,16 +46,16 @@ class BacktestPublishArtifactLocatorPostgresIntegrationTest {
     private static final Instant NOW = Instant.parse("2026-08-10T00:00:00Z");
 
     @Test
-    void freshDatabaseShouldMigrateFromV1ToV37AndEnforceLocatorContract() {
+    void freshDatabaseShouldMigrateFromV1ToV38AndEnforceLocatorContract() {
         PostgresConfig config = requireLocalDisposableConfig();
         String schema = randomSchema("fresh");
         try {
             migrate(config, schema, null);
             JdbcTemplate jdbc = jdbc(config, schema);
-            assertEquals("37", currentFlywayVersion(jdbc));
+            assertEquals("38", currentFlywayVersion(jdbc));
             assertSchemaContract(jdbc);
 
-            JdbcBacktestPublishRecordRepository repository = new JdbcBacktestPublishRecordRepository(jdbc);
+            JdbcBacktestPublishRecordRepository repository = repository(jdbc);
             Fixture first = seedFixture(jdbc, "fresh-first");
             BacktestPublishRecord stored = publishRecord(
                     first,
@@ -109,7 +111,7 @@ class BacktestPublishArtifactLocatorPostgresIntegrationTest {
 
             migrate(config, schema, null);
             JdbcTemplate upgraded = jdbc(config, schema);
-            assertEquals("37", currentFlywayVersion(upgraded));
+            assertEquals("38", currentFlywayVersion(upgraded));
             assertSchemaContract(upgraded);
             assertEquals(2, upgraded.queryForObject(
                     "SELECT COUNT(*) FROM backtest_publish_records "
@@ -117,7 +119,7 @@ class BacktestPublishArtifactLocatorPostgresIntegrationTest {
                     Integer.class
             ));
 
-            JdbcBacktestPublishRecordRepository repository = new JdbcBacktestPublishRecordRepository(upgraded);
+            JdbcBacktestPublishRecordRepository repository = repository(upgraded);
             BacktestPublishRecord legacy = repository.findByPublishRecordId(legacySucceeded.publishId()).orElseThrow();
             assertEquals(
                     BacktestPublishRecord.ArtifactLocatorBindingStatus.LEGACY_ARTIFACT_UNBOUND,
@@ -164,7 +166,7 @@ class BacktestPublishArtifactLocatorPostgresIntegrationTest {
             );
             assertEquals(1, competingAttempts.stream().filter(BindingAttempt.SUCCESS::equals).count());
             assertEquals(1, competingAttempts.stream().filter(BindingAttempt.CONFLICT::equals).count());
-            BacktestPublishRecord competingFinal = new JdbcBacktestPublishRecordRepository(control)
+            BacktestPublishRecord competingFinal = repository(control)
                     .findByPublishRecordId(competing.publishId())
                     .orElseThrow();
             boolean pairA = "artifact_competing_a".equals(competingFinal.artifactStorageKey())
@@ -189,7 +191,7 @@ class BacktestPublishArtifactLocatorPostgresIntegrationTest {
             );
             assertEquals(2, samePairAttempts.stream().filter(BindingAttempt.SUCCESS::equals).count());
             assertBound(
-                    new JdbcBacktestPublishRecordRepository(control)
+                    repository(control)
                             .findByPublishRecordId(samePair.publishId())
                             .orElseThrow(),
                     "artifact_same_pair",
@@ -494,7 +496,7 @@ class BacktestPublishArtifactLocatorPostgresIntegrationTest {
         JdbcTemplate worker = jdbc(config, schema);
         worker.setQueryTimeout(5);
         try {
-            new JdbcBacktestPublishRecordRepository(worker).upsert(record);
+            repository(worker).upsert(record);
             return BindingAttempt.SUCCESS;
         } catch (IllegalStateException exception) {
             assertEquals("backtest publish artifact locator conflict", exception.getMessage());
@@ -554,6 +556,14 @@ class BacktestPublishArtifactLocatorPostgresIntegrationTest {
         dataSource.setUsername(config.user());
         dataSource.setPassword(config.password());
         return new JdbcTemplate(dataSource);
+    }
+
+    private static JdbcBacktestPublishRecordRepository repository(JdbcTemplate jdbc) {
+        DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(jdbc.getDataSource());
+        return new JdbcBacktestPublishRecordRepository(
+                jdbc,
+                new JdbcAdmissionMutationCoordinator(jdbc, transactionManager, 256)
+        );
     }
 
     private static String withCurrentSchema(String url, String schema) {

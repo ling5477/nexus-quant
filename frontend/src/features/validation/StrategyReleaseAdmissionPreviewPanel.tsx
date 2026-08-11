@@ -1,10 +1,16 @@
-import {ReloadOutlined} from '@ant-design/icons';
-import {Alert, Button, Card, Descriptions, Skeleton, Space, Typography} from 'antd';
+import {PlusOutlined, RedoOutlined, ReloadOutlined} from '@ant-design/icons';
+import {Alert, Button, Card, Descriptions, Modal, Skeleton, Space, Typography} from 'antd';
+import {useEffect, useState} from 'react';
 
 import {formatApiError} from '@/api/errors';
+import {useStrategyReleaseShadowRunMaterialization} from '@/hooks/useStrategyReleaseQueries';
 import {StatusTag} from '@/nq-design-system/status/StatusTag';
+import {useAuthStore} from '@/store/auth-store';
 import type {AppApiError} from '@/types/api';
-import type {StrategyReleaseAdmissionPreviewResponse} from '@/types/strategy-releases';
+import type {
+    StrategyReleaseAdmissionPreviewResponse,
+    StrategyReleaseShadowRunMaterializationResponse,
+} from '@/types/strategy-releases';
 
 const {Text} = Typography;
 
@@ -18,7 +24,7 @@ interface AdmissionPreviewQueryState {
 }
 
 const REASON_TEXT: Record<string, string> = {
-    ELIGIBLE_FOR_CREATION_PLAN_ONLY: '仅可形成内存创建计划，不会创建或启动 Shadow Run',
+    ELIGIBLE_FOR_CREATION_PLAN_ONLY: '允许受控创建未启动的 CREATED Shadow Run',
     ARTIFACT_LOCATION_UNBOUND: '历史发布未绑定服务端制品位置',
     ARTIFACT_ROOT_NOT_CONFIGURED: '服务端可信制品根目录未配置',
     ARTIFACT_LOCATION_UNSAFE: '服务端制品位置未通过安全校验',
@@ -68,10 +74,25 @@ function unavailable(value: string | null | undefined): string {
     return value?.trim() || '未提供';
 }
 
+function createCommandIdentity(): string | null {
+    if (typeof crypto === 'undefined' || typeof crypto.randomUUID !== 'function') {
+        return null;
+    }
+    return `shadow-materialization-${crypto.randomUUID()}`;
+}
+
+type ConfirmationMode = 'new' | 'retry' | null;
+type MaterializationNotice = {
+    type: 'success' | 'warning' | 'error';
+    message: string;
+    description: string;
+} | null;
+
 /**
  * 现有 Strategy Validation workspace 内的最小 Shadow admission preview 区块。
  *
- * <p>仅展示 GET 查询结果与 provenance；唯一交互是刷新。组件不提供创建、启动、执行、重绑、上传或交易动作。
+ * <p>仅在 ELIGIBLE 且当前用户具备 OPERATOR/ADMIN 时提供 CREATE-only materialization；
+ * 不提供启动、执行、重绑、上传或交易动作。
  */
 export function StrategyReleaseAdmissionPreviewPanel({
     publishRecordId,
@@ -81,8 +102,79 @@ export function StrategyReleaseAdmissionPreviewPanel({
     query: AdmissionPreviewQueryState;
 }) {
     const preview = query.data;
+    const roles = useAuthStore((state) => state.currentUser?.roles ?? []);
+    const canMaterialize = roles.some((role) => ['OPERATOR', 'ADMIN'].includes(role.toUpperCase()));
+    const materialization = useStrategyReleaseShadowRunMaterialization();
+    const [confirmationMode, setConfirmationMode] = useState<ConfirmationMode>(null);
+    const [activeCommandIdentity, setActiveCommandIdentity] = useState<string | null>(null);
+    const [result, setResult] = useState<StrategyReleaseShadowRunMaterializationResponse | null>(null);
+    const [notice, setNotice] = useState<MaterializationNotice>(null);
     const legacyUnbound = preview?.bindingMode === 'LEGACY_UNBOUND'
         || preview?.bindingMode === 'LEGACY_PUBLISH_ONLY';
+    const eligible = preview?.admissionDecision === 'ELIGIBLE';
+
+    useEffect(() => {
+        setConfirmationMode(null);
+        setActiveCommandIdentity(null);
+        setResult(null);
+        setNotice(null);
+        materialization.reset();
+        // publish 变化代表新的 release command scope；旧 command identity 绝不能跨 publish 复用。
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [publishRecordId]);
+
+    const submitConfirmedCommand = () => {
+        if (!publishRecordId || !eligible || !canMaterialize) {
+            setConfirmationMode(null);
+            return;
+        }
+        const commandIdentity = confirmationMode === 'retry'
+            ? activeCommandIdentity
+            : createCommandIdentity();
+        if (!commandIdentity) {
+            setNotice({
+                type: 'error',
+                message: '无法创建 Shadow Run',
+                description: '无法生成安全的 Idempotency-Key；本次请求未发送。',
+            });
+            setConfirmationMode(null);
+            return;
+        }
+        setActiveCommandIdentity(commandIdentity);
+        setConfirmationMode(null);
+        setNotice(null);
+        materialization.mutate(
+            {publishRecordId, idempotencyKey: commandIdentity},
+            {
+                onSuccess: (created) => {
+                    setResult(created);
+                    setNotice({
+                        type: 'success',
+                        message: created.idempotentReplay ? '同一创建命令已安全重放' : 'Shadow Run 已创建',
+                        description: `状态 ${created.status}；未启动、未下单，也不构成交易授权。`,
+                    });
+                    query.refetch();
+                },
+                onError: (error) => {
+                    const apiError = error as AppApiError;
+                    if (apiError.code === 'ADMISSION_STALE') {
+                        setNotice({
+                            type: 'warning',
+                            message: '准入事实已变化',
+                            description: '已刷新准入预览，但不会自动再次创建。请复核新结果后重新确认。',
+                        });
+                        query.refetch();
+                        return;
+                    }
+                    setNotice({
+                        type: apiError.code === 'ADMISSION_BLOCKED' ? 'warning' : 'error',
+                        message: apiError.code === 'ADMISSION_BLOCKED' ? '当前准入已阻断' : 'Shadow Run 创建失败',
+                        description: formatApiError(apiError),
+                    });
+                },
+            },
+        );
+    };
 
     return (
         <Card
@@ -130,12 +222,37 @@ export function StrategyReleaseAdmissionPreviewPanel({
                         message={legacyUnbound
                             ? '历史未绑定'
                             : preview.admissionDecision === 'ELIGIBLE'
-                                ? '可进入 Shadow（仅预览）'
+                                ? '可创建未启动的 Shadow Run'
                                 : '准入已阻断'}
                         description={preview.admissionDecision === 'ELIGIBLE'
-                            ? '仅表示服务端规则允许形成内存中的创建计划；不会创建或启动 Shadow Run，也不构成交易授权。'
+                            ? '准入允许受控创建 CREATED Shadow Run；创建不会启动、不会下单，也不构成交易授权。'
                             : '请查看阻断原因与 provenance。当前结果不会触发任何创建、启动、执行或交易动作。'}
                     />
+                    {notice ? (
+                        <Alert
+                            data-testid="shadow-materialization-notice"
+                            type={notice.type}
+                            showIcon
+                            message={notice.message}
+                            description={notice.description}
+                        />
+                    ) : null}
+                    {result ? (
+                        <Alert
+                            data-testid="shadow-materialization-result"
+                            type="info"
+                            showIcon
+                            message={`Shadow Run：${result.status}`}
+                            description={(
+                                <Space direction="vertical" size={2}>
+                                    <Text code>{result.shadowRunId}</Text>
+                                    <Text type="secondary">
+                                        {result.idempotentReplay ? '同一命令重放，未新增 CREATED 事件。' : '已创建 RELEASE_BOUND 事实。'}
+                                    </Text>
+                                </Space>
+                            )}
+                        />
+                    ) : null}
                     <Descriptions size="small" bordered column={{xs: 1, sm: 2, lg: 3}}>
                         <Descriptions.Item label="制品验证">
                             <StatusTag
@@ -195,10 +312,47 @@ export function StrategyReleaseAdmissionPreviewPanel({
                             ))}
                         </Space>
                     </div>
+                    {eligible && canMaterialize ? (
+                        <Space wrap>
+                            <Button
+                                type="primary"
+                                icon={<PlusOutlined/>}
+                                loading={materialization.isPending}
+                                onClick={() => setConfirmationMode('new')}
+                            >
+                                {activeCommandIdentity ? '创建新的 Shadow Run' : '创建 Shadow Run'}
+                            </Button>
+                            {activeCommandIdentity ? (
+                                <Button
+                                    icon={<RedoOutlined/>}
+                                    disabled={materialization.isPending}
+                                    onClick={() => setConfirmationMode('retry')}
+                                >
+                                    重试同一创建命令
+                                </Button>
+                            ) : null}
+                        </Space>
+                    ) : null}
                 </Space>
             ) : (
                 <Alert type="warning" showIcon message="准入预览不可用"/>
             )}
+            <Modal
+                title={confirmationMode === 'retry' ? '重新确认同一创建命令' : '确认创建 Shadow Run'}
+                open={confirmationMode !== null}
+                okText={confirmationMode === 'retry' ? '确认重试' : '确认创建'}
+                cancelText="取消"
+                confirmLoading={materialization.isPending}
+                onOk={submitConfirmedCommand}
+                onCancel={() => setConfirmationMode(null)}
+            >
+                <Alert
+                    type="warning"
+                    showIcon
+                    message="仅创建 CREATED Shadow Run"
+                    description="本操作不会启动 Runner 或 Scheduler，不会下单，不会访问交易凭证，也不构成交易授权。"
+                />
+            </Modal>
         </Card>
     );
 }

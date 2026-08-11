@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.research.infra.paper.jdbc;
 import com.guidinglight.nexusquant.research.domain.paper.PaperTradingRun;
 import com.guidinglight.nexusquant.research.domain.paper.PaperTradingRunStatus;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperTradingRunRepository;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionMutationCoordinator;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -34,14 +35,19 @@ public class JdbcPaperTradingRunRepository implements PaperTradingRunRepository 
     private static final RowMapper<PaperTradingRun> ROW_MAPPER = JdbcPaperTradingRunRepository::mapRow;
 
     private final JdbcTemplate jdbcTemplate;
+    private final AdmissionMutationCoordinator admissionMutationCoordinator;
 
-    public JdbcPaperTradingRunRepository(JdbcTemplate jdbcTemplate) {
+    public JdbcPaperTradingRunRepository(
+            JdbcTemplate jdbcTemplate,
+            AdmissionMutationCoordinator admissionMutationCoordinator
+    ) {
         this.jdbcTemplate = jdbcTemplate;
+        this.admissionMutationCoordinator = admissionMutationCoordinator;
     }
 
     @Override
     public void insert(PaperTradingRun run) {
-        jdbcTemplate.update(
+        admissionMutationCoordinator.withLockedAdmissionStates(List.of(run.publishId()), () -> jdbcTemplate.update(
                 """
                         INSERT INTO paper_trading_runs (
                             paper_run_id, publish_id, strategy_version_id, status, trade_env, exchange_code, market_type,
@@ -73,7 +79,7 @@ public class JdbcPaperTradingRunRepository implements PaperTradingRunRepository 
                 run.createdBy(),
                 Timestamp.from(run.createdAt()),
                 Timestamp.from(run.updatedAt())
-        );
+        ));
     }
 
     @Override
@@ -106,7 +112,12 @@ public class JdbcPaperTradingRunRepository implements PaperTradingRunRepository 
 
     @Override
     public boolean updateStatus(String paperRunId, PaperTradingRunStatus status, Instant startedAt, Instant stoppedAt, Instant updatedAt) {
-        int updated = jdbcTemplate.update(
+        List<String> publishIds = jdbcTemplate.query(
+                "SELECT publish_id FROM paper_trading_runs WHERE paper_run_id = ?",
+                (resultSet, rowNum) -> resultSet.getString("publish_id"),
+                paperRunId
+        );
+        int updated = admissionMutationCoordinator.withLockedAdmissionStates(publishIds, () -> jdbcTemplate.update(
                 """
                         UPDATE paper_trading_runs
                         SET status = ?,
@@ -120,7 +131,7 @@ public class JdbcPaperTradingRunRepository implements PaperTradingRunRepository 
                 toTimestamp(stoppedAt),
                 Timestamp.from(updatedAt),
                 paperRunId
-        );
+        ));
         return updated > 0;
     }
 

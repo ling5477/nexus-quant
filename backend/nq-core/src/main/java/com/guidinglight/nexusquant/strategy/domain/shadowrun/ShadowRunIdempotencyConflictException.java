@@ -9,7 +9,7 @@ package com.guidinglight.nexusquant.strategy.domain.shadowrun;
  */
 public class ShadowRunIdempotencyConflictException extends RuntimeException {
 
-    private static final String REASON_CODE = "SHADOW_RUN_IDEMPOTENCY_PROVENANCE_CONFLICT";
+    private static final String REASON_CODE = "IDEMPOTENCY_CONFLICT";
 
     /**
      * 创建不携带具体 anchor 值的安全冲突异常，避免 digest 或请求载荷进入日志/API 错误链。

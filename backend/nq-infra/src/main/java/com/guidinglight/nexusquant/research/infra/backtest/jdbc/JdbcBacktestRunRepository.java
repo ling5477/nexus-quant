@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.research.infra.backtest.jdbc;
 import com.guidinglight.nexusquant.research.domain.BacktestRun;
 import com.guidinglight.nexusquant.research.domain.BacktestRunStatus;
 import com.guidinglight.nexusquant.research.domain.port.BacktestRunRepository;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionMutationCoordinator;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -39,9 +40,14 @@ public class JdbcBacktestRunRepository implements BacktestRunRepository {
     private static final RowMapper<BacktestRun> ROW_MAPPER = JdbcBacktestRunRepository::mapRow;
 
     private final JdbcTemplate jdbcTemplate;
+    private final AdmissionMutationCoordinator admissionMutationCoordinator;
 
-    public JdbcBacktestRunRepository(JdbcTemplate jdbcTemplate) {
+    public JdbcBacktestRunRepository(
+            JdbcTemplate jdbcTemplate,
+            AdmissionMutationCoordinator admissionMutationCoordinator
+    ) {
         this.jdbcTemplate = jdbcTemplate;
+        this.admissionMutationCoordinator = admissionMutationCoordinator;
     }
 
     @Override
@@ -119,7 +125,12 @@ public class JdbcBacktestRunRepository implements BacktestRunRepository {
             String summaryJson,
             Instant updatedAt
     ) {
-        return jdbcTemplate.update(
+        List<String> publishIds = jdbcTemplate.query(
+                "SELECT publish_record_id FROM backtest_publish_records WHERE backtest_run_id = ?",
+                (resultSet, rowNum) -> resultSet.getString("publish_record_id"),
+                backtestRunId
+        );
+        return admissionMutationCoordinator.withLockedAdmissionStates(publishIds, () -> jdbcTemplate.update(
                 """
                         UPDATE backtest_runs
                         SET status = ?,
@@ -143,7 +154,7 @@ public class JdbcBacktestRunRepository implements BacktestRunRepository {
                 summaryJson,
                 Timestamp.from(updatedAt),
                 backtestRunId
-        ) > 0;
+        ) > 0);
     }
 
     private static BacktestRun mapRow(ResultSet resultSet, int rowNum) throws SQLException {

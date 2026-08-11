@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.research.domain.eval.BacktestEvaluationReport;
 import com.guidinglight.nexusquant.research.domain.eval.EvaluationStatus;
 import com.guidinglight.nexusquant.research.domain.eval.port.BacktestEvaluationReportRepository;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionMutationCoordinator;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -25,14 +26,25 @@ public class JdbcBacktestEvaluationReportRepository implements BacktestEvaluatio
             JdbcBacktestEvaluationReportRepository::mapRow;
 
     private final JdbcTemplate jdbcTemplate;
+    private final AdmissionMutationCoordinator admissionMutationCoordinator;
 
-    public JdbcBacktestEvaluationReportRepository(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
+    public JdbcBacktestEvaluationReportRepository(
+            JdbcTemplate jdbcTemplate,
+            ObjectMapper objectMapper,
+            AdmissionMutationCoordinator admissionMutationCoordinator
+    ) {
         this.jdbcTemplate = jdbcTemplate;
+        this.admissionMutationCoordinator = admissionMutationCoordinator;
     }
 
     @Override
     public void upsert(BacktestEvaluationReport backtestEvaluationReport) {
-        jdbcTemplate.update(
+        List<String> publishIds = jdbcTemplate.query(
+                "SELECT publish_record_id FROM backtest_publish_records WHERE backtest_run_id = ?",
+                (resultSet, rowNum) -> resultSet.getString("publish_record_id"),
+                backtestEvaluationReport.backtestRunId()
+        );
+        admissionMutationCoordinator.withLockedAdmissionStates(publishIds, () -> jdbcTemplate.update(
                 """
                         INSERT INTO backtest_eval_reports (
                             eval_report_id, backtest_run_id, evaluation_status, initial_capital, final_cash_balance,
@@ -106,7 +118,7 @@ public class JdbcBacktestEvaluationReportRepository implements BacktestEvaluatio
                 toTimestamp(backtestEvaluationReport.evaluatedAt()),
                 Timestamp.from(backtestEvaluationReport.createdAt()),
                 Timestamp.from(backtestEvaluationReport.updatedAt())
-        );
+        ));
     }
 
     @Override

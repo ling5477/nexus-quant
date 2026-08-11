@@ -28,7 +28,7 @@ class StrategyReleaseShadowRunMaterializationServiceTest {
         AtomicReference<ShadowRunCreationPlan> writtenPlan = new AtomicReference<>();
         StrategyReleaseShadowRunMaterializationService service = new StrategyReleaseShadowRunMaterializationService(
                 (publishId, traceId) -> Optional.of(eligible(basePlan)),
-                (boundPlan, actorId) -> {
+                (boundPlan, guard, actorId) -> {
                     writtenPlan.set(boundPlan);
                     return result(false);
                 }
@@ -63,7 +63,7 @@ class StrategyReleaseShadowRunMaterializationServiceTest {
         AtomicInteger writes = new AtomicInteger();
         StrategyReleaseShadowRunMaterializationService service = new StrategyReleaseShadowRunMaterializationService(
                 (publishId, traceId) -> Optional.of(blocked()),
-                (boundPlan, actorId) -> {
+                (boundPlan, guard, actorId) -> {
                     writes.incrementAndGet();
                     return result(false);
                 }
@@ -83,7 +83,7 @@ class StrategyReleaseShadowRunMaterializationServiceTest {
         AtomicInteger writes = new AtomicInteger();
         StrategyReleaseShadowRunMaterializationService service = new StrategyReleaseShadowRunMaterializationService(
                 (publishId, traceId) -> Optional.empty(),
-                (boundPlan, actorId) -> {
+                (boundPlan, guard, actorId) -> {
                     writes.incrementAndGet();
                     return result(false);
                 }
@@ -107,7 +107,7 @@ class StrategyReleaseShadowRunMaterializationServiceTest {
                     evaluations.incrementAndGet();
                     return Optional.of(eligible(plan()));
                 },
-                (boundPlan, actorId) -> {
+                (boundPlan, guard, actorId) -> {
                     writes.incrementAndGet();
                     return result(false);
                 }
@@ -132,7 +132,7 @@ class StrategyReleaseShadowRunMaterializationServiceTest {
                     evaluations.incrementAndGet();
                     return Optional.of(eligible(plan()));
                 },
-                (boundPlan, actorId) -> {
+                (boundPlan, guard, actorId) -> {
                     writes.incrementAndGet();
                     return result(false);
                 }
@@ -166,7 +166,7 @@ class StrategyReleaseShadowRunMaterializationServiceTest {
                 false,
                 false
         );
-        return new StrategyReleaseAdmissionPreviewService.AdmissionEvaluation(preview(), decision);
+        return new StrategyReleaseAdmissionPreviewService.AdmissionEvaluation(preview(), decision, guard(plan));
     }
 
     private static StrategyReleaseAdmissionPreviewService.AdmissionEvaluation blocked() {
@@ -234,6 +234,39 @@ class StrategyReleaseShadowRunMaterializationServiceTest {
                 ShadowRunStatus.CREATED,
                 Instant.parse("2026-08-11T00:00:00Z"),
                 replay
+        );
+    }
+
+    static AdmissionGuard guard(ShadowRunCreationPlan plan) {
+        return new AdmissionGuard(
+                1,
+                plan.publishRecordId(),
+                7L,
+                plan.artifactDigest(),
+                "c".repeat(64),
+                plan.manifestSchemaVersion(),
+                "backtest-run-001",
+                plan.strategyVersionId(),
+                plan.datasetId(),
+                plan.evaluationId(),
+                plan.windowStart(),
+                plan.windowEnd(),
+                "ACTIVE",
+                "SUCCEEDED",
+                "SUCCEEDED",
+                new StrategyReleaseAdmissionPreviewFacts.PaperEvidenceIdentity(
+                        "paper-run-001",
+                        "STOPPED",
+                        "SIM",
+                        Instant.parse("2026-08-10T00:00:00Z")
+                ),
+                null,
+                null,
+                plan.authorizationBoundary(),
+                AdmissionGuard.SIDE_EFFECT_POLICY_VERSION,
+                plan.sideEffectPolicy(),
+                "d".repeat(64),
+                Instant.parse("2026-08-11T00:00:00Z")
         );
     }
 }

@@ -13,3 +13,14 @@ export interface StrategyReleaseAdmissionPreviewResponse {
     reasonCodes: string[];
     artifactDigest: string | null;
 }
+
+/** 受控 materialization 只返回 CREATED / RELEASE_BOUND 事实，不包含启动或交易能力。 */
+export interface StrategyReleaseShadowRunMaterializationResponse {
+    shadowRunId: string;
+    publishRecordId: string;
+    artifactDigest: string;
+    bindingMode: 'RELEASE_BOUND' | string;
+    status: 'CREATED' | string;
+    createdAt: string;
+    idempotentReplay: boolean;
+}

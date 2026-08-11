@@ -2,6 +2,9 @@ package com.guidinglight.nexusquant.strategy.strategyrelease.application;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunFactRepository;
+import com.guidinglight.nexusquant.strategy.domain.port.StrategyValidationOverviewFacts.LatestDecisionFact;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyValidationOverviewQueryService;
+import com.guidinglight.nexusquant.strategy.domain.port.StrategyValidationOverviewFacts;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyReport;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRun;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunEvent;
@@ -19,6 +22,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Collection;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -33,11 +38,11 @@ class ShadowRunMaterializationWriterTest {
     @Test
     void shouldMapPlanToCreatedRunAndAppendAudit() {
         RecordingRepository repository = new RecordingRepository();
-        ShadowRunMaterializationWriter writer = writer(repository);
         ShadowRunCreationPlan plan = StrategyReleaseShadowRunMaterializationServiceTest.plan()
                 .bindMaterializationCommand("operator-action-001");
+        WriterFixture fixture = writer(repository, plan);
 
-        ShadowRunMaterializationResult result = writer.materialize(plan, 41L);
+        ShadowRunMaterializationResult result = fixture.writer().materialize(plan, fixture.guard(), 41L);
 
         ShadowRun run = repository.requested;
         ShadowRunEvent event = repository.event;
@@ -64,7 +69,8 @@ class ShadowRunMaterializationWriterTest {
         RecordingRepository repository = new RecordingRepository();
         repository.existing = existing(plan);
 
-        ShadowRunMaterializationResult result = writer(repository).materialize(plan, 41L);
+        WriterFixture fixture = writer(repository, plan);
+        ShadowRunMaterializationResult result = fixture.writer().materialize(plan, fixture.guard(), 41L);
 
         assertTrue(result.idempotentReplay());
         assertEquals(repository.existing.id(), result.shadowRunId());
@@ -85,12 +91,96 @@ class ShadowRunMaterializationWriterTest {
                         || type.getName().contains("Client")));
     }
 
-    private static ShadowRunMaterializationWriter writer(ShadowRunFactRepository repository) {
-        return new ShadowRunMaterializationWriter(
+    private static WriterFixture writer(ShadowRunFactRepository repository, ShadowRunCreationPlan plan) {
+        StrategyReleaseAdmissionState state = new StrategyReleaseAdmissionState(
+                plan.publishRecordId(),
+                7L,
+                1,
+                plan.artifactDigest(),
+                "c".repeat(64),
+                plan.manifestSchemaVersion(),
+                NOW.minusSeconds(60),
+                NOW.minusSeconds(120),
+                NOW.minusSeconds(60)
+        );
+        LatestDecisionFact validation = new LatestDecisionFact(
+                plan.strategyVersionId(),
+                plan.datasetId(),
+                plan.evaluationId(),
+                plan.publishRecordId(),
+                "paper-run-001",
+                null,
+                "ACTIVE",
+                "SUCCEEDED",
+                "SUCCEEDED",
+                "STOPPED",
+                "SIM",
+                null,
+                null,
+                NOW.minusSeconds(30),
+                NOW.minusSeconds(30)
+        );
+        StrategyReleaseAdmissionPreviewFacts facts = new StrategyReleaseAdmissionPreviewFacts(
+                "backtest-run-001",
+                validation,
+                plan.windowStart(),
+                plan.windowEnd(),
+                new StrategyReleaseAdmissionPreviewFacts.PaperEvidenceIdentity(
+                        "paper-run-001",
+                        "STOPPED",
+                        "SIM",
+                        NOW.minusSeconds(30)
+                ),
+                null,
+                null,
+                plan.authorizationBoundary(),
+                plan.sideEffectPolicy()
+        );
+        StrategyReleaseAdmissionStateRepository stateRepository = new StrategyReleaseAdmissionStateRepository() {
+            @Override
+            public StrategyReleaseAdmissionState loadByPublishRecordId(String publishRecordId) {
+                return state;
+            }
+
+            @Override
+            public StrategyReleaseAdmissionState bindVerifiedReleaseIdentity(VerifiedStrategyReleaseIdentity identity) {
+                throw new UnsupportedOperationException();
+            }
+        };
+        StrategyReleaseAdmissionPreviewFactsRepository factsRepository = publishRecordId -> facts;
+        AdmissionGuardDecisionService decisionService = new AdmissionGuardDecisionService(
+                new StrategyValidationOverviewQueryService(() -> new StrategyValidationOverviewFacts(
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        Optional.empty()
+                ))
+        );
+        AdmissionGuardFingerprinter fingerprinter = new AdmissionGuardFingerprinter();
+        AdmissionGuard guard = fingerprinter.issue(state, facts, NOW);
+        ShadowRunMaterializationWriter writer = new ShadowRunMaterializationWriter(
                 repository,
                 new ObjectMapper(),
+                directCoordinator(),
+                stateRepository,
+                factsRepository,
+                decisionService,
+                fingerprinter,
                 Clock.fixed(NOW, ZoneOffset.UTC)
         );
+        return new WriterFixture(writer, guard);
+    }
+
+    private static AdmissionMutationCoordinator directCoordinator() {
+        return new AdmissionMutationCoordinator() {
+            @Override
+            public <T> T withLockedAdmissionStates(Collection<String> publishRecordIds, Supplier<T> mutation) {
+                return mutation.get();
+            }
+        };
     }
 
     private static ShadowRun existing(ShadowRunCreationPlan plan) {
@@ -199,5 +289,8 @@ class ShadowRunMaterializationWriterTest {
         public Optional<ShadowConsistencyReport> findLatestReport(UUID shadowRunId) {
             return Optional.empty();
         }
+    }
+
+    private record WriterFixture(ShadowRunMaterializationWriter writer, AdmissionGuard guard) {
     }
 }

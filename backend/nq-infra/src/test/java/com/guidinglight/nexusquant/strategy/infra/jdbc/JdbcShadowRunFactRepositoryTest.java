@@ -24,6 +24,7 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunSnapshotTy
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStateMachine;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStateTransitionException;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionMutationCoordinator;
 
 import java.time.Instant;
 import java.util.ArrayDeque;
@@ -67,8 +68,31 @@ class JdbcShadowRunFactRepositoryTest {
     void shouldRejectIdempotencyReplayWithDifferentReleaseProvenance() {
         ShadowRun existing = run(ShadowRunStatus.CREATED, 0);
         for (ShadowRun conflicting : List.of(
-                copyWithProvenance(existing, "pub-2", ARTIFACT_DIGEST),
-                copyWithProvenance(existing, existing.publishId(), "b".repeat(64))
+                copyWithProvenance(existing, "pub-2", existing.artifactDigest(), existing.strategyVersionId(),
+                        existing.datasetId(), existing.evaluationId(), existing.windowStart(), existing.windowEnd(),
+                        existing.sideEffectPolicy(), existing.authorizationBoundary()),
+                copyWithProvenance(existing, existing.publishId(), "b".repeat(64), existing.strategyVersionId(),
+                        existing.datasetId(), existing.evaluationId(), existing.windowStart(), existing.windowEnd(),
+                        existing.sideEffectPolicy(), existing.authorizationBoundary()),
+                copyWithProvenance(existing, existing.publishId(), existing.artifactDigest(), "sv-2",
+                        existing.datasetId(), existing.evaluationId(), existing.windowStart(), existing.windowEnd(),
+                        existing.sideEffectPolicy(), existing.authorizationBoundary()),
+                copyWithProvenance(existing, existing.publishId(), existing.artifactDigest(), existing.strategyVersionId(),
+                        UUID.randomUUID(), existing.evaluationId(), existing.windowStart(), existing.windowEnd(),
+                        existing.sideEffectPolicy(), existing.authorizationBoundary()),
+                copyWithProvenance(existing, existing.publishId(), existing.artifactDigest(), existing.strategyVersionId(),
+                        existing.datasetId(), "eval-2", existing.windowStart(), existing.windowEnd(),
+                        existing.sideEffectPolicy(), existing.authorizationBoundary()),
+                copyWithProvenance(existing, existing.publishId(), existing.artifactDigest(), existing.strategyVersionId(),
+                        existing.datasetId(), existing.evaluationId(), existing.windowStart().minusSeconds(1),
+                        existing.windowEnd(), existing.sideEffectPolicy(), existing.authorizationBoundary()),
+                copyWithProvenance(existing, existing.publishId(), existing.artifactDigest(), existing.strategyVersionId(),
+                        existing.datasetId(), existing.evaluationId(), existing.windowStart(), existing.windowEnd(),
+                        ((ObjectNode) existing.sideEffectPolicy().deepCopy()).put("provenanceReference", "publish:other"),
+                        existing.authorizationBoundary()),
+                copyWithProvenance(existing, existing.publishId(), existing.artifactDigest(), existing.strategyVersionId(),
+                        existing.datasetId(), existing.evaluationId(), existing.windowStart(), existing.windowEnd(),
+                        existing.sideEffectPolicy(), ShadowRunAuthorizationBoundary.REVIEW_ONLY)
         )) {
             RecordingJdbcTemplate jdbcTemplate = new RecordingJdbcTemplate();
             jdbcTemplate.updateCounts.add(0);
@@ -80,7 +104,7 @@ class JdbcShadowRunFactRepositoryTest {
                     () -> repository.create(conflicting)
             );
 
-            assertEquals("SHADOW_RUN_IDEMPOTENCY_PROVENANCE_CONFLICT", exception.reasonCode());
+            assertEquals("IDEMPOTENCY_CONFLICT", exception.reasonCode());
             assertFalse(exception.getMessage().contains(ARTIFACT_DIGEST));
         }
     }
@@ -121,6 +145,7 @@ class JdbcShadowRunFactRepositoryTest {
     void shouldUpdateStatusWithExpectedVersionAndAppendTraceEvent() {
         RecordingJdbcTemplate jdbcTemplate = new RecordingJdbcTemplate();
         ShadowRun run = run(ShadowRunStatus.READY, 0);
+        jdbcTemplate.queryResults.add(List.of(run.publishId()));
         jdbcTemplate.queryResults.add(List.of(run));
         jdbcTemplate.updateCounts.add(1);
         jdbcTemplate.updateCounts.add(1);
@@ -152,6 +177,7 @@ class JdbcShadowRunFactRepositoryTest {
     void shouldFailStatusUpdateOnVersionMismatch() {
         RecordingJdbcTemplate jdbcTemplate = new RecordingJdbcTemplate();
         ShadowRun run = run(ShadowRunStatus.READY, 3);
+        jdbcTemplate.queryResults.add(List.of(run.publishId()));
         jdbcTemplate.queryResults.add(List.of(run));
         JdbcShadowRunFactRepository repository = repository(jdbcTemplate);
 
@@ -173,6 +199,7 @@ class JdbcShadowRunFactRepositoryTest {
         RecordingJdbcTemplate jdbcTemplate = new RecordingJdbcTemplate();
         RecordingTransactionManager transactionManager = new RecordingTransactionManager();
         ShadowRun run = run(ShadowRunStatus.COMPLETED, 0);
+        jdbcTemplate.queryResults.add(List.of(run.publishId()));
         jdbcTemplate.queryResults.add(List.of(run));
         jdbcTemplate.updateCounts.add(1);
         JdbcShadowRunFactRepository repository = repository(jdbcTemplate, transactionManager);
@@ -360,8 +387,19 @@ class JdbcShadowRunFactRepositoryTest {
                 jdbcTemplate,
                 OBJECT_MAPPER,
                 new ShadowRunStateMachine(),
-                auditWriter
+                auditWriter,
+                new DirectAdmissionMutationCoordinator()
         );
+    }
+
+    private static final class DirectAdmissionMutationCoordinator implements AdmissionMutationCoordinator {
+        @Override
+        public <T> T withLockedAdmissionStates(
+                java.util.Collection<String> publishRecordIds,
+                java.util.function.Supplier<T> mutation
+        ) {
+            return mutation.get();
+        }
     }
 
     private ShadowRun run(ShadowRunStatus status, long version) {
@@ -400,26 +438,37 @@ class JdbcShadowRunFactRepositoryTest {
         );
     }
 
-    private ShadowRun copyWithProvenance(ShadowRun source, String publishId, String artifactDigest) {
+    private ShadowRun copyWithProvenance(
+            ShadowRun source,
+            String publishId,
+            String artifactDigest,
+            String strategyVersionId,
+            UUID datasetId,
+            String evaluationId,
+            Instant windowStart,
+            Instant windowEnd,
+            com.fasterxml.jackson.databind.JsonNode sideEffectPolicy,
+            ShadowRunAuthorizationBoundary authorizationBoundary
+    ) {
         return new ShadowRun(
                 UUID.randomUUID(),
-                source.strategyVersionId(),
-                source.datasetId(),
-                source.evaluationId(),
+                strategyVersionId,
+                datasetId,
+                evaluationId,
                 publishId,
                 artifactDigest,
                 source.paperRunId(),
                 source.status(),
-                source.windowStart(),
-                source.windowEnd(),
-                source.sideEffectPolicy(),
+                windowStart,
+                windowEnd,
+                sideEffectPolicy,
                 source.noOrderSubmission(),
                 source.noCredentialAccess(),
                 source.noPrivateEndpoint(),
                 source.noLedgerMutation(),
                 source.noAccountMutation(),
                 source.noExternalPrivateIo(),
-                source.authorizationBoundary(),
+                authorizationBoundary,
                 source.requestId(),
                 source.idempotencyKey(),
                 source.traceId(),

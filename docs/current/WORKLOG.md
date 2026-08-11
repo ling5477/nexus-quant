@@ -18381,3 +18381,16 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - findings：P0=0/P1=0/P2=2（legitimate rerun UX、完整 session/risk summary 待后续）/P3=1（外部 Maven settings 既有 warning）；migration/frontend/Shadow start/trading/LIVE/AI/DH/Python 影响为 0。
 - authority：`accepted_batch=GateX-4 / ACCEPTED|CI_GREEN`；`work_batch=GateX-5 / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`；唯一 next action=`NQ-GATEX-5-RELEASE-TO-SHADOW-MATERIALIZATION-REVIEW`。
 - result：`IMPLEMENTED / RELEASE_TO_SHADOW_MATERIALIZATION_COMPLETE / IDEMPOTENT_PROVENANCE_BOUND_SHADOW_CREATE_VERIFIED / NO_SHADOW_START / PENDING_INDEPENDENT_REVIEW`；未 commit、未 push。
+
+## 2026-08-11 — GateX-5 Release-to-Shadow materialization final review attempt-02
+
+- task：`NQ-GATEX-5-RELEASE-TO-SHADOW-MATERIALIZATION-FINAL-REVIEW`；NQ-only、独立 security/consistency/PostgreSQL race/frontend write-boundary 最终审查。
+- baseline：`dev`；starting `HEAD == origin/dev == ac4b1ba10f7ac10f973707e97c52b56a6b5aec6f`；50 个既有 staged 路径、unstaged/untracked=`0/0`；V38 禁止修改并保持增量 0。
+- chain：真实生产链 `POST → Controller → MaterializationService → preview/release/artifact verification → Guard → admission → plan → writer → FOR UPDATE → current facts → canonical fingerprint/decision → idempotency → run/event → revision trigger` 已逐层复核。
+- race/result：r0/r1 与 validation/Paper/Shadow/consistency/publish/evaluation old-Guard races 全部 fail-closed；same-command retry 返回同 run/单 CREATED event，并发 old Guard one CREATE/one STALE；different-command loser 重评估后可合法 rerun；完整 provenance conflict 409 且无 last-write-wins。
+- validation：PostgreSQL 17.10 强制 3 suites/12 tests 全通过；focused/full backend 最终 exit 0；WebMvc 7/7；ArchUnit 6/6 + 6/6；frontend build exit 0；targeted Playwright 11/11；disposable schema/container 已清理。
+- RCA：记录并纠正 Maven `-D` PowerShell 引用、datasource 注入与 disposable legacy-account fixture 三项环境问题；最终重跑结果通过，失败轮次未伪装为 PASS。
+- findings：P0=0/P1=0/P2=2/P3=1；`ADMISSION_MATERIALIZATION_FACT_TEAR=CLOSED`，无需代码或 migration 修复。
+- boundary：V38/code/schema 增量=0；Shadow 仅创建 `CREATED / RELEASE_BOUND` fact；runner/scheduler/trading/risk/ledger/account/credential/private network/LIVE 调用或授权均为 0；未 commit、未 push、CI 未运行。
+- authority：`GateX-5 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
+- next：唯一下一动作=`NQ-GATEX-5-COMMIT-AND-PUSH`。
