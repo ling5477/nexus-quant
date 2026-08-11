@@ -13037,3 +13037,21 @@ Boundary / findings：P0=0/P1=0（1 个 duplicate-key P1 已关闭）/P2=4（OS 
 Retry / RCA：首个 focused Maven 命令因 PowerShell 未引用逗号参数而仅发生 CLI parse failure；随后 nq-core test 因模块无 Mockito 依赖失败，测试改为 in-memory fakes，未新增依赖；Controller matcher mix 修正后 focused 16/16 通过。Playwright loading 断言先后收紧为真实 `.ant-btn-loading` 状态；完整重跑首次因 Windows 保留端口覆盖默认 `51888` 而在 webServer 启动前 `EACCES`，未终止未知进程，改用项目已有 external-server contract 与未保留本地端口 `52340` 后 9/9 通过，临时 Vite 已关闭。doc-links 首次调用因嵌套 `powershell` 丢失数组边界未开始扫描，改用当前 shell 显式 array invocation 后通过。上述失败均未被记录为产品通过。
 
 边界：SELECT-only JDBC、read-only transaction、GET-only Controller 与无 mutation UI；migration、artifact producer、locator API、Shadow create/start、scheduler/runner、order/risk/ledger write、credential/private exchange API、LIVE、AI/DH/Integration 变更或调用均为 0。
+
+## 2026-08-11 — GateX-5 Release-to-Shadow materialization implementation attempt-01
+
+| 验证项 | 结果 | 证据摘要 |
+| --- | --- | --- |
+| GateX-4 exact-head preflight | PASS（通过） | `dev`；starting `HEAD == origin/dev == 7aaf6027644b2ba6cd7dc588536784be50ff1eff`；GitHub Actions run `31467397459 / completed / success / 10 jobs / bad=0`；进入时 clean、staged empty、LIVE=`DISABLED`。 |
+| Core focused | PASS（通过） | materialization service/writer 与既有 admission focused suites 30 tests，0 failures / 0 errors。 |
+| Security WebMvc | PASS（通过） | 3 tests：anonymous 401、VIEWER 403、OPERATOR 200 且响应 `CREATED / RELEASE_BOUND`。 |
+| Disposable PostgreSQL | PASS（通过） | 官方 `postgres:17` 一次性容器运行 V1..V37；single/replay/two-thread concurrent/provenance conflict/audit-failure rollback 综合测试通过，容器已删除。 |
+| Focused backend reactor | PASS（通过） | `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-api,nq-app -am test`；23 modules `SUCCESS`；`nq-app` 256 tests、0 failures / 0 errors / 17 skipped。 |
+| Full backend regression | PASS（通过） | `mvn -f backend/pom.xml test`；23 modules `SUCCESS`；285 份 Surefire XML 汇总 1374 tests、0 failures / 0 errors / 21 skipped。 |
+| Architecture | PASS（通过） | `ModuleBoundaryArchTest` 与 `PackageBoundaryArchTest` targeted 合计 16 tests、0 failures / 0 errors。 |
+| Frontend | NOT RUN（未运行） | frontend diff 为 0；按任务要求不运行形式化 Playwright。 |
+| Authority / docs / diff / staged scope | PASS（通过） | authority checker=`errors=0`；doc links=`211 checked / 0 errors / 1 existing warning`；tracked/cached whitespace 与 exact staged scope 在收尾复核。 |
+
+RCA：Security WebMvc 首次缺少 `AuthUserRepository` slice mock，补齐后 3/3；focused reactor 首次发现新增 service 双构造器装配歧义，production 构造器增加 `@Autowired` 后定向 6/6、focused 与 full backend 全部重跑通过。`postgres:17-alpine` pull 无进展后终止，使用本机已有官方 `postgres:17` 完成真实 disposable PostgreSQL 验证，未以 mock DB 替代。doc-links 首次遗漏 mandatory `-Roots`，未开始扫描；修正参数后 211 links / 0 errors。
+
+边界：materialization 只创建 `CREATED / RELEASE_BOUND` Shadow fact 与既有 `CREATED` audit event；runner/scheduler/order/risk/ledger/account/credential/private exchange/network invocation 均为 0；migration/frontend/LIVE/AI/DH/Python 变更为 0。

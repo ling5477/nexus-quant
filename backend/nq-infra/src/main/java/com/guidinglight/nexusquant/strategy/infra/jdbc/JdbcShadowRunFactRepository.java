@@ -392,11 +392,25 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
     }
 
     /**
-     * 幂等键只允许复用同一 release provenance；否则静默返回旧行会让调用方误认错误绑定已创建。
+     * 幂等键只允许复用同一 immutable creation-plan provenance；否则静默返回旧行会让调用方
+     * 误认错误 release、window、policy 或 authorization binding 已创建。
      */
     private static void requireSameReleaseProvenance(ShadowRun requested, ShadowRun persisted) {
         if (!Objects.equals(requested.publishId(), persisted.publishId())
-                || !Objects.equals(requested.artifactDigest(), persisted.artifactDigest())) {
+                || !Objects.equals(requested.artifactDigest(), persisted.artifactDigest())
+                || !Objects.equals(requested.strategyVersionId(), persisted.strategyVersionId())
+                || !Objects.equals(requested.datasetId(), persisted.datasetId())
+                || !Objects.equals(requested.evaluationId(), persisted.evaluationId())
+                || !Objects.equals(requested.windowStart(), persisted.windowStart())
+                || !Objects.equals(requested.windowEnd(), persisted.windowEnd())
+                || !Objects.equals(requested.sideEffectPolicy(), persisted.sideEffectPolicy())
+                || requested.noOrderSubmission() != persisted.noOrderSubmission()
+                || requested.noCredentialAccess() != persisted.noCredentialAccess()
+                || requested.noPrivateEndpoint() != persisted.noPrivateEndpoint()
+                || requested.noLedgerMutation() != persisted.noLedgerMutation()
+                || requested.noAccountMutation() != persisted.noAccountMutation()
+                || requested.noExternalPrivateIo() != persisted.noExternalPrivateIo()
+                || requested.authorizationBoundary() != persisted.authorizationBoundary()) {
             throw new ShadowRunIdempotencyConflictException();
         }
     }

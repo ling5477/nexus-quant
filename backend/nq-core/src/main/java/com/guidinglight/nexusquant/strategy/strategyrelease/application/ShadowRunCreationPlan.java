@@ -5,6 +5,12 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunReleaseBin
 import com.guidinglight.nexusquant.strategy.strategyrelease.artifact.StrategyArtifactManifest;
 
 import java.time.Instant;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -88,6 +94,59 @@ public record ShadowRunCreationPlan(
         return value.length() == 64
                 && value.chars().allMatch(character -> (character >= '0' && character <= '9')
                 || (character >= 'a' && character <= 'f'));
+    }
+
+    /**
+     * 将 operator 提供的标准 {@code Idempotency-Key} 绑定为一次 materialization command identity。
+     *
+     * <p>Why：GateX-3 的 base key 只描述 immutable admission facts；加入独立 command identity 后，
+     * 相同 command 重放仍命中同一 Shadow Run，而同一 release 的另一次合法人工创建可使用新 identity。
+     * 原始 header 不进入数据库，持久化的仍是不可逆 SHA-256 identity。
+     *
+     * @param commandIdentity 1..128 字符且不含控制字符的标准幂等 header
+     * @return 仅替换 materialization idempotency key 的 immutable plan
+     */
+    public ShadowRunCreationPlan bindMaterializationCommand(String commandIdentity) {
+        String normalized = requireText(commandIdentity, "commandIdentity");
+        if (normalized.length() > 128 || normalized.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("commandIdentity must be 1..128 characters without control characters");
+        }
+        String materializationKey = deterministicSha256(List.of(
+                "shadow-run-materialization.v1",
+                shadowRunIdempotencyKey,
+                normalized
+        ));
+        return new ShadowRunCreationPlan(
+                releaseAnchorId,
+                publishRecordId,
+                artifactDigest,
+                strategyVersionId,
+                datasetId,
+                evaluationId,
+                windowStart,
+                windowEnd,
+                inputReference,
+                authorizationBoundary,
+                sideEffectPolicy,
+                manifestSchemaVersion,
+                provenanceReference,
+                traceId,
+                materializationKey
+        );
+    }
+
+    private static String deterministicSha256(List<String> fields) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            for (String value : fields) {
+                byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+                digest.update(ByteBuffer.allocate(Integer.BYTES).putInt(bytes.length).array());
+                digest.update(bytes);
+            }
+            return HexFormat.of().formatHex(digest.digest());
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 must be available", exception);
+        }
     }
 
     /**

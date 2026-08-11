@@ -18367,3 +18367,17 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：migration/V37、artifact producer、filesystem upload/import、locator registration API、Shadow create/start、scheduler/runner、order/risk/ledger write、private exchange API、credential、LIVE、AI/DH/Integration 与大规模 frontend 重构变更=`0`。
 - authority：治理 contract 不包含 `IMPLEMENTED|READY_TO_COMMIT`；按普通 implementation canonical lifecycle 使用 `GateX-4 / IMPLEMENTED|SELF_REVIEWED / UNCOMMITTED / NOT_RUN`，其唯一 COMMIT_AND_PUSH action 为 `NQ-GATEX-4-COMMIT-AND-PUSH`。
 - result：`IMPLEMENTED / GATEX_4_MINIMAL_API_UI_CLOSURE_COMPLETE / READ_ONLY_ADMISSION_PREVIEW_VERIFIED / READY_TO_COMMIT`；未 commit、未 push。
+
+## 2026-08-11 — GateX-5 Release-to-Shadow materialization implementation attempt-01
+
+- task：`NQ-GATEX-5-RELEASE-TO-SHADOW-MATERIALIZATION-IMPLEMENTATION`；NQ-only、L 级 controlled Shadow write / idempotency / provenance / RBAC / audit / PostgreSQL regression。
+- baseline：`dev` clean、staged empty；starting `HEAD == origin/dev == 7aaf6027644b2ba6cd7dc588536784be50ff1eff`；GateX-4 exact-head CI run `31467397459` 为 `completed / success / 10 jobs / bad=0`，先收口为 `ACCEPTED|CI_GREEN` 再初始化 GateX-5。
+- audit：复用 `ShadowRunRunnerService.newRun → ShadowRunFactRepository → JdbcShadowRunFactRepository` 的既有 aggregate/schema/idempotency/event；安全 pre-start state 为 `CREATED`，既有 start path 后续会进入 PRECHECKING/READY/RUNNING，但本轮依赖与调用均为 0。
+- implementation：GET/POST 共用 `StrategyReleaseAdmissionPreviewService.evaluate(...)`；POST 仅接收 path `publishRecordId` 与标准 `Idempotency-Key`，从本次 ELIGIBLE decision 的唯一 `ShadowRunCreationPlan` 映射并原子创建 `CREATED / RELEASE_BOUND` run 与一个 `CREATED` event。
+- idempotency：GateX-3 immutable admission key + operator command identity 采用 length-prefixed SHA-256 派生；同 identity 重放同一 run，不同 identity 支持合法 rerun；JDBC collision guard 扩展到完整 persisted provenance。
+- security/side effects：anonymous 401、VIEWER 403、OPERATOR/ADMIN role contract；server-side profile actor 二次校验；无 runner/scheduler/trading/risk/ledger/account/credential/private client/network dependency；原始 idempotency header、path、manifest、storage key 不入响应或 audit。
+- validation：core focused 30/30；Security WebMvc 3/3；真实一次性 PostgreSQL single/replay/concurrent/conflict/rollback 通过且容器删除；focused/full backend 均 23 modules `BUILD SUCCESS`，full 汇总 1374 tests、0 failures、0 errors、21 skipped；ArchUnit targeted 16/16。
+- RCA：补齐 WebMvc security slice 的 repository mock；给双构造器 service 的 production 构造器增加 `@Autowired` 并重跑全量；alpine image pull 无进展时终止，改用已有官方 postgres:17 镜像，不影响 disposable DB 真实性。
+- findings：P0=0/P1=0/P2=2（legitimate rerun UX、完整 session/risk summary 待后续）/P3=1（外部 Maven settings 既有 warning）；migration/frontend/Shadow start/trading/LIVE/AI/DH/Python 影响为 0。
+- authority：`accepted_batch=GateX-4 / ACCEPTED|CI_GREEN`；`work_batch=GateX-5 / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`；唯一 next action=`NQ-GATEX-5-RELEASE-TO-SHADOW-MATERIALIZATION-REVIEW`。
+- result：`IMPLEMENTED / RELEASE_TO_SHADOW_MATERIALIZATION_COMPLETE / IDEMPOTENT_PROVENANCE_BOUND_SHADOW_CREATE_VERIFIED / NO_SHADOW_START / PENDING_INDEPENDENT_REVIEW`；未 commit、未 push。

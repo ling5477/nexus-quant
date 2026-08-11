@@ -54,6 +54,17 @@ public class StrategyReleaseAdmissionPreviewService {
      */
     @Transactional(readOnly = true)
     public Optional<StrategyReleaseAdmissionPreview> preview(String publishRecordId, String traceId) {
+        return evaluate(publishRecordId, traceId).map(AdmissionEvaluation::preview);
+    }
+
+    /**
+     * 使用 GET preview 与 POST materialization 共用的 server-owned admission orchestration。
+     *
+     * <p>返回值只携带安全 preview 和纯 admission decision；artifact 路径、manifest、storage key 与
+     * 内部 repository facts 不会越过该边界。调用者只能在本次 decision 为 ELIGIBLE 且 plan 非空时写入。
+     */
+    @Transactional(readOnly = true)
+    public Optional<AdmissionEvaluation> evaluate(String publishRecordId, String traceId) {
         StrategyRelease release = releaseProductionService.verify(publishRecordId);
         StrategyArtifactVerificationResult verification = release.verificationResult();
         if (verification.status() == StrategyArtifactVerificationResult.Status.REJECTED
@@ -79,7 +90,10 @@ public class StrategyReleaseAdmissionPreviewService {
                 traceId
         ));
 
-        return Optional.of(toPreview(release, verification, validationDecision, admission));
+        return Optional.of(new AdmissionEvaluation(
+                toPreview(release, verification, validationDecision, admission),
+                admission
+        ));
     }
 
     private StrategyReleaseAdmissionPreviewFacts loadFactsFailClosed(String publishRecordId, String traceId) {
@@ -130,6 +144,17 @@ public class StrategyReleaseAdmissionPreviewService {
             return ShadowRunReleaseBindingMode.derive(release.publishRecordId(), release.artifactDigest());
         } catch (IllegalArgumentException exception) {
             return ShadowRunReleaseBindingMode.LEGACY_PUBLISH_ONLY;
+        }
+    }
+
+    /** GET 与 POST 共享的最小 evaluation 结果，不暴露 filesystem 或 raw manifest。 */
+    public record AdmissionEvaluation(
+            StrategyReleaseAdmissionPreview preview,
+            ReleaseToShadowAdmissionDecision admission
+    ) {
+        public AdmissionEvaluation {
+            Objects.requireNonNull(preview, "preview must not be null");
+            Objects.requireNonNull(admission, "admission must not be null");
         }
     }
 }

@@ -5,6 +5,9 @@ import com.guidinglight.nexusquant.account.application.ExchangeAccountNotFoundEx
 import com.guidinglight.nexusquant.auth.application.AdminNotInitializedException;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunReadOnlyNotFoundException;
+import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunIdempotencyConflictException;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunMaterializationAuthorizationException;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunMaterializationRejectedException;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -116,6 +119,42 @@ public class ApiExceptionHandler {
         };
         return ResponseEntity.status(status)
                 .body(build(status, ex.errorCode(), ex.getMessage(), request, List.of()));
+    }
+
+    /** Shadow materialization 写权限缺失时返回稳定 403，不暴露 actor 或 role payload。 */
+    @ExceptionHandler(ShadowRunMaterializationAuthorizationException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ApiErrorResponse handleShadowMaterializationAuthorization(
+            ShadowRunMaterializationAuthorizationException ex,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.FORBIDDEN, "SHADOW_MATERIALIZATION_FORBIDDEN", "write permission required", request, List.of());
+    }
+
+    /** Admission 非 ELIGIBLE 时拒绝写入并返回稳定 422。 */
+    @ExceptionHandler(ShadowRunMaterializationRejectedException.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    public ApiErrorResponse handleShadowMaterializationRejected(
+            ShadowRunMaterializationRejectedException ex,
+            HttpServletRequest request
+    ) {
+        return build(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                "SHADOW_MATERIALIZATION_ADMISSION_BLOCKED",
+                "release is not eligible for Shadow materialization",
+                request,
+                List.of()
+        );
+    }
+
+    /** 相同 command identity 绑定到不同 immutable provenance 时 fail-closed。 */
+    @ExceptionHandler(ShadowRunIdempotencyConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiErrorResponse handleShadowRunIdempotencyConflict(
+            ShadowRunIdempotencyConflictException ex,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.CONFLICT, ex.reasonCode(), "idempotency identity conflict", request, List.of());
     }
 
     @ExceptionHandler(AdminNotInitializedException.class)

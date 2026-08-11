@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunFactRepository;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRun;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunAuthorizationBoundary;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunIdempotencyConflictException;
@@ -14,11 +15,20 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunReleaseBin
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
 import com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcShadowRunFactRepository;
 import com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcShadowRunIllegalTransitionAuditWriter;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunCreationPlan;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunMaterializationResult;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunMaterializationWriter;
 
 import java.net.URI;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
@@ -27,6 +37,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * GateX-2 provenance migration 在显式本地 disposable PostgreSQL 上的 fresh/upgrade 回归。
@@ -114,6 +125,176 @@ class ShadowRunProvenancePostgresIntegrationTest {
         } finally {
             dropSchema(config, schema);
         }
+    }
+
+    @Test
+    void materializationShouldBeAtomicIdempotentConcurrentAndProvenanceBound() throws Exception {
+        PostgresConfig config = requireLocalDisposableConfig();
+        String schema = randomSchema("fresh");
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            migrate(config, schema, null);
+            JdbcTemplate jdbc = jdbc(config, schema);
+            Fixture fixture = seedFixture(jdbc, "materialization");
+            JdbcShadowRunFactRepository repository = repository(jdbc);
+            DataSourceTransactionManager transactionManager = transactionManager(jdbc);
+            TransactionTemplate transaction = new TransactionTemplate(transactionManager);
+            ShadowRunMaterializationWriter writer = new ShadowRunMaterializationWriter(repository, new ObjectMapper());
+
+            ShadowRunCreationPlan singlePlan = materializationPlan(fixture, "single-command");
+            ShadowRunMaterializationResult created = transaction.execute(
+                    status -> writer.materialize(singlePlan, 41L)
+            );
+            ShadowRunMaterializationResult replay = transaction.execute(
+                    status -> writer.materialize(singlePlan, 41L)
+            );
+            assertTrue(created != null && replay != null);
+            assertEquals(created.shadowRunId(), replay.shadowRunId());
+            assertEquals(false, created.idempotentReplay());
+            assertEquals(true, replay.idempotentReplay());
+            assertMaterializedFacts(jdbc, singlePlan, created.shadowRunId());
+
+            ShadowRunCreationPlan concurrentPlan = materializationPlan(fixture, "concurrent-command");
+            CountDownLatch ready = new CountDownLatch(2);
+            CountDownLatch start = new CountDownLatch(1);
+            Future<ShadowRunMaterializationResult> first = executor.submit(
+                    () -> concurrentMaterialize(transaction, writer, concurrentPlan, ready, start)
+            );
+            Future<ShadowRunMaterializationResult> second = executor.submit(
+                    () -> concurrentMaterialize(transaction, writer, concurrentPlan, ready, start)
+            );
+            ready.await();
+            start.countDown();
+            ShadowRunMaterializationResult firstResult = first.get();
+            ShadowRunMaterializationResult secondResult = second.get();
+            assertEquals(firstResult.shadowRunId(), secondResult.shadowRunId());
+            assertEquals(1, List.of(firstResult, secondResult).stream()
+                    .filter(ShadowRunMaterializationResult::idempotentReplay)
+                    .count());
+            assertEquals(1, jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM shadow_runs WHERE idempotency_key = ?",
+                    Integer.class,
+                    concurrentPlan.shadowRunIdempotencyKey()
+            ));
+            assertEquals(1, jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM shadow_run_events WHERE shadow_run_id = ? AND event_type = 'CREATED'",
+                    Integer.class,
+                    firstResult.shadowRunId()
+            ));
+
+            ShadowRunCreationPlan conflicting = copyWithWindowConflict(concurrentPlan);
+            assertThrows(ShadowRunIdempotencyConflictException.class, () -> transaction.execute(
+                    status -> writer.materialize(conflicting, 41L)
+            ));
+
+            ShadowRunCreationPlan rollbackPlan = materializationPlan(fixture, "rollback-command");
+            ShadowRunFactRepository failingAuditRepository = failingAuditRepository(repository);
+            ShadowRunMaterializationWriter failingWriter = new ShadowRunMaterializationWriter(
+                    failingAuditRepository,
+                    new ObjectMapper()
+            );
+            assertThrows(IllegalStateException.class, () -> transaction.execute(
+                    status -> failingWriter.materialize(rollbackPlan, 41L)
+            ));
+            assertEquals(0, jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM shadow_runs WHERE idempotency_key = ?",
+                    Integer.class,
+                    rollbackPlan.shadowRunIdempotencyKey()
+            ));
+        } finally {
+            executor.shutdownNow();
+            dropSchema(config, schema);
+        }
+    }
+
+    private static ShadowRunMaterializationResult concurrentMaterialize(
+            TransactionTemplate transaction,
+            ShadowRunMaterializationWriter writer,
+            ShadowRunCreationPlan plan,
+            CountDownLatch ready,
+            CountDownLatch start
+    ) throws InterruptedException {
+        ready.countDown();
+        start.await();
+        return transaction.execute(status -> writer.materialize(plan, 41L));
+    }
+
+    private static void assertMaterializedFacts(
+            JdbcTemplate jdbc,
+            ShadowRunCreationPlan plan,
+            UUID shadowRunId
+    ) {
+        var facts = jdbc.queryForMap(
+                "SELECT publish_id, artifact_digest, status, started_at, paper_run_id FROM shadow_runs WHERE id = ?",
+                shadowRunId
+        );
+        assertEquals(plan.publishRecordId(), facts.get("publish_id"));
+        assertEquals(plan.artifactDigest(), facts.get("artifact_digest"));
+        assertEquals("CREATED", facts.get("status"));
+        assertEquals(null, facts.get("started_at"));
+        assertEquals(null, facts.get("paper_run_id"));
+        assertEquals(1, jdbc.queryForObject(
+                "SELECT COUNT(*) FROM shadow_run_events WHERE shadow_run_id = ? AND event_type = 'CREATED'",
+                Integer.class,
+                shadowRunId
+        ));
+    }
+
+    private static ShadowRunCreationPlan materializationPlan(Fixture fixture, String commandIdentity) {
+        return new ShadowRunCreationPlan(
+                fixture.publishId(),
+                fixture.publishId(),
+                DIGEST,
+                fixture.strategyVersionId(),
+                fixture.datasetId(),
+                fixture.evaluationId(),
+                START,
+                START.plusSeconds(60),
+                "dataset:" + fixture.datasetId(),
+                ShadowRunAuthorizationBoundary.DIAGNOSTIC_ONLY,
+                new ShadowRunCreationPlan.SideEffectPolicy(true, true, true, true, true, true),
+                "strategy-release-manifest.v1",
+                "publish:" + fixture.publishId(),
+                "trace-gatex5",
+                "b".repeat(64)
+        ).bindMaterializationCommand(commandIdentity);
+    }
+
+    private static ShadowRunCreationPlan copyWithWindowConflict(ShadowRunCreationPlan source) {
+        return new ShadowRunCreationPlan(
+                source.releaseAnchorId(),
+                source.publishRecordId(),
+                source.artifactDigest(),
+                source.strategyVersionId(),
+                source.datasetId(),
+                source.evaluationId(),
+                source.windowStart(),
+                source.windowEnd().plusSeconds(1),
+                source.inputReference(),
+                source.authorizationBoundary(),
+                source.sideEffectPolicy(),
+                source.manifestSchemaVersion(),
+                source.provenanceReference(),
+                source.traceId(),
+                source.shadowRunIdempotencyKey()
+        );
+    }
+
+    private static ShadowRunFactRepository failingAuditRepository(ShadowRunFactRepository delegate) {
+        return (ShadowRunFactRepository) Proxy.newProxyInstance(
+                ShadowRunFactRepository.class.getClassLoader(),
+                new Class<?>[]{ShadowRunFactRepository.class},
+                (proxy, method, args) -> {
+                    if ("appendEvent".equals(method.getName())) {
+                        throw new IllegalStateException("forced audit failure");
+                    }
+                    try {
+                        return method.invoke(delegate, args);
+                    } catch (InvocationTargetException exception) {
+                        throw exception.getCause();
+                    }
+                }
+        );
     }
 
     private static void assertSchemaContract(JdbcTemplate jdbc) {
@@ -334,6 +515,7 @@ class ShadowRunProvenancePostgresIntegrationTest {
         String backtestConfigId = "gatex2-backtest-config-" + unique;
         String backtestRunId = "gatex2-backtest-run-" + unique;
         String publishId = "gatex2-publish-" + unique;
+        String evaluationId = "gatex2-evaluation-" + unique;
         UUID datasetId = UUID.randomUUID();
 
         jdbc.update(
@@ -375,14 +557,22 @@ class ShadowRunProvenancePostgresIntegrationTest {
                 DIGEST
         );
         jdbc.update(
+                "INSERT INTO backtest_eval_reports (eval_report_id, backtest_run_id, evaluation_status, evaluated_at) "
+                        + "VALUES (?, ?, 'SUCCEEDED', ?)",
+                evaluationId,
+                backtestRunId,
+                java.sql.Timestamp.from(START)
+        );
+        jdbc.update(
                 "INSERT INTO backtest_publish_records (publish_record_id, backtest_run_id, research_config_id, "
-                        + "backtest_config_id, source_strategy_id, publish_status, publish_name, strategy_version_id) "
-                        + "VALUES (?, ?, ?, ?, ?, 'SUCCEEDED', 'GateX2 fixture', ?)",
+                        + "backtest_config_id, source_strategy_id, eval_report_id, publish_status, publish_name, "
+                        + "strategy_version_id) VALUES (?, ?, ?, ?, ?, ?, 'SUCCEEDED', 'GateX2 fixture', ?)",
                 publishId,
                 backtestRunId,
                 researchId,
                 backtestConfigId,
                 strategyId,
+                evaluationId,
                 strategyVersionId
         );
         jdbc.update(
@@ -395,7 +585,7 @@ class ShadowRunProvenancePostgresIntegrationTest {
                 java.sql.Timestamp.from(START),
                 java.sql.Timestamp.from(START.plusSeconds(60))
         );
-        return new Fixture(strategyVersionId, datasetId, publishId);
+        return new Fixture(strategyVersionId, datasetId, publishId, evaluationId);
     }
 
     private static JdbcShadowRunFactRepository repository(JdbcTemplate jdbc) {
@@ -407,6 +597,10 @@ class ShadowRunProvenancePostgresIntegrationTest {
                 objectMapper,
                 new JdbcShadowRunIllegalTransitionAuditWriter(jdbc, objectMapper, transactionManager)
         );
+    }
+
+    private static DataSourceTransactionManager transactionManager(JdbcTemplate jdbc) {
+        return new DataSourceTransactionManager(jdbc.getDataSource());
     }
 
     private static void migrate(PostgresConfig config, String schema, MigrationVersion target) {
@@ -465,7 +659,7 @@ class ShadowRunProvenancePostgresIntegrationTest {
         return config;
     }
 
-    private record Fixture(String strategyVersionId, UUID datasetId, String publishId) {
+    private record Fixture(String strategyVersionId, UUID datasetId, String publishId, String evaluationId) {
     }
 
     private record PostgresConfig(String url, String user, String password, boolean required) {

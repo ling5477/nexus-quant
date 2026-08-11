@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatew-freeze
 last_frozen_gate_commit=16376de28be78eea58afbe1374847ee07ca2ccc7
 active_gate=GateX
 active_gate_status=IN_PROGRESS|NOT_FROZEN
-accepted_batch=GateX-4C
+accepted_batch=GateX-4
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=b4e5406fbb9de5432f79f9ef8ef76c95002e0e56
-accepted_batch_acceptance_head=b4e5406fbb9de5432f79f9ef8ef76c95002e0e56
-accepted_batch_ci_run=31409595743
-work_batch=GateX-4
-work_batch_status=IMPLEMENTED|SELF_REVIEWED
+accepted_batch_implementation_commit=7aaf6027644b2ba6cd7dc588536784be50ff1eff
+accepted_batch_acceptance_head=7aaf6027644b2ba6cd7dc588536784be50ff1eff
+accepted_batch_ci_run=31467397459
+work_batch=GateX-5
+work_batch_status=IMPLEMENTED|PENDING_REVIEW
 work_batch_commit=UNCOMMITTED
 work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEX-4-COMMIT-AND-PUSH
+next_action=NQ-GATEX-5-RELEASE-TO-SHADOW-MATERIALIZATION-REVIEW
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -73,10 +73,11 @@ nq-current-authority:end -->
 - GateX-1：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Strategy Release aggregate、稳定 manifest contract、trusted-root artifact verifier、只读 provenance service 与 JDBC adapter 已提升为 production capability；implementation/acceptance head=`2655f5144ba27cc88c2786de7f76633df3df462d`，exact-head CI run=`31358676688 / completed / success`；未新增 migration/persistence、Release-to-Shadow admission、API、scheduler、LIVE 或交易写侧。
 - GateX-2：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Strategy Release artifact provenance migration、domain/JDBC persistence 与 idempotency provenance collision fail-closed 约束已由 exact-head CI 接受；implementation/acceptance head=`894e76bf69dbcf1574be6c993f18ca7913033564`，exact-head CI run=`31379536899 / completed / success`。保留 P2：Flyway 单事务会把前序 DDL 强锁持有至提交，部署前必须按目标表规模、长事务和锁等待设置受控窗口与超时。
 - GateX-3：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。production Release-to-Shadow admission 已实现为 fail-closed 纯决策并仅生成 immutable `ShadowRunCreationPlan`；implementation/acceptance head=`5f4824eecaac5cffbbc314fb8f767bd6ba45c29f`，exact-head CI run=`31391541813 / completed / success`。该接受不表示 Shadow Run 已创建或启动，也不表示交易或 LIVE 授权。
-- GateX-4：`IMPLEMENTED / SELF-REVIEWED`（已实现 / 已自审）。`publishRecordId → server-resolved release → artifact verification → canonical validation/admission → GET API → Strategy Validation 小型预览区` 已形成只读闭环；后端聚焦、两轮全量回归、ArchUnit、前端 build 与 9 场景 Playwright 均通过。`ELIGIBLE` 仅表示可形成内存 creation plan，不创建/启动 Shadow Run，也不构成交易或 LIVE 授权。正式 retry evidence 为 [evidence/gate-x/NQ-GATEX-4-MINIMAL-API-UI-CLOSURE-IMPLEMENTATION.attempt-02.md](evidence/gate-x/NQ-GATEX-4-MINIMAL-API-UI-CLOSURE-IMPLEMENTATION.attempt-02.md)。
+- GateX-4：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。`publishRecordId → server-resolved release → artifact verification → canonical validation/admission → GET API → Strategy Validation 小型预览区` 已形成只读闭环；implementation/acceptance head=`7aaf6027644b2ba6cd7dc588536784be50ff1eff`，exact-head CI run=`31467397459 / completed / success / 10 jobs / bad=0`。`ELIGIBLE` 仅表示可形成内存 creation plan，不创建/启动 Shadow Run，也不构成交易或 LIVE 授权。正式 retry evidence 为 [evidence/gate-x/NQ-GATEX-4-MINIMAL-API-UI-CLOSURE-IMPLEMENTATION.attempt-02.md](evidence/gate-x/NQ-GATEX-4-MINIMAL-API-UI-CLOSURE-IMPLEMENTATION.attempt-02.md)。
 - GateX-4A：`PASS / DESIGN BLOCKER RESOLVED`（通过 / 设计阻断已解决）。schema/security review 选择方案 A：在 `backtest_publish_records` 增加 nullable、成对约束、受限 opaque 且绑定后不可变的 `artifact_storage_key` / `manifest_storage_key`；trusted root 只允许来自服务端配置，历史数据坚持 `NO FAKE BACKFILL`。4B 实施按 provider/storage contract 重新判断后未增加缺乏正式业务 invariant 的 partial UNIQUE。
 - GateX-4B：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Persistent artifact locator migration 的 implementation/acceptance head=`92043c37dad96d984d5e55a1e5170c97d335d6d4`，exact-head CI run=`31403529376 / completed / success`；V37、domain/JDBC nullable pair、内部 typed publish 输入、SQL trigger 不可变保护与 PostgreSQL 回归已接受。当前 artifact producer 尚未接线，记录为 `PERSISTENCE_READY / PRODUCER_NOT_YET_CONNECTED`。
 - GateX-4C：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Implementation/acceptance head=`b4e5406fbb9de5432f79f9ef8ef76c95002e0e56`，exact-head CI run=`31409595743 / completed / success / 10 jobs / bad=0`；独立安全审查已关闭 duplicate manifest identity key 的 P1，并验证服务器受控 resolver、trusted-root containment、Windows junction/root/target replacement、cross-release identity、bounded strict manifest parser 与 GateX-1 verifier 集成。该接受不创建 Shadow Run，不授权交易或 LIVE。
+- GateX-5：`IMPLEMENTED / PENDING REVIEW`（已实现 / 待独立审查）。受控 POST 只接收 `publishRecordId` 与标准 `Idempotency-Key`，复用 GateX-4 server-owned orchestration 重新验证 release/artifact/validation/policy，并从唯一 `ShadowRunCreationPlan` 原子、幂等地创建 `CREATED / RELEASE_BOUND` Shadow Run。真实一次性 PostgreSQL、RBAC、全量后端与 ArchUnit 已通过；runner/scheduler/交易/外部网络调用为 0。该状态不表示 review、commit 或 CI 已接受，也不授权启动 Shadow Run、交易或 LIVE。证据为 [evidence/gate-x/NQ-GATEX-5-RELEASE-TO-SHADOW-MATERIALIZATION-IMPLEMENTATION.attempt-01.md](evidence/gate-x/NQ-GATEX-5-RELEASE-TO-SHADOW-MATERIALIZATION-IMPLEMENTATION.attempt-01.md)。
 - GateW-3 dry-run order preview：只包含 OKX Spot、BUY/SELL、LIMIT、internal application、local persisted facts、read-only diagnostic；minimum notional、fee、远端 permission 与 runtime balance/risk 继续保持显式 UNKNOWN / NOT_EVALUATED，`executionReadiness=BLOCKED`，不得推导交易授权。
 - GateW-3 read-only reconciliation：只包含 OKX Spot、最多 3 个 allowlisted symbols、1 page/100 records/24h typed private `Read` snapshot、bounded local SELECT 与 pure comparator；默认不装配，无 real smoke/credential/network/repair/persistence/scheduler，`executionReadiness=BLOCKED`。CI acceptance 只接受该 side-effect-free contract，不证明真实 permission 或账户健康。
 - GateW-3 risk preflight：只消费 immutable preview/reconciliation result 与显式 local metadata snapshots；不调用 `PreTradeRiskService`/registry/stateful rules，不构造 `PlaceOrderCommand`，无 DB/network/write。minimum notional、fee、remote permission 保持 UNKNOWN，stateful risk/balance/position 等保持 NOT_EVALUATED，`executionReadiness=BLOCKED`、`tradingAuthorized=false`。
@@ -110,4 +111,4 @@ updated_commit=16376de28be78eea58afbe1374847ee07ca2ccc7
 
 ## 4. 下一允许动作
 
-GateX-4C 服务器受控 artifact binding 的 implementation/acceptance head `b4e5406fbb9de5432f79f9ef8ef76c95002e0e56` 已由 exact-head CI run `31409595743` 接受。当前 work batch 为 `GateX-4 / IMPLEMENTED|SELF_REVIEWED / UNCOMMITTED / NOT_RUN`，唯一下一动作精确为 `NQ-GATEX-4-COMMIT-AND-PUSH`；只允许提交并推送当前只读 admission preview staged scope，不得创建或启动 Shadow Run、开启 LIVE、下单、撤单、转账或提现。
+GateX-4 的 implementation/acceptance head `7aaf6027644b2ba6cd7dc588536784be50ff1eff` 已由 exact-head CI run `31467397459` 接受。当前 work batch 为 `GateX-5 / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`，唯一下一动作精确为 `NQ-GATEX-5-RELEASE-TO-SHADOW-MATERIALIZATION-REVIEW`；只允许独立审查当前受控 Shadow materialization staged scope，不得启动 Shadow Run、开启 LIVE、下单、撤单、转账或提现。
