@@ -18533,3 +18533,19 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：LIVE=`DISABLED`、kill switch=`ENGAGED`；credential material/exchange/probe/order/cancel/transfer/withdraw/dispatch=`0`；production migration、stage/commit/push/PR/tag=`0`。
 - result：`PASS / GATEY_2_MIGRATION_SECURITY_REVIEW_ACCEPTED / P0_0 / P1_0 / V39_ACCEPTED_FOR_LOCAL_BASELINE / NO_PRODUCTION_MIGRATION_AUTHORIZATION / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
 - next：唯一下一动作=`NQ-GATEY-2-LIVE-SESSION-FACT-MODEL-COMMIT-AND-PUSH`。
+
+## 2026-08-12 — GateY-2 post-CI acceptance 与 GateY-3 initialization attempt-01
+
+- task：`NQ-GATEY-2-POST-CI-ACCEPTANCE-AND-GATEY-3-INITIALIZATION`；NQ-only、documentation-only、post-CI authority reconciliation、high-risk batch acceptance 与 next-batch initialization。
+- baseline：`dev` clean、staged empty；`HEAD == origin/dev == 19ac2d1cdc7a1982f97fb0e1b0e62c081d003018`；起始 authority checker errors=0。
+- exact-head CI：run `31608725854 / completed / success`，`headSha=19ac2d1c...`，10 jobs / bad=0；canonical GitHub 事实由 `gh` 重新取得。
+- acceptance：GateY-2 独立 migration/security review 为 P0=0/P1=0；接受 V39 local schema、六张 control-plane fact 表、LiveSession/approval/risk domain、Repository/JDBC、PostgreSQL append-only/immutable enforcement、事务/并发与 architecture hygiene baseline。
+- non-capabilities：production migration、execution worker、真实 PLACE/CANCEL transport/provider、credential decrypt、permission probe、remote reconciliation、partial-fill real execution、LIVE 与 micro-live 均未实现/未授权。
+- reconciliation：accepted batch 推进为 `GateY-2 / ACCEPTED|CI_GREEN`，implementation/acceptance head=`19ac2d1cdc7a1982f97fb0e1b0e62c081d003018`，CI run=`31608725854`；work batch 初始化为 `GateY-3 / NOT_STARTED / NONE / NOT_RUN`。
+- GateY-3 boundary：只允许 ExecutionIntent/Receipt runtime、fake exchange、fake PLACE/CANCEL、stable clientOrderId、idempotency、claim/lease、crash/UNKNOWN、NO BLIND RETRY、fake/local reconciliation、deterministic partial-fill/cancel-race 与 PostgreSQL tests；真实 HTTP/private endpoint/credential/PLACE/CANCEL/worker deployment/LIVE/资金动作禁止。
+- architecture hygiene：intent/receipt 不得形成第二 orders/fills/trades 主事实；exchange port 归 control-plane/application，fake adapter 留在 adapter/infra；provider DTO 不进 domain，worker orchestration 不进 JDBC，reconciliation 复用既有 orders/trades/positions，新增跨模块依赖检查 ArchUnit。
+- residuals：`PRODUCTION_LOCK_WINDOW_NOT_MEASURED`、`FILESYSTEM_STABLE_HANDLE_LIMITATION_INHERITED`、`LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE` 继续保留；前两项继续阻断 production deployment、worker 与 first real order。
+- validation：authority errors=0；links 253 checked/14 historical warnings/0 errors；`git diff --check` errors=0；final allowlist 9 paths、unexpected=0；backend/frontend/research/scripts/deploy/.github/migration/docs/gates/docs/archive 与固化 GateY-2 evidence diff=0。业务产品测试未运行，因为本轮仅文档同步并采用 exact-head CI。
+- boundary：credential access/exchange calls/order/cancel/transfer/withdraw/交易副作用=0；LIVE=`DISABLED`、kill switch=`ENGAGED`；不修改固化 GateY-2 evidence，未 commit/push/PR/tag。
+- result：`PASS / GATEY_2_ACCEPTED / CI_GREEN / GATEY_3_INITIALIZED / PRODUCTION_MIGRATION_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
+- next：`NQ-GATEY-3-EXECUTION-INTENT-RECEIPT-FAKE-EXCHANGE-IMPLEMENTATION`。

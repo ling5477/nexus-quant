@@ -13275,3 +13275,21 @@ GateY-1 接受只覆盖设计/安全/migration 合同，不表示 Flyway migrati
 | Security/trading boundary | PASS / ZERO SIDE EFFECT（通过 / 无副作用） | LIVE disabled；credential material/exchange/order/cancel/transfer/withdraw/dispatch=0；production migration=0 |
 
 CI=`NOT_RUN`，production lock window 未测。P2 继续保留 `PRODUCTION_LOCK_WINDOW_NOT_MEASURED`、`FILESYSTEM_STABLE_HANDLE_LIMITATION_INHERITED` 与 GateY-3 hard gate `LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE`；均不构成本轮 P0/P1。完整证据：[evidence/gate-y/NQ-GATEY-2-LIVE-SESSION-FACT-MODEL-MIGRATION-SECURITY-REVIEW.attempt-01.md](evidence/gate-y/NQ-GATEY-2-LIVE-SESSION-FACT-MODEL-MIGRATION-SECURITY-REVIEW.attempt-01.md)。
+
+## 2026-08-12 — GateY-2 post-CI acceptance 与 GateY-3 initialization attempt-01
+
+结论：`PASS / GATEY_2_ACCEPTED / CI_GREEN / GATEY_3_INITIALIZED / PRODUCTION_MIGRATION_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
+
+| 验证项 / Command | 结果 | 范围 / 环境 / warning / 阻断性 |
+| --- | --- | --- |
+| `git fetch origin` + Git preflight | PASS（通过） | `dev`；起始 worktree clean、staged empty；`HEAD == origin/dev == 19ac2d1cdc7a1982f97fb0e1b0e62c081d003018` |
+| `gh run view 31608725854` | PASS（通过） | `NQ CI Baseline / completed / success`；exact `headSha=19ac2d1c...`；10 jobs / bad=0 |
+| Independent migration/security review | PASS（通过） | P0=0、P1=0；V39 六表、LiveSession/approval/risk、Repository/JDBC、PostgreSQL enforcement、事务/并发与 architecture hygiene baseline 已接受 |
+| Governance action matcher | PASS（通过） | `GateY-3 / NOT_STARTED` 要求 `IMPLEMENTATION`；`NQ-GATEY-3-EXECUTION-INTENT-RECEIPT-FAKE-EXCHANGE-IMPLEMENTATION` 命中现有 canonical matcher；contract/script diff=0 |
+| `check-current-authority.ps1` | PASS（通过） | GateY-2=`ACCEPTED|CI_GREEN`；GateY-3=`NOT_STARTED / NONE / NOT_RUN`；next action canonical；`errors=0` |
+| `check-doc-links.ps1 -Roots @('README.md','docs/current')` | PASS WITH WARNINGS（通过并有 warning） | 253 checked / 14 historical warnings / 0 errors；warning 仅来自 append-only `TESTING.md` 中既有 GateJ/GateX 旧路径，非本轮 hard error |
+| Final diff / forbidden paths | PASS / ZERO DIFF（通过 / 禁止区域无变更） | `git diff --check` errors=0；final allowlist 9 paths；unexpected paths=0；backend/frontend/research/scripts/deploy/.github/migration/docs/gates/docs/archive diff=0；仅既有 Windows LF→CRLF 提示 |
+| Product/local runtime tests | NOT RUN（未运行） | documentation-only；业务代码、migration、CI workflow 变更=0；采用已核验 exact-head CI，不伪造本地产品测试 |
+| Security/trading boundary | PASS / ZERO SIDE EFFECT（通过 / 无副作用） | credential access/exchange call/permission probe/order/cancel/transfer/withdraw=0；LIVE=`DISABLED`、Shadow trading=`NOT_ENABLED`、real provider/private trading=`NOT_IMPLEMENTED` |
+
+GateY-2 接受不表示 production migration deployment、execution worker、真实 provider、credential decrypt、permission probe、真实 PLACE/CANCEL、remote reconciliation、partial-fill real execution、LIVE 或 micro-live 已实现/授权。三项 residual `PRODUCTION_LOCK_WINDOW_NOT_MEASURED`、`FILESYSTEM_STABLE_HANDLE_LIMITATION_INHERITED`、`LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE` 继续保留；前两项继续阻断 production deployment、worker 与 first real order。完整证据：[evidence/gate-y/NQ-GATEY-2-POST-CI-ACCEPTANCE-AND-GATEY-3-INITIALIZATION.attempt-01.md](evidence/gate-y/NQ-GATEY-2-POST-CI-ACCEPTANCE-AND-GATEY-3-INITIALIZATION.attempt-01.md)。
