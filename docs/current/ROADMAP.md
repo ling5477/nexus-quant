@@ -49,7 +49,7 @@ GateX strict archive + freeze exact-head CI + annotated tag VERIFIED
   ↓
 GateY IN PROGRESS / NOT FROZEN
   ↓
-GateY-PLAN NOT STARTED
+GateY-PLAN IMPLEMENTED / SELF REVIEWED
 ```
 
 ## 下一允许动作
@@ -75,8 +75,8 @@ GateY-PLAN NOT STARTED
 - GateX-4C：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`b4e5406fbb9de5432f79f9ef8ef76c95002e0e56`，exact-head CI run=`31409595743 / completed / success / 10 jobs / bad=0`；duplicate manifest identity key P1 与服务器受控 resolver trust boundary 已关闭。
 - GateX-5：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；forward-remediation commit=`3336bd8153845d5368a0d65a9c72d3566dc9bd35`，acceptance head=`a383be750f51d063d429bc25fad80e60dffb7014`，exact-head CI run=`31512467501 / completed / success / 10 jobs / bad=0`。最终独立审查的 P0=0、产品 P1=0 与 `ADMISSION_MATERIALIZATION_FACT_TEAR=CLOSED` 保持成立；runner/scheduler/交易/外部网络调用均为 0。
 - GateX-FREEZE：`ACCEPTED / CI GREEN / TAGGED`（已接受 / CI 已通过 / 已打 tag）；annotated tag object=`ef4deb25728601719d20b2c6c64af7905c73a92e`，peeled target 与 freeze commit 精确一致。
-- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-PLAN=`NOT STARTED`（未开始）。
-- 当前唯一治理动作是 `NQ-GATEY-PLAN-IMPLEMENTATION`；只允许在独立任务中形成和审查 GateY plan，不表示 implementation 已开始；Shadow Run 启动、LIVE 与交易写侧均不属于该动作。
+- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-PLAN=`IMPLEMENTED / SELF REVIEWED`（计划已形成 / 已完成自审），可进入提交前复核，基线见 [GATEY_PLAN.md](GATEY_PLAN.md)。
+- 当前唯一治理动作是 `NQ-GATEY-PLAN-COMMIT-AND-PUSH`；只允许提交并推送计划文档，不表示 implementation 或 micro-live 已获授权；GateY-1、Shadow Run 启动、LIVE 与交易写侧均不属于该动作。
 
 ## GateW 已冻结边界
 
@@ -92,7 +92,8 @@ GateY-PLAN NOT STARTED
 - GateX-0 只处理 P1 与 GateX 触达区域的低风险 P2；不得演化为 Maven 全量拆分或全仓架构重构。
 - GateX-1～5 与 FREEZE 的历史前置、范围和验收以已归档的 [GATEX_PLAN.md](../gates/gate-x/GATEX_PLAN.md) 为准；计划不得被解释为额外 capability 或 runtime 授权。
 - `nq-gatex-freeze` 不得删除、移动、覆盖或 force update；问题只能通过 forward remediation 或 superseding tag 处理。
-- GateY 当前只允许 `PLAN / NOT_STARTED`；在独立 plan 被审查和授权前，不得创建 GateY implementation batch。
+- GateY plan 已在同一任务完成事实核对和 security/architecture/database/operations self-review，不再增加独立 plan review/freeze 任务；计划提交和 exact-head CI 接受前不得启动 GateY-1。
+- GateY-1 的未来候选任务只允许做 LiveSession/OperatorApproval/ExecutionIntent/Receipt 数据模型独立审查，不得创建 migration 或 runtime capability；精确下一动作始终服从 [STATUS.md](STATUS.md)。
 - 不得把 GateW diagnostic/read-only/soak 证据推导为远端交易 permission、账户健康、余额充分、private trading 或 unattended execution readiness。
 - 不得开启 LIVE、真实下单/撤单、转账/提现、AI trading、DH runtime、Integration runtime、RealClient 或 real provider。
 - NQ-only 任务不得修改或声明 DH current authority；DH/Integration 状态继续只表达 NQ 侧 no-real 边界。

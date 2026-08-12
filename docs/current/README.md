@@ -6,9 +6,9 @@
 
 <!-- nq-current-summary:start -->
 - 最近冻结 Gate 为 GateX：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-x/](../gates/gate-x/)。
-- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-PLAN=`NOT STARTED`（未开始），implementation 尚未开始。
+- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-PLAN=`IMPLEMENTED / SELF REVIEWED`（计划已形成 / 已完成自审），可进入提交前复核；implementation 尚未开始。
 - Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEY-PLAN-IMPLEMENTATION`；只允许在独立任务中形成和审查 GateY plan，不表示 implementation 已开始，exact transition 以 [STATUS.md](STATUS.md) 为准。
+- 当前唯一动作是 `NQ-GATEY-PLAN-COMMIT-AND-PUSH`；只允许提交并推送 GateY plan 文档，不表示 implementation 或 micro-live 已获授权，exact transition 以 [STATUS.md](STATUS.md) 为准。
 - 当前 runtime release、current work commit 与精确 runtime 标识只从 [STATUS.md](STATUS.md) 获取，本索引不复制其值。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
@@ -19,6 +19,8 @@
 | --- | --- | --- |
 | 唯一阶段状态 | [STATUS.md](STATUS.md) | 是 |
 | 下一允许动作 | [ROADMAP.md](ROADMAP.md) | 否 |
+| GateY 当前计划 | [GATEY_PLAN.md](GATEY_PLAN.md) | 否；规划候选能力、hard gate 与批次，不构成 runtime/LIVE 授权 |
+| GateY 当前任务证据 | [evidence/gate-y/README.md](evidence/gate-y/README.md) | 否；只记录可复核证据 |
 | GateX 已归档实施基线 | [GATEX_PLAN.md](../gates/gate-x/GATEX_PLAN.md) | 否；只保存批次、边界与验收历史，不决定 current 状态 |
 | GateX strict archive | [../gates/gate-x/README.md](../gates/gate-x/README.md) | 否；已冻结历史证据，不决定 current 状态 |
 | Authority 分层 | [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md) | 否；必须服从 STATUS |

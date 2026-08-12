@@ -12,6 +12,7 @@
 6. [GATEV_PLAN.md](GATEV_PLAN.md)：GateV historical planning context 的 allowed residual；不决定 current Gate 或独立接受 work batch。
 7. [evidence/gate-w/README.md](evidence/gate-w/README.md)：GateW post-tag current evidence index；只记录 closeout/remediation 导航，不决定 current Gate 或 implementation acceptance。
 8. [../gates/gate-x/GATEX_PLAN.md](../gates/gate-x/GATEX_PLAN.md)：GateX 已归档 implementation baseline；不决定 current Gate，pre-tag 阶段也不构成 frozen authority。
+9. [GATEY_PLAN.md](GATEY_PLAN.md)：GateY 当前 planning baseline；定义候选目标、hard gate、控制面和批次，不表示 API/schema/runtime 已实现，也不授权 micro-live。
 
 ## 2. NQ Capability Authority
 
@@ -29,6 +30,7 @@
 - [TESTING.md](TESTING.md)：append-only validation evidence ledger。
 - [WORKLOG.md](WORKLOG.md)：append-only work evidence ledger。
 - [evidence/gate-w/README.md](evidence/gate-w/README.md)：GateW post-tag current evidence 索引；不参与阶段判定。
+- [evidence/gate-y/README.md](evidence/gate-y/README.md)：GateY planning task evidence 索引；不参与阶段判定或 implementation acceptance。
 
 两份 ledger 的历史状态不参与当前阶段判定，也不得覆盖 STATUS。
 
@@ -78,6 +80,6 @@ Historical evidence 中的旧状态、旧路径和旧 next action 不覆盖 curr
 - GateW-ATTEMPT-13-168H-ACCEPTANCE：`ACCEPTED / CI GREEN`；Attempt-13=`COMPLETED / ACCEPTED`，production soak=`COMPLETED`。
 - GateX：`FROZEN / ACCEPTED / TAGGED`；freeze commit=`299ab30bd2e243314be2dc609cb244cd5388027b`，tag=`nq-gatex-freeze`，strict archive/release/post-tag verification 均通过。
 - GateX-5：`ACCEPTED / CI GREEN`；最终 `ADMISSION_MATERIALIZATION_FACT_TEAR=CLOSED`，但不授权 Shadow execution、trading 或 LIVE。
-- GateY：`IN PROGRESS / NOT FROZEN`；GateY-PLAN=`NOT STARTED`。该 transition 只授权独立 plan task，不表示 implementation started。
+- GateY：`IN PROGRESS / NOT FROZEN`；GateY-PLAN=`IMPLEMENTED / SELF_REVIEWED`，可进入提交前复核。当前计划只冻结 OKX Spot 单场所 micro-live 候选边界，implementation 未开始、micro-live 未授权。
 - LIVE=`DISABLED`，kill switch=`ENGAGED`；Shadow trading 未启用；AI、DH runtime、Integration runtime 未开始；real provider 与 private trading 未实现。
 - 唯一下一动作从 [STATUS.md](STATUS.md) 与 [ROADMAP.md](ROADMAP.md) 读取；本索引不建立第二份 action authority。
