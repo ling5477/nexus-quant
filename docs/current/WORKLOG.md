@@ -18465,3 +18465,32 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：micro-live=`NOT AUTHORIZED`；LIVE=`DISABLED`、Shadow trading=`NOT_ENABLED`；真实外联/credential/probe/order/cancel/transfer/withdraw/交易副作用=0；未 stage/commit/push/PR/tag。
 - result：`PASS / GATEY_PLAN_ACCEPTED / CI_GREEN / GATEY_1_INITIALIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
 - next：`NQ-GATEY-1-LIVE-SESSION-DATA-MODEL-WORK-ORDER-IMPLEMENTATION`。
+
+## 2026-08-12 — GateY-1 live session data model work order attempt-01
+
+- task：`NQ-GATEY-1-LIVE-SESSION-DATA-MODEL-WORK-ORDER-IMPLEMENTATION`；NQ-only、high-risk documentation/migration work order；不创建migration/runtime。
+- baseline：`dev` clean、staged empty；`HEAD == origin/dev == 21d3e457f749774800f2908d34e6e19a500c076e`；exact-head CI run `31570833270 / completed / success / 10 jobs / bad=0`；authority before errors=0。
+- ownership：复用现有 orders/trades/positions/ledger/audit/risk/event/account/credential/release/reconciliation/kill-switch facts；禁止第二主账。Paper/Shadow不升级为LIVE facts。
+- model：冻结 LiveSession、OperatorApproval、RiskLimitSet、ExecutionIntent、ExecutionReceipt；首版仅6表；worker bounded claim/lease进入intent；unknown result固定no blind retry。
+- rejected/deferred：拒绝 `live_position_snapshots`、`portfolio_risk_snapshots`、`cost_slippage_facts`；`reconciliation_cases`后置GateY-3证明必要性。
+- transaction/concurrency：DB transaction与exchange HTTP严格分离；覆盖approval、pause/kill、duplicate claim、crash before/after send、timeout、PLACE/CANCEL、partial fill与optimistic locking。
+- GateX P2：production lock-window验证合同已冻结、GateY-5实测；plain mutable path禁止作为release identity，stable handle由GateY-4关闭；两项继续阻断first order。
+- validation：authority errors=0；doc links最终240 checked/14 historical warnings/0 errors；diff check通过；业务代码/migration/workflow/contract/forbidden directory diff=0。前两次link命令参数错误均未完成扫描，RCA后重跑通过。
+- authority after：`GateY-1 / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`；未stage/commit/push/PR/tag。
+- boundary：credential access/exchange calls/order/cancel/transfer/withdraw/交易副作用=0；LIVE=`DISABLED`、Shadow trading=`NOT_ENABLED`、real provider/private trading=`NOT_IMPLEMENTED`。
+- result：`PASS / GATEY_1_WORK_ORDER_READY / IMPLEMENTED / PENDING_REVIEW / NO_MIGRATION_CREATED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED`。
+- next：`NQ-GATEY-1-LIVE-SESSION-DATA-MODEL-MIGRATION-SECURITY-REVIEW`。
+
+## 2026-08-12 — GateY-1 live session data model migration/security review attempt-01
+
+- task：`NQ-GATEY-1-LIVE-SESSION-DATA-MODEL-MIGRATION-SECURITY-REVIEW`；NQ-only、L 级 independent migration/LIVE security/schema/state/concurrency/DDL review。
+- baseline：`dev`；`HEAD == origin/dev == 21d3e457f749774800f2908d34e6e19a500c076e`；staged empty；起始 dirty 10 paths 精确命中 allowlist；exact-head CI run `31570833270 / completed / success / 10 jobs / bad=0`。
+- schema evidence：V1～V38 连续；真实 target type 为 users/account/credential=`BIGINT`、publish/admission=`VARCHAR(128)`、order=`VARCHAR(64)`；release anchor 改为 admission state + digest + revision，FK 全部 RESTRICT。
+- minimality：六表 6/6 `NECESSARY`；拒绝第二 order/trade/position/ledger/audit/risk/Paper/Shadow 主账；reconciliation case继续后置。
+- contract closure：冻结 USDT risk units/`NUMERIC(38,8)`/BigDecimal/rounding/max、结构化 data quality、专用 versioned canonical encoder、session event counter、approval locked separation、intent完整状态/field matrix/claim/send-start、receipt allowlist digest、DB append-only/immutable triggers、DDL timeout/abort与 no-hard-delete。
+- legacy boundary：`orders.account_id` 与 `exchange_accounts.exchange_account_id` identity split 以 locked `legacy_account_id` bridge fail-closed；GateY-2/3实现与 PostgreSQL test前禁止 intent runtime，不改既有order schema/owner。
+- validation：authority errors=0；links 242 checked/14 historical warnings/0 errors；migration missing/above38=0/0；final worktree expected 11、unexpected/missing=0/0；forbidden directories diff=0；业务测试未运行，因为业务代码/migration/CI workflow变更=0。
+- findings：P0=0/P1=0/P3=0；P2为 production lock window、filesystem stable handle、legacy account identity bridge runtime/test与deferred reconciliation cases。
+- boundary：credential access/exchange call/probe/order/cancel/transfer/withdraw/交易副作用=0；LIVE=`DISABLED`、Shadow trading=`NOT_ENABLED`、kill switch=`ENGAGED`；未stage/commit/push/PR/tag。
+- authority：`GateY-1 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`；唯一 next=`NQ-GATEY-1-LIVE-SESSION-DATA-MODEL-COMMIT-AND-PUSH`。
+- result：`PASS / GATEY_1_MIGRATION_SECURITY_REVIEW_ACCEPTED / P0_0 / P1_0 / NO_MIGRATION_CREATED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。

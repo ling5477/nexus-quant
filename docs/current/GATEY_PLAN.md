@@ -278,17 +278,16 @@ GateY 只有同时满足以下条件才可进入 freeze closeout：GateY-1～6 �
 
 Freeze/tag 前必须运行 archive、current-authority、doc-link 与 release exact-head checks。失败 attempt、unknown receipt、reconciliation case 和 safety incident 必须保留。GateY freeze 不授权 GateZ、第二 venue、更大资金或无人值守执行。
 
-## 23. First Implementation Task
+## 23. GateY-1 Current Work Order
 
-计划提交并经 CI 接受后，第一个 implementation work order 候选是：
+GateY-PLAN 已由 exact-head green CI 接受，GateY-1 正式 work order 已形成并通过独立 migration/security review：
 
-```text
-NQ-GATEY-1-LIVE-CONTROL-PLANE-DATA-MODEL-REVIEW
-```
+- [GATEY_1_LIVE_SESSION_DATA_MODEL_WORK_ORDER.md](GATEY_1_LIVE_SESSION_DATA_MODEL_WORK_ORDER.md)
+- 状态：`REVIEW ACCEPTED / READY TO COMMIT`（审查已接受 / 可进入提交前复核）。
+- 范围：五个核心模型、六表 candidate schema、事实所有权、状态机、事务、幂等、并发、append-only、migration lock-window 与 stable-handle 安全合同。
+- 边界：migration、Controller/Service/Repository、worker、credential 配置、真实交易调用与 LIVE side effect 均为 0。
 
-它是 **独立设计审查**，不是 implementation：只审查 LiveSession/approval/intent/receipt/case schema candidates、API DTO/errors、state transitions、RBAC、idempotency、transaction/locking、retention、migration lock-window 与 rollback plan。允许输出 review evidence；禁止创建 migration、Controller/Service/Repository、worker、credential 配置或真实交易能力。当前任务完成后的唯一下一动作仍是 `NQ-GATEY-PLAN-COMMIT-AND-PUSH`，不得跳到 GateY-1。
-
-本任务已同时完成计划级 security、architecture、database 和 operations self-review；不再增加独立 GateY plan review 或 plan freeze 任务。
+独立审查已确认 P0=0、P1=0，并冻结六表最小性、真实 FK/type、risk/canonical digest、intent claim/crash、append-only trigger、event ordering、DDL/retention 合同。当前仍不得创建 Flyway migration；精确下一动作只读取 [STATUS.md](STATUS.md)。
 
 ## 24. Do-Not-Build List
 
