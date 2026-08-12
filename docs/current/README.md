@@ -6,9 +6,9 @@
 
 <!-- nq-current-summary:start -->
 - 最近冻结 Gate 为 GateX：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-x/](../gates/gate-x/)。
-- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-PLAN=`ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateY-1=`REVIEW ACCEPTED / READY TO COMMIT`（审查已接受 / 可进入提交前复核）。
+- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-PLAN 与 GateY-1 均为 `ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateY-2=`NOT STARTED`（未开始）。
 - Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEY-1-LIVE-SESSION-DATA-MODEL-COMMIT-AND-PUSH`；只允许提交已接受的 GateY-1 文档 work order，不得创建 migration 或 runtime，micro-live 未授权，exact transition 以 [STATUS.md](STATUS.md) 为准。
+- 当前唯一动作是 `NQ-GATEY-2-LIVE-SESSION-FACT-MODEL-IMPLEMENTATION`；只允许实现 GateY LIVE control-plane facts，不包含真实 exchange execution，micro-live 未授权，exact transition 以 [STATUS.md](STATUS.md) 为准。
 - 当前 runtime release、current work commit 与精确 runtime 标识只从 [STATUS.md](STATUS.md) 获取，本索引不复制其值。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
@@ -20,7 +20,7 @@
 | 唯一阶段状态 | [STATUS.md](STATUS.md) | 是 |
 | 下一允许动作 | [ROADMAP.md](ROADMAP.md) | 否 |
 | GateY 当前计划 | [GATEY_PLAN.md](GATEY_PLAN.md) | 否；规划候选能力、hard gate 与批次，不构成 runtime/LIVE 授权 |
-| GateY-1 当前 work order | [GATEY_1_LIVE_SESSION_DATA_MODEL_WORK_ORDER.md](GATEY_1_LIVE_SESSION_DATA_MODEL_WORK_ORDER.md) | 否；独立 review 已接受候选 schema/state/transaction/idempotency，不表示 migration 已实现 |
+| GateY-1 已接受 work order | [GATEY_1_LIVE_SESSION_DATA_MODEL_WORK_ORDER.md](GATEY_1_LIVE_SESSION_DATA_MODEL_WORK_ORDER.md) | 否；独立 review 与 exact-head CI 已接受候选 schema/state/transaction/idempotency，不表示 migration 或 runtime 已实现 |
 | GateY 当前任务证据 | [evidence/gate-y/README.md](evidence/gate-y/README.md) | 否；只记录可复核证据 |
 | GateX 已归档实施基线 | [GATEX_PLAN.md](../gates/gate-x/GATEX_PLAN.md) | 否；只保存批次、边界与验收历史，不决定 current 状态 |
 | GateX strict archive | [../gates/gate-x/README.md](../gates/gate-x/README.md) | 否；已冻结历史证据，不决定 current 状态 |

@@ -1,6 +1,6 @@
 # GateY Implementation Plan
 
-> 状态：`IMPLEMENTED / SELF_REVIEWED`（计划已形成 / 已完成自审），可进入提交前复核。
+> 状态：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；当前实施批次为 GateY-2，但本计划本身不构成 LIVE 授权。
 > 定位：GateY 是 `Single-Venue Micro-Live Gate`（单交易所微资金受控实盘阶段）的规划基线，不是 LIVE 授权。
 > 安全边界：`LIVE=DISABLED`、`Shadow trading=NOT_ENABLED`、真实订单/撤单/转账/提现均为 0。未来能力使用 `CANDIDATE / NOT_IMPLEMENTED` 标记；不得据此修改当前 API 或 schema 事实。
 
@@ -263,7 +263,7 @@ Python 继续是 offline research domain。允许规划 walk-forward validation�
 | --- | --- | --- | --- |
 | GateY-0 | 当前 Plan / Fact Reconciliation | 本文、evidence、authority self-review；无代码 | DISABLED |
 | GateY-1 | LiveSession、OperatorApproval、ExecutionIntent/Receipt 数据模型独立审查 | schema/API/state/locking/retention/threat/lock-window review；只审查，不建 migration | DISABLED |
-| GateY-2 | LiveSession Fact Model、Approval State Machine、append-only event | migration + domain/repository/API/RBAC/idempotency/PostgreSQL tests，经独立 review | DISABLED |
+| GateY-2 | LiveSession control-plane Fact Model、Approval State Machine、immutable RiskLimitSet、append-only event | Flyway migration + domain/repository/JDBC + PostgreSQL constraint/migration tests；不含真实 exchange execution | DISABLED |
 | GateY-3 | Intent/Receipt Ledger、Fake Exchange Contract、Idempotency、Unknown-order/Reconciliation | no-egress fake contract、crash/replay/concurrency、full reconciliation evidence | DISABLED |
 | GateY-4 | Scoped Credential Runtime、Private Read-only Probe、Kill Switch、Deployment Boundary | credential scope/endpoint negatives、kill propagation、stable-handle closure、immutable worker packaging | DISABLED |
 | GateY-5 | Worker Dry-run、Approval Dashboard、Restart/Rollback/Restore Drill | fake-only isolated worker、risk-visible UI、production-like lock/restore/incident drills；结束仍不得真实下单 | DISABLED |
@@ -278,16 +278,29 @@ GateY 只有同时满足以下条件才可进入 freeze closeout：GateY-1～6 �
 
 Freeze/tag 前必须运行 archive、current-authority、doc-link 与 release exact-head checks。失败 attempt、unknown receipt、reconciliation case 和 safety incident 必须保留。GateY freeze 不授权 GateZ、第二 venue、更大资金或无人值守执行。
 
-## 23. GateY-1 Current Work Order
+## 23. GateY-1 Acceptance 与 GateY-2 Initialization
 
-GateY-PLAN 已由 exact-head green CI 接受，GateY-1 正式 work order 已形成并通过独立 migration/security review：
+GateY-PLAN 已由 exact-head green CI 接受，GateY-1 正式 work order 已形成、通过独立 migration/security review，并由 exact-head CI 正式接受：
 
 - [GATEY_1_LIVE_SESSION_DATA_MODEL_WORK_ORDER.md](GATEY_1_LIVE_SESSION_DATA_MODEL_WORK_ORDER.md)
-- 状态：`REVIEW ACCEPTED / READY TO COMMIT`（审查已接受 / 可进入提交前复核）。
+- 状态：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`76ef325f7b8a3d3325df63af2cb1b979309bd141`，CI run=`31581317959 / completed / success / 10 jobs / bad=0`。
 - 范围：五个核心模型、六表 candidate schema、事实所有权、状态机、事务、幂等、并发、append-only、migration lock-window 与 stable-handle 安全合同。
 - 边界：migration、Controller/Service/Repository、worker、credential 配置、真实交易调用与 LIVE side effect 均为 0。
 
-独立审查已确认 P0=0、P1=0，并冻结六表最小性、真实 FK/type、risk/canonical digest、intent claim/crash、append-only trigger、event ordering、DDL/retention 合同。当前仍不得创建 Flyway migration；精确下一动作只读取 [STATUS.md](STATUS.md)。
+独立审查已确认 P0=0、P1=0，并冻结六表最小性、真实 FK/type、risk/canonical digest、intent claim/crash、append-only trigger、event ordering、DDL/retention 合同。该接受不表示 Flyway migration、Java domain、Repository、LiveSession runtime、execution worker 或 OKX TRADE 已实现。
+
+GateY-2 初始化为 `NOT STARTED`（未开始），只允许实现以下 control-plane facts：
+
+1. GateY LIVE control-plane Flyway fact model。
+2. `LiveSession` aggregate/domain 与 approval state machine。
+3. immutable/versioned/digest-bound `RiskLimitSet` facts。
+4. append-only `live_session_events`。
+5. Repository/JDBC baseline。
+6. PostgreSQL constraints 与 migration tests。
+
+GateY-2 不实现真实 exchange execution。future exchange worker、real PLACE/CANCEL transport、`ExecutionIntent` external dispatch、`ExecutionReceipt` real-provider binding、unknown-order exchange reconciliation 与 partial-fill real exchange handling 全部后置 GateY-3。
+
+GateY-2 implementation 启动时必须重新扫描 `backend/nq-infra/src/main/resources/db/migration` 的最高 Flyway version。若最高仍为 V38，候选为 `V39__gate_y2_live_session_fact_model.sql`；否则使用 current highest + 1。不得抢号、预先写死版本事实或修改历史 migration。精确下一动作只读取 [STATUS.md](STATUS.md)。
 
 ## 24. Do-Not-Build List
 

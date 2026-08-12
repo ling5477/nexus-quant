@@ -18494,3 +18494,18 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：credential access/exchange call/probe/order/cancel/transfer/withdraw/交易副作用=0；LIVE=`DISABLED`、Shadow trading=`NOT_ENABLED`、kill switch=`ENGAGED`；未stage/commit/push/PR/tag。
 - authority：`GateY-1 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`；唯一 next=`NQ-GATEY-1-LIVE-SESSION-DATA-MODEL-COMMIT-AND-PUSH`。
 - result：`PASS / GATEY_1_MIGRATION_SECURITY_REVIEW_ACCEPTED / P0_0 / P1_0 / NO_MIGRATION_CREATED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
+
+## 2026-08-12 — GateY-1 post-CI acceptance 与 GateY-2 initialization attempt-01
+
+- task：`NQ-GATEY-1-POST-CI-ACCEPTANCE-AND-GATEY-2-INITIALIZATION`；NQ-only、documentation-only、post-CI authority reconciliation 与 next-batch initialization。
+- baseline：`dev` clean、staged empty；`HEAD == origin/dev == 76ef325f7b8a3d3325df63af2cb1b979309bd141`；起始 authority checker errors=0。
+- exact-head CI：run `31581317959 / completed / success`，`headSha=76ef325f...`，10 jobs / bad=0；canonical GitHub 事实由 `gh` 重新取得。
+- acceptance：GateY-1 独立 migration/security review 为 P0=0/P1=0；接受范围仅为 LiveSession/approval/risk/intent/receipt、状态机、事务/并发/crash/unknown-result、六表 candidate schema、DDL/lock/retention 与 first-real-order blocker handoff。
+- reconciliation：accepted batch 推进为 `GateY-1 / ACCEPTED|CI_GREEN`；work batch 初始化为 `GateY-2 / NOT_STARTED / NONE / NOT_RUN`；唯一 next action=`NQ-GATEY-2-LIVE-SESSION-FACT-MODEL-IMPLEMENTATION`。
+- GateY-2 boundary：只允许 control-plane Flyway fact model、LiveSession domain、approval state machine、immutable risk facts、append-only events、Repository/JDBC 与 PostgreSQL tests；真实 exchange worker/PLACE/CANCEL/receipt binding/reconciliation/partial-fill semantics 后置 GateY-3。
+- migration precondition：GateY-2 启动时重新扫描最高 Flyway version；只有最高仍为 V38 时才候选 V39，否则 current highest + 1；本轮不预占、不创建、不修改 migration。
+- validation：authority final errors=0；links final 244 checked/14 historical warnings/0 errors；`git diff --check` errors=0；final allowlist 10 paths；backend/frontend/research/scripts/deploy/.github/migration/docs/gates/docs/archive diff=0。
+- boundary：业务代码/migration/CI workflow/governance contract diff=0；credential access/exchange calls/order/cancel/transfer/withdraw/交易副作用=0；LIVE=`DISABLED`、kill switch=`ENGAGED`；未 commit/push/PR/tag。
+- findings：P0=0/P1=0；P2 为 production lock window、filesystem stable handle、legacy account identity bridge runtime/test 与 deferred reconciliation cases；P3=1，为根 `CLAUDE.md` 的非权威旧 GateJ/GateK 文案漂移，本轮 allowlist 外只记录不修改。
+- result：`PASS / GATEY_1_ACCEPTED / CI_GREEN / GATEY_2_INITIALIZED / NO_MIGRATION_CREATED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
+- next：`NQ-GATEY-2-LIVE-SESSION-FACT-MODEL-IMPLEMENTATION`。

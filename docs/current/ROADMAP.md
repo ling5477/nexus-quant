@@ -51,9 +51,9 @@ GateY IN PROGRESS / NOT FROZEN
   ↓
 GateY-PLAN ACCEPTED / CI GREEN
   ↓
-GateY-1 REVIEW ACCEPTED / READY TO COMMIT
+GateY-1 ACCEPTED / CI GREEN
   ↓
-GateY-1 COMMIT / PUSH PENDING
+GateY-2 NOT STARTED
 ```
 
 ## 下一允许动作
@@ -80,8 +80,9 @@ GateY-1 COMMIT / PUSH PENDING
 - GateX-5：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；forward-remediation commit=`3336bd8153845d5368a0d65a9c72d3566dc9bd35`，acceptance head=`a383be750f51d063d429bc25fad80e60dffb7014`，exact-head CI run=`31512467501 / completed / success / 10 jobs / bad=0`。最终独立审查的 P0=0、产品 P1=0 与 `ADMISSION_MATERIALIZATION_FACT_TEAR=CLOSED` 保持成立；runner/scheduler/交易/外部网络调用均为 0。
 - GateX-FREEZE：`ACCEPTED / CI GREEN / TAGGED`（已接受 / CI 已通过 / 已打 tag）；annotated tag object=`ef4deb25728601719d20b2c6c64af7905c73a92e`，peeled target 与 freeze commit 精确一致。
 - GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-PLAN=`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。原计划 commit=`d86cea72485280f71001b87075deb3d2a0906fec`，forward remediation/acceptance head=`d7dcffad80cc4dc5089307bfa0e2a5439f37815c`，exact-head CI run=`31568447799 / completed / success / 10 jobs / bad=0`，基线见 [GATEY_PLAN.md](GATEY_PLAN.md)。
-- GateY-1：`REVIEW ACCEPTED / READY TO COMMIT`（审查已接受 / 可进入提交前复核）；[正式 work order](GATEY_1_LIVE_SESSION_DATA_MODEL_WORK_ORDER.md) 的候选数据模型、状态机、事务、幂等、并发、约束与 migration 验证合同已确认 P0=0、P1=0，仍未创建 migration/runtime，micro-live 未授权。
-- 当前唯一治理动作是 `NQ-GATEY-1-LIVE-SESSION-DATA-MODEL-COMMIT-AND-PUSH`；精确状态和安全边界服从 [STATUS.md](STATUS.md)。
+- GateY-1：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`76ef325f7b8a3d3325df63af2cb1b979309bd141`，exact-head CI run=`31581317959 / completed / success / 10 jobs / bad=0`。接受范围是候选数据模型、状态机、事务、幂等、并发、约束与 migration 验证合同，不表示 migration/runtime 已实现。
+- GateY-2：`NOT STARTED`（未开始）；只实现 control-plane facts：Flyway fact model、`LiveSession` aggregate/domain、approval state machine、immutable risk facts、append-only session events、Repository/JDBC 与 PostgreSQL migration tests。真实 exchange execution 全部后置 GateY-3。
+- 当前唯一治理动作是 `NQ-GATEY-2-LIVE-SESSION-FACT-MODEL-IMPLEMENTATION`；精确状态和安全边界服从 [STATUS.md](STATUS.md)。
 
 ## GateW 已冻结边界
 
@@ -91,14 +92,14 @@ GateY-1 COMMIT / PUSH PENDING
 - Attempt-09 的拒绝、Attempt-10/11/12 的失败终态与全部 remediation evidence 均已进入 GateW archive，不得删除、覆盖或复用。
 - `nq-gatew-freeze` 不得删除、移动、覆盖或 force update；问题只能通过 forward remediation 或 superseding tag 处理。
 
-## GateX frozen / GateY planning 边界
+## GateX frozen / GateY implementation 边界
 
 - 唯一实施顺序为 0A → 0B → 0C → 0D → 条件性 0E；GateX-0 总量控制在 3～5 个代码任务、3～7 工程日。
 - GateX-0 只处理 P1 与 GateX 触达区域的低风险 P2；不得演化为 Maven 全量拆分或全仓架构重构。
 - GateX-1～5 与 FREEZE 的历史前置、范围和验收以已归档的 [GATEX_PLAN.md](../gates/gate-x/GATEX_PLAN.md) 为准；计划不得被解释为额外 capability 或 runtime 授权。
 - `nq-gatex-freeze` 不得删除、移动、覆盖或 force update；问题只能通过 forward remediation 或 superseding tag 处理。
 - GateY plan 已完成事实核对和 security/architecture/database/operations self-review，并由 forward-fix exact-head green CI 接受；历史失败 CI 必须保留，但不再作为 current work batch。
-- GateY-1 work order 已通过独立 migration/security review；六表最小集合、事实所有权、约束/索引、append-only、锁窗口、stable-handle、安全与 forward remediation 合同已冻结。当前仍不得创建 Flyway migration；精确下一动作始终服从 [STATUS.md](STATUS.md)。
+- GateY-1 work order 已通过独立 migration/security review 与 exact-head CI 接受；六表最小集合、事实所有权、约束/索引、append-only、锁窗口、stable-handle、安全与 forward remediation 合同已冻结。GateY-2 启动时必须重新扫描最高 Flyway version；若最高仍为 V38，候选才是 `V39__gate_y2_live_session_fact_model.sql`，否则使用 current highest + 1。不得预占版本或修改历史 migration。
 - 不得把 GateW diagnostic/read-only/soak 证据推导为远端交易 permission、账户健康、余额充分、private trading 或 unattended execution readiness。
 - 不得开启 LIVE、真实下单/撤单、转账/提现、AI trading、DH runtime、Integration runtime、RealClient 或 real provider。
 - NQ-only 任务不得修改或声明 DH current authority；DH/Integration 状态继续只表达 NQ 侧 no-real 边界。
