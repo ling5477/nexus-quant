@@ -7,7 +7,7 @@
 ## 1. Current Baseline
 
 - GateX 已 `FROZEN / ACCEPTED / TAGGED`；freeze commit=`299ab30bd2e243314be2dc609cb244cd5388027b`，annotated tag=`nq-gatex-freeze`，tag object=`ef4deb25728601719d20b2c6c64af7905c73a92e`。
-- GateX freeze exact-head CI=`31565353974 / completed / success`；最终 authority HEAD=`6413bc961bcb0952b04595b1480c627807771bce`，authority-sync exact-head CI=`31565712836 / completed / success`。
+- GateX freeze exact-head CI run `31565353974`（completed / success）；最终 authority HEAD=`6413bc...`，authority-sync exact-head CI run `31565712836`（completed / success）。
 - 当前 GateY=`IN_PROGRESS / NOT_FROZEN`；本计划只完成事实核对、目标、设计边界、批次与验收条件，不创建 GateY runtime capability。
 - GateW 已接受的 168h OKX read-only soak 提供公共/受控私有只读、immutable release、systemd、失败终态、回滚和 incident evidence；它不证明交易权限、余额充分或真实下单能力。
 - GateX 已接受的 release/admission/materialization 只允许受控创建 `CREATED / RELEASE_BOUND` Shadow fact；runner、scheduler、交易和外部网络调用为 0。
