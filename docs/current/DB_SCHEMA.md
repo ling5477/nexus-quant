@@ -664,3 +664,17 @@ GateX-4B 新增 forward-only Flyway migration：
 - publish HTTP contract 未变；普通 publish 继续写入 unbound pair。内部 `publishWithArtifactLocator(...)` 只接受已验证 typed locator，供未来受控 artifact pipeline 使用；当前状态为 `PERSISTENCE_READY / PRODUCER_NOT_YET_CONNECTED`，不得伪造 key。
 
 disposable PostgreSQL 17.7 验证覆盖 fresh `V1→V37`、upgrade `V36→V37`、`Flyway.validate`、历史 row no-backfill/可读、合法 pair 写读、partial pair 与非法格式拒绝、JDBC 幂等/冲突、trigger 首次绑定与不可变、无 UNIQUE 下 duplicate behavior。fresh 与 upgrade 小样本均为 2 rows、relation 8,192 bytes、indexes 65,536 bytes、long transactions 0、lock waits 0；这些数据只描述 localhost disposable database，不能外推生产安全。生产部署仍保留 P2：必须在受控窗口只读核对目标表行数/大小、长事务、锁等待和写入速率，并为 `ADD COLUMN` / `ADD CHECK` / `VALIDATE` / trigger DDL 配置停止条件；本轮未实测生产表规模或锁窗口。
+
+## GateY-2 LIVE Session Control-plane Fact Model
+
+`V39__gate_y2_live_session_fact_model.sql` 已创建六张新表；该 migration 未修改 V1～V38、无 historical backfill、无现有表 rewrite，也不启用 LIVE：
+
+- `risk_limit_sets`：不可变、版本化的 LIVE session 风险规则定义，金额使用 `NUMERIC(38,8)`，canonical digest schema 固定为 `risk-limit-set.v1`；不是运行期 `risk_events` 的替代品。
+- `live_sessions`：可变 control-plane aggregate，绑定 owner、OKX LIVE account、release admission digest/revision、exact credential reference、risk set digest、scope hash、execution window、optimistic version 与 `next_event_sequence`；同一 `exchange_account_id + venue` 最多一个 non-terminal session。
+- `live_session_events`：按 `(session_id, sequence_no)` 唯一的 append-only 有序事件；event sequence 由锁定 session row 后读取/递增 counter 生成，不使用 `MAX+1`。
+- `operator_approvals`：append-only 人工决策事实，绑定 exact scope/release/risk digest、经实时 `users/user_roles/roles` RBAC 校验后的 approver role snapshot 与 expiry；审批不等于交易所权限、kill switch 释放或 LIVE 授权。V39 不 seed `LIVE_APPROVER`，缺少/撤销/禁用授权均由应用 fail-closed。
+- `execution_intents`、`execution_receipts`：仅落 schema、状态/check/unique/index/immutability contract，供 GateY-3 后续实现；GateY-2 没有 worker、dispatch、provider 或 HTTP 路径。
+
+PostgreSQL trigger 直接拒绝 `risk_limit_sets` 的 UPDATE/DELETE，以及 `live_session_events`、`operator_approvals`、`execution_receipts` 的 UPDATE/DELETE；`live_sessions` 与 `execution_intents` 只允许合同内的受控 version/state 更新。所有新增表和字段都有中文 `COMMENT`，敏感字段注释明确禁止 credential material、raw request/response、headers 和签名。migration 保留 `SET LOCAL lock_timeout='5s'` 与 `SET LOCAL statement_timeout='60s'`。
+
+Disposable PostgreSQL 17.7 已验证 fresh `V1→V38` fixture 后 `V38→V39`、`Flyway.validate`、六表/注释/trigger、包含 `roles/user_roles` 的历史 fingerprint 不变、约束/非法精度/非法状态/非法窗口、单活 partial unique、append-only/immutable direct SQL rejection、引用一致性 fail-closed、creator identity 绑定、无 `LIVE_APPROVER` 拒绝、授予后并发审批与 8-way event sequence。该本地 PASS 不授权 production migration；`PRODUCTION_LOCK_WINDOW_NOT_MEASURED` 继续保留。

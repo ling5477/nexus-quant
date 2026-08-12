@@ -18509,3 +18509,27 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - findings：P0=0/P1=0；P2 为 production lock window、filesystem stable handle、legacy account identity bridge runtime/test 与 deferred reconciliation cases；P3=1，为根 `CLAUDE.md` 的非权威旧 GateJ/GateK 文案漂移，本轮 allowlist 外只记录不修改。
 - result：`PASS / GATEY_1_ACCEPTED / CI_GREEN / GATEY_2_INITIALIZED / NO_MIGRATION_CREATED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
 - next：`NQ-GATEY-2-LIVE-SESSION-FACT-MODEL-IMPLEMENTATION`。
+
+## 2026-08-12 — GateY-2 LIVE session fact model implementation attempt-01
+
+- task：`NQ-GATEY-2-LIVE-SESSION-FACT-MODEL-IMPLEMENTATION`；NQ-only、L 级 backend/Flyway/control-plane fact model/state machine/JDBC/PostgreSQL implementation。
+- baseline：`dev`；起始 `HEAD == origin/dev == 2217d28ff184d3ca38a1b76bea194fa462586599`；CI run `31583487794 / completed / success / 10 jobs / bad=0`；起始 worktree/staging clean，authority errors=0，最高 migration=V38。
+- implementation：新增 V39 六表；`nq-core` 新增 LiveSession/approval/risk bounded context、deterministic digest、state machine、repository/auth port 与 transaction service；`nq-infra` 新增 JDBC adapter。application 只运行化 create/approve/reject，START/ACTIVATE/RESUME 等通用 transition 入口在完整 runtime gates 前不暴露；ExecutionIntent/Receipt 保持 schema-only，无 worker/provider/HTTP。
+- fail-closed：session 创建在同一短事务绑定 authenticated creator、实时 OPERATOR RBAC，并锁定验证 account owner、OKX/LIVE、exact credential-account reference、release identity/digest/revision 与 risk digest；approval command 不接受自报 identity/role，service 实时锁定 `users/user_roles/roles` 校验 `LIVE_APPROVER` 后才生成 role snapshot；有效 approval 精确匹配当前 scope/release/risk digest。JDBC 不读取 credential material。
+- validation：domain/migration contract 8/8；真实 PostgreSQL 17.7 integration 1/1；模块 reactor success；隔离 PostgreSQL 全后端 reactor success，`nq-app` 270 tests / 0 failures / 0 errors / 27 skipped；ArchUnit 12/12。默认 5432 首轮因既有 V38 checksum mismatch 失败，未 repair，随后以 disposable DB 得到可归因 PASS。
+- boundary：LIVE=`DISABLED`、kill switch=`ENGAGED`；credential access/exchange call/permission probe/order/cancel/transfer/withdraw=`0/0/0/0/0/0/0`；未 stage/commit/push/PR/tag。
+- findings：P0=0、P1=0；自审发现的 digest/reference、authenticated identity/RBAC 与通用 transition hard-gate bypass 缺口均已最小修复并回归；P2 保留 `PRODUCTION_LOCK_WINDOW_NOT_MEASURED`、`FILESYSTEM_STABLE_HANDLE_LIMITATION_INHERITED`、`LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE`；P3=0。
+- result：`PASS / GATEY_2_FACT_MODEL_IMPLEMENTED / MIGRATION_CREATED / POSTGRESQL_GREEN / ARCHITECTURE_HYGIENE_CHECKED / PENDING_INDEPENDENT_REVIEW / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED`。
+- next：唯一下一动作=`NQ-GATEY-2-LIVE-SESSION-FACT-MODEL-MIGRATION-SECURITY-REVIEW`。
+
+## 2026-08-12 — GateY-2 LIVE session fact model migration/security review attempt-01
+
+- task：`NQ-GATEY-2-LIVE-SESSION-FACT-MODEL-MIGRATION-SECURITY-REVIEW`；NQ-only、L 级 independent migration/LIVE control-plane security/PostgreSQL concurrency/state/transaction review。
+- baseline：`dev`；`HEAD == origin/dev == 2217d28ff184d3ca38a1b76bea194fa462586599`；baseline CI `31583487794 / completed / success / 10 jobs`；staged empty。
+- review：Codex Security scan `7fd476ec-9854-42d7-9170-b2c07120866b` 对 23 个 source-like 文件形成 23/23 full-file receipts；六表均为必要 control-plane fact，无第二主账；最终 P0=0/P1=0。
+- corrections：在 GateY-2 原范围最小收紧 initial state、scope immutability、claim/reclaim lease、receipt outcome、canonical arrays、owner/actor/event/scope/time/RBAC/reference validation、Spring constructor injection 与相关回归测试；未新增 GateY-3 worker/API/provider。
+- validation：focused PostgreSQL 1/1；module regression 117/0/0/4 skipped；isolated full backend 270/0/0/27 skipped；Codex Security artifacts sealed。默认 5432 因既有 V38 checksum mismatch 失败，未 repair，随后使用 disposable DB 得到可归因 PASS。
+- residuals：`PRODUCTION_LOCK_WINDOW_NOT_MEASURED`、`FILESYSTEM_STABLE_HANDLE_LIMITATION_INHERITED`、`LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE` 保留；后者在 GateY-3 第一笔真实动作前必须关闭，当前因无 writer/worker/dispatch 不可达。
+- boundary：LIVE=`DISABLED`、kill switch=`ENGAGED`；credential material/exchange/probe/order/cancel/transfer/withdraw/dispatch=`0`；production migration、stage/commit/push/PR/tag=`0`。
+- result：`PASS / GATEY_2_MIGRATION_SECURITY_REVIEW_ACCEPTED / P0_0 / P1_0 / V39_ACCEPTED_FOR_LOCAL_BASELINE / NO_PRODUCTION_MIGRATION_AUTHORIZATION / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
+- next：唯一下一动作=`NQ-GATEY-2-LIVE-SESSION-FACT-MODEL-COMMIT-AND-PUSH`。

@@ -13243,3 +13243,35 @@ Findings：P0=0、P1=0；P2=`PRODUCTION_LOCK_WINDOW_NOT_MEASURED`、`FILESYSTEM_
 | Security/trading boundary | PASS / ZERO SIDE EFFECT（通过 / 无副作用） | credential access/exchange call/order/cancel/transfer/withdraw=0；LIVE=`DISABLED`、Shadow trading=`NOT_ENABLED`、real provider/private trading=`NOT_IMPLEMENTED` |
 
 GateY-1 接受只覆盖设计/安全/migration 合同，不表示 Flyway migration、Java domain、Repository、LiveSession runtime、execution worker 或 OKX TRADE 已实现。P0=0、P1=0；既有四项 P2 继续保留并阻断 production deployment/worker start/first real order；P3=1，为根 `CLAUDE.md` 的非权威旧 GateJ/GateK 文案漂移，本轮 allowlist 外只记录不修改。完整证据：[evidence/gate-y/NQ-GATEY-1-POST-CI-ACCEPTANCE-AND-GATEY-2-INITIALIZATION.attempt-01.md](evidence/gate-y/NQ-GATEY-1-POST-CI-ACCEPTANCE-AND-GATEY-2-INITIALIZATION.attempt-01.md)。
+
+## 2026-08-12 — GateY-2 LIVE session fact model implementation attempt-01
+
+结论：`PASS / GATEY_2_FACT_MODEL_IMPLEMENTED / MIGRATION_CREATED / POSTGRESQL_GREEN / ARCHITECTURE_HYGIENE_CHECKED / PENDING_INDEPENDENT_REVIEW / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED`。
+
+| 验证项 / Command | 结果 | 范围 / 环境 / warning / 阻断性 |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-core,nq-infra -am -DskipTests compile` | PASS（通过） | `nq-core`/`nq-infra` 与依赖模块编译成功 |
+| 定向 domain + migration contract tests | PASS（通过） | 8 tests，failures/errors/skipped=`0/0/0`；状态机、scope invalidation、expiry、canonical digest 与 V39 文本合同 |
+| Real PostgreSQL 17.7 integration | PASS（通过） | 1 test，failures/errors/skipped=`0/0/0`；fresh V1→V38、V38→V39、Flyway validate、含 roles/user_roles 的历史 fingerprint、六表/约束/trigger/JDBC/负向引用、可信 creator、实时 RBAC 拒绝/授予、并发；临时端口 55439 与数据目录已清理 |
+| `mvn -f backend/pom.xml -pl nq-core,nq-risk,nq-infra -am test` | PASS（通过） | 完整 reactor `BUILD SUCCESS`；`nq-infra` 117 tests / 0 failures / 4 skipped；skip 为既有显式环境型测试 |
+| `mvn -f backend/pom.xml test`（默认 local 5432） | FAIL（失败，环境阻断） | 3 个 local-context test 因既有数据库 V38 checksum 与仓库不一致无法启动；未对该数据库执行 Flyway repair，非 GateY-2 代码失败 |
+| 全后端 regression（隔离 PostgreSQL 17.7 + 最小 legacy account fixture） | PASS（通过） | 完整 reactor `BUILD SUCCESS`；`nq-app` 270 tests / 0 failures / 0 errors / 27 skipped；fixture 仅写 disposable DB，实例随后删除 |
+| ArchUnit | PASS（通过） | `ModuleBoundaryArchTest` 6/6，`PackageBoundaryArchTest` 6/6；无 domain→infra/JDBC 反向依赖，无新增模块依赖 |
+| Security/trading boundary | PASS / ZERO SIDE EFFECT（通过 / 无副作用） | credential material access、exchange call、permission probe、order、cancel、transfer、withdraw 均为 0；LIVE=`DISABLED`、kill switch=`ENGAGED` |
+
+未运行：CI=`NOT_RUN`；production migration/lock-window 未测，且不获授权。已知 warning 为既有 SLF4J provider、Mockito dynamic-agent 与少量 test compile unchecked/deprecation 提示，不阻断本轮。完整证据：[evidence/gate-y/NQ-GATEY-2-LIVE-SESSION-FACT-MODEL-IMPLEMENTATION.attempt-01.md](evidence/gate-y/NQ-GATEY-2-LIVE-SESSION-FACT-MODEL-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-12 — GateY-2 LIVE session fact model migration/security review attempt-01
+
+结论：`PASS / GATEY_2_MIGRATION_SECURITY_REVIEW_ACCEPTED / P0_0 / P1_0 / V39_ACCEPTED_FOR_LOCAL_BASELINE / NO_PRODUCTION_MIGRATION_AUTHORIZATION / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
+
+| 验证项 / Command | 结果 | 范围 / 环境 / warning / 阻断性 |
+| --- | --- | --- |
+| Codex Security diff scan | PASS（通过） | scan `7fd476ec-9854-42d7-9170-b2c07120866b`；23/23 full-file receipts；0 reportable findings；manifest/findings/coverage/report/SARIF sealed |
+| Focused PostgreSQL 17.7 integration | PASS（通过） | 1 test / failures=0 / errors=0 / skipped=0；fresh V1→V39、Flyway validate、direct SQL guards、RBAC/concurrency/rollback；disposable port 55439 |
+| `mvn -f backend/pom.xml -pl nq-core,nq-risk,nq-infra -am test` | PASS（通过） | 117 tests / failures=0 / errors=0 / skipped=4 |
+| `mvn -f backend/pom.xml test`（默认 local 5432） | FAIL（失败，环境基线） | 既有本地 DB V38 checksum mismatch；未 repair、未写用户数据库 |
+| `mvn -f backend/pom.xml test`（isolated disposable PostgreSQL + minimal legacy account fixture） | PASS（通过） | 270 tests / failures=0 / errors=0 / skipped=27；完整 reactor `BUILD SUCCESS` |
+| Security/trading boundary | PASS / ZERO SIDE EFFECT（通过 / 无副作用） | LIVE disabled；credential material/exchange/order/cancel/transfer/withdraw/dispatch=0；production migration=0 |
+
+CI=`NOT_RUN`，production lock window 未测。P2 继续保留 `PRODUCTION_LOCK_WINDOW_NOT_MEASURED`、`FILESYSTEM_STABLE_HANDLE_LIMITATION_INHERITED` 与 GateY-3 hard gate `LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE`；均不构成本轮 P0/P1。完整证据：[evidence/gate-y/NQ-GATEY-2-LIVE-SESSION-FACT-MODEL-MIGRATION-SECURITY-REVIEW.attempt-01.md](evidence/gate-y/NQ-GATEY-2-LIVE-SESSION-FACT-MODEL-MIGRATION-SECURITY-REVIEW.attempt-01.md)。
