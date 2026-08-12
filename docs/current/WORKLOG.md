@@ -18394,3 +18394,28 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：V38/code/schema 增量=0；Shadow 仅创建 `CREATED / RELEASE_BOUND` fact；runner/scheduler/trading/risk/ledger/account/credential/private network/LIVE 调用或授权均为 0；未 commit、未 push、CI 未运行。
 - authority：`GateX-5 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
 - next：唯一下一动作=`NQ-GATEX-5-COMMIT-AND-PUSH`。
+
+## 2026-08-12 — GateX-5 post-CI acceptance and GateX freeze readiness attempt-01
+
+- task：`NQ-GATEX-5-POST-CI-ACCEPTANCE-AND-GATEX-FREEZE-READINESS`；NQ-only、exact-head CI acceptance、GateX completion audit、freeze readiness review、最小文档同步。
+- baseline：fetch 后 `dev` clean、staged empty；`HEAD == origin/dev == a383be750f51d063d429bc25fad80e60dffb7014`；GateX-5 base `ac4b1ba1...` 与 forward remediation `3336bd81...` 均为 HEAD ancestor。
+- exact-head CI：`NQ CI Baseline` run `31512467501 / completed / success`，`headSha=HEAD`，10 jobs / bad=0；backend、PostgreSQL/Flyway、frontend build、E2E、security/no-outbound/secret scan 全部成功。
+- completion：GateX-0A..0E、1、3、4 accepted；2/4B/4C/5 accepted with P2；历史 blocker 以是否被后续 remediation 关闭为准。18 项技术 freeze hard gate 全部通过，GateX-5 final review 仍为 P0=0/P1=0、`ADMISSION_MATERIALIZATION_FACT_TEAR=CLOSED`。
+- residual：`PRODUCTION_LOCK_WINDOW_NOT_MEASURED` 与 `FILESYSTEM_STABLE_HANDLE_LIMITATION_INHERITED` 不阻塞 non-LIVE `CREATED` materialization，但必须保留到 freeze archive；GateX pre-tag archive 尚不存在，closeout 前 archive checker 返回 `ARCHIVE_MANIFEST_INCOMPLETE`。
+- blocker：现有 governance contract 不能识别任务强制要求的 `NQ-GATEX-FREEZE-CLOSEOUT`；library 返回 action type=`UNKNOWN`、mapping=`False`，且本任务禁止修改 contract。无法合法写入 GateX-5 post-CI acceptance/freeze next action。
+- authority：保持 `GateX-5 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN` 与 `NQ-GATEX-5-COMMIT-AND-PUSH` 原值；未修改 README/STATUS/ROADMAP，未伪造 accepted/freeze-ready 状态。
+- validation：authority checker PASS；doc links 213/0 errors/1 existing warning；普通功能本地测试未重跑，采用 exact-head CI；业务代码/migration/frontend/test/CI/governance contract/LIVE/交易变更=0。
+- result：`BLOCKED / GATEX_FREEZE_NOT_READY / GOVERNANCE_GATEX_FREEZE_ACTION_UNMAPPED`；不创建 GateX-5C，不启动 GateY，不自动 commit/push/tag。
+
+## 2026-08-12 — Generic freeze closeout action contract fix attempt-01
+
+- task：`NQ-GOVERNANCE-FREEZE-CLOSEOUT-ACTION-CONTRACT-FIX`；NQ-only、governance contract fix、next-action canonicalization、lifecycle regression、GateX-5 post-CI authority acceptance。
+- baseline：`dev`；`HEAD == origin/dev == a383be750f51d063d429bc25fad80e60dffb7014`；保留上一任务 3 个 staged blocker evidence 路径，未先提交；unstaged/untracked=`0/0`。
+- Case B：现有 contract 只有 GateW legacy `NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION`，不存在通用 Gate-level closeout action；新增统一 `FREEZE_CLOSEOUT` 类型与 `NQ-GATE[A-Z0-9]+-FREEZE-CLOSEOUT` exact pattern。
+- mapping：shared library 从任意 `Gate<代号>-<batch>` 提取 Gate scope 并 ordinal-exact 绑定 closeout action；scoped legacy mapping 优先级与 Attempt-13 safety requirements 不变。
+- regression：GateX-5/GateW-4/GateY-9 三组 positive 与 15 组 negative status mapping 全通过；invalid suffix/batch/lowercase fail-closed；完整 lifecycle、next-action、archive-manifest suites 均 exit 0；authority `errors=0`；doc links=`213 checked / 0 errors / 1 existing warning`。
+- Gate-specific audit：未新增 GateX case/allowlist/exact action/startswith patch；GateY 仅为内存 generic fixture，未启动 GateY。
+- authority：GateX-5 forward-remediation commit=`3336bd8153845d5368a0d65a9c72d3566dc9bd35`，acceptance head=`a383be750f51d063d429bc25fad80e60dffb7014`，exact-head CI=`31512467501 / success / 10 jobs / bad=0`；提升为 `ACCEPTED|CI_GREEN`。GateX-FREEZE=`ACCEPTED|CI_GREEN|FREEZE_READY`，GateX 仍 `IN_PROGRESS|NOT_FROZEN`。
+- boundary：archive/release checker code、manifest/role/tag semantics、backend/frontend/research/migration/CI workflow/credential/trading/Shadow runner/LIVE 变更=0；actual freeze/archive/tag 未执行。
+- result：`PASS / GENERIC_FREEZE_CLOSEOUT_ACTION_CONTRACT_FIXED / GATEX_5_ACCEPTED / GATEX_FREEZE_AUTHORIZED / READY_TO_COMMIT`；P0=0/P1=0/P2=2/P3=1。
+- next：唯一下一动作=`NQ-GATEX-FREEZE-CLOSEOUT`；推荐 commit=`fix(governance): support generic freeze closeout action`，本任务不自动 commit/push。

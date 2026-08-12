@@ -894,6 +894,30 @@ try {
         $attempt13AcceptedAuthority)) 'attempt-13 failed state entered freeze'
     Write-Output 'PASS fixture=attempt-13-acceptance-full-success-failure-and-freeze-hard-gates'
 
+    $freezeCloseoutInvalidStatuses=@(
+        'NOT_STARTED','IMPLEMENTED|PENDING_REVIEW','REVIEW_ACCEPTED|READY_TO_COMMIT',
+        'COMMITTED|CI_PENDING','BLOCKED'
+    )
+    foreach ($case in @(
+        @{Gate='GateX';WorkBatch='GateX-5'},
+        @{Gate='GateW';WorkBatch='GateW-4'},
+        @{Gate='GateY';WorkBatch='GateY-9'}
+    )) {
+        $freezeWorkBatch=$case.WorkBatch
+        $freezeAction='NQ-{0}-FREEZE-CLOSEOUT' -f $case.Gate.ToUpperInvariant()
+        Assert-Condition ((Get-GovernanceNextActionType $contract $freezeAction) -ceq 'FREEZE_CLOSEOUT') `
+            "generic freeze closeout type mismatch gate=$($case.Gate)"
+        Assert-Condition (Test-GovernanceNextActionForWorkBatch `
+            $contract $attempt13FreezeReadyStatus $freezeWorkBatch $freezeAction) `
+            "generic freeze closeout mapping rejected gate=$($case.Gate) workBatch=$freezeWorkBatch"
+        foreach ($status in $freezeCloseoutInvalidStatuses) {
+            Assert-Condition (-not (Test-GovernanceNextActionForWorkBatch `
+                $contract $status $freezeWorkBatch $freezeAction)) `
+                "generic freeze closeout accepted invalid status gate=$($case.Gate) status=$status"
+        }
+    }
+    Write-Output 'PASS fixture=generic-freeze-closeout gates=GateX,GateW,GateY positive=3 negative-statuses=15'
+
     Assert-Condition (-not [bool]$contract.lifecycles.freeze.authorityReviewCommitRequired) 'freeze authority review commit must not be required'
     Assert-Condition (@($contract.lifecycles.freeze.candidateEntryStatuses) -contains 'IMPLEMENTED|PENDING_REVIEW') 'freeze pending-review candidate entry missing'
     Assert-Condition (@($contract.lifecycles.freeze.candidateEntryStatuses) -cnotcontains 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED') 'green continuation was accepted as freeze/archive candidate'
@@ -1036,7 +1060,7 @@ try {
         -MachineAttempt 'Attempt-13' -MachineAttemptStatus 'COMPLETED|ACCEPTED' `
         -ProductionSoak 'COMPLETED' -KillSwitch 'ENGAGED'
     Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false `
-        'ATTEMPT_13_ACCEPTANCE_WORK_BATCH_INVALID' 'authority-attempt-13-wrong-work-batch-freeze-rejected'
+        'NEXT_ACTION_WORK_BATCH_MISMATCH' 'authority-attempt-13-wrong-work-batch-freeze-rejected'
 
     Write-AuthorityFixture $authorityRoot $deploymentAuthorizedStatus $attempt11StartAction `
         $remediationCommit '302' 'IN_PROGRESS|NOT_FROZEN' $attempt10RemediationBatch `

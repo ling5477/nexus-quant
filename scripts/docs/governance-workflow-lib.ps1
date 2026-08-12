@@ -176,6 +176,13 @@ function Test-GovernanceNextActionForWorkBatch {
     }
 
     if ($actualType -cne $expectedType) { return $false }
+    if ($actualType -ceq 'FREEZE_CLOSEOUT') {
+        # Freeze closeout 是 Gate-level action；上方高优先级 exact mapping 继续保护历史 batch-scoped contract。
+        $gateMatch = [regex]::Match($WorkBatch, '^(?<gate>Gate[A-Z0-9]+)-')
+        if (-not $gateMatch.Success) { return $false }
+        $expectedAction = 'NQ-{0}-FREEZE-CLOSEOUT' -f $gateMatch.Groups['gate'].Value.ToUpperInvariant()
+        return [string]::Equals($Action, $expectedAction, [System.StringComparison]::Ordinal)
+    }
     $expectedPrefix = 'NQ-{0}-' -f $WorkBatch.ToUpperInvariant()
     return $Action.StartsWith($expectedPrefix, [System.StringComparison]::OrdinalIgnoreCase)
 }

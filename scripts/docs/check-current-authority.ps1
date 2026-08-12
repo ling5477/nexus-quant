@@ -383,8 +383,7 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
                             $(if ($authority.ContainsKey($requiredAcceptanceFact.Key)) { $authority[$requiredAcceptanceFact.Key] } else { 'MISSING' }))
                     }
                 }
-            } elseif ($authority.work_batch_status -ceq 'ACCEPTED|READY_TO_COMMIT' -or
-                $authority.work_batch_status -ceq 'ACCEPTED|CI_GREEN|FREEZE_READY') {
+            } elseif ($authority.work_batch_status -ceq 'ACCEPTED|READY_TO_COMMIT') {
                 Add-AuthorityError "ATTEMPT_13_ACCEPTANCE_WORK_BATCH_INVALID work_batch=$($authority.work_batch) status=$($authority.work_batch_status)"
             }
 

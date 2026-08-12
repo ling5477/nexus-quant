@@ -41,7 +41,9 @@ GateX-4B ACCEPTED / CI GREEN
   ↓
 GateX-4C ACCEPTED / CI GREEN
   ↓
-GateX-5 REVIEW ACCEPTED / READY TO COMMIT
+GateX-5 ACCEPTED / CI GREEN
+  ↓
+GateX FREEZE READY / NOT FROZEN
 ```
 
 ## 下一允许动作
@@ -50,7 +52,7 @@ GateX-5 REVIEW ACCEPTED / READY TO COMMIT
 - GateW freeze commit=`16376de28be78eea58afbe1374847ee07ca2ccc7`；exact-head CI run=`31299729114 / completed / success / 10 jobs / bad=0`。
 - GateW Attempt-13=`COMPLETED / ACCEPTED`（已完成 / 已接受）；production deployment=`STOPPED`；production soak=`COMPLETED`。656 条样本与 hash chain 已接受并 sealed，worker 已停止。
 - GateW acceptance batch：`GateW-ATTEMPT-13-168H-ACCEPTANCE / ACCEPTED / CI GREEN`；acceptance head=`20cf7970dfb414868da3e42dddaefc5965246570`，CI run=`31295184056`。
-- GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateX-0A/0B/0C/0D/1/2/3/4/4C 已接受，GateX-0E 条件项已审计且无需实施；GateX-5 受控 Shadow materialization 独立审查已接受并待提交。
+- GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateX-0A/0B/0C/0D/1/2/3/4/4C/5 已接受，GateX-0E 条件项已审计且无需实施；18/18 technical hard gates 已通过，当前为 `FREEZE READY`，actual freeze/archive/tag 尚未执行。
 - GateX-PLAN：`BASELINE ESTABLISHED / READY TO COMMIT`（基线已建立 / 可进入提交前复核）；实施基线见 [GATEX_PLAN.md](GATEX_PLAN.md)。
 - GateX-0A：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；Strategy↔Trading 与 audit port ownership P1 已关闭，merge acceptance head 的 exact-head CI 已成功。
 - GateX-0B：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；acceptance head=`108a14d14906d6fa354349c66d35a2ae6967cebf`，exact-head CI run=`31321821962 / completed / success`。
@@ -64,8 +66,9 @@ GateX-5 REVIEW ACCEPTED / READY TO COMMIT
 - GateX-4A：`PASS / DESIGN BLOCKER RESOLVED`（通过 / 设计阻断已解决）；方案 A 固定在 `backtest_publish_records` 增加 nullable pair `artifact_storage_key` / `manifest_storage_key`，使用受限 opaque key、绑定后不可变、trusted root 只来自服务端配置且 `NO FAKE BACKFILL`。4B 已按当前 provider contract 重新判断并未增加缺乏正式 invariant 的 partial UNIQUE。
 - GateX-4B：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`92043c37dad96d984d5e55a1e5170c97d335d6d4`，exact-head CI run=`31403529376 / completed / success`。Producer 仍为 `PERSISTENCE_READY / PRODUCER_NOT_YET_CONNECTED`。
 - GateX-4C：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`b4e5406fbb9de5432f79f9ef8ef76c95002e0e56`，exact-head CI run=`31409595743 / completed / success / 10 jobs / bad=0`；duplicate manifest identity key P1 与服务器受控 resolver trust boundary 已关闭。
-- GateX-5：`REVIEW ACCEPTED / READY TO COMMIT`（审查已接受 / 可进入提交前复核）；最终独立审查以 PostgreSQL 17.10 强制 race matrix、focused/full backend、WebMvc/ArchUnit、frontend build 与 11 条 targeted Playwright 证明 P0=0、P1=0，`ADMISSION_MATERIALIZATION_FACT_TEAR=CLOSED`。commit 与 exact-head CI 仍未执行；runner/scheduler/交易/外部网络调用均为 0。
-- 当前唯一治理动作是 `NQ-GATEX-5-COMMIT-AND-PUSH`；只允许提交并推送当前已审查 staged scope，不得启动 Shadow Run、开启 LIVE 或触达交易写侧。
+- GateX-5：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；forward-remediation commit=`3336bd8153845d5368a0d65a9c72d3566dc9bd35`，acceptance head=`a383be750f51d063d429bc25fad80e60dffb7014`，exact-head CI run=`31512467501 / completed / success / 10 jobs / bad=0`。最终独立审查的 P0=0、产品 P1=0 与 `ADMISSION_MATERIALIZATION_FACT_TEAR=CLOSED` 保持成立；runner/scheduler/交易/外部网络调用均为 0。
+- GateX-FREEZE：`ACCEPTED / CI GREEN / FREEZE READY`（已接受 / CI 已通过 / 冻结准备就绪）；通用 `FREEZE_CLOSEOUT` action 已由 GateX/GateW/GateY 同构正例和五状态负例验证。该状态不是 `FROZEN`、`TAGGED` 或 `ARCHIVED`。
+- 当前唯一治理动作是 `NQ-GATEX-FREEZE-CLOSEOUT`；只允许执行后续 GateX freeze closeout，actual freeze、strict archive、tag、GateY、Shadow Run 启动、LIVE 与交易写侧均不属于本任务。
 
 ## GateW 已冻结边界
 

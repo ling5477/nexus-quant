@@ -13076,3 +13076,41 @@ RCA：首次 mandatory Maven 命令因 PowerShell 未整体引用 JDBC `-D` 参�
 Findings：P0=0；P1=0；P2=2（V38 生产锁窗口/规模未测；GateX-4C filesystem stable-handle residual 继承且未扩大到 writer transaction）；P3=1（既有 Mockito/SLF4J、Vite chunk 与 Ant Design v5/React 19 warnings）。
 
 Boundary：V38 增量=0；migration/schema/code 增量=0；Runner/Scheduler/Matching/OrderCommandService/TradingVenueGateway/risk/ledger/account/credential/private exchange/external network invocation=`0`；LIVE=`DISABLED`，Shadow trading=`NOT_ENABLED`。完整证据：[evidence/gate-x/NQ-GATEX-5-RELEASE-TO-SHADOW-MATERIALIZATION-FINAL-REVIEW.attempt-02.md](evidence/gate-x/NQ-GATEX-5-RELEASE-TO-SHADOW-MATERIALIZATION-FINAL-REVIEW.attempt-02.md)。
+
+## 2026-08-12 — GateX-5 post-CI acceptance and GateX freeze readiness attempt-01
+
+| 验证项 | 结果 | 范围 / 环境 / 说明 |
+| --- | --- | --- |
+| Git alignment | PASS（通过） | fetch 后 `dev` clean、staged empty；`HEAD == origin/dev == a383be750f51d063d429bc25fad80e60dffb7014` |
+| GateX-5 commit ancestry | PASS（通过） | base materialization `ac4b1ba1...`、forward remediation `3336bd81...` 均为当前 HEAD ancestor |
+| Exact-head CI | PASS（通过） | `NQ CI Baseline` run `31512467501`；`completed / success`；`headSha=HEAD`；10 jobs / bad=0 |
+| GateX completion audit | PASS WITH P2（通过并保留 P2） | GateX-0A..0E、1、3、4 accepted；2/4B/4C/5 accepted with documented non-blocking P2；历史 BLOCKED attempts 均按后续 remediation 判断 |
+| 18-item technical freeze matrix | PASS（通过） | 18/18；release/provenance/artifact/admission/guard/idempotency/atomicity/RBAC/no-side-effect/LIVE/全链验证/CI 均有证据 |
+| Current authority checker | PASS（通过） | `errors=0 / CURRENT_AUTHORITY_CONSISTENT`；authority 保持 GateX-5 review accepted，未伪造 post-CI promotion |
+| Doc links | PASS（通过） | 213 checked / 0 errors / 1 个既有 GateJ ledger warning |
+| GateX pre-tag archive | BLOCKED（阻断） | `GATE_ARCHIVE_NOT_FOUND / ARCHIVE_MANIFEST_INCOMPLETE`；closeout 尚未执行，不能在本任务 allowlist 内创建 strict archive |
+| Governance GateX freeze action mapping | BLOCKED（阻断） | `NQ-GATEX-FREEZE-CLOSEOUT` action type=`UNKNOWN`、work-batch mapping=`False`；任务同时禁止修改 contract |
+| Backend/frontend/Python local rerun | NOT RUN（未运行） | 本轮只做 exact-head CI acceptance 与 docs audit；普通功能已由 exact-head CI 覆盖，不重复测试 |
+
+Findings：P0=0；P1=1（`GOVERNANCE_GATEX_FREEZE_ACTION_UNMAPPED`）；P2=2（生产锁窗口未测、filesystem stable-handle limitation 继承且不阻塞 non-LIVE CREATED materialization）；P3=1（既有工具链 warning）。最终为 `BLOCKED / GATEX_FREEZE_NOT_READY / GOVERNANCE_GATEX_FREEZE_ACTION_UNMAPPED`。完整证据：[evidence/gate-x/NQ-GATEX-5-POST-CI-ACCEPTANCE-AND-GATEX-FREEZE-READINESS.attempt-01.md](evidence/gate-x/NQ-GATEX-5-POST-CI-ACCEPTANCE-AND-GATEX-FREEZE-READINESS.attempt-01.md)。
+
+## 2026-08-12 — Generic freeze closeout action contract fix attempt-01
+
+结论：`PASS / GENERIC_FREEZE_CLOSEOUT_ACTION_CONTRACT_FIXED / GATEX_5_ACCEPTED / GATEX_FREEZE_AUTHORIZED / READY_TO_COMMIT`。
+
+| 验证项 | 结果 | 范围 / 环境 / 说明 |
+| --- | --- | --- |
+| Preflight / remote alignment | PASS（通过） | `dev`；`HEAD == origin/dev == a383be750f51d063d429bc25fad80e60dffb7014`；仅保留上一任务 3 个 staged blocker evidence 路径，unstaged/untracked=`0/0`；cached check 通过 |
+| GateX-5 ancestry / exact-head CI | PASS（通过） | forward-remediation commit=`3336bd8153845d5368a0d65a9c72d3566dc9bd35` 为 acceptance head ancestor；run `31512467501 / completed / success / 10 jobs / bad=0`，`headSha=HEAD` |
+| Generic action classification | PASS（通过） | `NQ-GATEX/GATEW/GATEY-FREEZE-CLOSEOUT` 均分类为 `FREEZE_CLOSEOUT`；GateX-5/GateW-4/GateY-9 mapping=`true` |
+| Negative action matrix | PASS（通过） | 三个 Gate × `NOT_STARTED`、`IMPLEMENTED|PENDING_REVIEW`、`REVIEW_ACCEPTED|READY_TO_COMMIT`、`COMMITTED|CI_PENDING`、`BLOCKED`，15 个 mapping 均 reject；非法 suffix/batch-in-action/lowercase 均 `UNKNOWN` |
+| Existing action regression | PASS（通过） | 完整 next-action suite 通过；`IMPLEMENTATION`、`REVIEW`、`COMMIT_AND_PUSH`、`BLOCKED` 与 GateW Attempt-13 legacy exact mapping 未回归 |
+| Governance lifecycle suite | PASS（通过） | `scripts/docs/test-governance-workflow-lifecycle.ps1` exit 0；`GOVERNANCE_LIFECYCLE_REGRESSION`、`TASK_EVIDENCE_POLICY_VALID` |
+| Authority next-action suite | PASS（通过） | `scripts/docs/test-current-authority-next-action.ps1` exit 0；generic GateX authority fixture 与 current authority canonical triple 通过 |
+| Archive manifest suite | PASS（通过） | `scripts/docs/test-gate-archive-manifest.ps1` exit 0；archive hard-gate regression 未改变 |
+| Current authority checker | PASS（通过） | GateX-5=`ACCEPTED|CI_GREEN`，GateX-FREEZE=`ACCEPTED|CI_GREEN|FREEZE_READY`，next action=`NQ-GATEX-FREEZE-CLOSEOUT`，`errors=0` |
+| Current doc links | PASS（通过） | 213 checked / 0 errors / 1 个既有 GateJ ledger warning；首次嵌套 `powershell -File` 丢失数组边界而未开始扫描，改用当前 PowerShell 显式 `-Roots` 数组后通过 |
+| Archive/release code impact | PASS / ZERO DIFF（通过 / 无变更） | `check-gate-archive.ps1`、manifest、release checker、tag semantics 未修改；actual freeze/archive/tag 未执行 |
+| Backend/frontend/Python | NOT RUN（未运行） | 本轮只改 governance PowerShell/JSON/tests 与 current docs；业务代码变更为 0，沿用 GateX-5 exact-head CI 作为产品基线 |
+
+Findings：P0=0；P1=0（`GOVERNANCE_GATEX_FREEZE_ACTION_UNMAPPED` 已关闭）；P2=2（生产锁窗口、filesystem stable-handle limitation 继续保留）；P3=1（既有工具链 warning）。完整证据：[evidence/gate-x/NQ-GOVERNANCE-FREEZE-CLOSEOUT-ACTION-CONTRACT-FIX.attempt-01.md](evidence/gate-x/NQ-GOVERNANCE-FREEZE-CLOSEOUT-ACTION-CONTRACT-FIX.attempt-01.md)。

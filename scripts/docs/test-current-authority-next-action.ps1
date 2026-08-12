@@ -700,7 +700,7 @@ $attempt13AcceptedAuthority = @{
 
 Assert-ActionType $attempt13AcceptedReadyAction 'COMMIT_AND_PUSH'
 Assert-ActionType $attempt13AcceptanceCiAction 'CI_WAIT_OR_INVESTIGATION'
-Assert-ActionType $attempt13FreezeCloseoutAction 'GATE_FREEZE_CLOSEOUT'
+Assert-ActionType $attempt13FreezeCloseoutAction 'FREEZE_CLOSEOUT'
 Assert-ActionType $attempt13FailureAction 'FAILURE_REMEDIATION_IMPLEMENTATION'
 foreach ($case in @(
     @{Status=$attempt13AcceptedReadyStatus;Action=$attempt13AcceptedReadyAction;Name='accepted-ready-to-commit'},
@@ -765,13 +765,46 @@ if (Test-GovernanceNextActionForWorkBatch `
 foreach ($invalidAction in @(
     'NQ-GATEW-ATTEMPT-12-168H-ACCEPTANCE-CI-ACCEPTANCE',
     'NQ-GATEW-ATTEMPT-14-168H-ACCEPTANCE-CI-ACCEPTANCE',
-    'NQ-GATEW-FREEZE-CLOSEOUT',
     'NQ-GATEW-FREEZE-CLOSEOUT-IMPLEMENTATION-LATER',
     'nq-gatew-freeze-closeout-implementation'
 )) {
     Assert-ActionType $invalidAction 'UNKNOWN'
 }
 Write-Output 'PASS canonical-attempt-13-acceptance-success-and-failure-mappings exact=true'
+
+$freezeCloseoutInvalidStatuses = @(
+    'NOT_STARTED',
+    'IMPLEMENTED|PENDING_REVIEW',
+    'REVIEW_ACCEPTED|READY_TO_COMMIT',
+    'COMMITTED|CI_PENDING',
+    'BLOCKED'
+)
+foreach ($case in @(
+    @{Gate='GateX';WorkBatch='GateX-5'},
+    @{Gate='GateW';WorkBatch='GateW-4'},
+    @{Gate='GateY';WorkBatch='GateY-9'}
+)) {
+    $freezeWorkBatch = $case.WorkBatch
+    $freezeAction = 'NQ-{0}-FREEZE-CLOSEOUT' -f $case.Gate.ToUpperInvariant()
+    Assert-ActionType $freezeAction 'FREEZE_CLOSEOUT'
+    if (-not (Test-GovernanceNextActionForWorkBatch `
+            $contract $attempt13FreezeReadyStatus $freezeWorkBatch $freezeAction)) {
+        throw "GENERIC_FREEZE_CLOSEOUT_MAPPING_REJECTED gate=$($case.Gate) workBatch=$freezeWorkBatch"
+    }
+    foreach ($status in $freezeCloseoutInvalidStatuses) {
+        if (Test-GovernanceNextActionForWorkBatch $contract $status $freezeWorkBatch $freezeAction) {
+            throw "GENERIC_FREEZE_CLOSEOUT_INVALID_STATUS_ACCEPTED gate=$($case.Gate) status=$status"
+        }
+    }
+}
+foreach ($invalidAction in @(
+    'NQ-GATEX-FREEZE-CLOSEOUT-LATER',
+    'NQ-GATEX-5-FREEZE-CLOSEOUT',
+    'nq-gatex-freeze-closeout'
+)) {
+    Assert-ActionType $invalidAction 'UNKNOWN'
+}
+Write-Output 'PASS generic-freeze-closeout gates=GateX,GateW,GateY positive=3 negative-statuses=15'
 
 $releaseCandidateReviewRemediation =
         'NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-REMEDIATION'
@@ -1046,6 +1079,40 @@ $nonAttemptReadmeFixture = @(
 Assert-CrossDocumentAuthorityCase `
     'non-attempt-ignores-historical-attempts' $nonAttemptStatusFixture `
     $nonAttemptRoadmapFixture $true '' $nonAttemptReadmeFixture $nonAttemptReadmeFixture
+
+$genericFreezeStatusFixture = $nonAttemptStatusFixture.Replace(
+    'accepted_batch=GateW-ATTEMPT-13-168H-ACCEPTANCE',
+    'accepted_batch=GateX-5')
+$genericFreezeStatusFixture = $genericFreezeStatusFixture.Replace(
+    'work_batch=GateX-PLAN',
+    'work_batch=GateX-FREEZE')
+$genericFreezeStatusFixture = $genericFreezeStatusFixture.Replace(
+    'work_batch_status=NOT_STARTED',
+    'work_batch_status=ACCEPTED|CI_GREEN|FREEZE_READY')
+$genericFreezeStatusFixture = $genericFreezeStatusFixture.Replace(
+    'work_batch_commit=NONE',
+    'work_batch_commit=3333333333333333333333333333333333333333')
+$genericFreezeStatusFixture = $genericFreezeStatusFixture.Replace(
+    'work_batch_ci_run=NOT_RUN',
+    'work_batch_ci_run=456')
+$genericFreezeStatusFixture = $genericFreezeStatusFixture.Replace(
+    'NQ-GATEX-PLAN-IMPLEMENTATION',
+    'NQ-GATEX-FREEZE-CLOSEOUT')
+$genericFreezeStatusFixture = $genericFreezeStatusFixture.Replace(
+    '- GateW-ATTEMPT-13-168H-ACCEPTANCE: `ACCEPTED / CI GREEN`.',
+    '- GateX-5: `ACCEPTED / CI GREEN`.')
+$genericFreezeStatusFixture = $genericFreezeStatusFixture.Replace(
+    '- GateX-PLAN: `NOT STARTED`.',
+    '- GateX-FREEZE: `ACCEPTED / CI GREEN / FREEZE READY`.')
+$genericFreezeRoadmapFixture = $nonAttemptRoadmapFixture.Replace(
+    'NQ-GATEX-PLAN-IMPLEMENTATION',
+    'NQ-GATEX-FREEZE-CLOSEOUT')
+$genericFreezeReadmeFixture = $nonAttemptReadmeFixture.Replace(
+    'NQ-GATEX-PLAN-IMPLEMENTATION',
+    'NQ-GATEX-FREEZE-CLOSEOUT')
+Assert-CrossDocumentAuthorityCase `
+    'generic-gatex-freeze-closeout-authority' $genericFreezeStatusFixture `
+    $genericFreezeRoadmapFixture $true '' $genericFreezeReadmeFixture $genericFreezeReadmeFixture
 
 $gateXConsolidationStatusFixture = $nonAttemptStatusFixture.Replace(
     'NQ-GATEX-PLAN-IMPLEMENTATION',
