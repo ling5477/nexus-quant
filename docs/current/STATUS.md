@@ -2,22 +2,22 @@
 
 <!-- nq-current-authority:start
 authority_schema=3
-last_frozen_gate=GateW
+last_frozen_gate=GateX
 last_frozen_gate_status=FROZEN|ACCEPTED|TAGGED
-last_frozen_gate_tag=nq-gatew-freeze
-last_frozen_gate_commit=16376de28be78eea58afbe1374847ee07ca2ccc7
-active_gate=GateX
+last_frozen_gate_tag=nq-gatex-freeze
+last_frozen_gate_commit=299ab30bd2e243314be2dc609cb244cd5388027b
+active_gate=GateY
 active_gate_status=IN_PROGRESS|NOT_FROZEN
 accepted_batch=GateX-5
 accepted_batch_status=ACCEPTED|CI_GREEN
 accepted_batch_implementation_commit=3336bd8153845d5368a0d65a9c72d3566dc9bd35
 accepted_batch_acceptance_head=a383be750f51d063d429bc25fad80e60dffb7014
 accepted_batch_ci_run=31512467501
-work_batch=GateX-FREEZE
-work_batch_status=ACCEPTED|CI_GREEN|FREEZE_READY
-work_batch_commit=3336bd8153845d5368a0d65a9c72d3566dc9bd35
-work_batch_ci_run=31512467501
-next_action=NQ-GATEX-FREEZE-CLOSEOUT
+work_batch=GateY-PLAN
+work_batch_status=NOT_STARTED
+work_batch_commit=NONE
+work_batch_ci_run=NOT_RUN
+next_action=NQ-GATEY-PLAN-IMPLEMENTATION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -63,7 +63,7 @@ nq-current-authority:end -->
 - GateW-ATTEMPT-12-PREREQUISITE-SCHEMA-REMEDIATION：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Commit `e8c334886ae6614133b0bf3f0083bc1893a11e01` 将 worker 的 exact schema 校验与 Java `PrerequisiteMain` 的 23-field sanitized contract 对齐；exact-head CI run `30709995836` 为 `completed / success / 10 jobs / bad=0`。修复只发生在 credential/network/OKX 调用前的本地 readback contract，不扩大 endpoint、权限或运行范围。
 - GateW-ATTEMPT-13-168H-ACCEPTANCE：`ACCEPTED / CI GREEN / FREEZE READY`（已接受 / CI 已通过 / 冻结准备就绪）；Attempt-13=`COMPLETED / ACCEPTED`；production deployment=`STOPPED`；production soak=`COMPLETED`。唯一 RunId=`gatew-soak-20260801T180544Z-140bbcd1` 已完成 168h read-only acceptance；656 条样本从 sequence 1 到 656 连续唯一，final sample=`2026-08-08T18:13:34.4112272Z`，observed duration=`604820.4973147s`；hash-chain=`PASS / HASH_CHAIN_VERIFIED`，forbidden/fallback/raw/secret=`0/0/0/0`。Canonical seal 后 worker/fail-close=`inactive/dead`、MainPID/residual=`0/0`、NRestarts=`0`；LIVE=`DISABLED`，kill switch=`ENGAGED`。Acceptance/parser-fix commit=`20cf7970dfb414868da3e42dddaefc5965246570`，exact-head `NQ CI Baseline` run `31295184056` 为 `completed / success / 10 jobs / bad=0`。
 - GateW-FREEZE：`ACCEPTED / CI GREEN / TAGGED`（已接受 / CI 已通过 / 已打 tag）；freeze commit=`16376de28be78eea58afbe1374847ee07ca2ccc7`，exact-head CI run=`31299729114 / completed / success / 10 jobs / bad=0`。Strict archive 与 release post-tag verification 均通过；tag 不得删除、移动、覆盖或 force update。
-- GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；已归档的 [GATEX_PLAN.md](../gates/gate-x/GATEX_PLAN.md) 保存 implementation baseline，GateX strict archive candidate 位于 [../gates/gate-x/README.md](../gates/gate-x/README.md)；tag 创建并通过 post-tag 校验前均不构成 frozen authority。
+- GateX：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-x/README.md](../gates/gate-x/README.md)，release tag=`nq-gatex-freeze`，annotated tag object=`ef4deb25728601719d20b2c6c64af7905c73a92e`，peeled/freeze commit=`299ab30bd2e243314be2dc609cb244cd5388027b`。
 - GateX-PLAN：`BASELINE ESTABLISHED / READY TO COMMIT`（基线已建立 / 可进入提交前复核）；本轮仅形成计划与 current authority 同步，未改 production code、migration、API、UI 或 runtime。
 - GateX-0A：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；canonical implementation commit=`49851276cdbbe7daf49506cc3af327e42973788b`，merge acceptance head=`61d9292b0b77d9c25f36232bee9512b87ac256c6`，exact-head `NQ CI Baseline` run=`31318868410 / completed / success`。Strategy↔Trading 与 audit port ownership 已修复，bounded-context ArchUnit guardrails 与 backend regression 已由该 CI 接受。
 - GateX-0B：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`108a14d14906d6fa354349c66d35a2ae6967cebf`，exact-head `NQ CI Baseline` run=`31321821962 / completed / success`。生产 class/package 已改用稳定 capability/domain naming，新配置 key 与 `nq.gatew.*` legacy alias 的确定性兼容已覆盖测试；未改变公开 API、数据库、交易状态机、LIVE 或真实交易边界。
@@ -78,19 +78,21 @@ nq-current-authority:end -->
 - GateX-4B：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Persistent artifact locator migration 的 implementation/acceptance head=`92043c37dad96d984d5e55a1e5170c97d335d6d4`，exact-head CI run=`31403529376 / completed / success`；V37、domain/JDBC nullable pair、内部 typed publish 输入、SQL trigger 不可变保护与 PostgreSQL 回归已接受。当前 artifact producer 尚未接线，记录为 `PERSISTENCE_READY / PRODUCER_NOT_YET_CONNECTED`。
 - GateX-4C：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Implementation/acceptance head=`b4e5406fbb9de5432f79f9ef8ef76c95002e0e56`，exact-head CI run=`31409595743 / completed / success / 10 jobs / bad=0`；独立安全审查已关闭 duplicate manifest identity key 的 P1，并验证服务器受控 resolver、trusted-root containment、Windows junction/root/target replacement、cross-release identity、bounded strict manifest parser 与 GateX-1 verifier 集成。该接受不创建 Shadow Run，不授权交易或 LIVE。
 - GateX-5：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Forward-remediation implementation commit=`3336bd8153845d5368a0d65a9c72d3566dc9bd35`，acceptance head=`a383be750f51d063d429bc25fad80e60dffb7014`，exact-head `NQ CI Baseline` run=`31512467501 / completed / success / 10 jobs / bad=0`；技术 hard gates=`18/18 PASS`，P0=0、产品 P1=0，`ADMISSION_MATERIALIZATION_FACT_TEAR=CLOSED`。该接受只覆盖受控 `CREATED / RELEASE_BOUND` materialization，不授权启动 Shadow Run、交易或 LIVE。
-- GateX-FREEZE：`ACCEPTED / CI GREEN / FREEZE READY`（已接受 / CI 已通过 / 冻结准备就绪）。通用 `FREEZE_CLOSEOUT` action contract 与跨 Gate 正负回归均通过，GateX strict archive candidate 已形成；freeze commit、exact-head CI、annotated tag 与 post-tag authority transition 仍待本 closeout 完成。
+- GateX-FREEZE：`ACCEPTED / CI GREEN / TAGGED`（已接受 / CI 已通过 / 已打 tag）。Freeze commit=`299ab30bd2e243314be2dc609cb244cd5388027b`，exact-head CI run=`31565353974 / completed / success / 10 jobs / bad=0`；strict archive 与 release post-tag verification 均 errors=0，tag 不得删除、移动、覆盖或 force update。
+- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；仅表示下一 planning container 已选定，不表示 GateY implementation 已开始。
+- GateY-PLAN：`NOT STARTED`（未开始）；work commit=`NONE`，CI=`NOT_RUN`。
 - GateW-3 dry-run order preview：只包含 OKX Spot、BUY/SELL、LIMIT、internal application、local persisted facts、read-only diagnostic；minimum notional、fee、远端 permission 与 runtime balance/risk 继续保持显式 UNKNOWN / NOT_EVALUATED，`executionReadiness=BLOCKED`，不得推导交易授权。
 - GateW-3 read-only reconciliation：只包含 OKX Spot、最多 3 个 allowlisted symbols、1 page/100 records/24h typed private `Read` snapshot、bounded local SELECT 与 pure comparator；默认不装配，无 real smoke/credential/network/repair/persistence/scheduler，`executionReadiness=BLOCKED`。CI acceptance 只接受该 side-effect-free contract，不证明真实 permission 或账户健康。
 - GateW-3 risk preflight：只消费 immutable preview/reconciliation result 与显式 local metadata snapshots；不调用 `PreTradeRiskService`/registry/stateful rules，不构造 `PlaceOrderCommand`，无 DB/network/write。minimum notional、fee、remote permission 保持 UNKNOWN，stateful risk/balance/position 等保持 NOT_EVALUATED，`executionReadiness=BLOCKED`、`tradingAuthorized=false`。
 
 ## 2. Archive Compatibility Verification
 
-以下三项只供已冻结 archive checker 校验 GateW tag 事实，不属于 `nq-current-authority` schema：
+以下三项只供已冻结 archive checker 校验 GateX tag 事实，不属于 `nq-current-authority` schema：
 
 ```text
 current_gate_status=FROZEN|ACCEPTED|TAGGED
-current_gate_tag=nq-gatew-freeze
-updated_commit=16376de28be78eea58afbe1374847ee07ca2ccc7
+current_gate_tag=nq-gatex-freeze
+updated_commit=299ab30bd2e243314be2dc609cb244cd5388027b
 ```
 
 ## 3. 安全与运行边界
@@ -112,4 +114,4 @@ updated_commit=16376de28be78eea58afbe1374847ee07ca2ccc7
 
 ## 4. 下一允许动作
 
-GateX-5 的 forward-remediation commit `3336bd8153845d5368a0d65a9c72d3566dc9bd35` 已包含于 acceptance head `a383be750f51d063d429bc25fad80e60dffb7014`，并由 exact-head CI run `31512467501` 接受。当前 work batch 为 `GateX-FREEZE / ACCEPTED|CI_GREEN|FREEZE_READY / 3336bd8153845d5368a0d65a9c72d3566dc9bd35 / 31512467501`，唯一下一动作精确为 `NQ-GATEX-FREEZE-CLOSEOUT`；本任务只允许完成 strict archive、pre-tag verification、freeze commit、exact-head CI、annotated tag、post-tag verification 与一次机械式 current authority 同步，不得启动 GateY implementation、Shadow Run、LIVE、下单、撤单、转账或提现。
+GateX freeze commit `299ab30bd2e243314be2dc609cb244cd5388027b` 的 exact-head CI run `31565353974` 已 `completed / success / 10 jobs / bad=0`，annotated tag `nq-gatex-freeze` 已推送且 peeled target 精确一致。当前 work batch 为 `GateY-PLAN / NOT_STARTED / NONE / NOT_RUN`，唯一下一动作精确为 `NQ-GATEY-PLAN-IMPLEMENTATION`；该动作只允许在独立任务中形成和审查 GateY plan，不得启动 GateY implementation、Shadow Run、LIVE、下单、撤单、转账或提现。

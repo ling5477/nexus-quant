@@ -46,7 +46,7 @@
 
 ## 6. Gate Archive
 
-- GateX strict archive candidate：[../gates/gate-x/README.md](../gates/gate-x/README.md)，当前处于 pre-tag closeout；只有 freeze commit、exact-head CI、annotated tag 与 post-tag verification 均成功后才可成为 durable frozen archive。
+- GateX durable strict archive：[../gates/gate-x/README.md](../gates/gate-x/README.md)，`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag），release tag=`nq-gatex-freeze`，freeze commit=`299ab30bd2e243314be2dc609cb244cd5388027b`。
 - GateX task evidence：[../gates/gate-x/source/task-evidence/README.md](../gates/gate-x/source/task-evidence/README.md)，保存 GateX 全部 PASS/FAIL/BLOCKED/retry/remediation 过程证据；原 `docs/current/evidence/gate-x/**` 已按 hash-preserving move 收口。
 - GateW durable archive：[../gates/gate-w/README.md](../gates/gate-w/README.md)，`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag），release tag=`nq-gatew-freeze`。
 - GateW task evidence：[../gates/gate-w/source/task-evidence/README.md](../gates/gate-w/source/task-evidence/README.md)，保存 freeze snapshot 的不可覆盖 attempts 与索引。
@@ -76,6 +76,8 @@ Historical evidence 中的旧状态、旧路径和旧 next action 不覆盖 curr
 
 - GateW：`FROZEN / ACCEPTED / TAGGED`；freeze commit=`16376de28be78eea58afbe1374847ee07ca2ccc7`，tag=`nq-gatew-freeze`，strict archive/release/post-tag verification 均通过。
 - GateW-ATTEMPT-13-168H-ACCEPTANCE：`ACCEPTED / CI GREEN`；Attempt-13=`COMPLETED / ACCEPTED`，production soak=`COMPLETED`。
-- GateX：`IN PROGRESS / NOT FROZEN`；GateX-5=`ACCEPTED / CI GREEN`，GateX-FREEZE=`ACCEPTED / CI GREEN / FREEZE READY`。strict archive candidate 已形成，但 freeze commit/tag/post-tag authority transition 尚未完成。
+- GateX：`FROZEN / ACCEPTED / TAGGED`；freeze commit=`299ab30bd2e243314be2dc609cb244cd5388027b`，tag=`nq-gatex-freeze`，strict archive/release/post-tag verification 均通过。
+- GateX-5：`ACCEPTED / CI GREEN`；最终 `ADMISSION_MATERIALIZATION_FACT_TEAR=CLOSED`，但不授权 Shadow execution、trading 或 LIVE。
+- GateY：`IN PROGRESS / NOT FROZEN`；GateY-PLAN=`NOT STARTED`。该 transition 只授权独立 plan task，不表示 implementation started。
 - LIVE=`DISABLED`，kill switch=`ENGAGED`；Shadow trading 未启用；AI、DH runtime、Integration runtime 未开始；real provider 与 private trading 未实现。
 - 唯一下一动作从 [STATUS.md](STATUS.md) 与 [ROADMAP.md](ROADMAP.md) 读取；本索引不建立第二份 action authority。

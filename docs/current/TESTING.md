@@ -13132,3 +13132,19 @@ Findings：P0=0；P1=0（`GOVERNANCE_GATEX_FREEZE_ACTION_UNMAPPED` 已关闭）�
 | Product/backend/frontend/Python tests | NOT RERUN（未重跑） | 本轮只执行 docs/archive closeout；产品基线使用 starting exact-head CI `31560815042`，无业务代码、migration 或 CI workflow diff |
 
 Boundary：LIVE=`DISABLED`，Shadow trading=`NOT_ENABLED`；runner/scheduler/trading/credential/private exchange/external write side effects=0。P2 `PRODUCTION_LOCK_WINDOW_NOT_MEASURED` 与 `FILESYSTEM_STABLE_HANDLE_LIMITATION_INHERITED` 保留。tag 只能在本 archive 所在 freeze commit 的 exact-head CI 全绿后创建。
+
+## 2026-08-12 — GateX freeze release and post-tag verification
+
+结论：`PASS / GATEX_FROZEN_ACCEPTED_TAGGED / POST_TAG_VERIFIED / AUTHORITY_SYNC_COMMIT_PENDING`（通过 / GateX 已冻结接受并打 tag / tag 后验证通过 / authority 同步提交待验证）。
+
+| 验证项 | 结果 | 范围 / 环境 / 说明 |
+| --- | --- | --- |
+| Freeze commit push | PASS（通过） | commit=`299ab30bd2e243314be2dc609cb244cd5388027b`；`origin/dev` 精确对齐 |
+| Freeze exact-head CI | PASS（通过） | run `31565353974 / completed / success`；`headSha=299ab30b...`；10 jobs / bad=0 |
+| Annotated tag | PASS（通过） | `nq-gatex-freeze`；object type=`tag`；tag object=`ef4deb25728601719d20b2c6c64af7905c73a92e` |
+| Local/remote peeled target | PASS（通过） | local 与 remote `refs/tags/nq-gatex-freeze^{}` 均为 freeze commit `299ab30b...` |
+| Strict archive post-tag | PASS（通过） | `ARCHIVE_MANIFEST_COMPLETE`；12 个 required roles 独立；warnings=0、errors=0 |
+| Release post-tag | PASS（通过） | `GATE_RELEASE_VALID`；tag、peeled target、origin/dev 与 exact-head CI contract errors=0 |
+| Authority transition | READY TO COMMIT（可进入提交前复核） | GateX→frozen、GateY→`PLAN / NOT_STARTED` 的机械同步；该同步提交仍需 exact-head CI，失败不得写成 closeout 完成 |
+
+Boundary：GateX freeze 不创建/启动 Shadow Run；LIVE=`DISABLED`，Shadow trading=`NOT_ENABLED`；order/cancel/transfer/withdraw/external trading side effects=`0/0/0/0/0`。Tag 禁止删除、移动、覆盖或 force update。

@@ -18430,3 +18430,12 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - verification：authority PS5.1/PS7 errors=0；strict archive warnings/errors=0/0；links 262 checked/16 historical warnings/0 errors；lifecycle、next-action、archive-manifest regressions均 exit 0。
 - boundary：业务代码、migration、CI workflow、backend/frontend/research、DH、LIVE、Shadow runner/scheduler、交易写侧变更=0；LIVE=`DISABLED`，Shadow trading=`NOT_ENABLED`。
 - result：`PASS / GATE_ARCHIVE_PRETAG_VALID / FREEZE_COMMIT_AUTHORIZED / TAG_PENDING`；下一步只允许提交 archive freeze commit、push 并等待其 exact-head CI。
+
+## 2026-08-12 — GateX freeze commit、tag 与 post-tag authority transition
+
+- freeze commit：`299ab30bd2e243314be2dc609cb244cd5388027b`，已推送到 `origin/dev`；exact-head CI run `31565353974 / completed / success / 10 jobs / bad=0`。
+- tag：创建并推送 canonical annotated tag `nq-gatex-freeze`；tag object=`ef4deb25728601719d20b2c6c64af7905c73a92e`，local/remote peeled target 均精确为 freeze commit。
+- post-tag：strict archive 返回 `ARCHIVE_MANIFEST_COMPLETE`，release checker 返回 `GATE_RELEASE_VALID`，均 errors=0；12 个 required roles 独立，tag/remote/origin-dev/CI 绑定通过。
+- authority transition：`last_frozen_gate=GateX`，`active_gate=GateY / IN_PROGRESS|NOT_FROZEN`，`work_batch=GateY-PLAN / NOT_STARTED`，唯一下一动作=`NQ-GATEY-PLAN-IMPLEMENTATION`；未创建 GateY plan 或 implementation。
+- boundary：LIVE=`DISABLED`，Shadow trading=`NOT_ENABLED`；Shadow runner/scheduler、order/cancel/transfer/withdraw、credential/private exchange/write side effects=0；tag 禁止移动或 force update。
+- result：`PASS / GATEX_FROZEN_ACCEPTED_TAGGED / POST_TAG_VERIFIED / AUTHORITY_SYNC_READY_TO_COMMIT`；authority sync commit 尚需 exact-head CI，全绿前不得宣布整个 closeout 完成。
