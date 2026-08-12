@@ -13293,3 +13293,36 @@ CI=`NOT_RUN`，production lock window 未测。P2 继续保留 `PRODUCTION_LOCK_
 | Security/trading boundary | PASS / ZERO SIDE EFFECT（通过 / 无副作用） | credential access/exchange call/permission probe/order/cancel/transfer/withdraw=0；LIVE=`DISABLED`、Shadow trading=`NOT_ENABLED`、real provider/private trading=`NOT_IMPLEMENTED` |
 
 GateY-2 接受不表示 production migration deployment、execution worker、真实 provider、credential decrypt、permission probe、真实 PLACE/CANCEL、remote reconciliation、partial-fill real execution、LIVE 或 micro-live 已实现/授权。三项 residual `PRODUCTION_LOCK_WINDOW_NOT_MEASURED`、`FILESYSTEM_STABLE_HANDLE_LIMITATION_INHERITED`、`LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE` 继续保留；前两项继续阻断 production deployment、worker 与 first real order。完整证据：[evidence/gate-y/NQ-GATEY-2-POST-CI-ACCEPTANCE-AND-GATEY-3-INITIALIZATION.attempt-01.md](evidence/gate-y/NQ-GATEY-2-POST-CI-ACCEPTANCE-AND-GATEY-3-INITIALIZATION.attempt-01.md)。
+
+## 2026-08-13 — GateY-3 execution intent / receipt / fake exchange implementation attempt-01
+
+结论：`PASS / GATEY_3_FAKE_EXECUTION_RUNTIME_IMPLEMENTED / IDEMPOTENCY_ENFORCED / CLAIM_LEASE_ENFORCED / NO_BLIND_RETRY_PROVEN / UNKNOWN_RECONCILIATION_PROVEN / POSTGRESQL_GREEN / PENDING_INDEPENDENT_REVIEW / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED`。
+
+| 验证项 / Command | 结果 | 范围 / 环境 / warning / 阻断性 |
+| --- | --- | --- |
+| `ExecutionIntentRuntimeTest` | PASS（通过） | 8 tests / failures=0 / errors=0 / skipped=0；状态矩阵、canonical golden、idempotency/CANCEL、5 mutation outcomes、5 query outcomes、6 类 crash/recovery 与 mutation count≤1 |
+| PostgreSQL 17.7 execution integration | PASS（通过） | `LiveSessionFactModelPostgresIntegrationTest` 1/0/0/0；fresh V1→V39、concurrent create/claim、lease reclaim、SEND_STARTED no reclaim、CAS、identity bridge、CANCEL identity、receipt concurrency/rollback |
+| `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-adapter-api -am test` | BUILD SUCCESS | 16-module reactor；相关汇总 117 tests / 0 failures / 0 errors / 4 existing conditional skips |
+| `mvn -f backend/pom.xml test`（默认 local DB） | FAIL（失败，环境基线） | 本机长期 DB V38 checksum=`-977971896`，仓库解析值=`-1061979028`；未 repair、未写用户数据库；不是 GateY-3 assertion failure |
+| `mvn -f backend/pom.xml test`（isolated PostgreSQL 17.7 + temporary legacy account fixture） | BUILD SUCCESS | fresh V1→V39；23/23 reactor SUCCESS；`nq-app` 270 tests / 0 failures / 0 errors / 27 existing conditional skips；fixture 为一次性 `SIM / ACTIVE` account，随容器删除 |
+| ArchUnit / no-outbound focused tests | PASS（通过） | module/package boundary、no-outbound、OKX/Binance no-real endpoint guards 通过；1 条既有 CI-only guard conditional skip |
+| Migration/static boundary | PASS（通过） | V1～V39 diff=0、V40=0；execution 新代码无网络、credential、real provider 或 production fake Bean |
+
+Known warnings：既有 SLF4J no-provider、Mockito dynamic-agent、unchecked/deprecation 与 Windows LF→CRLF 提示。未运行：CI=`NOT_RUN`、production migration/lock-window、worker deployment、真实 provider/permission/exchange；均不获授权。P0=0、P1=0；P2=`PRODUCTION_LOCK_WINDOW_NOT_MEASURED`、`FILESYSTEM_STABLE_HANDLE_LIMITATION_INHERITED`；`LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE` 为 PostgreSQL 证据支持的候选 `CLOSED`，待独立 review。完整证据：[evidence/gate-y/NQ-GATEY-3-EXECUTION-INTENT-RECEIPT-FAKE-EXCHANGE-IMPLEMENTATION.attempt-01.md](evidence/gate-y/NQ-GATEY-3-EXECUTION-INTENT-RECEIPT-FAKE-EXCHANGE-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-13 — GateY-3 fake execution independent security review attempt-01
+
+结论：`PASS / GATEY_3_FAKE_EXECUTION_SECURITY_REVIEW_ACCEPTED / P0_0 / P1_0 / NO_BLIND_RETRY_VERIFIED / FAKE_PROVIDER_ISOLATED / POSTGRESQL_CONCURRENCY_VERIFIED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
+
+| 验证项 / Command | 结果 | 范围 / 环境 / warning / 阻断性 |
+| --- | --- | --- |
+| `ExecutionIntentRuntimeTest` | PASS（通过） | 10/0/0/0；含 mutation exception/thread interruption、canonical delimiter/null ambiguity、golden 与 mutation count≤1 |
+| PostgreSQL 17.7 execution integration | PASS（通过） | fresh V1→V38→V39；1/0/0/0；含 kill switch、legacy/owner/missing-order bridge、forged digest、same-hash field mismatch、UNKNOWN/CANCEL 与 receipt rollback |
+| `mvn -f backend/pom.xml -pl nq-core,nq-infra,nq-adapter-api -am test` | BUILD SUCCESS | 16/16 reactor；0 failures/errors；4 个既有条件性 skip |
+| `mvn -f backend/pom.xml test` | BUILD SUCCESS | fresh disposable PostgreSQL 17.7 + 唯一 PAPER/ACTIVE fixture；23/23 reactor；`nq-app` 270/0/0/27 existing conditional skips |
+| ArchUnit / no-real focused reactor | BUILD SUCCESS | 19 tests / 0 failures / 0 errors / 1 个既有 env 条件 skip |
+| Static boundary | PASS（通过） | V39 diff=0、V40=0、dependency diff=0、无 production outbound/credential/fake Bean、无第二交易事实写入 |
+
+Corrections：独立审查在当前 GateY-3 allowlist 内关闭 durable kill switch、session creator/account owner bridge、统一 fail-closed taxonomy、UNKNOWN PLACE 的 CANCEL 阻断、intent/receipt canonical revalidation、canonical delimiter/null ambiguity、exception/interruption mutation counter、sensitive `toString()` 与 same-hash field mismatch 共 8 类 P1。最终 P0=0/P1=0，`LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE=CLOSED`。
+
+Known warnings：既有 SLF4J no-provider、Mockito dynamic-agent、unchecked/deprecation、Windows LF→CRLF，以及 1 个依赖 env 的既有 no-outbound skip。首次使用本机不存在的 `postgres:17.7-alpine` 时 Docker create 超时且未形成测试结论；随后改用本机已有 `postgres:17.7` 完成验证，全部一次性容器已删除。未运行：CI、production migration/lock-window、production worker、真实 provider/credential/private endpoint/PLACE/CANCEL/micro-live/LIVE；这些均保持禁止。完整证据：[evidence/gate-y/NQ-GATEY-3-EXECUTION-INTENT-RECEIPT-FAKE-EXCHANGE-SECURITY-REVIEW.attempt-01.md](evidence/gate-y/NQ-GATEY-3-EXECUTION-INTENT-RECEIPT-FAKE-EXCHANGE-SECURITY-REVIEW.attempt-01.md)。

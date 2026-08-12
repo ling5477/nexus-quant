@@ -55,7 +55,7 @@ GateY-1 ACCEPTED / CI GREEN
   ↓
 GateY-2 ACCEPTED / CI GREEN
   ↓
-GateY-3 NOT STARTED
+GateY-3 REVIEW ACCEPTED / READY TO COMMIT
 ```
 
 ## 下一允许动作
@@ -84,8 +84,8 @@ GateY-3 NOT STARTED
 - GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-PLAN=`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。原计划 commit=`d86cea72485280f71001b87075deb3d2a0906fec`，forward remediation/acceptance head=`d7dcffad80cc4dc5089307bfa0e2a5439f37815c`，exact-head CI run=`31568447799 / completed / success / 10 jobs / bad=0`，基线见 [GATEY_PLAN.md](GATEY_PLAN.md)。
 - GateY-1：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`76ef325f7b8a3d3325df63af2cb1b979309bd141`，exact-head CI run=`31581317959 / completed / success / 10 jobs / bad=0`。接受范围是候选数据模型、状态机、事务、幂等、并发、约束与 migration 验证合同，不表示 migration/runtime 已实现。
 - GateY-2：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`19ac2d1cdc7a1982f97fb0e1b0e62c081d003018`，exact-head CI run=`31608725854 / completed / success / 10 jobs / bad=0`。接受范围为 V39 local schema、六张 control-plane fact 表、`LiveSession`/approval/risk domain、Repository/JDBC、PostgreSQL enforcement、事务/并发与 architecture hygiene baseline；不授权 production migration、worker、真实 exchange execution 或 micro-live。
-- GateY-3：`NOT STARTED`（未开始）；只允许 `ExecutionIntent`/`ExecutionReceipt` runtime、fake exchange port/adapter、fake PLACE/CANCEL、stable `clientOrderId`、idempotency、claim/lease、crash/UNKNOWN、`NO BLIND RETRY`、fake/local reconciliation、deterministic partial-fill/cancel-race scenarios 与 PostgreSQL integration tests。
-- 当前唯一治理动作是 `NQ-GATEY-3-EXECUTION-INTENT-RECEIPT-FAKE-EXCHANGE-IMPLEMENTATION`；精确状态和安全边界服从 [STATUS.md](STATUS.md)。
+- GateY-3：`REVIEW ACCEPTED / READY TO COMMIT`（审查已接受 / 可进入提交前复核）；独立 review 最终 P0=0/P1=0，`NO BLIND RETRY`、PostgreSQL concurrency、fake-provider isolation 与 `LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE=CLOSED` 均有代码和回归证据。真实 provider、credential、外联与 LIVE 均未实现/未授权。
+- 当前唯一治理动作是 `NQ-GATEY-3-EXECUTION-INTENT-RECEIPT-FAKE-EXCHANGE-COMMIT-AND-PUSH`；精确状态和安全边界服从 [STATUS.md](STATUS.md)。
 
 ## GateW 已冻结边界
 
@@ -104,7 +104,7 @@ GateY-3 NOT STARTED
 - GateY plan 已完成事实核对和 security/architecture/database/operations self-review，并由 forward-fix exact-head green CI 接受；历史失败 CI 必须保留，但不再作为 current work batch。
 - GateY-1 work order 已通过独立 migration/security review 与 exact-head CI 接受；六表最小集合、事实所有权、约束/索引、append-only、锁窗口、stable-handle、安全与 forward remediation 合同已冻结。GateY-2 使用 `V39__gate_y2_live_session_fact_model.sql`，未修改 V1～V38；独立 review 已接受 local/disposable baseline，但不构成生产部署、micro-LIVE 或真实交易授权。
 - GateY-3 中 `ExecutionIntent` owner 不得成为第二 `orders` 主事实，`ExecutionReceipt` 不得成为 `fills`/`trades` 主事实；exchange port 由 control-plane/application 拥有，fake adapter 位于 adapter/infra 边界，provider DTO 不得泄漏到 domain，worker orchestration 不得进入 JDBC，reconciliation 必须复用 `orders`/`trades`/`positions` 事实；新增跨模块依赖时检查 ArchUnit。
-- `PRODUCTION_LOCK_WINDOW_NOT_MEASURED`、`FILESYSTEM_STABLE_HANDLE_LIMITATION_INHERITED` 与 `LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE` 继续保留；前两项继续阻断 production deployment、worker 与 first real order。真实 OKX/Binance HTTP、private endpoint、credential、真实 PLACE/CANCEL、production worker deployment、LIVE、transfer、withdraw 与真实资金均禁止。
+- `LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE=CLOSED` 已由 GateY-3 独立 review 的真实 PostgreSQL 正反测试确认；`PRODUCTION_LOCK_WINDOW_NOT_MEASURED` 与 `FILESYSTEM_STABLE_HANDLE_LIMITATION_INHERITED` 继续保留并阻断 production deployment、worker 与 first real order。真实 OKX/Binance HTTP、private endpoint、credential、真实 PLACE/CANCEL、production worker deployment、LIVE、transfer、withdraw 与真实资金均禁止。
 - 不得把 GateW diagnostic/read-only/soak 证据推导为远端交易 permission、账户健康、余额充分、private trading 或 unattended execution readiness。
 - 不得开启 LIVE、真实下单/撤单、转账/提现、AI trading、DH runtime、Integration runtime、RealClient 或 real provider。
 - NQ-only 任务不得修改或声明 DH current authority；DH/Integration 状态继续只表达 NQ 侧 no-real 边界。

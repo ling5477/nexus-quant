@@ -18549,3 +18549,30 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：credential access/exchange calls/order/cancel/transfer/withdraw/交易副作用=0；LIVE=`DISABLED`、kill switch=`ENGAGED`；不修改固化 GateY-2 evidence，未 commit/push/PR/tag。
 - result：`PASS / GATEY_2_ACCEPTED / CI_GREEN / GATEY_3_INITIALIZED / PRODUCTION_MIGRATION_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
 - next：`NQ-GATEY-3-EXECUTION-INTENT-RECEIPT-FAKE-EXCHANGE-IMPLEMENTATION`。
+
+## 2026-08-13 — GateY-3 execution intent / receipt / fake exchange implementation attempt-01
+
+- task：`NQ-GATEY-3-EXECUTION-INTENT-RECEIPT-FAKE-EXCHANGE-IMPLEMENTATION`；NQ-only、L 级 fake/local execution semantics、idempotency/claim/crash/reconciliation/PostgreSQL implementation。
+- baseline：`dev`；起始 clean/staged empty；`HEAD == origin/dev == a6c390b4f8e8c852c4b6516a4bc3fdd90aa14d9c`；exact-head CI run `31611574079 / completed / success / 10 jobs / bad=0`；GateY-2=`ACCEPTED|CI_GREEN`，GateY-3=`NOT_STARTED`。
+- implementation：新增 execution domain/application/repository/JDBC runtime；固定 V39 状态机、`execution-intent-payload.v1`、stable clientOrderId、create-or-get idempotency、DB-time claim/lease、不可逆 SEND_STARTED、append-only receipt、query-only UNKNOWN recovery 与 deterministic test fake。V1～V39 未改、V40=0。
+- ownership：复用既有 live_sessions/exchange_accounts/orders；PLACE 精确绑定既有 order clientOrderId，CANCEL 绑定唯一原 PLACE identity；不新增第二 order/trade/position/ledger，不新增 event caller。
+- no-blind-retry：SEND_STARTED 独立短事务先提交；mutation、receipt、crash/recovery matrix 证明重复 worker/lease expiry/service restart 模拟后 mutation count≤1，SEND_STARTED/UNKNOWN 只 query clientOrderId。
+- PostgreSQL：fresh V1→V39；并发 create/claim、lease reclaim、SEND_STARTED no reclaim、CAS、identity bridge、CANCEL identity、attemptNo 并发与 receipt/CAS 原子回滚均通过；`LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE` 作为候选 CLOSED 进入独立 review。
+- validation：core 8/8；PostgreSQL integration 1/1；16-module targeted reactor success；isolated PostgreSQL full backend 23/23 reactor success，`nq-app` 270/0/0/27 skipped；ArchUnit/no-outbound green。默认 local DB 因既有 V38 checksum mismatch 失败，未 repair；改用一次性库与最小 SIM account fixture获得可归因 PASS。
+- boundary：fake 仅 test fixture；无 production Bean/HTTP/socket/DNS/provider/credential；real exchange/probe/PLACE/CANCEL/transfer/withdraw=0；LIVE=`DISABLED`、kill switch=`ENGAGED`；production migration/worker/first real order未授权。
+- findings：P0=0/P1=0/P3=0；P2 保留 `PRODUCTION_LOCK_WINDOW_NOT_MEASURED`、`FILESYSTEM_STABLE_HANDLE_LIMITATION_INHERITED`；未 stage/commit/push/PR/tag。
+- result：`PASS / GATEY_3_FAKE_EXECUTION_RUNTIME_IMPLEMENTED / IDEMPOTENCY_ENFORCED / CLAIM_LEASE_ENFORCED / NO_BLIND_RETRY_PROVEN / UNKNOWN_RECONCILIATION_PROVEN / POSTGRESQL_GREEN / PENDING_INDEPENDENT_REVIEW / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED`。
+- authority：`GateY-3 / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`。
+- next：`NQ-GATEY-3-EXECUTION-INTENT-RECEIPT-FAKE-EXCHANGE-SECURITY-REVIEW`。
+
+## 2026-08-13 — GateY-3 fake execution independent security review attempt-01
+
+- task：`NQ-GATEY-3-EXECUTION-INTENT-RECEIPT-FAKE-EXCHANGE-SECURITY-REVIEW`；NQ-only、L 级 execution/idempotency/crash/PostgreSQL/fake-boundary 独立安全审查。
+- baseline：`dev`；`HEAD == origin/dev == a6c390b4f8e8c852c4b6516a4bc3fdd90aa14d9c`；staged empty；authority=`GateY-3 / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`。
+- findings/corrections：在当前 GateY-3 allowlist 内关闭 8 类 P1：durable kill switch、session creator/account owner bridge、统一 bridge fail-closed、UNKNOWN PLACE 的 CANCEL reconciliation、intent/receipt canonical revalidation、canonical delimiter/null ambiguity、exception/interruption mutation counter、receipt sensitive `toString()`；最终又以逐字段 equality 关闭 same-hash field mismatch。
+- validation：core runtime 10/10；disposable PostgreSQL 17.7 fresh V1→V39 integration 1/1；16-module required reactor success；fresh PostgreSQL 全量 backend 23/23 reactor success、`nq-app` 270/0/0/27 skipped；ArchUnit/no-real 19/0/0/1 skipped；V39 diff=0、V40=0、outbound/credential/fake production Bean=0。
+- residuals：`LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE=CLOSED`；P2 `PRODUCTION_LOCK_WINDOW_NOT_MEASURED`、`FILESYSTEM_STABLE_HANDLE_LIMITATION_INHERITED` 保留并阻断 production deployment/worker/first real order。
+- boundary：fake 仅 test fixture；真实 HTTP/private endpoint/provider/credential/PLACE/CANCEL/transfer/withdraw=0；LIVE=`DISABLED`、kill switch=`ENGAGED`；未 stage/commit/push/PR/tag。
+- result：`PASS / GATEY_3_FAKE_EXECUTION_SECURITY_REVIEW_ACCEPTED / P0_0 / P1_0 / NO_BLIND_RETRY_VERIFIED / FAKE_PROVIDER_ISOLATED / POSTGRESQL_CONCURRENCY_VERIFIED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
+- authority：`GateY-3 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
+- next：`NQ-GATEY-3-EXECUTION-INTENT-RECEIPT-FAKE-EXCHANGE-COMMIT-AND-PUSH`。

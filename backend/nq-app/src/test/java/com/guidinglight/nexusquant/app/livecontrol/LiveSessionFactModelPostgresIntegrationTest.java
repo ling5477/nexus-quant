@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.app.livecontrol;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -15,13 +16,23 @@ import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionEvent;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionState;
 import com.guidinglight.nexusquant.livecontrol.domain.OperatorApproval;
 import com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSet;
+import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntent;
+import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentCanonicalEncoder;
+import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentDraft;
+import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentState;
+import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptCanonicalEncoder;
+import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptDraft;
+import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptOutcome;
+import com.guidinglight.nexusquant.livecontrol.execution.infra.jdbc.JdbcExecutionIntentRepository;
 import com.guidinglight.nexusquant.livecontrol.infra.jdbc.JdbcLiveControlAuthorization;
 import com.guidinglight.nexusquant.livecontrol.infra.jdbc.JdbcLiveControlRepository;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -111,6 +122,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
             ));
             assertEquals(11L, jdbc.queryForObject(
                     "SELECT next_event_sequence FROM live_sessions WHERE session_id = ?", Long.class, first.id()));
+            assertExecutionIntentRuntime(jdbc, transactions, service, existing, risk);
         } finally {
             latest.clean();
         }
@@ -416,6 +428,281 @@ class LiveSessionFactModelPostgresIntegrationTest {
         jdbc.update("UPDATE exchange_accounts SET exchange_code='OKX' WHERE exchange_account_id=?",
                 existing.exchangeAccountId());
         assertTrue(repository.lockAndValidateSessionReferences(session));
+    }
+
+    private static void assertExecutionIntentRuntime(
+            JdbcTemplate jdbc,
+            TransactionTemplate transactions,
+            LiveSessionControlService sessionService,
+            ExistingFixture existing,
+            RiskLimitSet risk
+    ) throws Exception {
+        jdbc.update("""
+                UPDATE live_sessions
+                SET state='KILLED',version=version+1,updated_at=CURRENT_TIMESTAMP
+                WHERE exchange_account_id=?
+                  AND state NOT IN ('REJECTED','KILLED','FAILED','LIVE_RECONCILED')
+                """, existing.exchangeAccountId());
+        LiveSession runtimeSession = session(existing, risk, UUID.randomUUID(), NOW.plusSeconds(20));
+        transactions.executeWithoutResult(status -> sessionService.createSession(
+                new AuthenticatedLiveControlActor(existing.creatorId()), runtimeSession, risk,
+                createdEvent(runtimeSession, existing.creatorId())));
+        for (String state : List.of("APPROVED", "LIVE_WARMUP", "LIVE_ACTIVE")) {
+            jdbc.update("UPDATE live_sessions SET state=?,version=version+1,updated_at=CURRENT_TIMESTAMP "
+                    + "WHERE session_id=?", state, runtimeSession.id());
+        }
+
+        UUID intentId = UUID.randomUUID();
+        ExecutionIntentDraft draft = ExecutionIntentCanonicalEncoder.place(
+                intentId, runtimeSession.id(), "BTC-USDT", "BUY",
+                decimal("1"), decimal("10"), "gatey3-order-" + intentId.toString().substring(0, 8));
+        jdbc.update("""
+                INSERT INTO orders(
+                    order_id,account_id,venue,exchange_code,trade_env,symbol,client_order_id,
+                    side,type,price,qty,status,trace_id
+                ) VALUES (?,?,'OKX','OKX','LIVE','BTC-USDT',?,'BUY','LIMIT',10,1,'CREATED','gatey3-test')
+                """, draft.localOrderId(), existing.legacyAccountId(), draft.clientOrderId());
+
+        JdbcExecutionIntentRepository repository = new JdbcExecutionIntentRepository(
+                jdbc, new DataSourceTransactionManager(jdbc.getDataSource()));
+        LiveControlException engaged = assertThrows(
+                LiveControlException.class, () -> repository.createOrGet(draft));
+        assertEquals("GLOBAL_KILL_SWITCH_NOT_DISENGAGED", engaged.code());
+        assertEquals(0, jdbc.queryForObject(
+                "SELECT count(*) FROM execution_intents WHERE intent_id=?", Integer.class, intentId));
+        jdbc.update("UPDATE kill_switch_states SET status='DISENGAGED',version=version+1," +
+                "reason_code='GATEY3_TEST_ONLY',source='POSTGRES_TEST_FIXTURE',updated_at=CURRENT_TIMESTAMP," +
+                "updated_by='gatey3-test',trace_id='gatey3-test' WHERE scope='GLOBAL_TRADING'");
+        ExecutionIntent created = repository.createOrGet(draft);
+        assertEquals(created, repository.createOrGet(draft));
+        ExecutionIntentDraft conflict = ExecutionIntentCanonicalEncoder.place(
+                intentId, runtimeSession.id(), "BTC-USDT", "BUY", decimal("2"), decimal("10"),
+                draft.localOrderId());
+        LiveControlException conflictFailure = assertThrows(
+                LiveControlException.class, () -> repository.createOrGet(conflict));
+        assertEquals("IDEMPOTENCY_CONFLICT", conflictFailure.code());
+
+        CountDownLatch createStart = new CountDownLatch(1);
+        try (ExecutorService executor = Executors.newFixedThreadPool(4)) {
+            List<Future<ExecutionIntent>> futures = java.util.stream.IntStream.range(0, 4)
+                    .mapToObj(index -> executor.submit(() -> {
+                        assertTrue(createStart.await(10, TimeUnit.SECONDS));
+                        return repository.createOrGet(draft);
+                    })).toList();
+            createStart.countDown();
+            for (Future<ExecutionIntent> future : futures) {
+                assertEquals(intentId, future.get(10, TimeUnit.SECONDS).intentId());
+            }
+        }
+        assertEquals(1, jdbc.queryForObject(
+                "SELECT count(*) FROM execution_intents WHERE intent_id=?", Integer.class, intentId));
+
+        CountDownLatch claimStart = new CountDownLatch(1);
+        List<UUID> tokens = java.util.stream.IntStream.range(0, 4).mapToObj(ignored -> UUID.randomUUID()).toList();
+        List<Optional<ExecutionIntent>> claims = new java.util.ArrayList<>();
+        try (ExecutorService executor = Executors.newFixedThreadPool(4)) {
+            List<Future<Optional<ExecutionIntent>>> futures = java.util.stream.IntStream.range(0, 4)
+                    .mapToObj(index -> executor.submit(() -> {
+                        assertTrue(claimStart.await(10, TimeUnit.SECONDS));
+                        return repository.claim(intentId, "worker-" + index, tokens.get(index), Duration.ofMillis(25));
+                    })).toList();
+            claimStart.countDown();
+            for (Future<Optional<ExecutionIntent>> future : futures) {
+                claims.add(future.get(10, TimeUnit.SECONDS));
+            }
+        }
+        assertEquals(1, claims.stream().filter(Optional::isPresent).count());
+        ExecutionIntent claimed = claims.stream().flatMap(Optional::stream).findFirst().orElseThrow();
+        jdbc.queryForObject("SELECT pg_sleep(0.05)", Object.class);
+        UUID reclaimedToken = UUID.randomUUID();
+        ExecutionIntent reclaimed = repository.claim(
+                intentId, "worker-reclaimed", reclaimedToken, Duration.ofMinutes(1)).orElseThrow();
+        assertEquals(ExecutionIntentState.CLAIMED, reclaimed.state());
+        assertNotEquals(claimed.claimToken(), reclaimed.claimToken());
+
+        jdbc.update("UPDATE kill_switch_states SET status='ENGAGED',version=version+1," +
+                "reason_code='GATEY3_TEST_ENGAGE',source='POSTGRES_TEST_FIXTURE',updated_at=CURRENT_TIMESTAMP," +
+                "updated_by='gatey3-test',trace_id='gatey3-test' WHERE scope='GLOBAL_TRADING'");
+        LiveControlException sendBlocked = assertThrows(LiveControlException.class,
+                () -> repository.markSendStarted(intentId, reclaimed.version(), reclaimedToken));
+        assertEquals("GLOBAL_KILL_SWITCH_NOT_DISENGAGED", sendBlocked.code());
+        assertEquals(ExecutionIntentState.CLAIMED, repository.find(intentId).orElseThrow().state());
+        jdbc.update("UPDATE kill_switch_states SET status='DISENGAGED',version=version+1," +
+                "reason_code='GATEY3_TEST_ONLY',source='POSTGRES_TEST_FIXTURE',updated_at=CURRENT_TIMESTAMP," +
+                "updated_by='gatey3-test',trace_id='gatey3-test' WHERE scope='GLOBAL_TRADING'");
+        ExecutionIntent sendStarted = repository.markSendStarted(
+                intentId, reclaimed.version(), reclaimedToken).orElseThrow();
+        assertEquals(ExecutionIntentState.SEND_STARTED, sendStarted.state());
+        assertTrue(repository.markSendStarted(intentId, reclaimed.version(), reclaimedToken).isEmpty());
+        assertTrue(repository.claim(
+                intentId, "worker-forbidden", UUID.randomUUID(), Duration.ofMinutes(1)).isEmpty());
+        assertEquals(sendStarted.sendStartedAt(), repository.find(intentId).orElseThrow().sendStartedAt());
+
+        jdbc.update("UPDATE exchange_accounts SET legacy_account_id=NULL WHERE exchange_account_id=?",
+                existing.exchangeAccountId());
+        UUID bridgeIntentId = UUID.randomUUID();
+        ExecutionIntentDraft bridgeDraft = ExecutionIntentCanonicalEncoder.place(
+                bridgeIntentId, runtimeSession.id(), "BTC-USDT", "BUY", decimal("1"), decimal("10"),
+                draft.localOrderId());
+        LiveControlException bridgeFailure = assertThrows(
+                LiveControlException.class, () -> repository.createOrGet(bridgeDraft));
+        assertEquals("ACCOUNT_IDENTITY_BRIDGE_UNVERIFIED", bridgeFailure.code());
+        jdbc.update("UPDATE exchange_accounts SET legacy_account_id=? WHERE exchange_account_id=?",
+                existing.legacyAccountId(), existing.exchangeAccountId());
+
+        long mismatchedAccountId = jdbc.queryForObject(
+                "INSERT INTO accounts(account_code,venue,status) VALUES (?, 'OKX', 'ACTIVE') RETURNING account_id",
+                Long.class, "gatey3-mismatch-" + intentId);
+        ExecutionIntentDraft mismatchDraft = insertPlaceOrder(
+                jdbc, runtimeSession.id(), mismatchedAccountId, "gatey3-mismatch-");
+        assertBridgeRejected(jdbc, repository, mismatchDraft);
+
+        ExecutionIntentDraft ownerDraft = insertPlaceOrder(
+                jdbc, runtimeSession.id(), existing.legacyAccountId(), "gatey3-owner-");
+        jdbc.update("UPDATE exchange_accounts SET owner_user_id=? WHERE exchange_account_id=?",
+                existing.approverId(), existing.exchangeAccountId());
+        assertBridgeRejected(jdbc, repository, ownerDraft);
+        jdbc.update("UPDATE exchange_accounts SET owner_user_id=? WHERE exchange_account_id=?",
+                existing.creatorId(), existing.exchangeAccountId());
+
+        ExecutionIntentDraft missingOrderDraft = ExecutionIntentCanonicalEncoder.place(
+                UUID.randomUUID(), runtimeSession.id(), "BTC-USDT", "BUY", decimal("1"), decimal("10"),
+                "gatey3-missing-" + UUID.randomUUID().toString().substring(0, 8));
+        assertBridgeRejected(jdbc, repository, missingOrderDraft);
+
+        ExecutionIntentDraft forged = new ExecutionIntentDraft(
+                draft.intentId(), draft.sessionId(), draft.action(), draft.symbol(), draft.side(), draft.orderType(),
+                draft.quantity(), draft.limitPrice(), draft.localOrderId(), draft.clientOrderId(), "f".repeat(64));
+        LiveControlException forgedFailure = assertThrows(
+                LiveControlException.class, () -> repository.createOrGet(forged));
+        assertEquals("INTENT_CANONICAL_PAYLOAD_INVALID", forgedFailure.code());
+
+        ExecutionIntentDraft fieldMismatch = insertPlaceOrder(
+                jdbc, runtimeSession.id(), existing.legacyAccountId(), "gatey3-field-mismatch-");
+        jdbc.update("""
+                INSERT INTO execution_intents(
+                    intent_id,session_id,sequence,action,symbol,side,order_type,quantity,limit_price,
+                    payload_hash_schema_version,payload_hash,client_order_id,local_order_id,state
+                ) VALUES (?, ?, 900001, 'PLACE', 'BTC-USDT', 'SELL', 'LIMIT', 1, 10,
+                          'execution-intent-payload.v1', ?, ?, ?, 'CREATED')
+                """, fieldMismatch.intentId(), fieldMismatch.sessionId(), fieldMismatch.payloadHash(),
+                fieldMismatch.clientOrderId(), fieldMismatch.localOrderId());
+        LiveControlException fieldMismatchFailure = assertThrows(
+                LiveControlException.class, () -> repository.createOrGet(fieldMismatch));
+        assertEquals("IDEMPOTENCY_CONFLICT", fieldMismatchFailure.code());
+
+        ExecutionIntent unknown = repository.markAmbiguousForRecovery(
+                intentId, sendStarted.version(), reclaimedToken).orElseThrow();
+        assertEquals(ExecutionIntentState.UNKNOWN, unknown.state());
+
+        ExecutionIntentDraft cancelDraft = ExecutionIntentCanonicalEncoder.cancel(
+                UUID.randomUUID(), runtimeSession.id(), "BTC-USDT", draft.localOrderId(), draft.clientOrderId());
+        LiveControlException unresolvedCancel = assertThrows(
+                LiveControlException.class, () -> repository.createOrGet(cancelDraft));
+        assertEquals("CANCEL_PLACE_RECONCILIATION_REQUIRED", unresolvedCancel.code());
+        assertEquals(1, jdbc.queryForObject(
+                "SELECT count(*) FROM execution_intents WHERE local_order_id=?", Integer.class, draft.localOrderId()));
+
+        UUID receiptId = UUID.randomUUID();
+        CountDownLatch receiptStart = new CountDownLatch(1);
+        List<Object> receiptResults = new java.util.ArrayList<>();
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            List<Future<Object>> futures = java.util.stream.IntStream.range(0, 2)
+                    .mapToObj(index -> executor.submit(() -> {
+                        assertTrue(receiptStart.await(10, TimeUnit.SECONDS));
+                        ExecutionReceiptDraft receipt = ExecutionReceiptCanonicalEncoder.draft(
+                                index == 0 ? receiptId : UUID.randomUUID(), intentId,
+                                ExecutionReceiptOutcome.QUERY_CONFIRMED, "query-" + index,
+                                "exchange-order", "FAKE_RECONCILIATION", "CONFIRMED", NOW.plusSeconds(index));
+                        try {
+                            return repository.appendReceiptAndTransition(
+                                    intentId, unknown.version(), reclaimedToken, receipt,
+                                    ExecutionIntentState.RECONCILED);
+                        } catch (RuntimeException ex) {
+                            return ex;
+                        }
+                    })).toList();
+            receiptStart.countDown();
+            for (Future<Object> future : futures) {
+                receiptResults.add(future.get(10, TimeUnit.SECONDS));
+            }
+        }
+        assertEquals(1, receiptResults.stream().filter(ExecutionIntent.class::isInstance).count());
+        assertEquals(1, receiptResults.stream().filter(RuntimeException.class::isInstance).count());
+        assertEquals(List.of(1), jdbc.queryForList(
+                "SELECT attempt_no FROM execution_receipts WHERE intent_id=? ORDER BY attempt_no",
+                Integer.class, intentId));
+        ExecutionIntent cancel = repository.createOrGet(cancelDraft);
+        assertEquals("CANCEL", cancel.action().name());
+        assertEquals(draft.clientOrderId(), cancel.clientOrderId());
+        assertEquals(null, cancel.side());
+        assertEquals(2, jdbc.queryForObject(
+                "SELECT count(*) FROM execution_intents WHERE local_order_id=?", Integer.class, draft.localOrderId()));
+        UUID existingReceiptId = jdbc.queryForObject(
+                "SELECT receipt_id FROM execution_receipts WHERE intent_id=?", UUID.class, intentId);
+
+        UUID rollbackIntentId = UUID.randomUUID();
+        String rollbackOrderId = "gatey3-rollback-" + rollbackIntentId.toString().substring(0, 8);
+        ExecutionIntentDraft rollbackDraft = ExecutionIntentCanonicalEncoder.place(
+                rollbackIntentId, runtimeSession.id(), "BTC-USDT", "BUY",
+                decimal("1"), decimal("10"), rollbackOrderId);
+        jdbc.update("""
+                INSERT INTO orders(
+                    order_id,account_id,venue,exchange_code,trade_env,symbol,client_order_id,
+                    side,type,price,qty,status,trace_id
+                ) VALUES (?,?,'OKX','OKX','LIVE','BTC-USDT',?,'BUY','LIMIT',10,1,'CREATED','gatey3-test')
+                """, rollbackOrderId, existing.legacyAccountId(), rollbackDraft.clientOrderId());
+        repository.createOrGet(rollbackDraft);
+        UUID rollbackToken = UUID.randomUUID();
+        ExecutionIntent rollbackClaimed = repository.claim(
+                rollbackIntentId, "rollback-worker", rollbackToken, Duration.ofMinutes(1)).orElseThrow();
+        ExecutionIntent rollbackSendStarted = repository.markSendStarted(
+                rollbackIntentId, rollbackClaimed.version(), rollbackToken).orElseThrow();
+        ExecutionIntent rollbackUnknown = repository.markAmbiguousForRecovery(
+                rollbackIntentId, rollbackSendStarted.version(), rollbackToken).orElseThrow();
+        long rollbackVersion = rollbackUnknown.version();
+        ExecutionReceiptDraft duplicateReceipt = ExecutionReceiptCanonicalEncoder.draft(
+                existingReceiptId, rollbackIntentId, ExecutionReceiptOutcome.QUERY_CONFIRMED,
+                "rollback-query", "rollback-exchange", "FAKE_RECONCILIATION", "CONFIRMED", NOW);
+        assertThrows(DataIntegrityViolationException.class, () -> repository.appendReceiptAndTransition(
+                rollbackIntentId, rollbackVersion, rollbackToken, duplicateReceipt,
+                ExecutionIntentState.RECONCILED));
+        assertEquals(0, jdbc.queryForObject(
+                "SELECT count(*) FROM execution_receipts WHERE intent_id=?", Integer.class, rollbackIntentId));
+        ExecutionIntent afterRollback = repository.find(rollbackIntentId).orElseThrow();
+        assertEquals(ExecutionIntentState.UNKNOWN, afterRollback.state());
+        assertEquals(rollbackVersion, afterRollback.version());
+    }
+
+    private static ExecutionIntentDraft insertPlaceOrder(
+            JdbcTemplate jdbc,
+            UUID sessionId,
+            long accountId,
+            String prefix
+    ) {
+        UUID intentId = UUID.randomUUID();
+        String orderId = prefix + intentId.toString().substring(0, 8);
+        ExecutionIntentDraft draft = ExecutionIntentCanonicalEncoder.place(
+                intentId, sessionId, "BTC-USDT", "BUY", decimal("1"), decimal("10"), orderId);
+        jdbc.update("""
+                INSERT INTO orders(
+                    order_id,account_id,venue,exchange_code,trade_env,symbol,client_order_id,
+                    side,type,price,qty,status,trace_id
+                ) VALUES (?,?,'OKX','OKX','LIVE','BTC-USDT',?,'BUY','LIMIT',10,1,'CREATED','gatey3-test')
+                """, orderId, accountId, draft.clientOrderId());
+        return draft;
+    }
+
+    private static void assertBridgeRejected(
+            JdbcTemplate jdbc,
+            JdbcExecutionIntentRepository repository,
+            ExecutionIntentDraft draft
+    ) {
+        LiveControlException failure = assertThrows(
+                LiveControlException.class, () -> repository.createOrGet(draft));
+        assertEquals("ACCOUNT_IDENTITY_BRIDGE_UNVERIFIED", failure.code());
+        assertEquals(0, jdbc.queryForObject(
+                "SELECT count(*) FROM execution_intents WHERE intent_id=?", Integer.class, draft.intentId()));
     }
 
     private static void assertApprovalRequiresExactCurrentScope(
