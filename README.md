@@ -8,7 +8,7 @@ NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/
 - 最近冻结 Gate 为 GateW：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；archive 为 [docs/gates/gate-w/](docs/gates/gate-w/)，release tag=`nq-gatew-freeze`。
 - GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateX-0A/0B/0C/0D/1/2/3/4/4B/4C/5=`ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateX-0E=`AUDITED / IMPLEMENTATION NOT REQUIRED`（已审计 / 无需实施），18/18 technical hard gates 已通过，当前为 `FREEZE READY`（冻结准备就绪）。
 - Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEX-FREEZE-CLOSEOUT`；只允许进入后续 GateX freeze closeout，actual freeze、strict archive、tag、GateY、Shadow Run 启动与交易写侧尚未执行，exact transition 以 [STATUS.md](docs/current/STATUS.md) 为准。
+- 当前唯一动作是 `NQ-GATEX-FREEZE-CLOSEOUT`；GateX strict archive candidate 已形成，当前只允许完成 pre-tag 校验、freeze commit、exact-head CI、annotated tag 与 post-tag authority 同步；GateY implementation、Shadow Run 启动与交易写侧均未授权，exact transition 以 [STATUS.md](docs/current/STATUS.md) 为准。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
 
@@ -16,7 +16,8 @@ NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/
 
 - [STATUS.md](docs/current/STATUS.md)：唯一阶段状态 authority。
 - [ROADMAP.md](docs/current/ROADMAP.md)：下一允许动作和路线。
-- [GATEX_PLAN.md](docs/current/GATEX_PLAN.md)：GateX 实施基线、批次、边界与冻结条件；不代表 capability 已实现。
+- [GATEX_PLAN.md](docs/gates/gate-x/GATEX_PLAN.md)：GateX 已归档实施基线、批次、边界与冻结条件；不决定 current 状态。
+- [GateX archive candidate](docs/gates/gate-x/README.md)：GateX pre-tag strict archive candidate；tag 创建前仍不构成 frozen authority。
 - [GateW archive](docs/gates/gate-w/README.md)：已冻结 GateW 的 strict archive；历史证据不决定 current 状态。
 - [FACT_SOURCE_INDEX.md](docs/current/FACT_SOURCE_INDEX.md)：authority 分层与历史证据边界。
 - [API.md](docs/current/API.md)：已实现 API 能力事实。

@@ -11,6 +11,7 @@
 5. [GOVERNANCE_WORKFLOW.md](GOVERNANCE_WORKFLOW.md)：Gate checker、lifecycle、evidence 与 release 执行规则；machine contract 位于 `scripts/docs/governance-workflow-contract.json`，两者均不决定 current Gate。
 6. [GATEV_PLAN.md](GATEV_PLAN.md)：GateV historical planning context 的 allowed residual；不决定 current Gate 或独立接受 work batch。
 7. [evidence/gate-w/README.md](evidence/gate-w/README.md)：GateW post-tag current evidence index；只记录 closeout/remediation 导航，不决定 current Gate 或 implementation acceptance。
+8. [../gates/gate-x/GATEX_PLAN.md](../gates/gate-x/GATEX_PLAN.md)：GateX 已归档 implementation baseline；不决定 current Gate，pre-tag 阶段也不构成 frozen authority。
 
 ## 2. NQ Capability Authority
 
@@ -45,6 +46,8 @@
 
 ## 6. Gate Archive
 
+- GateX strict archive candidate：[../gates/gate-x/README.md](../gates/gate-x/README.md)，当前处于 pre-tag closeout；只有 freeze commit、exact-head CI、annotated tag 与 post-tag verification 均成功后才可成为 durable frozen archive。
+- GateX task evidence：[../gates/gate-x/source/task-evidence/README.md](../gates/gate-x/source/task-evidence/README.md)，保存 GateX 全部 PASS/FAIL/BLOCKED/retry/remediation 过程证据；原 `docs/current/evidence/gate-x/**` 已按 hash-preserving move 收口。
 - GateW durable archive：[../gates/gate-w/README.md](../gates/gate-w/README.md)，`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag），release tag=`nq-gatew-freeze`。
 - GateW task evidence：[../gates/gate-w/source/task-evidence/README.md](../gates/gate-w/source/task-evidence/README.md)，保存 freeze snapshot 的不可覆盖 attempts 与索引。
 - GateV durable archive：[../gates/gate-v/README.md](../gates/gate-v/README.md)，release tag=`nq-gatev-freeze`。
@@ -53,7 +56,7 @@
 
 Gate archive 是 historical evidence，不覆盖本文件。
 
-GateW archive 的 `source/task-evidence/**` 是 approved non-role evidence；它不参与 archive role 计数，也不能替代 mandatory/conditional role。unknown、empty、path traversal 与 symlink/reparse point 仍 fail-closed。
+GateW 与 GateX archive 的 `source/task-evidence/**` 是 approved non-role evidence；它不参与 archive role 计数，也不能替代 mandatory/conditional role。unknown、empty、path traversal 与 symlink/reparse point 仍 fail-closed。
 
 ## 7. Historical Evidence
 
@@ -73,6 +76,6 @@ Historical evidence 中的旧状态、旧路径和旧 next action 不覆盖 curr
 
 - GateW：`FROZEN / ACCEPTED / TAGGED`；freeze commit=`16376de28be78eea58afbe1374847ee07ca2ccc7`，tag=`nq-gatew-freeze`，strict archive/release/post-tag verification 均通过。
 - GateW-ATTEMPT-13-168H-ACCEPTANCE：`ACCEPTED / CI GREEN`；Attempt-13=`COMPLETED / ACCEPTED`，production soak=`COMPLETED`。
-- GateX：`IN PROGRESS / NOT FROZEN`；GateX-PLAN=`NOT STARTED`。该 authority transition 只授权独立 plan task，不表示 implementation started。
+- GateX：`IN PROGRESS / NOT FROZEN`；GateX-5=`ACCEPTED / CI GREEN`，GateX-FREEZE=`ACCEPTED / CI GREEN / FREEZE READY`。strict archive candidate 已形成，但 freeze commit/tag/post-tag authority transition 尚未完成。
 - LIVE=`DISABLED`，kill switch=`ENGAGED`；Shadow trading 未启用；AI、DH runtime、Integration runtime 未开始；real provider 与 private trading 未实现。
 - 唯一下一动作从 [STATUS.md](STATUS.md) 与 [ROADMAP.md](ROADMAP.md) 读取；本索引不建立第二份 action authority。

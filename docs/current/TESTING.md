@@ -13114,3 +13114,21 @@ Findings：P0=0；P1=1（`GOVERNANCE_GATEX_FREEZE_ACTION_UNMAPPED`）；P2=2（�
 | Backend/frontend/Python | NOT RUN（未运行） | 本轮只改 governance PowerShell/JSON/tests 与 current docs；业务代码变更为 0，沿用 GateX-5 exact-head CI 作为产品基线 |
 
 Findings：P0=0；P1=0（`GOVERNANCE_GATEX_FREEZE_ACTION_UNMAPPED` 已关闭）；P2=2（生产锁窗口、filesystem stable-handle limitation 继续保留）；P3=1（既有工具链 warning）。完整证据：[evidence/gate-x/NQ-GOVERNANCE-FREEZE-CLOSEOUT-ACTION-CONTRACT-FIX.attempt-01.md](evidence/gate-x/NQ-GOVERNANCE-FREEZE-CLOSEOUT-ACTION-CONTRACT-FIX.attempt-01.md)。
+
+## 2026-08-12 — GateX freeze closeout pre-tag verification
+
+结论：`PASS / GATE_ARCHIVE_PRETAG_VALID / FREEZE_COMMIT_AUTHORIZED / TAG_PENDING`（通过 / Gate archive pre-tag 有效 / 已授权创建冻结提交 / tag 待创建）。
+
+| 验证项 | 结果 | 范围 / 环境 / 说明 |
+| --- | --- | --- |
+| Starting exact-head baseline | PASS（通过） | `HEAD == origin/dev == f255e6b0914c3c6aa39708a269a20a3a17964450`；CI run `31560815042 / completed / success / 10 jobs / bad=0` |
+| Hash-preserving archive move | PASS（通过） | 31 份 GateX task evidence + 1 份 `GATEX_PLAN.md` 迁移前后 SHA-256 mismatch=0；current GateX evidence 目录已清空 |
+| Strict archive pre-tag | PASS（通过） | 8 个 mandatory roles + backend/DB、API、frontend、runtime/scheduling 4 个 conditional roles 均独立；warnings=0、errors=0 |
+| Current authority PS5.1 / PS7 | PASS（通过） | 两个引擎均 `CURRENT_AUTHORITY_CONSISTENT`、errors=0；authority 保持 GateX `IN_PROGRESS|NOT_FROZEN`，未预写 tag/commit |
+| Document links | PASS WITH WARNINGS（通过并有 warning） | 262 checked / 16 warnings / 0 errors；warning 仅来自 append-only historical ledger 或归档 evidence 内迁移前相对代码路径 |
+| Governance lifecycle | PASS（通过） | exit 0；`GOVERNANCE_LIFECYCLE_REGRESSION / TASK_EVIDENCE_POLICY_VALID` |
+| Current next-action | PASS（通过） | exit 0；`CURRENT_AUTHORITY_NEXT_ACTION_REGRESSION`，GateX freeze closeout canonical mapping 保持成立 |
+| Archive manifest regression | PASS（通过） | exit 0；`GATE_ARCHIVE_MANIFEST_REGRESSION / TASK_EVIDENCE_POLICY_VALID` |
+| Product/backend/frontend/Python tests | NOT RERUN（未重跑） | 本轮只执行 docs/archive closeout；产品基线使用 starting exact-head CI `31560815042`，无业务代码、migration 或 CI workflow diff |
+
+Boundary：LIVE=`DISABLED`，Shadow trading=`NOT_ENABLED`；runner/scheduler/trading/credential/private exchange/external write side effects=0。P2 `PRODUCTION_LOCK_WINDOW_NOT_MEASURED` 与 `FILESYSTEM_STABLE_HANDLE_LIMITATION_INHERITED` 保留。tag 只能在本 archive 所在 freeze commit 的 exact-head CI 全绿后创建。

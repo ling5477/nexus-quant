@@ -18419,3 +18419,14 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：archive/release checker code、manifest/role/tag semantics、backend/frontend/research/migration/CI workflow/credential/trading/Shadow runner/LIVE 变更=0；actual freeze/archive/tag 未执行。
 - result：`PASS / GENERIC_FREEZE_CLOSEOUT_ACTION_CONTRACT_FIXED / GATEX_5_ACCEPTED / GATEX_FREEZE_AUTHORIZED / READY_TO_COMMIT`；P0=0/P1=0/P2=2/P3=1。
 - next：唯一下一动作=`NQ-GATEX-FREEZE-CLOSEOUT`；推荐 commit=`fix(governance): support generic freeze closeout action`，本任务不自动 commit/push。
+
+## 2026-08-12 — GateX freeze closeout pre-tag archive
+
+- task：`NQ-GATEX-FREEZE-CLOSEOUT`；NQ-only、strict archive、pre-tag verification、freeze/tag closeout。
+- baseline：`dev`；starting `HEAD == origin/dev == f255e6b0914c3c6aa39708a269a20a3a17964450`；starting exact-head CI run `31560815042 / completed / success / 10 jobs / bad=0`；canonical tag `nq-gatex-freeze` 起始不存在。
+- archive：创建 `docs/gates/gate-x/` 12 个独立 role 文档；将 `GATEX_PLAN.md` 与 31 份 GateX task evidence 迁入 archive，迁移前后 SHA-256 mismatch=0；PASS/FAIL/BLOCKED/retry/remediation 历史全部保留。
+- manifest：只增加 GateX strict override、expected tag、实际 conditional roles 与 `allowPreTagArchiveState=true`；未修改 checker、role matcher、tag/release semantics 或 contract tests。
+- current pointers：root/current README、STATUS、ROADMAP、FACT_SOURCE_INDEX 指向 archive candidate；机器 authority 仍为 GateX `IN_PROGRESS|NOT_FROZEN`、GateX-5 accepted、GateX-FREEZE freeze-ready，未伪造未来 commit/tag/CI。
+- verification：authority PS5.1/PS7 errors=0；strict archive warnings/errors=0/0；links 262 checked/16 historical warnings/0 errors；lifecycle、next-action、archive-manifest regressions均 exit 0。
+- boundary：业务代码、migration、CI workflow、backend/frontend/research、DH、LIVE、Shadow runner/scheduler、交易写侧变更=0；LIVE=`DISABLED`，Shadow trading=`NOT_ENABLED`。
+- result：`PASS / GATE_ARCHIVE_PRETAG_VALID / FREEZE_COMMIT_AUTHORIZED / TAG_PENDING`；下一步只允许提交 archive freeze commit、push 并等待其 exact-head CI。

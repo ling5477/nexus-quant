@@ -52,8 +52,8 @@ GateX FREEZE READY / NOT FROZEN
 - GateW freeze commit=`16376de28be78eea58afbe1374847ee07ca2ccc7`；exact-head CI run=`31299729114 / completed / success / 10 jobs / bad=0`。
 - GateW Attempt-13=`COMPLETED / ACCEPTED`（已完成 / 已接受）；production deployment=`STOPPED`；production soak=`COMPLETED`。656 条样本与 hash chain 已接受并 sealed，worker 已停止。
 - GateW acceptance batch：`GateW-ATTEMPT-13-168H-ACCEPTANCE / ACCEPTED / CI GREEN`；acceptance head=`20cf7970dfb414868da3e42dddaefc5965246570`，CI run=`31295184056`。
-- GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateX-0A/0B/0C/0D/1/2/3/4/4C/5 已接受，GateX-0E 条件项已审计且无需实施；18/18 technical hard gates 已通过，当前为 `FREEZE READY`，actual freeze/archive/tag 尚未执行。
-- GateX-PLAN：`BASELINE ESTABLISHED / READY TO COMMIT`（基线已建立 / 可进入提交前复核）；实施基线见 [GATEX_PLAN.md](GATEX_PLAN.md)。
+- GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateX-0A/0B/0C/0D/1/2/3/4/4C/5 已接受，GateX-0E 条件项已审计且无需实施；18/18 technical hard gates 已通过，当前为 `FREEZE READY`，strict archive candidate 已形成，freeze commit/tag 尚未完成。
+- GateX-PLAN：`BASELINE ARCHIVED`（基线已归档）；实施基线见 [GATEX_PLAN.md](../gates/gate-x/GATEX_PLAN.md)。
 - GateX-0A：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；Strategy↔Trading 与 audit port ownership P1 已关闭，merge acceptance head 的 exact-head CI 已成功。
 - GateX-0B：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；acceptance head=`108a14d14906d6fa354349c66d35a2ae6967cebf`，exact-head CI run=`31321821962 / completed / success`。
 - GateX-0C：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；acceptance head=`46392213495652f6a09005148cc160fd2882adb9`，exact-head CI run=`31325824949 / completed / success`。
@@ -68,7 +68,7 @@ GateX FREEZE READY / NOT FROZEN
 - GateX-4C：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`b4e5406fbb9de5432f79f9ef8ef76c95002e0e56`，exact-head CI run=`31409595743 / completed / success / 10 jobs / bad=0`；duplicate manifest identity key P1 与服务器受控 resolver trust boundary 已关闭。
 - GateX-5：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；forward-remediation commit=`3336bd8153845d5368a0d65a9c72d3566dc9bd35`，acceptance head=`a383be750f51d063d429bc25fad80e60dffb7014`，exact-head CI run=`31512467501 / completed / success / 10 jobs / bad=0`。最终独立审查的 P0=0、产品 P1=0 与 `ADMISSION_MATERIALIZATION_FACT_TEAR=CLOSED` 保持成立；runner/scheduler/交易/外部网络调用均为 0。
 - GateX-FREEZE：`ACCEPTED / CI GREEN / FREEZE READY`（已接受 / CI 已通过 / 冻结准备就绪）；通用 `FREEZE_CLOSEOUT` action 已由 GateX/GateW/GateY 同构正例和五状态负例验证。该状态不是 `FROZEN`、`TAGGED` 或 `ARCHIVED`。
-- 当前唯一治理动作是 `NQ-GATEX-FREEZE-CLOSEOUT`；只允许执行后续 GateX freeze closeout，actual freeze、strict archive、tag、GateY、Shadow Run 启动、LIVE 与交易写侧均不属于本任务。
+- 当前唯一治理动作是 `NQ-GATEX-FREEZE-CLOSEOUT`；只允许完成 GateX strict archive、pre-tag verification、freeze commit、exact-head CI、annotated tag、post-tag verification 与一次机械式 authority 同步；GateY implementation、Shadow Run 启动、LIVE 与交易写侧均不属于本任务。
 
 ## GateW 已冻结边界
 
@@ -82,7 +82,7 @@ GateX FREEZE READY / NOT FROZEN
 
 - 唯一实施顺序为 0A → 0B → 0C → 0D → 条件性 0E；GateX-0 总量控制在 3～5 个代码任务、3～7 工程日。
 - GateX-0 只处理 P1 与 GateX 触达区域的低风险 P2；不得演化为 Maven 全量拆分或全仓架构重构。
-- GateX-1～5 与 FREEZE 的前置、范围和验收以 [GATEX_PLAN.md](GATEX_PLAN.md) 为准；计划不得被解释为 capability 已实现。
+- GateX-1～5 与 FREEZE 的历史前置、范围和验收以已归档的 [GATEX_PLAN.md](../gates/gate-x/GATEX_PLAN.md) 为准；计划不得被解释为额外 capability 或 runtime 授权。
 - 不得把 GateW diagnostic/read-only/soak 证据推导为远端交易 permission、账户健康、余额充分、private trading 或 unattended execution readiness。
 - 不得开启 LIVE、真实下单/撤单、转账/提现、AI trading、DH runtime、Integration runtime、RealClient 或 real provider。
 - NQ-only 任务不得修改或声明 DH current authority；DH/Integration 状态继续只表达 NQ 侧 no-real 边界。

@@ -8,7 +8,7 @@
 - 最近冻结 Gate 为 GateW：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-w/](../gates/gate-w/)。
 - GateX：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateX-0A/0B/0C/0D/1/2/3/4/4B/4C/5=`ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateX-0E=`AUDITED / IMPLEMENTATION NOT REQUIRED`（已审计 / 无需实施），18/18 technical hard gates 已通过，当前为 `FREEZE READY`（冻结准备就绪）。
 - Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEX-FREEZE-CLOSEOUT`；只允许进入后续 GateX freeze closeout，actual freeze、strict archive、tag、GateY、Shadow Run 启动与交易写侧尚未执行，exact transition 以 [STATUS.md](STATUS.md) 为准。
+- 当前唯一动作是 `NQ-GATEX-FREEZE-CLOSEOUT`；GateX strict archive candidate 已形成，当前只允许完成 pre-tag 校验、freeze commit、exact-head CI、annotated tag 与 post-tag authority 同步；GateY implementation、Shadow Run 启动与交易写侧均未授权，exact transition 以 [STATUS.md](STATUS.md) 为准。
 - 当前 runtime release、current work commit 与精确 runtime 标识只从 [STATUS.md](STATUS.md) 获取，本索引不复制其值。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
@@ -19,7 +19,8 @@
 | --- | --- | --- |
 | 唯一阶段状态 | [STATUS.md](STATUS.md) | 是 |
 | 下一允许动作 | [ROADMAP.md](ROADMAP.md) | 否 |
-| GateX 实施基线 | [GATEX_PLAN.md](GATEX_PLAN.md) | 否；只定义批次、边界与验收，不代表 capability 已实现 |
+| GateX 已归档实施基线 | [GATEX_PLAN.md](../gates/gate-x/GATEX_PLAN.md) | 否；只保存批次、边界与验收历史，不决定 current 状态 |
+| GateX archive candidate | [../gates/gate-x/README.md](../gates/gate-x/README.md) | 否；pre-tag candidate 不构成 frozen authority |
 | Authority 分层 | [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md) | 否；必须服从 STATUS |
 | Gate 治理 workflow | [GOVERNANCE_WORKFLOW.md](GOVERNANCE_WORKFLOW.md) | 否；定义 checker、lifecycle、evidence 与 release contract |
 | Post-tag current evidence | [evidence/gate-w/README.md](evidence/gate-w/README.md) | 否；只保留 current 导航与 closeout evidence |
