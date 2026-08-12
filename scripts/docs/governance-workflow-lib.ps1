@@ -178,6 +178,8 @@ function Test-GovernanceNextActionForWorkBatch {
     if ($actualType -cne $expectedType) { return $false }
     if ($actualType -ceq 'FREEZE_CLOSEOUT') {
         # Freeze closeout 是 Gate-level action；上方高优先级 exact mapping 继续保护历史 batch-scoped contract。
+        # Windows PowerShell 5.1 在 StrictMode 下需要先建立局部变量，避免条件分支中的首次赋值被当作未定义读取。
+        $gateMatch = $null
         $gateMatch = [regex]::Match($WorkBatch, '^(?<gate>Gate[A-Z0-9]+)-')
         if (-not $gateMatch.Success) { return $false }
         $expectedAction = 'NQ-{0}-FREEZE-CLOSEOUT' -f $gateMatch.Groups['gate'].Value.ToUpperInvariant()
