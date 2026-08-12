@@ -13167,3 +13167,22 @@ Boundary：GateX freeze 不创建/启动 Shadow Run；LIVE=`DISABLED`，Shadow t
 | External/trading boundary | PASS / ZERO SIDE EFFECT（通过 / 无副作用） | 真实交易所外联=0、credential 访问=0、order/cancel/transfer/withdraw=0、LIVE=`DISABLED`、Shadow trading=`NOT_ENABLED` |
 
 GateX P2 disposition：`PRODUCTION_LOCK_WINDOW_NOT_MEASURED` 与 `FILESYSTEM_STABLE_HANDLE_LIMITATION_INHERITED` 均为 FIRST_REAL_ORDER blocker；分别由 GateY-5（设计始于 GateY-1）和 GateY-4 关闭。完整证据：[evidence/gate-y/NQ-GATEY-PLAN-IMPLEMENTATION.attempt-01.md](evidence/gate-y/NQ-GATEY-PLAN-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-12 — GateY plan post-CI active authority sync attempt-01
+
+结论：`PASS / GATEY_PLAN_ACCEPTED / CI_GREEN / GATEY_1_INITIALIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
+
+| 验证项 / Command | 结果 | 范围 / 环境 / warning / 阻断性 |
+| --- | --- | --- |
+| `git fetch origin` + Git preflight | PASS（通过） | `dev`；起始 worktree clean、staged empty；`HEAD == origin/dev == d7dcffad80cc4dc5089307bfa0e2a5439f37815c` |
+| `gh run view 31567968083` | EXPECTED FAILURE（预期历史失败） | `headSha=d86cea72485280f71001b87075deb3d2a0906fec`；10 jobs 中 9 success，Secret scan failure；脱敏日志分类=`GITLEAKS_GENERIC_API_KEY_FALSE_POSITIVE / GATEY_PLAN_LINE_10`，非真实 secret |
+| Forward remediation audit | PASS（通过） | commit=`d7dcffad80cc4dc5089307bfa0e2a5439f37815c` 仅修改 `GATEY_PLAN.md` 一行；`d86cea7...` 为直接父提交；无 amend/revert/history rewrite/force push/Gitleaks disable/宽泛 allowlist |
+| `gh run view 31568447799` | PASS（通过） | exact `headSha=d7dcffad80cc4dc5089307bfa0e2a5439f37815c`；`completed / success / 10 jobs / bad=0` |
+| Governance action matcher | PASS（通过） | proposed action 类型=`IMPLEMENTATION`，对 `GateY-1 / NOT_STARTED` mapping=`true`；contract/script diff=0 |
+| `check-current-authority.ps1` | PASS（通过） | GateY-PLAN=`ACCEPTED|CI_GREEN`；GateY-1=`NOT_STARTED`；next action canonical；`errors=0`。首次 ROADMAP 声明与状态同句导致 parser actual=0，拆为 canonical 独立声明后关闭，未修改 checker |
+| `check-doc-links.ps1 -Roots README.md,docs/current` | PASS WITH WARNINGS（通过并有 warning） | 232 checked / 14 historical warnings / 0 errors；warning 仅来自 append-only GateJ/GateX 旧路径，非本轮 hard error |
+| Diff scope / forbidden paths | PASS（通过） | 仅允许的 root/current/evidence 文档；backend/frontend/research/scripts/deploy/.github/migration/docs/gates/docs/archive diff=0 |
+| Product/local runtime tests | NOT RUN（未运行） | 本轮 documentation-only authority reconciliation；业务代码、migration、CI workflow 变化=0，采用两个 GitHub run 和 final exact-head CI 作为产品验证事实；非阻断 |
+| Security/trading boundary | PASS / ZERO SIDE EFFECT（通过 / 无副作用） | 真实外联、credential access、permission probe、order/cancel/transfer/withdraw=0；LIVE=`DISABLED`、Shadow trading=`NOT_ENABLED` |
+
+P0=0、P1=0；GateX 两个 first-real-order P2 继续保留且不阻断 GateY-1 work-order task。完整证据：[evidence/gate-y/NQ-GATEY-PLAN-POST-CI-ACTIVE-AUTHORITY-SYNC.attempt-01.md](evidence/gate-y/NQ-GATEY-PLAN-POST-CI-ACTIVE-AUTHORITY-SYNC.attempt-01.md)。

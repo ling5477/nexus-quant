@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatex-freeze
 last_frozen_gate_commit=299ab30bd2e243314be2dc609cb244cd5388027b
 active_gate=GateY
 active_gate_status=IN_PROGRESS|NOT_FROZEN
-accepted_batch=GateX-5
+accepted_batch=GateY-PLAN
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=3336bd8153845d5368a0d65a9c72d3566dc9bd35
-accepted_batch_acceptance_head=a383be750f51d063d429bc25fad80e60dffb7014
-accepted_batch_ci_run=31512467501
-work_batch=GateY-PLAN
-work_batch_status=IMPLEMENTED|SELF_REVIEWED
-work_batch_commit=UNCOMMITTED
+accepted_batch_implementation_commit=d86cea72485280f71001b87075deb3d2a0906fec
+accepted_batch_acceptance_head=d7dcffad80cc4dc5089307bfa0e2a5439f37815c
+accepted_batch_ci_run=31568447799
+work_batch=GateY-1
+work_batch_status=NOT_STARTED
+work_batch_commit=NONE
 work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEY-PLAN-COMMIT-AND-PUSH
+next_action=NQ-GATEY-1-LIVE-SESSION-DATA-MODEL-WORK-ORDER-IMPLEMENTATION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -80,7 +80,8 @@ nq-current-authority:end -->
 - GateX-5：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Forward-remediation implementation commit=`3336bd8153845d5368a0d65a9c72d3566dc9bd35`，acceptance head=`a383be750f51d063d429bc25fad80e60dffb7014`，exact-head `NQ CI Baseline` run=`31512467501 / completed / success / 10 jobs / bad=0`；技术 hard gates=`18/18 PASS`，P0=0、产品 P1=0，`ADMISSION_MATERIALIZATION_FACT_TEAR=CLOSED`。该接受只覆盖受控 `CREATED / RELEASE_BOUND` materialization，不授权启动 Shadow Run、交易或 LIVE。
 - GateX-FREEZE：`ACCEPTED / CI GREEN / TAGGED`（已接受 / CI 已通过 / 已打 tag）。Freeze commit=`299ab30bd2e243314be2dc609cb244cd5388027b`，exact-head CI run=`31565353974 / completed / success / 10 jobs / bad=0`；strict archive 与 release post-tag verification 均 errors=0，tag 不得删除、移动、覆盖或 force update。
 - GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；[GATEY_PLAN.md](GATEY_PLAN.md) 已将目标冻结为 OKX Spot 单场所微资金受控实盘候选，但不表示 implementation 或 micro-live 已获授权。
-- GateY-PLAN：`IMPLEMENTED / SELF REVIEWED`（计划已形成 / 已完成自审），可进入提交前复核；work commit=`UNCOMMITTED`，CI=`NOT_RUN`。计划级安全、架构、数据库与运维边界审查已在同一任务完成，不再增加独立 plan review/freeze 任务。
+- GateY-PLAN：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。原计划 commit=`d86cea72485280f71001b87075deb3d2a0906fec` 的 CI run `31567968083` 因 Gitleaks `generic-api-key` false positive 失败；forward-only remediation commit=`d7dcffad80cc4dc5089307bfa0e2a5439f37815c` 仅修正文档误报，exact-head CI run=`31568447799 / completed / success / 10 jobs / bad=0`。接受范围仅为 planning baseline，不表示 LiveSession、migration、worker、OKX TRADE 或 credential 已实现。
+- GateY-1：`NOT STARTED`（未开始）；work commit=`NONE`，CI=`NOT_RUN`。第一轮只允许形成 LiveSession、OperatorApproval、ExecutionIntent/Receipt、Risk Limit Set 的正式 implementation work order；之后仍须独立 migration/security review，当前不得创建 migration 或 runtime capability。
 - GateW-3 dry-run order preview：只包含 OKX Spot、BUY/SELL、LIMIT、internal application、local persisted facts、read-only diagnostic；minimum notional、fee、远端 permission 与 runtime balance/risk 继续保持显式 UNKNOWN / NOT_EVALUATED，`executionReadiness=BLOCKED`，不得推导交易授权。
 - GateW-3 read-only reconciliation：只包含 OKX Spot、最多 3 个 allowlisted symbols、1 page/100 records/24h typed private `Read` snapshot、bounded local SELECT 与 pure comparator；默认不装配，无 real smoke/credential/network/repair/persistence/scheduler，`executionReadiness=BLOCKED`。CI acceptance 只接受该 side-effect-free contract，不证明真实 permission 或账户健康。
 - GateW-3 risk preflight：只消费 immutable preview/reconciliation result 与显式 local metadata snapshots；不调用 `PreTradeRiskService`/registry/stateful rules，不构造 `PlaceOrderCommand`，无 DB/network/write。minimum notional、fee、remote permission 保持 UNKNOWN，stateful risk/balance/position 等保持 NOT_EVALUATED，`executionReadiness=BLOCKED`、`tradingAuthorized=false`。
@@ -114,4 +115,4 @@ updated_commit=299ab30bd2e243314be2dc609cb244cd5388027b
 
 ## 4. 下一允许动作
 
-GateX freeze commit `299ab30bd2e243314be2dc609cb244cd5388027b` 的 exact-head CI run `31565353974` 已 `completed / success / 10 jobs / bad=0`，annotated tag `nq-gatex-freeze` 已推送且 peeled target 精确一致。当前 work batch 为 `GateY-PLAN / IMPLEMENTED|SELF_REVIEWED / UNCOMMITTED / NOT_RUN`，唯一下一动作精确为 `NQ-GATEY-PLAN-COMMIT-AND-PUSH`。本动作只允许提交并推送本计划文档；在该提交的 exact-head CI 被接受并另行授权前，不得启动 GateY-1，更不得启动 Shadow Run、LIVE、下单、撤单、转账或提现。
+GateY-PLAN 的原始提交、失败 CI、forward-only false-positive remediation 与最终 exact-head green CI 已形成完整事实链，现为 `ACCEPTED|CI_GREEN`。当前 work batch 为 `GateY-1 / NOT_STARTED / NONE / NOT_RUN`，唯一下一动作精确为 `NQ-GATEY-1-LIVE-SESSION-DATA-MODEL-WORK-ORDER-IMPLEMENTATION`。该动作只允许形成正式 implementation work order，不得创建 migration、Java/API/worker/frontend 能力，不得读取 credential、连接 OKX、启动 Shadow Run 或 LIVE，也不得产生下单、撤单、转账或提现副作用。

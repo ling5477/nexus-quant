@@ -80,6 +80,6 @@ Historical evidence 中的旧状态、旧路径和旧 next action 不覆盖 curr
 - GateW-ATTEMPT-13-168H-ACCEPTANCE：`ACCEPTED / CI GREEN`；Attempt-13=`COMPLETED / ACCEPTED`，production soak=`COMPLETED`。
 - GateX：`FROZEN / ACCEPTED / TAGGED`；freeze commit=`299ab30bd2e243314be2dc609cb244cd5388027b`，tag=`nq-gatex-freeze`，strict archive/release/post-tag verification 均通过。
 - GateX-5：`ACCEPTED / CI GREEN`；最终 `ADMISSION_MATERIALIZATION_FACT_TEAR=CLOSED`，但不授权 Shadow execution、trading 或 LIVE。
-- GateY：`IN PROGRESS / NOT FROZEN`；GateY-PLAN=`IMPLEMENTED / SELF_REVIEWED`，可进入提交前复核。当前计划只冻结 OKX Spot 单场所 micro-live 候选边界，implementation 未开始、micro-live 未授权。
+- GateY：`IN PROGRESS / NOT FROZEN`；GateY-PLAN=`ACCEPTED / CI_GREEN`，GateY-1=`NOT_STARTED`。当前计划只冻结 OKX Spot 单场所 micro-live 候选边界；GateY-1 第一轮只形成 work order，implementation/migration 未开始、micro-live 未授权。
 - LIVE=`DISABLED`，kill switch=`ENGAGED`；Shadow trading 未启用；AI、DH runtime、Integration runtime 未开始；real provider 与 private trading 未实现。
 - 唯一下一动作从 [STATUS.md](STATUS.md) 与 [ROADMAP.md](ROADMAP.md) 读取；本索引不建立第二份 action authority。
