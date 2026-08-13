@@ -18648,3 +18648,30 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - validation：authority errors=0；links 272 checked / 14 个既有 historical warnings / 0 errors；9 个允许路径、unexpected=0；`git diff --check` errors=0；backend/frontend/research/scripts/deploy/.github/migration/docs/gates/docs/archive diff=0。产品测试未重复运行，因为本轮 documentation-only 并采用 addendum exact-head CI。
 - result：`PASS / GATEY_4_ANCESTRY_FORWARD_RECONCILED / CANONICAL_IMPLEMENTATION_ACCEPTED / GATEY_4_ACCEPTED / CI_GREEN / FILESYSTEM_STABLE_HANDLE_CLOSED_FOR_SUPPORTED_LINUX_RUNTIME / GATEY_5_INITIALIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
 - next：`NQ-GATEY-5-ISOLATED-WORKER-DRYRUN-ROLLBACK-RESTORE-LOCK-WINDOW-IMPLEMENTATION`。
+
+## 2026-08-13 — GateY-5 production-like scale authority establishment attempt-01
+
+- task：`NQ-GATEY-5-PRODUCTION-LIKE-SCALE-AUTHORITY-ESTABLISHMENT`；NQ-only、L 级 capacity/database governance prerequisite。
+- baseline：`dev` clean/staged empty；`HEAD == origin/dev == 4e4373ecdb88dcfcb0637cc4c74e321c210e1e76`；exact-head CI run `31682295629 / completed / success`；authority=`GateY-5 / NOT_STARTED / NONE / NOT_RUN`。
+- environment：仓库无明确 target DB identity/read-only authorization/connection procedure，故 `TARGET_ENVIRONMENT_STATS=NOT_RUN`；未 SSH、未读取 DB env/password、未连接 production。
+- authority：建立 `REVIEWED_SYNTHETIC_ENVELOPE` candidate；从实际 V39/FK/runtime RBAC 重建 21-table closure，覆盖 required 13/13 + valid-FK support 8；retention=730 days，orders=2,500,000，sessions/intents/receipts=`5,000/2,000,000/6,000,000`；所有 scale 均为 `SYNTHETIC_CONSERVATIVE`，不冒充 observed。
+- manifest：JSON parse PASS；duplicate/bad-source/unknown/size-mismatch=`0/0/0/0`；target rows=`11,728,032`；planned table/index bytes=`10,323,410,944/8,078,557,184`；UTF-8 no BOM、LF；SHA-256=`6f31eeaaca4bdad56aae50979c57459b0fdec8a9d2b60155331a89efbffbaffc`。
+- generator：本轮只冻结 deterministic disposable-only contract，不新增 tooling/module/dependency，不运行 V39 lock measurement；新 GateY 六表 migration-time rows=0，steady-state target单独记录。
+- boundary：credential material/exchange calls/PLACE/CANCEL/transfer/withdraw/production DB read-write/migration/worker/deploy=`0`；V1～V39 unchanged、V40=0；LIVE=`DISABLED`、kill=`ENGAGED`。
+- residuals：`PRODUCTION_LOCK_WINDOW_NOT_MEASURED=OPEN`；capacity authority 尚待独立 review/exact-head CI；GateY-5 machine authority继续 `NOT_STARTED`。
+- result：`PASS / GATEY_5_PRODUCTION_LIKE_SCALE_AUTHORITY_ESTABLISHED / ALL_V39_DEPENDENCY_TABLES_COVERED / SCALE_SOURCE_CLASSIFIED / CAPACITY_ENVELOPE_FROZEN / NO_PRODUCTION_WRITE / GATEY_5_IMPLEMENTATION_NOT_STARTED / READY_FOR_INDEPENDENT_SCALE_REVIEW`。
+- next：`NQ-GATEY-5-PRODUCTION-LIKE-SCALE-AUTHORITY-REVIEW`。
+
+## 2026-08-13 — GateY-5 production-like scale authority independent review attempt-01
+
+- task：`NQ-GATEY-5-PRODUCTION-LIKE-SCALE-AUTHORITY-REVIEW`；NQ-only、L 级 independent capacity/database governance review。
+- baseline：`dev`；`HEAD == origin/dev == 4e4373ecdb88dcfcb0637cc4c74e321c210e1e76`；candidate dirty allowlist 5 files；GateY-5 machine authority=`NOT_STARTED / NONE / NOT_RUN`。
+- dependency：从 actual V1/V2/V3/V5/V7/V10/V12/V18/V19/V20/V27/V28/V29/V31/V37/V38/V39 重建；21 tables missing/unjustified/duplicate=`0/0/0`。5 direct existing parents 负责 migration lock relevance；6 V39 新表只进入 post-migration steady drill；10 RBAC/lineage/account tables为 valid deterministic seed support。
+- RCA/correction：初版 `preV39TargetRows/targetRows` 对 generic consumer 仍有 phase ambiguity，UUID/timestamp/session transition constraint 过于隐式；新增 machine `datasetPhases`、policy/derived source、scenario class、`5s+2s<=7s` blocked expectation 与 seed-derived realizability contract。21-table set、orders 2.5M、PRE/POST totals 与 write envelope 不变。
+- scale：PRE=`3,557,032 rows / 7.58 GiB relation+index reservation`；POST=`11,728,032 rows / 17.14 GiB`；V39-created post facts=`8,171,000 rows / 9.56 GiB`。`orders=2,500,000` 接受为 conservative synthetic，不是 production observed。
+- realizability：11 named FK/unique/check/cardinality checks全部通过；5000 sessions 必须按 account 串行进入 terminal 后复用，events/intents/receipts 使用确定性 positive sequence/attempt；credential 仅 non-secret synthetic bytes。
+- manifest：status=`REVIEW_ACCEPTED_READY_TO_COMMIT`；digest=`bbb67585855ef1c10adf2fbd57ef7cbdd270af702c4a322fe5a38d328037ee81`；JSON/UTF-8 LF/digest/coverage/phase/formula全部通过。
+- validation：authority errors=`0`；first full links checked=`256`、warnings=`14` historical、errors=`0`；changed paths=`6`、unexpected/forbidden=`0/0`；sensitive values=`0`；product/runtime tests=`NOT_RUN`。一次 ad-hoc PowerShell constraint array 解析失败，改为 named boolean map 后 `11/11` 通过，无写副作用。
+- boundary：production DB/credential/exchange/real mutation/worker/deployment/migration execution=`0`；LIVE=`DISABLED`、kill=`ENGAGED`；`PRODUCTION_LOCK_WINDOW_NOT_MEASURED=OPEN`。
+- result：`PASS / GATEY_5_PRODUCTION_LIKE_SCALE_AUTHORITY_REVIEW_ACCEPTED / P0_0 / P1_0 / PRE_V39_MIGRATION_SCALE_FROZEN / POST_V39_OPERATIONAL_SCALE_FROZEN / ALL_V39_DEPENDENCIES_COVERED / SYNTHETIC_ENVELOPE_REALIZABLE / CAPACITY_MANIFEST_VERIFIED / PRODUCTION_LOCK_WINDOW_STILL_OPEN / GATEY_5_IMPLEMENTATION_NOT_STARTED / READY_TO_COMMIT`。
+- next：`COMMIT_SCALE_AUTHORITY_AND_WAIT_EXACT_HEAD_CI`；CI green 后才恢复 `NQ-GATEY-5-ISOLATED-WORKER-DRYRUN-ROLLBACK-RESTORE-LOCK-WINDOW-IMPLEMENTATION`。

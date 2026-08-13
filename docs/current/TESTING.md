@@ -13402,3 +13402,36 @@ Known warnings：既有 Maven settings unknown `profiles`、Mockito dynamic agen
 | Product/local runtime tests | NOT RUN（未运行） | documentation-only；采用 addendum exact-head CI，不重复执行业务测试；非阻断 |
 
 P0=0、P1=0、P3=0；P2 `PRODUCTION_LOCK_WINDOW_NOT_MEASURED=OPEN` 与受约束的短生命周期 decrypt `String` 残留继续保留。production migration deployment、production worker、`FIRST_REAL_ORDER`、real PLACE/CANCEL、micro-live 与 LIVE 均未授权。完整证据：[evidence/gate-y/NQ-GATEY-4-ANCESTRY-RECONCILIATION-POST-ADDENDUM-CI-ACCEPTANCE.attempt-01.md](evidence/gate-y/NQ-GATEY-4-ANCESTRY-RECONCILIATION-POST-ADDENDUM-CI-ACCEPTANCE.attempt-01.md)。
+
+## 2026-08-13 — GateY-5 production-like scale authority establishment attempt-01
+
+结论：`PASS / GATEY_5_PRODUCTION_LIKE_SCALE_AUTHORITY_ESTABLISHED / ALL_V39_DEPENDENCY_TABLES_COVERED / SCALE_SOURCE_CLASSIFIED / CAPACITY_ENVELOPE_FROZEN / NO_PRODUCTION_WRITE / GATEY_5_IMPLEMENTATION_NOT_STARTED / READY_FOR_INDEPENDENT_SCALE_REVIEW`。
+
+| 验证项 | 结果 | 范围与环境 |
+| --- | --- | --- |
+| Hard baseline | PASS（通过） | `dev` clean/staged empty；`HEAD == origin/dev == 4e4373ecdb88dcfcb0637cc4c74e321c210e1e76`；exact-head CI run `31682295629 / completed / success` |
+| Environment statistics authorization | NOT RUN（未运行） | 无明确 target DB identity/read-only authorization/connection procedure；未 SSH、未读取 DB env/password、未连接生产 |
+| Dependency/source coverage | PASS（通过） | manifest 21 tables；任务必需 13/13；valid-FK support 8；duplicate=0；bad source=0；unknown scale=0 |
+| Capacity formula | PASS（通过） | size formula mismatch=0；target rows=`11,728,032`；planned table/index estimate=`10,323,410,944 / 8,078,557,184 bytes`；全部为 synthetic，不是 observed |
+| Deterministic encoding | PASS（通过） | JSON parse；UTF-8 no BOM；LF；固定 order；digest contract SHA-256=`6f31eeaa...affc` |
+| Product/runtime tests | NOT RUN（未运行） | documentation/governance-only；未实现 generator，未运行 V39 lock measurement、Maven、frontend、Playwright 或 PostgreSQL drill |
+| Security/trading boundary | PASS / ZERO SIDE EFFECT（通过 / 无副作用） | credential material/exchange call/PLACE/CANCEL/production DB write/migration/worker start=`0`；LIVE disabled、kill engaged |
+
+Known limitations：authority 为 `REVIEWED_SYNTHETIC_ENVELOPE` candidate，尚待独立 review 与 exact-head CI；byte estimate 不是 `pg_relation_size` observation；`PRODUCTION_LOCK_WINDOW_NOT_MEASURED=OPEN`。完整证据：[evidence/gate-y/NQ-GATEY-5-PRODUCTION-LIKE-SCALE-AUTHORITY-ESTABLISHMENT.attempt-01.md](evidence/gate-y/NQ-GATEY-5-PRODUCTION-LIKE-SCALE-AUTHORITY-ESTABLISHMENT.attempt-01.md)。
+
+## 2026-08-13 — GateY-5 production-like scale authority independent review attempt-01
+
+结论：`PASS / GATEY_5_PRODUCTION_LIKE_SCALE_AUTHORITY_REVIEW_ACCEPTED / P0_0 / P1_0 / PRE_V39_MIGRATION_SCALE_FROZEN / POST_V39_OPERATIONAL_SCALE_FROZEN / ALL_V39_DEPENDENCIES_COVERED / SYNTHETIC_ENVELOPE_REALIZABLE / CAPACITY_MANIFEST_VERIFIED / PRODUCTION_LOCK_WINDOW_STILL_OPEN / GATEY_5_IMPLEMENTATION_NOT_STARTED / READY_TO_COMMIT`。
+
+| Command / check | Result | Scope / environment / warnings |
+| --- | --- | --- |
+| Baseline + authority | PASS（通过） | `dev`；`HEAD == origin/dev == 4e4373ecdb88dcfcb0637cc4c74e321c210e1e76`；5-file candidate allowlist；authority errors=`0` |
+| Actual SQL dependency rebuild | PASS（通过） | V1/V2/V3/V5/V7/V10/V12/V18/V19/V20/V27/V28/V29/V31/V37/V38/V39；21 tables，missing/unjustified/duplicate=`0/0/0` |
+| Manifest parse/digest | PASS（通过） | schema=`gatey-production-like-scale.v1`；UTF-8 no BOM、LF；digest match=`bbb67585855ef1c10adf2fbd57ef7cbdd270af702c4a322fe5a38d328037ee81` |
+| Dataset phase/formula | PASS（通过） | PRE/POST rows=`3,557,032 / 11,728,032`；phase problems=`0`；size mismatch=`0`；derivation missing/duplicate=`0/0` |
+| FK/unique/check realizability | PASS（通过） | 11 named static checks / 0 failures；session partial unique、intent/receipt sequence、credential type unique、publish/admission 1:1 均有 deterministic construction |
+| Doc links first full pass | PASS WITH WARNINGS（通过并有 warning） | checked=`256`、errors=`0`、14 个既有 historical warnings；ledger-inclusive final rerun记录在 review evidence |
+| Git/sensitive boundary | PASS（通过） | changed=`6`、unexpected/forbidden=`0/0`；`git diff --check` exit=`0`，仅既有 LF→CRLF working-tree warning；sensitive value match=`0` |
+| Product/runtime tests | NOT RUN（未运行） | manifest/governance review-only；未实现 generator，未运行 Maven/frontend/Python/PostgreSQL lock drill；非阻断 |
+
+Review correction：增加 machine `PRE_V39_MIGRATION_CLONE` / `POST_V39_OPERATIONAL_DRILL`、source/scenario class、5s+2s bounded lock expectation、seed-derived deterministic constraint contract；21-table set 与 capacity targets 不变。Validation wrapper 曾因 PowerShell comparison-array parsing 失败一次，改为 named boolean map 后 `11/11` 通过；该工具调用错误未产生写操作。完整证据：[evidence/gate-y/NQ-GATEY-5-PRODUCTION-LIKE-SCALE-AUTHORITY-REVIEW.attempt-01.md](evidence/gate-y/NQ-GATEY-5-PRODUCTION-LIKE-SCALE-AUTHORITY-REVIEW.attempt-01.md)。
