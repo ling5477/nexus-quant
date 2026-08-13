@@ -13345,3 +13345,33 @@ Known warnings：既有 SLF4J no-provider、Mockito dynamic-agent、unchecked/de
 | Security/trading boundary | PASS / ZERO SIDE EFFECT（通过 / 无副作用） | credential access/exchange call/order/cancel/transfer/withdraw=0；LIVE=`DISABLED`、kill switch=`ENGAGED`、real provider/private trading=`NOT_IMPLEMENTED` |
 
 GateY-3 接受仅覆盖 deterministic fake/local execution runtime、stable clientOrderId/canonical hash、cross-process idempotency、claim/lease、durable SEND_STARTED、crash/UNKNOWN recovery、NO BLIND RETRY、receipt atomicity 与 PostgreSQL concurrency baseline。GateY-4 只初始化 scoped credential/private read-only/kill/deployment boundary；PLACE、CANCEL、资金 mutation、production worker 自动启动、micro-live 与 LIVE 均禁止。完整证据：[evidence/gate-y/NQ-GATEY-3-POST-CI-ACCEPTANCE-AND-GATEY-4-INITIALIZATION.attempt-01.md](evidence/gate-y/NQ-GATEY-3-POST-CI-ACCEPTANCE-AND-GATEY-4-INITIALIZATION.attempt-01.md)。
+
+## 2026-08-13 — GateY-4 scoped credential/private read-only/kill/deployment boundary implementation attempt-01
+
+结论：`PASS / GATEY_4_SECURITY_BOUNDARY_IMPLEMENTED / SCOPED_CREDENTIAL_ENFORCED / PRIVATE_READONLY_PROBE_IMPLEMENTED / KILL_PROPAGATION_ENFORCED / FILESYSTEM_STABLE_HANDLE_CLOSED / IMMUTABLE_WORKER_ADMISSION_IMPLEMENTED / NO_MUTATING_EXCHANGE_CALL / PENDING_INDEPENDENT_REVIEW / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED`。
+
+| 验证项 | 结果 | 范围 |
+| --- | --- | --- |
+| focused reactor | PASS | core 最终 20/0/0/7 skipped；infra 12/0/0；app 36/0/0；final snapshot focused 9/0/0/7 skipped + app 2/0/0；ArchUnit/no-outbound green |
+| full backend | PASS | 最终 23/23 modules；1443 tests / 0 failures / 0 errors / 38 skipped；39 migrations validated，V40=0 |
+| deployment script regression | PASS | GateW verifier delegation、Linux/root/identity、no-start/no-secret/no-network |
+| stable handle | PASS / SUPPORTED RUNTIME CONTRACT | Linux `SecureDirectoryStream` source handle + bounded private immutable snapshot contract closed；Windows fail-closed，7 Linux cases skipped，其他 OS 不授权 |
+| real private read-only smoke | NOT RUN | `API_KEY_REQUIRED`；read calls=0，mutation=0，不读取凭证 |
+| security/side effect | PASS | P0=0、P1=0；PLACE/CANCEL/transfer/withdraw/worker start/micro-live=`0`；LIVE disabled、kill engaged |
+
+P2 `PRODUCTION_LOCK_WINDOW_NOT_MEASURED` 保留；CI 与 independent Security/Operations Review 未运行。完整证据：[evidence/gate-y/NQ-GATEY-4-SCOPED-CREDENTIAL-PRIVATE-READONLY-KILL-DEPLOYMENT-BOUNDARY-IMPLEMENTATION.attempt-01.md](evidence/gate-y/NQ-GATEY-4-SCOPED-CREDENTIAL-PRIVATE-READONLY-KILL-DEPLOYMENT-BOUNDARY-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-13 — GateY-4 independent Security/Operations Review attempt-01
+
+结论：`PASS / GATEY_4_SECURITY_OPERATIONS_REVIEW_ACCEPTED / P0_0 / P1_0 / SCOPED_CREDENTIAL_BOUNDARY_VERIFIED / PRIVATE_READONLY_BOUNDARY_VERIFIED / KILL_PROPAGATION_VERIFIED / LINUX_STABLE_HANDLE_RACES_VERIFIED / FILESYSTEM_STABLE_HANDLE_CLOSED_FOR_SUPPORTED_LINUX_RUNTIME / IMMUTABLE_WORKER_ADMISSION_VERIFIED / NO_MUTATING_EXCHANGE_CALL / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
+
+| 验证项 | 结果 | 范围与环境 |
+| --- | --- | --- |
+| Linux stable-handle | PASS | WSL2 Ubuntu，Linux `6.6.87.2-microsoft-standard-WSL2`，`/tmp` 为 ext filesystem；Temurin JDK 21.0.12；`SecureDirectoryStream`/`NOFOLLOW_LINKS`/regular file/non-null `fileKey` 前置通过；14 tests / 0 failures / 0 errors / 0 skipped |
+| focused backend | PASS | core 23、adapter-okx 9、infra 23、app 36，共 91 tests / 0 failures / 0 errors / 10 skips；skips 为 Windows 上 Linux-only 9 与 no-outbound environment 1；ArchUnit green |
+| deployment script regression | PASS | 6 cases：delegate-release、linux-root、identity、no-start、no-secret、no-network |
+| full backend | PASS | 23/23 Reactor modules；1450 tests / 0 failures / 0 errors / 40 skipped；`BUILD SUCCESS` |
+| real private read-only smoke | NOT RUN | `API_KEY_REQUIRED`；remote permission=`NOT_VERIFIED`，IP allowlist remote verification=`NOT_VERIFIABLE` |
+| no-outbound/security boundary | PASS | 真实 credential lookup、exchange HTTP/DNS/socket、PLACE/CANCEL/transfer/withdraw、worker start、deploy 均为 0；LIVE disabled |
+
+Known warnings：既有 Maven settings unknown `profiles`、Mockito dynamic agent、SLF4J no-provider、unchecked/deprecation、LF→CRLF。首次 Linux Maven 调度因 Windows localRepository 路径在 Linux 下解释错误而尝试 Aliyun mirror，TLS/model resolution 失败且未运行测试；改用 offline mounted Maven repository 后成功。Linux 临时 JDK 来自 Adoptium 官方 release，SHA-256 校验通过，完成后删除。CI=`NOT_RUN`。P2 `PRODUCTION_LOCK_WINDOW_NOT_MEASURED=OPEN`，阻断 production migration/deployment/worker/FIRST_REAL_ORDER；不阻断本次 review acceptance。完整证据：[evidence/gate-y/NQ-GATEY-4-SCOPED-CREDENTIAL-PRIVATE-READONLY-KILL-DEPLOYMENT-BOUNDARY-SECURITY-REVIEW.attempt-01.md](evidence/gate-y/NQ-GATEY-4-SCOPED-CREDENTIAL-PRIVATE-READONLY-KILL-DEPLOYMENT-BOUNDARY-SECURITY-REVIEW.attempt-01.md)。

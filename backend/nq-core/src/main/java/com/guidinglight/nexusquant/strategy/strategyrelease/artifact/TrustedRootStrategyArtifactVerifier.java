@@ -168,6 +168,7 @@ public class TrustedRootStrategyArtifactVerifier {
 
         Set<String> logicalNames = new LinkedHashSet<>();
         Set<String> relativePaths = new LinkedHashSet<>();
+        Set<String> caseFoldedRelativePaths = new LinkedHashSet<>();
         long declaredTotal = 0;
         for (ArtifactFile artifact : manifest.artifactFiles()) {
             if (artifact == null) {
@@ -202,6 +203,10 @@ public class TrustedRootStrategyArtifactVerifier {
             }
             if (!logicalNames.add(artifact.logicalName()) || !relativePaths.add(artifact.relativePath())) {
                 return Optional.of(rejected(FindingCode.DUPLICATE_ARTIFACT, safePath));
+            }
+            // Deployment must behave identically on case-sensitive and case-insensitive filesystems.
+            if (!caseFoldedRelativePaths.add(artifact.relativePath().toLowerCase(Locale.ROOT))) {
+                return Optional.of(rejected(FindingCode.CASE_COLLISION, safePath));
             }
             try {
                 declaredTotal = Math.addExact(declaredTotal, artifact.sizeBytes());

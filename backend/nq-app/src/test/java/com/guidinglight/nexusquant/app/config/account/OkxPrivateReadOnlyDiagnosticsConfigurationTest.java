@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.app.config.account;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
+import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialRepository;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateReadonlyProbeService;
 import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
@@ -83,6 +84,16 @@ class OkxPrivateReadOnlyDiagnosticsConfigurationTest {
             assertFalse(context.getBeansOfType(OkxPrivateReadTransport.class).isEmpty());
             assertFalse(context.getBeansOfType(OkxPrivateCredentialExecutor.class).isEmpty());
             assertFalse(context.getBeansOfType(OkxPrivateReadonlyProbeService.class).isEmpty());
+        }
+    }
+
+    @Test
+    void scopedExplicitProfileStillRequiresExactReadOnlyFlagsAndCreatesNoTradingAdapter() {
+        try (AnnotationConfigApplicationContext context = context(
+                "scoped-okx-private-readonly", STABLE_PREFIX, true, false)) {
+            assertFalse(context.getBeansOfType(OkxPrivateReadonlyProbeService.class).isEmpty());
+            assertTrue(context.getBeansOfType(TradingAdapter.class).isEmpty());
+            assertTrue(context.getBeansOfType(OkxWsClient.class).isEmpty());
         }
     }
 
@@ -195,6 +206,11 @@ class OkxPrivateReadOnlyDiagnosticsConfigurationTest {
         @Bean
         ExchangeAccountRepository exchangeAccountRepository() {
             return mock(ExchangeAccountRepository.class);
+        }
+
+        @Bean
+        ExchangeAccountCredentialRepository exchangeAccountCredentialRepository() {
+            return mock(ExchangeAccountCredentialRepository.class);
         }
 
         @Bean

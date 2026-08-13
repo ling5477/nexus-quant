@@ -18594,3 +18594,30 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：credential access/exchange calls/order/cancel/transfer/withdraw/交易副作用=0；LIVE=`DISABLED`、kill switch=`ENGAGED`；不修改业务代码、V39、migration、workflow、governance contract 或既有 GateY-3 implementation/review evidence，未 commit/push/PR/tag。
 - result：`PASS / GATEY_3_ACCEPTED / CI_GREEN / LEGACY_ACCOUNT_IDENTITY_BRIDGE_CLOSED / GATEY_4_INITIALIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
 - next：`NQ-GATEY-4-SCOPED-CREDENTIAL-PRIVATE-READONLY-KILL-DEPLOYMENT-BOUNDARY-IMPLEMENTATION`。
+
+## 2026-08-13 — GateY-4 security/deployment boundary implementation attempt-01
+
+- task：`NQ-GATEY-4-SCOPED-CREDENTIAL-PRIVATE-READONLY-KILL-DEPLOYMENT-BOUNDARY-IMPLEMENTATION`；NQ-only、L 级 backend/security/credential/kill/stable-handle/deployment implementation。
+- baseline：`dev` clean/staged empty；`HEAD == origin/dev == 6b5d918c0f90925fce5a6ab4862afbe4cc1522ef`；CI `31659232390 / completed / success / 10 jobs / bad=0`。
+- implementation：复用 GateW release verifier、typed endpoint guard、credential repository/JIT executor 与唯一 durable kill owner；新增 typed scoped capability、显式 read-only probe、kill envelope/claim-send gate、Linux verified-open source handle + bounded private immutable snapshot reader、immutable package/process/session deployment admission 与 non-mutating verifier script。
+- self-review correction：发现 consumer 直接读取可变 source handle 的 P1（最终拒绝前可能观察到原地改写字节），已改为从已打开 source 验证到有配置 hard cap 且不暴露 backing array 的 private snapshot，consumer 只读 snapshot，随后复核 source/snapshot；P1 已关闭。
+- migration：V1～V39 unchanged，V40=0；未修改 production DB。
+- validation：focused core/infra/app/ArchUnit/no-outbound 全绿；script regression PASS；最终全后端 23/23 modules、1443 tests / 0 failures / 0 errors / 38 skipped。Windows 跳过 7 个 Linux race/snapshot-limit cases并保持 fail-closed；其他 OS 不获 production authorization。
+- smoke：`REAL_PRIVATE_READONLY_SMOKE=NOT_RUN / API_KEY_REQUIRED`；未读取 credential；real read/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0`。
+- findings：P0=0、P1=0、P3=0；P2 `PRODUCTION_LOCK_WINDOW_NOT_MEASURED` 保留。CI/独立 Security/Operations Review 未运行。
+- boundary：production migration/worker/FIRST_REAL_ORDER 未授权；production worker start=0、micro-live orders=0、LIVE=`DISABLED`、kill=`ENGAGED`；未 stage/commit/push/PR/tag/deploy。
+- authority：GateY-3 accepted 保持；GateY-4=`IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`。
+- next：`NQ-GATEY-4-SCOPED-CREDENTIAL-PRIVATE-READONLY-KILL-DEPLOYMENT-BOUNDARY-SECURITY-REVIEW`。
+
+## 2026-08-13 — GateY-4 independent Security/Operations Review attempt-01
+
+- task：`NQ-GATEY-4-SCOPED-CREDENTIAL-PRIVATE-READONLY-KILL-DEPLOYMENT-BOUNDARY-SECURITY-REVIEW`；NQ-only、L 级 credential/private-readonly/kill/Linux TOCTOU/deployment admission 独立安全复核。
+- baseline：`dev`；`HEAD == origin/dev == 6b5d918c0f90925fce5a6ab4862afbe4cc1522ef`；staged empty；authority=`GateY-4 / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`。
+- corrections：关闭 exact credential default fallback、probe config/balance 前 kill revision race、revoked/rotated lifecycle conflict、endpoint operation/digest duplicated authority、session venue null fail-open 与 `POST_VERIFY_SIDE_EFFECT_BEFORE_FINAL_CLOSURE`；stable snapshot 改为 closure 后才返回的 thread-bound one-shot result，补齐总量 64 MiB cap 与清零语义。
+- Linux：WSL2 Ubuntu ext filesystem；Temurin 21.0.12 官方 SHA-256 通过；`SecureDirectoryStream`/`NOFOLLOW_LINKS`/stable fileKey 前置与 14 个 race/closure tests 全绿，relevant skips=0；临时 JDK cache 已删除。
+- validation：focused 91/0/0/10 skipped；script 6/6；full backend 23/23 modules、1450/0/0/40 skipped；ArchUnit green；authority/diff/migration/stage-name/no-outbound checks通过。
+- residuals：P0=0/P1=0/P3=0；P2 `PRODUCTION_LOCK_WINDOW_NOT_MEASURED=OPEN`；既有 JDBC/Jackson decrypt 路径需要短生命周期 `String`，仍限制在 infra/JIT session 并在 `finally` 清理可变 material，不新增缓存/日志/控制面逃逸。
+- boundary：真实 private smoke=`NOT_RUN / API_KEY_REQUIRED / REMOTE_PERMISSION_NOT_VERIFIED`；credential lookup、real exchange call、PLACE/CANCEL/transfer/withdraw、worker start、production deploy=`0`；LIVE=`DISABLED`；未 stage/commit/push/PR/tag。
+- result：`PASS / GATEY_4_SECURITY_OPERATIONS_REVIEW_ACCEPTED / P0_0 / P1_0 / LINUX_STABLE_HANDLE_RACES_VERIFIED / FILESYSTEM_STABLE_HANDLE_CLOSED_FOR_SUPPORTED_LINUX_RUNTIME / NO_MUTATING_EXCHANGE_CALL / LIVE_DISABLED / READY_TO_COMMIT`。
+- authority：`GateY-4 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
+- next：`NQ-GATEY-4-SCOPED-CREDENTIAL-PRIVATE-READONLY-KILL-DEPLOYMENT-BOUNDARY-COMMIT-AND-PUSH`。

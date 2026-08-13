@@ -1,9 +1,12 @@
 package com.guidinglight.nexusquant.account.infra.okx.readonly;
 
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
+import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialSummary;
+import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialRepository;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateCredentialContext;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateEnvironment;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxIpAllowlistStatus;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadError;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadException;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadOperation;
@@ -16,9 +19,13 @@ import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 import com.guidinglight.nexusquant.risk.service.KillSwitchState;
 import com.guidinglight.nexusquant.risk.service.KillSwitchStateRepository;
 import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
+import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialCapability;
+import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialCapabilityPolicy;
+import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialReference.RemoteIpVerificationStatus;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -30,11 +37,34 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class OkxPrivateReadonlyProbeServiceTest {
 
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-07-13T00:00:00Z"), ZoneOffset.UTC);
+
+    @Test
+    void legacyExecutorMustFailClosedForExactCredentialReference() {
+        OkxPrivateCredentialExecutor legacy = new OkxPrivateCredentialExecutor() {
+            @Override
+            public <T> T withActiveCredential(
+                    Long ownerId,
+                    Long accountId,
+                    String credentialType,
+                    CredentialCallback<T> callback
+            ) {
+                throw new AssertionError("non-exact credential lookup must not be called");
+            }
+        };
+
+        OkxPrivateReadException failure = assertThrows(OkxPrivateReadException.class,
+                () -> legacy.withActiveCredential(7L, 9L, 11L, "OKX_API_V5", session -> null));
+
+        assertEquals(OkxPrivateReadError.CREDENTIAL_UNAVAILABLE, failure.category());
+    }
 
     @Test
     void callsConfigBeforeBalanceOnlyForExplicitReadOnlyPermission() {
@@ -217,6 +247,103 @@ class OkxPrivateReadonlyProbeServiceTest {
         }
     }
 
+    @Test
+    void scopedDiagnosticBindsExactCredentialAndRemotePermissionIpFacts() {
+        TrackingExecutor executor = new TrackingExecutor();
+        RecordingTransport transport = new RecordingTransport(Set.of("READ_ONLY"), true, true);
+        transport.ipStatus = OkxIpAllowlistStatus.MATCHED;
+        executor.transport = transport;
+        ExchangeAccountCredentialRepository credentials = mock(ExchangeAccountCredentialRepository.class);
+        ExchangeAccountCredentialSummary summary = credentialSummary("READ_ONLY", false, "SUCCEEDED", "PASSED");
+        when(credentials.findByCredentialIdForOwner(7L, 9L, 13L)).thenReturn(Optional.of(summary));
+        OkxPrivateReadonlyProbeService service = new OkxPrivateReadonlyProbeService(
+                new StubAccountRepository(account("OKX", "LIVE", "ACTIVE")),
+                executor,
+                new KillSwitchService(killSwitchRepository(KillSwitchStatus.ENGAGED), CLOCK),
+                CLOCK,
+                credentials,
+                new ScopedCredentialCapabilityPolicy(Duration.ofHours(1))
+        );
+
+        ScopedPrivateReadonlyProbeObservation observation = service.probeScopedDiagnostic(
+                new ScopedPrivateReadonlyProbeRequest(
+                        7L, 9L, 13L, "OKX_API_V5",
+                        ScopedCredentialCapability.PRIVATE_READONLY_DIAGNOSTIC,
+                        OkxPrivateEnvironment.PRODUCTION, List.of("BTC"), "203.0.113.10"));
+
+        assertEquals(OkxPrivateProbeStatus.PASSED_READ_ONLY, observation.probeStatus());
+        assertEquals(List.of(13L), executor.credentialReferences);
+        assertEquals(RemoteIpVerificationStatus.REMOTE_PERMISSION_IP_VERIFIED,
+                observation.remoteIpVerificationStatus());
+        assertEquals(List.of(
+                OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ,
+                OkxPrivateReadOperation.OKX_ACCOUNT_BALANCE_READ), transport.operations);
+        assertFalse(observation.tradingAuthorization());
+    }
+
+    @Test
+    void scopedDiagnosticRechecksExactKillFactBeforeBalanceRead() {
+        MutableKillSwitchRepository killRepository = new MutableKillSwitchRepository();
+        TrackingExecutor executor = new TrackingExecutor();
+        RecordingTransport transport = new RecordingTransport(Set.of("READ_ONLY"), true, true);
+        transport.ipStatus = OkxIpAllowlistStatus.MATCHED;
+        transport.afterConfiguration = () -> killRepository.status = KillSwitchStatus.DISENGAGED;
+        executor.transport = transport;
+        ExchangeAccountCredentialRepository credentials = mock(ExchangeAccountCredentialRepository.class);
+        when(credentials.findByCredentialIdForOwner(7L, 9L, 13L))
+                .thenReturn(Optional.of(credentialSummary("READ_ONLY", false, "SUCCEEDED", "PASSED")));
+        OkxPrivateReadonlyProbeService service = new OkxPrivateReadonlyProbeService(
+                new StubAccountRepository(account("OKX", "LIVE", "ACTIVE")), executor,
+                new KillSwitchService(killRepository, CLOCK), CLOCK,
+                credentials, new ScopedCredentialCapabilityPolicy(Duration.ofHours(1)));
+
+        ScopedPrivateReadonlyProbeObservation observation = service.probeScopedDiagnostic(
+                new ScopedPrivateReadonlyProbeRequest(
+                        7L, 9L, 13L, "OKX_API_V5",
+                        ScopedCredentialCapability.PRIVATE_READONLY_DIAGNOSTIC,
+                        OkxPrivateEnvironment.PRODUCTION, List.of("BTC"), "203.0.113.10"));
+
+        assertEquals(OkxPrivateProbeStatus.BLOCKED, observation.probeStatus());
+        assertEquals(List.of("KILL_SWITCH_CHANGED_DURING_PROBE"), observation.blockers());
+        assertEquals(List.of(OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ), transport.operations);
+    }
+
+    @Test
+    void futureCapabilityAndUnverifiableIpStopBeforeUnsafeContinuation() {
+        TrackingExecutor futureExecutor = new TrackingExecutor();
+        futureExecutor.transport = new RecordingTransport(Set.of("READ_ONLY"), true, true);
+        ExchangeAccountCredentialRepository credentials = mock(ExchangeAccountCredentialRepository.class);
+        when(credentials.findByCredentialIdForOwner(7L, 9L, 13L))
+                .thenReturn(Optional.of(credentialSummary("READ_ONLY", false, "SUCCEEDED", "PASSED")));
+        OkxPrivateReadonlyProbeService service = new OkxPrivateReadonlyProbeService(
+                new StubAccountRepository(account("OKX", "LIVE", "ACTIVE")), futureExecutor,
+                new KillSwitchService(killSwitchRepository(KillSwitchStatus.ENGAGED), CLOCK), CLOCK,
+                credentials, new ScopedCredentialCapabilityPolicy(Duration.ofHours(1)));
+
+        ScopedPrivateReadonlyProbeObservation future = service.probeScopedDiagnostic(new ScopedPrivateReadonlyProbeRequest(
+                7L, 9L, 13L, "OKX_API_V5", ScopedCredentialCapability.FUTURE_MICRO_LIVE,
+                OkxPrivateEnvironment.PRODUCTION, List.of("BTC"), "203.0.113.10"));
+
+        assertEquals(OkxPrivateProbeStatus.BLOCKED, future.probeStatus());
+        assertEquals(0, futureExecutor.callbacks.get());
+        assertEquals(List.of("FUTURE_CAPABILITY_NOT_CALLABLE"), future.blockers());
+
+        TrackingExecutor ipExecutor = new TrackingExecutor();
+        RecordingTransport ipTransport = new RecordingTransport(Set.of("READ_ONLY"), true, true);
+        ipTransport.ipStatus = OkxIpAllowlistStatus.NOT_CHECKED;
+        ipExecutor.transport = ipTransport;
+        OkxPrivateReadonlyProbeService ipService = new OkxPrivateReadonlyProbeService(
+                new StubAccountRepository(account("OKX", "LIVE", "ACTIVE")), ipExecutor,
+                new KillSwitchService(killSwitchRepository(KillSwitchStatus.ENGAGED), CLOCK), CLOCK,
+                credentials, new ScopedCredentialCapabilityPolicy(Duration.ofHours(1)));
+        ScopedPrivateReadonlyProbeObservation ip = ipService.probeScopedDiagnostic(new ScopedPrivateReadonlyProbeRequest(
+                7L, 9L, 13L, "OKX_API_V5", ScopedCredentialCapability.PRIVATE_READONLY_DIAGNOSTIC,
+                OkxPrivateEnvironment.PRODUCTION, List.of("BTC"), "203.0.113.10"));
+        assertEquals(OkxPrivateProbeStatus.BLOCKED, ip.probeStatus());
+        assertEquals(RemoteIpVerificationStatus.NOT_VERIFIABLE, ip.remoteIpVerificationStatus());
+        assertEquals(List.of(OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ), ipTransport.operations);
+    }
+
     private static void assertStoppedBeforeCredentialAndNetwork(
             KillSwitchStateRepository killSwitchRepository,
             String expectedBlocker
@@ -290,8 +417,21 @@ class OkxPrivateReadonlyProbeServiceTest {
         return new ExchangeAccountSummary(9L, null, 7L, exchange, environment, "test", null, false, status);
     }
 
+    private static ExchangeAccountCredentialSummary credentialSummary(
+            String scope,
+            boolean withdraw,
+            String permissionStatus,
+            String ipStatus
+    ) {
+        return new ExchangeAccountCredentialSummary(
+                13L, 9L, "OKX_API_V5", "****", "ACTIVE", "VERIFIED", true,
+                null, null, null, CLOCK.instant().minusSeconds(60), null, CLOCK.instant().minusSeconds(60),
+                permissionStatus, scope, withdraw, ipStatus, 0, CLOCK.instant().minusSeconds(60), null);
+    }
+
     private static final class TrackingExecutor implements OkxPrivateCredentialExecutor {
         private final AtomicInteger callbacks = new AtomicInteger();
+        private final List<Long> credentialReferences = new ArrayList<>();
         private RecordingTransport transport;
 
         @Override
@@ -307,6 +447,18 @@ class OkxPrivateReadonlyProbeServiceTest {
             callbacks.incrementAndGet();
             return callback.execute((request, environment) -> transport.execute(request, null, environment));
         }
+
+        @Override
+        public <T> T withActiveCredential(
+                Long ownerId,
+                Long accountId,
+                Long credentialId,
+                String type,
+                CredentialCallback<T> callback
+        ) {
+            credentialReferences.add(credentialId);
+            return withActiveCredential(ownerId, accountId, type, callback);
+        }
     }
 
     private static final class RecordingTransport implements OkxPrivateReadTransport {
@@ -316,6 +468,8 @@ class OkxPrivateReadonlyProbeServiceTest {
         private final boolean ipAllowlistConfigured;
         private final List<OkxPrivateReadOperation> operations = new ArrayList<>();
         private OkxPrivateReadError failure;
+        private OkxIpAllowlistStatus ipStatus = OkxIpAllowlistStatus.NOT_CHECKED;
+        private Runnable afterConfiguration = () -> { };
 
         private RecordingTransport(Set<String> permissions, boolean configComplete, boolean balanceComplete) {
             this(permissions, configComplete, balanceComplete, true);
@@ -343,11 +497,31 @@ class OkxPrivateReadonlyProbeServiceTest {
             if (failure != null) {
                 throw new OkxPrivateReadException(failure);
             }
-            return request.operation() == OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ
-                    ? new OkxPrivateReadResult(
-                    request.operation(), permissions, 0, configComplete,
-                    List.of(), List.of(), ipAllowlistConfigured, CLOCK.instant())
-                    : new OkxPrivateReadResult(request.operation(), Set.of(), 2, balanceComplete);
+            if (request.operation() == OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ) {
+                OkxPrivateReadResult result = new OkxPrivateReadResult(
+                        request.operation(), permissions, 0, configComplete,
+                        List.of(), List.of(), ipAllowlistConfigured, ipStatus, CLOCK.instant());
+                afterConfiguration.run();
+                return result;
+            }
+            return new OkxPrivateReadResult(request.operation(), Set.of(), 2, balanceComplete);
+        }
+    }
+
+    private static final class MutableKillSwitchRepository implements KillSwitchStateRepository {
+        private KillSwitchStatus status = KillSwitchStatus.ENGAGED;
+
+        @Override
+        public Optional<KillSwitchState> findByScope(KillSwitchScope scope) {
+            return Optional.of(new KillSwitchState(
+                    scope, status, status == KillSwitchStatus.ENGAGED ? 1 : 2,
+                    "TEST_STATE", "TEST_FIXTURE", CLOCK.instant().minusSeconds(1),
+                    "tester", "trace-kill-switch-race"));
+        }
+
+        @Override
+        public KillSwitchState engage(KillSwitchEngageCommand command) {
+            throw new UnsupportedOperationException();
         }
     }
 

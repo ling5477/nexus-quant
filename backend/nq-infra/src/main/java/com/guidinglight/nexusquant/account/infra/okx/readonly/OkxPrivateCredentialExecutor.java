@@ -1,6 +1,8 @@
 package com.guidinglight.nexusquant.account.infra.okx.readonly;
 
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateEnvironment;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadError;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadException;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadRequest;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadResult;
 
@@ -19,7 +21,9 @@ public interface OkxPrivateCredentialExecutor {
 
     /**
      * 按服务端 credential reference 精确选择 active credential。
-     * 默认实现保留测试/旧 adapter 兼容；JDBC production executor 必须覆盖并在 SQL 中绑定 credentialId。
+     *
+     * <p>未实现 exact-reference 查询的旧 executor 必须 fail-closed，不能静默退化为 account/type 查询，
+     * 否则 scoped request 可能使用同账户下错误的 credential。</p>
      */
     default <T> T withActiveCredential(
             Long ownerId,
@@ -28,7 +32,7 @@ public interface OkxPrivateCredentialExecutor {
             String credentialType,
             CredentialCallback<T> callback
     ) {
-        return withActiveCredential(ownerId, exchangeAccountId, credentialType, callback);
+        throw new OkxPrivateReadException(OkxPrivateReadError.CREDENTIAL_UNAVAILABLE);
     }
 
     @FunctionalInterface

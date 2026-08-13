@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /** Trusted-root link/reparse 与 TOCTOU production guard 回归测试。 */
@@ -65,6 +66,32 @@ class TrustedRootStrategyArtifactVerifierTest {
 
         assertEquals(StrategyArtifactVerificationResult.Status.REJECTED, result.status());
         assertEquals(FindingCode.ARTIFACT_CHANGED_DURING_VERIFICATION, result.reasonCode());
+    }
+
+    @Test
+    void shouldRejectCaseCollidingManifestPathsAcrossPlatforms() {
+        byte[] content = "{\"score\":1}".getBytes(StandardCharsets.UTF_8);
+        ArtifactFile lower = new ArtifactFile(
+                "lower", "model/data.json", sha256(content), content.length, "application/json");
+        ArtifactFile upper = new ArtifactFile(
+                "upper", "MODEL/data.json", sha256(content), content.length, "application/json");
+        List<ArtifactFile> files = List.of(lower, upper);
+        StrategyArtifactManifest manifest = new StrategyArtifactManifest(
+                StrategyArtifactManifest.SUPPORTED_SCHEMA_VERSION,
+                "sv-case-collision",
+                UUID.fromString("22222222-2222-4222-8222-222222222222"),
+                "eval-case-collision",
+                files,
+                TrustedRootStrategyArtifactVerifier.computeArtifactDigest(files),
+                Instant.parse("2026-08-01T00:00:00Z"),
+                "nq-research/1.0"
+        );
+
+        StrategyArtifactVerificationResult result =
+                new TrustedRootStrategyArtifactVerifier(POLICY).validateManifest(manifest).orElseThrow();
+
+        assertEquals(FindingCode.CASE_COLLISION, result.reasonCode());
+        assertTrue(result.safeRelativeIdentifier().endsWith("data.json"));
     }
 
     private StrategyArtifactManifest manifest(String relativePath, byte[] content) {

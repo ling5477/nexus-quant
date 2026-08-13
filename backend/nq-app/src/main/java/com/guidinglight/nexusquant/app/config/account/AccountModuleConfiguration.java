@@ -111,7 +111,8 @@ public class AccountModuleConfiguration {
                 || !(executor instanceof JdbcOkxPrivateCredentialExecutor)
                 || !environment.acceptsProfiles(Profiles.of(
                 "okx-private-readonly-diagnostics",
-                "gatew-okx-readonly-soak"
+                "gatew-okx-readonly-soak",
+                "scoped-okx-private-readonly"
         ))
                 || !exactBoolean(environment, "nq.env-safety.ci", false)
                 || !exactBoolean(environment, "nq.env-safety.real-exchange-enabled", false)

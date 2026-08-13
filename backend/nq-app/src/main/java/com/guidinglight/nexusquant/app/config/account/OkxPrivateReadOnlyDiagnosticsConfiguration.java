@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.app.config.account;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
+import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialRepository;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.JdbcOkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateReadonlyProbeService;
@@ -9,8 +10,10 @@ import com.guidinglight.nexusquant.adapter.okx.service.JdkOkxPrivateReadTranspor
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadTransport;
 import com.guidinglight.nexusquant.app.config.CapabilityPropertyResolver;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
+import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialCapabilityPolicy;
 
 import java.time.Clock;
+import java.time.Duration;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -21,6 +24,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * OKX private read-only diagnostics 的显式 composition root。
@@ -29,7 +33,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * Bean 创建不读取 credential、不执行 probe、不访问网络，也不注册 scheduler/runner/mutating adapter。</p>
  */
 @Configuration
-@Profile({"okx-private-readonly-diagnostics", "gatew-okx-readonly", "gatew-okx-readonly-soak"})
+@Profile({"okx-private-readonly-diagnostics", "gatew-okx-readonly", "gatew-okx-readonly-soak",
+        "scoped-okx-private-readonly"})
 @Conditional(
         OkxPrivateReadOnlyDiagnosticsConfiguration.OkxPrivateReadOnlyDiagnosticsEnabledCondition.class
 )
@@ -73,15 +78,27 @@ public class OkxPrivateReadOnlyDiagnosticsConfiguration {
     @Bean
     public OkxPrivateReadonlyProbeService okxPrivateReadOnlyProbeService(
             ExchangeAccountRepository exchangeAccountRepository,
+            ExchangeAccountCredentialRepository credentialRepository,
             OkxPrivateCredentialExecutor credentialExecutor,
-            KillSwitchService killSwitchService
+            KillSwitchService killSwitchService,
+            @Value("${nq.live-control.scoped-credential.maximum-permission-probe-age:PT1H}") String maximumProbeAge
     ) {
         return new OkxPrivateReadonlyProbeService(
                 exchangeAccountRepository,
                 credentialExecutor,
                 killSwitchService,
-                Clock.systemUTC()
+                Clock.systemUTC(),
+                credentialRepository,
+                new ScopedCredentialCapabilityPolicy(parsePositiveDuration(maximumProbeAge))
         );
+    }
+
+    private static Duration parsePositiveDuration(String value) {
+        Duration parsed = Duration.parse(value);
+        if (parsed.isZero() || parsed.isNegative()) {
+            throw new IllegalArgumentException("permission probe age must be positive");
+        }
+        return parsed;
     }
 
     static final class OkxPrivateReadOnlyDiagnosticsEnabledCondition implements Condition {

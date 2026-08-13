@@ -149,7 +149,6 @@ class OkxPrivateReadOnlyPermissionProbeSpringContextTest {
 
     @Configuration(proxyBeanMethods = false)
     static class Dependencies {
-
         @Bean
         JdbcTemplate jdbcTemplate() {
             return mock(JdbcTemplate.class);
