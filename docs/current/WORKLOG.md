@@ -18633,3 +18633,18 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - findings：P0=0、P1=0、P3=0；P2 保留生产锁窗口未实测与受约束的短生命周期 decrypt `String`；LIVE=`DISABLED`，kill switch=`ENGAGED`。
 - result：`PASS / GATEY_4_REVIEWED_PATH_SET_FORWARD_ADDENDUM_CREATED / EXACT_44_PATH_SCOPE_FROZEN / BLOB_MANIFEST_FROZEN / CANDIDATE_A_REVIEW_CONFORMANT / CANDIDATE_B_INCOMPLETE_PARALLEL_COMMIT / MERGE_SELECTS_CANDIDATE_A / P0_0 / P1_0 / READY_TO_COMMIT_ADDENDUM`。
 - next：`COMMIT_ADDENDUM_AND_WAIT_EXACT_HEAD_CI`。
+
+## 2026-08-13 GateY-4 ancestry reconciliation post-addendum CI acceptance
+
+- task：`NQ-GATEY-4-ANCESTRY-RECONCILIATION-POST-ADDENDUM-CI-ACCEPTANCE`；NQ-only、L 级 documentation/post-CI authority reconciliation。
+- baseline：`dev` clean/staged empty；`HEAD == origin/dev == b3a6b1fd550d8ccb5132c7b16942a4b11b67f78e`；addendum exact-head CI run `31679311259`=`completed / success / 10 jobs / bad=0`。
+- integrity：机器字段 13/13；44-path digest=`6b44210616c772f400f17f3d2703b9fd213d979675adaf5ecf7c3c4d9a74086e`；44-blob digest=`b3ad060d34011947a72474bcf9670a0a46e685a0fefc652500bf3d2ec883613f`；复算完全一致。
+- ancestry：Candidate A 44/44、blob mismatch=0、tree=target；Candidate B present/missing/unexpected=`26/18/0`、common mismatch=0；merge parents=A/B、merge tree=A、A→merge diff=0。A=`CANONICAL_IMPLEMENTATION`，B=`SUPERSEDED_INCOMPLETE_PARALLEL_IMPLEMENTATION`，status=`FORWARD_RECONCILED`。
+- acceptance：GateY-4 canonical implementation=`44ac9b3c014bcd7a46499c4180053742e64c7709`；final acceptance evidence head=`b3a6b1fd550d8ccb5132c7b16942a4b11b67f78e`；accepted CI=`31679311259`。
+- stable handle：Linux relevant tests 14/0/0/0；`FILESYSTEM_STABLE_HANDLE_LIMITATION_INHERITED=CLOSED_FOR_SUPPORTED_LINUX_RUNTIME`；其他 OS/filesystem 不授权。
+- residuals：real private smoke=`NOT_RUN / API_KEY_REQUIRED`；remote permission=`NOT_RUN`；IP allowlist=`NOT_VERIFIABLE`；P2 `PRODUCTION_LOCK_WINDOW_NOT_MEASURED=OPEN` 与受约束的 decrypt `String` 残留保留。
+- GateY-5：初始化 fake-only isolated worker、restart/replay、rollback/restore、incident/reconciliation drill、approval/risk visibility 与 production-like lock-window measurement；状态=`NOT_STARTED`。
+- boundary：credential access/exchange calls/worker starts/trading side effects=`0/0/0/0`；real provider/private trading=`NOT_IMPLEMENTED`；production worker/deployment、FIRST_REAL_ORDER、micro-live 未授权；LIVE=`DISABLED`，kill switch=`ENGAGED`。
+- validation：authority errors=0；links 272 checked / 14 个既有 historical warnings / 0 errors；9 个允许路径、unexpected=0；`git diff --check` errors=0；backend/frontend/research/scripts/deploy/.github/migration/docs/gates/docs/archive diff=0。产品测试未重复运行，因为本轮 documentation-only 并采用 addendum exact-head CI。
+- result：`PASS / GATEY_4_ANCESTRY_FORWARD_RECONCILED / CANONICAL_IMPLEMENTATION_ACCEPTED / GATEY_4_ACCEPTED / CI_GREEN / FILESYSTEM_STABLE_HANDLE_CLOSED_FOR_SUPPORTED_LINUX_RUNTIME / GATEY_5_INITIALIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
+- next：`NQ-GATEY-5-ISOLATED-WORKER-DRYRUN-ROLLBACK-RESTORE-LOCK-WINDOW-IMPLEMENTATION`。

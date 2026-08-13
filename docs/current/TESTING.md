@@ -13385,3 +13385,20 @@ Known warnings：既有 Maven settings unknown `profiles`、Mockito dynamic agen
 - exact target-head CI run `31671837597`=`completed/success`，10 jobs、bad=0；本轮独立重跑 GateY-4 deployment-boundary regression=`PASS`（6/6）。Linux-only 与全量后端未在本轮本地重跑，继续引用 target tree 内冻结证据与 exact-head CI，不改写为本地通过。
 - P0=0、P1=0；P2 保留 `PRODUCTION_LOCK_WINDOW_NOT_MEASURED=OPEN` 与受约束的短生命周期 JDBC/Jackson decrypt `String`；LIVE=`DISABLED`，kill switch=`ENGAGED`。
 - 完整证据：[evidence/gate-y/NQ-GATEY-4-REVIEWED-PATH-SET-FORWARD-ADDENDUM.attempt-01.md](evidence/gate-y/NQ-GATEY-4-REVIEWED-PATH-SET-FORWARD-ADDENDUM.attempt-01.md)。
+
+## GateY-4 ancestry reconciliation post-addendum CI acceptance（2026-08-13）
+
+结论：`PASS / GATEY_4_ANCESTRY_FORWARD_RECONCILED / CANONICAL_IMPLEMENTATION_ACCEPTED / GATEY_4_ACCEPTED / CI_GREEN / FILESYSTEM_STABLE_HANDLE_CLOSED_FOR_SUPPORTED_LINUX_RUNTIME / GATEY_5_INITIALIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
+
+| 验证项 | 结果 | 范围与环境 |
+| --- | --- | --- |
+| Git baseline | PASS（通过） | branch=`dev`；起始 worktree clean、staged empty；`HEAD == origin/dev == b3a6b1fd550d8ccb5132c7b16942a4b11b67f78e` |
+| Addendum exact-head CI | PASS（通过） | `NQ CI Baseline` run `31679311259`；`completed / success`；head SHA 精确匹配；10 jobs / bad=0 |
+| Addendum integrity | PASS（通过） | machine fields 13/13；reviewed paths=44；path digest=`6b442106...4086e`；blob rows=44；blob digest=`b3ad060d...3613f`；全部复算一致 |
+| Ancestry reconciliation | PASS（通过） | A 44/44、blob mismatch=0、tree=target；B present/missing/unexpected=`26/18/0`、common blob mismatch=0；merge parents=A/B、merge tree=A、A→merge diff=0 |
+| Stable handle | PASS / SUPPORTED LINUX ONLY（通过 / 仅受支持 Linux） | Linux relevant tests 14/0/0/0；`CLOSED_FOR_SUPPORTED_LINUX_RUNTIME`；其他 OS/filesystem 不获 production authorization |
+| Real/remote facts | NOT RUN / NOT VERIFIED（未运行 / 未验证） | real private smoke=`NOT_RUN / API_KEY_REQUIRED`；remote permission=`NOT_RUN`；IP allowlist=`NOT_VERIFIABLE` |
+| Documentation hard checks | PASS WITH WARNINGS（通过并有 warning） | authority errors=0；links 272 checked / 14 个既有 historical warnings / 0 errors；9 个允许路径、unexpected=0；forbidden-area diff=0；`git diff --check` errors=0 |
+| Product/local runtime tests | NOT RUN（未运行） | documentation-only；采用 addendum exact-head CI，不重复执行业务测试；非阻断 |
+
+P0=0、P1=0、P3=0；P2 `PRODUCTION_LOCK_WINDOW_NOT_MEASURED=OPEN` 与受约束的短生命周期 decrypt `String` 残留继续保留。production migration deployment、production worker、`FIRST_REAL_ORDER`、real PLACE/CANCEL、micro-live 与 LIVE 均未授权。完整证据：[evidence/gate-y/NQ-GATEY-4-ANCESTRY-RECONCILIATION-POST-ADDENDUM-CI-ACCEPTANCE.attempt-01.md](evidence/gate-y/NQ-GATEY-4-ANCESTRY-RECONCILIATION-POST-ADDENDUM-CI-ACCEPTANCE.attempt-01.md)。

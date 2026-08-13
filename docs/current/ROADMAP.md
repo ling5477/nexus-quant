@@ -57,7 +57,9 @@ GateY-2 ACCEPTED / CI GREEN
   ↓
 GateY-3 ACCEPTED / CI GREEN
   ↓
-GateY-4 REVIEW ACCEPTED / READY TO COMMIT
+GateY-4 ACCEPTED / CI GREEN
+  ↓
+GateY-5 NOT STARTED
 ```
 
 ## 下一允许动作
@@ -87,8 +89,9 @@ GateY-4 REVIEW ACCEPTED / READY TO COMMIT
 - GateY-1：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`76ef325f7b8a3d3325df63af2cb1b979309bd141`，exact-head CI run=`31581317959 / completed / success / 10 jobs / bad=0`。接受范围是候选数据模型、状态机、事务、幂等、并发、约束与 migration 验证合同，不表示 migration/runtime 已实现。
 - GateY-2：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`19ac2d1cdc7a1982f97fb0e1b0e62c081d003018`，exact-head CI run=`31608725854 / completed / success / 10 jobs / bad=0`。接受范围为 V39 local schema、六张 control-plane fact 表、`LiveSession`/approval/risk domain、Repository/JDBC、PostgreSQL enforcement、事务/并发与 architecture hygiene baseline；不授权 production migration、worker、真实 exchange execution 或 micro-live。
 - GateY-3：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`1f2ad2324166872a567a0420b71a8b4a5b68f7f1`，exact-head CI run=`31622259352 / completed / success / 10 jobs / bad=0`。`NO BLIND RETRY`、PostgreSQL concurrency、fake-provider isolation 与 `LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE=CLOSED` 均有独立 review 与回归证据；接受不包含真实 provider、credential、外联、production worker 或 LIVE。
-- GateY-4：`REVIEW ACCEPTED / READY TO COMMIT`（复核已接受 / 可进入提交前复核）；P0=0/P1=0，scoped credential/private readonly/kill propagation/immutable worker admission 已独立复核。真实 Linux stable-handle race matrix 14/14、0 relevant skips，filesystem residual 只在 supported Linux runtime 下关闭；真实 smoke=`NOT_RUN / API_KEY_REQUIRED`，remote permission/IP allowlist 未验证，CI=`NOT_RUN`。
-- 当前唯一治理动作是 `NQ-GATEY-4-SCOPED-CREDENTIAL-PRIVATE-READONLY-KILL-DEPLOYMENT-BOUNDARY-COMMIT-AND-PUSH`；精确状态和安全边界服从 [STATUS.md](STATUS.md)。
+- GateY-4：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；canonical implementation commit=`44ac9b3c014bcd7a46499c4180053742e64c7709`，final acceptance evidence head=`b3a6b1fd550d8ccb5132c7b16942a4b11b67f78e`，exact-head CI run=`31679311259 / completed / success / 10 jobs / bad=0`。44-path/44-blob addendum 与 ancestry reconciliation 已通过；Candidate B 因缺少 18 个 reviewed paths 被 supersede。Linux stable-handle closure 只适用于 supported Linux runtime；真实 smoke=`NOT_RUN / API_KEY_REQUIRED`，remote permission/IP allowlist 未验证。
+- GateY-5：`NOT STARTED`（未开始）；已初始化为 isolated worker fake-only dry-run、restart/replay、rollback/restore、incident/reconciliation drill、approval/risk visibility 与 production-like lock-window measurement。
+- 当前唯一治理动作是 `NQ-GATEY-5-ISOLATED-WORKER-DRYRUN-ROLLBACK-RESTORE-LOCK-WINDOW-IMPLEMENTATION`；精确状态和安全边界服从 [STATUS.md](STATUS.md)。
 
 ## GateW 已冻结边界
 
@@ -110,6 +113,8 @@ GateY-4 REVIEW ACCEPTED / READY TO COMMIT
 - `LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE=CLOSED` 已由 GateY-3 独立 review 确认；GateY-4 将 `FILESYSTEM_STABLE_HANDLE_LIMITATION_INHERITED` 在 Linux + `SecureDirectoryStream` supported runtime 下处置为 `SUPPORTED_RUNTIME_CLOSED`，Windows/其他 filesystem 不获 production authorization。`PRODUCTION_LOCK_WINDOW_NOT_MEASURED` 继续保留并阻断 production migration deployment、worker 与 first real order。真实 PLACE/CANCEL、production worker start、LIVE、transfer、withdraw 与真实资金仍禁止。
 - GateY-4 中 credential material ownership 不得进入 domain；control plane 只持 credential reference/capability，JIT decrypt 只能发生在受控 adapter/worker 边界；private provider DTO 不得泄漏 core domain，kill-switch owner 保持唯一，deployment tooling 不承载交易业务规则，read-only probe 不得解释为 trading authorization，fake provider 不得成为真实 provider fallback。若新增 module dependency，必须检查 ArchUnit。
 - GateY-4 仍禁止 PLACE、CANCEL、transfer、withdraw、真实资金 mutation、LIVE activation、production worker 自动启动与真实 micro-live。真实 read-only smoke 必须为显式人工模式；缺少 OKX credential 时只允许 `BLOCKED / API_KEY_REQUIRED`，用户应在 NQ 本地安全 credential 管理路径配置，不得在聊天中粘贴明文 API Key、Secret 或 Passphrase。
+- GateY-5 只允许 isolated worker fake-only dry-run、intent/receipt durable boundary、restart/replay、UNKNOWN reconciliation、NO BLIND RETRY、kill propagation、heartbeat/resource limits、immutable rollback、disposable backup/restore、incident drill、最小 approval/risk visibility 与 production-like V39 lock-window measurement；继续禁止 real OKX mutation、real PLACE/CANCEL、real credential requirement、production worker/deployment、micro-live 与 LIVE。
+- GateY-5 architecture hygiene：worker 不拥有 strategy admission、risk-rule authoring、session authorization 或 credential lifecycle；PostgreSQL intent/receipt 保持唯一 durable execution boundary；orders/trades/positions/ledger owner 不变；fake provider 不得成为 real fallback；dashboard 只展示事实；restart/deployment tooling 不承载业务决策；新增跨 module dependency 必须检查 ArchUnit。禁止 microservice rewrite 或 second execution ledger。
 - 不得把 GateW diagnostic/read-only/soak 证据推导为远端交易 permission、账户健康、余额充分、private trading 或 unattended execution readiness。
 - 不得开启 LIVE、真实下单/撤单、转账/提现、AI trading、DH runtime、Integration runtime、RealClient 或 real provider。
 - NQ-only 任务不得修改或声明 DH current authority；DH/Integration 状态继续只表达 NQ 侧 no-real 边界。
