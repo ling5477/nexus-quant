@@ -13375,3 +13375,13 @@ P2 `PRODUCTION_LOCK_WINDOW_NOT_MEASURED` 保留；CI 与 independent Security/Op
 | no-outbound/security boundary | PASS | 真实 credential lookup、exchange HTTP/DNS/socket、PLACE/CANCEL/transfer/withdraw、worker start、deploy 均为 0；LIVE disabled |
 
 Known warnings：既有 Maven settings unknown `profiles`、Mockito dynamic agent、SLF4J no-provider、unchecked/deprecation、LF→CRLF。首次 Linux Maven 调度因 Windows localRepository 路径在 Linux 下解释错误而尝试 Aliyun mirror，TLS/model resolution 失败且未运行测试；改用 offline mounted Maven repository 后成功。Linux 临时 JDK 来自 Adoptium 官方 release，SHA-256 校验通过，完成后删除。CI=`NOT_RUN`。P2 `PRODUCTION_LOCK_WINDOW_NOT_MEASURED=OPEN`，阻断 production migration/deployment/worker/FIRST_REAL_ORDER；不阻断本次 review acceptance。完整证据：[evidence/gate-y/NQ-GATEY-4-SCOPED-CREDENTIAL-PRIVATE-READONLY-KILL-DEPLOYMENT-BOUNDARY-SECURITY-REVIEW.attempt-01.md](evidence/gate-y/NQ-GATEY-4-SCOPED-CREDENTIAL-PRIVATE-READONLY-KILL-DEPLOYMENT-BOUNDARY-SECURITY-REVIEW.attempt-01.md)。
+
+## GateY-4 reviewed path set forward addendum（2026-08-13）
+
+- baseline=`6b5d918c0f90925fce5a6ab4862afbe4cc1522ef`；target head=`a280e8ba311c9950d273a88d3e92732eb5e592c2`；target tree=`77b4571b124ea58733623ad8e5367d0101a39065`。
+- handoff expected paths=44；target changed paths=44；missing=0；unexpected=0；逐路径独立审查完成。
+- reviewed path-set SHA-256=`6b44210616c772f400f17f3d2703b9fd213d979675adaf5ecf7c3c4d9a74086e`；target blob-manifest SHA-256=`b3ad060d34011947a72474bcf9670a0a46e685a0fefc652500bf3d2ec883613f`。
+- Candidate A 44/44 path 与 blob 完全匹配 target；Candidate B changed=26、common=26、common blob mismatch=0、missing reviewed=18、unexpected=0，处置为 incomplete parallel commit。
+- exact target-head CI run `31671837597`=`completed/success`，10 jobs、bad=0；本轮独立重跑 GateY-4 deployment-boundary regression=`PASS`（6/6）。Linux-only 与全量后端未在本轮本地重跑，继续引用 target tree 内冻结证据与 exact-head CI，不改写为本地通过。
+- P0=0、P1=0；P2 保留 `PRODUCTION_LOCK_WINDOW_NOT_MEASURED=OPEN` 与受约束的短生命周期 JDBC/Jackson decrypt `String`；LIVE=`DISABLED`，kill switch=`ENGAGED`。
+- 完整证据：[evidence/gate-y/NQ-GATEY-4-REVIEWED-PATH-SET-FORWARD-ADDENDUM.attempt-01.md](evidence/gate-y/NQ-GATEY-4-REVIEWED-PATH-SET-FORWARD-ADDENDUM.attempt-01.md)。

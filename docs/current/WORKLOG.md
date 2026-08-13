@@ -18621,3 +18621,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - result：`PASS / GATEY_4_SECURITY_OPERATIONS_REVIEW_ACCEPTED / P0_0 / P1_0 / LINUX_STABLE_HANDLE_RACES_VERIFIED / FILESYSTEM_STABLE_HANDLE_CLOSED_FOR_SUPPORTED_LINUX_RUNTIME / NO_MUTATING_EXCHANGE_CALL / LIVE_DISABLED / READY_TO_COMMIT`。
 - authority：`GateY-4 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
 - next：`NQ-GATEY-4-SCOPED-CREDENTIAL-PRIVATE-READONLY-KILL-DEPLOYMENT-BOUNDARY-COMMIT-AND-PUSH`。
+
+## 2026-08-13 GateY-4 reviewed path set forward addendum
+
+- classification：`INDEPENDENT_REVIEW / DOCUMENTATION / FREEZE_REVIEW / FORWARD_ONLY_ADDENDUM`；未修改业务代码、migration、`STATUS.md` 或 `ROADMAP.md`。
+- baseline/target：`6b5d918c0f90925fce5a6ab4862afbe4cc1522ef` -> `a280e8ba311c9950d273a88d3e92732eb5e592c2`（tree `77b4571b124ea58733623ad8e5367d0101a39065`）。
+- scope：handoff expected=44、target changed=44、missing=0、unexpected=0；逐路径 disposition 与全部 target blob 已冻结。
+- digest：path set=`6b44210616c772f400f17f3d2703b9fd213d979675adaf5ecf7c3c4d9a74086e`；blob manifest=`b3ad060d34011947a72474bcf9670a0a46e685a0fefc652500bf3d2ec883613f`。
+- candidates：Candidate A 完整覆盖 44/44 且 tree/blob 与 merge target 一致；Candidate B common=26、blob mismatch=0、missing=18、unexpected=0，处置为 incomplete parallel commit；merge selects Candidate A。
+- validation：exact target-head CI run `31671837597` success（10 jobs、bad=0）；本轮独立 deployment-boundary regression 6/6 PASS；authority checker 与 docs link checker 另见提交前验证输出。
+- findings：P0=0、P1=0、P3=0；P2 保留生产锁窗口未实测与受约束的短生命周期 decrypt `String`；LIVE=`DISABLED`，kill switch=`ENGAGED`。
+- result：`PASS / GATEY_4_REVIEWED_PATH_SET_FORWARD_ADDENDUM_CREATED / EXACT_44_PATH_SCOPE_FROZEN / BLOB_MANIFEST_FROZEN / CANDIDATE_A_REVIEW_CONFORMANT / CANDIDATE_B_INCOMPLETE_PARALLEL_COMMIT / MERGE_SELECTS_CANDIDATE_A / P0_0 / P1_0 / READY_TO_COMMIT_ADDENDUM`。
+- next：`COMMIT_ADDENDUM_AND_WAIT_EXACT_HEAD_CI`。
