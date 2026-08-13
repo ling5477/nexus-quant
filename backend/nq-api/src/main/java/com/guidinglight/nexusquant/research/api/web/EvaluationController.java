@@ -20,6 +20,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -46,14 +47,19 @@ public class EvaluationController {
     /**
      * 查询评估报告列表。
      *
-     * @return 已生成评估报告列表
+     * @param researchConfigId 可选研究配置 ID
+     * @param backtestConfigId 可选回测配置 ID
+     * @return 当前筛选范围内已生成的评估报告列表
      */
     @GetMapping
-    @Operation(summary = "查询评估报告列表", description = "返回 GateI-2 评估报告核心指标列表。")
+    @Operation(summary = "查询评估报告列表", description = "按 researchConfigId / backtestConfigId 可选过滤并返回 GateI-2 评估报告核心指标列表。")
     @ApiResponse(responseCode = "200", description = "查询成功")
-    public List<BacktestEvaluationResponse> list() {
+    public List<BacktestEvaluationResponse> list(
+            @RequestParam(required = false) String researchConfigId,
+            @RequestParam(required = false) String backtestConfigId
+    ) {
         TraceIdContext.getOrCreate();
-        return backtestRunApiService.listEvaluations().stream()
+        return backtestRunApiService.listEvaluations(researchConfigId, backtestConfigId).stream()
                 .map(BacktestEvaluationResponse::from)
                 .toList();
     }

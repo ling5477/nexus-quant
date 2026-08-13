@@ -4,6 +4,8 @@ import {promisify} from 'node:util';
 const execFileAsync = promisify(execFile);
 
 export const POSITIVE_MARKETDATA_FIXTURE_SOURCE = 'E2E_POSITIVE_FIXTURE';
+const POSITIVE_MARKETDATA_FIXTURE_JOB_ID = '00000000-0000-4000-8000-000000002001';
+const POSITIVE_MARKETDATA_FIXTURE_RUN_ID = '00000000-0000-4000-8000-000000002002';
 export const POSITIVE_MARKETDATA_FIXTURE_QUERY = {
     exchangeCode: 'BINANCE',
     marketType: 'SPOT',
@@ -173,13 +175,17 @@ async function runFixtureSql(sql: string): Promise<number> {
  *
  * Why:
  * The production fixture ingest endpoint only has legacy no-dash symbols. This helper prepares
- * canonical UI-scope `BTC-USDT` fake bars without adding backend API, migration, provider calls,
- * startup seed, or long-lived local data. Cleanup is source/scope/window bounded so non-fixture
- * bars cannot be deleted by this E2E setup.
+ * canonical UI-scope `BTC-USDT` fake bars and a newer synthetic successful ingestion fact without
+ * adding backend API, migration, provider calls, startup seed, or long-lived local data. The
+ * deterministic job/run IDs isolate source health from unrelated E2E failures in the same DB.
  */
 export async function preparePositiveMarketdataBarsFixture(): Promise<number> {
     const sql = `
         BEGIN;
+        DELETE FROM marketdata_ingestion_runs
+        WHERE run_id = '${POSITIVE_MARKETDATA_FIXTURE_RUN_ID}'::uuid;
+        DELETE FROM marketdata_ingestion_jobs
+        WHERE job_id = '${POSITIVE_MARKETDATA_FIXTURE_JOB_ID}'::uuid;
         DELETE FROM marketdata_bars
         WHERE ${fixtureWhereClause()};
         INSERT INTO marketdata_bars (
@@ -202,6 +208,45 @@ export async function preparePositiveMarketdataBarsFixture(): Promise<number> {
             ingested_at
         ) VALUES
         ${insertRowsSql()};
+        INSERT INTO marketdata_ingestion_jobs (
+            job_id, exchange_code, market_type, symbol, "interval", start_time, end_time,
+            status, source, created_by, created_at, updated_at, request_json
+        ) VALUES (
+            '${POSITIVE_MARKETDATA_FIXTURE_JOB_ID}'::uuid,
+            '${POSITIVE_MARKETDATA_FIXTURE_QUERY.exchangeCode}',
+            '${POSITIVE_MARKETDATA_FIXTURE_QUERY.marketType}',
+            '${POSITIVE_MARKETDATA_FIXTURE_QUERY.symbol}',
+            '${POSITIVE_MARKETDATA_FIXTURE_QUERY.interval}',
+            TIMESTAMPTZ '${POSITIVE_MARKETDATA_FIXTURE_QUERY.startTime}',
+            TIMESTAMPTZ '${POSITIVE_MARKETDATA_FIXTURE_QUERY.endTime}',
+            'SUCCEEDED',
+            '${POSITIVE_MARKETDATA_FIXTURE_SOURCE}',
+            'marketdata-positive-bars-fixture-smoke',
+            TIMESTAMPTZ '2099-01-01T00:00:00Z',
+            TIMESTAMPTZ '2099-01-01T00:00:01Z',
+            '{"fake":true,"source":"${POSITIVE_MARKETDATA_FIXTURE_SOURCE}"}'::jsonb
+        );
+        INSERT INTO marketdata_ingestion_runs (
+            run_id, job_id, status, started_at, finished_at, requested_start_time,
+            requested_end_time, actual_start_time, actual_end_time, fetched_bars,
+            inserted_bars, updated_bars, skipped_bars, raw_summary_json, created_at
+        ) VALUES (
+            '${POSITIVE_MARKETDATA_FIXTURE_RUN_ID}'::uuid,
+            '${POSITIVE_MARKETDATA_FIXTURE_JOB_ID}'::uuid,
+            'SUCCEEDED',
+            TIMESTAMPTZ '2099-01-01T00:00:00Z',
+            TIMESTAMPTZ '2099-01-01T00:00:01Z',
+            TIMESTAMPTZ '${POSITIVE_MARKETDATA_FIXTURE_QUERY.startTime}',
+            TIMESTAMPTZ '${POSITIVE_MARKETDATA_FIXTURE_QUERY.endTime}',
+            TIMESTAMPTZ '${POSITIVE_MARKETDATA_FIXTURE_QUERY.startTime}',
+            TIMESTAMPTZ '${POSITIVE_MARKETDATA_FIXTURE_QUERY.endTime}',
+            ${POSITIVE_MARKETDATA_FIXTURE_EXPECTED_BARS},
+            ${POSITIVE_MARKETDATA_FIXTURE_EXPECTED_BARS},
+            0,
+            0,
+            '{"fake":true,"source":"${POSITIVE_MARKETDATA_FIXTURE_SOURCE}"}'::jsonb,
+            TIMESTAMPTZ '2099-01-01T00:00:01Z'
+        );
         COMMIT;
         SELECT COUNT(*)::int
         FROM marketdata_bars
@@ -214,18 +259,26 @@ export async function preparePositiveMarketdataBarsFixture(): Promise<number> {
  * Removes only the GateM-2I fake fixture scope from local test DB.
  *
  * Why:
- * The smoke must leave unrelated local bars untouched. The delete predicate intentionally includes
- * exchange, market type, symbol, interval, explicit fake source, and the fixed fixture window.
+ * The smoke must leave unrelated local facts untouched. Bar deletion is source/scope/window bounded;
+ * ingestion cleanup uses only the two deterministic fixture IDs.
  */
 export async function cleanupPositiveMarketdataBarsFixture(): Promise<number> {
     const sql = `
         BEGIN;
+        DELETE FROM marketdata_ingestion_runs
+        WHERE run_id = '${POSITIVE_MARKETDATA_FIXTURE_RUN_ID}'::uuid;
+        DELETE FROM marketdata_ingestion_jobs
+        WHERE job_id = '${POSITIVE_MARKETDATA_FIXTURE_JOB_ID}'::uuid;
         DELETE FROM marketdata_bars
         WHERE ${fixtureWhereClause()};
         COMMIT;
-        SELECT COUNT(*)::int
-        FROM marketdata_bars
-        WHERE ${fixtureWhereClause()};
+        SELECT (
+            (SELECT COUNT(*) FROM marketdata_bars WHERE ${fixtureWhereClause()})
+            + (SELECT COUNT(*) FROM marketdata_ingestion_jobs
+               WHERE job_id = '${POSITIVE_MARKETDATA_FIXTURE_JOB_ID}'::uuid)
+            + (SELECT COUNT(*) FROM marketdata_ingestion_runs
+               WHERE run_id = '${POSITIVE_MARKETDATA_FIXTURE_RUN_ID}'::uuid)
+        )::int;
     `;
     return runFixtureSql(sql);
 }

@@ -2,12 +2,12 @@ package com.guidinglight.nexusquant.livecontrol.execution.application;
 
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.execution.application.port.ExecutionIntentRepository;
+import com.guidinglight.nexusquant.livecontrol.execution.application.port.ExecutionAttemptLifecycle;
 import com.guidinglight.nexusquant.livecontrol.execution.application.port.FakeExchangeMutationPort;
 import com.guidinglight.nexusquant.livecontrol.execution.application.port.FakeExchangeQueryResult;
 import com.guidinglight.nexusquant.livecontrol.execution.application.port.FakeExchangeResult;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntent;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentCanonicalEncoder;
-import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentDraft;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentState;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptCanonicalEncoder;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptDraft;
@@ -67,20 +67,41 @@ public final class ExecutionIntentService {
             Duration lease,
             Instant observedAt
     ) {
+        return claimAndExecute(intentId, workerId, claimToken, lease, observedAt, ExecutionAttemptLifecycle.NOOP);
+    }
+
+    /**
+     * 独立 worker 入口。生命周期守卫在 claim 前及 durable SEND_STARTED 后、fake mutation 前执行；
+     * 后一个守卫失败时保留 SEND_STARTED，重启只能进入 query-only recovery。
+     */
+    public ExecutionIntent claimAndExecute(
+            UUID intentId,
+            String workerId,
+            UUID claimToken,
+            Duration lease,
+            Instant observedAt,
+            ExecutionAttemptLifecycle lifecycle
+    ) {
+        Objects.requireNonNull(lifecycle, "lifecycle must not be null");
+        lifecycle.beforeClaim();
         Optional<ExecutionIntent> claimed = repository.claim(intentId, workerId, claimToken, lease);
         if (claimed.isEmpty()) {
             return repository.find(intentId)
                     .orElseThrow(() -> new LiveControlException("EXECUTION_INTENT_NOT_FOUND", "intent was not found"));
         }
+        lifecycle.afterClaim(claimed.get());
         ExecutionIntent sendStarted = repository.markSendStarted(
                         intentId, claimed.get().version(), claimToken)
                 .orElseThrow(() -> new LiveControlException(
                         "EXECUTION_INTENT_SEND_CAS_CONFLICT", "intent changed before SEND_STARTED"));
+        lifecycle.afterSendStarted(sendStarted);
+        lifecycle.beforeFakeMutation(sendStarted);
 
         FakeExchangeResult result = sendStarted.action()
                 == com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentAction.PLACE
                 ? exchange.place(sendStarted)
                 : exchange.cancel(sendStarted);
+        lifecycle.afterFakeMutation(sendStarted, result);
         ResultMapping mapping = mapMutation(result);
         ExecutionReceiptDraft receipt = ExecutionReceiptCanonicalEncoder.draft(
                 UUID.randomUUID(), intentId, mapping.outcome(), result.exchangeRequestId(),

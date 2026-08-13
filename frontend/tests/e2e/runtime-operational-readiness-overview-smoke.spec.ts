@@ -95,6 +95,25 @@ function buildOperationalReadinessSummary() {
         profileBoundaryStatus: operationalStatus('SAFE_SUMMARY_ONLY', 'PROFILE_BOUNDARY_SAFE_SUMMARY_ONLY', 'Safe profile summary only.'),
         configDiagnosticsStatus: operationalStatus('SAFE_SUMMARY_ONLY', 'CONFIG_DIAGNOSTICS_SAFE_SUMMARY_ONLY', 'Safe config diagnostics summary only.'),
         logDiagnosticsStatus: operationalStatus('SAFE_SUMMARY_ONLY', 'LOG_DIAGNOSTICS_SAFE_SUMMARY_ONLY', 'Safe log diagnostics summary only.'),
+        fakeDryRunOperations: {
+            observedAt: '2026-06-30T14:00:00Z',
+            mode: 'FAKE_ONLY_DRY_RUN',
+            liveState: 'DISABLED',
+            killState: 'ENGAGED',
+            sessionId: '60000000-0000-0000-0000-000000000001',
+            sessionState: 'RECONCILIATION_BLOCKED',
+            approvalState: 'APPROVED',
+            riskDigest: 'c'.repeat(64),
+            workerHealth: 'OBSERVED_FROM_INTENT',
+            workerIdentity: 'isolated-fake-worker',
+            releaseIdentity: 'NOT_RECORDED',
+            releaseDigest: 'NOT_RECORDED',
+            intentId: '70000000-0000-0000-0000-000000000001',
+            intentState: 'UNKNOWN',
+            receiptState: 'TRANSPORT_ERROR',
+            tradingAuthorization: false,
+            productionStartAuthorization: false,
+        },
     };
 }
 
@@ -191,6 +210,17 @@ test.describe('runtime operational readiness overview', () => {
         await expect(overview).toContainText('Actuator health is process health only, not LIVE authorization.');
         await expect(overview).toContainText('Runtime UI does not prove real provider readiness');
         await expect(overview).toContainText('Paper-only / SKIPPED / NoReal signals are not real-ready.');
+
+        const fakeDryRun = page.getByTestId('fake-dry-run-operations');
+        await expect(fakeDryRun).toBeVisible();
+        await expect(fakeDryRun).toContainText('FAKE-ONLY DRY-RUN / LIVE DISABLED');
+        await expect(fakeDryRun).toContainText('ENGAGED');
+        await expect(fakeDryRun).toContainText('RECONCILIATION_BLOCKED');
+        await expect(fakeDryRun).toContainText('UNKNOWN');
+        await expect(fakeDryRun).toContainText('NOT_RECORDED');
+        await expect(fakeDryRun).toContainText('tradingAuthorization=false');
+        await expect(fakeDryRun).toContainText('productionStartAuthorization=false');
+        await expect(fakeDryRun.getByRole('button')).toHaveCount(0);
 
         await expect(overview.getByRole('link', {name: 'View MarketData readiness'}))
             .toHaveAttribute('href', '/marketdata?exchangeCode=BINANCE&marketType=SPOT&symbol=BTC-USDT&interval=1m');

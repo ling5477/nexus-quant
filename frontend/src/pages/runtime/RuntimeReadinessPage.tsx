@@ -80,6 +80,14 @@ interface OperationalReadinessItem {
     tone: StatusTone;
 }
 
+interface FakeDryRunOperationsRow {
+    key: string;
+    area: string;
+    status: string;
+    detail: string;
+    tone: StatusTone;
+}
+
 interface VenueSummary {
     venue: string;
     capabilities: number;
@@ -90,7 +98,10 @@ interface VenueSummary {
     tone: StatusTone;
 }
 
-type OperationalReadinessStatusKey = Exclude<keyof OperationalReadinessResponse, 'generatedAt'>;
+type OperationalReadinessStatusKey = Exclude<
+    keyof OperationalReadinessResponse,
+    'generatedAt' | 'fakeDryRunOperations'
+>;
 
 function uniqueSorted(values: string[]): string[] {
     return [...new Set(values.filter(Boolean))].sort((left, right) => left.localeCompare(right));
@@ -540,6 +551,15 @@ const operationalColumns: ColumnsType<OperationalReadinessItem> = [
     },
 ];
 
+const fakeDryRunOperationsColumns: ColumnsType<FakeDryRunOperationsRow> = [
+    {title: 'Operational fact', dataIndex: 'area', key: 'area', width: 210},
+    {
+        title: 'Status', dataIndex: 'status', key: 'status', width: 230,
+        render: (status: string, row) => <StatusTag label={status} tone={row.tone} variant="pill"/>,
+    },
+    {title: 'Sanitized detail', dataIndex: 'detail', key: 'detail'},
+];
+
 /**
  * RuntimeReadinessPage 是 GateM Runtime UI 5A 的只读运行边界总览。
  *
@@ -564,6 +584,16 @@ export function RuntimeReadinessPage() {
     const operationalReadinessUnavailable = operationalReadinessQuery.isError
         || (operationalReadinessQuery.isSuccess && !operationalReadinessSummary);
     const operationalReadinessItems = buildOperationalReadinessItems(operationalReadinessSummary);
+    const fakeOperations = operationalReadinessSummary?.fakeDryRunOperations;
+    const fakeDryRunRows: FakeDryRunOperationsRow[] = fakeOperations ? [
+        {key: 'mode', area: 'Execution mode', status: fakeOperations.mode, detail: '仅 disposable/local fake dry-run；不授予生产启动。', tone: 'info'},
+        {key: 'kill', area: 'Kill switch', status: fakeOperations.killState, detail: `observed ${formatDateTime(fakeOperations.observedAt)}`, tone: fakeOperations.killState === 'ENGAGED' ? 'danger' : 'warning'},
+        {key: 'session', area: 'Session / approval', status: fakeOperations.sessionState, detail: `${fakeOperations.sessionId} / approval=${fakeOperations.approvalState}`, tone: statusTone(fakeOperations.sessionState)},
+        {key: 'risk', area: 'Risk binding', status: fakeOperations.riskDigest === '-' ? 'NOT_OBSERVED' : 'DIGEST_BOUND', detail: fakeOperations.riskDigest, tone: 'warning'},
+        {key: 'worker', area: 'Worker health', status: fakeOperations.workerHealth, detail: `worker=${fakeOperations.workerIdentity}`, tone: statusTone(fakeOperations.workerHealth)},
+        {key: 'release', area: 'Release identity', status: fakeOperations.releaseIdentity, detail: `digest=${fakeOperations.releaseDigest}`, tone: 'warning'},
+        {key: 'intent', area: 'Intent / receipt', status: fakeOperations.intentState, detail: `${fakeOperations.intentId} / receipt=${fakeOperations.receiptState}`, tone: ['UNKNOWN', 'FAILED'].includes(fakeOperations.intentState) ? 'danger' : statusTone(fakeOperations.intentState)},
+    ] : [];
     const unexpectedSignals = items.filter(isReadinessSignalUnexpected);
     const permissionRows = items.filter((item) => item.capability === 'PERMISSION_PROBE');
     const noRealRows = items.filter((item) => item.status === 'NO_REAL' || NO_REAL_VENUES.has(item.venue));
@@ -614,6 +644,37 @@ export function RuntimeReadinessPage() {
                         pagination={false}
                         size="small"
                         scroll={{x: 980}}
+                    />
+                </Space>
+            </Card>
+
+            <Card
+                className="page-section"
+                variant="borderless"
+                title="FAKE-ONLY dry-run operations"
+                data-testid="fake-dry-run-operations"
+            >
+                <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                    <Alert
+                        type="warning"
+                        showIcon
+                        message="FAKE-ONLY DRY-RUN / LIVE DISABLED"
+                        description="只读展示现有 kill、session、approval、risk、intent 与 receipt 事实。没有 durable worker/release fact 时明确显示 NOT_OBSERVED / NOT_RECORDED；本页没有 START、PLACE、CANCEL 或 DISENGAGE 操作。"
+                    />
+                    <Space size={[8, 8]} wrap>
+                        <StatusTag label="LIVE DISABLED" tone="danger" variant="pill"/>
+                        <StatusTag label={fakeOperations?.killState ?? 'UNKNOWN'} tone="danger" variant="pill"/>
+                        <StatusTag label="tradingAuthorization=false" tone="info" variant="pill"/>
+                        <StatusTag label="productionStartAuthorization=false" tone="info" variant="pill"/>
+                    </Space>
+                    <Table<FakeDryRunOperationsRow>
+                        rowKey="key"
+                        columns={fakeDryRunOperationsColumns}
+                        dataSource={fakeDryRunRows}
+                        pagination={false}
+                        size="small"
+                        scroll={{x: 900}}
+                        locale={{emptyText: 'Operational snapshot unavailable; runtime remains fail-closed'}}
                     />
                 </Space>
             </Card>

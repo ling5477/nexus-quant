@@ -60,6 +60,7 @@ interface MarketdataReadinessPayload {
     status?: string;
     freshnessStatus?: string;
     sourceHealthStatus?: string;
+    sourceHealth?: string;
     sourceHealthReason?: string;
     backendSupportLevel?: string;
     barCount?: number;
@@ -229,6 +230,7 @@ test.describe('marketdata positive bars fixture smoke', () => {
             expect(preflightReadiness.qualityStatusSummary?.okCount).toBe(POSITIVE_MARKETDATA_FIXTURE_EXPECTED_BARS);
             expect(preflightReadiness.freshnessStatus).toBe('FRESH');
             expect(preflightReadiness.sourceHealthStatus).toBe('FRESH');
+            expect(preflightReadiness.sourceHealth).toBe('HEALTHY');
 
             console.info(
                 [
@@ -297,7 +299,7 @@ test.describe('marketdata positive bars fixture smoke', () => {
             await expect(qualityPanel).toContainText('Readiness status');
             await expect(qualityPanel).toContainText('FRESH');
             await expect(qualityPanel).toContainText('freshness: FRESH');
-            await expect(qualityPanel).toContainText('source health: FRESH');
+            await expect(qualityPanel).toContainText('source health: HEALTHY');
             await expect(qualityPanel).toContainText('NO_MIGRATION_MVP');
             await expect(qualityPanel).toContainText(new RegExp(`Quality status[\\s\\S]*ok=${POSITIVE_MARKETDATA_FIXTURE_EXPECTED_BARS}`));
             await expect(qualityPanel).toContainText(/Gap count[\s\S]*0/);

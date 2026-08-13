@@ -54,8 +54,16 @@ public class OperationalReadinessService {
      * @return safe fail-closed operational readiness response
      */
     public OperationalReadinessResponse currentSummary() {
+        return currentSummary(com.guidinglight.nexusquant.runtime.api.dto.FakeDryRunOperationsResponse
+                .unavailable(Instant.now(clock)));
+    }
+
+    public OperationalReadinessResponse currentSummary(
+            com.guidinglight.nexusquant.runtime.api.dto.FakeDryRunOperationsResponse operations
+    ) {
+        Instant generatedAt = Instant.now(clock);
         return new OperationalReadinessResponse(
-                Instant.now(clock),
+                generatedAt,
                 status("DISABLED", "LIVE_DISABLED", "LIVE execution is disabled by default."),
                 status("NOT_STARTED", "AI_RUNTIME_NOT_STARTED", "AI runtime has not started."),
                 status("NOT_INTEGRATED", "DH_RUNTIME_NOT_CONNECTED", "DH runtime is not integrated."),
@@ -73,7 +81,8 @@ public class OperationalReadinessService {
                 status("SAFE_SUMMARY_ONLY", "CONFIG_VALUES_OMITTED",
                         "Config diagnostics are reported as safe summary categories only."),
                 status("SAFE_SUMMARY_ONLY", "LOG_VALUES_OMITTED",
-                        "Log diagnostics are reported as safe summary categories only.")
+                        "Log diagnostics are reported as safe summary categories only."),
+                operations
         );
     }
 

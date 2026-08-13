@@ -37,6 +37,20 @@ public interface BacktestEvaluationReportRepository {
     default List<BacktestEvaluationReport> listAll() {
         return List.of();
     }
+
+    /**
+     * 按研究配置或回测配置筛选评估报告。
+     *
+     * <p>Why：回测详情必须把 evaluation 限定到当前 config；忽略筛选会把其他配置的指标、
+     * run 与权益曲线串到当前页面。默认实现只兼容无筛选的旧调用，持久化实现负责跨 run 事实过滤。
+     *
+     * @param researchConfigId 研究配置 ID，可空
+     * @param backtestConfigId 回测配置 ID，可空
+     * @return 当前筛选范围内的评估报告
+     */
+    default List<BacktestEvaluationReport> list(String researchConfigId, String backtestConfigId) {
+        return researchConfigId == null && backtestConfigId == null ? listAll() : List.of();
+    }
 }
 
 

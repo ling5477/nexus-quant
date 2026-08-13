@@ -26,4 +26,25 @@ export interface OperationalReadinessResponse {
     profileBoundaryStatus: OperationalReadinessStatusResponse;
     configDiagnosticsStatus: OperationalReadinessStatusResponse;
     logDiagnosticsStatus: OperationalReadinessStatusResponse;
+    fakeDryRunOperations: FakeDryRunOperationsResponse;
+}
+
+export interface FakeDryRunOperationsResponse {
+    observedAt: string;
+    mode: string;
+    liveState: string;
+    killState: string;
+    sessionId: string;
+    sessionState: string;
+    approvalState: string;
+    riskDigest: string;
+    workerHealth: string;
+    workerIdentity: string;
+    releaseIdentity: string;
+    releaseDigest: string;
+    intentId: string;
+    intentState: string;
+    receiptState: string;
+    tradingAuthorization: boolean;
+    productionStartAuthorization: boolean;
 }

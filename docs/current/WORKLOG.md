@@ -18675,3 +18675,24 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：production DB/credential/exchange/real mutation/worker/deployment/migration execution=`0`；LIVE=`DISABLED`、kill=`ENGAGED`；`PRODUCTION_LOCK_WINDOW_NOT_MEASURED=OPEN`。
 - result：`PASS / GATEY_5_PRODUCTION_LIKE_SCALE_AUTHORITY_REVIEW_ACCEPTED / P0_0 / P1_0 / PRE_V39_MIGRATION_SCALE_FROZEN / POST_V39_OPERATIONAL_SCALE_FROZEN / ALL_V39_DEPENDENCIES_COVERED / SYNTHETIC_ENVELOPE_REALIZABLE / CAPACITY_MANIFEST_VERIFIED / PRODUCTION_LOCK_WINDOW_STILL_OPEN / GATEY_5_IMPLEMENTATION_NOT_STARTED / READY_TO_COMMIT`。
 - next：`COMMIT_SCALE_AUTHORITY_AND_WAIT_EXACT_HEAD_CI`；CI green 后才恢复 `NQ-GATEY-5-ISOLATED-WORKER-DRYRUN-ROLLBACK-RESTORE-LOCK-WINDOW-IMPLEMENTATION`。
+## 2026-08-13 — GateY-5 isolated worker / dry-run / rollback / restore / lock-window implementation
+
+- task：`NQ-GATEY-5-ISOLATED-WORKER-DRYRUN-ROLLBACK-RESTORE-LOCK-WINDOW-IMPLEMENTATION`；NQ-only、L 级 fake-only operational closure。
+- implementation：完成 deterministic PRE/POST fixture、真实 V38→V39 disposable lock measurement、独立 fake worker/venue JVM、durable `SEND_STARTED` lifecycle、query-only recovery、NO BLIND RETRY、immutable release verification、rollback/restore/incident drill 与只读 readiness API/UI。
+- naming correction：正式源码只使用稳定 capability/domain naming；`DisposableFakeVenueLauncher`、`IsolatedFakeExecutionWorkerLauncher`、`DisposableWorkerReleaseVerifier` 与 `nq.fake-worker.*`；生产 `src/main` 阶段词扫描为 0，任务名只保留在 scripts/tests/evidence/authority。
+- validation：canonical PRE full `3,557,032` rows、digest `0be3fc4a...84fe`、relation/index/total=`808,878,080/1,716,002,816/2,525,585,408 bytes`，四类 blocked DDL 均 `<=7s`；canonical POST full `11,728,032` rows、digest `78063819...690c`、六张 V39 relation/index/total=`2,133,581,824/2,272,878,592/4,407,214,080 bytes`；process/rollback/restore/incident drill PASS；full backend 23/23，`nq-app` 276/0/0/27 skipped；frontend build PASS；targeted Playwright 1 passed。
+- frontend residual：full `npm run test:e2e` exit=1，87 tests 中 `.last-run.json` 保留 32 failed ids，根因是 local backend `127.0.0.1:18888` 未启动；未写成通过。
+- boundary：real credential/exchange/WebSocket/PLACE/CANCEL/transfer/withdraw/borrow/leverage/production DB/migration/worker/deploy=`0`；external egress=`0`；kill=`ENGAGED`、LIVE=`DISABLED`、micro-live=`NOT_AUTHORIZED`；V1～V39 unchanged、V40=`NONE`。
+- result：`PASS / IMPLEMENTED|PENDING_REVIEW`；未 stage/commit/push/tag。
+- next：`NQ-GATEY-5-ISOLATED-WORKER-DRYRUN-ROLLBACK-RESTORE-LOCK-WINDOW-SECURITY-OPERATIONS-REVIEW`。
+
+## 2026-08-14 — GateY-5 isolated worker Security/Operations Review attempt-01
+
+- task：NQ-only、L 级 independent security/operations/process recovery/lock/restore/fake isolation/architecture/frontend closure review。
+- baseline：`dev`；`HEAD == origin/dev == b1ac45601dc8908b8301ff6f48d439d44c52bcd3`；staged=`0`；authority before=`GateY-5 / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`。
+- remediation：关闭 worker actual JAR/release/readonly binding、lock graph/精确 blocker release、evaluation query scope，以及 marketdata positive fixture 对 ingestion health facts 的隔离和 `FRESH`/`HEALTHY` 枚举断言。
+- validation：backend 23-module `BUILD SUCCESS`；frontend build PASS；full E2E=`87 collected / 86 passed / 1 canonical skipped / 0 failed`；targeted positive bars final=`1 passed`；GateY-5 lock/post-restore tooling regressions PASS；migration diff=0、V40=NONE、diff check errors=0。
+- findings：P0=0、P1=0、P2=0；P3 为既有 React/Ant Design compatibility/deprecated 与 Vite large-chunk warnings，不阻断本轮安全/正确性 hard gate。
+- boundary：credential/real exchange HTTP/WS/PLACE/CANCEL/transfer/withdraw/borrow/leverage/production DB/migration/worker/deploy/external egress=`0`；LIVE=`DISABLED`、kill=`ENGAGED`、micro-live=`NOT_AUTHORIZED`；未 stage/commit/push/tag/deploy。
+- result：`PASS / GATEY_5_SECURITY_OPERATIONS_REVIEW_ACCEPTED / REVIEW_ACCEPTED|READY_TO_COMMIT`。
+- next：`NQ-GATEY-5-ISOLATED-WORKER-DRYRUN-ROLLBACK-RESTORE-LOCK-WINDOW-COMMIT-AND-PUSH`。

@@ -13435,3 +13435,38 @@ Known limitations：authority 为 `REVIEWED_SYNTHETIC_ENVELOPE` candidate，尚�
 | Product/runtime tests | NOT RUN（未运行） | manifest/governance review-only；未实现 generator，未运行 Maven/frontend/Python/PostgreSQL lock drill；非阻断 |
 
 Review correction：增加 machine `PRE_V39_MIGRATION_CLONE` / `POST_V39_OPERATIONAL_DRILL`、source/scenario class、5s+2s bounded lock expectation、seed-derived deterministic constraint contract；21-table set 与 capacity targets 不变。Validation wrapper 曾因 PowerShell comparison-array parsing 失败一次，改为 named boolean map 后 `11/11` 通过；该工具调用错误未产生写操作。完整证据：[evidence/gate-y/NQ-GATEY-5-PRODUCTION-LIKE-SCALE-AUTHORITY-REVIEW.attempt-01.md](evidence/gate-y/NQ-GATEY-5-PRODUCTION-LIKE-SCALE-AUTHORITY-REVIEW.attempt-01.md)。
+## 2026-08-13 — GateY-5 isolated worker / dry-run / rollback / restore / lock-window implementation attempt-01
+
+结论：`PASS / GATEY_5_FAKE_ONLY_ISOLATED_WORKER_IMPLEMENTED / PRODUCTION_LIKE_FIXTURE_REALIZED / V38_V39_LOCK_WINDOW_MEASURED / PRODUCTION_LOCK_WINDOW_CLOSED / PROCESS_RESTART_REPLAY_VERIFIED / NO_BLIND_RETRY_VERIFIED / ROLLBACK_DRILL_VERIFIED / RESTORE_DRILL_VERIFIED / INCIDENT_RECONCILIATION_VERIFIED / OPERATOR_VISIBILITY_IMPLEMENTED / PENDING_INDEPENDENT_REVIEW / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED`。
+
+| Command / check | Result | Scope / environment / warnings |
+| --- | --- | --- |
+| full PRE lock-window drill | PASS（通过） | canonical rerun：`3,557,032` rows；digest=`0be3fc4a...84fe`；actual relation/index/total=`808,878,080 / 1,716,002,816 / 2,525,585,408 bytes`；normal V39=`997ms`；四类 blocked writer=`5,800/5,757/5,746/5,712ms`，均 `<=7s`；active tx `>30s` denied；statement timeout=`60.148s`；long read=`NON_BLOCKING/978ms`；retry/validate PASS |
+| full POST backup/restore drill | PASS（通过） | canonical rerun：`11,728,032` rows；digest=`78063819...690c`；六张 V39 relation/index/total=`2,133,581,824 / 2,272,878,592 / 4,407,214,080 bytes`；restored subset=`10,521,000`；sessions terminal；receipt ratio=3；source disposable DB 实际销毁后恢复 |
+| isolated worker/process/incident drill | PASS（通过） | crash-before/after-send/after-mutation、receipt failure、duplicate worker、kill revision、rollback、restore、partial/late/cancel-race、UNKNOWN；`SEND_STARTED/UNKNOWN` 无 blind mutation retry |
+| focused backend tests | PASS（通过） | lifecycle、release verifier、loopback fake transport、JDBC projection、GET API、ArchUnit |
+| full backend | PASS（通过） | `mvn -f backend/pom.xml test`；23/23 modules；`nq-app` 276 tests / 0 failures / 0 errors / 27 skipped |
+| frontend build | PASS（通过） | `npm run build` |
+| targeted Playwright | PASS（通过） | `runtime-operational-readiness-overview-smoke.spec.ts`，1 passed |
+| full frontend E2E | FAILED（失败） | `npm run test:e2e` exit=1；collection 87 tests；`.last-run.json` 保留 32 failed ids；依赖未启动的 local backend，`ECONNREFUSED 127.0.0.1:18888`；未写成通过 |
+| production source stage-name scan | PASS（通过） | production `src/main` 对 `GateY-5/GateY5/gatey5/gate-y-5` 为 0；正式类/package/properties 使用稳定 capability/domain naming |
+| no-real boundary | PASS / ZERO SIDE EFFECT（通过 / 无真实副作用） | credential/real HTTP/WebSocket/PLACE/CANCEL/transfer/withdraw/borrow/leverage/production DB/migration/worker/deploy=`0`；external egress=`0`；LIVE disabled、kill engaged |
+
+Known warnings / residuals：完整 frontend E2E 的 32 个失败来自 local backend `18888` 未启动，需在独立 review 的 no-real local 环境复核。PRE 15 张 relation 与 POST 六张 V39 relation 的 exact bytes 已由 canonical full rerun 持久化到 evidence。完整证据：[evidence/gate-y/NQ-GATEY-5-ISOLATED-WORKER-DRYRUN-ROLLBACK-RESTORE-LOCK-WINDOW-IMPLEMENTATION.attempt-01.md](evidence/gate-y/NQ-GATEY-5-ISOLATED-WORKER-DRYRUN-ROLLBACK-RESTORE-LOCK-WINDOW-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-14 — GateY-5 isolated worker Security/Operations Review attempt-01
+
+结论：`PASS / GATEY_5_SECURITY_OPERATIONS_REVIEW_ACCEPTED / P0_0 / P1_0 / PRODUCTION_LIKE_FIXTURE_VERIFIED / LOCK_WINDOW_CLOSURE_REVERIFIED / NO_BLIND_RETRY_REVERIFIED / FAKE_REMOTE_RECOVERY_VERIFIED / ROLLBACK_VERIFIED / RESTORE_REPLAY_SAFE / FULL_FRONTEND_E2E_GREEN / FULL_BACKEND_GREEN / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
+
+| 验证 | 结果 | 证据摘要 |
+| --- | --- | --- |
+| backend full regression | PASS（通过） | `mvn -f backend/pom.xml test`；23-module reactor `BUILD SUCCESS`，failures/errors=`0/0` |
+| frontend build | PASS（通过） | `npm run build`；`tsc -b && vite build` exit=`0`；既有 large-chunk warning 非阻断 |
+| frontend full E2E | PASS（通过） | `87 collected / 86 passed / 1 canonical skipped / 0 failed`；exit=`0`；no-real loopback backend + disposable PostgreSQL |
+| targeted remediation | PASS（通过） | evaluation controller `1/1`、backtest detail `2/2`、marketdata real backend `1/1`、positive bars final `1/1` |
+| GateY-5 tooling regression | PASS（通过） | lock-window 与 post-restore tooling regression 均 PASS；migration diff=`0`，V40=`NONE` |
+| security/architecture | PASS（通过） | P0/P1=`0/0`；API 无 SQL，core 无 JDBC/infra reverse dependency，fake endpoint strictly loopback；`git diff --check` errors=`0` |
+| docs governance | PASS WITH HISTORICAL WARNINGS（通过并有历史 warning） | authority errors=`0`；links=`281 checked / 14 historical warnings / 0 errors`；首次链接命令遗漏 mandatory `-Roots`，exit=`1` 且未开始扫描，修正后重跑通过 |
+| no-real / no-egress | PASS / ZERO SIDE EFFECT（通过 / 无真实副作用） | credential/real HTTP/WS/PLACE/CANCEL/transfer/withdraw/borrow/leverage/production DB/migration/worker/deploy/external egress 均=`0`；LIVE disabled、kill engaged |
+
+Review remediation：关闭 actual JAR/release/readonly binding、lock graph/精确 blocker release、evaluation query scope、marketdata source-health fixture isolation 与 `FRESH`/`HEALTHY` 枚举断言问题。完整证据：[evidence/gate-y/NQ-GATEY-5-ISOLATED-WORKER-DRYRUN-ROLLBACK-RESTORE-LOCK-WINDOW-SECURITY-OPERATIONS-REVIEW.attempt-01.md](evidence/gate-y/NQ-GATEY-5-ISOLATED-WORKER-DRYRUN-ROLLBACK-RESTORE-LOCK-WINDOW-SECURITY-OPERATIONS-REVIEW.attempt-01.md)。

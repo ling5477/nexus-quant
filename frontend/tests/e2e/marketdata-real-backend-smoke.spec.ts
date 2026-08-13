@@ -25,6 +25,12 @@ interface MarketdataBarPayload {
     qualityStatus?: string | null;
 }
 
+interface MarketdataReadinessPayload {
+    sourceHealth?: string | null;
+    sourceHealthStatus?: string | null;
+    sourceHealthReason?: string | null;
+}
+
 const backendBaseUrl = process.env.E2E_BACKEND_BASE_URL ?? 'http://127.0.0.1:18888';
 const queryStart = '2025-01-01T00:00:00Z';
 const queryEnd = '2026-12-31T23:59:59Z';
@@ -169,6 +175,9 @@ test.describe('marketdata real backend smoke', () => {
         const barsResponsePromise = page.waitForResponse((response) =>
             response.url().includes('/api/marketdata/bars') && response.request().method() === 'GET',
         );
+        const readinessResponsePromise = page.waitForResponse((response) =>
+            response.url().includes('/api/marketdata/readiness') && response.request().method() === 'GET',
+        );
 
         await page.getByRole('menuitem', {name: '行情查询'}).click();
         await expect(page).toHaveURL(/\/marketdata$/);
@@ -182,6 +191,12 @@ test.describe('marketdata real backend smoke', () => {
         expect(barsResponse.status()).toBe(200);
         const barsPayload = await barsResponse.json() as MarketdataBarPayload[];
         expect(Array.isArray(barsPayload), 'page query must receive real bars array payload').toBeTruthy();
+        const readinessResponse = await readinessResponsePromise;
+        expect(readinessResponse.status()).toBe(200);
+        const readinessPayload = await readinessResponse.json() as MarketdataReadinessPayload;
+        const sourceHealth = readinessPayload.sourceHealth ?? readinessPayload.sourceHealthStatus;
+        expect(sourceHealth, 'readiness payload must expose source health').toBeTruthy();
+        expect(readinessPayload.sourceHealthReason, 'readiness payload must expose a source health reason').toBeTruthy();
         if (scenario.bars.length > 0) {
             expect(barsPayload.length).toBeGreaterThan(0);
         } else {
@@ -208,7 +223,8 @@ test.describe('marketdata real backend smoke', () => {
         await expect(qualityPanel).toContainText('Freshness');
         await expect(qualityPanel).toContainText('Quality status');
         await expect(qualityPanel).toContainText('Gap count');
-        await expect(qualityPanel).toContainText('source health: not available from current API');
+        await expect(qualityPanel).toContainText(`source health: ${sourceHealth}`);
+        await expect(qualityPanel).toContainText(readinessPayload.sourceHealthReason as string);
 
         if (barsPayload.length > 0) {
             await expect(kline.locator('canvas').first()).toBeVisible({timeout: 15_000});
@@ -226,7 +242,6 @@ test.describe('marketdata real backend smoke', () => {
             await expect(chartPanel).toContainText('当前查询没有返回 OHLCV bars');
             await expect(volume).toContainText('当前查询没有返回成交量 bars');
             await expect(qualityPanel).toContainText('No bars returned');
-            await expect(qualityPanel).toContainText('no bars returned for the submitted window');
             await expect(qualityPanel).toContainText('qualityStatus unavailable');
         }
 

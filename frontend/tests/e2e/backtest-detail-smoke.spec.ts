@@ -57,7 +57,9 @@ test.describe('backtest detail page smoke (B1.2)', () => {
         await expect(page.getByRole('heading', {name: '回测详情可视化'})).toBeVisible();
 
         // 无 run → 曲线显式 unavailable(不编造)。
-        await expect(page.getByText('所选评估缺少 backtestRunId')).toBeVisible({timeout: 30_000});
+        const unavailableNotes = page.getByText('所选评估缺少 backtestRunId');
+        await expect(unavailableNotes).toHaveCount(2);
+        await expect(unavailableNotes.first()).toBeVisible({timeout: 30_000});
         // 指标空态:明确提示,不回退成报错或假数据。
         await expect(page.getByText('尚无评估结果。请先运行回测并执行评估后再查看指标。')).toBeVisible();
         // 数据集快照仍可见(config 已绑定 dataset),证明非曲线区不受影响。

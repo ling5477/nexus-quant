@@ -36,7 +36,8 @@ public record OperationalReadinessResponse(
         OperationalReadinessStatusResponse startupBoundaryStatus,
         OperationalReadinessStatusResponse profileBoundaryStatus,
         OperationalReadinessStatusResponse configDiagnosticsStatus,
-        OperationalReadinessStatusResponse logDiagnosticsStatus
+        OperationalReadinessStatusResponse logDiagnosticsStatus,
+        FakeDryRunOperationsResponse fakeDryRunOperations
 ) {
 
     public OperationalReadinessResponse {
@@ -52,5 +53,6 @@ public record OperationalReadinessResponse(
         Objects.requireNonNull(profileBoundaryStatus, "profileBoundaryStatus must not be null");
         Objects.requireNonNull(configDiagnosticsStatus, "configDiagnosticsStatus must not be null");
         Objects.requireNonNull(logDiagnosticsStatus, "logDiagnosticsStatus must not be null");
+        Objects.requireNonNull(fakeDryRunOperations, "fakeDryRunOperations must not be null");
     }
 }

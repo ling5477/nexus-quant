@@ -152,8 +152,8 @@ public class BacktestRunApiService {
      *
      * @return 已生成的评估报告列表
      */
-    public List<BacktestEvaluationReport> listEvaluations() {
-        return backtestEvaluationService.listAll();
+    public List<BacktestEvaluationReport> listEvaluations(String researchConfigId, String backtestConfigId) {
+        return backtestEvaluationService.list(researchConfigId, backtestConfigId);
     }
 
     /**

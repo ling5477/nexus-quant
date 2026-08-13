@@ -200,6 +200,17 @@ public class BacktestEvaluationService {
         return backtestEvaluationReportRepository.listAll();
     }
 
+    /**
+     * 按研究配置或回测配置读取评估报告，避免跨配置混入其他 run 的指标。
+     */
+    public java.util.List<BacktestEvaluationReport> list(String researchConfigId, String backtestConfigId) {
+        return backtestEvaluationReportRepository.list(normalizeFilter(researchConfigId), normalizeFilter(backtestConfigId));
+    }
+
+    private static String normalizeFilter(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
     private String safeMessage(RuntimeException exception) {
         return exception.getMessage() == null || exception.getMessage().isBlank()
                 ? exception.getClass().getSimpleName()

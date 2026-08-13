@@ -84,13 +84,13 @@ public record LiveSession(
         return draft.withScopeHash(LiveSessionApprovalScopeEncoder.digest(draft));
     }
 
-    /** GateY-2 只允许 application service 持久化人工审批的两个状态结果。 */
+    /** 人工审批持久化只允许批准或拒绝两个状态结果。 */
     public LiveSession recordApprovalDecision(LiveSessionState target, Instant now) {
         if (state != LiveSessionState.APPROVAL_PENDING
                 || (target != LiveSessionState.APPROVED && target != LiveSessionState.REJECTED)) {
             throw new LiveControlException(
                     "LIVE_SESSION_APPROVAL_TRANSITION_REQUIRED",
-                    "GateY-2 can persist only an approval or rejection transition"
+                    "approval persistence accepts only approval or rejection transitions"
             );
         }
         return new LiveSession(

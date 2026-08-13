@@ -75,6 +75,11 @@ class OperationalReadinessControllerTest {
                 .andExpect(jsonPath("$.profileBoundaryStatus.status").value("SAFE_SUMMARY_ONLY"))
                 .andExpect(jsonPath("$.configDiagnosticsStatus.status").value("SAFE_SUMMARY_ONLY"))
                 .andExpect(jsonPath("$.logDiagnosticsStatus.status").value("SAFE_SUMMARY_ONLY"))
+                .andExpect(jsonPath("$.fakeDryRunOperations.mode").value("FAKE_ONLY_DRY_RUN"))
+                .andExpect(jsonPath("$.fakeDryRunOperations.liveState").value("DISABLED"))
+                .andExpect(jsonPath("$.fakeDryRunOperations.killState").value("UNKNOWN"))
+                .andExpect(jsonPath("$.fakeDryRunOperations.tradingAuthorization").value(false))
+                .andExpect(jsonPath("$.fakeDryRunOperations.productionStartAuthorization").value(false))
                 .andReturn();
 
         String body = result.getResponse().getContentAsString();

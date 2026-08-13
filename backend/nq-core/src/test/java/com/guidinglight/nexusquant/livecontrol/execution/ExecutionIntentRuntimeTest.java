@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.execution.application.ExecutionIntentService;
+import com.guidinglight.nexusquant.livecontrol.execution.application.port.ExecutionAttemptLifecycle;
 import com.guidinglight.nexusquant.livecontrol.execution.application.port.ExecutionIntentRepository;
 import com.guidinglight.nexusquant.livecontrol.execution.application.port.FakeExchangeMutationPort;
 import com.guidinglight.nexusquant.livecontrol.execution.application.port.FakeExchangeQueryResult;
@@ -151,6 +152,46 @@ class ExecutionIntentRuntimeTest {
         assertEquals(0, exchange.mutationCalls);
         assertEquals(1, exchange.queryCalls);
         assertEquals("CANCEL_RACE_SIMULATION", repository.receipts.getLast().errorCode());
+    }
+
+    @Test
+    void shouldRunLifecycleGuardsAroundDurableSendAndLeaveQueryOnlyRecoveryState() {
+        InMemoryRepository repository = new InMemoryRepository();
+        DeterministicFakeExchange exchange = new DeterministicFakeExchange();
+        repository.createOrGet(place(INTENT_ID));
+        List<String> calls = new ArrayList<>();
+        ExecutionAttemptLifecycle lifecycle = new ExecutionAttemptLifecycle() {
+            @Override
+            public void beforeClaim() {
+                calls.add("BEFORE_CLAIM");
+            }
+
+            @Override
+            public void afterClaim(ExecutionIntent intent) {
+                calls.add("AFTER_CLAIM:" + intent.state());
+            }
+
+            @Override
+            public void afterSendStarted(ExecutionIntent intent) {
+                calls.add("AFTER_SEND_STARTED:" + intent.state());
+            }
+
+            @Override
+            public void beforeFakeMutation(ExecutionIntent intent) {
+                calls.add("BEFORE_MUTATION");
+                throw new LiveControlException("CONTROLLED_KILL_CHANGE", "send is denied");
+            }
+        };
+
+        LiveControlException denied = assertThrows(LiveControlException.class,
+                () -> new ExecutionIntentService(repository, exchange).claimAndExecute(
+                        INTENT_ID, "worker", UUID.randomUUID(), Duration.ofMinutes(1), NOW, lifecycle));
+
+        assertEquals("CONTROLLED_KILL_CHANGE", denied.code());
+        assertEquals(List.of("BEFORE_CLAIM", "AFTER_CLAIM:CLAIMED",
+                "AFTER_SEND_STARTED:SEND_STARTED", "BEFORE_MUTATION"), calls);
+        assertEquals(ExecutionIntentState.SEND_STARTED, repository.find(INTENT_ID).orElseThrow().state());
+        assertEquals(0, exchange.mutationCalls);
     }
 
     @Test

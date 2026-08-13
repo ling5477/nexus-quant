@@ -9,6 +9,7 @@ import com.guidinglight.nexusquant.strategy.strategyrelease.application.Admissio
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -177,6 +178,36 @@ public class JdbcBacktestEvaluationReportRepository implements BacktestEvaluatio
                         """,
                 ROW_MAPPER
         );
+    }
+
+    @Override
+    public List<BacktestEvaluationReport> list(String researchConfigId, String backtestConfigId) {
+        if (researchConfigId == null && backtestConfigId == null) {
+            return listAll();
+        }
+        StringBuilder sql = new StringBuilder("""
+                SELECT e.eval_report_id, e.backtest_run_id, e.evaluation_status, e.initial_capital,
+                       e.final_cash_balance, e.final_position_market_value, e.final_equity, e.realized_pnl,
+                       e.unrealized_pnl, e.net_pnl, e.total_return_rate, e.total_return, e.annualized_return,
+                       e.total_fee, e.total_slippage, e.order_count, e.trade_count, e.winning_trade_count,
+                       e.losing_trade_count, e.flat_trade_count, e.win_rate, e.max_drawdown,
+                       e.max_drawdown_rate, e.profit_loss_ratio, e.sharpe_ratio,
+                       e.report_json::text AS report_json, e.metrics_json::text AS metrics_json,
+                       e.failure_code, e.failure_message, e.evaluated_at, e.created_at, e.updated_at
+                FROM backtest_eval_reports e
+                JOIN backtest_runs r ON r.backtest_run_id = e.backtest_run_id
+                """);
+        List<Object> args = new ArrayList<>();
+        if (researchConfigId != null) {
+            sql.append(" WHERE r.research_config_id = ?");
+            args.add(researchConfigId);
+        }
+        if (backtestConfigId != null) {
+            sql.append(args.isEmpty() ? " WHERE" : " AND").append(" r.backtest_config_id = ?");
+            args.add(backtestConfigId);
+        }
+        sql.append(" ORDER BY e.evaluated_at DESC NULLS LAST, e.created_at DESC, e.eval_report_id DESC");
+        return jdbcTemplate.query(sql.toString(), ROW_MAPPER, args.toArray());
     }
 
     private static BacktestEvaluationReport mapRow(ResultSet resultSet, int rowNum) throws SQLException {

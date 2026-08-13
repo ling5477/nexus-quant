@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.runtime.api.web;
 
 import com.guidinglight.nexusquant.runtime.api.OperationalReadinessService;
+import com.guidinglight.nexusquant.runtime.api.FakeDryRunOperationsService;
 import com.guidinglight.nexusquant.runtime.api.dto.OperationalReadinessResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -9,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Objects;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -26,12 +28,22 @@ import org.springframework.web.bind.annotation.RestController;
 public class OperationalReadinessController {
 
     private final OperationalReadinessService operationalReadinessService;
+    private final FakeDryRunOperationsService fakeDryRunOperationsService;
 
     public OperationalReadinessController(OperationalReadinessService operationalReadinessService) {
+        this(operationalReadinessService, new FakeDryRunOperationsService(java.util.Optional.empty()));
+    }
+
+    @Autowired
+    public OperationalReadinessController(
+            OperationalReadinessService operationalReadinessService,
+            FakeDryRunOperationsService fakeDryRunOperationsService
+    ) {
         this.operationalReadinessService = Objects.requireNonNull(
                 operationalReadinessService,
                 "operationalReadinessService must not be null"
         );
+        this.fakeDryRunOperationsService = Objects.requireNonNull(fakeDryRunOperationsService);
     }
 
     /**
@@ -47,6 +59,6 @@ public class OperationalReadinessController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public OperationalReadinessResponse operationalReadiness() {
-        return operationalReadinessService.currentSummary();
+        return operationalReadinessService.currentSummary(fakeDryRunOperationsService.currentSnapshot());
     }
 }

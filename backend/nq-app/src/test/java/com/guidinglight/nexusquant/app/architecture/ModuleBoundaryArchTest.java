@@ -58,6 +58,12 @@ class ModuleBoundaryArchTest {
             .should().resideInAPackage("..infra..");
 
     @ArchTest
+    static final ArchRule execution_worker_should_not_depend_on_real_exchange_adapters = noClasses()
+            .that().resideInAPackage("..app.livecontrol.executionworker..")
+            .should().dependOnClassesThat().resideInAnyPackage(
+                    "..adapter.okx..", "..adapter.binance..", "..exchange.okx..", "..exchange.binance..");
+
+    @ArchTest
     static final ArchRule fallback_components_should_only_be_wired_from_local_test_fallback_configuration = noClasses()
             .that().resideInAPackage("..app.config..")
             .and().doNotHaveSimpleName("LocalTestFallbackConfiguration")
