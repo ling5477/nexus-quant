@@ -6,9 +6,9 @@ NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/
 
 <!-- nq-current-summary:start -->
 - 最近冻结 Gate 为 GateX：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [docs/gates/gate-x/](docs/gates/gate-x/)，release tag=`nq-gatex-freeze`。
-- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-PLAN、GateY-1 与 GateY-2 均为 `ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateY-3=`REVIEW ACCEPTED / READY TO COMMIT`（审查已接受 / 可进入提交前复核）。
+- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-PLAN、GateY-1、GateY-2 与 GateY-3 均为 `ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateY-4=`NOT STARTED`（未开始）。
 - Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEY-3-EXECUTION-INTENT-RECEIPT-FAKE-EXCHANGE-COMMIT-AND-PUSH`；只允许精确暂存、提交并推送已接受的 fake/local execution 变更，不包含真实交易所、真实 PLACE/CANCEL、production worker 或 LIVE，micro-live 未授权，exact transition 以 [STATUS.md](docs/current/STATUS.md) 为准。
+- 当前唯一动作是 `NQ-GATEY-4-SCOPED-CREDENTIAL-PRIVATE-READONLY-KILL-DEPLOYMENT-BOUNDARY-IMPLEMENTATION`；只允许 scoped credential reference/capability、OKX private read-only probe、kill propagation 与 deployment boundary 的默认关闭实现，不授权 PLACE、CANCEL、资金 mutation、production worker 自动启动、micro-live 或 LIVE，exact transition 以 [STATUS.md](docs/current/STATUS.md) 为准。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
 

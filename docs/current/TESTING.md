@@ -13326,3 +13326,22 @@ Known warnings：既有 SLF4J no-provider、Mockito dynamic-agent、unchecked/de
 Corrections：独立审查在当前 GateY-3 allowlist 内关闭 durable kill switch、session creator/account owner bridge、统一 fail-closed taxonomy、UNKNOWN PLACE 的 CANCEL 阻断、intent/receipt canonical revalidation、canonical delimiter/null ambiguity、exception/interruption mutation counter、sensitive `toString()` 与 same-hash field mismatch 共 8 类 P1。最终 P0=0/P1=0，`LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE=CLOSED`。
 
 Known warnings：既有 SLF4J no-provider、Mockito dynamic-agent、unchecked/deprecation、Windows LF→CRLF，以及 1 个依赖 env 的既有 no-outbound skip。首次使用本机不存在的 `postgres:17.7-alpine` 时 Docker create 超时且未形成测试结论；随后改用本机已有 `postgres:17.7` 完成验证，全部一次性容器已删除。未运行：CI、production migration/lock-window、production worker、真实 provider/credential/private endpoint/PLACE/CANCEL/micro-live/LIVE；这些均保持禁止。完整证据：[evidence/gate-y/NQ-GATEY-3-EXECUTION-INTENT-RECEIPT-FAKE-EXCHANGE-SECURITY-REVIEW.attempt-01.md](evidence/gate-y/NQ-GATEY-3-EXECUTION-INTENT-RECEIPT-FAKE-EXCHANGE-SECURITY-REVIEW.attempt-01.md)。
+
+## 2026-08-13 — GateY-3 post-CI acceptance 与 GateY-4 initialization attempt-01
+
+结论：`PASS / GATEY_3_ACCEPTED / CI_GREEN / LEGACY_ACCOUNT_IDENTITY_BRIDGE_CLOSED / GATEY_4_INITIALIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`（通过 / GateY-3 已接受 / CI 已通过 / legacy account identity bridge 已关闭 / GateY-4 已初始化 / 未授权 micro-live / LIVE 关闭 / 可进入提交前复核）。
+
+| 验证项 / Command | 结果 | 范围 / 环境 / warning / 阻断性 |
+| --- | --- | --- |
+| `git fetch origin` + Git preflight | PASS（通过） | `dev`；起始 worktree clean、staged empty；`HEAD == origin/dev == 1f2ad2324166872a567a0420b71a8b4a5b68f7f1` |
+| `gh run view 31622259352` | PASS（通过） | `NQ CI Baseline / completed / success`；exact `headSha=1f2ad232...`；10 jobs / bad=0 |
+| Independent execution/security review | PASS（通过） | P0=0、P1=0；真实 PostgreSQL 17.7 正向与 `legacy NULL / mismatch / owner mismatch / missing order` 反向路径通过，`LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE=CLOSED` |
+| Governance action matcher | PASS（通过） | `GateY-4 / NOT_STARTED` 要求 `IMPLEMENTATION`；`NQ-GATEY-4-SCOPED-CREDENTIAL-PRIVATE-READONLY-KILL-DEPLOYMENT-BOUNDARY-IMPLEMENTATION` 命中 canonical prefix/type；contract/script diff=0 |
+| 第一轮 `check-current-authority.ps1` | PASS（通过） | GateY-3=`ACCEPTED|CI_GREEN`；GateY-4=`NOT_STARTED / NONE / NOT_RUN`；next action canonical；`errors=0` |
+| 第一轮 `check-doc-links.ps1 -Roots @('README.md','docs/current')` | PASS WITH WARNINGS（通过并有 warning） | 260 checked / 14 historical warnings / 0 errors；warning 仅来自 append-only GateJ/GateX 旧路径，非本轮 hard error |
+| 第一轮 `git diff --check` | PASS（通过） | whitespace errors=0；仅既有 Windows LF→CRLF 提示 |
+| Final docs/allowlist/forbidden-area rerun | PASS（通过） | authority errors=0；links 261 checked / 14 historical warnings / 0 errors；9 个允许路径，unexpected/missing=`0/0`、staged=0；`git diff --check` errors=0；backend/frontend/research/scripts/deploy/.github/migration/docs/gates/docs/archive diff=0 |
+| Product/local runtime tests | NOT RUN（未运行） | documentation-only；业务代码、V39、migration、CI workflow 均无变更；采用 exact-head CI，不重复执行业务测试；非阻断 |
+| Security/trading boundary | PASS / ZERO SIDE EFFECT（通过 / 无副作用） | credential access/exchange call/order/cancel/transfer/withdraw=0；LIVE=`DISABLED`、kill switch=`ENGAGED`、real provider/private trading=`NOT_IMPLEMENTED` |
+
+GateY-3 接受仅覆盖 deterministic fake/local execution runtime、stable clientOrderId/canonical hash、cross-process idempotency、claim/lease、durable SEND_STARTED、crash/UNKNOWN recovery、NO BLIND RETRY、receipt atomicity 与 PostgreSQL concurrency baseline。GateY-4 只初始化 scoped credential/private read-only/kill/deployment boundary；PLACE、CANCEL、资金 mutation、production worker 自动启动、micro-live 与 LIVE 均禁止。完整证据：[evidence/gate-y/NQ-GATEY-3-POST-CI-ACCEPTANCE-AND-GATEY-4-INITIALIZATION.attempt-01.md](evidence/gate-y/NQ-GATEY-3-POST-CI-ACCEPTANCE-AND-GATEY-4-INITIALIZATION.attempt-01.md)。

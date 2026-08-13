@@ -18576,3 +18576,21 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - result：`PASS / GATEY_3_FAKE_EXECUTION_SECURITY_REVIEW_ACCEPTED / P0_0 / P1_0 / NO_BLIND_RETRY_VERIFIED / FAKE_PROVIDER_ISOLATED / POSTGRESQL_CONCURRENCY_VERIFIED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
 - authority：`GateY-3 / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
 - next：`NQ-GATEY-3-EXECUTION-INTENT-RECEIPT-FAKE-EXCHANGE-COMMIT-AND-PUSH`。
+
+## 2026-08-13 — GateY-3 post-CI acceptance 与 GateY-4 initialization attempt-01
+
+- task：`NQ-GATEY-3-POST-CI-ACCEPTANCE-AND-GATEY-4-INITIALIZATION`；NQ-only、documentation-only、post-CI authority reconciliation、high-risk batch acceptance 与 next-batch initialization。
+- baseline：`dev` clean、staged empty；`HEAD == origin/dev == 1f2ad2324166872a567a0420b71a8b4a5b68f7f1`；起始 authority checker errors=0。
+- exact-head CI：run `31622259352 / completed / success`，`headSha=1f2ad232...`，10 jobs / bad=0；canonical GitHub 事实由 `gh` 重新取得。
+- acceptance：GateY-3 独立 execution/security review 最终 P0=0/P1=0；接受 ExecutionIntent/Receipt runtime、deterministic fake exchange、stable clientOrderId/canonical hash、cross-process idempotency、claim/lease、durable SEND_STARTED、crash/UNKNOWN recovery、NO BLIND RETRY、receipt atomicity 与 PostgreSQL concurrency baseline。
+- bridge：真实 PostgreSQL 正向及 `legacy NULL / mismatch / owner mismatch / missing order` 反向路径通过，正式记录 `LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE=CLOSED`。
+- non-capabilities：真实 provider、真实 PLACE/CANCEL、credential decrypt、private endpoint、real permission probe、production worker、production migration deployment、remote order/fill reconciliation、micro-live 与 LIVE 均未实现/未授权。
+- reconciliation：accepted batch 推进为 `GateY-3 / ACCEPTED|CI_GREEN`，implementation/acceptance head=`1f2ad2324166872a567a0420b71a8b4a5b68f7f1`，CI run=`31622259352`；work batch 初始化为 `GateY-4 / NOT_STARTED / NONE / NOT_RUN`。
+- GateY-4 boundary：只允许 scoped credential reference/capability、最小 read permission、JIT material access boundary、OKX private read-only probe、endpoint/IP allowlist readiness、kill propagation、worker deployment identity、immutable release/process boundary、no-real/default-disabled profile、显式人工 read-only smoke 与审计证据。
+- credential：material 不进入 domain，control plane 只持 reference/capability，JIT decrypt 只在受控 adapter/worker 边界；缺少真实 OKX credential 只能 `BLOCKED / API_KEY_REQUIRED`，用户须在 NQ 本地安全 credential 管理路径配置，不得在聊天中粘贴明文。
+- architecture hygiene：private provider DTO 不进 core domain；kill-switch owner 唯一；deployment tooling 不承载交易规则；read-only probe 不构成交易授权；fake provider 不得成为真实 provider fallback；新增依赖检查 ArchUnit。
+- residuals：`PRODUCTION_LOCK_WINDOW_NOT_MEASURED`、`FILESYSTEM_STABLE_HANDLE_LIMITATION_INHERITED` 继续阻断 production deployment、production worker 与 `FIRST_REAL_ORDER`。
+- validation：final authority errors=0；links 261 checked/14 historical warnings/0 errors；`git diff --check` errors=0；9 个允许路径，unexpected/missing=`0/0`、staged=0；backend/frontend/research/scripts/deploy/.github/migration/docs/gates/docs/archive diff=0。业务产品测试未运行，因为本轮仅文档同步并采用 exact-head CI。
+- boundary：credential access/exchange calls/order/cancel/transfer/withdraw/交易副作用=0；LIVE=`DISABLED`、kill switch=`ENGAGED`；不修改业务代码、V39、migration、workflow、governance contract 或既有 GateY-3 implementation/review evidence，未 commit/push/PR/tag。
+- result：`PASS / GATEY_3_ACCEPTED / CI_GREEN / LEGACY_ACCOUNT_IDENTITY_BRIDGE_CLOSED / GATEY_4_INITIALIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
+- next：`NQ-GATEY-4-SCOPED-CREDENTIAL-PRIVATE-READONLY-KILL-DEPLOYMENT-BOUNDARY-IMPLEMENTATION`。

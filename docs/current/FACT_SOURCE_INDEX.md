@@ -80,6 +80,6 @@ Historical evidence 中的旧状态、旧路径和旧 next action 不覆盖 curr
 - GateW-ATTEMPT-13-168H-ACCEPTANCE：`ACCEPTED / CI GREEN`；Attempt-13=`COMPLETED / ACCEPTED`，production soak=`COMPLETED`。
 - GateX：`FROZEN / ACCEPTED / TAGGED`；freeze commit=`299ab30bd2e243314be2dc609cb244cd5388027b`，tag=`nq-gatex-freeze`，strict archive/release/post-tag verification 均通过。
 - GateX-5：`ACCEPTED / CI GREEN`；最终 `ADMISSION_MATERIALIZATION_FACT_TEAR=CLOSED`，但不授权 Shadow execution、trading 或 LIVE。
-- GateY：`IN PROGRESS / NOT FROZEN`；GateY-PLAN、GateY-1 与 GateY-2 均为 `ACCEPTED / CI_GREEN`，GateY-3=`NOT_STARTED`。GateY-2 只接受 V39 local schema 与 LIVE control-plane fact baseline，不代表 production migration、execution worker、真实 exchange execution 或 micro-live 已获授权；GateY-3 只允许 fake/local execution contract 与确定性测试。
+- GateY：`IN PROGRESS / NOT FROZEN`；GateY-PLAN、GateY-1、GateY-2 与 GateY-3 均为 `ACCEPTED / CI_GREEN`，GateY-4=`NOT_STARTED`。GateY-3 只接受 deterministic fake/local execution runtime、PostgreSQL concurrency 与 `LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE=CLOSED`，不代表真实 provider、credential、private endpoint、production worker、真实 PLACE/CANCEL、micro-live 或 LIVE 已获授权；GateY-4 只允许 scoped credential/private read-only/kill/deployment boundary 的默认关闭实现。
 - LIVE=`DISABLED`，kill switch=`ENGAGED`；Shadow trading 未启用；AI、DH runtime、Integration runtime 未开始；real provider 与 private trading 未实现。
 - 唯一下一动作从 [STATUS.md](STATUS.md) 与 [ROADMAP.md](ROADMAP.md) 读取；本索引不建立第二份 action authority。
