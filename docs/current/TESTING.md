@@ -13470,3 +13470,22 @@ Known warnings / residuals：完整 frontend E2E 的 32 个失败来自 local ba
 | no-real / no-egress | PASS / ZERO SIDE EFFECT（通过 / 无真实副作用） | credential/real HTTP/WS/PLACE/CANCEL/transfer/withdraw/borrow/leverage/production DB/migration/worker/deploy/external egress 均=`0`；LIVE disabled、kill engaged |
 
 Review remediation：关闭 actual JAR/release/readonly binding、lock graph/精确 blocker release、evaluation query scope、marketdata source-health fixture isolation 与 `FRESH`/`HEALTHY` 枚举断言问题。完整证据：[evidence/gate-y/NQ-GATEY-5-ISOLATED-WORKER-DRYRUN-ROLLBACK-RESTORE-LOCK-WINDOW-SECURITY-OPERATIONS-REVIEW.attempt-01.md](evidence/gate-y/NQ-GATEY-5-ISOLATED-WORKER-DRYRUN-ROLLBACK-RESTORE-LOCK-WINDOW-SECURITY-OPERATIONS-REVIEW.attempt-01.md)。
+
+## 2026-08-14 — GateY-5 post-CI acceptance and GateY-6 initialization attempt-01
+
+结论：`PASS / GATEY_5_ACCEPTED / CI_GREEN / FAILED_CI_PRESERVED / FORWARD_REMEDIATION_ACCEPTED / PRODUCTION_LOCK_WINDOW_CLOSED_FOR_REVIEWED_SYNTHETIC_DISPOSABLE_GATEY_SCALE / GATEY_6_INITIALIZED / FIRST_REAL_ORDER_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
+
+| Command / check | Result | Scope / environment / warnings / blocking |
+| --- | --- | --- |
+| Git baseline | PASS（通过） | `dev` clean/staged empty；`HEAD == origin/dev == 88f6f7f25a81f55fe17984df335546ad2033c61f` |
+| implementation CI `31727172181` | FAILED / PRESERVED（失败 / 已保留） | headSha=`8d594f1a0000678e4817f3ec80de19ac975da992`；唯一 failed job=`Secret scan`；`generic-api-key` false positive non-secret hash evidence；不得改写为 green |
+| remediation ancestry/scope | PASS（通过） | commit=`88f6f7f25a81f55fe17984df335546ad2033c61f`；唯一 parent=`8d594f1a0000678e4817f3ec80de19ac975da992`；changed files=`1`；product/CI workflow/allowlist changes=`0/0/0` |
+| remediation exact-head CI `31761584826` | PASS（通过） | `NQ CI Baseline / completed / success`；headSha=`88f6f7f25a81f55fe17984df335546ad2033c61f`；bad jobs=`0` |
+| `scripts/docs/check-current-authority.ps1` | PASS（通过） | authority errors=`0`；accepted batch=`GateY-5 / ACCEPTED|CI_GREEN`；work batch=`GateY-6 / NOT_STARTED` |
+| `scripts/docs/check-doc-links.ps1` corrected array invocation | PASS WITH HISTORICAL WARNINGS（通过并有历史 warning） | checked=`283`、warnings=`14`、errors=`0`；warnings 均来自 append-only ledger 的既有 GateJ/GateX 历史路径 |
+| link checker initial literal-comma invocation | FAILED BEFORE SCAN（扫描前失败） | `-Roots README.md,docs/current` 被 PowerShell 解析为单 root，`ROOT_NOT_FOUND`、checked=`0`；RCA 后改为数组参数并通过，非文档链接失败 |
+| diff/allowlist/forbidden area | PASS（通过） | first pass changed paths=`7`；ledger 追加后 final changed/staged paths=`9`；unexpected/missing expected=`0/0`；`git diff --check` 与 `git diff --cached --check` errors=`0`；backend/frontend/research/scripts/deploy/.github/migration/docs/gates/docs/archive diff=`0` |
+| Product tests | NOT RUN（未运行） | documentation-only；业务代码、migration、workflow diff 均为 0，采用已核验 exact-head CI，不重复执行 Maven/frontend/Python tests；非阻断 |
+| Security/trading boundary | PASS / ZERO SIDE EFFECT（通过 / 无副作用） | credential access/exchange calls/worker starts/production operations/trading side effects=`0/0/0/0/0`；LIVE disabled、kill engaged |
+
+GateY-5 lock-window 只按 reviewed synthetic disposable GateY scale 限定关闭，不声明 production SLA、production migration 或 real trading verified。GateY-6 initialization 只建立治理容器；`FIRST_REAL_ORDER` 与 micro-live 均未授权。完整证据：[evidence/gate-y/NQ-GATEY-5-POST-CI-ACCEPTANCE-AND-GATEY-6-INITIALIZATION.attempt-01.md](evidence/gate-y/NQ-GATEY-5-POST-CI-ACCEPTANCE-AND-GATEY-6-INITIALIZATION.attempt-01.md)。

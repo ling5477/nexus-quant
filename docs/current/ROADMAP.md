@@ -59,7 +59,9 @@ GateY-3 ACCEPTED / CI GREEN
   ↓
 GateY-4 ACCEPTED / CI GREEN
   ↓
-GateY-5 REVIEW ACCEPTED / READY TO COMMIT
+GateY-5 ACCEPTED / CI GREEN
+  ↓
+GateY-6 NOT STARTED
 ```
 
 ## 下一允许动作
@@ -90,8 +92,9 @@ GateY-5 REVIEW ACCEPTED / READY TO COMMIT
 - GateY-2：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`19ac2d1cdc7a1982f97fb0e1b0e62c081d003018`，exact-head CI run=`31608725854 / completed / success / 10 jobs / bad=0`。接受范围为 V39 local schema、六张 control-plane fact 表、`LiveSession`/approval/risk domain、Repository/JDBC、PostgreSQL enforcement、事务/并发与 architecture hygiene baseline；不授权 production migration、worker、真实 exchange execution 或 micro-live。
 - GateY-3：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`1f2ad2324166872a567a0420b71a8b4a5b68f7f1`，exact-head CI run=`31622259352 / completed / success / 10 jobs / bad=0`。`NO BLIND RETRY`、PostgreSQL concurrency、fake-provider isolation 与 `LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE=CLOSED` 均有独立 review 与回归证据；接受不包含真实 provider、credential、外联、production worker 或 LIVE。
 - GateY-4：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；canonical implementation commit=`44ac9b3c014bcd7a46499c4180053742e64c7709`，final acceptance evidence head=`b3a6b1fd550d8ccb5132c7b16942a4b11b67f78e`，exact-head CI run=`31679311259 / completed / success / 10 jobs / bad=0`。44-path/44-blob addendum 与 ancestry reconciliation 已通过；Candidate B 因缺少 18 个 reviewed paths 被 supersede。Linux stable-handle closure 只适用于 supported Linux runtime；真实 smoke=`NOT_RUN / API_KEY_REQUIRED`，remote permission/IP allowlist 未验证。
-- GateY-5：`REVIEW ACCEPTED / READY TO COMMIT`（审查已接受 / 可进入提交前复核）；P0/P1=0，backend、frontend full E2E、lock/recovery/rollback/restore hard gates 均通过独立 Security/Operations Review。
-- 当前唯一治理动作是 `NQ-GATEY-5-ISOLATED-WORKER-DRYRUN-ROLLBACK-RESTORE-LOCK-WINDOW-COMMIT-AND-PUSH`；精确状态和安全边界服从 [STATUS.md](STATUS.md)。
+- GateY-5：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit=`8d594f1a0000678e4817f3ec80de19ac975da992`，failed implementation CI=`31727172181 / failure`，失败归类为 `FALSE_POSITIVE_NON_SECRET_HASH_EVIDENCE` 并保留；forward-only remediation/acceptance head=`88f6f7f25a81f55fe17984df335546ad2033c61f`，exact-head CI run=`31761584826 / completed / success / bad=0`。Remediation 只修改 1 个 review evidence 文件，产品代码、CI workflow、allowlist 变更均为 0。
+- GateY-6：`NOT STARTED`（未开始）；候选范围固定为 OKX Spot、单一 pilot account、micro capital、single owner/release/window、1～2 high-liquidity spot symbols、LIMIT-only 与 120h controlled soak。Initialization 只建立治理容器，不授权 micro-live、`FIRST_REAL_ORDER`、credential 访问、OKX 调用、kill disengage 或 LIVE enable。
+- 当前唯一治理动作是 `NQ-GATEY-6-EXPLICIT-MICRO-LIVE-AUTHORIZATION-PREFLIGHT-AND-WORK-ORDER-IMPLEMENTATION`；只允许重建 `FIRST_REAL_ORDER_HARD_GATE` matrix、绑定 GateY-1～5 exact evidence、标记 `PASS / NOT_MET / NOT_VERIFIABLE`、识别 credential/IP/venue permission 缺口、冻结 exact pilot work order 与定义 120h soak/abort/kill/reconcile/rollback contract。该任务仍不得发送真实订单；精确状态和安全边界服从 [STATUS.md](STATUS.md)。
 
 ## GateW 已冻结边界
 
@@ -115,6 +118,9 @@ GateY-5 REVIEW ACCEPTED / READY TO COMMIT
 - GateY-4 仍禁止 PLACE、CANCEL、transfer、withdraw、真实资金 mutation、LIVE activation、production worker 自动启动与真实 micro-live。真实 read-only smoke 必须为显式人工模式；缺少 OKX credential 时只允许 `BLOCKED / API_KEY_REQUIRED`，用户应在 NQ 本地安全 credential 管理路径配置，不得在聊天中粘贴明文 API Key、Secret 或 Passphrase。
 - GateY-5 只允许 isolated worker fake-only dry-run、intent/receipt durable boundary、restart/replay、UNKNOWN reconciliation、NO BLIND RETRY、kill propagation、heartbeat/resource limits、immutable rollback、disposable backup/restore、incident drill、最小 approval/risk visibility 与 production-like V39 lock-window measurement；继续禁止 real OKX mutation、real PLACE/CANCEL、real credential requirement、production worker/deployment、micro-live 与 LIVE。
 - GateY-5 architecture hygiene：worker 不拥有 strategy admission、risk-rule authoring、session authorization 或 credential lifecycle；PostgreSQL intent/receipt 保持唯一 durable execution boundary；orders/trades/positions/ledger owner 不变；fake provider 不得成为 real fallback；dashboard 只展示事实；restart/deployment tooling 不承载业务决策；新增跨 module dependency 必须检查 ArchUnit。禁止 microservice rewrite 或 second execution ledger。
+- GateY-6 frozen candidate scope：仅 OKX Spot、单 venue、单 pilot account、单 owner、单 strategy release、单 execution window、1～2 个高流动性现货 symbol、LIMIT-only、micro capital；明确禁止 Binance fallback、第二 venue、cross-venue routing、market order、margin、leverage、futures、options、borrow、transfer、withdraw、funding API、AI/LLM execution、DH runtime execution 与 unattended execution。
+- GateY-6 explicit authorization 必须绑定 exact immutable pilot scope：`sessionId`、OKX account reference、strategy release digest、risk-limit-set digest、credential reference、symbol allowlist、capital cap、single-order notional cap、daily-loss cap、execution window、approval expiry 与 scope hash。任一字段变化均使 authorization 失效并回到 `APPROVAL_PENDING`；历史口头授权、GateY-6 初始化或 CI green 均不能替代 exact pilot 的新授权。
+- GateY-6 candidate soak 为 120h、manual start、continuous reconciliation、kill available。发现 credential permission drift、withdraw/transfer permission、IP allowlist mismatch、kill inconsistency、unresolved unknown order、reconciliation blocked、ledger/position divergence、release/worker mismatch、risk violation、unexpected endpoint、external fallback 或 secret leakage 时，pilot 必须 terminal/frozen，禁止 auto restart。
 - 不得把 GateW diagnostic/read-only/soak 证据推导为远端交易 permission、账户健康、余额充分、private trading 或 unattended execution readiness。
 - 不得开启 LIVE、真实下单/撤单、转账/提现、AI trading、DH runtime、Integration runtime、RealClient 或 real provider。
 - NQ-only 任务不得修改或声明 DH current authority；DH/Integration 状态继续只表达 NQ 侧 no-real 边界。

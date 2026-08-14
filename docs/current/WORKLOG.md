@@ -18696,3 +18696,17 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：credential/real exchange HTTP/WS/PLACE/CANCEL/transfer/withdraw/borrow/leverage/production DB/migration/worker/deploy/external egress=`0`；LIVE=`DISABLED`、kill=`ENGAGED`、micro-live=`NOT_AUTHORIZED`；未 stage/commit/push/tag/deploy。
 - result：`PASS / GATEY_5_SECURITY_OPERATIONS_REVIEW_ACCEPTED / REVIEW_ACCEPTED|READY_TO_COMMIT`。
 - next：`NQ-GATEY-5-ISOLATED-WORKER-DRYRUN-ROLLBACK-RESTORE-LOCK-WINDOW-COMMIT-AND-PUSH`。
+
+## 2026-08-14 — GateY-5 post-CI acceptance and GateY-6 initialization attempt-01
+
+- task：`NQ-GATEY-5-POST-CI-ACCEPTANCE-AND-GATEY-6-INITIALIZATION`；NQ-only、L 级 documentation/post-CI authority reconciliation。
+- baseline：`dev` clean/staged empty；`HEAD == origin/dev == 88f6f7f25a81f55fe17984df335546ad2033c61f`；authority before=`GateY-4 accepted / GateY-5 REVIEW_ACCEPTED|READY_TO_COMMIT`。
+- commit chain：implementation=`8d594f1a0000678e4817f3ec80de19ac975da992`；failed CI=`31727172181 / failure`，唯一 bad job=`Secret scan`，归类=`generic-api-key / FALSE_POSITIVE_NON_SECRET_HASH_EVIDENCE`；失败历史保留。
+- forward remediation：commit/acceptance head=`88f6f7f25a81f55fe17984df335546ad2033c61f`；唯一 parent 为 implementation；changed files=`1`，product/CI workflow/allowlist changes=`0/0/0`；exact-head CI=`31761584826 / completed / success / bad=0`。
+- acceptance：GateY-5=`ACCEPTED|CI_GREEN`；fake-only worker、durable intent/receipt、NO BLIND RETRY、replay/recovery、kill、immutable release、rollback/backup/restore/incident/reconciliation、operator visibility、full regression 与 synthetic lock-window evidence 被接受；不扩大为 production SLA/migration/real trading。
+- GateY-6：初始化 OKX Spot 单一 pilot account、micro capital、exact scope 与 120h controlled soak 治理容器；`FIRST_REAL_ORDER=NOT_AUTHORIZED`、micro-live=`NOT_AUTHORIZED`。
+- explicit authorization：未来必须绑定 exact `sessionId/account/release/risk/credential/symbol/capital/order/daily-loss/window/expiry/scope hash`；任一字段变化回到 `APPROVAL_PENDING`。历史口头授权、GateY-6 初始化或 CI green 均不能替代 exact pilot 新授权。
+- validation：authority errors=`0`；links final=`284 checked / 14 historical warnings / 0 errors`；final changed/staged paths=`9`、unexpected/missing expected=`0/0`、forbidden diff=`0`、`git diff --check` 与 cached check errors=`0`。首次 link 命令因 comma 参数被解析成单 root，`ROOT_NOT_FOUND / checked=0`，RCA 后以数组参数重跑通过。
+- boundary：credential access/exchange calls/worker starts/production operations/trading side effects=`0/0/0/0/0`；real provider/private trading=`NOT_IMPLEMENTED`；LIVE=`DISABLED`、kill=`ENGAGED`；未 commit/push/tag/deploy。
+- result：`PASS / GATEY_5_ACCEPTED / CI_GREEN / FAILED_CI_PRESERVED / FORWARD_REMEDIATION_ACCEPTED / GATEY_6_INITIALIZED / FIRST_REAL_ORDER_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
+- next：`NQ-GATEY-6-EXPLICIT-MICRO-LIVE-AUTHORIZATION-PREFLIGHT-AND-WORK-ORDER-IMPLEMENTATION`。
