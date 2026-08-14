@@ -84,6 +84,17 @@ public final class OkxSpotEndpointGuard {
         return EndpointPolicyDecision.allowPrivateReadOnly(definition.capability());
     }
 
+    /**
+     * GateY provider contract 的独立 typed allowlist。这里只证明 operation contract 精确匹配，
+     * {@code runtimeAuthorized} 永远为 false；调用方不能提交 method、path、host 或 raw URL。
+     */
+    public OkxSpotProviderContractDecision evaluateProviderContract(OkxSpotProviderOperation operation) {
+        if (operation == null || !OkxSpotProviderOperation.exactAllowlist().contains(operation)) {
+            return OkxSpotProviderContractDecision.deny(operation);
+        }
+        return OkxSpotProviderContractDecision.allowContractOnly(operation);
+    }
+
     private EndpointPolicyDecision evaluatePublicRead(
             OkxSpotCapabilityDefinition definition,
             String method,

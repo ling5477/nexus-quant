@@ -16,6 +16,7 @@ import com.guidinglight.nexusquant.adapter.binance.service.BinanceExchangeAdapte
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClient;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
+import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotExecutionProviderPort;
 
 import java.math.BigDecimal;
 import java.util.Collection;
@@ -50,6 +51,8 @@ class ExchangeAdapterConfigurationReadinessTest {
             assertEquals(2, adapters.size());
             assertInstanceOf(OkxExchangeAdapter.class, adapters.get("OKX"));
             assertInstanceOf(BinanceExchangeAdapter.class, adapters.get("BINANCE"));
+            assertTrue(context.getBeansOfType(SpotExecutionProviderPort.class).isEmpty(),
+                    "GateY provider contract must not be wired into default runtime");
         }
     }
 
@@ -79,6 +82,7 @@ class ExchangeAdapterConfigurationReadinessTest {
             assertTrue(context.getBeansOfType(BinanceExchangeAdapter.class).isEmpty());
             assertTrue(context.getBeansOfType(OkxWsClient.class).isEmpty());
             assertTrue(context.getBeansOfType(BinanceWsClient.class).isEmpty());
+            assertTrue(context.getBeansOfType(SpotExecutionProviderPort.class).isEmpty());
         }
     }
 

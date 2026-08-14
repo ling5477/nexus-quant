@@ -53,6 +53,12 @@ class PackageBoundaryArchTest {
             );
 
     @ArchTest
+    static final ArchRule strategy_should_not_depend_on_execution_provider_contract = noClasses()
+            .that().resideInAPackage("..strategy..")
+            .and().resideOutsideOfPackage("..app.architecture.fixture..")
+            .should().dependOnClassesThat().resideInAPackage("..livecontrol.execution.application.provider..");
+
+    @ArchTest
     static final ArchRule validation_should_not_depend_on_trading_owned_audit_port = noClasses()
             .that().resideInAnyPackage("..validation..", "..validationreview..")
             .should().dependOnClassesThat().haveFullyQualifiedName(

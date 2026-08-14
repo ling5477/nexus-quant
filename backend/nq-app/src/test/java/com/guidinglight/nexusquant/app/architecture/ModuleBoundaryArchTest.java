@@ -64,6 +64,27 @@ class ModuleBoundaryArchTest {
                     "..adapter.okx..", "..adapter.binance..", "..exchange.okx..", "..exchange.binance..");
 
     @ArchTest
+    static final ArchRule execution_provider_application_contract_should_not_depend_on_okx_concrete = noClasses()
+            .that().resideInAPackage("..livecontrol.execution.application.provider..")
+            .should().dependOnClassesThat().resideInAnyPackage("..adapter.okx..", "java.net..", "java.net.http..");
+
+    @ArchTest
+    static final ArchRule okx_spot_provider_contract_should_not_depend_on_real_http_or_credentials = noClasses()
+            .that().haveSimpleNameStartingWith("OkxSpotProvider")
+            .should().dependOnClassesThat().haveFullyQualifiedName(
+                    "com.guidinglight.nexusquant.adapter.okx.service.OkxHttpClient")
+            .orShould().dependOnClassesThat().haveFullyQualifiedName(
+                    "com.guidinglight.nexusquant.adapter.okx.model.OkxApiCredentials")
+            .orShould().dependOnClassesThat().haveFullyQualifiedName(
+                    "com.guidinglight.nexusquant.adapter.okx.service.OkxRequestSigner")
+            .orShould().dependOnClassesThat().haveFullyQualifiedName(
+                    "com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateRequestSigner")
+            .orShould().dependOnClassesThat().haveFullyQualifiedName(
+                    "com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateCredentialContext")
+            .orShould().dependOnClassesThat().haveFullyQualifiedName(
+                    "com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadTransport");
+
+    @ArchTest
     static final ArchRule fallback_components_should_only_be_wired_from_local_test_fallback_configuration = noClasses()
             .that().resideInAPackage("..app.config..")
             .and().doNotHaveSimpleName("LocalTestFallbackConfiguration")

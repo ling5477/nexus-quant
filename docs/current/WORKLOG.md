@@ -18771,3 +18771,26 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - validation：authority errors=`0`；next-action regression PASS；nested link invocation因数组边界在扫描前失败，direct-array修正后final=`295 checked / 14 historical warnings / 0 errors`；changed/expected/unexpected/missing=`9/9/0/0`、staged=`0`；product/scripts/migration/manifest diff=`0/0/0/0`；diff-check errors=`0`。
 - result：`PASS / GATEY_6A_POST_CI_CONTINUATION_ACCEPTED / COMMITTED_CI_GREEN_CONTINUE_REQUIRED / GATEY_6B_INITIALIZED / FIRST_REAL_ORDER_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`；未stage/commit/push/tag/deploy。
 - next：operational=`COMMIT_GATEY_6A_AUTHORITY_SYNC_AND_WAIT_EXACT_HEAD_CI`；machine authority=`NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-IMPLEMENTATION`，两者不得混淆。
+
+## 2026-08-14 — GateY-6B OKX Spot real-provider mutation contract implementation attempt-01
+
+- task：`NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-IMPLEMENTATION`；NQ-only、L级、高风险交易边界 implementation。
+- baseline：`dev`；starting `HEAD == origin/dev == 2a00d1e3cbab8bec38f344090b0636bf69b78cd1`；exact-head CI=`31804169275 / completed / success`；起始 clean/staged empty。
+- implementation：在 `nq-core` 建立 `SpotExecutionProviderPort`、typed request/result/error/clientOrderId contract；在 `nq-adapter-okx` 建立 LIMIT-only adapter、五项 exact operation allowlist、typed transport port、venue-state translation 与 fake contract tests。GateY-3 intent/receipt/SEND_STARTED/UNKNOWN 语义复用且未修改。
+- safety：UNKNOWN 与 cancel timeout/race 强制 query-first，mutation retry 永远 false；OPEN 才可 controlled cancel，partial 默认 reconcile-first；raw venue unknown fail closed；default Spring context 不注册 provider/transport，worker/runtime wiring=0。
+- validation：compile PASS；provider focused=`6+9` tests PASS；default wiring/ArchUnit=`24` tests PASS；GateY-3/5 regression=`11+2+2` tests PASS；full backend 23/23 modules PASS，`nq-app=279/0/0/27 skipped`；static no-egress/credential/raw endpoint scan PASS；authority errors=0、next-action regression PASS、links=`297/14 historical warnings/0 errors`；forbidden-area/manifest diff=0。
+- boundary：credential access/OKX calls/external egress/real PLACE/CANCEL/worker/production operation=`0/0/0/0/0/0`；migration diff=0，hard-gate manifest unchanged=`0/25/5`；real provider/private trading仍`NOT_IMPLEMENTED`；FIRST_REAL_ORDER/micro-live未授权；LIVE disabled、kill engaged。
+- result：`PASS / GATEY_6B_REAL_PROVIDER_MUTATION_CONTRACT_IMPLEMENTED / IMPLEMENTED|PENDING_REVIEW`；未 stage/commit/push/tag/deploy。
+- next：`NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-SECURITY-OPERATIONS-REVIEW`。
+
+## 2026-08-14 — GateY-6B OKX Spot provider mutation contract Security/Operations Review attempt-01
+
+- task：`NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-SECURITY-OPERATIONS-REVIEW`；NQ-only、L级 independent security/operations/architecture review。
+- baseline：`dev`；`HEAD == origin/dev == 2a00d1e3cbab8bec38f344090b0636bf69b78cd1`；exact-head CI=`31804169275 / completed / success`；起始 candidate=`13 tracked + 13 untracked`、staged/unexpected=`0/0`。
+- findings/remediation：关闭 P1 mutation certainty、P1 order-response fill bounds、P2 response pre-read cap contract 与 P2 normalized result/fill invariants；补充 `SEND_STARTED` 前置 contract 和 5 个 adapter 攻击性 tests。
+- architecture：application port ownership、dependency direction、typed endpoint、LIMIT-only、no second SoR、default bean=0、worker binding=0、production transport=0、runtime mutation reachability=0 均通过。
+- validation：focused=`34`；wiring/ArchUnit/no-outbound=`27`；GateY-3/4/5=`11/13/4`；full backend=`23/23 modules / 1478 tests / 0 failures / 0 errors / 44 skipped`；authority/link/diff final validation另行收口。
+- scan：static hits仅`COMMENT/TYPE_ONLY/TEST_ONLY`，`EXECUTABLE_RISK=0`；Codex Security/CodeRabbit因项目active skills allowlist未运行，不冒充外部扫描。
+- boundary：migration/manifest/frontend/research/deploy/`.github`/governance contract diff=0；real credential/OKX network/real mutation=`0/0/0`；real provider/private trading=`NOT_IMPLEMENTED`；FIRST_REAL_ORDER/micro-live未授权；LIVE disabled、kill engaged。
+- result：`PASS / GATEY_6B_REAL_PROVIDER_MUTATION_CONTRACT_SECURITY_REVIEW_ACCEPTED / P0_0 / P1_0 / REVIEW_ACCEPTED|READY_TO_COMMIT`；未 stage/commit/push/tag/deploy。
+- next：`NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-COMMIT-AND-PUSH`。

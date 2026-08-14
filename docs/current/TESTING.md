@@ -13581,3 +13581,40 @@ Known warning / non-blocking：PS5.1 lifecycle 仍约 4m40s，process-heavy 但�
 | Security/trading boundary | PASS / ZERO SIDE EFFECT（通过 / 无副作用） | credential/OKX/real PLACE/real CANCEL/worker/production operation=`0/0/0/0/0/0`；real provider/private trading NOT_IMPLEMENTED；FIRST_REAL_ORDER/micro-live NOT_AUTHORIZED；LIVE disabled、kill engaged |
 
 GateY-6B仅获得后续独立fake/stub/no-egress contract implementation的治理启动资格；authority-sync commit取得新的exact-head CI green前不得开始实现。完整证据：[evidence/gate-y/NQ-GATEY-6A-POST-CI-CONTINUATION-AND-GATEY-6B-INITIALIZATION.attempt-02.md](evidence/gate-y/NQ-GATEY-6A-POST-CI-CONTINUATION-AND-GATEY-6B-INITIALIZATION.attempt-02.md)。
+
+## 2026-08-14 — GateY-6B OKX Spot real-provider mutation contract implementation attempt-01
+
+结论：`PASS / GATEY_6B_REAL_PROVIDER_MUTATION_CONTRACT_IMPLEMENTED / TYPED_OKX_SPOT_CONTRACT / LIMIT_ONLY / ENDPOINT_ALLOWLIST_FAIL_CLOSED / STABLE_CLIENT_ORDER_ID / QUERY_FIRST_UNKNOWN_RECOVERY / NO_BLIND_RETRY / STATE_AWARE_CANCEL / NO_REAL_CREDENTIAL / NO_OKX_NETWORK / NO_REAL_MUTATION / DEFAULT_RUNTIME_FAIL_CLOSED / MIGRATION_UNCHANGED / REAL_PROVIDER_NOT_YET_ACCEPTED / PRIVATE_TRADING_NOT_IMPLEMENTED / FIRST_REAL_ORDER_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / PENDING_INDEPENDENT_SECURITY_OPERATIONS_REVIEW`。
+
+| Command / check | Result | Scope / environment / warnings / blocking |
+| --- | --- | --- |
+| exact-head baseline | PASS（通过） | `dev`；starting `HEAD == origin/dev == 2a00d1e3cbab8bec38f344090b0636bf69b78cd1`；CI `31804169275 / completed / success` |
+| compile | PASS（通过） | `mvn -f backend/pom.xml -pl nq-adapter-okx -am -DskipTests compile`；`BUILD SUCCESS` |
+| provider focused tests | PASS（通过） | `SpotProviderContractTest` 6、`OkxSpotProviderAdapterContractTest` 9；failures/errors/skips=`0/0/0` |
+| default wiring + ArchUnit | PASS（通过） | `ExchangeAdapterConfigurationReadinessTest,ModuleBoundaryArchTest,PackageBoundaryArchTest` 共 24 tests；failures/errors/skips=`0/0/0` |
+| GateY-3/5 focused regression | PASS（通过） | `ExecutionIntentRuntimeTest` 11、`LoopbackFakeExchangeHttpClientTest` 2、`DisposableWorkerReleaseVerifierTest` 2；全部通过 |
+| full backend | PASS（通过） | `mvn -f backend/pom.xml test`；23/23 modules success；`nq-app` 279 tests，failures/errors/skips=`0/0/27` |
+| scoped static security checks | PASS（通过） | main transport implementation=0；test fake transport=1；无 `java.net`/`OkxHttpClient`/signer/credential/Spring annotation/HTTP URL/raw execute；OKX/external calls=0 |
+| governance/current docs | PASS WITH HISTORICAL WARNINGS（通过并有历史 warning） | authority errors=0；next-action regression PASS；links=`297 checked / 14 historical warnings / 0 errors`；warnings 均为既有历史路径 |
+| forbidden-area / hard-gate manifest | PASS（通过） | frontend/research/migration/deploy/`.github`/scripts/manifest diff=0；manifest=`30 gates / 0 PASS / 25 NOT_MET / 5 NOT_VERIFIABLE` |
+| frontend / Python | NOT RUN（未运行） | frontend/research diff=0；任务只修改 backend contract/tests 与 current docs，非阻断 |
+
+Known warnings：既有 SLF4J NOP 与 Mockito dynamic-agent warning；非阻断。首次 focused Maven 命令因 PowerShell `-D...` 参数未引用而解析失败，修正后通过；首次 ArchUnit run因当前版本不支持 `haveSimpleNameMatching` 而 testCompile 失败，改用受支持 API 后通过。完整证据：[evidence/gate-y/NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-IMPLEMENTATION.attempt-01.md](evidence/gate-y/NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-14 — GateY-6B OKX Spot provider mutation contract Security/Operations Review attempt-01
+
+结论：`PASS / GATEY_6B_REAL_PROVIDER_MUTATION_CONTRACT_SECURITY_REVIEW_ACCEPTED / REAL_MUTATION_RUNTIME_UNREACHABLE / NO_REAL_TRANSPORT / NO_REAL_CREDENTIAL / NO_EGRESS / LIMIT_ONLY_VERIFIED / ENDPOINT_ALLOWLIST_VERIFIED / STABLE_CLIENT_ORDER_ID_VERIFIED / UNKNOWN_QUERY_FIRST_VERIFIED / NO_BLIND_RETRY_VERIFIED / STATE_AWARE_CANCEL_VERIFIED / SANITIZED_OUTCOME_VERIFIED / DEFAULT_RUNTIME_FAIL_CLOSED / MIGRATION_UNCHANGED / P0_0 / P1_0 / REAL_PROVIDER_NOT_IMPLEMENTED / PRIVATE_TRADING_NOT_IMPLEMENTED / FIRST_REAL_ORDER_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
+
+| Command / check | Result | Scope / environment / warnings / blocking |
+| --- | --- | --- |
+| baseline/candidate | PASS（通过） | `dev`；`HEAD == origin/dev == 2a00d1e3cbab8bec38f344090b0636bf69b78cd1`；CI `31804169275 / completed / success`；起始 `13 tracked + 13 untracked`、staged=0 |
+| focused provider security | PASS（通过） | `SpotProviderContractTest` 9 + adapter/endpoint/private-read 25 = 34；failures/errors/skips=`0/0/0` |
+| default wiring/ArchUnit/no-outbound | PASS（通过） | 27 tests；provider bean=0；production transport=0；failures/errors/skips=`0/0/0` |
+| GateY-3/4/5 regressions | PASS（通过） | `11 / 13 / 4` tests；failures/errors/skips=`0/0/0` |
+| full backend | PASS（通过） | 23/23 modules；Surefire aggregate=`1478 tests / 0 failures / 0 errors / 44 skipped` |
+| static network/secret classification | PASS（通过） | `COMMENT/TYPE_ONLY/TEST_ONLY`；`EXECUTABLE_RISK=0`；real credential/network/mutation=`0/0/0` |
+| governance next action | PASS（通过） | actual/expected=`COMMIT_AND_PUSH/COMMIT_AND_PUSH`；valid=`True` |
+| migration/hard-gate manifest | PASS（通过） | migration/manifest diff=`0/0`；manifest=`0 PASS / 25 NOT_MET / 5 NOT_VERIFIABLE` |
+| Codex Security / CodeRabbit | NOT RUN（未运行） | 不在项目 active skills allowlist；未冒充工具扫描，使用 scoped static/dynamic review、ArchUnit、wiring/no-outbound 与 full regression 替代 |
+
+Review closed findings：P1 mutation certainty、P1 order-response fill bounds、P2 pre-read response cap contract、P2 normalized result/fill invariants。P0/P1 open=`0/0`；真实 transport、credential、worker/runtime 接线与真实交易继续未实现、未授权。完整证据：[evidence/gate-y/NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-SECURITY-OPERATIONS-REVIEW.attempt-01.md](evidence/gate-y/NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-SECURITY-OPERATIONS-REVIEW.attempt-01.md)。
