@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.4.0",
+  "schemaVersion": "1.5.0",
   "authoritySchema": "3",
   "authority": {
     "activeGateStatuses": [
@@ -401,6 +401,13 @@
         "workBatchStatus": "COMMITTED|CI_FAILED|FIX_REQUIRED",
         "workBatch": "GateW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW",
         "nextAction": "NQ-GATEW-ATTEMPT-10-RELEASE-CANDIDATE-STABILIZATION-REVIEW-CI-BLOCKER-FIX"
+      },
+      {
+        "scope": "WORK_BATCH",
+        "workBatchStatus": "COMMITTED|CI_GREEN|CONTINUE_REQUIRED",
+        "workBatch": "GateY-6",
+        "nextAction": "NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-IMPLEMENTATION",
+        "expectedActionTypeOverride": "IMPLEMENTATION"
       }
     ],
     "strictActionFamilyPatterns": [

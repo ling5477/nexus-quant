@@ -18734,3 +18734,26 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - validation：manifest=`errors 0 / 30 / 0-25-5 / gaps 10 / reader 8 / prerequisites 6`；authority errors=`0`；links=`289 checked / 14 historical warnings / 0 errors`；changed/expected/unexpected/missing=`12/12/0/0`；staged/forbidden diff=`0/0`；credential-looking assignments=`0`；diff-check errors=`0`。产品tests=`NOT RUN / docs-only`。首个大patch context mismatch、manifest compact PowerShell parse failure与一次无可审计输出的合并式只读检查均无写副作用，已改为拆分命令重跑。
 - result：`PASS / GATEY_6_PREFLIGHT_SECURITY_OPERATIONS_REVIEW_ACCEPTED / REVIEW_ACCEPTED|READY_TO_COMMIT / P0_0 / P1_0`；未stage/commit/push/tag/deploy。
 - next：`NQ-GATEY-6-EXPLICIT-MICRO-LIVE-AUTHORIZATION-PREFLIGHT-AND-WORK-ORDER-COMMIT-AND-PUSH`。
+
+## 2026-08-14 — GateY-6 continuation contract hardening and lifecycle RCA attempt-01
+
+- task：`NQ-GOVERNANCE-GATEY6-CONTINUATION-CONTRACT-HARDENING-AND-LIFECYCLE-RCA`；NQ-only、L 级 governance/CI matcher hardening。
+- model：选择 Option B exact typed continuation override；schema `1.4.0 -> 1.5.0`；generic continuation 仍为 `SECURITY_RISK_REVIEW`，只允许 exact GateY-6 tuple 使用 `IMPLEMENTATION`。
+- security：override action 绑定 exact status/workBatch/action；错误 status/batch/action、near-match、lowercase、suffix injection、unknown、duplicate mapping 均 fail closed；first-mapping-wins 已移除。
+- RCA：`PERFORMANCE_REGRESSION`；100+ 串行 checker/git child 长尾，原 harness 无 per-child timeout/START marker，外层捕获导致长时间无可见进度；未复现固定 deadlock/recursion/repo lock。
+- remediation：`System.Diagnostics.Process` 异步双流、60 秒 child timeout、START marker、PID/CPU/children/last-output 诊断、`taskkill /T` cleanup；1 秒 timeout probe 证明 timeout=FAIL 且 PID 被清理。
+- validation：next-action PS5.1/PS7 PASS；full lifecycle PS5.1/PS7 PASS（各 138 bounded children）；authority PS5.1/PS7 errors=0；GateW historical semantics preserved；P0/P1/P2=`0/0/0`。
+- boundary：GateY authority unchanged；product/backend/frontend/research/migration/deploy/trading diff=0；credential/OKX/PLACE/CANCEL/worker/production operation=`0`；LIVE disabled、kill engaged。
+- result：`PASS / IMPLEMENTED|PENDING_REVIEW`；未 stage/commit/push/tag。
+- next：`NQ-GOVERNANCE-GATEY6-CONTINUATION-CONTRACT-HARDENING-AND-LIFECYCLE-SECURITY-REVIEW`。
+
+## 2026-08-14 — GateY-6 continuation governance Security Review attempt-01
+
+- task：`NQ-GOVERNANCE-GATEY6-CONTINUATION-CONTRACT-HARDENING-AND-LIFECYCLE-SECURITY-REVIEW`；NQ-only、L 级 independent governance/security/PowerShell compatibility review。
+- baseline：`dev`；`HEAD == origin/dev == 621736e9a282d0f7684e2527fe86fe8e1faf506d`；exact-head CI `31774122178 / completed / success`；candidate 起始 9 paths、staged/unexpected/missing=`0/0/0`。
+- review：Option B exact tuple override verified；global continuation 与 GateW semantics unchanged；duplicate/malformed mapping fail closed；checker/library parity 与 GateY-6 same accepted/work batch lifecycle verified。
+- remediation：补齐 unknown status/action loader validation、9 类 malformed contract、完整 near-match、argv/dual-stream/callsite/process-tree/Git failure probes、child START/END resolution 与 GateY-6 专属 lifecycle preservation tests。
+- validation：matcher PS5.1/PS7 exit=`0/0`；lifecycle PS5.1/PS7 exit=`0/0`、duration=`280.199s/103.352s`、child=`144/144` each；intentional timeout probes=`2` each，unexpected timeout/failure=`0/0`；authority errors=`0/0`；temp remaining=`0`。
+- boundary：GateY machine authority unchanged；product/migration/deploy/`.github` diff=`0`；credential/OKX/PLACE/CANCEL/worker/production operation=`0`；FIRST_REAL_ORDER/micro-live not authorized，LIVE disabled，kill engaged。
+- result：`PASS / REVIEW_ACCEPTED|READY_TO_COMMIT / P0_0 / P1_0`；未 stage/commit/push/tag。
+- next：`NQ-GOVERNANCE-GATEY6-CONTINUATION-CONTRACT-HARDENING-AND-LIFECYCLE-COMMIT-AND-PUSH`。

@@ -9,6 +9,9 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'governance-workflow-lib.ps1')
 $contract = Get-GovernanceWorkflowContract (Join-Path $PSScriptRoot 'governance-workflow-contract.json')
+$contractPath = Join-Path $PSScriptRoot 'governance-workflow-contract.json'
+if ([string]$contract.schemaVersion -cne '1.5.0') { throw "CONTRACT_VERSION_NOT_CURRENT version=$($contract.schemaVersion)" }
+Write-Output 'PASS fixture=contract-current-version-accepted version=1.5.0'
 
 function Assert-ActionType {
     param([string] $Action, [string] $Expected)
@@ -980,6 +983,102 @@ if (Test-GovernanceNextActionForWorkBatch $contract $continuationStatus 'GateW-4
 }
 Write-Output 'PASS action-same-batch relation=GateW-3'
 Write-Output 'PASS action-cross-batch-rejected relation=GateW-4'
+
+$gateY6Action = 'NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-IMPLEMENTATION'
+if ((Get-GovernanceExpectedNextActionType $contract $continuationStatus) -cne 'SECURITY_RISK_REVIEW') {
+    throw 'GLOBAL_CONTINUATION_TYPE_CHANGED'
+}
+if ((Get-GovernanceExpectedNextActionTypeForWorkBatch $contract $continuationStatus 'GateY-6' $gateY6Action) -cne 'IMPLEMENTATION' -or
+    -not (Test-GovernanceNextActionForWorkBatch $contract $continuationStatus 'GateY-6' $gateY6Action)) {
+    throw 'GATEY6_EXACT_CONTINUATION_OVERRIDE_REJECTED'
+}
+Write-Output 'PASS fixture=gatey6-exact-continuation-implementation-override'
+
+$rejectedGateY6Cases = @(
+    @{ Name='gatew-continuation-arbitrary-implementation'; Status=$continuationStatus; Batch='GateW-3'; Action='NQ-GATEW-3-ARBITRARY-IMPLEMENTATION' },
+    @{ Name='gatey5-continuation-gatey6-action'; Status=$continuationStatus; Batch='GateY-5'; Action=$gateY6Action },
+    @{ Name='gatey6-wrong-implementation'; Status=$continuationStatus; Batch='GateY-6'; Action='NQ-GATEY-6-OTHER-IMPLEMENTATION' },
+    @{ Name='gatey6-near-match'; Status=$continuationStatus; Batch='GateY-6'; Action=($gateY6Action + '-X') },
+    @{ Name='gatey6-mutation-implementation'; Status=$continuationStatus; Batch='GateY-6'; Action='NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-IMPLEMENTATION' },
+    @{ Name='gatey6-real-provider-implementation'; Status=$continuationStatus; Batch='GateY-6'; Action='NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-IMPLEMENTATION' },
+    @{ Name='gatey6-lowercase'; Status=$continuationStatus; Batch='GateY-6'; Action=$gateY6Action.ToLowerInvariant() },
+    @{ Name='gatey6-implementation-review'; Status=$continuationStatus; Batch='GateY-6'; Action=($gateY6Action + '-REVIEW') },
+    @{ Name='gatey06-leading-zero'; Status=$continuationStatus; Batch='GateY-6'; Action=$gateY6Action.Replace('NQ-GATEY-6-', 'NQ-GATEY-06-') },
+    @{ Name='gatey6a-sub-batch'; Status=$continuationStatus; Batch='GateY-6'; Action=$gateY6Action.Replace('NQ-GATEY-6-', 'NQ-GATEY-6A-') },
+    @{ Name='gatey6-security-risk-review-pretends-override'; Status=$continuationStatus; Batch='GateY-6'; Action='NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-SECURITY-RISK-REVIEW' },
+    @{ Name='gatey6-arbitrary-suffix-implementation'; Status=$continuationStatus; Batch='GateY-6'; Action='NQ-GATEY-6-ARBITRARY-IMPLEMENTATION' },
+    @{ Name='gatey6-wrong-status'; Status='NOT_STARTED'; Batch='GateY-6'; Action=$gateY6Action },
+    @{ Name='gatey6-wrong-work-batch'; Status=$continuationStatus; Batch='GateY-7'; Action=$gateY6Action },
+    @{ Name='gatey6-wrong-status-and-batch'; Status='NOT_STARTED'; Batch='GateY-7'; Action=$gateY6Action }
+)
+foreach ($case in $rejectedGateY6Cases) {
+    if (Test-GovernanceNextActionForWorkBatch $contract $case.Status $case.Batch $case.Action) {
+        throw "GATEY6_OVERRIDE_FAIL_OPEN fixture=$($case.Name)"
+    }
+    Write-Output "PASS fixture=$($case.Name) rejected=true"
+}
+
+$contractValidationRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('nq-governance-contract-' + [guid]::NewGuid().ToString('N'))
+[System.IO.Directory]::CreateDirectory($contractValidationRoot) | Out-Null
+try {
+    $contractJson = [System.IO.File]::ReadAllText($contractPath, (New-Object System.Text.UTF8Encoding($false)))
+    foreach ($versionCase in @(
+        @{ Name='old-version'; Version='1.4.0' },
+        @{ Name='future-version'; Version='9.0.0' }
+    )) {
+        $versionPath = Join-Path $contractValidationRoot ($versionCase.Name + '.json')
+        Write-Utf8File $versionPath ($contractJson.Replace('"schemaVersion": "1.5.0"', ('"schemaVersion": "{0}"' -f $versionCase.Version)))
+        $rejected = $false
+        try { $null = Get-GovernanceWorkflowContract $versionPath } catch { $rejected = $true }
+        if (-not $rejected) { throw "CONTRACT_VERSION_FAIL_OPEN fixture=$($versionCase.Name)" }
+        Write-Output "PASS fixture=contract-$($versionCase.Name)-rejected version=$($versionCase.Version)"
+    }
+
+    $duplicateContract = $contractJson | ConvertFrom-Json
+    $duplicateContract.authority.exactNextActionMappings = @($duplicateContract.authority.exactNextActionMappings) +
+        @($duplicateContract.authority.exactNextActionMappings | Where-Object {
+            [string]$_.workBatchStatus -ceq $continuationStatus -and [string]$_.workBatch -ceq 'GateY-6'
+        })
+    $duplicatePath = Join-Path $contractValidationRoot 'duplicate-exact-mapping.json'
+    Write-Utf8File $duplicatePath ($duplicateContract | ConvertTo-Json -Depth 100)
+    $duplicateRejected = $false
+    try { $null = Get-GovernanceWorkflowContract $duplicatePath } catch {
+        $duplicateRejected = $_.Exception.Message -match 'duplicate_exact_mapping'
+    }
+    if (-not $duplicateRejected) { throw 'DUPLICATE_EXACT_MAPPING_FAIL_OPEN' }
+    Write-Output 'PASS fixture=duplicate-exact-mapping-rejected'
+
+    $malformedCases = @(
+        @{ Name='override-wrong-scope'; Mutate={ param($m) $m.scope='STATUS' } },
+        @{ Name='override-unknown-type'; Mutate={ param($m) $m.expectedActionTypeOverride='UNKNOWN_TYPE' } },
+        @{ Name='override-blank'; Mutate={ param($m) $m.expectedActionTypeOverride='' } },
+        @{ Name='override-action-mismatch'; Mutate={ param($m) $m.expectedActionTypeOverride='REVIEW' } },
+        @{ Name='missing-status'; Mutate={ param($m) $m.PSObject.Properties.Remove('workBatchStatus') } },
+        @{ Name='missing-work-batch'; Mutate={ param($m) $m.PSObject.Properties.Remove('workBatch') } },
+        @{ Name='missing-next-action'; Mutate={ param($m) $m.PSObject.Properties.Remove('nextAction') } },
+        @{ Name='unknown-status'; Mutate={ param($m) $m.workBatchStatus='UNKNOWN_STATUS' } },
+        @{ Name='unknown-action'; Mutate={ param($m) $m.nextAction='NQ-GATEY-6-UNKNOWN' } }
+    )
+    foreach ($malformedCase in $malformedCases) {
+        $malformedContract = $contractJson | ConvertFrom-Json
+        $targetMapping = @($malformedContract.authority.exactNextActionMappings | Where-Object {
+            [string]$_.workBatchStatus -ceq $continuationStatus -and [string]$_.workBatch -ceq 'GateY-6'
+        })[0]
+        & $malformedCase.Mutate $targetMapping
+        $malformedPath = Join-Path $contractValidationRoot ($malformedCase.Name + '.json')
+        Write-Utf8File $malformedPath ($malformedContract | ConvertTo-Json -Depth 100)
+        $malformedRejected = $false
+        try { $null = Get-GovernanceWorkflowContract $malformedPath } catch {
+            $malformedRejected = $_.Exception.Message -match '^GOVERNANCE_CONTRACT_INVALID'
+        }
+        if (-not $malformedRejected) { throw "MALFORMED_CONTRACT_FAIL_OPEN fixture=$($malformedCase.Name)" }
+        Write-Output "PASS fixture=contract-$($malformedCase.Name)-rejected"
+    }
+} finally {
+    if (Test-Path -LiteralPath $contractValidationRoot) {
+        Remove-Item -LiteralPath $contractValidationRoot -Recurse -Force
+    }
+}
 
 foreach ($status in @($contract.authority.workBatchStatuses)) {
     $expected = Get-GovernanceExpectedNextActionType $contract ([string]$status)

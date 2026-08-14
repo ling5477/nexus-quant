@@ -13527,3 +13527,36 @@ GateY-5 lock-window 只按 reviewed synthetic disposable GateY scale 限定关�
 | Security/trading boundary | PASS / ZERO SIDE EFFECT（通过 / 无副作用） | credential/OKX/worker/production/trading=`0/0/0/0/0`；real provider/private trading NOT_IMPLEMENTED；explicit authorization NOT_GRANTED；FIRST_REAL_ORDER/micro-live NOT_AUTHORIZED；LIVE disabled、kill engaged |
 
 Review只接受documentation/governance work order，不接受任何真实交易能力。完整证据：[evidence/gate-y/NQ-GATEY-6-EXPLICIT-MICRO-LIVE-AUTHORIZATION-PREFLIGHT-AND-WORK-ORDER-SECURITY-OPERATIONS-REVIEW.attempt-01.md](evidence/gate-y/NQ-GATEY-6-EXPLICIT-MICRO-LIVE-AUTHORIZATION-PREFLIGHT-AND-WORK-ORDER-SECURITY-OPERATIONS-REVIEW.attempt-01.md)。
+
+## 2026-08-14 — GateY-6 continuation contract hardening and lifecycle RCA attempt-01
+
+结论：`PASS / GATEY6_CONTINUATION_GOVERNANCE_CONTRACT_HARDENED / CONTINUATION_MODEL_EXPLICIT / NO_GLOBAL_ACTION_TYPE_BROADENING / HISTORICAL_GATEW_SEMANTICS_PRESERVED / LIFECYCLE_HANG_ROOT_CAUSED / FULL_GOVERNANCE_REGRESSION_GREEN / P0_0 / P1_0 / GATEY_AUTHORITY_UNCHANGED / PENDING_INDEPENDENT_SECURITY_REVIEW`。
+
+| 验证 | 结果 | 证据摘要 |
+| --- | --- | --- |
+| next-action regression | PASS（通过） | PS5.1 + PS7；exact GateY-6 positive、九类 negative、1.4.0/future version、duplicate exact mapping 均 fail closed |
+| lifecycle full regression | PASS（通过） | PS5.1 约 4m20s、PS7 约 1m33s；各 138 bounded child invocations；timeout probe 与 process cleanup PASS；最终 lifecycle/evidence 双 PASS |
+| current authority | PASS（通过） | PS5.1 + PS7 errors=0；GateY-5 accepted、GateY-6 `REVIEW_ACCEPTED|READY_TO_COMMIT`，authority 未修改 |
+| historical GateW | PASS（通过） | continuation generic type 仍为 `SECURITY_RISK_REVIEW`；arbitrary implementation、archive/freeze/release 均拒绝 |
+| shell compatibility | PASS（通过） | loader/checker/tests 在 Windows PowerShell 5.1 与 PowerShell 7 完整通过 |
+| product/trading boundary | PASS / ZERO SIDE EFFECT（通过 / 无副作用） | product/migration/deploy diff=0；credential/OKX/PLACE/CANCEL/worker/production operation=0；LIVE disabled、kill engaged |
+
+RCA 分类=`PERFORMANCE_REGRESSION`：100+ 串行 child process 长尾 + 原 harness 无 per-child timeout/START marker + 外层整段捕获输出。改为异步双流 `System.Diagnostics.Process`、60 秒局部 timeout、`taskkill /T` 清理与 START marker。完整证据：[evidence/gate-y/NQ-GOVERNANCE-GATEY6-CONTINUATION-CONTRACT-HARDENING-AND-LIFECYCLE-RCA.attempt-01.md](evidence/gate-y/NQ-GOVERNANCE-GATEY6-CONTINUATION-CONTRACT-HARDENING-AND-LIFECYCLE-RCA.attempt-01.md)。
+
+## 2026-08-14 — GateY-6 continuation governance Security Review attempt-01
+
+结论：`PASS / GATEY6_CONTINUATION_GOVERNANCE_SECURITY_REVIEW_ACCEPTED / OPTION_B_EXACT_OVERRIDE_VERIFIED / NO_GLOBAL_CONTINUATION_BROADENING / HISTORICAL_GATEW_SEMANTICS_PRESERVED / MALFORMED_AND_DUPLICATE_MAPPINGS_FAIL_CLOSED / CHECKER_LIBRARY_PARITY_VERIFIED / BOUNDED_CHILD_HARNESS_VERIFIED / LIFECYCLE_HANG_RCA_ACCEPTED / PS51_FULL_REGRESSION_GREEN / PS7_FULL_REGRESSION_GREEN / P0_0 / P1_0 / GATEY_AUTHORITY_UNCHANGED / READY_TO_COMMIT`。
+
+| 验证 | 结果 | Scope / environment / warnings / blocking |
+| --- | --- | --- |
+| exact-head baseline | PASS（通过） | `dev`；`HEAD == origin/dev == 621736e9a282d0f7684e2527fe86fe8e1faf506d`；CI `31774122178 / completed / success` 由 `gh run view` 核验 |
+| matcher/loader PS5.1 | PASS（通过） | exit=`0`，26.948s；exact positive、扩展 negative/near-match、old/future version、duplicate 与 9 类 malformed contract fail closed |
+| matcher/loader PS7 | PASS（通过） | exit=`0`，11.650s；与 PS5.1 同矩阵 |
+| full lifecycle PS5.1 | PASS（通过） | exit=`0`，280.199s；child START/END=`144/144`；intentional timeout probes=`2`；unexpected timeout/failure=`0/0` |
+| full lifecycle PS7 | PASS（通过） | exit=`0`，103.352s；child START/END=`144/144`；intentional timeout probes=`2`；unexpected timeout/failure=`0/0` |
+| harness security probes | PASS（通过） | spaces/quotes/Unicode/parentheses/ampersand argv；stdout/stderr 各 5,000 行；两个 distinct callsites；root/direct/grandchild cleanup；Git nonzero fail closed |
+| current authority PS5.1/PS7 | PASS（通过） | exit=`0/0`，2.556s/1.023s，errors=`0/0`；GateY-6 authority unchanged |
+| temp/process cleanup | PASS（通过） | full regression 后 `%TEMP%\nq-governance-lifecycle-*` remaining=`0`；unexpected remaining process=`0` |
+| product/security boundary | PASS / ZERO SIDE EFFECT（通过 / 无副作用） | product/migration/deploy/`.github` diff=`0`；credential/OKX/PLACE/CANCEL/worker/production operation=`0`；LIVE disabled、kill engaged |
+
+Known warning / non-blocking：PS5.1 lifecycle 仍约 4m40s，process-heavy 但每个 child 60 秒有界；不并行化 authority mutation fixtures。审查中一次 parse-only wrapper 参数错误与一次 process-tree probe fixture 的 pwsh path 拆分均已 RCA 并修正，随后双 shell full regression green。完整证据：[evidence/gate-y/NQ-GOVERNANCE-GATEY6-CONTINUATION-CONTRACT-HARDENING-AND-LIFECYCLE-SECURITY-REVIEW.attempt-01.md](evidence/gate-y/NQ-GOVERNANCE-GATEY6-CONTINUATION-CONTRACT-HARDENING-AND-LIFECYCLE-SECURITY-REVIEW.attempt-01.md)。

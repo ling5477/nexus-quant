@@ -16,7 +16,7 @@ function Get-GovernanceWorkflowContract {
     $contract = $content | ConvertFrom-Json
     # A checker must understand the exact contract shape before it can use any policy from it.
     # Unknown versions fail closed instead of being treated as a forward-compatible extension.
-    if ($contract.schemaVersion -ne '1.4.0' -or $contract.authoritySchema -ne '3' -or
+    if ($contract.schemaVersion -ne '1.5.0' -or $contract.authoritySchema -ne '3' -or
         -not $contract.authority -or -not $contract.authority.strictActionFamilyPatterns -or
         -not $contract.authority.strictNextActions -or -not $contract.lifecycles -or
         -not $contract.lifecycles.transitionPolicies -or -not $contract.lifecycles.attempt10Runtime -or
@@ -28,6 +28,47 @@ function Get-GovernanceWorkflowContract {
     if ($contract.release.remoteName -ne 'origin' -or $contract.release.expectedBranch -ne 'dev' -or
         $contract.release.workflowName -ne 'NQ CI Baseline') {
         throw "GOVERNANCE_CONTRACT_INVALID release_identity path=$Path"
+    }
+
+    $exactMappings = @(Get-GovernancePropertyValue $contract.authority 'exactNextActionMappings')
+    $mappingKeys = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::Ordinal)
+    $knownActionTypes = @(
+        @($contract.authority.statusToNextActionType.PSObject.Properties | ForEach-Object { [string]$_.Value }) +
+        @($contract.authority.nextActionTypes | ForEach-Object { [string]$_.name }) +
+        @($contract.authority.strictNextActions | ForEach-Object { [string]$_.type })
+    ) | Select-Object -Unique
+    foreach ($mapping in $exactMappings) {
+        $status = [string](Get-GovernancePropertyValue $mapping 'workBatchStatus')
+        $workBatch = [string](Get-GovernancePropertyValue $mapping 'workBatch')
+        $nextAction = [string](Get-GovernancePropertyValue $mapping 'nextAction')
+        if ([string]::IsNullOrWhiteSpace($status) -or [string]::IsNullOrWhiteSpace($workBatch) -or
+            [string]::IsNullOrWhiteSpace($nextAction)) {
+            throw "GOVERNANCE_CONTRACT_INVALID exact_mapping_required_dimension path=$Path"
+        }
+        if (@($contract.authority.workBatchStatuses) -cnotcontains $status) {
+            throw "GOVERNANCE_CONTRACT_INVALID exact_mapping_unknown_status path=$Path status=$status"
+        }
+        $actualActionType = Get-GovernanceNextActionType $contract $nextAction
+        if ($actualActionType -ceq 'UNKNOWN') {
+            throw "GOVERNANCE_CONTRACT_INVALID exact_mapping_unknown_action path=$Path status=$status work_batch=$workBatch action=$nextAction"
+        }
+        # Exact dimensions must identify one policy. Authority requirements may narrow applicability,
+        # but must not create order-dependent "first mapping wins" behavior for the same tuple.
+        $mappingKey = $status + [char]0 + $workBatch + [char]0 + $nextAction
+        if (-not $mappingKeys.Add($mappingKey)) {
+            throw "GOVERNANCE_CONTRACT_INVALID duplicate_exact_mapping path=$Path status=$status work_batch=$workBatch action=$nextAction"
+        }
+
+        $override = Get-GovernancePropertyValue $mapping 'expectedActionTypeOverride'
+        if ($null -ne $override) {
+            $scope = [string](Get-GovernancePropertyValue $mapping 'scope')
+            $overrideType = [string]$override
+            if ($scope -cne 'WORK_BATCH' -or [string]::IsNullOrWhiteSpace($overrideType) -or
+                $knownActionTypes -cnotcontains $overrideType -or
+                $actualActionType -cne $overrideType) {
+                throw "GOVERNANCE_CONTRACT_INVALID exact_mapping_type_override path=$Path status=$status work_batch=$workBatch action=$nextAction override=$overrideType"
+            }
+        }
     }
     return $contract
 }
@@ -113,15 +154,13 @@ function Test-GovernanceExactNextActionMapping {
 
     $mappings = Get-GovernancePropertyValue $Contract.authority 'exactNextActionMappings'
     if ($null -eq $mappings) { return $false }
-    foreach ($mapping in @($mappings)) {
-        if ([string]$mapping.workBatchStatus -ceq $Status -and
-            [string]$mapping.workBatch -ceq $WorkBatch -and
-            [string]$mapping.nextAction -ceq $Action -and
-            (Test-GovernanceMappingAuthorityRequirements $mapping $Context)) {
-            return $true
-        }
-    }
-    return $false
+    $matches = @($mappings | Where-Object {
+        [string]$_.workBatchStatus -ceq $Status -and
+        [string]$_.workBatch -ceq $WorkBatch -and
+        [string]$_.nextAction -ceq $Action -and
+        (Test-GovernanceMappingAuthorityRequirements $_ $Context)
+    })
+    return $matches.Count -eq 1
 }
 
 function Test-GovernanceScopedNextActionMapping {
@@ -132,16 +171,37 @@ function Test-GovernanceScopedNextActionMapping {
 
     $mappings = Get-GovernancePropertyValue $Contract.authority 'exactNextActionMappings'
     if ($null -eq $mappings) { return $false }
-    foreach ($mapping in @($mappings)) {
-        if ([string](Get-GovernancePropertyValue $mapping 'scope') -ceq 'WORK_BATCH' -and
-            [string]$mapping.workBatchStatus -ceq $Status -and
-            [string]$mapping.workBatch -ceq $WorkBatch -and
-            [string]$mapping.nextAction -ceq $Action -and
-            (Test-GovernanceMappingAuthorityRequirements $mapping $Context)) {
-            return $true
-        }
-    }
-    return $false
+    $matches = @($mappings | Where-Object {
+        [string](Get-GovernancePropertyValue $_ 'scope') -ceq 'WORK_BATCH' -and
+        [string]$_.workBatchStatus -ceq $Status -and
+        [string]$_.workBatch -ceq $WorkBatch -and
+        [string]$_.nextAction -ceq $Action -and
+        (Test-GovernanceMappingAuthorityRequirements $_ $Context)
+    })
+    return $matches.Count -eq 1
+}
+
+function Get-GovernanceExpectedNextActionTypeForWorkBatch {
+    param(
+        [object] $Contract, [string] $Status, [string] $WorkBatch, [string] $Action,
+        [object] $Context = $null
+    )
+
+    $genericType = Get-GovernanceExpectedNextActionType $Contract $Status
+    $mappings = Get-GovernancePropertyValue $Contract.authority 'exactNextActionMappings'
+    if ($null -eq $mappings) { return $genericType }
+    $matches = @($mappings | Where-Object {
+        [string](Get-GovernancePropertyValue $_ 'scope') -ceq 'WORK_BATCH' -and
+        [string]$_.workBatchStatus -ceq $Status -and
+        [string]$_.workBatch -ceq $WorkBatch -and
+        [string]$_.nextAction -ceq $Action -and
+        (Test-GovernanceMappingAuthorityRequirements $_ $Context)
+    })
+    if ($matches.Count -gt 1) { return 'UNKNOWN' }
+    if ($matches.Count -eq 0) { return $genericType }
+    $override = Get-GovernancePropertyValue $matches[0] 'expectedActionTypeOverride'
+    if ($null -eq $override) { return $genericType }
+    return [string]$override
 }
 
 function Test-GovernanceNextActionForWorkBatch {
@@ -151,7 +211,8 @@ function Test-GovernanceNextActionForWorkBatch {
     )
 
     if ([string]::IsNullOrWhiteSpace($WorkBatch) -or [string]::IsNullOrWhiteSpace($Action)) { return $false }
-    $expectedType = Get-GovernanceExpectedNextActionType $Contract $Status
+    $expectedType = Get-GovernanceExpectedNextActionTypeForWorkBatch `
+        $Contract $Status $WorkBatch $Action $Context
     $actualType = Get-GovernanceNextActionType $Contract $Action
     if ($expectedType -ceq 'UNKNOWN' -or $actualType -ceq 'UNKNOWN') { return $false }
 
@@ -164,6 +225,16 @@ function Test-GovernanceNextActionForWorkBatch {
     if ($scopedMappings.Count -gt 0) {
         return $actualType -ceq $expectedType -and
             (Test-GovernanceScopedNextActionMapping $Contract $Status $WorkBatch $Action $Context)
+    }
+
+    $reservedOverrideMappings = @($exactMappings | Where-Object {
+        $null -ne (Get-GovernancePropertyValue $_ 'expectedActionTypeOverride') -and
+        [string]$_.nextAction -ceq $Action
+    })
+    if ($reservedOverrideMappings.Count -gt 0) {
+        # An override action is a capability bound to its exact tuple; it must never fall back
+        # to a generic status/prefix rule when status or work batch differs.
+        return $false
     }
 
     $statusMappings = @($exactMappings | Where-Object {

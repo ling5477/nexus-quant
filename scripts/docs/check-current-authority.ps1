@@ -406,7 +406,8 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
                 }
             }
 
-            $expectedActionType = Get-GovernanceExpectedNextActionType $contract $authority.work_batch_status
+            $expectedActionType = Get-GovernanceExpectedNextActionTypeForWorkBatch `
+                $contract $authority.work_batch_status $authority.work_batch $authority.next_action $authority
             $actualActionType = Get-GovernanceNextActionType $contract $authority.next_action
             if ($expectedActionType -eq 'UNKNOWN' -or $actualActionType -ne $expectedActionType) {
                 Add-AuthorityError "NEXT_ACTION_TYPE_MISMATCH status=$($authority.work_batch_status) expected=$expectedActionType actual=$actualActionType action=$($authority.next_action)"
@@ -490,6 +491,7 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
                             $summaryNextAction.Value,
                             [System.StringComparison]::Ordinal)) {
                         Add-AuthorityError "CURRENT_NEXT_ACTION_CONFLICT source=$($readmeSpec.Source) status=$($authority.next_action) readme=$($summaryNextAction.Value)"
+                        Add-AuthorityError "CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH source=$($readmeSpec.Source) field=next_action"
                     }
 
                     if ($machineAttemptAuthority.IsApplicable -and $machineAttemptAuthority.IsValid) {
@@ -583,6 +585,7 @@ if (-not (Test-Path -LiteralPath $resolvedStatus -PathType Leaf)) {
                         $roadmapNextAction.Value,
                         [System.StringComparison]::Ordinal)) {
                     Add-AuthorityError "CURRENT_NEXT_ACTION_CONFLICT source=ROADMAP status=$($authority.next_action) roadmap=$($roadmapNextAction.Value)"
+                    Add-AuthorityError 'CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH source=ROADMAP field=next_action'
                 }
             }
             if (-not (Test-StatusPhrase $statusBody $authority.last_frozen_gate 'FROZEN\s*/\s*ACCEPTED\s*/\s*TAGGED')) {

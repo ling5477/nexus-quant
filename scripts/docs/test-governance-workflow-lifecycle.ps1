@@ -12,6 +12,8 @@ $contractPath = Join-Path $PSScriptRoot 'governance-workflow-contract.json'
 $contract = Get-GovernanceWorkflowContract $contractPath
 $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("nq-governance-lifecycle-" + [guid]::NewGuid().ToString('N'))
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+$script:childInvocation = 0
+$script:expectedTimeoutProbeCount = 0
 
 function Assert-Condition { param([bool]$Condition,[string]$Message); if (-not $Condition) { throw "ASSERTION_FAILED $Message" } }
 function Write-Utf8File {
@@ -50,28 +52,125 @@ function Assert-RuntimeTransition {
     Assert-Condition ($actual -eq $Expected) "runtime-transition=$Scenario expected=$Expected actual=$actual"
     Write-Output "PASS fixture=$Scenario runtimeFrom=$From runtimeTo=$To allowed=$actual"
 }
+function ConvertTo-NativeCommandLineArgument {
+    param([string]$Value)
+    if ([string]::IsNullOrEmpty($Value)) { return '""' }
+    if ($Value -notmatch '[\s"]') { return $Value }
+    # Windows native argv parsing requires quote-adjacent and trailing backslashes to be doubled.
+    $escaped = [regex]::Replace($Value, '(\\*)"', '$1$1\"')
+    $escaped = [regex]::Replace($escaped, '(\\+)$', '$1$1')
+    return '"' + $escaped + '"'
+}
+function Stop-BoundedProcessTree {
+    param([System.Diagnostics.Process]$Process)
+    if ($null -eq $Process -or $Process.HasExited) { return }
+    # taskkill /T is used only for disposable test children so a timed-out checker cannot orphan git/gh descendants.
+    $null = & taskkill.exe /PID $Process.Id /T /F 2>&1
+    try { $Process.WaitForExit(5000) | Out-Null } catch { }
+    if (-not $Process.HasExited) { Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue }
+}
+function Invoke-BoundedChildProcess {
+    param(
+        [string]$Executable,[string[]]$Arguments,[string]$WorkingRoot,
+        [string]$Kind,[int]$TimeoutSeconds=60,[int]$CallSiteLine=0
+    )
+    $script:childInvocation++
+    $invocation = $script:childInvocation
+    if ($CallSiteLine -le 0) {
+        $callSite = @(Get-PSCallStack | Select-Object -Skip 1 -First 1)[0]
+        $CallSiteLine = if ($null -ne $callSite) { [int]$callSite.ScriptLineNumber } else { 0 }
+    }
+    [System.IO.Directory]::CreateDirectory($tempRoot) | Out-Null
+    $nativeArguments = (@($Arguments) | ForEach-Object { ConvertTo-NativeCommandLineArgument ([string]$_) }) -join ' '
+    Write-Host "START child=$invocation kind=$Kind checker=$([System.IO.Path]::GetFileName($Executable)) callsiteLine=$CallSiteLine timeoutSeconds=$TimeoutSeconds"
+    $process = $null
+    $stdoutTask = $null
+    $stderrTask = $null
+    try {
+        $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+        $startInfo.FileName = $Executable
+        $startInfo.Arguments = $nativeArguments
+        $startInfo.WorkingDirectory = $WorkingRoot
+        $startInfo.UseShellExecute = $false
+        $startInfo.CreateNoWindow = $true
+        $startInfo.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
+        $startInfo.RedirectStandardOutput = $true
+        $startInfo.RedirectStandardError = $true
+        $process = New-Object System.Diagnostics.Process
+        $process.StartInfo = $startInfo
+        if (-not $process.Start()) { throw "CHILD_PROCESS_START_FAILED child=$invocation kind=$Kind executable=$Executable" }
+        # Read both streams concurrently so neither pipe can fill and block the child.
+        $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+        $stderrTask = $process.StandardError.ReadToEndAsync()
+        $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+        while (-not $process.HasExited -and [DateTime]::UtcNow -lt $deadline) {
+            Start-Sleep -Milliseconds 100
+            $process.Refresh()
+        }
+        if (-not $process.HasExited) {
+            $process.Refresh()
+            $children = @(Get-CimInstance Win32_Process -Filter ("ParentProcessId={0}" -f $process.Id) -ErrorAction SilentlyContinue |
+                ForEach-Object { '{0}:{1}' -f $_.ProcessId,$_.Name })
+            $cpu = if ($process.HasExited) { 'EXITED' } else { [math]::Round($process.CPU,3) }
+            Stop-BoundedProcessTree $process
+            try { $process.WaitForExit(5000) | Out-Null } catch { }
+            $timeoutText = @(
+                $(if ($null -ne $stdoutTask -and $stdoutTask.IsCompleted) { [string]$stdoutTask.Result }),
+                $(if ($null -ne $stderrTask -and $stderrTask.IsCompleted) { [string]$stderrTask.Result })
+            ) -join "`n"
+            $lastOutput = @($timeoutText -split "`r?`n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }) | Select-Object -Last 1
+            Write-Host "END child=$invocation kind=$Kind status=TIMEOUT timeoutSeconds=$TimeoutSeconds"
+            throw ("CHILD_PROCESS_TIMEOUT child={0} kind={1} executable={2} callsiteLine={3} timeoutSeconds={4} pid={5} cpu={6} children={7} lastOutput={8}" -f
+                $invocation,$Kind,$Executable,$CallSiteLine,$TimeoutSeconds,$process.Id,$cpu,($children -join ','),$lastOutput)
+        }
+        $process.WaitForExit()
+        $exitCode = [int]$process.ExitCode
+        $stdout = [string]$stdoutTask.Result
+        $stderr = [string]$stderrTask.Result
+        Write-Host "END child=$invocation kind=$Kind status=EXIT exitCode=$exitCode"
+        return [pscustomobject]@{
+            ExitCode = $exitCode
+            Text = (($stdout.TrimEnd(),$stderr.TrimEnd() | Where-Object { -not [string]::IsNullOrEmpty($_) }) -join "`n")
+            Invocation = $invocation
+            CallSiteLine = $CallSiteLine
+        }
+    } finally {
+        if ($null -ne $process -and -not $process.HasExited) { Stop-BoundedProcessTree $process }
+        if ($null -ne $process) { $process.Dispose() }
+    }
+}
 function Invoke-Checker {
     param([string]$Script,[string[]]$Arguments,[string]$WorkingRoot)
-    $previous=$ErrorActionPreference; $ErrorActionPreference='Continue'
-    Push-Location $WorkingRoot
-    try { $output=& powershell -NoProfile -ExecutionPolicy Bypass -File $Script @Arguments 2>&1; $exit=$LASTEXITCODE }
-    finally { Pop-Location; $ErrorActionPreference=$previous }
-    return [pscustomobject]@{ExitCode=$exit;Text=(($output|ForEach-Object{$_.ToString()})-join "`n")}
+    $shell = (Get-Process -Id $PID).Path
+    $caller = @(Get-PSCallStack | Select-Object -Skip 1 -First 1)[0]
+    $callerLine = if ($null -ne $caller) { [int]$caller.ScriptLineNumber } else { 0 }
+    return Invoke-BoundedChildProcess $shell (@('-NoProfile','-ExecutionPolicy','Bypass','-File',$Script) + @($Arguments)) `
+        $WorkingRoot 'checker' 60 $callerLine
 }
 function Assert-Checker {
     param([object]$Result,[bool]$Pass,[string]$Expected,[string]$Scenario)
-    if ($Pass -and $Result.ExitCode -ne 0) { throw "UNEXPECTED_FAILURE scenario=$Scenario output=$($Result.Text)" }
-    if (-not $Pass -and $Result.ExitCode -eq 0) { throw "UNEXPECTED_SUCCESS scenario=$Scenario output=$($Result.Text)" }
+    if ($Pass -and $Result.ExitCode -ne 0) { throw "UNEXPECTED_FAILURE scenario=$Scenario exit=$($Result.ExitCode) resultType=$($Result.GetType().FullName) output=$($Result.Text)" }
+    if (-not $Pass -and $Result.ExitCode -eq 0) { throw "UNEXPECTED_SUCCESS scenario=$Scenario exit=$($Result.ExitCode) resultType=$($Result.GetType().FullName) output=$($Result.Text)" }
     if ($Result.Text -notmatch [regex]::Escape($Expected)) { throw "OUTPUT_MISMATCH scenario=$Scenario expected=$Expected output=$($Result.Text)" }
     Write-Output "PASS fixture=$Scenario exit=$($Result.ExitCode) expected=$Expected"
 }
 function Invoke-FixtureGit {
     param([string]$Root,[string[]]$Arguments)
-    $previous=$ErrorActionPreference; $ErrorActionPreference='Continue'
-    $output=& git -C $Root @Arguments 2>&1; $exit=$LASTEXITCODE
-    $ErrorActionPreference=$previous
-    if ($exit -ne 0) { throw "FIXTURE_GIT_FAILED args=$($Arguments -join ' ') output=$($output -join ' ')" }
-    return (($output|ForEach-Object{$_.ToString()})-join "`n").Trim()
+    $git = (Get-Command git -ErrorAction Stop).Source
+    $caller = @(Get-PSCallStack | Select-Object -Skip 1 -First 1)[0]
+    $callerLine = if ($null -ne $caller) { [int]$caller.ScriptLineNumber } else { 0 }
+    $result = Invoke-BoundedChildProcess $git (@('-C',$Root) + @($Arguments)) $Root 'git' 60 $callerLine
+    if ($result.ExitCode -ne 0) { throw "FIXTURE_GIT_FAILED args=$($Arguments -join ' ') output=$($result.Text)" }
+    return $result.Text.Trim()
+}
+
+function Invoke-CallsiteProbeOne {
+    param([string]$Shell)
+    return Invoke-BoundedChildProcess $Shell @('-NoProfile','-Command','exit 0') $tempRoot 'callsite-probe-one' 10
+}
+function Invoke-CallsiteProbeTwo {
+    param([string]$Shell)
+    return Invoke-BoundedChildProcess $Shell @('-NoProfile','-Command','exit 0') $tempRoot 'callsite-probe-two' 10
 }
 
 function Write-AuthorityFixture {
@@ -86,7 +185,8 @@ function Write-AuthorityFixture {
         [string]$MachineAttempt='',
         [string]$MachineAttemptStatus='',
         [string]$ProductionSoak='',
-        [string]$KillSwitch=''
+        [string]$KillSwitch='',
+        [string]$ActiveGate='GateW'
     )
     $display = switch ($Status) {
         'NOT_STARTED' { 'NOT STARTED' }
@@ -127,7 +227,7 @@ last_frozen_gate=GateV
 last_frozen_gate_status=FROZEN|ACCEPTED|TAGGED
 last_frozen_gate_tag=nq-gatev-freeze
 last_frozen_gate_commit=1111111111111111111111111111111111111111
-active_gate=GateW
+active_gate=$ActiveGate
 active_gate_status=$ActiveStatus
 accepted_batch=$AcceptedBatch
 accepted_batch_status=ACCEPTED|CI_GREEN
@@ -150,7 +250,7 @@ private_trading=NOT_IMPLEMENTED
 nq-current-authority:end -->
 
 - GateV: FROZEN / ACCEPTED / TAGGED.
-- GateW: IN PROGRESS / NOT FROZEN.
+- ${ActiveGate}: IN PROGRESS / NOT FROZEN.
 - ${AcceptedBatch}: ACCEPTED / CI GREEN.
 - ${WorkBatch}: $display.
 - Next action: $Action.
@@ -182,7 +282,7 @@ nq-current-authority:end -->
         '# Current Docs',
         '',
         '<!-- nq-current-summary:start -->',
-        '- GateW: `IN PROGRESS / NOT FROZEN`.',
+        ('- {0}: `IN PROGRESS / NOT FROZEN`.' -f $ActiveGate),
         ('- Attempt-{0}=`{1} / {2}`; production deployment=`{3}`.' -f
             $attemptId,$AttemptState,$AuthorizationState,$DeploymentState),
         ('- {0} `{1}`; fixture.' -f $currentUniqueActionIs,$Action),
@@ -194,12 +294,133 @@ nq-current-authority:end -->
 
 try {
     $unsupportedContractPath = Join-Path $tempRoot 'unsupported-contract.json'
-    $unsupportedContract = (Get-Content -Raw $contractPath).Replace('"schemaVersion": "1.4.0"', '"schemaVersion": "9.0.0"')
+    $unsupportedContract = (Get-Content -Raw $contractPath).Replace('"schemaVersion": "1.5.0"', '"schemaVersion": "9.0.0"')
     Write-Utf8File $unsupportedContractPath $unsupportedContract
     $unsupportedRejected = $false
     try { $null = Get-GovernanceWorkflowContract $unsupportedContractPath } catch { $unsupportedRejected = $true }
     Assert-Condition $unsupportedRejected 'unsupported contract version was accepted'
     Write-Output 'PASS fixture=unsupported-contract-version-rejected'
+
+    $timeoutProbeRejected = $false
+    $timeoutProbePid = $null
+    try {
+        $shell = (Get-Process -Id $PID).Path
+        $null = Invoke-BoundedChildProcess $shell @('-NoProfile','-Command','Start-Sleep -Seconds 5') `
+            $tempRoot 'timeout-probe' 1
+    } catch {
+        $timeoutProbeRejected = $_.Exception.Message -match 'CHILD_PROCESS_TIMEOUT'
+        if ($_.Exception.Message -match 'pid=(?<pid>[1-9][0-9]*)') { $timeoutProbePid = [int]$Matches.pid }
+    }
+    Assert-Condition $timeoutProbeRejected 'bounded child timeout did not fail the test'
+    Assert-Condition ($null -ne $timeoutProbePid -and -not (Get-Process -Id $timeoutProbePid -ErrorAction SilentlyContinue)) `
+        "timed-out child process was not cleaned pid=$timeoutProbePid"
+    $script:expectedTimeoutProbeCount++
+    Write-Output 'PASS fixture=bounded-child-timeout-fails-and-cleans-process'
+
+    $shell = (Get-Process -Id $PID).Path
+    $argumentProbePath = Join-Path $tempRoot 'argument probe (unicode 测试 &).ps1'
+    Write-Utf8File $argumentProbePath @'
+param([Parameter(ValueFromRemainingArguments=$true)][string[]]$ProbeValues)
+foreach ($value in $ProbeValues) {
+    [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($value))
+}
+'@
+    $argumentProbeValues = @('space value','quote"value','unicode-路径','parentheses(value)','ampersand&value','trailing\')
+    $argumentProbe = Invoke-BoundedChildProcess $shell `
+        (@('-NoProfile','-ExecutionPolicy','Bypass','-File',$argumentProbePath) + $argumentProbeValues) `
+        $tempRoot 'argument-boundary-probe' 10
+    Assert-Condition ($argumentProbe.ExitCode -eq 0) "argument probe failed output=$($argumentProbe.Text)"
+    $expectedArgumentLines = @($argumentProbeValues | ForEach-Object {
+        [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($_))
+    })
+    $actualArgumentLines = @($argumentProbe.Text -split "`r?`n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    Assert-Condition (($expectedArgumentLines -join '|') -ceq ($actualArgumentLines -join '|')) `
+        "argument boundary changed expected=$($expectedArgumentLines -join ',') actual=$($actualArgumentLines -join ',')"
+    Write-Output 'PASS fixture=bounded-child-argument-boundary spaces-quotes-unicode-parentheses-ampersand=true'
+
+    $dualStreamProbePath = Join-Path $tempRoot 'dual-stream-probe.ps1'
+    Write-Utf8File $dualStreamProbePath @'
+for ($i = 0; $i -lt 5000; $i++) {
+    [Console]::Out.WriteLine(('OUT-{0:D5}-' -f $i) + ('x' * 128))
+    [Console]::Error.WriteLine(('ERR-{0:D5}-' -f $i) + ('y' * 128))
+}
+[Console]::Out.WriteLine('STDOUT_DONE')
+[Console]::Error.WriteLine('STDERR_DONE')
+'@
+    $dualStreamProbe = Invoke-BoundedChildProcess $shell `
+        @('-NoProfile','-ExecutionPolicy','Bypass','-File',$dualStreamProbePath) `
+        $tempRoot 'dual-stream-probe' 20
+    Assert-Condition ($dualStreamProbe.ExitCode -eq 0 -and
+        $dualStreamProbe.Text.Contains('STDOUT_DONE') -and $dualStreamProbe.Text.Contains('STDERR_DONE')) `
+        'concurrent stdout/stderr probe did not complete both streams'
+    Write-Output 'PASS fixture=bounded-child-concurrent-stdout-stderr largeStreams=true'
+
+    $callsiteOne = Invoke-CallsiteProbeOne $shell
+    $callsiteTwo = Invoke-CallsiteProbeTwo $shell
+    Assert-Condition ($callsiteOne.CallSiteLine -gt 0 -and $callsiteTwo.CallSiteLine -gt 0 -and
+        $callsiteOne.CallSiteLine -ne $callsiteTwo.CallSiteLine) `
+        "callsite lines were not distinct first=$($callsiteOne.CallSiteLine) second=$($callsiteTwo.CallSiteLine)"
+    Write-Output "PASS fixture=bounded-child-distinct-callsites first=$($callsiteOne.CallSiteLine) second=$($callsiteTwo.CallSiteLine)"
+
+    $treeRootScript = Join-Path $tempRoot 'tree-root.ps1'
+    $treeChildScript = Join-Path $tempRoot 'tree-child.ps1'
+    $treeGrandchildScript = Join-Path $tempRoot 'tree-grandchild.ps1'
+    $treePidRoot = Join-Path $tempRoot 'tree-pids'
+    [System.IO.Directory]::CreateDirectory($treePidRoot) | Out-Null
+    Write-Utf8File $treeGrandchildScript @'
+param([string]$PidRoot)
+[IO.File]::WriteAllText((Join-Path $PidRoot 'grandchild.pid'), [string]$PID)
+Start-Sleep -Seconds 30
+'@
+    Write-Utf8File $treeChildScript @'
+param([string]$GrandchildScript,[string]$PidRoot)
+[IO.File]::WriteAllText((Join-Path $PidRoot 'child.pid'), [string]$PID)
+$Shell = (Get-Process -Id $PID).Path
+$grandchild = Start-Process -FilePath $Shell -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$GrandchildScript,$PidRoot) -PassThru
+[IO.File]::WriteAllText((Join-Path $PidRoot 'launched-grandchild.pid'), [string]$grandchild.Id)
+$grandchild.WaitForExit()
+'@
+    Write-Utf8File $treeRootScript @'
+param([string]$ChildScript,[string]$GrandchildScript,[string]$PidRoot)
+[IO.File]::WriteAllText((Join-Path $PidRoot 'root.pid'), [string]$PID)
+$Shell = (Get-Process -Id $PID).Path
+$child = Start-Process -FilePath $Shell -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$ChildScript,$GrandchildScript,$PidRoot) -PassThru
+[IO.File]::WriteAllText((Join-Path $PidRoot 'launched-child.pid'), [string]$child.Id)
+$child.WaitForExit()
+'@
+    $treeTimeoutRejected = $false
+    try {
+        $null = Invoke-BoundedChildProcess $shell `
+            @('-NoProfile','-ExecutionPolicy','Bypass','-File',$treeRootScript,$treeChildScript,$treeGrandchildScript,$treePidRoot) `
+            $tempRoot 'process-tree-timeout-probe' 5
+    } catch {
+        $treeTimeoutRejected = $_.Exception.Message -match 'CHILD_PROCESS_TIMEOUT'
+    }
+    Assert-Condition $treeTimeoutRejected 'process-tree timeout probe did not fail as expected'
+    $script:expectedTimeoutProbeCount++
+    $treePidFiles = @('root.pid','child.pid','grandchild.pid')
+    $treePids = @()
+    foreach ($pidFile in $treePidFiles) {
+        $pidPath = Join-Path $treePidRoot $pidFile
+        Assert-Condition (Test-Path -LiteralPath $pidPath -PathType Leaf) "process-tree pid file missing path=$pidPath"
+        $treePids += [int]([IO.File]::ReadAllText($pidPath).Trim())
+    }
+    $cleanupDeadline = [DateTime]::UtcNow.AddSeconds(5)
+    do {
+        $remainingTreePids = @($treePids | Where-Object { Get-Process -Id $_ -ErrorAction SilentlyContinue })
+        if ($remainingTreePids.Count -eq 0) { break }
+        Start-Sleep -Milliseconds 100
+    } while ([DateTime]::UtcNow -lt $cleanupDeadline)
+    Assert-Condition ($remainingTreePids.Count -eq 0) `
+        "timed-out process tree was not cleaned remaining=$($remainingTreePids -join ',')"
+    Write-Output "PASS fixture=bounded-child-process-tree-cleanup pids=$($treePids -join ',')"
+
+    $gitFailureRejected = $false
+    try { $null = Invoke-FixtureGit $tempRoot @('rev-parse','--verify','refs/heads/does-not-exist') } catch {
+        $gitFailureRejected = $_.Exception.Message -match 'FIXTURE_GIT_FAILED'
+    }
+    Assert-Condition $gitFailureRejected 'bounded git failure did not fail closed'
+    Write-Output 'PASS fixture=bounded-git-error-exit-fails-closed'
 
     $continuationStatusCount=@($contract.authority.workBatchStatuses | Where-Object { $_ -ceq 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' }).Count
     Assert-Condition ($continuationStatusCount -eq 1) "green continuation canonical status count=$continuationStatusCount"
@@ -321,6 +542,25 @@ try {
         toNextAction=$pendingReviewAction
     }
     Assert-ContextTransition 'highRisk' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' 'IMPLEMENTED|PENDING_REVIEW' $fixCommit '102' 'UNCOMMITTED' 'NOT_RUN' $false $false 'green-continuation-accepted-batch-change-rejected' $changedAcceptedBatchContext
+
+    $gateY6PendingReviewAction='NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-SECURITY-REVIEW'
+    $gateY6ContinuationContext=[pscustomobject]@{
+        fromWorkBatch='GateY-6';toWorkBatch='GateY-6';fromAcceptedBatch='GateY-5';toAcceptedBatch='GateY-5'
+        toNextAction=$gateY6PendingReviewAction
+    }
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' 'IMPLEMENTED|PENDING_REVIEW' `
+        $fixCommit '31774122178' 'UNCOMMITTED' 'NOT_RUN' $false $true `
+        'gatey6-continuation-to-implementation-pending-review' $gateY6ContinuationContext
+    $gateY6PromotedAcceptedContext=$gateY6ContinuationContext.PSObject.Copy()
+    $gateY6PromotedAcceptedContext.toAcceptedBatch='GateY-6'
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' 'IMPLEMENTED|PENDING_REVIEW' `
+        $fixCommit '31774122178' 'UNCOMMITTED' 'NOT_RUN' $false $false `
+        'gatey6-hidden-accepted-batch-promotion-rejected' $gateY6PromotedAcceptedContext
+    $gateY6SubBatchContext=$gateY6ContinuationContext.PSObject.Copy()
+    $gateY6SubBatchContext.toWorkBatch='GateY-6B'
+    Assert-ContextTransition 'highRisk' 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' 'IMPLEMENTED|PENDING_REVIEW' `
+        $fixCommit '31774122178' 'UNCOMMITTED' 'NOT_RUN' $false $false `
+        'gatey6-hidden-work-sub-batch-rejected' $gateY6SubBatchContext
 
     $rcSourceCommit='6666666666666666666666666666666666666666'
     $rcReviewCommit='7777777777777777777777777777777777777777'
@@ -1100,6 +1340,33 @@ try {
     Assert-Checker (Invoke-Checker $authorityChecker @('-ReadinessMode','ARCHIVE_FREEZE') $authorityRoot) $false 'GATE_READINESS_STATUS_INVALID' 'green-continuation-archive-freeze-checker-rejected'
     Assert-Checker (Invoke-Checker $authorityChecker @('-ReadinessMode','RELEASE') $authorityRoot) $false 'GATE_READINESS_STATUS_INVALID' 'green-continuation-release-checker-rejected'
 
+    # Simulates GateY-6A review/commit/exact-head CI completion while the numbered GateY-6 batch continues to 6B.
+    $gateY6Action = 'NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-IMPLEMENTATION'
+    Write-AuthorityFixture -Root $authorityRoot -Status 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED' `
+        -Action $gateY6Action -Commit $fixCommit -Ci '31774122178' -AcceptedBatch 'GateY-5' `
+        -WorkBatch 'GateY-6' -ActiveGate 'GateY'
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $true `
+        'PASS / CURRENT_AUTHORITY_CONSISTENT' 'gatey6a-exact-head-green-to-gatey6b-implementation'
+
+    $roadmapPath = Join-Path $authorityRoot 'docs/current/ROADMAP.md'
+    $roadmap = [System.IO.File]::ReadAllText($roadmapPath, $utf8NoBom)
+    Write-Utf8File $roadmapPath ($roadmap.Replace($gateY6Action, 'NQ-GATEY-6-DRIFTED-IMPLEMENTATION'))
+    Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false `
+        'CURRENT_AUTHORITY_CROSS_DOCUMENT_MISMATCH' 'gatey6-cross-document-drift-rejected'
+
+    foreach ($gateYCase in @(
+        @{ Name='gatey6-authority-wrong-action'; Status='COMMITTED|CI_GREEN|CONTINUE_REQUIRED'; Batch='GateY-6'; Action='NQ-GATEY-6-ARBITRARY-IMPLEMENTATION'; Expected='NEXT_ACTION_TYPE_MISMATCH' },
+        @{ Name='gatey6-authority-lowercase-action'; Status='COMMITTED|CI_GREEN|CONTINUE_REQUIRED'; Batch='GateY-6'; Action=$gateY6Action.ToLowerInvariant(); Expected='NEXT_ACTION_TYPE_MISMATCH' },
+        @{ Name='gatey6-authority-wrong-status'; Status='NOT_STARTED'; Batch='GateY-6'; Action=$gateY6Action; Expected='NEXT_ACTION_WORK_BATCH_MISMATCH' },
+        @{ Name='gatey6-authority-wrong-work-batch'; Status='COMMITTED|CI_GREEN|CONTINUE_REQUIRED'; Batch='GateY-7'; Action=$gateY6Action; Expected='NEXT_ACTION_TYPE_MISMATCH' }
+    )) {
+        $caseCommit = if ($gateYCase.Status -ceq 'NOT_STARTED') { 'NONE' } else { $fixCommit }
+        $caseCi = if ($gateYCase.Status -ceq 'NOT_STARTED') { 'NOT_RUN' } else { '31774122178' }
+        Write-AuthorityFixture -Root $authorityRoot -Status $gateYCase.Status -Action $gateYCase.Action `
+            -Commit $caseCommit -Ci $caseCi -AcceptedBatch 'GateY-5' -WorkBatch $gateYCase.Batch -ActiveGate 'GateY'
+        Assert-Checker (Invoke-Checker $authorityChecker @() $authorityRoot) $false $gateYCase.Expected $gateYCase.Name
+    }
+
     Write-AuthorityFixture $authorityRoot 'IMPLEMENTED|PENDING_REVIEW' 'NQ-GATEW-FIXTURE-REVIEW' 'UNCOMMITTED' 'NOT_RUN'
     Assert-Checker (Invoke-Checker $authorityChecker @('-ReadinessMode','ARCHIVE_FREEZE') $authorityRoot) $true 'PASS / CURRENT_AUTHORITY_CONSISTENT' 'pending-review-archive-freeze-checker-positive'
     Write-AuthorityFixture $authorityRoot 'ACCEPTED|CI_GREEN' 'NQ-GATEW-FIXTURE-POST-CI-ACTIVE-AUTHORITY-SYNC' $fixCommit '102'
@@ -1286,6 +1553,7 @@ echo [{"databaseId":42,"workflowName":"NQ CI Baseline","status":"completed","con
 
     Write-Output 'PASS / GOVERNANCE_LIFECYCLE_REGRESSION'
     Write-Output 'PASS / TASK_EVIDENCE_POLICY_VALID'
+    Write-Output "LIFECYCLE_METRICS childCount=$script:childInvocation expectedTimeoutProbeCount=$script:expectedTimeoutProbeCount unexpectedTimeoutCount=0 unexpectedFailureCount=0"
 }
 finally {
     $tempBase=[System.IO.Path]::GetTempPath()
