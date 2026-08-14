@@ -6,9 +6,9 @@
 
 <!-- nq-current-summary:start -->
 - 最近冻结 Gate 为 GateX：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-x/](../gates/gate-x/)。
-- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-PLAN、GateY-1、GateY-2、GateY-3、GateY-4 与 GateY-5 均为 `ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateY-6=`NOT STARTED`（未开始）。
+- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-PLAN、GateY-1、GateY-2、GateY-3、GateY-4 与 GateY-5 均为 `ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateY-6=`REVIEW ACCEPTED / READY TO COMMIT`（审查已接受 / 可进入提交前复核）。
 - Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEY-6-EXPLICIT-MICRO-LIVE-AUTHORIZATION-PREFLIGHT-AND-WORK-ORDER-IMPLEMENTATION`；GateY-6 initialization 仅建立受控真实交易阶段的治理容器，不构成 micro-live 或第一笔真实订单授权，exact transition 以 [STATUS.md](STATUS.md) 为准。
+- 当前唯一动作是 `NQ-GATEY-6-EXPLICIT-MICRO-LIVE-AUTHORIZATION-PREFLIGHT-AND-WORK-ORDER-COMMIT-AND-PUSH`；GateY-6 work order只定义hard-gate/exact pilot/120h soak合同，不构成micro-live或第一笔真实订单授权，exact transition以 [STATUS.md](STATUS.md) 为准。
 - 当前 runtime release、current work commit 与精确 runtime 标识只从 [STATUS.md](STATUS.md) 获取，本索引不复制其值。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->

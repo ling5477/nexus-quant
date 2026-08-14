@@ -61,7 +61,7 @@ GateY-4 ACCEPTED / CI GREEN
   ↓
 GateY-5 ACCEPTED / CI GREEN
   ↓
-GateY-6 NOT STARTED
+GateY-6 REVIEW ACCEPTED / READY TO COMMIT
 ```
 
 ## 下一允许动作
@@ -93,8 +93,8 @@ GateY-6 NOT STARTED
 - GateY-3：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`1f2ad2324166872a567a0420b71a8b4a5b68f7f1`，exact-head CI run=`31622259352 / completed / success / 10 jobs / bad=0`。`NO BLIND RETRY`、PostgreSQL concurrency、fake-provider isolation 与 `LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE=CLOSED` 均有独立 review 与回归证据；接受不包含真实 provider、credential、外联、production worker 或 LIVE。
 - GateY-4：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；canonical implementation commit=`44ac9b3c014bcd7a46499c4180053742e64c7709`，final acceptance evidence head=`b3a6b1fd550d8ccb5132c7b16942a4b11b67f78e`，exact-head CI run=`31679311259 / completed / success / 10 jobs / bad=0`。44-path/44-blob addendum 与 ancestry reconciliation 已通过；Candidate B 因缺少 18 个 reviewed paths 被 supersede。Linux stable-handle closure 只适用于 supported Linux runtime；真实 smoke=`NOT_RUN / API_KEY_REQUIRED`，remote permission/IP allowlist 未验证。
 - GateY-5：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit=`8d594f1a0000678e4817f3ec80de19ac975da992`，failed implementation CI=`31727172181 / failure`，失败归类为 `FALSE_POSITIVE_NON_SECRET_HASH_EVIDENCE` 并保留；forward-only remediation/acceptance head=`88f6f7f25a81f55fe17984df335546ad2033c61f`，exact-head CI run=`31761584826 / completed / success / bad=0`。Remediation 只修改 1 个 review evidence 文件，产品代码、CI workflow、allowlist 变更均为 0。
-- GateY-6：`NOT STARTED`（未开始）；候选范围固定为 OKX Spot、单一 pilot account、micro capital、single owner/release/window、1～2 high-liquidity spot symbols、LIMIT-only 与 120h controlled soak。Initialization 只建立治理容器，不授权 micro-live、`FIRST_REAL_ORDER`、credential 访问、OKX 调用、kill disengage 或 LIVE enable。
-- 当前唯一治理动作是 `NQ-GATEY-6-EXPLICIT-MICRO-LIVE-AUTHORIZATION-PREFLIGHT-AND-WORK-ORDER-IMPLEMENTATION`；只允许重建 `FIRST_REAL_ORDER_HARD_GATE` matrix、绑定 GateY-1～5 exact evidence、标记 `PASS / NOT_MET / NOT_VERIFIABLE`、识别 credential/IP/venue permission 缺口、冻结 exact pilot work order 与定义 120h soak/abort/kill/reconcile/rollback contract。该任务仍不得发送真实订单；精确状态和安全边界服从 [STATUS.md](STATUS.md)。
+- GateY-6：`REVIEW ACCEPTED / READY TO COMMIT`（审查已接受 / 可进入提交前复核）；独立审查重建并验证30项hard gates，最终仍为`PASS=0 / NOT_MET=25 / NOT_VERIFIABLE=5`，P0/P1=`0/0`。real provider/private trading继续NOT_IMPLEMENTED，credential/IP/pilot fields未物化，explicit authorization未授予。Work order只冻结OKX Spot单账户、1～2 symbols、LIMIT-only、exact scope、exactly-one first-order与120h soak合同，不授权任何真实调用。
+- 当前唯一治理动作是 `NQ-GATEY-6-EXPLICIT-MICRO-LIVE-AUTHORIZATION-PREFLIGHT-AND-WORK-ORDER-COMMIT-AND-PUSH`；提交及exact-head CI接受前不得进入provider implementation，更不得发送真实订单；精确状态和安全边界服从 [STATUS.md](STATUS.md)。
 
 ## GateW 已冻结边界
 

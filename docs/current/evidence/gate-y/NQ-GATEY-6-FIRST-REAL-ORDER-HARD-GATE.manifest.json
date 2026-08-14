@@ -1,0 +1,509 @@
+{
+  "schemaVersion": "gatey6-first-real-order-hard-gate.v1",
+  "scope": "OKX_SPOT_SINGLE_ACCOUNT_MICRO_LIVE",
+  "generatedForTask": "NQ-GATEY-6-EXPLICIT-MICRO-LIVE-AUTHORIZATION-PREFLIGHT-AND-WORK-ORDER-IMPLEMENTATION",
+  "baselineHead": "8a3b2981668b53b492a9a46a6b4b381f7f656782",
+  "baselineCiRun": "31764829976",
+  "acceptedBatch": "GateY-5",
+  "firstRealOrder": "NOT_AUTHORIZED",
+  "microLive": "NOT_AUTHORIZED",
+  "explicitAuthorization": "NOT_GRANTED",
+  "live": "DISABLED",
+  "killSwitch": "ENGAGED",
+  "realProvider": "NOT_IMPLEMENTED",
+  "privateTrading": "NOT_IMPLEMENTED",
+  "allowedStatusValues": [
+    "PASS",
+    "NOT_MET",
+    "NOT_VERIFIABLE"
+  ],
+  "finalStatusCounts": {
+    "PASS": 0,
+    "NOT_MET": 25,
+    "NOT_VERIFIABLE": 5
+  },
+  "gapCandidateCount": 10,
+  "readerPolicy": {
+    "missingGate": "REJECT_MANIFEST_FAIL_CLOSED",
+    "unknownGate": "REJECT_MANIFEST_FAIL_CLOSED",
+    "missingStatus": "NOT_VERIFIABLE_FAIL_CLOSED",
+    "unknownStatus": "REJECT_MANIFEST_FAIL_CLOSED",
+    "invalidStatusCombination": "REJECT_MANIFEST_FAIL_CLOSED",
+    "missingEvidence": "NOT_VERIFIABLE_FAIL_CLOSED",
+    "countMismatch": "REJECT_MANIFEST_FAIL_CLOSED",
+    "authorizationOnAnyValidationFailure": "NOT_AUTHORIZED"
+  },
+  "exactPilotScope": {
+    "pilotSessionId": "UNRESOLVED",
+    "venue": "OKX_SPOT",
+    "exchangeAccountReference": "UNRESOLVED",
+    "credentialReference": "UNRESOLVED",
+    "ownerIdentity": "UNRESOLVED",
+    "creatorIdentity": "UNRESOLVED",
+    "approverIdentity": "UNRESOLVED",
+    "strategyReleaseId": "UNRESOLVED",
+    "strategyReleaseDigest": "UNRESOLVED",
+    "artifactDigest": "UNRESOLVED",
+    "riskLimitSetId": "UNRESOLVED",
+    "riskLimitSetDigest": "UNRESOLVED",
+    "symbolAllowlist": "UNRESOLVED",
+    "capitalCap": "UNRESOLVED",
+    "singleOrderNotionalCap": "UNRESOLVED",
+    "symbolPositionCap": "UNRESOLVED",
+    "dailyLossCap": "UNRESOLVED",
+    "maxOpenOrders": "UNRESOLVED",
+    "maxIntradayOrders": "UNRESOLVED",
+    "executionWindowStart": "UNRESOLVED",
+    "executionWindowEnd": "UNRESOLVED",
+    "approvalExpiresAt": "UNRESOLVED",
+    "pilotScopeHash": "UNRESOLVED"
+  },
+  "pilotPrerequisiteBindings": {
+    "instrumentMetadata": {
+      "digest": "UNRESOLVED",
+      "observedAt": "UNRESOLVED",
+      "tradingStatus": "UNRESOLVED",
+      "tickSize": "UNRESOLVED",
+      "lotSize": "UNRESOLVED",
+      "minimumOrderSize": "UNRESOLVED",
+      "minimumOrderValue": "UNRESOLVED",
+      "bindingEffect": "DENY_IF_MISSING_OR_STALE_AND_REAPPROVE_IF_CONSTRAINTS_CHANGE"
+    },
+    "feeSchedule": {
+      "digest": "UNRESOLVED",
+      "observedAt": "UNRESOLVED",
+      "evidenceClass": "UNRESOLVED",
+      "bindingEffect": "ACTUAL_TIER_UNKNOWN_IS_NOT_VERIFIABLE_AND_POLICY_CHANGE_REQUIRES_REAPPROVAL"
+    },
+    "balanceSnapshot": {
+      "digest": "UNRESOLVED",
+      "observedAt": "UNRESOLVED",
+      "bindingEffect": "FRESH_PRIVATE_READ_REQUIRED_AND_UNKNOWN_OR_STALE_DENIES_PREFLIGHT"
+    },
+    "clockSyncObservation": {
+      "digest": "UNRESOLVED",
+      "observedAt": "UNRESOLVED",
+      "signedTimestampSource": "UNRESOLVED",
+      "maximumToleratedSkew": "UNRESOLVED",
+      "bindingEffect": "UNKNOWN_STALE_OR_EXCESSIVE_SKEW_DENIES_PREFLIGHT"
+    },
+    "endpointPolicy": {
+      "version": "UNRESOLVED",
+      "digest": "UNRESOLVED",
+      "bindingEffect": "IMMUTABLE_SCOPE_INPUT_AND_ANY_CHANGE_REQUIRES_REAPPROVAL"
+    },
+    "providerReleaseIdentity": {
+      "providerContractIdentity": "UNRESOLVED",
+      "providerArtifactDigest": "UNRESOLVED",
+      "workerReleaseDigest": "UNRESOLVED",
+      "bindingEffect": "IMMUTABLE_SCOPE_INPUT_AND_ANY_CHANGE_REQUIRES_REAPPROVAL"
+    }
+  },
+  "evidenceCatalog": {
+    "E-X-ADMISSION": {
+      "sourceGateBatch": "GateX-5/GateX-FREEZE",
+      "evidenceFile": "docs/gates/gate-x/GATEX_BATCH_0_5_EVIDENCE_MATRIX.md",
+      "implementationCommit": "3336bd8153845d5368a0d65a9c72d3566dc9bd35",
+      "acceptanceHead": "a383be750f51d063d429bc25fad80e60dffb7014",
+      "ciRun": "31512467501",
+      "testOrDrillIdentity": "GateX-5 hard gates 18/18 and admission materialization closure",
+      "scopeQualification": "Capability only; no GateY-6 pilot release binding."
+    },
+    "E-Y2-FACT": {
+      "sourceGateBatch": "GateY-2",
+      "evidenceFile": "docs/current/evidence/gate-y/NQ-GATEY-2-LIVE-SESSION-FACT-MODEL-MIGRATION-SECURITY-REVIEW.attempt-01.md",
+      "implementationCommit": "19ac2d1cdc7a1982f97fb0e1b0e62c081d003018",
+      "acceptanceHead": "19ac2d1cdc7a1982f97fb0e1b0e62c081d003018",
+      "ciRun": "31608725854",
+      "testOrDrillIdentity": "Focused PostgreSQL integration PASS; full disposable backend 270 tests and 0 failures.",
+      "scopeQualification": "Local/disposable V39 facts; no production migration or pilot materialization."
+    },
+    "E-Y3-EXECUTION": {
+      "sourceGateBatch": "GateY-3",
+      "evidenceFile": "docs/current/evidence/gate-y/NQ-GATEY-3-EXECUTION-INTENT-RECEIPT-FAKE-EXCHANGE-SECURITY-REVIEW.attempt-01.md",
+      "implementationCommit": "1f2ad2324166872a567a0420b71a8b4a5b68f7f1",
+      "acceptanceHead": "1f2ad2324166872a567a0420b71a8b4a5b68f7f1",
+      "ciRun": "31622259352",
+      "testOrDrillIdentity": "ExecutionIntentRuntimeTest 10/0/0/0; PostgreSQL concurrency and fake isolation.",
+      "scopeQualification": "Fake-only; does not prove OKX mutation, query, cancel or fill semantics."
+    },
+    "E-Y4-SECURITY": {
+      "sourceGateBatch": "GateY-4",
+      "evidenceFile": "docs/current/evidence/gate-y/NQ-GATEY-4-SCOPED-CREDENTIAL-PRIVATE-READONLY-KILL-DEPLOYMENT-BOUNDARY-SECURITY-REVIEW.attempt-01.md",
+      "implementationCommit": "44ac9b3c014bcd7a46499c4180053742e64c7709",
+      "acceptanceHead": "b3a6b1fd550d8ccb5132c7b16942a4b11b67f78e",
+      "ciRun": "31679311259",
+      "testOrDrillIdentity": "Supported Linux stable-handle 14/0/0/0; kill fail-close; private read-only tests.",
+      "scopeQualification": "Read-only only; real smoke NOT_RUN/API_KEY_REQUIRED; remote permission and IP not verified."
+    },
+    "E-Y5-OPS": {
+      "sourceGateBatch": "GateY-5",
+      "evidenceFile": "docs/current/evidence/gate-y/NQ-GATEY-5-ISOLATED-WORKER-DRYRUN-ROLLBACK-RESTORE-LOCK-WINDOW-SECURITY-OPERATIONS-REVIEW.attempt-01.md",
+      "implementationCommit": "8d594f1a0000678e4817f3ec80de19ac975da992",
+      "acceptanceHead": "88f6f7f25a81f55fe17984df335546ad2033c61f",
+      "ciRun": "31761584826",
+      "testOrDrillIdentity": "Full backend GREEN; frontend build; E2E 86 passed/1 canonical skipped; lock, restore, replay and incident drills.",
+      "scopeQualification": "Fake/synthetic/disposable only; lock-window closure is not production SLA evidence."
+    },
+    "E-Y5-ACCEPTANCE": {
+      "sourceGateBatch": "GateY-5 post-CI acceptance",
+      "evidenceFile": "docs/current/evidence/gate-y/NQ-GATEY-5-POST-CI-ACCEPTANCE-AND-GATEY-6-INITIALIZATION.attempt-01.md",
+      "implementationCommit": "8d594f1a0000678e4817f3ec80de19ac975da992",
+      "acceptanceHead": "88f6f7f25a81f55fe17984df335546ad2033c61f",
+      "ciRun": "31761584826",
+      "testOrDrillIdentity": "Exact-head CI success; failed CI 31727172181 preserved and forward-remediated.",
+      "scopeQualification": "GateY-6 initialization only; FIRST_REAL_ORDER and micro-live not authorized."
+    },
+    "E-CURRENT-OKX-AUDIT": {
+      "sourceGateBatch": "GateY-6 preflight current-code audit",
+      "evidenceFile": "backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/service/OkxSpotEndpointGuard.java",
+      "implementationCommit": "8a3b2981668b53b492a9a46a6b4b381f7f656782",
+      "acceptanceHead": "NOT_APPLICABLE",
+      "ciRun": "31764829976",
+      "testOrDrillIdentity": "Exact-head baseline CI and current-code inspection of adapter, guard, transport and readiness wiring.",
+      "scopeQualification": "Legacy code fact only; not GateY-6 real-provider acceptance."
+    },
+    "E-CURRENT-RBAC-AUDIT": {
+      "sourceGateBatch": "GateY-6 preflight current-code audit",
+      "evidenceFile": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/LiveSessionControlService.java",
+      "implementationCommit": "8a3b2981668b53b492a9a46a6b4b381f7f656782",
+      "acceptanceHead": "NOT_APPLICABLE",
+      "ciRun": "31764829976",
+      "testOrDrillIdentity": "Exact-head baseline CI and creator/approver inequality inspection.",
+      "scopeQualification": "Capability exists; exact independent pilot identities are unresolved."
+    }
+  },
+  "gates": [
+    {
+      "id": "G01",
+      "name": "release/admission evidence",
+      "gateType": "PLAN",
+      "capabilityStatus": "PASS",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-X-ADMISSION"],
+      "blocker": "Exact GateY-6 pilot release and admission facts are not materialized.",
+      "nextRequiredAction": "Bind immutable pilot release, artifact and admission digests."
+    },
+    {
+      "id": "G02",
+      "name": "exact strategy release digest",
+      "gateType": "PLAN",
+      "capabilityStatus": "PASS",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-X-ADMISSION", "E-Y2-FACT"],
+      "blocker": "Pilot release ID and digests are unresolved.",
+      "nextRequiredAction": "Select accepted immutable release and bind it into pilotScopeHash."
+    },
+    {
+      "id": "G03",
+      "name": "immutable risk-limit-set",
+      "gateType": "PLAN",
+      "capabilityStatus": "PASS",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-Y2-FACT"],
+      "blocker": "Exact risk-limit-set ID, digest and thresholds are unresolved.",
+      "nextRequiredAction": "Obtain explicit authority for immutable pilot risk facts."
+    },
+    {
+      "id": "G04",
+      "name": "LiveSession and OperatorApproval",
+      "gateType": "PLAN",
+      "capabilityStatus": "PASS",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-Y2-FACT"],
+      "blocker": "No exact pilot session or approval exists.",
+      "nextRequiredAction": "Materialize only after provider and credential batches are independently accepted."
+    },
+    {
+      "id": "G05",
+      "name": "ExecutionIntent and ExecutionReceipt traceability",
+      "gateType": "PLAN",
+      "capabilityStatus": "PASS",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-Y3-EXECUTION"],
+      "blocker": "Accepted traceability is fake-provider scoped.",
+      "nextRequiredAction": "Port the reviewed contract to the real-provider boundary and exact session."
+    },
+    {
+      "id": "G06",
+      "name": "intentId idempotency",
+      "gateType": "PLAN",
+      "capabilityStatus": "PASS",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-Y3-EXECUTION"],
+      "blocker": "Stable OKX client order ID mapping is not reviewed.",
+      "nextRequiredAction": "Add deterministic mapping, collision and format contract tests."
+    },
+    {
+      "id": "G07",
+      "name": "private endpoint allowlist",
+      "gateType": "PLAN",
+      "capabilityStatus": "NOT_MET",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-CURRENT-OKX-AUDIT"],
+      "blocker": "Current typed guard rejects private mutation and legacy raw paths are not GateY authority.",
+      "nextRequiredAction": "Implement typed method/path/operation/order-type allowlist with default deny."
+    },
+    {
+      "id": "G08",
+      "name": "scoped pilot credential minimum TRADE permission",
+      "gateType": "PLAN",
+      "capabilityStatus": "NOT_MET",
+      "pilotBindingStatus": "NOT_VERIFIABLE",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-Y4-SECURITY"],
+      "blocker": "Accepted capability is private read-only; no exact pilot credential exists.",
+      "nextRequiredAction": "Extend reviewed scope contract, then verify dedicated pilot permission without mutation."
+    },
+    {
+      "id": "G09",
+      "name": "transfer and withdraw disabled proof",
+      "gateType": "PLAN",
+      "capabilityStatus": "PASS",
+      "pilotBindingStatus": "NOT_VERIFIABLE",
+      "finalGateStatus": "NOT_VERIFIABLE",
+      "evidenceRefs": ["E-Y4-SECURITY"],
+      "blocker": "Local fail-close policy exists; remote pilot key facts are unavailable.",
+      "nextRequiredAction": "Verify withdraw false and transfer/funding unavailable through sanitized read-only facts."
+    },
+    {
+      "id": "G10",
+      "name": "IP allowlist",
+      "gateType": "PLAN",
+      "capabilityStatus": "PASS",
+      "pilotBindingStatus": "NOT_VERIFIABLE",
+      "finalGateStatus": "NOT_VERIFIABLE",
+      "evidenceRefs": ["E-Y4-SECURITY"],
+      "blocker": "Exact pilot egress IP and remote key binding are unresolved.",
+      "nextRequiredAction": "Freeze egress identity and independently verify remote binding."
+    },
+    {
+      "id": "G11",
+      "name": "kill propagation",
+      "gateType": "PLAN",
+      "capabilityStatus": "PASS",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-Y4-SECURITY", "E-Y5-OPS"],
+      "blocker": "Exact pilot session, revision and propagation deadline are unbound.",
+      "nextRequiredAction": "Bind independent disengage authorization and fail-close deadline."
+    },
+    {
+      "id": "G12",
+      "name": "order fill account and position reconciliation",
+      "gateType": "PLAN",
+      "capabilityStatus": "PASS",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-Y3-EXECUTION", "E-Y5-OPS"],
+      "blocker": "Only fake/local reconciliation is accepted.",
+      "nextRequiredAction": "Implement and review real OKX order/fill/balance/position/ledger convergence."
+    },
+    {
+      "id": "G13",
+      "name": "unknown-order recovery",
+      "gateType": "PLAN",
+      "capabilityStatus": "PASS",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-Y3-EXECUTION", "E-Y5-OPS"],
+      "blocker": "Real query-by-clientOrderId is not a reviewed GateY worker capability.",
+      "nextRequiredAction": "Implement typed query-first recovery with no blind PLACE retry."
+    },
+    {
+      "id": "G14",
+      "name": "partial-fill cancel and retry semantics",
+      "gateType": "PLAN",
+      "capabilityStatus": "PASS",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-Y5-OPS"],
+      "blocker": "Accepted scenarios are fake-only.",
+      "nextRequiredAction": "Contract-test OKX partial fill, cancel race and query-first behavior."
+    },
+    {
+      "id": "G15",
+      "name": "immutable release and rollback",
+      "gateType": "PLAN",
+      "capabilityStatus": "PASS",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-Y5-OPS"],
+      "blocker": "No accepted real-worker artifact is bound to the pilot.",
+      "nextRequiredAction": "Build, review and bind exact artifact and rollback target."
+    },
+    {
+      "id": "G16",
+      "name": "backup and restore",
+      "gateType": "PLAN",
+      "capabilityStatus": "PASS",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-Y5-OPS"],
+      "blocker": "Disposable capability is not bound to exact pilot storage and release facts.",
+      "nextRequiredAction": "Rehearse exact pilot recovery contract without production mutation."
+    },
+    {
+      "id": "G17",
+      "name": "incident drill",
+      "gateType": "PLAN",
+      "capabilityStatus": "PASS",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-Y5-OPS"],
+      "blocker": "Real-provider errors and pilot identities are absent from accepted drill.",
+      "nextRequiredAction": "Add no-egress real-provider contract incident scenarios."
+    },
+    {
+      "id": "G18",
+      "name": "production-like lock-window closure",
+      "gateType": "PLAN",
+      "capabilityStatus": "PASS",
+      "pilotBindingStatus": "NOT_VERIFIABLE",
+      "finalGateStatus": "NOT_VERIFIABLE",
+      "evidenceRefs": ["E-Y5-OPS"],
+      "blocker": "Closure is limited to reviewed synthetic disposable GateY scale.",
+      "nextRequiredAction": "Bind deployment risk evidence to exact runtime; do not claim production SLA or migration authorization."
+    },
+    {
+      "id": "G19",
+      "name": "filesystem stable-handle closure",
+      "gateType": "PLAN",
+      "capabilityStatus": "PASS",
+      "pilotBindingStatus": "NOT_VERIFIABLE",
+      "finalGateStatus": "NOT_VERIFIABLE",
+      "evidenceRefs": ["E-Y4-SECURITY"],
+      "blocker": "Supported Linux capability exists; exact pilot host and release handle are unresolved.",
+      "nextRequiredAction": "Verify exact immutable release on supported Linux runtime."
+    },
+    {
+      "id": "G20",
+      "name": "exact operator explicit authorization",
+      "gateType": "PLAN",
+      "capabilityStatus": "PASS",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-Y2-FACT", "E-Y5-ACCEPTANCE"],
+      "blocker": "Exact pilot scope is unresolved and authorization is NOT_GRANTED.",
+      "nextRequiredAction": "Obtain a future explicit authorization bound to exact pilotScopeHash."
+    },
+    {
+      "id": "G21",
+      "name": "real provider mutation path implemented and reviewed",
+      "gateType": "HARD_GATE_GAP_CANDIDATE",
+      "capabilityStatus": "NOT_MET",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-CURRENT-OKX-AUDIT"],
+      "blocker": "Legacy adapter is not a worker-safe reviewed GateY provider.",
+      "nextRequiredAction": "Implement OKX Spot LIMIT provider with fake/stub/no-egress contract tests only."
+    },
+    {
+      "id": "G22",
+      "name": "private trading path implemented and reviewed",
+      "gateType": "HARD_GATE_GAP_CANDIDATE",
+      "capabilityStatus": "NOT_MET",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-CURRENT-OKX-AUDIT"],
+      "blocker": "Current readiness and endpoint guard fail-close private mutation.",
+      "nextRequiredAction": "Implement after provider contract with exact authorization checks."
+    },
+    {
+      "id": "G23",
+      "name": "instrument metadata freshness",
+      "gateType": "HARD_GATE_GAP_CANDIDATE",
+      "capabilityStatus": "NOT_MET",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-CURRENT-OKX-AUDIT"],
+      "blocker": "No GateY mutation freshness and expiry contract exists.",
+      "nextRequiredAction": "Add bounded freshness source, timestamp and stale fail-close tests."
+    },
+    {
+      "id": "G24",
+      "name": "instrument trading status tick size lot size minimum order size and minimum order value",
+      "gateType": "HARD_GATE_GAP_CANDIDATE",
+      "capabilityStatus": "NOT_MET",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-CURRENT-OKX-AUDIT"],
+      "blocker": "Trading status, tick size, lot size, minimum order size/value and exact pilot instrument facts are unresolved.",
+      "nextRequiredAction": "Validate tradable status, price, size and minimum value from fresh typed metadata."
+    },
+    {
+      "id": "G25",
+      "name": "available balance",
+      "gateType": "HARD_GATE_GAP_CANDIDATE",
+      "capabilityStatus": "PASS",
+      "pilotBindingStatus": "NOT_VERIFIABLE",
+      "finalGateStatus": "NOT_VERIFIABLE",
+      "evidenceRefs": ["E-Y4-SECURITY"],
+      "blocker": "Read-only balance capability exists; exact pilot account and balance are unavailable.",
+      "nextRequiredAction": "Verify sanitized available balance immediately before authorization and execution."
+    },
+    {
+      "id": "G26",
+      "name": "fee assumptions",
+      "gateType": "HARD_GATE_GAP_CANDIDATE",
+      "capabilityStatus": "NOT_MET",
+      "pilotBindingStatus": "NOT_VERIFIABLE",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-CURRENT-OKX-AUDIT"],
+      "blocker": "No accepted fee source, freshness or loss-cap treatment exists, and the actual pilot fee tier is not verifiable.",
+      "nextRequiredAction": "Freeze typed fee facts and conservative calculation contract."
+    },
+    {
+      "id": "G27",
+      "name": "clock and time synchronization",
+      "gateType": "HARD_GATE_GAP_CANDIDATE",
+      "capabilityStatus": "NOT_MET",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-CURRENT-OKX-AUDIT"],
+      "blocker": "No pilot skew preflight, continuous health or stop threshold exists.",
+      "nextRequiredAction": "Implement signed-request clock contract and fail-close threshold."
+    },
+    {
+      "id": "G28",
+      "name": "venue order-state translation",
+      "gateType": "HARD_GATE_GAP_CANDIDATE",
+      "capabilityStatus": "NOT_MET",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-CURRENT-OKX-AUDIT"],
+      "blocker": "Legacy mapping is not an accepted GateY worker contract.",
+      "nextRequiredAction": "Cover every OKX state, partial fill, cancel race and illegal transition."
+    },
+    {
+      "id": "G29",
+      "name": "real query by clientOrderId support",
+      "gateType": "HARD_GATE_GAP_CANDIDATE",
+      "capabilityStatus": "NOT_MET",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-CURRENT-OKX-AUDIT"],
+      "blocker": "Typed single-order query is not ported to the GateY worker boundary.",
+      "nextRequiredAction": "Implement bounded exact-account exact-symbol query-first recovery."
+    },
+    {
+      "id": "G30",
+      "name": "creator and approver separation",
+      "gateType": "HARD_GATE_GAP_CANDIDATE",
+      "capabilityStatus": "PASS",
+      "pilotBindingStatus": "NOT_MET",
+      "finalGateStatus": "NOT_MET",
+      "evidenceRefs": ["E-Y2-FACT", "E-CURRENT-RBAC-AUDIT"],
+      "blocker": "Exact independent creator and LIVE_APPROVER identities are unresolved.",
+      "nextRequiredAction": "Bind two independently authenticated identities; no self-approval exception is accepted."
+    }
+  ],
+  "nextAction": "NQ-GATEY-6-EXPLICIT-MICRO-LIVE-AUTHORIZATION-PREFLIGHT-AND-WORK-ORDER-COMMIT-AND-PUSH"
+}
