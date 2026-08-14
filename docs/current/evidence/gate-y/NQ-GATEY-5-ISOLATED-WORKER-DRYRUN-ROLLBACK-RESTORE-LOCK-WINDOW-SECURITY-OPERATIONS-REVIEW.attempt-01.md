@@ -70,7 +70,7 @@ scripts/gatey/tests/run-gatey5-post-restore-regression.ps1
 ### Migration, scale and deterministic fixtures
 
 - V1～V39 migration diff=`0`；V40=`NONE`；未发现 runtime DDL、Flyway repair、history manipulation、constraint/trigger bypass。
-- scale authority commit=`b1ac45601dc8908b8301ff6f48d439d44c52bcd3`；manifest digest=`bbb67585855ef1c10adf2fbd57ef7cbdd270af702c4a322fe5a38d328037ee81`。
+- reviewed scale source Git commit：`b1ac45601dc8908b8301ff6f48d439d44c52bcd3`；capacity manifest SHA-256：`bbb67585855ef1c10adf2fbd57ef7cbdd270af702c4a322fe5a38d328037ee81`。
 - PRE exact rows=`3,557,032`，logical digest=`0be3fc4a207da07188e32aa36ee6acd7fb655293b6b8b1aa9ff58d6789b484fe`。
 - POST exact rows=`11,728,032`，logical digest=`78063819fc1c35256f1bc27613fbd0b16f74c6201bd315c7f31eda09e57b690c`。
 - generator 使用固定 seed、确定性 ID/时间、合法 FK/UNIQUE/CHECK/状态转换；synthetic credential bytes 由固定 digest 生成，不读取真实 credential；没有 row-count shortcut。
@@ -163,3 +163,17 @@ READY_TO_COMMIT
 推荐提交信息：`feat(gatey): 完成 GateY-5 fake-only worker 与独立安全运维审查`。
 
 唯一下一动作：`NQ-GATEY-5-ISOLATED-WORKER-DRYRUN-ROLLBACK-RESTORE-LOCK-WINDOW-COMMIT-AND-PUSH`。本 review 未 commit、push、tag、deploy，未初始化 GateY-6。
+
+## Post-commit CI secret-scan remediation
+
+- `failed_commit=8d594f1a0000678e4817f3ec80de19ac975da992`
+- `failed_ci_run=31727172181`
+- `rule_id=generic-api-key`
+- `finding_path=docs/current/evidence/gate-y/NQ-GATEY-5-ISOLATED-WORKER-DRYRUN-ROLLBACK-RESTORE-LOCK-WINDOW-SECURITY-OPERATIONS-REVIEW.attempt-01.md`
+- `finding_line=73`
+- `classification=FALSE_POSITIVE_NON_SECRET_HASH_EVIDENCE`
+- `remediation=EVIDENCE_LEXICAL_SANITIZATION`
+- `gitleaks_result=PASS`
+- `custom_backstop=PASS`
+
+以上结果使用 Gitleaks `8.18.4`、`extend.useDefault=true`、tracked safe working tree、`--no-git` 与 `--redact` 复现；未记录 matched value 或 source fragment，未修改 CI allowlist。
