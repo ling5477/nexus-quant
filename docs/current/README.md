@@ -6,9 +6,9 @@
 
 <!-- nq-current-summary:start -->
 - 最近冻结 Gate 为 GateX：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-x/](../gates/gate-x/)。
-- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-PLAN、GateY-1、GateY-2、GateY-3、GateY-4 与 GateY-5 均为 `ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateY-6B typed provider contract=`REVIEW ACCEPTED / READY TO COMMIT`（复核已接受 / 可进入提交前复核）。
+- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-6B typed provider contract=`ACCEPTED / CI GREEN / CONTRACT ONLY`（已接受 / CI 已通过 / 仅合同能力），GateY-6C=`NOT STARTED`（未开始）；GateY 整体未接受、未冻结。
 - Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-COMMIT-AND-PUSH`；仅提交已接受的 contract candidate，不授权 credential lookup、OKX network、真实 PLACE/CANCEL、worker/runtime 接线、micro-live、第一笔真实订单或 LIVE，exact transition 以 [STATUS.md](STATUS.md) 为准。
+- 当前唯一动作是 `NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-IMPLEMENTATION`；仅允许进入 scoped credential/IP/private permission 的只读验证实现，不授权 PLACE、CANCEL、mutation、micro-live、第一笔真实订单或 LIVE，exact transition 以 [STATUS.md](STATUS.md) 为准。
 - 当前 runtime release、current work commit 与精确 runtime 标识只从 [STATUS.md](STATUS.md) 获取，本索引不复制其值。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->

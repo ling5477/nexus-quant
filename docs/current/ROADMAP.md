@@ -61,7 +61,9 @@ GateY-4 ACCEPTED / CI GREEN
   ↓
 GateY-5 ACCEPTED / CI GREEN
   ↓
-GateY-6 IMPLEMENTED / PENDING REVIEW
+GateY-6B ACCEPTED / CI GREEN / CONTRACT ONLY
+  ↓
+GateY-6C NOT STARTED
 ```
 
 ## 下一允许动作
@@ -93,8 +95,10 @@ GateY-6 IMPLEMENTED / PENDING REVIEW
 - GateY-3：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/acceptance head=`1f2ad2324166872a567a0420b71a8b4a5b68f7f1`，exact-head CI run=`31622259352 / completed / success / 10 jobs / bad=0`。`NO BLIND RETRY`、PostgreSQL concurrency、fake-provider isolation 与 `LEGACY_ORDER_ACCOUNT_IDENTITY_BRIDGE=CLOSED` 均有独立 review 与回归证据；接受不包含真实 provider、credential、外联、production worker 或 LIVE。
 - GateY-4：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；canonical implementation commit=`44ac9b3c014bcd7a46499c4180053742e64c7709`，final acceptance evidence head=`b3a6b1fd550d8ccb5132c7b16942a4b11b67f78e`，exact-head CI run=`31679311259 / completed / success / 10 jobs / bad=0`。44-path/44-blob addendum 与 ancestry reconciliation 已通过；Candidate B 因缺少 18 个 reviewed paths 被 supersede。Linux stable-handle closure 只适用于 supported Linux runtime；真实 smoke=`NOT_RUN / API_KEY_REQUIRED`，remote permission/IP allowlist 未验证。
 - GateY-5：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit=`8d594f1a0000678e4817f3ec80de19ac975da992`，failed implementation CI=`31727172181 / failure`，失败归类为 `FALSE_POSITIVE_NON_SECRET_HASH_EVIDENCE` 并保留；forward-only remediation/acceptance head=`88f6f7f25a81f55fe17984df335546ad2033c61f`，exact-head CI run=`31761584826 / completed / success / bad=0`。Remediation 只修改 1 个 review evidence 文件，产品代码、CI workflow、allowlist 变更均为 0。
-- GateY-6：`REVIEW ACCEPTED / READY TO COMMIT`（复核已接受 / 可进入提交前复核）；typed OKX Spot provider contract、fake/stub tests、default fail-closed wiring guard 与跨模块 ArchUnit 已通过独立 Security/Operations Review，P0=0、P1=0。work commit=`UNCOMMITTED`、CI=`NOT_RUN`；accepted batch继续为GateY-5。30项hard gates仍为`PASS=0 / NOT_MET=25 / NOT_VERIFIABLE=5`，gap candidates=`10`；real provider/private trading继续`NOT_IMPLEMENTED`，credential/IP/pilot fields未物化，explicit authorization未授予。
-- 当前唯一治理动作是 `NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-COMMIT-AND-PUSH`；它只允许提交已接受的 typed contract、tests、review remediation 与 evidence。仍必须保持无真实 credential、无 credential lookup、无 OKX network、无 external egress、无真实 PLACE/CANCEL/mutation、无 worker/runtime 接线、无 LIVE/micro-live/FIRST_REAL_ORDER、无 kill disengage；精确状态和安全边界服从 [STATUS.md](STATUS.md)。
+- GateY-6B：`ACCEPTED / CI GREEN / CONTRACT ONLY`（已接受 / CI 已通过 / 仅合同能力）；implementation/acceptance head=`990f8c5680c23d02dec059ca72e7355f88faa72e`，exact-head CI run=`31811302301 / completed / success / 10 jobs / bad=0`。接受范围不包含 production transport、credential wiring、real signing/HTTP、worker/runtime binding、private trading、pilot、`FIRST_REAL_ORDER`、micro-live 或 LIVE。
+- GateY-6C：`NOT STARTED`（未开始）；只允许 scoped credential、IP allowlist、private permission 与 real read-only verification，当前 credential lookup/access、OKX calls=`0/0/0`。PLACE、CANCEL、transfer、withdraw、funding mutation、borrow、leverage、derivatives、LIVE enable 与 kill disengage 均禁止。
+- 当前唯一治理动作是 `NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-IMPLEMENTATION`；authority-sync commit 取得 exact-head CI green 后必须直接进入该业务/安全能力实现，不再插入 route validation、matcher hardening、plan review 或 authority-model review。
+- GateY 保持 `IN PROGRESS / NOT FROZEN`；GateY-6B acceptance 不等于 GateY 或 GateY-6 overall accepted/frozen，也不授权 GateY-FREEZE。30 项 hard gates 仍为 `PASS=0 / NOT_MET=25 / NOT_VERIFIABLE=5`，gap candidates=`10`；real provider/private trading=`NOT_IMPLEMENTED`、`FIRST_REAL_ORDER`/micro-live=`NOT_AUTHORIZED`、LIVE=`DISABLED`、kill=`ENGAGED`。
 
 ## GateW 已冻结边界
 

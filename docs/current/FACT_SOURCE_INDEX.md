@@ -34,6 +34,14 @@
 
 两份 ledger 的历史状态不参与当前阶段判定，也不得覆盖 STATUS。
 
+### 3.1 GateY-6 正式子批次 lifecycle
+
+- GateY-6A～6F 使用 `accepted_batch` / `work_batch` 表达可独立接受的正式子批次；子批次接受不等于 GateY 或 GateY-6 overall accepted/frozen。
+- 普通子批次复用 `NOT_STARTED -> IMPLEMENTATION -> IMPLEMENTED|PENDING_REVIEW -> REVIEW_ACCEPTED|READY_TO_COMMIT -> commit -> exact-head CI -> next sub-batch`，高风险代码仍必须经过独立 review 与 exact-head CI。
+- Governance contract `1.5.0` 进入 maintenance mode；不再为 GateY-6C、6D、6E、6F 增加 task-ID-specific override，也不再为单个 `next_action` 修改 matcher。
+- 连续两个 governance/docs-only 任务未推进核心 capability 时，第三个任务必须触发 engineering drift review；治理变更仅在解决可复用系统性缺陷时允许，不得再以 checker compatibility 作为业务任务主线。
+- 本轮 authority-sync commit 取得 exact-head CI green 后，必须直接进入 GateY-6C 代码/安全能力实现，不再插入 route validation、matcher hardening、plan review 或 authority-model review。
+
 ## 4. NQ-DH Integration Boundary
 
 - 本仓库只保存 NQ 侧 contract/mock/test-support 与 no-real boundary。
@@ -80,6 +88,6 @@ Historical evidence 中的旧状态、旧路径和旧 next action 不覆盖 curr
 - GateW-ATTEMPT-13-168H-ACCEPTANCE：`ACCEPTED / CI GREEN`；Attempt-13=`COMPLETED / ACCEPTED`，production soak=`COMPLETED`。
 - GateX：`FROZEN / ACCEPTED / TAGGED`；freeze commit=`299ab30bd2e243314be2dc609cb244cd5388027b`，tag=`nq-gatex-freeze`，strict archive/release/post-tag verification 均通过。
 - GateX-5：`ACCEPTED / CI GREEN`；最终 `ADMISSION_MATERIALIZATION_FACT_TEAR=CLOSED`，但不授权 Shadow execution、trading 或 LIVE。
-- GateY：`IN PROGRESS / NOT FROZEN`；GateY-PLAN、GateY-1、GateY-2、GateY-3、GateY-4 与 GateY-5 均为 `ACCEPTED / CI_GREEN`，GateY-6B typed provider contract=`REVIEW_ACCEPTED / READY_TO_COMMIT`。独立 review 已关闭 candidate 内 P1/P2，P0=0、P1=0；work commit=`UNCOMMITTED`、CI=`NOT_RUN`，不构成 numbered batch acceptance 或真实 provider 实现。30项hard gates继续为`0 PASS / 25 NOT_MET / 5 NOT_VERIFIABLE`、gap candidates=`10`；accepted batch仍为GateY-5，`FIRST_REAL_ORDER`、micro-live、credential访问、OKX network、真实PLACE/CANCEL与LIVE仍均未授权。
+- GateY：`IN PROGRESS / NOT FROZEN`；GateY-6B typed provider contract=`ACCEPTED / CI GREEN / CONTRACT ONLY`，implementation/acceptance head=`990f8c5680c23d02dec059ca72e7355f88faa72e`，exact-head CI run=`31811302301`；GateY-6C=`NOT_STARTED`。该子批次接受不构成 GateY/GateY-6 overall acceptance、真实 provider 实现或 GateY-FREEZE 授权。30 项 hard gates 继续为 `0 PASS / 25 NOT_MET / 5 NOT_VERIFIABLE`、gap candidates=`10`；`FIRST_REAL_ORDER`、micro-live、credential访问、OKX network、真实 PLACE/CANCEL 与 LIVE 仍均未授权。
 - LIVE=`DISABLED`，kill switch=`ENGAGED`；Shadow trading 未启用；AI、DH runtime、Integration runtime 未开始；real provider 与 private trading 未实现。
 - 唯一下一动作从 [STATUS.md](STATUS.md) 与 [ROADMAP.md](ROADMAP.md) 读取；本索引不建立第二份 action authority。

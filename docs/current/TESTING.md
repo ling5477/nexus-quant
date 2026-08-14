@@ -13618,3 +13618,21 @@ Known warnings：既有 SLF4J NOP 与 Mockito dynamic-agent warning；非阻断�
 | Codex Security / CodeRabbit | NOT RUN（未运行） | 不在项目 active skills allowlist；未冒充工具扫描，使用 scoped static/dynamic review、ArchUnit、wiring/no-outbound 与 full regression 替代 |
 
 Review closed findings：P1 mutation certainty、P1 order-response fill bounds、P2 pre-read response cap contract、P2 normalized result/fill invariants。P0/P1 open=`0/0`；真实 transport、credential、worker/runtime 接线与真实交易继续未实现、未授权。完整证据：[evidence/gate-y/NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-SECURITY-OPERATIONS-REVIEW.attempt-01.md](evidence/gate-y/NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-SECURITY-OPERATIONS-REVIEW.attempt-01.md)。
+
+## 2026-08-14 — GateY-6 engineering drift closeout and sub-batch authority normalization attempt-01
+
+结论：`PASS / GATEY_6_ENGINEERING_DRIFT_CLOSED / GOVERNANCE_1_5_0_FROZEN / NO_MORE_TASK_ID_SPECIFIC_OVERRIDES / GATEY_6B_ACCEPTED / CI_GREEN / FORMAL_SUBBATCH_AUTHORITY_ADOPTED / GATEY_6C_INITIALIZED / REAL_PROVIDER_NOT_IMPLEMENTED / PRIVATE_TRADING_NOT_IMPLEMENTED / FIRST_REAL_ORDER_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
+
+| Command / check | Result | Scope / environment / warnings / blocking |
+| --- | --- | --- |
+| starting baseline | PASS（通过） | `dev`；`HEAD == origin/dev == 990f8c5680c23d02dec059ca72e7355f88faa72e`；起始 dirty path 仅为保留的 GateY-6B post-CI blocker evidence；staged=0 |
+| GateY-6B exact-head CI | PASS（通过） | `31811302301 / NQ CI Baseline / completed / success / 10 jobs / bad=0`；`headSha=990f8c...72e` |
+| disposable sub-batch authority | PASS（通过） | actual/expected=`IMPLEMENTATION/IMPLEMENTATION`；target legal=`True`；temporary authority checker errors=0；active Gate、GateY overall、GateY-FREEZE 与 manifest disposition 均未变化 |
+| current authority | PASS（通过） | accepted=`GateY-6B / ACCEPTED|CI_GREEN`；work=`GateY-6C / NOT_STARTED / NONE / NOT_RUN`；authority errors=0 |
+| next-action regression | PASS（通过） | contract=`1.5.0`；`PASS / CURRENT_AUTHORITY_NEXT_ACTION_REGRESSION`；未增加 exact override、未修改 matcher/scripts |
+| doc links | PASS WITH HISTORICAL WARNINGS（通过并有历史 warning） | final=`302 checked / 14 historical warnings / 0 errors`；warning 均为 `TESTING.md` 既有 GateJ/GateX append-only 历史路径 |
+| hard-gate manifest | PASS（通过） | manifest diff=0；`30 gates / 0 PASS / 25 NOT_MET / 5 NOT_VERIFIABLE / 10 gap candidates`；G21=`NOT_MET/NOT_MET/NOT_MET` |
+| scoped diff / staging | PASS（通过） | 仅允许的 current docs、GateY evidence/index；product/scripts/migration/manifest/work-order/blocker tracked diff=0；staged=0；`git diff --check` exit=0 |
+| Maven/frontend/Python | NOT RUN（未运行） | 本轮为 docs-only authority sync，产品 diff=0；GateY-6B exact-head baseline CI 已核验，非阻断 |
+
+RCA：首次 disposable fixture 将单引号字符串中的换行 escape 作为字面量，checker 返回 `WORK_BATCH_BODY_CONTRADICTION`；改用真实换行后通过。首次嵌套 `powershell -File` link invocation 未正确传递 `-Roots` 数组并在扫描前失败，改为当前 PowerShell 直接数组调用后通过。完整证据：[evidence/gate-y/NQ-GATEY-6-ENGINEERING-DRIFT-CLOSEOUT-AND-SUBBATCH-AUTHORITY-NORMALIZATION.attempt-01.md](evidence/gate-y/NQ-GATEY-6-ENGINEERING-DRIFT-CLOSEOUT-AND-SUBBATCH-AUTHORITY-NORMALIZATION.attempt-01.md)。

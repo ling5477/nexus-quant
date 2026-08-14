@@ -18794,3 +18794,16 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：migration/manifest/frontend/research/deploy/`.github`/governance contract diff=0；real credential/OKX network/real mutation=`0/0/0`；real provider/private trading=`NOT_IMPLEMENTED`；FIRST_REAL_ORDER/micro-live未授权；LIVE disabled、kill engaged。
 - result：`PASS / GATEY_6B_REAL_PROVIDER_MUTATION_CONTRACT_SECURITY_REVIEW_ACCEPTED / P0_0 / P1_0 / REVIEW_ACCEPTED|READY_TO_COMMIT`；未 stage/commit/push/tag/deploy。
 - next：`NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-COMMIT-AND-PUSH`。
+
+## 2026-08-14 — GateY-6 engineering drift closeout and sub-batch authority normalization attempt-01
+
+- task：`NQ-GATEY-6-ENGINEERING-DRIFT-CLOSEOUT-AND-SUBBATCH-AUTHORITY-NORMALIZATION`；NQ-only、L 级 documentation/fact-source sync/authority normalization/engineering drift closeout。
+- baseline：`dev`；`HEAD == origin/dev == 990f8c5680c23d02dec059ca72e7355f88faa72e`；GateY-6B exact-head CI=`31811302301 / completed / success / 10 jobs / bad=0`；保留原 `BLOCKED / NEXT_ACTION_CONTRACT_UNDEFINED` evidence。
+- drift decision：Governance contract `1.5.0` 进入 maintenance mode；GateY-6A～6F 改用正式子批次 authority 与普通 lifecycle；不再新增 6C～6F task-ID-specific override，不再为单个 next action 修改 matcher，也不再以 checker compatibility 作为业务主线。
+- dry-run：`Get-GovernanceNextActionType=IMPLEMENTATION`；`Get-GovernanceExpectedNextActionType(NOT_STARTED)=IMPLEMENTATION`；target legal=`True`；temporary checker errors=0；active Gate、GateY overall acceptance/freeze authorization 与 manifest 均未变化。
+- authority：accepted batch=`GateY-6B / ACCEPTED|CI_GREEN / 990f8c...72e / CI 31811302301`；work batch=`GateY-6C / NOT_STARTED / NONE / NOT_RUN`；唯一 action=`NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-IMPLEMENTATION`。
+- scope：GateY-6B 只接受 typed provider contract；production transport、credential wiring、real signing/HTTP、worker binding、private trading、pilot 与 LIVE 不接受。GateY-6C 只初始化 scoped credential/IP/private permission/read-only verification；本轮 credential lookup/access、OKX calls=`0/0/0`。
+- hard gates：manifest未修改；`30 / 0 PASS / 25 NOT_MET / 5 NOT_VERIFIABLE / 10 gaps`；G21 capability/pilot/final=`NOT_MET/NOT_MET/NOT_MET`。
+- validation：authority errors=0；links=`302 checked / 14 historical warnings / 0 errors`；next-action regression PASS；product/scripts/migration/manifest/work-order/blocker tracked diff=0；staged=0；diff-check errors=0。Maven/frontend/Python=`NOT RUN / docs-only`。
+- result：`PASS / GATEY_6_ENGINEERING_DRIFT_CLOSED / GOVERNANCE_1_5_0_FROZEN / NO_MORE_TASK_ID_SPECIFIC_OVERRIDES / GATEY_6B_ACCEPTED / CI_GREEN / FORMAL_SUBBATCH_AUTHORITY_ADOPTED / GATEY_6C_INITIALIZED / FIRST_REAL_ORDER_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`；未 stage/commit/push/tag/deploy。
+- next：authority-sync commit 取得 exact-head CI green 后直接执行 `NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-IMPLEMENTATION`；不得插入 route validation、matcher hardening、plan review 或 authority-model review。完整证据：[evidence/gate-y/NQ-GATEY-6-ENGINEERING-DRIFT-CLOSEOUT-AND-SUBBATCH-AUTHORITY-NORMALIZATION.attempt-01.md](evidence/gate-y/NQ-GATEY-6-ENGINEERING-DRIFT-CLOSEOUT-AND-SUBBATCH-AUTHORITY-NORMALIZATION.attempt-01.md)。
