@@ -8,7 +8,7 @@
 - AI `NOT STARTED`（未开始）。
 - DH runtime `NOT INTEGRATED`（未集成）。
 - Integration-1 `NOT STARTED / mock-test-support only where applicable`（未开始 / 仅在适用处保留 mock 测试支撑）。
-- RealClient / real provider / private trading adapter / real permission probe `NOT IMPLEMENTED`（未实现）。
+- RealClient / real provider / private trading adapter `NOT IMPLEMENTED`（未实现）。OKX 受控真实 private read-only permission diagnostic 基础设施已存在，但默认 runtime 为 `NoReal`，只允许显式 profile 与 fail-closed safety 配置选择，不构成交易授权。
 
 ## 模块职责
 
@@ -26,7 +26,7 @@
 | `nq-eval` | evaluation、backtest run API 编排 owner | 不负责交易执行 |
 | `nq-observability` | 观测指标、健康、日志与运行可见性支撑 | 不承载业务决策 |
 | `nq-adapter-api` | 交易所 adapter contract | 不实现具体交易所调用，不代表 real adapter permission probe 已实现 |
-| `nq-adapter-okx` | OKX 交易所适配实现；当前不得解释为 real provider 已启用 | 不定义平台交易主语义，不实现真实 permission probe adapter |
+| `nq-adapter-okx` | OKX 交易所适配实现；提供受控 permission diagnostic 复用的 typed private read-only request/transport；当前不得解释为 real provider 已启用 | 不定义平台交易主语义，不提供 generic/mutating permission probe，不允许 startup/scheduler 自动 probe |
 | `nq-adapter-binance` | Binance 交易所适配实现；当前不得解释为 real provider 已启用 | 不定义平台交易主语义，不实现真实 permission probe adapter |
 | `frontend` | React / Vite / Ant Design / TanStack Query 控制台 | 不散写 API 请求，不做 AI / Agent / DH runtime 成熟页面 mock，不提供 LIVE / real trading 按钮 |
 | `research/py` | Python 独立离线研究工具链、CLI、pytest/mypy/ruff 验证 | 不进入 auth、recovery、ledger、live trading 主链，不表示 ML ready 或 live execution ready |

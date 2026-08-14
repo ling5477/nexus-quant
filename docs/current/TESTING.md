@@ -13636,3 +13636,20 @@ Review closed findings：P1 mutation certainty、P1 order-response fill bounds�
 | Maven/frontend/Python | NOT RUN（未运行） | 本轮为 docs-only authority sync，产品 diff=0；GateY-6B exact-head baseline CI 已核验，非阻断 |
 
 RCA：首次 disposable fixture 将单引号字符串中的换行 escape 作为字面量，checker 返回 `WORK_BATCH_BODY_CONTRADICTION`；改用真实换行后通过。首次嵌套 `powershell -File` link invocation 未正确传递 `-Roots` 数组并在扫描前失败，改为当前 PowerShell 直接数组调用后通过。完整证据：[evidence/gate-y/NQ-GATEY-6-ENGINEERING-DRIFT-CLOSEOUT-AND-SUBBATCH-AUTHORITY-NORMALIZATION.attempt-01.md](evidence/gate-y/NQ-GATEY-6-ENGINEERING-DRIFT-CLOSEOUT-AND-SUBBATCH-AUTHORITY-NORMALIZATION.attempt-01.md)。
+
+## 2026-08-15 — GateY-6C scoped credential/IP/private permission read-only verification attempt-02
+
+结论：`BLOCKED / OKX_PERMISSION_MODEL_CONFLICT / NO_SECRET_REQUESTED / NO_REMOTE_PROBE / NO_MUTATION / GATEY_HARD_GATE_CONTRACT_REMEDIATION_REQUIRED`（阻断 / OKX 权限模型冲突 / 未请求秘密 / 未执行远端探测 / 无变更调用 / 需要修正 hard-gate contract）。
+
+| Command / check | Result | Scope / environment / warnings / blocking |
+| --- | --- | --- |
+| Git/origin baseline | PASS（通过） | `dev` clean/staged empty；`HEAD == origin/dev == e90c61528a144ea258e571fcb4b93ce13c30bf76` |
+| exact-head CI | PASS（通过） | run=`31817056214 / NQ CI Baseline / completed / success`；head SHA 与 baseline 精确一致 |
+| current authority | PASS（通过） | errors=`0`；GateY-6B accepted，GateY-6C保持`NOT_STARTED`，LIVE disabled，kill engaged |
+| current code capability audit | PASS（通过） | 既有 typed GET account/config、exact credential JIT、default NoReal、explicit profile/safety flags、no startup call；只读审计，credential access/network=`0/0` |
+| OKX official permission audit | BLOCKING CONFLICT（阻断冲突） | 官方 `Trade` permission 同时包含 place/cancel、funding transfer 与 write settings；Funds transfer endpoint明确要求`Trade` privilege；因此 G08 minimum TRADE 与 G09 remote transfer unavailable不可同时满足 |
+| doc links | PASS WITH HISTORICAL WARNINGS（通过并有历史 warning） | `304 checked / 14 historical warnings / 0 errors`；warning均为既有 append-only 历史路径 |
+| backend focused/GateW/GateY-6B/ArchUnit/full Maven | NOT RUN（未运行） | 协议 blocker 在任何 Java 修改、credential lookup和真实 probe前触发；这是阻断项，不得解释为测试通过 |
+| remote authenticated probe | NOT RUN（未运行） | credential reference lookup/access=`0/0`；OKX calls/retry/mutation=`0/0/0` |
+
+完整证据：[evidence/gate-y/NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-IMPLEMENTATION.attempt-02.md](evidence/gate-y/NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-IMPLEMENTATION.attempt-02.md)。

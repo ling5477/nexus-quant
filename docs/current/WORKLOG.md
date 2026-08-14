@@ -18807,3 +18807,14 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - validation：authority errors=0；links=`302 checked / 14 historical warnings / 0 errors`；next-action regression PASS；product/scripts/migration/manifest/work-order/blocker tracked diff=0；staged=0；diff-check errors=0。Maven/frontend/Python=`NOT RUN / docs-only`。
 - result：`PASS / GATEY_6_ENGINEERING_DRIFT_CLOSED / GOVERNANCE_1_5_0_FROZEN / NO_MORE_TASK_ID_SPECIFIC_OVERRIDES / GATEY_6B_ACCEPTED / CI_GREEN / FORMAL_SUBBATCH_AUTHORITY_ADOPTED / GATEY_6C_INITIALIZED / FIRST_REAL_ORDER_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`；未 stage/commit/push/tag/deploy。
 - next：authority-sync commit 取得 exact-head CI green 后直接执行 `NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-IMPLEMENTATION`；不得插入 route validation、matcher hardening、plan review 或 authority-model review。完整证据：[evidence/gate-y/NQ-GATEY-6-ENGINEERING-DRIFT-CLOSEOUT-AND-SUBBATCH-AUTHORITY-NORMALIZATION.attempt-01.md](evidence/gate-y/NQ-GATEY-6-ENGINEERING-DRIFT-CLOSEOUT-AND-SUBBATCH-AUTHORITY-NORMALIZATION.attempt-01.md)。
+
+## 2026-08-15 — GateY-6C scoped credential/IP/private permission read-only verification attempt-02
+
+- task：`NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-IMPLEMENTATION`；NQ-only、L级、高风险credential/private API边界重试。
+- baseline：`dev` clean/staged empty；`HEAD == origin/dev == e90c61528a144ea258e571fcb4b93ce13c30bf76`；exact-head CI=`31817056214 / completed / success`；authority errors=`0`。
+- attempt-01：原 blocker=`CURRENT_AUTHORITY_CONFLICT`；本轮以current code事实最小修正`ARCHITECTURE.md`/`MODULES.md`，确认受控真实private read-only diagnostic基础设施已存在、默认`NoReal`且无startup/scheduler probe。
+- protocol：OKX官方`Trade` permission包含funding transfer；Funds transfer endpoint要求`Trade` privilege。G08 minimum TRADE与G09 remote transfer/funding unavailable无法由同一credential同时满足，NQ endpoint deny不能改变remote capability。
+- boundary：在credential lookup前停止；reference/material access=`0/0`，OKX call/retry/mutation=`0/0/0`，PLACE/CANCEL/transfer/withdraw=`0/0/0/0`；manifest/work order/governance/backend/migration均未修改。
+- validation：authority errors=`0`；links=`304 checked / 14 historical warnings / 0 errors`；diff-check=`0`；Maven/ArchUnit/remote probe=`NOT RUN / protocol hard blocker`。
+- result：`BLOCKED / OKX_PERMISSION_MODEL_CONFLICT / G08_TRADE_AND_G09_TRANSFER_REQUIREMENTS_NOT_SIMULTANEOUSLY_EXPRESSIBLE / NO_SECRET_REQUESTED / NO_REMOTE_PROBE / NO_MUTATION / GATEY_HARD_GATE_CONTRACT_REMEDIATION_REQUIRED`。
+- next：独立修正 hard-gate contract，明确接受remote `TRADE`包含funding transfer，并把remote permission、适用的account-level restriction与NQ `FUNDS_MOVEMENT`永久deny拆成三层事实；本轮未修改authority，GateY-6C仍`NOT_STARTED`。

@@ -8,7 +8,7 @@
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
 - Integration-1：`NOT STARTED / mock-test-support only where applicable`（未开始 / 仅在适用处保留 mock 测试支撑）。
-- RealClient / real provider / private trading adapter / real permission probe：`NOT IMPLEMENTED`（未实现）。
+- RealClient / real provider / private trading adapter：`NOT IMPLEMENTED`（未实现）。受控真实 private read-only permission diagnostic 基础设施已存在：只允许在显式 diagnostic profile 与全部 fail-closed safety 配置精确满足时选择；默认 runtime 使用 `NoReal`，尚未完成本轮 GateY-6C 真实 smoke，不构成交易授权。
 
 ## 总体架构
 
@@ -47,4 +47,4 @@ NexusQuant 当前由 Java 后端多模块、React 前端控制台、Python 离�
 - 不实现 DH runtime integration。
 - 不接 NQ RealClient，不接真实 Provider。
 - 不启用 LIVE，不新增真实下单、撤单、转账、提现路径。
-- 不实现真实 OKX / Binance permission probe adapter。
+- 不实现 generic/mutating permission probe。既有 OKX private read-only diagnostic 只能显式人工触发 typed `GET` 请求，不允许 startup/scheduler 自动 probe，不允许 mutation，也不得解释为 RealClient、real provider、private trading 或 LIVE authorization；Binance real permission probe 仍未实现。
