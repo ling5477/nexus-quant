@@ -6,9 +6,9 @@ NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/
 
 <!-- nq-current-summary:start -->
 - 最近冻结 Gate 为 GateX：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [docs/gates/gate-x/](docs/gates/gate-x/)，release tag=`nq-gatex-freeze`。
-- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-PLAN、GateY-1、GateY-2、GateY-3、GateY-4 与 GateY-5 均为 `ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateY-6=`REVIEW ACCEPTED / READY TO COMMIT`（审查已接受 / 可进入提交前复核）。
+- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-PLAN、GateY-1、GateY-2、GateY-3、GateY-4 与 GateY-5 均为 `ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateY-6=`COMMITTED / CI GREEN / CONTINUE REQUIRED`（已提交 / CI 已通过 / 必须继续同批次受控实施）。
 - Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEY-6-EXPLICIT-MICRO-LIVE-AUTHORIZATION-PREFLIGHT-AND-WORK-ORDER-COMMIT-AND-PUSH`；GateY-6 work order只定义hard-gate/exact pilot/120h soak合同，不构成micro-live或第一笔真实订单授权，exact transition以 [STATUS.md](docs/current/STATUS.md) 为准。
+- 当前唯一动作是 `NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-IMPLEMENTATION`；它只允许在独立任务中启动 GateY-6B 的 fake/stub/no-egress contract implementation，不授权 credential lookup、OKX network、真实 PLACE/CANCEL、micro-live、第一笔真实订单或 LIVE，exact transition以 [STATUS.md](docs/current/STATUS.md) 为准。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
 

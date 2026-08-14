@@ -18757,3 +18757,17 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：GateY machine authority unchanged；product/migration/deploy/`.github` diff=`0`；credential/OKX/PLACE/CANCEL/worker/production operation=`0`；FIRST_REAL_ORDER/micro-live not authorized，LIVE disabled，kill engaged。
 - result：`PASS / REVIEW_ACCEPTED|READY_TO_COMMIT / P0_0 / P1_0`；未 stage/commit/push/tag。
 - next：`NQ-GOVERNANCE-GATEY6-CONTINUATION-CONTRACT-HARDENING-AND-LIFECYCLE-COMMIT-AND-PUSH`。
+
+## 2026-08-14 — GateY-6A post-CI continuation and GateY-6B initialization attempt-02
+
+- task：`NQ-GATEY-6A-POST-CI-CONTINUATION-AND-GATEY-6B-INITIALIZATION`；NQ-only、L级documentation/fact-source sync/post-CI authority reconciliation。
+- baseline：`dev` clean/staged empty；fetch后`HEAD == origin/dev == 9e99e037b6ec4d7723f9714ff18f41a7364942c4`；authority before=`GateY-5 accepted / GateY-6 REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`。
+- evidence：GateY-6A work commit=`621736e9a282d0f7684e2527fe86fe8e1faf506d`，exact-head CI=`31774122178 / completed / success / 10 jobs / bad=0`；governance fix=`9e99e037b6ec4d7723f9714ff18f41a7364942c4`，exact-head CI=`31786614783 / completed / success / 10 jobs / bad=0`；contract=`1.5.0`。
+- blocker history：原post-CI attempt-01=`BLOCKED / NEXT_ACTION_CONTRACT_UNDEFINED`；当前仓库无同名attempt-01 tracked evidence，故本attempt-02只记录并保留历史结果，不补造、覆盖或删除历史文件。
+- matcher：generic continuation仍为`SECURITY_RISK_REVIEW`；精确GateY-6 tuple effective/actual=`IMPLEMENTATION/IMPLEMENTATION`、legal=true；要求的负例均拒绝；完整next-action regression PASS。
+- authority：accepted batch保持`GateY-5 / ACCEPTED|CI_GREEN`；work batch追平为`GateY-6 / COMMITTED|CI_GREEN|CONTINUE_REQUIRED / 621736e9... / 31774122178`；next action=`NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-IMPLEMENTATION`。
+- hard gates：manifest未修改；实际重算`30 / 0 PASS / 25 NOT_MET / 5 NOT_VERIFIABLE / 10 gap candidates`；无unauthorized promotion。
+- GateY-6B：只初始化后续fake/stub/no-egress contract implementation；本轮产品代码、credential lookup、OKX network、PLACE/CANCEL、worker、production operation均为0。
+- validation：authority errors=`0`；next-action regression PASS；nested link invocation因数组边界在扫描前失败，direct-array修正后final=`295 checked / 14 historical warnings / 0 errors`；changed/expected/unexpected/missing=`9/9/0/0`、staged=`0`；product/scripts/migration/manifest diff=`0/0/0/0`；diff-check errors=`0`。
+- result：`PASS / GATEY_6A_POST_CI_CONTINUATION_ACCEPTED / COMMITTED_CI_GREEN_CONTINUE_REQUIRED / GATEY_6B_INITIALIZED / FIRST_REAL_ORDER_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`；未stage/commit/push/tag/deploy。
+- next：operational=`COMMIT_GATEY_6A_AUTHORITY_SYNC_AND_WAIT_EXACT_HEAD_CI`；machine authority=`NQ-GATEY-6-OKX-SPOT-REAL-PROVIDER-MUTATION-CONTRACT-IMPLEMENTATION`，两者不得混淆。

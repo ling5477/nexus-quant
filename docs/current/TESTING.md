@@ -13560,3 +13560,24 @@ RCA 分类=`PERFORMANCE_REGRESSION`：100+ 串行 child process 长尾 + 原 har
 | product/security boundary | PASS / ZERO SIDE EFFECT（通过 / 无副作用） | product/migration/deploy/`.github` diff=`0`；credential/OKX/PLACE/CANCEL/worker/production operation=`0`；LIVE disabled、kill engaged |
 
 Known warning / non-blocking：PS5.1 lifecycle 仍约 4m40s，process-heavy 但每个 child 60 秒有界；不并行化 authority mutation fixtures。审查中一次 parse-only wrapper 参数错误与一次 process-tree probe fixture 的 pwsh path 拆分均已 RCA 并修正，随后双 shell full regression green。完整证据：[evidence/gate-y/NQ-GOVERNANCE-GATEY6-CONTINUATION-CONTRACT-HARDENING-AND-LIFECYCLE-SECURITY-REVIEW.attempt-01.md](evidence/gate-y/NQ-GOVERNANCE-GATEY6-CONTINUATION-CONTRACT-HARDENING-AND-LIFECYCLE-SECURITY-REVIEW.attempt-01.md)。
+
+## 2026-08-14 — GateY-6A post-CI continuation and GateY-6B initialization attempt-02
+
+结论：`PASS / GATEY_6A_POST_CI_CONTINUATION_ACCEPTED / GOVERNANCE_CONTRACT_1_5_0_VERIFIED / ORIGINAL_NEXT_ACTION_BLOCKER_CLOSED / GATEY_6_WORK_BATCH_CONTINUES / COMMITTED_CI_GREEN_CONTINUE_REQUIRED / GATEY_6B_INITIALIZED / REAL_PROVIDER_NOT_IMPLEMENTED / PRIVATE_TRADING_NOT_IMPLEMENTED / FIRST_REAL_ORDER_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
+
+| Command / check | Result | Scope / environment / warnings / blocking |
+| --- | --- | --- |
+| Git/origin baseline | PASS（通过） | `dev` clean/staged empty；fetch后`HEAD == origin/dev == 9e99e037b6ec4d7723f9714ff18f41a7364942c4` |
+| GateY-6A exact-head CI | PASS（通过） | run=`31774122178 / NQ CI Baseline / completed / success / 10 jobs / bad=0`；headSha=`621736e9a282d0f7684e2527fe86fe8e1faf506d`；commit可从`origin/dev`到达 |
+| Governance fix exact-head CI | PASS（通过） | run=`31786614783 / NQ CI Baseline / completed / success / 10 jobs / bad=0`；headSha=`9e99e037b6ec4d7723f9714ff18f41a7364942c4`；contract=`1.5.0` |
+| matcher positive/negative | PASS（通过） | generic=`SECURITY_RISK_REVIEW`；GateY-6 effective/actual=`IMPLEMENTATION/IMPLEMENTATION`、legal=true；GateY-5、GateW arbitrary implementation、wrong status/batch、lowercase、near-match均false |
+| `scripts/docs/test-current-authority-next-action.ps1` | PASS（通过） | exit=`0`；`PASS / CURRENT_AUTHORITY_NEXT_ACTION_REGRESSION` |
+| hard-gate manifest reconstruction | PASS（通过） | manifest diff=`0`；`gates=30`、`PASS/NOT_MET/NOT_VERIFIABLE=0/25/5`、gap candidates=`10`；authorization/FIRST_REAL_ORDER/micro-live/LIVE/kill保持安全值 |
+| first nested link-check invocation | FAILED BEFORE SCAN（扫描前失败） | nested `powershell -File` 未保持`-Roots`数组边界，`PositionalParameterNotFound`；未执行链接扫描、无写副作用 |
+| corrected direct-array link checker | PASS WITH HISTORICAL WARNINGS（通过并有历史warning） | 初次corrected run=`294 checked / 14 historical warnings / 0 errors`；ledger追加后final rerun=`295 checked / 14 historical warnings / 0 errors`；warnings均为append-only ledger既有GateJ/GateX历史路径 |
+| authority / diff / forbidden-area final rerun | PASS（通过） | authority errors=`0`；changed/expected/unexpected/missing=`9/9/0/0`、staged=`0`；`git diff --check` errors=`0`，仅LF→CRLF working-tree warning；product/scripts/migration/hard-gate manifest diff=`0/0/0/0` |
+| full lifecycle suite | NOT RUN（未运行） | final `scripts/docs/**` diff=`0`，且governance fix exact-head CI已独立验证green；按任务约定不重复约4分钟suite，非阻断 |
+| Product tests | NOT RUN（未运行） | documentation-only；final backend/frontend/research/migration/scripts/deploy/`.github` diff=`0`，不运行Maven/frontend/Python tests |
+| Security/trading boundary | PASS / ZERO SIDE EFFECT（通过 / 无副作用） | credential/OKX/real PLACE/real CANCEL/worker/production operation=`0/0/0/0/0/0`；real provider/private trading NOT_IMPLEMENTED；FIRST_REAL_ORDER/micro-live NOT_AUTHORIZED；LIVE disabled、kill engaged |
+
+GateY-6B仅获得后续独立fake/stub/no-egress contract implementation的治理启动资格；authority-sync commit取得新的exact-head CI green前不得开始实现。完整证据：[evidence/gate-y/NQ-GATEY-6A-POST-CI-CONTINUATION-AND-GATEY-6B-INITIALIZATION.attempt-02.md](evidence/gate-y/NQ-GATEY-6A-POST-CI-CONTINUATION-AND-GATEY-6B-INITIALIZATION.attempt-02.md)。
