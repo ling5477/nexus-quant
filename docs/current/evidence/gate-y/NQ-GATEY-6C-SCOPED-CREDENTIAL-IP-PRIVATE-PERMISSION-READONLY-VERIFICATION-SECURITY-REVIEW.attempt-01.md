@@ -121,4 +121,3 @@ IDE terminal 因 PowerShell executable path 引号解析返回 `Illegal char <">
 - review decision：`FAIL / GATEY_6C_SECURITY_REVIEW_REJECTED / P0_0 / P1_1 / MANAGEMENT_PASSWORD_INCIDENT_CONTAINMENT_NOT_PROVEN / AUTHORITY_UNCHANGED / NOT_READY_TO_COMMIT`。
 - remediation：不得读取或复制密码；由有权限的 operator 在安全边界外完成 terminal transcript/history/log/artifact residual 清理与失效确认，只提交不含密码内容的脱敏 containment attestation；同时提供目标 DB 的 allowlisted、read-only、脱敏 summary/audit 聚合证据。完成后重跑本 Security Review，仍不得重跑 OKX probe。
 - commit recommendation 保留为未来通过后使用：`feat(gatey): verify scoped OKX pilot credential readiness`；当前不建议 stage/commit。
-
