@@ -18818,3 +18818,16 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - validation：authority errors=`0`；links=`304 checked / 14 historical warnings / 0 errors`；diff-check=`0`；Maven/ArchUnit/remote probe=`NOT RUN / protocol hard blocker`。
 - result：`BLOCKED / OKX_PERMISSION_MODEL_CONFLICT / G08_TRADE_AND_G09_TRANSFER_REQUIREMENTS_NOT_SIMULTANEOUSLY_EXPRESSIBLE / NO_SECRET_REQUESTED / NO_REMOTE_PROBE / NO_MUTATION / GATEY_HARD_GATE_CONTRACT_REMEDIATION_REQUIRED`。
 - next：独立修正 hard-gate contract，明确接受remote `TRADE`包含funding transfer，并把remote permission、适用的account-level restriction与NQ `FUNDS_MOVEMENT`永久deny拆成三层事实；本轮未修改authority，GateY-6C仍`NOT_STARTED`。
+
+## 2026-08-15 — GateY-6C hard-gate permission contract remediation attempt-01
+
+- task：`NQ-GATEY-6C-HARD-GATE-PERMISSION-CONTRACT-REMEDIATION`；NQ-only、L级、docs/contract-only safety remediation。
+- baseline：`dev` clean/staged empty；`HEAD == origin/dev == 0b42a2e8b6a8bef5828a4c2523ba19ab57c02f0e`；exact-head CI=`31820717419 / completed / success`；authority errors=`0`。
+- official protocol：2026-08-15只读取OKX官方docs；确认 `Trade` permission固有包含funding transfer，`POST /api/v5/asset/transfer`要求Trade privilege，`GET /api/v5/account/config`返回`ip`与`perm`。Authenticated OKX API call=`0`。
+- remediation：G08明确remote `READ + TRADE` required、`WITHDRAW` forbidden、IP binding required及 `INHERENT_OKX_TRADE_PERMISSION_RESIDUAL`；G09改为funds-movement containment + withdraw-deny，并把remote permission、account-level policy与NQ runtime containment拆成三层事实。
+- NQ containment：`SpotExecutionProviderPort`、reviewed worker/transport surface无transfer/withdraw；typed endpoint policy default-deny funds movement；raw/arbitrary private path不可表达。Remote capability不等于application/FIRST_REAL_ORDER/LIVE authorization。
+- manifest：schema v1不变；G08=`NOT_MET/NOT_VERIFIABLE/NOT_MET`，G09=`PASS/NOT_VERIFIABLE/NOT_VERIFIABLE`；`30 gates / 0 PASS / 25 NOT_MET / 5 NOT_VERIFIABLE / 10 gaps`；authorization/LIVE/kill/provider/private-trading safety fields不变。
+- validation：manifest reader regression PASS；authority errors=`0`；next-action regression PASS；final links=`306 checked / 14 historical warnings / 0 errors`；diff-check exit=`0`；allowlist=`6/6`、forbidden diff=`0`。一次nested `powershell -File` link invocation因数组参数拆分在扫描前失败，direct-array重跑通过。Maven/frontend/Python=`NOT RUN / docs-only`。
+- boundary：credential reference/material access=`0/0`；authenticated OKX API/mutation/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0`；product/scripts/governance/STATUS/ARCHITECTURE/MODULES diff=`0`；未stage/commit/push/tag/deploy。
+- result：`PASS / GATEY_6C_PERMISSION_CONTRACT_REMEDIATED / OKX_TRADE_TRANSFER_SEMANTICS_ACKNOWLEDGED / G08_G09_LAYERED / REMOTE_WITHDRAW_FORBIDDEN / REMOTE_TRANSFER_CAPABILITY_NOT_MISREPRESENTED / NQ_FUNDS_MOVEMENT_DENY_PRESERVED / HARD_GATE_COUNTS_UNCHANGED / FIRST_REAL_ORDER_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
+- next：`COMMIT_PERMISSION_CONTRACT_REMEDIATION` → exact-head CI → rerun `NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-IMPLEMENTATION`；不创建GateY-6C2。

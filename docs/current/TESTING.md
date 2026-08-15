@@ -13653,3 +13653,25 @@ RCA：首次 disposable fixture 将单引号字符串中的换行 escape 作为�
 | remote authenticated probe | NOT RUN（未运行） | credential reference lookup/access=`0/0`；OKX calls/retry/mutation=`0/0/0` |
 
 完整证据：[evidence/gate-y/NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-IMPLEMENTATION.attempt-02.md](evidence/gate-y/NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-IMPLEMENTATION.attempt-02.md)。
+
+## 2026-08-15 — GateY-6C hard-gate permission contract remediation attempt-01
+
+结论：`PASS / GATEY_6C_PERMISSION_CONTRACT_REMEDIATED / OKX_TRADE_TRANSFER_SEMANTICS_ACKNOWLEDGED / G08_G09_LAYERED / REMOTE_WITHDRAW_FORBIDDEN / REMOTE_TRANSFER_CAPABILITY_NOT_MISREPRESENTED / NQ_FUNDS_MOVEMENT_DENY_PRESERVED / HARD_GATE_COUNTS_UNCHANGED / FIRST_REAL_ORDER_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`（通过 / permission合同已修复 / 状态与授权边界不变 / 可进入提交前复核）。
+
+| Command / check | Result | Scope / environment / warnings / blocking |
+| --- | --- | --- |
+| Git/origin baseline | PASS（通过） | `dev` clean/staged empty；`HEAD == origin/dev == 0b42a2e8b6a8bef5828a4c2523ba19ab57c02f0e` |
+| exact-head CI | PASS（通过） | run=`31820717419 / NQ CI Baseline / completed / success`；head SHA精确一致 |
+| OKX official docs audit | PASS（通过） | 2026-08-15只读取`www.okx.com/docs-v5`公开文档；确认Read/Trade/Withdraw、Trade包含funding transfer、account/config返回`ip`/`perm`、asset/transfer要求Trade；authenticated OKX API call=`0` |
+| hard-gate manifest reader regression | PASS（通过） | JSON parse；schema=`gatey6-first-real-order-hard-gate.v1`；reader policy fields=`8`；gates=`30`；final=`0/25/5`；gaps=`10`；logic/evidence/count/safety errors=`0` |
+| G08/G09 invariance | PASS（通过） | G08=`NOT_MET/NOT_VERIFIABLE/NOT_MET`；G09=`PASS/NOT_VERIFIABLE/NOT_VERIFIABLE`；status changes=`0` |
+| current authority | PASS（通过） | errors=`0`；GateY-6B accepted、GateY-6C not started、canonical next action、LIVE disabled、kill engaged均未变化 |
+| next-action regression | PASS（通过） | `PASS / CURRENT_AUTHORITY_NEXT_ACTION_REGRESSION`；scripts/governance diff=`0` |
+| doc links | PASS WITH HISTORICAL WARNINGS（通过并有历史warning） | final=`306 checked / 14 historical warnings / 0 errors`；warning均为既有append-only GateJ/GateX历史路径 |
+| diff/scope | PASS（通过） | final `git diff --check` exit=`0`；仅6个allowlisted docs/manifest paths；backend/frontend/research/migration/scripts/deploy/`.github`与STATUS/ARCHITECTURE/MODULES/governance diff=`0` |
+| credential / mutation boundary | PASS / ZERO SIDE EFFECT（通过 / 无副作用） | credential reference/material access=`0/0`；authenticated OKX API/mutation/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0`；worker/production/LIVE enable/kill disengage=`0/0/0/0` |
+| Maven/frontend/Python | NOT RUN（未运行） | docs/contract-only；product、migration与workflow diff=`0`，使用已核验exact-head CI；非阻断 |
+
+RCA：最终汇总中的嵌套 `powershell -File` 调用把 `-Roots` 数组拆成位置参数，link checker以 `PositionalParameterNotFound` 在扫描前失败；改用当前PowerShell直接数组调用后得到final `306/14/0`。该诊断无写副作用，不是文档链接失败。
+
+完整证据：[evidence/gate-y/NQ-GATEY-6C-HARD-GATE-PERMISSION-CONTRACT-REMEDIATION.attempt-01.md](evidence/gate-y/NQ-GATEY-6C-HARD-GATE-PERMISSION-CONTRACT-REMEDIATION.attempt-01.md)。

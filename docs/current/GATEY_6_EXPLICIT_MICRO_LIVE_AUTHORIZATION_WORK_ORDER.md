@@ -55,8 +55,8 @@
 | `G05` | ExecutionIntent/Receipt traceability | PLAN | PASS | NOT_MET | NOT_MET | `E-Y3-EXECUTION` | port reviewed contract to real provider and bind exact pilot session |
 | `G06` | intentId idempotency | PLAN | PASS | NOT_MET | NOT_MET | `E-Y3-EXECUTION` | prove stable client order ID mapping against OKX contract tests |
 | `G07` | private endpoint allowlist | PLAN | NOT_MET | NOT_MET | NOT_MET | `E-CURRENT-OKX-AUDIT` | implement typed exact mutation allowlist; arbitrary path remains forbidden |
-| `G08` | scoped pilot credential minimum TRADE permission | PLAN | NOT_MET | NOT_VERIFIABLE | NOT_MET | `E-Y4-SECURITY` | extend reviewed capability from read-only to exact pilot TRADE scope; later verify remotely without mutation |
-| `G09` | transfer/withdraw disabled proof | PLAN | PASS | NOT_VERIFIABLE | NOT_VERIFIABLE | `E-Y4-SECURITY` | local policy fail-closes, but exact remote pilot permission proof is absent |
+| `G08` | scoped pilot credential READ + TRADE permission / WITHDRAW forbidden | PLAN | NOT_MET | NOT_VERIFIABLE | NOT_MET | `E-Y4-SECURITY` | verify dedicated key has READ + TRADE, lacks WITHDRAW and is IP-bound；明确接受 OKX TRADE 固有 funding-transfer capability，但不把它解释为 NQ 资金移动授权 |
+| `G09` | funds-movement containment and withdraw-deny proof | PLAN | PASS | NOT_VERIFIABLE | NOT_VERIFIABLE | `E-Y4-SECURITY` | NQ local containment capability存在；exact key 的 WITHDRAW absence、NQ runtime不可达证明及适用的account-level restriction仍需分层核验 |
 | `G10` | IP allowlist | PLAN | PASS | NOT_VERIFIABLE | NOT_VERIFIABLE | `E-Y4-SECURITY` | exact pilot egress IP and remote key binding are unresolved |
 | `G11` | kill propagation | PLAN | PASS | NOT_MET | NOT_MET | `E-Y4-SECURITY`,`E-Y5-OPS` | bind exact session/revision/deadline and independent disengage authorization |
 | `G12` | order/fill/account/position reconciliation | PLAN | PASS | NOT_MET | NOT_MET | `E-Y3-EXECUTION`,`E-Y5-OPS` | implement and review real OKX query/fill/account convergence |
@@ -118,17 +118,31 @@ Candidate endpoint allowlist（仅供后续实现与审查，本轮未调用）�
 
 ## 7. Credential readiness and future procedure
 
+### 7.1 Permission safety model
+
+本工作单固定以下三层安全模型；三层事实必须独立观察、独立记录，不得合并成一个 permission PASS：
+
+| Layer | Required fact | Boundary |
+| --- | --- | --- |
+| Layer A — Remote API Key permission | future pilot key必须 `READ=REQUIRED`、`TRADE=REQUIRED`、`WITHDRAW=FORBIDDEN`、`IP_BINDING=REQUIRED` | OKX `TRADE` permission固有包含 funding-transfer capability；不得记录 `remoteTransferCapability=false`，也不得把该能力解释为已授权的 NQ funds-movement path |
+| Layer B — Exchange/account policy | exact pilot account/sub-account若存在额外 transfer restriction，只能单独记录 `VERIFIED / NOT_VERIFIABLE / NOT_APPLICABLE` | 某一种 sub-account transfer被限制，不证明所有 funding transfer不可执行；account-level policy不得与API-key permission合并为PASS |
+| Layer C — NQ application/runtime | `FUNDS_MOVEMENT=DENY`；TRANSFER/WITHDRAW operation均不暴露 | `SpotExecutionProviderPort`和已审查worker surface均无transfer/withdraw；typed endpoint policy default-deny funds movement；raw/arbitrary private path不可表达 |
+
+因此：`remote permission capability != application authorization != FIRST_REAL_ORDER authorization != LIVE authorization`。`FIRST_REAL_ORDER=NOT_AUTHORIZED`继续成立。
+
+已知残余风险固定为 `INHERENT_OKX_TRADE_PERMISSION_RESIDUAL`：未来 pilot key 因 `TRADE` 而保留OKX远端funding-transfer capability。该风险不属于NQ application containment失败，但必须显式保留，并继续依赖既有防御纵深：dedicated pilot credential、IP allowlist、WITHDRAW absent、single account scope、tiny capital cap、single-order cap、daily-loss cap、typed provider、NQ funds-movement unreachable、kill switch engaged与manual approval。以上均引用本工作单既有hard gates/scope/risk/kill/approval合同，不新增重复hard gate。
+
 | Contract | Status | Required behavior |
 | --- | --- | --- |
 | credential reference | PASS / CAPABILITY ONLY | durable facts只保存 opaque reference；不得保存 credential material |
-| credential scope | NOT_MET | dedicated GateY pilot key；OKX Spot；minimum TRADE；无额外能力 |
-| permission probe | NOT_VERIFIABLE | future read-only verification必须证明TRADE与withdraw事实；OKX remote permission model若不能独立证明transfer/funding unavailable，则该remote事实继续NOT_VERIFIABLE，且NQ typed endpoint policy仍必须永久deny transfer/funding |
+| credential scope | NOT_MET | dedicated GateY pilot key；OKX Spot；READ + TRADE required；WITHDRAW forbidden；IP binding required；显式接受TRADE固有funding-transfer capability |
+| permission probe | NOT_VERIFIABLE | future read-only verification只读取 `GET /api/v5/account/config` 的sanitized `perm`/`ip`事实，证明READ + TRADE present、WITHDRAW absent与IP binding；适用的account-level transfer restriction单独记录，不执行transfer probe或任何mutation |
 | expiry | NOT_MET | expiry早于/等于 pilot approval window，并有 fail-close clock check |
 | rotation/revoke | NOT_MET | freeze rotation plan、revoke trigger、post-session revoke/disable verification |
 | JIT access | PASS / CAPABILITY ONLY | 仅被 exact worker identity按 exact credential reference短时读取；不得进入 control plane |
 | logging/redaction | PASS / CAPABILITY ONLY | 禁止 raw credential、签名串、private headers/body；只记录 reference/status/audit code |
 
-Pilot status 固定为：`SCOPED_PILOT_CREDENTIAL=NOT_MET`、`TRADE_PERMISSION=NOT_VERIFIABLE`、`WITHDRAW_DISABLED=NOT_VERIFIABLE`、`TRANSFER_DISABLED=NOT_VERIFIABLE`、`IP_ALLOWLIST=NOT_VERIFIABLE`。
+Pilot status 固定为：`SCOPED_PILOT_CREDENTIAL=NOT_MET`、`READ_TRADE_PERMISSION=NOT_VERIFIABLE`、`WITHDRAW_FORBIDDEN=NOT_VERIFIABLE`、`IP_ALLOWLIST=NOT_VERIFIABLE`、`ACCOUNT_LEVEL_TRANSFER_RESTRICTION=NOT_VERIFIABLE`；NQ application contract继续为 `FUNDS_MOVEMENT=DENY`。这些状态不得误写为remote transfer capability absent。
 
 未来 credential 必须通过 NQ credential management/JIT 管理，由独立 GateY pilot key 承载。禁止通过 chat、Markdown、Git/env file、shell history、CLI argument、test fixture 或 evidence file 传递 credential material。
 
@@ -267,7 +281,7 @@ Candidate acceptance：duration=`120h`、manual start、single account、single 
 
 必须记录：orders attempted/accepted/rejected、fills、partial fills、cancels、unknown results、reconciliation cases、kill events、risk denials、latency、fees/slippage、position drift、ledger drift与permission drift。每条事实绑定session/account/release/risk/scope hash/order/intent/run identity，不记录 credential material。
 
-Immediate-stop conditions：credential permission drift；withdraw unexpectedly enabled；transfer/funding capability observed；IP allowlist mismatch；unexpected endpoint；fake/real fallback ambiguity；kill inconsistency；worker identity/release/risk/scope hash mismatch；unresolved unknown；reconciliation blocked；order/fill/position/ledger divergence；risk cap/daily loss breach；instrument metadata inconsistency；clock failure；secret leakage；unexpected real network path。
+Immediate-stop conditions：credential permission drift；WITHDRAW unexpectedly enabled；NQ transfer/withdraw operation变为可达；适用的account-level transfer restriction发生不利漂移；IP allowlist mismatch；unexpected endpoint；fake/real fallback ambiguity；kill inconsistency；worker identity/release/risk/scope hash mismatch；unresolved unknown；reconciliation blocked；order/fill/position/ledger divergence；risk cap/daily loss breach；instrument metadata inconsistency；clock failure；secret leakage；unexpected real network path。OKX `TRADE` 固有funding-transfer capability本身是已知残余，不伪装成首次观察到的异常；任何NQ funds-movement reachability仍立即停止。
 
 任一 stop-severity 条件触发：`ENGAGE KILL`、`STOP NEW INTENTS`、`NO AUTO RESTART`、terminal/frozen session、保留 evidence并进入独立incident review。
 

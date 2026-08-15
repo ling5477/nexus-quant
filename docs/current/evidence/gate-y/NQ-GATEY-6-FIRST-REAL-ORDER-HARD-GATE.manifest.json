@@ -253,25 +253,25 @@
     },
     {
       "id": "G08",
-      "name": "scoped pilot credential minimum TRADE permission",
+      "name": "scoped pilot credential READ and TRADE permission with WITHDRAW forbidden",
       "gateType": "PLAN",
       "capabilityStatus": "NOT_MET",
       "pilotBindingStatus": "NOT_VERIFIABLE",
       "finalGateStatus": "NOT_MET",
       "evidenceRefs": ["E-Y4-SECURITY"],
-      "blocker": "Accepted capability is private read-only; no exact pilot credential exists.",
-      "nextRequiredAction": "Extend reviewed scope contract, then verify dedicated pilot permission without mutation."
+      "blocker": "No exact pilot credential exists. READ and TRADE are required, WITHDRAW is forbidden, and OKX TRADE inherently retains funding-transfer capability as an explicit residual rather than an authorized NQ funds-movement path.",
+      "nextRequiredAction": "Without mutation, verify dedicated pilot READ and TRADE permissions, WITHDRAW absence and IP binding; record the inherent OKX TRADE funding-transfer residual explicitly."
     },
     {
       "id": "G09",
-      "name": "transfer and withdraw disabled proof",
+      "name": "funds-movement containment and withdraw-deny proof",
       "gateType": "PLAN",
       "capabilityStatus": "PASS",
       "pilotBindingStatus": "NOT_VERIFIABLE",
       "finalGateStatus": "NOT_VERIFIABLE",
       "evidenceRefs": ["E-Y4-SECURITY"],
-      "blocker": "Local fail-close policy exists; remote pilot key facts are unavailable.",
-      "nextRequiredAction": "Verify withdraw false and transfer/funding unavailable through sanitized read-only facts."
+      "blocker": "NQ local containment capability exists, but exact remote WITHDRAW absence and any applicable account-level transfer restriction are unavailable; OKX TRADE funding-transfer capability is inherent and is not represented as absent.",
+      "nextRequiredAction": "Verify remote WITHDRAW absence, prove NQ TRANSFER and WITHDRAW operations remain unreachable across provider, worker and endpoint policy, and observe any applicable account-level transfer restriction separately."
     },
     {
       "id": "G10",
