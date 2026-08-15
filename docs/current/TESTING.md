@@ -13675,3 +13675,85 @@ RCA：首次 disposable fixture 将单引号字符串中的换行 escape 作为�
 RCA：最终汇总中的嵌套 `powershell -File` 调用把 `-Roots` 数组拆成位置参数，link checker以 `PositionalParameterNotFound` 在扫描前失败；改用当前PowerShell直接数组调用后得到final `306/14/0`。该诊断无写副作用，不是文档链接失败。
 
 完整证据：[evidence/gate-y/NQ-GATEY-6C-HARD-GATE-PERMISSION-CONTRACT-REMEDIATION.attempt-01.md](evidence/gate-y/NQ-GATEY-6C-HARD-GATE-PERMISSION-CONTRACT-REMEDIATION.attempt-01.md)。
+
+## 2026-08-15 — GateY-6C scoped credential/IP/private permission read-only verification implementation attempt-03
+
+结论：`BLOCKED / API_KEY_REQUIRED`（阻断 / 缺少可用 API key）。GateW/GateY typed permission policy 与安全边界实现、focused tests、GateY-4/GateY-6B/ArchUnit 和全量 backend 均通过；本地 metadata-only 查询没有找到 active `OKX / LIVE / OKX_API_V5` exact credential，故 authenticated remote probe 未运行，authority 保持 GateY-6C `NOT_STARTED`。
+
+| Command / check | Result | Scope / environment / known warnings / blocking |
+| --- | --- | --- |
+| focused account/probe/API/Spring Maven tests | PASS（通过） | core/infra/API/Spring=`16/8/7/9`，failures/errors=`0/0`；覆盖 GateW preserve、GateY READ+TRADE、WITHDRAW hard fail、unknown/malformed fail-close、IP non-match fail-close、audit metadata 与 Spring profile isolation |
+| `scripts/gatey/tests/run-gatey4-deployment-boundary-regression.ps1` | PASS（通过） | no-start/no-secret/no-network；非阻断 |
+| GateY-6B + ArchUnit regression | PASS（通过） | core/adapter/app-architecture=`9/28/24`，failures/errors=`0/0`；FUNDS_MOVEMENT deny、default NoReal 与 mutation unreachable 保持 |
+| `mvn -f backend/pom.xml test` | PASS（通过） | 最终 audit 语义修正后完整重跑；23/23 modules `BUILD SUCCESS`，failures/errors=`0/0`；`nq-app=281 tests / 27 skipped`；1:02 min（修正前也曾于 59.547s 通过） |
+| `mvn -f backend/pom.xml -pl nq-core "-Dtest=CredentialPermissionProbeServiceTest" test` | PASS（通过） | 最终 audit 语义收紧后 16/16，failures/errors/skipped=`0/0/0`；证明 `SKIPPED` 不会把本地 withdraw risk 伪装成 remote detection |
+| local PostgreSQL metadata-only exact-candidate query | PASS / ZERO CANDIDATE（通过 / 无候选） | exit=`0`；只读非敏感 metadata，active OKX LIVE credential rows=`0`；未选择/解密 credential payload |
+| authenticated `GET /api/v5/account/config` | NOT RUN / BLOCKING（未运行 / 阻断） | exact credential、expected IP 与 secure runtime 不可用；Remote READ/TRADE/WITHDRAW/IP 均不得写成 verified |
+
+已知 warning/failure：第一次 focused Maven 因 PowerShell 未引用 `-Dsurefire...` 参数，exit=`1` 且未进入编译，引用修正后通过；新增 audit JSON assertion 后第一次 core 重跑因测试方法未声明 checked exception 在 `testCompile` exit=`1`，增加 `throws Exception` 后最终 16/16 通过；IDE terminal 的 PowerShell path 引号解析失败，降级到同一工作区 PowerShell。未运行 frontend、Python、migration 或远端 probe；它们分别不在本轮变更范围或被 credential blocker 阻断。完整证据：[evidence/gate-y/NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-IMPLEMENTATION.attempt-03.md](evidence/gate-y/NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-IMPLEMENTATION.attempt-03.md)。
+
+## 2026-08-15 — GateY-6C controlled credential/IP real private read-only verification attempt-04
+
+结论：`PASS / IMPLEMENTED / PENDING REVIEW`（通过 / 已实现 / 待独立审查）。从固定出口 `47.251.74.35` 通过既有 JIT credential path 只调用一次 `GET /api/v5/account/config`，retry=`0`；READ/TRADE=`VERIFIED / VERIFIED`、WITHDRAW=`ABSENT`、IP=`MATCHED` ，exchange mutation 与 PLACE/CANCEL/TRANSFER/WITHDRAW 均为 0。
+
+| Command / check | Result | Scope / environment / known warnings / blocking |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml -pl nq-app,nq-scheduler -am "-Dtest=OkxPrivateReadOnlyPermissionProbeSpringContextTest,OkxRecoveryServiceTest" "-Dsurefire.failIfNoSpecifiedTests=false" test` | PASS（通过） | scoped profile composition/recovery regression=`10+2=12`，failures/errors=`0/0`；非阻断 |
+| isolated GateY-6C helper → NQ permission probe | PASS（通过） | 唯一真实 endpoint=`GET /api/v5/account/config`；real OKX call=`1`，retry=`0`，raw response 未输出 |
+| credential writeback metadata | PASS（通过） | `SUCCEEDED / TRADE / withdraw=false / IP PASSED / failedAuth=0 / error=NULL`；只读脱敏列 |
+| `BEGIN READ ONLY` allowlisted audit aggregation | PASS WITH NON-BLOCKING TRAILING PARSER ERROR（通过，尾随解析错误不阻断） | STARTED/SUCCEEDED=`1/1`、FAILED/SKIPPED=`0/0`，GateY expectation/READ/TRADE/withdraw absent/residual 全部匹配；事务已 `ROLLBACK`，随后 heredoc terminator 产生额外 syntax error |
+| isolated runtime cleanup | PASS（通过） | unit=`not-found`、listener `18890` absent、artifact absent、GateW running units=0、current release preserved |
+| final docs/Git/authority checks | PASS（通过） | `git diff --check` exit=0（仅 LF→CRLF 提示）；authority checker errors=0；staged=0；frontend/research/deploy/.github/migration diff=0 |
+
+已知安全事件：OKX credential material exposure=`0`；辅助 NQ 管理密码曾一次在普通终端回显，随后已轮换并验证 bcrypt shape，事件保留为 `1 / ROTATED`。未运行第二次 probe、frontend、Python、migration 或 full backend；attempt-03 已有 full backend green，attempt-04 仅增加 profile guard 与 focused 12-test 回归。完整证据：[evidence/gate-y/NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-IMPLEMENTATION.attempt-04.md](evidence/gate-y/NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-IMPLEMENTATION.attempt-04.md)。
+
+## 2026-08-15 — GateY-6C scoped credential/IP/private permission read-only verification Security Review attempt-01
+
+结论： `FAIL / GATEY_6C_SECURITY_REVIEW_REJECTED / P0_0 / P1_1 / MANAGEMENT_PASSWORD_INCIDENT_CONTAINMENT_NOT_PROVEN / AUTHORITY_UNCHANGED / NOT_READY_TO_COMMIT` （失败 / 独立安全审查拒绝 / authority 不变 / 不可提交）。代码、remote permission evidence cross-check、no-mutation reachability 与全部本地回归通过；辅助管理密码只证明已轮换，未证明 durable residual 已清除，故 P1 阻断。
+
+| Command / check | Result | Scope / environment / known warnings / blocking |
+| --- | --- | --- |
+| GateY-6C/GateW/API/Spring/recovery focused Maven | PASS（通过） | core/infra/scheduler/API/app=`16/8/2/7/10`，43 tests，failures/errors/skipped=`0/0/0` |
+| GateY-4 deployment boundary regression | PASS（通过） | delegate-release/linux-root/identity/no-start/no-secret/no-network |
+| GateY-6B provider/readiness + ArchUnit Maven | PASS（通过） | adapter=`14`、app/readiness/ArchUnit=`24`，failures/errors=`0/0` |
+| `mvn -f backend/pom.xml test` | PASS（通过） | 23/23 modules `BUILD SUCCESS`；1484 tests，failures/errors/skipped=`0/0/45`；52.929s |
+| changed production Java IDE inspection | PASS（通过） | 8 files，errors=`0` |
+| exact metadata safe PostgreSQL query | INCONCLUSIVE（无法判定） | 当前只读连接返回 0 行，无法确认其为 attempt-04 目标 DB；未选择敏感列，未作远端事实反证 |
+| management-password containment review | BLOCKING（阻断） | exposure channel=普通 PowerShell terminal echo；rotation 有脱敏事实；terminal transcript/history/log/process args/screenshot/CI/browser storage residual 未证明 absent |
+| remote authenticated probe | NOT RUN（未运行） | 任务明确禁止；review 新增 OKX call/mutation=`0/0` |
+
+IDE terminal 在命令启动前因 executable path 引号解析失败，随后降级到同一工作区 PowerShell；结果可信度高。未运行 frontend/Python/migration，因为对应 diff 均为 0；未读取密码值、credential material 或 raw OKX response。完整证据：[evidence/gate-y/NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-SECURITY-REVIEW.attempt-01.md](evidence/gate-y/NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-SECURITY-REVIEW.attempt-01.md)。
+
+## 2026-08-15 — GateY-6C management-password containment and persisted-fact requery attempt-01
+
+结论：`BLOCKED / MANAGEMENT_PASSWORD_CONTAINMENT_UNPROVEN / TARGET_DB_IDENTITY_NOT_VERIFIED / AUTHORITY_UNCHANGED`（阻断 / 管理密码收口未证明 / 目标数据库身份未验证 / authority 不变）。轮换状态可由既有脱敏事实验证，但没有 operator exact-value residual=0 attestation；attempt-04 也未保存 exact host/port/database/schema identity，因此没有连接候选 PostgreSQL 或执行 SQL。
+
+| Command / check | Result | Scope / environment / known warnings / blocking |
+| --- | --- | --- |
+| IDE Git status + PowerShell preflight | PASS（通过） | branch=`dev`；staged=`0`；保留现有 GateY-6C dirty diff |
+| durable-location metadata inventory | BLOCKING（阻断） | PSReadLine history artifact 存在；transcript/browser/process-args/history 无 operator attestation；未读取密码值或 matching line |
+| CI canonical custom-regex backstop equivalent | PASS WITH TOOL DOWNGRADE（通过但工具降级） | local gitleaks unavailable；changed/untracked safe files=`22`；repository/evidence candidates=`0/0`；不等于旧值 residual=0 |
+| attempt-04 target DB identity verification | BLOCKING（阻断） | evidence 缺 exact host/port/database/schema；3 个 IDE PostgreSQL candidates 均非 read-only，未连接、未查询 |
+| persisted credential/probe/audit requery | NOT RUN / BLOCKING（未运行 / 阻断） | `TARGET_PERSISTED_FACTS_REQUERY=NOT_AVAILABLE`；不得重跑 OKX 替代 |
+| OKX/credential/mutation accounting | PASS（通过） | credential material access、OKX calls、probe POST、exchange mutation=`0/0/0/0` |
+
+未运行 Maven/frontend/Python：本任务没有代码、API、migration、frontend 或 research 修改；既有 implementation tests 不因 evidence-only blocker 重跑。完整证据：[evidence/gate-y/NQ-GATEY-6C-MANAGEMENT-PASSWORD-CONTAINMENT-AND-PERSISTED-FACT-REQUERY.attempt-01.md](evidence/gate-y/NQ-GATEY-6C-MANAGEMENT-PASSWORD-CONTAINMENT-AND-PERSISTED-FACT-REQUERY.attempt-01.md)。
+
+## 2026-08-15 — GateY-6C scoped credential/IP/private permission read-only verification Security Review attempt-02
+
+结论：`PASS / GATEY_6C_SECURITY_REVIEW_ACCEPTED / P0_0 / P1_0 / MANAGEMENT_PASSWORD_INCIDENT_CLOSED / TARGET_PERSISTED_FACTS_REQUERY_UNAVAILABLE_ACCEPTED_RESIDUAL / REVIEW_ACCEPTED|READY_TO_COMMIT`（通过 / 安全审查已接受 / 管理密码事件已关闭 / target DB 重查不可用作为非阻断残留接受 / 可进入提交前复核）。
+
+| Command / check | Result | Scope / environment / known warnings / blocking |
+| --- | --- | --- |
+| Git/origin/current authority preflight | PASS（通过） | `dev`；`HEAD == origin/dev == 9d1f32f3d1a0789866879b98784ebe49fa54f29d`；staged=0；authority errors=0 |
+| operator containment attestation | PASS（通过） | rotated verified；PSReadLine=`1/0`、Local Temp=`13637/0`、NQ workspace=`7555/0` scanned/hits；defined scope residual=0；previous empty-search scan invalidated；未读取或输出 secret |
+| focused GateY-6C/GateW/API/Spring/recovery Maven | PASS（通过） | core/infra/scheduler/API/app=`16/8/2/7/10`，43 tests，failures/errors/skipped=`0/0/0` |
+| `scripts/gatey/tests/run-gatey4-deployment-boundary-regression.ps1` | PASS（通过） | delegate-release/linux-root/identity/no-start/no-secret/no-network |
+| GateY-6B provider/readiness + ArchUnit Maven | PASS（通过） | provider=`14`、readiness/ArchUnit=`24`，failures/errors/skipped=`0/0/0` |
+| `mvn -f backend/pom.xml test` | PASS（通过） | 23/23 modules `BUILD SUCCESS`；1484 tests，failures/errors/skipped=`0/0/45`；58.604s |
+| CI canonical custom-regex secret backstop equivalent | PASS WITH TOOL DOWNGRADE（通过但工具降级） | local gitleaks unavailable；safe changed/untracked files=`24`；repository/evidence candidates=`0/0`；只输出计数 |
+| current authority / doc links / forbidden-area diff | PASS（通过） | authority errors=`0`；links=`106 checked / 14 historical warnings / 0 errors`；frontend/research/CI/scripts/deploy/migration/manifest/governance diff=`0` |
+| target DB persisted-fact requery | NOT RUN / NON-BLOCKING P2（未运行 / 非阻断 P2） | exact host/port/database/schema provenance 无法恢复；`TARGET_PERSISTED_FACTS_REQUERY=NOT_AVAILABLE`；未连接候选 DB |
+| OKX/credential/mutation accounting | PASS（通过） | 本轮 credential material access、OKX calls、permission probe POST、exchange mutation=`0/0/0/0` |
+
+已知 warning：Mockito dynamic-agent、SLF4J NOP、编译 deprecation/unchecked、条件性 PostgreSQL integration skips 与 14 条 append-only 历史链接 warning；均非 failure/error。未运行 frontend/Python，因为对应 diff 为 0；未重跑 OKX 和 permission probe。完整证据：[evidence/gate-y/NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-SECURITY-REVIEW.attempt-02.md](evidence/gate-y/NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-SECURITY-REVIEW.attempt-02.md)。

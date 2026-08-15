@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.account.infra.probe;
 
 import com.guidinglight.nexusquant.account.domain.ExchangeCredentialPermissionProbeRequest;
 import com.guidinglight.nexusquant.account.domain.ExchangeCredentialPermissionProbeResult;
+import com.guidinglight.nexusquant.account.domain.CredentialPermissionExpectation;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -34,7 +35,7 @@ class NoRealExchangeCredentialPermissionProbePortTest {
                     "OKX",
                     "SIM",
                     "OKX_API_V5",
-                    "PAPER",
+                    CredentialPermissionExpectation.READ_ONLY_DIAGNOSTIC,
                     true,
                     "trace-no-real-exchange"
             ));

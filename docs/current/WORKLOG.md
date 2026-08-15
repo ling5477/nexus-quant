@@ -18831,3 +18831,65 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：credential reference/material access=`0/0`；authenticated OKX API/mutation/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0`；product/scripts/governance/STATUS/ARCHITECTURE/MODULES diff=`0`；未stage/commit/push/tag/deploy。
 - result：`PASS / GATEY_6C_PERMISSION_CONTRACT_REMEDIATED / OKX_TRADE_TRANSFER_SEMANTICS_ACKNOWLEDGED / G08_G09_LAYERED / REMOTE_WITHDRAW_FORBIDDEN / REMOTE_TRANSFER_CAPABILITY_NOT_MISREPRESENTED / NQ_FUNDS_MOVEMENT_DENY_PRESERVED / HARD_GATE_COUNTS_UNCHANGED / FIRST_REAL_ORDER_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
 - next：`COMMIT_PERMISSION_CONTRACT_REMEDIATION` → exact-head CI → rerun `NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-IMPLEMENTATION`；不创建GateY-6C2。
+
+## 2026-08-15 — GateY-6C scoped credential/IP/private permission read-only verification implementation attempt-03
+
+- task：`NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-IMPLEMENTATION`；NQ-only、L级、高风险 credential/private GET boundary。
+- baseline：`dev`；起始 clean/staged empty；`HEAD == origin/dev == 9d1f32f3d1a0789866879b98784ebe49fa54f29d`；exact-head CI= `31863332915 / completed / success`；authority errors=`0`。
+- implementation：新增 typed `CredentialPermissionExpectation`；GateW 保持 READ required/TRADE forbidden/WITHDRAW forbidden/IP matched，GateY 独立要求 READ+TRADE/WITHDRAW forbidden/IP matched；unknown mode 在 transaction/credential/network 前 fail closed；result/audit 记录 permission expectation、READ/TRADE/WITHDRAW detected 与 inherent OKX TRADE residual；migration=`0`。
+- composition：默认 `NoReal`；GateW/GateY profile 分别绑定独立 policy，冲突回落 `NoReal`；startup/scheduler probe=`0/0` ，provider/worker mutation wiring=`0/0`，NQ FUNDS_MOVEMENT 保持 DENY。
+- credential：未读取 `.env` 或 credential material；一次 local PostgreSQL metadata-only exact-candidate query 返回 `0 rows`，credential reference=`NOT_AVAILABLE`，material access/exposure=`0/0`。
+- remote：authenticated GET/retry/OKX call=`0/0/0`；PLACE/CANCEL/transfer/withdraw及其他mutation=`0` ；READ/TRADE/WITHDRAW/IP=`NOT_VERIFIED / API_KEY_REQUIRED`；remote account identity=`NOT_VERIFIABLE`。
+- validation：focused core/infra/API/Spring=`16/8/7/9` PASS；GateY-4 PASS；GateY-6B+ArchUnit=`9/28/24` PASS。最终收紧 `SKIPPED` audit remote-detection 语义并补断言后，core focused 最终 16/16 PASS；首次重跑因 test method checked exception 声明缺失在 `testCompile` 失败，修正后通过；随后 final full backend 23/23 modules `BUILD SUCCESS`、failures/errors=`0/0`、 `nq-app=281 tests / 27 skipped`、1:02 min。frontend/Python/remote probe=`NOT RUN`。
+- result： `BLOCKED / API_KEY_REQUIRED / LOCAL_POLICY_IMPLEMENTED / FULL_BACKEND_GREEN / NO_REMOTE_PROBE / NO_SECRET_EXPOSURE / NO_EXCHANGE_MUTATION / GATEY_6C_AUTHORITY_UNCHANGED / LIVE_DISABLED` ；未stage/commit/push/deploy，`STATUS.md` 不修改。
+- next：通过既有安全写侧/JIT path 配置 exact LIVE OKX credential 与 expected egress IP 后重跑同一 task；最多一次 `GET /api/v5/account/config`、retry=0；remote 四项全部通过后才能进入独立 Security Review。
+
+## 2026-08-15 — GateY-6C scoped credential/IP/private permission read-only verification implementation attempt-04
+
+- task：`NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-IMPLEMENTATION` ；NQ-only、L级、credential/real outbound 高风险边界。
+- scope：复用既有 credential-management/JIT path，在固定出口隔离 runtime 执行最多一次 OKX account-config GET；不实现或启用 provider、worker、scheduler、PLACE/CANCEL、funds movement、LIVE 或 kill disengage。
+- credential/IP：exact metadata=`owner 2 / account 1 / credential 1 / OKX / LIVE / OKX_API_V5 / ACTIVE` ；expected/key-bound IP=`47.251.74.35`；OKX material exposure=`0`。辅助 NQ 管理密码一次终端回显事件已轮换，保留 `1 / ROTATED` 事实。
+- implementation：真实隔离启动暴露 recovery bean composition 缺陷；最小增加 `OkxRecoveryService` scoped-profile exclusion 与 Spring negative assertion，12 tests 通过；attempt-03 其他 diff 与 full backend green evidence保持。
+- remote：唯一 `GET /api/v5/account/config`；call/retry=`1/0`；READ/TRADE=`VERIFIED/VERIFIED`、WITHDRAW=`ABSENT`、IP= `MATCHED`；audit STARTED/SUCCEEDED=`1/1`、FAILED/SKIPPED=`0/0`。
+- boundary：exchange mutation 与 PLACE/CANCEL/TRANSFER/WITHDRAW=`0 / 0/0/0/0`； `INHERENT_OKX_TRADE_PERMISSION_RESIDUAL=ACKNOWLEDGED`，`NQ_FUNDS_MOVEMENT=DENIED`；real provider/private trading= `NOT_IMPLEMENTED`，LIVE=`DISABLED`，kill=`ENGAGED`，first real order/micro-live=`NOT_AUTHORIZED`。
+- cleanup：transient unit/artifact、listener、SSH tunnel、Vite 与临时 browser tab 已清理；GateW running units=0，current release 未变。
+- result： `PASS / GATEY_6C_IMPLEMENTED / PENDING_REVIEW / SINGLE_REAL_OKX_GET / RETRY_0 / EXCHANGE_MUTATION_0 / LIVE_DISABLED` ；work batch commit=`UNCOMMITTED`，CI=`NOT_RUN`，未stage/commit/push。
+- next：`NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-SECURITY-REVIEW`；不得再次运行真实 probe。
+
+## 2026-08-15 — GateY-6C scoped credential/IP/private permission read-only verification Security Review attempt-01
+
+- task：`NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-SECURITY-REVIEW`；NQ-only、L级、独立 credential/private-readonly/runtime reachability/incident review。
+- baseline：`dev`；`HEAD == origin/dev == 9d1f32f3d1a0789866879b98784ebe49fa54f29d`；staged=0；authority= `GateY-6C / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`；checker errors=0。
+- review：typed GateW/GateY expectation 隔离、unknown fail-close、default NoReal、exact GET-only、JIT callback、audit sanitization、control-plane/exchange mutation 分层、recovery scoped exclusion、funds-movement runtime unreachable 均通过；remote READ/TRADE/WITHDRAW/IP evidence 与 implementation/tests 一致。
+- tests：GateY-6C/GateW/API/Spring/recovery focused 43 tests PASS；GateY-4 boundary PASS；GateY-6B provider/readiness + ArchUnit=`14+24` PASS；full backend 23/23 modules `BUILD SUCCESS`，1484 tests、failures/errors/skipped=`0/0/45`。
+- incident：辅助 NQ 管理密码 exposure channel=普通 PowerShell terminal echo；rotation 只有脱敏事实。terminal transcript/history/log/process args/screenshot/CI/browser storage durable residual 未证明 absent；本轮禁止重新读取 credential material，故不能判定 `ROTATED_AND_CONTAINED`。
+- findings：P0=0；P1=1 `AUXILIARY_MANAGEMENT_PASSWORD_CONTAINMENT_UNPROVEN`；P2=1 `TARGET_PERSISTED_FACTS_REQUERY_UNAVAILABLE`；P3=0。
+- boundary：review 新增 OKX call/retry/exchange mutation=`0/0/0`；migration/frontend/research/CI/governance/manifest diff=0；LIVE disabled、kill engaged、real provider/private trading not implemented、first real order/micro-live not authorized。
+- result：`FAIL / GATEY_6C_SECURITY_REVIEW_REJECTED / AUTHORITY_UNCHANGED / NOT_READY_TO_COMMIT`；`STATUS.md` 不修改，未stage/commit/push。
+- next：由 operator 在不读取/复制密码的前提下完成 durable residual 清理和脱敏 containment attestation，并提供目标 DB allowlisted read-only summary/audit 聚合证据；随后重跑同一 Security Review，不得重跑 OKX probe。完整证据：[evidence/gate-y/NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-SECURITY-REVIEW.attempt-01.md](evidence/gate-y/NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-SECURITY-REVIEW.attempt-01.md)。
+
+## 2026-08-15 — GateY-6C management-password containment and persisted-fact requery attempt-01
+
+- task：`NQ-GATEY-6C-MANAGEMENT-PASSWORD-CONTAINMENT-AND-PERSISTED-FACT-REQUERY`；NQ-only、L级、security incident containment / local residual verification / read-only persisted evidence。
+- baseline：`dev`；staged=0；authority=`GateY-6C / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`；attempt-03/04 与 Security Review attempt-01 dirty diff 保留。
+- incident：既有脱敏事实验证 password rotated；PSReadLine history artifact 存在，但没有 operator 使用旧值完成 history/transcript/log/browser/process-args/screenshot/artifact exact scan 的 residual=0 attestation，故 containment 仍未证明。
+- secret scan：local gitleaks unavailable；降级复用 CI canonical high-risk regex backstop，changed/untracked safe files=22，repository/evidence candidates=`0/0`；没有输出匹配内容，该结果不能替代旧值 exact match。
+- DB：attempt-04 未记录 exact host/port/database/schema identity；IDE 的 3 个 PostgreSQL candidates 均非 read-only，未凭名称推断目标、未连接、未查询；persisted summary/audit requery=`NOT_AVAILABLE`。
+- boundary：credential material access、OKX calls、probe POST、exchange mutation、bootstrap/rotate/decrypt=`0`；production code/migration/frontend/research/CI/governance/manifest/STATUS 修改=`0`。
+- findings：P0=0；P1=1 `AUXILIARY_MANAGEMENT_PASSWORD_CONTAINMENT_UNPROVEN`；P2=1 `TARGET_PERSISTED_FACTS_REQUERY_UNAVAILABLE`；P3=0。
+- result：`BLOCKED / MANAGEMENT_PASSWORD_CONTAINMENT_UNPROVEN / TARGET_DB_IDENTITY_NOT_VERIFIED / AUTHORITY_UNCHANGED` ；未stage/commit/push。
+- next：operator 提供不含 secret 的 exact-value residual=0 containment attestation，并提供 attempt-04 target DB exact identity provenance 或可信只读聚合；满足后直接重跑原 Security Review attempt-02，不得重跑 OKX。
+
+## 2026-08-15 — GateY-6C scoped credential/IP/private permission read-only verification Security Review attempt-02
+
+- task：`NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-SECURITY-REVIEW`；NQ-only、L级、独立 credential/private-readonly/incident-closeout/runtime reachability review。
+- baseline：`dev`；`HEAD == origin/dev == 9d1f32f3d1a0789866879b98784ebe49fa54f29d`；staged=0；authority before=`GateY-6C / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`；checker errors=0。
+- remote evidence：复用 attempt-04 immutable evidence；唯一历史 `GET /api/v5/account/config` call/retry=`1/0`，READ/TRADE=`VERIFIED/VERIFIED`、WITHDRAW=`ABSENT`、IP=`MATCHED`，audit=`1/1/0/0`；本轮 OKX call=0。
+- incident：operator attested rotation verified、exact-value scan completed；PSReadLine=`1/0`、Local Temp=`13637/0`、NQ workspace=`7555/0` scanned/hits，defined scope residual=0，previous empty-search scan invalidated；`AUXILIARY_MANAGEMENT_PASSWORD_CONTAINMENT_UNPROVEN=CLOSED`。未读取、复制或输出 secret。
+- DB residual：attempt-04 target host/port/database/schema identity provenance 无法恢复；未猜测或连接候选 DB，`P2 / ACCEPTED_RESIDUAL / TARGET_PERSISTED_FACTS_REQUERY_UNAVAILABLE` 保留，未重跑 OKX/probe。
+- review：GateW/GateY typed permission policy、unknown fail-close、default NoReal、JIT lifecycle/audit sanitization、OKX TRADE residual、NQ funds-movement/runtime mutation unreachable、recovery scoped exclusion与control-plane事务边界保持通过。
+- validation：focused GateY-6C/GateW/API/Spring/recovery=`43` PASS；GateY-4 PASS；GateY-6B provider/readiness+ArchUnit=`14+24` PASS；full backend 23/23 modules `BUILD SUCCESS`，1484 tests、failures/errors/skipped=`0/0/45`；authority errors=0、links=`106/14 historical warnings/0`、secret candidates=`0/0`、forbidden-area diff=0。
+- boundary：本轮 credential material access、OKX calls、probe POST、exchange mutation=`0/0/0/0`；migration/frontend/research/CI/governance/manifest diff=0；LIVE disabled、kill engaged、real provider/private trading not implemented、first real order/micro-live not authorized。
+- findings：P0=0；P1=0；P2=1 accepted residual；P3=0。
+- result：`PASS / GATEY_6C_SECURITY_REVIEW_ACCEPTED / MANAGEMENT_PASSWORD_INCIDENT_CLOSED / REVIEW_ACCEPTED|READY_TO_COMMIT`；authority after=`GateY-6C / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`；未stage/commit/push。
+- next：`NQ-GATEY-6C-COMMIT-AND-PUSH`；不得再次 probe 或扩展到 GateY-6D、pilot、real provider、order execution、micro-live 或 LIVE。完整证据：[evidence/gate-y/NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-SECURITY-REVIEW.attempt-02.md](evidence/gate-y/NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-SECURITY-REVIEW.attempt-02.md)。

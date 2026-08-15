@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.account.infra.probe;
 
 import com.guidinglight.nexusquant.account.domain.ExchangeCredentialPermissionProbeRequest;
 import com.guidinglight.nexusquant.account.domain.ExchangeCredentialPermissionProbeResult;
+import com.guidinglight.nexusquant.account.domain.CredentialPermissionExpectation;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeCredentialPermissionProbePort;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.JdbcOkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
@@ -33,6 +34,7 @@ public final class OkxRealReadonlyPermissionProbePort implements ExchangeCredent
 
     private final OkxPrivateCredentialExecutor credentialExecutor;
     private final String expectedIp;
+    private final CredentialPermissionExpectation permissionExpectation;
     private final Clock clock;
 
     public OkxRealReadonlyPermissionProbePort(
@@ -40,9 +42,26 @@ public final class OkxRealReadonlyPermissionProbePort implements ExchangeCredent
             String expectedIp,
             Clock clock
     ) {
+        this(credentialExecutor, expectedIp, CredentialPermissionExpectation.READ_ONLY_DIAGNOSTIC, clock);
+    }
+
+    public OkxRealReadonlyPermissionProbePort(
+            OkxPrivateCredentialExecutor credentialExecutor,
+            String expectedIp,
+            CredentialPermissionExpectation permissionExpectation,
+            Clock clock
+    ) {
         this.credentialExecutor = Objects.requireNonNull(credentialExecutor, "credentialExecutor must not be null");
         this.expectedIp = OkxIpAddressNormalizer.normalizeLiteral(expectedIp);
+        this.permissionExpectation = Objects.requireNonNull(
+                permissionExpectation,
+                "permissionExpectation must not be null"
+        );
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
+    }
+
+    public CredentialPermissionExpectation permissionExpectation() {
+        return permissionExpectation;
     }
 
     @Override
@@ -89,31 +108,44 @@ public final class OkxRealReadonlyPermissionProbePort implements ExchangeCredent
             return failed(request, "RESPONSE_CONTRACT_MISMATCH", ipStatus(observed), false, requestId, startedAt);
         }
         Set<String> permissions = observed.normalizedPermissions();
-        if (!KNOWN_PERMISSIONS.containsAll(permissions)) {
-            return failed(request, "RESPONSE_CONTRACT_MISMATCH", ipStatus(observed),
-                    permissions.contains("WITHDRAW"), requestId, startedAt);
-        }
         boolean read = permissions.contains("READ_ONLY");
         boolean trade = permissions.contains("TRADE");
         boolean withdraw = permissions.contains("WITHDRAW");
         String scope = trade ? "TRADE" : withdraw ? "FUNDING" : read ? "READ_ONLY" : null;
+        if (!KNOWN_PERMISSIONS.containsAll(permissions)) {
+            return failed(request, "RESPONSE_CONTRACT_MISMATCH", ipStatus(observed), read, trade, withdraw,
+                    requestId, startedAt, scope);
+        }
         String ipStatus = ipStatus(observed);
-        if (!read) {
-            return failed(request, "READ_PERMISSION_MISSING", ipStatus, withdraw, requestId, startedAt, scope);
-        }
-        if (trade) {
-            return failed(request, "TRADE_PERMISSION_ENABLED", ipStatus, withdraw, requestId, startedAt, scope);
-        }
         if (withdraw) {
-            return failed(request, "WITHDRAW_PERMISSION_ENABLED", ipStatus, true, requestId, startedAt, scope);
+            return failed(request, "WITHDRAW_PERMISSION_ENABLED", ipStatus, read, trade, true,
+                    requestId, startedAt, scope);
+        }
+        if (!read) {
+            return failed(request, "READ_PERMISSION_MISSING", ipStatus, false, trade, false,
+                    requestId, startedAt, scope);
+        }
+        if (permissionExpectation == CredentialPermissionExpectation.READ_ONLY_DIAGNOSTIC && trade) {
+            return failed(request, "TRADE_PERMISSION_ENABLED", ipStatus, read, true, false,
+                    requestId, startedAt, scope);
+        }
+        if (permissionExpectation == CredentialPermissionExpectation.GATEY_PILOT_READINESS && !trade) {
+            return failed(request, "TRADE_PERMISSION_MISSING", ipStatus, read, false, false,
+                    requestId, startedAt, scope);
         }
         if (observed.ipAllowlistStatus() != OkxIpAllowlistStatus.MATCHED) {
-            return failed(request, ipFailure(observed.ipAllowlistStatus()), ipStatus, false, requestId, startedAt, scope);
+            return failed(request, ipFailure(observed.ipAllowlistStatus()), ipStatus, read, trade, false,
+                    requestId, startedAt, scope);
         }
         return ExchangeCredentialPermissionProbeResult.succeeded(
                 "OKX",
                 request.credentialType(),
-                "READ_ONLY",
+                scope,
+                read,
+                trade,
+                false,
+                permissionExpectation,
+                trade,
                 "PASSED",
                 requestId,
                 request.traceId(),
@@ -130,13 +162,15 @@ public final class OkxRealReadonlyPermissionProbePort implements ExchangeCredent
             String requestId,
             Instant startedAt
     ) {
-        return failed(request, category, ipStatus, withdraw, requestId, startedAt, null);
+        return failed(request, category, ipStatus, false, false, withdraw, requestId, startedAt, null);
     }
 
     private ExchangeCredentialPermissionProbeResult failed(
             ExchangeCredentialPermissionProbeRequest request,
             String category,
             String ipStatus,
+            boolean read,
+            boolean trade,
             boolean withdraw,
             String requestId,
             Instant startedAt,
@@ -147,7 +181,11 @@ public final class OkxRealReadonlyPermissionProbePort implements ExchangeCredent
                 request == null ? JdbcOkxPrivateCredentialExecutor.OKX_API_V5 : request.credentialType(),
                 "FAILED",
                 scope,
+                read,
+                trade,
                 withdraw,
+                request == null ? permissionExpectation : request.permissionExpectation(),
+                trade,
                 ipStatus,
                 category,
                 category,
@@ -159,7 +197,7 @@ public final class OkxRealReadonlyPermissionProbePort implements ExchangeCredent
         );
     }
 
-    private static boolean safeRequest(ExchangeCredentialPermissionProbeRequest request) {
+    private boolean safeRequest(ExchangeCredentialPermissionProbeRequest request) {
         return request != null
                 && request.ownerUserId() != null && request.ownerUserId() > 0
                 && request.accountId() != null && request.accountId() > 0
@@ -167,7 +205,7 @@ public final class OkxRealReadonlyPermissionProbePort implements ExchangeCredent
                 && "OKX".equalsIgnoreCase(request.exchange())
                 && "LIVE".equalsIgnoreCase(request.tradeEnv())
                 && JdbcOkxPrivateCredentialExecutor.OKX_API_V5.equals(request.credentialType())
-                && "PAPER".equalsIgnoreCase(request.requestedMode())
+                && request.permissionExpectation() == permissionExpectation
                 && request.dryRun();
     }
 
@@ -218,6 +256,7 @@ public final class OkxRealReadonlyPermissionProbePort implements ExchangeCredent
 
     @Override
     public String toString() {
-        return "OkxRealReadonlyPermissionProbePort[expectedIp=CONFIGURED]";
+        return "OkxRealReadonlyPermissionProbePort[expectedIp=CONFIGURED,permissionExpectation="
+                + permissionExpectation + "]";
     }
 }

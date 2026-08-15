@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.account.infra.probe;
 
 import com.guidinglight.nexusquant.account.domain.ExchangeCredentialPermissionProbeRequest;
 import com.guidinglight.nexusquant.account.domain.ExchangeCredentialPermissionProbeResult;
+import com.guidinglight.nexusquant.account.domain.CredentialPermissionExpectation;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxIpAllowlistStatus;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateEnvironment;
@@ -46,7 +47,12 @@ class OkxRealReadonlyPermissionProbePortTest {
         assertTrue(port.supportsControlledLiveReadOnlyProbe());
         assertEquals("SUCCEEDED", result.permissionProbeStatus());
         assertEquals("READ_ONLY", result.detectedPermissionScope());
+        assertTrue(result.readPermissionDetected());
+        assertFalse(result.tradePermissionDetected());
         assertFalse(result.withdrawEnabledDetected());
+        assertEquals(CredentialPermissionExpectation.READ_ONLY_DIAGNOSTIC, result.permissionExpectation());
+        assertFalse(result.inherentOkxTradePermissionResidual());
+        assertEquals(0, result.retryCount());
         assertEquals("PASSED", result.ipAllowlistProbeStatus());
         assertEquals(OkxPrivateEnvironment.PRODUCTION, observedEnvironment.get());
         assertEquals(OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ, observedRequest.get().operation());
@@ -55,6 +61,37 @@ class OkxRealReadonlyPermissionProbePortTest {
         assertEquals("203.0.113.8", observedRequest.get().expectedIp());
         assertTrue(java.util.Arrays.stream(ExchangeCredentialPermissionProbeRequest.class.getRecordComponents())
                 .noneMatch(component -> component.getName().toLowerCase().contains("payload")));
+    }
+
+    @Test
+    void gateYPilotReadinessRequiresReadAndTradeRejectsWithdrawAndAcknowledgesResidual() {
+        OkxRealReadonlyPermissionProbePort passing = gateYPort(new FakeExecutor((request, environment) ->
+                result(Set.of("READ_ONLY", "TRADE"), true, OkxIpAllowlistStatus.MATCHED)));
+
+        ExchangeCredentialPermissionProbeResult passed = passing.probe(gateYRequest());
+
+        assertEquals("SUCCEEDED", passed.permissionProbeStatus());
+        assertEquals("TRADE", passed.detectedPermissionScope());
+        assertTrue(passed.readPermissionDetected());
+        assertTrue(passed.tradePermissionDetected());
+        assertFalse(passed.withdrawEnabledDetected());
+        assertEquals(CredentialPermissionExpectation.GATEY_PILOT_READINESS, passed.permissionExpectation());
+        assertTrue(passed.inherentOkxTradePermissionResidual());
+        assertEquals(0, passed.retryCount());
+
+        Map<Set<String>, String> rejected = Map.of(
+                Set.of("READ_ONLY"), "TRADE_PERMISSION_MISSING",
+                Set.of("TRADE"), "READ_PERMISSION_MISSING",
+                Set.of("READ_ONLY", "TRADE", "WITHDRAW"), "WITHDRAW_PERMISSION_ENABLED",
+                Set.of("READ_ONLY", "TRADE", "future_permission"), "RESPONSE_CONTRACT_MISMATCH"
+        );
+        for (Map.Entry<Set<String>, String> entry : rejected.entrySet()) {
+            ExchangeCredentialPermissionProbeResult failed = gateYPort(new FakeExecutor((request, environment) ->
+                    result(entry.getKey(), true, OkxIpAllowlistStatus.MATCHED))).probe(gateYRequest());
+            assertEquals("FAILED", failed.permissionProbeStatus());
+            assertEquals(entry.getValue(), failed.sanitizedErrorCategory());
+            assertEquals(0, failed.retryCount());
+        }
     }
 
     @Test
@@ -134,7 +171,8 @@ class OkxRealReadonlyPermissionProbePortTest {
                 result(Set.of("READ_ONLY"), true, OkxIpAllowlistStatus.MATCHED));
         OkxRealReadonlyPermissionProbePort port = port(executor);
         ExchangeCredentialPermissionProbeRequest wrongEnvironment = new ExchangeCredentialPermissionProbeRequest(
-                1L, 900001L, 7L, "OKX", "SIM", "OKX_API_V5", "PAPER", true, "trace"
+                1L, 900001L, 7L, "OKX", "SIM", "OKX_API_V5",
+                CredentialPermissionExpectation.READ_ONLY_DIAGNOSTIC, true, "trace"
         );
 
         assertEquals("REQUEST_SCOPE_BLOCKED", port.probe(wrongEnvironment).sanitizedErrorCategory());
@@ -150,9 +188,26 @@ class OkxRealReadonlyPermissionProbePortTest {
         return new OkxRealReadonlyPermissionProbePort(executor, "203.0.113.8", CLOCK);
     }
 
+    private static OkxRealReadonlyPermissionProbePort gateYPort(FakeExecutor executor) {
+        return new OkxRealReadonlyPermissionProbePort(
+                executor,
+                "203.0.113.8",
+                CredentialPermissionExpectation.GATEY_PILOT_READINESS,
+                CLOCK
+        );
+    }
+
     private static ExchangeCredentialPermissionProbeRequest request() {
         return new ExchangeCredentialPermissionProbeRequest(
-                1L, 900001L, 7L, "OKX", "LIVE", "OKX_API_V5", "PAPER", true, "trace-permission"
+                1L, 900001L, 7L, "OKX", "LIVE", "OKX_API_V5",
+                CredentialPermissionExpectation.READ_ONLY_DIAGNOSTIC, true, "trace-permission"
+        );
+    }
+
+    private static ExchangeCredentialPermissionProbeRequest gateYRequest() {
+        return new ExchangeCredentialPermissionProbeRequest(
+                1L, 900001L, 7L, "OKX", "LIVE", "OKX_API_V5",
+                CredentialPermissionExpectation.GATEY_PILOT_READINESS, true, "trace-gatey-permission"
         );
     }
 

@@ -27,6 +27,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -39,6 +40,7 @@ import org.springframework.stereotype.Component;
  * 这里复用 `OkxRestReconcileService`，把恢复行为收敛成同一条幂等路径。
  */
 @Component
+@Profile("!scoped-okx-private-readonly")
 public class OkxRecoveryService implements RecoveryService {
 
     private static final int DEFAULT_LIMIT = 500;

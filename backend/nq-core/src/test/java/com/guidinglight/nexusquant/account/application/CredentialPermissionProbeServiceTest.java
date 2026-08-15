@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.account.application;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.account.application.command.CredentialPermissionProbeCommand;
 import com.guidinglight.nexusquant.account.domain.CredentialPermissionProbeSummary;
+import com.guidinglight.nexusquant.account.domain.CredentialPermissionExpectation;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialMaterial;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialSummary;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
@@ -131,6 +132,85 @@ class CredentialPermissionProbeServiceTest {
     }
 
     @Test
+    void gateYExpectationIsTypedAndPersistedInSanitizedAudit() throws Exception {
+        Fixture fixture = new Fixture("LIVE");
+        ExchangeAccountCredentialMaterial credential = fixture.seedCredential(credential("ACTIVE", true));
+        ExchangeCredentialPermissionProbePort port = new ExchangeCredentialPermissionProbePort() {
+            @Override
+            public boolean supportsControlledLiveReadOnlyProbe() {
+                return true;
+            }
+
+            @Override
+            public ExchangeCredentialPermissionProbeResult probe(ExchangeCredentialPermissionProbeRequest request) {
+                assertEquals(CredentialPermissionExpectation.GATEY_PILOT_READINESS,
+                        request.permissionExpectation());
+                return ExchangeCredentialPermissionProbeResult.succeeded(
+                        "OKX",
+                        "OKX_API_V5",
+                        "TRADE",
+                        true,
+                        true,
+                        false,
+                        CredentialPermissionExpectation.GATEY_PILOT_READINESS,
+                        true,
+                        "PASSED",
+                        "req-gatey",
+                        request.traceId(),
+                        fixedClock.instant(),
+                        fixedClock.instant()
+                );
+            }
+        };
+
+        CredentialPermissionProbeSummary summary = fixture.service(port).probe(
+                1L,
+                fixture.account.exchangeAccountId(),
+                credential.credentialId(),
+                "admin",
+                new CredentialPermissionProbeCommand(
+                        "GateY pilot readiness probe",
+                        true,
+                        "GATEY_PILOT_READINESS",
+                        true
+                ),
+                "trace-gatey"
+        );
+
+        assertEquals("SUCCEEDED", summary.permissionProbeStatus());
+        assertEquals("TRADE", summary.permissionScope());
+        var metadata = objectMapper.readTree(fixture.repository.auditLogs.get(1).metadataJson());
+        assertEquals("GATEY_PILOT_READINESS", metadata.get("permissionExpectation").asText());
+        assertTrue(metadata.get("readPermissionDetected").asBoolean());
+        assertTrue(metadata.get("tradePermissionDetected").asBoolean());
+        assertFalse(metadata.get("withdrawPermissionDetected").asBoolean());
+        assertTrue(metadata.get("inherentOkxTradePermissionResidual").asBoolean());
+        assertFalse(containsSensitive(metadata.toString()));
+    }
+
+    @Test
+    void unknownPermissionExpectationFailsClosedBeforeCredentialOrTransactionAccess() {
+        Fixture fixture = new Fixture("LIVE");
+        ExchangeAccountCredentialMaterial credential = fixture.seedCredential(credential("ACTIVE", true));
+        RecordingProbePort port = RecordingProbePort.success("READ_ONLY");
+
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, () -> fixture.service(port).probe(
+                1L,
+                fixture.account.exchangeAccountId(),
+                credential.credentialId(),
+                "admin",
+                new CredentialPermissionProbeCommand("unknown policy", true, "FUTURE_POLICY", true),
+                "trace-unknown-policy"
+        ));
+
+        assertEquals("unsupported credential permission expectation", failure.getMessage());
+        assertEquals(0, port.calls);
+        assertEquals(0, fixture.transactions.executions);
+        assertTrue(fixture.repository.auditLogs.isEmpty());
+        assertEquals("NOT_PROBED", fixture.repository.storage.get(credential.credentialId()).permissionProbeStatus());
+    }
+
+    @Test
     void shouldWriteFailedAuditAndIncrementFailedAuthCountForAuthFailures() {
         Fixture fixture = new Fixture("SIM");
         ExchangeAccountCredentialMaterial credential = fixture.seedCredential(credential("ACTIVE", true));
@@ -191,7 +271,7 @@ class CredentialPermissionProbeServiceTest {
     }
 
     @Test
-    void shouldSkipWhenPaperSafetyGateMissingOrWithdrawEnabledRisk() {
+    void shouldSkipWhenPaperSafetyGateMissingOrWithdrawEnabledRisk() throws Exception {
         Fixture missingPaperGate = new Fixture("SIM");
         ExchangeAccountCredentialMaterial active = missingPaperGate.seedCredential(credential("ACTIVE", true));
         RecordingProbePort missingGatePort = RecordingProbePort.success("READ_ONLY");
@@ -221,6 +301,8 @@ class CredentialPermissionProbeServiceTest {
         assertEquals("SKIPPED", withdraw.permissionProbeStatus());
         assertEquals("WITHDRAW_ENABLED_RISK", withdraw.sanitizedErrorCategory());
         assertEquals(0, withdrawPort.calls);
+        var skippedMetadata = objectMapper.readTree(withdrawRisk.repository.auditLogs.getFirst().metadataJson());
+        assertFalse(skippedMetadata.get("withdrawPermissionDetected").asBoolean());
     }
 
     @Test

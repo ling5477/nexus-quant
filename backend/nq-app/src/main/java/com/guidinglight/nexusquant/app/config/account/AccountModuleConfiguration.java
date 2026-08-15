@@ -10,6 +10,7 @@ import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredential
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialVerifier;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeCredentialPermissionProbePort;
+import com.guidinglight.nexusquant.account.domain.CredentialPermissionExpectation;
 import com.guidinglight.nexusquant.account.infra.jdbc.JdbcExchangeAccountCredentialRepository;
 import com.guidinglight.nexusquant.account.infra.jdbc.JdbcExchangeAccountRepository;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.JdbcOkxPrivateCredentialExecutor;
@@ -107,13 +108,10 @@ public class AccountModuleConfiguration {
             Environment environment
     ) {
         OkxPrivateCredentialExecutor executor = credentialExecutorProvider.getIfAvailable();
+        CredentialPermissionExpectation permissionExpectation = permissionExpectation(environment);
         if (!permissionProperties.enabled()
                 || !(executor instanceof JdbcOkxPrivateCredentialExecutor)
-                || !environment.acceptsProfiles(Profiles.of(
-                "okx-private-readonly-diagnostics",
-                "gatew-okx-readonly-soak",
-                "scoped-okx-private-readonly"
-        ))
+                || permissionExpectation == null
                 || !exactBoolean(environment, "nq.env-safety.ci", false)
                 || !exactBoolean(environment, "nq.env-safety.real-exchange-enabled", false)
                 || !exactBoolean(environment, "nq.env-safety.live-enabled", false)
@@ -129,6 +127,7 @@ public class AccountModuleConfiguration {
             return new OkxRealReadonlyPermissionProbePort(
                     executor,
                     permissionProperties.expectedIp(),
+                    permissionExpectation,
                     Clock.systemUTC()
             );
         } catch (IllegalArgumentException ex) {
@@ -187,5 +186,23 @@ public class AccountModuleConfiguration {
                 LEGACY_READ_ONLY_PREFIX + "." + name,
                 required
         );
+    }
+
+    /**
+     * profile 与 permission policy 一一绑定；GateW 与 GateY profile 同时出现时 fail-closed。
+     */
+    private static CredentialPermissionExpectation permissionExpectation(Environment environment) {
+        boolean gateY = environment.acceptsProfiles(Profiles.of("scoped-okx-private-readonly"));
+        boolean gateW = environment.acceptsProfiles(Profiles.of(
+                "okx-private-readonly-diagnostics",
+                "gatew-okx-readonly",
+                "gatew-okx-readonly-soak"
+        ));
+        if (gateY == gateW) {
+            return null;
+        }
+        return gateY
+                ? CredentialPermissionExpectation.GATEY_PILOT_READINESS
+                : CredentialPermissionExpectation.READ_ONLY_DIAGNOSTIC;
     }
 }

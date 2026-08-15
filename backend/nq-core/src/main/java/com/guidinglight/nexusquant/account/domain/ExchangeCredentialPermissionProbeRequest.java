@@ -14,7 +14,7 @@ public record ExchangeCredentialPermissionProbeRequest(
         String exchange,
         String tradeEnv,
         String credentialType,
-        String requestedMode,
+        CredentialPermissionExpectation permissionExpectation,
         boolean dryRun,
         String traceId
 ) {

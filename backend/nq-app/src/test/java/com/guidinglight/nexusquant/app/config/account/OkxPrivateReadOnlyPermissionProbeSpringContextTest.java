@@ -2,9 +2,11 @@ package com.guidinglight.nexusquant.app.config.account;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeCredentialPermissionProbePort;
+import com.guidinglight.nexusquant.account.domain.CredentialPermissionExpectation;
 import com.guidinglight.nexusquant.account.infra.probe.NoRealExchangeCredentialPermissionProbePort;
 import com.guidinglight.nexusquant.account.infra.probe.OkxRealReadonlyPermissionProbePort;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
+import com.guidinglight.nexusquant.scheduler.service.OkxRecoveryService;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -61,7 +63,38 @@ class OkxPrivateReadOnlyPermissionProbeSpringContextTest {
         realCandidateRunner().run(context -> {
             assertTrue(context.getStartupFailure() == null);
             assertSelected(context, OkxRealReadonlyPermissionProbePort.class);
+            assertEquals(CredentialPermissionExpectation.READ_ONLY_DIAGNOSTIC,
+                    context.getBean(OkxRealReadonlyPermissionProbePort.class).permissionExpectation());
         });
+    }
+
+    @Test
+    void explicitScopedGateYProfileSelectsPilotReadinessPolicyWithoutStartupNetwork() {
+        candidateRunner(new String[]{"scoped-okx-private-readonly"}).run(context -> {
+            assertTrue(context.getStartupFailure() == null);
+            assertSelected(context, OkxRealReadonlyPermissionProbePort.class);
+            assertEquals(CredentialPermissionExpectation.GATEY_PILOT_READINESS,
+                    context.getBean(OkxRealReadonlyPermissionProbePort.class).permissionExpectation());
+        });
+    }
+
+    @Test
+    void scopedGateYProfileDoesNotRegisterOkxRecoveryOrItsScheduler() {
+        new ApplicationContextRunner()
+                .withInitializer(context -> context.getEnvironment().setActiveProfiles(
+                        "scoped-okx-private-readonly"
+                ))
+                .withUserConfiguration(OkxRecoveryService.class)
+                .run(context -> {
+                    assertTrue(context.getStartupFailure() == null);
+                    assertTrue(context.getBeansOfType(OkxRecoveryService.class).isEmpty());
+                });
+    }
+
+    @Test
+    void conflictingGateWAndGateYProfilesFailClosedToNoReal() {
+        candidateRunner(new String[]{"okx-private-readonly-diagnostics", "scoped-okx-private-readonly"})
+                .run(context -> assertSelected(context, NoRealExchangeCredentialPermissionProbePort.class));
     }
 
     @Test
@@ -99,10 +132,12 @@ class OkxPrivateReadOnlyPermissionProbeSpringContextTest {
     }
 
     private ApplicationContextRunner realCandidateRunner(String... overrides) {
+        return candidateRunner(new String[]{"okx-private-readonly-diagnostics"}, overrides);
+    }
+
+    private ApplicationContextRunner candidateRunner(String[] profiles, String... overrides) {
         ApplicationContextRunner runner = contextRunner
-                .withInitializer(context -> context.getEnvironment().setActiveProfiles(
-                        "okx-private-readonly-diagnostics"
-                ))
+                .withInitializer(context -> context.getEnvironment().setActiveProfiles(profiles))
                 .withPropertyValues(
                         "nq.okx.private-readonly-diagnostics.enabled=true",
                         "nq.okx.private-readonly-diagnostics.order-submission-enabled=false",

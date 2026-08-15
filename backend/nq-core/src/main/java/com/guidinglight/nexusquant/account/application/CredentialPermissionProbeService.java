@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.account.application.command.CredentialPermissionProbeCommand;
 import com.guidinglight.nexusquant.account.domain.CredentialPermissionProbeSummary;
+import com.guidinglight.nexusquant.account.domain.CredentialPermissionExpectation;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialSummary;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
 import com.guidinglight.nexusquant.account.domain.ExchangeCredentialPermissionProbeRequest;
@@ -99,6 +100,9 @@ public class CredentialPermissionProbeService {
         Long normalizedCredentialId = requirePositive(credentialId, "credentialId");
         String normalizedActor = normalizeActor(actor);
         String normalizedReason = normalizeReason(command == null ? null : command.reason());
+        CredentialPermissionExpectation permissionExpectation = CredentialPermissionExpectation.fromRequestedMode(
+                command == null ? null : command.mode()
+        );
         String requestId = UUID.randomUUID().toString();
         ProbePreparation preparation = Objects.requireNonNull(transactions.execute(status -> prepare(
                 normalizedOwnerUserId,
@@ -107,6 +111,7 @@ public class CredentialPermissionProbeService {
                 normalizedActor,
                 normalizedReason,
                 command,
+                permissionExpectation,
                 requestId,
                 traceId
         )), "permission probe preparation must not be null");
@@ -123,7 +128,7 @@ public class CredentialPermissionProbeService {
                     preparation.account().exchangeCode(),
                     preparation.account().tradeEnv(),
                     preparation.credential().credentialType(),
-                    normalizeMode(command == null ? null : command.mode()),
+                    preparation.permissionExpectation(),
                     Boolean.TRUE.equals(command == null ? null : command.dryRun()),
                     traceId
             ));
@@ -153,6 +158,7 @@ public class CredentialPermissionProbeService {
             String actor,
             String reason,
             CredentialPermissionProbeCommand command,
+            CredentialPermissionExpectation permissionExpectation,
             String requestId,
             String traceId
     ) {
@@ -170,21 +176,27 @@ public class CredentialPermissionProbeService {
             throw new IllegalStateException("credential permission probe already in progress");
         }
         if (!credential.isActive() || !"ACTIVE".equals(credential.credentialStatus())) {
-            return completed(account, credential, actor, reason, "CREDENTIAL_NOT_ACTIVE", requestId, traceId, now);
+            return completed(account, credential, actor, reason, "CREDENTIAL_NOT_ACTIVE",
+                    permissionExpectation, requestId, traceId, now);
         }
         if ("LIVE".equalsIgnoreCase(account.tradeEnv())
                 && !permissionProbePort.supportsControlledLiveReadOnlyProbe()) {
-            return completed(account, credential, actor, reason, "LIVE_CREDENTIAL_BLOCKED", requestId, traceId, now);
+            return completed(account, credential, actor, reason, "LIVE_CREDENTIAL_BLOCKED",
+                    permissionExpectation, requestId, traceId, now);
         }
         if (credential.withdrawEnabled()) {
-            return completed(account, credential, actor, reason, "WITHDRAW_ENABLED_RISK", requestId, traceId, now);
+            return completed(account, credential, actor, reason, "WITHDRAW_ENABLED_RISK",
+                    permissionExpectation, requestId, traceId, now);
         }
-        if (!paperSafetyGatePassed(command)) {
-            return completed(account, credential, actor, reason, "PAPER_SAFETY_GATE_MISSING", requestId, traceId, now);
+        if (!paperSafetyGatePassed(command, permissionExpectation)) {
+            return completed(account, credential, actor, reason, "PAPER_SAFETY_GATE_MISSING",
+                    permissionExpectation, requestId, traceId, now);
         }
         appendAudit(credential, "PERMISSION_PROBE_STARTED", actor, reason,
-                null, credential.permissionProbeStatus(), "IN_PROGRESS", requestId, traceId, false);
-        return new ProbePreparation(account, credential, actor, reason, requestId, traceId, null);
+                null, credential.permissionProbeStatus(), "IN_PROGRESS", requestId, traceId, false,
+                permissionExpectation);
+        return new ProbePreparation(account, credential, actor, reason, permissionExpectation,
+                requestId, traceId, null);
     }
 
     private ProbePreparation completed(
@@ -193,6 +205,7 @@ public class CredentialPermissionProbeService {
             String actor,
             String reason,
             String policyDecision,
+            CredentialPermissionExpectation permissionExpectation,
             String requestId,
             String traceId,
             Instant now
@@ -202,9 +215,11 @@ public class CredentialPermissionProbeService {
                 credential,
                 actor,
                 reason,
+                permissionExpectation,
                 requestId,
                 traceId,
-                skip(account, credential, actor, reason, policyDecision, requestId, traceId, now)
+                skip(account, credential, actor, reason, policyDecision, permissionExpectation,
+                        requestId, traceId, now)
         );
     }
 
@@ -248,7 +263,12 @@ public class CredentialPermissionProbeService {
                     errorCategory, "IN_PROGRESS", finalStatus,
                     emptyToDefault(result.requestId(), preparation.requestId()),
                     emptyToDefault(result.traceId(), preparation.traceId()), incrementFailedAuthCount,
-                    observedPermissionScope, persistedIpStatus);
+                    observedPermissionScope, persistedIpStatus,
+                    result.permissionExpectation() == null
+                            ? preparation.permissionExpectation()
+                            : result.permissionExpectation(),
+                    result.readPermissionDetected(), result.tradePermissionDetected(),
+                    result.withdrawEnabledDetected(), result.inherentOkxTradePermissionResidual());
         } catch (CredentialPermissionProbeWritebackException ex) {
             throw ex;
         } catch (RuntimeException ex) {
@@ -294,6 +314,7 @@ public class CredentialPermissionProbeService {
             String actor,
             String reason,
             String policyDecision,
+            CredentialPermissionExpectation permissionExpectation,
             String requestId,
             String traceId,
             Instant now
@@ -314,7 +335,8 @@ public class CredentialPermissionProbeService {
             throw new IllegalStateException("permission probe skip writeback conflict");
         }
         appendAudit(credential, "PERMISSION_PROBE_SKIPPED", actor, reason, policyDecision,
-                credential.permissionProbeStatus(), "SKIPPED", requestId, traceId, false);
+                credential.permissionProbeStatus(), "SKIPPED", requestId, traceId, false,
+                permissionExpectation);
         ExchangeAccountCredentialSummary latestCredential = credentialRepository.findByCredentialIdForOwner(
                 account.ownerUserId(),
                 account.exchangeAccountId(),
@@ -328,13 +350,17 @@ public class CredentialPermissionProbeService {
                 .orElseThrow(() -> new ExchangeAccountNotFoundException(exchangeAccountId));
     }
 
-    private boolean paperSafetyGatePassed(CredentialPermissionProbeCommand command) {
+    private boolean paperSafetyGatePassed(
+            CredentialPermissionProbeCommand command,
+            CredentialPermissionExpectation permissionExpectation
+    ) {
         if (command == null) {
             return false;
         }
         return Boolean.TRUE.equals(command.paperSafetyConfirmed())
                 && Boolean.TRUE.equals(command.dryRun())
-                && "PAPER".equals(normalizeMode(command.mode()));
+                && (permissionExpectation == CredentialPermissionExpectation.READ_ONLY_DIAGNOSTIC
+                || permissionExpectation == CredentialPermissionExpectation.GATEY_PILOT_READINESS);
     }
 
     private String eventTypeFor(String finalStatus) {
@@ -370,7 +396,8 @@ public class CredentialPermissionProbeService {
             String toStatus,
             String requestId,
             String traceId,
-            boolean failedAuthCountIncremented
+            boolean failedAuthCountIncremented,
+            CredentialPermissionExpectation permissionExpectation
     ) {
         appendAudit(
                 credential,
@@ -384,7 +411,12 @@ public class CredentialPermissionProbeService {
                 traceId,
                 failedAuthCountIncremented,
                 credential.permissionScope(),
-                credential.ipAllowlistProbeStatus()
+                credential.ipAllowlistProbeStatus(),
+                permissionExpectation,
+                false,
+                false,
+                false,
+                false
         );
     }
 
@@ -400,7 +432,12 @@ public class CredentialPermissionProbeService {
             String traceId,
             boolean failedAuthCountIncremented,
             String detectedScope,
-            String ipAllowlistStatus
+            String ipAllowlistStatus,
+            CredentialPermissionExpectation permissionExpectation,
+            boolean readPermissionDetected,
+            boolean tradePermissionDetected,
+            boolean withdrawPermissionDetected,
+            boolean inherentOkxTradePermissionResidual
     ) {
         credentialRepository.appendCredentialAuditLog(
                 credential.credentialId(),
@@ -417,7 +454,12 @@ public class CredentialPermissionProbeService {
                         traceId,
                         failedAuthCountIncremented,
                         detectedScope,
-                        ipAllowlistStatus
+                        ipAllowlistStatus,
+                        permissionExpectation,
+                        readPermissionDetected,
+                        tradePermissionDetected,
+                        withdrawPermissionDetected,
+                        inherentOkxTradePermissionResidual
                 ),
                 Instant.now(clock)
         );
@@ -432,7 +474,12 @@ public class CredentialPermissionProbeService {
             String traceId,
             boolean failedAuthCountIncremented,
             String detectedScope,
-            String ipAllowlistStatus
+            String ipAllowlistStatus,
+            CredentialPermissionExpectation permissionExpectation,
+            boolean readPermissionDetected,
+            boolean tradePermissionDetected,
+            boolean withdrawPermissionDetected,
+            boolean inherentOkxTradePermissionResidual
     ) {
         ObjectNode metadata = objectMapper.createObjectNode();
         metadata.put("credentialId", credential.credentialId());
@@ -442,6 +489,11 @@ public class CredentialPermissionProbeService {
         metadata.put("toStatus", toStatus);
         metadata.put("probeStatus", toStatus);
         metadata.put("detectedScope", detectedScope);
+        metadata.put("permissionExpectation", permissionExpectation == null ? null : permissionExpectation.name());
+        metadata.put("readPermissionDetected", readPermissionDetected);
+        metadata.put("tradePermissionDetected", tradePermissionDetected);
+        metadata.put("withdrawPermissionDetected", withdrawPermissionDetected);
+        metadata.put("inherentOkxTradePermissionResidual", inherentOkxTradePermissionResidual);
         metadata.put("ipAllowlistStatus", ipAllowlistStatus);
         metadata.put("policyDecision", policyDecision);
         metadata.put("errorCategory", policyDecision);
@@ -504,17 +556,6 @@ public class CredentialPermissionProbeService {
         return normalized;
     }
 
-    private String normalizeMode(String value) {
-        if (value == null || value.isBlank()) {
-            return "PAPER";
-        }
-        String normalized = value.trim().toUpperCase(Locale.ROOT);
-        if (!"PAPER".equals(normalized)) {
-            throw new IllegalArgumentException("permission probe mode must be PAPER");
-        }
-        return normalized;
-    }
-
     private String normalizeProbeStatus(String value) {
         String normalized = value == null ? null : value.trim().toUpperCase(Locale.ROOT);
         if (!"SUCCEEDED".equals(normalized) && !"FAILED".equals(normalized) && !"SKIPPED".equals(normalized)) {
@@ -573,6 +614,7 @@ public class CredentialPermissionProbeService {
             ExchangeAccountCredentialSummary credential,
             String actor,
             String reason,
+            CredentialPermissionExpectation permissionExpectation,
             String requestId,
             String traceId,
             CredentialPermissionProbeSummary completedSummary
