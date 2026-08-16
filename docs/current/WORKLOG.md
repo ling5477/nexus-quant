@@ -18998,3 +18998,17 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - validation：authority errors=`0`；doc links首次因外层 `-File` 逗号参数被绑定为单路径而exit=`1 / ROOT_NOT_FOUND`，改用PowerShell数组参数后checked=`345`、errors=`0`、14个既有warnings；`git diff --check`通过；dirty allowlist精确8文件；backend/frontend/migration/scripts/deploy/CI diff=`0`。Docs-only未运行Maven/frontend/Python，非阻断。
 - result：`PASS / GATEY_6D_ACCEPTED / CI_GREEN / GATEY_6E_INITIALIZED / EXACT_PILOT_SCOPE_NOT_MATERIALIZED / FIRST_REAL_ORDER_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / REAL_PROVIDER_NOT_IMPLEMENTED / PRIVATE_TRADING_NOT_IMPLEMENTED / LIVE_DISABLED / KILL_ENGAGED / READY_TO_COMMIT`；未stage/commit/push/deploy。
 - next：进入 `NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-IMPLEMENTATION` 产品代码任务；不得再插入 docs-only review/governance/plan。完整证据：[post-CI acceptance attempt-01](evidence/gate-y/NQ-GATEY-6D-POST-CI-ACCEPTANCE-AND-GATEY-6E-INITIALIZATION.attempt-01.md)。
+
+## 2026-08-16 — GateY-6E first real order prerequisite implementation attempt-01
+
+- task：`NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-IMPLEMENTATION`；NQ-only、高风险 code-change；先执行不可绕过的official contract hard gate。
+- baseline：`dev` clean、staged=`0`；`HEAD == origin/dev == e7230161d30a2332473a84dd5eb58ccf1dd0ac9a`；CI `31946090565 / completed / success` exact-head；authority before=`GateY-6E / NOT_STARTED`。
+- official contract：`account/instruments`有`state/tickSz/lotSz/minSz`，其中SPOT `minSz`精确为base-currency minimum size；`trade-fee`、`balance`、`public/time`分别覆盖fee、USDT available balance与server timestamp。
+- blocker：四个candidate endpoint均无venue-authored per-instrument minimum order value/notional；全文`minNotional`仅RFQ错误码placeholder，不能映射V40独立positive USDT `minimumOrderValue`。
+- decision：禁止固定5 USDT、公告值、`minSz × ticker`、经验推导或fixture；`BLOCKED / MINIMUM_ORDER_VALUE_SOURCE_UNRESOLVED / NO_FABRICATED_PREREQUISITE_FACT`。
+- implementation：trusted real observation、real provider transport、credential/JIT wiring、provider operations、runtime wiring改动均为0；未修改V40/V41、schema、migration或GateY-6B contract。
+- counters：real credential/OKX API/PilotScope/approval/ExecutionIntent/Receipt/PLACE/CANCEL/TRANSFER/WITHDRAW/worker/LIVE enable/kill disengage均=`0`；公开OKX docs访问不属于API调用。
+- validation：official docs HTTP 200；typed response tables=`54/24/69/1` fields；首次本地HTML helper命名导致parser exit=`1`，更名后通过；Maven/focused tests因hard gate立即阻断而未运行，未伪装为通过。
+- findings：P0/P1/P2/P3=`0/1/0/0`；P1=`MINIMUM_ORDER_VALUE_SOURCE_UNRESOLVED`。
+- authority：保持`accepted GateY-6D / work GateY-6E NOT_STARTED / NONE / NOT_RUN`与原next action；LIVE disabled、kill engaged、real provider/private trading not implemented、first real order not authorized。
+- next：需要当前官方typed source，或另行明确授权V40/V41 contract/schema remediation；在此之前implementation保持fail closed。完整证据：[blocked attempt-01](evidence/gate-y/NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-IMPLEMENTATION.attempt-01.md)。

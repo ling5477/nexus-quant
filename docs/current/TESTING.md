@@ -13894,3 +13894,19 @@ IDE terminal 在命令启动前因 executable path 引号解析失败，随后�
 | exact allowlist / forbidden scope | PASS（通过） | 仅用户允许的 8 个 Markdown 文件；backend/frontend/migration/scripts/deploy/`.github` diff=`0` |
 
 本任务 docs-only，未运行 Maven、frontend build/E2E 或 Python tests；这是预期的非阻断未执行项。GateY-6D 产品代码由 exact-head CI `31944962448` 验证，本轮未修改产品代码、schema、checker、governance、deploy 或 CI，也未执行真实 exchange operation。完整证据：[post-CI acceptance attempt-01](evidence/gate-y/NQ-GATEY-6D-POST-CI-ACCEPTANCE-AND-GATEY-6E-INITIALIZATION.attempt-01.md)。
+
+## 2026-08-16 — GateY-6E first real order prerequisite implementation attempt-01
+
+结论：`BLOCKED / MINIMUM_ORDER_VALUE_SOURCE_UNRESOLVED / NO_FABRICATED_PREREQUISITE_FACT / NO_OKX_CALL / NO_EXCHANGE_MUTATION / FIRST_REAL_ORDER_NOT_AUTHORIZED / LIVE_DISABLED`（阻断 / minimum order value 来源未解决 / 不伪造 prerequisite fact / 未调用 OKX API / 无交易所 mutation / 第一笔真实订单未授权 / LIVE 关闭）。
+
+| Command / check | Result | Scope / environment / known warnings / blocking |
+| --- | --- | --- |
+| Git/CI baseline | PASS（通过） | `dev` clean、staged=`0`；`HEAD == origin/dev == e7230161...`；CI `31946090565 / completed / success` exact-head |
+| OKX API v5 official docs | PASS（通过） | 公开 docs HTTP 200；只解析四个候选 endpoint 的 path/response contract；OKX API call=`0` |
+| instruments response table | BLOCKED（阻断） | `state/tickSz/lotSz/minSz` 可回读；SPOT `minSz` 是 base quantity；54个response fields中无minimum order value/notional |
+| fee/balance/time tables | PASS（通过） | fee tier/rates、USDT `availBal`、server `ts`有typed来源；均不提供instrument minimum order value |
+| `minNotional`全文上下文 | BLOCKED（阻断） | 仅RFQ错误码模板 `{nonSpotMinNotional}`/`{spotMinNotional}`，不是候选endpoint response field |
+| local HTML field extractor | PASS（通过） | 首次 helper 名 `Clean` 触发PowerShell parser exit=`1`；改用无歧义 helper 后 instruments/fee/balance/time=`54/24/69/1` fields，未写文件 |
+| Maven/focused regression | NOT RUN（未运行） | hard gate要求在其余代码前立即停止；backend/schema/provider/runtime diff=`0`，该未执行项是阻断结果而非测试通过 |
+
+V40要求独立、可回读、`>0`且币种固定USDT的`minimumOrderValue`，并纳入canonical digest与append-only observation；固定5 USDT、历史公告、`minSz × ticker`、经验推导或fixture均未采用。Authority保持`GateY-6E / NOT_STARTED / NONE / NOT_RUN`。完整证据：[blocked implementation attempt-01](evidence/gate-y/NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-IMPLEMENTATION.attempt-01.md)。
