@@ -42,6 +42,7 @@ class ValidationReviewFlywayPostgresIntegrationTest {
                 .defaultSchema(schema)
                 .createSchemas(true)
                 .cleanDisabled(false)
+                .target("33")
                 .load();
         try {
             MigrateResult result = flyway.migrate();
@@ -62,7 +63,7 @@ class ValidationReviewFlywayPostgresIntegrationTest {
                 .locations("filesystem:../nq-infra/src/main/resources/db/migration")
                 .load();
         publicFlyway.migrate();
-        assertEquals("33", publicFlyway.info().current().getVersion().getVersion());
+        assertEquals("40", publicFlyway.info().current().getVersion().getVersion());
     }
 
     private record SmokeConfig(String url, String user, String password, boolean required) {

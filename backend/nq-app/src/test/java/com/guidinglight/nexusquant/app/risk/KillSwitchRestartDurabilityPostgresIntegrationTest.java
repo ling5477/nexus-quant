@@ -63,6 +63,7 @@ class KillSwitchRestartDurabilityPostgresIntegrationTest {
                 .defaultSchema(schema)
                 .createSchemas(true)
                 .cleanDisabled(false)
+                .target("35")
                 .load();
         try {
             flyway.migrate();

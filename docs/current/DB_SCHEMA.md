@@ -678,3 +678,17 @@ disposable PostgreSQL 17.7 验证覆盖 fresh `V1→V37`、upgrade `V36→V37`�
 PostgreSQL trigger 直接拒绝 `risk_limit_sets` 的 UPDATE/DELETE，以及 `live_session_events`、`operator_approvals`、`execution_receipts` 的 UPDATE/DELETE；`live_sessions` 与 `execution_intents` 只允许合同内的受控 version/state 更新。所有新增表和字段都有中文 `COMMENT`，敏感字段注释明确禁止 credential material、raw request/response、headers 和签名。migration 保留 `SET LOCAL lock_timeout='5s'` 与 `SET LOCAL statement_timeout='60s'`。
 
 Disposable PostgreSQL 17.7 已验证 fresh `V1→V38` fixture 后 `V38→V39`、`Flyway.validate`、六表/注释/trigger、包含 `roles/user_roles` 的历史 fingerprint 不变、约束/非法精度/非法状态/非法窗口、单活 partial unique、append-only/immutable direct SQL rejection、引用一致性 fail-closed、creator identity 绑定、无 `LIVE_APPROVER` 拒绝、授予后并发审批与 8-way event sequence。该本地 PASS 不授权 production migration；`PRODUCTION_LOCK_WINDOW_NOT_MEASURED` 继续保留。
+
+## GateY-6D Pilot Scope 与 Prerequisite Fact Model
+
+`V40__gate_y6d_pilot_scope_prerequisite_fact_model.sql` 已按冻结 work order 实现；当前为 `IMPLEMENTED / PENDING INDEPENDENT MIGRATION SECURITY REVIEW`（已实现 / 等待独立迁移安全复核）。该状态不改变 GateY-6D machine authority，不表示真实 pilot、独立审批、FIRST_REAL_ORDER、micro-live 或 LIVE 已授权。
+
+- `pilot_scope_bindings`：每个 `live_sessions.session_id` 最多一个 immutable `pilot-scope.v1` binding；保存 exact instrument/fee/balance/clock source contract、freshness ceiling、endpoint policy、provider artifact、worker release 与 lowercase SHA-256 `pilot_scope_hash`。数据库重建 canonical payload/hash，拒绝 supplied mismatch、late binding、UPDATE 与 DELETE。
+- `pilot_prerequisite_observations`：append-only 四类 typed facts，允许值为 `INSTRUMENT_METADATA / FEE_SCHEDULE / BALANCE_SNAPSHOT / CLOCK_SYNC`；通过 source observation identity 与 observation-set/type 两组 unique constraint 实现幂等和完整集合约束。
+- `pilot_instrument_observation_items`：保存 instrument observation 的 exact symbol、trading status、tick/lot/minimum size/value；composite FK 只允许挂到 `INSTRUMENT_METADATA`，deferred trigger 校验 exact symbol set 与 digest。
+- `operator_approvals` 仅新增 `scope_schema_version` 与 nullable `pilot_scope_id`。历史行在 migration 内真实标记为 `approval-scope.v1` 后立即移除 default，`pilot_scope_id` 保持 `NULL`；pilot approval 必须通过 `(session_id, pilot_scope_id, scope_hash)` composite FK exact 绑定 scope，legacy approval 不能用于 pilot。
+- 三张新表、全部新字段均有中文 COMMENT；digest、状态、identity/version、maximum-age/skew、variant 与 amount 均有 CHECK/FK/unique/index；scope/observation/item 均有 immutable/append-only guard。
+- complete-set validation 使用 deferred constraint trigger，在 commit 前要求四类 observation 与 instrument exact set 全部完整；同 identity+同 payload 幂等，同 identity+不同 payload conflict，并发由数据库 unique/locking 裁决。
+- migration 不执行历史 approval 批量 `UPDATE`，不创建历史 pilot scope/observation/item，不制造 digest/source/observedAt；V1～V39 不变。
+
+Disposable PostgreSQL 17.7 已验证 V39→V40、V1→V40 full replay、Flyway validate、Java/PostgreSQL canonical parity、no-fake-backfill、约束/trigger、幂等/并发、legacy/new approval compatibility 与 timeout transaction rollback。小 fixture 的 V39→V40 约 70ms，冲突锁下 bounded timeout 约 5.08s；这些数字不能外推 production SLA，production migration 仍未授权。

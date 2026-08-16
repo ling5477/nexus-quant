@@ -13790,3 +13790,26 @@ IDE terminal 在命令启动前因 executable path 引号解析失败，随后�
 | Maven/frontend/Python/PostgreSQL | NOT RUN（未运行） | documentation/design-only，产品代码与 migration SQL 变更必须为 0；非阻断；V40 implementation task 必须执行 PostgreSQL/full backend 验证 |
 
 本任务未创建 SQL、LiveSession、approval、ExecutionIntent 或任何 exchange mutation；credential/OKX access=`0/0`。IDE formatter churn 的根因是对 append-only 大文件执行 bulk Markdown reformat；停止条件触发后恢复四个 tracked 文件到已确认 clean 的精确 HEAD，再仅重放允许的小 patch，最终 diff 已收口。完整合同：[evidence/gate-y/NQ-GATEY-6D-PILOT-SCOPE-PREREQUISITE-FACT-MODEL-FORWARD-MIGRATION-WORK-ORDER.attempt-01.md](evidence/gate-y/NQ-GATEY-6D-PILOT-SCOPE-PREREQUISITE-FACT-MODEL-FORWARD-MIGRATION-WORK-ORDER.attempt-01.md)。
+
+## 2026-08-16 — GateY-6D pilot scope/prerequisite fact-model V40 implementation attempt-01
+
+- PostgreSQL：disposable PostgreSQL 17.7 required profile；V39→V40 PASS（约 70ms，最后一次 72ms），V1→V40 replay/validate PASS，no-fake-backfill PASS，Java/PostgreSQL canonical payload/hash parity PASS。
+- rollback/lock：持有 `operator_approvals` 冲突锁时 V40 在 bounded `lock_timeout` 失败，最后一次实测 5079ms；Flyway transaction rollback 后 partial V40 schema/history row=`0`。
+- focused：canonical/freshness 5/5、migration checksum contract 4/4、ArchUnit 20/20、PostgreSQL integration 3/3，failures/errors/skips=`0/0/0`。
+- full backend：23/23 modules `BUILD SUCCESS`；`nq-app` 284 tests / 0 failures / 0 errors / 24 existing conditional skips。最后的 import/style-only 调整后再次执行 focused reactor，23/23 modules `BUILD SUCCESS`。
+- boundary：V1～V39 unchanged；ExecutionIntent/Receipt creation、OKX call、exchange mutation、credential access、worker/provider wiring、LIVE enable、kill disengage=`0`；LIVE=`DISABLED`、kill=`ENGAGED`。
+- result：`PASS / V40_IMPLEMENTED / PILOT_SCOPE_FACT_MODEL_IMPLEMENTED / PREREQUISITE_OBSERVATION_MODEL_IMPLEMENTED / JAVA_POSTGRES_CANONICAL_PARITY_PASS / NO_FAKE_BACKFILL / V39_TO_V40_PASS / V1_TO_V40_PASS / EXECUTION_INTENT_0 / OKX_CALL_0 / EXCHANGE_MUTATION_0 / LIVE_DISABLED / KILL_ENGAGED / PENDING_INDEPENDENT_MIGRATION_SECURITY_REVIEW`。
+
+## 2026-08-16 — GateY-6D pilot scope prerequisite fact-model forward migration Security Review attempt-01
+
+- conclusion：`PASS / GATEY_6D_V40_MIGRATION_SECURITY_REVIEW_ACCEPTED / P0_0 / P1_0 / READY_TO_COMMIT`（通过 / V40 migration独立审查已接受 / 可进入提交前复核）。
+- environment：disposable PostgreSQL 17.7，`127.0.0.1:55440/nq_gatey6d_review`；public schema 由仓库既有 Flyway integration V1→V40；未连接生产。
+- focused command：GateY-6D canonical/freshness/migration/PostgreSQL + GateY-2/3/4/6C + ArchUnit，final `BUILD SUCCESS`；nq-core/nq-infra/nq-app=`44/23/23`，failures/errors/skips均为 0。
+- migration validation：V39→V40约 `177ms`、V1→V40+validate、no-fake-backfill、Java/PostgreSQL parity、constraints、idempotency/concurrency、approval compatibility均 PASS；lock-timeout rollback final约 `5088ms`；V40 SHA-256=`1c0e486db0f3db4cdf250cb99ab0ed1e289f42d1ed522981272ee8b4c4da25e3`。
+- review fixes：关闭 2 个 P1——preflight未要求exact valid pilot approval、future-dated approval可提前有效；增加 exact approval fail-close、`approved_at <= decisionAt` 与回归。final P0/P1=`0/0`；P2=`PRODUCTION_LOCK_WINDOW_NOT_MEASURED`。
+- full backend：首次因 disposable public schema未预迁移导致两个既有 infra smoke找不到表；运行现有 `ValidationReviewFlywayPostgresIntegrationTest` 1/1完成V1→V40后，相同 required-PostgreSQL full command复跑为23/23 modules `BUILD SUCCESS`，全 reactor failures/errors=`0/0`，nq-app=`284/0/0/24 existing conditional skips`。
+- boundary：V1～V39、frontend/research/scripts/deploy/`.github`、STATUS/ROADMAP diff=`0`；credential/OKX/ExecutionIntent/Receipt/PLACE/CANCEL/TRANSFER/WITHDRAW/worker/provider/LIVE enable/kill disengage=`0`；LIVE disabled、kill engaged。
+- not run：frontend/Python/E2E、production lock-window measurement、credential/OKX probe、真实 pilot/approval/runtime/deploy/交易路径；均不在本 review scope或明确禁止。
+- known warnings：P1修复期间曾有SQL括号、缺import与approval count fixture失败，均最小修正并最终回归；Mockito dynamic-agent、SLF4J NOP、deprecation/unchecked与conditional skips为非阻断。
+- complete evidence：[security review attempt-01](evidence/gate-y/NQ-GATEY-6D-PILOT-SCOPE-PREREQUISITE-FACT-MODEL-FORWARD-MIGRATION-SECURITY-REVIEW.attempt-01.md)。
+- evidence：[implementation attempt-01](evidence/gate-y/NQ-GATEY-6D-PILOT-SCOPE-PREREQUISITE-FACT-MODEL-FORWARD-MIGRATION-IMPLEMENTATION.attempt-01.md)。

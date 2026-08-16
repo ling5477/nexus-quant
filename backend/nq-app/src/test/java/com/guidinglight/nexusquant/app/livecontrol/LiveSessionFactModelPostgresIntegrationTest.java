@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.app.livecontrol;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -15,6 +16,10 @@ import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionEvent;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionState;
 import com.guidinglight.nexusquant.livecontrol.domain.OperatorApproval;
+import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationCanonicalEncoder;
+import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationSet;
+import com.guidinglight.nexusquant.livecontrol.domain.PilotPrerequisiteObservation;
+import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSet;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntent;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentCanonicalEncoder;
@@ -26,11 +31,14 @@ import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceipt
 import com.guidinglight.nexusquant.livecontrol.execution.infra.jdbc.JdbcExecutionIntentRepository;
 import com.guidinglight.nexusquant.livecontrol.infra.jdbc.JdbcLiveControlAuthorization;
 import com.guidinglight.nexusquant.livecontrol.infra.jdbc.JdbcLiveControlRepository;
+import com.guidinglight.nexusquant.livecontrol.infra.jdbc.JdbcPilotScopeRepository;
+import com.guidinglight.nexusquant.livecontrol.infra.PilotScopeFactTransactionService;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -41,6 +49,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.FlywayException;
 import org.junit.jupiter.api.Test;
 import org.postgresql.util.PSQLException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -50,7 +59,7 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * GateY-2 disposable PostgreSQL integration：回放 V1→V39，验证真实 FK/trigger/JDBC/并发。
+ * GateY disposable PostgreSQL integration：回放 V1→latest，验证真实 FK/trigger/JDBC/并发。
  * 测试只写随机 schema 和脱敏 fixture，不启动 adapter、credential access 或任何交易路径。
  */
 class LiveSessionFactModelPostgresIntegrationTest {
@@ -82,7 +91,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
         latest.migrate();
         latest.validate();
         try {
-            assertEquals("39", latest.info().current().getVersion().getVersion());
+            assertEquals("40", latest.info().current().getVersion().getVersion());
             assertEquals(historicalFingerprint, historicalFingerprint(jdbc));
             assertSixTablesAndContracts(jdbc);
 
@@ -128,6 +137,574 @@ class LiveSessionFactModelPostgresIntegrationTest {
         }
     }
 
+    @Test
+    void shouldUpgradeV39WithoutFakeBackfillAndEnforcePilotFacts() throws Exception {
+        SmokeConfig config = SmokeConfig.fromSystemProperties();
+        if (!config.required()) {
+            assumeTrue(config.configured(), "PostgreSQL GateY-6D integration is disabled");
+        }
+        assertTrue(config.configured(), "Missing required nq.postgres.smoke.* properties");
+
+        String schema = "gatey6d_" + UUID.randomUUID().toString().replace("-", "");
+        Flyway throughV38 = flyway(config, schema, "38");
+        throughV38.migrate();
+        JdbcTemplate jdbc = jdbc(config, schema);
+        ExistingFixture historicalFixture = seedExistingFacts(jdbc);
+        Flyway throughV39 = flyway(config, schema, "39");
+        throughV39.migrate();
+        HistoricalV39 historical = seedHistoricalV39Facts(jdbc, historicalFixture);
+
+        Flyway latest = flyway(config, schema, null);
+        long startedAt = System.nanoTime();
+        latest.migrate();
+        long migrationElapsedMs = Duration.ofNanos(System.nanoTime() - startedAt).toMillis();
+        latest.validate();
+        System.out.println("gatey6d_v39_to_v40_elapsed_ms=" + migrationElapsedMs);
+        try {
+            assertEquals("40", latest.info().current().getVersion().getVersion());
+            assertTrue(migrationElapsedMs < 60_000);
+            assertEquals(historical.fingerprint(), historicalApprovalFingerprint(jdbc, historical.approvalId()));
+            assertEquals("approval-scope.v1", jdbc.queryForObject(
+                    "SELECT scope_schema_version FROM operator_approvals WHERE approval_id=?",
+                    String.class, historical.approvalId()));
+            assertEquals(0, jdbc.queryForObject(
+                    "SELECT count(*) FROM operator_approvals WHERE approval_id=? AND pilot_scope_id IS NOT NULL",
+                    Integer.class, historical.approvalId()));
+            assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM pilot_scope_bindings", Integer.class));
+            assertEquals(0, jdbc.queryForObject(
+                    "SELECT count(*) FROM pilot_prerequisite_observations", Integer.class));
+            assertEquals(0, jdbc.queryForObject(
+                    "SELECT count(*) FROM pilot_instrument_observation_items", Integer.class));
+
+            ExistingFixture pilotFixture = seedExistingFacts(jdbc);
+            JdbcLiveControlRepository liveRepository = new JdbcLiveControlRepository(jdbc);
+            JdbcPilotScopeRepository pilotRepository = new JdbcPilotScopeRepository(jdbc);
+            JdbcLiveControlAuthorization authorization = new JdbcLiveControlAuthorization(jdbc);
+            var transactionManager = new DataSourceTransactionManager(jdbc.getDataSource());
+            TransactionTemplate transactions = new TransactionTemplate(transactionManager);
+            LiveSessionControlService liveService = new LiveSessionControlService(liveRepository, authorization);
+            PilotScopeFactTransactionService pilotTransactions = new PilotScopeFactTransactionService(
+                    liveService, liveRepository, pilotRepository, authorization, transactionManager);
+            RiskLimitSet pilotRisk = risk(pilotFixture.creatorId(), 100);
+            transactions.executeWithoutResult(status -> liveService.createRiskLimitSet(
+                    new AuthenticatedLiveControlActor(pilotFixture.creatorId()), pilotRisk));
+
+            Instant factNow = Instant.now().truncatedTo(ChronoUnit.MICROS);
+            LiveSession session = LiveSession.create(
+                    UUID.randomUUID(), pilotFixture.creatorId(), pilotFixture.exchangeAccountId(),
+                    pilotFixture.releaseId(), DIGEST_A, 1, pilotRisk.id(), pilotRisk.canonicalDigest(),
+                    pilotFixture.credentialId(), List.of("BTC-USDT"), decimal("25"),
+                    factNow.minusSeconds(5), factNow.plusSeconds(300), pilotFixture.creatorId(), factNow);
+            PilotScopeBinding scope = pilotScope(session, pilotFixture.creatorId(), factNow);
+            PilotObservationSet observations = pilotObservations(scope, UUID.randomUUID(), factNow, decimal("25"));
+            PilotScopeBinding stored = pilotTransactions.materialize(
+                    new AuthenticatedLiveControlActor(pilotFixture.creatorId()), session, pilotRisk,
+                    createdEventAt(session, pilotFixture.creatorId(), factNow), scope, observations);
+            assertEquals(scope.id(), stored.id());
+            assertEquals(4, jdbc.queryForObject(
+                    "SELECT count(*) FROM pilot_prerequisite_observations WHERE pilot_scope_id=?",
+                    Integer.class, scope.id()));
+            assertEquals(1, jdbc.queryForObject(
+                    "SELECT count(*) FROM pilot_instrument_observation_items WHERE observation_id=?",
+                    Integer.class, observations.instrumentMetadata().id()));
+
+            String postgresCanonical = jdbc.queryForObject("""
+                    SELECT gate_y6d_pilot_scope_canonical_payload(
+                        scope.session_id, scope.instrument_metadata_digest, scope.instrument_source_identity,
+                        scope.instrument_source_schema_version, scope.instrument_maximum_age_ms,
+                        scope.fee_schedule_digest, scope.fee_tier, scope.fee_evidence_class,
+                        scope.fee_source_identity, scope.fee_source_schema_version, scope.fee_maximum_age_ms,
+                        scope.balance_source_identity, scope.balance_source_schema_version, scope.balance_maximum_age_ms,
+                        scope.clock_source_identity, scope.clock_source_schema_version, scope.clock_maximum_age_ms,
+                        scope.signed_timestamp_source, scope.maximum_tolerated_skew_ms,
+                        scope.endpoint_policy_version, scope.endpoint_policy_digest,
+                        scope.provider_contract_identity, scope.provider_artifact_digest,
+                        scope.worker_identity, scope.worker_release_digest)
+                    FROM pilot_scope_bindings scope WHERE scope.pilot_scope_id=?
+                    """, String.class, scope.id());
+            assertEquals(com.guidinglight.nexusquant.livecontrol.domain.PilotScopeCanonicalEncoder.encode(session, scope),
+                    postgresCanonical);
+            assertEquals(scope.pilotScopeHash(), jdbc.queryForObject(
+                    "SELECT gate_y6d_reconstruct_pilot_scope_hash(?)", String.class, scope.id()));
+
+            PilotScopeBinding replay = transactions.execute(
+                    status -> pilotRepository.materialize(session, scope));
+            assertEquals(scope.id(), replay.id());
+            assertEquals(observations.id(), transactions.execute(
+                    status -> pilotRepository.appendObservationSet(scope, observations)).id());
+            assertConcurrentPilotRetries(jdbc, liveService, pilotRepository, transactions, factNow);
+
+            PilotScopeBinding conflict = pilotScopeWithProvider(scope, session, "provider-contract-2");
+            LiveControlException scopeConflict = assertThrows(LiveControlException.class,
+                    () -> transactions.execute(status -> pilotRepository.materialize(session, conflict)));
+            assertEquals("PILOT_SCOPE_MATERIALIZATION_CONFLICT", scopeConflict.code());
+
+            assertSqlState23514(() -> jdbc.update(
+                    "UPDATE pilot_scope_bindings SET worker_identity='mutated' WHERE pilot_scope_id=?", scope.id()));
+            assertSqlState23514(() -> jdbc.update(
+                    "DELETE FROM pilot_scope_bindings WHERE pilot_scope_id=?", scope.id()));
+            assertSqlState23514(() -> jdbc.update(
+                    "UPDATE pilot_prerequisite_observations SET recorder_identity='mutated' WHERE observation_id=?",
+                    observations.balanceSnapshot().id()));
+            assertSqlState23514(() -> jdbc.update(
+                    "DELETE FROM pilot_instrument_observation_items WHERE observation_id=?",
+                    observations.instrumentMetadata().id()));
+
+            PilotObservationSet identityConflict = pilotObservations(
+                    scope, UUID.randomUUID(), factNow.plusMillis(1), decimal("26"));
+            LiveControlException observationConflict = assertThrows(LiveControlException.class,
+                    () -> transactions.execute(status -> pilotRepository.appendObservationSet(scope, identityConflict)));
+            assertEquals("PREREQUISITE_OBSERVATION_IDENTITY_CONFLICT", observationConflict.code());
+
+            assertIncompleteObservationSetRollback(jdbc, transactions, observations);
+            assertFutureAndSkewObservationsRejected(jdbc, observations);
+            assertFalse(pilotTransactions.preflight(session.id(), decimal("20")).eligible());
+            assertPilotApprovalCompatibility(
+                    jdbc, liveRepository, pilotRepository, transactions, session, scope,
+                    pilotFixture.creatorId(), pilotFixture.approverId(), factNow);
+
+            PilotScopeBinding lateScope = pilotScope(historical.session(), historicalFixture.creatorId(), factNow);
+            assertSqlState23514(() -> transactions.execute(
+                    status -> pilotRepository.materialize(historical.session(), lateScope)));
+
+            assertTrue(pilotTransactions.preflight(session.id(), decimal("20")).eligible());
+            assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM execution_intents", Integer.class));
+            assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM execution_receipts", Integer.class));
+        } finally {
+            latest.clean();
+        }
+    }
+
+    @Test
+    void shouldReplayV1ToV40AndRollbackOnMigrationLockTimeout() throws Exception {
+        SmokeConfig config = SmokeConfig.fromSystemProperties();
+        if (!config.required()) {
+            assumeTrue(config.configured(), "PostgreSQL GateY-6D integration is disabled");
+        }
+        assertTrue(config.configured(), "Missing required nq.postgres.smoke.* properties");
+
+        String replaySchema = "gatey6d_replay_" + UUID.randomUUID().toString().replace("-", "");
+        Flyway replay = flyway(config, replaySchema, null);
+        replay.migrate();
+        try {
+            assertEquals("40", replay.info().current().getVersion().getVersion());
+            replay.validate();
+        } finally {
+            replay.clean();
+        }
+
+        String timeoutSchema = "gatey6d_timeout_" + UUID.randomUUID().toString().replace("-", "");
+        Flyway throughV39 = flyway(config, timeoutSchema, "39");
+        throughV39.migrate();
+        JdbcTemplate jdbc = jdbc(config, timeoutSchema);
+        TransactionTemplate locker = new TransactionTemplate(
+                new DataSourceTransactionManager(jdbc.getDataSource()));
+        CountDownLatch locked = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        try (ExecutorService executor = Executors.newSingleThreadExecutor()) {
+            Future<?> lock = executor.submit(() -> locker.executeWithoutResult(status -> {
+                jdbc.execute("LOCK TABLE operator_approvals IN ACCESS SHARE MODE");
+                locked.countDown();
+                try {
+                    assertTrue(release.await(15, TimeUnit.SECONDS));
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(ex);
+                }
+            }));
+            assertTrue(locked.await(10, TimeUnit.SECONDS));
+            long startedAt = System.nanoTime();
+            assertThrows(FlywayException.class, () -> flyway(config, timeoutSchema, null).migrate());
+            long elapsedMs = Duration.ofNanos(System.nanoTime() - startedAt).toMillis();
+            System.out.println("gatey6d_lock_timeout_elapsed_ms=" + elapsedMs);
+            assertTrue(elapsedMs >= 4_000 && elapsedMs < 15_000);
+            release.countDown();
+            lock.get(10, TimeUnit.SECONDS);
+        } finally {
+            release.countDown();
+        }
+        assertEquals(0, jdbc.queryForObject("""
+                SELECT count(*) FROM information_schema.tables
+                WHERE table_schema=current_schema() AND table_name='pilot_scope_bindings'
+                """, Integer.class));
+        assertEquals(0, jdbc.queryForObject("""
+                SELECT count(*) FROM information_schema.columns
+                WHERE table_schema=current_schema() AND table_name='operator_approvals'
+                  AND column_name IN ('scope_schema_version','pilot_scope_id')
+                """, Integer.class));
+        assertEquals("39", throughV39.info().current().getVersion().getVersion());
+        throughV39.clean();
+    }
+
+    private static HistoricalV39 seedHistoricalV39Facts(JdbcTemplate jdbc, ExistingFixture fixture) {
+        JdbcLiveControlRepository repository = new JdbcLiveControlRepository(jdbc);
+        RiskLimitSet risk = risk(fixture.creatorId(), 99);
+        repository.createRiskLimitSet(risk);
+        LiveSession session = session(fixture, risk, UUID.randomUUID(), NOW);
+        repository.createSession(session);
+        UUID approvalId = UUID.randomUUID();
+        jdbc.update("""
+                INSERT INTO operator_approvals(
+                    approval_id,session_id,scope_hash,release_digest,risk_limit_set_digest,
+                    approver_id,approver_role,decision,reason,approved_at,expires_at
+                ) VALUES (?,?,?,?,?,?,'LIVE_APPROVER','REJECTED','historical-v39',?,?)
+                """, approvalId, session.id(), session.approvalScopeHash(), session.releaseDigest(),
+                session.riskLimitSetDigest(), fixture.approverId(), Timestamp.from(NOW),
+                Timestamp.from(NOW.plusSeconds(120)));
+        return new HistoricalV39(session, approvalId, historicalApprovalFingerprint(jdbc, approvalId));
+    }
+
+    private static String historicalApprovalFingerprint(JdbcTemplate jdbc, UUID approvalId) {
+        return jdbc.queryForObject("""
+                SELECT concat_ws('|', approval_id::text, session_id::text, scope_hash, release_digest,
+                    risk_limit_set_digest, approver_id::text, approver_role, decision, reason,
+                    approved_at::text, expires_at::text)
+                FROM operator_approvals WHERE approval_id=?
+                """, String.class, approvalId);
+    }
+
+    private static PilotScopeBinding pilotScope(LiveSession session, long createdBy, Instant createdAt) {
+        var item = instrumentItem(PilotPrerequisiteObservation.TradingStatus.LIVE);
+        PilotScopeBinding draft = new PilotScopeBinding(
+                UUID.randomUUID(), session.id(),
+                PilotObservationCanonicalEncoder.instrumentMetadataDigest(List.of(item)),
+                "instrument-source", "instrument-source.v1", 300_000,
+                DIGEST_B, "tier-1", PilotScopeBinding.FeeEvidenceClass.OBSERVED_PRIVATE,
+                "fee-source", "fee-source.v1", 3_600_000,
+                "balance-source", "balance-source.v1", 10_000,
+                "clock-source", "clock-source.v1", 60_000,
+                PilotScopeBinding.SIGNED_TIMESTAMP_SOURCE, 500,
+                "endpoint-policy.v1", DIGEST_A, "provider-contract", DIGEST_A,
+                "pilot-worker", DIGEST_B, "0".repeat(64), createdBy, createdAt
+        );
+        return draft.withCanonicalHash(session);
+    }
+
+    private static PilotScopeBinding pilotScopeWithProvider(
+            PilotScopeBinding source,
+            LiveSession session,
+            String providerIdentity
+    ) {
+        return new PilotScopeBinding(
+                UUID.randomUUID(), source.sessionId(), source.instrumentMetadataDigest(),
+                source.instrumentSourceIdentity(), source.instrumentSourceSchemaVersion(),
+                source.instrumentMaximumAgeMs(), source.feeScheduleDigest(), source.feeTier(),
+                source.feeEvidenceClass(), source.feeSourceIdentity(), source.feeSourceSchemaVersion(),
+                source.feeMaximumAgeMs(), source.balanceSourceIdentity(), source.balanceSourceSchemaVersion(),
+                source.balanceMaximumAgeMs(), source.clockSourceIdentity(), source.clockSourceSchemaVersion(),
+                source.clockMaximumAgeMs(), source.signedTimestampSource(), source.maximumToleratedSkewMs(),
+                source.endpointPolicyVersion(), source.endpointPolicyDigest(), providerIdentity,
+                source.providerArtifactDigest(), source.workerIdentity(), source.workerReleaseDigest(),
+                "0".repeat(64), source.createdBy(), source.createdAt()
+        ).withCanonicalHash(session);
+    }
+
+    private static PilotScopeBinding pilotScopeWithId(PilotScopeBinding source, UUID pilotScopeId) {
+        return new PilotScopeBinding(
+                pilotScopeId, source.sessionId(), source.instrumentMetadataDigest(),
+                source.instrumentSourceIdentity(), source.instrumentSourceSchemaVersion(),
+                source.instrumentMaximumAgeMs(), source.feeScheduleDigest(), source.feeTier(),
+                source.feeEvidenceClass(), source.feeSourceIdentity(), source.feeSourceSchemaVersion(),
+                source.feeMaximumAgeMs(), source.balanceSourceIdentity(), source.balanceSourceSchemaVersion(),
+                source.balanceMaximumAgeMs(), source.clockSourceIdentity(), source.clockSourceSchemaVersion(),
+                source.clockMaximumAgeMs(), source.signedTimestampSource(), source.maximumToleratedSkewMs(),
+                source.endpointPolicyVersion(), source.endpointPolicyDigest(), source.providerContractIdentity(),
+                source.providerArtifactDigest(), source.workerIdentity(), source.workerReleaseDigest(),
+                source.pilotScopeHash(), source.createdBy(), source.createdAt()
+        );
+    }
+
+    private static void assertConcurrentPilotRetries(
+            JdbcTemplate jdbc,
+            LiveSessionControlService liveService,
+            JdbcPilotScopeRepository pilotRepository,
+            TransactionTemplate transactions,
+            Instant factNow
+    ) throws Exception {
+        ExistingFixture fixture = seedExistingFacts(jdbc);
+        RiskLimitSet riskLimitSet = risk(fixture.creatorId(), 101);
+        transactions.executeWithoutResult(status -> liveService.createRiskLimitSet(
+                new AuthenticatedLiveControlActor(fixture.creatorId()), riskLimitSet));
+        LiveSession concurrentSession = LiveSession.create(
+                UUID.randomUUID(), fixture.creatorId(), fixture.exchangeAccountId(), fixture.releaseId(),
+                DIGEST_A, 1, riskLimitSet.id(), riskLimitSet.canonicalDigest(), fixture.credentialId(),
+                List.of("BTC-USDT"), decimal("25"), factNow.minusSeconds(5), factNow.plusSeconds(300),
+                fixture.creatorId(), factNow);
+        transactions.executeWithoutResult(status -> liveService.createSession(
+                new AuthenticatedLiveControlActor(fixture.creatorId()), concurrentSession, riskLimitSet,
+                createdEventAt(concurrentSession, fixture.creatorId(), factNow)));
+
+        PilotScopeBinding firstScope = pilotScope(concurrentSession, fixture.creatorId(), factNow);
+        PilotScopeBinding secondScope = pilotScopeWithId(firstScope, UUID.randomUUID());
+        CountDownLatch scopeStart = new CountDownLatch(1);
+        List<PilotScopeBinding> scopeResults;
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            List<Future<PilotScopeBinding>> futures = List.of(firstScope, secondScope).stream()
+                    .map(candidate -> executor.submit(() -> {
+                        assertTrue(scopeStart.await(10, TimeUnit.SECONDS));
+                        return transactions.execute(status -> pilotRepository.materialize(concurrentSession, candidate));
+                    }))
+                    .toList();
+            scopeStart.countDown();
+            scopeResults = List.of(
+                    futures.get(0).get(10, TimeUnit.SECONDS),
+                    futures.get(1).get(10, TimeUnit.SECONDS));
+        }
+        assertEquals(scopeResults.get(0).id(), scopeResults.get(1).id());
+        assertEquals(1, jdbc.queryForObject(
+                "SELECT count(*) FROM pilot_scope_bindings WHERE session_id=?",
+                Integer.class, concurrentSession.id()));
+
+        PilotScopeBinding storedScope = scopeResults.getFirst();
+        Instant observationTime = factNow.plusMillis(5);
+        PilotObservationSet firstSet = pilotObservations(
+                storedScope, UUID.randomUUID(), observationTime, decimal("25"));
+        PilotObservationSet secondSet = pilotObservations(
+                storedScope, UUID.randomUUID(), observationTime, decimal("25"));
+        CountDownLatch observationStart = new CountDownLatch(1);
+        List<PilotObservationSet> observationResults;
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            List<Future<PilotObservationSet>> futures = List.of(firstSet, secondSet).stream()
+                    .map(candidate -> executor.submit(() -> {
+                        assertTrue(observationStart.await(10, TimeUnit.SECONDS));
+                        return transactions.execute(status -> pilotRepository.appendObservationSet(storedScope, candidate));
+                    }))
+                    .toList();
+            observationStart.countDown();
+            observationResults = List.of(
+                    futures.get(0).get(10, TimeUnit.SECONDS),
+                    futures.get(1).get(10, TimeUnit.SECONDS));
+        }
+        assertEquals(observationResults.get(0).id(), observationResults.get(1).id());
+        assertEquals(4, jdbc.queryForObject(
+                "SELECT count(*) FROM pilot_prerequisite_observations WHERE pilot_scope_id=?",
+                Integer.class, storedScope.id()));
+        assertEquals(1, jdbc.queryForObject(
+                "SELECT count(DISTINCT observation_set_id) FROM pilot_prerequisite_observations WHERE pilot_scope_id=?",
+                Integer.class, storedScope.id()));
+    }
+
+    private static PilotObservationSet pilotObservations(
+            PilotScopeBinding scope,
+            UUID setId,
+            Instant recordedAt,
+            BigDecimal availableBalance
+    ) {
+        Instant observedAt = recordedAt.minusMillis(100);
+        var item = instrumentItem(PilotPrerequisiteObservation.TradingStatus.LIVE);
+        var instrument = canonical(new PilotPrerequisiteObservation.InstrumentMetadata(
+                observationEnvelope(scope, setId, "instrument-identity", scope.instrumentSourceIdentity(),
+                        scope.instrumentSourceSchemaVersion(),
+                        PilotPrerequisiteObservation.InstrumentMetadata.SCHEMA_VERSION, observedAt, recordedAt),
+                scope.instrumentMetadataDigest(), List.of(item)));
+        var fee = canonical(new PilotPrerequisiteObservation.FeeSchedule(
+                observationEnvelope(scope, setId, "fee-identity", scope.feeSourceIdentity(),
+                        scope.feeSourceSchemaVersion(),
+                        PilotPrerequisiteObservation.FeeSchedule.SCHEMA_VERSION, observedAt, recordedAt),
+                scope.feeScheduleDigest(), scope.feeTier(), scope.feeEvidenceClass(),
+                decimal("0.001"), decimal("0.0015"),
+                PilotPrerequisiteObservation.FeeSchedule.LOSS_TREATMENT));
+        var balance = canonical(new PilotPrerequisiteObservation.BalanceSnapshot(
+                observationEnvelope(scope, setId, "balance-identity", scope.balanceSourceIdentity(),
+                        scope.balanceSourceSchemaVersion(),
+                        PilotPrerequisiteObservation.BalanceSnapshot.SCHEMA_VERSION, observedAt, recordedAt),
+                DIGEST_A, "USDT", availableBalance));
+        var clock = canonical(new PilotPrerequisiteObservation.ClockSync(
+                observationEnvelope(scope, setId, "clock-identity", scope.clockSourceIdentity(),
+                        scope.clockSourceSchemaVersion(),
+                        PilotPrerequisiteObservation.ClockSync.SCHEMA_VERSION, observedAt, recordedAt),
+                DIGEST_B, scope.signedTimestampSource(), 25));
+        return new PilotObservationSet(setId, scope.id(), instrument, fee, balance, clock);
+    }
+
+    private static PilotPrerequisiteObservation.InstrumentItem instrumentItem(
+            PilotPrerequisiteObservation.TradingStatus status
+    ) {
+        return new PilotPrerequisiteObservation.InstrumentItem(
+                "BTC-USDT", status, new BigDecimal("0.1"), new BigDecimal("0.001"),
+                new BigDecimal("0.001"), new BigDecimal("5"), "USDT");
+    }
+
+    private static PilotPrerequisiteObservation.Envelope observationEnvelope(
+            PilotScopeBinding scope,
+            UUID setId,
+            String identity,
+            String source,
+            String sourceSchema,
+            String observationSchema,
+            Instant observedAt,
+            Instant recordedAt
+    ) {
+        return new PilotPrerequisiteObservation.Envelope(
+                UUID.randomUUID(), scope.id(), setId, observationSchema, identity, source, sourceSchema,
+                observedAt, recordedAt, scope.workerIdentity(), "0".repeat(64));
+    }
+
+    private static PilotPrerequisiteObservation.InstrumentMetadata canonical(
+            PilotPrerequisiteObservation.InstrumentMetadata value
+    ) {
+        return new PilotPrerequisiteObservation.InstrumentMetadata(
+                value.envelope().withPayloadHash(PilotObservationCanonicalEncoder.digest(value)),
+                value.instrumentMetadataDigest(), value.items());
+    }
+
+    private static PilotPrerequisiteObservation.FeeSchedule canonical(
+            PilotPrerequisiteObservation.FeeSchedule value
+    ) {
+        return new PilotPrerequisiteObservation.FeeSchedule(
+                value.envelope().withPayloadHash(PilotObservationCanonicalEncoder.digest(value)),
+                value.feeScheduleDigest(), value.feeTier(), value.feeEvidenceClass(),
+                value.makerFeeRate(), value.takerFeeRate(), value.feeLossTreatment());
+    }
+
+    private static PilotPrerequisiteObservation.BalanceSnapshot canonical(
+            PilotPrerequisiteObservation.BalanceSnapshot value
+    ) {
+        return new PilotPrerequisiteObservation.BalanceSnapshot(
+                value.envelope().withPayloadHash(PilotObservationCanonicalEncoder.digest(value)),
+                value.balanceSnapshotDigest(), value.balanceCurrency(), value.availableBalance());
+    }
+
+    private static PilotPrerequisiteObservation.ClockSync canonical(
+            PilotPrerequisiteObservation.ClockSync value
+    ) {
+        return new PilotPrerequisiteObservation.ClockSync(
+                value.envelope().withPayloadHash(PilotObservationCanonicalEncoder.digest(value)),
+                value.clockSyncObservationDigest(), value.signedTimestampSource(), value.observedSkewMs());
+    }
+
+    private static void assertIncompleteObservationSetRollback(
+            JdbcTemplate jdbc,
+            TransactionTemplate transactions,
+            PilotObservationSet source
+    ) {
+        assertSqlState23514(() -> transactions.executeWithoutResult(status -> jdbc.update("""
+                INSERT INTO pilot_prerequisite_observations(
+                    observation_id,pilot_scope_id,observation_set_id,observation_type,
+                    observation_schema_version,observation_identity,source_identity,source_schema_version,
+                    observed_at,recorded_at,recorder_identity,observation_payload_hash,
+                    instrument_metadata_digest,fee_schedule_digest,balance_snapshot_digest,
+                    clock_sync_observation_digest,fee_tier,fee_evidence_class,maker_fee_rate,taker_fee_rate,
+                    fee_loss_treatment,balance_currency,available_balance,signed_timestamp_source,observed_skew_ms)
+                SELECT ?,pilot_scope_id,?,'BALANCE_SNAPSHOT',observation_schema_version,?,
+                       source_identity,source_schema_version,observed_at,recorded_at,recorder_identity,
+                       observation_payload_hash,instrument_metadata_digest,fee_schedule_digest,
+                       balance_snapshot_digest,clock_sync_observation_digest,fee_tier,fee_evidence_class,
+                       maker_fee_rate,taker_fee_rate,fee_loss_treatment,balance_currency,available_balance,
+                       signed_timestamp_source,observed_skew_ms
+                FROM pilot_prerequisite_observations WHERE observation_id=?
+                """, UUID.randomUUID(), UUID.randomUUID(), "incomplete-" + UUID.randomUUID(),
+                source.balanceSnapshot().id())));
+        assertEquals(4, jdbc.queryForObject(
+                "SELECT count(*) FROM pilot_prerequisite_observations WHERE pilot_scope_id=?",
+                Integer.class, source.pilotScopeId()));
+    }
+
+    private static void assertFutureAndSkewObservationsRejected(
+            JdbcTemplate jdbc,
+            PilotObservationSet source
+    ) {
+        assertSqlState23514(() -> jdbc.update("""
+                INSERT INTO pilot_prerequisite_observations(
+                    observation_id,pilot_scope_id,observation_set_id,observation_type,
+                    observation_schema_version,observation_identity,source_identity,source_schema_version,
+                    observed_at,recorded_at,recorder_identity,observation_payload_hash,
+                    instrument_metadata_digest,fee_schedule_digest,balance_snapshot_digest,
+                    clock_sync_observation_digest,fee_tier,fee_evidence_class,maker_fee_rate,taker_fee_rate,
+                    fee_loss_treatment,balance_currency,available_balance,signed_timestamp_source,observed_skew_ms)
+                SELECT ?,pilot_scope_id,?,'BALANCE_SNAPSHOT',observation_schema_version,?,
+                       source_identity,source_schema_version,transaction_timestamp()+INTERVAL '2 seconds',
+                       transaction_timestamp(),recorder_identity,observation_payload_hash,
+                       instrument_metadata_digest,fee_schedule_digest,balance_snapshot_digest,
+                       clock_sync_observation_digest,fee_tier,fee_evidence_class,maker_fee_rate,taker_fee_rate,
+                       fee_loss_treatment,balance_currency,available_balance,signed_timestamp_source,observed_skew_ms
+                FROM pilot_prerequisite_observations WHERE observation_id=?
+                """, UUID.randomUUID(), UUID.randomUUID(), "future-" + UUID.randomUUID(),
+                source.balanceSnapshot().id()));
+        assertSqlState23514(() -> jdbc.update("""
+                INSERT INTO pilot_prerequisite_observations(
+                    observation_id,pilot_scope_id,observation_set_id,observation_type,
+                    observation_schema_version,observation_identity,source_identity,source_schema_version,
+                    observed_at,recorded_at,recorder_identity,observation_payload_hash,
+                    instrument_metadata_digest,fee_schedule_digest,balance_snapshot_digest,
+                    clock_sync_observation_digest,fee_tier,fee_evidence_class,maker_fee_rate,taker_fee_rate,
+                    fee_loss_treatment,balance_currency,available_balance,signed_timestamp_source,observed_skew_ms)
+                SELECT ?,pilot_scope_id,?,'CLOCK_SYNC',observation_schema_version,?,
+                       source_identity,source_schema_version,observed_at,recorded_at,recorder_identity,
+                       observation_payload_hash,instrument_metadata_digest,fee_schedule_digest,
+                       balance_snapshot_digest,clock_sync_observation_digest,fee_tier,fee_evidence_class,
+                       maker_fee_rate,taker_fee_rate,fee_loss_treatment,balance_currency,available_balance,
+                       signed_timestamp_source,501
+                FROM pilot_prerequisite_observations WHERE observation_id=?
+                """, UUID.randomUUID(), UUID.randomUUID(), "skew-" + UUID.randomUUID(),
+                source.clockSync().id()));
+    }
+
+    private static void assertPilotApprovalCompatibility(
+            JdbcTemplate jdbc,
+            JdbcLiveControlRepository liveRepository,
+            JdbcPilotScopeRepository pilotRepository,
+            TransactionTemplate transactions,
+            LiveSession session,
+            PilotScopeBinding scope,
+            long creatorId,
+            long approverId,
+            Instant approvedAt
+    ) {
+        OperatorApproval legacy = new OperatorApproval(
+                UUID.randomUUID(), session.id(), session.approvalScopeHash(), session.releaseDigest(),
+                session.riskLimitSetDigest(), approverId, OperatorApproval.REQUIRED_ROLE,
+                OperatorApproval.Decision.APPROVED, "legacy-cannot-authorize-pilot",
+                approvedAt, approvedAt.plusSeconds(120));
+        assertSqlState23514(() -> transactions.executeWithoutResult(
+                status -> liveRepository.appendApproval(legacy)));
+
+        OperatorApproval selfApproval = new OperatorApproval(
+                UUID.randomUUID(), session.id(), OperatorApproval.PILOT_SCOPE_SCHEMA, scope.id(),
+                scope.pilotScopeHash(), session.releaseDigest(), session.riskLimitSetDigest(), creatorId,
+                OperatorApproval.REQUIRED_ROLE, OperatorApproval.Decision.APPROVED, "self-approval",
+                approvedAt, approvedAt.plusSeconds(120));
+        assertSqlState23514(() -> transactions.executeWithoutResult(
+                status -> liveRepository.appendApproval(selfApproval)));
+
+        OperatorApproval lateExpiry = new OperatorApproval(
+                UUID.randomUUID(), session.id(), OperatorApproval.PILOT_SCOPE_SCHEMA, scope.id(),
+                scope.pilotScopeHash(), session.releaseDigest(), session.riskLimitSetDigest(), approverId,
+                OperatorApproval.REQUIRED_ROLE, OperatorApproval.Decision.APPROVED, "late-expiry",
+                approvedAt, session.executionWindowEnd().plusSeconds(1));
+        assertSqlState23514(() -> transactions.executeWithoutResult(
+                status -> liveRepository.appendApproval(lateExpiry)));
+
+        OperatorApproval futureDated = new OperatorApproval(
+                UUID.randomUUID(), session.id(), OperatorApproval.PILOT_SCOPE_SCHEMA, scope.id(),
+                scope.pilotScopeHash(), session.releaseDigest(), session.riskLimitSetDigest(), approverId,
+                OperatorApproval.REQUIRED_ROLE, OperatorApproval.Decision.APPROVED, "future-dated",
+                approvedAt.plusSeconds(60), approvedAt.plusSeconds(120));
+        transactions.executeWithoutResult(status -> liveRepository.appendApproval(futureDated));
+        assertTrue(pilotRepository.findValidPilotApproval(scope, approvedAt.plusSeconds(1)).isEmpty());
+
+        OperatorApproval valid = new OperatorApproval(
+                UUID.randomUUID(), session.id(), OperatorApproval.PILOT_SCOPE_SCHEMA, scope.id(),
+                scope.pilotScopeHash(), session.releaseDigest(), session.riskLimitSetDigest(), approverId,
+                OperatorApproval.REQUIRED_ROLE, OperatorApproval.Decision.APPROVED, "pilot-approved",
+                approvedAt, approvedAt.plusSeconds(120));
+        transactions.executeWithoutResult(status -> liveRepository.appendApproval(valid));
+        assertEquals(valid.id(), pilotRepository.findValidPilotApproval(scope, approvedAt.plusSeconds(1))
+                .orElseThrow().id());
+        assertTrue(liveRepository.findValidApproval(session, approvedAt.plusSeconds(1)).isEmpty());
+        assertEquals(2, jdbc.queryForObject("""
+                SELECT count(*) FROM operator_approvals
+                WHERE scope_schema_version='pilot-scope.v1' AND pilot_scope_id=?
+                """, Integer.class, scope.id()));
+    }
+
+    private static LiveSessionEvent createdEventAt(LiveSession session, long actorId, Instant occurredAt) {
+        return new LiveSessionEvent(
+                UUID.randomUUID(), session.id(), 1, null, LiveSessionState.APPROVAL_PENDING,
+                "CREATE", actorId, "pilot-create-request", "pilot-create-trace", "SESSION_CREATED",
+                "pilot-create-session", "2".repeat(64), "{}", occurredAt);
+    }
+
     private static Flyway flyway(SmokeConfig config, String schema, String target) {
         var configuration = Flyway.configure()
                 .dataSource(config.url(), config.user(), config.password())
@@ -152,7 +729,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
     }
 
     private static String withCurrentSchema(String url, String schema) {
-        return url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema;
+        return url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema + ",public";
     }
 
     private static ExistingFixture seedExistingFacts(JdbcTemplate jdbc) {
@@ -269,8 +846,10 @@ class LiveSessionFactModelPostgresIntegrationTest {
                 """, Integer.class));
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM risk_limit_sets", Integer.class));
         assertEquals(4, jdbc.queryForObject("""
-                SELECT count(*) FROM pg_trigger
-                WHERE NOT tgisinternal AND tgname IN (
+                SELECT count(*) FROM pg_trigger t
+                JOIN pg_class c ON c.oid = t.tgrelid
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = current_schema() AND NOT t.tgisinternal AND t.tgname IN (
                     'trg_risk_limit_sets_immutable','trg_live_session_events_append_only',
                     'trg_operator_approvals_append_only','trg_execution_receipts_append_only')
                 """, Integer.class));
@@ -300,9 +879,9 @@ class LiveSessionFactModelPostgresIntegrationTest {
         UUID approvalId = UUID.randomUUID();
         jdbc.update("""
                 INSERT INTO operator_approvals(
-                    approval_id,session_id,scope_hash,release_digest,risk_limit_set_digest,
+                    approval_id,session_id,scope_schema_version,scope_hash,release_digest,risk_limit_set_digest,
                     approver_id,approver_role,decision,reason,approved_at,expires_at
-                ) VALUES (?,?,?,?,?,?,'LIVE_APPROVER','REJECTED','fixture',?,?)
+                ) VALUES (?,?,'approval-scope.v1',?,?,?,?, 'LIVE_APPROVER','REJECTED','fixture',?,?)
                 """, approvalId, session.id(), session.approvalScopeHash(), session.releaseDigest(),
                 session.riskLimitSetDigest(), existing.approverId(), Timestamp.from(NOW), Timestamp.from(NOW.plusSeconds(10)));
         assertSqlState23514(() -> jdbc.update(
@@ -504,7 +1083,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
             List<Future<Optional<ExecutionIntent>>> futures = java.util.stream.IntStream.range(0, 4)
                     .mapToObj(index -> executor.submit(() -> {
                         assertTrue(claimStart.await(10, TimeUnit.SECONDS));
-                        return repository.claim(intentId, "worker-" + index, tokens.get(index), Duration.ofMillis(25));
+                        return repository.claim(intentId, "worker-" + index, tokens.get(index), Duration.ofMillis(500));
                     })).toList();
             claimStart.countDown();
             for (Future<Optional<ExecutionIntent>> future : futures) {
@@ -513,7 +1092,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
         }
         assertEquals(1, claims.stream().filter(Optional::isPresent).count());
         ExecutionIntent claimed = claims.stream().flatMap(Optional::stream).findFirst().orElseThrow();
-        jdbc.queryForObject("SELECT pg_sleep(0.05)", Object.class);
+        jdbc.queryForObject("SELECT pg_sleep(0.55)", Object.class);
         UUID reclaimedToken = UUID.randomUUID();
         ExecutionIntent reclaimed = repository.claim(
                 intentId, "worker-reclaimed", reclaimedToken, Duration.ofMinutes(1)).orElseThrow();
@@ -1064,7 +1643,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
     }
 
     private static void assertSqlState23514(Runnable action) {
-        DataIntegrityViolationException failure = assertThrows(DataIntegrityViolationException.class, action::run);
+        RuntimeException failure = assertThrows(RuntimeException.class, action::run);
         Throwable cause = failure;
         while (cause != null && !(cause instanceof PSQLException)) {
             cause = cause.getCause();
@@ -1081,6 +1660,9 @@ class LiveSessionFactModelPostgresIntegrationTest {
             long credentialId,
             String releaseId
     ) {
+    }
+
+    private record HistoricalV39(LiveSession session, UUID approvalId, String fingerprint) {
     }
 
     private record SmokeConfig(String url, String user, String password, boolean required) {

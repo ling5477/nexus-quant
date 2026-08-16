@@ -18918,3 +18918,24 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - validation：authority=`errors 0`；links=`324 checked / 14 historical warnings / 0 errors`；diff-check=`0`；dirty allowlist=`5/5`；forbidden-area与positive authorization hits=`0`；5 个 changed Markdown IDE problems=`0`。bulk formatter churn 已恢复并仅重放小 patch；Maven/frontend/Python/PostgreSQL=`NOT RUN / docs-only`。
 - result：`PASS / GATEY_6D_FORWARD_MIGRATION_CONTRACT_DEFINED / DURABLE_PILOT_SCOPE_MODEL_DEFINED / PREREQUISITE_FACT_MODEL_DEFINED / CANONICAL_PILOT_SCOPE_HASH_DEFINED / NO_FAKE_BACKFILL / NO_EXECUTION_INTENT / NO_EXCHANGE_MUTATION / FIRST_REAL_ORDER_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`。
 - next：`NQ-GATEY-6D-PILOT-SCOPE-PREREQUISITE-FACT-MODEL-FORWARD-MIGRATION-IMPLEMENTATION`；该任务才允许 V40/domain/repository/JDBC/PostgreSQL tests，仍不授权任何真实交易或 LIVE。完整证据：[evidence/gate-y/NQ-GATEY-6D-PILOT-SCOPE-PREREQUISITE-FACT-MODEL-FORWARD-MIGRATION-WORK-ORDER.attempt-01.md](evidence/gate-y/NQ-GATEY-6D-PILOT-SCOPE-PREREQUISITE-FACT-MODEL-FORWARD-MIGRATION-WORK-ORDER.attempt-01.md)。
+
+## 2026-08-16 — GateY-6D pilot scope prerequisite fact-model forward migration implementation attempt-01
+
+- baseline：`dev`；起始 clean/staged empty；`HEAD == origin/dev == 3544b70e877dde40908e369baaed8f1b312cfa30`；exact-head CI=`31925787001 / completed / success`；authority=`accepted GateY-6C / work GateY-6D NOT_STARTED`。
+- implementation：新增 V40 三表、approval 两列、PostgreSQL constraints/functions/triggers；新增 immutable scope、typed observations、canonical/freshness policy、repository/JDBC 与 materialization/approval/refresh/preflight 四类事务；V1～V39 unchanged。
+- validation：V40 checksum=`1c0e486d...5e3`；PostgreSQL 17.7 V39→V40 约 70ms、V1→V40 replay、no-fake-backfill、Java/DB parity、timeout rollback、幂等/并发与 approval compatibility PASS；focused=`5+4+20+3` PASS；full backend 23/23，`nq-app` 284/0/0/24 existing conditional skips。
+- boundary：ExecutionIntent/Receipt、credential、OKX、PLACE/CANCEL/TRANSFER/WITHDRAW、worker/provider wiring、LIVE enable、kill disengage=`0`；frontend/research/scripts/deploy/`.github` diff=0；LIVE disabled、kill engaged；未 stage/commit/push/tag/deploy。
+- authority：`STATUS.md` / `ROADMAP.md` 不修改；GateY-6D machine authority 继续 `NOT_STARTED / NONE / NOT_RUN`。
+- result：`PASS / V40_IMPLEMENTED / PILOT_SCOPE_FACT_MODEL_IMPLEMENTED / PREREQUISITE_OBSERVATION_MODEL_IMPLEMENTED / JAVA_POSTGRES_CANONICAL_PARITY_PASS / NO_FAKE_BACKFILL / V39_TO_V40_PASS / V1_TO_V40_PASS / EXECUTION_INTENT_0 / OKX_CALL_0 / EXCHANGE_MUTATION_0 / LIVE_DISABLED / KILL_ENGAGED / PENDING_INDEPENDENT_MIGRATION_SECURITY_REVIEW`。
+- next：`NQ-GATEY-6D-PILOT-SCOPE-PREREQUISITE-FACT-MODEL-FORWARD-MIGRATION-SECURITY-REVIEW`。完整证据：[implementation attempt-01](evidence/gate-y/NQ-GATEY-6D-PILOT-SCOPE-PREREQUISITE-FACT-MODEL-FORWARD-MIGRATION-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-16 — GateY-6D pilot scope prerequisite fact-model forward migration Security Review attempt-01
+
+- task：`NQ-GATEY-6D-PILOT-SCOPE-PREREQUISITE-FACT-MODEL-FORWARD-MIGRATION-SECURITY-REVIEW`；NQ-only、L级、独立 migration/data-integrity/concurrency review。
+- baseline：`dev`；`HEAD == origin/dev == 3544b70e877dde40908e369baaed8f1b312cfa30`；进入 review 时实际 staged=10，与工单 staged=0预期不符；未擅自 stage/unstage，全部 dirty files仍在 V40 implementation/review allowlist。
+- review/fix：审查 schema/no-backfill/canonical/observation/idempotency/approval/transaction/upgrade/architecture/runtime boundary；发现并关闭2个P1：preflight缺exact valid approval、future-dated approval提前有效。final P0/P1=`0/0`；P2保留`PRODUCTION_LOCK_WINDOW_NOT_MEASURED`。
+- validation：focused nq-core/nq-infra/nq-app=`44/23/23`全部通过；PostgreSQL 17.7 V39→V40、V1→V40、rollback、parity、no-backfill、concurrency、approval compatibility通过；full backend在public schema V1→V40准备后23/23 modules `BUILD SUCCESS`，failures/errors=`0/0`。
+- boundary：V1～V39与forbidden areas diff=0；credential/OKX/ExecutionIntent/Receipt/PLACE/CANCEL/TRANSFER/WITHDRAW/worker/provider/LIVE enable/kill disengage=`0`；LIVE disabled、kill engaged；未连接生产或执行外部副作用。
+- authority：`STATUS.md` / `ROADMAP.md` unchanged；accepted=`GateY-6C / ACCEPTED|CI_GREEN`，work=`GateY-6D / NOT_STARTED / NONE / NOT_RUN`。
+- result：`PASS / GATEY_6D_V40_MIGRATION_SECURITY_REVIEW_ACCEPTED / P0_0 / P1_0 / NO_FAKE_BACKFILL / JAVA_POSTGRES_CANONICAL_PARITY_ACCEPTED / CONCURRENCY_ACCEPTED / APPROVAL_COMPATIBILITY_ACCEPTED / V39_TO_V40_ACCEPTED / V1_TO_V40_ACCEPTED / EXECUTION_INTENT_0 / OKX_CALL_0 / EXCHANGE_MUTATION_0 / LIVE_DISABLED / READY_TO_COMMIT`。
+- next：提交当前 V40 implementation + review evidence并等待 exact-head CI；不得推进machine authority或进入真实 pilot/runtime/LIVE。完整证据：[security review attempt-01](evidence/gate-y/NQ-GATEY-6D-PILOT-SCOPE-PREREQUISITE-FACT-MODEL-FORWARD-MIGRATION-SECURITY-REVIEW.attempt-01.md)。

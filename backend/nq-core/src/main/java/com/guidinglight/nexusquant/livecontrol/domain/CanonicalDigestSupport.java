@@ -44,6 +44,14 @@ final class CanonicalDigestSupport {
         return quote(money(value, "canonical decimal").toPlainString());
     }
 
+    static String plainDecimal(BigDecimal value, String name) {
+        if (value == null) {
+            throw new IllegalArgumentException(name + " must not be null");
+        }
+        BigDecimal normalized = value.stripTrailingZeros();
+        return normalized.signum() == 0 ? "0" : normalized.toPlainString();
+    }
+
     static String quote(String value) {
         if (value == null) {
             return "null";

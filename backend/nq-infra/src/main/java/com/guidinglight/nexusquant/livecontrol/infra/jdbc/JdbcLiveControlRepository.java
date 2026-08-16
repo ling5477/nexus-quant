@@ -44,7 +44,8 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
             FROM risk_limit_sets
             """;
     private static final String APPROVAL_SELECT = """
-            SELECT approval_id, session_id, scope_hash, release_digest, risk_limit_set_digest,
+            SELECT approval_id, session_id, scope_schema_version, pilot_scope_id,
+                   scope_hash, release_digest, risk_limit_set_digest,
                    approver_id, approver_role, decision, reason, approved_at, expires_at
             FROM operator_approvals
             """;
@@ -264,11 +265,13 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
     public void appendApproval(OperatorApproval value) {
         jdbcTemplate.update("""
                 INSERT INTO operator_approvals (
-                    approval_id, session_id, scope_hash, release_digest, risk_limit_set_digest,
+                    approval_id, session_id, scope_schema_version, pilot_scope_id,
+                    scope_hash, release_digest, risk_limit_set_digest,
                     approver_id, approver_role, decision, reason, approved_at, expires_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                value.id(), value.sessionId(), value.scopeHash(), value.releaseDigest(),
+                value.id(), value.sessionId(), value.scopeSchemaVersion(), value.pilotScopeId(),
+                value.scopeHash(), value.releaseDigest(),
                 value.riskLimitSetDigest(), value.approverId(), value.approverRole(),
                 value.decision().name(), value.reason(), timestamp(value.approvedAt()), timestamp(value.expiresAt())
         );
@@ -283,14 +286,17 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
     public Optional<OperatorApproval> findValidApproval(LiveSession session, Instant now) {
         return first(jdbcTemplate.query(APPROVAL_SELECT + """
                 WHERE session_id = ?
+                  AND scope_schema_version = 'approval-scope.v1'
+                  AND pilot_scope_id IS NULL
                   AND scope_hash = ?
                   AND release_digest = ?
                   AND risk_limit_set_digest = ?
                   AND decision = 'APPROVED'
+                  AND approved_at <= ?
                   AND expires_at > ?
                 ORDER BY approved_at DESC, approval_id DESC LIMIT 1
                 """, this::mapApproval, session.id(), session.approvalScopeHash(),
-                session.releaseDigest(), session.riskLimitSetDigest(), timestamp(now)));
+                session.releaseDigest(), session.riskLimitSetDigest(), timestamp(now), timestamp(now)));
     }
 
     private LiveSession mapSession(ResultSet row, int rowNumber) throws SQLException {
@@ -324,6 +330,7 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
     private OperatorApproval mapApproval(ResultSet row, int rowNumber) throws SQLException {
         return new OperatorApproval(
                 row.getObject("approval_id", UUID.class), row.getObject("session_id", UUID.class),
+                row.getString("scope_schema_version"), row.getObject("pilot_scope_id", UUID.class),
                 row.getString("scope_hash"), row.getString("release_digest"),
                 row.getString("risk_limit_set_digest"), row.getLong("approver_id"),
                 row.getString("approver_role"), OperatorApproval.Decision.valueOf(row.getString("decision")),
