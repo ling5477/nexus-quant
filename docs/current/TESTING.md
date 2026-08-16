@@ -13773,3 +13773,20 @@ IDE terminal 在命令启动前因 executable path 引号解析失败，随后�
 | Maven/frontend/Python | NOT RUN（未运行） | documentation-only，产品/migration/CI/governance diff 必须为 0；使用 exact-head CI `31893000098`，非阻断 |
 
 本任务 credential access、OKX calls、exchange mutation、worker/provider start=`0/0/0/0`；未重跑 probe，未创建 pilot facts、`ExecutionIntent`、approval 或 V40。首次 link checker 调用遗漏 mandatory `-Roots` 参数并在扫描前失败；改为当前 PowerShell 直接传入 `@('README.md','docs/current')` 后通过，未隐藏该非产品失败。完整证据：[evidence/gate-y/NQ-GATEY-6C-POST-CI-ACCEPTANCE-AND-GATEY-6D-INITIALIZATION.attempt-01.md](evidence/gate-y/NQ-GATEY-6C-POST-CI-ACCEPTANCE-AND-GATEY-6D-INITIALIZATION.attempt-01.md)。
+
+## 2026-08-16 — GateY-6D pilot scope prerequisite fact-model forward migration work order attempt-01
+
+结论：`PASS / GATEY_6D_FORWARD_MIGRATION_CONTRACT_DEFINED / DURABLE_PILOT_SCOPE_MODEL_DEFINED / PREREQUISITE_FACT_MODEL_DEFINED / CANONICAL_PILOT_SCOPE_HASH_DEFINED / NO_FAKE_BACKFILL / NO_EXECUTION_INTENT / NO_EXCHANGE_MUTATION / FIRST_REAL_ORDER_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`（通过 / forward migration 合同已定义 / 可进入提交前复核）。
+
+| Command / check | Result | Scope / environment / known warnings / blocking |
+| --- | --- | --- |
+| Git/origin/current CI baseline | PASS（通过） | `dev` clean；`HEAD == origin/dev == 016d652f3b57ce3282f3efd03bdd0dfdcd7c5ae4`；CI `31923811316 / completed / success` exact-head |
+| migration/V39/domain audit | PASS / FORWARD MIGRATION REQUIRED（通过 / 需要 forward migration） | 最高 migration=V39；确认 prerequisite typed facts、fresh identity/freshness、`pilot-scope.v1` 与 versioned approval exact binding 缺口 |
+| schema/compatibility contract review | PASS（通过） | 三张新表 + `operator_approvals` 两列；immutable/append-only、FK/unique/check/trigger、idempotency、no-fake-backfill、forward remediation 已冻结 |
+| docs/current authority checker | PASS（通过） | `errors=0 / CURRENT_AUTHORITY_CONSISTENT`；GateY-6D 仍为 `NOT_STARTED`，`STATUS.md` 未修改 |
+| doc links | PASS WITH HISTORICAL WARNINGS（通过并有历史 warning） | `324 checked / 14 historical warnings / 0 errors`；warning 全部来自既有 append-only ledger 历史路径 |
+| diff / forbidden-area checks | PASS（通过） | `git diff --check` exit=`0`；dirty allowlist=`5/5`；backend/frontend/research/scripts/deploy/.github/migration diff=`0`；positive authorization pattern hits=`0` |
+| IDE Markdown formatting / problems | PASS WITH RECOVERED FORMATTER CHURN（通过，已收回 formatter churn） | bulk formatter 曾机械重写大文件，已恢复精确 HEAD 内容并只重放本轮小 patch；最终 5 个 changed Markdown errors=`0` |
+| Maven/frontend/Python/PostgreSQL | NOT RUN（未运行） | documentation/design-only，产品代码与 migration SQL 变更必须为 0；非阻断；V40 implementation task 必须执行 PostgreSQL/full backend 验证 |
+
+本任务未创建 SQL、LiveSession、approval、ExecutionIntent 或任何 exchange mutation；credential/OKX access=`0/0`。IDE formatter churn 的根因是对 append-only 大文件执行 bulk Markdown reformat；停止条件触发后恢复四个 tracked 文件到已确认 clean 的精确 HEAD，再仅重放允许的小 patch，最终 diff 已收口。完整合同：[evidence/gate-y/NQ-GATEY-6D-PILOT-SCOPE-PREREQUISITE-FACT-MODEL-FORWARD-MIGRATION-WORK-ORDER.attempt-01.md](evidence/gate-y/NQ-GATEY-6D-PILOT-SCOPE-PREREQUISITE-FACT-MODEL-FORWARD-MIGRATION-WORK-ORDER.attempt-01.md)。

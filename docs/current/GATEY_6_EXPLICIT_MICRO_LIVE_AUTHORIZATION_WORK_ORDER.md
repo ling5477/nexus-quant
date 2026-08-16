@@ -199,7 +199,7 @@ Symbol selection只冻结标准，不选择 symbol：spot only、high liquidity�
 
 ## 10. LiveSession, approval and explicit authorization
 
-V39/domain 已能表达 session、account reference、credential reference、release、risk、symbols、capital、window、approval、expiry 与 scope hash；当前审计未发现必须立即创建 forward migration 的 durable fact 缺口。若独立审查发现 mandatory durable fact不能无损表示，则状态改为 `BLOCKED / FORWARD_MIGRATION_REQUIRED`，另开 migration work order，不得在本任务创建 V40。
+V39/domain 已能表达 session、account reference、credential reference、release、risk、symbols、capital、window、approval、expiry 与 legacy `approval-scope.v1`；GateY-6D audit confirmed forward migration is required before exact pilot materialization. Mandatory prerequisite facts、fresh observation identity/freshness、versioned canonical `pilotScopeHash` 与 approval exact binding 不能由 V39 无损表达，必须先完成独立 forward migration work order；不得伪回填历史 session 或在 materialization task 内临时改义 V39 字段。
 
 `LiveSessionControlService` 能拒绝creator与approver为同一identity，且GateY-2 accepted evidence明确覆盖该规则，故separation capability为PASS；具体pilot的两个独立authenticated主体均未选择，pilot binding为`NOT_MET`。不存在已接受的single-operator exception，禁止同一identity以不同role伪装双主体。
 
