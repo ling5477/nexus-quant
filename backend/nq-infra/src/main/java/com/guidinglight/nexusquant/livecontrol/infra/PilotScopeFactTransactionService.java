@@ -31,6 +31,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 public class PilotScopeFactTransactionService {
 
+    private static final String OPERATOR_ROLE = "OPERATOR";
+
     private final LiveSessionControlService liveSessionService;
     private final LiveControlRepository liveControlRepository;
     private final PilotScopeRepository pilotScopeRepository;
@@ -66,16 +68,32 @@ public class PilotScopeFactTransactionService {
             PilotObservationSet observations
     ) {
         return writeTransactions.execute(status -> {
+            if (!authorization.lockAndCheckRole(actor.userId(), OPERATOR_ROLE)) {
+                throw new LiveControlException(
+                        "LIVE_SESSION_OPERATOR_ROLE_REQUIRED",
+                        "authenticated actor does not currently hold the required role"
+                );
+            }
+            var existingSession = liveControlRepository.lockSession(session.id());
+            if (existingSession.isPresent()) {
+                LiveSession existing = existingSession.get();
+                if (!existing.approvalScopeHash().equals(session.approvalScopeHash())
+                        || existing.createdBy() != actor.userId()
+                        || !liveControlRepository.lockAndValidateSessionReferences(existing)) {
+                    throw new LiveControlException(
+                            "PILOT_MATERIALIZATION_IDEMPOTENCY_CONFLICT",
+                            "session identity is already bound to different or stale facts"
+                    );
+                }
+                PilotScopeBinding stored = pilotScopeRepository.materialize(existing, scope);
+                pilotScopeRepository.appendObservationSet(stored, observations);
+                return stored;
+            }
             liveSessionService.createSession(actor, session, riskLimitSet, createdEvent);
             PilotScopeBinding stored = pilotScopeRepository.materialize(session, scope);
             pilotScopeRepository.appendObservationSet(stored, observations);
             return stored;
         });
-    }
-
-    /** Refresh 只追加新的完整 observation set，不覆盖旧事实。 */
-    public PilotObservationSet refresh(PilotScopeBinding scope, PilotObservationSet observations) {
-        return writeTransactions.execute(status -> pilotScopeRepository.appendObservationSet(scope, observations));
     }
 
     /** 独立 approval 事务；只追加 exact pilot approval，不创建 ExecutionIntent 或状态迁移。 */
@@ -86,6 +104,13 @@ public class PilotScopeFactTransactionService {
             if (!OperatorApproval.PILOT_SCOPE_SCHEMA.equals(approval.scopeSchemaVersion())
                     || !authorization.lockAndCheckRole(actor.userId(), OperatorApproval.REQUIRED_ROLE)) {
                 throw new LiveControlException("PILOT_APPROVAL_FORBIDDEN", "pilot approval authorization failed");
+            }
+            var replay = liveControlRepository.findApproval(approval.id());
+            if (replay.isPresent()) {
+                if (replay.get().equals(approval)) {
+                    return replay.get();
+                }
+                throw new LiveControlException("APPROVAL_ID_REUSED", "approval id was reused with different facts");
             }
             LiveSession session = liveControlRepository.lockSession(approval.sessionId()).orElseThrow(() ->
                     new LiveControlException("LIVE_SESSION_NOT_FOUND", "pilot approval session was not found"));

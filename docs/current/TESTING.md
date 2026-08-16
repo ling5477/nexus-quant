@@ -13813,3 +13813,69 @@ IDE terminal 在命令启动前因 executable path 引号解析失败，随后�
 - known warnings：P1修复期间曾有SQL括号、缺import与approval count fixture失败，均最小修正并最终回归；Mockito dynamic-agent、SLF4J NOP、deprecation/unchecked与conditional skips为非阻断。
 - complete evidence：[security review attempt-01](evidence/gate-y/NQ-GATEY-6D-PILOT-SCOPE-PREREQUISITE-FACT-MODEL-FORWARD-MIGRATION-SECURITY-REVIEW.attempt-01.md)。
 - evidence：[implementation attempt-01](evidence/gate-y/NQ-GATEY-6D-PILOT-SCOPE-PREREQUISITE-FACT-MODEL-FORWARD-MIGRATION-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-16 — GateY-6D exact pilot scope prerequisite materialization implementation attempt-01
+
+结论：`PASS / GATEY_6D_MATERIALIZATION_CAPABILITY_IMPLEMENTED / EXACT_PILOT_SCOPE_NOT_MATERIALIZED / EXPLICIT_PILOT_SCOPE_INPUT_REQUIRED / PREREQUISITE_OBSERVATION_INPUT_REQUIRED / NO_VALUES_INVENTED / EXECUTION_INTENT_0 / EXCHANGE_MUTATION_0 / LIVE_DISABLED / KILL_ENGAGED / PENDING_INDEPENDENT_SECURITY_REVIEW`（通过 / 能力已实现 / 未物化实际 pilot / 待独立安全评审）。
+
+| Command / check | Result | Scope / environment / known warnings |
+| --- | --- | --- |
+| baseline + exact-head CI | PASS（通过） | `dev`；起始 clean；`HEAD == origin/dev == bc35edb60370aee367ab40853201e1f249179b83`；CI `31933158234 / completed / success` |
+| compile | PASS（通过） | `mvn -f backend/pom.xml -pl nq-api,nq-infra -am -DskipTests compile`；20/20 modules `BUILD SUCCESS` |
+| GateY-6D focused | PASS（通过） | infra/API 新增 11 tests，failures/errors/skipped=`0/0/0`；认证 actor、SoR/runtime mismatch、canonical scope/observation hash、risk/symbol/time fail-close、exact approval binding |
+| V40 PostgreSQL + GateY-2/4/6C + ArchUnit | PASS（通过） | disposable PostgreSQL 17.7；89 tests，`0/0/0`；V39→V40=`99ms`、V1→V40、no-fake-backfill、幂等/并发、approval compatibility、lock-timeout rollback=`5065ms`；23/23 modules success |
+| GateY-4 deployment boundary script | PASS（通过） | 6 cases：delegate-release/linux-root/identity/no-start/no-secret/no-network |
+| `mvn -f backend/pom.xml test` | PASS（通过） | 23/23 modules `BUILD SUCCESS`；1506 tests，failures/errors/skipped=`0/0/47`；50.843s |
+
+标准 full backend 中 47 个 skip 为既有 conditional/manual integration；V40 PostgreSQL required profile 已在 disposable PostgreSQL 17.7 单独 3/3 实跑。首次 focused 命令因 PowerShell 未引用 `-Dsurefire.failIfNoSpecifiedTests=false` 被 Maven 解析为 lifecycle phase，退出码 1；加引号后相同测试集通过，该次非产品编排失败未隐藏。既有 Mockito dynamic-agent、SLF4J NOP、deprecation/unchecked warning 非阻断。
+
+本轮未调用 materialization API、未写实际 LiveSession/PilotScope/observation/approval；preflight=`NOT_RUN_NO_SCOPE`。credential material access、OKX call、ExecutionIntent/Receipt、PLACE/CANCEL/TRANSFER/WITHDRAW、worker/provider start、exchange mutation、LIVE enable、kill disengage 均为 0。完整证据：[evidence/gate-y/NQ-GATEY-6D-EXACT-PILOT-SCOPE-PREREQUISITE-MATERIALIZATION-IMPLEMENTATION.attempt-01.md](evidence/gate-y/NQ-GATEY-6D-EXACT-PILOT-SCOPE-PREREQUISITE-MATERIALIZATION-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-16 — GateY-6D exact pilot scope prerequisite materialization Security Review attempt-01
+
+结论：`FAIL / GATEY_6D_SECURITY_REVIEW_REJECTED / P0_0 / P1_1_OPEN / P1_3_CLOSED / UNTRUSTED_PREREQUISITE_OBSERVATION_AUTHORITY / AUTHORITY_UNCHANGED / NOT_READY_TO_COMMIT`（失败 / 独立安全审查拒绝 / authority 不变 / 不可提交）。
+
+| Command / check | Result | Scope / environment / known warnings |
+| --- | --- | --- |
+| GateY-6D focused | PASS（通过） | 20/20 modules；13 tests；failures/errors/skipped=`0/0/0`；覆盖 cross-owner preflight、approval auth-before-lookup 与 role-revoked replay |
+| PostgreSQL + GateY-2/4/6C + ArchUnit | PASS（通过） | disposable PostgreSQL 17.7；23/23 modules；137 tests；failures/errors=`0/0`；10 个既有 Windows stable-handle skips；V39→V40=`88ms`，rollback=`5059ms` |
+| GateY-4 deployment boundary | PASS（通过） | 6/6：delegate-release/linux-root/identity/no-start/no-secret/no-network |
+| `mvn -f backend/pom.xml test` | PASS（通过） | 23/23 modules；1508 tests；failures/errors/skipped=`0/0/47`；52.052s |
+| static reachability / forbidden diff | PASS（通过） | migration/frontend/research/scripts/deploy/CI diff=`0`；credential access、OKX、ExecutionIntent/Receipt、exchange mutation、worker/provider start、LIVE enable、kill disengage=`0` |
+
+关闭 3 个 P1：cross-account preflight IDOR、materialization replay role-revocation bypass、approval unauthorized resource probe。仍有 1 个 P1：请求提交的动态 prerequisite observation 没有可信 SoR/attestation 验证，approval 不绑定可追加的 observation set，伪造 balance/skew 可成为 durable eligible preflight；因此 review 不接受。完整证据：[security review attempt-01](evidence/gate-y/NQ-GATEY-6D-EXACT-PILOT-SCOPE-PREREQUISITE-MATERIALIZATION-SECURITY-REVIEW.attempt-01.md)。
+
+文档 checker：current authority=`errors 0 / PASS`；links 最终=`336 checked / 14 existing historical warnings / 0 errors / PASS`。首次 link checker 遗漏 mandatory `-Roots` 参数并在扫描前 exit 1，补全 `README.md,docs/current` roots 后通过，不把首次调用写成通过。
+
+## 2026-08-16 — GateY-6D trusted prerequisite observation authority remediation attempt-01
+
+结论：`PASS / GATEY_6D_TRUSTED_OBSERVATION_AUTHORITY_REMEDIATED / OPERATOR_OBSERVATION_AUTHORITY_REMOVED / PRODUCTION_FAIL_CLOSED / POST_APPROVAL_FORGED_REFRESH_DENIED / P1_REMEDIATED_PENDING_REVIEW / EXECUTION_INTENT_0 / OKX_CALL_0 / EXCHANGE_MUTATION_0 / LIVE_DISABLED / READY_FOR_SECURITY_REVIEW_ATTEMPT_02`（通过 / P1 已整改并待独立复审）。
+
+| Command / check | Result | Scope / environment / known warnings / blocking |
+| --- | --- | --- |
+| controller/resolver/service focused Maven | PASS（通过） | 20/20 modules；17 tests，failures/errors/skipped=`0/0/0`；旧 observation payload、server-owned bindings、production unavailable、trusted validation 与 post-approval forged replay均覆盖 |
+| ArchUnit / source boundary | PASS（通过） | `PackageBoundaryArchTest` 10 tests；API/command不得依赖 observation payload，transaction primitive main caller仅control-plane |
+| required PostgreSQL 17.7 | PASS（通过） | disposable container；`LiveSessionFactModelPostgresIntegrationTest` 3/3、0 skipped；unavailable path exact rows=`0/0/0/0`，V39→V40、V1→V40、lock-timeout rollback通过 |
+| GateY-6C focused | PASS（通过） | core/adapter/infra/app=`20/2/8/25`，共55 tests，failures/errors/skipped=`0/0/0` |
+| GateY-4 deployment boundary | PASS（通过） | 6/6：delegate-release/linux-root/identity/no-start/no-secret/no-network |
+| `mvn -f backend/pom.xml test` | PASS（通过） | 23/23 modules；1515 tests，failures/errors/skipped=`0/0/47`；51.134s |
+| static trust/reachability/diff | PASS（通过） | operator authority fields=0；production trusted implementation=1且固定 unavailable；refresh primitive=0；migration/frontend/research/scripts/deploy/CI diff=0；staged=0 |
+
+47 个 skip 为既有 conditional/manual integration；required PostgreSQL 已单独实跑。未运行 frontend/Python/E2E，因为对应 diff 为 0。未访问 credential material、未调用 OKX、未执行 exchange mutation、未创建 `ExecutionIntent` 或实际 pilot facts；LIVE disabled、kill engaged。完整证据：[evidence/gate-y/NQ-GATEY-6D-TRUSTED-PREREQUISITE-OBSERVATION-AUTHORITY-REMEDIATION.attempt-01.md](evidence/gate-y/NQ-GATEY-6D-TRUSTED-PREREQUISITE-OBSERVATION-AUTHORITY-REMEDIATION.attempt-01.md)。
+
+## 2026-08-16 — GateY-6D exact pilot scope prerequisite materialization Security Review attempt-02
+
+结论：`PASS / GATEY_6D_SECURITY_REVIEW_ACCEPTED / ATTEMPT_01_P1_CLOSED / P0_0 / P1_0 / TRUSTED_OBSERVATION_AUTHORITY_ACCEPTED / PRODUCTION_FAIL_CLOSED_ACCEPTED / POST_APPROVAL_FORGED_REFRESH_DENIED / AUTHORIZATION_REGRESSIONS_PASS / EXACT_PILOT_SCOPE_NOT_MATERIALIZED / EXECUTION_INTENT_0 / OKX_CALL_0 / EXCHANGE_MUTATION_0 / LIVE_DISABLED / READY_TO_COMMIT`（通过 / attempt-01 P1 已关闭 / 可进入提交前复核）。
+
+| Command / check | Result | Scope / environment / known warnings / blocking |
+| --- | --- | --- |
+| controller/resolver/service focused Maven | PASS（通过） | 20/20 modules；17 tests，failures/errors/skipped=`0/0/0`；legacy JSON、trusted authority、production unavailable、forged replay与IDOR覆盖 |
+| ArchUnit/source boundary | PASS（通过） | 23/23 modules；14 tests，failures/errors/skipped=`0/0/0`；API/command observation dependency与transaction single-main-caller guard通过 |
+| required PostgreSQL 17.7 | PASS（通过） | disposable container；3/3、0 skipped；unavailable path rows=`0/0/0/0`，V39→V40、V1→V40、role-revoked replay与lock-timeout rollback=`5063ms`通过 |
+| GateY-6C focused | PASS（通过） | core/infra/scheduler/API/app=`16/8/2/7/10`，共43 tests，failures/errors/skipped=`0/0/0` |
+| GateY-4 deployment boundary | PASS（通过） | 6/6：delegate-release/linux-root/identity/no-start/no-secret/no-network |
+| GateY-2 regression | PASS（通过） | required PostgreSQL suite中的GateY-2 fact-model/repository/concurrency path与full backend通过 |
+| `mvn -f backend/pom.xml test` | PASS（通过） | 23/23 modules；1515 tests，failures/errors/skipped=`0/0/47`；52.737s |
+| static trust/reachability/diff | PASS（通过） | operator observation input=0；production authority implementation=1且fixed unavailable；arbitrary refresh=0；credential material/OKX/exchange mutation=0；migration/frontend/research/scripts/deploy/CI diff=0；staged=0 |
+
+47 个 skip 为既有 conditional/manual integration；required PostgreSQL 已单独实跑。一次性容器已停止并自动删除；未连接本机 5432、生产数据库或真实数据。Mockito dynamic-agent、SLF4J NOP、deprecation/unchecked、expected error-path stack trace与LF→CRLF为非阻断 warning。未运行 frontend/Python/E2E，因为对应 diff为0。完整证据：[security review attempt-02](evidence/gate-y/NQ-GATEY-6D-EXACT-PILOT-SCOPE-PREREQUISITE-MATERIALIZATION-SECURITY-REVIEW.attempt-02.md)。

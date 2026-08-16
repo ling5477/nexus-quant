@@ -65,7 +65,7 @@ GateY-6B ACCEPTED / CI GREEN / CONTRACT ONLY
   ↓
 GateY-6C ACCEPTED / CI GREEN
   ↓
-GateY-6D NOT STARTED
+GateY-6D REVIEW ACCEPTED / READY TO COMMIT
 ```
 
 ## 下一允许动作
@@ -99,8 +99,8 @@ GateY-6D NOT STARTED
 - GateY-5：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit=`8d594f1a0000678e4817f3ec80de19ac975da992`，failed implementation CI=`31727172181 / failure`，失败归类为 `FALSE_POSITIVE_NON_SECRET_HASH_EVIDENCE` 并保留；forward-only remediation/acceptance head=`88f6f7f25a81f55fe17984df335546ad2033c61f`，exact-head CI run=`31761584826 / completed / success / bad=0`。Remediation 只修改 1 个 review evidence 文件，产品代码、CI workflow、allowlist 变更均为 0。
 - GateY-6B：`ACCEPTED / CI GREEN / CONTRACT ONLY`（已接受 / CI 已通过 / 仅合同能力）；implementation/acceptance head=`990f8c5680c23d02dec059ca72e7355f88faa72e`，exact-head CI run=`31811302301 / completed / success / 10 jobs / bad=0`。接受范围不包含 production transport、credential wiring、real signing/HTTP、worker/runtime binding、private trading、pilot、`FIRST_REAL_ORDER`、micro-live 或 LIVE。
 - GateY-6C：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit=`febf30adfbd2ac1d1c017b1185ed75fb30abd851`，failed feature CI=`31892305007 / failure / EOF_WHITESPACE_ONLY`，forward remediation/acceptance head=`696963a75d6a701a215bf0eb7ff94d4bed97d43f`，exact-head CI=`31893000098 / completed / success`。受控固定出口已完成唯一一次 `GET /api/v5/account/config`，retry=`0`，READ/TRADE=`VERIFIED / VERIFIED`、WITHDRAW=`ABSENT`、IP=`MATCHED`，exchange mutation 与 PLACE/CANCEL/TRANSFER/WITHDRAW 均为 0。Security Review P0/P1=`0/0`；管理密码事件在 defined containment scope 内已关闭；`TARGET_PERSISTED_FACTS_REQUERY_UNAVAILABLE` 保留为非阻断 P2 accepted residual。
-- GateY-6D：`NOT STARTED`（未开始）；只初始化 exact pilot scope/prerequisite materialization 边界。`pilotScopeHash=UNRESOLVED`、independent `OperatorApproval=NOT_CREATED`；kill 保持 `ENGAGED`、LIVE=`DISABLED`、`FIRST_REAL_ORDER`/micro-live=`NOT_AUTHORIZED`。禁止创建 `ExecutionIntent`、PLACE/CANCEL/transfer/withdraw、启动 worker/real provider、解除 kill 或自动进入 GateY-6E。
-- 当前唯一治理动作是 `NQ-GATEY-6D-EXACT-PILOT-SCOPE-PREREQUISITE-MATERIALIZATION-IMPLEMENTATION`；只能在独立任务中实现 exact release/risk/account/credential/identity/symbol/cap/window/prerequisite/digest/scope-hash/approval binding。若 V39 无法无损表示 mandatory durable facts，必须 `BLOCKED / FORWARD_MIGRATION_REQUIRED` 并另开 migration work order；不得在本任务创建 V40。
+- GateY-6D：`REVIEW ACCEPTED / READY TO COMMIT`（评审已接受 / 可进入提交前复核）；Security Review attempt-02 已确认 attempt-01 P1 关闭且 P0/P1=`0/0`，authenticated typed materialization、server-owned trusted observation boundary、canonical hash、independent approval 与 stored-fact preflight capability可进入提交。因 production trusted observation source仍未实现且 exact inputs未提供，`EXACT_PILOT_SCOPE=NOT_MATERIALIZED`、observation/approval=`NOT_CREATED`、preflight=`NOT_RUN_NO_SCOPE`；kill 保持 `ENGAGED`、LIVE=`DISABLED`、`FIRST_REAL_ORDER`/micro-live=`NOT_AUTHORIZED`。
+- 当前唯一治理动作是 `NQ-GATEY-6D-COMMIT-AND-PUSH`；只允许提交本次已接受的 control-plane capability并等待 exact-head CI，不得补造 operator 输入、物化实际 pilot、创建 `ExecutionIntent`、PLACE/CANCEL/transfer/withdraw、启动 worker/real provider、解除 kill 或自动进入 GateY-6E。
 - GateY 保持 `IN PROGRESS / NOT FROZEN`；GateY-6C acceptance 不等于 GateY 或 GateY-6 overall accepted/frozen，也不授权 GateY-FREEZE。30 项 hard gates 仍为 `PASS=0 / NOT_MET=25 / NOT_VERIFIABLE=5`，gap candidates=`10`；real provider/private trading=`NOT_IMPLEMENTED`、`FIRST_REAL_ORDER`/micro-live=`NOT_AUTHORIZED`、LIVE=`DISABLED`、kill=`ENGAGED`。
 
 ## GateW 已冻结边界

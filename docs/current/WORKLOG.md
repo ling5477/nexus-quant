@@ -18939,3 +18939,50 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - authority：`STATUS.md` / `ROADMAP.md` unchanged；accepted=`GateY-6C / ACCEPTED|CI_GREEN`，work=`GateY-6D / NOT_STARTED / NONE / NOT_RUN`。
 - result：`PASS / GATEY_6D_V40_MIGRATION_SECURITY_REVIEW_ACCEPTED / P0_0 / P1_0 / NO_FAKE_BACKFILL / JAVA_POSTGRES_CANONICAL_PARITY_ACCEPTED / CONCURRENCY_ACCEPTED / APPROVAL_COMPATIBILITY_ACCEPTED / V39_TO_V40_ACCEPTED / V1_TO_V40_ACCEPTED / EXECUTION_INTENT_0 / OKX_CALL_0 / EXCHANGE_MUTATION_0 / LIVE_DISABLED / READY_TO_COMMIT`。
 - next：提交当前 V40 implementation + review evidence并等待 exact-head CI；不得推进machine authority或进入真实 pilot/runtime/LIVE。完整证据：[security review attempt-01](evidence/gate-y/NQ-GATEY-6D-PILOT-SCOPE-PREREQUISITE-FACT-MODEL-FORWARD-MIGRATION-SECURITY-REVIEW.attempt-01.md)。
+
+## 2026-08-16 — GateY-6D exact pilot scope prerequisite materialization implementation attempt-01
+
+- task：`NQ-GATEY-6D-EXACT-PILOT-SCOPE-PREREQUISITE-MATERIALIZATION-IMPLEMENTATION`；NQ-only、L级、authenticated LIVE control-plane capability implementation。
+- baseline：`dev` 起始 clean/staged empty；`HEAD == origin/dev == bc35edb60370aee367ab40853201e1f249179b83`；exact-head CI=`31933158234 / completed / success`；accepted=`GateY-6C / ACCEPTED|CI_GREEN`；work before=`GateY-6D / NOT_STARTED`。
+- implementation：复用 V40 `PilotScopeBinding/PilotObservationSet/repository/transaction/canonical/freshness/preflight`；新增 typed materialization/approval/preflight application/API boundary。认证 actor 只取 gateway/profile；account、GateY-6C credential、release admission、risk 与 server-owned runtime authority 全部 exact re-query；服务端重建 scope/observation hashes；独立 `LIVE_APPROVER` 且禁止自审批。
+- validation：compile 20/20；新增 focused 11/11；PostgreSQL 17.7 + GateY-2/4/6C + ArchUnit focused 89/89；GateY-4 script 6/6；full backend 23/23 modules、1506 tests、failures/errors/skipped=`0/0/47`。首次 focused 因 PowerShell 参数未引用而在 Maven lifecycle 解析阶段失败，引用参数后通过。
+- materialization：未提供 exact operator scope、server runtime authority 与 typed prerequisite observation inputs；因此 `CAPABILITY_IMPLEMENTED`、`EXACT_PILOT_SCOPE_NOT_MATERIALIZED`、`EXPLICIT_PILOT_SCOPE_INPUT_REQUIRED`、`PREREQUISITE_OBSERVATION_INPUT_REQUIRED`、`NO_VALUES_INVENTED`。实际 session/scope/observation/approval 行=`0/0/0/0`，preflight=`NOT_RUN_NO_SCOPE`。
+- boundary：V40/migration/schema diff=`0`；credential material/OKX/network exchange call/ExecutionIntent/Receipt/PLACE/CANCEL/TRANSFER/WITHDRAW/worker/provider/exchange mutation/LIVE enable/kill disengage=`0`；LIVE disabled、kill engaged、first real order/micro-live not authorized。
+- authority after：`GateY-6D / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`；next=`NQ-GATEY-6D-EXACT-PILOT-SCOPE-PREREQUISITE-MATERIALIZATION-SECURITY-REVIEW`；未 stage/commit/push/deploy。
+- evidence：[implementation attempt-01](evidence/gate-y/NQ-GATEY-6D-EXACT-PILOT-SCOPE-PREREQUISITE-MATERIALIZATION-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-16 — GateY-6D exact pilot scope prerequisite materialization Security Review attempt-01
+
+- task：`NQ-GATEY-6D-EXACT-PILOT-SCOPE-PREREQUISITE-MATERIALIZATION-SECURITY-REVIEW`；NQ-only、L级、authorization/authority/atomicity/trading-reachability独立审查。
+- baseline：`dev`；`HEAD == origin/dev == bc35edb60370aee367ab40853201e1f249179b83`；baseline CI=`31933158234 / completed / success`；进入 review 时 dirty/staged=`24/0`。
+- review/fix：关闭3个P1——cross-owner preflight IDOR、existing-session replay绕过当前 `OPERATOR` 角色、未授权 approver 先探测 session/scope；focused与PostgreSQL role-revocation回归通过。
+- open P1：dynamic prerequisite observations 由 request 直接提供，未从可信 SoR/attestation验证；approval不绑定可追加 observation set，故伪造 balance/skew 可进入 durable preflight。review=`REJECTED / NOT_READY_TO_COMMIT`。
+- validation：focused 13/13；disposable PostgreSQL + GateY-2/4/6C + ArchUnit 137 tests、0 failures/errors；GateY-4 6/6；full backend 23/23、1508 tests、failures/errors/skipped=`0/0/47`；authority errors=0；links 336 checked/14 existing warnings/0 errors；migration/frontend/research/scripts/deploy/CI diff=0。link checker 首次漏传 mandatory roots，扫描前 exit 1，修正后通过。
+- boundary：exact pilot未物化；credential/OKX/ExecutionIntent/Receipt/PLACE/CANCEL/TRANSFER/WITHDRAW/worker/provider/exchange mutation/LIVE enable/kill disengage=0；LIVE disabled、kill engaged、first real order/micro-live not authorized。
+- authority：保持 `GateY-6D / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`；next仍为本 Security Review，先完成 trusted observation authority remediation 后重跑；未 stage/commit/push/deploy。
+- evidence：[security review attempt-01](evidence/gate-y/NQ-GATEY-6D-EXACT-PILOT-SCOPE-PREREQUISITE-MATERIALIZATION-SECURITY-REVIEW.attempt-01.md)。
+
+## 2026-08-16 — GateY-6D trusted prerequisite observation authority remediation attempt-01
+
+- task：`NQ-GATEY-6D-TRUSTED-PREREQUISITE-OBSERVATION-AUTHORITY-REMEDIATION`；NQ-only、L级、P1 trust-boundary code remediation。
+- baseline：`dev`；`HEAD == origin/dev == bc35edb60370aee367ab40853201e1f249179b83`；起始 dirty/staged=`26/0`；保留既有 GateY-6D implementation/review diff。
+- root cause：operator request 可提交 balance/fee/clock/instrument、identity/digest/source/time 等动态 observation facts；approval 后 arbitrary refresh/replay 可把伪造事实追加为 durable preflight authority。
+- implementation：API/command 删除全部 observation authority fields；resolver 重读 server-owned scope bindings；新增 `PilotPrerequisiteObservationAuthority`；production 唯一实现固定 unavailable/503；control-plane 在 transaction 前重算 canonical hash并复核 source/schema/recorder/time/symbol/freshness；删除 arbitrary `refresh(scope, observations)` primitive。
+- tests：test-only deterministic authority 覆盖完整 materialization、invalid source/schema/recorder/future/stale/symbol、server canonical hash 与 approval 后 forged replay；PostgreSQL unavailable path exact rows=`LiveSession/PilotScope/Observation/Approval=0/0/0/0`。
+- validation：GateY-6D focused 17/17；ArchUnit 10/10；required PostgreSQL 17.7 3/3；GateY-6C focused 55/55；GateY-4 6/6；full backend 23/23 modules、1515 tests、failures/errors/skipped=`0/0/47`。
+- boundary：credential/OKX/ExecutionIntent/Receipt/PLACE/CANCEL/TRANSFER/WITHDRAW/worker/provider/exchange mutation/LIVE enable/kill disengage=`0`；migration/frontend/research/scripts/deploy/CI diff=0；LIVE disabled、kill engaged；actual pilot facts=0。
+- findings：P0=0；P1 remediation-self-check open=0，原 finding=`P1_REMEDIATED_PENDING_REVIEW`；P2=0；P3=0。未创建 attempt-02，未 stage/commit/push。
+- authority：保持 `GateY-6D / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`；next仍为原 Security Review。
+- next：重跑 `NQ-GATEY-6D-EXACT-PILOT-SCOPE-PREREQUISITE-MATERIALIZATION-SECURITY-REVIEW` 并新增 attempt-02。完整证据：[remediation attempt-01](evidence/gate-y/NQ-GATEY-6D-TRUSTED-PREREQUISITE-OBSERVATION-AUTHORITY-REMEDIATION.attempt-01.md)。
+
+## 2026-08-16 — GateY-6D exact pilot scope prerequisite materialization Security Review attempt-02
+
+- task：`NQ-GATEY-6D-EXACT-PILOT-SCOPE-PREREQUISITE-MATERIALIZATION-SECURITY-REVIEW`；NQ-only、L级、attempt-01 P1 remediation与authorization regression独立复核。
+- baseline：`dev`；`HEAD == origin/dev == bc35edb60370aee367ab40853201e1f249179b83`；baseline CI=`31933158234 / completed / success`；staged=`0`；读取attempt-01 review/remediation/implementation与完整dirty diff。
+- review：operator request/command observation authority fields已删除，global Jackson ignore下旧字段仍明确拒绝；trusted observation port为唯一入口，production实现固定 unavailable/503；source/value/time/identity/hash同一trusted result并由服务端重建canonical hash；arbitrary refresh primitive删除且main caller仅control-plane。
+- atomicity/authorization：PostgreSQL unavailable path精确`LiveSession/PilotScope/Observation/Approval=0/0/0/0`；success path同事务提交session+scope+complete set；cross-owner preflight IDOR、role-revoked replay、approval auth-before-lookup保持关闭；approval/preflight exact scope、expiry、legacy-deny与stored-fact-only边界成立。
+- validation：GateY-6D focused 17/17；ArchUnit 14/14；required PostgreSQL 17.7 3/3；GateY-6C 43/43；GateY-4 6/6；GateY-2 path通过；full backend 23/23 modules、1515 tests、failures/errors/skipped=`0/0/47`、52.737s。
+- boundary：exact pilot未物化；credential material/OKX/ExecutionIntent/Receipt/PLACE/CANCEL/TRANSFER/WITHDRAW/worker/provider/exchange mutation/LIVE enable/kill disengage=`0`；LIVE disabled、kill engaged、first real order/micro-live not authorized。
+- findings：P0/P1/P2/P3=`0/0/0/0`；attempt-01 `UNTRUSTED_PREREQUISITE_OBSERVATION_AUTHORITY`与3个authorization P1均关闭。
+- authority：`GateY-6D / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`；next=`NQ-GATEY-6D-COMMIT-AND-PUSH`；未stage/commit/push/deploy。
+- evidence：[security review attempt-02](evidence/gate-y/NQ-GATEY-6D-EXACT-PILOT-SCOPE-PREREQUISITE-MATERIALIZATION-SECURITY-REVIEW.attempt-02.md)。

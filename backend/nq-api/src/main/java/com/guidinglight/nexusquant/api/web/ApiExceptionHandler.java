@@ -4,6 +4,7 @@ import com.guidinglight.nexusquant.account.application.ExchangeAccountCredential
 import com.guidinglight.nexusquant.account.application.ExchangeAccountNotFoundException;
 import com.guidinglight.nexusquant.auth.application.AdminNotInitializedException;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunReadOnlyNotFoundException;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunIdempotencyConflictException;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionGuardUninitializedException;
@@ -147,6 +148,26 @@ public class ApiExceptionHandler {
                 request,
                 List.of()
         );
+    }
+
+    /** LIVE control-plane 拒绝使用稳定错误码，避免 JDBC/认证/凭证细节泄露为 500。 */
+    @ExceptionHandler(LiveControlException.class)
+    public ResponseEntity<ApiErrorResponse> handleLiveControlException(
+            LiveControlException ex,
+            HttpServletRequest request
+    ) {
+        HttpStatus status = switch (ex.code()) {
+            case "LIVE_SESSION_NOT_FOUND", "PILOT_SCOPE_NOT_FOUND" -> HttpStatus.NOT_FOUND;
+            case "TRUSTED_PREREQUISITE_OBSERVATION_UNAVAILABLE" -> HttpStatus.SERVICE_UNAVAILABLE;
+            case "RISK_LIMIT_SET_OPERATOR_ROLE_REQUIRED", "LIVE_SESSION_OPERATOR_ROLE_REQUIRED",
+                    "LIVE_APPROVER_ROLE_REQUIRED", "PILOT_APPROVAL_FORBIDDEN",
+                    "PILOT_PREFLIGHT_OPERATOR_ROLE_REQUIRED" -> HttpStatus.FORBIDDEN;
+            case "PILOT_MATERIALIZATION_IDEMPOTENCY_CONFLICT", "PILOT_SCOPE_MATERIALIZATION_CONFLICT",
+                    "PREREQUISITE_OBSERVATION_IDENTITY_CONFLICT", "APPROVAL_ID_REUSED" -> HttpStatus.CONFLICT;
+            default -> HttpStatus.UNPROCESSABLE_ENTITY;
+        };
+        return ResponseEntity.status(status)
+                .body(build(status, ex.code(), ex.getMessage(), request, List.of()));
     }
 
     /** facts generation 变化时返回稳定 409；不暴露 revision、fingerprint 或 SQL。 */

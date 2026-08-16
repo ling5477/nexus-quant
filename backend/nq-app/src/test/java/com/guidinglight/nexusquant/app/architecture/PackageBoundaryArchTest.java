@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -84,6 +85,31 @@ class PackageBoundaryArchTest {
             .should().dependOnClassesThat().resideInAPackage("..strategy.domain.port..");
 
     @ArchTest
+    static final ArchRule pilot_api_should_not_depend_on_prerequisite_observation_facts = noClasses()
+            .that().resideInAPackage("..livecontrol.api..")
+            .should().dependOnClassesThat().haveFullyQualifiedName(
+                    "com.guidinglight.nexusquant.livecontrol.domain.PilotPrerequisiteObservation"
+            );
+
+    @ArchTest
+    static final ArchRule pilot_materialization_command_should_not_depend_on_observation_payloads = noClasses()
+            .that().haveFullyQualifiedName(
+                    "com.guidinglight.nexusquant.livecontrol.application.PilotScopeMaterializationCommand"
+            )
+            .should().dependOnClassesThat().haveFullyQualifiedName(
+                    "com.guidinglight.nexusquant.livecontrol.domain.PilotPrerequisiteObservation"
+            );
+
+    @ArchTest
+    static final ArchRule pilot_materialization_command_should_not_depend_on_observation_sets = noClasses()
+            .that().haveFullyQualifiedName(
+                    "com.guidinglight.nexusquant.livecontrol.application.PilotScopeMaterializationCommand"
+            )
+            .should().dependOnClassesThat().haveFullyQualifiedName(
+                    "com.guidinglight.nexusquant.livecontrol.domain.PilotObservationSet"
+            );
+
+    @ArchTest
     static final ArchRule order_command_adapter_should_implement_strategy_port = classes()
             .that().haveFullyQualifiedName(
                     "com.guidinglight.nexusquant.trading.application.port.OrderCommandStrategyExecutionGateway"
@@ -137,6 +163,27 @@ class PackageBoundaryArchTest {
                     .toList();
         }
         assertTrue(offenders.isEmpty(), () -> "main source Gate stage package dependencies detected: " + offenders);
+    }
+
+    @Test
+    void pilot_fact_transaction_primitive_should_have_single_main_source_caller() throws IOException {
+        List<Path> callers;
+        try (var paths = Files.walk(BACKEND_SOURCE_ROOT)) {
+            callers = paths
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains(
+                            "src" + File.separator + "main" + File.separator + "java"))
+                    .filter(path -> !path.getFileName().toString().equals("PilotScopeFactTransactionService.java"))
+                    .filter(path -> readLines(path).stream()
+                            .anyMatch(line -> line.contains("PilotScopeFactTransactionService")))
+                    .map(Path::normalize)
+                    .toList();
+        }
+        assertEquals(1, callers.size(), () -> "unexpected pilot transaction callers: " + callers);
+        assertTrue(callers.getFirst().endsWith(Path.of(
+                        "nq-infra", "src", "main", "java", "com", "guidinglight", "nexusquant",
+                        "livecontrol", "infra", "PilotScopeControlPlaneService.java")),
+                () -> "pilot transaction caller bypassed trusted control-plane: " + callers);
     }
 
     private String readPackageName(Path path) {

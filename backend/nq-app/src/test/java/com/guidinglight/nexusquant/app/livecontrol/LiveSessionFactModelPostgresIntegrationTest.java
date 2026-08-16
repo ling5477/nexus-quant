@@ -11,6 +11,8 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor;
 import com.guidinglight.nexusquant.livecontrol.application.LiveSessionControlService;
 import com.guidinglight.nexusquant.livecontrol.application.OperatorApprovalCommand;
+import com.guidinglight.nexusquant.livecontrol.application.PilotScopeAuthorityResolver;
+import com.guidinglight.nexusquant.livecontrol.application.PilotScopeMaterializationCommand;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionEvent;
@@ -32,7 +34,9 @@ import com.guidinglight.nexusquant.livecontrol.execution.infra.jdbc.JdbcExecutio
 import com.guidinglight.nexusquant.livecontrol.infra.jdbc.JdbcLiveControlAuthorization;
 import com.guidinglight.nexusquant.livecontrol.infra.jdbc.JdbcLiveControlRepository;
 import com.guidinglight.nexusquant.livecontrol.infra.jdbc.JdbcPilotScopeRepository;
+import com.guidinglight.nexusquant.livecontrol.infra.PilotScopeControlPlaneService;
 import com.guidinglight.nexusquant.livecontrol.infra.PilotScopeFactTransactionService;
+import com.guidinglight.nexusquant.livecontrol.infra.UnavailablePilotPrerequisiteObservationAuthority;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -190,6 +194,9 @@ class LiveSessionFactModelPostgresIntegrationTest {
                     new AuthenticatedLiveControlActor(pilotFixture.creatorId()), pilotRisk));
 
             Instant factNow = Instant.now().truncatedTo(ChronoUnit.MICROS);
+            assertUnavailableTrustedObservationLeavesNoPartialFacts(
+                    jdbc, liveRepository, pilotRepository, authorization, pilotTransactions,
+                    pilotFixture, pilotRisk, factNow);
             LiveSession session = LiveSession.create(
                     UUID.randomUUID(), pilotFixture.creatorId(), pilotFixture.exchangeAccountId(),
                     pilotFixture.releaseId(), DIGEST_A, 1, pilotRisk.id(), pilotRisk.canonicalDigest(),
@@ -201,6 +208,17 @@ class LiveSessionFactModelPostgresIntegrationTest {
                     new AuthenticatedLiveControlActor(pilotFixture.creatorId()), session, pilotRisk,
                     createdEventAt(session, pilotFixture.creatorId(), factNow), scope, observations);
             assertEquals(scope.id(), stored.id());
+            long operatorRoleId = jdbc.queryForObject(
+                    "SELECT id FROM roles WHERE role_code = 'OPERATOR'", Long.class);
+            jdbc.update("DELETE FROM user_roles WHERE user_id=? AND role_id=?",
+                    pilotFixture.creatorId(), operatorRoleId);
+            LiveControlException revokedReplay = assertThrows(LiveControlException.class,
+                    () -> pilotTransactions.materialize(
+                            new AuthenticatedLiveControlActor(pilotFixture.creatorId()), session, pilotRisk,
+                            createdEventAt(session, pilotFixture.creatorId(), factNow), scope, observations));
+            assertEquals("LIVE_SESSION_OPERATOR_ROLE_REQUIRED", revokedReplay.code());
+            jdbc.update("INSERT INTO user_roles(user_id,role_id) VALUES (?,?)",
+                    pilotFixture.creatorId(), operatorRoleId);
             assertEquals(4, jdbc.queryForObject(
                     "SELECT count(*) FROM pilot_prerequisite_observations WHERE pilot_scope_id=?",
                     Integer.class, scope.id()));
@@ -361,6 +379,71 @@ class LiveSessionFactModelPostgresIntegrationTest {
                     approved_at::text, expires_at::text)
                 FROM operator_approvals WHERE approval_id=?
                 """, String.class, approvalId);
+    }
+
+    private static void assertUnavailableTrustedObservationLeavesNoPartialFacts(
+            JdbcTemplate jdbc,
+            JdbcLiveControlRepository liveRepository,
+            JdbcPilotScopeRepository pilotRepository,
+            JdbcLiveControlAuthorization authorization,
+            PilotScopeFactTransactionService pilotTransactions,
+            ExistingFixture fixture,
+            RiskLimitSet risk,
+            Instant factNow
+    ) {
+        UUID sessionId = UUID.randomUUID();
+        LiveSession expectedSession = LiveSession.create(
+                sessionId, fixture.creatorId(), fixture.exchangeAccountId(), fixture.releaseId(), DIGEST_A, 1,
+                risk.id(), risk.canonicalDigest(), fixture.credentialId(), List.of("BTC-USDT"), decimal("25"),
+                factNow.minusSeconds(5), factNow.plusSeconds(300), fixture.creatorId(), factNow);
+        PilotScopeBinding expectedScope = pilotScope(expectedSession, fixture.creatorId(), factNow);
+        PilotScopeAuthorityResolver.ResolvedScopeBindings bindings = resolvedBindings(expectedScope);
+        var riskSelection = new PilotScopeMaterializationCommand.RiskSelection(
+                risk.id(), risk.canonicalDigest(), risk.version(), risk.capitalCap(), risk.maxOrderNotional(),
+                risk.maxSymbolPositionNotional(), risk.maxDailyRealizedLoss(), risk.maxDailyTotalLoss(),
+                risk.maxOpenOrders(), risk.maxIntradayOrders(), risk.symbolAllowlist(),
+                risk.maxSessionDurationSeconds(), risk.spreadLimitBps(), risk.slippageLimitBps(),
+                risk.maxMarketDataAgeMs(), risk.minDataCoverageBps());
+        var command = new PilotScopeMaterializationCommand(
+                sessionId, expectedScope.id(), fixture.exchangeAccountId(), fixture.credentialId(),
+                fixture.releaseId(), DIGEST_A, 1, riskSelection, List.of("BTC-USDT"), decimal("25"),
+                factNow.minusSeconds(5), factNow.plusSeconds(300), expectedScope.pilotScopeHash(),
+                "unavailable-" + sessionId, "unavailable-request", "unavailable-trace");
+        PilotScopeAuthorityResolver resolver = (actor, ignored) ->
+                new PilotScopeAuthorityResolver.ResolvedAuthority(risk, bindings);
+        var controlPlane = new PilotScopeControlPlaneService(
+                resolver, new UnavailablePilotPrerequisiteObservationAuthority(), pilotTransactions,
+                liveRepository, pilotRepository, authorization);
+
+        LiveControlException failure = assertThrows(
+                LiveControlException.class,
+                () -> controlPlane.materialize(
+                        new AuthenticatedLiveControlActor(fixture.creatorId()), command));
+
+        assertEquals("TRUSTED_PREREQUISITE_OBSERVATION_UNAVAILABLE", failure.code());
+        assertEquals(0, jdbc.queryForObject(
+                "SELECT count(*) FROM live_sessions WHERE session_id=?", Integer.class, sessionId));
+        assertEquals(0, jdbc.queryForObject(
+                "SELECT count(*) FROM pilot_scope_bindings WHERE pilot_scope_id=?",
+                Integer.class, expectedScope.id()));
+        assertEquals(0, jdbc.queryForObject(
+                "SELECT count(*) FROM pilot_prerequisite_observations WHERE pilot_scope_id=?",
+                Integer.class, expectedScope.id()));
+        assertEquals(0, jdbc.queryForObject(
+                "SELECT count(*) FROM operator_approvals WHERE session_id=?", Integer.class, sessionId));
+    }
+
+    private static PilotScopeAuthorityResolver.ResolvedScopeBindings resolvedBindings(PilotScopeBinding scope) {
+        return new PilotScopeAuthorityResolver.ResolvedScopeBindings(
+                scope.instrumentMetadataDigest(), scope.instrumentSourceIdentity(),
+                scope.instrumentSourceSchemaVersion(), scope.instrumentMaximumAgeMs(), scope.feeScheduleDigest(),
+                scope.feeTier(), scope.feeEvidenceClass(), scope.feeSourceIdentity(),
+                scope.feeSourceSchemaVersion(), scope.feeMaximumAgeMs(), scope.balanceSourceIdentity(),
+                scope.balanceSourceSchemaVersion(), scope.balanceMaximumAgeMs(), scope.clockSourceIdentity(),
+                scope.clockSourceSchemaVersion(), scope.clockMaximumAgeMs(), scope.signedTimestampSource(),
+                scope.maximumToleratedSkewMs(), scope.endpointPolicyVersion(), scope.endpointPolicyDigest(),
+                scope.providerContractIdentity(), scope.providerArtifactDigest(), scope.workerIdentity(),
+                scope.workerReleaseDigest());
     }
 
     private static PilotScopeBinding pilotScope(LiveSession session, long createdBy, Instant createdAt) {
