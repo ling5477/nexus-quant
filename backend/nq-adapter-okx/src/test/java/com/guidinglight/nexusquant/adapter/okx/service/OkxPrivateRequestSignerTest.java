@@ -43,6 +43,20 @@ class OkxPrivateRequestSignerTest {
     }
 
     @Test
+    void postSignatureBindsExactCanonicalBody() {
+        Clock clock = Clock.fixed(Instant.parse("2026-08-16T12:00:00Z"), ZoneOffset.UTC);
+        OkxPrivateRequestSigner signer = new OkxPrivateRequestSigner(clock);
+        try (OkxPrivateCredentialContext credential = credential();
+             OkxPrivateRequestSigner.SignedHeaders first = signer.sign(
+                     "POST", "/api/v5/trade/order", "{\"instId\":\"BTC-USDT\"}", credential);
+             OkxPrivateRequestSigner.SignedHeaders changed = signer.sign(
+                     "POST", "/api/v5/trade/order", "{\"instId\":\"ETH-USDT\"}", credential)) {
+            assertFalse(first.values().get("OK-ACCESS-SIGN")
+                    .equals(changed.values().get("OK-ACCESS-SIGN")));
+        }
+    }
+
+    @Test
     void rejectsCredentialHeaderControlCharactersWithoutLeakingMarker() {
         String marker = "header-marker-should-not-escape";
         for (char control : new char[]{'\r', '\n', '\0', '\u001f', '\u007f'}) {

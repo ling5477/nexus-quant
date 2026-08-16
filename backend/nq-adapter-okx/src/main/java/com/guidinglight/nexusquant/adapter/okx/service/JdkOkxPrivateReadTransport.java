@@ -29,12 +29,12 @@ import java.util.concurrent.Semaphore;
 import java.util.regex.Pattern;
 
 /**
- * OKX global host 专用 private read-only transport。
+ * OKX global host 专用 credential-scoped typed transport。
  *
- * <p>固定 GET/空 body、NEVER redirect、无自动 retry、256 KiB response cap 与单并发；
- * raw response 和 authenticated headers 不离开本类。</p>
+ * <p>复用同一 signer、JDK client、NEVER redirect、无自动 retry、bounded response 与单并发；
+ * 既有 read-only API 保持不变，GateY-6E capability 不带 Spring/runtime wiring。</p>
  */
-public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport {
+public final class JdkOkxPrivateReadTransport implements OkxPrivateRealTransport {
 
     public static final URI GLOBAL_HOST = URI.create("https://openapi.okx.com");
     public static final int MAX_RESPONSE_BYTES = 256 * 1024;
@@ -49,6 +49,7 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
     private final ObjectMapper objectMapper;
     private final Clock clock;
     private final OkxPrivateHttpExchange exchange;
+    private final OkxJdkRealClient realClient;
     private final Duration requestTimeout;
     private final Semaphore concurrency = new Semaphore(1, true);
 
@@ -82,6 +83,69 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
         this.endpointGuard = new OkxSpotEndpointGuard();
         this.requestTimeout = validateDuration(requestTimeout, MAX_REQUEST_TIMEOUT, "requestTimeout");
         this.exchange = Objects.requireNonNull(exchange, "exchange must not be null");
+        this.realClient = new OkxJdkRealClient(
+                this.objectMapper, this.clock, this.signer, this.exchange, this.requestTimeout);
+    }
+
+    @Override
+    public OkxPilotPrerequisiteSnapshot observePrerequisites(
+            OkxPilotPrerequisiteRequest request,
+            OkxPrivateCredentialContext credential,
+            OkxPrivateEnvironment environment
+    ) {
+        return withPermit(() -> realClient.observePrerequisites(request, credential, environment));
+    }
+
+    @Override
+    public OkxSpotProviderTransport.PlaceResponse placeLimit(
+            OkxSpotProviderTransport.PlaceCommand command,
+            OkxPrivateCredentialContext credential,
+            OkxPrivateEnvironment environment
+    ) {
+        requireProviderContract(OkxSpotProviderOperation.PLACE_LIMIT);
+        return withPermit(() -> realClient.placeLimit(command, credential, environment));
+    }
+
+    @Override
+    public OkxSpotProviderTransport.OrderResponse queryOrder(
+            OkxSpotProviderTransport.OrderCommand command,
+            OkxPrivateCredentialContext credential,
+            OkxPrivateEnvironment environment
+    ) {
+        requireProviderContract(OkxSpotProviderOperation.QUERY_ORDER);
+        return withPermit(() -> realClient.queryOrder(
+                command, credential, environment, OkxSpotProviderOperation.QUERY_ORDER));
+    }
+
+    @Override
+    public OkxSpotProviderTransport.CancelResponse cancelOrder(
+            OkxSpotProviderTransport.CancelCommand command,
+            OkxPrivateCredentialContext credential,
+            OkxPrivateEnvironment environment
+    ) {
+        requireProviderContract(OkxSpotProviderOperation.CANCEL_ORDER);
+        return withPermit(() -> realClient.cancelOrder(command, credential, environment));
+    }
+
+    @Override
+    public OkxSpotProviderTransport.OrderResponse readOrder(
+            OkxSpotProviderTransport.OrderCommand command,
+            OkxPrivateCredentialContext credential,
+            OkxPrivateEnvironment environment
+    ) {
+        requireProviderContract(OkxSpotProviderOperation.READ_ORDER);
+        return withPermit(() -> realClient.queryOrder(
+                command, credential, environment, OkxSpotProviderOperation.READ_ORDER));
+    }
+
+    @Override
+    public OkxSpotProviderTransport.FillResponse readFills(
+            OkxSpotProviderTransport.FillCommand command,
+            OkxPrivateCredentialContext credential,
+            OkxPrivateEnvironment environment
+    ) {
+        requireProviderContract(OkxSpotProviderOperation.READ_FILLS);
+        return withPermit(() -> realClient.readFills(command, credential, environment));
     }
 
     @Override
@@ -368,17 +432,70 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
                 .connectTimeout(connectTimeout)
                 .followRedirects(HttpClient.Redirect.NEVER)
                 .build();
-        return (uri, headers, timeout) -> {
-            HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
-                    .timeout(timeout)
-                    .GET();
-            headers.forEach(builder::header);
-            HttpResponse<byte[]> response = client.send(
-                    builder.build(),
-                    ignored -> new LimitedBodySubscriber(MAX_RESPONSE_BYTES)
-            );
-            return new OkxPrivateHttpExchange.Response(response.statusCode(), response.body());
+        return new OkxPrivateHttpExchange() {
+            @Override
+            public Response get(URI uri, Map<String, String> headers, Duration timeout)
+                    throws IOException, InterruptedException {
+                return get(uri, headers, timeout, MAX_RESPONSE_BYTES);
+            }
+
+            @Override
+            public Response get(
+                    URI uri,
+                    Map<String, String> headers,
+                    Duration timeout,
+                    int maximumResponseBytes
+            ) throws IOException, InterruptedException {
+                return send(client, HttpRequest.newBuilder(uri).timeout(timeout).GET(), headers,
+                        maximumResponseBytes);
+            }
+
+            @Override
+            public Response post(
+                    URI uri,
+                    Map<String, String> headers,
+                    byte[] body,
+                    Duration timeout,
+                    int maximumResponseBytes
+            ) throws IOException, InterruptedException {
+                HttpRequest.Builder builder = HttpRequest.newBuilder(uri).timeout(timeout)
+                        .POST(HttpRequest.BodyPublishers.ofByteArray(body));
+                return send(client, builder, headers, maximumResponseBytes);
+            }
         };
+    }
+
+    private static OkxPrivateHttpExchange.Response send(
+            HttpClient client,
+            HttpRequest.Builder builder,
+            Map<String, String> headers,
+            int maximumResponseBytes
+    ) throws IOException, InterruptedException {
+        if (maximumResponseBytes <= 0 || maximumResponseBytes > MAX_RESPONSE_BYTES) {
+            throw new OkxPrivateHttpExchange.ResponseLimitExceededIOException();
+        }
+        headers.forEach(builder::header);
+        HttpResponse<byte[]> response = client.send(
+                builder.build(), ignored -> new LimitedBodySubscriber(maximumResponseBytes));
+        return new OkxPrivateHttpExchange.Response(response.statusCode(), response.body());
+    }
+
+    private <T> T withPermit(java.util.function.Supplier<T> operation) {
+        if (!concurrency.tryAcquire()) {
+            throw new OkxPrivateReadException(OkxPrivateReadError.RATE_LIMITED);
+        }
+        try {
+            return operation.get();
+        } finally {
+            concurrency.release();
+        }
+    }
+
+    private void requireProviderContract(OkxSpotProviderOperation operation) {
+        OkxSpotProviderContractDecision decision = endpointGuard.evaluateProviderContract(operation);
+        if (!decision.contractAllowed() || decision.runtimeAuthorized() || decision.tradingAuthorized()) {
+            throw new IllegalStateException("OKX provider operation is outside the typed contract");
+        }
     }
 
     private static boolean hasCause(Throwable throwable, Class<? extends Throwable> type) {
@@ -525,7 +642,7 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateReadTransport
         }
     }
 
-    private static final class ResponseTooLargeIOException extends IOException {
+    static final class ResponseTooLargeIOException extends IOException {
         private ResponseTooLargeIOException() {
             super("response exceeded configured byte limit");
         }

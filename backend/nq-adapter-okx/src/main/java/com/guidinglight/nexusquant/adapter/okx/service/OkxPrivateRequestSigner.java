@@ -34,9 +34,26 @@ public final class OkxPrivateRequestSigner {
      */
     SignedHeaders sign(OkxPrivateReadRequest request, OkxPrivateCredentialContext credential) {
         Objects.requireNonNull(request, "request must not be null");
+        return sign(request.operation().method(), request.pathWithQuery(), "", credential);
+    }
+
+    SignedHeaders sign(
+            String method,
+            String pathWithQuery,
+            String body,
+            OkxPrivateCredentialContext credential
+    ) {
+        if (!"GET".equals(method) && !"POST".equals(method)) {
+            throw new IllegalArgumentException("private request method is not allowlisted");
+        }
+        if (pathWithQuery == null || !pathWithQuery.startsWith("/api/v5/")
+                || pathWithQuery.indexOf('\r') >= 0 || pathWithQuery.indexOf('\n') >= 0) {
+            throw new IllegalArgumentException("private request path is invalid");
+        }
+        body = Objects.requireNonNull(body, "body must not be null");
         Objects.requireNonNull(credential, "credential must not be null");
         String timestamp = TIMESTAMP_FORMATTER.format(clock.instant());
-        String prehash = timestamp + request.operation().method() + request.pathWithQuery();
+        String prehash = timestamp + method + pathWithQuery + body;
         byte[] secretBytes = utf8(credential.secretKey());
         byte[] prehashBytes = prehash.getBytes(StandardCharsets.UTF_8);
         byte[] digest = null;

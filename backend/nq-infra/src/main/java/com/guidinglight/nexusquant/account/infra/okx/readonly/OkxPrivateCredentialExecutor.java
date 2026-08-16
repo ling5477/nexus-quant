@@ -5,6 +5,9 @@ import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadError;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadException;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadRequest;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadResult;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxPilotPrerequisiteRequest;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxPilotPrerequisiteSnapshot;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport;
 
 /**
  * infrastructure 内同步 scoped decrypt executor；callback 只获得线程绑定、到期失效的 typed read session，
@@ -46,5 +49,47 @@ public interface OkxPrivateCredentialExecutor {
     @FunctionalInterface
     interface CredentialSession {
         OkxPrivateReadResult execute(OkxPrivateReadRequest request, OkxPrivateEnvironment environment);
+
+        default OkxPilotPrerequisiteSnapshot observePrerequisites(
+                OkxPilotPrerequisiteRequest request,
+                OkxPrivateEnvironment environment
+        ) {
+            throw new OkxPrivateReadException(OkxPrivateReadError.CREDENTIAL_UNAVAILABLE);
+        }
+
+        default OkxSpotProviderTransport.PlaceResponse placeLimit(
+                OkxSpotProviderTransport.PlaceCommand command,
+                OkxPrivateEnvironment environment
+        ) {
+            throw new OkxPrivateReadException(OkxPrivateReadError.CREDENTIAL_UNAVAILABLE);
+        }
+
+        default OkxSpotProviderTransport.OrderResponse queryOrder(
+                OkxSpotProviderTransport.OrderCommand command,
+                OkxPrivateEnvironment environment
+        ) {
+            throw new OkxPrivateReadException(OkxPrivateReadError.CREDENTIAL_UNAVAILABLE);
+        }
+
+        default OkxSpotProviderTransport.CancelResponse cancelOrder(
+                OkxSpotProviderTransport.CancelCommand command,
+                OkxPrivateEnvironment environment
+        ) {
+            throw new OkxPrivateReadException(OkxPrivateReadError.CREDENTIAL_UNAVAILABLE);
+        }
+
+        default OkxSpotProviderTransport.OrderResponse readOrder(
+                OkxSpotProviderTransport.OrderCommand command,
+                OkxPrivateEnvironment environment
+        ) {
+            throw new OkxPrivateReadException(OkxPrivateReadError.CREDENTIAL_UNAVAILABLE);
+        }
+
+        default OkxSpotProviderTransport.FillResponse readFills(
+                OkxSpotProviderTransport.FillCommand command,
+                OkxPrivateEnvironment environment
+        ) {
+            throw new OkxPrivateReadException(OkxPrivateReadError.CREDENTIAL_UNAVAILABLE);
+        }
     }
 }

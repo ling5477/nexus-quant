@@ -13,9 +13,9 @@ import java.util.UUID;
  * GateY provider 的可注入 transport port。
  *
  * <p>接口只有五个 typed operation；没有 host、URL、method、path、header、credential 或通用
- * execute escape hatch。每个 command 都携带 response read limit；未来 transport 必须在分配或完整
- * 读取响应 body 前执行 byte/fill cap，metadata post-check 只作为第二道防线。GateY-6B 只在 tests
- * 提供 fake/stub implementation，main runtime 无实现。</p>
+ * execute escape hatch。每个 command 都携带 response read limit；real transport 在分配或完整
+ * 读取响应 body 前执行 byte/fill cap，metadata post-check 只作为第二道防线。GateY-6E 已提供
+ * credential-scoped typed capability，但默认 Spring/worker runtime 仍不装配。</p>
  */
 public interface OkxSpotProviderTransport {
 
@@ -103,7 +103,9 @@ public interface OkxSpotProviderTransport {
         }
     }
 
-    /** Future transport 在读取响应内容前必须执行的硬上限。 */
+    /**
+     * Future transport 在读取响应内容前必须执行的硬上限。
+     */
     record ResponseReadLimit(int maximumResponseBytes, int maximumFillRecords) {
         public ResponseReadLimit {
             if (maximumResponseBytes <= 0) {

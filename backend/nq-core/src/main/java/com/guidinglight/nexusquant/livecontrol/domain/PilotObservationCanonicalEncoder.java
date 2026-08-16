@@ -1,9 +1,12 @@
 package com.guidinglight.nexusquant.livecontrol.domain;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/** prerequisite observation 与 instrument item 的确定性 canonical encoder。 */
+/**
+ * prerequisite observation 与 instrument item 的确定性 canonical encoder。
+ */
 public final class PilotObservationCanonicalEncoder {
 
     private PilotObservationCanonicalEncoder() {
@@ -24,6 +27,39 @@ public final class PilotObservationCanonicalEncoder {
 
     public static String digest(PilotPrerequisiteObservation observation) {
         return CanonicalDigestSupport.sha256(encode(observation));
+    }
+
+    public static String feeScheduleDigest(
+            List<String> symbols,
+            String feeTier,
+            BigDecimal makerFeeRate,
+            BigDecimal takerFeeRate
+    ) {
+        String symbolPayload = symbols.stream().map(CanonicalDigestSupport::quote)
+                .collect(Collectors.joining(",", "[", "]"));
+        return CanonicalDigestSupport.sha256("{" +
+                "\"schemaVersion\":\"fee-schedule-observation.v1\"" +
+                ",\"symbols\":" + symbolPayload +
+                ",\"feeTier\":" + CanonicalDigestSupport.quote(feeTier) +
+                ",\"feeEvidenceClass\":\"OBSERVED_PRIVATE\"" +
+                ",\"makerFeeRate\":" + CanonicalDigestSupport.quote(
+                CanonicalDigestSupport.plainDecimal(makerFeeRate, "makerFeeRate")) +
+                ",\"takerFeeRate\":" + CanonicalDigestSupport.quote(
+                CanonicalDigestSupport.plainDecimal(takerFeeRate, "takerFeeRate")) + "}");
+    }
+
+    public static String balanceSnapshotDigest(BigDecimal availableBalance) {
+        return CanonicalDigestSupport.sha256("{" +
+                "\"schemaVersion\":\"balance-snapshot-observation.v1\"" +
+                ",\"balanceCurrency\":\"USDT\"" +
+                ",\"availableBalance\":" + CanonicalDigestSupport.decimal(availableBalance) + "}");
+    }
+
+    public static String clockSyncDigest(String timestampSource, long observedSkewMs) {
+        return CanonicalDigestSupport.sha256("{" +
+                "\"schemaVersion\":\"clock-sync-observation.v1\"" +
+                ",\"signedTimestampSource\":" + CanonicalDigestSupport.quote(timestampSource) +
+                ",\"observedSkewMs\":" + observedSkewMs + "}");
     }
 
     public static String encode(PilotPrerequisiteObservation observation) {
@@ -49,9 +85,9 @@ public final class PilotObservationCanonicalEncoder {
                     ",\"feeTier\":" + CanonicalDigestSupport.quote(value.feeTier()) +
                     ",\"feeEvidenceClass\":" + CanonicalDigestSupport.quote(value.feeEvidenceClass().name()) +
                     ",\"makerFeeRate\":" + CanonicalDigestSupport.quote(
-                            CanonicalDigestSupport.plainDecimal(value.makerFeeRate(), "makerFeeRate")) +
+                    CanonicalDigestSupport.plainDecimal(value.makerFeeRate(), "makerFeeRate")) +
                     ",\"takerFeeRate\":" + CanonicalDigestSupport.quote(
-                            CanonicalDigestSupport.plainDecimal(value.takerFeeRate(), "takerFeeRate")) +
+                    CanonicalDigestSupport.plainDecimal(value.takerFeeRate(), "takerFeeRate")) +
                     ",\"feeLossTreatment\":" + CanonicalDigestSupport.quote(value.feeLossTreatment()) + "}";
             case PilotPrerequisiteObservation.BalanceSnapshot value -> "{" +
                     "\"balanceSnapshotDigest\":" + CanonicalDigestSupport.quote(value.balanceSnapshotDigest()) +
@@ -87,30 +123,30 @@ public final class PilotObservationCanonicalEncoder {
             PilotPrerequisiteObservation.InstrumentItem item
     ) {
         String prefix = "{" +
-                        "\"symbol\":" + CanonicalDigestSupport.quote(item.symbol()) +
-                        ",\"tradingStatus\":" + CanonicalDigestSupport.quote(item.tradingStatus().name()) +
-                        ",\"tickSize\":" + CanonicalDigestSupport.quote(
-                                CanonicalDigestSupport.plainDecimal(item.tickSize(), "tickSize")) +
-                        ",\"lotSize\":" + CanonicalDigestSupport.quote(
-                                CanonicalDigestSupport.plainDecimal(item.lotSize(), "lotSize")) +
-                        ",\"minimumOrderSize\":" + CanonicalDigestSupport.quote(
-                                CanonicalDigestSupport.plainDecimal(item.minimumOrderSize(), "minimumOrderSize"));
+                "\"symbol\":" + CanonicalDigestSupport.quote(item.symbol()) +
+                ",\"tradingStatus\":" + CanonicalDigestSupport.quote(item.tradingStatus().name()) +
+                ",\"tickSize\":" + CanonicalDigestSupport.quote(
+                CanonicalDigestSupport.plainDecimal(item.tickSize(), "tickSize")) +
+                ",\"lotSize\":" + CanonicalDigestSupport.quote(
+                CanonicalDigestSupport.plainDecimal(item.lotSize(), "lotSize")) +
+                ",\"minimumOrderSize\":" + CanonicalDigestSupport.quote(
+                CanonicalDigestSupport.plainDecimal(item.minimumOrderSize(), "minimumOrderSize"));
         if (PilotPrerequisiteObservation.InstrumentMetadata.LEGACY_SCHEMA_VERSION.equals(schemaVersion)) {
             return prefix +
-                   ",\"minimumOrderValue\":" + CanonicalDigestSupport.quote(
-                           CanonicalDigestSupport.plainDecimal(item.minimumOrderValue(), "minimumOrderValue")) +
-                   ",\"minimumOrderValueCurrency\":" +
-                   CanonicalDigestSupport.quote(item.minimumOrderValueCurrency()) + "}";
+                    ",\"minimumOrderValue\":" + CanonicalDigestSupport.quote(
+                    CanonicalDigestSupport.plainDecimal(item.minimumOrderValue(), "minimumOrderValue")) +
+                    ",\"minimumOrderValueCurrency\":" +
+                    CanonicalDigestSupport.quote(item.minimumOrderValueCurrency()) + "}";
         }
         String evidence = prefix + ",\"minimumOrderValueEvidenceClass\":" +
-                          CanonicalDigestSupport.quote(item.minimumOrderValueEvidenceClass().name());
+                CanonicalDigestSupport.quote(item.minimumOrderValueEvidenceClass().name());
         if (item.minimumOrderValueEvidenceClass()
                 == PilotPrerequisiteObservation.MinimumOrderValueEvidenceClass.VENUE_PUBLISHED) {
             return evidence +
-                   ",\"minimumOrderValue\":" + CanonicalDigestSupport.quote(
-                           CanonicalDigestSupport.plainDecimal(item.minimumOrderValue(), "minimumOrderValue")) +
-                   ",\"minimumOrderValueCurrency\":" +
-                   CanonicalDigestSupport.quote(item.minimumOrderValueCurrency()) + "}";
+                    ",\"minimumOrderValue\":" + CanonicalDigestSupport.quote(
+                    CanonicalDigestSupport.plainDecimal(item.minimumOrderValue(), "minimumOrderValue")) +
+                    ",\"minimumOrderValueCurrency\":" +
+                    CanonicalDigestSupport.quote(item.minimumOrderValueCurrency()) + "}";
         }
         return evidence + "}";
     }

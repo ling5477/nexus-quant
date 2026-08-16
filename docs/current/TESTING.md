@@ -13944,3 +13944,31 @@ V1～V40 diff=`0`，V41为唯一新增migration；历史value/currency未重写�
 | diff/authority/migration guards | PASS（通过） | V1～V40 diff=`0`；V42=`0`；`STATUS.md`/`ROADMAP.md` diff=`0`；`git diff --check` 无 whitespace error，仅 LF→CRLF 提示 |
 
 Review 初始两项 P1 级验收覆盖缺口已由同一 PostgreSQL integration test 最小补强关闭：exact canonical bytes parity，以及直接阻塞 V41/中途失败后的 atomic rollback。P0/P1/P3=`0/0/0`；保留非阻断 P2=`PRODUCTION_LOCK_WINDOW_NOT_MEASURED`。Mockito dynamic-agent、SLF4J NOP、deprecation/unchecked、expected migration failure stack trace 与 LF→CRLF 为非阻断 warning。frontend/Python/E2E 未运行，因为对应 diff=`0`；production lock、credential、OKX、真实 pilot/approval、worker、deploy、交易均未执行。完整证据：[V41 migration security review attempt-01](evidence/gate-y/NQ-GATEY-6E-MINIMUM-ORDER-VALUE-SEMANTIC-FORWARD-REMEDIATION-SECURITY-REVIEW.attempt-01.md)。
+
+## 2026-08-16 — GateY-6E first real order prerequisite implementation attempt-02
+
+- implementation：复用V41 instrument v2与GateY-6B provider ID/contract；新增trusted OKX prerequisite authority、exact credential-scoped typed real transport、JIT credential callback、fee group/balance/server-time采集、PLACE/QUERY/CANCEL/FILLS closed set；real mutation runtime仍unbound。
+- focused：compile 16/16；adapter/core/infra 59 tests全绿；更新后named provider/credential/observation/control-plane/V41/ArchUnit suites在23/23 reactor中全绿。
+- full backend：`mvn -f backend/pom.xml test`；23/23 modules、317 reports、1538 tests、failures/errors/skipped=`0/0/48`、53.599s、`BUILD SUCCESS`。
+- safety：fake HTTP/test credential only；real credential/OKX API/PilotScope/approval/ExecutionIntent/Receipt/PLACE/CANCEL/TRANSFER/WITHDRAW/worker/LIVE enable/kill disengage=`0`；LIVE disabled、kill engaged。
+- docs/authority：首次 `check-current-authority.ps1` 因 root/current README 与 ROADMAP 三处旧 implementation pointer 退出码=`1`、errors=`8`；最小同步为 security review 后重跑退出码=`0`、errors=`0`，`PASS / CURRENT_AUTHORITY_CONSISTENT`。link check=`357 checked / 14 existing warnings / 0 errors`；`git diff --check`通过，仅有既有 LF→CRLF 非阻断提示。
+- findings/authority：P0/P1/P2/P3=`0/0/0/0`；`GateY-6E / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`；next=`NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-SECURITY-REVIEW`。完整证据：[implementation attempt-02](evidence/gate-y/NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-IMPLEMENTATION.attempt-02.md)。
+
+## 2026-08-17 — GateY-6E first real order prerequisite Security Review attempt-01
+
+结论：`PASS / GATEY_6E_PREREQUISITE_SECURITY_REVIEW_ACCEPTED / P0_0 / P1_0 / TRUSTED_OBSERVATION_ACCEPTED / CREDENTIAL_JIT_BOUNDARY_ACCEPTED / REAL_PROVIDER_TRANSPORT_ACCEPTED / ORDER_IDENTITY_ACCEPTED / NO_BLIND_RETRY_ACCEPTED / REAL_MUTATION_RUNTIME_UNBOUND / V41_REGRESSION_PASS / OKX_CALL_0 / EXECUTION_INTENT_0 / EXCHANGE_MUTATION_0 / FIRST_REAL_ORDER_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`（通过 / GateY-6E prerequisite 安全审查已接受 / 可进入提交前复核）。
+
+| Command / check | Result | Scope / environment / warnings |
+| --- | --- | --- |
+| baseline / reviewed diff | PASS（通过） | `dev`；`HEAD == origin/dev == 1770c38655e16fa8708e4363bcdc4fda007f46c9`；baseline CI `31952505427 / completed / success`；staged=`0`；28 个原始 diff 文件与 15/15 security surfaces 已审查 |
+| Codex Security diff scan | PASS（通过） | scan `c33f878b-03fa-4aee-9374-530f886b94d0`；coverage=`complete`；findings=`0`；两个 P1 候选经最小修复与验证后 disposition=`suppressed`；一个不可达 capability 候选经静态与 Spring 证明 suppress |
+| adapter remediation focused | PASS（通过） | 23/23 reactor dependencies；24 tests；failures/errors/skipped=`0/0/0`；覆盖 duplicate `clOrdId`、root rate-limit query-first 与 signed fills `ordId` encoding |
+| Spring runtime-unbound focused | PASS（通过） | 23/23 modules；22 tests；failures/errors/skipped=`0/0/0`；production `SpotExecutionProviderPort` bean、startup/scheduler mutation 与 ExecutionIntent→real transport caller均为0 |
+| required PostgreSQL V41 focused | PASS（通过） | disposable PostgreSQL 17.10 loopback；11 tests；failures/errors/skipped=`0/0/0`；覆盖 V39/V40→V41、V1→V41、canonical parity、no fake backfill、lock-timeout与atomic rollback |
+| expanded security regression | PASS（通过） | 23/23 modules；143 tests；failures/errors/skipped=`0/0/0`；trusted observation、JIT credential、HTTP/SSRF/redirect/size、order/fill identity、UNKNOWN/query-first、GateY-3/4/6B/6C/6D 与 ArchUnit |
+| `mvn -f backend/pom.xml test` | PASS（通过） | 23/23 modules `BUILD SUCCESS`；1540 tests；failures/errors/skipped=`0/0/48`；54.437s |
+| current authority / doc links / diff | PASS（通过） | authority errors=`0`；doc links corrected array invocation=`360 checked / 14 historical warnings / 0 errors`；`git diff --check` exit=`0`，仅 LF→CRLF warning |
+
+48 个 skip 为既有 conditional/manual integration；必需 V41 PostgreSQL path 已单独强制为 0 skip。首次 focused Maven 因 PowerShell 未引用 `-Dsurefire.failIfNoSpecifiedTests=false` 被解析为 lifecycle phase，exit=`1` 且未进入编译；修正引用后全部通过。Codex Security reporting draft 首次因 coverage schema 字段版本不匹配被拒绝且未写 artifact，按返回约束重提后唯一一次 completion 成功；scan warning `working tree changed` 对应 review 内两个 P1 最小修复，最终工作树已由 focused/full tests 重验。文档链接脚本按无参任务命令首次 exit=`1 / mandatory Roots`，改用当前脚本要求的 `-Roots @('README.md','docs/current')` 后通过。Disposable PostgreSQL 已停止并自动删除。
+
+最终 P0/P1/P2/P3=`0/0/0/0`；real credential/OKX API/PilotScope/approval/ExecutionIntent/Receipt/PLACE/CANCEL/TRANSFER/WITHDRAW/worker/LIVE enable/kill disengage均为0。Authority after=`GateY-6E / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`，next=`NQ-GATEY-6E-COMMIT-AND-PUSH`；`real_provider/private_trading=NOT_IMPLEMENTED`、runtime unbound、first real order not authorized、LIVE disabled、kill engaged。完整证据：[Security Review attempt-01](evidence/gate-y/NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-SECURITY-REVIEW.attempt-01.md)。

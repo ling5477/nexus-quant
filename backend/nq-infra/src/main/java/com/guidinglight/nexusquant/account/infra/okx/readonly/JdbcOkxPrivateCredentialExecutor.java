@@ -6,6 +6,13 @@ import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateCredentialConte
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadError;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadException;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadTransport;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateRealTransport;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxPilotPrerequisiteRequest;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxPilotPrerequisiteSnapshot;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateEnvironment;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadRequest;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadResult;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -127,11 +134,82 @@ public final class JdbcOkxPrivateCredentialExecutor implements OkxPrivateCredent
             )) {
                 Thread ownerThread = Thread.currentThread();
                 AtomicBoolean active = new AtomicBoolean(true);
-                CredentialSession session = (request, environment) -> {
-                    if (!active.get() || Thread.currentThread() != ownerThread) {
-                        throw new OkxPrivateReadException(OkxPrivateReadError.AUTHENTICATION_FAILURE);
+                CredentialSession session = new CredentialSession() {
+                    @Override
+                    public OkxPrivateReadResult execute(
+                            OkxPrivateReadRequest request,
+                            OkxPrivateEnvironment environment
+                    ) {
+                        requireActive();
+                        return transport.execute(request, credential, environment);
                     }
-                    return transport.execute(request, credential, environment);
+
+                    @Override
+                    public OkxPilotPrerequisiteSnapshot observePrerequisites(
+                            OkxPilotPrerequisiteRequest request,
+                            OkxPrivateEnvironment environment
+                    ) {
+                        requireActive();
+                        return realTransport().observePrerequisites(request, credential, environment);
+                    }
+
+                    @Override
+                    public OkxSpotProviderTransport.PlaceResponse placeLimit(
+                            OkxSpotProviderTransport.PlaceCommand command,
+                            OkxPrivateEnvironment environment
+                    ) {
+                        requireActive();
+                        return realTransport().placeLimit(command, credential, environment);
+                    }
+
+                    @Override
+                    public OkxSpotProviderTransport.OrderResponse queryOrder(
+                            OkxSpotProviderTransport.OrderCommand command,
+                            OkxPrivateEnvironment environment
+                    ) {
+                        requireActive();
+                        return realTransport().queryOrder(command, credential, environment);
+                    }
+
+                    @Override
+                    public OkxSpotProviderTransport.CancelResponse cancelOrder(
+                            OkxSpotProviderTransport.CancelCommand command,
+                            OkxPrivateEnvironment environment
+                    ) {
+                        requireActive();
+                        return realTransport().cancelOrder(command, credential, environment);
+                    }
+
+                    @Override
+                    public OkxSpotProviderTransport.OrderResponse readOrder(
+                            OkxSpotProviderTransport.OrderCommand command,
+                            OkxPrivateEnvironment environment
+                    ) {
+                        requireActive();
+                        return realTransport().readOrder(command, credential, environment);
+                    }
+
+                    @Override
+                    public OkxSpotProviderTransport.FillResponse readFills(
+                            OkxSpotProviderTransport.FillCommand command,
+                            OkxPrivateEnvironment environment
+                    ) {
+                        requireActive();
+                        return realTransport().readFills(command, credential, environment);
+                    }
+
+                    private OkxPrivateRealTransport realTransport() {
+                        if (!(transport instanceof OkxPrivateRealTransport value)) {
+                            throw new OkxPrivateReadException(OkxPrivateReadError.CREDENTIAL_UNAVAILABLE);
+                        }
+                        return value;
+                    }
+
+                    private void requireActive() {
+                        if (!active.get() || Thread.currentThread() != ownerThread) {
+                            throw new OkxPrivateReadException(OkxPrivateReadError.AUTHENTICATION_FAILURE);
+                        }
+                    }
                 };
                 try {
                     return Objects.requireNonNull(

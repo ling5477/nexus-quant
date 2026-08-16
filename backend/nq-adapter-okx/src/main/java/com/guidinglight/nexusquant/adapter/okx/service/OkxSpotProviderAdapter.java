@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Fake/stub transport 下的 OKX Spot provider contract implementation。
+ * OKX Spot provider contract implementation；transport 可为 fake 或显式 credential-scoped capability。
  *
  * <p>该类没有 Spring annotation、default constructor、credential、signer、HTTP client 或 fallback。
  * 每次 mutation 最多调用 transport 一次；任何不确定结果都返回 query-first，不在本类重试。</p>

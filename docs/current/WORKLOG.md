@@ -19035,3 +19035,26 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - findings：final P0/P1/P2/P3=`0/0/1/0`；review=`ACCEPTED / READY_TO_COMMIT`。
 - boundary：credential/OKX/真实PilotScope/approval/ExecutionIntent/Receipt/PLACE/CANCEL/TRANSFER/WITHDRAW/worker/provider/exchange mutation/LIVE enable/kill disengage均=`0`；LIVE disabled、kill engaged、first real order not authorized；未stage/commit/push/deploy。
 - authority：保持`accepted GateY-6D / work GateY-6E NOT_STARTED / NONE / NOT_RUN`；`STATUS.md`/`ROADMAP.md`未改。next只允许提交当前exact allowlist并等待exact-head CI。完整证据：[V41 migration security review attempt-01](evidence/gate-y/NQ-GATEY-6E-MINIMUM-ORDER-VALUE-SEMANTIC-FORWARD-REMEDIATION-SECURITY-REVIEW.attempt-01.md)。
+
+## 2026-08-16 — GateY-6E first real order prerequisite implementation attempt-02
+
+- task：`NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-IMPLEMENTATION`；NQ-only、高风险 trusted observation + typed real-provider capability implementation。
+- implementation：复用V41 `VENUE_NOT_PUBLISHED`双NULL语义、GateY-6B 32 hex provider identity与既有signer/JDK client；新增exact credential JIT observation、fee group映射、USDT `availBal`、server-time/skew、typed LIMIT PLACE/query/cancel/fills；fills先解析exact `ordId`，mutation retry=0。
+- compatibility：撤销对GateY-3 44位execution clientOrderId冻结算法的中间修改；真实transport只消费GateY-6B 32位provider identity，保持历史幂等/replay contract不变。
+- validation：focused/ArchUnit全绿；full backend 23/23 modules、1538 tests、failures/errors/skipped=`0/0/48`、53.599s；P0/P1/P2/P3=`0/0/0/0`。
+- authority validation：checker首次因 root/current README 与 ROADMAP 三处旧 implementation pointer 失败（exit=`1`、errors=`8`）；最小同步为 security review 后重跑通过（exit=`0`、errors=`0`）；link check=`357/14 existing warnings/0 errors`，`git diff --check`通过。
+- boundary：real credential/OKX API/PilotScope/approval/ExecutionIntent/Receipt/PLACE/CANCEL/TRANSFER/WITHDRAW/worker/LIVE enable/kill disengage=`0`；runtime unbound、LIVE disabled、kill engaged、first real order not authorized。
+- authority：`GateY-6E / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`；next=`NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-SECURITY-REVIEW`；未stage/commit/push/deploy。完整证据：[implementation attempt-02](evidence/gate-y/NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-IMPLEMENTATION.attempt-02.md)。
+
+## 2026-08-17 — GateY-6E first real order prerequisite Security Review attempt-01
+
+- task：`NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-SECURITY-REVIEW`；NQ-only、高风险 independent trusted-observation/private-transport review。
+- baseline：`dev`；`HEAD == origin/dev == 1770c38655e16fa8708e4363bcdc4fda007f46c9`；baseline CI=`31952505427 / completed / success`；staged=`0`；authority before=`GateY-6E / IMPLEMENTED|PENDING_REVIEW / UNCOMMITTED / NOT_RUN`。
+- review：28 个原始 diff 文件与 15/15 security surfaces闭合；trusted observation server ownership/torn-set、credential JIT、closed-set provider、HTTPS/SSRF/redirect/bounds、exact order/fill identity、mutation uncertainty、runtime-unbound、V41 与 architecture均接受。
+- P1 fixes：venue `ordId` 在 signed fills query 前 RFC 3986 encoding；PLACE root non-zero与item `51016`/rate-limit/permission/unknown code固定 `UNKNOWN / queryRequired=true`，仅明确参数拒绝 definitive reject；focused 重验通过。
+- validation：adapter 24/24；Spring runtime-unbound 22/22；required PostgreSQL V41 11/11且0 skip；expanded security 143/143；full backend 23/23 modules、1540 tests、failures/errors/skipped=`0/0/48`、54.437s；authority errors=0；doc links=`360/14 historical warnings/0 errors`；diff-check通过。
+- Codex Security：scan `c33f878b-03fa-4aee-9374-530f886b94d0` completed；coverage=`complete`；findings=`0`；15 surfaces；唯一 completion 成功。三个 discovery candidates 均 suppressed：一个 runtime-unreachable，两个已修复并验证。
+- boundary：real credential/OKX API/PilotScope/approval/ExecutionIntent/Receipt/PLACE/CANCEL/TRANSFER/WITHDRAW/worker/LIVE enable/kill disengage=`0`；disposable PostgreSQL已删除；real mutation runtime unbound、first real order/micro-live not authorized、LIVE disabled、kill engaged。
+- findings：final P0/P1/P2/P3=`0/0/0/0`。
+- authority：`GateY-6E / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`；next=`NQ-GATEY-6E-COMMIT-AND-PUSH`；`real_provider/private_trading=NOT_IMPLEMENTED`继续表示真实 runtime 尚未接受或启用；未stage/commit/push/deploy。
+- evidence：[Security Review attempt-01](evidence/gate-y/NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-SECURITY-REVIEW.attempt-01.md)。

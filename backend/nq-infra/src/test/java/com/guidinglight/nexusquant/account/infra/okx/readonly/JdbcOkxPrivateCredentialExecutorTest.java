@@ -8,11 +8,16 @@ import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadOperation;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadRequest;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadResult;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadTransport;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateRealTransport;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxPilotPrerequisiteRequest;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxPilotPrerequisiteSnapshot;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -146,6 +151,37 @@ class JdbcOkxPrivateCredentialExecutorTest {
     }
 
     @Test
+    void realCapabilityUsesTheSameJitCredentialContextAndClearsItAfterCallback() {
+        StubJdbcTemplate jdbc = new StubJdbcTemplate(1, validPayload());
+        AtomicReference<char[]> secretReference = new AtomicReference<>();
+        AtomicInteger calls = new AtomicInteger();
+        OkxPrivateRealTransport transport = (OkxPrivateRealTransport) Proxy.newProxyInstance(
+                OkxPrivateRealTransport.class.getClassLoader(),
+                new Class<?>[]{OkxPrivateRealTransport.class},
+                (proxy, method, arguments) -> {
+                    if (method.getName().equals("observePrerequisites")) {
+                        secretReference.set(secretBuffer(arguments[1]));
+                        calls.incrementAndGet();
+                        return prerequisiteSnapshot();
+                    }
+                    throw new AssertionError("unexpected transport method: " + method.getName());
+                });
+
+        executor(jdbc, transport).withActiveCredential(
+                7L, 9L, 42L, "OKX_API_V5", session -> {
+                    session.observePrerequisites(
+                            new OkxPilotPrerequisiteRequest(List.of("BTC-USDT")),
+                            OkxPrivateEnvironment.PRODUCTION);
+                    assertFalse(allCleared(secretReference.get()));
+                    return observation();
+                });
+
+        assertEquals(1, calls.get());
+        assertEquals(1, jdbc.decryptCalls.get());
+        assertTrue(allCleared(secretReference.get()));
+    }
+
+    @Test
     void rejectsTypeFallbackAndSanitizesMalformedCredentialPayload() {
         StubJdbcTemplate validJdbc = new StubJdbcTemplate(1, validPayload());
         OkxPrivateReadException typeError = assertThrows(OkxPrivateReadException.class,
@@ -256,6 +292,18 @@ class JdbcOkxPrivateCredentialExecutorTest {
                 List.of(),
                 true, true, true, false, true, false
         );
+    }
+
+    private static OkxPilotPrerequisiteSnapshot prerequisiteSnapshot() {
+        Instant now = Instant.parse("2026-08-16T12:00:00Z");
+        return new OkxPilotPrerequisiteSnapshot(
+                List.of(new OkxPilotPrerequisiteSnapshot.InstrumentFact(
+                        "BTC-USDT", "live", "1", new BigDecimal("0.1"),
+                        new BigDecimal("0.0001"), new BigDecimal("0.1"))),
+                List.of(new OkxPilotPrerequisiteSnapshot.FeeFact(
+                        "BTC-USDT", "Lv1", "1", new BigDecimal("-0.0008"),
+                        new BigDecimal("-0.001"), now)),
+                new BigDecimal("100"), now, now, 0);
     }
 
     private static String validPayload() {

@@ -6,9 +6,9 @@ NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/
 
 <!-- nq-current-summary:start -->
 - 最近冻结 Gate 为 GateX：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [docs/gates/gate-x/](docs/gates/gate-x/)，release tag=`nq-gatex-freeze`。
-- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-6D=`ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateY-6E=`NOT STARTED`（未开始）；GateY 整体未接受、未冻结。
+- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-6D=`ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateY-6E=`REVIEW ACCEPTED / READY TO COMMIT`（审查已接受 / 可进入提交前复核）；GateY 整体未接受、未冻结。
 - Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-IMPLEMENTATION`；只允许开发 production trusted observation、reviewed real-provider/private-trading path、exact pilot inputs/materialization 与最终 fail-closed preflight prerequisite capability。当前请求不构成第一笔真实订单授权；任何真实 PLACE 必须在后续再次取得绑定 exact account/credential/order/risk/window/scope hash 的用户显式授权，精确边界以 [STATUS.md](docs/current/STATUS.md) 为准。
+- 当前唯一动作是 `NQ-GATEY-6E-COMMIT-AND-PUSH`；该动作只允许提交已接受的 prerequisite capability 并等待 exact-head CI。real mutation runtime 仍未绑定，exact PilotScope 未物化，当前请求不构成第一笔真实订单授权；任何真实 PLACE 必须在后续再次取得绑定 exact account/credential/order/risk/window/scope hash 的用户显式授权，精确边界以 [STATUS.md](docs/current/STATUS.md) 为准。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
 

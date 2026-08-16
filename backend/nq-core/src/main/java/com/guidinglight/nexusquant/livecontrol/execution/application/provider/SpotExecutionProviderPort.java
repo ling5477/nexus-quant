@@ -14,8 +14,8 @@ import com.guidinglight.nexusquant.livecontrol.execution.application.provider.Sp
  *
  * <p>合同不提供 raw method/path/body escape hatch，不读取 credential，也不授予 LIVE/trading
  * authorization。mutation 方法只能由既有 GateY-3 execution owner 在 durable {@code SEND_STARTED}
- * 已成功落库后调用；本 port 不创建、不替代也不延后该事实。GateY-6B 仅实现 fake/stub transport 下的
- * OKX contract，当前没有 runtime caller，默认 runtime 不装配该 port。</p>
+ * 已成功落库后调用；本 port 不创建、不替代也不延后该事实。GateY-6E 已实现 OKX typed transport
+ * capability，但当前没有 runtime caller，默认 runtime 不装配该 port。</p>
  */
 public interface SpotExecutionProviderPort {
 
