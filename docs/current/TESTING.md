@@ -13757,3 +13757,19 @@ IDE terminal 在命令启动前因 executable path 引号解析失败，随后�
 | OKX/credential/mutation accounting | PASS（通过） | 本轮 credential material access、OKX calls、permission probe POST、exchange mutation=`0/0/0/0` |
 
 已知 warning：Mockito dynamic-agent、SLF4J NOP、编译 deprecation/unchecked、条件性 PostgreSQL integration skips 与 14 条 append-only 历史链接 warning；均非 failure/error。未运行 frontend/Python，因为对应 diff 为 0；未重跑 OKX 和 permission probe。完整证据：[evidence/gate-y/NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-SECURITY-REVIEW.attempt-02.md](evidence/gate-y/NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-SECURITY-REVIEW.attempt-02.md)。
+
+## 2026-08-16 — GateY-6C post-CI acceptance and GateY-6D initialization attempt-01
+
+结论：`PASS / GATEY_6C_ACCEPTED / CI_GREEN / FAILED_FEATURE_CI_PRESERVED / FORWARD_REMEDIATION_ACCEPTED / GATEY_6D_INITIALIZED / EXACT_PILOT_SCOPE_NOT_MATERIALIZED / INDEPENDENT_APPROVAL_NOT_CREATED / FIRST_REAL_ORDER_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`（通过 / GateY-6C 已接受 / GateY-6D 仅初始化 / 可进入提交前复核）。
+
+| Command / check | Result | Scope / environment / known warnings / blocking |
+| --- | --- | --- |
+| Git/origin baseline | PASS（通过） | `dev` clean/staged empty；`HEAD == origin/dev == 696963a75d6a701a215bf0eb7ff94d4bed97d43f` |
+| failed feature CI | PASS / FAILURE PRESERVED（通过 / 失败历史已保留） | `31892305007 / completed / failure`；headSha=`febf30adfbd2ac1d1c017b1185ed75fb30abd851`；唯一失败 job=`Diff check`，错误=`new blank line at EOF` |
+| forward remediation exact-head CI | PASS（通过） | `31893000098 / completed / success`；headSha=`696963a75d6a701a215bf0eb7ff94d4bed97d43f`；remediation 仅修改 1 个 review evidence 文件的 EOF whitespace |
+| GateY-6C Security Review | PASS（通过） | P0/P1=`0/0`；READ/TRADE=`VERIFIED/VERIFIED`、WITHDRAW=`ABSENT`、IP=`MATCHED`；real OKX GET/retry/exchange mutation=`1/0/0`；P2 accepted residual=`TARGET_PERSISTED_FACTS_REQUERY_UNAVAILABLE` |
+| proposed next-action lifecycle | PASS（通过） | type/expected=`IMPLEMENTATION/IMPLEMENTATION`；`GateY-6D / NOT_STARTED` relation=`True`；generic regression=`PASS / CURRENT_AUTHORITY_NEXT_ACTION_REGRESSION` |
+| final docs/Git/allowlist validation | PASS（通过） | authority errors=`0`；links=`321 checked / 14 historical warnings / 0 errors`；next-action regression PASS；`git diff --check` exit=`0`；dirty allowlist=`8/8`；product/migration/CI/governance/manifest diff=`0` |
+| Maven/frontend/Python | NOT RUN（未运行） | documentation-only，产品/migration/CI/governance diff 必须为 0；使用 exact-head CI `31893000098`，非阻断 |
+
+本任务 credential access、OKX calls、exchange mutation、worker/provider start=`0/0/0/0`；未重跑 probe，未创建 pilot facts、`ExecutionIntent`、approval 或 V40。首次 link checker 调用遗漏 mandatory `-Roots` 参数并在扫描前失败；改为当前 PowerShell 直接传入 `@('README.md','docs/current')` 后通过，未隐藏该非产品失败。完整证据：[evidence/gate-y/NQ-GATEY-6C-POST-CI-ACCEPTANCE-AND-GATEY-6D-INITIALIZATION.attempt-01.md](evidence/gate-y/NQ-GATEY-6C-POST-CI-ACCEPTANCE-AND-GATEY-6D-INITIALIZATION.attempt-01.md)。

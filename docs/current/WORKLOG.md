@@ -18893,3 +18893,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - findings：P0=0；P1=0；P2=1 accepted residual；P3=0。
 - result：`PASS / GATEY_6C_SECURITY_REVIEW_ACCEPTED / MANAGEMENT_PASSWORD_INCIDENT_CLOSED / REVIEW_ACCEPTED|READY_TO_COMMIT`；authority after=`GateY-6C / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`；未stage/commit/push。
 - next：`NQ-GATEY-6C-COMMIT-AND-PUSH`；不得再次 probe 或扩展到 GateY-6D、pilot、real provider、order execution、micro-live 或 LIVE。完整证据：[evidence/gate-y/NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-SECURITY-REVIEW.attempt-02.md](evidence/gate-y/NQ-GATEY-6C-SCOPED-CREDENTIAL-IP-PRIVATE-PERMISSION-READONLY-VERIFICATION-SECURITY-REVIEW.attempt-02.md)。
+
+## 2026-08-16 — GateY-6C post-CI acceptance and GateY-6D initialization attempt-01
+
+- task：`NQ-GATEY-6C-POST-CI-ACCEPTANCE-AND-GATEY-6D-INITIALIZATION`；NQ-only、L级、documentation-only fact-source sync / post-CI acceptance / sub-batch transition。
+- baseline：`dev` clean/staged empty；`HEAD == origin/dev == 696963a75d6a701a215bf0eb7ff94d4bed97d43f`；authority before=`accepted GateY-6B / work GateY-6C REVIEW_ACCEPTED|READY_TO_COMMIT`。
+- lineage：implementation=`febf30adfbd2ac1d1c017b1185ed75fb30abd851`；CI `31892305007` 保留为 `FAILED / EOF_WHITESPACE_ONLY / FORWARD_REMEDIATED`；acceptance head=`696963a75d6a701a215bf0eb7ff94d4bed97d43f`；exact-head CI=`31893000098 / completed / success`。
+- review：P0/P1=`0/0`；READ/TRADE=`VERIFIED/VERIFIED`、WITHDRAW=`ABSENT`、IP=`MATCHED`；real OKX GET/retry/exchange mutation=`1/0/0`；management password incident=`CLOSED / ROTATED_AND_CONTAINED` within defined scope；P2 accepted residual=`TARGET_PERSISTED_FACTS_REQUERY_UNAVAILABLE`。
+- authority after：accepted=`GateY-6C / ACCEPTED|CI_GREEN / febf30ad... / 696963a... / 31893000098`；work=`GateY-6D / NOT_STARTED / NONE / NOT_RUN`。
+- GateY-6D：仅初始化 exact pilot scope/prerequisite materialization；`pilotScopeHash=UNRESOLVED`、independent approval=`NOT_CREATED`；V39 当前 work order 审计未发现 mandatory durable fact 缺口，本轮 V40/migration=`0`。
+- boundary：credential access、OKX calls、exchange mutation、worker/provider start=`0/0/0/0`；real provider/private trading not implemented；LIVE disabled、kill engaged、first real order/micro-live not authorized；hard-gate manifest 不变。
+- validation：proposed next action type/expected=`IMPLEMENTATION/IMPLEMENTATION`、relation=`True`；完整 lifecycle regression PASS；authority errors=0、links=`321/14 historical warnings/0`、diff check PASS、dirty allowlist=`8/8`、全部 forbidden-area diff=0。首次 link checker 因遗漏 mandatory `-Roots` 在扫描前失败，数组参数修正后通过。
+- next：`NQ-GATEY-6D-EXACT-PILOT-SCOPE-PREREQUISITE-MATERIALIZATION-IMPLEMENTATION`；不得自动实施或进入 GateY-6E。完整证据：[evidence/gate-y/NQ-GATEY-6C-POST-CI-ACCEPTANCE-AND-GATEY-6D-INITIALIZATION.attempt-01.md](evidence/gate-y/NQ-GATEY-6C-POST-CI-ACCEPTANCE-AND-GATEY-6D-INITIALIZATION.attempt-01.md)。
