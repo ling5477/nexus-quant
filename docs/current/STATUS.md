@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatex-freeze
 last_frozen_gate_commit=299ab30bd2e243314be2dc609cb244cd5388027b
 active_gate=GateY
 active_gate_status=IN_PROGRESS|NOT_FROZEN
-accepted_batch=GateY-6C
+accepted_batch=GateY-6D
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=febf30adfbd2ac1d1c017b1185ed75fb30abd851
-accepted_batch_acceptance_head=696963a75d6a701a215bf0eb7ff94d4bed97d43f
-accepted_batch_ci_run=31893000098
-work_batch=GateY-6D
-work_batch_status=REVIEW_ACCEPTED|READY_TO_COMMIT
-work_batch_commit=UNCOMMITTED
+accepted_batch_implementation_commit=b56e68bdc45fd6a7f27e6e830447e995ff683bfb
+accepted_batch_acceptance_head=b56e68bdc45fd6a7f27e6e830447e995ff683bfb
+accepted_batch_ci_run=31944962448
+work_batch=GateY-6E
+work_batch_status=NOT_STARTED
+work_batch_commit=NONE
 work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEY-6D-COMMIT-AND-PUSH
+next_action=NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-IMPLEMENTATION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -88,8 +88,9 @@ nq-current-authority:end -->
 - GateY-5：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit=`8d594f1a0000678e4817f3ec80de19ac975da992` 的 CI run `31727172181` 因 Gitleaks `generic-api-key` 对非秘密 hash evidence 的误报而失败，失败历史保留。Forward-only remediation commit=`88f6f7f25a81f55fe17984df335546ad2033c61f` 的唯一 parent 为 implementation commit，仅修改 1 个 review evidence 文件，未修改产品代码、CI workflow 或 allowlist；exact-head CI run=`31761584826 / completed / success / bad=0`。接受范围仅为 fake-only isolated worker、durable intent/receipt、NO BLIND RETRY、crash/restart/replay、fake remote observation、kill propagation、immutable release、rollback/backup/restore/incident/reconciliation drill、只读 operator visibility、full regression、production-like synthetic fixture 与 V38→V39 lock-window measurement。`PRODUCTION_LOCK_WINDOW_NOT_MEASURED=CLOSED_FOR_REVIEWED_SYNTHETIC_DISPOSABLE_GATEY_SCALE` 不是 production SLA、production migration 或真实交易验证。
 - GateY-6B：`ACCEPTED / CI GREEN / CONTRACT ONLY`（已接受 / CI 已通过 / 仅合同能力）。Typed OKX Spot provider contract 的 implementation/acceptance head=`990f8c5680c23d02dec059ca72e7355f88faa72e`，exact-head CI run=`31811302301 / completed / success / 10 jobs / bad=0`。接受范围仅为 `SpotExecutionProviderPort`、typed transport/adapter、LIMIT-only、exact endpoint allowlist、stable clientOrderId、query-first/UNKNOWN、no-blind-retry、state-aware CANCEL、venue-state translation、sanitized outcome 与 default fail-closed；不包含 production transport、credential wiring、real signing/HTTP、worker/runtime binding、private trading、pilot、`FIRST_REAL_ORDER`、micro-live 或 LIVE。
 - GateY-6C：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Implementation commit=`febf30adfbd2ac1d1c017b1185ed75fb30abd851` 的 CI run `31892305007` 因 review evidence EOF blank line 而失败，失败历史固定为 `FAILED / EOF_WHITESPACE_ONLY / FORWARD_REMEDIATED`；forward remediation/acceptance head=`696963a75d6a701a215bf0eb7ff94d4bed97d43f`，exact-head CI run=`31893000098 / completed / success`。既有 credential-management/JIT 边界从受控固定出口完成唯一一次 `GET /api/v5/account/config`，retry=`0`；remote READ/TRADE=`VERIFIED / VERIFIED`、WITHDRAW=`ABSENT`、IP=`MATCHED`，exchange mutation 与 PLACE/CANCEL/TRANSFER/WITHDRAW=`0 / 0/0/0/0`。独立 Security Review 为 P0=0/P1=0；辅助 NQ 管理密码事件在 defined containment scope 内为 `CLOSED / ROTATED_AND_CONTAINED`。`TARGET_PERSISTED_FACTS_REQUERY_UNAVAILABLE` 保留为非阻断 P2 accepted residual。该接受不实现 real provider/private trading，不授权 funding mutation、borrow、leverage、derivatives、LIVE enable、kill disengage 或 `FIRST_REAL_ORDER`。
-- GateY-6D：`REVIEW ACCEPTED / READY TO COMMIT`（评审已接受 / 可进入提交前复核）。Security Review attempt-01 的 3 个 authorization P1 与 `UNTRUSTED_PREREQUISITE_OBSERVATION_AUTHORITY` 均由 attempt-02 独立复核为关闭；operator DTO/command不接受 observation facts，trusted observation port为唯一入口，production真实 source未实现时固定 fail closed，arbitrary refresh primitive不可达；focused/PostgreSQL/GateY-2/4/6C/ArchUnit与23/23 modules全后端回归通过，P0/P1=`0/0`。因未获得 exact operator scope、runtime authority与可信 prerequisite observation，`EXACT_PILOT_SCOPE=NOT_MATERIALIZED`、observation set/approval=`NOT_CREATED`、preflight=`NOT_RUN_NO_SCOPE`；本状态只允许 commit/push并等待 exact-head CI，不得创建 `ExecutionIntent`，不得 PLACE/CANCEL/transfer/withdraw，不得 disengage kill、启动 worker/real provider或自动进入 GateY-6E。
-- GateY-6 使用正式子批次 authority；GateY-6C 的接受不等于 GateY 或 GateY-6 overall accepted/frozen，也不授权 GateY-FREEZE。30 项 hard-gate manifest 保持 `PASS=0 / NOT_MET=25 / NOT_VERIFIABLE=5`、gap candidates=`10`；G21 capability/pilot/final=`NOT_MET / NOT_MET / NOT_MET`，real provider/private trading继续`NOT_IMPLEMENTED`。
+- GateY-6D：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。Implementation/review commit=`b56e68bdc45fd6a7f27e6e830447e995ff683bfb`，exact-head `NQ CI Baseline` run=`31944962448 / completed / success`；Security Review P0/P1=`0/0`，`TRUSTED_OBSERVATION_AUTHORITY_ACCEPTED`、`PRODUCTION_FAIL_CLOSED_ACCEPTED`、`POST_APPROVAL_FORGED_REFRESH_DENIED` 与 `AUTHORIZATION_REGRESSIONS_PASS` 保持成立。接受范围仅为 GateY-6D control-plane capability；`ExecutionIntent/OKX_CALL/EXCHANGE_MUTATION=0/0/0`，`EXACT_PILOT_SCOPE=NOT_MATERIALIZED`，第一笔真实订单与 micro-live 均未授权。
+- GateY-6E：`NOT STARTED`（未开始）。工程目标仅初始化为：建立 production trusted prerequisite observation capability；建立 reviewed OKX Spot real provider/private trading path；绑定 exact operator-controlled pilot inputs；materialize exact pilot scope；运行 final fail-closed preflight；并且只有在后续用户再次给予绑定 exact account、credential、symbol、side、price/price rule、quantity/notional、risk limits、execution window 与 `pilotScopeHash` 的明确授权后，才允许 exactly-one tiny LIMIT real order。当前 `TRUSTED_REAL_OBSERVATION/REAL_PROVIDER/PRIVATE_TRADING=NOT_IMPLEMENTED`、`EXACT_PILOT_SCOPE=NOT_MATERIALIZED`、`EXPLICIT_FIRST_ORDER_AUTHORIZATION=NOT_GRANTED`；本次“CI通过，下一步任务”不构成真实 PLACE 授权。
+- GateY-6 使用正式子批次 authority；GateY-6D 的接受不等于 GateY 或 GateY-6 overall accepted/frozen，也不授权 GateY-FREEZE。30 项 hard-gate manifest 保持 `PASS=0 / NOT_MET=25 / NOT_VERIFIABLE=5`、gap candidates=`10`；G21 capability/pilot/final=`NOT_MET / NOT_MET / NOT_MET`，real provider/private trading继续`NOT_IMPLEMENTED`。
 - GateW-3 dry-run order preview：只包含 OKX Spot、BUY/SELL、LIMIT、internal application、local persisted facts、read-only diagnostic；minimum notional、fee、远端 permission 与 runtime balance/risk 继续保持显式 UNKNOWN / NOT_EVALUATED，`executionReadiness=BLOCKED`，不得推导交易授权。
 - GateW-3 read-only reconciliation：只包含 OKX Spot、最多 3 个 allowlisted symbols、1 page/100 records/24h typed private `Read` snapshot、bounded local SELECT 与 pure comparator；默认不装配，无 real smoke/credential/network/repair/persistence/scheduler，`executionReadiness=BLOCKED`。CI acceptance 只接受该 side-effect-free contract，不证明真实 permission 或账户健康。
 - GateW-3 risk preflight：只消费 immutable preview/reconciliation result 与显式 local metadata snapshots；不调用 `PreTradeRiskService`/registry/stateful rules，不构造 `PlaceOrderCommand`，无 DB/network/write。minimum notional、fee、remote permission 保持 UNKNOWN，stateful risk/balance/position 等保持 NOT_EVALUATED，`executionReadiness=BLOCKED`、`tradingAuthorized=false`。
@@ -123,4 +124,4 @@ updated_commit=299ab30bd2e243314be2dc609cb244cd5388027b
 
 ## 4. 下一允许动作
 
-GateY-6C 为 `ACCEPTED|CI_GREEN`，implementation commit=`febf30adfbd2ac1d1c017b1185ed75fb30abd851`，acceptance head=`696963a75d6a701a215bf0eb7ff94d4bed97d43f`，exact-head CI run=`31893000098`；failed feature CI `31892305007` 继续保留为 `FAILED / EOF_WHITESPACE_ONLY / FORWARD_REMEDIATED`。当前 work batch 为 `GateY-6D / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`；Security Review attempt-02 已关闭 attempt-01 全部 P1，唯一下一动作精确为 `NQ-GATEY-6D-COMMIT-AND-PUSH`。`EXACT_PILOT_SCOPE=NOT_MATERIALIZED`、`EXPLICIT_PILOT_SCOPE_INPUT_REQUIRED`、`PREREQUISITE_OBSERVATION_INPUT_REQUIRED`；`EXPLICIT_MICRO_LIVE_AUTHORIZATION=NOT_GRANTED`、`FIRST_REAL_ORDER=NOT_AUTHORIZED`、micro-live=`NOT_AUTHORIZED`、real provider/private trading=`NOT_IMPLEMENTED`、LIVE=`DISABLED`、kill switch=`ENGAGED`；真实 PLACE/CANCEL、transfer、withdraw、borrow 与 leverage 均未获授权。
+GateY-6D 为 `ACCEPTED|CI_GREEN`，implementation/acceptance head=`b56e68bdc45fd6a7f27e6e830447e995ff683bfb`，exact-head CI run=`31944962448 / completed / success`。当前 work batch 为 `GateY-6E / NOT_STARTED / NONE / NOT_RUN`，唯一下一动作精确为 `NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-IMPLEMENTATION`；它只授权开发真实准入 prerequisite capability，不授权真实交易。`TRUSTED_REAL_OBSERVATION/REAL_PROVIDER/PRIVATE_TRADING=NOT_IMPLEMENTED`、`EXACT_PILOT_SCOPE=NOT_MATERIALIZED`、`EXPLICIT_FIRST_ORDER_AUTHORIZATION=NOT_GRANTED`、`FIRST_REAL_ORDER=NOT_AUTHORIZED`、micro-live=`NOT_AUTHORIZED`、LIVE=`DISABLED`、kill switch=`ENGAGED`；真实 PLACE/CANCEL、transfer、withdraw、borrow 与 leverage 均未获授权。

@@ -13879,3 +13879,18 @@ IDE terminal 在命令启动前因 executable path 引号解析失败，随后�
 | static trust/reachability/diff | PASS（通过） | operator observation input=0；production authority implementation=1且fixed unavailable；arbitrary refresh=0；credential material/OKX/exchange mutation=0；migration/frontend/research/scripts/deploy/CI diff=0；staged=0 |
 
 47 个 skip 为既有 conditional/manual integration；required PostgreSQL 已单独实跑。一次性容器已停止并自动删除；未连接本机 5432、生产数据库或真实数据。Mockito dynamic-agent、SLF4J NOP、deprecation/unchecked、expected error-path stack trace与LF→CRLF为非阻断 warning。未运行 frontend/Python/E2E，因为对应 diff为0。完整证据：[security review attempt-02](evidence/gate-y/NQ-GATEY-6D-EXACT-PILOT-SCOPE-PREREQUISITE-MATERIALIZATION-SECURITY-REVIEW.attempt-02.md)。
+
+## 2026-08-16 — GateY-6D post-CI acceptance 与 GateY-6E initialization
+
+结论：`PASS / GATEY_6D_ACCEPTED / CI_GREEN / GATEY_6E_INITIALIZED / EXACT_PILOT_SCOPE_NOT_MATERIALIZED / FIRST_REAL_ORDER_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / REAL_PROVIDER_NOT_IMPLEMENTED / PRIVATE_TRADING_NOT_IMPLEMENTED / LIVE_DISABLED / KILL_ENGAGED / READY_TO_COMMIT`（通过 / GateY-6D 已接受 / CI 已通过 / GateY-6E 已初始化 / 可进入提交前复核）。
+
+| Command / check | Result | Scope / environment / known warnings / blocking |
+| --- | --- | --- |
+| baseline Git checks | PASS（通过） | `dev`；worktree clean；staged=`0`；`HEAD == origin/dev == b56e68bd...`；commit subject=`feat(gatey): implement exact pilot scope materialization` |
+| `gh run view 31944962448 --json ...` | PASS（通过） | `NQ CI Baseline / completed / success`；exact `headSha=b56e68bd...`；只读 GitHub Actions 核验 |
+| `scripts/docs/check-current-authority.ps1` | PASS（通过） | errors=`0`；accepted GateY-6D、work GateY-6E `NOT_STARTED`、next action一致 |
+| `scripts/docs/check-doc-links.ps1` | PASS（通过） | 外层 `powershell -File ... -Roots README.md,docs/current` 首次 exit=`1 / ROOT_NOT_FOUND`，RCA 为 `string[]` 被绑定成单个逗号字面路径；改用 `-Roots @('README.md','docs/current')` 后 checked=`345`、errors=`0`；14 个既有 historical warnings，不阻断本任务 |
+| `git diff --check` | PASS（通过） | whitespace errors=`0`；仅 LF→CRLF 工作区提示 |
+| exact allowlist / forbidden scope | PASS（通过） | 仅用户允许的 8 个 Markdown 文件；backend/frontend/migration/scripts/deploy/`.github` diff=`0` |
+
+本任务 docs-only，未运行 Maven、frontend build/E2E 或 Python tests；这是预期的非阻断未执行项。GateY-6D 产品代码由 exact-head CI `31944962448` 验证，本轮未修改产品代码、schema、checker、governance、deploy 或 CI，也未执行真实 exchange operation。完整证据：[post-CI acceptance attempt-01](evidence/gate-y/NQ-GATEY-6D-POST-CI-ACCEPTANCE-AND-GATEY-6E-INITIALIZATION.attempt-01.md)。

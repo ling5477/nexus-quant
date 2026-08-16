@@ -18986,3 +18986,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - findings：P0/P1/P2/P3=`0/0/0/0`；attempt-01 `UNTRUSTED_PREREQUISITE_OBSERVATION_AUTHORITY`与3个authorization P1均关闭。
 - authority：`GateY-6D / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`；next=`NQ-GATEY-6D-COMMIT-AND-PUSH`；未stage/commit/push/deploy。
 - evidence：[security review attempt-02](evidence/gate-y/NQ-GATEY-6D-EXACT-PILOT-SCOPE-PREREQUISITE-MATERIALIZATION-SECURITY-REVIEW.attempt-02.md)。
+
+## 2026-08-16 — GateY-6D post-CI acceptance 与 GateY-6E initialization
+
+- task：`NQ-GATEY-6D-POST-CI-ACCEPTANCE-AND-GATEY-6E-INITIALIZATION`；NQ-only、docs-only、唯一 post-CI lifecycle closeout。
+- baseline：`dev` clean、staged=`0`；`HEAD == origin/dev == b56e68bdc45fd6a7f27e6e830447e995ff683bfb`；commit subject精确匹配；`NQ CI Baseline` run `31944962448 / completed / success` 且 head SHA精确匹配。
+- acceptance：GateY-6D Security Review P0/P1=`0/0`；trusted observation authority、production fail-closed、post-approval forged refresh denial与authorization regressions由exact-head CI接受；`ExecutionIntent/OKX_CALL/EXCHANGE_MUTATION=0/0/0`。
+- authority：accepted batch推进为`GateY-6D / ACCEPTED|CI_GREEN / b56e68bd... / 31944962448`；work batch初始化为`GateY-6E / NOT_STARTED / NONE / NOT_RUN`；next=`NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-IMPLEMENTATION`。
+- GateY-6E boundary：只初始化production trusted observation、reviewed OKX Spot real provider/private trading、exact inputs/materialization与final fail-closed preflight的后续产品开发范围；当前实现count=`0`。
+- trading boundary：`TRUSTED_REAL_OBSERVATION/REAL_PROVIDER/PRIVATE_TRADING=NOT_IMPLEMENTED`；`EXACT_PILOT_SCOPE=NOT_MATERIALIZED`；explicit first-order authorization=`NOT_GRANTED`；first real order/micro-live=`NOT_AUTHORIZED`；LIVE disabled、kill engaged。
+- validation：authority errors=`0`；doc links首次因外层 `-File` 逗号参数被绑定为单路径而exit=`1 / ROOT_NOT_FOUND`，改用PowerShell数组参数后checked=`345`、errors=`0`、14个既有warnings；`git diff --check`通过；dirty allowlist精确8文件；backend/frontend/migration/scripts/deploy/CI diff=`0`。Docs-only未运行Maven/frontend/Python，非阻断。
+- result：`PASS / GATEY_6D_ACCEPTED / CI_GREEN / GATEY_6E_INITIALIZED / EXACT_PILOT_SCOPE_NOT_MATERIALIZED / FIRST_REAL_ORDER_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / REAL_PROVIDER_NOT_IMPLEMENTED / PRIVATE_TRADING_NOT_IMPLEMENTED / LIVE_DISABLED / KILL_ENGAGED / READY_TO_COMMIT`；未stage/commit/push/deploy。
+- next：进入 `NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-IMPLEMENTATION` 产品代码任务；不得再插入 docs-only review/governance/plan。完整证据：[post-CI acceptance attempt-01](evidence/gate-y/NQ-GATEY-6D-POST-CI-ACCEPTANCE-AND-GATEY-6E-INITIALIZATION.attempt-01.md)。

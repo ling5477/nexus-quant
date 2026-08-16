@@ -6,9 +6,9 @@
 
 <!-- nq-current-summary:start -->
 - 最近冻结 Gate 为 GateX：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-x/](../gates/gate-x/)。
-- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-6C=`ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateY-6D=`REVIEW ACCEPTED / READY TO COMMIT`（评审已接受 / 可进入提交前复核）；GateY 整体未接受、未冻结。
+- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-6D=`ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateY-6E=`NOT STARTED`（未开始）；GateY 整体未接受、未冻结。
 - Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEY-6D-COMMIT-AND-PUSH`；只允许提交已通过独立安全评审且尚未实际物化的 exact pilot scope/prerequisite capability，不授权补造输入、创建 `ExecutionIntent`、PLACE、CANCEL、mutation、micro-live、第一笔真实订单或 LIVE，exact transition 以 [STATUS.md](STATUS.md) 为准。
+- 当前唯一动作是 `NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-IMPLEMENTATION`；只允许开发 production trusted observation、reviewed real-provider/private-trading path、exact pilot inputs/materialization 与最终 fail-closed preflight prerequisite capability。当前请求不构成第一笔真实订单授权；任何真实 PLACE 必须在后续再次取得绑定 exact account/credential/order/risk/window/scope hash 的用户显式授权，精确边界以 [STATUS.md](STATUS.md) 为准。
 - 当前 runtime release、current work commit 与精确 runtime 标识只从 [STATUS.md](STATUS.md) 获取，本索引不复制其值。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
