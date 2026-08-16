@@ -72,11 +72,12 @@ public sealed interface PilotPrerequisiteObservation permits
 
     record InstrumentMetadata(Envelope envelope, String instrumentMetadataDigest, List<InstrumentItem> items)
             implements PilotPrerequisiteObservation {
-        public static final String SCHEMA_VERSION = "instrument-metadata-observation.v1";
+        public static final String LEGACY_SCHEMA_VERSION = "instrument-metadata-observation.v1";
+        public static final String SCHEMA_VERSION = "instrument-metadata-observation.v2";
 
         public InstrumentMetadata {
             Objects.requireNonNull(envelope, "envelope must not be null");
-            PilotScopeBinding.require(SCHEMA_VERSION.equals(envelope.observationSchemaVersion()),
+            PilotScopeBinding.require(isSupportedSchema(envelope.observationSchemaVersion()),
                     "instrument observation schema mismatch");
             PilotScopeBinding.requireDigest(instrumentMetadataDigest, "instrumentMetadataDigest");
             items = List.copyOf(Objects.requireNonNull(items, "items must not be null"));
@@ -85,6 +86,21 @@ public sealed interface PilotPrerequisiteObservation permits
             List<String> symbols = items.stream().map(InstrumentItem::symbol).toList();
             PilotScopeBinding.require(symbols.equals(symbols.stream().distinct().sorted().toList()),
                     "instrument items must be sorted and unique");
+            if (LEGACY_SCHEMA_VERSION.equals(envelope.observationSchemaVersion())) {
+                PilotScopeBinding.require(items.stream().allMatch(item ->
+                                item.minimumOrderValueEvidenceClass()
+                                        == MinimumOrderValueEvidenceClass.LEGACY_V40_REQUIRED),
+                        "legacy instrument observation items require LEGACY_V40_REQUIRED evidence");
+            } else {
+                PilotScopeBinding.require(items.stream().noneMatch(item ->
+                                item.minimumOrderValueEvidenceClass()
+                                        == MinimumOrderValueEvidenceClass.LEGACY_V40_REQUIRED),
+                        "v2 instrument observation items cannot use legacy evidence");
+            }
+        }
+
+        public static boolean isSupportedSchema(String value) {
+            return SCHEMA_VERSION.equals(value) || LEGACY_SCHEMA_VERSION.equals(value);
         }
 
         @Override
@@ -186,6 +202,7 @@ public sealed interface PilotPrerequisiteObservation permits
             BigDecimal tickSize,
             BigDecimal lotSize,
             BigDecimal minimumOrderSize,
+            MinimumOrderValueEvidenceClass minimumOrderValueEvidenceClass,
             BigDecimal minimumOrderValue,
             String minimumOrderValueCurrency
     ) {
@@ -196,9 +213,23 @@ public sealed interface PilotPrerequisiteObservation permits
             requirePositive(tickSize, "tickSize");
             requirePositive(lotSize, "lotSize");
             requirePositive(minimumOrderSize, "minimumOrderSize");
-            requirePositive(minimumOrderValue, "minimumOrderValue");
-            PilotScopeBinding.require("USDT".equals(minimumOrderValueCurrency),
-                    "minimumOrderValueCurrency must be USDT");
+            Objects.requireNonNull(minimumOrderValueEvidenceClass,
+                    "minimumOrderValueEvidenceClass must not be null");
+            switch (minimumOrderValueEvidenceClass) {
+                case VENUE_PUBLISHED -> {
+                    requirePositive(minimumOrderValue, "minimumOrderValue");
+                    PilotScopeBinding.requireText(
+                            minimumOrderValueCurrency, 16, "minimumOrderValueCurrency");
+                }
+                case VENUE_NOT_PUBLISHED -> PilotScopeBinding.require(
+                        minimumOrderValue == null && minimumOrderValueCurrency == null,
+                        "VENUE_NOT_PUBLISHED cannot carry minimum order value facts");
+                case LEGACY_V40_REQUIRED -> {
+                    requirePositive(minimumOrderValue, "minimumOrderValue");
+                    PilotScopeBinding.require("USDT".equals(minimumOrderValueCurrency),
+                            "legacy minimumOrderValueCurrency must be USDT");
+                }
+            }
         }
 
         private static void requirePositive(BigDecimal value, String name) {
@@ -220,5 +251,11 @@ public sealed interface PilotPrerequisiteObservation permits
         SUSPEND,
         PREOPEN,
         TEST
+    }
+
+    enum MinimumOrderValueEvidenceClass {
+        VENUE_PUBLISHED,
+        VENUE_NOT_PUBLISHED,
+        LEGACY_V40_REQUIRED
     }
 }

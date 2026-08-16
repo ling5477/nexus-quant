@@ -27,7 +27,8 @@ public record PilotObservationSet(
             );
         }
         PilotScopeBinding.require(
-                PilotObservationCanonicalEncoder.instrumentMetadataDigest(instrumentMetadata.items())
+                PilotObservationCanonicalEncoder.instrumentMetadataDigest(
+                        instrumentMetadata.envelope().observationSchemaVersion(), instrumentMetadata.items())
                         .equals(instrumentMetadata.instrumentMetadataDigest()),
                 "instrument metadata digest is not canonical"
         );

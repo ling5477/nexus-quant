@@ -32,7 +32,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 /**
- * GateY-6D application facade。仅构造并提交 V40 facts；没有 ExecutionIntent/provider/worker 依赖。
+ * GateY-6D application facade。仅构造并提交受版本约束的 prerequisite facts；没有 ExecutionIntent/provider/worker 依赖。
  */
 @Service
 public class PilotScopeControlPlaneService implements PilotScopeControlPlane {

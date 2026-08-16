@@ -71,7 +71,7 @@
 | `G21` | real provider mutation path implemented/reviewed | HARD_GATE_GAP_CANDIDATE | NOT_MET | NOT_MET | NOT_MET | `E-CURRENT-OKX-AUDIT` | implement worker-safe OKX Spot LIMIT provider with fake/stub tests only |
 | `G22` | private trading path implemented/reviewed | HARD_GATE_GAP_CANDIDATE | NOT_MET | NOT_MET | NOT_MET | `E-CURRENT-OKX-AUDIT` | current readiness and endpoint guard fail-close mutation |
 | `G23` | instrument metadata freshness | HARD_GATE_GAP_CANDIDATE | NOT_MET | NOT_MET | NOT_MET | `E-CURRENT-OKX-AUDIT` | add bounded freshness/expiry contract and fail-close stale metadata |
-| `G24` | instrument trading status / tick size / lot size / minimum order size / minimum order value | HARD_GATE_GAP_CANDIDATE | NOT_MET | NOT_MET | NOT_MET | `E-CURRENT-OKX-AUDIT` | trading status、tick/lot、minimum size/value与exact pilot facts均未绑定 |
+| `G24` | instrument trading status / tick size / lot size / minimum order size / minimum order value evidence | HARD_GATE_GAP_CANDIDATE | NOT_MET | NOT_MET | NOT_MET | `E-CURRENT-OKX-AUDIT` | trading status、tick/lot/minimum size是 mandatory venue facts；minimum value仅在`VENUE_PUBLISHED`时强制，否则必须显式`VENUE_NOT_PUBLISHED`；exact pilot facts仍未绑定 |
 | `G25` | available balance | HARD_GATE_GAP_CANDIDATE | PASS | NOT_VERIFIABLE | NOT_VERIFIABLE | `E-Y4-SECURITY` | read-only balance capability exists; exact pilot account/balance unavailable |
 | `G26` | fee assumptions | HARD_GATE_GAP_CANDIDATE | NOT_MET | NOT_VERIFIABLE | NOT_MET | `E-CURRENT-OKX-AUDIT` | capability缺少accepted fee contract；actual pilot fee tier/source不可验证，需冻结freshness、estimate/observed语义与loss-cap treatment |
 | `G27` | clock/time synchronization | HARD_GATE_GAP_CANDIDATE | NOT_MET | NOT_MET | NOT_MET | `E-CURRENT-OKX-AUDIT` | add clock-skew preflight, signed-request tolerance and stop threshold |
@@ -193,7 +193,7 @@ Pilot status 固定为：`SCOPED_PILOT_CREDENTIAL=NOT_MET`、`READ_TRADE_PERMISS
 
 ## 9. Symbol and capital/risk contracts
 
-Symbol selection只冻结标准，不选择 symbol：spot only、high liquidity、instrument trading status可交易、metadata freshness可验证、tick size/lot size/minimum order size/minimum order value已知、available balance充足、spread bounded、query/fill reconciliation受支持。未来选定的1～2个symbol必须进入exact scope hash；metadata stale或status非tradable时`FIRST_REAL_ORDER=DENIED`。
+Symbol selection只冻结标准，不选择 symbol：spot only、high liquidity、instrument trading status可交易、metadata freshness可验证、tick size/lot size/minimum order size为当前官方可证明的 mandatory venue facts；minimum order value在venue正式发布时必须以`VENUE_PUBLISHED`及其value/currency强制校验，venue API未公开时必须显式记录`VENUE_NOT_PUBLISHED`且不得携带人工value/currency。available balance充足、spread bounded、query/fill reconciliation受支持。未来选定的1～2个symbol必须进入exact scope hash；metadata stale或status非tradable时`FIRST_REAL_ORDER=DENIED`。若未来真实`PLACE`收到场所未预先公开的额外notional规则明确拒绝，必须归类为`DEFINITIVELY_REJECTED / NO_RETRY`，不得反向伪造prerequisite fact。
 
 当前 accepted authority没有具体 micro-live金额。因此 `capitalCap`、`singleOrderNotionalCap`、`symbolPositionCap`、`dailyLossCap`、`maxOpenOrders`、`maxIntradayOrders` 均保持 `UNRESOLVED / EXPLICIT_AUTHORITY_REQUIRED`。只冻结关系：single order notional远低于 capital cap；daily loss cap远低于 pilot capital；position与order count有硬上限；LIMIT-only；任何数值缺失都拒绝授权。
 

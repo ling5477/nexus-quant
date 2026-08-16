@@ -12,7 +12,14 @@ public final class PilotObservationCanonicalEncoder {
     public static String instrumentMetadataDigest(
             List<PilotPrerequisiteObservation.InstrumentItem> items
     ) {
-        return CanonicalDigestSupport.sha256(instrumentMetadataPayload(items));
+        return instrumentMetadataDigest(PilotPrerequisiteObservation.InstrumentMetadata.SCHEMA_VERSION, items);
+    }
+
+    public static String instrumentMetadataDigest(
+            String schemaVersion,
+            List<PilotPrerequisiteObservation.InstrumentItem> items
+    ) {
+        return CanonicalDigestSupport.sha256(instrumentMetadataPayload(schemaVersion, items));
     }
 
     public static String digest(PilotPrerequisiteObservation observation) {
@@ -36,7 +43,7 @@ public final class PilotObservationCanonicalEncoder {
         return switch (observation) {
             case PilotPrerequisiteObservation.InstrumentMetadata value -> "{" +
                     "\"instrumentMetadataDigest\":" + CanonicalDigestSupport.quote(value.instrumentMetadataDigest()) +
-                    ",\"items\":" + instrumentItems(value.items()) + "}";
+                    ",\"items\":" + instrumentItems(value.envelope().observationSchemaVersion(), value.items()) + "}";
             case PilotPrerequisiteObservation.FeeSchedule value -> "{" +
                     "\"feeScheduleDigest\":" + CanonicalDigestSupport.quote(value.feeScheduleDigest()) +
                     ",\"feeTier\":" + CanonicalDigestSupport.quote(value.feeTier()) +
@@ -58,14 +65,28 @@ public final class PilotObservationCanonicalEncoder {
     }
 
     private static String instrumentMetadataPayload(
+            String schemaVersion,
             List<PilotPrerequisiteObservation.InstrumentItem> items
     ) {
-        return "{\"schemaVersion\":\"instrument-metadata-observation.v1\",\"items\":" +
-                instrumentItems(items) + "}";
+        PilotScopeBinding.require(PilotPrerequisiteObservation.InstrumentMetadata.isSupportedSchema(schemaVersion),
+                "instrument observation schema mismatch");
+        return "{\"schemaVersion\":" + CanonicalDigestSupport.quote(schemaVersion) + ",\"items\":" +
+                instrumentItems(schemaVersion, items) + "}";
     }
 
-    private static String instrumentItems(List<PilotPrerequisiteObservation.InstrumentItem> items) {
-        return items.stream().map(item -> "{" +
+    private static String instrumentItems(
+            String schemaVersion,
+            List<PilotPrerequisiteObservation.InstrumentItem> items
+    ) {
+        return items.stream().map(item -> instrumentItem(schemaVersion, item))
+                .collect(Collectors.joining(",", "[", "]"));
+    }
+
+    private static String instrumentItem(
+            String schemaVersion,
+            PilotPrerequisiteObservation.InstrumentItem item
+    ) {
+        String prefix = "{" +
                         "\"symbol\":" + CanonicalDigestSupport.quote(item.symbol()) +
                         ",\"tradingStatus\":" + CanonicalDigestSupport.quote(item.tradingStatus().name()) +
                         ",\"tickSize\":" + CanonicalDigestSupport.quote(
@@ -73,11 +94,24 @@ public final class PilotObservationCanonicalEncoder {
                         ",\"lotSize\":" + CanonicalDigestSupport.quote(
                                 CanonicalDigestSupport.plainDecimal(item.lotSize(), "lotSize")) +
                         ",\"minimumOrderSize\":" + CanonicalDigestSupport.quote(
-                                CanonicalDigestSupport.plainDecimal(item.minimumOrderSize(), "minimumOrderSize")) +
-                        ",\"minimumOrderValue\":" + CanonicalDigestSupport.quote(
-                                CanonicalDigestSupport.plainDecimal(item.minimumOrderValue(), "minimumOrderValue")) +
-                        ",\"minimumOrderValueCurrency\":" +
-                        CanonicalDigestSupport.quote(item.minimumOrderValueCurrency()) + "}")
-                .collect(Collectors.joining(",", "[", "]"));
+                                CanonicalDigestSupport.plainDecimal(item.minimumOrderSize(), "minimumOrderSize"));
+        if (PilotPrerequisiteObservation.InstrumentMetadata.LEGACY_SCHEMA_VERSION.equals(schemaVersion)) {
+            return prefix +
+                   ",\"minimumOrderValue\":" + CanonicalDigestSupport.quote(
+                           CanonicalDigestSupport.plainDecimal(item.minimumOrderValue(), "minimumOrderValue")) +
+                   ",\"minimumOrderValueCurrency\":" +
+                   CanonicalDigestSupport.quote(item.minimumOrderValueCurrency()) + "}";
+        }
+        String evidence = prefix + ",\"minimumOrderValueEvidenceClass\":" +
+                          CanonicalDigestSupport.quote(item.minimumOrderValueEvidenceClass().name());
+        if (item.minimumOrderValueEvidenceClass()
+                == PilotPrerequisiteObservation.MinimumOrderValueEvidenceClass.VENUE_PUBLISHED) {
+            return evidence +
+                   ",\"minimumOrderValue\":" + CanonicalDigestSupport.quote(
+                           CanonicalDigestSupport.plainDecimal(item.minimumOrderValue(), "minimumOrderValue")) +
+                   ",\"minimumOrderValueCurrency\":" +
+                   CanonicalDigestSupport.quote(item.minimumOrderValueCurrency()) + "}";
+        }
+        return evidence + "}";
     }
 }

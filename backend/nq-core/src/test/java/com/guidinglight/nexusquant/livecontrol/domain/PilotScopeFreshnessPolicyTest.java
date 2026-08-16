@@ -44,7 +44,9 @@ class PilotScopeFreshnessPolicyTest {
         UUID setId = UUID.fromString("33333333-3333-3333-3333-333333333333");
         var item = new PilotPrerequisiteObservation.InstrumentItem(
                 "BTC-USDT", status, new BigDecimal("0.1"), new BigDecimal("0.001"),
-                new BigDecimal("0.001"), new BigDecimal("5"), "USDT");
+                new BigDecimal("0.001"),
+                PilotPrerequisiteObservation.MinimumOrderValueEvidenceClass.VENUE_PUBLISHED,
+                new BigDecimal("5"), "USDT");
         String instrumentDigest = PilotObservationCanonicalEncoder.instrumentMetadataDigest(List.of(item));
         PilotScopeBinding scope = new PilotScopeBinding(
                 scopeId, sessionId, instrumentDigest, "instrument-source", "instrument.v1", 2_000,

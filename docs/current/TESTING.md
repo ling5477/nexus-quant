@@ -13910,3 +13910,37 @@ IDE terminal 在命令启动前因 executable path 引号解析失败，随后�
 | Maven/focused regression | NOT RUN（未运行） | hard gate要求在其余代码前立即停止；backend/schema/provider/runtime diff=`0`，该未执行项是阻断结果而非测试通过 |
 
 V40要求独立、可回读、`>0`且币种固定USDT的`minimumOrderValue`，并纳入canonical digest与append-only observation；固定5 USDT、历史公告、`minSz × ticker`、经验推导或fixture均未采用。Authority保持`GateY-6E / NOT_STARTED / NONE / NOT_RUN`。完整证据：[blocked implementation attempt-01](evidence/gate-y/NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-16 — GateY-6E minimum order value 语义前向修正 implementation attempt-01
+
+结论：`PASS / GATEY_6E_MINIMUM_ORDER_VALUE_SEMANTIC_REMEDIATED / V41_IMPLEMENTED / VENUE_NOT_PUBLISHED_MODELED_EXPLICITLY / NO_FABRICATED_PREREQUISITE_FACT / INSTRUMENT_OBSERVATION_V2 / JAVA_POSTGRES_PARITY_PASS / V40_TO_V41_PASS / V1_TO_V41_PASS / OKX_CALL_0 / EXCHANGE_MUTATION_0 / FIRST_REAL_ORDER_NOT_AUTHORIZED / LIVE_DISABLED / PENDING_INDEPENDENT_MIGRATION_SECURITY_REVIEW`（通过 / V41 已实现 / minimum order value 未发布语义已显式建模 / 等待独立 migration security review）。
+
+| Command / check | Result | Scope / environment / known warnings |
+| --- | --- | --- |
+| baseline Git + exact-head CI | PASS（通过） | `dev` 起始 clean、staged=`0`；`HEAD == origin/dev == 4fa39a7c5700cabd6b041d6457cb4640eabb4feb`；CI `31947934533 / completed / success` exact-head |
+| compile | PASS（通过） | `mvn -f backend/pom.xml -pl nq-core,nq-infra -am -DskipTests compile` |
+| focused Java/migration contract | PASS（通过） | 16 tests，failures/errors=`0/0`；v1 bytes、v2 deterministic NOT_PUBLISHED、evidence constraints、repository/control-plane 与 migration contract覆盖 |
+| required PostgreSQL 17.7 | PASS（通过） | repository Compose PostgreSQL，loopback `127.0.0.1:5432/nexus_quant`，仅随机 schema；4 tests，failures/errors/skipped=`0/0/0` |
+| V40→V41 / V1→V41 / Flyway | PASS（通过） | populated V40 upgrade、fresh V1 replay、validate/checksum、historical v1 fingerprint不变、no fake backfill、v1/v2 coexistence |
+| DB/Java semantics | PASS（通过） | v2 `VENUE_NOT_PUBLISHED`、fake value与空`VENUE_PUBLISHED`拒绝、canonical bytes与digest parity、append-only、complete set、identity/idempotency/conflict、lock-timeout回归 |
+| `mvn -f backend/pom.xml test` | PASS（通过） | 23/23 modules `BUILD SUCCESS`，reactor failures/errors=`0/0`；`nq-app` 289 tests / 0 failures / 0 errors / 30 existing conditional skips；65s |
+
+两次 focused Maven 命令因 PowerShell `-D` 参数引号解析在测试启动前失败，修正命令后相同 suite 通过；PostgreSQL首次 rerun 因测试 fixture 的第二个`RiskLimitSet`复用全局version=`100`而失败，最小改为`101`后4/4通过。Mockito dynamic-agent、SLF4J NOP、deprecation/unchecked、expected error-path stack trace与LF→CRLF提示均为非阻断 warning。frontend/Python/E2E未运行，因为对应diff为0。
+
+V1～V40 diff=`0`，V41为唯一新增migration；历史value/currency未重写，metadata-safe default仅标记`LEGACY_V40_REQUIRED`并立即移除。credential read、OKX API、真实PilotScope/OperatorApproval、ExecutionIntent/Receipt、PLACE/CANCEL/TRANSFER/WITHDRAW、worker/provider runtime、exchange mutation、LIVE enable、kill disengage均为0；LIVE保持`DISABLED`、kill保持`ENGAGED`。Authority仍为`GateY-6E / NOT_STARTED / NONE / NOT_RUN`。完整证据：[V41 implementation attempt-01](evidence/gate-y/NQ-GATEY-6E-MINIMUM-ORDER-VALUE-SEMANTIC-FORWARD-REMEDIATION-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-16 — GateY-6E minimum order value 语义前向修正 Security Review attempt-01
+
+结论：`PASS / GATEY_6E_V41_SECURITY_REVIEW_ACCEPTED / P0_0 / P1_0 / NO_FAKE_BACKFILL / V1_COMPATIBILITY_ACCEPTED / INSTRUMENT_V2_SEMANTICS_ACCEPTED / JAVA_POSTGRES_PARITY_ACCEPTED / V40_TO_V41_ACCEPTED / V1_TO_V41_ACCEPTED / OKX_CALL_0 / EXCHANGE_MUTATION_0 / FIRST_REAL_ORDER_NOT_AUTHORIZED / LIVE_DISABLED / READY_TO_COMMIT`（通过 / V41 独立 migration security review 已接受 / 可进入提交前复核）。
+
+| Command / check | Result | Scope / environment / known warnings / blocking |
+| --- | --- | --- |
+| baseline Git + exact-head CI | PASS（通过） | `dev`；`HEAD == origin/dev == 4fa39a7c5700cabd6b041d6457cb4640eabb4feb`；staged=`0`；CI `31947934533 / completed / success` exact-head；首次 GitHub API EOF，第二次只读重试成功 |
+| `mvn -f backend/pom.xml -pl nq-app -am -DskipTests compile` | PASS（通过） | 23/23 reactor modules `SUCCESS`；`BUILD SUCCESS` |
+| required focused GateY-6B + core/infra/GateY-6D + ArchUnit + PostgreSQL | PASS（通过） | 78 tests，failures/errors/skips=`0/0/0`；PostgreSQL 17.7 loopback Compose、4/4 随机 schema 均已 clean |
+| Java/PostgreSQL exact canonical bytes parity | PASS（通过） | v1 legacy、v2 NOT_PUBLISHED、v2 PUBLISHED 双 symbol/DB排序/decimal normalization/NULL deterministic representation 全覆盖；不只比较最终 hash |
+| V40→V41 / V1→V41 / rollback | PASS（通过） | no fake backfill；V40→V41=`116ms`；V41 lock-timeout=`5097ms`；lock/mid-migration failure 均无 partial column/constraint/Flyway history；classification=`DISPOSABLE_POSTGRES_MEASUREMENT` |
+| `mvn -f backend/pom.xml test` | PASS（通过） | 23/23 modules `BUILD SUCCESS`；reactor failures/errors=`0/0`；`nq-app=289/0/0/30 existing conditional skips`；`01:04 min` |
+| diff/authority/migration guards | PASS（通过） | V1～V40 diff=`0`；V42=`0`；`STATUS.md`/`ROADMAP.md` diff=`0`；`git diff --check` 无 whitespace error，仅 LF→CRLF 提示 |
+
+Review 初始两项 P1 级验收覆盖缺口已由同一 PostgreSQL integration test 最小补强关闭：exact canonical bytes parity，以及直接阻塞 V41/中途失败后的 atomic rollback。P0/P1/P3=`0/0/0`；保留非阻断 P2=`PRODUCTION_LOCK_WINDOW_NOT_MEASURED`。Mockito dynamic-agent、SLF4J NOP、deprecation/unchecked、expected migration failure stack trace 与 LF→CRLF 为非阻断 warning。frontend/Python/E2E 未运行，因为对应 diff=`0`；production lock、credential、OKX、真实 pilot/approval、worker、deploy、交易均未执行。完整证据：[V41 migration security review attempt-01](evidence/gate-y/NQ-GATEY-6E-MINIMUM-ORDER-VALUE-SEMANTIC-FORWARD-REMEDIATION-SECURITY-REVIEW.attempt-01.md)。

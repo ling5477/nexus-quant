@@ -692,3 +692,15 @@ Disposable PostgreSQL 17.7 已验证 fresh `V1→V38` fixture 后 `V38→V39`、
 - migration 不执行历史 approval 批量 `UPDATE`，不创建历史 pilot scope/observation/item，不制造 digest/source/observedAt；V1～V39 不变。
 
 Disposable PostgreSQL 17.7 已验证 V39→V40、V1→V40 full replay、Flyway validate、Java/PostgreSQL canonical parity、no-fake-backfill、约束/trigger、幂等/并发、legacy/new approval compatibility 与 timeout transaction rollback。小 fixture 的 V39→V40 约 70ms，冲突锁下 bounded timeout 约 5.08s；这些数字不能外推 production SLA，production migration 仍未授权。
+
+### GateY-6E minimum order value 语义前向修正（V41）
+
+`V41__gate_y6e_minimum_order_value_semantic_remediation.sql` 只修正 V40 将独立 `minimum_order_value > 0 / currency=USDT` 误当成 mandatory venue-authored fact 的语义缺陷，不修改 V1～V40，也不授权真实 pilot、provider、订单或 LIVE。
+
+- `pilot_instrument_observation_items` 新增非空 `minimum_order_value_evidence_class`，允许 `VENUE_PUBLISHED / VENUE_NOT_PUBLISHED / LEGACY_V40_REQUIRED`。`VENUE_PUBLISHED` 必须有正数 value 与非空 currency；`VENUE_NOT_PUBLISHED` 必须同时保持 value/currency 为 `NULL`；`LEGACY_V40_REQUIRED` 只允许保留 V40 历史行的原正数 USDT 形态。
+- 历史行通过 `ADD COLUMN ... DEFAULT 'LEGACY_V40_REQUIRED'` 的 metadata-safe 路径无损标记，并在同一 migration 立即 `DROP DEFAULT`；没有 `UPDATE`、没有 value/currency 改写、没有把历史值重新解释为 venue-published。
+- instrument observation 新增 `instrument-metadata-observation.v2`；migration 后的新 production instrument observation 只能插入 v2。历史 v1 继续可回读，其 canonical bytes/digest 不变；v1 item 必须标为 `LEGACY_V40_REQUIRED`，v2 item 禁止使用该 legacy class。
+- v2 canonical item 总是编码 `minimumOrderValueEvidenceClass`；只有 `VENUE_PUBLISHED` 才编码 value/currency。`VENUE_NOT_PUBLISHED` 不编码两个 nullable 字段，形成唯一确定性 representation。外层 `pilot-scope.v1` 合同未变，instrument metadata digest 变化自然进入 exact scope hash。
+- V41 重建 PostgreSQL instrument digest 与 observation payload hash 函数，保持 Java/PostgreSQL byte-for-byte parity；新 insert guard、evidence CHECK 与既有 append-only、immutable、exact-set、complete-set deferred validation 共同 fail closed。
+
+本地 PostgreSQL 17.7 随机 schema 已验证 populated V40→V41、fresh V1→V41 replay、Flyway validate/checksum、historical v1 fingerprint/canonical bytes 不变、no-fake-backfill、v1/v2 共存、v2 evidence 约束、Java/PostgreSQL parity、append-only、identity/idempotency/conflict、complete-set 与 lock-timeout 回归。该验证未连接生产数据库，不构成 production migration 授权；production lock window/target scale 仍待独立 migration security review。

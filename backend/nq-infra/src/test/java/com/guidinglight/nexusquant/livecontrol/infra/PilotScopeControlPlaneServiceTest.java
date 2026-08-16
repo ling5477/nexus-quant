@@ -307,7 +307,9 @@ class PilotScopeControlPlaneServiceTest {
     private static PilotPrerequisiteObservation.InstrumentItem item(String symbol) {
         return new PilotPrerequisiteObservation.InstrumentItem(
                 symbol, PilotPrerequisiteObservation.TradingStatus.LIVE, new BigDecimal("0.1"),
-                new BigDecimal("0.001"), new BigDecimal("0.001"), new BigDecimal("5"), "USDT");
+                new BigDecimal("0.001"), new BigDecimal("0.001"),
+                PilotPrerequisiteObservation.MinimumOrderValueEvidenceClass.VENUE_PUBLISHED,
+                new BigDecimal("5"), "USDT");
     }
 
     private static PilotScopeMaterializationCommand withHash(PilotScopeMaterializationCommand value, String hash) {

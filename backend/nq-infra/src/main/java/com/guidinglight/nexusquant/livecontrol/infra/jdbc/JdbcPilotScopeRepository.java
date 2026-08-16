@@ -159,10 +159,12 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
             jdbcTemplate.update("""
                     INSERT INTO pilot_instrument_observation_items (
                         observation_id, observation_type, symbol, trading_status, tick_size, lot_size,
-                        minimum_order_size, minimum_order_value, minimum_order_value_currency
-                    ) VALUES (?, 'INSTRUMENT_METADATA', ?, ?, ?, ?, ?, ?, ?)
+                        minimum_order_size, minimum_order_value_evidence_class,
+                        minimum_order_value, minimum_order_value_currency
+                    ) VALUES (?, 'INSTRUMENT_METADATA', ?, ?, ?, ?, ?, ?, ?, ?)
                     """, observations.instrumentMetadata().id(), item.symbol(), item.tradingStatus().name(),
-                    item.tickSize(), item.lotSize(), item.minimumOrderSize(), item.minimumOrderValue(),
+                    item.tickSize(), item.lotSize(), item.minimumOrderSize(),
+                    item.minimumOrderValueEvidenceClass().name(), item.minimumOrderValue(),
                     item.minimumOrderValueCurrency());
         }
         return observations;
@@ -366,14 +368,18 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
     private List<PilotPrerequisiteObservation.InstrumentItem> mapInstrumentItems(UUID observationId) {
         return jdbcTemplate.query("""
                 SELECT symbol, trading_status, tick_size, lot_size, minimum_order_size,
-                       minimum_order_value, minimum_order_value_currency
+                       minimum_order_value_evidence_class, minimum_order_value,
+                       minimum_order_value_currency
                 FROM pilot_instrument_observation_items
                 WHERE observation_id = ? ORDER BY symbol
                 """, (row, rowNumber) -> new PilotPrerequisiteObservation.InstrumentItem(
                         row.getString("symbol"),
                         PilotPrerequisiteObservation.TradingStatus.valueOf(row.getString("trading_status")),
                         row.getBigDecimal("tick_size"), row.getBigDecimal("lot_size"),
-                        row.getBigDecimal("minimum_order_size"), row.getBigDecimal("minimum_order_value"),
+                        row.getBigDecimal("minimum_order_size"),
+                        PilotPrerequisiteObservation.MinimumOrderValueEvidenceClass.valueOf(
+                                row.getString("minimum_order_value_evidence_class")),
+                        row.getBigDecimal("minimum_order_value"),
                         row.getString("minimum_order_value_currency")), observationId);
     }
 

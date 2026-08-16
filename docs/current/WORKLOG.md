@@ -19012,3 +19012,26 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - findings：P0/P1/P2/P3=`0/1/0/0`；P1=`MINIMUM_ORDER_VALUE_SOURCE_UNRESOLVED`。
 - authority：保持`accepted GateY-6D / work GateY-6E NOT_STARTED / NONE / NOT_RUN`与原next action；LIVE disabled、kill engaged、real provider/private trading not implemented、first real order not authorized。
 - next：需要当前官方typed source，或另行明确授权V40/V41 contract/schema remediation；在此之前implementation保持fail closed。完整证据：[blocked attempt-01](evidence/gate-y/NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-16 — GateY-6E minimum order value 语义前向修正 implementation attempt-01
+
+- task：`NQ-GATEY-6E-MINIMUM-ORDER-VALUE-SEMANTIC-FORWARD-REMEDIATION-IMPLEMENTATION`；NQ-only、L级 forward migration，仅关闭`MINIMUM_ORDER_VALUE_SOURCE_UNRESOLVED`的错误 contract语义。
+- baseline：`dev`起始clean、staged=`0`；`HEAD == origin/dev == 4fa39a7c5700cabd6b041d6457cb4640eabb4feb`；CI `31947934533 / completed / success` exact-head；最高migration起始V40。
+- implementation：新增V41与`minimum_order_value_evidence_class`；历史V40行无损标记`LEGACY_V40_REQUIRED`且不重写value；新production instrument observation固定v2；`VENUE_PUBLISHED`强制value/currency，`VENUE_NOT_PUBLISHED`强制双NULL；outer `pilot-scope.v1`不变。
+- canonical/JDBC：历史v1 bytes保持不变；v2 NOT_PUBLISHED不编码nullable value字段；Java/JDBC/PostgreSQL reconstruction按schema version处理并保持digest parity；append-only、complete-set与identity/idempotency仍fail closed。
+- validation：compile通过；focused Java/migration 16/16；required PostgreSQL 17.7随机schema 4/4，覆盖V40→V41、V1→V41、Flyway、no-fake-backfill、v1/v2、constraints/parity/append-only/complete-set/idempotency/lock-timeout；full backend 23/23 modules success，failures/errors=`0/0`，`nq-app=289/0/0/30 skipped`。
+- boundary：V1～V40未改；credential/OKX/真实PilotScope/approval/ExecutionIntent/Receipt/PLACE/CANCEL/TRANSFER/WITHDRAW/worker/provider/exchange mutation/LIVE enable/kill disengage=`0`；LIVE disabled、kill engaged；未stage/commit/push/deploy。
+- findings：P0/P1/P3=`0/0/0`；P2=`PRODUCTION_LOCK_WINDOW_NOT_MEASURED`，本地随机schema结果不可外推生产；待独立migration security review。
+- authority：保持`accepted GateY-6D / work GateY-6E NOT_STARTED / NONE / NOT_RUN`；原next action不变；本实现唯一下一任务为`NQ-GATEY-6E-MINIMUM-ORDER-VALUE-SEMANTIC-FORWARD-REMEDIATION-SECURITY-REVIEW`。完整证据：[V41 implementation attempt-01](evidence/gate-y/NQ-GATEY-6E-MINIMUM-ORDER-VALUE-SEMANTIC-FORWARD-REMEDIATION-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-16 — GateY-6E minimum order value 语义前向修正 Security Review attempt-01
+
+- task：`NQ-GATEY-6E-MINIMUM-ORDER-VALUE-SEMANTIC-FORWARD-REMEDIATION-SECURITY-REVIEW`；NQ-only、L级 independent migration/data-integrity/contract-compatibility review。
+- baseline：`dev`；`HEAD == origin/dev == 4fa39a7c5700cabd6b041d6457cb4640eabb4feb`；staged=`0`；CI `31947934533 / completed / success` exact-head；dirty files严格属于V41 remediation/review。
+- review：V1～V40未改；V41唯一新增migration且无fake backfill；v1 bytes/hash兼容；v2 evidence class由Java/DB双层强制；append-only/FK/complete-set/digest/idempotency保持；outer `pilot-scope.v1`不变，无provider/runtime wiring。
+- test remediation：关闭2个P1级验收覆盖缺口——补齐v1 legacy、v2 NOT_PUBLISHED、v2 PUBLISHED双symbol/decimal/DB排序的Java/PostgreSQL exact bytes parity；直接锁V41首个DDL并注入中途migration failure，验证column/constraint/Flyway history原子rollback。production Java/V41 SQL未改。
+- validation：compile 23/23；focused 78 tests、failures/errors/skips=`0/0/0`，PostgreSQL random schema 4/4；V40→V41/V1→V41/Flyway/rollback通过；full backend 23/23，`nq-app=289/0/0/30 skipped`，`BUILD SUCCESS`。
+- measurement：V40→V41=`116ms`、V41 lock-timeout=`5097ms`，仅为`DISPOSABLE_POSTGRES_MEASUREMENT`；P2=`PRODUCTION_LOCK_WINDOW_NOT_MEASURED`保留，不外推production SLA。
+- findings：final P0/P1/P2/P3=`0/0/1/0`；review=`ACCEPTED / READY_TO_COMMIT`。
+- boundary：credential/OKX/真实PilotScope/approval/ExecutionIntent/Receipt/PLACE/CANCEL/TRANSFER/WITHDRAW/worker/provider/exchange mutation/LIVE enable/kill disengage均=`0`；LIVE disabled、kill engaged、first real order not authorized；未stage/commit/push/deploy。
+- authority：保持`accepted GateY-6D / work GateY-6E NOT_STARTED / NONE / NOT_RUN`；`STATUS.md`/`ROADMAP.md`未改。next只允许提交当前exact allowlist并等待exact-head CI。完整证据：[V41 migration security review attempt-01](evidence/gate-y/NQ-GATEY-6E-MINIMUM-ORDER-VALUE-SEMANTIC-FORWARD-REMEDIATION-SECURITY-REVIEW.attempt-01.md)。
