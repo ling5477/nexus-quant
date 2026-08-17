@@ -14026,3 +14026,23 @@ Review 初始两项 P1 级验收覆盖缺口已由同一 PostgreSQL integration 
 | final docs/diff/boundary validation | PASS（通过） | authority errors=`0`；links=`369 checked / 14 historical warnings / 0 errors`；diff-check通过；allowlist=`4/4`；staged=`0`；产品/migration/STATUS/ROADMAP diff=`0`；ledger removals=`0`；新增内容secret/raw-private/positive-side-effect hits=`0/0/0` |
 
 部署/migration/symlink/systemd restart、PLACE/CANCEL/TRANSFER/WITHDRAW/BORROW/LEVERAGE、ExecutionIntent/Receipt、worker/exchange mutation、LIVE enable、kill disengage与soak start均为0。Authority保持GateY-6F `NOT_STARTED`。完整证据：[server runtime blocked attempt-02](evidence/gate-y/NQ-GATEY-6F-EXACT-PILOT-BINDING-AND-READONLY-VERIFICATION-IMPLEMENTATION.attempt-02.md)。
+
+## 2026-08-17 — GateY-6F server runtime attempt-03
+
+结论：`BLOCKED / SERVER_RUNTIME_RELEASE_NOT_READY / DEPLOYMENT_AUTHORIZATION_REQUIRED / NO_DEPLOYMENT_PERFORMED / NO_OKX_CALL / FIRST_REAL_ORDER_NOT_AUTHORIZED`（阻断 / server runtime release未就绪 / 需要独立部署授权 / 未部署 / 未调用OKX / 第一笔真实订单未授权）。
+
+| Command / check | Result | Scope / environment / known warnings / blocking |
+| --- | --- | --- |
+| Git/origin/current authority baseline | PASS（通过） | `dev` clean；staged=`0`；local/remote/CI exact head=`b2181a2000bd7d56eef392d6a016c6e059486433`；authority errors=`0`；GateY-6F `NOT_STARTED` |
+| GitHub CI `32039066358` | PASS（通过） | `NQ CI Baseline / completed / success / 10 jobs`；`ls-remote`首次GitHub HTTP 500，限定重试成功 |
+| operator-provided SSH identity reference | PASS（通过） | `nq_gatew_soak_ed25519_v2` exists/regular file/owner verified；private key content/hash read=`0/0` |
+| admin BatchMode SSH + `sudo -n` | PASS（通过） | principal=`admin`；hostname=`iZrj9gpab986sm4d0bb6agZ`；UTC=`2026-08-17T15:06:28Z`；sudo noninteractive PASS |
+| server current release | BLOCKED（阻断） | `/opt/nexus-quant/current`→`b103069d8bfcecccba0b4d590317ddccc66898b9`；manifest SHA-256=`f5b891e0d5547f25077a165a636ca6b40600bc8deedfe78f1110f7bddb44e4cb`；root/root 755 |
+| release ancestry | BLOCKED（阻断） | GateW release是GateY-6E implementation祖先；GateY-6E不在server release中；`SERVER_RUNTIME_RELEASE_NOT_READY` |
+| NTP/Java/unit/container read-only audit | PASS（通过） | NTP yes；OpenJDK 21.0.11；6个历史GateW units均inactive/dead；active NQ unit=`0`；仅`nq-gatew-postgres` container running |
+| schema/profile/server LIVE/kill/SoR/JIT/OKX | NOT RUN（未运行） | release hard gate要求立即停止；不得复制历史GateW facts或自行部署 |
+| durable control-plane/preflight/requery | NOT RUN（未运行） | LiveSession/PilotScope/ObservationSet/approval/ExecutionIntent/Receipt均未创建；server write=`0` |
+| focused/full Maven、frontend、Python | NOT RUN（未运行） | 产品代码diff=`0`；exact-head CI已通过；不在本blocker scope |
+| final docs/diff/boundary validation | PASS（通过） | authority errors=`0`；links=`372 checked / 14 historical warnings / 0 errors`；diff-check通过；allowlist=`4/4`；staged=`0`；产品/migration/STATUS/ROADMAP diff=`0`；ledger removals=`0`；新增内容secret/raw-private/positive-side-effect hits=`0/0/0` |
+
+部署/migration/symlink/systemd reload/restart、credential read、OKX calls、PLACE/CANCEL/TRANSFER/WITHDRAW/BORROW/LEVERAGE、ExecutionIntent/Receipt、worker/exchange mutation、LIVE enable、kill disengage与soak start均为0。Authority保持GateY-6F `NOT_STARTED`。完整证据：[server release blocked attempt-03](evidence/gate-y/NQ-GATEY-6F-EXACT-PILOT-BINDING-AND-READONLY-VERIFICATION-IMPLEMENTATION.attempt-03.md)。

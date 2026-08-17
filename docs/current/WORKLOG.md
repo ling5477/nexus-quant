@@ -19105,3 +19105,21 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - authority：保持`accepted GateY-6E / work GateY-6F NOT_STARTED / NONE / NOT_RUN`；next action不变；first real order/micro-live not authorized、soak not started、LIVE disabled、kill engaged。
 - result：`BLOCKED / SERVER_RUNTIME_NOT_VERIFIED / SERVER_SSH_ACCESS_REQUIRED / NO_DEPLOYMENT_PERFORMED / NO_CREDENTIAL_READ / NO_OKX_CALL / NO_OKX_MUTATION / FIRST_REAL_ORDER_NOT_AUTHORIZED`。
 - next：operator通过安全附件/secret manager提供仅供ssh引用的private-key path reference，或预先将有效identity加载到本会话SSH agent；不要在聊天中粘贴密码或私钥。随后以attempt-03重跑，不覆盖attempt-01/02。完整证据：[server runtime blocked attempt-02](evidence/gate-y/NQ-GATEY-6F-EXACT-PILOT-BINDING-AND-READONLY-VERIFICATION-IMPLEMENTATION.attempt-02.md)。
+
+## 2026-08-17 — GateY-6F server runtime attempt-03
+
+- task：`NQ-GATEY-6F-EXACT-PILOT-BINDING-AND-READONLY-VERIFICATION-IMPLEMENTATION — attempt-03 / SERVER_RUNTIME`；NQ-only、高风险server runtime qualification。
+- baseline：`dev` clean、staged=`0`；`HEAD == origin/dev == b2181a2000bd7d56eef392d6a016c6e059486433`；CI `32039066358 / completed / success / 10 jobs`；authority errors=`0`。
+- SSH identity：operator提供`nq_gatew_soak_ed25519_v2` exact path reference；existence/type/owner通过，content/hash read=`0/0`；fixed OpenSSH/`-F NUL`/IdentitiesOnly/BatchMode/public-key-only。
+- SSH/sudo：connected principal=`admin`；hostname=`iZrj9gpab986sm4d0bb6agZ`；UTC=`2026-08-17T15:06:28Z`；`sudo -n true` PASS；未修改known_hosts/authorized_keys/sshd。
+- server release：`/opt/nexus-quant/current`精确指向`/opt/nexus-quant/releases/b103069d8bfcecccba0b4d590317ddccc66898b9`；manifest SHA-256=`f5b891e0d5547f25077a165a636ca6b40600bc8deedfe78f1110f7bddb44e4cb`；root/root 755；NTP yes；Java 21.0.11。
+- units：6个历史GateW soak/failclose units全部inactive/dead，active NQ unit=`0`；仅`nq-gatew-postgres` container running；未读env/password/volume。
+- hard gate：local ancestry证明server GateW release早于且不包含GateY-6E prerequisite implementation；结论=`SERVER_RUNTIME_RELEASE_NOT_READY / DEPLOYMENT_AUTHORIZATION_REQUIRED`。
+- stopped scope：未查询schema/Flyway/profile/server LIVE/kill、SoR或operator inputs；credential metadata/material read=`0/0`；permission/IP、五个OKX GET、trusted collection、PilotScope/approval/preflight/requery均未运行。
+- counters：OKX calls/retry=`0/0`；PLACE/CANCEL/TRANSFER/WITHDRAW/BORROW/LEVERAGE/ExecutionIntent/Receipt/worker mutation/exchange mutation/deployment/migration/symlink/systemd reload-restart/LIVE enable/kill disengage/soak start均为0。
+- tests：exact-head CI通过；focused/full Maven、frontend、Python未运行，产品代码diff=0且release hard gate已阻断。
+- docs validation：authority errors=`0`；links=`372 checked / 14 historical warnings / 0 errors`；diff-check通过；allowlist=`4/4`；staged=`0`；产品/migration/STATUS/ROADMAP diff=`0`；append-only ledger removals=`0`；新增内容secret/raw-private/positive-side-effect hits=`0/0/0`。
+- findings：P0/P1/P2/P3=`0/1/0/0`；P1=`SERVER_RUNTIME_RELEASE_NOT_READY / DEPLOYMENT_AUTHORIZATION_REQUIRED`。
+- authority：保持`accepted GateY-6E / work GateY-6F NOT_STARTED / NONE / NOT_RUN`；next action不变；first real order/micro-live not authorized、soak not started、LIVE disabled、kill engaged。
+- result：`BLOCKED / SERVER_RUNTIME_RELEASE_NOT_READY / DEPLOYMENT_AUTHORIZATION_REQUIRED / NO_DEPLOYMENT_PERFORMED / NO_OKX_CALL / FIRST_REAL_ORDER_NOT_AUTHORIZED`。
+- next：需要独立server deployment authorization与exact artifact/schema/health/rollback/stop plan；本task不得部署。部署与CI完成后以attempt-04重跑。完整证据：[server release blocked attempt-03](evidence/gate-y/NQ-GATEY-6F-EXACT-PILOT-BINDING-AND-READONLY-VERIFICATION-IMPLEMENTATION.attempt-03.md)。
