@@ -14007,3 +14007,22 @@ Review 初始两项 P1 级验收覆盖缺口已由同一 PostgreSQL integration 
 | final docs/diff/boundary validation | PASS（通过） | authority errors=`0`；links=`366 checked / 14 historical warnings / 0 errors`；`git diff --check` exit=`0`；allowlist=`4/4`；staged=`0`；backend/frontend/research/scripts/deploy/`.github`/migration/STATUS/ROADMAP diff=`0`；ledger removals=`0`；added-content secret/raw-private hits=`0/0` |
 
 任务消息缺少accepted DTO要求的exact non-secret values，包括materialization/risk/symbol/window/hash/idempotency字段、creator认证上下文和独立LIVE_APPROVER审批字段；current SoR exact-one facts也因只读连接未建立而不可requery。PLACE/CANCEL/TRANSFER/WITHDRAW/BORROW、ExecutionIntent/Receipt、worker/exchange mutation、LIVE enable、kill disengage、soak start均为0。完整证据：[blocked attempt-01](evidence/gate-y/NQ-GATEY-6F-EXACT-PILOT-BINDING-AND-READONLY-VERIFICATION-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-17 — GateY-6F server runtime attempt-02
+
+结论：`BLOCKED / SERVER_RUNTIME_NOT_VERIFIED / SERVER_SSH_ACCESS_REQUIRED / NO_DEPLOYMENT_PERFORMED / NO_CREDENTIAL_READ / NO_OKX_CALL / NO_OKX_MUTATION / FIRST_REAL_ORDER_NOT_AUTHORIZED`（阻断 / server runtime未验证 / 需要既有安全SSH访问 / 未部署 / 未读取凭证 / 未调用OKX / 无OKX mutation / 第一笔真实订单未授权）。
+
+| Command / check | Result | Scope / environment / known warnings / blocking |
+| --- | --- | --- |
+| Git/origin/current authority baseline | PASS（通过） | `dev` clean；staged=`0`；local/remote/CI exact head=`b7c5a2e046de36522843c32ca726bc9850b1d4dc`；authority errors=`0`；GateY-6F `NOT_STARTED` |
+| GitHub CI `32037619314` | PASS（通过） | `NQ CI Baseline / completed / success / 10 jobs`；只读核验 |
+| repository secure SSH discovery | PASS（通过） | 历史正式targets=`root@47.251.74.35:22`与后续`admin@47.251.74.35:22 + operator-specified key path + sudo -n`；仓库未保存可调用key path；未读取`.ssh`/key/config |
+| root BatchMode hostname probe | BLOCKED（阻断） | public-key only；exit=`255 / Permission denied`；remote command executed=`0` |
+| admin BatchMode hostname probe | BLOCKED（阻断） | public-key only；exit=`255 / Permission denied`；remote command executed=`0` |
+| server release/schema/profile/LIVE/kill | NOT RUN（未运行） | SSH authentication hard gate先失败；不得从历史GateW evidence复制current facts |
+| SoR/input/JIT/permission/IP/OKX | NOT RUN（未运行） | 更早的server access hard gate阻断；credential metadata/material read=`0/0`；OKX calls/retry=`0/0` |
+| durable control-plane/preflight/requery | NOT RUN（未运行） | LiveSession/PilotScope/ObservationSet/approval/ExecutionIntent/Receipt均未创建；server durable write=`0` |
+| focused/full Maven、frontend、Python | NOT RUN（未运行） | 未进入server runtime；产品代码diff=`0`；exact-head CI已通过 |
+| final docs/diff/boundary validation | PASS（通过） | authority errors=`0`；links=`369 checked / 14 historical warnings / 0 errors`；diff-check通过；allowlist=`4/4`；staged=`0`；产品/migration/STATUS/ROADMAP diff=`0`；ledger removals=`0`；新增内容secret/raw-private/positive-side-effect hits=`0/0/0` |
+
+部署/migration/symlink/systemd restart、PLACE/CANCEL/TRANSFER/WITHDRAW/BORROW/LEVERAGE、ExecutionIntent/Receipt、worker/exchange mutation、LIVE enable、kill disengage与soak start均为0。Authority保持GateY-6F `NOT_STARTED`。完整证据：[server runtime blocked attempt-02](evidence/gate-y/NQ-GATEY-6F-EXACT-PILOT-BINDING-AND-READONLY-VERIFICATION-IMPLEMENTATION.attempt-02.md)。

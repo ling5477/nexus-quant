@@ -19088,3 +19088,20 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - authority：保持`accepted GateY-6E / work GateY-6F NOT_STARTED / NONE / NOT_RUN`；next action不变；first real order/micro-live not authorized、GateY pilot soak not started、LIVE disabled、kill engaged。
 - result：`BLOCKED / EXPLICIT_PILOT_SCOPE_INPUT_REQUIRED / NO_CREDENTIAL_READ / NO_OKX_CALL / NO_PILOT_MATERIALIZATION / FIRST_REAL_ORDER_NOT_AUTHORIZED / LIVE_DISABLED`。
 - next：operator只提供non-secret exact scope fields，并在既有安全运行环境建立可验证的current SoR read-only connection；不得在聊天中提供API key/secret/passphrase。随后以attempt-02重跑同名任务。完整证据：[blocked attempt-01](evidence/gate-y/NQ-GATEY-6F-EXACT-PILOT-BINDING-AND-READONLY-VERIFICATION-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-17 — GateY-6F server runtime attempt-02
+
+- task：`NQ-GATEY-6F-EXACT-PILOT-BINDING-AND-READONLY-VERIFICATION-IMPLEMENTATION — attempt-02 / SERVER_RUNTIME`；NQ-only、高风险server runtime qualification。
+- baseline：`dev` clean、staged=`0`；`HEAD == origin/dev == b7c5a2e046de36522843c32ca726bc9850b1d4dc`；CI `32037619314 / completed / success / 10 jobs`；authority errors=`0`。
+- SSH discovery：仓库只记录正式root target与后续admin+operator-specified key path；未保存可调用key path。本轮未读取`.ssh`、private key、agent key material或SSH config。
+- SSH hard gate：root/admin两个BatchMode、public-key-only、password/interactive-disabled hostname probes均exit=`255 / Permission denied`；端口可达，但remote command executed=`0`。
+- server runtime：hostname/UTC/NTP/current release/`/opt/nexus-quant/current`/systemd/PostgreSQL/schema/Flyway/profile/server LIVE/kill均`NOT_VERIFIED`；未复制历史GateW facts，未部署、迁移、切symlink或restart unit。
+- current SoR/operator inputs：未进入；owner/account/credential metadata/release/risk/runtime digests均unresolved；used inputs=`NONE`；mechanical IDs与scope hash未生成。
+- boundary：credential metadata/material read=`0/0`；permission/IP与五个OKX GET未运行；OKX calls/retry=`0/0`；LiveSession/PilotScope/ObservationSet/approval/preflight/requery=`NOT_RUN`。
+- counters：PLACE/CANCEL/TRANSFER/WITHDRAW/BORROW/LEVERAGE/ExecutionIntent/ExecutionReceipt/worker mutation/exchange mutation/deployment/migration/symlink/systemd restart/LIVE enable/kill disengage/soak start均为0。
+- tests：exact-head CI通过；focused/full Maven、frontend、Python未运行，因为SSH hard gate在server runtime前阻断且产品代码diff=0。
+- docs validation：authority errors=`0`；links=`369 checked / 14 historical warnings / 0 errors`；diff-check通过；allowlist=`4/4`；staged=`0`；产品/migration/STATUS/ROADMAP diff=`0`；append-only ledger removals=`0`；新增内容secret/raw-private/positive-side-effect hits=`0/0/0`。
+- findings：P0/P1/P2/P3=`0/1/0/0`；P1=`SERVER_SSH_ACCESS_REQUIRED / SERVER_RUNTIME_NOT_VERIFIED`。
+- authority：保持`accepted GateY-6E / work GateY-6F NOT_STARTED / NONE / NOT_RUN`；next action不变；first real order/micro-live not authorized、soak not started、LIVE disabled、kill engaged。
+- result：`BLOCKED / SERVER_RUNTIME_NOT_VERIFIED / SERVER_SSH_ACCESS_REQUIRED / NO_DEPLOYMENT_PERFORMED / NO_CREDENTIAL_READ / NO_OKX_CALL / NO_OKX_MUTATION / FIRST_REAL_ORDER_NOT_AUTHORIZED`。
+- next：operator通过安全附件/secret manager提供仅供ssh引用的private-key path reference，或预先将有效identity加载到本会话SSH agent；不要在聊天中粘贴密码或私钥。随后以attempt-03重跑，不覆盖attempt-01/02。完整证据：[server runtime blocked attempt-02](evidence/gate-y/NQ-GATEY-6F-EXACT-PILOT-BINDING-AND-READONLY-VERIFICATION-IMPLEMENTATION.attempt-02.md)。
