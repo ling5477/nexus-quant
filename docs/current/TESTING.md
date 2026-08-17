@@ -13988,3 +13988,22 @@ Review 初始两项 P1 级验收覆盖缺口已由同一 PostgreSQL integration 
 | Maven/frontend/Python | NOT RUN（未运行） | docs-only；产品代码、migration、CI、governance diff 必须为 0；使用 exact-head CI `31997221424`，非阻断 |
 
 本任务 credential read、OKX call、PLACE/CANCEL、ExecutionIntent、worker/exchange mutation、soak start、LIVE enable、kill disengage 均为 0。GateY-6F 仅初始化 exact pilot binding 与真实只读 verification；operator-controlled exact values 未提供，exact PilotScope 未物化，independent approval 未创建，第一笔真实订单与 micro-live 未授权。完整证据：[post-CI acceptance attempt-01](evidence/gate-y/NQ-GATEY-6E-POST-CI-ACCEPTANCE-AND-GATEY-6F-INITIALIZATION.attempt-01.md)。
+
+## 2026-08-17 — GateY-6F exact pilot binding and read-only verification implementation attempt-01
+
+结论：`BLOCKED / EXPLICIT_PILOT_SCOPE_INPUT_REQUIRED / NO_CREDENTIAL_READ / NO_OKX_CALL / NO_PILOT_MATERIALIZATION / FIRST_REAL_ORDER_NOT_AUTHORIZED / LIVE_DISABLED`（阻断 / 需要明确 pilot scope 输入 / 未读取凭证 / 未调用 OKX / 未物化 pilot / 第一笔真实订单未授权 / LIVE 关闭）。
+
+| Command / check | Result | Scope / environment / known warnings / blocking |
+| --- | --- | --- |
+| Git/origin/current authority baseline | PASS（通过） | `dev` clean；staged=`0`；local/remote/CI exact head=`7582e6e999eb9cb7f46f35efc852a62af103f5a4`；authority errors=`0`；GateY-6F `NOT_STARTED` |
+| GitHub CI `32034307622` | PASS（通过） | `NQ CI Baseline / completed / success / 10 jobs`；只读核验 |
+| accepted DTO/control-plane audit | PASS（通过） | exact materialization/risk/approval fields、authenticated creator/approver ownership、creator != approver、stored-fact-only preflight与canonical component reuse已确认 |
+| Docker current SoR candidate | NOT AVAILABLE（不可用） | Docker daemon未运行；未启动容器 |
+| PostgreSQL read-only identity probe | BLOCKED（阻断） | local default candidate `127.0.0.1:5432/nexus_quant`；`psql -w` exit=`2 / NO_PASSWORD_SUPPLIED`；SQL executed=`0`；未读取任何 secret |
+| credential/permission/IP/OKX | NOT RUN（未运行） | credential metadata/material read=`0/0`；account/config与四个prerequisite endpoint calls=`0`；retry=`0` |
+| PilotScope/approval/preflight/requery | NOT RUN（未运行） | LiveSession/PilotScope/ObservationSet/approval/ExecutionIntent/ExecutionReceipt均未创建；durable write=`0` |
+| focused Maven safety tests | NOT RUN（未运行） | explicit input hard gate在credential/OKX前阻断；产品代码diff=`0`，未进入真实调用路径 |
+| frontend/Python | NOT RUN（未运行） | 不在本任务范围 |
+| final docs/diff/boundary validation | PASS（通过） | authority errors=`0`；links=`366 checked / 14 historical warnings / 0 errors`；`git diff --check` exit=`0`；allowlist=`4/4`；staged=`0`；backend/frontend/research/scripts/deploy/`.github`/migration/STATUS/ROADMAP diff=`0`；ledger removals=`0`；added-content secret/raw-private hits=`0/0` |
+
+任务消息缺少accepted DTO要求的exact non-secret values，包括materialization/risk/symbol/window/hash/idempotency字段、creator认证上下文和独立LIVE_APPROVER审批字段；current SoR exact-one facts也因只读连接未建立而不可requery。PLACE/CANCEL/TRANSFER/WITHDRAW/BORROW、ExecutionIntent/Receipt、worker/exchange mutation、LIVE enable、kill disengage、soak start均为0。完整证据：[blocked attempt-01](evidence/gate-y/NQ-GATEY-6F-EXACT-PILOT-BINDING-AND-READONLY-VERIFICATION-IMPLEMENTATION.attempt-01.md)。

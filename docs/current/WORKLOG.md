@@ -19072,3 +19072,19 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - validation：GitHub CI 与 remote `dev` 已只读核验；authority final errors=`0`（首轮两次因 ROADMAP next-action 标题未使用 checker canonical phrase 而 errors=`1`，最小修正文案后通过，checker未改）；links=`363 checked / 14 historical warnings / 0 errors`；`git diff --check`通过；allowlist expected/actual=`8/8`、missing/extra=`0/0`；staged=`0`；backend/frontend/research/scripts/deploy/`.github`/migration diff=`0`；positive authorization hits=`0`；append-only ledgers additions/removals=`30/0`。Docs-only 不运行 Maven/frontend/Python；未 stage/commit/push/deploy。
 - result：`PASS / GATEY_6E_ACCEPTED / FAILED_FEATURE_CI_PRESERVED / FORWARD_REMEDIATION_ACCEPTED / CI_GREEN / GATEY_6F_INITIALIZED / EXACT_PILOT_SCOPE_NOT_MATERIALIZED / FIRST_REAL_ORDER_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / SOAK_NOT_STARTED / REAL_MUTATION_RUNTIME_UNBOUND / LIVE_DISABLED / KILL_ENGAGED / READY_TO_COMMIT`。
 - next：进入 `NQ-GATEY-6F-EXACT-PILOT-BINDING-AND-READONLY-VERIFICATION-IMPLEMENTATION`；不得再插入 docs-only review/governance/plan。完整证据：[post-CI acceptance attempt-01](evidence/gate-y/NQ-GATEY-6E-POST-CI-ACCEPTANCE-AND-GATEY-6F-INITIALIZATION.attempt-01.md)。
+
+## 2026-08-17 — GateY-6F exact pilot binding and read-only verification implementation attempt-01
+
+- task：`NQ-GATEY-6F-EXACT-PILOT-BINDING-AND-READONLY-VERIFICATION-IMPLEMENTATION`；NQ-only、高风险 controlled-runtime read-only task。
+- baseline：`dev` clean、staged=`0`；`HEAD == origin/dev == 7582e6e999eb9cb7f46f35efc852a62af103f5a4`；CI `32034307622 / completed / success / 10 jobs`；authority errors=`0`。
+- control-plane audit：复用唯一 production `PilotScopeControlPlaneService`、trusted observation authority、JDBC SoR resolver、credential JIT executor、OKX client/signer与existing session/approval/preflight；新增第二套API/resolver/client/SoR=`0`，产品代码diff=`0`。
+- server facts：本地default SoR candidate的`psql -w`只读身份探针在SQL前exit=`2 / NO_PASSWORD_SUPPLIED`；Docker daemon不可用；未读取环境secret、`.pgpass`内容、credential payload或生产连接。owner/account/credential metadata/release/risk/runtime digests均`UNRESOLVED / NOT REQUERIED`。
+- missing inputs：accepted request的materialization/risk/symbol/capital/window/hash/idempotency字段、creator认证上下文、approval request字段与独立LIVE_APPROVER认证上下文均未提供；未猜默认值。
+- boundary：credential metadata/material read=`0/0`；permission/IP probe、account/config、四个prerequisite GET、trusted collection、materialization、approval、preflight、durable requery均未运行；OKX calls/retry=`0/0`。
+- counters：PLACE/CANCEL/TRANSFER/WITHDRAW/BORROW/ExecutionIntent/ExecutionReceipt/worker mutation/exchange mutation/LIVE enable/kill disengage/soak start均为0。
+- tests：baseline CI已通过；focused Maven未运行，因为explicit-input hard gate在credential/OKX前阻断且产品代码diff=0；frontend/Python未运行。
+- docs validation：authority errors=`0`；links=`366 checked / 14 historical warnings / 0 errors`；diff-check通过；allowlist=`4/4`；staged=`0`；产品/STATUS/ROADMAP diff=`0`；append-only ledger removals=`0`；本轮新增内容secret value/raw private payload hits=`0/0`。
+- findings：P0/P1/P2/P3=`0/1/0/0`；P1=`EXPLICIT_PILOT_SCOPE_INPUT_REQUIRED + CURRENT_SOR_REQUERY_UNAVAILABLE`。
+- authority：保持`accepted GateY-6E / work GateY-6F NOT_STARTED / NONE / NOT_RUN`；next action不变；first real order/micro-live not authorized、GateY pilot soak not started、LIVE disabled、kill engaged。
+- result：`BLOCKED / EXPLICIT_PILOT_SCOPE_INPUT_REQUIRED / NO_CREDENTIAL_READ / NO_OKX_CALL / NO_PILOT_MATERIALIZATION / FIRST_REAL_ORDER_NOT_AUTHORIZED / LIVE_DISABLED`。
+- next：operator只提供non-secret exact scope fields，并在既有安全运行环境建立可验证的current SoR read-only connection；不得在聊天中提供API key/secret/passphrase。随后以attempt-02重跑同名任务。完整证据：[blocked attempt-01](evidence/gate-y/NQ-GATEY-6F-EXACT-PILOT-BINDING-AND-READONLY-VERIFICATION-IMPLEMENTATION.attempt-01.md)。
