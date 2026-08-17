@@ -32,7 +32,7 @@ class JdkOkxRealTransportTest {
 
     private static final Instant NOW = Instant.parse("2026-08-16T12:00:00Z");
     private static final Clock CLOCK = Clock.fixed(NOW, ZoneOffset.UTC);
-    private static final String CLIENT_ORDER_ID = "nq16d3a6706f72a51b2cd08d0672372d";
+    private static final String CLIENT_ORDER_ID = "00000000000000000000000000000001";
     private static final String SYMBOL = "BTC-USDT";
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
