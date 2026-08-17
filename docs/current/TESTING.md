@@ -13972,3 +13972,19 @@ Review 初始两项 P1 级验收覆盖缺口已由同一 PostgreSQL integration 
 48 个 skip 为既有 conditional/manual integration；必需 V41 PostgreSQL path 已单独强制为 0 skip。首次 focused Maven 因 PowerShell 未引用 `-Dsurefire.failIfNoSpecifiedTests=false` 被解析为 lifecycle phase，exit=`1` 且未进入编译；修正引用后全部通过。Codex Security reporting draft 首次因 coverage schema 字段版本不匹配被拒绝且未写 artifact，按返回约束重提后唯一一次 completion 成功；scan warning `working tree changed` 对应 review 内两个 P1 最小修复，最终工作树已由 focused/full tests 重验。文档链接脚本按无参任务命令首次 exit=`1 / mandatory Roots`，改用当前脚本要求的 `-Roots @('README.md','docs/current')` 后通过。Disposable PostgreSQL 已停止并自动删除。
 
 最终 P0/P1/P2/P3=`0/0/0/0`；real credential/OKX API/PilotScope/approval/ExecutionIntent/Receipt/PLACE/CANCEL/TRANSFER/WITHDRAW/worker/LIVE enable/kill disengage均为0。Authority after=`GateY-6E / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`，next=`NQ-GATEY-6E-COMMIT-AND-PUSH`；`real_provider/private_trading=NOT_IMPLEMENTED`、runtime unbound、first real order not authorized、LIVE disabled、kill engaged。完整证据：[Security Review attempt-01](evidence/gate-y/NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-SECURITY-REVIEW.attempt-01.md)。
+
+## 2026-08-17 — GateY-6E post-CI acceptance 与 GateY-6F initialization
+
+结论：`PASS / GATEY_6E_ACCEPTED / FAILED_FEATURE_CI_PRESERVED / FORWARD_REMEDIATION_ACCEPTED / CI_GREEN / GATEY_6F_INITIALIZED / EXACT_PILOT_SCOPE_NOT_MATERIALIZED / FIRST_REAL_ORDER_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / SOAK_NOT_STARTED / REAL_MUTATION_RUNTIME_UNBOUND / LIVE_DISABLED / KILL_ENGAGED / READY_TO_COMMIT`（通过 / GateY-6E 已接受 / 失败 CI 历史已保留 / GateY-6F 已初始化 / 可进入提交前复核）。
+
+| Command / check | Result | Scope / environment / known warnings / blocking |
+| --- | --- | --- |
+| Git/origin baseline | PASS（通过） | `dev` clean、staged=`0`；`HEAD == origin/dev == c4b2668e50f8087e0e147573aca66be7fd944e3b` |
+| failed implementation CI | PASS / FAILURE PRESERVED（通过 / 失败历史已保留） | `31958446614 / completed / failure`；headSha=`0708bd9d...`；唯一失败 job=`Secret scan`；sanitized Gitleaks metadata 指向测试 `clientOrderId` 行，其他 9 jobs success |
+| forward remediation exact-head CI | PASS（通过） | direct-child remediation=`c4b2668e...`；仅修改 `JdkOkxRealTransportTest.java` 1 行；`31997221424 / completed / success / 10 jobs` |
+| GateY-6E Security Review | PASS（通过） | P0/P1=`0/0`；V41、trusted observation、credential JIT、typed transport、exact identity、query-first UNKNOWN 接受；real mutation runtime unbound |
+| current authority / doc links | PASS（通过） | authority final errors=`0`；首轮两次因 ROADMAP next-action 标题未使用 checker canonical phrase 而 exit=`1 / errors=1`，最小修正文案后通过；links=`363 checked / 14 historical warnings / 0 errors` |
+| diff / exact allowlist / forbidden scope | PASS（通过） | `git diff --check` exit=`0`；allowlist expected/actual=`8/8`、missing/extra=`0/0`；staged=`0`；backend/frontend/research/scripts/deploy/`.github`/migration diff=`0`；positive authorization hits=`0`；append-only ledgers additions/removals=`30/0`；仅既有 LF→CRLF 提示 |
+| Maven/frontend/Python | NOT RUN（未运行） | docs-only；产品代码、migration、CI、governance diff 必须为 0；使用 exact-head CI `31997221424`，非阻断 |
+
+本任务 credential read、OKX call、PLACE/CANCEL、ExecutionIntent、worker/exchange mutation、soak start、LIVE enable、kill disengage 均为 0。GateY-6F 仅初始化 exact pilot binding 与真实只读 verification；operator-controlled exact values 未提供，exact PilotScope 未物化，independent approval 未创建，第一笔真实订单与 micro-live 未授权。完整证据：[post-CI acceptance attempt-01](evidence/gate-y/NQ-GATEY-6E-POST-CI-ACCEPTANCE-AND-GATEY-6F-INITIALIZATION.attempt-01.md)。

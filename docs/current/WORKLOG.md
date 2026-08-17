@@ -19058,3 +19058,17 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - findings：final P0/P1/P2/P3=`0/0/0/0`。
 - authority：`GateY-6E / REVIEW_ACCEPTED|READY_TO_COMMIT / UNCOMMITTED / NOT_RUN`；next=`NQ-GATEY-6E-COMMIT-AND-PUSH`；`real_provider/private_trading=NOT_IMPLEMENTED`继续表示真实 runtime 尚未接受或启用；未stage/commit/push/deploy。
 - evidence：[Security Review attempt-01](evidence/gate-y/NQ-GATEY-6E-FIRST-REAL-ORDER-PREREQUISITE-SECURITY-REVIEW.attempt-01.md)。
+
+## 2026-08-17 — GateY-6E post-CI acceptance 与 GateY-6F initialization
+
+- task：`NQ-GATEY-6E-POST-CI-ACCEPTANCE-AND-GATEY-6F-INITIALIZATION`；NQ-only、docs-only、唯一 post-CI lifecycle closeout。
+- baseline：`dev` clean、staged=`0`；`HEAD == origin/dev == c4b2668e50f8087e0e147573aca66be7fd944e3b`。
+- CI chain：implementation commit=`0708bd9d...` 的 run `31958446614 / completed / failure` 仅 Secret scan 失败，分类=`GITLEAKS_FALSE_POSITIVE / TEST_CLIENT_ORDER_ID_ONLY`，其他 9 jobs success；失败历史保留。Direct-child forward remediation=`c4b2668e...` 只改测试 1 行，exact-head run `31997221424 / completed / success / 10 jobs`。
+- acceptance：GateY-6E `FIRST_REAL_ORDER_PREREQUISITE_CAPABILITY` 已接受；Security Review P0/P1=`0/0`。接受覆盖 V41、trusted OKX prerequisite observation、credential-JIT typed transport、exact order/fill identity 与 query-first UNKNOWN；不等于 real runtime、exact pilot、first order、micro-live 或 LIVE authorization。
+- authority：accepted batch推进为`GateY-6E / ACCEPTED|CI_GREEN / implementation 0708bd9d... / acceptance c4b2668e... / CI 31997221424`；work batch初始化为`GateY-6F / NOT_STARTED / NONE / NOT_RUN`；next=`NQ-GATEY-6F-EXACT-PILOT-BINDING-AND-READONLY-VERIFICATION-IMPLEMENTATION`。
+- GateY-6F boundary：只允许 operator-controlled exact release/risk/account/credential/symbol/caps/window binding、production trusted read-only collection、exact PilotScope materialization、independent approval 与 stored-fact preflight；缺少 exact values 必须返回 `EXPLICIT_PILOT_SCOPE_INPUT_REQUIRED`。
+- current status：exact PilotScope=`NOT_MATERIALIZED`；approval=`NOT_CREATED`；first real order/micro-live=`NOT_AUTHORIZED`；GateY pilot soak=`NOT_STARTED`；real mutation runtime=`UNBOUND`；real provider/private trading=`NOT_IMPLEMENTED`；LIVE disabled、kill engaged。
+- counters：credential read/OKX call/PLACE/CANCEL/ExecutionIntent/worker mutation/exchange mutation/soak start/LIVE enable/kill disengage=`0/0/0/0/0/0/0/0/0/0`。
+- validation：GitHub CI 与 remote `dev` 已只读核验；authority final errors=`0`（首轮两次因 ROADMAP next-action 标题未使用 checker canonical phrase 而 errors=`1`，最小修正文案后通过，checker未改）；links=`363 checked / 14 historical warnings / 0 errors`；`git diff --check`通过；allowlist expected/actual=`8/8`、missing/extra=`0/0`；staged=`0`；backend/frontend/research/scripts/deploy/`.github`/migration diff=`0`；positive authorization hits=`0`；append-only ledgers additions/removals=`30/0`。Docs-only 不运行 Maven/frontend/Python；未 stage/commit/push/deploy。
+- result：`PASS / GATEY_6E_ACCEPTED / FAILED_FEATURE_CI_PRESERVED / FORWARD_REMEDIATION_ACCEPTED / CI_GREEN / GATEY_6F_INITIALIZED / EXACT_PILOT_SCOPE_NOT_MATERIALIZED / FIRST_REAL_ORDER_NOT_AUTHORIZED / MICRO_LIVE_NOT_AUTHORIZED / SOAK_NOT_STARTED / REAL_MUTATION_RUNTIME_UNBOUND / LIVE_DISABLED / KILL_ENGAGED / READY_TO_COMMIT`。
+- next：进入 `NQ-GATEY-6F-EXACT-PILOT-BINDING-AND-READONLY-VERIFICATION-IMPLEMENTATION`；不得再插入 docs-only review/governance/plan。完整证据：[post-CI acceptance attempt-01](evidence/gate-y/NQ-GATEY-6E-POST-CI-ACCEPTANCE-AND-GATEY-6F-INITIALIZATION.attempt-01.md)。
