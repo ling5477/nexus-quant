@@ -1,0 +1,13 @@
+allowlist:
+  backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/PilotScopePrerequisiteFactModelMigrationContractTest.java
+  docs/evidence/migration-checksum-reconciliation/attempt-01/**
+
+explicitly_forbidden:
+  target V40 migration
+  unrelated migrations
+  production Java
+  Current Authority / GateY
+  Java Standard / Huangshan / Shadow
+  Router
+  CI / AGENTS
+  DH repository

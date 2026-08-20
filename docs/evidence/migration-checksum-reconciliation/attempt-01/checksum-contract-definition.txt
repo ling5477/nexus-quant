@@ -1,0 +1,10 @@
+test=PilotScopePrerequisiteFactModelMigrationContractTest.shouldKeepReviewedMigrationChecksumStable
+test_module=backend/nq-infra
+migration=backend/nq-infra/src/main/resources/db/migration/V40__gate_y6d_pilot_scope_prerequisite_fact_model.sql
+algorithm=SHA-256
+pre_remediation_input=Files.readAllBytes(MIGRATION) raw working-tree bytes
+pre_remediation_encoding_normalization=NONE
+pre_remediation_line_ending_normalization=NONE
+expected=1c0e486db0f3db4cdf250cb99ab0ed1e289f42d1ed522981272ee8b4c4da25e3
+windows_worktree_actual=f32eaf8eb333739020a1bdaac49471bc56d245a3aa5468ec108051b83a2d7ab4
+contract_defect=platform-dependent checkout line endings were included in checksum input

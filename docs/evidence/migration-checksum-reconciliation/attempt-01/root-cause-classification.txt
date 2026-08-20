@@ -1,0 +1,10 @@
+root_cause=CHECKSUM_ALGORITHM_OR_ENCODING_DRIFT（校验算法或编码输入漂移）
+evidence_1=expected hash equals creation commit, HEAD and origin/dev LF blob
+evidence_2=Windows working tree is clean but checked out as CRLF because core.autocrlf=true
+evidence_3=raw working-tree checksum fails while LF-normalized checksum exactly matches expected
+evidence_4=migration and expectation were introduced together and neither later changed
+stale_test_expectation=NO
+unauthorized_migration_drift=NO
+unresolved_provenance_conflict=NO
+authority_tieout=CONSISTENT
+immutability_status=TRUE
