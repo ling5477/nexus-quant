@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "songshan_rules": 308,
+  "huangshan_rules": 319,
+  "unchanged": 200,
+  "modified": 70,
+  "added": 11,
+  "removed": 0,
+  "renumbered_or_relocated": 38,
+  "matching_policy": "section-order alignment plus normalized semantic similarity",
+  "diff_sha256": "9b775e061c567eaf99cf6e465e0aa74ddb90192c5f721ea3ec92a51004e051f0",
+  "huangshan_mapping_sha256": "962d292b8be907388f024d13724080ecacfe485f9822f085245303064ba419a9",
+  "adaptation": {
+    "ADOPTED": 241,
+    "MODIFIED": 76,
+    "REJECTED": 1,
+    "NOT_APPLICABLE": 1
+  }
+}

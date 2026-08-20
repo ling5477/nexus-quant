@@ -1,0 +1,12 @@
+workflow=.github/workflows/ci.yml
+job=java-engineering-shadow
+mode=SHADOW
+violation_found_blocks_build=NO
+checker_execution_failed_blocks_build=YES
+config_invalid_blocks_build=YES
+missing_report_blocks_build=YES
+continue_on_error=ABSENT
+report_artifact=artifacts/java-shadow/shadow-report.json
+source_upload=NO
+real_exchange_call=0
+remote_ci=REMOTE_CI_NOT_RUN

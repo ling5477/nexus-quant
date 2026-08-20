@@ -1,0 +1,3752 @@
+schema_version: "1.0.0"
+status: "SUPERSEDED"
+superseded_by: "alibaba-huangshan-rule-mapping.yaml"
+source:
+  edition: "Alibaba Java Development Manual Songshan 1.7.0"
+  official_repository: "https://github.com/alibaba/p3c"
+  source_ref: "5fb5777aed30728e7cd0e9811ae61c9c5032c30f"
+  source_blob_identity: "4d4c5cc9a1a3d42b92c3fc169f5215a2e60ad86f"
+  source_rule_count: 308
+adaptation_policy: "complete-rule-index-with-project-summaries"
+project_rule_catalog:
+  - rule_id: "JAVA-COMMON-NAMING-001"
+    summary: "命名、包结构与可读性"
+  - rule_id: "JAVA-COMMON-CONSTANT-001"
+    summary: "常量与配置边界"
+  - rule_id: "JAVA-COMMON-OBJECT-001"
+    summary: "对象与 OOP 语义"
+  - rule_id: "JAVA-COMMON-TIME-001"
+    summary: "可注入时间源"
+  - rule_id: "JAVA-COMMON-COLLECTION-001"
+    summary: "集合边界与安全处理"
+  - rule_id: "JAVA-COMMON-CONCURRENCY-001"
+    summary: "并发、线程池与背压"
+  - rule_id: "JAVA-COMMON-CONTROL-001"
+    summary: "控制流与 fail-closed"
+  - rule_id: "JAVA-COMMON-DOC-001"
+    summary: "有信息量的注释与 JavaDoc"
+  - rule_id: "JAVA-COMMON-DOC-003"
+    summary: "拒绝作者与创建日期注释"
+  - rule_id: "JAVA-COMMON-ARCH-001"
+    summary: "稳定契约与模块边界"
+  - rule_id: "JAVA-COMMON-ARCH-002"
+    summary: "按替换语义定义接口"
+  - rule_id: "JAVA-COMMON-DEPRECATED-001"
+    summary: "弃用代码治理"
+  - rule_id: "JAVA-COMMON-EXCEPTION-001"
+    summary: "异常传播与转换"
+  - rule_id: "JAVA-COMMON-EXCEPTION-002"
+    summary: "错误分类与错误码"
+  - rule_id: "JAVA-COMMON-LOG-001"
+    summary: "结构化日志"
+  - rule_id: "JAVA-COMMON-TEST-001"
+    summary: "单元与集成测试"
+  - rule_id: "JAVA-COMMON-SECURITY-001"
+    summary: "输入、权限与安全编码"
+  - rule_id: "JAVA-COMMON-DB-001"
+    summary: "PostgreSQL 事实优先的数据规则"
+  - rule_id: "JAVA-COMMON-DB-002"
+    summary: "批量、分页、索引与 N+1"
+  - rule_id: "JAVA-COMMON-SQL-001"
+    summary: "确定性与参数化 SQL"
+  - rule_id: "JAVA-COMMON-DEPENDENCY-001"
+    summary: "依赖版本与兼容性"
+  - rule_id: "JAVA-COMMON-EXTERNAL-001"
+    summary: "外部服务和服务器边界"
+rules:
+  - source_rule_id: "ALI-SG-PROG-NAME-001"
+    source_section: "编程规约 / 命名风格"
+    source_level: "MANDATORY"
+    concise_summary: "命名风格 第 1 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-NAME-002"
+    source_section: "编程规约 / 命名风格"
+    source_level: "MANDATORY"
+    concise_summary: "命名风格 第 2 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-NAME-003"
+    source_section: "编程规约 / 命名风格"
+    source_level: "MANDATORY"
+    concise_summary: "命名风格 第 3 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-NAME-004"
+    source_section: "编程规约 / 命名风格"
+    source_level: "MANDATORY"
+    concise_summary: "命名风格 第 4 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-NAME-005"
+    source_section: "编程规约 / 命名风格"
+    source_level: "MANDATORY"
+    concise_summary: "命名风格 第 5 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-NAME-006"
+    source_section: "编程规约 / 命名风格"
+    source_level: "MANDATORY"
+    concise_summary: "命名风格 第 6 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-NAME-007"
+    source_section: "编程规约 / 命名风格"
+    source_level: "MANDATORY"
+    concise_summary: "命名风格 第 7 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-NAME-008"
+    source_section: "编程规约 / 命名风格"
+    source_level: "MANDATORY"
+    concise_summary: "命名风格 第 8 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-NAME-009"
+    source_section: "编程规约 / 命名风格"
+    source_level: "MANDATORY"
+    concise_summary: "命名风格 第 9 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-NAME-010"
+    source_section: "编程规约 / 命名风格"
+    source_level: "MANDATORY"
+    concise_summary: "命名风格 第 10 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-NAME-011"
+    source_section: "编程规约 / 命名风格"
+    source_level: "MANDATORY"
+    concise_summary: "命名风格 第 11 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-NAME-012"
+    source_section: "编程规约 / 命名风格"
+    source_level: "MANDATORY"
+    concise_summary: "命名风格 第 12 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-NAME-013"
+    source_section: "编程规约 / 命名风格"
+    source_level: "RECOMMENDED"
+    concise_summary: "命名风格 第 13 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-NAME-014"
+    source_section: "编程规约 / 命名风格"
+    source_level: "RECOMMENDED"
+    concise_summary: "命名风格 第 14 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-NAME-015"
+    source_section: "编程规约 / 命名风格"
+    source_level: "RECOMMENDED"
+    concise_summary: "命名风格 第 15 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-NAME-016"
+    source_section: "编程规约 / 命名风格"
+    source_level: "RECOMMENDED"
+    concise_summary: "命名风格 第 16 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-NAME-018"
+    source_section: "编程规约 / 命名风格"
+    source_level: "REFERENCE"
+    concise_summary: "命名风格 第 18 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-NAME-019"
+    source_section: "编程规约 / 命名风格"
+    source_level: "REFERENCE"
+    concise_summary: "命名风格 第 19 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONST-001"
+    source_section: "编程规约 / 常量定义"
+    source_level: "MANDATORY"
+    concise_summary: "常量定义 第 1 条：按项目规则 JAVA-COMMON-CONSTANT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONSTANT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONST-002"
+    source_section: "编程规约 / 常量定义"
+    source_level: "MANDATORY"
+    concise_summary: "常量定义 第 2 条：按项目规则 JAVA-COMMON-CONSTANT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONSTANT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONST-003"
+    source_section: "编程规约 / 常量定义"
+    source_level: "RECOMMENDED"
+    concise_summary: "常量定义 第 3 条：按项目规则 JAVA-COMMON-CONSTANT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONSTANT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONST-004"
+    source_section: "编程规约 / 常量定义"
+    source_level: "RECOMMENDED"
+    concise_summary: "常量定义 第 4 条：按项目规则 JAVA-COMMON-CONSTANT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONSTANT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONST-005"
+    source_section: "编程规约 / 常量定义"
+    source_level: "RECOMMENDED"
+    concise_summary: "常量定义 第 5 条：按项目规则 JAVA-COMMON-CONSTANT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONSTANT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-FMT-001"
+    source_section: "编程规约 / 代码格式"
+    source_level: "MANDATORY"
+    concise_summary: "代码格式 第 1 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-FMT-002"
+    source_section: "编程规约 / 代码格式"
+    source_level: "MANDATORY"
+    concise_summary: "代码格式 第 2 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-FMT-003"
+    source_section: "编程规约 / 代码格式"
+    source_level: "MANDATORY"
+    concise_summary: "代码格式 第 3 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-FMT-004"
+    source_section: "编程规约 / 代码格式"
+    source_level: "MANDATORY"
+    concise_summary: "代码格式 第 4 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-FMT-005"
+    source_section: "编程规约 / 代码格式"
+    source_level: "MANDATORY"
+    concise_summary: "代码格式 第 5 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-FMT-006"
+    source_section: "编程规约 / 代码格式"
+    source_level: "MANDATORY"
+    concise_summary: "代码格式 第 6 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-FMT-007"
+    source_section: "编程规约 / 代码格式"
+    source_level: "MANDATORY"
+    concise_summary: "代码格式 第 7 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-FMT-008"
+    source_section: "编程规约 / 代码格式"
+    source_level: "MANDATORY"
+    concise_summary: "代码格式 第 8 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-FMT-009"
+    source_section: "编程规约 / 代码格式"
+    source_level: "MANDATORY"
+    concise_summary: "代码格式 第 9 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-FMT-010"
+    source_section: "编程规约 / 代码格式"
+    source_level: "MANDATORY"
+    concise_summary: "代码格式 第 10 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-FMT-011"
+    source_section: "编程规约 / 代码格式"
+    source_level: "RECOMMENDED"
+    concise_summary: "代码格式 第 11 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-FMT-012"
+    source_section: "编程规约 / 代码格式"
+    source_level: "RECOMMENDED"
+    concise_summary: "代码格式 第 12 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-FMT-013"
+    source_section: "编程规约 / 代码格式"
+    source_level: "RECOMMENDED"
+    concise_summary: "代码格式 第 13 条：按项目规则 JAVA-COMMON-NAMING-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-NAMING-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-001"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "MANDATORY"
+    concise_summary: "OOP 规约 第 1 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-002"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "MANDATORY"
+    concise_summary: "OOP 规约 第 2 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-003"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "MANDATORY"
+    concise_summary: "OOP 规约 第 3 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-004"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "MANDATORY"
+    concise_summary: "OOP 规约 第 4 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-005"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "MANDATORY"
+    concise_summary: "OOP 规约 第 5 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-006"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "MANDATORY"
+    concise_summary: "OOP 规约 第 6 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-007"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "MANDATORY"
+    concise_summary: "OOP 规约 第 7 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-008"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "MANDATORY"
+    concise_summary: "OOP 规约 第 8 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-009"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "MANDATORY"
+    concise_summary: "OOP 规约 第 9 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-010"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "MANDATORY"
+    concise_summary: "OOP 规约 第 10 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-011"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "MANDATORY"
+    concise_summary: "OOP 规约 第 11 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-012"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "MANDATORY"
+    concise_summary: "OOP 规约 第 12 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-014"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "MANDATORY"
+    concise_summary: "OOP 规约 第 14 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-015"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "MANDATORY"
+    concise_summary: "OOP 规约 第 15 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-016"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "MANDATORY"
+    concise_summary: "OOP 规约 第 16 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-017"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "MANDATORY"
+    concise_summary: "OOP 规约 第 17 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-018"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "MANDATORY"
+    concise_summary: "OOP 规约 第 18 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-019"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "OOP 规约 第 19 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-020"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "OOP 规约 第 20 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-021"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "OOP 规约 第 21 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-022"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "OOP 规约 第 22 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-023"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "OOP 规约 第 23 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-024"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "OOP 规约 第 24 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-025"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "OOP 规约 第 25 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OOP-026"
+    source_section: "编程规约 / OOP 规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "OOP 规约 第 26 条：按项目规则 JAVA-COMMON-OBJECT-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-OBJECT-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-TIME-001"
+    source_section: "编程规约 / 日期时间"
+    source_level: "MANDATORY"
+    concise_summary: "日期时间 第 1 条：按项目规则 JAVA-COMMON-TIME-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TIME-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-TIME-002"
+    source_section: "编程规约 / 日期时间"
+    source_level: "MANDATORY"
+    concise_summary: "日期时间 第 2 条：按项目规则 JAVA-COMMON-TIME-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TIME-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-TIME-003"
+    source_section: "编程规约 / 日期时间"
+    source_level: "MANDATORY"
+    concise_summary: "日期时间 第 3 条：按项目规则 JAVA-COMMON-TIME-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TIME-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-TIME-004"
+    source_section: "编程规约 / 日期时间"
+    source_level: "MANDATORY"
+    concise_summary: "日期时间 第 4 条：按项目规则 JAVA-COMMON-TIME-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TIME-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-TIME-005"
+    source_section: "编程规约 / 日期时间"
+    source_level: "MANDATORY"
+    concise_summary: "日期时间 第 5 条：按项目规则 JAVA-COMMON-TIME-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TIME-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-TIME-006"
+    source_section: "编程规约 / 日期时间"
+    source_level: "RECOMMENDED"
+    concise_summary: "日期时间 第 6 条：按项目规则 JAVA-COMMON-TIME-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TIME-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-TIME-007"
+    source_section: "编程规约 / 日期时间"
+    source_level: "RECOMMENDED"
+    concise_summary: "日期时间 第 7 条：按项目规则 JAVA-COMMON-TIME-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TIME-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-001"
+    source_section: "编程规约 / 集合处理"
+    source_level: "MANDATORY"
+    concise_summary: "集合处理 第 1 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-002"
+    source_section: "编程规约 / 集合处理"
+    source_level: "MANDATORY"
+    concise_summary: "集合处理 第 2 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-003"
+    source_section: "编程规约 / 集合处理"
+    source_level: "MANDATORY"
+    concise_summary: "集合处理 第 3 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-004"
+    source_section: "编程规约 / 集合处理"
+    source_level: "MANDATORY"
+    concise_summary: "集合处理 第 4 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-005"
+    source_section: "编程规约 / 集合处理"
+    source_level: "MANDATORY"
+    concise_summary: "集合处理 第 5 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-006"
+    source_section: "编程规约 / 集合处理"
+    source_level: "MANDATORY"
+    concise_summary: "集合处理 第 6 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-007"
+    source_section: "编程规约 / 集合处理"
+    source_level: "MANDATORY"
+    concise_summary: "集合处理 第 7 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-008"
+    source_section: "编程规约 / 集合处理"
+    source_level: "MANDATORY"
+    concise_summary: "集合处理 第 8 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-009"
+    source_section: "编程规约 / 集合处理"
+    source_level: "MANDATORY"
+    concise_summary: "集合处理 第 9 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-010"
+    source_section: "编程规约 / 集合处理"
+    source_level: "MANDATORY"
+    concise_summary: "集合处理 第 10 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-011"
+    source_section: "编程规约 / 集合处理"
+    source_level: "MANDATORY"
+    concise_summary: "集合处理 第 11 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-012"
+    source_section: "编程规约 / 集合处理"
+    source_level: "MANDATORY"
+    concise_summary: "集合处理 第 12 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-013"
+    source_section: "编程规约 / 集合处理"
+    source_level: "MANDATORY"
+    concise_summary: "集合处理 第 13 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-014"
+    source_section: "编程规约 / 集合处理"
+    source_level: "MANDATORY"
+    concise_summary: "集合处理 第 14 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-015"
+    source_section: "编程规约 / 集合处理"
+    source_level: "MANDATORY"
+    concise_summary: "集合处理 第 15 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-016"
+    source_section: "编程规约 / 集合处理"
+    source_level: "RECOMMENDED"
+    concise_summary: "集合处理 第 16 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-017"
+    source_section: "编程规约 / 集合处理"
+    source_level: "RECOMMENDED"
+    concise_summary: "集合处理 第 17 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-018"
+    source_section: "编程规约 / 集合处理"
+    source_level: "RECOMMENDED"
+    concise_summary: "集合处理 第 18 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-019"
+    source_section: "编程规约 / 集合处理"
+    source_level: "RECOMMENDED"
+    concise_summary: "集合处理 第 19 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-020"
+    source_section: "编程规约 / 集合处理"
+    source_level: "REFERENCE"
+    concise_summary: "集合处理 第 20 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-COLL-021"
+    source_section: "编程规约 / 集合处理"
+    source_level: "REFERENCE"
+    concise_summary: "集合处理 第 21 条：按项目规则 JAVA-COMMON-COLLECTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-COLLECTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONC-001"
+    source_section: "编程规约 / 并发处理"
+    source_level: "MANDATORY"
+    concise_summary: "并发处理 第 1 条：按项目规则 JAVA-COMMON-CONCURRENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONCURRENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONC-002"
+    source_section: "编程规约 / 并发处理"
+    source_level: "MANDATORY"
+    concise_summary: "并发处理 第 2 条：按项目规则 JAVA-COMMON-CONCURRENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONCURRENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONC-003"
+    source_section: "编程规约 / 并发处理"
+    source_level: "MANDATORY"
+    concise_summary: "并发处理 第 3 条：按项目规则 JAVA-COMMON-CONCURRENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONCURRENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONC-004"
+    source_section: "编程规约 / 并发处理"
+    source_level: "MANDATORY"
+    concise_summary: "并发处理 第 4 条：按项目规则 JAVA-COMMON-CONCURRENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONCURRENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONC-005"
+    source_section: "编程规约 / 并发处理"
+    source_level: "MANDATORY"
+    concise_summary: "并发处理 第 5 条：按项目规则 JAVA-COMMON-CONCURRENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONCURRENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONC-006"
+    source_section: "编程规约 / 并发处理"
+    source_level: "MANDATORY"
+    concise_summary: "并发处理 第 6 条：按项目规则 JAVA-COMMON-CONCURRENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONCURRENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONC-007"
+    source_section: "编程规约 / 并发处理"
+    source_level: "MANDATORY"
+    concise_summary: "并发处理 第 7 条：按项目规则 JAVA-COMMON-CONCURRENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONCURRENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONC-008"
+    source_section: "编程规约 / 并发处理"
+    source_level: "MANDATORY"
+    concise_summary: "并发处理 第 8 条：按项目规则 JAVA-COMMON-CONCURRENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONCURRENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONC-009"
+    source_section: "编程规约 / 并发处理"
+    source_level: "MANDATORY"
+    concise_summary: "并发处理 第 9 条：按项目规则 JAVA-COMMON-CONCURRENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONCURRENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONC-010"
+    source_section: "编程规约 / 并发处理"
+    source_level: "MANDATORY"
+    concise_summary: "并发处理 第 10 条：按项目规则 JAVA-COMMON-CONCURRENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONCURRENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONC-011"
+    source_section: "编程规约 / 并发处理"
+    source_level: "MANDATORY"
+    concise_summary: "并发处理 第 11 条：按项目规则 JAVA-COMMON-CONCURRENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONCURRENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONC-012"
+    source_section: "编程规约 / 并发处理"
+    source_level: "MANDATORY"
+    concise_summary: "并发处理 第 12 条：按项目规则 JAVA-COMMON-CONCURRENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONCURRENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONC-013"
+    source_section: "编程规约 / 并发处理"
+    source_level: "RECOMMENDED"
+    concise_summary: "并发处理 第 13 条：按项目规则 JAVA-COMMON-CONCURRENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONCURRENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONC-014"
+    source_section: "编程规约 / 并发处理"
+    source_level: "RECOMMENDED"
+    concise_summary: "并发处理 第 14 条：按项目规则 JAVA-COMMON-CONCURRENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONCURRENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONC-015"
+    source_section: "编程规约 / 并发处理"
+    source_level: "RECOMMENDED"
+    concise_summary: "并发处理 第 15 条：按项目规则 JAVA-COMMON-CONCURRENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONCURRENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONC-016"
+    source_section: "编程规约 / 并发处理"
+    source_level: "RECOMMENDED"
+    concise_summary: "并发处理 第 16 条：按项目规则 JAVA-COMMON-CONCURRENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONCURRENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONC-017"
+    source_section: "编程规约 / 并发处理"
+    source_level: "REFERENCE"
+    concise_summary: "并发处理 第 17 条：按项目规则 JAVA-COMMON-CONCURRENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONCURRENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONC-018"
+    source_section: "编程规约 / 并发处理"
+    source_level: "REFERENCE"
+    concise_summary: "并发处理 第 18 条：按项目规则 JAVA-COMMON-CONCURRENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONCURRENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CONC-019"
+    source_section: "编程规约 / 并发处理"
+    source_level: "REFERENCE"
+    concise_summary: "并发处理 第 19 条：按项目规则 JAVA-COMMON-CONCURRENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONCURRENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CTRL-001"
+    source_section: "编程规约 / 控制语句"
+    source_level: "MANDATORY"
+    concise_summary: "控制语句 第 1 条：按项目规则 JAVA-COMMON-CONTROL-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONTROL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CTRL-002"
+    source_section: "编程规约 / 控制语句"
+    source_level: "MANDATORY"
+    concise_summary: "控制语句 第 2 条：按项目规则 JAVA-COMMON-CONTROL-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONTROL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CTRL-003"
+    source_section: "编程规约 / 控制语句"
+    source_level: "MANDATORY"
+    concise_summary: "控制语句 第 3 条：按项目规则 JAVA-COMMON-CONTROL-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONTROL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CTRL-004"
+    source_section: "编程规约 / 控制语句"
+    source_level: "MANDATORY"
+    concise_summary: "控制语句 第 4 条：按项目规则 JAVA-COMMON-CONTROL-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONTROL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CTRL-005"
+    source_section: "编程规约 / 控制语句"
+    source_level: "MANDATORY"
+    concise_summary: "控制语句 第 5 条：按项目规则 JAVA-COMMON-CONTROL-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONTROL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CTRL-006"
+    source_section: "编程规约 / 控制语句"
+    source_level: "RECOMMENDED"
+    concise_summary: "控制语句 第 6 条：按项目规则 JAVA-COMMON-CONTROL-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONTROL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CTRL-007"
+    source_section: "编程规约 / 控制语句"
+    source_level: "RECOMMENDED"
+    concise_summary: "控制语句 第 7 条：按项目规则 JAVA-COMMON-CONTROL-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONTROL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CTRL-008"
+    source_section: "编程规约 / 控制语句"
+    source_level: "RECOMMENDED"
+    concise_summary: "控制语句 第 8 条：按项目规则 JAVA-COMMON-CONTROL-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONTROL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CTRL-009"
+    source_section: "编程规约 / 控制语句"
+    source_level: "RECOMMENDED"
+    concise_summary: "控制语句 第 9 条：按项目规则 JAVA-COMMON-CONTROL-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONTROL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CTRL-010"
+    source_section: "编程规约 / 控制语句"
+    source_level: "RECOMMENDED"
+    concise_summary: "控制语句 第 10 条：按项目规则 JAVA-COMMON-CONTROL-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONTROL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CTRL-011"
+    source_section: "编程规约 / 控制语句"
+    source_level: "RECOMMENDED"
+    concise_summary: "控制语句 第 11 条：按项目规则 JAVA-COMMON-CONTROL-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONTROL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CTRL-012"
+    source_section: "编程规约 / 控制语句"
+    source_level: "RECOMMENDED"
+    concise_summary: "控制语句 第 12 条：按项目规则 JAVA-COMMON-CONTROL-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONTROL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CTRL-013"
+    source_section: "编程规约 / 控制语句"
+    source_level: "REFERENCE"
+    concise_summary: "控制语句 第 13 条：按项目规则 JAVA-COMMON-CONTROL-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONTROL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-CTRL-014"
+    source_section: "编程规约 / 控制语句"
+    source_level: "REFERENCE"
+    concise_summary: "控制语句 第 14 条：按项目规则 JAVA-COMMON-CONTROL-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-CONTROL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-DOC-001"
+    source_section: "编程规约 / 注释规约"
+    source_level: "MANDATORY"
+    concise_summary: "注释规约 第 1 条：按项目规则 JAVA-COMMON-DOC-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DOC-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-DOC-002"
+    source_section: "编程规约 / 注释规约"
+    source_level: "MANDATORY"
+    concise_summary: "注释规约 第 2 条：按项目规则 JAVA-COMMON-DOC-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DOC-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-DOC-003"
+    source_section: "编程规约 / 注释规约"
+    source_level: "MANDATORY"
+    concise_summary: "注释规约 第 3 条：按项目规则 JAVA-COMMON-DOC-003 进行适配评审。"
+    disposition: "REJECTED"
+    project_rule_ids: ["JAVA-COMMON-DOC-003"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "Git 是作者与历史权威；作者和创建日期注释容易失真，项目明确禁止。"
+  - source_rule_id: "ALI-SG-PROG-DOC-004"
+    source_section: "编程规约 / 注释规约"
+    source_level: "MANDATORY"
+    concise_summary: "注释规约 第 4 条：按项目规则 JAVA-COMMON-DOC-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DOC-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-DOC-005"
+    source_section: "编程规约 / 注释规约"
+    source_level: "MANDATORY"
+    concise_summary: "注释规约 第 5 条：按项目规则 JAVA-COMMON-DOC-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DOC-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-DOC-006"
+    source_section: "编程规约 / 注释规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "注释规约 第 6 条：按项目规则 JAVA-COMMON-DOC-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DOC-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-DOC-007"
+    source_section: "编程规约 / 注释规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "注释规约 第 7 条：按项目规则 JAVA-COMMON-DOC-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DOC-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-DOC-008"
+    source_section: "编程规约 / 注释规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "注释规约 第 8 条：按项目规则 JAVA-COMMON-DOC-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DOC-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-DOC-009"
+    source_section: "编程规约 / 注释规约"
+    source_level: "REFERENCE"
+    concise_summary: "注释规约 第 9 条：按项目规则 JAVA-COMMON-DOC-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DOC-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-DOC-010"
+    source_section: "编程规约 / 注释规约"
+    source_level: "REFERENCE"
+    concise_summary: "注释规约 第 10 条：按项目规则 JAVA-COMMON-DOC-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DOC-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-DOC-011"
+    source_section: "编程规约 / 注释规约"
+    source_level: "REFERENCE"
+    concise_summary: "注释规约 第 11 条：按项目规则 JAVA-COMMON-DOC-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DOC-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-DOC-012"
+    source_section: "编程规约 / 注释规约"
+    source_level: "REFERENCE"
+    concise_summary: "注释规约 第 12 条：按项目规则 JAVA-COMMON-DOC-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DOC-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-FE-001"
+    source_section: "编程规约 / 前后端规约"
+    source_level: "MANDATORY"
+    concise_summary: "前后端规约 第 1 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按仓库既有 API contract、DTO 与后端权限边界改写，不改变前端技术栈或冻结合同。"
+  - source_rule_id: "ALI-SG-PROG-FE-002"
+    source_section: "编程规约 / 前后端规约"
+    source_level: "MANDATORY"
+    concise_summary: "前后端规约 第 2 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按仓库既有 API contract、DTO 与后端权限边界改写，不改变前端技术栈或冻结合同。"
+  - source_rule_id: "ALI-SG-PROG-FE-003"
+    source_section: "编程规约 / 前后端规约"
+    source_level: "MANDATORY"
+    concise_summary: "前后端规约 第 3 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按仓库既有 API contract、DTO 与后端权限边界改写，不改变前端技术栈或冻结合同。"
+  - source_rule_id: "ALI-SG-PROG-FE-004"
+    source_section: "编程规约 / 前后端规约"
+    source_level: "MANDATORY"
+    concise_summary: "前后端规约 第 4 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按仓库既有 API contract、DTO 与后端权限边界改写，不改变前端技术栈或冻结合同。"
+  - source_rule_id: "ALI-SG-PROG-FE-005"
+    source_section: "编程规约 / 前后端规约"
+    source_level: "MANDATORY"
+    concise_summary: "前后端规约 第 5 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按仓库既有 API contract、DTO 与后端权限边界改写，不改变前端技术栈或冻结合同。"
+  - source_rule_id: "ALI-SG-PROG-FE-006"
+    source_section: "编程规约 / 前后端规约"
+    source_level: "MANDATORY"
+    concise_summary: "前后端规约 第 6 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按仓库既有 API contract、DTO 与后端权限边界改写，不改变前端技术栈或冻结合同。"
+  - source_rule_id: "ALI-SG-PROG-FE-007"
+    source_section: "编程规约 / 前后端规约"
+    source_level: "MANDATORY"
+    concise_summary: "前后端规约 第 7 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按仓库既有 API contract、DTO 与后端权限边界改写，不改变前端技术栈或冻结合同。"
+  - source_rule_id: "ALI-SG-PROG-FE-008"
+    source_section: "编程规约 / 前后端规约"
+    source_level: "MANDATORY"
+    concise_summary: "前后端规约 第 8 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按仓库既有 API contract、DTO 与后端权限边界改写，不改变前端技术栈或冻结合同。"
+  - source_rule_id: "ALI-SG-PROG-FE-009"
+    source_section: "编程规约 / 前后端规约"
+    source_level: "MANDATORY"
+    concise_summary: "前后端规约 第 9 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按仓库既有 API contract、DTO 与后端权限边界改写，不改变前端技术栈或冻结合同。"
+  - source_rule_id: "ALI-SG-PROG-FE-010"
+    source_section: "编程规约 / 前后端规约"
+    source_level: "MANDATORY"
+    concise_summary: "前后端规约 第 10 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按仓库既有 API contract、DTO 与后端权限边界改写，不改变前端技术栈或冻结合同。"
+  - source_rule_id: "ALI-SG-PROG-FE-011"
+    source_section: "编程规约 / 前后端规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "前后端规约 第 11 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按仓库既有 API contract、DTO 与后端权限边界改写，不改变前端技术栈或冻结合同。"
+  - source_rule_id: "ALI-SG-PROG-FE-012"
+    source_section: "编程规约 / 前后端规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "前后端规约 第 12 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按仓库既有 API contract、DTO 与后端权限边界改写，不改变前端技术栈或冻结合同。"
+  - source_rule_id: "ALI-SG-PROG-FE-013"
+    source_section: "编程规约 / 前后端规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "前后端规约 第 13 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按仓库既有 API contract、DTO 与后端权限边界改写，不改变前端技术栈或冻结合同。"
+  - source_rule_id: "ALI-SG-PROG-FE-014"
+    source_section: "编程规约 / 前后端规约"
+    source_level: "REFERENCE"
+    concise_summary: "前后端规约 第 14 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按仓库既有 API contract、DTO 与后端权限边界改写，不改变前端技术栈或冻结合同。"
+  - source_rule_id: "ALI-SG-PROG-OTHER-001"
+    source_section: "编程规约 / 其他"
+    source_level: "MANDATORY"
+    concise_summary: "其他 第 1 条：按项目规则 JAVA-COMMON-DEPRECATED-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DEPRECATED-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OTHER-002"
+    source_section: "编程规约 / 其他"
+    source_level: "MANDATORY"
+    concise_summary: "其他 第 2 条：按项目规则 JAVA-COMMON-DEPRECATED-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DEPRECATED-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OTHER-003"
+    source_section: "编程规约 / 其他"
+    source_level: "MANDATORY"
+    concise_summary: "其他 第 3 条：按项目规则 JAVA-COMMON-DEPRECATED-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DEPRECATED-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OTHER-004"
+    source_section: "编程规约 / 其他"
+    source_level: "MANDATORY"
+    concise_summary: "其他 第 4 条：按项目规则 JAVA-COMMON-DEPRECATED-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DEPRECATED-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OTHER-005"
+    source_section: "编程规约 / 其他"
+    source_level: "MANDATORY"
+    concise_summary: "其他 第 5 条：按项目规则 JAVA-COMMON-DEPRECATED-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DEPRECATED-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OTHER-006"
+    source_section: "编程规约 / 其他"
+    source_level: "RECOMMENDED"
+    concise_summary: "其他 第 6 条：按项目规则 JAVA-COMMON-DEPRECATED-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DEPRECATED-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OTHER-007"
+    source_section: "编程规约 / 其他"
+    source_level: "RECOMMENDED"
+    concise_summary: "其他 第 7 条：按项目规则 JAVA-COMMON-DEPRECATED-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DEPRECATED-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-PROG-OTHER-008"
+    source_section: "编程规约 / 其他"
+    source_level: "RECOMMENDED"
+    concise_summary: "其他 第 8 条：按项目规则 JAVA-COMMON-DEPRECATED-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DEPRECATED-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-CODE-001"
+    source_section: "异常日志 / 错误码"
+    source_level: "MANDATORY"
+    concise_summary: "错误码 第 1 条：按项目规则 JAVA-COMMON-EXCEPTION-002 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-CODE-002"
+    source_section: "异常日志 / 错误码"
+    source_level: "MANDATORY"
+    concise_summary: "错误码 第 2 条：按项目规则 JAVA-COMMON-EXCEPTION-002 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-CODE-003"
+    source_section: "异常日志 / 错误码"
+    source_level: "MANDATORY"
+    concise_summary: "错误码 第 3 条：按项目规则 JAVA-COMMON-EXCEPTION-002 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-CODE-004"
+    source_section: "异常日志 / 错误码"
+    source_level: "MANDATORY"
+    concise_summary: "错误码 第 4 条：按项目规则 JAVA-COMMON-EXCEPTION-002 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-CODE-005"
+    source_section: "异常日志 / 错误码"
+    source_level: "MANDATORY"
+    concise_summary: "错误码 第 5 条：按项目规则 JAVA-COMMON-EXCEPTION-002 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-CODE-006"
+    source_section: "异常日志 / 错误码"
+    source_level: "MANDATORY"
+    concise_summary: "错误码 第 6 条：按项目规则 JAVA-COMMON-EXCEPTION-002 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-CODE-007"
+    source_section: "异常日志 / 错误码"
+    source_level: "MANDATORY"
+    concise_summary: "错误码 第 7 条：按项目规则 JAVA-COMMON-EXCEPTION-002 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-CODE-008"
+    source_section: "异常日志 / 错误码"
+    source_level: "RECOMMENDED"
+    concise_summary: "错误码 第 8 条：按项目规则 JAVA-COMMON-EXCEPTION-002 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-CODE-009"
+    source_section: "异常日志 / 错误码"
+    source_level: "RECOMMENDED"
+    concise_summary: "错误码 第 9 条：按项目规则 JAVA-COMMON-EXCEPTION-002 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-CODE-010"
+    source_section: "异常日志 / 错误码"
+    source_level: "REFERENCE"
+    concise_summary: "错误码 第 10 条：按项目规则 JAVA-COMMON-EXCEPTION-002 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-CODE-011"
+    source_section: "异常日志 / 错误码"
+    source_level: "REFERENCE"
+    concise_summary: "错误码 第 11 条：按项目规则 JAVA-COMMON-EXCEPTION-002 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-CODE-012"
+    source_section: "异常日志 / 错误码"
+    source_level: "REFERENCE"
+    concise_summary: "错误码 第 12 条：按项目规则 JAVA-COMMON-EXCEPTION-002 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-CODE-013"
+    source_section: "异常日志 / 错误码"
+    source_level: "REFERENCE"
+    concise_summary: "错误码 第 13 条：按项目规则 JAVA-COMMON-EXCEPTION-002 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-HANDLING-001"
+    source_section: "异常日志 / 异常处理"
+    source_level: "MANDATORY"
+    concise_summary: "异常处理 第 1 条：按项目规则 JAVA-COMMON-EXCEPTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-HANDLING-002"
+    source_section: "异常日志 / 异常处理"
+    source_level: "MANDATORY"
+    concise_summary: "异常处理 第 2 条：按项目规则 JAVA-COMMON-EXCEPTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-HANDLING-003"
+    source_section: "异常日志 / 异常处理"
+    source_level: "MANDATORY"
+    concise_summary: "异常处理 第 3 条：按项目规则 JAVA-COMMON-EXCEPTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-HANDLING-004"
+    source_section: "异常日志 / 异常处理"
+    source_level: "MANDATORY"
+    concise_summary: "异常处理 第 4 条：按项目规则 JAVA-COMMON-EXCEPTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-HANDLING-005"
+    source_section: "异常日志 / 异常处理"
+    source_level: "MANDATORY"
+    concise_summary: "异常处理 第 5 条：按项目规则 JAVA-COMMON-EXCEPTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-HANDLING-006"
+    source_section: "异常日志 / 异常处理"
+    source_level: "MANDATORY"
+    concise_summary: "异常处理 第 6 条：按项目规则 JAVA-COMMON-EXCEPTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-HANDLING-007"
+    source_section: "异常日志 / 异常处理"
+    source_level: "MANDATORY"
+    concise_summary: "异常处理 第 7 条：按项目规则 JAVA-COMMON-EXCEPTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-HANDLING-008"
+    source_section: "异常日志 / 异常处理"
+    source_level: "MANDATORY"
+    concise_summary: "异常处理 第 8 条：按项目规则 JAVA-COMMON-EXCEPTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-HANDLING-009"
+    source_section: "异常日志 / 异常处理"
+    source_level: "MANDATORY"
+    concise_summary: "异常处理 第 9 条：按项目规则 JAVA-COMMON-EXCEPTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-HANDLING-010"
+    source_section: "异常日志 / 异常处理"
+    source_level: "RECOMMENDED"
+    concise_summary: "异常处理 第 10 条：按项目规则 JAVA-COMMON-EXCEPTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-HANDLING-011"
+    source_section: "异常日志 / 异常处理"
+    source_level: "RECOMMENDED"
+    concise_summary: "异常处理 第 11 条：按项目规则 JAVA-COMMON-EXCEPTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-HANDLING-012"
+    source_section: "异常日志 / 异常处理"
+    source_level: "RECOMMENDED"
+    concise_summary: "异常处理 第 12 条：按项目规则 JAVA-COMMON-EXCEPTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ERR-HANDLING-013"
+    source_section: "异常日志 / 异常处理"
+    source_level: "REFERENCE"
+    concise_summary: "异常处理 第 13 条：按项目规则 JAVA-COMMON-EXCEPTION-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-EXCEPTION-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-LOG-001"
+    source_section: "异常日志 / 日志规约"
+    source_level: "MANDATORY"
+    concise_summary: "日志规约 第 1 条：按项目规则 JAVA-COMMON-LOG-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-LOG-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-LOG-002"
+    source_section: "异常日志 / 日志规约"
+    source_level: "MANDATORY"
+    concise_summary: "日志规约 第 2 条：按项目规则 JAVA-COMMON-LOG-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-LOG-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-LOG-003"
+    source_section: "异常日志 / 日志规约"
+    source_level: "MANDATORY"
+    concise_summary: "日志规约 第 3 条：按项目规则 JAVA-COMMON-LOG-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-LOG-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-LOG-004"
+    source_section: "异常日志 / 日志规约"
+    source_level: "MANDATORY"
+    concise_summary: "日志规约 第 4 条：按项目规则 JAVA-COMMON-LOG-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-LOG-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-LOG-005"
+    source_section: "异常日志 / 日志规约"
+    source_level: "MANDATORY"
+    concise_summary: "日志规约 第 5 条：按项目规则 JAVA-COMMON-LOG-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-LOG-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-LOG-006"
+    source_section: "异常日志 / 日志规约"
+    source_level: "MANDATORY"
+    concise_summary: "日志规约 第 6 条：按项目规则 JAVA-COMMON-LOG-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-LOG-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-LOG-007"
+    source_section: "异常日志 / 日志规约"
+    source_level: "MANDATORY"
+    concise_summary: "日志规约 第 7 条：按项目规则 JAVA-COMMON-LOG-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-LOG-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-LOG-008"
+    source_section: "异常日志 / 日志规约"
+    source_level: "MANDATORY"
+    concise_summary: "日志规约 第 8 条：按项目规则 JAVA-COMMON-LOG-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-LOG-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-LOG-009"
+    source_section: "异常日志 / 日志规约"
+    source_level: "MANDATORY"
+    concise_summary: "日志规约 第 9 条：按项目规则 JAVA-COMMON-LOG-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-LOG-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-LOG-010"
+    source_section: "异常日志 / 日志规约"
+    source_level: "MANDATORY"
+    concise_summary: "日志规约 第 10 条：按项目规则 JAVA-COMMON-LOG-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-LOG-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-LOG-011"
+    source_section: "异常日志 / 日志规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "日志规约 第 11 条：按项目规则 JAVA-COMMON-LOG-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-LOG-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-LOG-012"
+    source_section: "异常日志 / 日志规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "日志规约 第 12 条：按项目规则 JAVA-COMMON-LOG-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-LOG-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-LOG-013"
+    source_section: "异常日志 / 日志规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "日志规约 第 13 条：按项目规则 JAVA-COMMON-LOG-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-LOG-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-TEST-001"
+    source_section: "单元测试 / 单元测试"
+    source_level: "MANDATORY"
+    concise_summary: "单元测试 第 1 条：按项目规则 JAVA-COMMON-TEST-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TEST-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-TEST-002"
+    source_section: "单元测试 / 单元测试"
+    source_level: "MANDATORY"
+    concise_summary: "单元测试 第 2 条：按项目规则 JAVA-COMMON-TEST-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TEST-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-TEST-003"
+    source_section: "单元测试 / 单元测试"
+    source_level: "MANDATORY"
+    concise_summary: "单元测试 第 3 条：按项目规则 JAVA-COMMON-TEST-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TEST-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-TEST-004"
+    source_section: "单元测试 / 单元测试"
+    source_level: "MANDATORY"
+    concise_summary: "单元测试 第 4 条：按项目规则 JAVA-COMMON-TEST-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TEST-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-TEST-005"
+    source_section: "单元测试 / 单元测试"
+    source_level: "MANDATORY"
+    concise_summary: "单元测试 第 5 条：按项目规则 JAVA-COMMON-TEST-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TEST-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-TEST-006"
+    source_section: "单元测试 / 单元测试"
+    source_level: "MANDATORY"
+    concise_summary: "单元测试 第 6 条：按项目规则 JAVA-COMMON-TEST-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TEST-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-TEST-007"
+    source_section: "单元测试 / 单元测试"
+    source_level: "MANDATORY"
+    concise_summary: "单元测试 第 7 条：按项目规则 JAVA-COMMON-TEST-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TEST-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-TEST-008"
+    source_section: "单元测试 / 单元测试"
+    source_level: "RECOMMENDED"
+    concise_summary: "单元测试 第 8 条：按项目规则 JAVA-COMMON-TEST-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TEST-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-TEST-009"
+    source_section: "单元测试 / 单元测试"
+    source_level: "RECOMMENDED"
+    concise_summary: "单元测试 第 9 条：按项目规则 JAVA-COMMON-TEST-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TEST-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-TEST-010"
+    source_section: "单元测试 / 单元测试"
+    source_level: "RECOMMENDED"
+    concise_summary: "单元测试 第 10 条：按项目规则 JAVA-COMMON-TEST-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TEST-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-TEST-011"
+    source_section: "单元测试 / 单元测试"
+    source_level: "RECOMMENDED"
+    concise_summary: "单元测试 第 11 条：按项目规则 JAVA-COMMON-TEST-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TEST-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-TEST-012"
+    source_section: "单元测试 / 单元测试"
+    source_level: "RECOMMENDED"
+    concise_summary: "单元测试 第 12 条：按项目规则 JAVA-COMMON-TEST-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TEST-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-TEST-013"
+    source_section: "单元测试 / 单元测试"
+    source_level: "RECOMMENDED"
+    concise_summary: "单元测试 第 13 条：按项目规则 JAVA-COMMON-TEST-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TEST-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-TEST-014"
+    source_section: "单元测试 / 单元测试"
+    source_level: "RECOMMENDED"
+    concise_summary: "单元测试 第 14 条：按项目规则 JAVA-COMMON-TEST-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TEST-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-TEST-015"
+    source_section: "单元测试 / 单元测试"
+    source_level: "REFERENCE"
+    concise_summary: "单元测试 第 15 条：按项目规则 JAVA-COMMON-TEST-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TEST-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-TEST-016"
+    source_section: "单元测试 / 单元测试"
+    source_level: "REFERENCE"
+    concise_summary: "单元测试 第 16 条：按项目规则 JAVA-COMMON-TEST-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-TEST-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-SEC-001"
+    source_section: "安全规约 / 安全规约"
+    source_level: "MANDATORY"
+    concise_summary: "安全规约 第 1 条：按项目规则 JAVA-COMMON-SECURITY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-SECURITY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-SEC-002"
+    source_section: "安全规约 / 安全规约"
+    source_level: "MANDATORY"
+    concise_summary: "安全规约 第 2 条：按项目规则 JAVA-COMMON-SECURITY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-SECURITY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-SEC-003"
+    source_section: "安全规约 / 安全规约"
+    source_level: "MANDATORY"
+    concise_summary: "安全规约 第 3 条：按项目规则 JAVA-COMMON-SECURITY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-SECURITY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-SEC-004"
+    source_section: "安全规约 / 安全规约"
+    source_level: "MANDATORY"
+    concise_summary: "安全规约 第 4 条：按项目规则 JAVA-COMMON-SECURITY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-SECURITY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-SEC-005"
+    source_section: "安全规约 / 安全规约"
+    source_level: "MANDATORY"
+    concise_summary: "安全规约 第 5 条：按项目规则 JAVA-COMMON-SECURITY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-SECURITY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-SEC-006"
+    source_section: "安全规约 / 安全规约"
+    source_level: "MANDATORY"
+    concise_summary: "安全规约 第 6 条：按项目规则 JAVA-COMMON-SECURITY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-SECURITY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-SEC-007"
+    source_section: "安全规约 / 安全规约"
+    source_level: "MANDATORY"
+    concise_summary: "安全规约 第 7 条：按项目规则 JAVA-COMMON-SECURITY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-SECURITY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-SEC-008"
+    source_section: "安全规约 / 安全规约"
+    source_level: "MANDATORY"
+    concise_summary: "安全规约 第 8 条：按项目规则 JAVA-COMMON-SECURITY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-SECURITY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-SEC-009"
+    source_section: "安全规约 / 安全规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "安全规约 第 9 条：按项目规则 JAVA-COMMON-SECURITY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-SECURITY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-MYSQL-DDL-001"
+    source_section: "MySQL 数据库 / 建表规约"
+    source_level: "MANDATORY"
+    concise_summary: "建表规约 第 1 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-DDL-002"
+    source_section: "MySQL 数据库 / 建表规约"
+    source_level: "MANDATORY"
+    concise_summary: "建表规约 第 2 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-DDL-003"
+    source_section: "MySQL 数据库 / 建表规约"
+    source_level: "MANDATORY"
+    concise_summary: "建表规约 第 3 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-DDL-004"
+    source_section: "MySQL 数据库 / 建表规约"
+    source_level: "MANDATORY"
+    concise_summary: "建表规约 第 4 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-DDL-005"
+    source_section: "MySQL 数据库 / 建表规约"
+    source_level: "MANDATORY"
+    concise_summary: "建表规约 第 5 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-DDL-006"
+    source_section: "MySQL 数据库 / 建表规约"
+    source_level: "MANDATORY"
+    concise_summary: "建表规约 第 6 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-DDL-007"
+    source_section: "MySQL 数据库 / 建表规约"
+    source_level: "MANDATORY"
+    concise_summary: "建表规约 第 7 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-DDL-008"
+    source_section: "MySQL 数据库 / 建表规约"
+    source_level: "MANDATORY"
+    concise_summary: "建表规约 第 8 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-DDL-009"
+    source_section: "MySQL 数据库 / 建表规约"
+    source_level: "MANDATORY"
+    concise_summary: "建表规约 第 9 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-DDL-010"
+    source_section: "MySQL 数据库 / 建表规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "建表规约 第 10 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-DDL-011"
+    source_section: "MySQL 数据库 / 建表规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "建表规约 第 11 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-DDL-012"
+    source_section: "MySQL 数据库 / 建表规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "建表规约 第 12 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-DDL-013"
+    source_section: "MySQL 数据库 / 建表规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "建表规约 第 13 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-DDL-014"
+    source_section: "MySQL 数据库 / 建表规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "建表规约 第 14 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-DDL-015"
+    source_section: "MySQL 数据库 / 建表规约"
+    source_level: "REFERENCE"
+    concise_summary: "建表规约 第 15 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-IDX-001"
+    source_section: "MySQL 数据库 / 索引规约"
+    source_level: "MANDATORY"
+    concise_summary: "索引规约 第 1 条：按项目规则 JAVA-COMMON-DB-002 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-IDX-002"
+    source_section: "MySQL 数据库 / 索引规约"
+    source_level: "MANDATORY"
+    concise_summary: "索引规约 第 2 条：按项目规则 JAVA-COMMON-DB-002 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-IDX-003"
+    source_section: "MySQL 数据库 / 索引规约"
+    source_level: "MANDATORY"
+    concise_summary: "索引规约 第 3 条：按项目规则 JAVA-COMMON-DB-002 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-IDX-004"
+    source_section: "MySQL 数据库 / 索引规约"
+    source_level: "MANDATORY"
+    concise_summary: "索引规约 第 4 条：按项目规则 JAVA-COMMON-DB-002 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-IDX-005"
+    source_section: "MySQL 数据库 / 索引规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "索引规约 第 5 条：按项目规则 JAVA-COMMON-DB-002 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-IDX-006"
+    source_section: "MySQL 数据库 / 索引规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "索引规约 第 6 条：按项目规则 JAVA-COMMON-DB-002 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-IDX-007"
+    source_section: "MySQL 数据库 / 索引规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "索引规约 第 7 条：按项目规则 JAVA-COMMON-DB-002 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-IDX-008"
+    source_section: "MySQL 数据库 / 索引规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "索引规约 第 8 条：按项目规则 JAVA-COMMON-DB-002 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-IDX-009"
+    source_section: "MySQL 数据库 / 索引规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "索引规约 第 9 条：按项目规则 JAVA-COMMON-DB-002 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-IDX-010"
+    source_section: "MySQL 数据库 / 索引规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "索引规约 第 10 条：按项目规则 JAVA-COMMON-DB-002 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-IDX-011"
+    source_section: "MySQL 数据库 / 索引规约"
+    source_level: "REFERENCE"
+    concise_summary: "索引规约 第 11 条：按项目规则 JAVA-COMMON-DB-002 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-SQL-001"
+    source_section: "MySQL 数据库 / SQL 语句"
+    source_level: "MANDATORY"
+    concise_summary: "SQL 语句 第 1 条：按项目规则 JAVA-COMMON-SQL-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-SQL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-SQL-002"
+    source_section: "MySQL 数据库 / SQL 语句"
+    source_level: "MANDATORY"
+    concise_summary: "SQL 语句 第 2 条：按项目规则 JAVA-COMMON-SQL-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-SQL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-SQL-003"
+    source_section: "MySQL 数据库 / SQL 语句"
+    source_level: "MANDATORY"
+    concise_summary: "SQL 语句 第 3 条：按项目规则 JAVA-COMMON-SQL-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-SQL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-SQL-004"
+    source_section: "MySQL 数据库 / SQL 语句"
+    source_level: "MANDATORY"
+    concise_summary: "SQL 语句 第 4 条：按项目规则 JAVA-COMMON-SQL-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-SQL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-SQL-005"
+    source_section: "MySQL 数据库 / SQL 语句"
+    source_level: "MANDATORY"
+    concise_summary: "SQL 语句 第 5 条：按项目规则 JAVA-COMMON-SQL-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-SQL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-SQL-006"
+    source_section: "MySQL 数据库 / SQL 语句"
+    source_level: "MANDATORY"
+    concise_summary: "SQL 语句 第 6 条：按项目规则 JAVA-COMMON-SQL-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-SQL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-SQL-007"
+    source_section: "MySQL 数据库 / SQL 语句"
+    source_level: "MANDATORY"
+    concise_summary: "SQL 语句 第 7 条：按项目规则 JAVA-COMMON-SQL-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-SQL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-SQL-008"
+    source_section: "MySQL 数据库 / SQL 语句"
+    source_level: "MANDATORY"
+    concise_summary: "SQL 语句 第 8 条：按项目规则 JAVA-COMMON-SQL-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-SQL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-SQL-009"
+    source_section: "MySQL 数据库 / SQL 语句"
+    source_level: "MANDATORY"
+    concise_summary: "SQL 语句 第 9 条：按项目规则 JAVA-COMMON-SQL-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-SQL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-SQL-010"
+    source_section: "MySQL 数据库 / SQL 语句"
+    source_level: "RECOMMENDED"
+    concise_summary: "SQL 语句 第 10 条：按项目规则 JAVA-COMMON-SQL-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-SQL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-SQL-011"
+    source_section: "MySQL 数据库 / SQL 语句"
+    source_level: "RECOMMENDED"
+    concise_summary: "SQL 语句 第 11 条：按项目规则 JAVA-COMMON-SQL-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-SQL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-SQL-012"
+    source_section: "MySQL 数据库 / SQL 语句"
+    source_level: "REFERENCE"
+    concise_summary: "SQL 语句 第 12 条：按项目规则 JAVA-COMMON-SQL-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-SQL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-SQL-013"
+    source_section: "MySQL 数据库 / SQL 语句"
+    source_level: "REFERENCE"
+    concise_summary: "SQL 语句 第 13 条：按项目规则 JAVA-COMMON-SQL-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-SQL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-ORM-001"
+    source_section: "MySQL 数据库 / ORM 映射"
+    source_level: "MANDATORY"
+    concise_summary: "ORM 映射 第 1 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-ORM-002"
+    source_section: "MySQL 数据库 / ORM 映射"
+    source_level: "MANDATORY"
+    concise_summary: "ORM 映射 第 2 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-ORM-003"
+    source_section: "MySQL 数据库 / ORM 映射"
+    source_level: "MANDATORY"
+    concise_summary: "ORM 映射 第 3 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-ORM-004"
+    source_section: "MySQL 数据库 / ORM 映射"
+    source_level: "MANDATORY"
+    concise_summary: "ORM 映射 第 4 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-ORM-005"
+    source_section: "MySQL 数据库 / ORM 映射"
+    source_level: "MANDATORY"
+    concise_summary: "ORM 映射 第 5 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-ORM-006"
+    source_section: "MySQL 数据库 / ORM 映射"
+    source_level: "MANDATORY"
+    concise_summary: "ORM 映射 第 6 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-ORM-007"
+    source_section: "MySQL 数据库 / ORM 映射"
+    source_level: "MANDATORY"
+    concise_summary: "ORM 映射 第 7 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-ORM-008"
+    source_section: "MySQL 数据库 / ORM 映射"
+    source_level: "RECOMMENDED"
+    concise_summary: "ORM 映射 第 8 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-ORM-009"
+    source_section: "MySQL 数据库 / ORM 映射"
+    source_level: "REFERENCE"
+    concise_summary: "ORM 映射 第 9 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-MYSQL-ORM-010"
+    source_section: "MySQL 数据库 / ORM 映射"
+    source_level: "REFERENCE"
+    concise_summary: "ORM 映射 第 10 条：按项目规则 JAVA-COMMON-DB-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-DB-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "原规则含 MySQL 专有语义；仅保留可迁移意图并改写为 PostgreSQL、既有 Migration 与仓库事实。"
+  - source_rule_id: "ALI-SG-ENG-LAYER-001"
+    source_section: "工程结构 / 应用分层"
+    source_level: "RECOMMENDED"
+    concise_summary: "应用分层 第 1 条：按项目规则 JAVA-COMMON-ARCH-002 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按仓库模块边界和替换语义改写，拒绝机械式 Service/DAO 接口与 Impl。"
+  - source_rule_id: "ALI-SG-ENG-LAYER-002"
+    source_section: "工程结构 / 应用分层"
+    source_level: "REFERENCE"
+    concise_summary: "应用分层 第 2 条：按项目规则 JAVA-COMMON-ARCH-002 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按仓库模块边界和替换语义改写，拒绝机械式 Service/DAO 接口与 Impl。"
+  - source_rule_id: "ALI-SG-ENG-LAYER-003"
+    source_section: "工程结构 / 应用分层"
+    source_level: "REFERENCE"
+    concise_summary: "应用分层 第 3 条：按项目规则 JAVA-COMMON-ARCH-002 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-002"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按仓库模块边界和替换语义改写，拒绝机械式 Service/DAO 接口与 Impl。"
+  - source_rule_id: "ALI-SG-ENG-DEP-001"
+    source_section: "工程结构 / 二方库依赖"
+    source_level: "MANDATORY"
+    concise_summary: "二方库依赖 第 1 条：按项目规则 JAVA-COMMON-DEPENDENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DEPENDENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ENG-DEP-002"
+    source_section: "工程结构 / 二方库依赖"
+    source_level: "MANDATORY"
+    concise_summary: "二方库依赖 第 2 条：按项目规则 JAVA-COMMON-DEPENDENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DEPENDENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ENG-DEP-003"
+    source_section: "工程结构 / 二方库依赖"
+    source_level: "MANDATORY"
+    concise_summary: "二方库依赖 第 3 条：按项目规则 JAVA-COMMON-DEPENDENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DEPENDENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ENG-DEP-004"
+    source_section: "工程结构 / 二方库依赖"
+    source_level: "MANDATORY"
+    concise_summary: "二方库依赖 第 4 条：按项目规则 JAVA-COMMON-DEPENDENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DEPENDENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ENG-DEP-005"
+    source_section: "工程结构 / 二方库依赖"
+    source_level: "MANDATORY"
+    concise_summary: "二方库依赖 第 5 条：按项目规则 JAVA-COMMON-DEPENDENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DEPENDENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ENG-DEP-006"
+    source_section: "工程结构 / 二方库依赖"
+    source_level: "MANDATORY"
+    concise_summary: "二方库依赖 第 6 条：按项目规则 JAVA-COMMON-DEPENDENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DEPENDENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ENG-DEP-007"
+    source_section: "工程结构 / 二方库依赖"
+    source_level: "MANDATORY"
+    concise_summary: "二方库依赖 第 7 条：按项目规则 JAVA-COMMON-DEPENDENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DEPENDENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ENG-DEP-008"
+    source_section: "工程结构 / 二方库依赖"
+    source_level: "RECOMMENDED"
+    concise_summary: "二方库依赖 第 8 条：按项目规则 JAVA-COMMON-DEPENDENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DEPENDENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ENG-DEP-009"
+    source_section: "工程结构 / 二方库依赖"
+    source_level: "RECOMMENDED"
+    concise_summary: "二方库依赖 第 9 条：按项目规则 JAVA-COMMON-DEPENDENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DEPENDENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ENG-DEP-010"
+    source_section: "工程结构 / 二方库依赖"
+    source_level: "RECOMMENDED"
+    concise_summary: "二方库依赖 第 10 条：按项目规则 JAVA-COMMON-DEPENDENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DEPENDENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ENG-DEP-011"
+    source_section: "工程结构 / 二方库依赖"
+    source_level: "RECOMMENDED"
+    concise_summary: "二方库依赖 第 11 条：按项目规则 JAVA-COMMON-DEPENDENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DEPENDENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ENG-DEP-012"
+    source_section: "工程结构 / 二方库依赖"
+    source_level: "REFERENCE"
+    concise_summary: "二方库依赖 第 12 条：按项目规则 JAVA-COMMON-DEPENDENCY-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-DEPENDENCY-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-ENG-SERVER-001"
+    source_section: "工程结构 / 服务器"
+    source_level: "RECOMMENDED"
+    concise_summary: "服务器 第 1 条：按项目规则 JAVA-COMMON-EXTERNAL-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-EXTERNAL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按现有 CI、部署边界和环境隔离改写，不直接采用外部服务器默认值。"
+  - source_rule_id: "ALI-SG-ENG-SERVER-002"
+    source_section: "工程结构 / 服务器"
+    source_level: "RECOMMENDED"
+    concise_summary: "服务器 第 2 条：按项目规则 JAVA-COMMON-EXTERNAL-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-EXTERNAL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按现有 CI、部署边界和环境隔离改写，不直接采用外部服务器默认值。"
+  - source_rule_id: "ALI-SG-ENG-SERVER-003"
+    source_section: "工程结构 / 服务器"
+    source_level: "RECOMMENDED"
+    concise_summary: "服务器 第 3 条：按项目规则 JAVA-COMMON-EXTERNAL-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-EXTERNAL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按现有 CI、部署边界和环境隔离改写，不直接采用外部服务器默认值。"
+  - source_rule_id: "ALI-SG-ENG-SERVER-004"
+    source_section: "工程结构 / 服务器"
+    source_level: "RECOMMENDED"
+    concise_summary: "服务器 第 4 条：按项目规则 JAVA-COMMON-EXTERNAL-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-EXTERNAL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按现有 CI、部署边界和环境隔离改写，不直接采用外部服务器默认值。"
+  - source_rule_id: "ALI-SG-ENG-SERVER-005"
+    source_section: "工程结构 / 服务器"
+    source_level: "REFERENCE"
+    concise_summary: "服务器 第 5 条：按项目规则 JAVA-COMMON-EXTERNAL-001 进行适配评审。"
+    disposition: "MODIFIED"
+    project_rule_ids: ["JAVA-COMMON-EXTERNAL-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "按现有 CI、部署边界和环境隔离改写，不直接采用外部服务器默认值。"
+  - source_rule_id: "ALI-SG-DESIGN-001"
+    source_section: "设计规约 / 设计规约"
+    source_level: "MANDATORY"
+    concise_summary: "设计规约 第 1 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-DESIGN-002"
+    source_section: "设计规约 / 设计规约"
+    source_level: "MANDATORY"
+    concise_summary: "设计规约 第 2 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-DESIGN-003"
+    source_section: "设计规约 / 设计规约"
+    source_level: "MANDATORY"
+    concise_summary: "设计规约 第 3 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-DESIGN-004"
+    source_section: "设计规约 / 设计规约"
+    source_level: "MANDATORY"
+    concise_summary: "设计规约 第 4 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-DESIGN-005"
+    source_section: "设计规约 / 设计规约"
+    source_level: "MANDATORY"
+    concise_summary: "设计规约 第 5 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-DESIGN-006"
+    source_section: "设计规约 / 设计规约"
+    source_level: "MANDATORY"
+    concise_summary: "设计规约 第 6 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-DESIGN-007"
+    source_section: "设计规约 / 设计规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "设计规约 第 7 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-DESIGN-008"
+    source_section: "设计规约 / 设计规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "设计规约 第 8 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-DESIGN-009"
+    source_section: "设计规约 / 设计规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "设计规约 第 9 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-DESIGN-010"
+    source_section: "设计规约 / 设计规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "设计规约 第 10 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-DESIGN-011"
+    source_section: "设计规约 / 设计规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "设计规约 第 11 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-DESIGN-012"
+    source_section: "设计规约 / 设计规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "设计规约 第 12 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-DESIGN-013"
+    source_section: "设计规约 / 设计规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "设计规约 第 13 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-DESIGN-014"
+    source_section: "设计规约 / 设计规约"
+    source_level: "RECOMMENDED"
+    concise_summary: "设计规约 第 14 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-DESIGN-015"
+    source_section: "设计规约 / 设计规约"
+    source_level: "REFERENCE"
+    concise_summary: "设计规约 第 15 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-DESIGN-016"
+    source_section: "设计规约 / 设计规约"
+    source_level: "REFERENCE"
+    concise_summary: "设计规约 第 16 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-DESIGN-017"
+    source_section: "设计规约 / 设计规约"
+    source_level: "REFERENCE"
+    concise_summary: "设计规约 第 17 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-DESIGN-018"
+    source_section: "设计规约 / 设计规约"
+    source_level: "REFERENCE"
+    concise_summary: "设计规约 第 18 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"
+  - source_rule_id: "ALI-SG-DESIGN-019"
+    source_section: "设计规约 / 设计规约"
+    source_level: "REFERENCE"
+    concise_summary: "设计规约 第 19 条：按项目规则 JAVA-COMMON-ARCH-001 进行适配评审。"
+    disposition: "ADOPTED"
+    project_rule_ids: ["JAVA-COMMON-ARCH-001"]
+    applies_to: ["PRODUCTION", "TEST"]
+    enforcement:
+      mode: "REVIEW"
+      status: "DOCUMENTED"
+      implementation: null
+    rationale: "与 Java 21、项目合同和现有工程模式兼容，作为项目规则摘要采纳。"

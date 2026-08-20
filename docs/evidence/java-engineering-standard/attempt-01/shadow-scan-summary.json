@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0.0",
+  "checker_version": "1.0.0-powershell",
+  "result": "VIOLATION_FOUND",
+  "current_violation_count": 144,
+  "baseline_violation_count": 144,
+  "new_violation_count": 0,
+  "configuration_sha256": "36ee2c9eaabc9028599b66f5d8e14660eb8c7c6e87eaa923fac8b92f15f9aafa",
+  "report_sha256_run_1": "58cc07ceab209425dbdafe71f7b67ddb8a2440d808aa489c4915162d344317d3",
+  "report_sha256_run_2": "58cc07ceab209425dbdafe71f7b67ddb8a2440d808aa489c4915162d344317d3",
+  "deterministic": true,
+  "architecture_scope": "docs/standards/java/java-shadow-scope.json",
+  "business_java_modified_for_baseline": false
+}

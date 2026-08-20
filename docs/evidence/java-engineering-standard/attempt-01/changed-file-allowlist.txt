@@ -1,0 +1,6 @@
+.github/workflows/ci.yml
+AGENTS.md
+.agents/skills/nq-java-engineering-standard/**
+docs/standards/java/**
+scripts/java-standard/**
+docs/evidence/java-engineering-standard/attempt-01/**

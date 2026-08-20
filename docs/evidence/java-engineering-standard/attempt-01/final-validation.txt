@@ -1,0 +1,23 @@
+governance_checker=PASS
+source_rule_count=308
+mapping_catalog_rule_count=22
+documented_project_rule_count=65
+exception_count=0
+shadow_scan=VIOLATION_FOUND / BASELINE=144 / NEW=0
+shadow_determinism=PASS / RUN1_HASH_EQUALS_RUN2_HASH
+architecture_scope=PASS / CURRENT_MODULE_FACTS_DRIVEN
+targeted_archunit=PASS / 24 TESTS / 0 FAILURES / 0 ERRORS / 0 SKIPPED
+full_maven_test=FAIL / PRE_EXISTING_MIGRATION_CHECKSUM_DRIFT
+full_maven_failure_test=PilotScopePrerequisiteFactModelMigrationContractTest.shouldKeepReviewedMigrationChecksumStable
+full_maven_expected_checksum=1c0e486db0f3db4cdf250cb99ab0ed1e289f42d1ed522981272ee8b4c4da25e3
+full_maven_actual_checksum=f32eaf8eb333739020a1bdaac49471bc56d245a3aa5468ec108051b83a2d7ab4
+failure_scope_diff=EMPTY / MIGRATION_AND_TEST_UNMODIFIED
+git_diff_check=PASS
+allowlist_verification=PASS
+symlink_verification=PASS
+secret_scan=PASS
+absolute_path_scan=PASS
+generic_yaml_parser=NOT_RUN / PYTHON_SHIM_INVALID_AND_BUNDLED_PYTHON_HAS_NO_PYYAML
+project_schema_checker=PASS
+remote_ci=REMOTE_CI_NOT_RUN
+decision=BLOCKED / VALIDATION_REGRESSION

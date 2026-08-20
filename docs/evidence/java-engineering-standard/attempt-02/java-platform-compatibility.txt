@@ -1,0 +1,17 @@
+compiler_release=21
+records=SUPPORTED_WITH_DOMAIN_IDENTITY_BOUNDARY
+sealed_hierarchy=SUPPORTED_FOR_TRUE_CLOSED_WORLD_ONLY
+instanceof_pattern=SUPPORTED
+pattern_switch=SUPPORTED / EXHAUSTIVENESS_REQUIRED
+record_patterns=SUPPORTED
+switch_expression=SUPPORTED
+text_blocks=SUPPORTED
+local_var=SUPPORTED_WHEN_SEMANTICS_REMAIN_CLEAR
+stream_to_list=SUPPORTED / UNMODIFIABLE_ASSUMPTION_FORBIDDEN
+copy_factories=SUPPORTED
+sequenced_collections=SUPPORTED
+preview_features=DISABLED / FORBIDDEN_WITHOUT_SEPARATE_AUTHORITY
+virtual_threads=AVAILABLE_BUT_NOT_ENABLED_OR_DEFAULT
+common_pool_async=SHADOW_RULE
+direct_system_time=SHADOW_RULE_IN_DOMAIN_APPLICATION_SCOPE
+compatibility=PASS
