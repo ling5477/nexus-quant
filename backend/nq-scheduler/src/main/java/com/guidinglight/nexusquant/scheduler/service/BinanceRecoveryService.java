@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
@@ -37,6 +38,12 @@ import org.springframework.stereotype.Component;
  * 当前明确只支持手动 runOnce，不引入新的启动/定时副作用。
  */
 @Component
+@ConditionalOnProperty(
+        prefix = "nq.runtime.trading-components",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = false
+)
 public class BinanceRecoveryService {
 
     private static final int DEFAULT_LIMIT = 500;
@@ -167,4 +174,3 @@ public class BinanceRecoveryService {
         eventPublisherPort.append(TopicNames.AUDIT_EVENT_V1, envelope);
     }
 }
-

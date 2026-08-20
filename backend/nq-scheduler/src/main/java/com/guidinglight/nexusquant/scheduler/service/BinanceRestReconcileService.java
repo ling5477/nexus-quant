@@ -30,6 +30,7 @@ import java.util.UUID;
 
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,12 @@ import org.slf4j.LoggerFactory;
  * adapter-binance 与本服务内，避免 core/ledger/risk 出现 venue 分支。
  */
 @Component
+@ConditionalOnProperty(
+        prefix = "nq.runtime.trading-components",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = false
+)
 public class BinanceRestReconcileService {
 
     private static final Logger log = LoggerFactory.getLogger(BinanceRestReconcileService.class);
@@ -375,4 +382,3 @@ public class BinanceRestReconcileService {
         return status == OrderStatus.FILLED || status == OrderStatus.CANCELLED || status == OrderStatus.REJECTED;
     }
 }
-

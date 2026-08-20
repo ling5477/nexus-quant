@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
@@ -35,6 +36,12 @@ import org.springframework.stereotype.Component;
  * 但同步器仍必须复用 core 的状态机与 ledger 的幂等能力，不能直接改 orders 或直接写账本表。
  */
 @Component
+@ConditionalOnProperty(
+        prefix = "nq.runtime.trading-components",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = false
+)
 public class OkxRestReconcileService {
 
     private static final String SOURCE = "nq-scheduler.okx-rest-reconcile";
@@ -370,4 +377,3 @@ public class OkxRestReconcileService {
         eventPublisherPort.append(TopicNames.TRADE_EVENT_V1, envelope);
     }
 }
-

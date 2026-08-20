@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -55,6 +56,12 @@ public class ExchangeAdapterConfiguration {
      */
     @Bean
     @Profile("!gatew & !gatew-okx-readonly & !okx-private-readonly-diagnostics & !scoped-okx-private-readonly & !worker-deployment-admission")
+    @ConditionalOnProperty(
+            prefix = "nq.runtime.trading-components",
+            name = "enabled",
+            havingValue = "true",
+            matchIfMissing = false
+    )
     public OkxExchangeAdapter okxTradingAdapter(
             @Value("${nq.okx.adapter.stub-on-bootstrap-failure:false}") boolean stubOnBootstrapFailure,
             AdapterReadinessService readinessService
@@ -78,12 +85,24 @@ public class ExchangeAdapterConfiguration {
      */
     @Bean
     @Profile("!gatew & !gatew-okx-readonly & !okx-private-readonly-diagnostics & !scoped-okx-private-readonly & !worker-deployment-admission")
+    @ConditionalOnProperty(
+            prefix = "nq.runtime.trading-components",
+            name = "enabled",
+            havingValue = "true",
+            matchIfMissing = false
+    )
     public BinanceExchangeAdapter binanceTradingAdapter(AdapterReadinessService readinessService) {
         return new BinanceExchangeAdapter(readinessService);
     }
 
     @Bean
     @Profile("!gatew & !gatew-okx-readonly & !okx-private-readonly-diagnostics & !scoped-okx-private-readonly & !worker-deployment-admission")
+    @ConditionalOnProperty(
+            prefix = "nq.runtime.trading-components",
+            name = "enabled",
+            havingValue = "true",
+            matchIfMissing = false
+    )
     public OkxWsClient okxWsClient() {
         return new OkxWsClient();
     }
@@ -95,6 +114,12 @@ public class ExchangeAdapterConfiguration {
 
     @Bean
     @Profile("!gatew & !gatew-okx-readonly & !okx-private-readonly-diagnostics & !scoped-okx-private-readonly & !worker-deployment-admission")
+    @ConditionalOnProperty(
+            prefix = "nq.runtime.trading-components",
+            name = "enabled",
+            havingValue = "true",
+            matchIfMissing = false
+    )
     public BinanceWsClient binanceWsClient() {
         return new BinanceWsClient();
     }

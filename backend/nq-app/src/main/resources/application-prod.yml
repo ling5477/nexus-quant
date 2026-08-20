@@ -17,6 +17,9 @@ server:
   port: ${NQ_PROD_APP_PORT:8080}
 
 nq:
+  runtime:
+    trading-components:
+      enabled: true
   dh:
     integration1:
       runtime:

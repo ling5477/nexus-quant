@@ -31,6 +31,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.test.context.support.TestPropertySourceUtils;
 
 /**
  * TradingVenueGatewayReadinessRuntimeSmokeTest 是 GateM-4 的消费侧 runtime smoke。
@@ -107,6 +108,10 @@ class TradingVenueGatewayReadinessRuntimeSmokeTest {
 
     private static AnnotationConfigApplicationContext newContext() {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+        TestPropertySourceUtils.addInlinedPropertiesToEnvironment(
+                context,
+                "nq.runtime.trading-components.enabled=true"
+        );
         context.register(ExchangeAdapterConfiguration.class);
         context.refresh();
         return context;

@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
@@ -39,6 +40,12 @@ import org.springframework.stereotype.Component;
  * 因此这里先向 `TradingVenueGateway` 查询统一订单快照，再决定是否继续执行本地成交与记账。
  */
 @Component
+@ConditionalOnProperty(
+        prefix = "nq.runtime.trading-components",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = false
+)
 public class PaperMatchingService {
 
     private static final String SOURCE = "nq-scheduler.paper-matching";
@@ -311,4 +318,3 @@ public class PaperMatchingService {
         return detail;
     }
 }
-

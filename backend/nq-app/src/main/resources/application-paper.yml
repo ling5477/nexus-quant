@@ -4,6 +4,9 @@ spring:
       on-profile: paper
 
 nq:
+  runtime:
+    trading-components:
+      enabled: true
   env-safety:
     # Why: paper profile 只允许受控 Paper Trading，不允许 LIVE、真实 provider、真实 exchange 或外联探活。
     live-enabled: ${NQ_LIVE_ENABLED:false}

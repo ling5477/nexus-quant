@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Objects;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,6 +27,12 @@ import org.springframework.web.bind.annotation.RestController;
  * 这里先提供最小的 catalog 列表与显式 sync 动作，作为多币种主链的正式入口。
  */
 @RestController
+@ConditionalOnProperty(
+        prefix = "nq.runtime.trading-components",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = false
+)
 @RequestMapping("/api/instruments")
 @Tag(name = "Instrument Catalog API", description = "正式 instrument/symbol catalog API")
 public class InstrumentCatalogController {

@@ -17,6 +17,9 @@ server:
   port: ${NQ_APP_PORT:18888}
 
 nq:
+  runtime:
+    trading-components:
+      enabled: true
   account:
     credentials:
       master-key: ${NQ_ACCOUNT_CREDENTIALS_MASTER_KEY}

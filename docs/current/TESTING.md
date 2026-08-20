@@ -14046,3 +14046,129 @@ Review 初始两项 P1 级验收覆盖缺口已由同一 PostgreSQL integration 
 | final docs/diff/boundary validation | PASS（通过） | authority errors=`0`；links=`372 checked / 14 historical warnings / 0 errors`；diff-check通过；allowlist=`4/4`；staged=`0`；产品/migration/STATUS/ROADMAP diff=`0`；ledger removals=`0`；新增内容secret/raw-private/positive-side-effect hits=`0/0/0` |
 
 部署/migration/symlink/systemd reload/restart、credential read、OKX calls、PLACE/CANCEL/TRANSFER/WITHDRAW/BORROW/LEVERAGE、ExecutionIntent/Receipt、worker/exchange mutation、LIVE enable、kill disengage与soak start均为0。Authority保持GateY-6F `NOT_STARTED`。完整证据：[server release blocked attempt-03](evidence/gate-y/NQ-GATEY-6F-EXACT-PILOT-BINDING-AND-READONLY-VERIFICATION-IMPLEMENTATION.attempt-03.md)。
+
+## 2026-08-19 — GateY-6F server read-only runtime composition and deployment contract implementation attempt-01
+
+结论：`PASS / GATEY_6F_SERVER_READONLY_RUNTIME_COMPOSITION_IMPLEMENTED / TRUSTED_OBSERVATION_RUNTIME_BOUND / REAL_MUTATION_RUNTIME_UNBOUND / STARTUP_CREDENTIAL_READ_0 / STARTUP_OKX_CALL_0 / IMMUTABLE_RELEASE_CONTRACT_READY / MIGRATION_CONTRACT_READY / ROLLBACK_HARD_GATE_READY / NO_SERVER_MUTATION / LIVE_DISABLED / KILL_ENGAGED / PENDING_INDEPENDENT_SECURITY_REVIEW`（通过 / server 只读 runtime composition 与部署合同已实现 / 等待独立安全审查）。
+
+- focused Maven：23 modules `BUILD SUCCESS`；新增/相关10 tests，failures/errors/skipped=`0/0/0`。首次命令因 PowerShell 未引用 Maven `-D` 参数而 exit=`1`、未进入编译；修正后通过。
+- final full backend：`mvn -f backend/pom.xml test`；23 modules、319 reports、1546 tests、failures/errors/skipped=`0/0/48`、48.858s、`BUILD SUCCESS`；最后新增validation scheduler profile hard exclusion后重跑。
+- GateY release/deployment contract：PowerShell 5.1/7 各14/14 PASS；含synthetic fat-JAR V1～V41 byte binding/tamper rejection；跨引擎 canonical manifest SHA-256 同为`c8b986ee55deadca4b13671871dd545e87052b70eb82e88c827d8b0c0aad8c01`。
+- GateW frozen regression：34/34 PASS；既有 reproducibility、tamper、JAR/path/CRC/limits 与 dirty exact commit contract未退化。
+- migration inventory：源码实际V1～V41连续、41 files、target=`V41`、inventory SHA-256=`2b6847457a91423f0cbbaed49c3e018f28846a5b94615a169fc5bee67802488b`。
+- builder：当前worktree dirty，按预期`BLOCKED / EXACT_COMMIT_WORKTREE_NOT_CLEAN`；未生成deployable release。server SSH/write/deploy/migration/systemd/symlink、credential/OKX、ExecutionIntent/Receipt、PLACE/CANCEL、LIVE/kill mutation均为0。
+- findings：self-review final P0/P1=`0/0`；deployable build与server backup/restore/migration/activation/health verification后置独立security review、commit/exact-head CI与deployment task。完整证据：[implementation attempt-01](evidence/gate-y/NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-19 — GateY-6F server read-only runtime composition and deployment contract Security Review attempt-01
+
+结论：`FAIL / GATEY_6F_SERVER_READONLY_RUNTIME_COMPOSITION_AND_DEPLOYMENT_CONTRACT_SECURITY_REVIEW_REJECTED / P0_2 / P1_2 / RELEASE_LINK_INTEGRITY_BYPASS / ROLLBACK_EVIDENCE_UNTRUSTED / QUALIFICATION_PRODUCTION_CONTEXT_NOT_BOOTABLE / POSIX_OWNER_MODE_INSTALLATION_CONTRACT_UNENFORCED / NOT_READY_TO_COMMIT`（失败 / 独立安全审查拒绝 / 不可提交）。
+
+- provenance/baseline：implementation expected/actual=`22/22`、missing/extra=`0/0`、staged=0；`HEAD==origin/dev==2605a20e...`；baseline CI run `32041844923` attempt 2、10 jobs全绿。
+- P0 PoC：临时release中的`app/nq-app.jar`为指向release root外文件的`HardLink`，GateY verifier错误返回`PASS / GATEY_READONLY_RELEASE_VERIFIED`；GateW verifier明确拒绝link/reparse。
+- P0 rollback：deployment evaluator仅消费调用者JSON中的compatibility/backup/restore/health布尔值，无backup/restore/Flyway/health proof provenance即可返回READY。
+- P1 full context：完整`NexusQuantApplication`以唯一qualification profile启动，在credential/OKX前因`AdapterInstrumentCatalogSyncService`缺`OkxExchangeAdapter`而失败；轻量context test未覆盖全包component scan。
+- P1 installer：manifest仅声明owner/mode/current，GateY verifier/installer未验证actual POSIX/owner、no-overwrite或atomic current，builder仍返回`deployable=true`。
+- validation：full Maven 23 modules、1546 tests、0 failures/0 errors/48 skipped、50.469s；GateY PS5.1/7各14/14；GateW 34/34；migration V1～V41 continuous；authority errors=0；links 375/14 warnings/0 errors。绿色suite不覆盖上述Finding。
+- boundary：server/credential/OKX/mutation/LIVE/kill side effects均0；GateY-6F保持`NOT_STARTED`。完整证据：[Security Review attempt-01](evidence/gate-y/NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-SECURITY-REVIEW.attempt-01.md)。
+
+## 2026-08-19 — GateY-6F server read-only runtime composition and deployment contract P0/P1 remediation attempt-01
+
+结论：`IMPLEMENTED / GATEY_6F_P0_P1_REMEDIATION_COMPLETE / RELEASE_HARDLINK_BYPASS_CLOSED / ROLLBACK_EVIDENCE_PROVENANCE_ENFORCED / QUALIFICATION_PRODUCTION_CONTEXT_BOOTABLE / LINUX_INSTALLATION_CONTRACT_ENFORCED / P0_0 / P1_0 / PENDING_INDEPENDENT_SECURITY_REVIEW`（已实现 / P0/P1 修复完成 / 等待独立安全审查）。
+
+| Command / check | Result | Scope / environment / known warnings / blocking |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | PASS（通过） | 23 modules、320 reports、1547 tests、failures/errors/skipped=`0/0/48`；首次 full run 的 14 WebMvc failures 已做 RCA 并复跑关闭 |
+| qualification full context + affected web tests | PASS（通过） | `NexusQuantApplication + gatey-readonly-qualification` 真实 component scan；trusted authority=1，Spot provider/TradingAdapter/worker/recovery/scheduler/private WS=0，startup DB/credential/decrypt/OKX=0 |
+| GateY contract / Windows PowerShell 5.1 | PASS（通过） | 22/22；manifest SHA-256=`eae0c8ca638739007adc50ec5b720a103d1b2d2deaafb70f9be9f4abfeece6f1` |
+| GateY contract / PowerShell 7 | PASS（通过） | 22/22；与 PS5.1 manifest hash一致 |
+| disposable Linux canonical verifier | PASS（通过） | 22/22；cached PowerShell Ubuntu image，`--network none` |
+| disposable Linux installer | PASS（通过） | 13/13；root/POSIX/service-user denial/hardlink/symlink/no-overwrite/source independence/atomic current/previous release，`--network none` |
+| GateW frozen regression | PASS（通过） | 34/34；GateW files diff=0 |
+| migration inventory | PASS（通过） | V1～V41、41 files、target V41、inventory SHA-256=`2b6847457a91423f0cbbaed49c3e018f28846a5b94615a169fc5bee67802488b`、migration diff=0 |
+| `git diff --check` | PASS（通过） | exit=0；仅既有 LF→CRLF warnings |
+| current authority | PASS（通过） | errors=0；GateY-6F=`NOT_STARTED` |
+| doc links | PASS（通过） | 361 checked / 14 historical warnings / 0 errors；首次漏传 mandatory `Roots` 参数未执行扫描，修正后通过 |
+| IDE format/problems | UNAVAILABLE（不可用） | 同一 IDE 工具连续超时，按项目降级规则使用 Java 21 compile、full Maven 与 diff check；不阻断 |
+
+验证历史：首次 focused Maven 因 PowerShell 未引用 `-D` 参数而未进入编译；完整 context 依次暴露 maintenance/catalog consumer closure；首次 full Maven 因 controller `@ConditionalOnBean` 影响 WebMvc slice 而 14 failures，改为 qualification-only profile exclusion 后受影响测试及 full Maven 均通过。原 Security Review `FAIL / P0_2 / P1_2` 历史未改写。production/server SSH、部署、migration、backup/restore、systemd/current symlink、credential、OKX、交易、LIVE/kill side effects均为0。完整证据：[P0/P1 remediation attempt-01](evidence/gate-y/NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-P0-P1-REMEDIATION.attempt-01.md)。
+
+## 2026-08-20 — GateY-6F server read-only runtime composition and deployment contract Security Review attempt-02
+
+结论：`FAIL / GATEY_6F_SECURITY_REVIEW_ATTEMPT_02_REJECTED / P0_1 / P1_1 / ROLLBACK_CONTRACT_UNPROVEN / STAGE_SEMANTIC_SECURITY_BOUNDARY_COUPLING / NOT_READY_TO_COMMIT / NO_DEPLOYMENT`（失败 / 独立安全审查拒绝 / 不可提交）。
+
+| Command / check | Result | Scope / environment / blocking |
+| --- | --- | --- |
+| provenance expected set | PASS（通过） | expected/actual=32/32，missing/extra=0/0，staged=0；初始 staged=5 仅为 expected files，已执行精确 unstage，worktree bytes未改 |
+| `mvn -f backend/pom.xml test` | PASS（通过） | 1547 tests，failures/errors/skipped=`0/0/48` |
+| GateY PS5.1 / PS7 | PASS（通过） | 22/22 / 22/22；HardLink、parent traversal、tamper 与 receipt mismatch regression通过 |
+| disposable Linux verifier / installer | PASS（通过） | 22/22 / 13/13，network=none；FIFO reject、service-user current move denied |
+| forged rollback/health receipt PoC | FAIL（阻断） | caller 可调用公开 `New-GateYDeploymentReceipt` 自选 Fields、producer/digest；虚构 compatibility、backup/restore得到 readiness |
+| forged post-activation PoC | FAIL（阻断） | root-owned但未安装/无 current、无真实 health probe 的 release，caller HEALTH receipt 获得 `POST_ACTIVATION_ACCEPTED` |
+| GateW / migration | PASS（通过） | 34/34；V1-V41/41 files/target V41；GateW/migration diff=0 |
+| authority / docs / diff | PASS（通过） | authority errors=0；links=361/14 warnings/0 errors；diff-check=0 |
+
+修正后的 annotation audit 显示 GateY stage string 分散在 production class、profile、error code 与 app/api/scheduler/infra 12 个以上位置；安全隔离依赖手工 negative profile denylist，形成 P1。首次 annotation scan 因 glob 不匹配而全零，未作为证据。完整证据：[Security Review attempt-02](evidence/gate-y/NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-SECURITY-REVIEW.attempt-02.md)。
+
+## 2026-08-20 — GateY-6F server read-only runtime composition and deployment contract P0/P1 remediation attempt-02
+
+结论：`IMPLEMENTED / GATEY_6F_P0_P1_REMEDIATION_ATTEMPT_02_COMPLETE / VERIFIED_RECEIPT_MINTING_AUTHORITY_ENFORCED / CALLER_ASSERTION_TRUST_PATH_REMOVED / CAPABILITY_NEUTRAL_RUNTIME_COMPOSITION_ENFORCED / FAIL_CLOSED_COMPONENT_ASSEMBLY / ORIGINAL_CLOSED_FINDINGS_REGRESSION_GREEN / P0_0 / P1_0 / PENDING_INDEPENDENT_SECURITY_REVIEW`（已实现 / 等待独立安全审查）。
+
+| Command/check | Result | Scope/environment/known warnings/blocking |
+| --- | --- | --- |
+| `mvn -f backend/pom.xml test` | PASS（通过） | 23 modules、320 reports、1548 tests、failures/errors/skipped=`0/0/48`；首次 full run 1 failure/2 errors 已 RCA 为轻量 test context 未显式开启 capability，targeted 3/3 与 full rerun通过 |
+| focused Spring | PASS（通过） | 10/10；`NexusQuantApplication + gatey-readonly-qualification` 启动，trusted authority=1，provider/trading/worker/recovery/business scheduler/private WS=0，startup DB/OKX=0 |
+| GateY PS5.1 / PS7 / disposable Linux | PASS（通过） | 32/32 / 32/32 / 32/32；10 个 receipt forgery attack cases 固化；manifest SHA-256=`f41a69d38fdc61ca324fef4e14aa7886727134810fcc9140fad4890763ba00d5` 一致 |
+| disposable Linux installer | PASS（通过） | 13/13；cached image、`--network none --rm`、productionMutation=false |
+| GateW frozen regression | PASS（通过） | 34/34；GateW diff=0 |
+| migration inventory | PASS（通过） | V1–V41、41 files、target V41、inventory SHA-256=`2b6847457a91423f0cbbaed49c3e018f28846a5b94615a169fc5bee67802488b`、diff=0 |
+| authority / diff | PASS（通过） | authority errors=0；`git diff --check` exit=0，仅 LF→CRLF warning |
+
+未执行 production/server SSH、deploy、migration、backup/restore、JVM health probe、credential、OKX/Binance、交易、LIVE 或 kill disengage；这些项目不得解读为通过。首次 focused Maven 因未引用 `-D` 参数未进入测试、首次 P0 PS7 因 Windows ACL owner JSON 表示失败、Docker engine 初始未运行，均已 RCA 并复跑关闭。完整证据：[P0/P1 remediation attempt-02](evidence/gate-y/NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-P0-P1-REMEDIATION.attempt-02.md)。
+
+## 2026-08-20 — GateY-6F server read-only runtime composition and deployment contract Security Review attempt-03
+
+结论：`FAIL / GATEY_6F_SECURITY_REVIEW_ATTEMPT_03_REJECTED / P0_1 / CALLER_CONTROLLED_VERIFIED_RECEIPT_MINTING_REMAINS / NOT_READY_TO_COMMIT / NO_DEPLOYMENT`（失败 / 独立安全审查拒绝）。
+
+| Command/check | Result | Scope/environment/blocking |
+| --- | --- | --- |
+| exported-command receipt PoC | FAIL（阻断） | caller-created temporary Flyway/backup JSON 经 public `Test-GateY*` verifier 后，public `Assert-GateYRollbackContract` 返回 `VERIFIED_BACKUP_AND_RESTORE_REQUIRED`；无 server/credential/network/mutation |
+| module-scope mint PoC | FAIL（阻断） | PowerShell module-private function 不构成 authority boundary；仅为 secondary proof |
+| GateY PS5.1 / PS7 | PASS（通过） | 32/32 / 32/32，但 regression 将 caller-created synthetic chain列为 valid，因此未覆盖 P0 |
+| authority / diff | PASS（通过） | authority errors=0；diff-check=0 |
+| Codex Security | PARTIAL（部分覆盖） | tracked 24-file scan 无 finding；untracked GateY scripts不在 inventory，P0由人工动态审查发现 |
+| CodeRabbit | NOT RUN（未完成） | WSL CLI 已认证，review service WebSocket closed，未返回 issue |
+
+未执行 production/server/credential/exchange/LIVE side effects。完整证据：[Security Review attempt-03](evidence/gate-y/NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-SECURITY-REVIEW.attempt-03.md)。
+
+## 2026-08-20 — GateY-6F server read-only runtime composition and deployment contract P0 remediation attempt-03
+
+结论：`IMPLEMENTED / GATEY_6F_P0_REMEDIATION_ATTEMPT_03_COMPLETE / RECEIPTS_REDUCED_TO_AUDIT_EVIDENCE / CALLER_VERIFIER_CANNOT_MINT_AUTHORIZATION / AUTHORIZATION_REVERIFIES_CURRENT_FACTS / P0_0 / PENDING_FINAL_INDEPENDENT_SECURITY_REVIEW`（已实现 / 等待最终独立安全复审）。
+
+| Command/check | Result | Scope/environment/blocking |
+| --- | --- | --- |
+| Attempt-03 public PoC after fix | PASS（通过） | caller temporary facts 只生成 audit evidence；authorization=`BLOCKED / RECEIPT_AUDIT_EVIDENCE_CANNOT_AUTHORIZE` |
+| GateY PS5.1 / PS7 / disposable Linux | PASS（通过） | 27/27 / 27/27 / 27/27；audit/serialize/clone/stale/cross-release/public verifier/health regression覆盖 |
+| disposable Linux installer | PASS（通过） | 13/13；cached image、`--network none --rm`、productionMutation=false |
+| GateW / Maven | PASS（通过） | 34/34；23 modules、320 reports、1548 tests、failures/errors/skipped=`0/0/48` |
+| migration / authority / diff | PASS（通过） | V1–V41/41 files/target V41/diff=0；authority errors=0；diff-check=0 |
+
+production Flyway/backup/restore/JVM health verifier 未实现，因此 deployment authorization 继续 fail-closed；未执行 production/server/credential/exchange/LIVE side effects。完整证据：[P0 remediation attempt-03](evidence/gate-y/NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-P0-REMEDIATION.attempt-03.md)。
+
+## 2026-08-20 — GateY-6F server read-only runtime composition and deployment contract Security Review attempt-04 final
+
+结论：`PASS / GATEY_6F_SECURITY_REVIEW_ATTEMPT_04_FINAL_ACCEPTED / ROLLBACK_AUTHORIZATION_BOUNDARY_VERIFIED / RECEIPTS_AUDIT_ONLY_VERIFIED / CALLER_CONTROLLED_AUTHORIZATION_PATHS_CLOSED / CURRENT_FACT_REVERIFICATION_FAIL_CLOSED / CAPABILITY_NEUTRAL_RUNTIME_REGRESSION_GREEN / ORIGINAL_SECURITY_FINDINGS_CLOSED / P0_0 / P1_0 / READY_TO_COMMIT`（通过 / 最终独立安全复核接受 / 可进入提交前复核）。
+
+| Command / check | Result | Scope / environment / blocking |
+| --- | --- | --- |
+| baseline / changed set | PASS（通过） | `HEAD == origin/dev == 2605a20e...`；staged=0；review pre-write expected/actual=45/45、missing/extra=0/0 |
+| independent exported-command PoC | PASS（通过） | public Flyway/compatibility/backup/restore evidence 全部 audit-only、authorization=false；Assert=`RECEIPT_AUDIT_EVIDENCE_CANNOT_AUTHORIZE` |
+| canonical Linux current-fact Assert | PASS（通过） | root-owned/POSIX `/opt/nexus-quant/releases/<releaseId>` fixture；`ROLLBACK_CURRENT_VERIFICATION_NOT_IMPLEMENTED` |
+| serialize/deserialize/clone/stale/cross-binding | PASS（通过） | audit evidence 不改变 authorization decision |
+| synthetic assessment | PASS（通过） | `authorizationEligible=false`、`deploymentAcceptance=false`；无 production acceptance |
+| `mvn -f backend/pom.xml test` | PASS（通过） | 23 modules、`BUILD SUCCESS`、failures/errors=0、48.297s |
+| GateY PS5.1 / PS7 / disposable Linux | PASS（通过） | 27/27 / 27/27 / 27/27；manifest hash一致；Linux `--network none --rm` |
+| disposable Linux installer | PASS（通过） | 13/13；`productionMutation=false` |
+| GateW / migration | PASS（通过） | 34/34；GateW diff=0；V1～V41、41 files、target V41、migration diff=0 |
+| composition / authority / diff | PASS（通过） | production Java stage semantic matches=0；authority errors=0；`git diff --check` exit=0 |
+
+已保留非阻断执行历史：combined Linux wrapper 因残留 `$LASTEXITCODE` exit=1，但两份脚本输出 PASS，随后独立 `-File` 各自 exit=0；首次 PoC quoting parser exit=1、首次 migration probe 字典序错误、首次 canonical Linux PoC 工具解析失败，均修正后重跑通过，未把失败写成通过。未执行 production server、DB、backup/restore、health、credential、exchange、LIVE 或交易操作。固定 deferred residual 为 P2 stable-open identity、P2 full default context、P3 Javadoc drift；均未形成 P0/P1。完整证据：[final Security Review attempt-04](evidence/gate-y/NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-SECURITY-REVIEW.attempt-04.md)。

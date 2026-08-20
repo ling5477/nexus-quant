@@ -15,6 +15,9 @@ server:
   port: ${NQ_APP_PORT:18888}
 
 nq:
+  runtime:
+    trading-components:
+      enabled: true
   account:
     credentials:
       # Why: local 写侧闭环需要真实走 DB 密文路径，但不要求真实外网探活，因此默认启用结构性校验模式。

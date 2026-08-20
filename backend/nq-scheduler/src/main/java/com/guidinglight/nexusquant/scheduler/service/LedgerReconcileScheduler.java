@@ -13,6 +13,7 @@ import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +25,12 @@ import org.springframework.stereotype.Component;
  * 否则账本偏差只能在人工排查时被动发现。
  */
 @Component
+@ConditionalOnProperty(
+        prefix = "nq.runtime.trading-components",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = false
+)
 public class LedgerReconcileScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(LedgerReconcileScheduler.class);
@@ -118,4 +125,3 @@ public class LedgerReconcileScheduler {
         return detail;
     }
 }
-

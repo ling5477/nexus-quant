@@ -24,6 +24,13 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] trace_id=%X{trace_id} %logger - %msg%n"
 
 nq:
+  runtime:
+    # 业务/交易 consumer 必须显式开启；capability profile 可统一关闭该闭包，缺失时 Bean fail-closed。
+    trading-components:
+      enabled: ${NQ_TRADING_COMPONENTS_ENABLED:false}
+    # 真实只读 provider observation 默认不装配，只允许受控 deployment alias 显式开启。
+    provider-observation:
+      enabled: false
   dh:
     integration1:
       runtime:
