@@ -1,0 +1,13 @@
+java_diff=0
+java_test_diff=0
+pom_diff=0
+migration_diff=0
+contract_schema_api_golden_state_machine_diff=0
+current_authority_diff=0
+agents_claude_diff=0
+ci_current_task_diff=0
+java_standard_diff=0
+shadow_baseline_scanner_report_current_task_diff=0
+nq_java_engineering_skill_diff=0
+dh_diff=0
+result=PASS（通过）

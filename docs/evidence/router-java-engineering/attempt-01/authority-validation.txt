@@ -1,0 +1,12 @@
+authority_file=docs/current/STATUS.md
+authority_schema=3
+last_frozen_gate=GateX
+active_gate=GateY
+active_gate_status=IN_PROGRESS / NOT_FROZEN（进行中 / 未冻结）
+work_batch=GateY-6F
+work_batch_status=NOT_STARTED（未开始）
+live=DISABLED（已关闭）
+dh_runtime=NOT_INTEGRATED（未集成）
+check_current_authority=PASS / CURRENT_AUTHORITY_CONSISTENT（当前 Authority 一致）
+test_current_authority_next_action=PASS
+authority_files_modified=0

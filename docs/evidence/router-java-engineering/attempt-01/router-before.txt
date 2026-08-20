@@ -1,0 +1,7 @@
+router_path=.agents/skills/nq-dh-workflow-router/SKILL.md
+router_before_sha256=e8e21a61d710ec597589be021860262a7f732f1488ca56727e60be098129cd9a
+router_file_count=1
+nq_java_route_explicit=NO
+unknown_repository_fail_closed=NO
+java_skill_recursion_guard=NO
+before_status=ROUTE_MISSING（路由缺失）

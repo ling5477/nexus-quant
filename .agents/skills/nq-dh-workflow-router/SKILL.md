@@ -1,6 +1,6 @@
 ---
 name: nq-dh-workflow-router
-description: NQ/DH workflow router for NexusQuant and Decision Hub tasks. Use when a task mentions NexusQuant, NQ, Decision Hub, DH, quant trading platform work, Gate or FREEZE planning, stage transition archive governance, frontend optimization, architecture review, deployment, security audit, exchange integration, documentation, spreadsheets, presentations, or domain websites, and Codex must classify the task, choose only relevant plugins or project skills, route pure documentation and archive governance work to nq-docs-writer when appropriate, define scope, preserve Gate boundaries, and produce the standard NQ/DH execution report.
+description: NQ/DH workflow router for NexusQuant and Decision Hub tasks. Use when a task mentions NexusQuant, NQ, Decision Hub, DH, quant trading platform work, Gate or FREEZE planning, stage transition archive governance, frontend optimization, architecture review, deployment, security audit, exchange integration, documentation, spreadsheets, presentations, domain websites, or Java engineering, and Codex must detect the repository, read current Authority, classify the task, compose only relevant plugins or project skills, route repository-specific Java work, preserve safety and Gate boundaries, and produce the standard NQ/DH execution report.
 ---
 
 # NQ-DH Workflow Router
@@ -65,6 +65,81 @@ Select only the tools needed for the classified task. Do not enable every availa
 - For CI workflow, security, credential, LIVE, or real-provider work, keep the CI/security/domain review primary; `nq-docs-writer` may only keep documentation facts from crossing the approved boundary.
 
 Never use a plugin or skill to bypass restrictions on AI, DH integration, LIVE trading, credentials, real providers, RealClient, migrations, or production paths.
+
+## Step 2.1: Route Repository-specific Java Engineering
+
+Resolve the repository with `git rev-parse --show-toplevel` and repository-owned current Authority before selecting a Java Engineering skill. Do not infer the repository from the task name, branch, an archived path, or model memory.
+
+If a Java-scoped task cannot resolve exactly one supported repository, stop with:
+
+```text
+FAIL_CLOSED / REPOSITORY_UNRESOLVED
+```
+
+Load the repository-specific Java Engineering skill when the task adds, changes, reviews, debugs, refactors, or validates any of these scopes:
+
+```text
+Java source or Java code review/refactoring
+Spring Boot / Spring Framework / Spring MVC / Spring Security / Spring Data
+JDBC / transaction / Repository / Service / Controller / Adapter / Port / SPI
+thread / executor / async / concurrency / logging / exception handling
+Maven Java dependencies
+JUnit / Mockito / ArchUnit / Checkstyle / Spotless / PMD / SpotBugs
+```
+
+Repository routes are:
+
+```text
+repository = nexus-quant AND Java scope exists
+  -> nq-java-engineering-standard
+
+repository = decision-hub AND Java scope exists
+  -> dh-java-engineering-standard
+```
+
+For NexusQuant, Java scope also includes trading, order, risk, ledger, marketdata, strategy, research, scheduler, exchange adapter, and account/auth Java implementation. These terms only trigger the NQ Java Skill; this Router does not duplicate or redefine their domain rules.
+
+Do not load a Java Engineering skill merely because the repository contains Java. Pure documentation, Authority-only, Git-only, React/TypeScript-only, Python-only, evidence-append, and read-only runtime qualification tasks do not load it unless they explicitly modify or review Java or Maven-Java behavior.
+
+## Step 2.2: Compose Skills, Order And Precedence
+
+Execution order is fixed:
+
+```text
+1. nq-dh-workflow-router
+2. repository detection
+3. current Authority / Gate / safety boundary
+4. task-specific domain, security, review, migration, API, or documentation skill when applicable
+5. repository-specific Java Engineering skill when Java scope exists
+6. implementation or review
+7. validation
+```
+
+Skills compose rather than compete. For example, an NQ Java exchange-adapter security review loads the security/review skill before `nq-java-engineering-standard`; an NQ Java trading implementation applies current Authority and NQ domain constraints before the Java Skill. A pure WORKLOG append, frontend task, or Python research task does not load the Java Skill.
+
+Precedence is fixed:
+
+```text
+User explicit authorization / safety
+> current Authority / Gate / frozen contracts
+> repository domain invariants
+> repository-specific Java Engineering skill
+> adapted Huangshan rules
+> formatting / IDE preference
+```
+
+A Java Engineering skill cannot override Authority, Gate, frozen contracts, Schema, Golden Cases, state machines, runtime modes, exchange/provider permissions, or LIVE permissions. This Router defines only when to load which skill, order, precedence, composition, fail-closed behavior, and recursion protection; it does not copy Java, Spring, Huangshan, numerical, timing, trading, retry, or implementation rules.
+
+Java Engineering skills are leaf execution/constraint skills. Re-entry is forbidden:
+
+```text
+nq-java-engineering-standard -> nq-dh-workflow-router
+dh-java-engineering-standard -> nq-dh-workflow-router
+
+RECURSIVE_ROUTING_REJECTED
+```
+
+Once this Router has selected a Java Engineering skill for the current task, that skill must not re-enter the Router.
 
 ## Step 3: Define Scope
 

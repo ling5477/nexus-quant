@@ -1,0 +1,13 @@
+allowlist:
+  .agents/skills/nq-dh-workflow-router/SKILL.md
+  docs/evidence/router-java-engineering/attempt-01/**
+
+preexisting_dirty:
+  .github/workflows/ci.yml
+  AGENTS.md
+  .agents/skills/nq-java-engineering-standard/**
+  docs/evidence/java-engineering-standard/**
+  docs/standards/java/**
+  scripts/java-standard/**
+
+unknown_paths=0

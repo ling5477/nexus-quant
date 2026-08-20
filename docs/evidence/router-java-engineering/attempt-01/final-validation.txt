@@ -1,0 +1,17 @@
+router_after_sha256=718d8dc8dfb9efbf1d243cc801ea75b3fe22c0cb2f03cd22ed15abf1560298a4
+nq_java_engineering_skill_sha256=01d7d1bd74c8c8f4fae6704319bea92be2bd3f3d3fdd43660a07faa1d68b973f
+huangshan_mapping_sha256=962d292b8be907388f024d13724080ecacfe485f9822f085245303064ba419a9
+authority_validation=PASS
+java_skill_active_inputs=PASS / 8 OF 8
+huangshan_active_songshan_superseded=PASS
+router_structural_assertions=PASS / 11 OF 11
+skill_creator_quick_validate=NOT_COMPLETED / PYTHON_RUNTIME_MISSING_PYYAML / STRUCTURAL_FALLBACK_11_OF_11_PASS
+transient_tool_artifact_cleanup=PASS / LITERAL_SYSTEMDRIVE_CACHE_REMOVED
+routing_cases_A_H=PASS
+routing_semantic_parity=ALIGNED
+git_diff_check=PASS
+changed_file_allowlist=PASS / 10 OF 10 CURRENT_TASK_FILES
+forbidden_file_verification=PASS / 0 CURRENT_TASK_FORBIDDEN_PATHS
+secret_absolute_path_symlink=PASS / 0 CREDENTIAL_LITERALS / 0 ABSOLUTE_PATHS / 0 SYMLINKS
+known_migration_checksum_blocker=NOT_EXERCISED
+final_decision=IMPLEMENTED / PENDING_INDEPENDENT_REVIEW（已实施 / 待独立审查）
