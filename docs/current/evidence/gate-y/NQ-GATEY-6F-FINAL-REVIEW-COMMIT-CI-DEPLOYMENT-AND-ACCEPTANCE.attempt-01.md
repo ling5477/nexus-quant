@@ -83,3 +83,29 @@ Kill disengage = 0
 ## 8. Next phase
 
 仅在精确cached allowlist复核通过后执行commit message：`fix(gatey): complete readonly server deployment readiness`，随后push并等待exact-head CI。任何cached scope异常、CI失败或后续production hard gate失败均停止部署并追加真实结果。
+
+## 9. Phase D/E implementation commit and exact-head CI
+
+- Implementation commit=`7c5de6e56f6df2623c0d54f591fd69f9d7745cc6`；28 files、4056 insertions、7 deletions。
+- Push=`origin/dev` fast-forward success。
+- `NQ CI Baseline` run=`32492178305 / completed / success`，headSha精确匹配；11/11 jobs全部success，包括Secret scan、no-outbound、Java Shadow、Backend Maven、PostgreSQL/Flyway与两类E2E。
+
+## 10. Phase F first build blocker and local fix
+
+clean、committed、CI-green implementation HEAD首次执行canonical builder返回：
+
+```text
+BLOCKED / RELEASE_APPLICATION_MIGRATION_MISMATCH
+```
+
+Server contact/upload/install=`0/0/0`。RCA确认Spring Boot fat JAR把41个Flyway migration放在唯一`BOOT-INF/lib/nq-infra-*.jar`的`db/migration/**`内；builder错误地只检查不存在的`BOOT-INF/classes/db/migration/**`。该问题属于局部build verifier路径缺陷，不改变安全、credential、LIVE、trading、DB或rollback模型。
+
+最小fix：builder要求唯一nested `nq-infra` JAR，复制到bounded memory stream后逐条验证41个migration path/hash与closed count；synthetic builder fixture同步改为真实nested-JAR布局，tamper仍精确拒绝。
+
+Fix validation：PowerShell parser PASS；builder self-test PASS（41 migrations、valid accepted、tamper rejected）；PS5.1/PS7/Linux release regression均29/29；刚才真实`nq-app` fat JAR独立返回`PASS / REAL_FAT_JAR_MIGRATION_BINDING / migrationCount=41`。
+
+```text
+Forward fix commit = PENDING_EXECUTION
+Forward fix exact-head CI = PENDING_EXECUTION
+Immutable release retry = PENDING_EXECUTION
+```

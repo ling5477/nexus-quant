@@ -120,36 +120,67 @@ function Assert-ApplicationJarContract
                 }
             }
             $inventory = Get-GateYMigrationInventory $migrationRoot
-            $expected = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
-            foreach ($migration in $inventory.migrations)
+            $infraEntries = @($archive.Entries | Where-Object {
+                $_.FullName -match '^BOOT-INF/lib/nq-infra-[A-Za-z0-9._-]+\.jar$'
+            })
+            if ($infraEntries.Count -ne 1)
             {
-                $entryName = 'BOOT-INF/classes/db/migration/' + [string]$migration.fileName
-                $null = $expected.Add($entryName)
-                $entry = $archive.GetEntry($entryName)
-                if ($null -eq $entry)
-                {
-                    throw 'BLOCKED / RELEASE_APPLICATION_MIGRATION_MISMATCH'
-                }
-                $entryStream = $entry.Open()
+                throw 'BLOCKED / RELEASE_APPLICATION_MIGRATION_MISMATCH'
+            }
+            $infraEntryStream = $infraEntries[0].Open()
+            $infraMemory = [IO.MemoryStream]::new()
+            try
+            {
+                $infraEntryStream.CopyTo($infraMemory)
+                $infraMemory.Position = 0
+                $infraArchive = [IO.Compression.ZipArchive]::new(
+                    $infraMemory, [IO.Compression.ZipArchiveMode]::Read, $true
+                )
                 try
                 {
-                    if ((Get-StreamSha256 $entryStream) -cne [string]$migration.sha256)
+                    $expected = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+                    foreach ($migration in $inventory.migrations)
+                    {
+                        $entryName = 'db/migration/' + [string]$migration.fileName
+                        $null = $expected.Add($entryName)
+                        $entry = $infraArchive.GetEntry($entryName)
+                        if ($null -eq $entry)
+                        {
+                            throw 'BLOCKED / RELEASE_APPLICATION_MIGRATION_MISMATCH'
+                        }
+                        $entryStream = $entry.Open()
+                        try
+                        {
+                            if ((Get-StreamSha256 $entryStream) -cne [string]$migration.sha256)
+                            {
+                                throw 'BLOCKED / RELEASE_APPLICATION_MIGRATION_MISMATCH'
+                            }
+                        }
+                        finally
+                        {
+                            $entryStream.Dispose()
+                        }
+                    }
+                    $actual = @($infraArchive.Entries | Where-Object {
+                        $_.FullName -match '^db/migration/V[1-9][0-9]*__[A-Za-z0-9_]+\.sql$'
+                    })
+                    if ($actual.Count -ne $expected.Count -or
+                            @($actual | Where-Object {
+                                -not $expected.Contains($_.FullName)
+                            }).Count -ne 0)
                     {
                         throw 'BLOCKED / RELEASE_APPLICATION_MIGRATION_MISMATCH'
                     }
                 }
                 finally
                 {
-                    $entryStream.Dispose()
+                    $infraArchive.Dispose()
                 }
             }
-            $actual = @($archive.Entries | Where-Object {
-                $_.FullName -match '^BOOT-INF/classes/db/migration/V[1-9][0-9]*__[A-Za-z0-9_]+\.sql$'
-            })
-            if ($actual.Count -ne $expected.Count -or
-                    @($actual | Where-Object { -not $expected.Contains($_.FullName) }).Count -ne 0)
+            finally
             {
-                throw 'BLOCKED / RELEASE_APPLICATION_MIGRATION_MISMATCH'
+                $infraEntryStream.Dispose()
+                $infraMemory.Dispose()
             }
         }
         finally
@@ -176,44 +207,87 @@ function New-SyntheticApplicationJar
         $archive = [IO.Compression.ZipArchive]::new($stream, [IO.Compression.ZipArchiveMode]::Create, $false)
         try
         {
-            $sources = [ordered]@{
-                'BOOT-INF/classes/com/guidinglight/nexusquant/app/NexusQuantApplication.class' = $null
-                'BOOT-INF/classes/application-gatey-readonly-qualification.yml' = $profilePath
-            }
-            foreach ($migration in (Get-GateYMigrationInventory $migrationRoot).migrations)
+            $classEntry = $archive.CreateEntry(
+                'BOOT-INF/classes/com/guidinglight/nexusquant/app/NexusQuantApplication.class',
+                [IO.Compression.CompressionLevel]::NoCompression
+            )
+            $classOutput = $classEntry.Open()
+            try
             {
-                $sources['BOOT-INF/classes/db/migration/' + [string]$migration.fileName] =
-                    Join-Path $migrationRoot ([string]$migration.fileName)
+                $bytes = [Text.Encoding]::ASCII.GetBytes('synthetic-class')
+                $classOutput.Write($bytes, 0, $bytes.Length)
             }
-            $migrationIndex = 0
-            foreach ($entryName in $sources.Keys)
+            finally
             {
-                $entry = $archive.CreateEntry($entryName, [IO.Compression.CompressionLevel]::NoCompression)
-                $output = $entry.Open()
+                $classOutput.Dispose()
+            }
+            $profileEntry = $archive.CreateEntry(
+                'BOOT-INF/classes/application-gatey-readonly-qualification.yml',
+                [IO.Compression.CompressionLevel]::NoCompression
+            )
+            $profileOutput = $profileEntry.Open()
+            $profileInput = [IO.File]::OpenRead($profilePath)
+            try
+            {
+                $profileInput.CopyTo($profileOutput)
+            }
+            finally
+            {
+                $profileInput.Dispose()
+                $profileOutput.Dispose()
+            }
+
+            $infraMemory = [IO.MemoryStream]::new()
+            try
+            {
+                $infraArchive = [IO.Compression.ZipArchive]::new(
+                    $infraMemory, [IO.Compression.ZipArchiveMode]::Create, $true
+                )
                 try
                 {
-                    $source = $sources[$entryName]
-                    if ($null -eq $source)
+                    $migrationIndex = 0
+                    foreach ($migration in (Get-GateYMigrationInventory $migrationRoot).migrations)
                     {
-                        $bytes = [Text.Encoding]::ASCII.GetBytes('synthetic-class')
-                        $output.Write($bytes, 0, $bytes.Length)
-                    }
-                    else
-                    {
-                        $input = [IO.File]::OpenRead([string]$source)
-                        try { $input.CopyTo($output) } finally { $input.Dispose() }
-                        if ($TamperFirstMigration -and $entryName -match '/db/migration/' -and $migrationIndex -eq 0)
+                        $entry = $infraArchive.CreateEntry(
+                            ('db/migration/' + [string]$migration.fileName),
+                            [IO.Compression.CompressionLevel]::NoCompression
+                        )
+                        $output = $entry.Open()
+                        $input = [IO.File]::OpenRead(
+                            (Join-Path $migrationRoot ([string]$migration.fileName))
+                        )
+                        try
                         {
-                            $tamper = [Text.Encoding]::ASCII.GetBytes('tamper')
-                            $output.Write($tamper, 0, $tamper.Length)
+                            $input.CopyTo($output)
+                            if ($TamperFirstMigration -and $migrationIndex -eq 0)
+                            {
+                                $tamper = [Text.Encoding]::ASCII.GetBytes('tamper')
+                                $output.Write($tamper, 0, $tamper.Length)
+                            }
                         }
-                        if ($entryName -match '/db/migration/') { $migrationIndex++ }
+                        finally
+                        {
+                            $input.Dispose()
+                            $output.Dispose()
+                        }
+                        $migrationIndex++
                     }
                 }
                 finally
                 {
-                    $output.Dispose()
+                    $infraArchive.Dispose()
                 }
+                $infraMemory.Position = 0
+                $infraEntry = $archive.CreateEntry(
+                    'BOOT-INF/lib/nq-infra-0.1.0-SNAPSHOT.jar',
+                    [IO.Compression.CompressionLevel]::NoCompression
+                )
+                $infraOutput = $infraEntry.Open()
+                try { $infraMemory.CopyTo($infraOutput) } finally { $infraOutput.Dispose() }
+            }
+            finally
+            {
+                $infraMemory.Dispose()
             }
         }
         finally
