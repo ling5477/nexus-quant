@@ -4,6 +4,9 @@ spring:
       on-profile: ci
 
 nq:
+  runtime:
+    trading-components:
+      enabled: true
   env-safety:
     # Why: ci profile 是 5B-ENV 的 merge-blocking 默认安全边界；真实外联和真实 provider 必须显式失败。
     ci: ${CI:true}

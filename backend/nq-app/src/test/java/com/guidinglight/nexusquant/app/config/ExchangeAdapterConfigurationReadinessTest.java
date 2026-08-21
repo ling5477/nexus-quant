@@ -19,6 +19,7 @@ import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotExecutionProviderPort;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Function;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.test.context.support.TestPropertySourceUtils;
 
 /**
  * ExchangeAdapterConfigurationReadinessTest 固定 GateM-3 trading 装配层 fail-closed 行为。
@@ -86,9 +88,27 @@ class ExchangeAdapterConfigurationReadinessTest {
         }
     }
 
+    @Test
+    void gateYReadonlyQualificationProfileDoesNotRegisterMutatingTradingOrPrivateWebSocketBeans() {
+        try (AnnotationConfigApplicationContext context = newContext("gatey-readonly-qualification")) {
+            assertTrue(context.getBeansOfType(TradingAdapter.class).isEmpty());
+            assertTrue(context.getBeansOfType(OkxExchangeAdapter.class).isEmpty());
+            assertTrue(context.getBeansOfType(BinanceExchangeAdapter.class).isEmpty());
+            assertTrue(context.getBeansOfType(OkxWsClient.class).isEmpty());
+            assertTrue(context.getBeansOfType(BinanceWsClient.class).isEmpty());
+            assertTrue(context.getBeansOfType(SpotExecutionProviderPort.class).isEmpty());
+        }
+    }
+
     private static AnnotationConfigApplicationContext newContext(String... activeProfiles) {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
         context.getEnvironment().setActiveProfiles(activeProfiles);
+        boolean tradingComponentsEnabled = Arrays.stream(activeProfiles)
+                .noneMatch("gatey-readonly-qualification"::equals);
+        TestPropertySourceUtils.addInlinedPropertiesToEnvironment(
+                context,
+                "nq.runtime.trading-components.enabled=" + tradingComponentsEnabled
+        );
         context.register(ExchangeAdapterConfiguration.class, ReadinessTestConfiguration.class);
         context.refresh();
         return context;

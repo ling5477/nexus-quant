@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.context.annotation.Profile;
@@ -41,6 +42,12 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Profile("!scoped-okx-private-readonly")
+@ConditionalOnProperty(
+        prefix = "nq.runtime.trading-components",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = false
+)
 public class OkxRecoveryService implements RecoveryService {
 
     private static final int DEFAULT_LIMIT = 500;
@@ -353,4 +360,3 @@ public class OkxRecoveryService implements RecoveryService {
     ) {
     }
 }
-

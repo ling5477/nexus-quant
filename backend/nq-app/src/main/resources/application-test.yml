@@ -18,6 +18,9 @@ server:
   port: ${NQ_TEST_APP_PORT:18080}
 
 nq:
+  runtime:
+    trading-components:
+      enabled: true
   env-safety:
     # Why: test profile 必须默认 no-outbound，且禁止 LIVE/AI/DH/real provider/real exchange。
     live-enabled: ${NQ_LIVE_ENABLED:false}

@@ -29,6 +29,7 @@ import jakarta.validation.constraints.Positive;
 import java.util.List;
 import java.util.Objects;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -50,6 +51,12 @@ import org.springframework.web.server.ResponseStatusException;
  */
 @Validated
 @RestController
+@ConditionalOnProperty(
+        prefix = "nq.runtime.trading-components",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = false
+)
 @RequestMapping("/api/trading")
 @Tag(name = "Trading API", description = "正式交易运行触发、恢复、对账与最小查询接口。")
 public class TradingVerificationController {

@@ -19123,3 +19123,90 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - authority：保持`accepted GateY-6E / work GateY-6F NOT_STARTED / NONE / NOT_RUN`；next action不变；first real order/micro-live not authorized、soak not started、LIVE disabled、kill engaged。
 - result：`BLOCKED / SERVER_RUNTIME_RELEASE_NOT_READY / DEPLOYMENT_AUTHORIZATION_REQUIRED / NO_DEPLOYMENT_PERFORMED / NO_OKX_CALL / FIRST_REAL_ORDER_NOT_AUTHORIZED`。
 - next：需要独立server deployment authorization与exact artifact/schema/health/rollback/stop plan；本task不得部署。部署与CI完成后以attempt-04重跑。完整证据：[server release blocked attempt-03](evidence/gate-y/NQ-GATEY-6F-EXACT-PILOT-BINDING-AND-READONLY-VERIFICATION-IMPLEMENTATION.attempt-03.md)。
+
+## 2026-08-19 — GateY-6F server read-only runtime composition and deployment contract implementation attempt-01
+
+- task：NQ-only、L级 Spring composition + immutable release/deployment/migration/rollback contract implementation；不执行server mutation。
+- baseline：`dev` clean、staged=`0`；`HEAD == origin/dev == 2605a20e9de3a6ef2cacc3118a353942fa74b2b1`；CI `32041844923 / attempt 2 / completed / success`。
+- runtime：新增default-off `gatey-readonly-qualification`；guarded trusted authority要求durable kill=`ENGAGED`后才进入exact credential JIT observation；default仍unavailable。qualification context的Spot provider/trading adapter/worker/startup recovery/scheduler beans均为0。
+- release：新增GateY独立canonical manifest/builder/verifier；exact-source Maven build、source timestamp、fat JAR profile/application/migration byte parity、artifact hash/POSIX/owner/profile/schema identity均hard-bound；dirty worktree builder按预期阻断。
+- deployment：只读evidence evaluator从实际Flyway history派生pending；previous release兼容性未证明时强制verified backup+restore，否则`ROLLBACK_CONTRACT_UNPROVEN`；脚本不执行SSH/systemd/symlink/DB/network写操作。
+- validation：focused10 tests全绿，最终scheduler-focused 5 tests全绿；final full backend 23 modules、1546 tests、0 failure/0 error/48 skipped、48.858s；GateY PS5.1/7各14/14且manifest hash一致，synthetic fat-JAR V1～V41 binding/tamper test通过；GateW regression 34/34；actual migration target=V41。
+- findings/boundary：self-review P0/P1=`0/0`；server/deploy/migration/credential/OKX/mutation/LIVE/kill side effects均0；GateY-6F保持`NOT_STARTED`，下一动作是独立security review。完整证据：[implementation attempt-01](evidence/gate-y/NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-19 — GateY-6F server read-only runtime composition and deployment contract Security Review attempt-01
+
+- task：NQ-only、L级独立Spring/credential/ingress/mutation/release/migration/rollback/startup安全审查；review-only。
+- baseline/provenance：`dev`、`HEAD==origin/dev==2605a20e...`、staged=0、CI `32041844923/attempt2/success`；implementation 22路径expected/actual一致，无mixed worktree。
+- P0：GateY verifier接受release root外可变inode的HardLink artifact；rollback/health evaluator信任无proof provenance的调用者布尔JSON。
+- P1：完整qualification production context因未排除的adapter consumers缺Bean而启动失败；actual POSIX owner/mode、installer no-overwrite与atomic current未执行验证。
+- validation：Maven 1546/0/0/48、GateY PS5.1/7 14/14、GateW 34/34、V1～V41 continuous、authority/link/diff通过；动态full context失败与hard-link PoC稳定复现。
+- result：`SECURITY_REVIEW_REJECTED / P0_2 / P1_2 / NOT_READY_TO_COMMIT`；未修改被审实现，server/credential/OKX/trading/LIVE/kill side effects均0。
+- next：独立`NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-P0-P1-REMEDIATION`；关闭Finding并重审后才能commit。完整证据：[Security Review attempt-01](evidence/gate-y/NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-SECURITY-REVIEW.attempt-01.md)。
+
+## 2026-08-19 — GateY-6F server read-only runtime composition and deployment contract P0/P1 remediation
+
+- task：`NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-P0-P1-REMEDIATION`；NQ-only、security remediation、release integrity、rollback provenance、Spring production context、POSIX installer 与 tests。
+- baseline：`dev`；`HEAD == origin/dev == 2605a20e9de3a6ef2cacc3118a353942fa74b2b1`；baseline CI=`32041844923 / attempt 2 / completed / success`；intentional dirty worktree 中的 implementation 与 Security Review evidence 完整保留。
+- P0-01：verifier 新增 ancestor/leaf no-link、regular-file、Windows hardlink list、Linux type/nlink/device/inode、normalized path collision 与 fail-closed；installer 逐文件独立 copy，pre/post hash+nlink 验证，source mutation 不影响 installed release。
+- P0-02：删除 deployment evaluator 对 caller booleans/health 的直接信任；新增 canonical Flyway/backup/restore/compatibility/health receipt chain 与 fixed producer/version/digest/release/schema/artifact binding；状态拆分为 `BUILT_VERIFIED / PRE_DEPLOYMENT_READY / INSTALLED_VERIFIED / POST_ACTIVATION_ACCEPTED`。
+- P1-01：完整 production component scan 暴露并关闭 catalog/recovery/maintenance/controller consumer closure；未引入 fake adapter；最终 context boot，trusted authority=1，mutation runtime/worker/recovery/scheduler/private WS=0，startup credential/decrypt/OKX=0。
+- P1-02：新增 root-only Linux installer、actual POSIX owner/mode、service-user write denial、no-overwrite、stage/final verification、temporary symlink + atomic replace current、previous release preservation。
+- validation：full Maven 1547 tests、failures/errors/skipped=`0/0/48`；GateY PS5.1/PS7/Linux=`22/22 / 22/22 / 22/22`；Linux installer=`13/13`；GateW=`34/34`；migration V1～V41/41 files/diff=0；authority errors=0；links=361/14 warnings/0 errors；diff-check通过。
+- boundary：server SSH read/write、deployment、migration、production backup/restore、systemd/server symlink、credential metadata/material/decrypt、OKX GET/POST、PLACE/CANCEL、transfer/withdraw、ExecutionIntent/Receipt、order/ledger、LIVE enable、kill disengage全部为0；disposable Linux side effects仅在 network-none 容器内。
+- result：`IMPLEMENTED / GATEY_6F_P0_P1_REMEDIATION_COMPLETE / P0_0 / P1_0 / PENDING_INDEPENDENT_SECURITY_REVIEW`；不 commit/push/deploy/tag。
+- next：`NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-SECURITY-REVIEW-ATTEMPT-02`。完整证据：[P0/P1 remediation attempt-01](evidence/gate-y/NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-P0-P1-REMEDIATION.attempt-01.md)。
+
+## 2026-08-20 — GateY-6F server read-only runtime composition and deployment contract Security Review attempt-02
+
+- task：`NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-SECURITY-REVIEW-ATTEMPT-02`；NQ-only、independent security review、review-only。
+- provenance：expected/actual=32/32、missing/extra=0/0；初始 staged=5 违反 review baseline，5 个均为 expected paths，已精确 unstage且未改工作区内容；最终 staged=0。
+- P0：公开 `New-GateYDeploymentReceipt` 接受 caller Fields 后自行赋予 verifier producer 与 digest；caller 虚构 compatibility、backup/restore 与 health receipt 通过 assertion。Linux PoC 在无 install/current/health probe 的 root-owned release 上得到 `POST_ACTIVATION_ACCEPTED`。
+- P1：GateY stage semantics进入 production class/profile/error code，且跨 app/api/scheduler/infra 使用手工 negative profile exclusion；此前遗漏 consumer 的历史说明该安全闭包不是 capability-neutral/集中 fail-closed。
+- green evidence：full Maven=1547/0/0/48；GateY PS5.1/PS7=22/22；Linux verifier/installer=22/22、13/13；FIFO rejected；service user不能移动current；GateW=34/34；migration V1-V41且diff=0；authority/docs/diff通过。
+- result：`FAIL / GATEY_6F_SECURITY_REVIEW_ATTEMPT_02_REJECTED / P0_1 / P1_1 / ROLLBACK_CONTRACT_UNPROVEN / STAGE_SEMANTIC_SECURITY_BOUNDARY_COUPLING / NOT_READY_TO_COMMIT / NO_DEPLOYMENT`。
+- boundary：server SSH/deployment/production migration/backup/restore/systemd/server symlink、credential/decrypt、OKX、trade/funds、ExecutionIntent/Receipt、LIVE/kill mutation均为0；disposable Linux仅 network-none 临时容器。
+- next：`NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-P0-P1-REMEDIATION-ATTEMPT-02`。完整证据：[Security Review attempt-02](evidence/gate-y/NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-SECURITY-REVIEW.attempt-02.md)。
+
+## 2026-08-20 — GateY-6F server read-only runtime composition and deployment contract P0/P1 remediation attempt-02
+
+- task：NQ-only、L级 `SECURITY_REMEDIATION + RECEIPT_TRUST_BOUNDARY_FIX + CAPABILITY_NEUTRAL_RUNTIME_COMPOSITION + TESTS`；只关闭 Attempt-02 的 1 P0 + 1 P1。
+- P0：删除公开通用 receipt mint；module-private verifier mint + in-memory authority registry；persisted JSON 永久为 untrusted；compatibility source 固定 `/opt/nexus-quant/current`，disposable proof 只能 `UNKNOWN`；backup/restore 只验证 disposable artifact；无真实 JVM probe 时 health=`NOT_VERIFIED`。
+- P1：production Java 改为 `provider-observation` / `trading-components` capability-neutral 语义；base 默认 false，现有明确 runtime profiles 显式 true；已触达 controller/catalog/recovery/reconcile/maintenance/business scheduler/adapter/private WS 均 `matchIfMissing=false`；GateY 仅保留 deployment profile alias。
+- validation：full Maven=320 reports/1548 tests/0 failures/0 errors/48 skipped；focused Spring=10/10；PS5.1/PS7/Linux verifier=32/32；Linux installer=13/13；GateW=34/34；migration=V1–V41/41 files/diff=0；authority errors=0；diff-check=0。
+- boundary：server SSH/deploy/production migration/backup/restore/systemd/server symlink、credential/decrypt、OKX/交易/资金、ExecutionIntent/Receipt、order/ledger、LIVE/kill mutation全部为0；GateY-6F保持`NOT_STARTED`。
+- result：`IMPLEMENTED / GATEY_6F_P0_P1_REMEDIATION_ATTEMPT_02_COMPLETE / P0_0 / P1_0 / PENDING_INDEPENDENT_SECURITY_REVIEW`；`DO NOT COMMIT`。
+- next：`NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-SECURITY-REVIEW-ATTEMPT-03`。完整证据：[P0/P1 remediation attempt-02](evidence/gate-y/NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-P0-P1-REMEDIATION.attempt-02.md)。
+
+## 2026-08-20 — GateY-6F server read-only runtime composition and deployment contract Security Review attempt-03
+
+- task：NQ-only、L级独立 P0/P1 security review；review-only。
+- P0：public `Test-GateYFlywayHistoryObservation`、`Test-GateYBackupArtifact`、`Test-GateYRestoreEvidence` 接受 caller temporary artifact，并在 registry 中铸造 trusted receipt；public rollback evaluator 接受该链并返回 `VERIFIED_BACKUP_AND_RESTORE_REQUIRED`。private module scope bypass为secondary proof。
+- P1：未发现新增 P1；capability-neutral composition 仍保留，GateY production Java stage semantics scan=0。
+- validation：public-command PoC=FAIL；PS5.1/PS7=32/32但未覆盖攻击；authority/diff通过；Codex Security tracked inventory partial；CodeRabbit WSL review service连接失败。
+- boundary：server/deploy/production migration/backup/restore/systemd/credential/OKX/trade/funds/LIVE/kill mutation全部为0；PoC仅使用本机临时目录。
+- result：`FAIL / GATEY_6F_SECURITY_REVIEW_ATTEMPT_03_REJECTED / P0_1 / CALLER_CONTROLLED_VERIFIED_RECEIPT_MINTING_REMAINS / NOT_READY_TO_COMMIT / NO_DEPLOYMENT / NO_SCOPE_EXPANSION`；`DO NOT COMMIT`。
+- next：`NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-P0-REMEDIATION-ATTEMPT-03`。完整证据：[Security Review attempt-03](evidence/gate-y/NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-SECURITY-REVIEW.attempt-03.md)。
+
+## 2026-08-20 — GateY-6F server read-only runtime composition and deployment contract P0 remediation attempt-03
+
+- task：NQ-only、L级 `SECURITY_REMEDIATION + ROLLBACK_AUTHORIZATION_BOUNDARY_FIX + DEPLOYMENT_EVIDENCE_REDESIGN + NEGATIVE_TESTS`；只关闭 Attempt-03 P0。
+- P0：删除 trusted receipt registry/mint/receipt-based Assert；public `Test-GateY*` 仅输出 `AUDIT_EVIDENCE_ONLY`，serialized/clone/stale/cross-release evidence 不可 authorization；`Assert-GateYRollbackContract` 只接受 canonical production context 并主动验证，production verifier 未实现时 fail-closed。
+- synthetic：`Invoke-GateYSyntheticRollbackAssessment` 仅用于 fixture，`authorizationEligible=false`、`deploymentAcceptance=false`。
+- validation：P0 PoC after fix=BLOCKED；PS5.1/PS7/Linux=27/27；Linux installer=13/13；GateW=34/34；Maven=1548/0/0/48；migration V1–V41/41 files/diff=0；authority/diff通过。
+- boundary：server/deploy/production migration/backup/restore/systemd/credential/OKX/trade/funds/LIVE/kill mutation全部为0；GateY-6F保持`NOT_STARTED`。
+- result：`IMPLEMENTED / GATEY_6F_P0_REMEDIATION_ATTEMPT_03_COMPLETE / P0_0 / PENDING_FINAL_INDEPENDENT_SECURITY_REVIEW`；`DO NOT COMMIT`。
+- next：`NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-SECURITY-REVIEW-ATTEMPT-04-FINAL`。完整证据：[P0 remediation attempt-03](evidence/gate-y/NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-P0-REMEDIATION.attempt-03.md)。
+
+## 2026-08-20 — GateY-6F server read-only runtime composition and deployment contract Security Review attempt-04 final
+
+- task：NQ-only、L 级 `FINAL_INDEPENDENT_SECURITY_REVIEW + ROLLBACK_AUTHORIZATION_BOUNDARY_REVIEW + TARGETED_REGRESSION`；review-only，不扩展新安全主题。
+- baseline/provenance：branch=dev、staged=0；`HEAD == origin/dev == 2605a20e9de3a6ef2cacc3118a353942fa74b2b1`；review pre-write changed set expected/actual=45/45、missing/extra=0/0；authority errors=0，GateY-6F保持`NOT_STARTED`、LIVE disabled、kill engaged。
+- P0：independent exported-command PoC 的 Flyway/compatibility/backup/restore outputs 全部 `AUDIT_EVIDENCE_ONLY`、`authorizationEligible=false`；serialize/deserialize/clone/stale/cross-release/cross-schema/different-backup/digest modification均不能授权。legacy caller chain固定`RECEIPT_AUDIT_EVIDENCE_CANNOT_AUTHORIZE`。
+- current fact：disposable canonical Linux release通过POSIX verifier；无 receipt Assert 精确 `ROLLBACK_CURRENT_VERIFICATION_NOT_IMPLEMENTED`。production Flyway/backup/restore verifier 未实现时 fail-closed，不是 blocker，也不表示 production 已验证。
+- synthetic：`Invoke-GateYSyntheticRollbackAssessment` 固定 `authorizationEligible=false`、`deploymentAcceptance=false`；未出现 production deployment/rollback acceptance。
+- P1 regression：production Java GateY stage semantic matches=0；capability-neutral composition保持；full Maven 23 modules `BUILD SUCCESS`；GateY PS5.1/PS7/Linux=27/27；Linux installer=13/13；GateW=34/34；migration V1～V41/41 files/diff=0。
+- findings：P0/P1=`0/0`。固定 non-blocking residual：P2 stable-open identity、P2 full default context、P3 Javadoc drift。
+- boundary：server SSH/deployment/production migration/backup/restore/systemd/server symlink、credential/decrypt、OKX/交易/资金、ExecutionIntent/Receipt、order/ledger、LIVE enable、kill disengage全部为0；disposable Linux只写network-none ephemeral container。
+- result：`PASS / GATEY_6F_SECURITY_REVIEW_ATTEMPT_04_FINAL_ACCEPTED / ROLLBACK_AUTHORIZATION_BOUNDARY_VERIFIED / RECEIPTS_AUDIT_ONLY_VERIFIED / CALLER_CONTROLLED_AUTHORIZATION_PATHS_CLOSED / CURRENT_FACT_REVERIFICATION_FAIL_CLOSED / CAPABILITY_NEUTRAL_RUNTIME_REGRESSION_GREEN / ORIGINAL_SECURITY_FINDINGS_CLOSED / P0_0 / P1_0 / READY_TO_COMMIT`。
+- next：唯一下一动作 `NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-COMMIT-AND-EXACT-HEAD-CI`；本轮未 add/commit/push/tag。完整证据：[final Security Review attempt-04](evidence/gate-y/NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-SECURITY-REVIEW.attempt-04.md)。

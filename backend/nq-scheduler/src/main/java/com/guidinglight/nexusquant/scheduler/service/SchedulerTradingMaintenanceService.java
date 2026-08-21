@@ -7,12 +7,19 @@ import com.guidinglight.nexusquant.trading.application.maintenance.TradingMainte
 import java.util.Locale;
 import java.util.Objects;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
  * SchedulerTradingMaintenanceService 收口 scheduler 侧的 reconcile / recovery 具体实现。
  */
 @Component
+@ConditionalOnProperty(
+        prefix = "nq.runtime.trading-components",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = false
+)
 public class SchedulerTradingMaintenanceService implements TradingMaintenanceService {
 
     private final OkxRestReconcileService okxRestReconcileService;
@@ -59,4 +66,3 @@ public class SchedulerTradingMaintenanceService implements TradingMaintenanceSer
         return venue == null || venue.isBlank() ? "OKX" : venue.trim().toUpperCase(Locale.ROOT);
     }
 }
-

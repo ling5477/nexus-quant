@@ -21,6 +21,7 @@ import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
@@ -31,6 +32,12 @@ import org.springframework.stereotype.Component;
  * 后续 selector、research dataset 和 trading precision 都围绕这份正式事实工作。
  */
 @Component
+@ConditionalOnProperty(
+        prefix = "nq.runtime.trading-components",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = false
+)
 public class AdapterInstrumentCatalogSyncService implements InstrumentCatalogSyncService {
 
     private final InstrumentCatalogService instrumentCatalogService;

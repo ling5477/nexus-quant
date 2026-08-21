@@ -23,7 +23,9 @@ import org.springframework.scheduling.config.TaskManagementConfigUtils;
 @EnableConfigurationProperties(ValidationEvidenceSchedulerProperties.class)
 public class ValidationEvidenceSchedulerConfiguration {
 
-    /** 显式开启时才装配运行 Bean；默认、local、test、CI 均不注册 scheduler。 */
+    /**
+     * 显式开启时才装配运行 Bean；默认、local、test、CI 均不注册 scheduler。
+     */
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnProperty(
             prefix = ValidationEvidenceSchedulerProperties.PREFIX,
