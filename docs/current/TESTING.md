@@ -14258,3 +14258,24 @@ P1：counter null coercion、release manifest伪造startup credential/OKX zero�
 | Maven / GateW / migration | PASS（通过） | Maven1552/0/0/48；GateW34/34；V1～V41 continuous |
 
 首次parser wrapper插值失败和中间manifest hash均保留为执行历史，最终全套独立重跑通过。Production server/DB/credential/OKX/trade/LIVE/kill side effects均0。完整证据：[readiness remediation attempt-01](evidence/gate-y/NQ-GATEY-6F-SERVER-DEPLOYMENT-READINESS-REMEDIATION.attempt-01.md)。
+
+## 2026-08-21 — GateY-6F Final Review, Commit, CI, Deployment and Acceptance attempt-01
+
+结论：`BLOCKED / SERVER_AUTHENTICATION_UNAVAILABLE / FINAL_REVIEW_ACCEPTED / COMMITTED / EXACT_HEAD_CI_GREEN / IMMUTABLE_RELEASE_VERIFIED / DEPLOYMENT_NOT_STARTED / NO_SERVER_MUTATION / P0_0 / P1_0`（服务器认证阻断 / 部署未开始）。
+
+- Final review：Maven1552/0/0/48、PS5.1/PS7 deployment48+release29、Linux22/13/29、GateW34、V1～V41、Java governance/Shadow new-code=0、authority/links/diff全部通过。
+- Commits：implementation=`7c5de6e5...`；nested migration verifier fix=`31c87e5b...`；Maven output isolation fix=`96ae90ff...`。
+- Exact-head CI：runs `32492178305`、`32493024365`、`32493560487`均completed/success/11 of 11；正式release source为最后一个CI-green head。
+- Release：ID=`96ae90ff...`、manifest=`0b1afbf6...f083`、application=`6c1513e5...db76`、13 artifacts、schema V41；local verifier PASS。
+- Server：BatchMode strict-host hostname probe exit=1/publickey denied；remote command=0。无IdentityFile path，不读取SSH/secret material，不尝试密码。
+- Production：SSH success/write、upload/install、DB read/write、systemd/current、health、trading/LIVE/kill mutation全部0；Phase G后续NOT RUN。
+
+完整证据：[joint attempt-01](evidence/gate-y/NQ-GATEY-6F-FINAL-REVIEW-COMMIT-CI-DEPLOYMENT-AND-ACCEPTANCE.attempt-01.md)。
+
+## 2026-08-22 — GateY-6F joint deployment Phase G resume
+
+用户提供明确SSH IdentityFile reference后，hostname与root只读preflight成功；key bytes未读取/输出。Server Java21/Pwsh7/NTP/disk/current verified；active NQ process=0、18890 listener absent、仅GateW PostgreSQL容器运行。
+
+Deployment仍阻断：committed target `127.0.0.1:5432/nexus_quant`不接受连接，实际仅55432 accepting；GateY service user、runtime.env、secrets.env、db.pgpass、unit均missing。未读取container env或任何secret，未执行DB table/Flyway/kill query、upload、install、systemd/current mutation或health。
+
+结论：`BLOCKED / CANONICAL_DATABASE_TARGET_MISMATCH / SERVER_RUNTIME_ENVIRONMENT_NOT_PROVISIONED / DB_AND_ROLLBACK_PREFLIGHT_NOT_EXECUTED / DEPLOYMENT_NOT_STARTED / NO_DATABASE_MUTATION / NO_SERVER_MUTATION`。需用户决定55432 forward contract或提供5432 listener，并通过外部安全渠道预置GateY env/secret/pgpass后，在同一任务续跑Phase G。

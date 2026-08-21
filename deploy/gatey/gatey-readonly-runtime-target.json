@@ -36,7 +36,7 @@
     "targetId": "gatey-production-control-plane",
     "runtimeEnvironment": "PRODUCTION_CONTROL_PLANE",
     "host": "127.0.0.1",
-    "port": 5432,
+    "port": 55432,
     "name": "nexus_quant",
     "flywayHistoryTable": "flyway_schema_history",
     "credentialReferenceName": "gatey-readonly-qualification-db",

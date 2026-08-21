@@ -101,7 +101,7 @@ try
     $selfTest = ($selfTestOutput -join [Environment]::NewLine) | ConvertFrom-Json
     Assert-Condition (
         [string]$selfTest.decision -ceq 'PASS / GATEY_READONLY_RUNTIME_DEPLOYMENT_CONTRACT_SELF_TEST' -and
-        [int]$selfTest.cases -eq 40 -and
+        [int]$selfTest.cases -eq 41 -and
         -not [bool]$selfTest.filesystemMutation -and
         -not [bool]$selfTest.systemdMutation -and
         -not [bool]$selfTest.databaseMutation -and
@@ -212,7 +212,7 @@ try
         'SPRING_PROFILES_ACTIVE=gatey-readonly-qualification',
         'NQ_APP_BIND_ADDRESS=127.0.0.1',
         'NQ_GATEY_MANAGEMENT_ADDRESS=127.0.0.1',
-        'NQ_GATEY_QUALIFICATION_DB_URL=jdbc:postgresql://127.0.0.1:5432/nexus_quant',
+        'NQ_GATEY_QUALIFICATION_DB_URL=jdbc:postgresql://127.0.0.1:55432/nexus_quant',
         'NQ_LIVE_ENABLED=false', 'NQ_TRADING_COMPONENTS_ENABLED=false',
         'NQ_RUNTIME_PROVIDER_OBSERVATION_ENABLED=true',
         'NQ_GATEY_EXPECTED_KILL_SWITCH=ENGAGED'
@@ -236,7 +236,7 @@ try
     ) 'SECRET_ENV_PLACEHOLDER_MISSING'
     $pgpassSource = Get-Content -LiteralPath $pgpassTemplate -Raw
     Assert-Condition (
-        $pgpassSource.Contains('127.0.0.1:5432:nexus_quant:REPLACE_WITH_LOCAL:REPLACE_WITH_LOCAL')
+        $pgpassSource.Contains('127.0.0.1:55432:nexus_quant:REPLACE_WITH_LOCAL:REPLACE_WITH_LOCAL')
     ) 'PGPASS_PLACEHOLDER_MISSING'
 
     $targetValue = Get-Content -LiteralPath $target -Raw | ConvertFrom-Json
@@ -253,7 +253,7 @@ try
         [string]$targetValue.environment.secretMode -ceq '600' -and
         [string]$targetValue.database.targetId -ceq 'gatey-production-control-plane' -and
         [string]$targetValue.database.host -ceq '127.0.0.1' -and
-        [int]$targetValue.database.port -eq 5432 -and
+        [int]$targetValue.database.port -eq 55432 -and
         [string]$targetValue.database.name -ceq 'nexus_quant' -and
         [string]$targetValue.database.credentialPath -ceq
             '/etc/nexus-quant/gatey-readonly-qualification/db.pgpass' -and

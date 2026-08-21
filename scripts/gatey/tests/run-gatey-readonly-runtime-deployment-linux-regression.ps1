@@ -109,7 +109,7 @@ try
     $targetValue = Get-Content -LiteralPath $target -Raw | ConvertFrom-Json
     Assert-Condition (
         [string]$targetValue.database.host -ceq '127.0.0.1' -and
-        [int]$targetValue.database.port -eq 5432 -and
+        [int]$targetValue.database.port -eq 55432 -and
         [string]$targetValue.database.name -ceq 'nexus_quant' -and
         [string]$targetValue.database.credentialReferenceName -ceq
             'gatey-readonly-qualification-db'
@@ -120,7 +120,7 @@ try
     Assert-Condition ($LASTEXITCODE -eq 0) 'ORCHESTRATOR_SELF_TEST_FAILED'
     $selfTest = ($selfTestOutput -join [Environment]::NewLine) | ConvertFrom-Json
     Assert-Condition (
-        [int]$selfTest.cases -eq 40 -and
+        [int]$selfTest.cases -eq 41 -and
         -not [bool]$selfTest.filesystemMutation -and
         -not [bool]$selfTest.systemdMutation -and
         -not [bool]$selfTest.databaseMutation -and

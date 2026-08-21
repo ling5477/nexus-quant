@@ -1,4 +1,4 @@
 # GateY root-only PostgreSQL credential reference template.
 # Install as /etc/nexus-quant/gatey-readonly-qualification/db.pgpass with root:root / 0600.
 # psql consumes this file directly; deployment PowerShell validates metadata but never reads its bytes.
-127.0.0.1:5432:nexus_quant:REPLACE_WITH_LOCAL:REPLACE_WITH_LOCAL
+127.0.0.1:55432:nexus_quant:REPLACE_WITH_LOCAL:REPLACE_WITH_LOCAL

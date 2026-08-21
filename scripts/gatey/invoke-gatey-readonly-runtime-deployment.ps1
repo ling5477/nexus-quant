@@ -140,7 +140,7 @@ function Assert-TargetContract($Target)
     if ([string]$Target.database.targetId -cne 'gatey-production-control-plane' -or
             [string]$Target.database.runtimeEnvironment -cne 'PRODUCTION_CONTROL_PLANE' -or
             [string]$Target.database.host -cne '127.0.0.1' -or
-            [int]$Target.database.port -ne 5432 -or
+            [int]$Target.database.port -ne 55432 -or
             [string]$Target.database.name -cne 'nexus_quant' -or
             [string]$Target.database.flywayHistoryTable -cne 'flyway_schema_history' -or
             [string]$Target.database.credentialReferenceName -cne
@@ -1139,7 +1139,7 @@ function New-TestTarget
         database = [pscustomobject][ordered]@{
             targetId = 'gatey-production-control-plane'
             runtimeEnvironment = 'PRODUCTION_CONTROL_PLANE'
-            host = '127.0.0.1'; port = 5432; name = 'nexus_quant'
+            host = '127.0.0.1'; port = 55432; name = 'nexus_quant'
             flywayHistoryTable = 'flyway_schema_history'
             credentialReferenceName = 'gatey-readonly-qualification-db'
             credentialPath = '/etc/nexus-quant/gatey-readonly-qualification/db.pgpass'
@@ -1163,7 +1163,7 @@ function New-TestEnvironment([string]$ReleaseId)
         NQ_GATEY_MANAGEMENT_ADDRESS = '127.0.0.1'; NQ_GATEY_MANAGEMENT_PORT = '18890'
         NQ_GATEY_RELEASE_ID = $ReleaseId; NQ_GATEY_SOURCE_COMMIT = $ReleaseId
         NQ_GATEY_RELEASE_MANIFEST_SHA256 = ('2' * 64)
-        NQ_GATEY_QUALIFICATION_DB_URL = 'jdbc:postgresql://127.0.0.1:5432/nexus_quant'
+        NQ_GATEY_QUALIFICATION_DB_URL = 'jdbc:postgresql://127.0.0.1:55432/nexus_quant'
         NQ_GATEY_QUALIFICATION_DB_USER = 'fixture-user'
         NQ_GATEY_DATABASE_TARGET_ID = 'gatey-production-control-plane'
         NQ_GATEY_DATABASE_CREDENTIAL_REFERENCE = 'gatey-readonly-qualification-db'
@@ -1205,6 +1205,11 @@ function Invoke-ContractSelfTest
     $target = New-TestTarget
     Assert-TargetContract $target
     $cases.Add('canonical-target-pass')
+    $wrongCanonicalPort = Copy-Object $target
+    $wrongCanonicalPort.database.port = 5432
+    Expect-Blocked { Assert-TargetContract $wrongCanonicalPort } `
+        'BLOCKED / DATABASE_TARGET_MISMATCH'
+    $cases.Add('wrong-canonical-db-port-blocked')
 
     $missingUnit = Copy-Object $target; $missingUnit.unit.name = ''
     Expect-Blocked { Assert-TargetContract $missingUnit } 'BLOCKED / SYSTEMD_UNIT_MISMATCH'
@@ -1257,7 +1262,7 @@ function Invoke-ContractSelfTest
         'BLOCKED / DATABASE_TARGET_MISMATCH'
     $cases.Add('wrong-db-target-blocked')
     $localhost = New-TestEnvironment $releaseId
-    $localhost['NQ_GATEY_QUALIFICATION_DB_URL'] = 'jdbc:postgresql://localhost:5432/nexus_quant'
+    $localhost['NQ_GATEY_QUALIFICATION_DB_URL'] = 'jdbc:postgresql://localhost:55432/nexus_quant'
     Expect-Blocked { Assert-EnvironmentValues $localhost $target $releaseId } `
         'BLOCKED / LOCALHOST_DATABASE_FALLBACK_REJECTED'
     $cases.Add('localhost-fallback-rejected')
@@ -1340,11 +1345,11 @@ function Invoke-ContractSelfTest
     $cases.Add('counter-negative-rejected')
 
     Assert-DatabaseFacts ([pscustomobject]@{
-        database='nexus_quant';port=5432;killSwitch='ENGAGED';failedMigrations=0;currentVersion='V41'
+        database='nexus_quant';port=55432;killSwitch='ENGAGED';failedMigrations=0;currentVersion='V41'
     }) $target 'V41'
     $cases.Add('database-facts-pass')
     Expect-Blocked { Assert-DatabaseFacts ([pscustomobject]@{
-        database='soak_db';port=5432;killSwitch='ENGAGED';failedMigrations=0;currentVersion='V41'
+        database='soak_db';port=55432;killSwitch='ENGAGED';failedMigrations=0;currentVersion='V41'
     }) $target 'V41' } 'BLOCKED / DATABASE_TARGET_MISMATCH'
     $cases.Add('observed-db-mismatch-blocked')
 
@@ -1381,7 +1386,7 @@ function Invoke-ContractSelfTest
     }
     $cases.Add('preflight-external-io-explicitly-classified')
 
-    if ($cases.Count -ne 40) { throw ('SELF_TEST_CASE_COUNT_INVALID:' + $cases.Count) }
+    if ($cases.Count -ne 41) { throw ('SELF_TEST_CASE_COUNT_INVALID:' + $cases.Count) }
     return [pscustomobject][ordered]@{
         decision = 'PASS / GATEY_READONLY_RUNTIME_DEPLOYMENT_CONTRACT_SELF_TEST'
         cases = $cases.Count

@@ -19288,3 +19288,25 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：Java/systemd/DB target/receipt/HardLink/GateW/migration/STATUS/ROADMAP本任务新增diff=0；server/production DB/credential/OKX/trading/LIVE/kill mutation全部0。
 - result：`IMPLEMENTED / GATEY_6F_SERVER_DEPLOYMENT_READINESS_REMEDIATION_COMPLETE / COUNTER_NULL_FAIL_CLOSED / RUNTIME_FACTS_REMOVED_FROM_RELEASE_MANIFEST / PLAN_ZERO_EXTERNAL_IO_VERIFIED / PREFLIGHT_IO_EXPLICITLY_CLASSIFIED / P0_0 / P1_0 / READY_FOR_FINAL_DEPLOYMENT_REVIEW`；`DO NOT COMMIT`。
 - next：唯一联合任务`NQ-GATEY-6F-FINAL-REVIEW-COMMIT-CI-DEPLOYMENT-AND-ACCEPTANCE`，不得再拆readiness子任务。完整证据：[readiness remediation attempt-01](evidence/gate-y/NQ-GATEY-6F-SERVER-DEPLOYMENT-READINESS-REMEDIATION.attempt-01.md)。
+
+## 2026-08-21 — GateY-6F Final Review, Commit, CI, Deployment and Acceptance attempt-01
+
+- final review：P0/P1=0/0；全部Maven/PowerShell/Linux/GateW/migration/Java governance/docs hard gates通过。
+- implementation：commit `7c5de6e5...`并push；CI `32492178305` 11/11 success。
+- builder fix 1：真实fat JAR migration位于nested nq-infra JAR；commit `31c87e5b...`，CI `32493024365` 11/11 success。
+- builder fix 2：Maven stdout污染applicationJar return；commit `96ae90ff...`，CI `32493560487` 11/11 success。
+- release：canonical build/local verify PASS；ID=`96ae90ff...`、manifest=`0b1afbf6...f083`、app=`6c1513e5...db76`、13 artifacts、V41。
+- server：accepted target=`admin@47.251.74.35`；首次BatchMode strict hostname probe认证失败，remote command=0；附件无IdentityFile path，不读取key/config/agent或尝试密码。
+- result：`BLOCKED / SERVER_AUTHENTICATION_UNAVAILABLE / DEPLOYMENT_NOT_STARTED / NO_SERVER_MUTATION / P0_0 / P1_0`。
+- boundary：server successful read/write、upload/install、DB、systemd/current、health、OKX/trade/LIVE/kill mutation全部0；rollback不需要。
+- resume：用户提供明确IdentityFile path reference或配置non-interactive SSH agent后，在同一联合任务从Phase G继续，不新增readiness子任务。完整证据：[joint attempt-01](evidence/gate-y/NQ-GATEY-6F-FINAL-REVIEW-COMMIT-CI-DEPLOYMENT-AND-ACCEPTANCE.attempt-01.md)。
+
+## 2026-08-22 — GateY-6F joint deployment Phase G resume
+
+- SSH：用户提供exact IdentityFile reference；OpenSSH消费但agent不读取/输出key bytes；hostname/root readonly preflight成功。
+- server：Java21.0.11、Pwsh7、NTP yes、disk约22.8GiB available、current=`b103069d...` GateW release；active NQ process与18890 listener均0。
+- DB：repo canonical port5432 not accepting；server host-network GateW PostgreSQL只在55432 accepting；未进行credential-assisted DB table/Flyway/kill query。
+- prerequisites：GateY service user/runtime.env/secrets.env/db.pgpass/unit均missing；不伪造placeholder、不复制GateW secret、不读取container env。
+- result：`BLOCKED / CANONICAL_DATABASE_TARGET_MISMATCH / SERVER_RUNTIME_ENVIRONMENT_NOT_PROVISIONED / NO_DATABASE_MUTATION / NO_SERVER_MUTATION`。
+- side effects：SSH invocations/authenticated/server mutations=`5/4/0`；upload/install/DB writes/systemd/current/health/OKX/trade/LIVE/kill mutation全部0。
+- resume：用户决定DB contract 55432 forward-fix或提供5432 listener，并通过外部安全渠道预置GateY env/secret/pgpass后，同一任务从Phase G重跑全部hard gates。
