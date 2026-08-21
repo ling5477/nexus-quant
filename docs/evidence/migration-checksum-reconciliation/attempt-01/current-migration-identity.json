@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0.0",
+  "migration": "backend/nq-infra/src/main/resources/db/migration/V40__gate_y6d_pilot_scope_prerequisite_fact_model.sql",
+  "git_object_format": "sha1",
+  "core_autocrlf": true,
+  "git_eol": "i/lf w/crlf",
+  "working_tree": {
+    "raw_sha256": "f32eaf8eb333739020a1bdaac49471bc56d245a3aa5468ec108051b83a2d7ab4",
+    "raw_git_sha1": "b704729fce57a88036a3c5223f9278137048d9ed",
+    "filtered_git_sha1": "63052fcd7473e1b6e8a8975c1be45679010b01bb",
+    "byte_length": 44823,
+    "line_count": 725,
+    "encoding": "UTF-8",
+    "bom": false,
+    "line_endings": "CRLF",
+    "trailing_newline": "CRLF"
+  },
+  "head": {
+    "raw_sha256": "1c0e486db0f3db4cdf250cb99ab0ed1e289f42d1ed522981272ee8b4c4da25e3",
+    "blob_sha1": "63052fcd7473e1b6e8a8975c1be45679010b01bb",
+    "byte_length": 44098,
+    "line_count": 725,
+    "encoding": "UTF-8",
+    "bom": false,
+    "line_endings": "LF",
+    "trailing_newline": "LF"
+  },
+  "origin_dev": {
+    "raw_sha256": "1c0e486db0f3db4cdf250cb99ab0ed1e289f42d1ed522981272ee8b4c4da25e3",
+    "blob_sha1": "63052fcd7473e1b6e8a8975c1be45679010b01bb",
+    "byte_length": 44098,
+    "line_endings": "LF"
+  },
+  "head_equals_origin": true,
+  "working_equals_head_raw": false,
+  "working_equals_head_after_git_text_filter": true,
+  "working_lf_normalized_sha256": "1c0e486db0f3db4cdf250cb99ab0ed1e289f42d1ed522981272ee8b4c4da25e3"
+}

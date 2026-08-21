@@ -1,0 +1,15 @@
+skill=.agents/skills/nq-java-engineering-standard/SKILL.md
+skill_root=.agents/skills
+root_ambiguity=NO
+frontmatter=PASS
+trigger_coverage=PASS
+exclusion_coverage=PASS
+authority_reference=PASS
+common_standard_reference=PASS
+nq_overlay_reference=PASS
+mapping_and_exception_reference=PASS
+hardcoded_current_gate=ABSENT
+hardcoded_next_action=ABSENT
+blanket_suppression=ABSENT
+project_governance_skill_validation=PASS
+skill_creator_quick_validate=NOT_RUN / PYTHON_RUNTIME_MISSING_PYYAML

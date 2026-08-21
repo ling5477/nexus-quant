@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0.0",
+  "repository": "NexusQuant",
+  "architecture_sources": [
+    "docs/current/ARCHITECTURE.md",
+    "docs/current/MODULES.md"
+  ],
+  "production_source_roots": [
+    "backend"
+  ],
+  "production_source_marker": "/src/main/java/",
+  "test_source_marker": "/src/test/java/",
+  "scanner_mode": "JAVA_LEXICAL_STRUCTURE_AWARE",
+  "time_restricted_prefixes": [
+    "backend/nq-api/src/main/java/",
+    "backend/nq-backtest/src/main/java/",
+    "backend/nq-core/src/main/java/",
+    "backend/nq-eval/src/main/java/",
+    "backend/nq-ledger/src/main/java/",
+    "backend/nq-research/src/main/java/",
+    "backend/nq-risk/src/main/java/",
+    "backend/nq-scheduler/src/main/java/"
+  ],
+  "infrastructure_time_boundary_prefixes": [
+    "backend/nq-app/src/main/java/",
+    "backend/nq-infra/src/main/java/",
+    "backend/nq-adapter-api/src/main/java/",
+    "backend/nq-adapter-binance/src/main/java/",
+    "backend/nq-adapter-okx/src/main/java/",
+    "backend/nq-observability/src/main/java/"
+  ],
+  "excluded_segments": [
+    "target",
+    "build",
+    "node_modules",
+    "vendor",
+    "generated",
+    "generated-sources"
+  ],
+  "architecture_notes": [
+    "nq-core owns domain, policy, ports and application services and must not depend on JDBC",
+    "nq-infra owns JDBC and repository adapters",
+    "exchange adapters are infrastructure boundaries and do not define platform domain semantics",
+    "tests are governed by review and existing test/ArchUnit checks, not folded into the production Shadow baseline"
+  ]
+}

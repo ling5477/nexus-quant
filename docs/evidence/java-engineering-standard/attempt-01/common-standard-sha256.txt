@@ -1,0 +1,5 @@
+file=docs/standards/java/common-java-engineering-standard.md
+sha256=849c2111e8208a3ddd50a58106ff39bbf381c31e9d779a49c424c4b9bad39739
+encoding=UTF-8
+line_endings=LF
+cross_repository_comparison=PASS / DH_HASH_MATCH

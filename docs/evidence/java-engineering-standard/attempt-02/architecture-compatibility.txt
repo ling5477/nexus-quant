@@ -1,0 +1,10 @@
+architecture_sources=docs/current/ARCHITECTURE.md + docs/current/MODULES.md + module POM + ArchUnit
+nq_app=COMPOSITION_ROOT
+nq_api=HTTP_DTO_CONTRACT / NO_SQL
+nq_core=DOMAIN_POLICY_PORT_APPLICATION / NO_JDBC
+nq_infra=JDBC_FLYWAY_REPOSITORY_ADAPTER
+exchange_adapters=BOUNDARY_ONLY / NO_NEW_REAL_PERMISSION
+domain_invariants=BIGDECIMAL_TIME_SEED_MODE_STATE_MACHINE_IDEMPOTENCY_RISK_AUDIT_REPRODUCIBILITY_PRESERVED
+service_impl_ceremony=REJECTED
+business_java_changed=0
+compatibility=PASS

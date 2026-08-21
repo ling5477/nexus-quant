@@ -1,0 +1,20 @@
+{
+  "schema_version": "2.0.0",
+  "source_name": "Alibaba Java Development Manual",
+  "edition": "Huangshan",
+  "edition_version": "1.7.1",
+  "status": "CURRENT_EXTERNAL_REFERENCE",
+  "official_repository": "https://github.com/alibaba/p3c",
+  "source_ref": "6c59c8c36ecd8722c712d5685b8c3822c1c8b030",
+  "source_commit_date": "2022-05-11T11:50:37+08:00",
+  "edition_release_date": "2022-02-03",
+  "source_path": "Java开发手册(黄山版).pdf",
+  "source_blob_identity": "6ff47d6af208e8ca3666ff9457d098b3ccd20b91",
+  "source_sha256": "68463b8cc5f1ad8f9c4fcaaa7c468a46a7e603b23cd22f38414697782b404f1f",
+  "retrieved_at_utc": "2026-08-20T05:05:23Z",
+  "license": "Apache-2.0",
+  "license_source_path": "license.txt",
+  "source_rule_count": 319,
+  "previous_external_reference": "Songshan 1.7.0",
+  "adaptation_policy": "summarized-and-mapped-not-full-copy"
+}

@@ -1,0 +1,13 @@
+task=NQ-DH-JAVA-ENGINEERING-STANDARD-HUANGSHAN-UPGRADE
+repository=nexus-quant
+branch=dev
+head=2605a20e9de3a6ef2cacc3118a353942fa74b2b1
+starting_dirty_scope=ATTEMPT_01_GOVERNANCE_ALLOWLIST_ONLY
+attempt_01_file_count=9
+attempt_01_tree_sha256=ef8ceb8a83d0a291a324fc6a6390e915d9aa3490c85b89aead9ee09cf33602c1
+previous_ruleset=Alibaba Songshan 1.7.0 / 308 rules
+previous_shadow_count=144
+previous_repository_decision=BLOCKED / VALIDATION_REGRESSION
+authority_source=docs/current/STATUS.md#nq-current-authority
+authority_diff_allowed=NO
+business_java_diff_allowed=NO

@@ -1,0 +1,13 @@
+task=NQ_ROUTER_JAVA_ENGINEERING_PARITY_RECONCILIATION
+repository=nexus-quant
+branch=dev
+head=2605a20e9de3a6ef2cacc3118a353942fa74b2b1
+origin_dev=2605a20e9de3a6ef2cacc3118a353942fa74b2b1
+merge_base=2605a20e9de3a6ef2cacc3118a353942fa74b2b1
+ahead=0
+behind=0
+unresolved_conflicts=0
+unfinished_git_operation=0
+router_before_sha256=e8e21a61d710ec597589be021860262a7f732f1488ca56727e60be098129cd9a
+dirty_provenance=PREVIOUS_JAVA_STANDARD + HUANGSHAN_UPGRADE
+unknown_dirty_paths=0

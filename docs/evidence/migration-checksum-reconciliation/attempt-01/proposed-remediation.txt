@@ -1,0 +1,9 @@
+decision=MINIMAL_TEST_ONLY_REMEDIATION_ALLOWED（允许最小测试修复）
+modify=PilotScopePrerequisiteFactModelMigrationContractTest.java
+do_not_modify=V40 migration bytes
+canonical_contract=decode strict UTF-8, reject BOM, normalize CRLF to LF, reject remaining bare CR, preserve trailing-newline count, SHA-256 canonical UTF-8 bytes
+expected_hash_source=reviewed Git blob from creation commit bc35edb60370aee367ab40853201e1f249179b83
+special_case_for_hash=NO
+authority_change=NO
+schema_change=NO
+database_behavior_change=NO

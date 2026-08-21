@@ -1,0 +1,11 @@
+source_name=Alibaba Java Development Manual
+edition=Songshan 1.7.0
+official_repository=https://github.com/alibaba/p3c
+source_ref=5fb5777aed30728e7cd0e9811ae61c9c5032c30f
+source_blob_identity=4d4c5cc9a1a3d42b92c3fc169f5215a2e60ad86f
+source_sha256=094d541cc2fe09137a4f44a2ca31fd9c4d732f25b62a61f3c2a499b29a41d587
+license=Apache-2.0
+pdf_pages=63
+parsed_rule_count=308
+verification_result=PASS / OFFICIAL_GIT_OBJECT_AND_SHA256_FIXED
+later_official_edition=Huangshan / RECORDED_NOT_SUBSTITUTED

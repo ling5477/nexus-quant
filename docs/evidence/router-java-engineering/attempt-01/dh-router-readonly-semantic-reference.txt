@@ -1,0 +1,10 @@
+repository=decision-hub
+access=READ_ONLY（只读）
+branch=dev
+head=c2cf74c608d0ce488a50c23212532efb80203022
+router_sha256=37b8cd9c751e16105d6b46609778fcb1d9a484c954bb3e0622b13ae52521fa96
+reference_semantics=repository_detection,authority_first,skill_composition,java_trigger,negative_routing,unknown_repository_fail_closed,recursion_guard,precedence
+copied_authority=NO
+copied_stage=NO
+copied_domain_rules=NO
+dh_files_modified=0

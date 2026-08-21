@@ -1,0 +1,11 @@
+skill=.agents/skills/nq-java-engineering-standard/SKILL.md
+duplicate_huangshan_skill=ABSENT
+platform_profile_first=PASS
+huangshan_mapping_reference=PASS
+java_spring_architecture_profile_references=PASS
+hardcoded_platform_version=ABSENT
+preview_enablement=ABSENT
+virtual_thread_enablement=ABSENT
+service_impl_ceremony=REJECTED
+project_governance_checker=PASS
+skill_creator_quick_validate=NOT_RUN / PYTHON_RUNTIME_MISSING_PYYAML

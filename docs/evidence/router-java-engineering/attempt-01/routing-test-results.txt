@@ -1,0 +1,9 @@
+case_A_nq_java_risk_service=PASS / AUTHORITY_AND_DOMAIN_THEN_NQ_JAVA_SKILL
+case_B_nq_jdbc_repository=PASS / AUTHORITY_THEN_NQ_JAVA_SKILL
+case_C_java_exchange_security_review=PASS / SECURITY_REVIEW_THEN_NQ_JAVA_SKILL
+case_D_worklog_only=PASS / JAVA_SKILL_NOT_LOADED
+case_E_react_typescript_only=PASS / JAVA_SKILL_NOT_LOADED
+case_F_python_only=PASS / JAVA_SKILL_NOT_LOADED
+case_G_unknown_repository=PASS / FAIL_CLOSED_REPOSITORY_UNRESOLVED
+case_H_java_skill_reentry=PASS / RECURSIVE_ROUTING_REJECTED
+routing_case_failures=0

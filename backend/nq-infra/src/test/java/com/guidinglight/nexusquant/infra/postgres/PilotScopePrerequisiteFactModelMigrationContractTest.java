@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -109,12 +111,21 @@ class PilotScopePrerequisiteFactModelMigrationContractTest {
 
     @Test
     void shouldKeepReviewedMigrationChecksumStable() throws IOException, NoSuchAlgorithmException {
+        byte[] migrationBytes = Files.readAllBytes(MIGRATION);
+        String migrationSql = StandardCharsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT)
+                .decode(ByteBuffer.wrap(migrationBytes))
+                .toString();
+        assertFalse(migrationSql.startsWith("\uFEFF"), "migration must not contain a UTF-8 BOM");
+
+        // The reviewed identity is the canonical Git UTF-8/LF blob. Normalize checkout CRLF only;
+        // preserve every other character and the trailing-newline count, and reject bare CR input.
+        String canonicalSql = migrationSql.replace("\r\n", "\n");
+        assertFalse(canonicalSql.contains("\r"), "migration must use LF or checkout CRLF line endings");
         String checksum = HexFormat.of().formatHex(
-                MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(MIGRATION))
+                MessageDigest.getInstance("SHA-256").digest(canonicalSql.getBytes(StandardCharsets.UTF_8))
         );
         assertEquals("1c0e486db0f3db4cdf250cb99ab0ed1e289f42d1ed522981272ee8b4c4da25e3", checksum);
-        assertEquals(StandardCharsets.UTF_8, Files.readString(MIGRATION, StandardCharsets.UTF_8)
-                .getBytes(StandardCharsets.UTF_8).length == Files.readAllBytes(MIGRATION).length
-                ? StandardCharsets.UTF_8 : null);
     }
 }

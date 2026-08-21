@@ -1,0 +1,17 @@
+comparison=reviewed Git blob versus Windows working-tree bytes
+classification=LINE_ENDING_ONLY（仅换行差异）
+reviewed_blob_line_endings=LF
+working_tree_line_endings=CRLF
+reviewed_blob_length=44098
+working_tree_length=44823
+line_count=725 / 725
+utf8_bom=NO / NO
+lf_normalized_bytes_equal=YES
+ddl_semantic_change=NO
+dml_semantic_change=NO
+constraint_change=NO
+index_change=NO
+default_change=NO
+data_backfill_change=NO
+database_behavior_change=NO
+migration_file_edit_required=NO

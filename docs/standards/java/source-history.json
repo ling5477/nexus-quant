@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0.0",
+  "lineage": [
+    {
+      "edition": "Songshan",
+      "version": "1.7.0",
+      "source_ref": "5fb5777aed30728e7cd0e9811ae61c9c5032c30f",
+      "source_blob_identity": "4d4c5cc9a1a3d42b92c3fc169f5215a2e60ad86f",
+      "source_sha256": "094d541cc2fe09137a4f44a2ca31fd9c4d732f25b62a61f3c2a499b29a41d587",
+      "source_rule_count": 308,
+      "status": "SUPERSEDED",
+      "superseded_by": "Huangshan 1.7.1"
+    },
+    {
+      "edition": "Huangshan",
+      "version": "1.7.1",
+      "source_ref": "6c59c8c36ecd8722c712d5685b8c3822c1c8b030",
+      "source_blob_identity": "6ff47d6af208e8ca3666ff9457d098b3ccd20b91",
+      "source_sha256": "68463b8cc5f1ad8f9c4fcaaa7c468a46a7e603b23cd22f38414697782b404f1f",
+      "source_rule_count": 319,
+      "status": "CURRENT_EXTERNAL_REFERENCE",
+      "superseded_by": null
+    }
+  ]
+}

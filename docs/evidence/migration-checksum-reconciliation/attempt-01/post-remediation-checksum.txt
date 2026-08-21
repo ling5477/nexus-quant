@@ -1,0 +1,10 @@
+canonical_algorithm=SHA-256 over strict UTF-8 bytes after CRLF-to-LF normalization
+canonical_bom_treatment=REJECT
+canonical_bare_cr_treatment=REJECT
+canonical_trailing_newline_treatment=PRESERVE
+canonical_checksum=1c0e486db0f3db4cdf250cb99ab0ed1e289f42d1ed522981272ee8b4c4da25e3
+reviewed_git_blob_sha1=63052fcd7473e1b6e8a8975c1be45679010b01bb
+target_test=PASS / 4 TESTS / 0 FAILURES / 0 ERRORS / 0 SKIPPED
+migration_contract_suite=PASS / 17 TESTS / 0 FAILURES / 0 ERRORS / 0 SKIPPED
+full_backend_maven=PASS / 1546 TESTS / 0 FAILURES / 0 ERRORS / 43 SKIPPED
+old_actual_fingerprint_in_surefire=0

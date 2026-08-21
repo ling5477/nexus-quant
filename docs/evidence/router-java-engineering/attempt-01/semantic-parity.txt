@@ -1,0 +1,12 @@
+parity_type=ROUTING_SEMANTIC_PARITY（路由语义一致）
+byte_for_byte_parity=NOT_REQUIRED（不要求逐字节一致）
+repository_detection=ALIGNED（已对齐）
+authority_first=ALIGNED
+task_and_java_skill_composition=ALIGNED
+java_scope_trigger=ALIGNED
+negative_routing=ALIGNED
+unknown_repository_behavior=ALIGNED
+recursion_protection=ALIGNED
+precedence=ALIGNED
+nq_authority_and_domain_semantics=PRESERVED（已保留）
+final_parity_status=ALIGNED

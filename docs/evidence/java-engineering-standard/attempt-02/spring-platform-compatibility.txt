@@ -1,0 +1,13 @@
+spring_boot=3.5.10
+spring_framework=6.2.15
+spring_security=6.5.7
+jakarta_migrated_imports=validation:118 / servlet:121 / persistence:0
+legacy_migrated_javax_imports=0
+dependency_injection=CONSTRUCTOR_INJECTION_FOR_NEW_CODE / HISTORICAL_FIELD_INJECTION_BASELINE_ONLY
+configuration=TYPED_CONFIGURATION_PREFERRED / EXISTING_NAMESPACE_PRESERVED
+transaction=SPRING_PROXY_SEMANTICS_DOCUMENTED
+async=MANAGED_EXECUTOR_REQUIRED / VIRTUAL_THREADS_NOT_ENABLED
+http_clients=EXISTING_JDK_SPRING_EXCHANGE_ADAPTER_MODEL_PRESERVED
+testing=MockitoBean_CURRENT_STYLE_DETECTED
+technology_upgrade=0
+compatibility=PASS

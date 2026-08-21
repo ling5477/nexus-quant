@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0.0",
+  "test": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/PilotScopePrerequisiteFactModelMigrationContractTest.java",
+  "versions": [
+    {
+      "commit": "bc35edb60370aee367ab40853201e1f249179b83",
+      "date": "2026-08-16T15:08:56+08:00",
+      "subject": "feat(gatey): add pilot scope prerequisite fact model",
+      "change": "ADD",
+      "blob_sha1": "f8847439ddfb6bf612665dda8e5cb0bad5809994",
+      "expected_sha256": "1c0e486db0f3db4cdf250cb99ab0ed1e289f42d1ed522981272ee8b4c4da25e3",
+      "checksum_input": "raw working-tree bytes"
+    }
+  ],
+  "later_expectation_commits": 0,
+  "expectation_matches_same_commit_migration_blob": true,
+  "platform_independent_input_contract_at_creation": false
+}

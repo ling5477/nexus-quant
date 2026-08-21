@@ -1,0 +1,11 @@
+modified_file=backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/PilotScopePrerequisiteFactModelMigrationContractTest.java
+change=checksum input changed from raw checkout bytes to canonical UTF-8/LF bytes
+strict_utf8=YES
+utf8_bom=REJECTED
+crlf=normalized to LF
+bare_cr=REJECTED
+trailing_newline_count=PRESERVED
+expected_hash=UNCHANGED / provenance-bound to reviewed Git blob
+target_migration_modified=NO
+production_java_modified=NO
+schema_or_database_behavior_change=NO

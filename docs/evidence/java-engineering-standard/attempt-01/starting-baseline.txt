@@ -1,0 +1,12 @@
+task=NQ-JAVA-ENGINEERING-STANDARD-SHADOW-CI
+repository=nexus-quant
+branch=dev
+head=2605a20e9de3a6ef2cacc3118a353942fa74b2b1
+worktree=CLEAN
+dirty_files=0
+staged_files=0
+remote=origin https://github.com/ling5477/nexus-quant.git
+authority_source=docs/current/STATUS.md#nq-current-authority
+authority_check=PASS / CURRENT_AUTHORITY_CONSISTENT
+requested_path_resolution=WORKSPACE_PATH_CORRECTED_TO_EXISTING_REPOSITORY
+source_baseline=Java 21 / Maven multi-module / ArchUnit tests / no global Checkstyle-PMD-SpotBugs plugin

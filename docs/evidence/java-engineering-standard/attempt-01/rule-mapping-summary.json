@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "source_rules": 308,
+  "dispositions": {
+    "ADOPTED": 236,
+    "MODIFIED": 71,
+    "REJECTED": 1,
+    "NOT_APPLICABLE": 0
+  },
+  "enforcement": {
+    "STATIC": 0,
+    "ARCH_TEST": 0,
+    "REVIEW": 308,
+    "DOCUMENT_ONLY": 0
+  },
+  "project_rule_catalog_count": 22,
+  "mapping_sha256": "873c8e8912fcbed7c561a44e09a1ae21404f65c7f5f05c104adf06f8b117773a",
+  "note": "外部规则映射保持 review 语义；项目自有高置信度 Shadow 检查由 architecture scope 驱动，不把业务语义伪装成静态强制。"
+}
