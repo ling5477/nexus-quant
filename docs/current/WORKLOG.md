@@ -19310,3 +19310,23 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - result：`BLOCKED / CANONICAL_DATABASE_TARGET_MISMATCH / SERVER_RUNTIME_ENVIRONMENT_NOT_PROVISIONED / NO_DATABASE_MUTATION / NO_SERVER_MUTATION`。
 - side effects：SSH invocations/authenticated/server mutations=`5/4/0`；upload/install/DB writes/systemd/current/health/OKX/trade/LIVE/kill mutation全部0。
 - resume：用户决定DB contract 55432 forward-fix或提供5432 listener，并通过外部安全渠道预置GateY env/secret/pgpass后，同一任务从Phase G重跑全部hard gates。
+
+## 2026-08-22 — GateY-6F joint deployment DB hard gate
+
+- port fix：用户授权55432；commit `56ea6887...`、CI `32501671835` 11/11 success；release ID=`56ea6887...`、manifest=`05b8830f...f4e4`、app=`05310e9c...66aa`。
+- GateW：active worker/process=0，不停止唯一PostgreSQL容器；existing keys/DB password/master key只作为root-only references识别，未输出values。
+- DB：GateW descriptor DB=`nq_gatew_okx_readonly_soak`、user=`nqgatew`；canonical `nexus_quant`不存在；目录只有soak DB与postgres。
+- rollback：创建DB/bootstrap V1–V41属于production mutation；production backup/restore/database recovery未验证，严格不执行。
+- prerequisites：GateY service user/runtime.env/secrets.env/db.pgpass仍missing；不伪造、不复制soak DB为control plane。
+- result：`BLOCKED / PRODUCTION_DATABASE_TARGET_MISSING / PRODUCTION_ROLLBACK_VERIFICATION_NOT_AVAILABLE / NO_DATABASE_MUTATION / NO_SERVER_MUTATION / P0_0 / P1_0`。
+- resume：外部授权并预置独立GateY DB/role、已验证recovery合同与release-bound env files后，在同一联合任务重跑Phase G/H。
+
+## 2026-08-22 — GateY-6F DB bootstrap, recovery and activation fix
+
+- DB：授权后创建`nexus_quant`和readonly role；Flyway V1–V41、kill ENGAGED、70 tables SELECT/write0。
+- recovery：695668-byte pg_dump，restore drill V41/ENGAGED/70 tables，drill DB删除；contract verified。
+- credentials：server-side generated DB/JWT、existing master-key reference；values未输出；env/secret/pgpass owner/mode/access通过。
+- install：release `56ea...` POSIX verified；unit installed/inactive；current仍`b103...`。
+- activation blocker：`Resolve-Path`未dereference current symlink，pre-switch link-integrity fail；mutations0，previous/new verifiersPASS。
+- fix：Linux `readlink -f` canonicalization三处，PS5.1/PS7 deployment49+release29、Linux23/13/29通过。
+- next：精确commit/push/CI/rebuild new release，更新release-bound runtime.env后重新InstallUnit/Activate。

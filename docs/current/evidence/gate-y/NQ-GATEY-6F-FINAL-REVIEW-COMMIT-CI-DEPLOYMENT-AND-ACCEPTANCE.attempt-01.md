@@ -2,7 +2,7 @@
 
 ## 1. Current decision
 
-`BLOCKED / CANONICAL_DATABASE_TARGET_MISMATCH / SERVER_RUNTIME_ENVIRONMENT_NOT_PROVISIONED / FINAL_REVIEW_ACCEPTED / COMMITTED / EXACT_HEAD_CI_GREEN / IMMUTABLE_RELEASE_VERIFIED / DEPLOYMENT_NOT_STARTED / NO_DATABASE_MUTATION / NO_SERVER_MUTATION / P0_0 / P1_0`（数据库目标与服务器不一致 / GateY运行环境未预置 / 部署未开始）。
+`PHASE_H_PASS / DATABASE_BOOTSTRAPPED_V41 / BACKUP_RESTORE_VERIFIED / IMMUTABLE_RELEASE_INSTALLED / ACTIVATION_BLOCKED_CURRENT_UNCHANGED / CURRENT_SYMLINK_CANONICALIZATION_FIX_IMPLEMENTED / EXACT_HEAD_CI_PENDING / P0_0 / P1_0`（DB与recovery hard gate通过 / activation缺陷已修复待CI）。
 
 本文件是联合任务的单一append-forward evidence。尚未执行的commit、CI、release、server preflight、DB、activation、health和acceptance均明确标记为`PENDING_EXECUTION`，不得从本节推断为通过。
 
@@ -274,4 +274,98 @@ Canonical 55432 forward-fix commit = PENDING_EXECUTION
 Forward-fix exact-head CI = PENDING_EXECUTION
 New immutable release = PENDING_EXECUTION
 Server mutation = 0
+```
+
+## 19. 55432 forward commit, CI and release
+
+- Canonical DB port forward commit=`56ea68875ae5be940c94fce0f773c56d5369a104`；push success。
+- Exact-head `NQ CI Baseline` run=`32501671835 / completed / success / 11 of 11`。
+- New release ID/source=`56ea68875ae5be940c94fce0f773c56d5369a104`。
+- Manifest SHA-256=`05b8830f105ef0f85652ca1fc8a0fd5807507bb420b3fd6b02b9a8a62f44f4e4`。
+- Application SHA-256=`05310e9c1afed4d9adb42414ed28d98cf72c1d54432c05f872571b1728ec66aa`。
+- Artifacts=`13`；schema target=`V41`；local verifier PASS。
+- Previous generated release `96ae...` removed from exact local target path before new build；可由其commit重建。New `56ea...` release保留本地，未上传。
+
+## 20. Provisioning recheck and DB hard gate
+
+用户回复“已预置”，但server metadata recheck精确返回：GateY service user、runtime.env、secrets.env、db.pgpass仍全部missing；55432 accepting。User also statedexisting OKX keys与DB account可用，且GateW runtime可停止。Read-only facts确认无active GateW worker/process，只有必须保留的`nq-gatew-postgres` DB container。
+
+Server已有root-only credential references：`db-password.cred`、`credential-master-key.cred`等；没有env文件。Sanitized GateW descriptor只证明：host=`127.0.0.1`、port=`55432`、database=`nq_gatew_okx_readonly_soak`、user=`nqgatew`与password file reference。未输出credential value。
+
+使用现有password reference由`psql`外部进程执行read-only GateY DB identity probe，目标`nexus_quant`在连接阶段返回：
+
+```text
+FATAL: database "nexus_quant" does not exist
+```
+
+随后连接已知GateW DB只读查询`pg_database`目录，服务器非template databases仅为：
+
+```text
+nq_gatew_okx_readonly_soak
+postgres
+```
+
+因此不能把GateW soak DB当作GateY production control plane。创建`nexus_quant`、建立GateY role或执行V1–V41均属于production DB mutation；当前`ROLLBACK_CURRENT_VERIFICATION_NOT_IMPLEMENTED`合同没有production database recovery proof。
+
+Phase H hard gate：
+
+`BLOCKED / PRODUCTION_DATABASE_TARGET_MISSING / PRODUCTION_ROLLBACK_VERIFICATION_NOT_AVAILABLE / SERVER_RUNTIME_ENVIRONMENT_NOT_PROVISIONED / DB_AND_ROLLBACK_PREFLIGHT_INCOMPLETE / DEPLOYMENT_NOT_STARTED / NO_DATABASE_MUTATION / NO_SERVER_MUTATION`。
+
+## 21. Final counters and resume requirement
+
+```text
+SSH invocations/authenticated sessions/server mutations = 11/10/0
+SSH key bytes exposed = 0
+PostgreSQL readiness probes = 3
+Credential-assisted DB connection attempts = 2
+Successful DB catalog reads/business table reads/writes = 1/0/0
+Flyway/kill/business counter query = 0/0/0
+Release upload/install = 0/0
+Systemd/current pointer mutation = 0/0
+OKX GET/POST = 0/0
+PLACE/CANCEL/transfer/withdraw = 0/0/0/0
+LIVE enable = 0
+Kill disengage = 0
+Rollback = NOT REQUIRED / activation never started
+```
+
+Resume requires external, independently authorized provisioning：
+
+1. 在55432提供独立`nexus_quant` production control-plane DB与专用GateY role。
+2. 对V1–V41 bootstrap/migration建立可执行、已验证的production backup/restore/database recovery合同；否则保持`NO_DATABASE_MUTATION`。
+3. 在新release identity下预置GateY runtime.env/secrets.env/db.pgpass；metadata必须符合owner/mode合同，secret不得进入聊天或仓库。
+
+满足后在同一联合任务重新执行Phase G/H；不得直接复用GateW soak DB、跳过rollback hard gate或先upload/activate。
+
+## 22. Authorized production DB bootstrap and recovery proof
+
+用户明确授权production DB/role creation、V1–V41、fresh DB drop/recreate recovery及root-only GateY credential provisioning。Existing GateW worker/process=0，DB container保持运行。
+
+Transport/tooling：release tar SHA-256=`7fada405705930069840f2200998043c6fba050097dde9d67d01bb011cf68681`；Flyway image tar SHA-256=`661fee83ba5ad1f3848a0192c8731f182a5b9e089dfec7aacf5446b40e563040`；server hashes/path safety/release verifier PASS；Flyway image digest=`sha256:782c5c207ffb5ac6336139fda4f4295bd9991ef63ad36919406d4268740069bb`。Migration source从manifest-bound nested nq-infra JAR提取，41 files/hash/inventory=`2b684745...88b`全部匹配。
+
+Production bootstrap：创建独立`nexus_quant`与runtime role`nq_gatey_readonly`；Flyway migrate/validate V1–V41成功；V35 seed kill=`ENGAGED`。Runtime role对70/70 public tables有SELECT，write privileges=0。
+
+Credential provisioning：DB password/JWT在服务器生成，master key从既有root-only reference复制；任何value均未输出。GateY runtime.env=`root:nq-gatey-readonly/0640`，secrets.env/db.pgpass=`root:root/0600`；service对runtime只读，对secret/pgpass不可读写。初次错误创建underscore Linux user已删除，canonical hyphen user与parent traversal权限修正并验证；DB role保持underscore。
+
+Backup/restore drill：root-only pg_dump SHA-256=`eb4aacc3fec0ccac10e6f999b5122d31e172f09d0d47bc63ed99dd9347b3f84b`、bytes=`695668`；restore drill DB验证`failed=0 / V41 / ENGAGED / 70 tables`后删除，remaining=0。Production recovery contract verified。
+
+Pre-activation side effects：ExecutionIntent/Receipt/Order/Ledger=`0/0/0/0`；Flyway=`0 failed / V41`；kill=`ENGAGED`。
+
+## 23. Install and first activation blocker
+
+Release `56ea6887...` immutable install/verify PASS，POSIX verified、service user不可写；pure Plan PASS。首次InstallUnit因错误Linux service user命名返回`ENVIRONMENT_OWNER_INVALID`，unit未写；修正hyphen user与config parent group后InstallUnit PASS，unit root:root/0644、inactive，current仍previous GateW `b103069d...`。
+
+首次canonical Activate在current切换前返回`RELEASE_LINK_INTEGRITY_VIOLATION`，reported filesystem/systemd/DB mutations=false；current仍`b103...`、unit inactive。New/previous manifest nlink=1；new installed verifier与bundled GateW previous verifier均PASS。
+
+RCA：PowerShell `Resolve-Path`在server保留`/opt/nexus-quant/current` symlink path，没有dereference target；previous verification正确拒绝path component symlink。Fix统一使用Linux`readlink -f` canonicalization，覆盖ReleaseRoot、RequireCurrent和previous pointer。
+
+Regression：PS5.1/PS7 deployment49 + release29；Linux runtime23（含真实symlink probe）/installer13/release29；canonical hashes一致。首次parser summary wrapper因缺空格未运行，目标脚本已被PS5.1/PS7/Linux成功解析执行。
+
+```text
+Symlink fix commit = PENDING_EXECUTION
+Symlink fix exact-head CI = PENDING_EXECUTION
+New immutable release = PENDING_EXECUTION
+Current pointer = b103069d8bfcecccba0b4d590317ddccc66898b9
+GateY unit = inactive
+Runtime start/health = 0/NOT RUN
 ```

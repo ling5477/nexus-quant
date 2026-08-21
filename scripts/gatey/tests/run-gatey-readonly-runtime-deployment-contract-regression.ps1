@@ -267,11 +267,16 @@ try
         'Assert-EnvironmentMetadata', 'Assert-DatabaseFacts', 'Assert-HealthFacts',
         'Write-DeploymentEvidence', 'DEPLOYMENT_EVIDENCE_PATH_INVALID',
         'ROLLBACK_CURRENT_VERIFICATION_NOT_IMPLEMENTED',
-        'Test-PreviousRelease', 'Set-CurrentPointer', 'nq-gatew-release-v3'
+        'Test-PreviousRelease', 'Set-CurrentPointer', 'Resolve-CanonicalPath',
+        'nq-gatew-release-v3'
     ))
     {
         Assert-Condition $orchestratorSource.Contains($marker) ('ORCHESTRATOR_MARKER_MISSING:' + $marker)
     }
+    Assert-Condition (
+        $orchestratorSource -notmatch '\$previous\s*=\s*\(Resolve-Path' -and
+        $orchestratorSource -notmatch '\$resolvedCurrent\s*=\s*\(Resolve-Path'
+    ) 'CURRENT_SYMLINK_NOT_CANONICALLY_RESOLVED'
     foreach ($forbidden in @(
         'observePrerequisites(', '/api/v5/', 'Invoke-RestMethod -Method Post', 'permission probe'
     ))
@@ -283,7 +288,7 @@ try
 
     [pscustomobject][ordered]@{
         decision = 'PASS / GATEY_READONLY_RUNTIME_DEPLOYMENT_CONTRACT_REGRESSION'
-        cases = 48
+        cases = 49
         contractSelfTestCases = [int]$selfTest.cases
         systemdContract = $true
         environmentContract = $true

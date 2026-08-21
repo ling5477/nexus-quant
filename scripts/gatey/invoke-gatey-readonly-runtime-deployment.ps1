@@ -91,6 +91,27 @@ function Read-Json([string]$Path)
     return Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
 }
 
+function Resolve-CanonicalPath([string]$Path)
+{
+    $fullPath = [IO.Path]::GetFullPath($Path).TrimEnd('/', '\')
+    if (-not (Test-Path -LiteralPath $fullPath))
+    {
+        return $fullPath
+    }
+    $linux = Get-Variable -Name IsLinux -ErrorAction SilentlyContinue
+    if ($null -ne $linux -and [bool]$linux.Value)
+    {
+        $resolved = Invoke-Native '/usr/bin/readlink' @('-f', '--', $fullPath)
+        $value = (($resolved.Lines -join '').Trim()).TrimEnd('/')
+        if ([string]::IsNullOrWhiteSpace($value))
+        {
+            Throw-Blocked 'RELEASE_PATH_RESOLUTION_FAILED'
+        }
+        return [IO.Path]::GetFullPath($value).TrimEnd('/')
+    }
+    return (Resolve-Path -LiteralPath $fullPath).Path.TrimEnd('\', '/')
+}
+
 function Assert-TargetContract($Target)
 {
     if ($null -eq $Target -or
@@ -536,7 +557,7 @@ function Get-TargetAndPaths
     $resolvedRelease = $requestedRelease
     if (Test-Path -LiteralPath $requestedRelease)
     {
-        $resolvedRelease = (Resolve-Path -LiteralPath $requestedRelease).Path.TrimEnd('/')
+        $resolvedRelease = Resolve-CanonicalPath $requestedRelease
     }
     $targetPath = $TargetContractPath
     if ([string]::IsNullOrWhiteSpace($targetPath))
@@ -637,7 +658,7 @@ function Invoke-ReleasePreflight($Context, [switch]$RequireCurrent)
     {
         $current = [string]$Context.target.service.currentPointer
         if (-not (Test-Path -LiteralPath $current)) { Throw-Blocked 'CURRENT_RELEASE_MISMATCH' }
-        $resolvedCurrent = (Resolve-Path -LiteralPath $current).Path.TrimEnd('/')
+        $resolvedCurrent = Resolve-CanonicalPath $current
         if ($resolvedCurrent -cne $Context.releaseRoot) { Throw-Blocked 'CURRENT_RELEASE_MISMATCH' }
     }
     $manifest = Get-Content -LiteralPath (Join-Path $Context.releaseRoot 'release-manifest.json') -Raw |
@@ -973,7 +994,7 @@ function Activate-Runtime
     $previous = $null
     if (Test-Path -LiteralPath $current)
     {
-        $previous = (Resolve-Path -LiteralPath $current).Path.TrimEnd('/')
+        $previous = Resolve-CanonicalPath $current
         $previousId = Split-Path -Leaf $previous
         $previousVerification = Test-PreviousRelease $previous
         if ([string]$previousVerification.releaseId -cne $previousId)

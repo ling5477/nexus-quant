@@ -150,6 +150,26 @@ try
             'READ_ONLY_EXTERNAL_IO_ALLOWED' -and
         [bool]$contractResult.preflightCredentialAssistedExternalIo
     ) 'DYNAMIC_PLAN_ZERO_IO_INVALID'
+    $canonicalTarget = Join-Path $tempRoot 'canonical-target'
+    $canonicalLink = Join-Path $tempRoot 'canonical-link'
+    [IO.Directory]::CreateDirectory($canonicalTarget) | Out-Null
+    & /usr/bin/ln -s -- $canonicalTarget $canonicalLink
+    Assert-Condition ($LASTEXITCODE -eq 0) 'CANONICAL_LINK_FIXTURE_FAILED'
+    $orchestratorText = Get-Content -LiteralPath $orchestrator -Raw
+    $dispatcher = [regex]::Match(
+        $orchestratorText,
+        '(?ms)^try\r?\n\{\r?\n    \$result = switch \(\$Action\)'
+    )
+    Assert-Condition $dispatcher.Success 'ORCHESTRATOR_DISPATCHER_NOT_FOUND'
+    $prefix = $orchestratorText.Substring(0, $dispatcher.Index).Replace(
+        '$PSScriptRoot',
+        ("'" + $gateyRoot.Replace("'", "''") + "'")
+    )
+    $probe = "`$resolved=Resolve-CanonicalPath '$canonicalLink';Write-Output `$resolved"
+    $canonicalResult = @(& ([ScriptBlock]::Create($prefix + "`n" + $probe)))
+    Assert-Condition (
+        [string]($canonicalResult | Select-Object -Last 1) -ceq $canonicalTarget
+    ) 'CURRENT_SYMLINK_CANONICAL_RESOLUTION_FAILED'
     Complete-Case 'db-mismatch-rejected'
     Complete-Case 'localhost-fallback-rejected'
     Complete-Case 'live-enabled-rejected'
@@ -161,11 +181,12 @@ try
     Complete-Case 'mutation-runtime-bound-rejected'
     Complete-Case 'startup-side-effect-rejected'
     Complete-Case 'counter-truth-table-pass'
+    Complete-Case 'canonical-symlink-resolution-pass'
     Complete-Case 'activation-rollback-path-present'
     Complete-Case 'dynamic-plan-zero-external-io-pass'
     Complete-Case 'preflight-external-io-explicitly-classified'
 
-    Assert-Condition ($cases.Count -eq 22) ('CASE_COUNT_INVALID:' + $cases.Count)
+    Assert-Condition ($cases.Count -eq 23) ('CASE_COUNT_INVALID:' + $cases.Count)
     [pscustomobject][ordered]@{
         decision = 'PASS / GATEY_READONLY_RUNTIME_DEPLOYMENT_LINUX_REGRESSION'
         cases = $cases.Count

@@ -14279,3 +14279,19 @@ P1：counter null coercion、release manifest伪造startup credential/OKX zero�
 Deployment仍阻断：committed target `127.0.0.1:5432/nexus_quant`不接受连接，实际仅55432 accepting；GateY service user、runtime.env、secrets.env、db.pgpass、unit均missing。未读取container env或任何secret，未执行DB table/Flyway/kill query、upload、install、systemd/current mutation或health。
 
 结论：`BLOCKED / CANONICAL_DATABASE_TARGET_MISMATCH / SERVER_RUNTIME_ENVIRONMENT_NOT_PROVISIONED / DB_AND_ROLLBACK_PREFLIGHT_NOT_EXECUTED / DEPLOYMENT_NOT_STARTED / NO_DATABASE_MUTATION / NO_SERVER_MUTATION`。需用户决定55432 forward contract或提供5432 listener，并通过外部安全渠道预置GateY env/secret/pgpass后，在同一任务续跑Phase G。
+
+## 2026-08-22 — GateY-6F joint deployment DB hard gate
+
+Canonical port55432 forward commit=`56ea6887...`；exact-head CI `32501671835` 11/11 success；new release/local verify PASS，ID=`56ea6887...`、manifest=`05b8830f...f4e4`、app=`05310e9c...66aa`。
+
+Server provisioning recheck仍显示GateY service user/env/secret/pgpass missing。Existing GateW sanitized descriptor指向DB `nq_gatew_okx_readonly_soak`与user `nqgatew`。Credential-assisted read-only connect到canonical `nexus_quant`在连接阶段返回database does not exist；`pg_database`目录只有GateW soak DB与postgres。
+
+结论：`BLOCKED / PRODUCTION_DATABASE_TARGET_MISSING / PRODUCTION_ROLLBACK_VERIFICATION_NOT_AVAILABLE / NO_DATABASE_MUTATION / DEPLOYMENT_NOT_STARTED / NO_SERVER_MUTATION`。未查询Flyway/kill/business tables，未upload/install/activate。必须外部授权并建立独立GateY DB、role及可验证backup/restore/recovery合同后续跑。
+
+## 2026-08-22 — GateY-6F DB bootstrap, recovery and activation fix
+
+用户授权production bootstrap。Manifest-bound 41 migrations经Flyway 11 migrate/validate到V41；kill ENGAGED；readonly role对70 tables SELECT、write=0。pg_dump/restore drill验证V41/kill/70 tables后删除drill DB，recovery PASS。GateY env/secret/pgpass metadata与service access boundary通过。
+
+Release `56ea...` install/verify PASS；InstallUnit在修正canonical service user/parent traversal后PASS，current保持`b103...`、unit inactive。First Activate在切换前因`Resolve-Path`未dereference current symlink被link-integrity阻断，mutations=false。Standalone new/previous verifiers均PASS。
+
+Canonical readlink-f fix及永久Linux symlink regression已实现：PS5.1/PS7 deployment49+release29；Linux runtime23/installer13/release29。等待forward commit/exact-head CI/new release，未启动runtime。
