@@ -10,7 +10,7 @@
 - `architecture-overlay.md`：从当前模块、文档与 ArchUnit 得出的 NQ 实际架构。
 - `nq-java-domain-overlay.md`：NQ 数值、时间、交易模式、订单、外部副作用和审计规则。
 - `alibaba-huangshan-rule-mapping.yaml`：当前黄山版 319 条规则的逐条 disposition、compatibility 与 enforcement 映射。
-- `alibaba-songshan-rule-mapping.yaml`：标记为 `SUPERSEDED`（已被替代）的上一版 mapping，仅保留 lineage。
+- `history/alibaba-songshan-rule-mapping.yaml`：`SUPERSEDED / HISTORY_ONLY`（已被替代 / 仅历史）的上一版 mapping，不属于 current verifier input。
 - `songshan-to-huangshan-diff.yaml`：308→319 条规则的完整 lineage 与 semantic diff。
 - `java-rule-exceptions.yaml`：显式、限域、可过期的规则豁免；默认无豁免。
 - `java-shadow-scope.json`：由当前架构文档导出的扫描层级、source root 与基础设施时间边界；检查器不得在代码中猜模块。

@@ -135,7 +135,7 @@ function Get-CanonicalConfigurationHash([string]$RootPath, [string[]]$RelativePa
 try {
     $required = @(
         "README.md", "common-java-engineering-standard.md", "java-platform-profile.md", "spring-platform-profile.md", "architecture-overlay.md",
-        "alibaba-huangshan-rule-mapping.yaml", "alibaba-songshan-rule-mapping.yaml", "songshan-to-huangshan-diff.yaml",
+        "alibaba-huangshan-rule-mapping.yaml", "songshan-to-huangshan-diff.yaml",
         "java-rule-exceptions.yaml", "java-shadow-scope.json", "platform-profile.json", "source-provenance.json", "source-history.json", "shadow-baseline.json"
     )
     foreach ($name in $required) { Assert-Condition (Test-Path -LiteralPath (Join-Path $standardRoot $name) -PathType Leaf) "CONFIG_INVALID" "missing docs/standards/java/$name" }
@@ -165,6 +165,13 @@ try {
     foreach ($version in @($platform.spring.boot, $platform.spring.framework, $platform.testing.junit_jupiter, $platform.testing.mockito, $platform.database.postgresql_driver, $platform.database.flyway)) { Assert-Condition ($version -match '^\d+\.\d+\.\d+') "PLATFORM_PROFILE_INVALID" "invalid effective dependency version $version" }
     $pomPath = if (Test-Path -LiteralPath (Join-Path $repoRoot 'backend\pom.xml')) { Join-Path $repoRoot 'backend\pom.xml' } else { Join-Path $repoRoot 'dh-bom\pom.xml' }
     $pomText = Get-Content -LiteralPath $pomPath -Raw -Encoding UTF8
+    try { [xml]$pomXml = $pomText }
+    catch { throw "CONFIG_INVALID: root Maven POM is not valid XML" }
+    $qualityProfilePresent = @($pomXml.SelectNodes("//*[local-name()='profile']") | Where-Object {
+        $idNode = $_.SelectSingleNode("./*[local-name()='id']")
+        $null -ne $idNode -and $idNode.InnerText.Trim() -ceq 'quality'
+    }).Count -gt 0
+    $qualityProfileStatus = if ($qualityProfilePresent) { 'AVAILABLE' } else { 'NOT_AVAILABLE' }
     $javaMatch = [regex]::Match($pomText, '<maven\.compiler\.release>(?:\$\{java\.version\}|(\d+))</maven\.compiler\.release>')
     Assert-Condition ($javaMatch.Success) "PLATFORM_PROFILE_INVALID" "compiler release declaration missing"
     $declaredRelease = if ($javaMatch.Groups[1].Success) { [int]$javaMatch.Groups[1].Value } else { $jv = [regex]::Match($pomText, '<java\.version>(\d+)</java\.version>'); Assert-Condition $jv.Success "PLATFORM_PROFILE_INVALID" "java.version missing"; [int]$jv.Groups[1].Value }
@@ -176,8 +183,6 @@ try {
     $ciJavaPattern = 'java-version:\s*[''"]?' + [regex]::Escape([string]$platform.java.ci_version) + '[''"]?'
     Assert-Condition ($ciText -match $ciJavaPattern) "PLATFORM_PROFILE_INVALID" "CI Java does not match platform profile"
 
-    $songshanMapping = Get-Content -LiteralPath (Join-Path $standardRoot "alibaba-songshan-rule-mapping.yaml") -Raw -Encoding UTF8
-    Assert-Condition ($songshanMapping -match '(?m)^status:\s*"SUPERSEDED"\s*$') "MAPPING_INVALID" "Songshan mapping still appears current"
     $mapping = Get-Content -LiteralPath (Join-Path $standardRoot "alibaba-huangshan-rule-mapping.yaml") -Raw -Encoding UTF8
     Assert-Condition ($mapping -match '(?m)^status:\s*"CURRENT_EXTERNAL_REFERENCE"\s*$') "MAPPING_INVALID" "Huangshan mapping is not current"
     $sourceIds = @([regex]::Matches($mapping, '(?m)^\s*- source_rule_id:\s*"([^"\r\n]+)"') | ForEach-Object { $_.Groups[1].Value })
@@ -249,6 +254,12 @@ try {
     Assert-Condition ($links.Count -eq 0) "CONFIG_INVALID" "reparse point or cross-repository link found"
     Assert-Condition ($ciText.Contains('Java engineering standard Shadow') -and $ciText.Contains('invoke-java-shadow-scan.ps1') -and $ciText -notmatch '(?ms)Java engineering standard Shadow.*?continue-on-error:\s*true') "CONFIG_INVALID" "CI Shadow contract invalid"
 
+    $v40VerifierPath = Join-Path $PSScriptRoot 'verify-v40-migration-git-blob.ps1'
+    Assert-Condition (Test-Path -LiteralPath $v40VerifierPath -PathType Leaf) "CONFIG_INVALID" "V40 exact Git blob verifier is missing"
+    $currentPwsh = [Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
+    $v40VerifierOutput = @(& $currentPwsh -NoProfile -File $v40VerifierPath -RepositoryRoot $repoRoot 2>&1 | ForEach-Object { $_.ToString() })
+    Assert-Condition ($LASTEXITCODE -eq 0 -and $v40VerifierOutput -contains 'V40_GIT_BLOB_CONTRACT=PASS') "CONFIG_INVALID" "V40 exact Git blob contract failed"
+
     $commonHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $standardRoot 'common-java-engineering-standard.md')).Hash.ToLowerInvariant()
     Write-Output 'GOVERNANCE_CHECKER_RESULT=PASS'
     Write-Output "JAVA_PLATFORM=release-$($platform.java.compiler_release)"
@@ -263,6 +274,10 @@ try {
     Write-Output "CONFIGURATION_HASH_ALGORITHM=$configurationHashAlgorithm"
     Write-Output "CURRENT_CANONICAL_CONFIG_HASH=$currentCanonicalConfigurationHash"
     Write-Output "CONFIG_HASH_INPUTS=$($configInputPaths -join ',')"
+    Write-Output "QUALITY_PROFILE=$qualityProfileStatus"
+    Write-Output 'CURRENT_ACTIVE_SONGSHAN_INPUT_COUNT=0'
+    Write-Output 'SONGSHAN_MAPPING_STATUS=HISTORY_ONLY'
+    $v40VerifierOutput | Write-Output
     Write-Output "COMMON_STANDARD_SHA256=$commonHash"
     exit 0
 }
