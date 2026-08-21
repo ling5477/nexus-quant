@@ -14295,3 +14295,9 @@ Server provisioning recheck仍显示GateY service user/env/secret/pgpass missing
 Release `56ea...` install/verify PASS；InstallUnit在修正canonical service user/parent traversal后PASS，current保持`b103...`、unit inactive。First Activate在切换前因`Resolve-Path`未dereference current symlink被link-integrity阻断，mutations=false。Standalone new/previous verifiers均PASS。
 
 Canonical readlink-f fix及永久Linux symlink regression已实现：PS5.1/PS7 deployment49+release29；Linux runtime23/installer13/release29。等待forward commit/exact-head CI/new release，未启动runtime。
+
+## 2026-08-22 — GateY-6F activation rollback and timing remediation
+
+Symlink fix commit=`51d755b9...`、CI `32506158245` 11/11 green；release/install/unit PASS。Activate期间SSH断开，但background controller完成health rejection、stop与previous pointer restore；显式Stop验证MainPID0/port closed/DB mutation0。
+
+Journal无Spring exception：Tomcat约35.1s、application约40.7s ready，超过旧30s health bound。ExecStopPost又把自身PID计为cgroup residual。Fix采用90s bounded health和self-PID exclusion；PS5.1/PS7 deployment51+release29、Linux25/13/29、parser0通过。等待commit/CI/release重试。

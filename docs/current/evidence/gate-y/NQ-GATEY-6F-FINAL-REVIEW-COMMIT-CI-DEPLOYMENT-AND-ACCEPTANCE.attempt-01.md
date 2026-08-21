@@ -2,7 +2,7 @@
 
 ## 1. Current decision
 
-`PHASE_H_PASS / DATABASE_BOOTSTRAPPED_V41 / BACKUP_RESTORE_VERIFIED / IMMUTABLE_RELEASE_INSTALLED / ACTIVATION_BLOCKED_CURRENT_UNCHANGED / CURRENT_SYMLINK_CANONICALIZATION_FIX_IMPLEMENTED / EXACT_HEAD_CI_PENDING / P0_0 / P1_0`（DB与recovery hard gate通过 / activation缺陷已修复待CI）。
+`PHASE_H_PASS / DATABASE_BOOTSTRAPPED_V41 / BACKUP_RESTORE_VERIFIED / ACTIVATION_ROLLBACK_VERIFIED / HEALTH_AND_STOP_TIMING_FIX_IMPLEMENTED / EXACT_HEAD_CI_PENDING / CURRENT_PREVIOUS_RELEASE / P0_0 / P1_0`（DB/recovery/rollback通过 / health与stop时序fix待CI）。
 
 本文件是联合任务的单一append-forward evidence。尚未执行的commit、CI、release、server preflight、DB、activation、health和acceptance均明确标记为`PENDING_EXECUTION`，不得从本节推断为通过。
 
@@ -368,4 +368,29 @@ New immutable release = PENDING_EXECUTION
 Current pointer = b103069d8bfcecccba0b4d590317ddccc66898b9
 GateY unit = inactive
 Runtime start/health = 0/NOT RUN
+```
+
+## 24. Symlink fix CI, release and activation rollback
+
+- Symlink fix commit=`51d755b99af3d9ae788899e443fb4dd7245f878f`；push success；exact-head CI run=`32506158245 / completed / success / 11 of 11`。
+- Release ID=`51d755b9...`、manifest=`9c10339e33c6b095ad9dd50b23ef4814a799b7d157a8070cc9b8dd7b9398f015`、app=`8ed5406f3228b263793420ed219accb2d5f45a6ec7e460247d3908b6f3871bfe`；server transport/install/POSIX/unit install PASS。
+- Runtime env release binding count=3；current保持previous、unit inactive后执行Activate。
+
+Activation SSH controller连接中断时，readback曾显示current=new、unit active、MainPID存在、listener未就绪。后台activation controller继续执行，最终health未接受并按合同stop/restore previous。Canonical Health readback返回`CURRENT_RELEASE_MISMATCH`是因为controller已恢复previous。显式Stop最终PASS：MainPID=0、port closed、DB mutation=0；current=`b103...`。
+
+Journal证明Spring无exception：Tomcat约35.1秒启动，application ready约40.7秒；固定30秒health窗口过短，产生false timeout。ExecStopPost在自身仍属于unit cgroup时调用VerifyStopped，又把自身PID计为residual，使unit标为failed；外部Stop在control process退出后通过。
+
+## 25. Health/stop timing fix
+
+最小fix：health bounded attempt limit从30调整为90秒；VerifyStopped只排除当前ExecStopPost control PID，任何其他cgroup PID仍阻断。永久回归新增`health-timeout-bounded-90-seconds`与`exec-stop-post-self-pid-excluded`。
+
+Validation：parser0；PS5.1/PS7 deployment51 + release29；Linux runtime25（含canonical symlink、90s bound、self-PID）/installer13/release29；canonical synthetic hashes一致。
+
+```text
+Health/stop timing fix commit = PENDING_EXECUTION
+Exact-head CI = PENDING_EXECUTION
+Replacement release/install/activation = PENDING_EXECUTION
+Current = b103069d8bfcecccba0b4d590317ddccc66898b9
+GateY unit = stopped/failed, MainPID=0, port closed
+DB = V41 / kill ENGAGED / business deltas 0
 ```

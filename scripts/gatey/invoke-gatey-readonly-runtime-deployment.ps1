@@ -23,6 +23,7 @@ Import-Module $script:ContractPath -Force -DisableNameChecking
 $script:Sha256Pattern = '^[0-9a-f]{64}$'
 $script:CommitPattern = '^[0-9a-f]{40}$'
 $script:PlaceholderPattern = '^(REPLACE_WITH_LOCAL|REPLACE_WITH_EXACT_COMMIT|CHANGE_ME)'
+$script:HealthAttemptLimit = 90
 
 if ([string]::IsNullOrWhiteSpace($ExpectedReleaseId))
 {
@@ -785,7 +786,7 @@ function Invoke-Health
     $base = 'http://127.0.0.1:18890'
     $health = $null
     $identity = $null
-    for ($attempt = 1; $attempt -le 30; $attempt++)
+    for ($attempt = 1; $attempt -le $script:HealthAttemptLimit; $attempt++)
     {
         try
         {
@@ -806,7 +807,7 @@ function Invoke-Health
         {
             $health = $null
             $identity = $null
-            if ($attempt -lt 30) { Start-Sleep -Seconds 1 }
+            if ($attempt -lt $script:HealthAttemptLimit) { Start-Sleep -Seconds 1 }
         }
     }
     if ($null -eq $health -or $null -eq $identity)
@@ -828,6 +829,16 @@ function Invoke-Health
     }
 }
 
+function Get-ResidualCgroupProcessIds(
+    [AllowEmptyCollection()][string[]]$ProcessIds,
+    [long]$ControlProcessId
+)
+{
+    return @($ProcessIds | Where-Object {
+        -not [string]::IsNullOrWhiteSpace($_) -and [long]$_ -ne $ControlProcessId
+    })
+}
+
 function Invoke-VerifyStopped
 {
     Assert-RootLinux
@@ -847,9 +858,8 @@ function Invoke-VerifyStopped
         $procsPath = '/sys/fs/cgroup' + $controlGroup + '/cgroup.procs'
         if (Test-Path -LiteralPath $procsPath -PathType Leaf)
         {
-            $residual = @([IO.File]::ReadAllLines($procsPath) | Where-Object {
-                -not [string]::IsNullOrWhiteSpace($_)
-            })
+            $residual = @(Get-ResidualCgroupProcessIds `
+                ([IO.File]::ReadAllLines($procsPath)) ([long]$PID))
             if ($residual.Count -ne 0) { Throw-Blocked 'RUNTIME_STOP_NOT_VERIFIED' }
         }
     }
@@ -1406,8 +1416,21 @@ function Invoke-ContractSelfTest
         throw 'PREFLIGHT_IO_CLASSIFICATION_INVALID'
     }
     $cases.Add('preflight-external-io-explicitly-classified')
+    if ($script:HealthAttemptLimit -ne 90)
+    {
+        throw 'HEALTH_ATTEMPT_LIMIT_INVALID'
+    }
+    $cases.Add('health-timeout-bounded-90-seconds')
+    $selfOnly = @(Get-ResidualCgroupProcessIds @([string]$PID, '') ([long]$PID))
+    $withResidual = @(Get-ResidualCgroupProcessIds @([string]$PID, '424242') ([long]$PID))
+    if ($selfOnly.Count -ne 0 -or $withResidual.Count -ne 1 -or
+            [string]$withResidual[0] -cne '424242')
+    {
+        throw 'CGROUP_CONTROL_PROCESS_EXCLUSION_INVALID'
+    }
+    $cases.Add('exec-stop-post-self-pid-excluded')
 
-    if ($cases.Count -ne 41) { throw ('SELF_TEST_CASE_COUNT_INVALID:' + $cases.Count) }
+    if ($cases.Count -ne 43) { throw ('SELF_TEST_CASE_COUNT_INVALID:' + $cases.Count) }
     return [pscustomobject][ordered]@{
         decision = 'PASS / GATEY_READONLY_RUNTIME_DEPLOYMENT_CONTRACT_SELF_TEST'
         cases = $cases.Count

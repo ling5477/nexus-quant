@@ -19330,3 +19330,13 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - activation blocker：`Resolve-Path`未dereference current symlink，pre-switch link-integrity fail；mutations0，previous/new verifiersPASS。
 - fix：Linux `readlink -f` canonicalization三处，PS5.1/PS7 deployment49+release29、Linux23/13/29通过。
 - next：精确commit/push/CI/rebuild new release，更新release-bound runtime.env后重新InstallUnit/Activate。
+
+## 2026-08-22 — GateY-6F activation rollback and timing remediation
+
+- symlink release：commit `51d755b9...`、CI `32506158245` green；server install/unit通过。
+- activation：controller SSH断开后继续执行；health未接受，自动stop并恢复`b103...`；外部Stop确认PID0/port closed。
+- RCA：server application ready约40.7s > 30s health window；ExecStopPost自计control PID导致stop false negative。
+- fix：health bound=90s；cgroup只排除当前control PID，其他残留仍block。
+- regression：PS5.1/PS7 deployment51+release29；Linux25/13/29；parser0。
+- current：previous GateW；GateY unit stopped/failed；DB V41/ENGAGED，business deltas0。
+- next：forward commit/CI/rebuild/reinstall/activate。
