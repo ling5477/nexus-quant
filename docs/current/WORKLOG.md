@@ -19340,3 +19340,12 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - regression：PS5.1/PS7 deployment51+release29；Linux25/13/29；parser0。
 - current：previous GateW；GateY unit stopped/failed；DB V41/ENGAGED，business deltas0。
 - next：forward commit/CI/rebuild/reinstall/activate。
+
+## 2026-08-22 — GateY-6F mapped-loopback activation remediation
+
+- CI/release：`de6a9a23...` CI `32507250300` attempt2 11/11 green；release manifest/app=`5a8899ef...a508de / 13390251...3503c`，server immutable install/POSIX通过。
+- activation：两次canonical attempt均health reject后自动stop/restore previous；current=`b103...`、PID0、port closed、DB V41/ENGAGED、四类业务计数0。
+- RCA：server `ss`把loopback显示为`[::ffff:127.0.0.1]:18890`；PID与两个PowerShell GET均正确，旧address regex误判。
+- fix：只新增精确IPv4-mapped loopback接受，继续拒绝wildcard并保留PID binding；VerifyStopped共用同一pattern。
+- regression：parser0；PS5.1/PS7 deployment51/self-test46+release29；Linux26/13/29，network none。
+- next：forward commit/push/exact-head CI后从新SHA构建release并重试canonical activation。

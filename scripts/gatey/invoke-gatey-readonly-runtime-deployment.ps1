@@ -24,6 +24,7 @@ $script:Sha256Pattern = '^[0-9a-f]{64}$'
 $script:CommitPattern = '^[0-9a-f]{40}$'
 $script:PlaceholderPattern = '^(REPLACE_WITH_LOCAL|REPLACE_WITH_EXACT_COMMIT|CHANGE_ME)'
 $script:HealthAttemptLimit = 90
+$script:ManagementListenerPattern = '(?:127\.0\.0\.1|\[::ffff:127\.0\.0\.1\]):18890'
 
 if ([string]::IsNullOrWhiteSpace($ExpectedReleaseId))
 {
@@ -792,7 +793,7 @@ function Invoke-Health
         {
             $listeners = Invoke-Native '/usr/bin/ss' @('-H', '-ltnp')
             $listenerText = $listeners.Lines -join "`n"
-            if ($listenerText -notmatch '127\.0\.0\.1:18890' -or
+            if (-not (Test-ManagementLoopbackListener $listenerText) -or
                     $listenerText -notmatch ('pid=' + $mainPid + '([,\)])'))
             {
                 throw 'listener not ready'
@@ -827,6 +828,12 @@ function Invoke-Health
         diagnosticOnly = [bool]$identity.diagnosticOnly
         tradingAuthorization = $false
     }
+}
+
+function Test-ManagementLoopbackListener([string]$ListenerText)
+{
+    return -not [string]::IsNullOrWhiteSpace($ListenerText) -and
+        $ListenerText -match $script:ManagementListenerPattern
 }
 
 function Get-ResidualCgroupProcessIds(
@@ -864,7 +871,7 @@ function Invoke-VerifyStopped
         }
     }
     $listeners = Invoke-Native '/usr/bin/ss' @('-H', '-ltnp')
-    if (($listeners.Lines -join "`n") -match '127\.0\.0\.1:18890')
+    if (Test-ManagementLoopbackListener ($listeners.Lines -join "`n"))
     {
         Throw-Blocked 'RUNTIME_STOP_NOT_VERIFIED'
     }
@@ -1421,6 +1428,16 @@ function Invoke-ContractSelfTest
         throw 'HEALTH_ATTEMPT_LIMIT_INVALID'
     }
     $cases.Add('health-timeout-bounded-90-seconds')
+    if (-not (Test-ManagementLoopbackListener '127.0.0.1:18890') -or
+            -not (Test-ManagementLoopbackListener '[::ffff:127.0.0.1]:18890') -or
+            (Test-ManagementLoopbackListener '0.0.0.0:18890') -or
+            (Test-ManagementLoopbackListener '[::]:18890'))
+    {
+        throw 'MANAGEMENT_LOOPBACK_LISTENER_CLASSIFICATION_INVALID'
+    }
+    $cases.Add('ipv4-loopback-listener-accepted')
+    $cases.Add('ipv4-mapped-loopback-listener-accepted')
+    $cases.Add('wildcard-listener-rejected')
     $selfOnly = @(Get-ResidualCgroupProcessIds @([string]$PID, '') ([long]$PID))
     $withResidual = @(Get-ResidualCgroupProcessIds @([string]$PID, '424242') ([long]$PID))
     if ($selfOnly.Count -ne 0 -or $withResidual.Count -ne 1 -or
@@ -1430,7 +1447,7 @@ function Invoke-ContractSelfTest
     }
     $cases.Add('exec-stop-post-self-pid-excluded')
 
-    if ($cases.Count -ne 43) { throw ('SELF_TEST_CASE_COUNT_INVALID:' + $cases.Count) }
+    if ($cases.Count -ne 46) { throw ('SELF_TEST_CASE_COUNT_INVALID:' + $cases.Count) }
     return [pscustomobject][ordered]@{
         decision = 'PASS / GATEY_READONLY_RUNTIME_DEPLOYMENT_CONTRACT_SELF_TEST'
         cases = $cases.Count

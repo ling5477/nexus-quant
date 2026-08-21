@@ -101,7 +101,7 @@ try
     $selfTest = ($selfTestOutput -join [Environment]::NewLine) | ConvertFrom-Json
     Assert-Condition (
         [string]$selfTest.decision -ceq 'PASS / GATEY_READONLY_RUNTIME_DEPLOYMENT_CONTRACT_SELF_TEST' -and
-        [int]$selfTest.cases -eq 43 -and
+        [int]$selfTest.cases -eq 46 -and
         -not [bool]$selfTest.filesystemMutation -and
         -not [bool]$selfTest.systemdMutation -and
         -not [bool]$selfTest.databaseMutation -and
@@ -268,7 +268,8 @@ try
         'Write-DeploymentEvidence', 'DEPLOYMENT_EVIDENCE_PATH_INVALID',
         'ROLLBACK_CURRENT_VERIFICATION_NOT_IMPLEMENTED',
         'Test-PreviousRelease', 'Set-CurrentPointer', 'Resolve-CanonicalPath',
-        'Get-ResidualCgroupProcessIds', '$script:HealthAttemptLimit = 90',
+        'Get-ResidualCgroupProcessIds', 'Test-ManagementLoopbackListener',
+        '$script:HealthAttemptLimit = 90',
         'nq-gatew-release-v3'
     ))
     {

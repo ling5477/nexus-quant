@@ -14301,3 +14301,9 @@ Canonical readlink-f fix及永久Linux symlink regression已实现：PS5.1/PS7 d
 Symlink fix commit=`51d755b9...`、CI `32506158245` 11/11 green；release/install/unit PASS。Activate期间SSH断开，但background controller完成health rejection、stop与previous pointer restore；显式Stop验证MainPID0/port closed/DB mutation0。
 
 Journal无Spring exception：Tomcat约35.1s、application约40.7s ready，超过旧30s health bound。ExecStopPost又把自身PID计为cgroup residual。Fix采用90s bounded health和self-PID exclusion；PS5.1/PS7 deployment51+release29、Linux25/13/29、parser0通过。等待commit/CI/release重试。
+
+## 2026-08-22 — GateY-6F IPv4-mapped loopback health remediation
+
+Commit `de6a9a23...` 的 exact-head CI run `32507250300` attempt 2 为11/11 success；attempt 1唯一失败是Maven Central HTTP 429。Replacement release/server install/POSIX/Plan/DB切换前校验通过。两次canonical Activate均因health listener文本误判自动停止并恢复`b103...`，DB side effects保持0。
+
+独立production只读probe证明`ss`使用`[::ffff:127.0.0.1]:18890`，expected MainPID匹配，PowerShell health/identity GET均PASS。最小fix接受IPv4与IPv4-mapped loopback，拒绝IPv4/IPv6 wildcard。Parser0；PS5.1/PS7 deployment51/self-test46、release29；Linux `--network none` runtime26、installer13、release29均PASS。未运行全量Maven；新 exact-head CI 将执行完整基线，当前不阻断forward commit。

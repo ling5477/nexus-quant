@@ -120,7 +120,7 @@ try
     Assert-Condition ($LASTEXITCODE -eq 0) 'ORCHESTRATOR_SELF_TEST_FAILED'
     $selfTest = ($selfTestOutput -join [Environment]::NewLine) | ConvertFrom-Json
     Assert-Condition (
-        [int]$selfTest.cases -eq 43 -and
+        [int]$selfTest.cases -eq 46 -and
         -not [bool]$selfTest.filesystemMutation -and
         -not [bool]$selfTest.systemdMutation -and
         -not [bool]$selfTest.databaseMutation -and
@@ -183,12 +183,13 @@ try
     Complete-Case 'counter-truth-table-pass'
     Complete-Case 'canonical-symlink-resolution-pass'
     Complete-Case 'health-timeout-bounded-90-seconds'
+    Complete-Case 'ipv4-mapped-loopback-listener-accepted'
     Complete-Case 'exec-stop-post-self-pid-excluded'
     Complete-Case 'activation-rollback-path-present'
     Complete-Case 'dynamic-plan-zero-external-io-pass'
     Complete-Case 'preflight-external-io-explicitly-classified'
 
-    Assert-Condition ($cases.Count -eq 25) ('CASE_COUNT_INVALID:' + $cases.Count)
+    Assert-Condition ($cases.Count -eq 26) ('CASE_COUNT_INVALID:' + $cases.Count)
     [pscustomobject][ordered]@{
         decision = 'PASS / GATEY_READONLY_RUNTIME_DEPLOYMENT_LINUX_REGRESSION'
         cases = $cases.Count

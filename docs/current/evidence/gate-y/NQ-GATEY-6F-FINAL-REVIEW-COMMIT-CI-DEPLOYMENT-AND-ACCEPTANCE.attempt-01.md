@@ -394,3 +394,17 @@ Current = b103069d8bfcecccba0b4d590317ddccc66898b9
 GateY unit = stopped/failed, MainPID=0, port closed
 DB = V41 / kill ENGAGED / business deltas 0
 ```
+
+## 26. Exact-head CI, replacement release and mapped-loopback blocker
+
+- Health/stop timing fix commit=`de6a9a23e59235608a1d6ca2a47f1bc2bf8fa9d6`；首次 CI run `32507250300` 的 Backend Maven fixture 因 Maven Central HTTP 429 失败，代码测试未开始；同一 exact-head attempt 2 重跑后 `completed / success / 11 of 11`，未新增提交。
+- Replacement release ID/source=`de6a9a23...`，manifest=`5a8899ef55791e0a4ea8ff3165cb369c9bc6be70a10b61e0629c1983d9a508de`，application=`1339025150b9d1453aeeaf74cf6b57bbf5b1c3830133babc045f2c647283503c`，13 artifacts、V41；local/source/server POSIX/install verification均PASS。
+- Transport tar bytes=`36640256`、SHA-256=`748432925c74c662772322f2084d7e303f2cb11de4c8aeb5ff8c2bd6fee41398`。首次上传在本地等待窗口终止后只形成不完整临时文件；随后使用`.part`完整重传、server size/hash验证和原子替换，未从不完整文件解包或安装。
+- 两次本地controller orchestration错误均在activation前fail-closed：首次是`pipefail + grep -q`的SIGPIPE；第二次漏传显式`-ReleaseRoot`并返回`CANONICAL_DATABASE_TARGET_MISSING`。两次env/unit事务均恢复，filesystem/systemd/DB/trading mutation decision为false；installed immutable release保留。
+- 显式release root后，InstallUnit、动态Plan与切换前DB hard gate PASS；Plan外部IO计数全部0，current仍`b103...`、MainPID0、DB=`failed0/V41/ENGAGED/0/0/0/0`。
+- 两次canonical Activate均在90秒后返回`RUNTIME_HEALTH_NOT_VERIFIED`并按合同stop/verify stopped/restore previous。每次独立readback均为current=`b103...`、MainPID0、18890 closed、kill ENGAGED、ExecutionIntent/Receipt/Order/Ledger=`0/0/0/0`。
+- 第二次有界复现期间，runtime实际为active，MainPID与listener PID一致；PowerShell两个loopback GET均PASS/UP，identity绑定`de6a9a23...`。`ss`唯一listener表示为`[::ffff:127.0.0.1]:18890`，旧controller只匹配`127.0.0.1:18890`，因此产生false negative。
+
+最小fix只接受精确IPv4 loopback或IPv4-mapped loopback表示，继续拒绝`0.0.0.0:18890`与`[::]:18890`，且health仍强制expected MainPID；VerifyStopped复用同一精确pattern，避免映射表示绕过残留listener检查。
+
+Validation：parser0；PS5.1/PS7 deployment51/self-test46 + release29；disposable Linux `--network none` runtime26/installer13/release29。Forward commit、exact-head CI、新release与activation仍为`PENDING_EXECUTION`。
