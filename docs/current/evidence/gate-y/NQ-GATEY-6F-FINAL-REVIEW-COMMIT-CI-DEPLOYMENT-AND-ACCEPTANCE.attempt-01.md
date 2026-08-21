@@ -408,3 +408,21 @@ DB = V41 / kill ENGAGED / business deltas 0
 最小fix只接受精确IPv4 loopback或IPv4-mapped loopback表示，继续拒绝`0.0.0.0:18890`与`[::]:18890`，且health仍强制expected MainPID；VerifyStopped复用同一精确pattern，避免映射表示绕过残留listener检查。
 
 Validation：parser0；PS5.1/PS7 deployment51/self-test46 + release29；disposable Linux `--network none` runtime26/installer13/release29。Forward commit、exact-head CI、新release与activation仍为`PENDING_EXECUTION`。
+
+## 27. Forward fix CI, immutable release and deployment acceptance
+
+- Forward fix commit=`2cee199081bc338b4dd5c05d2aff867b7a418202`；精确暂存6个文件后commit/push成功。Exact-head `NQ CI Baseline` run=`32510253812 / completed / success / 11 of 11 / bad=0`。
+- Canonical release ID/source=`2cee1990...`；manifest SHA-256=`98b38cee57eb187e1ab7a4d262ef6d3580989d1be965b5762de0ed0f61f84350`；application SHA-256=`383554ed7f9ee8d7809852e4d2ae6225e69946938870e2e6c9d838ea9b455db7`；13 artifacts、schema target V41。Local independent verifier PASS。
+- Transport tar bytes=`36641280`、SHA-256=`fd112bdaccc0814b1913fdf162a891fc42bf7f3d891b11600cbf4f4d30bd9135`；server `.part` size/hash验证后使用。Source verifier、immutable install、POSIX、link integrity、service-user-write-denied、InstallUnit与动态Plan全部PASS。
+- Activation前：current=`b103069d...`、MainPID0、18890 closed；Flyway failed0/currentV41、kill ENGAGED、ExecutionIntent/Receipt/Order/Ledger=`0/0/0/0`。Canonical `Activate -NoMigration -PreviousReleaseId b103...`返回`PASS / GATEY_READONLY_RELEASE_ACTIVATED_HEALTHY`，current=`2cee1990...`、MainPID=`1028560`、rollbackRequired=false。
+- 独立UnitPreflight：`READ_ONLY_EXTERNAL_IO_ALLOWED`，psql/pgpass/network/databaseReads=`1/1/1/1`，databaseWrites/filesystem/systemd/runtimeStarts=`0/0/0/0`，credential bytes exposed=false。
+- 独立Health：active/running、MainPID=`1028560`、NRestarts0；mapped-loopback listener绑定同一PID；actuator health UP；sourceCommit/releaseId exact；LIVE=false、kill=ENGAGED、mutationRuntimeBound=false、diagnosticOnly=true、tradingAuthorization=false、noSideEffect=true。
+- Counter truth：9项均为`NOT_INSTRUMENTED/null`；`verifiedZero=0 / notVerified=9 / unknownNeverPromotedToZero=true`。不得把OKX GET/POST或credential/decrypt counters写成0。
+- Side-effect evidence：该PID established sockets仅10条mapped-loopback PostgreSQL `55432`连接，non-loopback=0；runtime journal `api/v5|okx.com|www.okx` markers=0；kill state/version/event在两次查询中稳定为`ENGAGED/1/1`；ExecutionIntent/Receipt/Order/Ledger稳定为`0/0/0/0`。PLACE/CANCEL/transfer/withdraw未执行；LIVE enable与kill disengage均0。
+- Runtime boundary：service=`nq-gatey-readonly`；release/runtime.env不可写，secrets.env/db.pgpass不可读；installed immutable releases保留。Local generated `target/`与server transport/source staging已删除，均可由exact commit重建；active release未删除或停止。
+
+Final decision：
+
+`PASS / GATEY_6F_SERVER_DEPLOYMENT_ACCEPTED / FINAL_REVIEW_ACCEPTED / COMMITTED / EXACT_HEAD_CI_GREEN / IMMUTABLE_RELEASE_VERIFIED / SERVER_PREFLIGHT_VERIFIED / READONLY_RUNTIME_DEPLOYED / LOOPBACK_HEALTH_VERIFIED / RUNTIME_IDENTITY_VERIFIED / LIVE_DISABLED / KILL_ENGAGED / MUTATION_RUNTIME_UNBOUND / NO_STARTUP_TRADING_SIDE_EFFECT / P0_0 / P1_0`。
+
+GateY-6F authority status仍为`NOT_STARTED`；本部署接受不物化PilotScope、不授权第一笔订单、micro-live、PLACE/CANCEL或pilot执行。任务建议的后续候选为`NQ-GATEY-6F-EXACT-PILOT-ATTEMPT-04`，但实际下一允许动作仍必须读取`STATUS.md` machine authority并获得独立授权。

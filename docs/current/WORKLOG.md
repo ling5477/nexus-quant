@@ -19349,3 +19349,13 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - fix：只新增精确IPv4-mapped loopback接受，继续拒绝wildcard并保留PID binding；VerifyStopped共用同一pattern。
 - regression：parser0；PS5.1/PS7 deployment51/self-test46+release29；Linux26/13/29，network none。
 - next：forward commit/push/exact-head CI后从新SHA构建release并重试canonical activation。
+
+## 2026-08-22 — GateY-6F readonly server deployment accepted
+
+- forward：commit=`2cee1990...`，CI=`32510253812 / success / 11 of 11`。
+- release：manifest/app=`98b38cee...f84350 / 383554ed...455db7`；immutable install/POSIX/Plan通过。
+- activation：canonical Activate成功；current=`2cee1990...`、MainPID=`1028560`、active/running、NRestarts0。
+- acceptance：health UP、identity exact、LIVE=false、kill ENGAGED、mutationRuntimeBound=false；9 counters为`NOT_INSTRUMENTED/null`。
+- side effects：non-loopback socket0、OKX URL journal markers0、kill version/event=`1/1`、四类业务计数稳定0；无PLACE/CANCEL/transfer/withdraw。
+- security：service不可写release/env、不可读secret/pgpass；临时transport/staging已清理，active release保留。
+- result：`PASS / GATEY_6F_SERVER_DEPLOYMENT_ACCEPTED / P0_0 / P1_0`；GateY-6F authority仍NOT_STARTED，pilot/first order未授权。

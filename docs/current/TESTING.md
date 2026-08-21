@@ -14307,3 +14307,9 @@ Journal无Spring exception：Tomcat约35.1s、application约40.7s ready，超过
 Commit `de6a9a23...` 的 exact-head CI run `32507250300` attempt 2 为11/11 success；attempt 1唯一失败是Maven Central HTTP 429。Replacement release/server install/POSIX/Plan/DB切换前校验通过。两次canonical Activate均因health listener文本误判自动停止并恢复`b103...`，DB side effects保持0。
 
 独立production只读probe证明`ss`使用`[::ffff:127.0.0.1]:18890`，expected MainPID匹配，PowerShell health/identity GET均PASS。最小fix接受IPv4与IPv4-mapped loopback，拒绝IPv4/IPv6 wildcard。Parser0；PS5.1/PS7 deployment51/self-test46、release29；Linux `--network none` runtime26、installer13、release29均PASS。未运行全量Maven；新 exact-head CI 将执行完整基线，当前不阻断forward commit。
+
+## 2026-08-22 — GateY-6F server deployment accepted
+
+Forward fix commit=`2cee1990...`；exact-head CI run `32510253812` completed/success/11 of 11。Release manifest/app=`98b38cee...f84350 / 383554ed...455db7`；local/server source/installed/POSIX验证通过。Canonical Activate成功，独立UnitPreflight/Health/systemd/listener/identity均PASS。
+
+Runtime MainPID=`1028560`、NRestarts0；LIVE=false、kill ENGAGED、mutationRuntimeBound=false。9 counters诚实保持`NOT_INSTRUMENTED/null`，没有伪造zero。PID non-loopback sockets=0、OKX URL journal markers=0；kill version/event=`1/1`，ExecutionIntent/Receipt/Order/Ledger两次查询稳定为0。结论：`PASS / GATEY_6F_SERVER_DEPLOYMENT_ACCEPTED / P0_0 / P1_0`。GateY-6F machine authority仍`NOT_STARTED`，pilot/first order未授权。
