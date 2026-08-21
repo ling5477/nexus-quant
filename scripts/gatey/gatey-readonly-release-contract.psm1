@@ -126,7 +126,15 @@ function Assert-GateYReleaseArtifacts
         'config/application-gatey-readonly-qualification.yml',
         'bin/gatey-readonly-release-contract.psm1',
         'bin/invoke-gatey-readonly-deployment-contract.ps1',
-        'bin/install-gatey-readonly-release.ps1'
+        'bin/install-gatey-readonly-release.ps1',
+        'bin/invoke-gatey-readonly-runtime-deployment.ps1',
+        'config/nq-gatey-readonly-qualification.service',
+        'config/gatey-readonly-runtime.env.example',
+        'config/gatey-readonly-runtime.secrets.env.example',
+        'config/gatey-readonly-db.pgpass.example',
+        'config/gatey-readonly-runtime-target.json',
+        'bin/verify-gatew-release.ps1',
+        'bin/gatew-release-contract.psm1'
     ))
     {
         if (-not $paths.Contains($required))
@@ -193,13 +201,11 @@ function New-GateYReadonlyReleaseManifest
             currentPointer = '/opt/nexus-quant/current'
         }
         safety = [pscustomobject][ordered]@{
+            factClassification = 'EXPECTED_CONFIGURATION'
             live = 'DISABLED'
             killSwitch = 'ENGAGED'
             spotExecutionProviderBeans = 0
             executionWorkerBindings = 0
-            startupCredentialReads = 0
-            startupOkxGetCalls = 0
-            startupOkxPostCalls = 0
             tradingAuthorization = $false
         }
         deployment = [pscustomobject][ordered]@{
@@ -214,6 +220,36 @@ function New-GateYReadonlyReleaseManifest
             )
         }
         artifacts = $orderedArtifacts
+    }
+}
+
+function Assert-GateYReleaseManifestRuntimeFactBoundary($Manifest)
+{
+    if ($null -eq $Manifest.safety -or
+            [string]$Manifest.safety.factClassification -cne 'EXPECTED_CONFIGURATION')
+    {
+        throw 'BLOCKED / RELEASE_MANIFEST_RUNTIME_FACT_INVALID'
+    }
+    $allowedSafetyFields = @(
+        'factClassification', 'live', 'killSwitch', 'spotExecutionProviderBeans',
+        'executionWorkerBindings', 'tradingAuthorization'
+    )
+    $actualSafetyFields = @($Manifest.safety.PSObject.Properties.Name)
+    if (@($allowedSafetyFields | Where-Object { $actualSafetyFields -notcontains $_ }).Count -ne 0 -or
+            @($actualSafetyFields | Where-Object { $allowedSafetyFields -notcontains $_ }).Count -ne 0)
+    {
+        throw 'BLOCKED / RELEASE_MANIFEST_RUNTIME_FACT_INVALID'
+    }
+    foreach ($forbidden in @(
+        'startupCredentialReads', 'startupOkxGetCalls', 'startupOkxPostCalls',
+        'runtimeHealthy', 'killSwitchObserved', 'databaseConnected'
+    ))
+    {
+        if ($null -ne $Manifest.PSObject.Properties[$forbidden] -or
+                $null -ne $Manifest.safety.PSObject.Properties[$forbidden])
+        {
+            throw 'BLOCKED / RELEASE_MANIFEST_RUNTIME_FACT_INVALID'
+        }
     }
 }
 
@@ -517,6 +553,7 @@ function Test-GateYReadonlyRelease
     {
         throw 'BLOCKED / RELEASE_MANIFEST_CONTRACT_INVALID'
     }
+    Assert-GateYReleaseManifestRuntimeFactBoundary $manifest
     Assert-GateYReleaseArtifacts @($manifest.artifacts)
     $declared = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($artifact in $manifest.artifacts)

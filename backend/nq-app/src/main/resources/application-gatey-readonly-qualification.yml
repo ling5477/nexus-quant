@@ -20,6 +20,11 @@ management:
   info:
     env:
       enabled: true
+  endpoints:
+    web:
+      # 仅在 loopback qualification runtime 暴露稳定、无授权能力的 deployment identity。
+      exposure:
+        include: health,info,readonlyproviderobservation
 
 info:
   nq:
@@ -44,6 +49,7 @@ nq:
       enabled: false
     provider-observation:
       enabled: true
+      deployment-profile: gatey-readonly-qualification
       release-id: ${NQ_GATEY_RELEASE_ID}
       source-commit: ${NQ_GATEY_SOURCE_COMMIT}
       capability-identity: read-only-provider-observation

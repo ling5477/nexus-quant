@@ -8,6 +8,11 @@ import com.guidinglight.nexusquant.livecontrol.application.PilotPrerequisiteObse
 import com.guidinglight.nexusquant.livecontrol.deployment.WorkerDeploymentAdmissionService;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotExecutionProviderPort;
 import com.guidinglight.nexusquant.livecontrol.infra.KillSwitchGuardedProviderObservationAuthority;
+import com.guidinglight.nexusquant.risk.service.KillSwitchEngageCommand;
+import com.guidinglight.nexusquant.risk.service.KillSwitchScope;
+import com.guidinglight.nexusquant.risk.service.KillSwitchState;
+import com.guidinglight.nexusquant.risk.service.KillSwitchStateRepository;
+import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
 import com.guidinglight.nexusquant.scheduler.service.AdapterInstrumentCatalogSyncService;
 import com.guidinglight.nexusquant.scheduler.service.BinanceRecoveryService;
 import com.guidinglight.nexusquant.scheduler.service.BinanceRestReconcileService;
@@ -26,7 +31,9 @@ import java.net.SocketAddress;
 import java.net.URI;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
@@ -35,6 +42,7 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.ApplicationContext;
@@ -46,10 +54,14 @@ import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * 使用 {@link NexusQuantApplication} 的真实 component scan 验证 GateY qualification 生产图。
@@ -62,6 +74,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
         classes = NexusQuantApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.MOCK
 )
+@AutoConfigureMockMvc
 @ContextConfiguration(
         classes = GateYReadonlyQualificationProductionContextTest.Probes.class,
         initializers = GateYReadonlyQualificationProductionContextTest.NoOkxOutboundInitializer.class
@@ -78,6 +91,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
         "nq.security.access-token-ttl=PT30M",
         "nq.runtime.trading-components.enabled=false",
         "nq.runtime.provider-observation.enabled=true",
+        "nq.runtime.provider-observation.deployment-profile=gatey-readonly-qualification",
         "nq.runtime.provider-observation.release-id=1111111111111111111111111111111111111111",
         "nq.runtime.provider-observation.source-commit=1111111111111111111111111111111111111111",
         "nq.runtime.provider-observation.capability-identity=read-only-provider-observation",
@@ -108,6 +122,9 @@ class GateYReadonlyQualificationProductionContextTest {
     @Autowired
     private CountingDataSource dataSource;
 
+    @Autowired
+    private MockMvc mockMvc;
+
     @AfterAll
     static void restoreNoOutboundGuard() {
         NoOkxOutboundProxySelector.restore();
@@ -117,6 +134,7 @@ class GateYReadonlyQualificationProductionContextTest {
     void fullProductionComponentScanStartsWithOnlyTrustedReadAuthority() {
         assertNotNull(context);
         assertEquals(1, context.getBeansOfType(KillSwitchGuardedProviderObservationAuthority.class).size());
+        assertEquals(1, context.getBeansOfType(ReadOnlyRuntimeDiagnosticEndpoint.class).size());
         assertInstanceOf(
                 KillSwitchGuardedProviderObservationAuthority.class,
                 context.getBean(PilotPrerequisiteObservationAuthority.class)
@@ -141,13 +159,80 @@ class GateYReadonlyQualificationProductionContextTest {
         assertEquals(0, NoOkxOutboundProxySelector.selections.get());
     }
 
+    @Test
+    void loopbackDiagnosticEndpointIsGetOnlyAndKeepsStartupSideEffectsAtZero() throws Exception {
+        mockMvc.perform(get("/actuator/readonlyproviderobservation"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sourceCommit")
+                        .value("1111111111111111111111111111111111111111"))
+                .andExpect(jsonPath("$.releaseId")
+                        .value("1111111111111111111111111111111111111111"))
+                .andExpect(jsonPath("$.javaMajor").value(21))
+                .andExpect(jsonPath("$.qualificationProfile").value("gatey-readonly-qualification"))
+                .andExpect(jsonPath("$.capabilityIdentity").value("read-only-provider-observation"))
+                .andExpect(jsonPath("$.bindAddress").value("127.0.0.1"))
+                .andExpect(jsonPath("$.providerObservationEnabled").value(true))
+                .andExpect(jsonPath("$.tradingComponentsEnabled").value(false))
+                .andExpect(jsonPath("$.liveEnabled").value(false))
+                .andExpect(jsonPath("$.killSwitch").value("ENGAGED"))
+                .andExpect(jsonPath("$.mutationRuntimeBound").value(false))
+                .andExpect(jsonPath("$.credentialMetadataReads.status").value("NOT_INSTRUMENTED"))
+                .andExpect(jsonPath("$.credentialMaterialReads.status").value("NOT_INSTRUMENTED"))
+                .andExpect(jsonPath("$.decryptCount.status").value("NOT_INSTRUMENTED"))
+                .andExpect(jsonPath("$.okxGetCount.status").value("NOT_INSTRUMENTED"))
+                .andExpect(jsonPath("$.okxPostCount.status").value("NOT_INSTRUMENTED"))
+                .andExpect(jsonPath("$.executionIntentDelta.status").value("NOT_INSTRUMENTED"))
+                .andExpect(jsonPath("$.executionReceiptDelta.status").value("NOT_INSTRUMENTED"))
+                .andExpect(jsonPath("$.orderDelta.status").value("NOT_INSTRUMENTED"))
+                .andExpect(jsonPath("$.ledgerDelta.status").value("NOT_INSTRUMENTED"))
+                .andExpect(jsonPath("$.diagnosticOnly").value(true))
+                .andExpect(jsonPath("$.tradingAuthorization").value(false))
+                .andExpect(jsonPath("$.noSideEffect").value(true));
+
+        mockMvc.perform(get("/actuator/readonlyproviderobservation"))
+                .andExpect(status().isOk());
+        assertEquals(2, Probes.killReads.get());
+        assertEquals(0, dataSource.connectionAttempts.get());
+        assertEquals(0, NoOkxOutboundProxySelector.selections.get());
+    }
+
     @TestConfiguration(proxyBeanMethods = false)
     static class Probes {
+
+        private static final AtomicInteger killReads = new AtomicInteger();
 
         @Bean
         @Primary
         CountingDataSource qualificationCountingDataSource() {
             return new CountingDataSource();
+        }
+
+        @Bean
+        @Primary
+        KillSwitchStateRepository qualificationKillSwitchStateRepository() {
+            killReads.set(0);
+            KillSwitchState state = new KillSwitchState(
+                    KillSwitchScope.GLOBAL_TRADING,
+                    KillSwitchStatus.ENGAGED,
+                    1,
+                    "QUALIFICATION_TEST",
+                    "TEST",
+                    Instant.parse("2026-08-20T00:00:00Z"),
+                    "test-operator",
+                    "qualification-test-trace"
+            );
+            return new KillSwitchStateRepository() {
+                @Override
+                public Optional<KillSwitchState> findByScope(KillSwitchScope scope) {
+                    killReads.incrementAndGet();
+                    return Optional.of(state);
+                }
+
+                @Override
+                public KillSwitchState engage(KillSwitchEngageCommand command) {
+                    throw new AssertionError("diagnostic endpoint must not mutate kill state");
+                }
+            };
         }
 
     }

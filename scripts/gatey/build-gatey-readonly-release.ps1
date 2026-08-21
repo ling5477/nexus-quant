@@ -12,7 +12,15 @@ $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $contractPath = Join-Path $PSScriptRoot 'gatey-readonly-release-contract.psm1'
 $deploymentPath = Join-Path $PSScriptRoot 'invoke-gatey-readonly-deployment-contract.ps1'
 $installerPath = Join-Path $PSScriptRoot 'install-gatey-readonly-release.ps1'
+$runtimeDeploymentPath = Join-Path $PSScriptRoot 'invoke-gatey-readonly-runtime-deployment.ps1'
 $profilePath = Join-Path $repo 'backend/nq-app/src/main/resources/application-gatey-readonly-qualification.yml'
+$systemdUnitPath = Join-Path $repo 'deploy/systemd/nq-gatey-readonly-qualification.service'
+$runtimeEnvTemplatePath = Join-Path $repo 'deploy/gatey/gatey-readonly-runtime.env.example'
+$runtimeSecretsTemplatePath = Join-Path $repo 'deploy/gatey/gatey-readonly-runtime.secrets.env.example'
+$runtimePgpassTemplatePath = Join-Path $repo 'deploy/gatey/gatey-readonly-db.pgpass.example'
+$runtimeTargetPath = Join-Path $repo 'deploy/gatey/gatey-readonly-runtime-target.json'
+$gatewVerifierPath = Join-Path $repo 'scripts/gatew/verify-gatew-release.ps1'
+$gatewContractPath = Join-Path $repo 'scripts/gatew/gatew-release-contract.psm1'
 $migrationRoot = Join-Path $repo 'backend/nq-infra/src/main/resources/db/migration'
 Import-Module $contractPath -Force -DisableNameChecking
 
@@ -308,6 +316,14 @@ try
             Copy-Artifact $contractPath $stage 'bin/gatey-readonly-release-contract.psm1' '0644' 'release-contract'
             Copy-Artifact $deploymentPath $stage 'bin/invoke-gatey-readonly-deployment-contract.ps1' '0755' 'deployment-contract'
             Copy-Artifact $installerPath $stage 'bin/install-gatey-readonly-release.ps1' '0755' 'release-installer'
+            Copy-Artifact $runtimeDeploymentPath $stage 'bin/invoke-gatey-readonly-runtime-deployment.ps1' '0755' 'runtime-deployment-orchestrator'
+            Copy-Artifact $systemdUnitPath $stage 'config/nq-gatey-readonly-qualification.service' '0644' 'systemd-runtime-contract'
+            Copy-Artifact $runtimeEnvTemplatePath $stage 'config/gatey-readonly-runtime.env.example' '0644' 'runtime-environment-template'
+            Copy-Artifact $runtimeSecretsTemplatePath $stage 'config/gatey-readonly-runtime.secrets.env.example' '0600' 'runtime-secret-environment-template'
+            Copy-Artifact $runtimePgpassTemplatePath $stage 'config/gatey-readonly-db.pgpass.example' '0600' 'database-credential-reference-template'
+            Copy-Artifact $runtimeTargetPath $stage 'config/gatey-readonly-runtime-target.json' '0644' 'runtime-target-contract'
+            Copy-Artifact $gatewVerifierPath $stage 'bin/verify-gatew-release.ps1' '0755' 'gatew-rollback-verifier'
+            Copy-Artifact $gatewContractPath $stage 'bin/gatew-release-contract.psm1' '0644' 'gatew-rollback-contract'
         )
         $manifest = New-GateYReadonlyReleaseManifest $head $commitTimestamp $artifacts $migrationRoot
         Write-GateYReadonlyCanonicalManifest (Join-Path $stage 'release-manifest.json') $manifest
