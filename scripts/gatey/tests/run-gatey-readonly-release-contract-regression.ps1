@@ -453,6 +453,10 @@ try
     {
         Assert-Condition $builderSource.Contains($marker) "BUILDER_MARKER_MISSING:$marker"
     }
+    Assert-Condition (
+        $builderSource.Contains('$mavenOutput = @(& $maven @arguments)') -and
+        $builderSource -notmatch '(?m)^\s*& \$maven @arguments\s*$'
+    ) 'BUILDER_MAVEN_OUTPUT_LEAKS_TO_RETURN_VALUE'
     Complete-Case 'builder-exact-clean-contract'
 
     $builderSelfTestOutput = @(& $engine -NoProfile -File $builder -ContractSelfTest 2>&1)

@@ -64,9 +64,11 @@ function Invoke-ExactSourceApplicationBuild
         'clean', 'package', 'spring-boot:repackage',
         '-DskipTests', "-Dproject.build.outputTimestamp=$OutputTimestamp"
     )
-    & $maven @arguments
-    if ($LASTEXITCODE -ne 0)
+    $mavenOutput = @(& $maven @arguments)
+    $mavenExitCode = [int]$LASTEXITCODE
+    if ($mavenExitCode -ne 0)
     {
+        $mavenOutput | ForEach-Object { Write-Verbose ([string]$_) }
         throw 'FAIL / RELEASE_APPLICATION_BUILD_FAILED'
     }
     if (@(& git -C $repo status --porcelain=v1).Count -ne 0)

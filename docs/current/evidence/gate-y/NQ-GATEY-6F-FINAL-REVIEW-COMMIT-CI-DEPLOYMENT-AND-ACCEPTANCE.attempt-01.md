@@ -109,3 +109,23 @@ Forward fix commit = PENDING_EXECUTION
 Forward fix exact-head CI = PENDING_EXECUTION
 Immutable release retry = PENDING_EXECUTION
 ```
+
+## 11. Phase F second build blocker and local fix
+
+Forward fix commit=`31c87e5b7fe18bf4418781e83df0180165de39e7`，push成功；exact-head `NQ CI Baseline` run=`32493024365 / completed / success / 11 of 11`。
+
+第二次clean CI-green builder执行越过nested migration hard gate后返回：
+
+```text
+BLOCKED / RELEASE_ARTIFACT_MISSING
+```
+
+RCA：`Invoke-ExactSourceApplicationBuild`把Maven stdout写入PowerShell success stream，导致调用方`$applicationJar`收到`Object[]`而不是单一JAR path；所有13个canonical source artifacts实际存在。该问题同样是局部build orchestration返回值缺陷，server contact/upload/install仍为0。
+
+最小fix：捕获Maven output与exit code，函数success stream只返回单一application JAR path；release regression永久拒绝raw `& $maven @arguments` success-stream leakage。Builder self-test、PS5.1/PS7/Linux release 29/29均通过。
+
+```text
+Second forward fix commit = PENDING_EXECUTION
+Second forward fix exact-head CI = PENDING_EXECUTION
+Immutable release retry = PENDING_EXECUTION
+```
