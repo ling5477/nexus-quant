@@ -14313,3 +14313,18 @@ Commit `de6a9a23...` 的 exact-head CI run `32507250300` attempt 2 为11/11 succ
 Forward fix commit=`2cee1990...`；exact-head CI run `32510253812` completed/success/11 of 11。Release manifest/app=`98b38cee...f84350 / 383554ed...455db7`；local/server source/installed/POSIX验证通过。Canonical Activate成功，独立UnitPreflight/Health/systemd/listener/identity均PASS。
 
 Runtime MainPID=`1028560`、NRestarts0；LIVE=false、kill ENGAGED、mutationRuntimeBound=false。9 counters诚实保持`NOT_INSTRUMENTED/null`，没有伪造zero。PID non-loopback sockets=0、OKX URL journal markers=0；kill version/event=`1/1`，ExecutionIntent/Receipt/Order/Ledger两次查询稳定为0。结论：`PASS / GATEY_6F_SERVER_DEPLOYMENT_ACCEPTED / P0_0 / P1_0`。GateY-6F machine authority仍`NOT_STARTED`，pilot/first order未授权。
+
+## 2026-08-22 — GateY-6F Exact Pilot Binding Implementation attempt-01
+
+结论：`IMPLEMENTED / GATEY_6F_EXACT_PILOT_BINDING_COMPLETE / AUTHORITATIVE_FACT_DRIFT_FAIL_CLOSED / ONE_TIME_BINDING_ENFORCED / NO_PROVIDER_IO / NO_ORDER_MUTATION / P0_0 / P1_0 / READY_TO_COMMIT`（实现完成 / 可进入提交前复核）。
+
+| Command / check | Result | Scope / warnings |
+| --- | --- | --- |
+| focused Maven | PASS（通过） | 11 tests，0 failures/errors/skips；exact digest、drift、expiry、tamper、idempotency、duplicate consumption、stored summary only |
+| full Maven | PASS（通过） | 23 modules、1563 tests、failures/errors/skipped=`0/0/48`；首次CGLIB proxy failure已RCA并最小修复，最终全量通过 |
+| GateY regressions | PASS（通过） | deployment boundary、release29、runtime deployment51、GateY5 lock/post-restore |
+| GateW frozen regressions | PASS（通过） | soak37、security12、release reproducibility34 |
+| Java governance / Shadow | PASS / SHADOW ONLY | verifier PASS；existing=144、ruleset expansion=14、new-code=0 |
+| Authority / migration / diff | PASS（通过） | authority errors=0；V1～V41 unchanged；V40 blob contract PASS；whitespace error=0 |
+
+未运行 deployment acceptance；未访问服务器、credential material 或真实 OKX。Capability默认不装配，`tradingAuthorized=false`、`exchangeMutation=false`，没有 PLACE/CANCEL/ExecutionIntent/Receipt/order/ledger mutation。完整证据：[exact pilot binding attempt-01](evidence/gate-y/NQ-GATEY-6F-EXACT-PILOT-BINDING-IMPLEMENTATION.attempt-01.md)。

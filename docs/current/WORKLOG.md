@@ -19359,3 +19359,12 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - side effects：non-loopback socket0、OKX URL journal markers0、kill version/event=`1/1`、四类业务计数稳定0；无PLACE/CANCEL/transfer/withdraw。
 - security：service不可写release/env、不可读secret/pgpass；临时transport/staging已清理，active release保留。
 - result：`PASS / GATEY_6F_SERVER_DEPLOYMENT_ACCEPTED / P0_0 / P1_0`；GateY-6F authority仍NOT_STARTED，pilot/first order未授权。
+
+## 2026-08-22 — GateY-6F Exact Pilot Binding Implementation attempt-01
+
+- scope：复用V39 append-only session events与V40 scope/observation facts，实现server-owned exact binding、current-fact drift validation和一次性consume；无migration/API/execution接线。
+- implementation：exact release/manifest/server/runtime、account/credential、single instrument/side/LIMIT/price/quantity/notional、四类snapshot、risk/kill/window/correlation canonical binding；`SERIALIZABLE` short transaction；默认disabled composition。
+- validation：focused11/0/0/0；full Maven1563/0/0/48；GateY boundary/release29/runtime51/GateY5；GateW37/12/34；Authority errors0；Java verifier PASS/Shadow new-code0；V1～V41 unchanged。
+- boundary：credential material/OKX/provider/permission probe/PLACE/CANCEL/ExecutionIntent/Receipt/order/ledger/server access=`0`；LIVE disabled、kill engaged；binding与consume均不授权交易。
+- result：`IMPLEMENTED / GATEY_6F_EXACT_PILOT_BINDING_COMPLETE / AUTHORITATIVE_FACT_DRIFT_FAIL_CLOSED / ONE_TIME_BINDING_ENFORCED / NO_PROVIDER_IO / NO_ORDER_MUTATION / P0_0 / P1_0 / READY_TO_COMMIT`。
+- next：`NQ-GATEY-6F-EXACT-PILOT-ATTEMPT-04`；必须另行提供exact operator values与授权，不插Deployment Review。
