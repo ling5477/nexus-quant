@@ -238,6 +238,37 @@ try
     Assert-Condition ($verified.artifactCount -eq 14 -and $verified.linkIntegrityVerified) 'RELEASE_VERIFICATION_FAILED'
     Complete-Case 'independent-regular-file-pass'
 
+    $legacyRelease = Join-Path $tempRoot 'legacy-release'
+    Copy-Item -LiteralPath $releaseA -Destination $legacyRelease -Recurse
+    $legacyManifestPath = Join-Path $legacyRelease 'release-manifest.json'
+    $legacyManifest = Get-Content -LiteralPath $legacyManifestPath -Raw | ConvertFrom-Json
+    $legacyManifest.artifacts = @($legacyManifest.artifacts | Where-Object {
+        [string]$_.relativePath -cne 'bin/invoke-gatey-exact-pilot-scope.ps1'
+    })
+    Remove-Item -LiteralPath (Join-Path $legacyRelease 'bin/invoke-gatey-exact-pilot-scope.ps1') -Force
+    Write-GateYReadonlyCanonicalManifest $legacyManifestPath $legacyManifest
+    Expect-Blocked { Test-GateYReadonlyRelease $legacyRelease } `
+        'BLOCKED / RELEASE_REQUIRED_ARTIFACT_MISSING'
+    $legacyVerified = Test-GateYReadonlyRelease $legacyRelease `
+        -AllowLegacyExactPilotControlSurfaceAbsent
+    Assert-Condition ($legacyVerified.artifactCount -eq 13) 'LEGACY_RELEASE_VERIFICATION_FAILED'
+    Complete-Case 'previous-legacy-exact-pilot-surface-absence-explicitly-accepted'
+
+    $incompleteLegacyRelease = Join-Path $tempRoot 'incomplete-legacy-release'
+    Copy-Item -LiteralPath $legacyRelease -Destination $incompleteLegacyRelease -Recurse
+    $incompleteManifestPath = Join-Path $incompleteLegacyRelease 'release-manifest.json'
+    $incompleteManifest = Get-Content -LiteralPath $incompleteManifestPath -Raw | ConvertFrom-Json
+    $incompleteManifest.artifacts = @($incompleteManifest.artifacts | Where-Object {
+        [string]$_.relativePath -cne 'bin/install-gatey-readonly-release.ps1'
+    })
+    Remove-Item -LiteralPath (Join-Path $incompleteLegacyRelease 'bin/install-gatey-readonly-release.ps1') -Force
+    Write-GateYReadonlyCanonicalManifest $incompleteManifestPath $incompleteManifest
+    Expect-Blocked {
+        Test-GateYReadonlyRelease $incompleteLegacyRelease `
+            -AllowLegacyExactPilotControlSurfaceAbsent
+    } 'BLOCKED / RELEASE_REQUIRED_ARTIFACT_MISSING'
+    Complete-Case 'previous-legacy-other-required-artifact-still-rejected'
+
     $forgedRuntimeRelease = Join-Path $tempRoot 'forged-runtime-release'
     Copy-Item -LiteralPath $releaseA -Destination $forgedRuntimeRelease -Recurse
     $forgedRuntimeManifestPath = Join-Path $forgedRuntimeRelease 'release-manifest.json'
@@ -473,7 +504,7 @@ try
     }
     Complete-Case 'deployment-contract-no-server-write'
 
-    Assert-Condition ($script:Cases.Count -eq 29) "CASE_COUNT_INVALID:$($script:Cases.Count)"
+    Assert-Condition ($script:Cases.Count -eq 31) "CASE_COUNT_INVALID:$($script:Cases.Count)"
     [pscustomobject][ordered]@{
         decision = 'PASS / GATEY_READONLY_RELEASE_CONTRACT_REGRESSION'
         cases = $script:Cases.Count

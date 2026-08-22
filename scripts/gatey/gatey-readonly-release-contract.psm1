@@ -106,7 +106,10 @@ function Sort-GateYReleaseArtifacts
 
 function Assert-GateYReleaseArtifacts
 {
-    param([Parameter(Mandatory = $true)][AllowEmptyCollection()][object[]]$Artifacts)
+    param(
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][object[]]$Artifacts,
+        [switch]$AllowLegacyExactPilotControlSurfaceAbsent
+    )
     $paths = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($artifact in $Artifacts)
     {
@@ -121,14 +124,13 @@ function Assert-GateYReleaseArtifacts
             throw 'BLOCKED / RELEASE_ARTIFACT_CONTRACT_INVALID'
         }
     }
-    foreach ($required in @(
+    $legacyRequired = @(
         'app/nq-app.jar',
         'config/application-gatey-readonly-qualification.yml',
         'bin/gatey-readonly-release-contract.psm1',
         'bin/invoke-gatey-readonly-deployment-contract.ps1',
         'bin/install-gatey-readonly-release.ps1',
         'bin/invoke-gatey-readonly-runtime-deployment.ps1',
-        'bin/invoke-gatey-exact-pilot-scope.ps1',
         'config/nq-gatey-readonly-qualification.service',
         'config/gatey-readonly-runtime.env.example',
         'config/gatey-readonly-runtime.secrets.env.example',
@@ -136,9 +138,19 @@ function Assert-GateYReleaseArtifacts
         'config/gatey-readonly-runtime-target.json',
         'bin/verify-gatew-release.ps1',
         'bin/gatew-release-contract.psm1'
-    ))
+    )
+    foreach ($required in $legacyRequired)
     {
         if (-not $paths.Contains($required))
+        {
+            throw 'BLOCKED / RELEASE_REQUIRED_ARTIFACT_MISSING'
+        }
+    }
+    $exactPilotControl = 'bin/invoke-gatey-exact-pilot-scope.ps1'
+    if (-not $paths.Contains($exactPilotControl))
+    {
+        if (-not $AllowLegacyExactPilotControlSurfaceAbsent -or
+                $paths.Count -ne $legacyRequired.Count)
         {
             throw 'BLOCKED / RELEASE_REQUIRED_ARTIFACT_MISSING'
         }
@@ -527,6 +539,7 @@ function Test-GateYReadonlyRelease
     param(
         [Parameter(Mandatory = $true)][string]$ReleaseRoot,
         [switch]$RequirePosix,
+        [switch]$AllowLegacyExactPilotControlSurfaceAbsent,
         [string]$ExpectedOwner = 'root'
     )
     if (-not (Test-Path -LiteralPath $ReleaseRoot -PathType Container))
@@ -555,7 +568,8 @@ function Test-GateYReadonlyRelease
         throw 'BLOCKED / RELEASE_MANIFEST_CONTRACT_INVALID'
     }
     Assert-GateYReleaseManifestRuntimeFactBoundary $manifest
-    Assert-GateYReleaseArtifacts @($manifest.artifacts)
+    Assert-GateYReleaseArtifacts @($manifest.artifacts) `
+        -AllowLegacyExactPilotControlSurfaceAbsent:$AllowLegacyExactPilotControlSurfaceAbsent
     $declared = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($artifact in $manifest.artifacts)
     {
@@ -823,7 +837,9 @@ function Test-GateYReleaseSchemaCompatibility
         {
             $null = Assert-GateYDisposableEvidencePath $fullPreviousRoot
         }
-        $previous = Test-GateYReadonlyRelease $PreviousReleaseRoot -RequirePosix:$canonicalCurrent
+        $previous = Test-GateYReadonlyRelease $PreviousReleaseRoot `
+            -RequirePosix:$canonicalCurrent `
+            -AllowLegacyExactPilotControlSurfaceAbsent
         $previousManifest = Get-Content -LiteralPath (Join-Path $PreviousReleaseRoot 'release-manifest.json') `
             -Raw | ConvertFrom-Json
         $previousReleaseId = [string]$previous.releaseId

@@ -270,6 +270,7 @@ try
         'Write-DeploymentEvidence', 'DEPLOYMENT_EVIDENCE_PATH_INVALID',
         'ROLLBACK_CURRENT_VERIFICATION_NOT_IMPLEMENTED',
         'Test-PreviousRelease', 'Set-CurrentPointer', 'Resolve-CanonicalPath',
+        '-AllowLegacyExactPilotControlSurfaceAbsent',
         'Get-ResidualCgroupProcessIds', 'Test-ManagementLoopbackListener',
         '$script:HealthAttemptLimit = 90',
         'nq-gatew-release-v3'

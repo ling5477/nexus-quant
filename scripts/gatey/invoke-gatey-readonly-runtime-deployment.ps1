@@ -934,7 +934,8 @@ function Test-PreviousRelease([string]$Root)
     $previousContract = Get-PreviousReleaseContract $manifest
     if ($previousContract -ceq 'GATEY')
     {
-        $verified = Test-GateYReadonlyRelease $Root -RequirePosix
+        $verified = Test-GateYReadonlyRelease $Root -RequirePosix `
+            -AllowLegacyExactPilotControlSurfaceAbsent
         return [pscustomobject][ordered]@{
             contract = 'GATEY'
             releaseId = [string]$verified.releaseId
