@@ -19378,3 +19378,14 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - production side effects：deployment/credential JIT/OKX/DB write/binding/consume/trading mutation=`0/0/0/0/0/0/0`；LIVE disabled、kill engaged。
 - result：`IMPLEMENTED / EXACT_PILOT_SCOPE_CONTROL_SURFACE_READY / P0_0 / P1_0 / PENDING_EXACT_HEAD_CI / OPERATOR_INPUT_NOT_PROVIDED`。
 - next：精确提交并等待CI；之后runtime alignment。若仍无operator exact values，在同一Attempt-04返回`OPERATOR_EXACT_SCOPE_INPUT_REQUIRED`。
+
+## 2026-08-22 — GateY-6F Attempt-04 runtime alignment / operator input blocker
+
+- task：`NQ-GATEY-6F-PILOT-SCOPE-CONTROL-SURFACE-AND-ATTEMPT-04-RESUME`；NQ-only L级production-readonly qualification。
+- remediation：首次 `6c732fe2...` release安装后，activation因 previous GateY 13-artifact rollback verifier不兼容而在pointer mutation前阻断；forward commit `1292b0e4...` 只为previous accepted GateY release开放legacy 13-artifact验证，其他缺失仍拒绝。
+- validation：release/runtime/ExactPilot=`31/51/7`；deployment boundary PASS；authority errors=0；exact-head CI run `32572645294 / completed / success / 11 of 11`。
+- runtime：canonical release `1292b0e4...`、manifest `e5895f47...cee3f`、14 artifacts、V41；current/health/PID/NRestarts=`1292b0e4.../UP/1060386/0`；LIVE=false、kill=ENGAGED、mutationRuntimeBound=false。
+- production facts：read-only aggregate session/scope/observation/approval/events/intents/receipts=`0/0/0/0/0/0/0`；credential JIT/OKX/provider mutation/binding consume/trading mutation=`0/0/0/0/0`。
+- operational history：immutable install=`2`，超过预期`0/1`；第一份未激活 candidate与第二份remediation release均保留。首次DB quoting失败未进入psql并打印非secret shell环境；随后read-only事务成功。
+- result：`BLOCKED / GATEY_6F_EXACT_PILOT_ATTEMPT_04_NOT_QUALIFIED / OPERATOR_EXACT_SCOPE_INPUT_REQUIRED / RUNTIME_EXACT_HEAD_ALIGNED / NO_REAL_ORDER / LIVE_DISABLED / KILL_ENGAGED / P0_0 / P1_0`。
+- next：operator通过服务器外部安全渠道创建root-owned non-secret closed JSON，仅提供服务器路径reference；之后继续同一Attempt-04，不创建Attempt-05，不在聊天提供credential。

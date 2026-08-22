@@ -14343,3 +14343,18 @@ Runtime MainPID=`1028560`、NRestarts0；LIVE=false、kill ENGAGED、mutationRun
 | Authority/migration | PASS（通过）；errors=0；V1～V41 unchanged |
 
 首次生产 resume hard gate为scope/observations/approval/binding=`0/0/0/0`且runtime仍`2cee1990...`，已保留在[Attempt-04 evidence](evidence/gate-y/NQ-GATEY-6F-EXACT-PILOT.attempt-04.md)。本阶段未部署、未调用credential/OKX、未写生产DB、未consume binding、无交易 mutation。
+
+## 2026-08-22 — GateY-6F Attempt-04 runtime alignment 与 operator-input hard gate
+
+结论：`BLOCKED / OPERATOR_EXACT_SCOPE_INPUT_REQUIRED / RUNTIME_EXACT_HEAD_ALIGNED / NO_CREDENTIAL_JIT / NO_OKX_CALL / NO_REAL_ORDER`（阻断 / runtime 已对齐 / 缺 operator exact input）。
+
+| Command / check | Result |
+| --- | --- |
+| remediation focused regressions | PASS（通过）；release/runtime/ExactPilot=`31/51/7` cases，deployment boundary PASS，authority errors=0 |
+| exact-head CI | PASS（通过）；commit `1292b0e49d62ebb5f3f3809be75c6216b66277f8`，run `32572645294 / completed / success / 11 of 11` |
+| immutable verifier/install | PASS（通过）；14 artifacts、V41、manifest `e5895f47...cee3f`、POSIX/link/write-denial verified |
+| canonical activation/health | PASS（通过）；runtime release/source=`1292b0e4...`、health=UP、MainPID=`1060386`、NRestarts=0、kill=ENGAGED、mutationRuntimeBound=false |
+| production DB aggregate | PASS（只读通过）；session/scope/observation/approval/events/intents/receipts=`0/0/0/0/0/0/0`，Flyway V41/failed=0 |
+| Linux local disposable tests | NOT RUN（未运行）；WSL 无 `pwsh`，Docker daemon 未运行，当前 CI workflow未直接调用这两份脚本；生产 canonical installer/POSIX/runtime另行真实通过，非阻断 |
+
+首次 candidate activation 的 `RELEASE_REQUIRED_ARTIFACT_MISSING` 已由 forward remediation关闭并保留历史；immutable install=`2`（未激活 candidate + remediation release），超过任务预期 `0/1`，未删除 immutable evidence。正式配置目录不存在 exact-scope JSON，故未进入 CLI/JIT/OKX/生产 materialization。一次 DB 命令 quoting 失败未进入 psql并打印非 secret shell环境；后续单条 read-only事务成功。完整证据：[Attempt-04](evidence/gate-y/NQ-GATEY-6F-EXACT-PILOT.attempt-04.md)。

@@ -91,3 +91,112 @@ kill disengage=0
 ```
 
 下一步仍在本 Attempt-04 内：精确提交 implementation并等待 exact-head CI GREEN；随后按 accepted immutable contract对齐 runtime。若此时安全输入源仍没有全部 operator exact values，必须返回 `BLOCKED / OPERATOR_EXACT_SCOPE_INPUT_REQUIRED / NO_REAL_ORDER`，不得自动选择任何交易参数。
+
+## Attempt-04 第二次 resume：runtime 已对齐，operator exact input 仍缺失
+
+最终结论：
+
+```text
+BLOCKED /
+GATEY_6F_EXACT_PILOT_ATTEMPT_04_NOT_QUALIFIED /
+OPERATOR_EXACT_SCOPE_INPUT_REQUIRED /
+RUNTIME_EXACT_HEAD_ALIGNED /
+NO_CREDENTIAL_JIT /
+NO_OKX_CALL /
+NO_PROVIDER_MUTATION /
+NO_PILOT_MATERIALIZATION /
+NO_REAL_ORDER /
+FIRST_REAL_ORDER_NOT_AUTHORIZED /
+MICRO_LIVE_NOT_AUTHORIZED /
+LIVE_DISABLED /
+KILL_ENGAGED /
+P0_0 /
+P1_0
+```
+
+### Commit 与 CI
+
+- Control-surface implementation commit=`6c732fe26c8e1aef2d9f83150200ec740fff9b4d`；exact-head CI run=`32571525343 / completed / success / 11 of 11`。
+- 首次 deployment 发现 previous GateY rollback release 的 13-artifact closed set 无法被新增 14th exact-pilot artifact 的 verifier 验证，canonical `Activate` 在 pointer mutation 前返回 `BLOCKED / RELEASE_REQUIRED_ARTIFACT_MISSING`。
+- Forward remediation commit=`1292b0e49d62ebb5f3f3809be75c6216b66277f8`；只允许 previous GateY release 缺少新增 exact-pilot control artifact，当前 release 仍强制 14 artifacts，其他 legacy 必需 artifact 缺失仍拒绝。
+- Remediation exact-head CI run=`32572645294 / completed / success / 11 of 11`。本地 release/runtime/ExactPilot regressions=`31/51/7` cases，deployment boundary PASS，authority errors=0；本机 WSL 因无 `pwsh` 未执行两项 root-Linux disposable regression，当前 CI workflow 也未直接调用这两份脚本。生产 canonical installer/POSIX verifier 与 runtime activation另行真实通过，不把未运行的 disposable scripts 写成 PASS。
+
+### Immutable deployment 与 runtime identity
+
+首次 candidate：
+
+```text
+release/source=6c732fe26c8e1aef2d9f83150200ec740fff9b4d
+manifestSha256=342510edbe48382e9b19eff88614e5e789b5d15fb98bf457420f885846d1912e
+transportSha256=4af696336e86d6f7e77b2488071eedd7e87a33862aa48c8f5e7d8de14f587798
+installedVerified=true
+activation=BLOCKED / RELEASE_REQUIRED_ARTIFACT_MISSING
+pointerMutation=false
+databaseMutation=false
+```
+
+失败后已恢复旧 `runtime.env` 与 release `2cee199081bc338b4dd5c05d2aff867b7a418202`；恢复态 health=UP、MainPID=`1058544`、NRestarts=0。该历史 blocker 未删除或改写为 PASS。
+
+最终 remediation release：
+
+```text
+releaseId=1292b0e49d62ebb5f3f3809be75c6216b66277f8
+sourceCommit=1292b0e49d62ebb5f3f3809be75c6216b66277f8
+manifestSha256=e5895f4730cf05b492f566ca1718301c5a8779a1c9d48efbc2aa92fbe12cee3f
+transportSha256=22e5e5cc2ba8fd4efa443ea7e835de6440c76f474716f84b38fc79058d7f35df
+transportBytes=36754944
+artifactCount=14
+schemaTarget=V41
+currentPointer=/opt/nexus-quant/releases/1292b0e49d62ebb5f3f3809be75c6216b66277f8
+health=UP
+MainPID=1060386
+NRestarts=0
+LIVE=false
+kill=ENGAGED
+mutationRuntimeBound=false
+diagnosticOnly=true
+tradingAuthorization=false
+```
+
+Canonical deployment evidence：`gatey-readonly-deployment-20260822T123118Z-attempt-04-resume.json`，decision=`PASS / GATEY_READONLY_RELEASE_ACTIVATED_HEALTHY`，rollbackRequired=false。未运行 migration，Flyway 保持 V41 / failed=0 / pending=0。
+
+执行中 immutable install=`2`，超过任务预期的 `0/1`：第一份为未激活的失败 candidate，第二份为 forward remediation exact-head；两份均 root-owned immutable、未覆盖或删除，作为真实 deployment history 保留。Atomic pointer activation实际成功=`1`。
+
+### Operator input hard gate 与 side effects
+
+仅检查正式配置目录的文件元数据；目录中只有既有 runtime/secret/DB reference 文件及 deployment env 备份，不存在 operator exact-scope JSON。未读取 credential bytes，未从聊天选择或推导 owner/account/credential、release/risk、instrument/side、price/quantity/notional、window、creator或approver。
+
+因此未运行 `ValidateInput` 或 `Invoke`，并在 credential JIT、OKX、scope/approval/binding write 之前停止。最终 production `READ ONLY` 聚合结果：
+
+```text
+live_sessions=0
+pilot_scope_bindings=0
+pilot_prerequisite_observations=0
+operator_approvals=0
+live_session_events=0
+execution_intents=0
+execution_receipts=0
+flyway_failed=0
+flyway_current=V41
+```
+
+一次只读计数命令因本地 PowerShell/SSH quoting 错误未进入 `psql`，意外打印远端 shell 的非 secret 进程环境；没有读取 runtime/secret/pgpass 内容，随后使用单条 `BEGIN TRANSACTION READ ONLY` 聚合查询成功。该失败历史保留，不表述为 PASS。
+
+最终 side-effect boundary：
+
+```text
+credential JIT=0
+OKX GET/POST=0/0
+unexpected/fallback endpoint=0/0
+PLACE/CANCEL/transfer/withdraw=0/0/0/0
+scope/approval/binding create/consume=0/0/0/0
+ExecutionIntent/ExecutionReceipt=0/0
+real Order/Fill/trading Ledger delta=0/0/0
+LIVE enable=0
+kill disengage=0
+FIRST_REAL_ORDER=NOT_AUTHORIZED
+MICRO_LIVE=NOT_AUTHORIZED
+SOAK=NOT_STARTED
+```
+
+恢复条件：operator 通过服务器外部安全渠道创建一份满足 closed JSON schema、root ownership 与独立 creator/approver要求的 non-secret exact scope input，并仅提供其服务器路径 reference；不得在聊天中提供 API key、secret 或 passphrase。恢复后继续同一 Attempt-04，不创建 Attempt-05。
