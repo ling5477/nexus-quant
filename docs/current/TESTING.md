@@ -14328,3 +14328,18 @@ Runtime MainPID=`1028560`、NRestarts0；LIVE=false、kill ENGAGED、mutationRun
 | Authority / migration / diff | PASS（通过） | authority errors=0；V1～V41 unchanged；V40 blob contract PASS；whitespace error=0 |
 
 未运行 deployment acceptance；未访问服务器、credential material 或真实 OKX。Capability默认不装配，`tradingAuthorized=false`、`exchangeMutation=false`，没有 PLACE/CANCEL/ExecutionIntent/Receipt/order/ledger mutation。完整证据：[exact pilot binding attempt-01](evidence/gate-y/NQ-GATEY-6F-EXACT-PILOT-BINDING-IMPLEMENTATION.attempt-01.md)。
+
+## 2026-08-22 — GateY-6F Pilot Scope Control Surface / Attempt-04 resume
+
+结论：`IMPLEMENTED / EXACT_PILOT_SCOPE_CONTROL_SURFACE_READY / CREATOR_APPROVER_SEPARATION_ENFORCED / EXACT_SCOPE_DIGEST_APPROVAL_ENFORCED / BINDING_CREATE_ONLY / NO_CONSUME_SURFACE / P0_0 / P1_0 / PENDING_EXACT_HEAD_CI`（实现完成 / 等待 exact-head CI）。
+
+| Command / check | Result |
+| --- | --- |
+| focused Java | PASS（通过）；22 tests + final role-preflight 8 tests，0 failures/errors/skips |
+| full Maven final | PASS（通过）；23 modules、330 reports、1581 tests、failures/errors/skipped=`0/0/48` |
+| exact scope PowerShell | PASS（通过）；7/7 closed-input/self-approval/MARKET/secret/missing/no-debug-no-consume cases |
+| GateY release/runtime | PASS（通过）；29 / 51 cases；release closed set=14；server mutation=0 |
+| Java governance/Shadow | PASS / SHADOW ONLY；existing144/ruleset-expansion14/new-code0 |
+| Authority/migration | PASS（通过）；errors=0；V1～V41 unchanged |
+
+首次生产 resume hard gate为scope/observations/approval/binding=`0/0/0/0`且runtime仍`2cee1990...`，已保留在[Attempt-04 evidence](evidence/gate-y/NQ-GATEY-6F-EXACT-PILOT.attempt-04.md)。本阶段未部署、未调用credential/OKX、未写生产DB、未consume binding、无交易 mutation。

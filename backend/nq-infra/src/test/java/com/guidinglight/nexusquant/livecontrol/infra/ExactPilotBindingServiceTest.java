@@ -14,10 +14,12 @@ import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingCons
 import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingValidation;
 import com.guidinglight.nexusquant.livecontrol.application.port.LiveControlAuthorizationPort;
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
+import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotScopeAuthorization;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
 import com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSet;
 import com.guidinglight.nexusquant.livecontrol.domain.port.ExactPilotBindingRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.port.ExactPilotScopeAuthorizationRepository;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -51,6 +53,7 @@ class ExactPilotBindingServiceTest {
     private ExactPilotBinding.AuthoritativeFacts facts;
     private MutableAuthority authority;
     private FakeRepository repository;
+    private FakeScopeAuthorizationRepository scopeAuthorizationRepository;
     private ExactPilotBindingService service;
 
     @BeforeEach
@@ -65,9 +68,11 @@ class ExactPilotBindingServiceTest {
                 order, observations(), risk(UUID.randomUUID(), 1, DIGEST_A));
         authority = new MutableAuthority(facts);
         repository = new FakeRepository(session(command.sessionId(), facts));
+        scopeAuthorizationRepository = new FakeScopeAuthorizationRepository();
         LiveControlAuthorizationPort authorization = mock(LiveControlAuthorizationPort.class);
         when(authorization.lockAndCheckRole(OWNER_ID, "OPERATOR")).thenReturn(true);
-        service = new ExactPilotBindingService(authority, repository, authorization, new NoopTransactions());
+        service = new ExactPilotBindingService(
+                authority, repository, scopeAuthorizationRepository, authorization, new NoopTransactions());
     }
 
     @Test
@@ -93,6 +98,17 @@ class ExactPilotBindingServiceTest {
         assertEquals(0, authority.providerCalls);
         assertEquals(0, authority.orders);
         assertEquals(0, authority.ledgerDelta);
+    }
+
+    @Test
+    void rejectsBindingWithoutIndependentExactScopeApproval() {
+        scopeAuthorizationRepository.approved = false;
+
+        LiveControlException exception = assertThrows(
+                LiveControlException.class, () -> service.create(actor, command));
+
+        assertEquals("EXACT_PILOT_SCOPE_APPROVAL_REJECTED", exception.code());
+        assertTrue(repository.find(command.sessionId(), command.bindingId()).isEmpty());
     }
 
     @Test
@@ -427,6 +443,36 @@ class ExactPilotBindingServiceTest {
             consumed = true;
             return new com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingConsumption(
                     value.id(), value.bindingDigest(), consumedAt, false, false);
+        }
+    }
+
+    private static final class FakeScopeAuthorizationRepository
+            implements ExactPilotScopeAuthorizationRepository {
+        private boolean approved = true;
+
+        @Override
+        public ExactPilotScopeAuthorization recordApproved(
+                ExactPilotScopeAuthorization authorization,
+                LiveSession lockedSession,
+                ExactPilotBinding.Correlation creatorCorrelation,
+                ExactPilotBinding.Correlation approverCorrelation,
+                Instant approvedAt,
+                Instant expiresAt
+        ) {
+            throw new UnsupportedOperationException("not used by ExactPilotBindingServiceTest");
+        }
+
+        @Override
+        public void requireApproved(
+                long creatorPrincipal,
+                ExactPilotBindingCommand bindingCommand,
+                ExactPilotBinding.AuthoritativeFacts currentFacts,
+                Instant decisionAt
+        ) {
+            if (!approved) {
+                throw new LiveControlException(
+                        "EXACT_PILOT_SCOPE_APPROVAL_REJECTED", "exact scope approval missing");
+            }
         }
     }
 

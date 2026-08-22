@@ -12,6 +12,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
 import com.guidinglight.nexusquant.livecontrol.domain.port.ExactPilotBindingRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.port.ExactPilotScopeAuthorizationRepository;
 
 import java.time.Instant;
 import java.util.List;
@@ -31,17 +32,21 @@ public final class ExactPilotBindingService implements ExactPilotBindingControlP
 
     private final ExactPilotBindingAuthority authority;
     private final ExactPilotBindingRepository repository;
+    private final ExactPilotScopeAuthorizationRepository scopeAuthorizationRepository;
     private final LiveControlAuthorizationPort authorization;
     private final TransactionTemplate transactions;
 
     public ExactPilotBindingService(
             ExactPilotBindingAuthority authority,
             ExactPilotBindingRepository repository,
+            ExactPilotScopeAuthorizationRepository scopeAuthorizationRepository,
             LiveControlAuthorizationPort authorization,
             PlatformTransactionManager transactionManager
     ) {
         this.authority = Objects.requireNonNull(authority, "authority must not be null");
         this.repository = Objects.requireNonNull(repository, "repository must not be null");
+        this.scopeAuthorizationRepository = Objects.requireNonNull(
+                scopeAuthorizationRepository, "scopeAuthorizationRepository must not be null");
         this.authorization = Objects.requireNonNull(authorization, "authorization must not be null");
         this.transactions = new TransactionTemplate(
                 Objects.requireNonNull(transactionManager, "transactionManager must not be null"));
@@ -66,6 +71,7 @@ public final class ExactPilotBindingService implements ExactPilotBindingControlP
             }
             ExactPilotBinding.AuthoritativeFacts facts = authority.resolveForCreation(actor, command, decisionAt);
             requireCreationMatchesCommand(actor, command, facts);
+            scopeAuthorizationRepository.requireApproved(actor.userId(), command, facts, decisionAt);
             ExactPilotBinding binding = ExactPilotBinding.verified(
                     command.bindingId(), command.sessionId(), command.pilotScopeId(), command.observationSetId(),
                     facts.deployment(), facts.account(), facts.order(), facts.observations(), facts.riskPolicy(),
@@ -178,6 +184,15 @@ public final class ExactPilotBindingService implements ExactPilotBindingControlP
                     "authoritative exact pilot facts changed after binding"
             );
         }
+        scopeAuthorizationRepository.requireApproved(
+                actor.userId(), command(binding), current, decisionAt);
+    }
+
+    private static ExactPilotBindingCommand command(ExactPilotBinding binding) {
+        return new ExactPilotBindingCommand(
+                binding.id(), binding.sessionId(), binding.pilotScopeId(), binding.observationSetId(),
+                binding.order(), binding.pilotWindowStart(), binding.pilotWindowEnd(), binding.correlation(),
+                binding.bindingExpiresAt());
     }
 
     private static void requireCreationMatchesCommand(

@@ -19368,3 +19368,13 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：credential material/OKX/provider/permission probe/PLACE/CANCEL/ExecutionIntent/Receipt/order/ledger/server access=`0`；LIVE disabled、kill engaged；binding与consume均不授权交易。
 - result：`IMPLEMENTED / GATEY_6F_EXACT_PILOT_BINDING_COMPLETE / AUTHORITATIVE_FACT_DRIFT_FAIL_CLOSED / ONE_TIME_BINDING_ENFORCED / NO_PROVIDER_IO / NO_ORDER_MUTATION / P0_0 / P1_0 / READY_TO_COMMIT`。
 - next：`NQ-GATEY-6F-EXACT-PILOT-ATTEMPT-04`；必须另行提供exact operator values与授权，不插Deployment Review。
+
+## 2026-08-22 — GateY-6F Pilot Scope Control Surface / Attempt-04 resume
+
+- initial production blocker：runtime=`2cee1990...`；V41/health/kill正常；session/scope/observation/pilot approval/binding=`0/0/0/0/0`，故`EXACT_PILOT_SCOPE_NOT_AUTHORIZED`。
+- implementation：root/operator closed-input CLI；V39 creator+independent approver events；exact scope canonical digest；`ExactPilotBindingService` create/validate approval hard gate；无consume surface。
+- release：control script纳入immutable closed set，artifact 13→14；未改installer/runtime deployment设计，无migration。
+- validation：focused22+8、full Maven1581/0/0/48、PowerShell7、GateY release29/runtime51、Authority0、Java verifier PASS/Shadow new-code0。
+- production side effects：deployment/credential JIT/OKX/DB write/binding/consume/trading mutation=`0/0/0/0/0/0/0`；LIVE disabled、kill engaged。
+- result：`IMPLEMENTED / EXACT_PILOT_SCOPE_CONTROL_SURFACE_READY / P0_0 / P1_0 / PENDING_EXACT_HEAD_CI / OPERATOR_INPUT_NOT_PROVIDED`。
+- next：精确提交并等待CI；之后runtime alignment。若仍无operator exact values，在同一Attempt-04返回`OPERATOR_EXACT_SCOPE_INPUT_REQUIRED`。

@@ -128,6 +128,7 @@ function Assert-GateYReleaseArtifacts
         'bin/invoke-gatey-readonly-deployment-contract.ps1',
         'bin/install-gatey-readonly-release.ps1',
         'bin/invoke-gatey-readonly-runtime-deployment.ps1',
+        'bin/invoke-gatey-exact-pilot-scope.ps1',
         'config/nq-gatey-readonly-qualification.service',
         'config/gatey-readonly-runtime.env.example',
         'config/gatey-readonly-runtime.secrets.env.example',

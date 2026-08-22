@@ -4,11 +4,16 @@ import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredential
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
 import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingAuthority;
 import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingControlPlane;
+import com.guidinglight.nexusquant.livecontrol.application.ExactPilotScopeControlPlane;
+import com.guidinglight.nexusquant.livecontrol.application.PilotScopeControlPlane;
 import com.guidinglight.nexusquant.livecontrol.application.port.LiveControlAuthorizationPort;
 import com.guidinglight.nexusquant.livecontrol.domain.port.ExactPilotBindingRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.port.ExactPilotScopeAuthorizationRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.LiveControlRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotScopeRepository;
 import com.guidinglight.nexusquant.livecontrol.infra.ExactPilotBindingService;
+import com.guidinglight.nexusquant.livecontrol.infra.ExactPilotScopeAuthorizationService;
+import com.guidinglight.nexusquant.livecontrol.infra.ExactPilotScopeControlSurfaceService;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.port.InstrumentCatalogReadPort;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionStateRepository;
@@ -64,9 +69,33 @@ public class ExactPilotBindingConfiguration {
     public ExactPilotBindingControlPlane exactPilotBindingControlPlane(
             ExactPilotBindingAuthority authority,
             ExactPilotBindingRepository repository,
+            ExactPilotScopeAuthorizationRepository scopeAuthorizationRepository,
             LiveControlAuthorizationPort authorization,
             PlatformTransactionManager transactionManager
     ) {
-        return new ExactPilotBindingService(authority, repository, authorization, transactionManager);
+        return new ExactPilotBindingService(
+                authority, repository, scopeAuthorizationRepository, authorization, transactionManager);
+    }
+
+    @Bean
+    public ExactPilotScopeAuthorizationService exactPilotScopeAuthorizationService(
+            ExactPilotBindingAuthority authority,
+            ExactPilotBindingRepository bindingRepository,
+            ExactPilotScopeAuthorizationRepository scopeAuthorizationRepository,
+            LiveControlAuthorizationPort authorization,
+            PlatformTransactionManager transactionManager
+    ) {
+        return new ExactPilotScopeAuthorizationService(
+                authority, bindingRepository, scopeAuthorizationRepository, authorization, transactionManager);
+    }
+
+    @Bean
+    public ExactPilotScopeControlPlane exactPilotScopeControlPlane(
+            PilotScopeControlPlane pilotScopeControlPlane,
+            ExactPilotScopeAuthorizationService scopeAuthorizationService,
+            ExactPilotBindingControlPlane bindingControlPlane
+    ) {
+        return new ExactPilotScopeControlSurfaceService(
+                pilotScopeControlPlane, scopeAuthorizationService, bindingControlPlane);
     }
 }
