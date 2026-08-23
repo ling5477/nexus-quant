@@ -8,6 +8,7 @@ $gateyRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $repo = (Resolve-Path (Join-Path $gateyRoot '../..')).Path
 $orchestrator = Join-Path $gateyRoot 'invoke-gatey-readonly-runtime-deployment.ps1'
 $exactPilotControl = Join-Path $gateyRoot 'invoke-gatey-exact-pilot-scope.ps1'
+$minimalLivePilotControl = Join-Path $gateyRoot 'invoke-gatey-minimal-live-pilot.ps1'
 $contract = Join-Path $gateyRoot 'gatey-readonly-release-contract.psm1'
 $deploymentContract = Join-Path $gateyRoot 'invoke-gatey-readonly-deployment-contract.ps1'
 $installer = Join-Path $gateyRoot 'install-gatey-readonly-release.ps1'
@@ -68,6 +69,7 @@ function New-PlanTestRelease([string]$Root, [string]$ReleaseId, [string]$Migrati
         Add-TestArtifact $Root 'bin/install-gatey-readonly-release.ps1' $installer '0755' 'release-installer'
         Add-TestArtifact $Root 'bin/invoke-gatey-readonly-runtime-deployment.ps1' $orchestrator '0755' 'runtime-deployment-orchestrator'
         Add-TestArtifact $Root 'bin/invoke-gatey-exact-pilot-scope.ps1' $exactPilotControl '0755' 'exact-pilot-control-surface'
+        Add-TestArtifact $Root 'bin/invoke-gatey-minimal-live-pilot.ps1' $minimalLivePilotControl '0755' 'minimal-live-pilot-control-surface'
         Add-TestArtifact $Root 'config/nq-gatey-readonly-qualification.service' $unit '0644' 'systemd-runtime-contract'
         Add-TestArtifact $Root 'config/gatey-readonly-runtime.env.example' $template '0644' 'runtime-environment-template'
         Add-TestArtifact $Root 'config/gatey-readonly-runtime.secrets.env.example' $secretTemplate '0600' 'runtime-secret-environment-template'

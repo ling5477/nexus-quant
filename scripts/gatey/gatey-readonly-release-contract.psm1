@@ -155,6 +155,11 @@ function Assert-GateYReleaseArtifacts
             throw 'BLOCKED / RELEASE_REQUIRED_ARTIFACT_MISSING'
         }
     }
+    if (-not $paths.Contains('bin/invoke-gatey-minimal-live-pilot.ps1') -and
+            -not $AllowLegacyExactPilotControlSurfaceAbsent)
+    {
+        throw 'BLOCKED / RELEASE_REQUIRED_ARTIFACT_MISSING'
+    }
 }
 
 function New-GateYReadonlyReleaseManifest

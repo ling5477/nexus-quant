@@ -7,6 +7,7 @@ import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository
 import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor;
 import com.guidinglight.nexusquant.livecontrol.application.PilotScopeAuthorityResolver;
 import com.guidinglight.nexusquant.livecontrol.application.PilotScopeMaterializationCommand;
+import com.guidinglight.nexusquant.livecontrol.application.MinimalPilotMaterializationCommand;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSet;
@@ -17,6 +18,7 @@ import com.guidinglight.nexusquant.strategy.strategyrelease.application.Strategy
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Objects;
+import java.util.UUID;
 
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Repository;
@@ -69,19 +71,8 @@ public class JdbcPilotScopeAuthorityResolver implements PilotScopeAuthorityResol
         ExchangeAccountCredentialSummary credential = credentialRepository.findByCredentialIdForOwner(
                         actor.userId(), command.exchangeAccountId(), command.credentialReference())
                 .orElseThrow(() -> denied("PILOT_CREDENTIAL_REFERENCE_MISMATCH"));
-        if (!Objects.equals(credential.credentialId(), command.credentialReference())
-                || !Objects.equals(credential.exchangeAccountId(), command.exchangeAccountId())
-                || !"OKX_API_V5".equals(credential.credentialType())
-                || !"ACTIVE".equals(credential.credentialStatus())
-                || !credential.isActive()
-                || !"VERIFIED".equals(credential.verificationStatus())
-                || !"SUCCEEDED".equals(credential.permissionProbeStatus())
-                || !"TRADE".equals(credential.permissionScope())
-                || credential.withdrawEnabled()
-                || !"PASSED".equals(credential.ipAllowlistProbeStatus())
-                || credential.lastPermissionProbeAt() == null
-                || credential.revokedAt() != null
-                || credential.rotatedAt() != null) {
+        if (!eligibleCredential(credential, command.exchangeAccountId(), command.credentialReference())
+        ) {
             throw denied("PILOT_CREDENTIAL_REFERENCE_MISMATCH");
         }
 
@@ -99,6 +90,65 @@ public class JdbcPilotScopeAuthorityResolver implements PilotScopeAuthorityResol
             throw denied("PILOT_RISK_REFERENCE_MISMATCH");
         }
         return new ResolvedAuthority(risk, resolveRuntimeAuthority());
+    }
+
+    @Override
+    public ResolvedMinimalAuthority resolveMinimal(
+            AuthenticatedLiveControlActor actor,
+            MinimalPilotMaterializationCommand command
+    ) {
+        Objects.requireNonNull(actor, "actor must not be null");
+        Objects.requireNonNull(command, "command must not be null");
+        ExchangeAccountSummary account = accountRepository.findById(command.exchangeAccountId())
+                .orElseThrow(() -> denied("PILOT_ACCOUNT_REFERENCE_MISMATCH"));
+        if (!Objects.equals(account.ownerUserId(), actor.userId())
+                || !"OKX".equals(account.exchangeCode()) || !"LIVE".equals(account.tradeEnv())
+                || !"ACTIVE".equals(account.status())) {
+            throw denied("PILOT_ACCOUNT_REFERENCE_MISMATCH");
+        }
+        ExchangeAccountCredentialSummary credential = credentialRepository.findByCredentialIdForOwner(
+                        actor.userId(), command.exchangeAccountId(), command.credentialReferenceId())
+                .orElseThrow(() -> denied("PILOT_CREDENTIAL_REFERENCE_MISMATCH"));
+        if (!eligibleCredential(credential, command.exchangeAccountId(), command.credentialReferenceId())) {
+            throw denied("PILOT_CREDENTIAL_REFERENCE_MISMATCH");
+        }
+        String releaseId = requiredText("minimal-live-pilot-strategy-release-id");
+        StrategyReleaseAdmissionState admission = admissionRepository.loadByPublishRecordId(releaseId);
+        if (!admission.identityBound()) throw denied("PILOT_RELEASE_REFERENCE_MISMATCH");
+        UUID riskId;
+        try {
+            riskId = UUID.fromString(requiredText("minimal-live-pilot-risk-limit-set-id"));
+        } catch (IllegalArgumentException failure) {
+            throw denied("PILOT_RISK_REFERENCE_MISMATCH");
+        }
+        RiskLimitSet risk = liveControlRepository.findRiskLimitSet(riskId)
+                .orElseThrow(() -> denied("PILOT_RISK_REFERENCE_MISMATCH"));
+        if (!risk.symbolAllowlist().contains(command.instrument())
+                || command.configuredPilotMaxNotional().compareTo(risk.maxOrderNotional()) > 0
+                || command.configuredPilotMaxNotional().compareTo(risk.capitalCap()) > 0) {
+            throw denied("PILOT_RISK_REFERENCE_MISMATCH");
+        }
+        return new ResolvedMinimalAuthority(actor.userId(), admission, risk, resolveRuntimeAuthority());
+    }
+
+    private static boolean eligibleCredential(
+            ExchangeAccountCredentialSummary credential,
+            long exchangeAccountId,
+            long credentialReference
+    ) {
+        return Objects.equals(credential.credentialId(), credentialReference)
+                && Objects.equals(credential.exchangeAccountId(), exchangeAccountId)
+                && "OKX_API_V5".equals(credential.credentialType())
+                && "ACTIVE".equals(credential.credentialStatus())
+                && credential.isActive()
+                && "VERIFIED".equals(credential.verificationStatus())
+                && "SUCCEEDED".equals(credential.permissionProbeStatus())
+                && "TRADE".equals(credential.permissionScope())
+                && !credential.withdrawEnabled()
+                && "PASSED".equals(credential.ipAllowlistProbeStatus())
+                && credential.lastPermissionProbeAt() != null
+                && credential.revokedAt() == null
+                && credential.rotatedAt() == null;
     }
 
     private ResolvedScopeBindings resolveRuntimeAuthority() {

@@ -105,6 +105,8 @@ final class OkxVenueStateTranslator {
                         fill.exchangeTradeId(),
                         nonNegative(fill.price()),
                         nonNegative(fill.quantity()),
+                        java.util.Objects.requireNonNull(fill.fee(), "fee must not be null"),
+                        fill.feeCurrency(),
                         fill.filledAt()))
                 .toList();
     }

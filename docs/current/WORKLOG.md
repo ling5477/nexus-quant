@@ -19389,3 +19389,11 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - operational history：immutable install=`2`，超过预期`0/1`；第一份未激活 candidate与第二份remediation release均保留。首次DB quoting失败未进入psql并打印非secret shell环境；随后read-only事务成功。
 - result：`BLOCKED / GATEY_6F_EXACT_PILOT_ATTEMPT_04_NOT_QUALIFIED / OPERATOR_EXACT_SCOPE_INPUT_REQUIRED / RUNTIME_EXACT_HEAD_ALIGNED / NO_REAL_ORDER / LIVE_DISABLED / KILL_ENGAGED / P0_0 / P1_0`。
 - next：operator通过服务器外部安全渠道创建root-owned non-secret closed JSON，仅提供服务器路径reference；之后继续同一Attempt-04，不创建Attempt-05，不在聊天提供credential。
+
+## 2026-08-23 — NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END
+
+- scope：V42 durable pilot lease、controlled kill window、single-operator internal approval、七参数 one-shot command、scoped OKX LIMIT/query/CANCEL、crash recovery、Fill/Ledger reconciliation、release artifact 14→15。
+- result：`REVIEW ACCEPTED / READY TO COMMIT / P0_0 / P1_0`；source capability 与 targeted review 完成，尚未 commit/CI/deploy。
+- validation：focused29；PostgreSQL4+1；full Maven 23 modules；GateY exact/minimal/release/runtime=`7/19/31/51`；GateW=`37/12/34`；Java checker PASS，Shadow new-code=0；diff check PASS。
+- boundary：服务器/credential/OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0/0`；LIVE disabled、kill engaged；未修改生产数据库。
+- next：精确 commit/push，等待 exact-head CI GREEN；随后 immutable V42 deployment。若仍缺 operator 七项参数，停止为 `BLOCKED / OPERATOR_PILOT_PARAMETERS_REQUIRED`。

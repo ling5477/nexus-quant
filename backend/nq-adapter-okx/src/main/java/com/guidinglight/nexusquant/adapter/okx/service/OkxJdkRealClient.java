@@ -235,11 +235,13 @@ final class OkxJdkRealClient {
                 String tradeId = requireIdentifier(text(row, "tradeId"), "tradeId", 64);
                 BigDecimal price = positiveDecimal(text(row, "fillPx"), "fillPx");
                 BigDecimal quantity = positiveDecimal(text(row, "fillSz"), "fillSz");
+                BigDecimal fee = decimal(text(row, "fee"), "fee");
+                String feeCurrency = requireIdentifier(text(row, "feeCcy"), "feeCcy", 16);
                 Instant filledAt = epochMillis(text(row, "fillTime"), "fillTime");
                 if (filledAt.isBefore(command.begin()) || filledAt.isAfter(command.end())) {
                     throw new WireFailure(SpotProviderError.Category.MALFORMED_RESPONSE, false);
                 }
-                fills.add(new RawFill(tradeId, price, quantity, filledAt));
+                fills.add(new RawFill(tradeId, price, quantity, fee, feeCurrency, filledAt));
             }
             return new FillResponse(
                     metadata(OkxSpotProviderOperation.READ_FILLS, queried.bytes() + response.bytes()),

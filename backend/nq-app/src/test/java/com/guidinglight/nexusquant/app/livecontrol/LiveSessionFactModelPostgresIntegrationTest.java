@@ -96,7 +96,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
         latest.migrate();
         latest.validate();
         try {
-            assertEquals("41", latest.info().current().getVersion().getVersion());
+            assertEquals("42", latest.info().current().getVersion().getVersion());
             assertEquals(historicalFingerprint, historicalFingerprint(jdbc));
             assertSixTablesAndContracts(jdbc);
 
@@ -166,7 +166,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
         latest.validate();
         System.out.println("gatey6e_v39_to_v41_elapsed_ms=" + migrationElapsedMs);
         try {
-            assertEquals("41", latest.info().current().getVersion().getVersion());
+            assertEquals("42", latest.info().current().getVersion().getVersion());
             assertTrue(migrationElapsedMs < 60_000);
             assertEquals(historical.fingerprint(), historicalApprovalFingerprint(jdbc, historical.approvalId()));
             assertEquals("approval-scope.v1", jdbc.queryForObject(
@@ -277,7 +277,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
 
             assertIncompleteObservationSetRollback(jdbc, transactions, observations);
             assertFutureAndSkewObservationsRejected(jdbc, observations);
-            assertFalse(pilotTransactions.preflight(session.id(), decimal("20")).eligible());
+            assertTrue(pilotTransactions.preflight(session.id(), decimal("20")).eligible());
             assertPilotApprovalCompatibility(
                     jdbc, liveRepository, pilotRepository, transactions, session, scope,
                     pilotFixture.creatorId(), pilotFixture.approverId(), factNow);
@@ -343,7 +343,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
         try {
             latest.migrate();
             latest.validate();
-            assertEquals("41", latest.info().current().getVersion().getVersion());
+            assertEquals("42", latest.info().current().getVersion().getVersion());
             assertEquals(legacyFingerprint,
                     legacyInstrumentFingerprint(jdbc, legacyObservations.instrumentMetadata().id()));
             assertEquals("LEGACY_V40_REQUIRED", jdbc.queryForObject("""
@@ -489,7 +489,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
         Flyway replay = flyway(config, replaySchema, null);
         replay.migrate();
         try {
-            assertEquals("41", replay.info().current().getVersion().getVersion());
+            assertEquals("42", replay.info().current().getVersion().getVersion());
             replay.validate();
         } finally {
             replay.clean();
@@ -1533,6 +1533,8 @@ class LiveSessionFactModelPostgresIntegrationTest {
                 "updated_by='gatey3-test',trace_id='gatey3-test' WHERE scope='GLOBAL_TRADING'");
         ExecutionIntent created = repository.createOrGet(draft);
         assertEquals(created, repository.createOrGet(draft));
+        assertConcurrentPilotLeasePlaceBinding(
+                jdbc, repository, runtimeSession, existing, intentId);
         ExecutionIntentDraft conflict = ExecutionIntentCanonicalEncoder.place(
                 intentId, runtimeSession.id(), "BTC-USDT", "BUY", decimal("2"), decimal("10"),
                 draft.localOrderId());
@@ -1730,6 +1732,54 @@ class LiveSessionFactModelPostgresIntegrationTest {
         ExecutionIntent afterRollback = repository.find(rollbackIntentId).orElseThrow();
         assertEquals(ExecutionIntentState.UNKNOWN, afterRollback.state());
         assertEquals(rollbackVersion, afterRollback.version());
+    }
+
+    private static void assertConcurrentPilotLeasePlaceBinding(
+            JdbcTemplate jdbc,
+            JdbcExecutionIntentRepository repository,
+            LiveSession session,
+            ExistingFixture existing,
+            UUID firstIntentId
+    ) throws Exception {
+        ExecutionIntentDraft second = insertPlaceOrder(
+                jdbc, session.id(), existing.legacyAccountId(), "gatey-pilot-double-place-");
+        repository.createOrGet(second);
+        UUID leaseId = UUID.randomUUID();
+        jdbc.update("""
+                INSERT INTO pilot_execution_leases(
+                    lease_id,live_session_id,binding_id,binding_digest,status,max_notional,
+                    valid_from,expires_at,created_by,version,created_at,updated_at
+                ) VALUES (?,?,?,?,'ACTIVE',100,CURRENT_TIMESTAMP,
+                          CURRENT_TIMESTAMP+INTERVAL '2 minutes',?,1,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+                """, leaseId, session.id(), UUID.randomUUID(), DIGEST_A, existing.creatorId());
+        CountDownLatch start = new CountDownLatch(1);
+        List<Object> results = new java.util.ArrayList<>();
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            List<Future<Object>> futures = List.of(firstIntentId, second.intentId()).stream()
+                    .map(intentId -> executor.submit(() -> {
+                        assertTrue(start.await(10, TimeUnit.SECONDS));
+                        try {
+                            return (Object) jdbc.update("""
+                                    INSERT INTO pilot_execution_lease_intents(lease_id,intent_id,action)
+                                    VALUES (?,?,'PLACE')
+                                    """, leaseId, intentId);
+                        } catch (RuntimeException failure) {
+                            return (Object) failure;
+                        }
+                    })).toList();
+            start.countDown();
+            for (Future<Object> future : futures) results.add(future.get(10, TimeUnit.SECONDS));
+        }
+        assertEquals(1, results.stream().filter(Integer.class::isInstance).count());
+        assertEquals(1, results.stream().filter(RuntimeException.class::isInstance).count());
+        assertEquals(1, jdbc.queryForObject(
+                "SELECT count(*) FROM pilot_execution_lease_intents WHERE lease_id=? AND action='PLACE'",
+                Integer.class, leaseId));
+        jdbc.update("""
+                UPDATE pilot_execution_leases
+                SET status='FAILED',closed_at=CURRENT_TIMESTAMP,version=version+1,updated_at=CURRENT_TIMESTAMP
+                WHERE lease_id=?
+                """, leaseId);
     }
 
     private static ExecutionIntentDraft insertPlaceOrder(

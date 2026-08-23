@@ -14358,3 +14358,17 @@ Runtime MainPID=`1028560`、NRestarts0；LIVE=false、kill ENGAGED、mutationRun
 | Linux local disposable tests | NOT RUN（未运行）；WSL 无 `pwsh`，Docker daemon 未运行，当前 CI workflow未直接调用这两份脚本；生产 canonical installer/POSIX/runtime另行真实通过，非阻断 |
 
 首次 candidate activation 的 `RELEASE_REQUIRED_ARTIFACT_MISSING` 已由 forward remediation关闭并保留历史；immutable install=`2`（未激活 candidate + remediation release），超过任务预期 `0/1`，未删除 immutable evidence。正式配置目录不存在 exact-scope JSON，故未进入 CLI/JIT/OKX/生产 materialization。一次 DB 命令 quoting 失败未进入 psql并打印非 secret shell环境；后续单条 read-only事务成功。完整证据：[Attempt-04](evidence/gate-y/NQ-GATEY-6F-EXACT-PILOT.attempt-04.md)。
+
+## 2026-08-23 — GateY Minimal Live Pilot End-to-End implementation
+
+| Command / check | Result | Scope / environment | Warnings / not run | Blocking |
+| --- | --- | --- | --- | --- |
+| focused Maven | PASS（通过）；29 tests，0 failures/errors/skips | core/risk/adapter/infra/app minimal pilot | Mockito dynamic-agent warning | 否 |
+| required PostgreSQL | PASS（通过）；4 + 1 tests | localhost PostgreSQL 17.7 random schema；V39/V40/fresh→V42、concurrency、Flyway continuous | 本机 public V42 草稿只做空表索引/checksum repair；非生产 | 否 |
+| `mvn -f backend/pom.xml test` | PASS（通过）；23 modules，0 failures/errors | full backend | 既有平台/可选 PostgreSQL tests按条件 skipped；强制 PostgreSQL另行已跑 | 否 |
+| GateY regressions | PASS（通过）；exact7/minimal19/release31/runtime51 + GateY4/GateY5 | local/no-network | provider/credential/server mutation=0 | 否 |
+| GateW frozen regressions | PASS（通过）；37/12/34 | local fixtures | 无 | 否 |
+| Java checker / Shadow | PASS / Shadow-only | release21 / Boot3.5.10；detached worktree | `VIOLATION_FOUND` 但 `NEW_CODE_VIOLATION_COUNT=0` | 否 |
+| production/OKX | NOT RUN（未运行） | 无服务器访问 | CI、deployment、credential JIT、OKX、PLACE/CANCEL待后续 hard gate | 是，阻断 pilot PASS |
+
+完整证据：[minimal live pilot attempt-01](evidence/gate-y/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md)。当前 decision=`REVIEW ACCEPTED / READY TO COMMIT`；真实副作用为 0。

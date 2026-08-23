@@ -112,7 +112,7 @@ public final class StoredFactExactPilotBindingAuthority implements ExactPilotBin
             PilotScopeBinding scope = requireScope(session, pilotScopeId);
             PilotObservationSet observations = requireObservations(scope, observationSetId);
             RiskLimitSet risk = requireRisk(session);
-            requireApprovalAndFreshness(scope, observations, session, decisionAt);
+            requireFreshness(scope, observations, session, decisionAt);
             requireCurrentReferences(session, actor, risk);
             requireExactWindow(session, pilotWindowStart, pilotWindowEnd, decisionAt);
             requireExactOrder(order, observations, risk, session.capitalCap());
@@ -180,14 +180,13 @@ public final class StoredFactExactPilotBindingAuthority implements ExactPilotBin
         return risk;
     }
 
-    private void requireApprovalAndFreshness(
+    private void requireFreshness(
             PilotScopeBinding scope,
             PilotObservationSet observations,
             LiveSession session,
             Instant decisionAt
     ) {
-        if (pilotScopeRepository.findValidPilotApproval(scope, decisionAt).isEmpty()
-                || !freshnessPolicy.evaluate(scope, observations, session.capitalCap(), decisionAt).eligible()) {
+        if (!freshnessPolicy.evaluate(scope, observations, session.capitalCap(), decisionAt).eligible()) {
             throw denied();
         }
     }

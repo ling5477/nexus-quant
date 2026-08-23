@@ -137,7 +137,17 @@ public interface OkxSpotProviderTransport {
         }
     }
 
-    record RawFill(String exchangeTradeId, BigDecimal price, BigDecimal quantity, Instant filledAt) {
+    record RawFill(
+            String exchangeTradeId,
+            BigDecimal price,
+            BigDecimal quantity,
+            BigDecimal fee,
+            String feeCurrency,
+            Instant filledAt
+    ) {
+        public RawFill(String exchangeTradeId, BigDecimal price, BigDecimal quantity, Instant filledAt) {
+            this(exchangeTradeId, price, quantity, BigDecimal.ZERO, "USDT", filledAt);
+        }
     }
 
     record RawOrder(

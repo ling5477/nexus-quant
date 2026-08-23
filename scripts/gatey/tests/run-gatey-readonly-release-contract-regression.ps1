@@ -12,6 +12,7 @@ $deployment = Join-Path $gateyRoot 'invoke-gatey-readonly-deployment-contract.ps
 $installer = Join-Path $gateyRoot 'install-gatey-readonly-release.ps1'
 $runtimeDeployment = Join-Path $gateyRoot 'invoke-gatey-readonly-runtime-deployment.ps1'
 $exactPilotControl = Join-Path $gateyRoot 'invoke-gatey-exact-pilot-scope.ps1'
+$minimalLivePilotControl = Join-Path $gateyRoot 'invoke-gatey-minimal-live-pilot.ps1'
 $systemdUnit = Join-Path $repo 'deploy/systemd/nq-gatey-readonly-qualification.service'
 $runtimeEnvTemplate = Join-Path $repo 'deploy/gatey/gatey-readonly-runtime.env.example'
 $runtimeSecretsTemplate = Join-Path $repo 'deploy/gatey/gatey-readonly-runtime.secrets.env.example'
@@ -69,6 +70,7 @@ function New-TestRelease(
         Add-TestArtifact $Root 'bin/install-gatey-readonly-release.ps1' $installer '0755' 'release-installer'
         Add-TestArtifact $Root 'bin/invoke-gatey-readonly-runtime-deployment.ps1' $runtimeDeployment '0755' 'runtime-deployment-orchestrator'
         Add-TestArtifact $Root 'bin/invoke-gatey-exact-pilot-scope.ps1' $exactPilotControl '0755' 'exact-pilot-control-surface'
+        Add-TestArtifact $Root 'bin/invoke-gatey-minimal-live-pilot.ps1' $minimalLivePilotControl '0755' 'minimal-live-pilot-control-surface'
         Add-TestArtifact $Root 'config/nq-gatey-readonly-qualification.service' $systemdUnit '0644' 'systemd-runtime-contract'
         Add-TestArtifact $Root 'config/gatey-readonly-runtime.env.example' $runtimeEnvTemplate '0644' 'runtime-environment-template'
         Add-TestArtifact $Root 'config/gatey-readonly-runtime.secrets.env.example' $runtimeSecretsTemplate '0600' 'runtime-secret-environment-template'
@@ -235,7 +237,7 @@ try
     Complete-Case 'release-manifest-cannot-assert-runtime-counter-zero'
 
     $verified = Test-GateYReadonlyRelease $releaseA
-    Assert-Condition ($verified.artifactCount -eq 14 -and $verified.linkIntegrityVerified) 'RELEASE_VERIFICATION_FAILED'
+    Assert-Condition ($verified.artifactCount -eq 15 -and $verified.linkIntegrityVerified) 'RELEASE_VERIFICATION_FAILED'
     Complete-Case 'independent-regular-file-pass'
 
     $legacyRelease = Join-Path $tempRoot 'legacy-release'
@@ -243,9 +245,13 @@ try
     $legacyManifestPath = Join-Path $legacyRelease 'release-manifest.json'
     $legacyManifest = Get-Content -LiteralPath $legacyManifestPath -Raw | ConvertFrom-Json
     $legacyManifest.artifacts = @($legacyManifest.artifacts | Where-Object {
-        [string]$_.relativePath -cne 'bin/invoke-gatey-exact-pilot-scope.ps1'
+        [string]$_.relativePath -notin @(
+            'bin/invoke-gatey-exact-pilot-scope.ps1',
+            'bin/invoke-gatey-minimal-live-pilot.ps1'
+        )
     })
     Remove-Item -LiteralPath (Join-Path $legacyRelease 'bin/invoke-gatey-exact-pilot-scope.ps1') -Force
+    Remove-Item -LiteralPath (Join-Path $legacyRelease 'bin/invoke-gatey-minimal-live-pilot.ps1') -Force
     Write-GateYReadonlyCanonicalManifest $legacyManifestPath $legacyManifest
     Expect-Blocked { Test-GateYReadonlyRelease $legacyRelease } `
         'BLOCKED / RELEASE_REQUIRED_ARTIFACT_MISSING'
@@ -495,7 +501,7 @@ try
     $builderSelfTestOutput = @(& $engine -NoProfile -File $builder -ContractSelfTest 2>&1)
     Assert-Condition ($LASTEXITCODE -eq 0) 'BUILDER_SELF_TEST_PROCESS_FAILED'
     $builderSelfTest = ($builderSelfTestOutput -join [Environment]::NewLine) | ConvertFrom-Json
-    Assert-Condition ([int]$builderSelfTest.migrationCount -eq 41 -and [bool]$builderSelfTest.tamperedMigrationRejected) 'BUILDER_SELF_TEST_RESULT_INVALID'
+    Assert-Condition ([int]$builderSelfTest.migrationCount -eq 42 -and [bool]$builderSelfTest.tamperedMigrationRejected) 'BUILDER_SELF_TEST_RESULT_INVALID'
     Complete-Case 'builder-fat-jar-migration-binding'
 
     foreach ($forbidden in @('systemctl start', 'Invoke-WebRequest', 'Invoke-RestMethod', 'ssh ', 'psql '))

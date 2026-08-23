@@ -136,11 +136,6 @@ public class PilotScopeFactTransactionService {
                         false, null, null, decisionAt,
                         List.of(PilotScopePreflightResult.Violation.SCOPE_NOT_MATERIALIZED), List.of());
             }
-            if (pilotScopeRepository.findValidPilotApproval(scope.get(), decisionAt).isEmpty()) {
-                return new PilotScopePreflightResult(
-                        false, scope.get().id(), null, decisionAt,
-                        List.of(PilotScopePreflightResult.Violation.APPROVAL_MISSING_OR_EXPIRED), List.of());
-            }
             var observations = pilotScopeRepository.findLatestCompleteObservationSet(scope.get().id());
             if (observations.isEmpty()) {
                 return new PilotScopePreflightResult(

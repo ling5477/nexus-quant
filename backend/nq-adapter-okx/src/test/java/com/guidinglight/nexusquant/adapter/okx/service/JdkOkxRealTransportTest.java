@@ -161,6 +161,8 @@ class JdkOkxRealTransportTest {
 
         assertEquals(1, response.fills().size());
         assertEquals("trade-1", response.fills().get(0).exchangeTradeId());
+        assertEquals(new BigDecimal("-0.025"), response.fills().get(0).fee());
+        assertEquals("USDT", response.fills().get(0).feeCurrency());
         assertEquals("GET /api/v5/trade/order?instId=BTC-USDT&clOrdId=" + CLIENT_ORDER_ID,
                 exchange.requestLines().get(0));
         assertEquals("GET /api/v5/trade/fills?instType=SPOT&instId=BTC-USDT&ordId=order-1"
@@ -332,7 +334,8 @@ class JdkOkxRealTransportTest {
     private static String fillsBody() {
         return "{\"code\":\"0\",\"data\":[{\"instId\":\"BTC-USDT\",\"ordId\":\"order-1\","
                 + "\"clOrdId\":\"" + CLIENT_ORDER_ID + "\",\"tradeId\":\"trade-1\","
-                + "\"fillPx\":\"100\",\"fillSz\":\"0.25\",\"fillTime\":\"1786881600000\"}]}";
+                + "\"fillPx\":\"100\",\"fillSz\":\"0.25\",\"fee\":\"-0.025\","
+                + "\"feeCcy\":\"USDT\",\"fillTime\":\"1786881600000\"}]}";
     }
 
     private static List<String> iterable(java.util.Iterator<String> iterator) {

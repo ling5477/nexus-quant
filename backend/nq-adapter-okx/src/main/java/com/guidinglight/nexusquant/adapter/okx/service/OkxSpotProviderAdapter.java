@@ -252,7 +252,8 @@ public final class OkxSpotProviderAdapter implements SpotExecutionProviderPort {
         try {
             List<FillReference> fills = response.fills().stream()
                     .map(fill -> new FillReference(
-                            fill.exchangeTradeId(), fill.price(), fill.quantity(), fill.filledAt()))
+                            fill.exchangeTradeId(), fill.price(), fill.quantity(),
+                            fill.fee(), fill.feeCurrency(), fill.filledAt()))
                     .toList();
             return new FillPage(clientOrderId, fills, response.complete(), null, response.metadata().observedAt());
         } catch (IllegalArgumentException ex) {

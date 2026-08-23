@@ -6,9 +6,9 @@ NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/
 
 <!-- nq-current-summary:start -->
 - 最近冻结 Gate 为 GateX：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [docs/gates/gate-x/](docs/gates/gate-x/)，release tag=`nq-gatex-freeze`。
-- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-6E=`ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateY-6F=`NOT STARTED`（未开始）；GateY 整体未接受、未冻结。
+- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-6E=`ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateY-6F=`REVIEW ACCEPTED / READY TO COMMIT`（定向复核已接受 / 可提交）；GateY 整体未接受、未冻结。
 - Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEY-6F-EXACT-PILOT-BINDING-AND-READONLY-VERIFICATION-IMPLEMENTATION`；该动作只允许绑定 operator 明确提供的 exact pilot inputs、执行受控真实只读 prerequisite collection、物化 exact PilotScope、取得独立审批并运行 stored-fact preflight。real mutation runtime 仍未绑定，exact PilotScope 当前仍未物化，PLACE/CANCEL 仍为 0，当前请求不构成第一笔真实订单授权；精确边界以 [STATUS.md](docs/current/STATUS.md) 为准。
+- 当前唯一动作是 `NQ-GATEY-6F-MINIMAL-LIVE-PILOT-END-TO-END-COMMIT-AND-PUSH`；V42、durable lease、controlled kill window、one-shot command 与 scoped OKX execution source capability 已本地通过定向复核，但尚未 commit/CI/deploy。operator 七项参数未提供，credential/OKX/PLACE/CANCEL 均为 0；精确边界以 [STATUS.md](docs/current/STATUS.md) 为准。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
 

@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.livecontrol.application;
 
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionCommand;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionEvent;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionState;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionStateMachine;
@@ -13,6 +14,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.port.LiveControlRepository
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -203,6 +205,71 @@ public class LiveSessionControlService {
         } catch (ApprovalReplay replay) {
             return replay.approval;
         }
+    }
+
+    /**
+     * 单一 authenticated OPERATOR 的最小pilot内部状态事实；仍严格消费既有状态机。
+     * 本入口不访问provider、不改变kill，也不创建ExecutionIntent。
+     */
+    @Transactional
+    public LiveSession transitionMinimalPilot(
+            AuthenticatedLiveControlActor actor,
+            UUID sessionId,
+            LiveSessionCommand command,
+            String requestId,
+            String traceId,
+            String idempotencyKey
+    ) {
+        Objects.requireNonNull(actor, "actor must not be null");
+        Objects.requireNonNull(sessionId, "sessionId must not be null");
+        Objects.requireNonNull(command, "command must not be null");
+        if (!Set.of(
+                LiveSessionCommand.APPROVE,
+                LiveSessionCommand.START,
+                LiveSessionCommand.ACTIVATE,
+                LiveSessionCommand.STOP,
+                LiveSessionCommand.BEGIN_RECONCILE,
+                LiveSessionCommand.RECONCILE_PASS,
+                LiveSessionCommand.RECONCILE_BLOCK,
+                LiveSessionCommand.FAIL,
+                LiveSessionCommand.KILL
+        ).contains(command)) {
+            throw new LiveControlException("MINIMAL_PILOT_TRANSITION_FORBIDDEN", "command is outside minimal pilot");
+        }
+        LiveSession current = repository.lockSession(sessionId)
+                .orElseThrow(() -> new LiveControlException("LIVE_SESSION_NOT_FOUND", "live session was not found"));
+        if (current.ownerId() != actor.userId()
+                || !authorization.lockAndCheckRole(actor.userId(), SESSION_CREATOR_ROLE)
+                || !repository.lockAndValidateSessionReferences(current)) {
+            throw new LiveControlException("MINIMAL_PILOT_OPERATOR_FORBIDDEN", "operator/session authority failed");
+        }
+        LiveSessionState target = stateMachine.transition(current.state(), command);
+        Instant occurredAt = repository.currentTime();
+        LiveSession updated = withState(current, target, occurredAt);
+        if (!repository.compareAndSetSession(current, updated)) {
+            throw new LiveControlException("LIVE_SESSION_VERSION_CONFLICT", "session changed concurrently");
+        }
+        repository.appendSessionEvent(event(
+                current, target, "MINIMAL_PILOT_" + command.name(), actor.userId(),
+                requestId, traceId,
+                command == LiveSessionCommand.APPROVE
+                        ? "MINIMAL_PILOT_INTERNAL_APPROVAL" : "MINIMAL_PILOT_" + command.name(),
+                idempotencyKey,
+                com.guidinglight.nexusquant.livecontrol.domain.LiveSessionApprovalScopeEncoder.digest(current),
+                occurredAt
+        ));
+        return updated;
+    }
+
+    private static LiveSession withState(LiveSession current, LiveSessionState target, Instant occurredAt) {
+        return new LiveSession(
+                current.id(), current.ownerId(), current.exchangeAccountId(), current.venue(),
+                current.strategyReleaseId(), current.releaseDigest(), current.releaseAdmissionRevision(),
+                current.riskLimitSetId(), current.riskLimitSetDigest(), current.credentialReference(),
+                current.symbolAllowlist(), current.capitalCap(), current.executionWindowStart(),
+                current.executionWindowEnd(), target, Math.addExact(current.version(), 1),
+                current.approvalScopeHash(), current.nextEventSequence(), current.createdBy(),
+                current.createdAt(), occurredAt);
     }
 
     private static LiveSessionEvent event(

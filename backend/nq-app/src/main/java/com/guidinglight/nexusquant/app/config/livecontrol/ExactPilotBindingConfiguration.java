@@ -69,12 +69,10 @@ public class ExactPilotBindingConfiguration {
     public ExactPilotBindingControlPlane exactPilotBindingControlPlane(
             ExactPilotBindingAuthority authority,
             ExactPilotBindingRepository repository,
-            ExactPilotScopeAuthorizationRepository scopeAuthorizationRepository,
             LiveControlAuthorizationPort authorization,
             PlatformTransactionManager transactionManager
     ) {
-        return new ExactPilotBindingService(
-                authority, repository, scopeAuthorizationRepository, authorization, transactionManager);
+        return new ExactPilotBindingService(authority, repository, authorization, transactionManager);
     }
 
     @Bean
