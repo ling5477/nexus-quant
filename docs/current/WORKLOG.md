@@ -19397,3 +19397,10 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - validation：focused29；PostgreSQL4+1；full Maven 23 modules；GateY exact/minimal/release/runtime=`7/19/31/51`；GateW=`37/12/34`；Java checker PASS，Shadow new-code=0；diff check PASS。
 - boundary：服务器/credential/OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0/0`；LIVE disabled、kill engaged；未修改生产数据库。
 - next：精确 commit/push，等待 exact-head CI GREEN；随后 immutable V42 deployment。若仍缺 operator 七项参数，停止为 `BLOCKED / OPERATOR_PILOT_PARAMETERS_REQUIRED`。
+
+### 2026-08-23 deployment blocker update
+
+- commit/CI：`b18450d1f3c5407d7b0cabddc12330e4c0cac62e` / `32626468825`，10/10 success。
+- production：15-artifact release仅immutable install；V41 root-only backup已验证；migration/activation/credential/OKX/PLACE/CANCEL=0。
+- incident：Flyway info诊断后SSH连续banner timeout，无法取得incident后current/systemd/DB readback；P1=1。
+- decision：`BLOCKED / SERVER_SSH_UNRESPONSIVE / NO_MIGRATION_INVOKED`；下一动作仅允许带外恢复、终止残留诊断进程和只读审计，禁止盲目重试。

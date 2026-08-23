@@ -69,7 +69,7 @@ GateY-6D ACCEPTED / CI GREEN
   ↓
 GateY-6E ACCEPTED / CI GREEN
   ↓
-GateY-6F REVIEW ACCEPTED / READY TO COMMIT
+GateY-6F BLOCKED / SERVER SSH UNRESPONSIVE
 ```
 
 ## 下一允许动作
@@ -105,8 +105,8 @@ GateY-6F REVIEW ACCEPTED / READY TO COMMIT
 - GateY-6C：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit=`febf30adfbd2ac1d1c017b1185ed75fb30abd851`，failed feature CI=`31892305007 / failure / EOF_WHITESPACE_ONLY`，forward remediation/acceptance head=`696963a75d6a701a215bf0eb7ff94d4bed97d43f`，exact-head CI=`31893000098 / completed / success`。受控固定出口已完成唯一一次 `GET /api/v5/account/config`，retry=`0`，READ/TRADE=`VERIFIED / VERIFIED`、WITHDRAW=`ABSENT`、IP=`MATCHED`，exchange mutation 与 PLACE/CANCEL/TRANSFER/WITHDRAW 均为 0。Security Review P0/P1=`0/0`；管理密码事件在 defined containment scope 内已关闭；`TARGET_PERSISTED_FACTS_REQUERY_UNAVAILABLE` 保留为非阻断 P2 accepted residual。
 - GateY-6D：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/review commit=`b56e68bdc45fd6a7f27e6e830447e995ff683bfb`，exact-head CI run=`31944962448 / completed / success`，Security Review P0/P1=`0/0`。接受仅覆盖 trusted-observation boundary、production fail-closed、forged-refresh denial、authorization regression 与 materialization control-plane capability；`EXACT_PILOT_SCOPE=NOT_MATERIALIZED`、`FIRST_REAL_ORDER`/micro-live=`NOT_AUTHORIZED`。
 - GateY-6E：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit=`0708bd9def0c5d8a299ee4b299103145a156be2d` 的 CI run=`31958446614 / completed / failure`，失败分类为 `GITLEAKS_FALSE_POSITIVE / TEST_CLIENT_ORDER_ID_ONLY`，历史保留；forward-only remediation/acceptance head=`c4b2668e50f8087e0e147573aca66be7fd944e3b`，exact-head CI run=`31997221424 / completed / success / 10 jobs`。独立 Security Review P0/P1=`0/0`。接受范围仅为 `FIRST_REAL_ORDER_PREREQUISITE_CAPABILITY`，machine `real_provider/private_trading` 仍保持 `NOT_IMPLEMENTED`，real mutation runtime 仍为 `UNBOUND`。
-- GateY-6F：`REVIEW ACCEPTED / READY TO COMMIT`（定向复核已接受 / 可提交）；V42 durable lease、exact kill window、单 operator internal approval、七参数 LIMIT-only command、scoped OKX execution、query-first recovery 与 reconciliation source capability 已实现并本地全绿。尚未 commit/CI/deploy，生产 credential/OKX/PLACE/CANCEL 均为 0。
-- 当前唯一治理动作是 `NQ-GATEY-6F-MINIMAL-LIVE-PILOT-END-TO-END-COMMIT-AND-PUSH`；exact-head CI 绿后才允许 immutable deployment。若 operator 七项参数仍缺失，停止为 `BLOCKED / OPERATOR_PILOT_PARAMETERS_REQUIRED`，不得自行选择交易参数。
+- GateY-6F：`BLOCKED / SERVER SSH UNRESPONSIVE`（阻断 / 服务器 SSH 无响应）；implementation commit/CI已通过，inactive immutable install与V41 backup完成，但migration/activation均未执行。
+- 当前唯一治理动作是 `NQ-GATEY-6F-MINIMAL-LIVE-PILOT-END-TO-END-BLOCKED`；只允许带外恢复和只读状态审计。禁止盲目重试migration、activation或pilot。
 - GateY 保持 `IN PROGRESS / NOT FROZEN`；GateY-6E acceptance 不等于 GateY 或 GateY-6 overall accepted/frozen，也不授权 GateY-FREEZE。30 项 hard gates 仍为 `PASS=0 / NOT_MET=25 / NOT_VERIFIABLE=5`，gap candidates=`10`；exact PilotScope=`NOT_MATERIALIZED`、real provider/private trading=`NOT_IMPLEMENTED`、`FIRST_REAL_ORDER`/micro-live=`NOT_AUTHORIZED`、GateY pilot soak=`NOT_STARTED`、LIVE=`DISABLED`、kill=`ENGAGED`。
 
 ## GateW 已冻结边界

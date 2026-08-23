@@ -14372,3 +14372,11 @@ Runtime MainPID=`1028560`、NRestarts0；LIVE=false、kill ENGAGED、mutationRun
 | production/OKX | NOT RUN（未运行） | 无服务器访问 | CI、deployment、credential JIT、OKX、PLACE/CANCEL待后续 hard gate | 是，阻断 pilot PASS |
 
 完整证据：[minimal live pilot attempt-01](evidence/gate-y/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md)。当前 decision=`REVIEW ACCEPTED / READY TO COMMIT`；真实副作用为 0。
+
+### Deployment blocker update
+
+- implementation commit/CI：`b18450d1f3c5407d7b0cabddc12330e4c0cac62e` / run `32626468825`，10/10 success。
+- release/install：15 artifacts、V42、manifest `d040140d...a28d`；server immutable install PASS，未激活。
+- preflight/backup：旧runtime V41 healthy、kill ENGAGED、mutationRuntimeBound=false；业务计数0；root-only backup格式/hash通过。
+- blocker：JShell Flyway `info()` 诊断后服务器SSH持续banner timeout；`migrate()`未调用，V42/current/systemd未变更。
+- decision：`BLOCKED / SERVER_SSH_UNRESPONSIVE / NO_MIGRATION_INVOKED / NO_ACTIVATION`；P0=0、P1=1。

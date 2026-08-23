@@ -2,14 +2,14 @@
 
 ## 当前结论
 
-`REVIEW ACCEPTED / READY TO COMMIT`（定向复核已接受 / 可提交）。本文件是 implementation→CI→deployment→pilot 的单一持续 evidence；当前只完成 source implementation、本地验证与 targeted review。CI、生产部署、credential JIT、OKX 调用和真实 pilot 均未执行。
+`BLOCKED / SERVER_SSH_UNRESPONSIVE / NO_MIGRATION_INVOKED`（阻断 / 服务器 SSH 无响应 / 未调用迁移）。本文件是 implementation→CI→deployment→pilot 的单一持续 evidence；source implementation、targeted review、commit/push与exact-head CI已完成，deployment停在inactive immutable install + V41 backup。
 
 ```text
 P0=0
-P1=0
-implementationCommit=UNCOMMITTED
-exactHeadCi=NOT_RUN
-productionDeployment=NOT_STARTED
+P1=1
+implementationCommit=b18450d1f3c5407d7b0cabddc12330e4c0cac62e
+exactHeadCi=32626468825/completed/success
+productionDeployment=BLOCKED_BEFORE_MIGRATION_AND_ACTIVATION
 operatorPilotParameters=NOT_PROVIDED
 credentialJitReads=0
 okxCalls=0
@@ -71,3 +71,16 @@ kill=ENGAGED
 4. 只有参数齐全且 production prerequisite 全部 PASS 后，才允许 exactly-one real LIMIT；本文件当前绝不声明真实 pilot PASS。
 
 推荐 commit：`feat(gatey): add crash-safe minimal live pilot execution`。
+
+## Deployment incident（2026-08-23）
+
+- exact-head CI run `32626468825`：10/10 jobs success。
+- canonical release：release/source=`b18450d1f3c5407d7b0cabddc12330e4c0cac62e`，manifest=`d040140dade2a2f5059659ed030d44d0ca737bc761ff116b385aeb15854ba28d`，15 artifacts，schema target V42。
+- server preflight：current=`1292b0e49d62ebb5f3f3809be75c6216b66277f8`，manifest=`e5895f47...cee3f`，14 artifacts，V41；systemd active/running、MainPID=`1060386`、NRestarts=0；health UP、kill ENGAGED、mutationRuntimeBound=false、tradingAuthorization=false。
+- DB read-only aggregate：V41/failed0，session/scope/observation/intent/receipt/order/trade/ledger均0，V42 table absent。
+- immutable install：new release installed/verified，POSIX/link integrity/service-user write denial通过；未切current。
+- backup：`/var/lib/nexus-quant/gatey-readonly-qualification/backups/pre-v42-b18450d1.dump`，root:root/0600/links1，bytes=`676787`，SHA-256=`952ad83f8d82560b79c83678240640f672481e18e33e971c902d586b2912ddac`，`pg_restore --list`通过。
+- incident：第一次 JShell命令因classpath wildcard被shell展开，把JAR误当source files并产生大量解析输出；终止后第二次正确引用的只读 `Flyway.info()` 会话无输出并被远端关闭。随后SSH三次连续banner timeout；TCP 22一度仍可连接。
+- 未执行：任何代码路径中的 `Flyway.migrate()`、V42 DDL、current pointer切换、systemd restart/activation、credential JIT、OKX、PLACE/CANCEL、transfer/withdraw。
+- 最后已验证安全状态是在incident前：旧release运行、V41、LIVE=false、kill=ENGAGED。incident后因SSH不可达，不能把这些值伪装成最新已复核事实。
+- 恢复要求：通过云控制台/带外通道确认主机，终止残留JShell/bash/ssh诊断进程，核验旧runtime与V41事实；若任何状态漂移立即继续fail-closed。禁止直接重试migration或activation。
