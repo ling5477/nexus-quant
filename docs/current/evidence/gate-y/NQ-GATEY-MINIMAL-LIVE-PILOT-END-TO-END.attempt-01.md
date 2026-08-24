@@ -2,7 +2,7 @@
 
 ## 当前结论
 
-`BLOCKED / ACTIVE_ACCOUNT_OR_CREDENTIAL_NOT_FOUND / PILOT_INSTRUMENT_SELECTION_REQUIRED / NO_REAL_ORDER`（阻断 / 当前 production SoR 无有效账户或凭证 / 缺少唯一可信 instrument / 未发送真实订单）。本文件是 implementation→CI→deployment→pilot 的单一持续 evidence；SSH blocker 已关闭，当前 exact HEAD 的 V42 immutable release 已激活并通过 health，但 production `exchange_accounts`、`exchange_account_credentials` 与历史 LIVE order/trade instrument facts 均为空，故在 credential JIT 与 OKX 调用前 fail-closed。
+`BLOCKED / PRODUCTION_ACCOUNT_CREDENTIAL_REPROVISION_REQUIRED / PILOT_INSTRUMENT_SELECTION_REQUIRED / NO_REAL_ORDER`（阻断 / 当前 production SoR 需要通过正式路径重新配置账户与凭证 / 缺少唯一可信 instrument / 未发送真实订单）。本文件是 implementation→CI→deployment→pilot 的单一持续 evidence；历史 GateW/GateY SoR 已唯一恢复 owner/account/credential identity，但当前 canonical DB 缺少 historical owner、account与credential，仓库也没有跨历史DB导入加密credential的正式恢复合同，故在任何 production SoR 写入、credential JIT 与 OKX 调用前 fail-closed。
 
 ```text
 P0=0
@@ -12,7 +12,9 @@ exactHeadCi=32626468825/completed/success
 productionDeployment=PASS_EXACT_HEAD_V42_ACTIVE
 activeRuntime=c47c8db317bbbef64989f247b087752bf2b46a3c
 activeManifest=de1f52359619e6f38fc4671ec5c091bb5019acf3d4f953e14d402d45f0377c50
-operatorPilotParameters=RULES_PROVIDED_BUT_SOR_REFERENCES_MISSING
+operatorPilotParameters=RULES_PROVIDED_BUT_CANONICAL_REPROVISION_REQUIRED
+historicalIdentity=OWNER_2_ACCOUNT_1_CREDENTIAL_1
+productionSorRecovery=BLOCKED_BEFORE_WRITE
 credentialJitReads=0
 okxCalls=0
 PLACE=0
@@ -67,7 +69,7 @@ kill=ENGAGED
 
 ## 未完成 hard gates
 
-1. 当前 production SoR 必须存在且只能存在一个 canonical `OKX / LIVE / ACTIVE` account，以及该账户唯一 ACTIVE credential reference；当前两表均为空，精确阻断为 `ACTIVE_ACCOUNT_OR_CREDENTIAL_NOT_FOUND`。
+1. 当前 production SoR 必须通过正式 Account/Credential Service路径重新配置 historical owner/account/credential；禁止 raw SQL复制用户、密文或permission facts。当前精确阻断为 `PRODUCTION_ACCOUNT_CREDENTIAL_REPROVISION_REQUIRED`。
 2. 必须从此前真实资金、实盘 0 或 accepted pilot evidence 中恢复唯一可信 OKX Spot instrument；当前 production LIVE order/trade facts 均为 0，精确阻断为 `PILOT_INSTRUMENT_SELECTION_REQUIRED`。
 3. 只有以上事实恢复且实时 bestAsk/venue rules/fee/balance/clock 与 notional 约束全部通过后，才允许 exactly-one real LIMIT；本文件当前不声明真实 pilot PASS。
 
@@ -97,3 +99,14 @@ kill=ENGAGED
 - production SoR：`exchange_accounts=0`、`exchange_account_credentials=0`；历史 LIVE `orders/trades` instrument candidates=0。因此同时命中 `ACTIVE_ACCOUNT_OR_CREDENTIAL_NOT_FOUND` 与 `PILOT_INSTRUMENT_SELECTION_REQUIRED`，不得让 operator 重填不存在的 ID，也不得随机选择币种。
 - 最终副作用：live session/lease/lease intent/lease event/execution intent/execution receipt/order/trade/ledger/audit 均为0；credential JIT/OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0`。未生成 clientOrderId、idempotencyKey、requestId 或 traceId；kill保持ENGAGED。
 - Final decision：`BLOCKED / ACTIVE_ACCOUNT_OR_CREDENTIAL_NOT_FOUND / PILOT_INSTRUMENT_SELECTION_REQUIRED / NO_REAL_ORDER / EXACT_HEAD_RUNTIME_HEALTHY / V42_PENDING_0_FAILED_0 / LIVE_DISABLED / KILL_ENGAGED / NO_PLACE_RETRY / NO_TRANSFER / NO_WITHDRAW / P0_0 / P1_0`。
+
+## Production SoR restore continuation（2026-08-24）
+
+- Git/runtime baseline：`HEAD == origin/dev == 7a08c2202017d0de765d9175320c40bad81b722b`，worktree clean；server current仍为`c47c8db3...`，V42/failed0、health UP、LIVE=false、kill=ENGAGED，account/credential/session/lease/intent/receipt/order/trade/ledger/audit均为0。
+- historical account source：GateY-6C accepted real probe evidence与仍可查询的GateW dedicated PostgreSQL精确一致；唯一历史identity为ownerUserId=2、exchangeAccountId=1、OKX/LIVE/ACTIVE。未使用早期本机bootstrap account `900029`。
+- historical credential source：同一历史DB只有credentialId=1，绑定account=1，type=`OKX_API_V5`、ACTIVE、permission probe SUCCEEDED、scope TRADE、withdraw=false、IP PASSED、keyVersion=1，encrypted payload非空且未撤销/未轮换。只读取metadata与payload存在布尔值，未读取或输出material。
+- secure-store check：current root-only secrets中master-key字段存在且非空，runtime keyVersion=1；该事实只证明安全引用仍存在，不授权复制historical ciphertext、直接解密或绕过Credential Service。
+- canonical recovery review：`ExchangeAccountCommandService`可创建account；`ExchangeAccountCredentialCommandService.upsert/rotate`与API只接受plaintext credential material并在当前DB重新加密。仓库没有historical encrypted credential import、跨DB recovery或owner identity restore合同；current DB users=1、roles=3、user_roles=0，historical ownerId=2不存在。直接SQL复制user/account/credential会绕过owner、审计、验证与幂等边界，明确未执行。
+- instrument source：historical GateW config仅证明`NQ_GATEW_SOAK_CURRENCIES=USDT`；historical orders/trades=`0/0`；GateY-6C与accepted GateW real evidence中没有明确`*-USDT` instrument。可信候选数=0，不能把USDT balance probe推导成BTC/ETH/SOL交易对。
+- production writes：account create=0、credential upsert/rotate=0、raw SQL mutation=0；credential JIT/OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0`。未创建session、binding、lease或订单identity，kill保持ENGAGED。
+- Final decision：`BLOCKED / PRODUCTION_ACCOUNT_CREDENTIAL_REPROVISION_REQUIRED / PILOT_INSTRUMENT_SELECTION_REQUIRED / NO_REAL_ORDER / HISTORICAL_IDENTITY_RECOVERED / CANONICAL_SOR_WRITE_0 / CREDENTIAL_MATERIAL_EXPOSURE_0 / LIVE_DISABLED / KILL_ENGAGED / P0_0 / P1_0`。因account/credential尚未恢复，不满足“只有instrument缺失”，本轮不向operator发起instrument单选。

@@ -14394,3 +14394,16 @@ Runtime MainPID=`1028560`、NRestarts0；LIVE=false、kill ENGAGED、mutationRun
 | final side-effect aggregate | PASS（只读通过） | session/lease/intent/receipt/order/trade/ledger/audit全0；LIVE=false、kill=ENGAGED | PLACE/CANCEL/transfer/withdraw=`0/0/0/0`；未运行真实 reconciliation（无订单） | 否 |
 
 结论：`BLOCKED / ACTIVE_ACCOUNT_OR_CREDENTIAL_NOT_FOUND / PILOT_INSTRUMENT_SELECTION_REQUIRED / NO_REAL_ORDER / P0_0 / P1_0`。本轮未执行 backend full Maven、frontend E2E 或 Python checks；代码未变，已消费 exact-head CI `32626468825` 与 immutable verifier，阻断来自 production SoR 缺失而非测试失败。
+
+## 2026-08-24 — Production SoR restore and minimal pilot resume
+
+| Command / check | Result | Scope / environment | Known warnings / not run | Blocking |
+| --- | --- | --- | --- | --- |
+| Git/runtime baseline | PASS（通过） | `HEAD==origin/dev==7a08c220...`；worktree clean；current `c47...`、V42/failed0、health UP、kill ENGAGED | 未重部署、未迁移、未改systemd | 否 |
+| historical account identity | PASS（只读通过） | GateY-6C accepted evidence + GateW historical DB；唯一owner/account=`2/1`、OKX/LIVE/ACTIVE | current owner=2不存在 | 是 |
+| historical credential identity/material presence | PASS（只读通过） | credential=1、ACTIVE、TRADE、withdraw=false、IP PASSED、keyVersion1、encrypted payload非空 | 未读取/decrypt/output material | 否 |
+| canonical recovery path review | BLOCKED（阻断） | Account Service可创建account；Credential API只接受plaintext并重新加密；无encrypted import/cross-DB recovery | current users/roles/user_roles=`1/3/0`；禁止raw SQL | 是 |
+| instrument recovery | BLOCKED（阻断） | historical config仅USDT；orders/trades=`0/0`；accepted real evidence无`*-USDT` | 未调用public/private OKX；未随机选币 | 是 |
+| final side-effect aggregate | PASS（只读通过） | current account/credential/session/lease/intent/receipt/order/trade/ledger/audit均0 | PLACE/CANCEL/transfer/withdraw=`0/0/0/0`；reconciliation未运行 | 否 |
+
+结论：`BLOCKED / PRODUCTION_ACCOUNT_CREDENTIAL_REPROVISION_REQUIRED / PILOT_INSTRUMENT_SELECTION_REQUIRED / NO_REAL_ORDER / P0_0 / P1_0`。未修改Java/SQL/migration/deploy，故未重跑Maven、Java Shadow、frontend或Python测试；本轮是production metadata与正式恢复合同的只读资格审计。

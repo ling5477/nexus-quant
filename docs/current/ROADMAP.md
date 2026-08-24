@@ -69,7 +69,7 @@ GateY-6D ACCEPTED / CI GREEN
   ↓
 GateY-6E ACCEPTED / CI GREEN
   ↓
-GateY-6F BLOCKED / ACTIVE ACCOUNT OR CREDENTIAL NOT FOUND
+GateY-6F BLOCKED / PRODUCTION ACCOUNT CREDENTIAL REPROVISION REQUIRED
 ```
 
 ## 下一允许动作
@@ -105,8 +105,8 @@ GateY-6F BLOCKED / ACTIVE ACCOUNT OR CREDENTIAL NOT FOUND
 - GateY-6C：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit=`febf30adfbd2ac1d1c017b1185ed75fb30abd851`，failed feature CI=`31892305007 / failure / EOF_WHITESPACE_ONLY`，forward remediation/acceptance head=`696963a75d6a701a215bf0eb7ff94d4bed97d43f`，exact-head CI=`31893000098 / completed / success`。受控固定出口已完成唯一一次 `GET /api/v5/account/config`，retry=`0`，READ/TRADE=`VERIFIED / VERIFIED`、WITHDRAW=`ABSENT`、IP=`MATCHED`，exchange mutation 与 PLACE/CANCEL/TRANSFER/WITHDRAW 均为 0。Security Review P0/P1=`0/0`；管理密码事件在 defined containment scope 内已关闭；`TARGET_PERSISTED_FACTS_REQUERY_UNAVAILABLE` 保留为非阻断 P2 accepted residual。
 - GateY-6D：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/review commit=`b56e68bdc45fd6a7f27e6e830447e995ff683bfb`，exact-head CI run=`31944962448 / completed / success`，Security Review P0/P1=`0/0`。接受仅覆盖 trusted-observation boundary、production fail-closed、forged-refresh denial、authorization regression 与 materialization control-plane capability；`EXACT_PILOT_SCOPE=NOT_MATERIALIZED`、`FIRST_REAL_ORDER`/micro-live=`NOT_AUTHORIZED`。
 - GateY-6E：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit=`0708bd9def0c5d8a299ee4b299103145a156be2d` 的 CI run=`31958446614 / completed / failure`，失败分类为 `GITLEAKS_FALSE_POSITIVE / TEST_CLIENT_ORDER_ID_ONLY`，历史保留；forward-only remediation/acceptance head=`c4b2668e50f8087e0e147573aca66be7fd944e3b`，exact-head CI run=`31997221424 / completed / success / 10 jobs`。独立 Security Review P0/P1=`0/0`。接受范围仅为 `FIRST_REAL_ORDER_PREREQUISITE_CAPABILITY`，machine `real_provider/private_trading` 仍保持 `NOT_IMPLEMENTED`，real mutation runtime 仍为 `UNBOUND`。
-- GateY-6F：`BLOCKED / ACTIVE_ACCOUNT_OR_CREDENTIAL_NOT_FOUND / PILOT_INSTRUMENT_SELECTION_REQUIRED`（阻断 / production SoR 缺有效账户或凭证 / 缺唯一可信 instrument）；SSH blocker已关闭，current exact HEAD `c47c8db3...`、V42 `pending=0 / failed=0`、health UP、LIVE=false、kill=ENGAGED均已验证，但 production account/credential 与历史 LIVE instrument candidates 均为0，真实订单未发送。
-- 当前唯一治理动作是 `NQ-GATEY-6F-MINIMAL-LIVE-PILOT-END-TO-END-BLOCKED`；只允许先恢复并复核 production SoR 的唯一 canonical ACTIVE OKX/LIVE account、唯一 ACTIVE credential reference与唯一可信 OKX Spot instrument。禁止手工臆造 ID、随机选币、第二 PLACE、transfer或withdraw；不得把已完成 deployment/V42 写成 pilot acceptance。
+- GateY-6F：`BLOCKED / PRODUCTION_ACCOUNT_CREDENTIAL_REPROVISION_REQUIRED / PILOT_INSTRUMENT_SELECTION_REQUIRED`（阻断 / 需要通过正式路径重新配置production账户与凭证 / 缺唯一可信instrument）；历史owner/account/credential identity已唯一恢复为`2/1/1`，但current DB缺owner=2、account与credential，且正式API没有encrypted import/cross-DB recovery合同；instrument可信候选仍为0，真实订单未发送。
+- 当前唯一治理动作是 `NQ-GATEY-6F-MINIMAL-LIVE-PILOT-END-TO-END-BLOCKED`；只允许先通过现有Account/Credential Service与服务器安全凭证路径重新配置historical identity并复核唯一性。禁止raw SQL复制user/ciphertext/permission facts、随机选币、第二PLACE、transfer或withdraw；account/credential未恢复前不得只问instrument或调用OKX。
 - GateY 保持 `IN PROGRESS / NOT FROZEN`；GateY-6E acceptance 不等于 GateY 或 GateY-6 overall accepted/frozen，也不授权 GateY-FREEZE。30 项 hard gates 仍为 `PASS=0 / NOT_MET=25 / NOT_VERIFIABLE=5`，gap candidates=`10`；exact PilotScope=`NOT_MATERIALIZED`、real provider/private trading=`NOT_IMPLEMENTED`、`FIRST_REAL_ORDER`/micro-live=`NOT_AUTHORIZED`、GateY pilot soak=`NOT_STARTED`、LIVE=`DISABLED`、kill=`ENGAGED`。
 
 ## GateW 已冻结边界

@@ -19412,3 +19412,11 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Validation：release local/server verifier、POSIX/link/write denial、V41 backup hash/format、Flyway migrate+validate、UnitPreflight/Health、production aggregate均已真实执行；activation连接UNKNOWN后采用query/reconcile，未重试activation。
 - Boundary：credential material未读取或输出；credential JIT/OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0`；session/lease/intent/receipt/order/trade/ledger/audit均0；P0=0、P1=0。
 - Next：仍在同一attempt内，先恢复并复核NQ production SoR中唯一canonical ACTIVE OKX/LIVE account、其唯一ACTIVE credential reference与唯一可信OKX Spot instrument；不得要求operator臆造数据库ID，不得随机选币或执行第二PLACE。
+
+## 2026-08-24 — NQ-GATEY-PRODUCTION-SOR-RESTORE-AND-MINIMAL-PILOT-RESUME
+
+- Scope：继续同一`NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01`，只读恢复historical account/credential/instrument identity并审计canonical SoR恢复路径；未创建Attempt-02，未迁移/部署/修改systemd/pilot/kill合同。
+- Result：历史GateY-6C evidence与GateW DB唯一恢复owner/account/credential=`2/1/1`，encrypted material仍存在且未暴露；current DB缺owner=2/account/credential，正式API没有encrypted import/cross-DB recovery，故`BLOCKED / PRODUCTION_ACCOUNT_CREDENTIAL_REPROVISION_REQUIRED`。historical orders/trades=0且无可信`*-USDT` evidence，同时保留`PILOT_INSTRUMENT_SELECTION_REQUIRED`。
+- Validation：Git exact match/clean、server exact runtime/V42/health/kill、historical/current DB metadata、secure reference shape、Account/Credential Service与API DTO均已只读核验；生产业务基线仍全0。
+- Boundary：production DB write、raw SQL mutation、credential JIT/OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0/0`；未读取secret material，未生成session/binding/lease/order identity；P0=0、P1=0。
+- Next：必须通过现有Account/Credential Service和服务器安全凭证路径重新配置historical owner/account/credential并复核唯一性；在此之前不只问instrument、不调用OKX、不执行pilot。
