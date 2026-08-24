@@ -13,6 +13,7 @@ import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
@@ -55,7 +56,7 @@ class KillSwitchServiceTest {
     }
 
     @Test
-    void engageUsesInjectedClockAndHasNoProductionReleaseSurface() {
+    void engageUsesInjectedClockAndOnlyExactPilotDisengageIsExposed() {
         RecordingRepository repository = new RecordingRepository(state(KillSwitchStatus.DISENGAGED, NOW.minusSeconds(1)));
         KillSwitchSnapshot result = service(repository).engage(7, "MANUAL_SAFETY_STOP", "operator-1", "trace-1");
 
@@ -69,10 +70,25 @@ class KillSwitchServiceTest {
                 .filter(method -> Modifier.isPublic(method.getModifiers()))
                 .map(Method::getName)
                 .collect(Collectors.toSet());
-        assertEquals(Set.of("snapshot", "engage"), publicMethods);
+        assertEquals(Set.of("snapshot", "engage", "disengageForPilot"), publicMethods);
         assertFalse(publicMethods.stream().anyMatch(name -> Set.of(
                 "disable", "disengage", "release", "reset", "clear"
         ).contains(name)));
+    }
+
+    @Test
+    void exactPilotDisengageUsesLeaseBoundCommand() {
+        RecordingRepository repository = new RecordingRepository(state(KillSwitchStatus.ENGAGED, NOW.minusSeconds(1)));
+        UUID leaseId = UUID.randomUUID();
+        PilotKillSwitchDisengageCommand command = new PilotKillSwitchDisengageCommand(
+                KillSwitchScope.GLOBAL_TRADING, 7, leaseId, NOW.plusSeconds(60),
+                "operator-1", "trace-1", NOW);
+
+        KillSwitchSnapshot result = service(repository).disengageForPilot(command);
+
+        assertEquals(KillSwitchStatus.DISENGAGED, result.status());
+        assertEquals(8, result.version());
+        assertEquals(command, repository.disengageCommand);
     }
 
     @Test
@@ -132,6 +148,7 @@ class KillSwitchServiceTest {
     private static final class RecordingRepository implements KillSwitchStateRepository {
         private KillSwitchState state;
         private KillSwitchEngageCommand command;
+        private PilotKillSwitchDisengageCommand disengageCommand;
 
         private RecordingRepository(KillSwitchState state) {
             this.state = state;
@@ -161,6 +178,20 @@ class KillSwitchServiceTest {
                     command.updatedBy(),
                     command.traceId()
             );
+            return state;
+        }
+
+        @Override
+        public KillSwitchState disengageForPilot(PilotKillSwitchDisengageCommand command) {
+            this.disengageCommand = command;
+            if (state == null || state.version() != command.expectedVersion()
+                    || state.status() != KillSwitchStatus.ENGAGED) {
+                throw new KillSwitchVersionConflictException("test version conflict");
+            }
+            state = new KillSwitchState(
+                    command.scope(), KillSwitchStatus.DISENGAGED, state.version() + 1,
+                    "PILOT_LEASE_" + command.leaseId(), "PILOT_EXECUTION_LEASE",
+                    command.occurredAt(), command.updatedBy(), command.traceId());
             return state;
         }
     }

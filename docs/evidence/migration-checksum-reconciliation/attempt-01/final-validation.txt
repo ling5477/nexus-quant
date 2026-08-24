@@ -1,0 +1,16 @@
+root_cause=CHECKSUM_ALGORITHM_OR_ENCODING_DRIFT
+expected_hash_provenance=FOUND
+authority_tieout=CONSISTENT
+immutable_migration=TRUE
+migration_modified=NO
+minimal_remediation=PASS / TEST_ONLY_CANONICAL_CHECKSUM_INPUT
+target_test=PASS / 4 TESTS
+related_migration_tests=PASS / 17 TESTS
+full_backend_maven=PASS / 1546 TESTS / 0 FAILURES / 0 ERRORS / 43 SKIPPED
+previous_checksum_failure_fingerprint=ABSENT_FROM_SUREFIRE
+authority_validation=PASS / CURRENT_AUTHORITY_CONSISTENT + NEXT_ACTION_REGRESSION_PASS
+changed_file_allowlist=PASS / 16 OF 16 CURRENT_TASK_FILES
+forbidden_file_verification=PASS / MIGRATION_0 / PRODUCTION_JAVA_0 / POM_0 / AUTHORITY_0
+secret_absolute_path_symlink=PASS / 0 CREDENTIAL_LITERALS / 0 ABSOLUTE_PATHS / 0 SYMLINKS
+nq_pre_existing_validation_blocker=RESOLVED
+final_decision=IMPLEMENTED / PENDING_INDEPENDENT_REVIEW（已实施 / 待独立审查）

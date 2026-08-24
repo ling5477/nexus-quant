@@ -12,6 +12,122 @@ $checkerVersion = "2.0.0-powershell-lexical"
 $rulesetVersion = "huangshan-platform-2.0.0"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 
+# CANONICAL_CONFIG_HASH_START
+function Get-CanonicalConfigurationHashAlgorithm {
+    return "git-canonical-v1"
+}
+
+function ConvertTo-CanonicalUInt32Bytes([uint32]$Value) {
+    return ,([byte[]]@(
+        [byte](($Value -shr 24) -band 0xff),
+        [byte](($Value -shr 16) -band 0xff),
+        [byte](($Value -shr 8) -band 0xff),
+        [byte]($Value -band 0xff)
+    ))
+}
+
+function ConvertTo-CanonicalUInt64Bytes([uint64]$Value) {
+    return ,([byte[]]@(
+        [byte](($Value -shr 56) -band 0xff),
+        [byte](($Value -shr 48) -band 0xff),
+        [byte](($Value -shr 40) -band 0xff),
+        [byte](($Value -shr 32) -band 0xff),
+        [byte](($Value -shr 24) -band 0xff),
+        [byte](($Value -shr 16) -band 0xff),
+        [byte](($Value -shr 8) -band 0xff),
+        [byte]($Value -band 0xff)
+    ))
+}
+
+function Write-CanonicalFrameBytes([IO.Stream]$Stream, [byte[]]$Bytes) {
+    if ($Bytes.Length -gt 0) { $Stream.Write($Bytes, 0, $Bytes.Length) }
+}
+
+function Get-CanonicalConfigurationTextBytes([string]$FullPath, [string]$RelativePath) {
+    $raw = [IO.File]::ReadAllBytes($FullPath)
+    if ($raw.Length -ge 3 -and $raw[0] -eq 0xef -and $raw[1] -eq 0xbb -and $raw[2] -eq 0xbf) {
+        throw "CONFIG_INVALID: UTF-8 BOM is forbidden in canonical configuration input: $RelativePath"
+    }
+    $strictUtf8 = [Text.UTF8Encoding]::new($false, $true)
+    try { $text = $strictUtf8.GetString($raw) }
+    catch { throw "CONFIG_INVALID: invalid UTF-8 in canonical configuration input: $RelativePath" }
+    $canonical = $text.Replace("`r`n", "`n")
+    if ($canonical.Contains("`r")) {
+        throw "CONFIG_INVALID: bare CR is forbidden in canonical configuration input: $RelativePath"
+    }
+    return ,([Text.UTF8Encoding]::new($false).GetBytes($canonical))
+}
+
+function Get-CanonicalConfigurationInputPaths([string]$RootPath) {
+    $standards = Join-Path $RootPath "docs\standards\java"
+    $overlays = @(@("nq-java-domain-overlay.md", "dh-java-domain-overlay.md") | Where-Object {
+        Test-Path -LiteralPath (Join-Path $standards $_) -PathType Leaf
+    })
+    if ($overlays.Count -ne 1) { throw "CONFIG_INVALID: exactly one domain overlay is required" }
+    return @(
+        "docs/standards/java/common-java-engineering-standard.md",
+        "docs/standards/java/java-platform-profile.md",
+        "docs/standards/java/spring-platform-profile.md",
+        "docs/standards/java/architecture-overlay.md",
+        "docs/standards/java/$($overlays[0])",
+        "docs/standards/java/alibaba-huangshan-rule-mapping.yaml",
+        "docs/standards/java/java-rule-exceptions.yaml",
+        "docs/standards/java/java-shadow-scope.json",
+        "docs/standards/java/platform-profile.json",
+        "scripts/java-standard/invoke-java-shadow-scan.ps1"
+    )
+}
+
+function Get-CanonicalConfigurationHash([string]$RootPath, [string[]]$RelativePaths) {
+    $root = [IO.Path]::GetFullPath($RootPath).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+    $normalized = New-Object System.Collections.Generic.List[string]
+    $seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach ($inputPath in $RelativePaths) {
+        $path = ([string]$inputPath).Replace("\", "/")
+        $segments = @($path.Split('/'))
+        if ([string]::IsNullOrWhiteSpace($path) -or [IO.Path]::IsPathRooted($path) -or
+            $segments.Count -eq 0 -or @($segments | Where-Object { $_ -eq "" -or $_ -eq "." -or $_ -eq ".." }).Count -gt 0) {
+            throw "CONFIG_INVALID: invalid canonical configuration path: $inputPath"
+        }
+        if (-not $seen.Add($path)) { throw "CONFIG_INVALID: duplicate canonical configuration path: $path" }
+        $normalized.Add($path)
+    }
+    $paths = [string[]]$normalized.ToArray()
+    [Array]::Sort($paths, [StringComparer]::Ordinal)
+
+    $stream = [IO.MemoryStream]::new()
+    try {
+        $utf8 = [Text.UTF8Encoding]::new($false)
+        $magic = [Text.Encoding]::ASCII.GetBytes("NQDH-SHADOW-CONFIG")
+        $algorithm = $utf8.GetBytes((Get-CanonicalConfigurationHashAlgorithm))
+        Write-CanonicalFrameBytes $stream (ConvertTo-CanonicalUInt32Bytes ([uint32]$magic.Length))
+        Write-CanonicalFrameBytes $stream $magic
+        Write-CanonicalFrameBytes $stream (ConvertTo-CanonicalUInt32Bytes ([uint32]$algorithm.Length))
+        Write-CanonicalFrameBytes $stream $algorithm
+        Write-CanonicalFrameBytes $stream (ConvertTo-CanonicalUInt32Bytes ([uint32]$paths.Length))
+        foreach ($path in $paths) {
+            $nativePath = $path.Replace([char]'/', [IO.Path]::DirectorySeparatorChar)
+            $fullPath = [IO.Path]::GetFullPath((Join-Path $root $nativePath))
+            $comparison = if ([IO.Path]::DirectorySeparatorChar -eq [char]'\') { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+            if (-not $fullPath.StartsWith($root + [IO.Path]::DirectorySeparatorChar, $comparison) -or
+                -not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
+                throw "CONFIG_INVALID: missing or escaping canonical configuration input: $path"
+            }
+            $pathBytes = $utf8.GetBytes($path)
+            $contentBytes = Get-CanonicalConfigurationTextBytes $fullPath $path
+            Write-CanonicalFrameBytes $stream (ConvertTo-CanonicalUInt32Bytes ([uint32]$pathBytes.Length))
+            Write-CanonicalFrameBytes $stream $pathBytes
+            Write-CanonicalFrameBytes $stream (ConvertTo-CanonicalUInt64Bytes ([uint64]$contentBytes.Length))
+            Write-CanonicalFrameBytes $stream $contentBytes
+        }
+        $sha = [Security.Cryptography.SHA256]::Create()
+        try { return ([BitConverter]::ToString($sha.ComputeHash($stream.ToArray()))).Replace("-", "").ToLowerInvariant() }
+        finally { $sha.Dispose() }
+    }
+    finally { $stream.Dispose() }
+}
+# CANONICAL_CONFIG_HASH_END
+
 function Get-Sha256Text([string]$Text) {
     $sha = [System.Security.Cryptography.SHA256]::Create()
     try {
@@ -105,19 +221,8 @@ try {
     $scopePath = Join-Path $standardsRoot "java-shadow-scope.json"
     $platformPath = Join-Path $standardsRoot "platform-profile.json"
     $mappingPath = Join-Path $standardsRoot "alibaba-huangshan-rule-mapping.yaml"
-    $configFiles = @(
-        Join-Path $standardsRoot "common-java-engineering-standard.md"
-        Join-Path $standardsRoot "java-platform-profile.md"
-        Join-Path $standardsRoot "spring-platform-profile.md"
-        Join-Path $standardsRoot "architecture-overlay.md"
-        $overlayCandidates[0]
-        $mappingPath
-        Join-Path $standardsRoot "java-rule-exceptions.yaml"
-        $scopePath
-        $platformPath
-        $PSCommandPath
-    )
-    foreach ($file in $configFiles) { if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw "CONFIG_INVALID: missing configuration file: $(Get-RepoPath $file)" } }
+    $configInputPaths = Get-CanonicalConfigurationInputPaths $repoRoot
+    $configurationHashAlgorithm = Get-CanonicalConfigurationHashAlgorithm
 
     $scope = Get-Content -LiteralPath $scopePath -Raw -Encoding UTF8 | ConvertFrom-Json
     $platform = Get-Content -LiteralPath $platformPath -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -125,8 +230,7 @@ try {
     if ($platform.schema_version -ne "1.0.0" -or $platform.java.status -ne "CONSISTENT" -or $platform.spring.status -ne "CONSISTENT") { throw "PLATFORM_PROFILE_INVALID: inconsistent platform profile" }
     if ([int]$platform.java.compiler_release -lt 17) { throw "PLATFORM_PROFILE_INVALID: unsupported compiler release" }
 
-    $configMaterial = foreach ($file in $configFiles) { "$(Get-RepoPath $file)=$((Get-FileHash -Algorithm SHA256 -LiteralPath $file).Hash.ToLowerInvariant())" }
-    $configurationHash = Get-Sha256Text (($configMaterial | Sort-Object) -join "`n")
+    $configurationHash = Get-CanonicalConfigurationHash $repoRoot $configInputPaths
     $excludedSegments = @($scope.excluded_segments)
     $productionRoots = @($scope.production_source_roots)
     $timeRestrictedPrefixes = @($scope.time_restricted_prefixes)
@@ -138,6 +242,8 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "CHECKER_EXECUTION_FAILED: git status failed" }
         if ($statusLine.Length -ge 4) { $changedJava[$statusLine.Substring(3).Trim('"').Replace('\', '/')] = $true }
     }
+    $currentBaselineHead = (git -C $repoRoot rev-parse HEAD).Trim()
+    if ($LASTEXITCODE -ne 0 -or $currentBaselineHead -notmatch '^[0-9a-f]{40}$') { throw "CHECKER_EXECUTION_FAILED: current HEAD resolution failed" }
     $rulesetExpansionRuleIds = @(
         "JAVA-LEGACY-DATE-IN-DOMAIN", "JAVA-RAW-THREAD", "JAVA-UNMANAGED-EXECUTOR", "JAVA-COMMON-POOL-ASYNC",
         "SPRING-FIELD-INJECTION", "SPRING-LEGACY-JAVAX-PERSISTENCE", "SPRING-LEGACY-JAVAX-VALIDATION", "SPRING-LEGACY-JAVAX-SERVLET",
@@ -255,7 +361,7 @@ try {
         $lineagePreviousCount = [int]$attempt01Summary.baseline_violation_count
         $projection = @($classified | ForEach-Object { [pscustomobject]@{ rule_id = $_.rule_id; path = $_.path; classification = $_.classification; fingerprint = $_.fingerprint } })
         $baseline = [pscustomobject]@{
-            schema_version = "2.0.0"; previous_ruleset_version = "songshan-shadow-1.0.0"; current_ruleset_version = $rulesetVersion; checker_version = $checkerVersion; configuration_sha256 = $configurationHash; generated_at_utc = $provenance.retrieved_at_utc; deterministic_content_sha256 = Get-Sha256Text ($projection | ConvertTo-Json -Depth 5 -Compress); excluded_paths = @($excludedSegments); previous_count = $lineagePreviousCount; current_count = $classified.Count; existing_baseline_count = @($classified | Where-Object { $_.classification -eq 'EXISTING_BASELINE_FINDING' }).Count; ruleset_expansion_count = @($classified | Where-Object { $_.classification -eq 'RULESET_EXPANSION_FINDING' }).Count; new_code_count = @($classified | Where-Object { $_.classification -eq 'NEW_CODE_FINDING' }).Count; violation_count = $classified.Count; violations = $classified
+            schema_version = "2.0.0"; previous_ruleset_version = "songshan-shadow-1.0.0"; current_ruleset_version = $rulesetVersion; baseline_head = $currentBaselineHead; checker_version = $checkerVersion; configuration_hash_algorithm = $configurationHashAlgorithm; configuration_sha256 = $configurationHash; generated_at_utc = $provenance.retrieved_at_utc; deterministic_content_sha256 = Get-Sha256Text ($projection | ConvertTo-Json -Depth 5 -Compress); excluded_paths = @($excludedSegments); previous_count = $lineagePreviousCount; current_count = $classified.Count; existing_baseline_count = @($classified | Where-Object { $_.classification -eq 'EXISTING_BASELINE_FINDING' }).Count; ruleset_expansion_count = @($classified | Where-Object { $_.classification -eq 'RULESET_EXPANSION_FINDING' }).Count; new_code_count = @($classified | Where-Object { $_.classification -eq 'NEW_CODE_FINDING' }).Count; violation_count = $classified.Count; violations = $classified
         }
         [IO.Directory]::CreateDirectory((Split-Path $baselineFullPath -Parent)) | Out-Null
         [IO.File]::WriteAllText($baselineFullPath, ($baseline | ConvertTo-Json -Depth 8) + "`n", [Text.UTF8Encoding]::new($false))
@@ -264,7 +370,9 @@ try {
 
     if (-not $previousBaseline) { throw "BASELINE_SCHEMA_INVALID: missing baseline" }
     if ($previousBaseline.schema_version -ne "2.0.0" -or $previousBaseline.current_ruleset_version -ne $rulesetVersion) { throw "BASELINE_SCHEMA_INVALID: baseline ruleset/schema mismatch" }
-    if ($previousBaseline.configuration_sha256 -ne $configurationHash) { throw "BASELINE_SCHEMA_INVALID: baseline configuration hash mismatch" }
+    $baselineAlgorithmProperty = $previousBaseline.PSObject.Properties['configuration_hash_algorithm']
+    if ($null -eq $baselineAlgorithmProperty -or [string]$baselineAlgorithmProperty.Value -ne $configurationHashAlgorithm) { throw "BASELINE_SCHEMA_INVALID: baseline configuration hash algorithm mismatch" }
+    if ($previousBaseline.configuration_sha256 -ne $configurationHash) { throw "BASELINE_CONFIGURATION_HASH_MISMATCH: baseline=$($previousBaseline.configuration_sha256) current=$configurationHash" }
     $baselineByFingerprint = @{}; foreach ($item in @($previousBaseline.violations)) { $baselineByFingerprint[$item.fingerprint] = $item.classification }
     $reported = @($findings | ForEach-Object {
         $classification = if ($baselineByFingerprint.ContainsKey($_.fingerprint)) { [string]$baselineByFingerprint[$_.fingerprint] } elseif ($changedJava.ContainsKey($_.path)) { "NEW_CODE_FINDING" } else { "RULESET_EXPANSION_FINDING" }
@@ -275,7 +383,7 @@ try {
     $newCodeCount = @($reported | Where-Object { $_.classification -eq 'NEW_CODE_FINDING' }).Count
     $status = if ($reported.Count) { "VIOLATION_FOUND" } else { "PASS" }
     $report = [pscustomobject]@{
-        schema_version = "2.0.0"; status = $status; checker_version = $checkerVersion; ruleset_version = $rulesetVersion; huangshan_source_ref = "6c59c8c36ecd8722c712d5685b8c3822c1c8b030"; java_platform = "release-$($platform.java.compiler_release)"; spring_platform = "boot-$($platform.spring.boot)_framework-$($platform.spring.framework)"; configuration_sha256 = $configurationHash; current_violation_count = $reported.Count; baseline_violation_count = [int]$previousBaseline.violation_count; existing_baseline_count = $existingCount; ruleset_expansion_count = $expansionCount; new_code_violation_count = $newCodeCount; report_artifact = $OutputPath.Replace("\", "/"); violations = $reported
+        schema_version = "2.0.0"; status = $status; checker_version = $checkerVersion; ruleset_version = $rulesetVersion; baseline_head = $previousBaseline.baseline_head; huangshan_source_ref = "6c59c8c36ecd8722c712d5685b8c3822c1c8b030"; java_platform = "release-$($platform.java.compiler_release)"; spring_platform = "boot-$($platform.spring.boot)_framework-$($platform.spring.framework)"; configuration_hash_algorithm = $configurationHashAlgorithm; configuration_sha256 = $configurationHash; current_violation_count = $reported.Count; baseline_violation_count = [int]$previousBaseline.violation_count; existing_baseline_count = $existingCount; ruleset_expansion_count = $expansionCount; new_code_violation_count = $newCodeCount; report_artifact = $OutputPath.Replace("\", "/"); violations = $reported
     }
     $outputFullPath = Resolve-RepoFile $OutputPath
     [IO.Directory]::CreateDirectory((Split-Path $outputFullPath -Parent)) | Out-Null
@@ -286,6 +394,9 @@ try {
     Write-Output "SPRING_PLATFORM=boot-$($platform.spring.boot)_framework-$($platform.spring.framework)"
     Write-Output "HUANGSHAN_RULESET_IDENTITY=$($report.huangshan_source_ref)"
     Write-Output "RULESET_VERSION=$rulesetVersion"
+    Write-Output "BASELINE_HEAD=$($previousBaseline.baseline_head)"
+    Write-Output "CONFIGURATION_HASH_ALGORITHM=$configurationHashAlgorithm"
+    Write-Output "CONFIG_HASH_INPUTS=$($configInputPaths -join ',')"
     Write-Output "EXISTING_BASELINE_COUNT=$existingCount"
     Write-Output "RULESET_EXPANSION_COUNT=$expansionCount"
     Write-Output "NEW_CODE_VIOLATION_COUNT=$newCodeCount"
@@ -295,7 +406,7 @@ try {
 }
 catch {
     $message = $_.Exception.Message
-    if ($message -match '^(CONFIG_INVALID|PLATFORM_PROFILE_INVALID|MAPPING_INVALID|BASELINE_SCHEMA_INVALID|RULE_ID_COLLISION):') { Write-Error $message; exit 2 }
-    Write-Error "CHECKER_EXECUTION_FAILED: $message"
+    if ($message -match '^(CONFIG_INVALID|PLATFORM_PROFILE_INVALID|MAPPING_INVALID|BASELINE_SCHEMA_INVALID|BASELINE_CONFIGURATION_HASH_MISMATCH|RULE_ID_COLLISION):') { [Console]::Error.WriteLine($message); exit 2 }
+    [Console]::Error.WriteLine("CHECKER_EXECUTION_FAILED: $message")
     exit 3
 }

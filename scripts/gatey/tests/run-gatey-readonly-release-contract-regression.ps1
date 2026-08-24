@@ -10,6 +10,16 @@ $contract = Join-Path $gateyRoot 'gatey-readonly-release-contract.psm1'
 $builder = Join-Path $gateyRoot 'build-gatey-readonly-release.ps1'
 $deployment = Join-Path $gateyRoot 'invoke-gatey-readonly-deployment-contract.ps1'
 $installer = Join-Path $gateyRoot 'install-gatey-readonly-release.ps1'
+$runtimeDeployment = Join-Path $gateyRoot 'invoke-gatey-readonly-runtime-deployment.ps1'
+$exactPilotControl = Join-Path $gateyRoot 'invoke-gatey-exact-pilot-scope.ps1'
+$minimalLivePilotControl = Join-Path $gateyRoot 'invoke-gatey-minimal-live-pilot.ps1'
+$systemdUnit = Join-Path $repo 'deploy/systemd/nq-gatey-readonly-qualification.service'
+$runtimeEnvTemplate = Join-Path $repo 'deploy/gatey/gatey-readonly-runtime.env.example'
+$runtimeSecretsTemplate = Join-Path $repo 'deploy/gatey/gatey-readonly-runtime.secrets.env.example'
+$runtimePgpassTemplate = Join-Path $repo 'deploy/gatey/gatey-readonly-db.pgpass.example'
+$runtimeTarget = Join-Path $repo 'deploy/gatey/gatey-readonly-runtime-target.json'
+$gatewVerifier = Join-Path $repo 'scripts/gatew/verify-gatew-release.ps1'
+$gatewContract = Join-Path $repo 'scripts/gatew/gatew-release-contract.psm1'
 Import-Module $contract -Force -DisableNameChecking
 
 $script:Cases = [Collections.Generic.List[string]]::new()
@@ -58,6 +68,16 @@ function New-TestRelease(
         Add-TestArtifact $Root 'bin/gatey-readonly-release-contract.psm1' $contract '0644' 'release-contract'
         Add-TestArtifact $Root 'bin/invoke-gatey-readonly-deployment-contract.ps1' $deployment '0755' 'deployment-contract'
         Add-TestArtifact $Root 'bin/install-gatey-readonly-release.ps1' $installer '0755' 'release-installer'
+        Add-TestArtifact $Root 'bin/invoke-gatey-readonly-runtime-deployment.ps1' $runtimeDeployment '0755' 'runtime-deployment-orchestrator'
+        Add-TestArtifact $Root 'bin/invoke-gatey-exact-pilot-scope.ps1' $exactPilotControl '0755' 'exact-pilot-control-surface'
+        Add-TestArtifact $Root 'bin/invoke-gatey-minimal-live-pilot.ps1' $minimalLivePilotControl '0755' 'minimal-live-pilot-control-surface'
+        Add-TestArtifact $Root 'config/nq-gatey-readonly-qualification.service' $systemdUnit '0644' 'systemd-runtime-contract'
+        Add-TestArtifact $Root 'config/gatey-readonly-runtime.env.example' $runtimeEnvTemplate '0644' 'runtime-environment-template'
+        Add-TestArtifact $Root 'config/gatey-readonly-runtime.secrets.env.example' $runtimeSecretsTemplate '0600' 'runtime-secret-environment-template'
+        Add-TestArtifact $Root 'config/gatey-readonly-db.pgpass.example' $runtimePgpassTemplate '0600' 'database-credential-reference-template'
+        Add-TestArtifact $Root 'config/gatey-readonly-runtime-target.json' $runtimeTarget '0644' 'runtime-target-contract'
+        Add-TestArtifact $Root 'bin/verify-gatew-release.ps1' $gatewVerifier '0755' 'gatew-rollback-verifier'
+        Add-TestArtifact $Root 'bin/gatew-release-contract.psm1' $gatewContract '0644' 'gatew-rollback-contract'
     )
     Remove-Item -LiteralPath (Join-Path $Root 'app-source.jar') -Force
     $manifest = New-GateYReadonlyReleaseManifest $SourceCommit '2026-08-19T00:00:00Z' $artifacts $MigrationRoot
@@ -203,10 +223,68 @@ try
     $manifestB = New-TestRelease $releaseB $migrations
     Assert-Condition ((ConvertTo-GateYReadonlyCanonicalManifestJson $manifestA) -ceq (ConvertTo-GateYReadonlyCanonicalManifestJson $manifestB)) 'CANONICAL_MANIFEST_NOT_DETERMINISTIC'
     Complete-Case 'canonical-manifest-deterministic'
+    $forbiddenRuntimeFacts = @(
+        'startupCredentialReads', 'startupOkxGetCalls', 'startupOkxPostCalls',
+        'runtimeHealthy', 'killSwitchObserved', 'databaseConnected'
+    )
+    Assert-Condition (
+        [string]$manifestA.safety.factClassification -ceq 'EXPECTED_CONFIGURATION' -and
+        @($forbiddenRuntimeFacts | Where-Object {
+            $null -ne $manifestA.PSObject.Properties[$_] -or
+            $null -ne $manifestA.safety.PSObject.Properties[$_]
+        }).Count -eq 0
+    ) 'RELEASE_MANIFEST_RUNTIME_FACT_BOUNDARY_INVALID'
+    Complete-Case 'release-manifest-cannot-assert-runtime-counter-zero'
 
     $verified = Test-GateYReadonlyRelease $releaseA
-    Assert-Condition ($verified.artifactCount -eq 5 -and $verified.linkIntegrityVerified) 'RELEASE_VERIFICATION_FAILED'
+    Assert-Condition ($verified.artifactCount -eq 15 -and $verified.linkIntegrityVerified) 'RELEASE_VERIFICATION_FAILED'
     Complete-Case 'independent-regular-file-pass'
+
+    $legacyRelease = Join-Path $tempRoot 'legacy-release'
+    Copy-Item -LiteralPath $releaseA -Destination $legacyRelease -Recurse
+    $legacyManifestPath = Join-Path $legacyRelease 'release-manifest.json'
+    $legacyManifest = Get-Content -LiteralPath $legacyManifestPath -Raw | ConvertFrom-Json
+    $legacyManifest.artifacts = @($legacyManifest.artifacts | Where-Object {
+        [string]$_.relativePath -notin @(
+            'bin/invoke-gatey-exact-pilot-scope.ps1',
+            'bin/invoke-gatey-minimal-live-pilot.ps1'
+        )
+    })
+    Remove-Item -LiteralPath (Join-Path $legacyRelease 'bin/invoke-gatey-exact-pilot-scope.ps1') -Force
+    Remove-Item -LiteralPath (Join-Path $legacyRelease 'bin/invoke-gatey-minimal-live-pilot.ps1') -Force
+    Write-GateYReadonlyCanonicalManifest $legacyManifestPath $legacyManifest
+    Expect-Blocked { Test-GateYReadonlyRelease $legacyRelease } `
+        'BLOCKED / RELEASE_REQUIRED_ARTIFACT_MISSING'
+    $legacyVerified = Test-GateYReadonlyRelease $legacyRelease `
+        -AllowLegacyExactPilotControlSurfaceAbsent
+    Assert-Condition ($legacyVerified.artifactCount -eq 13) 'LEGACY_RELEASE_VERIFICATION_FAILED'
+    Complete-Case 'previous-legacy-exact-pilot-surface-absence-explicitly-accepted'
+
+    $incompleteLegacyRelease = Join-Path $tempRoot 'incomplete-legacy-release'
+    Copy-Item -LiteralPath $legacyRelease -Destination $incompleteLegacyRelease -Recurse
+    $incompleteManifestPath = Join-Path $incompleteLegacyRelease 'release-manifest.json'
+    $incompleteManifest = Get-Content -LiteralPath $incompleteManifestPath -Raw | ConvertFrom-Json
+    $incompleteManifest.artifacts = @($incompleteManifest.artifacts | Where-Object {
+        [string]$_.relativePath -cne 'bin/install-gatey-readonly-release.ps1'
+    })
+    Remove-Item -LiteralPath (Join-Path $incompleteLegacyRelease 'bin/install-gatey-readonly-release.ps1') -Force
+    Write-GateYReadonlyCanonicalManifest $incompleteManifestPath $incompleteManifest
+    Expect-Blocked {
+        Test-GateYReadonlyRelease $incompleteLegacyRelease `
+            -AllowLegacyExactPilotControlSurfaceAbsent
+    } 'BLOCKED / RELEASE_REQUIRED_ARTIFACT_MISSING'
+    Complete-Case 'previous-legacy-other-required-artifact-still-rejected'
+
+    $forgedRuntimeRelease = Join-Path $tempRoot 'forged-runtime-release'
+    Copy-Item -LiteralPath $releaseA -Destination $forgedRuntimeRelease -Recurse
+    $forgedRuntimeManifestPath = Join-Path $forgedRuntimeRelease 'release-manifest.json'
+    $forgedRuntimeManifest = Get-Content -LiteralPath $forgedRuntimeManifestPath -Raw | ConvertFrom-Json
+    $forgedRuntimeManifest.safety | Add-Member -NotePropertyName startupCredentialReads `
+        -NotePropertyValue 0
+    Write-GateYReadonlyCanonicalManifest $forgedRuntimeManifestPath $forgedRuntimeManifest
+    Expect-Blocked { Test-GateYReadonlyRelease $forgedRuntimeRelease } `
+        'BLOCKED / RELEASE_MANIFEST_RUNTIME_FACT_INVALID'
+    Complete-Case 'caller-runtime-zero-field-rejected'
 
     [IO.File]::AppendAllText((Join-Path $releaseB 'app/nq-app.jar'), 'tamper', $script:Utf8NoBom)
     Expect-Blocked { Test-GateYReadonlyRelease $releaseB } 'BLOCKED / RELEASE_ARTIFACT_HASH_MISMATCH'
@@ -414,12 +492,16 @@ try
     {
         Assert-Condition $builderSource.Contains($marker) "BUILDER_MARKER_MISSING:$marker"
     }
+    Assert-Condition (
+        $builderSource.Contains('$mavenOutput = @(& $maven @arguments)') -and
+        $builderSource -notmatch '(?m)^\s*& \$maven @arguments\s*$'
+    ) 'BUILDER_MAVEN_OUTPUT_LEAKS_TO_RETURN_VALUE'
     Complete-Case 'builder-exact-clean-contract'
 
     $builderSelfTestOutput = @(& $engine -NoProfile -File $builder -ContractSelfTest 2>&1)
     Assert-Condition ($LASTEXITCODE -eq 0) 'BUILDER_SELF_TEST_PROCESS_FAILED'
     $builderSelfTest = ($builderSelfTestOutput -join [Environment]::NewLine) | ConvertFrom-Json
-    Assert-Condition ([int]$builderSelfTest.migrationCount -eq 41 -and [bool]$builderSelfTest.tamperedMigrationRejected) 'BUILDER_SELF_TEST_RESULT_INVALID'
+    Assert-Condition ([int]$builderSelfTest.migrationCount -eq 42 -and [bool]$builderSelfTest.tamperedMigrationRejected) 'BUILDER_SELF_TEST_RESULT_INVALID'
     Complete-Case 'builder-fat-jar-migration-binding'
 
     foreach ($forbidden in @('systemctl start', 'Invoke-WebRequest', 'Invoke-RestMethod', 'ssh ', 'psql '))
@@ -428,7 +510,7 @@ try
     }
     Complete-Case 'deployment-contract-no-server-write'
 
-    Assert-Condition ($script:Cases.Count -eq 27) "CASE_COUNT_INVALID:$($script:Cases.Count)"
+    Assert-Condition ($script:Cases.Count -eq 31) "CASE_COUNT_INVALID:$($script:Cases.Count)"
     [pscustomobject][ordered]@{
         decision = 'PASS / GATEY_READONLY_RELEASE_CONTRACT_REGRESSION'
         cases = $script:Cases.Count

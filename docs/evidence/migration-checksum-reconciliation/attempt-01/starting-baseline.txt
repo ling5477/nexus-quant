@@ -1,0 +1,14 @@
+task=NQ_MIGRATION_CHECKSUM_REGRESSION_DIAGNOSIS
+repository=nexus-quant
+branch=dev
+head=2605a20e9de3a6ef2cacc3118a353942fa74b2b1
+origin_dev=2605a20e9de3a6ef2cacc3118a353942fa74b2b1
+merge_base=2605a20e9de3a6ef2cacc3118a353942fa74b2b1
+ahead=0
+behind=0
+unresolved_conflicts=0
+unfinished_git_operation=0
+checksum_test_dirty_at_start=NO
+target_migration_dirty_at_start=NO
+dirty_provenance=PREVIOUS_JAVA_STANDARD + HUANGSHAN_UPGRADE + ROUTER_INTEGRATION
+unknown_dirty_paths=0

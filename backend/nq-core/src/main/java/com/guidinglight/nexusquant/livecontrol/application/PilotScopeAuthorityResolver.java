@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.livecontrol.application;
 
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSet;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionState;
 
 /**
  * 重新解析 account、credential、release、risk 与 runtime immutable authority 的 server-side port。
@@ -12,6 +13,27 @@ public interface PilotScopeAuthorityResolver {
             AuthenticatedLiveControlActor actor,
             PilotScopeMaterializationCommand command
     );
+
+    default ResolvedMinimalAuthority resolveMinimal(
+            AuthenticatedLiveControlActor actor,
+            MinimalPilotMaterializationCommand command
+    ) {
+        throw new UnsupportedOperationException("minimal pilot authority is not implemented");
+    }
+
+    record ResolvedMinimalAuthority(
+            long ownerId,
+            StrategyReleaseAdmissionState admission,
+            RiskLimitSet riskLimitSet,
+            ResolvedScopeBindings scopeBindings
+    ) {
+        public ResolvedMinimalAuthority {
+            if (ownerId <= 0) throw new IllegalArgumentException("ownerId must be positive");
+            java.util.Objects.requireNonNull(admission, "admission must not be null");
+            java.util.Objects.requireNonNull(riskLimitSet, "riskLimitSet must not be null");
+            java.util.Objects.requireNonNull(scopeBindings, "scopeBindings must not be null");
+        }
+    }
 
     record ResolvedAuthority(RiskLimitSet riskLimitSet, ResolvedScopeBindings scopeBindings) {
         public ResolvedAuthority {

@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "gatey-readonly-runtime-target.v1",
+  "runtimeRole": "GATEY_READONLY_QUALIFICATION",
+  "unit": {
+    "name": "nq-gatey-readonly-qualification.service",
+    "installedPath": "/etc/systemd/system/nq-gatey-readonly-qualification.service",
+    "sourceRelativePath": "config/nq-gatey-readonly-qualification.service"
+  },
+  "service": {
+    "user": "nq-gatey-readonly",
+    "group": "nq-gatey-readonly",
+    "workingDirectory": "/opt/nexus-quant",
+    "releaseRoot": "/opt/nexus-quant/releases",
+    "currentPointer": "/opt/nexus-quant/current",
+    "evidenceRoot": "/var/lib/nexus-quant/gatey-readonly-qualification/deployment-evidence"
+  },
+  "environment": {
+    "path": "/etc/nexus-quant/gatey-readonly-qualification/runtime.env",
+    "owner": "root",
+    "group": "nq-gatey-readonly",
+    "mode": "640",
+    "templateRelativePath": "config/gatey-readonly-runtime.env.example",
+    "secretPath": "/etc/nexus-quant/gatey-readonly-qualification/secrets.env",
+    "secretOwner": "root",
+    "secretGroup": "root",
+    "secretMode": "600",
+    "secretTemplateRelativePath": "config/gatey-readonly-runtime.secrets.env.example"
+  },
+  "management": {
+    "address": "127.0.0.1",
+    "port": 18890,
+    "healthPath": "/actuator/health",
+    "identityPath": "/actuator/readonlyproviderobservation"
+  },
+  "database": {
+    "targetId": "gatey-production-control-plane",
+    "runtimeEnvironment": "PRODUCTION_CONTROL_PLANE",
+    "host": "127.0.0.1",
+    "port": 55432,
+    "name": "nexus_quant",
+    "flywayHistoryTable": "flyway_schema_history",
+    "credentialReferenceName": "gatey-readonly-qualification-db",
+    "credentialPath": "/etc/nexus-quant/gatey-readonly-qualification/db.pgpass",
+    "credentialOwner": "root",
+    "credentialGroup": "root",
+    "credentialMode": "600",
+    "credentialTemplateRelativePath": "config/gatey-readonly-db.pgpass.example"
+  },
+  "safety": {
+    "live": "DISABLED",
+    "killSwitch": "ENGAGED",
+    "providerObservationEnabled": true,
+    "tradingComponentsEnabled": false,
+    "mutationRuntimeBound": false
+  }
+}

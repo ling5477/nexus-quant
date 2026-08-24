@@ -2,8 +2,10 @@
   "schema_version": "2.0.0",
   "previous_ruleset_version": "songshan-shadow-1.0.0",
   "current_ruleset_version": "huangshan-platform-2.0.0",
+  "baseline_head": "53dfa55cc09e842e1567acbab35227262b3d5ddf",
   "checker_version": "2.0.0-powershell-lexical",
-  "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6",
+  "configuration_hash_algorithm": "git-canonical-v1",
+  "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc",
   "generated_at_utc": "2026-08-20T05:05:23Z",
   "deterministic_content_sha256": "fe0c7d3f117401e13f751005464545b838eb3ca3b508052abbce6dc5adaddcb1",
   "excluded_paths": [
@@ -32,7 +34,7 @@
       "fingerprint": "810c9e773351f594a0b83a84",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-COMMON-LOG-002",
@@ -45,7 +47,7 @@
       "fingerprint": "ddabd7f7ad1b34e4034bbb6f",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-COMMON-LOG-002",
@@ -58,7 +60,7 @@
       "fingerprint": "1a742cb4d1192d3cbf612cef",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-COMMON-OPTIONAL-001",
@@ -71,7 +73,7 @@
       "fingerprint": "124599f1da5ac3a822e87d2c",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-COMMON-SQL-001",
@@ -84,7 +86,7 @@
       "fingerprint": "a7ecfe31625fb4790965ae06",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-COMMON-SQL-001",
@@ -97,7 +99,7 @@
       "fingerprint": "078ddb637476f78a6ef174d5",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-COMMON-SQL-001",
@@ -110,7 +112,7 @@
       "fingerprint": "2ad3bd68baf2c3d0fcf6166e",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-COMMON-SQL-001",
@@ -123,7 +125,7 @@
       "fingerprint": "a827d4ade2c00eba58f9b458",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-RAW-THREAD",
@@ -136,7 +138,7 @@
       "fingerprint": "237b385497c3a506cd4f567f",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-RAW-THREAD",
@@ -149,7 +151,7 @@
       "fingerprint": "f791c8103fab2781fb4b10f3",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-RAW-THREAD",
@@ -162,7 +164,7 @@
       "fingerprint": "d9290b5b4e723e63800f3f14",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-RAW-THREAD",
@@ -175,7 +177,7 @@
       "fingerprint": "01f9bc6fc38d91357a50c5bd",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-RAW-THREAD",
@@ -188,7 +190,7 @@
       "fingerprint": "22a91fbde8d83d8c380ae460",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-RAW-THREAD",
@@ -201,7 +203,7 @@
       "fingerprint": "87293396516fdcec043484d5",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-RAW-THREAD",
@@ -214,7 +216,7 @@
       "fingerprint": "93d6221055fdcce78333392c",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -227,7 +229,7 @@
       "fingerprint": "8d0bc00764558e41ab7fc11d",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -240,7 +242,7 @@
       "fingerprint": "379a80b897720a4f94977307",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -253,7 +255,7 @@
       "fingerprint": "9c071691bf9f7aeeaa26ce2d",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -266,7 +268,7 @@
       "fingerprint": "9593da5facd5d5700732e6e3",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -279,7 +281,7 @@
       "fingerprint": "e281307870ff239b2031aa5d",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -292,7 +294,7 @@
       "fingerprint": "18df0abf46d5763dc34f88b7",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -305,7 +307,7 @@
       "fingerprint": "192eee63d41bb70beb126414",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -318,7 +320,7 @@
       "fingerprint": "744a6535b7e5288de1588a3d",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -331,7 +333,7 @@
       "fingerprint": "1e6a8f4849cfe0cdecdfb482",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -344,7 +346,7 @@
       "fingerprint": "636f16308393d24a71da9b98",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -357,7 +359,7 @@
       "fingerprint": "8232590ffc3efd3de845b57b",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -370,7 +372,7 @@
       "fingerprint": "9a0595113265d82707804391",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -383,7 +385,7 @@
       "fingerprint": "ebcfa2c6bc2f8fae9641d1cb",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -396,7 +398,7 @@
       "fingerprint": "0191962f9317a19e6848bc06",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -409,7 +411,7 @@
       "fingerprint": "b4baf6175a2939321c29fa34",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -422,7 +424,7 @@
       "fingerprint": "dfe974aa2579526fd15a19c1",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -435,7 +437,7 @@
       "fingerprint": "e421b9d3a093fb281e9ddd84",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -448,7 +450,7 @@
       "fingerprint": "f5f5255249e472bc54835eca",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -461,7 +463,7 @@
       "fingerprint": "540652349d7ab21d708bf51d",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -474,7 +476,7 @@
       "fingerprint": "7a77630b9418cdcce205d65f",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -487,7 +489,7 @@
       "fingerprint": "a94f10ee4c25be74e1db65a2",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -500,7 +502,7 @@
       "fingerprint": "edb2d0872b4c4c535d9212f8",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -513,7 +515,7 @@
       "fingerprint": "9153830bcadbbc5e340dcc16",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -526,7 +528,7 @@
       "fingerprint": "70b02162455e98c5321350a9",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -539,7 +541,7 @@
       "fingerprint": "a72c2016e016cf01aec76546",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -552,7 +554,7 @@
       "fingerprint": "75df9501e809d5221d86f9af",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -565,7 +567,7 @@
       "fingerprint": "8d9b2adf8f7b272cb44fc8e2",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -578,7 +580,7 @@
       "fingerprint": "f74c041e41051761bdd003fe",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -591,7 +593,7 @@
       "fingerprint": "33c471bb132fde7e4fc02975",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -604,7 +606,7 @@
       "fingerprint": "3ec42fb74358453610f52c6e",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -617,7 +619,7 @@
       "fingerprint": "598e1111ddf54cb9508185c0",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -630,7 +632,7 @@
       "fingerprint": "8e8d4641611d78a636d41f65",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -643,7 +645,7 @@
       "fingerprint": "f556cd17fdc1cf814862398e",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -656,7 +658,7 @@
       "fingerprint": "072deaae8beaa5872364f093",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -669,7 +671,7 @@
       "fingerprint": "e4f29bf28bb10145d6134fbf",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -682,7 +684,7 @@
       "fingerprint": "04cade319ff9ddf1c2025b21",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -695,7 +697,7 @@
       "fingerprint": "425c77db348191e6d62bdc66",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -708,7 +710,7 @@
       "fingerprint": "5968d328c1649fa8c6b27653",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -721,7 +723,7 @@
       "fingerprint": "fd330ea11ee96c970bce9180",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -734,7 +736,7 @@
       "fingerprint": "37394b2f44eb1a133958ec35",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -747,7 +749,7 @@
       "fingerprint": "34181300217c246c50855bf2",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -760,7 +762,7 @@
       "fingerprint": "09b91d92b8655c7ac82f1eac",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -773,7 +775,7 @@
       "fingerprint": "ed8b5c581318d28132560e7d",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -786,7 +788,7 @@
       "fingerprint": "3c7330f98fcddbe805e8a546",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -799,7 +801,7 @@
       "fingerprint": "55066476b2a623267fee4f7e",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -812,7 +814,7 @@
       "fingerprint": "5b93194913da4110b6d29fa3",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -825,7 +827,7 @@
       "fingerprint": "6691ad816ea41ef80aa95c72",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -838,7 +840,7 @@
       "fingerprint": "6f7803c184e160e15b5f2bc2",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -851,7 +853,7 @@
       "fingerprint": "ee0cbf92ae1ffe725ff9ee0c",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -864,7 +866,7 @@
       "fingerprint": "075e912293b7f3dd037fbb94",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -877,7 +879,7 @@
       "fingerprint": "236ad08e9be7ca0fdd2aca43",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -890,7 +892,7 @@
       "fingerprint": "384823d775d403a3872b0574",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -903,7 +905,7 @@
       "fingerprint": "568d5fc9ad4f8f2c319353a2",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -916,7 +918,7 @@
       "fingerprint": "5fe0bce93e8ad1dcd70e0038",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -929,7 +931,7 @@
       "fingerprint": "93a2f6498529621a78ec5068",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -942,7 +944,7 @@
       "fingerprint": "a8f3f09f603c0ca1924e6185",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -955,7 +957,7 @@
       "fingerprint": "cefeb0419d27f9558e90ae1c",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -968,7 +970,7 @@
       "fingerprint": "e51b6dc7519760b0c9b2f1cf",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -981,7 +983,7 @@
       "fingerprint": "2998ca531f5e8a85c4247ff2",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -994,7 +996,7 @@
       "fingerprint": "f8b025f22f3d9612b8c98f99",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1007,7 +1009,7 @@
       "fingerprint": "54b787f841c99bce55cf2ca3",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1020,7 +1022,7 @@
       "fingerprint": "0ce082b48e810434773ffec2",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1033,7 +1035,7 @@
       "fingerprint": "66379a0c8e72628a0213f68e",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1046,7 +1048,7 @@
       "fingerprint": "8cf9a080c35523502c07a1d9",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1059,7 +1061,7 @@
       "fingerprint": "c60b3c250a885591dce932e2",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1072,7 +1074,7 @@
       "fingerprint": "ee6305faad751dbe552694db",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1085,7 +1087,7 @@
       "fingerprint": "f2fea1c1f9eaf27c8c1c262c",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1098,7 +1100,7 @@
       "fingerprint": "de7a2f259211cebf7ccb1cb0",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1111,7 +1113,7 @@
       "fingerprint": "234337af6b8f411ed168d869",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1124,7 +1126,7 @@
       "fingerprint": "20ff30109d2705c1f279f9c3",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1137,7 +1139,7 @@
       "fingerprint": "5a11fde38e480982cebcf66c",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1150,7 +1152,7 @@
       "fingerprint": "8797e46dcd9ba2e0036ba02f",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1163,7 +1165,7 @@
       "fingerprint": "c76a51dfeaf690a9739c0e41",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1176,7 +1178,7 @@
       "fingerprint": "e4600a2d6e8d60294fddac6a",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1189,7 +1191,7 @@
       "fingerprint": "88d52eaa2f2d36ad39d2fbe4",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1202,7 +1204,7 @@
       "fingerprint": "b91ae88e80deff2f490bda3e",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1215,7 +1217,7 @@
       "fingerprint": "c0635ce3fc32bbdffb755430",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1228,7 +1230,7 @@
       "fingerprint": "e51cf41a2892c47b9c2554f8",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1241,7 +1243,7 @@
       "fingerprint": "6bb89697dbd265134e8be13c",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1254,7 +1256,7 @@
       "fingerprint": "d00e2619c50db759fc71970e",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1267,7 +1269,7 @@
       "fingerprint": "9c3b73a3a6086ec64d99eae7",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1280,7 +1282,7 @@
       "fingerprint": "04b06a7b843719b554a7bacd",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1293,7 +1295,7 @@
       "fingerprint": "2c5e634b27670cefd2839e4d",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1306,7 +1308,7 @@
       "fingerprint": "52452df6c7a00f5876902202",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1319,7 +1321,7 @@
       "fingerprint": "af38bb74da09e5ac1650f40c",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1332,7 +1334,7 @@
       "fingerprint": "c502954f06021649abd94089",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1345,7 +1347,7 @@
       "fingerprint": "dd3a29e6b1aecb25be791dd1",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1358,7 +1360,7 @@
       "fingerprint": "dfacf69b2f18384271ea0e7a",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1371,7 +1373,7 @@
       "fingerprint": "eb6865de2c02618ee38688f0",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1384,7 +1386,7 @@
       "fingerprint": "43563494107fa70abbbce076",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1397,7 +1399,7 @@
       "fingerprint": "0a6965715cfe98f7cb5ed77f",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1410,7 +1412,7 @@
       "fingerprint": "35ef32a67cf7bc4a254bb27a",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1423,7 +1425,7 @@
       "fingerprint": "829c091f651de1e0c523b80f",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1436,7 +1438,7 @@
       "fingerprint": "8fe14fc14a09ea06c3083ce5",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1449,7 +1451,7 @@
       "fingerprint": "9160c2638398c8416555e11c",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1462,7 +1464,7 @@
       "fingerprint": "8f0e49bf3b28c41a41a9f55e",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1475,7 +1477,7 @@
       "fingerprint": "84419f8d8a389fda45ad403a",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1488,7 +1490,7 @@
       "fingerprint": "afc645af0d4d84a2853e9080",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1501,7 +1503,7 @@
       "fingerprint": "147c2d07b764e67e7a97c61b",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1514,7 +1516,7 @@
       "fingerprint": "cf4e479a05f6fc7b880b99d4",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1527,7 +1529,7 @@
       "fingerprint": "d77e5f977c5dc1ed70f05767",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1540,7 +1542,7 @@
       "fingerprint": "6f8f3b311ac8c5e95ee25ad7",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1553,7 +1555,7 @@
       "fingerprint": "d704036dc40d9778a70ff775",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1566,7 +1568,7 @@
       "fingerprint": "17ff4bfc56e15080478a0055",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1579,7 +1581,7 @@
       "fingerprint": "85d7b4a351461598fcc90cb3",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1592,7 +1594,7 @@
       "fingerprint": "8670ec074e76de60fc23740f",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1605,7 +1607,7 @@
       "fingerprint": "ae5335b6ed45e6d751e4a828",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1618,7 +1620,7 @@
       "fingerprint": "08bba586062f8f2357608825",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1631,7 +1633,7 @@
       "fingerprint": "4823573f939cd11409b0a6e3",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1644,7 +1646,7 @@
       "fingerprint": "ae1ff8c44df1298474527398",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1657,7 +1659,7 @@
       "fingerprint": "44d97e1d3beef3dd0c9d1c41",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1670,7 +1672,7 @@
       "fingerprint": "56cc85f81f93d203991f806d",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1683,7 +1685,7 @@
       "fingerprint": "b077e8ac81cad93ece082bea",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1696,7 +1698,7 @@
       "fingerprint": "0e76e6fb9e9eafa3d61cd839",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1709,7 +1711,7 @@
       "fingerprint": "f74f95bc1250e51fb41f89b2",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1722,7 +1724,7 @@
       "fingerprint": "aac7956e3cde20a126cf0652",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1735,7 +1737,7 @@
       "fingerprint": "761688c952101eb68b8d5308",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1748,7 +1750,7 @@
       "fingerprint": "821eb3922ccc37c8c9dc416c",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1761,7 +1763,7 @@
       "fingerprint": "91b96fdefa32d8ecc452398b",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1774,7 +1776,7 @@
       "fingerprint": "b1c2f132b2085fd67233e89e",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1787,7 +1789,7 @@
       "fingerprint": "c722f6e58c20f5028ba72512",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1800,7 +1802,7 @@
       "fingerprint": "dcc5946948bf0412d6f3ecbe",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1813,7 +1815,7 @@
       "fingerprint": "bee3cfe9fd368a7823020f8f",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1826,7 +1828,7 @@
       "fingerprint": "08846cdb2839da290ec6bd12",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1839,7 +1841,7 @@
       "fingerprint": "7f23b118019c00f672ed763d",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1852,7 +1854,7 @@
       "fingerprint": "f8a4d8648c8425dc98ea317d",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1865,7 +1867,7 @@
       "fingerprint": "198525b6a4ef07c494d21fb5",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1878,7 +1880,7 @@
       "fingerprint": "6ab181cf4e954c140046d887",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1891,7 +1893,7 @@
       "fingerprint": "25c8bab86aeb2b02ae183423",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1904,7 +1906,7 @@
       "fingerprint": "d9d73c42539c246cf6372d9b",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1917,7 +1919,7 @@
       "fingerprint": "1eed7b45bdcfa614dac19dee",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1930,7 +1932,7 @@
       "fingerprint": "4f359f5be6799f2734d1a745",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1943,7 +1945,7 @@
       "fingerprint": "e0bd1667e3c1ff816f237e97",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1956,7 +1958,7 @@
       "fingerprint": "b7def1c23eb09a70bb5e5361",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1969,7 +1971,7 @@
       "fingerprint": "97476952733fdbb29f29d61f",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-TIME-DIRECT-READ",
@@ -1982,7 +1984,7 @@
       "fingerprint": "c76343fd3863ec09c8ac9ddb",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-UNMANAGED-EXECUTOR",
@@ -1995,7 +1997,7 @@
       "fingerprint": "496438db5e50bf5392d4c58c",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-UNMANAGED-EXECUTOR",
@@ -2008,7 +2010,7 @@
       "fingerprint": "d89bbc9c6f09bdd7dff1976e",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-UNMANAGED-EXECUTOR",
@@ -2021,7 +2023,7 @@
       "fingerprint": "0f6c9401ff1273fa2ed9a381",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-UNMANAGED-EXECUTOR",
@@ -2034,7 +2036,7 @@
       "fingerprint": "5689b469434d5be5dc032bef",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-UNMANAGED-EXECUTOR",
@@ -2047,7 +2049,7 @@
       "fingerprint": "93d423474761f3da4eb6ce09",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-UNMANAGED-EXECUTOR",
@@ -2060,7 +2062,7 @@
       "fingerprint": "368ca5441fcd4d9adbb264b1",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     },
     {
       "rule_id": "JAVA-UNMANAGED-EXECUTOR",
@@ -2073,7 +2075,7 @@
       "fingerprint": "1343b821e313b9c1b5d7f45c",
       "checker_version": "2.0.0-powershell-lexical",
       "ruleset_version": "huangshan-platform-2.0.0",
-      "configuration_sha256": "04d79fd9e6ea8defdf3b20ad56001ce11ba973f9c7674e511860ca9a41c431e6"
+      "configuration_sha256": "47f37f2dbdca21df5c5cfc7b6ba14bdf845d20109863906a188b4cc5dd4d34bc"
     }
   ]
 }

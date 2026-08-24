@@ -6,6 +6,7 @@ import com.guidinglight.nexusquant.livecontrol.application.PilotScopeAuthorityRe
 import com.guidinglight.nexusquant.livecontrol.application.PilotScopeControlPlane;
 import com.guidinglight.nexusquant.livecontrol.application.PilotScopeMaterializationCommand;
 import com.guidinglight.nexusquant.livecontrol.application.PilotScopeMaterializationResult;
+import com.guidinglight.nexusquant.livecontrol.application.MinimalPilotMaterializationCommand;
 import com.guidinglight.nexusquant.livecontrol.application.PilotPrerequisiteObservationAuthority;
 import com.guidinglight.nexusquant.livecontrol.application.port.LiveControlAuthorizationPort;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
@@ -102,6 +103,56 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
                 actor, session, risk, createdEvent, scope, observations);
         return new PilotScopeMaterializationResult(
                 session.id(), stored.id(), observations.id(), stored.pilotScopeHash());
+    }
+
+    @Override
+    public PilotScopeMaterializationResult materializeMinimal(
+            AuthenticatedLiveControlActor actor,
+            MinimalPilotMaterializationCommand command
+    ) {
+        Objects.requireNonNull(actor, "actor must not be null");
+        Objects.requireNonNull(command, "command must not be null");
+        if (!authorization.lockAndCheckRole(actor.userId(), OPERATOR_ROLE)) {
+            throw new LiveControlException("LIVE_SESSION_OPERATOR_ROLE_REQUIRED", "operator role is required");
+        }
+        PilotScopeAuthorityResolver.ResolvedMinimalAuthority authority =
+                authorityResolver.resolveMinimal(actor, command);
+        RiskLimitSet risk = authority.riskLimitSet();
+        var admission = authority.admission();
+        PilotScopeMaterializationCommand resolved = new PilotScopeMaterializationCommand(
+                command.sessionId(), command.pilotScopeId(), command.exchangeAccountId(),
+                command.credentialReferenceId(), admission.publishRecordId(),
+                admission.releaseArtifactDigest(), admission.admissionRevision(), selection(risk),
+                List.of(command.instrument()), command.configuredPilotMaxNotional(),
+                command.executionWindowStart(), command.executionWindowEnd(), ZERO_DIGEST,
+                command.idempotencyKey(), command.requestId(), command.traceId());
+        Instant now = liveControlRepository.currentTime();
+        LiveSession session = LiveSession.create(
+                resolved.sessionId(), actor.userId(), resolved.exchangeAccountId(), resolved.strategyReleaseId(),
+                resolved.releaseDigest(), resolved.releaseAdmissionRevision(), risk.id(), risk.canonicalDigest(),
+                resolved.credentialReference(), resolved.symbolAllowlist(), resolved.capitalCap(),
+                resolved.executionWindowStart(), resolved.executionWindowEnd(), actor.userId(), now);
+        session.requireWithinRiskLimit(risk);
+        PilotScopeBinding scope = canonicalScope(actor, resolved, authority.scopeBindings(), session, now);
+        PilotObservationSet observations = observationAuthority.resolveTrustedObservationSet(session, scope, now);
+        requireTrustedObservationSet(session, scope, observations, now);
+        LiveSessionEvent createdEvent = new LiveSessionEvent(
+                UUID.randomUUID(), session.id(), 1, null, LiveSessionState.APPROVAL_PENDING,
+                "CREATE", actor.userId(), command.requestId(), command.traceId(), "SESSION_CREATED",
+                command.idempotencyKey(), scope.pilotScopeHash(), "{}", now);
+        PilotScopeBinding stored = transactionService.materialize(
+                actor, session, risk, createdEvent, scope, observations);
+        return new PilotScopeMaterializationResult(
+                session.id(), stored.id(), observations.id(), stored.pilotScopeHash());
+    }
+
+    private static PilotScopeMaterializationCommand.RiskSelection selection(RiskLimitSet risk) {
+        return new PilotScopeMaterializationCommand.RiskSelection(
+                risk.id(), risk.canonicalDigest(), risk.version(), risk.capitalCap(), risk.maxOrderNotional(),
+                risk.maxSymbolPositionNotional(), risk.maxDailyRealizedLoss(), risk.maxDailyTotalLoss(),
+                risk.maxOpenOrders(), risk.maxIntradayOrders(), risk.symbolAllowlist(),
+                risk.maxSessionDurationSeconds(), risk.spreadLimitBps(), risk.slippageLimitBps(),
+                risk.maxMarketDataAgeMs(), risk.minDataCoverageBps());
     }
 
     @Override

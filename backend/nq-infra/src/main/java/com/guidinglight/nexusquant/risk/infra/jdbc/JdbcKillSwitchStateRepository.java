@@ -6,6 +6,7 @@ import com.guidinglight.nexusquant.risk.service.KillSwitchState;
 import com.guidinglight.nexusquant.risk.service.KillSwitchStateRepository;
 import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
 import com.guidinglight.nexusquant.risk.service.KillSwitchVersionConflictException;
+import com.guidinglight.nexusquant.risk.service.PilotKillSwitchDisengageCommand;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -118,6 +119,45 @@ public class JdbcKillSwitchStateRepository implements KillSwitchStateRepository 
                 command.updatedBy(),
                 command.traceId()
         );
+    }
+
+    @Transactional
+    @Override
+    public KillSwitchState disengageForPilot(PilotKillSwitchDisengageCommand command) {
+        Objects.requireNonNull(command, "command must not be null");
+        List<Integer> leases = jdbcTemplate.query("""
+                SELECT 1 FROM pilot_execution_leases
+                WHERE lease_id=? AND status IN ('ACTIVE','CONSUMED')
+                  AND expires_at=? AND expires_at>CURRENT_TIMESTAMP
+                FOR UPDATE
+                """, (row, ignored) -> row.getInt(1), command.leaseId(), Timestamp.from(command.leaseExpiresAt()));
+        if (leases.size() != 1) {
+            throw new IllegalStateException("active exact pilot lease is required");
+        }
+        KillSwitchState current = first(jdbcTemplate.query(
+                SELECT_STATE + " WHERE scope=? FOR UPDATE", stateRowMapper(), command.scope().name()))
+                .orElseThrow(() -> new IllegalStateException("kill switch state is missing"));
+        if (current.version() != command.expectedVersion() || current.status() != KillSwitchStatus.ENGAGED) {
+            throw new KillSwitchVersionConflictException("kill switch must be exact ENGAGED version");
+        }
+        long nextVersion = current.version() + 1;
+        String reason = "PILOT_LEASE_" + command.leaseId();
+        int updated = jdbcTemplate.update("""
+                UPDATE kill_switch_states
+                SET status='DISENGAGED',version=?,reason_code=?,source='PILOT_EXECUTION_LEASE',
+                    updated_at=?,updated_by=?,trace_id=?
+                WHERE scope=? AND status='ENGAGED' AND version=?
+                """, nextVersion, reason, Timestamp.from(command.occurredAt()), command.updatedBy(),
+                command.traceId(), command.scope().name(), current.version());
+        if (updated != 1) throw new KillSwitchVersionConflictException("kill switch changed concurrently");
+        jdbcTemplate.update("""
+                INSERT INTO kill_switch_events(
+                    id,scope,from_status,to_status,state_version,reason_code,source,actor_id,trace_id,occurred_at
+                ) VALUES (?,?,'ENGAGED','DISENGAGED',?,?,'PILOT_EXECUTION_LEASE',?,?,?)
+                """, UUID.randomUUID(), command.scope().name(), nextVersion, reason, command.updatedBy(),
+                command.traceId(), Timestamp.from(command.occurredAt()));
+        return new KillSwitchState(command.scope(), KillSwitchStatus.DISENGAGED, nextVersion, reason,
+                "PILOT_EXECUTION_LEASE", command.occurredAt(), command.updatedBy(), command.traceId());
     }
 
     private static KillSwitchVersionConflictException conflict(KillSwitchEngageCommand command) {

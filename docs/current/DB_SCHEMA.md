@@ -704,3 +704,15 @@ Disposable PostgreSQL 17.7 已验证 V39→V40、V1→V40 full replay、Flyway v
 - V41 重建 PostgreSQL instrument digest 与 observation payload hash 函数，保持 Java/PostgreSQL byte-for-byte parity；新 insert guard、evidence CHECK 与既有 append-only、immutable、exact-set、complete-set deferred validation 共同 fail closed。
 
 本地 PostgreSQL 17.7 随机 schema 已验证 populated V40→V41、fresh V1→V41 replay、Flyway validate/checksum、historical v1 fingerprint/canonical bytes 不变、no-fake-backfill、v1/v2 共存、v2 evidence 约束、Java/PostgreSQL parity、append-only、identity/idempotency/conflict、complete-set 与 lock-timeout 回归。该验证未连接生产数据库，不构成 production migration 授权；production lock window/target scale 仍待独立 migration security review。
+
+## GateY Minimal Live Pilot Durable Lease（V42）
+
+`V42__gate_y_minimal_live_pilot_execution_lease.sql` 新增三张 GateY 最小实盘控制表；V1～V41 未修改。该 schema 只建立一次性执行租约与审计事实，不自行启用 LIVE、不调用 provider、不创建订单。
+
+- `pilot_execution_leases`：绑定 `live_session_id`、`binding_id/digest`、operator max notional、有效窗口、creator、version 与生命周期；状态只允许 `CREATED / ACTIVE / CONSUMED / EXPIRED / CLOSED / FAILED`。全局唯一表达整个 minimal pilot 合同只能创建一次 lease，终态后也禁止第二个 pilot。
+- `pilot_execution_lease_intents`：append-only lease/action/intent 绑定；主键 `(lease_id, action)` 与 intent unique 保证每个 lease 最多一个 PLACE、一个 CANCEL。
+- `pilot_execution_lease_events`：append-only lifecycle audit，按 `(lease_id, lease_version)` 唯一；保存脱敏 reason/request/trace/timestamp，不保存 credential 或 provider payload。
+- lease identity/window/cap 不可变；状态只允许 frozen transition graph，version 必须逐次 +1。三表均使用 FK/unique/CHECK/index/trigger 与中文 COMMENT。
+- migration 使用 5s lock timeout、60s statement timeout；没有历史 backfill、现有交易表 rewrite、credential material、raw response 或资金 mutation。
+
+PostgreSQL 17.7 随机 schema 已验证 V39/V40→V42、fresh V1→V42、Flyway validate、direct SQL immutability、global single pilot 与 concurrent double PLACE exactly-one。生产尚未迁移到 V42；当前 source 状态为 `REVIEW ACCEPTED / READY TO COMMIT`，不等于 production schema accepted。

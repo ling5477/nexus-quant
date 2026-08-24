@@ -9,7 +9,17 @@ $repo = (Resolve-Path (Join-Path $gateyRoot '../..')).Path
 $contract = Join-Path $gateyRoot 'gatey-readonly-release-contract.psm1'
 $installer = Join-Path $gateyRoot 'install-gatey-readonly-release.ps1'
 $deployment = Join-Path $gateyRoot 'invoke-gatey-readonly-deployment-contract.ps1'
+$runtimeDeployment = Join-Path $gateyRoot 'invoke-gatey-readonly-runtime-deployment.ps1'
+$exactPilotControl = Join-Path $gateyRoot 'invoke-gatey-exact-pilot-scope.ps1'
+$minimalLivePilotControl = Join-Path $gateyRoot 'invoke-gatey-minimal-live-pilot.ps1'
 $profile = Join-Path $repo 'backend/nq-app/src/main/resources/application-gatey-readonly-qualification.yml'
+$systemdUnit = Join-Path $repo 'deploy/systemd/nq-gatey-readonly-qualification.service'
+$runtimeEnvTemplate = Join-Path $repo 'deploy/gatey/gatey-readonly-runtime.env.example'
+$runtimeSecretsTemplate = Join-Path $repo 'deploy/gatey/gatey-readonly-runtime.secrets.env.example'
+$runtimePgpassTemplate = Join-Path $repo 'deploy/gatey/gatey-readonly-db.pgpass.example'
+$runtimeTarget = Join-Path $repo 'deploy/gatey/gatey-readonly-runtime-target.json'
+$gatewVerifier = Join-Path $repo 'scripts/gatew/verify-gatew-release.ps1'
+$gatewContract = Join-Path $repo 'scripts/gatew/gatew-release-contract.psm1'
 $engine = (Get-Process -Id $PID).Path
 $serviceUser = 'nq-gatey-readonly-test'
 $utf8 = [Text.UTF8Encoding]::new($false)
@@ -57,6 +67,16 @@ function New-SourceRelease([string]$Root, [string]$ReleaseId, [string]$Migration
         Add-Artifact $Root 'bin/gatey-readonly-release-contract.psm1' $contract '0644' 'release-contract'
         Add-Artifact $Root 'bin/invoke-gatey-readonly-deployment-contract.ps1' $deployment '0755' 'deployment-contract'
         Add-Artifact $Root 'bin/install-gatey-readonly-release.ps1' $installer '0755' 'release-installer'
+        Add-Artifact $Root 'bin/invoke-gatey-readonly-runtime-deployment.ps1' $runtimeDeployment '0755' 'runtime-deployment-orchestrator'
+        Add-Artifact $Root 'bin/invoke-gatey-exact-pilot-scope.ps1' $exactPilotControl '0755' 'exact-pilot-control-surface'
+        Add-Artifact $Root 'bin/invoke-gatey-minimal-live-pilot.ps1' $minimalLivePilotControl '0755' 'minimal-live-pilot-control-surface'
+        Add-Artifact $Root 'config/nq-gatey-readonly-qualification.service' $systemdUnit '0644' 'systemd-runtime-contract'
+        Add-Artifact $Root 'config/gatey-readonly-runtime.env.example' $runtimeEnvTemplate '0644' 'runtime-environment-template'
+        Add-Artifact $Root 'config/gatey-readonly-runtime.secrets.env.example' $runtimeSecretsTemplate '0600' 'runtime-secret-environment-template'
+        Add-Artifact $Root 'config/gatey-readonly-db.pgpass.example' $runtimePgpassTemplate '0600' 'database-credential-reference-template'
+        Add-Artifact $Root 'config/gatey-readonly-runtime-target.json' $runtimeTarget '0644' 'runtime-target-contract'
+        Add-Artifact $Root 'bin/verify-gatew-release.ps1' $gatewVerifier '0755' 'gatew-rollback-verifier'
+        Add-Artifact $Root 'bin/gatew-release-contract.psm1' $gatewContract '0644' 'gatew-rollback-contract'
     )
     Remove-Item -LiteralPath $jarSource -Force
     $manifest = New-GateYReadonlyReleaseManifest $ReleaseId '2026-08-19T00:00:00Z' $artifacts $MigrationRoot

@@ -3,22 +3,27 @@ package com.guidinglight.nexusquant.app.config.livecontrol;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.JdbcOkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
+import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
 import com.guidinglight.nexusquant.adapter.okx.service.JdkOkxPrivateReadTransport;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadTransport;
 import com.guidinglight.nexusquant.app.config.account.AccountCredentialRuntimeProperties;
 import com.guidinglight.nexusquant.livecontrol.application.PilotPrerequisiteObservationAuthority;
+import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotExecutionProviderPort;
 import com.guidinglight.nexusquant.livecontrol.infra.KillSwitchGuardedProviderObservationAuthority;
 import com.guidinglight.nexusquant.livecontrol.infra.okx.OkxPilotPrerequisiteObservationAuthority;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 
 import java.time.Clock;
+import java.util.function.BooleanSupplier;
 
+import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
@@ -93,6 +98,28 @@ public class ReadOnlyProviderObservationConfiguration {
         return new KillSwitchGuardedProviderObservationAuthority(
                 new OkxPilotPrerequisiteObservationAuthority(credentialExecutor),
                 killSwitchService
+        );
+    }
+
+    /**
+     * Deployment health 只读取既有 runtime identity、kill snapshot 与 Bean 装配事实，不产生授权或外联。
+     */
+    @Bean
+    public ReadOnlyRuntimeDiagnosticEndpoint readOnlyRuntimeDiagnosticEndpoint(
+            ReadOnlyProviderObservationRuntimeIdentity identity,
+            KillSwitchService killSwitchService,
+            Environment environment,
+            ListableBeanFactory beanFactory
+    ) {
+        BooleanSupplier mutationRuntimeBound = () ->
+                beanFactory.getBeanNamesForType(SpotExecutionProviderPort.class, false, false).length > 0
+                        || beanFactory.getBeanNamesForType(TradingAdapter.class, false, false).length > 0;
+        return new ReadOnlyRuntimeDiagnosticEndpoint(
+                identity,
+                killSwitchService,
+                environment,
+                Clock.systemUTC(),
+                mutationRuntimeBound
         );
     }
 }

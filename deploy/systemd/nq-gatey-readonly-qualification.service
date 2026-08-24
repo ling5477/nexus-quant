@@ -1,0 +1,53 @@
+[Unit]
+Description=NexusQuant GateY read-only qualification runtime
+Documentation=file:/opt/nexus-quant/current/release-manifest.json
+After=network.target
+Wants=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=nq-gatey-readonly
+Group=nq-gatey-readonly
+WorkingDirectory=/opt/nexus-quant
+Environment=NQ_GATEY_RELEASE_ROOT=/opt/nexus-quant/current
+Environment=NQ_GATEY_TARGET_CONTRACT=/opt/nexus-quant/current/config/gatey-readonly-runtime-target.json
+EnvironmentFile=/etc/nexus-quant/gatey-readonly-qualification/runtime.env
+EnvironmentFile=/etc/nexus-quant/gatey-readonly-qualification/secrets.env
+ExecStartPre=+/usr/bin/pwsh -NoProfile -File /opt/nexus-quant/current/bin/invoke-gatey-readonly-runtime-deployment.ps1 -Action UnitPreflight
+ExecStart=/usr/bin/java -jar /opt/nexus-quant/current/app/nq-app.jar
+ExecStopPost=+/usr/bin/pwsh -NoProfile -File /opt/nexus-quant/current/bin/invoke-gatey-readonly-runtime-deployment.ps1 -Action VerifyStopped
+Restart=no
+KillMode=mixed
+TimeoutStartSec=120s
+TimeoutStopSec=30s
+RuntimeDirectory=nexus-quant/gatey-readonly-qualification
+RuntimeDirectoryMode=0700
+UMask=0077
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+PrivateDevices=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadOnlyPaths=/opt/nexus-quant/releases
+ReadOnlyPaths=/etc/nexus-quant/gatey-readonly-qualification
+ReadWritePaths=/run/nexus-quant/gatey-readonly-qualification
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nq-gatey-readonly-qualification
+
+[Install]
+WantedBy=multi-user.target

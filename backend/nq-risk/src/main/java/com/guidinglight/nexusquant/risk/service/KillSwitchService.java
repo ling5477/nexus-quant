@@ -77,6 +77,19 @@ public final class KillSwitchService {
         return snapshot(state, occurredAt);
     }
 
+    /**
+     * 对数据库已验证的 exact active pilot lease 开启短时窗口；不是通用 release/reset。
+     * repository 必须在同一事务内锁定 lease 与 global kill state。
+     */
+    public KillSwitchSnapshot disengageForPilot(PilotKillSwitchDisengageCommand command) {
+        Objects.requireNonNull(command, "command must not be null");
+        if (command.scope() != GLOBAL_SCOPE) {
+            throw new IllegalArgumentException("only GLOBAL_TRADING is supported");
+        }
+        KillSwitchState state = repository.disengageForPilot(command);
+        return snapshot(state, command.occurredAt());
+    }
+
     private static KillSwitchSnapshot snapshot(KillSwitchState state, Instant observedAt) {
         return new KillSwitchSnapshot(
                 state.scope(),

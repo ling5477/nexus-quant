@@ -19210,3 +19210,197 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - boundary：server SSH/deployment/production migration/backup/restore/systemd/server symlink、credential/decrypt、OKX/交易/资金、ExecutionIntent/Receipt、order/ledger、LIVE enable、kill disengage全部为0；disposable Linux只写network-none ephemeral container。
 - result：`PASS / GATEY_6F_SECURITY_REVIEW_ATTEMPT_04_FINAL_ACCEPTED / ROLLBACK_AUTHORIZATION_BOUNDARY_VERIFIED / RECEIPTS_AUDIT_ONLY_VERIFIED / CALLER_CONTROLLED_AUTHORIZATION_PATHS_CLOSED / CURRENT_FACT_REVERIFICATION_FAIL_CLOSED / CAPABILITY_NEUTRAL_RUNTIME_REGRESSION_GREEN / ORIGINAL_SECURITY_FINDINGS_CLOSED / P0_0 / P1_0 / READY_TO_COMMIT`。
 - next：唯一下一动作 `NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-COMMIT-AND-EXACT-HEAD-CI`；本轮未 add/commit/push/tag。完整证据：[final Security Review attempt-04](evidence/gate-y/NQ-GATEY-6F-SERVER-READONLY-RUNTIME-COMPOSITION-AND-DEPLOYMENT-CONTRACT-SECURITY-REVIEW.attempt-04.md)。
+
+## 2026-08-21 — GateY-6F Server Runtime Deployment attempt-01
+
+- task：`NQ-GATEY-6F-SERVER-RUNTIME-DEPLOYMENT`；NQ-only、L级 production deployment，必须先通过target/systemd/DB/rollback hard gates。
+- baseline：dev clean、staged=0；`HEAD == origin/dev == 506b38549a139bafb25bf2ab5820aecac3792f1b`；exact-head `NQ CI Baseline` run=`32389011832 / completed / success / 10 jobs`。
+- resolved contract：accepted evidence可定位canonical server（报告脱敏）、admin SSH、`/opt/nexus-quant/releases/<releaseId>`、`/opt/nexus-quant/current`、service user=`nq-gatey-readonly`、profile=`gatey-readonly-qualification`、loopback=`127.0.0.1:18890`。
+- blocker：exact committed tree没有GateY qualification systemd unit、unit/env installer、canonical DB target或start/stop/rollback/health/counter orchestration；builder只打包app/profile/contract/evaluator/installer，installer只支持install/verify/activate。GateW frozen units不得复用。
+- execution：target resolution hard gate先失败；builder/local verifier、SSH/server preflight、Flyway、rollback evaluator、upload/install/activation/systemd/health全部NOT RUN。
+- findings：P0=0；P1=1=`DEPLOYMENT_RUNTIME_CONTRACT_INCOMPLETE`。
+- boundary：Server SSH read/write=0/0；upload/install/current switch/systemd/migration/backup/restore=0；credential/decrypt/OKX/trade/funds/intent/receipt/order/ledger/LIVE/kill mutation全部0；GateY-6F仍`NOT_STARTED`。
+- result：`BLOCKED / DEPLOYMENT_IMPLEMENTATION_DEFECT / DEPLOYMENT_TARGET_NOT_RESOLVED / GATEY_QUALIFICATION_SYSTEMD_CONTRACT_MISSING / CANONICAL_DATABASE_TARGET_MISSING / NO_SERVER_MUTATION / NO_PILOT`。
+- next：`NQ-GATEY-6F-SERVER-RUNTIME-DEPLOYMENT-CONTRACT-REMEDIATION`；需先补齐并独立审查committed deployment runtime contract，exact-head CI成功后再部署，不得边部署边修复。完整证据：[deployment attempt-01 blocker](evidence/gate-y/NQ-GATEY-6F-SERVER-RUNTIME-DEPLOYMENT.attempt-01.md)。
+
+## 2026-08-21 — GateY-6F Server Runtime Deployment Contract Remediation attempt-01
+
+- task：`NQ-GATEY-6F-SERVER-RUNTIME-DEPLOYMENT-CONTRACT-REMEDIATION`；只关闭deployment runtime contract P1，禁止Java/server/production DB/credential/exchange mutation。
+- baseline：dev、staged=0、`HEAD == origin/dev == 506b38549a139bafb25bf2ab5820aecac3792f1b`；exact-head CI run=`32389011832 / success`；起始dirty set仅Deployment Attempt-01证据4路径。
+- audit：现有`/actuator/info`只含release/source/profile静态YAML；runtime identity bean的capability/bind/Java事实未暴露；health不含LIVE/kill/capability/startup counters。
+- hard gate：env/systemd/DB query可证明期望配置和durable facts，但不能证明running JVM实际装配/消费状态，也不能观测credential/decrypt/OKX startup counters。
+- execution：命中`RUNTIME_HEALTH_IDENTITY_SURFACE_MISSING / SCOPE_ESCALATION_REQUIRED`；未新增unit/env/DB target/orchestrator/test，未修改Java或Deployment Attempt-01。
+- findings：P0=0；P1=`DEPLOYMENT_RUNTIME_CONTRACT_INCOMPLETE`仍开放，根因收敛到缺少deployment-safe Java read-only identity/counter surface。
+- boundary：server/DB/credential/OKX/trade/LIVE/kill side effects全部0；backend/frontend/research/migration/GateW/governance/STATUS/ROADMAP diff=0。
+- result：`BLOCKED / RUNTIME_HEALTH_IDENTITY_SURFACE_MISSING / SCOPE_ESCALATION_REQUIRED / DEPLOYMENT_RUNTIME_CONTRACT_INCOMPLETE / NO_PARTIAL_DEPLOYMENT_CONTRACT / NO_SERVER_ACCESS`。
+- next：`NQ-GATEY-6F-RUNTIME-HEALTH-IDENTITY-SURFACE-IMPLEMENTATION`；需显式允许最小Java只读surface和独立安全审查，通过后重跑deployment contract remediation。完整证据：[remediation attempt-01 blocker](evidence/gate-y/NQ-GATEY-6F-SERVER-RUNTIME-DEPLOYMENT-CONTRACT-REMEDIATION.attempt-01.md)。
+
+## 2026-08-21 — GateY-6F Server Deployment Readiness Completion attempt-01
+
+- task：NQ-only、L级同轮完成runtime identity、systemd/env/DB target、start-stop、activation-rollback、health、dry-run与测试；不访问服务器。
+- runtime：新增capability-neutral `GET /actuator/readonlyproviderobservation`，复用唯一identity与KillSwitchService；counter未知时精确`NOT_INSTRUMENTED`，无授权能力或敏感数据。
+- composition：full qualification context保持trusted authority=1、diagnostic endpoint=1，Spot provider/TradingAdapter/worker/recovery/scheduler/private WS=0；endpoint连续GET后startup DataSource/OKX仍0。
+- process/env：新增`nq-gatey-readonly-qualification.service`；non-secret runtime env=`root:nq-gatey-readonly/0640`，root-only secrets与pgpass=`root:root/0600`；PowerShell不读取credential bytes。
+- DB：target固定`gatey-production-control-plane / 127.0.0.1:5432/nexus_quant / flyway_schema_history / gatey-readonly-qualification-db`；arbitrary/localhost/mismatch fail-closed。
+- orchestration：Plan/Preflight/InstallUnit/Start/Stop/Health/Activate/Rollback；Java21、release/unit/env/DB/kill/current/health全链验证；stop需MainPID0、port absent、cgroup empty；failed activation先stop后恢复previous，GateW previous使用manifest-bound frozen verifier。
+- release：closed set扩展为13个manifest-bound artifacts；GateY release/installer security保持。
+- validation：focused Java final5/5；full Maven23 modules BUILD SUCCESS；PS5/7 release27/27 + deployment33/33；Linux runtime20/20、installer13/13、release27/27；GateW34/34；migration V1–V41/diff0；authority errors0。
+- findings：P0/P1=0；两个deployment blocker关闭，等待final review。P2为production counters保持`NOT_INSTRUMENTED`直到可靠instrumentation。
+- boundary：server/DB/credential/OKX/trade/LIVE/kill side effects全部0；frontend/research/migration/GateW/governance/STATUS/ROADMAP diff=0。
+- result：`IMPLEMENTED / GATEY_6F_SERVER_DEPLOYMENT_READINESS_COMPLETE / RUNTIME_IDENTITY_SURFACE_COMPLETE / SYSTEMD_CONTRACT_COMPLETE / ENV_OWNERSHIP_CONTRACT_COMPLETE / CANONICAL_DATABASE_TARGET_COMPLETE / START_STOP_ORCHESTRATION_COMPLETE / ACTIVATION_ROLLBACK_COMPLETE / LOOPBACK_HEALTH_VERIFIER_COMPLETE / DRY_RUN_ZERO_MUTATION / P0_0 / P1_0 / PENDING_FINAL_DEPLOYMENT_READINESS_REVIEW`。
+- next：唯一`NQ-GATEY-6F-SERVER-DEPLOYMENT-READINESS-FINAL-REVIEW`；本轮不add/commit/push/tag。完整证据：[readiness completion attempt-01](evidence/gate-y/NQ-GATEY-6F-SERVER-DEPLOYMENT-READINESS-COMPLETION.attempt-01.md)。
+
+## 2026-08-21 — GateY-6F Server Deployment Readiness Final Review attempt-01
+
+- task：`NQ-GATEY-6F-SERVER-DEPLOYMENT-READINESS-FINAL-REVIEW`；NQ-only、L级独立security/deployment/runtime identity review；review-only。
+- baseline：任务绑定`506b38549a139bafb25bf2ab5820aecac3792f1b`；fetch后实际`HEAD == origin/dev == c48582a6d575d0ecb2a132781e076a5f78dc7dd2`，新增7个提交；current CI run `32455734846 / completed / success`仅作信息，不替代任务绑定。
+- inventory：pre-write expected/actual=`24/24`、missing/extra=`0/0`、staged=0；上游delta与24个dirty路径无直接重叠，但baseline hard gate无例外。
+- execution：`BLOCKED / BASELINE_CHANGED`先触发；未rebase，未检查或修改implementation，未复用Completion验证；Maven/PS5.1/PS7/Linux/GateY/GateW/migration/Java verifier/shadow scan均NOT RUN。
+- findings：P0/P1=`NOT ASSESSED / NOT ASSESSED`；baseline阻断不是技术finding，也不是P0/P1=0。
+- authority：errors=0；GateY-6F=`NOT_STARTED`、LIVE disabled、kill engaged；first order/micro-live未授权。
+- boundary：server/DB/credential/OKX/trade/LIVE/kill side effects全部0；本轮只新增blocker evidence并最小同步README/TESTING/WORKLOG。
+- result：`BLOCKED / BASELINE_CHANGED / GATEY_6F_SERVER_DEPLOYMENT_READINESS_FINAL_REVIEW_NOT_EXECUTED / P0_P1_NOT_ASSESSED / NOT_READY_TO_COMMIT`；`DO NOT COMMIT`。
+- next：重新下发绑定`c48582a6...`精确基线的final review，明确接受上游7个提交后重跑全部独立审查；不得在本review中rebase。完整证据：[final review baseline blocker](evidence/gate-y/NQ-GATEY-6F-SERVER-DEPLOYMENT-READINESS-FINAL-REVIEW.attempt-01.md)。
+
+## 2026-08-21 — GateY-6F Server Deployment Readiness Final Review attempt-02
+
+- task：NQ-only、L级independent security/deployment/runtime identity/upstream compatibility review；review-only。
+- baseline：`HEAD == origin/dev == c48582a6...`、CI `32455734846 / success`、staged=0、authority errors=0；Attempt-01 SHA-256保持`4b349b42...20f0`。
+- upstream：7 commits、80 paths与24 implementation paths direct overlap=0；无nq-app/GateY/deploy/POM/migration SQL变更；`UPSTREAM_DELTA_COMPATIBLE`。
+- runtime/Spring/systemd/DB：identity GET-only/loopback/sensitive-field boundary通过；full context mutation beans=0；systemd/env ownership和17个DB/Flyway/kill mismatch攻击除counter外均fail-closed。
+- findings：P0=0；P1=3：`OBSERVED/null`被PowerShell转0接受；release manifest在NOT_INSTRUMENTED时仍宣称startup credential/OKX=0；Plan/UnitPreflight实际`PGPASSFILE+psql`但回归未执行Plan并宣称zero credential/network。
+- validation：Maven 23 modules/1552 tests/0 failures/0 errors/48 skipped；PS5.1/7各deployment33/33+release27/27；Linux runtime20/20、installer13/13、release27/27；GateW34/34；migration V1～V41；Java verifier PASS/Shadow new-code=0。
+- execution history：Docker首次未启动，用户启动后network-none回归通过；主worktree Shadow受既有不可读artifacts阻断，临时clean clone首次长路径失败、启用longpaths后通过；均未伪写首轮PASS。
+- boundary：server SSH/deploy/production DB/migration/credential/OKX/trade/LIVE/kill mutation全部0；implementation本轮未改。
+- result：`FAIL / GATEY_6F_SERVER_DEPLOYMENT_READINESS_FINAL_REVIEW_ATTEMPT_02_REJECTED / UPSTREAM_DELTA_COMPATIBLE / P0_0 / P1_3 / NOT_READY_TO_COMMIT`；`DO NOT COMMIT`。
+- next：唯一`NQ-GATEY-6F-SERVER-DEPLOYMENT-READINESS-REMEDIATION`，同轮关闭3个P1并补永久负向测试，不再拆readiness子任务。完整证据：[Final Review attempt-02](evidence/gate-y/NQ-GATEY-6F-SERVER-DEPLOYMENT-READINESS-FINAL-REVIEW.attempt-02.md)。
+
+## 2026-08-21 — GateY-6F Server Deployment Readiness Remediation attempt-01
+
+- task：NQ-only、L级security remediation；同轮关闭counter trust、release manifest fact、Plan dry-run boundary三个P1。
+- baseline：`HEAD == origin/dev == c48582a6...`、staged=0、authority errors=0；进入时26个允许dirty paths，Final Review Attempt-01/02 hash保持不变。
+- counter：先验证property/null/integral type再比较；NI/UNKNOWN null=`NOT_VERIFIED`，verified/observed integer0=`VERIFIED_ZERO`，其余组合fail-closed；health输出0 verified/9 not-verified。
+- manifest：删除startup credential/OKX counter facts；safety固定`EXPECTED_CONFIGURATION`与精确allowlist；caller-added runtime facts拒绝。
+- Plan：改为local-only release/target/unit source verification；PS5.1/PS7/Linux动态执行，psql/pgpass/network/DB read/write/systemd/runtime start均0，fixture digest不变。
+- Preflight：保持root read-only DB/Flyway/kill验证，显式分类`READ_ONLY_EXTERNAL_IO_ALLOWED`与credential-assisted external process consumption；psql/pgpass/network=1/1/1、DB write=0、script credential bytes exposure=false。
+- validation：PS5.1/PS7 deployment48+release29；Linux runtime22/installer13/release29；Maven23 modules/1552 tests/0 failures/0 errors/48 skipped；GateW34；V1～V41；parser0 errors。
+- history：首次parser汇报wrapper因变量插值失败；修正后通过。增强Preflight审计字段后最终全套重跑，canonical manifest hash=`0039f316...b5bda`。
+- boundary：Java/systemd/DB target/receipt/HardLink/GateW/migration/STATUS/ROADMAP本任务新增diff=0；server/production DB/credential/OKX/trading/LIVE/kill mutation全部0。
+- result：`IMPLEMENTED / GATEY_6F_SERVER_DEPLOYMENT_READINESS_REMEDIATION_COMPLETE / COUNTER_NULL_FAIL_CLOSED / RUNTIME_FACTS_REMOVED_FROM_RELEASE_MANIFEST / PLAN_ZERO_EXTERNAL_IO_VERIFIED / PREFLIGHT_IO_EXPLICITLY_CLASSIFIED / P0_0 / P1_0 / READY_FOR_FINAL_DEPLOYMENT_REVIEW`；`DO NOT COMMIT`。
+- next：唯一联合任务`NQ-GATEY-6F-FINAL-REVIEW-COMMIT-CI-DEPLOYMENT-AND-ACCEPTANCE`，不得再拆readiness子任务。完整证据：[readiness remediation attempt-01](evidence/gate-y/NQ-GATEY-6F-SERVER-DEPLOYMENT-READINESS-REMEDIATION.attempt-01.md)。
+
+## 2026-08-21 — GateY-6F Final Review, Commit, CI, Deployment and Acceptance attempt-01
+
+- final review：P0/P1=0/0；全部Maven/PowerShell/Linux/GateW/migration/Java governance/docs hard gates通过。
+- implementation：commit `7c5de6e5...`并push；CI `32492178305` 11/11 success。
+- builder fix 1：真实fat JAR migration位于nested nq-infra JAR；commit `31c87e5b...`，CI `32493024365` 11/11 success。
+- builder fix 2：Maven stdout污染applicationJar return；commit `96ae90ff...`，CI `32493560487` 11/11 success。
+- release：canonical build/local verify PASS；ID=`96ae90ff...`、manifest=`0b1afbf6...f083`、app=`6c1513e5...db76`、13 artifacts、V41。
+- server：accepted target=`admin@47.251.74.35`；首次BatchMode strict hostname probe认证失败，remote command=0；附件无IdentityFile path，不读取key/config/agent或尝试密码。
+- result：`BLOCKED / SERVER_AUTHENTICATION_UNAVAILABLE / DEPLOYMENT_NOT_STARTED / NO_SERVER_MUTATION / P0_0 / P1_0`。
+- boundary：server successful read/write、upload/install、DB、systemd/current、health、OKX/trade/LIVE/kill mutation全部0；rollback不需要。
+- resume：用户提供明确IdentityFile path reference或配置non-interactive SSH agent后，在同一联合任务从Phase G继续，不新增readiness子任务。完整证据：[joint attempt-01](evidence/gate-y/NQ-GATEY-6F-FINAL-REVIEW-COMMIT-CI-DEPLOYMENT-AND-ACCEPTANCE.attempt-01.md)。
+
+## 2026-08-22 — GateY-6F joint deployment Phase G resume
+
+- SSH：用户提供exact IdentityFile reference；OpenSSH消费但agent不读取/输出key bytes；hostname/root readonly preflight成功。
+- server：Java21.0.11、Pwsh7、NTP yes、disk约22.8GiB available、current=`b103069d...` GateW release；active NQ process与18890 listener均0。
+- DB：repo canonical port5432 not accepting；server host-network GateW PostgreSQL只在55432 accepting；未进行credential-assisted DB table/Flyway/kill query。
+- prerequisites：GateY service user/runtime.env/secrets.env/db.pgpass/unit均missing；不伪造placeholder、不复制GateW secret、不读取container env。
+- result：`BLOCKED / CANONICAL_DATABASE_TARGET_MISMATCH / SERVER_RUNTIME_ENVIRONMENT_NOT_PROVISIONED / NO_DATABASE_MUTATION / NO_SERVER_MUTATION`。
+- side effects：SSH invocations/authenticated/server mutations=`5/4/0`；upload/install/DB writes/systemd/current/health/OKX/trade/LIVE/kill mutation全部0。
+- resume：用户决定DB contract 55432 forward-fix或提供5432 listener，并通过外部安全渠道预置GateY env/secret/pgpass后，同一任务从Phase G重跑全部hard gates。
+
+## 2026-08-22 — GateY-6F joint deployment DB hard gate
+
+- port fix：用户授权55432；commit `56ea6887...`、CI `32501671835` 11/11 success；release ID=`56ea6887...`、manifest=`05b8830f...f4e4`、app=`05310e9c...66aa`。
+- GateW：active worker/process=0，不停止唯一PostgreSQL容器；existing keys/DB password/master key只作为root-only references识别，未输出values。
+- DB：GateW descriptor DB=`nq_gatew_okx_readonly_soak`、user=`nqgatew`；canonical `nexus_quant`不存在；目录只有soak DB与postgres。
+- rollback：创建DB/bootstrap V1–V41属于production mutation；production backup/restore/database recovery未验证，严格不执行。
+- prerequisites：GateY service user/runtime.env/secrets.env/db.pgpass仍missing；不伪造、不复制soak DB为control plane。
+- result：`BLOCKED / PRODUCTION_DATABASE_TARGET_MISSING / PRODUCTION_ROLLBACK_VERIFICATION_NOT_AVAILABLE / NO_DATABASE_MUTATION / NO_SERVER_MUTATION / P0_0 / P1_0`。
+- resume：外部授权并预置独立GateY DB/role、已验证recovery合同与release-bound env files后，在同一联合任务重跑Phase G/H。
+
+## 2026-08-22 — GateY-6F DB bootstrap, recovery and activation fix
+
+- DB：授权后创建`nexus_quant`和readonly role；Flyway V1–V41、kill ENGAGED、70 tables SELECT/write0。
+- recovery：695668-byte pg_dump，restore drill V41/ENGAGED/70 tables，drill DB删除；contract verified。
+- credentials：server-side generated DB/JWT、existing master-key reference；values未输出；env/secret/pgpass owner/mode/access通过。
+- install：release `56ea...` POSIX verified；unit installed/inactive；current仍`b103...`。
+- activation blocker：`Resolve-Path`未dereference current symlink，pre-switch link-integrity fail；mutations0，previous/new verifiersPASS。
+- fix：Linux `readlink -f` canonicalization三处，PS5.1/PS7 deployment49+release29、Linux23/13/29通过。
+- next：精确commit/push/CI/rebuild new release，更新release-bound runtime.env后重新InstallUnit/Activate。
+
+## 2026-08-22 — GateY-6F activation rollback and timing remediation
+
+- symlink release：commit `51d755b9...`、CI `32506158245` green；server install/unit通过。
+- activation：controller SSH断开后继续执行；health未接受，自动stop并恢复`b103...`；外部Stop确认PID0/port closed。
+- RCA：server application ready约40.7s > 30s health window；ExecStopPost自计control PID导致stop false negative。
+- fix：health bound=90s；cgroup只排除当前control PID，其他残留仍block。
+- regression：PS5.1/PS7 deployment51+release29；Linux25/13/29；parser0。
+- current：previous GateW；GateY unit stopped/failed；DB V41/ENGAGED，business deltas0。
+- next：forward commit/CI/rebuild/reinstall/activate。
+
+## 2026-08-22 — GateY-6F mapped-loopback activation remediation
+
+- CI/release：`de6a9a23...` CI `32507250300` attempt2 11/11 green；release manifest/app=`5a8899ef...a508de / 13390251...3503c`，server immutable install/POSIX通过。
+- activation：两次canonical attempt均health reject后自动stop/restore previous；current=`b103...`、PID0、port closed、DB V41/ENGAGED、四类业务计数0。
+- RCA：server `ss`把loopback显示为`[::ffff:127.0.0.1]:18890`；PID与两个PowerShell GET均正确，旧address regex误判。
+- fix：只新增精确IPv4-mapped loopback接受，继续拒绝wildcard并保留PID binding；VerifyStopped共用同一pattern。
+- regression：parser0；PS5.1/PS7 deployment51/self-test46+release29；Linux26/13/29，network none。
+- next：forward commit/push/exact-head CI后从新SHA构建release并重试canonical activation。
+
+## 2026-08-22 — GateY-6F readonly server deployment accepted
+
+- forward：commit=`2cee1990...`，CI=`32510253812 / success / 11 of 11`。
+- release：manifest/app=`98b38cee...f84350 / 383554ed...455db7`；immutable install/POSIX/Plan通过。
+- activation：canonical Activate成功；current=`2cee1990...`、MainPID=`1028560`、active/running、NRestarts0。
+- acceptance：health UP、identity exact、LIVE=false、kill ENGAGED、mutationRuntimeBound=false；9 counters为`NOT_INSTRUMENTED/null`。
+- side effects：non-loopback socket0、OKX URL journal markers0、kill version/event=`1/1`、四类业务计数稳定0；无PLACE/CANCEL/transfer/withdraw。
+- security：service不可写release/env、不可读secret/pgpass；临时transport/staging已清理，active release保留。
+- result：`PASS / GATEY_6F_SERVER_DEPLOYMENT_ACCEPTED / P0_0 / P1_0`；GateY-6F authority仍NOT_STARTED，pilot/first order未授权。
+
+## 2026-08-22 — GateY-6F Exact Pilot Binding Implementation attempt-01
+
+- scope：复用V39 append-only session events与V40 scope/observation facts，实现server-owned exact binding、current-fact drift validation和一次性consume；无migration/API/execution接线。
+- implementation：exact release/manifest/server/runtime、account/credential、single instrument/side/LIMIT/price/quantity/notional、四类snapshot、risk/kill/window/correlation canonical binding；`SERIALIZABLE` short transaction；默认disabled composition。
+- validation：focused11/0/0/0；full Maven1563/0/0/48；GateY boundary/release29/runtime51/GateY5；GateW37/12/34；Authority errors0；Java verifier PASS/Shadow new-code0；V1～V41 unchanged。
+- boundary：credential material/OKX/provider/permission probe/PLACE/CANCEL/ExecutionIntent/Receipt/order/ledger/server access=`0`；LIVE disabled、kill engaged；binding与consume均不授权交易。
+- result：`IMPLEMENTED / GATEY_6F_EXACT_PILOT_BINDING_COMPLETE / AUTHORITATIVE_FACT_DRIFT_FAIL_CLOSED / ONE_TIME_BINDING_ENFORCED / NO_PROVIDER_IO / NO_ORDER_MUTATION / P0_0 / P1_0 / READY_TO_COMMIT`。
+- next：`NQ-GATEY-6F-EXACT-PILOT-ATTEMPT-04`；必须另行提供exact operator values与授权，不插Deployment Review。
+
+## 2026-08-22 — GateY-6F Pilot Scope Control Surface / Attempt-04 resume
+
+- initial production blocker：runtime=`2cee1990...`；V41/health/kill正常；session/scope/observation/pilot approval/binding=`0/0/0/0/0`，故`EXACT_PILOT_SCOPE_NOT_AUTHORIZED`。
+- implementation：root/operator closed-input CLI；V39 creator+independent approver events；exact scope canonical digest；`ExactPilotBindingService` create/validate approval hard gate；无consume surface。
+- release：control script纳入immutable closed set，artifact 13→14；未改installer/runtime deployment设计，无migration。
+- validation：focused22+8、full Maven1581/0/0/48、PowerShell7、GateY release29/runtime51、Authority0、Java verifier PASS/Shadow new-code0。
+- production side effects：deployment/credential JIT/OKX/DB write/binding/consume/trading mutation=`0/0/0/0/0/0/0`；LIVE disabled、kill engaged。
+- result：`IMPLEMENTED / EXACT_PILOT_SCOPE_CONTROL_SURFACE_READY / P0_0 / P1_0 / PENDING_EXACT_HEAD_CI / OPERATOR_INPUT_NOT_PROVIDED`。
+- next：精确提交并等待CI；之后runtime alignment。若仍无operator exact values，在同一Attempt-04返回`OPERATOR_EXACT_SCOPE_INPUT_REQUIRED`。
+
+## 2026-08-22 — GateY-6F Attempt-04 runtime alignment / operator input blocker
+
+- task：`NQ-GATEY-6F-PILOT-SCOPE-CONTROL-SURFACE-AND-ATTEMPT-04-RESUME`；NQ-only L级production-readonly qualification。
+- remediation：首次 `6c732fe2...` release安装后，activation因 previous GateY 13-artifact rollback verifier不兼容而在pointer mutation前阻断；forward commit `1292b0e4...` 只为previous accepted GateY release开放legacy 13-artifact验证，其他缺失仍拒绝。
+- validation：release/runtime/ExactPilot=`31/51/7`；deployment boundary PASS；authority errors=0；exact-head CI run `32572645294 / completed / success / 11 of 11`。
+- runtime：canonical release `1292b0e4...`、manifest `e5895f47...cee3f`、14 artifacts、V41；current/health/PID/NRestarts=`1292b0e4.../UP/1060386/0`；LIVE=false、kill=ENGAGED、mutationRuntimeBound=false。
+- production facts：read-only aggregate session/scope/observation/approval/events/intents/receipts=`0/0/0/0/0/0/0`；credential JIT/OKX/provider mutation/binding consume/trading mutation=`0/0/0/0/0`。
+- operational history：immutable install=`2`，超过预期`0/1`；第一份未激活 candidate与第二份remediation release均保留。首次DB quoting失败未进入psql并打印非secret shell环境；随后read-only事务成功。
+- result：`BLOCKED / GATEY_6F_EXACT_PILOT_ATTEMPT_04_NOT_QUALIFIED / OPERATOR_EXACT_SCOPE_INPUT_REQUIRED / RUNTIME_EXACT_HEAD_ALIGNED / NO_REAL_ORDER / LIVE_DISABLED / KILL_ENGAGED / P0_0 / P1_0`。
+- next：operator通过服务器外部安全渠道创建root-owned non-secret closed JSON，仅提供服务器路径reference；之后继续同一Attempt-04，不创建Attempt-05，不在聊天提供credential。
+
+## 2026-08-23 — NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END
+
+- scope：V42 durable pilot lease、controlled kill window、single-operator internal approval、七参数 one-shot command、scoped OKX LIMIT/query/CANCEL、crash recovery、Fill/Ledger reconciliation、release artifact 14→15。
+- result：`REVIEW ACCEPTED / READY TO COMMIT / P0_0 / P1_0`；source capability 与 targeted review 完成，尚未 commit/CI/deploy。
+- validation：focused29；PostgreSQL4+1；full Maven 23 modules；GateY exact/minimal/release/runtime=`7/19/31/51`；GateW=`37/12/34`；Java checker PASS，Shadow new-code=0；diff check PASS。
+- boundary：服务器/credential/OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0/0`；LIVE disabled、kill engaged；未修改生产数据库。
+- next：精确 commit/push，等待 exact-head CI GREEN；随后 immutable V42 deployment。若仍缺 operator 七项参数，停止为 `BLOCKED / OPERATOR_PILOT_PARAMETERS_REQUIRED`。
+
+### 2026-08-23 deployment blocker update
+
+- commit/CI：`b18450d1f3c5407d7b0cabddc12330e4c0cac62e` / `32626468825`，10/10 success。
+- production：15-artifact release仅immutable install；V41 root-only backup已验证；migration/activation/credential/OKX/PLACE/CANCEL=0。
+- incident：Flyway info诊断后SSH连续banner timeout，无法取得incident后current/systemd/DB readback；P1=1。
+- decision：`BLOCKED / SERVER_SSH_UNRESPONSIVE / NO_MIGRATION_INVOKED`；下一动作仅允许带外恢复、终止残留诊断进程和只读审计，禁止盲目重试。

@@ -106,7 +106,9 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
                 return Optional.empty();
             }
             if (current.action() == ExecutionIntentAction.PLACE) {
-                requirePlaceSafetyGate(current.sessionId());
+                requirePlaceSendSafetyGate(current);
+            } else if (minimalPilotSession(current.sessionId())) {
+                requireCancelSendSafetyGate(current);
             }
             int updated = jdbc.update("""
                     UPDATE execution_intents
@@ -292,7 +294,7 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
             throw new LiveControlException("LIVE_SESSION_NOT_ACTIVE", "new PLACE requires LIVE_ACTIVE session state");
         }
         if (draft.action() == ExecutionIntentAction.PLACE) {
-            requirePlaceSafetyGate(draft.sessionId());
+            requirePlaceCreationSafetyGate(draft.sessionId());
         }
         if (!"OKX_SPOT".equals(value.sessionVenue()) || !"OKX".equals(value.orderExchangeCode())
                 || !"LIVE".equals(value.orderTradeEnv()) || !value.symbolAllowlist().contains(draft.symbol())
@@ -327,19 +329,162 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
         return findInternal(intentId, true);
     }
 
-    private void requirePlaceSafetyGate(UUID sessionId) {
+    private void requirePlaceCreationSafetyGate(UUID sessionId) {
         String sessionState = jdbc.queryForObject(
                 "SELECT state FROM live_sessions WHERE session_id=?", String.class, sessionId);
-        List<String> killStates = jdbc.query(
-                "SELECT status FROM kill_switch_states WHERE scope='GLOBAL_TRADING' FOR SHARE",
-                (row, ignored) -> row.getString("status"));
+        List<KillFact> killStates = killFacts();
         if (!"LIVE_ACTIVE".equals(sessionState)) {
             throw new LiveControlException("LIVE_SESSION_NOT_ACTIVE", "new PLACE requires LIVE_ACTIVE session state");
         }
-        if (killStates.size() != 1 || !"DISENGAGED".equals(killStates.getFirst())) {
+        if (killStates.size() != 1 || !"DISENGAGED".equals(killStates.getFirst().status())) {
             throw new LiveControlException(
                     "GLOBAL_KILL_SWITCH_NOT_DISENGAGED", "new PLACE is blocked by the global kill switch");
         }
+        boolean minimal = minimalPilotSession(sessionId);
+        if ("PILOT_EXECUTION_LEASE".equals(killStates.getFirst().source()) && !minimal) {
+            throw new LiveControlException(
+                    "PILOT_KILL_WINDOW_SCOPE_MISMATCH", "pilot kill window cannot authorize another session");
+        }
+        if (minimal) {
+            List<Integer> leases = jdbc.query("""
+                    SELECT 1 FROM pilot_execution_leases
+                    WHERE live_session_id=? AND status='ACTIVE'
+                      AND valid_from<=CURRENT_TIMESTAMP AND expires_at>CURRENT_TIMESTAMP
+                    FOR UPDATE
+                    """, (row, ignored) -> row.getInt(1), sessionId);
+            if (leases.size() != 1) {
+                throw new LiveControlException(
+                        "PILOT_EXECUTION_LEASE_NOT_ACTIVE", "minimal pilot requires one active lease");
+            }
+        }
+    }
+
+    private void requirePlaceSendSafetyGate(ExecutionIntent intent) {
+        requirePlaceCreationSafetyGateForSend(intent.sessionId());
+        if (!minimalPilotSession(intent.sessionId())) return;
+        List<UUID> exact = jdbc.query("""
+                SELECT lease.lease_id
+                FROM pilot_execution_lease_intents link
+                JOIN pilot_execution_leases lease ON lease.lease_id=link.lease_id
+                JOIN live_sessions session ON session.session_id=lease.live_session_id
+                JOIN exchange_accounts account ON account.exchange_account_id=session.exchange_account_id
+                JOIN exchange_account_credentials credential
+                  ON credential.credential_id=session.credential_reference
+                 AND credential.exchange_account_id=session.exchange_account_id
+                JOIN pilot_scope_bindings scope ON scope.session_id=session.session_id
+                WHERE link.intent_id=? AND link.action='PLACE'
+                  AND lease.live_session_id=? AND lease.status='CONSUMED'
+                  AND lease.valid_from<=CURRENT_TIMESTAMP AND lease.expires_at>CURRENT_TIMESTAMP
+                  AND (? * ?)<=lease.max_notional
+                  AND account.owner_user_id=session.owner_id AND account.exchange_code='OKX'
+                  AND account.trade_env='LIVE' AND account.status='ACTIVE'
+                  AND credential.credential_type='OKX_API_V5'
+                  AND credential.credential_status='ACTIVE' AND credential.is_active=TRUE
+                  AND credential.verification_status='VERIFIED'
+                  AND credential.permission_probe_status='SUCCEEDED'
+                  AND credential.permission_scope='TRADE' AND credential.withdraw_enabled=FALSE
+                  AND credential.ip_allowlist_probe_status='PASSED'
+                  AND credential.revoked_at IS NULL AND credential.rotated_at IS NULL
+                  AND EXISTS (
+                      SELECT 1 FROM pilot_prerequisite_observations observation
+                      JOIN pilot_instrument_observation_items item
+                        ON item.observation_id=observation.observation_id
+                      WHERE observation.pilot_scope_id=scope.pilot_scope_id
+                        AND observation.observation_type='INSTRUMENT_METADATA'
+                        AND observation.observed_at + scope.instrument_maximum_age_ms * INTERVAL '1 millisecond'
+                            >= CURRENT_TIMESTAMP
+                        AND item.symbol=? AND item.trading_status='LIVE'
+                        AND ? >= item.minimum_order_size
+                        AND (? * ?) >= COALESCE(item.minimum_order_value,0)
+                  )
+                  AND EXISTS (
+                      SELECT 1 FROM pilot_prerequisite_observations observation
+                      WHERE observation.pilot_scope_id=scope.pilot_scope_id
+                        AND observation.observation_type='FEE_SCHEDULE'
+                        AND observation.fee_evidence_class='OBSERVED_PRIVATE'
+                        AND observation.observed_at + scope.fee_maximum_age_ms * INTERVAL '1 millisecond'
+                            >= CURRENT_TIMESTAMP
+                  )
+                  AND EXISTS (
+                      SELECT 1 FROM pilot_prerequisite_observations observation
+                      WHERE observation.pilot_scope_id=scope.pilot_scope_id
+                        AND observation.observation_type='BALANCE_SNAPSHOT'
+                        AND observation.available_balance >= (? * ?)
+                        AND observation.observed_at + scope.balance_maximum_age_ms * INTERVAL '1 millisecond'
+                            >= CURRENT_TIMESTAMP
+                  )
+                  AND EXISTS (
+                      SELECT 1 FROM pilot_prerequisite_observations observation
+                      WHERE observation.pilot_scope_id=scope.pilot_scope_id
+                        AND observation.observation_type='CLOCK_SYNC'
+                        AND abs(observation.observed_skew_ms) <= scope.maximum_tolerated_skew_ms
+                        AND observation.observed_at + scope.clock_maximum_age_ms * INTERVAL '1 millisecond'
+                            >= CURRENT_TIMESTAMP
+                  )
+                FOR UPDATE OF lease
+                """,
+                (row, ignored) -> row.getObject(1, UUID.class), intent.intentId(), intent.sessionId(),
+                intent.limitPrice(), intent.quantity(), intent.symbol(), intent.quantity(),
+                intent.limitPrice(), intent.quantity(), intent.limitPrice(), intent.quantity());
+        if (exact.size() != 1 || !killFacts().getFirst().reasonCode().equals("PILOT_LEASE_" + exact.getFirst())) {
+            throw new LiveControlException(
+                    "PILOT_EXECUTION_LEASE_SEND_REJECTED", "PLACE send is outside exact consumed lease");
+        }
+    }
+
+    private void requirePlaceCreationSafetyGateForSend(UUID sessionId) {
+        String sessionState = jdbc.queryForObject(
+                "SELECT state FROM live_sessions WHERE session_id=?", String.class, sessionId);
+        List<KillFact> killStates = killFacts();
+        if (!"LIVE_ACTIVE".equals(sessionState)) {
+            throw new LiveControlException("LIVE_SESSION_NOT_ACTIVE", "new PLACE requires LIVE_ACTIVE session state");
+        }
+        if (killStates.size() != 1 || !"DISENGAGED".equals(killStates.getFirst().status())) {
+            throw new LiveControlException(
+                    "GLOBAL_KILL_SWITCH_NOT_DISENGAGED", "new PLACE is blocked by the global kill switch");
+        }
+        if ("PILOT_EXECUTION_LEASE".equals(killStates.getFirst().source())
+                && !minimalPilotSession(sessionId)) {
+            throw new LiveControlException(
+                    "PILOT_KILL_WINDOW_SCOPE_MISMATCH", "pilot kill window cannot authorize another session");
+        }
+    }
+
+    private void requireCancelSendSafetyGate(ExecutionIntent intent) {
+        requirePlaceCreationSafetyGateForSend(intent.sessionId());
+        List<UUID> leases = jdbc.query("""
+                SELECT lease.lease_id
+                FROM pilot_execution_lease_intents link
+                JOIN pilot_execution_leases lease ON lease.lease_id=link.lease_id
+                WHERE link.intent_id=? AND link.action='CANCEL'
+                  AND lease.live_session_id=? AND lease.status='CONSUMED'
+                  AND lease.expires_at>CURRENT_TIMESTAMP
+                FOR UPDATE OF lease
+                """, (row, ignored) -> row.getObject(1, UUID.class), intent.intentId(), intent.sessionId());
+        List<KillFact> kill = killFacts();
+        if (leases.size() != 1 || kill.size() != 1
+                || !"PILOT_EXECUTION_LEASE".equals(kill.getFirst().source())
+                || !kill.getFirst().reasonCode().equals("PILOT_LEASE_" + leases.getFirst())) {
+            throw new LiveControlException(
+                    "PILOT_EXECUTION_LEASE_CANCEL_SEND_REJECTED",
+                    "CANCEL send is outside exact consumed lease");
+        }
+    }
+
+    private List<KillFact> killFacts() {
+        return jdbc.query(
+                "SELECT status,source,reason_code FROM kill_switch_states "
+                        + "WHERE scope='GLOBAL_TRADING' FOR SHARE",
+                (row, ignored) -> new KillFact(
+                        row.getString("status"), row.getString("source"), row.getString("reason_code")));
+    }
+
+    private boolean minimalPilotSession(UUID sessionId) {
+        Integer count = jdbc.queryForObject("""
+                SELECT count(*) FROM live_session_events
+                WHERE session_id=? AND command='MINIMAL_PILOT_APPROVE'
+                """, Integer.class, sessionId);
+        return count != null && count == 1;
     }
 
     private ExecutionIntent requireSamePayload(ExecutionIntent existing, ExecutionIntentDraft draft) {
@@ -429,5 +574,8 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
     }
 
     private record OriginalPlaceFacts(ExecutionIntentState state, String latestOutcome) {
+    }
+
+    private record KillFact(String status, String source, String reasonCode) {
     }
 }

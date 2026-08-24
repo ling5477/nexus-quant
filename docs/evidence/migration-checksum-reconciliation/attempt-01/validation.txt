@@ -1,0 +1,13 @@
+pre_remediation_target_test=FAIL / 4 TESTS / 1 FAILURE
+pre_remediation_fingerprint_expected=1c0e486db0f3db4cdf250cb99ab0ed1e289f42d1ed522981272ee8b4c4da25e3
+pre_remediation_fingerprint_actual=f32eaf8eb333739020a1bdaac49471bc56d245a3aa5468ec108051b83a2d7ab4
+authority_checker=PASS
+next_action_checker=PASS
+post_remediation_target_test=PASS / 4 TESTS / 0 FAILURES / 0 ERRORS / 0 SKIPPED
+related_migration_tests=PASS / 9 CLASSES / 17 TESTS / 0 FAILURES / 0 ERRORS / 0 SKIPPED
+full_backend_maven=PASS / 320 REPORTS / 1546 TESTS / 0 FAILURES / 0 ERRORS / 43 SKIPPED
+quality_profile=PASS
+old_checksum_failure_fingerprint_in_surefire=0
+local_test_database_side_effect=localhost PostgreSQL nexus_quant migrated from V39 to V41 by existing full-Maven local-profile tests
+non_product_test_command_failures=2 / reactor dependency compile scope + PowerShell argument parsing / both corrected without product change
+diff_and_safety_checks=PASS / 16 ALLOWLISTED FILES / 0 FORBIDDEN / 0 SECRET / 0 ABSOLUTE_PATH / 0 SYMLINK

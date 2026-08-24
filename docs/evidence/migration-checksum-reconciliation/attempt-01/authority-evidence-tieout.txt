@@ -1,0 +1,10 @@
+current_authority=PASS / CURRENT_AUTHORITY_CONSISTENT（当前 Authority 一致）
+current_active_gate=GateY / IN_PROGRESS / NOT_FROZEN
+gatey_6d_status=ACCEPTED / CI_GREEN（已接受 / CI 已通过）
+gatey_6d_implementation_review_commit=b56e68bdc45fd6a7f27e6e830447e995ff683bfb
+gatey_6d_exact_head_ci_run=31944962448 / completed / success
+implementation_evidence_v40_sha256=1c0e486db0f3db4cdf250cb99ab0ed1e289f42d1ed522981272ee8b4c4da25e3
+security_review_evidence_v40_sha256=1c0e486db0f3db4cdf250cb99ab0ed1e289f42d1ed522981272ee8b4c4da25e3
+security_review=P0_0 / P1_0 / ACCEPTED
+repository_evidence_execution=V39_TO_V40_PASS + V1_TO_V40_FLYWAY_VALIDATE_PASS
+authority_tieout=CONSISTENT（一致）

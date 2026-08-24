@@ -13,6 +13,13 @@ public interface PilotScopeControlPlane {
             PilotScopeMaterializationCommand command
     );
 
+    default PilotScopeMaterializationResult materializeMinimal(
+            AuthenticatedLiveControlActor actor,
+            MinimalPilotMaterializationCommand command
+    ) {
+        throw new UnsupportedOperationException("minimal pilot materialization is not implemented");
+    }
+
     OperatorApproval approve(AuthenticatedLiveControlActor actor, PilotScopeApprovalCommand command);
 
     PilotScopePreflightResult preflight(AuthenticatedLiveControlActor actor, java.util.UUID sessionId);

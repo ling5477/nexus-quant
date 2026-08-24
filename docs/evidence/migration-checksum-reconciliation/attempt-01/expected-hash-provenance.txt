@@ -1,0 +1,9 @@
+expected_hash=1c0e486db0f3db4cdf250cb99ab0ed1e289f42d1ed522981272ee8b4c4da25e3
+matching_commit=bc35edb60370aee367ab40853201e1f249179b83
+matching_blob=63052fcd7473e1b6e8a8975c1be45679010b01bb
+matching_identity=canonical Git UTF-8 LF blob, 44098 bytes, 725 lines, no BOM, one trailing LF
+head_match=YES
+origin_dev_match=YES
+windows_worktree_raw_match=NO
+windows_worktree_lf_normalized_match=YES
+expected_hash_provenance=FOUND（已找到）

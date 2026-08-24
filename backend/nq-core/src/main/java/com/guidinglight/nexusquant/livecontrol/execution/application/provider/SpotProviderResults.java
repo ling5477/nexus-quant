@@ -42,13 +42,21 @@ public final class SpotProviderResults {
             String exchangeTradeId,
             BigDecimal price,
             BigDecimal quantity,
+            BigDecimal fee,
+            String feeCurrency,
             Instant filledAt
     ) {
         public FillReference {
             exchangeTradeId = boundedText(exchangeTradeId, "exchangeTradeId", 128);
             requirePositive(price, "price");
             requirePositive(quantity, "quantity");
+            Objects.requireNonNull(fee, "fee must not be null");
+            feeCurrency = boundedText(feeCurrency, "feeCurrency", 16);
             Objects.requireNonNull(filledAt, "filledAt must not be null");
+        }
+
+        public FillReference(String exchangeTradeId, BigDecimal price, BigDecimal quantity, Instant filledAt) {
+            this(exchangeTradeId, price, quantity, BigDecimal.ZERO, "USDT", filledAt);
         }
     }
 
