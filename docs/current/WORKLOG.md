@@ -19420,3 +19420,12 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Validation：Git exact match/clean、server exact runtime/V42/health/kill、historical/current DB metadata、secure reference shape、Account/Credential Service与API DTO均已只读核验；生产业务基线仍全0。
 - Boundary：production DB write、raw SQL mutation、credential JIT/OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0/0`；未读取secret material，未生成session/binding/lease/order identity；P0=0、P1=0。
 - Next：必须通过现有Account/Credential Service和服务器安全凭证路径重新配置historical owner/account/credential并复核唯一性；在此之前不只问instrument、不调用OKX、不执行pilot。
+
+## 2026-08-24 — NQ-GATEY-BTC-USDT-MINIMAL-LIVE-PILOT-FINAL-EXECUTION
+
+- Scope：继续同一attempt；固定account1/credential1/BTC-USDT/BUY/LIMIT/10 USDT，验证production baseline与current prerequisite组合；未创建Attempt-02，未迁移/部署/修改systemd。
+- Result：provisioning已恢复account1/credential1且关闭18891/env；current runtime/V42/health/kill正常。但permission/scope/IP=`NOT_PROBED/NULL/NOT_CHECKED`、BTC catalog row=0；minimal-pilot不组合current permission writeback/catalog sync/bestAsk采集，故`BLOCKED / CURRENT_PILOT_PREREQUISITE_NOT_VERIFIED / NO_REAL_ORDER`。
+- Findings：P1-1=`MINIMAL_PILOT_CURRENT_PERMISSION_REFRESH_NOT_COMPOSED`；P1-2=`MINIMAL_PILOT_CURRENT_BEST_ASK_AND_CATALOG_REFRESH_NOT_COMPOSED`。关闭后需要测试、exact-head CI与重新部署，本轮禁止现场扩展。
+- Validation：Git exact/clean、18891/env、18890 health、account/credential metadata、BTC catalog、代码执行路径与final production aggregate均已真实核验。
+- Boundary：credential material exposure=0；credential JIT/OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0`；session/lease/intent/receipt/order/trade/ledger/audit均0；LIVE=false、kill ENGAGED。
+- Next：单独授权关闭两个P1并完成CI/部署后，才可继续同一attempt刷新current prerequisite与exactly-one PLACE；不得直接手写facts或执行第二pilot。

@@ -14407,3 +14407,16 @@ Runtime MainPID=`1028560`、NRestarts0；LIVE=false、kill ENGAGED、mutationRun
 | final side-effect aggregate | PASS（只读通过） | current account/credential/session/lease/intent/receipt/order/trade/ledger/audit均0 | PLACE/CANCEL/transfer/withdraw=`0/0/0/0`；reconciliation未运行 | 否 |
 
 结论：`BLOCKED / PRODUCTION_ACCOUNT_CREDENTIAL_REPROVISION_REQUIRED / PILOT_INSTRUMENT_SELECTION_REQUIRED / NO_REAL_ORDER / P0_0 / P1_0`。未修改Java/SQL/migration/deploy，故未重跑Maven、Java Shadow、frontend或Python测试；本轮是production metadata与正式恢复合同的只读资格审计。
+
+## 2026-08-24 — BTC-USDT minimal live pilot final execution
+
+| Command / check | Result | Scope / environment | Known warnings / not run | Blocking |
+| --- | --- | --- | --- | --- |
+| Git/runtime baseline | PASS（通过） | `HEAD==origin/dev==d7d03cc5...`；current `c47...`、V42/failed0、health UP、kill ENGAGED | 未部署、未改systemd | 否 |
+| provisioning closeout | PASS WITH RESIDUAL（通过，保留残留） | 18891 listener absent；provisioning env absent；account/credential=`1/1` | transient DB-check unit为failed；未reset | 否 |
+| account/credential baseline | PASS（通过） | account1 OKX/LIVE/ACTIVE；credential1 ACTIVE/VERIFIED | permission/scope/IP=`NOT_PROBED/NULL/NOT_CHECKED` | 是，阻断Phase2 |
+| BTC-USDT catalog | BLOCKED（阻断） | operator选择已明确；production catalog row=0 | current profile禁用catalog sync | 是 |
+| current prerequisite composition | BLOCKED（阻断） | minimal-pilot不调用permission probe；JIT snapshot无bestAsk；CLI要求预填price/qty | 未调用credential JIT/OKX | 是 |
+| final side-effect aggregate | PASS（只读通过） | session/lease/intent/receipt/order/trade/ledger/audit全0；LIVE=false、kill ENGAGED | PLACE/CANCEL/transfer/withdraw=`0/0/0/0` | 否 |
+
+结论：`BLOCKED / CURRENT_PILOT_PREREQUISITE_NOT_VERIFIED / NO_REAL_ORDER / P0_0 / P1_2`。两个P1来自已部署执行组合缺口；附件同时禁止重新部署与新review，故未改代码、未运行Maven/Shadow或真实OKX。

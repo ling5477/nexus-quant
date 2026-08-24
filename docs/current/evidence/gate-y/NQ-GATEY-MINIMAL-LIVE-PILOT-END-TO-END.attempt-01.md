@@ -2,19 +2,20 @@
 
 ## 当前结论
 
-`BLOCKED / PRODUCTION_ACCOUNT_CREDENTIAL_REPROVISION_REQUIRED / PILOT_INSTRUMENT_SELECTION_REQUIRED / NO_REAL_ORDER`（阻断 / 当前 production SoR 需要通过正式路径重新配置账户与凭证 / 缺少唯一可信 instrument / 未发送真实订单）。本文件是 implementation→CI→deployment→pilot 的单一持续 evidence；历史 GateW/GateY SoR 已唯一恢复 owner/account/credential identity，但当前 canonical DB 缺少 historical owner、account与credential，仓库也没有跨历史DB导入加密credential的正式恢复合同，故在任何 production SoR 写入、credential JIT 与 OKX 调用前 fail-closed。
+`BLOCKED / CURRENT_PILOT_PREREQUISITE_NOT_VERIFIED / NO_REAL_ORDER`（阻断 / 当前pilot前置事实未验证 / 未发送真实订单）。本文件是 implementation→CI→deployment→pilot 的单一持续 evidence；production provisioning已恢复account=1、credential=1且operator固定BTC-USDT，但已部署`c47...` minimal-pilot入口无法在现有禁止部署/代码变更边界内刷新current permission/IP、BTC catalog与bestAsk，因此在credential JIT、OKX与PLACE前fail-closed。
 
 ```text
 P0=0
-P1=0
+P1=2
 implementationCommit=b18450d1f3c5407d7b0cabddc12330e4c0cac62e
 exactHeadCi=32626468825/completed/success
 productionDeployment=PASS_EXACT_HEAD_V42_ACTIVE
 activeRuntime=c47c8db317bbbef64989f247b087752bf2b46a3c
 activeManifest=de1f52359619e6f38fc4671ec5c091bb5019acf3d4f953e14d402d45f0377c50
-operatorPilotParameters=RULES_PROVIDED_BUT_CANONICAL_REPROVISION_REQUIRED
+operatorPilotParameters=ACCOUNT_1_CREDENTIAL_1_BTC_USDT_BUY_LIMIT_CAP_10
 historicalIdentity=OWNER_2_ACCOUNT_1_CREDENTIAL_1
-productionSorRecovery=BLOCKED_BEFORE_WRITE
+productionSorRecovery=PASS_PROVISIONED
+currentPrerequisite=BLOCKED_NOT_COMPOSED
 credentialJitReads=0
 okxCalls=0
 PLACE=0
@@ -69,9 +70,9 @@ kill=ENGAGED
 
 ## 未完成 hard gates
 
-1. 当前 production SoR 必须通过正式 Account/Credential Service路径重新配置 historical owner/account/credential；禁止 raw SQL复制用户、密文或permission facts。当前精确阻断为 `PRODUCTION_ACCOUNT_CREDENTIAL_REPROVISION_REQUIRED`。
-2. 必须从此前真实资金、实盘 0 或 accepted pilot evidence 中恢复唯一可信 OKX Spot instrument；当前 production LIVE order/trade facts 均为 0，精确阻断为 `PILOT_INSTRUMENT_SELECTION_REQUIRED`。
-3. 只有以上事实恢复且实时 bestAsk/venue rules/fee/balance/clock 与 notional 约束全部通过后，才允许 exactly-one real LIMIT；本文件当前不声明真实 pilot PASS。
+1. current permission/IP必须通过正式JIT刷新并落为`SUCCEEDED / TRADE / PASSED`；当前为`NOT_PROBED / NULL / NOT_CHECKED`，已部署minimal-pilot不调用permission probe。
+2. BTC-USDT catalog与current bestAsk必须通过正式current-fact入口刷新；当前catalog row=0，已部署profile禁用catalog sync，minimal-pilot CLI仍要求外部预填price/quantity且prerequisite snapshot没有bestAsk。
+3. 只有以上P1关闭、重新通过exact-head CI/部署并验证实时bestAsk/venue rules/fee/balance/clock与notional约束后，才允许exactly-one real LIMIT；本文件当前不声明真实pilot PASS。
 
 推荐 commit：`feat(gatey): add crash-safe minimal live pilot execution`。
 
@@ -110,3 +111,16 @@ kill=ENGAGED
 - instrument source：historical GateW config仅证明`NQ_GATEW_SOAK_CURRENCIES=USDT`；historical orders/trades=`0/0`；GateY-6C与accepted GateW real evidence中没有明确`*-USDT` instrument。可信候选数=0，不能把USDT balance probe推导成BTC/ETH/SOL交易对。
 - production writes：account create=0、credential upsert/rotate=0、raw SQL mutation=0；credential JIT/OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0`。未创建session、binding、lease或订单identity，kill保持ENGAGED。
 - Final decision：`BLOCKED / PRODUCTION_ACCOUNT_CREDENTIAL_REPROVISION_REQUIRED / PILOT_INSTRUMENT_SELECTION_REQUIRED / NO_REAL_ORDER / HISTORICAL_IDENTITY_RECOVERED / CANONICAL_SOR_WRITE_0 / CREDENTIAL_MATERIAL_EXPOSURE_0 / LIVE_DISABLED / KILL_ENGAGED / P0_0 / P1_0`。因account/credential尚未恢复，不满足“只有instrument缺失”，本轮不向operator发起instrument单选。
+
+## BTC-USDT final execution continuation（2026-08-24）
+
+- Git/runtime：`HEAD == origin/dev == d7d03cc53b4f1479aa7ac8efa554ae9d5dca8983`；server current仍为`c47c8db3...`，V42/failed0、health UP、LIVE=false、kill=ENGAGED。
+- provisioning closeout：18891 listener absent，`/run/nq-gatey-provisioning.env` absent；保留一个inactive/failed provisioning DB-check transient unit，未reset或修改systemd。18890 runtime active/running。
+- canonical SoR：account1=`owner2 / OKX / LIVE / ACTIVE`；credential1=`OKX_API_V5 / ACTIVE / VERIFIED`，唯一account/credential计数=`1/1`。provisioning blocker关闭；本轮未重新provision或读取credential material。
+- zero baseline：V42/failed0，session/lease/intent/receipt/order/trade/ledger/audit均0。
+- current permission blocker：credential stored facts为`permissionProbeStatus=NOT_PROBED`、`permissionScope=NULL`、`ipAllowlistProbeStatus=NOT_CHECKED`。`StoredFactExactPilotBindingAuthority`要求`SUCCEEDED / TRADE / PASSED`且`lastPermissionProbeAt`非空；已部署minimal-pilot只启用`gatey-readonly-qualification` profile，不装配`scoped-okx-private-readonly` permission-probe composition，也不调用`/account/config` writeback。因此不能把历史GateY-6C permission当current refresh。
+- BTC catalog blocker：operator已固定BTC-USDT，但production `instrument_catalog`中BTC-USDT row=0。`MinimalLivePilotControlService`在JIT observation前先要求唯一catalog row；current profile显式`catalog-sync.enabled=false`，故直接启动pilot会以`PILOT_INSTRUMENT_REFERENCE_MISMATCH`拒绝。
+- bestAsk blocker：`invoke-gatey-minimal-live-pilot.ps1`要求外部传入`limitPrice`与`quantity`；`OkxJdkRealClient.observePrerequisites()`只采集instrument、fee、USDT balance与server time，不采集current bestAsk。仓库没有可在本轮no-code/no-deployment边界内调用的正式bestAsk→exact order参数CLI。
+- Findings：P0=0；P1-1=`MINIMAL_PILOT_CURRENT_PERMISSION_REFRESH_NOT_COMPOSED`；P1-2=`MINIMAL_PILOT_CURRENT_BEST_ASK_AND_CATALOG_REFRESH_NOT_COMPOSED`。关闭它们需要代码、测试、exact-head CI与重新部署；附件同时禁止重新部署与新review，因此本轮不做现场修复。
+- final authoritative readback：BTC catalog=0，permission/scope/IP=`NOT_PROBED/NULL/NOT_CHECKED`，session/lease/intent/receipt/order/trade/ledger/audit全0；health UP、LIVE=false、kill=ENGAGED。credential JIT/OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0`，未生成order identities。
+- Final decision：`BLOCKED / CURRENT_PILOT_PREREQUISITE_NOT_VERIFIED / NO_REAL_ORDER / BTC_USDT_SELECTED / ACCOUNT_1_REUSED / CREDENTIAL_1_REUSED / LIVE_FALSE / KILL_ENGAGED / PLACE_0 / CANCEL_0 / NO_TRANSFER / NO_WITHDRAW / P0_0 / P1_2`。
