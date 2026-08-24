@@ -2,7 +2,7 @@
 
 ## 当前结论
 
-`BLOCKED / CURRENT_PILOT_PREREQUISITE_NOT_VERIFIED / NO_REAL_ORDER`（阻断 / 当前pilot前置事实未验证 / 未发送真实订单）。本文件是 implementation→CI→deployment→pilot 的单一持续 evidence；production provisioning已恢复account=1、credential=1且operator固定BTC-USDT，但已部署`c47...` minimal-pilot入口无法在现有禁止部署/代码变更边界内刷新current permission/IP、BTC catalog与bestAsk，因此在credential JIT、OKX与PLACE前fail-closed。
+`BLOCKED / CURRENT_MARKET_SNAPSHOT_PERSISTENCE_MIGRATION_REQUIRED / NO_REAL_ORDER`（阻断 / current market snapshot需要forward migration承载 / 未发送真实订单）。本文件是 implementation→CI→deployment→pilot 的单一持续 evidence；P1 remediation授权已提供，但V40/V41强约束observation模型无法持久化bestAsk、bestAskObservedAt与marketSnapshotDigest，无法在不伪造既有语义的前提下把current ask绑定到exact order，因此在代码修改、credential JIT、OKX与PLACE前fail-closed。
 
 ```text
 P0=0
@@ -15,7 +15,7 @@ activeManifest=de1f52359619e6f38fc4671ec5c091bb5019acf3d4f953e14d402d45f0377c50
 operatorPilotParameters=ACCOUNT_1_CREDENTIAL_1_BTC_USDT_BUY_LIMIT_CAP_10
 historicalIdentity=OWNER_2_ACCOUNT_1_CREDENTIAL_1
 productionSorRecovery=PASS_PROVISIONED
-currentPrerequisite=BLOCKED_NOT_COMPOSED
+currentPrerequisite=BLOCKED_MIGRATION_REQUIRED
 credentialJitReads=0
 okxCalls=0
 PLACE=0
@@ -70,9 +70,9 @@ kill=ENGAGED
 
 ## 未完成 hard gates
 
-1. current permission/IP必须通过正式JIT刷新并落为`SUCCEEDED / TRADE / PASSED`；当前为`NOT_PROBED / NULL / NOT_CHECKED`，已部署minimal-pilot不调用permission probe。
-2. BTC-USDT catalog与current bestAsk必须通过正式current-fact入口刷新；当前catalog row=0，已部署profile禁用catalog sync，minimal-pilot CLI仍要求外部预填price/quantity且prerequisite snapshot没有bestAsk。
-3. 只有以上P1关闭、重新通过exact-head CI/部署并验证实时bestAsk/venue rules/fee/balance/clock与notional约束后，才允许exactly-one real LIMIT；本文件当前不声明真实pilot PASS。
+1. 先建立最小forward migration，为typed `MARKET_SNAPSHOT`或等价强约束variant承载instrument、bestAsk、bestAskObservedAt、marketSnapshotDigest与source identity；必须参与DB canonical hash重建、append-only/immutability与freshness。
+2. 在新schema之上关闭permission refresh与typed BTC-USDT public metadata/ticker组合，禁止raw endpoint、脚本curl或把bestAsk塞进instrument/clock/reason/correlation字段。
+3. 只有migration、代码、测试、targeted review、exact-head CI与受控部署全部通过后，才允许继续同一attempt刷新current facts并执行exactly-one real LIMIT。
 
 推荐 commit：`feat(gatey): add crash-safe minimal live pilot execution`。
 
@@ -124,3 +124,13 @@ kill=ENGAGED
 - Findings：P0=0；P1-1=`MINIMAL_PILOT_CURRENT_PERMISSION_REFRESH_NOT_COMPOSED`；P1-2=`MINIMAL_PILOT_CURRENT_BEST_ASK_AND_CATALOG_REFRESH_NOT_COMPOSED`。关闭它们需要代码、测试、exact-head CI与重新部署；附件同时禁止重新部署与新review，因此本轮不做现场修复。
 - final authoritative readback：BTC catalog=0，permission/scope/IP=`NOT_PROBED/NULL/NOT_CHECKED`，session/lease/intent/receipt/order/trade/ledger/audit全0；health UP、LIVE=false、kill=ENGAGED。credential JIT/OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0`，未生成order identities。
 - Final decision：`BLOCKED / CURRENT_PILOT_PREREQUISITE_NOT_VERIFIED / NO_REAL_ORDER / BTC_USDT_SELECTED / ACCOUNT_1_REUSED / CREDENTIAL_1_REUSED / LIVE_FALSE / KILL_ENGAGED / PLACE_0 / CANCEL_0 / NO_TRANSFER / NO_WITHDRAW / P0_0 / P1_2`。
+
+## Prerequisite remediation schema hard gate（2026-08-24）
+
+- 授权：用户明确允许一次关闭P1-01/P1-02、代码/测试/review/commit/CI/deploy与同attempt pilot；默认no-new-migration，但在确证现有持久化模型无法承载时允许提出migration blocker。
+- schema evidence：V40 `pilot_prerequisite_observations.observation_type`只允许`INSTRUMENT_METADATA / FEE_SCHEDULE / BALANCE_SNAPSHOT / CLOCK_SYNC`；variant CHECK、payload hash重建函数、freshness lookup与item FK均按四类固定。V41只调整instrument minimum-order-value语义，仍保持四类variant；V42只新增pilot lease三表。
+- binding evidence：`ExactPilotBinding`持久化`observationSetId`与`OrderEnvelope.price/quantity/notional`，但没有marketSnapshotDigest或bestAskObservedAt。仅保存order price不能证明它来自current bestAsk；把digest编码进request/trace/correlation或其他字段不属于typed fact，也无法由DB重建验证。
+- migration review：安全最小候选必须是forward-only V43（或下一可用版本），新增typed market snapshot承载与中文COMMENT，扩展observation type/variant、canonical payload hash、domain/JDBC mapping、freshness、exact binding validation与PostgreSQL regression。需评估CHECK/函数替换锁窗口；现有表为空，因此无需历史回填，不得修改V40/V41/V42。
+- prohibited shortcuts：未把bestAsk塞入instrument digest、clock observation、minimumOrderValue、lease event、audit reason或correlation；未新增JSON旁路；未调用raw OKX或写production DB。
+- current production：account1/credential1/BTC-USDT operator decision保留；credential JIT/OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0`，session/lease/intent/receipt/order/trade/ledger/audit全0；LIVE=false、kill=ENGAGED。
+- Final decision：`BLOCKED / CURRENT_MARKET_SNAPSHOT_PERSISTENCE_MIGRATION_REQUIRED / NO_REAL_ORDER / P0_0 / P1_2 / PLACE_0 / CANCEL_0 / LIVE_FALSE / KILL_ENGAGED / NO_TRANSFER / NO_WITHDRAW`。本轮不生成半成品代码，不commit/push/deploy；下一动作必须先获得最小V43实施范围确认，之后继续同一attempt，不创建Attempt-02。

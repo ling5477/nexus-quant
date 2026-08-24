@@ -19429,3 +19429,11 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Validation：Git exact/clean、18891/env、18890 health、account/credential metadata、BTC catalog、代码执行路径与final production aggregate均已真实核验。
 - Boundary：credential material exposure=0；credential JIT/OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0`；session/lease/intent/receipt/order/trade/ledger/audit均0；LIVE=false、kill ENGAGED。
 - Next：单独授权关闭两个P1并完成CI/部署后，才可继续同一attempt刷新current prerequisite与exactly-one PLACE；不得直接手写facts或执行第二pilot。
+
+## 2026-08-24 — NQ-GATEY-MINIMAL-PILOT-PREREQUISITE-REMEDIATION-AND-FINAL-EXECUTION
+
+- Scope：审计两个P1的最小实现与持久化承载；继续同一attempt，不创建Attempt-02，不触碰production。
+- Result：V40/V41强约束observation schema没有bestAsk/bestAskObservedAt/marketSnapshotDigest，V42仅lease，ExactPilotBinding不能证明order price来自current ask；`BLOCKED / CURRENT_MARKET_SNAPSHOT_PERSISTENCE_MIGRATION_REQUIRED / NO_REAL_ORDER`。
+- Migration review：最小候选为forward V43 typed market snapshot variant/columns、DB canonical hash、domain/JDBC/freshness/binding与PostgreSQL tests；现有表空，无backfill，不得修改V40/V41/V42。DDL CHECK/函数替换锁窗口必须独立验证。
+- Boundary：未把market fact塞入错误字段，未新增JSON旁路，未改代码/migration，credential JIT/OKX/PLACE/CANCEL/transfer/withdraw全0；LIVE=false、kill ENGAGED；P0=0、P1=2。
+- Next：先确认最小V43实施范围；授权后继续同一任务完成代码、测试、review、commit/CI/deploy与exactly-one pilot。

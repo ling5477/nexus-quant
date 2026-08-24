@@ -14420,3 +14420,16 @@ Runtime MainPID=`1028560`、NRestarts0；LIVE=false、kill ENGAGED、mutationRun
 | final side-effect aggregate | PASS（只读通过） | session/lease/intent/receipt/order/trade/ledger/audit全0；LIVE=false、kill ENGAGED | PLACE/CANCEL/transfer/withdraw=`0/0/0/0` | 否 |
 
 结论：`BLOCKED / CURRENT_PILOT_PREREQUISITE_NOT_VERIFIED / NO_REAL_ORDER / P0_0 / P1_2`。两个P1来自已部署执行组合缺口；附件同时禁止重新部署与新review，故未改代码、未运行Maven/Shadow或真实OKX。
+
+## 2026-08-24 — Minimal pilot prerequisite remediation schema hard gate
+
+| Check | Result | Evidence / scope | Blocking |
+| --- | --- | --- | --- |
+| V40 observation model | BLOCKED（阻断） | only 4 typed variants；CHECK/hash/freshness/FK fixed | 是 |
+| V41 semantic remediation | PASS（只读核验） | only minimum-order-value semantics；no market snapshot | 否 |
+| V42 lease schema | PASS（只读核验） | lease only；no market snapshot carrier | 否 |
+| ExactPilotBinding persistence | BLOCKED（阻断） | order price exists；market digest/observedAt absent | 是 |
+| no-migration carrier alternatives | REJECTED（拒绝） | instrument/clock/reason/correlation reuse would falsify semantics | 是 |
+| production side effects | PASS（只读通过） | JIT/OKX/PLACE/CANCEL/transfer/withdraw all0；LIVE=false、kill ENGAGED | 否 |
+
+结论：`BLOCKED / CURRENT_MARKET_SNAPSHOT_PERSISTENCE_MIGRATION_REQUIRED / NO_REAL_ORDER / P0_0 / P1_2`。未修改代码或migration，未运行Maven/Shadow/CI/deploy/OKX；必须先评审并授权最小forward V43范围。
