@@ -14380,3 +14380,17 @@ Runtime MainPID=`1028560`、NRestarts0；LIVE=false、kill ENGAGED、mutationRun
 - preflight/backup：旧runtime V41 healthy、kill ENGAGED、mutationRuntimeBound=false；业务计数0；root-only backup格式/hash通过。
 - blocker：JShell Flyway `info()` 诊断后服务器SSH持续banner timeout；`migrate()`未调用，V42/current/systemd未变更。
 - decision：`BLOCKED / SERVER_SSH_UNRESPONSIVE / NO_MIGRATION_INVOKED / NO_ACTIVATION`；P0=0、P1=1。
+
+## 2026-08-24 — GateY Minimal Live Pilot Final Execution continuation
+
+| Command / check | Result | Scope / environment | Known warnings / not run | Blocking |
+| --- | --- | --- | --- | --- |
+| SSH recovery + old runtime audit | PASS（通过） | accepted host；IdentityFile仅由OpenSSH消费；旧current/V41/kill/业务计数只读核验 | 无JShell残留；长期独立Java session未误杀 | 否 |
+| exact-head immutable release | PASS（通过） | `c47c8db3...`；15 artifacts；manifest `de1f5235...7c50`；local/server verifier、POSIX、link/write denial | `b18450d1...` candidate未激活 | 否 |
+| V41 backup | PASS（通过） | root:root/0600/links1；bytes 676787；SHA-256 `952ad83f...ddac`；`pg_restore --list` | 未执行 restore | 否 |
+| Flyway V42 | PASS（通过） | pinned Flyway 11 image；manifest-bound 42-file closed set；V41→V42 + validate | current/pending/failed=`42/0/0`；三张新表均空 | 否 |
+| exact-head activation reconcile | PASS（通过） | activation SSH结果一度 UNKNOWN；未重试，query/reconcile后独立UnitPreflight/Health通过 | MainPID 1135142；runtime counters仍`NOT_INSTRUMENTED`，未伪造zero | 否 |
+| production SoR account/instrument recovery | BLOCKED（阻断） | canonical DB target；`exchange_accounts=0`、`exchange_account_credentials=0`、LIVE order/trade instrument candidates=0 | 未调用credential JIT/OKX；未计算bestAsk/quantity | 是 |
+| final side-effect aggregate | PASS（只读通过） | session/lease/intent/receipt/order/trade/ledger/audit全0；LIVE=false、kill=ENGAGED | PLACE/CANCEL/transfer/withdraw=`0/0/0/0`；未运行真实 reconciliation（无订单） | 否 |
+
+结论：`BLOCKED / ACTIVE_ACCOUNT_OR_CREDENTIAL_NOT_FOUND / PILOT_INSTRUMENT_SELECTION_REQUIRED / NO_REAL_ORDER / P0_0 / P1_0`。本轮未执行 backend full Maven、frontend E2E 或 Python checks；代码未变，已消费 exact-head CI `32626468825` 与 immutable verifier，阻断来自 production SoR 缺失而非测试失败。

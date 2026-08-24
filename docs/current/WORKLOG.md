@@ -19404,3 +19404,11 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - production：15-artifact release仅immutable install；V41 root-only backup已验证；migration/activation/credential/OKX/PLACE/CANCEL=0。
 - incident：Flyway info诊断后SSH连续banner timeout，无法取得incident后current/systemd/DB readback；P1=1。
 - decision：`BLOCKED / SERVER_SSH_UNRESPONSIVE / NO_MIGRATION_INVOKED`；下一动作仅允许带外恢复、终止残留诊断进程和只读审计，禁止盲目重试。
+
+## 2026-08-24 — NQ-GATEY-MINIMAL-LIVE-PILOT-FINAL-EXECUTION continuation
+
+- Scope：继续既有 `NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01`；恢复SSH、复核旧runtime/V41/kill、从current exact HEAD构建并部署V42 release、尝试恢复production account/credential/instrument事实；未创建新Attempt。
+- Result：SSH blocker关闭；current=`c47c8db317bbbef64989f247b087752bf2b46a3c`、manifest=`de1f52359619e6f38fc4671ec5c091bb5019acf3d4f953e14d402d45f0377c50`、V42 `pending=0 / failed=0`、health UP、LIVE=false、kill=ENGAGED。production account/credential两表为空且历史LIVE instrument候选为0，故 `BLOCKED / ACTIVE_ACCOUNT_OR_CREDENTIAL_NOT_FOUND / PILOT_INSTRUMENT_SELECTION_REQUIRED / NO_REAL_ORDER`。
+- Validation：release local/server verifier、POSIX/link/write denial、V41 backup hash/format、Flyway migrate+validate、UnitPreflight/Health、production aggregate均已真实执行；activation连接UNKNOWN后采用query/reconcile，未重试activation。
+- Boundary：credential material未读取或输出；credential JIT/OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0`；session/lease/intent/receipt/order/trade/ledger/audit均0；P0=0、P1=0。
+- Next：仍在同一attempt内，先恢复并复核NQ production SoR中唯一canonical ACTIVE OKX/LIVE account、其唯一ACTIVE credential reference与唯一可信OKX Spot instrument；不得要求operator臆造数据库ID，不得随机选币或执行第二PLACE。

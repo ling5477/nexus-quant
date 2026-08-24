@@ -2,15 +2,17 @@
 
 ## 当前结论
 
-`BLOCKED / SERVER_SSH_UNRESPONSIVE / NO_MIGRATION_INVOKED`（阻断 / 服务器 SSH 无响应 / 未调用迁移）。本文件是 implementation→CI→deployment→pilot 的单一持续 evidence；source implementation、targeted review、commit/push与exact-head CI已完成，deployment停在inactive immutable install + V41 backup。
+`BLOCKED / ACTIVE_ACCOUNT_OR_CREDENTIAL_NOT_FOUND / PILOT_INSTRUMENT_SELECTION_REQUIRED / NO_REAL_ORDER`（阻断 / 当前 production SoR 无有效账户或凭证 / 缺少唯一可信 instrument / 未发送真实订单）。本文件是 implementation→CI→deployment→pilot 的单一持续 evidence；SSH blocker 已关闭，当前 exact HEAD 的 V42 immutable release 已激活并通过 health，但 production `exchange_accounts`、`exchange_account_credentials` 与历史 LIVE order/trade instrument facts 均为空，故在 credential JIT 与 OKX 调用前 fail-closed。
 
 ```text
 P0=0
-P1=1
+P1=0
 implementationCommit=b18450d1f3c5407d7b0cabddc12330e4c0cac62e
 exactHeadCi=32626468825/completed/success
-productionDeployment=BLOCKED_BEFORE_MIGRATION_AND_ACTIVATION
-operatorPilotParameters=NOT_PROVIDED
+productionDeployment=PASS_EXACT_HEAD_V42_ACTIVE
+activeRuntime=c47c8db317bbbef64989f247b087752bf2b46a3c
+activeManifest=de1f52359619e6f38fc4671ec5c091bb5019acf3d4f953e14d402d45f0377c50
+operatorPilotParameters=RULES_PROVIDED_BUT_SOR_REFERENCES_MISSING
 credentialJitReads=0
 okxCalls=0
 PLACE=0
@@ -65,10 +67,9 @@ kill=ENGAGED
 
 ## 未完成 hard gates
 
-1. 精确暂存、commit、push 与 exact-head CI GREEN。
-2. 构建 V42/15-artifact immutable release并按既有 deployment contract 部署，验证 runtime exact-head、Flyway V42、health、LIVE=false、kill=ENGAGED。
-3. operator 必须显式提供七项参数；当前缺失，因此 CI/deployment 后若仍未提供，结论必须为 `BLOCKED / OPERATOR_PILOT_PARAMETERS_REQUIRED`。
-4. 只有参数齐全且 production prerequisite 全部 PASS 后，才允许 exactly-one real LIMIT；本文件当前绝不声明真实 pilot PASS。
+1. 当前 production SoR 必须存在且只能存在一个 canonical `OKX / LIVE / ACTIVE` account，以及该账户唯一 ACTIVE credential reference；当前两表均为空，精确阻断为 `ACTIVE_ACCOUNT_OR_CREDENTIAL_NOT_FOUND`。
+2. 必须从此前真实资金、实盘 0 或 accepted pilot evidence 中恢复唯一可信 OKX Spot instrument；当前 production LIVE order/trade facts 均为 0，精确阻断为 `PILOT_INSTRUMENT_SELECTION_REQUIRED`。
+3. 只有以上事实恢复且实时 bestAsk/venue rules/fee/balance/clock 与 notional 约束全部通过后，才允许 exactly-one real LIMIT；本文件当前不声明真实 pilot PASS。
 
 推荐 commit：`feat(gatey): add crash-safe minimal live pilot execution`。
 
@@ -84,3 +85,15 @@ kill=ENGAGED
 - 未执行：任何代码路径中的 `Flyway.migrate()`、V42 DDL、current pointer切换、systemd restart/activation、credential JIT、OKX、PLACE/CANCEL、transfer/withdraw。
 - 最后已验证安全状态是在incident前：旧release运行、V41、LIVE=false、kill=ENGAGED。incident后因SSH不可达，不能把这些值伪装成最新已复核事实。
 - 恢复要求：通过云控制台/带外通道确认主机，终止残留JShell/bash/ssh诊断进程，核验旧runtime与V41事实；若任何状态漂移立即继续fail-closed。禁止直接重试migration或activation。
+
+## Final execution continuation（2026-08-24）
+
+- SSH：用户仅提供 IdentityFile path reference；只验证文件存在且非空，未读取 key content。`hostname` 与 accepted host 一致；无 JShell 进程，长期独立 Java session 不属于本 incident，未误杀。
+- 恢复复核：旧 current=`1292b0e4...`、V41/failed0、kill=ENGAGED、health UP；session/scope/observation/intent/receipt/order/trade/ledger=`0`。
+- exact-head release：从 `c47c8db317bbbef64989f247b087752bf2b46a3c` 构建 15 artifacts，manifest=`de1f52359619e6f38fc4671ec5c091bb5019acf3d4f953e14d402d45f0377c50`、schema target=V42；local/server source/installed verifier、POSIX、link integrity 与 service-user write denial 全部 PASS（通过）。未激活 `b18450d1...` candidate。
+- V41 backup：既有 `pre-v42-b18450d1.dump` 复核为 root:root/0600/links1、bytes=`676787`、SHA-256=`952ad83f8d82560b79c83678240640f672481e18e33e971c902d586b2912ddac`，`pg_restore --list` PASS（通过）。
+- migration：manifest-bound 42-file closed set/hash通过；pinned Flyway image digest=`sha256:782c5c207ffb5ac6336139fda4f4295bd9991ef63ad36919406d4268740069bb` 执行唯一一次 V41→V42，随后 validate PASS；current/pending/failed=`42/0/0`，三张 V42 表均存在且计数0。临时 Flyway env-file 已删除，未输出 DB credential material。
+- activation：旧 runtime canonical Stop 后 atomic activation 的 SSH controller连接变为 UNKNOWN；未重试 activation，而是 query/reconcile 确认 current、unit、PID、listener 与三项 runtime binding 均已切到 exact HEAD。独立 UnitPreflight/Health PASS，MainPID=`1135142`、NRestarts=0、LIVE=false、kill=ENGAGED、mutationRuntimeBound=false、tradingAuthorization=false。
+- production SoR：`exchange_accounts=0`、`exchange_account_credentials=0`；历史 LIVE `orders/trades` instrument candidates=0。因此同时命中 `ACTIVE_ACCOUNT_OR_CREDENTIAL_NOT_FOUND` 与 `PILOT_INSTRUMENT_SELECTION_REQUIRED`，不得让 operator 重填不存在的 ID，也不得随机选择币种。
+- 最终副作用：live session/lease/lease intent/lease event/execution intent/execution receipt/order/trade/ledger/audit 均为0；credential JIT/OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0`。未生成 clientOrderId、idempotencyKey、requestId 或 traceId；kill保持ENGAGED。
+- Final decision：`BLOCKED / ACTIVE_ACCOUNT_OR_CREDENTIAL_NOT_FOUND / PILOT_INSTRUMENT_SELECTION_REQUIRED / NO_REAL_ORDER / EXACT_HEAD_RUNTIME_HEALTHY / V42_PENDING_0_FAILED_0 / LIVE_DISABLED / KILL_ENGAGED / NO_PLACE_RETRY / NO_TRANSFER / NO_WITHDRAW / P0_0 / P1_0`。
