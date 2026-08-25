@@ -11,8 +11,250 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $script:ContractPath = Join-Path $PSScriptRoot 'gatey-readonly-release-contract.psm1'
+$script:PilotDatabaseGrantSql = @'
+\set ON_ERROR_STOP on
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '30s';
+
+DO $gatey$
+DECLARE
+    unexpected TEXT;
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_roles
+        WHERE rolname = 'nq_gatey_readonly'
+          AND rolcanlogin
+          AND NOT rolsuper
+          AND NOT rolcreaterole
+          AND NOT rolcreatedb
+          AND NOT rolreplication
+          AND NOT rolbypassrls
+    ) THEN
+        RAISE EXCEPTION 'PILOT_DATABASE_RUNTIME_ROLE_INVALID';
+    END IF;
+    IF has_schema_privilege('nq_gatey_readonly', 'public', 'CREATE') THEN
+        RAISE EXCEPTION 'PILOT_DATABASE_RUNTIME_ROLE_SCHEMA_CREATE_FORBIDDEN';
+    END IF;
+    SELECT string_agg(table_name || ':' || privilege_type, ',' ORDER BY table_name, privilege_type)
+    INTO unexpected
+    FROM information_schema.role_table_grants
+    WHERE grantee = 'nq_gatey_readonly'
+      AND table_schema = 'public'
+      AND privilege_type IN ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER');
+    IF unexpected IS NOT NULL THEN
+        RAISE EXCEPTION 'PILOT_DATABASE_WRITE_BASELINE_NOT_EMPTY:%', unexpected;
+    END IF;
+    SELECT string_agg(sequence_name, ',' ORDER BY sequence_name)
+    INTO unexpected
+    FROM information_schema.sequences
+    WHERE sequence_schema = 'public'
+      AND has_sequence_privilege(
+          'nq_gatey_readonly', format('%I.%I', sequence_schema, sequence_name), 'USAGE,UPDATE');
+    IF unexpected IS NOT NULL THEN
+        RAISE EXCEPTION 'PILOT_DATABASE_SEQUENCE_BASELINE_NOT_EMPTY:%', unexpected;
+    END IF;
+END
+$gatey$;
+
+GRANT UPDATE ON TABLE public.exchange_account_credentials TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.credential_audit_logs TO nq_gatey_readonly;
+GRANT INSERT, UPDATE ON TABLE public.instrument_catalog TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.risk_limit_sets TO nq_gatey_readonly;
+GRANT INSERT, UPDATE ON TABLE public.live_sessions TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.live_session_events TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.operator_approvals TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.pilot_scope_bindings TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.pilot_prerequisite_observations TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.pilot_instrument_observation_items TO nq_gatey_readonly;
+GRANT INSERT, UPDATE ON TABLE public.pilot_execution_leases TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.pilot_execution_lease_intents TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.pilot_execution_lease_events TO nq_gatey_readonly;
+GRANT INSERT, UPDATE ON TABLE public.execution_intents TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.execution_receipts TO nq_gatey_readonly;
+GRANT INSERT, UPDATE ON TABLE public.orders TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.trades TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.ledger_entries TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.ledger_events TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.account_snapshots TO nq_gatey_readonly;
+GRANT INSERT, UPDATE ON TABLE public.positions TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.audit_logs TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.risk_events TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.event_store TO nq_gatey_readonly;
+GRANT UPDATE ON TABLE public.kill_switch_states TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.kill_switch_events TO nq_gatey_readonly;
+
+GRANT USAGE ON SEQUENCE public.credential_audit_logs_credential_audit_log_id_seq
+    TO nq_gatey_readonly;
+GRANT USAGE ON SEQUENCE public.instrument_catalog_instrument_id_seq TO nq_gatey_readonly;
+GRANT USAGE ON SEQUENCE public.account_snapshots_snapshot_id_seq TO nq_gatey_readonly;
+GRANT USAGE ON SEQUENCE public.audit_logs_id_seq TO nq_gatey_readonly;
+GRANT USAGE ON SEQUENCE public.ledger_events_ledger_event_id_seq TO nq_gatey_readonly;
+GRANT USAGE ON SEQUENCE public.positions_id_seq TO nq_gatey_readonly;
+
+DO $gatey$
+DECLARE
+    mismatch TEXT;
+    sequence_name TEXT;
+BEGIN
+    WITH expected(table_name, privilege_type) AS (VALUES
+        ('exchange_account_credentials', 'UPDATE'),
+        ('credential_audit_logs', 'INSERT'),
+        ('instrument_catalog', 'INSERT'), ('instrument_catalog', 'UPDATE'),
+        ('risk_limit_sets', 'INSERT'),
+        ('live_sessions', 'INSERT'), ('live_sessions', 'UPDATE'),
+        ('live_session_events', 'INSERT'),
+        ('operator_approvals', 'INSERT'),
+        ('pilot_scope_bindings', 'INSERT'),
+        ('pilot_prerequisite_observations', 'INSERT'),
+        ('pilot_instrument_observation_items', 'INSERT'),
+        ('pilot_execution_leases', 'INSERT'), ('pilot_execution_leases', 'UPDATE'),
+        ('pilot_execution_lease_intents', 'INSERT'),
+        ('pilot_execution_lease_events', 'INSERT'),
+        ('execution_intents', 'INSERT'), ('execution_intents', 'UPDATE'),
+        ('execution_receipts', 'INSERT'),
+        ('orders', 'INSERT'), ('orders', 'UPDATE'),
+        ('trades', 'INSERT'),
+        ('ledger_entries', 'INSERT'),
+        ('ledger_events', 'INSERT'),
+        ('account_snapshots', 'INSERT'),
+        ('positions', 'INSERT'), ('positions', 'UPDATE'),
+        ('audit_logs', 'INSERT'),
+        ('risk_events', 'INSERT'),
+        ('event_store', 'INSERT'),
+        ('kill_switch_states', 'UPDATE'),
+        ('kill_switch_events', 'INSERT')
+    ), actual AS (
+        SELECT table_name, privilege_type
+        FROM information_schema.role_table_grants
+        WHERE grantee = 'nq_gatey_readonly'
+          AND table_schema = 'public'
+          AND privilege_type IN ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER')
+    ), difference AS (
+        (SELECT * FROM expected EXCEPT SELECT * FROM actual)
+        UNION ALL
+        (SELECT * FROM actual EXCEPT SELECT * FROM expected)
+    )
+    SELECT string_agg(table_name || ':' || privilege_type, ',' ORDER BY table_name, privilege_type)
+    INTO mismatch
+    FROM difference;
+    IF mismatch IS NOT NULL THEN
+        RAISE EXCEPTION 'PILOT_DATABASE_TABLE_GRANT_DIVERGENCE:%', mismatch;
+    END IF;
+    FOREACH sequence_name IN ARRAY ARRAY[
+        'credential_audit_logs_credential_audit_log_id_seq',
+        'instrument_catalog_instrument_id_seq',
+        'account_snapshots_snapshot_id_seq',
+        'audit_logs_id_seq',
+        'ledger_events_ledger_event_id_seq',
+        'positions_id_seq'
+    ] LOOP
+        IF NOT has_sequence_privilege('nq_gatey_readonly', 'public.' || sequence_name, 'USAGE')
+                OR has_sequence_privilege('nq_gatey_readonly', 'public.' || sequence_name, 'UPDATE') THEN
+            RAISE EXCEPTION 'PILOT_DATABASE_SEQUENCE_GRANT_DIVERGENCE:%', sequence_name;
+        END IF;
+    END LOOP;
+END
+$gatey$;
+
+COMMIT;
+SELECT 'PILOT_DATABASE_WRITE_WINDOW_OPEN';
+'@
+$script:PilotDatabaseRevokeSql = @'
+\set ON_ERROR_STOP on
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '30s';
+
+REVOKE UPDATE ON TABLE public.exchange_account_credentials FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.credential_audit_logs FROM nq_gatey_readonly;
+REVOKE INSERT, UPDATE ON TABLE public.instrument_catalog FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.risk_limit_sets FROM nq_gatey_readonly;
+REVOKE INSERT, UPDATE ON TABLE public.live_sessions FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.live_session_events FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.operator_approvals FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.pilot_scope_bindings FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.pilot_prerequisite_observations FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.pilot_instrument_observation_items FROM nq_gatey_readonly;
+REVOKE INSERT, UPDATE ON TABLE public.pilot_execution_leases FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.pilot_execution_lease_intents FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.pilot_execution_lease_events FROM nq_gatey_readonly;
+REVOKE INSERT, UPDATE ON TABLE public.execution_intents FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.execution_receipts FROM nq_gatey_readonly;
+REVOKE INSERT, UPDATE ON TABLE public.orders FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.trades FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.ledger_entries FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.ledger_events FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.account_snapshots FROM nq_gatey_readonly;
+REVOKE INSERT, UPDATE ON TABLE public.positions FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.audit_logs FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.risk_events FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.event_store FROM nq_gatey_readonly;
+REVOKE UPDATE ON TABLE public.kill_switch_states FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.kill_switch_events FROM nq_gatey_readonly;
+
+REVOKE USAGE ON SEQUENCE public.credential_audit_logs_credential_audit_log_id_seq
+    FROM nq_gatey_readonly;
+REVOKE USAGE ON SEQUENCE public.instrument_catalog_instrument_id_seq FROM nq_gatey_readonly;
+REVOKE USAGE ON SEQUENCE public.account_snapshots_snapshot_id_seq FROM nq_gatey_readonly;
+REVOKE USAGE ON SEQUENCE public.audit_logs_id_seq FROM nq_gatey_readonly;
+REVOKE USAGE ON SEQUENCE public.ledger_events_ledger_event_id_seq FROM nq_gatey_readonly;
+REVOKE USAGE ON SEQUENCE public.positions_id_seq FROM nq_gatey_readonly;
+
+DO $gatey$
+DECLARE
+    unexpected TEXT;
+BEGIN
+    SELECT string_agg(table_name || ':' || privilege_type, ',' ORDER BY table_name, privilege_type)
+    INTO unexpected
+    FROM information_schema.role_table_grants
+    WHERE grantee = 'nq_gatey_readonly'
+      AND table_schema = 'public'
+      AND privilege_type IN ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER');
+    IF unexpected IS NOT NULL THEN
+        RAISE EXCEPTION 'PILOT_DATABASE_TABLE_REVOKE_DIVERGENCE:%', unexpected;
+    END IF;
+    SELECT string_agg(sequence_name, ',' ORDER BY sequence_name)
+    INTO unexpected
+    FROM information_schema.sequences
+    WHERE sequence_schema = 'public'
+      AND has_sequence_privilege(
+          'nq_gatey_readonly', format('%I.%I', sequence_schema, sequence_name), 'USAGE,UPDATE');
+    IF unexpected IS NOT NULL THEN
+        RAISE EXCEPTION 'PILOT_DATABASE_SEQUENCE_REVOKE_DIVERGENCE:%', unexpected;
+    END IF;
+    IF has_schema_privilege('nq_gatey_readonly', 'public', 'CREATE') THEN
+        RAISE EXCEPTION 'PILOT_DATABASE_RUNTIME_ROLE_SCHEMA_CREATE_FORBIDDEN';
+    END IF;
+END
+$gatey$;
+
+COMMIT;
+SELECT 'PILOT_DATABASE_WRITE_WINDOW_CLOSED';
+'@
 
 function Throw-Blocked([string]$Code) { throw ('BLOCKED / ' + $Code) }
+
+function Invoke-PilotDatabaseWindowSql(
+    [string]$Sql,
+    [string]$ExpectedMarker,
+    [string]$FailureCode
+) {
+    $dockerPath = '/usr/bin/docker'
+    $timeoutPath = '/usr/bin/timeout'
+    if (-not (Test-Path -LiteralPath $dockerPath -PathType Leaf) -or
+            -not (Test-Path -LiteralPath $timeoutPath -PathType Leaf)) {
+        Throw-Blocked $FailureCode
+    }
+    $command = 'PGCONNECT_TIMEOUT=5 PGPASSWORD="$(cat /run/secrets/postgres_password)" ' +
+        'exec psql -X -h 127.0.0.1 -p 55432 -U nqgatew -d nexus_quant -At '
+    $output = @($Sql | & $timeoutPath --signal=TERM 45s `
+            $dockerPath exec -i nq-gatew-postgres /bin/sh -c $command 2>&1)
+    if ($LASTEXITCODE -ne 0 -or -not ($output -contains $ExpectedMarker)) {
+        Throw-Blocked $FailureCode
+    }
+}
 
 try {
     $linux = Get-Variable -Name IsLinux -ErrorAction SilentlyContinue
@@ -48,6 +290,10 @@ try {
         (Get-FileHash -LiteralPath $machineIdPath -Algorithm SHA256).Hash.ToLowerInvariant()
     $jar = Join-Path $release 'app/nq-app.jar'
     if (-not (Test-Path -LiteralPath $jar -PathType Leaf)) { Throw-Blocked 'RELEASE_ARTIFACT_MISSING' }
+    $active = @(& /usr/bin/systemctl is-active nq-gatey-readonly-qualification.service 2>$null)
+    if ($LASTEXITCODE -eq 0 -or ($active -join '').Trim() -ceq 'active') {
+        Throw-Blocked 'PILOT_DATABASE_WRITE_WINDOW_REQUIRES_RUNTIME_STOPPED'
+    }
     $bash = @'
 set -eu
 set -a
@@ -95,10 +341,21 @@ exec /usr/sbin/runuser --preserve-environment -u nq-gatey-readonly -- /usr/bin/j
   --nq.runtime.minimal-live-pilot.side="$5" \
   --nq.runtime.minimal-live-pilot.configured-max-notional="$6"
 '@
-    & /usr/bin/bash -c $bash minimal-live-pilot $jar $ExchangeAccountId $CredentialReferenceId `
-        $Instrument $Side ([string]$ConfiguredPilotMaxNotional) `
-        ([string]$verified.manifestSha256) $serverIdentity ([string]$verified.releaseId)
-    if ($LASTEXITCODE -ne 0) { Throw-Blocked 'MINIMAL_LIVE_PILOT_INVOCATION_FAILED' }
+    $writeWindowAttempted = $true
+    try {
+        Invoke-PilotDatabaseWindowSql $script:PilotDatabaseGrantSql `
+            'PILOT_DATABASE_WRITE_WINDOW_OPEN' 'PILOT_DATABASE_WRITE_WINDOW_GRANT_FAILED'
+        & /usr/bin/bash -c $bash minimal-live-pilot $jar $ExchangeAccountId $CredentialReferenceId `
+            $Instrument $Side ([string]$ConfiguredPilotMaxNotional) `
+            ([string]$verified.manifestSha256) $serverIdentity ([string]$verified.releaseId)
+        if ($LASTEXITCODE -ne 0) { Throw-Blocked 'MINIMAL_LIVE_PILOT_INVOCATION_FAILED' }
+    }
+    finally {
+        if ($writeWindowAttempted) {
+            Invoke-PilotDatabaseWindowSql $script:PilotDatabaseRevokeSql `
+                'PILOT_DATABASE_WRITE_WINDOW_CLOSED' 'PILOT_DATABASE_WRITE_WINDOW_REVOKE_FAILED'
+        }
+    }
 }
 catch {
     $decision = if ($_.Exception.Message -match '^BLOCKED / [A-Z0-9_]+$') {
