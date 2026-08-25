@@ -47,7 +47,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -76,7 +75,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
         havingValue = "false",
         matchIfMissing = false
 )
-@ConditionalOnBean(com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingControlPlane.class)
 public class MinimalLivePilotConfiguration {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MinimalLivePilotConfiguration.class);

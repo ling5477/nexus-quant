@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.app.config.auth;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -77,7 +78,11 @@ class SecurityConfigurationContextTest {
         OrderCommandService orderCommandService = mock(OrderCommandService.class);
 
         new ApplicationContextRunner()
-                .withUserConfiguration(SecurityConfiguration.class, MinimalLivePilotConfiguration.class)
+                .withUserConfiguration(
+                        MinimalLivePilotConfiguration.class,
+                        PilotBindingDependencyConfiguration.class,
+                        SecurityConfiguration.class
+                )
                 .withPropertyValues(
                         "spring.main.web-application-type=none",
                         "nq.security.issuer=nexus-quant-pilot-context-test",
@@ -101,7 +106,6 @@ class SecurityConfigurationContextTest {
                 .withBean(CredentialPermissionProbeService.class, () -> permissionProbeService)
                 .withBean(PilotScopeControlPlane.class, () -> mock(PilotScopeControlPlane.class))
                 .withBean(PilotScopeRepository.class, () -> mock(PilotScopeRepository.class))
-                .withBean(ExactPilotBindingControlPlane.class, () -> mock(ExactPilotBindingControlPlane.class))
                 .withBean(PilotExecutionLeaseRepository.class, () -> mock(PilotExecutionLeaseRepository.class))
                 .withBean(LiveSessionControlService.class, () -> mock(LiveSessionControlService.class))
                 .withBean(KillSwitchService.class, () -> mock(KillSwitchService.class))
@@ -128,6 +132,13 @@ class SecurityConfigurationContextTest {
                 });
     }
 
+    @Test
+    void minimalPilotCompositionDoesNotUseOrderingSensitiveClassCondition() {
+        assertFalse(MinimalLivePilotConfiguration.class.isAnnotationPresent(
+                org.springframework.boot.autoconfigure.condition.ConditionalOnBean.class
+        ));
+    }
+
     @TestConfiguration(proxyBeanMethods = false)
     static class NeutralSecurityDependencies {
 
@@ -139,6 +150,15 @@ class SecurityConfigurationContextTest {
         @Bean
         AuthUserRepository authUserRepository() {
             return mock(AuthUserRepository.class);
+        }
+    }
+
+    @TestConfiguration(proxyBeanMethods = false)
+    static class PilotBindingDependencyConfiguration {
+
+        @Bean
+        ExactPilotBindingControlPlane exactPilotBindingControlPlane() {
+            return mock(ExactPilotBindingControlPlane.class);
         }
     }
 }
