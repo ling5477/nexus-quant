@@ -14450,3 +14450,17 @@ Runtime MainPID=`1028560`、NRestarts0；LIVE=false、kill ENGAGED、mutationRun
 | targeted P0/P1 review | PASS（通过） | V43/hash/freshness/permission/catalog/binding/10U/cardinality/secret | P0=0、P1=0 | 否 |
 
 未运行：exact-head CI、immutable release build、production backup/V42→V43/activation、credential JIT、OKX、PLACE/CANCEL、reconciliation。当前结论为 `LOCAL_GREEN / CI_PENDING / NO_REAL_ORDER`，production仍V42、LIVE=false、kill=ENGAGED。
+
+## 2026-08-25 — GateY V43 production deployment / pilot bootstrap
+
+| Command / check | Result | Scope / environment |
+| --- | --- | --- |
+| exact-head CI run `32812501391` | PASS（通过）；10/10 jobs success | implementation commit `13081d8b...` |
+| canonical immutable install/verify | PASS（通过）；15 artifacts，manifest=`e4958089...e9910` | production Linux；POSIX/link/root ownership/service-user write denial |
+| pre-V43 `pg_dump -Fc` + `pg_restore --list` | PASS（通过）；701419 bytes、1748 entries | production V42；root:root/0600/link1；首次非法`-X`调用在连接与文件创建前失败且无残留 |
+| release-bound Flyway migrate/validate/info | PASS（通过）；V42→V43唯一一次，pending=0、failed=0、long-lock=0 | production PostgreSQL 16.14；43-file exact closed set/hash |
+| canonical Activate + Health | PASS（通过）；exact release/source、MainPID=`1172512`、health UP | production；LIVE=false、kill=ENGAGED、mutationRuntimeBound=false |
+| minimal pilot controller | BLOCKED（阻断）；`MINIMAL_LIVE_PILOT_INVOCATION_FAILED` | production non-web Spring context；`SecurityConfiguration`要求缺失的`HttpSecurity`，在JIT/OKX/业务写入前失败 |
+| final DB/runtime readback | PASS（通过 fail-close） | V43/failed0/health UP/LIVE=false/kill ENGAGED；PLACE/CANCEL/order/trade/ledger/audit=0 |
+
+Known warning：`UnitPreflight`在current尚未切换时按合同返回`CURRENT_RELEASE_MISMATCH`，server mutation=false；随后按Stop→Activate顺序成功，不属于runtime故障。未运行真实permission/catalog/ticker/balance/fee/clock、PLACE、CANCEL或reconciliation，因为application context未启动；该缺口是阻断性P1，不能记为skipped PASS。

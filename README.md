@@ -8,7 +8,7 @@ NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/
 - 最近冻结 Gate 为 GateX：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [docs/gates/gate-x/](docs/gates/gate-x/)，release tag=`nq-gatex-freeze`。
 - GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-6E=`ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateY-6F=`BLOCKED`（阻断）；GateY 整体未接受、未冻结。
 - Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEY-6F-MINIMAL-LIVE-PILOT-END-TO-END-BLOCKED`；implementation CI已绿，release只完成inactive immutable install和V41 backup，服务器SSH banner持续超时。未调用migration/activation/credential/OKX/PLACE/CANCEL；精确边界以 [STATUS.md](docs/current/STATUS.md) 为准。
+- 当前唯一动作是 `NQ-GATEY-6F-MINIMAL-LIVE-PILOT-NON-WEB-SECURITY-CONTEXT-REMEDIATION-BLOCKED`；exact-head V43 release已迁移并激活，但唯一pilot controller在non-web Spring Security context初始化时失败，OKX/PLACE/CANCEL仍为0。精确边界以 [STATUS.md](docs/current/STATUS.md) 为准。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
 

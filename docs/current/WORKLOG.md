@@ -19445,3 +19445,11 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Validation：testCompile/full Maven 23 modules；PostgreSQL5/5；GateY=`7/25/31/51 + GateY4/GateY5`；GateW=`37/12/34`；Authority/Java PASS；Shadow new-code=0；custom secret backstop 44/0。
 - Boundary：server/production DB/credential material/OKX/PLACE/CANCEL/transfer/withdraw均未触达；production仍runtime `c47c8db3...`、V42、LIVE=false、kill=ENGAGED，PLACE/CANCEL/transfer/withdraw=`0/0/0/0`。
 - Next：精确暂存并commit/push，等待exact-head CI；CI全绿后构建immutable release、确认backup、V42→V43、激活exact runtime并继续同一attempt的唯一一次真实BUY LIMIT。
+
+## 2026-08-25 — NQ-GATEY-V43-COMPLETION-AND-FINAL-PILOT production continuation
+
+- Scope：继续唯一attempt-01；exact release install、pre-V43 backup、V42→V43、runtime activation与一次pilot controller调用。
+- Result：`BLOCKED / V43_DEPLOYED / PILOT_BOOTSTRAP_P1 / NO_REAL_ORDER`。Production current=`13081d8b...`、V43/failed0、health UP、LIVE=false、kill=ENGAGED；controller因non-web context无`HttpSecurity`在JIT/OKX前失败。
+- Validation：exact-head CI 10/10；immutable verifier、backup、Flyway validate/pending0、canonical Health均PASS；最终全部pilot/order/ledger/audit计数0。
+- Boundary：credential material exposure=0；OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0`；未创建Attempt-02，未重试controller或PLACE。
+- Next：`NQ-GATEY-6F-MINIMAL-LIVE-PILOT-NON-WEB-SECURITY-CONTEXT-REMEDIATION-BLOCKED`；最小代码修复与CLI context回归后重新走review/CI/redeploy，禁止现场绕过。

@@ -151,3 +151,15 @@ kill=ENGAGED
 - Production boundary：server/production DB/credential material/OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0/0/0`；production仍为 runtime=`c47c8db3...`、V42、LIVE=false、kill=ENGAGED，PLACE/CANCEL/transfer/withdraw=`0/0/0/0`。
 - Current decision：`IMPLEMENTED / LOCAL_GREEN / P0_0 / P1_0 / CI_PENDING / DEPLOYMENT_NOT_STARTED / NO_REAL_ORDER`。
 - Next：精确暂存、commit `fix(gatey): complete current market prerequisites for live pilot`、push `origin/dev` 并等待 exact-head CI；只有 CI 全绿后才构建 immutable release、备份、V42→V43、激活并继续同一 attempt 的唯一一次真实 pilot。
+
+## V43 production deployment and pilot bootstrap blocker（2026-08-25）
+
+- Git/CI：implementation commit与`origin/dev`均为`13081d8bf675fc3234cfd2488a67fd071dbbb2ff`；exact-head CI run `32812501391` 为10/10 success。
+- Release：15-artifact immutable release安装与installed verifier均PASS；manifest SHA-256=`e4958089006829fdbd949f8f44750f994b887f6e3926ae8e569f4fd9470e9910`，POSIX/link/root ownership与service-user write denial通过；旧`b18450d1...` candidate未激活。
+- Backup：新建pre-V43 backup `pre-v43-13081d8b-20260825T081700Z.dump`；root:root/0600/link1、bytes=`701419`、SHA-256=`b786f170f1eae5d6a88e1cec2617495eef44a5f8a481a2388a4ab89391e05440`，`pg_restore --list` 1748 entries并通过。首次`pg_dump -X`在连接与文件创建前因非法参数退出，精确路径复核为不存在后使用新名称成功，未覆盖或删除旧backup。
+- Migration：从exact release nested `nq-infra` JAR提取并验证43-file closed set/hash；pinned Flyway image digest=`sha256:782c5c207ffb5ac6336139fda4f4295bd9991ef63ad36919406d4268740069bb`唯一一次执行V42→V43，validate PASS；最终current/pending/failed/long-lock=`43/0/0/0`，kill=`ENGAGED`。数据库credential只经root-owned reference由外部进程消费，material未输出。
+- Runtime：runtime env原子绑定exact release/manifest并从唯一accepted事实恢复expected IP=`47.251.74.35`；canonical Stop旧runtime后Activate成功。Current=`13081d8b...`、MainPID=`1172512`、NRestarts=0、health UP、source/release exact、LIVE=false、kill=ENGAGED、mutationRuntimeBound=false、tradingAuthorization=false。
+- Pilot invocation：最终基线为V43/failed0/kill ENGAGED/account1/credential1/activeLease0/PLACE0/CANCEL0/order0/trade0/ledger0。唯一一次controller调用在Spring context初始化阶段返回`BLOCKED / MINIMAL_LIVE_PILOT_INVOCATION_FAILED`；根因是CLI固定`--spring.main.web-application-type=none`，但`SecurityConfiguration.securityFilterChain(HttpSecurity)`仍无条件装配，non-web context没有`HttpSecurity` Bean。
+- Side effects：失败发生在permission refresh与全部application runner逻辑之前；final permission=`NOT_PROBED / scope NULL / IP NOT_CHECKED / withdraw=false`，BTC-USDT catalog=0；session/scope/observation/lease/leaseIntent/executionIntent/receipt/order/trade/ledger/audit全0。credential JIT/OKX GET/OKX POST/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0/0`，未生成clientOrderId/idempotencyKey/requestId/traceId，无reconciliation divergence。
+- P1：`MINIMAL_LIVE_PILOT_NON_WEB_SECURITY_CONTEXT_BOOTSTRAP_FAILURE`。禁止用servlet端口抢占、关闭Security、现场参数注入或第二次controller调用绕过；必须先做最小代码修复、真实CLI context回归、targeted review、exact-head CI与immutable redeploy。
+- Final decision：`BLOCKED / V43_DEPLOYED / EXACT_HEAD_RUNTIME_HEALTHY / MINIMAL_LIVE_PILOT_NON_WEB_SECURITY_CONTEXT_BOOTSTRAP_FAILURE / NO_REAL_ORDER / LIVE_FALSE / KILL_ENGAGED / PLACE_0 / CANCEL_0 / NO_PLACE_RETRY / NO_TRANSFER / NO_WITHDRAW / P0_0 / P1_1`。
