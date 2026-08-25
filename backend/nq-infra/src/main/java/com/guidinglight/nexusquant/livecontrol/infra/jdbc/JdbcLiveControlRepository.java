@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.livecontrol.infra.jdbc;
 
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionAuthorityType;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionEvent;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionState;
 import com.guidinglight.nexusquant.livecontrol.domain.OperatorApproval;
@@ -23,12 +24,15 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
-/** PostgreSQL JDBC adapter；只持久化事实，不决定业务状态迁移。 */
+/**
+ * PostgreSQL JDBC adapter；只持久化事实，不决定业务状态迁移。
+ */
 @Repository
 public class JdbcLiveControlRepository implements LiveControlRepository {
 
     private static final String SESSION_SELECT = """
-            SELECT session_id, owner_id, exchange_account_id, venue, strategy_release_id,
+            SELECT session_id, owner_id, exchange_account_id, venue, authority_type,
+                   operator_pilot_authority_id, operator_pilot_authority_digest, strategy_release_id,
                    release_digest, release_admission_revision, risk_limit_set_id,
                    risk_limit_set_digest, credential_reference, symbol_allowlist, capital_cap,
                    execution_window_start, execution_window_end, state, version,
@@ -114,28 +118,74 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
 
     @Override
     public boolean lockAndValidateSessionReferences(LiveSession value) {
+        if (value.authorityType() == LiveSessionAuthorityType.OPERATOR_PILOT) {
+            List<Integer> matches = jdbcTemplate.query("""
+                              SELECT 1
+                              FROM exchange_accounts account
+                              JOIN exchange_account_credentials credential
+                                ON credential.credential_id = ?
+                               AND credential.exchange_account_id = account.exchange_account_id
+                              JOIN operator_pilot_authorities authority
+                                ON authority.authority_id = ?
+                              WHERE account.exchange_account_id = ?
+                                AND account.owner_user_id = ?
+                                AND account.exchange_code = 'OKX'
+                                AND account.trade_env = 'LIVE'
+                                AND account.status = 'ACTIVE'
+                                AND credential.credential_type = 'OKX_API_V5'
+                                AND credential.credential_status = 'ACTIVE'
+                                AND credential.verification_status = 'VERIFIED'
+                                AND credential.permission_probe_status = 'SUCCEEDED'
+                                AND credential.permission_scope = 'TRADE'
+                                AND credential.withdraw_enabled = FALSE
+                            AND credential.ip_allowlist_probe_status = 'PASSED'
+                            AND credential.last_permission_probe_at IS NOT NULL
+                            AND credential.last_permission_probe_at <= CURRENT_TIMESTAMP + INTERVAL '5 seconds'
+                            AND credential.last_permission_probe_at + INTERVAL '1 minute' >= CURRENT_TIMESTAMP
+                            AND credential.revoked_at IS NULL
+                                AND authority.owner_user_id = ?
+                                AND authority.exchange_account_id = ?
+                                AND authority.credential_reference_id = ?
+                                AND authority.instrument = ?
+                                AND authority.max_notional >= ?
+                                AND authority.valid_from <= ?
+                                AND authority.expires_at >= ?
+                            AND authority.status = 'ACTIVE'
+                            AND authority.valid_from <= CURRENT_TIMESTAMP
+                            AND authority.expires_at > CURRENT_TIMESTAMP
+                                AND authority.canonical_digest = ?
+                              FOR UPDATE OF account, credential, authority
+                            """, (resultSet, rowNumber) -> resultSet.getInt(1),
+                    value.credentialReference(), value.operatorPilotAuthorityId(),
+                    value.exchangeAccountId(), value.ownerId(), value.ownerId(),
+                    value.exchangeAccountId(), value.credentialReference(),
+                    value.symbolAllowlist().getFirst(), value.capitalCap(),
+                    timestamp(value.executionWindowStart()), timestamp(value.executionWindowEnd()),
+                    value.operatorPilotAuthorityDigest());
+            return matches.size() == 1;
+        }
         List<Integer> matches = jdbcTemplate.query("""
-                SELECT 1
-                FROM exchange_accounts account
-                JOIN exchange_account_credentials credential
-                  ON credential.credential_id = ?
-                 AND credential.exchange_account_id = account.exchange_account_id
-                JOIN strategy_release_admission_state admission
-                  ON admission.publish_record_id = ?
-                JOIN risk_limit_sets risk
-                  ON risk.risk_limit_set_id = ?
-                WHERE account.exchange_account_id = ?
-                  AND account.owner_user_id = ?
-                  AND account.exchange_code = 'OKX'
-                  AND account.trade_env = 'LIVE'
-                  AND admission.release_artifact_digest = ?
-                  AND admission.admission_revision = ?
-                  AND admission.manifest_fingerprint IS NOT NULL
-                  AND admission.manifest_schema_version = 'strategy-release-manifest.v1'
-                  AND admission.identity_bound_at IS NOT NULL
-                  AND risk.canonical_digest = ?
-                FOR UPDATE OF account, credential, admission, risk
-                """, (resultSet, rowNumber) -> resultSet.getInt(1),
+                        SELECT 1
+                        FROM exchange_accounts account
+                        JOIN exchange_account_credentials credential
+                          ON credential.credential_id = ?
+                         AND credential.exchange_account_id = account.exchange_account_id
+                        JOIN strategy_release_admission_state admission
+                          ON admission.publish_record_id = ?
+                        JOIN risk_limit_sets risk
+                          ON risk.risk_limit_set_id = ?
+                        WHERE account.exchange_account_id = ?
+                          AND account.owner_user_id = ?
+                          AND account.exchange_code = 'OKX'
+                          AND account.trade_env = 'LIVE'
+                          AND admission.release_artifact_digest = ?
+                          AND admission.admission_revision = ?
+                          AND admission.manifest_fingerprint IS NOT NULL
+                          AND admission.manifest_schema_version = 'strategy-release-manifest.v1'
+                          AND admission.identity_bound_at IS NOT NULL
+                          AND risk.canonical_digest = ?
+                        FOR UPDATE OF account, credential, admission, risk
+                        """, (resultSet, rowNumber) -> resultSet.getInt(1),
                 value.credentialReference(), value.strategyReleaseId(), value.riskLimitSetId(),
                 value.exchangeAccountId(), value.ownerId(), value.releaseDigest(),
                 value.releaseAdmissionRevision(), value.riskLimitSetDigest());
@@ -147,22 +197,30 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
         jdbcTemplate.update(connection -> {
             var statement = connection.prepareStatement("""
                     INSERT INTO live_sessions (
-                        session_id, owner_id, exchange_account_id, venue, strategy_release_id,
+                        session_id, owner_id, exchange_account_id, venue, authority_type,
+                        operator_pilot_authority_id, operator_pilot_authority_digest, strategy_release_id,
                         release_digest, release_admission_revision, risk_limit_set_id,
                         risk_limit_set_digest, credential_reference, symbol_allowlist, capital_cap,
                         execution_window_start, execution_window_end, state, version,
                         approval_scope_hash, approval_scope_schema_version, next_event_sequence,
                         created_by, created_at, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """);
             int index = 1;
             statement.setObject(index++, value.id());
             statement.setLong(index++, value.ownerId());
             statement.setLong(index++, value.exchangeAccountId());
             statement.setString(index++, value.venue());
+            statement.setString(index++, value.authorityType().name());
+            statement.setObject(index++, value.operatorPilotAuthorityId());
+            statement.setString(index++, value.operatorPilotAuthorityDigest());
             statement.setString(index++, value.strategyReleaseId());
             statement.setString(index++, value.releaseDigest());
-            statement.setLong(index++, value.releaseAdmissionRevision());
+            if (value.authorityType() == LiveSessionAuthorityType.STRATEGY) {
+                statement.setLong(index++, value.releaseAdmissionRevision());
+            } else {
+                statement.setNull(index++, java.sql.Types.BIGINT);
+            }
             statement.setObject(index++, value.riskLimitSetId());
             statement.setString(index++, value.riskLimitSetDigest());
             statement.setLong(index++, value.credentialReference());
@@ -173,7 +231,7 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
             statement.setString(index++, value.state().name());
             statement.setLong(index++, value.version());
             statement.setString(index++, value.approvalScopeHash());
-            statement.setString(index++, LiveSession.APPROVAL_SCOPE_SCHEMA);
+            statement.setString(index++, value.approvalScopeSchemaVersion());
             statement.setLong(index++, value.nextEventSequence());
             statement.setLong(index++, value.createdBy());
             statement.setTimestamp(index++, timestamp(value.createdAt()));
@@ -245,12 +303,12 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
         }
         LiveSessionEvent sequenced = event.withSequence(sequence);
         jdbcTemplate.update("""
-                INSERT INTO live_session_events (
-                    event_id, session_id, sequence_no, from_state, to_state, command, actor_id,
-                    request_id, trace_id, reason_code, idempotency_key, command_payload_hash,
-                    command_payload_schema_version, metadata, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'live-session-command.v1', CAST(? AS JSONB), ?)
-                """,
+                        INSERT INTO live_session_events (
+                            event_id, session_id, sequence_no, from_state, to_state, command, actor_id,
+                            request_id, trace_id, reason_code, idempotency_key, command_payload_hash,
+                            command_payload_schema_version, metadata, created_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'live-session-command.v1', CAST(? AS JSONB), ?)
+                        """,
                 sequenced.id(), sequenced.sessionId(), sequenced.sequence(),
                 sequenced.fromState() == null ? null : sequenced.fromState().name(),
                 sequenced.toState().name(), sequenced.command(), sequenced.actorId(),
@@ -264,12 +322,12 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
     @Override
     public void appendApproval(OperatorApproval value) {
         jdbcTemplate.update("""
-                INSERT INTO operator_approvals (
-                    approval_id, session_id, scope_schema_version, pilot_scope_id,
-                    scope_hash, release_digest, risk_limit_set_digest,
-                    approver_id, approver_role, decision, reason, approved_at, expires_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
+                        INSERT INTO operator_approvals (
+                            approval_id, session_id, scope_schema_version, pilot_scope_id,
+                            scope_hash, release_digest, risk_limit_set_digest,
+                            approver_id, approver_role, decision, reason, approved_at, expires_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
                 value.id(), value.sessionId(), value.scopeSchemaVersion(), value.pilotScopeId(),
                 value.scopeHash(), value.releaseDigest(),
                 value.riskLimitSetDigest(), value.approverId(), value.approverRole(),
@@ -285,17 +343,17 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
     @Override
     public Optional<OperatorApproval> findValidApproval(LiveSession session, Instant now) {
         return first(jdbcTemplate.query(APPROVAL_SELECT + """
-                WHERE session_id = ?
-                  AND scope_schema_version = 'approval-scope.v1'
-                  AND pilot_scope_id IS NULL
-                  AND scope_hash = ?
-                  AND release_digest = ?
-                  AND risk_limit_set_digest = ?
-                  AND decision = 'APPROVED'
-                  AND approved_at <= ?
-                  AND expires_at > ?
-                ORDER BY approved_at DESC, approval_id DESC LIMIT 1
-                """, this::mapApproval, session.id(), session.approvalScopeHash(),
+                        WHERE session_id = ?
+                          AND scope_schema_version = 'approval-scope.v1'
+                          AND pilot_scope_id IS NULL
+                          AND scope_hash = ?
+                          AND release_digest = ?
+                          AND risk_limit_set_digest = ?
+                          AND decision = 'APPROVED'
+                          AND approved_at <= ?
+                          AND expires_at > ?
+                        ORDER BY approved_at DESC, approval_id DESC LIMIT 1
+                        """, this::mapApproval, session.id(), session.approvalScopeHash(),
                 session.releaseDigest(), session.riskLimitSetDigest(), timestamp(now), timestamp(now)));
     }
 
@@ -303,6 +361,9 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
         return new LiveSession(
                 row.getObject("session_id", UUID.class), row.getLong("owner_id"),
                 row.getLong("exchange_account_id"), row.getString("venue"),
+                LiveSessionAuthorityType.valueOf(row.getString("authority_type")),
+                row.getObject("operator_pilot_authority_id", UUID.class),
+                row.getString("operator_pilot_authority_digest"),
                 row.getString("strategy_release_id"), row.getString("release_digest"),
                 row.getLong("release_admission_revision"), row.getObject("risk_limit_set_id", UUID.class),
                 row.getString("risk_limit_set_digest"), row.getLong("credential_reference"),

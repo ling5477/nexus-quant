@@ -508,11 +508,12 @@ try
     ) 'BUILDER_MAVEN_OUTPUT_LEAKS_TO_RETURN_VALUE'
     Complete-Case 'builder-exact-clean-contract'
 
-    $builderSelfTestOutput = @(& $engine -NoProfile -File $builder -ContractSelfTest 2>&1)
+    $builderSelfTestOutput = @(& $engine -NoProfile -ExecutionPolicy Bypass `
+            -File $builder -ContractSelfTest 2>&1)
     Assert-Condition ($LASTEXITCODE -eq 0) 'BUILDER_SELF_TEST_PROCESS_FAILED'
     $builderSelfTest = ($builderSelfTestOutput -join [Environment]::NewLine) | ConvertFrom-Json
     Assert-Condition (
-        [int]$builderSelfTest.migrationCount -eq 43 -and
+        [int]$builderSelfTest.migrationCount -eq 44 -and
         [bool]$builderSelfTest.tamperedMigrationRejected -and
         [bool]$builderSelfTest.canonicalMaterializationVerified -and
         [int]$builderSelfTest.trackedFiles -gt 0 -and

@@ -16,6 +16,7 @@ import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveCont
 import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingCommand;
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.OperatorApproval;
+import com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationCanonicalEncoder;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationSet;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotPrerequisiteObservation;
@@ -24,6 +25,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSet;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.port.LiveControlRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.port.OperatorPilotAuthorityRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotScopeRepository;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.InstrumentCatalogItem;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.port.InstrumentCatalogReadPort;
@@ -60,6 +62,8 @@ class StoredFactExactPilotBindingAuthorityTest {
         ExchangeAccountCredentialRepository credentialRepository = mock(ExchangeAccountCredentialRepository.class);
         StrategyReleaseAdmissionStateRepository admissionRepository =
                 mock(StrategyReleaseAdmissionStateRepository.class);
+        OperatorPilotAuthorityRepository operatorAuthorityRepository =
+                mock(OperatorPilotAuthorityRepository.class);
         InstrumentCatalogReadPort instrumentCatalog = mock(InstrumentCatalogReadPort.class);
         KillSwitchService killSwitchService = mock(KillSwitchService.class);
 
@@ -108,7 +112,8 @@ class StoredFactExactPilotBindingAuthorityTest {
                 DIGEST_C, "server-a", ExactPilotBinding.DeploymentIdentity.RUNTIME_PROFILE);
         StoredFactExactPilotBindingAuthority authority = new StoredFactExactPilotBindingAuthority(
                 liveRepository, scopeRepository, accountRepository, credentialRepository,
-                admissionRepository, instrumentCatalog, killSwitchService, runtimeIdentity);
+                admissionRepository, operatorAuthorityRepository, instrumentCatalog, killSwitchService,
+                runtimeIdentity);
 
         ExactPilotBinding.AuthoritativeFacts resolved = authority.resolveForCreation(
                 new AuthenticatedLiveControlActor(OWNER), command, NOW);
@@ -142,6 +147,81 @@ class StoredFactExactPilotBindingAuthorityTest {
         assertEquals("EXACT_PILOT_BINDING_AUTHORITY_REJECTED", staleMarket.code());
         verify(credentialRepository, times(2)).findByCredentialIdForOwner(OWNER, ACCOUNT, CREDENTIAL);
         verifyNoMoreInteractions(credentialRepository);
+    }
+
+    @Test
+    void resolvesOperatorPilotBindingWithoutStrategyRiskAndRejectsAuthorityMismatch() {
+        LiveControlRepository liveRepository = mock(LiveControlRepository.class);
+        PilotScopeRepository scopeRepository = mock(PilotScopeRepository.class);
+        ExchangeAccountRepository accountRepository = mock(ExchangeAccountRepository.class);
+        ExchangeAccountCredentialRepository credentialRepository = mock(ExchangeAccountCredentialRepository.class);
+        StrategyReleaseAdmissionStateRepository admissionRepository =
+                mock(StrategyReleaseAdmissionStateRepository.class);
+        OperatorPilotAuthorityRepository operatorAuthorityRepository =
+                mock(OperatorPilotAuthorityRepository.class);
+        InstrumentCatalogReadPort instrumentCatalog = mock(InstrumentCatalogReadPort.class);
+        KillSwitchService killSwitchService = mock(KillSwitchService.class);
+
+        OperatorPilotAuthority operatorAuthority = OperatorPilotAuthority.active(
+                UUID.randomUUID(), OWNER, ACCOUNT, CREDENTIAL, "BTC-USDT",
+                OperatorPilotAuthority.Side.BUY, OperatorPilotAuthority.OrderType.LIMIT,
+                decimal("10"), NOW.minusSeconds(60), NOW.plusSeconds(600), OWNER, NOW.minusSeconds(60));
+        LiveSession session = LiveSession.createOperatorPilot(
+                UUID.randomUUID(), OWNER, ACCOUNT, operatorAuthority.id(),
+                operatorAuthority.canonicalDigest(), CREDENTIAL, "BTC-USDT", decimal("10"),
+                NOW.minusSeconds(60), NOW.plusSeconds(600), OWNER, NOW.minusSeconds(60));
+        PilotScopeBinding scope = scope(session);
+        PilotObservationSet observations = observations(scope);
+        ExactPilotBinding.OrderEnvelope order = order();
+        ExactPilotBindingCommand command = new ExactPilotBindingCommand(
+                UUID.randomUUID(), session.id(), scope.id(), observations.id(), order,
+                session.executionWindowStart(), session.executionWindowEnd(),
+                new ExactPilotBinding.Correlation("request-op", "trace-op", "idempotency-op"),
+                NOW.plusSeconds(300));
+
+        when(liveRepository.findSession(session.id())).thenReturn(Optional.of(session));
+        when(liveRepository.lockAndValidateSessionReferences(session)).thenReturn(true);
+        when(scopeRepository.findBySessionId(session.id())).thenReturn(Optional.of(scope));
+        when(scopeRepository.findObservationSet(scope.id(), observations.id()))
+                .thenReturn(Optional.of(observations));
+        when(scopeRepository.findLatestCompleteObservationSet(scope.id()))
+                .thenReturn(Optional.of(observations));
+        when(operatorAuthorityRepository.find(operatorAuthority.id())).thenReturn(Optional.of(operatorAuthority));
+        when(accountRepository.findByIdForOwner(OWNER, ACCOUNT)).thenReturn(Optional.of(
+                new ExchangeAccountSummary(ACCOUNT, 121L, OWNER, "OKX", "LIVE", "pilot", null,
+                        false, "ACTIVE")));
+        when(credentialRepository.findByCredentialIdForOwner(OWNER, ACCOUNT, CREDENTIAL))
+                .thenReturn(Optional.of(credential()));
+        when(instrumentCatalog.findByExchangeAndSymbols("OKX", List.of("BTC-USDT")))
+                .thenReturn(List.of(instrument()));
+        when(killSwitchService.snapshot()).thenReturn(new KillSwitchSnapshot(
+                KillSwitchScope.GLOBAL_TRADING, KillSwitchStatus.ENGAGED, 1, "PILOT_LOCKED",
+                "DURABLE_STORE", NOW.minusSeconds(600), NOW, "kill-trace"));
+        ExactPilotRuntimeIdentity runtimeIdentity = ExactPilotRuntimeIdentity.from(
+                new ReadOnlyProviderObservationRuntimeIdentity(
+                        "1".repeat(40), "1".repeat(40),
+                        ReadOnlyProviderObservationRuntimeIdentity.CAPABILITY, "127.0.0.1", 21),
+                DIGEST_C, "server-a", ExactPilotBinding.DeploymentIdentity.RUNTIME_PROFILE);
+        StoredFactExactPilotBindingAuthority authority = new StoredFactExactPilotBindingAuthority(
+                liveRepository, scopeRepository, accountRepository, credentialRepository,
+                admissionRepository, operatorAuthorityRepository, instrumentCatalog, killSwitchService,
+                runtimeIdentity);
+
+        ExactPilotBinding.AuthoritativeFacts resolved = authority.resolveForCreation(
+                new AuthenticatedLiveControlActor(OWNER), command, NOW);
+        assertEquals(null, resolved.riskPolicy());
+        assertEquals(operatorAuthority.id(), resolved.operatorPilotAuthority().authorityId());
+        assertEquals(operatorAuthority.canonicalDigest(), resolved.operatorPilotAuthority().authorityDigest());
+
+        OperatorPilotAuthority mismatched = OperatorPilotAuthority.active(
+                operatorAuthority.id(), OWNER, ACCOUNT, CREDENTIAL, "BTC-USDT",
+                OperatorPilotAuthority.Side.BUY, OperatorPilotAuthority.OrderType.LIMIT,
+                decimal("9"), NOW.minusSeconds(60), NOW.plusSeconds(600), OWNER, NOW.minusSeconds(60));
+        when(operatorAuthorityRepository.find(operatorAuthority.id())).thenReturn(Optional.of(mismatched));
+        LiveControlException mismatch = assertThrows(LiveControlException.class,
+                () -> authority.resolveForCreation(new AuthenticatedLiveControlActor(OWNER), command, NOW));
+        assertEquals("EXACT_PILOT_BINDING_AUTHORITY_REJECTED", mismatch.code());
+        verifyNoMoreInteractions(admissionRepository);
     }
 
     private static RiskLimitSet risk() {
@@ -252,7 +332,7 @@ class StoredFactExactPilotBindingAuthorityTest {
         return new ExchangeAccountCredentialSummary(
                 CREDENTIAL, ACCOUNT, "OKX_API_V5", "masked", "ACTIVE", "VERIFIED", true,
                 null, null, null, NOW.minusSeconds(700), null, NOW.minusSeconds(600),
-                "SUCCEEDED", "TRADE", false, "PASSED", 0, NOW.minusSeconds(600), null);
+                "SUCCEEDED", "TRADE", false, "PASSED", 0, NOW.minusSeconds(30), null);
     }
 
     private static InstrumentCatalogItem instrument() {

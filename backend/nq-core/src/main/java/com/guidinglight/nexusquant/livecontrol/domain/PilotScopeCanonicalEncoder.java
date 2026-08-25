@@ -4,7 +4,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-/** `pilot-scope.v1` byte-stable encoder；字段顺序由 GateY-6D 合同冻结。 */
+/**
+ * `pilot-scope.v1` byte-stable encoder；字段顺序由 GateY-6D 合同冻结。
+ */
 public final class PilotScopeCanonicalEncoder {
 
     private PilotScopeCanonicalEncoder() {
@@ -24,17 +26,25 @@ public final class PilotScopeCanonicalEncoder {
         String symbols = session.symbolAllowlist().stream()
                 .map(CanonicalDigestSupport::quote)
                 .collect(Collectors.joining(",", "[", "]"));
-        return "{" +
-                "\"schemaVersion\":" + CanonicalDigestSupport.quote(PilotScopeBinding.SCHEMA_VERSION) +
-                ",\"sessionId\":" + CanonicalDigestSupport.quote(session.id().toString()) +
-                ",\"ownerId\":" + session.ownerId() +
-                ",\"exchangeAccountId\":" + session.exchangeAccountId() +
-                ",\"venue\":" + CanonicalDigestSupport.quote(session.venue()) +
-                ",\"strategyReleaseId\":" + CanonicalDigestSupport.quote(session.strategyReleaseId()) +
+        String authority = session.authorityType() == LiveSessionAuthorityType.STRATEGY
+                ? ",\"strategyReleaseId\":" + CanonicalDigestSupport.quote(session.strategyReleaseId()) +
                 ",\"releaseArtifactDigest\":" + CanonicalDigestSupport.quote(session.releaseDigest()) +
                 ",\"releaseAdmissionRevision\":" + session.releaseAdmissionRevision() +
                 ",\"riskLimitSetId\":" + CanonicalDigestSupport.quote(session.riskLimitSetId().toString()) +
-                ",\"riskLimitSetDigest\":" + CanonicalDigestSupport.quote(session.riskLimitSetDigest()) +
+                ",\"riskLimitSetDigest\":" + CanonicalDigestSupport.quote(session.riskLimitSetDigest())
+                : ",\"authorityType\":\"OPERATOR_PILOT\"" +
+                ",\"operatorPilotAuthorityId\":" +
+                CanonicalDigestSupport.quote(session.operatorPilotAuthorityId().toString()) +
+                ",\"operatorPilotAuthorityDigest\":" +
+                CanonicalDigestSupport.quote(session.operatorPilotAuthorityDigest());
+        String schema = session.authorityType() == LiveSessionAuthorityType.STRATEGY
+                ? PilotScopeBinding.SCHEMA_VERSION : PilotScopeBinding.OPERATOR_PILOT_SCHEMA_VERSION;
+        return "{" +
+                "\"schemaVersion\":" + CanonicalDigestSupport.quote(schema) +
+                ",\"sessionId\":" + CanonicalDigestSupport.quote(session.id().toString()) +
+                ",\"ownerId\":" + session.ownerId() +
+                ",\"exchangeAccountId\":" + session.exchangeAccountId() +
+                ",\"venue\":" + CanonicalDigestSupport.quote(session.venue()) + authority +
                 ",\"credentialReference\":" + session.credentialReference() +
                 ",\"symbolAllowlist\":" + symbols +
                 ",\"capitalCap\":" + CanonicalDigestSupport.decimal(session.capitalCap()) +

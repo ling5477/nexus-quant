@@ -1,26 +1,19 @@
 package com.guidinglight.nexusquant.livecontrol.infra;
 
-import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingAuthority;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingCommand;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingConsumption;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingConsumptionCommand;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingControlPlane;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingValidation;
+import com.guidinglight.nexusquant.livecontrol.application.*;
 import com.guidinglight.nexusquant.livecontrol.application.port.LiveControlAuthorizationPort;
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
 import com.guidinglight.nexusquant.livecontrol.domain.port.ExactPilotBindingRepository;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * Exact binding control/admission transaction owner；只读权威事实并追加 binding lifecycle event。
@@ -69,6 +62,7 @@ public final class ExactPilotBindingService implements ExactPilotBindingControlP
             ExactPilotBinding binding = ExactPilotBinding.verified(
                     command.bindingId(), command.sessionId(), command.pilotScopeId(), command.observationSetId(),
                     facts.deployment(), facts.account(), facts.order(), facts.observations(), facts.riskPolicy(),
+                    facts.operatorPilotAuthority(),
                     facts.pilotWindowStart(), facts.pilotWindowEnd(), command.correlation(), decisionAt,
                     command.bindingExpiresAt()
             );

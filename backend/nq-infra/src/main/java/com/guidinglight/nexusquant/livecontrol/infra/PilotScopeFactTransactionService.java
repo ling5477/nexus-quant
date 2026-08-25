@@ -2,11 +2,13 @@ package com.guidinglight.nexusquant.livecontrol.infra;
 
 import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor;
 import com.guidinglight.nexusquant.livecontrol.application.LiveSessionControlService;
+import com.guidinglight.nexusquant.livecontrol.application.OperatorPilotAuthorityService;
 import com.guidinglight.nexusquant.livecontrol.application.port.LiveControlAuthorizationPort;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionEvent;
 import com.guidinglight.nexusquant.livecontrol.domain.OperatorApproval;
+import com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationSet;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeFreshnessPolicy;
@@ -34,6 +36,7 @@ public class PilotScopeFactTransactionService {
     private static final String OPERATOR_ROLE = "OPERATOR";
 
     private final LiveSessionControlService liveSessionService;
+    private final OperatorPilotAuthorityService operatorAuthorityService;
     private final LiveControlRepository liveControlRepository;
     private final PilotScopeRepository pilotScopeRepository;
     private final LiveControlAuthorizationPort authorization;
@@ -43,12 +46,14 @@ public class PilotScopeFactTransactionService {
 
     public PilotScopeFactTransactionService(
             LiveSessionControlService liveSessionService,
+            OperatorPilotAuthorityService operatorAuthorityService,
             LiveControlRepository liveControlRepository,
             PilotScopeRepository pilotScopeRepository,
             LiveControlAuthorizationPort authorization,
             PlatformTransactionManager transactionManager
     ) {
         this.liveSessionService = liveSessionService;
+        this.operatorAuthorityService = operatorAuthorityService;
         this.liveControlRepository = liveControlRepository;
         this.pilotScopeRepository = pilotScopeRepository;
         this.authorization = authorization;
@@ -58,7 +63,45 @@ public class PilotScopeFactTransactionService {
         this.preflightTransactions.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
     }
 
-    /** 创建 session、scope 和首个完整 observation set；任一步失败由同一事务整体回滚。 */
+    /**
+     * authority、session、scope 与 observation set 在同一短事务中原子物化。
+     */
+    public PilotScopeBinding materializeOperatorPilot(
+            AuthenticatedLiveControlActor actor,
+            LiveSession session,
+            OperatorPilotAuthority authority,
+            LiveSessionEvent createdEvent,
+            PilotScopeBinding scope,
+            PilotObservationSet observations
+    ) {
+        return writeTransactions.execute(status -> {
+            if (!authorization.lockAndCheckRole(actor.userId(), OPERATOR_ROLE)) {
+                throw new LiveControlException(
+                        "LIVE_SESSION_OPERATOR_ROLE_REQUIRED",
+                        "authenticated actor does not currently hold the required role");
+            }
+            OperatorPilotAuthority storedAuthority = operatorAuthorityService.materialize(actor, authority);
+            var existingSession = liveControlRepository.lockSession(session.id());
+            if (existingSession.isPresent()) {
+                LiveSession existing = existingSession.get();
+                if (!existing.equals(session)
+                        || !liveControlRepository.lockAndValidateSessionReferences(existing)) {
+                    throw new LiveControlException(
+                            "PILOT_MATERIALIZATION_IDEMPOTENCY_CONFLICT",
+                            "operator pilot session is bound to different or stale facts");
+                }
+            } else {
+                liveSessionService.createOperatorPilotSession(actor, session, storedAuthority, createdEvent);
+            }
+            PilotScopeBinding stored = pilotScopeRepository.materialize(session, scope);
+            pilotScopeRepository.appendObservationSet(stored, observations);
+            return stored;
+        });
+    }
+
+    /**
+     * 创建 session、scope 和首个完整 observation set；任一步失败由同一事务整体回滚。
+     */
     public PilotScopeBinding materialize(
             AuthenticatedLiveControlActor actor,
             LiveSession session,
@@ -96,7 +139,9 @@ public class PilotScopeFactTransactionService {
         });
     }
 
-    /** 独立 approval 事务；只追加 exact pilot approval，不创建 ExecutionIntent 或状态迁移。 */
+    /**
+     * 独立 approval 事务；只追加 exact pilot approval，不创建 ExecutionIntent 或状态迁移。
+     */
     public OperatorApproval approve(AuthenticatedLiveControlActor actor, OperatorApproval approval) {
         return writeTransactions.execute(status -> {
             Objects.requireNonNull(actor, "actor must not be null");
@@ -126,7 +171,9 @@ public class PilotScopeFactTransactionService {
         });
     }
 
-    /** REPEATABLE READ 内使用一个 DB transaction timestamp 选择并评估 exact complete set。 */
+    /**
+     * REPEATABLE READ 内使用一个 DB transaction timestamp 选择并评估 exact complete set。
+     */
     public PilotScopePreflightResult preflight(UUID sessionId, BigDecimal requiredBalance) {
         return preflightTransactions.execute(status -> {
             var scope = pilotScopeRepository.findBySessionId(sessionId);

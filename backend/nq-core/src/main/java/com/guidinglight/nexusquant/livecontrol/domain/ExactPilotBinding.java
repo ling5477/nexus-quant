@@ -22,6 +22,7 @@ public record ExactPilotBinding(
         OrderEnvelope order,
         ObservationIdentities observations,
         RiskPolicyIdentity riskPolicy,
+        OperatorPilotAuthorityIdentity operatorPilotAuthority,
         Instant pilotWindowStart,
         Instant pilotWindowEnd,
         Correlation correlation,
@@ -30,8 +31,34 @@ public record ExactPilotBinding(
         String bindingDigest
 ) {
     public static final String SCHEMA_VERSION = "exact-pilot-binding.v2";
+    public static final String OPERATOR_PILOT_SCHEMA_VERSION = "exact-pilot-binding.operator-pilot.v1";
     public static final Duration MAXIMUM_LIFETIME = Duration.ofMinutes(15);
     private static final String ZERO_DIGEST = "0".repeat(64);
+
+    /**
+     * v2 source-compatible constructor；既有调用继续表达 STRATEGY risk identity。
+     */
+    public ExactPilotBinding(
+            UUID id,
+            UUID sessionId,
+            UUID pilotScopeId,
+            UUID observationSetId,
+            DeploymentIdentity deployment,
+            AccountIdentity account,
+            OrderEnvelope order,
+            ObservationIdentities observations,
+            RiskPolicyIdentity riskPolicy,
+            Instant pilotWindowStart,
+            Instant pilotWindowEnd,
+            Correlation correlation,
+            Instant bindingCreatedAt,
+            Instant bindingExpiresAt,
+            String bindingDigest
+    ) {
+        this(id, sessionId, pilotScopeId, observationSetId, deployment, account, order, observations,
+                riskPolicy, null, pilotWindowStart, pilotWindowEnd, correlation, bindingCreatedAt,
+                bindingExpiresAt, bindingDigest);
+    }
 
     public ExactPilotBinding {
         Objects.requireNonNull(id, "id must not be null");
@@ -42,7 +69,15 @@ public record ExactPilotBinding(
         Objects.requireNonNull(account, "account must not be null");
         Objects.requireNonNull(order, "order must not be null");
         Objects.requireNonNull(observations, "observations must not be null");
-        Objects.requireNonNull(riskPolicy, "riskPolicy must not be null");
+        require((riskPolicy != null) != (operatorPilotAuthority != null),
+                "exactly one strategy or operator pilot authority is required");
+        if (operatorPilotAuthority != null) {
+            require(operatorPilotAuthority.instrument().equals(order.exchangeInstrumentId())
+                            && operatorPilotAuthority.side() == order.side()
+                            && operatorPilotAuthority.orderType() == order.orderType()
+                            && order.notional().compareTo(operatorPilotAuthority.maxNotional()) <= 0,
+                    "order exceeds operator pilot authority");
+        }
         Objects.requireNonNull(pilotWindowStart, "pilotWindowStart must not be null");
         Objects.requireNonNull(pilotWindowEnd, "pilotWindowEnd must not be null");
         Objects.requireNonNull(correlation, "correlation must not be null");
@@ -74,9 +109,33 @@ public record ExactPilotBinding(
     ) {
         ExactPilotBinding draft = new ExactPilotBinding(
                 id, sessionId, pilotScopeId, observationSetId, deployment, account, order, observations,
-                riskPolicy, pilotWindowStart, pilotWindowEnd, correlation, bindingCreatedAt,
+                riskPolicy, null, pilotWindowStart, pilotWindowEnd, correlation, bindingCreatedAt,
                 bindingExpiresAt, ZERO_DIGEST
         );
+        return draft.withDigest(ExactPilotBindingCanonicalEncoder.digest(draft));
+    }
+
+    public static ExactPilotBinding verified(
+            UUID id,
+            UUID sessionId,
+            UUID pilotScopeId,
+            UUID observationSetId,
+            DeploymentIdentity deployment,
+            AccountIdentity account,
+            OrderEnvelope order,
+            ObservationIdentities observations,
+            RiskPolicyIdentity riskPolicy,
+            OperatorPilotAuthorityIdentity operatorPilotAuthority,
+            Instant pilotWindowStart,
+            Instant pilotWindowEnd,
+            Correlation correlation,
+            Instant bindingCreatedAt,
+            Instant bindingExpiresAt
+    ) {
+        ExactPilotBinding draft = new ExactPilotBinding(
+                id, sessionId, pilotScopeId, observationSetId, deployment, account, order, observations,
+                riskPolicy, operatorPilotAuthority, pilotWindowStart, pilotWindowEnd, correlation,
+                bindingCreatedAt, bindingExpiresAt, ZERO_DIGEST);
         return draft.withDigest(ExactPilotBindingCanonicalEncoder.digest(draft));
     }
 
@@ -94,7 +153,8 @@ public record ExactPilotBinding(
                 && account.equals(facts.account())
                 && order.equals(facts.order())
                 && observations.equals(facts.observations())
-                && riskPolicy.equals(facts.riskPolicy())
+                && Objects.equals(riskPolicy, facts.riskPolicy())
+                && Objects.equals(operatorPilotAuthority, facts.operatorPilotAuthority())
                 && pilotWindowStart.equals(facts.pilotWindowStart())
                 && pilotWindowEnd.equals(facts.pilotWindowEnd());
     }
@@ -102,7 +162,7 @@ public record ExactPilotBinding(
     private ExactPilotBinding withDigest(String digest) {
         return new ExactPilotBinding(
                 id, sessionId, pilotScopeId, observationSetId, deployment, account, order, observations,
-                riskPolicy, pilotWindowStart, pilotWindowEnd, correlation, bindingCreatedAt,
+                riskPolicy, operatorPilotAuthority, pilotWindowStart, pilotWindowEnd, correlation, bindingCreatedAt,
                 bindingExpiresAt, digest
         );
     }
@@ -202,9 +262,9 @@ public record ExactPilotBinding(
             Objects.requireNonNull(marketSnapshotIdentity, "marketSnapshotIdentity must not be null");
             requireDigest(marketSnapshotDigest, "marketSnapshotDigest");
             require(java.util.Set.of(
-                    instrumentSnapshotIdentity, feeSnapshotIdentity,
-                    balanceSnapshotIdentity, exchangeTimeSnapshotIdentity,
-                    marketSnapshotIdentity).size() == 5,
+                            instrumentSnapshotIdentity, feeSnapshotIdentity,
+                            balanceSnapshotIdentity, exchangeTimeSnapshotIdentity,
+                            marketSnapshotIdentity).size() == 5,
                     "observation identities must be distinct");
         }
     }
@@ -225,6 +285,37 @@ public record ExactPilotBinding(
         }
     }
 
+    public record OperatorPilotAuthorityIdentity(
+            UUID authorityId,
+            String authorityDigest,
+            String instrument,
+            Side side,
+            OrderType orderType,
+            BigDecimal maxNotional,
+            int maxPlaceCount,
+            int maxCancelCount,
+            boolean transferAllowed,
+            boolean withdrawAllowed,
+            String killSwitchState
+    ) {
+        public OperatorPilotAuthorityIdentity {
+            Objects.requireNonNull(authorityId, "authorityId must not be null");
+            requireDigest(authorityDigest, "authorityDigest");
+            require(instrument != null && instrument.matches("[A-Z0-9]{2,20}-USDT"),
+                    "operator authority instrument is invalid");
+            Objects.requireNonNull(side, "operator authority side must not be null");
+            require(orderType == OrderType.LIMIT, "operator authority order type must be LIMIT");
+            maxNotional = CanonicalDigestSupport.money(maxNotional, "maxNotional");
+            require(maxNotional.signum() > 0 && maxNotional.compareTo(OperatorPilotAuthority.HARD_CAP) <= 0,
+                    "operator authority maxNotional is invalid");
+            require(maxPlaceCount == 1 && maxCancelCount == 1,
+                    "operator authority count limits are invalid");
+            require(!transferAllowed && !withdrawAllowed, "operator authority cannot permit funding mutation");
+            require(RiskPolicyIdentity.REQUIRED_KILL_SWITCH_STATE.equals(killSwitchState),
+                    "kill switch must be ENGAGED");
+        }
+    }
+
     public record Correlation(String requestId, String traceId, String idempotencyKey) {
         public Correlation {
             requireExactText(requestId, 128, "requestId");
@@ -242,9 +333,29 @@ public record ExactPilotBinding(
             OrderEnvelope order,
             ObservationIdentities observations,
             RiskPolicyIdentity riskPolicy,
+            OperatorPilotAuthorityIdentity operatorPilotAuthority,
             Instant pilotWindowStart,
             Instant pilotWindowEnd
     ) {
+        /**
+         * v2 source-compatible constructor。
+         */
+        public AuthoritativeFacts(
+                UUID sessionId,
+                UUID pilotScopeId,
+                UUID observationSetId,
+                DeploymentIdentity deployment,
+                AccountIdentity account,
+                OrderEnvelope order,
+                ObservationIdentities observations,
+                RiskPolicyIdentity riskPolicy,
+                Instant pilotWindowStart,
+                Instant pilotWindowEnd
+        ) {
+            this(sessionId, pilotScopeId, observationSetId, deployment, account, order, observations,
+                    riskPolicy, null, pilotWindowStart, pilotWindowEnd);
+        }
+
         public AuthoritativeFacts {
             Objects.requireNonNull(sessionId, "sessionId must not be null");
             Objects.requireNonNull(pilotScopeId, "pilotScopeId must not be null");
@@ -253,7 +364,8 @@ public record ExactPilotBinding(
             Objects.requireNonNull(account, "account must not be null");
             Objects.requireNonNull(order, "order must not be null");
             Objects.requireNonNull(observations, "observations must not be null");
-            Objects.requireNonNull(riskPolicy, "riskPolicy must not be null");
+            require((riskPolicy != null) != (operatorPilotAuthority != null),
+                    "exactly one authoritative risk identity is required");
             Objects.requireNonNull(pilotWindowStart, "pilotWindowStart must not be null");
             Objects.requireNonNull(pilotWindowEnd, "pilotWindowEnd must not be null");
             require(pilotWindowEnd.isAfter(pilotWindowStart), "pilot window must be non-empty");

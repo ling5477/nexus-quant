@@ -28,8 +28,6 @@ foreach ($required in @(
     '--nq.runtime.provider-observation.transfer-enabled=false',
     '--nq.runtime.provider-observation.withdraw-enabled=false',
     "while IFS='=' read -r name ignored", '*) unset "$name" ;;',
-    'NQ_LIVE_CONTROL_PILOT_MATERIALIZATION_MINIMAL_LIVE_PILOT_STRATEGY_RELEASE_ID',
-    'NQ_LIVE_CONTROL_PILOT_MATERIALIZATION_MINIMAL_LIVE_PILOT_RISK_LIMIT_SET_ID',
     'NQ_LIVE_CONTROL_PILOT_MATERIALIZATION_WORKER_RELEASE_DIGEST',
     'PILOT_DATABASE_WRITE_WINDOW_REQUIRES_RUNTIME_STOPPED',
     'PILOT_DATABASE_WRITE_WINDOW_OPEN', 'PILOT_DATABASE_WRITE_WINDOW_CLOSED',
@@ -38,6 +36,7 @@ foreach ($required in @(
     'GRANT UPDATE ON TABLE public.exchange_account_credentials TO nq_gatey_readonly',
     'GRANT INSERT ON TABLE public.credential_audit_logs TO nq_gatey_readonly',
     'GRANT INSERT, UPDATE ON TABLE public.instrument_catalog TO nq_gatey_readonly',
+    'GRANT SELECT, INSERT, UPDATE ON TABLE public.operator_pilot_authorities TO nq_gatey_readonly',
     'GRANT INSERT, UPDATE ON TABLE public.live_sessions TO nq_gatey_readonly',
     'GRANT INSERT, UPDATE ON TABLE public.pilot_execution_leases TO nq_gatey_readonly',
     'GRANT INSERT, UPDATE ON TABLE public.execution_intents TO nq_gatey_readonly',
@@ -45,14 +44,17 @@ foreach ($required in @(
     'GRANT INSERT ON TABLE public.event_store TO nq_gatey_readonly',
     'GRANT UPDATE ON TABLE public.kill_switch_states TO nq_gatey_readonly',
     'GRANT INSERT ON TABLE public.kill_switch_events TO nq_gatey_readonly',
+    'GRANT UPDATE(exchange_account_id) ON TABLE public.exchange_accounts TO nq_gatey_readonly',
     'GRANT UPDATE(id) ON TABLE public.users TO nq_gatey_readonly',
     'GRANT UPDATE(user_id) ON TABLE public.user_roles TO nq_gatey_readonly',
     'GRANT UPDATE(id) ON TABLE public.roles TO nq_gatey_readonly',
     'GRANT USAGE ON SEQUENCE public.credential_audit_logs_credential_audit_log_id_seq',
     'REVOKE UPDATE ON TABLE public.exchange_account_credentials FROM nq_gatey_readonly',
+    'REVOKE SELECT, INSERT, UPDATE ON TABLE public.operator_pilot_authorities FROM nq_gatey_readonly',
     'REVOKE INSERT ON TABLE public.event_store FROM nq_gatey_readonly',
     'REVOKE UPDATE ON TABLE public.kill_switch_states FROM nq_gatey_readonly',
     'REVOKE UPDATE(id) ON TABLE public.users FROM nq_gatey_readonly',
+    'REVOKE UPDATE(exchange_account_id) ON TABLE public.exchange_accounts FROM nq_gatey_readonly',
     'REVOKE UPDATE(user_id) ON TABLE public.user_roles FROM nq_gatey_readonly',
     'REVOKE UPDATE(id) ON TABLE public.roles FROM nq_gatey_readonly',
     'REVOKE USAGE ON SEQUENCE public.credential_audit_logs_credential_audit_log_id_seq',
@@ -66,7 +68,11 @@ foreach ($forbidden in @(
     'apiKey', 'secretKey', 'passphrase', 'MARKET', 'transfer-enabled=true', 'withdraw-enabled=true',
     '$LimitPrice', '$Quantity', 'minimal-live-pilot.limit-price', 'minimal-live-pilot.quantity',
     'GRANT ALL', 'GRANT CREATE', 'GRANT DELETE', 'GRANT TRUNCATE', 'GRANT ON ALL',
-    'ALTER DEFAULT PRIVILEGES'
+    'ALTER DEFAULT PRIVILEGES',
+    'NQ_LIVE_CONTROL_PILOT_MATERIALIZATION_MINIMAL_LIVE_PILOT_STRATEGY_RELEASE_ID',
+    'NQ_LIVE_CONTROL_PILOT_MATERIALIZATION_MINIMAL_LIVE_PILOT_RISK_LIMIT_SET_ID',
+    'GRANT INSERT ON TABLE public.risk_limit_sets',
+    'GRANT INSERT ON TABLE public.operator_approvals'
 )) {
     if ($source.IndexOf($forbidden, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
         throw ('FORBIDDEN_SURFACE:' + $forbidden)
@@ -88,7 +94,7 @@ $grantSql = $grantMatch.Groups['sql'].Value
 $revokeSql = $revokeMatch.Groups['sql'].Value
 $writeTables = @(
     'exchange_account_credentials', 'credential_audit_logs', 'instrument_catalog',
-    'risk_limit_sets', 'live_sessions', 'live_session_events', 'operator_approvals',
+    'operator_pilot_authorities', 'live_sessions', 'live_session_events',
     'pilot_scope_bindings', 'pilot_prerequisite_observations',
     'pilot_instrument_observation_items', 'pilot_execution_leases',
     'pilot_execution_lease_intents', 'pilot_execution_lease_events', 'execution_intents',
@@ -97,11 +103,11 @@ $writeTables = @(
     'kill_switch_states', 'kill_switch_events'
 )
 foreach ($table in $writeTables) {
-    if ($grantSql -cnotmatch ("(?m)^GRANT (INSERT|UPDATE|INSERT, UPDATE) ON TABLE public\." +
+    if ($grantSql -cnotmatch ("(?m)^GRANT (INSERT|UPDATE|INSERT, UPDATE|SELECT, INSERT, UPDATE) ON TABLE public\." +
             [regex]::Escape($table) + ' TO nq_gatey_readonly;$')) {
         throw ('PILOT_DATABASE_TABLE_GRANT_MISSING:' + $table)
     }
-    if ($revokeSql -cnotmatch ("(?m)^REVOKE (INSERT|UPDATE|INSERT, UPDATE) ON TABLE public\." +
+    if ($revokeSql -cnotmatch ("(?m)^REVOKE (INSERT|UPDATE|INSERT, UPDATE|SELECT, INSERT, UPDATE) ON TABLE public\." +
             [regex]::Escape($table) + ' FROM nq_gatey_readonly;$')) {
         throw ('PILOT_DATABASE_TABLE_REVOKE_MISSING:' + $table)
     }
@@ -118,6 +124,7 @@ foreach ($sequence in $writeSequences) {
     }
 }
 $roleLockColumns = @(
+    @('exchange_accounts', 'exchange_account_id'),
     @('users', 'id'), @('user_roles', 'user_id'), @('roles', 'id')
 )
 foreach ($pair in $roleLockColumns) {

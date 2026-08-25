@@ -10,6 +10,7 @@ import com.guidinglight.nexusquant.livecontrol.application.port.LiveControlAutho
 import com.guidinglight.nexusquant.livecontrol.domain.port.ExactPilotBindingRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.ExactPilotScopeAuthorizationRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.LiveControlRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.port.OperatorPilotAuthorityRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotScopeRepository;
 import com.guidinglight.nexusquant.livecontrol.infra.ExactPilotBindingService;
 import com.guidinglight.nexusquant.livecontrol.infra.ExactPilotScopeAuthorizationService;
@@ -53,13 +54,15 @@ public class ExactPilotBindingConfiguration {
             ExchangeAccountRepository accountRepository,
             ExchangeAccountCredentialRepository credentialRepository,
             StrategyReleaseAdmissionStateRepository admissionRepository,
+            OperatorPilotAuthorityRepository operatorAuthorityRepository,
             InstrumentCatalogReadPort instrumentCatalog,
             KillSwitchService killSwitchService,
             ExactPilotRuntimeIdentity runtimeIdentity
     ) {
         return new StoredFactExactPilotBindingAuthority(
                 liveControlRepository, pilotScopeRepository, accountRepository, credentialRepository,
-                admissionRepository, instrumentCatalog, killSwitchService, runtimeIdentity
+                admissionRepository, operatorAuthorityRepository, instrumentCatalog, killSwitchService,
+                runtimeIdentity
         );
     }
 

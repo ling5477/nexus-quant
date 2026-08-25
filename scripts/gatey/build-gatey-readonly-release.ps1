@@ -71,7 +71,55 @@ function Assert-ExactCommitMaterialization
     Push-Location $SourceRoot
     try
     {
-        $actualHashes = @($paths | & git hash-object --no-filters --stdin-paths)
+        if ($PSVersionTable.PSVersion.Major -lt 7)
+        {
+            if (@($paths | Where-Object { $_ -match '[^\x00-\x7F]' }).Count -ne 0)
+            {
+                throw 'BLOCKED / RELEASE_SOURCE_PATH_INVALID'
+            }
+            $git = (Get-Command git -ErrorAction Stop).Source
+            $hashTempRoot = Join-Path ([IO.Path]::GetTempPath()) `
+                ('nqg-hash-' + [Guid]::NewGuid().ToString('N'))
+            try
+            {
+                [IO.Directory]::CreateDirectory($hashTempRoot) | Out-Null
+                $pathFile = Join-Path $hashTempRoot 'paths.txt'
+                $outputFile = Join-Path $hashTempRoot 'hashes.txt'
+                $errorFile = Join-Path $hashTempRoot 'error.txt'
+                [IO.File]::WriteAllLines($pathFile, [string[]]$paths, [Text.Encoding]::ASCII)
+                $hashProcess = Start-Process -FilePath $git `
+                    -ArgumentList @('hash-object', '--no-filters', '--stdin-paths') `
+                    -WorkingDirectory $SourceRoot -RedirectStandardInput $pathFile `
+                    -RedirectStandardOutput $outputFile -RedirectStandardError $errorFile `
+                    -WindowStyle Hidden -Wait -PassThru
+                $hashError = if (Test-Path -LiteralPath $errorFile) {
+                    Get-Content -LiteralPath $errorFile -Raw
+                } else { '' }
+                if ($hashProcess.ExitCode -ne 0 -or -not [string]::IsNullOrWhiteSpace($hashError))
+                {
+                    throw 'FAIL / RELEASE_SOURCE_HASH_PROCESS_FAILED'
+                }
+                $actualHashes = @(Get-Content -LiteralPath $outputFile)
+            }
+            finally
+            {
+                if (Test-Path -LiteralPath $hashTempRoot)
+                {
+                    $resolvedHashTempRoot = [IO.Path]::GetFullPath($hashTempRoot)
+                    $expectedHashTempPrefix = Join-Path ([IO.Path]::GetFullPath([IO.Path]::GetTempPath())) 'nqg-hash-'
+                    if (-not $resolvedHashTempRoot.StartsWith(
+                            $expectedHashTempPrefix, [StringComparison]::OrdinalIgnoreCase))
+                    {
+                        throw 'FAIL / RELEASE_SOURCE_CLEANUP_PATH_INVALID'
+                    }
+                    Remove-Item -LiteralPath $resolvedHashTempRoot -Recurse -Force
+                }
+            }
+        }
+        else
+        {
+            $actualHashes = @($paths | & git hash-object --no-filters --stdin-paths)
+        }
     }
     finally
     {
@@ -138,12 +186,123 @@ function Copy-GitBatchBlob
     }
 }
 
+function Write-ExactCommitBlobTreeWindowsPowerShell
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$SourceRoot,
+        [Parameter(Mandatory = $true)][string]$Commit
+    )
+    $entries = @(& git -C $repo ls-tree -r --full-tree $Commit)
+    if ($LASTEXITCODE -ne 0 -or $entries.Count -eq 0)
+    {
+        throw 'FAIL / RELEASE_SOURCE_TREE_INVENTORY_FAILED'
+    }
+    $hashes = [Collections.Generic.List[string]]::new()
+    foreach ($entry in $entries)
+    {
+        $parts = ([string]$entry).Split("`t", 2)
+        if ($parts.Count -ne 2 -or $parts[0] -notmatch '^([0-9]{6}) blob ([0-9a-f]{40})$' -or
+                $Matches[1] -eq '120000')
+        {
+            throw 'BLOCKED / RELEASE_SOURCE_TREE_UNSUPPORTED'
+        }
+        $hashes.Add($Matches[2])
+    }
+    $batchTempRoot = Join-Path ([IO.Path]::GetTempPath()) `
+        ('nqg-batch-' + [Guid]::NewGuid().ToString('N'))
+    $batchOutputStream = $null
+    try
+    {
+        [IO.Directory]::CreateDirectory($batchTempRoot) | Out-Null
+        $inputPath = Join-Path $batchTempRoot 'hashes.txt'
+        $outputPath = Join-Path $batchTempRoot 'batch.bin'
+        $errorPath = Join-Path $batchTempRoot 'error.txt'
+        [IO.File]::WriteAllLines($inputPath, [string[]]$hashes, [Text.Encoding]::ASCII)
+        $git = (Get-Command git -ErrorAction Stop).Source
+        $batchProcess = Start-Process -FilePath $git `
+            -ArgumentList @('-C', ('"' + $repo + '"'), 'cat-file', '--batch') `
+            -RedirectStandardInput $inputPath -RedirectStandardOutput $outputPath `
+            -RedirectStandardError $errorPath -WindowStyle Hidden -Wait -PassThru
+        $batchError = if (Test-Path -LiteralPath $errorPath) {
+            Get-Content -LiteralPath $errorPath -Raw
+        } else { '' }
+        if ($batchProcess.ExitCode -ne 0 -or -not [string]::IsNullOrWhiteSpace($batchError))
+        {
+            throw 'FAIL / RELEASE_SOURCE_BLOB_PROCESS_FAILED'
+        }
+        $batchOutputStream = [IO.File]::OpenRead($outputPath)
+        $count = 0
+        foreach ($entry in $entries)
+        {
+            $parts = ([string]$entry).Split("`t", 2)
+            $hash = $hashes[$count]
+            $relativePath = $parts[1]
+            $segments = @($relativePath.Split('/'))
+            if ([string]::IsNullOrWhiteSpace($relativePath) -or
+                    [IO.Path]::IsPathRooted($relativePath) -or $relativePath.Contains('\') -or
+                    @($segments | Where-Object { $_ -eq '' -or $_ -eq '.' -or $_ -eq '..' }).Count -gt 0)
+            {
+                throw 'BLOCKED / RELEASE_SOURCE_PATH_INVALID'
+            }
+            $fullPath = [IO.Path]::GetFullPath((Join-Path $SourceRoot $relativePath))
+            if (-not $fullPath.StartsWith(
+                    [IO.Path]::GetFullPath($SourceRoot) + [IO.Path]::DirectorySeparatorChar,
+                    [StringComparison]::OrdinalIgnoreCase))
+            {
+                throw 'BLOCKED / RELEASE_SOURCE_PATH_INVALID'
+            }
+            $parentPath = [IO.Path]::GetDirectoryName($fullPath)
+            if ([string]::IsNullOrWhiteSpace($parentPath))
+            {
+                throw 'BLOCKED / RELEASE_SOURCE_PATH_INVALID'
+            }
+            [IO.Directory]::CreateDirectory($parentPath) | Out-Null
+            $header = Read-GitBatchAsciiLine $batchOutputStream
+            if ($header -notmatch ('^' + $hash + ' blob ([0-9]+)$'))
+            {
+                throw 'FAIL / RELEASE_SOURCE_BLOB_HEADER_INVALID'
+            }
+            $length = [long]$Matches[1]
+            $file = [IO.File]::Open(
+                $fullPath, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+            try { Copy-GitBatchBlob $batchOutputStream $file $length }
+            finally { $file.Dispose() }
+            $count++
+        }
+        if ($batchOutputStream.Position -ne $batchOutputStream.Length -or $count -ne $entries.Count)
+        {
+            throw 'FAIL / RELEASE_SOURCE_BLOB_PROCESS_FAILED'
+        }
+        return $count
+    }
+    finally
+    {
+        if ($null -ne $batchOutputStream) { $batchOutputStream.Dispose() }
+        if (Test-Path -LiteralPath $batchTempRoot)
+        {
+            $resolvedBatchTempRoot = [IO.Path]::GetFullPath($batchTempRoot)
+            $expectedBatchTempPrefix = Join-Path `
+                ([IO.Path]::GetFullPath([IO.Path]::GetTempPath())) 'nqg-batch-'
+            if (-not $resolvedBatchTempRoot.StartsWith(
+                    $expectedBatchTempPrefix, [StringComparison]::OrdinalIgnoreCase))
+            {
+                throw 'FAIL / RELEASE_SOURCE_CLEANUP_PATH_INVALID'
+            }
+            Remove-Item -LiteralPath $resolvedBatchTempRoot -Recurse -Force
+        }
+    }
+}
+
 function Write-ExactCommitBlobTree
 {
     param(
         [Parameter(Mandatory = $true)][string]$SourceRoot,
         [Parameter(Mandatory = $true)][string]$Commit
     )
+    if ($PSVersionTable.PSVersion.Major -lt 7)
+    {
+        return Write-ExactCommitBlobTreeWindowsPowerShell $SourceRoot $Commit
+    }
     $entries = @(& git -C $repo ls-tree -r --full-tree $Commit)
     if ($LASTEXITCODE -ne 0 -or $entries.Count -eq 0)
     {
@@ -156,16 +315,38 @@ function Write-ExactCommitBlobTree
     $startInfo.RedirectStandardInput = $true
     $startInfo.RedirectStandardOutput = $true
     $startInfo.RedirectStandardError = $true
-    foreach ($argument in @('-C', $repo, 'cat-file', '--batch'))
+    if ($startInfo.PSObject.Properties.Name -contains 'StandardInputEncoding')
     {
-        $null = $startInfo.ArgumentList.Add($argument)
+        $startInfo.StandardInputEncoding = [Text.Encoding]::ASCII
+    }
+    if ($startInfo.PSObject.Properties.Name -contains 'ArgumentList')
+    {
+        foreach ($argument in @('-C', $repo, 'cat-file', '--batch'))
+        {
+            $null = $startInfo.ArgumentList.Add($argument)
+        }
+    }
+    else
+    {
+        if ($repo.Contains('"'))
+        {
+            throw 'BLOCKED / RELEASE_SOURCE_PATH_INVALID'
+        }
+        # Windows PowerShell 5.1 使用 .NET Framework；这里不经 shell，且 repo 已是受控绝对路径。
+        $startInfo.Arguments = '-C "' + $repo + '" cat-file --batch'
     }
     $process = [Diagnostics.Process]::new()
     $process.StartInfo = $startInfo
-    if (-not $process.Start()) { throw 'FAIL / RELEASE_SOURCE_BLOB_PROCESS_FAILED' }
+    $processStarted = $false
+    $previousConsoleInputEncoding = [Console]::InputEncoding
+    [Console]::InputEncoding = [Text.Encoding]::ASCII
     try
     {
-        $output = $process.StandardOutput.BaseStream
+        if (-not $process.Start()) { throw 'FAIL / RELEASE_SOURCE_BLOB_PROCESS_FAILED' }
+        $processStarted = $true
+        $batchInputStream = $process.StandardInput.BaseStream
+        $batchOutputStream = $process.StandardOutput.BaseStream
+        # 直接写 ASCII + LF，避免 PS5 StreamWriter 的 BOM/CRLF 污染 git batch object name。
         $count = 0
         foreach ($entry in $entries)
         {
@@ -191,10 +372,16 @@ function Write-ExactCommitBlobTree
             {
                 throw 'BLOCKED / RELEASE_SOURCE_PATH_INVALID'
             }
-            [IO.Directory]::CreateDirectory((Split-Path -Parent $fullPath)) | Out-Null
-            $process.StandardInput.WriteLine($hash)
-            $process.StandardInput.Flush()
-            $header = Read-GitBatchAsciiLine $output
+            $parentPath = [IO.Path]::GetDirectoryName($fullPath)
+            if ([string]::IsNullOrWhiteSpace($parentPath))
+            {
+                throw 'BLOCKED / RELEASE_SOURCE_PATH_INVALID'
+            }
+            [IO.Directory]::CreateDirectory($parentPath) | Out-Null
+            $request = [Text.Encoding]::ASCII.GetBytes($hash + "`n")
+            $batchInputStream.Write($request, 0, $request.Length)
+            $batchInputStream.Flush()
+            $header = Read-GitBatchAsciiLine $batchOutputStream
             if ($header -notmatch ('^' + $hash + ' blob ([0-9]+)$'))
             {
                 throw 'FAIL / RELEASE_SOURCE_BLOB_HEADER_INVALID'
@@ -206,11 +393,11 @@ function Write-ExactCommitBlobTree
                 [IO.FileAccess]::Write,
                 [IO.FileShare]::None
             )
-            try { Copy-GitBatchBlob $output $file $length }
+            try { Copy-GitBatchBlob $batchOutputStream $file $length }
             finally { $file.Dispose() }
             $count++
         }
-        $process.StandardInput.Close()
+        $batchInputStream.Close()
         $process.WaitForExit()
         if ($process.ExitCode -ne 0 -or $count -ne $entries.Count)
         {
@@ -220,7 +407,11 @@ function Write-ExactCommitBlobTree
     }
     finally
     {
-        if (-not $process.HasExited) { $process.Kill($true) }
+        [Console]::InputEncoding = $previousConsoleInputEncoding
+        if ($processStarted -and -not $process.HasExited)
+        {
+            $process.Kill()
+        }
         $process.Dispose()
     }
 }

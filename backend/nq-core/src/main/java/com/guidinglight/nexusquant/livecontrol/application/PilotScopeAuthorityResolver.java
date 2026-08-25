@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.livecontrol.application;
 
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
+import com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority;
 import com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSet;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionState;
 
@@ -23,14 +24,12 @@ public interface PilotScopeAuthorityResolver {
 
     record ResolvedMinimalAuthority(
             long ownerId,
-            StrategyReleaseAdmissionState admission,
-            RiskLimitSet riskLimitSet,
+            OperatorPilotAuthority operatorPilotAuthority,
             ResolvedScopeBindings scopeBindings
     ) {
         public ResolvedMinimalAuthority {
             if (ownerId <= 0) throw new IllegalArgumentException("ownerId must be positive");
-            java.util.Objects.requireNonNull(admission, "admission must not be null");
-            java.util.Objects.requireNonNull(riskLimitSet, "riskLimitSet must not be null");
+            java.util.Objects.requireNonNull(operatorPilotAuthority, "operatorPilotAuthority must not be null");
             java.util.Objects.requireNonNull(scopeBindings, "scopeBindings must not be null");
         }
     }
@@ -42,7 +41,9 @@ public interface PilotScopeAuthorityResolver {
         }
     }
 
-    /** 只由 server-owned authority resolver 产生的 immutable pilot scope contract。 */
+    /**
+     * 只由 server-owned authority resolver 产生的 immutable pilot scope contract。
+     */
     record ResolvedScopeBindings(
             String instrumentMetadataDigest,
             String instrumentSourceIdentity,

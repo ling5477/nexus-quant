@@ -7,7 +7,9 @@ import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository
 import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor;
 import com.guidinglight.nexusquant.livecontrol.application.PilotScopeAuthorityResolver;
 import com.guidinglight.nexusquant.livecontrol.application.PilotScopeMaterializationCommand;
+import com.guidinglight.nexusquant.livecontrol.application.MinimalPilotMaterializationCommand;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
+import com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSet;
 import com.guidinglight.nexusquant.livecontrol.domain.port.LiveControlRepository;
@@ -31,8 +33,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
 
-/** GateY-6D production authority resolver 的 exact SoR 与 server-owned scope 回归。 */
+/**
+ * GateY-6D production authority resolver 的 exact SoR 与 server-owned scope 回归。
+ */
 class JdbcPilotScopeAuthorityResolverTest {
 
     private static final Instant NOW = Instant.parse("2026-08-16T08:00:00Z");
@@ -69,10 +74,34 @@ class JdbcPilotScopeAuthorityResolverTest {
         bindings = bindings();
         when(accounts.findByIdForOwner(11L, 101L)).thenReturn(Optional.of(new ExchangeAccountSummary(
                 101L, null, 11L, "OKX", "LIVE", "pilot", "immutable-account", false, "ACTIVE")));
+        when(accounts.findById(101L)).thenReturn(Optional.of(new ExchangeAccountSummary(
+                101L, null, 11L, "OKX", "LIVE", "pilot", "immutable-account", false, "ACTIVE")));
         when(credentials.findByCredentialIdForOwner(11L, 101L, 202L)).thenReturn(Optional.of(credential("TRADE")));
         when(admissions.loadByPublishRecordId("release-immutable-1")).thenReturn(new StrategyReleaseAdmissionState(
                 "release-immutable-1", 7, 1, A, B, "strategy-release-manifest.v1", NOW, NOW, NOW));
         when(liveControl.findRiskLimitSet(risk.id())).thenReturn(Optional.of(risk));
+    }
+
+    @Test
+    void shouldResolveMinimalOperatorAuthorityWithoutStrategyOrRiskFacts() {
+        configureRuntime(bindings);
+        MinimalPilotMaterializationCommand minimal = new MinimalPilotMaterializationCommand(
+                UUID.randomUUID(), UUID.randomUUID(), 101, 202, "BTC-USDT",
+                new BigDecimal("10.00000000"), NOW, NOW.plusSeconds(120),
+                "idem-minimal", "request-minimal", "trace-minimal");
+
+        var resolved = resolver().resolveMinimal(new AuthenticatedLiveControlActor(11), minimal);
+
+        OperatorPilotAuthority authority = resolved.operatorPilotAuthority();
+        assertEquals(11, resolved.ownerId());
+        assertEquals("BTC-USDT", authority.instrument());
+        assertEquals(OperatorPilotAuthority.Side.BUY, authority.side());
+        assertEquals(OperatorPilotAuthority.OrderType.LIMIT, authority.orderType());
+        assertEquals(new BigDecimal("10.00000000"), authority.maxNotional());
+        assertEquals(1, authority.maxPlaceCount());
+        assertEquals(1, authority.maxCancelCount());
+        assertEquals(bindings, resolved.scopeBindings());
+        verifyNoInteractions(admissions, liveControl);
     }
 
     @Test

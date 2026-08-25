@@ -15,6 +15,7 @@ import java.util.UUID;
 public record PilotExecutionLease(
         UUID id,
         UUID liveSessionId,
+        UUID operatorPilotAuthorityId,
         UUID bindingId,
         String bindingDigest,
         Status status,
@@ -29,6 +30,29 @@ public record PilotExecutionLease(
         Instant updatedAt
 ) {
     public static final Duration MAXIMUM_LIFETIME = Duration.ofMinutes(5);
+
+    /**
+     * V42 source-compatible constructor；STRATEGY lease 不绑定 operator authority。
+     */
+    public PilotExecutionLease(
+            UUID id,
+            UUID liveSessionId,
+            UUID bindingId,
+            String bindingDigest,
+            Status status,
+            BigDecimal maxNotional,
+            Instant validFrom,
+            Instant expiresAt,
+            Instant consumedAt,
+            Instant closedAt,
+            long createdBy,
+            long version,
+            Instant createdAt,
+            Instant updatedAt
+    ) {
+        this(id, liveSessionId, null, bindingId, bindingDigest, status, maxNotional, validFrom,
+                expiresAt, consumedAt, closedAt, createdBy, version, createdAt, updatedAt);
+    }
 
     public PilotExecutionLease {
         Objects.requireNonNull(id, "id must not be null");
@@ -70,7 +94,9 @@ public record PilotExecutionLease(
         ExactPilotBinding.require(binding.order().notional().compareTo(maxNotional) <= 0,
                 "binding notional exceeds operator maximum");
         return new PilotExecutionLease(
-                id, binding.sessionId(), binding.id(), binding.bindingDigest(), Status.CREATED,
+                id, binding.sessionId(), binding.operatorPilotAuthority() == null
+                ? null : binding.operatorPilotAuthority().authorityId(),
+                binding.id(), binding.bindingDigest(), Status.CREATED,
                 maxNotional, validFrom, expiresAt, null, null, createdBy, 1, validFrom, validFrom);
     }
 

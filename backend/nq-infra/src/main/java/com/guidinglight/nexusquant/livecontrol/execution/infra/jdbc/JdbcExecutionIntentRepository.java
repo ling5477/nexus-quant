@@ -83,12 +83,12 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
                 return Optional.empty();
             }
             int updated = jdbc.update("""
-                    UPDATE execution_intents
-                    SET state='CLAIMED',version=version+1,claimed_by=?,claim_token=?,
-                        claimed_at=CURRENT_TIMESTAMP,lease_expires_at=CURRENT_TIMESTAMP + (? * INTERVAL '1 millisecond')
-                    WHERE intent_id=? AND state=? AND version=?
-                      AND claim_token IS NOT DISTINCT FROM ? AND send_started_at IS NULL
-                    """, workerId, claimToken, lease.toMillis(), intentId, current.state().name(),
+                            UPDATE execution_intents
+                            SET state='CLAIMED',version=version+1,claimed_by=?,claim_token=?,
+                                claimed_at=CURRENT_TIMESTAMP,lease_expires_at=CURRENT_TIMESTAMP + (? * INTERVAL '1 millisecond')
+                            WHERE intent_id=? AND state=? AND version=?
+                              AND claim_token IS NOT DISTINCT FROM ? AND send_started_at IS NULL
+                            """, workerId, claimToken, lease.toMillis(), intentId, current.state().name(),
                     current.version(), current.claimToken());
             return updated == 1 ? findInternal(intentId, false) : Optional.empty();
         }));
@@ -163,11 +163,11 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
                     "SELECT COALESCE(MAX(attempt_no),0)+1 FROM execution_receipts WHERE intent_id=?",
                     Integer.class, intentId);
             jdbc.update("""
-                    INSERT INTO execution_receipts(
-                        receipt_id,intent_id,attempt_no,outcome,exchange_request_id,exchange_order_id,
-                        error_category,error_code,received_at,payload_digest,payload_digest_schema_version
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
-                    """, receipt.receiptId(), intentId, attemptNo, receipt.outcome().name(),
+                            INSERT INTO execution_receipts(
+                                receipt_id,intent_id,attempt_no,outcome,exchange_request_id,exchange_order_id,
+                                error_category,error_code,received_at,payload_digest,payload_digest_schema_version
+                            ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                            """, receipt.receiptId(), intentId, attemptNo, receipt.outcome().name(),
                     receipt.exchangeRequestId(), receipt.exchangeOrderId(), receipt.errorCategory(),
                     receipt.errorCode(), Timestamp.from(receipt.receivedAt()), receipt.payloadDigest(),
                     ExecutionReceiptDraft.DIGEST_SCHEMA);
@@ -201,14 +201,14 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
         }
         if (draft.action() == ExecutionIntentAction.CANCEL) {
             List<OriginalPlaceFacts> places = jdbc.query("""
-                    SELECT state,
-                           (SELECT outcome FROM execution_receipts er
-                            WHERE er.intent_id=ei.intent_id ORDER BY attempt_no DESC LIMIT 1) AS latest_outcome
-                    FROM execution_intents ei
-                    WHERE session_id=? AND local_order_id=? AND action='PLACE' AND client_order_id=?
-                    FOR UPDATE
-                    """, (row, ignored) -> new OriginalPlaceFacts(
-                    ExecutionIntentState.valueOf(row.getString("state")), row.getString("latest_outcome")),
+                            SELECT state,
+                                   (SELECT outcome FROM execution_receipts er
+                                    WHERE er.intent_id=ei.intent_id ORDER BY attempt_no DESC LIMIT 1) AS latest_outcome
+                            FROM execution_intents ei
+                            WHERE session_id=? AND local_order_id=? AND action='PLACE' AND client_order_id=?
+                            FOR UPDATE
+                            """, (row, ignored) -> new OriginalPlaceFacts(
+                            ExecutionIntentState.valueOf(row.getString("state")), row.getString("latest_outcome")),
                     draft.sessionId(), draft.localOrderId(), draft.clientOrderId());
             if (places.size() != 1) {
                 throw new LiveControlException(
@@ -231,11 +231,11 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
                 "SELECT COALESCE(MAX(sequence),0)+1 FROM execution_intents WHERE session_id=?",
                 Long.class, draft.sessionId());
         jdbc.update("""
-                INSERT INTO execution_intents(
-                    intent_id,session_id,sequence,action,symbol,side,order_type,quantity,limit_price,
-                    payload_hash_schema_version,payload_hash,client_order_id,local_order_id,state
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'CREATED')
-                """, draft.intentId(), draft.sessionId(), sequence, draft.action().name(), draft.symbol(),
+                        INSERT INTO execution_intents(
+                            intent_id,session_id,sequence,action,symbol,side,order_type,quantity,limit_price,
+                            payload_hash_schema_version,payload_hash,client_order_id,local_order_id,state
+                        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'CREATED')
+                        """, draft.intentId(), draft.sessionId(), sequence, draft.action().name(), draft.symbol(),
                 draft.side(), draft.orderType(), draft.quantity(), draft.limitPrice(),
                 ExecutionIntentDraft.PAYLOAD_SCHEMA, draft.payloadHash(), draft.clientOrderId(), draft.localOrderId());
         ExecutionIntent created = findInternal(draft.intentId(), false).orElseThrow();
@@ -260,23 +260,23 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
 
     private SessionOrderFacts lockAndValidateSessionOrder(ExecutionIntentDraft draft) {
         List<SessionOrderFacts> values = jdbc.query("""
-                SELECT ls.state,ls.venue,ls.symbol_allowlist,ls.exchange_account_id,ls.created_by,
-                       ea.owner_user_id,ea.legacy_account_id,
-                       o.account_id,o.exchange_code,o.trade_env,o.symbol,o.client_order_id,o.side,o.type,o.qty,o.price
-                FROM live_sessions ls
-                JOIN exchange_accounts ea ON ea.exchange_account_id=ls.exchange_account_id
-                JOIN orders o ON o.order_id=?
-                WHERE ls.session_id=?
-                FOR UPDATE OF ls,o
-                """, (row, ignored) -> new SessionOrderFacts(
-                row.getString("state"), row.getString("venue"),
-                java.util.List.of((String[]) row.getArray("symbol_allowlist").getArray()),
-                row.getLong("exchange_account_id"),
-                row.getLong("created_by"), row.getLong("owner_user_id"),
-                nullableLong(row, "legacy_account_id"), row.getLong("account_id"),
-                row.getString("exchange_code"), row.getString("trade_env"), row.getString("symbol"),
-                row.getString("client_order_id"), row.getString("side"), row.getString("type"),
-                row.getBigDecimal("qty"), row.getBigDecimal("price")),
+                        SELECT ls.state,ls.venue,ls.symbol_allowlist,ls.exchange_account_id,ls.created_by,
+                               ea.owner_user_id,ea.legacy_account_id,
+                               o.account_id,o.exchange_code,o.trade_env,o.symbol,o.client_order_id,o.side,o.type,o.qty,o.price
+                        FROM live_sessions ls
+                        JOIN exchange_accounts ea ON ea.exchange_account_id=ls.exchange_account_id
+                        JOIN orders o ON o.order_id=?
+                        WHERE ls.session_id=?
+                        FOR UPDATE OF ls,o
+                        """, (row, ignored) -> new SessionOrderFacts(
+                        row.getString("state"), row.getString("venue"),
+                        java.util.List.of((String[]) row.getArray("symbol_allowlist").getArray()),
+                        row.getLong("exchange_account_id"),
+                        row.getLong("created_by"), row.getLong("owner_user_id"),
+                        nullableLong(row, "legacy_account_id"), row.getLong("account_id"),
+                        row.getString("exchange_code"), row.getString("trade_env"), row.getString("symbol"),
+                        row.getString("client_order_id"), row.getString("side"), row.getString("type"),
+                        row.getBigDecimal("qty"), row.getBigDecimal("price")),
                 draft.localOrderId(), draft.sessionId());
         if (values.size() != 1) {
             throw new LiveControlException(
@@ -363,69 +363,102 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
         requirePlaceCreationSafetyGateForSend(intent.sessionId());
         if (!minimalPilotSession(intent.sessionId())) return;
         List<UUID> exact = jdbc.query("""
-                SELECT lease.lease_id
-                FROM pilot_execution_lease_intents link
-                JOIN pilot_execution_leases lease ON lease.lease_id=link.lease_id
-                JOIN live_sessions session ON session.session_id=lease.live_session_id
-                JOIN exchange_accounts account ON account.exchange_account_id=session.exchange_account_id
-                JOIN exchange_account_credentials credential
-                  ON credential.credential_id=session.credential_reference
-                 AND credential.exchange_account_id=session.exchange_account_id
-                JOIN pilot_scope_bindings scope ON scope.session_id=session.session_id
-                WHERE link.intent_id=? AND link.action='PLACE'
-                  AND lease.live_session_id=? AND lease.status='CONSUMED'
-                  AND lease.valid_from<=CURRENT_TIMESTAMP AND lease.expires_at>CURRENT_TIMESTAMP
-                  AND (? * ?)<=lease.max_notional
-                  AND account.owner_user_id=session.owner_id AND account.exchange_code='OKX'
-                  AND account.trade_env='LIVE' AND account.status='ACTIVE'
-                  AND credential.credential_type='OKX_API_V5'
-                  AND credential.credential_status='ACTIVE' AND credential.is_active=TRUE
-                  AND credential.verification_status='VERIFIED'
-                  AND credential.permission_probe_status='SUCCEEDED'
-                  AND credential.permission_scope='TRADE' AND credential.withdraw_enabled=FALSE
-                  AND credential.ip_allowlist_probe_status='PASSED'
-                  AND credential.revoked_at IS NULL AND credential.rotated_at IS NULL
-                  AND EXISTS (
-                      SELECT 1 FROM pilot_prerequisite_observations observation
-                      JOIN pilot_instrument_observation_items item
-                        ON item.observation_id=observation.observation_id
-                      WHERE observation.pilot_scope_id=scope.pilot_scope_id
-                        AND observation.observation_type='INSTRUMENT_METADATA'
-                        AND observation.observed_at + scope.instrument_maximum_age_ms * INTERVAL '1 millisecond'
-                            >= CURRENT_TIMESTAMP
-                        AND item.symbol=? AND item.trading_status='LIVE'
-                        AND ? >= item.minimum_order_size
-                        AND (? * ?) >= COALESCE(item.minimum_order_value,0)
-                  )
-                  AND EXISTS (
-                      SELECT 1 FROM pilot_prerequisite_observations observation
-                      WHERE observation.pilot_scope_id=scope.pilot_scope_id
-                        AND observation.observation_type='FEE_SCHEDULE'
-                        AND observation.fee_evidence_class='OBSERVED_PRIVATE'
-                        AND observation.observed_at + scope.fee_maximum_age_ms * INTERVAL '1 millisecond'
-                            >= CURRENT_TIMESTAMP
-                  )
-                  AND EXISTS (
-                      SELECT 1 FROM pilot_prerequisite_observations observation
-                      WHERE observation.pilot_scope_id=scope.pilot_scope_id
-                        AND observation.observation_type='BALANCE_SNAPSHOT'
-                        AND observation.available_balance >= (? * ?)
-                        AND observation.observed_at + scope.balance_maximum_age_ms * INTERVAL '1 millisecond'
-                            >= CURRENT_TIMESTAMP
-                  )
-                  AND EXISTS (
-                      SELECT 1 FROM pilot_prerequisite_observations observation
-                      WHERE observation.pilot_scope_id=scope.pilot_scope_id
-                        AND observation.observation_type='CLOCK_SYNC'
-                        AND abs(observation.observed_skew_ms) <= scope.maximum_tolerated_skew_ms
-                        AND observation.observed_at + scope.clock_maximum_age_ms * INTERVAL '1 millisecond'
-                            >= CURRENT_TIMESTAMP
-                  )
-                FOR UPDATE OF lease
-                """,
+                        SELECT lease.lease_id
+                        FROM pilot_execution_lease_intents link
+                        JOIN pilot_execution_leases lease ON lease.lease_id=link.lease_id
+                        JOIN live_sessions session ON session.session_id=lease.live_session_id
+                        LEFT JOIN operator_pilot_authorities authority
+                          ON authority.authority_id=lease.operator_pilot_authority_id
+                         AND authority.authority_id=session.operator_pilot_authority_id
+                        JOIN exchange_accounts account ON account.exchange_account_id=session.exchange_account_id
+                        JOIN exchange_account_credentials credential
+                          ON credential.credential_id=session.credential_reference
+                         AND credential.exchange_account_id=session.exchange_account_id
+                        JOIN pilot_scope_bindings scope ON scope.session_id=session.session_id
+                        WHERE link.intent_id=? AND link.action='PLACE'
+                          AND lease.live_session_id=? AND lease.status='CONSUMED'
+                          AND lease.valid_from<=CURRENT_TIMESTAMP AND lease.expires_at>CURRENT_TIMESTAMP
+                          AND (? * ?)<=lease.max_notional
+                          AND (
+                            (session.authority_type='STRATEGY' AND lease.operator_pilot_authority_id IS NULL)
+                            OR (session.authority_type='OPERATOR_PILOT'
+                              AND session.operator_pilot_authority_digest=authority.canonical_digest
+                              AND authority.status='ACTIVE'
+                              AND authority.valid_from<=CURRENT_TIMESTAMP AND authority.expires_at>CURRENT_TIMESTAMP
+                              AND authority.owner_user_id=session.owner_id
+                              AND authority.exchange_account_id=session.exchange_account_id
+                              AND authority.credential_reference_id=session.credential_reference
+                              AND authority.instrument=? AND authority.side=? AND authority.order_type='LIMIT'
+                              AND (? * ?)<=authority.max_notional
+                              AND authority.max_place_count=1 AND authority.max_cancel_count=1
+                              AND authority.transfer_allowed=FALSE AND authority.withdraw_allowed=FALSE)
+                          )
+                          AND account.owner_user_id=session.owner_id AND account.exchange_code='OKX'
+                          AND account.trade_env='LIVE' AND account.status='ACTIVE'
+                          AND credential.credential_type='OKX_API_V5'
+                          AND credential.credential_status='ACTIVE' AND credential.is_active=TRUE
+                          AND credential.verification_status='VERIFIED'
+                          AND credential.permission_probe_status='SUCCEEDED'
+                          AND credential.permission_scope='TRADE' AND credential.withdraw_enabled=FALSE
+                          AND credential.ip_allowlist_probe_status='PASSED'
+                          AND credential.last_permission_probe_at IS NOT NULL
+                          AND credential.last_permission_probe_at<=CURRENT_TIMESTAMP + INTERVAL '5 seconds'
+                          AND credential.last_permission_probe_at + INTERVAL '1 minute'>=CURRENT_TIMESTAMP
+                          AND credential.revoked_at IS NULL AND credential.rotated_at IS NULL
+                          AND EXISTS (
+                              SELECT 1 FROM pilot_prerequisite_observations observation
+                              JOIN pilot_instrument_observation_items item
+                                ON item.observation_id=observation.observation_id
+                              WHERE observation.pilot_scope_id=scope.pilot_scope_id
+                                AND observation.observation_type='INSTRUMENT_METADATA'
+                                AND observation.observed_at + scope.instrument_maximum_age_ms * INTERVAL '1 millisecond'
+                                    >= CURRENT_TIMESTAMP
+                                AND item.symbol=? AND item.trading_status='LIVE'
+                                AND ? >= item.minimum_order_size
+                                AND (? * ?) >= COALESCE(item.minimum_order_value,0)
+                          )
+                          AND EXISTS (
+                              SELECT 1 FROM pilot_prerequisite_observations observation
+                              WHERE observation.pilot_scope_id=scope.pilot_scope_id
+                                AND observation.observation_type='MARKET_SNAPSHOT'
+                                AND observation.market_instrument=? AND observation.best_ask=?
+                                AND observation.market_snapshot_digest=gate_y43_market_snapshot_digest(
+                                    observation.market_instrument,observation.best_ask,observation.observed_at,
+                                    observation.source_identity,observation.source_schema_version)
+                                AND observation.observed_at + scope.instrument_maximum_age_ms * INTERVAL '1 millisecond'
+                                    >= CURRENT_TIMESTAMP
+                          )
+                          AND EXISTS (
+                              SELECT 1 FROM pilot_prerequisite_observations observation
+                              WHERE observation.pilot_scope_id=scope.pilot_scope_id
+                                AND observation.observation_type='FEE_SCHEDULE'
+                                AND observation.fee_evidence_class='OBSERVED_PRIVATE'
+                                AND observation.observed_at + scope.fee_maximum_age_ms * INTERVAL '1 millisecond'
+                                    >= CURRENT_TIMESTAMP
+                          )
+                          AND EXISTS (
+                              SELECT 1 FROM pilot_prerequisite_observations observation
+                              WHERE observation.pilot_scope_id=scope.pilot_scope_id
+                                AND observation.observation_type='BALANCE_SNAPSHOT'
+                                AND observation.available_balance >= (? * ?)
+                                AND observation.observed_at + scope.balance_maximum_age_ms * INTERVAL '1 millisecond'
+                                    >= CURRENT_TIMESTAMP
+                          )
+                          AND EXISTS (
+                              SELECT 1 FROM pilot_prerequisite_observations observation
+                              WHERE observation.pilot_scope_id=scope.pilot_scope_id
+                                AND observation.observation_type='CLOCK_SYNC'
+                                AND abs(observation.observed_skew_ms) <= scope.maximum_tolerated_skew_ms
+                                AND observation.observed_at + scope.clock_maximum_age_ms * INTERVAL '1 millisecond'
+                                    >= CURRENT_TIMESTAMP
+                          )
+                        FOR UPDATE OF lease
+                        """,
                 (row, ignored) -> row.getObject(1, UUID.class), intent.intentId(), intent.sessionId(),
+                intent.limitPrice(), intent.quantity(), intent.symbol(), intent.side(),
                 intent.limitPrice(), intent.quantity(), intent.symbol(), intent.quantity(),
-                intent.limitPrice(), intent.quantity(), intent.limitPrice(), intent.quantity());
+                intent.limitPrice(), intent.quantity(), intent.symbol(), intent.limitPrice(),
+                intent.limitPrice(), intent.quantity());
         if (exact.size() != 1 || !killFacts().getFirst().reasonCode().equals("PILOT_LEASE_" + exact.getFirst())) {
             throw new LiveControlException(
                     "PILOT_EXECUTION_LEASE_SEND_REJECTED", "PLACE send is outside exact consumed lease");
@@ -453,14 +486,39 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
     private void requireCancelSendSafetyGate(ExecutionIntent intent) {
         requirePlaceCreationSafetyGateForSend(intent.sessionId());
         List<UUID> leases = jdbc.query("""
-                SELECT lease.lease_id
-                FROM pilot_execution_lease_intents link
-                JOIN pilot_execution_leases lease ON lease.lease_id=link.lease_id
-                WHERE link.intent_id=? AND link.action='CANCEL'
-                  AND lease.live_session_id=? AND lease.status='CONSUMED'
-                  AND lease.expires_at>CURRENT_TIMESTAMP
-                FOR UPDATE OF lease
-                """, (row, ignored) -> row.getObject(1, UUID.class), intent.intentId(), intent.sessionId());
+                        SELECT lease.lease_id
+                        FROM pilot_execution_lease_intents link
+                        JOIN pilot_execution_leases lease ON lease.lease_id=link.lease_id
+                        JOIN live_sessions session ON session.session_id=lease.live_session_id
+                        LEFT JOIN operator_pilot_authorities authority
+                          ON authority.authority_id=lease.operator_pilot_authority_id
+                         AND authority.authority_id=session.operator_pilot_authority_id
+                        JOIN exchange_account_credentials credential
+                          ON credential.credential_id=session.credential_reference
+                         AND credential.exchange_account_id=session.exchange_account_id
+                        WHERE link.intent_id=? AND link.action='CANCEL'
+                          AND lease.live_session_id=? AND lease.status='CONSUMED'
+                          AND lease.expires_at>CURRENT_TIMESTAMP
+                          AND (
+                            (session.authority_type='STRATEGY' AND lease.operator_pilot_authority_id IS NULL)
+                            OR (session.authority_type='OPERATOR_PILOT'
+                              AND session.operator_pilot_authority_digest=authority.canonical_digest
+                              AND authority.status='ACTIVE' AND authority.expires_at>CURRENT_TIMESTAMP
+                              AND authority.instrument=? AND authority.max_cancel_count=1
+                              AND authority.transfer_allowed=FALSE AND authority.withdraw_allowed=FALSE)
+                          )
+                          AND credential.credential_status='ACTIVE' AND credential.is_active=TRUE
+                          AND credential.verification_status='VERIFIED'
+                          AND credential.permission_probe_status='SUCCEEDED'
+                          AND credential.permission_scope='TRADE' AND credential.withdraw_enabled=FALSE
+                          AND credential.ip_allowlist_probe_status='PASSED'
+                          AND credential.last_permission_probe_at IS NOT NULL
+                          AND credential.last_permission_probe_at<=CURRENT_TIMESTAMP + INTERVAL '5 seconds'
+                          AND credential.last_permission_probe_at + INTERVAL '1 minute'>=CURRENT_TIMESTAMP
+                          AND credential.revoked_at IS NULL AND credential.rotated_at IS NULL
+                        FOR UPDATE OF lease
+                        """, (row, ignored) -> row.getObject(1, UUID.class), intent.intentId(), intent.sessionId(),
+                intent.symbol());
         List<KillFact> kill = killFacts();
         if (leases.size() != 1 || kill.size() != 1
                 || !"PILOT_EXECUTION_LEASE".equals(kill.getFirst().source())

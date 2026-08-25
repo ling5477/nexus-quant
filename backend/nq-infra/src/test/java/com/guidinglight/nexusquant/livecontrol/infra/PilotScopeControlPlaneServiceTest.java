@@ -5,10 +5,12 @@ import com.guidinglight.nexusquant.livecontrol.application.PilotPrerequisiteObse
 import com.guidinglight.nexusquant.livecontrol.application.PilotScopeApprovalCommand;
 import com.guidinglight.nexusquant.livecontrol.application.PilotScopeAuthorityResolver;
 import com.guidinglight.nexusquant.livecontrol.application.PilotScopeMaterializationCommand;
+import com.guidinglight.nexusquant.livecontrol.application.MinimalPilotMaterializationCommand;
 import com.guidinglight.nexusquant.livecontrol.application.port.LiveControlAuthorizationPort;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
 import com.guidinglight.nexusquant.livecontrol.domain.OperatorApproval;
+import com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationCanonicalEncoder;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationSet;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotPrerequisiteObservation;
@@ -38,7 +40,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/** GateY-6D trusted observation、canonicalization、authorization 与 forged replay 回归。 */
+/**
+ * GateY-6D trusted observation、canonicalization、authorization 与 forged replay 回归。
+ */
 class PilotScopeControlPlaneServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-08-16T08:00:00Z");
@@ -79,6 +83,39 @@ class PilotScopeControlPlaneServiceTest {
         when(transactions.materialize(any(), any(), any(), any(), any(), any()))
                 .thenAnswer(invocation -> invocation.getArgument(4));
         when(transactions.approve(any(), any())).thenAnswer(invocation -> invocation.getArgument(1));
+    }
+
+    @Test
+    void shouldMaterializeOperatorPilotWithoutSyntheticStrategyOrRisk() {
+        MinimalPilotMaterializationCommand command = new MinimalPilotMaterializationCommand(
+                UUID.randomUUID(), UUID.randomUUID(), 101, 202, "BTC-USDT",
+                new BigDecimal("10.00000000"), NOW, NOW.plusSeconds(120),
+                "idem-operator", "request-operator", "trace-operator");
+        OperatorPilotAuthority operatorAuthority = OperatorPilotAuthority.active(
+                UUID.randomUUID(), ACTOR.userId(), 101, 202, "BTC-USDT",
+                OperatorPilotAuthority.Side.BUY, OperatorPilotAuthority.OrderType.LIMIT,
+                new BigDecimal("10.00000000"), NOW, NOW.plusSeconds(120), ACTOR.userId(), NOW);
+        when(resolver.resolveMinimal(ACTOR, command)).thenReturn(
+                new PilotScopeAuthorityResolver.ResolvedMinimalAuthority(
+                        ACTOR.userId(), operatorAuthority, bindings));
+        when(transactions.materializeOperatorPilot(any(), any(), any(), any(), any(), any()))
+                .thenAnswer(invocation -> invocation.getArgument(4));
+
+        var result = service.materializeMinimal(ACTOR, command);
+
+        ArgumentCaptor<LiveSession> session = ArgumentCaptor.forClass(LiveSession.class);
+        ArgumentCaptor<OperatorPilotAuthority> authority =
+                ArgumentCaptor.forClass(OperatorPilotAuthority.class);
+        ArgumentCaptor<PilotScopeBinding> scope = ArgumentCaptor.forClass(PilotScopeBinding.class);
+        verify(transactions).materializeOperatorPilot(
+                any(), session.capture(), authority.capture(), any(), scope.capture(), any());
+        assertEquals(operatorAuthority, authority.getValue());
+        assertEquals(operatorAuthority.id(), session.getValue().operatorPilotAuthorityId());
+        assertEquals(null, session.getValue().strategyReleaseId());
+        assertEquals(null, session.getValue().riskLimitSetId());
+        assertTrue(scope.getValue().hasCanonicalHash(session.getValue()));
+        assertEquals(result.pilotScopeId(), scope.getValue().id());
+        verify(transactions, never()).materialize(any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -363,10 +400,10 @@ class PilotScopeControlPlaneServiceTest {
                 setId, scope, balanceObservedAt, recordedAt, recorder, balanceSource, balance);
         var clock = clock(setId, scope, clockObservedAt, recordedAt, recorder,
                 variant == ObservationVariant.FORGED_AFTER_APPROVAL ? 0 : 10);
-        String md=PilotObservationCanonicalEncoder.marketSnapshotDigest("BTC-USDT",new BigDecimal("100"),recordedAt,"market-source","market.v1");
-        var draft=new PilotPrerequisiteObservation.MarketSnapshot(envelope(UUID.randomUUID(),setId,scope,PilotPrerequisiteObservation.MarketSnapshot.SCHEMA_VERSION,"market-"+UUID.randomUUID(),"market-source","market.v1",recordedAt,recordedAt,recorder),md,"BTC-USDT",new BigDecimal("100"));
-        var market=new PilotPrerequisiteObservation.MarketSnapshot(draft.envelope().withPayloadHash(PilotObservationCanonicalEncoder.digest(draft)),md,"BTC-USDT",new BigDecimal("100"));
-        return new PilotObservationSet(setId,scope.id(),instrument,fee,balanceSnapshot,clock,market);
+        String md = PilotObservationCanonicalEncoder.marketSnapshotDigest("BTC-USDT", new BigDecimal("100"), recordedAt, "market-source", "market.v1");
+        var draft = new PilotPrerequisiteObservation.MarketSnapshot(envelope(UUID.randomUUID(), setId, scope, PilotPrerequisiteObservation.MarketSnapshot.SCHEMA_VERSION, "market-" + UUID.randomUUID(), "market-source", "market.v1", recordedAt, recordedAt, recorder), md, "BTC-USDT", new BigDecimal("100"));
+        var market = new PilotPrerequisiteObservation.MarketSnapshot(draft.envelope().withPayloadHash(PilotObservationCanonicalEncoder.digest(draft)), md, "BTC-USDT", new BigDecimal("100"));
+        return new PilotObservationSet(setId, scope.id(), instrument, fee, balanceSnapshot, clock, market);
     }
 
     private static PilotPrerequisiteObservation.InstrumentMetadata instrument(
@@ -462,7 +499,9 @@ class PilotScopeControlPlaneServiceTest {
                 sourceSchema, observedAt, recordedAt, recorder, ZERO);
     }
 
-    /** 仅 test scope 的 deterministic fake；不是 Spring bean，也不进入 production composition。 */
+    /**
+     * 仅 test scope 的 deterministic fake；不是 Spring bean，也不进入 production composition。
+     */
     private static final class DeterministicObservationAuthority
             implements PilotPrerequisiteObservationAuthority {
 

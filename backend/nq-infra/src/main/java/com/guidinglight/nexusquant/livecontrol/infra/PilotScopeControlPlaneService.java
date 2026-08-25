@@ -14,6 +14,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionEvent;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionState;
 import com.guidinglight.nexusquant.livecontrol.domain.OperatorApproval;
+import com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationSet;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeFreshnessPolicy;
@@ -117,31 +118,23 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
         }
         PilotScopeAuthorityResolver.ResolvedMinimalAuthority authority =
                 authorityResolver.resolveMinimal(actor, command);
-        RiskLimitSet risk = authority.riskLimitSet();
-        var admission = authority.admission();
-        PilotScopeMaterializationCommand resolved = new PilotScopeMaterializationCommand(
-                command.sessionId(), command.pilotScopeId(), command.exchangeAccountId(),
-                command.credentialReferenceId(), admission.publishRecordId(),
-                admission.releaseArtifactDigest(), admission.admissionRevision(), selection(risk),
-                List.of(command.instrument()), command.configuredPilotMaxNotional(),
-                command.executionWindowStart(), command.executionWindowEnd(), ZERO_DIGEST,
-                command.idempotencyKey(), command.requestId(), command.traceId());
+        OperatorPilotAuthority operatorAuthority = authority.operatorPilotAuthority();
         Instant now = liveControlRepository.currentTime();
-        LiveSession session = LiveSession.create(
-                resolved.sessionId(), actor.userId(), resolved.exchangeAccountId(), resolved.strategyReleaseId(),
-                resolved.releaseDigest(), resolved.releaseAdmissionRevision(), risk.id(), risk.canonicalDigest(),
-                resolved.credentialReference(), resolved.symbolAllowlist(), resolved.capitalCap(),
-                resolved.executionWindowStart(), resolved.executionWindowEnd(), actor.userId(), now);
-        session.requireWithinRiskLimit(risk);
-        PilotScopeBinding scope = canonicalScope(actor, resolved, authority.scopeBindings(), session, now);
+        LiveSession session = LiveSession.createOperatorPilot(
+                command.sessionId(), actor.userId(), command.exchangeAccountId(), operatorAuthority.id(),
+                operatorAuthority.canonicalDigest(), command.credentialReferenceId(), command.instrument(),
+                command.configuredPilotMaxNotional(), command.executionWindowStart(),
+                command.executionWindowEnd(), actor.userId(), now);
+        PilotScopeBinding scope = canonicalScope(
+                actor, command.pilotScopeId(), authority.scopeBindings(), session, now);
         PilotObservationSet observations = resolveTrustedObservationSet(session, scope, now);
         requireTrustedObservationSet(session, scope, observations, now);
         LiveSessionEvent createdEvent = new LiveSessionEvent(
                 UUID.randomUUID(), session.id(), 1, null, LiveSessionState.APPROVAL_PENDING,
                 "CREATE", actor.userId(), command.requestId(), command.traceId(), "SESSION_CREATED",
                 command.idempotencyKey(), scope.pilotScopeHash(), "{}", now);
-        PilotScopeBinding stored = transactionService.materialize(
-                actor, session, risk, createdEvent, scope, observations);
+        PilotScopeBinding stored = transactionService.materializeOperatorPilot(
+                actor, session, operatorAuthority, createdEvent, scope, observations);
         return new PilotScopeMaterializationResult(
                 session.id(), stored.id(), observations.id(), stored.pilotScopeHash());
     }
@@ -182,6 +175,12 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
         }
         LiveSession session = liveControlRepository.findSession(command.sessionId())
                 .orElseThrow(() -> new LiveControlException("LIVE_SESSION_NOT_FOUND", "live session was not found"));
+        if (session.authorityType()
+                == com.guidinglight.nexusquant.livecontrol.domain.LiveSessionAuthorityType.OPERATOR_PILOT) {
+            throw new LiveControlException(
+                    "OPERATOR_PILOT_EXTERNAL_APPROVAL_FORBIDDEN",
+                    "operator pilot approval is carried by its explicit authority");
+        }
         PilotScopeBinding scope = pilotScopeRepository.findBySessionId(command.sessionId())
                 .orElseThrow(() -> new LiveControlException("PILOT_SCOPE_NOT_FOUND", "pilot scope was not found"));
         if (!scope.id().equals(command.pilotScopeId())
@@ -217,9 +216,19 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
             LiveSession session,
             Instant now
     ) {
+        return canonicalScope(actor, command.pilotScopeId(), value, session, now);
+    }
+
+    private static PilotScopeBinding canonicalScope(
+            AuthenticatedLiveControlActor actor,
+            UUID pilotScopeId,
+            PilotScopeAuthorityResolver.ResolvedScopeBindings value,
+            LiveSession session,
+            Instant now
+    ) {
         Objects.requireNonNull(value, "scopeBindings must not be null");
         PilotScopeBinding draft = new PilotScopeBinding(
-                command.pilotScopeId(), session.id(), value.instrumentMetadataDigest(),
+                pilotScopeId, session.id(), value.instrumentMetadataDigest(),
                 value.instrumentSourceIdentity(), value.instrumentSourceSchemaVersion(),
                 value.instrumentMaximumAgeMs(), value.feeScheduleDigest(), value.feeTier(),
                 value.feeEvidenceClass(), value.feeSourceIdentity(), value.feeSourceSchemaVersion(),
@@ -247,14 +256,14 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
                         && !value.envelope().observedAt().isAfter(value.envelope().recordedAt())
                         && value.envelope().recorderIdentity().equals(scope.workerIdentity()));
         boolean exactSources = observations.instrumentMetadata().envelope().sourceIdentity()
-                        .equals(scope.instrumentSourceIdentity())
+                .equals(scope.instrumentSourceIdentity())
                 && observations.instrumentMetadata().envelope().sourceSchemaVersion()
-                        .equals(scope.instrumentSourceSchemaVersion())
+                .equals(scope.instrumentSourceSchemaVersion())
                 && observations.feeSchedule().envelope().sourceIdentity().equals(scope.feeSourceIdentity())
                 && observations.feeSchedule().envelope().sourceSchemaVersion().equals(scope.feeSourceSchemaVersion())
                 && observations.balanceSnapshot().envelope().sourceIdentity().equals(scope.balanceSourceIdentity())
                 && observations.balanceSnapshot().envelope().sourceSchemaVersion()
-                        .equals(scope.balanceSourceSchemaVersion())
+                .equals(scope.balanceSourceSchemaVersion())
                 && observations.clockSync().envelope().sourceIdentity().equals(scope.clockSourceIdentity())
                 && observations.clockSync().envelope().sourceSchemaVersion().equals(scope.clockSourceSchemaVersion());
         boolean exactSymbols = observations.instrumentMetadata().items().stream()
@@ -282,12 +291,12 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
                 && stored.maxOpenOrders() == supplied.maxOpenOrders()
                 && stored.maxIntradayOrders() == supplied.maxIntradayOrders()
                 && stored.symbolAllowlist().equals(new RiskLimitSet(
-                        stored.id(), supplied.version(), supplied.capitalCap(), supplied.maxOrderNotional(),
-                        supplied.maxSymbolPositionNotional(), supplied.maxDailyRealizedLoss(),
-                        supplied.maxDailyTotalLoss(), supplied.maxOpenOrders(), supplied.maxIntradayOrders(),
-                        supplied.symbolAllowlist(), supplied.maxSessionDurationSeconds(), supplied.spreadLimitBps(),
-                        supplied.slippageLimitBps(), supplied.maxMarketDataAgeMs(), supplied.minDataCoverageBps(),
-                        stored.createdBy(), stored.createdAt()).symbolAllowlist())
+                stored.id(), supplied.version(), supplied.capitalCap(), supplied.maxOrderNotional(),
+                supplied.maxSymbolPositionNotional(), supplied.maxDailyRealizedLoss(),
+                supplied.maxDailyTotalLoss(), supplied.maxOpenOrders(), supplied.maxIntradayOrders(),
+                supplied.symbolAllowlist(), supplied.maxSessionDurationSeconds(), supplied.spreadLimitBps(),
+                supplied.slippageLimitBps(), supplied.maxMarketDataAgeMs(), supplied.minDataCoverageBps(),
+                stored.createdBy(), stored.createdAt()).symbolAllowlist())
                 && stored.maxSessionDurationSeconds() == supplied.maxSessionDurationSeconds()
                 && moneyEquals(stored.spreadLimitBps(), supplied.spreadLimitBps())
                 && moneyEquals(stored.slippageLimitBps(), supplied.slippageLimitBps())

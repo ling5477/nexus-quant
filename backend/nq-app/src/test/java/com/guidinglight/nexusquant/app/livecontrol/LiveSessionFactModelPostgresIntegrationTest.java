@@ -96,7 +96,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
         latest.migrate();
         latest.validate();
         try {
-            assertEquals("43", latest.info().current().getVersion().getVersion());
+            assertEquals("44", latest.info().current().getVersion().getVersion());
             assertEquals(historicalFingerprint, historicalFingerprint(jdbc));
             assertSixTablesAndContracts(jdbc);
 
@@ -143,7 +143,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
     }
 
     @Test
-    void shouldForwardMigrateExactV42ToV43WithoutPendingOrFailedMigrations() {
+    void shouldForwardMigrateExactV42ToV43ThenV43ToV44WithoutPendingOrFailedMigrations() {
         SmokeConfig config = SmokeConfig.fromSystemProperties();
         if (!config.required()) {
             assumeTrue(config.configured(), "PostgreSQL GateY V42 to V43 integration is disabled");
@@ -155,14 +155,13 @@ class LiveSessionFactModelPostgresIntegrationTest {
         throughV42.migrate();
         assertEquals("42", throughV42.info().current().getVersion().getVersion());
 
-        Flyway latest = flyway(config, schema, null);
+        Flyway throughV43 = flyway(config, schema, "43");
         long startedAt = System.nanoTime();
-        latest.migrate();
+        throughV43.migrate();
         long migrationElapsedMs = Duration.ofNanos(System.nanoTime() - startedAt).toMillis();
-        latest.validate();
+        throughV43.validate();
         try {
-            assertEquals("43", latest.info().current().getVersion().getVersion());
-            assertEquals(0, latest.info().pending().length);
+            assertEquals("43", throughV43.info().current().getVersion().getVersion());
             assertEquals(0, jdbc(config, schema).queryForObject(
                     "SELECT count(*) FROM flyway_schema_history WHERE success=FALSE", Integer.class));
             assertTrue(migrationElapsedMs < 60_000, "V43 migration exceeded statement timeout budget");
@@ -173,8 +172,18 @@ class LiveSessionFactModelPostgresIntegrationTest {
                       AND table_name='pilot_prerequisite_observations'
                       AND column_name IN ('market_snapshot_digest','market_instrument','best_ask')
                     """, Integer.class));
+            Flyway latest = flyway(config, schema, null);
+            long v44StartedAt = System.nanoTime();
+            latest.migrate();
+            long v44ElapsedMs = Duration.ofNanos(System.nanoTime() - v44StartedAt).toMillis();
+            latest.validate();
+            assertEquals("44", latest.info().current().getVersion().getVersion());
+            assertEquals(0, latest.info().pending().length);
+            assertEquals(0, jdbc(config, schema).queryForObject(
+                    "SELECT count(*) FROM flyway_schema_history WHERE success=FALSE", Integer.class));
+            assertTrue(v44ElapsedMs < 60_000, "V44 migration exceeded statement timeout budget");
         } finally {
-            latest.clean();
+            throughV43.clean();
         }
     }
 
@@ -202,9 +211,23 @@ class LiveSessionFactModelPostgresIntegrationTest {
         latest.validate();
         System.out.println("gatey6e_v39_to_v41_elapsed_ms=" + migrationElapsedMs);
         try {
-            assertEquals("43", latest.info().current().getVersion().getVersion());
+            assertEquals("44", latest.info().current().getVersion().getVersion());
             assertTrue(migrationElapsedMs < 60_000);
             assertEquals(historical.fingerprint(), historicalApprovalFingerprint(jdbc, historical.approvalId()));
+            assertEquals("STRATEGY", jdbc.queryForObject(
+                    "SELECT authority_type FROM live_sessions WHERE session_id=?",
+                    String.class, historical.session().id()));
+            assertEquals(0, jdbc.queryForObject("""
+                    SELECT count(*) FROM live_sessions
+                    WHERE session_id=? AND (operator_pilot_authority_id IS NOT NULL
+                        OR operator_pilot_authority_digest IS NOT NULL)
+                    """, Integer.class, historical.session().id()));
+            assertEquals(historical.session().strategyReleaseId(), jdbc.queryForObject(
+                    "SELECT strategy_release_id FROM live_sessions WHERE session_id=?",
+                    String.class, historical.session().id()));
+            assertEquals(historical.session().riskLimitSetId(), jdbc.queryForObject(
+                    "SELECT risk_limit_set_id FROM live_sessions WHERE session_id=?",
+                    UUID.class, historical.session().id()));
             assertEquals("approval-scope.v1", jdbc.queryForObject(
                     "SELECT scope_schema_version FROM operator_approvals WHERE approval_id=?",
                     String.class, historical.approvalId()));
@@ -224,8 +247,13 @@ class LiveSessionFactModelPostgresIntegrationTest {
             var transactionManager = new DataSourceTransactionManager(jdbc.getDataSource());
             TransactionTemplate transactions = new TransactionTemplate(transactionManager);
             LiveSessionControlService liveService = new LiveSessionControlService(liveRepository, authorization);
+            var operatorAuthorityService = new com.guidinglight.nexusquant.livecontrol.application
+                    .OperatorPilotAuthorityService(
+                    new com.guidinglight.nexusquant.livecontrol.infra.jdbc
+                            .JdbcOperatorPilotAuthorityRepository(jdbc), authorization);
             PilotScopeFactTransactionService pilotTransactions = new PilotScopeFactTransactionService(
-                    liveService, liveRepository, pilotRepository, authorization, transactionManager);
+                    liveService, operatorAuthorityService, liveRepository, pilotRepository,
+                    authorization, transactionManager);
             RiskLimitSet pilotRisk = risk(pilotFixture.creatorId(), 100);
             transactions.executeWithoutResult(status -> liveService.createRiskLimitSet(
                     new AuthenticatedLiveControlActor(pilotFixture.creatorId()), pilotRisk));
@@ -370,11 +398,8 @@ class LiveSessionFactModelPostgresIntegrationTest {
                 PilotPrerequisiteObservation.InstrumentMetadata.LEGACY_SCHEMA_VERSION,
                 legacyItem, "-legacy");
         transactions.executeWithoutResult(status -> {
-            liveService.createRiskLimitSet(
-                    new AuthenticatedLiveControlActor(legacyFixture.creatorId()), legacyRisk);
-            liveService.createSession(
-                    new AuthenticatedLiveControlActor(legacyFixture.creatorId()), legacySession, legacyRisk,
-                    createdEventAt(legacySession, legacyFixture.creatorId(), factNow));
+            liveRepository.createRiskLimitSet(legacyRisk);
+            seedStrategySessionV39(jdbc, legacySession);
             pilotRepository.materialize(legacySession, legacyScope);
             appendLegacyV40ObservationSet(jdbc, legacyObservations);
         });
@@ -384,7 +409,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
         try {
             latest.migrate();
             latest.validate();
-            assertEquals("43", latest.info().current().getVersion().getVersion());
+            assertEquals("44", latest.info().current().getVersion().getVersion());
             assertEquals(legacyFingerprint,
                     legacyInstrumentFingerprint(jdbc, legacyObservations.instrumentMetadata().id()));
             assertEquals("LEGACY_V40_REQUIRED", jdbc.queryForObject("""
@@ -404,17 +429,17 @@ class LiveSessionFactModelPostgresIntegrationTest {
             assertInstrumentCanonicalBytesParity(jdbc, legacyObservations.instrumentMetadata());
 
             assertSqlState23514(() -> jdbc.update("""
-                    INSERT INTO pilot_prerequisite_observations(
-                        observation_id,pilot_scope_id,observation_set_id,observation_type,
-                        observation_schema_version,observation_identity,source_identity,source_schema_version,
-                        observed_at,recorded_at,recorder_identity,observation_payload_hash,
-                        instrument_metadata_digest)
-                    SELECT ?,pilot_scope_id,?,'INSTRUMENT_METADATA',
-                           'instrument-metadata-observation.v1',?,source_identity,source_schema_version,
-                           observed_at,recorded_at,recorder_identity,observation_payload_hash,
-                           instrument_metadata_digest
-                    FROM pilot_prerequisite_observations WHERE observation_id=?
-                    """, UUID.randomUUID(), UUID.randomUUID(), "new-v1-" + UUID.randomUUID(),
+                            INSERT INTO pilot_prerequisite_observations(
+                                observation_id,pilot_scope_id,observation_set_id,observation_type,
+                                observation_schema_version,observation_identity,source_identity,source_schema_version,
+                                observed_at,recorded_at,recorder_identity,observation_payload_hash,
+                                instrument_metadata_digest)
+                            SELECT ?,pilot_scope_id,?,'INSTRUMENT_METADATA',
+                                   'instrument-metadata-observation.v1',?,source_identity,source_schema_version,
+                                   observed_at,recorded_at,recorder_identity,observation_payload_hash,
+                                   instrument_metadata_digest
+                            FROM pilot_prerequisite_observations WHERE observation_id=?
+                            """, UUID.randomUUID(), UUID.randomUUID(), "new-v1-" + UUID.randomUUID(),
                     legacyObservations.instrumentMetadata().id()));
 
             ExistingFixture v2Fixture = seedExistingFacts(jdbc);
@@ -497,7 +522,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
                         minimum_order_value,minimum_order_value_currency)
                      VALUES (?,'INSTRUMENT_METADATA','ETH-USDT','LIVE',0.1,0.001,0.001,
                              'VENUE_PUBLISHED',NULL,NULL)
-                     """, v2Observations.instrumentMetadata().id()));
+                    """, v2Observations.instrumentMetadata().id()));
             assertSqlState23514(() -> jdbc.update("""
                     INSERT INTO pilot_instrument_observation_items(
                         observation_id,observation_type,symbol,trading_status,tick_size,lot_size,
@@ -527,7 +552,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
         Flyway replay = flyway(config, replaySchema, null);
         replay.migrate();
         try {
-            assertEquals("43", replay.info().current().getVersion().getVersion());
+            assertEquals("44", replay.info().current().getVersion().getVersion());
             replay.validate();
         } finally {
             replay.clean();
@@ -614,17 +639,39 @@ class LiveSessionFactModelPostgresIntegrationTest {
         RiskLimitSet risk = risk(fixture.creatorId(), 99);
         repository.createRiskLimitSet(risk);
         LiveSession session = session(fixture, risk, UUID.randomUUID(), NOW);
-        repository.createSession(session);
+        seedStrategySessionV39(jdbc, session);
         UUID approvalId = UUID.randomUUID();
         jdbc.update("""
-                INSERT INTO operator_approvals(
-                    approval_id,session_id,scope_hash,release_digest,risk_limit_set_digest,
-                    approver_id,approver_role,decision,reason,approved_at,expires_at
-                ) VALUES (?,?,?,?,?,?,'LIVE_APPROVER','REJECTED','historical-v39',?,?)
-                """, approvalId, session.id(), session.approvalScopeHash(), session.releaseDigest(),
+                        INSERT INTO operator_approvals(
+                            approval_id,session_id,scope_hash,release_digest,risk_limit_set_digest,
+                            approver_id,approver_role,decision,reason,approved_at,expires_at
+                        ) VALUES (?,?,?,?,?,?,'LIVE_APPROVER','REJECTED','historical-v39',?,?)
+                        """, approvalId, session.id(), session.approvalScopeHash(), session.releaseDigest(),
                 session.riskLimitSetDigest(), fixture.approverId(), Timestamp.from(NOW),
                 Timestamp.from(NOW.plusSeconds(120)));
         return new HistoricalV39(session, approvalId, historicalApprovalFingerprint(jdbc, approvalId));
+    }
+
+    /**
+     * 历史升级 fixture 必须使用 V39 当时的列集，不能复用升级后的 current JDBC adapter。
+     */
+    private static void seedStrategySessionV39(JdbcTemplate jdbc, LiveSession session) {
+        jdbc.update("""
+                        INSERT INTO live_sessions(
+                            session_id,owner_id,exchange_account_id,venue,strategy_release_id,
+                            release_digest,release_admission_revision,risk_limit_set_id,risk_limit_set_digest,
+                            credential_reference,symbol_allowlist,capital_cap,execution_window_start,
+                            execution_window_end,state,version,approval_scope_hash,
+                            approval_scope_schema_version,next_event_sequence,created_by,created_at,updated_at
+                        ) VALUES (?,?,?,?,?,?,?,?,?,?,?, ?,?,?,?,?,?,?,?,?,?,?)
+                        """, session.id(), session.ownerId(), session.exchangeAccountId(), session.venue(),
+                session.strategyReleaseId(), session.releaseDigest(), session.releaseAdmissionRevision(),
+                session.riskLimitSetId(), session.riskLimitSetDigest(), session.credentialReference(),
+                session.symbolAllowlist().toArray(String[]::new), session.capitalCap(),
+                Timestamp.from(session.executionWindowStart()), Timestamp.from(session.executionWindowEnd()),
+                session.state().name(), session.version(), session.approvalScopeHash(),
+                LiveSession.APPROVAL_SCOPE_SCHEMA, session.nextEventSequence(), session.createdBy(),
+                Timestamp.from(session.createdAt()), Timestamp.from(session.updatedAt()));
     }
 
     private static String historicalApprovalFingerprint(JdbcTemplate jdbc, UUID approvalId) {
@@ -969,8 +1016,8 @@ class LiveSessionFactModelPostgresIntegrationTest {
             PilotPrerequisiteObservation.MarketSnapshot observation
     ) {
         assertEquals(observation.marketSnapshotDigest(), jdbc.queryForObject("""
-                SELECT gate_y43_market_snapshot_digest(?,?,?,?,?)
-                """, String.class,
+                        SELECT gate_y43_market_snapshot_digest(?,?,?,?,?)
+                        """, String.class,
                 observation.instrument(), observation.bestAsk(),
                 Timestamp.from(observation.envelope().observedAt()),
                 observation.envelope().sourceIdentity(),
@@ -1077,13 +1124,13 @@ class LiveSessionFactModelPostgresIntegrationTest {
     ) {
         var instrument = observations.instrumentMetadata();
         jdbc.update("""
-                INSERT INTO pilot_prerequisite_observations(
-                    observation_id,pilot_scope_id,observation_set_id,observation_type,
-                    observation_schema_version,observation_identity,source_identity,source_schema_version,
-                    observed_at,recorded_at,recorder_identity,observation_payload_hash,
-                    instrument_metadata_digest)
-                VALUES (?,?,?,'INSTRUMENT_METADATA',?,?,?,?,?,?,?,?,?)
-                """, instrument.id(), instrument.pilotScopeId(), instrument.observationSetId(),
+                        INSERT INTO pilot_prerequisite_observations(
+                            observation_id,pilot_scope_id,observation_set_id,observation_type,
+                            observation_schema_version,observation_identity,source_identity,source_schema_version,
+                            observed_at,recorded_at,recorder_identity,observation_payload_hash,
+                            instrument_metadata_digest)
+                        VALUES (?,?,?,'INSTRUMENT_METADATA',?,?,?,?,?,?,?,?,?)
+                        """, instrument.id(), instrument.pilotScopeId(), instrument.observationSetId(),
                 instrument.envelope().observationSchemaVersion(), instrument.envelope().observationIdentity(),
                 instrument.envelope().sourceIdentity(), instrument.envelope().sourceSchemaVersion(),
                 Timestamp.from(instrument.envelope().observedAt()), Timestamp.from(instrument.envelope().recordedAt()),
@@ -1092,14 +1139,14 @@ class LiveSessionFactModelPostgresIntegrationTest {
 
         var fee = observations.feeSchedule();
         jdbc.update("""
-                INSERT INTO pilot_prerequisite_observations(
-                    observation_id,pilot_scope_id,observation_set_id,observation_type,
-                    observation_schema_version,observation_identity,source_identity,source_schema_version,
-                    observed_at,recorded_at,recorder_identity,observation_payload_hash,
-                    fee_schedule_digest,fee_tier,fee_evidence_class,maker_fee_rate,taker_fee_rate,
-                    fee_loss_treatment)
-                VALUES (?,?,?,'FEE_SCHEDULE',?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-                """, fee.id(), fee.pilotScopeId(), fee.observationSetId(),
+                        INSERT INTO pilot_prerequisite_observations(
+                            observation_id,pilot_scope_id,observation_set_id,observation_type,
+                            observation_schema_version,observation_identity,source_identity,source_schema_version,
+                            observed_at,recorded_at,recorder_identity,observation_payload_hash,
+                            fee_schedule_digest,fee_tier,fee_evidence_class,maker_fee_rate,taker_fee_rate,
+                            fee_loss_treatment)
+                        VALUES (?,?,?,'FEE_SCHEDULE',?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                        """, fee.id(), fee.pilotScopeId(), fee.observationSetId(),
                 fee.envelope().observationSchemaVersion(), fee.envelope().observationIdentity(),
                 fee.envelope().sourceIdentity(), fee.envelope().sourceSchemaVersion(),
                 Timestamp.from(fee.envelope().observedAt()), Timestamp.from(fee.envelope().recordedAt()),
@@ -1109,13 +1156,13 @@ class LiveSessionFactModelPostgresIntegrationTest {
 
         var balance = observations.balanceSnapshot();
         jdbc.update("""
-                INSERT INTO pilot_prerequisite_observations(
-                    observation_id,pilot_scope_id,observation_set_id,observation_type,
-                    observation_schema_version,observation_identity,source_identity,source_schema_version,
-                    observed_at,recorded_at,recorder_identity,observation_payload_hash,
-                    balance_snapshot_digest,balance_currency,available_balance)
-                VALUES (?,?,?,'BALANCE_SNAPSHOT',?,?,?,?,?,?,?,?,?,?,?)
-                """, balance.id(), balance.pilotScopeId(), balance.observationSetId(),
+                        INSERT INTO pilot_prerequisite_observations(
+                            observation_id,pilot_scope_id,observation_set_id,observation_type,
+                            observation_schema_version,observation_identity,source_identity,source_schema_version,
+                            observed_at,recorded_at,recorder_identity,observation_payload_hash,
+                            balance_snapshot_digest,balance_currency,available_balance)
+                        VALUES (?,?,?,'BALANCE_SNAPSHOT',?,?,?,?,?,?,?,?,?,?,?)
+                        """, balance.id(), balance.pilotScopeId(), balance.observationSetId(),
                 balance.envelope().observationSchemaVersion(), balance.envelope().observationIdentity(),
                 balance.envelope().sourceIdentity(), balance.envelope().sourceSchemaVersion(),
                 Timestamp.from(balance.envelope().observedAt()), Timestamp.from(balance.envelope().recordedAt()),
@@ -1124,13 +1171,13 @@ class LiveSessionFactModelPostgresIntegrationTest {
 
         var clock = observations.clockSync();
         jdbc.update("""
-                INSERT INTO pilot_prerequisite_observations(
-                    observation_id,pilot_scope_id,observation_set_id,observation_type,
-                    observation_schema_version,observation_identity,source_identity,source_schema_version,
-                    observed_at,recorded_at,recorder_identity,observation_payload_hash,
-                    clock_sync_observation_digest,signed_timestamp_source,observed_skew_ms)
-                VALUES (?,?,?,'CLOCK_SYNC',?,?,?,?,?,?,?,?,?,?,?)
-                """, clock.id(), clock.pilotScopeId(), clock.observationSetId(),
+                        INSERT INTO pilot_prerequisite_observations(
+                            observation_id,pilot_scope_id,observation_set_id,observation_type,
+                            observation_schema_version,observation_identity,source_identity,source_schema_version,
+                            observed_at,recorded_at,recorder_identity,observation_payload_hash,
+                            clock_sync_observation_digest,signed_timestamp_source,observed_skew_ms)
+                        VALUES (?,?,?,'CLOCK_SYNC',?,?,?,?,?,?,?,?,?,?,?)
+                        """, clock.id(), clock.pilotScopeId(), clock.observationSetId(),
                 clock.envelope().observationSchemaVersion(), clock.envelope().observationIdentity(),
                 clock.envelope().sourceIdentity(), clock.envelope().sourceSchemaVersion(),
                 Timestamp.from(clock.envelope().observedAt()), Timestamp.from(clock.envelope().recordedAt()),
@@ -1139,11 +1186,11 @@ class LiveSessionFactModelPostgresIntegrationTest {
 
         var item = instrument.items().getFirst();
         jdbc.update("""
-                INSERT INTO pilot_instrument_observation_items(
-                    observation_id,observation_type,symbol,trading_status,tick_size,lot_size,
-                    minimum_order_size,minimum_order_value,minimum_order_value_currency)
-                VALUES (?,'INSTRUMENT_METADATA',?,?,?,?,?,?,?)
-                """, instrument.id(), item.symbol(), item.tradingStatus().name(), item.tickSize(), item.lotSize(),
+                        INSERT INTO pilot_instrument_observation_items(
+                            observation_id,observation_type,symbol,trading_status,tick_size,lot_size,
+                            minimum_order_size,minimum_order_value,minimum_order_value_currency)
+                        VALUES (?,'INSTRUMENT_METADATA',?,?,?,?,?,?,?)
+                        """, instrument.id(), item.symbol(), item.tradingStatus().name(), item.tickSize(), item.lotSize(),
                 item.minimumOrderSize(), item.minimumOrderValue(), item.minimumOrderValueCurrency());
     }
 
@@ -1167,21 +1214,21 @@ class LiveSessionFactModelPostgresIntegrationTest {
             PilotObservationSet source
     ) {
         assertSqlState23514(() -> transactions.executeWithoutResult(status -> jdbc.update("""
-                INSERT INTO pilot_prerequisite_observations(
-                    observation_id,pilot_scope_id,observation_set_id,observation_type,
-                    observation_schema_version,observation_identity,source_identity,source_schema_version,
-                    observed_at,recorded_at,recorder_identity,observation_payload_hash,
-                    instrument_metadata_digest,fee_schedule_digest,balance_snapshot_digest,
-                    clock_sync_observation_digest,fee_tier,fee_evidence_class,maker_fee_rate,taker_fee_rate,
-                    fee_loss_treatment,balance_currency,available_balance,signed_timestamp_source,observed_skew_ms)
-                SELECT ?,pilot_scope_id,?,'BALANCE_SNAPSHOT',observation_schema_version,?,
-                       source_identity,source_schema_version,observed_at,recorded_at,recorder_identity,
-                       observation_payload_hash,instrument_metadata_digest,fee_schedule_digest,
-                       balance_snapshot_digest,clock_sync_observation_digest,fee_tier,fee_evidence_class,
-                       maker_fee_rate,taker_fee_rate,fee_loss_treatment,balance_currency,available_balance,
-                       signed_timestamp_source,observed_skew_ms
-                FROM pilot_prerequisite_observations WHERE observation_id=?
-                """, UUID.randomUUID(), UUID.randomUUID(), "incomplete-" + UUID.randomUUID(),
+                        INSERT INTO pilot_prerequisite_observations(
+                            observation_id,pilot_scope_id,observation_set_id,observation_type,
+                            observation_schema_version,observation_identity,source_identity,source_schema_version,
+                            observed_at,recorded_at,recorder_identity,observation_payload_hash,
+                            instrument_metadata_digest,fee_schedule_digest,balance_snapshot_digest,
+                            clock_sync_observation_digest,fee_tier,fee_evidence_class,maker_fee_rate,taker_fee_rate,
+                            fee_loss_treatment,balance_currency,available_balance,signed_timestamp_source,observed_skew_ms)
+                        SELECT ?,pilot_scope_id,?,'BALANCE_SNAPSHOT',observation_schema_version,?,
+                               source_identity,source_schema_version,observed_at,recorded_at,recorder_identity,
+                               observation_payload_hash,instrument_metadata_digest,fee_schedule_digest,
+                               balance_snapshot_digest,clock_sync_observation_digest,fee_tier,fee_evidence_class,
+                               maker_fee_rate,taker_fee_rate,fee_loss_treatment,balance_currency,available_balance,
+                               signed_timestamp_source,observed_skew_ms
+                        FROM pilot_prerequisite_observations WHERE observation_id=?
+                        """, UUID.randomUUID(), UUID.randomUUID(), "incomplete-" + UUID.randomUUID(),
                 source.balanceSnapshot().id())));
         assertEquals(5, jdbc.queryForObject(
                 "SELECT count(*) FROM pilot_prerequisite_observations WHERE pilot_scope_id=?",
@@ -1193,38 +1240,38 @@ class LiveSessionFactModelPostgresIntegrationTest {
             PilotObservationSet source
     ) {
         assertSqlState23514(() -> jdbc.update("""
-                INSERT INTO pilot_prerequisite_observations(
-                    observation_id,pilot_scope_id,observation_set_id,observation_type,
-                    observation_schema_version,observation_identity,source_identity,source_schema_version,
-                    observed_at,recorded_at,recorder_identity,observation_payload_hash,
-                    instrument_metadata_digest,fee_schedule_digest,balance_snapshot_digest,
-                    clock_sync_observation_digest,fee_tier,fee_evidence_class,maker_fee_rate,taker_fee_rate,
-                    fee_loss_treatment,balance_currency,available_balance,signed_timestamp_source,observed_skew_ms)
-                SELECT ?,pilot_scope_id,?,'BALANCE_SNAPSHOT',observation_schema_version,?,
-                       source_identity,source_schema_version,transaction_timestamp()+INTERVAL '2 seconds',
-                       transaction_timestamp(),recorder_identity,observation_payload_hash,
-                       instrument_metadata_digest,fee_schedule_digest,balance_snapshot_digest,
-                       clock_sync_observation_digest,fee_tier,fee_evidence_class,maker_fee_rate,taker_fee_rate,
-                       fee_loss_treatment,balance_currency,available_balance,signed_timestamp_source,observed_skew_ms
-                FROM pilot_prerequisite_observations WHERE observation_id=?
-                """, UUID.randomUUID(), UUID.randomUUID(), "future-" + UUID.randomUUID(),
+                        INSERT INTO pilot_prerequisite_observations(
+                            observation_id,pilot_scope_id,observation_set_id,observation_type,
+                            observation_schema_version,observation_identity,source_identity,source_schema_version,
+                            observed_at,recorded_at,recorder_identity,observation_payload_hash,
+                            instrument_metadata_digest,fee_schedule_digest,balance_snapshot_digest,
+                            clock_sync_observation_digest,fee_tier,fee_evidence_class,maker_fee_rate,taker_fee_rate,
+                            fee_loss_treatment,balance_currency,available_balance,signed_timestamp_source,observed_skew_ms)
+                        SELECT ?,pilot_scope_id,?,'BALANCE_SNAPSHOT',observation_schema_version,?,
+                               source_identity,source_schema_version,transaction_timestamp()+INTERVAL '2 seconds',
+                               transaction_timestamp(),recorder_identity,observation_payload_hash,
+                               instrument_metadata_digest,fee_schedule_digest,balance_snapshot_digest,
+                               clock_sync_observation_digest,fee_tier,fee_evidence_class,maker_fee_rate,taker_fee_rate,
+                               fee_loss_treatment,balance_currency,available_balance,signed_timestamp_source,observed_skew_ms
+                        FROM pilot_prerequisite_observations WHERE observation_id=?
+                        """, UUID.randomUUID(), UUID.randomUUID(), "future-" + UUID.randomUUID(),
                 source.balanceSnapshot().id()));
         assertSqlState23514(() -> jdbc.update("""
-                INSERT INTO pilot_prerequisite_observations(
-                    observation_id,pilot_scope_id,observation_set_id,observation_type,
-                    observation_schema_version,observation_identity,source_identity,source_schema_version,
-                    observed_at,recorded_at,recorder_identity,observation_payload_hash,
-                    instrument_metadata_digest,fee_schedule_digest,balance_snapshot_digest,
-                    clock_sync_observation_digest,fee_tier,fee_evidence_class,maker_fee_rate,taker_fee_rate,
-                    fee_loss_treatment,balance_currency,available_balance,signed_timestamp_source,observed_skew_ms)
-                SELECT ?,pilot_scope_id,?,'CLOCK_SYNC',observation_schema_version,?,
-                       source_identity,source_schema_version,observed_at,recorded_at,recorder_identity,
-                       observation_payload_hash,instrument_metadata_digest,fee_schedule_digest,
-                       balance_snapshot_digest,clock_sync_observation_digest,fee_tier,fee_evidence_class,
-                       maker_fee_rate,taker_fee_rate,fee_loss_treatment,balance_currency,available_balance,
-                       signed_timestamp_source,501
-                FROM pilot_prerequisite_observations WHERE observation_id=?
-                """, UUID.randomUUID(), UUID.randomUUID(), "skew-" + UUID.randomUUID(),
+                        INSERT INTO pilot_prerequisite_observations(
+                            observation_id,pilot_scope_id,observation_set_id,observation_type,
+                            observation_schema_version,observation_identity,source_identity,source_schema_version,
+                            observed_at,recorded_at,recorder_identity,observation_payload_hash,
+                            instrument_metadata_digest,fee_schedule_digest,balance_snapshot_digest,
+                            clock_sync_observation_digest,fee_tier,fee_evidence_class,maker_fee_rate,taker_fee_rate,
+                            fee_loss_treatment,balance_currency,available_balance,signed_timestamp_source,observed_skew_ms)
+                        SELECT ?,pilot_scope_id,?,'CLOCK_SYNC',observation_schema_version,?,
+                               source_identity,source_schema_version,observed_at,recorded_at,recorder_identity,
+                               observation_payload_hash,instrument_metadata_digest,fee_schedule_digest,
+                               balance_snapshot_digest,clock_sync_observation_digest,fee_tier,fee_evidence_class,
+                               maker_fee_rate,taker_fee_rate,fee_loss_treatment,balance_currency,available_balance,
+                               signed_timestamp_source,501
+                        FROM pilot_prerequisite_observations WHERE observation_id=?
+                        """, UUID.randomUUID(), UUID.randomUUID(), "skew-" + UUID.randomUUID(),
                 source.clockSync().id()));
     }
 
@@ -1400,12 +1447,12 @@ class LiveSessionFactModelPostgresIntegrationTest {
         jdbc.update("INSERT INTO backtest_eval_reports(eval_report_id,backtest_run_id,evaluation_status,evaluated_at) "
                 + "VALUES (?,?,'SUCCEEDED',?)", evalId, runId, Timestamp.from(NOW));
         jdbc.update("""
-                INSERT INTO backtest_publish_records(
-                    publish_record_id,backtest_run_id,research_config_id,backtest_config_id,source_strategy_id,
-                    eval_report_id,strategy_version_id,publish_status,publish_name,
-                    artifact_storage_key,manifest_storage_key
-                ) VALUES (?,?,?,?,?,?,?,'SUCCEEDED','GateY fixture',?,?)
-                """, publishId, runId, researchId, configId, strategyId, evalId, versionId,
+                        INSERT INTO backtest_publish_records(
+                            publish_record_id,backtest_run_id,research_config_id,backtest_config_id,source_strategy_id,
+                            eval_report_id,strategy_version_id,publish_status,publish_name,
+                            artifact_storage_key,manifest_storage_key
+                        ) VALUES (?,?,?,?,?,?,?,'SUCCEEDED','GateY fixture',?,?)
+                        """, publishId, runId, researchId, configId, strategyId, evalId, versionId,
                 "artifact_" + suffix, "manifest_" + suffix);
         return publishId;
     }
@@ -1466,11 +1513,11 @@ class LiveSessionFactModelPostgresIntegrationTest {
 
         UUID approvalId = UUID.randomUUID();
         jdbc.update("""
-                INSERT INTO operator_approvals(
-                    approval_id,session_id,scope_schema_version,scope_hash,release_digest,risk_limit_set_digest,
-                    approver_id,approver_role,decision,reason,approved_at,expires_at
-                ) VALUES (?,?,'approval-scope.v1',?,?,?,?, 'LIVE_APPROVER','REJECTED','fixture',?,?)
-                """, approvalId, session.id(), session.approvalScopeHash(), session.releaseDigest(),
+                        INSERT INTO operator_approvals(
+                            approval_id,session_id,scope_schema_version,scope_hash,release_digest,risk_limit_set_digest,
+                            approver_id,approver_role,decision,reason,approved_at,expires_at
+                        ) VALUES (?,?,'approval-scope.v1',?,?,?,?, 'LIVE_APPROVER','REJECTED','fixture',?,?)
+                        """, approvalId, session.id(), session.approvalScopeHash(), session.releaseDigest(),
                 session.riskLimitSetDigest(), existing.approverId(), Timestamp.from(NOW), Timestamp.from(NOW.plusSeconds(10)));
         assertSqlState23514(() -> jdbc.update(
                 "UPDATE operator_approvals SET reason='changed' WHERE approval_id=?", approvalId));
@@ -1517,13 +1564,13 @@ class LiveSessionFactModelPostgresIntegrationTest {
                         "claimed_at=NULL,lease_expires_at=NULL WHERE intent_id=?", intentId));
         UUID firstToken = UUID.randomUUID();
         jdbc.update("UPDATE execution_intents SET state='CLAIMED',version=2,claimed_by='worker-a',claim_token=?," +
-                        "claimed_at=CURRENT_TIMESTAMP - INTERVAL '2 minutes'," +
-                        "lease_expires_at=CURRENT_TIMESTAMP - INTERVAL '1 second' " +
-                        "WHERE intent_id=?", firstToken, intentId);
+                "claimed_at=CURRENT_TIMESTAMP - INTERVAL '2 minutes'," +
+                "lease_expires_at=CURRENT_TIMESTAMP - INTERVAL '1 second' " +
+                "WHERE intent_id=?", firstToken, intentId);
         UUID reclaimedToken = UUID.randomUUID();
         jdbc.update("UPDATE execution_intents SET version=3,claimed_by='worker-b',claim_token=?," +
-                        "claimed_at=CURRENT_TIMESTAMP,lease_expires_at=CURRENT_TIMESTAMP + INTERVAL '5 minutes' " +
-                        "WHERE intent_id=?", reclaimedToken, intentId);
+                "claimed_at=CURRENT_TIMESTAMP,lease_expires_at=CURRENT_TIMESTAMP + INTERVAL '5 minutes' " +
+                "WHERE intent_id=?", reclaimedToken, intentId);
         assertSqlState23514(() -> jdbc.update(
                 "UPDATE execution_intents SET version=4,claimed_by='worker-c',claim_token=?," +
                         "claimed_at=CURRENT_TIMESTAMP,lease_expires_at=CURRENT_TIMESTAMP + INTERVAL '5 minutes' " +
@@ -1539,10 +1586,10 @@ class LiveSessionFactModelPostgresIntegrationTest {
                 intentId));
         for (String outcome : List.of("QUERY_CONFIRMED", "QUERY_NOT_FOUND")) {
             jdbc.update("""
-                    INSERT INTO execution_receipts(
-                        receipt_id,intent_id,attempt_no,outcome,received_at,payload_digest,payload_digest_schema_version
-                    ) VALUES (?,?,?,?,?,?,'execution-receipt-envelope.v1')
-                    """, UUID.randomUUID(), intentId, outcome.equals("QUERY_CONFIRMED") ? 2 : 3, outcome,
+                            INSERT INTO execution_receipts(
+                                receipt_id,intent_id,attempt_no,outcome,received_at,payload_digest,payload_digest_schema_version
+                            ) VALUES (?,?,?,?,?,?,'execution-receipt-envelope.v1')
+                            """, UUID.randomUUID(), intentId, outcome.equals("QUERY_CONFIRMED") ? 2 : 3, outcome,
                     Timestamp.from(NOW), outcome.equals("QUERY_CONFIRMED") ? "6".repeat(64) : "7".repeat(64));
         }
         assertSqlState23514(() -> jdbc.update(
@@ -1749,12 +1796,12 @@ class LiveSessionFactModelPostgresIntegrationTest {
         ExecutionIntentDraft fieldMismatch = insertPlaceOrder(
                 jdbc, runtimeSession.id(), existing.legacyAccountId(), "gatey3-field-mismatch-");
         jdbc.update("""
-                INSERT INTO execution_intents(
-                    intent_id,session_id,sequence,action,symbol,side,order_type,quantity,limit_price,
-                    payload_hash_schema_version,payload_hash,client_order_id,local_order_id,state
-                ) VALUES (?, ?, 900001, 'PLACE', 'BTC-USDT', 'SELL', 'LIMIT', 1, 10,
-                          'execution-intent-payload.v1', ?, ?, ?, 'CREATED')
-                """, fieldMismatch.intentId(), fieldMismatch.sessionId(), fieldMismatch.payloadHash(),
+                        INSERT INTO execution_intents(
+                            intent_id,session_id,sequence,action,symbol,side,order_type,quantity,limit_price,
+                            payload_hash_schema_version,payload_hash,client_order_id,local_order_id,state
+                        ) VALUES (?, ?, 900001, 'PLACE', 'BTC-USDT', 'SELL', 'LIMIT', 1, 10,
+                                  'execution-intent-payload.v1', ?, ?, ?, 'CREATED')
+                        """, fieldMismatch.intentId(), fieldMismatch.sessionId(), fieldMismatch.payloadHash(),
                 fieldMismatch.clientOrderId(), fieldMismatch.localOrderId());
         LiveControlException fieldMismatchFailure = assertThrows(
                 LiveControlException.class, () -> repository.createOrGet(fieldMismatch));
@@ -2008,7 +2055,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
         CountDownLatch start = new CountDownLatch(1);
         try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
             List<Future<Object>> results = List.of(
-                    OperatorApproval.Decision.APPROVED, OperatorApproval.Decision.REJECTED).stream()
+                            OperatorApproval.Decision.APPROVED, OperatorApproval.Decision.REJECTED).stream()
                     .map(decision -> executor.submit(() -> {
                         ready.countDown();
                         assertTrue(start.await(10, TimeUnit.SECONDS));
@@ -2056,9 +2103,9 @@ class LiveSessionFactModelPostgresIntegrationTest {
                             "rollback-request", "rollback-trace", "SESSION_CREATED",
                             "rollback-created", "1".repeat(64), "{}", NOW));
             jdbc.update("INSERT INTO live_session_events(event_id,session_id,sequence_no,to_state,command," +
-                    "request_id,trace_id,reason_code,idempotency_key,command_payload_hash," +
-                    "command_payload_schema_version,metadata) VALUES (?,?,1,'APPROVAL_PENDING','CREATED'," +
-                    "'duplicate','duplicate','CREATED','duplicate',?,'live-session-command.v1','{}'::jsonb)",
+                            "request_id,trace_id,reason_code,idempotency_key,command_payload_hash," +
+                            "command_payload_schema_version,metadata) VALUES (?,?,1,'APPROVAL_PENDING','CREATED'," +
+                            "'duplicate','duplicate','CREATED','duplicate',?,'live-session-command.v1','{}'::jsonb)",
                     UUID.randomUUID(), badCreatedEventSession.id(), "2".repeat(64));
         }));
         assertEquals(0, jdbc.queryForObject(
@@ -2095,9 +2142,9 @@ class LiveSessionFactModelPostgresIntegrationTest {
                             NOW.plusSeconds(120), "rollback-approval", "rollback-trace",
                             "rollback-approval", "4".repeat(64)));
             jdbc.update("INSERT INTO live_session_events(event_id,session_id,sequence_no,to_state,command," +
-                    "request_id,trace_id,reason_code,idempotency_key,command_payload_hash," +
-                    "command_payload_schema_version,metadata) VALUES (?,?,1,'APPROVED','APPROVE'," +
-                    "'duplicate','duplicate','APPROVED','duplicate',?,'live-session-command.v1','{}'::jsonb)",
+                            "request_id,trace_id,reason_code,idempotency_key,command_payload_hash," +
+                            "command_payload_schema_version,metadata) VALUES (?,?,1,'APPROVED','APPROVE'," +
+                            "'duplicate','duplicate','APPROVED','duplicate',?,'live-session-command.v1','{}'::jsonb)",
                     UUID.randomUUID(), approvalRollbackSession.id(), "3".repeat(64));
         }));
         assertEquals(0, jdbc.queryForObject(

@@ -4,7 +4,9 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-/** Session-bound immutable pilot scope；不拥有 account、release、risk 或交易事实。 */
+/**
+ * Session-bound immutable pilot scope；不拥有 account、release、risk 或交易事实。
+ */
 public record PilotScopeBinding(
         UUID id,
         UUID sessionId,
@@ -37,6 +39,7 @@ public record PilotScopeBinding(
         Instant createdAt
 ) {
     public static final String SCHEMA_VERSION = "pilot-scope.v1";
+    public static final String OPERATOR_PILOT_SCHEMA_VERSION = "pilot-scope.operator-pilot.v1";
     public static final String SIGNED_TIMESTAMP_SOURCE = "NTP_DISCIPLINED_SYSTEM_CLOCK";
 
     public PilotScopeBinding {

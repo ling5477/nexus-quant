@@ -86,7 +86,7 @@ public class JdbcExactPilotBindingRepository implements ExactPilotBindingReposit
                 CREATE_COMMAND, binding.account().ownerId(), binding.correlation().requestId(),
                 binding.correlation().traceId(), "EXACT_PILOT_BINDING_VERIFIED",
                 binding.correlation().idempotencyKey(), ExactPilotBindingCanonicalEncoder.eventDigest(
-                        CREATE_COMMAND, binding.bindingDigest(), binding.correlation().idempotencyKey()),
+                CREATE_COMMAND, binding.bindingDigest(), binding.correlation().idempotencyKey()),
                 metadata, binding.bindingCreatedAt()
         ));
         return binding;
@@ -193,7 +193,29 @@ public class JdbcExactPilotBindingRepository implements ExactPilotBindingReposit
             String canonical = text(stored, "canonicalBinding");
             String storedDigest = text(stored, "bindingDigest");
             JsonNode value = objectMapper.readTree(canonical);
-            requireText(value, "schemaVersion", ExactPilotBinding.SCHEMA_VERSION);
+            String schemaVersion = text(value, "schemaVersion");
+            boolean operatorPilot = ExactPilotBinding.OPERATOR_PILOT_SCHEMA_VERSION.equals(schemaVersion);
+            if (!operatorPilot && !ExactPilotBinding.SCHEMA_VERSION.equals(schemaVersion)) {
+                throw new IllegalArgumentException("schemaVersion is unsupported");
+            }
+            ExactPilotBinding.RiskPolicyIdentity risk = operatorPilot ? null
+                    : new ExactPilotBinding.RiskPolicyIdentity(
+                    uuid(value, "riskLimitSetId"), intValue(value, "riskPolicyVersion"),
+                    text(value, "riskPolicyDigest"), text(value, "killSwitchState"));
+            ExactPilotBinding.OperatorPilotAuthorityIdentity operatorAuthority = operatorPilot
+                    ? new ExactPilotBinding.OperatorPilotAuthorityIdentity(
+                    uuid(value, "operatorPilotAuthorityId"),
+                    text(value, "operatorPilotAuthorityDigest"),
+                    text(value, "operatorPilotInstrument"),
+                    ExactPilotBinding.Side.valueOf(text(value, "operatorPilotSide")),
+                    ExactPilotBinding.OrderType.valueOf(text(value, "operatorPilotOrderType")),
+                    decimal(value, "operatorPilotMaxNotional"),
+                    intValue(value, "operatorPilotMaxPlaceCount"),
+                    intValue(value, "operatorPilotMaxCancelCount"),
+                    booleanValue(value, "operatorPilotTransferAllowed"),
+                    booleanValue(value, "operatorPilotWithdrawAllowed"),
+                    text(value, "killSwitchState"))
+                    : null;
             ExactPilotBinding binding = new ExactPilotBinding(
                     uuid(value, "bindingId"), uuid(value, "sessionId"), uuid(value, "pilotScopeId"),
                     uuid(value, "observationSetId"),
@@ -214,9 +236,7 @@ public class JdbcExactPilotBindingRepository implements ExactPilotBindingReposit
                             uuid(value, "instrumentSnapshotIdentity"), uuid(value, "feeSnapshotIdentity"),
                             uuid(value, "balanceSnapshotIdentity"), uuid(value, "exchangeTimeSnapshotIdentity"),
                             uuid(value, "marketSnapshotIdentity"), text(value, "marketSnapshotDigest")),
-                    new ExactPilotBinding.RiskPolicyIdentity(
-                            uuid(value, "riskLimitSetId"), intValue(value, "riskPolicyVersion"),
-                            text(value, "riskPolicyDigest"), text(value, "killSwitchState")),
+                    risk, operatorAuthority,
                     instant(value, "pilotWindowStart"), instant(value, "pilotWindowEnd"),
                     new ExactPilotBinding.Correlation(
                             text(value, "requestId"), text(value, "traceId"), text(value, "idempotencyKey")),
@@ -281,6 +301,14 @@ public class JdbcExactPilotBindingRepository implements ExactPilotBindingReposit
             throw new IllegalArgumentException(field + " is missing or invalid");
         }
         return value.intValue();
+    }
+
+    private static boolean booleanValue(JsonNode node, String field) {
+        JsonNode value = node.get(field);
+        if (value == null || !value.isBoolean()) {
+            throw new IllegalArgumentException(field + " is missing or invalid");
+        }
+        return value.booleanValue();
     }
 
     private static UUID uuid(JsonNode node, String field) {

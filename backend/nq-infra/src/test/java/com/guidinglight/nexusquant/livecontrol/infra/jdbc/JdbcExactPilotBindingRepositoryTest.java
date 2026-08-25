@@ -98,6 +98,38 @@ class JdbcExactPilotBindingRepositoryTest {
         assertEquals("EXACT_PILOT_BINDING_FACT_CORRUPTED", exception.code());
     }
 
+    @Test
+    void roundTripsOperatorPilotCanonicalBindingWithoutRiskIdentity() {
+        JdbcTemplate jdbc = mock(JdbcTemplate.class);
+        LiveControlRepository liveRepository = mock(LiveControlRepository.class);
+        List<String> metadata = new ArrayList<>();
+        ExactPilotBinding binding = operatorBinding();
+        LiveSession session = LiveSession.createOperatorPilot(
+                binding.sessionId(), binding.account().ownerId(), binding.account().exchangeAccountId(),
+                binding.operatorPilotAuthority().authorityId(),
+                binding.operatorPilotAuthority().authorityDigest(),
+                binding.account().credentialReferenceId(), binding.order().exchangeInstrumentId(),
+                binding.operatorPilotAuthority().maxNotional(), binding.pilotWindowStart(),
+                binding.pilotWindowEnd(), binding.account().ownerId(), binding.pilotWindowStart());
+        when(jdbc.queryForList(anyString(), eq(String.class), any(), any()))
+                .thenAnswer(invocation -> List.copyOf(metadata));
+        when(jdbc.queryForList(anyString(), eq(String.class), any(), any(), any()))
+                .thenAnswer(invocation -> List.copyOf(metadata));
+        when(liveRepository.appendSessionEvent(any(LiveSessionEvent.class))).thenAnswer(invocation -> {
+            LiveSessionEvent event = invocation.getArgument(0);
+            metadata.add(event.metadataJson());
+            return event;
+        });
+        JdbcExactPilotBindingRepository repository = new JdbcExactPilotBindingRepository(
+                jdbc, new ObjectMapper(), liveRepository);
+
+        assertEquals(binding, repository.createOrGet(binding, session));
+        ExactPilotBinding reloaded = repository.find(binding.sessionId(), binding.id()).orElseThrow();
+        assertEquals(binding, reloaded);
+        assertEquals(null, reloaded.riskPolicy());
+        assertEquals(binding.operatorPilotAuthority(), reloaded.operatorPilotAuthority());
+    }
+
     private static ExactPilotBinding binding() {
         BigDecimal price = decimal("100");
         BigDecimal quantity = decimal("0.1");
@@ -116,6 +148,30 @@ class JdbcExactPilotBindingRepositoryTest {
                 new ExactPilotBinding.RiskPolicyIdentity(
                         UUID.randomUUID(), 1, "b".repeat(64), "ENGAGED"),
                 NOW.minusSeconds(60), NOW.plusSeconds(600), correlation("create"),
+                NOW, NOW.plusSeconds(300));
+    }
+
+    private static ExactPilotBinding operatorBinding() {
+        BigDecimal price = decimal("100");
+        BigDecimal quantity = decimal("0.1");
+        return ExactPilotBinding.verified(
+                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
+                new ExactPilotBinding.DeploymentIdentity(
+                        "1".repeat(40), "1".repeat(40), "a".repeat(64), "server-a",
+                        ExactPilotBinding.DeploymentIdentity.RUNTIME_PROFILE),
+                new ExactPilotBinding.AccountIdentity("OKX", "LIVE", 11L, 21L, 31L),
+                new ExactPilotBinding.OrderEnvelope(
+                        101L, "BTC-USDT", ExactPilotBinding.Side.BUY, ExactPilotBinding.OrderType.LIMIT,
+                        price, quantity, price.multiply(quantity)),
+                new ExactPilotBinding.ObservationIdentities(
+                        UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
+                        UUID.randomUUID(), "c".repeat(64)),
+                null,
+                new ExactPilotBinding.OperatorPilotAuthorityIdentity(
+                        UUID.randomUUID(), "d".repeat(64), "BTC-USDT", ExactPilotBinding.Side.BUY,
+                        ExactPilotBinding.OrderType.LIMIT, decimal("10"), 1, 1,
+                        false, false, "ENGAGED"),
+                NOW.minusSeconds(60), NOW.plusSeconds(600), correlation("operator"),
                 NOW, NOW.plusSeconds(300));
     }
 

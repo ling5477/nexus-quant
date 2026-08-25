@@ -2,11 +2,13 @@ package com.guidinglight.nexusquant.livecontrol.application;
 
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionAuthorityType;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionCommand;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionEvent;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionState;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionStateMachine;
 import com.guidinglight.nexusquant.livecontrol.domain.OperatorApproval;
+import com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority;
 import com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSet;
 import com.guidinglight.nexusquant.livecontrol.application.port.LiveControlAuthorizationPort;
 import com.guidinglight.nexusquant.livecontrol.domain.port.LiveControlRepository;
@@ -89,7 +91,7 @@ public class LiveSessionControlService {
         }
         if (session.createdBy() != actor.userId() || session.ownerId() != actor.userId()) {
             throw new LiveControlException(
-                "LIVE_SESSION_CREATOR_IDENTITY_MISMATCH",
+                    "LIVE_SESSION_CREATOR_IDENTITY_MISMATCH",
                     "session creator and owner must equal the authenticated actor"
             );
         }
@@ -123,6 +125,52 @@ public class LiveSessionControlService {
                     "LIVE_SESSION_REFERENCE_MISMATCH",
                     "account, credential, release admission, or risk reference is inconsistent"
             );
+        }
+        repository.createSession(session);
+        repository.appendSessionEvent(createdEvent);
+        return session;
+    }
+
+    /**
+     * OPERATOR_PILOT 会话只绑定显式人工 authority，不创建或借用 strategy/risk facts。
+     */
+    @Transactional
+    public LiveSession createOperatorPilotSession(
+            AuthenticatedLiveControlActor actor,
+            LiveSession session,
+            OperatorPilotAuthority authority,
+            LiveSessionEvent createdEvent
+    ) {
+        Objects.requireNonNull(actor, "actor must not be null");
+        Objects.requireNonNull(session, "session must not be null");
+        Objects.requireNonNull(authority, "authority must not be null");
+        Objects.requireNonNull(createdEvent, "createdEvent must not be null");
+        if (session.authorityType() != LiveSessionAuthorityType.OPERATOR_PILOT
+                || session.state() != LiveSessionState.APPROVAL_PENDING || session.version() != 1
+                || session.createdBy() != actor.userId() || session.ownerId() != actor.userId()
+                || !session.operatorPilotAuthorityId().equals(authority.id())
+                || !session.operatorPilotAuthorityDigest().equals(authority.canonicalDigest())
+                || !authority.activeAt(repository.currentTime())
+                || !authority.hasCanonicalDigest()
+                || !authorization.lockAndCheckRole(actor.userId(), SESSION_CREATOR_ROLE)) {
+            throw new LiveControlException(
+                    "OPERATOR_PILOT_SESSION_AUTHORITY_REJECTED",
+                    "operator pilot session authority is invalid");
+        }
+        authority.requireScope(
+                session.ownerId(), session.exchangeAccountId(), session.credentialReference(),
+                session.symbolAllowlist().getFirst(), OperatorPilotAuthority.Side.BUY,
+                OperatorPilotAuthority.OrderType.LIMIT, session.capitalCap(), repository.currentTime());
+        if (!createdEvent.sessionId().equals(session.id()) || createdEvent.fromState() != null
+                || createdEvent.toState() != LiveSessionState.APPROVAL_PENDING
+                || createdEvent.actorId() == null || createdEvent.actorId() != actor.userId()
+                || !"CREATE".equals(createdEvent.command())
+                || !"SESSION_CREATED".equals(createdEvent.reasonCode())
+                || !session.hasCanonicalApprovalScopeHash()
+                || !repository.lockAndValidateSessionReferences(session)) {
+            throw new LiveControlException(
+                    "OPERATOR_PILOT_SESSION_REFERENCE_MISMATCH",
+                    "operator pilot session references are inconsistent");
         }
         repository.createSession(session);
         repository.appendSessionEvent(createdEvent);
@@ -239,6 +287,7 @@ public class LiveSessionControlService {
         LiveSession current = repository.lockSession(sessionId)
                 .orElseThrow(() -> new LiveControlException("LIVE_SESSION_NOT_FOUND", "live session was not found"));
         if (current.ownerId() != actor.userId()
+                || current.authorityType() != LiveSessionAuthorityType.OPERATOR_PILOT
                 || !authorization.lockAndCheckRole(actor.userId(), SESSION_CREATOR_ROLE)
                 || !repository.lockAndValidateSessionReferences(current)) {
             throw new LiveControlException("MINIMAL_PILOT_OPERATOR_FORBIDDEN", "operator/session authority failed");
@@ -264,6 +313,8 @@ public class LiveSessionControlService {
     private static LiveSession withState(LiveSession current, LiveSessionState target, Instant occurredAt) {
         return new LiveSession(
                 current.id(), current.ownerId(), current.exchangeAccountId(), current.venue(),
+                current.authorityType(), current.operatorPilotAuthorityId(),
+                current.operatorPilotAuthorityDigest(),
                 current.strategyReleaseId(), current.releaseDigest(), current.releaseAdmissionRevision(),
                 current.riskLimitSetId(), current.riskLimitSetDigest(), current.credentialReference(),
                 current.symbolAllowlist(), current.capitalCap(), current.executionWindowStart(),

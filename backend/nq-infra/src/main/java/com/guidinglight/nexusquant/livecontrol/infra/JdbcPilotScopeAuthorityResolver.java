@@ -9,6 +9,7 @@ import com.guidinglight.nexusquant.livecontrol.application.PilotScopeAuthorityRe
 import com.guidinglight.nexusquant.livecontrol.application.PilotScopeMaterializationCommand;
 import com.guidinglight.nexusquant.livecontrol.application.MinimalPilotMaterializationCommand;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
+import com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSet;
 import com.guidinglight.nexusquant.livecontrol.domain.port.LiveControlRepository;
@@ -112,23 +113,13 @@ public class JdbcPilotScopeAuthorityResolver implements PilotScopeAuthorityResol
         if (!eligibleCredential(credential, command.exchangeAccountId(), command.credentialReferenceId())) {
             throw denied("PILOT_CREDENTIAL_REFERENCE_MISMATCH");
         }
-        String releaseId = requiredText("minimal-live-pilot-strategy-release-id");
-        StrategyReleaseAdmissionState admission = admissionRepository.loadByPublishRecordId(releaseId);
-        if (!admission.identityBound()) throw denied("PILOT_RELEASE_REFERENCE_MISMATCH");
-        UUID riskId;
-        try {
-            riskId = UUID.fromString(requiredText("minimal-live-pilot-risk-limit-set-id"));
-        } catch (IllegalArgumentException failure) {
-            throw denied("PILOT_RISK_REFERENCE_MISMATCH");
-        }
-        RiskLimitSet risk = liveControlRepository.findRiskLimitSet(riskId)
-                .orElseThrow(() -> denied("PILOT_RISK_REFERENCE_MISMATCH"));
-        if (!risk.symbolAllowlist().contains(command.instrument())
-                || command.configuredPilotMaxNotional().compareTo(risk.maxOrderNotional()) > 0
-                || command.configuredPilotMaxNotional().compareTo(risk.capitalCap()) > 0) {
-            throw denied("PILOT_RISK_REFERENCE_MISMATCH");
-        }
-        return new ResolvedMinimalAuthority(actor.userId(), admission, risk, resolveRuntimeAuthority());
+        OperatorPilotAuthority authority = OperatorPilotAuthority.active(
+                UUID.randomUUID(), actor.userId(), command.exchangeAccountId(),
+                command.credentialReferenceId(), command.instrument(), OperatorPilotAuthority.Side.BUY,
+                OperatorPilotAuthority.OrderType.LIMIT, command.configuredPilotMaxNotional(),
+                command.executionWindowStart(), command.executionWindowEnd(), actor.userId(),
+                command.executionWindowStart());
+        return new ResolvedMinimalAuthority(actor.userId(), authority, resolveRuntimeAuthority());
     }
 
     private static boolean eligibleCredential(

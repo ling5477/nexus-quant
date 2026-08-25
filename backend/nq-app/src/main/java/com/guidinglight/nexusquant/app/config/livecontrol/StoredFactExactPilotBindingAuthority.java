@@ -11,6 +11,8 @@ import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionState;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionAuthorityType;
+import com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationSet;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationCanonicalEncoder;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotPrerequisiteObservation;
@@ -18,6 +20,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeFreshnessPolicy;
 import com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSet;
 import com.guidinglight.nexusquant.livecontrol.domain.port.LiveControlRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.port.OperatorPilotAuthorityRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotScopeRepository;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.InstrumentCatalogItem;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.port.InstrumentCatalogReadPort;
@@ -27,6 +30,7 @@ import com.guidinglight.nexusquant.strategy.strategyrelease.application.Strategy
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionStateRepository;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -40,11 +44,14 @@ import java.util.UUID;
  */
 public final class StoredFactExactPilotBindingAuthority implements ExactPilotBindingAuthority {
 
+    private static final Duration MAXIMUM_PERMISSION_AGE = Duration.ofMinutes(1);
+
     private final LiveControlRepository liveControlRepository;
     private final PilotScopeRepository pilotScopeRepository;
     private final ExchangeAccountRepository accountRepository;
     private final ExchangeAccountCredentialRepository credentialRepository;
     private final StrategyReleaseAdmissionStateRepository admissionRepository;
+    private final OperatorPilotAuthorityRepository operatorAuthorityRepository;
     private final InstrumentCatalogReadPort instrumentCatalog;
     private final KillSwitchService killSwitchService;
     private final ExactPilotRuntimeIdentity runtimeIdentity;
@@ -56,6 +63,7 @@ public final class StoredFactExactPilotBindingAuthority implements ExactPilotBin
             ExchangeAccountRepository accountRepository,
             ExchangeAccountCredentialRepository credentialRepository,
             StrategyReleaseAdmissionStateRepository admissionRepository,
+            OperatorPilotAuthorityRepository operatorAuthorityRepository,
             InstrumentCatalogReadPort instrumentCatalog,
             KillSwitchService killSwitchService,
             ExactPilotRuntimeIdentity runtimeIdentity
@@ -65,6 +73,7 @@ public final class StoredFactExactPilotBindingAuthority implements ExactPilotBin
         this.accountRepository = Objects.requireNonNull(accountRepository);
         this.credentialRepository = Objects.requireNonNull(credentialRepository);
         this.admissionRepository = Objects.requireNonNull(admissionRepository);
+        this.operatorAuthorityRepository = Objects.requireNonNull(operatorAuthorityRepository);
         this.instrumentCatalog = Objects.requireNonNull(instrumentCatalog);
         this.killSwitchService = Objects.requireNonNull(killSwitchService);
         this.runtimeIdentity = Objects.requireNonNull(runtimeIdentity);
@@ -112,12 +121,29 @@ public final class StoredFactExactPilotBindingAuthority implements ExactPilotBin
             LiveSession session = requireSession(actor, sessionId);
             PilotScopeBinding scope = requireScope(session, pilotScopeId);
             PilotObservationSet observations = requireObservations(scope, observationSetId);
-            RiskLimitSet risk = requireRisk(session);
+            RiskLimitSet risk = session.authorityType() == LiveSessionAuthorityType.STRATEGY
+                    ? requireRisk(session) : null;
+            OperatorPilotAuthority operatorAuthority = session.authorityType() == LiveSessionAuthorityType.OPERATOR_PILOT
+                    ? requireOperatorAuthority(session, decisionAt) : null;
             requireFreshness(scope, observations, session, decisionAt);
-            requireCurrentReferences(session, actor, risk);
+            requireCurrentReferences(session, actor, risk, operatorAuthority, decisionAt);
             requireExactWindow(session, pilotWindowStart, pilotWindowEnd, decisionAt);
-            requireExactOrder(order, observations, risk, session.capitalCap());
+            requireExactOrder(order, observations, risk, operatorAuthority, session.capitalCap(), decisionAt);
             requireKillEngaged();
+            ExactPilotBinding.RiskPolicyIdentity riskIdentity = risk == null ? null
+                    : new ExactPilotBinding.RiskPolicyIdentity(
+                    risk.id(), risk.version(), risk.canonicalDigest(),
+                    ExactPilotBinding.RiskPolicyIdentity.REQUIRED_KILL_SWITCH_STATE);
+            ExactPilotBinding.OperatorPilotAuthorityIdentity operatorIdentity = operatorAuthority == null ? null
+                    : new ExactPilotBinding.OperatorPilotAuthorityIdentity(
+                    operatorAuthority.id(), operatorAuthority.canonicalDigest(),
+                    operatorAuthority.instrument(), ExactPilotBinding.Side.valueOf(
+                    operatorAuthority.side().name()),
+                    ExactPilotBinding.OrderType.valueOf(operatorAuthority.orderType().name()),
+                    operatorAuthority.maxNotional(), operatorAuthority.maxPlaceCount(),
+                    operatorAuthority.maxCancelCount(), operatorAuthority.transferAllowed(),
+                    operatorAuthority.withdrawAllowed(),
+                    ExactPilotBinding.RiskPolicyIdentity.REQUIRED_KILL_SWITCH_STATE);
             return new ExactPilotBinding.AuthoritativeFacts(
                     session.id(), scope.id(), observations.id(), runtimeIdentity.deployment(),
                     new ExactPilotBinding.AccountIdentity(
@@ -130,9 +156,7 @@ public final class StoredFactExactPilotBindingAuthority implements ExactPilotBin
                             observations.balanceSnapshot().id(), observations.clockSync().id(),
                             observations.marketSnapshot().id(),
                             observations.marketSnapshot().marketSnapshotDigest()),
-                    new ExactPilotBinding.RiskPolicyIdentity(
-                            risk.id(), risk.version(), risk.canonicalDigest(),
-                            ExactPilotBinding.RiskPolicyIdentity.REQUIRED_KILL_SWITCH_STATE),
+                    riskIdentity, operatorIdentity,
                     pilotWindowStart, pilotWindowEnd
             );
         } catch (LiveControlException exception) {
@@ -140,6 +164,16 @@ public final class StoredFactExactPilotBindingAuthority implements ExactPilotBin
         } catch (RuntimeException exception) {
             throw denied(exception);
         }
+    }
+
+    private OperatorPilotAuthority requireOperatorAuthority(LiveSession session, Instant decisionAt) {
+        OperatorPilotAuthority authority = operatorAuthorityRepository.find(session.operatorPilotAuthorityId())
+                .orElseThrow(StoredFactExactPilotBindingAuthority::denied);
+        if (!authority.activeAt(decisionAt) || !authority.hasCanonicalDigest()
+                || !authority.canonicalDigest().equals(session.operatorPilotAuthorityDigest())) {
+            throw denied();
+        }
+        return authority;
     }
 
     private LiveSession requireSession(AuthenticatedLiveControlActor actor, UUID sessionId) {
@@ -197,11 +231,13 @@ public final class StoredFactExactPilotBindingAuthority implements ExactPilotBin
     private void requireCurrentReferences(
             LiveSession session,
             AuthenticatedLiveControlActor actor,
-            RiskLimitSet risk
+            RiskLimitSet risk,
+            OperatorPilotAuthority operatorAuthority,
+            Instant decisionAt
     ) {
         ExchangeAccountSummary account = accountRepository.findByIdForOwner(
                 actor.userId(), session.exchangeAccountId()).orElseThrow(
-                        StoredFactExactPilotBindingAuthority::denied);
+                StoredFactExactPilotBindingAuthority::denied);
         if (!Objects.equals(account.exchangeAccountId(), session.exchangeAccountId())
                 || !Objects.equals(account.ownerUserId(), session.ownerId())
                 || !"OKX".equals(account.exchangeCode()) || !"LIVE".equals(account.tradeEnv())
@@ -210,23 +246,31 @@ public final class StoredFactExactPilotBindingAuthority implements ExactPilotBin
         }
         ExchangeAccountCredentialSummary credential = credentialRepository.findByCredentialIdForOwner(
                 actor.userId(), session.exchangeAccountId(), session.credentialReference()).orElseThrow(
-                        StoredFactExactPilotBindingAuthority::denied);
-        if (!credentialIsEligible(credential, session)) {
+                StoredFactExactPilotBindingAuthority::denied);
+        if (!credentialIsEligible(credential, session, decisionAt)) {
             throw denied();
         }
-        StrategyReleaseAdmissionState admission = admissionRepository.loadByPublishRecordId(
-                session.strategyReleaseId());
-        if (!admission.identityBound()
-                || admission.admissionRevision() != session.releaseAdmissionRevision()
-                || !session.releaseDigest().equals(admission.releaseArtifactDigest())
-                || !risk.canonicalDigest().equals(session.riskLimitSetDigest())) {
+        if (session.authorityType() == LiveSessionAuthorityType.STRATEGY) {
+            StrategyReleaseAdmissionState admission = admissionRepository.loadByPublishRecordId(
+                    session.strategyReleaseId());
+            if (!admission.identityBound()
+                    || admission.admissionRevision() != session.releaseAdmissionRevision()
+                    || !session.releaseDigest().equals(admission.releaseArtifactDigest())
+                    || risk == null || !risk.canonicalDigest().equals(session.riskLimitSetDigest())) {
+                throw denied();
+            }
+        } else if (operatorAuthority == null
+                || operatorAuthority.ownerUserId() != session.ownerId()
+                || operatorAuthority.exchangeAccountId() != session.exchangeAccountId()
+                || operatorAuthority.credentialReferenceId() != session.credentialReference()) {
             throw denied();
         }
     }
 
     private static boolean credentialIsEligible(
             ExchangeAccountCredentialSummary credential,
-            LiveSession session
+            LiveSession session,
+            Instant decisionAt
     ) {
         return Objects.equals(credential.credentialId(), session.credentialReference())
                 && Objects.equals(credential.exchangeAccountId(), session.exchangeAccountId())
@@ -239,6 +283,8 @@ public final class StoredFactExactPilotBindingAuthority implements ExactPilotBin
                 && !credential.withdrawEnabled()
                 && "PASSED".equals(credential.ipAllowlistProbeStatus())
                 && credential.lastPermissionProbeAt() != null
+                && !credential.lastPermissionProbeAt().isAfter(decisionAt.plusSeconds(5))
+                && !credential.lastPermissionProbeAt().plus(MAXIMUM_PERMISSION_AGE).isBefore(decisionAt)
                 && credential.revokedAt() == null
                 && credential.rotatedAt() == null;
     }
@@ -261,7 +307,9 @@ public final class StoredFactExactPilotBindingAuthority implements ExactPilotBin
             ExactPilotBinding.OrderEnvelope order,
             PilotObservationSet observations,
             RiskLimitSet risk,
-            BigDecimal sessionCapitalCap
+            OperatorPilotAuthority operatorAuthority,
+            BigDecimal sessionCapitalCap,
+            Instant decisionAt
     ) {
         List<InstrumentCatalogItem> catalog = instrumentCatalog.findByExchangeAndSymbols(
                 ExactPilotBinding.AccountIdentity.EXCHANGE, List.of(order.exchangeInstrumentId()));
@@ -291,15 +339,27 @@ public final class StoredFactExactPilotBindingAuthority implements ExactPilotBin
                         observations.marketSnapshot().envelope().observedAt(),
                         observations.marketSnapshot().envelope().sourceIdentity(),
                         observations.marketSnapshot().envelope().sourceSchemaVersion()));
-        boolean withinRisk = order.notional().compareTo(risk.maxOrderNotional()) <= 0
-                && order.notional().compareTo(risk.maxSymbolPositionNotional()) <= 0
-                && order.notional().compareTo(risk.capitalCap()) <= 0
-                && order.notional().compareTo(sessionCapitalCap) <= 0;
+        boolean withinRisk;
+        if (risk != null) {
+            withinRisk = order.notional().compareTo(risk.maxOrderNotional()) <= 0
+                    && order.notional().compareTo(risk.maxSymbolPositionNotional()) <= 0
+                    && order.notional().compareTo(risk.capitalCap()) <= 0
+                    && order.notional().compareTo(sessionCapitalCap) <= 0
+                    && risk.symbolAllowlist().contains(order.exchangeInstrumentId());
+        } else {
+            operatorAuthority.requireScope(
+                    operatorAuthority.ownerUserId(), operatorAuthority.exchangeAccountId(),
+                    operatorAuthority.credentialReferenceId(), order.exchangeInstrumentId(),
+                    OperatorPilotAuthority.Side.valueOf(order.side().name()),
+                    OperatorPilotAuthority.OrderType.valueOf(order.orderType().name()),
+                    order.notional(), decisionAt);
+            withinRisk = order.notional().compareTo(sessionCapitalCap) <= 0;
+        }
         boolean minimumValue = observed.minimumOrderValue() == null
                 || order.notional().compareTo(observed.minimumOrderValue()) >= 0;
         if (!exactCatalog || observed.tradingStatus() != PilotPrerequisiteObservation.TradingStatus.LIVE
                 || !exactPrecision || !exactMarket || !withinRisk || !minimumValue
-                || !risk.symbolAllowlist().contains(order.exchangeInstrumentId())) {
+        ) {
             throw denied();
         }
     }
