@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.account.application.CredentialPermissionProbeService;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
+import com.guidinglight.nexusquant.app.config.livecontrol.ExactPilotBindingConfiguration;
 import com.guidinglight.nexusquant.app.config.livecontrol.MinimalLivePilotConfiguration;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.auth.application.AuthService;
@@ -142,6 +143,9 @@ class SecurityConfigurationContextTest {
     @Test
     void minimalPilotCompositionDoesNotUseOrderingSensitiveClassCondition() {
         assertFalse(MinimalLivePilotConfiguration.class.isAnnotationPresent(
+                org.springframework.boot.autoconfigure.condition.ConditionalOnBean.class
+        ));
+        assertFalse(ExactPilotBindingConfiguration.class.isAnnotationPresent(
                 org.springframework.boot.autoconfigure.condition.ConditionalOnBean.class
         ));
     }

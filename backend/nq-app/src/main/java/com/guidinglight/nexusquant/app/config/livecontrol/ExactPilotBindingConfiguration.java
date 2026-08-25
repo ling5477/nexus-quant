@@ -19,7 +19,6 @@ import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionStateRepository;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,7 +28,6 @@ import org.springframework.transaction.PlatformTransactionManager;
  * Exact binding capability 的显式 composition root；默认不装配，不改变已接受的只读 deployment。
  */
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnBean(ReadOnlyProviderObservationRuntimeIdentity.class)
 @ConditionalOnProperty(
         prefix = "nq.live-control.exact-pilot-binding",
         name = "enabled",
