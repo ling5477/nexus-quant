@@ -19,6 +19,7 @@ import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingComm
 import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingControlPlane;
 import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingValidation;
 import com.guidinglight.nexusquant.livecontrol.application.MinimalLivePilotCommand;
+import com.guidinglight.nexusquant.livecontrol.application.MinimalPilotMaterializationCommand;
 import com.guidinglight.nexusquant.livecontrol.application.PilotExecutionLeaseControlPlane;
 import com.guidinglight.nexusquant.livecontrol.application.PilotScopeControlPlane;
 import com.guidinglight.nexusquant.livecontrol.application.PilotScopeMaterializationResult;
@@ -37,6 +38,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -86,7 +88,27 @@ class MinimalLivePilotControlServiceTest {
         verify(fixture.bindings, never()).create(any(), any());
     }
 
+    @Test
+    void truncatesRuntimeClockToPostgresMicrosecondsBeforeAuthorityMaterialization() {
+        Instant runtimeNow = Instant.parse("2026-08-25T04:00:00.123456789Z");
+        Fixture fixture = fixture(
+                new BigDecimal("0.00100000"), Clock.fixed(runtimeNow, ZoneOffset.UTC));
+
+        fixture.service.prepare(command());
+
+        ArgumentCaptor<MinimalPilotMaterializationCommand> materialization =
+                ArgumentCaptor.forClass(MinimalPilotMaterializationCommand.class);
+        verify(fixture.scopes).materializeMinimal(any(), materialization.capture());
+        Instant expectedStart = runtimeNow.truncatedTo(ChronoUnit.MICROS);
+        assertEquals(expectedStart, materialization.getValue().executionWindowStart());
+        assertEquals(expectedStart.plusSeconds(120), materialization.getValue().executionWindowEnd());
+    }
+
     private static Fixture fixture(BigDecimal minimumQuantity) {
+        return fixture(minimumQuantity, Clock.fixed(NOW, ZoneOffset.UTC));
+    }
+
+    private static Fixture fixture(BigDecimal minimumQuantity, Clock clock) {
         ExchangeAccountRepository accounts = mock(ExchangeAccountRepository.class);
         InstrumentCatalogReadPort catalog = mock(InstrumentCatalogReadPort.class);
         CredentialPermissionProbeService permissionProbeService = mock(CredentialPermissionProbeService.class);
@@ -122,8 +144,8 @@ class MinimalLivePilotControlServiceTest {
 
         return new Fixture(new MinimalLivePilotControlService(
                 accounts, catalog, permissionProbeService, scopes, scopeRepository,
-                bindings, leases, Clock.fixed(NOW, ZoneOffset.UTC)),
-                permissionProbeService, bindings);
+                bindings, leases, clock),
+                permissionProbeService, scopes, bindings);
     }
 
     private static MinimalLivePilotCommand command() {
@@ -233,6 +255,7 @@ class MinimalLivePilotControlServiceTest {
     private record Fixture(
             MinimalLivePilotControlService service,
             CredentialPermissionProbeService permissionProbeService,
+            PilotScopeControlPlane scopes,
             ExactPilotBindingControlPlane bindings
     ) {
     }

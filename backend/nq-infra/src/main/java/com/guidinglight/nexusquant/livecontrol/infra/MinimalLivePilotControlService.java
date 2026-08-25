@@ -27,6 +27,7 @@ import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -84,7 +85,8 @@ public final class MinimalLivePilotControlService implements MinimalLivePilotCon
         ExactPilotBinding.Correlation correlation = new ExactPilotBinding.Correlation(
                 requestId, traceId, idempotencyKey);
         refreshPermission(account, command, traceId);
-        Instant start = clock.instant();
+        // PostgreSQL TIMESTAMPTZ 与 canonical digest 共用微秒精度，必须在 Clock 边界统一。
+        Instant start = clock.instant().truncatedTo(ChronoUnit.MICROS);
         Instant end = start.plus(PILOT_WINDOW);
         UUID sessionId = UUID.randomUUID();
         UUID pilotScopeId = UUID.randomUUID();
