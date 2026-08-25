@@ -19461,3 +19461,11 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Validation：focused15、compile/test-compile23 modules、full Maven23 modules、GateY 7/25/31/51+GateY4/5、GateW37/12/34、Authority/Java/secret/Shadow均通过。
 - Boundary：migration/交易链diff=0；production/controller/JIT/OKX/lease/PLACE/CANCEL/transfer/withdraw全0；`target/`未删除或stage。
 - Next：精确commit/push与exact-head CI；CI绿后仅code-only V43 redeploy并验证retry-safe，再按附件恢复同一controller一次。
+
+## 2026-08-25 — Non-web remediation CI / release reproducibility blocker
+
+- Scope：commit/push/CI与同commit两种checkout的exact release构建比较；未运行migration或controller。
+- Result：non-web修复commit=`90d7ff52...`、CI `32817687018` 10/10 green；但CRLF/LF manifests=`30fa3510.../049588c0...`不一致，`BLOCKED / EXACT_RELEASE_CROSS_CHECKOUT_REPRODUCIBILITY_DIVERGENCE / P1_1`。
+- Deployment：CRLF candidate immutable install/verify PASS但未InstallUnit/Activate；production继续old current、V43、health UP、kill ENGAGED，全部pilot/order/ledger facts0。
+- Boundary：controller retry/JIT/OKX/PLACE/CANCEL/transfer/withdraw全0；未删除server candidate或主仓库`target/`。
+- Next：`NQ-GATEY-6F-EXACT-RELEASE-CROSS-CHECKOUT-REPRODUCIBILITY-REMEDIATION-BLOCKED`。

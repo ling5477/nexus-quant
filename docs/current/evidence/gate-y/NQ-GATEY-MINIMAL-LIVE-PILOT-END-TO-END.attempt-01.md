@@ -175,3 +175,14 @@ kill=ENGAGED
 - Targeted review：non-web不再要求HttpSecurity；Servlet security未削弱；无GateY/profile/task-id hack；credential/secret边界与交易逻辑diff=0。P0=0、P1=0。
 - Production boundary：server继续current=`13081d8b...`、V43/failed0、health UP、LIVE=false、kill=ENGAGED；本轮production访问、controller、credential JIT、OKX、lease、PLACE、CANCEL、transfer、withdraw均为0。
 - Current decision：`IMPLEMENTED / LOCAL_GREEN / P0_0 / P1_0 / CI_PENDING / DEPLOYMENT_NOT_STARTED / CONTROLLER_NOT_RETRIED / NO_REAL_ORDER`。
+
+## Non-web remediation CI and exact-release reproducibility blocker（2026-08-25）
+
+- Implementation/CI：commit=`90d7ff52623ebeef43317a52194b1f5e60745b63`，`HEAD==origin/dev`；exact-head CI run=`32817687018 / completed / success / 10 jobs`，non-web Security P1关闭。
+- Build path A：CRLF detached clean worktree的fresh canonical builder首次返回generic internal error且无release；同Maven goals成功后canonical builder clean重建PASS，release=`90d7ff52...`、15 artifacts、V43、manifest=`30fa3510c9cc85c9c53f867c84e8ccddfb9b38d1a7a82e7f1d3e1e309e40ebc7`。
+- Server install：path A release上传16 files并immutable install/verify PASS；POSIX/link/root ownership/service-user write denial通过。该candidate只安装、未InstallUnit、未更新runtime env、未Stop/Activate。
+- Repro path B：使用`core.autocrlf=false`的独立LF clean clone对同一commit构建；fresh canonical builder同样先generic失败且无release，exact Maven warm build后canonical clean build PASS，manifest=`049588c05547cc1af87b4dcd9b61f82d25f346fea2df2cafeea62f5959738639`。
+- Divergence：同一releaseId/sourceCommit、artifactCount=15、schemaTarget=V43却产生不同manifest；CRLF build的unit为1891 bytes/53 CRLF，既有LF unit为1838 bytes/53 LF。`systemd-analyze verify`虽PASS，但单次verifier不能覆盖cross-checkout reproducibility，故命中`EXACT_RELEASE_CROSS_CHECKOUT_REPRODUCIBILITY_DIVERGENCE` P1。
+- Cleanup：两个本轮临时build worktree/clone均按精确绝对路径移除；未改既有artifact ACL、未删除主仓库`target/`、未删除服务器immutable candidate。
+- Final production readback：current=`13081d8b...`、unit active、health UP、V43/failed0、kill ENGAGED；activeLease/intent/receipt/order/trade/ledger/audit=`0/0/0/0/0/0/0`。controller retry/JIT/OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0/0`。
+- Final decision：`BLOCKED / NON_WEB_SECURITY_CONTEXT_REMEDIATED / EXACT_HEAD_CI_GREEN / EXACT_RELEASE_CROSS_CHECKOUT_REPRODUCIBILITY_DIVERGENCE / CANDIDATE_NOT_ACTIVATED / NO_REAL_ORDER / LIVE_FALSE / KILL_ENGAGED / PLACE_0 / CANCEL_0 / P0_0 / P1_1`。

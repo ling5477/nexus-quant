@@ -8,7 +8,7 @@
 - 最近冻结 Gate 为 GateX：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-x/](../gates/gate-x/)。
 - GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-6E=`ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateY-6F=`BLOCKED`（阻断）；GateY 整体未接受、未冻结。
 - Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEY-6F-MINIMAL-LIVE-PILOT-NON-WEB-SECURITY-CONTEXT-REMEDIATION-BLOCKED`；exact-head V43 release已迁移并激活，但唯一pilot controller在non-web Spring Security context初始化时失败，OKX/PLACE/CANCEL仍为0。精确边界以 [STATUS.md](STATUS.md) 为准。
+- 当前唯一动作是 `NQ-GATEY-6F-EXACT-RELEASE-CROSS-CHECKOUT-REPRODUCIBILITY-REMEDIATION-BLOCKED`；non-web Security修复CI已绿，但同commit LF/CRLF构建manifest漂移，candidate禁止激活；production仍为旧V43 healthy runtime，OKX/PLACE/CANCEL为0。精确边界以 [STATUS.md](STATUS.md) 为准。
 - 当前 runtime release、current work commit 与精确 runtime 标识只从 [STATUS.md](STATUS.md) 获取，本索引不复制其值。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->

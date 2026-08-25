@@ -14478,3 +14478,15 @@ Known warning：`UnitPreflight`在current尚未切换时按合同返回`CURRENT_
 | Java Shadow | PASS（通过当前diff） | detached短路径同一三Java文件 | `NEW_CODE_VIOLATION_COUNT=0`；主worktree既有ACL阻断未改 |
 
 未运行：commit/push、exact-head CI、release build/deploy、controller retry或OKX/PLACE。当前为`LOCAL_GREEN / CI_PENDING / NO_REAL_ORDER`。
+
+## 2026-08-25 — Non-web remediation CI / release reproducibility
+
+| Check | Result | Scope | Blocking |
+| --- | --- | --- | --- |
+| exact-head CI `32817687018` | PASS（通过）；10/10 jobs | commit `90d7ff52...` | 否 |
+| CRLF clean build/install | 单次verifier PASS | 15 artifacts / V43 / manifest `30fa3510...`；installed inactive | 是，需cross-build |
+| LF clean clone build | 单次verifier PASS | 同commit / 15 artifacts / V43 / manifest `049588c0...` | 是 |
+| manifest equality | FAIL（失败） | `30fa3510... != 049588c0...` | 是，P1 |
+| production final readback | PASS（安全态） | old current、V43/failed0/health UP/kill ENGAGED、业务事实0 | 否 |
+
+Known warning：两个fresh workspace的canonical builder首次均只返回generic internal error；相同Maven goals成功后builder clean重建才通过。这与line-ending manifest divergence共同阻断部署。本轮未运行Flyway migrate、DDL、new backup、InstallUnit、activation、controller retry或OKX。
