@@ -86,7 +86,8 @@ class ExactPilotBindingCanonicalEncoderTest {
                         ExactPilotBinding.DeploymentIdentity.RUNTIME_PROFILE),
                 new ExactPilotBinding.AccountIdentity("OKX", "LIVE", 11L, 21L, 31L), order,
                 new ExactPilotBinding.ObservationIdentities(
-                        UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()),
+                        UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
+                        UUID.randomUUID(), "c".repeat(64)),
                 new ExactPilotBinding.RiskPolicyIdentity(
                         UUID.randomUUID(), 1, "b".repeat(64), "ENGAGED"),
                 CREATED.minusSeconds(60), CREATED.plusSeconds(600),

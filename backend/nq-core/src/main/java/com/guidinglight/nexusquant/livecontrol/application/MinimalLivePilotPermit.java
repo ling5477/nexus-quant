@@ -1,5 +1,6 @@
 package com.guidinglight.nexusquant.livecontrol.application;
 
+import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -13,7 +14,10 @@ public record MinimalLivePilotPermit(
         UUID placeIntentId,
         String clientOrderId,
         String requestId,
-        String traceId
+        String traceId,
+        BigDecimal limitPrice,
+        BigDecimal quantity,
+        BigDecimal notional
 ) {
     public MinimalLivePilotPermit {
         if (ownerId <= 0) throw new IllegalArgumentException("ownerId must be positive");
@@ -25,5 +29,17 @@ public record MinimalLivePilotPermit(
         Objects.requireNonNull(clientOrderId, "clientOrderId must not be null");
         Objects.requireNonNull(requestId, "requestId must not be null");
         Objects.requireNonNull(traceId, "traceId must not be null");
+        requirePositive(limitPrice, "limitPrice");
+        requirePositive(quantity, "quantity");
+        requirePositive(notional, "notional");
+        if (limitPrice.multiply(quantity).compareTo(notional) != 0) {
+            throw new IllegalArgumentException("notional must equal limitPrice multiplied by quantity");
+        }
+    }
+
+    private static void requirePositive(BigDecimal value, String fieldName) {
+        if (value == null || value.signum() <= 0) {
+            throw new IllegalArgumentException(fieldName + " must be positive");
+        }
     }
 }

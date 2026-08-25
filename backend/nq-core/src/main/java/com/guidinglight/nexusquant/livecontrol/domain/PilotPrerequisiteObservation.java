@@ -11,7 +11,7 @@ public sealed interface PilotPrerequisiteObservation permits
         PilotPrerequisiteObservation.InstrumentMetadata,
         PilotPrerequisiteObservation.FeeSchedule,
         PilotPrerequisiteObservation.BalanceSnapshot,
-        PilotPrerequisiteObservation.ClockSync {
+        PilotPrerequisiteObservation.ClockSync, PilotPrerequisiteObservation.MarketSnapshot {
 
     String ENVELOPE_SCHEMA = "prerequisite-observation-envelope.v1";
 
@@ -238,12 +238,37 @@ public sealed interface PilotPrerequisiteObservation permits
             PilotScopeBinding.require(value.scale() <= 18, name + " has more than 18 decimal places");
         }
     }
+    record MarketSnapshot(
+            Envelope envelope,
+            String marketSnapshotDigest,
+            String instrument,
+            BigDecimal bestAsk
+    ) implements PilotPrerequisiteObservation {
+        public static final String SCHEMA_VERSION = "market-snapshot-observation.v1";
+
+        public MarketSnapshot {
+            Objects.requireNonNull(envelope, "envelope must not be null");
+            PilotScopeBinding.require(SCHEMA_VERSION.equals(envelope.observationSchemaVersion()),
+                    "market observation schema mismatch");
+            PilotScopeBinding.requireDigest(marketSnapshotDigest, "marketSnapshotDigest");
+            PilotScopeBinding.require(instrument != null && instrument.matches("[A-Z0-9]{2,20}-USDT"),
+                    "market instrument is not canonical");
+            bestAsk = CanonicalDigestSupport.money(bestAsk, "bestAsk");
+            PilotScopeBinding.require(bestAsk.signum() > 0, "bestAsk must be positive");
+        }
+
+        @Override
+        public ObservationType type() {
+            return ObservationType.MARKET_SNAPSHOT;
+        }
+    }
 
     enum ObservationType {
         INSTRUMENT_METADATA,
         FEE_SCHEDULE,
         BALANCE_SNAPSHOT,
-        CLOCK_SYNC
+        CLOCK_SYNC,
+        MARKET_SNAPSHOT
     }
 
     enum TradingStatus {

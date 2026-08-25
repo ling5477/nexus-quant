@@ -13,6 +13,7 @@ import com.guidinglight.nexusquant.livecontrol.deployment.WorkerDeploymentAdmiss
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotExecutionProviderPort;
 import com.guidinglight.nexusquant.livecontrol.infra.KillSwitchGuardedProviderObservationAuthority;
 import com.guidinglight.nexusquant.livecontrol.infra.UnavailablePilotPrerequisiteObservationAuthority;
+import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService;
 import com.guidinglight.nexusquant.risk.service.KillSwitchEngageCommand;
 import com.guidinglight.nexusquant.risk.service.KillSwitchScope;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
@@ -50,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 class GateYReadonlyQualificationConfigurationTest {
 
@@ -225,6 +227,11 @@ class GateYReadonlyQualificationConfigurationTest {
                     repository,
                     Clock.fixed(Instant.parse("2026-08-19T00:00:00Z"), ZoneOffset.UTC)
             );
+        }
+
+        @Bean
+        InstrumentCatalogService instrumentCatalogService() {
+            return mock(InstrumentCatalogService.class);
         }
     }
 

@@ -12,6 +12,10 @@ import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationCanonicalE
 import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationSet;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotPrerequisiteObservation;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
+import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService;
+import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogUpsertStats;
+import com.guidinglight.nexusquant.marketdata.domain.instrument.InstrumentCatalogItem;
+import com.guidinglight.nexusquant.marketdata.domain.instrument.port.InstrumentCatalogRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.stereotype.Component;
 
@@ -39,8 +43,8 @@ class OkxPilotPrerequisiteObservationAuthorityTest {
     @Test
     void createsCanonicalCompleteV2ObservationSetFromExactJitCredentialScope() {
         CapturingExecutor executor = new CapturingExecutor(snapshot(0));
-        OkxPilotPrerequisiteObservationAuthority authority =
-                new OkxPilotPrerequisiteObservationAuthority(executor);
+        InMemoryCatalogRepository catalog = new InMemoryCatalogRepository();
+        OkxPilotPrerequisiteObservationAuthority authority = authority(executor, catalog);
 
         PilotObservationSet first = authority.resolveTrustedObservationSet(session(), scope(), NOW);
         PilotObservationSet same = authority.resolveTrustedObservationSet(session(), scope(), NOW);
@@ -63,6 +67,8 @@ class OkxPilotPrerequisiteObservationAuthorityTest {
         assertEquals("Lv1/1", first.feeSchedule().feeTier());
         assertEquals(0, new BigDecimal("100.25").compareTo(first.balanceSnapshot().availableBalance()));
         assertEquals(0, first.clockSync().observedSkewMs());
+        assertEquals(1, catalog.items.size());
+        assertEquals("BTC-USDT", catalog.items.getFirst().exchangeSymbol());
         assertTrue(first.observations().stream().allMatch(value ->
                 value.envelope().observedAt().equals(NOW)
                         && value.envelope().recordedAt().equals(NOW)
@@ -76,8 +82,7 @@ class OkxPilotPrerequisiteObservationAuthorityTest {
     void rejectsSourceMismatchBeforeCredentialReadAndReturnsOnlySanitizedError() {
         String marker = "secret-provider-marker";
         CapturingExecutor executor = new CapturingExecutor(snapshot(0));
-        OkxPilotPrerequisiteObservationAuthority authority =
-                new OkxPilotPrerequisiteObservationAuthority(executor);
+        OkxPilotPrerequisiteObservationAuthority authority = authority(executor);
 
         LiveControlException failure = assertThrows(LiveControlException.class,
                 () -> authority.resolveTrustedObservationSet(session(), scope("WRONG_CLOCK_SOURCE"), NOW));
@@ -91,8 +96,7 @@ class OkxPilotPrerequisiteObservationAuthorityTest {
     @Test
     void anyMalformedOrPartialCollectionFailsAsOneSetWithoutReturningFacts() {
         CapturingExecutor executor = new CapturingExecutor(snapshot(1_001));
-        OkxPilotPrerequisiteObservationAuthority authority =
-                new OkxPilotPrerequisiteObservationAuthority(executor);
+        OkxPilotPrerequisiteObservationAuthority authority = authority(executor);
 
         LiveControlException failure = assertThrows(LiveControlException.class,
                 () -> authority.resolveTrustedObservationSet(session(), scope(), NOW));
@@ -104,11 +108,9 @@ class OkxPilotPrerequisiteObservationAuthorityTest {
     @Test
     void rejectsStaleProviderFactsAndCollectionsThatOutliveTheShortestFreshnessWindow() {
         OkxPilotPrerequisiteObservationAuthority staleFeeAuthority =
-                new OkxPilotPrerequisiteObservationAuthority(new CapturingExecutor(
-                        snapshot(0, NOW.minusSeconds(61), NOW)));
+                authority(new CapturingExecutor(snapshot(0, NOW.minusSeconds(61), NOW)));
         OkxPilotPrerequisiteObservationAuthority staleCollectionAuthority =
-                new OkxPilotPrerequisiteObservationAuthority(new CapturingExecutor(
-                        snapshot(0, NOW, NOW.plusMillis(5_001))));
+                authority(new CapturingExecutor(snapshot(0, NOW, NOW.plusMillis(5_001))));
 
         LiveControlException staleFee = assertThrows(LiveControlException.class,
                 () -> staleFeeAuthority.resolveTrustedObservationSet(session(), scope(), NOW));
@@ -137,6 +139,18 @@ class OkxPilotPrerequisiteObservationAuthorityTest {
                 OWNER_ID,
                 NOW
         );
+    }
+
+    private static OkxPilotPrerequisiteObservationAuthority authority(CapturingExecutor executor) {
+        return authority(executor, new InMemoryCatalogRepository());
+    }
+
+    private static OkxPilotPrerequisiteObservationAuthority authority(
+            CapturingExecutor executor,
+            InMemoryCatalogRepository catalog
+    ) {
+        return new OkxPilotPrerequisiteObservationAuthority(
+                executor, new InstrumentCatalogService(catalog));
     }
 
     private static PilotScopeBinding scope() {
@@ -197,6 +211,7 @@ class OkxPilotPrerequisiteObservationAuthorityTest {
                 List.of(new OkxPilotPrerequisiteSnapshot.FeeFact(
                         "BTC-USDT", "Lv1", "1", new BigDecimal("-0.0008"),
                         new BigDecimal("-0.001"), feeProviderTimestamp)),
+                List.of(new OkxPilotPrerequisiteSnapshot.MarketFact("BTC-USDT",new BigDecimal("100"),localClockMidpoint)),
                 new BigDecimal("100.25"), localClockMidpoint.plusMillis(skew), localClockMidpoint, skew
         );
     }
@@ -254,6 +269,50 @@ class OkxPilotPrerequisiteObservationAuthorityTest {
                     return snapshot;
                 }
             });
+        }
+    }
+
+    private static final class InMemoryCatalogRepository implements InstrumentCatalogRepository {
+        private List<InstrumentCatalogItem> items = List.of();
+
+        @Override
+        public List<InstrumentCatalogItem> list(String exchangeCode) {
+            return items;
+        }
+
+        @Override
+        public List<InstrumentCatalogItem> findByExchangeAndSymbols(
+                String exchangeCode,
+                List<String> exchangeSymbols
+        ) {
+            return items.stream()
+                    .filter(item -> item.exchangeCode().equals(exchangeCode)
+                            && exchangeSymbols.contains(item.exchangeSymbol()))
+                    .toList();
+        }
+
+        @Override
+        public InstrumentCatalogUpsertStats upsertAll(
+                List<InstrumentCatalogItem> values,
+                Instant syncedAt
+        ) {
+            items = values.stream().map(value -> new InstrumentCatalogItem(
+                    101L, value.exchangeCode(), value.instrumentType(), value.exchangeSymbol(),
+                    value.internalSymbol(), value.baseAsset(), value.quoteAsset(), value.status(),
+                    value.tickSize(), value.stepSize(), value.minQuantity(),
+                    value.maxLimitQuantity(), value.maxMarketSize(), value.maxMarketSizeUnit(),
+                    value.maxLimitNotionalUsd(), value.maxMarketNotionalUsd(), value.source(),
+                    value.sourceSchemaVersion(), value.observedAt(), syncedAt,
+                    value.nextRuleEffectiveAt(), value.ruleChecksum(), syncedAt, syncedAt)).toList();
+            return new InstrumentCatalogUpsertStats(values.size(), 0);
+        }
+
+        @Override
+        public InstrumentCatalogUpsertStats upsertVenueRuleFacts(
+                List<InstrumentCatalogItem> values,
+                Instant syncedAt
+        ) {
+            return upsertAll(values, syncedAt);
         }
     }
 }

@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Objects;
 
-/** `exact-pilot-binding.v1` 固定字段顺序、UTF-8、数值和 UTC 时间 canonical encoder。 */
+/** `exact-pilot-binding.v2` 固定字段顺序、UTF-8、数值和 UTC 时间 canonical encoder。 */
 public final class ExactPilotBindingCanonicalEncoder {
 
     private ExactPilotBindingCanonicalEncoder() {
@@ -60,6 +60,8 @@ public final class ExactPilotBindingCanonicalEncoder {
                 ",\"feeSnapshotIdentity\":" + quote(observations.feeSnapshotIdentity().toString()) +
                 ",\"balanceSnapshotIdentity\":" + quote(observations.balanceSnapshotIdentity().toString()) +
                 ",\"exchangeTimeSnapshotIdentity\":" + quote(observations.exchangeTimeSnapshotIdentity().toString()) +
+                ",\"marketSnapshotIdentity\":" + quote(observations.marketSnapshotIdentity().toString()) +
+                ",\"marketSnapshotDigest\":" + quote(observations.marketSnapshotDigest()) +
                 ",\"riskLimitSetId\":" + quote(risk.riskLimitSetId().toString()) +
                 ",\"riskPolicyVersion\":" + risk.riskPolicyVersion() +
                 ",\"riskPolicyDigest\":" + quote(risk.riskPolicyDigest()) +

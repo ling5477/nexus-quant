@@ -47,6 +47,7 @@ final class OkxJdkRealClient {
     private static final String FEE_PATH = "/api/v5/account/trade-fee";
     private static final String BALANCE_PATH = "/api/v5/account/balance";
     private static final String TIME_PATH = "/api/v5/public/time";
+    private static final String TICKER_PATH = "/api/v5/market/ticker";
     private static final String ORDER_PATH = "/api/v5/trade/order";
     private static final String CANCEL_PATH = "/api/v5/trade/cancel-order";
     private static final String FILLS_PATH = "/api/v5/trade/fills";
@@ -82,11 +83,13 @@ final class OkxJdkRealClient {
         try {
             List<OkxPilotPrerequisiteSnapshot.InstrumentFact> instruments = new ArrayList<>();
             List<OkxPilotPrerequisiteSnapshot.FeeFact> fees = new ArrayList<>();
+            List<OkxPilotPrerequisiteSnapshot.MarketFact> markets = new ArrayList<>();
             for (String instrument : request.instruments()) {
                 OkxPilotPrerequisiteSnapshot.InstrumentFact instrumentFact =
                         readInstrument(instrument, credential, environment);
                 instruments.add(instrumentFact);
                 fees.add(readFee(instrument, instrumentFact.feeGroupId(), credential, environment));
+                markets.add(readMarket(instrument));
             }
             BigDecimal balance = readAvailableBalance(credential, environment);
             Instant before = clock.instant();
@@ -94,7 +97,7 @@ final class OkxJdkRealClient {
             Instant after = clock.instant();
             Instant midpoint = before.plusMillis(Duration.between(before, after).toMillis() / 2);
             long skew = Math.subtractExact(serverTime.toEpochMilli(), midpoint.toEpochMilli());
-            return new OkxPilotPrerequisiteSnapshot(instruments, fees, balance, serverTime, midpoint, skew);
+            return new OkxPilotPrerequisiteSnapshot(instruments, fees, markets, balance, serverTime, midpoint, skew);
         } catch (WireFailure failure) {
             throw new OkxPrivateReadException(toReadError(failure.category()));
         } catch (ArithmeticException | IllegalArgumentException failure) {
@@ -340,6 +343,18 @@ final class OkxJdkRealClient {
         WireResponse response = publicRequest(TIME_PATH, JdkOkxPrivateReadTransport.MAX_RESPONSE_BYTES);
         requireRootSuccess(response.root());
         return epochMillis(text(exactRow(response.root()), "ts"), "ts");
+    }
+    private OkxPilotPrerequisiteSnapshot.MarketFact readMarket(String instrument) {
+        WireResponse response = publicRequest(
+                TICKER_PATH + "?instId=" + instrument,
+                JdkOkxPrivateReadTransport.MAX_RESPONSE_BYTES);
+        requireRootSuccess(response.root());
+        JsonNode row = exactRow(response.root());
+        requireExact(text(row, "instId"), instrument);
+        return new OkxPilotPrerequisiteSnapshot.MarketFact(
+                instrument,
+                positiveDecimal(text(row, "askPx"), "askPx"),
+                epochMillis(text(row, "ts"), "ts"));
     }
 
     private QueryResult queryOrder(

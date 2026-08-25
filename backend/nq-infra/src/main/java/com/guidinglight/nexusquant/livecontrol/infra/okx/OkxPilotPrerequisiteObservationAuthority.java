@@ -12,6 +12,8 @@ import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationCanonicalE
 import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationSet;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotPrerequisiteObservation;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
+import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService;
+import com.guidinglight.nexusquant.marketdata.domain.instrument.InstrumentCatalogItem;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -25,7 +27,8 @@ import java.util.UUID;
 /**
  * OKX production prerequisite observation capability；默认 runtime 不装配该 authority。
  *
- * <p>四类 facts 在一次 exact-credential JIT callback 内完整采集，任一失败都不会返回 partial set。</p>
+ * <p>五类 facts 在一次 exact-credential JIT callback 内完整采集，instrument metadata 随后经正式
+ * catalog application service 做 bounded upsert；任一失败都不会返回 partial set。</p>
  */
 public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrerequisiteObservationAuthority {
 
@@ -37,11 +40,19 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
     public static final String BALANCE_SOURCE_SCHEMA = "okx-account-balance.v5";
     public static final String CLOCK_SOURCE = "OKX_PUBLIC_TIME";
     public static final String CLOCK_SOURCE_SCHEMA = "okx-public-time.v5";
+    public static final String MARKET_SOURCE = "OKX_MARKET_TICKER";
+    public static final String MARKET_SOURCE_SCHEMA = "okx-market-ticker.v5";
 
     private final OkxPrivateCredentialExecutor credentialExecutor;
+    private final InstrumentCatalogService instrumentCatalogService;
 
-    public OkxPilotPrerequisiteObservationAuthority(OkxPrivateCredentialExecutor credentialExecutor) {
+    public OkxPilotPrerequisiteObservationAuthority(
+            OkxPrivateCredentialExecutor credentialExecutor,
+            InstrumentCatalogService instrumentCatalogService
+    ) {
         this.credentialExecutor = Objects.requireNonNull(credentialExecutor, "credentialExecutor must not be null");
+        this.instrumentCatalogService = Objects.requireNonNull(
+                instrumentCatalogService, "instrumentCatalogService must not be null");
     }
 
     @Override
@@ -65,6 +76,7 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
                             OkxPrivateEnvironment.PRODUCTION)
             );
             requireFreshSnapshot(snapshot, scope, resolvedAt);
+            refreshCatalog(snapshot, resolvedAt);
             return materialize(session, scope, snapshot, resolvedAt);
         } catch (RuntimeException failure) {
             // transport/JDBC/parser cause 可能含 provider 细节；authority 边界只返回固定、脱敏分类。
@@ -107,6 +119,56 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
                         || value.isAfter(snapshot.okxServerTime()))) {
             throw new IllegalArgumentException("fee observation is stale");
         }
+        Instant earliestFreshMarketTimestamp = snapshot.okxServerTime()
+                .minusMillis(scope.instrumentMaximumAgeMs());
+        for (int index = 0; index < snapshot.markets().size(); index++) {
+            OkxPilotPrerequisiteSnapshot.MarketFact market = snapshot.markets().get(index);
+            if (!market.instrument().equals(snapshot.instruments().get(index).instrument())
+                    || market.observedAt().isBefore(earliestFreshMarketTimestamp)
+                    || market.observedAt().isAfter(snapshot.okxServerTime())) {
+                throw new IllegalArgumentException("market observation is stale or outside instrument scope");
+            }
+        }
+    }
+
+    private void refreshCatalog(OkxPilotPrerequisiteSnapshot snapshot, Instant syncedAt) {
+        List<InstrumentCatalogItem> items = snapshot.instruments().stream()
+                .map(value -> catalogItem(value, syncedAt))
+                .toList();
+        instrumentCatalogService.upsertCatalogItems(items, syncedAt);
+        List<InstrumentCatalogItem> stored = instrumentCatalogService.findByExchangeAndSymbols(
+                "OKX", items.stream().map(InstrumentCatalogItem::exchangeSymbol).toList());
+        if (stored.size() != items.size()) {
+            throw new IllegalStateException("instrument catalog refresh did not persist the exact scope");
+        }
+        for (int index = 0; index < items.size(); index++) {
+            InstrumentCatalogItem expected = items.get(index);
+            InstrumentCatalogItem actual = stored.get(index);
+            if (!expected.exchangeSymbol().equals(actual.exchangeSymbol())
+                    || !expected.status().equals(actual.status())
+                    || expected.tickSize().compareTo(actual.tickSize()) != 0
+                    || expected.stepSize().compareTo(actual.stepSize()) != 0
+                    || expected.minQuantity().compareTo(actual.minQuantity()) != 0) {
+                throw new IllegalStateException("instrument catalog refresh readback mismatch");
+            }
+        }
+    }
+
+    private static InstrumentCatalogItem catalogItem(
+            OkxPilotPrerequisiteSnapshot.InstrumentFact value,
+            Instant syncedAt
+    ) {
+        String[] assets = value.instrument().split("-", -1);
+        if (assets.length != 2 || !"USDT".equals(assets[1])) {
+            throw new IllegalArgumentException("unsupported OKX Spot instrument");
+        }
+        return new InstrumentCatalogItem(
+                null, "OKX", "SPOT", value.instrument(), value.instrument(),
+                assets[0], assets[1], tradingStatus(value.state()).name(),
+                value.tickSize(), value.lotSize(), value.minimumOrderSize(),
+                null, null, null, null, null,
+                INSTRUMENT_SOURCE, null, null, syncedAt, null, null,
+                null, null);
     }
 
     private static PilotObservationSet materialize(
@@ -202,7 +264,27 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
                         PilotScopeBinding.SIGNED_TIMESTAMP_SOURCE,
                         snapshot.observedSkewMs()
                 ));
-        return new PilotObservationSet(observationSetId, scope.id(), instrument, fee, balance, clock);
+        OkxPilotPrerequisiteSnapshot.MarketFact marketFact = snapshot.markets().getFirst();
+        String marketDigest = PilotObservationCanonicalEncoder.marketSnapshotDigest(
+                marketFact.instrument(), marketFact.bestAsk(), marketFact.observedAt(),
+                MARKET_SOURCE, MARKET_SOURCE_SCHEMA);
+        PilotPrerequisiteObservation.MarketSnapshot marketDraft =
+                new PilotPrerequisiteObservation.MarketSnapshot(
+                        new PilotPrerequisiteObservation.Envelope(
+                                deterministicUuid("market|" + collectionKey),
+                                scope.id(), observationSetId,
+                                PilotPrerequisiteObservation.MarketSnapshot.SCHEMA_VERSION,
+                                "okx:market:" + marketDigest.substring(0, 32),
+                                MARKET_SOURCE, MARKET_SOURCE_SCHEMA,
+                                marketFact.observedAt(), resolvedAt, scope.workerIdentity(), "0".repeat(64)),
+                        marketDigest, marketFact.instrument(), marketFact.bestAsk());
+        PilotPrerequisiteObservation.MarketSnapshot market =
+                new PilotPrerequisiteObservation.MarketSnapshot(
+                        marketDraft.envelope().withPayloadHash(
+                                PilotObservationCanonicalEncoder.digest(marketDraft)),
+                        marketDigest, marketFact.instrument(), marketFact.bestAsk());
+        return new PilotObservationSet(
+                observationSetId, scope.id(), instrument, fee, balance, clock, market);
     }
 
     private static void requireExactScope(LiveSession session, PilotScopeBinding scope) {

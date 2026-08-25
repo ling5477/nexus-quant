@@ -26,6 +26,7 @@ public record PilotScopePreflightResult(
         FEE_STALE,
         BALANCE_STALE,
         CLOCK_STALE,
+        MARKET_STALE,
         INSTRUMENT_NOT_LIVE,
         FEE_NOT_OBSERVED_PRIVATE,
         BALANCE_INSUFFICIENT,

@@ -62,6 +62,23 @@ public final class PilotObservationCanonicalEncoder {
                 ",\"observedSkewMs\":" + observedSkewMs + "}");
     }
 
+    public static String marketSnapshotDigest(
+            String instrument,
+            BigDecimal bestAsk,
+            java.time.Instant observedAt,
+            String sourceIdentity,
+            String sourceSchemaVersion
+    ) {
+        return CanonicalDigestSupport.sha256("{" +
+                "\"schemaVersion\":\"market-snapshot-observation.v1\"" +
+                ",\"instrument\":" + CanonicalDigestSupport.quote(instrument) +
+                ",\"bestAsk\":" + CanonicalDigestSupport.quote(
+                CanonicalDigestSupport.plainDecimal(bestAsk, "bestAsk")) +
+                ",\"observedAt\":" + CanonicalDigestSupport.instant(observedAt) +
+                ",\"sourceIdentity\":" + CanonicalDigestSupport.quote(sourceIdentity) +
+                ",\"sourceSchemaVersion\":" + CanonicalDigestSupport.quote(sourceSchemaVersion) + "}");
+    }
+
     public static String encode(PilotPrerequisiteObservation observation) {
         PilotPrerequisiteObservation.Envelope envelope = observation.envelope();
         return "{" +
@@ -97,6 +114,11 @@ public final class PilotObservationCanonicalEncoder {
                     "\"clockSyncObservationDigest\":" + CanonicalDigestSupport.quote(value.clockSyncObservationDigest()) +
                     ",\"signedTimestampSource\":" + CanonicalDigestSupport.quote(value.signedTimestampSource()) +
                     ",\"observedSkewMs\":" + value.observedSkewMs() + "}";
+            case PilotPrerequisiteObservation.MarketSnapshot value -> "{" +
+                    "\"marketSnapshotDigest\":" + CanonicalDigestSupport.quote(value.marketSnapshotDigest()) +
+                    ",\"instrument\":" + CanonicalDigestSupport.quote(value.instrument()) +
+                    ",\"bestAsk\":" + CanonicalDigestSupport.quote(
+                    CanonicalDigestSupport.plainDecimal(value.bestAsk(), "bestAsk")) + "}";
         };
     }
 

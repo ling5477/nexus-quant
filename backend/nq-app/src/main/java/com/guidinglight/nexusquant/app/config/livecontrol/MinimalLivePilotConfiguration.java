@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.app.config.livecontrol;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
+import com.guidinglight.nexusquant.account.application.CredentialPermissionProbeService;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotEndpointGuard;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderAdapter;
@@ -15,6 +16,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.PilotExecutionLease;
 import com.guidinglight.nexusquant.livecontrol.domain.port.ExactPilotBindingRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.LiveControlRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotExecutionLeaseRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.port.PilotScopeRepository;
 import com.guidinglight.nexusquant.livecontrol.execution.application.port.ExecutionIntentRepository;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotExecutionProviderPort;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderRequests;
@@ -92,12 +94,15 @@ public class MinimalLivePilotConfiguration {
     public MinimalLivePilotControlPlane minimalLivePilotControlPlane(
             ExchangeAccountRepository accounts,
             InstrumentCatalogReadPort instruments,
+            CredentialPermissionProbeService permissionProbeService,
             PilotScopeControlPlane scopes,
+            PilotScopeRepository scopeRepository,
             com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingControlPlane bindings,
             PilotExecutionLeaseControlPlane leases
     ) {
         return new MinimalLivePilotControlService(
-                accounts, instruments, scopes, bindings, leases, Clock.systemUTC());
+                accounts, instruments, permissionProbeService, scopes, scopeRepository,
+                bindings, leases, Clock.systemUTC());
     }
 
     @Bean
@@ -151,18 +156,18 @@ public class MinimalLivePilotConfiguration {
             @Value("${nq.runtime.minimal-live-pilot.credential-reference-id}") long credentialReferenceId,
             @Value("${nq.runtime.minimal-live-pilot.instrument}") String instrument,
             @Value("${nq.runtime.minimal-live-pilot.side}") ExactPilotBinding.Side side,
-            @Value("${nq.runtime.minimal-live-pilot.limit-price}") BigDecimal price,
-            @Value("${nq.runtime.minimal-live-pilot.quantity}") BigDecimal quantity,
             @Value("${nq.runtime.minimal-live-pilot.configured-max-notional}") BigDecimal maxNotional
     ) {
         return new MinimalPilotRunner(
                 control, leases, orders, lifecycle, orderRepository, gateway, trades, ledger, audit,
                 accounts, bindingRepository, jdbc, context, objectMapper,
                 new MinimalLivePilotCommand(
-                        accountId, credentialReferenceId, instrument, side, price, quantity, maxNotional));
+                        accountId, credentialReferenceId, instrument, side, maxNotional));
     }
 
     private static final class MinimalPilotRunner implements ApplicationRunner {
+        private static final long OPEN_ORDER_OBSERVATION_WINDOW_MILLIS = 2_000L;
+
         private final MinimalLivePilotControlPlane control;
         private final PilotExecutionLeaseControlPlane leases;
         private final OrderCommandService orders;
@@ -243,7 +248,7 @@ public class MinimalLivePilotConfiguration {
                         permit.clientOrderId(), permit.clientOrderId(), MinimalPilotTradingVenueGateway.SOURCE,
                         com.guidinglight.nexusquant.contracts.model.OrderSide.valueOf(command.side().name()),
                         com.guidinglight.nexusquant.contracts.model.OrderType.LIMIT,
-                        command.limitPrice(), command.quantity(), "GTC", permit.traceId()));
+                        permit.limitPrice(), permit.quantity(), "GTC", permit.traceId()));
                 var stored = orderRepository.findByOrderId(result.orderId()).orElseThrow();
                 completeReconciliation(stored, permit.requestId(), permit.traceId());
                 success = true;
@@ -268,8 +273,6 @@ public class MinimalLivePilotConfiguration {
                     || binding.account().credentialReferenceId() != command.credentialReferenceId()
                     || !binding.order().exchangeInstrumentId().equals(command.instrument())
                     || binding.order().side() != command.side()
-                    || binding.order().price().compareTo(command.limitPrice()) != 0
-                    || binding.order().quantity().compareTo(command.quantity()) != 0
                     || lease.maxNotional().compareTo(command.configuredPilotMaxNotional()) != 0) {
                 throw new IllegalStateException("PILOT_RECOVERY_OPERATOR_SCOPE_MISMATCH");
             }
@@ -321,12 +324,12 @@ public class MinimalLivePilotConfiguration {
                 String traceId
         ) {
             var reconciliation = gateway.reconcile(stored);
-            if (reconciliation.observation().state()
-                    == com.guidinglight.nexusquant.livecontrol.execution.application.provider
-                    .SpotProviderResults.OrderState.OPEN
-                    || reconciliation.observation().state()
-                    == com.guidinglight.nexusquant.livecontrol.execution.application.provider
-                    .SpotProviderResults.OrderState.PARTIALLY_FILLED) {
+            if (isOpen(reconciliation)) {
+                awaitOpenOrderObservationWindow();
+                stored = orderRepository.findByOrderId(stored.orderId()).orElseThrow();
+                reconciliation = gateway.reconcile(stored);
+            }
+            if (isOpen(reconciliation)) {
                 orders.cancelOrder(new CancelOrderRequest(
                         requestId + "-cancel", stored.orderId(), stored.accountId(), "OKX",
                         stored.symbol(), stored.clientOrderId(), stored.externalOrderId(),
@@ -337,6 +340,24 @@ public class MinimalLivePilotConfiguration {
             alignOrder(stored, reconciliation, traceId);
             persistFills(trades, ledger, audit, stored, reconciliation, traceId);
             requireTerminal(reconciliation);
+        }
+
+        private static boolean isOpen(MinimalPilotTradingVenueGateway.PilotReconciliation reconciliation) {
+            return reconciliation.observation().state()
+                    == com.guidinglight.nexusquant.livecontrol.execution.application.provider
+                    .SpotProviderResults.OrderState.OPEN
+                    || reconciliation.observation().state()
+                    == com.guidinglight.nexusquant.livecontrol.execution.application.provider
+                    .SpotProviderResults.OrderState.PARTIALLY_FILLED;
+        }
+
+        private static void awaitOpenOrderObservationWindow() {
+            try {
+                Thread.sleep(OPEN_ORDER_OBSERVATION_WINDOW_MILLIS);
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("pilot open-order observation window was interrupted", exception);
+            }
         }
 
         private void alignOrder(

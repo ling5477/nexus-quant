@@ -501,7 +501,7 @@ try
     $builderSelfTestOutput = @(& $engine -NoProfile -File $builder -ContractSelfTest 2>&1)
     Assert-Condition ($LASTEXITCODE -eq 0) 'BUILDER_SELF_TEST_PROCESS_FAILED'
     $builderSelfTest = ($builderSelfTestOutput -join [Environment]::NewLine) | ConvertFrom-Json
-    Assert-Condition ([int]$builderSelfTest.migrationCount -eq 42 -and [bool]$builderSelfTest.tamperedMigrationRejected) 'BUILDER_SELF_TEST_RESULT_INVALID'
+    Assert-Condition ([int]$builderSelfTest.migrationCount -eq 43 -and [bool]$builderSelfTest.tamperedMigrationRejected) 'BUILDER_SELF_TEST_RESULT_INVALID'
     Complete-Case 'builder-fat-jar-migration-binding'
 
     foreach ($forbidden in @('systemctl start', 'Invoke-WebRequest', 'Invoke-RestMethod', 'ssh ', 'psql '))

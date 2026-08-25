@@ -19437,3 +19437,11 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Migration review：最小候选为forward V43 typed market snapshot variant/columns、DB canonical hash、domain/JDBC/freshness/binding与PostgreSQL tests；现有表空，无backfill，不得修改V40/V41/V42。DDL CHECK/函数替换锁窗口必须独立验证。
 - Boundary：未把market fact塞入错误字段，未新增JSON旁路，未改代码/migration，credential JIT/OKX/PLACE/CANCEL/transfer/withdraw全0；LIVE=false、kill ENGAGED；P0=0、P1=2。
 - Next：先确认最小V43实施范围；授权后继续同一任务完成代码、测试、review、commit/CI/deploy与exactly-one pilot。
+
+## 2026-08-25 — NQ-GATEY-V43-COMPLETION-AND-FINAL-PILOT
+
+- Scope：继续既有 `NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01`；实现forward-only V43、五类prerequisite、permission/catalog/ticker refresh、自动price/quantity、binding v2与CLI闭环；未创建Attempt-02。
+- Result：`IMPLEMENTED / LOCAL_GREEN / P0_0 / P1_0 / CI_PENDING / NO_REAL_ORDER`。V43完整保留V41四类variant并新增market hard gate；price绑定fresh bestAsk，quantity预留手续费与0.10 USDT buffer后按lotSize向下取整，cap固定≤10 USDT。
+- Validation：testCompile/full Maven 23 modules；PostgreSQL5/5；GateY=`7/25/31/51 + GateY4/GateY5`；GateW=`37/12/34`；Authority/Java PASS；Shadow new-code=0；custom secret backstop 44/0。
+- Boundary：server/production DB/credential material/OKX/PLACE/CANCEL/transfer/withdraw均未触达；production仍runtime `c47c8db3...`、V42、LIVE=false、kill=ENGAGED，PLACE/CANCEL/transfer/withdraw=`0/0/0/0`。
+- Next：精确暂存并commit/push，等待exact-head CI；CI全绿后构建immutable release、确认backup、V42→V43、激活exact runtime并继续同一attempt的唯一一次真实BUY LIMIT。

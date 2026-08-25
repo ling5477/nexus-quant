@@ -92,7 +92,7 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
                     "client expected pilot scope hash does not match server reconstruction"
             );
         }
-        PilotObservationSet observations = observationAuthority.resolveTrustedObservationSet(session, scope, now);
+        PilotObservationSet observations = resolveTrustedObservationSet(session, scope, now);
         requireTrustedObservationSet(session, scope, observations, now);
         LiveSessionEvent createdEvent = new LiveSessionEvent(
                 UUID.randomUUID(), session.id(), 1, null, LiveSessionState.APPROVAL_PENDING,
@@ -134,7 +134,7 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
                 resolved.executionWindowStart(), resolved.executionWindowEnd(), actor.userId(), now);
         session.requireWithinRiskLimit(risk);
         PilotScopeBinding scope = canonicalScope(actor, resolved, authority.scopeBindings(), session, now);
-        PilotObservationSet observations = observationAuthority.resolveTrustedObservationSet(session, scope, now);
+        PilotObservationSet observations = resolveTrustedObservationSet(session, scope, now);
         requireTrustedObservationSet(session, scope, observations, now);
         LiveSessionEvent createdEvent = new LiveSessionEvent(
                 UUID.randomUUID(), session.id(), 1, null, LiveSessionState.APPROVAL_PENDING,
@@ -153,6 +153,24 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
                 risk.maxOpenOrders(), risk.maxIntradayOrders(), risk.symbolAllowlist(),
                 risk.maxSessionDurationSeconds(), risk.spreadLimitBps(), risk.slippageLimitBps(),
                 risk.maxMarketDataAgeMs(), risk.minDataCoverageBps());
+    }
+
+    private PilotObservationSet resolveTrustedObservationSet(
+            LiveSession session,
+            PilotScopeBinding scope,
+            Instant resolvedAt
+    ) {
+        try {
+            return observationAuthority.resolveTrustedObservationSet(session, scope, resolvedAt);
+        } catch (LiveControlException exception) {
+            throw exception;
+        } catch (RuntimeException exception) {
+            LiveControlException denied = new LiveControlException(
+                    "TRUSTED_PREREQUISITE_OBSERVATION_INVALID",
+                    "trusted prerequisite observation is invalid");
+            denied.initCause(exception);
+            throw denied;
+        }
     }
 
     @Override

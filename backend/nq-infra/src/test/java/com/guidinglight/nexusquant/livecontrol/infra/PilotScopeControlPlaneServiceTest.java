@@ -363,7 +363,10 @@ class PilotScopeControlPlaneServiceTest {
                 setId, scope, balanceObservedAt, recordedAt, recorder, balanceSource, balance);
         var clock = clock(setId, scope, clockObservedAt, recordedAt, recorder,
                 variant == ObservationVariant.FORGED_AFTER_APPROVAL ? 0 : 10);
-        return new PilotObservationSet(setId, scope.id(), instrument, fee, balanceSnapshot, clock);
+        String md=PilotObservationCanonicalEncoder.marketSnapshotDigest("BTC-USDT",new BigDecimal("100"),recordedAt,"market-source","market.v1");
+        var draft=new PilotPrerequisiteObservation.MarketSnapshot(envelope(UUID.randomUUID(),setId,scope,PilotPrerequisiteObservation.MarketSnapshot.SCHEMA_VERSION,"market-"+UUID.randomUUID(),"market-source","market.v1",recordedAt,recordedAt,recorder),md,"BTC-USDT",new BigDecimal("100"));
+        var market=new PilotPrerequisiteObservation.MarketSnapshot(draft.envelope().withPayloadHash(PilotObservationCanonicalEncoder.digest(draft)),md,"BTC-USDT",new BigDecimal("100"));
+        return new PilotObservationSet(setId,scope.id(),instrument,fee,balanceSnapshot,clock,market);
     }
 
     private static PilotPrerequisiteObservation.InstrumentMetadata instrument(

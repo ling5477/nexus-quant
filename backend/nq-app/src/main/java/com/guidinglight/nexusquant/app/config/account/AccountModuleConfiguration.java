@@ -192,7 +192,8 @@ public class AccountModuleConfiguration {
      * profile 与 permission policy 一一绑定；GateW 与 GateY profile 同时出现时 fail-closed。
      */
     private static CredentialPermissionExpectation permissionExpectation(Environment environment) {
-        boolean gateY = environment.acceptsProfiles(Profiles.of("scoped-okx-private-readonly"));
+        boolean gateY = environment.acceptsProfiles(Profiles.of(
+                "scoped-okx-private-readonly", "gatey-readonly-qualification"));
         boolean gateW = environment.acceptsProfiles(Profiles.of(
                 "okx-private-readonly-diagnostics",
                 "gatew-okx-readonly",

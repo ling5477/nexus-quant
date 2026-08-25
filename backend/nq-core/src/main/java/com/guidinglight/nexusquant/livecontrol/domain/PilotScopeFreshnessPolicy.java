@@ -29,6 +29,8 @@ public final class PilotScopeFreshnessPolicy {
                 decisionAt, PilotScopePreflightResult.Violation.BALANCE_STALE, violations);
         addIfStale(observations.clockSync().envelope().observedAt(), scope.clockMaximumAgeMs(),
                 decisionAt, PilotScopePreflightResult.Violation.CLOCK_STALE, violations);
+        addIfStale(observations.marketSnapshot().envelope().observedAt(), scope.instrumentMaximumAgeMs(),
+                decisionAt, PilotScopePreflightResult.Violation.MARKET_STALE, violations);
 
         if (observations.instrumentMetadata().items().stream()
                 .anyMatch(item -> item.tradingStatus() != PilotPrerequisiteObservation.TradingStatus.LIVE)) {
@@ -48,7 +50,9 @@ public final class PilotScopeFreshnessPolicy {
                 || !scope.feeScheduleDigest().equals(observations.feeSchedule().feeScheduleDigest())
                 || !scope.feeTier().equals(observations.feeSchedule().feeTier())
                 || scope.feeEvidenceClass() != observations.feeSchedule().feeEvidenceClass()
-                || !scope.signedTimestampSource().equals(observations.clockSync().signedTimestampSource())) {
+                || !scope.signedTimestampSource().equals(observations.clockSync().signedTimestampSource())
+                || observations.instrumentMetadata().items().stream()
+                .noneMatch(item -> item.symbol().equals(observations.marketSnapshot().instrument()))) {
             violations.add(PilotScopePreflightResult.Violation.SCOPE_FACT_MISMATCH);
         }
         return new PilotScopePreflightResult(

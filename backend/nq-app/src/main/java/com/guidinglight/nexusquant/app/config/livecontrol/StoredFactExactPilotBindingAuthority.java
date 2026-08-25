@@ -12,6 +12,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionState;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationSet;
+import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationCanonicalEncoder;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotPrerequisiteObservation;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeFreshnessPolicy;
@@ -126,7 +127,9 @@ public final class StoredFactExactPilotBindingAuthority implements ExactPilotBin
                     order,
                     new ExactPilotBinding.ObservationIdentities(
                             observations.instrumentMetadata().id(), observations.feeSchedule().id(),
-                            observations.balanceSnapshot().id(), observations.clockSync().id()),
+                            observations.balanceSnapshot().id(), observations.clockSync().id(),
+                            observations.marketSnapshot().id(),
+                            observations.marketSnapshot().marketSnapshotDigest()),
                     new ExactPilotBinding.RiskPolicyIdentity(
                             risk.id(), risk.version(), risk.canonicalDigest(),
                             ExactPilotBinding.RiskPolicyIdentity.REQUIRED_KILL_SWITCH_STATE),
@@ -279,6 +282,15 @@ public final class StoredFactExactPilotBindingAuthority implements ExactPilotBin
         boolean exactPrecision = isMultiple(order.price(), observed.tickSize())
                 && isMultiple(order.quantity(), observed.lotSize())
                 && order.quantity().compareTo(observed.minimumOrderSize()) >= 0;
+        boolean exactMarket = order.exchangeInstrumentId().equals(observations.marketSnapshot().instrument())
+                && order.price().compareTo(observations.marketSnapshot().bestAsk()) == 0
+                && observations.marketSnapshot().marketSnapshotDigest().equals(
+                PilotObservationCanonicalEncoder.marketSnapshotDigest(
+                        observations.marketSnapshot().instrument(),
+                        observations.marketSnapshot().bestAsk(),
+                        observations.marketSnapshot().envelope().observedAt(),
+                        observations.marketSnapshot().envelope().sourceIdentity(),
+                        observations.marketSnapshot().envelope().sourceSchemaVersion()));
         boolean withinRisk = order.notional().compareTo(risk.maxOrderNotional()) <= 0
                 && order.notional().compareTo(risk.maxSymbolPositionNotional()) <= 0
                 && order.notional().compareTo(risk.capitalCap()) <= 0
@@ -286,7 +298,7 @@ public final class StoredFactExactPilotBindingAuthority implements ExactPilotBin
         boolean minimumValue = observed.minimumOrderValue() == null
                 || order.notional().compareTo(observed.minimumOrderValue()) >= 0;
         if (!exactCatalog || observed.tradingStatus() != PilotPrerequisiteObservation.TradingStatus.LIVE
-                || !exactPrecision || !withinRisk || !minimumValue
+                || !exactPrecision || !exactMarket || !withinRisk || !minimumValue
                 || !risk.symbolAllowlist().contains(order.exchangeInstrumentId())) {
             throw denied();
         }

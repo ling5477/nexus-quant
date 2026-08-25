@@ -93,10 +93,12 @@ public class ReadOnlyProviderObservationConfiguration {
     @Primary
     public PilotPrerequisiteObservationAuthority readOnlyProviderObservationAuthority(
             OkxPrivateCredentialExecutor credentialExecutor,
-            KillSwitchService killSwitchService
+            KillSwitchService killSwitchService,
+            com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService
+                    instrumentCatalogService
     ) {
         return new KillSwitchGuardedProviderObservationAuthority(
-                new OkxPilotPrerequisiteObservationAuthority(credentialExecutor),
+                new OkxPilotPrerequisiteObservationAuthority(credentialExecutor, instrumentCatalogService),
                 killSwitchService
         );
     }

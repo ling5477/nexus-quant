@@ -288,7 +288,8 @@ class ExactPilotBindingServiceTest {
 
     private static ExactPilotBinding.ObservationIdentities observations() {
         return new ExactPilotBinding.ObservationIdentities(
-                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
+                UUID.randomUUID(), "c".repeat(64));
     }
 
     private static ExactPilotBinding.RiskPolicyIdentity risk(UUID id, int version, String digest) {

@@ -72,7 +72,10 @@ class PilotScopeFreshnessPolicyTest {
                 envelope(scopeId, setId, "c", "clock-source", "clock.v1",
                         PilotPrerequisiteObservation.ClockSync.SCHEMA_VERSION, observedAt),
                 B, PilotScopeBinding.SIGNED_TIMESTAMP_SOURCE, skew));
-        return new Fixture(scope, new PilotObservationSet(setId, scopeId, instrument, fee, balanceObservation, clock));
+        String md=PilotObservationCanonicalEncoder.marketSnapshotDigest("BTC-USDT",new BigDecimal("100"),observedAt,"market-source","market.v1");
+        var draft=new PilotPrerequisiteObservation.MarketSnapshot(envelope(scopeId,setId,"m","market-source","market.v1",PilotPrerequisiteObservation.MarketSnapshot.SCHEMA_VERSION,observedAt),md,"BTC-USDT",new BigDecimal("100"));
+        var market=new PilotPrerequisiteObservation.MarketSnapshot(draft.envelope().withPayloadHash(PilotObservationCanonicalEncoder.digest(draft)),md,"BTC-USDT",new BigDecimal("100"));
+        return new Fixture(scope,new PilotObservationSet(setId,scopeId,instrument,fee,balanceObservation,clock,market));
     }
 
     private static PilotPrerequisiteObservation.Envelope envelope(

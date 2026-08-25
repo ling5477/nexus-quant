@@ -37,10 +37,11 @@ class JdkOkxRealTransportTest {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Test
-    void collectsExactFourPrerequisitesWithVenueNotionalLeftUnpublished() {
+    void collectsExactFivePrerequisitesWithVenueNotionalLeftUnpublished() {
         FakeExchange exchange = new FakeExchange();
         exchange.enqueue(200, instrumentBody());
         exchange.enqueue(200, feeBody());
+        exchange.enqueue(200, tickerBody());
         exchange.enqueue(200, balanceBody());
         exchange.enqueue(200, timeBody());
 
@@ -53,16 +54,19 @@ class JdkOkxRealTransportTest {
         assertEquals(SYMBOL, snapshot.instruments().get(0).instrument());
         assertEquals(new BigDecimal("0.1"), snapshot.instruments().get(0).minimumOrderSize());
         assertEquals("Lv1/1", snapshot.fees().get(0).tierIdentity());
+        assertEquals(SYMBOL, snapshot.markets().get(0).instrument());
+        assertEquals(new BigDecimal("62500.1"), snapshot.markets().get(0).bestAsk());
+        assertEquals(Instant.parse("2026-08-16T12:00:00Z"), snapshot.markets().get(0).observedAt());
         assertEquals(new BigDecimal("100.25"), snapshot.availableUsdtBalance());
         assertEquals(0, snapshot.observedSkewMs());
         assertEquals(List.of(
                 "GET /api/v5/account/instruments?instType=SPOT&instId=BTC-USDT",
                 "GET /api/v5/account/trade-fee?instType=SPOT&instId=BTC-USDT",
+                "GET /api/v5/market/ticker?instId=BTC-USDT",
                 "GET /api/v5/account/balance?ccy=USDT",
                 "GET /api/v5/public/time"
         ), exchange.requestLines());
-        assertTrue(exchange.authenticated().subList(0, 3).stream().allMatch(Boolean::booleanValue));
-        assertFalse(exchange.authenticated().get(3));
+        assertEquals(List.of(true, true, false, true, false), exchange.authenticated());
     }
 
     @Test
@@ -306,6 +310,11 @@ class JdkOkxRealTransportTest {
     private static String balanceBody() {
         return "{\"code\":\"0\",\"data\":[{\"details\":[{\"ccy\":\"USDT\","
                 + "\"availBal\":\"100.25\",\"cashBal\":\"999999\"}]}]}";
+    }
+
+    private static String tickerBody() {
+        return "{\"code\":\"0\",\"data\":[{\"instId\":\"BTC-USDT\","
+                + "\"askPx\":\"62500.1\",\"ts\":\"1786881600000\"}]}";
     }
 
     private static String timeBody() {

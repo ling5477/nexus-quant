@@ -14433,3 +14433,20 @@ Runtime MainPID=`1028560`、NRestarts0；LIVE=false、kill ENGAGED、mutationRun
 | production side effects | PASS（只读通过） | JIT/OKX/PLACE/CANCEL/transfer/withdraw all0；LIVE=false、kill ENGAGED | 否 |
 
 结论：`BLOCKED / CURRENT_MARKET_SNAPSHOT_PERSISTENCE_MIGRATION_REQUIRED / NO_REAL_ORDER / P0_0 / P1_2`。未修改代码或migration，未运行Maven/Shadow/CI/deploy/OKX；必须先评审并授权最小forward V43范围。
+
+## 2026-08-25 — V43 completion and final pilot local verification
+
+| Command / check | Result | Scope / environment | Known warnings / not run | Blocking |
+| --- | --- | --- | --- | --- |
+| `mvn -f backend/pom.xml -DskipTests test` | PASS（通过） | 23 modules production compile + testCompile | Java compiler既有unchecked/deprecation提示 | 否 |
+| focused Maven | PASS（通过） | core/OKX/infra/app及V43/permission/catalog/auto order/binding fixtures | conditional PostgreSQL tests另行required执行 | 否 |
+| disposable PostgreSQL required | PASS（通过），5/5 | PostgreSQL 17.7随机schema；V1→V43、V40历史、V42→V43、canonical parity、invalid/tamper/append-only/concurrency | 所有随机schema已clean；非production | 否 |
+| `mvn -f backend/pom.xml test` | PASS（通过） | full backend reactor，23 modules | 既有条件性skipped保留 | 否 |
+| GateY regressions | PASS（通过） | exact7、minimal25、release31、runtime51、GateY4、GateY5 lock/post-restore | Linux-only install/runtime tests未在Windows执行；CI覆盖 | 否 |
+| GateW frozen regressions | PASS（通过） | remediation37、security12、release reproducibility34 | 无production访问 | 否 |
+| Authority / Java governance | PASS（通过） | current authority errors=0；Java release21/Spring Boot3.5.10 | 无 | 否 |
+| Java Shadow | `VIOLATION_FOUND`（仅Shadow） | canonical temporary detached worktree，当前Java diff | `NEW_CODE_VIOLATION_COUNT=0`；既有baseline/ruleset expansion非阻断 | 否 |
+| custom secret backstop | PASS（通过） | changed/untracked safe files 44，0 findings | 本机无gitleaks；pinned gitleaks待exact-head CI | CI待执行 |
+| targeted P0/P1 review | PASS（通过） | V43/hash/freshness/permission/catalog/binding/10U/cardinality/secret | P0=0、P1=0 | 否 |
+
+未运行：exact-head CI、immutable release build、production backup/V42→V43/activation、credential JIT、OKX、PLACE/CANCEL、reconciliation。当前结论为 `LOCAL_GREEN / CI_PENDING / NO_REAL_ORDER`，production仍V42、LIVE=false、kill=ENGAGED。

@@ -29,7 +29,7 @@ public record ExactPilotBinding(
         Instant bindingExpiresAt,
         String bindingDigest
 ) {
-    public static final String SCHEMA_VERSION = "exact-pilot-binding.v1";
+    public static final String SCHEMA_VERSION = "exact-pilot-binding.v2";
     public static final Duration MAXIMUM_LIFETIME = Duration.ofMinutes(15);
     private static final String ZERO_DIGEST = "0".repeat(64);
 
@@ -190,16 +190,21 @@ public record ExactPilotBinding(
             UUID instrumentSnapshotIdentity,
             UUID feeSnapshotIdentity,
             UUID balanceSnapshotIdentity,
-            UUID exchangeTimeSnapshotIdentity
+            UUID exchangeTimeSnapshotIdentity,
+            UUID marketSnapshotIdentity,
+            String marketSnapshotDigest
     ) {
         public ObservationIdentities {
             Objects.requireNonNull(instrumentSnapshotIdentity, "instrumentSnapshotIdentity must not be null");
             Objects.requireNonNull(feeSnapshotIdentity, "feeSnapshotIdentity must not be null");
             Objects.requireNonNull(balanceSnapshotIdentity, "balanceSnapshotIdentity must not be null");
             Objects.requireNonNull(exchangeTimeSnapshotIdentity, "exchangeTimeSnapshotIdentity must not be null");
+            Objects.requireNonNull(marketSnapshotIdentity, "marketSnapshotIdentity must not be null");
+            requireDigest(marketSnapshotDigest, "marketSnapshotDigest");
             require(java.util.Set.of(
                     instrumentSnapshotIdentity, feeSnapshotIdentity,
-                    balanceSnapshotIdentity, exchangeTimeSnapshotIdentity).size() == 4,
+                    balanceSnapshotIdentity, exchangeTimeSnapshotIdentity,
+                    marketSnapshotIdentity).size() == 5,
                     "observation identities must be distinct");
         }
     }

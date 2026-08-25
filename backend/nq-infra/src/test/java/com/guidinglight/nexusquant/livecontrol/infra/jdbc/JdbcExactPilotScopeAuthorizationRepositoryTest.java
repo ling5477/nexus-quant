@@ -154,7 +154,8 @@ class JdbcExactPilotScopeAuthorizationRepositoryTest {
                         ExactPilotBinding.DeploymentIdentity.RUNTIME_PROFILE),
                 new ExactPilotBinding.AccountIdentity("OKX", "LIVE", CREATOR, 21L, 31L), order,
                 new ExactPilotBinding.ObservationIdentities(
-                        UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()),
+                        UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
+                        UUID.randomUUID(), "c".repeat(64)),
                 new ExactPilotBinding.RiskPolicyIdentity(
                         UUID.randomUUID(), 1, "b".repeat(64), "ENGAGED"),
                 NOW.minusSeconds(60), NOW.plusSeconds(600));

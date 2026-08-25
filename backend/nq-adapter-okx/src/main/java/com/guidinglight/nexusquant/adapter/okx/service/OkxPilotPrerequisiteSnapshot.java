@@ -6,11 +6,12 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 四类 OKX prerequisite facts 的完整、typed、credential-free collection snapshot。
+ * 五类 OKX prerequisite facts 的完整、typed、credential-free collection snapshot。
  */
 public record OkxPilotPrerequisiteSnapshot(
         List<InstrumentFact> instruments,
         List<FeeFact> fees,
+        List<MarketFact> markets,
         BigDecimal availableUsdtBalance,
         Instant okxServerTime,
         Instant localClockMidpoint,
@@ -19,11 +20,22 @@ public record OkxPilotPrerequisiteSnapshot(
     public OkxPilotPrerequisiteSnapshot {
         instruments = List.copyOf(Objects.requireNonNull(instruments, "instruments must not be null"));
         fees = List.copyOf(Objects.requireNonNull(fees, "fees must not be null"));
+        markets = List.copyOf(Objects.requireNonNull(markets, "markets must not be null"));
         Objects.requireNonNull(availableUsdtBalance, "availableUsdtBalance must not be null");
         Objects.requireNonNull(okxServerTime, "okxServerTime must not be null");
         Objects.requireNonNull(localClockMidpoint, "localClockMidpoint must not be null");
-        if (instruments.size() < 1 || instruments.size() > 2 || fees.size() != instruments.size()) {
+        if (instruments.size() < 1 || instruments.size() > 2
+                || fees.size() != instruments.size()
+                || markets.size() != instruments.size()) {
             throw new IllegalArgumentException("prerequisite collection is incomplete");
+        }
+    }
+
+    public record MarketFact(String instrument, BigDecimal bestAsk, Instant observedAt) {
+        public MarketFact {
+            requireText(instrument, "instrument");
+            requirePositive(bestAsk, "bestAsk");
+            Objects.requireNonNull(observedAt, "observedAt must not be null");
         }
     }
 

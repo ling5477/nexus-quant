@@ -111,7 +111,8 @@ class JdbcExactPilotBindingRepositoryTest {
                         101L, "BTC-USDT", ExactPilotBinding.Side.BUY, ExactPilotBinding.OrderType.LIMIT,
                         price, quantity, price.multiply(quantity)),
                 new ExactPilotBinding.ObservationIdentities(
-                        UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()),
+                        UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
+                        UUID.randomUUID(), "c".repeat(64)),
                 new ExactPilotBinding.RiskPolicyIdentity(
                         UUID.randomUUID(), 1, "b".repeat(64), "ENGAGED"),
                 NOW.minusSeconds(60), NOW.plusSeconds(600), correlation("create"),

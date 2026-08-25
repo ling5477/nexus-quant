@@ -1,7 +1,9 @@
 package com.guidinglight.nexusquant.app.config.livecontrol;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -20,6 +22,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.PilotPrerequisiteObservati
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSet;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.port.LiveControlRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotScopeRepository;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.InstrumentCatalogItem;
@@ -115,8 +118,29 @@ class StoredFactExactPilotBindingAuthorityTest {
         assertEquals(observations.id(), resolved.observationSetId());
         assertEquals(order, resolved.order());
         assertEquals(CREDENTIAL, resolved.account().credentialReferenceId());
+        assertEquals(observations.marketSnapshot().id(), resolved.observations().marketSnapshotIdentity());
+        assertEquals(observations.marketSnapshot().marketSnapshotDigest(),
+                resolved.observations().marketSnapshotDigest());
         assertEquals(KillSwitchStatus.ENGAGED.name(), resolved.riskPolicy().killSwitchState());
-        verify(credentialRepository).findByCredentialIdForOwner(OWNER, ACCOUNT, CREDENTIAL);
+
+        ExactPilotBinding.OrderEnvelope wrongPrice = new ExactPilotBinding.OrderEnvelope(
+                order.instrumentId(), order.exchangeInstrumentId(), order.side(), order.orderType(),
+                decimal("99.9"), order.quantity(), decimal("9.99"));
+        ExactPilotBindingCommand priceDrift = new ExactPilotBindingCommand(
+                UUID.randomUUID(), session.id(), scope.id(), observations.id(), wrongPrice,
+                session.executionWindowStart(), session.executionWindowEnd(),
+                new ExactPilotBinding.Correlation("request-price-drift", "trace-price-drift", "idem-price-drift"),
+                NOW.plusSeconds(300));
+        LiveControlException rejectedPrice = assertThrows(LiveControlException.class,
+                () -> authority.resolveForCreation(
+                        new AuthenticatedLiveControlActor(OWNER), priceDrift, NOW));
+        assertEquals("EXACT_PILOT_BINDING_AUTHORITY_REJECTED", rejectedPrice.code());
+
+        LiveControlException staleMarket = assertThrows(LiveControlException.class,
+                () -> authority.resolveForCreation(
+                        new AuthenticatedLiveControlActor(OWNER), command, NOW.plusSeconds(61)));
+        assertEquals("EXACT_PILOT_BINDING_AUTHORITY_REJECTED", staleMarket.code());
+        verify(credentialRepository, times(2)).findByCredentialIdForOwner(OWNER, ACCOUNT, CREDENTIAL);
         verifyNoMoreInteractions(credentialRepository);
     }
 
@@ -183,7 +207,18 @@ class StoredFactExactPilotBindingAuthorityTest {
                 clockDraft.envelope().withPayloadHash(PilotObservationCanonicalEncoder.digest(clockDraft)),
                 clockDraft.clockSyncObservationDigest(), clockDraft.signedTimestampSource(),
                 clockDraft.observedSkewMs());
-        return new PilotObservationSet(setId, scope.id(), instrument, fee, balance, clock);
+        String marketDigest = PilotObservationCanonicalEncoder.marketSnapshotDigest(
+                "BTC-USDT", new BigDecimal("100"), NOW,
+                "OKX_MARKET_TICKER", "okx-market-ticker.v5");
+        var marketDraft = new PilotPrerequisiteObservation.MarketSnapshot(
+                envelope(scope, setId, PilotPrerequisiteObservation.MarketSnapshot.SCHEMA_VERSION,
+                        "market-observation", "OKX_MARKET_TICKER", "okx-market-ticker.v5"),
+                marketDigest, "BTC-USDT", new BigDecimal("100"));
+        var market = new PilotPrerequisiteObservation.MarketSnapshot(
+                marketDraft.envelope().withPayloadHash(PilotObservationCanonicalEncoder.digest(marketDraft)),
+                marketDigest, "BTC-USDT", new BigDecimal("100"));
+        return new PilotObservationSet(
+                setId, scope.id(), instrument, fee, balance, clock, market);
     }
 
     private static PilotPrerequisiteObservation.Envelope envelope(

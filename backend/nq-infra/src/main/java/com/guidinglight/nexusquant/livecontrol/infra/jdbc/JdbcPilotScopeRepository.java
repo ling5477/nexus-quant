@@ -48,7 +48,8 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
                    observation_payload_hash, instrument_metadata_digest, fee_schedule_digest,
                    balance_snapshot_digest, clock_sync_observation_digest, fee_tier,
                    fee_evidence_class, maker_fee_rate, taker_fee_rate, fee_loss_treatment,
-                   balance_currency, available_balance, signed_timestamp_source, observed_skew_ms
+                   balance_currency, available_balance, signed_timestamp_source, observed_skew_ms,
+                   market_snapshot_digest, market_instrument, best_ask
             FROM pilot_prerequisite_observations
             """;
     private static final String APPROVAL_SELECT = """
@@ -178,7 +179,7 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
         if (values.isEmpty()) {
             return Optional.empty();
         }
-        if (values.size() != 4) {
+        if (values.size() != 5) {
             throw new LiveControlException("PILOT_OBSERVATION_SET_INCOMPLETE", "stored observation set is incomplete");
         }
         Map<PilotPrerequisiteObservation.ObservationType, PilotPrerequisiteObservation> typed =
@@ -193,7 +194,9 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
                 (PilotPrerequisiteObservation.BalanceSnapshot) typed.get(
                         PilotPrerequisiteObservation.ObservationType.BALANCE_SNAPSHOT),
                 (PilotPrerequisiteObservation.ClockSync) typed.get(
-                        PilotPrerequisiteObservation.ObservationType.CLOCK_SYNC)
+                        PilotPrerequisiteObservation.ObservationType.CLOCK_SYNC),
+                (PilotPrerequisiteObservation.MarketSnapshot) typed.get(
+                        PilotPrerequisiteObservation.ObservationType.MARKET_SNAPSHOT)
         ));
     }
 
@@ -204,7 +207,7 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
                 FROM pilot_prerequisite_observations
                 WHERE pilot_scope_id = ?
                 GROUP BY observation_set_id
-                HAVING count(*) = 4 AND count(DISTINCT observation_type) = 4
+                HAVING count(*) = 5 AND count(DISTINCT observation_type) = 5
                 ORDER BY max(observed_at) DESC, observation_set_id DESC
                 LIMIT 1
                 """, (row, rowNumber) -> row.getObject(1, UUID.class), pilotScopeId);
@@ -254,7 +257,7 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
             return Optional.empty();
         }
         UUID setId = existing.getFirst().setId();
-        if (existing.size() != 4 || existing.stream().anyMatch(value -> !value.setId().equals(setId))) {
+        if (existing.size() != 5 || existing.stream().anyMatch(value -> !value.setId().equals(setId))) {
             throw identityConflict();
         }
         return findObservationSet(requested.pilotScopeId(), setId);
@@ -275,8 +278,9 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
                         observation_payload_hash, instrument_metadata_digest, fee_schedule_digest,
                         balance_snapshot_digest, clock_sync_observation_digest, fee_tier,
                         fee_evidence_class, maker_fee_rate, taker_fee_rate, fee_loss_treatment,
-                        balance_currency, available_balance, signed_timestamp_source, observed_skew_ms
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        balance_currency, available_balance, signed_timestamp_source, observed_skew_ms,
+                        market_snapshot_digest, market_instrument, best_ask
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT DO NOTHING
                     """);
             int index = 1;
@@ -305,10 +309,13 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
             statement.setBigDecimal(index++, variant.availableBalance());
             statement.setString(index++, variant.signedTimestampSource());
             if (variant.observedSkewMs() == null) {
-                statement.setObject(index, null);
+                statement.setObject(index++, null);
             } else {
-                statement.setLong(index, variant.observedSkewMs());
+                statement.setLong(index++, variant.observedSkewMs());
             }
+            statement.setString(index++, variant.marketDigest());
+            statement.setString(index++, variant.marketInstrument());
+            statement.setBigDecimal(index, variant.bestAsk());
             return statement;
         });
         if (inserted != 1) {
@@ -362,6 +369,9 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
             case CLOCK_SYNC -> new PilotPrerequisiteObservation.ClockSync(
                     envelope, row.getString("clock_sync_observation_digest"),
                     row.getString("signed_timestamp_source"), row.getLong("observed_skew_ms"));
+            case MARKET_SNAPSHOT -> new PilotPrerequisiteObservation.MarketSnapshot(
+                    envelope, row.getString("market_snapshot_digest"),
+                    row.getString("market_instrument"), row.getBigDecimal("best_ask"));
         };
     }
 
@@ -436,23 +446,32 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
             String balanceCurrency,
             BigDecimal availableBalance,
             String signedTimestampSource,
-            Long observedSkewMs
+            Long observedSkewMs,
+            String marketDigest,
+            String marketInstrument,
+            BigDecimal bestAsk
     ) {
         private static Variant from(PilotPrerequisiteObservation observation) {
             return switch (observation) {
                 case PilotPrerequisiteObservation.InstrumentMetadata value -> new Variant(
                         value.instrumentMetadataDigest(), null, null, null, null, null,
-                        null, null, null, null, null, null, null);
+                        null, null, null, null, null, null, null, null, null, null);
                 case PilotPrerequisiteObservation.FeeSchedule value -> new Variant(
                         null, value.feeScheduleDigest(), null, null, value.feeTier(),
                         value.feeEvidenceClass().name(), value.makerFeeRate(), value.takerFeeRate(),
-                        value.feeLossTreatment(), null, null, null, null);
+                        value.feeLossTreatment(), null, null, null, null, null, null, null);
                 case PilotPrerequisiteObservation.BalanceSnapshot value -> new Variant(
                         null, null, value.balanceSnapshotDigest(), null, null, null,
-                        null, null, null, value.balanceCurrency(), value.availableBalance(), null, null);
+                        null, null, null, value.balanceCurrency(), value.availableBalance(),
+                        null, null, null, null, null);
                 case PilotPrerequisiteObservation.ClockSync value -> new Variant(
                         null, null, null, value.clockSyncObservationDigest(), null, null,
-                        null, null, null, null, null, value.signedTimestampSource(), value.observedSkewMs());
+                        null, null, null, null, null, value.signedTimestampSource(),
+                        value.observedSkewMs(), null, null, null);
+                case PilotPrerequisiteObservation.MarketSnapshot value -> new Variant(
+                        null, null, null, null, null, null, null, null,
+                        null, null, null, null, null,
+                        value.marketSnapshotDigest(), value.instrument(), value.bestAsk());
             };
         }
     }

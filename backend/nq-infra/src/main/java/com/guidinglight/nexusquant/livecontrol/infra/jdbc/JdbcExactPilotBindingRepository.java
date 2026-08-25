@@ -212,7 +212,8 @@ public class JdbcExactPilotBindingRepository implements ExactPilotBindingReposit
                             decimal(value, "price"), decimal(value, "quantity"), decimal(value, "notional")),
                     new ExactPilotBinding.ObservationIdentities(
                             uuid(value, "instrumentSnapshotIdentity"), uuid(value, "feeSnapshotIdentity"),
-                            uuid(value, "balanceSnapshotIdentity"), uuid(value, "exchangeTimeSnapshotIdentity")),
+                            uuid(value, "balanceSnapshotIdentity"), uuid(value, "exchangeTimeSnapshotIdentity"),
+                            uuid(value, "marketSnapshotIdentity"), text(value, "marketSnapshotDigest")),
                     new ExactPilotBinding.RiskPolicyIdentity(
                             uuid(value, "riskLimitSetId"), intValue(value, "riskPolicyVersion"),
                             text(value, "riskPolicyDigest"), text(value, "killSwitchState")),

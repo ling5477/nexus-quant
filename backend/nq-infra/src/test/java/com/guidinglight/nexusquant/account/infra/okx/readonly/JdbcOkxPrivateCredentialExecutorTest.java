@@ -303,6 +303,7 @@ class JdbcOkxPrivateCredentialExecutorTest {
                 List.of(new OkxPilotPrerequisiteSnapshot.FeeFact(
                         "BTC-USDT", "Lv1", "1", new BigDecimal("-0.0008"),
                         new BigDecimal("-0.001"), now)),
+                List.of(new OkxPilotPrerequisiteSnapshot.MarketFact("BTC-USDT",new BigDecimal("100"),now)),
                 new BigDecimal("100"), now, now, 0);
     }
 

@@ -2,20 +2,20 @@
 
 ## 当前结论
 
-`BLOCKED / CURRENT_MARKET_SNAPSHOT_PERSISTENCE_MIGRATION_REQUIRED / NO_REAL_ORDER`（阻断 / current market snapshot需要forward migration承载 / 未发送真实订单）。本文件是 implementation→CI→deployment→pilot 的单一持续 evidence；P1 remediation授权已提供，但V40/V41强约束observation模型无法持久化bestAsk、bestAskObservedAt与marketSnapshotDigest，无法在不伪造既有语义的前提下把current ask绑定到exact order，因此在代码修改、credential JIT、OKX与PLACE前fail-closed。
+`IMPLEMENTED / LOCAL_GREEN / CI_PENDING / NO_REAL_ORDER`（已实现 / 本地验证通过 / CI 待执行 / 未发送真实订单）。本文件继续作为 implementation→CI→deployment→pilot 的单一持续 evidence；V43、五类 prerequisite、permission refresh、BTC-USDT catalog refresh、current bestAsk binding 与自动 quantity 已完成本地实现和 P0/P1 review。exact-head commit/CI、production V42→V43、runtime activation 与真实 pilot 尚未执行，故仍保持 fail-closed。
 
 ```text
 P0=0
-P1=2
-implementationCommit=b18450d1f3c5407d7b0cabddc12330e4c0cac62e
-exactHeadCi=32626468825/completed/success
+P1=0
+implementationCommit=PENDING
+exactHeadCi=PENDING
 productionDeployment=PASS_EXACT_HEAD_V42_ACTIVE
 activeRuntime=c47c8db317bbbef64989f247b087752bf2b46a3c
 activeManifest=de1f52359619e6f38fc4671ec5c091bb5019acf3d4f953e14d402d45f0377c50
 operatorPilotParameters=ACCOUNT_1_CREDENTIAL_1_BTC_USDT_BUY_LIMIT_CAP_10
 historicalIdentity=OWNER_2_ACCOUNT_1_CREDENTIAL_1
 productionSorRecovery=PASS_PROVISIONED
-currentPrerequisite=BLOCKED_MIGRATION_REQUIRED
+currentPrerequisite=LOCAL_IMPLEMENTATION_VERIFIED_CI_PENDING
 credentialJitReads=0
 okxCalls=0
 PLACE=0
@@ -134,3 +134,20 @@ kill=ENGAGED
 - prohibited shortcuts：未把bestAsk塞入instrument digest、clock observation、minimumOrderValue、lease event、audit reason或correlation；未新增JSON旁路；未调用raw OKX或写production DB。
 - current production：account1/credential1/BTC-USDT operator decision保留；credential JIT/OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0`，session/lease/intent/receipt/order/trade/ledger/audit全0；LIVE=false、kill=ENGAGED。
 - Final decision：`BLOCKED / CURRENT_MARKET_SNAPSHOT_PERSISTENCE_MIGRATION_REQUIRED / NO_REAL_ORDER / P0_0 / P1_2 / PLACE_0 / CANCEL_0 / LIVE_FALSE / KILL_ENGAGED / NO_TRANSFER / NO_WITHDRAW`。本轮不生成半成品代码，不commit/push/deploy；下一动作必须先获得最小V43实施范围确认，之后继续同一attempt，不创建Attempt-02。
+
+## V43 completion and final pilot implementation（2026-08-25）
+
+- Scope：继续同一 `NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01`；新增且仅新增 V43，未创建 Attempt-02，未修改 V40/V41/V42，未访问 production 或 OKX。
+- V43：新增 `MARKET_SNAPSHOT` typed variant，保存 `marketSnapshotDigest / marketInstrument / bestAsk`，`observedAt` 与 source identity 复用 immutable envelope；完整保留 V41 四类 variant 约束，五类 set deferred validator、append-only、固定 OKX ticker source、session instrument、lowercase SHA-256、`bestAsk > 0` 与最多 8 位小数均由 PostgreSQL hard gate 校验。
+- canonical parity：Java/DB 对 market snapshot digest 与 prerequisite envelope payload hash 使用相同字段顺序、quoted decimal、UTC microsecond 与 UTF-8 SHA-256；disposable PostgreSQL 已验证 byte parity、tamper、invalid digest/source、`bestAsk<=0` 与不完整 set 拒绝。
+- permission：复用 `CredentialPermissionProbeService`、`OkxRealReadonlyPermissionProbePort` 与 `GATEY_PILOT_READINESS`；minimal pilot 先执行唯一受控 `GET /api/v5/account/config` refresh，只有 `SUCCEEDED / TRADE / withdraw=false / IP PASSED / fresh` 才继续。
+- catalog/market：typed OKX account instrument metadata 经 `InstrumentCatalogService` 和 canonical repository bounded upsert/readback；typed public ticker读取 exact BTC-USDT `askPx/ts`，无 raw endpoint、脚本 curl 或全市场 sync。
+- auto order：operator 输入收敛为 account/credential/BTC-USDT/BUY/10 USDT；`limitPrice=current fresh bestAsk` 且必须 tick-valid。`quantity` 使用 `min(available USDT, cap) - abs(taker fee) reserve - 0.10 USDT safety buffer` 后按 lotSize 向下取整，并校验 minQty、published minNotional（若存在）、balance、fee reserve 与 `notional<=10`。
+- exact binding：`ExactPilotBinding` 升级为 v2，显式绑定 market observation identity + digest；stored-fact authority 强制 instrument、price、freshness、canonical digest 与五类 current set 一致。price drift、expired market 与 digest drift均 no PLACE。
+- order closeout：PLACE 路径仍最多一次且禁止 retry；timeout/unknown query-first。OPEN/PARTIAL 先观察 2 秒并再次 query，之后最多 CANCEL 一次；最终 reconciliation/lease/kill 合同保持不变。
+- PostgreSQL：本地 PostgreSQL 17.7 随机 schema 5/5 PASS（通过），覆盖 V1→V43、V40 historical preservation、精确 V42→V43、pending=0、failed history=0、五类 JDBC replay、append-only、并发与 lock timeout；所有随机 schema 已清理。
+- Validation：production compile 与全仓 testCompile PASS；full Maven 23 modules PASS；GateY exact/minimal/release/runtime/GateY4/GateY5=`7/25/31/51/PASS/PASS`；GateW frozen=`37/12/34`；Authority checker与Java governance PASS；Shadow=`NEW_CODE_VIOLATION_COUNT=0`；custom secret backstop 44 files/0 findings。Pinned gitleaks 留待 exact-head CI。
+- Targeted review：V43 variant/hash/lock、五类语义、market freshness/source、permission writeback、catalog path、binding digest、10U cap、PLACE/CANCEL cardinality、secret handling均已检查；P0=0、P1=0。
+- Production boundary：server/production DB/credential material/OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0/0/0`；production仍为 runtime=`c47c8db3...`、V42、LIVE=false、kill=ENGAGED，PLACE/CANCEL/transfer/withdraw=`0/0/0/0`。
+- Current decision：`IMPLEMENTED / LOCAL_GREEN / P0_0 / P1_0 / CI_PENDING / DEPLOYMENT_NOT_STARTED / NO_REAL_ORDER`。
+- Next：精确暂存、commit `fix(gatey): complete current market prerequisites for live pilot`、push `origin/dev` 并等待 exact-head CI；只有 CI 全绿后才构建 immutable release、备份、V42→V43、激活并继续同一 attempt 的唯一一次真实 pilot。

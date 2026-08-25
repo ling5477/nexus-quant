@@ -161,7 +161,8 @@ class ExactPilotScopeControlSurfaceServiceTest {
                         ExactPilotBinding.DeploymentIdentity.RUNTIME_PROFILE),
                 new ExactPilotBinding.AccountIdentity("OKX", "LIVE", CREATOR, 21L, 31L),
                 command.order(), new ExactPilotBinding.ObservationIdentities(
-                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()),
+                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
+                UUID.randomUUID(), "c".repeat(64)),
                 new ExactPilotBinding.RiskPolicyIdentity(UUID.randomUUID(), 1, DIGEST, "ENGAGED"),
                 command.pilotWindowStart(), command.pilotWindowEnd());
     }

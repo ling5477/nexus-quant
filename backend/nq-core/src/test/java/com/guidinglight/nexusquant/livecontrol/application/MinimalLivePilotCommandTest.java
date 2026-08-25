@@ -12,28 +12,30 @@ import org.junit.jupiter.api.Test;
 class MinimalLivePilotCommandTest {
 
     @Test
-    void acceptsOnlyExplicitLimitEnvelopeWithinOperatorMaximum() {
+    void acceptsOnlyFixedBuyBtcScopeWithinHardCap() {
         MinimalLivePilotCommand command = new MinimalLivePilotCommand(
                 1, 2, "BTC-USDT", ExactPilotBinding.Side.BUY,
-                new BigDecimal("100.00000000"), new BigDecimal("0.01000000"),
-                new BigDecimal("1.00000000"));
+                new BigDecimal("10.00000000"));
 
-        assertEquals(0, command.notional().compareTo(new BigDecimal("1.0000000000000000")));
+        assertEquals(0, command.configuredPilotMaxNotional().compareTo(new BigDecimal("10.00000000")));
     }
 
     @Test
     void rejectsMissingInvalidOrOverCapOperatorValues() {
         assertThrows(IllegalArgumentException.class, () -> new MinimalLivePilotCommand(
                 0, 2, "BTC-USDT", ExactPilotBinding.Side.BUY,
-                BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE));
+                BigDecimal.ONE));
         assertThrows(IllegalArgumentException.class, () -> new MinimalLivePilotCommand(
                 1, 2, "*", ExactPilotBinding.Side.BUY,
-                BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE));
+                BigDecimal.ONE));
         assertThrows(NullPointerException.class, () -> new MinimalLivePilotCommand(
                 1, 2, "BTC-USDT", null,
-                BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE));
+                BigDecimal.ONE));
         assertThrows(IllegalArgumentException.class, () -> new MinimalLivePilotCommand(
                 1, 2, "BTC-USDT", ExactPilotBinding.Side.SELL,
-                new BigDecimal("2"), BigDecimal.ONE, BigDecimal.ONE));
+                BigDecimal.ONE));
+        assertThrows(IllegalArgumentException.class, () -> new MinimalLivePilotCommand(
+                1, 2, "BTC-USDT", ExactPilotBinding.Side.BUY,
+                new BigDecimal("10.00000001")));
     }
 }

@@ -96,7 +96,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
         latest.migrate();
         latest.validate();
         try {
-            assertEquals("42", latest.info().current().getVersion().getVersion());
+            assertEquals("43", latest.info().current().getVersion().getVersion());
             assertEquals(historicalFingerprint, historicalFingerprint(jdbc));
             assertSixTablesAndContracts(jdbc);
 
@@ -143,6 +143,42 @@ class LiveSessionFactModelPostgresIntegrationTest {
     }
 
     @Test
+    void shouldForwardMigrateExactV42ToV43WithoutPendingOrFailedMigrations() {
+        SmokeConfig config = SmokeConfig.fromSystemProperties();
+        if (!config.required()) {
+            assumeTrue(config.configured(), "PostgreSQL GateY V42 to V43 integration is disabled");
+        }
+        assertTrue(config.configured(), "Missing required nq.postgres.smoke.* properties");
+
+        String schema = "gatey43_" + UUID.randomUUID().toString().replace("-", "");
+        Flyway throughV42 = flyway(config, schema, "42");
+        throughV42.migrate();
+        assertEquals("42", throughV42.info().current().getVersion().getVersion());
+
+        Flyway latest = flyway(config, schema, null);
+        long startedAt = System.nanoTime();
+        latest.migrate();
+        long migrationElapsedMs = Duration.ofNanos(System.nanoTime() - startedAt).toMillis();
+        latest.validate();
+        try {
+            assertEquals("43", latest.info().current().getVersion().getVersion());
+            assertEquals(0, latest.info().pending().length);
+            assertEquals(0, jdbc(config, schema).queryForObject(
+                    "SELECT count(*) FROM flyway_schema_history WHERE success=FALSE", Integer.class));
+            assertTrue(migrationElapsedMs < 60_000, "V43 migration exceeded statement timeout budget");
+            assertEquals(3, jdbc(config, schema).queryForObject("""
+                    SELECT count(*)
+                    FROM information_schema.columns
+                    WHERE table_schema=current_schema()
+                      AND table_name='pilot_prerequisite_observations'
+                      AND column_name IN ('market_snapshot_digest','market_instrument','best_ask')
+                    """, Integer.class));
+        } finally {
+            latest.clean();
+        }
+    }
+
+    @Test
     void shouldUpgradeV39WithoutFakeBackfillAndEnforcePilotFacts() throws Exception {
         SmokeConfig config = SmokeConfig.fromSystemProperties();
         if (!config.required()) {
@@ -166,7 +202,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
         latest.validate();
         System.out.println("gatey6e_v39_to_v41_elapsed_ms=" + migrationElapsedMs);
         try {
-            assertEquals("42", latest.info().current().getVersion().getVersion());
+            assertEquals("43", latest.info().current().getVersion().getVersion());
             assertTrue(migrationElapsedMs < 60_000);
             assertEquals(historical.fingerprint(), historicalApprovalFingerprint(jdbc, historical.approvalId()));
             assertEquals("approval-scope.v1", jdbc.queryForObject(
@@ -220,7 +256,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
             assertEquals("LIVE_SESSION_OPERATOR_ROLE_REQUIRED", revokedReplay.code());
             jdbc.update("INSERT INTO user_roles(user_id,role_id) VALUES (?,?)",
                     pilotFixture.creatorId(), operatorRoleId);
-            assertEquals(4, jdbc.queryForObject(
+            assertEquals(5, jdbc.queryForObject(
                     "SELECT count(*) FROM pilot_prerequisite_observations WHERE pilot_scope_id=?",
                     Integer.class, scope.id()));
             assertEquals(1, jdbc.queryForObject(
@@ -251,6 +287,8 @@ class LiveSessionFactModelPostgresIntegrationTest {
             assertEquals(scope.id(), replay.id());
             assertEquals(observations.id(), transactions.execute(
                     status -> pilotRepository.appendObservationSet(scope, observations)).id());
+            assertMarketCanonicalBytesParity(jdbc, observations.marketSnapshot());
+            assertInvalidMarketSnapshotsRejected(jdbc, observations);
             assertConcurrentPilotRetries(jdbc, liveService, pilotRepository, transactions, factNow);
 
             PilotScopeBinding conflict = pilotScopeWithProvider(scope, session, "provider-contract-2");
@@ -265,6 +303,9 @@ class LiveSessionFactModelPostgresIntegrationTest {
             assertSqlState23514(() -> jdbc.update(
                     "UPDATE pilot_prerequisite_observations SET recorder_identity='mutated' WHERE observation_id=?",
                     observations.balanceSnapshot().id()));
+            assertSqlState23514(() -> jdbc.update(
+                    "UPDATE pilot_prerequisite_observations SET best_ask=best_ask+1 WHERE observation_id=?",
+                    observations.marketSnapshot().id()));
             assertSqlState23514(() -> jdbc.update(
                     "DELETE FROM pilot_instrument_observation_items WHERE observation_id=?",
                     observations.instrumentMetadata().id()));
@@ -343,7 +384,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
         try {
             latest.migrate();
             latest.validate();
-            assertEquals("42", latest.info().current().getVersion().getVersion());
+            assertEquals("43", latest.info().current().getVersion().getVersion());
             assertEquals(legacyFingerprint,
                     legacyInstrumentFingerprint(jdbc, legacyObservations.instrumentMetadata().id()));
             assertEquals("LEGACY_V40_REQUIRED", jdbc.queryForObject("""
@@ -351,19 +392,16 @@ class LiveSessionFactModelPostgresIntegrationTest {
                     FROM pilot_instrument_observation_items WHERE observation_id=?
                     """, String.class, legacyObservations.instrumentMetadata().id()));
 
-            PilotObservationSet reloaded = pilotRepository.findObservationSet(
-                    legacyScope.id(), legacyObservations.id()).orElseThrow();
-            assertEquals(PilotPrerequisiteObservation.InstrumentMetadata.LEGACY_SCHEMA_VERSION,
-                    reloaded.instrumentMetadata().envelope().observationSchemaVersion());
-            assertEquals(PilotPrerequisiteObservation.MinimumOrderValueEvidenceClass.LEGACY_V40_REQUIRED,
-                    reloaded.instrumentMetadata().items().getFirst().minimumOrderValueEvidenceClass());
+            LiveControlException historicalFourTypeSet = assertThrows(LiveControlException.class,
+                    () -> pilotRepository.findObservationSet(legacyScope.id(), legacyObservations.id()));
+            assertEquals("PILOT_OBSERVATION_SET_INCOMPLETE", historicalFourTypeSet.code());
             assertEquals(legacyObservations.instrumentMetadata().instrumentMetadataDigest(), jdbc.queryForObject(
                     "SELECT gate_y6d_instrument_metadata_digest(?)", String.class,
                     legacyObservations.instrumentMetadata().id()));
             assertEquals(legacyObservations.instrumentMetadata().observationPayloadHash(), jdbc.queryForObject(
                     "SELECT gate_y6d_observation_payload_hash(?)", String.class,
                     legacyObservations.instrumentMetadata().id()));
-            assertInstrumentCanonicalBytesParity(jdbc, reloaded.instrumentMetadata());
+            assertInstrumentCanonicalBytesParity(jdbc, legacyObservations.instrumentMetadata());
 
             assertSqlState23514(() -> jdbc.update("""
                     INSERT INTO pilot_prerequisite_observations(
@@ -489,7 +527,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
         Flyway replay = flyway(config, replaySchema, null);
         replay.migrate();
         try {
-            assertEquals("42", replay.info().current().getVersion().getVersion());
+            assertEquals("43", replay.info().current().getVersion().getVersion());
             replay.validate();
         } finally {
             replay.clean();
@@ -798,7 +836,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
                     futures.get(1).get(10, TimeUnit.SECONDS));
         }
         assertEquals(observationResults.get(0).id(), observationResults.get(1).id());
-        assertEquals(4, jdbc.queryForObject(
+        assertEquals(5, jdbc.queryForObject(
                 "SELECT count(*) FROM pilot_prerequisite_observations WHERE pilot_scope_id=?",
                 Integer.class, storedScope.id()));
         assertEquals(1, jdbc.queryForObject(
@@ -863,7 +901,19 @@ class LiveSessionFactModelPostgresIntegrationTest {
                         scope.clockSourceSchemaVersion(),
                         PilotPrerequisiteObservation.ClockSync.SCHEMA_VERSION, observedAt, recordedAt),
                 DIGEST_B, scope.signedTimestampSource(), 25));
-        return new PilotObservationSet(setId, scope.id(), instrument, fee, balance, clock);
+        String marketSource = "OKX_MARKET_TICKER";
+        String marketSchema = "okx-market-ticker.v5";
+        String marketDigest = PilotObservationCanonicalEncoder.marketSnapshotDigest(
+                "BTC-USDT", new BigDecimal("100"), observedAt, marketSource, marketSchema);
+        var market = canonical(new PilotPrerequisiteObservation.MarketSnapshot(
+                observationEnvelope(
+                        scope, setId, "market-identity" + identitySuffix,
+                        marketSource, marketSchema,
+                        PilotPrerequisiteObservation.MarketSnapshot.SCHEMA_VERSION,
+                        observedAt, recordedAt),
+                marketDigest, "BTC-USDT", new BigDecimal("100")));
+        return new PilotObservationSet(
+                setId, scope.id(), instrument, fee, balance, clock, market);
     }
 
     private static PilotPrerequisiteObservation.InstrumentItem instrumentItem(
@@ -914,6 +964,57 @@ class LiveSessionFactModelPostgresIntegrationTest {
         assertEquals(javaItems, postgresItems);
     }
 
+    private static void assertMarketCanonicalBytesParity(
+            JdbcTemplate jdbc,
+            PilotPrerequisiteObservation.MarketSnapshot observation
+    ) {
+        assertEquals(observation.marketSnapshotDigest(), jdbc.queryForObject("""
+                SELECT gate_y43_market_snapshot_digest(?,?,?,?,?)
+                """, String.class,
+                observation.instrument(), observation.bestAsk(),
+                Timestamp.from(observation.envelope().observedAt()),
+                observation.envelope().sourceIdentity(),
+                observation.envelope().sourceSchemaVersion()));
+        assertEquals(observation.observationPayloadHash(), jdbc.queryForObject(
+                "SELECT gate_y6d_observation_payload_hash(?)", String.class, observation.id()));
+    }
+
+    private static void assertInvalidMarketSnapshotsRejected(
+            JdbcTemplate jdbc,
+            PilotObservationSet observations
+    ) {
+        var market = observations.marketSnapshot();
+        String insert = """
+                INSERT INTO pilot_prerequisite_observations(
+                    observation_id,pilot_scope_id,observation_set_id,observation_type,
+                    observation_schema_version,observation_identity,source_identity,source_schema_version,
+                    observed_at,recorded_at,recorder_identity,observation_payload_hash,
+                    market_snapshot_digest,market_instrument,best_ask)
+                VALUES (?,?,?,'MARKET_SNAPSHOT',?,?,?,?,?,?,?,?,?,?,?)
+                """;
+        assertSqlState23514(() -> jdbc.update(
+                insert, UUID.randomUUID(), market.pilotScopeId(), UUID.randomUUID(),
+                PilotPrerequisiteObservation.MarketSnapshot.SCHEMA_VERSION, "invalid-zero-best-ask",
+                "OKX_MARKET_TICKER", "okx-market-ticker.v5",
+                Timestamp.from(market.envelope().observedAt()), Timestamp.from(market.envelope().recordedAt()),
+                market.envelope().recorderIdentity(), "0".repeat(64), "a".repeat(64), "BTC-USDT",
+                BigDecimal.ZERO));
+        assertSqlState23514(() -> jdbc.update(
+                insert, UUID.randomUUID(), market.pilotScopeId(), UUID.randomUUID(),
+                PilotPrerequisiteObservation.MarketSnapshot.SCHEMA_VERSION, "invalid-digest",
+                "OKX_MARKET_TICKER", "okx-market-ticker.v5",
+                Timestamp.from(market.envelope().observedAt()), Timestamp.from(market.envelope().recordedAt()),
+                market.envelope().recorderIdentity(), "0".repeat(64), "invalid", "BTC-USDT",
+                market.bestAsk()));
+        assertSqlState23514(() -> jdbc.update(
+                insert, UUID.randomUUID(), market.pilotScopeId(), UUID.randomUUID(),
+                PilotPrerequisiteObservation.MarketSnapshot.SCHEMA_VERSION, "invalid-source",
+                "UNTRUSTED_SOURCE", "okx-market-ticker.v5",
+                Timestamp.from(market.envelope().observedAt()), Timestamp.from(market.envelope().recordedAt()),
+                market.envelope().recorderIdentity(), "0".repeat(64), "a".repeat(64), "BTC-USDT",
+                market.bestAsk()));
+    }
+
     private static PilotPrerequisiteObservation.Envelope observationEnvelope(
             PilotScopeBinding scope,
             UUID setId,
@@ -960,6 +1061,14 @@ class LiveSessionFactModelPostgresIntegrationTest {
         return new PilotPrerequisiteObservation.ClockSync(
                 value.envelope().withPayloadHash(PilotObservationCanonicalEncoder.digest(value)),
                 value.clockSyncObservationDigest(), value.signedTimestampSource(), value.observedSkewMs());
+    }
+
+    private static PilotPrerequisiteObservation.MarketSnapshot canonical(
+            PilotPrerequisiteObservation.MarketSnapshot value
+    ) {
+        return new PilotPrerequisiteObservation.MarketSnapshot(
+                value.envelope().withPayloadHash(PilotObservationCanonicalEncoder.digest(value)),
+                value.marketSnapshotDigest(), value.instrument(), value.bestAsk());
     }
 
     private static void appendLegacyV40ObservationSet(
@@ -1074,7 +1183,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
                 FROM pilot_prerequisite_observations WHERE observation_id=?
                 """, UUID.randomUUID(), UUID.randomUUID(), "incomplete-" + UUID.randomUUID(),
                 source.balanceSnapshot().id())));
-        assertEquals(4, jdbc.queryForObject(
+        assertEquals(5, jdbc.queryForObject(
                 "SELECT count(*) FROM pilot_prerequisite_observations WHERE pilot_scope_id=?",
                 Integer.class, source.pilotScopeId()));
     }
