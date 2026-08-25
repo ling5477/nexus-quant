@@ -69,7 +69,7 @@ GateY-6D ACCEPTED / CI GREEN
   ↓
 GateY-6E ACCEPTED / CI GREEN
   ↓
-GateY-6F BLOCKED / OPERATOR INPUT REQUIRED / CREDENTIAL AUTHENTICATION FAILED
+GateY-6F BLOCKED / MAJOR ARCHITECTURE DECISION REQUIRED / STRATEGY AND RISK AUTHORITY ABSENT
 ```
 
 ## 下一允许动作
@@ -105,8 +105,8 @@ GateY-6F BLOCKED / OPERATOR INPUT REQUIRED / CREDENTIAL AUTHENTICATION FAILED
 - GateY-6C：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit=`febf30adfbd2ac1d1c017b1185ed75fb30abd851`，failed feature CI=`31892305007 / failure / EOF_WHITESPACE_ONLY`，forward remediation/acceptance head=`696963a75d6a701a215bf0eb7ff94d4bed97d43f`，exact-head CI=`31893000098 / completed / success`。受控固定出口已完成唯一一次 `GET /api/v5/account/config`，retry=`0`，READ/TRADE=`VERIFIED / VERIFIED`、WITHDRAW=`ABSENT`、IP=`MATCHED`，exchange mutation 与 PLACE/CANCEL/TRANSFER/WITHDRAW 均为 0。Security Review P0/P1=`0/0`；管理密码事件在 defined containment scope 内已关闭；`TARGET_PERSISTED_FACTS_REQUERY_UNAVAILABLE` 保留为非阻断 P2 accepted residual。
 - GateY-6D：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation/review commit=`b56e68bdc45fd6a7f27e6e830447e995ff683bfb`，exact-head CI run=`31944962448 / completed / success`，Security Review P0/P1=`0/0`。接受仅覆盖 trusted-observation boundary、production fail-closed、forged-refresh denial、authorization regression 与 materialization control-plane capability；`EXACT_PILOT_SCOPE=NOT_MATERIALIZED`、`FIRST_REAL_ORDER`/micro-live=`NOT_AUTHORIZED`。
 - GateY-6E：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；implementation commit=`0708bd9def0c5d8a299ee4b299103145a156be2d` 的 CI run=`31958446614 / completed / failure`，失败分类为 `GITLEAKS_FALSE_POSITIVE / TEST_CLIENT_ORDER_ID_ONLY`，历史保留；forward-only remediation/acceptance head=`c4b2668e50f8087e0e147573aca66be7fd944e3b`，exact-head CI run=`31997221424 / completed / success / 10 jobs`。独立 Security Review P0/P1=`0/0`。接受范围仅为 `FIRST_REAL_ORDER_PREREQUISITE_CAPABILITY`，machine `real_provider/private_trading` 仍保持 `NOT_IMPLEMENTED`，real mutation runtime 仍为 `UNBOUND`。
-- GateY-6F：`BLOCKED / OPERATOR INPUT REQUIRED / CREDENTIAL AUTHENTICATION FAILED`（阻断 / 需要 operator 输入 / credential 鉴权失败）。Release reproducibility、non-web/Spring composition与最小权限DB写窗口均已关闭；最终forward-fix commit=`496ed9f22ae27582696571e2afb96c89dfd63fb9`、exact-head CI run=`32836087190 / completed / success / 10 jobs`，canonical V43 release已激活并health UP。唯一current OKX permission refresh写回`FAILED / HTTP_UNAUTHORIZED`，PLACE/CANCEL/transfer/withdraw=`0/0/0/0`。
-- 当前唯一治理动作是 `NQ-GATEY-6F-CREDENTIAL-AUTHENTICATION-REMEDIATION-BLOCKED`：operator通过既有安全credential管理路径修复或轮换account1/credential1的material，禁止在聊天中提供明文；修复后继续同一attempt-01，仅重跑current permission prerequisite，PLACE仍不得retry或超过一次。
+- GateY-6F：`BLOCKED / MAJOR ARCHITECTURE DECISION REQUIRED / STRATEGY AND RISK AUTHORITY ABSENT`（阻断 / 需要重大架构决策 / strategy与risk authority缺失）。credential2 current permission已验证；role-lock最小修复commit=`97e04a5bbce453b4b8a4392d5c3b6880a200d427`、exact-head CI run=`32858550250 / completed / success / 11 jobs`，canonical V43 release已激活并health UP。production admission/backtest publish/risk set=`0/0/0`，PLACE/CANCEL/transfer/withdraw=`0/0/0/0`。
+- 当前唯一治理动作是 `NQ-GATEY-6F-MINIMAL-PILOT-STRATEGY-RISK-AUTHORITY-DECISION-BLOCKED`：operator选择提供既有可信Strategy Release admission与risk-set facts，或显式授权新的minimal-session架构/forward migration；不得由程序随机/伪造facts，也不得在决定前重启controller。
 - GateY 保持 `IN PROGRESS / NOT FROZEN`；GateY-6E acceptance 不等于 GateY 或 GateY-6 overall accepted/frozen，也不授权 GateY-FREEZE。30 项 hard gates 仍为 `PASS=0 / NOT_MET=25 / NOT_VERIFIABLE=5`，gap candidates=`10`；exact PilotScope=`NOT_MATERIALIZED`、real provider/private trading=`NOT_IMPLEMENTED`、`FIRST_REAL_ORDER`/micro-live=`NOT_AUTHORIZED`、GateY pilot soak=`NOT_STARTED`、LIVE=`DISABLED`、kill=`ENGAGED`。
 
 ## GateW 已冻结边界

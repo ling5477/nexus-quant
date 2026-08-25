@@ -19477,3 +19477,11 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Validation：pilot/release/runtime=`81/31/51 PASS`，builder exact-blob self-test、full Maven 23 modules、Java governance、detached Shadow new-code=0、production install/POSIX/health与DB ACL revoke readback均通过。
 - Boundary：current permission refresh=1；PLACE/CANCEL/transfer/withdraw=0/0/0/0，activeLease=0，LIVE=false，kill=ENGAGED；未读取或输出credential material。短暂ACL测试事件已精确REVOKE并确认最终写权限0、业务事实0。
 - Next：`NQ-GATEY-6F-CREDENTIAL-AUTHENTICATION-REMEDIATION-BLOCKED`；operator通过安全credential管理路径修复或轮换material后继续同一attempt-01，禁止在聊天中粘贴明文、禁止第二PLACE。
+
+## 2026-08-25 NQ-GATEY-RESUME-MINIMAL-LIVE-PILOT-AFTER-CREDENTIAL-REPAIR
+
+- Scope：继续唯一attempt-01，自动解析credential2、执行current permission、修复PostgreSQL role-lock最小列权限并code-only redeploy；未创建Attempt-02。
+- Result：credential2=`SUCCEEDED / TRADE / IP PASSED / withdraw=false`；forward-fix=`97e04a5b...`、CI=`32858550250 / success / 11 jobs`。随后因production admission/backtest publish/risk set全0而`BLOCKED / MAJOR_ARCHITECTURE_DECISION_REQUIRED / NO_REAL_ORDER`。
+- Validation：pilot/release/runtime=`90/31/51 PASS`、builder exact-blob、full Maven23 modules、production POSIX/health与ACL revoke readback通过。
+- Boundary：session/lease/intent/order/trade/ledger/audit与PLACE/CANCEL/transfer/withdraw全0，LIVE=false、kill=ENGAGED；credential material未读取/输出。
+- Next：`NQ-GATEY-6F-MINIMAL-PILOT-STRATEGY-RISK-AUTHORITY-DECISION-BLOCKED`；operator提供既有可信facts或授权新的minimal-session架构/forward migration。

@@ -14503,3 +14503,15 @@ Known warning：两个fresh workspace的canonical builder首次均只返回gener
 - Environment：Windows PowerShell + 本地Maven/PostgreSQL回归、clean detached Git worktree、GitHub Actions、production Linux/Java21/PostgreSQL V43/OKX private read-only permission endpoint。
 - Known warnings：本地Docker daemon不可用；WSL缺少pwsh，Linux installer专项未在本机执行，已由服务器真实installer/POSIX verifier覆盖。GitHub Actions的Node/setup-java deprecation annotations不阻断本轮。
 - Not run：未执行BTC-USDT metadata/ticker、balance、fee、clock、binding、lease、PLACE、CANCEL或reconciliation，因为permission prerequisite先行确定性失败。最终判定为operator credential material hard blocker。
+
+## 2026-08-25 GateY credential2 resume / role-lock / authority blocker
+
+- Command：production SoR unique account/credential query；Result：PASS（通过），account1与credential2各唯一，credential2=`ACTIVE / VERIFIED / OKX_API_V5`，旧credential1未采用。
+- Command：真实`GATEY_PILOT_READINESS`；Result：PASS（通过），credential2=`SUCCEEDED / TRADE / IP PASSED / withdraw=false`。
+- Command：PostgreSQL role-lock privilege rollback probe；Result：PASS（通过），三张authorization表仅需identity列UPDATE，事务最终ROLLBACK。
+- Command：pilot/release/runtime/builder/Maven；Result：PASS（通过），90/31/51、exact-blob builder self-test、23 modules。
+- Command：exact-head CI `32858550250`与release deployment；Result：PASS（通过），11 jobs success；release=`97e04a5b...`、manifest=`64e62c61...`、V43、POSIX/health通过，无migration。
+- Command：formal minimal controller after role-lock remediation；Result：BLOCKED（阻断），`PILOT_RUNTIME_AUTHORITY_NOT_CONFIGURED`；production admission/backtest publish/risk set=`0/0/0`。
+- Environment：production Linux/Java21/PostgreSQL V43/OKX current private permission，Windows本地Maven/PowerShell，GitHub Actions。
+- Known warnings：GitHub Node/setup-java deprecation annotations不阻断；未运行新的migration，因为尚未获得architecture decision。
+- Not run：未进入session/scope/observation/binding/lease/PLACE/CANCEL/reconciliation；PLACE=0，最终安全态通过。
