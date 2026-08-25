@@ -19469,3 +19469,11 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Deployment：CRLF candidate immutable install/verify PASS但未InstallUnit/Activate；production继续old current、V43、health UP、kill ENGAGED，全部pilot/order/ledger facts0。
 - Boundary：controller retry/JIT/OKX/PLACE/CANCEL/transfer/withdraw全0；未删除server candidate或主仓库`target/`。
 - Next：`NQ-GATEY-6F-EXACT-RELEASE-CROSS-CHECKOUT-REPRODUCIBILITY-REMEDIATION-BLOCKED`。
+
+## 2026-08-25 NQ-GATEY-FINAL-CONVERGENCE-TO-FIRST-REAL-PILOT
+
+- Scope：继续唯一`NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01`，关闭release reproducibility/Spring composition/DB write window并部署exact V43 runtime；未创建Attempt-02。
+- Result：`BLOCKED / OPERATOR_INPUT_REQUIRED / CREDENTIAL_AUTHENTICATION_FAILED / HTTP_UNAUTHORIZED / NO_REAL_ORDER`。Forward-fix commit=`496ed9f22ae27582696571e2afb96c89dfd63fb9`，exact-head CI=`32836087190 / 10 jobs success`，production current exact/health UP。
+- Validation：pilot/release/runtime=`81/31/51 PASS`，builder exact-blob self-test、full Maven 23 modules、Java governance、detached Shadow new-code=0、production install/POSIX/health与DB ACL revoke readback均通过。
+- Boundary：current permission refresh=1；PLACE/CANCEL/transfer/withdraw=0/0/0/0，activeLease=0，LIVE=false，kill=ENGAGED；未读取或输出credential material。短暂ACL测试事件已精确REVOKE并确认最终写权限0、业务事实0。
+- Next：`NQ-GATEY-6F-CREDENTIAL-AUTHENTICATION-REMEDIATION-BLOCKED`；operator通过安全credential管理路径修复或轮换material后继续同一attempt-01，禁止在聊天中粘贴明文、禁止第二PLACE。

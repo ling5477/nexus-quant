@@ -14490,3 +14490,16 @@ Known warning：`UnitPreflight`在current尚未切换时按合同返回`CURRENT_
 | production final readback | PASS（安全态） | old current、V43/failed0/health UP/kill ENGAGED、业务事实0 | 否 |
 
 Known warning：两个fresh workspace的canonical builder首次均只返回generic internal error；相同Maven goals成功后builder clean重建才通过。这与line-ending manifest divergence共同阻断部署。本轮未运行Flyway migrate、DDL、new backup、InstallUnit、activation、controller retry或OKX。
+
+## 2026-08-25 GateY-6F final convergence / credential hard blocker
+
+- Command：`pwsh -NoProfile -File scripts/gatey/tests/run-gatey-minimal-live-pilot-contract-regression.ps1`；Result：PASS（通过），81 cases，provider/PLACE/CANCEL/transfer/withdraw均0。
+- Command：release/runtime contract、builder `-ContractSelfTest`、`mvn -f backend/pom.xml test`；Result：PASS（通过），31/31、51/51、exact-blob builder self-test、23 modules build success。
+- Command：Java governance与clean detached Shadow；Result：PASS（通过）/`NEW_CODE_VIOLATION_COUNT=0`。主worktree Shadow因既有不可读artifact checker exit 3，不计通过；clean detached exact commit结果为接受依据。
+- Command：production PostgreSQL exact grant/readback/revoke；Result：PASS（通过），26表精确DML与6 sequence USAGE窗口可用，finally后table DML=0、sequence `USAGE|UPDATE`=0。测试提取错误曾造成约4秒已提交ACL窗口，立即同源REVOKE；期间LIVE=false、tradingAuthorization=false且业务/交易事实全0。
+- Command：exact-head GitHub CI run `32836087190`；Result：`completed / success / 10 jobs`。
+- Command：canonical build/install/activation/health；Result：PASS（通过），release=`496ed9f2...`、manifest=`c5af3f14...`、15 artifacts、V43/failed0、POSIX/link/root ownership/service-user write denial与health均通过，无migration/new backup。
+- Command：minimal-pilot current permission refresh；Result：BLOCKED（阻断），OKX返回确定性`HTTP_UNAUTHORIZED`并写回`FAILED`；PLACE/CANCEL/transfer/withdraw=`0/0/0/0`，activeLease=0、kill=ENGAGED、LIVE=false。
+- Environment：Windows PowerShell + 本地Maven/PostgreSQL回归、clean detached Git worktree、GitHub Actions、production Linux/Java21/PostgreSQL V43/OKX private read-only permission endpoint。
+- Known warnings：本地Docker daemon不可用；WSL缺少pwsh，Linux installer专项未在本机执行，已由服务器真实installer/POSIX verifier覆盖。GitHub Actions的Node/setup-java deprecation annotations不阻断本轮。
+- Not run：未执行BTC-USDT metadata/ticker、balance、fee、clock、binding、lease、PLACE、CANCEL或reconciliation，因为permission prerequisite先行确定性失败。最终判定为operator credential material hard blocker。
