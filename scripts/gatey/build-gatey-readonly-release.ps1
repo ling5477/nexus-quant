@@ -38,6 +38,242 @@ function Assert-ExactCleanCommit
     return $head
 }
 
+function Assert-ExactCommitMaterialization
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$SourceRoot,
+        [Parameter(Mandatory = $true)][string]$Commit
+    )
+    $entries = @(& git -C $repo ls-tree -r --full-tree $Commit)
+    if ($LASTEXITCODE -ne 0 -or $entries.Count -eq 0)
+    {
+        throw 'FAIL / RELEASE_SOURCE_TREE_INVENTORY_FAILED'
+    }
+    $paths = [Collections.Generic.List[string]]::new()
+    $expectedHashes = [Collections.Generic.List[string]]::new()
+    foreach ($entry in $entries)
+    {
+        $parts = ([string]$entry).Split("`t", 2)
+        if ($parts.Count -ne 2 -or $parts[0] -notmatch '^([0-9]{6}) blob ([0-9a-f]{40})$' -or
+                $Matches[1] -eq '120000' -or $parts[1].Contains("`n") -or $parts[1].Contains("`r"))
+        {
+            throw 'BLOCKED / RELEASE_SOURCE_TREE_UNSUPPORTED'
+        }
+        $fullPath = Join-Path $SourceRoot $parts[1]
+        if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf) -or
+                ((Get-Item -LiteralPath $fullPath -Force).Attributes -band [IO.FileAttributes]::ReparsePoint))
+        {
+            throw 'FAIL / RELEASE_SOURCE_FILE_MISSING'
+        }
+        $paths.Add($parts[1].Replace('\', '/'))
+        $expectedHashes.Add($Matches[2])
+    }
+    Push-Location $SourceRoot
+    try
+    {
+        $actualHashes = @($paths | & git hash-object --no-filters --stdin-paths)
+    }
+    finally
+    {
+        Pop-Location
+    }
+    if ($LASTEXITCODE -ne 0 -or $actualHashes.Count -ne $expectedHashes.Count)
+    {
+        throw 'FAIL / RELEASE_SOURCE_HASH_PROCESS_FAILED'
+    }
+    for ($index = 0; $index -lt $expectedHashes.Count; $index++)
+    {
+        if ([string]$actualHashes[$index] -cne [string]$expectedHashes[$index])
+        {
+            Write-Verbose (
+                'materialized blob mismatch path={0} expected={1} actual={2}' -f
+                $paths[$index], $expectedHashes[$index], $actualHashes[$index]
+            )
+            throw 'FAIL / RELEASE_SOURCE_BLOB_HASH_MISMATCH'
+        }
+    }
+    $materializedFiles = @(Get-ChildItem -LiteralPath $SourceRoot -Recurse -File -Force)
+    if ($materializedFiles.Count -ne $paths.Count)
+    {
+        throw 'FAIL / RELEASE_SOURCE_FILE_COUNT_MISMATCH'
+    }
+    return $paths.Count
+}
+
+function Read-GitBatchAsciiLine
+{
+    param([Parameter(Mandatory = $true)][IO.Stream]$Stream)
+    $bytes = [Collections.Generic.List[byte]]::new()
+    while ($true)
+    {
+        $value = $Stream.ReadByte()
+        if ($value -lt 0) { throw 'FAIL / RELEASE_SOURCE_BLOB_STREAM_TRUNCATED' }
+        if ($value -eq 10) { break }
+        $bytes.Add([byte]$value)
+        if ($bytes.Count -gt 256) { throw 'FAIL / RELEASE_SOURCE_BLOB_HEADER_INVALID' }
+    }
+    return [Text.Encoding]::ASCII.GetString($bytes.ToArray())
+}
+
+function Copy-GitBatchBlob
+{
+    param(
+        [Parameter(Mandatory = $true)][IO.Stream]$Source,
+        [Parameter(Mandatory = $true)][IO.Stream]$Destination,
+        [Parameter(Mandatory = $true)][long]$Length
+    )
+    $remaining = $Length
+    $buffer = [byte[]]::new(65536)
+    while ($remaining -gt 0)
+    {
+        $requested = [int][Math]::Min([long]$buffer.Length, $remaining)
+        $read = $Source.Read($buffer, 0, $requested)
+        if ($read -le 0) { throw 'FAIL / RELEASE_SOURCE_BLOB_STREAM_TRUNCATED' }
+        $Destination.Write($buffer, 0, $read)
+        $remaining -= $read
+    }
+    if ($Source.ReadByte() -ne 10)
+    {
+        throw 'FAIL / RELEASE_SOURCE_BLOB_STREAM_INVALID'
+    }
+}
+
+function Write-ExactCommitBlobTree
+{
+    param(
+        [Parameter(Mandatory = $true)][string]$SourceRoot,
+        [Parameter(Mandatory = $true)][string]$Commit
+    )
+    $entries = @(& git -C $repo ls-tree -r --full-tree $Commit)
+    if ($LASTEXITCODE -ne 0 -or $entries.Count -eq 0)
+    {
+        throw 'FAIL / RELEASE_SOURCE_TREE_INVENTORY_FAILED'
+    }
+    $git = (Get-Command git -ErrorAction Stop).Source
+    $startInfo = [Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = $git
+    $startInfo.UseShellExecute = $false
+    $startInfo.RedirectStandardInput = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    foreach ($argument in @('-C', $repo, 'cat-file', '--batch'))
+    {
+        $null = $startInfo.ArgumentList.Add($argument)
+    }
+    $process = [Diagnostics.Process]::new()
+    $process.StartInfo = $startInfo
+    if (-not $process.Start()) { throw 'FAIL / RELEASE_SOURCE_BLOB_PROCESS_FAILED' }
+    try
+    {
+        $output = $process.StandardOutput.BaseStream
+        $count = 0
+        foreach ($entry in $entries)
+        {
+            $parts = ([string]$entry).Split("`t", 2)
+            if ($parts.Count -ne 2 -or $parts[0] -notmatch '^([0-9]{6}) blob ([0-9a-f]{40})$' -or
+                    $Matches[1] -eq '120000')
+            {
+                throw 'BLOCKED / RELEASE_SOURCE_TREE_UNSUPPORTED'
+            }
+            $hash = $Matches[2]
+            $relativePath = $parts[1]
+            $segments = @($relativePath.Split('/'))
+            if ([string]::IsNullOrWhiteSpace($relativePath) -or
+                    [IO.Path]::IsPathRooted($relativePath) -or $relativePath.Contains('\') -or
+                    @($segments | Where-Object { $_ -eq '' -or $_ -eq '.' -or $_ -eq '..' }).Count -gt 0)
+            {
+                throw 'BLOCKED / RELEASE_SOURCE_PATH_INVALID'
+            }
+            $fullPath = [IO.Path]::GetFullPath((Join-Path $SourceRoot $relativePath))
+            if (-not $fullPath.StartsWith(
+                    [IO.Path]::GetFullPath($SourceRoot) + [IO.Path]::DirectorySeparatorChar,
+                    [StringComparison]::OrdinalIgnoreCase))
+            {
+                throw 'BLOCKED / RELEASE_SOURCE_PATH_INVALID'
+            }
+            [IO.Directory]::CreateDirectory((Split-Path -Parent $fullPath)) | Out-Null
+            $process.StandardInput.WriteLine($hash)
+            $process.StandardInput.Flush()
+            $header = Read-GitBatchAsciiLine $output
+            if ($header -notmatch ('^' + $hash + ' blob ([0-9]+)$'))
+            {
+                throw 'FAIL / RELEASE_SOURCE_BLOB_HEADER_INVALID'
+            }
+            $length = [long]$Matches[1]
+            $file = [IO.File]::Open(
+                $fullPath,
+                [IO.FileMode]::CreateNew,
+                [IO.FileAccess]::Write,
+                [IO.FileShare]::None
+            )
+            try { Copy-GitBatchBlob $output $file $length }
+            finally { $file.Dispose() }
+            $count++
+        }
+        $process.StandardInput.Close()
+        $process.WaitForExit()
+        if ($process.ExitCode -ne 0 -or $count -ne $entries.Count)
+        {
+            throw 'FAIL / RELEASE_SOURCE_BLOB_PROCESS_FAILED'
+        }
+        return $count
+    }
+    finally
+    {
+        if (-not $process.HasExited) { $process.Kill($true) }
+        $process.Dispose()
+    }
+}
+
+function New-ExactCommitSourceMaterialization
+{
+    param([Parameter(Mandatory = $true)][string]$Commit)
+    $base = Join-Path ([IO.Path]::GetTempPath()) `
+        ('nqg-' + [Guid]::NewGuid().ToString('N').Substring(0, 12))
+    $source = Join-Path $base 'source'
+    try
+    {
+        [IO.Directory]::CreateDirectory($source) | Out-Null
+        $writtenFiles = Write-ExactCommitBlobTree $source $Commit
+        $trackedFiles = Assert-ExactCommitMaterialization $source $Commit
+        if ($writtenFiles -ne $trackedFiles)
+        {
+            throw 'FAIL / RELEASE_SOURCE_FILE_COUNT_MISMATCH'
+        }
+        return [pscustomobject][ordered]@{
+            baseRoot = $base
+            sourceRoot = $source
+            trackedFiles = $trackedFiles
+            sourceMode = 'EXACT_GIT_COMMIT_BLOB_BYTES'
+        }
+    }
+    catch
+    {
+        if (Test-Path -LiteralPath $base)
+        {
+            Remove-Item -LiteralPath $base -Recurse -Force
+        }
+        throw
+    }
+}
+
+function Remove-ExactCommitSourceMaterialization
+{
+    param([Parameter(Mandatory = $true)]$Materialization)
+    $base = [IO.Path]::GetFullPath([string]$Materialization.baseRoot)
+    $temp = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
+    if (-not $base.StartsWith(
+            (Join-Path $temp 'nqg-'),
+            [StringComparison]::OrdinalIgnoreCase))
+    {
+        throw 'FAIL / RELEASE_SOURCE_CLEANUP_PATH_INVALID'
+    }
+    if (Test-Path -LiteralPath $base)
+    {
+        Remove-Item -LiteralPath $base -Recurse -Force
+    }
+}
+
 function Copy-Artifact
 {
     param([string]$Source, [string]$Root, [string]$RelativePath, [string]$Mode, [string]$Role)
@@ -59,10 +295,14 @@ function Copy-Artifact
 
 function Invoke-ExactSourceApplicationBuild
 {
-    param([Parameter(Mandatory = $true)][string]$OutputTimestamp)
+    param(
+        [Parameter(Mandatory = $true)][string]$OutputTimestamp,
+        [Parameter(Mandatory = $true)][string]$SourceRoot,
+        [Parameter(Mandatory = $true)][string]$SourceMigrationRoot
+    )
     $maven = (Get-Command mvn -ErrorAction Stop).Source
     $arguments = @(
-        '-f', 'backend/pom.xml', '-pl', 'nq-app', '-am',
+        '-f', (Join-Path $SourceRoot 'backend/pom.xml'), '-pl', 'nq-app', '-am',
         'clean', 'package', 'spring-boot:repackage',
         '-DskipTests', "-Dproject.build.outputTimestamp=$OutputTimestamp"
     )
@@ -77,7 +317,7 @@ function Invoke-ExactSourceApplicationBuild
     {
         throw 'BLOCKED / RELEASE_BUILD_MODIFIED_SOURCE_TREE'
     }
-    $target = Join-Path $repo 'backend/nq-app/target'
+    $target = Join-Path $SourceRoot 'backend/nq-app/target'
     $jars = @(Get-ChildItem -LiteralPath $target -File -Filter 'nq-app-*.jar' |
         Where-Object { $_.Name -notlike '*.original' -and $_.Name -notlike '*-sources.jar' -and
                 $_.Name -notlike '*-javadoc.jar' })
@@ -85,7 +325,7 @@ function Invoke-ExactSourceApplicationBuild
     {
         throw 'BLOCKED / RELEASE_APPLICATION_ARTIFACT_AMBIGUOUS'
     }
-    Assert-ApplicationJarContract $jars[0].FullName
+    Assert-ApplicationJarContract $jars[0].FullName $SourceMigrationRoot
     return $jars[0].FullName
 }
 
@@ -105,7 +345,10 @@ function Get-StreamSha256
 
 function Assert-ApplicationJarContract
 {
-    param([Parameter(Mandatory = $true)][string]$Path)
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [string]$SourceMigrationRoot = $migrationRoot
+    )
     Add-Type -AssemblyName System.IO.Compression
     $stream = [IO.File]::OpenRead($Path)
     try
@@ -123,7 +366,7 @@ function Assert-ApplicationJarContract
                     throw 'BLOCKED / RELEASE_APPLICATION_CONTENT_INVALID'
                 }
             }
-            $inventory = Get-GateYMigrationInventory $migrationRoot
+            $inventory = Get-GateYMigrationInventory $SourceMigrationRoot
             $infraEntries = @($archive.Entries | Where-Object {
                 $_.FullName -match '^BOOT-INF/lib/nq-infra-[A-Za-z0-9._-]+\.jar$'
             })
@@ -308,6 +551,8 @@ function New-SyntheticApplicationJar
 function Invoke-BuilderContractSelfTest
 {
     $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ('nq-gatey-builder-selftest-' + [Guid]::NewGuid().ToString('N'))
+    $materializationA = $null
+    $materializationB = $null
     try
     {
         [IO.Directory]::CreateDirectory($tempRoot) | Out-Null
@@ -325,16 +570,39 @@ function Invoke-BuilderContractSelfTest
         {
             if ($_.Exception.Message -cne 'BLOCKED / RELEASE_APPLICATION_MIGRATION_MISMATCH') { throw }
         }
+        $head = (& git -C $repo rev-parse HEAD).Trim()
+        $materializationA = New-ExactCommitSourceMaterialization $head
+        $materializationB = New-ExactCommitSourceMaterialization $head
+        foreach ($relativePath in @(
+            'scripts/gatey/build-gatey-readonly-release.ps1',
+            'scripts/gatey/invoke-gatey-minimal-live-pilot.ps1',
+            'deploy/systemd/nq-gatey-readonly-qualification.service',
+            'deploy/gatey/gatey-readonly-runtime-target.json',
+            'backend/nq-infra/src/main/resources/db/migration/V43__gate_y_current_market_snapshot.sql'
+        ))
+        {
+            $hashA = Get-GateYReadonlySha256File (Join-Path $materializationA.sourceRoot $relativePath)
+            $hashB = Get-GateYReadonlySha256File (Join-Path $materializationB.sourceRoot $relativePath)
+            if ($hashA -cne $hashB)
+            {
+                throw 'FAIL / RELEASE_SOURCE_MATERIALIZATION_NOT_DETERMINISTIC'
+            }
+        }
         return [pscustomobject][ordered]@{
             decision = 'PASS / GATEY_READONLY_RELEASE_BUILDER_SELF_TEST'
             migrationCount = @((Get-GateYMigrationInventory $migrationRoot).migrations).Count
             validJarAccepted = $true
             tamperedMigrationRejected = $true
+            canonicalMaterializationVerified = $true
+            trackedFiles = [int]$materializationA.trackedFiles
+            sourceMode = [string]$materializationA.sourceMode
             serverMutation = $false
         }
     }
     finally
     {
+        if ($null -ne $materializationA) { Remove-ExactCommitSourceMaterialization $materializationA }
+        if ($null -ne $materializationB) { Remove-ExactCommitSourceMaterialization $materializationB }
         if (Test-Path -LiteralPath $tempRoot)
         {
             $resolved = [IO.Path]::GetFullPath($tempRoot)
@@ -374,67 +642,83 @@ try
         [Globalization.CultureInfo]::InvariantCulture,
         [Globalization.DateTimeStyles]::RoundtripKind
     )).ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-    $applicationJar = Invoke-ExactSourceApplicationBuild $commitTimestamp
-    $root = if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
-        Join-Path $repo 'target/gatey-readonly-releases'
-    } else { [IO.Path]::GetFullPath($OutputRoot) }
-    [IO.Directory]::CreateDirectory($root) | Out-Null
-    $releaseRoot = Join-Path $root $head
-    if (Test-Path -LiteralPath $releaseRoot)
-    {
-        throw 'BLOCKED / RELEASE_OUTPUT_ALREADY_EXISTS'
-    }
-    $stage = Join-Path $root ('.build-' + $head + '-' + [Guid]::NewGuid().ToString('N'))
+    $materialization = $null
     try
     {
-        [IO.Directory]::CreateDirectory($stage) | Out-Null
-        $artifacts = @(
-            Copy-Artifact $applicationJar $stage 'app/nq-app.jar' '0644' 'application'
-            Copy-Artifact $profilePath $stage 'config/application-gatey-readonly-qualification.yml' '0644' 'runtime-profile'
-            Copy-Artifact $contractPath $stage 'bin/gatey-readonly-release-contract.psm1' '0644' 'release-contract'
-            Copy-Artifact $deploymentPath $stage 'bin/invoke-gatey-readonly-deployment-contract.ps1' '0755' 'deployment-contract'
-            Copy-Artifact $installerPath $stage 'bin/install-gatey-readonly-release.ps1' '0755' 'release-installer'
-            Copy-Artifact $runtimeDeploymentPath $stage 'bin/invoke-gatey-readonly-runtime-deployment.ps1' '0755' 'runtime-deployment-orchestrator'
-            Copy-Artifact $exactPilotControlPath $stage 'bin/invoke-gatey-exact-pilot-scope.ps1' '0755' 'exact-pilot-control-surface'
-            Copy-Artifact $minimalLivePilotControlPath $stage 'bin/invoke-gatey-minimal-live-pilot.ps1' '0755' 'minimal-live-pilot-control-surface'
-            Copy-Artifact $systemdUnitPath $stage 'config/nq-gatey-readonly-qualification.service' '0644' 'systemd-runtime-contract'
-            Copy-Artifact $runtimeEnvTemplatePath $stage 'config/gatey-readonly-runtime.env.example' '0644' 'runtime-environment-template'
-            Copy-Artifact $runtimeSecretsTemplatePath $stage 'config/gatey-readonly-runtime.secrets.env.example' '0600' 'runtime-secret-environment-template'
-            Copy-Artifact $runtimePgpassTemplatePath $stage 'config/gatey-readonly-db.pgpass.example' '0600' 'database-credential-reference-template'
-            Copy-Artifact $runtimeTargetPath $stage 'config/gatey-readonly-runtime-target.json' '0644' 'runtime-target-contract'
-            Copy-Artifact $gatewVerifierPath $stage 'bin/verify-gatew-release.ps1' '0755' 'gatew-rollback-verifier'
-            Copy-Artifact $gatewContractPath $stage 'bin/gatew-release-contract.psm1' '0644' 'gatew-rollback-contract'
-        )
-        $manifest = New-GateYReadonlyReleaseManifest $head $commitTimestamp $artifacts $migrationRoot
-        Write-GateYReadonlyCanonicalManifest (Join-Path $stage 'release-manifest.json') $manifest
-        Move-Item -LiteralPath $stage -Destination $releaseRoot
-        $stage = $null
-        $verified = Test-GateYReadonlyRelease $releaseRoot
-        [pscustomobject][ordered]@{
-            decision = 'PASS / GATEY_READONLY_RELEASE_BUILT_VERIFIED'
-            contractState = 'BUILT_VERIFIED'
-            releaseId = $verified.releaseId
-            releaseRoot = $releaseRoot
-            manifestSha256 = $verified.manifestSha256
-            artifactCount = $verified.artifactCount
-            schemaTarget = $verified.schemaTarget
-            deployable = $false
-            installationRequired = $true
-            serverMutation = $false
-        } | ConvertTo-Json -Depth 5
+        $materialization = New-ExactCommitSourceMaterialization $head
+        $sourceRepo = [string]$materialization.sourceRoot
+        $sourceMigrationRoot = Join-Path $sourceRepo 'backend/nq-infra/src/main/resources/db/migration'
+        $applicationJar = Invoke-ExactSourceApplicationBuild `
+            $commitTimestamp $sourceRepo $sourceMigrationRoot
+        $root = if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
+            Join-Path $repo 'target/gatey-readonly-releases'
+        } else { [IO.Path]::GetFullPath($OutputRoot) }
+        [IO.Directory]::CreateDirectory($root) | Out-Null
+        $releaseRoot = Join-Path $root $head
+        if (Test-Path -LiteralPath $releaseRoot)
+        {
+            throw 'BLOCKED / RELEASE_OUTPUT_ALREADY_EXISTS'
+        }
+        $stage = Join-Path $root ('.build-' + $head + '-' + [Guid]::NewGuid().ToString('N'))
+        try
+        {
+            [IO.Directory]::CreateDirectory($stage) | Out-Null
+            $artifacts = @(
+                Copy-Artifact $applicationJar $stage 'app/nq-app.jar' '0644' 'application'
+                Copy-Artifact (Join-Path $sourceRepo 'backend/nq-app/src/main/resources/application-gatey-readonly-qualification.yml') $stage 'config/application-gatey-readonly-qualification.yml' '0644' 'runtime-profile'
+                Copy-Artifact (Join-Path $sourceRepo 'scripts/gatey/gatey-readonly-release-contract.psm1') $stage 'bin/gatey-readonly-release-contract.psm1' '0644' 'release-contract'
+                Copy-Artifact (Join-Path $sourceRepo 'scripts/gatey/invoke-gatey-readonly-deployment-contract.ps1') $stage 'bin/invoke-gatey-readonly-deployment-contract.ps1' '0755' 'deployment-contract'
+                Copy-Artifact (Join-Path $sourceRepo 'scripts/gatey/install-gatey-readonly-release.ps1') $stage 'bin/install-gatey-readonly-release.ps1' '0755' 'release-installer'
+                Copy-Artifact (Join-Path $sourceRepo 'scripts/gatey/invoke-gatey-readonly-runtime-deployment.ps1') $stage 'bin/invoke-gatey-readonly-runtime-deployment.ps1' '0755' 'runtime-deployment-orchestrator'
+                Copy-Artifact (Join-Path $sourceRepo 'scripts/gatey/invoke-gatey-exact-pilot-scope.ps1') $stage 'bin/invoke-gatey-exact-pilot-scope.ps1' '0755' 'exact-pilot-control-surface'
+                Copy-Artifact (Join-Path $sourceRepo 'scripts/gatey/invoke-gatey-minimal-live-pilot.ps1') $stage 'bin/invoke-gatey-minimal-live-pilot.ps1' '0755' 'minimal-live-pilot-control-surface'
+                Copy-Artifact (Join-Path $sourceRepo 'deploy/systemd/nq-gatey-readonly-qualification.service') $stage 'config/nq-gatey-readonly-qualification.service' '0644' 'systemd-runtime-contract'
+                Copy-Artifact (Join-Path $sourceRepo 'deploy/gatey/gatey-readonly-runtime.env.example') $stage 'config/gatey-readonly-runtime.env.example' '0644' 'runtime-environment-template'
+                Copy-Artifact (Join-Path $sourceRepo 'deploy/gatey/gatey-readonly-runtime.secrets.env.example') $stage 'config/gatey-readonly-runtime.secrets.env.example' '0600' 'runtime-secret-environment-template'
+                Copy-Artifact (Join-Path $sourceRepo 'deploy/gatey/gatey-readonly-db.pgpass.example') $stage 'config/gatey-readonly-db.pgpass.example' '0600' 'database-credential-reference-template'
+                Copy-Artifact (Join-Path $sourceRepo 'deploy/gatey/gatey-readonly-runtime-target.json') $stage 'config/gatey-readonly-runtime-target.json' '0644' 'runtime-target-contract'
+                Copy-Artifact (Join-Path $sourceRepo 'scripts/gatew/verify-gatew-release.ps1') $stage 'bin/verify-gatew-release.ps1' '0755' 'gatew-rollback-verifier'
+                Copy-Artifact (Join-Path $sourceRepo 'scripts/gatew/gatew-release-contract.psm1') $stage 'bin/gatew-release-contract.psm1' '0644' 'gatew-rollback-contract'
+            )
+            $manifest = New-GateYReadonlyReleaseManifest `
+                $head $commitTimestamp $artifacts $sourceMigrationRoot
+            Write-GateYReadonlyCanonicalManifest (Join-Path $stage 'release-manifest.json') $manifest
+            Move-Item -LiteralPath $stage -Destination $releaseRoot
+            $stage = $null
+            $verified = Test-GateYReadonlyRelease $releaseRoot
+            [pscustomobject][ordered]@{
+                decision = 'PASS / GATEY_READONLY_RELEASE_BUILT_VERIFIED'
+                contractState = 'BUILT_VERIFIED'
+                releaseId = $verified.releaseId
+                releaseRoot = $releaseRoot
+                manifestSha256 = $verified.manifestSha256
+                artifactCount = $verified.artifactCount
+                schemaTarget = $verified.schemaTarget
+                sourceMode = [string]$materialization.sourceMode
+                trackedSourceFiles = [int]$materialization.trackedFiles
+                deployable = $false
+                installationRequired = $true
+                serverMutation = $false
+            } | ConvertTo-Json -Depth 5
+        }
+        finally
+        {
+            if ($null -ne $stage -and (Test-Path -LiteralPath $stage))
+            {
+                $resolved = [IO.Path]::GetFullPath($stage)
+                if (-not $resolved.StartsWith(
+                        [IO.Path]::GetFullPath($root) + [IO.Path]::DirectorySeparatorChar,
+                        [StringComparison]::OrdinalIgnoreCase))
+                {
+                    throw 'FAIL / RELEASE_STAGE_CLEANUP_PATH_INVALID'
+                }
+                Remove-Item -LiteralPath $resolved -Recurse -Force
+            }
+        }
     }
     finally
     {
-        if ($null -ne $stage -and (Test-Path -LiteralPath $stage))
-        {
-            $resolved = [IO.Path]::GetFullPath($stage)
-            if (-not $resolved.StartsWith([IO.Path]::GetFullPath($root) + [IO.Path]::DirectorySeparatorChar,
-                    [StringComparison]::OrdinalIgnoreCase))
-            {
-                throw 'FAIL / RELEASE_STAGE_CLEANUP_PATH_INVALID'
-            }
-            Remove-Item -LiteralPath $resolved -Recurse -Force
-        }
+        if ($null -ne $materialization) { Remove-ExactCommitSourceMaterialization $materialization }
     }
 }
 catch

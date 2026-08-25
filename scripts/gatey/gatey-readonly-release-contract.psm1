@@ -196,7 +196,7 @@ function New-GateYReadonlyReleaseManifest
             powershellMajor = 7
         }
         buildProvenance = [pscustomobject][ordered]@{
-            sourceTreeMode = 'EXACT_COMMIT'
+            sourceTreeMode = 'EXACT_GIT_COMMIT_BLOB_BYTES'
             cleanWorktree = $true
             buildLocation = 'OPERATOR_WORKSTATION_ONLY'
             serverBuildAllowed = $false

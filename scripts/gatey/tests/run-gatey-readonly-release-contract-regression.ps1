@@ -488,7 +488,17 @@ try
     Complete-Case 'normal-synthetic-evaluator-path-is-audit-only'
 
     $builderSource = Get-Content -LiteralPath $builder -Raw
-    foreach ($marker in @('EXACT_COMMIT_WORKTREE_NOT_CLEAN', 'JAVA_MAJOR_VERSION_MISMATCH', 'Invoke-ExactSourceApplicationBuild', '-Dproject.build.outputTimestamp=', 'Assert-ApplicationJarContract', 'RELEASE_APPLICATION_MIGRATION_MISMATCH', 'BUILT_VERIFIED', 'installationRequired = $true'))
+    foreach ($marker in @(
+        'EXACT_COMMIT_WORKTREE_NOT_CLEAN', 'JAVA_MAJOR_VERSION_MISMATCH',
+        'New-ExactCommitSourceMaterialization', 'Assert-ExactCommitMaterialization',
+        'EXACT_GIT_COMMIT_BLOB_BYTES', 'Write-ExactCommitBlobTree',
+        "'cat-file', '--batch'", 'Copy-GitBatchBlob',
+        'RELEASE_SOURCE_BLOB_HASH_MISMATCH', 'RELEASE_SOURCE_BLOB_PROCESS_FAILED',
+        'RELEASE_SOURCE_FILE_COUNT_MISMATCH', 'Invoke-ExactSourceApplicationBuild',
+        '-Dproject.build.outputTimestamp=', 'Assert-ApplicationJarContract',
+        'RELEASE_APPLICATION_MIGRATION_MISMATCH', 'BUILT_VERIFIED',
+        'installationRequired = $true'
+    ))
     {
         Assert-Condition $builderSource.Contains($marker) "BUILDER_MARKER_MISSING:$marker"
     }
@@ -501,7 +511,13 @@ try
     $builderSelfTestOutput = @(& $engine -NoProfile -File $builder -ContractSelfTest 2>&1)
     Assert-Condition ($LASTEXITCODE -eq 0) 'BUILDER_SELF_TEST_PROCESS_FAILED'
     $builderSelfTest = ($builderSelfTestOutput -join [Environment]::NewLine) | ConvertFrom-Json
-    Assert-Condition ([int]$builderSelfTest.migrationCount -eq 43 -and [bool]$builderSelfTest.tamperedMigrationRejected) 'BUILDER_SELF_TEST_RESULT_INVALID'
+    Assert-Condition (
+        [int]$builderSelfTest.migrationCount -eq 43 -and
+        [bool]$builderSelfTest.tamperedMigrationRejected -and
+        [bool]$builderSelfTest.canonicalMaterializationVerified -and
+        [int]$builderSelfTest.trackedFiles -gt 0 -and
+        [string]$builderSelfTest.sourceMode -ceq 'EXACT_GIT_COMMIT_BLOB_BYTES'
+    ) 'BUILDER_SELF_TEST_RESULT_INVALID'
     Complete-Case 'builder-fat-jar-migration-binding'
 
     foreach ($forbidden in @('systemctl start', 'Invoke-WebRequest', 'Invoke-RestMethod', 'ssh ', 'psql '))
