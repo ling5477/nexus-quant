@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.app.config.auth;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -30,6 +31,7 @@ import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
 import com.guidinglight.nexusquant.security.token.TokenService;
 import com.guidinglight.nexusquant.trading.application.OrderCommandService;
 import com.guidinglight.nexusquant.trading.application.OrderLifecycleService;
+import com.guidinglight.nexusquant.trading.application.port.TradingVenueGateway;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
 
 import org.junit.jupiter.api.Test;
@@ -81,6 +83,7 @@ class SecurityConfigurationContextTest {
                 .withUserConfiguration(
                         MinimalLivePilotConfiguration.class,
                         PilotBindingDependencyConfiguration.class,
+                        GatewaySelectionProbeConfiguration.class,
                         SecurityConfiguration.class
                 )
                 .withPropertyValues(
@@ -128,6 +131,10 @@ class SecurityConfigurationContextTest {
                     assertNotNull(context.getBean(PasswordEncoder.class));
                     assertNotNull(context.getBean(TokenService.class));
                     assertNotNull(context.getBean(AuthService.class));
+                    assertSame(
+                            context.getBean("minimalPilotTradingVenueGateway"),
+                            context.getBean(SelectedGateway.class).gateway()
+                    );
                     verifyNoInteractions(permissionProbeService, credentialExecutor, orderCommandService);
                 });
     }
@@ -160,5 +167,22 @@ class SecurityConfigurationContextTest {
         ExactPilotBindingControlPlane exactPilotBindingControlPlane() {
             return mock(ExactPilotBindingControlPlane.class);
         }
+    }
+
+    @TestConfiguration(proxyBeanMethods = false)
+    static class GatewaySelectionProbeConfiguration {
+
+        @Bean
+        TradingVenueGateway competingTradingVenueGateway() {
+            return mock(TradingVenueGateway.class);
+        }
+
+        @Bean
+        SelectedGateway selectedGateway(TradingVenueGateway gateway) {
+            return new SelectedGateway(gateway);
+        }
+    }
+
+    private record SelectedGateway(TradingVenueGateway gateway) {
     }
 }
