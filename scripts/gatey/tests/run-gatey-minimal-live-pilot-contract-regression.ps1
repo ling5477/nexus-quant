@@ -45,12 +45,19 @@ foreach ($required in @(
     'GRANT INSERT ON TABLE public.event_store TO nq_gatey_readonly',
     'GRANT UPDATE ON TABLE public.kill_switch_states TO nq_gatey_readonly',
     'GRANT INSERT ON TABLE public.kill_switch_events TO nq_gatey_readonly',
+    'GRANT UPDATE(id) ON TABLE public.users TO nq_gatey_readonly',
+    'GRANT UPDATE(user_id) ON TABLE public.user_roles TO nq_gatey_readonly',
+    'GRANT UPDATE(id) ON TABLE public.roles TO nq_gatey_readonly',
     'GRANT USAGE ON SEQUENCE public.credential_audit_logs_credential_audit_log_id_seq',
     'REVOKE UPDATE ON TABLE public.exchange_account_credentials FROM nq_gatey_readonly',
     'REVOKE INSERT ON TABLE public.event_store FROM nq_gatey_readonly',
     'REVOKE UPDATE ON TABLE public.kill_switch_states FROM nq_gatey_readonly',
+    'REVOKE UPDATE(id) ON TABLE public.users FROM nq_gatey_readonly',
+    'REVOKE UPDATE(user_id) ON TABLE public.user_roles FROM nq_gatey_readonly',
+    'REVOKE UPDATE(id) ON TABLE public.roles FROM nq_gatey_readonly',
     'REVOKE USAGE ON SEQUENCE public.credential_audit_logs_credential_audit_log_id_seq',
-    'PILOT_DATABASE_WRITE_BASELINE_NOT_EMPTY', 'PILOT_DATABASE_SEQUENCE_BASELINE_NOT_EMPTY'
+    'PILOT_DATABASE_WRITE_BASELINE_NOT_EMPTY', 'PILOT_DATABASE_COLUMN_WRITE_BASELINE_NOT_EMPTY',
+    'PILOT_DATABASE_COLUMN_REVOKE_DIVERGENCE', 'PILOT_DATABASE_SEQUENCE_BASELINE_NOT_EMPTY'
 )) {
     if (-not $source.Contains($required)) { throw ('MISSING_CONTRACT:' + $required) }
 }
@@ -110,8 +117,19 @@ foreach ($sequence in $writeSequences) {
         throw ('PILOT_DATABASE_SEQUENCE_WINDOW_MISMATCH:' + $sequence)
     }
 }
-if (($grantSql | Select-String -Pattern '(?m)^GRANT .* ON TABLE ' -AllMatches).Matches.Count -ne 26 -or
-        ($revokeSql | Select-String -Pattern '(?m)^REVOKE .* ON TABLE ' -AllMatches).Matches.Count -ne 26) {
+$roleLockColumns = @(
+    @('users', 'id'), @('user_roles', 'user_id'), @('roles', 'id')
+)
+foreach ($pair in $roleLockColumns) {
+    $table = $pair[0]
+    $column = $pair[1]
+    if (-not $grantSql.Contains("GRANT UPDATE($column) ON TABLE public.$table TO nq_gatey_readonly;") -or
+            -not $revokeSql.Contains("REVOKE UPDATE($column) ON TABLE public.$table FROM nq_gatey_readonly;")) {
+        throw ('PILOT_DATABASE_ROLE_LOCK_COLUMN_WINDOW_MISMATCH:' + $table + '.' + $column)
+    }
+}
+if (($grantSql | Select-String -Pattern '(?m)^GRANT .* ON TABLE ' -AllMatches).Matches.Count -ne 29 -or
+        ($revokeSql | Select-String -Pattern '(?m)^REVOKE .* ON TABLE ' -AllMatches).Matches.Count -ne 29) {
     throw 'PILOT_DATABASE_TABLE_WINDOW_CARDINALITY_INVALID'
 }
 
@@ -127,7 +145,7 @@ if ([string]$result.decision -cne 'BLOCKED / ROOT_LINUX_REQUIRED') {
 
 [pscustomobject][ordered]@{
     decision = 'PASS / GATEY_MINIMAL_LIVE_PILOT_CONTRACT_REGRESSION'
-    cases = 81
+    cases = 90
     providerCalls = 0
     place = 0
     cancel = 0

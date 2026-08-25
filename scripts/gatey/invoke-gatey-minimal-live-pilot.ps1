@@ -46,6 +46,15 @@ BEGIN
     IF unexpected IS NOT NULL THEN
         RAISE EXCEPTION 'PILOT_DATABASE_WRITE_BASELINE_NOT_EMPTY:%', unexpected;
     END IF;
+    SELECT string_agg(table_name || '.' || column_name, ',' ORDER BY table_name, column_name)
+    INTO unexpected
+    FROM information_schema.role_column_grants
+    WHERE grantee = 'nq_gatey_readonly'
+      AND table_schema = 'public'
+      AND privilege_type = 'UPDATE';
+    IF unexpected IS NOT NULL THEN
+        RAISE EXCEPTION 'PILOT_DATABASE_COLUMN_WRITE_BASELINE_NOT_EMPTY:%', unexpected;
+    END IF;
     SELECT string_agg(sequence_name, ',' ORDER BY sequence_name)
     INTO unexpected
     FROM information_schema.sequences
@@ -84,6 +93,11 @@ GRANT INSERT ON TABLE public.risk_events TO nq_gatey_readonly;
 GRANT INSERT ON TABLE public.event_store TO nq_gatey_readonly;
 GRANT UPDATE ON TABLE public.kill_switch_states TO nq_gatey_readonly;
 GRANT INSERT ON TABLE public.kill_switch_events TO nq_gatey_readonly;
+
+-- PostgreSQL row-locking clauses require UPDATE privilege. Limit it to one immutable identity column per table.
+GRANT UPDATE(id) ON TABLE public.users TO nq_gatey_readonly;
+GRANT UPDATE(user_id) ON TABLE public.user_roles TO nq_gatey_readonly;
+GRANT UPDATE(id) ON TABLE public.roles TO nq_gatey_readonly;
 
 GRANT USAGE ON SEQUENCE public.credential_audit_logs_credential_audit_log_id_seq
     TO nq_gatey_readonly;
@@ -142,6 +156,12 @@ BEGIN
     IF mismatch IS NOT NULL THEN
         RAISE EXCEPTION 'PILOT_DATABASE_TABLE_GRANT_DIVERGENCE:%', mismatch;
     END IF;
+    IF NOT has_column_privilege('nq_gatey_readonly', 'public.users', 'id', 'UPDATE')
+            OR NOT has_column_privilege(
+                'nq_gatey_readonly', 'public.user_roles', 'user_id', 'UPDATE')
+            OR NOT has_column_privilege('nq_gatey_readonly', 'public.roles', 'id', 'UPDATE') THEN
+        RAISE EXCEPTION 'PILOT_DATABASE_ROLE_LOCK_COLUMN_GRANT_DIVERGENCE';
+    END IF;
     FOREACH sequence_name IN ARRAY ARRAY[
         'credential_audit_logs_credential_audit_log_id_seq',
         'instrument_catalog_instrument_id_seq',
@@ -194,6 +214,10 @@ REVOKE INSERT ON TABLE public.event_store FROM nq_gatey_readonly;
 REVOKE UPDATE ON TABLE public.kill_switch_states FROM nq_gatey_readonly;
 REVOKE INSERT ON TABLE public.kill_switch_events FROM nq_gatey_readonly;
 
+REVOKE UPDATE(id) ON TABLE public.users FROM nq_gatey_readonly;
+REVOKE UPDATE(user_id) ON TABLE public.user_roles FROM nq_gatey_readonly;
+REVOKE UPDATE(id) ON TABLE public.roles FROM nq_gatey_readonly;
+
 REVOKE USAGE ON SEQUENCE public.credential_audit_logs_credential_audit_log_id_seq
     FROM nq_gatey_readonly;
 REVOKE USAGE ON SEQUENCE public.instrument_catalog_instrument_id_seq FROM nq_gatey_readonly;
@@ -214,6 +238,15 @@ BEGIN
       AND privilege_type IN ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER');
     IF unexpected IS NOT NULL THEN
         RAISE EXCEPTION 'PILOT_DATABASE_TABLE_REVOKE_DIVERGENCE:%', unexpected;
+    END IF;
+    SELECT string_agg(table_name || '.' || column_name, ',' ORDER BY table_name, column_name)
+    INTO unexpected
+    FROM information_schema.role_column_grants
+    WHERE grantee = 'nq_gatey_readonly'
+      AND table_schema = 'public'
+      AND privilege_type = 'UPDATE';
+    IF unexpected IS NOT NULL THEN
+        RAISE EXCEPTION 'PILOT_DATABASE_COLUMN_REVOKE_DIVERGENCE:%', unexpected;
     END IF;
     SELECT string_agg(sequence_name, ',' ORDER BY sequence_name)
     INTO unexpected
