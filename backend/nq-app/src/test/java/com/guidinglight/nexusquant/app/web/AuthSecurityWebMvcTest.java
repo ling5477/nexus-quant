@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.app.web;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -33,6 +35,7 @@ import com.guidinglight.nexusquant.strategy.application.StrategyScheduleScanServ
 import com.guidinglight.nexusquant.strategy.application.StrategyScheduleService;
 import com.guidinglight.nexusquant.trading.application.maintenance.TradingMaintenanceService;
 import com.guidinglight.nexusquant.observability.config.ObservabilityAutoConfiguration;
+import com.guidinglight.nexusquant.security.web.JwtAuthenticationFilter;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -43,9 +46,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.web.FilterChainProxy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -88,6 +95,12 @@ class AuthSecurityWebMvcTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private ApplicationContext applicationContext;
+
+    @Autowired
+    private FilterChainProxy springSecurityFilterChain;
 
     @MockitoBean
     private OrderCommandService orderCommandService;
@@ -144,6 +157,17 @@ class AuthSecurityWebMvcTest {
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.username").value("admin"))
                 .andExpect(jsonPath("$.roles[0]").value("ADMIN"));
+    }
+
+    @Test
+    void servletContextKeepsExactlyOneSecurityChainAndJwtFilterOrder() {
+        assertEquals(1, applicationContext.getBeansOfType(SecurityFilterChain.class).size());
+        var filters = springSecurityFilterChain.getFilters("/api/trading/orders/ord-1");
+        int jwtIndex = indexOf(filters, JwtAuthenticationFilter.class);
+        int authorizationIndex = indexOf(filters, AuthorizationFilter.class);
+        assertTrue(jwtIndex >= 0, "JWT filter must remain in the servlet security chain");
+        assertTrue(authorizationIndex >= 0, "authorization filter must remain in the chain");
+        assertTrue(jwtIndex < authorizationIndex, "JWT filter must run before authorization");
     }
 
     @Test
@@ -322,6 +346,15 @@ class AuthSecurityWebMvcTest {
                 java.util.List.of(roles),
                 enabled
         );
+    }
+
+    private static int indexOf(java.util.List<jakarta.servlet.Filter> filters, Class<?> type) {
+        for (int index = 0; index < filters.size(); index++) {
+            if (type.isInstance(filters.get(index))) {
+                return index;
+            }
+        }
+        return -1;
     }
 }
 

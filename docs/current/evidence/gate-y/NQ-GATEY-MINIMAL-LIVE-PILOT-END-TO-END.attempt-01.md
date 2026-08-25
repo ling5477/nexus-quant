@@ -163,3 +163,15 @@ kill=ENGAGED
 - Side effects：失败发生在permission refresh与全部application runner逻辑之前；final permission=`NOT_PROBED / scope NULL / IP NOT_CHECKED / withdraw=false`，BTC-USDT catalog=0；session/scope/observation/lease/leaseIntent/executionIntent/receipt/order/trade/ledger/audit全0。credential JIT/OKX GET/OKX POST/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0/0/0`，未生成clientOrderId/idempotencyKey/requestId/traceId，无reconciliation divergence。
 - P1：`MINIMAL_LIVE_PILOT_NON_WEB_SECURITY_CONTEXT_BOOTSTRAP_FAILURE`。禁止用servlet端口抢占、关闭Security、现场参数注入或第二次controller调用绕过；必须先做最小代码修复、真实CLI context回归、targeted review、exact-head CI与immutable redeploy。
 - Final decision：`BLOCKED / V43_DEPLOYED / EXACT_HEAD_RUNTIME_HEALTHY / MINIMAL_LIVE_PILOT_NON_WEB_SECURITY_CONTEXT_BOOTSTRAP_FAILURE / NO_REAL_ORDER / LIVE_FALSE / KILL_ENGAGED / PLACE_0 / CANCEL_0 / NO_PLACE_RETRY / NO_TRANSFER / NO_WITHDRAW / P0_0 / P1_1`。
+
+## Non-web Security context remediation implementation（2026-08-25）
+
+- Scope：继续同一attempt-01；只修复Spring composition，不修改V43、market/permission/catalog/quantity、lease/kill/provider/reconciliation或脚本参数。
+- Implementation：仅为`SecurityConfiguration.securityFilterChain(HttpSecurity)`增加`@ConditionalOnWebApplication(type=SERVLET)`；web-neutral的`PasswordEncoder`、`TokenService`、`AuthService`、`CurrentUserProfileService`保持原装配，未新增第二套Security或profile/task-id特判。
+- Non-web regression：真实`SpringApplication`固定`WebApplicationType.NONE`成功启动，`SecurityFilterChain` bean count=0且通用认证beans存在；actual `MinimalLivePilotConfiguration`在non-web context中两个ApplicationRunner均成功实例化，permission/credential/order mocks零交互。
+- Servlet regression：`SecurityFilterChain` bean count=1；JWT filter仍位于AuthorizationFilter之前；既有login permitAll、GET认证、write ADMIN/OPERATOR、401/403行为共12 tests全绿，无`permitAll /api/**`扩大。
+- Validation：production compile/test-compile 23 modules PASS；focused=`15/15`；full Maven 23 modules PASS；GateY=`7/25/31/51 + GateY4/GateY5`；GateW=`37/12/34`；Authority/Java governance/custom secret backstop PASS；detached Shadow=`NEW_CODE_VIOLATION_COUNT=0`。
+- Validation history：首次Maven命令将生命周期误写为`testCompile`而在编译前退出；首次focused的测试假设错误要求不存在的form-login filter，改为验证实际AuthorizationFilter后15/15。首次full Maven仅因本机localhost开发库旧V43 checksum失败；当前migration SHA-256仍精确为`f41dbb3...`且diff=0，使用Flyway 11.7.2仅对本机history执行一次repair后full Maven通过，production未连接或迁移。主worktree Shadow被既有不可读artifact ACL阻断，短路径detached worktree对同一三文件diff通过并已移除，未改ACL或用户目录。
+- Targeted review：non-web不再要求HttpSecurity；Servlet security未削弱；无GateY/profile/task-id hack；credential/secret边界与交易逻辑diff=0。P0=0、P1=0。
+- Production boundary：server继续current=`13081d8b...`、V43/failed0、health UP、LIVE=false、kill=ENGAGED；本轮production访问、controller、credential JIT、OKX、lease、PLACE、CANCEL、transfer、withdraw均为0。
+- Current decision：`IMPLEMENTED / LOCAL_GREEN / P0_0 / P1_0 / CI_PENDING / DEPLOYMENT_NOT_STARTED / CONTROLLER_NOT_RETRIED / NO_REAL_ORDER`。

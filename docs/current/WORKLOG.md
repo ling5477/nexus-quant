@@ -19453,3 +19453,11 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Validation：exact-head CI 10/10；immutable verifier、backup、Flyway validate/pending0、canonical Health均PASS；最终全部pilot/order/ledger/audit计数0。
 - Boundary：credential material exposure=0；OKX/PLACE/CANCEL/transfer/withdraw=`0/0/0/0/0`；未创建Attempt-02，未重试controller或PLACE。
 - Next：`NQ-GATEY-6F-MINIMAL-LIVE-PILOT-NON-WEB-SECURITY-CONTEXT-REMEDIATION-BLOCKED`；最小代码修复与CLI context回归后重新走review/CI/redeploy，禁止现场绕过。
+
+## 2026-08-25 — Non-web Security context remediation implementation
+
+- Scope：只对Servlet `SecurityFilterChain`增加正式web条件，并补non-web SpringApplication、actual pilot composition与Servlet Security回归；继续attempt-01。
+- Result：`IMPLEMENTED / LOCAL_GREEN / P0_0 / P1_0 / CI_PENDING`；non-web chain=0、pilot runners=2且外部mock零交互，Servlet chain=1、JWT/auth/RBAC行为保持。
+- Validation：focused15、compile/test-compile23 modules、full Maven23 modules、GateY 7/25/31/51+GateY4/5、GateW37/12/34、Authority/Java/secret/Shadow均通过。
+- Boundary：migration/交易链diff=0；production/controller/JIT/OKX/lease/PLACE/CANCEL/transfer/withdraw全0；`target/`未删除或stage。
+- Next：精确commit/push与exact-head CI；CI绿后仅code-only V43 redeploy并验证retry-safe，再按附件恢复同一controller一次。

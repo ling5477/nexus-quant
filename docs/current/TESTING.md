@@ -14464,3 +14464,17 @@ Runtime MainPID=`1028560`、NRestarts0；LIVE=false、kill ENGAGED、mutationRun
 | final DB/runtime readback | PASS（通过 fail-close） | V43/failed0/health UP/LIVE=false/kill ENGAGED；PLACE/CANCEL/order/trade/ledger/audit=0 |
 
 Known warning：`UnitPreflight`在current尚未切换时按合同返回`CURRENT_RELEASE_MISMATCH`，server mutation=false；随后按Stop→Activate顺序成功，不属于runtime故障。未运行真实permission/catalog/ticker/balance/fee/clock、PLACE、CANCEL或reconciliation，因为application context未启动；该缺口是阻断性P1，不能记为skipped PASS。
+
+## 2026-08-25 — Non-web Security context remediation local verification
+
+| Command / check | Result | Scope / environment | Warning / not run |
+| --- | --- | --- | --- |
+| production compile + `test-compile` | PASS（通过） | 23 backend modules | 首次误写`testCompile`在编译前退出 |
+| Security/non-web/pilot focused | PASS（通过）；15 tests | non-web SpringApplication、actual pilot composition、Servlet auth/RBAC/JWT | 首次filter测试假设错误已修正后重跑 |
+| `mvn -f backend/pom.xml test` | PASS（通过）；23 modules | 本机local profile | 首次仅因localhost V43旧checksum失败；Flyway本地repair后通过，production未触达 |
+| GateY regressions | PASS（通过） | 7/25/31/51、GateY4、GateY5 lock/post-restore | provider calls=0 |
+| GateW frozen regressions | PASS（通过） | 37/12/34 | attempt/release事实未改 |
+| Authority / Java governance / secret backstop | PASS（通过） | errors=0 / release21+Boot3.5.10 / 3 files 0 finding | 本机无gitleaks；CI待运行 |
+| Java Shadow | PASS（通过当前diff） | detached短路径同一三Java文件 | `NEW_CODE_VIOLATION_COUNT=0`；主worktree既有ACL阻断未改 |
+
+未运行：commit/push、exact-head CI、release build/deploy、controller retry或OKX/PLACE。当前为`LOCAL_GREEN / CI_PENDING / NO_REAL_ORDER`。
