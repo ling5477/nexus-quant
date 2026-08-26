@@ -38,6 +38,9 @@ foreach ($required in @(
     'GRANT INSERT, UPDATE ON TABLE public.instrument_catalog TO nq_gatey_readonly',
     'GRANT SELECT, INSERT, UPDATE ON TABLE public.operator_pilot_authorities TO nq_gatey_readonly',
     'GRANT INSERT, UPDATE ON TABLE public.live_sessions TO nq_gatey_readonly',
+    'GRANT SELECT, INSERT ON TABLE public.pilot_scope_bindings TO nq_gatey_readonly',
+    'GRANT SELECT, INSERT ON TABLE public.pilot_prerequisite_observations TO nq_gatey_readonly',
+    'GRANT SELECT, INSERT ON TABLE public.pilot_instrument_observation_items TO nq_gatey_readonly',
     'GRANT INSERT, UPDATE ON TABLE public.pilot_execution_leases TO nq_gatey_readonly',
     'GRANT INSERT, UPDATE ON TABLE public.execution_intents TO nq_gatey_readonly',
     'GRANT INSERT, UPDATE ON TABLE public.orders TO nq_gatey_readonly',
@@ -51,6 +54,9 @@ foreach ($required in @(
     'GRANT USAGE ON SEQUENCE public.credential_audit_logs_credential_audit_log_id_seq',
     'REVOKE UPDATE ON TABLE public.exchange_account_credentials FROM nq_gatey_readonly',
     'REVOKE SELECT, INSERT, UPDATE ON TABLE public.operator_pilot_authorities FROM nq_gatey_readonly',
+    'REVOKE SELECT, INSERT ON TABLE public.pilot_scope_bindings FROM nq_gatey_readonly',
+    'REVOKE SELECT, INSERT ON TABLE public.pilot_prerequisite_observations FROM nq_gatey_readonly',
+    'REVOKE SELECT, INSERT ON TABLE public.pilot_instrument_observation_items FROM nq_gatey_readonly',
     'REVOKE INSERT ON TABLE public.event_store FROM nq_gatey_readonly',
     'REVOKE UPDATE ON TABLE public.kill_switch_states FROM nq_gatey_readonly',
     'REVOKE UPDATE(id) ON TABLE public.users FROM nq_gatey_readonly',
@@ -59,6 +65,9 @@ foreach ($required in @(
     'REVOKE UPDATE(id) ON TABLE public.roles FROM nq_gatey_readonly',
     'REVOKE USAGE ON SEQUENCE public.credential_audit_logs_credential_audit_log_id_seq',
     'PILOT_DATABASE_WRITE_BASELINE_NOT_EMPTY', 'PILOT_DATABASE_COLUMN_WRITE_BASELINE_NOT_EMPTY',
+    'PILOT_DATABASE_TRIGGER_SELECT_BASELINE_NOT_EMPTY',
+    'PILOT_DATABASE_TRIGGER_SELECT_GRANT_DIVERGENCE',
+    'PILOT_DATABASE_TRIGGER_SELECT_REVOKE_DIVERGENCE',
     'PILOT_DATABASE_COLUMN_REVOKE_DIVERGENCE', 'PILOT_DATABASE_SEQUENCE_BASELINE_NOT_EMPTY'
 )) {
     if (-not $source.Contains($required)) { throw ('MISSING_CONTRACT:' + $required) }
@@ -103,11 +112,11 @@ $writeTables = @(
     'kill_switch_states', 'kill_switch_events'
 )
 foreach ($table in $writeTables) {
-    if ($grantSql -cnotmatch ("(?m)^GRANT (INSERT|UPDATE|INSERT, UPDATE|SELECT, INSERT, UPDATE) ON TABLE public\." +
+    if ($grantSql -cnotmatch ("(?m)^GRANT (INSERT|UPDATE|INSERT, UPDATE|SELECT, INSERT|SELECT, INSERT, UPDATE) ON TABLE public\." +
             [regex]::Escape($table) + ' TO nq_gatey_readonly;$')) {
         throw ('PILOT_DATABASE_TABLE_GRANT_MISSING:' + $table)
     }
-    if ($revokeSql -cnotmatch ("(?m)^REVOKE (INSERT|UPDATE|INSERT, UPDATE|SELECT, INSERT, UPDATE) ON TABLE public\." +
+    if ($revokeSql -cnotmatch ("(?m)^REVOKE (INSERT|UPDATE|INSERT, UPDATE|SELECT, INSERT|SELECT, INSERT, UPDATE) ON TABLE public\." +
             [regex]::Escape($table) + ' FROM nq_gatey_readonly;$')) {
         throw ('PILOT_DATABASE_TABLE_REVOKE_MISSING:' + $table)
     }
