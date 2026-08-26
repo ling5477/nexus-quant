@@ -73,6 +73,8 @@ class JdkOkxRealTransportTest {
     void readsCurrentClockFromExactPublicEndpointWithoutCredentialHeaders() {
         FakeExchange exchange = new FakeExchange();
         exchange.enqueue(200, timeBody());
+        exchange.enqueue(200, timeBody());
+        exchange.enqueue(200, timeBody());
 
         OkxSpotProviderTransport.ClockResponse response = transport(exchange).readClock(
                 new OkxSpotProviderTransport.ClockCommand(context(), limit()));
@@ -81,8 +83,30 @@ class JdkOkxRealTransportTest {
         assertEquals(NOW, response.serverTime());
         assertEquals(NOW, response.localClockMidpoint());
         assertEquals(Duration.ZERO, response.observedSkew());
-        assertEquals(List.of("GET /api/v5/public/time"), exchange.requestLines());
-        assertEquals(List.of(false), exchange.authenticated());
+        assertEquals(List.of(
+                "GET /api/v5/public/time",
+                "GET /api/v5/public/time",
+                "GET /api/v5/public/time"), exchange.requestLines());
+        assertEquals(List.of(false, false, false), exchange.authenticated());
+    }
+
+    @Test
+    void selectsLowestRoundTripClockSampleWithoutChoosingBySkew() {
+        FakeExchange exchange = new FakeExchange();
+        exchange.enqueue(200, timeBody(NOW.plusMillis(230)));
+        exchange.enqueue(200, timeBody(NOW.plusMillis(1_090)));
+        exchange.enqueue(200, timeBody(NOW.plusMillis(2_150)));
+        Clock sequence = new SequenceClock(List.of(
+                NOW, NOW.plusMillis(300),
+                NOW.plusSeconds(1), NOW.plusMillis(1_100),
+                NOW.plusSeconds(2), NOW.plusMillis(2_200),
+                NOW.plusSeconds(3)));
+
+        OkxSpotProviderTransport.ClockResponse response = transport(exchange, sequence).readClock(
+                new OkxSpotProviderTransport.ClockCommand(context(), limit()));
+
+        assertEquals(Duration.ofMillis(40), response.observedSkew());
+        assertEquals(NOW.plusMillis(1_050), response.localClockMidpoint());
     }
 
     @Test
@@ -271,7 +295,11 @@ class JdkOkxRealTransportTest {
     }
 
     private static JdkOkxPrivateReadTransport transport(OkxPrivateHttpExchange exchange) {
-        return new JdkOkxPrivateReadTransport(MAPPER, CLOCK, Duration.ofSeconds(5), exchange);
+        return transport(exchange, CLOCK);
+    }
+
+    private static JdkOkxPrivateReadTransport transport(OkxPrivateHttpExchange exchange, Clock clock) {
+        return new JdkOkxPrivateReadTransport(MAPPER, clock, Duration.ofSeconds(5), exchange);
     }
 
     private static OkxSpotProviderTransport.PlaceCommand placeCommand() {
@@ -334,7 +362,11 @@ class JdkOkxRealTransportTest {
     }
 
     private static String timeBody() {
-        return "{\"code\":\"0\",\"data\":[{\"ts\":\"1786881600000\"}]}";
+        return timeBody(NOW);
+    }
+
+    private static String timeBody(Instant value) {
+        return "{\"code\":\"0\",\"data\":[{\"ts\":\"" + value.toEpochMilli() + "\"}]}";
     }
 
     private static String acknowledgementBody(String code) {
@@ -461,5 +493,31 @@ class JdkOkxRealTransportTest {
     }
 
     private record QueuedResponse(int status, byte[] body, IOException failure) {
+    }
+
+    private static final class SequenceClock extends Clock {
+        private final Queue<Instant> values;
+
+        private SequenceClock(List<Instant> values) {
+            this.values = new ArrayDeque<>(values);
+        }
+
+        @Override
+        public java.time.ZoneId getZone() {
+            return ZoneOffset.UTC;
+        }
+
+        @Override
+        public Clock withZone(java.time.ZoneId zone) {
+            if (!ZoneOffset.UTC.equals(zone)) {
+                throw new IllegalArgumentException("only UTC is supported");
+            }
+            return this;
+        }
+
+        @Override
+        public Instant instant() {
+            return values.remove();
+        }
     }
 }

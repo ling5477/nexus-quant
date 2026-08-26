@@ -390,3 +390,14 @@ kill=ENGAGED
 - Production boundary：current=`e7e006c3...`、runtime stopped、V46/failed0、kill=`ENGAGED/version11`、ordinal4=`CONSUMED`。PLACE=1、intent=`SEND_STARTED`、receipt=0、pilot order=`SENT/LIVE/externalOrderId NULL`、Trade=0、Ledger=0、table/column临时写权限=`0/0`。无第二PLACE、PLACE retry、CANCEL、transfer或withdraw。
 - Current decision：`PUBLIC_CLOCK_CREDENTIAL_BOUNDARY_FIX_LOCAL_GREEN / CI_PENDING / PRODUCTION_QUERY_ONLY_BLOCKED / PLACE_COUNT_1 / NO_PLACE_RETRY / KILL_ENGAGED / LIVE_FALSE / P0_0 / P1_0`。
 - Next：精确提交5份实现/测试文件与本evidence，push `origin/dev`并等待exact-head CI；CI全绿后仅code-only部署并再次执行consumed query-only reconciliation。禁止第二PLACE。
+
+## Bounded public clock sampling remediation（2026-08-26）
+
+- Credential-boundary commit/CI：commit=`4cf53346e66a5db9067b37ff87481aa4c3ab8518`已push；exact-head CI run=`32960987208 / completed / success / 10 jobs`。Canonical V46 release manifest=`3648dc5bd01c21bf4ba3a03ef5c11118d6c702dd7f18710bee98012aa2ea76a1`，15 artifacts；server install/verify、atomic current、MainPID/NRestarts、health/DB、Stop/VerifyStopped均通过，无migration/backup/schema change。
+- Production query-only result：新wiring证明READ_CLOCK不再经过credential JIT，但单次public clock sample仍被adapter以`CLOCK_SKEW / REAL_CLOCK_SKEW`拒绝；order/fills read未开始，receipt/order/trade/ledger未变化，临时权限已撤销。该分类来自新增脱敏warn，不含raw response、URL、header或credential。
+- RCA refinement：production到OKX public time的观测RTT为`198..295ms`；单次midpoint在公网路径不对称时存在大于100ms的不确定波动。冻结maximum skew继续是100ms，不能放宽；选择偶然最小skew也会引入成功偏差。
+- Minimal fix：一次logical READ_CLOCK固定执行3个public samples，三次全部成功才返回；只选择lowest-RTT sample（Cristian-style），不按skew选样本，不循环、不backoff、不mutation retry。每个response仍独立受byte cap约束，总response bytes进入adapter metadata second-line cap；negative RTT、overflow、任一transport/parser failure均fail closed。
+- Validation：新增deterministic sequence-clock regression，证明3次exact public endpoint、credential headers=`false/false/false`且选择100ms lowest-RTT sample而非第一/最后样本；focused=`40/40 PASS`。Disposable V46 full Maven=`23/23 modules PASS`、`nq-app=315 tests / 0 failures / 0 errors / 35 conditional skips`，临时库删除；GateY minimal100、Authority、Java governance、GateW security12均PASS；Shadow `NEW_CODE_VIOLATION_COUNT=0`。
+- Production boundary：current=`4cf53346...`、runtime stopped、PLACE=1、intent=`SEND_STARTED`、receipt/trade/ledger=0、kill=`ENGAGED/version11`、LIVE=false、临时权限0；禁止第二PLACE。
+- Current decision：`BOUNDED_PUBLIC_CLOCK_SAMPLING_LOCAL_GREEN / CI_PENDING / RECONCILIATION_PENDING / PLACE_COUNT_1 / NO_PLACE_RETRY / KILL_ENGAGED / LIVE_FALSE / P0_0 / P1_0`。
+- Next：精确提交`OkxJdkRealClient`、transport regression与本evidence，push并等待exact-head CI；绿后code-only部署并继续同一consumed query-only recovery。

@@ -45,6 +45,7 @@ import static com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTra
  */
 final class OkxJdkRealClient {
 
+    private static final int CLOCK_SAMPLE_COUNT = 3;
     private static final String INSTRUMENT_PATH = "/api/v5/account/instruments";
     private static final String FEE_PATH = "/api/v5/account/trade-fee";
     private static final String BALANCE_PATH = "/api/v5/account/balance";
@@ -351,25 +352,44 @@ final class OkxJdkRealClient {
     ClockResponse readClock(ClockCommand command) {
         Objects.requireNonNull(command, "command must not be null");
         try {
-            Instant before = clock.instant();
-            WireResponse response = publicRequest(TIME_PATH, command.responseLimit().maximumResponseBytes());
-            requireRootSuccess(response.root());
-            Instant serverTime = epochMillis(text(exactRow(response.root()), "ts"), "ts");
-            Instant after = clock.instant();
-            Instant midpoint = before.plusMillis(Duration.between(before, after).toMillis() / 2);
+            ClockSample selected = null;
+            int totalResponseBytes = 0;
+            for (int sample = 0; sample < CLOCK_SAMPLE_COUNT; sample++) {
+                Instant before = clock.instant();
+                WireResponse response = publicRequest(TIME_PATH, command.responseLimit().maximumResponseBytes());
+                requireRootSuccess(response.root());
+                Instant serverTime = epochMillis(text(exactRow(response.root()), "ts"), "ts");
+                Instant after = clock.instant();
+                Duration roundTrip = Duration.between(before, after);
+                if (roundTrip.isNegative()) {
+                    throw new WireFailure(SpotProviderError.Category.CLOCK_SKEW, false);
+                }
+                Instant midpoint = before.plusMillis(roundTrip.toMillis() / 2);
+                ClockSample current = new ClockSample(
+                        serverTime, midpoint, Duration.between(midpoint, serverTime), roundTrip);
+                if (selected == null || current.roundTrip().compareTo(selected.roundTrip()) < 0) {
+                    selected = current;
+                }
+                totalResponseBytes = Math.addExact(totalResponseBytes, response.bytes());
+            }
+            if (selected == null) {
+                throw new WireFailure(SpotProviderError.Category.UNKNOWN_RESULT, false);
+            }
             return new ClockResponse(
-                    metadata(OkxSpotProviderOperation.READ_CLOCK, response.bytes()),
-                    serverTime,
-                    midpoint,
-                    Duration.between(midpoint, serverTime),
+                    metadata(OkxSpotProviderOperation.READ_CLOCK, totalResponseBytes),
+                    selected.serverTime(),
+                    selected.localClockMidpoint(),
+                    selected.observedSkew(),
                     null);
-        } catch (WireFailure failure) {
+        } catch (ArithmeticException | WireFailure failure) {
+            SpotProviderError.Category category = failure instanceof WireFailure wire
+                    ? wire.category() : SpotProviderError.Category.MALFORMED_RESPONSE;
             return new ClockResponse(
                     metadata(OkxSpotProviderOperation.READ_CLOCK, 0),
                     null,
                     null,
                     null,
-                    new TransportFailure(failure.category(), false));
+                    new TransportFailure(category, false));
         }
     }
 
@@ -665,6 +685,14 @@ final class OkxJdkRealClient {
     }
 
     private record QueryResult(RawOrder order, int bytes) {
+    }
+
+    private record ClockSample(
+            Instant serverTime,
+            Instant localClockMidpoint,
+            Duration observedSkew,
+            Duration roundTrip
+    ) {
     }
 
     private static final class WireFailure extends RuntimeException {
