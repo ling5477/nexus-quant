@@ -314,6 +314,7 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
                 && order.side().equals(binding.order().side().name())
                 && order.qty().compareTo(binding.order().quantity()) == 0
                 && order.price() != null && order.price().compareTo(binding.order().price()) == 0
+                && "LIVE".equals(order.tradeEnv()) && "LIVE".equals(request.tradeEnv())
                 && request.type() == com.guidinglight.nexusquant.contracts.model.OrderType.LIMIT;
     }
 

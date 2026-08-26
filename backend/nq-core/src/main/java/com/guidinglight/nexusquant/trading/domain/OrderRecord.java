@@ -24,6 +24,7 @@ import java.math.BigDecimal;
  * @param status 订单状态
  * @param reason 状态原因
  * @param traceId 链路追踪 ID
+ * @param tradeEnv canonical交易环境，固定SIM/LIVE
  */
 public record OrderRecord(
         String orderId,
@@ -39,8 +40,36 @@ public record OrderRecord(
         String externalOrderId,
         OrderStatus status,
         String reason,
-        String traceId
+        String traceId,
+        String tradeEnv
 ) {
+
+    /** 兼容既有订单构造器；未显式声明时保持历史SIM默认值。 */
+    public OrderRecord(
+            String orderId,
+            Long accountId,
+            String strategyRunId,
+            String venue,
+            String symbol,
+            String clientOrderId,
+            String side,
+            String type,
+            BigDecimal price,
+            BigDecimal qty,
+            String externalOrderId,
+            OrderStatus status,
+            String reason,
+            String traceId
+    ) {
+        this(orderId, accountId, strategyRunId, venue, symbol, clientOrderId, side, type,
+                price, qty, externalOrderId, status, reason, traceId, "SIM");
+    }
+
+    public OrderRecord {
+        if (!java.util.Set.of("SIM", "LIVE").contains(tradeEnv)) {
+            throw new IllegalArgumentException("tradeEnv must be SIM or LIVE");
+        }
+    }
 
     /**
      * 基于当前订单构造新的状态快照。
@@ -64,7 +93,8 @@ public record OrderRecord(
                 externalOrderId,
                 nextStatus,
                 nextReason,
-                traceId
+                traceId,
+                tradeEnv
         );
     }
 
@@ -93,7 +123,8 @@ public record OrderRecord(
                 nextExternalOrderId,
                 status,
                 reason,
-                traceId
+                traceId,
+                tradeEnv
         );
     }
 }

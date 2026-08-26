@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor;
 import com.guidinglight.nexusquant.livecontrol.application.LiveSessionControlService;
 import com.guidinglight.nexusquant.livecontrol.application.OperatorApprovalCommand;
@@ -38,6 +39,8 @@ import com.guidinglight.nexusquant.livecontrol.infra.jdbc.JdbcPilotScopeReposito
 import com.guidinglight.nexusquant.livecontrol.infra.PilotScopeControlPlaneService;
 import com.guidinglight.nexusquant.livecontrol.infra.PilotScopeFactTransactionService;
 import com.guidinglight.nexusquant.livecontrol.infra.UnavailablePilotPrerequisiteObservationAuthority;
+import com.guidinglight.nexusquant.trading.domain.OrderRecord;
+import com.guidinglight.nexusquant.trading.infra.jdbc.JdbcOrderRepository;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -1378,14 +1381,16 @@ class LiveSessionFactModelPostgresIntegrationTest {
         long operatorRole = jdbc.queryForObject(
                 "SELECT id FROM roles WHERE role_code = 'OPERATOR'", Long.class);
         jdbc.update("INSERT INTO user_roles(user_id,role_id) VALUES (?,?)", creator, operatorRole);
-        long legacyAccount = jdbc.queryForObject(
-                "INSERT INTO accounts(account_code,venue,status) VALUES (?, 'OKX', 'ACTIVE') RETURNING account_id",
-                Long.class, "gatey-account-" + suffix);
         long exchangeAccount = jdbc.queryForObject("""
                 INSERT INTO exchange_accounts(
-                    owner_user_id, exchange_code, trade_env, account_alias, legacy_account_id, status
-                ) VALUES (?, 'OKX', 'LIVE', ?, ?, 'ACTIVE') RETURNING exchange_account_id
-                """, Long.class, creator, "gatey-live-" + suffix, legacyAccount);
+                    owner_user_id, exchange_code, trade_env, account_alias, status
+                ) VALUES (?, 'OKX', 'LIVE', ?, 'ACTIVE') RETURNING exchange_account_id
+                """, Long.class, creator, "gatey-live-" + suffix);
+        long legacyAccount = jdbc.queryForObject(
+                "INSERT INTO accounts(account_code,venue,status) VALUES (?, 'OKX', 'ACTIVE') RETURNING account_id",
+                Long.class, "nq-okx-live-" + exchangeAccount);
+        jdbc.update("UPDATE exchange_accounts SET legacy_account_id=? WHERE exchange_account_id=?",
+                legacyAccount, exchangeAccount);
         long credential = jdbc.queryForObject("""
                 INSERT INTO exchange_account_credentials(
                     exchange_account_id, credential_type, encrypted_payload, key_version, cipher_suite,
@@ -1754,17 +1759,12 @@ class LiveSessionFactModelPostgresIntegrationTest {
                 intentId, "worker-forbidden", UUID.randomUUID(), Duration.ofMinutes(1)).isEmpty());
         assertEquals(sendStarted.sendStartedAt(), repository.find(intentId).orElseThrow().sendStartedAt());
 
-        jdbc.update("UPDATE exchange_accounts SET legacy_account_id=NULL WHERE exchange_account_id=?",
-                existing.exchangeAccountId());
-        UUID bridgeIntentId = UUID.randomUUID();
-        ExecutionIntentDraft bridgeDraft = ExecutionIntentCanonicalEncoder.place(
-                bridgeIntentId, runtimeSession.id(), "BTC-USDT", "BUY", decimal("1"), decimal("10"),
-                draft.localOrderId());
-        LiveControlException bridgeFailure = assertThrows(
-                LiveControlException.class, () -> repository.createOrGet(bridgeDraft));
-        assertEquals("ACCOUNT_IDENTITY_BRIDGE_UNVERIFIED", bridgeFailure.code());
-        jdbc.update("UPDATE exchange_accounts SET legacy_account_id=? WHERE exchange_account_id=?",
-                existing.legacyAccountId(), existing.exchangeAccountId());
+        assertThrows(DataIntegrityViolationException.class, () -> jdbc.update(
+                "UPDATE exchange_accounts SET legacy_account_id=NULL WHERE exchange_account_id=?",
+                existing.exchangeAccountId()));
+        assertEquals(existing.legacyAccountId(), jdbc.queryForObject(
+                "SELECT legacy_account_id FROM exchange_accounts WHERE exchange_account_id=?",
+                Long.class, existing.exchangeAccountId()));
 
         long mismatchedAccountId = jdbc.queryForObject(
                 "INSERT INTO accounts(account_code,venue,status) VALUES (?, 'OKX', 'ACTIVE') RETURNING account_id",
@@ -1948,12 +1948,10 @@ class LiveSessionFactModelPostgresIntegrationTest {
         String orderId = prefix + intentId.toString().substring(0, 8);
         ExecutionIntentDraft draft = ExecutionIntentCanonicalEncoder.place(
                 intentId, sessionId, "BTC-USDT", "BUY", decimal("1"), decimal("10"), orderId);
-        jdbc.update("""
-                INSERT INTO orders(
-                    order_id,account_id,venue,exchange_code,trade_env,symbol,client_order_id,
-                    side,type,price,qty,status,trace_id
-                ) VALUES (?,?,'OKX','OKX','LIVE','BTC-USDT',?,'BUY','LIMIT',10,1,'CREATED','gatey3-test')
-                """, orderId, accountId, draft.clientOrderId());
+        new JdbcOrderRepository(jdbc).insert(new OrderRecord(
+                orderId, accountId, null, "OKX", "BTC-USDT", draft.clientOrderId(),
+                "BUY", "LIMIT", decimal("10"), decimal("1"), null,
+                OrderStatus.NEW, "GATEY3_TEST", "gatey3-test", "LIVE"), NOW);
         return draft;
     }
 

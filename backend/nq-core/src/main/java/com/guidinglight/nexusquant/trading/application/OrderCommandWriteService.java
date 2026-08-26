@@ -111,7 +111,8 @@ public class OrderCommandWriteService {
                 null,
                 OrderStatus.NEW,
                 "ORDER_CREATED",
-                request.traceId()
+                request.traceId(),
+                request.tradeEnv()
         );
 
         try {

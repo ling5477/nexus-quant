@@ -44,6 +44,7 @@ class MinimalLivePilotConfigurationTest {
         var request = MinimalLivePilotConfiguration.placeOrderRequest(permit, 17L, command);
 
         assertNull(request.strategyRunId());
+        assertEquals("LIVE", request.tradeEnv());
         assertEquals(permit.leaseId() + "|" + permit.placeIntentId(), request.executionScopeId());
         assertEquals("nq-client", request.clientOrderId());
         assertEquals("nq-client", request.idempotencyKey());

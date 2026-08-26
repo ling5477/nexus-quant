@@ -2,7 +2,7 @@
 
 ## 当前结论
 
-`EXECUTION_SCOPE_FIX_LOCAL_GREEN / CI_PENDING / NO_REAL_ORDER`（执行scope修复本地通过 / CI 待执行 / 未发送真实订单）。V46 已完成exact-head CI、production backup、V45→V46 migration与exact runtime部署；唯一后续controller调用合法生成ordinal2 lease，但因gateway仍错误复用已清空的`strategyRunId`承载pilot scope，在durable ExecutionIntent/PLACE前fail closed。当前修复以独立`executionScopeId`传递lease/intent identity，strategyRunId继续为null；CI成功前不再次部署或调用controller。
+`TRADE_ENV_FIX_LOCAL_GREEN / CI_PENDING / NO_REAL_ORDER`（交易环境修复本地通过 / CI 待执行 / 未发送真实订单）。Dedicated `executionScopeId`修复已完成exact-head CI并部署；随后controller合法生成ordinal3 lease，但正式`JdbcOrderRepository`沿用V5默认`trade_env=SIM`，被session/order LIVE identity guard在durable ExecutionIntent/PLACE前fail closed。当前修复显式贯穿`tradeEnv`并只让operator pilot写LIVE；CI成功前不再次部署或调用controller。
 
 ```text
 P0=0
@@ -13,10 +13,10 @@ productionDeployment=V46_EXACT_HEAD_CURRENT_RUNTIME_STOPPED
 activeRuntime=979d69c760dc07f220e7c4cb7bf55385120c8992
 activeManifest=5c0ac60becb2adf6f75e6f4330d41e1d65a03f02035f0d315af13b7c317850c3
 operatorPilotParameters=ACCOUNT_1_CREDENTIAL_2_BTC_USDT_BUY_LIMIT_CAP_10
-currentPrerequisite=EXECUTION_SCOPE_FIX_LOCAL_VERIFIED_CI_PENDING
+currentPrerequisite=TRADE_ENV_FIX_LOCAL_VERIFIED_CI_PENDING
 authority=CLOSED
 session=RECONCILIATION_BLOCKED
-lease=FAILED_ORDINAL_2
+lease=FAILED_ORDINAL_3
 activeLease=0
 PLACE=0
 CANCEL=0
@@ -332,3 +332,18 @@ kill=ENGAGED
 - Production boundary：当前production schema V46、current pointer仍为`979d69c7...`，runtime按controller合同保持stopped；kill ENGAGED、activeLease0、PLACE=0、无PLACE retry、transfer/withdraw=0。Execution-scope修复尚未commit/CI/deploy，禁止在此状态再次调用controller。
 - Current decision：`EXECUTION_SCOPE_FIX_IMPLEMENTED / LOCAL_GREEN / V46_PRODUCTION_ACTIVE_SCHEMA / V46_RUNTIME_CURRENT_STOPPED / PRE_PLACE_TERMINAL_LEASE_REGENERATION_VERIFIED / PLACE_0 / NO_PLACE_RETRY / LIVE_FALSE / KILL_ENGAGED / P0_0 / P1_0 / CI_PENDING`。
 - Next：精确提交五份execution-scope实现/测试与本evidence，push `origin/dev`并等待exact-head CI；随后构建/安装/激活code-only V46 release，再次证明全execution facts仍为0后继续Attempt-01。若届时出现PLACE/SEND_STARTED/UNKNOWN，只允许query/reconciliation，永久禁止第二PLACE。
+
+## Dedicated execution scope deployment 与 LIVE order metadata remediation（2026-08-26）
+
+- Execution scope commit/CI：commit=`7e0dad46a0a7f2f15316eeb5edf51bceef2f889e`已push；exact-head CI run=`32947170654 / completed / success / 10 jobs`。Focused=`13/13 PASS`、disposable V46 full Maven=`23/23 modules PASS`、GateY minimal100/100、Authority/Java/secret/Shadow均通过。
+- Code-only release：15-artifact V46 release manifest=`f51ecf0da7aac5e19efd6a37789f9cc1647dadd1b10161e4f7f98967e6df9ef3`；服务器installer/verify确认POSIX/link/root ownership与service-user write denial。只原子切换runtime identity/current并激活health；未再次运行Flyway、未创建新backup。
+- Pre-PLACE gate：exact runtime=`7e0dad46...`、MainPID=`1255859`、NRestarts=0、V46/failed0、credential2 current facts保持有效；leaf ordinal2=`FAILED/unconsumed/no successor`、decision2、activeLease0、PLACE/CANCEL/SEND_STARTED/Intent/Receipt/Order/Trade/Ledger与临时权限均0。随后按合同停止runtime。
+- Order identity incident：同一Attempt-01 controller合法生成ordinal3 lease并进入`JdbcExecutionIntentRepository.lockAndValidateSessionOrder()`；数据库以`ORDER_INTENT_IDENTITY_MISMATCH`拒绝session/order venue/environment/symbol/clientOrderId组合。Finally将ordinal3置`FAILED/unconsumed`、session=`RECONCILIATION_BLOCKED`、kill恢复`ENGAGED/version9`，权限归零。
+- No-PLACE proof：incident后lineage新增ordinal3但PLACE额度不变；decision=3、activeLease0，PLACE/CANCEL/SEND_STARTED/ExecutionIntent/ExecutionReceipt/Order（含unlinked LIVE order）/Trade/Ledger全部0。没有durable clientOrderId、provider PLACE或UNKNOWN；未再次调用controller/PLACE。
+- RCA：`orders.trade_env`自V5默认SIM；正式`JdbcOrderRepository.insert()`只写legacy `venue`，依赖trigger补`exchange_code=venue`并保留默认SIM，而旧PostgreSQL helper直接SQL写`exchange_code=OKX/trade_env=LIVE`，掩盖了正式repository缺口。数据库guard必须保留。
+- Minimal fix：`tradeEnv`显式贯穿`PlaceOrderRequest → OrderRecord → JdbcOrderRepository`；既有构造器继续默认SIM，operator pilot唯一显式传LIVE。Repository INSERT同时写`exchange_code=order.venue`与`trade_env=order.tradeEnv`，row mapper/immutable status快照保留环境；gateway同时验证request/order均LIVE。无migration、dependency、provider、lease、retry或交易额度变化。
+- PostgreSQL fixture correction：required integration改用真实`JdbcOrderRepository.insert(OrderRecord tradeEnv=LIVE)`，不再direct SQL预填正确metadata；latest V46 fixture按canonical bridge顺序先创建NULL mapping exchange account，再创建`nq-okx-live-<ID>` account并绑定，且断言non-NULL→NULL不可变。首次required run的3个canonical fixture错误、第二轮1个过时bridge清空测试均由DB正确拒绝并已最小修正；最终`5/5 PASS / 0 skipped`，所有随机schema清理。
+- Validation：focused Order/gateway/config/JDBC=`14/14 PASS`；required PostgreSQL=`5/5 PASS / 0 skipped`；final disposable V46 full Maven=`23/23 modules PASS`、`nq-app=315 tests / 0 failures / 0 errors / 34 conditional skips`，数据库已删除；GateY minimal=`100/100 PASS`，Java governance PASS。
+- Production boundary：schema/current pointer仍为V46/`7e0dad46...`，runtime依controller合同保持stopped；kill ENGAGED/version9、activeLease0、PLACE=0、no PLACE retry、transfer/withdraw=0。TradeEnv修复尚未commit/CI/deploy，禁止再次调用controller。
+- Current decision：`TRADE_ENV_FIX_IMPLEMENTED / LOCAL_GREEN / V46_PRODUCTION_ACTIVE_SCHEMA / V46_RUNTIME_CURRENT_STOPPED / PLACE_0 / NO_PLACE_RETRY / LIVE_FALSE / KILL_ENGAGED / P0_0 / P1_0 / CI_PENDING`。
+- Next：精确提交tradeEnv实现、正式repository/PostgreSQL回归与本evidence，push `origin/dev`并等待exact-head CI；随后仅code-only V46 release部署，再次证明execution facts为0后继续Attempt-01。首次SEND_STARTED/PLACE/UNKNOWN出现后永久禁止任何后续PLACE。

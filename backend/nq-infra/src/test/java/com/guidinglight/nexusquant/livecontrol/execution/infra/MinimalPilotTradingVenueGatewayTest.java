@@ -88,6 +88,6 @@ class MinimalPilotTradingVenueGatewayTest {
                 "request-pilot", 17L, strategyRunId, "OKX", "BTC-USDT",
                 "client-pilot", "client-pilot", MinimalPilotTradingVenueGateway.SOURCE,
                 OrderSide.BUY, OrderType.LIMIT, new BigDecimal("100"),
-                new BigDecimal("0.01"), "GTC", "trace-pilot", executionScopeId);
+                new BigDecimal("0.01"), "GTC", "trace-pilot", "LIVE", executionScopeId);
     }
 }

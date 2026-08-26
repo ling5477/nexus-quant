@@ -32,6 +32,8 @@ class JdbcOrderRepositoryTest {
         assertTrue(repository.findByAccountAndClientOrderId(1001L, "coid-1").isPresent());
         assertTrue(repository.findByOrderId("ord-1").isPresent());
         repository.insert(order, Instant.parse("2026-03-24T03:00:00Z"));
+        assertTrue(jdbcTemplate.lastUpdateSql.contains("exchange_code"));
+        assertTrue(jdbcTemplate.lastUpdateSql.contains("trade_env"));
         repository.updateStatus("ord-1", OrderStatus.ACCEPTED, "accepted", Instant.parse("2026-03-24T03:00:01Z"));
         repository.updateExternalOrderId("ord-1", "ex-ord-1", Instant.parse("2026-03-24T03:00:02Z"));
         assertEquals(1, repository.findByStatuses(List.of(OrderStatus.ACCEPTED), 10).size());

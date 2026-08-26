@@ -414,6 +414,7 @@ public class MinimalLivePilotConfiguration {
                 com.guidinglight.nexusquant.contracts.model.OrderSide.valueOf(command.side().name()),
                 com.guidinglight.nexusquant.contracts.model.OrderType.LIMIT,
                 permit.limitPrice(), permit.quantity(), "GTC", permit.traceId(),
+                "LIVE",
                 permit.leaseId() + "|" + permit.placeIntentId());
     }
 

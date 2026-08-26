@@ -32,7 +32,7 @@ public class JdbcOrderRepository implements OrderRepository {
 
     private static final String BASE_SELECT = """
             SELECT order_id, account_id, strategy_run_id, venue, symbol, client_order_id, side, type, price, qty,
-                   external_order_id, status, reason, trace_id
+                   external_order_id, status, reason, trace_id, trade_env
             FROM orders
             """;
 
@@ -84,8 +84,8 @@ public class JdbcOrderRepository implements OrderRepository {
                 """
                         INSERT INTO orders (
                             order_id, account_id, strategy_run_id, venue, symbol, client_order_id, side, type, price, qty,
-                            external_order_id, status, reason, trace_id, created_at, updated_at
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            external_order_id, status, reason, trace_id, exchange_code, trade_env, created_at, updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                 order.orderId(),
                 order.accountId(),
@@ -98,10 +98,12 @@ public class JdbcOrderRepository implements OrderRepository {
                 order.price(),
                 order.qty(),
                 order.externalOrderId(),
-                order.status().name(),
-                order.reason(),
-                order.traceId(),
-                Timestamp.from(now),
+                 order.status().name(),
+                 order.reason(),
+                 order.traceId(),
+                 order.venue(),
+                 order.tradeEnv(),
+                 Timestamp.from(now),
                 Timestamp.from(now)
         );
     }
@@ -158,7 +160,8 @@ public class JdbcOrderRepository implements OrderRepository {
                 resultSet.getString("external_order_id"),
                 OrderStatus.valueOf(resultSet.getString("status")),
                 resultSet.getString("reason"),
-                resultSet.getString("trace_id")
+                resultSet.getString("trace_id"),
+                resultSet.getString("trade_env")
         );
     }
 }
