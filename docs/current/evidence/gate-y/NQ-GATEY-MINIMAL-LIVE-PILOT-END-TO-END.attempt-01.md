@@ -2,21 +2,21 @@
 
 ## 当前结论
 
-`V45_IMPLEMENTED / LOCAL_GREEN / CI_PENDING / NO_REAL_ORDER`（V45 已实现 / 本地验证通过 / CI 待执行 / 未发送真实订单）。V45 将一次性语义从“全局只能有一行lease”收敛为“Attempt-01最多一次zero-intent pre-PLACE replacement，且全部lease合计PLACE<=1”；旧lease不复活、旧session只经既有状态机终态化。Canonical legacy account bridge复用既有`legacy_account_id`，由确定性identity、FK、trigger与审计约束。Production仍保持V44 fail-closed，CI成功前不部署或调用controller。
+`V46_IMPLEMENTED / LOCAL_GREEN / CI_PENDING / NO_REAL_ORDER`（V46 已实现 / 本地验证通过 / CI 待执行 / 未发送真实订单）。V46 将lease固定为可前向再生成的短时执行窗口，同时由Attempt-01全局PLACE唯一性承担exactly-once；只有terminal、unconsumed且全attempt执行事实为0的唯一leaf predecessor可以生成`ordinal+1` successor。历史lease/decision不可修改或复活，CI成功前不迁移、部署或调用controller。
 
 ```text
 P0=0
 P1=0
 implementationCommit=PENDING
 exactHeadCi=PENDING
-productionDeployment=UNCHANGED_EXACT_HEAD_V44_ACTIVE
-activeRuntime=51efdd15b66ec5f895269a4168115ea28d9989b5
-activeManifest=b586ecc72db01c88fe4163a97fb6846b0bb6e2787bc2019fcda968d1ed250901
+productionDeployment=UNCHANGED_EXACT_HEAD_V45_ACTIVE
+activeRuntime=1762b76d84b702fcb9af07040dc51205fa878300
+activeManifest=e1a38ed64a2c0cb16f568aea17c955b33b824d438f6ffb0f25e8e425bc4598c9
 operatorPilotParameters=ACCOUNT_1_CREDENTIAL_2_BTC_USDT_BUY_LIMIT_CAP_10
-currentPrerequisite=V45_LOCAL_VERIFIED_CI_PENDING
-authority=EXPIRED
-session=LIVE_ACTIVE
-lease=EXPIRED
+currentPrerequisite=V46_LOCAL_VERIFIED_CI_PENDING
+authority=CLOSED
+session=RECONCILIATION_BLOCKED
+lease=FAILED_ORDINAL_1
 activeLease=0
 PLACE=0
 CANCEL=0
@@ -299,3 +299,20 @@ kill=ENGAGED
 - Hard blocker：V45已用完本pilot唯一replacement；其终态`FAILED`不可复活，V45禁止second successor/replacement，且用户明确禁止修改历史lease、Attempt-02、第二replacement与第二PLACE。继续需要新的operator架构决定，不能因PLACE仍为0自行放宽replacement语义。
 - Final decision：`BLOCKED / MAJOR_ARCHITECTURE_DECISION_REQUIRED / UNIQUE_REPLACEMENT_TERMINAL_PRE_PLACE / ORDER_IDENTITY_LOCAL_FIX_READY / NO_REAL_ORDER / PLACE_0 / CANCEL_0 / NO_PLACE_RETRY / ACTIVE_LEASE_0 / LIVE_FALSE / KILL_ENGAGED / NO_TRANSFER / NO_WITHDRAW / P0_0 / P1_1`。
 - Next：operator必须选择以`NO_REAL_ORDER`关闭Attempt-01，或明确授权新的forward-only terminal-replacement recovery contract；新合同必须保持PLACE total<=1、retry=0，不得复活FAILED lease、不得手工SQL改状态、不得创建Attempt-02，并需独立说明是否允许且如何限制第二successor。当前禁止controller、PLACE、CANCEL、transfer、withdraw。
+
+## V46 terminal lease regeneration 本地实现与复核（2026-08-26）
+
+- Authorization：operator明确批准`PRE_PLACE_TERMINAL_LEASE_REGENERATION`，继续原Attempt-01；禁止Attempt-02、第二PLACE、PLACE retry、历史lease复活/复用/删除/修改与production手工DDL。Lease仅为短时执行窗口；Attempt-01 execution boundary继续承担exactly-once。
+- Forward migration：只新增`V46__gate_y_attempt_level_terminal_lease_regeneration.sql`，未修改V42–V45。`replacement_ordinal`由SMALLINT前向扩为INTEGER，successor必须是唯一leaf predecessor的`ordinal+1`；移除V45 single-replacement特例，保留single-origin、single-open、per-predecessor successor唯一、decision唯一与全局PLACE/CANCEL唯一索引。
+- Durable zero proof：新decision固定`PRE_PLACE_REGENERATION_ALLOWED`；decision与successor trigger均锁定predecessor并验证terminal、unconsumed、无successor、activeLease=0，以及全OPERATOR_PILOT lineage的PLACE link、SEND_STARTED、ExecutionIntent、ExecutionReceipt、Order、Trade/Fill、Ledger全部为0。Provider PLACE只能在durable SEND_STARTED之后发生，因此SEND_STARTED=0同时证明provider PLACE=0；任一事实出现后永久拒绝regeneration。
+- Java/session：domain不再设置ordinal特例或task-specific上限，ordinal只从数据库判定返回；新lease reason固定`PRE_PLACE_TERMINAL_REGENERATION`。Predecessor session按当前状态经既有状态机收敛：ACTIVE/PAUSED→STOP、STOPPED→BEGIN_RECONCILE、RECONCILING→RECONCILE_BLOCK、RECONCILIATION_BLOCKED→RESOLVE_AND_CLOSE，preparation状态→KILL；terminal状态只读返回，不复活旧session或authority。
+- Production-shaped regression：V45合法历史`lease0 EXPIRED / ordinal0 → lease1 FAILED / ordinal1`先落库，再执行精确V45→V46；随后验证ordinal2、ordinal3与任意正ordinal domain合同。并发regeneration最多一个winner；并发PLACE claimant最多一个winner；PLACE fact出现并将lease终态化后再次regeneration精确返回`REPLACEMENT_FORBIDDEN_SIDE_EFFECT_STARTED`。历史lineage update、重复successor/decision、ACTIVE/CONSUMED predecessor与ExecutionIntent/SEND_STARTED/Order/Receipt路径均拒绝。
+- Order identity：current HEAD `f648064d1192a96a88d3ff1ee820e5038e0c7e0a`已包含operator synthetic `strategyRunId=null`修复；focused与full Maven覆盖production-shaped local order identity，不再把lease/intent组合冒充strategy run。该commit尚未部署，production仍运行`1762b76d...`。
+- Validation：focused domain/service/migration contract=`12/12 PASS`；PostgreSQL required integration=`4/4 PASS / 0 skipped`，覆盖V1→V46、空V45→V46与带ordinal0/1历史事实的V45→V46，随机schema均已清理。Disposable V46数据库下full Maven=`23/23 modules PASS`，`nq-app=315 tests / 0 failures / 0 errors / 34 conditional skips`，数据库已强制删除。
+- Governance regression：GateY exact/minimal/release/runtime=`7/100/31/51 PASS`，GateY4、GateY5 lock/post-restore均PASS；GateW frozen=`37/12/34 PASS`；current Authority errors=0，Java governance PASS。主工作区Shadow仍被既有`artifacts/pre-clean-3-pip-tmp` ACL阻断；应用同一diff/untracked V46文件的detached worktree复核`NEW_CODE_VIOLATION_COUNT=0`并已删除。Custom secret backstop=`13 files / 0 findings`；本机未安装gitleaks，pinned scan留待exact-head CI。
+- Validation history：首次required PostgreSQL命令只因本机不存在`nexus_quant_test`而在SQLSTATE 3D000退出，改用既有`nexus_quant`随机schema后进入断言；V44 authority expiry trigger正确拒绝未到期EXPIRED夹具，改为真实3秒窗口后通过。GateY release regression首次仍期望migration count 45，builder self-test实际正确返回46；只同步contract期望为46后31/31通过。所有失败均未写成产品通过。
+- Target cleanup：按operator授权删除仓库根`target/`的114个未跟踪可再生成文件，共258241937 bytes；删除前精确验证路径为`E:\Project\nexus-quant\target`且tracked count=0。未删除`backend/**/target`；后续Maven只重新生成模块构建输出。
+- Targeted P0/P1 review：只审查attempt-level exactly-once、regeneration/PLACE concurrency、V45历史兼容、session terminalization、order identity与V46 migration。补充关闭PLACE后永久拒绝的测试覆盖缺口；最终P0=0、P1=0。
+- Production boundary：本阶段production访问、backup、migration、deployment、credential JIT、OKX、controller、PLACE/CANCEL/transfer/withdraw均为0。最后已知production继续是V45 runtime=`1762b76d...`、lease0=`EXPIRED/unconsumed`、lease1=`FAILED/unconsumed`、activeLease=0、PLACE/SEND_STARTED/Intent/Receipt/Order/Trade/Ledger均0、LIVE=false、kill=ENGAGED；部署前必须重新只读确认，不能把历史值冒充current readback。
+- Current decision：`V46_IMPLEMENTED / LOCAL_GREEN / PRE_PLACE_TERMINAL_LEASE_REGENERATION_VERIFIED_LOCALLY / ATTEMPT_LEVEL_EXACTLY_ONCE_VERIFIED_LOCALLY / ORDER_IDENTITY_FIX_VERIFIED / PLACE_0 / NO_PLACE_RETRY / LIVE_FALSE / KILL_ENGAGED / P0_0 / P1_0 / CI_PENDING / PRODUCTION_UNCHANGED`。
+- Next：精确暂存V46、Java/repository/session变更、回归、GateY release migration-count合同与本evidence；commit `fix(gatey): generalize zero-side-effect pilot lease recovery`，push `origin/dev`并等待exact-head CI。CI全绿前禁止production backup/V45→V46/deployment/controller/PLACE。

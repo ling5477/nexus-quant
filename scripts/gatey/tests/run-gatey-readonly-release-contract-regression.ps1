@@ -513,7 +513,7 @@ try
     Assert-Condition ($LASTEXITCODE -eq 0) 'BUILDER_SELF_TEST_PROCESS_FAILED'
     $builderSelfTest = ($builderSelfTestOutput -join [Environment]::NewLine) | ConvertFrom-Json
     Assert-Condition (
-        [int]$builderSelfTest.migrationCount -eq 45 -and
+        [int]$builderSelfTest.migrationCount -eq 46 -and
         [bool]$builderSelfTest.tamperedMigrationRejected -and
         [bool]$builderSelfTest.canonicalMaterializationVerified -and
         [int]$builderSelfTest.trackedFiles -gt 0 -and

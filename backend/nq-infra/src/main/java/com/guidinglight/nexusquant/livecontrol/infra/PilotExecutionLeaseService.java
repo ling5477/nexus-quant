@@ -102,7 +102,8 @@ public final class PilotExecutionLeaseService implements PilotExecutionLeaseCont
                 UUID.randomUUID(), binding, maxNotional, actor.userId(), now, expiresAt)
                 : PilotExecutionLease.createdReplacement(
                 UUID.randomUUID(), binding, maxNotional, actor.userId(), now, expiresAt,
-                authorization.predecessorLeaseId(), authorization.decisionId());
+                authorization.predecessorLeaseId(), authorization.decisionId(),
+                authorization.replacementOrdinal());
         PilotExecutionLease created = leases.create(draft,
                 correlation.requestId(), correlation.traceId());
         try {

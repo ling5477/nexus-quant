@@ -346,7 +346,7 @@ public class LiveSessionControlService {
     }
 
     /**
-     * 只消费V45 append-only zero-intent判定，以既有状态机关闭旧session；不复活authority/lease。
+     * 只消费append-only pre-PLACE判定，以既有状态机关闭predecessor session；不复活authority/lease。
      */
     @Transactional
     public LiveSession terminalizeMinimalPilotPrePlaceRecovery(
@@ -373,14 +373,19 @@ public class LiveSessionControlService {
             throw new LiveControlException(
                     "PRE_PLACE_RECOVERY_REFERENCE_MISMATCH", "pre-place recovery references are invalid");
         }
-        if (current.state() == LiveSessionState.LIVE_RECONCILED) {
+        if (current.state().terminal()) {
             return current;
         }
-        for (LiveSessionCommand command : java.util.List.of(
-                LiveSessionCommand.STOP,
-                LiveSessionCommand.BEGIN_RECONCILE,
-                LiveSessionCommand.RECONCILE_BLOCK,
-                LiveSessionCommand.RESOLVE_AND_CLOSE)) {
+        for (int step = 0; step < 4 && !current.state().terminal(); step++) {
+            LiveSessionCommand command = switch (current.state()) {
+                case LIVE_ACTIVE, LIVE_PAUSED -> LiveSessionCommand.STOP;
+                case LIVE_STOPPED -> LiveSessionCommand.BEGIN_RECONCILE;
+                case LIVE_RECONCILING -> LiveSessionCommand.RECONCILE_BLOCK;
+                case RECONCILIATION_BLOCKED -> LiveSessionCommand.RESOLVE_AND_CLOSE;
+                case APPROVAL_PENDING, APPROVED, LIVE_WARMUP -> LiveSessionCommand.KILL;
+                case REJECTED, FAILED, KILLED, LIVE_RECONCILED -> throw new IllegalStateException(
+                        "terminal session reached regeneration loop");
+            };
             LiveSessionState target = stateMachine.transition(current.state(), command);
             Instant occurredAt = repository.currentTime();
             LiveSession updated = withState(current, target, occurredAt);
@@ -390,17 +395,21 @@ public class LiveSessionControlService {
             }
             repository.appendSessionEvent(event(
                     current, target, "MINIMAL_PILOT_" + command.name(), actor.userId(),
-                    requestId, traceId, "PRE_PLACE_ZERO_INTENT_" + command.name(),
+                    requestId, traceId, "PRE_PLACE_REGENERATION_" + command.name(),
                     idempotencyKey,
                     com.guidinglight.nexusquant.livecontrol.domain.LiveSessionApprovalScopeEncoder.digest(current),
                     occurredAt));
             current = updated;
         }
+        if (!current.state().terminal()) {
+            throw new LiveControlException(
+                    "PRE_PLACE_RECOVERY_STATE_AMBIGUOUS", "predecessor session did not terminalize");
+        }
         return current;
     }
 
     /**
-     * 回收V45 replacement准备阶段遗留的过期session；DB必须证明binding未消费且无lease/intent。
+     * 回收pre-PLACE regeneration准备阶段遗留的过期session；DB必须证明binding未消费且无lease/intent。
      */
     @Transactional
     public Optional<LiveSession> terminalizeExpiredMinimalPilotPreparation(

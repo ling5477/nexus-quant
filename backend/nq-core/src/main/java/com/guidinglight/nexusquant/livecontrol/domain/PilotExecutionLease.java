@@ -34,6 +34,8 @@ public record PilotExecutionLease(
         String replacementReason
 ) {
     public static final Duration MAXIMUM_LIFETIME = Duration.ofMinutes(5);
+    public static final String V45_REPLACEMENT_REASON = "PRE_PLACE_ZERO_INTENT_FAILURE";
+    public static final String REGENERATION_REASON = "PRE_PLACE_TERMINAL_REGENERATION";
 
     /**
      * V42 source-compatible constructor；STRATEGY lease 不绑定 operator authority。
@@ -85,9 +87,10 @@ public record PilotExecutionLease(
         ExactPilotBinding.require(!terminal || closedAt != null, "terminal lease requires closedAt");
         boolean original = replacementOrdinal == 0 && predecessorLeaseId == null
                 && recoveryDecisionId == null && replacementReason == null;
-        boolean replacement = replacementOrdinal == 1 && predecessorLeaseId != null
+        boolean replacement = replacementOrdinal > 0 && predecessorLeaseId != null
                 && recoveryDecisionId != null
-                && "PRE_PLACE_ZERO_INTENT_FAILURE".equals(replacementReason);
+                && (V45_REPLACEMENT_REASON.equals(replacementReason)
+                || REGENERATION_REASON.equals(replacementReason));
         ExactPilotBinding.require(original || replacement, "lease replacement lineage is invalid");
     }
 
@@ -120,7 +123,8 @@ public record PilotExecutionLease(
             Instant validFrom,
             Instant expiresAt,
             UUID predecessorLeaseId,
-            UUID recoveryDecisionId
+            UUID recoveryDecisionId,
+            int replacementOrdinal
     ) {
         PilotExecutionLease original = created(
                 id, binding, maxNotional, createdBy, validFrom, expiresAt);
@@ -129,7 +133,7 @@ public record PilotExecutionLease(
                 original.bindingId(), original.bindingDigest(), original.status(), original.maxNotional(),
                 original.validFrom(), original.expiresAt(), null, null, original.createdBy(),
                 original.version(), original.createdAt(), original.updatedAt(), predecessorLeaseId,
-                recoveryDecisionId, 1, "PRE_PLACE_ZERO_INTENT_FAILURE");
+                recoveryDecisionId, replacementOrdinal, REGENERATION_REASON);
     }
 
     public boolean activeAt(Instant decisionAt) {

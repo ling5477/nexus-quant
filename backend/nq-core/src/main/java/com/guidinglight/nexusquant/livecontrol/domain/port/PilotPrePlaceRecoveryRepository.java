@@ -43,8 +43,8 @@ public interface PilotPrePlaceRecoveryRepository {
             java.util.Objects.requireNonNull(decisionId);
             java.util.Objects.requireNonNull(predecessorLeaseId);
             java.util.Objects.requireNonNull(predecessorSessionId);
-            if (replacementOrdinal != 1) {
-                throw new IllegalArgumentException("replacementOrdinal must equal one");
+            if (replacementOrdinal <= 0) {
+                throw new IllegalArgumentException("replacementOrdinal must be positive");
             }
         }
     }

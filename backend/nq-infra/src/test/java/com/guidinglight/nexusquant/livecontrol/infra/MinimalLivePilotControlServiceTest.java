@@ -125,7 +125,7 @@ class MinimalLivePilotControlServiceTest {
     void routesAllowedZeroIntentDecisionToReplacementLeaseOnly() {
         Fixture fixture = fixture(new BigDecimal("0.00100000"));
         Authorization authorization = new Authorization(
-                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 1);
+                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 3);
         when(fixture.leases.prepareZeroIntentReplacement(
                 any(), anyLong(), anyLong(), anyString(), any(), any()))
                 .thenReturn(Optional.of(authorization));

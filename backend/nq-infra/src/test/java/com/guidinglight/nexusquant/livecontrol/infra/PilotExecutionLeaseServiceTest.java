@@ -87,7 +87,7 @@ class PilotExecutionLeaseServiceTest {
         var actor = new AuthenticatedLiveControlActor(11L);
         var correlation = new ExactPilotBinding.Correlation("request", "trace", "idempotency");
         Authorization authorization = new Authorization(
-                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 1);
+                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 7);
         when(kill.snapshot()).thenReturn(new KillSwitchSnapshot(
                 KillSwitchScope.GLOBAL_TRADING, KillSwitchStatus.ENGAGED, 4,
                 "SAFE", "PILOT_RECOVERY", NOW, NOW, "trace"));

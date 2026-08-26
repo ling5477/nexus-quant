@@ -43,23 +43,40 @@ public class JdbcPilotPrePlaceRecoveryRepository implements PilotPrePlaceRecover
                        session.owner_id,session.exchange_account_id,session.credential_reference,
                        session.symbol_allowlist,session.capital_cap,
                        (SELECT count(*) FROM pilot_execution_lease_intents link
-                         WHERE link.lease_id=lease.lease_id) AS lease_intents,
+                         WHERE link.action='PLACE') AS lease_intents,
                        (SELECT count(*) FROM execution_intents intent
-                         WHERE intent.session_id=session.session_id) AS intents,
+                         JOIN live_sessions attempt_session ON attempt_session.session_id=intent.session_id
+                         WHERE attempt_session.authority_type='OPERATOR_PILOT') AS intents,
                        (SELECT count(*) FROM execution_intents intent
-                         WHERE intent.session_id=session.session_id AND intent.send_started_at IS NOT NULL) AS sends,
+                         JOIN live_sessions attempt_session ON attempt_session.session_id=intent.session_id
+                         WHERE attempt_session.authority_type='OPERATOR_PILOT'
+                           AND intent.send_started_at IS NOT NULL) AS sends,
                        (SELECT count(*) FROM execution_receipts receipt
                          JOIN execution_intents intent ON intent.intent_id=receipt.intent_id
-                         WHERE intent.session_id=session.session_id) AS receipts,
+                         JOIN live_sessions attempt_session ON attempt_session.session_id=intent.session_id
+                         WHERE attempt_session.authority_type='OPERATOR_PILOT') AS receipts,
                        (SELECT count(*) FROM orders value JOIN execution_intents intent
                          ON intent.local_order_id=value.order_id
-                         WHERE intent.session_id=session.session_id) AS orders_count,
+                         JOIN live_sessions attempt_session ON attempt_session.session_id=intent.session_id
+                         WHERE attempt_session.authority_type='OPERATOR_PILOT') AS orders_count,
                        (SELECT count(*) FROM trades value JOIN orders local_order ON local_order.order_id=value.order_id
                          JOIN execution_intents intent ON intent.local_order_id=local_order.order_id
-                         WHERE intent.session_id=session.session_id) AS trades_count
+                         JOIN live_sessions attempt_session ON attempt_session.session_id=intent.session_id
+                         WHERE attempt_session.authority_type='OPERATOR_PILOT') AS trades_count,
+                       (SELECT count(DISTINCT ledger.entry_id) FROM ledger_entries ledger
+                         LEFT JOIN orders local_order ON ledger.ref_id=local_order.order_id
+                         LEFT JOIN trades trade ON ledger.ref_id=trade.trade_id
+                         LEFT JOIN orders trade_order ON trade_order.order_id=trade.order_id
+                         JOIN execution_intents intent
+                           ON intent.local_order_id=COALESCE(local_order.order_id,trade_order.order_id)
+                         JOIN live_sessions attempt_session ON attempt_session.session_id=intent.session_id
+                         WHERE attempt_session.authority_type='OPERATOR_PILOT') AS ledger_count
                 FROM pilot_execution_leases lease
                 JOIN live_sessions session ON session.session_id=lease.live_session_id
-                ORDER BY lease.created_at,lease.lease_id
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM pilot_execution_leases successor
+                    WHERE successor.predecessor_lease_id=lease.lease_id)
+                ORDER BY lease.replacement_ordinal DESC,lease.created_at DESC,lease.lease_id
                 FOR UPDATE OF lease,session
                 """, (row, ignored) -> new Candidate(
                 row.getObject("lease_id", UUID.class), row.getObject("live_session_id", UUID.class),
@@ -69,7 +86,7 @@ public class JdbcPilotPrePlaceRecoveryRepository implements PilotPrePlaceRecover
                 java.util.List.of((String[]) row.getArray("symbol_allowlist").getArray()),
                 row.getBigDecimal("capital_cap"), row.getLong("lease_intents"),
                 row.getLong("intents"), row.getLong("sends"), row.getLong("receipts"),
-                row.getLong("orders_count"), row.getLong("trades_count")));
+                row.getLong("orders_count"), row.getLong("trades_count"), row.getLong("ledger_count")));
         if (candidates.isEmpty()) {
             return Optional.empty();
         }
@@ -86,7 +103,7 @@ public class JdbcPilotPrePlaceRecoveryRepository implements PilotPrePlaceRecover
                 && !candidate.consumed();
         boolean zero = candidate.leaseIntents() == 0 && candidate.intents() == 0
                 && candidate.sends() == 0 && candidate.receipts() == 0
-                && candidate.orders() == 0 && candidate.trades() == 0;
+                && candidate.orders() == 0 && candidate.trades() == 0 && candidate.ledger() == 0;
         if (!exactScope || !terminal) {
             throw rejected("REPLACEMENT_FORBIDDEN_STATE_AMBIGUOUS");
         }
@@ -99,16 +116,19 @@ public class JdbcPilotPrePlaceRecoveryRepository implements PilotPrePlaceRecover
                     place_intent_count,send_started_count,execution_intent_count,
                     execution_receipt_count,order_count,trade_count,ledger_count,
                     decided_by,request_id,trace_id,decided_at
-                ) VALUES (?,?,?,'REPLACEMENT_ALLOWED_ZERO_INTENT',0,0,0,0,0,0,0,?,?,?,?)
+                ) VALUES (?,?,?,'PRE_PLACE_REGENERATION_ALLOWED',0,0,0,0,0,0,0,?,?,?,?)
                 ON CONFLICT (predecessor_lease_id) DO NOTHING
                 """, decisionId, candidate.leaseId(), candidate.sessionId(), ownerId,
                 requestId, traceId, Timestamp.from(decidedAt));
         return jdbc.queryForObject("""
-                SELECT decision_id,predecessor_lease_id,predecessor_session_id
-                FROM pilot_pre_place_recovery_decisions WHERE predecessor_lease_id=?
+                SELECT decision.decision_id,decision.predecessor_lease_id,
+                       decision.predecessor_session_id,lease.replacement_ordinal+1
+                FROM pilot_pre_place_recovery_decisions decision
+                JOIN pilot_execution_leases lease ON lease.lease_id=decision.predecessor_lease_id
+                WHERE decision.predecessor_lease_id=?
                 """, (row, ignored) -> Optional.of(new Authorization(
                 row.getObject(1, UUID.class), row.getObject(2, UUID.class),
-                row.getObject(3, UUID.class), 1)), candidate.leaseId());
+                row.getObject(3, UUID.class), row.getInt(4))), candidate.leaseId());
     }
 
     @Override
@@ -128,7 +148,8 @@ public class JdbcPilotPrePlaceRecoveryRepository implements PilotPrePlaceRecover
                 JOIN kill_switch_states kill ON kill.scope='GLOBAL_TRADING'
                 WHERE decision.decision_id=?
                   AND decision.predecessor_session_id=?
-                  AND decision.decision='REPLACEMENT_ALLOWED_ZERO_INTENT'
+                  AND decision.decision IN (
+                      'REPLACEMENT_ALLOWED_ZERO_INTENT','PRE_PLACE_REGENERATION_ALLOWED')
                   AND lease.status IN ('EXPIRED','FAILED') AND lease.consumed_at IS NULL
                   AND account.owner_user_id=? AND account.status='ACTIVE'
                   AND account.exchange_code='OKX' AND account.trade_env='LIVE'
@@ -169,7 +190,8 @@ public class JdbcPilotPrePlaceRecoveryRepository implements PilotPrePlaceRecover
                   ON authority.authority_id=session.operator_pilot_authority_id
                 JOIN kill_switch_states kill ON kill.scope='GLOBAL_TRADING'
                 WHERE decision.decision_id=?
-                  AND decision.decision='REPLACEMENT_ALLOWED_ZERO_INTENT'
+                  AND decision.decision IN (
+                      'REPLACEMENT_ALLOWED_ZERO_INTENT','PRE_PLACE_REGENERATION_ALLOWED')
                   AND decision.place_intent_count=0 AND decision.send_started_count=0
                   AND decision.execution_intent_count=0 AND decision.execution_receipt_count=0
                   AND decision.order_count=0 AND decision.trade_count=0 AND decision.ledger_count=0
@@ -215,7 +237,7 @@ public class JdbcPilotPrePlaceRecoveryRepository implements PilotPrePlaceRecover
             UUID leaseId, UUID sessionId, String status, boolean consumed,
             long ownerId, long exchangeAccountId, long credentialReferenceId,
             List<String> symbols, BigDecimal capitalCap, long leaseIntents,
-            long intents, long sends, long receipts, long orders, long trades
+            long intents, long sends, long receipts, long orders, long trades, long ledger
     ) {
     }
 }

@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.livecontrol.domain;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -37,6 +38,20 @@ class PilotExecutionLeaseTest {
         assertThrows(IllegalArgumentException.class, () -> PilotExecutionLease.created(
                 UUID.randomUUID(), binding, new BigDecimal("10.00000000"), 11,
                 NOW, NOW.plusSeconds(301)));
+    }
+
+    @Test
+    void regeneratedLeaseAcceptsDatabaseDerivedPositiveOrdinalWithoutTaskSpecificCeiling() {
+        ExactPilotBinding binding = binding();
+        PilotExecutionLease lease = PilotExecutionLease.createdReplacement(
+                UUID.randomUUID(), binding, new BigDecimal("10.00000000"), 11,
+                NOW, NOW.plusSeconds(120), UUID.randomUUID(), UUID.randomUUID(), 37);
+
+        assertEquals(37, lease.replacementOrdinal());
+        assertEquals(PilotExecutionLease.REGENERATION_REASON, lease.replacementReason());
+        assertThrows(IllegalArgumentException.class, () -> PilotExecutionLease.createdReplacement(
+                UUID.randomUUID(), binding, new BigDecimal("10.00000000"), 11,
+                NOW, NOW.plusSeconds(120), UUID.randomUUID(), UUID.randomUUID(), 0));
     }
 
     private static ExactPilotBinding binding() {
