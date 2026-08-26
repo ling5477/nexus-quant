@@ -413,7 +413,8 @@ public class MinimalLivePilotConfiguration {
                 permit.clientOrderId(), permit.clientOrderId(), MinimalPilotTradingVenueGateway.SOURCE,
                 com.guidinglight.nexusquant.contracts.model.OrderSide.valueOf(command.side().name()),
                 com.guidinglight.nexusquant.contracts.model.OrderType.LIMIT,
-                permit.limitPrice(), permit.quantity(), "GTC", permit.traceId());
+                permit.limitPrice(), permit.quantity(), "GTC", permit.traceId(),
+                permit.leaseId() + "|" + permit.placeIntentId());
     }
 
     static void persistFills(

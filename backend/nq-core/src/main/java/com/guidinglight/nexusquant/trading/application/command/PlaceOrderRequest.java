@@ -26,6 +26,7 @@ import java.math.BigDecimal;
  * @param quantity       数量，必须大于 0
  * @param timeInForce    时效策略；未显式指定时按订单类型兜底
  * @param traceId        链路追踪 ID
+ * @param executionScopeId 内部执行网关的一次性scope identity，可空；不得作为strategy run持久化
  */
 public record PlaceOrderRequest(
         String requestId,
@@ -41,8 +42,32 @@ public record PlaceOrderRequest(
         BigDecimal price,
         BigDecimal quantity,
         String timeInForce,
-        String traceId
+        String traceId,
+        String executionScopeId
 ) {
+
+    /**
+     * 兼容既有完整构造器；普通/strategy调用没有独立执行scope。
+     */
+    public PlaceOrderRequest(
+            String requestId,
+            Long accountId,
+            String strategyRunId,
+            String venue,
+            String symbol,
+            String clientOrderId,
+            String idempotencyKey,
+            String source,
+            OrderSide side,
+            OrderType type,
+            BigDecimal price,
+            BigDecimal quantity,
+            String timeInForce,
+            String traceId
+    ) {
+        this(requestId, accountId, strategyRunId, venue, symbol, clientOrderId,
+                idempotencyKey, source, side, type, price, quantity, timeInForce, traceId, null);
+    }
 
     /**
      * 兼容旧构造器，允许现有调用方在不感知新字段的前提下继续工作。
@@ -73,7 +98,8 @@ public record PlaceOrderRequest(
                 price,
                 quantity,
                 defaultTimeInForce(type),
-                traceId
+                traceId,
+                null
         );
     }
 
@@ -86,6 +112,7 @@ public record PlaceOrderRequest(
         idempotencyKey = normalizeText(idempotencyKey, buildDefaultIdempotencyKey(accountId, clientOrderId));
         source = normalizeText(source, defaultSource(strategyRunId));
         timeInForce = normalizeText(timeInForce, defaultTimeInForce(type));
+        executionScopeId = normalizeText(executionScopeId, null);
     }
 
     private static String buildDefaultIdempotencyKey(Long accountId, String clientOrderId) {

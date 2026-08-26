@@ -290,11 +290,12 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
         return values.getFirst();
     }
 
-    private static PilotInvocation requirePlaceInvocation(PlaceOrderRequest request) {
-        if (!SOURCE.equals(request.source()) || request.strategyRunId() == null) {
+    static PilotInvocation requirePlaceInvocation(PlaceOrderRequest request) {
+        if (!SOURCE.equals(request.source()) || request.strategyRunId() != null
+                || request.executionScopeId() == null) {
             throw rejected("PILOT_PROVIDER_SCOPE_REQUIRED");
         }
-        String[] values = request.strategyRunId().split("\\|", -1);
+        String[] values = request.executionScopeId().split("\\|", -1);
         if (values.length != 2) throw rejected("PILOT_PROVIDER_SCOPE_REQUIRED");
         try {
             return new PilotInvocation(UUID.fromString(values[0]), UUID.fromString(values[1]));
@@ -353,7 +354,7 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
         return new LiveControlException(code, "minimal pilot provider operation rejected");
     }
 
-    private record PilotInvocation(UUID leaseId, UUID intentId) {
+    record PilotInvocation(UUID leaseId, UUID intentId) {
     }
 
     private record LeasePlace(UUID leaseId, UUID intentId) {

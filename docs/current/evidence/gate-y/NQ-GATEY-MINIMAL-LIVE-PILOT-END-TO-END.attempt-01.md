@@ -2,21 +2,21 @@
 
 ## 当前结论
 
-`V46_IMPLEMENTED / LOCAL_GREEN / CI_PENDING / NO_REAL_ORDER`（V46 已实现 / 本地验证通过 / CI 待执行 / 未发送真实订单）。V46 将lease固定为可前向再生成的短时执行窗口，同时由Attempt-01全局PLACE唯一性承担exactly-once；只有terminal、unconsumed且全attempt执行事实为0的唯一leaf predecessor可以生成`ordinal+1` successor。历史lease/decision不可修改或复活，CI成功前不迁移、部署或调用controller。
+`EXECUTION_SCOPE_FIX_LOCAL_GREEN / CI_PENDING / NO_REAL_ORDER`（执行scope修复本地通过 / CI 待执行 / 未发送真实订单）。V46 已完成exact-head CI、production backup、V45→V46 migration与exact runtime部署；唯一后续controller调用合法生成ordinal2 lease，但因gateway仍错误复用已清空的`strategyRunId`承载pilot scope，在durable ExecutionIntent/PLACE前fail closed。当前修复以独立`executionScopeId`传递lease/intent identity，strategyRunId继续为null；CI成功前不再次部署或调用controller。
 
 ```text
 P0=0
 P1=0
 implementationCommit=PENDING
 exactHeadCi=PENDING
-productionDeployment=UNCHANGED_EXACT_HEAD_V45_ACTIVE
-activeRuntime=1762b76d84b702fcb9af07040dc51205fa878300
-activeManifest=e1a38ed64a2c0cb16f568aea17c955b33b824d438f6ffb0f25e8e425bc4598c9
+productionDeployment=V46_EXACT_HEAD_CURRENT_RUNTIME_STOPPED
+activeRuntime=979d69c760dc07f220e7c4cb7bf55385120c8992
+activeManifest=5c0ac60becb2adf6f75e6f4330d41e1d65a03f02035f0d315af13b7c317850c3
 operatorPilotParameters=ACCOUNT_1_CREDENTIAL_2_BTC_USDT_BUY_LIMIT_CAP_10
-currentPrerequisite=V46_LOCAL_VERIFIED_CI_PENDING
+currentPrerequisite=EXECUTION_SCOPE_FIX_LOCAL_VERIFIED_CI_PENDING
 authority=CLOSED
 session=RECONCILIATION_BLOCKED
-lease=FAILED_ORDINAL_1
+lease=FAILED_ORDINAL_2
 activeLease=0
 PLACE=0
 CANCEL=0
@@ -316,3 +316,19 @@ kill=ENGAGED
 - Production boundary：本阶段production访问、backup、migration、deployment、credential JIT、OKX、controller、PLACE/CANCEL/transfer/withdraw均为0。最后已知production继续是V45 runtime=`1762b76d...`、lease0=`EXPIRED/unconsumed`、lease1=`FAILED/unconsumed`、activeLease=0、PLACE/SEND_STARTED/Intent/Receipt/Order/Trade/Ledger均0、LIVE=false、kill=ENGAGED；部署前必须重新只读确认，不能把历史值冒充current readback。
 - Current decision：`V46_IMPLEMENTED / LOCAL_GREEN / PRE_PLACE_TERMINAL_LEASE_REGENERATION_VERIFIED_LOCALLY / ATTEMPT_LEVEL_EXACTLY_ONCE_VERIFIED_LOCALLY / ORDER_IDENTITY_FIX_VERIFIED / PLACE_0 / NO_PLACE_RETRY / LIVE_FALSE / KILL_ENGAGED / P0_0 / P1_0 / CI_PENDING / PRODUCTION_UNCHANGED`。
 - Next：精确暂存V46、Java/repository/session变更、回归、GateY release migration-count合同与本evidence；commit `fix(gatey): generalize zero-side-effect pilot lease recovery`，push `origin/dev`并等待exact-head CI。CI全绿前禁止production backup/V45→V46/deployment/controller/PLACE。
+
+## V46 production 与 dedicated execution scope remediation（2026-08-26）
+
+- Commit/CI：V46 implementation commit=`979d69c760dc07f220e7c4cb7bf55385120c8992`已push `origin/dev`；exact-head `NQ CI Baseline` run=`32943454540 / completed / success / 10 jobs`，包含Backend Maven、PostgreSQL/Flyway、pinned Gitleaks、Java Shadow、no-outbound与E2E。
+- Immutable release：canonical builder输出15 artifacts、schema target V46、source mode=`EXACT_GIT_COMMIT_BLOB_BYTES`，manifest=`5c0ac60becb2adf6f75e6f4330d41e1d65a03f02035f0d315af13b7c317850c3`。服务器installer与独立verify确认source/installed manifest一致，root/POSIX/link integrity通过，service user不可写；upload staging已删除。
+- Migration closed set：从exact fat JAR内唯一`nq-infra` nested JAR提取46份migration并逐项比对manifest，版本连续V1..V46；V46 SHA-256=`fa0ccf7265841949ee77881c2e35c9f64065c1759fcaa3ac3f618cd4ca0b3ea1`，inventory=`cdbe1278f5d13b4640148a7b92cf79e1140bb12fa3555a6f981a0921b557719c`。
+- Backup：最终pre-V46 backup=`/var/lib/nexus-quant/gatey-readonly-qualification/backups/pre-v46-979d69c7-20260826T075416Z.dump`，root:root/0600/link1、bytes=`787927`、SHA-256=`74874ad810e90c85844dcccf42e4d64bdf4fb3fb05dc67113a6296151238150a`，`pg_restore --list` 1848 entries。前三次尝试分别被runtime role新表权限、错误socket port与不存在的postgres DB role拒绝，partial均由trap删除；最终复用container内既有`nqgatew` local socket identity，不读取或输出password/container env。
+- Migration/activation：pinned Flyway image digest=`sha256:782c5c207ffb5ac6336139fda4f4295bd9991ef63ad36919406d4268740069bb`自报11.20.3；pre-info精确为V45且只V46 pending，唯一一次migrate应用1条，validate 46/46，post-info V46 success，临时migration staging删除。旧runtime停止、三项release identity原子更新后canonical Activate+Health通过；current=`979d69c7...`、MainPID=`1253755`、NRestarts=0，未触发rollback。
+- Pre-PLACE hard gate：独立health绑定exact release/source；DB为V46/failed0、kill=`ENGAGED/version5`、account1 bridge存在、credential2=`ACTIVE/VERIFIED/SUCCEEDED/TRADE/PASSED/withdraw=false`。历史lease0/1=`EXPIRED/FAILED`且unconsumed，leaf ordinal1无successor，decision=1、activeLease=0；PLACE/CANCEL/SEND_STARTED/Intent/Receipt/Order/Trade/Ledger与临时权限全部0。
+- Controller incident：停止read-only runtime后只调用一次exact immutable controller。V46合法追加decision2并生成ordinal2 lease；runner调用`OrderCommandService`后在`MinimalPilotTradingVenueGateway.requirePlaceInvocation()`拒绝`PILOT_PROVIDER_SCOPE_REQUIRED`。Finally将ordinal2 lease置`FAILED/unconsumed`、session置`RECONCILIATION_BLOCKED`、kill恢复`ENGAGED/version7`，临时权限归零。
+- No-PLACE proof：incident后decision=2，lineage=`ordinal0 EXPIRED → ordinal1 FAILED → ordinal2 FAILED`，activeLease=0；PLACE/CANCEL/SEND_STARTED/ExecutionIntent/ExecutionReceipt/Order/Trade/Ledger仍全部0。没有clientOrderId durable fact、provider PLACE或UNKNOWN，因此未执行query-by-clientOrderId；未再次调用controller/PLACE。
+- RCA：前一修复正确将operator `PlaceOrderRequest.strategyRunId`设为null，避免本地Order伪造strategy identity；但gateway仍从该字段解析`leaseId|intentId`，形成互斥合同。修复为内部`PlaceOrderRequest.executionScopeId`：普通/strategy调用通过兼容构造器保持null；pilot显式传入`leaseId|placeIntentId`，gateway同时强制source正确、`strategyRunId==null`与两个UUID格式，不把execution scope持久化为strategy。
+- Validation：focused=`13/13 PASS`，覆盖OrderCommand、dedicated scope正向、synthetic strategy scope反向与pilot request mapping；disposable V46 DB下full Maven=`23/23 modules PASS`、`nq-app=315 tests / 0 failures / 0 errors / 34 conditional skips`，数据库已删除。GateY minimal=`100/100 PASS`，Java governance PASS。
+- Production boundary：当前production schema V46、current pointer仍为`979d69c7...`，runtime按controller合同保持stopped；kill ENGAGED、activeLease0、PLACE=0、无PLACE retry、transfer/withdraw=0。Execution-scope修复尚未commit/CI/deploy，禁止在此状态再次调用controller。
+- Current decision：`EXECUTION_SCOPE_FIX_IMPLEMENTED / LOCAL_GREEN / V46_PRODUCTION_ACTIVE_SCHEMA / V46_RUNTIME_CURRENT_STOPPED / PRE_PLACE_TERMINAL_LEASE_REGENERATION_VERIFIED / PLACE_0 / NO_PLACE_RETRY / LIVE_FALSE / KILL_ENGAGED / P0_0 / P1_0 / CI_PENDING`。
+- Next：精确提交五份execution-scope实现/测试与本evidence，push `origin/dev`并等待exact-head CI；随后构建/安装/激活code-only V46 release，再次证明全execution facts仍为0后继续Attempt-01。若届时出现PLACE/SEND_STARTED/UNKNOWN，只允许query/reconciliation，永久禁止第二PLACE。
