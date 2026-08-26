@@ -193,6 +193,30 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
     }
 
     @Override
+    public boolean lockAndValidatePostExecutionReconciliation(LiveSession session, UUID leaseId) {
+        List<Integer> matches = jdbcTemplate.query("""
+                SELECT 1
+                FROM pilot_execution_leases lease
+                JOIN pilot_execution_lease_intents link
+                  ON link.lease_id=lease.lease_id AND link.action='PLACE'
+                JOIN execution_intents intent
+                  ON intent.intent_id=link.intent_id AND intent.state='RECONCILED'
+                JOIN execution_receipts receipt
+                  ON receipt.intent_id=intent.intent_id
+                 AND receipt.outcome IN ('QUERY_CONFIRMED','QUERY_NOT_FOUND')
+                JOIN orders local_order
+                  ON local_order.order_id=intent.local_order_id
+                 AND local_order.trade_env='LIVE'
+                 AND local_order.status IN ('FILLED','CANCELLED','REJECTED')
+                WHERE lease.lease_id=?
+                  AND lease.live_session_id=?
+                  AND lease.status='CONSUMED'
+                FOR SHARE OF lease,intent,local_order
+                """, (row, ignored) -> row.getInt(1), leaseId, session.id());
+        return matches.size() == 1;
+    }
+
+    @Override
     public void createSession(LiveSession value) {
         jdbcTemplate.update(connection -> {
             var statement = connection.prepareStatement("""

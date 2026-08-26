@@ -25,6 +25,11 @@ public interface LiveControlRepository {
      */
     boolean lockAndValidateSessionReferences(LiveSession session);
 
+    /** 仅供已完成durable query reconciliation的operator pilot session终态化；默认拒绝。 */
+    default boolean lockAndValidatePostExecutionReconciliation(LiveSession session, UUID leaseId) {
+        return false;
+    }
+
     void createSession(LiveSession session);
 
     Optional<LiveSession> findSession(UUID sessionId);

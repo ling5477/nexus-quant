@@ -408,6 +408,65 @@ public class LiveSessionControlService {
         return current;
     }
 
+    /** 已完成durable venue query reconciliation后，即使原交易authority过期也只允许安全终态化。 */
+    @Transactional
+    public LiveSession terminalizeMinimalPilotPostExecution(
+            AuthenticatedLiveControlActor actor,
+            UUID sessionId,
+            UUID leaseId,
+            String requestId,
+            String traceId,
+            String idempotencyKey
+    ) {
+        if (!authorization.lockAndCheckRole(actor.userId(), SESSION_CREATOR_ROLE)) {
+            throw new LiveControlException(
+                    "POST_EXECUTION_RECOVERY_OPERATOR_FORBIDDEN", "post-execution operator role is required");
+        }
+        LiveSession current = repository.lockSession(sessionId)
+                .orElseThrow(() -> new LiveControlException("LIVE_SESSION_NOT_FOUND", "live session was not found"));
+        if (current.ownerId() != actor.userId()
+                || current.authorityType() != LiveSessionAuthorityType.OPERATOR_PILOT
+                || !repository.lockAndValidatePostExecutionReconciliation(current, leaseId)) {
+            throw new LiveControlException(
+                    "POST_EXECUTION_RECOVERY_REFERENCE_MISMATCH", "durable reconciliation proof is incomplete");
+        }
+        if (current.state() == LiveSessionState.LIVE_RECONCILED) return current;
+        if (current.state().terminal()) {
+            throw new LiveControlException(
+                    "POST_EXECUTION_RECOVERY_STATE_INVALID", "session terminal state is not reconciled");
+        }
+        for (int step = 0; step < 4 && current.state() != LiveSessionState.LIVE_RECONCILED; step++) {
+            LiveSessionCommand command = switch (current.state()) {
+                case LIVE_ACTIVE, LIVE_PAUSED -> LiveSessionCommand.STOP;
+                case LIVE_STOPPED -> LiveSessionCommand.BEGIN_RECONCILE;
+                case LIVE_RECONCILING -> LiveSessionCommand.RECONCILE_PASS;
+                case RECONCILIATION_BLOCKED -> LiveSessionCommand.RESOLVE_AND_CLOSE;
+                case APPROVAL_PENDING, APPROVED, LIVE_WARMUP,
+                     REJECTED, FAILED, KILLED, LIVE_RECONCILED -> throw new LiveControlException(
+                        "POST_EXECUTION_RECOVERY_STATE_INVALID", "session is outside post-execution recovery");
+            };
+            LiveSessionState target = stateMachine.transition(current.state(), command);
+            Instant occurredAt = repository.currentTime();
+            LiveSession updated = withState(current, target, occurredAt);
+            if (!repository.compareAndSetSession(current, updated)) {
+                throw new LiveControlException(
+                        "LIVE_SESSION_VERSION_CONFLICT", "session changed during post-execution recovery");
+            }
+            repository.appendSessionEvent(event(
+                    current, target, "MINIMAL_PILOT_" + command.name(), actor.userId(),
+                    requestId, traceId, "POST_EXECUTION_RECONCILIATION_" + command.name(),
+                    idempotencyKey,
+                    com.guidinglight.nexusquant.livecontrol.domain.LiveSessionApprovalScopeEncoder.digest(current),
+                    occurredAt));
+            current = updated;
+        }
+        if (current.state() != LiveSessionState.LIVE_RECONCILED) {
+            throw new LiveControlException(
+                    "POST_EXECUTION_RECOVERY_STATE_AMBIGUOUS", "session did not reconcile");
+        }
+        return current;
+    }
+
     /**
      * 回收pre-PLACE regeneration准备阶段遗留的过期session；DB必须证明binding未消费且无lease/intent。
      */

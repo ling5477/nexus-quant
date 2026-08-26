@@ -192,12 +192,15 @@ public final class PilotExecutionLeaseService implements PilotExecutionLeaseCont
                 .orElseThrow(() -> new LiveControlException("PILOT_LEASE_NOT_FOUND", "lease was not found"));
         try {
             try {
-                transition(actor, current.liveSessionId(), LiveSessionCommand.STOP, correlation);
-                transition(actor, current.liveSessionId(), LiveSessionCommand.BEGIN_RECONCILE, correlation);
-                transition(actor, current.liveSessionId(),
-                        terminal == PilotExecutionLease.Status.CLOSED
-                                ? LiveSessionCommand.RECONCILE_PASS : LiveSessionCommand.RECONCILE_BLOCK,
-                        correlation);
+                if (terminal == PilotExecutionLease.Status.CLOSED) {
+                    sessions.terminalizeMinimalPilotPostExecution(
+                            actor, current.liveSessionId(), current.id(), correlation.requestId(),
+                            correlation.traceId(), correlation.idempotencyKey());
+                } else {
+                    transition(actor, current.liveSessionId(), LiveSessionCommand.STOP, correlation);
+                    transition(actor, current.liveSessionId(), LiveSessionCommand.BEGIN_RECONCILE, correlation);
+                    transition(actor, current.liveSessionId(), LiveSessionCommand.RECONCILE_BLOCK, correlation);
+                }
             } catch (RuntimeException sessionFailure) {
                 if (terminal == PilotExecutionLease.Status.CLOSED) throw sessionFailure;
             }

@@ -411,3 +411,13 @@ kill=ENGAGED
 - Production boundary：current=`a9678273...`、runtime stopped、PLACE=1、intent=`SEND_STARTED/version3`、receipt/trade/ledger=0、kill=`ENGAGED/version11`、LIVE=false、临时权限0。
 - Current decision：`CANONICAL_QUERY_RECOVERY_TRANSITION_LOCAL_GREEN / CI_PENDING / RECONCILIATION_PENDING / PLACE_COUNT_1 / NO_PLACE_RETRY / KILL_ENGAGED / LIVE_FALSE / P0_0 / P1_0`。
 - Next：精确提交gateway、focused test与本evidence，exact-head CI绿后code-only部署并继续同一query-only reconciliation。
+
+## Post-execution session terminalization remediation（2026-08-26）
+
+- Transition commit/CI/deployment：commit=`583b7ca10742542bd8aa5b56e9a42b223a4f714e`的exact-head CI run=`32964778547 / completed / success / 10 jobs`；V46 release manifest=`dd8fc97884722307311996d4cd3ef7e1fc53b1441ca8cb309c446bb15679014a`，15 artifacts。Install/verify、atomic current、health/DB、NRestarts0、Stop均通过。
+- Reconciliation facts：query-only recovery合法完成`SEND_STARTED → UNKNOWN → RECONCILED`；production现为intent=`RECONCILED/version5`、receipt=`QUERY_CONFIRMED`、order=`FILLED/LIVE`、Trade=1、Ledger=4。随后lease close调用普通session transition时，因原authority/reference freshness过期拒绝；lease保持CONSUMED、session=`LIVE_ACTIVE`、authority=`ACTIVE`，kill ENGAGED。Venue不再需要查询。
+- RCA/fix：普通`transitionMinimalPilot`必须继续要求current account/credential/authority references；不能为终态化放宽。新增post-execution terminalization只在数据库锁定并唯一证明同一`CONSUMED` lease、PLACE intent=`RECONCILED`、query receipt、LIVE terminal order时放行，然后仅按既有状态机`STOP → BEGIN_RECONCILE → RECONCILE_PASS`（或blocked close）收敛session。任一proof缺失/CAS conflict均fail closed；lease随后才CLOSED，kill finally保持ENGAGED。
+- PostgreSQL proof：production相同join/`FOR SHARE OF lease,intent,local_order`在普通事务返回唯一1行并立即ROLLBACK；read-only事务拒绝row lock属于PostgreSQL预期，不是SQL失败。
+- Validation：focused gateway/lease=`21/21 PASS`；disposable V46 full Maven=`23/23 modules PASS`、`nq-app=315 tests / 0 failures / 0 errors / 35 conditional skips`，临时库删除。Targeted review P0=0/P1=0。
+- Current decision：`POST_EXECUTION_SESSION_TERMINALIZATION_LOCAL_GREEN / CI_PENDING / VENUE_RECONCILIATION_COMPLETE / FINAL_CLOSE_PENDING / PLACE_COUNT_1 / NO_PLACE_RETRY / KILL_ENGAGED / LIVE_FALSE / P0_0 / P1_0`。
+- Next：精确提交post-execution terminalization实现与本evidence，exact-head CI绿后code-only部署；下一次只消费已持久化RECONCILED facts完成session/lease close，不再访问OKX。
