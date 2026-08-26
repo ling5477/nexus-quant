@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
@@ -45,6 +47,7 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
 
     public static final String SOURCE = "GATEY_MINIMAL_LIVE_PILOT";
     private static final Duration CLAIM_LEASE = Duration.ofMinutes(1);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MinimalPilotTradingVenueGateway.class);
 
     private final ExecutionIntentRepository intents;
     private final ExactPilotBindingRepository bindings;
@@ -268,6 +271,8 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
         Objects.requireNonNull(observation, "clock observation must not be null");
         Objects.requireNonNull(requestTimestamp, "request timestamp must not be null");
         if (observation.error() != null) {
+            LOGGER.warn("pilot_reconciliation_clock_unavailable category={} audit_code={}",
+                    observation.error().category(), observation.error().auditCode());
             throw rejected("PILOT_RECONCILIATION_CLOCK_UNAVAILABLE");
         }
         var refreshed = new SpotProviderRequests.RequestContext(

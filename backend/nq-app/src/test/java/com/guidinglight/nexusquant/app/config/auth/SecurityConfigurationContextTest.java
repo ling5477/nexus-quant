@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.account.application.CredentialPermissionProbeService;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateRealTransport;
 import com.guidinglight.nexusquant.app.config.livecontrol.ExactPilotBindingConfiguration;
 import com.guidinglight.nexusquant.app.config.livecontrol.MinimalLivePilotConfiguration;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
@@ -118,6 +119,7 @@ class SecurityConfigurationContextTest {
                 .withBean(KillSwitchService.class, () -> mock(KillSwitchService.class))
                 .withBean(LiveControlRepository.class, () -> mock(LiveControlRepository.class))
                 .withBean(OkxPrivateCredentialExecutor.class, () -> credentialExecutor)
+                .withBean(OkxPrivateRealTransport.class, () -> mock(OkxPrivateRealTransport.class))
                 .withBean(ExecutionIntentRepository.class, () -> mock(ExecutionIntentRepository.class))
                 .withBean(ExactPilotBindingRepository.class, () -> mock(ExactPilotBindingRepository.class))
                 .withBean(JdbcTemplate.class, () -> mock(JdbcTemplate.class))
