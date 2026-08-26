@@ -18,6 +18,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
 import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.InstrumentCatalogItem;
 
+import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -176,21 +177,26 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
         Objects.requireNonNull(session, "session must not be null");
         Objects.requireNonNull(pilotScopeId, "pilotScopeId must not be null");
         Objects.requireNonNull(resolvedAt, "resolvedAt must not be null");
+        String stage = "OBSERVATION";
         try {
             if (session.authorityType() != LiveSessionAuthorityType.OPERATOR_PILOT
                     || createdBy <= 0 || createdBy != session.ownerId()) {
                 throw new IllegalArgumentException("operator pilot bootstrap scope mismatch");
             }
             OkxPilotPrerequisiteSnapshot snapshot = observeSnapshot(session);
+            stage = "SCOPE";
             PilotScopeBinding scope = bootstrapScope(
                     session, pilotScopeId, createdBy, snapshot, resolvedAt);
+            stage = "FRESHNESS";
             requireFreshSnapshot(snapshot, scope, resolvedAt);
+            stage = "CATALOG";
             refreshCatalog(snapshot, resolvedAt);
+            stage = "MATERIALIZATION";
             PilotObservationSet observations = materialize(session, scope, snapshot, resolvedAt);
             return new TrustedOperatorPilotBootstrap(scope, observations);
         } catch (RuntimeException failure) {
             throw new LiveControlException(
-                    "TRUSTED_OPERATOR_PILOT_SCOPE_BOOTSTRAP_UNAVAILABLE",
+                    "TRUSTED_OPERATOR_PILOT_SCOPE_BOOTSTRAP_" + stage + "_FAILED",
                     "trusted operator pilot scope bootstrap failed"
             );
         }
@@ -299,8 +305,9 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
             throw new IllegalArgumentException("fee digest mismatch");
         }
 
-        String balanceDigest = PilotObservationCanonicalEncoder.balanceSnapshotDigest(
-                snapshot.availableUsdtBalance());
+        java.math.BigDecimal availableBalance = snapshot.availableUsdtBalance()
+                .setScale(8, RoundingMode.DOWN);
+        String balanceDigest = PilotObservationCanonicalEncoder.balanceSnapshotDigest(availableBalance);
         String clockDigest = PilotObservationCanonicalEncoder.clockSyncDigest(
                 PilotScopeBinding.SIGNED_TIMESTAMP_SOURCE, snapshot.observedSkewMs());
         String collectionKey = scope.id() + "|" + instrumentDigest + "|" + feeDigest + "|"
@@ -334,7 +341,7 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
                                 BALANCE_SOURCE, BALANCE_SOURCE_SCHEMA, resolvedAt, collectionKey),
                         balanceDigest,
                         PilotPrerequisiteObservation.BalanceSnapshot.CURRENCY,
-                        snapshot.availableUsdtBalance()
+                        availableBalance
                 ));
         PilotPrerequisiteObservation.ClockSync clock = withHash(
                 new PilotPrerequisiteObservation.ClockSync(

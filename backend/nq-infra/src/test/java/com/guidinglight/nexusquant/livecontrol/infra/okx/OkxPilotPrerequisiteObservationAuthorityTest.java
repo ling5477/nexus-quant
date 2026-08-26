@@ -123,9 +123,21 @@ class OkxPilotPrerequisiteObservationAuthorityTest {
                 () -> authority.bootstrapTrustedOperatorPilotScope(
                         operatorSession(), UUID.randomUUID(), OWNER_ID, NOW));
 
-        assertEquals("TRUSTED_OPERATOR_PILOT_SCOPE_BOOTSTRAP_UNAVAILABLE", failure.code());
+        assertEquals("TRUSTED_OPERATOR_PILOT_SCOPE_BOOTSTRAP_FRESHNESS_FAILED", failure.code());
         assertEquals(1, executor.calls.get());
         assertTrue(catalog.items.isEmpty());
+    }
+
+    @Test
+    void operatorBootstrapRoundsAvailableBalanceDownToCanonicalMoneyScale() {
+        OkxPilotPrerequisiteObservationAuthority authority = authority(
+                new CapturingExecutor(snapshot(0, new BigDecimal("10.123456789"))));
+
+        var bootstrap = authority.bootstrapTrustedOperatorPilotScope(
+                operatorSession(), UUID.randomUUID(), OWNER_ID, NOW);
+
+        assertEquals(new BigDecimal("10.12345678"),
+                bootstrap.observationSet().balanceSnapshot().availableBalance());
     }
 
     @Test
@@ -262,10 +274,23 @@ class OkxPilotPrerequisiteObservationAuthorityTest {
         return snapshot(skew, NOW, NOW);
     }
 
+    private static OkxPilotPrerequisiteSnapshot snapshot(long skew, BigDecimal availableBalance) {
+        return snapshot(skew, NOW, NOW, availableBalance);
+    }
+
     private static OkxPilotPrerequisiteSnapshot snapshot(
             long skew,
             Instant feeProviderTimestamp,
             Instant localClockMidpoint
+    ) {
+        return snapshot(skew, feeProviderTimestamp, localClockMidpoint, new BigDecimal("100.25"));
+    }
+
+    private static OkxPilotPrerequisiteSnapshot snapshot(
+            long skew,
+            Instant feeProviderTimestamp,
+            Instant localClockMidpoint,
+            BigDecimal availableBalance
     ) {
         return new OkxPilotPrerequisiteSnapshot(
                 List.of(new OkxPilotPrerequisiteSnapshot.InstrumentFact(
@@ -275,7 +300,7 @@ class OkxPilotPrerequisiteObservationAuthorityTest {
                         "BTC-USDT", "Lv1", "1", new BigDecimal("-0.0008"),
                         new BigDecimal("-0.001"), feeProviderTimestamp)),
                 List.of(new OkxPilotPrerequisiteSnapshot.MarketFact("BTC-USDT",new BigDecimal("100"),localClockMidpoint)),
-                new BigDecimal("100.25"), localClockMidpoint.plusMillis(skew), localClockMidpoint, skew
+                availableBalance, localClockMidpoint.plusMillis(skew), localClockMidpoint, skew
         );
     }
 
