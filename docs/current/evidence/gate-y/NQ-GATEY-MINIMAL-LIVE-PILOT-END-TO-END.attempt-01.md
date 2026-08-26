@@ -421,3 +421,12 @@ kill=ENGAGED
 - Validation：focused gateway/lease=`21/21 PASS`；disposable V46 full Maven=`23/23 modules PASS`、`nq-app=315 tests / 0 failures / 0 errors / 35 conditional skips`，临时库删除。Targeted review P0=0/P1=0。
 - Current decision：`POST_EXECUTION_SESSION_TERMINALIZATION_LOCAL_GREEN / CI_PENDING / VENUE_RECONCILIATION_COMPLETE / FINAL_CLOSE_PENDING / PLACE_COUNT_1 / NO_PLACE_RETRY / KILL_ENGAGED / LIVE_FALSE / P0_0 / P1_0`。
 - Next：精确提交post-execution terminalization实现与本evidence，exact-head CI绿后code-only部署；下一次只消费已持久化RECONCILED facts完成session/lease close，不再访问OKX。
+
+## Durable-first final close remediation（2026-08-26）
+
+- Post-execution terminalization commit/CI/deployment：commit=`4637ed6013c9a02125d391d35fc492a79d53ed65`的exact-head CI run=`32970855338 / completed / success / 10 jobs`；V46 release manifest=`93dfc2fdbdf043c57c1d6ec5711dccd7c952d6f8000fcd6370629e2e1e0c67bb`。Install/verify、atomic current、health/DB、NRestarts0与Stop通过。
+- Final-close replay incident：runner在intent/receipt/order/trade/ledger均已完整后仍再次执行venue order/fills query；existing Trade与新observation的非主身份字段比对触发`REAL_ORDER_RECONCILIATION_DIVERGENCE`，session/lease未关闭。DB durable facts未变化，PLACE仍1。
+- Minimal fix：consumed recovery先以单条bounded SQL检查同一local order的intent=`RECONCILED`、query receipt、LIVE terminal order；FILLED还必须至少1条Trade且每条Trade精确4条`ref_type=TRADE/ref_id=tradeId` ledger entries。只有全部成立才跳过venue与fill重放，直接进入已验证的post-execution session/lease close；任一缺失仍执行原query reconciliation，不伪造完成。
+- Validation：focused gateway/lease/composition=`12/12 PASS`。Production当前facts满足durable check：intent RECONCILED、QUERY_CONFIRMED receipt、FILLED/LIVE、Trade1、Ledger4。P0=0/P1=0。
+- Current decision：`DURABLE_FIRST_FINAL_CLOSE_LOCAL_GREEN / CI_PENDING / VENUE_RECONCILIATION_COMPLETE / FINAL_CLOSE_PENDING / PLACE_COUNT_1 / NO_PLACE_RETRY / KILL_ENGAGED / LIVE_FALSE / P0_0 / P1_0`。
+- Next：精确提交runner与本evidence；exact-head CI绿后code-only部署并只完成final close。

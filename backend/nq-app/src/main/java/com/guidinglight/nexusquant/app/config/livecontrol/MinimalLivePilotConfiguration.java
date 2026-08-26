@@ -295,9 +295,11 @@ public class MinimalLivePilotConfiguration {
                     """, String.class, lease.id());
             boolean success = false;
             try {
-                completeReconciliation(
-                        orderRepository.findByOrderId(orderId).orElseThrow(),
-                        binding.correlation().requestId(), binding.correlation().traceId());
+                var stored = orderRepository.findByOrderId(orderId).orElseThrow();
+                if (!hasCompleteDurableReconciliation(stored.orderId())) {
+                    completeReconciliation(
+                            stored, binding.correlation().requestId(), binding.correlation().traceId());
+                }
                 success = true;
             } finally {
                 if (success) {
@@ -308,6 +310,37 @@ public class MinimalLivePilotConfiguration {
                             actor, lease, "PILOT_RECOVERY_INCOMPLETE", binding.correlation());
                 }
             }
+        }
+
+        private boolean hasCompleteDurableReconciliation(String orderId) {
+            Boolean complete = jdbc.queryForObject("""
+                    SELECT COUNT(*) = 1
+                    FROM execution_intents intent
+                    JOIN execution_receipts receipt
+                      ON receipt.intent_id=intent.intent_id
+                     AND receipt.outcome IN ('QUERY_CONFIRMED','QUERY_NOT_FOUND')
+                    JOIN orders local_order
+                      ON local_order.order_id=intent.local_order_id
+                     AND local_order.trade_env='LIVE'
+                     AND local_order.status IN ('FILLED','CANCELLED','REJECTED')
+                    WHERE intent.local_order_id=?
+                      AND intent.state='RECONCILED'
+                      AND (
+                        local_order.status IN ('CANCELLED','REJECTED')
+                        OR (
+                          local_order.status='FILLED'
+                          AND EXISTS (SELECT 1 FROM trades trade WHERE trade.order_id=local_order.order_id)
+                          AND NOT EXISTS (
+                            SELECT 1
+                            FROM trades trade
+                            WHERE trade.order_id=local_order.order_id
+                              AND (SELECT COUNT(*) FROM ledger_entries entry
+                                   WHERE entry.ref_type='TRADE' AND entry.ref_id=trade.trade_id) <> 4
+                          )
+                        )
+                      )
+                    """, Boolean.class, orderId);
+            return Boolean.TRUE.equals(complete);
         }
 
         private void suspendOrFail(
