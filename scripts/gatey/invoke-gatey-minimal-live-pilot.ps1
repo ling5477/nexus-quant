@@ -46,13 +46,6 @@ BEGIN
     IF unexpected IS NOT NULL THEN
         RAISE EXCEPTION 'PILOT_DATABASE_WRITE_BASELINE_NOT_EMPTY:%', unexpected;
     END IF;
-    IF has_table_privilege('nq_gatey_readonly', 'public.pilot_scope_bindings', 'SELECT')
-            OR has_table_privilege(
-                'nq_gatey_readonly', 'public.pilot_prerequisite_observations', 'SELECT')
-            OR has_table_privilege(
-                'nq_gatey_readonly', 'public.pilot_instrument_observation_items', 'SELECT') THEN
-        RAISE EXCEPTION 'PILOT_DATABASE_TRIGGER_SELECT_BASELINE_NOT_EMPTY';
-    END IF;
     SELECT string_agg(table_name || '.' || column_name, ',' ORDER BY table_name, column_name)
     INTO unexpected
     FROM information_schema.role_column_grants
@@ -80,9 +73,9 @@ GRANT INSERT, UPDATE ON TABLE public.instrument_catalog TO nq_gatey_readonly;
 GRANT SELECT, INSERT, UPDATE ON TABLE public.operator_pilot_authorities TO nq_gatey_readonly;
 GRANT INSERT, UPDATE ON TABLE public.live_sessions TO nq_gatey_readonly;
 GRANT INSERT ON TABLE public.live_session_events TO nq_gatey_readonly;
-GRANT SELECT, INSERT ON TABLE public.pilot_scope_bindings TO nq_gatey_readonly;
-GRANT SELECT, INSERT ON TABLE public.pilot_prerequisite_observations TO nq_gatey_readonly;
-GRANT SELECT, INSERT ON TABLE public.pilot_instrument_observation_items TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.pilot_scope_bindings TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.pilot_prerequisite_observations TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.pilot_instrument_observation_items TO nq_gatey_readonly;
 GRANT INSERT, UPDATE ON TABLE public.pilot_execution_leases TO nq_gatey_readonly;
 GRANT INSERT ON TABLE public.pilot_execution_lease_intents TO nq_gatey_readonly;
 GRANT INSERT ON TABLE public.pilot_execution_lease_events TO nq_gatey_readonly;
@@ -102,6 +95,7 @@ GRANT INSERT ON TABLE public.kill_switch_events TO nq_gatey_readonly;
 
 -- PostgreSQL row-locking clauses require UPDATE privilege. Limit it to one immutable identity column per table.
 GRANT UPDATE(exchange_account_id) ON TABLE public.exchange_accounts TO nq_gatey_readonly;
+GRANT UPDATE(pilot_scope_id) ON TABLE public.pilot_scope_bindings TO nq_gatey_readonly;
 GRANT UPDATE(id) ON TABLE public.users TO nq_gatey_readonly;
 GRANT UPDATE(user_id) ON TABLE public.user_roles TO nq_gatey_readonly;
 GRANT UPDATE(id) ON TABLE public.roles TO nq_gatey_readonly;
@@ -162,15 +156,10 @@ BEGIN
     IF mismatch IS NOT NULL THEN
         RAISE EXCEPTION 'PILOT_DATABASE_TABLE_GRANT_DIVERGENCE:%', mismatch;
     END IF;
-    IF NOT has_table_privilege('nq_gatey_readonly', 'public.pilot_scope_bindings', 'SELECT')
-            OR NOT has_table_privilege(
-                'nq_gatey_readonly', 'public.pilot_prerequisite_observations', 'SELECT')
-            OR NOT has_table_privilege(
-                'nq_gatey_readonly', 'public.pilot_instrument_observation_items', 'SELECT') THEN
-        RAISE EXCEPTION 'PILOT_DATABASE_TRIGGER_SELECT_GRANT_DIVERGENCE';
-    END IF;
     IF NOT has_column_privilege(
                 'nq_gatey_readonly', 'public.exchange_accounts', 'exchange_account_id', 'UPDATE')
+            OR NOT has_column_privilege(
+                'nq_gatey_readonly', 'public.pilot_scope_bindings', 'pilot_scope_id', 'UPDATE')
             OR NOT has_column_privilege('nq_gatey_readonly', 'public.users', 'id', 'UPDATE')
             OR NOT has_column_privilege(
                 'nq_gatey_readonly', 'public.user_roles', 'user_id', 'UPDATE')
@@ -208,9 +197,9 @@ REVOKE INSERT, UPDATE ON TABLE public.instrument_catalog FROM nq_gatey_readonly;
 REVOKE SELECT, INSERT, UPDATE ON TABLE public.operator_pilot_authorities FROM nq_gatey_readonly;
 REVOKE INSERT, UPDATE ON TABLE public.live_sessions FROM nq_gatey_readonly;
 REVOKE INSERT ON TABLE public.live_session_events FROM nq_gatey_readonly;
-REVOKE SELECT, INSERT ON TABLE public.pilot_scope_bindings FROM nq_gatey_readonly;
-REVOKE SELECT, INSERT ON TABLE public.pilot_prerequisite_observations FROM nq_gatey_readonly;
-REVOKE SELECT, INSERT ON TABLE public.pilot_instrument_observation_items FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.pilot_scope_bindings FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.pilot_prerequisite_observations FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.pilot_instrument_observation_items FROM nq_gatey_readonly;
 REVOKE INSERT, UPDATE ON TABLE public.pilot_execution_leases FROM nq_gatey_readonly;
 REVOKE INSERT ON TABLE public.pilot_execution_lease_intents FROM nq_gatey_readonly;
 REVOKE INSERT ON TABLE public.pilot_execution_lease_events FROM nq_gatey_readonly;
@@ -231,6 +220,7 @@ REVOKE INSERT ON TABLE public.kill_switch_events FROM nq_gatey_readonly;
 REVOKE UPDATE(id) ON TABLE public.users FROM nq_gatey_readonly;
 REVOKE UPDATE(user_id) ON TABLE public.user_roles FROM nq_gatey_readonly;
 REVOKE UPDATE(id) ON TABLE public.roles FROM nq_gatey_readonly;
+REVOKE UPDATE(pilot_scope_id) ON TABLE public.pilot_scope_bindings FROM nq_gatey_readonly;
 REVOKE UPDATE(exchange_account_id) ON TABLE public.exchange_accounts FROM nq_gatey_readonly;
 
 REVOKE USAGE ON SEQUENCE public.credential_audit_logs_credential_audit_log_id_seq
@@ -253,13 +243,6 @@ BEGIN
       AND privilege_type IN ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER');
     IF unexpected IS NOT NULL THEN
         RAISE EXCEPTION 'PILOT_DATABASE_TABLE_REVOKE_DIVERGENCE:%', unexpected;
-    END IF;
-    IF has_table_privilege('nq_gatey_readonly', 'public.pilot_scope_bindings', 'SELECT')
-            OR has_table_privilege(
-                'nq_gatey_readonly', 'public.pilot_prerequisite_observations', 'SELECT')
-            OR has_table_privilege(
-                'nq_gatey_readonly', 'public.pilot_instrument_observation_items', 'SELECT') THEN
-        RAISE EXCEPTION 'PILOT_DATABASE_TRIGGER_SELECT_REVOKE_DIVERGENCE';
     END IF;
     SELECT string_agg(table_name || '.' || column_name, ',' ORDER BY table_name, column_name)
     INTO unexpected
