@@ -80,6 +80,21 @@ class MinimalLivePilotControlServiceTest {
     }
 
     @Test
+    void alignsLotUnitsDownWhenMaximumQuantityWouldCreateNinthDecimalNotional() {
+        Fixture fixture = fixture(
+                new BigDecimal("0.00000001"),
+                new BigDecimal("111963.40000000"),
+                new BigDecimal("0.00000001"));
+
+        var permit = fixture.service.prepare(command());
+
+        assertEquals(0, permit.limitPrice().compareTo(new BigDecimal("111963.40000000")));
+        assertEquals(0, permit.quantity().compareTo(new BigDecimal("0.00008830")));
+        assertEquals(0, permit.notional().compareTo(new BigDecimal("9.88636822")));
+        assertEquals(0, permit.limitPrice().multiply(permit.quantity()).compareTo(permit.notional()));
+    }
+
+    @Test
     void blocksBeforeBindingWhenVenueMinimumCannotFitFeeReserveAndBufferUnderTenUsdt() {
         Fixture fixture = fixture(new BigDecimal("0.10000000"));
 
@@ -132,6 +147,25 @@ class MinimalLivePilotControlServiceTest {
     }
 
     private static Fixture fixture(BigDecimal minimumQuantity, Clock clock) {
+        return fixture(
+                minimumQuantity, clock,
+                new BigDecimal("100.00000000"), new BigDecimal("0.00100000"));
+    }
+
+    private static Fixture fixture(
+            BigDecimal minimumQuantity,
+            BigDecimal marketPrice,
+            BigDecimal lotSize
+    ) {
+        return fixture(minimumQuantity, Clock.fixed(NOW, ZoneOffset.UTC), marketPrice, lotSize);
+    }
+
+    private static Fixture fixture(
+            BigDecimal minimumQuantity,
+            Clock clock,
+            BigDecimal marketPrice,
+            BigDecimal lotSize
+    ) {
         ExchangeAccountRepository accounts = mock(ExchangeAccountRepository.class);
         InstrumentCatalogReadPort catalog = mock(InstrumentCatalogReadPort.class);
         CredentialPermissionProbeService permissionProbeService = mock(CredentialPermissionProbeService.class);
@@ -151,9 +185,9 @@ class MinimalLivePilotControlServiceTest {
         when(scopes.materializeMinimal(any(), any())).thenReturn(
                 new PilotScopeMaterializationResult(UUID.randomUUID(), SCOPE_ID, SET_ID, "a".repeat(64)));
         when(scopeRepository.findObservationSet(SCOPE_ID, SET_ID))
-                .thenReturn(Optional.of(observations(minimumQuantity)));
+                .thenReturn(Optional.of(observations(minimumQuantity, marketPrice, lotSize)));
         when(catalog.findByExchangeAndSymbols("OKX", List.of("BTC-USDT")))
-                .thenReturn(List.of(catalogItem(minimumQuantity)));
+                .thenReturn(List.of(catalogItem(minimumQuantity, lotSize)));
 
         ExactPilotBinding storedBinding = mock(ExactPilotBinding.class);
         UUID bindingId = UUID.randomUUID();
@@ -177,17 +211,21 @@ class MinimalLivePilotControlServiceTest {
                 1L, 2L, "BTC-USDT", ExactPilotBinding.Side.BUY, new BigDecimal("10.00000000"));
     }
 
-    private static InstrumentCatalogItem catalogItem(BigDecimal minimumQuantity) {
+    private static InstrumentCatalogItem catalogItem(BigDecimal minimumQuantity, BigDecimal lotSize) {
         return new InstrumentCatalogItem(
                 77L, "OKX", "SPOT", "BTC-USDT", "BTC-USDT", "BTC", "USDT", "LIVE",
-                new BigDecimal("0.10000000"), new BigDecimal("0.00100000"), minimumQuantity,
+                new BigDecimal("0.10000000"), lotSize, minimumQuantity,
                 "OKX_ACCOUNT_INSTRUMENTS", NOW, NOW, NOW);
     }
 
-    private static PilotObservationSet observations(BigDecimal minimumQuantity) {
+    private static PilotObservationSet observations(
+            BigDecimal minimumQuantity,
+            BigDecimal marketPrice,
+            BigDecimal lotSize
+    ) {
         var item = new PilotPrerequisiteObservation.InstrumentItem(
                 "BTC-USDT", PilotPrerequisiteObservation.TradingStatus.LIVE,
-                new BigDecimal("0.10000000"), new BigDecimal("0.00100000"), minimumQuantity,
+                new BigDecimal("0.10000000"), lotSize, minimumQuantity,
                 PilotPrerequisiteObservation.MinimumOrderValueEvidenceClass.VENUE_NOT_PUBLISHED,
                 null, null);
         var instrument = canonical(new PilotPrerequisiteObservation.InstrumentMetadata(
@@ -214,12 +252,12 @@ class MinimalLivePilotControlServiceTest {
                         PilotScopeBinding.SIGNED_TIMESTAMP_SOURCE, 0),
                 PilotScopeBinding.SIGNED_TIMESTAMP_SOURCE, 0));
         String marketDigest = PilotObservationCanonicalEncoder.marketSnapshotDigest(
-                "BTC-USDT", new BigDecimal("100.00000000"), NOW,
+                "BTC-USDT", marketPrice, NOW,
                 "OKX_MARKET_TICKER", "okx-market-ticker.v5");
         var market = canonical(new PilotPrerequisiteObservation.MarketSnapshot(
                 envelope("market", PilotPrerequisiteObservation.MarketSnapshot.SCHEMA_VERSION,
                         "OKX_MARKET_TICKER", "okx-market-ticker.v5", NOW),
-                marketDigest, "BTC-USDT", new BigDecimal("100.00000000")));
+                marketDigest, "BTC-USDT", marketPrice));
         return new PilotObservationSet(SET_ID, SCOPE_ID, instrument, fee, balance, clock, market);
     }
 

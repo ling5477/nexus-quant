@@ -24,6 +24,7 @@ import com.guidinglight.nexusquant.marketdata.domain.instrument.InstrumentCatalo
 import com.guidinglight.nexusquant.marketdata.domain.instrument.port.InstrumentCatalogReadPort;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.Duration;
@@ -226,7 +227,9 @@ public final class MinimalLivePilotControlService implements MinimalLivePilotCon
         BigDecimal price = market.bestAsk();
         BigDecimal lotCost = price.multiply(instrument.lotSize());
         BigDecimal lotUnits = usable.divide(lotCost, 0, RoundingMode.DOWN);
-        BigDecimal quantity = lotUnits.multiply(instrument.lotSize()).setScale(8, RoundingMode.UNNECESSARY);
+        BigDecimal canonicalLotUnits = alignLotUnitsForCanonicalNotional(lotCost, lotUnits);
+        BigDecimal quantity = canonicalLotUnits.multiply(instrument.lotSize())
+                .setScale(8, RoundingMode.UNNECESSARY);
         BigDecimal notional = price.multiply(quantity).setScale(8, RoundingMode.UNNECESSARY);
         BigDecimal actualFeeReserve = notional.multiply(feeRate).setScale(8, RoundingMode.CEILING);
         boolean minimumValueSatisfied = instrument.minimumOrderValue() == null
@@ -248,6 +251,23 @@ public final class MinimalLivePilotControlService implements MinimalLivePilotCon
             throw rejected("BTC_USDT_VENUE_MINIMUM_EXCEEDS_PILOT_CAP");
         }
         return new SafeOrderParameters(price, quantity, notional);
+    }
+
+    private static BigDecimal alignLotUnitsForCanonicalNotional(
+            BigDecimal lotCost,
+            BigDecimal maximumLotUnits
+    ) {
+        BigDecimal normalizedLotCost = lotCost.stripTrailingZeros();
+        int excessScale = Math.max(0, normalizedLotCost.scale() - 8);
+        if (excessScale == 0) {
+            return maximumLotUnits;
+        }
+        BigInteger scaleDivisor = BigInteger.TEN.pow(excessScale);
+        BigInteger unscaledLotCost = normalizedLotCost.unscaledValue().abs();
+        BigInteger requiredLotMultiple = scaleDivisor.divide(unscaledLotCost.gcd(scaleDivisor));
+        BigInteger maximumUnits = maximumLotUnits.toBigIntegerExact();
+        // 向下对齐lot数量，保证price*quantity可精确写入NUMERIC(38,8)，不得低估notional。
+        return new BigDecimal(maximumUnits.divide(requiredLotMultiple).multiply(requiredLotMultiple));
     }
 
     private record SafeOrderParameters(BigDecimal limitPrice, BigDecimal quantity, BigDecimal notional) {
