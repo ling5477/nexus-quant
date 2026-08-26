@@ -1,8 +1,10 @@
 package com.guidinglight.nexusquant.livecontrol.execution.infra;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -17,6 +19,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.port.PilotExecutionLeaseRe
 import com.guidinglight.nexusquant.livecontrol.execution.application.port.ExecutionIntentRepository;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotExecutionProviderPort;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderError;
+import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderRequests;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntent;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentState;
@@ -24,6 +27,7 @@ import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
 
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -120,6 +124,49 @@ class MinimalPilotTradingVenueGatewayTest {
 
         assertSame(intent, gateway.appendQueryReceipt(intent, unknown));
         verifyNoInteractions(intents);
+    }
+
+    @Test
+    void refreshesOnlyReadClockContextWhenPlaceTimeObservationIsStale() {
+        Instant placeTime = Instant.parse("2026-08-26T09:00:00Z");
+        Instant recoveryTime = placeTime.plusSeconds(600);
+        var stale = new SpotProviderRequests.RequestContext(
+                UUID.randomUUID(), "credential-reference", "trace", "request",
+                new SpotProviderRequests.ClockContract(
+                        SpotProviderRequests.TimestampSource.TRUSTED_UTC_CLOCK,
+                        placeTime, placeTime, Duration.ZERO,
+                        Duration.ofMillis(100), Duration.ofSeconds(5)));
+        var observed = new SpotProviderResults.ClockObservation(
+                recoveryTime.plusMillis(25), recoveryTime, Duration.ofMillis(25), null, recoveryTime);
+
+        var refreshed = MinimalPilotTradingVenueGateway.refreshedReadOnlyContext(
+                stale, observed, recoveryTime);
+
+        assertEquals(stale.sessionId(), refreshed.sessionId());
+        assertEquals(stale.referenceId(), refreshed.referenceId());
+        assertEquals(recoveryTime, refreshed.clock().requestTimestamp());
+        assertEquals(recoveryTime, refreshed.clock().observationAt());
+        assertEquals(Duration.ofMillis(25), refreshed.clock().observedSkew());
+        assertTrue(refreshed.clock().healthyAt(recoveryTime));
+        assertFalse(stale.clock().healthyAt(recoveryTime));
+    }
+
+    @Test
+    void rejectsFailedReadClockObservation() {
+        Instant now = Instant.parse("2026-08-26T09:10:00Z");
+        var base = new SpotProviderRequests.RequestContext(
+                UUID.randomUUID(), "credential-reference", "trace", "request",
+                new SpotProviderRequests.ClockContract(
+                        SpotProviderRequests.TimestampSource.TRUSTED_UTC_CLOCK,
+                        now, now, Duration.ZERO, Duration.ofMillis(100), Duration.ofSeconds(5)));
+        var failed = new SpotProviderResults.ClockObservation(
+                null, null, null,
+                SpotProviderError.classify(SpotProviderError.Category.TRANSPORT_TIMEOUT, false), now);
+
+        LiveControlException error = assertThrows(LiveControlException.class,
+                () -> MinimalPilotTradingVenueGateway.refreshedReadOnlyContext(base, failed, now));
+
+        assertEquals("PILOT_RECONCILIATION_CLOCK_UNAVAILABLE", error.code());
     }
 
     private static MinimalPilotTradingVenueGateway gateway(ExecutionIntentRepository intents) {

@@ -26,6 +26,8 @@ import java.util.Set;
 
 import static com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.CancelCommand;
 import static com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.CancelResponse;
+import static com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.ClockCommand;
+import static com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.ClockResponse;
 import static com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.FillCommand;
 import static com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.FillResponse;
 import static com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.OrderCommand;
@@ -344,6 +346,33 @@ final class OkxJdkRealClient {
         requireRootSuccess(response.root());
         return epochMillis(text(exactRow(response.root()), "ts"), "ts");
     }
+
+    /** 为query-only recovery读取当前venue clock；该public request不携带credential headers。 */
+    ClockResponse readClock(ClockCommand command) {
+        Objects.requireNonNull(command, "command must not be null");
+        try {
+            Instant before = clock.instant();
+            WireResponse response = publicRequest(TIME_PATH, command.responseLimit().maximumResponseBytes());
+            requireRootSuccess(response.root());
+            Instant serverTime = epochMillis(text(exactRow(response.root()), "ts"), "ts");
+            Instant after = clock.instant();
+            Instant midpoint = before.plusMillis(Duration.between(before, after).toMillis() / 2);
+            return new ClockResponse(
+                    metadata(OkxSpotProviderOperation.READ_CLOCK, response.bytes()),
+                    serverTime,
+                    midpoint,
+                    Duration.between(midpoint, serverTime),
+                    null);
+        } catch (WireFailure failure) {
+            return new ClockResponse(
+                    metadata(OkxSpotProviderOperation.READ_CLOCK, 0),
+                    null,
+                    null,
+                    null,
+                    new TransportFailure(failure.category(), false));
+        }
+    }
+
     private OkxPilotPrerequisiteSnapshot.MarketFact readMarket(String instrument) {
         WireResponse response = publicRequest(
                 TICKER_PATH + "?instId=" + instrument,

@@ -13,7 +13,8 @@ public enum OkxSpotProviderOperation {
     QUERY_ORDER("GET", "/api/v5/trade/order", false),
     CANCEL_ORDER("POST", "/api/v5/trade/cancel-order", true),
     READ_ORDER("GET", "/api/v5/trade/order", false),
-    READ_FILLS("GET", "/api/v5/trade/fills", false);
+    READ_FILLS("GET", "/api/v5/trade/fills", false),
+    READ_CLOCK("GET", "/api/v5/public/time", false);
 
     private static final Set<OkxSpotProviderOperation> EXACT_ALLOWLIST = Set.of(values());
 

@@ -149,6 +149,12 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateRealTransport
     }
 
     @Override
+    public OkxSpotProviderTransport.ClockResponse readClock(OkxSpotProviderTransport.ClockCommand command) {
+        requireProviderContract(OkxSpotProviderOperation.READ_CLOCK);
+        return withPermit(() -> realClient.readClock(command));
+    }
+
+    @Override
     public OkxPrivateReadResult execute(
             OkxPrivateReadRequest request,
             OkxPrivateCredentialContext credential,

@@ -4,6 +4,8 @@ import com.guidinglight.nexusquant.adapter.api.model.EndpointGuardReason;
 import com.guidinglight.nexusquant.adapter.api.model.ExchangeCapability;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.CancelCommand;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.CancelResponse;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.ClockCommand;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.ClockResponse;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.FillCommand;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.FillResponse;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.OrderCommand;
@@ -29,6 +31,7 @@ import com.guidinglight.nexusquant.livecontrol.execution.application.provider.Sp
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderRequests.ResponseBounds;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderRequests.TimestampSource;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults.CancelDisposition;
+import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults.ClockObservation;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults.FillPage;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults.MutationOutcome;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults.OrderObservation;
@@ -367,6 +370,25 @@ class OkxSpotProviderAdapterContractTest {
     }
 
     @Test
+    void shouldRefreshClockForReadOnlyRecoveryWithoutRelaxingPlaceClockGuard() {
+        FakeTransport fake = new FakeTransport();
+        SpotExecutionProviderPort provider = provider(fake);
+        fake.clockResponse = new ClockResponse(
+                metadata(OkxSpotProviderOperation.READ_CLOCK, 64),
+                NOW.plusMillis(50), NOW, Duration.ofMillis(50), null);
+
+        ClockObservation refreshed = provider.readClock(unresolvedClockContext());
+
+        assertNull(refreshed.error());
+        assertEquals(Duration.ofMillis(50), refreshed.observedSkew());
+        assertEquals(1, fake.clockCalls.get());
+        var place = provider.placeLimit(placeRequest(unresolvedClockContext()));
+        assertEquals(MutationOutcome.DEFINITIVELY_REJECTED, place.outcome());
+        assertEquals(SpotProviderError.Category.CLOCK_SKEW, place.error().category());
+        assertEquals(0, fake.placeCalls.get(), "READ_CLOCK must not relax the PLACE clock contract");
+    }
+
+    @Test
     void shouldReturnBoundedFillReferencesWithoutCreatingSecondLedgerTruth() {
         FakeTransport fake = new FakeTransport();
         SpotExecutionProviderPort provider = provider(fake);
@@ -403,6 +425,9 @@ class OkxSpotProviderAdapterContractTest {
                 ResponseOutcome.ACCEPTED, order("canceled", ZERO, ONE), null);
         fake.fillResponse = new FillResponse(
                 metadata(OkxSpotProviderOperation.READ_FILLS, 64), List.of(), true, null);
+        fake.clockResponse = new ClockResponse(
+                metadata(OkxSpotProviderOperation.READ_CLOCK, 64),
+                NOW, NOW, Duration.ZERO, null);
 
         provider.placeLimit(placeRequest(healthyContext()));
         provider.queryOrderByClientOrderId(orderQuery(healthyContext()));
@@ -412,6 +437,7 @@ class OkxSpotProviderAdapterContractTest {
                 observation(OrderState.OPEN, ZERO, ONE, null),
                 PartialCancelPolicy.QUERY_FIRST));
         provider.readFills(new FillQuery(orderQuery(healthyContext()), NOW.minusSeconds(60), NOW, 10));
+        provider.readClock(unresolvedClockContext());
 
         ResponseReadLimit expected = new ResponseReadLimit(1024, 100);
         assertEquals(expected, fake.lastPlaceCommand.responseLimit());
@@ -419,6 +445,7 @@ class OkxSpotProviderAdapterContractTest {
         assertEquals(expected, fake.lastReadCommand.responseLimit());
         assertEquals(expected, fake.lastCancelCommand.responseLimit());
         assertEquals(expected, fake.lastFillCommand.responseLimit());
+        assertEquals(expected, fake.lastClockCommand.responseLimit());
         assertEquals(10, fake.lastFillCommand.maxRecords());
     }
 
@@ -497,7 +524,7 @@ class OkxSpotProviderAdapterContractTest {
     void shouldKeepEndpointAllowlistExactAndMakeRawUrlFundsAndUnsupportedFamiliesUnreachable() {
         OkxSpotEndpointGuard guard = new OkxSpotEndpointGuard();
         assertEquals(
-                List.of("CANCEL_ORDER", "PLACE_LIMIT", "QUERY_ORDER", "READ_FILLS", "READ_ORDER"),
+                List.of("CANCEL_ORDER", "PLACE_LIMIT", "QUERY_ORDER", "READ_CLOCK", "READ_FILLS", "READ_ORDER"),
                 OkxSpotProviderOperation.exactAllowlist().stream().map(Enum::name).sorted().toList());
         for (OkxSpotProviderOperation operation : OkxSpotProviderOperation.values()) {
             OkxSpotProviderContractDecision decision = guard.evaluateProviderContract(operation);
@@ -533,7 +560,7 @@ class OkxSpotProviderAdapterContractTest {
                 .map(method -> method.getName())
                 .sorted()
                 .toList();
-        assertEquals(List.of("cancelOrder", "placeLimit", "queryOrder", "readFills", "readOrder"),
+        assertEquals(List.of("cancelOrder", "placeLimit", "queryOrder", "readClock", "readFills", "readOrder"),
                 transportMethods);
 
         String componentNames = Arrays.stream(OkxSpotProviderTransport.class.getDeclaredClasses())
@@ -705,16 +732,19 @@ class OkxSpotProviderAdapterContractTest {
         private final AtomicInteger cancelCalls = new AtomicInteger();
         private final AtomicInteger readCalls = new AtomicInteger();
         private final AtomicInteger fillCalls = new AtomicInteger();
+        private final AtomicInteger clockCalls = new AtomicInteger();
         private PlaceResponse placeResponse;
         private OrderResponse queryResponse;
         private CancelResponse cancelResponse;
         private OrderResponse readResponse;
         private FillResponse fillResponse;
+        private ClockResponse clockResponse;
         private PlaceCommand lastPlaceCommand;
         private OrderCommand lastQueryCommand;
         private CancelCommand lastCancelCommand;
         private OrderCommand lastReadCommand;
         private FillCommand lastFillCommand;
+        private ClockCommand lastClockCommand;
 
         @Override
         public PlaceResponse placeLimit(PlaceCommand command) {
@@ -749,6 +779,13 @@ class OkxSpotProviderAdapterContractTest {
             fillCalls.incrementAndGet();
             lastFillCommand = command;
             return fillResponse;
+        }
+
+        @Override
+        public ClockResponse readClock(ClockCommand command) {
+            clockCalls.incrementAndGet();
+            lastClockCommand = command;
+            return clockResponse;
         }
     }
 }

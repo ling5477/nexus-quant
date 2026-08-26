@@ -29,6 +29,8 @@ public interface OkxSpotProviderTransport {
 
     FillResponse readFills(FillCommand command);
 
+    ClockResponse readClock(ClockCommand command);
+
     record TransportContext(
             UUID sessionId,
             String referenceId,
@@ -100,6 +102,16 @@ public interface OkxSpotProviderTransport {
             if (maxRecords <= 0 || maxRecords > responseLimit.maximumFillRecords()) {
                 throw new IllegalArgumentException("maxRecords exceeds response read limit");
             }
+        }
+    }
+
+    record ClockCommand(
+            TransportContext context,
+            ResponseReadLimit responseLimit
+    ) {
+        public ClockCommand {
+            Objects.requireNonNull(context, "context must not be null");
+            Objects.requireNonNull(responseLimit, "responseLimit must not be null");
         }
     }
 
@@ -198,6 +210,15 @@ public interface OkxSpotProviderTransport {
         public FillResponse {
             fills = List.copyOf(fills == null ? List.of() : fills);
         }
+    }
+
+    record ClockResponse(
+            ResponseMetadata metadata,
+            Instant serverTime,
+            Instant localClockMidpoint,
+            java.time.Duration observedSkew,
+            TransportFailure failure
+    ) {
     }
 
     private static String requireText(String value, String name) {

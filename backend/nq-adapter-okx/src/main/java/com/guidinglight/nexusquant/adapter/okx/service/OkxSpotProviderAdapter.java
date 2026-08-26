@@ -2,6 +2,8 @@ package com.guidinglight.nexusquant.adapter.okx.service;
 
 import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.CancelCommand;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.CancelResponse;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.ClockCommand;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.ClockResponse;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.FillCommand;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.FillResponse;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport.OrderCommand;
@@ -24,6 +26,7 @@ import com.guidinglight.nexusquant.livecontrol.execution.application.provider.Sp
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderRequests.ResponseBounds;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults.CancelDisposition;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults.CancelResult;
+import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults.ClockObservation;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults.FillPage;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults.FillReference;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults.MutationOutcome;
@@ -32,6 +35,7 @@ import com.guidinglight.nexusquant.livecontrol.execution.application.provider.Sp
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults.OrderState;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -263,6 +267,41 @@ public final class OkxSpotProviderAdapter implements SpotExecutionProviderPort {
         }
     }
 
+    @Override
+    public ClockObservation readClock(RequestContext request) {
+        Objects.requireNonNull(request, "request must not be null");
+        requireContractOperation(OkxSpotProviderOperation.READ_CLOCK);
+        ClockResponse response;
+        try {
+            response = transport.readClock(new ClockCommand(
+                    transportContext(request, Instant.now(clock)), transportReadLimit()));
+        } catch (RuntimeException ex) {
+            return failedClock(SpotProviderError.Category.UNKNOWN_RESULT, Instant.now(clock));
+        }
+        SpotProviderError envelopeError = validateMetadata(
+                response == null ? null : response.metadata(), OkxSpotProviderOperation.READ_CLOCK, false);
+        if (envelopeError != null) {
+            return new ClockObservation(null, null, null, envelopeError, Instant.now(clock));
+        }
+        if (response.failure() != null) {
+            return new ClockObservation(
+                    null, null, null, error(response.failure(), false), response.metadata().observedAt());
+        }
+        if (response.serverTime() == null
+                || response.localClockMidpoint() == null
+                || response.observedSkew() == null
+                || !Duration.between(response.localClockMidpoint(), response.serverTime())
+                .equals(response.observedSkew())) {
+            return failedClock(SpotProviderError.Category.MALFORMED_RESPONSE, response.metadata().observedAt());
+        }
+        if (response.observedSkew().abs().compareTo(request.clock().maximumSkew()) > 0) {
+            return failedClock(SpotProviderError.Category.CLOCK_SKEW, response.metadata().observedAt());
+        }
+        return new ClockObservation(
+                response.serverTime(), response.localClockMidpoint(), response.observedSkew(), null,
+                response.metadata().observedAt());
+    }
+
     private OrderObservation executeOrderRead(
             OrderQuery request,
             OkxSpotProviderOperation operation,
@@ -331,12 +370,16 @@ public final class OkxSpotProviderAdapter implements SpotExecutionProviderPort {
     }
 
     private static TransportContext transportContext(RequestContext context) {
+        return transportContext(context, context.clock().requestTimestamp());
+    }
+
+    private static TransportContext transportContext(RequestContext context, Instant requestTimestamp) {
         return new TransportContext(
                 context.sessionId(),
                 context.referenceId(),
                 context.traceId(),
                 context.correlationId(),
-                context.clock().requestTimestamp()
+                requestTimestamp
         );
     }
 
@@ -389,5 +432,10 @@ public final class OkxSpotProviderAdapter implements SpotExecutionProviderPort {
                 error,
                 observedAt
         );
+    }
+
+    private static ClockObservation failedClock(SpotProviderError.Category category, Instant observedAt) {
+        return new ClockObservation(
+                null, null, null, SpotProviderError.classify(category, false), observedAt);
     }
 }

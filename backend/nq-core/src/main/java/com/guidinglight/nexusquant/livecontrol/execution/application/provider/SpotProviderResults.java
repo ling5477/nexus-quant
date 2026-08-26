@@ -194,6 +194,29 @@ public final class SpotProviderResults {
         }
     }
 
+    /** 当前venue clock的只读观测；不携带或刷新交易授权、余额、费率与市场事实。 */
+    public record ClockObservation(
+            Instant serverTime,
+            Instant localClockMidpoint,
+            java.time.Duration observedSkew,
+            SpotProviderError error,
+            Instant observedAt
+    ) {
+        public ClockObservation {
+            Objects.requireNonNull(observedAt, "observedAt must not be null");
+            if (error == null) {
+                Objects.requireNonNull(serverTime, "serverTime must not be null");
+                Objects.requireNonNull(localClockMidpoint, "localClockMidpoint must not be null");
+                Objects.requireNonNull(observedSkew, "observedSkew must not be null");
+                if (!java.time.Duration.between(localClockMidpoint, serverTime).equals(observedSkew)) {
+                    throw new IllegalArgumentException("clock observation is internally inconsistent");
+                }
+            } else if (serverTime != null || localClockMidpoint != null || observedSkew != null) {
+                throw new IllegalArgumentException("failed clock observation must not carry venue clock facts");
+            }
+        }
+    }
+
     private static List<FillReference> boundedFillReferences(List<FillReference> values) {
         List<FillReference> copied = List.copyOf(values == null ? List.of() : values);
         if (copied.size() > MAX_FILL_REFERENCES) {

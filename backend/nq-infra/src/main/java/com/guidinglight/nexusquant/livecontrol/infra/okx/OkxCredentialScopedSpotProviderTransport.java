@@ -78,6 +78,12 @@ public final class OkxCredentialScopedSpotProviderTransport implements OkxSpotPr
         return withCredential(session -> session.readFills(command, OkxPrivateEnvironment.PRODUCTION));
     }
 
+    @Override
+    public ClockResponse readClock(ClockCommand command) {
+        requireSession(command.context().sessionId());
+        return withCredential(session -> session.readClock(command));
+    }
+
     private <T> T withCredential(OkxPrivateCredentialExecutor.CredentialCallback<T> callback) {
         return credentialExecutor.withActiveCredential(
                 ownerId,
@@ -89,7 +95,14 @@ public final class OkxCredentialScopedSpotProviderTransport implements OkxSpotPr
     }
 
     private void requireScope(String instrument, UUID requestSessionId) {
-        if (!sessionId.equals(requestSessionId) || !symbolAllowlist.contains(instrument)) {
+        requireSession(requestSessionId);
+        if (!symbolAllowlist.contains(instrument)) {
+            throw new IllegalArgumentException("provider command is outside the exact pilot scope");
+        }
+    }
+
+    private void requireSession(UUID requestSessionId) {
+        if (!sessionId.equals(requestSessionId)) {
             throw new IllegalArgumentException("provider command is outside the exact pilot scope");
         }
     }

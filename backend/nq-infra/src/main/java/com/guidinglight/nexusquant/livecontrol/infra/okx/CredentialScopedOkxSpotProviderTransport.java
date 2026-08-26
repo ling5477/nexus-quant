@@ -51,6 +51,11 @@ public final class CredentialScopedOkxSpotProviderTransport implements OkxSpotPr
         return execute(command.context().sessionId(), session -> session.readFills(command, production()));
     }
 
+    @Override
+    public ClockResponse readClock(ClockCommand command) {
+        return execute(command.context().sessionId(), session -> session.readClock(command));
+    }
+
     private <T> T execute(UUID sessionId, Function<OkxPrivateCredentialExecutor.CredentialSession, T> operation) {
         LiveSession session = sessions.findSession(sessionId)
                 .orElseThrow(() -> new LiveControlException("LIVE_SESSION_NOT_FOUND", "pilot session not found"));

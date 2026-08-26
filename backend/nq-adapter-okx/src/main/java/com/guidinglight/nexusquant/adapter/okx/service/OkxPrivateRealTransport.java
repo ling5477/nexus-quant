@@ -42,4 +42,6 @@ public interface OkxPrivateRealTransport extends OkxPrivateReadTransport {
             OkxPrivateCredentialContext credential,
             OkxPrivateEnvironment environment
     );
+
+    OkxSpotProviderTransport.ClockResponse readClock(OkxSpotProviderTransport.ClockCommand command);
 }

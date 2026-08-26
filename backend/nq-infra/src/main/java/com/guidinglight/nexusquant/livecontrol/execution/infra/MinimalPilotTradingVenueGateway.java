@@ -148,7 +148,10 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
     public PilotReconciliation reconcile(OrderRecord order) {
         LeasePlace place = findLeasePlace(order.clientOrderId());
         ExactPilotBinding binding = binding(lease(place.leaseId()));
-        SpotProviderRequests.RequestContext context = context(binding, binding.correlation());
+        requireQueryOnlyRecoveryState(place.intentId());
+        SpotProviderRequests.RequestContext frozenContext = context(binding, binding.correlation());
+        SpotProviderRequests.RequestContext context = refreshedReadOnlyContext(
+                frozenContext, provider.readClock(frozenContext), clock.instant());
         var orderQuery = new SpotProviderRequests.OrderQuery(
                 com.guidinglight.nexusquant.livecontrol.execution.application.provider.ProviderClientOrderId
                         .from(place.intentId(), order.clientOrderId()),
@@ -164,8 +167,13 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
             fillPage = new SpotProviderResults.FillPage(
                     orderQuery.clientOrderId().value(), List.of(), true, null, observation.observedAt());
         } else {
+            SpotProviderRequests.RequestContext frozenFillContext = context(binding, binding.correlation());
+            SpotProviderRequests.RequestContext fillContext = refreshedReadOnlyContext(
+                    frozenFillContext, provider.readClock(frozenFillContext), clock.instant());
             fillPage = provider.readFills(new SpotProviderRequests.FillQuery(
-                    orderQuery, binding.pilotWindowStart(), binding.pilotWindowEnd(), 100));
+                    new SpotProviderRequests.OrderQuery(
+                            orderQuery.clientOrderId(), orderQuery.venue(), orderQuery.instrument(), fillContext),
+                    binding.pilotWindowStart(), binding.pilotWindowEnd(), 100));
         }
         if (fillPage.error() != null || !fillPage.complete()) {
             throw rejected("PILOT_RECONCILIATION_FILLS_INCOMPLETE");
@@ -240,6 +248,38 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
             case SEND_SUCCEEDED, FAILED, CANCELLED, RECONCILED -> intent;
             case CREATED, CLAIMED -> throw rejected("PILOT_INTENT_RECOVERY_STATE_INVALID");
         };
+    }
+
+    private ExecutionIntent requireQueryOnlyRecoveryState(UUID intentId) {
+        ExecutionIntent intent = intents.find(intentId)
+                .orElseThrow(() -> rejected("PILOT_INTENT_NOT_FOUND"));
+        if (intent.state() == ExecutionIntentState.CREATED || intent.state() == ExecutionIntentState.CLAIMED) {
+            throw rejected("PILOT_INTENT_RECOVERY_STATE_INVALID");
+        }
+        return intent;
+    }
+
+    static SpotProviderRequests.RequestContext refreshedReadOnlyContext(
+            SpotProviderRequests.RequestContext base,
+            SpotProviderResults.ClockObservation observation,
+            Instant requestTimestamp
+    ) {
+        Objects.requireNonNull(base, "base context must not be null");
+        Objects.requireNonNull(observation, "clock observation must not be null");
+        Objects.requireNonNull(requestTimestamp, "request timestamp must not be null");
+        if (observation.error() != null) {
+            throw rejected("PILOT_RECONCILIATION_CLOCK_UNAVAILABLE");
+        }
+        var refreshed = new SpotProviderRequests.RequestContext(
+                base.sessionId(), base.referenceId(), base.traceId(), base.correlationId(),
+                new SpotProviderRequests.ClockContract(
+                        base.clock().timestampSource(), requestTimestamp, observation.localClockMidpoint(),
+                        observation.observedSkew(), base.clock().maximumSkew(),
+                        base.clock().maximumObservationAge()));
+        if (!refreshed.clock().healthyAt(requestTimestamp)) {
+            throw rejected("PILOT_RECONCILIATION_CLOCK_UNAVAILABLE");
+        }
+        return refreshed;
     }
 
     static Instant canonicalReceiptTime(Instant value) {

@@ -198,6 +198,14 @@ public final class JdbcOkxPrivateCredentialExecutor implements OkxPrivateCredent
                         return realTransport().readFills(command, credential, environment);
                     }
 
+                    @Override
+                    public OkxSpotProviderTransport.ClockResponse readClock(
+                            OkxSpotProviderTransport.ClockCommand command
+                    ) {
+                        requireActive();
+                        return realTransport().readClock(command);
+                    }
+
                     private OkxPrivateRealTransport realTransport() {
                         if (!(transport instanceof OkxPrivateRealTransport value)) {
                             throw new OkxPrivateReadException(OkxPrivateReadError.CREDENTIAL_UNAVAILABLE);

@@ -91,5 +91,11 @@ public interface OkxPrivateCredentialExecutor {
         ) {
             throw new OkxPrivateReadException(OkxPrivateReadError.CREDENTIAL_UNAVAILABLE);
         }
+
+        default OkxSpotProviderTransport.ClockResponse readClock(
+                OkxSpotProviderTransport.ClockCommand command
+        ) {
+            throw new OkxPrivateReadException(OkxPrivateReadError.CREDENTIAL_UNAVAILABLE);
+        }
     }
 }

@@ -70,6 +70,22 @@ class JdkOkxRealTransportTest {
     }
 
     @Test
+    void readsCurrentClockFromExactPublicEndpointWithoutCredentialHeaders() {
+        FakeExchange exchange = new FakeExchange();
+        exchange.enqueue(200, timeBody());
+
+        OkxSpotProviderTransport.ClockResponse response = transport(exchange).readClock(
+                new OkxSpotProviderTransport.ClockCommand(context(), limit()));
+
+        assertEquals(OkxSpotProviderOperation.READ_CLOCK, response.metadata().operation());
+        assertEquals(NOW, response.serverTime());
+        assertEquals(NOW, response.localClockMidpoint());
+        assertEquals(Duration.ZERO, response.observedSkew());
+        assertEquals(List.of("GET /api/v5/public/time"), exchange.requestLines());
+        assertEquals(List.of(false), exchange.authenticated());
+    }
+
+    @Test
     void placeUsesExactLimitCashBodyThenQueriesByClientOrderIdWithoutRetry() throws Exception {
         FakeExchange exchange = new FakeExchange();
         exchange.enqueue(200, acknowledgementBody("0"));
