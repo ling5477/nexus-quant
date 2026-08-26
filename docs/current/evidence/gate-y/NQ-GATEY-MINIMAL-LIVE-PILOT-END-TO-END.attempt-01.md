@@ -430,3 +430,11 @@ kill=ENGAGED
 - Validation：focused gateway/lease/composition=`12/12 PASS`。Production当前facts满足durable check：intent RECONCILED、QUERY_CONFIRMED receipt、FILLED/LIVE、Trade1、Ledger4。P0=0/P1=0。
 - Current decision：`DURABLE_FIRST_FINAL_CLOSE_LOCAL_GREEN / CI_PENDING / VENUE_RECONCILIATION_COMPLETE / FINAL_CLOSE_PENDING / PLACE_COUNT_1 / NO_PLACE_RETRY / KILL_ENGAGED / LIVE_FALSE / P0_0 / P1_0`。
 - Next：精确提交runner与本evidence；exact-head CI绿后code-only部署并只完成final close。
+
+## Final acceptance（2026-08-26）
+
+- Durable-first commit/CI/release：commit=`8e3dd0cf6104eb85f36a0e434ca51ea9d903705a`，exact-head CI run=`32978280738 / completed / success / 10 jobs`，V46 release manifest=`d49ca03a39df8e7de15a2bb03651381ce4c1df8db1682d63e285fdd37b61e046`。Install/verify、atomic current、health/DB、NRestarts0与Stop通过。
+- Final close：controller只消费durable reconciliation facts并正常退出。Production final：ordinal4 lease=`CLOSED`、activeLease=0、session=`LIVE_RECONCILED`、authority=`CLOSED`、intent=`RECONCILED/version5`、receipt=`QUERY_CONFIRMED`、order=`FILLED/LIVE`、Trade=1、Ledger=4。
+- Safety：PLACE=1、PLACE retry=0、CANCEL=0、transfer=0、withdraw=0；kill=`ENGAGED/version11`、LIVE=false、runtime MainPID=0、临时table/column privileges=`0/0`。完整clientOrderId仍只在production DB，未输出到tracked evidence。
+- Final decision：`PASS / GATEY_MINIMAL_LIVE_PILOT_ACCEPTED / PRE_PLACE_TERMINAL_LEASE_REGENERATION_VERIFIED / ATTEMPT_LEVEL_EXACTLY_ONCE_VERIFIED / PLACE_COUNT_1 / NO_PLACE_RETRY / RECONCILIATION_VERIFIED / LEDGER_VERIFIED / KILL_REENGAGED / LIVE_FALSE / NO_TRANSFER / NO_WITHDRAW / P0_0 / P1_0`。
+- Next：`NQ-GATEY-FREEZE-CLOSEOUT`。不得执行第二笔真实pilot。

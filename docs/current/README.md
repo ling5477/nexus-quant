@@ -6,9 +6,9 @@
 
 <!-- nq-current-summary:start -->
 - 最近冻结 Gate 为 GateX：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-x/](../gates/gate-x/)。
-- GateY：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；GateY-6E=`ACCEPTED / CI GREEN`（已接受 / CI 已通过），GateY-6F=`BLOCKED`（阻断）；GateY 整体未接受、未冻结。
+- GateY：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateY-6F minimal live pilot=`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；GateY 整体尚未冻结。
 - Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEY-6F-MINIMAL-PILOT-STRATEGY-RISK-AUTHORITY-DECISION-BLOCKED`；credential2 current permission已验证`SUCCEEDED / TRADE / IP PASSED / withdraw=false`，但production没有任何Strategy Release admission、backtest publish或risk set，而V39 LiveSession强制绑定这些事实。继续需operator提供既有可信facts或授权新的minimal-session架构/migration；PLACE/CANCEL/transfer/withdraw均为0。精确边界以 [STATUS.md](STATUS.md) 为准。
+- 当前唯一动作是 `NQ-GATEY-FREEZE-CLOSEOUT`；唯一10U pilot已完成，PLACE=1、retry=0、CANCEL=0，最终activeLease=0、LIVE关闭、kill已接合。精确边界以 [STATUS.md](STATUS.md) 为准。
 - 当前 runtime release、current work commit 与精确 runtime 标识只从 [STATUS.md](STATUS.md) 获取，本索引不复制其值。
 - LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
