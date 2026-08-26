@@ -147,6 +147,63 @@ public class JdbcPilotPrePlaceRecoveryRepository implements PilotPrePlaceRecover
         return matches.size() == 1;
     }
 
+    @Override
+    public Optional<UUID> lockExpiredPreparationSession(
+            long ownerId,
+            long exchangeAccountId,
+            long credentialReferenceId,
+            String instrument,
+            BigDecimal maxNotional,
+            UUID decisionId
+    ) {
+        List<UUID> matches = jdbc.queryForList("""
+                SELECT session.session_id
+                FROM pilot_pre_place_recovery_decisions decision
+                JOIN pilot_execution_leases predecessor
+                  ON predecessor.lease_id=decision.predecessor_lease_id
+                 AND predecessor.live_session_id=decision.predecessor_session_id
+                JOIN live_sessions session
+                  ON session.authority_type='OPERATOR_PILOT'
+                 AND session.session_id<>decision.predecessor_session_id
+                JOIN operator_pilot_authorities authority
+                  ON authority.authority_id=session.operator_pilot_authority_id
+                JOIN kill_switch_states kill ON kill.scope='GLOBAL_TRADING'
+                WHERE decision.decision_id=?
+                  AND decision.decision='REPLACEMENT_ALLOWED_ZERO_INTENT'
+                  AND decision.place_intent_count=0 AND decision.send_started_count=0
+                  AND decision.execution_intent_count=0 AND decision.execution_receipt_count=0
+                  AND decision.order_count=0 AND decision.trade_count=0 AND decision.ledger_count=0
+                  AND predecessor.status IN ('EXPIRED','FAILED') AND predecessor.consumed_at IS NULL
+                  AND session.owner_id=? AND session.exchange_account_id=?
+                  AND session.credential_reference=? AND session.symbol_allowlist=ARRAY[?]::TEXT[]
+                  AND session.capital_cap=? AND session.state='APPROVAL_PENDING'
+                  AND session.created_at>=decision.decided_at
+                  AND session.execution_window_end<transaction_timestamp()
+                  AND authority.owner_user_id=? AND authority.exchange_account_id=?
+                  AND authority.credential_reference_id=? AND authority.instrument=?
+                  AND authority.max_notional=? AND authority.status='ACTIVE'
+                  AND kill.status='ENGAGED'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM pilot_execution_leases lease
+                      WHERE lease.live_session_id=session.session_id)
+                  AND NOT EXISTS (
+                      SELECT 1 FROM live_session_events event
+                      WHERE event.session_id=session.session_id
+                        AND event.command='CREATE_EXACT_PILOT_BINDING')
+                  AND NOT EXISTS (
+                      SELECT 1 FROM execution_intents intent
+                      WHERE intent.session_id=session.session_id)
+                  AND NOT EXISTS (SELECT 1 FROM pilot_execution_lease_intents)
+                FOR UPDATE OF predecessor,session,authority,kill
+                """, UUID.class, decisionId, ownerId, exchangeAccountId, credentialReferenceId,
+                instrument, maxNotional, ownerId, exchangeAccountId, credentialReferenceId,
+                instrument, maxNotional);
+        if (matches.size() > 1) {
+            throw rejected("REPLACEMENT_FORBIDDEN_STATE_AMBIGUOUS");
+        }
+        return matches.stream().findFirst();
+    }
+
     private static LiveControlException rejected(String code) {
         return new LiveControlException(code, "pre-place replacement recovery rejected");
     }

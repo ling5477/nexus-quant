@@ -24,6 +24,15 @@ public interface PilotPrePlaceRecoveryRepository {
 
     boolean lockAndValidateSessionRecovery(LiveSession session, UUID decisionId);
 
+    Optional<UUID> lockExpiredPreparationSession(
+            long ownerId,
+            long exchangeAccountId,
+            long credentialReferenceId,
+            String instrument,
+            BigDecimal maxNotional,
+            UUID decisionId
+    );
+
     record Authorization(
             UUID decisionId,
             UUID predecessorLeaseId,

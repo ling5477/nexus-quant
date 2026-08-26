@@ -146,9 +146,15 @@ public final class PilotExecutionLeaseService implements PilotExecutionLeaseCont
         java.util.Optional<Authorization> authorization = recoveries.decide(
                 actor.userId(), exchangeAccountId, credentialReferenceId, instrument, maxNotional,
                 UUID.randomUUID(), correlation.requestId(), correlation.traceId(), clock.instant());
-        authorization.ifPresent(value -> sessions.terminalizeMinimalPilotPrePlaceRecovery(
-                actor, value.predecessorSessionId(), value.decisionId(),
-                correlation.requestId(), correlation.traceId(), correlation.idempotencyKey()));
+        authorization.ifPresent(value -> {
+            sessions.terminalizeMinimalPilotPrePlaceRecovery(
+                    actor, value.predecessorSessionId(), value.decisionId(),
+                    correlation.requestId(), correlation.traceId(), correlation.idempotencyKey());
+            sessions.terminalizeExpiredMinimalPilotPreparation(
+                    actor, exchangeAccountId, credentialReferenceId, instrument, maxNotional,
+                    value.decisionId(), correlation.requestId(), correlation.traceId(),
+                    correlation.idempotencyKey());
+        });
         return authorization;
     }
 

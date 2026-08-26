@@ -122,7 +122,7 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
             OperatorPilotAuthorityService authorityService = new OperatorPilotAuthorityService(
                     authorityRepository, authorization);
             LiveSessionControlService sessionService = new LiveSessionControlService(
-                    sessionRepository, authorization, recoveries);
+                    sessionRepository, authorization, recoveries, authorityRepository);
             TransactionTemplate transactions = new TransactionTemplate(
                     new DataSourceTransactionManager(dataSource));
             var actor = new AuthenticatedLiveControlActor(fixture.ownerId());
@@ -242,6 +242,32 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
                     "request-v45", "trace-v45", "idem-v45");
             assertEquals("LIVE_RECONCILED", jdbc.queryForObject(
                     "SELECT state FROM live_sessions WHERE session_id=?", String.class, firstSession.id()));
+
+            Instant orphanNow = Instant.now().truncatedTo(ChronoUnit.MICROS);
+            OperatorPilotAuthority orphanAuthority = OperatorPilotAuthority.active(
+                    UUID.randomUUID(), fixture.ownerId(), fixture.accountId(), fixture.credentialId(),
+                    "BTC-USDT", OperatorPilotAuthority.Side.BUY, OperatorPilotAuthority.OrderType.LIMIT,
+                    new BigDecimal("10.00000000"), orphanNow, orphanNow.plusSeconds(1),
+                    fixture.ownerId(), orphanNow);
+            transactions.executeWithoutResult(status -> authorityService.materialize(actor, orphanAuthority));
+            LiveSession orphanSession = LiveSession.createOperatorPilot(
+                    UUID.randomUUID(), fixture.ownerId(), fixture.accountId(), orphanAuthority.id(),
+                    orphanAuthority.canonicalDigest(), fixture.credentialId(), "BTC-USDT",
+                    orphanAuthority.maxNotional(), orphanNow, orphanNow.plusSeconds(1),
+                    fixture.ownerId(), orphanNow);
+            transactions.executeWithoutResult(status -> sessionService.createOperatorPilotSession(
+                    actor, orphanSession, orphanAuthority,
+                    createdEvent(orphanSession, fixture.ownerId(), "orphan")));
+            Thread.sleep(1_100L);
+            assertTrue(sessionService.terminalizeExpiredMinimalPilotPreparation(
+                    actor, fixture.accountId(), fixture.credentialId(), "BTC-USDT",
+                    new BigDecimal("10.00000000"), recovery.decisionId(),
+                    "request-orphan", "trace-orphan", "idem-orphan").isPresent());
+            assertEquals("REJECTED", jdbc.queryForObject(
+                    "SELECT state FROM live_sessions WHERE session_id=?", String.class, orphanSession.id()));
+            assertEquals("EXPIRED", jdbc.queryForObject(
+                    "SELECT status FROM operator_pilot_authorities WHERE authority_id=?",
+                    String.class, orphanAuthority.id()));
 
             Instant secondNow = Instant.now().truncatedTo(ChronoUnit.MICROS);
             OperatorPilotAuthority secondAuthority = operatorAuthority(fixture, secondNow, "10.00000000");

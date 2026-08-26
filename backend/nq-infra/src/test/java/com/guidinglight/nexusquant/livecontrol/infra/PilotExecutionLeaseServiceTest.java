@@ -104,6 +104,9 @@ class PilotExecutionLeaseServiceTest {
         verify(sessions).terminalizeMinimalPilotPrePlaceRecovery(
                 actor, authorization.predecessorSessionId(), authorization.decisionId(),
                 "request", "trace", "idempotency");
+        verify(sessions).terminalizeExpiredMinimalPilotPreparation(
+                actor, 1L, 2L, "BTC-USDT", new BigDecimal("10.00000000"),
+                authorization.decisionId(), "request", "trace", "idempotency");
         verify(leases, never()).close(any(), any(), any(), any(), any(), any());
     }
 

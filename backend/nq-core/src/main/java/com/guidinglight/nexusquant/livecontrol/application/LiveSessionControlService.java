@@ -12,12 +12,15 @@ import com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority;
 import com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSet;
 import com.guidinglight.nexusquant.livecontrol.application.port.LiveControlAuthorizationPort;
 import com.guidinglight.nexusquant.livecontrol.domain.port.LiveControlRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.port.OperatorPilotAuthorityRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotPrePlaceRecoveryRepository;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.UUID;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,21 +38,31 @@ public class LiveSessionControlService {
     private final LiveControlAuthorizationPort authorization;
     private final LiveSessionStateMachine stateMachine;
     private final PilotPrePlaceRecoveryRepository recoveries;
+    private final OperatorPilotAuthorityRepository operatorAuthorities;
 
     @Autowired
     public LiveSessionControlService(
             LiveControlRepository repository,
             LiveControlAuthorizationPort authorization,
+            PilotPrePlaceRecoveryRepository recoveries,
+            OperatorPilotAuthorityRepository operatorAuthorities
+    ) {
+        this(repository, authorization, new LiveSessionStateMachine(), recoveries, operatorAuthorities);
+    }
+
+    public LiveSessionControlService(
+            LiveControlRepository repository,
+            LiveControlAuthorizationPort authorization,
             PilotPrePlaceRecoveryRepository recoveries
     ) {
-        this(repository, authorization, new LiveSessionStateMachine(), recoveries);
+        this(repository, authorization, new LiveSessionStateMachine(), recoveries, null);
     }
 
     public LiveSessionControlService(
             LiveControlRepository repository,
             LiveControlAuthorizationPort authorization
     ) {
-        this(repository, authorization, new LiveSessionStateMachine(), null);
+        this(repository, authorization, new LiveSessionStateMachine(), null, null);
     }
 
     LiveSessionControlService(
@@ -57,19 +70,21 @@ public class LiveSessionControlService {
             LiveControlAuthorizationPort authorization,
             LiveSessionStateMachine stateMachine
     ) {
-        this(repository, authorization, stateMachine, null);
+        this(repository, authorization, stateMachine, null, null);
     }
 
     LiveSessionControlService(
             LiveControlRepository repository,
             LiveControlAuthorizationPort authorization,
             LiveSessionStateMachine stateMachine,
-            PilotPrePlaceRecoveryRepository recoveries
+            PilotPrePlaceRecoveryRepository recoveries,
+            OperatorPilotAuthorityRepository operatorAuthorities
     ) {
         this.repository = Objects.requireNonNull(repository, "repository must not be null");
         this.authorization = Objects.requireNonNull(authorization, "authorization must not be null");
         this.stateMachine = Objects.requireNonNull(stateMachine, "stateMachine must not be null");
         this.recoveries = recoveries;
+        this.operatorAuthorities = operatorAuthorities;
     }
 
     @Transactional
@@ -382,6 +397,61 @@ public class LiveSessionControlService {
             current = updated;
         }
         return current;
+    }
+
+    /**
+     * 回收V45 replacement准备阶段遗留的过期session；DB必须证明尚未创建binding/lease/intent。
+     */
+    @Transactional
+    public Optional<LiveSession> terminalizeExpiredMinimalPilotPreparation(
+            AuthenticatedLiveControlActor actor,
+            long exchangeAccountId,
+            long credentialReferenceId,
+            String instrument,
+            BigDecimal maxNotional,
+            UUID recoveryDecisionId,
+            String requestId,
+            String traceId,
+            String idempotencyKey
+    ) {
+        Objects.requireNonNull(actor, "actor must not be null");
+        Objects.requireNonNull(recoveryDecisionId, "recoveryDecisionId must not be null");
+        if (recoveries == null || operatorAuthorities == null
+                || !authorization.lockAndCheckRole(actor.userId(), SESSION_CREATOR_ROLE)) {
+            throw new LiveControlException(
+                    "PRE_PLACE_PREPARATION_RECOVERY_FORBIDDEN",
+                    "pre-place preparation recovery authorization failed");
+        }
+        Optional<UUID> candidate = recoveries.lockExpiredPreparationSession(
+                actor.userId(), exchangeAccountId, credentialReferenceId,
+                instrument, maxNotional, recoveryDecisionId);
+        if (candidate.isEmpty()) {
+            return Optional.empty();
+        }
+        LiveSession current = repository.lockSession(candidate.get()).orElseThrow(() ->
+                new LiveControlException("LIVE_SESSION_NOT_FOUND", "live session was not found"));
+        if (current.ownerId() != actor.userId()
+                || current.authorityType() != LiveSessionAuthorityType.OPERATOR_PILOT
+                || current.state() != LiveSessionState.APPROVAL_PENDING) {
+            throw new LiveControlException(
+                    "PRE_PLACE_PREPARATION_RECOVERY_REFERENCE_MISMATCH",
+                    "expired preparation references are invalid");
+        }
+        LiveSessionState target = stateMachine.transition(current.state(), LiveSessionCommand.REJECT);
+        Instant occurredAt = repository.currentTime();
+        LiveSession updated = withState(current, target, occurredAt);
+        if (!repository.compareAndSetSession(current, updated)) {
+            throw new LiveControlException(
+                    "LIVE_SESSION_VERSION_CONFLICT", "session changed during preparation recovery");
+        }
+        repository.appendSessionEvent(event(
+                current, target, "MINIMAL_PILOT_REJECT", actor.userId(), requestId, traceId,
+                "PRE_PLACE_PREPARATION_EXPIRED", idempotencyKey,
+                com.guidinglight.nexusquant.livecontrol.domain.LiveSessionApprovalScopeEncoder.digest(current),
+                occurredAt));
+        operatorAuthorities.close(
+                current.operatorPilotAuthorityId(), OperatorPilotAuthority.Status.EXPIRED, occurredAt);
+        return Optional.of(updated);
     }
 
     private static LiveSession withState(LiveSession current, LiveSessionState target, Instant occurredAt) {
