@@ -68,6 +68,7 @@ END
 $gatey$;
 
 GRANT UPDATE ON TABLE public.exchange_account_credentials TO nq_gatey_readonly;
+GRANT INSERT ON TABLE public.accounts TO nq_gatey_readonly;
 GRANT INSERT ON TABLE public.credential_audit_logs TO nq_gatey_readonly;
 GRANT INSERT, UPDATE ON TABLE public.instrument_catalog TO nq_gatey_readonly;
 GRANT SELECT, INSERT, UPDATE ON TABLE public.operator_pilot_authorities TO nq_gatey_readonly;
@@ -77,6 +78,7 @@ GRANT INSERT ON TABLE public.pilot_scope_bindings TO nq_gatey_readonly;
 GRANT INSERT ON TABLE public.pilot_prerequisite_observations TO nq_gatey_readonly;
 GRANT INSERT ON TABLE public.pilot_instrument_observation_items TO nq_gatey_readonly;
 GRANT INSERT, UPDATE ON TABLE public.pilot_execution_leases TO nq_gatey_readonly;
+GRANT SELECT, INSERT ON TABLE public.pilot_pre_place_recovery_decisions TO nq_gatey_readonly;
 GRANT INSERT ON TABLE public.pilot_execution_lease_intents TO nq_gatey_readonly;
 GRANT INSERT ON TABLE public.pilot_execution_lease_events TO nq_gatey_readonly;
 GRANT INSERT, UPDATE ON TABLE public.execution_intents TO nq_gatey_readonly;
@@ -95,6 +97,8 @@ GRANT INSERT ON TABLE public.kill_switch_events TO nq_gatey_readonly;
 
 -- PostgreSQL row-locking clauses require UPDATE privilege. Limit it to one immutable identity column per table.
 GRANT UPDATE(exchange_account_id) ON TABLE public.exchange_accounts TO nq_gatey_readonly;
+GRANT UPDATE(legacy_account_id, updated_at) ON TABLE public.exchange_accounts TO nq_gatey_readonly;
+GRANT UPDATE(account_id) ON TABLE public.accounts TO nq_gatey_readonly;
 GRANT UPDATE(pilot_scope_id) ON TABLE public.pilot_scope_bindings TO nq_gatey_readonly;
 GRANT UPDATE(id) ON TABLE public.users TO nq_gatey_readonly;
 GRANT UPDATE(user_id) ON TABLE public.user_roles TO nq_gatey_readonly;
@@ -102,6 +106,7 @@ GRANT UPDATE(id) ON TABLE public.roles TO nq_gatey_readonly;
 
 GRANT USAGE ON SEQUENCE public.credential_audit_logs_credential_audit_log_id_seq
     TO nq_gatey_readonly;
+GRANT USAGE ON SEQUENCE public.accounts_account_id_seq TO nq_gatey_readonly;
 GRANT USAGE ON SEQUENCE public.instrument_catalog_instrument_id_seq TO nq_gatey_readonly;
 GRANT USAGE ON SEQUENCE public.account_snapshots_snapshot_id_seq TO nq_gatey_readonly;
 GRANT USAGE ON SEQUENCE public.audit_logs_id_seq TO nq_gatey_readonly;
@@ -115,6 +120,7 @@ DECLARE
 BEGIN
     WITH expected(table_name, privilege_type) AS (VALUES
         ('exchange_account_credentials', 'UPDATE'),
+        ('accounts', 'INSERT'),
         ('credential_audit_logs', 'INSERT'),
         ('instrument_catalog', 'INSERT'), ('instrument_catalog', 'UPDATE'),
         ('operator_pilot_authorities', 'INSERT'), ('operator_pilot_authorities', 'UPDATE'),
@@ -124,6 +130,7 @@ BEGIN
         ('pilot_prerequisite_observations', 'INSERT'),
         ('pilot_instrument_observation_items', 'INSERT'),
         ('pilot_execution_leases', 'INSERT'), ('pilot_execution_leases', 'UPDATE'),
+        ('pilot_pre_place_recovery_decisions', 'INSERT'),
         ('pilot_execution_lease_intents', 'INSERT'),
         ('pilot_execution_lease_events', 'INSERT'),
         ('execution_intents', 'INSERT'), ('execution_intents', 'UPDATE'),
@@ -159,6 +166,12 @@ BEGIN
     IF NOT has_column_privilege(
                 'nq_gatey_readonly', 'public.exchange_accounts', 'exchange_account_id', 'UPDATE')
             OR NOT has_column_privilege(
+                'nq_gatey_readonly', 'public.exchange_accounts', 'legacy_account_id', 'UPDATE')
+            OR NOT has_column_privilege(
+                'nq_gatey_readonly', 'public.exchange_accounts', 'updated_at', 'UPDATE')
+            OR NOT has_column_privilege(
+                'nq_gatey_readonly', 'public.accounts', 'account_id', 'UPDATE')
+            OR NOT has_column_privilege(
                 'nq_gatey_readonly', 'public.pilot_scope_bindings', 'pilot_scope_id', 'UPDATE')
             OR NOT has_column_privilege('nq_gatey_readonly', 'public.users', 'id', 'UPDATE')
             OR NOT has_column_privilege(
@@ -172,7 +185,8 @@ BEGIN
         'account_snapshots_snapshot_id_seq',
         'audit_logs_id_seq',
         'ledger_events_ledger_event_id_seq',
-        'positions_id_seq'
+        'positions_id_seq',
+        'accounts_account_id_seq'
     ] LOOP
         IF NOT has_sequence_privilege('nq_gatey_readonly', 'public.' || sequence_name, 'USAGE')
                 OR has_sequence_privilege('nq_gatey_readonly', 'public.' || sequence_name, 'UPDATE') THEN
@@ -192,6 +206,7 @@ SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '30s';
 
 REVOKE UPDATE ON TABLE public.exchange_account_credentials FROM nq_gatey_readonly;
+REVOKE INSERT ON TABLE public.accounts FROM nq_gatey_readonly;
 REVOKE INSERT ON TABLE public.credential_audit_logs FROM nq_gatey_readonly;
 REVOKE INSERT, UPDATE ON TABLE public.instrument_catalog FROM nq_gatey_readonly;
 REVOKE SELECT, INSERT, UPDATE ON TABLE public.operator_pilot_authorities FROM nq_gatey_readonly;
@@ -201,6 +216,7 @@ REVOKE INSERT ON TABLE public.pilot_scope_bindings FROM nq_gatey_readonly;
 REVOKE INSERT ON TABLE public.pilot_prerequisite_observations FROM nq_gatey_readonly;
 REVOKE INSERT ON TABLE public.pilot_instrument_observation_items FROM nq_gatey_readonly;
 REVOKE INSERT, UPDATE ON TABLE public.pilot_execution_leases FROM nq_gatey_readonly;
+REVOKE SELECT, INSERT ON TABLE public.pilot_pre_place_recovery_decisions FROM nq_gatey_readonly;
 REVOKE INSERT ON TABLE public.pilot_execution_lease_intents FROM nq_gatey_readonly;
 REVOKE INSERT ON TABLE public.pilot_execution_lease_events FROM nq_gatey_readonly;
 REVOKE INSERT, UPDATE ON TABLE public.execution_intents FROM nq_gatey_readonly;
@@ -222,6 +238,8 @@ REVOKE UPDATE(user_id) ON TABLE public.user_roles FROM nq_gatey_readonly;
 REVOKE UPDATE(id) ON TABLE public.roles FROM nq_gatey_readonly;
 REVOKE UPDATE(pilot_scope_id) ON TABLE public.pilot_scope_bindings FROM nq_gatey_readonly;
 REVOKE UPDATE(exchange_account_id) ON TABLE public.exchange_accounts FROM nq_gatey_readonly;
+REVOKE UPDATE(legacy_account_id, updated_at) ON TABLE public.exchange_accounts FROM nq_gatey_readonly;
+REVOKE UPDATE(account_id) ON TABLE public.accounts FROM nq_gatey_readonly;
 
 REVOKE USAGE ON SEQUENCE public.credential_audit_logs_credential_audit_log_id_seq
     FROM nq_gatey_readonly;
@@ -230,6 +248,7 @@ REVOKE USAGE ON SEQUENCE public.account_snapshots_snapshot_id_seq FROM nq_gatey_
 REVOKE USAGE ON SEQUENCE public.audit_logs_id_seq FROM nq_gatey_readonly;
 REVOKE USAGE ON SEQUENCE public.ledger_events_ledger_event_id_seq FROM nq_gatey_readonly;
 REVOKE USAGE ON SEQUENCE public.positions_id_seq FROM nq_gatey_readonly;
+REVOKE USAGE ON SEQUENCE public.accounts_account_id_seq FROM nq_gatey_readonly;
 
 DO $gatey$
 DECLARE

@@ -12,6 +12,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority;
 import com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSet;
 import com.guidinglight.nexusquant.livecontrol.application.port.LiveControlAuthorizationPort;
 import com.guidinglight.nexusquant.livecontrol.domain.port.LiveControlRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.port.PilotPrePlaceRecoveryRepository;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -33,13 +34,22 @@ public class LiveSessionControlService {
     private final LiveControlRepository repository;
     private final LiveControlAuthorizationPort authorization;
     private final LiveSessionStateMachine stateMachine;
+    private final PilotPrePlaceRecoveryRepository recoveries;
 
     @Autowired
     public LiveSessionControlService(
             LiveControlRepository repository,
+            LiveControlAuthorizationPort authorization,
+            PilotPrePlaceRecoveryRepository recoveries
+    ) {
+        this(repository, authorization, new LiveSessionStateMachine(), recoveries);
+    }
+
+    public LiveSessionControlService(
+            LiveControlRepository repository,
             LiveControlAuthorizationPort authorization
     ) {
-        this(repository, authorization, new LiveSessionStateMachine());
+        this(repository, authorization, new LiveSessionStateMachine(), null);
     }
 
     LiveSessionControlService(
@@ -47,9 +57,19 @@ public class LiveSessionControlService {
             LiveControlAuthorizationPort authorization,
             LiveSessionStateMachine stateMachine
     ) {
+        this(repository, authorization, stateMachine, null);
+    }
+
+    LiveSessionControlService(
+            LiveControlRepository repository,
+            LiveControlAuthorizationPort authorization,
+            LiveSessionStateMachine stateMachine,
+            PilotPrePlaceRecoveryRepository recoveries
+    ) {
         this.repository = Objects.requireNonNull(repository, "repository must not be null");
         this.authorization = Objects.requireNonNull(authorization, "authorization must not be null");
         this.stateMachine = Objects.requireNonNull(stateMachine, "stateMachine must not be null");
+        this.recoveries = recoveries;
     }
 
     @Transactional
@@ -308,6 +328,60 @@ public class LiveSessionControlService {
                 occurredAt
         ));
         return updated;
+    }
+
+    /**
+     * 只消费V45 append-only zero-intent判定，以既有状态机关闭旧session；不复活authority/lease。
+     */
+    @Transactional
+    public LiveSession terminalizeMinimalPilotPrePlaceRecovery(
+            AuthenticatedLiveControlActor actor,
+            UUID sessionId,
+            UUID recoveryDecisionId,
+            String requestId,
+            String traceId,
+            String idempotencyKey
+    ) {
+        Objects.requireNonNull(actor, "actor must not be null");
+        Objects.requireNonNull(sessionId, "sessionId must not be null");
+        Objects.requireNonNull(recoveryDecisionId, "recoveryDecisionId must not be null");
+        if (recoveries == null || !authorization.lockAndCheckRole(actor.userId(), SESSION_CREATOR_ROLE)) {
+            throw new LiveControlException(
+                    "PRE_PLACE_RECOVERY_OPERATOR_FORBIDDEN", "pre-place recovery authorization failed");
+        }
+        LiveSession current = repository.lockSession(sessionId)
+                .orElseThrow(() -> new LiveControlException(
+                        "LIVE_SESSION_NOT_FOUND", "live session was not found"));
+        if (current.ownerId() != actor.userId()
+                || current.authorityType() != LiveSessionAuthorityType.OPERATOR_PILOT
+                || !recoveries.lockAndValidateSessionRecovery(current, recoveryDecisionId)) {
+            throw new LiveControlException(
+                    "PRE_PLACE_RECOVERY_REFERENCE_MISMATCH", "pre-place recovery references are invalid");
+        }
+        if (current.state() == LiveSessionState.LIVE_RECONCILED) {
+            return current;
+        }
+        for (LiveSessionCommand command : java.util.List.of(
+                LiveSessionCommand.STOP,
+                LiveSessionCommand.BEGIN_RECONCILE,
+                LiveSessionCommand.RECONCILE_BLOCK,
+                LiveSessionCommand.RESOLVE_AND_CLOSE)) {
+            LiveSessionState target = stateMachine.transition(current.state(), command);
+            Instant occurredAt = repository.currentTime();
+            LiveSession updated = withState(current, target, occurredAt);
+            if (!repository.compareAndSetSession(current, updated)) {
+                throw new LiveControlException(
+                        "LIVE_SESSION_VERSION_CONFLICT", "session changed during pre-place recovery");
+            }
+            repository.appendSessionEvent(event(
+                    current, target, "MINIMAL_PILOT_" + command.name(), actor.userId(),
+                    requestId, traceId, "PRE_PLACE_ZERO_INTENT_" + command.name(),
+                    idempotencyKey,
+                    com.guidinglight.nexusquant.livecontrol.domain.LiveSessionApprovalScopeEncoder.digest(current),
+                    occurredAt));
+            current = updated;
+        }
+        return current;
     }
 
     private static LiveSession withState(LiveSession current, LiveSessionState target, Instant occurredAt) {

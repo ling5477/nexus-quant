@@ -15,6 +15,7 @@ import com.guidinglight.nexusquant.account.application.command.CredentialPermiss
 import com.guidinglight.nexusquant.account.domain.CredentialPermissionProbeSummary;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
+import com.guidinglight.nexusquant.account.infra.jdbc.CanonicalLegacyAccountBridgeService;
 import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingCommand;
 import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingControlPlane;
 import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingValidation;
@@ -31,6 +32,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationSet;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotPrerequisiteObservation;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotScopeRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.port.PilotPrePlaceRecoveryRepository.Authorization;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.InstrumentCatalogItem;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.port.InstrumentCatalogReadPort;
 
@@ -104,6 +106,27 @@ class MinimalLivePilotControlServiceTest {
         assertEquals(expectedStart.plusSeconds(120), materialization.getValue().executionWindowEnd());
     }
 
+    @Test
+    void routesAllowedZeroIntentDecisionToReplacementLeaseOnly() {
+        Fixture fixture = fixture(new BigDecimal("0.00100000"));
+        Authorization authorization = new Authorization(
+                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 1);
+        when(fixture.leases.prepareZeroIntentReplacement(
+                any(), anyLong(), anyLong(), anyString(), any(), any()))
+                .thenReturn(Optional.of(authorization));
+        PilotExecutionLease replacement = mock(PilotExecutionLease.class);
+        when(replacement.id()).thenReturn(UUID.randomUUID());
+        when(fixture.leases.createReplacementAndActivate(
+                any(), any(), any(), any(), any(), any())).thenReturn(replacement);
+
+        fixture.service.prepare(command());
+
+        verify(fixture.legacyBridge).resolveOrCreate(any(), anyString(), any());
+        verify(fixture.leases).createReplacementAndActivate(
+                any(), any(), any(), any(), any(), any());
+        verify(fixture.leases, never()).createAndActivate(any(), any(), any(), any(), any());
+    }
+
     private static Fixture fixture(BigDecimal minimumQuantity) {
         return fixture(minimumQuantity, Clock.fixed(NOW, ZoneOffset.UTC));
     }
@@ -116,6 +139,7 @@ class MinimalLivePilotControlServiceTest {
         PilotScopeRepository scopeRepository = mock(PilotScopeRepository.class);
         ExactPilotBindingControlPlane bindings = mock(ExactPilotBindingControlPlane.class);
         PilotExecutionLeaseControlPlane leases = mock(PilotExecutionLeaseControlPlane.class);
+        CanonicalLegacyAccountBridgeService legacyBridge = mock(CanonicalLegacyAccountBridgeService.class);
 
         when(accounts.findById(1L)).thenReturn(Optional.of(new ExchangeAccountSummary(
                 1L, 101L, 7L, "OKX", "LIVE", "pilot", "reference", true, "ACTIVE")));
@@ -144,8 +168,8 @@ class MinimalLivePilotControlServiceTest {
 
         return new Fixture(new MinimalLivePilotControlService(
                 accounts, catalog, permissionProbeService, scopes, scopeRepository,
-                bindings, leases, clock),
-                permissionProbeService, scopes, bindings);
+                bindings, leases, clock, legacyBridge),
+                permissionProbeService, scopes, bindings, leases, legacyBridge);
     }
 
     private static MinimalLivePilotCommand command() {
@@ -256,7 +280,9 @@ class MinimalLivePilotControlServiceTest {
             MinimalLivePilotControlService service,
             CredentialPermissionProbeService permissionProbeService,
             PilotScopeControlPlane scopes,
-            ExactPilotBindingControlPlane bindings
+            ExactPilotBindingControlPlane bindings,
+            PilotExecutionLeaseControlPlane leases,
+            CanonicalLegacyAccountBridgeService legacyBridge
     ) {
     }
 }

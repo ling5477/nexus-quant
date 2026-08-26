@@ -23,6 +23,7 @@ import com.guidinglight.nexusquant.livecontrol.application.PilotScopeControlPlan
 import com.guidinglight.nexusquant.livecontrol.domain.port.ExactPilotBindingRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.LiveControlRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotExecutionLeaseRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.port.PilotPrePlaceRecoveryRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotScopeRepository;
 import com.guidinglight.nexusquant.livecontrol.execution.application.port.ExecutionIntentRepository;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.port.InstrumentCatalogReadPort;
@@ -111,6 +112,8 @@ class SecurityConfigurationContextTest {
                 .withBean(PilotScopeControlPlane.class, () -> mock(PilotScopeControlPlane.class))
                 .withBean(PilotScopeRepository.class, () -> mock(PilotScopeRepository.class))
                 .withBean(PilotExecutionLeaseRepository.class, () -> mock(PilotExecutionLeaseRepository.class))
+                .withBean(PilotPrePlaceRecoveryRepository.class,
+                        () -> mock(PilotPrePlaceRecoveryRepository.class))
                 .withBean(LiveSessionControlService.class, () -> mock(LiveSessionControlService.class))
                 .withBean(KillSwitchService.class, () -> mock(KillSwitchService.class))
                 .withBean(LiveControlRepository.class, () -> mock(LiveControlRepository.class))

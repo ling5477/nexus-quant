@@ -5,6 +5,7 @@ import com.guidinglight.nexusquant.account.application.command.CredentialPermiss
 import com.guidinglight.nexusquant.account.domain.CredentialPermissionProbeSummary;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
+import com.guidinglight.nexusquant.account.infra.jdbc.CanonicalLegacyAccountBridgeService;
 import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor;
 import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingCommand;
 import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingControlPlane;
@@ -47,6 +48,30 @@ public final class MinimalLivePilotControlService implements MinimalLivePilotCon
     private final ExactPilotBindingControlPlane bindings;
     private final PilotExecutionLeaseControlPlane leases;
     private final Clock clock;
+    private final CanonicalLegacyAccountBridgeService legacyBridge;
+
+    public MinimalLivePilotControlService(
+            ExchangeAccountRepository accounts,
+            InstrumentCatalogReadPort instruments,
+            CredentialPermissionProbeService permissionProbeService,
+            PilotScopeControlPlane scopes,
+            PilotScopeRepository scopeRepository,
+            ExactPilotBindingControlPlane bindings,
+            PilotExecutionLeaseControlPlane leases,
+            Clock clock,
+            CanonicalLegacyAccountBridgeService legacyBridge
+    ) {
+        this.accounts = Objects.requireNonNull(accounts, "accounts must not be null");
+        this.instruments = Objects.requireNonNull(instruments, "instruments must not be null");
+        this.permissionProbeService = Objects.requireNonNull(
+                permissionProbeService, "permissionProbeService must not be null");
+        this.scopes = Objects.requireNonNull(scopes, "scopes must not be null");
+        this.scopeRepository = Objects.requireNonNull(scopeRepository, "scopeRepository must not be null");
+        this.bindings = Objects.requireNonNull(bindings, "bindings must not be null");
+        this.leases = Objects.requireNonNull(leases, "leases must not be null");
+        this.clock = Objects.requireNonNull(clock, "clock must not be null");
+        this.legacyBridge = Objects.requireNonNull(legacyBridge, "legacyBridge must not be null");
+    }
 
     public MinimalLivePilotControlService(
             ExchangeAccountRepository accounts,
@@ -60,13 +85,13 @@ public final class MinimalLivePilotControlService implements MinimalLivePilotCon
     ) {
         this.accounts = Objects.requireNonNull(accounts, "accounts must not be null");
         this.instruments = Objects.requireNonNull(instruments, "instruments must not be null");
-        this.permissionProbeService = Objects.requireNonNull(
-                permissionProbeService, "permissionProbeService must not be null");
+        this.permissionProbeService = Objects.requireNonNull(permissionProbeService);
         this.scopes = Objects.requireNonNull(scopes, "scopes must not be null");
         this.scopeRepository = Objects.requireNonNull(scopeRepository, "scopeRepository must not be null");
         this.bindings = Objects.requireNonNull(bindings, "bindings must not be null");
         this.leases = Objects.requireNonNull(leases, "leases must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
+        this.legacyBridge = null;
     }
 
     @Override
@@ -84,13 +109,23 @@ public final class MinimalLivePilotControlService implements MinimalLivePilotCon
         String idempotencyKey = "pilot-idempotency-" + operationId;
         ExactPilotBinding.Correlation correlation = new ExactPilotBinding.Correlation(
                 requestId, traceId, idempotencyKey);
+        if (legacyBridge == null) {
+            if (account.legacyAccountId() == null) {
+                throw rejected("CANONICAL_LEGACY_ACCOUNT_BRIDGE_REQUIRED");
+            }
+        } else {
+            legacyBridge.resolveOrCreate(account, traceId, clock.instant().truncatedTo(ChronoUnit.MICROS));
+        }
+        AuthenticatedLiveControlActor actor = new AuthenticatedLiveControlActor(account.ownerUserId());
+        var replacement = leases.prepareZeroIntentReplacement(
+                actor, command.exchangeAccountId(), command.credentialReferenceId(),
+                command.instrument(), command.configuredPilotMaxNotional(), correlation);
         refreshPermission(account, command, traceId);
         // PostgreSQL TIMESTAMPTZ 与 canonical digest 共用微秒精度，必须在 Clock 边界统一。
         Instant start = clock.instant().truncatedTo(ChronoUnit.MICROS);
         Instant end = start.plus(PILOT_WINDOW);
         UUID sessionId = UUID.randomUUID();
         UUID pilotScopeId = UUID.randomUUID();
-        AuthenticatedLiveControlActor actor = new AuthenticatedLiveControlActor(account.ownerUserId());
         var materialized = scopes.materializeMinimal(actor, new MinimalPilotMaterializationCommand(
                 sessionId, pilotScopeId, command.exchangeAccountId(), command.credentialReferenceId(),
                 command.instrument(), command.configuredPilotMaxNotional(), start, end,
@@ -118,7 +153,10 @@ public final class MinimalLivePilotControlService implements MinimalLivePilotCon
         if (validation.lifecycle() != ExactPilotBinding.Lifecycle.VERIFIED) {
             throw rejected("PILOT_BINDING_VALIDATION_FAILED");
         }
-        var lease = leases.createAndActivate(
+        var lease = replacement.isPresent()
+                ? leases.createReplacementAndActivate(
+                actor, binding, command.configuredPilotMaxNotional(), end, correlation, replacement.get())
+                : leases.createAndActivate(
                 actor, binding, command.configuredPilotMaxNotional(), end, correlation);
         UUID placeIntentId = UUID.randomUUID();
         String clientOrderId = com.guidinglight.nexusquant.livecontrol.execution.domain

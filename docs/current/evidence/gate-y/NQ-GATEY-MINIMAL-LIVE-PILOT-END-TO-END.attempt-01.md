@@ -2,18 +2,18 @@
 
 ## 当前结论
 
-`BLOCKED / PRE_PLACE_LEASE_EXPIRED / NO_REAL_ORDER`（阻断 / PLACE 前唯一 lease 已过期 / 未发送真实订单）。本文件继续作为 implementation→CI→deployment→pilot 的单一持续 evidence；V44、trusted operator bootstrap、exact-head CI 与 production deployment 均已完成，但唯一 lease 在 PLACE intent 创建前因 legacy account bridge 缺失而遗留为 ACTIVE，随后由 startup recovery 终态化为 EXPIRED。当前 PLACE/CANCEL/order/trade/ledger 均为0，kill 已恢复 ENGAGED；继续需要新的 lease/session recovery 与 legacy bridge 架构授权，禁止 Attempt-02、第二 lease 或绕过状态机。
+`V45_IMPLEMENTED / LOCAL_GREEN / CI_PENDING / NO_REAL_ORDER`（V45 已实现 / 本地验证通过 / CI 待执行 / 未发送真实订单）。V45 将一次性语义从“全局只能有一行lease”收敛为“Attempt-01最多一次zero-intent pre-PLACE replacement，且全部lease合计PLACE<=1”；旧lease不复活、旧session只经既有状态机终态化。Canonical legacy account bridge复用既有`legacy_account_id`，由确定性identity、FK、trigger与审计约束。Production仍保持V44 fail-closed，CI成功前不部署或调用controller。
 
 ```text
 P0=0
-P1=1
-implementationCommit=51efdd15b66ec5f895269a4168115ea28d9989b5
-exactHeadCi=32925189271_SUCCESS_11_JOBS
-productionDeployment=PASS_EXACT_HEAD_V44_ACTIVE
+P1=0
+implementationCommit=PENDING
+exactHeadCi=PENDING
+productionDeployment=UNCHANGED_EXACT_HEAD_V44_ACTIVE
 activeRuntime=51efdd15b66ec5f895269a4168115ea28d9989b5
 activeManifest=b586ecc72db01c88fe4163a97fb6846b0bb6e2787bc2019fcda968d1ed250901
 operatorPilotParameters=ACCOUNT_1_CREDENTIAL_2_BTC_USDT_BUY_LIMIT_CAP_10
-currentPrerequisite=TRUSTED_BOOTSTRAP_MATERIALIZED_PRE_PLACE_LEASE_EXPIRED
+currentPrerequisite=V45_LOCAL_VERIFIED_CI_PENDING
 authority=EXPIRED
 session=LIVE_ACTIVE
 lease=EXPIRED
@@ -254,3 +254,20 @@ kill=ENGAGED
 - Open P1：V42的`uq_pilot_execution_leases_single_pilot`只允许全局一个durable lease，且状态机禁止`EXPIRED → ACTIVE`；existing `LIVE_ACTIVE` session也禁止第二个non-terminal session。当前授权同时禁止修改历史migration、第二lease、Attempt-02与状态机绕过，因此无法在本轮安全地产生第一笔PLACE。继续至少需要新的forward migration/明确rearm contract、pre-PLACE ACTIVE-lease recovery、session recovery与canonical legacy account bridge决策；这属于新的重大架构决定。
 - Final decision：`BLOCKED / MAJOR_ARCHITECTURE_DECISION_REQUIRED / LEGACY_ACCOUNT_IDENTITY_BRIDGE_MISSING / PRE_PLACE_ACTIVE_LEASE_EXPIRED_WITHOUT_INTENT / UNIQUE_LEASE_ALREADY_CONSUMED_AS_IDENTITY / NO_REAL_ORDER / PLACE_0 / CANCEL_0 / NO_PLACE_RETRY / ACTIVE_LEASE_0 / LIVE_FALSE / KILL_ENGAGED / NO_TRANSFER / NO_WITHDRAW / P0_0 / P1_1`。
 - Next：继续保持Attempt-01且禁止Attempt-02/第二PLACE。Operator需明确授权新的forward migration与prepared-lease rearm/recovery + legacy bridge最小模型，或决定以`NO_REAL_ORDER`关闭Attempt-01；在该决定前禁止controller、PLACE、CANCEL、手工SQL rearm、修改V42/V44、transfer或withdraw。
+
+## V45 zero-intent recovery 与 canonical legacy bridge 实现（2026-08-26）
+
+- Authorization：operator明确批准新增且仅新增V45，继续原Attempt-01，PLACE total始终`<=1`、retry=0，禁止Attempt-02与第二PLACE。V42/V43/V44未修改，无Flyway repair或production手工DDL。
+- Replacement model：`pilot_execution_leases`新增`predecessor_lease_id / recovery_decision_id / replacement_ordinal / replacement_reason`；旧lease保持EXPIRED且identity/state不可变。V42全局row唯一索引替换为single-open、single-replacement、single-predecessor-successor；replacement ordinal固定1，reason固定`PRE_PLACE_ZERO_INTENT_FAILURE`。
+- Recovery decision：新增append-only `pilot_pre_place_recovery_decisions`，只持久化`REPLACEMENT_ALLOWED_ZERO_INTENT`及PLACE intent、SEND_STARTED、ExecutionIntent、ExecutionReceipt、Order、Trade与Ledger七项零计数。Decision insert与successor lease insert分别重新锁定predecessor并独立重算zero-proof；UNKNOWN、ACTIVE/CONSUMED predecessor、任何side-effect fact或第二successor均fail closed。
+- Attempt exactly-once：`pilot_execution_lease_intents`新增全局PLACE/CANCEL唯一索引；所有lease合计最多一个PLACE link与一个CANCEL link。PostgreSQL integration实测PLACE link #1成功、#2拒绝；这不是允许第二次PLACE或blind retry。
+- Session recovery：旧OPERATOR_PILOT session通过既有`LiveSessionStateMachine`依次执行`STOP → BEGIN_RECONCILE → RECONCILE_BLOCK → RESOLVE_AND_CLOSE`，最终`LIVE_RECONCILED`。Recovery专用入口必须重新验证operator、append-only decision、旧lease/session/account/credential/authority identity与kill ENGAGED；不要求已过期authority重新ACTIVE，也不直接SQL改state。
+- Canonical legacy bridge：复用`exchange_accounts.legacy_account_id`；正式bridge service以`nq-okx-live-<exchangeAccountId>`确定性创建唯一`accounts` identity，同事务readback并写脱敏audit。V45补`legacy_account_id → accounts.account_id` FK、NULL→non-NULL/INSERT canonical trigger与映射不可变约束；不复制credential、不增加transfer/withdraw或额外交易授权。
+- Runtime DB window：controller临时权限闭集只增加`accounts INSERT`、recovery decision `SELECT/INSERT`、bridge所需精确column UPDATE与`accounts_account_id_seq USAGE`；仍禁止DELETE/TRUNCATE/schema CREATE/GRANT ALL/default privileges，finally精确REVOKE/readback。
+- PostgreSQL：V1→V45、精确V44→V45与validate均PASS；active predecessor、ExecutionIntent/Order、SEND_STARTED/Receipt拒绝；旧lease immutable；两条并发replacement请求exactly-one；second replacement与PLACE #2拒绝；bridge deterministic/idempotent。所有随机schema均已清理。
+- Validation：production compile/testCompile 23 modules PASS；focused unit/contract=`8/8 PASS`；full Maven=`23/23 modules PASS`；GateY exact/minimal/release/runtime=`7/100/31/51 PASS`，GateY4/GateY5 PASS；GateW frozen=`37/12/34 PASS`；Authority与Java governance PASS。主worktree Shadow仍被既有不可读artifact ACL阻断，必须在exact commit的clean detached worktree复核。
+- Validation history：首次testCompile仅因既有unit构造器未补recovery port而失败；兼容构造器保持replacement fail-closed后通过。首次V45 integration的future/authority-window夹具被V44 trigger正确拒绝，改用真实时钟/窗口后通过。首次local context因`@Transactional final class`无法CGLIB代理而失败，移除final后真实context通过。首次full Maven仅缺少non-web context recovery mock，补齐后23 modules通过。所有失败均保留为执行历史，未伪装PASS。
+- Targeted P0/P1 review：仅审查replacement exactly-once/concurrency、legacy bridge、session recovery、PLACE boundary与migration。补充关闭两项review问题：bridge FK+INSERT trigger、terminal-session幂等返回前先验证actor/decision。最终P0=0/P1=0；未做全仓重新审计。
+- Production boundary：本实现阶段未迁移/部署V45，未调用credential/OKX/controller，未创建replacement或bridge production fact。Production仍为current=`51efdd15...`、V44、health UP、LIVE=false、kill ENGAGED、authority/lease EXPIRED、session LIVE_ACTIVE、activeLease0、PLACE/CANCEL/order/trade/ledger=`0/0/0/0/0`。
+- Current decision：`IMPLEMENTED / LOCAL_GREEN / V45_ZERO_INTENT_REPLACEMENT_READY_FOR_COMMIT / CANONICAL_LEGACY_ACCOUNT_BRIDGE_READY_FOR_COMMIT / PLACE_0 / NO_PLACE_RETRY / LIVE_FALSE / KILL_ENGAGED / P0_0 / P1_0 / CI_PENDING / PRODUCTION_UNCHANGED`。
+- Next：精确暂存V45、recovery/bridge实现与测试、controller contract和本文件；commit `fix(gatey): allow zero-intent pilot lease recovery`，push origin/dev并等待exact-head CI。CI全绿前禁止production backup/migration/deployment/controller/PLACE。

@@ -8,6 +8,8 @@ import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionCommand;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotExecutionLease;
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotExecutionLeaseRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.port.PilotPrePlaceRecoveryRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.port.PilotPrePlaceRecoveryRepository.Authorization;
 import com.guidinglight.nexusquant.risk.service.KillSwitchScope;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
@@ -28,17 +30,33 @@ import java.util.UUID;
 public final class PilotExecutionLeaseService implements PilotExecutionLeaseControlPlane {
 
     private final PilotExecutionLeaseRepository leases;
+    private final PilotPrePlaceRecoveryRepository recoveries;
     private final LiveSessionControlService sessions;
     private final KillSwitchService killSwitch;
     private final Clock clock;
 
     public PilotExecutionLeaseService(
             PilotExecutionLeaseRepository leases,
+            PilotPrePlaceRecoveryRepository recoveries,
             LiveSessionControlService sessions,
             KillSwitchService killSwitch,
             Clock clock
     ) {
         this.leases = Objects.requireNonNull(leases, "leases must not be null");
+        this.recoveries = Objects.requireNonNull(recoveries, "recoveries must not be null");
+        this.sessions = Objects.requireNonNull(sessions, "sessions must not be null");
+        this.killSwitch = Objects.requireNonNull(killSwitch, "killSwitch must not be null");
+        this.clock = Objects.requireNonNull(clock, "clock must not be null");
+    }
+
+    PilotExecutionLeaseService(
+            PilotExecutionLeaseRepository leases,
+            LiveSessionControlService sessions,
+            KillSwitchService killSwitch,
+            Clock clock
+    ) {
+        this.leases = Objects.requireNonNull(leases, "leases must not be null");
+        this.recoveries = null;
         this.sessions = Objects.requireNonNull(sessions, "sessions must not be null");
         this.killSwitch = Objects.requireNonNull(killSwitch, "killSwitch must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
@@ -52,11 +70,40 @@ public final class PilotExecutionLeaseService implements PilotExecutionLeaseCont
             Instant expiresAt,
             ExactPilotBinding.Correlation correlation
     ) {
+        return createAndActivate(actor, binding, maxNotional, expiresAt, correlation, null);
+    }
+
+    @Override
+    public PilotExecutionLease createReplacementAndActivate(
+            AuthenticatedLiveControlActor actor,
+            ExactPilotBinding binding,
+            BigDecimal maxNotional,
+            Instant expiresAt,
+            ExactPilotBinding.Correlation correlation,
+            Authorization authorization
+    ) {
+        return createAndActivate(actor, binding, maxNotional, expiresAt, correlation,
+                Objects.requireNonNull(authorization));
+    }
+
+    private PilotExecutionLease createAndActivate(
+            AuthenticatedLiveControlActor actor,
+            ExactPilotBinding binding,
+            BigDecimal maxNotional,
+            Instant expiresAt,
+            ExactPilotBinding.Correlation correlation,
+            Authorization authorization
+    ) {
         Objects.requireNonNull(actor, "actor must not be null");
         Objects.requireNonNull(correlation, "correlation must not be null");
         Instant now = clock.instant();
-        PilotExecutionLease created = leases.create(PilotExecutionLease.created(
-                        UUID.randomUUID(), binding, maxNotional, actor.userId(), now, expiresAt),
+        PilotExecutionLease draft = authorization == null
+                ? PilotExecutionLease.created(
+                UUID.randomUUID(), binding, maxNotional, actor.userId(), now, expiresAt)
+                : PilotExecutionLease.createdReplacement(
+                UUID.randomUUID(), binding, maxNotional, actor.userId(), now, expiresAt,
+                authorization.predecessorLeaseId(), authorization.decisionId());
+        PilotExecutionLease created = leases.create(draft,
                 correlation.requestId(), correlation.traceId());
         try {
             transition(actor, binding.sessionId(), LiveSessionCommand.APPROVE, correlation);
@@ -76,6 +123,33 @@ public final class PilotExecutionLeaseService implements PilotExecutionLeaseCont
             recoverLease(actor, created.id(), binding.sessionId(), correlation, "PILOT_ACTIVATION_FAILED");
             throw failure;
         }
+    }
+
+    @Override
+    public java.util.Optional<Authorization> prepareZeroIntentReplacement(
+            AuthenticatedLiveControlActor actor,
+            long exchangeAccountId,
+            long credentialReferenceId,
+            String instrument,
+            BigDecimal maxNotional,
+            ExactPilotBinding.Correlation correlation
+    ) {
+        Objects.requireNonNull(actor, "actor must not be null");
+        Objects.requireNonNull(correlation, "correlation must not be null");
+        if (killSwitch.snapshot().status() != KillSwitchStatus.ENGAGED) {
+            throw new LiveControlException("PILOT_KILL_NOT_ENGAGED", "recovery requires ENGAGED kill");
+        }
+        if (recoveries == null) {
+            throw new LiveControlException(
+                    "PRE_PLACE_RECOVERY_UNAVAILABLE", "pre-place recovery repository is unavailable");
+        }
+        java.util.Optional<Authorization> authorization = recoveries.decide(
+                actor.userId(), exchangeAccountId, credentialReferenceId, instrument, maxNotional,
+                UUID.randomUUID(), correlation.requestId(), correlation.traceId(), clock.instant());
+        authorization.ifPresent(value -> sessions.terminalizeMinimalPilotPrePlaceRecovery(
+                actor, value.predecessorSessionId(), value.decisionId(),
+                correlation.requestId(), correlation.traceId(), correlation.idempotencyKey()));
+        return authorization;
     }
 
     @Override

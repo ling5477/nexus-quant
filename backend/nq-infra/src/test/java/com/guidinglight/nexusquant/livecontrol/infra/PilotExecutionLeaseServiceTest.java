@@ -12,6 +12,8 @@ import com.guidinglight.nexusquant.livecontrol.application.LiveSessionControlSer
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotExecutionLease;
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotExecutionLeaseRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.port.PilotPrePlaceRecoveryRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.port.PilotPrePlaceRecoveryRepository.Authorization;
 import com.guidinglight.nexusquant.risk.service.KillSwitchScope;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 import com.guidinglight.nexusquant.risk.service.KillSwitchSnapshot;
@@ -73,6 +75,35 @@ class PilotExecutionLeaseServiceTest {
                         correlation);
 
         verify(kill).engage(7, "PILOT_RECONCILIATION_REQUIRED", "PILOT_RECOVERY", "trace");
+        verify(leases, never()).close(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void zeroIntentDecisionTerminalizesOnlyTheExactPredecessorSession() {
+        PilotExecutionLeaseRepository leases = mock(PilotExecutionLeaseRepository.class);
+        PilotPrePlaceRecoveryRepository recoveries = mock(PilotPrePlaceRecoveryRepository.class);
+        LiveSessionControlService sessions = mock(LiveSessionControlService.class);
+        KillSwitchService kill = mock(KillSwitchService.class);
+        var actor = new AuthenticatedLiveControlActor(11L);
+        var correlation = new ExactPilotBinding.Correlation("request", "trace", "idempotency");
+        Authorization authorization = new Authorization(
+                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 1);
+        when(kill.snapshot()).thenReturn(new KillSwitchSnapshot(
+                KillSwitchScope.GLOBAL_TRADING, KillSwitchStatus.ENGAGED, 4,
+                "SAFE", "PILOT_RECOVERY", NOW, NOW, "trace"));
+        when(recoveries.decide(
+                eq(11L), eq(1L), eq(2L), eq("BTC-USDT"), any(), any(),
+                eq("request"), eq("trace"), eq(NOW)))
+                .thenReturn(Optional.of(authorization));
+
+        new PilotExecutionLeaseService(
+                leases, recoveries, sessions, kill, Clock.fixed(NOW, ZoneOffset.UTC))
+                .prepareZeroIntentReplacement(
+                        actor, 1L, 2L, "BTC-USDT", new BigDecimal("10.00000000"), correlation);
+
+        verify(sessions).terminalizeMinimalPilotPrePlaceRecovery(
+                actor, authorization.predecessorSessionId(), authorization.decisionId(),
+                "request", "trace", "idempotency");
         verify(leases, never()).close(any(), any(), any(), any(), any(), any());
     }
 

@@ -34,6 +34,8 @@ foreach ($required in @(
     'PILOT_DATABASE_WRITE_WINDOW_GRANT_FAILED', 'PILOT_DATABASE_WRITE_WINDOW_REVOKE_FAILED',
     "'/usr/bin/timeout'", 'PGCONNECT_TIMEOUT=5', '--signal=TERM 45s',
     'GRANT UPDATE ON TABLE public.exchange_account_credentials TO nq_gatey_readonly',
+    'GRANT INSERT ON TABLE public.accounts TO nq_gatey_readonly',
+    'GRANT SELECT, INSERT ON TABLE public.pilot_pre_place_recovery_decisions TO nq_gatey_readonly',
     'GRANT INSERT ON TABLE public.credential_audit_logs TO nq_gatey_readonly',
     'GRANT INSERT, UPDATE ON TABLE public.instrument_catalog TO nq_gatey_readonly',
     'GRANT SELECT, INSERT, UPDATE ON TABLE public.operator_pilot_authorities TO nq_gatey_readonly',
@@ -45,11 +47,14 @@ foreach ($required in @(
     'GRANT UPDATE ON TABLE public.kill_switch_states TO nq_gatey_readonly',
     'GRANT INSERT ON TABLE public.kill_switch_events TO nq_gatey_readonly',
     'GRANT UPDATE(exchange_account_id) ON TABLE public.exchange_accounts TO nq_gatey_readonly',
+    'GRANT UPDATE(legacy_account_id, updated_at) ON TABLE public.exchange_accounts TO nq_gatey_readonly',
+    'GRANT UPDATE(account_id) ON TABLE public.accounts TO nq_gatey_readonly',
     'GRANT UPDATE(pilot_scope_id) ON TABLE public.pilot_scope_bindings TO nq_gatey_readonly',
     'GRANT UPDATE(id) ON TABLE public.users TO nq_gatey_readonly',
     'GRANT UPDATE(user_id) ON TABLE public.user_roles TO nq_gatey_readonly',
     'GRANT UPDATE(id) ON TABLE public.roles TO nq_gatey_readonly',
     'GRANT USAGE ON SEQUENCE public.credential_audit_logs_credential_audit_log_id_seq',
+    'GRANT USAGE ON SEQUENCE public.accounts_account_id_seq',
     'REVOKE UPDATE ON TABLE public.exchange_account_credentials FROM nq_gatey_readonly',
     'REVOKE SELECT, INSERT, UPDATE ON TABLE public.operator_pilot_authorities FROM nq_gatey_readonly',
     'REVOKE INSERT ON TABLE public.event_store FROM nq_gatey_readonly',
@@ -95,21 +100,22 @@ if (-not $grantMatch.Success -or -not $revokeMatch.Success) {
 $grantSql = $grantMatch.Groups['sql'].Value
 $revokeSql = $revokeMatch.Groups['sql'].Value
 $writeTables = @(
-    'exchange_account_credentials', 'credential_audit_logs', 'instrument_catalog',
+    'exchange_account_credentials', 'accounts', 'credential_audit_logs', 'instrument_catalog',
     'operator_pilot_authorities', 'live_sessions', 'live_session_events',
     'pilot_scope_bindings', 'pilot_prerequisite_observations',
     'pilot_instrument_observation_items', 'pilot_execution_leases',
+    'pilot_pre_place_recovery_decisions',
     'pilot_execution_lease_intents', 'pilot_execution_lease_events', 'execution_intents',
     'execution_receipts', 'orders', 'trades', 'ledger_entries', 'ledger_events',
     'account_snapshots', 'positions', 'audit_logs', 'risk_events', 'event_store',
     'kill_switch_states', 'kill_switch_events'
 )
 foreach ($table in $writeTables) {
-    if ($grantSql -cnotmatch ("(?m)^GRANT (INSERT|UPDATE|INSERT, UPDATE|SELECT, INSERT, UPDATE) ON TABLE public\." +
+    if ($grantSql -cnotmatch ("(?m)^GRANT (INSERT|UPDATE|INSERT, UPDATE|SELECT, INSERT|SELECT, INSERT, UPDATE) ON TABLE public\." +
             [regex]::Escape($table) + ' TO nq_gatey_readonly;$')) {
         throw ('PILOT_DATABASE_TABLE_GRANT_MISSING:' + $table)
     }
-    if ($revokeSql -cnotmatch ("(?m)^REVOKE (INSERT|UPDATE|INSERT, UPDATE|SELECT, INSERT, UPDATE) ON TABLE public\." +
+    if ($revokeSql -cnotmatch ("(?m)^REVOKE (INSERT|UPDATE|INSERT, UPDATE|SELECT, INSERT|SELECT, INSERT, UPDATE) ON TABLE public\." +
             [regex]::Escape($table) + ' FROM nq_gatey_readonly;$')) {
         throw ('PILOT_DATABASE_TABLE_REVOKE_MISSING:' + $table)
     }
@@ -117,7 +123,8 @@ foreach ($table in $writeTables) {
 $writeSequences = @(
     'credential_audit_logs_credential_audit_log_id_seq',
     'instrument_catalog_instrument_id_seq', 'account_snapshots_snapshot_id_seq',
-    'audit_logs_id_seq', 'ledger_events_ledger_event_id_seq', 'positions_id_seq'
+    'audit_logs_id_seq', 'ledger_events_ledger_event_id_seq', 'positions_id_seq',
+    'accounts_account_id_seq'
 )
 foreach ($sequence in $writeSequences) {
     if (-not $grantSql.Contains('public.' + $sequence) -or
@@ -127,6 +134,7 @@ foreach ($sequence in $writeSequences) {
 }
 $roleLockColumns = @(
     @('exchange_accounts', 'exchange_account_id'),
+    @('accounts', 'account_id'),
     @('pilot_scope_bindings', 'pilot_scope_id'),
     @('users', 'id'), @('user_roles', 'user_id'), @('roles', 'id')
 )
@@ -138,8 +146,14 @@ foreach ($pair in $roleLockColumns) {
         throw ('PILOT_DATABASE_ROLE_LOCK_COLUMN_WINDOW_MISMATCH:' + $table + '.' + $column)
     }
 }
-if (($grantSql | Select-String -Pattern '(?m)^GRANT .* ON TABLE ' -AllMatches).Matches.Count -ne 30 -or
-        ($revokeSql | Select-String -Pattern '(?m)^REVOKE .* ON TABLE ' -AllMatches).Matches.Count -ne 30) {
+if (-not $grantSql.Contains(
+        'GRANT UPDATE(legacy_account_id, updated_at) ON TABLE public.exchange_accounts TO nq_gatey_readonly;') -or
+        -not $revokeSql.Contains(
+        'REVOKE UPDATE(legacy_account_id, updated_at) ON TABLE public.exchange_accounts FROM nq_gatey_readonly;')) {
+    throw 'PILOT_DATABASE_LEGACY_BRIDGE_COLUMN_WINDOW_MISMATCH'
+}
+if (($grantSql | Select-String -Pattern '(?m)^GRANT .* ON TABLE ' -AllMatches).Matches.Count -ne 34 -or
+        ($revokeSql | Select-String -Pattern '(?m)^REVOKE .* ON TABLE ' -AllMatches).Matches.Count -ne 34) {
     throw 'PILOT_DATABASE_TABLE_WINDOW_CARDINALITY_INVALID'
 }
 
@@ -155,7 +169,7 @@ if ([string]$result.decision -cne 'BLOCKED / ROOT_LINUX_REQUIRED') {
 
 [pscustomobject][ordered]@{
     decision = 'PASS / GATEY_MINIMAL_LIVE_PILOT_CONTRACT_REGRESSION'
-    cases = 90
+    cases = 100
     providerCalls = 0
     place = 0
     cancel = 0

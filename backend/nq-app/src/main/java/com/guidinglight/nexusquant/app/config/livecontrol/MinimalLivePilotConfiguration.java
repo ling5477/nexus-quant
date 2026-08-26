@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
 import com.guidinglight.nexusquant.account.application.CredentialPermissionProbeService;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
+import com.guidinglight.nexusquant.account.infra.jdbc.CanonicalLegacyAccountBridgeService;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotEndpointGuard;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderAdapter;
 import com.guidinglight.nexusquant.livecontrol.application.LiveSessionControlService;
@@ -17,6 +18,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.port.ExactPilotBindingRepo
 import com.guidinglight.nexusquant.livecontrol.domain.port.LiveControlRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotExecutionLeaseRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotScopeRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.port.PilotPrePlaceRecoveryRepository;
 import com.guidinglight.nexusquant.livecontrol.execution.application.port.ExecutionIntentRepository;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotExecutionProviderPort;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderRequests;
@@ -83,10 +85,17 @@ public class MinimalLivePilotConfiguration {
     @Bean
     public PilotExecutionLeaseControlPlane pilotExecutionLeaseControlPlane(
             PilotExecutionLeaseRepository leases,
+            PilotPrePlaceRecoveryRepository recoveries,
             LiveSessionControlService sessions,
             KillSwitchService killSwitchService
     ) {
-        return new PilotExecutionLeaseService(leases, sessions, killSwitchService, Clock.systemUTC());
+        return new PilotExecutionLeaseService(
+                leases, recoveries, sessions, killSwitchService, Clock.systemUTC());
+    }
+
+    @Bean
+    public CanonicalLegacyAccountBridgeService canonicalLegacyAccountBridgeService(JdbcTemplate jdbc) {
+        return new CanonicalLegacyAccountBridgeService(jdbc);
     }
 
     @Bean
@@ -97,11 +106,12 @@ public class MinimalLivePilotConfiguration {
             PilotScopeControlPlane scopes,
             PilotScopeRepository scopeRepository,
             com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingControlPlane bindings,
-            PilotExecutionLeaseControlPlane leases
+            PilotExecutionLeaseControlPlane leases,
+            CanonicalLegacyAccountBridgeService legacyBridge
     ) {
         return new MinimalLivePilotControlService(
                 accounts, instruments, permissionProbeService, scopes, scopeRepository,
-                bindings, leases, Clock.systemUTC());
+                bindings, leases, Clock.systemUTC(), legacyBridge);
     }
 
     @Bean

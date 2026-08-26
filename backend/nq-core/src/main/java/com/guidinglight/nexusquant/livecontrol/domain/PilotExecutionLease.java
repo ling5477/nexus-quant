@@ -27,7 +27,11 @@ public record PilotExecutionLease(
         long createdBy,
         long version,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        UUID predecessorLeaseId,
+        UUID recoveryDecisionId,
+        int replacementOrdinal,
+        String replacementReason
 ) {
     public static final Duration MAXIMUM_LIFETIME = Duration.ofMinutes(5);
 
@@ -51,7 +55,8 @@ public record PilotExecutionLease(
             Instant updatedAt
     ) {
         this(id, liveSessionId, null, bindingId, bindingDigest, status, maxNotional, validFrom,
-                expiresAt, consumedAt, closedAt, createdBy, version, createdAt, updatedAt);
+                expiresAt, consumedAt, closedAt, createdBy, version, createdAt, updatedAt,
+                null, null, 0, null);
     }
 
     public PilotExecutionLease {
@@ -78,6 +83,12 @@ public record PilotExecutionLease(
         ExactPilotBinding.require(!consumed || consumedAt != null && closedAt == null,
                 "consumed lease requires consumedAt only");
         ExactPilotBinding.require(!terminal || closedAt != null, "terminal lease requires closedAt");
+        boolean original = replacementOrdinal == 0 && predecessorLeaseId == null
+                && recoveryDecisionId == null && replacementReason == null;
+        boolean replacement = replacementOrdinal == 1 && predecessorLeaseId != null
+                && recoveryDecisionId != null
+                && "PRE_PLACE_ZERO_INTENT_FAILURE".equals(replacementReason);
+        ExactPilotBinding.require(original || replacement, "lease replacement lineage is invalid");
     }
 
     public static PilotExecutionLease created(
@@ -97,7 +108,28 @@ public record PilotExecutionLease(
                 id, binding.sessionId(), binding.operatorPilotAuthority() == null
                 ? null : binding.operatorPilotAuthority().authorityId(),
                 binding.id(), binding.bindingDigest(), Status.CREATED,
-                maxNotional, validFrom, expiresAt, null, null, createdBy, 1, validFrom, validFrom);
+                maxNotional, validFrom, expiresAt, null, null, createdBy, 1, validFrom, validFrom,
+                null, null, 0, null);
+    }
+
+    public static PilotExecutionLease createdReplacement(
+            UUID id,
+            ExactPilotBinding binding,
+            BigDecimal maxNotional,
+            long createdBy,
+            Instant validFrom,
+            Instant expiresAt,
+            UUID predecessorLeaseId,
+            UUID recoveryDecisionId
+    ) {
+        PilotExecutionLease original = created(
+                id, binding, maxNotional, createdBy, validFrom, expiresAt);
+        return new PilotExecutionLease(
+                original.id(), original.liveSessionId(), original.operatorPilotAuthorityId(),
+                original.bindingId(), original.bindingDigest(), original.status(), original.maxNotional(),
+                original.validFrom(), original.expiresAt(), null, null, original.createdBy(),
+                original.version(), original.createdAt(), original.updatedAt(), predecessorLeaseId,
+                recoveryDecisionId, 1, "PRE_PLACE_ZERO_INTENT_FAILURE");
     }
 
     public boolean activeAt(Instant decisionAt) {

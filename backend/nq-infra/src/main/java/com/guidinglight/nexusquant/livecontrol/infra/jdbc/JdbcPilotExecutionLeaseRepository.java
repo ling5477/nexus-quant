@@ -25,7 +25,8 @@ public class JdbcPilotExecutionLeaseRepository implements PilotExecutionLeaseRep
 
     private static final String COLUMNS = """
             SELECT lease_id,live_session_id,operator_pilot_authority_id,binding_id,binding_digest,status,max_notional,
-                   valid_from,expires_at,consumed_at,closed_at,created_by,version,created_at,updated_at
+                   valid_from,expires_at,consumed_at,closed_at,created_by,version,created_at,updated_at,
+                   predecessor_lease_id,recovery_decision_id,replacement_ordinal,replacement_reason
             FROM pilot_execution_leases
             """;
 
@@ -48,13 +49,15 @@ public class JdbcPilotExecutionLeaseRepository implements PilotExecutionLeaseRep
         jdbc.update("""
                         INSERT INTO pilot_execution_leases(
                             lease_id,live_session_id,operator_pilot_authority_id,binding_id,binding_digest,status,max_notional,
-                            valid_from,expires_at,created_by,version,created_at,updated_at
-                        ) VALUES (?,?,?,?,?,?,?,?,?,?,1,?,?)
+                            valid_from,expires_at,created_by,version,created_at,updated_at,
+                            predecessor_lease_id,recovery_decision_id,replacement_ordinal,replacement_reason
+                        ) VALUES (?,?,?,?,?,?,?,?,?,?,1,?,?,?,?,?,?)
                         """, lease.id(), lease.liveSessionId(), lease.operatorPilotAuthorityId(),
                 lease.bindingId(), lease.bindingDigest(),
                 lease.status().name(), lease.maxNotional(), Timestamp.from(lease.validFrom()),
                 Timestamp.from(lease.expiresAt()), lease.createdBy(), Timestamp.from(lease.createdAt()),
-                Timestamp.from(lease.updatedAt()));
+                Timestamp.from(lease.updatedAt()), lease.predecessorLeaseId(), lease.recoveryDecisionId(),
+                lease.replacementOrdinal(), lease.replacementReason());
         appendEvent(lease.id(), null, lease.status(), 1, "PILOT_LEASE_CREATED",
                 requestId, traceId, lease.createdAt());
         return findLocked(lease.id()).orElseThrow();
@@ -213,7 +216,10 @@ public class JdbcPilotExecutionLeaseRepository implements PilotExecutionLeaseRep
                 row.getTimestamp("valid_from").toInstant(), row.getTimestamp("expires_at").toInstant(),
                 instant(row, "consumed_at"), instant(row, "closed_at"), row.getLong("created_by"),
                 row.getLong("version"), row.getTimestamp("created_at").toInstant(),
-                row.getTimestamp("updated_at").toInstant());
+                row.getTimestamp("updated_at").toInstant(),
+                row.getObject("predecessor_lease_id", UUID.class),
+                row.getObject("recovery_decision_id", UUID.class),
+                row.getInt("replacement_ordinal"), row.getString("replacement_reason"));
     }
 
     private static Instant instant(ResultSet row, String name) throws SQLException {

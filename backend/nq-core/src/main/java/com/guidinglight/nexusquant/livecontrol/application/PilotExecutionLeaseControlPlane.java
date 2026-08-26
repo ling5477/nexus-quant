@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.Optional;
+import com.guidinglight.nexusquant.livecontrol.domain.port.PilotPrePlaceRecoveryRepository.Authorization;
 
 /** Minimal live pilot lease lifecycle；不直接调用provider。 */
 public interface PilotExecutionLeaseControlPlane {
@@ -16,6 +17,24 @@ public interface PilotExecutionLeaseControlPlane {
             ExactPilotBinding binding,
             BigDecimal maxNotional,
             Instant expiresAt,
+            ExactPilotBinding.Correlation correlation
+    );
+
+    PilotExecutionLease createReplacementAndActivate(
+            AuthenticatedLiveControlActor actor,
+            ExactPilotBinding binding,
+            BigDecimal maxNotional,
+            Instant expiresAt,
+            ExactPilotBinding.Correlation correlation,
+            Authorization authorization
+    );
+
+    Optional<Authorization> prepareZeroIntentReplacement(
+            AuthenticatedLiveControlActor actor,
+            long exchangeAccountId,
+            long credentialReferenceId,
+            String instrument,
+            BigDecimal maxNotional,
             ExactPilotBinding.Correlation correlation
     );
 

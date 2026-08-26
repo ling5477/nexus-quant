@@ -10,13 +10,18 @@ import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveCont
 import com.guidinglight.nexusquant.livecontrol.application.LiveSessionControlService;
 import com.guidinglight.nexusquant.livecontrol.application.OperatorPilotAuthorityService;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionAuthorityType;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionEvent;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionState;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionCommand;
 import com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority;
 import com.guidinglight.nexusquant.livecontrol.infra.jdbc.JdbcLiveControlAuthorization;
 import com.guidinglight.nexusquant.livecontrol.infra.jdbc.JdbcLiveControlRepository;
 import com.guidinglight.nexusquant.livecontrol.infra.jdbc.JdbcOperatorPilotAuthorityRepository;
+import com.guidinglight.nexusquant.livecontrol.infra.jdbc.JdbcPilotPrePlaceRecoveryRepository;
+import com.guidinglight.nexusquant.account.infra.jdbc.CanonicalLegacyAccountBridgeService;
+import com.guidinglight.nexusquant.account.infra.jdbc.JdbcExchangeAccountRepository;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -24,6 +29,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
@@ -37,6 +45,274 @@ import org.springframework.transaction.support.TransactionTemplate;
  * V44 disposable PostgreSQL：operator authority、conditional session 与 lease lifecycle。
  */
 class OperatorPilotAuthorityPostgresIntegrationTest {
+
+    @Test
+    void migratesExactV44ToV45AndValidates() {
+        String url = System.getProperty("nq.postgres.smoke.url", "").trim();
+        String user = System.getProperty("nq.postgres.smoke.user", "").trim();
+        String password = System.getProperty("nq.postgres.smoke.password", "").trim();
+        boolean required = Boolean.parseBoolean(System.getProperty("nq.postgres.smoke.required", "false"));
+        if (!required) {
+            assumeTrue(!url.isBlank() && !user.isBlank() && !password.isBlank(),
+                    "PostgreSQL V44 to V45 integration is disabled");
+        }
+        String schema = "gatey45upgrade_" + UUID.randomUUID().toString().replace("-", "");
+        String schemaUrl = url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema + ",public";
+        Flyway throughV44 = Flyway.configure().dataSource(schemaUrl, user, password).schemas(schema)
+                .defaultSchema(schema).createSchemas(true).cleanDisabled(false).target("44")
+                .locations("filesystem:../nq-infra/src/main/resources/db/migration").load();
+        throughV44.migrate();
+        assertEquals("44", throughV44.info().current().getVersion().getVersion());
+        Flyway latest = Flyway.configure().dataSource(schemaUrl, user, password).schemas(schema)
+                .defaultSchema(schema).createSchemas(true).cleanDisabled(false)
+                .locations("filesystem:../nq-infra/src/main/resources/db/migration").load();
+        try {
+            latest.migrate();
+            latest.validate();
+            assertEquals("45", latest.info().current().getVersion().getVersion());
+        } finally {
+            latest.clean();
+        }
+    }
+
+    @Test
+    void allowsOneConcurrentZeroIntentReplacementAndCanonicalLegacyBridge() throws Exception {
+        String url = System.getProperty("nq.postgres.smoke.url", "").trim();
+        String user = System.getProperty("nq.postgres.smoke.user", "").trim();
+        String password = System.getProperty("nq.postgres.smoke.password", "").trim();
+        boolean required = Boolean.parseBoolean(System.getProperty("nq.postgres.smoke.required", "false"));
+        if (!required) {
+            assumeTrue(!url.isBlank() && !user.isBlank() && !password.isBlank(),
+                    "PostgreSQL V45 integration is disabled");
+        }
+        String schema = "gatey45_" + UUID.randomUUID().toString().replace("-", "");
+        String schemaUrl = url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema + ",public";
+        Flyway flyway = Flyway.configure().dataSource(schemaUrl, user, password).schemas(schema)
+                .defaultSchema(schema).createSchemas(true).cleanDisabled(false)
+                .locations("filesystem:../nq-infra/src/main/resources/db/migration").load();
+        flyway.migrate();
+        flyway.validate();
+        try {
+            DriverManagerDataSource dataSource = new DriverManagerDataSource(schemaUrl, user, password);
+            JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+            Fixture fixture = seedOperator(jdbc);
+            Instant now = Instant.now().truncatedTo(ChronoUnit.MICROS);
+            jdbc.update("""
+                    UPDATE exchange_account_credentials
+                    SET permission_probe_status='SUCCEEDED',permission_scope='TRADE',withdraw_enabled=FALSE,
+                        ip_allowlist_probe_status='PASSED',last_permission_probe_at=?
+                    WHERE credential_id=?
+                    """, Timestamp.from(now), fixture.credentialId());
+
+            var accounts = new JdbcExchangeAccountRepository(jdbc);
+            var account = accounts.findById(fixture.accountId()).orElseThrow();
+            CanonicalLegacyAccountBridgeService bridge = new CanonicalLegacyAccountBridgeService(jdbc);
+            long legacyId = bridge.resolveOrCreate(account, "trace-v45-bridge", now);
+            assertEquals(legacyId, bridge.resolveOrCreate(
+                    accounts.findById(fixture.accountId()).orElseThrow(), "trace-v45-bridge", now));
+            assertEquals("nq-okx-live-" + fixture.accountId(), jdbc.queryForObject(
+                    "SELECT account_code FROM accounts WHERE account_id=?", String.class, legacyId));
+
+            JdbcLiveControlRepository sessionRepository = new JdbcLiveControlRepository(jdbc);
+            JdbcLiveControlAuthorization authorization = new JdbcLiveControlAuthorization(jdbc);
+            JdbcOperatorPilotAuthorityRepository authorityRepository =
+                    new JdbcOperatorPilotAuthorityRepository(jdbc);
+            JdbcPilotPrePlaceRecoveryRepository recoveries =
+                    new JdbcPilotPrePlaceRecoveryRepository(jdbc);
+            OperatorPilotAuthorityService authorityService = new OperatorPilotAuthorityService(
+                    authorityRepository, authorization);
+            LiveSessionControlService sessionService = new LiveSessionControlService(
+                    sessionRepository, authorization, recoveries);
+            TransactionTemplate transactions = new TransactionTemplate(
+                    new DataSourceTransactionManager(dataSource));
+            var actor = new AuthenticatedLiveControlActor(fixture.ownerId());
+
+            OperatorPilotAuthority firstAuthority = OperatorPilotAuthority.active(
+                    UUID.randomUUID(), fixture.ownerId(), fixture.accountId(), fixture.credentialId(),
+                    "BTC-USDT", OperatorPilotAuthority.Side.BUY, OperatorPilotAuthority.OrderType.LIMIT,
+                    new BigDecimal("10.00000000"), now, now.plusSeconds(5), fixture.ownerId(), now);
+            transactions.executeWithoutResult(status -> authorityService.materialize(actor, firstAuthority));
+            LiveSession firstSession = LiveSession.createOperatorPilot(
+                    UUID.randomUUID(), fixture.ownerId(), fixture.accountId(), firstAuthority.id(),
+                    firstAuthority.canonicalDigest(), fixture.credentialId(), "BTC-USDT",
+                    firstAuthority.maxNotional(), now, now.plusSeconds(5), fixture.ownerId(), now);
+            transactions.executeWithoutResult(status -> sessionService.createOperatorPilotSession(
+                    actor, firstSession, firstAuthority, createdEvent(firstSession, fixture.ownerId(), "first")));
+            for (LiveSessionCommand command : List.of(
+                    LiveSessionCommand.APPROVE, LiveSessionCommand.START, LiveSessionCommand.ACTIVATE)) {
+                sessionService.transitionMinimalPilot(
+                        actor, firstSession.id(), command, "request-first", "trace-first", "idem-first");
+            }
+            UUID predecessor = UUID.randomUUID();
+            jdbc.update("""
+                    INSERT INTO pilot_execution_leases(
+                        lease_id,live_session_id,operator_pilot_authority_id,binding_id,binding_digest,
+                        status,max_notional,valid_from,expires_at,created_by,version,created_at,updated_at)
+                    VALUES (?,?,?,?,?,'CREATED',?,?,?,?,1,?,?)
+                    """, predecessor, firstSession.id(), firstAuthority.id(), UUID.randomUUID(), "d".repeat(64),
+                    new BigDecimal("10.00000000"), Timestamp.from(now), Timestamp.from(firstAuthority.expiresAt()),
+                    fixture.ownerId(), Timestamp.from(now), Timestamp.from(now));
+            Instant activatedAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
+            jdbc.update("""
+                    UPDATE pilot_execution_leases SET status='ACTIVE',version=2,updated_at=? WHERE lease_id=?
+                    """, Timestamp.from(activatedAt), predecessor);
+            LiveControlException activeRejected = assertThrows(LiveControlException.class, () -> recoveries.decide(
+                    fixture.ownerId(), fixture.accountId(), fixture.credentialId(), "BTC-USDT",
+                    new BigDecimal("10.00000000"), UUID.randomUUID(), "request-active", "trace-active",
+                    Instant.now().truncatedTo(ChronoUnit.MICROS)));
+            assertEquals("REPLACEMENT_FORBIDDEN_STATE_AMBIGUOUS", activeRejected.code());
+            Thread.sleep(5_100L);
+            Instant expiredAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
+            jdbc.update("""
+                    UPDATE pilot_execution_leases
+                    SET status='EXPIRED',closed_at=?,version=3,updated_at=? WHERE lease_id=?
+                    """, Timestamp.from(expiredAt), Timestamp.from(expiredAt), predecessor);
+
+            transactions.executeWithoutResult(status -> {
+                String orderId = "order-negative-created";
+                jdbc.update("""
+                        INSERT INTO orders(order_id,account_id,symbol,client_order_id,side,type,price,qty,
+                                           status,trace_id,venue,trade_env)
+                        VALUES (?,?,?,'client-negative-created','BUY','LIMIT',100,0.01,
+                                'SENT','trace-negative','OKX','LIVE')
+                        """, orderId, legacyId, "BTC-USDT");
+                jdbc.update("""
+                        INSERT INTO execution_intents(
+                            intent_id,session_id,sequence,action,symbol,side,order_type,quantity,limit_price,
+                            payload_hash_schema_version,payload_hash,client_order_id,local_order_id,state,version)
+                        VALUES (?,?,1,'PLACE','BTC-USDT','BUY','LIMIT',0.01,100,
+                                'execution-intent-payload.v1',?,'client-negative-created',?,'CREATED',1)
+                        """, UUID.randomUUID(), firstSession.id(), "a".repeat(64), orderId);
+                LiveControlException rejected = assertThrows(LiveControlException.class, () -> recoveries.decide(
+                        fixture.ownerId(), fixture.accountId(), fixture.credentialId(), "BTC-USDT",
+                        new BigDecimal("10.00000000"), UUID.randomUUID(), "request-intent", "trace-intent",
+                        Instant.now().truncatedTo(ChronoUnit.MICROS)));
+                assertEquals("REPLACEMENT_FORBIDDEN_SIDE_EFFECT_STARTED", rejected.code());
+                status.setRollbackOnly();
+            });
+
+            transactions.executeWithoutResult(status -> {
+                String orderId = "order-negative-send";
+                UUID intentId = UUID.randomUUID();
+                Instant factTime = Instant.now().truncatedTo(ChronoUnit.MICROS);
+                jdbc.update("""
+                        INSERT INTO orders(order_id,account_id,symbol,client_order_id,side,type,price,qty,
+                                           status,trace_id,venue,trade_env)
+                        VALUES (?,?,?,'client-negative-send','BUY','LIMIT',100,0.01,
+                                'SENT','trace-negative','OKX','LIVE')
+                        """, orderId, legacyId, "BTC-USDT");
+                jdbc.update("""
+                        INSERT INTO execution_intents(
+                            intent_id,session_id,sequence,action,symbol,side,order_type,quantity,limit_price,
+                            payload_hash_schema_version,payload_hash,client_order_id,local_order_id,state,version)
+                        VALUES (?,?,1,'PLACE','BTC-USDT','BUY','LIMIT',0.01,100,
+                                'execution-intent-payload.v1',?,'client-negative-send',?,'CREATED',1)
+                        """, intentId, firstSession.id(), "b".repeat(64), orderId);
+                UUID claimToken = UUID.randomUUID();
+                jdbc.update("""
+                        UPDATE execution_intents
+                        SET state='CLAIMED',version=2,claimed_by='fixture',claim_token=?,
+                            claimed_at=?,lease_expires_at=? WHERE intent_id=?
+                        """, claimToken, Timestamp.from(factTime),
+                        Timestamp.from(factTime.plusSeconds(30)), intentId);
+                jdbc.update("""
+                        UPDATE execution_intents SET state='SEND_STARTED',version=3,send_started_at=?
+                        WHERE intent_id=?
+                        """, Timestamp.from(factTime), intentId);
+                jdbc.update("""
+                        INSERT INTO execution_receipts(
+                            receipt_id,intent_id,attempt_no,outcome,received_at,payload_digest,
+                            payload_digest_schema_version)
+                        VALUES (?,?,1,'UNKNOWN',?,?,'execution-receipt-envelope.v1')
+                        """, UUID.randomUUID(), intentId, Timestamp.from(factTime), "c".repeat(64));
+                LiveControlException rejected = assertThrows(LiveControlException.class, () -> recoveries.decide(
+                        fixture.ownerId(), fixture.accountId(), fixture.credentialId(), "BTC-USDT",
+                        new BigDecimal("10.00000000"), UUID.randomUUID(), "request-send", "trace-send",
+                        factTime));
+                assertEquals("REPLACEMENT_FORBIDDEN_SIDE_EFFECT_STARTED", rejected.code());
+                status.setRollbackOnly();
+            });
+
+            var recovery = recoveries.decide(
+                    fixture.ownerId(), fixture.accountId(), fixture.credentialId(), "BTC-USDT",
+                    new BigDecimal("10.00000000"), UUID.randomUUID(), "request-v45", "trace-v45",
+                    Instant.now().truncatedTo(ChronoUnit.MICROS)).orElseThrow();
+            sessionService.terminalizeMinimalPilotPrePlaceRecovery(
+                    actor, firstSession.id(), recovery.decisionId(),
+                    "request-v45", "trace-v45", "idem-v45");
+            assertEquals("LIVE_RECONCILED", jdbc.queryForObject(
+                    "SELECT state FROM live_sessions WHERE session_id=?", String.class, firstSession.id()));
+
+            Instant secondNow = Instant.now().truncatedTo(ChronoUnit.MICROS);
+            OperatorPilotAuthority secondAuthority = operatorAuthority(fixture, secondNow, "10.00000000");
+            transactions.executeWithoutResult(status -> authorityService.materialize(actor, secondAuthority));
+            LiveSession secondSession = operatorSession(fixture, secondAuthority, secondNow);
+            transactions.executeWithoutResult(status -> sessionService.createOperatorPilotSession(
+                    actor, secondSession, secondAuthority, createdEvent(secondSession, fixture.ownerId(), "second")));
+
+            AtomicInteger succeeded = new AtomicInteger();
+            try (var executor = Executors.newFixedThreadPool(2)) {
+                java.util.concurrent.Callable<Void> insert = () -> {
+                    try {
+                        new JdbcTemplate(new DriverManagerDataSource(schemaUrl, user, password)).update("""
+                                INSERT INTO pilot_execution_leases(
+                                    lease_id,live_session_id,operator_pilot_authority_id,binding_id,binding_digest,
+                                    status,max_notional,valid_from,expires_at,created_by,version,created_at,updated_at,
+                                    predecessor_lease_id,recovery_decision_id,replacement_ordinal,replacement_reason)
+                                VALUES (?,?,?,?,?,'CREATED',?,?,?,?,1,?,?,?,?,1,'PRE_PLACE_ZERO_INTENT_FAILURE')
+                                """, UUID.randomUUID(), secondSession.id(), secondAuthority.id(), UUID.randomUUID(),
+                                "e".repeat(64), new BigDecimal("10.00000000"), Timestamp.from(secondNow),
+                                Timestamp.from(secondNow.plusSeconds(120)), fixture.ownerId(),
+                                Timestamp.from(secondNow), Timestamp.from(secondNow), predecessor,
+                                recovery.decisionId());
+                        succeeded.incrementAndGet();
+                    } catch (org.springframework.dao.DataIntegrityViolationException expected) {
+                        // 数据库唯一约束/trigger必须让并发loser失败。
+                    }
+                    return null;
+                };
+                Future<Void> first = executor.submit(insert);
+                Future<Void> second = executor.submit(insert);
+                first.get();
+                second.get();
+            }
+            assertEquals(1, succeeded.get());
+            assertEquals(1, jdbc.queryForObject(
+                    "SELECT count(*) FROM pilot_execution_leases WHERE predecessor_lease_id=?",
+                    Integer.class, predecessor));
+            assertEquals("EXPIRED", jdbc.queryForObject(
+                    "SELECT status FROM pilot_execution_leases WHERE lease_id=?", String.class, predecessor));
+            UUID successor = jdbc.queryForObject(
+                    "SELECT lease_id FROM pilot_execution_leases WHERE predecessor_lease_id=?",
+                    UUID.class, predecessor);
+            for (LiveSessionCommand command : List.of(
+                    LiveSessionCommand.APPROVE, LiveSessionCommand.START, LiveSessionCommand.ACTIVATE)) {
+                sessionService.transitionMinimalPilot(
+                        actor, secondSession.id(), command, "request-second", "trace-second", "idem-second");
+            }
+            Instant successorActiveAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
+            jdbc.update("""
+                    UPDATE pilot_execution_leases SET status='ACTIVE',version=2,updated_at=? WHERE lease_id=?
+                    """, Timestamp.from(successorActiveAt), successor);
+            UUID firstIntent = insertCreatedPlaceIntent(
+                    jdbc, secondSession.id(), legacyId, 1, "first", "f".repeat(64));
+            jdbc.update("""
+                    INSERT INTO pilot_execution_lease_intents(lease_id,intent_id,action,created_at)
+                    VALUES (?,?,'PLACE',?)
+                    """, successor, firstIntent, Timestamp.from(successorActiveAt));
+            UUID secondIntent = insertCreatedPlaceIntent(
+                    jdbc, secondSession.id(), legacyId, 2, "second", "1".repeat(64));
+            assertThrows(DataIntegrityViolationException.class, () -> jdbc.update("""
+                    INSERT INTO pilot_execution_lease_intents(lease_id,intent_id,action,created_at)
+                    VALUES (?,?,'PLACE',?)
+                    """, successor, secondIntent, Timestamp.from(successorActiveAt)));
+            assertEquals(1, jdbc.queryForObject(
+                    "SELECT count(*) FROM pilot_execution_lease_intents WHERE action='PLACE'",
+                    Integer.class));
+        } finally {
+            flyway.clean();
+        }
+    }
 
     @Test
     void enforcesOperatorAuthorityIsolationDigestLeaseAndCloseout() {
@@ -58,7 +334,7 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
         flyway.migrate();
         flyway.validate();
         try {
-            assertEquals("44", flyway.info().current().getVersion().getVersion());
+            assertEquals("45", flyway.info().current().getVersion().getVersion());
             DriverManagerDataSource dataSource = new DriverManagerDataSource(schemaUrl, user, password);
             JdbcTemplate jdbc = new JdbcTemplate(dataSource);
             Fixture fixture = seedOperator(jdbc);
@@ -190,6 +466,62 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
                 RETURNING credential_id
                 """, Long.class, account, new byte[]{1, 2, 3});
         return new Fixture(owner, account, credential);
+    }
+
+    private static OperatorPilotAuthority operatorAuthority(
+            Fixture fixture,
+            Instant now,
+            String maxNotional
+    ) {
+        return OperatorPilotAuthority.active(
+                UUID.randomUUID(), fixture.ownerId(), fixture.accountId(), fixture.credentialId(),
+                "BTC-USDT", OperatorPilotAuthority.Side.BUY, OperatorPilotAuthority.OrderType.LIMIT,
+                new BigDecimal(maxNotional), now, now.plusSeconds(120), fixture.ownerId(), now);
+    }
+
+    private static LiveSession operatorSession(
+            Fixture fixture,
+            OperatorPilotAuthority authority,
+            Instant now
+    ) {
+        return LiveSession.createOperatorPilot(
+                UUID.randomUUID(), fixture.ownerId(), fixture.accountId(), authority.id(),
+                authority.canonicalDigest(), fixture.credentialId(), "BTC-USDT",
+                authority.maxNotional(), now, now.plusSeconds(120), fixture.ownerId(), now);
+    }
+
+    private static LiveSessionEvent createdEvent(LiveSession session, long ownerId, String suffix) {
+        return new LiveSessionEvent(
+                UUID.randomUUID(), session.id(), 1, null, LiveSessionState.APPROVAL_PENDING,
+                "CREATE", ownerId, "request-" + suffix, "trace-" + suffix, "SESSION_CREATED",
+                "idempotency-" + suffix, session.approvalScopeHash(), "{}", session.createdAt());
+    }
+
+    private static UUID insertCreatedPlaceIntent(
+            JdbcTemplate jdbc,
+            UUID sessionId,
+            long legacyAccountId,
+            int sequence,
+            String suffix,
+            String payloadHash
+    ) {
+        String orderId = "order-place-" + suffix;
+        String clientOrderId = "client-place-" + suffix;
+        jdbc.update("""
+                INSERT INTO orders(order_id,account_id,symbol,client_order_id,side,type,price,qty,
+                                   status,trace_id,venue,trade_env)
+                VALUES (?,?,'BTC-USDT',?,'BUY','LIMIT',100,0.01,
+                        'SENT','trace-place','OKX','LIVE')
+                """, orderId, legacyAccountId, clientOrderId);
+        UUID intentId = UUID.randomUUID();
+        jdbc.update("""
+                INSERT INTO execution_intents(
+                    intent_id,session_id,sequence,action,symbol,side,order_type,quantity,limit_price,
+                    payload_hash_schema_version,payload_hash,client_order_id,local_order_id,state,version)
+                VALUES (?,?,?,'PLACE','BTC-USDT','BUY','LIMIT',0.01,100,
+                        'execution-intent-payload.v1',?,?,?,'CREATED',1)
+                """, intentId, sessionId, sequence, payloadHash, clientOrderId, orderId);
+        return intentId;
     }
 
     private record Fixture(long ownerId, long accountId, long credentialId) {
