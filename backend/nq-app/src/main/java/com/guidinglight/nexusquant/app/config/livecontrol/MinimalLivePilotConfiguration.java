@@ -10,6 +10,7 @@ import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderAdapter;
 import com.guidinglight.nexusquant.livecontrol.application.LiveSessionControlService;
 import com.guidinglight.nexusquant.livecontrol.application.MinimalLivePilotCommand;
 import com.guidinglight.nexusquant.livecontrol.application.MinimalLivePilotControlPlane;
+import com.guidinglight.nexusquant.livecontrol.application.MinimalLivePilotPermit;
 import com.guidinglight.nexusquant.livecontrol.application.PilotExecutionLeaseControlPlane;
 import com.guidinglight.nexusquant.livecontrol.application.PilotScopeControlPlane;
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
@@ -252,13 +253,8 @@ public class MinimalLivePilotConfiguration {
                     permit.requestId(), permit.traceId(), permit.clientOrderId());
             boolean success = false;
             try {
-                var result = orders.placeOrder(new PlaceOrderRequest(
-                        permit.requestId(), account.legacyAccountId(),
-                        permit.leaseId() + "|" + permit.placeIntentId(), "OKX", command.instrument(),
-                        permit.clientOrderId(), permit.clientOrderId(), MinimalPilotTradingVenueGateway.SOURCE,
-                        com.guidinglight.nexusquant.contracts.model.OrderSide.valueOf(command.side().name()),
-                        com.guidinglight.nexusquant.contracts.model.OrderType.LIMIT,
-                        permit.limitPrice(), permit.quantity(), "GTC", permit.traceId()));
+                var result = orders.placeOrder(placeOrderRequest(
+                        permit, account.legacyAccountId(), command));
                 var stored = orderRepository.findByOrderId(result.orderId()).orElseThrow();
                 completeReconciliation(stored, permit.requestId(), permit.traceId());
                 success = true;
@@ -402,6 +398,22 @@ public class MinimalLivePilotConfiguration {
                 throw new IllegalStateException("REAL_ORDER_RECONCILIATION_DIVERGENCE");
             }
         }
+    }
+
+    static PlaceOrderRequest placeOrderRequest(
+            MinimalLivePilotPermit permit,
+            long legacyAccountId,
+            MinimalLivePilotCommand command
+    ) {
+        Objects.requireNonNull(permit, "permit must not be null");
+        Objects.requireNonNull(command, "command must not be null");
+        return new PlaceOrderRequest(
+                permit.requestId(), legacyAccountId,
+                null, "OKX", command.instrument(),
+                permit.clientOrderId(), permit.clientOrderId(), MinimalPilotTradingVenueGateway.SOURCE,
+                com.guidinglight.nexusquant.contracts.model.OrderSide.valueOf(command.side().name()),
+                com.guidinglight.nexusquant.contracts.model.OrderType.LIMIT,
+                permit.limitPrice(), permit.quantity(), "GTC", permit.traceId());
     }
 
     static void persistFills(

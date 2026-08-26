@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.app.config.livecontrol;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -9,6 +11,9 @@ import static org.mockito.Mockito.when;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
+import com.guidinglight.nexusquant.livecontrol.application.MinimalLivePilotCommand;
+import com.guidinglight.nexusquant.livecontrol.application.MinimalLivePilotPermit;
+import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults;
 import com.guidinglight.nexusquant.livecontrol.execution.infra.MinimalPilotTradingVenueGateway;
 import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
@@ -20,10 +25,29 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
 class MinimalLivePilotConfigurationTest {
+
+    @Test
+    void operatorPilotPlaceRequestDoesNotForgeStrategyRunIdentity() {
+        MinimalLivePilotPermit permit = new MinimalLivePilotPermit(
+                7L, UUID.randomUUID(), UUID.randomUUID(), "a".repeat(64), UUID.randomUUID(),
+                UUID.randomUUID(), "nq-client", "pilot-request", "pilot-trace",
+                new BigDecimal("111963.40000000"), new BigDecimal("0.00008830"),
+                new BigDecimal("9.88636822"));
+        MinimalLivePilotCommand command = new MinimalLivePilotCommand(
+                1L, 2L, "BTC-USDT", ExactPilotBinding.Side.BUY, new BigDecimal("10.00000000"));
+
+        var request = MinimalLivePilotConfiguration.placeOrderRequest(permit, 17L, command);
+
+        assertNull(request.strategyRunId());
+        assertEquals("nq-client", request.clientOrderId());
+        assertEquals("nq-client", request.idempotencyKey());
+        assertEquals(17L, request.accountId());
+    }
 
     @Test
     void existingTradeStillRepairsIdempotentLedgerAfterCrash() {
