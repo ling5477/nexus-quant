@@ -401,3 +401,13 @@ kill=ENGAGED
 - Production boundary：current=`4cf53346...`、runtime stopped、PLACE=1、intent=`SEND_STARTED`、receipt/trade/ledger=0、kill=`ENGAGED/version11`、LIVE=false、临时权限0；禁止第二PLACE。
 - Current decision：`BOUNDED_PUBLIC_CLOCK_SAMPLING_LOCAL_GREEN / CI_PENDING / RECONCILIATION_PENDING / PLACE_COUNT_1 / NO_PLACE_RETRY / KILL_ENGAGED / LIVE_FALSE / P0_0 / P1_0`。
 - Next：精确提交`OkxJdkRealClient`、transport regression与本evidence，push并等待exact-head CI；绿后code-only部署并继续同一consumed query-only recovery。
+
+## SEND_STARTED canonical recovery transition remediation（2026-08-26）
+
+- Bounded-clock commit/CI：commit=`a9678273adccf105875d1f24e0daf00f626ef14d`已push；exact-head CI run=`32962917906 / completed / success / 10 jobs`。Canonical V46 release manifest=`e8d835143750d68bc5516631b2b97036dfef4b2f05cafd5698793ac72bd87e3e`，15 artifacts；server install/verify、atomic current、health/DB、NRestarts0与Stop/VerifyStopped通过，无migration/backup/schema change。
+- Query-only progress：三样本clock通过，order query取得确定observation；随后repository按canonical state machine拒绝`SEND_STARTED → RECONCILED`直接跳转。Production intent继续`SEND_STARTED/version3`、receipt=0，说明失败事务没有留下partial receipt或状态更新；PLACE仍1。
+- RCA/fix：V39/`ExecutionIntentStateMachine`唯一合法恢复链是`SEND_STARTED → UNKNOWN → RECONCILED`；既有`ExecutionIntentService.reconcileUnknown()`已经使用该模型。Gateway现在先以`markAmbiguousForRecovery(intentId,version,claimToken)`做CAS到UNKNOWN，再用同一已取得的query observation append receipt并CAS到RECONCILED；CAS conflict fail closed，不再次访问venue，不重新PLACE。
+- Validation：focused state-machine/gateway=`18/18 PASS`；disposable V46 full Maven=`23/23 modules PASS`、`nq-app=315 tests / 0 failures / 0 errors / 35 conditional skips`，临时库删除；GateY minimal100、Authority与Java governance PASS。Targeted review P0=0/P1=0。
+- Production boundary：current=`a9678273...`、runtime stopped、PLACE=1、intent=`SEND_STARTED/version3`、receipt/trade/ledger=0、kill=`ENGAGED/version11`、LIVE=false、临时权限0。
+- Current decision：`CANONICAL_QUERY_RECOVERY_TRANSITION_LOCAL_GREEN / CI_PENDING / RECONCILIATION_PENDING / PLACE_COUNT_1 / NO_PLACE_RETRY / KILL_ENGAGED / LIVE_FALSE / P0_0 / P1_0`。
+- Next：精确提交gateway、focused test与本evidence，exact-head CI绿后code-only部署并继续同一query-only reconciliation。

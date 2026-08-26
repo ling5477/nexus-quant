@@ -247,7 +247,12 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
         ExecutionIntent intent = intents.find(intentId)
                 .orElseThrow(() -> rejected("PILOT_INTENT_NOT_FOUND"));
         return switch (intent.state()) {
-            case SEND_STARTED, UNKNOWN -> appendQueryReceipt(intent, observation);
+            case SEND_STARTED -> appendQueryReceipt(
+                    intents.markAmbiguousForRecovery(
+                                    intent.intentId(), intent.version(), intent.claimToken())
+                            .orElseThrow(() -> rejected("PILOT_INTENT_RECOVERY_CAS_CONFLICT")),
+                    observation);
+            case UNKNOWN -> appendQueryReceipt(intent, observation);
             case SEND_SUCCEEDED, FAILED, CANCELLED, RECONCILED -> intent;
             case CREATED, CLAIMED -> throw rejected("PILOT_INTENT_RECOVERY_STATE_INVALID");
         };

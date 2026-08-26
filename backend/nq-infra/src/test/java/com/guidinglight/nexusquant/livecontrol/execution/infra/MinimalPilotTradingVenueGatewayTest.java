@@ -52,15 +52,21 @@ class MinimalPilotTradingVenueGatewayTest {
         UUID intentId = UUID.randomUUID();
         UUID claimToken = UUID.randomUUID();
         ExecutionIntent sendStarted = mock(ExecutionIntent.class);
+        ExecutionIntent unknown = mock(ExecutionIntent.class);
         ExecutionIntent reconciled = mock(ExecutionIntent.class);
         when(sendStarted.intentId()).thenReturn(intentId);
         when(sendStarted.state()).thenReturn(ExecutionIntentState.SEND_STARTED);
         when(sendStarted.version()).thenReturn(3L);
         when(sendStarted.claimToken()).thenReturn(claimToken);
+        when(unknown.intentId()).thenReturn(intentId);
+        when(unknown.state()).thenReturn(ExecutionIntentState.UNKNOWN);
+        when(unknown.version()).thenReturn(4L);
+        when(unknown.claimToken()).thenReturn(claimToken);
         when(intents.find(intentId)).thenReturn(Optional.of(sendStarted));
+        when(intents.markAmbiguousForRecovery(intentId, 3L, claimToken)).thenReturn(Optional.of(unknown));
         when(intents.appendReceiptAndTransition(
                 org.mockito.ArgumentMatchers.eq(intentId),
-                org.mockito.ArgumentMatchers.eq(3L),
+                org.mockito.ArgumentMatchers.eq(4L),
                 org.mockito.ArgumentMatchers.eq(claimToken),
                 org.mockito.ArgumentMatchers.any(),
                 org.mockito.ArgumentMatchers.eq(ExecutionIntentState.RECONCILED)))
@@ -74,10 +80,11 @@ class MinimalPilotTradingVenueGatewayTest {
         assertSame(reconciled, gateway.reconcileIntentObservation(intentId, confirmed));
         verify(intents).appendReceiptAndTransition(
                 org.mockito.ArgumentMatchers.eq(intentId),
-                org.mockito.ArgumentMatchers.eq(3L),
+                org.mockito.ArgumentMatchers.eq(4L),
                 org.mockito.ArgumentMatchers.eq(claimToken),
                 org.mockito.ArgumentMatchers.any(),
                 org.mockito.ArgumentMatchers.eq(ExecutionIntentState.RECONCILED));
+        verify(intents).markAmbiguousForRecovery(intentId, 3L, claimToken);
     }
 
     @Test
