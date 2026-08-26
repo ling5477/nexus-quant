@@ -186,10 +186,13 @@ public class JdbcPilotPrePlaceRecoveryRepository implements PilotPrePlaceRecover
                   AND NOT EXISTS (
                       SELECT 1 FROM pilot_execution_leases lease
                       WHERE lease.live_session_id=session.session_id)
+                  AND (SELECT count(*) FROM live_session_events event
+                       WHERE event.session_id=session.session_id
+                         AND event.command='CREATE_EXACT_PILOT_BINDING')<=1
                   AND NOT EXISTS (
                       SELECT 1 FROM live_session_events event
                       WHERE event.session_id=session.session_id
-                        AND event.command='CREATE_EXACT_PILOT_BINDING')
+                        AND event.command='CONSUME_EXACT_PILOT_BINDING')
                   AND NOT EXISTS (
                       SELECT 1 FROM execution_intents intent
                       WHERE intent.session_id=session.session_id)

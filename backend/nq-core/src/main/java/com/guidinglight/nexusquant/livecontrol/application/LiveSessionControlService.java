@@ -400,7 +400,7 @@ public class LiveSessionControlService {
     }
 
     /**
-     * 回收V45 replacement准备阶段遗留的过期session；DB必须证明尚未创建binding/lease/intent。
+     * 回收V45 replacement准备阶段遗留的过期session；DB必须证明binding未消费且无lease/intent。
      */
     @Transactional
     public Optional<LiveSession> terminalizeExpiredMinimalPilotPreparation(

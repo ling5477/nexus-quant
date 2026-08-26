@@ -100,6 +100,7 @@ GRANT UPDATE(exchange_account_id) ON TABLE public.exchange_accounts TO nq_gatey_
 GRANT UPDATE(legacy_account_id, updated_at) ON TABLE public.exchange_accounts TO nq_gatey_readonly;
 GRANT UPDATE(account_id) ON TABLE public.accounts TO nq_gatey_readonly;
 GRANT UPDATE(pilot_scope_id) ON TABLE public.pilot_scope_bindings TO nq_gatey_readonly;
+GRANT UPDATE(decision_id) ON TABLE public.pilot_pre_place_recovery_decisions TO nq_gatey_readonly;
 GRANT UPDATE(id) ON TABLE public.users TO nq_gatey_readonly;
 GRANT UPDATE(user_id) ON TABLE public.user_roles TO nq_gatey_readonly;
 GRANT UPDATE(id) ON TABLE public.roles TO nq_gatey_readonly;
@@ -173,6 +174,9 @@ BEGIN
                 'nq_gatey_readonly', 'public.accounts', 'account_id', 'UPDATE')
             OR NOT has_column_privilege(
                 'nq_gatey_readonly', 'public.pilot_scope_bindings', 'pilot_scope_id', 'UPDATE')
+            OR NOT has_column_privilege(
+                'nq_gatey_readonly', 'public.pilot_pre_place_recovery_decisions',
+                'decision_id', 'UPDATE')
             OR NOT has_column_privilege('nq_gatey_readonly', 'public.users', 'id', 'UPDATE')
             OR NOT has_column_privilege(
                 'nq_gatey_readonly', 'public.user_roles', 'user_id', 'UPDATE')
@@ -237,6 +241,7 @@ REVOKE UPDATE(id) ON TABLE public.users FROM nq_gatey_readonly;
 REVOKE UPDATE(user_id) ON TABLE public.user_roles FROM nq_gatey_readonly;
 REVOKE UPDATE(id) ON TABLE public.roles FROM nq_gatey_readonly;
 REVOKE UPDATE(pilot_scope_id) ON TABLE public.pilot_scope_bindings FROM nq_gatey_readonly;
+REVOKE UPDATE(decision_id) ON TABLE public.pilot_pre_place_recovery_decisions FROM nq_gatey_readonly;
 REVOKE UPDATE(exchange_account_id) ON TABLE public.exchange_accounts FROM nq_gatey_readonly;
 REVOKE UPDATE(legacy_account_id, updated_at) ON TABLE public.exchange_accounts FROM nq_gatey_readonly;
 REVOKE UPDATE(account_id) ON TABLE public.accounts FROM nq_gatey_readonly;

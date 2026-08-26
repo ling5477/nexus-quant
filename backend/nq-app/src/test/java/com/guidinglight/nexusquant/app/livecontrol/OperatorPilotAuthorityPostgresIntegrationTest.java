@@ -258,6 +258,13 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
             transactions.executeWithoutResult(status -> sessionService.createOperatorPilotSession(
                     actor, orphanSession, orphanAuthority,
                     createdEvent(orphanSession, fixture.ownerId(), "orphan")));
+            sessionRepository.appendSessionEvent(new LiveSessionEvent(
+                    UUID.randomUUID(), orphanSession.id(), 1,
+                    LiveSessionState.APPROVAL_PENDING, LiveSessionState.APPROVAL_PENDING,
+                    "CREATE_EXACT_PILOT_BINDING", fixture.ownerId(),
+                    "request-orphan-binding", "trace-orphan-binding", "EXACT_PILOT_BINDING_VERIFIED",
+                    "idem-orphan-binding", "a".repeat(64),
+                    "{\"bindingId\":\"fixture-unconsumed\"}", orphanNow));
             Thread.sleep(1_100L);
             assertTrue(sessionService.terminalizeExpiredMinimalPilotPreparation(
                     actor, fixture.accountId(), fixture.credentialId(), "BTC-USDT",

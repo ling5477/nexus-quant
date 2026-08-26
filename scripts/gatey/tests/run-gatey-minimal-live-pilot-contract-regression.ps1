@@ -136,6 +136,7 @@ $roleLockColumns = @(
     @('exchange_accounts', 'exchange_account_id'),
     @('accounts', 'account_id'),
     @('pilot_scope_bindings', 'pilot_scope_id'),
+    @('pilot_pre_place_recovery_decisions', 'decision_id'),
     @('users', 'id'), @('user_roles', 'user_id'), @('roles', 'id')
 )
 foreach ($pair in $roleLockColumns) {
@@ -152,8 +153,8 @@ if (-not $grantSql.Contains(
         'REVOKE UPDATE(legacy_account_id, updated_at) ON TABLE public.exchange_accounts FROM nq_gatey_readonly;')) {
     throw 'PILOT_DATABASE_LEGACY_BRIDGE_COLUMN_WINDOW_MISMATCH'
 }
-if (($grantSql | Select-String -Pattern '(?m)^GRANT .* ON TABLE ' -AllMatches).Matches.Count -ne 34 -or
-        ($revokeSql | Select-String -Pattern '(?m)^REVOKE .* ON TABLE ' -AllMatches).Matches.Count -ne 34) {
+if (($grantSql | Select-String -Pattern '(?m)^GRANT .* ON TABLE ' -AllMatches).Matches.Count -ne 35 -or
+        ($revokeSql | Select-String -Pattern '(?m)^REVOKE .* ON TABLE ' -AllMatches).Matches.Count -ne 35) {
     throw 'PILOT_DATABASE_TABLE_WINDOW_CARDINALITY_INVALID'
 }
 
