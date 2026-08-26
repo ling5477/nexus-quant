@@ -2,27 +2,27 @@
 
 ## 当前结论
 
-`IMPLEMENTED / LOCAL_GREEN / CI_PENDING / NO_REAL_ORDER`（已实现 / 本地验证通过 / CI 待执行 / 未发送真实订单）。本文件继续作为 implementation→CI→deployment→pilot 的单一持续 evidence；V43、五类 prerequisite、permission refresh、BTC-USDT catalog refresh、current bestAsk binding 与自动 quantity 已完成本地实现和 P0/P1 review。exact-head commit/CI、production V42→V43、runtime activation 与真实 pilot 尚未执行，故仍保持 fail-closed。
+`BLOCKED / PRE_PLACE_LEASE_EXPIRED / NO_REAL_ORDER`（阻断 / PLACE 前唯一 lease 已过期 / 未发送真实订单）。本文件继续作为 implementation→CI→deployment→pilot 的单一持续 evidence；V44、trusted operator bootstrap、exact-head CI 与 production deployment 均已完成，但唯一 lease 在 PLACE intent 创建前因 legacy account bridge 缺失而遗留为 ACTIVE，随后由 startup recovery 终态化为 EXPIRED。当前 PLACE/CANCEL/order/trade/ledger 均为0，kill 已恢复 ENGAGED；继续需要新的 lease/session recovery 与 legacy bridge 架构授权，禁止 Attempt-02、第二 lease 或绕过状态机。
 
 ```text
 P0=0
-P1=0
-implementationCommit=PENDING
-exactHeadCi=PENDING
-productionDeployment=PASS_EXACT_HEAD_V42_ACTIVE
-activeRuntime=c47c8db317bbbef64989f247b087752bf2b46a3c
-activeManifest=de1f52359619e6f38fc4671ec5c091bb5019acf3d4f953e14d402d45f0377c50
-operatorPilotParameters=ACCOUNT_1_CREDENTIAL_1_BTC_USDT_BUY_LIMIT_CAP_10
-historicalIdentity=OWNER_2_ACCOUNT_1_CREDENTIAL_1
-productionSorRecovery=PASS_PROVISIONED
-currentPrerequisite=LOCAL_IMPLEMENTATION_VERIFIED_CI_PENDING
-credentialJitReads=0
-okxCalls=0
+P1=1
+implementationCommit=51efdd15b66ec5f895269a4168115ea28d9989b5
+exactHeadCi=32925189271_SUCCESS_11_JOBS
+productionDeployment=PASS_EXACT_HEAD_V44_ACTIVE
+activeRuntime=51efdd15b66ec5f895269a4168115ea28d9989b5
+activeManifest=b586ecc72db01c88fe4163a97fb6846b0bb6e2787bc2019fcda968d1ed250901
+operatorPilotParameters=ACCOUNT_1_CREDENTIAL_2_BTC_USDT_BUY_LIMIT_CAP_10
+currentPrerequisite=TRUSTED_BOOTSTRAP_MATERIALIZED_PRE_PLACE_LEASE_EXPIRED
+authority=EXPIRED
+session=LIVE_ACTIVE
+lease=EXPIRED
+activeLease=0
 PLACE=0
 CANCEL=0
 transfer=0
 withdraw=0
-LIVE=DISABLED
+LIVE=false
 kill=ENGAGED
 ```
 
@@ -240,3 +240,17 @@ kill=ENGAGED
 - Final safety readback：current=`3250342c...`、MainPID=`1211429`、NRestarts=0、unit active/running、health UP、V44/failed0、LIVE=false、kill=ENGAGED。authority/session/scope/observation/catalog/lease/activeLease/intent/receipt/order/trade/ledger/audit均0；PLACE/CANCEL=`0/0`，transfer/withdraw=`0/0`，临时table DML/column UPDATE/sequence权限=`0/0/0`。Credential2 current permission仍为`SUCCEEDED / TRADE / IP PASSED / withdraw=false`；credential audit共8条脱敏事件，未读取或输出credential material。
 - Final decision：`BLOCKED / MAJOR_ARCHITECTURE_DECISION_REQUIRED / TRUSTED_OPERATOR_PILOT_SCOPE_BOOTSTRAP_NOT_MATERIALIZED / V44_DEPLOYED / EXACT_HEAD_CI_GREEN / ACTIVE_CREDENTIAL_2_VERIFIED / CURRENT_PERMISSION_REFRESH_VERIFIED / NO_REAL_ORDER / PLACE_0 / CANCEL_0 / NO_PLACE_RETRY / LIVE_FALSE / KILL_ENGAGED / ACTIVE_LEASE_0 / NO_TRANSFER / NO_WITHDRAW / P0_0 / P1_1`。
 - Next：继续同一Attempt-01且禁止Attempt-02/第二PLACE。Operator必须在以下安全路线中做新决定：提供由既有可信流程生成并可验证的root-owned exact-scope authority（当前不存在），或授权实现`TRUSTED_OPERATOR_PILOT_SCOPE_BOOTSTRAP`，使一次只读OKX observation原子产生当前instrument/fee约束并与同一snapshot绑定，同时明确freshness/skew/endpoint/provider/worker policy；不得由聊天输入动态observation、手工SQL、测试常量或占位digest替代。
+
+## Trusted bootstrap、pre-PLACE incident 与唯一 lease 终态 blocker（2026-08-26）
+
+- Trusted bootstrap chain：`6d81d678312ba6b7cf7efba3e735260efe548e11`实现同一 credential-JIT OKX snapshot 同时生成 instrument/fee immutable constraints 与五类 observations，外部 OKX 调用保持在数据库 transaction 之前；exact-head CI run=`32919825899 / success / 11 jobs`。随后`6a219fda9e2f20f57e46692efdf27a483566658a`将available balance在trusted adapter边界按8位向下规范化，CI run=`32921007531 / success / 11 jobs`。
+- Row-lock remediation：V40 trigger 的`FOR KEY SHARE`要求最小column UPDATE privilege；`6c231d4c3a60d0742fe0bd10cb0d82e176ea95d8`仅将`pilot_scope_bindings.pilot_scope_id UPDATE`纳入临时grant/revoke/readback，CI run=`32922699085 / success / 11 jobs`，GateY minimal contract=`90/90 PASS`。Canonical release manifest=`36d03ea47f72cb125c33355013530d790dd94887dba0b1a52b11d282e2ab0e60` code-only激活健康，无重复migration。
+- Snapshot-time defect：该release的controller在同一OKX snapshot完成后被`trusted prerequisite observation does not match immutable pilot scope`拒绝。根因是operator ticker provider timestamp来自采集期间，但通用STRATEGY validator要求所有observed/recorded time等于采集前DB `resolvedAt`。失败发生在materialization transaction提交前；authority/session/scope/observation/lease/intent/PLACE/order均0，kill ENGAGED，临时权限全部撤销。
+- Forward remediation：`51efdd15b66ec5f895269a4168115ea28d9989b5`保持STRATEGY校验原样，仅让OPERATOR_PILOT使用同一snapshot已验证的post-collection local midpoint作为共同`recordedAt`，并继续强制5秒最短collection window、100ms skew、exact recorder/source/symbol与freshness。Focused=`20/20 PASS`；隔离V1→V44 full Maven=`23/23 modules PASS`；GateY=`7/90/31/51 + GateY4/GateY5 PASS`；GateW frozen=`37/12/34 PASS`；Java governance PASS；clean detached Shadow=`NEW_CODE_VIOLATION_COUNT=0`。Targeted review P0=0/P1=0。
+- Commit/CI/deployment：commit已push `origin/dev`；exact-head CI run=`32925189271 / completed / success / 11 jobs`。Canonical release=`51efdd15...`、manifest=`b586ecc72db01c88fe4163a97fb6846b0bb6e2787bc2019fcda968d1ed250901`、15 artifacts、V44、exact Git blob source；installed POSIX/link/root ownership/service-user write denial均PASS。Activation SSH返回UNKNOWN后只读收敛为current/PID/listener/exact health一致，未重发Activate；无migration、无新backup。
+- Pre-PLACE incident：新release controller成功物化1个operator authority、1个OPERATOR_PILOT session、1个scope、5类observations、ExactPilotBinding与1个ACTIVE lease；随后runner在`orders.placeOrder()`之前因production `exchange_accounts.exchange_account_id=1`的`legacy_account_id=NULL`抛出`legacy account identity bridge is required`。该检查位于lease cleanup `try/finally`之前，导致kill暂时为DISENGAGED、session=`LIVE_ACTIVE`、lease=`ACTIVE`；但lease intent、ExecutionIntent、ExecutionReceipt、Order、Trade、Ledger、Audit与PLACE/CANCEL均为0，未生成或发送第二PLACE。
+- Fail-close recovery：未重试PLACE；再次启动同一controller只用于触发最高优先级`recoverAtStartup()`。恢复将唯一lease终态化为`EXPIRED`、operator authority终态化为`EXPIRED`并把kill恢复为`ENGAGED`；随后新materialization在existing non-terminal session唯一约束处阻断，仍未创建lease intent或PLACE。最终临时table DML/column UPDATE/sequence权限=`0/0/0`。
+- Final production readback：current=`51efdd15...`、MainPID=`1237382`、NRestarts=0、read-only runtime active/running、loopback health UP、V44/failed0、LIVE=false、kill=`ENGAGED/version3/PILOT_STARTUP_RECOVERY`、mutationRuntimeBound=false、tradingAuthorization=false。Authority=`EXPIRED`、session=`LIVE_ACTIVE`、lease=`EXPIRED`、activeLease=0、scope=1、observations=5；PLACE/CANCEL/receipt/order/trade/ledger/audit=`0/0/0/0/0/0/0`，transfer/withdraw=`0/0`。Credential material未读取或输出。
+- Open P1：V42的`uq_pilot_execution_leases_single_pilot`只允许全局一个durable lease，且状态机禁止`EXPIRED → ACTIVE`；existing `LIVE_ACTIVE` session也禁止第二个non-terminal session。当前授权同时禁止修改历史migration、第二lease、Attempt-02与状态机绕过，因此无法在本轮安全地产生第一笔PLACE。继续至少需要新的forward migration/明确rearm contract、pre-PLACE ACTIVE-lease recovery、session recovery与canonical legacy account bridge决策；这属于新的重大架构决定。
+- Final decision：`BLOCKED / MAJOR_ARCHITECTURE_DECISION_REQUIRED / LEGACY_ACCOUNT_IDENTITY_BRIDGE_MISSING / PRE_PLACE_ACTIVE_LEASE_EXPIRED_WITHOUT_INTENT / UNIQUE_LEASE_ALREADY_CONSUMED_AS_IDENTITY / NO_REAL_ORDER / PLACE_0 / CANCEL_0 / NO_PLACE_RETRY / ACTIVE_LEASE_0 / LIVE_FALSE / KILL_ENGAGED / NO_TRANSFER / NO_WITHDRAW / P0_0 / P1_1`。
+- Next：继续保持Attempt-01且禁止Attempt-02/第二PLACE。Operator需明确授权新的forward migration与prepared-lease rearm/recovery + legacy bridge最小模型，或决定以`NO_REAL_ORDER`关闭Attempt-01；在该决定前禁止controller、PLACE、CANCEL、手工SQL rearm、修改V42/V44、transfer或withdraw。
