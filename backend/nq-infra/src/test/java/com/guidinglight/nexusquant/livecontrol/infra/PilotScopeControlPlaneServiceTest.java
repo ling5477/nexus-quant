@@ -120,6 +120,54 @@ class PilotScopeControlPlaneServiceTest {
     }
 
     @Test
+    void operatorPilotAcceptsTrustedCollectionRecordedAfterScopeResolution() {
+        MinimalPilotMaterializationCommand command = new MinimalPilotMaterializationCommand(
+                UUID.randomUUID(), UUID.randomUUID(), 101, 202, "BTC-USDT",
+                new BigDecimal("10.00000000"), NOW, NOW.plusSeconds(120),
+                "idem-collected", "request-collected", "trace-collected");
+        OperatorPilotAuthority operatorAuthority = OperatorPilotAuthority.active(
+                UUID.randomUUID(), ACTOR.userId(), 101, 202, "BTC-USDT",
+                OperatorPilotAuthority.Side.BUY, OperatorPilotAuthority.OrderType.LIMIT,
+                new BigDecimal("10.00000000"), NOW, NOW.plusSeconds(120), ACTOR.userId(), NOW);
+        when(resolver.resolveMinimal(ACTOR, command)).thenReturn(
+                new PilotScopeAuthorityResolver.ResolvedMinimalAuthority(
+                        ACTOR.userId(), operatorAuthority));
+        when(transactions.materializeOperatorPilot(any(), any(), any(), any(), any(), any()))
+                .thenAnswer(invocation -> invocation.getArgument(4));
+        service = service(new DeterministicObservationAuthority(
+                ObservationVariant.OPERATOR_COLLECTION_AFTER_RESOLUTION));
+
+        service.materializeMinimal(ACTOR, command);
+
+        verify(transactions).materializeOperatorPilot(
+                any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void operatorPilotRejectsCollectionOutsideShortestFreshnessWindow() {
+        MinimalPilotMaterializationCommand command = new MinimalPilotMaterializationCommand(
+                UUID.randomUUID(), UUID.randomUUID(), 101, 202, "BTC-USDT",
+                new BigDecimal("10.00000000"), NOW, NOW.plusSeconds(120),
+                "idem-stale-collection", "request-stale-collection", "trace-stale-collection");
+        OperatorPilotAuthority operatorAuthority = OperatorPilotAuthority.active(
+                UUID.randomUUID(), ACTOR.userId(), 101, 202, "BTC-USDT",
+                OperatorPilotAuthority.Side.BUY, OperatorPilotAuthority.OrderType.LIMIT,
+                new BigDecimal("10.00000000"), NOW, NOW.plusSeconds(120), ACTOR.userId(), NOW);
+        when(resolver.resolveMinimal(ACTOR, command)).thenReturn(
+                new PilotScopeAuthorityResolver.ResolvedMinimalAuthority(
+                        ACTOR.userId(), operatorAuthority));
+        service = service(new DeterministicObservationAuthority(
+                ObservationVariant.OPERATOR_COLLECTION_OUTSIDE_WINDOW));
+
+        LiveControlException failure = assertThrows(
+                LiveControlException.class, () -> service.materializeMinimal(ACTOR, command));
+
+        assertEquals("TRUSTED_PREREQUISITE_OBSERVATION_INVALID", failure.code());
+        verify(transactions, never()).materializeOperatorPilot(
+                any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
     void operatorPilotShouldFailBeforeTransactionWhenTrustedBootstrapIsUnavailable() {
         MinimalPilotMaterializationCommand command = new MinimalPilotMaterializationCommand(
                 UUID.randomUUID(), UUID.randomUUID(), 101, 202, "BTC-USDT",
@@ -577,8 +625,13 @@ class PilotScopeControlPlaneServiceTest {
             ObservationVariant variant = variants.get(Math.min(call, variants.size() - 1));
             PilotScopeBinding scope = operatorScope(
                     session, pilotScopeId, bindings(), createdBy, resolvedAt);
+            Instant recordedAt = switch (variant) {
+                case OPERATOR_COLLECTION_AFTER_RESOLUTION -> resolvedAt.plusMillis(750);
+                case OPERATOR_COLLECTION_OUTSIDE_WINDOW -> resolvedAt.plusMillis(5_001);
+                default -> resolvedAt;
+            };
             return new TrustedOperatorPilotBootstrap(
-                    scope, observations(session, scope, resolvedAt, variant));
+                    scope, observations(session, scope, recordedAt, variant));
         }
 
         private int calls() {
@@ -594,6 +647,8 @@ class PilotScopeControlPlaneServiceTest {
         FUTURE_CLOCK,
         STALE_BALANCE,
         WRONG_SYMBOL,
-        FORGED_AFTER_APPROVAL
+        FORGED_AFTER_APPROVAL,
+        OPERATOR_COLLECTION_AFTER_RESOLUTION,
+        OPERATOR_COLLECTION_OUTSIDE_WINDOW
     }
 }

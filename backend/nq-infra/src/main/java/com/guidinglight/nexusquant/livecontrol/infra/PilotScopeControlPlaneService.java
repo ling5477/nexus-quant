@@ -131,7 +131,7 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
         PilotScopeBinding scope = bootstrap.scopeBinding();
         PilotObservationSet observations = bootstrap.observationSet();
         requireTrustedOperatorPilotBootstrap(actor, command, session, scope, observations, now);
-        requireTrustedObservationSet(session, scope, observations, now);
+        requireTrustedOperatorObservationSet(session, scope, observations, now);
         LiveSessionEvent createdEvent = new LiveSessionEvent(
                 UUID.randomUUID(), session.id(), 1, null, LiveSessionState.APPROVAL_PENDING,
                 "CREATE", actor.userId(), command.requestId(), command.traceId(), "SESSION_CREATED",
@@ -319,6 +319,47 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
             throw new LiveControlException(
                     "TRUSTED_OPERATOR_PILOT_SCOPE_BOOTSTRAP_INVALID",
                     "trusted operator pilot scope bootstrap does not bind the exact session");
+        }
+    }
+
+    private static void requireTrustedOperatorObservationSet(
+            LiveSession session,
+            PilotScopeBinding scope,
+            PilotObservationSet observations,
+            Instant resolvedAt
+    ) {
+        Objects.requireNonNull(observations, "trusted observations must not be null");
+        Instant recordedAt = observations.instrumentMetadata().envelope().recordedAt();
+        long collectionMaximumAgeMs = Math.min(
+                Math.min(scope.instrumentMaximumAgeMs(), scope.feeMaximumAgeMs()),
+                Math.min(scope.balanceMaximumAgeMs(), scope.clockMaximumAgeMs()));
+        Instant maximumObservedAt = recordedAt.plusMillis(scope.maximumToleratedSkewMs());
+        boolean exactEnvelope = !recordedAt.isBefore(resolvedAt)
+                && !resolvedAt.plusMillis(collectionMaximumAgeMs).isBefore(recordedAt)
+                && observations.observations().stream().allMatch(value ->
+                        value.envelope().recordedAt().equals(recordedAt)
+                                && !value.envelope().observedAt().isAfter(maximumObservedAt)
+                                && value.envelope().recorderIdentity().equals(scope.workerIdentity()));
+        boolean exactSources = observations.instrumentMetadata().envelope().sourceIdentity()
+                .equals(scope.instrumentSourceIdentity())
+                && observations.instrumentMetadata().envelope().sourceSchemaVersion()
+                .equals(scope.instrumentSourceSchemaVersion())
+                && observations.feeSchedule().envelope().sourceIdentity().equals(scope.feeSourceIdentity())
+                && observations.feeSchedule().envelope().sourceSchemaVersion().equals(scope.feeSourceSchemaVersion())
+                && observations.balanceSnapshot().envelope().sourceIdentity().equals(scope.balanceSourceIdentity())
+                && observations.balanceSnapshot().envelope().sourceSchemaVersion()
+                .equals(scope.balanceSourceSchemaVersion())
+                && observations.clockSync().envelope().sourceIdentity().equals(scope.clockSourceIdentity())
+                && observations.clockSync().envelope().sourceSchemaVersion().equals(scope.clockSourceSchemaVersion());
+        boolean exactSymbols = observations.instrumentMetadata().items().stream()
+                .map(item -> item.symbol()).toList().equals(session.symbolAllowlist());
+        PilotScopePreflightResult validation = new PilotScopeFreshnessPolicy()
+                .evaluate(scope, observations, BigDecimal.ZERO, recordedAt);
+        if (!exactEnvelope || !exactSources || !exactSymbols || !validation.eligible()) {
+            throw new LiveControlException(
+                    "TRUSTED_PREREQUISITE_OBSERVATION_INVALID",
+                    "trusted prerequisite observation does not match immutable pilot scope"
+            );
         }
     }
 

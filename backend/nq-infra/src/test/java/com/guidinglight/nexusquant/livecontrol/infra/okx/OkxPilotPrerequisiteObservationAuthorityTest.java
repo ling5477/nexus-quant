@@ -112,6 +112,22 @@ class OkxPilotPrerequisiteObservationAuthorityTest {
     }
 
     @Test
+    void operatorBootstrapUsesVerifiedCollectionMidpointAsCommonRecordedAt() {
+        Instant collectionMidpoint = NOW.plusMillis(750);
+        OkxPilotPrerequisiteObservationAuthority authority = authority(
+                new CapturingExecutor(snapshot(0, NOW, collectionMidpoint)));
+
+        var bootstrap = authority.bootstrapTrustedOperatorPilotScope(
+                operatorSession(), UUID.randomUUID(), OWNER_ID, NOW);
+
+        assertTrue(bootstrap.observationSet().observations().stream().allMatch(observation ->
+                observation.envelope().recordedAt().equals(collectionMidpoint)));
+        assertEquals(NOW, bootstrap.observationSet().instrumentMetadata().envelope().observedAt());
+        assertEquals(collectionMidpoint,
+                bootstrap.observationSet().marketSnapshot().envelope().observedAt());
+    }
+
+    @Test
     void operatorBootstrapRejectsExcessiveSkewBeforeCatalogWrite() {
         CapturingExecutor executor = new CapturingExecutor(snapshot(
                 OkxPilotPrerequisiteObservationAuthority.OPERATOR_MAXIMUM_TOLERATED_SKEW_MS + 1));

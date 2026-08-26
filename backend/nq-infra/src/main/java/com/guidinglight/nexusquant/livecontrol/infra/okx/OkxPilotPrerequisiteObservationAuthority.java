@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -310,6 +311,7 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
         String balanceDigest = PilotObservationCanonicalEncoder.balanceSnapshotDigest(availableBalance);
         String clockDigest = PilotObservationCanonicalEncoder.clockSyncDigest(
                 PilotScopeBinding.SIGNED_TIMESTAMP_SOURCE, snapshot.observedSkewMs());
+        Instant recordedAt = snapshot.localClockMidpoint().truncatedTo(ChronoUnit.MICROS);
         String collectionKey = scope.id() + "|" + instrumentDigest + "|" + feeDigest + "|"
                 + balanceDigest + "|" + clockDigest + "|" + resolvedAt;
         UUID observationSetId = deterministicUuid("set|" + collectionKey);
@@ -318,7 +320,8 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
                 new PilotPrerequisiteObservation.InstrumentMetadata(
                         envelope("instrument", scope, observationSetId,
                                 PilotPrerequisiteObservation.InstrumentMetadata.SCHEMA_VERSION,
-                                INSTRUMENT_SOURCE, INSTRUMENT_SOURCE_SCHEMA, resolvedAt, collectionKey),
+                                INSTRUMENT_SOURCE, INSTRUMENT_SOURCE_SCHEMA,
+                                resolvedAt, recordedAt, collectionKey),
                         instrumentDigest,
                         instrumentItems
                 ));
@@ -326,7 +329,8 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
                 new PilotPrerequisiteObservation.FeeSchedule(
                         envelope("fee", scope, observationSetId,
                                 PilotPrerequisiteObservation.FeeSchedule.SCHEMA_VERSION,
-                                FEE_SOURCE, FEE_SOURCE_SCHEMA, resolvedAt, collectionKey),
+                                FEE_SOURCE, FEE_SOURCE_SCHEMA,
+                                resolvedAt, recordedAt, collectionKey),
                         feeDigest,
                         firstFee.tierIdentity(),
                         PilotScopeBinding.FeeEvidenceClass.OBSERVED_PRIVATE,
@@ -338,7 +342,8 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
                 new PilotPrerequisiteObservation.BalanceSnapshot(
                         envelope("balance", scope, observationSetId,
                                 PilotPrerequisiteObservation.BalanceSnapshot.SCHEMA_VERSION,
-                                BALANCE_SOURCE, BALANCE_SOURCE_SCHEMA, resolvedAt, collectionKey),
+                                BALANCE_SOURCE, BALANCE_SOURCE_SCHEMA,
+                                resolvedAt, recordedAt, collectionKey),
                         balanceDigest,
                         PilotPrerequisiteObservation.BalanceSnapshot.CURRENCY,
                         availableBalance
@@ -347,7 +352,8 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
                 new PilotPrerequisiteObservation.ClockSync(
                         envelope("clock", scope, observationSetId,
                                 PilotPrerequisiteObservation.ClockSync.SCHEMA_VERSION,
-                                CLOCK_SOURCE, CLOCK_SOURCE_SCHEMA, resolvedAt, collectionKey),
+                                CLOCK_SOURCE, CLOCK_SOURCE_SCHEMA,
+                                resolvedAt, recordedAt, collectionKey),
                         clockDigest,
                         PilotScopeBinding.SIGNED_TIMESTAMP_SOURCE,
                         snapshot.observedSkewMs()
@@ -364,7 +370,8 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
                                 PilotPrerequisiteObservation.MarketSnapshot.SCHEMA_VERSION,
                                 "okx:market:" + marketDigest.substring(0, 32),
                                 MARKET_SOURCE, MARKET_SOURCE_SCHEMA,
-                                marketFact.observedAt(), resolvedAt, scope.workerIdentity(), "0".repeat(64)),
+                                marketFact.observedAt(), recordedAt,
+                                scope.workerIdentity(), "0".repeat(64)),
                         marketDigest, marketFact.instrument(), marketFact.bestAsk());
         PilotPrerequisiteObservation.MarketSnapshot market =
                 new PilotPrerequisiteObservation.MarketSnapshot(
@@ -447,7 +454,8 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
             String schemaVersion,
             String sourceIdentity,
             String sourceSchemaVersion,
-            Instant resolvedAt,
+            Instant observedAt,
+            Instant recordedAt,
             String collectionKey
     ) {
         String identityHash = sha256(type + "|" + collectionKey);
@@ -459,8 +467,8 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
                 "okx:" + type + ":" + identityHash.substring(0, 32),
                 sourceIdentity,
                 sourceSchemaVersion,
-                resolvedAt,
-                resolvedAt,
+                observedAt,
+                recordedAt,
                 scope.workerIdentity(),
                 "0".repeat(64)
         );
