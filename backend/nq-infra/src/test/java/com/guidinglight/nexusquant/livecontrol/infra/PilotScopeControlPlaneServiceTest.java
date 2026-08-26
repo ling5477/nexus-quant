@@ -97,7 +97,7 @@ class PilotScopeControlPlaneServiceTest {
                 new BigDecimal("10.00000000"), NOW, NOW.plusSeconds(120), ACTOR.userId(), NOW);
         when(resolver.resolveMinimal(ACTOR, command)).thenReturn(
                 new PilotScopeAuthorityResolver.ResolvedMinimalAuthority(
-                        ACTOR.userId(), operatorAuthority, bindings));
+                        ACTOR.userId(), operatorAuthority));
         when(transactions.materializeOperatorPilot(any(), any(), any(), any(), any(), any()))
                 .thenAnswer(invocation -> invocation.getArgument(4));
 
@@ -115,7 +115,31 @@ class PilotScopeControlPlaneServiceTest {
         assertEquals(null, session.getValue().riskLimitSetId());
         assertTrue(scope.getValue().hasCanonicalHash(session.getValue()));
         assertEquals(result.pilotScopeId(), scope.getValue().id());
+        assertEquals(1, observationAuthority.calls());
         verify(transactions, never()).materialize(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void operatorPilotShouldFailBeforeTransactionWhenTrustedBootstrapIsUnavailable() {
+        MinimalPilotMaterializationCommand command = new MinimalPilotMaterializationCommand(
+                UUID.randomUUID(), UUID.randomUUID(), 101, 202, "BTC-USDT",
+                new BigDecimal("10.00000000"), NOW, NOW.plusSeconds(120),
+                "idem-unavailable", "request-unavailable", "trace-unavailable");
+        OperatorPilotAuthority operatorAuthority = OperatorPilotAuthority.active(
+                UUID.randomUUID(), ACTOR.userId(), 101, 202, "BTC-USDT",
+                OperatorPilotAuthority.Side.BUY, OperatorPilotAuthority.OrderType.LIMIT,
+                new BigDecimal("10.00000000"), NOW, NOW.plusSeconds(120), ACTOR.userId(), NOW);
+        when(resolver.resolveMinimal(ACTOR, command)).thenReturn(
+                new PilotScopeAuthorityResolver.ResolvedMinimalAuthority(
+                        ACTOR.userId(), operatorAuthority));
+        service = service(new UnavailablePilotPrerequisiteObservationAuthority());
+
+        LiveControlException failure = assertThrows(
+                LiveControlException.class, () -> service.materializeMinimal(ACTOR, command));
+
+        assertEquals("TRUSTED_OPERATOR_PILOT_SCOPE_BOOTSTRAP_UNAVAILABLE", failure.code());
+        verify(transactions, never()).materializeOperatorPilot(
+                any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -320,6 +344,25 @@ class PilotScopeControlPlaneServiceTest {
                 value.workerReleaseDigest(), F, ACTOR.userId(), NOW).withCanonicalHash(session);
     }
 
+    private static PilotScopeBinding operatorScope(
+            LiveSession session,
+            UUID pilotScopeId,
+            PilotScopeAuthorityResolver.ResolvedScopeBindings value,
+            long createdBy,
+            Instant createdAt
+    ) {
+        return new PilotScopeBinding(
+                pilotScopeId, session.id(), value.instrumentMetadataDigest(),
+                value.instrumentSourceIdentity(), value.instrumentSourceSchemaVersion(), value.instrumentMaximumAgeMs(),
+                value.feeScheduleDigest(), value.feeTier(), value.feeEvidenceClass(), value.feeSourceIdentity(),
+                value.feeSourceSchemaVersion(), value.feeMaximumAgeMs(), value.balanceSourceIdentity(),
+                value.balanceSourceSchemaVersion(), value.balanceMaximumAgeMs(), value.clockSourceIdentity(),
+                value.clockSourceSchemaVersion(), value.clockMaximumAgeMs(), value.signedTimestampSource(),
+                value.maximumToleratedSkewMs(), value.endpointPolicyVersion(), value.endpointPolicyDigest(),
+                value.providerContractIdentity(), value.providerArtifactDigest(), value.workerIdentity(),
+                value.workerReleaseDigest(), F, createdBy, createdAt).withCanonicalHash(session);
+    }
+
     private static RiskLimitSet risk() {
         return new RiskLimitSet(
                 UUID.fromString("11111111-1111-1111-1111-111111111111"), 1,
@@ -521,6 +564,21 @@ class PilotScopeControlPlaneServiceTest {
             int call = calls.getAndIncrement();
             ObservationVariant variant = variants.get(Math.min(call, variants.size() - 1));
             return observations(session, scope, resolvedAt, variant);
+        }
+
+        @Override
+        public TrustedOperatorPilotBootstrap bootstrapTrustedOperatorPilotScope(
+                LiveSession session,
+                UUID pilotScopeId,
+                long createdBy,
+                Instant resolvedAt
+        ) {
+            int call = calls.getAndIncrement();
+            ObservationVariant variant = variants.get(Math.min(call, variants.size() - 1));
+            PilotScopeBinding scope = operatorScope(
+                    session, pilotScopeId, bindings(), createdBy, resolvedAt);
+            return new TrustedOperatorPilotBootstrap(
+                    scope, observations(session, scope, resolvedAt, variant));
         }
 
         private int calls() {

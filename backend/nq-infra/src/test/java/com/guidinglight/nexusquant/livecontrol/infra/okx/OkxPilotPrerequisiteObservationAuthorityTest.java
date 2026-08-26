@@ -39,6 +39,8 @@ class OkxPilotPrerequisiteObservationAuthorityTest {
     private static final long OWNER_ID = 7L;
     private static final long ACCOUNT_ID = 9L;
     private static final long CREDENTIAL_ID = 42L;
+    private static final String RELEASE_ID = "1".repeat(40);
+    private static final String MANIFEST_SHA256 = "2".repeat(64);
 
     @Test
     void createsCanonicalCompleteV2ObservationSetFromExactJitCredentialScope() {
@@ -76,6 +78,54 @@ class OkxPilotPrerequisiteObservationAuthorityTest {
                         && PilotObservationCanonicalEncoder.digest(value)
                         .equals(value.observationPayloadHash())));
         assertFalse(OkxPilotPrerequisiteObservationAuthority.class.isAnnotationPresent(Component.class));
+    }
+
+    @Test
+    void bootstrapsOperatorScopeAndObservationsFromExactlyOneTrustedSnapshot() {
+        CapturingExecutor executor = new CapturingExecutor(snapshot(0));
+        OkxPilotPrerequisiteObservationAuthority authority = authority(executor);
+        LiveSession session = operatorSession();
+        UUID pilotScopeId = UUID.fromString("99999999-8888-7777-6666-555555555555");
+
+        var bootstrap = authority.bootstrapTrustedOperatorPilotScope(
+                session, pilotScopeId, OWNER_ID, NOW);
+
+        PilotScopeBinding scope = bootstrap.scopeBinding();
+        PilotObservationSet observations = bootstrap.observationSet();
+        assertEquals(1, executor.calls.get());
+        assertEquals(pilotScopeId, scope.id());
+        assertEquals(session.id(), scope.sessionId());
+        assertTrue(scope.hasCanonicalHash(session));
+        assertEquals(observations.instrumentMetadata().instrumentMetadataDigest(),
+                scope.instrumentMetadataDigest());
+        assertEquals(observations.feeSchedule().feeScheduleDigest(), scope.feeScheduleDigest());
+        assertEquals(observations.feeSchedule().feeTier(), scope.feeTier());
+        assertEquals(MANIFEST_SHA256, scope.providerArtifactDigest());
+        assertEquals(MANIFEST_SHA256, scope.workerReleaseDigest());
+        assertEquals("gatey-minimal-live-pilot@" + RELEASE_ID, scope.workerIdentity());
+        assertEquals(OkxPilotPrerequisiteObservationAuthority.OPERATOR_ENDPOINT_POLICY_VERSION,
+                scope.endpointPolicyVersion());
+        assertEquals("d6c5aba2968ae54bc54d3285214aec144be80982728f2ccfe6e8046c17d1a886",
+                scope.endpointPolicyDigest());
+        assertEquals(OkxPilotPrerequisiteObservationAuthority.OPERATOR_MAXIMUM_TOLERATED_SKEW_MS,
+                scope.maximumToleratedSkewMs());
+    }
+
+    @Test
+    void operatorBootstrapRejectsExcessiveSkewBeforeCatalogWrite() {
+        CapturingExecutor executor = new CapturingExecutor(snapshot(
+                OkxPilotPrerequisiteObservationAuthority.OPERATOR_MAXIMUM_TOLERATED_SKEW_MS + 1));
+        InMemoryCatalogRepository catalog = new InMemoryCatalogRepository();
+        OkxPilotPrerequisiteObservationAuthority authority = authority(executor, catalog);
+
+        LiveControlException failure = assertThrows(
+                LiveControlException.class,
+                () -> authority.bootstrapTrustedOperatorPilotScope(
+                        operatorSession(), UUID.randomUUID(), OWNER_ID, NOW));
+
+        assertEquals("TRUSTED_OPERATOR_PILOT_SCOPE_BOOTSTRAP_UNAVAILABLE", failure.code());
+        assertEquals(1, executor.calls.get());
+        assertTrue(catalog.items.isEmpty());
     }
 
     @Test
@@ -141,6 +191,19 @@ class OkxPilotPrerequisiteObservationAuthorityTest {
         );
     }
 
+    private static LiveSession operatorSession() {
+        var authority = com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority.active(
+                UUID.fromString("22222222-3333-4444-5555-666666666666"),
+                OWNER_ID, ACCOUNT_ID, CREDENTIAL_ID, "BTC-USDT",
+                com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority.Side.BUY,
+                com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority.OrderType.LIMIT,
+                new BigDecimal("10.00000000"), NOW, NOW.plusSeconds(120), OWNER_ID, NOW);
+        return LiveSession.createOperatorPilot(
+                UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),
+                OWNER_ID, ACCOUNT_ID, authority.id(), authority.canonicalDigest(), CREDENTIAL_ID,
+                "BTC-USDT", authority.maxNotional(), NOW, NOW.plusSeconds(120), OWNER_ID, NOW);
+    }
+
     private static OkxPilotPrerequisiteObservationAuthority authority(CapturingExecutor executor) {
         return authority(executor, new InMemoryCatalogRepository());
     }
@@ -150,7 +213,7 @@ class OkxPilotPrerequisiteObservationAuthorityTest {
             InMemoryCatalogRepository catalog
     ) {
         return new OkxPilotPrerequisiteObservationAuthority(
-                executor, new InstrumentCatalogService(catalog));
+                executor, new InstrumentCatalogService(catalog), RELEASE_ID, MANIFEST_SHA256);
     }
 
     private static PilotScopeBinding scope() {

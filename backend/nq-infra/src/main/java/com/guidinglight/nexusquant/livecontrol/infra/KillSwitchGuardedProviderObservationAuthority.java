@@ -10,6 +10,7 @@ import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * 只读 provider observation authority 的调用期安全边界。
@@ -38,12 +39,28 @@ public final class KillSwitchGuardedProviderObservationAuthority
             PilotScopeBinding scope,
             Instant resolvedAt
     ) {
+        requireEngagedKillSwitch();
+        return delegate.resolveTrustedObservationSet(session, scope, resolvedAt);
+    }
+
+    @Override
+    public TrustedOperatorPilotBootstrap bootstrapTrustedOperatorPilotScope(
+            LiveSession session,
+            UUID pilotScopeId,
+            long createdBy,
+            Instant resolvedAt
+    ) {
+        requireEngagedKillSwitch();
+        return delegate.bootstrapTrustedOperatorPilotScope(
+                session, pilotScopeId, createdBy, resolvedAt);
+    }
+
+    private void requireEngagedKillSwitch() {
         if (killSwitchService.snapshot().status() != KillSwitchStatus.ENGAGED) {
             throw new LiveControlException(
                     "READ_ONLY_PROVIDER_OBSERVATION_KILL_SWITCH_REQUIRED",
                     "kill switch must be engaged before trusted prerequisite collection"
             );
         }
-        return delegate.resolveTrustedObservationSet(session, scope, resolvedAt);
     }
 }

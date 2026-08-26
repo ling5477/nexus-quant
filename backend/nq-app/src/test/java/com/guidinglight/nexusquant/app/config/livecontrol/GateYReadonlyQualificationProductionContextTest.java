@@ -94,6 +94,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "nq.runtime.provider-observation.deployment-profile=gatey-readonly-qualification",
         "nq.runtime.provider-observation.release-id=1111111111111111111111111111111111111111",
         "nq.runtime.provider-observation.source-commit=1111111111111111111111111111111111111111",
+        "NQ_GATEY_RELEASE_MANIFEST_SHA256=2222222222222222222222222222222222222222222222222222222222222222",
         "nq.runtime.provider-observation.capability-identity=read-only-provider-observation",
         "nq.runtime.provider-observation.order-submission-enabled=false",
         "nq.runtime.provider-observation.cancel-enabled=false",

@@ -24,13 +24,11 @@ public interface PilotScopeAuthorityResolver {
 
     record ResolvedMinimalAuthority(
             long ownerId,
-            OperatorPilotAuthority operatorPilotAuthority,
-            ResolvedScopeBindings scopeBindings
+            OperatorPilotAuthority operatorPilotAuthority
     ) {
         public ResolvedMinimalAuthority {
             if (ownerId <= 0) throw new IllegalArgumentException("ownerId must be positive");
             java.util.Objects.requireNonNull(operatorPilotAuthority, "operatorPilotAuthority must not be null");
-            java.util.Objects.requireNonNull(scopeBindings, "scopeBindings must not be null");
         }
     }
 

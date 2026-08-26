@@ -14,6 +14,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
@@ -63,6 +64,38 @@ class GateYReadonlyQualificationObservationAuthorityTest {
             assertEquals("READ_ONLY_PROVIDER_OBSERVATION_KILL_SWITCH_REQUIRED", failure.code());
             assertEquals(0, delegateCalls.get());
         }
+    }
+
+    @Test
+    void engagedKillSwitchDelegatesOperatorBootstrapExactlyOnce() {
+        AtomicInteger bootstrapCalls = new AtomicInteger();
+        PilotPrerequisiteObservationAuthority delegate = new PilotPrerequisiteObservationAuthority() {
+            @Override
+            public PilotObservationSet resolveTrustedObservationSet(
+                    com.guidinglight.nexusquant.livecontrol.domain.LiveSession session,
+                    com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding scope,
+                    Instant resolvedAt
+            ) {
+                throw new AssertionError("strategy observation path must not be used");
+            }
+
+            @Override
+            public TrustedOperatorPilotBootstrap bootstrapTrustedOperatorPilotScope(
+                    com.guidinglight.nexusquant.livecontrol.domain.LiveSession session,
+                    UUID pilotScopeId,
+                    long createdBy,
+                    Instant resolvedAt
+            ) {
+                bootstrapCalls.incrementAndGet();
+                return null;
+            }
+        };
+        var authority = new KillSwitchGuardedProviderObservationAuthority(
+                delegate, killSwitch(KillSwitchStatus.ENGAGED));
+
+        assertNull(authority.bootstrapTrustedOperatorPilotScope(
+                null, UUID.randomUUID(), 1, NOW));
+        assertEquals(1, bootstrapCalls.get());
     }
 
     private static KillSwitchService killSwitch(KillSwitchStatus status) {

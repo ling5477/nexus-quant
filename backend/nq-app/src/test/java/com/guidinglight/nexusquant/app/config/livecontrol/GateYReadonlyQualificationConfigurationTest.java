@@ -158,6 +158,7 @@ class GateYReadonlyQualificationConfigurationTest {
                 "nq.runtime.provider-observation.enabled=true",
                 "nq.runtime.provider-observation.release-id=" + COMMIT,
                 "nq.runtime.provider-observation.source-commit=" + COMMIT,
+                "NQ_GATEY_RELEASE_MANIFEST_SHA256=" + "2".repeat(64),
                 "nq.runtime.provider-observation.capability-identity=read-only-provider-observation",
                 "nq.runtime.provider-observation.order-submission-enabled=false",
                 "nq.runtime.provider-observation.cancel-enabled=false",

@@ -84,7 +84,6 @@ class JdbcPilotScopeAuthorityResolverTest {
 
     @Test
     void shouldResolveMinimalOperatorAuthorityWithoutStrategyOrRiskFacts() {
-        configureRuntime(bindings);
         MinimalPilotMaterializationCommand minimal = new MinimalPilotMaterializationCommand(
                 UUID.randomUUID(), UUID.randomUUID(), 101, 202, "BTC-USDT",
                 new BigDecimal("10.00000000"), NOW, NOW.plusSeconds(120),
@@ -100,7 +99,6 @@ class JdbcPilotScopeAuthorityResolverTest {
         assertEquals(new BigDecimal("10.00000000"), authority.maxNotional());
         assertEquals(1, authority.maxPlaceCount());
         assertEquals(1, authority.maxCancelCount());
-        assertEquals(bindings, resolved.scopeBindings());
         verifyNoInteractions(admissions, liveControl);
     }
 

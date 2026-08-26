@@ -119,7 +119,7 @@ public class JdbcPilotScopeAuthorityResolver implements PilotScopeAuthorityResol
                 OperatorPilotAuthority.OrderType.LIMIT, command.configuredPilotMaxNotional(),
                 command.executionWindowStart(), command.executionWindowEnd(), actor.userId(),
                 command.executionWindowStart());
-        return new ResolvedMinimalAuthority(actor.userId(), authority, resolveRuntimeAuthority());
+        return new ResolvedMinimalAuthority(actor.userId(), authority);
     }
 
     private static boolean eligibleCredential(

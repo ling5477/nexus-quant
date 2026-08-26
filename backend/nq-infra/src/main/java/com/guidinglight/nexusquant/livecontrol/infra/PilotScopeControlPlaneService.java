@@ -8,6 +8,7 @@ import com.guidinglight.nexusquant.livecontrol.application.PilotScopeMaterializa
 import com.guidinglight.nexusquant.livecontrol.application.PilotScopeMaterializationResult;
 import com.guidinglight.nexusquant.livecontrol.application.MinimalPilotMaterializationCommand;
 import com.guidinglight.nexusquant.livecontrol.application.PilotPrerequisiteObservationAuthority;
+import com.guidinglight.nexusquant.livecontrol.application.PilotPrerequisiteObservationAuthority.TrustedOperatorPilotBootstrap;
 import com.guidinglight.nexusquant.livecontrol.application.port.LiveControlAuthorizationPort;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
@@ -125,9 +126,11 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
                 operatorAuthority.canonicalDigest(), command.credentialReferenceId(), command.instrument(),
                 command.configuredPilotMaxNotional(), command.executionWindowStart(),
                 command.executionWindowEnd(), actor.userId(), now);
-        PilotScopeBinding scope = canonicalScope(
-                actor, command.pilotScopeId(), authority.scopeBindings(), session, now);
-        PilotObservationSet observations = resolveTrustedObservationSet(session, scope, now);
+        TrustedOperatorPilotBootstrap bootstrap = resolveTrustedOperatorPilotBootstrap(
+                actor, command, session, now);
+        PilotScopeBinding scope = bootstrap.scopeBinding();
+        PilotObservationSet observations = bootstrap.observationSet();
+        requireTrustedOperatorPilotBootstrap(actor, command, session, scope, observations, now);
         requireTrustedObservationSet(session, scope, observations, now);
         LiveSessionEvent createdEvent = new LiveSessionEvent(
                 UUID.randomUUID(), session.id(), 1, null, LiveSessionState.APPROVAL_PENDING,
@@ -161,6 +164,26 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
             LiveControlException denied = new LiveControlException(
                     "TRUSTED_PREREQUISITE_OBSERVATION_INVALID",
                     "trusted prerequisite observation is invalid");
+            denied.initCause(exception);
+            throw denied;
+        }
+    }
+
+    private TrustedOperatorPilotBootstrap resolveTrustedOperatorPilotBootstrap(
+            AuthenticatedLiveControlActor actor,
+            MinimalPilotMaterializationCommand command,
+            LiveSession session,
+            Instant resolvedAt
+    ) {
+        try {
+            return observationAuthority.bootstrapTrustedOperatorPilotScope(
+                    session, command.pilotScopeId(), actor.userId(), resolvedAt);
+        } catch (LiveControlException exception) {
+            throw exception;
+        } catch (RuntimeException exception) {
+            LiveControlException denied = new LiveControlException(
+                    "TRUSTED_OPERATOR_PILOT_SCOPE_BOOTSTRAP_INVALID",
+                    "trusted operator pilot scope bootstrap is invalid");
             denied.initCause(exception);
             throw denied;
         }
@@ -275,6 +298,27 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
                     "TRUSTED_PREREQUISITE_OBSERVATION_INVALID",
                     "trusted prerequisite observation does not match immutable pilot scope"
             );
+        }
+    }
+
+    private static void requireTrustedOperatorPilotBootstrap(
+            AuthenticatedLiveControlActor actor,
+            MinimalPilotMaterializationCommand command,
+            LiveSession session,
+            PilotScopeBinding scope,
+            PilotObservationSet observations,
+            Instant resolvedAt
+    ) {
+        boolean exact = scope.id().equals(command.pilotScopeId())
+                && scope.sessionId().equals(session.id())
+                && scope.createdBy() == actor.userId()
+                && scope.createdAt().equals(resolvedAt)
+                && scope.hasCanonicalHash(session)
+                && observations.pilotScopeId().equals(scope.id());
+        if (!exact) {
+            throw new LiveControlException(
+                    "TRUSTED_OPERATOR_PILOT_SCOPE_BOOTSTRAP_INVALID",
+                    "trusted operator pilot scope bootstrap does not bind the exact session");
         }
     }
 

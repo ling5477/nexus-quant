@@ -5,9 +5,12 @@ import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredenti
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPilotPrerequisiteRequest;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPilotPrerequisiteSnapshot;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateEnvironment;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderOperation;
 import com.guidinglight.nexusquant.livecontrol.application.PilotPrerequisiteObservationAuthority;
+import com.guidinglight.nexusquant.livecontrol.application.PilotPrerequisiteObservationAuthority.TrustedOperatorPilotBootstrap;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionAuthorityType;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationCanonicalEncoder;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationSet;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotPrerequisiteObservation;
@@ -23,6 +26,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * OKX production prerequisite observation capability；默认 runtime 不装配该 authority。
@@ -42,17 +46,40 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
     public static final String CLOCK_SOURCE_SCHEMA = "okx-public-time.v5";
     public static final String MARKET_SOURCE = "OKX_MARKET_TICKER";
     public static final String MARKET_SOURCE_SCHEMA = "okx-market-ticker.v5";
+    public static final long OPERATOR_INSTRUMENT_MAXIMUM_AGE_MS = 30_000L;
+    public static final long OPERATOR_FEE_MAXIMUM_AGE_MS = 60_000L;
+    public static final long OPERATOR_BALANCE_MAXIMUM_AGE_MS = 5_000L;
+    public static final long OPERATOR_CLOCK_MAXIMUM_AGE_MS = 5_000L;
+    public static final long OPERATOR_MAXIMUM_TOLERATED_SKEW_MS = 100L;
+    public static final String OPERATOR_ENDPOINT_POLICY_VERSION =
+            "okx-operator-pilot-exact-endpoints.v1";
+    public static final String OPERATOR_PROVIDER_CONTRACT_IDENTITY =
+            "okx-spot-provider-contract.v1";
+    private static final String ZERO_DIGEST = "0".repeat(64);
+    private static final String OPERATOR_ENDPOINT_POLICY_DIGEST = endpointPolicyDigest();
 
     private final OkxPrivateCredentialExecutor credentialExecutor;
     private final InstrumentCatalogService instrumentCatalogService;
+    private final String releaseId;
+    private final String releaseManifestSha256;
 
     public OkxPilotPrerequisiteObservationAuthority(
             OkxPrivateCredentialExecutor credentialExecutor,
-            InstrumentCatalogService instrumentCatalogService
+            InstrumentCatalogService instrumentCatalogService,
+            String releaseId,
+            String releaseManifestSha256
     ) {
         this.credentialExecutor = Objects.requireNonNull(credentialExecutor, "credentialExecutor must not be null");
         this.instrumentCatalogService = Objects.requireNonNull(
                 instrumentCatalogService, "instrumentCatalogService must not be null");
+        if (releaseId == null || !releaseId.matches("[0-9a-f]{40}")) {
+            throw new IllegalArgumentException("releaseId must be an exact commit");
+        }
+        if (releaseManifestSha256 == null || !releaseManifestSha256.matches("[0-9a-f]{64}")) {
+            throw new IllegalArgumentException("releaseManifestSha256 must be lowercase SHA-256");
+        }
+        this.releaseId = releaseId;
+        this.releaseManifestSha256 = releaseManifestSha256;
     }
 
     @Override
@@ -66,15 +93,7 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
         Objects.requireNonNull(resolvedAt, "resolvedAt must not be null");
         try {
             requireExactScope(session, scope);
-            OkxPilotPrerequisiteSnapshot snapshot = credentialExecutor.withActiveCredential(
-                    session.ownerId(),
-                    session.exchangeAccountId(),
-                    session.credentialReference(),
-                    JdbcOkxPrivateCredentialExecutor.OKX_API_V5,
-                    credentialSession -> credentialSession.observePrerequisites(
-                            new OkxPilotPrerequisiteRequest(session.symbolAllowlist()),
-                            OkxPrivateEnvironment.PRODUCTION)
-            );
+            OkxPilotPrerequisiteSnapshot snapshot = observeSnapshot(session);
             requireFreshSnapshot(snapshot, scope, resolvedAt);
             refreshCatalog(snapshot, resolvedAt);
             return materialize(session, scope, snapshot, resolvedAt);
@@ -104,6 +123,10 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
         if (calculatedSkew != snapshot.observedSkewMs()) {
             throw new IllegalArgumentException("clock observation is internally inconsistent");
         }
+        if (calculatedSkew < -scope.maximumToleratedSkewMs()
+                || calculatedSkew > scope.maximumToleratedSkewMs()) {
+            throw new IllegalArgumentException("clock observation exceeds the exact scope");
+        }
 
         long collectionMaximumAgeMs = Math.min(
                 Math.min(scope.instrumentMaximumAgeMs(), scope.feeMaximumAgeMs()),
@@ -128,6 +151,48 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
                     || market.observedAt().isAfter(snapshot.okxServerTime())) {
                 throw new IllegalArgumentException("market observation is stale or outside instrument scope");
             }
+        }
+    }
+
+    private OkxPilotPrerequisiteSnapshot observeSnapshot(LiveSession session) {
+        return credentialExecutor.withActiveCredential(
+                session.ownerId(),
+                session.exchangeAccountId(),
+                session.credentialReference(),
+                JdbcOkxPrivateCredentialExecutor.OKX_API_V5,
+                credentialSession -> credentialSession.observePrerequisites(
+                        new OkxPilotPrerequisiteRequest(session.symbolAllowlist()),
+                        OkxPrivateEnvironment.PRODUCTION)
+        );
+    }
+
+    @Override
+    public TrustedOperatorPilotBootstrap bootstrapTrustedOperatorPilotScope(
+            LiveSession session,
+            UUID pilotScopeId,
+            long createdBy,
+            Instant resolvedAt
+    ) {
+        Objects.requireNonNull(session, "session must not be null");
+        Objects.requireNonNull(pilotScopeId, "pilotScopeId must not be null");
+        Objects.requireNonNull(resolvedAt, "resolvedAt must not be null");
+        try {
+            if (session.authorityType() != LiveSessionAuthorityType.OPERATOR_PILOT
+                    || createdBy <= 0 || createdBy != session.ownerId()) {
+                throw new IllegalArgumentException("operator pilot bootstrap scope mismatch");
+            }
+            OkxPilotPrerequisiteSnapshot snapshot = observeSnapshot(session);
+            PilotScopeBinding scope = bootstrapScope(
+                    session, pilotScopeId, createdBy, snapshot, resolvedAt);
+            requireFreshSnapshot(snapshot, scope, resolvedAt);
+            refreshCatalog(snapshot, resolvedAt);
+            PilotObservationSet observations = materialize(session, scope, snapshot, resolvedAt);
+            return new TrustedOperatorPilotBootstrap(scope, observations);
+        } catch (RuntimeException failure) {
+            throw new LiveControlException(
+                    "TRUSTED_OPERATOR_PILOT_SCOPE_BOOTSTRAP_UNAVAILABLE",
+                    "trusted operator pilot scope bootstrap failed"
+            );
         }
     }
 
@@ -171,49 +236,65 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
                 null, null);
     }
 
+    private PilotScopeBinding bootstrapScope(
+            LiveSession session,
+            UUID pilotScopeId,
+            long createdBy,
+            OkxPilotPrerequisiteSnapshot snapshot,
+            Instant resolvedAt
+    ) {
+        ConstraintFacts facts = constraintFacts(session, snapshot);
+        PilotScopeBinding draft = new PilotScopeBinding(
+                pilotScopeId,
+                session.id(),
+                facts.instrumentDigest(),
+                INSTRUMENT_SOURCE,
+                INSTRUMENT_SOURCE_SCHEMA,
+                OPERATOR_INSTRUMENT_MAXIMUM_AGE_MS,
+                facts.feeDigest(),
+                facts.firstFee().tierIdentity(),
+                PilotScopeBinding.FeeEvidenceClass.OBSERVED_PRIVATE,
+                FEE_SOURCE,
+                FEE_SOURCE_SCHEMA,
+                OPERATOR_FEE_MAXIMUM_AGE_MS,
+                BALANCE_SOURCE,
+                BALANCE_SOURCE_SCHEMA,
+                OPERATOR_BALANCE_MAXIMUM_AGE_MS,
+                CLOCK_SOURCE,
+                CLOCK_SOURCE_SCHEMA,
+                OPERATOR_CLOCK_MAXIMUM_AGE_MS,
+                PilotScopeBinding.SIGNED_TIMESTAMP_SOURCE,
+                OPERATOR_MAXIMUM_TOLERATED_SKEW_MS,
+                OPERATOR_ENDPOINT_POLICY_VERSION,
+                OPERATOR_ENDPOINT_POLICY_DIGEST,
+                OPERATOR_PROVIDER_CONTRACT_IDENTITY,
+                releaseManifestSha256,
+                "gatey-minimal-live-pilot@" + releaseId,
+                releaseManifestSha256,
+                ZERO_DIGEST,
+                createdBy,
+                resolvedAt
+        );
+        return draft.withCanonicalHash(session);
+    }
+
     private static PilotObservationSet materialize(
             LiveSession session,
             PilotScopeBinding scope,
             OkxPilotPrerequisiteSnapshot snapshot,
             Instant resolvedAt
     ) {
-        List<PilotPrerequisiteObservation.InstrumentItem> instrumentItems = snapshot.instruments().stream()
-                .map(value -> new PilotPrerequisiteObservation.InstrumentItem(
-                        value.instrument(),
-                        tradingStatus(value.state()),
-                        value.tickSize(),
-                        value.lotSize(),
-                        value.minimumOrderSize(),
-                        PilotPrerequisiteObservation.MinimumOrderValueEvidenceClass.VENUE_NOT_PUBLISHED,
-                        null,
-                        null
-                ))
-                .toList();
-        if (!instrumentItems.stream().map(PilotPrerequisiteObservation.InstrumentItem::symbol).toList()
-                .equals(session.symbolAllowlist())) {
-            throw new IllegalArgumentException("instrument collection scope mismatch");
-        }
-        String instrumentDigest = PilotObservationCanonicalEncoder.instrumentMetadataDigest(instrumentItems);
+        ConstraintFacts facts = constraintFacts(session, snapshot);
+        List<PilotPrerequisiteObservation.InstrumentItem> instrumentItems = facts.instrumentItems();
+        String instrumentDigest = facts.instrumentDigest();
         if (!constantTimeEquals(instrumentDigest, scope.instrumentMetadataDigest())) {
             throw new IllegalArgumentException("instrument digest mismatch");
         }
-
-        OkxPilotPrerequisiteSnapshot.FeeFact firstFee = snapshot.fees().get(0);
-        boolean exactFees = true;
-        for (int index = 0; index < snapshot.fees().size(); index++) {
-            OkxPilotPrerequisiteSnapshot.FeeFact fee = snapshot.fees().get(index);
-            OkxPilotPrerequisiteSnapshot.InstrumentFact instrument = snapshot.instruments().get(index);
-            exactFees &= fee.instrument().equals(instrument.instrument())
-                    && fee.groupId().equals(instrument.feeGroupId())
-                    && fee.tierIdentity().equals(firstFee.tierIdentity())
-                    && fee.makerRate().compareTo(firstFee.makerRate()) == 0
-                    && fee.takerRate().compareTo(firstFee.takerRate()) == 0;
-        }
-        if (!exactFees || !firstFee.tierIdentity().equals(scope.feeTier())) {
+        OkxPilotPrerequisiteSnapshot.FeeFact firstFee = facts.firstFee();
+        if (!firstFee.tierIdentity().equals(scope.feeTier())) {
             throw new IllegalArgumentException("fee collection scope mismatch");
         }
-        String feeDigest = PilotObservationCanonicalEncoder.feeScheduleDigest(
-                session.symbolAllowlist(), firstFee.tierIdentity(), firstFee.makerRate(), firstFee.takerRate());
+        String feeDigest = facts.feeDigest();
         if (!constantTimeEquals(feeDigest, scope.feeScheduleDigest())) {
             throw new IllegalArgumentException("fee digest mismatch");
         }
@@ -285,6 +366,54 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
                         marketDigest, marketFact.instrument(), marketFact.bestAsk());
         return new PilotObservationSet(
                 observationSetId, scope.id(), instrument, fee, balance, clock, market);
+    }
+
+    private static ConstraintFacts constraintFacts(
+            LiveSession session,
+            OkxPilotPrerequisiteSnapshot snapshot
+    ) {
+        List<PilotPrerequisiteObservation.InstrumentItem> instrumentItems = snapshot.instruments().stream()
+                .map(value -> new PilotPrerequisiteObservation.InstrumentItem(
+                        value.instrument(),
+                        tradingStatus(value.state()),
+                        value.tickSize(),
+                        value.lotSize(),
+                        value.minimumOrderSize(),
+                        PilotPrerequisiteObservation.MinimumOrderValueEvidenceClass.VENUE_NOT_PUBLISHED,
+                        null,
+                        null
+                ))
+                .toList();
+        if (!instrumentItems.stream().map(PilotPrerequisiteObservation.InstrumentItem::symbol).toList()
+                .equals(session.symbolAllowlist())) {
+            throw new IllegalArgumentException("instrument collection scope mismatch");
+        }
+        OkxPilotPrerequisiteSnapshot.FeeFact firstFee = snapshot.fees().getFirst();
+        boolean exactFees = true;
+        for (int index = 0; index < snapshot.fees().size(); index++) {
+            OkxPilotPrerequisiteSnapshot.FeeFact fee = snapshot.fees().get(index);
+            OkxPilotPrerequisiteSnapshot.InstrumentFact instrument = snapshot.instruments().get(index);
+            exactFees &= fee.instrument().equals(instrument.instrument())
+                    && fee.groupId().equals(instrument.feeGroupId())
+                    && fee.tierIdentity().equals(firstFee.tierIdentity())
+                    && fee.makerRate().compareTo(firstFee.makerRate()) == 0
+                    && fee.takerRate().compareTo(firstFee.takerRate()) == 0;
+        }
+        if (!exactFees) {
+            throw new IllegalArgumentException("fee collection scope mismatch");
+        }
+        String instrumentDigest = PilotObservationCanonicalEncoder.instrumentMetadataDigest(instrumentItems);
+        String feeDigest = PilotObservationCanonicalEncoder.feeScheduleDigest(
+                session.symbolAllowlist(), firstFee.tierIdentity(), firstFee.makerRate(), firstFee.takerRate());
+        return new ConstraintFacts(instrumentItems, instrumentDigest, firstFee, feeDigest);
+    }
+
+    private record ConstraintFacts(
+            List<PilotPrerequisiteObservation.InstrumentItem> instrumentItems,
+            String instrumentDigest,
+            OkxPilotPrerequisiteSnapshot.FeeFact firstFee,
+            String feeDigest
+    ) {
     }
 
     private static void requireExactScope(LiveSession session, PilotScopeBinding scope) {
@@ -383,6 +512,24 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
         high = (high & 0xffffffffffff0fffL) | 0x0000000000005000L;
         low = (low & 0x3fffffffffffffffL) | 0x8000000000000000L;
         return new UUID(high, low);
+    }
+
+    private static String endpointPolicyDigest() {
+        List<String> prerequisiteEndpoints = List.of(
+                "GET /api/v5/account/balance",
+                "GET /api/v5/account/instruments",
+                "GET /api/v5/account/trade-fee",
+                "GET /api/v5/market/ticker",
+                "GET /api/v5/public/time"
+        );
+        String canonical = java.util.stream.Stream.concat(
+                        prerequisiteEndpoints.stream(),
+                        OkxSpotProviderOperation.exactAllowlist().stream()
+                                .map(operation -> operation.method() + " " + operation.path()))
+                .distinct()
+                .sorted()
+                .collect(Collectors.joining("\n"));
+        return sha256(OPERATOR_ENDPOINT_POLICY_VERSION + "\n" + canonical);
     }
 
     private static String sha256(String value) {

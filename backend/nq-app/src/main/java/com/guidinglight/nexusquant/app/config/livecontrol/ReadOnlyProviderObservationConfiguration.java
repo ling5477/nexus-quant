@@ -95,10 +95,14 @@ public class ReadOnlyProviderObservationConfiguration {
             OkxPrivateCredentialExecutor credentialExecutor,
             KillSwitchService killSwitchService,
             com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService
-                    instrumentCatalogService
+                    instrumentCatalogService,
+            ReadOnlyProviderObservationRuntimeIdentity runtimeIdentity,
+            @Value("${NQ_GATEY_RELEASE_MANIFEST_SHA256}") String releaseManifestSha256
     ) {
         return new KillSwitchGuardedProviderObservationAuthority(
-                new OkxPilotPrerequisiteObservationAuthority(credentialExecutor, instrumentCatalogService),
+                new OkxPilotPrerequisiteObservationAuthority(
+                        credentialExecutor, instrumentCatalogService,
+                        runtimeIdentity.releaseId(), releaseManifestSha256),
                 killSwitchService
         );
     }
