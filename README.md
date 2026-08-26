@@ -1,37 +1,32 @@
 # NexusQuant
 
-NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/current/STATUS.md](docs/current/STATUS.md) 的 `nq-current-authority` 机器可读区块；本 README 只提供入口和短摘要，不复制完整 machine authority。
+NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/current/STATUS.md](docs/current/STATUS.md) 的 `nq-current-authority` 机器可读区块；本 README 只提供入口和短摘要。
 
 ## 当前摘要
 
 <!-- nq-current-summary:start -->
-- 最近冻结 Gate 为 GateX：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [docs/gates/gate-x/](docs/gates/gate-x/)，release tag=`nq-gatex-freeze`。
-- GateY：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateY-6F minimal live pilot=`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；GateY 整体尚未冻结。
-- Attempt-13=`COMPLETED / ACCEPTED`; production deployment=`STOPPED`；production soak=`COMPLETED`，worker=`STOPPED`。
-- 当前唯一动作是 `NQ-GATEY-FREEZE-CLOSEOUT`；唯一10U pilot已完成，PLACE=1、retry=0、CANCEL=0，最终activeLease=0、LIVE关闭、kill已接合。精确边界以 [STATUS.md](docs/current/STATUS.md) 为准。
-- LIVE：`DISABLED`（关闭）；Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
+- 最近冻结 Gate 为 GateX：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [docs/gates/gate-x/](docs/gates/gate-x/)。
+- GateY：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateY-6F minimal live pilot=`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。
+- GateY freeze archive candidate 位于 [docs/gates/gate-y/](docs/gates/gate-y/)；annotated tag=`nq-gatey-freeze` 仍为 `TAG PENDING`（待创建）。
+- 当前唯一动作是 `NQ-GATEY-FREEZE-CLOSEOUT`。
+- Pilot final：PLACE=1、retry=0、CANCEL=0、activeLease=0、LIVE=false、kill=`ENGAGED`、Attempt-02 未创建。
+- Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
 
 ## Current Authority
 
 - [STATUS.md](docs/current/STATUS.md)：唯一阶段状态 authority。
 - [ROADMAP.md](docs/current/ROADMAP.md)：下一允许动作和路线。
-- [GATEY_PLAN.md](docs/current/GATEY_PLAN.md)：OKX Spot 单场所微资金受控实盘候选的 hard gate、控制面、批次与验收计划；不构成 LIVE 授权。
-- [GATEX_PLAN.md](docs/gates/gate-x/GATEX_PLAN.md)：GateX 已归档实施基线、批次、边界与冻结条件；不决定 current 状态。
-- [GateX strict archive](docs/gates/gate-x/README.md)：已冻结 GateX 的 durable evidence；历史证据不决定 current 状态。
-- [GateW archive](docs/gates/gate-w/README.md)：已冻结 GateW 的 strict archive；历史证据不决定 current 状态。
-- [FACT_SOURCE_INDEX.md](docs/current/FACT_SOURCE_INDEX.md)：authority 分层与历史证据边界。
-- [API.md](docs/current/API.md)：已实现 API 能力事实。
-- [DB_SCHEMA.md](docs/current/DB_SCHEMA.md)：已落地 schema 事实。
-- [ARCHITECTURE.md](docs/current/ARCHITECTURE.md) / [MODULES.md](docs/current/MODULES.md)：架构和模块职责。
+- [FACT_SOURCE_INDEX.md](docs/current/FACT_SOURCE_INDEX.md)：authority 分层与 archive 边界。
+- [API.md](docs/current/API.md) / [DB_SCHEMA.md](docs/current/DB_SCHEMA.md)：当前能力事实。
+- [ARCHITECTURE.md](docs/current/ARCHITECTURE.md) / [MODULES.md](docs/current/MODULES.md)：架构与模块职责。
 - [TESTING.md](docs/current/TESTING.md) / [WORKLOG.md](docs/current/WORKLOG.md)：append-only evidence ledger。
 
 ## Historical Evidence
 
-- Gate archive 统一位于 [docs/gates/](docs/gates/)；最近已冻结 Gate 的精确 tag 与 archive 入口从 [STATUS.md](docs/current/STATUS.md) 获取。
-- GateX 的不可覆盖 task 历史从 [archive evidence index](docs/gates/gate-x/source/task-evidence/README.md) 访问；GateW archive 继续保留其历史 Attempt 证据。
-- General archive 位于 [docs/archive/](docs/archive/)。
+- GateY strict archive candidate：[docs/gates/gate-y/](docs/gates/gate-y/)，包含 plan、work orders、全部 task evidence、失败/remediation 与最小实盘 pilot 证据。
+- 其他 Gate archive：[docs/gates/](docs/gates/)；通用历史归档：[docs/archive/](docs/archive/)。
 
 ## Boundary
 
-当前计划、历史 archive 与 evidence 均不代表 LIVE、Shadow trading、AI/DH runtime、Integration runtime、RealClient、real provider、private trading 或真实交易已启用。`acknowledge / escalate / resolve / close` 只表示本地人工诊断复核，不构成交易授权。
+GateY 只证明单账户、单 credential、OKX Spot BTC-USDT BUY LIMIT、`<= 10 USDT`、人工受控 exactly-one PLACE 与完整 reconciliation。它不授权第二 pilot、通用 LIVE、自动策略实盘、多订单/多账户/多交易所、合约/杠杆、transfer/withdraw 或 AI/DH 交易。

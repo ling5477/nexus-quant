@@ -70,6 +70,18 @@
     "runtime-scheduling-evidence": [
       "RUNTIME.*(EVIDENCE|BOUNDARY|READINESS|SUMMARY).*\\.md$",
       "SCHEDULING.*(EVIDENCE|BOUNDARY|READINESS|SUMMARY).*\\.md$"
+    ],
+    "deployment-evidence": [
+      "DEPLOYMENT_EVIDENCE_SUMMARY\\.md$"
+    ],
+    "live-pilot-evidence": [
+      "MINIMAL_LIVE_PILOT_EVIDENCE_SUMMARY\\.md$"
+    ],
+    "live-session-work-order": [
+      "GATEY_1_LIVE_SESSION_DATA_MODEL_WORK_ORDER\\.md$"
+    ],
+    "micro-live-work-order": [
+      "GATEY_6_EXPLICIT_MICRO_LIVE_AUTHORIZATION_WORK_ORDER\\.md$"
     ]
   },
   "strictGateOverrides": {
@@ -115,6 +127,21 @@
         "api-evidence",
         "frontend-evidence",
         "runtime-scheduling-evidence"
+      ],
+      "allowPreTagArchiveState": true
+    },
+    "gate-y": {
+      "expectedTag": "nq-gatey-freeze",
+      "expectedTagTarget": null,
+      "conditionalRoles": [
+        "backend-db-evidence",
+        "api-evidence",
+        "frontend-evidence",
+        "runtime-scheduling-evidence",
+        "deployment-evidence",
+        "live-pilot-evidence",
+        "live-session-work-order",
+        "micro-live-work-order"
       ],
       "allowPreTagArchiveState": true
     }

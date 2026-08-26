@@ -121,6 +121,29 @@ foreach ($case in @(
 }
 Write-Output 'PASS machine-attempt-case=gatex-plan result=NOT_APPLICABLE ordinary-canonical-validation=PASS'
 
+$repositoryAuditAuthority = @{
+    work_batch = 'GateAUDIT-PLAN'
+    work_batch_status = 'NOT_STARTED'
+    next_action = 'NQ-FULL-REPOSITORY-AUDIT-AND-CONSOLIDATION'
+}
+Assert-ActionType $repositoryAuditAuthority.next_action 'REPOSITORY_AUDIT'
+if (-not (Test-GovernanceNextActionForWorkBatch `
+        $contract $repositoryAuditAuthority.work_batch_status `
+        $repositoryAuditAuthority.work_batch $repositoryAuditAuthority.next_action)) {
+    throw 'POST_GATEY_REPOSITORY_AUDIT_CANONICAL_TRIPLE_REJECTED'
+}
+foreach ($case in @(
+    @{ Status='IMPLEMENTED|SELF_REVIEWED'; Batch='GateAUDIT-PLAN'; Action='NQ-FULL-REPOSITORY-AUDIT-AND-CONSOLIDATION' },
+    @{ Status='NOT_STARTED'; Batch='GateAUDIT-UNKNOWN'; Action='NQ-FULL-REPOSITORY-AUDIT-AND-CONSOLIDATION' },
+    @{ Status='NOT_STARTED'; Batch='GateAUDIT-PLAN'; Action='NQ-FULL-REPOSITORY-AUDIT-AND-CONSOLIDATION-X' }
+)) {
+    if (Test-GovernanceNextActionForWorkBatch $contract $case.Status $case.Batch $case.Action) {
+        throw ("POST_GATEY_REPOSITORY_AUDIT_NON_CANONICAL_TRIPLE_ACCEPTED status={0} batch={1} action={2}" -f
+            $case.Status, $case.Batch, $case.Action)
+    }
+}
+Write-Output 'PASS machine-attempt-case=post-gatey-repository-audit result=NOT_STARTED_ONLY'
+
 function Assert-CurrentDocsAuthorityCase {
     param(
         [string] $Name,

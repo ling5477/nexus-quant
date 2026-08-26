@@ -1158,6 +1158,17 @@ $child.WaitForExit()
     }
     Write-Output 'PASS fixture=generic-freeze-closeout gates=GateX,GateW,GateY positive=3 negative-statuses=15'
 
+    $repositoryAuditAction = 'NQ-FULL-REPOSITORY-AUDIT-AND-CONSOLIDATION'
+    Assert-Condition ((Get-GovernanceNextActionType $contract $repositoryAuditAction) -ceq 'REPOSITORY_AUDIT') `
+        'repository audit action type rejected'
+    Assert-Condition (Test-GovernanceNextActionForWorkBatch `
+            $contract 'NOT_STARTED' 'GateAUDIT-PLAN' $repositoryAuditAction) `
+        'repository audit canonical mapping rejected'
+    Assert-Condition (-not (Test-GovernanceNextActionForWorkBatch `
+            $contract 'NOT_STARTED' 'GateAUDIT-UNKNOWN' $repositoryAuditAction)) `
+        'repository audit accepted wrong work batch'
+    Write-Output 'PASS fixture=post-gatey-repository-audit-mapping'
+
     Assert-Condition (-not [bool]$contract.lifecycles.freeze.authorityReviewCommitRequired) 'freeze authority review commit must not be required'
     Assert-Condition (@($contract.lifecycles.freeze.candidateEntryStatuses) -contains 'IMPLEMENTED|PENDING_REVIEW') 'freeze pending-review candidate entry missing'
     Assert-Condition (@($contract.lifecycles.freeze.candidateEntryStatuses) -cnotcontains 'COMMITTED|CI_GREEN|CONTINUE_REQUIRED') 'green continuation was accepted as freeze/archive candidate'
@@ -1179,7 +1190,11 @@ $child.WaitForExit()
         Assert-Condition (Test-GovernanceEvidenceItem $contract $currentItem 'current' $path) "current evidence item rejected path=$path"
         Write-Output "PASS fixture=current-evidence path=$path"
     }
-    foreach ($path in @('source/task-evidence/README.md','source/task-evidence/NQ-GATEW-TASK.attempt-01.md')) {
+    foreach ($path in @(
+        'source/task-evidence/README.md',
+        'source/task-evidence/NQ-GATEW-TASK.attempt-01.md',
+        'source/task-evidence/NQ-GATEY-FIRST-REAL-ORDER-HARD-GATE.manifest.json'
+    )) {
         Assert-Condition (Test-GovernanceEvidencePath $contract 'archive' $path) "archive evidence rejected path=$path"; Write-Output "PASS fixture=archive-evidence path=$path"
     }
     foreach ($path in @(

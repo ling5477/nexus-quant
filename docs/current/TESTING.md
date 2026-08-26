@@ -14515,3 +14515,21 @@ Known warning：两个fresh workspace的canonical builder首次均只返回gener
 - Environment：production Linux/Java21/PostgreSQL V43/OKX current private permission，Windows本地Maven/PowerShell，GitHub Actions。
 - Known warnings：GitHub Node/setup-java deprecation annotations不阻断；未运行新的migration，因为尚未获得architecture decision。
 - Not run：未进入session/scope/observation/binding/lease/PLACE/CANCEL/reconciliation；PLACE=0，最终安全态通过。
+
+## 2026-08-26 — NQ-GATEY-FREEZE-CLOSEOUT pre-tag validation
+
+| Command / check | Result | Scope / environment | Known warnings / not run | Blocking |
+| --- | --- | --- | --- | --- |
+| `git fetch origin` + branch/status/HEAD | PASS（通过） | `dev`；starting `HEAD==origin/dev==65caaf7f...`；worktree initially clean | 当前 freeze 变更尚未提交 | 否 |
+| `gh run view 32981327378` | PASS（通过） | `completed / success / 10 jobs / bad=0`；head SHA=`65caaf7f...` | GitHub network read-only | 否 |
+| `check-current-authority.ps1` | PASS（通过） | errors=0；pre-tag Authority 仍为 GateY in progress / freeze ready | tag 尚未创建 | 否 |
+| `check-gate-archive.ps1 -Gate gate-y -PreTag` | PASS（通过） | 16 required roles；75 source evidence；warnings/errors=`0/0` | 2 份 sanitized JSON manifest 通过受限 path policy | 否 |
+| `check-doc-links.ps1` | PASS（通过） | 404 links checked；errors=0 | 128 warnings 均为 append-only ledger 或 archive historical path | 否 |
+| governance lifecycle / next-action / archive-manifest regressions | PASS（通过） | 3 suites exit 0；含 GateY strict override、JSON evidence、repository-audit mapping | 无 | 否 |
+| GateY frozen regressions | PASS（通过） | exact/minimal/release/runtime=`7/100/31/51`；GateY4、GateY5 lock/post-restore PASS | Linux-only install/runtime tests本轮未运行；既有服务器/CI证据保留 | 否 |
+| GateW frozen regressions | PASS（通过） | remediation/security/reproducibility=`37/12/34` | local fixtures；network/credential/Attempt-10 side effect=0 | 否 |
+| hash-preserving archive move | PASS（通过） | 75 source evidence mismatch=0；两份work order preserved | `GATEY_PLAN.md` 仅修复迁移后STATUS链接 | 否 |
+| custom secret backstop | PASS（通过） | changed/staged/untracked safe files=103；findings=0 | pinned Gitleaks待freeze commit exact-head CI | CI准入 |
+| forbidden-scope diff | PASS（通过） | backend/frontend/research/migration/deploy/.github=`0`；仅docs与5份docs-governance scripts | 未触达生产事实 | 否 |
+
+未运行 full Maven、frontend E2E 与 Python suite：本轮业务代码、前端、research、migration、deploy 与 workflow diff均为0；以starting exact-head CI `32981327378` 的10/10 green和已接受GateY capability evidence为baseline。明确未运行controller、pilot、OKX、credential、PLACE、CANCEL、transfer、withdraw、生产DB或server action。Freeze commit exact-head CI未产生前，tag保持`TAG PENDING`，该未验证项是tag准入阻断条件。

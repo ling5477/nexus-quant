@@ -300,7 +300,7 @@ GateY-2 初始化为 `NOT STARTED`（未开始），只允许实现以下 contro
 
 GateY-2 不实现真实 exchange execution。future exchange worker、real PLACE/CANCEL transport、`ExecutionIntent` external dispatch、`ExecutionReceipt` real-provider binding、unknown-order exchange reconciliation 与 partial-fill real exchange handling 全部后置 GateY-3。
 
-GateY-2 implementation 启动时必须重新扫描 `backend/nq-infra/src/main/resources/db/migration` 的最高 Flyway version。若最高仍为 V38，候选为 `V39__gate_y2_live_session_fact_model.sql`；否则使用 current highest + 1。不得抢号、预先写死版本事实或修改历史 migration。精确下一动作只读取 [STATUS.md](STATUS.md)。
+GateY-2 implementation 启动时必须重新扫描 `backend/nq-infra/src/main/resources/db/migration` 的最高 Flyway version。若最高仍为 V38，候选为 `V39__gate_y2_live_session_fact_model.sql`；否则使用 current highest + 1。不得抢号、预先写死版本事实或修改历史 migration。精确下一动作只读取 [STATUS.md](../../current/STATUS.md)。
 
 ## 24. Do-Not-Build List
 

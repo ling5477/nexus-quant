@@ -60,6 +60,10 @@ function Get-RoleFiles {
         'frontend-evidence' = "${prefix}_FRONTEND_EVIDENCE_SUMMARY.md"
         'python-boundary-evidence' = "${prefix}_PYTHON_BOUNDARY_EVIDENCE_SUMMARY.md"
         'runtime-scheduling-evidence' = "${prefix}_RUNTIME_SCHEDULING_BOUNDARY_SUMMARY.md"
+        'deployment-evidence' = "${prefix}_DEPLOYMENT_EVIDENCE_SUMMARY.md"
+        'live-pilot-evidence' = "${prefix}_MINIMAL_LIVE_PILOT_EVIDENCE_SUMMARY.md"
+        'live-session-work-order' = "${prefix}_1_LIVE_SESSION_DATA_MODEL_WORK_ORDER.md"
+        'micro-live-work-order' = "${prefix}_6_EXPLICIT_MICRO_LIVE_AUTHORIZATION_WORK_ORDER.md"
     }
     foreach ($role in $ConditionalRoles) { $files.Add([string]$conditionalFiles[$role]) }
     return @($files)
@@ -98,6 +102,24 @@ function Test-GateWOverrideContract {
         ($actualRoles -join '|') -eq ($expectedRoles -join '|')
     )
 }
+function Test-GateYOverrideContract {
+    param([object]$Manifest)
+    $property = $Manifest.strictGateOverrides.PSObject.Properties['gate-y']
+    if ($null -eq $property) { return $false }
+    $config = $property.Value
+    $expectedRoles = @(
+        'backend-db-evidence','api-evidence','frontend-evidence','runtime-scheduling-evidence',
+        'deployment-evidence','live-pilot-evidence','live-session-work-order','micro-live-work-order'
+    )
+    $actualRoles = @($config.conditionalRoles | ForEach-Object { [string]$_ })
+    return (
+        $config.expectedTag -eq 'nq-gatey-freeze' -and
+        $null -ne $config.PSObject.Properties['expectedTagTarget'] -and
+        $null -eq $config.expectedTagTarget -and
+        $config.allowPreTagArchiveState -eq $true -and
+        ($actualRoles -join '|') -eq ($expectedRoles -join '|')
+    )
+}
 function Copy-ManifestObject {
     param([object]$Manifest)
     return ($Manifest | ConvertTo-Json -Depth 20 | ConvertFrom-Json)
@@ -108,12 +130,15 @@ try {
     $gateU = $manifest.strictGateOverrides.'gate-u'
     $gateV = $manifest.strictGateOverrides.'gate-v'
     $gateW = $manifest.strictGateOverrides.'gate-w'
+    $gateY = $manifest.strictGateOverrides.'gate-y'
     Assert-Condition ($manifest.legacyThroughGate -eq 'gate-t') 'legacyThroughGate changed'
     Assert-Condition ($gateU.expectedTag -eq 'nq-gateu-freeze') 'GateU tag changed'
     Assert-Condition ($gateU.expectedTagTarget -eq '48ef0cdaa97099ae1ff5a66a8c0caeb07aa11fab') 'GateU target changed'
     Assert-Condition ($gateV.expectedTag -eq 'nq-gatev-freeze') 'GateV tag changed'
     Assert-Condition (Test-GateWOverrideContract $manifest) 'GateW strict override contract invalid'
     Write-Output 'PASS fixture=gatew-strict-override-contract'
+    Assert-Condition (Test-GateYOverrideContract $manifest) 'GateY strict override contract invalid'
+    Write-Output 'PASS fixture=gatey-strict-override-contract'
 
     $missingTagManifest = Copy-ManifestObject $manifest
     $missingTagManifest.strictGateOverrides.'gate-w'.expectedTag = $null
@@ -131,12 +156,15 @@ try {
     New-ArchiveFixture 'gate-u' @($gateU.conditionalRoles)
     New-ArchiveFixture 'gate-v' @($gateV.conditionalRoles)
     New-ArchiveFixture 'gate-w' @($gateW.conditionalRoles)
+    New-ArchiveFixture 'gate-y' @($gateY.conditionalRoles)
 
     Assert-Checker (Invoke-Checker 'gate-u' @('-PreTag')) $true 'PASS / GATE_ARCHIVE_PRETAG_VALID' 'gateu-compatibility-positive'
     Assert-Checker (Invoke-Checker 'gate-v' @('-PreTag')) $true 'PASS / GATE_ARCHIVE_PRETAG_VALID' 'pretag-structure-positive'
     Assert-Checker (Invoke-Checker 'gate-v') $true 'PASS / ARCHIVE_MANIFEST_COMPLETE' 'posttag-structure-positive'
     Assert-Checker (Invoke-Checker 'gate-w' @('-PreTag')) $true 'PASS / GATE_ARCHIVE_PRETAG_VALID' 'gatew-pretag-structure-positive'
     Assert-Checker (Invoke-Checker 'gate-w') $true 'PASS / ARCHIVE_MANIFEST_COMPLETE' 'gatew-posttag-structure-positive'
+    Assert-Checker (Invoke-Checker 'gate-y' @('-PreTag')) $true 'PASS / GATE_ARCHIVE_PRETAG_VALID' 'gatey-pretag-structure-positive'
+    Assert-Checker (Invoke-Checker 'gate-y') $true 'PASS / ARCHIVE_MANIFEST_COMPLETE' 'gatey-posttag-structure-positive'
 
     Invoke-FixtureGit @('init','-q') | Out-Null
     Invoke-FixtureGit @('config','user.name','NQ Governance Fixture') | Out-Null
@@ -211,6 +239,10 @@ exit 0
     foreach ($state in @('FAILED','BLOCKED','PASS')) {
         Assert-Condition ($positive.Text -match "EVIDENCE file=source/task-evidence/[^`n]*$state[^`n]* role=non-role valid=True") "$state attempt evidence rejected"
     }
+
+    $gateYRoot = Join-Path $fixtureRoot 'docs/gates/gate-y'
+    Write-Utf8File (Join-Path $gateYRoot 'source/task-evidence/NQ-GATEY-FIRST-REAL-ORDER-HARD-GATE.manifest.json') '{"schemaVersion":"fixture","gate":"GateY","status":"HISTORICAL","description":"sanitized disposable manifest evidence with no credential or external side effect"}'
+    Assert-Checker (Invoke-Checker 'gate-y' @('-PreTag')) $true 'EVIDENCE file=source/task-evidence/NQ-GATEY-FIRST-REAL-ORDER-HARD-GATE.manifest.json role=non-role valid=True' 'gatey-json-manifest-evidence-positive'
     Assert-Condition ($positive.Text -match 'ROLE role=archive-entry files=README.md') 'top-level README must remain sole archive-entry'
     Write-Output 'PASS fixture=gatew-historical-attempts-raw-evidence'
 
