@@ -2,7 +2,7 @@
 
 ## 当前结论
 
-`TRADE_ENV_FIX_LOCAL_GREEN / CI_PENDING / NO_REAL_ORDER`（交易环境修复本地通过 / CI 待执行 / 未发送真实订单）。Dedicated `executionScopeId`修复已完成exact-head CI并部署；随后controller合法生成ordinal3 lease，但正式`JdbcOrderRepository`沿用V5默认`trade_env=SIM`，被session/order LIVE identity guard在durable ExecutionIntent/PLACE前fail closed。当前修复显式贯穿`tradeEnv`并只让operator pilot写LIVE；CI成功前不再次部署或调用controller。
+`RECEIPT_RECOVERY_FIX_LOCAL_GREEN / CI_PENDING / PLACE_COUNT_1 / NO_PLACE_RETRY`（receipt/recovery修复本地通过 / CI待执行 / PLACE总数1 / 无PLACE重试）。TradeEnv修复已完成exact-head CI并部署；随后ordinal4首次持久化PLACE link、ExecutionIntent与SEND_STARTED，provider `placeLimit`已返回，但receipt因`receivedAt`纳秒精度被canonical微秒合同拒绝。当前修复统一receipt微秒时间并让consumed recovery只按已冻结clientOrderId query后追加query receipt与完成reconciliation；永久禁止任何新PLACE。
 
 ```text
 P0=0
@@ -13,12 +13,12 @@ productionDeployment=V46_EXACT_HEAD_CURRENT_RUNTIME_STOPPED
 activeRuntime=979d69c760dc07f220e7c4cb7bf55385120c8992
 activeManifest=5c0ac60becb2adf6f75e6f4330d41e1d65a03f02035f0d315af13b7c317850c3
 operatorPilotParameters=ACCOUNT_1_CREDENTIAL_2_BTC_USDT_BUY_LIMIT_CAP_10
-currentPrerequisite=TRADE_ENV_FIX_LOCAL_VERIFIED_CI_PENDING
+currentPrerequisite=RECEIPT_RECOVERY_FIX_LOCAL_VERIFIED_CI_PENDING
 authority=CLOSED
 session=RECONCILIATION_BLOCKED
-lease=FAILED_ORDINAL_3
-activeLease=0
-PLACE=0
+lease=CONSUMED_ORDINAL_4
+activeLease=1
+PLACE=1
 CANCEL=0
 transfer=0
 withdraw=0
@@ -347,3 +347,17 @@ kill=ENGAGED
 - Production boundary：schema/current pointer仍为V46/`7e0dad46...`，runtime依controller合同保持stopped；kill ENGAGED/version9、activeLease0、PLACE=0、no PLACE retry、transfer/withdraw=0。TradeEnv修复尚未commit/CI/deploy，禁止再次调用controller。
 - Current decision：`TRADE_ENV_FIX_IMPLEMENTED / LOCAL_GREEN / V46_PRODUCTION_ACTIVE_SCHEMA / V46_RUNTIME_CURRENT_STOPPED / PLACE_0 / NO_PLACE_RETRY / LIVE_FALSE / KILL_ENGAGED / P0_0 / P1_0 / CI_PENDING`。
 - Next：精确提交tradeEnv实现、正式repository/PostgreSQL回归与本evidence，push `origin/dev`并等待exact-head CI；随后仅code-only V46 release部署，再次证明execution facts为0后继续Attempt-01。首次SEND_STARTED/PLACE/UNKNOWN出现后永久禁止任何后续PLACE。
+
+## 唯一PLACE、receipt精度 incident 与 query-only recovery（2026-08-26）
+
+- TradeEnv commit/CI：commit=`89c822184d5f149bdffe55380edd39a2dfd26088`已push；exact-head CI run=`32950032837 / completed / success / 10 jobs`。Focused14、required PostgreSQL5/5、full Maven23 modules、GateY100与治理/安全检查均通过。
+- Code-only release：V46 release manifest=`4cf6ec16eeb6990ef4b0f9430e55395f6d92b74a8e456d659a85cf8d88d4b7cd`，服务器installer/verify通过并code-only激活为current；未迁移、未新增backup。首次runtime identity脚本因本地Python单行分号逻辑返回`CARDINALITY`且在temp/env替换前退出；多行修正后canonical Activate+Health成功，MainPID=`1257988`、NRestarts=0。
+- Pre-PLACE gate：V46/failed0、kill ENGAGED/version9、leaf ordinal3=`FAILED/unconsumed/no successor`、decision3、activeLease0；PLACE/CANCEL/SEND_STARTED/Intent/Receipt/Order/Trade/Ledger与临时权限全部0。Exact runtime停止后继续同一Attempt-01。
+- Unique PLACE boundary：controller合法追加decision4与ordinal4 lease；正式Order写入`exchange_code=OKX/trade_env=LIVE`并通过session/order identity guard。数据库随后持久化唯一PLACE link、唯一ExecutionIntent，将lease置CONSUMED并把intent置SEND_STARTED；provider `placeLimit()`返回后，`ExecutionReceiptCanonicalEncoder`因`clock.instant()`含纳秒而拒绝`receivedAt must have at most microsecond precision`。
+- Durable identity：clientOrderId=`nq1-c08899e03799d85afe353947e67502488ad72de7`；Order为`SENT / LIVE / price=78866.70000000 / qty=0.00012540 / externalOrderId=NULL`。该identity只用于后续query/reconciliation，不得重新生成或替换。未输出credential material或provider raw response。
+- Post-incident safety：ordinal4=`CONSUMED`、activeLease=1（等待recovery closeout），PLACE=1、CANCEL=0、ExecutionIntent=1/SEND_STARTED=1、Receipt/Trade/Ledger=0；kill=`ENGAGED/version11`，table/column/sequence临时权限归零，runtime stopped。结果必须按UNKNOWN边界处理，禁止第二PLACE、禁止新lease regeneration、禁止新clientOrderId。
+- Minimal remediation：`appendPlaceReceipt`与query receipt统一将可信Instant截断至MICROS，不放宽canonical encoder。`reconcile()`只调用`readOrderStatus`/`readFills`；对现有SEND_STARTED/UNKNOWN intent取得确定非UNKNOWN observation后追加`QUERY_CONFIRMED`或`QUERY_NOT_FOUND` receipt并CAS到RECONCILED，再继续Order/Trade/Fee/Ledger对账。CREATED/CLAIMED recovery状态fail closed，已终态intent保持幂等。
+- Validation：focused gateway=`5/5 PASS`，覆盖纳秒截断、SEND_STARTED query recovery→RECONCILED、UNKNOWN不伪造receipt与scope正反路径；final disposable V46 full Maven=`23/23 modules PASS`、`nq-app=315 tests / 0 failures / 0 errors / 34 conditional skips`，数据库删除；GateY minimal100/100、Java governance PASS。
+- Production boundary：production current/schema仍为`89c82218... / V46`，runtime stopped、kill ENGAGED；PLACE total固定1、PLACE retry0、CANCEL0、transfer/withdraw0。Receipt/recovery修复尚未commit/CI/deploy；当前禁止调用旧controller。
+- Current decision：`PLACE_COUNT_1 / NO_PLACE_RETRY / UNKNOWN_QUERY_ONLY_RECOVERY_REQUIRED / RECEIPT_RECOVERY_FIX_IMPLEMENTED / LOCAL_GREEN / CI_PENDING / KILL_ENGAGED / LIVE_FALSE / P0_0 / P1_0`。
+- Next：精确提交gateway receipt/recovery实现、focused回归与本evidence，push `origin/dev`并等待exact-head CI；随后只部署code-only V46 release，调用同一controller的consumed recovery分支。该分支必须按冻结clientOrderId query，不得进入`executeNewPilot()`或provider PLACE。

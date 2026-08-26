@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
@@ -17,18 +19,62 @@ import com.guidinglight.nexusquant.livecontrol.execution.application.provider.Sp
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderError;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntent;
+import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentState;
 import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
 
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 class MinimalPilotTradingVenueGatewayTest {
+
+    @Test
+    void truncatesReceiptTimeToCanonicalMicroseconds() {
+        assertEquals(Instant.parse("2026-08-26T09:06:52.123456Z"),
+                MinimalPilotTradingVenueGateway.canonicalReceiptTime(
+                        Instant.parse("2026-08-26T09:06:52.123456789Z")));
+    }
+
+    @Test
+    void reconcilesDurableSendStartedIntentFromQueryObservation() {
+        ExecutionIntentRepository intents = mock(ExecutionIntentRepository.class);
+        MinimalPilotTradingVenueGateway gateway = gateway(intents);
+        UUID intentId = UUID.randomUUID();
+        UUID claimToken = UUID.randomUUID();
+        ExecutionIntent sendStarted = mock(ExecutionIntent.class);
+        ExecutionIntent reconciled = mock(ExecutionIntent.class);
+        when(sendStarted.intentId()).thenReturn(intentId);
+        when(sendStarted.state()).thenReturn(ExecutionIntentState.SEND_STARTED);
+        when(sendStarted.version()).thenReturn(3L);
+        when(sendStarted.claimToken()).thenReturn(claimToken);
+        when(intents.find(intentId)).thenReturn(Optional.of(sendStarted));
+        when(intents.appendReceiptAndTransition(
+                org.mockito.ArgumentMatchers.eq(intentId),
+                org.mockito.ArgumentMatchers.eq(3L),
+                org.mockito.ArgumentMatchers.eq(claimToken),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.eq(ExecutionIntentState.RECONCILED)))
+                .thenReturn(reconciled);
+        SpotProviderResults.OrderObservation confirmed = new SpotProviderResults.OrderObservation(
+                SpotProviderResults.OrderState.FILLED,
+                "nq-query-confirmed", "okx-order-1", BigDecimal.ONE, BigDecimal.ONE,
+                BigDecimal.ZERO, List.of(), null,
+                Instant.parse("2026-08-26T09:06:52.123456789Z"));
+
+        assertSame(reconciled, gateway.reconcileIntentObservation(intentId, confirmed));
+        verify(intents).appendReceiptAndTransition(
+                org.mockito.ArgumentMatchers.eq(intentId),
+                org.mockito.ArgumentMatchers.eq(3L),
+                org.mockito.ArgumentMatchers.eq(claimToken),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.eq(ExecutionIntentState.RECONCILED));
+    }
 
     @Test
     void usesDedicatedExecutionScopeWithoutSyntheticStrategyIdentity() {
@@ -57,14 +103,7 @@ class MinimalPilotTradingVenueGatewayTest {
     @Test
     void unknownQueryDoesNotCreateFalseConfirmedReceipt() {
         ExecutionIntentRepository intents = mock(ExecutionIntentRepository.class);
-        MinimalPilotTradingVenueGateway gateway = new MinimalPilotTradingVenueGateway(
-                intents,
-                mock(ExactPilotBindingRepository.class),
-                mock(PilotExecutionLeaseRepository.class),
-                mock(PilotExecutionLeaseControlPlane.class),
-                mock(SpotExecutionProviderPort.class),
-                mock(JdbcTemplate.class),
-                Clock.systemUTC());
+        MinimalPilotTradingVenueGateway gateway = gateway(intents);
         ExecutionIntent intent = mock(ExecutionIntent.class);
         SpotProviderError error = SpotProviderError.classify(
                 SpotProviderError.Category.UNKNOWN_RESULT, false);
@@ -81,6 +120,17 @@ class MinimalPilotTradingVenueGatewayTest {
 
         assertSame(intent, gateway.appendQueryReceipt(intent, unknown));
         verifyNoInteractions(intents);
+    }
+
+    private static MinimalPilotTradingVenueGateway gateway(ExecutionIntentRepository intents) {
+        return new MinimalPilotTradingVenueGateway(
+                intents,
+                mock(ExactPilotBindingRepository.class),
+                mock(PilotExecutionLeaseRepository.class),
+                mock(PilotExecutionLeaseControlPlane.class),
+                mock(SpotExecutionProviderPort.class),
+                mock(JdbcTemplate.class),
+                Clock.systemUTC());
     }
 
     private static PlaceOrderRequest request(String strategyRunId, String executionScopeId) {

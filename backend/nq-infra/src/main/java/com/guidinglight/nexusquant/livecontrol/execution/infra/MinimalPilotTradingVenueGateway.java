@@ -30,6 +30,7 @@ import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -156,6 +157,7 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
         if (observation.state() == SpotProviderResults.OrderState.UNKNOWN || observation.error() != null) {
             throw rejected("PILOT_RECONCILIATION_ORDER_UNKNOWN");
         }
+        reconcileIntentObservation(place.intentId(), observation);
         SpotProviderResults.FillPage fillPage;
         if (observation.state() == SpotProviderResults.OrderState.REJECTED
                 || observation.state() == SpotProviderResults.OrderState.NOT_FOUND) {
@@ -207,7 +209,8 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
                 UUID.randomUUID(), intent.intentId(), outcome, null,
                 result.observation() == null ? null : result.observation().exchangeOrderId(),
                 result.error() == null ? null : result.error().category().name(),
-                result.error() == null ? null : result.error().certainty().name(), clock.instant());
+                result.error() == null ? null : result.error().certainty().name(),
+                canonicalReceiptTime(clock.instant()));
         return intents.appendReceiptAndTransition(
                 intent.intentId(), intent.version(), intent.claimToken(), receipt, target);
     }
@@ -221,9 +224,26 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
                 value.state() == SpotProviderResults.OrderState.NOT_FOUND
                         ? ExecutionReceiptOutcome.QUERY_NOT_FOUND : ExecutionReceiptOutcome.QUERY_CONFIRMED,
                 null, value.exchangeOrderId(), value.error() == null ? "PILOT_QUERY" : value.error().category().name(),
-                value.state().name(), value.observedAt());
+                value.state().name(), canonicalReceiptTime(value.observedAt()));
         return intents.appendReceiptAndTransition(
                 intent.intentId(), intent.version(), intent.claimToken(), receipt, ExecutionIntentState.RECONCILED);
+    }
+
+    ExecutionIntent reconcileIntentObservation(
+            UUID intentId,
+            SpotProviderResults.OrderObservation observation
+    ) {
+        ExecutionIntent intent = intents.find(intentId)
+                .orElseThrow(() -> rejected("PILOT_INTENT_NOT_FOUND"));
+        return switch (intent.state()) {
+            case SEND_STARTED, UNKNOWN -> appendQueryReceipt(intent, observation);
+            case SEND_SUCCEEDED, FAILED, CANCELLED, RECONCILED -> intent;
+            case CREATED, CLAIMED -> throw rejected("PILOT_INTENT_RECOVERY_STATE_INVALID");
+        };
+    }
+
+    static Instant canonicalReceiptTime(Instant value) {
+        return Objects.requireNonNull(value, "receipt time must not be null").truncatedTo(ChronoUnit.MICROS);
     }
 
     private void appendCancelReceipt(ExecutionIntent intent, SpotProviderResults.CancelResult result) {
