@@ -14533,3 +14533,16 @@ Known warning：两个fresh workspace的canonical builder首次均只返回gener
 | forbidden-scope diff | PASS（通过） | backend/frontend/research/migration/deploy/.github=`0`；仅docs与5份docs-governance scripts | 未触达生产事实 | 否 |
 
 未运行 full Maven、frontend E2E 与 Python suite：本轮业务代码、前端、research、migration、deploy 与 workflow diff均为0；以starting exact-head CI `32981327378` 的10/10 green和已接受GateY capability evidence为baseline。明确未运行controller、pilot、OKX、credential、PLACE、CANCEL、transfer、withdraw、生产DB或server action。Freeze commit exact-head CI未产生前，tag保持`TAG PENDING`，该未验证项是tag准入阻断条件。
+
+## 2026-08-27 — GateY hosted-runner recovery / tag / post-tag sync
+
+| Command / check | Result | Scope / environment | Known warnings / not run | Blocking |
+| --- | --- | --- | --- | --- |
+| stale run `32985542835` inspection | PLATFORM FAILURE（平台故障） | 11 jobs、runner name空、step count=0；outage期间未获取hosted runner | Run API仍queued但cancel endpoint认为completed；GitHub控制面状态撕裂 | 否；不作为代码失败 |
+| GitHub Status API | RECOVERED（已恢复） | Actions从critical incident恢复为All Systems Operational | 同期仍有minor Billing incident，不证明本仓库billing异常 | 否 |
+| `gh workflow run ci.yml --ref dev` | PASS（通过） | 新run `33037514013`；workflow_dispatch；head SHA=`72fbf5e7...` | 无新commit、无workflow修改 | 否 |
+| exact-head CI run `33037514013` | PASS（通过） | `completed / success / 11 jobs / bad=0` | Node/setup action deprecation annotations为非阻断后续项 | 否 |
+| tag local/remote verification | PASS（通过） | tag object=`c84f412...`；peeled local/remote=`72fbf5e7...` | annotated tag不可移动/覆盖 | 否 |
+| release/archive checker | PASS（通过） | `GATE_RELEASE_VALID`、`ARCHIVE_MANIFEST_COMPLETE`，errors=0 | 128 historical link warnings仍按既有policy非阻断 | 否 |
+
+本轮未运行controller、pilot、OKX、credential、生产DB或server action；未新增PLACE/CANCEL/transfer/withdraw。业务回归由exact-head CI 11/11真实执行并通过。Post-tag sync只更新current authority/entry/ledger，不修改tag-bound archive。

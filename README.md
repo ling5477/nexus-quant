@@ -5,10 +5,10 @@ NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/
 ## 当前摘要
 
 <!-- nq-current-summary:start -->
-- 最近冻结 Gate 为 GateX：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [docs/gates/gate-x/](docs/gates/gate-x/)。
-- GateY：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；GateY-6F minimal live pilot=`ACCEPTED / CI GREEN`（已接受 / CI 已通过）。
-- GateY freeze archive candidate 位于 [docs/gates/gate-y/](docs/gates/gate-y/)；annotated tag=`nq-gatey-freeze` 仍为 `TAG PENDING`（待创建）。
-- 当前唯一动作是 `NQ-GATEY-FREEZE-CLOSEOUT`。
+- 最近冻结 Gate 为 GateY：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [docs/gates/gate-y/](docs/gates/gate-y/)，tag=`nq-gatey-freeze`。
+- GateAUDIT：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；`GateAUDIT-PLAN=NOT STARTED`（未开始）。
+- GateY freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`；exact-head CI run=`33037514013 / completed / success / 11 jobs`。
+- 当前唯一动作是 `NQ-FULL-REPOSITORY-AUDIT-AND-CONSOLIDATION`。
 - Pilot final：PLACE=1、retry=0、CANCEL=0、activeLease=0、LIVE=false、kill=`ENGAGED`、Attempt-02 未创建。
 - Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
@@ -24,7 +24,7 @@ NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/
 
 ## Historical Evidence
 
-- GateY strict archive candidate：[docs/gates/gate-y/](docs/gates/gate-y/)，包含 plan、work orders、全部 task evidence、失败/remediation 与最小实盘 pilot 证据。
+- GateY strict archive：[docs/gates/gate-y/](docs/gates/gate-y/)，包含 plan、work orders、全部 task evidence、失败/remediation 与最小实盘 pilot 证据；它是 historical evidence，不覆盖 current authority。
 - 其他 Gate archive：[docs/gates/](docs/gates/)；通用历史归档：[docs/archive/](docs/archive/)。
 
 ## Boundary

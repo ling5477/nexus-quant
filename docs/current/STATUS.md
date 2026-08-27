@@ -2,22 +2,22 @@
 
 <!-- nq-current-authority:start
 authority_schema=3
-last_frozen_gate=GateX
+last_frozen_gate=GateY
 last_frozen_gate_status=FROZEN|ACCEPTED|TAGGED
-last_frozen_gate_tag=nq-gatex-freeze
-last_frozen_gate_commit=299ab30bd2e243314be2dc609cb244cd5388027b
-active_gate=GateY
+last_frozen_gate_tag=nq-gatey-freeze
+last_frozen_gate_commit=72fbf5e78f217a02b572a54fadb17dea204b594f
+active_gate=GateAUDIT
 active_gate_status=IN_PROGRESS|NOT_FROZEN
 accepted_batch=GateY-6F
 accepted_batch_status=ACCEPTED|CI_GREEN
 accepted_batch_implementation_commit=8e3dd0cf6104eb85f36a0e434ca51ea9d903705a
 accepted_batch_acceptance_head=8e3dd0cf6104eb85f36a0e434ca51ea9d903705a
 accepted_batch_ci_run=32978280738
-work_batch=GateY-FREEZE
-work_batch_status=ACCEPTED|CI_GREEN|FREEZE_READY
-work_batch_commit=8e3dd0cf6104eb85f36a0e434ca51ea9d903705a
-work_batch_ci_run=32978280738
-next_action=NQ-GATEY-FREEZE-CLOSEOUT
+work_batch=GateAUDIT-PLAN
+work_batch_status=NOT_STARTED
+work_batch_commit=NONE
+work_batch_ci_run=NOT_RUN
+next_action=NQ-FULL-REPOSITORY-AUDIT-AND-CONSOLIDATION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -33,11 +33,11 @@ nq-current-authority:end -->
 
 ## 1. 当前阶段
 
-- GateX：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-x/README.md](../gates/gate-x/README.md)，tag=`nq-gatex-freeze`。
-- GateY：`IN PROGRESS / NOT FROZEN`（进行中 / 未冻结）；当前仅等待 freeze closeout、freeze commit exact-head CI 与 annotated tag。
+- GateY：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-y/README.md](../gates/gate-y/README.md)，freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`，annotated tag=`nq-gatey-freeze`，tag object=`c84f412e1da652e85158c5478997945d3065e575`，peeled commit 与 freeze commit 一致。
+- GateAUDIT：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；仅初始化下一治理容器，不表示全仓 audit 已开始。
 - GateY-6F：`ACCEPTED / CI GREEN / MINIMAL LIVE PILOT VERIFIED`（已接受 / CI 已通过 / 最小实盘 pilot 已验证）；production pilot release=`8e3dd0cf6104eb85f36a0e434ca51ea9d903705a`，CI run=`32978280738 / completed / success / 10 jobs`。
-- GateY-FREEZE：`ACCEPTED / CI GREEN / FREEZE READY`（已接受 / CI 已通过 / 冻结准备就绪）；strict archive candidate 为 [../gates/gate-y/README.md](../gates/gate-y/README.md)，tag=`nq-gatey-freeze` 仍为 `TAG PENDING`。
-- Final authority/document baseline=`65caaf7fd3038658b0f4f24566efd2960e606d43`，exact-head CI run=`32981327378 / completed / success / 10 jobs / bad=0`。
+- GateY-FREEZE：`ACCEPTED / CI GREEN / TAGGED`（已接受 / CI 已通过 / 已打 tag）；exact-head CI run=`33037514013 / completed / success / 11 jobs / bad=0`，archive/release post-tag checker errors=0。
+- GateAUDIT-PLAN：`NOT STARTED`（未开始）；不得把 audit container 初始化写成 inventory、删除、合并或架构收口已经执行。
 
 ## 2. Accepted pilot facts
 
@@ -53,8 +53,8 @@ nq-current-authority:end -->
 
 ```text
 current_gate_status=FROZEN|ACCEPTED|TAGGED
-current_gate_tag=nq-gatex-freeze
-updated_commit=299ab30bd2e243314be2dc609cb244cd5388027b
+current_gate_tag=nq-gatey-freeze
+updated_commit=72fbf5e78f217a02b572a54fadb17dea204b594f
 ```
 
 ## 4. 安全与运行边界
@@ -66,4 +66,4 @@ updated_commit=299ab30bd2e243314be2dc609cb244cd5388027b
 
 ## 5. 下一允许动作
 
-- 当前唯一治理动作是 `NQ-GATEY-FREEZE-CLOSEOUT`；只允许 archive/checker/commit/push/exact-head CI/tag/post-tag authority sync，不得执行第二笔真实 pilot。
+- 当前唯一治理动作是 `NQ-FULL-REPOSITORY-AUDIT-AND-CONSOLIDATION`；当前仅为 `NOT STARTED`，必须在独立任务中先做只读 inventory/audit，不得直接删除代码、进入 GateZ 或扩大真实交易能力。

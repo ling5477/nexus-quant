@@ -19493,3 +19493,11 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Validation：starting exact-head CI `32981327378` 10/10 green；Authority errors=0；archive 16 roles/75 evidence/errors0；links 404/warnings128/errors0；governance三套PASS；GateY `7/100/31/51 + GateY4/5`、GateW `37/12/34` PASS；secret backstop103 files/0 findings；evidence move mismatch0。
 - Boundary：未运行controller/pilot/OKX/credential/server/production DB；PLACE/CANCEL/transfer/withdraw新增均为0；production终态继续activeLease=0、LIVE=false、kill ENGAGED、runtime stopped。`externalOrderId=NULL`保留为P2，不修改生产事实或代码。
 - Next：精确暂存freeze/archive/current/governance文件并commit/push；freeze commit exact-head CI success后创建并验证`nq-gatey-freeze`，随后仅同步post-tag current authority到`NQ-FULL-REPOSITORY-AUDIT-AND-CONSOLIDATION / NOT_STARTED`。
+
+## 2026-08-27 — NQ-GATEY hosted-runner recovery / tag / post-tag authority sync
+
+- Scope：恢复outage期间卡住的GitHub hosted-runner调度，验证freeze commit exact-head CI，创建/推送/核验annotated tag，并只同步root/current authority docs；不修改tag-bound archive或业务代码。
+- Result：stale run `32985542835`确认runner空/steps0；新workflow_dispatch run `33037514013`对exact head `72fbf5e7...`完成11/11 success。`nq-gatey-freeze` tag object=`c84f412...`，local/remote peeled commit=`72fbf5e7...`，release/archive errors=0。
+- Validation：Actions官方状态恢复；`HEAD==origin/dev`、worktree clean；Authority/archive/links pre-tag通过；tag local/remote/release checker通过；exact-head CI的Maven/PostgreSQL/E2E/Research/Gitleaks/no-outbound/security/Shadow全绿。
+- Boundary：controller/pilot/OKX/credential/生产DB/server与PLACE/CANCEL/transfer/withdraw新增均为0；LIVE=false、kill ENGAGED、activeLease=0、NO_SECOND_REAL_PILOT保持。
+- Next：只初始化`NQ-FULL-REPOSITORY-AUDIT-AND-CONSOLIDATION / NOT_STARTED`；下一独立任务先做只读全仓inventory/audit，不进入GateZ或扩大真实交易。

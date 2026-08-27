@@ -34,7 +34,7 @@
 
 ## 5. Gate Archive
 
-- GateY strict archive candidate：[../gates/gate-y/README.md](../gates/gate-y/README.md)。它保存 GateY plan、两份 work order、全部 PASS/FAIL/BLOCKED/retry/remediation task evidence、V43～V46、deployment 与 minimal live pilot 证据；pre-tag 阶段不决定 current status。
+- GateY strict archive：[../gates/gate-y/README.md](../gates/gate-y/README.md)，`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`，tag=`nq-gatey-freeze`，tag object=`c84f412e1da652e85158c5478997945d3065e575`，exact-head CI run=`33037514013 / completed / success / 11 jobs`。它保存 GateY plan、两份 work order、全部 PASS/FAIL/BLOCKED/retry/remediation task evidence、V43～V46、deployment 与 minimal live pilot 证据。
 - GateX durable archive：[../gates/gate-x/README.md](../gates/gate-x/README.md)，tag=`nq-gatex-freeze`。
 - GateW durable archive：[../gates/gate-w/README.md](../gates/gate-w/README.md)，tag=`nq-gatew-freeze`。
 - 其他已完成 Gate：`docs/gates/gate-*`。
