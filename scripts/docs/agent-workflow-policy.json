@@ -1,0 +1,490 @@
+{
+  "schemaVersion": "1.2.0",
+  "audit": {
+    "bootstrapCharter": "docs/audit/AUDIT_BOOTSTRAP_CHARTER.md"
+  },
+  "activeSkills": [
+    "db-schema-migration-review",
+    "frontend-antd-page-builder",
+    "frontend-product-ui-design",
+    "frontend-quality-regression",
+    "java-backend-maintenance",
+    "java-backend-regression-tests",
+    "nq-dh-workflow-router",
+    "nq-docs-writer",
+    "nq-java-engineering-standard",
+    "python-ops-tooling",
+    "python-project-development",
+    "ui-visual-system-polish"
+  ],
+  "skillCapabilities": [
+    {
+      "name": "nq-dh-workflow-router",
+      "roleType": "ROUTER",
+      "role": "Resolve repository authority and route one task to one primary Skill plus justified supporting Skills.",
+      "triggerClass": ["AMBIGUOUS_OR_GOVERNANCE_ROUTING"],
+      "positiveTriggers": ["NQ governance, mixed-scope, audit, Gate, release, credential, trading, or otherwise ambiguous work"],
+      "exclusions": ["Domain implementation, test design, documentation authoring, and domain validation"],
+      "inputContext": ["repository root", "root AGENTS.md", "current STATUS authority", "agent workflow policy", "task-scoped paths"],
+      "requiredActions": ["detect repository", "read authority", "classify task", "classify risk", "select one primary Skill", "select justified supporting Skills", "define scope and validation class"],
+      "validation": {
+        "required": ["unique repository", "conflict-free authority", "one active primary Skill"],
+        "conditional": ["audit charter resolution", "high-risk permission and review checks"],
+        "notApplicable": ["domain implementation tests"]
+      },
+      "outputContract": ["route decision", "risk and permission boundary", "included and excluded scope", "validation class or blocker"],
+      "nonGoals": ["business implementation", "domain validation", "docs lifecycle ownership", "Java standards ownership"],
+      "primaryResponsibilities": ["ROUTING_CLASSIFICATION"],
+      "supportingResponsibilities": [],
+      "overlapsWith": [
+        {"skill": "nq-docs-writer", "responsibility": "ROUTING_CLASSIFICATION", "primaryOwner": "nq-dh-workflow-router", "supportingOwner": "nq-docs-writer"}
+      ],
+      "requiresSkills": []
+    },
+    {
+      "name": "nq-docs-writer",
+      "roleType": "PRIMARY_EXECUTION",
+      "role": "Create the smallest documentation change that expresses verified repository facts in the owning document.",
+      "triggerClass": ["DOCUMENTATION"],
+      "positiveTriggers": ["docs-only work", "implementation requiring an explicitly justified documentation update"],
+      "exclusions": ["Gate or release lifecycle decisions", "archive machine roles", "Task-ID mapping", "CI authorization", "business implementation"],
+      "inputContext": ["target document", "fact owner from FACT_SOURCE_INDEX", "minimum code, test, or machine-contract evidence"],
+      "requiredActions": ["determine document type", "resolve verified fact source", "confirm write authorization and necessity", "make smallest documentation change", "validate facts paths and links", "report changes and conflicts"],
+      "validation": {
+        "required": ["fact consistency", "path and heading checks", "protected-scope diff"],
+        "conditional": ["doc link checker", "current authority checker", "referenced governance checker"],
+        "notApplicable": ["unrelated Maven, Playwright, shadow, or release-network validation"]
+      },
+      "outputContract": ["document type and fact source", "changed facts and files", "validation", "unresolved conflicts and rollback"],
+      "nonGoals": ["governance lifecycle", "release lifecycle", "archive ownership", "CI authorization"],
+      "primaryResponsibilities": ["VERIFIED_DOCUMENTATION"],
+      "supportingResponsibilities": ["IMPLEMENTATION_FACT_HANDOFF"],
+      "overlapsWith": [
+        {"skill": "nq-dh-workflow-router", "responsibility": "VERIFIED_DOCUMENTATION", "primaryOwner": "nq-docs-writer", "supportingOwner": "nq-dh-workflow-router"}
+      ],
+      "requiresSkills": []
+    },
+    {
+      "name": "nq-java-engineering-standard",
+      "roleType": "SUPPORTING_CONSTRAINT",
+      "role": "Apply deterministic, trigger-specific constraints to high-risk Java work without owning ordinary implementation or test design.",
+      "triggerClass": ["ARCHITECTURE", "TRANSACTION_CONCURRENCY", "TRADING_CORE", "PLATFORM_OR_DEPENDENCY_CHANGE", "STATIC_RULE_CHANGE", "FULL_JAVA_AUDIT"],
+      "positiveTriggers": ["cross-module architecture", "core transaction or concurrency", "trading/risk/ledger/audit core", "platform/dependency or static-rule change", "full Java audit"],
+      "exclusions": ["ordinary DTO, mapping, local Service, Controller, Repository, bug, or pure test work"],
+      "inputContext": ["platform-profile.json", "exact trigger", "affected Java/build/rule scope", "only applicable standards"],
+      "requiredActions": ["identify exact risk trigger", "read platform profile", "select applicable standards", "evaluate invariants", "add risk-specific validation", "classify check outcomes", "report exceptions and residual risk"],
+      "validation": {
+        "required": ["affected tests", "trigger-specific checks"],
+        "conditional": ["ArchUnit", "concurrency or integration regression", "standard verifier", "applicable shadow scan", "broader audit validation"],
+        "notApplicable": ["unmatched checkers and unconditional full shadow scan"]
+      },
+      "outputContract": ["exact trigger", "selected standards", "PASS/NOT_APPLICABLE/VIOLATION/EXCEPTION_WITH_REASON per category", "added validation and residual risk"],
+      "nonGoals": ["ordinary Java implementation", "test strategy", "automatic full scan", "repository architecture governance"],
+      "primaryResponsibilities": ["HIGH_RISK_JAVA_CONSTRAINT_EVALUATION"],
+      "supportingResponsibilities": ["JAVA_BACKEND_IMPLEMENTATION", "JAVA_REGRESSION_PROOF"],
+      "overlapsWith": [
+        {"skill": "java-backend-maintenance", "responsibility": "JAVA_BACKEND_IMPLEMENTATION", "primaryOwner": "java-backend-maintenance", "supportingOwner": "nq-java-engineering-standard"},
+        {"skill": "java-backend-regression-tests", "responsibility": "JAVA_REGRESSION_PROOF", "primaryOwner": "java-backend-regression-tests", "supportingOwner": "nq-java-engineering-standard"}
+      ],
+      "requiresSkills": []
+    },
+    {
+      "name": "java-backend-maintenance",
+      "roleType": "PRIMARY_EXECUTION",
+      "role": "Implement and remediate ordinary Java/Spring production behavior from root cause through affected validation.",
+      "triggerClass": ["JAVA_IMPLEMENTATION", "JAVA_BUG_REMEDIATION"],
+      "positiveTriggers": ["ordinary Java/Spring feature or bug in Controller, Service, Repository, mapping, state, transaction, or wiring"],
+      "exclusions": ["pure test design", "documentation", "frontend", "migration review", "full architecture governance"],
+      "inputContext": ["reproduction or request evidence", "affected implementation and callers", "related tests", "module build entry"],
+      "requiredActions": ["reproduce or understand", "locate responsible layer", "establish root cause", "implement minimal change", "identify regression", "run affected validation"],
+      "validation": {
+        "required": ["targeted reproduction or test", "affected Maven module test", "contract and failure-path check"],
+        "conditional": ["integration, transaction, concurrency, or architecture validation"],
+        "notApplicable": ["unrelated full-repository tests and fixed shadow scan"]
+      },
+      "outputContract": ["root cause", "changed production files and behavior", "required regression", "validation and rollback"],
+      "nonGoals": ["complete test strategy", "high-risk standards ownership", "repository architecture governance", "unrelated refactor"],
+      "primaryResponsibilities": ["JAVA_BACKEND_IMPLEMENTATION"],
+      "supportingResponsibilities": ["JAVA_REGRESSION_PROOF"],
+      "overlapsWith": [
+        {"skill": "java-backend-regression-tests", "responsibility": "JAVA_BACKEND_IMPLEMENTATION", "primaryOwner": "java-backend-maintenance", "supportingOwner": "java-backend-regression-tests"},
+        {"skill": "nq-java-engineering-standard", "responsibility": "HIGH_RISK_JAVA_CONSTRAINT_EVALUATION", "primaryOwner": "nq-java-engineering-standard", "supportingOwner": "java-backend-maintenance"}
+      ],
+      "requiresSkills": []
+    },
+    {
+      "name": "java-backend-regression-tests",
+      "roleType": "PRIMARY_VALIDATION",
+      "role": "Design deterministic Java tests and regression proof for business invariants, failure paths, and side effects.",
+      "triggerClass": ["JAVA_TEST_DESIGN", "JAVA_REGRESSION"],
+      "positiveTriggers": ["JUnit, golden case, bug regression, Controller/Service/Repository integration proof"],
+      "exclusions": ["production implementation", "documentation", "frontend", "migration review", "standards governance"],
+      "inputContext": ["business contract", "affected implementation", "existing test baseline", "fixtures", "target build entry"],
+      "requiredActions": ["identify invariants", "enumerate success failure and boundary cases", "cover idempotency and illegal states", "assert DB event and audit effects", "make fixtures deterministic", "run targeted tests"],
+      "validation": {
+        "required": ["targeted tests with observable assertions", "deterministic execution"],
+        "conditional": ["DB integration", "HTTP contract", "concurrency and high-risk failure paths"],
+        "notApplicable": ["unrelated full-suite tests and production changes"]
+      },
+      "outputContract": ["invariants and case matrix", "tests changed", "commands and results", "determinism and coverage gaps"],
+      "nonGoals": ["unauthorized production implementation", "weakened assertions", "ordinary implementation ownership"],
+      "primaryResponsibilities": ["JAVA_REGRESSION_PROOF"],
+      "supportingResponsibilities": ["JAVA_BACKEND_IMPLEMENTATION"],
+      "overlapsWith": [
+        {"skill": "java-backend-maintenance", "responsibility": "JAVA_REGRESSION_PROOF", "primaryOwner": "java-backend-regression-tests", "supportingOwner": "java-backend-maintenance"},
+        {"skill": "nq-java-engineering-standard", "responsibility": "HIGH_RISK_JAVA_CONSTRAINT_EVALUATION", "primaryOwner": "nq-java-engineering-standard", "supportingOwner": "java-backend-regression-tests"}
+      ],
+      "requiresSkills": []
+    },
+    {
+      "name": "db-schema-migration-review",
+      "roleType": "PRIMARY_VALIDATION",
+      "role": "Review PostgreSQL schema and forward-only migrations for correctness, compatibility, locking, recovery, and replay safety.",
+      "triggerClass": ["DATABASE_SCHEMA_OR_MIGRATION"],
+      "positiveTriggers": ["DDL, Flyway/Liquibase migration, index, constraint, comment, backfill, or schema compatibility review"],
+      "exclusions": ["Java implementation", "production migration execution", "historical migration rewrite"],
+      "inputContext": ["proposed DDL/migration", "current schema facts", "affected queries and compatibility points", "test PostgreSQL entry"],
+      "requiredActions": ["confirm forward-only ordering", "protect historical migrations", "review DDL constraints indexes and comments", "evaluate locking and compatibility", "evaluate restartable backfill", "define recovery and validate PostgreSQL behavior"],
+      "validation": {
+        "required": ["migration syntax and order", "forward-only", "historical immutability", "DDL and metadata consistency"],
+        "conditional": ["local/test PostgreSQL migration", "targeted DB tests", "locking and batched-backfill proof"],
+        "notApplicable": ["production migration execution and unrelated application tests"]
+      },
+      "outputContract": ["review decision and severities", "forward/history status", "DDL locking backfill compatibility and recovery", "validation and minimal fix"],
+      "nonGoals": ["Java implementation", "production database writes", "historical migration edits"],
+      "primaryResponsibilities": ["DB_MIGRATION_REVIEW"],
+      "supportingResponsibilities": ["APPLICATION_SCHEMA_COMPATIBILITY"],
+      "overlapsWith": [
+        {"skill": "java-backend-maintenance", "responsibility": "DB_MIGRATION_REVIEW", "primaryOwner": "db-schema-migration-review", "supportingOwner": "java-backend-maintenance"},
+        {"skill": "python-ops-tooling", "responsibility": "DB_MIGRATION_REVIEW", "primaryOwner": "db-schema-migration-review", "supportingOwner": "python-ops-tooling"}
+      ],
+      "requiresSkills": []
+    },
+    {
+      "name": "frontend-product-ui-design",
+      "roleType": "PRIMARY_EXECUTION",
+      "role": "Define business UX, information architecture, state semantics, operation flow, risk communication, and business copy.",
+      "triggerClass": ["FRONTEND_BUSINESS_UX"],
+      "positiveTriggers": ["page business goal, IA, state/action semantics, permission/risk communication, or copy design"],
+      "exclusions": ["React implementation", "typography/color/spacing/animation polish", "behavioral QA", "backend contract design"],
+      "inputContext": ["user goal", "business objects and permissions", "existing backend contract", "current page or flow"],
+      "requiredActions": ["define business goal", "model IA and states", "define actions and consequences", "cover system states", "write business copy", "state UX acceptance criteria"],
+      "validation": {
+        "required": ["state and operation completeness", "risk and permission clarity"],
+        "conditional": ["API/permission contract check", "dangerous-operation confirmation semantics"],
+        "notApplicable": ["visual token implementation", "frontend build", "Playwright execution"]
+      },
+      "outputContract": ["business goal and IA", "state/action model", "risk copy", "acceptance criteria and open questions"],
+      "nonGoals": ["visual polish", "React/API implementation", "QA ownership", "backend capability creation"],
+      "primaryResponsibilities": ["BUSINESS_UX_DESIGN"],
+      "supportingResponsibilities": ["FRONTEND_IMPLEMENTATION", "FRONTEND_REGRESSION_PROOF", "VISUAL_SYSTEM_POLISH"],
+      "overlapsWith": [
+        {"skill": "frontend-antd-page-builder", "responsibility": "BUSINESS_UX_DESIGN", "primaryOwner": "frontend-product-ui-design", "supportingOwner": "frontend-antd-page-builder"},
+        {"skill": "ui-visual-system-polish", "responsibility": "VISUAL_SYSTEM_POLISH", "primaryOwner": "ui-visual-system-polish", "supportingOwner": "frontend-product-ui-design"},
+        {"skill": "frontend-quality-regression", "responsibility": "FRONTEND_REGRESSION_PROOF", "primaryOwner": "frontend-quality-regression", "supportingOwner": "frontend-product-ui-design"}
+      ],
+      "requiresSkills": []
+    },
+    {
+      "name": "frontend-antd-page-builder",
+      "roleType": "PRIMARY_EXECUTION",
+      "role": "Implement React/TypeScript/Ant Design pages and components with API, query, hook, route, and type wiring.",
+      "triggerClass": ["FRONTEND_IMPLEMENTATION"],
+      "positiveTriggers": ["page/component implementation", "API module, types, query hooks, route, or form wiring"],
+      "exclusions": ["product IA redesign", "full visual review", "complete QA ownership", "backend and schema design"],
+      "inputContext": ["target frontend code", "existing API/types/query conventions", "route and build scripts", "provided UX and visual requirements"],
+      "requiredActions": ["inspect frontend contract", "map API types and queries", "implement minimal component change", "realize supplied states", "update focused tests", "run type/build validation"],
+      "validation": {
+        "required": ["configured type/build gate", "affected interaction smoke", "API and route consistency"],
+        "conditional": ["targeted Playwright for behavior changes"],
+        "notApplicable": ["full IA review", "site-wide visual audit", "unaffected full E2E suite"]
+      },
+      "outputContract": ["implemented components", "API/query/type wiring", "changed files", "validation and integration gaps"],
+      "nonGoals": ["business IA ownership", "visual-system ownership", "QA strategy", "backend or migration changes"],
+      "primaryResponsibilities": ["FRONTEND_IMPLEMENTATION"],
+      "supportingResponsibilities": ["BUSINESS_UX_DESIGN", "VISUAL_SYSTEM_POLISH", "FRONTEND_REGRESSION_PROOF"],
+      "overlapsWith": [
+        {"skill": "frontend-product-ui-design", "responsibility": "FRONTEND_IMPLEMENTATION", "primaryOwner": "frontend-antd-page-builder", "supportingOwner": "frontend-product-ui-design"},
+        {"skill": "ui-visual-system-polish", "responsibility": "VISUAL_SYSTEM_POLISH", "primaryOwner": "ui-visual-system-polish", "supportingOwner": "frontend-antd-page-builder"},
+        {"skill": "frontend-quality-regression", "responsibility": "FRONTEND_REGRESSION_PROOF", "primaryOwner": "frontend-quality-regression", "supportingOwner": "frontend-antd-page-builder"}
+      ],
+      "requiresSkills": []
+    },
+    {
+      "name": "frontend-quality-regression",
+      "roleType": "PRIMARY_VALIDATION",
+      "role": "Own frontend reproduction, bug isolation, type/build regression, Playwright, and behavioral proof.",
+      "triggerClass": ["FRONTEND_REGRESSION"],
+      "positiveTriggers": ["frontend bug, build/type failure, Playwright regression, behavioral QA"],
+      "exclusions": ["business page redesign", "IA redefinition", "pure visual polish", "backend and DB validation"],
+      "inputContext": ["reproduction path", "affected route/component/hook/test", "browser or build error", "stable fixture and test entry"],
+      "requiredActions": ["reproduce failure", "isolate layer", "determine root cause and fix scope", "update focused regression", "run type/build and Playwright as applicable", "report evidence and gaps"],
+      "validation": {
+        "required": ["failing-to-passing evidence", "configured type/build gate"],
+        "conditional": ["targeted Playwright", "responsive or visual regression check", "baseline attribution"],
+        "notApplicable": ["product redesign", "backend and DB tests"]
+      },
+      "outputContract": ["reproduction and root cause", "fix scope and tests", "commands and exit results", "before/after evidence and gaps"],
+      "nonGoals": ["business IA", "business copy", "pure visual polish", "assertion weakening"],
+      "primaryResponsibilities": ["FRONTEND_REGRESSION_PROOF"],
+      "supportingResponsibilities": ["FRONTEND_IMPLEMENTATION"],
+      "overlapsWith": [
+        {"skill": "frontend-antd-page-builder", "responsibility": "FRONTEND_REGRESSION_PROOF", "primaryOwner": "frontend-quality-regression", "supportingOwner": "frontend-antd-page-builder"},
+        {"skill": "frontend-product-ui-design", "responsibility": "BUSINESS_UX_DESIGN", "primaryOwner": "frontend-product-ui-design", "supportingOwner": "frontend-quality-regression"}
+      ],
+      "requiresSkills": []
+    },
+    {
+      "name": "ui-visual-system-polish",
+      "roleType": "PRIMARY_EXECUTION",
+      "role": "Own visual hierarchy, layout, spacing, typography, color, responsive behavior, accessibility, and design-system consistency.",
+      "triggerClass": ["FRONTEND_VISUAL_SYSTEM"],
+      "positiveTriggers": ["visual hierarchy, layout, typography, color, responsive, accessibility, or final polish"],
+      "exclusions": ["business flow or state model", "API wiring", "behavioral QA", "backend contract"],
+      "inputContext": ["target page or screenshot", "existing tokens and theme", "affected components", "representative viewport"],
+      "requiredActions": ["inspect visual state", "identify visual and accessibility gaps", "preserve business semantics", "apply minimal style/token changes", "check viewport overflow focus and contrast", "report evidence and drift"],
+      "validation": {
+        "required": ["hierarchy and alignment", "overflow and readability", "focus behavior"],
+        "conditional": ["responsive viewport", "keyboard and contrast", "screenshot or visual regression", "affected build"],
+        "notApplicable": ["business IA", "backend contract", "complete QA strategy"]
+      },
+      "outputContract": ["visual findings", "tokens/components/styles changed", "responsive/accessibility evidence", "remaining drift"],
+      "nonGoals": ["business workflow", "state model", "backend/API behavior", "test strategy"],
+      "primaryResponsibilities": ["VISUAL_SYSTEM_POLISH"],
+      "supportingResponsibilities": ["FRONTEND_IMPLEMENTATION"],
+      "overlapsWith": [
+        {"skill": "frontend-product-ui-design", "responsibility": "VISUAL_SYSTEM_POLISH", "primaryOwner": "ui-visual-system-polish", "supportingOwner": "frontend-product-ui-design"},
+        {"skill": "frontend-antd-page-builder", "responsibility": "FRONTEND_IMPLEMENTATION", "primaryOwner": "frontend-antd-page-builder", "supportingOwner": "ui-visual-system-polish"}
+      ],
+      "requiresSkills": []
+    },
+    {
+      "name": "python-ops-tooling",
+      "roleType": "PRIMARY_EXECUTION",
+      "role": "Build safe standalone and one-off Python scripts, helper or migration tooling, and temporary CLIs.",
+      "triggerClass": ["PYTHON_STANDALONE_TOOLING"],
+      "positiveTriggers": ["single script", "one-off processing", "temporary analysis", "helper/migration script", "temporary CLI"],
+      "exclusions": ["maintained package/library/service", "packaged CLI", "formal research/backtest/data framework"],
+      "inputContext": ["input examples", "expected output", "side-effect boundary", "small script and test scope"],
+      "requiredActions": ["classify as standalone", "define IO and side effects", "implement parameterized script", "add validation and safe rerun controls", "add focused tests", "run safe fixture"],
+      "validation": {
+        "required": ["normal empty and invalid input", "repeat execution or explicit non-idempotency", "no production side effects"],
+        "conditional": ["streaming/batching", "mocked API timeout and retry", "dry-run proof"],
+        "notApplicable": ["package release and full project quality matrix"]
+      },
+      "outputContract": ["purpose and command", "parameters and IO", "safety boundary", "tests and limits"],
+      "nonGoals": ["maintained project architecture", "packaged CLI", "production execution"],
+      "primaryResponsibilities": ["PYTHON_OPERATIONAL_SCRIPTING"],
+      "supportingResponsibilities": ["DB_MIGRATION_REVIEW"],
+      "overlapsWith": [
+        {"skill": "python-project-development", "responsibility": "PYTHON_OPERATIONAL_SCRIPTING", "primaryOwner": "python-ops-tooling", "supportingOwner": "python-project-development"},
+        {"skill": "db-schema-migration-review", "responsibility": "DB_MIGRATION_REVIEW", "primaryOwner": "db-schema-migration-review", "supportingOwner": "python-ops-tooling"}
+      ],
+      "requiresSkills": []
+    },
+    {
+      "name": "python-project-development",
+      "roleType": "PRIMARY_EXECUTION",
+      "role": "Develop maintained Python packages, libraries, services, packaged CLIs, and formal research, backtest, or data-engineering projects.",
+      "triggerClass": ["PYTHON_MAINTAINED_PROJECT"],
+      "positiveTriggers": ["package architecture", "pyproject.toml", "multi-module implementation and tests", "dependency/typing/async/persistence/network work", "packaged CLI", "research-to-production"],
+      "exclusions": ["single standalone script", "one-off analysis", "simple conversion", "helper/migration script", "temporary CLI"],
+      "inputContext": ["package metadata", "target modules and public API", "tests", "official tool entry", "only routed references"],
+      "requiredActions": ["classify project task", "identify package boundaries and contracts", "implement minimal coherent change", "add deterministic tests", "run official targeted quality gates", "review diff and report risk"],
+      "validation": {
+        "required": ["targeted tests", "configured directly relevant quality gate"],
+        "conditional": ["type/lint/package/CLI smoke", "async/concurrency", "persistence/network integration", "research reproducibility"],
+        "notApplicable": ["unconfigured tools", "unrelated full-repository gates", "production services"]
+      },
+      "outputContract": ["task classification and result", "changed contracts and files", "tests and validation", "remaining issues and rollback"],
+      "nonGoals": ["temporary helper scripts", "tool/framework migration", "unnecessary dependencies", "unauthorized release or deployment"],
+      "primaryResponsibilities": ["PYTHON_MAINTAINED_PROJECTS"],
+      "supportingResponsibilities": [],
+      "overlapsWith": [
+        {"skill": "python-ops-tooling", "responsibility": "PYTHON_MAINTAINED_PROJECTS", "primaryOwner": "python-project-development", "supportingOwner": "python-ops-tooling"}
+      ],
+      "requiresSkills": []
+    }
+  ],
+  "enums": {
+    "taskType": ["CODE_CHANGE", "TEST_CHANGE", "FRONTEND_UI", "DATABASE_MIGRATION", "CI_CD", "DOCUMENTATION", "SECURITY_AUDIT", "SENSITIVE_EXTERNAL_OPERATION", "GATE_FREEZE", "RELEASE", "BLOCKED", "FULL_REPOSITORY_AUDIT"],
+    "riskLevel": ["ORDINARY", "HIGH_RISK", "AUDIT", "BLOCKED"],
+    "docsBudget": ["NONE", "TESTING_AND_WORKLOG_IF_REQUIRED", "DB_SCHEMA_TESTING_WORKLOG", "CI_TESTING_WORKLOG_IF_REQUIRED", "TASK_SCOPED", "AUDIT_REPORT_ONLY", "FREEZE_SCOPED", "RELEASE_SCOPED"],
+    "networkPermission": ["DENIED", "LOCAL_ONLY", "READ_ONLY_IF_EXPLICIT"],
+    "credentialPermission": ["DENIED"],
+    "serverPermission": ["DENIED"],
+    "gitPublicationPermission": ["DENIED", "EXPLICIT_AUTHORIZATION_REQUIRED"],
+    "authorityMutationPermission": ["DENIED", "TASK_SCOPED"],
+    "requiredValidations": ["TARGETED_MAVEN_TEST", "FRONTEND_BUILD", "TARGETED_E2E_IF_BEHAVIOR_CHANGED", "MIGRATION_SYNTAX", "FORWARD_ONLY", "HISTORICAL_MIGRATION_IMMUTABLE", "TARGETED_DB_TEST", "WORKFLOW_SYNTAX", "PERMISSION_DIFF", "PINNING_CHECK", "DOC_LINKS", "FACT_CONSISTENCY", "EVIDENCE_PATHS", "FINDING_SEVERITY", "EXPLICIT_AUTHORIZATION_REQUIRED", "AUTHORITY", "ARCHIVE", "EXACT_HEAD_CI", "ANNOTATED_TAG", "REMOTE_OBJECT", "PEELED_TARGET", "BRANCH_ANCESTRY", "BLOCKER_EVIDENCE", "AUDIT_BOOTSTRAP_CHARTER", "FULL_INVENTORY", "GENERATED_OUTPUT_EXCLUSION", "NO_AUTO_REMEDIATION"]
+  },
+  "routes": {
+    "JAVA_CHANGE": {
+      "taskType": "CODE_CHANGE",
+      "riskLevel": "ORDINARY",
+      "primarySkill": "java-backend-maintenance",
+      "supportingSkills": [],
+      "requiredValidations": ["TARGETED_MAVEN_TEST"],
+      "independentReview": false,
+      "docsBudget": "NONE",
+      "networkPermission": "LOCAL_ONLY",
+      "credentialPermission": "DENIED",
+      "serverPermission": "DENIED",
+      "gitPublicationPermission": "DENIED",
+      "authorityMutationPermission": "DENIED"
+    },
+    "JAVA_TEST": {
+      "taskType": "TEST_CHANGE",
+      "riskLevel": "ORDINARY",
+      "primarySkill": "java-backend-regression-tests",
+      "supportingSkills": [],
+      "requiredValidations": ["TARGETED_MAVEN_TEST"],
+      "independentReview": false,
+      "docsBudget": "TESTING_AND_WORKLOG_IF_REQUIRED",
+      "networkPermission": "LOCAL_ONLY",
+      "credentialPermission": "DENIED",
+      "serverPermission": "DENIED",
+      "gitPublicationPermission": "DENIED",
+      "authorityMutationPermission": "DENIED"
+    },
+    "FRONTEND_CHANGE": {
+      "taskType": "FRONTEND_UI",
+      "riskLevel": "ORDINARY",
+      "primarySkill": "frontend-antd-page-builder",
+      "supportingSkills": [],
+      "requiredValidations": ["FRONTEND_BUILD", "TARGETED_E2E_IF_BEHAVIOR_CHANGED"],
+      "independentReview": false,
+      "docsBudget": "NONE",
+      "networkPermission": "LOCAL_ONLY",
+      "credentialPermission": "DENIED",
+      "serverPermission": "DENIED",
+      "gitPublicationPermission": "DENIED",
+      "authorityMutationPermission": "DENIED"
+    },
+    "MIGRATION_CHANGE": {
+      "taskType": "DATABASE_MIGRATION",
+      "riskLevel": "HIGH_RISK",
+      "primarySkill": "db-schema-migration-review",
+      "supportingSkills": [],
+      "requiredValidations": ["MIGRATION_SYNTAX", "FORWARD_ONLY", "HISTORICAL_MIGRATION_IMMUTABLE", "TARGETED_DB_TEST"],
+      "independentReview": true,
+      "docsBudget": "DB_SCHEMA_TESTING_WORKLOG",
+      "networkPermission": "LOCAL_ONLY",
+      "credentialPermission": "DENIED",
+      "serverPermission": "DENIED",
+      "gitPublicationPermission": "DENIED",
+      "authorityMutationPermission": "DENIED"
+    },
+    "CI_WORKFLOW_CHANGE": {
+      "taskType": "CI_CD",
+      "riskLevel": "HIGH_RISK",
+      "primarySkill": "nq-dh-workflow-router",
+      "supportingSkills": [],
+      "requiredValidations": ["WORKFLOW_SYNTAX", "PERMISSION_DIFF", "PINNING_CHECK"],
+      "independentReview": true,
+      "docsBudget": "CI_TESTING_WORKLOG_IF_REQUIRED",
+      "networkPermission": "READ_ONLY_IF_EXPLICIT",
+      "credentialPermission": "DENIED",
+      "serverPermission": "DENIED",
+      "gitPublicationPermission": "DENIED",
+      "authorityMutationPermission": "DENIED"
+    },
+    "DOCS_ONLY": {
+      "taskType": "DOCUMENTATION",
+      "riskLevel": "ORDINARY",
+      "primarySkill": "nq-docs-writer",
+      "supportingSkills": [],
+      "requiredValidations": ["DOC_LINKS", "FACT_CONSISTENCY"],
+      "independentReview": false,
+      "docsBudget": "TASK_SCOPED",
+      "networkPermission": "DENIED",
+      "credentialPermission": "DENIED",
+      "serverPermission": "DENIED",
+      "gitPublicationPermission": "DENIED",
+      "authorityMutationPermission": "DENIED"
+    },
+    "SECURITY_AUDIT": {
+      "taskType": "SECURITY_AUDIT",
+      "riskLevel": "AUDIT",
+      "primarySkill": "nq-dh-workflow-router",
+      "supportingSkills": [],
+      "requiredValidations": ["EVIDENCE_PATHS", "FINDING_SEVERITY"],
+      "independentReview": true,
+      "docsBudget": "AUDIT_REPORT_ONLY",
+      "networkPermission": "DENIED",
+      "credentialPermission": "DENIED",
+      "serverPermission": "DENIED",
+      "gitPublicationPermission": "DENIED",
+      "authorityMutationPermission": "DENIED"
+    },
+    "CREDENTIAL_OR_REAL_EXCHANGE": {
+      "taskType": "SENSITIVE_EXTERNAL_OPERATION",
+      "riskLevel": "BLOCKED",
+      "primarySkill": "nq-dh-workflow-router",
+      "supportingSkills": [],
+      "requiredValidations": ["EXPLICIT_AUTHORIZATION_REQUIRED"],
+      "independentReview": true,
+      "docsBudget": "NONE",
+      "networkPermission": "DENIED",
+      "credentialPermission": "DENIED",
+      "serverPermission": "DENIED",
+      "gitPublicationPermission": "DENIED",
+      "authorityMutationPermission": "DENIED"
+    },
+    "GATE_FREEZE": {
+      "taskType": "GATE_FREEZE",
+      "riskLevel": "HIGH_RISK",
+      "primarySkill": "nq-docs-writer",
+      "supportingSkills": [],
+      "requiredValidations": ["AUTHORITY", "DOC_LINKS", "ARCHIVE", "EXACT_HEAD_CI"],
+      "independentReview": true,
+      "docsBudget": "FREEZE_SCOPED",
+      "networkPermission": "READ_ONLY_IF_EXPLICIT",
+      "credentialPermission": "DENIED",
+      "serverPermission": "DENIED",
+      "gitPublicationPermission": "DENIED",
+      "authorityMutationPermission": "TASK_SCOPED"
+    },
+    "RELEASE_TAG": {
+      "taskType": "RELEASE",
+      "riskLevel": "HIGH_RISK",
+      "primarySkill": "nq-docs-writer",
+      "supportingSkills": [],
+      "requiredValidations": ["ANNOTATED_TAG", "REMOTE_OBJECT", "PEELED_TARGET", "BRANCH_ANCESTRY", "EXACT_HEAD_CI"],
+      "independentReview": true,
+      "docsBudget": "RELEASE_SCOPED",
+      "networkPermission": "READ_ONLY_IF_EXPLICIT",
+      "credentialPermission": "DENIED",
+      "serverPermission": "DENIED",
+      "gitPublicationPermission": "EXPLICIT_AUTHORIZATION_REQUIRED",
+      "authorityMutationPermission": "TASK_SCOPED"
+    },
+    "BLOCKED_TASK": {
+      "taskType": "BLOCKED",
+      "riskLevel": "BLOCKED",
+      "primarySkill": "nq-dh-workflow-router",
+      "supportingSkills": [],
+      "requiredValidations": ["BLOCKER_EVIDENCE"],
+      "independentReview": false,
+      "docsBudget": "NONE",
+      "networkPermission": "DENIED",
+      "credentialPermission": "DENIED",
+      "serverPermission": "DENIED",
+      "gitPublicationPermission": "DENIED",
+      "authorityMutationPermission": "DENIED"
+    },
+    "FULL_REPOSITORY_AUDIT": {
+      "taskType": "FULL_REPOSITORY_AUDIT",
+      "riskLevel": "AUDIT",
+      "primarySkill": "nq-dh-workflow-router",
+      "supportingSkills": [],
+      "requiredValidations": ["AUDIT_BOOTSTRAP_CHARTER", "FULL_INVENTORY", "GENERATED_OUTPUT_EXCLUSION", "NO_AUTO_REMEDIATION"],
+      "independentReview": true,
+      "docsBudget": "AUDIT_REPORT_ONLY",
+      "networkPermission": "DENIED",
+      "credentialPermission": "DENIED",
+      "serverPermission": "DENIED",
+      "gitPublicationPermission": "DENIED",
+      "authorityMutationPermission": "DENIED"
+    }
+  }
+}

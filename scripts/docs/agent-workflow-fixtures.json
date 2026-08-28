@@ -1,0 +1,307 @@
+{
+  "schemaVersion": "1.2.0",
+  "fixtures": [
+    {
+      "id": "ordinary-java-change",
+      "category": "JAVA_CHANGE",
+      "expected": {
+        "taskType": "CODE_CHANGE",
+        "riskLevel": "ORDINARY",
+        "primarySkill": "java-backend-maintenance",
+        "supportingSkills": [],
+        "requiredValidations": [
+          "TARGETED_MAVEN_TEST"
+        ],
+        "independentReview": false,
+        "docsBudget": "NONE",
+        "networkPermission": "LOCAL_ONLY",
+        "credentialPermission": "DENIED",
+        "serverPermission": "DENIED",
+        "gitPublicationPermission": "DENIED",
+        "authorityMutationPermission": "DENIED"
+      }
+    },
+    {
+      "id": "java-test-only",
+      "category": "JAVA_TEST",
+      "expected": {
+        "taskType": "TEST_CHANGE",
+        "riskLevel": "ORDINARY",
+        "primarySkill": "java-backend-regression-tests",
+        "supportingSkills": [],
+        "requiredValidations": [
+          "TARGETED_MAVEN_TEST"
+        ],
+        "independentReview": false,
+        "docsBudget": "TESTING_AND_WORKLOG_IF_REQUIRED",
+        "networkPermission": "LOCAL_ONLY",
+        "credentialPermission": "DENIED",
+        "serverPermission": "DENIED",
+        "gitPublicationPermission": "DENIED",
+        "authorityMutationPermission": "DENIED"
+      }
+    },
+    {
+      "id": "ordinary-frontend-change",
+      "category": "FRONTEND_CHANGE",
+      "expected": {
+        "taskType": "FRONTEND_UI",
+        "riskLevel": "ORDINARY",
+        "primarySkill": "frontend-antd-page-builder",
+        "supportingSkills": [],
+        "requiredValidations": [
+          "FRONTEND_BUILD",
+          "TARGETED_E2E_IF_BEHAVIOR_CHANGED"
+        ],
+        "independentReview": false,
+        "docsBudget": "NONE",
+        "networkPermission": "LOCAL_ONLY",
+        "credentialPermission": "DENIED",
+        "serverPermission": "DENIED",
+        "gitPublicationPermission": "DENIED",
+        "authorityMutationPermission": "DENIED"
+      }
+    },
+    {
+      "id": "migration-change",
+      "category": "MIGRATION_CHANGE",
+      "expected": {
+        "taskType": "DATABASE_MIGRATION",
+        "riskLevel": "HIGH_RISK",
+        "primarySkill": "db-schema-migration-review",
+        "supportingSkills": [],
+        "requiredValidations": [
+          "MIGRATION_SYNTAX",
+          "FORWARD_ONLY",
+          "HISTORICAL_MIGRATION_IMMUTABLE",
+          "TARGETED_DB_TEST"
+        ],
+        "independentReview": true,
+        "docsBudget": "DB_SCHEMA_TESTING_WORKLOG",
+        "networkPermission": "LOCAL_ONLY",
+        "credentialPermission": "DENIED",
+        "serverPermission": "DENIED",
+        "gitPublicationPermission": "DENIED",
+        "authorityMutationPermission": "DENIED"
+      }
+    },
+    {
+      "id": "ci-workflow-change",
+      "category": "CI_WORKFLOW_CHANGE",
+      "expected": {
+        "taskType": "CI_CD",
+        "riskLevel": "HIGH_RISK",
+        "primarySkill": "nq-dh-workflow-router",
+        "supportingSkills": [],
+        "requiredValidations": [
+          "WORKFLOW_SYNTAX",
+          "PERMISSION_DIFF",
+          "PINNING_CHECK"
+        ],
+        "independentReview": true,
+        "docsBudget": "CI_TESTING_WORKLOG_IF_REQUIRED",
+        "networkPermission": "READ_ONLY_IF_EXPLICIT",
+        "credentialPermission": "DENIED",
+        "serverPermission": "DENIED",
+        "gitPublicationPermission": "DENIED",
+        "authorityMutationPermission": "DENIED"
+      }
+    },
+    {
+      "id": "docs-only",
+      "category": "DOCS_ONLY",
+      "expected": {
+        "taskType": "DOCUMENTATION",
+        "riskLevel": "ORDINARY",
+        "primarySkill": "nq-docs-writer",
+        "supportingSkills": [],
+        "requiredValidations": [
+          "DOC_LINKS",
+          "FACT_CONSISTENCY"
+        ],
+        "independentReview": false,
+        "docsBudget": "TASK_SCOPED",
+        "networkPermission": "DENIED",
+        "credentialPermission": "DENIED",
+        "serverPermission": "DENIED",
+        "gitPublicationPermission": "DENIED",
+        "authorityMutationPermission": "DENIED"
+      }
+    },
+    {
+      "id": "security-audit",
+      "category": "SECURITY_AUDIT",
+      "expected": {
+        "taskType": "SECURITY_AUDIT",
+        "riskLevel": "AUDIT",
+        "primarySkill": "nq-dh-workflow-router",
+        "supportingSkills": [],
+        "requiredValidations": [
+          "EVIDENCE_PATHS",
+          "FINDING_SEVERITY"
+        ],
+        "independentReview": true,
+        "docsBudget": "AUDIT_REPORT_ONLY",
+        "networkPermission": "DENIED",
+        "credentialPermission": "DENIED",
+        "serverPermission": "DENIED",
+        "gitPublicationPermission": "DENIED",
+        "authorityMutationPermission": "DENIED"
+      }
+    },
+    {
+      "id": "credential-or-real-exchange",
+      "category": "CREDENTIAL_OR_REAL_EXCHANGE",
+      "expected": {
+        "taskType": "SENSITIVE_EXTERNAL_OPERATION",
+        "riskLevel": "BLOCKED",
+        "primarySkill": "nq-dh-workflow-router",
+        "supportingSkills": [],
+        "requiredValidations": [
+          "EXPLICIT_AUTHORIZATION_REQUIRED"
+        ],
+        "independentReview": true,
+        "docsBudget": "NONE",
+        "networkPermission": "DENIED",
+        "credentialPermission": "DENIED",
+        "serverPermission": "DENIED",
+        "gitPublicationPermission": "DENIED",
+        "authorityMutationPermission": "DENIED"
+      }
+    },
+    {
+      "id": "gate-freeze",
+      "category": "GATE_FREEZE",
+      "expected": {
+        "taskType": "GATE_FREEZE",
+        "riskLevel": "HIGH_RISK",
+        "primarySkill": "nq-docs-writer",
+        "supportingSkills": [],
+        "requiredValidations": [
+          "AUTHORITY",
+          "DOC_LINKS",
+          "ARCHIVE",
+          "EXACT_HEAD_CI"
+        ],
+        "independentReview": true,
+        "docsBudget": "FREEZE_SCOPED",
+        "networkPermission": "READ_ONLY_IF_EXPLICIT",
+        "credentialPermission": "DENIED",
+        "serverPermission": "DENIED",
+        "gitPublicationPermission": "DENIED",
+        "authorityMutationPermission": "TASK_SCOPED"
+      }
+    },
+    {
+      "id": "release-tag",
+      "category": "RELEASE_TAG",
+      "expected": {
+        "taskType": "RELEASE",
+        "riskLevel": "HIGH_RISK",
+        "primarySkill": "nq-docs-writer",
+        "supportingSkills": [],
+        "requiredValidations": [
+          "ANNOTATED_TAG",
+          "REMOTE_OBJECT",
+          "PEELED_TARGET",
+          "BRANCH_ANCESTRY",
+          "EXACT_HEAD_CI"
+        ],
+        "independentReview": true,
+        "docsBudget": "RELEASE_SCOPED",
+        "networkPermission": "READ_ONLY_IF_EXPLICIT",
+        "credentialPermission": "DENIED",
+        "serverPermission": "DENIED",
+        "gitPublicationPermission": "EXPLICIT_AUTHORIZATION_REQUIRED",
+        "authorityMutationPermission": "TASK_SCOPED"
+      }
+    },
+    {
+      "id": "blocked-task",
+      "category": "BLOCKED_TASK",
+      "expected": {
+        "taskType": "BLOCKED",
+        "riskLevel": "BLOCKED",
+        "primarySkill": "nq-dh-workflow-router",
+        "supportingSkills": [],
+        "requiredValidations": [
+          "BLOCKER_EVIDENCE"
+        ],
+        "independentReview": false,
+        "docsBudget": "NONE",
+        "networkPermission": "DENIED",
+        "credentialPermission": "DENIED",
+        "serverPermission": "DENIED",
+        "gitPublicationPermission": "DENIED",
+        "authorityMutationPermission": "DENIED"
+      }
+    },
+    {
+      "id": "full-repository-audit",
+      "category": "FULL_REPOSITORY_AUDIT",
+      "expected": {
+        "taskType": "FULL_REPOSITORY_AUDIT",
+        "riskLevel": "AUDIT",
+        "primarySkill": "nq-dh-workflow-router",
+        "supportingSkills": [],
+        "requiredValidations": [
+          "AUDIT_BOOTSTRAP_CHARTER",
+          "FULL_INVENTORY",
+          "GENERATED_OUTPUT_EXCLUSION",
+          "NO_AUTO_REMEDIATION"
+        ],
+        "independentReview": true,
+        "docsBudget": "AUDIT_REPORT_ONLY",
+        "networkPermission": "DENIED",
+        "credentialPermission": "DENIED",
+        "serverPermission": "DENIED",
+        "gitPublicationPermission": "DENIED",
+        "authorityMutationPermission": "DENIED"
+      }
+    }
+  ],
+  "maliciousMutations": [
+    {
+      "id": "release-git-publication-allowed",
+      "category": "RELEASE_TAG",
+      "field": "gitPublicationPermission",
+      "value": "ALLOWED",
+      "expectedError": "RELEASE_PUBLICATION_NOT_EXPLICIT"
+    },
+    {
+      "id": "gate-freeze-review-disabled",
+      "category": "GATE_FREEZE",
+      "field": "independentReview",
+      "value": false,
+      "expectedError": "GATE_FREEZE_REVIEW_REQUIRED"
+    },
+    {
+      "id": "security-audit-credential-allowed",
+      "category": "SECURITY_AUDIT",
+      "field": "credentialPermission",
+      "value": "ALLOWED",
+      "expectedError": "SECURITY_AUDIT_CREDENTIAL_DENIED"
+    },
+    {
+      "id": "full-audit-server-allowed",
+      "category": "FULL_REPOSITORY_AUDIT",
+      "field": "serverPermission",
+      "value": "ALLOWED",
+      "expectedError": "FULL_AUDIT_SERVER_DENIED"
+    },
+    {
+      "id": "full-audit-authority-mutation-allowed",
+      "category": "FULL_REPOSITORY_AUDIT",
+      "field": "authorityMutationPermission",
+      "value": "ALLOWED",
+      "expectedError": "FULL_AUDIT_AUTHORITY_DENIED"
+    },
+    {
+      "id": "credential-route-unauthorized-credential",
+      "category": "CREDENTIAL_OR_REAL_EXCHANGE",
+      "field": "credentialPermission",
+      "value": "ALLOWED_WITHOUT_EXPLICIT_AUTHORIZATION",
+      "expectedError": "SENSITIVE_CREDENTIAL_DENIED"
+    }
+  ]
+}

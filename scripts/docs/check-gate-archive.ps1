@@ -72,7 +72,7 @@ if (-not (Test-Path -LiteralPath $resolvedManifest -PathType Leaf)) {
     } elseif ($null -eq $contract) {
         Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' 'GOVERNANCE_CONTRACT_INVALID'
     } else {
-        foreach ($property in @('mandatoryRoles', 'acceptedAliases', 'strictGateOverrides', 'roleBodyPolicy')) {
+        foreach ($property in @('mandatoryRoles', 'acceptedAliases', 'defaultStrictPolicy', 'historicalProfiles', 'roleBodyPolicy')) {
             if ($null -eq (Get-GovernancePropertyValue $manifest $property)) {
                 Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' "MANIFEST_SCHEMA_FIELD_MISSING field=$property"
             }
@@ -82,22 +82,21 @@ if (-not (Test-Path -LiteralPath $resolvedManifest -PathType Leaf)) {
         if (-not (Test-Path -LiteralPath $gateRoot -PathType Container)) {
             Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' "GATE_ARCHIVE_NOT_FOUND $Gate"
         } else {
-            $strictConfig = Get-GovernancePropertyValue $manifest.strictGateOverrides $Gate
+            $historicalConfig = Get-GovernancePropertyValue $manifest.historicalProfiles $Gate
             $isLegacy = (Get-GateOrdinal $Gate) -le (Get-GateOrdinal ([string]$manifest.legacyThroughGate))
-            $isStrict = ($null -ne $strictConfig) -or (-not $isLegacy)
-            if (-not $isLegacy -and $null -eq $strictConfig) {
-                Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' "STRICT_GATE_OVERRIDE_MISSING gate=$Gate"
-            }
+            $isStrict = -not $isLegacy
+            $effectiveConfig = if ($null -ne $historicalConfig) { $historicalConfig } else { $manifest.defaultStrictPolicy }
 
             $requiredRoles = New-Object System.Collections.Generic.List[string]
             foreach ($role in @($manifest.mandatoryRoles)) { $requiredRoles.Add([string]$role) }
-            if ($null -ne $strictConfig) {
-                foreach ($role in @($strictConfig.conditionalRoles)) { $requiredRoles.Add([string]$role) }
+            if ($null -ne $effectiveConfig) {
+                foreach ($role in @($effectiveConfig.conditionalRoles)) { $requiredRoles.Add([string]$role) }
             }
             if (@($requiredRoles | Select-Object -Unique).Count -ne $requiredRoles.Count) {
                 Add-ArchiveError 'ARCHIVE_MANIFEST_INCOMPLETE' "DUPLICATE_REQUIRED_ROLE gate=$Gate"
             }
-            Write-Output ("POLICY gate={0} legacyThrough={1} legacy={2} strict={3}" -f $Gate, $manifest.legacyThroughGate, $isLegacy, $isStrict)
+            $profileName = if ($null -ne $historicalConfig) { 'historical' } else { 'default' }
+            Write-Output ("POLICY gate={0} legacyThrough={1} legacy={2} strict={3} profile={4}" -f $Gate, $manifest.legacyThroughGate, $isLegacy, $isStrict, $profileName)
 
             $allItems = @(Get-ChildItem -LiteralPath $gateRoot -Recurse -Force)
             foreach ($item in $allItems) {
@@ -223,11 +222,12 @@ if ($errors.Count -eq 0 -and -not $PreTag -and ($RequireRemoteTag -or $RequireCi
         Add-ArchiveError 'GATE_RELEASE_INVALID' "CANONICAL_TAG_PEELED_COMMIT_INVALID tag=$canonicalTag"
     }
 
-    $releaseArguments = @('-Gate', $Gate)
-    if ($ExpectedTag) { $releaseArguments += @('-ExpectedTag', $ExpectedTag) }
+    $releaseParameters = @{ Gate = $Gate }
+    if ($ExpectedTag) { $releaseParameters.ExpectedTag = $ExpectedTag }
     if ($errors.Count -eq 0) {
-        $releaseArguments += @('-ExpectedCommit', $peeledCommit)
-        $releaseOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'check-gate-release.ps1') @releaseArguments 2>&1
+        $releaseParameters.ExpectedCommit = $peeledCommit
+        # Keep release validation in the current PowerShell host so pwsh callers are not downgraded to Windows PowerShell 5.1.
+        $releaseOutput = & (Join-Path $PSScriptRoot 'check-gate-release.ps1') @releaseParameters 2>&1
         $releaseExit = $LASTEXITCODE
         $releaseOutput | Write-Output
         if ($releaseExit -ne 0) { Add-ArchiveError 'GATE_RELEASE_INVALID' 'DELEGATED_RELEASE_CHECK_FAILED' }

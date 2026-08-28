@@ -92,3 +92,46 @@ Rollback:
 ```
 
 只有请求已完成且相关验证真实通过时写 `DONE`。存在阻断时写 `BLOCKED / <具体原因>`，不要使用模糊措辞。
+
+## A. Role
+
+- Role type: `PRIMARY_EXECUTION`
+- Primary responsibility: `PYTHON_MAINTAINED_PROJECTS`
+
+本 Skill 是 maintained Python package/library/service/packaged CLI、正式 research/backtest 与 data-engineering project 的 primary owner。
+
+## B. Trigger
+
+- Positive：稳定 package architecture、`pyproject.toml`、多模块 implementation + tests、dependency/typing/async/persistence/network adapter、packaging 或 research-to-production。
+- Exclusion：单一独立脚本、一次性分析、简单转换、migration/helper script 和不形成长期维护 package 的 temporary CLI。
+
+## C. Input / Context
+
+按任务读取实际 package metadata、目标 modules、public API、tests、official tool entry 与必要 references；仅复杂工程约束或 delivery 场景按文中路由读取对应 reference，不加载无关工程文件。
+
+## D. Required Actions
+
+1. Classify the maintained-project task and inspect repository state.
+2. Identify package boundaries, public contracts, callers and failure modes.
+3. Design and implement the smallest coherent project change.
+4. Add or update deterministic tests for success, failure and boundary behavior.
+5. Run official targeted test/type/lint/build gates from narrow to broad.
+6. Review diff, dependency/resource/security impact and report residual risk.
+
+## E. Validation
+
+- Required：目标测试与项目已有的直接相关 quality gate。
+- Conditional：type/lint/package/CLI smoke、async/concurrency、persistence/network integration、research reproducibility 按 affected scope 增加。
+- Not applicable：项目未配置的工具、无关全仓 gate、真实生产服务与外部副作用。
+
+## F. Output Contract
+
+输出 task classification、result、changed files/contracts、tests、validation commands/results、remaining issues 和 rollback。
+
+## G. Non-goals
+
+不处理 temporary helper scripts，不迁移项目工具/框架或 layout，不为小功能新增无必要依赖，也不执行 packaging release 或生产部署，除非用户另行明确授权。
+
+## H. Overlap / Ownership
+
+本 Skill 对 maintained project 与 packaged CLI 是 `PRIMARY_OWNER`；`python-ops-tooling` 对 temporary/helper scripts 与一次性 CLI 是 `PRIMARY_OWNER`，两者在分类后不得同时作为 primary。

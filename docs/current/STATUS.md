@@ -13,11 +13,11 @@ accepted_batch_status=ACCEPTED|CI_GREEN
 accepted_batch_implementation_commit=8e3dd0cf6104eb85f36a0e434ca51ea9d903705a
 accepted_batch_acceptance_head=8e3dd0cf6104eb85f36a0e434ca51ea9d903705a
 accepted_batch_ci_run=32978280738
-work_batch=GateAUDIT-PLAN
-work_batch_status=NOT_STARTED
+work_batch=GateAUDIT-0C-R3
+work_batch_status=REVIEW_ACCEPTED|READY_TO_COMMIT
 work_batch_commit=NONE
 work_batch_ci_run=NOT_RUN
-next_action=NQ-FULL-REPOSITORY-AUDIT-AND-CONSOLIDATION
+next_action=NQ-GATEAUDIT-0C-R3-COMMIT
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -34,10 +34,10 @@ nq-current-authority:end -->
 ## 1. 当前阶段
 
 - GateY：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-y/README.md](../gates/gate-y/README.md)，freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`，annotated tag=`nq-gatey-freeze`，tag object=`c84f412e1da652e85158c5478997945d3065e575`，peeled commit 与 freeze commit 一致。
-- GateAUDIT：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；仅初始化下一治理容器，不表示全仓 audit 已开始。
+- GateAUDIT：`IN PROGRESS / NOT FROZEN`（治理进行中 / 未冻结）；R2 independent review 已接受 R2 candidate，R3 final independent review 已接受当前 post-R3 final candidate，candidate 已 `READY_TO_COMMIT`；commit 尚未创建，exact-head CI 尚未运行，Phase 0 尚未完成，Phase 1 全仓 audit 尚未开始。
 - GateY-6F：`ACCEPTED / CI GREEN / MINIMAL LIVE PILOT VERIFIED`（已接受 / CI 已通过 / 最小实盘 pilot 已验证）；production pilot release=`8e3dd0cf6104eb85f36a0e434ca51ea9d903705a`，CI run=`32978280738 / completed / success / 10 jobs`。
 - GateY-FREEZE：`ACCEPTED / CI GREEN / TAGGED`（已接受 / CI 已通过 / 已打 tag）；exact-head CI run=`33037514013 / completed / success / 11 jobs / bad=0`，archive/release post-tag checker errors=0。
-- GateAUDIT-PLAN：`NOT STARTED`（未开始）；不得把 audit container 初始化写成 inventory、删除、合并或架构收口已经执行。
+- GateAUDIT-0C-R3：`REVIEW_ACCEPTED / READY_TO_COMMIT`（独立复核已接受 / 可以进入提交准备）；final independent review decision=`PASS / REVIEW_ACCEPTED / READY_TO_COMMIT`，P0=0、P1=0；commit=`NONE`，exact-head CI=`NOT_RUN`，Phase 0 尚未完成，Phase 1 Inventory 尚未开始。
 
 ## 2. Accepted pilot facts
 
@@ -66,4 +66,4 @@ updated_commit=72fbf5e78f217a02b572a54fadb17dea204b594f
 
 ## 5. 下一允许动作
 
-- 当前唯一治理动作是 `NQ-FULL-REPOSITORY-AUDIT-AND-CONSOLIDATION`；当前仅为 `NOT STARTED`，必须在独立任务中先做只读 inventory/audit，不得直接删除代码、进入 GateZ 或扩大真实交易能力。
+- 当前唯一治理动作是 `NQ-GATEAUDIT-0C-R3-COMMIT`。R3 final independent review 已接受，但 commit 尚未创建、exact-head CI 尚未运行；Phase 0 尚未完成，Phase 1 Inventory 尚未开始。后续 Inventory 必须由中立 Audit Bootstrap Charter 驱动，默认只读，不得自动整改、进入 GateZ 或扩大真实交易能力。

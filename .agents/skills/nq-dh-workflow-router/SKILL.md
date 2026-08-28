@@ -1,265 +1,86 @@
 ---
 name: nq-dh-workflow-router
-description: NQ/DH workflow router for NexusQuant and Decision Hub tasks. Use when a task mentions NexusQuant, NQ, Decision Hub, DH, quant trading platform work, Gate or FREEZE planning, stage transition archive governance, frontend optimization, architecture review, deployment, security audit, exchange integration, documentation, spreadsheets, presentations, domain websites, or Java engineering, and Codex must detect the repository, read current Authority, classify the task, compose only relevant plugins or project skills, route repository-specific Java work, preserve safety and Gate boundaries, and produce the standard NQ/DH execution report.
+description: Route NexusQuant repository work by resolving the repository, reading current STATUS authority, classifying task and risk, choosing one primary Skill plus explicitly justified supporting Skills, and defining scope. Use for NQ governance, mixed-scope, Gate, audit, freeze, release, credential, trading, or otherwise ambiguous repository tasks.
 ---
 
-# NQ-DH Workflow Router
+# NQ Workflow Router
 
-Use this skill before executing NexusQuant or Decision Hub work. The goal is to classify the task, select the minimum relevant tools, and keep NQ/DH Gate, trading, credentials, and module boundaries explicit.
+本 Skill 只负责路由，不复制 Java、文档、archive、release、security 或交易领域实现规则。
 
-## Source Of Truth
+## 1. Repository 与 authority
 
-Read these repository documents only as needed for the current task:
+1. 用 `git rev-parse --show-toplevel` 确认唯一仓库。
+2. 读取根 `AGENTS.md` 与 `docs/current/STATUS.md` 的 `nq-current-authority` 区块。
+3. 当前事实冲突时输出 `BLOCKED / CURRENT_AUTHORITY_CONFLICT`。
+4. 全仓审计从 `scripts/docs/agent-workflow-policy.json` 的 `audit.bootstrapCharter` 解析并读取 repository-declared Audit Bootstrap Charter；字段缺失、路径非 canonical 或目标不存在时 fail-closed。被审计 Skill/checker 不是 authority。
 
-- `docs/current/STATUS.md` first; parse the `nq-current-authority` block for current/next Gate and safety state.
-- `docs/current/NQ_DH_CODEX_PLUGIN_WORKFLOW.md` for plugin routing and standard workflow.
-- `docs/current/NQ_DH_WORKFLOW_ROUTER_SKILL.md` for the original router specification.
-- `docs/current/NQ_DH_CODEX_TASK_TEMPLATES.md` for common task output templates.
-- `docs/current/README.md` and `AGENTS.md` for indexes, prohibited scope, and validation rules; they do not override `STATUS.md`.
+不得从分支名、任务名、旧会话、archive 或模型记忆推断 current state。
 
-Skills, templates, router docs, and `AGENTS.md` must not copy a concrete current Gate or next Gate. Examples use `<CURRENT_GATE>` and `<NEXT_GATE>` placeholders.
+## 2. 分类
 
-Do not treat archived documents as current facts unless the user explicitly asks for historical comparison.
+为任务记录一个 primary task type 和一个 risk level。机器口径以 `scripts/docs/agent-workflow-policy.json` 为准。
 
-## Step 1: Classify The Task
+- task type：后端实现、后端测试、前端实现、migration、CI、文档、安全审计、credential/真实交易、freeze、release、blocked 或全仓审计。
+- risk：`ORDINARY`、`HIGH_RISK`、`AUDIT`、`BLOCKED`。
 
-Choose exactly one primary type. Record auxiliary types only when they materially affect tool selection or validation.
+credential、真实交易、authority mutation、migration、CI 权限、安全边界、freeze/release 默认 `HIGH_RISK`；缺少明确授权时 fail-closed。
 
-- `CODE_ANALYSIS`
-- `CODE_CHANGE`
-- `FRONTEND_UI`
-- `DATA_VISUALIZATION`
-- `SECURITY_AUDIT`
-- `EXCHANGE_INTEGRATION`
-- `DOCUMENTATION`
-- `SPREADSHEET_MATRIX`
-- `DEPLOYMENT`
-- `CI_CD`
-- `PRODUCT_DESIGN`
-- `INVESTMENT_RESEARCH`
-- `PRESENTATION`
-- `DOMAIN_WEBSITE`
+## 3. Skill 选择
 
-For `DOCUMENTATION`, record a subtype when it changes routing or validation: `DOCS_ONLY`, `DOCUMENTATION_CLEANUP`, `DOCUMENTATION_RECONCILIATION`, `FACT_SOURCE_SYNC`, `ROADMAP_CLEANUP`, `PLAN`, `PLANNING_ONLY`, `REVIEW`, `FREEZE_REVIEW`, `FINAL_FREEZE`, `STATUS_SYNC`, `TESTING_SYNC`, `WORKLOG_SYNC`, `API_DOC_UPDATE`, `DB_SCHEMA_DOC_UPDATE`, `FRONTEND_DOC_UPDATE`, `CI_DOC_UPDATE`, `GATE_PLAN`, `GATE_FREEZE`, `ACCEPTANCE_REPORT`, `IMPLEMENTATION_REPORT`, `RELEASE_HANDOFF`, `POST_FREEZE_FIX_DOCS`, `STAGE_TRANSITION_ARCHIVE`, `ARCHIVE_INVENTORY`, `ARCHIVE_PLAN_REVIEW`, `ARCHIVE_MOVE_BATCH`, `ARCHIVE_CLOSEOUT`, `RELEASE_TAG_AND_ARCHIVE`, `FINAL_CLOSURE`, `DOCS_GOVERNANCE`, or `CURRENT_DOCS_CLASSIFICATION`.
+- 最多一个 primary Skill。
+- supporting Skill 仅在主 Skill 无法覆盖一个明确子范围时选择，并在执行前记录触发理由。
+- 插件按当前能力缺口选择，不固定完整流水线。
+- active Skill 只来自 `.agents/README.md` 与实际 `.agents/skills/**` 的交集；缺失或未声明即阻断治理验证。
+- 普通 Java primary 为 `java-backend-maintenance`；测试 primary 为 `java-backend-regression-tests`。
+- `nq-java-engineering-standard` 只能作为高风险 Java supporting Skill：跨模块架构、大范围 Spring wiring、事务/并发核心、trading/risk/ledger/audit 核心、Java/Spring/Maven 版本升级、ArchUnit/Checkstyle/PMD/SpotBugs 规则变化或全仓 Java 审计。
+- 文档 primary 为 `nq-docs-writer`；archive/release 规则只引用 machine contract/checker，不在 Skill 中重写。
 
-If the user request is ambiguous, make a conservative default assumption, state it, and avoid crossing module, Gate, trading, or credential boundaries.
+## 4. Scope
 
-## Step 2: Select Plugins And Skills
+执行前输出：repository、target files、excluded files、expected output、validation、权限边界。默认排除生成物、缓存、日志、凭证和任务无关模块；只有明确的全仓审计可扩大只读范围。
 
-Select only the tools needed for the classified task. Do not enable every available plugin or skill.
+Router 不授予网络、credential、server、Git publication、authority mutation 或真实外部副作用权限。
 
-- Use `docs/current/NQ_DH_CODEX_PLUGIN_WORKFLOW.md` as the routing table for plugins.
-- Use project active skills only when directly relevant to the task.
-- Use at most one primary skill; supporting skills must have a clear reason.
-- If plugin or skill guidance conflicts with Gate, security, trading, module, or user instructions, follow the stricter project boundary.
-- Use `nq-docs-writer` as the primary skill for pure documentation work: `DOCUMENTATION`, `DOCS_ONLY`, planning-only docs, review/freeze docs, current fact-source reconciliation, status/testing/worklog sync, API docs, DB schema docs, frontend docs, CI docs, acceptance reports, implementation reports, release handoffs, and post-freeze fix docs.
-- Route stage archive governance to `nq-docs-writer`: task names or prompts matching `*_ARCHIVE_INVENTORY`, `*_ARCHIVE_PLAN_REVIEW`, `*_ARCHIVE_MOVE_BATCH`, `*_ARCHIVE_CLOSEOUT`, `POST_*CURRENT_ARCHIVE*` / `POST_**CURRENT_ARCHIVE**`, `STAGE_TRANSITION_ARCHIVE`, `RELEASE_TAG_AND_ARCHIVE`, `FINAL_CLOSURE`, `DOCS_GOVERNANCE`, or `CURRENT_DOCS_CLASSIFICATION`.
-- Archive governance must stay separate from implementation. If a task also includes backend, frontend, DB, CI, security, credential, LIVE, real-provider, or exchange implementation, keep the implementation skill primary and let `nq-docs-writer` only synchronize TESTING, WORKLOG, current state, or archive policy inside the approved docs budget.
-- If the task implements backend, frontend, DB, CI, security, credential, LIVE, real-provider, or exchange changes and also needs documentation, keep the domain skill primary and use `nq-docs-writer` only as a supporting documentation skill.
-- If the task exposes fact-source conflict between attachments, prompts, old docs, current docs, tests, or code, select `nq-docs-writer` first for documentation reconciliation before editing current facts.
-- For migration work, keep `db-schema-migration-review` as primary; `nq-docs-writer` may only synchronize `DB_SCHEMA.md`, `TESTING.md`, and `WORKLOG.md`.
-- For frontend implementation, keep the relevant frontend skill primary; `nq-docs-writer` may only synchronize frontend docs, `TESTING.md`, and `WORKLOG.md`.
-- For Python work, inspect the actual project boundary before selecting a skill. Use `python-project-development` as primary when the task involves a formal package/library/service/CLI, `pyproject.toml` or package architecture, multiple maintained modules, implementation plus tests, dependency management, typing, application architecture, async service, persistence/network adapters, packaging/release, or a maintained research/backtest/data framework.
-- Use `python-ops-tooling` only for a standalone script, a few simple `.py` files, one-off processing, temporary analysis or diagnostics, data conversion, migration/helper scripts, and small tools that do not form a maintained package or service.
-- Do not activate both Python skills for the same primary task. When the boundary is unclear, inspect `pyproject.toml`, package roots, tests, dependency files, entry points, and affected modules; prefer `python-project-development` as soon as the change crosses into maintained package architecture, and use `python-ops-tooling` only for an explicit supporting script subtask.
-- For CI workflow, security, credential, LIVE, or real-provider work, keep the CI/security/domain review primary; `nq-docs-writer` may only keep documentation facts from crossing the approved boundary.
+## A. Role
 
-Never use a plugin or skill to bypass restrictions on AI, DH integration, LIVE trading, credentials, real providers, RealClient, migrations, or production paths.
+- Role type: `ROUTER`
+- Primary responsibility: `ROUTING_CLASSIFICATION`
 
-## Step 2.1: Route Repository-specific Java Engineering
+本 Skill 是 routing-only owner：把当前 repository authority、任务类型和风险转换为一个 primary Skill、必要的 supporting Skills 与最小执行范围。
 
-Resolve the repository with `git rev-parse --show-toplevel` and repository-owned current Authority before selecting a Java Engineering skill. Do not infer the repository from the task name, branch, an archived path, or model memory.
+## B. Trigger
 
-If a Java-scoped task cannot resolve exactly one supported repository, stop with:
+- Positive：NexusQuant governance、混合范围、Gate、audit、freeze、release、credential、交易相关或 primary Skill 不明确的任务。
+- Exclusion：primary Skill 已由有效 machine route 唯一确定的普通领域任务，以及任何领域实现、测试设计或文档写作本身。
 
-```text
-FAIL_CLOSED / REPOSITORY_UNRESOLVED
-```
+## C. Input / Context
 
-Load the repository-specific Java Engineering skill when the task adds, changes, reviews, debugs, refactors, or validates any of these scopes:
+只读取 repository root、根 `AGENTS.md`、`docs/current/STATUS.md` 的 machine authority、`scripts/docs/agent-workflow-policy.json` 和与分类直接相关的目标路径；仅全仓审计按 policy 解析 Audit Bootstrap Charter。不得预加载所有 Skills 或领域标准库。
 
-```text
-Java source or Java code review/refactoring
-Spring Boot / Spring Framework / Spring MVC / Spring Security / Spring Data
-JDBC / transaction / Repository / Service / Controller / Adapter / Port / SPI
-thread / executor / async / concurrency / logging / exception handling
-Maven Java dependencies
-JUnit / Mockito / ArchUnit / Checkstyle / Spotless / PMD / SpotBugs
-```
+## D. Required Actions
 
-Repository routes are:
+1. Detect the repository.
+2. Read current authority.
+3. Classify the primary task type.
+4. Classify risk and authorization boundaries.
+5. Select exactly one primary Skill.
+6. Select only justified supporting Skills.
+7. Define included scope, excluded scope, expected output and validation class.
 
-```text
-repository = nexus-quant AND Java scope exists
-  -> nq-java-engineering-standard
+## E. Validation
 
-repository = decision-hub AND Java scope exists
-  -> dh-java-engineering-standard
-```
+- Required：repository 唯一、authority 无冲突、primary Skill 唯一且 active、scope 明确。
+- Conditional：全仓审计验证 charter 路径；高风险 route 验证独立 review 与权限限制。
+- Not applicable：Maven、Playwright、migration、文档链接等领域验证，由执行或验证 owner 决定。
 
-For NexusQuant, Java scope also includes trading, order, risk, ledger, marketdata, strategy, research, scheduler, exchange adapter, and account/auth Java implementation. These terms only trigger the NQ Java Skill; this Router does not duplicate or redefine their domain rules.
+## F. Output Contract
 
-Do not load a Java Engineering skill merely because the repository contains Java. Pure documentation, Authority-only, Git-only, React/TypeScript-only, Python-only, evidence-append, and read-only runtime qualification tasks do not load it unless they explicitly modify or review Java or Maven-Java behavior.
+输出 repository、authority result、task type、risk、primary Skill、supporting Skills 及理由、included/excluded scope、validation class 和 blocker；不输出伪造的领域完成结论。
 
-## Step 2.2: Compose Skills, Order And Precedence
+## G. Non-goals
 
-Execution order is fixed:
-
-```text
-1. nq-dh-workflow-router
-2. repository detection
-3. current Authority / Gate / safety boundary
-4. task-specific domain, security, review, migration, API, or documentation skill when applicable
-5. repository-specific Java Engineering skill when Java scope exists
-6. implementation or review
-7. validation
-```
+不实现业务、不设计测试、不维护 docs/archive/release lifecycle、不执行完整验证、不解释 Java standards，也不授予任何额外权限。
 
-Skills compose rather than compete. For example, an NQ Java exchange-adapter security review loads the security/review skill before `nq-java-engineering-standard`; an NQ Java trading implementation applies current Authority and NQ domain constraints before the Java Skill. A pure WORKLOG append, frontend task, or Python research task does not load the Java Skill.
+## H. Overlap / Ownership
 
-Precedence is fixed:
-
-```text
-User explicit authorization / safety
-> current Authority / Gate / frozen contracts
-> repository domain invariants
-> repository-specific Java Engineering skill
-> adapted Huangshan rules
-> formatting / IDE preference
-```
-
-A Java Engineering skill cannot override Authority, Gate, frozen contracts, Schema, Golden Cases, state machines, runtime modes, exchange/provider permissions, or LIVE permissions. This Router defines only when to load which skill, order, precedence, composition, fail-closed behavior, and recursion protection; it does not copy Java, Spring, Huangshan, numerical, timing, trading, retry, or implementation rules.
-
-Java Engineering skills are leaf execution/constraint skills. Re-entry is forbidden:
-
-```text
-nq-java-engineering-standard -> nq-dh-workflow-router
-dh-java-engineering-standard -> nq-dh-workflow-router
-
-RECURSIVE_ROUTING_REJECTED
-```
-
-Once this Router has selected a Java Engineering skill for the current task, that skill must not re-enter the Router.
-
-## Step 3: Define Scope
-
-Before reading broadly or modifying files, state:
-
-- `repository`
-- `module`
-- `target files`
-- `excluded files`
-- `expected output`
-
-Exclude by default:
-
-- `node_modules`
-- `target`
-- `build`
-- `dist`
-- `.git`
-- `test-results`
-- `logs`
-- `secrets`
-- `credentials`
-
-Do not scan the full repository unless the task explicitly requires a repository-wide review.
-
-## Step 4: Apply Documentation Budget
-
-Default to code-first / test-first work. Documentation is not a default deliverable.
-
-- Review-only and audit-only tasks are no-diff by default; write docs only for stage freeze, contract freeze, high-risk plans, or explicit user instruction.
-- Ordinary code tasks do not update docs by default; if a durable note is necessary, add at most one `docs/current/WORKLOG.md` line.
-- Test-baseline tasks may update `docs/current/TESTING.md` and `docs/current/WORKLOG.md`.
-- Stage completion or Gate freeze may update `docs/current/STATUS.md`, `docs/current/ROADMAP.md`, `docs/current/TESTING.md`, and `docs/current/WORKLOG.md`.
-- `README.md` changes require entry-point, architecture, startup, or overall stage-status impact.
-- Dedicated PLAN docs are reserved for CI, migration, security, LIVE, credential, API contract, or similarly high-risk epics.
-- Do not create docs-only follow-up tasks merely to keep documents synchronized.
-- Prompts for future NQ/DH tasks should state the docs budget explicitly, for example: "docs default unchanged; if recording is needed, only one WORKLOG line is allowed."
-- When documentation is explicitly authorized, apply `nq-docs-writer` rules for fact-source priority, anti-churn, output shape, and validation.
-
-## Step 4.1: Apply Archive And Authority Fail-fast
-
-- `docs/current/STATUS.md` is the only current-stage authority. Conflicting current docs require `BLOCKED / CURRENT_AUTHORITY_CONFLICT`.
-- `scripts/docs/gate-archive-manifest.json` is a hard gate for Gate freeze work, not a suggestion.
-- Before writing a freeze archive, derive mandatory and applicable conditional roles from the manifest and compare them with the task allowlist.
-- If the allowlist cannot contain every required role, stop with `BLOCKED / ARCHIVE_ALLOWLIST_INCOMPLETE`.
-- If files or independent evidence bodies are missing, stop with `BLOCKED / ARCHIVE_MANIFEST_INCOMPLETE`.
-- An ordinary Gate freeze may create the complete pre-tag archive in one task. Inventory -> review -> move is reserved for large historical migrations, multi-Gate moves, current-doc physical slimming, destructive cleanup, or bulk relocation.
-- Before freeze/tag handoff, run the archive, authority, and link checkers under `scripts/docs/`.
-
-## Step 4.2: Apply Documentation Language Rules
-
-When a task writes or updates documentation, templates, task prompts, skill instructions, review reports, implementation reports, `README`, `STATUS`, `ROADMAP`, `TESTING`, `WORKLOG`, or any `docs/current` explanatory document, enforce the `nq-docs-writer` language governance rules:
-
-- 文档正文必须中文为主，不能把 current docs 或入口文档整篇英文化。
-- 英文任务名、状态枚举、类名、接口名、字段名、文件名、路径、命令、commit message 和协议原文可以保留英文。
-- 英文状态值首次出现时必须附中文解释；后续可复用精确英文状态值。
-- 代码注释的业务规则说明优先中文；API contract、协议字段和 enum 可保留英文或中英双语。
-- DB comment 使用中文业务语义，表名和字段名保持英文。
-- 不翻译 `docs/archive/**` 或 `docs/gates/**` 历史文档；只在后续自然触碰时修正旧文档语言漂移。
-- Agent 输出栏目名可以保留英文，但栏目内容必须中文为主。
-
-## Step 5: Enforce NQ Boundaries
-
-For NexusQuant tasks:
-
-- Do not enable LIVE trading.
-- Do not add real order or cancel paths unless the user explicitly asks and the current Gate allows it.
-- Do not expose credentials, API keys, exchange secrets, tenant data, tokens, cookies, or production env values.
-- Keep PAPER and LIVE isolated; explain isolation points, failure modes, and rollback when touched.
-- Do not write `<NEXT_GATE>` planning as implementation started; read both names and statuses from `STATUS.md` each turn.
-- Do not claim AI, DH integration, multi-exchange expansion, public production readiness, or UI/UX professionalism is complete unless current docs and verification prove it.
-
-Current baseline is never hard-coded in this skill. Parse `docs/current/STATUS.md` before every task and fail closed when it is missing, malformed, or conflicts with current entry documents.
-
-## Step 6: Enforce DH Boundaries
-
-For Decision Hub tasks:
-
-- Do not connect DH to NQ for real.
-- Do not allow DH to place orders, cancel orders, start Paper Runs, access credentials, or modify NQ trading state.
-- Treat Integration-0 as read-only boundary and contract freeze preparation only.
-- Do not add real providers, RealClient, third-party relays, or production trading paths.
-- For security-sensitive DH work, explicitly check HMAC, timestamp, nonce, source allowlist, payload size, tenant binding, replay protection, provider trust policy, and audit trail.
-
-## Step 7: Execute
-
-Use the smallest workflow that satisfies the request.
-
-- Read `AGENTS.md`, `README.md`, `docs/current/README.md`, and relevant current docs before code or documentation changes.
-- Read target files before editing.
-- Keep edits scoped to the selected module and task type.
-- Do not modify unrelated frontend, backend, Python, deployment, and documentation areas in the same turn unless the user explicitly requested a cross-stack change.
-- Do not update current docs to claim validation passed unless the command actually ran and passed.
-
-## Step 8: Validate
-
-Run validation based on the changed area, or explain why a narrower validation is sufficient.
-
-- Backend: `mvn -f backend/pom.xml test` or a justified module-specific Maven test.
-- Frontend: `Set-Location frontend; npm run build; npm run test:e2e`; page work should also use Browser or Chrome verification.
-- Python: `Set-Location research/py; python -m pytest -q; python -m mypy src; python -m ruff check .`.
-- Docs: run `scripts/docs/check-current-authority.ps1`; for Gate freeze/tag work also run `check-gate-archive.ps1` and `check-doc-links.ps1`. Check paths, forbidden boundaries, duplicate entry points, and whether validation claims match executed commands.
-- Deployment: check Docker, env examples, health checks, migrations, and rollback.
-
-If validation fails, report the root cause, apply the smallest fix when feasible, and rerun the relevant validation.
-
-## Step 9: Report
-
-Use this output shape for NQ/DH work:
-
-```text
-Task classification:
-Plugins selected:
-Scope:
-Files inspected:
-Files changed:
-Findings:
-Validation:
-Risks:
-Next concrete action:
-```
-
-For code review tasks, put findings first with file and line references, then summarize. For completed implementation tasks, include changed files, validation result, rollback method, and whether prohibited NQ/DH scope was touched.
+Router 对分类与选择是 `PRIMARY_OWNER`；被选择的领域 Skill 对实现或验证是 `PRIMARY_OWNER`，Router 仅为 `SUPPORTING_OWNER`。具体 pair 与唯一 ownership 以 machine responsibility matrix 为准。

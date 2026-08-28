@@ -65,3 +65,46 @@ mvn -Dtest=SomeTest test
 - 不用过度 mock 掩盖真实集成问题。
 - 不写依赖执行顺序的测试。
 - 不为了通过测试而降低业务断言。
+
+## A. Role
+
+- Role type: `PRIMARY_VALIDATION`
+- Primary responsibility: `JAVA_REGRESSION_PROOF`
+
+本 Skill 是 Java test design 与 regression proof 的 primary owner，独立证明业务不变量、失败路径与副作用保持正确。
+
+## B. Trigger
+
+- Positive：新增/修复 Java 测试、bug regression、golden case、Controller/Service/Repository integration proof、上线前 targeted regression。
+- Exclusion：生产实现本身、纯文档、纯前端、migration review 和高风险标准治理。
+
+## C. Input / Context
+
+读取待证明的业务契约、受影响实现、现有测试基线、fixture 与最小构建入口；只读取能解释 expected behavior 的数据和文档。
+
+## D. Required Actions
+
+1. Identify business invariants and regression intent.
+2. Enumerate success, failure and boundary cases.
+3. Cover idempotency, duplicate requests and illegal states when applicable.
+4. Assert DB, event, audit or outbox effects when applicable.
+5. Build deterministic golden cases or fixtures.
+6. Run targeted tests and report proof gaps.
+
+## E. Validation
+
+- Required：目标测试真实执行，断言可观测行为且不依赖顺序、真实生产服务、不可控时间/随机值。
+- Conditional：Repository/transaction 使用 integration or Testcontainers；HTTP contract 使用 MockMvc/WebMvcTest；高风险链路增加相应失败/并发路径。
+- Not applicable：未涉及模块的全仓测试、生产实现修改和固定 architecture/shadow scan。
+
+## F. Output Contract
+
+输出 invariants、case matrix、tests added/updated、命令与真实结果、determinism 处理、未覆盖风险。
+
+## G. Non-goals
+
+不修改生产实现，除非测试暴露明确 bug 且用户任务授权；不削弱断言、不用过度 mock 掩盖集成问题、不拥有普通 implementation 或高风险 standards。
+
+## H. Overlap / Ownership
+
+本 Skill 对 regression design/proof 是 `PRIMARY_OWNER`；`java-backend-maintenance` 仅识别需要哪些回归并拥有 production fix；高风险 constraint Skill 可补充风险类别但不设计全部测试。

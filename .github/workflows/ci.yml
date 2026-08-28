@@ -36,6 +36,17 @@ jobs:
             git show --check --pretty=format: HEAD
           fi
 
+      - name: Run blocking governance regression
+        shell: pwsh
+        run: |
+          ./scripts/docs/test-gate-release-ci-runs.ps1
+          ./scripts/docs/test-agent-workflow-fixtures.ps1
+          ./scripts/docs/test-current-authority-next-action.ps1
+          ./scripts/docs/test-governance-workflow-lifecycle.ps1
+          ./scripts/docs/test-gate-archive-manifest.ps1
+          ./scripts/docs/check-current-authority.ps1
+          ./scripts/docs/check-doc-links.ps1
+
   no-outbound-guard:
     name: No-outbound guard
     runs-on: ubuntu-latest

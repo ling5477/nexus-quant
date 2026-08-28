@@ -124,3 +124,46 @@ npm run test:e2e
 ```
 
 如果不能运行，必须说明原因和未验证风险。
+
+## A. Role
+
+- Role type: `PRIMARY_EXECUTION`
+- Primary responsibility: `FRONTEND_IMPLEMENTATION`
+
+本 Skill 是 React/TypeScript/Ant Design page/component implementation、API wiring、query/hooks/types 的 primary owner。
+
+## B. Trigger
+
+- Positive：在已知业务目标与 contract 下实现或修改页面、组件、路由、API module、types、TanStack Query hooks 或表单交互。
+- Exclusion：重新定义产品 IA/状态模型、完整视觉审查、纯 regression/bug isolation、后端/API/schema 设计。
+
+## C. Input / Context
+
+读取目标页面、相邻组件、现有 API/types/query conventions、路由与项目脚本，以及已提供的 UX/visual requirements；不加载无关页面或重做产品研究。
+
+## D. Required Actions
+
+1. Inspect the existing frontend structure and contract.
+2. Map API data to explicit types, query keys and hooks.
+3. Implement the smallest page/component change using current patterns.
+4. Realize supplied loading/error/empty/disabled/risk semantics.
+5. Add or update focused component/E2E coverage when behavior changes.
+6. Run affected type/build validation and report integration gaps.
+
+## E. Validation
+
+- Required：configured type/build gate 与 affected interaction smoke；API types、routes 和 query behavior 与现有 contract 一致。
+- Conditional：行为变化运行 targeted Playwright；纯组件/API wiring 按项目测试入口验证。
+- Not applicable：重新评审完整 IA、全站视觉 audit、未受影响的完整 E2E suite。
+
+## F. Output Contract
+
+输出 implemented page/components、API/query/type wiring、changed files、验证结果、未联调 contract 与 residual risk。
+
+## G. Non-goals
+
+不重新定义业务 IA、完整视觉系统或 QA strategy；不新增后端 API、修改 migration、切换 UI framework 或做无关重构。
+
+## H. Overlap / Ownership
+
+本 Skill 对 frontend implementation 是 `PRIMARY_OWNER`；产品 Skill 提供业务语义，视觉 Skill 提供 visual constraints，quality Skill 拥有 reproduction 与 regression proof。

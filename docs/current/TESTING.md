@@ -14546,3 +14546,66 @@ Known warning：两个fresh workspace的canonical builder首次均只返回gener
 | release/archive checker | PASS（通过） | `GATE_RELEASE_VALID`、`ARCHIVE_MANIFEST_COMPLETE`，errors=0 | 128 historical link warnings仍按既有policy非阻断 | 否 |
 
 本轮未运行controller、pilot、OKX、credential、生产DB或server action；未新增PLACE/CANCEL/transfer/withdraw。业务回归由exact-head CI 11/11真实执行并通过。Post-tag sync只更新current authority/entry/ledger，不修改tag-bound archive。
+
+## 2026-08-27 — GateAUDIT-0C Agent/Governance baseline remediation
+
+| Command / check | Result | Scope / environment | Known warning / RCA |
+| --- | --- | --- | --- |
+| `test-agent-workflow-fixtures.ps1` | PASS（通过）；12/12 | Windows PowerShell 5.1 + PowerShell 7.6.5 | `MISSING_SKILLS=0`、`UNDECLARED_SKILLS=0`、`TASK_ID_SPECIFIC_RUNTIME_RULES=0`、`CLAUDE_CURRENT_STAGE_CLAIMS=0` |
+| `test-current-authority-next-action.ps1` | PASS（通过）；10 checks | 5.1 + 7.6.5 | safety profile 与 review bypass negative fixture 通过 |
+| `test-governance-workflow-lifecycle.ps1` | PASS（通过）；20 checks | 5.1 + 7.6.5 | ordinary/high-risk/CI-failed/blocked/freeze/release/soak 通用生命周期 |
+| `test-gate-archive-manifest.ps1` | PASS（通过）；6 fixtures | 5.1 + 7.6.5 | future Gate default、mandatory/thin/unknown/reparse fail-closed、GateY historical profile |
+| `check-current-authority.ps1` | PASS（通过）；errors=0 | 5.1 + 7.6.5 | `GateAUDIT-0C=IMPLEMENTED|PENDING_REVIEW` |
+| `check-doc-links.ps1` | PASS（通过）；181 checked / 123 warnings / 0 errors | 5.1 + 7.6.5 | warnings 仅来自 append-only TESTING/WORKLOG 历史迁移路径 |
+| GateY archive regression | PASS（通过）；16 roles / 75 evidence / errors=0 | 5.1 + 7.6.5；remote/CI read-only | 首轮因过宽 placeholder regex 错拒 6 份历史正文；恢复冻结前精确语义后复验通过 |
+| GateY release regression | PASS（通过） | annotated tag、local/remote object、peeled target、branch ancestry、exact-head CI `33037514013` | 未创建/移动 tag，未触发发布写操作 |
+
+未运行 Maven、frontend、research、migration 或 deployment：本轮业务范围 diff 均为 0。未执行 commit、push、PR、tag、GitHub settings mutation、server、credential、production DB、LIVE、PLACE/CANCEL、transfer/withdraw。
+
+## 2026-08-27 — GateAUDIT-0C-R1 review findings remediation
+
+| Command / check | Result | Scope / environment | Evidence |
+| --- | --- | --- | --- |
+| `test-gate-release-ci-runs.ps1` | PASS（通过） | Windows PowerShell 5.1.26100.9168 + PowerShell 7.6.5 | split-run negative 拒绝、single-run positive 接受、array-valued properties 拒绝 |
+| `test-current-authority-next-action.ps1` | PASS（通过） | 5.1 + 7.6.5 | 7 positive actions、4 ambiguous actions、9 safety negatives、4 schema/contract negatives、5 whitespace negatives |
+| `test-agent-workflow-fixtures.ps1` | PASS（通过） | 隔离 `.agents.review-subject` 与最终 canonical `.agents`；5.1 + 7.6.5 | 12/12 positive、6/6 malicious mutation 以拒绝方式通过 |
+| lifecycle / archive fixture | PASS（通过） | 5.1 + 7.6.5 | lifecycle 20 checks；archive 6 fixtures |
+| `check-current-authority.ps1` | PASS（通过） | 5.1 + 7.6.5 | errors=0；final token 为 `CURRENT_AUTHORITY_VALID` |
+| `check-doc-links.ps1` | PASS（通过） | final canonical layout；5.1 + 7.6.5 | 181 checked / 123 historical warnings / 0 errors |
+| GateY Archive + Release | PASS（通过） | 5.1 + 7.6.5；Git/GitHub read-only | annotated/local/remote/peeled/ancestry/exact-head CI 保持；每次 `RELEASE_CI` 唯一绑定 databaseId=`33037514013` |
+| CI governance gate / CODEOWNERS | PASS（静态核对） | `.github/workflows/ci.yml`、`.github/CODEOWNERS` | 7 个 blocking governance commands；无 continue-on-error、新 secret 或权限提升；控制面 owner 覆盖补齐 |
+
+RCA：Windows PowerShell 5.1 将 top-level JSON array 作为一个 `Object[]` pipeline item，旧逻辑因此跨 run 聚合属性；修复后先显式枚举独立对象，再从同一对象读取 workflow/head/status/conclusion/databaseId。Archive 使用当前 host 的 named-parameter delegation，不再从 `pwsh` 降级到 `powershell`。
+
+边界：未加载候选 Skill 作为执行 instruction；未改 backend、frontend、research、deploy、业务 migration 或 `docs/gates/gate-y/**`；未执行 commit、push、PR、tag、GitHub settings mutation、server、credential、production DB、LIVE 或交易操作。`SUPPLY_CHAIN_ACTION_PINNING` 保留为后续 full CI security audit 的 P2。
+
+## 2026-08-28 — GateAUDIT-0C R2/R3 existing acceptance evidence materialization
+
+| Source event | Previously completed result | Durable evidence | Materialization statement |
+| --- | --- | --- | --- |
+| R2 independent review | `PASS / REVIEW_ACCEPTED / READY_TO_COMMIT` | [GATEAUDIT_0C_R2_INDEPENDENT_REVIEW_ACCEPTANCE.md](../audit/evidence/GATEAUDIT_0C_R2_INDEPENDENT_REVIEW_ACCEPTANCE.md) | Previously completed validation result, now materialized at this path; this task did not repeat the review or generate acceptance. |
+| R3 implementation/capability audit | `IMPLEMENTED / READY_FOR_CANONICAL_FINAL_REGRESSION` | [GATEAUDIT_0C_R3_SKILL_CAPABILITY_COMPLETION.md](../audit/evidence/GATEAUDIT_0C_R3_SKILL_CAPABILITY_COMPLETION.md) | Previously completed validation result, now materialized at this path; this is not an independent-review record. |
+
+本节只登记用户提供的既有执行结果及其 durable evidence 路径，不声称本次 materialization 重新运行了 R2/R3 tests。Current authority 未在本任务中前移。
+
+## 2026-08-28 — GateAUDIT-0C R3 final independent review acceptance evidence
+
+Evidence：[GATEAUDIT_0C_R3_FINAL_INDEPENDENT_REVIEW_ACCEPTANCE.md](../audit/evidence/GATEAUDIT_0C_R3_FINAL_INDEPENDENT_REVIEW_ACCEPTANCE.md)。
+
+以下结果来自已经完成的 `NQ-GATEAUDIT-0C-R3-SKILL-CAPABILITY-INDEPENDENT-REVIEW`，由本 materialization task 转录；本任务未重新执行独立 Review tests，也未生成 acceptance。
+
+| Source-review verification | Previously completed result |
+| --- | --- |
+| Final decision | `PASS / REVIEW_ACCEPTED / READY_TO_COMMIT` |
+| Positive fixtures | `12/12 PASS` |
+| Malicious mutations | `6/6 rejected` |
+| Previous capability mutations | `3/3 rejected` |
+| F1 capability mutations | `4/4 rejected`；A=`SKILL_REQUIRED_ACTIONS_EMPTY`，B=`DUPLICATED_PRIMARY_OWNERSHIP`，C=`MACHINE_SKILL_CONTRACT_DRIFT`，D=`CIRCULAR_SKILL_DEPENDENCIES` |
+| PowerShell parity | Windows PowerShell 5.1 `PASS`；PowerShell 7.6.5 `PASS`；`PS5.1_PS7_SEMANTIC_DIVERGENCE=0` |
+| Capability final state | `ACTIVE_SKILLS=12`；canonical Role/Primary=`12/12`；trigger-only/drift/duplicate/circular=`0/0/0/0` |
+| Runtime isolation | `TASK_ID_SPECIFIC_RUNTIME_RULES=0`；`GATE_SPECIFIC_ACTIVE_RUNTIME_RULES=0`；`ACTIVE_AUDIT_CHARTERS=1` |
+| R2 invariants | `R2_ACCEPTED_INVARIANTS_PRESERVED=YES` |
+| Candidate integrity | tracked/untracked mismatch=`0/0`；staged=`0`；TEMP fixture leftovers=`0` |
+| Findings | P0=`0`；P1=`0`；P2=`SUPPLY_CHAIN_ACTION_PINNING / DEFERRED_TO_FULL_CI_SECURITY_AUDIT`；P3=`0` |
+
+Materialization validation is recorded separately from the historical source-review results. Current authority remains `GateAUDIT-0C-R3 / IMPLEMENTED|PENDING_REVIEW / NONE / NOT_RUN` until the next authority reconciliation task.

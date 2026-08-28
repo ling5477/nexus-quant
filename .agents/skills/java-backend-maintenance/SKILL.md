@@ -76,3 +76,46 @@ mvn -f backend/pom.xml test
 - 不改变 API 契约，除非明确要求。
 - 不绕过状态机、幂等、审计、风控逻辑。
 - 不把临时修复写成不可测试逻辑。
+
+## A. Role
+
+- Role type: `PRIMARY_EXECUTION`
+- Primary responsibility: `JAVA_BACKEND_IMPLEMENTATION`
+
+本 Skill 是 Java/Spring production implementation 与 bug remediation 的 primary owner，负责从复现到最小实现和 affected validation 的闭环。
+
+## B. Trigger
+
+- Positive：普通 Java/Spring 功能、bug、Controller/Service/Repository、mapping、局部 transaction/state/wiring 修复。
+- Exclusion：纯测试设计、纯文档、纯前端、migration review、全仓架构治理；命中高风险 Java trigger 时由 Router额外选择 constraint Skill。
+
+## C. Input / Context
+
+读取最小复现、异常/请求证据、受影响模块的实现与调用方、对应测试及项目构建入口；只在风险命中时读取相关高风险标准。
+
+## D. Required Actions
+
+1. Reproduce or understand the requested behavior.
+2. Locate the responsible layer and contract.
+3. Establish the root cause.
+4. Implement the smallest coherent production change.
+5. Identify required regression coverage.
+6. Run affected validation and review the final diff.
+
+## E. Validation
+
+- Required：最小复现或目标测试、受影响 Maven module test、公开契约与失败路径检查。
+- Conditional：transaction/concurrency/integration、ArchUnit 或其他风险验证仅在 affected scope 需要时增加。
+- Not applicable：与改动无关的全仓 Maven、完整测试战略和固定 shadow scan。
+
+## F. Output Contract
+
+输出 root cause、changed production files、行为/契约变化、required regression、执行命令与结果、残余风险和回滚。
+
+## G. Non-goals
+
+不拥有完整测试战略、高风险 Java standards、全仓 architecture governance；不顺手重构、升级依赖或改变无关 API。
+
+## H. Overlap / Ownership
+
+本 Skill 对 Java production implementation 是 `PRIMARY_OWNER`；`java-backend-regression-tests` 对如何设计 regression proof 是 `PRIMARY_OWNER`；`nq-java-engineering-standard` 仅在高风险触发时提供 constraints。

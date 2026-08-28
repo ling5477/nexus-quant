@@ -58,3 +58,46 @@ argument-hint: "[ddl, migration, schema, or table]"
 - 不为了一次页面需求随意加表。
 - 不把审计、幂等、追踪字段省略。
 - 不在未评估影响的情况下修改历史字段语义。
+
+## A. Role
+
+- Role type: `PRIMARY_VALIDATION`
+- Primary responsibility: `DB_MIGRATION_REVIEW`
+
+本 Skill 是 PostgreSQL schema 与 forward-only migration correctness/recovery review 的 primary owner。
+
+## B. Trigger
+
+- Positive：DDL、Flyway/Liquibase migration、schema/index/constraint/comment、backfill 或兼容性评审。
+- Exclusion：Java implementation、普通 Repository bug、production migration execution、真实数据库写入和非 schema 数据处理脚本。
+
+## C. Input / Context
+
+读取待审 migration/DDL、当前 schema 事实、相关查询与应用兼容点、migration tool 配置及可用的本地/测试 PostgreSQL 验证入口；不得连接生产库。
+
+## D. Required Actions
+
+1. Confirm forward-only ordering and historical migration immutability.
+2. Review DDL types, defaults, nullability, constraints, indexes and comments.
+3. Evaluate lock duration, table size assumptions and compatibility window.
+4. Evaluate backfill batching, rate limiting, restartability and observability.
+5. Determine rollback/recovery implications without rewriting history.
+6. Execute or specify scoped PostgreSQL validation and report findings by severity.
+
+## E. Validation
+
+- Required：migration syntax/ordering、forward-only、historical immutability、DDL/constraint/index/comment consistency。
+- Conditional：在项目提供的本地/测试 PostgreSQL 上执行 migration + targeted DB tests；大表变更验证锁影响和分批 backfill；Liquibase/Flyway 使用项目官方入口。
+- Not applicable：production execution、与 schema 无关的 Java/前端测试和真实数据回填。
+
+## F. Output Contract
+
+输出结论、P0–P3 findings、forward/history 状态、DDL/locking/backfill/compatibility/recovery 结果、验证 SQL/命令、未验证项与最小修复。
+
+## G. Non-goals
+
+不拥有 Java implementation，不执行 production migration，不修改历史 migration，不把 rollback 描述为未经验证的 destructive down migration。
+
+## H. Overlap / Ownership
+
+本 Skill 对 schema/migration review 是 `PRIMARY_OWNER`；应用 Skill 对兼容代码是 `PRIMARY_OWNER`，Python ops 仅可实现经批准的 helper/backfill tooling。

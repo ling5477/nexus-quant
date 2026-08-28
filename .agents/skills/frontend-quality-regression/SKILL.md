@@ -94,3 +94,46 @@ npx playwright test <spec> --project=chromium
 - 不因为测试失败就降低断言价值。
 - 不删除关键状态或错误提示来让测试通过。
 - 不扩大到后端、DB、API 变更，除非用户明确要求。
+
+## A. Role
+
+- Role type: `PRIMARY_VALIDATION`
+- Primary responsibility: `FRONTEND_REGRESSION_PROOF`
+
+本 Skill 是 frontend reproduction、bug isolation、type/build regression、Playwright 与 behavioral validation 的 primary owner。
+
+## B. Trigger
+
+- Positive：前端 bug、白屏/路由/表单/API mapping 行为异常、构建或类型失败、Playwright regression、提交前 targeted QA。
+- Exclusion：从零设计业务页面、重新定义 IA/状态模型、纯视觉 polish、普通功能实现没有验证子任务时。
+
+## C. Input / Context
+
+读取明确复现路径、受影响 route/component/hook/test、浏览器或构建错误、稳定 fixture 和项目测试入口；不遍历无关页面或更改产品目标。
+
+## D. Required Actions
+
+1. Reproduce the issue or establish a deterministic failing proof.
+2. Isolate the responsible route/API/hook/state/component/style/test layer.
+3. Determine root cause and the smallest authorized fix scope.
+4. Add or update focused regression coverage.
+5. Run type/build and applicable Playwright validation.
+6. Report evidence, remaining coverage gaps and regression risk.
+
+## E. Validation
+
+- Required：问题从 failing evidence 到 passing evidence闭环，configured type/build gate 通过。
+- Conditional：用户可见行为运行 targeted Playwright；纯 style regression 做可复验视觉/响应式检查；baseline failure 单独归因。
+- Not applicable：重新设计业务流程、全站 visual polish、后端或 DB validation。
+
+## F. Output Contract
+
+输出 reproduction、root cause、fix scope、tests、命令/退出码、before/after evidence、未覆盖风险。
+
+## G. Non-goals
+
+不重新设计业务页面、IA 或业务文案，不承担纯视觉 polish，不以大重构或削弱断言制造通过。
+
+## H. Overlap / Ownership
+
+本 Skill 对 frontend regression proof 是 `PRIMARY_OWNER`；builder 对 production implementation、product Skill 对 UX、visual Skill 对样式体系分别保持 primary ownership。

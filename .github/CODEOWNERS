@@ -1,12 +1,14 @@
-# CODEOWNERS
-# 说明：
-# - 关键冻结目录（docs/gates/**）的任何修改都必须由 Owner 审核
-# - 关键入口文件（AGENTS.md、docs/current/**）建议同样受控
-# 使用方式：
-# - 将 @YOUR_GITHUB_USERNAME 替换成你的 GitHub 用户名
-# - 或替换成组织团队：@org/team
-
-/docs/gates/ @YOUR_GITHUB_USERNAME
-/docs/current/ @YOUR_GITHUB_USERNAME
-/AGENTS.md @YOUR_GITHUB_USERNAME
-/docs/README.md @YOUR_GITHUB_USERNAME
+# Agent/Governance、current authority、frozen evidence、CI 与 migration 变更必须由仓库 Owner 复核。
+/AGENTS.md @ling5477
+/CLAUDE.md @ling5477
+/.agents/ @ling5477
+/scripts/docs/ @ling5477
+/docs/current/ @ling5477
+/docs/gates/ @ling5477
+/.github/workflows/ @ling5477
+/backend/**/db/migration/ @ling5477
+/.github/CODEOWNERS @ling5477
+/.github/pull_request_template.md @ling5477
+/docs/audit/ @ling5477
+/docs/DOC_RULES.md @ling5477
+/docs/README.md @ling5477

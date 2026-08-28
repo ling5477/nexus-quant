@@ -1,58 +1,48 @@
 # Current Fact Source Index
 
-本索引定义 authority 分层，不复制独立 current Gate 判定。当前阶段必须解析 [STATUS.md](STATUS.md) 顶部唯一的 `nq-current-authority` 区块；任何冲突必须输出 `BLOCKED / CURRENT_AUTHORITY_CONFLICT`。
+本索引定义 current authority 分层，不复制动态阶段值。
 
-## 1. NQ Current Authority
+## 1. Current Authority
 
-1. [STATUS.md](STATUS.md)：唯一阶段状态 authority。
-2. [ROADMAP.md](ROADMAP.md)：只定义下一允许动作，不得覆盖 STATUS。
-3. [README.md](README.md) 与 root `README.md`：入口、短摘要和 archive pointer。
-4. [GOVERNANCE_WORKFLOW.md](GOVERNANCE_WORKFLOW.md)：checker、lifecycle、evidence 与 release contract；不决定 current Gate。
+1. [STATUS.md](STATUS.md)：唯一 machine current authority。
+2. Git、代码、测试与 CI：能力与验证事实。
+3. [ROADMAP.md](ROADMAP.md)：下一允许动作，不覆盖 STATUS。
+4. [GOVERNANCE_WORKFLOW.md](GOVERNANCE_WORKFLOW.md)：通用 lifecycle/checker 说明，不决定 current Gate。
 
-## 2. NQ Capability Authority
+冲突时输出 `BLOCKED / CURRENT_AUTHORITY_CONFLICT`；历史材料不得覆盖 current authority。
 
-- [API.md](API.md)：已实现 HTTP API 能力与边界。
-- [DB_SCHEMA.md](DB_SCHEMA.md)：已落地 Flyway schema。
-- [ARCHITECTURE.md](ARCHITECTURE.md) / [MODULES.md](MODULES.md)：当前架构与模块职责。
+## 2. Capability Owners
+
+- [API.md](API.md)：已实现 HTTP API 与边界。
+- [DB_SCHEMA.md](DB_SCHEMA.md)：已落地 schema/migration。
+- [ARCHITECTURE.md](ARCHITECTURE.md) / [MODULES.md](MODULES.md)：架构与模块职责。
 - [RUNBOOK.md](RUNBOOK.md)：当前运行手册。
-- [FRONTEND_DESIGN_SYSTEM.md](FRONTEND_DESIGN_SYSTEM.md)：当前设计系统参考。
+- [FRONTEND_DESIGN_SYSTEM.md](FRONTEND_DESIGN_SYSTEM.md)：前端设计系统参考。
 
-能力文档与阶段状态冲突时，先以代码和实际验证确定能力事实，再以 `STATUS.md` 判定 current Gate。
+## 3. Evidence Ledgers
 
-## 3. Evidence Ledger
+- [TESTING.md](TESTING.md)：append-only 验证证据。
+- [WORKLOG.md](WORKLOG.md)：append-only 工作证据。
 
-- [TESTING.md](TESTING.md)：append-only validation evidence ledger。
-- [WORKLOG.md](WORKLOG.md)：append-only work evidence ledger。
+旧条目只表示历史执行，不参与 current stage 判定。
 
-历史记录中的旧路径与旧状态不参与 current 阶段判定，也不得被重写为全部首轮通过。
+## 4. Agent / Governance
 
-## 4. NQ-DH Integration Boundary
+- 根 `AGENTS.md`：仓库级入口。
+- `.agents/README.md` 与 `.agents/skills/**`：唯一 active Skill 集合。
+- `scripts/docs/agent-workflow-policy.json`：machine routing policy。
+- `scripts/docs/governance-workflow-contract.json`：machine lifecycle/authority/evidence/release contract。
+- [Repository Audit Bootstrap Charter](../audit/AUDIT_BOOTSTRAP_CHARTER.md)：由 machine policy 声明的全仓审计中立入口。
+- [GateAUDIT-0C R2 independent review acceptance evidence](../audit/evidence/GATEAUDIT_0C_R2_INDEPENDENT_REVIEW_ACCEPTANCE.md)：GateAUDIT-0C execution/review evidence，分类为 `HISTORICAL_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`，不属于 current machine authority。
+- [GateAUDIT-0C R3 Skill capability completion evidence](../audit/evidence/GATEAUDIT_0C_R3_SKILL_CAPABILITY_COMPLETION.md)：GateAUDIT-0C implementation/capability evidence，分类为 `HISTORICAL_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`，不是 independent review，不属于 current machine authority。
+- [GateAUDIT-0C R3 final independent review evidence](../audit/evidence/GATEAUDIT_0C_R3_FINAL_INDEPENDENT_REVIEW_ACCEPTANCE.md)：GateAUDIT-0C R3 final independent review evidence，分类为 `HISTORICAL_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`，不属于 current machine authority。
 
-- 本仓库只保存 NQ 侧 contract/mock/test-support 与 no-real boundary。
-- Integration runtime 状态只读取 `STATUS.md`；NQ-only 任务不声明 DH current authority。
-- Integration 历史文档不能推导为 real HTTP、real provider、LIVE 或交易授权。
+`.agents/history/**`、`.agents.audit-subject/**`、旧 Skill/checker 自我声明均为 non-authoritative audit/history input。
 
-## 5. Gate Archive
+## 5. Frozen Evidence
 
-- GateY strict archive：[../gates/gate-y/README.md](../gates/gate-y/README.md)，`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`，tag=`nq-gatey-freeze`，tag object=`c84f412e1da652e85158c5478997945d3065e575`，exact-head CI run=`33037514013 / completed / success / 11 jobs`。它保存 GateY plan、两份 work order、全部 PASS/FAIL/BLOCKED/retry/remediation task evidence、V43～V46、deployment 与 minimal live pilot 证据。
-- GateX durable archive：[../gates/gate-x/README.md](../gates/gate-x/README.md)，tag=`nq-gatex-freeze`。
-- GateW durable archive：[../gates/gate-w/README.md](../gates/gate-w/README.md)，tag=`nq-gatew-freeze`。
-- 其他已完成 Gate：`docs/gates/gate-*`。
+- GateY：[../gates/gate-y/README.md](../gates/gate-y/README.md)。
+- 其他 frozen Gate：`docs/gates/gate-*`。
+- 通用历史：`docs/archive/**` 与 Gate 内 `source/**`。
 
-`docs/gates/**` 与 `docs/archive/**` 都是 historical evidence，不覆盖 `docs/current/STATUS.md`。GateY `source/task-evidence/**` 是 approved non-role evidence，不参与 archive role 计数。
-
-## 6. Historical Evidence
-
-- `docs/archive/**`：通用历史归档。
-- `docs/gates/*/source/**`：从 current 迁出的 durable process/task evidence。
-- GateY archive 保留全部失败、阻断、retry、remediation、credential correction、trusted bootstrap、release reproducibility、operator authority、lease recovery、legacy bridge、真实订单与 reconciliation 历史。
-
-## 7. Allowed Residual
-
-- `GATEW_PLAN.md`、`GATEV_PLAN.md`：历史 compatibility residual；后续只在明确授权 archive move batch 中处理。
-- `TESTING.md`、`WORKLOG.md` 中的旧链接属于 append-only evidence；不得据此改变 current Gate。
-- `ORDER_VENUE_IDENTITY_MODEL_CONSISTENCY_RESIDUAL`：后续全仓审计检查 Order/ExecutionReceipt/Trade venue identity ownership；本 freeze 不修改生产事实或代码。
-
-## 8. Current cleanup result
-
-GateY process-oriented PLAN / WORK_ORDER / task evidence 已移入 `docs/gates/gate-y/`；`docs/current` 只保留 current authority、capability docs、evidence ledgers与下一路线。GateY archive 不依赖 current 历史 process copies 作为核心证据。
+这些内容只读追溯，不覆盖 `STATUS.md`，不得为 current 收口改写历史正文。

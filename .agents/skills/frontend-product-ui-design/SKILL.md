@@ -46,8 +46,8 @@ argument-hint: "[page or feature]"
 
 涉及 NexusQuant / Decision Hub 时默认遵守：
 
-- 必须显式展示环境：`PAPER` / `DEMO` / `REAL`。
-- `REAL` 相关操作必须比 `PAPER` 更强提示。
+- 必须显式展示 canonical 交易环境：`SIM` / `LIVE`；venue `DEMO` 仅作为映射为 `SIM` 的适配层信息。
+- `LIVE` 相关操作必须比 `SIM` 更强提示。
 - 风控拒绝、交易失败、心跳超时、调度失败、恢复失败必须醒目。
 - 启动、停止、恢复、重试、发布、撤单必须说明影响范围。
 - 详情中保留可追踪字段：`traceId`、`requestId`、`runId`、`orderId`、`strategyCode`、`paperRunId`。
@@ -100,3 +100,46 @@ argument-hint: "[page or feature]"
 - 异常和风险显眼。
 - 空态和错误态可操作。
 - 文案准确、克制、专业。
+
+## A. Role
+
+- Role type: `PRIMARY_EXECUTION`
+- Primary responsibility: `BUSINESS_UX_DESIGN`
+
+本 Skill 是 business UX、information architecture、state semantics、operation flow、risk communication 与 business copy 的 primary owner。
+
+## B. Trigger
+
+- Positive：需要定义或修正页面业务目标、信息优先级、状态/权限/风险语义、操作闭环或业务文案。
+- Exclusion：已有 IA 下的纯 React/Ant Design 实现、纯视觉样式/动效 polish、构建/Playwright regression、后端 contract 设计。
+
+## C. Input / Context
+
+读取用户目标、业务对象与权限、后端已存在契约、当前页面/流程及可验证业务状态；不预读字体、色板、spacing token 或整个组件库。
+
+## D. Required Actions
+
+1. Define the page business goal and user decision.
+2. Model information architecture and state semantics.
+3. Define allowed actions, prerequisites, consequences and feedback loop.
+4. Cover loading, empty, error, disabled, stale, permission and risk states.
+5. Produce business copy and risk communication.
+6. State UX acceptance criteria for implementation and QA owners.
+
+## E. Validation
+
+- Required：每个关键状态与操作有来源、入口、结果和失败反馈，业务文案不掩盖风险或权限。
+- Conditional：对照现有 API/权限 contract；对危险操作验证确认语义和影响范围。
+- Not applicable：具体字体、颜色、间距、动效实现、frontend build 与 Playwright 执行。
+
+## F. Output Contract
+
+输出业务目标、IA、state/action model、风险与权限语义、business copy、acceptance criteria 和未决产品问题；组件名仅作语义建议，不构成视觉实现规范。
+
+## G. Non-goals
+
+不拥有 typography、color、spacing、animation 或 visual polish 实现；不实现 React/API wiring，不拥有 QA，也不新增后端能力。
+
+## H. Overlap / Ownership
+
+本 Skill 对 business UX 是 `PRIMARY_OWNER`；`frontend-antd-page-builder` 对实现、`ui-visual-system-polish` 对视觉系统、`frontend-quality-regression` 对行为验证分别是各自 `PRIMARY_OWNER`。

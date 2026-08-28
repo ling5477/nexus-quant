@@ -62,3 +62,46 @@ description: 编写 Python 批处理、数据修复、导入导出、离线清�
 - 不默认执行破坏性操作。
 - 不吞异常。
 - 不输出敏感信息。
+
+## A. Role
+
+- Role type: `PRIMARY_EXECUTION`
+- Primary responsibility: `PYTHON_OPERATIONAL_SCRIPTING`
+
+本 Skill 是 standalone/one-off Python scripts、helper/migration tooling 与小型 operational processing 的 primary owner。
+
+## B. Trigger
+
+- Positive：单一独立脚本、一次性处理、临时诊断、简单转换、helper/migration script、非 package 的 temporary CLI。
+- Exclusion：长期维护 package/library/service、packaged CLI、多模块工程、正式 research/backtest/data framework 或 application architecture。
+
+## C. Input / Context
+
+读取输入格式样例、目标输出、副作用边界、运行入口和相关少量 `.py`/tests；只有外部调用存在时读取对应 contract，不扫描完整 Python 工程。
+
+## D. Required Actions
+
+1. Classify the work as temporary/standalone rather than maintained project work.
+2. Define input, output, side effects and safe rerun behavior.
+3. Implement the smallest parameterized script or helper.
+4. Add input validation, bounded processing and dry-run/confirmation where needed.
+5. Add focused pytest coverage or executable fixtures.
+6. Run the script in a safe fixture and report usage and limits.
+
+## E. Validation
+
+- Required：正常、空/非法输入与重复执行或明确 non-idempotent behavior；无真实生产副作用。
+- Conditional：大文件验证 streaming/batching；外部 API 验证 timeout/retry/rate limit with mocks；写操作验证 dry-run。
+- Not applicable：package build、release、完整 typing/lint matrix，除非项目已有且目标脚本受其约束。
+
+## F. Output Contract
+
+输出脚本用途、调用命令、参数、输入/输出、副作用与安全边界、测试结果、已知限制。
+
+## G. Non-goals
+
+不创建或维护正式 package/service/framework，不静默把 temporary CLI 演变为 packaged CLI，不默认执行破坏性或生产操作。
+
+## H. Overlap / Ownership
+
+本 Skill 对 temporary/helper CLI 与 scripts 是 `PRIMARY_OWNER`；`python-project-development` 对 maintained packaged CLI、package/library/service 和正式 research/data 工程是 `PRIMARY_OWNER`。

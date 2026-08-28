@@ -6,8 +6,27 @@ Historical source 和 append-only ledger 断链降级为 warning；current/core 
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)]
-    [string[]] $Roots
+    [string[]] $Roots = @(
+        'AGENTS.md',
+        'CLAUDE.md',
+        '.agents',
+        'docs/README.md',
+        'docs/DOC_RULES.md',
+        'docs/audit',
+        'docs/current/README.md',
+        'docs/current/STATUS.md',
+        'docs/current/ROADMAP.md',
+        'docs/current/FACT_SOURCE_INDEX.md',
+        'docs/current/GOVERNANCE_WORKFLOW.md',
+        'docs/current/ARCHITECTURE.md',
+        'docs/current/MODULES.md',
+        'docs/current/API.md',
+        'docs/current/DB_SCHEMA.md',
+        'docs/current/RUNBOOK.md',
+        'docs/current/FRONTEND_DESIGN_SYSTEM.md',
+        'docs/current/TESTING.md',
+        'docs/current/WORKLOG.md'
+    )
 )
 
 Set-StrictMode -Version Latest

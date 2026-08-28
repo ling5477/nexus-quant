@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "2.0.0",
   "legacyThroughGate": "gate-t",
   "mandatoryRoles": [
     "archive-entry",
@@ -11,128 +11,53 @@
     "boundary-statement",
     "known-limitations"
   ],
-  "conditionalRoles": [
-    "backend-db-evidence",
-    "api-evidence",
-    "frontend-evidence",
-    "python-boundary-evidence",
-    "runtime-scheduling-evidence"
-  ],
-  "acceptedAliases": {
-    "archive-entry": [
-      "(^|/)README\\.md$"
+  "defaultStrictPolicy": {
+    "conditionalRoles": [
+      "backend-db-evidence",
+      "api-evidence",
+      "frontend-evidence",
+      "python-boundary-evidence",
+      "runtime-scheduling-evidence"
     ],
-    "freeze-closeout": [
-      "FREEZE_CLOSEOUT\\.md$",
-      "RELEASE_TAG_AND_ARCHIVE\\.md$",
-      "FINAL_CLOSEOUT\\.md$"
-    ],
-    "freeze-readiness": [
-      "FREEZE_READINESS(_REVIEW)?\\.md$",
-      "FREEZE_REVIEW\\.md$"
-    ],
-    "plan-or-reconstructed-baseline": [
-      "(^|/)[^/]*PLAN\\.md$",
-      "IMPLEMENTATION_BASELINE\\.md$",
-      "RECONSTRUCTED_BASELINE\\.md$"
-    ],
-    "batch-evidence-matrix": [
-      "BATCH_[0-9_]+_EVIDENCE_MATRIX\\.md$",
-      "EVIDENCE_MATRIX\\.md$"
-    ],
-    "testing-evidence": [
-      "TESTING_EVIDENCE_SUMMARY\\.md$",
-      "TESTING_AND_CI_SUMMARY\\.md$",
-      "TEST.*SUMMARY\\.md$",
-      "CI_EVIDENCE.*\\.md$"
-    ],
-    "boundary-statement": [
-      "BOUNDARY_STATEMENT\\.md$"
-    ],
-    "known-limitations": [
-      "KNOWN_LIMITATIONS(_AND_RESIDUALS)?\\.md$",
-      "LIMITATIONS.*RESIDUALS\\.md$"
-    ],
-    "backend-db-evidence": [
-      "BACKEND.*EVIDENCE.*\\.md$",
-      "DATABASE_EVIDENCE\\.md$",
-      "DB_MIGRATION_EVIDENCE.*\\.md$"
-    ],
-    "api-evidence": [
-      "API.*EVIDENCE.*\\.md$"
-    ],
-    "frontend-evidence": [
-      "FRONTEND.*EVIDENCE.*\\.md$"
-    ],
-    "python-boundary-evidence": [
-      "PYTHON.*(EVIDENCE|BOUNDARY).*\\.md$"
-    ],
-    "runtime-scheduling-evidence": [
-      "RUNTIME.*(EVIDENCE|BOUNDARY|READINESS|SUMMARY).*\\.md$",
-      "SCHEDULING.*(EVIDENCE|BOUNDARY|READINESS|SUMMARY).*\\.md$"
-    ],
-    "deployment-evidence": [
-      "DEPLOYMENT_EVIDENCE_SUMMARY\\.md$"
-    ],
-    "live-pilot-evidence": [
-      "MINIMAL_LIVE_PILOT_EVIDENCE_SUMMARY\\.md$"
-    ],
-    "live-session-work-order": [
-      "GATEY_1_LIVE_SESSION_DATA_MODEL_WORK_ORDER\\.md$"
-    ],
-    "micro-live-work-order": [
-      "GATEY_6_EXPLICIT_MICRO_LIVE_AUTHORIZATION_WORK_ORDER\\.md$"
-    ]
+    "allowPreTagArchiveState": true
   },
-  "strictGateOverrides": {
+  "acceptedAliases": {
+    "archive-entry": ["(^|/)README\\.md$"],
+    "freeze-closeout": ["FREEZE_CLOSEOUT\\.md$", "RELEASE_TAG_AND_ARCHIVE\\.md$", "FINAL_CLOSEOUT\\.md$"],
+    "freeze-readiness": ["FREEZE_READINESS(_REVIEW)?\\.md$", "FREEZE_REVIEW\\.md$"],
+    "plan-or-reconstructed-baseline": ["(^|/)[^/]*PLAN\\.md$", "IMPLEMENTATION_BASELINE\\.md$", "RECONSTRUCTED_BASELINE\\.md$"],
+    "batch-evidence-matrix": ["BATCH_[0-9_]+_EVIDENCE_MATRIX\\.md$", "EVIDENCE_MATRIX\\.md$"],
+    "testing-evidence": ["TESTING_EVIDENCE_SUMMARY\\.md$", "TESTING_AND_CI_SUMMARY\\.md$", "TEST.*SUMMARY\\.md$", "CI_EVIDENCE.*\\.md$"],
+    "boundary-statement": ["BOUNDARY_STATEMENT\\.md$"],
+    "known-limitations": ["KNOWN_LIMITATIONS(_AND_RESIDUALS)?\\.md$", "LIMITATIONS.*RESIDUALS\\.md$"],
+    "backend-db-evidence": ["BACKEND.*EVIDENCE.*\\.md$", "DATABASE_EVIDENCE\\.md$", "DB_MIGRATION_EVIDENCE.*\\.md$"],
+    "api-evidence": ["API.*EVIDENCE.*\\.md$"],
+    "frontend-evidence": ["FRONTEND.*EVIDENCE.*\\.md$"],
+    "python-boundary-evidence": ["PYTHON.*(EVIDENCE|BOUNDARY).*\\.md$"],
+    "runtime-scheduling-evidence": ["RUNTIME.*(EVIDENCE|BOUNDARY|READINESS|SUMMARY).*\\.md$", "SCHEDULING.*(EVIDENCE|BOUNDARY|READINESS|SUMMARY).*\\.md$"],
+    "deployment-evidence": ["DEPLOYMENT_EVIDENCE_SUMMARY\\.md$"],
+    "live-pilot-evidence": ["MINIMAL_LIVE_PILOT_EVIDENCE_SUMMARY\\.md$"],
+    "live-session-work-order": ["GATEY_1_LIVE_SESSION_DATA_MODEL_WORK_ORDER\\.md$"],
+    "micro-live-work-order": ["GATEY_6_EXPLICIT_MICRO_LIVE_AUTHORIZATION_WORK_ORDER\\.md$"]
+  },
+  "historicalProfiles": {
     "gate-u": {
-      "expectedTag": "nq-gateu-freeze",
-      "expectedTagTarget": "48ef0cdaa97099ae1ff5a66a8c0caeb07aa11fab",
-      "conditionalRoles": [
-        "backend-db-evidence",
-        "api-evidence",
-        "frontend-evidence",
-        "python-boundary-evidence",
-        "runtime-scheduling-evidence"
-      ],
+      "conditionalRoles": ["backend-db-evidence", "api-evidence", "frontend-evidence", "python-boundary-evidence", "runtime-scheduling-evidence"],
       "allowPreTagArchiveState": true
     },
     "gate-v": {
-      "expectedTag": "nq-gatev-freeze",
-      "expectedTagTarget": null,
-      "conditionalRoles": [
-        "backend-db-evidence",
-        "api-evidence",
-        "frontend-evidence",
-        "runtime-scheduling-evidence"
-      ],
+      "conditionalRoles": ["backend-db-evidence", "api-evidence", "frontend-evidence", "runtime-scheduling-evidence"],
       "allowPreTagArchiveState": true
     },
     "gate-w": {
-      "expectedTag": "nq-gatew-freeze",
-      "expectedTagTarget": null,
-      "conditionalRoles": [
-        "backend-db-evidence",
-        "api-evidence",
-        "frontend-evidence",
-        "runtime-scheduling-evidence"
-      ],
+      "conditionalRoles": ["backend-db-evidence", "api-evidence", "frontend-evidence", "runtime-scheduling-evidence"],
       "allowPreTagArchiveState": true
     },
     "gate-x": {
-      "expectedTag": "nq-gatex-freeze",
-      "expectedTagTarget": null,
-      "conditionalRoles": [
-        "backend-db-evidence",
-        "api-evidence",
-        "frontend-evidence",
-        "runtime-scheduling-evidence"
-      ],
+      "conditionalRoles": ["backend-db-evidence", "api-evidence", "frontend-evidence", "runtime-scheduling-evidence"],
       "allowPreTagArchiveState": true
     },
     "gate-y": {
-      "expectedTag": "nq-gatey-freeze",
-      "expectedTagTarget": null,
       "conditionalRoles": [
         "backend-db-evidence",
         "api-evidence",

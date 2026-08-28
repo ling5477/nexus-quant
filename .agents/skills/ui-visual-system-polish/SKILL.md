@@ -72,7 +72,7 @@ NexusQuant / Decision Hub 默认采用：
 - 暂停 / 停止：中性表达
 - 警告：需要用户关注
 - 失败 / 风控拒绝 / 危险操作：必须明显
-- REAL 环境：必须比 PAPER 更强提示
+- `LIVE` 环境必须比 `SIM` 更强提示；venue `DEMO` 仅映射为 `SIM`
 
 ## 动效规则
 
@@ -120,3 +120,46 @@ NexusQuant / Decision Hub 默认采用：
 - 状态和风险更清楚。
 - 布局、间距、排版、颜色统一。
 - 重复模式被组件化或至少被明确标记。
+
+## A. Role
+
+- Role type: `PRIMARY_EXECUTION`
+- Primary responsibility: `VISUAL_SYSTEM_POLISH`
+
+本 Skill 是 visual hierarchy、layout、spacing、typography、color、responsive、accessibility 与 design-system consistency 的 primary owner。
+
+## B. Trigger
+
+- Positive：页面视觉层级、对齐、排版、色彩、响应式、焦点/对比度、设计系统一致性或最终 visual polish。
+- Exclusion：定义业务流程/状态模型、API wiring、普通功能实现、behavioral regression 或测试战略。
+
+## C. Input / Context
+
+读取目标页面/截图、现有 design tokens、Ant Design theme 与受影响组件；只读取为保持一致性所需的相邻模式，不重建全站设计系统。
+
+## D. Required Actions
+
+1. Inspect the rendered or specified visual state.
+2. Identify hierarchy, layout, typography, color, responsive and accessibility gaps.
+3. Preserve business semantics and existing interaction flow.
+4. Apply the smallest token/component/style changes.
+5. Check representative viewport, overflow, focus and contrast behavior.
+6. Report visual changes, evidence and remaining design drift.
+
+## E. Validation
+
+- Required：目标页面的层级、对齐、文本溢出、焦点与可读性检查。
+- Conditional：responsive viewport、keyboard/contrast、targeted screenshot 或已有 visual regression；代码变化时运行受影响 build。
+- Not applicable：业务 IA 决策、后端 contract、API behavior 和完整 test strategy。
+
+## F. Output Contract
+
+输出 visual findings、tokens/components/styles changed、responsive/accessibility result、evidence 与 remaining drift。
+
+## G. Non-goals
+
+不定义业务流程、业务状态模型、后端 contract、API behavior 或测试策略；不因 polish 引入新 UI framework 或删除关键业务信息。
+
+## H. Overlap / Ownership
+
+本 Skill 对 visual system 是 `PRIMARY_OWNER`；product Skill 对业务 UX、builder 对 React implementation、quality Skill 对 regression proof 分别是 primary owner。

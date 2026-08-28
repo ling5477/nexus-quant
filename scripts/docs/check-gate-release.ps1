@@ -163,15 +163,18 @@ if ($null -ne $contract) {
                 # Do not echo provider/auth output; an exit code is sufficient and avoids accidental credential disclosure.
                 Add-ReleaseError 'RELEASE_CI_NOT_GREEN' "GH_RUN_LIST_FAILED exit=$exitCode"
             } else {
-                try { $runs = @($json | ConvertFrom-Json) } catch { $runs = @() }
-                $green = @($runs | Where-Object {
-                    $_.workflowName -eq [string]$contract.release.workflowName -and
-                    $_.headSha -eq $ExpectedCommit -and $_.status -eq 'completed' -and $_.conclusion -eq 'success'
-                } | Sort-Object databaseId -Descending | Select-Object -First 1)
-                if ($green.Count -eq 0) {
+                $jsonText = (($json | ForEach-Object { $_.ToString() }) -join "`n")
+                try {
+                    $runs = @(ConvertFrom-GovernanceJsonArray $jsonText)
+                    $green = Select-GovernanceReleaseCiRun $runs ([string]$contract.release.workflowName) $ExpectedCommit
+                } catch {
+                    Add-ReleaseError 'RELEASE_CI_NOT_GREEN' 'GH_RUN_JSON_INVALID'
+                    $green = $null
+                }
+                if ($null -eq $green) {
                     Add-ReleaseError 'RELEASE_CI_NOT_GREEN' "EXACT_HEAD_CI_NOT_GREEN headSha=$ExpectedCommit"
                 } else {
-                    Write-Output "RELEASE_CI run=$($green[0].databaseId) headSha=$ExpectedCommit status=completed conclusion=success"
+                    Write-Output "RELEASE_CI run=$($green.databaseId) headSha=$ExpectedCommit status=completed conclusion=success"
                 }
             }
         }
