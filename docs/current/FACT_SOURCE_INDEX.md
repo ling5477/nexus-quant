@@ -36,6 +36,7 @@
 - [GateAUDIT-0C R2 independent review acceptance evidence](../audit/evidence/GATEAUDIT_0C_R2_INDEPENDENT_REVIEW_ACCEPTANCE.md)：GateAUDIT-0C execution/review evidence，分类为 `HISTORICAL_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`，不属于 current machine authority。
 - [GateAUDIT-0C R3 Skill capability completion evidence](../audit/evidence/GATEAUDIT_0C_R3_SKILL_CAPABILITY_COMPLETION.md)：GateAUDIT-0C implementation/capability evidence，分类为 `HISTORICAL_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`，不是 independent review，不属于 current machine authority。
 - [GateAUDIT-0C R3 final independent review evidence](../audit/evidence/GATEAUDIT_0C_R3_FINAL_INDEPENDENT_REVIEW_ACCEPTANCE.md)：GateAUDIT-0C R3 final independent review evidence，分类为 `HISTORICAL_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`，不属于 current machine authority。
+- [GateAUDIT-0C CI-failure remediation independent review evidence](../audit/evidence/GATEAUDIT_0C_R3_CI_FAILURE_REMEDIATION_REVIEW_ACCEPTANCE.md)：GateAUDIT-0C CI-failure remediation independent review evidence，分类为 `HISTORICAL_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`，不属于 current machine authority。
 
 `.agents/history/**`、`.agents.audit-subject/**`、旧 Skill/checker 自我声明均为 non-authoritative audit/history input。
 

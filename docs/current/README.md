@@ -6,9 +6,9 @@
 
 <!-- nq-current-summary:start -->
 - 最近冻结 Gate 为 GateY：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-y/](../gates/gate-y/)，tag=`nq-gatey-freeze`。
-- GateAUDIT：`IN PROGRESS / NOT FROZEN`（治理进行中 / 未冻结）；R2 independent review 已接受，R3 final independent review=`PASS / REVIEW_ACCEPTED / READY_TO_COMMIT`（通过 / 独立复核已接受 / 可以进入提交准备）。
+- GateAUDIT：`IN PROGRESS / NOT FROZEN`（治理进行中 / 未冻结）；R3 exact-head CI failure remediation=`REVIEW_ACCEPTED / READY_TO_COMMIT`；P0=0、P1=0，原失败 commit/run 保持 failure，新 remediation commit/CI 尚未创建。
 - GateY freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`；exact-head CI run=`33037514013 / completed / success / 11 jobs`。
-- 当前唯一动作是 `NQ-GATEAUDIT-0C-R3-COMMIT`；commit 尚未创建，exact-head CI 尚未运行，Phase 0 尚未完成。
+- 当前唯一动作是 `NQ-GATEAUDIT-0C-R3-COMMIT`；不得再次 review 或修改 remediation candidate，Phase 0 尚未完成。
 - Pilot final：PLACE=1、retry=0、CANCEL=0、activeLease=0、LIVE=false、kill=`ENGAGED`、Attempt-02 未创建。
 - Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
@@ -32,6 +32,6 @@
 
 ## Current Is Not
 
-- 不是 Phase 1 repository Inventory/audit 已执行；R3 independent review 虽已接受，但 Phase 0 尚未完成，不得进入该阶段。
+- 不是 Phase 1 repository Inventory/audit 已执行；remediation review 已接受，但尚未提交并取得 exact-head CI green，不得进入该阶段。
 - 不是第二 pilot、通用 LIVE、自动策略交易、多订单、多账户、多交易所、合约/杠杆或资金移动已授权。
 - 不是 AI/DH runtime 可执行交易。

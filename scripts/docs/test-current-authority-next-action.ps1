@@ -13,6 +13,80 @@ function Assert-True {
     if (-not $Condition) { throw $Message }
 }
 
+function ConvertTo-CanonicalFixtureText {
+    param([Parameter(Mandatory = $true)][string] $Content)
+    $normalized = $Content.Replace("`r`n", "`n")
+    if ($normalized.Contains("`r")) { throw 'FIXTURE_MUTATION_FAILED bare CR is not supported' }
+    return $normalized
+}
+
+function Set-DeterministicFixtureLine {
+    param(
+        [Parameter(Mandatory = $true)][string] $Content,
+        [Parameter(Mandatory = $true)][string] $OldLine,
+        [Parameter(Mandatory = $true)][string] $NewLine
+    )
+    $normalized = ConvertTo-CanonicalFixtureText $Content
+    $lines = @($normalized -split "`n")
+    $indexes = @()
+    for ($index = 0; $index -lt $lines.Count; $index++) {
+        if ($lines[$index] -ceq $OldLine) { $indexes += $index }
+    }
+    if ($indexes.Count -eq 0) { throw "FIXTURE_MUTATION_TARGET_MISSING line=$OldLine" }
+    if ($indexes.Count -gt 1) { throw "FIXTURE_MUTATION_TARGET_AMBIGUOUS line=$OldLine count=$($indexes.Count)" }
+    $lines[$indexes[0]] = $NewLine
+    $mutated = $lines -join "`n"
+    if ($mutated -ceq $normalized) { throw "FIXTURE_MUTATION_FAILED unchanged line=$OldLine" }
+    return $mutated
+}
+
+function Remove-DeterministicFixtureLine {
+    param(
+        [Parameter(Mandatory = $true)][string] $Content,
+        [Parameter(Mandatory = $true)][string] $Line
+    )
+    $normalized = ConvertTo-CanonicalFixtureText $Content
+    $lines = @($normalized -split "`n")
+    $indexes = @()
+    for ($index = 0; $index -lt $lines.Count; $index++) {
+        if ($lines[$index] -ceq $Line) { $indexes += $index }
+    }
+    if ($indexes.Count -eq 0) { throw "FIXTURE_MUTATION_TARGET_MISSING line=$Line" }
+    if ($indexes.Count -gt 1) { throw "FIXTURE_MUTATION_TARGET_AMBIGUOUS line=$Line count=$($indexes.Count)" }
+    $remaining = for ($index = 0; $index -lt $lines.Count; $index++) {
+        if ($index -ne $indexes[0]) { $lines[$index] }
+    }
+    $mutated = @($remaining) -join "`n"
+    if ($mutated -ceq $normalized) { throw "FIXTURE_MUTATION_FAILED unchanged line=$Line" }
+    return $mutated
+}
+
+function Set-AuthorityFixtureField {
+    param(
+        [Parameter(Mandatory = $true)][string] $Content,
+        [Parameter(Mandatory = $true)][string] $Field,
+        [Parameter(Mandatory = $true)][string] $OldValue,
+        [Parameter(Mandatory = $true)][string] $NewValue
+    )
+    $normalized = ConvertTo-CanonicalFixtureText $Content
+    $oldLine = "$Field=$OldValue"
+    $newLine = "$Field=$NewValue"
+    $mutated = Set-DeterministicFixtureLine $normalized $oldLine $newLine
+    $originalLines = @($normalized -split "`n")
+    $mutatedLines = @($mutated -split "`n")
+    Assert-True ($originalLines.Count -eq $mutatedLines.Count) "FIXTURE_MUTATION_FAILED line count changed field=$Field"
+    $changedLineCount = 0
+    for ($index = 0; $index -lt $originalLines.Count; $index++) {
+        if ($originalLines[$index] -cne $mutatedLines[$index]) { $changedLineCount++ }
+    }
+    Assert-True ($changedLineCount -eq 1) "FIXTURE_MUTATION_FAILED changed-line-count=$changedLineCount field=$Field"
+    Assert-True (@($mutatedLines | Where-Object { $_ -ceq $oldLine }).Count -eq 0) "FIXTURE_MUTATION_FAILED old value remains field=$Field"
+    Assert-True (@($mutatedLines | Where-Object { $_ -ceq $newLine }).Count -eq 1) "FIXTURE_MUTATION_FAILED new value count invalid field=$Field"
+    $parsed = Read-GovernanceAuthorityBlock $mutated
+    Assert-True ((Get-GovernancePropertyValue $parsed $Field) -ceq $NewValue) "FIXTURE_MUTATION_FAILED parsed value mismatch field=$Field"
+    return $mutated
+}
+
 function Invoke-AuthorityFixture {
     param([string] $Content, [string] $ContractContent)
     $id = [guid]::NewGuid().ToString('N')
@@ -103,6 +177,35 @@ private_trading=NOT_IMPLEMENTED
 nq-current-authority:end -->
 '@
 
+$missingTargetRejected = $false
+try { $null = Set-AuthorityFixtureField $base 'production_soak' 'MISSING' 'FAILED' }
+catch {
+    Assert-True ($_.Exception.Message -match '^FIXTURE_MUTATION_TARGET_MISSING') "Missing-target guard returned wrong error: $($_.Exception.Message)"
+    $missingTargetRejected = $true
+}
+Assert-True $missingTargetRejected 'Missing-target guard did not reject the fixture.'
+Write-Output 'PASS mutation-guard=target-missing'
+
+$duplicatedTarget = Set-DeterministicFixtureLine $base 'production_soak=COMPLETED' "production_soak=COMPLETED`nproduction_soak=COMPLETED"
+$ambiguousTargetRejected = $false
+try { $null = Set-AuthorityFixtureField $duplicatedTarget 'production_soak' 'COMPLETED' 'FAILED' }
+catch {
+    Assert-True ($_.Exception.Message -match '^FIXTURE_MUTATION_TARGET_AMBIGUOUS') "Ambiguous-target guard returned wrong error: $($_.Exception.Message)"
+    $ambiguousTargetRejected = $true
+}
+Assert-True $ambiguousTargetRejected 'Ambiguous-target guard did not reject the fixture.'
+Write-Output 'PASS mutation-guard=target-ambiguous'
+
+$bareCrFixture = (ConvertTo-CanonicalFixtureText $base).Replace("production_soak=COMPLETED`n", "production_soak=COMPLETED`r")
+$bareCrRejected = $false
+try { $null = Set-AuthorityFixtureField $bareCrFixture 'production_soak' 'COMPLETED' 'FAILED' }
+catch {
+    Assert-True ($_.Exception.Message -match '^FIXTURE_MUTATION_FAILED bare CR') "Bare-CR guard returned wrong error: $($_.Exception.Message)"
+    $bareCrRejected = $true
+}
+Assert-True $bareCrRejected 'Bare-CR guard did not reject the fixture.'
+Write-Output 'PASS mutation-guard=bare-cr'
+
 $valid = Invoke-AuthorityFixture $base $null
 Assert-True ($valid.ExitCode -eq 0 -and $valid.Output -match 'PASS / CURRENT_AUTHORITY_VALID') "Valid authority rejected: $($valid.Output)"
 Write-Output 'PASS fixture=current-authority-valid'
@@ -119,15 +222,16 @@ $safetyMutations = @(
     @{ Field = 'private_trading'; From = 'NOT_IMPLEMENTED'; To = 'IMPLEMENTED' }
 )
 foreach ($mutation in $safetyMutations) {
-    $pattern = '(?m)^' + [regex]::Escape($mutation.Field + '=' + $mutation.From) + '$'
-    $replacement = $mutation.Field + '=' + $mutation.To
-    $result = Invoke-AuthorityFixture ($base -replace $pattern, $replacement) $null
+    $mutated = Set-AuthorityFixtureField $base $mutation.Field $mutation.From $mutation.To
+    Write-Output "PASS mutation-self-check=$($mutation.Field)"
+    $result = Invoke-AuthorityFixture $mutated $null
     Assert-AuthorityRejected $result ("safety-{0}" -f $mutation.Field) 'SAFETY_PROFILE_VIOLATION'
 }
+Write-Output 'FIXTURE_MUTATION_SELF_CHECKS=PASS'
 
-$missingField = Invoke-AuthorityFixture ($base -replace '(?m)^ai=NOT_STARTED\r?\n', '') $null
+$missingField = Invoke-AuthorityFixture (Remove-DeterministicFixtureLine $base 'ai=NOT_STARTED') $null
 Assert-AuthorityRejected $missingField 'required-field-missing' 'FIELD_MISSING'
-$invalidValue = Invoke-AuthorityFixture ($base -replace 'active_gate_status=IN_PROGRESS\|NOT_FROZEN', 'active_gate_status=INVALID') $null
+$invalidValue = Invoke-AuthorityFixture (Set-DeterministicFixtureLine $base 'active_gate_status=IN_PROGRESS|NOT_FROZEN' 'active_gate_status=INVALID') $null
 Assert-AuthorityRejected $invalidValue 'invalid-value' 'ACTIVE_GATE_STATUS_INVALID'
 $malformedContract = Invoke-AuthorityFixture $base '{not-json'
 Assert-AuthorityRejected $malformedContract 'contract-malformed' 'AUTHORITY_CONTRACT_INVALID'
@@ -139,11 +243,11 @@ $malformedProfile = Invoke-AuthorityFixture $base $malformedProfileJson
 Assert-AuthorityRejected $malformedProfile 'profile-malformed' 'AUTHORITY_CONTRACT_INVALID'
 
 $whitespaceCases = @(
-    @{ Name = 'key-leading-whitespace'; Content = ($base -replace '(?m)^production_soak=', ' production_soak=') },
-    @{ Name = 'key-trailing-whitespace'; Content = ($base -replace '(?m)^production_soak=', 'production_soak =') },
-    @{ Name = 'value-leading-whitespace'; Content = ($base -replace '(?m)^production_soak=COMPLETED$', 'production_soak= COMPLETED') },
-    @{ Name = 'value-trailing-whitespace'; Content = ($base -replace '(?m)^production_soak=COMPLETED$', 'production_soak=COMPLETED ') },
-    @{ Name = 'extra-machine-line-whitespace'; Content = ($base -replace '(?m)^production_soak=COMPLETED$', " `nproduction_soak=COMPLETED") }
+    @{ Name = 'key-leading-whitespace'; Content = (Set-DeterministicFixtureLine $base 'production_soak=COMPLETED' ' production_soak=COMPLETED') },
+    @{ Name = 'key-trailing-whitespace'; Content = (Set-DeterministicFixtureLine $base 'production_soak=COMPLETED' 'production_soak =COMPLETED') },
+    @{ Name = 'value-leading-whitespace'; Content = (Set-DeterministicFixtureLine $base 'production_soak=COMPLETED' 'production_soak= COMPLETED') },
+    @{ Name = 'value-trailing-whitespace'; Content = (Set-DeterministicFixtureLine $base 'production_soak=COMPLETED' 'production_soak=COMPLETED ') },
+    @{ Name = 'extra-machine-line-whitespace'; Content = (Set-DeterministicFixtureLine $base 'production_soak=COMPLETED' " `nproduction_soak=COMPLETED") }
 )
 foreach ($case in $whitespaceCases) {
     $result = Invoke-AuthorityFixture $case.Content $null

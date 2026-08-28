@@ -11,14 +11,21 @@ GateAUDIT-0C R2 independent review ACCEPTED
   ↓
 GateAUDIT-0C R3 final independent review ACCEPTED / READY_TO_COMMIT
   ↓
+commit ae396d3aa4a88878ec0e5284af63b21773e6a868
+  ↓
+exact-head CI 33147280950 FAILED
+  ↓
+GateAUDIT-0C R3 CI failure remediation REVIEW_ACCEPTED / READY_TO_COMMIT
+  ↓
 NQ-GATEAUDIT-0C-R3-COMMIT
 ```
 
 ## 下一允许动作
 
 - 唯一下一动作：`NQ-GATEAUDIT-0C-R3-COMMIT`。
-- R3 final independent review 已接受 current post-R3 final candidate，decision=`PASS / REVIEW_ACCEPTED / READY_TO_COMMIT`，P0=0、P1=0；不得再次启动 review 或 remediation。
-- commit 尚未创建，exact-head CI 尚未运行；Phase 0 尚未完成，不得 push、PR、tag 或进入 Phase 1 Inventory。
+- Remediation independent review decision=`PASS / REVIEW_ACCEPTED / READY_TO_COMMIT`，P0=0、P1=0，P1-01/P1-02=`CLOSED`，candidate modified by review=`NO`。
+- 失败 commit=`ae396d3aa4a88878ec0e5284af63b21773e6a868` 与 exact-head CI=`33147280950 / completed / failure` 保持不变；新 remediation commit 与 CI 尚未创建。
+- 不得再次启动 review、修改 remediation candidate、amend failed commit、弱化 CI、push、tag、deploy 或进入 Phase 1 Inventory。
 
 ## Persistent boundary
 

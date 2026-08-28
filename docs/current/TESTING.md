@@ -14609,3 +14609,44 @@ Evidence：[GATEAUDIT_0C_R3_FINAL_INDEPENDENT_REVIEW_ACCEPTANCE.md](../audit/evi
 | Findings | P0=`0`；P1=`0`；P2=`SUPPLY_CHAIN_ACTION_PINNING / DEFERRED_TO_FULL_CI_SECURITY_AUDIT`；P3=`0` |
 
 Materialization validation is recorded separately from the historical source-review results. Current authority remains `GateAUDIT-0C-R3 / IMPLEMENTED|PENDING_REVIEW / NONE / NOT_RUN` until the next authority reconciliation task.
+
+## 2026-08-28 — GateAUDIT-0C R3 exact-head CI failure
+
+| Check | Immutable result | Root cause |
+| --- | --- | --- |
+| Exact-head identity | commit/headSha=`ae396d3aa4a88878ec0e5284af63b21773e6a868`；run=`33147280950`；event=`workflow_dispatch` | identity match；不是旧 run 或相邻 commit |
+| `Diff check / Run blocking governance regression` | FAIL（失败） | authority safety negative fixture mutation 在 Linux/pwsh 未确定性替换 `production_soak=COMPLETED`，production checker 随后接受了未变 fixture |
+| `Java engineering standard Shadow / Validate Java governance configuration` | FAIL（失败） | verifier 仍要求 scoped R3 Java Skill 文本逐个包含旧 fixed standard filenames；`common-java-engineering-standard.md` 文件本身存在 |
+
+Artifact upload 未找到 `artifacts/java-shadow/shadow-report.json` 是 verifier 失败后的下游症状，不单列第三个 P1。本记录只登记失败事实；未修改 checker、Skill、CI job 或 failed commit。
+
+## 2026-08-28 — GateAUDIT-0C R3 CI failure remediation validation
+
+| Check | Result | Scope / notes |
+| --- | --- | --- |
+| Authority fixture mutation | PASS（通过） | PS5.1 + PS7；target missing/ambiguous/bare-CR guards PASS；9/9 safety mutation self-check 后均被 checker 以 `SAFETY_PROFILE_VIOLATION` 拒绝；`FIXTURE_MUTATION_SELF_CHECKS=PASS` |
+| Authority regression | PASS（通过） | PS5.1 + PS7；safety/schema/whitespace=`9/4/5`，failed=0；production checker/library/contract 未修改 |
+| Java verifier | PASS（通过） | required standard files、canonical config hash、provenance、profile、mapping、exceptions、baseline 与 CI blocking contract 保持；Skill binding 对齐 Role/Primary/profile/trigger/scoped-selection markers |
+| Java Shadow | PASS（执行完成） | exit 0；existing baseline=144、ruleset expansion=14、new code=0；report 已生成并在验证后删除，CI job/artifact policy 未修改 |
+| Linux local | `LINUX_PWSH_LOCAL=NOT_AVAILABLE` | WSL Ubuntu 无 `pwsh`；Docker daemon 不可用；未安装新系统依赖 |
+| Existing governance | PASS（通过） | Agent 12/12、malicious 6/6、previous 3/3、F1 4/4、runtime rules 0/0、charter=1、lifecycle 20/20、archive 6/6、release CI isolation PASS |
+| GateY | PASS（通过） | PS5.1 + PS7 Archive/Release；frozen diff=0 |
+| Docs links | PASS（通过） | PS5.1 + PS7；188 checked、123 historical warnings、0 errors |
+
+## 2026-08-28 — GateAUDIT-0C R3 CI-failure remediation independent review acceptance
+
+Evidence：[GATEAUDIT_0C_R3_CI_FAILURE_REMEDIATION_REVIEW_ACCEPTANCE.md](../audit/evidence/GATEAUDIT_0C_R3_CI_FAILURE_REMEDIATION_REVIEW_ACCEPTANCE.md)。
+
+以下结果来自已经完成的 `NQ-GATEAUDIT-0C-R3-CI-FAILURE-INDEPENDENT-REVIEW`，由本 materialization task 转录；本任务未重复 independent review，也未以 materialization validation 生成 acceptance。
+
+| Source-review verification | Previously completed result |
+| --- | --- |
+| P1-01 independent validation | `PASS / CLOSED`；deterministic mutation、exact-one-line guard、mutation self-check PASS；safety negatives=`9/9 rejected` |
+| P1-02 independent validation | `PASS / CLOSED`；standard integrity checks preserved；obsolete full-reference requirement removed；scoped Skill semantics preserved |
+| Java verifier / Shadow | `PASS / PASS`；baseline=144、ruleset expansion=14、new code=0；temporary report removed |
+| Cross-platform | Windows PowerShell 5.1=`PASS`；PowerShell 7.6.5=`PASS`；Linux local pwsh=`NOT_AVAILABLE`；final Linux proof remains future exact-head GitHub CI |
+| Existing regression | Agent 12/12、malicious 6/6、previous 3/3、F1 4/4、lifecycle 20/20、archive 6/6、release CI isolation、GateY Archive/Release 均为 source-review PASS |
+| Findings | P0=`0`；P1=`0`；P2=`SUPPLY_CHAIN_ACTION_PINNING / DEFERRED_TO_FULL_CI_SECURITY_AUDIT`；P3=`0` |
+| Final decision | `PASS / REVIEW_ACCEPTED / READY_TO_COMMIT` |
+
+本节只登记 source review 已完成及其 durable evidence 路径；表中 acceptance results 均归属于 source review，不归属于 materialization task。Failed baseline 仍为 `ae396d3aa4a88878ec0e5284af63b21773e6a868 / 33147280950 / completed / failure`；current authority 尚未前移。

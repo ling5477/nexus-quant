@@ -226,7 +226,11 @@ try {
     $skillPath = Join-Path $repoRoot ".agents\skills\$skillName\SKILL.md"
     Assert-Condition (Test-Path -LiteralPath $skillPath -PathType Leaf) "CONFIG_INVALID" "missing project Skill"
     $skillText = Get-Content -LiteralPath $skillPath -Raw -Encoding UTF8
-    foreach ($reference in @('platform-profile.json','common-java-engineering-standard.md','java-platform-profile.md','spring-platform-profile.md','architecture-overlay.md',$overlays[0],'alibaba-huangshan-rule-mapping.yaml','java-rule-exceptions.yaml')) { Assert-Condition ($skillText.Contains($reference)) "CONFIG_INVALID" "Skill missing $reference" }
+    Assert-Condition ($skillText -match '(?m)^- Role type: `SUPPORTING_CONSTRAINT`\s*$') "CONFIG_INVALID" "Skill Role type binding invalid"
+    Assert-Condition ($skillText -match '(?m)^- Primary responsibility: `HIGH_RISK_JAVA_CONSTRAINT_EVALUATION`\s*$') "CONFIG_INVALID" "Skill Primary responsibility binding invalid"
+    Assert-Condition ($skillText.Contains('platform-profile.json')) "CONFIG_INVALID" "Skill missing platform-profile.json"
+    foreach ($trigger in @('STATIC_RULE_CHANGE','FULL_JAVA_AUDIT')) { Assert-Condition ($skillText.Contains($trigger)) "CONFIG_INVALID" "Skill missing stable trigger marker $trigger" }
+    Assert-Condition ($skillText.Contains('Select only standards relevant to the affected scope.')) "CONFIG_INVALID" "Skill scoped standards selection marker missing"
     Assert-Condition ($skillText -notmatch '\bJava\s+21\b|Spring Boot\s+3\.\d|Spring Framework\s+6\.\d') "PLATFORM_PROFILE_INVALID" "Skill hard-codes platform versions"
     Assert-Condition ($skillText -notmatch '\bGate[A-Z0-9-]+\b|\bStage-QDR-\d+\b') "CONFIG_INVALID" "Skill hard-codes current authority"
 
