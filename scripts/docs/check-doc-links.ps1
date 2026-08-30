@@ -66,9 +66,9 @@ foreach ($rootInput in $Roots) {
         continue
     }
 
-    $item = Get-Item -LiteralPath $rootPath
+    $item = Get-Item -LiteralPath $rootPath -Force
     $files = if ($item.PSIsContainer) {
-        @(Get-ChildItem -LiteralPath $item.FullName -Recurse -File -Filter '*.md')
+        @(Get-ChildItem -LiteralPath $item.FullName -Recurse -File -Filter '*.md' -Force)
     } else {
         @($item)
     }

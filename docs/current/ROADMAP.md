@@ -17,15 +17,23 @@ exact-head CI 33147280950 FAILED
   ↓
 GateAUDIT-0C R3 CI failure remediation REVIEW_ACCEPTED / READY_TO_COMMIT
   ↓
+commit 99c976306fb4c645251847c35ecf8c09f194b05d
+  ↓
+exact-head CI 33164682651 FAILED
+  ↓
+previous P1-01/P1-02 CLOSED_BY_LINUX_CI
+  ↓
+doc-link hidden-root remediation REVIEW_ACCEPTED / READY_TO_COMMIT
+  ↓
 NQ-GATEAUDIT-0C-R3-COMMIT
 ```
 
 ## 下一允许动作
 
 - 唯一下一动作：`NQ-GATEAUDIT-0C-R3-COMMIT`。
-- Remediation independent review decision=`PASS / REVIEW_ACCEPTED / READY_TO_COMMIT`，P0=0、P1=0，P1-01/P1-02=`CLOSED`，candidate modified by review=`NO`。
-- 失败 commit=`ae396d3aa4a88878ec0e5284af63b21773e6a868` 与 exact-head CI=`33147280950 / completed / failure` 保持不变；新 remediation commit 与 CI 尚未创建。
-- 不得再次启动 review、修改 remediation candidate、amend failed commit、弱化 CI、push、tag、deploy 或进入 Phase 1 Inventory。
+- Failed catch-up：commit=`99c976306fb4c645251847c35ecf8c09f194b05d`，exact-head CI=`33164682651 / completed / failure`；previous P1-01/P1-02 已由 Linux CI 关闭，唯一 blocking failure 是 hidden `.agents` root provider visibility。
+- 当前 remediation=`REVIEW_ACCEPTED / READY_TO_COMMIT`，decision=`PASS / REVIEW_ACCEPTED / READY_TO_COMMIT`，P0=0、P1=0，candidate modified by review=`NO`，independence violation=0；commit=`NONE`、CI=`NOT_RUN`。
+- 不得再次启动 review 或修改 remediation candidate；不得 amend/rebase/squash failed commit、弱化 CI、push、tag、deploy 或进入 Phase 1 Inventory。
 
 ## Persistent boundary
 

@@ -14650,3 +14650,41 @@ Evidence：[GATEAUDIT_0C_R3_CI_FAILURE_REMEDIATION_REVIEW_ACCEPTANCE.md](../audi
 | Final decision | `PASS / REVIEW_ACCEPTED / READY_TO_COMMIT` |
 
 本节只登记 source review 已完成及其 durable evidence 路径；表中 acceptance results 均归属于 source review，不归属于 materialization task。Failed baseline 仍为 `ae396d3aa4a88878ec0e5284af63b21773e6a868 / 33147280950 / completed / failure`；current authority 尚未前移。
+
+## 2026-08-30 — GateAUDIT-0C R3 doc-link Linux hidden-root remediation
+
+Failed catch-up：commit/headSha=`99c976306fb4c645251847c35ecf8c09f194b05d`，exact-head CI run=`33164682651 / completed / failure`。此前 authority fixture P1 在 Linux CI 中为 `FIXTURE_MUTATION_SELF_CHECKS=PASS`、safety negatives=`9/9 rejected`、failed=`0`；Java Shadow job=`SUCCESS`，verifier、Shadow scan、report generation 与 artifact upload 均通过。唯一 blocking root cause=`POWERSHELL_PROVIDER_HIDDEN_ITEM_PORTABILITY`：`Test-Path` 看见 `.agents`，无 `-Force` 的 `Get-Item` 无法读取该 hidden root。
+
+| Check | PS5.1 | PS7 | Result |
+| --- | --- | --- | --- |
+| Default doc links | `PASS` | `PASS` | checked=`191`，warnings=`123`，errors=`0` |
+| Hidden-root focused fixture | `PASS` | `PASS` | checked=`1`，warnings=`0`，errors=`0`；fixture Hidden attribute=`true` |
+| Missing-root negative | `REJECT / exit 1` | `REJECT / exit 1` | `ROOT_NOT_FOUND`，errors=`1`；fail-closed 保持 |
+| Release CI isolation | `PASS` | `PASS` | negative/positive/array-properties 均通过 |
+| Agent workflow fixtures | `PASS` | `PASS` | Agent=`12/12`；malicious=`6/6 rejected`；previous capability=`3/3`；F1=`4/4` |
+| Authority next action | `PASS` | `PASS` | safety=`9/9 rejected`；`FIXTURE_MUTATION_SELF_CHECKS=PASS`；failed=`0` |
+| Governance lifecycle | `PASS` | `PASS` | `20/20`；`TASK_ID_SPECIFIC_RUNTIME_RULES=0` |
+| Gate archive manifest | `PASS` | `PASS` | `6/6` |
+| Current authority | `PASS` | `PASS` | errors=`0`；final token=`CURRENT_AUTHORITY_VALID` |
+| Java verifier | 未要求 | `PASS` | `GOVERNANCE_CHECKER_RESULT=PASS`；既有 P1-02 文件未修改 |
+
+Next action matcher：action=`NQ-GATEAUDIT-0C-R3-DOC-LINK-LINUX-INDEPENDENT-REVIEW`，matcher count=`1`，type=`REVIEW`。Focused fixture 清理结果=`TEMP_LEFTOVERS=0`。实现只为显式 root 的 `Get-Item` 与递归 `Get-ChildItem` 增加 `-Force`；默认 `.agents` root、missing-root error、historical warning policy 与 CI workflow 均未改变。P0=`0`，P1=`0`；P2=`SUPPLY_CHAIN_ACTION_PINNING / DEFERRED`，P3=`0`。
+
+## 2026-08-30 — GateAUDIT-0C R3 doc-link Linux remediation independent review acceptance evidence
+
+Evidence：[GATEAUDIT_0C_R3_DOC_LINK_LINUX_REMEDIATION_REVIEW_ACCEPTANCE.md](../audit/evidence/GATEAUDIT_0C_R3_DOC_LINK_LINUX_REMEDIATION_REVIEW_ACCEPTANCE.md)。
+
+以下结果来自已经完成的 `NQ-GATEAUDIT-0C-R3-DOC-LINK-LINUX-INDEPENDENT-REVIEW`，由本 materialization task 转录；本任务未重新执行独立 Review tests，也未生成 acceptance。
+
+| Source-review verification | Previously completed result |
+| --- | --- |
+| Final decision | `PASS / REVIEW_ACCEPTED / READY_TO_COMMIT` |
+| Hidden-root positive | PS5.1=`PASS`；PS7=`PASS`；checked=`1`，errors=`0` |
+| Missing-root fail-closed | PS5.1=`ROOT_NOT_FOUND / exit 1`；PS7=`ROOT_NOT_FOUND / exit 1` |
+| Active broken-link rejection | PS5.1/PS7=`REJECT / ERROR` |
+| Historical warning semantics | PS5.1/PS7=`WARNING / errors=0` |
+| Canonical candidate links | checked=`191`，warnings=`123`，errors=`0` |
+| Runtime isolation | `TASK_ID_SPECIFIC_RUNTIME_RULES=0`；`GATE_SPECIFIC_ACTIVE_RUNTIME_RULES=0`；`ACTIVE_AUDIT_CHARTERS=1` |
+| Findings | P0=`0`；P1=`0`；P2=`SUPPLY_CHAIN_ACTION_PINNING / DEFERRED_TO_FULL_CI_SECURITY_AUDIT`；P3=`0` |
+
+本节只登记 source review 已验证的历史结果及 durable evidence 路径。Failed baseline 仍为 `99c976306fb4c645251847c35ecf8c09f194b05d / 33164682651 / completed / failure`；current authority 未在本 materialization task 中前移。
