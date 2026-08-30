@@ -19582,3 +19582,13 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Failed baseline 保持：commit/headSha=`99c976306fb4c645251847c35ecf8c09f194b05d`；exact-head CI=`33164682651 / completed / failure`；10/11 jobs success，唯一失败 job=`Diff check`。
 - Boundary：candidate、`STATUS.md`、`ROADMAP.md`、current `README.md`、governance checker/contract、CI workflow、业务代码与 GateY frozen evidence 均未由本 materialization task 修改；canonical layout 未恢复。
 - Next：`RESTORE_CANONICAL_LAYOUT_AND_RECONCILE_DOC_LINK_REMEDIATION_ACCEPTANCE`。
+
+## 2026-08-30 — GateAUDIT Phase 0 post-CI authority closeout
+
+- Immutable proof：validated implementation commit/headSha=`40e1077e1fe735a3d250f094caaa24e437e8ea3f`；`NQ CI Baseline` run=`33306024232`，event=`workflow_dispatch`，status=`completed`，conclusion=`success`，blocking jobs=`11/11 SUCCESS`。
+- Linux closure：doc links=`PASS / DOC_LINKS_VALID / 194 checked / 123 warnings / 0 errors`；P1-01 authority fixture、P1-02 Java verifier、doc-link Linux hidden-root finding 均为 `CLOSED_BY_LINUX_CI`。
+- Authority catch-up：work batch 保持 `GateAUDIT-0C-R3-DOC-LINK-LINUX-REMEDIATION`，状态前移为 `ACCEPTED|CI_GREEN`，immutable acceptance pair 固定为 `40e1077e... / 33306024232`；`accepted_batch=GateY-6F` 与 Gate/runtime safety fields 均不变。
+- Phase state：GateAUDIT Phase 0=`ACCEPTED / CI_GREEN / COMPLETE`；GateAUDIT 仍为 `IN_PROGRESS / NOT_FROZEN`；Phase 1 尚未开始。
+- Next：`NQ-GATEAUDIT-PHASE1-REPOSITORY-AUDIT-INVENTORY`，matcher count=`1`，type=`AUDIT`。本任务不启动 inventory，不执行新 Review，不修改 implementation、Skill、CI、checker、matcher、GateY frozen evidence 或 runtime 权限。
+- Local validation：PS5.1/PS7 authority errors=`0/0`；next-action regression failed=`0/0`；lifecycle=`20/20 PASS`；Agent=`12/12 PASS`、malicious=`6/6 rejected`、previous capability=`3/3 rejected`、F1=`4/4 rejected`、runtime rules=`0/0`、active audit charters=`1`；doc links=`194 checked / 123 warnings / 0 errors / PASS`。
+- Recursion boundary：本次 closeout 是 `POST_CI_AUTHORITY_CATCH_UP`；docs-only closeout commit 不替换 `work_batch_commit`/`work_batch_ci_run`，不生成新的 Phase 0 hard gate。

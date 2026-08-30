@@ -6,9 +6,9 @@
 
 <!-- nq-current-summary:start -->
 - 最近冻结 Gate 为 GateY：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-y/](../gates/gate-y/)，tag=`nq-gatey-freeze`。
-- GateAUDIT：`IN PROGRESS / NOT FROZEN`（治理进行中 / 未冻结）；cross-platform remediation commit=`99c9763...` 的 exact-head CI run=`33164682651 / failure`，此前 authority fixture 与 Java verifier P1 已由 Linux CI 关闭；doc-link hidden-root remediation=`REVIEW_ACCEPTED / READY_TO_COMMIT`，新 commit=`NONE`、CI=`NOT_RUN`。
+- GateAUDIT：`IN PROGRESS / NOT FROZEN`（治理进行中 / 未冻结）；Phase 0=`ACCEPTED / CI_GREEN / COMPLETE`，validated implementation=`40e1077e...`，exact-head CI=`33306024232 / completed / success / 11 jobs`；Phase 1 尚未执行。
 - GateY freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`；exact-head CI run=`33037514013 / completed / success / 11 jobs`。
-- 当前唯一动作是 `NQ-GATEAUDIT-0C-R3-COMMIT`；不得再次 review 或修改 remediation candidate，Phase 0 尚未完成。
+- 当前唯一动作是 `NQ-GATEAUDIT-PHASE1-REPOSITORY-AUDIT-INVENTORY`；本 closeout 不启动 inventory，不得再次运行 Phase 0 review 或 exact-head CI。
 - Pilot final：PLACE=1、retry=0、CANCEL=0、activeLease=0、LIVE=false、kill=`ENGAGED`、Attempt-02 未创建。
 - Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
@@ -32,6 +32,6 @@
 
 ## Current Is Not
 
-- 不是 Phase 1 repository Inventory/audit 已执行；doc-link hidden-root remediation 已通过独立复核，但尚未提交并取得 exact-head CI green，不得进入该阶段。
+- 不是 Phase 1 repository Inventory/audit 已执行；Phase 0 已由 immutable exact-head CI 接受，Phase 1 仍需在下一任务按 Audit Bootstrap Charter 启动。
 - 不是第二 pilot、通用 LIVE、自动策略交易、多订单、多账户、多交易所、合约/杠杆或资金移动已授权。
 - 不是 AI/DH runtime 可执行交易。

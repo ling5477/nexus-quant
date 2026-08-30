@@ -14688,3 +14688,22 @@ Evidence：[GATEAUDIT_0C_R3_DOC_LINK_LINUX_REMEDIATION_REVIEW_ACCEPTANCE.md](../
 | Findings | P0=`0`；P1=`0`；P2=`SUPPLY_CHAIN_ACTION_PINNING / DEFERRED_TO_FULL_CI_SECURITY_AUDIT`；P3=`0` |
 
 本节只登记 source review 已验证的历史结果及 durable evidence 路径。Failed baseline 仍为 `99c976306fb4c645251847c35ecf8c09f194b05d / 33164682651 / completed / failure`；current authority 未在本 materialization task 中前移。
+
+## 2026-08-30 — GateAUDIT Phase 0 post-CI authority closeout
+
+| Check | Immutable result |
+| --- | --- |
+| Validated implementation | commit/headSha=`40e1077e1fe735a3d250f094caaa24e437e8ea3f` |
+| Exact-head CI | `NQ CI Baseline` run=`33306024232`；event=`workflow_dispatch`；status=`completed`；conclusion=`success` |
+| Blocking jobs | `11/11 SUCCESS` |
+| Linux doc links | `PASS / DOC_LINKS_VALID`；checked=`194`；warnings=`123`；errors=`0`；旧 hidden-root error absent |
+| Closed findings | P1-01 authority fixture=`CLOSED_BY_LINUX_CI`；P1-02 Java verifier=`CLOSED_BY_LINUX_CI`；doc-link Linux hidden root=`CLOSED_BY_LINUX_CI` |
+| Phase state | Phase 0=`ACCEPTED / CI_GREEN / COMPLETE`；GateAUDIT=`IN_PROGRESS / NOT_FROZEN`；Phase 1=`NOT_EXECUTED` |
+| Next action | `NQ-GATEAUDIT-PHASE1-REPOSITORY-AUDIT-INVENTORY`；matcher count=`1`；type=`AUDIT` |
+| Local authority | Windows PowerShell 5.1=`PASS / errors=0`；PowerShell 7=`PASS / errors=0` |
+| Local next-action regression | PS5.1/PS7=`PASS`；positive=`7`；ambiguous rejected=`4`；safety rejected=`9`；failed=`0` |
+| Local lifecycle regression | PS5.1/PS7=`20/20 PASS`；`TASK_ID_SPECIFIC_RUNTIME_RULES=0` |
+| Local Agent regression | PS5.1/PS7=`12/12 PASS`；malicious=`6/6 rejected`；previous capability=`3/3 rejected`；F1=`4/4 rejected`；runtime rules=`0/0`；active audit charters=`1` |
+| Local doc links | PS5.1/PS7=`PASS / DOC_LINKS_VALID`；checked=`194`；warnings=`123`；errors=`0` |
+
+前两个 failed exact-head CI 事实 `ae396d3... / 33147280950` 与 `99c9763... / 33164682651` 保留不变。本次仅执行 post-CI authority fact catch-up，不生成新 Review evidence，不把 docs-only closeout commit 作为新的 implementation candidate，也不触发新的 Phase 0 exact-head CI。

@@ -14,10 +14,10 @@ accepted_batch_implementation_commit=8e3dd0cf6104eb85f36a0e434ca51ea9d903705a
 accepted_batch_acceptance_head=8e3dd0cf6104eb85f36a0e434ca51ea9d903705a
 accepted_batch_ci_run=32978280738
 work_batch=GateAUDIT-0C-R3-DOC-LINK-LINUX-REMEDIATION
-work_batch_status=REVIEW_ACCEPTED|READY_TO_COMMIT
-work_batch_commit=NONE
-work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEAUDIT-0C-R3-COMMIT
+work_batch_status=ACCEPTED|CI_GREEN
+work_batch_commit=40e1077e1fe735a3d250f094caaa24e437e8ea3f
+work_batch_ci_run=33306024232
+next_action=NQ-GATEAUDIT-PHASE1-REPOSITORY-AUDIT-INVENTORY
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -34,10 +34,10 @@ nq-current-authority:end -->
 ## 1. 当前阶段
 
 - GateY：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-y/README.md](../gates/gate-y/README.md)，freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`，annotated tag=`nq-gatey-freeze`，tag object=`c84f412e1da652e85158c5478997945d3065e575`，peeled commit 与 freeze commit 一致。
-- GateAUDIT：`IN PROGRESS / NOT FROZEN`（治理进行中 / 未冻结）；R3 cross-platform remediation commit=`99c976306fb4c645251847c35ecf8c09f194b05d` 的 exact-head CI run=`33164682651 / completed / failure`。Linux CI 已关闭此前 authority fixture 与 Java verifier 两个 P1，并暴露 doc-link checker 无法读取 hidden `.agents` root；该 doc-link remediation 的独立复核现已接受，状态=`REVIEW_ACCEPTED / READY_TO_COMMIT`，新 commit=`NONE`、CI=`NOT_RUN`；Phase 0 尚未完成，Phase 1 全仓 audit 尚未开始。
+- GateAUDIT：`IN PROGRESS / NOT FROZEN`（治理进行中 / 未冻结）；Phase 0=`ACCEPTED / CI_GREEN / COMPLETE`，validated implementation commit=`40e1077e1fe735a3d250f094caaa24e437e8ea3f`，exact-head CI run=`33306024232 / workflow_dispatch / completed / success / 11 jobs`。Phase 1 全仓 inventory audit 尚未执行。
 - GateY-6F：`ACCEPTED / CI GREEN / MINIMAL LIVE PILOT VERIFIED`（已接受 / CI 已通过 / 最小实盘 pilot 已验证）；production pilot release=`8e3dd0cf6104eb85f36a0e434ca51ea9d903705a`，CI run=`32978280738 / completed / success / 10 jobs`。
 - GateY-FREEZE：`ACCEPTED / CI GREEN / TAGGED`（已接受 / CI 已通过 / 已打 tag）；exact-head CI run=`33037514013 / completed / success / 11 jobs / bad=0`，archive/release post-tag checker errors=0。
-- GateAUDIT-0C-R3-DOC-LINK-LINUX-REMEDIATION：`REVIEW_ACCEPTED / READY_TO_COMMIT`（独立复核已接受 / 可以进入提交准备）；decision=`PASS / REVIEW_ACCEPTED / READY_TO_COMMIT`，P0=0、P1=0，candidate modified by review=`NO`，independence violation=0；root cause=`POWERSHELL_PROVIDER_HIDDEN_ITEM_PORTABILITY`，显式 root 与递归枚举均使用 `-Force`，默认 `.agents` blocking root、missing-root fail-closed 与历史 warning policy 保持不变；commit=`NONE`，CI=`NOT_RUN`。
+- GateAUDIT-0C-R3-DOC-LINK-LINUX-REMEDIATION：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；immutable acceptance pair=`40e1077e1fe735a3d250f094caaa24e437e8ea3f / 33306024232`，blocking jobs=`11/11 SUCCESS`。Linux CI 已关闭 P1-01 authority fixture、P1-02 Java verifier 与 doc-link hidden-root portability finding；P0=0、P1=0。
 
 ## 2. Accepted pilot facts
 
@@ -66,4 +66,4 @@ updated_commit=72fbf5e78f217a02b572a54fadb17dea204b594f
 
 ## 5. 下一允许动作
 
-- 当前唯一治理动作是 `NQ-GATEAUDIT-0C-R3-COMMIT`。不得再次启动 review 或修改 remediation candidate；后续 remediation commit 的 exact-head CI green 前不得进入 Phase 1、改写 GateY frozen evidence 或扩大真实交易能力。
+- 当前唯一治理动作是 `NQ-GATEAUDIT-PHASE1-REPOSITORY-AUDIT-INVENTORY`：按 Audit Bootstrap Charter 启动 GateAUDIT Phase 1 full first-party repository inventory。Phase 1 尚未开始；不得再次启动 Phase 0 review 或 exact-head CI，不得改写 GateY frozen evidence 或扩大真实交易能力。
