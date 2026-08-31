@@ -9,7 +9,9 @@
 - GateAUDIT：`IN PROGRESS / NOT FROZEN`（治理进行中 / 未冻结）；Phase 0=`ACCEPTED / CI_GREEN / COMPLETE`，immutable pair=`40e1077e... / 33306024232`；Phase 1 inventory、Phase 2 analysis 与 Phase 3 disposition 已完成。
 - GateY freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`；exact-head CI run=`33037514013 / completed / success / 11 jobs`。
 - Phase 3 findings=`P0 0 / P1 4 / P2 8 / P3 1`；F-001=`95b859ee... / 33347091147`、F-002=`0651a736... / 33387882472`、F-003=`327c2229... / 33399190770`、F-004=`18efc06c... / 33358364678`，均为 `ACCEPTED / CI_GREEN`。
-- Phase4 remaining disposition closeout=`PASS / PHASE4_COMPLETE / READY_FOR_PHASE5 / REVIEW_ACCEPTED / READY_TO_COMMIT`；当前唯一动作是 `NQ-GATEAUDIT-PHASE4-REMAINING-DISPOSITION-AND-CONSOLIDATION-COMMIT`，exact-head CI全绿后才实施Phase5。
+- Phase4 remaining disposition closeout=`COMPLETE / ACCEPTED / CI_GREEN`，immutable pair=`7ca1fc92... / 33405549149`，blocking P0/P1=`0/0`。
+- Phase5A=`READY_TO_START / NOT_IMPLEMENTED`；inventory seed=`P5-F001～P5-F009 / P1 3 / P2 6`。Legacy Phase3 IDs F-005/F-011因canonical identity不可恢复而退休，不向Phase5传递未知语义。
+- 当前唯一动作是 `NQ-GATEAUDIT-PHASE5A-CANONICAL-DELIVERY-IMPLEMENTATION`，对应 workstream `NQ-GATEAUDIT-PHASE5A-CANONICAL-CI-AND-SUPPLY-CHAIN`。
 - Pilot final：PLACE=1、retry=0、CANCEL=0、activeLease=0、LIVE=false、kill=`ENGAGED`、Attempt-02 未创建。
 - Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->

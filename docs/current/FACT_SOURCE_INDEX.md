@@ -28,6 +28,7 @@
 - [ARCHITECTURE.md](ARCHITECTURE.md) / [MODULES.md](MODULES.md)：架构与模块职责。
 - [RUNBOOK.md](RUNBOOK.md)：当前运行手册。
 - [FRONTEND_DESIGN_SYSTEM.md](FRONTEND_DESIGN_SYSTEM.md)：前端设计系统参考。
+- [ROADMAP.md](ROADMAP.md)：Phase5 inventory finding seed、capability disposition与下一允许workstream；finding登记不表示implementation或acceptance。
 
 ## 4. Evidence Ledgers
 

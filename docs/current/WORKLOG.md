@@ -19726,3 +19726,11 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Validation：accepted pair `4/4`、authority/matcher/lifecycle/docs/stale/reference scans均PASS；`git diff --check` PASS。Docs/index-only scope未机械重跑Maven，最近F003 exact-head CI已覆盖全量11 jobs。
 - Candidate：`IMPLEMENTED / PENDING_REVIEW / P0_0 / P1_0`；next=`NQ-GATEAUDIT-PHASE4-REMAINING-DISPOSITION-AND-CONSOLIDATION-REVIEW`。未commit/push，未启动Phase5/Phase6。
 - Independent review final：`PASS / REVIEW_ACCEPTED / READY_TO_COMMIT_AND_EXACT_HEAD_CI`；Attempt-01 P1已关闭，P0/P1/P2/P3=`0/0/0/0`。Authority前移为`REVIEW_ACCEPTED|READY_TO_COMMIT / NONE / NOT_RUN`，next=`NQ-GATEAUDIT-PHASE4-REMAINING-DISPOSITION-AND-CONSOLIDATION-COMMIT`。
+
+## 2026-08-31 — GateAUDIT Phase4 post-CI authority reconciliation
+
+- Baseline：branch=`audit/post-gatey-agent-baseline`，worktree clean、staged=0，HEAD与remote均为`7ca1fc92f8900e3e9d19184fccd40569f233823f`；GitHub Actions run `33405549149`=`completed / success / headSha exact / 11 jobs / bad=0`。
+- Authority：Phase4 closeout同步为`COMPLETE / ACCEPTED / CI_GREEN`，immutable capability pair保持`7ca1fc92f8900e3e9d19184fccd40569f233823f / 33405549149`；Phase5A=`READY_TO_START / NOT_IMPLEMENTED`。
+- Legacy identity：tracked refs、all refs、reflog与unreachable blobs均无法恢复Phase3 F-005/F-011的canonical title/source/owner/consumer；二者标记为`LEGACY_FINDING_IDENTITY_UNRECOVERABLE / RETIRED`，历史ledger不删除，Phase5不继承未知语义。
+- Phase5 seed：登记`P5-F001～P5-F009`，severity=`P1 3 / P2 6`，全部`OPEN / NOT_IMPLEMENTED`；未修改backend/frontend/research/scripts/deploy/.github/migration/frozen archive。
+- Matcher：workstream名称包含`CI`会被现有matcher分类为CI action；machine next action使用唯一`IMPLEMENTATION` token `NQ-GATEAUDIT-PHASE5A-CANONICAL-DELIVERY-IMPLEMENTATION`，未修改matcher、checker、contract或lifecycle。
