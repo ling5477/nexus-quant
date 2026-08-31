@@ -11,7 +11,17 @@
 
 冲突时输出 `BLOCKED / CURRENT_AUTHORITY_CONFLICT`；历史材料不得覆盖 current authority。
 
-## 2. Capability Owners
+## 2. Active Current Document Set
+
+以下文件可以表达current facts，但只有 `STATUS.md` 决定current stage：
+
+- root `README.md`、本目录 `README.md`、`STATUS.md`、`ROADMAP.md`、`FACT_SOURCE_INDEX.md`；
+- `API.md`、`DB_SCHEMA.md`、`ARCHITECTURE.md`、`MODULES.md`、`RUNBOOK.md`、`GOVERNANCE_WORKFLOW.md`；
+- `TESTING.md`、`WORKLOG.md` 仅作为append-only evidence ledger。
+
+`GATEV_PLAN.md`、`GATEW_PLAN.md`、`NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md` 与 `docs/current/evidence/**` 均为 `HISTORICAL / NON_AUTHORITATIVE / RETAIN_IN_PLACE`。保留原路径是为了不改写append-only历史链接；其中阶段、状态和下一动作均为当时快照，不参与current authority、runtime routing、Skill routing或Phase4/5 disposition。
+
+## 3. Capability Owners
 
 - [API.md](API.md)：已实现 HTTP API 与边界。
 - [DB_SCHEMA.md](DB_SCHEMA.md)：已落地 schema/migration。
@@ -19,14 +29,14 @@
 - [RUNBOOK.md](RUNBOOK.md)：当前运行手册。
 - [FRONTEND_DESIGN_SYSTEM.md](FRONTEND_DESIGN_SYSTEM.md)：前端设计系统参考。
 
-## 3. Evidence Ledgers
+## 4. Evidence Ledgers
 
 - [TESTING.md](TESTING.md)：append-only 验证证据。
 - [WORKLOG.md](WORKLOG.md)：append-only 工作证据。
 
 旧条目只表示历史执行，不参与 current stage 判定。
 
-## 4. Agent / Governance
+## 5. Agent / Governance
 
 - 根 `AGENTS.md`：仓库级入口。
 - `.agents/README.md` 与 `.agents/skills/**`：唯一 active Skill 集合。
@@ -41,7 +51,7 @@
 
 `.agents/history/**`、`.agents.audit-subject/**`、旧 Skill/checker 自我声明均为 non-authoritative audit/history input。
 
-## 5. Frozen Evidence
+## 6. Frozen Evidence
 
 - GateY：[../gates/gate-y/README.md](../gates/gate-y/README.md)。
 - 其他 frozen Gate：`docs/gates/gate-*`。

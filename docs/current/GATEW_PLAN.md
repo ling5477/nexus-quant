@@ -1,5 +1,7 @@
 # GateW 单交易所准实盘准备与 Shadow-to-Live 安全门槛计划
 
+> **HISTORICAL / NON_AUTHORITATIVE**：本文件是GateW时期的保留计划正文，只供追溯；其中“当前状态/下一动作”均为当时快照。当前阶段只读取 [STATUS.md](STATUS.md) 与 [ROADMAP.md](ROADMAP.md)。
+
 英文名：`Single-Venue Pre-Live Readiness & Shadow-to-Live Safety Gate`。
 
 任务：`NQ-GATEW-PLAN-IMPLEMENTATION`。

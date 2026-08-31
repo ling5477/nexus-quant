@@ -14900,3 +14900,14 @@ Attempt-01=`FAIL / CHANGES_REQUIRED`：P1-01=`INTERPROCESS_DURABILITY_CHECK_ABSE
 - Full Maven：23/23 modules `SUCCESS`；Surefire XML=`1650 tests / 0 failures / 0 errors / 54 conditional skips`，`nq-app=326/0/0/36`。bootstrap 与 full-run disposable database、random schemas、F002 scenario DB和临时输出均已清理。
 - Preserved failures/RCA：首次命令因 PowerShell 未整体引用 JDBC `-D` 参数而在测试前失败；首次 testCompile 缺 `assertNotEquals` import；首次组合 run 的 replacement 预期应为 application fail-closed 而非 DB violation，且长期 local DB 有既有 orphan legacy account导致 V45 context migration失败。均以命令/Test fixture最小修正或全新 disposable DB归因，未修改 production Java/migration，未隐藏失败。
 - Side effects：OKX/Binance/credential/PLACE/CANCEL/transfer/withdraw/LIVE=`0/0/0/0/0/0/0/0`；production Java/migration/frontend/research/deploy/CI diff=`0`。
+
+## 2026-08-31 — GateAUDIT Phase4 remaining disposition closeout candidate
+
+- Accepted-pair verification：F-001、F-002、F-003、F-004 commits均存在且为当前HEAD祖先；对应runs=`33347091147 / 33387882472 / 33399190770 / 33358364678`均`completed / success / headSha exact / 11 jobs / bad=0`。
+- F-013 stale scan：canonical current owners的过期状态/next-action claim=`10→0`；legacy入口historical marker missing=`0`；machine authority checker=`errors 0`。
+- F-005/F-011 traceability：current ledgers仅保留`P2 / DEFERRED` ID且仓库无canonical semantic title；capability matrix已分别记录`DEFER_UNTIL_TRIGGER`，trigger为Phase5任务开始后、首个implementation commit前恢复source title/evidence/consumer/owner。未借用其他Gate同名finding，未推断实现。
+- Legacy reference inventory：`scripts/gatew=13 files / active refs 49`、`scripts/gatey=24 / active refs 56`、`deploy/gatey=4 / active refs 32`、`deploy/systemd=3 / active refs 21`；均不满足DELETE条件。`docs/current/evidence/gate-w=98 files / current refs 4 / CI refs 1 / active refs 8 / historical refs 575`，保留为historical/non-authoritative。
+- Governance：current authority、next-action positive/negative/safety fixtures、generic lifecycle=`20/20`均PASS，task-specific runtime rules=`0`；doc links focused=`161 checked / 0 warnings / 0 errors`。
+- Scope：只修改current owner docs与legacy index/banner；production Java/migration/CI workflow/frontend/research/scripts/deploy/frozen archive=`0`，deleted/moved assets=`0`。
+- Candidate result：初次独立review因F-005/F-011缺少显式row返回`CHANGES_REQUIRED / P1_1`；最小docs remediation已完成并等待同一reviewer复核。Phase5 inputs与Phase6 deferred proofs由`ROADMAP.md` capability matrix持有，本轮未实施后置能力。
+- Independent review final：`PASS / REVIEW_ACCEPTED / READY_TO_COMMIT_AND_EXACT_HEAD_CI`；原P1=`CLOSED`，P0/P1/P2/P3=`0/0/0/0`。F-005/F-011 rows=`1/1`，authority、matcher、lifecycle、links与diff均PASS。

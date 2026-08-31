@@ -6,9 +6,9 @@ NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/
 
 <!-- nq-current-summary:start -->
 - 最近冻结 Gate 为 GateY：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [docs/gates/gate-y/](docs/gates/gate-y/)，tag=`nq-gatey-freeze`。
-- GateAUDIT：`IN PROGRESS / NOT FROZEN`（进入治理容器 / 未冻结）；`GateAUDIT-PLAN=NOT STARTED`（未开始）。
+- GateAUDIT：`IN PROGRESS / NOT FROZEN`；Phase 0～3 已完成，Phase4 F-001～F-004 均为 `ACCEPTED / CI_GREEN`，remaining disposition closeout=`REVIEW_ACCEPTED / READY_TO_COMMIT`。
 - GateY freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`；exact-head CI run=`33037514013 / completed / success / 11 jobs`。
-- 当前唯一动作是 `NQ-FULL-REPOSITORY-AUDIT-AND-CONSOLIDATION`。
+- 当前唯一动作是 `NQ-GATEAUDIT-PHASE4-REMAINING-DISPOSITION-AND-CONSOLIDATION-COMMIT`；完成commit/exact-head CI后进入Phase5。
 - Pilot final：PLACE=1、retry=0、CANCEL=0、activeLease=0、LIVE=false、kill=`ENGAGED`、Attempt-02 未创建。
 - Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->

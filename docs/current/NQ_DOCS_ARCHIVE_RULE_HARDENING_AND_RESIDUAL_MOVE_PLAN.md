@@ -1,5 +1,7 @@
 # NQ-DOCS-ARCHIVE-RULE-HARDENING-AND-GATET-CURRENT-RESIDUAL-PLAN
 
+> **HISTORICAL / NON_AUTHORITATIVE**：本文件是GateT时期未执行的archive move计划快照，不决定当前residual、Gate或下一动作。当前分类以 [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md) 为准。
+
 Status: `PLAN READY / MOVE NOT STARTED`（计划已就绪 / 迁移未开始）
 
 本文是文档治理加硬与 GateR / GateS / GateT current residual move plan。本轮只定义规则和后续批次，不移动 `docs/current` 文件，不改 `docs/gates/**` 或 `docs/archive/**`，不启动 GateU。

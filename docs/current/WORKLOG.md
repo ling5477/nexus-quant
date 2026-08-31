@@ -19713,3 +19713,16 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Validation：focused=`2/0/0/0`；related=`58/0/0/0`；full Maven 23/23 modules SUCCESS，Surefire XML=`1650/0/0/54 skipped`；PostgreSQL=`17.7`、Flyway=`V46`。所有 disposable DB/schema/F002 child artifacts清理完成。
 - Outcome：`PROVEN / NO_PRODUCTION_IDENTITY_DEFECT`，并按 proof-only 规则=`SELF_REVIEWED / READY_TO_COMMIT`；P0/P1/P2/P3=`0/0/0/0`。Production Java/migration/frontend/research/deploy/CI=`0/0/0/0/0/0`，external side effects全部0。
 - Next：`NQ-GATEAUDIT-PHASE4-F003-ORDER-EXECUTION-IDENTITY-CONVERGENCE-COMMIT`；不单独启动 independent review，不自动 commit/push/CI。
+
+## 2026-08-31 — GateAUDIT Phase4 remaining disposition and consolidation
+
+- Baseline：branch=`audit/post-gatey-agent-baseline`，HEAD/remote=`327c2229e89c`，starting worktree/staged=`0/0`；F-003 exact-head run=`33399190770 / 11 of 11 SUCCESS`。
+- F-013 before：machine authority仍为F003 `IMPLEMENTED|SELF_REVIEWED / NONE / NOT_RUN`，canonical current owners含10条过期F002/F003/Phase claims。Remediation使用既有schema v3与generic matcher，未增加Task-ID rule、override或vocabulary。
+- F-013 after：machine work batch切换至Phase4 remaining disposition candidate；F001～F004 accepted pairs与Git/CI一致；canonical stale claim=`0`、legacy historical marker missing=`0`、historical evidence acting as authority/runtime routing=`0`。
+- Asset disposition：KEEP=`.github/workflows/ci.yml`、`scripts/docs/**`、`scripts/java-standard/**`、current proof tests/Spring configs；UPDATE=`STATUS/README/ROADMAP/FACT_SOURCE_INDEX/RUNBOOK`与3个legacy入口banner/index；CONSOLIDATE=`ROADMAP`单一capability matrix；ARCHIVE=`GateV/GateW plans、old archive-move plan、GateW attempt evidence`原路径保留且non-authoritative；DELETE=`0`。
+- Delete proof：GateW/GateY/deploy groups仍有active cross-script callers；GateW current evidence仍有current/CI/active引用，且98份中仅95份与frozen copy blob-identical。因此caller/reference条件不成立，未做高风险删除或移动。
+- Capability disposition：F-013=`IMPLEMENT_NOW / candidate complete`；F-005/F-011=`DEFER_UNTIL_TRIGGER / Phase5 entry source mapping before first implementation commit`；Phase5 CI/CD、canonical deployment、observability、supply-chain pinning、selected E2E=`IMPLEMENT_LATER`；Gate-specific helpers=`DEFER_UNTIL_TRIGGER`；Phase6 L4/L5/L6=`PROVE_FIRST`；真实交易扩展=`REJECT`；accepted Phase4 proof与isolated historical evidence=`NOT_REQUIRED`。
+- Independent review Attempt-01：`CHANGES_REQUIRED / P1 CAPABILITY_DISPOSITION_TRACEABILITY_INCOMPLETE`；F-005/F-011在ledger中存在但matrix未显式映射。Remediation只新增两个fail-closed rows和Phase5 entry trigger，不修改代码/checker/vocabulary。
+- Validation：accepted pair `4/4`、authority/matcher/lifecycle/docs/stale/reference scans均PASS；`git diff --check` PASS。Docs/index-only scope未机械重跑Maven，最近F003 exact-head CI已覆盖全量11 jobs。
+- Candidate：`IMPLEMENTED / PENDING_REVIEW / P0_0 / P1_0`；next=`NQ-GATEAUDIT-PHASE4-REMAINING-DISPOSITION-AND-CONSOLIDATION-REVIEW`。未commit/push，未启动Phase5/Phase6。
+- Independent review final：`PASS / REVIEW_ACCEPTED / READY_TO_COMMIT_AND_EXACT_HEAD_CI`；Attempt-01 P1已关闭，P0/P1/P2/P3=`0/0/0/0`。Authority前移为`REVIEW_ACCEPTED|READY_TO_COMMIT / NONE / NOT_RUN`，next=`NQ-GATEAUDIT-PHASE4-REMAINING-DISPOSITION-AND-CONSOLIDATION-COMMIT`。

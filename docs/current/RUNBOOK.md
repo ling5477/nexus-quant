@@ -61,9 +61,9 @@ python -m ruff check .
 - `/api/auth/login` 失败：确认后端已启动、DB migration 已完成、local admin 用户配置与认证数据源一致。
 - `/api/auth/me` 失败：确认请求携带 `<redacted-authorization-header-example>`，并先通过 `/api/auth/login` 获取 token。
 
-## 8. GateS-0 docs-only 验证边界
+## 8. GateAUDIT Phase4 closeout 与后续阶段边界
 
-GateS-0 当前为 `PLAN / NOT IMPLEMENTED`（规划 / 未实现），只做 fact-source reconciliation、planning review、read-model / frontend contract proposal 和验收清单。正常情况下只运行 docs consistency 相关命令：
+Phase4 remaining disposition closeout只处理current authority、legacy asset disposition和capability matrix。docs-only closeout正常运行以下一致性检查：
 
 ```powershell
 git status --short
@@ -72,4 +72,4 @@ git diff --check
 git diff --stat
 ```
 
-本阶段不运行真实交易所 HTTP / WebSocket，不读取 credential material，不启动 LIVE，不接 AI / DH runtime，不实现 RealClient、real provider、private trading adapter 或真实 permission probe。除非误触代码，否则不运行 Maven 全量测试、frontend build / E2E 或 Python pytest / mypy / ruff。
+本阶段不运行真实交易所 HTTP / WebSocket，不读取 credential material，不启动 LIVE，不接 AI / DH runtime。Phase5 才处理CI/CD、canonical deployment、observability、supply-chain pinning与selected E2E；Phase6才处理L4/L5/L6故障证明。仅docs/索引变化时不机械运行完整Maven。
