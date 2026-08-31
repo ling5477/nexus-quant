@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -283,6 +284,30 @@ class TradingChainPostgresIntegrationTest {
         assertEquals(1, fakeVenue.placeCount());
         assertEquals(0, fakeVenue.gatewayStatusQueryCount());
         assertEquals(0, ExchangeNoOutboundGuard.deniedSelections());
+    }
+
+    @Test
+    @Transactional
+    void keepsOneCanonicalOrderForRetryAndSeparatesIndependentEconomicActions() {
+        assertProductionComposition();
+        ScenarioContext first = placeAcceptedOrder("f003-canonical-order");
+        int placeCountAfterFirst = fakeVenue.placeCount();
+
+        var replay = orderCommandService.placeOrder(first.request());
+
+        assertTrue(replay.idempotentHit());
+        assertEquals(first.order().orderId(), replay.orderId());
+        assertEquals(placeCountAfterFirst, fakeVenue.placeCount());
+        assertEquals(1L, count(
+                "SELECT count(*) FROM orders WHERE account_id=? AND client_order_id=?",
+                first.accountId(), first.order().clientOrderId()));
+
+        ScenarioContext second = placeAcceptedOrder("f003-independent-order");
+        assertNotEquals(first.order().orderId(), second.order().orderId());
+        assertNotEquals(first.order().clientOrderId(), second.order().clientOrderId());
+        assertEquals(1L, count(
+                "SELECT count(*) FROM orders WHERE account_id=? AND client_order_id=?",
+                second.accountId(), second.order().clientOrderId()));
     }
 
     @Test
@@ -637,7 +662,7 @@ class TradingChainPostgresIntegrationTest {
         assertEquals(clientOrderId, accepted.clientOrderId());
         assertEquals(fakeVenue.externalOrderId(accepted.orderId()), accepted.externalOrderId());
         assertEquals(OrderStatus.ACCEPTED, accepted.status());
-        return new ScenarioContext(traceId, accountId, accepted);
+        return new ScenarioContext(traceId, accountId, accepted, request);
     }
 
     private void assertProductionComposition() {
@@ -707,7 +732,12 @@ class TradingChainPostgresIntegrationTest {
         return result;
     }
 
-    private record ScenarioContext(String traceId, Long accountId, OrderRecord order) {
+    private record ScenarioContext(
+            String traceId,
+            Long accountId,
+            OrderRecord order,
+            PlaceOrderRequest request
+    ) {
     }
 
     @TestConfiguration(proxyBeanMethods = false)

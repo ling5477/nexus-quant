@@ -14890,3 +14890,13 @@ Attempt-01=`FAIL / CHANGES_REQUIRED`：P1-01=`INTERPROCESS_DURABILITY_CHECK_ABSE
 - Accepted facts：Backend Maven既有 `postgres:16`、health check与CI-only `NQ_DB_*`被精确复用；三个 `SPRING_DATASOURCE_*` alias仅作用于 `Run backend tests` step，duplicate infrastructure/repository secret=`0/0`；F002 Java hashes、scenario DB、child override与全部断言不变。
 - Review validation：SnakeYAML parse/alias structure=`PASS`；focused=`2/0/0/0`；no-outbound/credential=`14/0/0/0`；GateY zero-side-effect context=`2/0/0/0`；PostgreSQL 17.7本地权限probe与scenario cleanup PASS，不声称等价CI 16；review residue=`0`。
 - Authority reconciliation：`GateAUDIT-PHASE4-F002-CI-DATASOURCE-BINDING-REMEDIATION / REVIEW_ACCEPTED|READY_TO_COMMIT / NONE / NOT_RUN`；next=`NQ-GATEAUDIT-PHASE4-F002-DATASOURCE-BINDING-COMMIT`，matcher=`1`、type=`COMMIT`。
+
+## 2026-08-31 — F-003 Order/Execution identity convergence proof
+
+- Focused proof：`TradingChainPostgresIntegrationTest#keepsOneCanonicalOrderForRetryAndSeparatesIndependentEconomicActions` 与 `LiveSessionFactModelPostgresIntegrationTest#shouldProveF003OrderExecutionIdentityConvergence`，结果=`2/0/0/0`。真实 production Spring graph + JDBC repository、PostgreSQL `17.7`、Flyway `V46`、deterministic fake venue、external network=`0`。
+- S1/S4：同一 ordinary request/clientOrderId 重放命中原 `orderId`，venue PLACE count不增加，`orders` count保持1；两个独立 account/clientOrderId 生成不同 Order。
+- S2/S3/S5：同一 canonical intent 串行与4路并发 `createOrGet` 均返回原 `intentId`；重新实例化 JDBC repository 后仍读取原 `intentId/localOrderId`，Order count不增加；随机 replacement intent 被 `ORDER_INTENT_IDENTITY_MISMATCH` fail-closed；独立 Order/Intent 各自保持唯一。
+- Related regression：core=`25/0/0/0`、infra=`8/0/0/0`、scheduler=`9/0/0/0`、app=`16/0/0/0`，合计=`58/0/0/0`。F002 R1/R2 forked-JVM proof均保留原 Order/Trade identity；F001/F004 Spring PostgreSQL regression=`8/0/0/0`。
+- Full Maven：23/23 modules `SUCCESS`；Surefire XML=`1650 tests / 0 failures / 0 errors / 54 conditional skips`，`nq-app=326/0/0/36`。bootstrap 与 full-run disposable database、random schemas、F002 scenario DB和临时输出均已清理。
+- Preserved failures/RCA：首次命令因 PowerShell 未整体引用 JDBC `-D` 参数而在测试前失败；首次 testCompile 缺 `assertNotEquals` import；首次组合 run 的 replacement 预期应为 application fail-closed 而非 DB violation，且长期 local DB 有既有 orphan legacy account导致 V45 context migration失败。均以命令/Test fixture最小修正或全新 disposable DB归因，未修改 production Java/migration，未隐藏失败。
+- Side effects：OKX/Binance/credential/PLACE/CANCEL/transfer/withdraw/LIVE=`0/0/0/0/0/0/0/0`；production Java/migration/frontend/research/deploy/CI diff=`0`。

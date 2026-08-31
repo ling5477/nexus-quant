@@ -146,6 +146,104 @@ class LiveSessionFactModelPostgresIntegrationTest {
     }
 
     @Test
+    void shouldProveF003OrderExecutionIdentityConvergence() throws Exception {
+        SmokeConfig config = SmokeConfig.fromSystemProperties();
+        if (!config.required()) {
+            assumeTrue(config.configured(), "PostgreSQL F003 identity convergence proof is disabled");
+        }
+        assertTrue(config.configured(), "Missing required nq.postgres.smoke.* properties");
+
+        String schema = "f003_identity_" + UUID.randomUUID().toString().replace("-", "");
+        Flyway latest = flyway(config, schema, null);
+        latest.migrate();
+        latest.validate();
+        JdbcTemplate jdbc = jdbc(config, schema);
+        try {
+            assertEquals("46", latest.info().current().getVersion().getVersion());
+            ExistingFixture existing = seedExistingFacts(jdbc);
+            JdbcLiveControlRepository liveRepository = new JdbcLiveControlRepository(jdbc);
+            JdbcLiveControlAuthorization authorization = new JdbcLiveControlAuthorization(jdbc);
+            TransactionTemplate transactions = new TransactionTemplate(
+                    new DataSourceTransactionManager(jdbc.getDataSource()));
+            LiveSessionControlService sessions = new LiveSessionControlService(liveRepository, authorization);
+            RiskLimitSet risk = risk(existing.creatorId());
+            transactions.executeWithoutResult(status -> sessions.createRiskLimitSet(
+                    new AuthenticatedLiveControlActor(existing.creatorId()), risk));
+            LiveSession runtimeSession = session(existing, risk, UUID.randomUUID(), NOW.plusSeconds(20));
+            transactions.executeWithoutResult(status -> sessions.createSession(
+                    new AuthenticatedLiveControlActor(existing.creatorId()), runtimeSession, risk,
+                    createdEvent(runtimeSession, existing.creatorId())));
+            for (String state : List.of("APPROVED", "LIVE_WARMUP", "LIVE_ACTIVE")) {
+                jdbc.update("UPDATE live_sessions SET state=?,version=version+1,updated_at=CURRENT_TIMESTAMP "
+                        + "WHERE session_id=?", state, runtimeSession.id());
+            }
+            jdbc.update("UPDATE kill_switch_states SET status='DISENGAGED',version=version+1,"
+                    + "reason_code='F003_TEST_ONLY',source='POSTGRES_TEST_FIXTURE',updated_at=CURRENT_TIMESTAMP,"
+                    + "updated_by='f003-test',trace_id='f003-test' WHERE scope='GLOBAL_TRADING'");
+
+            ExecutionIntentDraft first = insertPlaceOrder(
+                    jdbc, runtimeSession.id(), existing.legacyAccountId(), "f003-first-");
+            JdbcExecutionIntentRepository firstRepository = new JdbcExecutionIntentRepository(
+                    jdbc, new DataSourceTransactionManager(jdbc.getDataSource()));
+            ExecutionIntent created = firstRepository.createOrGet(first);
+            assertEquals(first.localOrderId(), created.localOrderId());
+            assertEquals(first.clientOrderId(), created.clientOrderId());
+            assertEquals(1, jdbc.queryForObject(
+                    "SELECT count(*) FROM orders WHERE order_id=?", Integer.class, first.localOrderId()));
+
+            CountDownLatch start = new CountDownLatch(1);
+            try (ExecutorService executor = Executors.newFixedThreadPool(4)) {
+                List<Future<ExecutionIntent>> futures = java.util.stream.IntStream.range(0, 4)
+                        .mapToObj(index -> executor.submit(() -> {
+                            assertTrue(start.await(10, TimeUnit.SECONDS));
+                            return firstRepository.createOrGet(first);
+                        })).toList();
+                start.countDown();
+                for (Future<ExecutionIntent> future : futures) {
+                    assertEquals(created.intentId(), future.get(10, TimeUnit.SECONDS).intentId());
+                }
+            }
+            assertEquals(1, jdbc.queryForObject(
+                    "SELECT count(*) FROM execution_intents WHERE local_order_id=? AND action='PLACE'",
+                    Integer.class, first.localOrderId()));
+
+            JdbcExecutionIntentRepository restartedRepository = new JdbcExecutionIntentRepository(
+                    jdbc, new DataSourceTransactionManager(jdbc.getDataSource()));
+            ExecutionIntent afterRestart = restartedRepository.createOrGet(first);
+            assertEquals(created.intentId(), afterRestart.intentId());
+            assertEquals(created.localOrderId(), afterRestart.localOrderId());
+            assertEquals(1, jdbc.queryForObject(
+                    "SELECT count(*) FROM orders WHERE order_id=?", Integer.class, first.localOrderId()));
+
+            ExecutionIntentDraft replacementIdentity = ExecutionIntentCanonicalEncoder.place(
+                    UUID.randomUUID(), first.sessionId(), first.symbol(), first.side(),
+                    first.quantity(), first.limitPrice(), first.localOrderId());
+            LiveControlException replacementRejected = assertThrows(
+                    LiveControlException.class,
+                    () -> restartedRepository.createOrGet(replacementIdentity));
+            assertEquals("ORDER_INTENT_IDENTITY_MISMATCH", replacementRejected.code());
+            assertEquals(1, jdbc.queryForObject(
+                    "SELECT count(*) FROM execution_intents WHERE local_order_id=? AND action='PLACE'",
+                    Integer.class, first.localOrderId()));
+
+            ExecutionIntentDraft second = insertPlaceOrder(
+                    jdbc, runtimeSession.id(), existing.legacyAccountId(), "f003-second-");
+            ExecutionIntent independent = restartedRepository.createOrGet(second);
+            assertNotEquals(created.intentId(), independent.intentId());
+            assertNotEquals(created.localOrderId(), independent.localOrderId());
+            assertNotEquals(created.clientOrderId(), independent.clientOrderId());
+            assertEquals(2, jdbc.queryForObject(
+                    "SELECT count(*) FROM orders WHERE order_id IN (?,?)",
+                    Integer.class, first.localOrderId(), second.localOrderId()));
+            assertEquals(2, jdbc.queryForObject(
+                    "SELECT count(*) FROM execution_intents WHERE intent_id IN (?,?)",
+                    Integer.class, first.intentId(), second.intentId()));
+        } finally {
+            latest.clean();
+        }
+    }
+
+    @Test
     void shouldForwardMigrateExactV42ToV43ThenV43ToV44WithoutPendingOrFailedMigrations() {
         SmokeConfig config = SmokeConfig.fromSystemProperties();
         if (!config.required()) {
