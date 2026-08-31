@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -18,6 +19,8 @@ import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
+import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
+import com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest;
 import com.guidinglight.nexusquant.ledger.service.TradeLedgerPostingService;
 import com.guidinglight.nexusquant.ledger.service.port.TradeLedgerPort;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
@@ -25,7 +28,10 @@ import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
 import com.guidinglight.nexusquant.risk.service.PreTradeRiskService;
 import com.guidinglight.nexusquant.risk.service.RiskGate;
 import com.guidinglight.nexusquant.scheduler.service.LedgerReconcileScheduler;
+import com.guidinglight.nexusquant.scheduler.service.LedgerModuleTradeLedgerGateway;
 import com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileService;
+import com.guidinglight.nexusquant.scheduler.service.TradeLedgerGateway;
+import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
 import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
 import com.guidinglight.nexusquant.trading.application.OrderCommandService;
 import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
@@ -48,11 +54,13 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -104,7 +112,6 @@ import org.springframework.transaction.annotation.Transactional;
         "nq.env-safety.real-exchange-enabled=false",
         "nq.env-safety.no-outbound=true"
 })
-@Transactional
 class TradingChainPostgresIntegrationTest {
 
     private static final BigDecimal ORDER_PRICE = new BigDecimal("100.00000000");
@@ -153,9 +160,13 @@ class TradingChainPostgresIntegrationTest {
     @Autowired
     private DeterministicFakeVenue fakeVenue;
 
+    @Autowired
+    private FailOnceTradeLedgerGateway failOnceTradeLedgerGateway;
+
     @BeforeEach
     void resetFakeVenue() {
         fakeVenue.reset();
+        failOnceTradeLedgerGateway.reset();
     }
 
     @AfterAll
@@ -164,6 +175,7 @@ class TradingChainPostgresIntegrationTest {
     }
 
     @Test
+    @Transactional
     void doesNotCreateTradeBeforeVenueReportsFill() {
         assertProductionComposition();
         ScenarioContext scenario = placeAcceptedOrder("negative");
@@ -191,6 +203,7 @@ class TradingChainPostgresIntegrationTest {
     }
 
     @Test
+    @Transactional
     void createsExactlyOneTradeFromVenueFillAndRemainsIdempotent() {
         assertProductionComposition();
         ScenarioContext scenario = placeAcceptedOrder("positive");
@@ -259,17 +272,332 @@ class TradingChainPostgresIntegrationTest {
         assertEquals(0, okxRestReconcileService.reconcileOnce(10));
         assertEquals(tradeCount, count("SELECT COUNT(*) FROM trades WHERE order_id = ?", filled.orderId()));
         assertEquals(ledgerCount, count("SELECT COUNT(*) FROM ledger_entries WHERE ref_id = ?", trade.tradeId()));
-        assertEquals(0, positionQuantity.compareTo(decimal(
+            assertEquals(0, positionQuantity.compareTo(decimal(
                 "SELECT qty FROM positions WHERE account_id = ? AND symbol = ?",
                 scenario.accountId(),
                 filled.symbol()
-        )));
-        assertEquals(orderQueries, fakeVenue.orderQueryCount());
-        assertEquals(fillQueries, fakeVenue.fillQueryCount());
+            )));
+            assertEquals(orderQueries, fakeVenue.orderQueryCount());
+            assertEquals(fillQueries + 1, fakeVenue.fillQueryCount());
         assertEquals(filled.externalOrderId(), fakeVenue.lastReconciliationExternalOrderId());
         assertEquals(1, fakeVenue.placeCount());
         assertEquals(0, fakeVenue.gatewayStatusQueryCount());
         assertEquals(0, ExchangeNoOutboundGuard.deniedSelections());
+    }
+
+    @Test
+    void recoversLedgerAfterDurableTradeAndRemainsIdempotent() {
+        assertProductionComposition();
+        ScenarioContext scenario = placeAcceptedOrder("f004-recovery");
+        OrderRecord accepted = scenario.order();
+        failOnceTradeLedgerGateway.failNext(accepted.orderId());
+
+        ScenarioContext unrelated = placeAcceptedOrder("f004-unrelated");
+        fakeVenue.reportFilled(unrelated.order().externalOrderId());
+        assertEquals(1, okxRestReconcileService.reconcileOnce(100));
+        assertEquals(1, failOnceTradeLedgerGateway.remainingFailureCount());
+        assertEquals(0, failOnceTradeLedgerGateway.attemptCount());
+
+        fakeVenue.reportFilled(accepted.externalOrderId());
+
+        try {
+            assertThrows(
+                    DeterministicLedgerPostingFailure.class,
+                    () -> okxRestReconcileService.reconcileOnce(100)
+            );
+            assertEquals(0, failOnceTradeLedgerGateway.remainingFailureCount());
+
+            OrderRecord filled = orderRepository.findByOrderId(accepted.orderId()).orElseThrow();
+            var trade = tradeRepository.findByOrderId(filled.orderId()).orElseThrow();
+            assertEquals(OrderStatus.FILLED, filled.status());
+            assertEquals(1L, count("SELECT COUNT(*) FROM trades WHERE order_id = ?", filled.orderId()));
+            assertEquals(0L, count("SELECT COUNT(*) FROM ledger_entries WHERE ref_id = ?", trade.tradeId()));
+            assertEquals(0L, count(
+                    "SELECT COUNT(*) FROM positions WHERE account_id = ? AND symbol = ?",
+                    scenario.accountId(),
+                    filled.symbol()
+            ));
+            assertEquals(0L, count(
+                    "SELECT COUNT(*) FROM account_snapshots WHERE account_id = ? AND currency = 'BTC'",
+                    scenario.accountId()
+            ));
+            assertEquals(1L, count(
+                    "SELECT COUNT(*) FROM event_store WHERE trace_id = ? AND topic = ? "
+                            + "AND event_type = 'TradeExecuted' AND key_value = ?",
+                    scenario.traceId(),
+                    TopicNames.TRADE_EVENT_V1,
+                    filled.clientOrderId()
+            ));
+            assertEquals(1L, count(
+                    "SELECT COUNT(*) FROM audit_logs WHERE trace_id = ? AND domain = 'RECONCILE' "
+                            + "AND action = 'OKX_LEDGER_POST_FAILED'",
+                    scenario.traceId()
+            ));
+
+            assertEquals(0, okxRestReconcileService.reconcileOnce(100));
+
+            assertEquals(2, failOnceTradeLedgerGateway.attemptCount());
+            assertEquals(1L, count("SELECT COUNT(*) FROM trades WHERE order_id = ?", filled.orderId()));
+            assertEquals(2L, count("SELECT COUNT(*) FROM ledger_entries WHERE ref_id = ?", trade.tradeId()));
+            assertEquals(2L, count(
+                    "SELECT COUNT(*) FROM ledger_events le JOIN ledger_entries e ON e.entry_id = le.entry_id "
+                            + "WHERE e.ref_id = ?",
+                    trade.tradeId()
+            ));
+            assertEquals(0, VENUE_FILL_QUANTITY.compareTo(decimal(
+                    "SELECT qty FROM positions WHERE account_id = ? AND symbol = ?",
+                    scenario.accountId(),
+                    filled.symbol()
+            )));
+            assertEquals(0, VENUE_FILL_QUANTITY.compareTo(decimal(
+                    "SELECT balance FROM account_snapshots WHERE account_id = ? AND currency = 'BTC' "
+                            + "ORDER BY ts DESC, snapshot_id DESC LIMIT 1",
+                    scenario.accountId()
+            )));
+            assertEquals(1L, count(
+                    "SELECT COUNT(*) FROM audit_logs WHERE trace_id = ? AND domain = 'RECONCILE' "
+                            + "AND action = 'OKX_LEDGER_RECOVERY_COMPLETED'",
+                    scenario.traceId()
+            ));
+            long ledgerCountAfterRecovery = count(
+                    "SELECT COUNT(*) FROM ledger_entries WHERE ref_id = ?",
+                    trade.tradeId()
+            );
+            BigDecimal positionAfterRecovery = decimal(
+                    "SELECT qty FROM positions WHERE account_id = ? AND symbol = ?",
+                    scenario.accountId(),
+                    filled.symbol()
+            );
+            BigDecimal accountAfterRecovery = accountBalance(scenario);
+            assertEquals(0, okxRestReconcileService.reconcileOnce(100));
+            assertEquals(3, failOnceTradeLedgerGateway.attemptCount());
+            assertEquals(1L, count("SELECT COUNT(*) FROM trades WHERE order_id = ?", filled.orderId()));
+            assertEquals(ledgerCountAfterRecovery, count(
+                    "SELECT COUNT(*) FROM ledger_entries WHERE ref_id = ?",
+                    trade.tradeId()
+            ));
+            assertEquals(0, positionAfterRecovery.compareTo(decimal(
+                    "SELECT qty FROM positions WHERE account_id = ? AND symbol = ?",
+                    scenario.accountId(),
+                    filled.symbol()
+            )));
+            assertEquals(0, accountAfterRecovery.compareTo(accountBalance(scenario)));
+            assertEquals(1L, count(
+                    "SELECT COUNT(*) FROM audit_logs WHERE trace_id = ? AND domain = 'RECONCILE' "
+                            + "AND action = 'OKX_LEDGER_RECOVERY_COMPLETED'",
+                    scenario.traceId()
+            ));
+            assertEquals(0, ExchangeNoOutboundGuard.deniedSelections());
+        } finally {
+            retireTestOrders(accepted.orderId(), unrelated.order().orderId());
+            restoreTestKillSwitch(scenario.traceId());
+        }
+    }
+
+    @Test
+    @Transactional
+    void processesMultipleVenueFillsAsIndependentTrades() {
+        ScenarioContext scenario = placeAcceptedOrder("f004-multifill");
+        VenueFill fillA = venueFill(scenario, "A", "120.00000000", "0.04000000", 4);
+        VenueFill fillB = venueFill(scenario, "B", "125.00000000", "0.06000000", 5);
+        fakeVenue.reportFills(scenario.order().externalOrderId(), List.of(fillA, fillB));
+
+        assertEquals(2, okxRestReconcileService.reconcileOnce(100));
+
+        PaperTradeRecord tradeA = tradeByExchangeId(fillA.exchangeTradeId());
+        PaperTradeRecord tradeB = tradeByExchangeId(fillB.exchangeTradeId());
+        assertEquals(1L, count("SELECT COUNT(*) FROM trades WHERE exchange_trade_id=?", fillA.exchangeTradeId()));
+        assertEquals(1L, count("SELECT COUNT(*) FROM trades WHERE exchange_trade_id=?", fillB.exchangeTradeId()));
+        assertLedgerComplete(tradeA);
+        assertLedgerComplete(tradeB);
+        assertEquals(0, ORDER_QUANTITY.compareTo(positionQuantity(scenario)));
+        assertEquals(0, ORDER_QUANTITY.compareTo(accountBalance(scenario)));
+
+        assertEquals(0, okxRestReconcileService.reconcileOnce(100));
+        assertLedgerComplete(tradeA);
+        assertLedgerComplete(tradeB);
+        assertEquals(0, ORDER_QUANTITY.compareTo(positionQuantity(scenario)));
+    }
+
+    @Test
+    @Transactional
+    void recoversOlderNonLatestTradeWithoutChangingCompletedLatestTrade() {
+        ScenarioContext scenario = placeAcceptedOrder("f004-old-trade");
+        VenueFill fillA = venueFill(scenario, "OLD", "120.00000000", "0.04000000", 4);
+        VenueFill fillB = venueFill(scenario, "LATEST", "125.00000000", "0.06000000", 5);
+        PaperTradeRecord tradeA = insertDurableTrade(scenario, fillA);
+        PaperTradeRecord tradeB = insertDurableTrade(scenario, fillB);
+        postCanonicalLedger(scenario.order(), tradeB);
+        long latestLedgerBefore = ledgerEntryCount(tradeB);
+        assertEquals(tradeB.tradeId(), tradeRepository.findByOrderId(scenario.order().orderId()).orElseThrow().tradeId());
+        assertEquals(0L, ledgerEntryCount(tradeA));
+        fakeVenue.reportFills(scenario.order().externalOrderId(), List.of());
+
+        assertEquals(0, okxRestReconcileService.reconcileOnce(100));
+
+        assertLedgerComplete(tradeA);
+        assertEquals(latestLedgerBefore, ledgerEntryCount(tradeB));
+        assertEquals(2L, count("SELECT COUNT(*) FROM trades WHERE order_id=?", scenario.order().orderId()));
+        assertEquals(0, ORDER_QUANTITY.compareTo(positionQuantity(scenario)));
+        assertEquals(1L, count(
+                "SELECT COUNT(*) FROM audit_logs WHERE trace_id=? "
+                        + "AND action='OKX_LEDGER_RECOVERY_COMPLETED' AND detail_json->>'trade_id'=?",
+                scenario.traceId(),
+                tradeA.tradeId()
+        ));
+    }
+
+    @Test
+    @Transactional
+    void processesNewFillWhenAnotherTradeAlreadyExists() {
+        ScenarioContext scenario = placeAcceptedOrder("f004-existing-new");
+        VenueFill fillA = venueFill(scenario, "EXISTING", "120.00000000", "0.04000000", 4);
+        VenueFill fillB = venueFill(scenario, "NEW", "125.00000000", "0.06000000", 5);
+        PaperTradeRecord tradeA = insertDurableTrade(scenario, fillA);
+        postCanonicalLedger(scenario.order(), tradeA);
+        fakeVenue.reportFills(scenario.order().externalOrderId(), List.of(fillB));
+
+        assertEquals(1, okxRestReconcileService.reconcileOnce(100));
+
+        PaperTradeRecord tradeB = tradeByExchangeId(fillB.exchangeTradeId());
+        assertEquals(2L, count("SELECT COUNT(*) FROM trades WHERE order_id=?", scenario.order().orderId()));
+        assertLedgerComplete(tradeA);
+        assertLedgerComplete(tradeB);
+        assertEquals(0, ORDER_QUANTITY.compareTo(positionQuantity(scenario)));
+        assertEquals(0, ORDER_QUANTITY.compareTo(accountBalance(scenario)));
+    }
+
+    @Test
+    @Transactional
+    void rejectsRecoveryWhenDurableTradeDoesNotBelongToOwningOrder() {
+        ScenarioContext scenario = placeAcceptedOrder("f004-identity-mismatch");
+        Long otherAccountId = insertAccount("gateaudit-l3-f004-other-" + UUID.randomUUID());
+        VenueFill fill = venueFill(scenario, "MISMATCH", "123.00000000", "0.10000000", 4);
+        PaperTradeRecord mismatchedTrade = new PaperTradeRecord(
+                "trd-f004-mismatch-" + UUID.randomUUID(),
+                scenario.order().orderId(),
+                otherAccountId,
+                scenario.order().symbol(),
+                scenario.order().venue(),
+                scenario.order().externalOrderId(),
+                fill.exchangeTradeId(),
+                fill.price(),
+                fill.quantity(),
+                BigDecimal.ZERO,
+                "USDT",
+                scenario.traceId(),
+                fill.tradeTs()
+        );
+        tradeRepository.insert(mismatchedTrade);
+        fakeVenue.reportFills(scenario.order().externalOrderId(), List.of());
+
+        assertThrows(IllegalStateException.class, () -> okxRestReconcileService.reconcileOnce(100));
+
+        assertEquals(0L, ledgerEntryCount(mismatchedTrade));
+        assertEquals(0L, count("SELECT COUNT(*) FROM positions WHERE account_id IN (?, ?)", scenario.accountId(), otherAccountId));
+        assertEquals(0L, count(
+                "SELECT COUNT(*) FROM account_snapshots WHERE account_id IN (?, ?)",
+                scenario.accountId(),
+                otherAccountId
+        ));
+        assertEquals(1L, count(
+                "SELECT COUNT(*) FROM audit_logs WHERE trace_id=? "
+                        + "AND action='OKX_LEDGER_RECOVERY_IDENTITY_MISMATCH'",
+                scenario.traceId()
+        ));
+
+        assertThrows(IllegalStateException.class, () -> okxRestReconcileService.reconcileOnce(100));
+        assertEquals(0L, ledgerEntryCount(mismatchedTrade));
+        assertEquals(2L, count(
+                "SELECT COUNT(*) FROM audit_logs WHERE trace_id=? "
+                        + "AND action='OKX_LEDGER_RECOVERY_IDENTITY_MISMATCH'",
+                scenario.traceId()
+        ));
+    }
+
+    private VenueFill venueFill(
+            ScenarioContext scenario,
+            String suffix,
+            String price,
+            String quantity,
+            long secondOffset
+    ) {
+        return new VenueFill(
+                "fake-l3-fill-" + suffix + "-" + scenario.order().orderId(),
+                new BigDecimal(price),
+                new BigDecimal(quantity),
+                VENUE_FILL_TIME.plusSeconds(secondOffset)
+        );
+    }
+
+    private PaperTradeRecord insertDurableTrade(ScenarioContext scenario, VenueFill fill) {
+        PaperTradeRecord trade = new PaperTradeRecord(
+                "trd-f004-" + UUID.randomUUID(),
+                scenario.order().orderId(),
+                scenario.accountId(),
+                scenario.order().symbol(),
+                scenario.order().venue(),
+                scenario.order().externalOrderId(),
+                fill.exchangeTradeId(),
+                fill.price(),
+                fill.quantity(),
+                BigDecimal.ZERO,
+                "USDT",
+                scenario.traceId(),
+                fill.tradeTs()
+        );
+        tradeRepository.insert(trade);
+        return trade;
+    }
+
+    private void postCanonicalLedger(OrderRecord order, PaperTradeRecord trade) {
+        LedgerPostingResult result = tradeLedgerPort.postTrade(new TradeLedgerRequest(
+                trade.tradeId(),
+                trade.orderId(),
+                trade.accountId(),
+                trade.symbol(),
+                OrderSide.valueOf(order.side()),
+                trade.price(),
+                trade.qty(),
+                trade.fee(),
+                trade.feeCurrency(),
+                trade.traceId(),
+                trade.ts()
+        ));
+        assertTrue(result.posted());
+    }
+
+    private PaperTradeRecord tradeByExchangeId(String exchangeTradeId) {
+        return tradeRepository.findByExchangeAndExchangeTradeId("OKX", exchangeTradeId).orElseThrow();
+    }
+
+    private void assertLedgerComplete(PaperTradeRecord trade) {
+        assertEquals(2L, ledgerEntryCount(trade));
+        assertEquals(2L, count(
+                "SELECT COUNT(*) FROM ledger_events le JOIN ledger_entries e ON e.entry_id=le.entry_id "
+                        + "WHERE e.ref_id=?",
+                trade.tradeId()
+        ));
+    }
+
+    private long ledgerEntryCount(PaperTradeRecord trade) {
+        return count("SELECT COUNT(*) FROM ledger_entries WHERE ref_id=?", trade.tradeId());
+    }
+
+    private BigDecimal positionQuantity(ScenarioContext scenario) {
+        return decimal(
+                "SELECT qty FROM positions WHERE account_id=? AND symbol=?",
+                scenario.accountId(),
+                scenario.order().symbol()
+        );
+    }
+
+    private BigDecimal accountBalance(ScenarioContext scenario) {
+        return decimal(
+                "SELECT balance FROM account_snapshots WHERE account_id=? AND currency='BTC' "
+                        + "ORDER BY ts DESC, snapshot_id DESC LIMIT 1",
+                scenario.accountId()
+        );
     }
 
     private ScenarioContext placeAcceptedOrder(String caseName) {
@@ -296,10 +624,11 @@ class TradingChainPostgresIntegrationTest {
                 traceId
         );
 
+        int placeCountBefore = fakeVenue.placeCount();
         var placeResult = orderCommandService.placeOrder(request);
         assertEquals(OrderStatus.ACCEPTED, placeResult.status());
         assertFalse(placeResult.idempotentHit());
-        assertEquals(1, fakeVenue.placeCount());
+        assertEquals(placeCountBefore + 1, fakeVenue.placeCount());
 
         OrderRecord accepted = orderRepository.findByOrderId(placeResult.orderId()).orElseThrow();
         assertEquals(accountId, accepted.accountId());
@@ -317,6 +646,7 @@ class TradingChainPostgresIntegrationTest {
         assertEquals("JdbcOrderRepository", AopUtils.getTargetClass(orderRepository).getSimpleName());
         assertEquals("JdbcTradeRepository", AopUtils.getTargetClass(tradeRepository).getSimpleName());
         assertInstanceOf(TradeLedgerPostingService.class, tradeLedgerPort);
+        assertInstanceOf(LedgerModuleTradeLedgerGateway.class, failOnceTradeLedgerGateway.realDelegate());
         assertSame(fakeVenue, tradingVenueGateway);
         assertSame(fakeVenue.okxAdapter(), okxExchangeAdapter);
         assertFalse(ProxySelector.getDefault() == null);
@@ -334,12 +664,35 @@ class TradingChainPostgresIntegrationTest {
         int updated = jdbc.update(
                 "UPDATE kill_switch_states SET status='DISENGAGED', version=version+1, "
                         + "reason_code='GATEAUDIT_L3_TEST_FIXTURE', source='TEST_TRANSACTION', "
-                        + "updated_at=CURRENT_TIMESTAMP, updated_by='GATEAUDIT_TEST', trace_id=? "
+                        + "updated_at=CURRENT_TIMESTAMP - INTERVAL '1 second', "
+                        + "updated_by='GATEAUDIT_TEST', trace_id=? "
                         + "WHERE scope='GLOBAL_TRADING'",
                 traceId
         );
         assertEquals(1, updated);
         assertEquals(KillSwitchStatus.DISENGAGED, killSwitchService.snapshot().status());
+    }
+
+    private void restoreTestKillSwitch(String traceId) {
+        int updated = jdbc.update(
+                "UPDATE kill_switch_states SET status='ENGAGED', version=version+1, "
+                        + "reason_code='GATEAUDIT_F004_TEST_COMPLETE', source='TEST_CLEANUP', "
+                        + "updated_at=CURRENT_TIMESTAMP - INTERVAL '1 second', "
+                        + "updated_by='GATEAUDIT_TEST', trace_id=? "
+                        + "WHERE scope='GLOBAL_TRADING'",
+                traceId
+        );
+        assertEquals(1, updated);
+    }
+
+    private void retireTestOrders(String... orderIds) {
+        for (String orderId : orderIds) {
+            assertEquals(1, jdbc.update(
+                    "UPDATE orders SET status='CANCELLED', reason='GATEAUDIT_TEST_CLEANUP', "
+                            + "updated_at=CURRENT_TIMESTAMP WHERE order_id=?",
+                    orderId
+            ));
+        }
     }
 
     private long count(String sql, Object... args) {
@@ -371,6 +724,66 @@ class TradingChainPostgresIntegrationTest {
         OkxExchangeAdapter deterministicOkxTradingAdapter(DeterministicFakeVenue fakeVenue) {
             return fakeVenue.okxAdapter();
         }
+
+        @Bean
+        @Primary
+        FailOnceTradeLedgerGateway failOnceTradeLedgerGateway(LedgerModuleTradeLedgerGateway delegate) {
+            return new FailOnceTradeLedgerGateway(delegate);
+        }
+    }
+
+    /** Test-only deterministic failure after durable Trade and before the real ledger transaction. */
+    static final class FailOnceTradeLedgerGateway implements TradeLedgerGateway {
+
+        private final LedgerModuleTradeLedgerGateway delegate;
+        private final AtomicInteger remainingFailures = new AtomicInteger();
+        private final AtomicInteger targetAttempts = new AtomicInteger();
+        private final AtomicReference<String> targetOrderId = new AtomicReference<>();
+
+        FailOnceTradeLedgerGateway(LedgerModuleTradeLedgerGateway delegate) {
+            this.delegate = Objects.requireNonNull(delegate, "delegate must not be null");
+        }
+
+        @Override
+        public LedgerPostingResult postTrade(TradeLedgerRequest request) {
+            if (!Objects.equals(targetOrderId.get(), request.orderId())) {
+                return delegate.postTrade(request);
+            }
+            targetAttempts.incrementAndGet();
+            if (remainingFailures.getAndUpdate(value -> value > 0 ? value - 1 : 0) > 0) {
+                throw new DeterministicLedgerPostingFailure();
+            }
+            return delegate.postTrade(request);
+        }
+
+        void failNext(String orderId) {
+            targetOrderId.set(Objects.requireNonNull(orderId, "orderId must not be null"));
+            remainingFailures.set(1);
+        }
+
+        int attemptCount() {
+            return targetAttempts.get();
+        }
+
+        int remainingFailureCount() {
+            return remainingFailures.get();
+        }
+
+        LedgerModuleTradeLedgerGateway realDelegate() {
+            return delegate;
+        }
+
+        void reset() {
+            remainingFailures.set(0);
+            targetAttempts.set(0);
+            targetOrderId.set(null);
+        }
+    }
+
+    static final class DeterministicLedgerPostingFailure extends RuntimeException {
+        DeterministicLedgerPostingFailure() {
+            super("deterministic F-004 ledger posting failure");
+        }
     }
 
     /** Test-only venue and transport script; every response is in-memory and deterministic. */
@@ -381,6 +794,7 @@ class TradingChainPostgresIntegrationTest {
         private final AtomicInteger cancels = new AtomicInteger();
         private final Map<String, VenueOrder> ordersByExternalId = new ConcurrentHashMap<>();
         private final Map<String, String> externalIdsByClientId = new ConcurrentHashMap<>();
+        private final Map<String, List<VenueFill>> fillsByExternalId = new ConcurrentHashMap<>();
         private final ObjectMapper objectMapper = new ObjectMapper();
         private final ScriptedOkxHttpClient transport = new ScriptedOkxHttpClient(objectMapper, this);
         private final OkxExchangeAdapter okxAdapter = new OkxExchangeAdapter(new OkxExchangeAdapter.Dependencies(
@@ -447,8 +861,24 @@ class TradingChainPostgresIntegrationTest {
 
         String reportFilled(String externalOrderId) {
             VenueOrder current = requireOrder(externalOrderId);
+            String exchangeTradeId = exchangeTradeId(current.orderId());
+            reportFills(externalOrderId, List.of(new VenueFill(
+                    exchangeTradeId,
+                    VENUE_FILL_PRICE,
+                    VENUE_FILL_QUANTITY,
+                    VENUE_FILL_TIME
+            )));
+            return exchangeTradeId;
+        }
+
+        void reportFills(String externalOrderId, List<VenueFill> fills) {
+            VenueOrder current = requireOrder(externalOrderId);
             ordersByExternalId.put(externalOrderId, current.withStatus(OrderStatus.FILLED));
-            return exchangeTradeId(current.orderId());
+            fillsByExternalId.put(externalOrderId, List.copyOf(fills));
+        }
+
+        List<VenueFill> fillsFor(String externalOrderId) {
+            return fillsByExternalId.getOrDefault(externalOrderId, List.of());
         }
 
         void reset() {
@@ -457,6 +887,7 @@ class TradingChainPostgresIntegrationTest {
             cancels.set(0);
             ordersByExternalId.clear();
             externalIdsByClientId.clear();
+            fillsByExternalId.clear();
             transport.reset();
         }
 
@@ -548,8 +979,12 @@ class TradingChainPostgresIntegrationTest {
             item.put("state", order.status() == OrderStatus.FILLED ? "filled" : "live");
             item.put("px", ORDER_PRICE.toPlainString());
             item.put("sz", ORDER_QUANTITY.toPlainString());
-            item.put("accFillSz", order.status() == OrderStatus.FILLED ? VENUE_FILL_QUANTITY.toPlainString() : "0");
-            item.put("avgPx", order.status() == OrderStatus.FILLED ? VENUE_FILL_PRICE.toPlainString() : "");
+            List<VenueFill> fills = venue.fillsFor(order.externalOrderId());
+            BigDecimal filledQuantity = fills.stream()
+                    .map(VenueFill::quantity)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            item.put("accFillSz", filledQuantity.toPlainString());
+            item.put("avgPx", fills.isEmpty() ? "" : fills.getFirst().price().toPlainString());
             var envelope = objectMapper.createObjectNode();
             envelope.put("code", "0");
             envelope.put("msg", "");
@@ -564,17 +999,17 @@ class TradingChainPostgresIntegrationTest {
             envelope.put("code", "0");
             envelope.put("msg", "");
             var data = envelope.putArray("data");
-            if (order.status() == OrderStatus.FILLED) {
+            for (VenueFill venueFill : venue.fillsFor(order.externalOrderId())) {
                 var fill = objectMapper.createObjectNode();
-                fill.put("tradeId", venue.exchangeTradeId(order.orderId()));
+                fill.put("tradeId", venueFill.exchangeTradeId());
                 fill.put("ordId", order.externalOrderId());
                 fill.put("instId", order.symbol());
                 fill.put("side", "buy");
-                fill.put("fillPx", VENUE_FILL_PRICE.toPlainString());
-                fill.put("fillSz", VENUE_FILL_QUANTITY.toPlainString());
+                fill.put("fillPx", venueFill.price().toPlainString());
+                fill.put("fillSz", venueFill.quantity().toPlainString());
                 fill.put("fee", "0.00000000");
                 fill.put("feeCcy", "USDT");
-                fill.put("ts", VENUE_FILL_TIME.toEpochMilli());
+                fill.put("ts", venueFill.tradeTs().toEpochMilli());
                 data.add(fill);
             }
             return envelope;
@@ -654,6 +1089,14 @@ class TradingChainPostgresIntegrationTest {
         VenueOrder withStatus(OrderStatus targetStatus) {
             return new VenueOrder(orderId, clientOrderId, externalOrderId, symbol, targetStatus);
         }
+    }
+
+    private record VenueFill(
+            String exchangeTradeId,
+            BigDecimal price,
+            BigDecimal quantity,
+            Instant tradeTs
+    ) {
     }
 
     static final class NoExchangeOutboundInitializer

@@ -94,6 +94,7 @@ class OkxRestReconcileServiceTest {
                 Optional.of(cancelRequestedOrder.withStatus(OrderStatus.ACCEPTED, "RECONCILE_STATUS_ALIGN"))
         );
         when(okxExchangeAdapter.listTradeReports("BTC-USDT", "ext-rec-1", "trc-rec-1")).thenReturn(List.of());
+        when(tradeRepository.findAllByOrderId("ord-rec-1", 10)).thenReturn(List.of());
 
         int newTrades = service.reconcileOnce(10);
 
@@ -188,6 +189,7 @@ class OkxRestReconcileServiceTest {
                 )
         ));
         when(tradeRepository.findByExchangeAndExchangeTradeId("OKX", "fill-rec-2")).thenReturn(Optional.empty());
+        when(tradeRepository.findAllByOrderId("ord-rec-2", 10)).thenReturn(List.of());
         when(tradeLedgerGateway.postTrade(any())).thenReturn(new LedgerPostingResult(true, false, "OK"));
 
         int newTrades = service.reconcileOnce(10);
@@ -247,7 +249,7 @@ class OkxRestReconcileServiceTest {
         );
 
         when(orderCommandService.findOrdersByStatuses(any(), eq(10))).thenReturn(List.of(filledOrder));
-        when(tradeRepository.findByOrderId("ord-rec-3")).thenReturn(Optional.empty());
+        when(tradeRepository.findAllByOrderId("ord-rec-3", 10)).thenReturn(List.of());
         when(okxExchangeAdapter.listTradeReports("BTC-USDT", "ext-rec-3", "trc-rec-3")).thenReturn(List.of(
                 new AdapterTradeReport(
                         "OKX",
@@ -280,7 +282,7 @@ class OkxRestReconcileServiceTest {
     }
 
     @Test
-    void shouldSkipFilledOrderBackfillWhenTradeAlreadyExists() {
+    void shouldEnsureLedgerConvergenceWhenFilledOrderTradeAlreadyExists() {
         OrderCommandService orderCommandService = Mockito.mock(OrderCommandService.class);
         OrderLifecycleService orderLifecycleService = Mockito.mock(OrderLifecycleService.class);
         OkxExchangeAdapter okxExchangeAdapter = Mockito.mock(OkxExchangeAdapter.class);
@@ -333,16 +335,25 @@ class OkxRestReconcileServiceTest {
         );
 
         when(orderCommandService.findOrdersByStatuses(any(), eq(10))).thenReturn(List.of(filledOrder));
-        when(tradeRepository.findByOrderId("ord-rec-4")).thenReturn(Optional.of(existingTrade));
+        when(okxExchangeAdapter.listTradeReports("BTC-USDT", "ext-rec-4", "trc-rec-4")).thenReturn(List.of());
+        when(tradeRepository.findAllByOrderId("ord-rec-4", 10)).thenReturn(List.of(existingTrade));
+        when(tradeLedgerGateway.postTrade(any())).thenReturn(new LedgerPostingResult(true, false, "POSTED"));
 
         int newTrades = service.reconcileOnce(10);
 
         assertEquals(0, newTrades);
         verify(okxExchangeAdapter, never()).getOrder(any());
-        verify(okxExchangeAdapter, never()).listTradeReports(any(), any(), any());
+        verify(okxExchangeAdapter, times(1)).listTradeReports("BTC-USDT", "ext-rec-4", "trc-rec-4");
         verify(tradeRepository, never()).insert(any());
-        verify(tradeLedgerGateway, never()).postTrade(any());
+        verify(tradeLedgerGateway, times(1)).postTrade(any());
         verify(eventStoreAppender, never()).append(eq("trade.event.v1"), any());
+        verify(auditLogRepository, times(1)).append(
+                eq("RECONCILE"),
+                eq("OKX_LEDGER_RECOVERY_COMPLETED"),
+                eq("ord-rec-4"),
+                eq("trc-rec-4"),
+                any()
+        );
     }
 }
 

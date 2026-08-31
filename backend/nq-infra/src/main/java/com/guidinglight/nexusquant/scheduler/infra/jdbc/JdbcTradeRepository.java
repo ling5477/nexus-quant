@@ -48,6 +48,30 @@ public class JdbcTradeRepository implements TradeRepository {
     }
 
     @Override
+    public List<PaperTradeRecord> findAllByOrderId(String orderId, int limit) {
+        if (limit <= 0) {
+            throw new IllegalArgumentException("limit must be positive");
+        }
+        List<PaperTradeRecord> results = jdbcTemplate.query(
+                """
+                        SELECT trade_id, order_id, account_id, symbol, exchange, external_order_id, exchange_trade_id, price, qty, fee,
+                               fee_currency, trace_id, ts
+                        FROM trades
+                        WHERE order_id = ?
+                        ORDER BY ts ASC, trade_id ASC
+                        LIMIT ?
+                        """,
+                TRADE_ROW_MAPPER,
+                orderId,
+                Math.addExact(limit, 1)
+        );
+        if (results.size() > limit) {
+            throw new IllegalStateException("per-order Trade recovery limit exceeded");
+        }
+        return List.copyOf(results);
+    }
+
+    @Override
     public Optional<PaperTradeRecord> findByExchangeAndExchangeTradeId(String exchange, String exchangeTradeId) {
         List<PaperTradeRecord> results = jdbcTemplate.query(
                 """

@@ -207,6 +207,12 @@ class PaperMatchingServiceTest {
         }
 
         @Override
+        public List<PaperTradeRecord> findAllByOrderId(String orderId, int limit) {
+            PaperTradeRecord trade = tradesByOrderId.get(orderId);
+            return trade == null ? List.of() : List.of(trade);
+        }
+
+        @Override
         public Optional<PaperTradeRecord> findByExchangeAndExchangeTradeId(String exchange, String exchangeTradeId) {
             return tradesByOrderId.values().stream()
                     .filter(trade -> exchange.equals(trade.exchange()) && exchangeTradeId.equals(trade.exchangeTradeId()))

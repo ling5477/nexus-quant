@@ -20,8 +20,10 @@ import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.scheduling.annotation.Scheduled;
@@ -118,40 +120,34 @@ public class OkxRestReconcileService {
                 continue;
             }
             if (order.status() == OrderStatus.FILLED) {
-                if (!shouldBackfillFilledOrder(order)) {
+                if (!canReconcileFilledOrder(order)) {
                     continue;
                 }
-                newTrades += reconcileFilledOrder(order);
+                newTrades += reconcileFilledOrder(order, limit);
                 continue;
             }
-            newTrades += reconcileSingleOrder(order);
+            newTrades += reconcileSingleOrder(order, limit);
         }
         return newTrades;
     }
 
     /**
-     * 仅对“订单已被对齐到终态，但成交事实仍未落库”的 OKX 样本执行补扫。
-     * <p>
-     * Why:
-     * UseCase-B 真实盘样本证明，交易所可能先返回 FILLED，而同一轮 `listFills(...)` 仍拿不到 fill。
-     * 若此时不继续补扫，该订单会因已终态而永久退出 reconcile/recovery 的扫描集合，导致 trades/ledger 永远缺失。
+     * FILLED order 只要保留稳定 venue identity，就继续进入有界的 Trade/Ledger 收敛检查。
      */
-    private boolean shouldBackfillFilledOrder(OrderRecord order) {
-        if (order.externalOrderId() == null || order.externalOrderId().isBlank()) {
-            return false;
-        }
-        return tradeRepository.findByOrderId(order.orderId()).isEmpty();
+    private boolean canReconcileFilledOrder(OrderRecord order) {
+        return order.externalOrderId() != null && !order.externalOrderId().isBlank();
     }
 
     /**
-     * 对已终态 FILLED、但仍缺 trade 事实的订单执行 fills 补扫。
+     * 对已终态 FILLED 订单补扫缺失 Trade，或重放 existing Trade 以确保 Ledger 收敛。
      * <p>
      * Why:
      * 这里刻意不再走 `getOrder -> alignOrderStatus(...)`，因为订单已经是终态；
-     * 本批的最小修复目标只是补齐 `fills -> trades -> ledger`，避免为了等 fills 再次改动终态推进时机。
+     * 本批的最小修复目标只是补齐 `fills -> trades -> ledger` 或 `existing trade -> ledger`，
+     * 避免为了等 fills 再次改动终态推进时机。
      */
-    private int reconcileFilledOrder(OrderRecord order) {
-        int newTrades = reconcileFills(order);
+    private int reconcileFilledOrder(OrderRecord order, int limit) {
+        int newTrades = reconcileFills(order, limit);
         auditLogRepository.append(
                 "RECONCILE",
                 "OKX_FILLED_ORDER_FILL_BACKFILL_COMPLETED",
@@ -167,7 +163,7 @@ public class OkxRestReconcileService {
         return newTrades;
     }
 
-    private int reconcileSingleOrder(OrderRecord currentOrder) {
+    private int reconcileSingleOrder(OrderRecord currentOrder, int limit) {
         AdapterOrderSnapshot snapshot = okxExchangeAdapter.getOrder(new com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery(
                 currentOrder.accountId(),
                 currentOrder.venue(),
@@ -206,7 +202,7 @@ public class OkxRestReconcileService {
         }
         alignOrderStatus(updatedOrder, snapshot.externalStatus(), updatedOrder.traceId());
         updatedOrder = orderCommandService.findByOrderId(updatedOrder.orderId()).orElse(updatedOrder);
-        int newTrades = reconcileFills(updatedOrder);
+        int newTrades = reconcileFills(updatedOrder, limit);
         auditLogRepository.append(
                 "RECONCILE",
                 "OKX_RECONCILE_COMPLETED",
@@ -284,13 +280,37 @@ public class OkxRestReconcileService {
         return status == OrderStatus.FILLED || status == OrderStatus.CANCELLED || status == OrderStatus.REJECTED;
     }
 
-    private int reconcileFills(OrderRecord order) {
+    private int reconcileFills(OrderRecord order, int limit) {
         if (order.externalOrderId() == null || order.externalOrderId().isBlank()) {
             return 0;
         }
+        if (limit <= 0) {
+            throw new IllegalArgumentException("limit must be positive");
+        }
+        List<AdapterTradeReport> tradeReports = List.copyOf(
+                okxExchangeAdapter.listTradeReports(order.symbol(), order.externalOrderId(), order.traceId())
+        );
+        if (tradeReports.size() > limit) {
+            auditRecoveryBoundaryFailure(order, "VENUE_REPORT_LIMIT_EXCEEDED");
+            throw new IllegalStateException("per-order venue report recovery limit exceeded");
+        }
+        List<PaperTradeRecord> durableTrades;
+        try {
+            durableTrades = tradeRepository.findAllByOrderId(order.orderId(), limit);
+        } catch (IllegalStateException ex) {
+            auditRecoveryBoundaryFailure(order, "DURABLE_TRADE_LIMIT_EXCEEDED");
+            throw ex;
+        }
         int newTrades = 0;
-        for (AdapterTradeReport tradeReport : okxExchangeAdapter.listTradeReports(order.symbol(), order.externalOrderId(), order.traceId())) {
-            if (tradeRepository.findByExchangeAndExchangeTradeId("OKX", tradeReport.exchangeTradeId()).isPresent()) {
+        Set<String> reportTradeIds = new HashSet<>();
+        for (AdapterTradeReport tradeReport : tradeReports) {
+            validateVenueReportOrderIdentity(order, tradeReport);
+            if (!reportTradeIds.add(tradeReport.exchangeTradeId())) {
+                failRecoveryIdentityMismatch(order, null, "DUPLICATE_VENUE_EXCHANGE_TRADE_ID");
+            }
+            var existingTrade = tradeRepository.findByExchangeAndExchangeTradeId("OKX", tradeReport.exchangeTradeId());
+            if (existingTrade.isPresent()) {
+                ensureLedgerConvergence(order, existingTrade.orElseThrow(), tradeReport, true);
                 auditLogRepository.append(
                         "RECONCILE",
                         "OKX_FILL_DEDUP_HIT",
@@ -320,31 +340,179 @@ public class OkxRestReconcileService {
             );
             tradeRepository.insert(trade);
             publishTradeEvent(order, tradeReport, normalizedFee, trade.tradeId());
-            LedgerPostingResult postingResult = tradeLedgerGateway.postTrade(new TradeLedgerRequest(
-                    trade.tradeId(),
-                    order.orderId(),
-                    order.accountId(),
-                    tradeReport.symbol(),
-                    OrderSide.valueOf(tradeReport.side()),
-                    tradeReport.price(),
-                    tradeReport.quantity(),
-                    normalizedFee,
-                    tradeReport.feeAsset(),
-                    order.traceId(),
-                    tradeReport.tradeTs()
-            ));
-            if (!postingResult.posted()) {
-                auditLogRepository.append(
-                        "RECONCILE",
-                        "OKX_LEDGER_POST_FAILED",
-                        order.orderId(),
-                        order.traceId(),
-                        java.util.Map.of("trade_id", trade.tradeId(), "reason", postingResult.reason())
-                );
-            }
+            ensureLedgerConvergence(order, trade, tradeReport, false);
             newTrades++;
         }
+        for (PaperTradeRecord durableTrade : durableTrades) {
+            if (reportTradeIds.contains(durableTrade.exchangeTradeId())) {
+                continue;
+            }
+            ensureLedgerConvergence(order, durableTrade, null, true);
+        }
         return newTrades;
+    }
+
+    /**
+     * Replays an existing durable Trade through the canonical idempotent ledger path.
+     *
+     * <p>Why: Trade persistence and ledger posting have separate transaction boundaries. A previous
+     * ledger failure must remain recoverable without inserting a replacement Trade or maintaining a
+     * second projection implementation.</p>
+     */
+    private LedgerPostingResult ensureLedgerConvergence(
+            OrderRecord order,
+            PaperTradeRecord trade,
+            AdapterTradeReport tradeReport,
+            boolean recovery
+    ) {
+        validateTradeOrderIdentity(order, trade);
+        if (tradeReport != null) {
+            validateTradeVenueReportIdentity(order, trade, tradeReport);
+        }
+        return postLedger(order, trade, recovery);
+    }
+
+    private void validateTradeOrderIdentity(OrderRecord order, PaperTradeRecord trade) {
+        if (!Objects.equals(trade.orderId(), order.orderId())) {
+            failRecoveryIdentityMismatch(order, trade, "TRADE_ORDER_ID_MISMATCH");
+        }
+        if (!Objects.equals(trade.accountId(), order.accountId())) {
+            failRecoveryIdentityMismatch(order, trade, "TRADE_ACCOUNT_ID_MISMATCH");
+        }
+        if (!Objects.equals(trade.symbol(), order.symbol())) {
+            failRecoveryIdentityMismatch(order, trade, "TRADE_SYMBOL_MISMATCH");
+        }
+        if (!Objects.equals(trade.exchange(), order.venue())) {
+            failRecoveryIdentityMismatch(order, trade, "TRADE_EXCHANGE_MISMATCH");
+        }
+        if (!Objects.equals(trade.externalOrderId(), order.externalOrderId())) {
+            failRecoveryIdentityMismatch(order, trade, "TRADE_EXTERNAL_ORDER_ID_MISMATCH");
+        }
+        if (trade.exchangeTradeId() == null || trade.exchangeTradeId().isBlank()) {
+            failRecoveryIdentityMismatch(order, trade, "TRADE_EXCHANGE_TRADE_ID_MISSING");
+        }
+    }
+
+    private void validateVenueReportOrderIdentity(OrderRecord order, AdapterTradeReport report) {
+        if (!Objects.equals(report.exchangeCode(), order.venue())) {
+            failRecoveryIdentityMismatch(order, null, "REPORT_EXCHANGE_MISMATCH");
+        }
+        if (!Objects.equals(report.symbol(), order.symbol())) {
+            failRecoveryIdentityMismatch(order, null, "REPORT_SYMBOL_MISMATCH");
+        }
+        if (!Objects.equals(report.exchangeOrderId(), order.externalOrderId())) {
+            failRecoveryIdentityMismatch(order, null, "REPORT_EXTERNAL_ORDER_ID_MISMATCH");
+        }
+        if (!Objects.equals(report.side(), order.side())) {
+            failRecoveryIdentityMismatch(order, null, "REPORT_SIDE_MISMATCH");
+        }
+        if (report.accountId() != null && !Objects.equals(report.accountId(), order.accountId())) {
+            failRecoveryIdentityMismatch(order, null, "REPORT_ACCOUNT_ID_MISMATCH");
+        }
+        if (report.clientOrderId() != null && !Objects.equals(report.clientOrderId(), order.clientOrderId())) {
+            failRecoveryIdentityMismatch(order, null, "REPORT_CLIENT_ORDER_ID_MISMATCH");
+        }
+        if (report.exchangeTradeId() == null || report.exchangeTradeId().isBlank()) {
+            failRecoveryIdentityMismatch(order, null, "REPORT_EXCHANGE_TRADE_ID_MISSING");
+        }
+        if (report.price() == null || report.quantity() == null) {
+            failRecoveryIdentityMismatch(order, null, "REPORT_PRICE_OR_QUANTITY_MISSING");
+        }
+    }
+
+    private void validateTradeVenueReportIdentity(
+            OrderRecord order,
+            PaperTradeRecord trade,
+            AdapterTradeReport report
+    ) {
+        validateVenueReportOrderIdentity(order, report);
+        if (!Objects.equals(trade.exchange(), report.exchangeCode())) {
+            failRecoveryIdentityMismatch(order, trade, "TRADE_REPORT_EXCHANGE_MISMATCH");
+        }
+        if (!Objects.equals(trade.exchangeTradeId(), report.exchangeTradeId())) {
+            failRecoveryIdentityMismatch(order, trade, "TRADE_REPORT_ID_MISMATCH");
+        }
+        if (!Objects.equals(trade.externalOrderId(), report.exchangeOrderId())) {
+            failRecoveryIdentityMismatch(order, trade, "TRADE_REPORT_EXTERNAL_ORDER_ID_MISMATCH");
+        }
+        if (!Objects.equals(trade.symbol(), report.symbol())) {
+            failRecoveryIdentityMismatch(order, trade, "TRADE_REPORT_SYMBOL_MISMATCH");
+        }
+        if (trade.price().compareTo(report.price()) != 0) {
+            failRecoveryIdentityMismatch(order, trade, "TRADE_REPORT_PRICE_MISMATCH");
+        }
+        if (trade.qty().compareTo(report.quantity()) != 0) {
+            failRecoveryIdentityMismatch(order, trade, "TRADE_REPORT_QUANTITY_MISMATCH");
+        }
+    }
+
+    private void failRecoveryIdentityMismatch(OrderRecord order, PaperTradeRecord trade, String reason) {
+        auditLogRepository.append(
+                "RECONCILE",
+                "OKX_LEDGER_RECOVERY_IDENTITY_MISMATCH",
+                order.orderId(),
+                order.traceId(),
+                java.util.Map.of(
+                        "order_id", order.orderId(),
+                        "trade_id", trade == null ? "UNKNOWN" : String.valueOf(trade.tradeId()),
+                        "reason", reason
+                )
+        );
+        throw new IllegalStateException("ledger recovery identity mismatch: " + reason);
+    }
+
+    private void auditRecoveryBoundaryFailure(OrderRecord order, String reason) {
+        auditLogRepository.append(
+                "RECONCILE",
+                "OKX_LEDGER_RECOVERY_INCOMPLETE",
+                order.orderId(),
+                order.traceId(),
+                java.util.Map.of("order_id", order.orderId(), "reason", reason)
+        );
+    }
+
+    private LedgerPostingResult postLedger(OrderRecord order, PaperTradeRecord trade, boolean recovery) {
+        LedgerPostingResult postingResult;
+        try {
+            postingResult = tradeLedgerGateway.postTrade(new TradeLedgerRequest(
+                    trade.tradeId(),
+                    trade.orderId(),
+                    trade.accountId(),
+                    trade.symbol(),
+                    OrderSide.valueOf(order.side()),
+                    trade.price(),
+                    trade.qty(),
+                    trade.fee(),
+                    trade.feeCurrency(),
+                    trade.traceId(),
+                    trade.ts()
+            ));
+        } catch (RuntimeException ex) {
+            auditLedgerFailure(order, trade.tradeId(), ex.getClass().getSimpleName());
+            throw ex;
+        }
+        if (!postingResult.posted()) {
+            auditLedgerFailure(order, trade.tradeId(), postingResult.reason());
+        } else if (recovery && !postingResult.idempotentHit()) {
+            auditLogRepository.append(
+                    "RECONCILE",
+                    "OKX_LEDGER_RECOVERY_COMPLETED",
+                    order.orderId(),
+                    order.traceId(),
+                    java.util.Map.of("trade_id", trade.tradeId(), "order_id", order.orderId())
+            );
+        }
+        return postingResult;
+    }
+
+    private void auditLedgerFailure(OrderRecord order, String tradeId, String reason) {
+        auditLogRepository.append(
+                "RECONCILE",
+                "OKX_LEDGER_POST_FAILED",
+                order.orderId(),
+                order.traceId(),
+                java.util.Map.of("trade_id", tradeId, "reason", reason)
+        );
     }
 
     private void publishTradeEvent(OrderRecord order, AdapterTradeReport tradeReport, java.math.BigDecimal normalizedFee, String tradeId) {

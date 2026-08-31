@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.scheduler.infra.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
 
@@ -36,9 +37,40 @@ class JdbcTradeRepositoryTest {
         JdbcTradeRepository repository = new JdbcTradeRepository(jdbcTemplate);
 
         assertTrue(repository.findByOrderId("ord-1").isPresent());
+        assertTrue(repository.findAllByOrderId("ord-1", 10).size() == 1);
         assertTrue(repository.findByExchangeAndExchangeTradeId("OKX", "ex-trd-1").isPresent());
         repository.insert(jdbcTemplate.queryResults.getFirst());
         assertTrue(jdbcTemplate.lastUpdateSql.contains("INSERT INTO trades"));
+    }
+
+    @Test
+    void shouldFailClosedWhenPerOrderTradeLimitWouldTruncate() {
+        RecordingJdbcTemplate jdbcTemplate = new RecordingJdbcTemplate();
+        PaperTradeRecord first = trade("trd-1", "ex-trd-1", Instant.parse("2026-03-28T11:00:00Z"));
+        PaperTradeRecord second = trade("trd-2", "ex-trd-2", Instant.parse("2026-03-28T11:00:01Z"));
+        jdbcTemplate.queryResults = List.of(first, second);
+
+        JdbcTradeRepository repository = new JdbcTradeRepository(jdbcTemplate);
+
+        assertThrows(IllegalStateException.class, () -> repository.findAllByOrderId("ord-1", 1));
+    }
+
+    private PaperTradeRecord trade(String tradeId, String exchangeTradeId, Instant ts) {
+        return new PaperTradeRecord(
+                tradeId,
+                "ord-1",
+                1001L,
+                "BTC-USDT",
+                "OKX",
+                "ex-ord-1",
+                exchangeTradeId,
+                new BigDecimal("100.00"),
+                new BigDecimal("0.01"),
+                BigDecimal.ZERO,
+                "USDT",
+                "trc-trade-1",
+                ts
+        );
     }
 
     private static final class RecordingJdbcTemplate extends JdbcTemplate {

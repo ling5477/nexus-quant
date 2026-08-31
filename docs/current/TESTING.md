@@ -14764,3 +14764,70 @@ Reviewer P2 事实：bare disposable fresh DB 下，既有 `ResearchBacktestHapp
 | Cleanup | `TEMP_DB_LEFTOVERS=0`；`TEMP_FIXTURE_LEFTOVERS=0`；`TEMP_ARTIFACT_LEFTOVERS=0`；disposable PostgreSQL stopped |
 
 本地 final canonical regression 未调用 OKX/Binance，未读取 credential，未执行真实 PLACE/CANCEL/transfer/withdraw。PostgreSQL 16 与 Linux L3 `2/2` proof 仍必须由本次新 exact-head CI 证明；提交前不得把 F-001 写为 `CLOSED` 或 `CI_GREEN`。
+
+## 2026-08-31 — GateAUDIT Phase 4 F-004 Trade/Ledger/Position convergence
+
+F-001 已由 immutable pair `95b859ee61a8e7f0a725e29877e7303ea4453b1a / 33347091147` 接受，CI=`completed / success / 11 of 11 jobs`。本节不重新 Review F-001，只记录 F-004 fault-injection-first implementation 与本地 proof。
+
+| Check | Result |
+| --- | --- |
+| Transaction audit | `OkxRestReconcileService` 无外层 transaction；`JdbcTradeRepository.insert` 在 reconcile production path 中 auto-commit；`TradeLedgerPostingService.postTrade` 为独立 `@Transactional`。`TRADE_CAN_COMMIT_BEFORE_LEDGER_FAILURE=YES` |
+| Baseline fault | test-only deterministic fail-once `TradeLedgerGateway` wrapper；fault 在 durable Trade/event 之后、real `TradeLedgerPostingService` transaction 之前；network/credential=`0/0` |
+| Baseline DB facts | Order=`FILLED`；Trade=`1`；Ledger=`0`；Position=`0`；Account=`0`；TradeExecuted=`1`；fault audit=`0`；fault 清除后第二次 normal reconcile 未再次调用 ledger，仍不收敛 |
+| Root cause | `OkxRestReconcileService.reconcileOnce/canReconcile predecessor` 对 FILLED existing Trade 直接 skip；`reconcileFills` 对 existing exchangeTradeId 直接 `continue`，把 Trade existence 误当成 ledger completion |
+| Remediation | existing durable Trade 重放到 canonical `TradeLedgerPostingService`；不插 replacement Trade、不新增 projection engine；异常写 `OKX_LEDGER_POST_FAILED` 后继续抛出，实际补账写 `OKX_LEDGER_RECOVERY_COMPLETED` |
+| Recovery DB facts | Trade=`1`；Ledger entries/events=`2/2`；Position=`0.10000000`；BTC account=`0.10000000`；failure/recovery audit=`1/1`；TradeExecuted=`1` |
+| Third reconcile | canonical idempotent hit；Trade=`1`、Ledger=`2`、Position 无额外 delta、recovery-completed audit 不重复；venue query count 不增加 |
+| Normal L3 | negative ACCEPTED-only、positive FILLED causal path、sentinel price=`123.45000000`、qty=`0.10000000`、identity continuity 与 duplicate facts 全部 PASS |
+| Focused | `TradingChainPostgresIntegrationTest`=`3 tests / 0 failures / 0 errors / 0 skipped`；Flyway V1～V46 PASS |
+| Related | 13 related classes across `nq-app/nq-core/nq-ledger/nq-scheduler/nq-infra`；`35 tests / 0 failures / 0 errors / 1 skipped` |
+| Full Maven | pristine schema + one allowed `PAPER / ACTIVE` legacy fixture；23/23 modules SUCCESS；module summaries=`1646 tests / 0 failures / 0 errors / 53 skipped` |
+| Surefire XML | `1641 tests / 0 failures / 0 errors / 53 skipped`；保持已知 duplicate FQN overwrite 差 5 |
+| Cleanup | `TEMP_DB_LEFTOVERS=0`；`TEMP_FIXTURE_LEFTOVERS=0`；`TEMP_ARTIFACT_LEFTOVERS=0`；disposable PostgreSQL stopped |
+
+Test harness RCA：首次 baseline run 暴露 auto-commit test kill-switch 时间戳与 JVM future guard 的毫秒级竞争，test-only setup/cleanup 使用明确过去 1 秒的时间戳后稳定；首次 full run 使用 focused business test 做 schema bootstrap，旧 FILLED order 消耗 fail-once，改用 CI 同款 schema-only Flyway V46 helper 后 pristine DB full reactor PASS。两者均未通过 production 逻辑规避。
+
+当前结论：`F004_DEFECT_REPRODUCED=YES / RECOVERY_IMPLEMENTED=YES / LOCAL_CONVERGENCE_PROOF=PASS / PENDING_INDEPENDENT_REVIEW`。Migration、frontend、research、deploy、CI、Skill、GateY frozen evidence 均未修改；F-002/F-003 保持 open，F-005/F-011 保持 P2/deferred。
+
+## 2026-08-31 — F-004 Review Attempt-01 P1 remediation
+
+Independent Review Attempt-01=`FAIL / CHANGES_REQUIRED`；P1-01=`MULTI_FILL_RECOVERY_ORDER_COLLAPSE`，P1-02=`FAULT_INJECTOR_TARGET_IDENTITY_UNBOUND`，P1-03=`LEDGER_RECOVERY_FACT_IDENTITY_NOT_BOUND`。本轮只整改这三个 P1，不启动 F-002/F-003/F-005/F-011。
+
+| Remediation proof | Result |
+| --- | --- |
+| Repository capability | 新增 `findAllByOrderId(orderId, limit)`；one-order scope，`ts ASC/trade_id ASC`；SQL 取 `limit+1`，超限 fail-closed，不静默截断 |
+| P1-01 | FILLED latest-Trade shortcut 删除；current bounded venue reports 逐 exchangeTradeId 处理，未返回的 durable Trades 逐笔 canonical replay；granularity=`TRADE/FILL` |
+| Multi-fill | 同 order Fill A/B 分别形成 Trade A/B=`1/1`，Ledger A/B=`2/2 entries + 2/2 events`，Position/BTC Account=`0.10000000`，retry duplicates=`0` |
+| Older Trade | older A 非 latest、Ledger missing；latest B Ledger complete。Recovery 后 A complete、B unchanged、Trade count=`2`、Position=`A+B` |
+| Existing + new fill | durable A 已存在且 complete，venue 新回报 B；B 仍 insert/post，A idempotent，最终两笔 Trade 均 exactly once |
+| P1-03 | replay facts 来自 persisted Trade；side 仅在 Trade↔owning Order 的 order/account/symbol/exchange/externalOrder identity 全部匹配后取 owning Order；report path 额外校验 exchange/exchangeTradeId/externalOrder/symbol/price/qty |
+| Identity mismatch | durable Trade account 与 owning Order mismatch 时 `OKX_LEDGER_RECOVERY_IDENTITY_MISMATCH` audit；连续两次 recovery 均 fail-closed，Ledger/Position/Account mutation=`0`，保持 retryable/visible |
+| P1-02 | fail-once target=`ORDER_ID`；unrelated U 经同一 real gateway 成功且 remaining failure=`1`；target T 第一次失败、第二次恢复、第三次 idempotent |
+| Fault isolation | 同一 non-empty PostgreSQL 内 `UNRELATED_CALL_CONSUMED_FAULT=NO / TARGET_FIRST_CALL_FAILED=YES / TARGET_SECOND_CALL_RECOVERED=YES / TARGET_THIRD_CALL_IDEMPOTENT=YES` |
+| Normal L3 | ACCEPTED-only、FILLED same-pass Trade→Ledger→Position、sentinel price=`123.45000000`、qty=`0.10000000`、identity continuity 全部 PASS |
+| Focused | S1～S7=`7 tests / 0 failures / 0 errors / 0 skipped`；fresh PostgreSQL 17.7 / Flyway V1～V46 |
+| Related | 13 classes / `40 tests / 0 failures / 0 errors / 1 skipped`，覆盖 nq-app/core/ledger/scheduler/infra |
+| Full Maven | pristine run 与同一 non-empty DB second run 均 23/23 modules SUCCESS；最终 module summaries=`1651 tests / 0 failures / 0 errors / 53 skipped` |
+| Surefire XML | `1646 tests / 0 failures / 0 errors / 53 skipped`；保持已知 duplicate-FQN overwrite 差 5 |
+| Cleanup | `TEMP_DB_LEFTOVERS=0 / TEMP_FIXTURE_LEFTOVERS=0 / TEMP_ARTIFACT_LEFTOVERS=0`；PostgreSQL stopped |
+
+当前结果：`P1-01 RESOLVED / P1-02 RESOLVED / P1-03 RESOLVED / REMEDIATED CANDIDATE / PENDING RE-REVIEW`。Known P2 `FULL_REGRESSION_FIXTURE_PREREQUISITE_UNDISCLOSED / NON_BLOCKING` 保持；replay-all existing Trade DB cost 仍为 P2。Authority 保持 `IMPLEMENTED|PENDING_REVIEW / NONE / NOT_RUN`，next=`NQ-GATEAUDIT-PHASE4-F004-INDEPENDENT-REVIEW`。
+
+## 2026-08-31 — F-004 Independent Review Attempt-02 acceptance reconciliation
+
+本节只转录已完成的 physically isolated Review Attempt-02，不重新 Review。Decision=`PASS / REVIEW_ACCEPTED / READY_FOR_AUTHORITY_RECONCILIATION`；P0=`0`、P1=`0`、P1-01/02/03=`CLOSED`、candidate modified by review=`NO`、independence violation=`0`。
+
+Accepted facts：recovery granularity=`TRADE/FILL`；multi-fill、older non-latest Trade、existing+new fill、Trade↔Order、Trade↔venue、identity mismatch fail-closed、target fault isolation 与 non-empty DB proof 均 PASS；canonical ledger reused=`YES`，replacement Trade=`NO`，second ledger engine=`NO`，F-001 preserved=`YES`。Review 实测 fresh S1～S7=`7/7 PASS`、non-empty S1～S7=`7/7 PASS`、targeted repository/service=`9/9 PASS`、full Maven 23/23 modules SUCCESS，XML=`1646/0/0/53 skipped`，known difference=`5`。
+
+Accepted P2：`FULL_REGRESSION_FIXTURE_PREREQUISITE_UNDISCLOSED / NON_BLOCKING`；bounded replay-all complete Trades DB cost；`ORDER_ID` fault target 对当前 single-eligible invocation 场景充分，未来 finer Trade/fill target 可作为 `TEST_HARNESS_PRECISION` follow-up，不重新升级 F-004 P1。
+
+F-004 当前语义为 `REVIEW_ACCEPTED / CI_PENDING`；commit=`NONE`、CI=`NOT_RUN`，不得提前写 `CLOSED` 或 `CI_GREEN`。
+
+### F-004 final pre-commit canonical regression
+
+- Focused：fresh PostgreSQL 17.7 / Flyway V1～V46，S1～S7=`7 tests / 0 failures / 0 errors / 0 skipped`。
+- Non-empty：同一 DB 已有 `accounts/orders/trades/ledger_entries=4/4/4/8` 后再次 S1～S7=`7/7 PASS`；`EMPTY_DB_DEPENDENCE=NO / TEST_ORDER_DEPENDENCE=NO`。
+- Related：13 classes across scheduler-contracts/scheduler/infra/ledger/core/app，`40 tests / 0 failures / 0 errors / 1 skipped`。
+- Full Maven：pristine schema + 唯一 allowed `PAPER / ACTIVE` fixture；23/23 modules SUCCESS，module summaries=`1651 tests / 0 failures / 0 errors / 53 skipped`；F-004 integration=`7/7` 实际执行。
+- Surefire XML：`1646 tests / 0 failures / 0 errors / 53 skipped`；known duplicate-FQN overwrite difference=`5`。
+- Cleanup/safety：`TEMP_DB_LEFTOVERS=0 / TEMP_FIXTURE_LEFTOVERS=0 / TEMP_ARTIFACT_LEFTOVERS=0`；OKX/Binance/credential/real PLACE/CANCEL/transfer/withdraw=`0`。

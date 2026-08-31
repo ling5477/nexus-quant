@@ -19621,3 +19621,38 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Full Maven：isolated fresh DB 加入唯一最小 `PAPER / ACTIVE` legacy account test fixture 后，23/23 modules SUCCESS；module summaries=`1645 tests / 0 failures / 0 errors / 53 skipped`；Surefire XML=`1640`，保持已知 duplicate FQN overwrite 差 5；full reactor 中 L3=`2/2 PASS`。
 - Governance：PowerShell 5.1/7 的 authority、next-action、lifecycle、doc-links、Agent fixtures 全部 PASS；authority errors=`0/0`、next-action failed=`0/0`、lifecycle=`20/20`、Agent=`12/12`、malicious=`6/6 rejected`、previous capability=`3/3 rejected`、F1=`4/4 rejected`、runtime rules=`0/0`、active charter=`1`、doc links=`194 checked / 123 historical warnings / 0 errors`。
 - Cleanup/safety：三个 task-local DB、唯一 fixture、disposable PostgreSQL cluster 与任务日志全部删除；`TEMP_DB_LEFTOVERS=0`、`TEMP_FIXTURE_LEFTOVERS=0`、`TEMP_ARTIFACT_LEFTOVERS=0`。OKX/Binance/credential/real PLACE/CANCEL/transfer/withdraw=`0`。
+
+## 2026-08-31 — GateAUDIT Phase 4 F-004 Trade/Ledger convergence implementation
+
+- F-001 catch-up：immutable pair=`95b859ee61a8e7f0a725e29877e7303ea4453b1a / 33347091147`，exact-head=`completed / success / 11/11`；F-001=`ACCEPTED / CI_GREEN`，未重复 Review。
+- Transaction audit：`OkxRestReconcileService` 无外层 transaction，`JdbcTradeRepository.insert` auto-commit；`TradeLedgerPostingService.postTrade` 独立 `@Transactional`。因此 Trade 可在 Ledger failure 前持久化。
+- Baseline reproduction：test-only fail-once fault 位于 durable Trade 之后、real ledger delegate 之前；fresh PostgreSQL 得到 `Order FILLED / Trade 1 / Ledger 0 / Position 0 / Account 0 / TradeExecuted 1`。fault 清除后第二次 normal reconcile 未进入 ledger gateway，`BASELINE_NON_CONVERGENCE_PROVEN=YES`。
+- Root cause：FILLED existing-Trade predicate 与 exchangeTradeId dedup branch 直接 skip/continue，错误地把 Trade existence 当作整个 fill processing 已完成。
+- Minimal remediation：existing durable Trade 重放到 canonical `TradeLedgerPostingService`；不插 duplicate Trade、不建第二套 ledger/projection、不改 schema/transaction architecture。异常 audit 后继续抛出；实际 recovery 追加 `OKX_LEDGER_RECOVERY_COMPLETED`。
+- Recovery proof：第二次 production reconcile 得到 `Trade 1 / Ledger 2 / Ledger events 2 / Position 0.10000000 / BTC Account 0.10000000 / failure audit 1 / recovery audit 1`；第三次 reconcile idempotent，Trade/Ledger/Position/audit 均无重复增量，venue query 不增加。
+- Regression：focused=`3/3 PASS`；related=`35 tests / 0 failures / 0 errors / 1 skipped`；full backend 23/23 modules SUCCESS，module summaries=`1646 / 0 / 0 / 53 skipped`，Surefire XML=`1641`，known duplicate-FQN discrepancy=`5`。
+- Test RCA：auto-commit kill-switch test timestamp future guard 通过 test-only `CURRENT_TIMESTAMP - 1 second` 稳定；full 首跑的 focused-bootstrap business row 污染通过改用 CI 同款 schema-only Flyway helper 清除。未修改 production 逻辑掩盖测试污染。
+- Cleanup/safety：四个 disposable DB、唯一 legacy fixture、临时 PostgreSQL cluster/log/classpath 已删除；leftovers=`0`。OKX/Binance/credential/real PLACE/CANCEL/transfer/withdraw=`0`；LIVE/kill/shadow/real-provider authority 不变。
+- Result：`F004_DEFECT_REPRODUCED=YES / RECOVERY_IMPLEMENTED=YES / LOCAL_CONVERGENCE_PROOF=PASS / IMPLEMENTED / PENDING_INDEPENDENT_REVIEW`。F-002/F-003=`OPEN`；F-005/F-011=`P2 / DEFERRED`。
+- Authority：`GateAUDIT-PHASE4-F004-TRADE-LEDGER-CONVERGENCE / IMPLEMENTED|PENDING_REVIEW / NONE / NOT_RUN`；next=`NQ-GATEAUDIT-PHASE4-F004-INDEPENDENT-REVIEW`，matcher=`1`、type=`REVIEW`。
+
+## 2026-08-31 — F-004 Review Attempt-01 P1 remediation
+
+- Review Attempt-01：`FAIL / CHANGES_REQUIRED`；P1-01 multi-fill order collapse、P1-02 global unbound fail-once、P1-03 recovery fact identity unbound。
+- Repository：新增 one-order bounded `findAllByOrderId(orderId, limit)`；deterministic oldest-first，`limit+1` 超界 fail-closed；无 schema/migration。
+- P1-01：删除 FILLED latest-Trade return；current venue reports 按 exchangeTradeId 逐 fill dedup/insert/replay，本轮未返回的 durable Trades 逐笔 replay。Multi-fill、older non-latest missing Ledger、existing A + new B 三场景均收敛，Trade/Ledger exactly once。
+- P1-03：所有 canonical replay 先绑定 persisted Trade↔owning Order；report-driven path 再绑定 exchange/exchangeTradeId/externalOrder/symbol/price/qty。Mismatch 写 `OKX_LEDGER_RECOVERY_IDENTITY_MISMATCH` 后抛出，连续 retry 均无 Ledger/Position/Account mutation。
+- P1-02：fault wrapper 绑定 target orderId；同一 non-empty DB 先完成 unrelated U 且不消费 failure，再由 target T 精确失败一次、第二次恢复、第三次 idempotent；测试结束将 durable test orders 移出 reconcile scan 并恢复 kill-switch。
+- Regression：focused S1～S7=`7/7 PASS`；related=`40/0/0/1 skipped`；full pristine 与 non-empty second pass 均 23/23 modules SUCCESS，最终 module summaries=`1651/0/0/53 skipped`，XML=`1646`，known discrepancy=`5`。
+- Safety/cleanup：OKX/Binance/credential/real PLACE/CANCEL/transfer/withdraw=`0`；LIVE/kill/shadow/provider authority 不变；temporary DB/fixture/cluster/log=`0`。
+- Result：`P1-01/02/03 RESOLVED / REMEDIATED CANDIDATE / IMPLEMENTED / PENDING_INDEPENDENT_REVIEW`。F-002/F-003=`OPEN`；F-005/F-011=`P2 / DEFERRED`；authority 与 next REVIEW token 不变。
+
+## 2026-08-31 — F-004 Independent Review Attempt-02 acceptance reconciliation
+
+- Review Attempt-02：`PASS / REVIEW_ACCEPTED / READY_FOR_AUTHORITY_RECONCILIATION`；physically isolated authority=`NO/NO/NO`，violation=`0`，candidate modified=`NO`。
+- Closure：P1-01 multi-fill collapse=`CLOSED`；P1-02 fault identity=`CLOSED`；P1-03 recovery identity binding=`CLOSED`；P0=`0`、P1=`0`。
+- Accepted proof：Trade/fill granularity、old non-latest recovery、existing+new fill、Order/report identity、mismatch fail-closed、canonical ledger、non-empty target isolation、F-001 regression 全部 PASS。
+- Review regression：fresh/non-empty S1～S7=`7/7 + 7/7 PASS`；targeted=`9/9 PASS`；full 23/23 modules SUCCESS；XML=`1646/0/0/53 skipped`，known difference=`5`；temp leftovers=`0`。
+- P2：full-regression fixture prerequisite、bounded replay-all DB cost、future finer Trade/fill fault-target precision，均 non-blocking，本任务不实施。
+- Authority reconciliation：`GateAUDIT-PHASE4-F004-TRADE-LEDGER-CONVERGENCE / REVIEW_ACCEPTED|READY_TO_COMMIT / NONE / NOT_RUN`；next=`NQ-GATEAUDIT-PHASE4-F004-COMMIT`，matcher=`1`、type=`COMMIT`。
+- Final pre-commit regression：fresh/non-empty S1～S7=`7/7 + 7/7 PASS`；related=`40/0/0/1 skipped`；full 23/23 modules SUCCESS，module summaries=`1651/0/0/53 skipped`、XML=`1646`、known difference=`5`；temporary DB/fixture/cluster/log=`0`，external real side effects=`0`。
