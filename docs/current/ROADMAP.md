@@ -71,19 +71,27 @@ P1-01 / P1-02 REMEDIATED
   ↓
 Independent Review Attempt-02 PASS / REVIEW_ACCEPTED
   ↓
-NQ-GATEAUDIT-PHASE4-F002-COMMIT
+commit e10373285ca48f3a362b4f510d55fb4677dc6ded
+  ↓
+exact-head CI 33376886158 FAILED / Backend Maven datasource env missing
+  ↓
+F-002 CI DATASOURCE BINDING REMEDIATION IMPLEMENTED / PENDING_REVIEW
+  ↓
+Independent Review PASS / REVIEW_ACCEPTED
+  ↓
+NQ-GATEAUDIT-PHASE4-F002-DATASOURCE-BINDING-COMMIT
 ```
 
 ## 下一允许动作
 
-- 唯一下一动作：`NQ-GATEAUDIT-PHASE4-F002-COMMIT`（matcher count=`1`，type=`COMMIT`）。
+- 唯一下一动作：`NQ-GATEAUDIT-PHASE4-F002-DATASOURCE-BINDING-COMMIT`（matcher count=`1`，type=`COMMIT`）。任务原建议 commit action含 `CI`/`COMMIT`会被 checker判为 ambiguous，故不修改 matcher并采用此唯一 COMMIT token。
 - 历史链保持：`ae396d3aa4a88878ec0e5284af63b21773e6a868 → 33147280950 / failure`；`99c976306fb4c645251847c35ecf8c09f194b05d → 33164682651 / failure`；`40e1077e1fe735a3d250f094caaa24e437e8ea3f → 33306024232 / success`。
 - Phase 0 immutable acceptance pair=`40e1077e1fe735a3d250f094caaa24e437e8ea3f / 33306024232`；P1-01、P1-02 与 doc-link Linux hidden-root finding 均为 `CLOSED_BY_LINUX_CI`。
 - Phase 1～3 是 audit/analysis/disposition facts；Phase 3 findings=`P0 0 / P1 4 / P2 8 / P3 1`。
-- F-001 immutable pair=`95b859ee61a8e7f0a725e29877e7303ea4453b1a / 33347091147`；F-004 immutable pair=`18efc06c380d2b411ba7d5f651e7e441247a1b96 / 33358364678`，均 `ACCEPTED / CI_GREEN`。F-002 Attempt-02 已接受，P1-01/P1-02=`CLOSED`，当前 `REVIEW_ACCEPTED / READY_TO_COMMIT`；F-003 保持 open。
+- F-001 immutable pair=`95b859ee61a8e7f0a725e29877e7303ea4453b1a / 33347091147`；F-004 immutable pair=`18efc06c380d2b411ba7d5f651e7e441247a1b96 / 33358364678`，均 `ACCEPTED / CI_GREEN`。F-002 proof Review已接受，`e1037328... / 33376886158` datasource failure已有workflow-only remediation且独立Review接受；当前等待commit与新 exact-head CI，F-003保持 open。
 
 ## Persistent boundary
 
 - `LIVE=DISABLED`、kill switch=`ENGAGED`；不得再次 pilot、PLACE、CANCEL、transfer、withdraw 或触达 credential/生产服务器/生产数据库。
 - GateY frozen archive 与 `nq-gatey-freeze` 不可改写。
-- 本次 commit/exact-head CI 只接受 F-002 Phase4 restart foundation，不扩展 accepted-timeout、cancel/fill race、kill in-flight、multi-instance、部署或 Phase6 qualification。
+- 本次 remediation 只复用 Backend Maven既有 disposable PostgreSQL contract并补齐 Spring datasource alias，不改变 F-002 proof、accepted-timeout、cancel/fill race、kill in-flight、multi-instance、部署或 Phase6 qualification。

@@ -484,6 +484,13 @@ jobs:
 
       - name: Run backend tests
         shell: bash
+        # Reuse the job's disposable PostgreSQL contract for integration tests that need
+        # Spring's canonical datasource names. Keep the aliases scoped to Maven tests so
+        # fixture preparation and unrelated jobs retain their existing environment.
+        env:
+          SPRING_DATASOURCE_URL: ${{ env.NQ_DB_URL }}
+          SPRING_DATASOURCE_USERNAME: ${{ env.NQ_DB_USER }}
+          SPRING_DATASOURCE_PASSWORD: ${{ env.NQ_DB_PASSWORD }}
         run: |
           set -euo pipefail
 

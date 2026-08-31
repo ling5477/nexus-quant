@@ -13,11 +13,11 @@ accepted_batch_status=ACCEPTED|CI_GREEN
 accepted_batch_implementation_commit=8e3dd0cf6104eb85f36a0e434ca51ea9d903705a
 accepted_batch_acceptance_head=8e3dd0cf6104eb85f36a0e434ca51ea9d903705a
 accepted_batch_ci_run=32978280738
-work_batch=GateAUDIT-PHASE4-F002-RESTART-PROOF-FOUNDATION
+work_batch=GateAUDIT-PHASE4-F002-CI-DATASOURCE-BINDING-REMEDIATION
 work_batch_status=REVIEW_ACCEPTED|READY_TO_COMMIT
 work_batch_commit=NONE
 work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEAUDIT-PHASE4-F002-COMMIT
+next_action=NQ-GATEAUDIT-PHASE4-F002-DATASOURCE-BINDING-COMMIT
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -38,10 +38,11 @@ nq-current-authority:end -->
 - GateY-6F：`ACCEPTED / CI GREEN / MINIMAL LIVE PILOT VERIFIED`（已接受 / CI 已通过 / 最小实盘 pilot 已验证）；production pilot release=`8e3dd0cf6104eb85f36a0e434ca51ea9d903705a`，CI run=`32978280738 / completed / success / 10 jobs`。
 - GateY-FREEZE：`ACCEPTED / CI GREEN / TAGGED`（已接受 / CI 已通过 / 已打 tag）；exact-head CI run=`33037514013 / completed / success / 11 jobs / bad=0`，archive/release post-tag checker errors=0。
 - GateAUDIT-0C-R3-DOC-LINK-LINUX-REMEDIATION：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；immutable acceptance pair=`40e1077e1fe735a3d250f094caaa24e437e8ea3f / 33306024232`，blocking jobs=`11/11 SUCCESS`。Linux CI 已关闭 P1-01 authority fixture、P1-02 Java verifier 与 doc-link hidden-root portability finding；P0=0、P1=0。
-- GateAUDIT Phase 3：`COMPLETE / READY_FOR_PHASE4`；正式 findings=`P0 0 / P1 4 / P2 8 / P3 1`。Tier A 为 F-001～F-004；F-001/F-004 已接受，F-002 restart foundation 独立 Review 已接受并等待 commit/exact-head CI，F-003 保持 open。
+- GateAUDIT Phase 3：`COMPLETE / READY_FOR_PHASE4`；正式 findings=`P0 0 / P1 4 / P2 8 / P3 1`。Tier A 为 F-001～F-004；F-001/F-004 已接受，F-002 restart foundation 独立 Review 已接受但 exact-head CI失败，当前进行 CI datasource binding remediation，F-003 保持 open。
 - GateAUDIT-PHASE4-L3-PROOF-FOUNDATION：`ACCEPTED / CI_GREEN`；immutable acceptance pair=`95b859ee61a8e7f0a725e29877e7303ea4453b1a / 33347091147`，exact-head CI=`11/11 SUCCESS`。F-001 不在本任务重新 Review。
 - GateAUDIT-PHASE4-F004-TRADE-LEDGER-CONVERGENCE：`ACCEPTED / CI_GREEN`；immutable acceptance pair=`18efc06c380d2b411ba7d5f651e7e441247a1b96 / 33358364678`，exact-head CI=`11/11 SUCCESS`。
-- GateAUDIT-PHASE4-F002-RESTART-PROOF-FOUNDATION：`REVIEW_ACCEPTED / READY_TO_COMMIT`；Attempt-02=`PASS / REVIEW_ACCEPTED / READY_FOR_AUTHORITY_RECONCILIATION`，P1-01/P1-02=`CLOSED`、P0/P1=`0/0`、review 未修改 candidate。test-only forked JVM harness 已证明 R1/R2 interprocess durability 与 per-fill Ledger exactly-once；这只是 Phase4 foundation，不等于 Phase6 full L4 qualification。
+- GateAUDIT-PHASE4-F002-RESTART-PROOF-FOUNDATION：`REVIEW_ACCEPTED / EXACT_HEAD_CI_FAILED`；commit=`e10373285ca48f3a362b4f510d55fb4677dc6ded`，run=`33376886158 / completed / failure / 10 success + Backend Maven failure`。F002 test实际执行`2 tests / 2 errors`，原因是 Backend Maven step缺少 `SPRING_DATASOURCE_*`；R1/R2 accepted proof本身不变，且不等于 Phase6 full L4 qualification。
+- GateAUDIT-PHASE4-F002-CI-DATASOURCE-BINDING-REMEDIATION：`REVIEW_ACCEPTED / READY_TO_COMMIT`；独立Review=`PASS / REVIEW_ACCEPTED / READY_FOR_COMMIT_AND_EXACT_HEAD_CI`，P0/P1/P2/P3=`0/0/0/0`、candidate modified=`NO`。workflow-only change复用既有PostgreSQL service与 `NQ_DB_*`，Java/assertion/side-effect语义不变。
 
 ## 2. Accepted pilot facts
 
@@ -70,4 +71,4 @@ updated_commit=72fbf5e78f217a02b572a54fadb17dea204b594f
 
 ## 5. 下一允许动作
 
-- 当前唯一治理动作是 `NQ-GATEAUDIT-PHASE4-F002-COMMIT`。只允许精确提交已接受的 7-path candidate，随后取得 exact-head CI 并确认 restart integration test实际执行；不得启动 accepted-timeout、F-003、Phase6 或扩大 LIVE 能力。
+- 当前唯一治理动作是 `NQ-GATEAUDIT-PHASE4-F002-DATASOURCE-BINDING-COMMIT`。只允许精确提交已接受6-path remediation、push并取得新 exact-head CI；不得第三次Review、启动 F-003/Phase6 或扩大 LIVE 能力。

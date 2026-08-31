@@ -19683,3 +19683,19 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Regression：focused两轮=`2/0/0/0 + 2/0/0/0`；related=`31/0/0/0`；full Maven=`23/23 SUCCESS / 1653/0/0/53 skipped`，XML=`1648/0/0/53`、known difference=`5`；cleanup/residue=`0`。
 - Scope：F-002 仅为 `PHASE4 RESTART FOUNDATION REVIEW_ACCEPTED`；accepted-timeout、lost ACK、cancel/fill race、abrupt crash、kill-in-flight 与 Phase6 full L4均未证明。
 - Authority reconciliation：`GateAUDIT-PHASE4-F002-RESTART-PROOF-FOUNDATION / REVIEW_ACCEPTED|READY_TO_COMMIT / NONE / NOT_RUN`；next=`NQ-GATEAUDIT-PHASE4-F002-COMMIT`，matcher=`1`、type=`COMMIT`。
+
+## 2026-08-31 — F-002 exact-head CI datasource binding remediation
+
+- Baseline：branch=`audit/post-gatey-agent-baseline`，`HEAD == origin = e10373285ca48f3a362b4f510d55fb4677dc6ded`，worktree/staged=`0/0`。Attempt-02 accepted proof与 Java hashes保持。
+- Failure：exact-head run `33376886158`为`completed / failure`；10 jobs success、Backend Maven failed。F002 test=`2 errors`，入口为 `RestartDatabase.create` missing `SPRING_DATASOURCE_URL`；workflow中三个 `SPRING_DATASOURCE_*`计数均为0。
+- RCA/implementation：Backend Maven已经有 `postgres:16`、health check、CI-only fake `NQ_DB_*`与schema/fixture准备。最小 workflow-only remediation 在 `Run backend tests` step把 `SPRING_DATASOURCE_*`映射到既有 `NQ_DB_*`；无第二套 PostgreSQL、无新 credential/dependency、无 Java/migration/production change。
+- Semantics/safety：F002 real JVM、unique R1/R2 scenario DB、parent interprocess SELECT、per-fill Ledger与second recovery assertions全部原样保留；external exchange/credential/LIVE/PLACE/CANCEL/transfer/withdraw=`0`。
+- Validation：SnakeYAML/alias structure、PS5.1/PS7 governance fixtures与authority checker均 PASS；PostgreSQL 17.7 focused fresh及 non-empty/conflicting env各`2/0/0/0`；cleanup/residue=`0`。未在本任务 rerun GitHub CI，PostgreSQL 16本地模拟未执行。
+- Result：`IMPLEMENTED / PENDING_INDEPENDENT_REVIEW`；authority=`GateAUDIT-PHASE4-F002-CI-DATASOURCE-BINDING-REMEDIATION / IMPLEMENTED|PENDING_REVIEW / NONE / NOT_RUN`；next=`NQ-GATEAUDIT-PHASE4-F002-DATASOURCE-BINDING-INDEPENDENT-REVIEW`，matcher=`1`、type=`REVIEW`。任务原 action含 `CI`+`REVIEW` 被 checker拒绝为 ambiguous；未修改 matcher/checker。未commit/push/rerun CI。
+
+## 2026-08-31 — F-002 datasource binding independent Review acceptance reconciliation
+
+- Review：`PASS / REVIEW_ACCEPTED / READY_FOR_COMMIT_AND_EXACT_HEAD_CI`；physical isolation/candidate authority=`PASS/NO`，P0/P1/P2/P3=`0/0/0/0`，candidate modified=`NO`。
+- Accepted scope：仅`.github/workflows/ci.yml`与5个current docs；Java/migration/frontend/research/deploy/frozen=`0`。Existing PostgreSQL reuse、step-scoped aliases、CI-only fake credential、scenario DB privilege、child override与other-test semantics全部 PASS。
+- Validation：YAML/structure、focused=`2/0/0/0`、related safety=`14/0/0/0 + 2/0/0/0`、cleanup/integrity=`PASS`。
+- Authority：`GateAUDIT-PHASE4-F002-CI-DATASOURCE-BINDING-REMEDIATION / REVIEW_ACCEPTED|READY_TO_COMMIT / NONE / NOT_RUN`；next=`NQ-GATEAUDIT-PHASE4-F002-DATASOURCE-BINDING-COMMIT`，matcher=`1`、type=`COMMIT`。未修改matcher/checker。

@@ -8,8 +8,8 @@
 - 最近冻结 Gate 为 GateY：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-y/](../gates/gate-y/)，tag=`nq-gatey-freeze`。
 - GateAUDIT：`IN PROGRESS / NOT FROZEN`（治理进行中 / 未冻结）；Phase 0=`ACCEPTED / CI_GREEN / COMPLETE`，immutable pair=`40e1077e... / 33306024232`；Phase 1 inventory、Phase 2 analysis 与 Phase 3 disposition 已完成。
 - GateY freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`；exact-head CI run=`33037514013 / completed / success / 11 jobs`。
-- Phase 3 findings=`P0 0 / P1 4 / P2 8 / P3 1`；F-001=`ACCEPTED / CI_GREEN`（`95b859ee... / 33347091147`）；F-004=`ACCEPTED / CI_GREEN`（`18efc06c... / 33358364678`）；F-002 Phase4 restart foundation=`REVIEW_ACCEPTED / READY_TO_COMMIT`。
-- 当前唯一动作是 `NQ-GATEAUDIT-PHASE4-F002-COMMIT`；只提交 accepted allowlist 并取得 exact-head CI，不得启动 accepted-timeout、F-003 或扩大 runtime 权限。
+- Phase 3 findings=`P0 0 / P1 4 / P2 8 / P3 1`；F-001=`ACCEPTED / CI_GREEN`（`95b859ee... / 33347091147`）；F-004=`ACCEPTED / CI_GREEN`（`18efc06c... / 33358364678`）；F-002 Phase4 restart foundation=`REVIEW_ACCEPTED / EXACT_HEAD_CI_FAILED`（`e1037328... / 33376886158`）。
+- CI datasource binding remediation=`REVIEW_ACCEPTED / READY_TO_COMMIT`；当前唯一动作是 `NQ-GATEAUDIT-PHASE4-F002-DATASOURCE-BINDING-COMMIT`，只提交已接受6-path candidate并取得新 exact-head CI，不得启动 F-003 或扩大 runtime 权限。
 - Pilot final：PLACE=1、retry=0、CANCEL=0、activeLease=0、LIVE=false、kill=`ENGAGED`、Attempt-02 未创建。
 - Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->

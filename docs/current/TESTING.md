@@ -14873,3 +14873,20 @@ Attempt-01=`FAIL / CHANGES_REQUIRED`：P1-01=`INTERPROCESS_DURABILITY_CHECK_ABSE
 - Review regression：focused fresh与 non-empty/conflicting env均`2/0/0/0`；related canonical rerun=`31/0/0/0`；full 23/23 modules SUCCESS，module summaries=`1653/0/0/53 skipped`、XML=`1648/0/0/53`、known difference=`5`；PostgreSQL=`17.7`、Flyway=`V46`。
 - Cleanup/integrity：child JVM/listener/scenario DB/cluster/temp/review residue=`0`；tracked/untracked mismatch=`0/0`，staged=`0`。
 - Authority reconciliation：`GateAUDIT-PHASE4-F002-RESTART-PROOF-FOUNDATION / REVIEW_ACCEPTED|READY_TO_COMMIT / NONE / NOT_RUN`；next=`NQ-GATEAUDIT-PHASE4-F002-COMMIT`，matcher=`1`、type=`COMMIT`。Known P2三项保持 non-blocking；Phase6 failure matrix仍未证明。
+
+## 2026-08-31 — F-002 exact-head CI failure and datasource binding remediation
+
+- Commit/push：accepted 7-path candidate commit=`e10373285ca48f3a362b4f510d55fb4677dc6ded`，parent=`18efc06c380d2b411ba7d5f651e7e441247a1b96`，local/remote一致、worktree clean。
+- Failed exact-head CI：run=`33376886158 / workflow_dispatch / headSha=e10373285ca48f3a362b4f510d55fb4677dc6ded / completed / failure`；11 jobs中10 success，Backend Maven failed。F002 test实际执行`2/0 failures/2 errors/0 skipped`，均在 `RestartDatabase.create` 因缺少 `SPRING_DATASOURCE_URL`失败。
+- RCA：Backend Maven已有 canonical `postgres:16` service、health check、CI-only fake credential与 `NQ_DB_URL/USER/PASSWORD`，fixture step已用其完成 Flyway V46和legacy account准备；`Run backend tests`未向 Maven注入 F002严格要求的 `SPRING_DATASOURCE_URL/USERNAME/PASSWORD`。本地 proof显式提供这些值，所以未复现该CI wiring gap。
+- Remediation：仅在 `Run backend tests` step将 `SPRING_DATASOURCE_*`映射到既有 job-level `NQ_DB_*`；service/image/health check/database/user/password均不新增，env不扩展到其他 jobs或fixture step。F002 Java、scenario DB创建/清理、A/B child override、interprocess/per-fill/idempotency断言全部未修改。
+- Local validation：SnakeYAML parse与 Backend Maven env alias结构检查=`PASS`；PS5.1/PS7 current-authority、next-action与agent-workflow fixtures=`PASS`；PostgreSQL 17.7 focused fresh=`2/0/0/0`，non-empty base + stale inherited `NQ_F002_DB_*`=`2/0/0/0`；child/scenario DB/listener/temp leftovers=`0`。未运行 GitHub CI；本机无 PostgreSQL 16 runtime，未声称17.7等价于CI 16。
+- Safety：disposable localhost DB、CI-only fake credential、repository secrets=`0`；OKX/Binance/credential/real PLACE/CANCEL/transfer/withdraw/LIVE=`0`。本任务不 commit/push、不重跑 acceptance CI。
+- Authority：F002 foundation=`REVIEW_ACCEPTED / EXACT_HEAD_CI_FAILED`；remediation=`IMPLEMENTED / PENDING_REVIEW`，next=`NQ-GATEAUDIT-PHASE4-F002-DATASOURCE-BINDING-INDEPENDENT-REVIEW`。任务原建议 action 同时匹配 `CI` 与 `REVIEW`，checker=`AMBIGUOUS`；未修改 matcher，改用唯一 REVIEW token。
+
+### F-002 datasource binding independent Review acceptance
+
+- Review：`PASS / REVIEW_ACCEPTED / READY_FOR_COMMIT_AND_EXACT_HEAD_CI`；物理隔离 authority=`NO/NO/NO`、violation=`0`、candidate modified=`NONE`、P0/P1/P2/P3=`0/0/0/0`。
+- Accepted facts：Backend Maven既有 `postgres:16`、health check与CI-only `NQ_DB_*`被精确复用；三个 `SPRING_DATASOURCE_*` alias仅作用于 `Run backend tests` step，duplicate infrastructure/repository secret=`0/0`；F002 Java hashes、scenario DB、child override与全部断言不变。
+- Review validation：SnakeYAML parse/alias structure=`PASS`；focused=`2/0/0/0`；no-outbound/credential=`14/0/0/0`；GateY zero-side-effect context=`2/0/0/0`；PostgreSQL 17.7本地权限probe与scenario cleanup PASS，不声称等价CI 16；review residue=`0`。
+- Authority reconciliation：`GateAUDIT-PHASE4-F002-CI-DATASOURCE-BINDING-REMEDIATION / REVIEW_ACCEPTED|READY_TO_COMMIT / NONE / NOT_RUN`；next=`NQ-GATEAUDIT-PHASE4-F002-DATASOURCE-BINDING-COMMIT`，matcher=`1`、type=`COMMIT`。
