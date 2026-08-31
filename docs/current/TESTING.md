@@ -14707,3 +14707,60 @@ Evidence：[GATEAUDIT_0C_R3_DOC_LINK_LINUX_REMEDIATION_REVIEW_ACCEPTANCE.md](../
 | Local doc links | PS5.1/PS7=`PASS / DOC_LINKS_VALID`；checked=`194`；warnings=`123`；errors=`0` |
 
 前两个 failed exact-head CI 事实 `ae396d3... / 33147280950` 与 `99c9763... / 33164682651` 保留不变。本次仅执行 post-CI authority fact catch-up，不生成新 Review evidence，不把 docs-only closeout commit 作为新的 implementation candidate，也不触发新的 Phase 0 exact-head CI。
+
+## 2026-08-31 — GateAUDIT Phase 4A F-001 L3 causal-fill remediation
+
+Phase 1 inventory、Phase 2 AS-IS analysis 与 Phase 3 findings/dispositions 已完成；Phase 3 severity=`P0 0 / P1 4 / P2 8 / P3 1`。Independent Review Attempt-01=`FAIL / CHANGES_REQUIRED`，唯一 blocking P1=`L3_FAKE_VENUE_FILL_FACT_NOT_CONSUMED / L3_CAUSAL_CHAIN_NOT_PROVEN`。本节只记录同一 F-001 candidate 的 causal-fill remediation，不重做 Phase 3，也不关闭 F-001。
+
+| Check | Result |
+| --- | --- |
+| Governance action | current next-action matcher=`1`、type=`REVIEW`；contract/checker diff=`0` |
+| Selected route | Route B；authoritative fill source=test-only deterministic OKX venue script；production fill consumer=`OkxRestReconcileService.reconcileSingleOrder/reconcileFills` |
+| Test source | `TradingChainPostgresIntegrationTest`；Fake `TradingVenueGateway` 只负责 PLACE/ACCEPTED；scripted `OkxHttpClient`=`TEST_ONLY / NO_NETWORK / NO_CREDENTIAL / DETERMINISTIC`；real `OkxExchangeAdapter` 执行 order/fill mapping |
+| Production composition | real `PreTradeRiskService`、`InMemoryOrderStateMachine`、JDBC order/trade/ledger repositories、`OkxRestReconcileService`、`TradeLedgerPostingService`、`LedgerReconcileScheduler`、audit/event store；`PaperMatchingService` 不参与该 scenario |
+| PostgreSQL | local disposable PostgreSQL `17.7`；Flyway V1～V46=`46/46 PASS` |
+| Focused L3 | `2 tests / 0 failures / 0 errors / 0 skipped / PASS`；ACCEPTED_ONLY negative control 与 ACCEPTED_THEN_FILLED positive control 均独立可见 |
+| Related regression | `31 tests / 0 failures / 0 errors / 0 skipped / PASS`；core/risk/ledger/scheduler/infra |
+| Full backend | 23 modules `SUCCESS`；module summaries=`1645 tests / 0 failures / 0 errors / 53 skipped`；duplicate FQN report overwrite makes raw XML sum=`1640`，仍比 module summaries 少 5 |
+| Remediation RCA | focused attempt-01 的 nonzero fee 产生 4 条真实 ledger entries，test-only fee 收口为 0 后恢复基础 2 条；attempt-02 的第二个 rollback case 观测到 kill-switch=`UNKNOWN`，改为 `@DirtiesContext(AFTER_EACH_TEST_METHOD)` 后两个 case 独立通过；未将该测试隔离现象归因为 production defect，未修改 production Java |
+| Governance regression | PS5.1/PS7 authority errors=`0/0`；next-action failed=`0/0`；Agent=`12/12 PASS`；runtime rules=`0/0`；active audit charters=`1` |
+| Docs links | PS5.1/PS7=`PASS / 194 checked / 123 historical warnings / 0 errors` |
+| L3 negative control | venue remains `ACCEPTED`；Trade=`0`；target ledger facts=`0`；Position/account target delta=`0` |
+| L3 positive/sentinel facts | venue external identity continuity=`PASS`；venue fill price=`123.45000000`（不同于 local order price=`100.00000000`）；fill quantity=`0.10000000`；persisted Trade identity/price/quantity 全部 exact match；Trade=`1`；ledger entries/events=`2/2`；Position/Account projection consistent |
+| Audit/events | exact `audit_logs(domain='RECONCILE', action='OKX_RECONCILE_COMPLETED', actor_id=orderId)` 与 `event_store(topic='trade.event.v1', event_type='TradeExecuted', key_value=clientOrderId)` 均为 1；P2 stage-specific assertion 已收口 |
+| Idempotency | second `OkxRestReconcileService.reconcileOnce` produced no new venue query、Trade、ledger posting 或 position delta；`SECOND_PASS_DUPLICATE_FACTS=0` |
+| External effects | OKX/Binance outbound=`0`；credential=`0`；real PLACE/CANCEL/transfer/withdraw=`0`；Fake place count=`1` |
+| Findings | F-001=`REMEDIATED IMPLEMENTATION CANDIDATE / LOCAL_CAUSAL_L3_PROOF_PASS / PENDING_INDEPENDENT_REVIEW`；F-002/F-003/F-004=`OPEN`；F-005/F-011=`P2 / DEFERRED`，本 remediation architecture/refactor change required=`NO` |
+
+Production Java、migration、frontend、research、deploy、CI、Skill 与 GateY frozen evidence 均未修改。F-001 仍需 independent review、accepted commit 与 exact-head CI。
+
+## 2026-08-31 — GateAUDIT Phase 4A F-001 independent review acceptance reconciliation
+
+本节只转录已完成的 Independent Review 事实，不重新运行 Review。Attempt-01=`FAIL / CHANGES_REQUIRED`，root cause=`L3_FAKE_VENUE_FILL_FACT_NOT_CONSUMED / L3_CAUSAL_CHAIN_NOT_PROVEN`；Attempt-02=`PASS / REVIEW_ACCEPTED / READY_FOR_AUTHORITY_RECONCILIATION`，P0=`0`、P1=`0`、candidate modified by review=`NO`、review independence violation=`0`。
+
+| Accepted proof | Result |
+| --- | --- |
+| Fill ordering and causal chain | `FILLED_BEFORE_TRADE=YES`；`CAUSAL_CHAIN_CONTINUOUS=YES` |
+| Test construction | `TEST_STITCHED=NO`；`DUAL_FILL_PRODUCERS=NO` |
+| Sentinel and identity | `SENTINEL_PRICE_CAUSAL_MATCH=PASS`；`SENTINEL_QTY_CAUSAL_MATCH=PASS`；`ORDER_VENUE_IDENTITY_CONTINUITY=PASS` |
+| Safety | `NETWORK_ISOLATION=PROVEN` |
+| Review P2 | `FULL_REGRESSION_FIXTURE_PREREQUISITE_UNDISCLOSED / P2 / NON_BLOCKING_FOR_F001` |
+
+Reviewer P2 事实：bare disposable fresh DB 下，既有 `ResearchBacktestHappyPathLocalTest` 有 1 个与 F-001 无关的 error；加入最小 legacy `PAPER / ACTIVE` account fixture 后 full Maven PASS。该 fixture 只允许用于 test setup，不修改 migration、production code 或提交数据库数据；后续作为 test-environment reproducibility 输入处理。F-001 当前为 `INDEPENDENT_REVIEW_ACCEPTED / CI_PENDING_AFTER_COMMIT`，final canonical regression 与 exact-head CI 仍待本任务执行。
+
+### Final pre-commit canonical regression
+
+| Check | Result |
+| --- | --- |
+| Disposable PostgreSQL | local PostgreSQL `17.7`；三个 isolated fresh DB；Flyway V1～V46=`46/46 PASS` |
+| Focused L3 | `TradingChainPostgresIntegrationTest`=`2 tests / 0 failures / 0 errors / 0 skipped / PASS` |
+| Related regression | 12 related classes across `nq-app/nq-core/nq-ledger/nq-scheduler/nq-infra`；`32 tests / 0 failures / 0 errors / 1 skipped / PASS`；唯一 skip 为既有 no-outbound 条件性 case |
+| Full Maven | `mvn -f backend/pom.xml test`；23/23 modules `SUCCESS`；module summaries=`1645 tests / 0 failures / 0 errors / 53 skipped` |
+| Surefire XML | `1640 tests / 0 failures / 0 errors / 53 skipped`；与 module summaries 的已知 duplicate FQN XML overwrite 差 5，无新差异 |
+| L3 in full reactor | `2 tests / 0 failures / 0 errors / 0 skipped`，实际执行 |
+| Review P2 fixture | isolated full-regression DB 中仅加入 1 条 `PAPER / ACTIVE` legacy account test fixture；未修改 migration/production code，未提交 DB 数据 |
+| Governance PS5.1 + PS7 | authority errors=`0/0`；next-action failed=`0/0`；lifecycle=`20/20`；Agent=`12/12`、malicious=`6/6 rejected`、previous capability=`3/3 rejected`、F1=`4/4 rejected`；runtime rules=`0/0`；active audit charters=`1` |
+| Docs links PS5.1 + PS7 | checked=`194`；historical warnings=`123`；errors=`0`；`PASS / DOC_LINKS_VALID` |
+| Cleanup | `TEMP_DB_LEFTOVERS=0`；`TEMP_FIXTURE_LEFTOVERS=0`；`TEMP_ARTIFACT_LEFTOVERS=0`；disposable PostgreSQL stopped |
+
+本地 final canonical regression 未调用 OKX/Binance，未读取 credential，未执行真实 PLACE/CANCEL/transfer/withdraw。PostgreSQL 16 与 Linux L3 `2/2` proof 仍必须由本次新 exact-head CI 证明；提交前不得把 F-001 写为 `CLOSED` 或 `CI_GREEN`。

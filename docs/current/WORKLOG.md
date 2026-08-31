@@ -19592,3 +19592,32 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Next：`NQ-GATEAUDIT-PHASE1-REPOSITORY-AUDIT-INVENTORY`，matcher count=`1`，type=`AUDIT`。本任务不启动 inventory，不执行新 Review，不修改 implementation、Skill、CI、checker、matcher、GateY frozen evidence 或 runtime 权限。
 - Local validation：PS5.1/PS7 authority errors=`0/0`；next-action regression failed=`0/0`；lifecycle=`20/20 PASS`；Agent=`12/12 PASS`、malicious=`6/6 rejected`、previous capability=`3/3 rejected`、F1=`4/4 rejected`、runtime rules=`0/0`、active audit charters=`1`；doc links=`194 checked / 123 warnings / 0 errors / PASS`。
 - Recursion boundary：本次 closeout 是 `POST_CI_AUTHORITY_CATCH_UP`；docs-only closeout commit 不替换 `work_batch_commit`/`work_batch_ci_run`，不生成新的 Phase 0 hard gate。
+
+## 2026-08-31 — GateAUDIT Phase 4A F-001 L3 causal-fill remediation
+
+- Phase catch-up：Phase 1 inventory、Phase 2 AS-IS analysis、Phase 3 findings/dispositions 均 COMPLETE；Phase 3=`P0 0 / P1 4 / P2 8 / P3 1`，属于 audit facts，不替换 Phase 0 immutable pair。
+- Review Attempt-01：`FAIL / CHANGES_REQUIRED`；唯一 blocking P1=`L3_FAKE_VENUE_FILL_FACT_NOT_CONSUMED / L3_CAUSAL_CHAIN_NOT_PROVEN`；review 未修改 candidate。
+- Implementation：`TradingChainPostgresIntegrationTest` 改用 Route B；Fake `TradingVenueGateway` 只负责 PLACE/ACCEPTED，test-only scripted `OkxHttpClient` 向 real `OkxExchangeAdapter` 提供确定性 order/fill payload，production `OkxRestReconcileService.reconcileSingleOrder/reconcileFills` 是唯一 Trade producer；`PaperMatchingService` 不参与 scenario；无 production Java/port/module change。
+- Causal proof：ACCEPTED_ONLY=`Trade 0 / ledger 0 / position delta 0`；ACCEPTED_THEN_FILLED 使用 external order/fill identity、price=`123.45000000`、qty=`0.10000000` sentinel，persisted Trade exact match，随后 real ledger/position/account projection；second reconcile duplicate facts=`0`；stage-specific reconcile audit 与 `TradeExecuted` event exact assertion 均通过。
+- Validation：focused=`2/2 PASS`；related=`31/31 PASS`；full backend 23 modules SUCCESS，module summaries=`1645 tests / 0 failures / 0 errors / 53 skipped`；raw Surefire XML=`1640`，duplicate FQN overwrite 差 5。fresh PostgreSQL 17.7 Flyway V1～V46 通过，所有 `nq_l3_causal_*` / `nq_l3_full_*` 临时库已删除。
+- Governance：PS5.1/PS7 authority=`errors 0/0`、next-action=`failed 0/0`、Agent=`12/12`、runtime rules=`0/0`、charter=`1`、links=`194/123 warnings/0 errors`，要求的四组 checker 全部 PASS。
+- Safety：Exchange no-outbound guard denied selections=`0`；OKX/Binance/credential/real PLACE/CANCEL/transfer/withdraw=`0`；test-local kill-switch change与所有 L3 facts均在 rollback transaction 内。
+- Result：`F-001 REMEDIATION IMPLEMENTED / LOCAL_CAUSAL_L3_PROOF_PASS / PENDING_INDEPENDENT_REVIEW`；F-001 未关闭；F-002/F-003/F-004 仍 open；F-005/F-011 仍 P2 / deferred。
+- Authority：`GateAUDIT-PHASE4-L3-PROOF-FOUNDATION / IMPLEMENTED|PENDING_REVIEW / NONE / NOT_RUN`；next=`NQ-GATEAUDIT-PHASE4-PROOF-FOUNDATION-INDEPENDENT-REVIEW`。
+- Re-review pointer：下一次 independent review 在 prose 中标识为 Review Attempt-02；本轮未创建 acceptance evidence、commit、push 或 CI run。
+
+## 2026-08-31 — GateAUDIT Phase 4A F-001 review acceptance reconciliation
+
+- Review facts：Attempt-01=`FAIL / CHANGES_REQUIRED`，root cause=`L3_FAKE_VENUE_FILL_FACT_NOT_CONSUMED / L3_CAUSAL_CHAIN_NOT_PROVEN`；Attempt-02=`PASS / REVIEW_ACCEPTED / READY_FOR_AUTHORITY_RECONCILIATION`，P0=`0`、P1=`0`、candidate modified by review=`NO`、review independence violation=`0`。本任务未运行第三次 Review。
+- Accepted proof：`FILLED_BEFORE_TRADE=YES`、`CAUSAL_CHAIN_CONTINUOUS=YES`、`TEST_STITCHED=NO`、`DUAL_FILL_PRODUCERS=NO`；sentinel price/qty 与 order/venue identity continuity 均 PASS；`NETWORK_ISOLATION=PROVEN`。
+- Review P2：`FULL_REGRESSION_FIXTURE_PREREQUISITE_UNDISCLOSED / P2 / NON_BLOCKING_FOR_F001`。bare disposable fresh DB 下既有 `ResearchBacktestHappyPathLocalTest` 有 1 个 unrelated error；加入最小 legacy `PAPER / ACTIVE` account fixture 后 full Maven PASS。该 fixture 仅用于 test setup，不修改 migration/production code、不提交 DB 数据。
+- Authority reconciliation：`GateAUDIT-PHASE4-L3-PROOF-FOUNDATION / REVIEW_ACCEPTED|READY_TO_COMMIT / NONE / NOT_RUN`；next=`NQ-GATEAUDIT-PHASE4-L3-COMMIT`，matcher count=`1`、type=`COMMIT`。
+- Current semantics：F-001=`INDEPENDENT_REVIEW_ACCEPTED / CI_PENDING_AFTER_COMMIT`；F-002/F-003/F-004=`OPEN`；F-005/F-011=`P2 / DEFERRED`。不得写为 `CLOSED`/`CI_GREEN`，不得开始后续 finding。
+
+### Final pre-commit canonical regression
+
+- Focused：isolated fresh PostgreSQL 17.7，Flyway V1～V46=`46/46 PASS`；`TradingChainPostgresIntegrationTest=2/2 PASS`。
+- Related：12 related classes 覆盖 `nq-app/nq-core/nq-ledger/nq-scheduler/nq-infra`，`32 tests / 0 failures / 0 errors / 1 skipped / PASS`；唯一 skip 为既有 no-outbound 条件性 case。
+- Full Maven：isolated fresh DB 加入唯一最小 `PAPER / ACTIVE` legacy account test fixture 后，23/23 modules SUCCESS；module summaries=`1645 tests / 0 failures / 0 errors / 53 skipped`；Surefire XML=`1640`，保持已知 duplicate FQN overwrite 差 5；full reactor 中 L3=`2/2 PASS`。
+- Governance：PowerShell 5.1/7 的 authority、next-action、lifecycle、doc-links、Agent fixtures 全部 PASS；authority errors=`0/0`、next-action failed=`0/0`、lifecycle=`20/20`、Agent=`12/12`、malicious=`6/6 rejected`、previous capability=`3/3 rejected`、F1=`4/4 rejected`、runtime rules=`0/0`、active charter=`1`、doc links=`194 checked / 123 historical warnings / 0 errors`。
+- Cleanup/safety：三个 task-local DB、唯一 fixture、disposable PostgreSQL cluster 与任务日志全部删除；`TEMP_DB_LEFTOVERS=0`、`TEMP_FIXTURE_LEFTOVERS=0`、`TEMP_ARTIFACT_LEFTOVERS=0`。OKX/Binance/credential/real PLACE/CANCEL/transfer/withdraw=`0`。

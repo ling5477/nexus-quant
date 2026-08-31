@@ -6,9 +6,10 @@
 
 <!-- nq-current-summary:start -->
 - 最近冻结 Gate 为 GateY：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-y/](../gates/gate-y/)，tag=`nq-gatey-freeze`。
-- GateAUDIT：`IN PROGRESS / NOT FROZEN`（治理进行中 / 未冻结）；Phase 0=`ACCEPTED / CI_GREEN / COMPLETE`，validated implementation=`40e1077e...`，exact-head CI=`33306024232 / completed / success / 11 jobs`；Phase 1 尚未执行。
+- GateAUDIT：`IN PROGRESS / NOT FROZEN`（治理进行中 / 未冻结）；Phase 0=`ACCEPTED / CI_GREEN / COMPLETE`，immutable pair=`40e1077e... / 33306024232`；Phase 1 inventory、Phase 2 analysis 与 Phase 3 disposition 已完成。
 - GateY freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`；exact-head CI run=`33037514013 / completed / success / 11 jobs`。
-- 当前唯一动作是 `NQ-GATEAUDIT-PHASE1-REPOSITORY-AUDIT-INVENTORY`；本 closeout 不启动 inventory，不得再次运行 Phase 0 review 或 exact-head CI。
+- Phase 3 findings=`P0 0 / P1 4 / P2 8 / P3 1`；Phase 4A F-001 L3 proof foundation=`REVIEW_ACCEPTED / READY_TO_COMMIT`，Attempt-01=`FAIL`、Attempt-02=`PASS`，尚未关闭 F-001。
+- 当前唯一动作是 `NQ-GATEAUDIT-PHASE4-L3-COMMIT`；final canonical regression 通过后只提交已接受 candidate，随后取得新 exact-head CI；不得启动 F-002～F-004 或扩大 runtime 权限。
 - Pilot final：PLACE=1、retry=0、CANCEL=0、activeLease=0、LIVE=false、kill=`ENGAGED`、Attempt-02 未创建。
 - Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
@@ -32,6 +33,6 @@
 
 ## Current Is Not
 
-- 不是 Phase 1 repository Inventory/audit 已执行；Phase 0 已由 immutable exact-head CI 接受，Phase 1 仍需在下一任务按 Audit Bootstrap Charter 启动。
+- 不是 F-001 已关闭；当前 L3 proof 已通过 independent review，仍缺 accepted commit 与 exact-head CI。
 - 不是第二 pilot、通用 LIVE、自动策略交易、多订单、多账户、多交易所、合约/杠杆或资金移动已授权。
 - 不是 AI/DH runtime 可执行交易。
