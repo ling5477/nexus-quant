@@ -19656,3 +19656,30 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - P2：full-regression fixture prerequisite、bounded replay-all DB cost、future finer Trade/fill fault-target precision，均 non-blocking，本任务不实施。
 - Authority reconciliation：`GateAUDIT-PHASE4-F004-TRADE-LEDGER-CONVERGENCE / REVIEW_ACCEPTED|READY_TO_COMMIT / NONE / NOT_RUN`；next=`NQ-GATEAUDIT-PHASE4-F004-COMMIT`，matcher=`1`、type=`COMMIT`。
 - Final pre-commit regression：fresh/non-empty S1～S7=`7/7 + 7/7 PASS`；related=`40/0/0/1 skipped`；full 23/23 modules SUCCESS，module summaries=`1651/0/0/53 skipped`、XML=`1646`、known difference=`5`；temporary DB/fixture/cluster/log=`0`，external real side effects=`0`。
+
+## 2026-08-31 — GateAUDIT Phase 4 F-002 restart proof foundation
+
+- F-004 catch-up：immutable pair=`18efc06c380d2b411ba7d5f651e7e441247a1b96 / 33358364678`，`ACCEPTED / CI_GREEN`；F-001 pair 保持。
+- Infrastructure：无既有真实 app-process restart harness；新增 test-only `ProcessBuilder` parent + helper main，child 真实加载 `NexusQuantApplication`/production graph，显式调用 production `OkxRestReconcileService.reconcileOnce`；startup automatic=`NO`。
+- R1：Process A real production path创建 Order/Trade，targeted Ledger failure 后 Trade=`1`、Ledger/Position/Account=`0/0/0`，graceful exit；Process B distinct PID/same DB 恢复同一 Trade，Ledger=`2`、Position/Account=`0.1/0.1`，第二次 reconcile 无重复。
+- R2：Process A partial Fill A=`0.04` durable；Process B fresh JVM消费 Fill A+B，最终 Trade=`2`、Ledger entries=`4`、Position/Account=`0.1/0.1`，retry idempotent。
+- Process evidence：final full R1 PID=`30236→7400`，A exit=`1788154740003 < B start 1788154740066`；R2=`23160→14288`，A exit=`1788154749917 < 1788154749981`；每组 A 完全退出后才启动 B，shared static state=`NO`。
+- Regression：focused=`2/2 PASS`；related=`42/0/0/1 skipped`；full 23/23 modules SUCCESS，module summaries=`1653/0/0/53 skipped`、XML=`1648`、known difference=`5`。
+- Safety/cleanup：production Java/migration/deploy/CI=`0`；external OKX/Binance/credential/real mutation=`0`；child JVM/listener/scenario DB/log=`0`。
+- Result：`F-002 PHASE4 RESTART FOUNDATION IMPLEMENTED / PENDING_INDEPENDENT_REVIEW`；不是 F-002 fully closed。Authority=`GateAUDIT-PHASE4-F002-RESTART-PROOF-FOUNDATION / IMPLEMENTED|PENDING_REVIEW / NONE / NOT_RUN`，next=`NQ-GATEAUDIT-PHASE4-F002-INDEPENDENT-REVIEW`。
+
+## 2026-08-31 — F-002 Attempt-01 interprocess/per-fill proof remediation
+
+- Attempt-01=`FAIL / CHANGES_REQUIRED`；仅有 P1-01 `INTERPROCESS_DURABILITY_CHECK_ABSENT` 与 P1-02 `R2_PER_FILL_LEDGER_EXACTLY_ONCE_NOT_PROVEN`。
+- Remediation：parent 在 A dead/B not started窗口直接连接随机 scenario PostgreSQL，并以 target identity检查 R1/R2 durable facts；R2 通过 `Trade.tradeId → ledger_entries.ref_id → ledger_events.entry_id` 分别验证 Fill A/B entries/events=`2/2`，第二次 recovery逐 Trade不变。
+- Robustness：R1 无关历史 Trade由 production path创建，证明无 global count/empty DB依赖；parent boundary only SELECT，business mutation=`0`；datasource env override、real process ordering、production recovery与 F-004 canonical path均保持。
+- Validation：focused fresh与 non-empty/base-datasource rerun均 `2/0/0/0`；related=`30/0/0/0`；full Maven=`23/23 SUCCESS / 1653 tests / 0 failures / 0 errors / 52 skipped`，XML=`1648`、known difference=`5`；PostgreSQL=`17.7`、Flyway=`V46`。
+- Result：P1-01/P1-02=`RESOLVED LOCALLY / PENDING RE-REVIEW`；production Java/migration=`0/0`。Authority 不变，next=`NQ-GATEAUDIT-PHASE4-F002-INDEPENDENT-REVIEW / Review Attempt-02`。
+
+## 2026-08-31 — F-002 Independent Review Attempt-02 acceptance reconciliation
+
+- Review：`PASS / REVIEW_ACCEPTED / READY_FOR_AUTHORITY_RECONCILIATION`；physically isolated candidate authority=`NO/NO/NO`、violation=`0`、candidate modified=`NO`、P0/P1=`0/0`。
+- Closure：P1-01 interprocess durability check=`CLOSED`；P1-02 per-fill Ledger exactly-once proof=`CLOSED`。Parent boundary direct PostgreSQL、scenario DB identity、R1/R2 durable facts、A/B per-Trade Ledger与第二次 recovery idempotency全部 PASS。
+- Regression：focused两轮=`2/0/0/0 + 2/0/0/0`；related=`31/0/0/0`；full Maven=`23/23 SUCCESS / 1653/0/0/53 skipped`，XML=`1648/0/0/53`、known difference=`5`；cleanup/residue=`0`。
+- Scope：F-002 仅为 `PHASE4 RESTART FOUNDATION REVIEW_ACCEPTED`；accepted-timeout、lost ACK、cancel/fill race、abrupt crash、kill-in-flight 与 Phase6 full L4均未证明。
+- Authority reconciliation：`GateAUDIT-PHASE4-F002-RESTART-PROOF-FOUNDATION / REVIEW_ACCEPTED|READY_TO_COMMIT / NONE / NOT_RUN`；next=`NQ-GATEAUDIT-PHASE4-F002-COMMIT`，matcher=`1`、type=`COMMIT`。

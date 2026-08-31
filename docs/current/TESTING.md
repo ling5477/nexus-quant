@@ -14831,3 +14831,45 @@ F-004 当前语义为 `REVIEW_ACCEPTED / CI_PENDING`；commit=`NONE`、CI=`NOT_R
 - Full Maven：pristine schema + 唯一 allowed `PAPER / ACTIVE` fixture；23/23 modules SUCCESS，module summaries=`1651 tests / 0 failures / 0 errors / 53 skipped`；F-004 integration=`7/7` 实际执行。
 - Surefire XML：`1646 tests / 0 failures / 0 errors / 53 skipped`；known duplicate-FQN overwrite difference=`5`。
 - Cleanup/safety：`TEMP_DB_LEFTOVERS=0 / TEMP_FIXTURE_LEFTOVERS=0 / TEMP_ARTIFACT_LEFTOVERS=0`；OKX/Binance/credential/real PLACE/CANCEL/transfer/withdraw=`0`。
+
+## 2026-08-31 — GateAUDIT Phase 4 F-002 real-process restart proof foundation
+
+F-004 已由 immutable pair `18efc06c380d2b411ba7d5f651e7e441247a1b96 / 33358364678` 接受。本节只记录 F-002 Phase4 test-only forked-JVM foundation，不重审 F-001/F-004，也不声明 Phase6 full L4 qualification。
+
+| Proof | Result |
+| --- | --- |
+| Existing infrastructure | repository 无可复用真实 app-process restart harness；`OkxRestReconcileService.reconcileOnce` 可作为 production recovery entry；`AUTO_ON_STARTUP=NO` |
+| Harness | `ProcessBuilder + test-classpath helper main`；child 加载 `NexusQuantApplication` 与 production Spring graph；production Java diff=`0`；listener=`0`；wait timeout=`90s` |
+| R1 process identity | final full PID A/B=`30236/7400`，A observed exit=`1788154740003`，B start=`1788154740066`；PID distinct 且 A 完全退出后才启动 B |
+| R1 Process A | real OrderCommand/Risk/state machine/JDBC/OKX reconcile；Order=`FILLED`、Trade=`1 durable`、Ledger=`0`、Position/Account=`0/0`；targeted Ledger failure；`GRACEFUL_EXIT` |
+| R1 Process B | fresh JVM、same DB、fault state absent、explicit production reconcile；same Trade=`1`、Ledger=`2`、Position/Account=`0.10000000/0.10000000`；second reconcile idempotent、recovery audit不重复 |
+| R2 partial restart | Process A durable partial Fill A=`0.04000000`；Process B reports Fill A+B，Trade=`2`、Ledger=`4`、Position/Account=`0.10000000/0.10000000`；final full PID=`23160/14288`，A exit=`1788154749917 < 1788154749981` |
+| Durable boundary | target Order/Trade 由 Process A production path生成；Process B 只从 same PostgreSQL + deterministic test transport恢复，无 Java object/static state transfer |
+| External safety | scripted test-classpath transport，无 listener；OKX/Binance external network=`0`、credential/signer=`0`、real PLACE/CANCEL/transfer/withdraw=`0` |
+| Focused | `TradingRestartRecoveryPostgresIntegrationTest`=`2 tests / 0 failures / 0 errors / 0 skipped / PASS` |
+| Related | F-001/F-004/F-002 + six modules=`42 tests / 0 failures / 0 errors / 1 skipped / PASS` |
+| Full Maven | 23/23 modules SUCCESS；module summaries=`1653 tests / 0 failures / 0 errors / 53 skipped`；restart test=`2/2` |
+| Surefire XML | `1648 tests / 0 failures / 0 errors / 53 skipped`；known duplicate-FQN difference=`5` |
+| Cleanup | child JVM=`0`、listener=`0`、scenario DB=`0`、child logs=`0`；disposable PostgreSQL stopped and removed |
+
+Result：`REAL_PROCESS_RESTART_PROVEN=YES / R1 PASS / R2 PASS / F-004 CANONICAL RECOVERY REUSED / PRODUCTION_JAVA_DIFF=0 / PHASE4 RESTART FOUNDATION IMPLEMENTED / PENDING INDEPENDENT REVIEW`。Phase6 仍需 accepted-timeout、cancel/fill race、external side-effect+DB failure、kill in-flight、multi-instance/lease 等完整 L4 matrix。
+
+### F-002 Independent Review Attempt-01 remediation
+
+Attempt-01=`FAIL / CHANGES_REQUIRED`：P1-01=`INTERPROCESS_DURABILITY_CHECK_ABSENT`，P1-02=`R2_PER_FILL_LEDGER_EXACTLY_ONCE_NOT_PROVEN`。本轮仅作 test-only remediation，未修改 production Java、migration、current authority、CI 或 deployment。
+
+- P1-01：parent 在 `runChild(A)` 返回并确认 ProcessHandle 不存活后、`runChild(B)` 前，使用 scenario JDBC 与 `current_database()` 直接查询目标 Order/Trade/Ledger/Position/Account；R1=`FILLED / 1 / entries 0 / events 0 / 0 / 0`，R2=`PARTIALLY_FILLED / Trade A 1 / Trade B 0 / A entries 2 / A events 2 / 0.04 / 0.04`。边界只执行 parameterized SELECT，business writes=`0`。
+- P1-02：Ledger identity 使用 `ledger_entries.ref_type='TRADE' + ref_id=tradeId`，event identity 使用 `ledger_events.entry_id → ledger_entries.entry_id`；Process B 后 Trade A/B 均为 1，Ledger A/B entries/events 均为 `2/2`，helper 内第二次 production recovery 前后逐 Trade facts相等，Position/Account=`0.1/0.1`。
+- Non-empty/datasource：R1 先经 production path创建一条无关历史 Trade；parent target queries均按 orderId/tradeId/exchangeTradeId/accountId过滤。第二轮 focused 使用 non-empty V46 base DB + `PAPER/ACTIVE` fixture，child 仍显式重绑定随机 scenario DB。
+- Validation：test-compile PASS；focused fresh=`2/0/0/0`，non-empty/conflicting parent datasource rerun=`2/0/0/0`；related=`30/0/0/0`；full Maven 23/23 modules SUCCESS，module summaries=`1653/0/0/52 skipped`、XML=`1648/0/0/52`、known difference=`5`。
+- Local result：`P1-01 REMEDIATED / PENDING RE-REVIEW`，`P1-02 REMEDIATED / PENDING RE-REVIEW`；F-002 仍为 `IMPLEMENTED / PENDING_REVIEW`，下一动作保持 `NQ-GATEAUDIT-PHASE4-F002-INDEPENDENT-REVIEW`。
+
+### F-002 Independent Review Attempt-02 acceptance reconciliation
+
+本节只转录已经完成的 physically isolated Attempt-02，不运行第三次 Review。Decision=`PASS / REVIEW_ACCEPTED / READY_FOR_AUTHORITY_RECONCILIATION`；candidate AGENTS/CLAUDE/Skills authority=`NO/NO/NO`，independence violation=`0`，candidate modified=`NO`，P0/P1=`0/0`。
+
+- Closure：P1-01 `INTERPROCESS_DURABILITY_CHECK_ABSENT`=`CLOSED`；P1-02 `R2_PER_FILL_LEDGER_EXACTLY_ONCE_NOT_PROVEN`=`CLOSED`。
+- Accepted proof：A dead/B not started窗口由 parent direct JDBC查询 scenario PostgreSQL；R1=`FILLED / Trade 1 / Ledger 0 / Position 0 / Account 0`；R2 partial boundary=`Trade A 1 / Trade B 0 / A entries/events 2/2 / Position/Account 0.04/0.04`；最终 A/B entries/events均`2/2`，第二次 recovery逐 Trade不变。
+- Review regression：focused fresh与 non-empty/conflicting env均`2/0/0/0`；related canonical rerun=`31/0/0/0`；full 23/23 modules SUCCESS，module summaries=`1653/0/0/53 skipped`、XML=`1648/0/0/53`、known difference=`5`；PostgreSQL=`17.7`、Flyway=`V46`。
+- Cleanup/integrity：child JVM/listener/scenario DB/cluster/temp/review residue=`0`；tracked/untracked mismatch=`0/0`，staged=`0`。
+- Authority reconciliation：`GateAUDIT-PHASE4-F002-RESTART-PROOF-FOUNDATION / REVIEW_ACCEPTED|READY_TO_COMMIT / NONE / NOT_RUN`；next=`NQ-GATEAUDIT-PHASE4-F002-COMMIT`，matcher=`1`、type=`COMMIT`。Known P2三项保持 non-blocking；Phase6 failure matrix仍未证明。
