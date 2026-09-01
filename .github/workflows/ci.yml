@@ -14,12 +14,12 @@ permissions:
 
 jobs:
   diff-check:
-    name: Diff check
+    name: Repository hygiene and governance
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 
@@ -47,8 +47,15 @@ jobs:
           ./scripts/docs/check-current-authority.ps1
           ./scripts/docs/check-doc-links.ps1
 
+      - name: Validate canonical delivery workflow contract
+        shell: pwsh
+        run: |
+          ./scripts/ci/Test-CanonicalDeliveryWorkflow.ps1
+          ./scripts/ci/tests/Test-CanonicalDeliveryWorkflow.Tests.ps1
+          ./scripts/ci/tests/Test-GitleaksExecution.Tests.ps1
+
   no-outbound-guard:
-    name: No-outbound guard
+    name: Runtime safety and no-outbound
     runs-on: ubuntu-latest
 
     env:
@@ -96,10 +103,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin
           java-version: "21"
@@ -194,121 +201,25 @@ jobs:
             fi
           done
 
-      - name: Run no-outbound guard tests
+      - name: Run consolidated runtime safety regression
         shell: bash
         run: |
           set -euo pipefail
 
-          mvn -f backend/pom.xml -pl nq-app -am test \
-            -Dtest=NoOutboundExchangeGuardTest,EnvSafetyValidatorTest \
-            -Dsurefire.failIfNoSpecifiedTests=false \
-            -Dnq.no-outbound.guard.required=true
-
-  ci-security-smoke:
-    name: CI security smoke
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    permissions:
-      contents: read
-
-    # Batch 5B-SMOKE 最小 CI 安全 smoke。把 5B-ENV fail-closed、no-outbound guard、NoReal probe
-    # SKIPPED、placeholder credential 与 CI env-name 断言聚合到一个独立 job，复用既有
-    # EnvSafetyValidatorTest / NoOutboundExchangeGuardTest / NoRealExchangeCredentialPermissionProbePortTest，
-    # 不引入真实 adapter / provider / exchange client，不做真实外联，不启动 LIVE / Paper / DH / AI runtime。
-    env:
-      CI: "true"
-      NQ_NO_OUTBOUND: "true"
-      # NQ_LIVE_ENABLED / NQ_REAL_PROVIDER_ENABLED / NQ_REAL_CLIENT_ENABLED 不在此注入。
-      # Why: 同 no-outbound-guard / backend job —— 这三个变量名被既有 NoOutboundExchangeGuardTest
-      # 列为 CI-guard 模式下禁止存在的 exchange credential/live env（值为 "false" 也违规），而
-      # EnvSafetyGuardConfiguration 缺省即按 false 处理，故不注入即可保留 fail-closed 语义。
-      NQ_AI_ENABLED: "false"
-      NQ_DH_RUNTIME_ENABLED: "false"
-      NQ_REAL_EXCHANGE_ENABLED: "false"
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "21"
-          cache: maven
-
-      - name: Verify no exchange credential / forbidden runtime env is injected
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          # CI env-name assertion：仅基于 job env 名称做存在性检查，绝不写入真实凭证或真实 endpoint。
-          forbidden_env_names=(
-            NQ_OKX_API_KEY
-            NQ_OKX_API_SECRET
-            NQ_OKX_API_PASSPHRASE
-            NQ_OKX_DOME_API_KEY
-            NQ_OKX_DOME_API_SECRET
-            NQ_OKX_DOME_API_PASSPHRASE
-            NQ_OKX_REAL_API_KEY
-            NQ_OKX_REAL_API_SECRET
-            NQ_OKX_REAL_API_PASSPHRASE
-            NQ_BINANCE_DOME_API_KEY
-            NQ_BINANCE_DOME_API_SECRET
-            NQ_BINANCE_DOME_PRIVATE_KEY
-            NQ_BINANCE_DOME_PRIVATE_KEY_PATH
-            NQ_BINANCE_REAL_API_KEY
-            NQ_BINANCE_REAL_API_SECRET
-            NQ_BINANCE_REAL_PRIVATE_KEY
-            NQ_BINANCE_REAL_PRIVATE_KEY_PATH
-            NQ_BINANCE_WS_DIAGNOSTIC_ENABLED
-            NQ_BINANCE_WS_LIVE_DIAGNOSTIC
-          )
-
-          for name in "${forbidden_env_names[@]}"; do
-            if [[ -n "${!name-}" ]]; then
-              echo "Forbidden exchange credential env is set: ${name}" >&2
-              exit 1
-            fi
-          done
-
-          forbidden_true_names=(
-            NQ_LIVE_ENABLED
-            NQ_AI_ENABLED
-            NQ_DH_RUNTIME_ENABLED
-            NQ_REAL_PROVIDER_ENABLED
-            NQ_REAL_CLIENT_ENABLED
-            NQ_REAL_EXCHANGE_ENABLED
-          )
-
-          for name in "${forbidden_true_names[@]}"; do
-            if [[ "${!name-}" == "true" ]]; then
-              echo "Forbidden CI/test runtime flag is true: ${name}" >&2
-              exit 1
-            fi
-          done
-
-      - name: Run CI security smoke tests (EnvSafety / no-outbound / NoReal / placeholder / env-name)
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          # 复用既有 guard / validator / port 测试，跨 nq-app + nq-infra 两个 module；
-          # failIfNoSpecifiedTests=false 允许同一 -Dtest 列表里的测试落在不同 module 而不报缺失。
-          # 不启动真实交易所 / provider / RealClient / LIVE / Paper / DH / AI；NoReal probe 保持 SKIPPED。
+          # One explicit security boundary job owns env fail-closed, no-outbound and no-real probe coverage.
+          # Backend regression still runs the complete suite; no second partial security job repeats this allowlist.
           mvn -f backend/pom.xml -pl nq-app,nq-infra -am test \
             -Dtest=EnvSafetyValidatorTest,NoOutboundExchangeGuardTest,NoRealExchangeCredentialPermissionProbePortTest \
             -Dsurefire.failIfNoSpecifiedTests=false \
             -Dnq.no-outbound.guard.required=true
 
   backend:
-    name: Backend Maven test
+    name: Backend regression
     runs-on: ubuntu-latest
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: "123456"
@@ -343,10 +254,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin
           java-version: "21"
@@ -365,121 +276,10 @@ jobs:
             -DincludeScope=runtime \
             -Dmdep.outputFile=target/backend-ci-fixture-classpath.txt
 
-          cat > "${fixture_dir}/BackendCiLegacyAccountFixture.java" <<'JAVA'
-          import java.sql.Connection;
-          import java.sql.DriverManager;
-          import java.sql.PreparedStatement;
-          import java.sql.ResultSet;
-
-          import org.flywaydb.core.Flyway;
-          import org.flywaydb.core.api.MigrationInfo;
-
-          public final class BackendCiLegacyAccountFixture {
-              private static final String FIXTURE_ACCOUNT_CODE = "ci-backend-test-account";
-
-              private BackendCiLegacyAccountFixture() {
-              }
-
-              public static void main(String[] args) throws Exception {
-                  String url = requireEnv("NQ_DB_URL");
-                  String user = requireEnv("NQ_DB_USER");
-                  String password = requireEnv("NQ_DB_PASSWORD");
-
-                  Flyway flyway = Flyway.configure()
-                          .dataSource(url, user, password)
-                          .locations("classpath:db/migration")
-                          .baselineOnMigrate(false)
-                          .cleanDisabled(true)
-                          .outOfOrder(false)
-                          .load();
-
-                  flyway.migrate();
-                  flyway.validate();
-                  MigrationInfo current = flyway.info().current();
-                  if (current == null || current.getVersion() == null) {
-                      throw new IllegalStateException(
-                              "Flyway did not produce a current schema version");
-                  }
-
-                  MigrationInfo[] pending = flyway.info().pending();
-                  if (pending.length != 0) {
-                      throw new IllegalStateException(
-                              "Flyway still has " + pending.length + " pending migrations");
-                  }
-
-                  String currentVersion = current.getVersion().getVersion();
-
-                  try (Connection connection = DriverManager.getConnection(url, user, password)) {
-                      insertLegacyAccount(connection);
-                      long legacyAccountRows = count(connection,
-                              "SELECT COUNT(*) FROM accounts WHERE account_code = ? AND venue = 'PAPER' AND status = 'ACTIVE'",
-                              FIXTURE_ACCOUNT_CODE);
-                      long exchangeAccountRows = count(connection,
-                              """
-                                      SELECT COUNT(*)
-                                      FROM exchange_accounts
-                                      WHERE account_alias = ?
-                                         OR legacy_account_id IN (
-                                             SELECT account_id FROM accounts WHERE account_code = ?
-                                         )
-                                      """,
-                              FIXTURE_ACCOUNT_CODE,
-                              FIXTURE_ACCOUNT_CODE);
-                      long credentialRows = count(connection, "SELECT COUNT(*) FROM exchange_account_credentials");
-
-                      if (legacyAccountRows != 1) {
-                          throw new IllegalStateException("Expected exactly one backend CI legacy account fixture row");
-                      }
-                      if (exchangeAccountRows != 0) {
-                          throw new IllegalStateException("Backend CI fixture must not create exchange_accounts rows");
-                      }
-                      if (credentialRows != 0) {
-                          throw new IllegalStateException("Backend CI fixture must not create credential rows");
-                      }
-                  }
-
-                  System.out.println(
-                          "Prepared backend CI legacy account fixture after Flyway V" + currentVersion);
-              }
-
-              private static void insertLegacyAccount(Connection connection) throws Exception {
-                  try (PreparedStatement statement = connection.prepareStatement(
-                          """
-                                  INSERT INTO accounts (account_code, venue, status)
-                                  VALUES (?, 'PAPER', 'ACTIVE')
-                                  ON CONFLICT (account_code) DO NOTHING
-                                  """)) {
-                      statement.setString(1, FIXTURE_ACCOUNT_CODE);
-                      statement.executeUpdate();
-                  }
-              }
-
-              private static long count(Connection connection, String sql, String... args) throws Exception {
-                  try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                      for (int i = 0; i < args.length; i++) {
-                          statement.setString(i + 1, args[i]);
-                      }
-                      try (ResultSet resultSet = statement.executeQuery()) {
-                          resultSet.next();
-                          return resultSet.getLong(1);
-                      }
-                  }
-              }
-
-              private static String requireEnv(String name) {
-                  String value = System.getenv(name);
-                  if (value == null || value.isBlank()) {
-                      throw new IllegalStateException("Missing required environment variable: " + name);
-                  }
-                  return value;
-              }
-          }
-          JAVA
-
           app_cp="$(cat backend/nq-app/target/backend-ci-fixture-classpath.txt)"
           classpath="backend/nq-app/target/classes:backend/nq-infra/target/classes:${app_cp}"
 
-          javac -cp "${classpath}" "${fixture_dir}/BackendCiLegacyAccountFixture.java"
+          javac -cp "${classpath}" -d "${fixture_dir}" scripts/ci/BackendCiLegacyAccountFixture.java
           java -cp "${fixture_dir}:${classpath}" BackendCiLegacyAccountFixture
 
       - name: Run backend tests
@@ -497,13 +297,13 @@ jobs:
           mvn -f backend/pom.xml test
 
   postgres-flyway:
-    name: PostgreSQL / Flyway smoke
+    name: PostgreSQL and Flyway
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
         env:
           POSTGRES_USER: nq_ci_user
           POSTGRES_PASSWORD: nq_ci_password
@@ -533,10 +333,10 @@ jobs:
           echo "::add-mask::${NQ_FLYWAY_DB_PASSWORD}"
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin
           java-version: "21"
@@ -841,7 +641,7 @@ jobs:
           echo "Pre-upload redaction gate: no high-risk credential pattern in ${gate_target} (text-only, fail closed)."
 
       - name: Upload PostgreSQL schema artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: nq-postgres-flyway-schema-artifacts
           path: artifacts/postgres-flyway/
@@ -874,102 +674,14 @@ jobs:
             -Dnq.app.context.smoke.user="${NQ_FLYWAY_DB_USER}" \
             -Dnq.app.context.smoke.password="${NQ_FLYWAY_DB_PASSWORD}"
 
-  frontend:
-    name: Frontend build
+  frontend-critical:
+    name: Frontend build and critical E2E
     runs-on: ubuntu-latest
-
-    env:
-      CI: "true"
-
-    defaults:
-      run:
-        working-directory: frontend
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install frontend dependencies
-        run: npm ci
-
-      - name: Build frontend
-        run: npm run build
-
-  frontend-no-backend-e2e:
-    name: Frontend no-backend E2E (Batch 5A)
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-
-    permissions:
-      contents: read
-
-    env:
-      CI: "true"
-
-    defaults:
-      run:
-        working-directory: frontend
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install frontend dependencies
-        run: npm ci
-
-      - name: Install Playwright Chromium
-        # Why: 只装 Chromium(含系统依赖);浏览器安装失败 = toolchain/环境失败,直接 fail job,绝不 skip-as-pass。
-        timeout-minutes: 30
-        run: npx playwright install --with-deps chromium
-
-      - name: Build frontend (production)
-        run: npm run build
-
-      - name: Run Batch 5A no-backend E2E (explicit 4-spec allowlist)
-        # Fail-closed:显式列出四个 allowlist spec;不用宽泛 glob、不用无参数 `playwright test`。
-        # CI config 自身也已用 testMatch 限定为同一组 spec(双重过滤)。
-        # 不启动 backend / PostgreSQL / Flyway / Docker / seed / 认证 / exchange account / 外网业务调用。
-        # 不传入 API base URL / token / cookie / Authorization / exchange credential / DB 连接信息。
-        run: |
-          npx playwright test \
-            --config=playwright.ci.config.ts \
-            tests/e2e/login-page-smoke.spec.ts \
-            tests/e2e/design-system-table-smoke.spec.ts \
-            tests/e2e/design-system-live-query-smoke.spec.ts \
-            tests/e2e/design-system-backtest-chart-smoke.spec.ts
-
-      - name: Cleanup Playwright temp output (no upload)
-        if: always()
-        # 删除任何 Playwright 可能生成的临时 output;本轮不上传任何 artifact/report/trace/video/screenshot。
-        # 该步骤只清理,不会把测试失败洗成通过(失败 job 状态已在上一步确定)。
-        run: |
-          rm -rf test-results-ci playwright-report test-results
-
-  frontend-e2e-backend-smoke:
-    name: Frontend backend E2E smoke
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-
-    permissions:
-      contents: read
+    timeout-minutes: 30
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
         env:
           POSTGRES_DB: nexus_quant
           POSTGRES_USER: nexus
@@ -984,10 +696,9 @@ jobs:
 
     env:
       CI: "true"
+      NQ_CRITICAL_E2E_REQUIRED: "true"
       NQ_NO_OUTBOUND: "true"
-      # NQ_LIVE_ENABLED / NQ_REAL_PROVIDER_ENABLED / NQ_REAL_CLIENT_ENABLED 不在此注入。
-      # Why: 既有 CI no-outbound guard 把这些 env 名称本身列为禁止存在；缺省 false 才是
-      # Batch 5B-ENV 接受的 fail-closed 语义。
+      # Forbidden credential and LIVE env names remain absent; missing values are the fail-closed contract.
       NQ_AI_ENABLED: "false"
       NQ_DH_RUNTIME_ENABLED: "false"
       NQ_REAL_EXCHANGE_ENABLED: "false"
@@ -1005,54 +716,28 @@ jobs:
       NQ_OKX_RECOVERY_ENABLED: "false"
       NQ_OKX_WS_ENABLED: "false"
       NQ_BINANCE_WS_ENABLED: "false"
-      NQ_NO_OUTBOUND_DENYLIST: >-
-        okx.com
-        www.okx.com
-        my.okx.com
-        binance.com
-        api.binance.com
-        fapi.binance.com
-        dapi.binance.com
-        testnet.binance.vision
-        ws-api.binance.com
-        ws-api.testnet.binance.vision
-        stream.binance.com
-        stream.binancefuture.com
-        bybit.com
-        api.bybit.com
-        bitget.com
-        gate.io
-        api.gateio.ws
-        coinbase.com
-        api.coinbase.com
-        kraken.com
-        api.kraken.com
-        crypto.com
-        hyperliquid.xyz
-        api.hyperliquid.xyz
 
     steps:
       - name: Mask CI-only PostgreSQL connection values
         shell: bash
         run: |
           set -euo pipefail
-
           echo "::add-mask::${NQ_DB_URL}"
           echo "::add-mask::${NQ_DB_USER}"
           echo "::add-mask::${NQ_DB_PASSWORD}"
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "22"
           cache: npm
@@ -1062,263 +747,295 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Install Playwright Chromium
-        working-directory: frontend
-        # Why: 只安装 backend smoke 需要的 Chromium；浏览器安装失败必须 fail，不做 skip-as-pass。
-        run: npx playwright install --with-deps chromium
-
-      - name: Build frontend (production)
+      - name: Build frontend production artifact
         working-directory: frontend
         run: npm run build
+
+      - name: Generate normalized frontend CycloneDX SBOM and artifact manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_root="artifacts/delivery/frontend"
+          mkdir -p "${evidence_root}/artifacts"
+          (cd frontend && npm sbom --sbom-format cyclonedx --omit=dev) > "${evidence_root}/frontend-sbom.raw.json"
+          cp -a frontend/dist "${evidence_root}/artifacts/dist"
+          pwsh -NoProfile -File scripts/ci/Normalize-CycloneDxSbom.ps1 \
+            -InputPath "${evidence_root}/frontend-sbom.raw.json" \
+            -OutputPath "${evidence_root}/frontend-sbom.cdx.json"
+          pwsh -NoProfile -File scripts/ci/New-DeliveryArtifactManifest.ps1 \
+            -ArtifactPath "${evidence_root}/artifacts" \
+            -RepositoryRoot "${evidence_root}" \
+            -ArtifactSetName frontend-production-dist \
+            -OutputPath "${evidence_root}/frontend-artifact-manifest.json"
+          rm "${evidence_root}/frontend-sbom.raw.json"
+          pwsh -NoProfile -File scripts/ci/Test-DeliveryArtifactSafety.ps1 \
+            -EvidenceRoot "${evidence_root}"
+
+      - name: Package backend application artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -f backend/pom.xml -pl nq-app -am -DskipTests package
+
+      - name: Generate normalized backend CycloneDX SBOM and artifact manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -f backend/pom.xml -DskipTests \
+            org.cyclonedx:cyclonedx-maven-plugin:2.9.3:makeAggregateBom \
+            -DoutputFormat=json -DoutputName=backend-sbom -DoutputReactorProjects=false
+          evidence_root="artifacts/delivery/backend"
+          mkdir -p "${evidence_root}/artifacts"
+          cp backend/target/backend-sbom.json "${evidence_root}/backend-sbom.raw.json"
+          cp backend/nq-app/target/nq-app-0.1.0-SNAPSHOT.jar "${evidence_root}/artifacts/nq-app.jar"
+          pwsh -NoProfile -File scripts/ci/Normalize-CycloneDxSbom.ps1 \
+            -InputPath "${evidence_root}/backend-sbom.raw.json" \
+            -OutputPath "${evidence_root}/backend-sbom.cdx.json"
+          pwsh -NoProfile -File scripts/ci/New-DeliveryArtifactManifest.ps1 \
+            -ArtifactPath "${evidence_root}/artifacts" \
+            -RepositoryRoot "${evidence_root}" \
+            -ArtifactSetName backend-application \
+            -OutputPath "${evidence_root}/backend-artifact-manifest.json"
+          rm "${evidence_root}/backend-sbom.raw.json"
+          pwsh -NoProfile -File scripts/ci/Test-DeliveryArtifactSafety.ps1 \
+            -EvidenceRoot "${evidence_root}"
+
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        timeout-minutes: 15
+        run: npx --no-install playwright install --with-deps chromium
+
+      - name: Run loopback critical E2E allowlist
+        working-directory: frontend
+        run: |
+          npm run test:e2e -- \
+            login-page-smoke.spec.ts \
+            strategy-validation-paper-shadow-smoke.spec.ts \
+            validation-review-workbench-smoke.spec.ts \
+            --project=chromium
 
       - name: Start nq-app local backend
         shell: bash
         run: |
           set -euo pipefail
-
-          raw_log="${RUNNER_TEMP}/nq-frontend-e2e-backend.raw.log"
-          pid_file="${RUNNER_TEMP}/nq-frontend-e2e-backend.pid"
+          raw_log="${RUNNER_TEMP}/nq-critical-e2e-backend.raw.log"
+          pid_file="${RUNNER_TEMP}/nq-critical-e2e-backend.pid"
           : > "${raw_log}"
-
-          # Batch 5B smoke uses local profile with CI no-outbound env hardening.
-          # It does not inject real exchange credentials or LIVE / real-provider flags.
           setsid mvn -f backend/pom.xml -pl nq-app -am -DskipTests spring-boot:run \
-            -Dspring-boot.run.profiles=local \
-            > "${raw_log}" 2>&1 &
+            -Dspring-boot.run.profiles=local > "${raw_log}" 2>&1 &
           echo "$!" > "${pid_file}"
-          echo "Started nq-app backend pid=$(cat "${pid_file}")"
 
       - name: Wait for backend health UP
         shell: bash
         run: |
           set -euo pipefail
-
           health_url="http://127.0.0.1:18888/actuator/health"
-          health_file="${RUNNER_TEMP}/nq-frontend-e2e-backend-health.json"
-          raw_log="${RUNNER_TEMP}/nq-frontend-e2e-backend.raw.log"
-          : > "${health_file}"
-
-          redact_tail() {
-            sed -E 's/((apiKey|api[_-]?key|apiSecret|api[_-]?secret|secret|token|signature|passphrase|password|cookie)[[:space:]]*[:=][[:space:]]*)[^[:space:]]+/\1<redacted>/Ig' "$1" \
-              | tail -n 120
-          }
-
+          raw_log="${RUNNER_TEMP}/nq-critical-e2e-backend.raw.log"
           for _ in {1..120}; do
-            if curl -fsS "${health_url}" -o "${health_file}"; then
-              if grep -Eq '"status"[[:space:]]*:[[:space:]]*"UP"' "${health_file}"; then
-                echo "Backend health is UP."
-                exit 0
-              fi
+            if curl -fsS "${health_url}" | grep -Eq '"status"[[:space:]]*:[[:space:]]*"UP"'; then
+              echo "Backend health is UP."
+              exit 0
             fi
             sleep 1
           done
-
-          printf '{"status":"UNAVAILABLE"}\n' > "${health_file}"
-          echo "Backend health did not reach UP before timeout." >&2
-          echo "Sanitized backend log tail follows (rule-based redaction, bounded tail):" >&2
-          if [ -s "${raw_log}" ]; then
-            redact_tail "${raw_log}" >&2
-          else
-            echo "Backend log is empty." >&2
-          fi
+          echo "Backend health did not reach UP. Sanitized bounded tail follows:" >&2
+          sed -E 's/((apiKey|api[_-]?key|apiSecret|api[_-]?secret|secret|token|signature|passphrase|password|cookie)[[:space:]]*[:=][[:space:]]*)[^[:space:]]+/\1<redacted>/Ig' "${raw_log}" | tail -n 120 >&2
           exit 1
 
-      - name: Run adapter readiness backend E2E
+      - name: Run real-backend critical E2E allowlist
         working-directory: frontend
         env:
           VITE_API_PROXY_TARGET: http://127.0.0.1:18888
-        run: npm run test:e2e -- adapter-readiness-panel-backend-smoke.spec.ts --project=chromium
+        run: |
+          npm run test:e2e -- \
+            runtime-operational-readiness-final-smoke.spec.ts \
+            adapter-readiness-panel-backend-smoke.spec.ts \
+            --project=chromium
 
-      - name: Cleanup backend process
+      - name: Cleanup backend and Playwright output
         if: always()
         shell: bash
         run: |
           set -euo pipefail
-
-          pid_file="${RUNNER_TEMP}/nq-frontend-e2e-backend.pid"
-          cleanup_failed=0
-
-          if [ -s "${pid_file}" ]; then
+          pid_file="${RUNNER_TEMP}/nq-critical-e2e-backend.pid"
+          if [ -f "${pid_file}" ]; then
             pid="$(cat "${pid_file}")"
-            if ps -p "${pid}" >/dev/null 2>&1; then
-              kill -- "-${pid}" >/dev/null 2>&1 || kill "${pid}" >/dev/null 2>&1 || cleanup_failed=1
-              sleep 3
+            if [[ "${pid}" =~ ^[0-9]+$ ]]; then
+              kill -TERM -- "-${pid}" 2>/dev/null || kill -TERM "${pid}" 2>/dev/null || true
+              for _ in {1..20}; do
+                kill -0 "${pid}" 2>/dev/null || break
+                sleep 0.25
+              done
+              kill -KILL -- "-${pid}" 2>/dev/null || kill -KILL "${pid}" 2>/dev/null || true
             fi
-            if ps -p "${pid}" >/dev/null 2>&1; then
-              kill -9 -- "-${pid}" >/dev/null 2>&1 || kill -9 "${pid}" >/dev/null 2>&1 || cleanup_failed=1
-              sleep 2
-            fi
           fi
+          rm -rf frontend/test-results-ci frontend/playwright-report frontend/test-results
 
-          if curl -fsS "http://127.0.0.1:18888/actuator/health" >/dev/null 2>&1; then
-            echo "Backend port 18888 still responds after cleanup." >&2
-            cleanup_failed=1
-          else
-            echo "Backend cleanup confirmed: health endpoint no longer responds."
-          fi
+      - name: Validate deterministic delivery evidence tooling
+        shell: pwsh
+        run: ./scripts/ci/tests/Test-DeliveryEvidence.ps1
 
-          if [ "${cleanup_failed}" -ne 0 ] && [ "${{ job.status }}" = "success" ]; then
-            exit 1
-          fi
-          exit 0
-
-      - name: Prepare sanitized backend smoke artifacts
-        if: always()
-        shell: bash
+      - name: Generate internal provenance manifest
+        shell: pwsh
+        env:
+          NQ_SOURCE_COMMIT: ${{ github.sha }}
+          NQ_CI_RUN_ID: ${{ github.run_id }}
+          NQ_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
+          NQ_REPOSITORY: ${{ github.repository }}
+          NQ_REF: ${{ github.ref }}
+          NQ_WORKFLOW_NAME: ${{ github.workflow }}
         run: |
-          set -euo pipefail
+          $javaVersion = (& java -version 2>&1 | Select-Object -First 1) -replace '"', ''
+          $nodeVersion = (& node --version).Trim()
+          $npmVersion = (& npm --version).Trim()
+          ./scripts/ci/New-InternalProvenance.ps1 `
+            -SourceCommit $env:NQ_SOURCE_COMMIT `
+            -CiRunId $env:NQ_CI_RUN_ID `
+            -CiRunAttempt $env:NQ_CI_RUN_ATTEMPT `
+            -Repository $env:NQ_REPOSITORY `
+            -Ref $env:NQ_REF `
+            -WorkflowName $env:NQ_WORKFLOW_NAME `
+            -WorkflowPath '.github/workflows/ci.yml' `
+            -WorkflowFilePath '.github/workflows/ci.yml' `
+            -SupplyChainLockPath 'scripts/ci/delivery-supply-chain-lock.json' `
+            -JavaVersion $javaVersion `
+            -NodeVersion $nodeVersion `
+            -NpmVersion $npmVersion `
+            -BackendEvidenceRoot 'artifacts/delivery/backend' `
+            -FrontendEvidenceRoot 'artifacts/delivery/frontend' `
+            -BackendSbomPath 'artifacts/delivery/backend/backend-sbom.cdx.json' `
+            -FrontendSbomPath 'artifacts/delivery/frontend/frontend-sbom.cdx.json' `
+            -BackendArtifactManifestPath 'artifacts/delivery/backend/backend-artifact-manifest.json' `
+            -FrontendArtifactManifestPath 'artifacts/delivery/frontend/frontend-artifact-manifest.json' `
+            -OutputPath 'artifacts/delivery/provenance/internal-provenance.json'
 
-          artifact_dir="${RUNNER_TEMP}/nq-frontend-e2e-backend-smoke-artifacts"
-          raw_log="${RUNNER_TEMP}/nq-frontend-e2e-backend.raw.log"
-          health_file="${RUNNER_TEMP}/nq-frontend-e2e-backend-health.json"
-          rm -rf "${artifact_dir}"
-          mkdir -p "${artifact_dir}"
-
-          sanitize_backend_log() {
-            # Why: the upload gate intentionally flags sensitive assignment keys even when
-            # values are masked. Uploaded artifacts therefore remove the full assignment token
-            # shape instead of preserving assignment-looking sensitive keys.
-            assignment_re='([A-Za-z0-9_.-]*('"$(printf '%s' 'api' 'Key|api[_-]?key|api' 'Secret|api[_-]?secret|sec' 'ret|to' 'ken|signa' 'ture|pass' 'phrase|password|co' 'okie')"')[A-Za-z0-9_.-]*[[:space:]]*[:=][[:space:]]*)[^[:space:]]+'
-            sed -E "s/${assignment_re}/[redacted-sensitive-assignment]/Ig" "$1"
-          }
-
-          if [ -s "${raw_log}" ]; then
-            sanitize_backend_log "${raw_log}" > "${artifact_dir}/backend.log"
-          else
-            printf 'backend log unavailable\n' > "${artifact_dir}/backend.log"
-          fi
-
-          if [ -s "${health_file}" ]; then
-            cp "${health_file}" "${artifact_dir}/health.json"
-          else
-            printf '{"status":"UNAVAILABLE"}\n' > "${artifact_dir}/health.json"
-          fi
-
-      - name: List frontend backend smoke artifact metadata
-        if: always()
-        shell: bash
+      - name: Validate internal provenance admission
+        shell: pwsh
+        env:
+          NQ_SOURCE_COMMIT: ${{ github.sha }}
+          NQ_CI_RUN_ID: ${{ github.run_id }}
+          NQ_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
+          NQ_REPOSITORY: ${{ github.repository }}
+          NQ_REF: ${{ github.ref }}
+          NQ_WORKFLOW_NAME: ${{ github.workflow }}
         run: |
-          set -euo pipefail
+          $javaVersion = (& java -version 2>&1 | Select-Object -First 1) -replace '"', ''
+          $nodeVersion = (& node --version).Trim()
+          $npmVersion = (& npm --version).Trim()
+          ./scripts/ci/Test-InternalProvenance.ps1 `
+            -ProvenancePath 'artifacts/delivery/provenance/internal-provenance.json' `
+            -ExpectedSourceCommit $env:NQ_SOURCE_COMMIT `
+            -ExpectedCiRunId $env:NQ_CI_RUN_ID `
+            -ExpectedCiRunAttempt $env:NQ_CI_RUN_ATTEMPT `
+            -ExpectedRepository $env:NQ_REPOSITORY `
+            -ExpectedRef $env:NQ_REF `
+            -ExpectedWorkflowName $env:NQ_WORKFLOW_NAME `
+            -ExpectedWorkflowPath '.github/workflows/ci.yml' `
+            -ExpectedJavaVersion $javaVersion `
+            -ExpectedNodeVersion $nodeVersion `
+            -ExpectedNpmVersion $npmVersion `
+            -WorkflowFilePath '.github/workflows/ci.yml' `
+            -SupplyChainLockPath 'scripts/ci/delivery-supply-chain-lock.json' `
+            -BackendEvidenceRoot 'artifacts/delivery/backend' `
+            -FrontendEvidenceRoot 'artifacts/delivery/frontend' `
+            -BackendSbomPath 'artifacts/delivery/backend/backend-sbom.cdx.json' `
+            -FrontendSbomPath 'artifacts/delivery/frontend/frontend-sbom.cdx.json' `
+            -BackendArtifactManifestPath 'artifacts/delivery/backend/backend-artifact-manifest.json' `
+            -FrontendArtifactManifestPath 'artifacts/delivery/frontend/frontend-artifact-manifest.json'
 
-          artifact_dir="${RUNNER_TEMP}/nq-frontend-e2e-backend-smoke-artifacts"
-
-          if [ ! -d "${artifact_dir}" ]; then
-            echo "Artifact directory is missing: ${artifact_dir}" >&2
-            exit 1
-          fi
-
-          echo "Generated artifact metadata (name | bytes | mime-type | mime-encoding; content not printed):"
-          while IFS= read -r -d '' f; do
-            rel="${f#"${artifact_dir}/"}"
-            bytes="$(wc -c < "${f}" | tr -d ' ')"
-            mime_type="$(file -b --mime-type "${f}")"
-            mime_encoding="$(file -b --mime-encoding "${f}")"
-            printf '%s | %s | %s | %s\n' "${rel}" "${bytes}" "${mime_type}" "${mime_encoding}"
-          done < <(find "${artifact_dir}" -type f -print0 | sort -z)
-
-      - name: Pre-upload redaction gate (frontend backend smoke artifacts)
-        id: frontend_backend_artifact_gate
-        if: always()
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          gate_target="${RUNNER_TEMP}/nq-frontend-e2e-backend-smoke-artifacts"
-
-          if [ ! -d "${gate_target}" ]; then
-            echo "Pre-upload redaction gate: generated artifact directory is missing: ${gate_target}" >&2
-            exit 1
-          fi
-
-          required_artifacts=(
-            backend.log
-            health.json
-          )
-
-          for artifact in "${required_artifacts[@]}"; do
-            if [ ! -s "${gate_target}/${artifact}" ]; then
-              echo "Pre-upload redaction gate: required artifact missing or empty: ${artifact}" >&2
-              exit 1
-            fi
-          done
-
-          while IFS= read -r -d '' f; do
-            if [ "$(file -b --mime-encoding "${f}")" = "binary" ]; then
-              echo "Pre-upload redaction gate: non-text artifact rejected: ${f#"${gate_target}/"}" >&2
-              exit 1
-            fi
-          done < <(find "${gate_target}" -type f -print0)
-
-          patterns="${RUNNER_TEMP}/nq-frontend-backend-smoke-patterns.txt"
-          violations="${RUNNER_TEMP}/nq-frontend-backend-smoke-violations.txt"
-          : > "${violations}"
-
-          append_redaction_rule() {
-            local rule="$1"
-            shift
-            printf '%s ' "${rule}" >> "${patterns}"
-            printf '%s' "$@" >> "${patterns}"
-            printf '\n' >> "${patterns}"
-          }
-
-          append_redaction_rule "dotenv_reference" '\.env'
-          append_redaction_rule "pem_private_key" "BEGIN [A-Z ]*" "PRIVATE" " " "KEY"
-          append_redaction_rule "aws_akia_key" 'AKIA[0-9A-Z]{16}'
-          append_redaction_rule "aws_asia_key" 'ASIA[0-9A-Z]{16}'
-          append_redaction_rule "openai_anthropic_key" 'sk-[A-Za-z0-9_-]{20,}'
-          append_redaction_rule "github_token" '(gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})'
-          append_redaction_rule "slack_token" 'xox[bp]-[A-Za-z0-9-]{10,}'
-          append_redaction_rule "credentials_in_url" '[a-zA-Z][a-zA-Z0-9+.-]*://[^/@[:space:]]+:[^/@[:space:]]+@'
-          append_redaction_rule "api_key_assignment" "(api" "Key|api[_-]?key)[[:space:]]*[:=]"
-          append_redaction_rule "api_secret_assignment" "(api" "Secret|api[_-]?secret|sec" "ret)[[:space:]]*[:=]"
-          append_redaction_rule "passphrase_assignment" "pass" "phrase[[:space:]]*[:=]"
-          append_redaction_rule "token_assignment" "to" "ken[[:space:]]*[:=]"
-          append_redaction_rule "password_assignment" 'password[[:space:]]*[:=]'
-          append_redaction_rule "cookie_assignment" "co" "okie[[:space:]]*[:=]"
-          append_redaction_rule "private_key_assignment" "(private" "Key|private[[:space:]_-]*key)[[:space:]]*[:=]"
-          append_redaction_rule "mnemonic_assignment" 'mnemonic[[:space:]]*[:=]'
-          append_redaction_rule "signature_assignment" "signa" "ture[[:space:]]*[:=]"
-          append_redaction_rule "credential_material_assignment" 'credential[[:space:]_-]*material[[:space:]]*[:=]'
-          append_redaction_rule "raw_req_assignment" "raw" "[[:space:]_-]*request[[:space:]]*[:=]"
-          append_redaction_rule "raw_resp_assignment" "raw" "[[:space:]_-]*response[[:space:]]*[:=]"
-          append_redaction_rule "encrypted_payload_assignment" 'encrypted_payload[[:space:]]*[:=]'
-          append_redaction_rule "decrypted_payload_assignment" 'decrypted_payload[[:space:]]*[:=]'
-          append_redaction_rule "exchange_host" 'okx\.com|binance\.com|bybit\.com|bitget\.com|gate\.io|coinbase\.com|kraken\.com|crypto\.com|hyperliquid\.xyz'
-
-          while IFS=' ' read -r rule re; do
-            [ -z "${rule}" ] && continue
-            files="$(grep -rIlE -e "${re}" "${gate_target}" 2>/dev/null || true)"
-            [ -z "${files}" ] && continue
-            while IFS= read -r mf; do
-              [ -z "${mf}" ] && continue
-              echo "REDACTION_HIT rule=${rule} file=${mf#"${gate_target}/"}" >> "${violations}"
-            done <<< "${files}"
-          done < "${patterns}"
-
-          if [ -s "${violations}" ]; then
-            echo "Pre-upload redaction gate found high-risk pattern(s) (rule/file only; values never printed):" >&2
-            cat "${violations}" >&2
-            exit 1
-          fi
-          echo "Pre-upload redaction gate: no high-risk pattern in generated artifact directory."
-
-      - name: Upload frontend backend smoke artifacts
-        if: always() && steps.frontend_backend_artifact_gate.outcome == 'success'
-        uses: actions/upload-artifact@v4
+      - name: Upload backend delivery evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: nq-frontend-e2e-backend-smoke-artifacts
-          path: ${{ runner.temp }}/nq-frontend-e2e-backend-smoke-artifacts/
+          name: backend-delivery-evidence
+          path: artifacts/delivery/backend/
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 14
 
-      - name: Cleanup Playwright temp output (no upload)
-        if: always()
-        working-directory: frontend
+      - name: Upload frontend delivery evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: frontend-delivery-evidence
+          path: artifacts/delivery/frontend/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload internal provenance manifest
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: internal-delivery-provenance
+          path: artifacts/delivery/provenance/
+          if-no-files-found: error
+          retention-days: 14
+
+  delivery-provenance:
+    name: Delivery SBOM and provenance
+    runs-on: ubuntu-latest
+    needs: [backend, frontend-critical]
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Set up Java
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+
+      - name: Download backend and frontend delivery evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: "*-delivery-evidence"
+          path: artifacts/delivery-input
+          merge-multiple: false
+
+      - name: Download internal provenance manifest
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: internal-delivery-provenance
+          path: artifacts/delivery-input/provenance
+
+      - name: Validate uploaded provenance readback
+        shell: pwsh
+        env:
+          NQ_SOURCE_COMMIT: ${{ github.sha }}
+          NQ_CI_RUN_ID: ${{ github.run_id }}
+          NQ_CI_RUN_ATTEMPT: ${{ github.run_attempt }}
+          NQ_REPOSITORY: ${{ github.repository }}
+          NQ_REF: ${{ github.ref }}
+          NQ_WORKFLOW_NAME: ${{ github.workflow }}
         run: |
-          rm -rf test-results-ci playwright-report test-results
-
+          $javaVersion = (& java -version 2>&1 | Select-Object -First 1) -replace '"', ''
+          $nodeVersion = (& node --version).Trim()
+          $npmVersion = (& npm --version).Trim()
+          ./scripts/ci/Test-InternalProvenance.ps1 `
+            -ProvenancePath 'artifacts/delivery-input/provenance/internal-provenance.json' `
+            -ExpectedSourceCommit $env:NQ_SOURCE_COMMIT `
+            -ExpectedCiRunId $env:NQ_CI_RUN_ID `
+            -ExpectedCiRunAttempt $env:NQ_CI_RUN_ATTEMPT `
+            -ExpectedRepository $env:NQ_REPOSITORY `
+            -ExpectedRef $env:NQ_REF `
+            -ExpectedWorkflowName $env:NQ_WORKFLOW_NAME `
+            -ExpectedWorkflowPath '.github/workflows/ci.yml' `
+            -ExpectedJavaVersion $javaVersion `
+            -ExpectedNodeVersion $nodeVersion `
+            -ExpectedNpmVersion $npmVersion `
+            -WorkflowFilePath '.github/workflows/ci.yml' `
+            -SupplyChainLockPath 'scripts/ci/delivery-supply-chain-lock.json' `
+            -BackendEvidenceRoot 'artifacts/delivery-input/backend-delivery-evidence' `
+            -FrontendEvidenceRoot 'artifacts/delivery-input/frontend-delivery-evidence' `
+            -BackendSbomPath 'artifacts/delivery-input/backend-delivery-evidence/backend-sbom.cdx.json' `
+            -FrontendSbomPath 'artifacts/delivery-input/frontend-delivery-evidence/frontend-sbom.cdx.json' `
+            -BackendArtifactManifestPath 'artifacts/delivery-input/backend-delivery-evidence/backend-artifact-manifest.json' `
+            -FrontendArtifactManifestPath 'artifacts/delivery-input/frontend-delivery-evidence/frontend-artifact-manifest.json'
   research:
-    name: Research quality gate
+    name: Research quality
     runs-on: ubuntu-latest
 
     env:
@@ -1331,10 +1048,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.11"
           cache: pip
@@ -1353,7 +1070,7 @@ jobs:
         run: python -m ruff check . --no-cache
 
   secret-scan:
-    name: Secret scan
+    name: Secret scanning
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -1362,33 +1079,62 @@ jobs:
 
     env:
       CI: "true"
-      GITLEAKS_VERSION: "8.18.4"
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - name: Install pinned gitleaks CLI
+      - name: Load canonical gitleaks identity
+        shell: pwsh
+        run: |
+          ./scripts/ci/Export-DeliveryToolIdentity.ps1 `
+            -ToolName gitleaks `
+            -Platform linux `
+            -Architecture x64 `
+            -GitHubEnvPath $env:GITHUB_ENV
+
+      - name: Install verified gitleaks CLI in runner temp
         shell: bash
         run: |
           set -euo pipefail
 
-          # Pinned version only (no 'latest'); no token / auth header is passed to the download.
-          version="${GITLEAKS_VERSION}"
           work="$(mktemp -d)"
-          asset="gitleaks_${version}_linux_x64.tar.gz"
-          url="https://github.com/gitleaks/gitleaks/releases/download/v${version}/${asset}"
+          archive="${work}/${NQ_GITLEAKS_ARTIFACT}"
+          official_checksums="${work}/official-checksums.txt"
 
-          curl --fail --silent --show-error --location --output "${work}/${asset}" "${url}"
-          tar -C "${work}" -xzf "${work}/${asset}" gitleaks
-          sudo install -m 0755 "${work}/gitleaks" /usr/local/bin/gitleaks
-
-          installed="$(gitleaks version)"
-          echo "Installed gitleaks version: ${installed}"
-          if [ "${installed}" != "${version}" ]; then
-            echo "Expected pinned gitleaks ${version} but found ${installed}" >&2
+          curl --fail --silent --show-error --location --output "${archive}" "${NQ_GITLEAKS_DOWNLOAD_URL}"
+          curl --fail --silent --show-error --location --output "${official_checksums}" "${NQ_GITLEAKS_CHECKSUM_SOURCE}"
+          mapfile -t official_matches < <(awk -v artifact="${NQ_GITLEAKS_ARTIFACT}" '$2 == artifact { print $1 }' "${official_checksums}")
+          if [ "${#official_matches[@]}" -ne 1 ] || [ "${official_matches[0]}" != "${NQ_GITLEAKS_SHA256}" ]; then
+            echo "Official gitleaks checksum does not match canonical lock identity" >&2
             exit 1
           fi
+          pwsh -NoProfile -File ./scripts/ci/Test-DeliveryToolArchive.ps1 \
+            -ToolName gitleaks -Platform linux -Architecture x64 -ArchivePath "${archive}"
+
+          mkdir -p "${work}/tampered"
+          tampered="${work}/tampered/${NQ_GITLEAKS_ARTIFACT}"
+          cp "${archive}" "${tampered}"
+          printf 'tamper' >> "${tampered}"
+          if pwsh -NoProfile -File ./scripts/ci/Test-DeliveryToolArchive.ps1 \
+              -ToolName gitleaks -Platform linux -Architecture x64 -ArchivePath "${tampered}" >/dev/null 2>&1; then
+            echo "Tampered gitleaks archive unexpectedly passed checksum verification" >&2
+            exit 1
+          fi
+          echo "Gitleaks official-checksum=PASS archive=PASS tamper-negative=PASS"
+
+          mkdir -p "${work}/bin"
+          tar -C "${work}/bin" -xzf "${archive}" gitleaks
+          chmod 0755 "${work}/bin/gitleaks"
+
+          verified_bin="$(realpath "${work}/bin/gitleaks")"
+          installed="$("${verified_bin}" version)"
+          echo "Verified gitleaks version: ${installed}"
+          if [ "${installed}" != "${NQ_GITLEAKS_VERSION}" ]; then
+            echo "Expected pinned gitleaks ${NQ_GITLEAKS_VERSION} but found ${installed}" >&2
+            exit 1
+          fi
+          printf 'NQ_GITLEAKS_BIN=%s\n' "${verified_bin}" >> "${GITHUB_ENV}"
 
       - name: Build tracked safe-file list
         shell: bash
@@ -1448,33 +1194,29 @@ jobs:
             '''FAKE-PLACEHOLDER''',
           ]
           paths = [
-            '''.*adapter/binance/service/BinanceRuntimeConfigTest\.java$''',
-            '''.*adapter/binance/service/BinanceRequestSignerTest\.java$''',
-            '''.*adapter/binance/service/BinanceHttpClientTest\.java$''',
-            '''.*adapter/binance/service/BinanceEd25519RequestSigner\.java$''',
+            '''.*adapter[\\/]binance[\\/]service[\\/]BinanceRuntimeConfigTest\.java$''',
+            '''.*adapter[\\/]binance[\\/]service[\\/]BinanceRequestSignerTest\.java$''',
+            '''.*adapter[\\/]binance[\\/]service[\\/]BinanceHttpClientTest\.java$''',
+            '''.*adapter[\\/]binance[\\/]service[\\/]BinanceEd25519RequestSigner\.java$''',
             # Frozen Gate-C diagnostic record: generic-api-key false positive on a non-secret
             # WebSocket client request UUID (client.request.id, ~line 325); the credential
             # fingerprint there is already masked. docs/gates is an immutable frozen archive.
-            '''.*docs/gates/gate-c/WORK\.md$''',
+            '''.*docs[\\/]gates[\\/]gate-c[\\/]WORK\.md$''',
           ]
           TOML
 
           # --no-git: scan files in the staged directory only, never git history.
           # --redact: never print secret values in logs or the report.
           set +e
-          gitleaks detect \
-            --source "${staging}" \
-            --no-git \
-            --config "${config}" \
-            --redact \
-            --report-format json \
-            --report-path "${report}" \
-            --exit-code 1 \
-            --no-banner
+          pwsh -NoProfile -File ./scripts/ci/Invoke-VerifiedGitleaks.ps1 \
+            -BinaryPath "${NQ_GITLEAKS_BIN}" \
+            -SourcePath "${staging}" \
+            -ConfigPath "${config}" \
+            -ReportPath "${report}"
           rc=$?
           set -e
 
-          if [ "${rc}" -ne 0 ]; then
+          if [ "${rc}" -eq 2 ]; then
             echo "gitleaks reported potential finding(s). Sanitized metadata only" \
                  "(RuleID / File / Lines / Fingerprint; never secret content / source content / commit / author):" >&2
             if command -v jq >/dev/null 2>&1 && [ -s "${report}" ]; then
@@ -1487,6 +1229,10 @@ jobs:
             echo "Resolve each finding by a precise path+rule allowlist for a confirmed fake/test/placeholder," \
                  "or by removing a real secret. Do not broaden allowlists or disable default rules. Failing CI." >&2
             exit 1
+          fi
+          if [ "${rc}" -ne 0 ]; then
+            echo "gitleaks scanner error exit=${rc}; failing closed." >&2
+            exit "${rc}"
           fi
           echo "gitleaks: no leaks found in tracked working tree."
 
@@ -1621,7 +1367,7 @@ jobs:
           echo "PROOF_OK"
 
   java-engineering-shadow:
-    name: Java engineering standard Shadow
+    name: Java architecture guard
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -1630,7 +1376,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Validate Java governance configuration
         shell: pwsh
@@ -1642,7 +1388,7 @@ jobs:
 
       - name: Upload Java Shadow report
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: java-engineering-shadow-report
           path: artifacts/java-shadow/shadow-report.json

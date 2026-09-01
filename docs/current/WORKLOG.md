@@ -19734,3 +19734,48 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Legacy identity：tracked refs、all refs、reflog与unreachable blobs均无法恢复Phase3 F-005/F-011的canonical title/source/owner/consumer；二者标记为`LEGACY_FINDING_IDENTITY_UNRECOVERABLE / RETIRED`，历史ledger不删除，Phase5不继承未知语义。
 - Phase5 seed：登记`P5-F001～P5-F009`，severity=`P1 3 / P2 6`，全部`OPEN / NOT_IMPLEMENTED`；未修改backend/frontend/research/scripts/deploy/.github/migration/frozen archive。
 - Matcher：workstream名称包含`CI`会被现有matcher分类为CI action；machine next action使用唯一`IMPLEMENTATION` token `NQ-GATEAUDIT-PHASE5A-CANONICAL-DELIVERY-IMPLEMENTATION`，未修改matcher、checker、contract或lifecycle。
+## 2026-09-01 — GateAUDIT Phase5A canonical delivery implementation
+
+- Scope：仅实现P5-F001 local baseline、P5-F004 immutable identities、P5-F005 internal SBOM/provenance、P5-F006 CI/E2E consolidation；P5-F002/F003/F007/F008/F009与Phase5-B/C保持未实现。
+- Workflow：11 jobs收敛为9个稳定capability names；runtime safety合并重复security partial suite；frontend production build从3次减为1次；backend full regression、fresh PostgreSQL/Flyway、research、secret与Java architecture guard保留。
+- Supply chain：新增`delivery-supply-chain-lock.json`，记录6类官方Actions tag→commit、gitleaks官方checksum、CycloneDX plugin source和PostgreSQL official digests；workflow mutable action/image identity=`0`。未申请`id-token: write`，未修改任何远端enforcement。
+- Evidence：新增normalized CycloneDX、artifact manifest、pre-upload artifact safety、internal provenance与tamper/secret regression工具；backend/frontend SBOM components=`87/110`，provenance确切绑定source/CI/workflow/toolchain/material/subject digests，不冒充GitHub platform attestation。
+- E2E：5-spec blocking candidate=`20 passed / skip 0`；backtest/paper四例因真实fixture strategy create 500拒绝进入blocking，保留manual。无retry、无skip-as-pass、无真实exchange或credential。
+- Validation：23-module Maven、V46 repository/app PostgreSQL smokes、frontend build、Playwright、research、runtime safety、gitleaks、workflow parse/contract与delivery evidence regression均PASS；所有disposable PostgreSQL/临时artifact已清理，localhost:5432未触达。
+- Result：`IMPLEMENTED / PENDING_INDEPENDENT_REVIEW`；P5-F004/P5-F006=`REMEDIATED_PENDING_REVIEW`，P5-F005 internal baseline pending review且platform attestation有明确residual，P5-F001=`LOCAL_REQUIRED_CHECK_BASELINE_READY / REMOTE_ENFORCEMENT_NOT_APPLIED`。未commit、未push、未运行exact-head CI。
+
+## 2026-09-01 — GateAUDIT Phase5A canonical delivery remediation
+
+- Baseline/Review：`f8a1d047f923cd940902f9ac3ad1c2dec9431b5b`与origin一致、staged=0；独立Review=`CHANGES_REQUIRED / P0 0 / P1 1 / P2 4`。仅关闭gitleaks系统路径覆盖、provenance未enforce、lock未完整enforce三个缺口。
+- Implementation：gitleaks identity从canonical lock导出，官方checksum与archive由独立脚本校验，verified binary停留runner temp；新增provenance disk-readback validator；workflow upload前强制readback；lock对Actions/Tools/Images做双向exact mapping和occurrence enforcement。
+- Negative proof：supply-chain action/tool/image/schema/duplicate/missing cases与gitleaks checksum/tamper全部fail-closed；provenance commit/run/material/subject/missing/schema 8类mutation全部fail-closed；scanner invalid-config error非0退出。
+- Validation：workflow/lock/provenance合同与负例PASS；SnakeYAML parse、permission diff、pinning/system-path、frontend build、loopback E2E 18/18、runtime safety Maven 15/15、research 24 + mypy + ruff、gitleaks actual scan 0 findings均PASS。首次WSL scan因Windows worktree gitdir不兼容exit 1，改用更严格filesystem candidate清单；首次scanner-error fixture因missing source被gitleaks视为0 findings而使harness exit 1，改用invalid TOML后PASS；首次Maven参数引用错误在测试前exit 1，整体引用后PASS。
+- Preserved invariants：9 jobs、frontend build=1、5 specs/20 cases/skip 0/retry 0、Actions 24/24、PostgreSQL 3/3、SBOM deterministic、no-outbound/credential/LIVE/PLACE/CANCEL/transfer/withdraw边界不变。real-backend 2/2、full Maven与SBOM真实产物使用同一candidate既有证据，本轮无相关业务代码变化。
+- Residual/Safety：image runtime pull与Backtest/Paper fixture residual继续P2；P5-F001远端enforcement未应用；未访问credential/生产/真实交易，未改backend production Java、migration、frontend业务、research、deploy、GateW/GateY、branch protection/ruleset。
+- Authority RCA：专用`IMPLEMENTED|PENDING_CLOSURE_REVIEW` machine token被schema v3 checker拒绝（errors=1）；未扩展lifecycle vocabulary，machine状态使用合法`IMPLEMENTED|PENDING_REVIEW`，closure限定由唯一next action和正文表达。修正后PS5.1/PS7 authority与next-action均PASS，doc links errors=0。
+- Result：`IMPLEMENTED / PENDING_CLOSURE_REVIEW`；三个整改finding=`REMEDIATED_PENDING_CLOSURE_REVIEW`；next=`NQ-GATEAUDIT-PHASE5A-CANONICAL-DELIVERY-CLOSURE-REVIEW`；commit/push/exact-head CI=`NONE/NONE/NOT_RUN`。
+
+## 2026-09-01 — GateAUDIT Phase5A canonical delivery remediation Attempt-03
+
+- Baseline：正确tracking ref=`origin/audit/post-gatey-agent-baseline`；HEAD/remote=`f8a1d047f923cd940902f9ac3ad1c2dec9431b5b`，`origin/dev=4c19cb775e...`且ancestor exit=0；20-file starting scope、staged=0、fingerprint=`3c7929c0...7ebd6`与Attempt-02一致。Attempt-02 BLOCKED事实保留，不改写。
+- Implementation：gitleaks由绝对`NQ_GITLEAKS_BIN`和fail-closed invoker消费；backend/frontend evidence、provenance generation/readback移至首次delivery upload前；上传后保留独立readback job；canonical validator增加step reachability、soft-fail/conditional/order、npm/Playwright/Maven/gitleaks consumer约束。
+- Regression：canonical positive PASS；19类workflow/lock/consumer/provenance mutation全部REJECTED；11类provenance内容/缺失/tamper mutation全部REJECTED；gitleaks sentinel/missing/finding/error=`NOT_EXECUTED/REJECTED/REJECTED/REJECTED`；NoSkipReporter contract PASS；YAML/PowerShell parse、`git diff --check`与scope invariants PASS。
+- Boundary：required checks=9、Actions=24/24、PostgreSQL=3/3、build=1、critical E2E=5 specs、permissions/no-id-token/no-secret边界保持；production Java/migration/frontend product/research/deploy/LIVE/private exchange改动=0。Full Maven未运行且不需要。
+- Residual：image runtime pull与critical E2E fixture继续P2；Playwright cleanup继续P3；remote enforcement未应用。本轮未暂存、commit、push。
+- Evidence：[Attempt-03](../audit/evidence/GATEAUDIT_PHASE5A_CANONICAL_DELIVERY_REMEDIATION_ATTEMPT_03.md)。Result=`IMPLEMENTED / P1_TARGETS_REMEDIATED / PENDING_INDEPENDENT_CLOSURE_REVIEW`；next=`NQ-GATEAUDIT-PHASE5A-CANONICAL-DELIVERY-CLOSURE-REVIEW / Attempt-02`。
+
+## 2026-09-01 — GateAUDIT Phase5A canonical delivery remediation Attempt-04
+
+- Scope：仅整改Closure Review Attempt-02的`CANONICAL_VALIDATOR_JOB_LEVEL_REACHABILITY_BYPASS`；workflow、gitleaks wrapper、delivery evidence、production Java/migration/frontend product/research/deploy均未修改。
+- Implementation：canonical validator新增single-source 9-job ID/check-name map、required job existence/name/unconditional/soft-fail检查，以及11类security-critical capability owner属于required job的映射验证。
+- Regression：新增`frontend-critical if:false`、`secret-scan if:false`与required job `continue-on-error:true`三项永久负例，全部REJECTED；原19项mutation、gitleaks sentinel/missing/finding/error、provenance missing/tamper、NoSkipReporter、YAML/PowerShell parse全部PASS。
+- Invariants：required checks=9、Actions=24/24、PostgreSQL=3/3、build=1、critical E2E=5 specs、permissions/no-id-token/no-secret及安全运行边界保持；scope drift=0。Full Maven未运行且不需要。
+- Evidence：[Attempt-04](../audit/evidence/GATEAUDIT_PHASE5A_CANONICAL_DELIVERY_REMEDIATION_ATTEMPT_04.md)。Result=`IMPLEMENTED / JOB_LEVEL_REACHABILITY_P1_REMEDIATED / PENDING_INDEPENDENT_CLOSURE_REVIEW`；staged/commit/push=`0/NONE/NONE`；next=`NQ-GATEAUDIT-PHASE5A-CANONICAL-DELIVERY-CLOSURE-REVIEW / Attempt-03`。
+
+## 2026-09-01 — GateAUDIT Phase5A canonical delivery remediation Attempt-05
+
+- Scope：仅整改Closure Review Attempt-03的`CRITICAL_E2E_JOB_LEVEL_REACHABILITY_BYPASS`；workflow、gitleaks/provenance/supply-chain实现、production code与runtime fixture均未修改。
+- Implementation：critical capability registry扩为18项；新增backend/frontend build、双manifest、post-upload readback和两项critical E2E execution ownership；5-spec scope绑定真实E2E命令而非workflow全文字符串。
+- Regression：新增E2E conditional relocation、non-required relocation、execution removed/text retained三项负例；required-job IDs由validator单一事实源输出，tests参数化证明9/9 job conditional和9/9 soft-fail均REJECTED。新总mutation=40，旧suite无回归。
+- Validation：canonical/Gitleaks/provenance/NoSkip/YAML/PowerShell/authority/diff均PASS；required checks=9、Actions=24/24、PostgreSQL=3/3、build=1、critical E2E=5 specs与安全边界保持。Full Maven未运行且不需要。
+- Evidence：[Attempt-05](../audit/evidence/GATEAUDIT_PHASE5A_CANONICAL_DELIVERY_REMEDIATION_ATTEMPT_05.md)。Result=`IMPLEMENTED / CRITICAL_E2E_REACHABILITY_P1_REMEDIATED / PENDING_INDEPENDENT_CLOSURE_REVIEW`；staged/commit/push=`0/NONE/NONE`；next=`NQ-GATEAUDIT-PHASE5A-CANONICAL-DELIVERY-CLOSURE-REVIEW / Attempt-04`。

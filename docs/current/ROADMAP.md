@@ -58,19 +58,19 @@ NQ-GATEAUDIT-PHASE5A-CANONICAL-CI-AND-SUPPLY-CHAIN
 
 ### Phase5 finding seed
 
-以下 finding 来自 `NQ-GATEAUDIT-PHASE5-CI-CD-DEPLOYMENT-HARDENING` 只读 inventory；状态均为 `OPEN / NOT_IMPLEMENTED`。
+以下 finding 来自 `NQ-GATEAUDIT-PHASE5-CI-CD-DEPLOYMENT-HARDENING` 只读 inventory；Phase5A只更新本轮授权的F001/F004/F005/F006，其余保持`OPEN / NOT_IMPLEMENTED`。
 
-| ID | Severity | Finding | Evidence summary |
-| --- | --- | --- | --- |
-| P5-F001 | P1 | `CI_REQUIRED_CHECK_ENFORCEMENT_ABSENT` | GitHub只读查询确认`dev`与当前audit branch均无branch protection，repository ruleset为空 |
-| P5-F002 | P1 | `CANONICAL_RELEASE_DEPLOYMENT_PATH_ABSENT` | `.github/workflows/ci.yml`不构建/验证release；GateW/GateY/freeze helper仅在legacy闭环内互调 |
-| P5-F003 | P1 | `CURRENT_SCHEMA_RESTORE_NOT_PROVEN` | GateW restore止于V35、GateY restore止于V39，而current schema为V46 |
-| P5-F004 | P2 | `SUPPLY_CHAIN_IDENTITIES_MUTABLE` | GitHub Actions使用major tags，PostgreSQL images使用mutable tags，gitleaks archive无checksum验证 |
-| P5-F005 | P2 | `SBOM_PROVENANCE_ATTESTATION_ABSENT` | current CI/release无canonical SBOM、artifact attestation或exact successful CI provenance |
-| P5-F006 | P2 | `CI_DUPLICATION_AND_CRITICAL_E2E_COVERAGE_GAP` | no-outbound/security与frontend build重复；blocking E2E未覆盖完整critical business subset |
-| P5-F007 | P2 | `MINIMUM_OPERATIONAL_OBSERVABILITY_INCOMPLETE` | scheduler/worker、reconciliation、ledger recovery与critical alert缺统一运行观测 |
-| P5-F008 | P2 | `PROD_CONFIGURATION_FAIL_CLOSED_GAP` | prod datasource仍有host/user/password fallback，缺失配置不会在配置解析期fail closed |
-| P5-F009 | P2 | `LEGACY_GATE_SPECIFIC_ACTIVE_ASSET_DEBT` | active tree仍保留GateW/GateY/freeze release/deploy/systemd入口且无current canonical replacement |
+| ID | Severity | Finding | Status | Evidence summary |
+| --- | --- | --- | --- | --- |
+| P5-F001 | P1 | `CI_REQUIRED_CHECK_ENFORCEMENT_ABSENT` | `LOCAL_REQUIRED_CHECK_BASELINE_READY / REMOTE_ENFORCEMENT_NOT_APPLIED` | 9个稳定capability check names已有machine regression；未调用GitHub API写ruleset/branch protection |
+| P5-F002 | P1 | `CANONICAL_RELEASE_DEPLOYMENT_PATH_ABSENT` | `OPEN / NOT_IMPLEMENTED` | `.github/workflows/ci.yml`不构建/验证release；GateW/GateY/freeze helper仅在legacy闭环内互调 |
+| P5-F003 | P1 | `CURRENT_SCHEMA_RESTORE_NOT_PROVEN` | `OPEN / NOT_IMPLEMENTED` | GateW restore止于V35、GateY restore止于V39，而current schema为V46 |
+| P5-F004 | P2 | `SUPPLY_CHAIN_IDENTITIES_MUTABLE` | `REMEDIATED_PENDING_CLOSURE_REVIEW` | lock对24处Actions、gitleaks/CycloneDX真实consumer与3处PostgreSQL image双向enforce；npm=`ci`、Playwright=`--no-install`；gitleaks绑定verified absolute path，sentinel/missing/finding/error均fail-closed |
+| P5-F005 | P2 | `SBOM_PROVENANCE_ATTESTATION_ABSENT` | `INTERNAL_SBOM_PROVENANCE_REMEDIATED_PENDING_CLOSURE_REVIEW` | backend/frontend本地产物、SBOM、manifest与provenance在首次delivery upload前独立readback PASS，上传后再做第二层readback；missing/tamper/identity/soft-fail/conditional/order负例均拒绝；platform attestation继续defer |
+| P5-F006 | P2 | `CI_DUPLICATION_AND_CRITICAL_E2E_COVERAGE_GAP` | `REMEDIATED_PENDING_CLOSURE_REVIEW` | 11→9 jobs、production build=1与5-spec/20-case/skip=0 invariant保持；`CRITICAL_E2E_ADMISSION_PENDING_FIXTURE_REPAIR`继续为P2，不在本轮处理 |
+| P5-F007 | P2 | `MINIMUM_OPERATIONAL_OBSERVABILITY_INCOMPLETE` | `OPEN / NOT_IMPLEMENTED` | scheduler/worker、reconciliation、ledger recovery与critical alert缺统一运行观测 |
+| P5-F008 | P2 | `PROD_CONFIGURATION_FAIL_CLOSED_GAP` | `OPEN / NOT_IMPLEMENTED` | prod datasource仍有host/user/password fallback，缺失配置不会在配置解析期fail closed |
+| P5-F009 | P2 | `LEGACY_GATE_SPECIFIC_ACTIVE_ASSET_DEBT` | `OPEN / NOT_IMPLEMENTED` | active tree仍保留GateW/GateY/freeze release/deploy/systemd入口且无current canonical replacement |
 
 ## Phase6 deferred proofs
 
@@ -85,8 +85,8 @@ NQ-GATEAUDIT-PHASE5A-CANONICAL-CI-AND-SUPPLY-CHAIN
 ## 下一允许动作
 
 - Phase4 immutable acceptance pair=`7ca1fc92f8900e3e9d19184fccd40569f233823f / 33405549149`；不得由本次authority reconciliation commit/CI替代。
-- 当前workstream：`NQ-GATEAUDIT-PHASE5A-CANONICAL-CI-AND-SUPPLY-CHAIN`，状态=`READY_TO_START / NOT_IMPLEMENTED`。
-- machine next action：`NQ-GATEAUDIT-PHASE5A-CANONICAL-DELIVERY-IMPLEMENTATION`，matcher type=`IMPLEMENTATION`。Phase5 implementation必须另行限定batch、验证与rollback。
+- 当前workstream：`NQ-GATEAUDIT-PHASE5A-CANONICAL-CI-AND-SUPPLY-CHAIN`，状态=`IMPLEMENTED / PENDING_CLOSURE_REVIEW`。
+- machine next action：`NQ-GATEAUDIT-PHASE5A-CANONICAL-DELIVERY-CLOSURE-REVIEW`，matcher type=`REVIEW`。该Review只关闭原P1与两个enforcement P2并检查既有invariants；Review通过前不得commit/push或申请远端required-check enforcement。
 
 ## Persistent boundary
 

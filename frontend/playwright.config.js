@@ -28,6 +28,9 @@ export default defineConfig({
     // 串行 worker 更符合当前项目的“关键链路可重复验收”目标。
     workers: 1,
     retries: 0,
+    reporter: process.env.NQ_CRITICAL_E2E_REQUIRED === 'true'
+        ? [['line'], ['./tests/e2e/no-skip-reporter.mjs']]
+        : [['line']],
     use: {
         baseURL: baseURL,
         actionTimeout: 30000,
