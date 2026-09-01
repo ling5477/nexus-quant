@@ -300,7 +300,8 @@ test.describe('GateV-4 validation review workbench', () => {
         await expect.poll(() => reviewRequestCount(conflictRequests, 'GET', `/api/validation-review-cases/${CASE_ID}`)).toBeGreaterThan(beforeDetail);
         await expect.poll(() => reviewRequestCount(conflictRequests, 'GET', `/api/validation-review-cases/${CASE_ID}/events`)).toBeGreaterThan(beforeEvents);
 
-        await page.unrouteAll({behavior: 'wait'});
+        // Each seed installs a complete LIFO route set. Clearing every route between scenarios
+        // creates a gap where background read-only queries can escape to the CI Vite proxy.
         const invalidTransitionAudit = await seedReviewWorkbench(page, {actionStatus: 422});
         await page.reload();
         await page.getByRole('button', {name: '确认已阅'}).click();
@@ -308,7 +309,6 @@ test.describe('GateV-4 validation review workbench', () => {
         await page.getByRole('button', {name: '确认提交'}).click();
         await expect(page.getByText('Case 状态已变化或流转不再合法，已重新获取最新详情。')).toBeVisible();
 
-        await page.unrouteAll({behavior: 'wait'});
         const forbiddenAudit = await seedReviewWorkbench(page, {actionStatus: 403});
         await page.reload();
         await page.getByRole('button', {name: '确认已阅'}).click();
@@ -330,27 +330,22 @@ test.describe('GateV-4 validation review workbench', () => {
         await expect(page.getByTestId('validation-review-queue').locator('.ant-spin-spinning')).toBeVisible();
         await expect(page.getByLabel('Owner ID')).toHaveCount(0);
 
-        await page.unrouteAll({behavior: 'wait'});
         const emptyAudit = await seedReviewWorkbench(page, {roles: ['OPERATOR'], listMode: 'empty'});
         await page.reload();
         await expect(page.getByText('当前筛选条件下没有 review case。')).toBeVisible();
 
-        await page.unrouteAll({behavior: 'wait'});
         const errorAudit = await seedReviewWorkbench(page, {listMode: 'error'});
         await page.reload();
         await expect(page.getByText('Review queue 加载失败')).toBeVisible();
 
-        await page.unrouteAll({behavior: 'wait'});
         const permissionAudit = await seedReviewWorkbench(page, {listMode: 'forbidden'});
         await page.reload();
         await expect(page.getByText('无权访问 review queue')).toBeVisible();
 
-        await page.unrouteAll({behavior: 'wait'});
         const notFoundAudit = await seedReviewWorkbench(page, {detailNotFound: true});
         await page.goto(`/strategies/validation?reviewCaseId=${SECOND_CASE_ID}`);
         await expect(page.getByText('Case 已不存在')).toBeVisible();
 
-        await page.unrouteAll({behavior: 'wait'});
         const invalidUrlAudit = await seedReviewWorkbench(page);
         await page.goto('/strategies/validation?reviewCaseId=not-a-uuid');
         await expect(page.getByText('reviewCaseId 无效')).toBeVisible();
@@ -359,12 +354,10 @@ test.describe('GateV-4 validation review workbench', () => {
             return path.startsWith('/api/validation-review-cases') && item.url.includes('not-a-uuid');
         })).toBeFalsy();
 
-        await page.unrouteAll({behavior: 'wait'});
         const unknownStateAudit = await seedReviewWorkbench(page, {stateOverride: 'FUTURE_STATE'});
         await page.goto(`/strategies/validation?reviewCaseId=${CASE_ID}`);
         await expect(page.getByText('当前状态没有可执行动作。')).toBeVisible();
 
-        await page.unrouteAll({behavior: 'wait'});
         const uuidFailureAudit = await seedReviewWorkbench(page, {uuidFailure: true});
         await page.reload();
         await page.getByRole('button', {name: '确认已阅'}).click();

@@ -1,5 +1,8 @@
 [CmdletBinding()]
-param()
+param(
+    [string]$WorkflowPath = '',
+    [switch]$ValidateCiShadowContractOnly
+)
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
@@ -8,6 +11,41 @@ $standardRoot = Join-Path $repoRoot "docs\standards\java"
 
 function Assert-Condition([bool]$Condition, [string]$Type, [string]$Message) {
     if (-not $Condition) { throw "$Type`: $Message" }
+}
+
+function Assert-JavaShadowCiContract([string]$WorkflowText) {
+    $jobsMarker = [regex]::Match($WorkflowText, '(?m)^jobs:\s*$')
+    Assert-Condition $jobsMarker.Success 'CONFIG_INVALID' 'CI jobs mapping missing'
+    $jobsText = $WorkflowText.Substring($jobsMarker.Index + $jobsMarker.Length)
+    $jobMatches = [regex]::Matches(
+        $jobsText,
+        '(?ms)^  java-engineering-shadow:\s*\r?\n(?<body>.*?)(?=^  [A-Za-z0-9_-]+:\s*$|\z)'
+    )
+    Assert-Condition ($jobMatches.Count -eq 1) 'CONFIG_INVALID' 'Java Shadow CI job missing or duplicated'
+    $jobBody = $jobMatches[0].Groups['body'].Value
+    Assert-Condition (-not [regex]::IsMatch($jobBody, '(?m)^    if:\s*')) 'CONFIG_INVALID' 'Java Shadow CI job is conditional'
+    $jobContinue = [regex]::Matches($jobBody, '(?m)^    continue-on-error:\s*(?<value>[^\r\n#]+)')
+    Assert-Condition ($jobContinue.Count -le 1) 'CONFIG_INVALID' 'Java Shadow CI job continue-on-error duplicated'
+    if ($jobContinue.Count -eq 1) {
+        Assert-Condition ($jobContinue[0].Groups['value'].Value.Trim() -ceq 'false') 'CONFIG_INVALID' 'Java Shadow CI job can soft-fail'
+    }
+
+    $stepMatches = [regex]::Matches(
+        $jobBody,
+        '(?ms)^      - name:\s*(?<name>[^\r\n]+)\r?\n(?<body>.*?)(?=^      - name:|\z)'
+    )
+    $scannerRunPattern = '(?m)^        run:[ \t]+\./scripts/java-standard/invoke-java-shadow-scan\.ps1[ \t]+-OutputPath[ \t]+artifacts/java-shadow/shadow-report\.json[ \t]*$'
+    $scannerSteps = @($stepMatches | Where-Object {
+        [regex]::IsMatch($_.Groups['body'].Value, $scannerRunPattern)
+    })
+    Assert-Condition ($scannerSteps.Count -eq 1) 'CONFIG_INVALID' 'Java Shadow scanner consumer missing or duplicated'
+    $scannerStep = $scannerSteps[0].Value
+    Assert-Condition (-not [regex]::IsMatch($scannerStep, '(?m)^        if:\s*')) 'CONFIG_INVALID' 'Java Shadow scanner is conditional'
+    $stepContinue = [regex]::Matches($scannerStep, '(?m)^        continue-on-error:\s*(?<value>[^\r\n#]+)')
+    Assert-Condition ($stepContinue.Count -le 1) 'CONFIG_INVALID' 'Java Shadow scanner continue-on-error duplicated'
+    if ($stepContinue.Count -eq 1) {
+        Assert-Condition ($stepContinue[0].Groups['value'].Value.Trim() -ceq 'false') 'CONFIG_INVALID' 'Java Shadow scanner can soft-fail'
+    }
 }
 
 function Get-Sha256Text([string]$Text) {
@@ -132,6 +170,15 @@ function Get-CanonicalConfigurationHash([string]$RootPath, [string[]]$RelativePa
 }
 # CANONICAL_CONFIG_HASH_END
 
+if ($ValidateCiShadowContractOnly) {
+    Assert-Condition (-not [string]::IsNullOrWhiteSpace($WorkflowPath)) 'CONFIG_INVALID' 'WorkflowPath is required for CI Shadow contract validation'
+    $resolvedWorkflow = (Resolve-Path -LiteralPath $WorkflowPath -ErrorAction Stop).Path
+    $workflowText = Get-Content -LiteralPath $resolvedWorkflow -Raw -Encoding UTF8
+    Assert-JavaShadowCiContract $workflowText
+    Write-Output 'JAVA_SHADOW_CI_CONTRACT=PASS'
+    return
+}
+
 try {
     $required = @(
         "README.md", "common-java-engineering-standard.md", "java-platform-profile.md", "spring-platform-profile.md", "architecture-overlay.md",
@@ -206,7 +253,7 @@ try {
 
     $ruleDocuments = @('common-java-engineering-standard.md','java-platform-profile.md','spring-platform-profile.md','architecture-overlay.md',$overlays[0])
     $documentedRuleIds = @()
-    foreach ($doc in $ruleDocuments) { $text = Get-Content -LiteralPath (Join-Path $standardRoot $doc) -Raw -Encoding UTF8; $documentedRuleIds += @([regex]::Matches($text, '(?m)^\s*- `([A-Z][A-Z0-9-]+)`：') | ForEach-Object { $_.Groups[1].Value }) }
+    foreach ($doc in $ruleDocuments) { $text = Get-Content -LiteralPath (Join-Path $standardRoot $doc) -Raw -Encoding UTF8; $documentedRuleIds += @([regex]::Matches($text, '(?m)^\s*- `([A-Z][A-Z0-9-]+)`\uFF1A') | ForEach-Object { $_.Groups[1].Value }) }
     Assert-Condition ($documentedRuleIds.Count -gt 0 -and ($documentedRuleIds | Sort-Object -Unique).Count -eq $documentedRuleIds.Count) "RULE_ID_COLLISION" "documented project rule collision"
     $allProjectRuleIds = @($catalogIds + $documentedRuleIds | Sort-Object -Unique)
 
@@ -256,7 +303,7 @@ try {
     foreach ($file in $governed) { $text = Get-Content -LiteralPath $file.FullName -Raw -Encoding UTF8; Assert-Condition ($text -notmatch '(?i)[A-Z]:[\\/](Users|project)[\\/]') "CONFIG_INVALID" "absolute path in $($file.Name)" }
     $links = @(); foreach ($scanRoot in @($standardRoot,(Split-Path $skillPath -Parent),$PSScriptRoot)) { $links += @(Get-ChildItem -LiteralPath $scanRoot -Recurse -Force | Where-Object { $_.Attributes -band [IO.FileAttributes]::ReparsePoint }) }
     Assert-Condition ($links.Count -eq 0) "CONFIG_INVALID" "reparse point or cross-repository link found"
-    Assert-Condition ($ciText.Contains('Java engineering standard Shadow') -and $ciText.Contains('invoke-java-shadow-scan.ps1') -and $ciText -notmatch '(?ms)Java engineering standard Shadow.*?continue-on-error:\s*true') "CONFIG_INVALID" "CI Shadow contract invalid"
+    Assert-JavaShadowCiContract $ciText
 
     $v40VerifierPath = Join-Path $PSScriptRoot 'verify-v40-migration-git-blob.ps1'
     Assert-Condition (Test-Path -LiteralPath $v40VerifierPath -PathType Leaf) "CONFIG_INVALID" "V40 exact Git blob verifier is missing"
