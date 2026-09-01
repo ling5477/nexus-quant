@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatey-freeze
 last_frozen_gate_commit=72fbf5e78f217a02b572a54fadb17dea204b594f
 active_gate=GateAUDIT
 active_gate_status=IN_PROGRESS|NOT_FROZEN
-accepted_batch=GateAUDIT-PHASE4-REMAINING-DISPOSITION-AND-CONSOLIDATION
+accepted_batch=GateAUDIT-PHASE5A-CANONICAL-CI-AND-SUPPLY-CHAIN
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=7ca1fc92f8900e3e9d19184fccd40569f233823f
-accepted_batch_acceptance_head=7ca1fc92f8900e3e9d19184fccd40569f233823f
-accepted_batch_ci_run=33405549149
-work_batch=GateAUDIT-PHASE5A-CANONICAL-CI-AND-SUPPLY-CHAIN
-work_batch_status=IMPLEMENTED|PENDING_REVIEW
+accepted_batch_implementation_commit=d1d20f4087cd337e0b21037b38b377bcbe25499f
+accepted_batch_acceptance_head=d1d20f4087cd337e0b21037b38b377bcbe25499f
+accepted_batch_ci_run=33505000903
+work_batch=GateAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE
+work_batch_status=NOT_STARTED
 work_batch_commit=NONE
 work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEAUDIT-PHASE5A-CANONICAL-DELIVERY-CLOSURE-REVIEW
+next_action=NQ-GATEAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE-IMPLEMENTATION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -44,7 +44,8 @@ nq-current-authority:end -->
 - GateAUDIT-PHASE4-F002-RESTART-PROOF-FOUNDATION：`ACCEPTED / CI_GREEN`；immutable acceptance pair=`0651a7365d1a6afe453d75c8abd3975d458e0b7a / 33387882472`。R1/R2 forked-JVM proof 与 CI datasource binding remediation 已由 exact-head CI 接受，且不等于 Phase6 full L4 qualification。
 - GateAUDIT-PHASE4-F003-ORDER-EXECUTION-IDENTITY-CONVERGENCE：`ACCEPTED / CI_GREEN`；immutable acceptance pair=`327c2229e89c076eace60046b79ec02c622a7fe4 / 33399190770`，exact-head CI=`11/11 SUCCESS`。ordinary Order 是唯一 execution fact，ExecutionIntent 只编排已存在 Order 的外部动作。
 - GateAUDIT-PHASE4-REMAINING-DISPOSITION-AND-CONSOLIDATION：`COMPLETE / ACCEPTED / CI_GREEN`；immutable acceptance pair=`7ca1fc92f8900e3e9d19184fccd40569f233823f / 33405549149`，exact-head CI=`11/11 SUCCESS`，blocking P0/P1=`0/0`。该 pair 是 Phase4 capability acceptance authority，不由后续 current-fact synchronization commit/CI替代。
-- GateAUDIT Phase5A：`IMPLEMENTED / PENDING_CLOSURE_REVIEW`；workstream=`NQ-GATEAUDIT-PHASE5A-CANONICAL-CI-AND-SUPPLY-CHAIN`。Closure Review Attempt-01=`REJECTED / P1 3`；Remediation Attempt-02=`BLOCKED`；Remediation Attempt-03后Closure Review Attempt-02=`REJECTED / P1 1 / JOB_LEVEL_REACHABILITY_BYPASS`；Remediation Attempt-04后Closure Review Attempt-03=`REJECTED / P1 1 / CRITICAL_E2E_JOB_LEVEL_REACHABILITY_BYPASS`。Remediation Attempt-05已将18类canonical critical capability与5个E2E spec绑定到真实execution step及required/unconditional owner，状态=`CRITICAL_E2E_REACHABILITY_P1_REMEDIATED / PENDING_INDEPENDENT_CLOSURE_REVIEW`，不得自行写为CLOSED。P5-F004/P5-F005/P5-F006保持`REMEDIATED_PENDING_CLOSURE_REVIEW`，platform attestation仍为`DEFERRED_UNTIL_EXPLICIT_AUTHORIZATION / id-token NOT_GRANTED`；P5-F001=`LOCAL_REQUIRED_CHECK_BASELINE_READY / REMOTE_ENFORCEMENT_NOT_APPLIED`。`IMAGE_DIGEST_RUNTIME_PULL_PENDING_EXACT_HEAD_CI`与`CRITICAL_E2E_ADMISSION_PENDING_FIXTURE_REPAIR`继续为P2；P5-F002/F003/F007/F008/F009保持`OPEN / NOT_IMPLEMENTED`。本candidate未commit、未push、未运行exact-head CI，也未修改远端ruleset/branch protection。
+- GateAUDIT Phase5A：`ACCEPTED / CI_GREEN`；immutable acceptance pair=`d1d20f4087cd337e0b21037b38b377bcbe25499f / 33505000903`，exact-head CI=`completed / success / 9 of 9`，blocking P0/P1=`0/0`。P5-F001=`LOCAL_REQUIRED_CHECK_BASELINE_ACCEPTED / REMOTE_ENFORCEMENT_NOT_APPLIED`；P5-F004与P5-F006=`ACCEPTED / CLOSED`；P5-F005=`INTERNAL_SBOM_PROVENANCE_ACCEPTED`，platform attestation仍为`DEFERRED_UNTIL_EXPLICIT_AUTHORIZATION / id-token NOT_GRANTED`。`IMAGE_DIGEST_RUNTIME_PULL_PENDING_EXACT_HEAD_CI`与`CRITICAL_E2E_ADMISSION_PENDING_FIXTURE_REPAIR`已由该exact-head CI关闭；remote required checks仍未应用或验证。
+- GateAUDIT Phase5B：`NOT_STARTED`；workstream=`GateAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE`。P5-F002=`CANONICAL_RELEASE_DEPLOYMENT_PATH_ABSENT / OPEN`与P5-F003=`CURRENT_SCHEMA_RESTORE_NOT_PROVEN / OPEN`是同一deployment/recovery capability的blocking inputs；P5-F007/F008/F009继续`OPEN / NOT_IMPLEMENTED`，不得在实现与独立高风险Review前提前关闭。
 
 ## 2. Accepted pilot facts
 
@@ -73,4 +74,4 @@ updated_commit=72fbf5e78f217a02b572a54fadb17dea204b594f
 
 ## 5. 下一允许动作
 
-- 当前唯一治理动作是 `NQ-GATEAUDIT-PHASE5A-CANONICAL-DELIVERY-CLOSURE-REVIEW`。该Review只验证原P1、两个enforcement P2及既有Phase5-A invariants，确认candidate fingerprint一致且P0/P1=0；不得重新执行完整Phase5-A审计、增加第二轮supply-chain/full review、启动Phase5-B/C或Phase6、再次pilot或扩大LIVE能力。
+- 下一允许动作是 `NQ-GATEAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE-IMPLEMENTATION`：一次形成P5-F002 canonical release/deployment path与P5-F003 current-schema backup/restore proof的完整candidate，完成整个能力闭环后只做一次独立高风险Review。当前Phase5B仍为`NOT_STARTED`；不得在本次authority sync中实现代码、deploy、restore或rollback，也不得访问生产服务器、生产数据库、credential、LIVE或真实交易所私有接口。

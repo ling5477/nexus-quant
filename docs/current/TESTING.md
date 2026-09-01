@@ -14967,3 +14967,12 @@ Attempt-01=`FAIL / CHANGES_REQUIRED`：P1-01=`INTERPROCESS_DURABILITY_CHECK_ABSE
 - Positive/invariants：canonical workflow PASS；critical capabilities=18、E2E specs bound=5、required jobs=9；Actions=24/24、PostgreSQL=3/3、frontend build=1、permissions/no-id-token/no-secret边界保持。Gitleaks、provenance、NoSkipReporter、SnakeYAML、PowerShell parser与`git diff --check`均PASS；production Java/migration/frontend product/research/deploy diff=0。
 - Not run：Full Maven=`NOT_REQUIRED`；workflow、Gitleaks wrapper、runtime fixture与P2/P3 residual未修改。
 - Evidence：[Attempt-05 remediation evidence](../audit/evidence/GATEAUDIT_PHASE5A_CANONICAL_DELIVERY_REMEDIATION_ATTEMPT_05.md)。Result=`IMPLEMENTED / CRITICAL_E2E_REACHABILITY_P1_REMEDIATED / PENDING_INDEPENDENT_CLOSURE_REVIEW`；最终关闭权属于Closure Review Attempt-04。
+
+## 2026-09-01 — GateAUDIT Phase5A post-CI authority acceptance
+
+- Acceptance baseline：branch=`audit/post-gatey-agent-baseline`，implementation/head=`d1d20f4087cd337e0b21037b38b377bcbe25499f`；exact-head CI run=`33505000903 / workflow_dispatch / completed / success / 9 of 9 / failed 0 / skipped 0`；P0/P1=`0/0`。
+- Java governance：`Java architecture guard=SUCCESS`，configuration verifier、Shadow scanner与report upload均成功；stable job ID与strict step-level scanner consumer contract已由双PowerShell regression和Linux exact-head CI验证。
+- Critical E2E：canonical allowlist=`5 specs / 20 cases / skipped 0`；loopback=`18/18 passed`，real-backend=`2/2 passed`，两个`CRITICAL_E2E_NO_SKIP`均为`status=passed`。`CRITICAL_E2E_ADMISSION_PENDING_FIXTURE_REPAIR`关闭。
+- Delivery/runtime：digest-pinned PostgreSQL实际pull且service healthy，Flyway/repository/nq-app smoke均成功；frontend/backend SBOM、artifact manifest、internal provenance、pre-upload admission、三项upload与post-upload readback全部成功。`IMAGE_DIGEST_RUNTIME_PULL_PENDING_EXACT_HEAD_CI`关闭。
+- Finding disposition：P5-F001=`LOCAL_REQUIRED_CHECK_BASELINE_ACCEPTED / REMOTE_ENFORCEMENT_NOT_APPLIED`；P5-F004/P5-F006=`ACCEPTED / CLOSED`；P5-F005=`INTERNAL_SBOM_PROVENANCE_ACCEPTED`且platform attestation继续deferred；P5-F002/F003/F007/F008/F009保持`OPEN / NOT_IMPLEMENTED`。
+- Scope：本次仅同步current authority与Phase5B entry，不重新审Phase5A，不运行Full Maven，不修改业务代码、CI、scripts、deploy或migration；remote enforcement=`NOT_APPLIED / NOT_VERIFIED`，Playwright generated-file cleanup保持P3 residual。

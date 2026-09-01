@@ -18,6 +18,10 @@ Phase4 remaining disposition closeout ACCEPTED / CI_GREEN
 7ca1fc92f8900e3e9d19184fccd40569f233823f / 33405549149
   ↓
 NQ-GATEAUDIT-PHASE5A-CANONICAL-CI-AND-SUPPLY-CHAIN
+  ↓
+d1d20f4087cd337e0b21037b38b377bcbe25499f / 33505000903 ACCEPTED / CI_GREEN
+  ↓
+NQ-GATEAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE-IMPLEMENTATION
 ```
 
 ## Phase4 accepted foundation
@@ -40,34 +44,34 @@ NQ-GATEAUDIT-PHASE5A-CANONICAL-CI-AND-SUPPLY-CHAIN
 | Legacy Phase3 identifier F-011 | title/source/owner/consumer均不可恢复 | 不产生任何新语义或implementation mapping | `LEGACY_FINDING_IDENTITY_UNRECOVERABLE / RETIRED` | 保留历史ledger记录，但禁止Phase5继承或猜测未知语义 | Historical evidence only | 仅在找到可验证canonical source时重新审计identity | Retired |
 | Gate-specific GateW/GateY release/deploy helpers | 默认不运行；仍有脚本间caller和rollback/release引用 | canonical deployment baseline | `DEFER_UNTIL_TRIGGER` | 当前删除会破坏cross-script contracts | Phase5 deployment owner | Phase5 canonical deployment rebuild开始且replacement通过回归 | Phase5 |
 | Historical plans与attempt evidence | 明确non-authoritative、保留append-only链接 | history不得参与authority/runtime | `NOT_REQUIRED` | 已通过fact-source分类隔离，不改写历史正文 | docs/archive owners | 仅引用迁移有独立授权时 | Historical |
-| Supply-chain immutable action pinning | actions仍以major tag引用并产生deprecation warning | immutable action/SBOM/provenance baseline | `IMPLEMENT_LATER` | 属CI/CD hardening，不是Phase4 correctness blocker | Phase5 CI owner | Phase5任务启动 | Phase5 |
-| Canonical deployment rebuild | Gate-specific tooling仍分散 | single canonical deploy/release path | `IMPLEMENT_LATER` | 本轮禁止deployment rebuild | Phase5 deployment owner | Phase5任务启动 | Phase5 |
+| Supply-chain immutable action pinning | 24处Actions、工具consumer与3处PostgreSQL image已由lock和exact-head CI验证 | immutable action/SBOM/provenance baseline | `NOT_REQUIRED` | Phase5A baseline已接受，不重复实现 | Phase5 CI owner | acceptance pair失效时才重开 | Phase5A |
+| Canonical deployment rebuild | Gate-specific tooling仍分散，且current schema restore未证明 | single canonical deploy/release/restore path | `IMPLEMENT_NOW` | P5-F002与P5-F003是Phase5B blocking capability | Phase5 deployment/recovery owner | Phase5B implementation | Phase5B |
 | Minimum observability baseline | 当前有Actuator/log/audit局部能力 | deployment health/log/metric/alert minimum | `IMPLEMENT_LATER` | 需绑定canonical deployment | Phase5 observability owner | canonical deployment candidate存在 | Phase5 |
-| Selected frontend E2E expansion | 现有build、no-backend与adapter readiness E2E green | Phase5 selected critical-flow matrix | `IMPLEMENT_LATER` | 当前无frontend behavior diff | Phase5 frontend QA owner | Phase5 test-scope确定 | Phase5 |
+| Selected frontend E2E expansion | 5-spec/20-case/skip=0 critical-flow matrix已由exact-head CI接受 | Phase5 selected critical-flow matrix | `NOT_REQUIRED` | Phase5A baseline已接受，不重复扩展 | Phase5 frontend QA owner | acceptance pair或critical scope失效时才重开 | Phase5A |
 | accepted-timeout / lost ACK / cancel-fill race / kill-in-flight / external-side-effect+DB failure / multi-instance lease | 尚未证明 | real-process deterministic L4 matrix | `PROVE_FIRST` | F-002只接受restart foundation | Phase6 qualification owner | Phase5 deployment+observability baseline accepted | Phase6 L4 |
 | L5/L6 scale、chaos与长期qualification | 未执行 | Phase6 L4 accepted | `PROVE_FIRST` | 不得越过L4直接实现 | Phase6 qualification owner | L4 accepted后 | Phase6 L5/L6 |
 | 第二pilot、通用LIVE、真实交易扩展、transfer/withdraw | 未授权 | explicit future authority + safety review | `REJECT` | 超出GateAUDIT与Phase4/5/6 proof边界 | future trading governance | 新任务与显式授权同时存在 | Not scheduled |
 
 ## Phase5 inputs
 
-- 当前CI基线为11 jobs；Phase4 closeout exact-head run `33405549149`为`completed / success / 11 jobs / bad=0`。
+- 当前accepted CI基线为9 jobs；Phase5A exact-head pair=`d1d20f4087cd337e0b21037b38b377bcbe25499f / 33505000903`，run=`completed / success / 9 of 9 / failed 0 / skipped 0`。
 - Legacy Phase3 IDs F-005/F-011的canonical source不可恢复，已退休；Phase5只使用以下inventory seed，不继承未知语义。
 - Gate-specific release/deploy helpers只作为输入inventory；Phase5不得为兼容历史路径修改canonical implementation。
-- 需要建立canonical deployment、minimum observability、immutable supply-chain pinning与selected E2E scope。
+- Phase5A已建立immutable supply-chain pinning、internal SBOM/provenance与selected E2E scope；Phase5B需要一次建立canonical deployment与current-schema backup/restore proof，minimum observability仍为后续open input。
 - LIVE保持`DISABLED`、kill switch保持`ENGAGED`；不读取credential、不触发真实provider。
 
 ### Phase5 finding seed
 
-以下 finding 来自 `NQ-GATEAUDIT-PHASE5-CI-CD-DEPLOYMENT-HARDENING` 只读 inventory；Phase5A只更新本轮授权的F001/F004/F005/F006，其余保持`OPEN / NOT_IMPLEMENTED`。
+以下 finding 来自 `NQ-GATEAUDIT-PHASE5-CI-CD-DEPLOYMENT-HARDENING` 只读 inventory；Phase5A已接受F001 local baseline与F004/F005/F006，Phase5B只以F002/F003为本轮blocking inputs，F007/F008/F009保持`OPEN / NOT_IMPLEMENTED`。
 
 | ID | Severity | Finding | Status | Evidence summary |
 | --- | --- | --- | --- | --- |
-| P5-F001 | P1 | `CI_REQUIRED_CHECK_ENFORCEMENT_ABSENT` | `LOCAL_REQUIRED_CHECK_BASELINE_READY / REMOTE_ENFORCEMENT_NOT_APPLIED` | 9个稳定capability check names已有machine regression；未调用GitHub API写ruleset/branch protection |
+| P5-F001 | P1 | `CI_REQUIRED_CHECK_ENFORCEMENT_ABSENT` | `LOCAL_REQUIRED_CHECK_BASELINE_ACCEPTED / REMOTE_ENFORCEMENT_NOT_APPLIED` | 9个稳定capability check names与exact-head CI已接受；未调用GitHub API写ruleset/branch protection |
 | P5-F002 | P1 | `CANONICAL_RELEASE_DEPLOYMENT_PATH_ABSENT` | `OPEN / NOT_IMPLEMENTED` | `.github/workflows/ci.yml`不构建/验证release；GateW/GateY/freeze helper仅在legacy闭环内互调 |
 | P5-F003 | P1 | `CURRENT_SCHEMA_RESTORE_NOT_PROVEN` | `OPEN / NOT_IMPLEMENTED` | GateW restore止于V35、GateY restore止于V39，而current schema为V46 |
-| P5-F004 | P2 | `SUPPLY_CHAIN_IDENTITIES_MUTABLE` | `REMEDIATED_PENDING_CLOSURE_REVIEW` | lock对24处Actions、gitleaks/CycloneDX真实consumer与3处PostgreSQL image双向enforce；npm=`ci`、Playwright=`--no-install`；gitleaks绑定verified absolute path，sentinel/missing/finding/error均fail-closed |
-| P5-F005 | P2 | `SBOM_PROVENANCE_ATTESTATION_ABSENT` | `INTERNAL_SBOM_PROVENANCE_REMEDIATED_PENDING_CLOSURE_REVIEW` | backend/frontend本地产物、SBOM、manifest与provenance在首次delivery upload前独立readback PASS，上传后再做第二层readback；missing/tamper/identity/soft-fail/conditional/order负例均拒绝；platform attestation继续defer |
-| P5-F006 | P2 | `CI_DUPLICATION_AND_CRITICAL_E2E_COVERAGE_GAP` | `REMEDIATED_PENDING_CLOSURE_REVIEW` | 11→9 jobs、production build=1与5-spec/20-case/skip=0 invariant保持；`CRITICAL_E2E_ADMISSION_PENDING_FIXTURE_REPAIR`继续为P2，不在本轮处理 |
+| P5-F004 | P2 | `SUPPLY_CHAIN_IDENTITIES_MUTABLE` | `ACCEPTED / CLOSED` | lock对24处Actions、gitleaks/CycloneDX真实consumer与3处PostgreSQL image双向enforce；exact-head CI已验证digest pull、consumer与fail-closed contracts |
+| P5-F005 | P2 | `SBOM_PROVENANCE_ATTESTATION_ABSENT` | `INTERNAL_SBOM_PROVENANCE_ACCEPTED` | backend/frontend artifact、SBOM、manifest与provenance已完成pre-upload admission、upload与post-upload readback；platform attestation继续`DEFERRED_UNTIL_EXPLICIT_AUTHORIZATION` |
+| P5-F006 | P2 | `CI_DUPLICATION_AND_CRITICAL_E2E_COVERAGE_GAP` | `ACCEPTED / CLOSED` | 9 jobs、production build=1、5-spec/20-case/skip=0由exact-head CI接受；loopback 18/18、real-backend 2/2，两个NoSkip reporter均PASS |
 | P5-F007 | P2 | `MINIMUM_OPERATIONAL_OBSERVABILITY_INCOMPLETE` | `OPEN / NOT_IMPLEMENTED` | scheduler/worker、reconciliation、ledger recovery与critical alert缺统一运行观测 |
 | P5-F008 | P2 | `PROD_CONFIGURATION_FAIL_CLOSED_GAP` | `OPEN / NOT_IMPLEMENTED` | prod datasource仍有host/user/password fallback，缺失配置不会在配置解析期fail closed |
 | P5-F009 | P2 | `LEGACY_GATE_SPECIFIC_ACTIVE_ASSET_DEBT` | `OPEN / NOT_IMPLEMENTED` | active tree仍保留GateW/GateY/freeze release/deploy/systemd入口且无current canonical replacement |
@@ -84,12 +88,12 @@ NQ-GATEAUDIT-PHASE5A-CANONICAL-CI-AND-SUPPLY-CHAIN
 
 ## 下一允许动作
 
-- Phase4 immutable acceptance pair=`7ca1fc92f8900e3e9d19184fccd40569f233823f / 33405549149`；不得由本次authority reconciliation commit/CI替代。
-- 当前workstream：`NQ-GATEAUDIT-PHASE5A-CANONICAL-CI-AND-SUPPLY-CHAIN`，状态=`IMPLEMENTED / PENDING_CLOSURE_REVIEW`。
-- machine next action：`NQ-GATEAUDIT-PHASE5A-CANONICAL-DELIVERY-CLOSURE-REVIEW`，matcher type=`REVIEW`。该Review只关闭原P1与两个enforcement P2并检查既有invariants；Review通过前不得commit/push或申请远端required-check enforcement。
+- Phase5A immutable acceptance pair=`d1d20f4087cd337e0b21037b38b377bcbe25499f / 33505000903`；不得由本次current-fact synchronization commit替代。
+- 当前workstream：`GateAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE`，状态=`NOT_STARTED`。
+- machine next action：`NQ-GATEAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE-IMPLEMENTATION`，matcher type=`IMPLEMENTATION`。P5-F002与P5-F003必须一次形成完整deployment/recovery candidate，完成能力闭环后只做一次独立高风险Review；本轮不实现release builder、installer、restore或rollback。
 
 ## Persistent boundary
 
 - `LIVE=DISABLED`、kill switch=`ENGAGED`；禁止再次pilot、PLACE、CANCEL、transfer、withdraw或credential/生产服务器/生产数据库访问。
 - GateY frozen archive与published tags不可改写。
-- 本次authority reconciliation不实施Phase5/Phase6 capability。
+- 本次authority reconciliation不实施Phase5B/Phase6 capability；remote enforcement保持`NOT_APPLIED / NOT_VERIFIED`，platform attestation保持deferred。

@@ -19779,3 +19779,11 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Regression：新增E2E conditional relocation、non-required relocation、execution removed/text retained三项负例；required-job IDs由validator单一事实源输出，tests参数化证明9/9 job conditional和9/9 soft-fail均REJECTED。新总mutation=40，旧suite无回归。
 - Validation：canonical/Gitleaks/provenance/NoSkip/YAML/PowerShell/authority/diff均PASS；required checks=9、Actions=24/24、PostgreSQL=3/3、build=1、critical E2E=5 specs与安全边界保持。Full Maven未运行且不需要。
 - Evidence：[Attempt-05](../audit/evidence/GATEAUDIT_PHASE5A_CANONICAL_DELIVERY_REMEDIATION_ATTEMPT_05.md)。Result=`IMPLEMENTED / CRITICAL_E2E_REACHABILITY_P1_REMEDIATED / PENDING_INDEPENDENT_CLOSURE_REVIEW`；staged/commit/push=`0/NONE/NONE`；next=`NQ-GATEAUDIT-PHASE5A-CANONICAL-DELIVERY-CLOSURE-REVIEW / Attempt-04`。
+
+## 2026-09-01 — GateAUDIT Phase5A post-CI authority acceptance and Phase5B entry
+
+- Baseline：branch=`audit/post-gatey-agent-baseline`，HEAD/remote=`d1d20f4087cd337e0b21037b38b377bcbe25499f`，starting worktree/staged=`0/0`；exact-head run `33505000903`=`completed / success / 9 of 9 / failed 0 / skipped 0`。
+- Phase5A acceptance：accepted batch切换为`GateAUDIT-PHASE5A-CANONICAL-CI-AND-SUPPLY-CHAIN / ACCEPTED|CI_GREEN`，immutable pair=`d1d20f4087cd337e0b21037b38b377bcbe25499f / 33505000903`，P0/P1=`0/0`，两个runtime P2 residual已关闭。
+- Findings：P5-F001 local baseline accepted但remote enforcement仍未应用；P5-F004/P5-F006 accepted并closed；P5-F005 internal SBOM/provenance accepted且platform attestation继续deferred；P5-F002/F003保持Phase5B blocking P1，P5-F007/F008/F009保持后续P2。
+- Phase5B entry：work batch=`GateAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE / NOT_STARTED / NONE / NOT_RUN`；next=`NQ-GATEAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE-IMPLEMENTATION`。P5-F002 canonical deployment与P5-F003 current-schema backup/restore必须形成一个完整candidate，完成后只做一次独立高风险Review。
+- Boundary：仅修改`STATUS/ROADMAP/TESTING/WORKLOG`；`FACT_SOURCE_INDEX` owner关系不变。未修改backend/frontend/research/scripts/deploy/.github/migration，未访问生产服务器、生产DB、credential或真实交易所，未启用LIVE/PLACE/CANCEL。
