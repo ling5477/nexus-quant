@@ -299,7 +299,7 @@ try {
             param($case);$content=(Get-Content $case.Workflow -Raw).Replace("      - name: $name","      - name: $name`n        continue-on-error: true");[IO.File]::WriteAllText($case.Workflow,$content)
         }.GetNewClosure()
         Assert-WorkflowRejected "$caseName-failure-ignored" {
-            param($case);$content=Get-Content $case.Workflow -Raw;$pattern='(?m)^(\s*run:\s*[^\r\n]+)$';$stepPattern='(?ms)(^      - name:\s*'+[regex]::Escape($name)+'\s*\r?\n.*?)(?=^      - name:|^  [A-Za-z0-9_-]+:\s*$|\z)';$match=[regex]::Match($content,$stepPattern);Assert-Condition $match.Success "Missing critical fixture: $name";$mutated=[regex]::Replace($match.Value,$pattern,'$1 || true',1);[IO.File]::WriteAllText($case.Workflow,$content.Remove($match.Index,$match.Length).Insert($match.Index,$mutated))
+            param($case);$content=Get-Content $case.Workflow -Raw;$pattern='(?m)^(\s*run:\s*[^\r\n]+)$';$stepPattern='(?ms)(^      - name:\s*'+[regex]::Escape($name)+'\s*\r?\n.*?)(?=^      - name:|^  [A-Za-z0-9_-]+:\s*$|\z)';$match=[regex]::Match($content,$stepPattern);if(-not$match.Success){throw "Missing critical fixture: $name"};$mutated=[regex]::Replace($match.Value,$pattern,'$1 || true',1);[IO.File]::WriteAllText($case.Workflow,$content.Remove($match.Index,$match.Length).Insert($match.Index,$mutated))
         }.GetNewClosure()
     }
 
