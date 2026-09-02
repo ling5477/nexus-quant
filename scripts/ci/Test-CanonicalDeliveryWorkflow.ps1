@@ -1,7 +1,12 @@
 [CmdletBinding()]
 param(
     [string] $WorkflowPath = '.github/workflows/ci.yml',
-    [string] $SupplyChainLockPath = 'scripts/ci/delivery-supply-chain-lock.json'
+    [string] $SupplyChainLockPath = 'scripts/ci/delivery-supply-chain-lock.json',
+    [string] $RestoreDrillPath = 'scripts/deployment/Invoke-NqCanonicalRestoreDrill.ps1',
+    [string] $ReleaseRegressionPath = 'scripts/deployment/tests/Test-NqCanonicalRelease.Tests.ps1',
+    [string] $ReleaseBuilderPath = 'scripts/deployment/New-NqCanonicalRelease.ps1',
+    [string] $InstallerPath = 'scripts/deployment/Install-NqCanonicalRelease.ps1',
+    [string] $DeploymentContractPath = 'deploy/canonical/deployment-contract.json'
 )
 
 Set-StrictMode -Version Latest
@@ -103,6 +108,14 @@ function Assert-RequiredStep(
     }
     Assert-Condition (-not [regex]::IsMatch($step.Text, '(?m)^\s+continue-on-error:\s*true\s*$')) "Required workflow step soft-fails: $Name"
     Assert-Condition (-not [regex]::IsMatch($step.Text, '(?m)^\s+if:\s*')) "Required workflow step is conditional: $Name"
+    return $step
+}
+
+function Assert-SinglePurposeStep([object[]]$Steps,[string]$Name,[string]$Job,[string]$Invocation) {
+    $step=Assert-RequiredStep $Steps $Name $Job
+    $runPattern='(?m)^\s*run:\s*'+[regex]::Escape($Invocation)+'\s*$'
+    Assert-Condition ([regex]::Matches($step.Body,$runPattern).Count-eq1) "Critical step invocation mismatch: $Name"
+    Assert-Condition (-not[regex]::IsMatch($step.Body,'(?i)(\|\|\s*true|;\s*exit\s+0|try\s*\{|catch\s*\{|ErrorAction\s+SilentlyContinue|LASTEXITCODE)')) "Critical step can ignore failure: $Name"
     return $step
 }
 
@@ -273,6 +286,67 @@ $lockValidationStep = Assert-RequiredStep $steps 'Validate canonical delivery wo
 Assert-Condition ($lockValidationStep.Body.Contains('Test-CanonicalDeliveryWorkflow.ps1')) 'Canonical lock validator invocation is missing'
 Assert-Condition ($lockValidationStep.Body.Contains('Test-CanonicalDeliveryWorkflow.Tests.ps1')) 'Canonical lock mutation regressions are not executed'
 Assert-Condition ($lockValidationStep.Body.Contains('Test-GitleaksExecution.Tests.ps1')) 'Gitleaks execution regressions are not executed'
+Assert-Condition ($lockValidationStep.Body.Contains('Test-NqCanonicalRelease.Tests.ps1')) 'Canonical release regression is not executed'
+
+$releaseBuildStep=Assert-SinglePurposeStep $steps 'Build canonical release and external admission' 'frontend-critical' './scripts/deployment/Build-NqCanonicalReleaseCi.ps1 -SourceCommit $env:NQ_SOURCE_COMMIT'
+$releaseVerifyStep=Assert-SinglePurposeStep $steps 'Verify canonical release and external admission' 'frontend-critical' './scripts/deployment/Test-NqCanonicalReleaseCi.ps1 -SourceCommit $env:NQ_SOURCE_COMMIT'
+$releaseInstallStep=Assert-SinglePurposeStep $steps 'Install and activate admitted canonical release' 'frontend-critical' './scripts/deployment/Install-NqCanonicalReleaseCi.ps1 -SourceCommit $env:NQ_SOURCE_COMMIT'
+$restoreStep=Assert-SinglePurposeStep $steps 'Run current-schema backup and restore drill' 'postgres-flyway' './scripts/deployment/Invoke-NqCanonicalRestoreCi.ps1 -SourceCommit $env:NQ_SOURCE_COMMIT'
+$backupStep=Assert-SinglePurposeStep $steps 'Verify canonical backup creation and integrity' 'postgres-flyway' "./scripts/deployment/Test-NqCanonicalRestoreProof.ps1 -Capability BACKUP_INTEGRITY -ProofRoot 'artifacts/phase5b-current-schema-restore' -ExpectedCommit `$env:NQ_SOURCE_COMMIT"
+$postRestoreStep=Assert-SinglePurposeStep $steps 'Verify canonical post-restore validation' 'postgres-flyway' "./scripts/deployment/Test-NqCanonicalRestoreProof.ps1 -Capability POST_RESTORE_VALIDATION -ProofRoot 'artifacts/phase5b-current-schema-restore' -ExpectedCommit `$env:NQ_SOURCE_COMMIT"
+
+Assert-Condition (Test-Path -LiteralPath $RestoreDrillPath -PathType Leaf) 'Restore drill implementation is missing'
+Assert-Condition (Test-Path -LiteralPath $ReleaseRegressionPath -PathType Leaf) 'Canonical release regression implementation is missing'
+Assert-Condition (Test-Path -LiteralPath $ReleaseBuilderPath -PathType Leaf) 'Canonical release builder implementation is missing'
+Assert-Condition (Test-Path -LiteralPath $InstallerPath -PathType Leaf) 'Canonical installer implementation is missing'
+Assert-Condition (Test-Path -LiteralPath $DeploymentContractPath -PathType Leaf) 'Canonical deployment contract is missing'
+$restoreImplementation = Get-Content -LiteralPath $RestoreDrillPath -Raw -Encoding UTF8
+$releaseRegression = Get-Content -LiteralPath $ReleaseRegressionPath -Raw -Encoding UTF8
+$releaseBuilder = Get-Content -LiteralPath $ReleaseBuilderPath -Raw -Encoding UTF8
+$installerImplementation = Get-Content -LiteralPath $InstallerPath -Raw -Encoding UTF8
+try { $deploymentContract = Get-Content -LiteralPath $DeploymentContractPath -Raw -Encoding UTF8 | ConvertFrom-Json } catch { throw 'Canonical deployment contract JSON is invalid' }
+Assert-Condition (-not $releaseBuilder.Contains('AllowCandidateWorktree')) 'Deployable release builder retains dirty-worktree bypass'
+foreach($marker in @('DEPLOYABLE_RELEASE_REQUIRES_CLEAN_COMMITTED_TREE','UNCOMMITTED_CANDIDATE','candidate-sha256:',
+        'BackendArtifactManifestPath','FrontendArtifactManifestPath','DEPLOYABLE_ARTIFACT_SET_MISMATCH')) {
+    Assert-Condition ($releaseBuilder.Contains($marker)) "Release source identity capability is missing: $marker"
+}
+foreach($marker in @('NON_DEPLOYABLE_RELEASE_FORBIDDEN','nq-canonical-activation-journal.v2','HMACSHA256',
+        'CALLER_CONTROLLED_ROLLBACK_TARGET_FORBIDDEN','DATABASE_RECOVERY_REQUIRED','DATABASE_STATE_EVIDENCE_REQUIRED',
+        'nq-canonical-activation-head.v1','STALE_ACTIVATION_AUTHORITY','Assert-KeyIdentity',
+        'Enter-ActivationOperationLock','ACTIVATION_OPERATION_LOCK_TIMEOUT','FileShare]::None')) {
+    Assert-Condition ($installerImplementation.Contains($marker)) "Activation/rollback capability is missing: $marker"
+}
+Assert-Condition ([int]$deploymentContract.database.postgresqlServerMajor -eq 16 -and
+        [int]$deploymentContract.database.backupToolMajor -eq 16 -and
+        [int]$deploymentContract.database.restoreToolMajor -eq 16) 'Canonical PostgreSQL major contract must be 16/16/16'
+Assert-Condition ([string]$deploymentContract.releaseAdmission.productionMode -ceq 'EXACT_HEAD_CI' -and
+        [bool]$deploymentContract.releaseAdmission.bundleSelfProofAllowed -eq $false -and
+        [bool]$deploymentContract.releaseAdmission.callerProvidedTrustRootAllowed -eq $false) 'Canonical external admission contract is invalid'
+$wrapperContracts=[ordered]@{
+    'scripts/deployment/Build-NqCanonicalReleaseCi.ps1'=@('New-NqCanonicalRelease.ps1','New-NqCanonicalReleaseAdmission.ps1','EXACT_HEAD_CI')
+    'scripts/deployment/Test-NqCanonicalReleaseCi.ps1'=@('Test-NqCanonicalRelease.ps1','Test-NqCanonicalReleaseAdmission.ps1','EXACT_HEAD_CI')
+    'scripts/deployment/Install-NqCanonicalReleaseCi.ps1'=@('Install-NqCanonicalRelease.ps1','trusted-release-admission','TestProductionPolicy')
+    'scripts/deployment/Invoke-NqCanonicalRestoreCi.ps1'=@('Invoke-NqCanonicalRestoreDrill.ps1','phase5b-current-schema-restore')
+    'scripts/deployment/Test-NqCanonicalRestoreProof.ps1'=@('Test-NqCanonicalBackup','BACKUP_INTEGRITY','POST_RESTORE_VALIDATION')
+}
+foreach($wrapper in $wrapperContracts.GetEnumerator()){
+    Assert-Condition (Test-Path $wrapper.Key -PathType Leaf) "Canonical critical wrapper missing: $($wrapper.Key)"
+    $wrapperText=Get-Content $wrapper.Key -Raw -Encoding UTF8
+    foreach($marker in $wrapper.Value){Assert-Condition $wrapperText.Contains($marker) "Canonical critical wrapper contract missing: $($wrapper.Key) marker=$marker"}
+}
+foreach ($marker in @('Test-NqCanonicalBackup', "Invoke-Flyway 'validate'", 'Invoke-Smoke $target',
+        'tampered-backup', 'truncated-backup', 'wrong-schema-target', 'restore-command-failure',
+        'post-restore-validation-mismatch', 'missing-flyway-history')) {
+    Assert-Condition ($restoreImplementation.Contains($marker)) "Restore drill security capability is missing: $marker"
+}
+Assert-Condition (-not [regex]::IsMatch($restoreImplementation, '(?s)if\s*\(\$false\)\s*\{.{0,500}Test-NqCanonicalBackup')) 'Backup integrity admission is conditional'
+Assert-Condition (-not $restoreImplementation.Contains('Test-NqCanonicalBackup -ErrorAction SilentlyContinue')) 'Backup integrity admission can soft-fail'
+foreach ($marker in @('same-source-same-artifact-deterministic-identity', 'manifest-missing-rejected',
+        'hard-link-rejected', 'immutable-install-and-atomic-initial-activation', 'verified-code-rollback',
+        'cross-process-activation-serialization-eight-processes','activation-vs-rollback-serialized',
+        'recovery-vs-activation-serialized','process-termination-releases-operation-lock')) {
+    Assert-Condition ($releaseRegression.Contains($marker)) "Canonical release regression capability is missing: $marker"
+}
 
 $npmInstallStep = Assert-RequiredStep $steps 'Install frontend dependencies' 'frontend-critical'
 Assert-Condition ([regex]::IsMatch($npmInstallStep.Body, '(?m)^\s*run:\s*npm ci\s*$')) 'Canonical frontend install must use npm ci'
@@ -285,7 +359,8 @@ Assert-Condition ([regex]::IsMatch($playwrightInstallStep.Body, '(?m)^\s*run:\s*
 $frontendBuildStep = Assert-RequiredStep $steps 'Build frontend production artifact' 'frontend-critical'
 $backendBuildStep = Assert-RequiredStep $steps 'Package backend application artifact' 'frontend-critical'
 Assert-Condition ([regex]::IsMatch($frontendBuildStep.Body, '(?m)^\s*run:\s*npm run build\s*$')) 'Canonical frontend production build invocation is missing'
-Assert-Condition ($backendBuildStep.Body.Contains('mvn -f backend/pom.xml -pl nq-app -am -DskipTests package')) 'Canonical backend artifact build invocation is missing'
+Assert-Condition ($backendBuildStep.Body.Contains('mvn -f backend/pom.xml -pl nq-app -am -DskipTests install')) 'Canonical backend reactor install invocation is missing'
+Assert-Condition ($backendBuildStep.Body.Contains('mvn -f backend/nq-app/pom.xml -DskipTests package spring-boot:repackage')) 'Executable Spring Boot application artifact build is missing'
 
 $loopbackE2eStep = Assert-RequiredStep $steps 'Run loopback critical E2E allowlist' 'frontend-critical'
 $realBackendE2eStep = Assert-RequiredStep $steps 'Run real-backend critical E2E allowlist' 'frontend-critical'
@@ -353,6 +428,12 @@ $criticalCapabilities = [ordered]@{
     'post-upload-provenance-readback' = $postUploadReadbackStep
     'critical-e2e-loopback-execution' = $loopbackE2eStep
     'critical-e2e-real-backend-execution' = $realBackendE2eStep
+    'canonical-release-build' = $releaseBuildStep
+    'canonical-release-verifier' = $releaseVerifyStep
+    'canonical-release-install-activation' = $releaseInstallStep
+    'current-schema-restore-drill' = $restoreStep
+    'backup-integrity-check' = $backupStep
+    'post-restore-validation' = $postRestoreStep
 }
 foreach ($capability in $criticalCapabilities.GetEnumerator()) {
     $owner = [string]$capability.Value.Job
@@ -372,6 +453,8 @@ Write-Output 'SUPPLY_CHAIN_CONSUMERS=npm-ci,playwright-no-install,cyclonedx-pinn
 Write-Output "REQUIRED_JOBS_UNCONDITIONAL=$($requiredJobIds.Count)"
 Write-Output "REQUIRED_JOB_IDS=$($requiredJobIds -join ',')"
 Write-Output "CRITICAL_CAPABILITIES_OWNERSHIP=$($criticalCapabilities.Count)"
+Write-Output 'CRITICAL_CAPABILITIES_MISSING=0'
+Write-Output 'CRITICAL_CAPABILITIES_UNKNOWN=0'
 Write-Output "CRITICAL_E2E_SPECS_BOUND=$($loopbackSpecs.Count + $realBackendSpecs.Count)"
 Write-Output "REQUIRED_CHECK_CANDIDATE=$candidate"
 Write-Output 'REMOTE_ENFORCEMENT=NOT_APPLIED'

@@ -53,6 +53,7 @@ jobs:
           ./scripts/ci/Test-CanonicalDeliveryWorkflow.ps1
           ./scripts/ci/tests/Test-CanonicalDeliveryWorkflow.Tests.ps1
           ./scripts/ci/tests/Test-GitleaksExecution.Tests.ps1
+          ./scripts/deployment/tests/Test-NqCanonicalRelease.Tests.ps1
 
   no-outbound-guard:
     name: Runtime safety and no-outbound
@@ -299,7 +300,7 @@ jobs:
   postgres-flyway:
     name: PostgreSQL and Flyway
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     services:
       postgres:
@@ -674,6 +675,24 @@ jobs:
             -Dnq.app.context.smoke.user="${NQ_FLYWAY_DB_USER}" \
             -Dnq.app.context.smoke.password="${NQ_FLYWAY_DB_PASSWORD}"
 
+      - name: Run current-schema backup and restore drill
+        shell: pwsh
+        env:
+          NQ_SOURCE_COMMIT: ${{ github.sha }}
+        run: ./scripts/deployment/Invoke-NqCanonicalRestoreCi.ps1 -SourceCommit $env:NQ_SOURCE_COMMIT
+
+      - name: Verify canonical backup creation and integrity
+        shell: pwsh
+        env:
+          NQ_SOURCE_COMMIT: ${{ github.sha }}
+        run: ./scripts/deployment/Test-NqCanonicalRestoreProof.ps1 -Capability BACKUP_INTEGRITY -ProofRoot 'artifacts/phase5b-current-schema-restore' -ExpectedCommit $env:NQ_SOURCE_COMMIT
+
+      - name: Verify canonical post-restore validation
+        shell: pwsh
+        env:
+          NQ_SOURCE_COMMIT: ${{ github.sha }}
+        run: ./scripts/deployment/Test-NqCanonicalRestoreProof.ps1 -Capability POST_RESTORE_VALIDATION -ProofRoot 'artifacts/phase5b-current-schema-restore' -ExpectedCommit $env:NQ_SOURCE_COMMIT
+
   frontend-critical:
     name: Frontend build and critical E2E
     runs-on: ubuntu-latest
@@ -775,7 +794,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mvn -f backend/pom.xml -pl nq-app -am -DskipTests package
+          mvn -f backend/pom.xml -pl nq-app -am -DskipTests install
+          mvn -f backend/nq-app/pom.xml -DskipTests package spring-boot:repackage
 
       - name: Generate normalized backend CycloneDX SBOM and artifact manifest
         shell: bash
@@ -799,6 +819,24 @@ jobs:
           rm "${evidence_root}/backend-sbom.raw.json"
           pwsh -NoProfile -File scripts/ci/Test-DeliveryArtifactSafety.ps1 \
             -EvidenceRoot "${evidence_root}"
+
+      - name: Build canonical release and external admission
+        shell: pwsh
+        env:
+          NQ_SOURCE_COMMIT: ${{ github.sha }}
+        run: ./scripts/deployment/Build-NqCanonicalReleaseCi.ps1 -SourceCommit $env:NQ_SOURCE_COMMIT
+
+      - name: Verify canonical release and external admission
+        shell: pwsh
+        env:
+          NQ_SOURCE_COMMIT: ${{ github.sha }}
+        run: ./scripts/deployment/Test-NqCanonicalReleaseCi.ps1 -SourceCommit $env:NQ_SOURCE_COMMIT
+
+      - name: Install and activate admitted canonical release
+        shell: pwsh
+        env:
+          NQ_SOURCE_COMMIT: ${{ github.sha }}
+        run: ./scripts/deployment/Install-NqCanonicalReleaseCi.ps1 -SourceCommit $env:NQ_SOURCE_COMMIT
 
       - name: Install Playwright Chromium
         working-directory: frontend

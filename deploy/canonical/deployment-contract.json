@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "nq-canonical-deployment-contract.v1",
+  "productionIdentity": "nexus-quant",
+  "installation": {
+    "root": "/opt/nexus-quant",
+    "releaseModel": "IMMUTABLE_RELEASE_DIRECTORY",
+    "activationModel": "ATOMIC_CURRENT_SYMLINK",
+    "sourceCheckoutRequired": false,
+    "mavenRequiredOnServer": false
+  },
+  "releaseAdmission": {
+    "schemaVersion": "nq-canonical-release-admission.v1",
+    "productionMode": "EXACT_HEAD_CI",
+    "productionAdmissionRoot": "/etc/nexus-quant/release-admission/<releaseId>.json",
+    "productionAdmissionDigest": "/etc/nexus-quant/release-admission/<releaseId>.sha256",
+    "bundleSelfProofAllowed": false,
+    "callerProvidedTrustRootAllowed": false,
+    "oidcAttestationRequired": false,
+    "testOnlyMode": "SYNTHETIC_TRUSTED_ADMISSION_ROOT"
+  },
+  "database": {
+    "postgresqlServerMajor": 16,
+    "backupToolMajor": 16,
+    "restoreToolMajor": 16,
+    "schemaTargetSource": "DYNAMIC_REPOSITORY_MIGRATION_INVENTORY",
+    "migrationDirection": "FORWARD_ONLY",
+    "sequence": [
+      "INSPECT_FLYWAY_HISTORY",
+      "DETERMINE_PENDING_MIGRATIONS",
+      "CREATE_BACKUP",
+      "VERIFY_BACKUP_INTEGRITY",
+      "REQUIRE_CURRENT_SCHEMA_RESTORE_PROOF",
+      "MIGRATE_FORWARD",
+      "FLYWAY_VALIDATE",
+      "ACTIVATE_APPLICATION",
+      "VERIFY_HEALTH_AND_READINESS"
+    ]
+  },
+  "failureSemantics": {
+    "beforeDatabaseMutation": "CODE_ROLLBACK_ALLOWED",
+    "afterCompatibleDatabaseMutation": "VERIFIED_CODE_ROLLBACK_ONLY",
+    "afterIncompatibleDatabaseMutation": "DATABASE_RECOVERY_REQUIRED",
+    "backupMissingOrInvalid": "DEPLOYMENT_BLOCKED",
+    "restoreProofMissing": "DEPLOYMENT_BLOCKED"
+  },
+  "rollback": {
+    "code": "ATOMIC_ACTIVATION_TO_VERIFIED_PREVIOUS_RELEASE",
+    "database": "EXPLICIT_DATABASE_RECOVERY_FROM_VERIFIED_BACKUP",
+    "flywayUndoAssumed": false,
+    "authorizationSource": "HMAC_BOUND_LAST_COMPLETED_ACTIVATION_TRANSACTION",
+    "callerControlledTargetAllowed": false,
+    "databaseStateEvidenceRequired": true
+  },
+  "activation": {
+    "transactionModel": "DURABLE_PREPARED_JOURNAL_THEN_ATOMIC_POINTER_THEN_COMPLETED",
+    "recoveryModel": "RECONCILE_PREPARED_JOURNAL_WITH_CURRENT_POINTER",
+    "freshnessModel": "MONOTONIC_GENERATION_AND_PREDECESSOR_HASH_CHAIN",
+    "authoritativeHead": "activation-head.json",
+    "unknownStateAllowed": false
+  }
+}

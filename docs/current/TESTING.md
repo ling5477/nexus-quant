@@ -14976,3 +14976,44 @@ Attempt-01=`FAIL / CHANGES_REQUIRED`：P1-01=`INTERPROCESS_DURABILITY_CHECK_ABSE
 - Delivery/runtime：digest-pinned PostgreSQL实际pull且service healthy，Flyway/repository/nq-app smoke均成功；frontend/backend SBOM、artifact manifest、internal provenance、pre-upload admission、三项upload与post-upload readback全部成功。`IMAGE_DIGEST_RUNTIME_PULL_PENDING_EXACT_HEAD_CI`关闭。
 - Finding disposition：P5-F001=`LOCAL_REQUIRED_CHECK_BASELINE_ACCEPTED / REMOTE_ENFORCEMENT_NOT_APPLIED`；P5-F004/P5-F006=`ACCEPTED / CLOSED`；P5-F005=`INTERNAL_SBOM_PROVENANCE_ACCEPTED`且platform attestation继续deferred；P5-F002/F003/F007/F008/F009保持`OPEN / NOT_IMPLEMENTED`。
 - Scope：本次仅同步current authority与Phase5B entry，不重新审Phase5A，不运行Full Maven，不修改业务代码、CI、scripts、deploy或migration；remote enforcement=`NOT_APPLIED / NOT_VERIFIED`，Playwright generated-file cleanup保持P3 residual。
+
+## 2026-09-01 — GateAUDIT Phase5B canonical deployment and restore implementation
+
+- Baseline：branch=`audit/post-gatey-agent-baseline`，HEAD/remote=`4c2b393ef0b3806a60cd3240c2e75ba1b350cc87`，`origin/dev` ancestor PASS，starting worktree/staged=`0/0`，authority=`errors=0`。
+- Release：actual executable Spring Boot JAR=`36,710,019 bytes`；frontend Vite production build PASS；canonical release=`nq-4c2b393ef0b3-35de8f47bfed6426`，manifest SHA-256=`e383ff2b8fc111df3303effac72866e5825f930f5095dcc55f19cad7b1b29462`，schema target=`V46`、artifacts=`9`。Build/verify/install/activate/verify均在disposable filesystem PASS；fixture regression=`18 cases PASS`。
+- Verifier negatives：manifest/artifact missing、hash/size、unexpected file、wrong source/schema、path escape、hard-link、symlink/reparse、mode与partial install均fail-closed；JAR检查central directory、limits、path alias、全量entry CRC与Spring Boot executable structure。
+- Restore proof：PostgreSQL 17.7独立native `initdb` loopback cluster从V1迁移至actual V46；custom backup=`802718 bytes / 1b614f4ed85fcdfa9cdd540a24fbef57fec2fb72549b4c46ab6ffe53decd2d17`；Flyway validate/current/pending=`PASS/V46/0`；source/restored canary=`75|464|276|46|V46|1`；repository/app-context smoke=`PASS/PASS`。
+- Restore negatives：tampered、truncated、wrong schema target、restore command failure、post-restore mismatch、missing Flyway history共6类全部REJECTED。Docker exact digest下载两次在同一CDN blob返回`EOF`，未以mutable image替代；native cluster/process均清理且未连接系统现有service。
+- CI admission：required jobs仍为9；release/restore owner分别为`frontend-critical`/`postgres-flyway`，unconditional/fail-closed；canonical validator PASS，critical capabilities=`20`；Phase5A 40项加Phase5B 7项mutation=`47/47 REJECTED`。
+- Other：PowerShell parser errors=`0`；SnakeYAML 2.4 workflow parse=`PASS / jobs=9`；frontend build PASS。未改production Java/POM/migration，因此Full Maven=`NOT_REQUIRED / NOT_RUN`；exact-head CI=`NOT_RUN`。P5-F002/P5-F003=`REMEDIATED_PENDING_INDEPENDENT_REVIEW`，P5-F007/F008/F009保持OPEN。
+- Evidence：[Phase5B implementation evidence](../audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_IMPLEMENTATION.md)。Result=`IMPLEMENTED / PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_CANDIDATE_COMPLETE / P0_0 / P1_TARGETS_REMEDIATED / PENDING_INDEPENDENT_REVIEW`。
+
+## 2026-09-01 — GateAUDIT Phase5B remediation Attempt-02
+
+- Inherited Review：`FAIL / P0_0 / P1_4 / P2_1 / NOT_READY_TO_COMMIT`；整改范围严格为source identity、activation/rollback、PG16 proof、CI registry/mutation与JAR local/central mismatch。
+- Source/activation：临时clean Git fixture及dirty/staged/untracked/generated/spoof mutations全部符合DEPLOYABLE policy；TEST_ONLY=`nq-test-* / deployable=false`且production policy拒绝。HMAC PREPARED/COMPLETED journal、completion recovery、caller-target rejection、forged/stale/current mismatch、previous missing、missing DB state与schema incompatible rollback均通过永久回归。Release/deployment suite=`40 cases PASS`。
+- PG16：Ubuntu官方PostgreSQL 16.15 server/pg_dump/pg_restore完成46 migrations至V46；backup=`793514 bytes / 366e801bda848d2af5a689973e9e7459882bac1520b443a9a86c6c889b959317`；Flyway pending=0、source/restored canary=`75|464|276|46|V46|1`、repository/app-context smoke=`PASS/PASS`。7类负例REJECTED；PG17.7 runtime在migration前以`UNSUPPORTED_POSTGRESQL_MAJOR`拒绝。
+- CI/JAR：required jobs=9；critical registry=`24 / missing 0 / unknown 0`；mutation=`50/50 REJECTED`，Phase5A 40与prior 47均保持。JAR local-name/local-method mismatch在重新绑定hash/manifest后均REJECTED，data descriptor语义保留。
+- Result：`IMPLEMENTED / PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_02_COMPLETE / P0_0 / P1_4_REMEDIATED / P2_JAR_INTEGRITY_REMEDIATED / PENDING_INDEPENDENT_REVIEW`；Full Maven=`NOT_REQUIRED / NOT_RUN`，exact-head CI=`NOT_RUN`。
+- Evidence：[Attempt-02](../audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_02.md)。
+
+## 2026-09-02 — GateAUDIT Phase5B remediation Attempt-03
+
+- Inherited Review：`FAIL / P0_0 / P1_3 / P2_1`；仅整改external admission trust、activation freshness、CI mandatory semantics与existing-key permission，不重做已通过PG16/JAR设计。
+- Admission：bundle外root绑定source/tree、producer、manifest/root、schema/PG、artifact set与execution identity；backend/frontend/deployment/whole-set与内部metadata同时替换全部REJECTED。Current local release/admission=`nq-test-82227abd7decacce22e43e54 / TEST_ONLY / authorizationEligible=false`；production policy只消费fixed trusted placement。
+- Activation/key：generation+predecessor head拒绝old completed/PREPARED/rollback journal、old head与A→B→A replay；原crash/recovery/rollback regression保持。Existing key每次读取验证link identity，Linux额外验证owner/0600；Windows suite=`57 cases PASS`，Linux suite=`62 cases PASS`并实际覆盖0644/0666/symlink/hard-link/wrong-owner。
+- CI：6个single-purpose critical wrappers，通用exact-invocation/unconditional/fail-closed enforcement；registry=`24 / missing 0 / unknown 0`，mutation=`64/64 REJECTED`，Phase5A 40保持。
+- PG/JAR regression：PG16.15 V1→V46、pending=0、双smoke、7 negatives PASS，backup=`793514 / 269a4fa9...37c9d`；PG17提前拒绝。JAR local/central regression保持。
+- Result：`IMPLEMENTED / PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_03_COMPLETE / P0_0 / P1_3_REMEDIATED / P2_KEY_PERMISSION_REMEDIATED / PENDING_INDEPENDENT_REVIEW`；Full Maven=`NOT_REQUIRED / NOT_RUN`、exact-head CI=`NOT_RUN`。
+- Evidence：[Attempt-03](../audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_03.md)。
+
+## 2026-09-02 — GateAUDIT Phase5B remediation Attempt-04
+
+- Scope：只整改Review-03的`ACTIVATION_AUTHORITY_CONCURRENT_FORK`，补Linux key与PG16回归；external admission、CI/JAR/PG contract仅回归。
+- Serialization：fixed installation lock使用cross-process exclusive file handle；activate/rollback/recover均在锁内重新读取head/journal/pointer并派生generation；timeout明确且零authority副作用，process termination后OS释放。
+- Windows concurrency：8 activation=`8 success / 0 failure / unique generations 2..9 / final generation 9 / fork 0`；activation-vs-rollback与recovery-vs-activation均generation +2且pointer/head一致；holder crash后recovery PASS。Windows suite=`66 cases PASS`。
+- Linux proof：官方PowerShell临时runtime下root-owned disposable repo=`75 cases PASS`；key和lock的0644/0666/wrong-owner/symlink/hard-link/missing/wrong-key按适用范围全部REJECTED，失败不改head/journal/pointer。
+- PG16：16.15、46/V46、pending0、backup=`793522 / 4640baf3...331bd`、canary一致、双smoke PASS、7 negatives REJECTED；PG17提前拒绝。
+- Accepted-area：admission regression PASS，CI=`64/64`且Phase5A=`40/40`，JAR descriptor/local-central PASS。Full Maven=`NOT_REQUIRED / NOT_RUN`，exact-head CI=`NOT_RUN`。
+- Result：`IMPLEMENTED / PHASE5B_ACTIVATION_CONCURRENCY_REMEDIATION_ATTEMPT_04_COMPLETE / P0_0 / P1_CONCURRENCY_REMEDIATED / P2_KEY_PROOF_COMPLETE / PENDING_INDEPENDENT_REVIEW`。
+- Evidence：[Attempt-04](../audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_04.md)。

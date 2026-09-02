@@ -1,0 +1,23 @@
+[Unit]
+Description=NexusQuant canonical application runtime
+Documentation=file:/opt/nexus-quant/current/release-manifest.json
+After=network.target
+
+[Service]
+Type=simple
+User=nexus-quant
+Group=nexus-quant
+WorkingDirectory=/opt/nexus-quant/current
+Environment=NQ_ENVIRONMENT=SIM
+EnvironmentFile=/etc/nexus-quant/runtime.env
+ExecStart=/usr/bin/java -jar /opt/nexus-quant/current/app/nq-app.jar
+Restart=on-failure
+RestartSec=5s
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/nexus-quant /var/log/nexus-quant
+
+[Install]
+WantedBy=multi-user.target

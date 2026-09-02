@@ -19787,3 +19787,43 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Findings：P5-F001 local baseline accepted但remote enforcement仍未应用；P5-F004/P5-F006 accepted并closed；P5-F005 internal SBOM/provenance accepted且platform attestation继续deferred；P5-F002/F003保持Phase5B blocking P1，P5-F007/F008/F009保持后续P2。
 - Phase5B entry：work batch=`GateAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE / NOT_STARTED / NONE / NOT_RUN`；next=`NQ-GATEAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE-IMPLEMENTATION`。P5-F002 canonical deployment与P5-F003 current-schema backup/restore必须形成一个完整candidate，完成后只做一次独立高风险Review。
 - Boundary：仅修改`STATUS/ROADMAP/TESTING/WORKLOG`；`FACT_SOURCE_INDEX` owner关系不变。未修改backend/frontend/research/scripts/deploy/.github/migration，未访问生产服务器、生产DB、credential或真实交易所，未启用LIVE/PLACE/CANCEL。
+
+## 2026-09-01 — GateAUDIT Phase5B canonical deployment and restore implementation
+
+- Scope：一次实现P5-F002 canonical release/deployment与P5-F003 current-schema backup/restore完整candidate；不改production Java、frontend product、research、Flyway migration、GateW/GateY legacy语义或frozen archive，不处理P5-F007/F008/F009。
+- Inventory：GateW/GateY的deterministic manifest、JAR/path/link/mode、dynamic migration inventory、immutable install、atomic current与forward-only rollback仅作为`REUSE_PRIMITIVE + LEGACY_INPUT_ONLY`；freeze/generic assets=`LEGACY_INPUT_ONLY`；现有CI=`WRAP`。legacy caller/asset删除=`0`。
+- Release/deploy：新增Gate-independent canonical module、builder、verifier、installer、systemd与deployment contract；release ID=`nq-4c2b393ef0b3-35de8f47bfed6426`，schema target动态得出V46，artifact=9。实际backend/frontend artifact完成build→verify→install→activate→verify，临时install精确清理。
+- Restore：独立PostgreSQL 17.7 native disposable cluster完成V1→V46、fixture、backup integrity、fresh target restore、Flyway validate、schema/data canary、repository/app-context smoke；6类负例全部REJECTED，临时cluster/process精确清理，production access=`NONE`。
+- CI：9 required jobs/check names保持；新增release/restore两项required capability owner，validator ownership增至20；Phase5A 40项与新增7项mutation共47项全部REJECTED。backend canonical artifact改为显式Spring Boot repackage，verifier强制可执行JAR。
+- Authority：work batch=`GateAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE / IMPLEMENTED|PENDING_REVIEW / NONE / NOT_RUN`；P5-F002/P5-F003=`REMEDIATED_PENDING_INDEPENDENT_REVIEW`，不写CLOSED；next=`NQ-GATEAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE-REVIEW`。
+- Boundary/residual：Docker pinned image两次下载均因CDN `EOF`失败，未使用mutable替代；remote enforcement=`NOT_APPLIED / NOT_VERIFIED`，platform attestation=`DEFERRED`，P5-F007/F008/F009保持OPEN。Staged/commit/push=`0/NONE/NONE`。
+- Evidence：[Phase5B implementation evidence](../audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_IMPLEMENTATION.md)。
+
+## 2026-09-01 — GateAUDIT Phase5B remediation Attempt-02
+
+- Inherited：独立Review拒绝candidate并报告P1 4项、P2 1项；本轮不扩大到P5-F007/F008/F009、remote enforcement、attestation或Phase6。
+- Source identity：删除dirty bypass；DEPLOYABLE要求clean committed tree与closed-set artifact manifests，manifest绑定git tree；未提交candidate只能生成`nq-test-* / NON_DEPLOYABLE`，production installer拒绝。
+- Activation/rollback：HMAC trusted journal采用PREPARED→atomic pointer→COMPLETED；completion failure可reconcile。Rollback仅消费last completed transaction和signed DB state，caller target/forged/stale/current mismatch/missing previous/missing DB state均拒绝；schema不兼容返回`DATABASE_RECOVERY_REQUIRED`。
+- PostgreSQL：Ubuntu官方PG16.15临时runtime完成V1→V46 backup/restore与repository/app-context smoke，PG17 fail-closed；临时cluster全部清理。
+- CI/JAR：registry 24项、missing/unknown=0；mutation总数50且全部REJECTED；local/central header name/method/flags/CRC/size/data descriptor绑定完成。GateW/GateY修改=0，legacy删除=0。
+- Authority：保持`IMPLEMENTED|PENDING_REVIEW / NONE / NOT_RUN`与原REVIEW next action；P5-F002/P5-F003/JAR P2仅`REMEDIATED_PENDING_INDEPENDENT_REVIEW`，未写CLOSED。Staged/commit/push=`0/NONE/NONE`。
+- Evidence：[Attempt-02](../audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_02.md)。
+
+## 2026-09-02 — GateAUDIT Phase5B remediation Attempt-03
+
+- Scope：只整改Review-02的provenance trust root、stale activation、CI mandatory variants和existing-key P2；PG16/JAR仅回归，其他Phase5/6 residual不变。
+- Admission：新增bundle外canonical admission与producer/validator；production固定root-owned admission path，caller path/digest不构成authority；current local candidate只生成TEST_ONLY admission。
+- Activation/key：新增signed monotonic activation-head与predecessor hash chain；old journal/head及A→B→A replay fail-closed。Existing key读取时重新验证regular/link count及Linux owner/0600。
+- CI：release build/verify/install、restore、backup integrity、post-validation拆成6个single-purpose wrapper；通用validator与参数化removed/conditional/soft-fail/failure-ignored suite总数64，全部REJECTED。
+- Regression：PG16.15 restore与PG17 negative、JAR local/central、Gitleaks/DeliveryEvidence保持；GateW/GateY/legacy diff=0。
+- Authority：machine字段与REVIEW next action保持；P5-F002/P5-F003与Attempt-03 findings仅`REMEDIATED_PENDING_INDEPENDENT_REVIEW`，未关闭。Staged/commit/push=`0/NONE/NONE`。
+- Evidence：[Attempt-03](../audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_03.md)。
+
+## 2026-09-02 — GateAUDIT Phase5B remediation Attempt-04
+
+- Scope：唯一代码整改目标为activation authority cross-process fork；admission、CI、PG、JAR不重构。
+- Implementation：`<installationRoot>/.activation-operation.lock`以OS exclusive file handle串行activate/rollback/recover；fixed path、installation identity、owner/mode/link checks、有限timeout。Lock取得后才recover/reread head并派生generation。
+- Multi-process：8个activation全部成功且generation唯一连续；activation/rollback与recovery/activation无fork；timeout零副作用；持锁进程终止后next recovery成功。
+- Linux/PG：Linux75-case suite实测key/lock owner/mode/link negatives；PG16.15 V1→V46 restore与PG17 negative回归通过；所有WSL runtime/test/cluster已清理。
+- Boundary：concurrency P1=`REMEDIATED_PENDING_INDEPENDENT_REVIEW`，key P2=`PROVEN_PENDING_INDEPENDENT_REVIEW`；P5-F002/F003仍pending，P5-F007/F008/F009 OPEN。Authority与REVIEW next action不变；staged/commit/push=`0/NONE/NONE`。
+- Evidence：[Attempt-04](../audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_04.md)。
