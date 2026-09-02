@@ -324,28 +324,48 @@ test.describe('GateV-4 validation review workbench', () => {
         expectNoUnexpectedRuntimeErrors(forbiddenAudit);
     });
 
-    test('loading、empty、API error、permission denied、404 与 OPERATOR owner 边界', async ({page}) => {
+    test('OPERATOR loading 状态保持 owner 筛选隐藏', async ({page}) => {
         const loadingAudit = await seedReviewWorkbench(page, {roles: ['OPERATOR'], listMode: 'delayed'});
         await page.goto('/strategies/validation');
         await expect(page.getByTestId('validation-review-queue').locator('.ant-spin-spinning')).toBeVisible();
         await expect(page.getByLabel('Owner ID')).toHaveCount(0);
+        expectOnlyAllowedReviewRequests(loadingAudit.requests);
+        expectNoUnexpectedRuntimeErrors(loadingAudit);
+    });
 
+    test('empty queue 展示明确空态', async ({page}) => {
         const emptyAudit = await seedReviewWorkbench(page, {roles: ['OPERATOR'], listMode: 'empty'});
-        await page.reload();
+        await page.goto('/strategies/validation');
         await expect(page.getByText('当前筛选条件下没有 review case。')).toBeVisible();
+        expectOnlyAllowedReviewRequests(emptyAudit.requests);
+        expectNoUnexpectedRuntimeErrors(emptyAudit);
+    });
 
+    test('queue API error 展示加载失败', async ({page}) => {
         const errorAudit = await seedReviewWorkbench(page, {listMode: 'error'});
-        await page.reload();
+        await page.goto('/strategies/validation');
         await expect(page.getByText('Review queue 加载失败')).toBeVisible();
+        expectOnlyAllowedReviewRequests(errorAudit.requests);
+        expectNoUnexpectedRuntimeErrors(errorAudit);
+    });
 
+    test('queue permission denied 展示无权访问', async ({page}) => {
         const permissionAudit = await seedReviewWorkbench(page, {listMode: 'forbidden'});
-        await page.reload();
+        await page.goto('/strategies/validation');
         await expect(page.getByText('无权访问 review queue')).toBeVisible();
+        expectOnlyAllowedReviewRequests(permissionAudit.requests);
+        expectNoUnexpectedRuntimeErrors(permissionAudit);
+    });
 
+    test('detail 404 展示 case 已不存在', async ({page}) => {
         const notFoundAudit = await seedReviewWorkbench(page, {detailNotFound: true});
         await page.goto(`/strategies/validation?reviewCaseId=${SECOND_CASE_ID}`);
         await expect(page.getByText('Case 已不存在')).toBeVisible();
+        expectOnlyAllowedReviewRequests(notFoundAudit.requests);
+        expectNoUnexpectedRuntimeErrors(notFoundAudit);
+    });
 
+    test('invalid reviewCaseId 在请求前拒绝', async ({page}) => {
         const invalidUrlAudit = await seedReviewWorkbench(page);
         await page.goto('/strategies/validation?reviewCaseId=not-a-uuid');
         await expect(page.getByText('reviewCaseId 无效')).toBeVisible();
@@ -353,22 +373,27 @@ test.describe('GateV-4 validation review workbench', () => {
             const path = new URL(item.url).pathname;
             return path.startsWith('/api/validation-review-cases') && item.url.includes('not-a-uuid');
         })).toBeFalsy();
+        expectOnlyAllowedReviewRequests(invalidUrlAudit.requests);
+        expectNoUnexpectedRuntimeErrors(invalidUrlAudit);
+    });
 
+    test('unknown state 不展示可执行动作', async ({page}) => {
         const unknownStateAudit = await seedReviewWorkbench(page, {stateOverride: 'FUTURE_STATE'});
         await page.goto(`/strategies/validation?reviewCaseId=${CASE_ID}`);
         await expect(page.getByText('当前状态没有可执行动作。')).toBeVisible();
+        expectOnlyAllowedReviewRequests(unknownStateAudit.requests);
+        expectNoUnexpectedRuntimeErrors(unknownStateAudit);
+    });
 
+    test('Idempotency-Key 生成失败时 fail-closed 且不发送请求', async ({page}) => {
         const uuidFailureAudit = await seedReviewWorkbench(page, {uuidFailure: true});
-        await page.reload();
+        await page.goto(`/strategies/validation?reviewCaseId=${CASE_ID}`);
         await page.getByRole('button', {name: '确认已阅'}).click();
         await page.getByLabel('复核原因').fill('UUID fail-closed 回归');
         await page.getByRole('button', {name: '确认提交'}).click();
         await expect(page.getByText('无法生成安全的 Idempotency-Key；本次请求未发送。')).toBeVisible();
         expect(uuidFailureAudit.requests.filter((item) => item.method === 'POST')).toHaveLength(0);
-
-        for (const audit of [loadingAudit, emptyAudit, errorAudit, permissionAudit, notFoundAudit, invalidUrlAudit, unknownStateAudit, uuidFailureAudit]) {
-            expectOnlyAllowedReviewRequests(audit.requests);
-            expectNoUnexpectedRuntimeErrors(audit);
-        }
+        expectOnlyAllowedReviewRequests(uuidFailureAudit.requests);
+        expectNoUnexpectedRuntimeErrors(uuidFailureAudit);
     });
 });
