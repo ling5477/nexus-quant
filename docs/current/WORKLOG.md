@@ -19827,3 +19827,12 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Linux/PG：Linux75-case suite实测key/lock owner/mode/link negatives；PG16.15 V1→V46 restore与PG17 negative回归通过；所有WSL runtime/test/cluster已清理。
 - Boundary：concurrency P1=`REMEDIATED_PENDING_INDEPENDENT_REVIEW`，key P2=`PROVEN_PENDING_INDEPENDENT_REVIEW`；P5-F002/F003仍pending，P5-F007/F008/F009 OPEN。Authority与REVIEW next action不变；staged/commit/push=`0/NONE/NONE`。
 - Evidence：[Attempt-04](../audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_04.md)。
+
+## 2026-09-02 — GateAUDIT Phase5B post-CI authority acceptance
+
+- History preservation：Phase5B implementation、Review FAIL、Remediation Attempt-02/03/04、commit/push、failed exact-head runs `33600183703`与`33610423976`、E2E structural split均保留原ledger/evidence；本轮只同步已验证current facts，不重写历史。
+- Technical acceptance：cumulative candidate HEAD/tree=`a12ec821fee9dcadaa11428f1db0a065614fb58b / 40421839abdb44ebd5e934add03fba85d78feab6`；exact-head run `33615809848`=`workflow_dispatch / completed / success / 9 of 9 / failed 0 / skipped 0`。Critical E2E=`5 specs / 27 cases`，canonical build/admission/verify/install/activate/active verification与PG16 current-schema restore全部成功。
+- Findings：P5-F002 canonical release/deployment与P5-F003 current-schema restore正式`ACCEPTED / CLOSED`；P5-F007/F008/F009继续`OPEN / NOT_IMPLEMENTED`；P5-F001 remote enforcement语义、platform attestation deferred与全部LIVE/credential安全边界不变。
+- Authority transition：accepted batch切换为`GateAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE / ACCEPTED|CI_GREEN`，immutable pair固定为`a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848`；下一work batch=`GateAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED / NOT_STARTED / NONE / NOT_RUN`，next=`NQ-GATEAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED-IMPLEMENTATION`，matcher=`IMPLEMENTATION`。
+- Scope/boundary：仅修改current owner docs与新增acceptance evidence；FACT_SOURCE_INDEX无需修改。未修改backend/frontend/research/scripts/deploy/.github/migration/frozen archive，未访问生产服务器、生产数据库、credential或真实交易所，未启用LIVE。Full Maven/E2E/restore技术验收不在docs-sync任务重跑。
+- Evidence：[Phase5B post-CI authority acceptance](../audit/evidence/GATEAUDIT_PHASE5B_POST_CI_AUTHORITY_ACCEPTANCE.md)。

@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatey-freeze
 last_frozen_gate_commit=72fbf5e78f217a02b572a54fadb17dea204b594f
 active_gate=GateAUDIT
 active_gate_status=IN_PROGRESS|NOT_FROZEN
-accepted_batch=GateAUDIT-PHASE5A-CANONICAL-CI-AND-SUPPLY-CHAIN
+accepted_batch=GateAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=d1d20f4087cd337e0b21037b38b377bcbe25499f
-accepted_batch_acceptance_head=d1d20f4087cd337e0b21037b38b377bcbe25499f
-accepted_batch_ci_run=33505000903
-work_batch=GateAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE
-work_batch_status=IMPLEMENTED|PENDING_REVIEW
+accepted_batch_implementation_commit=a12ec821fee9dcadaa11428f1db0a065614fb58b
+accepted_batch_acceptance_head=a12ec821fee9dcadaa11428f1db0a065614fb58b
+accepted_batch_ci_run=33615809848
+work_batch=GateAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED
+work_batch_status=NOT_STARTED
 work_batch_commit=NONE
 work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE-REVIEW
+next_action=NQ-GATEAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED-IMPLEMENTATION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -45,7 +45,7 @@ nq-current-authority:end -->
 - GateAUDIT-PHASE4-F003-ORDER-EXECUTION-IDENTITY-CONVERGENCE：`ACCEPTED / CI_GREEN`；immutable acceptance pair=`327c2229e89c076eace60046b79ec02c622a7fe4 / 33399190770`，exact-head CI=`11/11 SUCCESS`。ordinary Order 是唯一 execution fact，ExecutionIntent 只编排已存在 Order 的外部动作。
 - GateAUDIT-PHASE4-REMAINING-DISPOSITION-AND-CONSOLIDATION：`COMPLETE / ACCEPTED / CI_GREEN`；immutable acceptance pair=`7ca1fc92f8900e3e9d19184fccd40569f233823f / 33405549149`，exact-head CI=`11/11 SUCCESS`，blocking P0/P1=`0/0`。该 pair 是 Phase4 capability acceptance authority，不由后续 current-fact synchronization commit/CI替代。
 - GateAUDIT Phase5A：`ACCEPTED / CI_GREEN`；immutable acceptance pair=`d1d20f4087cd337e0b21037b38b377bcbe25499f / 33505000903`，exact-head CI=`completed / success / 9 of 9`，blocking P0/P1=`0/0`。P5-F001=`LOCAL_REQUIRED_CHECK_BASELINE_ACCEPTED / REMOTE_ENFORCEMENT_NOT_APPLIED`；P5-F004与P5-F006=`ACCEPTED / CLOSED`；P5-F005=`INTERNAL_SBOM_PROVENANCE_ACCEPTED`，platform attestation仍为`DEFERRED_UNTIL_EXPLICIT_AUTHORIZATION / id-token NOT_GRANTED`。`IMAGE_DIGEST_RUNTIME_PULL_PENDING_EXACT_HEAD_CI`与`CRITICAL_E2E_ADMISSION_PENDING_FIXTURE_REPAIR`已由该exact-head CI关闭；remote required checks仍未应用或验证。
-- GateAUDIT Phase5B：`IMPLEMENTED / PENDING_REVIEW`；workstream=`GateAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE`，commit=`NONE`、CI=`NOT_RUN`。Review Attempt-03=`FAIL / P1 ACTIVATION_AUTHORITY_CONCURRENT_FORK / P2 key proof pending`；Remediation Attempt-04新增installation-scoped跨进程exclusive lock，将activate/rollback/recover纳入同一有限时serialization boundary并在锁内重读authority。Windows 8-process activation、activation-vs-rollback、recovery-vs-activation、timeout/crash-release通过；Linux 75-case key/lock suite与PG16.15 restore回归通过，等待新独立Review。Concurrency P1=`REMEDIATED_PENDING_INDEPENDENT_REVIEW`，key P2=`PROVEN_PENDING_INDEPENDENT_REVIEW`；P5-F002/P5-F003继续pending，P5-F007/F008/F009继续OPEN。
+- GateAUDIT Phase5B：`ACCEPTED / CI_GREEN`；immutable technical pair=`a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848`，tree=`40421839abdb44ebd5e934add03fba85d78feab6`，exact-head CI=`9/9 SUCCESS / failed 0 / skipped 0`。Canonical release=`nq-a12ec821fee9-a9a98236663bba0b / COMMITTED_CLEAN / deployable=true / authorizationEligible=true`，build→external admission→verify→install→activate→active verification全部成功；PostgreSQL 16.15 current-schema restore至V46、pending=0、backup integrity、Flyway validate、repository/app-context smoke均通过，PG17 wrong-major提前拒绝。Critical E2E current baseline=`5 specs / 27 cases`（loopback=`25/25`、real-backend=`2/2`），Idempotency-Key fail-closed实际执行并通过。P5-F002与P5-F003=`ACCEPTED / CLOSED`；P5-F007/F008/F009继续`OPEN / NOT_IMPLEMENTED`，remote enforcement仍`NOT_APPLIED / NOT_VERIFIED`，platform attestation仍`DEFERRED`。
 
 ## 2. Accepted pilot facts
 
@@ -74,4 +74,4 @@ updated_commit=72fbf5e78f217a02b572a54fadb17dea204b594f
 
 ## 5. 下一允许动作
 
-- 下一允许动作是 `NQ-GATEAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE-REVIEW`：对P5-F002/P5-F003完整candidate执行一次独立高风险Review。实现任务不得自行关闭finding、接受Phase5B、commit/push或运行生产deployment；继续禁止生产服务器、生产数据库、credential、LIVE与真实交易所私有接口。
+- 下一允许动作是 `NQ-GATEAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED-IMPLEMENTATION`：仅实现P5-F008 production configuration fail-closed capability，消除prod datasource host/user/password fallback；不得在同一任务实现P5-F007/P5-F009、启动Phase6、访问生产服务器/生产数据库/credential、启用LIVE或调用真实交易所私有接口。

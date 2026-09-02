@@ -15017,3 +15017,13 @@ Attempt-01=`FAIL / CHANGES_REQUIRED`：P1-01=`INTERPROCESS_DURABILITY_CHECK_ABSE
 - Accepted-area：admission regression PASS，CI=`64/64`且Phase5A=`40/40`，JAR descriptor/local-central PASS。Full Maven=`NOT_REQUIRED / NOT_RUN`，exact-head CI=`NOT_RUN`。
 - Result：`IMPLEMENTED / PHASE5B_ACTIVATION_CONCURRENCY_REMEDIATION_ATTEMPT_04_COMPLETE / P0_0 / P1_CONCURRENCY_REMEDIATED / P2_KEY_PROOF_COMPLETE / PENDING_INDEPENDENT_REVIEW`。
 - Evidence：[Attempt-04](../audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_04.md)。
+
+## 2026-09-02 — GateAUDIT Phase5B post-CI authority acceptance
+
+- Immutable technical acceptance pair：`a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848`，tree=`40421839abdb44ebd5e934add03fba85d78feab6`。Run=`workflow_dispatch / completed / success / 9 of 9 / failed 0 / skipped 0`；本authority-sync文档提交不替代该pair。
+- Historical failures preserved：run `33600183703`因Linux mutation closure scope与disposable installation root失败；forward remediation后run `33610423976`关闭两项blocker，但既有monolithic loopback E2E在Idempotency-Key assertion前耗尽30秒test budget。两次failed run均保留为RCA evidence，不改写为成功。
+- Critical E2E：current baseline=`5 specs / 27 cases / failed 0 / skipped 0 / fixme 0`；loopback=`3 specs / 25/25 PASS`，real-backend=`2 specs / 2/2 PASS`。Idempotency-Key fail-closed=`EXECUTED / PASS / POST=0`；Attempt-02采用`STRUCTURAL_SPLIT`，timeout/retry/skip/fixme/production-code changes=`0/0/0/0/0`。
+- Canonical release：source=`a12ec821fee9dcadaa11428f1db0a065614fb58b / git-tree:40421839abdb44ebd5e934add03fba85d78feab6 / COMMITTED_CLEAN`，`deployable=true`、`authorizationEligible=true`；release=`nq-a12ec821fee9-a9a98236663bba0b`，manifest=`4bd796de9bc200c792264168a9242c5171c432ec110b68d26fc649617d2357a1`，root digest=`37a0f1971e8b2e3cb49d20c45cf7fbd069abd9eec5f021e36640b3f9172a4882`，admission=`1373472c8e868c717ba61be3ea07dab293d1580825fb07584c30228f8d50a683`；build→external admission→verify→install→activate→active verification=`SUCCESS`。
+- PostgreSQL/Flyway：server=`16.15 / 160015`，pg_dump/pg_restore=`16.15/16.15`，latest=`V46`，pending=`0`；backup integrity、restore、Flyway validate、repository smoke、app-context smoke均`PASS`，PG17 wrong-major在migration前`REJECTED`。
+- Finding disposition：P5-F002/P5-F003=`ACCEPTED / CLOSED`；P5-F007/F008/F009=`OPEN / NOT_IMPLEMENTED`；remote enforcement=`NOT_APPLIED / NOT_VERIFIED`，platform attestation=`DEFERRED`。Full Maven、frontend E2E与PG restore本authority-sync docs任务均=`NOT_REQUIRED / NOT_RERUN`。
+- Evidence：[Phase5B post-CI authority acceptance](../audit/evidence/GATEAUDIT_PHASE5B_POST_CI_AUTHORITY_ACCEPTANCE.md)。
