@@ -25,6 +25,11 @@ function Assert-Condition([bool] $Condition, [string] $Message) {
     if (-not $Condition) { throw $Message }
 }
 
+# GetNewClosure captures variables into a dynamic module, not this script's functions.
+# Bind the unchanged assertion body explicitly so a CI wrapper invoking this script
+# does not require the helper to be visible in the caller's global scope.
+$assertCondition = ${function:Assert-Condition}
+
 function Write-Json([string] $Path, [object] $Value) {
     $json = ($Value | ConvertTo-Json -Depth 40).Replace("`r`n", "`n").TrimEnd() + "`n"
     [IO.File]::WriteAllText($Path, $json, (New-Object Text.UTF8Encoding($false)))
@@ -244,7 +249,7 @@ try {
             param($case)
             $text = Get-Content -Raw -LiteralPath $case.ProductionYaml
             $placeholder = '${' + $variable + '}'
-            Assert-Condition ($text.Contains($placeholder)) 'Fallback mutation target missing'
+            & $assertCondition ($text.Contains($placeholder)) 'Fallback mutation target missing'
             $fallback = switch ($variable) {
                 'NQ_PROD_DB_URL' { 'jdbc:postgresql://db-prod:5432/nexus_quant' }
                 'NQ_PROD_DB_USER' { 'postgres' }
@@ -633,7 +638,7 @@ try {
             $text = Get-Content -Raw $case.Workflow
             $pattern = '(?ms)^      - name: Run production configuration fail-closed regression\r?\n.*?(?=^      - name:|\z)'
             $match = [regex]::Match($text, $pattern)
-            Assert-Condition $match.Success 'F008 mutation target missing'
+            & $assertCondition $match.Success 'F008 mutation target missing'
             $block = $match.Value
             if ($duplicate) {
                 $text = $text.Insert($match.Index, $block.Replace('        shell: bash', '        continue-on-error: ${{ true }}' + "`n        shell: bash"))

@@ -15089,3 +15089,10 @@ Attempt-01=`FAIL / CHANGES_REQUIRED`：P1-01=`INTERPROCESS_DURABILITY_CHECK_ABSE
 - Review绑定：parent HEAD=`aa73a7a58b7d5ecbb8e5beba2106cbbe982803dc`；15文件reviewed functional fingerprint=`179a7bdcd2a9ff0bfc120dabcad8823b7a757ba089f7fea2b4843e308aac4382`；review前后相同。全部3167文件manifest fingerprint=`5f414821e1452cc6fafe204e170ae6e177118749b5767d0630397d01632bd119`，reviewer implementation modifications=0。
 - 验证边界：Default实际为targeted Maven→fresh reports→shared semantic contract→admission；ContractOnly不授予admission。PS5.1临时嵌套runner的closure作用域错误通过独立`-File`入口重跑解决；独立fixture首轮错误消息断言过窄已修正；两次harness失败均保留且没有candidate修改。Full Maven/PG16/JAR/canonical release/frontend未重跑，remote CI=`NOT_RUN`。
 - 本提交任务仅核验review绑定并持久化已授权authority，不重跑上述implementation qualification。复合machine action的`COMMIT+CI`命中导致两种shell checker=`AMBIGUOUS / exit=1`；用户明确授权使用单一`COMMIT` token，隔离authority fixture两种shell均`CURRENT_AUTHORITY_VALID / exit=0`，不修改governance contract/matcher。
+
+## 2026-09-06 — F008 CI test harness scope remediation
+
+- RCA：GitHub的-File wrapper再调用suite，使GetNewClosure动态module无法按名称访问suite的Assert-Condition；PS5.1/PS7隔离复现均失败，直接entry可通过。显式捕获原helper ScriptBlock后，wrapper probe均保持循环捕获与false assertion抛错。
+- 实测：PS5.1 direct -File、PS7 direct -File、PS7完整GitHub wrapper suite均exit=0、135/135 REJECTED、accepted=0；三次R06/R09/R10各118 tests、assertion failures=17/50/12、errors/skips=0/0，真实Maven failure到validator拒绝链完整。
+- Baseline mandatory F008 reports=118/0/0/0；两种shell authority checker及diff check通过。22个assertion调用点和17个closure保留；仅原helper的binding及两个closure调用方式改变，validator/workflow/backend/config未改。
+- 本地Full Maven/PG16/JAR/canonical release/frontend未重跑；本记录为SELF_REVIEWED / READY_TO_COMMIT，不预先声明新exact-head CI通过。Evidence：[scope remediation](../audit/evidence/GATEAUDIT_PHASE5_F008_CI_TEST_HARNESS_SCOPE_REMEDIATION.md)。

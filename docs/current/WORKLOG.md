@@ -19894,3 +19894,10 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Machine next_action=`NQ-GATEAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED-COMMIT`；human work order=`NQ-GATEAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED-COMMIT-AND-EXACT-HEAD-CI`。The canonical machine action token is COMMIT because the governance workflow contract rejects the composite COMMIT+CI action as ambiguous. This does not narrow the authorized work order. Push and exact-head CI remain mandatory post-commit steps within the same task.
 - 用户已明确授权上述token收敛；禁止为该task ID添加matcher兼容规则。Current authority持久化为`REVIEW_ACCEPTED|READY_TO_COMMIT / NONE / NOT_RUN`，commit/push/exact-head CI是同一任务后续步骤；此记录不预先声明其通过。
 - 精确暂存范围为已reviewed candidate与本次authorized authority sync/accepted review evidence；排除artifacts、review harness、Maven target和本地生成物。不修改P5-F007/P5-F009、Phase6或生产安全边界；P5-F008正式closure留给CI green后的post-CI authority acceptance。
+
+## 2026-09-06 — F008 CI harness scope compatibility fix
+
+- 基线=716199a7cb836a5eaf43a88b0de6db0f47a75e91；failed exact-head CI=33976140445，8 success / 1 failure，唯一失败为canonical validator suite中的Assert-Condition查找失败。
+- 最小修复：保留原assertion函数，捕获其ScriptBlock供两个GetNewClosure fixture调用；没有global helper泄漏，不移动/删除mutation，不改变安全断言。Production/config/security Review不重新打开。
+- 验证：PS5.1/PS7真实-File完整suite各135/135拒绝，额外PS7 GitHub wrapper完整suite135/135拒绝；R06/R09/R10真实Maven拒绝链完整，accepted=0。自审=SELF_REVIEWED / READY_TO_COMMIT。
+- 精确提交范围为测试脚本、本evidence和TESTING/WORKLOG追加；后续按授权commit、push、exact-head CI，9/9绿色后仅进入post-CI authority acceptance；machine authority保持原值，本轮不写CLOSED。Evidence：[scope remediation](../audit/evidence/GATEAUDIT_PHASE5_F008_CI_TEST_HARNESS_SCOPE_REMEDIATION.md)。
