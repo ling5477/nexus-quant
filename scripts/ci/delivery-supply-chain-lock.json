@@ -14,7 +14,7 @@
       "tag": "v4.9.1",
       "commit": "cf277c60eb25467037889841efdb72551f06f6c3",
       "usage": "ACTIVE_CI",
-      "expectedOccurrences": 5,
+      "expectedOccurrences": 6,
       "source": "https://api.github.com/repos/actions/setup-java/git/refs/tags/v4.9.1"
     },
     {

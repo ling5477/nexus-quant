@@ -61,9 +61,9 @@ python -m ruff check .
 - `/api/auth/login` 失败：确认后端已启动、DB migration 已完成、local admin 用户配置与认证数据源一致。
 - `/api/auth/me` 失败：确认请求携带 `<redacted-authorization-header-example>`，并先通过 `/api/auth/login` 获取 token。
 
-## 8. GateAUDIT Phase4 acceptance 与后续阶段边界
+## 8. GateAUDIT Phase5 current boundary
 
-Phase4 remaining disposition closeout已由 immutable pair `7ca1fc92f8900e3e9d19184fccd40569f233823f / 33405549149` 接受。Phase5A当前仅为`READY_TO_START / NOT_IMPLEMENTED`；authority reconciliation和后续docs-only同步运行以下一致性检查：
+Phase5A与Phase5B已由各自immutable pair接受；当前F008 production configuration fail-closed为`REVIEW_ACCEPTED|READY_TO_COMMIT`（独立Review已接受，待提交与exact-head CI）。Authority reconciliation和后续docs-only同步运行以下一致性检查：
 
 ```powershell
 git status --short
@@ -72,4 +72,14 @@ git diff --check
 git diff --stat
 ```
 
-本阶段不运行真实交易所 HTTP / WebSocket，不读取 credential material，不启动 LIVE，不接 AI / DH runtime。Phase5A workstream处理canonical CI与supply-chain，后续Phase5 batch再处理canonical deployment、restore、observability与selected E2E；Phase6才处理L4/L5/L6故障证明。仅docs/索引变化时不机械运行完整Maven。
+本阶段不运行真实交易所 HTTP / WebSocket，不读取 credential material，不启动 LIVE，不接 AI / DH runtime。F008正式Review/acceptance完成前不得写成closed；P5-F007/P5-F009与Phase6继续deferred。仅docs/索引变化时不机械运行完整Maven。
+
+## 9. Canonical production configuration
+
+- Canonical systemd unit在`ExecStart`中固定`nq.production-configuration=true`和`spring.profiles.active=prod`；不要移入可变`runtime.env`，也不要用`NQ_ENVIRONMENT=SIM`代替production identity。
+- `/etc/nexus-quant/runtime.env`必须由外部部署系统以最小读取权限提供`NQ_PROD_DB_URL`、`NQ_PROD_DB_USER`、`NQ_PROD_DB_PASSWORD`、`NQ_SECURITY_SECRET`、`NQ_ACCOUNT_CREDENTIALS_MASTER_KEY`；禁止把值写入release bundle、deployment contract、unit、日志或evidence。
+- Spring展开include/group后的active profile set必须恰好为`{prod}`；prod与local/test/ci或任意其他profile组合均拒绝。prod即使未设置marker或marker=false也执行此校验。普通local启动保持原行为。
+- `nq.security.secret`和`nq.account.credentials.master-key`允许由既有Spring externalized sources提供；最终effective值必须非空、无未解析占位符、无首尾空白且非repository-known default。密钥轮换、key-version与历史ciphertext迁移不包含在F008整改中。
+- Canonical prod YAML采用单文档block mapping/scalar格式；CI直接验证五项required placeholder，无fallback。新增YAML合并、alias或其他格式前须扩展对应语义验证，当前checker对不支持的格式拒绝。
+- Production datasource只允许canonical `spring.datasource.url/username/password/driver-class-name` effective contract。禁止通过Hikari-specific identity、JNDI、custom/XA DataSource或独立`spring.flyway.url/user/password`建立第二连接身份。
+- 缺失、空白、非法或旁路配置必须在DataSource/Flyway bean创建前以`PROD_CONFIGURATION_INVALID`失败；不得等待DNS、TCP、authentication或Flyway network failure。

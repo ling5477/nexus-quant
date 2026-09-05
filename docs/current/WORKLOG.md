@@ -19836,3 +19836,61 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Authority transition：accepted batch切换为`GateAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE / ACCEPTED|CI_GREEN`，immutable pair固定为`a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848`；下一work batch=`GateAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED / NOT_STARTED / NONE / NOT_RUN`，next=`NQ-GATEAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED-IMPLEMENTATION`，matcher=`IMPLEMENTATION`。
 - Scope/boundary：仅修改current owner docs与新增acceptance evidence；FACT_SOURCE_INDEX无需修改。未修改backend/frontend/research/scripts/deploy/.github/migration/frozen archive，未访问生产服务器、生产数据库、credential或真实交易所，未启用LIVE。Full Maven/E2E/restore技术验收不在docs-sync任务重跑。
 - Evidence：[Phase5B post-CI authority acceptance](../audit/evidence/GATEAUDIT_PHASE5B_POST_CI_AUTHORITY_ACCEPTANCE.md)。
+
+## 2026-09-02 — GateAUDIT Phase5 F008 production configuration fail-closed implementation
+
+- Scope：只实现P5-F008；P5-F007/P5-F009、frontend、Phase6、migration、GateY frozen archive与历史Phase5B evidence未修改。Production/LIVE/credential/real exchange access=`NONE`。
+- Inventory：prod三项datasource fallback与canonical profile缺口确认；真实consumer为Boot DataSourceProperties/Hikari，alternate source覆盖CLI/system/env/JSON/profile/import；Flyway当前无独立identity且prod enabled=false。
+- Implementation：新增spring.factories注册的early startup guard，Binder校验effective datasource及PostgreSQL driver/URL，拒绝Hikari/JNDI/custom/XA/Flyway identity旁路；systemd固定marker+prod profile，deployment contract只记录external required key names与no-secret语义。
+- Tests：negative/positive/profile/redaction/outbound-zero矩阵；targeted 60 PASS；fresh PG16.15 full Maven 23/23 modules PASS、nq-app 376/0/0/35；required app-context 1 PASS；release 66 PASS；canonical mutations 72/72 REJECTED。
+- Review：独立首轮发现2个P1与2个P2，整改relaxed binding、Hikari/JNDI、URL parser/query identity及CI ownership后复审`P0/P1/P2/P3=0/0/0/0`。不把task-local复审写成formal lifecycle acceptance。
+- Authority：accepted Phase5B pair保持不变；F008=`REMEDIATED_PENDING_INDEPENDENT_REVIEW`，work batch=`IMPLEMENTED|PENDING_REVIEW / NONE / NOT_RUN`，next=`NQ-GATEAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED-REVIEW`。Staged/commit/push=`0/NONE/NONE`。
+- Evidence：[F008 implementation](../audit/evidence/GATEAUDIT_PHASE5_F008_PROD_CONFIG_FAIL_CLOSED_IMPLEMENTATION.md)。
+
+## 2026-09-05 — F008 Remediation Attempt-01
+
+- 用户授权范围：仅Formal Review的3项P1与1项P2；保留原candidate、implementation evidence与Formal Review FAIL事实。
+- 最小实现：guard校验resolved profiles exact `{prod}`；复用`nq.security.secret`/`NQ_SECURITY_SECRET`与`nq.account.credentials.master-key`/`NQ_ACCOUNT_CREDENTIALS_MASTER_KEY`，prod YAML显式无fallback，Binder最终值拒绝missing/blank/whitespace/unresolved placeholder/known defaults。
+- CI：直接读取production YAML的五项required mapping，并验证profile allowlist及initializer registration；新增fallback/profile/registration/duplicate-document/test-removal mutations。9个required jobs及25项capability归属保持。
+- 验证：targeted 111 PASS、full Maven23模块PASS（nq-app437/0/0/35）、fresh PG16.15 V46 pending0、双smoke各1 PASS、JAR discovery9例PASS、release66 PASS、CI mutations84/84 REJECTED（PS5.1/7）。
+- 有界独立静态检查无新增P0/P1；其指出的新专项suite删除保护缺口已补checker与mutation。正式Review Attempt-02尚未执行。
+- 边界：JWT claims/authorization、数据库ciphertext/key-version、其他profile、F007/F009、migration和Phase5B架构未修改；没有生产/真实credential/exchange访问，没有git add/commit/push。
+- Authority机器区块保持原值：accepted Phase5B不变，work batch=`IMPLEMENTED|PENDING_REVIEW / NONE / NOT_RUN`，next=`NQ-GATEAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED-REVIEW`。无需更改matcher。
+- Evidence：[Attempt-01](../audit/evidence/GATEAUDIT_PHASE5_F008_PROD_CONFIG_FAIL_CLOSED_REMEDIATION_ATTEMPT_01.md)。
+
+## 2026-09-05 — F008 Remediation Attempt-02
+
+- 目标：仅整改 Review Attempt-02 的 `DEFAULT_PROD_PROFILE_VALIDATION_BYPASS` 与 `CI_PROD_CONFIG_BYPASS_VARIANTS_NOT_ENFORCED`，不扩展到已通过的 datasource/JWT/master-key、F007/F009、legacy profile、migration/frontend/Phase6。
+- 实现：initializer 统一按 active 非空取 active、否则取 default 的 effective profile set 判定 prod；只要包含 prod 即运行完整 validation，marker missing/false 不得关闭。exact `{prod}` contract 保持。
+- CI：在既有9个 required jobs 的 `backend` 中加入唯一 production-config fail-closed Maven regression；canonical validator 将其作为真实 capability owner，mutation 使用隔离 backend source copy 与同一 Maven command 覆盖 R06/R09/R10。`MUTATIONS_REJECTED=92`。
+- 验证：targeted/mandatory command=`118/0/0`，validator=`9 jobs / 25 actual=registered / missing=unknown=0`；packaged artifact default-prod probe=4/4 guard reject、DB TCP=0；disposable PG16.15 full Maven=`23/23`、two smokes=`1/1`、release=`66/66`。
+- 环境RCA：一次默认 local full Maven 读取了已有本机 DB，在既有 V45 foreign-key inconsistency 失败并回滚，未作为通过；隔离 PG16 重跑通过且container residue=0。直接 JAR CLI 空 active/default-prod组合未构成目标 default-prod environment，已由 packaged classes/libs + root spring.factories 的自动发现 probe 取代。
+- 状态：两个P1与P5-F008=`REMEDIATED_PENDING_INDEPENDENT_REVIEW`；P5-F007/P5-F009=`OPEN / NOT_IMPLEMENTED`；machine authority/next action不变，staged/commit/push=`0/NONE/NONE`。
+- Evidence：[Attempt-02](../audit/evidence/GATEAUDIT_PHASE5_F008_PROD_CONFIG_FAIL_CLOSED_REMEDIATION_ATTEMPT_02.md)。
+
+## 2026-09-05 — F008 CI production-config enforcement remediation
+
+- 仅整改 Attempt-03 的 `CI_PROD_CONFIG_BYPASS_VARIANTS_NOT_ENFORCED`。禁止 required job/step 出现任何 `continue-on-error`；精确绑定真实 F008 command，拒绝 condition、替换、重复、owner relocation、failure-ignore 与 contract-only admission 降级。
+- 默认 validator 增加同源 F008 Maven admission，读取 fresh Surefire reports；R06/R09/R10 永久 mutation 从真实 Java assertion failure 贯通到 canonical admission rejection。PowerShell 不解析 Java profile 业务规则。
+- PS5.1/PS7 完整 suite 各 `116/116 REJECTED / accepted=0`；baseline F008=`118/0/0/0`；live jobs/capabilities=`9 / 25 actual=registered / missing=unknown=0`。本地 harness 的 PSModulePath 继承问题及 PS5.1 临时长路径问题已修正，失败日志保留。
+- 未修改 Java、application YAML、workflow、deployment/systemd、frontend、migration、research 或任何历史 evidence。Full Maven/PG16/JAR/release 不重跑；STATUS authority 保持原值。
+- 结果仅为 `P1_1_REMEDIATED / PENDING_FINAL_CLOSURE_REVIEW`，不是独立 final acceptance；本实施会话不得作为自身整改的独立 reviewer。Staged/commit/push=`0/NONE/NONE`。
+- Evidence：[CI enforcement remediation](../audit/evidence/GATEAUDIT_PHASE5_F008_CI_PROD_CONFIG_ENFORCEMENT_REMEDIATION.md)。
+
+## 2026-09-05 — F008 YAML semantic CI enforcement remediation
+
+- 目标：消除原始 YAML 文本与实际 key 语义不一致导致的唯一残留 P1。将 workflow job/step、condition/soft-fail、run/shell/env、action/image 的键读取统一到 SnakeYAML node model；保留现有 capability/selector/命令合同与 fresh-report admission。
+- Parser inventory：没有现成的仓库 YAML parser 调用；前端 yaml 为可选 peer，研究依赖未包含 YAML parser，diff-check 未准备这些依赖。复用已有 Spring Boot BOM 管理的 SnakeYAML，不新增/升级依赖；helper 离线读取已有 JAR，不复制 review artifact parser、不临时安装工具。
+- Default ordering：原有 targeted Maven 先执行，既完成同源 fresh-report proof，也在 clean CI 准备后端既有 parser 依赖；语义检查成功后才输出 ACCEPTED。ContractOnly 不执行 Maven，使用完全相同的语义检查，依赖缺失时拒绝。
+- 本轮实测：PS7/PS5.1 各 `135/135 REJECTED`，新增 S01–S10、关键 subtree/schema negatives 与 default exploit 全拒绝；两组 plain/quoted/escaped equality、8 项 parser negative、missing dependency proof 均通过。R06/R09/R10 真正执行 Java 并以 `17/50/12` assertion failures 传播拒绝。Authority 两种 shell 均通过。
+- 范围：仅两个既有 CI scripts、最小 Java/PowerShell reader 和 parser test、TESTING/WORKLOG 追加及指定 evidence。生产 Java/config、workflow、lock、STATUS、所有历史 evidence 不变。未运行 Full Maven/PG16/JAR/release/frontend，未访问生产服务或凭证。
+- 结果：`P1_1_REMEDIATED / PENDING_FINAL_CLOSURE_REVIEW`；无 stage/commit/push。下一次且唯一允许的独立 review 为 `NQ-GATEAUDIT-PHASE5-F008-YAML-SEMANTIC-FINAL-CLOSURE-REVIEW`，限 semantic parser、escaped-key、mode 一致性与 R06/R09/R10；未创建任何 Review/Attempt task。
+- Evidence：[YAML semantic remediation](../audit/evidence/GATEAUDIT_PHASE5_F008_YAML_SEMANTIC_CI_ENFORCEMENT_REMEDIATION.md)。
+
+## 2026-09-05 — F008 reviewed candidate authority persistence
+
+- 独立Final Closure Review已接受：`PASS / PHASE5_F008_YAML_SEMANTIC_FINAL_CLOSURE_ACCEPTED / P0_0 / P1_0 / READY_TO_COMMIT`；本轮仅持久化其授权状态，reviewed implementation保持不变。
+- Reviewed functional fingerprint=`179a7bdcd2a9ff0bfc120dabcad8823b7a757ba089f7fea2b4843e308aac4382`；基线parent=`aa73a7a58b7d5ecbb8e5beba2106cbbe982803dc`；accepted Phase5B pair保持`a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848`。
+- Machine next_action=`NQ-GATEAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED-COMMIT`；human work order=`NQ-GATEAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED-COMMIT-AND-EXACT-HEAD-CI`。The canonical machine action token is COMMIT because the governance workflow contract rejects the composite COMMIT+CI action as ambiguous. This does not narrow the authorized work order. Push and exact-head CI remain mandatory post-commit steps within the same task.
+- 用户已明确授权上述token收敛；禁止为该task ID添加matcher兼容规则。Current authority持久化为`REVIEW_ACCEPTED|READY_TO_COMMIT / NONE / NOT_RUN`，commit/push/exact-head CI是同一任务后续步骤；此记录不预先声明其通过。
+- 精确暂存范围为已reviewed candidate与本次authorized authority sync/accepted review evidence；排除artifacts、review harness、Maven target和本地生成物。不修改P5-F007/P5-F009、Phase6或生产安全边界；P5-F008正式closure留给CI green后的post-CI authority acceptance。

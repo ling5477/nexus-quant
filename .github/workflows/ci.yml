@@ -23,6 +23,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Java
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
       - name: Check whitespace in changed files
         shell: bash
         run: |
@@ -263,6 +270,10 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
+
+      - name: Run production configuration fail-closed regression
+        shell: bash
+        run: mvn -f backend/pom.xml -pl nq-app -am test -Dtest=ProductionConfigurationApplicationContextInitializerTest,ProductionSecretProfileRegressionTest -Dsurefire.failIfNoSpecifiedTests=false
 
       - name: Prepare backend CI legacy account fixture
         shell: bash

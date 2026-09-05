@@ -15027,3 +15027,65 @@ Attempt-01=`FAIL / CHANGES_REQUIRED`：P1-01=`INTERPROCESS_DURABILITY_CHECK_ABSE
 - PostgreSQL/Flyway：server=`16.15 / 160015`，pg_dump/pg_restore=`16.15/16.15`，latest=`V46`，pending=`0`；backup integrity、restore、Flyway validate、repository smoke、app-context smoke均`PASS`，PG17 wrong-major在migration前`REJECTED`。
 - Finding disposition：P5-F002/P5-F003=`ACCEPTED / CLOSED`；P5-F007/F008/F009=`OPEN / NOT_IMPLEMENTED`；remote enforcement=`NOT_APPLIED / NOT_VERIFIED`，platform attestation=`DEFERRED`。Full Maven、frontend E2E与PG restore本authority-sync docs任务均=`NOT_REQUIRED / NOT_RERUN`。
 - Evidence：[Phase5B post-CI authority acceptance](../audit/evidence/GATEAUDIT_PHASE5B_POST_CI_AUTHORITY_ACCEPTANCE.md)。
+
+## 2026-09-02 — GateAUDIT Phase5 F008 production configuration fail-closed implementation
+
+- Baseline：`audit/post-gatey-agent-baseline / aa73a7a58b7d5ecbb8e5beba2106cbbe982803dc`，与origin一致；`origin/dev` ancestor PASS；starting worktree/staged=`clean/0`；authority checker PASS。
+- Configuration：prod URL/user/password fallback移除；canonical systemd command line固定production marker与prod profile；runtime.env继续external injection且contract仅记录required key names/no secret bundling。
+- Guard：Spring Boot Binder读取最终effective/relaxed properties；通用datasource、Hikari/JNDI/custom/XA、Flyway split-brain及PostgreSQL URL credential/endpoint/service override全部在context refresh前fail closed。CountingDataSource construct/connect=`0/0`，negative DNS/TCP/Flyway attempt=`0/0/0`。
+- Targeted：F008 + env safety=`60 tests / 0 failures / 0 errors / 0 skipped / BUILD SUCCESS`；synthetic prod、local/test/CI、redaction、missing/blank/whitespace/malformed/non-PG、Hikari/JNDI/query bypass均覆盖。
+- Full backend：fresh digest-pinned PostgreSQL 16.15与CI同款safe env；23/23 modules SUCCESS，nq-app=`376 / failures 0 / errors 0 / existing skips 35`，V1→V46与pending=0语义保持；required app-context smoke=`1/1 PASS`。
+- Deployment/CI：release suite=`66 cases PASS`；canonical validator=`required jobs 9 / capabilities 25 / missing 0 / unknown 0`；mutation=`72/72 REJECTED`；job names unchanged，frontend E2E=`NOT_REQUIRED / NOT_RUN`。
+- Review：首轮`P0_0/P1_2/P2_2`后完成最小整改；task-local独立复审=`PASS / P0_0 / P1_0 / P2_0 / P3_0`。Formal lifecycle仍为`REMEDIATED_PENDING_INDEPENDENT_REVIEW`，exact-head CI=`NOT_RUN`。
+- RCA：首次full Maven误触本机已有PG17/V44不一致库，随后改用fresh disposable PG16；一次env集合过宽被NoOutbound guard正确拒绝；PS5.1 CRLF warning改用CI同款pwsh。最终验证全部通过，disposable容器已清理。
+- Evidence：[F008 implementation](../audit/evidence/GATEAUDIT_PHASE5_F008_PROD_CONFIG_FAIL_CLOSED_IMPLEMENTATION.md)。
+
+## 2026-09-05 — F008 Remediation Attempt-01
+
+- Inherited Formal Review=`FAIL / P0_0 / P1_3 / P2_1`；本轮仅整改profile mixing、JWT public default、CI fallback restoration与credential master-key public default。
+- Targeted=`111 tests / 0 failures / 0 errors / 0 skipped`；其中新`ProductionSecretProfileRegressionTest`为61项，覆盖真实ConfigData include/group/alias/JSON/CLI/system profile展开、两项secret来源、七个公开默认值、旧key签名拒绝、实际prod YAML五项缺失、redaction和refresh前失败。
+- Full Maven=`23/23 modules BUILD SUCCESS`；nq-app=`437 / failures 0 / errors 0 / existing skips 35`；cached digest-pinned PostgreSQL=`16.15 / 160015`，仅loopback随机端口42177，CI fixture迁移V1→V46、pending=0。Required app-context/repository smoke各`1/1 PASS`。
+- Executable JAR自动发现：missing/default JWT/master、include/group/JSON profile冲突、marker=false+prod缺密钥、invalid datasource共9例全部`PROD_CONFIGURATION_INVALID / PRE_REFRESH`；stdout/stderr synthetic secret occurrences=0。生成JAR SHA-256=`017eea9c0e3b1dcba38ed28f71648064c0ab3887960f71158b4f3a3dee4a098b`。
+- CI：旧72项+新增12项=`84/84 REJECTED`，PowerShell 5.1/7均通过；required jobs/capabilities=`9/25`，missing/unknown=`0/0`，workflow未改。Canonical release=`66 cases PASS`。
+- RCA：首次新测试6失败，证明Binder会保留unresolved placeholder文本；required-property guard补拒绝后目标/full回归通过。Authority checker首次受默认execution policy阻止，使用任务指定Bypass后通过。Docker原未启动，启动后使用缓存PG16镜像，无下载。
+- 隔离：清空测试进程继承的NQ/SPRING/PG/JVM配置，仅合成值；未复用旧Review helper，未触达5432或生产。临时数据库容器residue=0。日志与Surefire中完整synthetic secret匹配=0。
+- Result：四项finding均`REMEDIATED_PENDING_INDEPENDENT_REVIEW`；待正式Review Attempt-02。Evidence：[Attempt-01](../audit/evidence/GATEAUDIT_PHASE5_F008_PROD_CONFIG_FAIL_CLOSED_REMEDIATION_ATTEMPT_01.md)。
+
+## 2026-09-05 — F008 Remediation Attempt-02
+
+- Scope：只整改 Review Attempt-02 的 default-prod production validation bypass 与 mandatory CI capability closure；未重新设计 datasource/JWT/master-key、legacy profile、frontend、migration、F007/F009 或 Phase6。
+- Effective profile：`active=[] / default=[prod]` 现在进入完整 prod validation；marker missing/false/true 均不能关闭校验。default `{prod,local}`、active mixing 与 include/group injection 继续 fail-closed。
+- Mandatory CI：`backend` required job 的 dedicated production-configuration regression 使用两项真实 Java suite；validator 强制唯一 owner、exact command、unconditional/fail-closed。required jobs=`9`，capabilities actual/registered/missing/unknown=`25/25/0/0`。
+- Mutation：R06/R09/R10 的隔离 source mutation 运行 mandatory Maven command 均 non-zero；step remove/conditional/soft-fail/failure-ignore/unrelated-test 也均拒绝。suite=`92/92 REJECTED`。
+- Packaged artifact：从 executable JAR 的 classes/libs/root `spring.factories` 启动自动 discovery probe，default-prod/active-empty 4项 known/blank、marker absent/false 均`PROD_CONFIGURATION_INVALID`，Hikari/Flyway/loopback DB connection=`0/0/0`。
+- Runtime：disposable cached PG16.15（随机 loopback port）V1→V46/pending=0；full Maven=`23/23 BUILD SUCCESS`，app-context/repository smoke=`1/1 / 1/1 PASS`，container residue=0；canonical release=`66/66 PASS`；frontend=`NOT_REQUIRED`，remote exact-head CI=`NOT_RUN`。
+- RCA：首次未隔离 full Maven 使用既有本机 DB，V45 因既有外键数据不一致失败并回滚；不计为通过，改为 disposable PG16 后重跑成功。首次直接 JAR CLI profile 构造未形成 default-prod 条件，停止使用，改为来自 freshly packaged JAR 且记录 final profile set 的 auto-discovery probe。
+- Result：`DEFAULT_PROD_PROFILE_VALIDATION_BYPASS`、`CI_PROD_CONFIG_BYPASS_VARIANTS_NOT_ENFORCED` 与P5-F008均`REMEDIATED_PENDING_INDEPENDENT_REVIEW`；authority保持`IMPLEMENTED|PENDING_REVIEW / NONE / NOT_RUN`。Evidence：[Attempt-02](../audit/evidence/GATEAUDIT_PHASE5_F008_PROD_CONFIG_FAIL_CLOSED_REMEDIATION_ATTEMPT_02.md)。
+
+## 2026-09-05 — F008 CI production-config enforcement remediation
+
+- Scope：仅 Attempt-03 P1-B；required job/step 禁止任何 `continue-on-error` 字段（含 false 与 expression），F008 selector、owner、uniqueness、condition、完整 run script 与 failure propagation 均受约束。
+- Canonical admission：默认 validator 先校验 workflow contract，再对同一 backend source tree 执行真实 F008 Maven regression；native failure、缺少 fresh report、test skipped/failure/error 均拒绝。`-ContractOnly` 仅供结构 fixture，明确不产生 admission，canonical CI 禁止降级为该模式。
+- 本轮实测：PS5.1 `5.1.26100.9168` 与 PS7 `7.6.5` 完整 suite 均 `116/116 REJECTED / accepted=0`；baseline admission 各执行 118 个 F008 tests 并通过。R06/R09/R10 各经同一 default admission 入口因真实 assertion failures=`17/50/12` 拒绝。
+- Live inventory：required jobs=9，actual/registered/missing/unknown=`25/25/0/0`。Full Maven、PG16、packaged JAR、canonical release 均 `NOT_REQUIRED / NOT_RERUN`；此前 review 结果保留为历史已验证事实。
+- 状态：`IMPLEMENTED / F008_CI_PROD_CONFIG_ENFORCEMENT_REMEDIATED / PENDING_FINAL_CLOSURE_REVIEW`；authority 保持 `IMPLEMENTED|PENDING_REVIEW / NONE / NOT_RUN`，未 commit/push。
+- Evidence：[CI enforcement remediation](../audit/evidence/GATEAUDIT_PHASE5_F008_CI_PROD_CONFIG_ENFORCEMENT_REMEDIATION.md)。
+
+## 2026-09-05 — F008 YAML semantic CI enforcement remediation
+
+- Scope：只整改 `CI_PROD_CONFIG_BYPASS_VARIANTS_NOT_ENFORCED` 的 YAML key 表示绕过。Workflow 使用真实 SnakeYAML node model；required job/step 按解码后的 `if`、`continue-on-error` key 存在性拒绝，不评估 expression、不增加 escape regex 特例。
+- Parser：复用 backend Spring Boot 3.5.10 BOM 管理的 SnakeYAML 2.4；Java 21 source launcher 运行受仓库管理的 CI helper。Reader 只读取本地已有 Maven dependency，不下载/安装 parser。默认 validator 先执行原有同源 targeted F008 Maven（同时准备现有依赖），然后运行共同的 semantic contract；ContractOnly 只运行后者，缺依赖 fail-closed，不授予 admission。
+- Permanent proof：plain/quoted/escaped 的 `continue-on-error` 与 `if` 分别解析为同一 key；8 个 parser/unsupported-structure cases 与 missing-dependency case 全部拒绝。S01–S10、8 个 critical subtree/parser negatives、default-mode escaped-key exploit 加入原 suite。
+- PS7/PS5.1：完整 suite 均 exit=0、`135/135 REJECTED / accepted=0`；targeted F008 baseline=`118 tests / failures=0 / errors=0 / skipped=0`。R06/R09/R10 各 `118 tests / assertion failures=17/50/12 / errors=0 / skipped=0`，同一默认入口均拒绝。
+- ContractOnly 与 default 共用同一 YAML model。额外有效转义 `jobs/backend/name/run` fixture 通过结构合同；required jobs=9、capabilities=25、missing=0、unknown=0。PS5.1/PS7 authority checker 均 `errors=0 / CURRENT_AUTHORITY_VALID`。
+- Full Maven、PG16、packaged JAR、canonical release、frontend=`NOT_REQUIRED / NOT_RUN`；remote exact-head CI=`NOT_RUN`。生产 Java/config、workflow、lock、STATUS 及此前 evidence 均不修改。
+- Result：`IMPLEMENTED / F008_YAML_SEMANTIC_CI_ENFORCEMENT_REMEDIATED / P0_0 / P1_1_REMEDIATED / PENDING_FINAL_CLOSURE_REVIEW`；staged/commit/push=`0/NONE/NONE`。唯一后续 review 为 `NQ-GATEAUDIT-PHASE5-F008-YAML-SEMANTIC-FINAL-CLOSURE-REVIEW`，不在实施会话自我验收。
+- Evidence：[YAML semantic remediation](../audit/evidence/GATEAUDIT_PHASE5_F008_YAML_SEMANTIC_CI_ENFORCEMENT_REMEDIATION.md)。
+
+## 2026-09-05 — F008 Final Closure Review acceptance binding
+
+- 已接受独立review：`NQ-GATEAUDIT-PHASE5-F008-YAML-SEMANTIC-FINAL-CLOSURE-REVIEW`，结果=`PASS / PHASE5_F008_YAML_SEMANTIC_FINAL_CLOSURE_ACCEPTED / P0_0 / P1_0 / READY_TO_COMMIT`；只关闭semantic validator残留finding的本地review，不代表远端CI或P5-F008正式CLOSED。
+- Reviewer实际执行：PS5.1/PS7完整validator suite各`135/135 REJECTED / accepted=0`；独立限定semantic fixtures=`10/10 REJECTED`；两组key equality、8项parser negatives及missing BOM/JAR拒绝通过。R06/R09/R10各执行118 tests、assertion failures=`17/50/12`、errors/skips=`0/0`，source→Maven→mandatory capability→validator拒绝链成立。单独mandatory Maven=`118 tests / 0 failures / 0 errors / 0 skips`。
+- Review绑定：parent HEAD=`aa73a7a58b7d5ecbb8e5beba2106cbbe982803dc`；15文件reviewed functional fingerprint=`179a7bdcd2a9ff0bfc120dabcad8823b7a757ba089f7fea2b4843e308aac4382`；review前后相同。全部3167文件manifest fingerprint=`5f414821e1452cc6fafe204e170ae6e177118749b5767d0630397d01632bd119`，reviewer implementation modifications=0。
+- 验证边界：Default实际为targeted Maven→fresh reports→shared semantic contract→admission；ContractOnly不授予admission。PS5.1临时嵌套runner的closure作用域错误通过独立`-File`入口重跑解决；独立fixture首轮错误消息断言过窄已修正；两次harness失败均保留且没有candidate修改。Full Maven/PG16/JAR/canonical release/frontend未重跑，remote CI=`NOT_RUN`。
+- 本提交任务仅核验review绑定并持久化已授权authority，不重跑上述implementation qualification。复合machine action的`COMMIT+CI`命中导致两种shell checker=`AMBIGUOUS / exit=1`；用户明确授权使用单一`COMMIT` token，隔离authority fixture两种shell均`CURRENT_AUTHORITY_VALID / exit=0`，不修改governance contract/matcher。

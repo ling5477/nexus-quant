@@ -1,12 +1,22 @@
 [CmdletBinding()]
 param(
+    # ContractOnly validates workflow fixtures, never grants canonical admission. The default entry
+    # also executes the bound Java capability; a source mutation must fail this same admission entry.
+    [switch] $ContractOnly,
+    [string] $BackendRoot = 'backend',
     [string] $WorkflowPath = '.github/workflows/ci.yml',
     [string] $SupplyChainLockPath = 'scripts/ci/delivery-supply-chain-lock.json',
     [string] $RestoreDrillPath = 'scripts/deployment/Invoke-NqCanonicalRestoreDrill.ps1',
     [string] $ReleaseRegressionPath = 'scripts/deployment/tests/Test-NqCanonicalRelease.Tests.ps1',
     [string] $ReleaseBuilderPath = 'scripts/deployment/New-NqCanonicalRelease.ps1',
     [string] $InstallerPath = 'scripts/deployment/Install-NqCanonicalRelease.ps1',
-    [string] $DeploymentContractPath = 'deploy/canonical/deployment-contract.json'
+    [string] $DeploymentContractPath = 'deploy/canonical/deployment-contract.json',
+    [string] $SystemdUnitPath = 'deploy/canonical/nq-canonical.service',
+    [string] $ProductionConfigInitializerPath = (Join-Path $BackendRoot 'nq-app/src/main/java/com/guidinglight/nexusquant/app/config/env/ProductionConfigurationApplicationContextInitializer.java'),
+    [string] $ProductionConfigTestPath = (Join-Path $BackendRoot 'nq-app/src/test/java/com/guidinglight/nexusquant/app/config/env/ProductionConfigurationApplicationContextInitializerTest.java'),
+    [string] $SpringFactoriesPath = (Join-Path $BackendRoot 'nq-app/src/main/resources/META-INF/spring.factories'),
+    [string] $ProductionYamlPath = (Join-Path $BackendRoot 'nq-app/src/main/resources/application-prod.yml'),
+    [string] $ProductionSecretProfileTestPath = (Join-Path $BackendRoot 'nq-app/src/test/java/com/guidinglight/nexusquant/app/config/env/ProductionSecretProfileRegressionTest.java')
 )
 
 Set-StrictMode -Version Latest
@@ -14,6 +24,32 @@ $ErrorActionPreference = 'Stop'
 
 function Assert-Condition([bool] $Condition, [string] $Message) {
     if (-not $Condition) { throw $Message }
+}
+
+function Read-ProductionScalarConfiguration([string] $Path) {
+    # The canonical prod file is a block-mapping/scalar contract. Reject unsupported YAML constructs
+    # instead of guessing merge/alias/multidocument semantics; never print values in validation errors.
+    Assert-Condition (Test-Path -LiteralPath $Path -PathType Leaf) 'Production YAML is missing'
+    $values = [Collections.Generic.Dictionary[string,string]]::new([StringComparer]::Ordinal)
+    $seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $parents = [Collections.Generic.List[string]]::new()
+    foreach ($line in Get-Content -LiteralPath $Path -Encoding UTF8) {
+        if ($line -match '^\s*(#.*)?$') { continue }
+        $match = [regex]::Match($line, '^( *)([a-zA-Z][a-zA-Z0-9-]*):(?: +(.*))?$')
+        Assert-Condition $match.Success 'Unsupported production YAML syntax'
+        $indent = $match.Groups[1].Value.Length
+        Assert-Condition ($indent % 2 -eq 0) 'Invalid production YAML indentation'
+        $depth = [int]($indent / 2)
+        Assert-Condition ($depth -le $parents.Count) 'Invalid production YAML nesting'
+        while ($parents.Count -gt $depth) { $parents.RemoveAt($parents.Count - 1) }
+        $key = (@($parents) + $match.Groups[2].Value) -join '.'
+        Assert-Condition ($seen.Add($key)) 'Duplicate production YAML key'
+        $value = $match.Groups[3].Value.Trim()
+        if ($value.Length -eq 0) { $parents.Add($match.Groups[2].Value); continue }
+        Assert-Condition (-not ($value -match '^[&*!>|\[\{]')) 'Unsupported production YAML scalar'
+        $values.Add($key, $value)
+    }
+    return ,$values
 }
 
 function Get-RequiredProperty([object] $Object, [string] $Name, [string] $Context) {
@@ -39,46 +75,63 @@ function Assert-Unique([object[]] $Items, [scriptblock] $KeySelector, [string] $
     }
 }
 
-function Get-WorkflowSteps([string] $WorkflowContent) {
-    $stepPattern = '(?ms)^      - name:\s*(?<name>[^\r\n]+)\r?\n(?<body>.*?)(?=^      - name:|^  [A-Za-z0-9_-]+:\s*$|\z)'
-    $steps = @()
-    foreach ($match in [regex]::Matches($WorkflowContent, $stepPattern)) {
-        $jobMatches = [regex]::Matches(
-            $WorkflowContent.Substring(0, $match.Index),
-            '(?m)^  (?<job>[A-Za-z0-9_-]+):\s*$'
-        )
-        Assert-Condition ($jobMatches.Count -gt 0) "Unable to resolve workflow job for step: $($match.Groups['name'].Value)"
-        $steps += [pscustomobject]@{
-            Name = $match.Groups['name'].Value.Trim()
-            Body = $match.Groups['body'].Value
-            Text = $match.Value
-            Index = $match.Index
-            Job = $jobMatches[$jobMatches.Count - 1].Groups['job'].Value
-        }
-    }
-    Assert-Condition ($steps.Count -gt 0) 'No named workflow steps were found'
-    return $steps
+function Assert-YamlMapping([object] $Value, [string] $Context) {
+    Assert-Condition ($Value -is [pscustomobject]) "YAML_SEMANTIC_STRUCTURE_REJECTED / mapping required: $Context"
 }
 
-function Get-WorkflowJobs([string] $WorkflowContent) {
-    $jobsMarker = [regex]::Match($WorkflowContent, '(?m)^jobs:\s*$')
-    Assert-Condition $jobsMarker.Success 'Workflow jobs mapping is missing'
-    $jobsContent = $WorkflowContent.Substring($jobsMarker.Index + $jobsMarker.Length)
-    $jobPattern = '(?ms)^  (?<id>[A-Za-z0-9_-]+):\s*\r?\n(?<body>.*?)(?=^  [A-Za-z0-9_-]+:\s*$|\z)'
-    $jobs = @()
-    foreach ($match in [regex]::Matches($jobsContent, $jobPattern)) {
-        $nameMatch = [regex]::Match($match.Groups['body'].Value, '(?m)^    name:\s*(?<name>[^\r\n#]+?)\s*$')
-        Assert-Condition $nameMatch.Success "Required job name is missing: $($match.Groups['id'].Value)"
-        $jobs += [pscustomobject]@{
-            Id = $match.Groups['id'].Value
-            Name = $nameMatch.Groups['name'].Value.Trim()
-            Body = $match.Groups['body'].Value
-            Text = $match.Value
-            Index = $jobsMarker.Index + $jobsMarker.Length + $match.Index
+function Test-YamlKey([object] $Mapping, [string] $Key) {
+    return @($Mapping.PSObject.Properties.Name) -ccontains $Key
+}
+
+function Get-YamlText([object] $Mapping, [string] $Key, [switch] $Optional) {
+    if ($Optional -and -not (Test-YamlKey $Mapping $Key)) { return '' }
+    Assert-Condition (Test-YamlKey $Mapping $Key) "YAML_SEMANTIC_STRUCTURE_REJECTED / missing scalar: $Key"
+    $value = $Mapping.PSObject.Properties[$Key].Value
+    Assert-Condition ($value -is [string]) "YAML_SEMANTIC_STRUCTURE_REJECTED / scalar required: $Key"
+    return $value
+}
+
+function Get-WorkflowFields([object] $Value) {
+    if ($Value -is [pscustomobject]) {
+        foreach ($field in $Value.PSObject.Properties) {
+            [pscustomobject]@{ Key = $field.Name; Value = $field.Value }
+            Get-WorkflowFields $field.Value
+        }
+    } elseif ($Value -is [array]) {
+        foreach ($item in $Value) { Get-WorkflowFields $item }
+    }
+}
+
+function Get-WorkflowJobs([object] $Workflow) {
+    Assert-YamlMapping $Workflow 'workflow'
+    Assert-Condition (Test-YamlKey $Workflow 'jobs') 'YAML_SEMANTIC_STRUCTURE_REJECTED / jobs missing'
+    $mapping = $Workflow.PSObject.Properties['jobs'].Value
+    Assert-YamlMapping $mapping 'jobs'
+    foreach ($entry in $mapping.PSObject.Properties) {
+        Assert-YamlMapping $entry.Value "jobs.$($entry.Name)"
+        [pscustomobject]@{ Id = $entry.Name; Name = (Get-YamlText $entry.Value 'name'); Mapping = $entry.Value }
+    }
+}
+
+function Get-WorkflowSteps([object[]] $Jobs) {
+    $index = 0
+    foreach ($job in $Jobs) {
+        Assert-Condition (Test-YamlKey $job.Mapping 'steps') "YAML_SEMANTIC_STRUCTURE_REJECTED / steps missing: $($job.Id)"
+        $sequence = $job.Mapping.PSObject.Properties['steps'].Value
+        Assert-Condition ($sequence -is [array]) "YAML_SEMANTIC_STRUCTURE_REJECTED / steps must be a sequence: $($job.Id)"
+        foreach ($mapping in $sequence) {
+            Assert-YamlMapping $mapping "jobs.$($job.Id).steps"
+            [pscustomobject]@{
+                Name = (Get-YamlText $mapping 'name')
+                Body = (Get-YamlText $mapping 'run' -Optional)
+                Shell = (Get-YamlText $mapping 'shell' -Optional)
+                Index = $index
+                Job = $job.Id
+                Mapping = $mapping
+            }
+            $index++
         }
     }
-    Assert-Condition ($jobs.Count -gt 0) 'No workflow jobs were found'
-    return $jobs
 }
 
 function Assert-RequiredJob([object[]] $Jobs, [string] $Id, [string] $ExpectedName) {
@@ -86,42 +139,85 @@ function Assert-RequiredJob([object[]] $Jobs, [string] $Id, [string] $ExpectedNa
     Assert-Condition ($matches.Count -eq 1) "Required workflow job missing or duplicated: $Id"
     $job = $matches[0]
     Assert-Condition ([string]$job.Name -ceq $ExpectedName) "Required workflow job name mismatch: $Id"
-    Assert-Condition (-not [regex]::IsMatch($job.Body, '(?m)^    if:\s*')) "Required workflow job is conditional: $Id"
-    $continueMatches = [regex]::Matches($job.Body, '(?m)^    continue-on-error:\s*(?<value>[^\r\n#]+)')
-    Assert-Condition ($continueMatches.Count -le 1) "Required workflow job has duplicate continue-on-error: $Id"
-    if ($continueMatches.Count -eq 1) {
-        Assert-Condition ($continueMatches[0].Groups['value'].Value.Trim() -ceq 'false') "Required workflow job can soft-fail: $Id"
-    }
+    # Presence of a decoded key is forbidden, independent of source spelling or expression value.
+    Assert-Condition (-not (Test-YamlKey $job.Mapping 'if')) "Required workflow job is conditional: $Id"
+    Assert-Condition (-not (Test-YamlKey $job.Mapping 'continue-on-error')) "Required workflow job must omit continue-on-error: $Id"
     return $job
 }
 
-function Assert-RequiredStep(
-    [object[]] $Steps,
-    [string] $Name,
-    [string] $ExpectedJob = ''
-) {
+function Assert-RequiredStep([object[]] $Steps, [string] $Name, [string] $ExpectedJob = '') {
     $matches = @($Steps | Where-Object { [string]$_.Name -ceq $Name })
     Assert-Condition ($matches.Count -eq 1) "Required workflow step missing or duplicated: $Name"
     $step = $matches[0]
     if (-not [string]::IsNullOrWhiteSpace($ExpectedJob)) {
         Assert-Condition ([string]$step.Job -ceq $ExpectedJob) "Workflow step is in the wrong job: $Name"
     }
-    Assert-Condition (-not [regex]::IsMatch($step.Text, '(?m)^\s+continue-on-error:\s*true\s*$')) "Required workflow step soft-fails: $Name"
-    Assert-Condition (-not [regex]::IsMatch($step.Text, '(?m)^\s+if:\s*')) "Required workflow step is conditional: $Name"
+    Assert-Condition (-not (Test-YamlKey $step.Mapping 'continue-on-error')) "Required workflow step must omit continue-on-error: $Name"
+    Assert-Condition (-not (Test-YamlKey $step.Mapping 'if')) "Required workflow step is conditional: $Name"
     return $step
+}
+
+function Get-RequiredRunLines([object] $Step) {
+    $run = Get-YamlText $Step.Mapping 'run'
+    return (@($run -split '\r?\n' | ForEach-Object { $_.Trim() } | Where-Object { $_.Length -gt 0 }) -join "`n")
 }
 
 function Assert-SinglePurposeStep([object[]]$Steps,[string]$Name,[string]$Job,[string]$Invocation) {
-    $step=Assert-RequiredStep $Steps $Name $Job
-    $runPattern='(?m)^\s*run:\s*'+[regex]::Escape($Invocation)+'\s*$'
-    Assert-Condition ([regex]::Matches($step.Body,$runPattern).Count-eq1) "Critical step invocation mismatch: $Name"
-    Assert-Condition (-not[regex]::IsMatch($step.Body,'(?i)(\|\|\s*true|;\s*exit\s+0|try\s*\{|catch\s*\{|ErrorAction\s+SilentlyContinue|LASTEXITCODE)')) "Critical step can ignore failure: $Name"
+    $step = Assert-RequiredStep $Steps $Name $Job
+    Assert-Condition ((Get-RequiredRunLines $step) -ceq $Invocation) "Critical step invocation mismatch: $Name"
     return $step
 }
 
-$content = Get-Content -LiteralPath $WorkflowPath -Raw -Encoding UTF8
-$steps = @(Get-WorkflowSteps $content)
-$jobs = @(Get-WorkflowJobs $content)
+function Invoke-ProductionConfigAdmission {
+    # Bind the inspected files to the reactor that actually executes the capability. A fixture override
+    # must not validate one source tree and obtain a green result from another tree's unchanged tests.
+    $backendPath = (Resolve-Path -LiteralPath $BackendRoot).Path
+    $boundFiles = @{
+        'nq-app/src/main/java/com/guidinglight/nexusquant/app/config/env/ProductionConfigurationApplicationContextInitializer.java' = $ProductionConfigInitializerPath
+        'nq-app/src/test/java/com/guidinglight/nexusquant/app/config/env/ProductionConfigurationApplicationContextInitializerTest.java' = $ProductionConfigTestPath
+        'nq-app/src/test/java/com/guidinglight/nexusquant/app/config/env/ProductionSecretProfileRegressionTest.java' = $ProductionSecretProfileTestPath
+        'nq-app/src/main/resources/application-prod.yml' = $ProductionYamlPath
+        'nq-app/src/main/resources/META-INF/spring.factories' = $SpringFactoriesPath
+    }
+    foreach ($binding in $boundFiles.GetEnumerator()) {
+        $expected = (Resolve-Path -LiteralPath (Join-Path $backendPath $binding.Key)).Path
+        $actual = (Resolve-Path -LiteralPath $binding.Value).Path
+        Assert-Condition ($actual -ceq $expected) 'CANONICAL_ADMISSION_REJECTED / PRODUCTION_REGRESSION_SOURCE_MISMATCH'
+    }
+    $testNames = @('ProductionConfigurationApplicationContextInitializerTest', 'ProductionSecretProfileRegressionTest')
+    $targetPath = Join-Path $backendPath 'nq-app/target'
+    New-Item -ItemType Directory -Path $targetPath -Force | Out-Null
+    $reportPaths = @($testNames | ForEach-Object {
+        Join-Path $targetPath "surefire-reports/TEST-com.guidinglight.nexusquant.app.config.env.$_.xml"
+    })
+    foreach ($reportPath in $reportPaths) {
+        # Only these two generated reports are removed, so a skipped run cannot reuse stale green XML.
+        if (Test-Path -LiteralPath $reportPath) { Remove-Item -LiteralPath $reportPath -Force }
+    }
+    $regressionLog = Join-Path $targetPath 'production-config-admission.log'
+    $mavenArguments = @('-f', (Join-Path $backendPath 'pom.xml'), '-pl', 'nq-app', '-am', 'test',
+        ('-Dtest=' + ($testNames -join ',')), '-Dsurefire.failIfNoSpecifiedTests=false')
+    & mvn @mavenArguments *> $regressionLog
+    $regressionExit = $LASTEXITCODE
+    Assert-Condition ($regressionExit -eq 0) "CANONICAL_ADMISSION_REJECTED / PRODUCTION_CONFIG_REGRESSION_FAILED exit=$regressionExit log=$regressionLog"
+    foreach ($reportPath in $reportPaths) {
+        Assert-Condition (Test-Path -LiteralPath $reportPath -PathType Leaf) 'CANONICAL_ADMISSION_REJECTED / PRODUCTION_REGRESSION_REPORT_MISSING'
+        [xml] $report = Get-Content -LiteralPath $reportPath -Raw
+        Assert-Condition ([int]$report.testsuite.tests -gt 0 -and [int]$report.testsuite.failures -eq 0 -and
+            [int]$report.testsuite.errors -eq 0 -and [int]$report.testsuite.skipped -eq 0) 'CANONICAL_ADMISSION_REJECTED / PRODUCTION_REGRESSION_NOT_FULLY_EXECUTED'
+    }
+}
+
+# Only the native admission execution differs between modes. The parser does not download tools;
+# default's existing targeted Maven run also prepares its already-managed backend dependency.
+if (-not $ContractOnly) { Invoke-ProductionConfigAdmission }
+$semantic = & (Join-Path $PSScriptRoot 'Read-NqWorkflowYaml.ps1') -WorkflowPath $WorkflowPath
+$workflow = $semantic.document
+$jobs = @(Get-WorkflowJobs $workflow)
+$steps = @(Get-WorkflowSteps $jobs)
+$workflowFields = @(Get-WorkflowFields $workflow)
+# Legacy command-content checks inspect decoded scalar values, never raw YAML keys or comments.
+$content = @($workflowFields | Where-Object { $_.Value -is [string] } | ForEach-Object Value) -join "`n"
 try {
     $supplyChainLock = Get-Content -LiteralPath $SupplyChainLockPath -Raw -Encoding UTF8 | ConvertFrom-Json
 } catch {
@@ -147,7 +243,12 @@ foreach ($entry in $requiredJobs.GetEnumerator()) {
 }
 
 # Every action occurrence must match one active lock identity, including its human-readable version label.
-$actionMatches = [regex]::Matches($content, '(?m)^\s*uses:\s*([^@\s]+)@([^\s#]+)\s*(?:#\s*(\S+))?\s*$')
+$actionMatches = @($semantic.actions | ForEach-Object {
+    # SnakeYAML locates the actual uses scalar; its source mark identifies the version comment.
+    $match = [regex]::Match(($_.value + ' ' + $_.annotation).Trim(), '^([^@\s]+)@([^\s#]+)\s*(?:#\s*(\S+))?\s*$')
+    Assert-Condition $match.Success 'Malformed parsed action identity or version annotation'
+    $match
+})
 Assert-Condition ($actionMatches.Count -gt 0) 'No GitHub Actions identities were found'
 $lockedActions = @(Get-RequiredProperty $supplyChainLock 'actions' 'lock')
 Assert-Condition ($lockedActions.Count -gt 0) 'Supply-chain lock actions are empty'
@@ -213,7 +314,7 @@ Assert-Condition ([regex]::Matches($content, 'Test-DeliveryToolArchive\.ps1').Co
 foreach ($variable in @('NQ_GITLEAKS_VERSION', 'NQ_GITLEAKS_ARTIFACT', 'NQ_GITLEAKS_DOWNLOAD_URL')) {
     Assert-Condition ($content.Contains($variable)) "Workflow does not consume exported lock identity: $variable"
 }
-Assert-Condition (-not [regex]::IsMatch($content, '(?m)^\s+GITLEAKS_(VERSION|.*SHA256):')) 'Workflow duplicates a canonical gitleaks version or checksum'
+Assert-Condition (@($workflowFields | Where-Object { $_.Key -cmatch '^GITLEAKS_(VERSION|.*SHA256)$' }).Count -eq 0) 'Workflow duplicates a canonical gitleaks version or checksum'
 Assert-Condition (-not [regex]::IsMatch($content, '(?im)^.*sudo.*gitleaks.*$')) 'Gitleaks flow must not use sudo'
 Assert-Condition (-not $content.Contains('/usr/local/bin/gitleaks')) 'Gitleaks flow must not write /usr/local/bin'
 $gitleaksIdentityStep = Assert-RequiredStep $steps 'Load canonical gitleaks identity' 'secret-scan'
@@ -242,9 +343,14 @@ Assert-Condition ($lockedImages.Count -gt 0) 'Supply-chain lock images are empty
 Assert-Unique $lockedImages { param($item) "$(Get-RequiredText $item 'name' 'lock.images[]'):$(Get-RequiredText $item 'tag' 'lock.images[]')" } 'image name/tag'
 $activeImages = @($lockedImages | Where-Object { [string]$_.usage -ceq 'ACTIVE_CI_PINNED' })
 Assert-Condition ($activeImages.Count -gt 0) 'At least one active pinned image identity is required'
-$imageMatches = [regex]::Matches($content, '(?m)^\s*image:\s*([A-Za-z0-9._/-]+):([^@\s]+)@(sha256:[0-9a-f]+)\s*$')
+$allImageLines = @($workflowFields | Where-Object { $_.Key -ceq 'image' })
+$imageMatches = @($allImageLines | ForEach-Object {
+    Assert-Condition ($_.Value -is [string]) 'Workflow image must be a scalar'
+    $match = [regex]::Match($_.Value, '^([A-Za-z0-9._/-]+):([^@\s]+)@(sha256:[0-9a-f]+)$')
+    Assert-Condition $match.Success 'Mutable or malformed workflow service image identity exists'
+    $match
+})
 Assert-Condition ($imageMatches.Count -gt 0) 'No digest-pinned workflow service images were found'
-$allImageLines = [regex]::Matches($content, '(?m)^\s*image:\s*([^\s]+)\s*$')
 Assert-Condition ($allImageLines.Count -eq $imageMatches.Count) 'Mutable or malformed workflow service image identity exists'
 foreach ($locked in $activeImages) {
     $name = Get-RequiredText $locked 'name' 'lock.images[]'
@@ -270,20 +376,36 @@ foreach ($match in $imageMatches) {
 
 $expectedNames = @($requiredJobs.Values)
 foreach ($name in $expectedNames) {
-    Assert-Condition ([regex]::Matches($content, "(?m)^    name: $([regex]::Escape($name))$").Count -eq 1) "Required check name missing or duplicated: $name"
+    Assert-Condition (@($jobs | Where-Object { $_.Name -ceq $name }).Count -eq 1) "Required check name missing or duplicated: $name"
 }
-Assert-Condition (-not [regex]::IsMatch($content, '(?m)^\s+continue-on-error:\s*true\s*$')) 'Canonical workflow must not contain continue-on-error: true'
-Assert-Condition ([regex]::Matches($content, '(?m)^\s+run:\s+npm run build\s*$').Count -eq 1) 'Frontend production build must execute exactly once'
-Assert-Condition (-not $content.Contains('ci-security-smoke:')) 'Duplicate CI security job still exists'
+Assert-Condition (@($workflowFields | Where-Object { $_.Key -ceq 'continue-on-error' -and $_.Value -ceq 'true' }).Count -eq 0) 'Canonical workflow must not contain continue-on-error: true'
+Assert-Condition (@($steps | Where-Object { $_.Body.Trim() -ceq 'npm run build' }).Count -eq 1) 'Frontend production build must execute exactly once'
+Assert-Condition (@($jobs | Where-Object Id -CEQ 'ci-security-smoke').Count -eq 0) 'Duplicate CI security job still exists'
 foreach ($test in @('EnvSafetyValidatorTest', 'NoOutboundExchangeGuardTest', 'NoRealExchangeCredentialPermissionProbePortTest')) {
     Assert-Condition ($content.Contains($test)) "Runtime safety regression is missing: $test"
 }
-Assert-Condition (-not $content.Contains('id-token: write')) 'Platform attestation permission must remain disabled'
+$backendRegressionStep = Assert-RequiredStep $steps 'Run backend tests' 'backend'
+Assert-Condition ((Get-RequiredRunLines $backendRegressionStep) -ceq "set -euo pipefail`nmvn -f backend/pom.xml test") 'Backend regression must execute the full Maven reactor without a failure-ignore wrapper'
+$productionConfigRegressionStep = Assert-SinglePurposeStep $steps 'Run production configuration fail-closed regression' 'backend' 'mvn -f backend/pom.xml -pl nq-app -am test -Dtest=ProductionConfigurationApplicationContextInitializerTest,ProductionSecretProfileRegressionTest -Dsurefire.failIfNoSpecifiedTests=false'
+foreach ($regressionStep in @($backendRegressionStep, $productionConfigRegressionStep)) {
+    Assert-Condition ($regressionStep.Shell -ceq 'bash') "Regression shell must preserve native failure: $($regressionStep.Name)"
+}
+$backendJob = @($jobs | Where-Object Id -CEQ 'backend')[0]
+$javaOptionFields = @(Get-WorkflowFields $backendJob.Mapping)
+if (Test-YamlKey $workflow 'env') { $javaOptionFields += @(Get-WorkflowFields $workflow.PSObject.Properties['env'].Value) }
+Assert-Condition (@($javaOptionFields | Where-Object { $_.Key -cin @('MAVEN_ARGS','MAVEN_OPTS','JAVA_TOOL_OPTIONS','JDK_JAVA_OPTIONS','_JAVA_OPTIONS') }).Count -eq 0) 'Required Java regression must not inherit workflow test-skip or failure-ignore options'
+Assert-Condition (@($workflowFields | Where-Object { $_.Key -ceq 'id-token' -and $_.Value -ceq 'write' }).Count -eq 0) 'Platform attestation permission must remain disabled'
 Assert-Condition ($content.Contains('npm sbom --sbom-format cyclonedx')) 'Frontend SBOM generator is missing'
 Assert-Condition ([regex]::Matches($content, 'Test-DeliveryArtifactSafety\.ps1').Count -eq 2) 'Both delivery evidence producers must run the artifact safety gate'
 # Canonical dependency consumers must be reachable, fail closed, and consume repository locks.
 $lockValidationStep = Assert-RequiredStep $steps 'Validate canonical delivery workflow contract' 'diff-check'
 Assert-Condition ($lockValidationStep.Body.Contains('Test-CanonicalDeliveryWorkflow.ps1')) 'Canonical lock validator invocation is missing'
+Assert-Condition ((Get-RequiredRunLines $lockValidationStep) -ceq (@(
+    './scripts/ci/Test-CanonicalDeliveryWorkflow.ps1',
+    './scripts/ci/tests/Test-CanonicalDeliveryWorkflow.Tests.ps1',
+    './scripts/ci/tests/Test-GitleaksExecution.Tests.ps1',
+    './scripts/deployment/tests/Test-NqCanonicalRelease.Tests.ps1'
+) -join "`n")) 'Canonical CI must invoke full admission, not ContractOnly or a failure-ignore wrapper'
 Assert-Condition ($lockValidationStep.Body.Contains('Test-CanonicalDeliveryWorkflow.Tests.ps1')) 'Canonical lock mutation regressions are not executed'
 Assert-Condition ($lockValidationStep.Body.Contains('Test-GitleaksExecution.Tests.ps1')) 'Gitleaks execution regressions are not executed'
 Assert-Condition ($lockValidationStep.Body.Contains('Test-NqCanonicalRelease.Tests.ps1')) 'Canonical release regression is not executed'
@@ -300,10 +422,34 @@ Assert-Condition (Test-Path -LiteralPath $ReleaseRegressionPath -PathType Leaf) 
 Assert-Condition (Test-Path -LiteralPath $ReleaseBuilderPath -PathType Leaf) 'Canonical release builder implementation is missing'
 Assert-Condition (Test-Path -LiteralPath $InstallerPath -PathType Leaf) 'Canonical installer implementation is missing'
 Assert-Condition (Test-Path -LiteralPath $DeploymentContractPath -PathType Leaf) 'Canonical deployment contract is missing'
+Assert-Condition (Test-Path -LiteralPath $SystemdUnitPath -PathType Leaf) 'Canonical systemd unit is missing'
+Assert-Condition (Test-Path -LiteralPath $ProductionConfigInitializerPath -PathType Leaf) 'Production configuration initializer is missing'
+Assert-Condition (Test-Path -LiteralPath $ProductionConfigTestPath -PathType Leaf) 'Production configuration regression is missing'
+Assert-Condition (Test-Path -LiteralPath $ProductionSecretProfileTestPath -PathType Leaf) 'Production secret/profile regression is missing'
+Assert-Condition (Test-Path -LiteralPath $SpringFactoriesPath -PathType Leaf) 'Production configuration initializer registration is missing'
 $restoreImplementation = Get-Content -LiteralPath $RestoreDrillPath -Raw -Encoding UTF8
 $releaseRegression = Get-Content -LiteralPath $ReleaseRegressionPath -Raw -Encoding UTF8
 $releaseBuilder = Get-Content -LiteralPath $ReleaseBuilderPath -Raw -Encoding UTF8
 $installerImplementation = Get-Content -LiteralPath $InstallerPath -Raw -Encoding UTF8
+$systemdUnit = Get-Content -LiteralPath $SystemdUnitPath -Raw -Encoding UTF8
+$productionConfigInitializer = Get-Content -LiteralPath $ProductionConfigInitializerPath -Raw -Encoding UTF8
+$productionConfigTest = Get-Content -LiteralPath $ProductionConfigTestPath -Raw -Encoding UTF8
+$productionSecretProfileTest = Get-Content -LiteralPath $ProductionSecretProfileTestPath -Raw -Encoding UTF8
+$springFactories = Get-Content -LiteralPath $SpringFactoriesPath -Raw -Encoding UTF8
+$productionValues = Read-ProductionScalarConfiguration $ProductionYamlPath
+$requiredExternalProperties = [ordered]@{
+    'spring.datasource.url' = '${NQ_PROD_DB_URL}'
+    'spring.datasource.username' = '${NQ_PROD_DB_USER}'
+    'spring.datasource.password' = '${NQ_PROD_DB_PASSWORD}'
+    'nq.security.secret' = '${NQ_SECURITY_SECRET}'
+    'nq.account.credentials.master-key' = '${NQ_ACCOUNT_CREDENTIALS_MASTER_KEY}'
+}
+foreach ($entry in $requiredExternalProperties.GetEnumerator()) {
+    Assert-Condition ($productionValues.ContainsKey($entry.Key) -and
+            $productionValues[$entry.Key] -ceq $entry.Value) "Production external configuration without fallback required: $($entry.Key)"
+}
+Assert-Condition ($productionValues['spring.config.activate.on-profile'] -ceq 'prod' -and
+        $productionValues['spring.flyway.enabled'] -ceq 'false') 'Production activation/Flyway contract changed'
 try { $deploymentContract = Get-Content -LiteralPath $DeploymentContractPath -Raw -Encoding UTF8 | ConvertFrom-Json } catch { throw 'Canonical deployment contract JSON is invalid' }
 Assert-Condition (-not $releaseBuilder.Contains('AllowCandidateWorktree')) 'Deployable release builder retains dirty-worktree bypass'
 foreach($marker in @('DEPLOYABLE_RELEASE_REQUIRES_CLEAN_COMMITTED_TREE','UNCOMMITTED_CANDIDATE','candidate-sha256:',
@@ -322,6 +468,46 @@ Assert-Condition ([int]$deploymentContract.database.postgresqlServerMajor -eq 16
 Assert-Condition ([string]$deploymentContract.releaseAdmission.productionMode -ceq 'EXACT_HEAD_CI' -and
         [bool]$deploymentContract.releaseAdmission.bundleSelfProofAllowed -eq $false -and
         [bool]$deploymentContract.releaseAdmission.callerProvidedTrustRootAllowed -eq $false) 'Canonical external admission contract is invalid'
+$expectedProductionExecStart = 'ExecStart=/usr/bin/java -jar /opt/nexus-quant/current/app/nq-app.jar --nq.production-configuration=true --spring.profiles.active=prod'
+Assert-Condition ([regex]::Matches(
+        $systemdUnit,
+        '(?m)^' + [regex]::Escape($expectedProductionExecStart) + '\r?$'
+    ).Count -eq 1) 'Canonical systemd runtime must pin the production marker and prod profile on ExecStart'
+Assert-Condition ([regex]::Matches(
+        $systemdUnit,
+        '(?m)^EnvironmentFile=/etc/nexus-quant/runtime\.env\r?$'
+    ).Count -eq 1) 'Canonical systemd runtime must keep external runtime.env injection'
+Assert-Condition ($springFactories.Trim() -ceq
+        'org.springframework.context.ApplicationContextInitializer=com.guidinglight.nexusquant.app.config.env.ProductionConfigurationApplicationContextInitializer') 'Production configuration initializer registration is invalid'
+foreach ($marker in @('PROD_CONFIGURATION_INVALID','spring.datasource.hikari.jdbc-url',
+        'spring.datasource.jndi-name','spring.flyway.password','parseURL')) {
+    Assert-Condition ($productionConfigInitializer.Contains($marker)) "Production configuration guard is missing: $marker"
+}
+foreach ($marker in @('shouldRejectInvalidEffectiveProductionDatasource',
+        'shouldRejectAlternateDatasourceConnectionIdentity','shouldFailBeforeDatasourceCreationOrConnectionAndNeverEmitSecret')) {
+    Assert-Condition ($productionConfigTest.Contains($marker)) "Production configuration regression is missing: $marker"
+}
+$requiredDataSourceKeys = @($deploymentContract.runtimeConfiguration.requiredDataSourceKeys | ForEach-Object { [string]$_ })
+foreach ($marker in @('rejectsEveryNonProductionAdjunct','rejectsExpandedProfilesFromEverySupportedSource',
+        'rejectsMissingBlankWhitespaceAndAllPublicDefaults','rejectsOldDefaultSignedRolesUnderValidProductionKey',
+        'actualProdYamlRequiresEachExternalValue')) {
+    Assert-Condition ($productionSecretProfileTest.Contains($marker)) "Production secret/profile regression missing: $marker"
+}
+Assert-Condition (
+        [string]$deploymentContract.runtimeConfiguration.productionMarkerProperty -ceq 'nq.production-configuration' -and
+        [string]$deploymentContract.runtimeConfiguration.productionMarkerSource -ceq 'SYSTEMD_EXECSTART_COMMAND_LINE' -and
+        [string]$deploymentContract.runtimeConfiguration.requiredProfile -ceq 'prod' -and
+        (@($deploymentContract.runtimeConfiguration.approvedActiveProfiles) -join '|') -ceq 'prod' -and
+        (@($deploymentContract.runtimeConfiguration.requiredSecretKeys) -join '|') -ceq 'NQ_SECURITY_SECRET|NQ_ACCOUNT_CREDENTIALS_MASTER_KEY' -and
+        [string]$deploymentContract.runtimeConfiguration.profileSelectionSource -ceq 'SYSTEMD_EXECSTART_COMMAND_LINE' -and
+        [string]$deploymentContract.runtimeConfiguration.externalEnvironmentFile -ceq '/etc/nexus-quant/runtime.env' -and
+        ($requiredDataSourceKeys -join '|') -ceq 'NQ_PROD_DB_URL|NQ_PROD_DB_USER|NQ_PROD_DB_PASSWORD' -and
+        [string]$deploymentContract.runtimeConfiguration.effectivePropertyValidation -ceq 'SPRING_DATASOURCE_PROPERTIES_BEFORE_CONTEXT_REFRESH' -and
+        [bool]$deploymentContract.runtimeConfiguration.alternateDataSourceIdentityAllowed -eq $false -and
+        [bool]$deploymentContract.runtimeConfiguration.independentFlywayIdentityAllowed -eq $false -and
+        [bool]$deploymentContract.runtimeConfiguration.secretsBundled -eq $false -and
+        [string]$deploymentContract.runtimeConfiguration.failure -ceq 'PROD_CONFIGURATION_INVALID_BEFORE_DATASOURCE_OUTBOUND'
+    ) 'Canonical production runtime configuration contract is invalid'
 $wrapperContracts=[ordered]@{
     'scripts/deployment/Build-NqCanonicalReleaseCi.ps1'=@('New-NqCanonicalRelease.ps1','New-NqCanonicalReleaseAdmission.ps1','EXACT_HEAD_CI')
     'scripts/deployment/Test-NqCanonicalReleaseCi.ps1'=@('Test-NqCanonicalRelease.ps1','Test-NqCanonicalReleaseAdmission.ps1','EXACT_HEAD_CI')
@@ -349,16 +535,16 @@ foreach ($marker in @('same-source-same-artifact-deterministic-identity', 'manif
 }
 
 $npmInstallStep = Assert-RequiredStep $steps 'Install frontend dependencies' 'frontend-critical'
-Assert-Condition ([regex]::IsMatch($npmInstallStep.Body, '(?m)^\s*run:\s*npm ci\s*$')) 'Canonical frontend install must use npm ci'
-Assert-Condition (-not [regex]::IsMatch($content, '(?m)^\s*run:\s*npm install(?:\s|$)')) 'npm install must not replace the lockfile-enforced canonical install'
+Assert-Condition ((Get-RequiredRunLines $npmInstallStep) -ceq 'npm ci') 'Canonical frontend install must use npm ci'
+Assert-Condition (@($steps | Where-Object { $_.Body -match '(?m)^\s*npm install(?:\s|$)' }).Count -eq 0) 'npm install must not replace the lockfile-enforced canonical install'
 Assert-Condition (-not [regex]::IsMatch($content, '(?i)(--no-package-lock|package-lock\s*=\s*false|@latest)')) 'Dynamic or lockfile-bypassing npm resolution is forbidden'
 
 $playwrightInstallStep = Assert-RequiredStep $steps 'Install Playwright Chromium' 'frontend-critical'
-Assert-Condition ([regex]::IsMatch($playwrightInstallStep.Body, '(?m)^\s*run:\s*npx --no-install playwright install --with-deps chromium\s*$')) 'Playwright browser install must use the repository-locked package'
+Assert-Condition ((Get-RequiredRunLines $playwrightInstallStep) -ceq 'npx --no-install playwright install --with-deps chromium') 'Playwright browser install must use the repository-locked package'
 
 $frontendBuildStep = Assert-RequiredStep $steps 'Build frontend production artifact' 'frontend-critical'
 $backendBuildStep = Assert-RequiredStep $steps 'Package backend application artifact' 'frontend-critical'
-Assert-Condition ([regex]::IsMatch($frontendBuildStep.Body, '(?m)^\s*run:\s*npm run build\s*$')) 'Canonical frontend production build invocation is missing'
+Assert-Condition ((Get-RequiredRunLines $frontendBuildStep) -ceq 'npm run build') 'Canonical frontend production build invocation is missing'
 Assert-Condition ($backendBuildStep.Body.Contains('mvn -f backend/pom.xml -pl nq-app -am -DskipTests install')) 'Canonical backend reactor install invocation is missing'
 Assert-Condition ($backendBuildStep.Body.Contains('mvn -f backend/nq-app/pom.xml -DskipTests package spring-boot:repackage')) 'Executable Spring Boot application artifact build is missing'
 
@@ -431,6 +617,7 @@ $criticalCapabilities = [ordered]@{
     'canonical-release-build' = $releaseBuildStep
     'canonical-release-verifier' = $releaseVerifyStep
     'canonical-release-install-activation' = $releaseInstallStep
+    'production-configuration-fail-closed-regression' = $productionConfigRegressionStep
     'current-schema-restore-drill' = $restoreStep
     'backup-integrity-check' = $backupStep
     'post-restore-validation' = $postRestoreStep
@@ -458,3 +645,11 @@ Write-Output 'CRITICAL_CAPABILITIES_UNKNOWN=0'
 Write-Output "CRITICAL_E2E_SPECS_BOUND=$($loopbackSpecs.Count + $realBackendSpecs.Count)"
 Write-Output "REQUIRED_CHECK_CANDIDATE=$candidate"
 Write-Output 'REMOTE_ENFORCEMENT=NOT_APPLIED'
+
+if ($ContractOnly) {
+    Write-Output 'CANONICAL_ADMISSION=NOT_EVALUATED_CONTRACT_ONLY'
+    return
+}
+
+Write-Output 'PRODUCTION_CONFIG_REGRESSION=EXECUTED_PASS'
+Write-Output 'CANONICAL_ADMISSION=ACCEPTED'

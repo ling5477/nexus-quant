@@ -1,6 +1,25 @@
 {
   "schemaVersion": "nq-canonical-deployment-contract.v1",
   "productionIdentity": "nexus-quant",
+  "runtimeConfiguration": {
+    "productionMarkerProperty": "nq.production-configuration",
+    "productionMarkerSource": "SYSTEMD_EXECSTART_COMMAND_LINE",
+    "requiredProfile": "prod",
+    "approvedActiveProfiles": ["prod"],
+    "profileSelectionSource": "SYSTEMD_EXECSTART_COMMAND_LINE",
+    "externalEnvironmentFile": "/etc/nexus-quant/runtime.env",
+    "requiredDataSourceKeys": [
+      "NQ_PROD_DB_URL",
+      "NQ_PROD_DB_USER",
+      "NQ_PROD_DB_PASSWORD"
+    ],
+    "effectivePropertyValidation": "SPRING_DATASOURCE_PROPERTIES_BEFORE_CONTEXT_REFRESH",
+    "requiredSecretKeys": ["NQ_SECURITY_SECRET", "NQ_ACCOUNT_CREDENTIALS_MASTER_KEY"],
+    "alternateDataSourceIdentityAllowed": false,
+    "independentFlywayIdentityAllowed": false,
+    "secretsBundled": false,
+    "failure": "PROD_CONFIGURATION_INVALID_BEFORE_DATASOURCE_OUTBOUND"
+  },
   "installation": {
     "root": "/opt/nexus-quant",
     "releaseModel": "IMMUTABLE_RELEASE_DIRECTORY",
