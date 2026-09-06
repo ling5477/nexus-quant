@@ -1259,7 +1259,7 @@
     },
     {
       "path": "docs/current/ROADMAP.md",
-      "sha256": "f584ee079174d210ccf27681d9f15deafe235f1dd1416637d82bc9a68f6c6af9",
+      "sha256": "aa600c9fec8392053b07647df8ed7c337eb41783390d55d1b3517faef2819f44",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",
