@@ -37,7 +37,9 @@
 
 旧条目只表示历史执行，不参与 current stage 判定。
 
-- [F009 post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F009_POST_CI_AUTHORITY_ACCEPTANCE.md)：F009 immutable technical pair、失败delivery/remediation链、Phase5 finding reconciliation与Phase6延期依据。分类为`ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`；STATUS仍为唯一current authority，ROADMAP拥有remaining actions。
+- [F009 post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F009_POST_CI_AUTHORITY_ACCEPTANCE.md)：F009 immutable technical pair、失败delivery/remediation链、当时的Phase5 finding reconciliation与Phase6延期依据（历史接受快照）。分类为`ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`；STATUS仍为唯一current authority，ROADMAP拥有remaining actions。
+
+- [F001 post-remote acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_POST_REMOTE_AUTHORITY_ACCEPTANCE.md)：F001正式closure、独立remote effective-rule readback、Phase5 closure与Phase6 readiness推导；引用上一remote mutation证据，分类为`ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`，不替代F009 immutable technical pair。
 
 ## 5. Agent / Governance
 

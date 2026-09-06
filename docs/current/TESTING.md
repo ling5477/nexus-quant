@@ -15167,3 +15167,28 @@ Attempt-01=`FAIL / CHANGES_REQUIRED`：P1-01=`INTERPROCESS_DURABILITY_CHECK_ABSE
 - Authority PS5.1/PS7=`PASS / errors 0`；next-action=`failed 0`；agent workflow=`12/12`；lifecycle=`20/20`。PS5.1首次直接-File被本机execution policy拒绝，脚本未执行；仅验证进程使用-ExecutionPolicy Bypass后通过，系统策略未修改。该初始失败日志保留在本地artifacts。
 - Findings重算：total=9、完整accepted/closed=7、open/unclosed=2（blocked F001=1、deferred F005=1，均为open子集），remaining blocking=1。Phase5 REMAINS_OPEN、Phase6 DEFERRED，未开始。F001 remote仍NOT_APPLIED/NOT_VERIFIED，F005 platform attestation沿用DEFERRED。
 - 文档链接、append-only、stale claims、范围diff最终验证与可复验命令见[F009 post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F009_POST_CI_AUTHORITY_ACCEPTANCE.md)；Maven/PG16/canonical release/frontend/Playwright/production/LIVE及新technical CI均NOT_REQUIRED / NOT_RUN。
+
+
+## 2026-09-06 — F001 remote required-check enforcement verification
+
+- 本轮只做GitHub governance：starting HEAD/origin=`dcb541c06ffe2477619f56d62ddae276ed0112a3`，worktree clean、staged=0。Target `refs/heads/dev`由machine release.expectedBranch、workflow push/PR branches与remote default branch交叉推导，未选择audit工作分支。
+- Current registry+正式YAML reader+accepted CI `34024427455 / dbb8b9c6a2319338f5ca90b566ad494142a55e20`的真实check runs双向匹配9 contexts，GitHub Actions integration ID=15368，stale/duplicate=0；F009 guard仍属于既有diff-check context。
+- 用户任务书明确要求最小remote mutation；principal ling5477、admin permission已独立确认。Before rulesets/effective rules为空、legacy protection=404；完整before-state与rollback plan已捕获。
+- 唯一POST创建repository ruleset `22381941`，仅refs/heads/dev，required checks=9，enforcement active、strict=false、bypass=[]。独立configured/effective/branch GET通过，missing/unexpected/duplicate=0、other policies changed=0、default branch content changed=0。
+- Local negatives：remove-one-check DIFF（缺1），unknown/stale check ABSENT且加入后DIFF；没有remote negative mutation或临时PR/merge。Rollback material complete；required/executed=NO，rollback verified=NOT_REQUIRED。
+- Authority PS5.1/PS7、next-action、docs links、append-only、scope、credential leakage和diff结果见[F001 remote evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT.md)。Maven/PG16/frontend/Playwright/F009 qualification/new application CI均未执行。
+- Result=`REMOTE ENFORCEMENT APPLIED / VERIFIED / PENDING_AUTHORITY_ACCEPTANCE`。F001 closure、Phase5 closure、Phase6 readiness均留给下一post-remote acceptance；本任务不修改STATUS/ROADMAP，不stage/commit/push。
+
+
+## 2026-09-06 — F001 post-remote authority acceptance
+
+- 起始HEAD/origin=`dcb541c06ffe2477619f56d62ddae276ed0112a3`，branch=audit/post-gatey-agent-baseline，staged=0；继承上一任务11个evidence/ledger文件，source manifest=7/7，初始delta无漂移。
+- 本轮只用GET重新读取ruleset 22381941、dev effective rules及相关metadata：ACTIVE、dev-only、9/9、missing/unexpected/duplicate=0、app=15368、bypass=[]、strict=false；其他explicit branch rules不存在，不能解释为启用。Remote drift=0，remote mutation=0。
+- Rollback材料绑定before-state digest及DELETE ruleset 22381941方案；material complete=YES，executed=NO，verified=NOT_EXECUTED；没有回滚实测。
+- F001正式ACCEPTED/CLOSED，P0/P1=0/0；registry重算total=9、accepted/closed=8、open/unclosed=1（F005 deferred/non-blocking）、blocked=0、remaining blocking=0，非延期open=0。现有closure prerequisites满足，Phase5 ACCEPTED/CLOSED；F005保持延期，不伪装CLOSED。
+- Phase6 READY/NOT_STARTED；下一action=`NQ-GATEAUDIT-PHASE6-L4-FAILURE-MATRIX-PLAN`，machine status=NOT_STARTED/NONE/NOT_RUN。L4 PROVE_FIRST、L5/L6待L4 accepted；本轮没有Phase6代码/测试/计划实施。
+- ROADMAP正式inspect() old=new=`169f8b7c6f907d9b67764de22ce56c6244a5b7f491dc9f3d6e12c4822efead5a`；正文变化未改被检查语义，exception JSON不变，条件性stale-mutation proof=NOT_REQUIRED。实际治理、append-only、stale-claim和diff结果见[F001 acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_POST_REMOTE_AUTHORITY_ACCEPTANCE.md)。
+- 上一remote event与本次readback/authority commit分层；F009 technical pair和全部安全字段不变。Maven/PG16/frontend/Playwright/F009 qualification/new application CI均未执行。
+
+- 提交前staged-byte校验发现Git换行转换导致4个旧JSON与新readback的staged bytes不再匹配原digest；为保持source/manifest不重写，根.gitattributes仅增加10条精确evidence路径的-text，随后重新暂存并验证原始SHA。此为必要governance binding，不修改application/workflow或远端规则。
+- 上述精确属性绑定采用-text与cr-at-eol，并保留blank-at-eol/blank-at-eof/space-before-tab检查。对10条路径精确git add --renormalize后，staged manifest=7/7、prior source=9/9、新readback bytes全部一致，cached diff-check=PASS；隔离Git fixture证明真实行尾空格仍exit=2拒绝。原source/manifest未重写。

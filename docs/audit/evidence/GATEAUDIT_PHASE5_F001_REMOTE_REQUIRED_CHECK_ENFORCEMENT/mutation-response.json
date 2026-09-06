@@ -1,0 +1,76 @@
+{
+  "id": 22381941,
+  "name": "Canonical required checks (dev)",
+  "target": "branch",
+  "source_type": "Repository",
+  "source": "ling5477/nexus-quant",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "exclude": [],
+      "include": [
+        "refs/heads/dev"
+      ]
+    }
+  },
+  "rules": [
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": false,
+        "do_not_enforce_on_create": false,
+        "required_status_checks": [
+          {
+            "context": "Repository hygiene and governance",
+            "integration_id": 15368
+          },
+          {
+            "context": "Runtime safety and no-outbound",
+            "integration_id": 15368
+          },
+          {
+            "context": "Backend regression",
+            "integration_id": 15368
+          },
+          {
+            "context": "PostgreSQL and Flyway",
+            "integration_id": 15368
+          },
+          {
+            "context": "Frontend build and critical E2E",
+            "integration_id": 15368
+          },
+          {
+            "context": "Research quality",
+            "integration_id": 15368
+          },
+          {
+            "context": "Secret scanning",
+            "integration_id": 15368
+          },
+          {
+            "context": "Java architecture guard",
+            "integration_id": 15368
+          },
+          {
+            "context": "Delivery SBOM and provenance",
+            "integration_id": 15368
+          }
+        ]
+      }
+    }
+  ],
+  "node_id": "RRS_lACqUmVwb3NpdG9yec5E51hxzgFVhXU",
+  "created_at": "2026-09-06T18:29:30.972+08:00",
+  "updated_at": "2026-09-06T18:29:31.023+08:00",
+  "bypass_actors": [],
+  "current_user_can_bypass": "never",
+  "_links": {
+    "self": {
+      "href": "https://api.github.com/repos/ling5477/nexus-quant/rulesets/22381941"
+    },
+    "html": {
+      "href": "https://github.com/ling5477/nexus-quant/rules/22381941"
+    }
+  }
+}

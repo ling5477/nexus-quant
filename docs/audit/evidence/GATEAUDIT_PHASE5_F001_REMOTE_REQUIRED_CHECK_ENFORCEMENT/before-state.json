@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-06T10:28:18.064271+00:00",
+  "localHead": "dcb541c06ffe2477619f56d62ddae276ed0112a3",
+  "repository": {
+    "full_name": "ling5477/nexus-quant",
+    "default_branch": "dev",
+    "visibility": "public",
+    "permissions": {
+      "admin": true,
+      "maintain": true,
+      "push": true,
+      "triage": true,
+      "pull": true
+    },
+    "archived": false,
+    "allow_merge_commit": true,
+    "allow_squash_merge": true,
+    "allow_rebase_merge": true
+  },
+  "principal": {
+    "login": "ling5477",
+    "id": 128130348,
+    "type": "User"
+  },
+  "principalPermission": {
+    "permission": "admin",
+    "role_name": "admin"
+  },
+  "targetBranch": "dev",
+  "targetRef": "refs/heads/dev",
+  "targetAuthority": {
+    "contract": "scripts/docs/governance-workflow-contract.json#release.expectedBranch",
+    "workflow": ".github/workflows/ci.yml#on.pull_request.branches+on.push.branches",
+    "defaultBranchMatches": true
+  },
+  "repositoryRulesets": [],
+  "branch": {
+    "name": "dev",
+    "commit": {
+      "sha": "4c19cb775ebb18b4288400a5a1a402145c2fe30a",
+      "node_id": "C_kwDOROdYcdoAKDRjMTljYjc3NWViYjE4YjQyODg0MDBhNWExYTQwMjE0NWMyZmUzMGE",
+      "commit": {
+        "author": {
+          "name": "ling_0",
+          "email": "lingyu5477@foxmail.com",
+          "date": "2026-08-27T03:56:01Z"
+        },
+        "committer": {
+          "name": "ling_0",
+          "email": "lingyu5477@foxmail.com",
+          "date": "2026-08-27T03:56:01Z"
+        },
+        "message": "docs(gatey): complete post-tag authority closeout",
+        "tree": {
+          "sha": "508d06f665aebca60d6c9dc181d4df19c517bad5",
+          "url": "https://api.github.com/repos/ling5477/nexus-quant/git/trees/508d06f665aebca60d6c9dc181d4df19c517bad5"
+        },
+        "url": "https://api.github.com/repos/ling5477/nexus-quant/git/commits/4c19cb775ebb18b4288400a5a1a402145c2fe30a",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/ling5477/nexus-quant/commits/4c19cb775ebb18b4288400a5a1a402145c2fe30a",
+      "html_url": "https://github.com/ling5477/nexus-quant/commit/4c19cb775ebb18b4288400a5a1a402145c2fe30a",
+      "comments_url": "https://api.github.com/repos/ling5477/nexus-quant/commits/4c19cb775ebb18b4288400a5a1a402145c2fe30a/comments",
+      "author": {
+        "login": "ling5477",
+        "id": 128130348,
+        "node_id": "U_kgDOB6MdLA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/128130348?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/ling5477",
+        "html_url": "https://github.com/ling5477",
+        "followers_url": "https://api.github.com/users/ling5477/followers",
+        "following_url": "https://api.github.com/users/ling5477/following{/other_user}",
+        "gists_url": "https://api.github.com/users/ling5477/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/ling5477/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/ling5477/subscriptions",
+        "organizations_url": "https://api.github.com/users/ling5477/orgs",
+        "repos_url": "https://api.github.com/users/ling5477/repos",
+        "events_url": "https://api.github.com/users/ling5477/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/ling5477/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "ling5477",
+        "id": 128130348,
+        "node_id": "U_kgDOB6MdLA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/128130348?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/ling5477",
+        "html_url": "https://github.com/ling5477",
+        "followers_url": "https://api.github.com/users/ling5477/followers",
+        "following_url": "https://api.github.com/users/ling5477/following{/other_user}",
+        "gists_url": "https://api.github.com/users/ling5477/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/ling5477/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/ling5477/subscriptions",
+        "organizations_url": "https://api.github.com/users/ling5477/orgs",
+        "repos_url": "https://api.github.com/users/ling5477/repos",
+        "events_url": "https://api.github.com/users/ling5477/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/ling5477/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "72fbf5e78f217a02b572a54fadb17dea204b594f",
+          "url": "https://api.github.com/repos/ling5477/nexus-quant/commits/72fbf5e78f217a02b572a54fadb17dea204b594f",
+          "html_url": "https://github.com/ling5477/nexus-quant/commit/72fbf5e78f217a02b572a54fadb17dea204b594f"
+        }
+      ]
+    },
+    "_links": {
+      "self": "https://api.github.com/repos/ling5477/nexus-quant/branches/dev",
+      "html": "https://github.com/ling5477/nexus-quant/tree/dev"
+    },
+    "protected": false,
+    "protection": {
+      "enabled": false,
+      "required_status_checks": {
+        "enforcement_level": "off",
+        "contexts": [],
+        "checks": []
+      }
+    },
+    "protection_url": "https://api.github.com/repos/ling5477/nexus-quant/branches/dev/protection"
+  },
+  "legacyProtection": {
+    "http_status": 404,
+    "body": {
+      "message": "Branch not protected",
+      "documentation_url": "https://docs.github.com/rest/branches/branch-protection#get-branch-protection",
+      "status": "404"
+    }
+  },
+  "effectiveRules": [],
+  "authorization": {
+    "REMOTE_RULESET_MUTATION_AUTHORIZED": "YES",
+    "source": "Current user task explicitly directs setting canonical required checks remotely (sections 2, 7, 10); admin capability is verified separately.",
+    "scope": "Required status checks only for authoritative target; no unrelated policies or content changes."
+  }
+}

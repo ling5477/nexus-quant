@@ -1,0 +1,61 @@
+{
+  "name": "Canonical required checks (dev)",
+  "target": "branch",
+  "enforcement": "active",
+  "bypass_actors": [],
+  "conditions": {
+    "ref_name": {
+      "include": [
+        "refs/heads/dev"
+      ],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "required_status_checks": [
+          {
+            "context": "Repository hygiene and governance",
+            "integration_id": 15368
+          },
+          {
+            "context": "Runtime safety and no-outbound",
+            "integration_id": 15368
+          },
+          {
+            "context": "Backend regression",
+            "integration_id": 15368
+          },
+          {
+            "context": "PostgreSQL and Flyway",
+            "integration_id": 15368
+          },
+          {
+            "context": "Frontend build and critical E2E",
+            "integration_id": 15368
+          },
+          {
+            "context": "Research quality",
+            "integration_id": 15368
+          },
+          {
+            "context": "Secret scanning",
+            "integration_id": 15368
+          },
+          {
+            "context": "Java architecture guard",
+            "integration_id": 15368
+          },
+          {
+            "context": "Delivery SBOM and provenance",
+            "integration_id": 15368
+          }
+        ],
+        "strict_required_status_checks_policy": false,
+        "do_not_enforce_on_create": false
+      }
+    }
+  ]
+}

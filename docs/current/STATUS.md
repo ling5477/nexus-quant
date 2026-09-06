@@ -13,11 +13,11 @@ accepted_batch_status=ACCEPTED|CI_GREEN
 accepted_batch_implementation_commit=85d11984d0c65b464ffe4858fe7fd1da51885f12
 accepted_batch_acceptance_head=dbb8b9c6a2319338f5ca90b566ad494142a55e20
 accepted_batch_ci_run=34024427455
-work_batch=GateAUDIT-PHASE5-F001-REMOTE-REQUIRED-CHECK-ENFORCEMENT
-work_batch_status=BLOCKED
+work_batch=GateAUDIT-PHASE6-L4-FAILURE-MATRIX
+work_batch_status=NOT_STARTED
 work_batch_commit=NONE
 work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEAUDIT-PHASE5-F001-REMOTE-REQUIRED-CHECK-ENFORCEMENT-UNBLOCK
+next_action=NQ-GATEAUDIT-PHASE6-L4-FAILURE-MATRIX-PLAN
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -44,15 +44,17 @@ nq-current-authority:end -->
 - GateAUDIT-PHASE4-F002-RESTART-PROOF-FOUNDATION：`ACCEPTED / CI_GREEN`；immutable acceptance pair=`0651a7365d1a6afe453d75c8abd3975d458e0b7a / 33387882472`。R1/R2 forked-JVM proof 与 CI datasource binding remediation 已由 exact-head CI 接受，且不等于 Phase6 full L4 qualification。
 - GateAUDIT-PHASE4-F003-ORDER-EXECUTION-IDENTITY-CONVERGENCE：`ACCEPTED / CI_GREEN`；immutable acceptance pair=`327c2229e89c076eace60046b79ec02c622a7fe4 / 33399190770`，exact-head CI=`11/11 SUCCESS`。ordinary Order 是唯一 execution fact，ExecutionIntent 只编排已存在 Order 的外部动作。
 - GateAUDIT-PHASE4-REMAINING-DISPOSITION-AND-CONSOLIDATION：`COMPLETE / ACCEPTED / CI_GREEN`；immutable acceptance pair=`7ca1fc92f8900e3e9d19184fccd40569f233823f / 33405549149`，exact-head CI=`11/11 SUCCESS`，blocking P0/P1=`0/0`。该 pair 是 Phase4 capability acceptance authority，不由后续 current-fact synchronization commit/CI替代。
-- GateAUDIT Phase5A：`ACCEPTED / CI_GREEN`；immutable acceptance pair=`d1d20f4087cd337e0b21037b38b377bcbe25499f / 33505000903`，exact-head CI=`completed / success / 9 of 9`，blocking P0/P1=`0/0`。P5-F001=`LOCAL_REQUIRED_CHECK_BASELINE_ACCEPTED / REMOTE_ENFORCEMENT_NOT_APPLIED`；P5-F004与P5-F006=`ACCEPTED / CLOSED`；P5-F005=`INTERNAL_SBOM_PROVENANCE_ACCEPTED`，platform attestation仍为`DEFERRED_UNTIL_EXPLICIT_AUTHORIZATION / id-token NOT_GRANTED`。`IMAGE_DIGEST_RUNTIME_PULL_PENDING_EXACT_HEAD_CI`与`CRITICAL_E2E_ADMISSION_PENDING_FIXTURE_REPAIR`已由该exact-head CI关闭；remote required checks仍未应用或验证。
-- GateAUDIT Phase5B：`ACCEPTED / CI_GREEN`；immutable technical pair=`a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848`，tree=`40421839abdb44ebd5e934add03fba85d78feab6`，exact-head CI=`9/9 SUCCESS / failed 0 / skipped 0`。Canonical release=`nq-a12ec821fee9-a9a98236663bba0b / COMMITTED_CLEAN / deployable=true / authorizationEligible=true`，build→external admission→verify→install→activate→active verification全部成功；PostgreSQL 16.15 current-schema restore至V46、pending=0、backup integrity、Flyway validate、repository/app-context smoke均通过，PG17 wrong-major提前拒绝。Critical E2E current baseline=`5 specs / 27 cases`（loopback=`25/25`、real-backend=`2/2`），Idempotency-Key fail-closed实际执行并通过。P5-F002与P5-F003=`ACCEPTED / CLOSED`；P5-F008=`ACCEPTED / CLOSED`；P5-F007为`ACCEPTED / CLOSED`，P5-F009为`ACCEPTED / CLOSED`。remote enforcement仍`NOT_APPLIED / NOT_VERIFIED`，platform attestation仍`DEFERRED`。
+- GateAUDIT Phase5A：`ACCEPTED / CI_GREEN`；immutable acceptance pair=`d1d20f4087cd337e0b21037b38b377bcbe25499f / 33505000903`，exact-head CI=`completed / success / 9 of 9`，blocking P0/P1=`0/0`。P5-F001=`ACCEPTED / CLOSED`（local baseline与后续remote enforcement均已接受）；P5-F004与P5-F006=`ACCEPTED / CLOSED`；P5-F005=`INTERNAL_SBOM_PROVENANCE_ACCEPTED`，platform attestation仍为`DEFERRED_UNTIL_EXPLICIT_AUTHORIZATION / id-token NOT_GRANTED`。`IMAGE_DIGEST_RUNTIME_PULL_PENDING_EXACT_HEAD_CI`与`CRITICAL_E2E_ADMISSION_PENDING_FIXTURE_REPAIR`已由该exact-head CI关闭；remote required checks现已由ruleset `22381941`在`refs/heads/dev`生效并接受，effective checks=9/9。
+- GateAUDIT Phase5B：`ACCEPTED / CI_GREEN`；immutable technical pair=`a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848`，tree=`40421839abdb44ebd5e934add03fba85d78feab6`，exact-head CI=`9/9 SUCCESS / failed 0 / skipped 0`。Canonical release=`nq-a12ec821fee9-a9a98236663bba0b / COMMITTED_CLEAN / deployable=true / authorizationEligible=true`，build→external admission→verify→install→activate→active verification全部成功；PostgreSQL 16.15 current-schema restore至V46、pending=0、backup integrity、Flyway validate、repository/app-context smoke均通过，PG17 wrong-major提前拒绝。Critical E2E current baseline=`5 specs / 27 cases`（loopback=`25/25`、real-backend=`2/2`），Idempotency-Key fail-closed实际执行并通过。P5-F002与P5-F003=`ACCEPTED / CLOSED`；P5-F008=`ACCEPTED / CLOSED`；P5-F007为`ACCEPTED / CLOSED`，P5-F009为`ACCEPTED / CLOSED`。remote enforcement现为`APPLIED / VERIFIED / ACCEPTED`（ruleset `22381941`，`refs/heads/dev`），platform attestation仍`DEFERRED`。
 
 - GateAUDIT Phase5 F008：`ACCEPTED / CLOSED`（已接受 / 已关闭）；Final Closure Review=`PASS / P0_0 / P1_0`，implementation commit=`716199a7cb836a5eaf43a88b0de6db0f47a75e91`，immutable technical acceptance pair=`614359fc7f25227f736fbb1c11c7d584da1f0627 / 33978394774`，exact-head CI=`completed / success / 9 of 9 / failed 0 / skipped 0`。`614359fc7f25227f736fbb1c11c7d584da1f0627`属于`accepted CI test-harness compatibility remediation`，不构成新的F008 implementation finding。Mandatory Maven与YAML semantic validator通过，mutations=`135 REJECTED / 0 ACCEPTED`，R06/R09/R10均拒绝；本轮只接受已有review/CI证据，不重跑技术测试。详见[post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F008_POST_CI_AUTHORITY_ACCEPTANCE.md)。历史失败与remediation attempts保留在原evidence和append-only ledgers。
 
 - GateAUDIT Phase5 F007：`ACCEPTED / CLOSED`（已接受 / 已关闭）；implementation与accepted technical head均为`0e2efdeb236c185dbace67bb22f94c6af64a563a`，immutable technical acceptance pair=`0e2efdeb236c185dbace67bb22f94c6af64a563a / 34009290836`，exact-head CI=`completed / success / 9 of 9 / failed 0 / skipped 0`，P0=0、P1=0。Scheduler/worker、reconciliation、ledger recovery与critical alert最小观测均已具备；既有observability测试10/10通过，Full Maven=1783 tests、0 failures/errors、53 conditional test skips；53是测试条件跳过，不是CI job skip。高基数metric tags=0、业务副作用语义变化=0；本轮仅接受既有技术与CI证据，不重跑qualification。详见[post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F007_POST_CI_AUTHORITY_ACCEPTANCE.md)。本轮docs-only authority commit不替代该technical pair。
 
 - GateAUDIT Phase5 F009：`ACCEPTED / CLOSED`（已接受 / 已关闭），local review=`CLOSED / PASS / P0_0 / P1_0`，P1-1/P1-2/P1-3均CLOSED。首次delivery=`85d11984d0c65b464ffe4858fe7fd1da51885f12`、failed CI=`34024011663`保留为失败历史；remediation/accepted technical head=`dbb8b9c6a2319338f5ca90b566ad494142a55e20`、CI=`34024427455 / completed / success / 9 of 9 / failed 0 / skipped 0 / cancelled 0`。本次authority同步不替换technical pair；详见[F009 post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F009_POST_CI_AUTHORITY_ACCEPTANCE.md)。
-- Phase5=`REMAINS_OPEN`（仍未关闭）：9项中7项完整ACCEPTED/CLOSED，2项未完全关闭（F001阻断1项、F005延期1项，二者是未关闭项的子集）。F001 local baseline已接受，但remote enforcement仍`NOT_APPLIED / NOT_VERIFIED`，不存在已接受的closure或非阻断豁免；remaining blocking findings=1。F005 internal SBOM/provenance已接受，platform attestation继续非阻断`DEFERRED_UNTIL_EXPLICIT_AUTHORIZATION`。Phase6继续`DEFERRED`，未开始。逐项reconciliation由ROADMAP与本次evidence记录。
+- GateAUDIT Phase5 F001：`ACCEPTED / CLOSED`（已接受 / 已关闭）；remote enforcement事件为ruleset `22381941`创建，目标=`refs/heads/dev`，required checks=9；本轮只读重新验证ACTIVE、effective=YES、missing/unexpected/duplicate=0/0/0、GitHub Actions app=15368，P0=0、P1=0。正式authority acceptance与此前remote mutation分层，详见[F001 post-remote acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_POST_REMOTE_AUTHORITY_ACCEPTANCE.md)。
+- Phase5=`ACCEPTED / CLOSED`：total=9，accepted/closed=8（F001/F002/F003/F004/F006/F007/F008/F009），open/unclosed=1（仅F005 deferred/non-blocking），blocked=0、remaining blocking=0；非延期open=0。F005 internal SBOM/provenance已接受，platform attestation继续`DEFERRED / NON_BLOCKING / DEFERRED_UNTIL_EXPLICIT_AUTHORIZATION`，不伪装成CLOSED。既有ROADMAP闭合条件已满足，machine lifecycle无必须关闭全部deferred项的额外条件。
+- Phase6=`READY / NOT_STARTED`（前置条件满足 / 尚未开始）；Phase5 deployment、observability与整体accepted baseline已具备。仅登记L4 failure matrix的PLAN下一动作；L4/L5/L6证明尚未执行，L5/L6仍须等待L4 accepted。
 
 ## 2. Accepted pilot facts
 
@@ -81,9 +83,10 @@ updated_commit=72fbf5e78f217a02b572a54fadb17dea204b594f
 
 ## 5. 下一允许动作
 
-- Machine action=`NQ-GATEAUDIT-PHASE5-F001-REMOTE-REQUIRED-CHECK-ENFORCEMENT-UNBLOCK`；work batch=`GateAUDIT-PHASE5-F001-REMOTE-REQUIRED-CHECK-ENFORCEMENT / BLOCKED / NONE / NOT_RUN`，matcher type=`UNBLOCK`。
-- 解阻对象仅为现有P5-F001：须取得远端required-check enforcement的显式授权与适用current authority，才能应用并验证9个稳定required checks。当前无remote application/readback acceptance证据；本任务不申请或执行远端写操作，不宣称enforcement已存在。
-- P5-F005 platform attestation沿用既有DEFERRED disposition，不并入F001/F009、不授予id-token权限；Phase5 closure前Phase6保持DEFERRED，implementation未开始。LIVE DISABLED、kill ENGAGED及其他安全字段不变。
+- Machine action=`NQ-GATEAUDIT-PHASE6-L4-FAILURE-MATRIX-PLAN`；work batch=`GateAUDIT-PHASE6-L4-FAILURE-MATRIX / NOT_STARTED / NONE / NOT_RUN`，matcher type=`PLAN`。
+- 依据ROADMAP的`PROVE_FIRST` disposition，下一任务先定义real-process deterministic L4 failure matrix的隔离环境、故障注入、判定证据与验收计划。这里只登记下一动作，不创建Phase6代码、测试或计划产物；不授予真实provider、LIVE或生产权限。
+- `accepted_batch`及其commit/CI字段继续承载F009既有technical pair；F001是remote ruleset acceptance，没有新的application CI，不将规则ID或本次authority commit冒充technical head/CI。Phase5整体closure及F001 remote binding由本文件摘要、ROADMAP和accepted evidence表达，不修改schema。
+- P5-F005保持非阻断延期，不授予id-token权限。LIVE DISABLED、kill ENGAGED及其他安全字段不变。
 
 ## 6. F009 acceptance provenance
 

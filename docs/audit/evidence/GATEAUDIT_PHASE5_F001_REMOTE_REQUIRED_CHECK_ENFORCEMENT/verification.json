@@ -1,0 +1,33 @@
+{
+  "verifiedAt": "2026-09-06T10:29:37.566179+00:00",
+  "result": "PASS / PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT_APPLIED_AND_VERIFIED / P0_0 / P1_0 / PENDING_AUTHORITY_ACCEPTANCE",
+  "rulesetId": 22381941,
+  "targetRef": "refs/heads/dev",
+  "targetBranchAuthoritative": true,
+  "mutationAuthorized": true,
+  "mechanism": "repository ruleset",
+  "enforcement": "active",
+  "effectiveTargetRule": true,
+  "expectedCount": 9,
+  "actualCount": 9,
+  "missing": 0,
+  "unexpected": 0,
+  "duplicates": 0,
+  "integrationIds": [
+    15368
+  ],
+  "negativeComparison": {
+    "removeOneCheck": "DIFFERENT / 1 missing",
+    "unknownCheck": "ABSENT / augmented set DIFFERENT"
+  },
+  "unrelatedRemotePoliciesChanged": 0,
+  "defaultBranchHeadChanged": false,
+  "legacyProtectionStillAbsent": true,
+  "rollback": {
+    "materialComplete": true,
+    "required": false,
+    "executed": false,
+    "verified": "NOT_REQUIRED"
+  },
+  "nextAction": "NQ-GATEAUDIT-PHASE5-F001-POST-REMOTE-AUTHORITY-ACCEPTANCE"
+}

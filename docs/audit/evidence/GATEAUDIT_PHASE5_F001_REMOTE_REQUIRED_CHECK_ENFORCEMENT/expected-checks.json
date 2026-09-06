@@ -1,0 +1,169 @@
+{
+  "workflow": ".github/workflows/ci.yml",
+  "workflowName": "NQ CI Baseline",
+  "acceptedHead": "dbb8b9c6a2319338f5ca90b566ad494142a55e20",
+  "acceptedCi": 34024427455,
+  "checkSuiteId": 92188618828,
+  "requiredJobs": {
+    "diff-check": "Repository hygiene and governance",
+    "no-outbound-guard": "Runtime safety and no-outbound",
+    "backend": "Backend regression",
+    "postgres-flyway": "PostgreSQL and Flyway",
+    "frontend-critical": "Frontend build and critical E2E",
+    "research": "Research quality",
+    "secret-scan": "Secret scanning",
+    "java-engineering-shadow": "Java architecture guard",
+    "delivery-provenance": "Delivery SBOM and provenance"
+  },
+  "checks": [
+    {
+      "jobId": "diff-check",
+      "context": "Repository hygiene and governance",
+      "integration_id": 15368
+    },
+    {
+      "jobId": "no-outbound-guard",
+      "context": "Runtime safety and no-outbound",
+      "integration_id": 15368
+    },
+    {
+      "jobId": "backend",
+      "context": "Backend regression",
+      "integration_id": 15368
+    },
+    {
+      "jobId": "postgres-flyway",
+      "context": "PostgreSQL and Flyway",
+      "integration_id": 15368
+    },
+    {
+      "jobId": "frontend-critical",
+      "context": "Frontend build and critical E2E",
+      "integration_id": 15368
+    },
+    {
+      "jobId": "research",
+      "context": "Research quality",
+      "integration_id": 15368
+    },
+    {
+      "jobId": "secret-scan",
+      "context": "Secret scanning",
+      "integration_id": 15368
+    },
+    {
+      "jobId": "java-engineering-shadow",
+      "context": "Java architecture guard",
+      "integration_id": 15368
+    },
+    {
+      "jobId": "delivery-provenance",
+      "context": "Delivery SBOM and provenance",
+      "integration_id": 15368
+    }
+  ],
+  "acceptedCheckRuns": [
+    {
+      "id": 101462757939,
+      "name": "Repository hygiene and governance",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "dbb8b9c6a2319338f5ca90b566ad494142a55e20",
+      "app": {
+        "id": 15368,
+        "slug": "github-actions"
+      }
+    },
+    {
+      "id": 101462758020,
+      "name": "Secret scanning",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "dbb8b9c6a2319338f5ca90b566ad494142a55e20",
+      "app": {
+        "id": 15368,
+        "slug": "github-actions"
+      }
+    },
+    {
+      "id": 101462758021,
+      "name": "Backend regression",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "dbb8b9c6a2319338f5ca90b566ad494142a55e20",
+      "app": {
+        "id": 15368,
+        "slug": "github-actions"
+      }
+    },
+    {
+      "id": 101462758064,
+      "name": "PostgreSQL and Flyway",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "dbb8b9c6a2319338f5ca90b566ad494142a55e20",
+      "app": {
+        "id": 15368,
+        "slug": "github-actions"
+      }
+    },
+    {
+      "id": 101462758068,
+      "name": "Runtime safety and no-outbound",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "dbb8b9c6a2319338f5ca90b566ad494142a55e20",
+      "app": {
+        "id": 15368,
+        "slug": "github-actions"
+      }
+    },
+    {
+      "id": 101462758090,
+      "name": "Java architecture guard",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "dbb8b9c6a2319338f5ca90b566ad494142a55e20",
+      "app": {
+        "id": 15368,
+        "slug": "github-actions"
+      }
+    },
+    {
+      "id": 101462758092,
+      "name": "Research quality",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "dbb8b9c6a2319338f5ca90b566ad494142a55e20",
+      "app": {
+        "id": 15368,
+        "slug": "github-actions"
+      }
+    },
+    {
+      "id": 101462758209,
+      "name": "Frontend build and critical E2E",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "dbb8b9c6a2319338f5ca90b566ad494142a55e20",
+      "app": {
+        "id": 15368,
+        "slug": "github-actions"
+      }
+    },
+    {
+      "id": 101463450659,
+      "name": "Delivery SBOM and provenance",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "dbb8b9c6a2319338f5ca90b566ad494142a55e20",
+      "app": {
+        "id": 15368,
+        "slug": "github-actions"
+      }
+    }
+  ],
+  "duplicateCount": 0,
+  "staleCount": 0,
+  "f009GuardInExistingRequiredJob": true
+}

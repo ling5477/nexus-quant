@@ -3,3 +3,15 @@
 *.yaml text eol=lf
 *.ps1 text eol=crlf
 backend/nq-infra/src/main/resources/db/migration/*.sql text eol=lf
+
+# Preserve exact F001 source-evidence bytes bound by SHA-256 manifests.
+docs/audit/evidence/GATEAUDIT_PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT.md -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/audit/evidence/GATEAUDIT_PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT/after-state.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/audit/evidence/GATEAUDIT_PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT/before-state.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/audit/evidence/GATEAUDIT_PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT/expected-checks.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/audit/evidence/GATEAUDIT_PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT/manifest.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/audit/evidence/GATEAUDIT_PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT/mutation-request.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/audit/evidence/GATEAUDIT_PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT/mutation-response.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/audit/evidence/GATEAUDIT_PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT/rollback-plan.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/audit/evidence/GATEAUDIT_PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT/verification.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+docs/audit/evidence/GATEAUDIT_PHASE5_F001_POST_REMOTE_AUTHORITY_ACCEPTANCE.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

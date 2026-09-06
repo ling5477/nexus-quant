@@ -1,0 +1,287 @@
+{
+  "capturedAt": "2026-09-06T11:35:09.542301+00:00",
+  "task": "NQ-GATEAUDIT-PHASE5-F001-POST-REMOTE-AUTHORITY-ACCEPTANCE",
+  "localBaseline": "dcb541c06ffe2477619f56d62ddae276ed0112a3",
+  "apiCalls": [
+    {
+      "method": "GET",
+      "endpoint": "repos/ling5477/nexus-quant/rulesets/22381941",
+      "cliExit": 0
+    },
+    {
+      "method": "GET",
+      "endpoint": "repos/ling5477/nexus-quant/rules/branches/dev",
+      "cliExit": 0
+    },
+    {
+      "method": "GET",
+      "endpoint": "repos/ling5477/nexus-quant/rulesets?includes_parents=true&per_page=100",
+      "cliExit": 0
+    },
+    {
+      "method": "GET",
+      "endpoint": "repos/ling5477/nexus-quant/branches/dev/protection",
+      "cliExit": 1
+    },
+    {
+      "method": "GET",
+      "endpoint": "repos/ling5477/nexus-quant/branches/dev",
+      "cliExit": 0
+    },
+    {
+      "method": "GET",
+      "endpoint": "repos/ling5477/nexus-quant",
+      "cliExit": 0
+    }
+  ],
+  "configuredRuleset": {
+    "id": 22381941,
+    "name": "Canonical required checks (dev)",
+    "target": "branch",
+    "source_type": "Repository",
+    "source": "ling5477/nexus-quant",
+    "enforcement": "active",
+    "conditions": {
+      "ref_name": {
+        "exclude": [],
+        "include": [
+          "refs/heads/dev"
+        ]
+      }
+    },
+    "rules": [
+      {
+        "type": "required_status_checks",
+        "parameters": {
+          "strict_required_status_checks_policy": false,
+          "do_not_enforce_on_create": false,
+          "required_status_checks": [
+            {
+              "context": "Repository hygiene and governance",
+              "integration_id": 15368
+            },
+            {
+              "context": "Runtime safety and no-outbound",
+              "integration_id": 15368
+            },
+            {
+              "context": "Backend regression",
+              "integration_id": 15368
+            },
+            {
+              "context": "PostgreSQL and Flyway",
+              "integration_id": 15368
+            },
+            {
+              "context": "Frontend build and critical E2E",
+              "integration_id": 15368
+            },
+            {
+              "context": "Research quality",
+              "integration_id": 15368
+            },
+            {
+              "context": "Secret scanning",
+              "integration_id": 15368
+            },
+            {
+              "context": "Java architecture guard",
+              "integration_id": 15368
+            },
+            {
+              "context": "Delivery SBOM and provenance",
+              "integration_id": 15368
+            }
+          ]
+        }
+      }
+    ],
+    "node_id": "RRS_lACqUmVwb3NpdG9yec5E51hxzgFVhXU",
+    "created_at": "2026-09-06T18:29:30.972+08:00",
+    "updated_at": "2026-09-06T18:29:31.023+08:00",
+    "bypass_actors": [],
+    "current_user_can_bypass": "never",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/ling5477/nexus-quant/rulesets/22381941"
+      },
+      "html": {
+        "href": "https://github.com/ling5477/nexus-quant/rules/22381941"
+      }
+    }
+  },
+  "effectiveRules": [
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": false,
+        "do_not_enforce_on_create": false,
+        "required_status_checks": [
+          {
+            "context": "Repository hygiene and governance",
+            "integration_id": 15368
+          },
+          {
+            "context": "Runtime safety and no-outbound",
+            "integration_id": 15368
+          },
+          {
+            "context": "Backend regression",
+            "integration_id": 15368
+          },
+          {
+            "context": "PostgreSQL and Flyway",
+            "integration_id": 15368
+          },
+          {
+            "context": "Frontend build and critical E2E",
+            "integration_id": 15368
+          },
+          {
+            "context": "Research quality",
+            "integration_id": 15368
+          },
+          {
+            "context": "Secret scanning",
+            "integration_id": 15368
+          },
+          {
+            "context": "Java architecture guard",
+            "integration_id": 15368
+          },
+          {
+            "context": "Delivery SBOM and provenance",
+            "integration_id": 15368
+          }
+        ]
+      },
+      "ruleset_source_type": "Repository",
+      "ruleset_source": "ling5477/nexus-quant",
+      "ruleset_id": 22381941
+    }
+  ],
+  "repositoryRulesets": [
+    {
+      "id": 22381941,
+      "name": "Canonical required checks (dev)",
+      "target": "branch",
+      "source_type": "Repository",
+      "source": "ling5477/nexus-quant",
+      "enforcement": "active",
+      "node_id": "RRS_lACqUmVwb3NpdG9yec5E51hxzgFVhXU",
+      "_links": {
+        "self": {
+          "href": "https://api.github.com/repos/ling5477/nexus-quant/rulesets/22381941"
+        },
+        "html": {
+          "href": "https://github.com/ling5477/nexus-quant/rules/22381941"
+        }
+      },
+      "created_at": "2026-09-06T18:29:30.972+08:00",
+      "updated_at": "2026-09-06T18:29:31.023+08:00"
+    }
+  ],
+  "legacyProtection": {
+    "http_status": 404,
+    "body": {
+      "message": "Branch not protected",
+      "documentation_url": "https://docs.github.com/rest/branches/branch-protection#get-branch-protection",
+      "status": "404"
+    }
+  },
+  "branch": {
+    "name": "dev",
+    "protected": true,
+    "head": "4c19cb775ebb18b4288400a5a1a402145c2fe30a"
+  },
+  "repositoryRelevantMetadata": {
+    "full_name": "ling5477/nexus-quant",
+    "default_branch": "dev",
+    "visibility": "public",
+    "permissions": {
+      "admin": true,
+      "maintain": true,
+      "push": true,
+      "triage": true,
+      "pull": true
+    },
+    "archived": false,
+    "allow_merge_commit": true,
+    "allow_squash_merge": true,
+    "allow_rebase_merge": true
+  },
+  "comparison": {
+    "expected": 9,
+    "actual": 9,
+    "missing": 0,
+    "unexpected": 0,
+    "duplicate": 0,
+    "appIds": [
+      15368
+    ],
+    "remoteDrift": false,
+    "unrelatedExplicitRules": [],
+    "absentPolicies": [
+      "pull_request",
+      "non_fast_forward",
+      "deletion",
+      "required_signatures",
+      "required_linear_history",
+      "merge_queue"
+    ],
+    "remoteMutationThisTask": false
+  },
+  "rollback": {
+    "materialComplete": true,
+    "executed": false,
+    "verified": "NOT_EXECUTED"
+  },
+  "priorCandidateFingerprints": {
+    "docs/audit/evidence/GATEAUDIT_PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT.md": {
+      "sha256": "0e2cdf15f47f01cadfd11cd81635081c2831d144a713b8917683e4dbaced3d6a",
+      "size": 12517
+    },
+    "docs/audit/evidence/GATEAUDIT_PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT/after-state.json": {
+      "sha256": "939f83f1ba4385533af733bff3dc015a41caa89188a6ed18ab2f4c54c1068042",
+      "size": 9719
+    },
+    "docs/audit/evidence/GATEAUDIT_PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT/before-state.json": {
+      "sha256": "343c6223ea04f308d94b8c15c69e714e32e3c651ecedfdb25af823787cdafa23",
+      "size": 6204
+    },
+    "docs/audit/evidence/GATEAUDIT_PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT/expected-checks.json": {
+      "sha256": "8629e4115ed2636058dfe9787a134f3cc57f1de4ef999e642c5017794bc3bc5c",
+      "size": 4416
+    },
+    "docs/audit/evidence/GATEAUDIT_PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT/manifest.json": {
+      "sha256": "54ac5b739a85b963640a0f8a3f6f4f8d37c101253c7848b4dbcf5663655f3778",
+      "size": 721
+    },
+    "docs/audit/evidence/GATEAUDIT_PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT/mutation-request.json": {
+      "sha256": "ef3a00d20b445c8bebfa922b309f4e62d9635063f2189d34104c28b8e8277fe0",
+      "size": 1490
+    },
+    "docs/audit/evidence/GATEAUDIT_PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT/mutation-response.json": {
+      "sha256": "f8c751da6de6211ed211136b9cece4c92e64f7ec7a06db7541623ab38f102ae8",
+      "size": 2054
+    },
+    "docs/audit/evidence/GATEAUDIT_PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT/rollback-plan.json": {
+      "sha256": "554f0a69cee8f41e9285809f4aa083a03dd768f083f986d952c002e2ea025752",
+      "size": 1013
+    },
+    "docs/audit/evidence/GATEAUDIT_PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT/verification.json": {
+      "sha256": "46cfd9fc00c8b0763230d5f18436ddb7bfd8757bd84103af84978c31d95ccc02",
+      "size": 1028
+    },
+    "docs/current/TESTING.md": {
+      "sha256": "402cedd81b5a2a9dea3c9481b4f5c094702be8fa70f6d3fc67eebb9cfcbc47ee",
+      "size": 1607132
+    },
+    "docs/current/WORKLOG.md": {
+      "sha256": "2f950fd662f2bac2bc4edf2e19874731bb8426f40abc3bde374c1c6dddc7213a",
+      "size": 1764173
+    }
+  },
+  "previousEvidenceManifestSha256": "54ac5b739a85b963640a0f8a3f6f4f8d37c101253c7848b4dbcf5663655f3778",
+  "status": "PASS"
+}

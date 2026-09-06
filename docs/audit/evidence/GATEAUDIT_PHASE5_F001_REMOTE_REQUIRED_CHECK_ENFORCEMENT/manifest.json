@@ -1,0 +1,12 @@
+{
+  "algorithm": "SHA-256",
+  "files": {
+    "after-state.json": "939f83f1ba4385533af733bff3dc015a41caa89188a6ed18ab2f4c54c1068042",
+    "before-state.json": "343c6223ea04f308d94b8c15c69e714e32e3c651ecedfdb25af823787cdafa23",
+    "expected-checks.json": "8629e4115ed2636058dfe9787a134f3cc57f1de4ef999e642c5017794bc3bc5c",
+    "mutation-request.json": "ef3a00d20b445c8bebfa922b309f4e62d9635063f2189d34104c28b8e8277fe0",
+    "mutation-response.json": "f8c751da6de6211ed211136b9cece4c92e64f7ec7a06db7541623ab38f102ae8",
+    "rollback-plan.json": "554f0a69cee8f41e9285809f4aa083a03dd768f083f986d952c002e2ea025752",
+    "verification.json": "46cfd9fc00c8b0763230d5f18436ddb7bfd8757bd84103af84978c31d95ccc02"
+  }
+}

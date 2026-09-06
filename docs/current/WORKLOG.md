@@ -19975,3 +19975,26 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - STATUS/ROADMAP同步、FACT_SOURCE_INDEX增加evidence mapping、TESTING/本ledger仅追加、新增[F009 post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F009_POST_CI_AUTHORITY_ACCEPTANCE.md)；current README/RUNBOOK最小删除F009待review旧摘要，ROADMAP观测能力旧IMPLEMENT_LATER行按已接受F007事实同步。
 - ROADMAP正式inspect() digest=`aa600c9fec8392053b07647df8ed7c337eb41783390d55d1b3517faef2819f44`→`169f8b7c6f907d9b67764de22ce56c6244a5b7f491dc9f3d6e12c4822efead5a`；exception只改该hash，scope完全不变。Current checker PASS，未同步digest临时mutation STALE_EXCEPTION/REJECT，恢复原始bytes后PASS；未修改checker/tests。
 - 既有review/remediation/failure evidence、archive/migration、Java/JS/runtime/deployment实现不变。治理验证及PS5.1初始execution-policy失败/RCA见本evidence；两项Windows symlink privilege skips如实保留，不冒充Linux执行。用户已授权精确stage/commit/push，发布结果由最终报告和Git记录；回滚使用本次精确反向补丁，ledger以追加纠正保留历史。
+
+
+## 2026-09-06 — F001 remote enforcement applied and verified
+
+- Task=`NQ-GATEAUDIT-PHASE5-F001-REMOTE-REQUIRED-CHECK-ENFORCEMENT-UNBLOCK`；starting branch audit/post-gatey-agent-baseline、HEAD/origin dcb541c06ffe2477619f56d62ddae276ed0112a3，初始worktree clean、staged=0。
+- 只读解析canonical target refs/heads/dev与9个check-run identities；remote无既有ruleset/legacy protection，principal ling5477具备admin。本轮用户明确设置required checks的任务指令为授权来源，admin不是授权替代。
+- 捕获before-state/rollback material后，一次POST创建单一repository ruleset `22381941`。仅required-status-check enforcement，include精确dev ref，strict=false、no bypass；未新增其他policy。
+- 独立readback与effective rules验证ACTIVE、9/9、missing/unexpected/duplicate=0；本地负向比较符合预期。默认分支SHA及其他policy保持，legacy protection仍不存在。Rollback不需要、未执行。
+- 新增[F001 remote evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_REMOTE_REQUIRED_CHECK_ENFORCEMENT.md)及8个JSON（原始相关API响应、payload、verification、rollback、digests），TESTING/本ledger仅追加。Application/workflow/STATUS/ROADMAP/历史evidence无修改；无stage/commit/push、merge/tag/release、production/LIVE或技术qualification。
+- 状态仅APPLIED / VERIFIED / PENDING_AUTHORITY_ACCEPTANCE；不提前关闭F001/Phase5或推进Phase6。下一唯一任务=NQ-GATEAUDIT-PHASE5-F001-POST-REMOTE-AUTHORITY-ACCEPTANCE；固定F009 technical pair不变。
+
+
+## 2026-09-06 — F001 accepted and Phase5 closed
+
+- Task=NQ-GATEAUDIT-PHASE5-F001-POST-REMOTE-AUTHORITY-ACCEPTANCE；starting HEAD/origin=dcb541c06ffe2477619f56d62ddae276ed0112a3。继承上一任务11文件candidate，staged=0，未清理/覆盖原delta。
+- 独立GET readback确认ruleset 22381941 / refs/heads/dev / ACTIVE / effective 9/9，app15368，missing/unexpected/duplicate=0；strict=false、bypass=[]、其余explicit rules absent，remote drift=0。本轮没有remote POST/PUT/PATCH/DELETE。Rollback只检查材料，未执行或实测。
+- F001正式ACCEPTED/CLOSED；从真实registry重算8 closed + F005 deferred/non-blocking=9，remaining blocking=0，Phase5 ACCEPTED/CLOSED。保留原F001 blocker、discovery、authorization、creation、effective verification历史，并追加本次acceptance事件。
+- Phase6 READY/NOT_STARTED，下一动作=NQ-GATEAUDIT-PHASE6-L4-FAILURE-MATRIX-PLAN，仅登记L4 PROVE_FIRST计划入口。未创建Phase6实现或测试，L5/L6仍待L4 accepted。Machine accepted_batch继续表示F009既有CI technical pair，不借用CI号表示remote event。
+- STATUS/ROADMAP、FACT_SOURCE_INDEX、current README/RUNBOOK最小同步，新增[acceptance MD/JSON evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_POST_REMOTE_AUTHORITY_ACCEPTANCE.md)，TESTING/本ledger继续追加。原F001 remote evidence与8个JSON完整保留；ROADMAP inspected digest未变，exception不改。
+- 按本轮明确授权精确stage/commit/push authority与两轮evidence，发布结果由最终报告及Git记录。禁止merge/tag/force push/production/LIVE/remote mutation；回滚采用current文档反向补丁与ledger追加纠正。
+
+- 提交前staged-byte校验发现Git换行转换导致4个旧JSON与新readback的staged bytes不再匹配原digest；为保持source/manifest不重写，根.gitattributes仅增加10条精确evidence路径的-text，随后重新暂存并验证原始SHA。此为必要governance binding，不修改application/workflow或远端规则。
+- 上述精确属性绑定采用-text与cr-at-eol，并保留blank-at-eol/blank-at-eof/space-before-tab检查。对10条路径精确git add --renormalize后，staged manifest=7/7、prior source=9/9、新readback bytes全部一致，cached diff-check=PASS；隔离Git fixture证明真实行尾空格仍exit=2拒绝。原source/manifest未重写。

@@ -1,0 +1,18 @@
+{
+  "beforeStateSha256": "343c6223ea04f308d94b8c15c69e714e32e3c651ecedfdb25af823787cdafa23",
+  "mechanism": "new repository ruleset only; legacy protection remains absent",
+  "beforeRuleIds": [],
+  "beforeEffectiveRules": [],
+  "beforeLegacyProtectionHttpStatus": 404,
+  "rollbackMethod": "DELETE",
+  "rollbackEndpointTemplate": "repos/ling5477/nexus-quant/rulesets/{created_ruleset_id}",
+  "scope": "Only the ruleset ID returned by this task create response. Never delete other rulesets or branch protection.",
+  "readback": [
+    "repos/ling5477/nexus-quant/rulesets?includes_parents=true&per_page=100",
+    "repos/ling5477/nexus-quant/rules/branches/dev",
+    "repos/ling5477/nexus-quant/branches/dev/protection"
+  ],
+  "success": "Task-created ruleset absent; preexisting rulesets/effective rules unchanged; legacy protection still 404. Any concurrent external change must be reported.",
+  "createdRulesetId": 22381941,
+  "rollbackEndpoint": "repos/ling5477/nexus-quant/rulesets/22381941"
+}
