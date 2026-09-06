@@ -19901,3 +19901,12 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - 最小修复：保留原assertion函数，捕获其ScriptBlock供两个GetNewClosure fixture调用；没有global helper泄漏，不移动/删除mutation，不改变安全断言。Production/config/security Review不重新打开。
 - 验证：PS5.1/PS7真实-File完整suite各135/135拒绝，额外PS7 GitHub wrapper完整suite135/135拒绝；R06/R09/R10真实Maven拒绝链完整，accepted=0。自审=SELF_REVIEWED / READY_TO_COMMIT。
 - 精确提交范围为测试脚本、本evidence和TESTING/WORKLOG追加；后续按授权commit、push、exact-head CI，9/9绿色后仅进入post-CI authority acceptance；machine authority保持原值，本轮不写CLOSED。Evidence：[scope remediation](../audit/evidence/GATEAUDIT_PHASE5_F008_CI_TEST_HARNESS_SCOPE_REMEDIATION.md)。
+
+## 2026-09-06 — F008 accepted and current authority synchronized
+
+- Task=`NQ-GATEAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED-POST-CI-AUTHORITY-ACCEPTANCE`，仅docs-only finding closure与current-fact synchronization。
+- Preflight：branch=`audit/post-gatey-agent-baseline`；starting HEAD/origin=`614359fc7f25227f736fbb1c11c7d584da1f0627`，worktree clean、staged=0；existing exact-head CI=`33978394774 / completed / success / 9 of 9`，authority checker errors=0。
+- 正式接受P5-F008=`ACCEPTED / CLOSED`；implementation=`716199a7cb836a5eaf43a88b0de6db0f47a75e91`，technical acceptance head=`614359fc7f25227f736fbb1c11c7d584da1f0627`；harness follow-up归类为accepted CI test-harness compatibility remediation，不新开implementation finding。Final Closure Review=`PASS / P0_0 / P1_0`。
+- 下一项依据current ROADMAP的F009须在F008/F007关闭后执行、F007所需canonical deployment已接受，登记`GateAUDIT-PHASE5-F007-MINIMUM-OPERATIONAL-OBSERVABILITY / NOT_STARTED / NONE / NOT_RUN`；next_action=`NQ-GATEAUDIT-PHASE5-F007-MINIMUM-OPERATIONAL-OBSERVABILITY-IMPLEMENTATION`。P5-F007/P5-F009仍`OPEN / NOT_IMPLEMENTED`，不改变优先级，不实现后续工作。
+- STATUS/ROADMAP同步，TESTING/WORKLOG仅追加，新增[post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F008_POST_CI_AUTHORITY_ACCEPTANCE.md)；FACT_SOURCE_INDEX owner无变化。原失败CI与review/remediation记录保留，technical pair与本次docs authority-sync commit分离。
+- 用户已授权本次精确暂存、commit与push；不重跑F008、Full Maven、PG16、frontend、mutation或新的remote CI qualification。保留LIVE DISABLED、kill ENGAGED、remote enforcement NOT_APPLIED/NOT_VERIFIED、platform attestation DEFERRED及Phase6 deferred。回滚仅采用本次文档反向补丁，不改写历史。

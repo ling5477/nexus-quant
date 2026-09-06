@@ -15096,3 +15096,10 @@ Attempt-01=`FAIL / CHANGES_REQUIRED`：P1-01=`INTERPROCESS_DURABILITY_CHECK_ABSE
 - 实测：PS5.1 direct -File、PS7 direct -File、PS7完整GitHub wrapper suite均exit=0、135/135 REJECTED、accepted=0；三次R06/R09/R10各118 tests、assertion failures=17/50/12、errors/skips=0/0，真实Maven failure到validator拒绝链完整。
 - Baseline mandatory F008 reports=118/0/0/0；两种shell authority checker及diff check通过。22个assertion调用点和17个closure保留；仅原helper的binding及两个closure调用方式改变，validator/workflow/backend/config未改。
 - 本地Full Maven/PG16/JAR/canonical release/frontend未重跑；本记录为SELF_REVIEWED / READY_TO_COMMIT，不预先声明新exact-head CI通过。Evidence：[scope remediation](../audit/evidence/GATEAUDIT_PHASE5_F008_CI_TEST_HARNESS_SCOPE_REMEDIATION.md)。
+
+## 2026-09-06 — F008 post-CI authority acceptance
+
+- 本轮回读exact-head CI=`33978394774 / completed / success / 9 of 9 / failed 0 / skipped 0`；headSha=`614359fc7f25227f736fbb1c11c7d584da1f0627`与starting HEAD/origin一致。Implementation=`716199a7cb836a5eaf43a88b0de6db0f47a75e91`，后续head为accepted CI test-harness compatibility remediation。
+- 既有CI日志确认mandatory production-config Maven与YAML semantic validator通过，mutations=`135 REJECTED / 0 ACCEPTED`；R06/R09/R10各118 tests、assertion failures=`17/50/12`，source→Maven→required capability→canonical admission拒绝链完成。本轮没有重新执行这些技术测试。
+- Final Closure Review沿用已接受的`PASS / P0_0 / P1_0`，正式P5-F008=`ACCEPTED / CLOSED`；P5-F007/P5-F009保持`OPEN / NOT_IMPLEMENTED`。Full Maven/PG16/frontend/mutation suite/新的remote CI qualification=`NOT_REQUIRED / NOT_RUN`。
+- Docs/governance验证结果见[post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F008_POST_CI_AUTHORITY_ACCEPTANCE.md)；technical acceptance pair不由本次docs commit或其CI替代。

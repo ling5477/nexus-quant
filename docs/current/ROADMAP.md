@@ -25,7 +25,10 @@ NQ-GATEAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE
   ↓
 a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848 ACCEPTED / CI_GREEN
   ↓
-NQ-GATEAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED-COMMIT
+GateAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED ACCEPTED / CLOSED
+614359fc7f25227f736fbb1c11c7d584da1f0627 / 33978394774 ACCEPTED / CI_GREEN
+  ↓
+NQ-GATEAUDIT-PHASE5-F007-MINIMUM-OPERATIONAL-OBSERVABILITY-IMPLEMENTATION
 ```
 
 ## Phase4 accepted foundation
@@ -61,12 +64,12 @@ NQ-GATEAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED-COMMIT
 - 当前accepted CI基线为9 jobs；Phase5A exact-head pair=`d1d20f4087cd337e0b21037b38b377bcbe25499f / 33505000903`，run=`completed / success / 9 of 9 / failed 0 / skipped 0`。
 - Legacy Phase3 IDs F-005/F-011的canonical source不可恢复，已退休；Phase5只使用以下inventory seed，不继承未知语义。
 - Gate-specific release/deploy helpers只作为输入inventory；Phase5不得为兼容历史路径修改canonical implementation。
-- Phase5A已建立immutable supply-chain pinning、internal SBOM/provenance与selected E2E scope；Phase5B canonical deployment与current-schema backup/restore已由`a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848`接受。当前critical E2E baseline=`5 specs / 27 cases`；P5-F008为`REVIEW_ACCEPTED / READY_TO_COMMIT`，P5-F007/F009仍为后续open inputs。
+- Phase5A已建立immutable supply-chain pinning、internal SBOM/provenance与selected E2E scope；Phase5B canonical deployment与current-schema backup/restore已由`a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848`接受。当前critical E2E baseline=`5 specs / 27 cases`；P5-F008已由`614359fc7f25227f736fbb1c11c7d584da1f0627 / 33978394774`接受并关闭，P5-F007/F009仍为后续open inputs。
 - LIVE保持`DISABLED`、kill switch保持`ENGAGED`；不读取credential、不触发真实provider。
 
 ### Phase5 finding seed
 
-以下 finding 来自 `NQ-GATEAUDIT-PHASE5-CI-CD-DEPLOYMENT-HARDENING` 只读 inventory；Phase5A已接受F001 local baseline与F004/F005/F006，Phase5B已接受并关闭F002/F003，F008 candidate已通过独立Final Closure Review，待commit与exact-head CI，F007/F009保持`OPEN / NOT_IMPLEMENTED`。
+以下 finding 来自 `NQ-GATEAUDIT-PHASE5-CI-CD-DEPLOYMENT-HARDENING` 只读 inventory；Phase5A已接受F001 local baseline与F004/F005/F006，Phase5B已接受并关闭F002/F003，F008已通过独立Final Closure Review与9/9 exact-head CI，正式`ACCEPTED / CLOSED`，F007/F009保持`OPEN / NOT_IMPLEMENTED`。
 
 | ID | Severity | Finding | Status | Evidence summary |
 | --- | --- | --- | --- | --- |
@@ -77,7 +80,7 @@ NQ-GATEAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED-COMMIT
 | P5-F005 | P2 | `SBOM_PROVENANCE_ATTESTATION_ABSENT` | `INTERNAL_SBOM_PROVENANCE_ACCEPTED` | backend/frontend artifact、SBOM、manifest与provenance已完成pre-upload admission、upload与post-upload readback；platform attestation继续`DEFERRED_UNTIL_EXPLICIT_AUTHORIZATION` |
 | P5-F006 | P2 | `CI_DUPLICATION_AND_CRITICAL_E2E_COVERAGE_GAP` | `ACCEPTED / CLOSED` | Phase5A historical baseline=`5 specs / 20 cases`；最新Phase5B accepted baseline=`5 specs / 27 cases`，loopback 25/25、real-backend 2/2，两个NoSkip reporter均PASS |
 | P5-F007 | P2 | `MINIMUM_OPERATIONAL_OBSERVABILITY_INCOMPLETE` | `OPEN / NOT_IMPLEMENTED` | scheduler/worker、reconciliation、ledger recovery与critical alert缺统一运行观测 |
-| P5-F008 | P2 | `PROD_CONFIGURATION_FAIL_CLOSED_GAP` | `REVIEW_ACCEPTED / READY_TO_COMMIT` | Final Closure Review=`PASS / PHASE5_F008_YAML_SEMANTIC_FINAL_CLOSURE_ACCEPTED / P0_0 / P1_0`；两种shell各135/135 mutations拒绝、mandatory F008 118 tests通过；待精确提交与exact-head CI，尚未CLOSED |
+| P5-F008 | P2 | `PROD_CONFIGURATION_FAIL_CLOSED_GAP` | `ACCEPTED / CLOSED` | Final Closure Review=`PASS / P0_0 / P1_0`；implementation=`716199a7cb836a5eaf43a88b0de6db0f47a75e91`；accepted technical head=`614359fc7f25227f736fbb1c11c7d584da1f0627`，exact-head CI=`33978394774 / SUCCESS / 9 of 9`；mandatory Maven、YAML semantic validator、135/135 mutations拒绝及R06/R09/R10拒绝链通过 |
 | P5-F009 | P2 | `LEGACY_GATE_SPECIFIC_ACTIVE_ASSET_DEBT` | `OPEN / NOT_IMPLEMENTED` | current canonical replacement已由Phase5B接受，但active tree仍保留GateW/GateY/freeze release/deploy/systemd入口，尚未完成caller inventory与consolidation |
 
 ## Phase6 deferred proofs
@@ -93,11 +96,11 @@ NQ-GATEAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED-COMMIT
 ## 下一允许动作
 
 - Phase5B immutable technical acceptance pair=`a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848`；不得由本次current-fact synchronization commit或其CI替代。
-- 当前workstream：`GateAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED`，状态=`REVIEW_ACCEPTED|READY_TO_COMMIT / NONE / NOT_RUN`。
-- machine next action：`NQ-GATEAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED-COMMIT`，matcher type=`COMMIT`。人工 work order=`NQ-GATEAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED-COMMIT-AND-EXACT-HEAD-CI`，范围仍为fingerprint核验 → authority sync → 精确暂存 → commit → push → exact-head CI；CI green后仅进入post-CI authority acceptance，不重审F008 implementation。
+- F008 immutable technical acceptance pair=`614359fc7f25227f736fbb1c11c7d584da1f0627 / 33978394774`；implementation=`716199a7cb836a5eaf43a88b0de6db0f47a75e91`，后续head属于`accepted CI test-harness compatibility remediation`，不是新的implementation finding。详见[post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F008_POST_CI_AUTHORITY_ACCEPTANCE.md)。
+- 当前workstream：`GateAUDIT-PHASE5-F007-MINIMUM-OPERATIONAL-OBSERVABILITY`，状态=`NOT_STARTED / NONE / NOT_RUN`；machine next action：`NQ-GATEAUDIT-PHASE5-F007-MINIMUM-OPERATIONAL-OBSERVABILITY-IMPLEMENTATION`，matcher type=`IMPLEMENTATION`。依据本文件capability disposition的既有依赖，F009须在F008/F007关闭后单独执行；F008已关闭，F007所需canonical deployment已接受，因此下一项为F007。本轮仅同步authority，不实施F007/F009，不改变其优先级。
 
 ## Persistent boundary
 
 - `LIVE=DISABLED`、kill switch=`ENGAGED`；禁止再次pilot、PLACE、CANCEL、transfer、withdraw或credential/生产服务器/生产数据库访问。
 - GateY frozen archive与published tags不可改写。
-- P5-F008为`REVIEW_ACCEPTED / READY_TO_COMMIT`，本轮不得写成CLOSED；P5-F007/F009仍未实现，Phase6继续deferred。remote enforcement保持`NOT_APPLIED / NOT_VERIFIED`，platform attestation保持deferred。
+- P5-F008=`ACCEPTED / CLOSED`；P5-F007/F009仍未实现，Phase6继续deferred。remote enforcement保持`NOT_APPLIED / NOT_VERIFIED`，platform attestation保持deferred。
