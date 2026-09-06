@@ -31,7 +31,12 @@ GateAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED ACCEPTED / CLOSED
 GateAUDIT-PHASE5-F007-MINIMUM-OPERATIONAL-OBSERVABILITY ACCEPTED / CLOSED
 0e2efdeb236c185dbace67bb22f94c6af64a563a / 34009290836 ACCEPTED / CI_GREEN
   ↓
-NQ-GATEAUDIT-PHASE5-F009-LEGACY-GATE-SPECIFIC-ACTIVE-ASSET-CONSOLIDATION-COMMIT
+GateAUDIT-PHASE5-F009-LEGACY-GATE-SPECIFIC-ACTIVE-ASSET-CONSOLIDATION ACCEPTED / CLOSED
+dbb8b9c6a2319338f5ca90b566ad494142a55e20 / 34024427455 ACCEPTED / CI_GREEN
+  ↓
+Phase5 REMAINS_OPEN / P5-F001 remote enforcement NOT_APPLIED / NOT_VERIFIED
+  ↓
+NQ-GATEAUDIT-PHASE5-F001-REMOTE-REQUIRED-CHECK-ENFORCEMENT-UNBLOCK
 ```
 
 ## Phase4 accepted foundation
@@ -52,11 +57,11 @@ NQ-GATEAUDIT-PHASE5-F009-LEGACY-GATE-SPECIFIC-ACTIVE-ASSET-CONSOLIDATION-COMMIT
 | Phase4 proof foundation | F-001～F-004 accepted | four immutable pairs green | `NOT_REQUIRED` | 不重复实现或Review accepted proof | GateAUDIT | accepted pair失效时才重开 | Phase4 |
 | Legacy Phase3 identifier F-005 | title/source/owner/consumer均不可恢复 | 不产生任何新语义或implementation mapping | `LEGACY_FINDING_IDENTITY_UNRECOVERABLE / RETIRED` | 保留历史ledger记录，但禁止Phase5继承或猜测未知语义 | Historical evidence only | 仅在找到可验证canonical source时重新审计identity | Retired |
 | Legacy Phase3 identifier F-011 | title/source/owner/consumer均不可恢复 | 不产生任何新语义或implementation mapping | `LEGACY_FINDING_IDENTITY_UNRECOVERABLE / RETIRED` | 保留历史ledger记录，但禁止Phase5继承或猜测未知语义 | Historical evidence only | 仅在找到可验证canonical source时重新审计identity | Retired |
-| All historical-stage active runtime assets | legacy entrypoints已退役；capability callers已迁移；兼容合同逐项保留 | canonical release/deploy/restore与稳定runtime mode | `REVIEW_ACCEPTED / READY_TO_COMMIT` | 详见F009 inventory与本地回归；不改变accepted deployment语义 | Phase5 legacy consolidation owner | 三项P1已独立关闭；仅交付reviewed candidate并取得exact-head CI | Phase5 |
+| All historical-stage active runtime assets | legacy entrypoints已退役；capability callers已迁移；兼容合同逐项保留 | canonical release/deploy/restore与稳定runtime mode | `ACCEPTED / CLOSED` | F009 local review与最终9/9 exact-head CI已接受；不改变accepted deployment语义 | Phase5 legacy consolidation owner | 仅当accepted technical pair失效时重开 | Phase5 |
 | Historical plans与attempt evidence | 明确non-authoritative、保留append-only链接 | history不得参与authority/runtime | `NOT_REQUIRED` | 已通过fact-source分类隔离，不改写历史正文 | docs/archive owners | 仅引用迁移有独立授权时 | Historical |
 | Supply-chain immutable action pinning | 24处Actions、工具consumer与3处PostgreSQL image已由lock和exact-head CI验证 | immutable action/SBOM/provenance baseline | `NOT_REQUIRED` | Phase5A baseline已接受，不重复实现 | Phase5 CI owner | acceptance pair失效时才重开 | Phase5A |
 | Canonical deployment rebuild | immutable pair=`a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848` | single canonical deploy/release/restore path | `NOT_REQUIRED` | P5-F002与P5-F003已由9/9 exact-head CI接受并关闭 | Phase5 deployment/recovery owner | acceptance pair失效时才重开 | Phase5B |
-| Minimum observability baseline | 当前有Actuator/log/audit局部能力 | deployment health/log/metric/alert minimum | `IMPLEMENT_LATER` | 需绑定canonical deployment | Phase5 observability owner | canonical deployment candidate存在 | Phase5 |
+| Minimum observability baseline | F007最小运行观测已由immutable technical pair接受 | deployment health/log/metric/alert minimum | `NOT_REQUIRED` | F007已ACCEPTED / CLOSED，不重复实现 | Phase5 observability owner | accepted pair失效时才重开 | Phase5 |
 | Selected frontend E2E expansion | Phase5A historical pair接受`5 specs / 20 cases`；Phase5B current baseline=`5 specs / 27 cases` | Phase5 selected critical-flow matrix | `NOT_REQUIRED` | 当前loopback=`25/25`、real-backend=`2/2`、skip/fixme=`0/0`，不重复扩展 | Phase5 frontend QA owner | acceptance pair或critical scope失效时才重开 | Phase5A/Phase5B |
 | accepted-timeout / lost ACK / cancel-fill race / kill-in-flight / external-side-effect+DB failure / multi-instance lease | 尚未证明 | real-process deterministic L4 matrix | `PROVE_FIRST` | F-002只接受restart foundation | Phase6 qualification owner | Phase5 deployment+observability baseline accepted | Phase6 L4 |
 | L5/L6 scale、chaos与长期qualification | 未执行 | Phase6 L4 accepted | `PROVE_FIRST` | 不得越过L4直接实现 | Phase6 qualification owner | L4 accepted后 | Phase6 L5/L6 |
@@ -67,12 +72,12 @@ NQ-GATEAUDIT-PHASE5-F009-LEGACY-GATE-SPECIFIC-ACTIVE-ASSET-CONSOLIDATION-COMMIT
 - 当前accepted CI基线为9 jobs；Phase5A exact-head pair=`d1d20f4087cd337e0b21037b38b377bcbe25499f / 33505000903`，run=`completed / success / 9 of 9 / failed 0 / skipped 0`。
 - Legacy Phase3 IDs F-005/F-011的canonical source不可恢复，已退休；Phase5只使用以下inventory seed，不继承未知语义。
 - Gate-specific release/deploy helpers只作为输入inventory；Phase5不得为兼容历史路径修改canonical implementation。
-- Phase5A已建立immutable supply-chain pinning、internal SBOM/provenance与selected E2E scope；Phase5B canonical deployment与current-schema backup/restore已由`a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848`接受。当前critical E2E baseline=`5 specs / 27 cases`；P5-F008已由`614359fc7f25227f736fbb1c11c7d584da1f0627 / 33978394774`接受并关闭，P5-F007已由`0e2efdeb236c185dbace67bb22f94c6af64a563a / 34009290836`接受并关闭，F009仍为`REVIEW_ACCEPTED / READY_TO_COMMIT`，其F008/F007前置条件已满足。
+- Phase5A已建立immutable supply-chain pinning、internal SBOM/provenance与selected E2E scope；Phase5B canonical deployment与current-schema backup/restore已由`a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848`接受。当前critical E2E baseline=`5 specs / 27 cases`；P5-F008已由`614359fc7f25227f736fbb1c11c7d584da1f0627 / 33978394774`接受并关闭，P5-F007已由`0e2efdeb236c185dbace67bb22f94c6af64a563a / 34009290836`接受并关闭，F009已由`dbb8b9c6a2319338f5ca90b566ad494142a55e20 / 34024427455`接受并关闭；F001远端enforcement仍未应用/验证，F005 platform attestation仍延期。
 - LIVE保持`DISABLED`、kill switch保持`ENGAGED`；不读取credential、不触发真实provider。
 
 ### Phase5 finding seed
 
-以下 finding 来自 `NQ-GATEAUDIT-PHASE5-CI-CD-DEPLOYMENT-HARDENING` 只读 inventory；Phase5A已接受F001 local baseline与F004/F005/F006，Phase5B已接受并关闭F002/F003，F008已通过独立Final Closure Review与9/9 exact-head CI，正式`ACCEPTED / CLOSED`，F007已由本次post-CI authority acceptance正式`ACCEPTED / CLOSED`，F009保持`REVIEW_ACCEPTED / READY_TO_COMMIT`。
+以下 finding 来自 `NQ-GATEAUDIT-PHASE5-CI-CD-DEPLOYMENT-HARDENING` 只读 inventory；Phase5A已接受F001 local baseline与F004/F005/F006，Phase5B已接受并关闭F002/F003，F008已通过独立Final Closure Review与9/9 exact-head CI，正式`ACCEPTED / CLOSED`，F007与F009均已正式`ACCEPTED / CLOSED`。F001/F005仅接受已有范围，完整closure不能由此推断。
 
 | ID | Severity | Finding | Status | Evidence summary |
 | --- | --- | --- | --- | --- |
@@ -84,7 +89,14 @@ NQ-GATEAUDIT-PHASE5-F009-LEGACY-GATE-SPECIFIC-ACTIVE-ASSET-CONSOLIDATION-COMMIT
 | P5-F006 | P2 | `CI_DUPLICATION_AND_CRITICAL_E2E_COVERAGE_GAP` | `ACCEPTED / CLOSED` | Phase5A historical baseline=`5 specs / 20 cases`；最新Phase5B accepted baseline=`5 specs / 27 cases`，loopback 25/25、real-backend 2/2，两个NoSkip reporter均PASS |
 | P5-F007 | P2 | `MINIMUM_OPERATIONAL_OBSERVABILITY_INCOMPLETE` | `ACCEPTED / CLOSED` | implementation/accepted technical head=`0e2efdeb236c185dbace67bb22f94c6af64a563a`，exact-head CI=`34009290836 / SUCCESS / 9 of 9 / failed 0 / skipped 0`，observability tests=10/10、Full Maven=1783 tests/0 failures/0 errors/53 conditional test skips，P0/P1=0/0；详见[post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F007_POST_CI_AUTHORITY_ACCEPTANCE.md) |
 | P5-F008 | P2 | `PROD_CONFIGURATION_FAIL_CLOSED_GAP` | `ACCEPTED / CLOSED` | Final Closure Review=`PASS / P0_0 / P1_0`；implementation=`716199a7cb836a5eaf43a88b0de6db0f47a75e91`；accepted technical head=`614359fc7f25227f736fbb1c11c7d584da1f0627`，exact-head CI=`33978394774 / SUCCESS / 9 of 9`；mandatory Maven、YAML semantic validator、135/135 mutations拒绝及R06/R09/R10拒绝链通过 |
-| P5-F009 | P2 | `LEGACY_GATE_SPECIFIC_ACTIVE_ASSET_DEBT` | `REVIEW_ACCEPTED / READY_TO_COMMIT` | 所有历史stage已盘点；退役入口已删除或迁移，保留的签名/DB/错误码合同有owner与版本迁移触发条件；三项P1已独立关闭；local review PASS / P0_0 / P1_0；待commit与exact-head CI |
+| P5-F009 | P2 | `LEGACY_GATE_SPECIFIC_ACTIVE_ASSET_DEBT` | `ACCEPTED / CLOSED` | Local review CLOSED / P0_0 / P1_0，三项P1均CLOSED；accepted technical pair=`dbb8b9c6a2319338f5ca90b566ad494142a55e20 / 34024427455`，9/9 jobs success、failed/skipped/cancelled=0；首次失败delivery与remediation链见[F009 post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F009_POST_CI_AUTHORITY_ACCEPTANCE.md) |
+
+### Phase5 closure reconciliation
+
+- 总计9项；完整accepted/closed=7（F002/F003/F004/F006/F007/F008/F009）；open/unclosed=2，其中blocked=1（F001）、deferred=1（F005）。blocked/deferred是open/unclosed子集，不重复相加。两项均有部分已接受能力，不将其部分acceptance改写成完整closure。
+- Remaining blocking findings=1：P5-F001，既有P1 severity不变；9个local required-check names与CI只证明本地baseline，不能证明remote enforcement。当前未有closure或non-blocking waiver，保持阻断Phase5整体关闭。
+- P5-F005保持`INTERNAL_SBOM_PROVENANCE_ACCEPTED`，platform attestation=`DEFERRED_UNTIL_EXPLICIT_AUTHORIZATION / id-token NOT_GRANTED`，沿用已有非阻断延期范围；不增加新的closure或权限。
+- Phase5=`REMAINS_OPEN`；Phase6=`DEFERRED`（未开始）。完整逐项technical evidence、blocking属性与remaining action见本次F009 post-CI acceptance evidence。
 
 ## Phase6 deferred proofs
 
@@ -94,23 +106,26 @@ NQ-GATEAUDIT-PHASE5-F009-LEGACY-GATE-SPECIFIC-ACTIVE-ASSET-CONSOLIDATION-COMMIT
 - multi-instance/lease/duplicate worker；
 - L5/L6 scale、chaos与长期qualification。
 
-这些项目在P5-F007/F008/F009完成正式Review/acceptance并形成Phase5 accepted baseline前均不得写成已实现或已证明。
+P5-F007/F008/F009的Review/acceptance前置条件现已满足；Phase5整体accepted baseline仍被F001阻断，因此不推进Phase6 readiness，不实施或重跑L4/L5/L6 qualification。上述proofs仍未证明。
 
 ## 下一允许动作
 
 - Phase5B immutable technical acceptance pair=`a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848`；不得由本次current-fact synchronization commit或其CI替代。
 - F008 immutable technical acceptance pair=`614359fc7f25227f736fbb1c11c7d584da1f0627 / 33978394774`；implementation=`716199a7cb836a5eaf43a88b0de6db0f47a75e91`，后续head属于`accepted CI test-harness compatibility remediation`，不是新的implementation finding。详见[post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F008_POST_CI_AUTHORITY_ACCEPTANCE.md)。
 - F007 immutable technical acceptance pair=`0e2efdeb236c185dbace67bb22f94c6af64a563a / 34009290836`；implementation与accepted technical head相同，不由本轮docs-only authority commit替代。
-- 当前workstream：`GateAUDIT-PHASE5-F009-LEGACY-GATE-SPECIFIC-ACTIVE-ASSET-CONSOLIDATION`，状态=`REVIEW_ACCEPTED|READY_TO_COMMIT / NONE / NOT_RUN`；machine next action：`NQ-GATEAUDIT-PHASE5-F009-LEGACY-GATE-SPECIFIC-ACTIVE-ASSET-CONSOLIDATION-COMMIT`，matcher type=`COMMIT`。本轮仅交付已独立审查的F009 candidate；[implementation evidence](../audit/evidence/GATEAUDIT_PHASE5_F009_LEGACY_GATE_SPECIFIC_ACTIVE_ASSET_CONSOLIDATION_IMPLEMENTATION.md)记录所有stage的分类与本地证据。Phase6保持DEFERRED。
+- F009 immutable technical acceptance pair=`dbb8b9c6a2319338f5ca90b566ad494142a55e20 / 34024427455`；首次delivery=`85d11984d0c65b464ffe4858fe7fd1da51885f12`、failed CI=`34024011663`保留，不由后续authority commit替代。
+- 当前workstream：`GateAUDIT-PHASE5-F001-REMOTE-REQUIRED-CHECK-ENFORCEMENT`，状态=`BLOCKED / NONE / NOT_RUN`；machine next action=`NQ-GATEAUDIT-PHASE5-F001-REMOTE-REQUIRED-CHECK-ENFORCEMENT-UNBLOCK`，matcher type=`UNBLOCK`。先取得F001 remote enforcement显式授权与适用authority；随后才可应用/读回验证稳定9 checks并提交可接受证据。本任务只登记解阻，不操作ruleset/branch protection。
+- Phase5 remains open、Phase6 DEFERRED；F005延期项单独保留。详见[F009 post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F009_POST_CI_AUTHORITY_ACCEPTANCE.md)。
 
 ## Persistent boundary
 
 - `LIVE=DISABLED`、kill switch=`ENGAGED`；禁止再次pilot、PLACE、CANCEL、transfer、withdraw或credential/生产服务器/生产数据库访问。
 - GateY frozen archive与published tags不可改写。
-- P5-F008与P5-F007均为`ACCEPTED / CLOSED`；P5-F009保持`REVIEW_ACCEPTED / READY_TO_COMMIT`，Phase6继续deferred。remote enforcement保持`NOT_APPLIED / NOT_VERIFIED`，platform attestation保持deferred。
+- P5-F008/P5-F007/P5-F009均为`ACCEPTED / CLOSED`；P5-F001远端enforcement仍阻断Phase5 closure，Phase6继续deferred。remote enforcement保持`NOT_APPLIED / NOT_VERIFIED`，platform attestation保持deferred。
 
-## F009 reviewed candidate 提交交接
+## F009 accepted delivery lineage
 
-- Local review=`CLOSED / PASS / P0_0 / P1_0`；P1-1/P1-2/P1-3 均 CLOSED。`NO ADDITIONAL F009 REVIEW`，禁止修改已接受的 candidate implementation。
-- 当前任务为 `NQ-GATEAUDIT-PHASE5-F009-LEGACY-GATE-SPECIFIC-ACTIVE-ASSET-CONSOLIDATION-COMMIT-AND-EXACT-HEAD-CI`；machine next action 仅使用 `COMMIT`，避免 COMMIT/CI matcher 歧义。
-- Reviewed fingerprint 与 protected fingerprint 由 STATUS 记录；仅允许必要 precommit authority 同步及 exact staging、commit、push、exact-head CI。CI 成功后的唯一下一任务为 `NQ-GATEAUDIT-PHASE5-F009-POST-CI-AUTHORITY-ACCEPTANCE`；不提前接受 P5-F009，不推定 Phase6 readiness。
+- Local review=`CLOSED / PASS / P0_0 / P1_0`；P1-1/P1-2/P1-3均CLOSED，不追加review。
+- Failed delivery=`85d11984d0c65b464ffe4858fe7fd1da51885f12 / 34024011663`；precommit ROADMAP authority delta造成stage-asset exception digest stale。
+- Remediation与accepted technical head=`dbb8b9c6a2319338f5ca90b566ad494142a55e20`；exact-head CI=`34024427455 / completed / success / 9 of 9 / failed 0 / skipped 0 / cancelled 0`。
+- 本轮authority/docs commit仅同步已接受事实与ROADMAP guard binding，不替换technical pair，不重跑technical qualification。

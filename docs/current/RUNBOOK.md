@@ -63,7 +63,7 @@ python -m ruff check .
 
 ## 8. GateAUDIT Phase5 current boundary
 
-Phase5A、Phase5B、F008与F007已由各自immutable technical pair接受；当前work batch与下一动作从[STATUS.md](STATUS.md)读取，F009已实施、等待focused review。Authority reconciliation和后续docs-only同步运行以下一致性检查：
+Phase5A、Phase5B、F008与F007已由各自immutable technical pair接受；当前work batch与下一动作从[STATUS.md](STATUS.md)读取，F009已ACCEPTED / CLOSED，Phase5仍受F001 remote enforcement未应用/验证阻断。Authority reconciliation和后续docs-only同步运行以下一致性检查：
 
 ```powershell
 git status --short
@@ -72,7 +72,7 @@ git diff --check
 git diff --stat
 ```
 
-本阶段不运行真实交易所 HTTP / WebSocket，不读取 credential material，不启动 LIVE，不接 AI / DH runtime。F008与F007保持`ACCEPTED / CLOSED`；P5-F009保持`IMPLEMENTED / PENDING_FOCUSED_REVIEW`，Phase6继续deferred。仅docs/索引变化时不机械运行完整Maven。
+本阶段不运行真实交易所 HTTP / WebSocket，不读取 credential material，不启动 LIVE，不接 AI / DH runtime。F008与F007保持`ACCEPTED / CLOSED`；P5-F009为`ACCEPTED / CLOSED`，F005 platform attestation沿用DEFERRED disposition，Phase6继续deferred。仅docs/索引变化时不机械运行完整Maven。
 
 ## 9. Canonical production configuration
 

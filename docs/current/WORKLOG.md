@@ -19963,3 +19963,15 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - Reviewed candidate=c421eddb9b6b0d3fc9e707f2a3e766ceb87e20ff9fd88b9003c64fffedfa814f。新scoped before=after=0c4cb19699c5bf914d8e675f60fc37a4869b15ba4ee18ea3bac65e82c9740099，3209 protected paths、mismatch=0；P1-1/P1-2及其余已通过区域保持，不重审。
 - 仅改checker/tests、追加本ledger及新增evidence；inventory、STATUS/ROADMAP、Java/runtime/canonical实现均不变。Maven/PG16/canonical release/frontend=NOT_REQUIRED；独立review/exact-head CI=NOT_RUN；staged=0、add/commit/push=NONE。
 - Grammar限制、完整证据、路径清单与文件级回滚见 [P1-3 JS dependency remediation](../audit/evidence/GATEAUDIT_PHASE5_F009_P1_3_JS_MODULE_DEPENDENCY_REMEDIATION.md)。唯一下一任务：`NQ-GATEAUDIT-PHASE5-F009-P1-3-JS-MODULE-DEPENDENCY-CLOSURE-REVIEW`。
+
+
+## 2026-09-06 — F009 accepted and Phase5 remaining findings reconciled
+
+- Task=`NQ-GATEAUDIT-PHASE5-F009-POST-CI-AUTHORITY-ACCEPTANCE`；仅authority/evidence/governance binding。Starting branch=`audit/post-gatey-agent-baseline`，HEAD/origin=`dbb8b9c6a2319338f5ca90b566ad494142a55e20`，worktree CLEAN、staged=0；未追加review或implementation。
+- 保留完整历史：`85d11984d0c65b464ffe4858fe7fd1da51885f12 / 34024011663` failed delivery；precommit ROADMAP authority delta造成stage exception digest stale；`dbb8b9c6a2319338f5ca90b566ad494142a55e20`为最小remediation；`34024427455`为9/9绿色exact-head CI。
+- F009正式ACCEPTED/CLOSED，local review CLOSED / P0_0 / P1_0，三项P1均CLOSED；immutable technical pair=`dbb8b9c6a2319338f5ca90b566ad494142a55e20 / 34024427455`。本轮authority synchronization commit另行由Git记录，不替换technical acceptance head。
+- 从当前9项registry重算：7完整accepted/closed，2未完全关闭（F001阻断、F005延期）；Phase5 REMAINS_OPEN，remaining blocking=1。P5-F001沿用local baseline accepted / remote NOT_APPLIED / NOT_VERIFIED，保留P1；P5-F005 internal provenance accepted / platform attestation DEFERRED，不并入F009。Phase6 DEFERRED、implementation未开始。
+- 新work batch=`GateAUDIT-PHASE5-F001-REMOTE-REQUIRED-CHECK-ENFORCEMENT / BLOCKED / NONE / NOT_RUN`；next=`NQ-GATEAUDIT-PHASE5-F001-REMOTE-REQUIRED-CHECK-ENFORCEMENT-UNBLOCK`。解阻需要显式remote enforcement授权、适用authority及后续应用/读回验证证据；本任务不操作remote ruleset。
+- STATUS/ROADMAP同步、FACT_SOURCE_INDEX增加evidence mapping、TESTING/本ledger仅追加、新增[F009 post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F009_POST_CI_AUTHORITY_ACCEPTANCE.md)；current README/RUNBOOK最小删除F009待review旧摘要，ROADMAP观测能力旧IMPLEMENT_LATER行按已接受F007事实同步。
+- ROADMAP正式inspect() digest=`aa600c9fec8392053b07647df8ed7c337eb41783390d55d1b3517faef2819f44`→`169f8b7c6f907d9b67764de22ce56c6244a5b7f491dc9f3d6e12c4822efead5a`；exception只改该hash，scope完全不变。Current checker PASS，未同步digest临时mutation STALE_EXCEPTION/REJECT，恢复原始bytes后PASS；未修改checker/tests。
+- 既有review/remediation/failure evidence、archive/migration、Java/JS/runtime/deployment实现不变。治理验证及PS5.1初始execution-policy失败/RCA见本evidence；两项Windows symlink privilege skips如实保留，不冒充Linux执行。用户已授权精确stage/commit/push，发布结果由最终报告和Git记录；回滚使用本次精确反向补丁，ledger以追加纠正保留历史。

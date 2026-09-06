@@ -37,6 +37,8 @@
 
 旧条目只表示历史执行，不参与 current stage 判定。
 
+- [F009 post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F009_POST_CI_AUTHORITY_ACCEPTANCE.md)：F009 immutable technical pair、失败delivery/remediation链、Phase5 finding reconciliation与Phase6延期依据。分类为`ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`；STATUS仍为唯一current authority，ROADMAP拥有remaining actions。
+
 ## 5. Agent / Governance
 
 - 根 `AGENTS.md`：仓库级入口。

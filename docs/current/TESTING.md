@@ -15156,3 +15156,14 @@ Attempt-01=`FAIL / CHANGES_REQUIRED`：P1-01=`INTERPROCESS_DURABILITY_CHECK_ABSE
 - Reviewed candidate=c421eddb9b6b0d3fc9e707f2a3e766ceb87e20ff9fd88b9003c64fffedfa814f。新scoped before=after=0c4cb19699c5bf914d8e675f60fc37a4869b15ba4ee18ea3bac65e82c9740099，3209 protected paths、mismatch=0；P1-1/P1-2及其余已通过区域保持，不重审。
 - 仅改checker/tests、追加本ledger及新增evidence；inventory、STATUS/ROADMAP、Java/runtime/canonical实现均不变。Maven/PG16/canonical release/frontend=NOT_REQUIRED；独立review/exact-head CI=NOT_RUN；staged=0、add/commit/push=NONE。
 - Grammar限制、完整证据、路径清单与文件级回滚见 [P1-3 JS dependency remediation](../audit/evidence/GATEAUDIT_PHASE5_F009_P1_3_JS_MODULE_DEPENDENCY_REMEDIATION.md)。唯一下一任务：`NQ-GATEAUDIT-PHASE5-F009-P1-3-JS-MODULE-DEPENDENCY-CLOSURE-REVIEW`。
+
+
+## 2026-09-06 — F009 post-CI authority acceptance
+
+- 本轮仅核验Git/GitHub既有technical binding及运行文档/治理验证，不重新执行F009 review或技术qualification。Starting HEAD/origin=`dbb8b9c6a2319338f5ca90b566ad494142a55e20`，branch=`audit/post-gatey-agent-baseline`，worktree CLEAN、staged=0。
+- Failed delivery=`85d11984d0c65b464ffe4858fe7fd1da51885f12 / 34024011663`，completed/failure，8 success、1 failure；日志保留ROADMAP STAGE_SEMANTICS/STALE_EXCEPTION。Remediation=`dbb8b9c6a2319338f5ca90b566ad494142a55e20`为其直接子提交，仅同步当时ROADMAP exception hash。
+- Accepted technical pair=`dbb8b9c6a2319338f5ca90b566ad494142a55e20 / 34024427455`，只读GitHub核验completed/success、9/9 required jobs、failed/skipped/cancelled=0；F009 local review CLOSED、三项P1 CLOSED、P0/P1=0/0，正式ACCEPTED/CLOSED。后续authority commit不替换该pair。
+- 本轮governance：stage checker=`1798 files / 178 exceptions / errors 0`；Windows guard=`49 tests / 47 passed / 2 symlink privilege skips / failures 0`；未重跑Linux qualification。ROADMAP digest通过正式inspect()计算并同步；临时不更新digest的mutation由完整checker以exit=1拒绝，明确STALE_EXCEPTION；finally恢复原始bytes后完整checker PASS，exception仅对应sha256变化、scope不变。
+- Authority PS5.1/PS7=`PASS / errors 0`；next-action=`failed 0`；agent workflow=`12/12`；lifecycle=`20/20`。PS5.1首次直接-File被本机execution policy拒绝，脚本未执行；仅验证进程使用-ExecutionPolicy Bypass后通过，系统策略未修改。该初始失败日志保留在本地artifacts。
+- Findings重算：total=9、完整accepted/closed=7、open/unclosed=2（blocked F001=1、deferred F005=1，均为open子集），remaining blocking=1。Phase5 REMAINS_OPEN、Phase6 DEFERRED，未开始。F001 remote仍NOT_APPLIED/NOT_VERIFIED，F005 platform attestation沿用DEFERRED。
+- 文档链接、append-only、stale claims、范围diff最终验证与可复验命令见[F009 post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F009_POST_CI_AUTHORITY_ACCEPTANCE.md)；Maven/PG16/canonical release/frontend/Playwright/production/LIVE及新technical CI均NOT_REQUIRED / NOT_RUN。
