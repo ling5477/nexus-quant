@@ -63,7 +63,7 @@ python -m ruff check .
 
 ## 8. GateAUDIT Phase5 current boundary
 
-Phase5A与Phase5B已由各自immutable pair接受；当前F008 production configuration fail-closed为`REVIEW_ACCEPTED|READY_TO_COMMIT`（独立Review已接受，待提交与exact-head CI）。Authority reconciliation和后续docs-only同步运行以下一致性检查：
+Phase5A、Phase5B、F008与F007已由各自immutable technical pair接受；当前work batch与下一动作从[STATUS.md](STATUS.md)读取，F009仅登记为下一项、仍未实施。Authority reconciliation和后续docs-only同步运行以下一致性检查：
 
 ```powershell
 git status --short
@@ -72,7 +72,7 @@ git diff --check
 git diff --stat
 ```
 
-本阶段不运行真实交易所 HTTP / WebSocket，不读取 credential material，不启动 LIVE，不接 AI / DH runtime。F008正式Review/acceptance完成前不得写成closed；P5-F007/P5-F009与Phase6继续deferred。仅docs/索引变化时不机械运行完整Maven。
+本阶段不运行真实交易所 HTTP / WebSocket，不读取 credential material，不启动 LIVE，不接 AI / DH runtime。F008与F007保持`ACCEPTED / CLOSED`；P5-F009保持`OPEN / NOT_IMPLEMENTED`，Phase6继续deferred。仅docs/索引变化时不机械运行完整Maven。
 
 ## 9. Canonical production configuration
 

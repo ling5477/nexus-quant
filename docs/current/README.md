@@ -10,8 +10,8 @@
 - GateY freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`；exact-head CI run=`33037514013 / completed / success / 11 jobs`。
 - Phase 3 findings=`P0 0 / P1 4 / P2 8 / P3 1`；F-001=`95b859ee... / 33347091147`、F-002=`0651a736... / 33387882472`、F-003=`327c2229... / 33399190770`、F-004=`18efc06c... / 33358364678`，均为 `ACCEPTED / CI_GREEN`。
 - Phase4 remaining disposition closeout=`COMPLETE / ACCEPTED / CI_GREEN`，immutable pair=`7ca1fc92... / 33405549149`，blocking P0/P1=`0/0`。
-- Phase5A=`READY_TO_START / NOT_IMPLEMENTED`；inventory seed=`P5-F001～P5-F009 / P1 3 / P2 6`。Legacy Phase3 IDs F-005/F-011因canonical identity不可恢复而退休，不向Phase5传递未知语义。
-- 当前唯一动作是 `NQ-GATEAUDIT-PHASE5A-CANONICAL-DELIVERY-IMPLEMENTATION`，对应 workstream `NQ-GATEAUDIT-PHASE5A-CANONICAL-CI-AND-SUPPLY-CHAIN`。
+- Phase5A/Phase5B、P5-F008与P5-F007已接受；P5-F009保持`OPEN / NOT_IMPLEMENTED`，Phase6继续deferred。技术接受pair以[STATUS.md](STATUS.md)为准。
+- 当前work batch与唯一下一允许动作从[STATUS.md](STATUS.md)读取，由[ROADMAP.md](ROADMAP.md)解释；本轮只登记F009为下一项，不实施其能力。
 - Pilot final：PLACE=1、retry=0、CANCEL=0、activeLease=0、LIVE=false、kill=`ENGAGED`、Attempt-02 未创建。
 - Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->

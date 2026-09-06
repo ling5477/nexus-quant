@@ -19919,3 +19919,13 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - 初次完整测试使用既有本地库在V45外键约束处失败，nq-app 13 errors；未修复共享数据或migration。改用仓库锁定digest的隔离PostgreSQL及现有CI fixture后通过。测试编码/依赖/mock harness失败已修正，未削弱断言；详见[implementation evidence](../audit/evidence/GATEAUDIT_PHASE5_F007_MINIMUM_OPERATIONAL_OBSERVABILITY_IMPLEMENTATION.md)。
 - P5-F007=`IMPLEMENTED / SELF_REVIEWED / PENDING_EXACT_HEAD_CI`。本轮用户明确指定不另开独立Review，并授权精确commit/push/CI；machine保持合法`IMPLEMENTED|SELF_REVIEWED / NONE / NOT_RUN`提交前快照及COMMIT next action。未提前接受F007，F008 immutable pair不变，F009/Phase6不推进。
 - 无新增数据库查询、migration、frontend、monitoring infrastructure、生产/provider/credential/LIVE操作；metrics HTTP exposure与F008配置不变。回滚为本轮精确文件反向补丁；生成物与测试连接材料不提交。
+
+## 2026-09-06 — F007 post-CI authority acceptance
+
+- Task=`NQ-GATEAUDIT-PHASE5-F007-MINIMUM-OPERATIONAL-OBSERVABILITY-POST-CI-AUTHORITY-ACCEPTANCE`，NQ-only / DOCS_ONLY / NO_IMPLEMENTATION。
+- Preflight：branch=`audit/post-gatey-agent-baseline`，HEAD/origin=`0e2efdeb236c185dbace67bb22f94c6af64a563a`，worktree clean、staged=0；既有CI `34009290836` 已重新只读核验为精确head、completed/success、9/9 jobs，failed=0、skipped=0。
+- 正式接受P5-F007=`ACCEPTED / CLOSED`，implementation/accepted technical head均为`0e2efdeb236c185dbace67bb22f94c6af64a563a`，immutable pair=`0e2efdeb236c185dbace67bb22f94c6af64a563a / 34009290836`，P0=0、P1=0；不得由本轮docs commit替代。
+- 接受既有observability tests=10/10、Full Maven=1783 tests/0 failures/0 errors/53 conditional test skips；四类最小运行观测PRESENT，高基数metric tags=0、业务副作用语义变化=0。本轮技术tests/Full Maven/PG16/frontend/mutation suite/new remote CI均`NOT_REQUIRED / NOT_RUN`；53 test skips不等于CI job skip。
+- F008保持CLOSED；F009保持OPEN / NOT_IMPLEMENTED，并登记work batch=`GateAUDIT-PHASE5-F009-LEGACY-GATE-SPECIFIC-ACTIVE-ASSET-CONSOLIDATION / NOT_STARTED / NONE / NOT_RUN`，next_action=`NQ-GATEAUDIT-PHASE5-F009-LEGACY-GATE-SPECIFIC-ACTIVE-ASSET-CONSOLIDATION-IMPLEMENTATION`；Phase6继续DEFERRED，未实施F009。
+- STATUS/ROADMAP同步，新增[post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F007_POST_CI_AUTHORITY_ACCEPTANCE.md)，历史implementation evidence不变。按active-current stale claims检查，最小同步root README、current README/RUNBOOK相关摘要；FACT_SOURCE_INDEX owner无变化，NO_CHANGE_REQUIRED。
+- 轻量治理与文档验证结果见本次acceptance evidence；TESTING/WORKLOG仅追加，历史技术失败与既有证据完整保留。用户已授权精确commit/push；回滚仅为本轮docs反向补丁，不改写技术接受pair或历史。
