@@ -40,7 +40,7 @@ public class ExchangeAdapterConfiguration {
      * Spring context 也必须获得一个无 IO、无凭证读取、永不产出 READY 的保守实现，避免缺 Bean 或误放行真实交易。
      */
     @Bean
-    @Profile("!local & !test & !gated-verify")
+    @Profile("!local & !test")
     @ConditionalOnMissingBean(AdapterReadinessService.class)
     public AdapterReadinessService adapterReadinessService() {
         return new DefaultAdapterReadinessService();
@@ -55,7 +55,7 @@ public class ExchangeAdapterConfiguration {
      * 先走 readiness fail-closed，当前 no-real / LIVE disabled baseline 下不会触达真实 OKX HTTP 逻辑。
      */
     @Bean
-    @Profile("!gatew & !gatew-okx-readonly & !okx-private-readonly-diagnostics & !scoped-okx-private-readonly & !worker-deployment-admission")
+    @Profile("!okx-private-readonly-diagnostics & !scoped-okx-private-readonly & !worker-deployment-admission")
     @ConditionalOnProperty(
             prefix = "nq.runtime.trading-components",
             name = "enabled",
@@ -84,7 +84,7 @@ public class ExchangeAdapterConfiguration {
      * Binance adapter 在 app 装配层接入 readiness guard，同时保留具体类型 Bean。
      */
     @Bean
-    @Profile("!gatew & !gatew-okx-readonly & !okx-private-readonly-diagnostics & !scoped-okx-private-readonly & !worker-deployment-admission")
+    @Profile("!okx-private-readonly-diagnostics & !scoped-okx-private-readonly & !worker-deployment-admission")
     @ConditionalOnProperty(
             prefix = "nq.runtime.trading-components",
             name = "enabled",
@@ -96,7 +96,7 @@ public class ExchangeAdapterConfiguration {
     }
 
     @Bean
-    @Profile("!gatew & !gatew-okx-readonly & !okx-private-readonly-diagnostics & !scoped-okx-private-readonly & !worker-deployment-admission")
+    @Profile("!okx-private-readonly-diagnostics & !scoped-okx-private-readonly & !worker-deployment-admission")
     @ConditionalOnProperty(
             prefix = "nq.runtime.trading-components",
             name = "enabled",
@@ -113,7 +113,7 @@ public class ExchangeAdapterConfiguration {
     }
 
     @Bean
-    @Profile("!gatew & !gatew-okx-readonly & !okx-private-readonly-diagnostics & !scoped-okx-private-readonly & !worker-deployment-admission")
+    @Profile("!okx-private-readonly-diagnostics & !scoped-okx-private-readonly & !worker-deployment-admission")
     @ConditionalOnProperty(
             prefix = "nq.runtime.trading-components",
             name = "enabled",

@@ -76,7 +76,7 @@ class SensitiveFieldPolicyPrototypeTest {
 
         assertTrue(SensitiveFieldPolicy.findForbiddenFieldPaths(root).isEmpty());
 
-        JsonNode golden = ManifestPrototypeContract.readResource("gatex/strategy-release-manifest.golden.json");
+        JsonNode golden = ManifestPrototypeContract.readResource("strategyrelease/strategy-release-manifest.golden.json");
         assertTrue(SensitiveFieldPolicy.findForbiddenFieldPaths(golden).isEmpty());
         assertTrue(ManifestPrototypeContract.validate(golden).isEmpty());
     }

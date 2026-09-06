@@ -194,7 +194,7 @@ public class TradingPreflightReadinessService {
         blockers.add(blocker("LIVE_DISABLED", "LIVE is disabled; real trading cannot be authorized."));
         blockers.add(blocker(
                 "REAL_PROVIDER_NOT_IMPLEMENTED",
-                "Real provider / RealClient is not implemented for current GateP Batch 4 baseline."
+                "This preflight endpoint does not provide a real provider / RealClient."
         ));
         blockers.add(blocker(
                 "PRIVATE_TRADING_NOT_IMPLEMENTED",

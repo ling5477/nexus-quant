@@ -125,7 +125,7 @@ class PaperShadowConsistencyDrilldownQueryServiceTest {
         assertTrue(model.warnings().stream().anyMatch(message -> message.code().equals("NO_CONSISTENCY_REPORT")));
         assertTrue(model.warnings().stream().anyMatch(message -> message.code().equals("INCOMPLETE_SNAPSHOT_EVIDENCE")));
         assertTrue(model.nextSteps().stream()
-                .anyMatch(step -> step.action().equals("Generate or inspect consistency report in future GateS batch")));
+                .anyMatch(step -> step.action().equals("Generate or inspect consistency report through its authorized workflow")));
         assertTrue(model.nextSteps().stream().anyMatch(step -> step.action().equals("Inspect shadow snapshots")));
         assertEquals(1, queryPort.loadCalls);
     }

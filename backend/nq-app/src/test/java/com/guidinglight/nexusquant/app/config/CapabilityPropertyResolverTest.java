@@ -5,7 +5,6 @@ import org.springframework.mock.env.MockEnvironment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CapabilityPropertyResolverTest {
 
@@ -25,10 +24,10 @@ class CapabilityPropertyResolverTest {
     }
 
     @Test
-    void legacyKeyAloneRemainsCompatible() {
+    void legacyKeyAloneIsRejected() {
         MockEnvironment environment = new MockEnvironment().withProperty(LEGACY_KEY, "legacy");
 
-        assertEquals("legacy", CapabilityPropertyResolver.stableFirst(
+        assertEquals("default", CapabilityPropertyResolver.stableFirst(
                 environment,
                 STABLE_KEY,
                 LEGACY_KEY,
@@ -37,12 +36,12 @@ class CapabilityPropertyResolverTest {
     }
 
     @Test
-    void stableKeyWinsForNonSafetyConflict() {
+    void retiredKeyRejectsMixedConfiguration() {
         MockEnvironment environment = new MockEnvironment()
                 .withProperty(STABLE_KEY, "stable")
                 .withProperty(LEGACY_KEY, "legacy");
 
-        assertEquals("stable", CapabilityPropertyResolver.stableFirst(
+        assertEquals("default", CapabilityPropertyResolver.stableFirst(
                 environment,
                 STABLE_KEY,
                 LEGACY_KEY,
@@ -65,12 +64,12 @@ class CapabilityPropertyResolverTest {
     }
 
     @Test
-    void matchingStableAndLegacySafetyValuesAreAccepted() {
+    void matchingStableAndLegacySafetyValuesAreRejected() {
         MockEnvironment environment = new MockEnvironment()
                 .withProperty(STABLE_KEY, "true")
                 .withProperty(LEGACY_KEY, "true");
 
-        assertTrue(CapabilityPropertyResolver.matchesExactBoolean(
+        assertFalse(CapabilityPropertyResolver.matchesExactBoolean(
                 environment,
                 STABLE_KEY,
                 LEGACY_KEY,

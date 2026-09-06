@@ -29,7 +29,7 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
  * OKX public-only venue-rule sync 的装配边界。
  *
  * <p>默认/test/CI 不装配 reader 或 sync service，因此保持 no-egress。只有显式
- * okx-venue-rule-sync-manual profile（或 legacy profile）与 enabled=true 同时满足时才构造 public client；构造和启动不发请求，
+ * okx-venue-rule-sync-manual profile与 enabled=true 同时满足时才构造 public client；构造和启动不发请求，
  * 实际网络读取仍只能由 operator 直接调用 service。该配置不读取 API key/secret/passphrase，不装配
  * Controller、scheduler、runner、private transport 或 trading adapter。</p>
  */
@@ -57,7 +57,7 @@ public class OkxVenueRuleSyncConfiguration {
      * 构造固定 public instruments endpoint reader；base URL 必须显式注入，默认仅为不可连接的 localhost。
      */
     @Bean
-    @Profile({"okx-venue-rule-sync-manual", "gatew-venue-rules-manual"})
+    @Profile("okx-venue-rule-sync-manual")
     @Conditional(OkxVenueRuleSyncEnabledCondition.class)
     public OkxVenueRuleFactsReader okxVenueRuleFactsReader(
             ObjectMapper objectMapper,
@@ -90,7 +90,7 @@ public class OkxVenueRuleSyncConfiguration {
      * 装配无 HTTP 入口的 operator-triggered bounded application service。
      */
     @Bean
-    @Profile({"okx-venue-rule-sync-manual", "gatew-venue-rules-manual"})
+    @Profile("okx-venue-rule-sync-manual")
     @Conditional(OkxVenueRuleSyncEnabledCondition.class)
     public OkxVenueRuleFactsSyncService okxVenueRuleFactsSyncService(
             InstrumentCatalogService instrumentCatalogService,

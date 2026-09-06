@@ -7,10 +7,17 @@ import com.guidinglight.nexusquant.adapter.api.model.ExchangeCapability;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
+import java.net.http.HttpClient;
+import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -157,14 +164,48 @@ class OkxSpotEndpointGuardTest {
     }
 
     @Test
-    void gateWProfileShouldNotRegisterHistoricalAdapterThatConstructsAnHttpClient() {
+    void historicalAdapterRequiresManualPublicOutboundCapability() {
+        for (String profile : List.of("default", "local", "test", "ci", "paper", "prod",
+                "scoped-okx-private-readonly", "public-marketdata-manual")) {
+            assertHistoricalAdapterRegistration(profile, null, false);
+            assertHistoricalAdapterRegistration(profile, "false", false);
+            assertHistoricalAdapterRegistration(profile, "invalid", false);
+            assertHistoricalAdapterRegistration(profile, "true", "public-marketdata-manual".equals(profile));
+        }
+    }
+
+    private void assertHistoricalAdapterRegistration(String profile, String enabled, boolean expected) {
+        List<HttpClient> fixtureClients = new ArrayList<>();
         try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
-            context.getEnvironment().setActiveProfiles("gatew");
+            context.getEnvironment().setActiveProfiles(profile);
+            if (enabled != null) {
+                context.getEnvironment().getPropertySources().addFirst(new MapPropertySource("capability",
+                        Map.of("nq.public-marketdata.outbound.enabled", enabled)));
+            }
             context.scan("com.guidinglight.nexusquant.adapter.okx.service");
+            // Keep real component/condition discovery, but isolate construction from the
+            // ambient environment resolver. The fixture never sends a request.
+            context.addBeanFactoryPostProcessor(factory -> {
+                if (factory.containsBeanDefinition("okxHistoricalKlineAdapter")) {
+                    AbstractBeanDefinition definition = (AbstractBeanDefinition)
+                            factory.getBeanDefinition("okxHistoricalKlineAdapter");
+                    definition.setInstanceSupplier(() -> {
+                        HttpClient client = HttpClient.newHttpClient();
+                        fixtureClients.add(client);
+                        return new OkxHistoricalKlineAdapter(new OkxHttpClient(client, new ObjectMapper(),
+                                "http://127.0.0.1:0", Duration.ofSeconds(1), new OkxRequestSigner(),
+                                () -> "fixture", null, false));
+                    });
+                }
+            });
             context.refresh();
 
-            assertTrue(context.getBeansOfType(OkxHistoricalKlineAdapter.class).isEmpty());
+            assertEquals(expected ? 1 : 0, context.getBeansOfType(OkxHistoricalKlineAdapter.class).size(),
+                    profile + ":" + enabled);
             assertTrue(context.getBeansOfType(OkxWsSmokeRunner.class).isEmpty());
+            assertEquals(expected ? 1 : 0, fixtureClients.size());
+        } finally {
+            fixtureClients.forEach(HttpClient::close);
         }
     }
 }

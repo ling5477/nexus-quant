@@ -292,7 +292,7 @@ public class StrategyValidationOverviewQueryService {
                 "REVIEW_VALIDATION_BOUNDARY",
                 "backend",
                 "Review diagnostic-only and not-trading-authorization boundary",
-                "Boundary warnings are acknowledged before any future GateS action",
+                "Boundary warnings are acknowledged before any separately authorized runtime action",
                 true
         ));
         switch (latestDecision.decision()) {

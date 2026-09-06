@@ -140,7 +140,7 @@ public class PythonEvaluationArtifactPreviewOverviewQueryService {
 
     private List<BoundaryMessage> warnings() {
         return List.of(
-                message("NO_ARTIFACT_SOURCE_CONFIGURED", "WARNING", "No artifact file, manifest or runtime source is configured for GateT-4 No-file baseline.", "NO_FILE_BASELINE", null),
+                message("NO_ARTIFACT_SOURCE_CONFIGURED", "WARNING", "No artifact file, manifest or runtime source is configured for the No-file baseline.", "NO_FILE_BASELINE", null),
                 message("PYTHON_ARTIFACT_PREVIEW_DIAGNOSTIC_ONLY", "WARNING", "Preview only shows diagnostic readiness and does not import Python artifact into Java facts.", "SYSTEM_BOUNDARY", null),
                 message("PYTHON_ARTIFACT_NOT_ML_READY", "WARNING", "Python artifact remains offline evidence and is not Python ML readiness.", "SYSTEM_BOUNDARY", null),
                 message("PYTHON_ARTIFACT_NOT_LIVE_EXECUTION_READY", "WARNING", "Python artifact is not live execution readiness.", "SYSTEM_BOUNDARY", null),
@@ -187,11 +187,11 @@ public class PythonEvaluationArtifactPreviewOverviewQueryService {
                 ),
                 new EvidenceAnchor(
                         "GATET_4_WORK_ORDER",
-                        "docs/current/GATET_4_PYTHON_EVALUATION_ARTIFACT_BINDING_PREVIEW_WO.md",
+                        "docs/current/API.md",
                         "PLAN_READY_NOT_IMPLEMENTED",
                         generatedAt,
                         traceId,
-                        "GateT-4 work order authorizes only No-file baseline for this implementation."
+                        "The current API contract exposes only the No-file preview; this evidence anchor grants no runtime authorization."
                 ),
                 new EvidenceAnchor(
                         "GATES_PYTHON_RESEARCH_EVIDENCE",

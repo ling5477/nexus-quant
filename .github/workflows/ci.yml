@@ -54,6 +54,14 @@ jobs:
           ./scripts/docs/check-current-authority.ps1
           ./scripts/docs/check-doc-links.ps1
 
+      - name: Reject retired stage runtime assets
+        shell: pwsh
+        run: |
+          python3 ./scripts/docs/check-stage-assets.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python3 -m unittest discover -s scripts/docs/tests -p test_stage_assets.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Validate canonical delivery workflow contract
         shell: pwsh
         run: |

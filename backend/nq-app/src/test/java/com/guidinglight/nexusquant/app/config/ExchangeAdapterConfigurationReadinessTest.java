@@ -77,8 +77,8 @@ class ExchangeAdapterConfigurationReadinessTest {
     }
 
     @Test
-    void gateWProfileDoesNotRegisterMutatingTradingOrPrivateWebSocketBeans() {
-        try (AnnotationConfigApplicationContext context = newContext("gatew")) {
+    void diagnosticsProfileDoesNotRegisterMutatingTradingOrPrivateWebSocketBeans() {
+        try (AnnotationConfigApplicationContext context = newContext("okx-private-readonly-diagnostics")) {
             assertTrue(context.getBeansOfType(TradingAdapter.class).isEmpty());
             assertTrue(context.getBeansOfType(OkxExchangeAdapter.class).isEmpty());
             assertTrue(context.getBeansOfType(BinanceExchangeAdapter.class).isEmpty());
@@ -89,8 +89,8 @@ class ExchangeAdapterConfigurationReadinessTest {
     }
 
     @Test
-    void gateYReadonlyQualificationProfileDoesNotRegisterMutatingTradingOrPrivateWebSocketBeans() {
-        try (AnnotationConfigApplicationContext context = newContext("gatey-readonly-qualification")) {
+    void scopedReadonlyProfileDoesNotRegisterMutatingTradingOrPrivateWebSocketBeans() {
+        try (AnnotationConfigApplicationContext context = newContext("scoped-okx-private-readonly")) {
             assertTrue(context.getBeansOfType(TradingAdapter.class).isEmpty());
             assertTrue(context.getBeansOfType(OkxExchangeAdapter.class).isEmpty());
             assertTrue(context.getBeansOfType(BinanceExchangeAdapter.class).isEmpty());
@@ -104,7 +104,7 @@ class ExchangeAdapterConfigurationReadinessTest {
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
         context.getEnvironment().setActiveProfiles(activeProfiles);
         boolean tradingComponentsEnabled = Arrays.stream(activeProfiles)
-                .noneMatch("gatey-readonly-qualification"::equals);
+                .noneMatch("scoped-okx-private-readonly"::equals);
         TestPropertySourceUtils.addInlinedPropertiesToEnvironment(
                 context,
                 "nq.runtime.trading-components.enabled=" + tradingComponentsEnabled

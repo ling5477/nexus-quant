@@ -20,6 +20,7 @@ import java.util.Objects;
 
 import org.springframework.stereotype.Component;
 import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 /**
  * OkxHistoricalKlineAdapter 负责 OKX SPOT history-candles 的协议适配。
@@ -27,9 +28,12 @@ import org.springframework.context.annotation.Profile;
  * Why:
  * OKX 使用系统同形的 `BTC-USDT` symbol，但 interval 命名和响应数组顺序仍然是交易所私有协议；
  * 这些差异必须被隔离在 adapter 内，不能污染平台的 marketdata domain。
+ * 真实 HTTP client 只在已有的手动 public outbound capability 显式启用时构造；
+ * 默认运行与私有只读诊断不应因组件扫描获得公开行情外联能力。
  */
 @Component
-@Profile("!gatew")
+@Profile("public-marketdata-manual")
+@ConditionalOnProperty(prefix = "nq.public-marketdata.outbound", name = "enabled", havingValue = "true")
 public class OkxHistoricalKlineAdapter implements HistoricalKlineAdapter {
 
     private static final Map<String, String> SYMBOLS = Map.of(

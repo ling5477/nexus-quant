@@ -1,0 +1,73 @@
+spring:
+  config:
+    activate:
+      on-profile: scoped-okx-private-readonly
+  datasource:
+    # 服务器只允许显式注入的 loopback PostgreSQL；无默认生产地址或凭证。
+    url: ${NQ_READONLY_DB_URL}
+    username: ${NQ_READONLY_DB_USER}
+    password: ${NQ_READONLY_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    # Migration 由独立、备份和 rollback hard gate 保护的部署步骤执行，应用 activation 不自动迁移。
+    enabled: false
+
+server:
+  address: ${NQ_APP_BIND_ADDRESS:127.0.0.1}
+  port: ${NQ_APP_PORT:18890}
+
+management:
+  info:
+    env:
+      enabled: true
+  endpoints:
+    web:
+      # 仅在 loopback qualification runtime 暴露稳定、无授权能力的 deployment identity。
+      exposure:
+        include: health,info,readonlyproviderobservation
+
+info:
+  nq:
+    release-id: ${NQ_RELEASE_ID}
+    source-commit: ${NQ_SOURCE_COMMIT}
+    # 与显式 readonly capability 绑定；不提供生产部署入口。
+    qualification-profile: scoped-okx-private-readonly
+
+nq:
+  env-safety:
+    ci: ${CI:false}
+    live-enabled: false
+    ai-enabled: false
+    dh-runtime-enabled: false
+    real-provider-enabled: false
+    real-client-enabled: false
+    real-exchange-enabled: false
+    # 只有该显式 profile 允许后续受控 GET；启动本身仍保持零外联。
+    no-outbound: false
+  runtime:
+    trading-components:
+      enabled: false
+    provider-observation:
+      enabled: true
+      deployment-profile: scoped-okx-private-readonly
+      release-id: ${NQ_RELEASE_ID}
+      source-commit: ${NQ_SOURCE_COMMIT}
+      capability-identity: read-only-provider-observation
+      order-submission-enabled: false
+      cancel-enabled: false
+      transfer-enabled: false
+      withdraw-enabled: false
+  instrument:
+    catalog-sync:
+      enabled: false
+  okx:
+    recovery:
+      enabled: false
+    ws:
+      enabled: false
+  binance:
+    ws:
+      enabled: false
+  validation-operations:
+    scheduler:
+      enabled: false

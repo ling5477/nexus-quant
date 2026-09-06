@@ -18,14 +18,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 /**
- * LocalTestFallbackConfiguration 只负责 local/test/gated-verify 环境下的 fallback 装配。
+ * LocalTestFallbackConfiguration 只负责 local/test 环境下的 fallback 装配。
  * <p>
  * Why:
  * 该配置属于 PRE-CLEAN-1 明确保留的“本地/测试兼容入口”，
  * 这些 Bean 仅用于 local/test/fallback only，不允许作为正式 profile 主路径，也不应被后续规划当成正式模块能力。
  */
 @Configuration
-@Profile({"local", "test", "gated-verify"})
+@Profile({"local", "test"})
 public class LocalTestFallbackConfiguration {
 
     @Bean

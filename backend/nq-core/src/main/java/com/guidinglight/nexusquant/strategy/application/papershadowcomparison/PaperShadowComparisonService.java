@@ -372,7 +372,7 @@ public class PaperShadowComparisonService {
                     "Select an existing SIM Paper run with RUNNING or STOPPED evidence before comparison."
             );
             case BLOCKED_SHADOW_NOT_IMPLEMENTED -> List.of(
-                    "Do not fabricate Shadow facts; implement Shadow read-only fact source in a separate approved GateQ task."
+                    "Do not fabricate Shadow facts; implement Shadow read-only fact source in a separately approved capability task."
             );
             case BLOCKED_MISSING_SHADOW_RUN -> List.of(
                     "Select an existing comparable Shadow run after Shadow fact source exists."

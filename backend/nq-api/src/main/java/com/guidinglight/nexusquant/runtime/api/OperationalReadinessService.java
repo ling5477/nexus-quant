@@ -10,12 +10,12 @@ import java.util.Objects;
 import org.springframework.stereotype.Service;
 
 /**
- * OperationalReadinessService builds the GateM-6B disabled capability summary.
+ * OperationalReadinessService builds the disabled capability summary.
  *
  * <p>Why: operators need a single read-only summary for why the current runtime remains paper-only
  * and no-real. This service is deliberately static and fail-closed: it has no adapter, permission
  * probe, HTTP, database, file, or exchange client dependency. It only returns stable DTO values that
- * describe current GateM boundaries without changing runtime behavior.
+ * describe this endpoint's boundaries without changing runtime behavior.
  *
  * <p>Thread safety: the service only stores an immutable {@link Clock} reference and can be called
  * concurrently.
@@ -73,7 +73,7 @@ public class OperationalReadinessService {
                 status("DISABLED", "EXTERNAL_EXCHANGE_CALL_DISABLED",
                         "This endpoint does not perform external exchange calls."),
                 status("SKIPPED", "REAL_PERMISSION_PROBE_NOT_AVAILABLE",
-                        "Real permission probe is not available in current GateM."),
+                        "Real permission probe is not available through this readiness endpoint."),
                 status("SAFE_BY_DEFAULT", "STARTUP_BOUNDARY_FAIL_CLOSED",
                         "Startup boundary remains fail-closed for real runtime capabilities."),
                 status("SAFE_SUMMARY_ONLY", "PROFILE_VALUES_OMITTED",

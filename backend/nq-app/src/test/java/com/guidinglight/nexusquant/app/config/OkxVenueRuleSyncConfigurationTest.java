@@ -67,7 +67,7 @@ class OkxVenueRuleSyncConfigurationTest {
     }
 
     @Test
-    void legacyProfileAndKeysShouldRemainCompatible() {
+    void legacyProfileAndKeysAreRetired() {
         contextRunner
                 .withInitializer(context -> context.getEnvironment().setActiveProfiles("gatew-venue-rules-manual"))
                 .withPropertyValues(
@@ -77,8 +77,8 @@ class OkxVenueRuleSyncConfigurationTest {
                         "nq.gatew.okx-venue-rules.allowlist=BTC-USDT"
                 )
                 .run(context -> {
-                    assertNotNull(context.getBean(OkxVenueRuleFactsReader.class));
-                    assertNotNull(context.getBean(OkxVenueRuleFactsSyncService.class));
+                    assertFalse(context.containsBean("okxVenueRuleFactsReader"));
+                    assertFalse(context.containsBean("okxVenueRuleFactsSyncService"));
                 });
     }
 

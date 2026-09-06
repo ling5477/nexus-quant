@@ -33,7 +33,7 @@ import org.springframework.beans.factory.annotation.Value;
  * Bean 创建不读取 credential、不执行 probe、不访问网络，也不注册 scheduler/runner/mutating adapter。</p>
  */
 @Configuration
-@Profile({"okx-private-readonly-diagnostics", "gatew-okx-readonly", "gatew-okx-readonly-soak",
+@Profile({"okx-private-readonly-diagnostics",
         "scoped-okx-private-readonly"})
 @Conditional(
         OkxPrivateReadOnlyDiagnosticsConfiguration.OkxPrivateReadOnlyDiagnosticsEnabledCondition.class

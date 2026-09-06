@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 
 /**
- * 为 capability 配置提供稳定 key 与 legacy key 的确定性兼容。
+ * 为 capability 配置提供稳定 key，并拒绝退役的 stage key。
  *
  * <p>日志只记录 key 名和选择策略，不记录配置值。安全开关应使用 fail-closed 入口；
  * 普通参数可以使用 stable-first 入口。</p>
@@ -23,7 +23,7 @@ public final class CapabilityPropertyResolver {
     }
 
     /**
-     * 新 key 优先；只有 legacy key 时继续兼容。
+     * 只接受新 key；旧 key 一旦出现就返回保守默认值，禁止静默重启旧 runtime。
      */
     public static String stableFirst(
             Environment environment,
@@ -33,13 +33,14 @@ public final class CapabilityPropertyResolver {
     ) {
         Resolution resolution = resolve(environment, stableKey, legacyKey);
         if (resolution.conflict()) {
-            warnConflictOnce(stableKey, legacyKey, "STABLE_KEY_SELECTED");
+            warnConflictOnce(stableKey, legacyKey, "RETIRED_KEY_REJECTED");
+            return defaultValue;
         }
         return resolution.selectedValue(defaultValue);
     }
 
     /**
-     * 新旧 key 冲突时返回保守默认值，适用于 enable、权限和 endpoint binding。
+     * 旧 key 存在时返回保守默认值，适用于 enable、权限和 endpoint binding。
      */
     public static String failClosed(
             Environment environment,
@@ -78,9 +79,7 @@ public final class CapabilityPropertyResolver {
                     stableKey
             );
         }
-        boolean conflict = stableValue != null
-                && legacyValue != null
-                && !stableValue.trim().equals(legacyValue.trim());
+        boolean conflict = legacyValue != null;
         return new Resolution(stableValue, legacyValue, conflict);
     }
 
@@ -102,7 +101,7 @@ public final class CapabilityPropertyResolver {
             if (stableValue != null) {
                 return stableValue;
             }
-            return legacyValue == null ? defaultValue : legacyValue;
+            return defaultValue;
         }
     }
 }

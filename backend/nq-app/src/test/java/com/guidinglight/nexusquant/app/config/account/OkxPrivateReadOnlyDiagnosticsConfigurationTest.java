@@ -74,16 +74,16 @@ class OkxPrivateReadOnlyDiagnosticsConfigurationTest {
     }
 
     @Test
-    void legacyProfileAndKeysStillCreateReadOnlyComponents() {
+    void legacyProfileAndKeysCannotCreateReadOnlyComponents() {
         try (AnnotationConfigApplicationContext context = context(
                 "gatew-okx-readonly",
                 LEGACY_PREFIX,
                 true,
                 false
         )) {
-            assertFalse(context.getBeansOfType(OkxPrivateReadTransport.class).isEmpty());
-            assertFalse(context.getBeansOfType(OkxPrivateCredentialExecutor.class).isEmpty());
-            assertFalse(context.getBeansOfType(OkxPrivateReadonlyProbeService.class).isEmpty());
+            assertTrue(context.getBeansOfType(OkxPrivateReadTransport.class).isEmpty());
+            assertTrue(context.getBeansOfType(OkxPrivateCredentialExecutor.class).isEmpty());
+            assertTrue(context.getBeansOfType(OkxPrivateReadonlyProbeService.class).isEmpty());
         }
     }
 

@@ -98,8 +98,8 @@ class OkxPrivateReadOnlyPermissionProbeSpringContextTest {
     }
 
     @Test
-    void legacyProfileAndKeysRemainCompatible() {
-        legacyCandidateRunner().run(context -> assertSelected(context, OkxRealReadonlyPermissionProbePort.class));
+    void legacyProfileAndKeysAreRejected() {
+        legacyCandidateRunner().run(context -> assertSelected(context, NoRealExchangeCredentialPermissionProbePort.class));
     }
 
     @Test

@@ -15122,3 +15122,37 @@ Attempt-01=`FAIL / CHANGES_REQUIRED`：P1-01=`INTERPROCESS_DURABILITY_CHECK_ABSE
 - F008保持CLOSED；F009保持OPEN / NOT_IMPLEMENTED，并登记work batch=`GateAUDIT-PHASE5-F009-LEGACY-GATE-SPECIFIC-ACTIVE-ASSET-CONSOLIDATION / NOT_STARTED / NONE / NOT_RUN`，next_action=`NQ-GATEAUDIT-PHASE5-F009-LEGACY-GATE-SPECIFIC-ACTIVE-ASSET-CONSOLIDATION-IMPLEMENTATION`；Phase6继续DEFERRED，未实施F009。
 - STATUS/ROADMAP同步，新增[post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F007_POST_CI_AUTHORITY_ACCEPTANCE.md)，历史implementation evidence不变。按active-current stale claims检查，最小同步root README、current README/RUNBOOK相关摘要；FACT_SOURCE_INDEX owner无变化，NO_CHANGE_REQUIRED。
 - 轻量治理与文档验证结果见本次acceptance evidence；TESTING/WORKLOG仅追加，历史技术失败与既有证据完整保留。用户已授权精确commit/push；回滚仅为本轮docs反向补丁，不改写技术接受pair或历史。
+
+## 2026-09-06 — F009 全历史stage active asset consolidation implementation
+
+- Baseline=`21d14d9112364f3befcc77a1a370828ef22e72ed`；branch=`audit/post-gatey-agent-baseline`；本轮NO_ADD / NO_COMMIT / NO_PUSH，候选为`IMPLEMENTED|PENDING_REVIEW / NONE / NOT_RUN`，下一动作仅为F009 FOCUSED-REVIEW。
+- 由tracked事实推导Gate A～Y、GateAUDIT、GateZ proposal/fixture及Phase0～6/4A/5A/5B；广义候选1158全部分类，删除65、capability路径迁移24、repoint29、保留版本合同18；unclassified=0、退役入口after=0、unresolved active callers=0。保留合同有current caller、owner和versioned removal trigger，不宣称stage关键词归零。
+- Offline targeted Maven两组最终分别160/143 tests通过；第二组首次1个旧文案精确断言失败，更新该断言后重跑通过。canonical release合同66 cases通过；workflow ContractOnly通过，full admission=NOT_EVALUATED_CONTRACT_ONLY。
+- Stage guard扫描1797文件、179个固定内容例外、0错误；Windows 15 tests通过（symlink权限skip=1），Linux 15/15通过且0 skips。新增89个退役路径及其caller硬拒绝；current authority、历史证据、负向fixture保持合法。
+- PS5.1/PS7 authority、next-action、agent workflow、lifecycle和doc links通过；links warnings=123来自历史引用，errors=0。TESTING/WORKLOG仅追加；历史证据、migrations、frontend、canonical/F007/F008实质实现不变。Full Maven/PG16 full qualification/frontend/真实部署未执行；独立review与exact-head CI未执行。
+- LIVE DISABLED、kill ENGAGED、Phase6 DEFERRED；无credential/production/真实provider操作。回滚仅针对本轮清单反向补丁和新增路径，不reset/clean。详见[F009 implementation evidence](../audit/evidence/GATEAUDIT_PHASE5_F009_LEGACY_GATE_SPECIFIC_ACTIVE_ASSET_CONSOLIDATION_IMPLEMENTATION.md)及其机器inventory。
+
+
+## 2026-09-06 F009 focused review 三项 P1 remediation
+
+- 任务：`NQ-GATEAUDIT-PHASE5-F009-FOCUSED-REVIEW-P1-REMEDIATION`；状态=`IMPLEMENTED / P1_REMEDIATED / PENDING_CLOSURE_REVIEW`，非 acceptance。
+- Reviewed candidate=`53f93002653c0110403d2cc2e7451aae1c8e952b6aeaff49850aea03433a58d4`；HEAD/origin=`21d14d9112364f3befcc77a1a370828ef22e72ed`，staged=0、commit/push=NONE。
+- P1-1：移除活动 gatew selector，复用 manual public outbound profile/property；32 个真实 context 组合覆盖启用、默认与拒绝。
+- P1-2：18/18 contracts、105 声明成员、1559 approved source member edges；110 外部 type/file 关系，13 内部关系。中性 caller 对两个真实 review 成员 javac/runtime PASS，checker REJECT。
+- P1-3：活动控制面输入必须可检查或精确 safe-data 分类，unknown executable fail-closed；JS/其他支持类型负向及历史 evidence 排除均通过。
+- Maven targeted=29 PASS，failures/errors/skips=0；Windows guard=31 tests（30 PASS、1 existing symlink environment skip），Linux=31/31 PASS、0 skips；双平台 active scan=1798 files、178 exceptions、errors=0。
+- Authority PS5.1/PS7 PASS；next-action failed=0；agent workflow=12/12，lifecycle=20/20；links errors=0，既有123历史warning保留。Full Maven、PG16、canonical release、Phase5B admission、frontend未执行，不在delta预算内。
+- Unaffected candidate before=after=`ad338e7ac9a9a599a14dc4cedecd98ab6bda4ed18373e4fb2a7256e66817d34b`；3201路径未变，1138条非本轮inventory记录未变。保留原失败与开发阶段失败记录，不重写此前evidence。
+- 详细结果、可重复命令、scope与文件级rollback见 [P1 remediation evidence](../audit/evidence/GATEAUDIT_PHASE5_F009_FOCUSED_REVIEW_P1_REMEDIATION.md)。仅待 `NQ-GATEAUDIT-PHASE5-F009-FOCUSED-P1-CLOSURE-REVIEW`，不重审其他F009 disposition。
+
+
+## 2026-09-06 F009 P1-3 JS module dependency remediation
+
+- 任务：`NQ-GATEAUDIT-PHASE5-F009-P1-3-JS-MODULE-DEPENDENCY-REMEDIATION`；状态=`IMPLEMENTED / PHASE5_F009_P1_3_JS_MODULE_DEPENDENCY_BYPASS_REMEDIATED / P0_0 / P1_1_REMEDIATED / PENDING_P1_3_CLOSURE_REVIEW`，不构成 review acceptance。
+- 用无外部依赖 tokenizer + 明确受限 grammar 替换 JS dependency regex；支持静态 import/export、comment/whitespace/line break，完整消费 tokens，unsupported grammar fail-closed。原 commented、compact-comment、multiline from-import 均为旧 checker ALLOW、Node fixture PASS、新 checker REJECT。
+- 原31项回归及assertions保持不变，新增18项。Windows full guard=49 tests（47 PASS、2 symlink权限skip），Linux=49/49 PASS、0 skips；双平台active scan=1798 files、178 exceptions、errors=0。两项symlink拒绝均在Linux真实执行。
+- Linux JDK采用本轮额外授权的Ubuntu官方源apt安装，Java/javac=21.0.12，JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64，Linux ELF；安装改动repository files=0。初次安装一个必要依赖HTTP 502，有限重试通过。
+- Authority PS5.1/PS7、next-action、agent workflow、lifecycle、docs links、append-only、scope和diff检查通过；docs保留123项既有历史warning。首轮3个既有stage诊断case因解析异常提前返回而失败，修复为收集阻断错误后通过，旧断言未改。
+- Reviewed candidate=c421eddb9b6b0d3fc9e707f2a3e766ceb87e20ff9fd88b9003c64fffedfa814f。新scoped before=after=0c4cb19699c5bf914d8e675f60fc37a4869b15ba4ee18ea3bac65e82c9740099，3209 protected paths、mismatch=0；P1-1/P1-2及其余已通过区域保持，不重审。
+- 仅改checker/tests、追加本ledger及新增evidence；inventory、STATUS/ROADMAP、Java/runtime/canonical实现均不变。Maven/PG16/canonical release/frontend=NOT_REQUIRED；独立review/exact-head CI=NOT_RUN；staged=0、add/commit/push=NONE。
+- Grammar限制、完整证据、路径清单与文件级回滚见 [P1-3 JS dependency remediation](../audit/evidence/GATEAUDIT_PHASE5_F009_P1_3_JS_MODULE_DEPENDENCY_REMEDIATION.md)。唯一下一任务：`NQ-GATEAUDIT-PHASE5-F009-P1-3-JS-MODULE-DEPENDENCY-CLOSURE-REVIEW`。

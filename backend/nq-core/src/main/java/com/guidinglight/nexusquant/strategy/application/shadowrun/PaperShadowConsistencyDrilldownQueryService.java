@@ -233,14 +233,14 @@ public class PaperShadowConsistencyDrilldownQueryService {
                 "REVIEW_DRILLDOWN_BOUNDARY",
                 "backend",
                 "Review diagnostic-only and not-trading-authorization boundary",
-                "boundary blockers reviewed before any future GateS action",
+                "boundary blockers reviewed before any separately authorized runtime action",
                 true
         ));
         if (report == null) {
             steps.add(new NextStep(
                     "GENERATE_OR_INSPECT_CONSISTENCY_REPORT_FUTURE_BATCH",
                     "backend",
-                    "Generate or inspect consistency report in future GateS batch",
+                    "Generate or inspect consistency report through its authorized workflow",
                     "latest consistency report exists or absence is explained",
                     false
             ));

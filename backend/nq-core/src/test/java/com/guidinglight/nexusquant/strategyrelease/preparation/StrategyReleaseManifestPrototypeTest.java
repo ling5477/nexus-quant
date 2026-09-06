@@ -36,8 +36,8 @@ import org.junit.jupiter.api.Test;
 /** PRE-GATEX manifest 强契约原型；只验证 test resource，不进入生产运行路径。 */
 class StrategyReleaseManifestPrototypeTest {
 
-    private static final String SCHEMA_RESOURCE = "gatex/strategy-release-manifest.schema.json";
-    private static final String GOLDEN_RESOURCE = "gatex/strategy-release-manifest.golden.json";
+    private static final String SCHEMA_RESOURCE = "strategyrelease/strategy-release-manifest.schema.json";
+    private static final String GOLDEN_RESOURCE = "strategyrelease/strategy-release-manifest.golden.json";
 
     @Test
     void shouldParseGoldenSampleAndSatisfyRequiredContract() throws Exception {

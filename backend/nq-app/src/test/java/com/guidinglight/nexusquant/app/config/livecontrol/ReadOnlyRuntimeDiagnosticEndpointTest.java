@@ -51,7 +51,7 @@ class ReadOnlyRuntimeDiagnosticEndpointTest {
         assertEquals("1111111111111111111111111111111111111111", first.sourceCommit());
         assertEquals(first.sourceCommit(), first.releaseId());
         assertEquals(21, first.javaMajor());
-        assertEquals("gatey-readonly-qualification", first.qualificationProfile());
+        assertEquals("scoped-okx-private-readonly", first.qualificationProfile());
         assertEquals("read-only-provider-observation", first.capabilityIdentity());
         assertEquals("127.0.0.1", first.bindAddress());
         assertTrue(first.providerObservationEnabled());
@@ -128,7 +128,7 @@ class ReadOnlyRuntimeDiagnosticEndpointTest {
                 .withProperty("nq.runtime.trading-components.enabled", "false")
                 .withProperty(
                         "nq.runtime.provider-observation.deployment-profile",
-                        "gatey-readonly-qualification"
+                        "scoped-okx-private-readonly"
                 )
                 .withProperty("nq.env-safety.live-enabled", Boolean.toString(liveEnabled));
         return new ReadOnlyRuntimeDiagnosticEndpoint(

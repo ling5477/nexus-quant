@@ -411,7 +411,7 @@ public class ShadowValidationWorkflowOverviewQueryService {
             warnings.add(message(
                     "STALE_EVIDENCE",
                     "WARNING",
-                    "Evidence is older than the GateT-1 freshness window and needs review.",
+                    "Evidence is older than the operator-evidence freshness window and needs review.",
                     fact.sourceType(),
                     fact.sourceId()
             ));
@@ -543,7 +543,7 @@ public class ShadowValidationWorkflowOverviewQueryService {
             warnings.add(message(
                     "NO_OPERATOR_ITEMS",
                     "INFO",
-                    "No operator items were derived from local GateS facts.",
+                    "No operator items were derived from local runtime facts.",
                     "SHADOW_VALIDATION_WORKFLOW",
                     null
             ));
@@ -587,7 +587,7 @@ public class ShadowValidationWorkflowOverviewQueryService {
             steps.add(new NextStep(
                     "ADD_LOCAL_EVIDENCE",
                     "operator",
-                    "Inspect existing GateS views or generate evidence only through separately authorized workflows",
+                    "Inspect existing diagnostic views or generate evidence only through separately authorized workflows",
                     "Local read-only evidence exists before operator review is attempted",
                     false
             ));
