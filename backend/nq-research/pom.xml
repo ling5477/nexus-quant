@@ -17,6 +17,16 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.guidinglight.nexusquant</groupId>
+            <artifactId>nq-observability</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.guidinglight.nexusquant</groupId>
             <artifactId>nq-common</artifactId>
             <version>${project.version}</version>

@@ -19910,3 +19910,12 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - 下一项依据current ROADMAP的F009须在F008/F007关闭后执行、F007所需canonical deployment已接受，登记`GateAUDIT-PHASE5-F007-MINIMUM-OPERATIONAL-OBSERVABILITY / NOT_STARTED / NONE / NOT_RUN`；next_action=`NQ-GATEAUDIT-PHASE5-F007-MINIMUM-OPERATIONAL-OBSERVABILITY-IMPLEMENTATION`。P5-F007/P5-F009仍`OPEN / NOT_IMPLEMENTED`，不改变优先级，不实现后续工作。
 - STATUS/ROADMAP同步，TESTING/WORKLOG仅追加，新增[post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F008_POST_CI_AUTHORITY_ACCEPTANCE.md)；FACT_SOURCE_INDEX owner无变化。原失败CI与review/remediation记录保留，technical pair与本次docs authority-sync commit分离。
 - 用户已授权本次精确暂存、commit与push；不重跑F008、Full Maven、PG16、frontend、mutation或新的remote CI qualification。保留LIVE DISABLED、kill ENGAGED、remote enforcement NOT_APPLIED/NOT_VERIFIED、platform attestation DEFERRED及Phase6 deferred。回滚仅采用本次文档反向补丁，不改写历史。
+
+## 2026-09-06 — F007 最小运行观测实现与自审
+
+- Task=`NQ-GATEAUDIT-PHASE5-F007-MINIMUM-OPERATIONAL-OBSERVABILITY-IMPLEMENTATION`；starting HEAD=`6b1516537fdf2b14b92afc1a2aa3221a18f1c719`，branch=`audit/post-gatey-agent-baseline`。
+- 完成五个固定operation的最小运行信号：validation scheduler、ledger/OKX reconciliation、durable Trade→Ledger recovery、critical alert；typed port/NoOp/失败隔离/Micrometer由nq-observability拥有，nq-app仅装配并提供现有health的安全摘要。新增代码注释使用简体中文。
+- 验证：targeted初轮42 tests通过；受影响模块完整测试与Full Maven在disposable PostgreSQL上均23/23 modules成功；最终新增观测测试10 cases通过。真实MeterRegistry/Actuator、架构、时间戳、并发、低基数标签、异常身份/返回值、拒绝结果、告警写入失败、重复Bean/meter、health读取失败均有覆盖。
+- 初次完整测试使用既有本地库在V45外键约束处失败，nq-app 13 errors；未修复共享数据或migration。改用仓库锁定digest的隔离PostgreSQL及现有CI fixture后通过。测试编码/依赖/mock harness失败已修正，未削弱断言；详见[implementation evidence](../audit/evidence/GATEAUDIT_PHASE5_F007_MINIMUM_OPERATIONAL_OBSERVABILITY_IMPLEMENTATION.md)。
+- P5-F007=`IMPLEMENTED / SELF_REVIEWED / PENDING_EXACT_HEAD_CI`。本轮用户明确指定不另开独立Review，并授权精确commit/push/CI；machine保持合法`IMPLEMENTED|SELF_REVIEWED / NONE / NOT_RUN`提交前快照及COMMIT next action。未提前接受F007，F008 immutable pair不变，F009/Phase6不推进。
+- 无新增数据库查询、migration、frontend、monitoring infrastructure、生产/provider/credential/LIVE操作；metrics HTTP exposure与F008配置不变。回滚为本轮精确文件反向补丁；生成物与测试连接材料不提交。

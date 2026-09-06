@@ -1,10 +1,12 @@
 package com.guidinglight.nexusquant.scheduler.validationevidence;
 
+import com.guidinglight.nexusquant.observability.operational.OperationalObservation;
 import com.guidinglight.nexusquant.scheduler.lock.SchedulerExecutionLock;
 import com.guidinglight.nexusquant.strategy.application.validationoperations.runtimeevidence.ValidationOperationsRuntimeEvidenceOverviewQueryService;
 
 import java.time.Clock;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -61,13 +63,15 @@ public class ValidationEvidenceSchedulerConfiguration {
         ValidationEvidenceScheduler validationEvidenceScheduler(
                 ValidationEvidenceSchedulerProperties properties,
                 ValidationEvidenceRefreshService refreshService,
-                SchedulerExecutionLock executionLock
+                SchedulerExecutionLock executionLock,
+                ObjectProvider<OperationalObservation> observation
         ) {
             return new ValidationEvidenceScheduler(
                     properties,
                     refreshService,
                     executionLock,
-                    Clock.systemUTC()
+                    Clock.systemUTC(),
+                    observation.getIfAvailable(() -> OperationalObservation.NOOP)
             );
         }
     }

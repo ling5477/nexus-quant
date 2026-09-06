@@ -1,5 +1,10 @@
 package com.guidinglight.nexusquant.scheduler.validationevidence;
 
+import com.guidinglight.nexusquant.observability.operational.OperationalObservation;
+import com.guidinglight.nexusquant.observability.operational.SafeOperationalObservation;
+import static com.guidinglight.nexusquant.observability.operational.OperationalObservation.Operation.*;
+import static com.guidinglight.nexusquant.observability.operational.OperationalObservation.Signal.*;
+
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.scheduler.lock.SchedulerExecutionLock;
 import com.guidinglight.nexusquant.scheduler.lock.SchedulerLockExecution;
@@ -32,6 +37,7 @@ public final class ValidationEvidenceScheduler {
     private final ValidationEvidenceRefreshService refreshService;
     private final SchedulerExecutionLock executionLock;
     private final Clock clock;
+    private final OperationalObservation observation;
 
     public ValidationEvidenceScheduler(
             ValidationEvidenceSchedulerProperties properties,
@@ -39,6 +45,17 @@ public final class ValidationEvidenceScheduler {
             SchedulerExecutionLock executionLock,
             Clock clock
     ) {
+        this(properties, refreshService, executionLock, clock, OperationalObservation.NOOP);
+    }
+
+    public ValidationEvidenceScheduler(
+            ValidationEvidenceSchedulerProperties properties,
+            ValidationEvidenceRefreshService refreshService,
+            SchedulerExecutionLock executionLock,
+            Clock clock,
+            OperationalObservation observation
+    ) {
+        this.observation = new SafeOperationalObservation(observation);
         this.properties = Objects.requireNonNull(properties, "properties must not be null");
         this.refreshService = Objects.requireNonNull(refreshService, "refreshService must not be null");
         this.executionLock = Objects.requireNonNull(executionLock, "executionLock must not be null");
@@ -62,6 +79,24 @@ public final class ValidationEvidenceScheduler {
      * @return 脱敏运行摘要；不会持久化 execution history
      */
     public ValidationEvidenceRefreshResult runOnce() {
+        observation.record(VALIDATION_REFRESH, ATTEMPT, 1);
+        try {
+            ValidationEvidenceRefreshResult result = runObservedFacts();
+            OperationalObservation.Signal signal = switch (result.result()) {
+                case SUCCESS -> SUCCESS;
+                case DEGRADED -> DEGRADED;
+                case FAILED -> FAILURE;
+                case SKIPPED_DISABLED, SKIPPED_LOCK_NOT_ACQUIRED -> SKIPPED;
+            };
+            observation.record(VALIDATION_REFRESH, signal, 1);
+            return result;
+        } catch (RuntimeException ex) {
+            observation.record(VALIDATION_REFRESH, FAILURE, 1);
+            throw ex;
+        }
+    }
+
+    private ValidationEvidenceRefreshResult runObservedFacts() {
         if (!properties.isEnabled()) {
             return logResult(nonQueryResult(ValidationEvidenceRefreshResult.Result.SKIPPED_DISABLED, null));
         }

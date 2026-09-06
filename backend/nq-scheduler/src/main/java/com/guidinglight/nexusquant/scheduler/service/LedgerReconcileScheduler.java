@@ -1,5 +1,10 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
+import com.guidinglight.nexusquant.observability.operational.OperationalObservation;
+import com.guidinglight.nexusquant.observability.operational.SafeOperationalObservation;
+import static com.guidinglight.nexusquant.observability.operational.OperationalObservation.Operation.*;
+import static com.guidinglight.nexusquant.observability.operational.OperationalObservation.Signal.*;
+
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.scheduler.model.LedgerReconcileDiff;
 import com.guidinglight.nexusquant.scheduler.service.port.LedgerReconcileRepository;
@@ -13,6 +18,7 @@ import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -38,6 +44,7 @@ public class LedgerReconcileScheduler {
     private final LedgerReconcileRepository ledgerReconcileRepository;
     private final AuditLogRepository auditLogRepository;
     private final Clock clock;
+    private final OperationalObservation observation;
 
     /**
      * @param ledgerReconcileRepository 对账差异数据源
@@ -47,6 +54,16 @@ public class LedgerReconcileScheduler {
             LedgerReconcileRepository ledgerReconcileRepository,
             AuditLogRepository auditLogRepository
     ) {
+        this(ledgerReconcileRepository, auditLogRepository, OperationalObservation.NOOP);
+    }
+
+    @Autowired
+    public LedgerReconcileScheduler(
+            LedgerReconcileRepository ledgerReconcileRepository,
+            AuditLogRepository auditLogRepository,
+            OperationalObservation observation
+    ) {
+        this.observation = new SafeOperationalObservation(observation);
         this.ledgerReconcileRepository = Objects.requireNonNull(
                 ledgerReconcileRepository,
                 "ledgerReconcileRepository must not be null"
@@ -72,6 +89,19 @@ public class LedgerReconcileScheduler {
      * @return 差异条数
      */
     public int reconcileOnce() {
+        observation.record(LEDGER_RECONCILE, ATTEMPT, 1);
+        try {
+            int count = reconcileObservedFacts();
+            observation.record(LEDGER_RECONCILE, UNRESOLVED_SNAPSHOT, count);
+            observation.record(LEDGER_RECONCILE, count == 0 ? SUCCESS : DEGRADED, 1);
+            return count;
+        } catch (RuntimeException ex) {
+            observation.record(LEDGER_RECONCILE, FAILURE, 1);
+            throw ex;
+        }
+    }
+
+    private int reconcileObservedFacts() {
         List<LedgerReconcileDiff> diffs = ledgerReconcileRepository.findDiffs();
         if (diffs.isEmpty()) {
             auditLogRepository.append(

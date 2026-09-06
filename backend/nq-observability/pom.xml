@@ -17,6 +17,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.guidinglight.nexusquant</groupId>
             <artifactId>nq-common</artifactId>
             <version>${project.version}</version>

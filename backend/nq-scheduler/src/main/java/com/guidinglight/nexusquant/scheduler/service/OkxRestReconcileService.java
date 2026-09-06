@@ -1,5 +1,11 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
+import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
+import com.guidinglight.nexusquant.observability.operational.OperationalObservation;
+import com.guidinglight.nexusquant.observability.operational.SafeOperationalObservation;
+import static com.guidinglight.nexusquant.observability.operational.OperationalObservation.Operation.*;
+import static com.guidinglight.nexusquant.observability.operational.OperationalObservation.Signal.*;
+
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterTradeReport;
@@ -26,6 +32,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -57,6 +64,7 @@ public class OkxRestReconcileService {
     private final EventPublisherPort eventPublisherPort;
     private final com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository auditLogRepository;
     private final Clock clock;
+    private final OperationalObservation observation;
 
     /**
      * @param orderCommandService   订单编排服务
@@ -74,8 +82,23 @@ public class OkxRestReconcileService {
             TradeRepository tradeRepository,
             TradeLedgerGateway tradeLedgerGateway,
             EventPublisherPort eventPublisherPort,
-            com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository auditLogRepository
+            AuditLogRepository auditLogRepository
     ) {
+        this(orderCommandService, orderLifecycleService, okxExchangeAdapter, tradeRepository, tradeLedgerGateway, eventPublisherPort, auditLogRepository, OperationalObservation.NOOP);
+    }
+
+    @Autowired
+    public OkxRestReconcileService(
+            OrderCommandService orderCommandService,
+            OrderLifecycleService orderLifecycleService,
+            OkxExchangeAdapter okxExchangeAdapter,
+            TradeRepository tradeRepository,
+            TradeLedgerGateway tradeLedgerGateway,
+            EventPublisherPort eventPublisherPort,
+            AuditLogRepository auditLogRepository,
+            OperationalObservation observation
+    ) {
+        this.observation = new SafeOperationalObservation(observation);
         this.orderCommandService = Objects.requireNonNull(orderCommandService, "orderCommandService must not be null");
         this.orderLifecycleService = Objects.requireNonNull(orderLifecycleService, "orderLifecycleService must not be null");
         this.okxExchangeAdapter = Objects.requireNonNull(okxExchangeAdapter, "okxExchangeAdapter must not be null");
@@ -104,6 +127,19 @@ public class OkxRestReconcileService {
      * @return 本次新写入的 trade 数量
      */
     public int reconcileOnce(int limit) {
+        observation.record(OKX_RECONCILE, ATTEMPT, 1);
+        try {
+            int result = reconcileObservedFacts(limit);
+            // 成功表示本轮调用正常完成；订单未找到或账本拒绝等事实仍由独立 unresolved 指标表达。
+            observation.record(OKX_RECONCILE, SUCCESS, 1);
+            return result;
+        } catch (RuntimeException ex) {
+            observation.record(OKX_RECONCILE, FAILURE, 1);
+            throw ex;
+        }
+    }
+
+    private int reconcileObservedFacts(int limit) {
         int newTrades = 0;
         for (OrderRecord order : orderCommandService.findOrdersByStatuses(
                 List.of(
@@ -173,6 +209,7 @@ public class OkxRestReconcileService {
                 currentOrder.traceId()
         ));
         if (snapshot.resultCategory() == AdapterResultCategory.NOT_FOUND) {
+            observation.record(OKX_RECONCILE, UNRESOLVED, 1);
             auditLogRepository.append(
                     "RECONCILE",
                     "OKX_RECONCILE_ORDER_NOT_FOUND",
@@ -365,6 +402,22 @@ public class OkxRestReconcileService {
             AdapterTradeReport tradeReport,
             boolean recovery
     ) {
+        if (!recovery) return replayLedgerFacts(order, trade, tradeReport, false);
+        observation.record(LEDGER_RECOVERY, ATTEMPT, 1);
+        try {
+            LedgerPostingResult result = replayLedgerFacts(order, trade, tradeReport, true);
+            observation.record(LEDGER_RECOVERY, result.posted() ? SUCCESS : FAILURE, 1);
+            if (!result.posted()) observation.record(LEDGER_RECOVERY, UNRESOLVED, 1);
+            return result;
+        } catch (RuntimeException ex) {
+            observation.record(LEDGER_RECOVERY, FAILURE, 1);
+            throw ex;
+        }
+    }
+
+    private LedgerPostingResult replayLedgerFacts(
+            OrderRecord order, PaperTradeRecord trade, AdapterTradeReport tradeReport, boolean recovery
+    ) {
         validateTradeOrderIdentity(order, trade);
         if (tradeReport != null) {
             validateTradeVenueReportIdentity(order, trade, tradeReport);
@@ -492,6 +545,7 @@ public class OkxRestReconcileService {
             throw ex;
         }
         if (!postingResult.posted()) {
+            observation.record(OKX_RECONCILE, UNRESOLVED, 1);
             auditLedgerFailure(order, trade.tradeId(), postingResult.reason());
         } else if (recovery && !postingResult.idempotentHit()) {
             auditLogRepository.append(

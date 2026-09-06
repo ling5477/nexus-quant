@@ -1,5 +1,10 @@
 package com.guidinglight.nexusquant.research.application.paper;
 
+import com.guidinglight.nexusquant.observability.operational.OperationalObservation;
+import com.guidinglight.nexusquant.observability.operational.SafeOperationalObservation;
+import static com.guidinglight.nexusquant.observability.operational.OperationalObservation.Operation.*;
+import static com.guidinglight.nexusquant.observability.operational.OperationalObservation.Signal.*;
+
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunAlert;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunAlertSeverity;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunAlertStatus;
@@ -27,14 +32,24 @@ public class PaperRunMonitorService {
     private final PaperRunDailyReportRepository dailyReportRepository;
     private final PaperRunAlertRepository alertRepository;
     private final Clock clock;
+    private final OperationalObservation observation;
 
-    @Autowired
     public PaperRunMonitorService(
             PaperTradingRunService runService,
             PaperRunDailyReportRepository dailyReportRepository,
             PaperRunAlertRepository alertRepository
     ) {
-        this(runService, dailyReportRepository, alertRepository, Clock.systemUTC());
+        this(runService, dailyReportRepository, alertRepository, OperationalObservation.NOOP);
+    }
+
+    @Autowired
+    public PaperRunMonitorService(
+            PaperTradingRunService runService,
+            PaperRunDailyReportRepository dailyReportRepository,
+            PaperRunAlertRepository alertRepository,
+            OperationalObservation observation
+    ) {
+        this(runService, dailyReportRepository, alertRepository, Clock.systemUTC(), observation);
     }
 
     public PaperRunMonitorService(
@@ -43,6 +58,17 @@ public class PaperRunMonitorService {
             PaperRunAlertRepository alertRepository,
             Clock clock
     ) {
+        this(runService, dailyReportRepository, alertRepository, clock, OperationalObservation.NOOP);
+    }
+
+    public PaperRunMonitorService(
+            PaperTradingRunService runService,
+            PaperRunDailyReportRepository dailyReportRepository,
+            PaperRunAlertRepository alertRepository,
+            Clock clock,
+            OperationalObservation observation
+    ) {
+        this.observation = new SafeOperationalObservation(observation);
         this.runService = Objects.requireNonNull(runService);
         this.dailyReportRepository = Objects.requireNonNull(dailyReportRepository);
         this.alertRepository = Objects.requireNonNull(alertRepository);
@@ -118,6 +144,9 @@ public class PaperRunMonitorService {
                 now
         );
         alertRepository.insert(alert);
+        if (severity == PaperRunAlertSeverity.CRITICAL) {
+            observation.record(CRITICAL_ALERT, EMITTED, 1);
+        }
         return alert;
     }
 
