@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][switch]$ConfirmDisposable,
     [ValidateSet('Docker', 'Native', 'WslPg16')][string]$ExecutionMode = 'Docker',
@@ -139,10 +139,47 @@ function Assert-ContainerName([string]$Name) {
     }
 }
 
-function Invoke-Docker([string[]]$Arguments, [switch]$AllowFailure) {
+function Protect-DockerDiagnostic([string]$Text, [string[]]$Arguments) {
+    # 先移除本轮随机口令和传入的环境值；带凭证标记的整行不保留原文。
+    $safe = $Text.Replace($databasePassword, '<redacted>')
+    for ($index = 0; $index -lt $Arguments.Count - 1; $index++) {
+        if ($Arguments[$index] -in @('--env', '-e') -and $Arguments[$index + 1].Contains('=')) {
+            $value = $Arguments[$index + 1].Substring($Arguments[$index + 1].IndexOf('=') + 1)
+            if ($value.Length -gt 0) { $safe = $safe.Replace($value, '<redacted>') }
+        }
+    }
+    $safe = (($safe -split '\r?\n' | ForEach-Object {
+        if ($_ -match '(?i)password|passwd|pwd\s*=|secret|token|api.?key|authorization|cookie|://|--env|(?:^|\s)-e\s') {
+            '<redacted-sensitive-line>'
+        } else { $_ -replace '[\x00-\x08\x0b-\x1f\x7f]', '?' }
+    }) -join "`n")
+    if ($safe.Length -gt 4096) { $safe = $safe.Substring(0, 4096) + '<truncated>' }
+    return $safe
+}
+
+function Invoke-Docker([string[]]$Arguments, [switch]$AllowFailure,
+        [Parameter(Mandatory = $true)][string]$Operation) {
+    # PS5.1 的 native stderr 不能提前终止捕获；退出码仍由下方原有分支严格裁决。
+    $null = Get-Command docker -ErrorAction Stop
+    $ErrorActionPreference = 'Continue'
+    $PSNativeCommandUseErrorActionPreference = $false
     $lines = @(& docker @Arguments 2>&1)
     $code = [int]$LASTEXITCODE
-    if (-not $AllowFailure -and $code -ne 0) { throw 'FAIL / DISPOSABLE_DOCKER_COMMAND_FAILED' }
+    $ErrorActionPreference = 'Stop'
+    if ($code -ne 0) {
+        $stderr = (@($lines | Where-Object { $_ -is [Management.Automation.ErrorRecord] } |
+            ForEach-Object { $_.ToString() }) -join "`n")
+        $record = [ordered]@{
+            operation = $Operation
+            stage = $script:dockerStage
+            exitCode = $code
+            stderrAvailable = -not [string]::IsNullOrWhiteSpace($stderr)
+            sanitizedStderr = Protect-DockerDiagnostic $stderr $Arguments
+        }
+        $diagnostic = 'DISPOSABLE_DOCKER_FAILURE ' + ($record | ConvertTo-Json -Compress)
+        Write-Information $diagnostic -InformationAction Continue
+        if (-not $AllowFailure) { throw ('FAIL / DISPOSABLE_DOCKER_COMMAND_FAILED / ' + $diagnostic) }
+    }
     return [pscustomobject]@{ ExitCode = $code; Lines = $lines }
 }
 
@@ -155,12 +192,12 @@ function Start-Postgres([string]$Name) {
         if ($LASTEXITCODE -ne 0) { throw 'FAIL / DISPOSABLE_NATIVE_DATABASE_CREATE_FAILED' }
         return
     }
-    $result = Invoke-Docker @('run', '--detach', '--name', $Name,
+    $result = Invoke-Docker -Operation 'START_CONTAINER' -Arguments @('run', '--detach', '--name', $Name,
         '--env', "POSTGRES_DB=$database", '--env', "POSTGRES_USER=$databaseUser",
         '--env', "POSTGRES_PASSWORD=$databasePassword", '--publish', '127.0.0.1::5432', $PostgresImage)
     if ($result.Lines.Count -eq 0) { throw 'FAIL / DISPOSABLE_POSTGRES_START_FAILED' }
     for ($attempt = 1; $attempt -le 60; $attempt++) {
-        $ready = Invoke-Docker @('exec', $Name, 'pg_isready', '--username', $databaseUser, '--dbname', $database) -AllowFailure
+        $ready = Invoke-Docker -Operation 'WAIT_POSTGRES_READY' -Arguments @('exec', $Name, 'pg_isready', '--username', $databaseUser, '--dbname', $database) -AllowFailure
         if ($ready.ExitCode -eq 0) { return }
         Start-Sleep -Seconds 1
     }
@@ -178,15 +215,15 @@ function Stop-Postgres([string]$Name) {
         }
         return
     }
-    $listed = Invoke-Docker @('ps', '--all', '--quiet', '--filter', "name=^/$Name$") -AllowFailure
+    $listed = Invoke-Docker -Operation 'LIST_CONTAINER_FOR_CLEANUP' -Arguments @('ps', '--all', '--quiet', '--filter', "name=^/$Name$") -AllowFailure
     if ($listed.ExitCode -eq 0 -and -not [string]::IsNullOrWhiteSpace(($listed.Lines -join '').Trim())) {
-        $null = Invoke-Docker @('rm', '--force', $Name)
+        $null = Invoke-Docker -Operation 'REMOVE_CONTAINER' -Arguments @('rm', '--force', $Name)
     }
 }
 
 function Get-Port([string]$Name) {
     if ($ExecutionMode -in @('Native','WslPg16')) { return [string]$nativePort }
-    $result = Invoke-Docker @('port', $Name, '5432/tcp')
+    $result = Invoke-Docker -Operation 'READ_PORT_MAPPING' -Arguments @('port', $Name, '5432/tcp')
     $line = ($result.Lines -join '').Trim()
     if ($line -cnotmatch '^127\.0\.0\.1:([0-9]+)$') { throw 'BLOCKED / NON_LOOPBACK_POSTGRES_MAPPING' }
     return $Matches[1]
@@ -204,7 +241,7 @@ function Invoke-Scalar([string]$Name, [string]$Sql) {
         if ($LASTEXITCODE -ne 0) { throw 'FAIL / DISPOSABLE_NATIVE_SQL_FAILED' }
         return ($lines -join "`n").Trim()
     }
-    $result = Invoke-Docker @('exec', '--env', "PGPASSWORD=$databasePassword", $Name,
+    $result = Invoke-Docker -Operation 'EXECUTE_SQL' -Arguments @('exec', '--env', "PGPASSWORD=$databasePassword", $Name,
         'psql', '--username', $databaseUser, '--dbname', $database, '--no-psqlrc',
         '--set', 'ON_ERROR_STOP=1', '--tuples-only', '--no-align', '--command', $Sql)
     return ($result.Lines -join "`n").Trim()
@@ -266,16 +303,20 @@ function Expect-Rejected([scriptblock]$Action, [string]$Name) {
     return $Name
 }
 
+$script:dockerStage = 'INITIAL_DISPOSABLE_CLEANUP'
 foreach ($name in @($source, $target, $failure)) { Stop-Postgres $name }
 try {
+    $script:dockerStage = 'PREPARE_DISPOSABLE_RUNTIME'
     Write-Output 'STAGE / PREPARE_DISPOSABLE_RUNTIME'
     [IO.Directory]::CreateDirectory($negativeRoot) | Out-Null
     [IO.Directory]::CreateDirectory($launcherRoot) | Out-Null
     if ($ExecutionMode -ceq 'Docker') {
-        $null = Invoke-Docker @('image', 'inspect', $PostgresImage)
+        $null = Invoke-Docker -Operation 'INSPECT_IMAGE' -Arguments @('image', 'inspect', $PostgresImage)
     } else {
         Start-NativeCluster
     }
+
+    $script:dockerStage = 'PREPARE_FLYWAY_CLASSPATH'
 
     Write-Output 'STAGE / PREPARE_FLYWAY_CLASSPATH'
     $mavenLines = @(& mvn -f (Join-Path $repo 'backend/pom.xml') -DskipTests install 2>&1)
@@ -289,14 +330,16 @@ try {
         (Join-Path $PSScriptRoot 'NqCanonicalFlywayLauncher.java')
     if ($LASTEXITCODE -ne 0) { throw 'FAIL / RESTORE_DRILL_LAUNCHER_COMPILE_FAILED' }
 
+    $script:dockerStage = 'MIGRATE_SOURCE_TO_CURRENT'
+
     Write-Output 'STAGE / MIGRATE_SOURCE_TO_CURRENT'
     Start-Postgres $source
     $serverVersionNumber = Invoke-Scalar $source 'SHOW server_version_num;'
     if ($serverVersionNumber -cnotmatch '^([0-9]+)$') { throw 'BLOCKED / POSTGRESQL_VERSION_OBSERVATION_INVALID' }
     $serverMajor = [Math]::Floor([int64]$Matches[1] / 10000)
     if ($ExecutionMode -ceq 'Docker') {
-        $dumpToolIdentity = ((Invoke-Docker @('exec',$source,'pg_dump','--version')).Lines -join ' ').Trim()
-        $restoreToolIdentity = ((Invoke-Docker @('exec',$source,'pg_restore','--version')).Lines -join ' ').Trim()
+        $dumpToolIdentity = ((Invoke-Docker -Operation 'READ_DUMP_VERSION' -Arguments @('exec',$source,'pg_dump','--version')).Lines -join ' ').Trim()
+        $restoreToolIdentity = ((Invoke-Docker -Operation 'READ_RESTORE_VERSION' -Arguments @('exec',$source,'pg_restore','--version')).Lines -join ' ').Trim()
     } elseif ($ExecutionMode -ceq 'WslPg16') {
         $dumpToolIdentity = ((Invoke-WslPg 'pg_dump' @('--version')).Lines -join ' ').Trim()
         $restoreToolIdentity = ((Invoke-WslPg 'pg_restore' @('--version')).Lines -join ' ').Trim()
@@ -318,6 +361,8 @@ ON CONFLICT (role_code) DO UPDATE SET description=EXCLUDED.description;
 "@
     $sourceCanary = Get-Canary $source
 
+    $script:dockerStage = 'CREATE_AND_VERIFY_BACKUP'
+
     Write-Output 'STAGE / CREATE_AND_VERIFY_BACKUP'
     if ($ExecutionMode -ceq 'Native') {
         $sourceDatabase = Get-NativeDatabaseName $source
@@ -332,15 +377,17 @@ ON CONFLICT (role_code) DO UPDATE SET description=EXCLUDED.description;
             '--dbname',$sourceDatabase,'--format','custom','--no-owner','--no-privileges','--file',$wslDumpPath)
         $toolIdentity = $dumpToolIdentity
     } else {
-        $null = Invoke-Docker @('exec', '--env', "PGPASSWORD=$databasePassword", $source,
+        $null = Invoke-Docker -Operation 'CREATE_BACKUP' -Arguments @('exec', '--env', "PGPASSWORD=$databasePassword", $source,
             'pg_dump', '--username', $databaseUser, '--dbname', $database, '--format', 'custom',
             '--no-owner', '--no-privileges', '--file', '/tmp/current-schema.dump')
-        $null = Invoke-Docker @('cp', "${source}:/tmp/current-schema.dump", $dumpPath)
-        $toolIdentity = ((Invoke-Docker @('exec', $source, 'pg_dump', '--version')).Lines -join ' ').Trim()
+        $null = Invoke-Docker -Operation 'COPY_BACKUP_FROM_CONTAINER' -Arguments @('cp', "${source}:/tmp/current-schema.dump", $dumpPath)
+        $toolIdentity = ((Invoke-Docker -Operation 'READ_DUMP_VERSION' -Arguments @('exec', $source, 'pg_dump', '--version')).Lines -join ' ').Trim()
     }
     $null = Write-NqCanonicalBackupMetadata $dumpPath $metadataPath $migration.targetVersion `
         "disposable:${runId}:source" $toolIdentity $serverMajor $backupToolMajor $restoreToolMajor $commit
     $backup = Test-NqCanonicalBackup $dumpPath $metadataPath $migration.targetVersion $commit 16
+
+    $script:dockerStage = 'RESTORE_AND_VALIDATE_CURRENT_SCHEMA'
 
     Write-Output 'STAGE / RESTORE_AND_VALIDATE_CURRENT_SCHEMA'
     Start-Postgres $target
@@ -355,16 +402,19 @@ ON CONFLICT (role_code) DO UPDATE SET description=EXCLUDED.description;
         $null = Invoke-WslPg 'pg_restore' @('--host','127.0.0.1','--port',[string]$nativePort,'--username',$databaseUser,
             '--dbname',$targetDatabase,'--no-owner','--no-privileges','--exit-on-error',$wslDumpPath)
     } else {
-        $null = Invoke-Docker @('cp', $dumpPath, "${target}:/tmp/current-schema.dump")
-        $null = Invoke-Docker @('exec', '--env', "PGPASSWORD=$databasePassword", $target,
+        $null = Invoke-Docker -Operation 'COPY_BACKUP_TO_CONTAINER' -Arguments @('cp', $dumpPath, "${target}:/tmp/current-schema.dump")
+        $null = Invoke-Docker -Operation 'RESTORE_DATABASE' -Arguments @('exec', '--env', "PGPASSWORD=$databasePassword", $target,
             'pg_restore', '--username', $databaseUser, '--dbname', $database, '--no-owner',
             '--no-privileges', '--exit-on-error', '/tmp/current-schema.dump')
     }
     $null = Invoke-Flyway 'validate' $target
     $targetCanary = Get-Canary $target
     if ($targetCanary -cne $sourceCanary) { throw 'FAIL / POST_RESTORE_SCHEMA_OR_DATA_CANARY_MISMATCH' }
+    $script:dockerStage = 'RUN_REPOSITORY_AND_APP_SMOKE'
     Write-Output 'STAGE / RUN_REPOSITORY_AND_APP_SMOKE'
     Invoke-Smoke $target
+
+    $script:dockerStage = 'RUN_BACKUP_AND_RESTORE_NEGATIVE_CASES'
 
     Write-Output 'STAGE / RUN_BACKUP_AND_RESTORE_NEGATIVE_CASES'
     $negativeCases = [Collections.Generic.List[string]]::new()
@@ -406,8 +456,8 @@ ON CONFLICT (role_code) DO UPDATE SET description=EXCLUDED.description;
             '--dbname',$failureDatabase,'--no-owner','--no-privileges','--exit-on-error',$wslTruncated) -AllowFailure
         $failedRestoreCode = $failedRestore.ExitCode
     } else {
-        $null = Invoke-Docker @('cp', $truncated, "${failure}:/tmp/truncated.dump")
-        $failedRestore = Invoke-Docker @('exec', '--env', "PGPASSWORD=$databasePassword", $failure,
+        $null = Invoke-Docker -Operation 'COPY_NEGATIVE_BACKUP' -Arguments @('cp', $truncated, "${failure}:/tmp/truncated.dump")
+        $failedRestore = Invoke-Docker -Operation 'RESTORE_TRUNCATED_BACKUP' -Arguments @('exec', '--env', "PGPASSWORD=$databasePassword", $failure,
             'pg_restore', '--username', $databaseUser, '--dbname', $database, '--no-owner',
             '--no-privileges', '--exit-on-error', '/tmp/truncated.dump') -AllowFailure
         $failedRestoreCode = $failedRestore.ExitCode
@@ -457,6 +507,7 @@ VALUES ('NQ_CANONICAL_RESTORE_CANARY', 'non-secret disposable restore proof');
     [IO.File]::WriteAllText($receiptPath, ($receipt | ConvertTo-Json -Depth 12), [Text.UTF8Encoding]::new($false))
     $receipt
 } finally {
+    $script:dockerStage = 'CLEANUP_DISPOSABLE_RUNTIME'
     Write-Output 'STAGE / CLEANUP_DISPOSABLE_RUNTIME'
     foreach ($name in @($failure, $target, $source)) { Stop-Postgres $name }
     Stop-NativeCluster

@@ -69,7 +69,10 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
         try {
             latest.migrate();
             latest.validate();
-            assertEquals("46", latest.info().current().getVersion().getVersion());
+            assertEquals(java.util.Arrays.stream(latest.info().all())
+                    .filter(migration -> migration.getScript().startsWith("V"))
+                    .map(org.flywaydb.core.api.MigrationInfo::getVersion)
+                    .max(java.util.Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
         } finally {
             latest.clean();
         }
@@ -186,7 +189,10 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
 
             latest.migrate();
             latest.validate();
-            assertEquals("46", latest.info().current().getVersion().getVersion());
+            assertEquals(java.util.Arrays.stream(latest.info().all())
+                    .filter(migration -> migration.getScript().startsWith("V"))
+                    .map(org.flywaydb.core.api.MigrationInfo::getVersion)
+                    .max(java.util.Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
             var decision1 = recoveries.decide(
                     fixture.ownerId(), fixture.accountId(), fixture.credentialId(), "BTC-USDT",
                     new BigDecimal("10.00000000"), UUID.randomUUID(),
@@ -653,7 +659,10 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
         flyway.migrate();
         flyway.validate();
         try {
-            assertEquals("46", flyway.info().current().getVersion().getVersion());
+            assertEquals(java.util.Arrays.stream(flyway.info().all())
+                    .filter(migration -> migration.getScript().startsWith("V"))
+                    .map(org.flywaydb.core.api.MigrationInfo::getVersion)
+                    .max(java.util.Comparator.naturalOrder()).orElseThrow().getVersion(), flyway.info().current().getVersion().getVersion());
             DriverManagerDataSource dataSource = new DriverManagerDataSource(schemaUrl, user, password);
             JdbcTemplate jdbc = new JdbcTemplate(dataSource);
             Fixture fixture = seedOperator(jdbc);

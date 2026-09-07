@@ -4,6 +4,8 @@ param()
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+& (Join-Path $PSScriptRoot 'Test-NqDockerDiagnostics.Tests.ps1')
+
 $deploymentRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $repo = [IO.Path]::GetFullPath((Join-Path $deploymentRoot '..\..'))
 $builder = Join-Path $deploymentRoot 'New-NqCanonicalRelease.ps1'
@@ -17,15 +19,19 @@ $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ('nq-canonical-release-tests-' 
 $utf8 = [Text.UTF8Encoding]::new($false)
 $cases = [Collections.Generic.List[string]]::new()
 Import-Module (Join-Path $deploymentRoot 'nq-canonical-release.psm1') -Force -DisableNameChecking
+$migrationInventory = Get-NqMigrationInventory (Join-Path $repo 'backend/nq-infra/src/main/resources/db/migration')
+$repositorySchema = $migrationInventory.targetVersion
+$incompatibleSchema = 'V' + ([int]$migrationInventory.migrations[-1].version + 1)
 
 function Complete-Case([string]$Name) {
     $cases.Add($Name)
     Write-Output "PASS / $Name"
 }
 
-function Expect-Rejected([scriptblock]$Action, [string]$Name) {
+function Expect-Rejected([scriptblock]$Action, [string]$Name, [string]$ExpectedError = '') {
     try { & $Action; throw "NEGATIVE_CASE_ACCEPTED / $Name" } catch {
         if ($_.Exception.Message -like 'NEGATIVE_CASE_ACCEPTED*') { throw }
+        if ($ExpectedError -and $_.Exception.Message -cne $ExpectedError) { throw }
     }
     Complete-Case $Name
 }
@@ -336,7 +342,7 @@ try {
         -SourceRoot $releaseA -ExpectedSourceCommit $head -AdmissionRootPath $admissionAPath -ExpectedAdmissionSha256 $admissionA.admissionSha256 -ConfirmDisposable
     $databaseState = Join-Path $installRoot 'database-state.json'
     $null = & $installer -Action observe-database -InstallationRoot $installRoot `
-        -DatabaseStatePath $databaseState -TestDatabaseSchemaVersion V46 -TestPostgresqlMajor 16 -ConfirmDisposable
+        -DatabaseStatePath $databaseState -TestDatabaseSchemaVersion $repositorySchema -TestPostgresqlMajor 16 -ConfirmDisposable
     $activationA = & $installer -Action activate -InstallationRoot $installRoot `
         -ReleaseId $installedA.releaseId -DatabaseStatePath $databaseState `
         -ExpectedSourceCommit $head -AdmissionRootPath $admissionAPath -ExpectedAdmissionSha256 $admissionA.admissionSha256 -ConfirmDisposable
@@ -419,16 +425,32 @@ try {
     } 'stale-journal-current-pointer-mismatch-rejected'
     Set-TestCurrentReleaseId $installRoot ([string]$installedC.releaseId)
 
-    $databaseStateV47 = Join-Path $installRoot 'database-state-v47.json'
+    $incompatibleDatabaseState = Join-Path $installRoot 'database-state-incompatible.json'
     $null = & $installer -Action observe-database -InstallationRoot $installRoot `
-        -DatabaseStatePath $databaseStateV47 -TestDatabaseSchemaVersion V47 -TestPostgresqlMajor 16 -ConfirmDisposable
+        -DatabaseStatePath $incompatibleDatabaseState -TestDatabaseSchemaVersion $incompatibleSchema -TestPostgresqlMajor 16 -ConfirmDisposable
     Expect-Rejected {
-        & $installer -Action rollback -InstallationRoot $installRoot -DatabaseStatePath $databaseStateV47 `
+        & $installer -Action rollback -InstallationRoot $installRoot -DatabaseStatePath $incompatibleDatabaseState `
             -ExpectedSourceCommit $head -ConfirmDisposable
-    } 'schema-incompatible-code-rollback-requires-database-recovery'
+    } 'schema-incompatible-code-rollback-requires-database-recovery' 'BLOCKED / DATABASE_RECOVERY_REQUIRED'
+    Expect-Rejected {
+        & $installer -Action activate -InstallationRoot $installRoot -ReleaseId $installedA.releaseId `
+            -DatabaseStatePath $incompatibleDatabaseState -ExpectedSourceCommit $head -ConfirmDisposable
+    } 'schema-incompatible-activation-rejected' 'BLOCKED / RELEASE_DATABASE_SCHEMA_INCOMPATIBLE'
+    $olderDatabaseState = Join-Path $installRoot 'database-state-older.json'
+    $null = & $installer -Action observe-database -InstallationRoot $installRoot `
+        -DatabaseStatePath $olderDatabaseState -TestDatabaseSchemaVersion V46 -TestPostgresqlMajor 16 -ConfirmDisposable
+    Expect-Rejected {
+        & $installer -Action activate -InstallationRoot $installRoot -ReleaseId $installedA.releaseId `
+            -DatabaseStatePath $olderDatabaseState -ExpectedSourceCommit $head -ConfirmDisposable
+    } 'older-schema-activation-rejected' 'BLOCKED / RELEASE_DATABASE_SCHEMA_INCOMPATIBLE'
+    Expect-Rejected {
+        & $installer -Action observe-database -InstallationRoot $installRoot `
+            -DatabaseStatePath (Join-Path $installRoot 'database-state-wrong-major.json') `
+            -TestDatabaseSchemaVersion $repositorySchema -TestPostgresqlMajor 17 -ConfirmDisposable
+    } 'unsupported-postgresql-major-rejected' 'BLOCKED / UNSUPPORTED_POSTGRESQL_MAJOR'
     Expect-Rejected {
         & $installer -Action rollback -InstallationRoot $installRoot -ExpectedSourceCommit $head -ConfirmDisposable
-    } 'missing-database-state-evidence-fails-closed'
+    } 'missing-database-state-evidence-fails-closed' 'BLOCKED / DATABASE_STATE_EVIDENCE_REQUIRED'
 
     $previousReleaseRoot = Join-Path (Join-Path $installRoot 'releases') ([string]$installedA.releaseId)
     $hiddenPreviousRoot = Join-Path $tempRoot 'hidden-previous-release'
@@ -516,7 +538,7 @@ try {
     $concurrencyRoot=Join-Path $tempRoot 'concurrency-installation'
     $concurrentA=& $installer -Action install -InstallationRoot $concurrencyRoot -SourceRoot $releaseA -ExpectedSourceCommit $head -ConfirmDisposable
     $concurrentC=& $installer -Action install -InstallationRoot $concurrencyRoot -SourceRoot $releaseC -ExpectedSourceCommit $head -ConfirmDisposable
-    $concurrencyDbState=Join-Path $concurrencyRoot 'database-state.json';$null=& $installer -Action observe-database -InstallationRoot $concurrencyRoot -DatabaseStatePath $concurrencyDbState -TestDatabaseSchemaVersion V46 -TestPostgresqlMajor 16 -ConfirmDisposable
+    $concurrencyDbState=Join-Path $concurrencyRoot 'database-state.json';$null=& $installer -Action observe-database -InstallationRoot $concurrencyRoot -DatabaseStatePath $concurrencyDbState -TestDatabaseSchemaVersion $repositorySchema -TestPostgresqlMajor 16 -ConfirmDisposable
     $initialConcurrent=& $installer -Action activate -InstallationRoot $concurrencyRoot -ReleaseId $concurrentA.releaseId -DatabaseStatePath $concurrencyDbState -ExpectedSourceCommit $head -ConfirmDisposable
     $startGeneration=[long]$initialConcurrent.generation
     $workers=[Collections.Generic.List[object]]::new()

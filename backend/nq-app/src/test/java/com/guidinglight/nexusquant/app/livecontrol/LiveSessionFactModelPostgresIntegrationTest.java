@@ -99,7 +99,10 @@ class LiveSessionFactModelPostgresIntegrationTest {
         latest.migrate();
         latest.validate();
         try {
-            assertEquals("46", latest.info().current().getVersion().getVersion());
+            assertEquals(java.util.Arrays.stream(latest.info().all())
+                    .filter(migration -> migration.getScript().startsWith("V"))
+                    .map(org.flywaydb.core.api.MigrationInfo::getVersion)
+                    .max(java.util.Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
             assertEquals(historicalFingerprint, historicalFingerprint(jdbc));
             assertSixTablesAndContracts(jdbc);
 
@@ -159,7 +162,10 @@ class LiveSessionFactModelPostgresIntegrationTest {
         latest.validate();
         JdbcTemplate jdbc = jdbc(config, schema);
         try {
-            assertEquals("46", latest.info().current().getVersion().getVersion());
+            assertEquals(java.util.Arrays.stream(latest.info().all())
+                    .filter(migration -> migration.getScript().startsWith("V"))
+                    .map(org.flywaydb.core.api.MigrationInfo::getVersion)
+                    .max(java.util.Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
             ExistingFixture existing = seedExistingFacts(jdbc);
             JdbcLiveControlRepository liveRepository = new JdbcLiveControlRepository(jdbc);
             JdbcLiveControlAuthorization authorization = new JdbcLiveControlAuthorization(jdbc);
@@ -278,7 +284,10 @@ class LiveSessionFactModelPostgresIntegrationTest {
             latest.migrate();
             long v44ElapsedMs = Duration.ofNanos(System.nanoTime() - v44StartedAt).toMillis();
             latest.validate();
-            assertEquals("46", latest.info().current().getVersion().getVersion());
+            assertEquals(java.util.Arrays.stream(latest.info().all())
+                    .filter(migration -> migration.getScript().startsWith("V"))
+                    .map(org.flywaydb.core.api.MigrationInfo::getVersion)
+                    .max(java.util.Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
             assertEquals(0, latest.info().pending().length);
             assertEquals(0, jdbc(config, schema).queryForObject(
                     "SELECT count(*) FROM flyway_schema_history WHERE success=FALSE", Integer.class));
@@ -312,7 +321,10 @@ class LiveSessionFactModelPostgresIntegrationTest {
         latest.validate();
         System.out.println("gatey6e_v39_to_v41_elapsed_ms=" + migrationElapsedMs);
         try {
-            assertEquals("46", latest.info().current().getVersion().getVersion());
+            assertEquals(java.util.Arrays.stream(latest.info().all())
+                    .filter(migration -> migration.getScript().startsWith("V"))
+                    .map(org.flywaydb.core.api.MigrationInfo::getVersion)
+                    .max(java.util.Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
             assertTrue(migrationElapsedMs < 60_000);
             assertEquals(historical.fingerprint(), historicalApprovalFingerprint(jdbc, historical.approvalId()));
             assertEquals("STRATEGY", jdbc.queryForObject(
@@ -510,7 +522,10 @@ class LiveSessionFactModelPostgresIntegrationTest {
         try {
             latest.migrate();
             latest.validate();
-            assertEquals("46", latest.info().current().getVersion().getVersion());
+            assertEquals(java.util.Arrays.stream(latest.info().all())
+                    .filter(migration -> migration.getScript().startsWith("V"))
+                    .map(org.flywaydb.core.api.MigrationInfo::getVersion)
+                    .max(java.util.Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
             assertEquals(legacyFingerprint,
                     legacyInstrumentFingerprint(jdbc, legacyObservations.instrumentMetadata().id()));
             assertEquals("LEGACY_V40_REQUIRED", jdbc.queryForObject("""
@@ -653,7 +668,10 @@ class LiveSessionFactModelPostgresIntegrationTest {
         Flyway replay = flyway(config, replaySchema, null);
         replay.migrate();
         try {
-            assertEquals("46", replay.info().current().getVersion().getVersion());
+            assertEquals(java.util.Arrays.stream(replay.info().all())
+                    .filter(migration -> migration.getScript().startsWith("V"))
+                    .map(org.flywaydb.core.api.MigrationInfo::getVersion)
+                    .max(java.util.Comparator.naturalOrder()).orElseThrow().getVersion(), replay.info().current().getVersion().getVersion());
             replay.validate();
         } finally {
             replay.clean();

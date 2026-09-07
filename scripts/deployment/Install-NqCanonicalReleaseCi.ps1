@@ -1,9 +1,11 @@
 [CmdletBinding()]param([Parameter(Mandatory=$true)][string]$SourceCommit)
 Set-StrictMode -Version Latest;$ErrorActionPreference='Stop'
+Import-Module (Join-Path $PSScriptRoot 'nq-canonical-release.psm1') -Force -DisableNameChecking
+$repositorySchema=(Get-NqMigrationInventory (Join-Path $PSScriptRoot '../../backend/nq-infra/src/main/resources/db/migration')).targetVersion
 $releaseRoot=Join-Path $env:RUNNER_TEMP 'nq-canonical-release';$installationRoot=Join-Path ([IO.Path]::GetTempPath()) "nq-canonical-installation-$([Guid]::NewGuid().ToString('N'))";$databaseState=Join-Path $installationRoot 'database-state.json';$admissionRoot='artifacts/delivery/provenance/release-admission.json';$digestPath='artifacts/delivery/provenance/release-admission.sha256'
 $line=([IO.File]::ReadAllText([IO.Path]::GetFullPath($digestPath))).Trim();if($line-cnotmatch'^([0-9a-f]{64})(?:\s|$)'){throw 'BLOCKED / PRODUCTION_ADMISSION_DIGEST_INVALID'};$digest=$Matches[1]
 $releaseId=(Get-Content (Join-Path $releaseRoot 'release-manifest.json') -Raw|ConvertFrom-Json).releaseId;$trustedDirectory=Join-Path $installationRoot 'trusted-release-admission';[IO.Directory]::CreateDirectory($trustedDirectory)|Out-Null;Copy-Item $admissionRoot (Join-Path $trustedDirectory "$releaseId.json");Copy-Item $digestPath (Join-Path $trustedDirectory "$releaseId.sha256")
 $installed=& (Join-Path $PSScriptRoot 'Install-NqCanonicalRelease.ps1') -Action install -InstallationRoot $installationRoot -SourceRoot $releaseRoot -ExpectedSourceCommit $SourceCommit -ConfirmDisposable -TestProductionPolicy
-$null=& (Join-Path $PSScriptRoot 'Install-NqCanonicalRelease.ps1') -Action observe-database -InstallationRoot $installationRoot -DatabaseStatePath $databaseState -TestDatabaseSchemaVersion V46 -TestPostgresqlMajor 16 -ConfirmDisposable
+$null=& (Join-Path $PSScriptRoot 'Install-NqCanonicalRelease.ps1') -Action observe-database -InstallationRoot $installationRoot -DatabaseStatePath $databaseState -TestDatabaseSchemaVersion $repositorySchema -TestPostgresqlMajor 16 -ConfirmDisposable
 $null=& (Join-Path $PSScriptRoot 'Install-NqCanonicalRelease.ps1') -Action activate -InstallationRoot $installationRoot -ReleaseId $installed.releaseId -DatabaseStatePath $databaseState -ExpectedSourceCommit $SourceCommit -ConfirmDisposable -TestProductionPolicy
 & (Join-Path $PSScriptRoot 'Install-NqCanonicalRelease.ps1') -Action verify -InstallationRoot $installationRoot -ReleaseId $installed.releaseId -ExpectedSourceCommit $SourceCommit -ConfirmDisposable -TestProductionPolicy

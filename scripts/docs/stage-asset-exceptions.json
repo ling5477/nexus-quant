@@ -603,7 +603,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
-      "sha256": "eebfb7e851eefe866b5ef4190f2704b6b74d3b3432a9fd22f7853e4132346ed0",
+      "sha256": "f9b9c1545082fb3c95ee2c8d1b627228e12557fee304f7c6c9f18aa87dfa312b",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -611,7 +611,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java",
-      "sha256": "cdff2f7c27b2d98a6185ef4680b838c9f479c5a2f5ed1c9580210946acd4dab7",
+      "sha256": "6539d1e21b80ea2164f735f24901afada53d60f4a33a1608c55a38eec0ec6a11",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -1307,7 +1307,7 @@
     },
     {
       "path": "scripts/deployment/Invoke-NqCanonicalRestoreDrill.ps1",
-      "sha256": "7c5a4f8095e76eab37bf73e146d378d757c2281dfa377711545a9012966da866",
+      "sha256": "ad7fcdfe3903153f5efa86ca93359aa24fbcdd69d03a534f1fd8c9448c620cc4",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",

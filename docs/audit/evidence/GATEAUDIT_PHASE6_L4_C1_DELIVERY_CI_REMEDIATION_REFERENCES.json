@@ -1,0 +1,1554 @@
+{
+  "base": "41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd",
+  "rows": [
+    {
+      "reference": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java:102",
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
+      "line": 102,
+      "classification": "CURRENT_SCHEMA_HEAD",
+      "before": "46 / V46",
+      "after": "canonical resolved Flyway migration maximum (V47)",
+      "reason": "CURRENT_REPOSITORY_SCHEMA: migration 无 target 上限；预期值从同一 canonical migration 集合解析，不再硬编码版本。"
+    },
+    {
+      "reference": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java:162",
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
+      "line": 162,
+      "classification": "CURRENT_SCHEMA_HEAD",
+      "before": "46 / V46",
+      "after": "canonical resolved Flyway migration maximum (V47)",
+      "reason": "CURRENT_REPOSITORY_SCHEMA: migration 无 target 上限；预期值从同一 canonical migration 集合解析，不再硬编码版本。"
+    },
+    {
+      "reference": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java:281",
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
+      "line": 281,
+      "classification": "CURRENT_SCHEMA_HEAD",
+      "before": "46 / V46",
+      "after": "canonical resolved Flyway migration maximum (V47)",
+      "reason": "CURRENT_REPOSITORY_SCHEMA: migration 无 target 上限；预期值从同一 canonical migration 集合解析，不再硬编码版本。"
+    },
+    {
+      "reference": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java:315",
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
+      "line": 315,
+      "classification": "CURRENT_SCHEMA_HEAD",
+      "before": "46 / V46",
+      "after": "canonical resolved Flyway migration maximum (V47)",
+      "reason": "CURRENT_REPOSITORY_SCHEMA: migration 无 target 上限；预期值从同一 canonical migration 集合解析，不再硬编码版本。"
+    },
+    {
+      "reference": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java:513",
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
+      "line": 513,
+      "classification": "CURRENT_SCHEMA_HEAD",
+      "before": "46 / V46",
+      "after": "canonical resolved Flyway migration maximum (V47)",
+      "reason": "CURRENT_REPOSITORY_SCHEMA: migration 无 target 上限；预期值从同一 canonical migration 集合解析，不再硬编码版本。"
+    },
+    {
+      "reference": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java:656",
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
+      "line": 656,
+      "classification": "CURRENT_SCHEMA_HEAD",
+      "before": "46 / V46",
+      "after": "canonical resolved Flyway migration maximum (V47)",
+      "reason": "CURRENT_REPOSITORY_SCHEMA: migration 无 target 上限；预期值从同一 canonical migration 集合解析，不再硬编码版本。"
+    },
+    {
+      "reference": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java:45",
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java",
+      "line": 45,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java:57",
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java",
+      "line": 57,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java:72",
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java",
+      "line": 72,
+      "classification": "CURRENT_SCHEMA_HEAD",
+      "before": "46 / V46",
+      "after": "canonical resolved Flyway migration maximum (V47)",
+      "reason": "CURRENT_REPOSITORY_SCHEMA: migration 无 target 上限；预期值从同一 canonical migration 集合解析，不再硬编码版本。"
+    },
+    {
+      "reference": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java:86",
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java",
+      "line": 86,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java:189",
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java",
+      "line": 189,
+      "classification": "CURRENT_SCHEMA_HEAD",
+      "before": "46 / V46",
+      "after": "canonical resolved Flyway migration maximum (V47)",
+      "reason": "CURRENT_REPOSITORY_SCHEMA: migration 无 target 上限；预期值从同一 canonical migration 集合解析，不再硬编码版本。"
+    },
+    {
+      "reference": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java:656",
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java",
+      "line": 656,
+      "classification": "CURRENT_SCHEMA_HEAD",
+      "before": "46 / V46",
+      "after": "canonical resolved Flyway migration maximum (V47)",
+      "reason": "CURRENT_REPOSITORY_SCHEMA: migration 无 target 上限；预期值从同一 canonical migration 集合解析，不再硬编码版本。"
+    },
+    {
+      "reference": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/OrderVersionFlywayPostgresIntegrationTest.java:21",
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/OrderVersionFlywayPostgresIntegrationTest.java",
+      "line": 21,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/OrderVersionFlywayPostgresIntegrationTest.java:37",
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/OrderVersionFlywayPostgresIntegrationTest.java",
+      "line": 37,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "backend/nq-infra/src/main/resources/db/migration/V46__gate_y_attempt_level_terminal_lease_regeneration.sql:194",
+      "path": "backend/nq-infra/src/main/resources/db/migration/V46__gate_y_attempt_level_terminal_lease_regeneration.sql",
+      "line": 194,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "backend/nq-infra/src/main/resources/db/migration/V46__gate_y_attempt_level_terminal_lease_regeneration.sql:196",
+      "path": "backend/nq-infra/src/main/resources/db/migration/V46__gate_y_attempt_level_terminal_lease_regeneration.sql",
+      "line": 196,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/TerminalLeaseRegenerationMigrationContractTest.java:16",
+      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/TerminalLeaseRegenerationMigrationContractTest.java",
+      "line": 16,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_IMPLEMENTATION.md:56",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_IMPLEMENTATION.md",
+      "line": 56,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_IMPLEMENTATION.md:75",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_IMPLEMENTATION.md",
+      "line": 75,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_IMPLEMENTATION.md:82",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_IMPLEMENTATION.md",
+      "line": 82,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_IMPLEMENTATION.md:83",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_IMPLEMENTATION.md",
+      "line": 83,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_IMPLEMENTATION.md:88",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_IMPLEMENTATION.md",
+      "line": 88,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_02.md:68",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_02.md",
+      "line": 68,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_02.md:72",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_02.md",
+      "line": 72,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_02.md:73",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_02.md",
+      "line": 73,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_03.md:57",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_03.md",
+      "line": 57,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_03.md:61",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_03.md",
+      "line": 61,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_04.md:86",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_04.md",
+      "line": 86,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_04.md:91",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5B_CANONICAL_DEPLOYMENT_AND_RESTORE_REMEDIATION_ATTEMPT_04.md",
+      "line": 91,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5B_EXACT_HEAD_CI_REMEDIATION_ATTEMPT_01.md:52",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5B_EXACT_HEAD_CI_REMEDIATION_ATTEMPT_01.md",
+      "line": 52,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5B_EXACT_HEAD_CI_REMEDIATION_ATTEMPT_01.md:54",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5B_EXACT_HEAD_CI_REMEDIATION_ATTEMPT_01.md",
+      "line": 54,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5B_POST_CI_AUTHORITY_ACCEPTANCE.md:63",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5B_POST_CI_AUTHORITY_ACCEPTANCE.md",
+      "line": 63,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5B_POST_CI_AUTHORITY_ACCEPTANCE.md:67",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5B_POST_CI_AUTHORITY_ACCEPTANCE.md",
+      "line": 67,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5B_POST_CI_AUTHORITY_ACCEPTANCE.md:71",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5B_POST_CI_AUTHORITY_ACCEPTANCE.md",
+      "line": 71,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5_F008_PROD_CONFIG_FAIL_CLOSED_IMPLEMENTATION.md:75",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5_F008_PROD_CONFIG_FAIL_CLOSED_IMPLEMENTATION.md",
+      "line": 75,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5_F008_PROD_CONFIG_FAIL_CLOSED_REMEDIATION_ATTEMPT_01.md:133",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5_F008_PROD_CONFIG_FAIL_CLOSED_REMEDIATION_ATTEMPT_01.md",
+      "line": 133,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5_F008_PROD_CONFIG_FAIL_CLOSED_REMEDIATION_ATTEMPT_02.md:83",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5_F008_PROD_CONFIG_FAIL_CLOSED_REMEDIATION_ATTEMPT_02.md",
+      "line": 83,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5_F008_PROD_CONFIG_FAIL_CLOSED_REVIEW.md:150",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5_F008_PROD_CONFIG_FAIL_CLOSED_REVIEW.md",
+      "line": 150,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5_F008_PROD_CONFIG_FAIL_CLOSED_REVIEW_ATTEMPT_02.md:175",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5_F008_PROD_CONFIG_FAIL_CLOSED_REVIEW_ATTEMPT_02.md",
+      "line": 175,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5_F008_PROD_CONFIG_FAIL_CLOSED_REVIEW_ATTEMPT_03.md:173",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5_F008_PROD_CONFIG_FAIL_CLOSED_REVIEW_ATTEMPT_03.md",
+      "line": 173,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5_F009_ACTIVE_ASSET_INVENTORY.json:5459",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5_F009_ACTIVE_ASSET_INVENTORY.json",
+      "line": 5459,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5_F009_ACTIVE_ASSET_INVENTORY.json:5702",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5_F009_ACTIVE_ASSET_INVENTORY.json",
+      "line": 5702,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5_F009_ACTIVE_ASSET_INVENTORY.json:77991",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5_F009_ACTIVE_ASSET_INVENTORY.json",
+      "line": 77991,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE5_F009_ACTIVE_ASSET_INVENTORY.json:77999",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE5_F009_ACTIVE_ASSET_INVENTORY.json",
+      "line": 77999,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_FAILURE_MATRIX_PLAN.json:4883",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_FAILURE_MATRIX_PLAN.json",
+      "line": 4883,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_FAILURE_MATRIX_PLAN.md:88",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_FAILURE_MATRIX_PLAN.md",
+      "line": 88,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_FAILURE_MATRIX_PLAN.md:208",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_FAILURE_MATRIX_PLAN.md",
+      "line": 208,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_FAILURE_MATRIX_PLAN.md:535",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_FAILURE_MATRIX_PLAN.md",
+      "line": 535,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_RUNTIME_CORRECTNESS_C1_IMPLEMENTATION.md:208",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_RUNTIME_CORRECTNESS_C1_IMPLEMENTATION.md",
+      "line": 208,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_RUNTIME_CORRECTNESS_C1_IMPLEMENTATION.md:210",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_RUNTIME_CORRECTNESS_C1_IMPLEMENTATION.md",
+      "line": 210,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_RUNTIME_CORRECTNESS_C1_IMPLEMENTATION.md:273",
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_RUNTIME_CORRECTNESS_C1_IMPLEMENTATION.md",
+      "line": 273,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/ROADMAP.md:101",
+      "path": "docs/current/ROADMAP.md",
+      "line": 101,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/STATUS.md:48",
+      "path": "docs/current/STATUS.md",
+      "line": 48,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:14721",
+      "path": "docs/current/TESTING.md",
+      "line": 14721,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:14755",
+      "path": "docs/current/TESTING.md",
+      "line": 14755,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:14782",
+      "path": "docs/current/TESTING.md",
+      "line": 14782,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:14788",
+      "path": "docs/current/TESTING.md",
+      "line": 14788,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:14808",
+      "path": "docs/current/TESTING.md",
+      "line": 14808,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:14828",
+      "path": "docs/current/TESTING.md",
+      "line": 14828,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:14863",
+      "path": "docs/current/TESTING.md",
+      "line": 14863,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:14873",
+      "path": "docs/current/TESTING.md",
+      "line": 14873,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:14881",
+      "path": "docs/current/TESTING.md",
+      "line": 14881,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:14896",
+      "path": "docs/current/TESTING.md",
+      "line": 14896,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:14918",
+      "path": "docs/current/TESTING.md",
+      "line": 14918,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:14921",
+      "path": "docs/current/TESTING.md",
+      "line": 14921,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:14923",
+      "path": "docs/current/TESTING.md",
+      "line": 14923,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:14935",
+      "path": "docs/current/TESTING.md",
+      "line": 14935,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:14983",
+      "path": "docs/current/TESTING.md",
+      "line": 14983,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:14985",
+      "path": "docs/current/TESTING.md",
+      "line": 14985,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:14995",
+      "path": "docs/current/TESTING.md",
+      "line": 14995,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:15006",
+      "path": "docs/current/TESTING.md",
+      "line": 15006,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:15016",
+      "path": "docs/current/TESTING.md",
+      "line": 15016,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:15027",
+      "path": "docs/current/TESTING.md",
+      "line": 15027,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:15037",
+      "path": "docs/current/TESTING.md",
+      "line": 15037,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:15047",
+      "path": "docs/current/TESTING.md",
+      "line": 15047,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/TESTING.md:15061",
+      "path": "docs/current/TESTING.md",
+      "line": 15061,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/WORKLOG.md:19492",
+      "path": "docs/current/WORKLOG.md",
+      "line": 19492,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/WORKLOG.md:19602",
+      "path": "docs/current/WORKLOG.md",
+      "line": 19602,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/WORKLOG.md:19619",
+      "path": "docs/current/WORKLOG.md",
+      "line": 19619,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/WORKLOG.md:19676",
+      "path": "docs/current/WORKLOG.md",
+      "line": 19676,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/WORKLOG.md:19713",
+      "path": "docs/current/WORKLOG.md",
+      "line": 19713,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/WORKLOG.md:19744",
+      "path": "docs/current/WORKLOG.md",
+      "line": 19744,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/WORKLOG.md:19795",
+      "path": "docs/current/WORKLOG.md",
+      "line": 19795,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/WORKLOG.md:19796",
+      "path": "docs/current/WORKLOG.md",
+      "line": 19796,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/WORKLOG.md:19807",
+      "path": "docs/current/WORKLOG.md",
+      "line": 19807,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/WORKLOG.md:19827",
+      "path": "docs/current/WORKLOG.md",
+      "line": 19827,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/current/WORKLOG.md:19855",
+      "path": "docs/current/WORKLOG.md",
+      "line": 19855,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/GATEY_BACKEND_DB_MIGRATION_EVIDENCE_SUMMARY.md:7",
+      "path": "docs/gates/gate-y/GATEY_BACKEND_DB_MIGRATION_EVIDENCE_SUMMARY.md",
+      "line": 7,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/GATEY_BACKEND_DB_MIGRATION_EVIDENCE_SUMMARY.md:9",
+      "path": "docs/gates/gate-y/GATEY_BACKEND_DB_MIGRATION_EVIDENCE_SUMMARY.md",
+      "line": 9,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/GATEY_BACKEND_DB_MIGRATION_EVIDENCE_SUMMARY.md:11",
+      "path": "docs/gates/gate-y/GATEY_BACKEND_DB_MIGRATION_EVIDENCE_SUMMARY.md",
+      "line": 11,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/GATEY_BATCH_1_6_EVIDENCE_MATRIX.md:14",
+      "path": "docs/gates/gate-y/GATEY_BATCH_1_6_EVIDENCE_MATRIX.md",
+      "line": 14,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/GATEY_BATCH_1_6_EVIDENCE_MATRIX.md:20",
+      "path": "docs/gates/gate-y/GATEY_BATCH_1_6_EVIDENCE_MATRIX.md",
+      "line": 20,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/GATEY_BATCH_1_6_EVIDENCE_MATRIX.md:22",
+      "path": "docs/gates/gate-y/GATEY_BATCH_1_6_EVIDENCE_MATRIX.md",
+      "line": 22,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/GATEY_DEPLOYMENT_EVIDENCE_SUMMARY.md:3",
+      "path": "docs/gates/gate-y/GATEY_DEPLOYMENT_EVIDENCE_SUMMARY.md",
+      "line": 3,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/GATEY_DEPLOYMENT_EVIDENCE_SUMMARY.md:14",
+      "path": "docs/gates/gate-y/GATEY_DEPLOYMENT_EVIDENCE_SUMMARY.md",
+      "line": 14,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/GATEY_FREEZE_READINESS_REVIEW.md:5",
+      "path": "docs/gates/gate-y/GATEY_FREEZE_READINESS_REVIEW.md",
+      "line": 5,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/GATEY_KNOWN_LIMITATIONS_AND_RESIDUALS.md:22",
+      "path": "docs/gates/gate-y/GATEY_KNOWN_LIMITATIONS_AND_RESIDUALS.md",
+      "line": 22,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/README.md:3",
+      "path": "docs/gates/gate-y/README.md",
+      "line": 3,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:12",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 12,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:303",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 303,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:306",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 306,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:309",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 309,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:311",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 311,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:312",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 312,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:315",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 315,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:317",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 317,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:318",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 318,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:320",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 320,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:322",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 322,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:323",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 323,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:324",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 324,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:325",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 325,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:326",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 326,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:327",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 327,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:328",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 328,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:331",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 331,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:332",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 332,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:333",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 333,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:334",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 334,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:338",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 338,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:339",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 339,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:340",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 340,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:345",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 345,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:346",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 346,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:347",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 347,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:348",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 348,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:349",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 349,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:354",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 354,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:355",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 355,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:360",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 360,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:362",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 362,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:364",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 364,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:372",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 372,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:376",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 376,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:378",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 378,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:383",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 383,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:389",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 389,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:390",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 390,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:396",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 396,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:400",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 400,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:407",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 407,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:410",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 410,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:417",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 417,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:421",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 421,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:427",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 427,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md:436",
+      "path": "docs/gates/gate-y/source/task-evidence/NQ-GATEY-MINIMAL-LIVE-PILOT-END-TO-END.attempt-01.md",
+      "line": 436,
+      "classification": "IMMUTABLE_HISTORICAL_EVIDENCE",
+      "before": "46 / V46",
+      "after": "unchanged",
+      "reason": "固定历史迁移、升级基线或已接受交付事实；保持原值。"
+    },
+    {
+      "reference": "scripts/deployment/Install-NqCanonicalReleaseCi.ps1:7",
+      "path": "scripts/deployment/Install-NqCanonicalReleaseCi.ps1",
+      "line": 7,
+      "classification": "CURRENT_RELEASE_FIXTURE",
+      "before": "46 / V46",
+      "after": "$repositorySchema (V47)",
+      "reason": "复用 Get-NqMigrationInventory.targetVersion 导出当前 schema。"
+    },
+    {
+      "reference": "scripts/deployment/tests/Test-NqCanonicalRelease.Tests.ps1:339",
+      "path": "scripts/deployment/tests/Test-NqCanonicalRelease.Tests.ps1",
+      "line": 339,
+      "classification": "CURRENT_RELEASE_FIXTURE",
+      "before": "46 / V46",
+      "after": "$repositorySchema (V47)",
+      "reason": "复用 Get-NqMigrationInventory.targetVersion 导出当前 schema。"
+    },
+    {
+      "reference": "scripts/deployment/tests/Test-NqCanonicalRelease.Tests.ps1:519",
+      "path": "scripts/deployment/tests/Test-NqCanonicalRelease.Tests.ps1",
+      "line": 519,
+      "classification": "CURRENT_RELEASE_FIXTURE",
+      "before": "46 / V46",
+      "after": "$repositorySchema (V47)",
+      "reason": "复用 Get-NqMigrationInventory.targetVersion 导出当前 schema。"
+    },
+    {
+      "reference": "scripts/deployment/tests/Test-NqCanonicalRelease.Tests.ps1:424",
+      "path": "scripts/deployment/tests/Test-NqCanonicalRelease.Tests.ps1",
+      "line": 424,
+      "classification": "NEGATIVE_COMPATIBILITY_FIXTURE",
+      "before": "V47 (old wrong-schema case)",
+      "after": "current + 1 (V48); additional older V46 activation rejection",
+      "reason": "保留相对 current 的不兼容回滚，并增加旧 schema 激活拒绝；不把原负例变成正常输入。"
+    }
+  ],
+  "counts": {
+    "CURRENT_SCHEMA_HEAD": 9,
+    "IMMUTABLE_HISTORICAL_EVIDENCE": 137,
+    "CURRENT_RELEASE_FIXTURE": 3,
+    "NEGATIVE_COMPATIBILITY_FIXTURE": 1
+  },
+  "activeStaleAfter": 0,
+  "historicalModified": 0,
+  "negativeCoverageLost": 0,
+  "activeStaleBefore": 9,
+  "closureAttempt": {
+    "decision": "BLOCKED / PHASE6_L4_C1_DELIVERY_BLOCKER_CLOSURE_NOT_ACCEPTED",
+    "blockers": [
+      "F009_HASH_REFRESH_OUTSIDE_AUTHORIZED_FIXTURES",
+      "DIAGNOSTIC_RELEASE_HARNESS_REGRESSION"
+    ],
+    "head": "41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd",
+    "staged": 0,
+    "reviewedPaths": 12,
+    "reviewedByteChanges": 0,
+    "authorityByteChanges": 0,
+    "beforeCounts": {
+      "contracts": 18,
+      "members": 105,
+      "authorizedCallerEdges": 1559,
+      "protectedPaths": 178
+    },
+    "afterCounts": {
+      "contracts": 18,
+      "members": 105,
+      "authorizedCallerEdges": 1559,
+      "protectedPaths": 178
+    },
+    "callerTopologyDelta": 0,
+    "registryNonDigestDelta": 0,
+    "refreshed": [
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
+        "old": "eebfb7e851eefe866b5ef4190f2704b6b74d3b3432a9fd22f7853e4132346ed0",
+        "new": "f9b9c1545082fb3c95ee2c8d1b627228e12557fee304f7c6c9f18aa87dfa312b"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java",
+        "old": "cdff2f7c27b2d98a6185ef4680b838c9f479c5a2f5ed1c9580210946acd4dab7",
+        "new": "6539d1e21b80ea2164f735f24901afada53d60f4a33a1608c55a38eec0ec6a11"
+      }
+    ],
+    "unrefreshedDiagnosticScript": {
+      "path": "scripts/deployment/Invoke-NqCanonicalRestoreDrill.ps1",
+      "old": "7c5a4f8095e76eab37bf73e146d378d757c2281dfa377711545a9012966da866",
+      "candidate": "ad7fcdfe3903153f5efa86ca93359aa24fbcdd69d03a534f1fd8c9448c620cc4"
+    },
+    "activeStaleBefore": 9,
+    "activeStaleAfter": 0,
+    "javaIntegration": "NOT_RUN / STOPPED_AFTER_HARD_GATE_FAILURE",
+    "release": "FAIL / exit 1 / diagnostic success branch observed exitCode 23",
+    "stageGuard": "FAIL / exit 1 / STAGE_SEMANTICS and STALE_EXCEPTION",
+    "standaloneDiagnostics": {
+      "PS51": "PASS",
+      "PS7": "PASS on earlier candidate before final compatibility edits; final nested PS7 FAIL"
+    },
+    "historicalDockerFailure": "UNCLASSIFIABLE_WITH_RETAINED_EVIDENCE",
+    "dockerApi": "TIMEOUT / 15 seconds",
+    "cachedWslPg16Executable": "NOT_AVAILABLE at configured path / exit 1",
+    "backupRestore": "NOT_RUN",
+    "remainingValidation": "NOT_RUN / STOPPED_AFTER_HARD_GATE_FAILURE",
+    "commit": "NONE",
+    "push": "NONE",
+    "newCI": "NOT_RUN",
+    "initialFourPaths": {
+      "scripts/deployment/Install-NqCanonicalReleaseCi.ps1": "7607ac14521bf91785f3f6aa98d8fa8d5ff8241a39f63022f471ab7d6d390ba0",
+      "scripts/deployment/tests/Test-NqCanonicalRelease.Tests.ps1": "46a3c374e2b32b73162a995c3e834ff89f513803a53637a8bb65e0b9a450c98f",
+      "docs/audit/evidence/GATEAUDIT_PHASE6_L4_C1_DELIVERY_CI_REMEDIATION.md": "be03f284bace5f3b99a22fe570c855813ecfbe15a573e895497bacceab73d871",
+      "docs/audit/evidence/GATEAUDIT_PHASE6_L4_C1_DELIVERY_CI_REMEDIATION_REFERENCES.json": "a3d1ada01cd1f231e9efd715cedb87b63c0ee838f9edf422d77560c65b1bc4c7"
+    },
+    "proofBoundary": "activeStaleAfter is source inventory only; Java tests NOT_RUN"
+  },
+  "closureAttempt02": {
+    "task": "NQ-GATEAUDIT-PHASE6-L4-C1-DELIVERY-BLOCKER-CLOSURE-ATTEMPT-02",
+    "localDecision": "PASS / LOCAL_DELIVERY_GATES",
+    "deliveryDecision": "PENDING_EXACT_HEAD_CI",
+    "implementationCommit": "41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd",
+    "historicalFailedCI": "34086018265",
+    "historicalDockerFailure": "UNCLASSIFIABLE_WITH_RETAINED_EVIDENCE",
+    "B2Classification": "TEST_FIXTURE_STATE_LEAK",
+    "B2Cause": "fake created script:LASTEXITCODE=23; inherited script variable shadowed updated native global:LASTEXITCODE=0 in nested release harness",
+    "correction": "test fake forwards current global native exit code to caller scope; no script exit-code cache",
+    "attempt02ProductionDiagnosticByteChanges": 0,
+    "beforeCounts": {
+      "contracts": 18,
+      "members": 105,
+      "approvedCallerEdges": 1559,
+      "protectedPaths": 178
+    },
+    "afterCounts": {
+      "contracts": 18,
+      "members": 105,
+      "approvedCallerEdges": 1559,
+      "protectedPaths": 178
+    },
+    "digestRefresh": [
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
+        "old": "eebfb7e851eefe866b5ef4190f2704b6b74d3b3432a9fd22f7853e4132346ed0",
+        "new": "f9b9c1545082fb3c95ee2c8d1b627228e12557fee304f7c6c9f18aa87dfa312b",
+        "classification": "FIXTURE_IDENTITY"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java",
+        "old": "cdff2f7c27b2d98a6185ef4680b838c9f479c5a2f5ed1c9580210946acd4dab7",
+        "new": "6539d1e21b80ea2164f735f24901afada53d60f4a33a1608c55a38eec0ec6a11",
+        "classification": "FIXTURE_IDENTITY"
+      },
+      {
+        "path": "scripts/deployment/Invoke-NqCanonicalRestoreDrill.ps1",
+        "old": "7c5a4f8095e76eab37bf73e146d378d757c2281dfa377711545a9012966da866",
+        "new": "ad7fcdfe3903153f5efa86ca93359aa24fbcdd69d03a534f1fd8c9448c620cc4",
+        "classification": "GOVERNANCE_CONTRACT"
+      }
+    ],
+    "registryNonDigestDelta": 0,
+    "callerTopologyDelta": 0,
+    "classificationDelta": 0,
+    "protectedPathSetDelta": 0,
+    "reviewedPaths": 12,
+    "reviewedByteChanges": 0,
+    "authorityByteChanges": 0,
+    "C2Changes": 0,
+    "migrationChanges": 0,
+    "productionTradingChanges": 0,
+    "activeStaleBefore": 9,
+    "activeStaleAfter": 0,
+    "releaseCases": 69,
+    "releaseFailures": 0,
+    "mutationsRejected": 135,
+    "mutationsAccepted": 0,
+    "java": [
+      {
+        "name": "LiveSessionFactModelPostgresIntegrationTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "OperatorPilotAuthorityPostgresIntegrationTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ],
+    "diagnosticsPS51": "PASS",
+    "diagnosticsPS7": "PASS",
+    "nestedReleaseDiagnostics": "PASS",
+    "stageChecker": "PASS / errors=0",
+    "stageTestsWindows": {
+      "tests": 49,
+      "passed": 47,
+      "conditionalSymlinkSkips": 2
+    },
+    "stageTestsLinux": {
+      "tests": 49,
+      "passed": 49,
+      "skipped": 0
+    },
+    "authorityPS51": "PASS",
+    "authorityPS7": "PASS",
+    "nextAction": "PASS",
+    "agentWorkflow": "PASS / 12 of 12",
+    "lifecycle": "PASS / 20 of 20",
+    "docsLinks": {
+      "checked": 425,
+      "warnings": 123,
+      "errors": 0
+    },
+    "gitleaksFindings": 0,
+    "localDocker": "NOT_RUN / LOCAL_DOCKER_API_UNAVAILABLE",
+    "localWslRestore": {
+      "result": "PASS",
+      "schema": "V47",
+      "serverMajor": 16,
+      "negativeCases": 7,
+      "pending": 0,
+      "smokes": "PASS",
+      "cleanup": "PASS / independently verified absent"
+    },
+    "sourcePaths": [
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java",
+      "docs/audit/evidence/GATEAUDIT_PHASE6_L4_C1_DELIVERY_CI_REMEDIATION.md",
+      "docs/audit/evidence/GATEAUDIT_PHASE6_L4_C1_DELIVERY_CI_REMEDIATION_REFERENCES.json",
+      "scripts/deployment/Install-NqCanonicalReleaseCi.ps1",
+      "scripts/deployment/Invoke-NqCanonicalRestoreDrill.ps1",
+      "scripts/deployment/tests/Test-NqCanonicalRelease.Tests.ps1",
+      "scripts/deployment/tests/Test-NqDockerDiagnostics.Tests.ps1",
+      "scripts/docs/stage-asset-exceptions.json"
+    ]
+  }
+}
