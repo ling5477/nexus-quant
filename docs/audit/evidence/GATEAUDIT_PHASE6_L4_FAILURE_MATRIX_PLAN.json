@@ -28,18 +28,20 @@
   "decision": {
     "plan": "EXECUTABLE_PLAN_COMPLETE",
     "requestedSuccessToken": "PLAN_EXECUTABLE",
-    "final": "PLANNED / PHASE6_L4_FAILURE_MATRIX_BLOCKERS_DISPOSITIONED / P0_0 / P1_5 / PLAN_EXECUTABLE",
+    "final": "PLANNED / PHASE6_L4_CANONICAL_RUNTIME_REACHABILITY_RESOLVED / P0_0 / CANONICAL_P1_2 / REACHABILITY_UNKNOWN_0 / PLAN_EXECUTABLE",
     "P0Found": 0,
-    "P1Found": 5,
+    "P1Found": 2,
     "independentReview": "NOT_RUN",
-    "runtime": "TARGETED_REPRODUCTION_PASS; L4_QUALIFICATION_NOT_RUN",
-    "reason": "5 original items dispositioned; 5 runtime correctness remediations remain open. No unknown owner/boundary; plan completion does not mean defect closure.",
+    "runtime": "THREE_CURRENT_KNOWN_DEFECT_REPRODUCTIONS_AND_ONE_NORMAL_REGRESSION_PASS; L4_QUALIFICATION_NOT_RUN",
+    "reason": "Two current canonical defects pass R1-R4. Historical retired/dormant observations preserved. Local delivery gates pass; acceptance still requires this follow-up exact-head green CI and a separate authority transition.",
     "counts": {
-      "confirmedCorrectnessDefects": 5,
+      "confirmedCorrectnessDefects": 2,
       "proofSeamGaps": 0,
       "falsePositives": 0,
-      "remainingUnknowns": 0
-    }
+      "remainingUnknowns": 0,
+      "retiredOrDormant": 3
+    },
+    "countSemantics": "Current blocking P1 count requires all R1-R4 PASS. Historical five observations are preserved without declaring them fixed or false positives."
   },
   "sources": [
     {
@@ -352,19 +354,25 @@
       "id": "T15",
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4PlanBlockerPostgresIntegrationTest.java",
       "startLine": 1,
-      "endLine": 295
+      "endLine": 295,
+      "sourceCommit": "378de657ac33b9f9fd666288d489181ac0147b2e",
+      "scope": "HISTORICAL_FAILED_DELIVERY_SOURCE; current files and hashes in gateRemediation.sourceFiles"
     },
     {
       "id": "T16",
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4TypedGatewayFixture.java",
       "startLine": 1,
-      "endLine": 125
+      "endLine": 125,
+      "sourceCommit": "378de657ac33b9f9fd666288d489181ac0147b2e",
+      "scope": "HISTORICAL_FAILED_DELIVERY_SOURCE; current files and hashes in gateRemediation.sourceFiles"
     },
     {
       "id": "T17",
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/PilotExecutionLeaseServiceTest.java",
       "startLine": 1,
-      "endLine": 160
+      "endLine": 160,
+      "sourceCommit": "378de657ac33b9f9fd666288d489181ac0147b2e",
+      "scope": "HISTORICAL_FAILED_DELIVERY_SOURCE; current files and hashes in gateRemediation.sourceFiles"
     },
     {
       "id": "S35",
@@ -508,7 +516,12 @@
         "B0",
         "B1"
       ],
-      "fixtureProfile": "F1"
+      "fixtureProfile": "F1",
+      "currentEligibility": {
+        "currentQualificationRequired": true,
+        "classification": "CURRENT_CANONICAL_PROFILE",
+        "activationCondition": "C1/C2 then independent review and B0; task authorization still required"
+      }
     },
     {
       "id": "L4-AT-02",
@@ -638,7 +651,12 @@
         "B0",
         "B1"
       ],
-      "fixtureProfile": "F1"
+      "fixtureProfile": "F1",
+      "currentEligibility": {
+        "currentQualificationRequired": false,
+        "classification": "RETIRED_COMPATIBILITY_PROFILE",
+        "activationCondition": "Separate authorized current owner/composition and R1-R4 reassessment; never activate a retired pilot or dormant sender just to run this row."
+      }
     },
     {
       "id": "L4-LA-01",
@@ -770,7 +788,12 @@
         "B0",
         "B1"
       ],
-      "fixtureProfile": "F1"
+      "fixtureProfile": "F1",
+      "currentEligibility": {
+        "currentQualificationRequired": false,
+        "classification": "RETIRED_COMPATIBILITY_PROFILE",
+        "activationCondition": "Separate authorized current owner/composition and R1-R4 reassessment; never activate a retired pilot or dormant sender just to run this row."
+      }
     },
     {
       "id": "L4-LA-02",
@@ -902,7 +925,12 @@
         "B0",
         "B1"
       ],
-      "fixtureProfile": "F1"
+      "fixtureProfile": "F1",
+      "currentEligibility": {
+        "currentQualificationRequired": true,
+        "classification": "CURRENT_CANONICAL_PROFILE",
+        "activationCondition": "C1/C2 then independent review and B0; task authorization still required"
+      }
     },
     {
       "id": "L4-CFR-01",
@@ -1026,8 +1054,7 @@
       ],
       "implementationImpact": [
         "TEST_ONLY",
-        "TEST_HARNESS",
-        "PRODUCTION_CORRECTNESS_FIX"
+        "TEST_HARNESS"
       ],
       "dependencies": [
         "B0",
@@ -1035,7 +1062,12 @@
         "C1",
         "R"
       ],
-      "fixtureProfile": "F1"
+      "fixtureProfile": "F1",
+      "currentEligibility": {
+        "currentQualificationRequired": false,
+        "classification": "RETIRED_COMPATIBILITY_PROFILE",
+        "activationCondition": "Separate authorized current owner/composition and R1-R4 reassessment; never activate a retired pilot or dormant sender just to run this row."
+      }
     },
     {
       "id": "L4-CFR-02",
@@ -1165,7 +1197,12 @@
         "B0",
         "B2"
       ],
-      "fixtureProfile": "F1"
+      "fixtureProfile": "F1",
+      "currentEligibility": {
+        "currentQualificationRequired": true,
+        "classification": "CURRENT_CANONICAL_PROFILE",
+        "activationCondition": "C1/C2 then independent review and B0; task authorization still required"
+      }
     },
     {
       "id": "L4-CFR-03",
@@ -1291,7 +1328,12 @@
         "B0",
         "B2"
       ],
-      "fixtureProfile": "F0_CANCEL"
+      "fixtureProfile": "F0_CANCEL",
+      "currentEligibility": {
+        "currentQualificationRequired": true,
+        "classification": "CURRENT_CANONICAL_PROFILE",
+        "activationCondition": "C1/C2 then independent review and B0; task authorization still required"
+      }
     },
     {
       "id": "L4-CFR-04",
@@ -1427,7 +1469,12 @@
         "C1",
         "R"
       ],
-      "fixtureProfile": "F1"
+      "fixtureProfile": "F1",
+      "currentEligibility": {
+        "currentQualificationRequired": true,
+        "classification": "CURRENT_CANONICAL_PROFILE",
+        "activationCondition": "C1/C2 then independent review and B0; task authorization still required"
+      }
     },
     {
       "id": "L4-PFC-01",
@@ -1560,7 +1607,12 @@
         "B0",
         "B2"
       ],
-      "fixtureProfile": "F2"
+      "fixtureProfile": "F2",
+      "currentEligibility": {
+        "currentQualificationRequired": true,
+        "classification": "CURRENT_CANONICAL_PROFILE",
+        "activationCondition": "C1/C2 then independent review and B0; task authorization still required"
+      }
     },
     {
       "id": "L4-PFC-02",
@@ -1693,7 +1745,12 @@
         "C2",
         "R"
       ],
-      "fixtureProfile": "F1_PARTIAL_CANCEL"
+      "fixtureProfile": "F1_PARTIAL_CANCEL",
+      "currentEligibility": {
+        "currentQualificationRequired": false,
+        "classification": "RETIRED_COMPATIBILITY_PROFILE",
+        "activationCondition": "Separate authorized current owner/composition and R1-R4 reassessment; never activate a retired pilot or dormant sender just to run this row."
+      }
     },
     {
       "id": "L4-KIF-01",
@@ -1819,10 +1876,14 @@
         "B0",
         "B3",
         "C2",
-        "C3",
         "R"
       ],
-      "fixtureProfile": "F0_REJECT"
+      "fixtureProfile": "F0_REJECT",
+      "currentEligibility": {
+        "currentQualificationRequired": true,
+        "classification": "CURRENT_CANONICAL_PROFILE",
+        "activationCondition": "C1/C2 then independent review and B0; task authorization still required"
+      }
     },
     {
       "id": "L4-KIF-02",
@@ -1944,17 +2005,20 @@
       ],
       "implementationImpact": [
         "TEST_ONLY",
-        "TEST_HARNESS",
-        "PRODUCTION_CORRECTNESS_FIX"
+        "TEST_HARNESS"
       ],
       "dependencies": [
         "B0",
         "B3",
         "C2",
-        "C3",
         "R"
       ],
-      "fixtureProfile": "F0_UNSENT"
+      "fixtureProfile": "F0_UNSENT",
+      "currentEligibility": {
+        "currentQualificationRequired": false,
+        "classification": "RETIRED_COMPATIBILITY_PROFILE",
+        "activationCondition": "Separate authorized current owner/composition and R1-R4 reassessment; never activate a retired pilot or dormant sender just to run this row."
+      }
     },
     {
       "id": "L4-KIF-03",
@@ -2080,17 +2144,20 @@
       ],
       "implementationImpact": [
         "TEST_ONLY",
-        "TEST_HARNESS",
-        "PRODUCTION_CORRECTNESS_FIX"
+        "TEST_HARNESS"
       ],
       "dependencies": [
         "B0",
         "B3",
         "C2",
-        "C3",
         "R"
       ],
-      "fixtureProfile": "F1"
+      "fixtureProfile": "F1",
+      "currentEligibility": {
+        "currentQualificationRequired": false,
+        "classification": "RETIRED_COMPATIBILITY_PROFILE",
+        "activationCondition": "Separate authorized current owner/composition and R1-R4 reassessment; never activate a retired pilot or dormant sender just to run this row."
+      }
     },
     {
       "id": "L4-ESDB-00",
@@ -2216,7 +2283,12 @@
         "B0",
         "B4"
       ],
-      "fixtureProfile": "F0_REJECT"
+      "fixtureProfile": "F0_REJECT",
+      "currentEligibility": {
+        "currentQualificationRequired": true,
+        "classification": "CURRENT_CANONICAL_PROFILE",
+        "activationCondition": "C1/C2 then independent review and B0; task authorization still required"
+      }
     },
     {
       "id": "L4-ESDB-01",
@@ -2347,7 +2419,12 @@
         "B0",
         "B4"
       ],
-      "fixtureProfile": "F1"
+      "fixtureProfile": "F1",
+      "currentEligibility": {
+        "currentQualificationRequired": false,
+        "classification": "RETIRED_COMPATIBILITY_PROFILE",
+        "activationCondition": "Separate authorized current owner/composition and R1-R4 reassessment; never activate a retired pilot or dormant sender just to run this row."
+      }
     },
     {
       "id": "L4-ESDB-02",
@@ -2477,7 +2554,12 @@
         "B0",
         "B4"
       ],
-      "fixtureProfile": "F1"
+      "fixtureProfile": "F1",
+      "currentEligibility": {
+        "currentQualificationRequired": false,
+        "classification": "RETIRED_COMPATIBILITY_PROFILE",
+        "activationCondition": "Separate authorized current owner/composition and R1-R4 reassessment; never activate a retired pilot or dormant sender just to run this row."
+      }
     },
     {
       "id": "L4-ESDB-03",
@@ -2609,7 +2691,12 @@
         "B0",
         "B4"
       ],
-      "fixtureProfile": "F1"
+      "fixtureProfile": "F1",
+      "currentEligibility": {
+        "currentQualificationRequired": false,
+        "classification": "RETIRED_COMPATIBILITY_PROFILE",
+        "activationCondition": "Separate authorized current owner/composition and R1-R4 reassessment; never activate a retired pilot or dormant sender just to run this row."
+      }
     },
     {
       "id": "L4-ESDB-04",
@@ -2739,7 +2826,12 @@
         "B0",
         "B4"
       ],
-      "fixtureProfile": "F1"
+      "fixtureProfile": "F1",
+      "currentEligibility": {
+        "currentQualificationRequired": false,
+        "classification": "RETIRED_COMPATIBILITY_PROFILE",
+        "activationCondition": "Separate authorized current owner/composition and R1-R4 reassessment; never activate a retired pilot or dormant sender just to run this row."
+      }
     },
     {
       "id": "L4-ESDB-05",
@@ -2873,7 +2965,12 @@
         "C2",
         "R"
       ],
-      "fixtureProfile": "F1_PARTIAL_CANCEL"
+      "fixtureProfile": "F1_PARTIAL_CANCEL",
+      "currentEligibility": {
+        "currentQualificationRequired": true,
+        "classification": "CURRENT_CANONICAL_PROFILE",
+        "activationCondition": "C1/C2 then independent review and B0; task authorization still required"
+      }
     },
     {
       "id": "L4-ESDB-06",
@@ -3003,7 +3100,12 @@
         "B0",
         "B4"
       ],
-      "fixtureProfile": "F1"
+      "fixtureProfile": "F1",
+      "currentEligibility": {
+        "currentQualificationRequired": true,
+        "classification": "CURRENT_CANONICAL_PROFILE",
+        "activationCondition": "C1/C2 then independent review and B0; task authorization still required"
+      }
     },
     {
       "id": "L4-ESDB-07",
@@ -3134,7 +3236,12 @@
         "B0",
         "B4"
       ],
-      "fixtureProfile": "F1"
+      "fixtureProfile": "F1",
+      "currentEligibility": {
+        "currentQualificationRequired": true,
+        "classification": "CURRENT_CANONICAL_PROFILE",
+        "activationCondition": "C1/C2 then independent review and B0; task authorization still required"
+      }
     },
     {
       "id": "L4-MIL-01",
@@ -3265,7 +3372,12 @@
         "B0",
         "B5"
       ],
-      "fixtureProfile": "F1"
+      "fixtureProfile": "F1",
+      "currentEligibility": {
+        "currentQualificationRequired": false,
+        "classification": "DORMANT_NO_CURRENT_ENTRYPOINT",
+        "activationCondition": "Separate authorized current owner/composition and R1-R4 reassessment; never activate a retired pilot or dormant sender just to run this row."
+      }
     },
     {
       "id": "L4-MIL-02",
@@ -3396,7 +3508,12 @@
         "B0",
         "B5"
       ],
-      "fixtureProfile": "F1"
+      "fixtureProfile": "F1",
+      "currentEligibility": {
+        "currentQualificationRequired": false,
+        "classification": "DORMANT_NO_CURRENT_ENTRYPOINT",
+        "activationCondition": "Separate authorized current owner/composition and R1-R4 reassessment; never activate a retired pilot or dormant sender just to run this row."
+      }
     },
     {
       "id": "L4-MIL-03",
@@ -3518,17 +3635,20 @@
       ],
       "implementationImpact": [
         "TEST_ONLY",
-        "TEST_HARNESS",
-        "PRODUCTION_CORRECTNESS_FIX"
+        "TEST_HARNESS"
       ],
       "dependencies": [
         "B0",
         "B5",
         "C2",
-        "C3",
         "R"
       ],
-      "fixtureProfile": "F0_UNSENT"
+      "fixtureProfile": "F0_UNSENT",
+      "currentEligibility": {
+        "currentQualificationRequired": false,
+        "classification": "DORMANT_NO_CURRENT_ENTRYPOINT",
+        "activationCondition": "Separate authorized current owner/composition and R1-R4 reassessment; never activate a retired pilot or dormant sender just to run this row."
+      }
     },
     {
       "id": "L4-MIL-04",
@@ -3654,7 +3774,12 @@
         "B0",
         "B5"
       ],
-      "fixtureProfile": "NO_WORK"
+      "fixtureProfile": "NO_WORK",
+      "currentEligibility": {
+        "currentQualificationRequired": true,
+        "classification": "CURRENT_CANONICAL_PROFILE",
+        "activationCondition": "C1/C2 then independent review and B0; task authorization still required"
+      }
     },
     {
       "id": "L4-DW-01",
@@ -3785,7 +3910,12 @@
         "B0",
         "B5"
       ],
-      "fixtureProfile": "F1"
+      "fixtureProfile": "F1",
+      "currentEligibility": {
+        "currentQualificationRequired": true,
+        "classification": "CURRENT_CANONICAL_PROFILE",
+        "activationCondition": "C1/C2 then independent review and B0; task authorization still required"
+      }
     },
     {
       "id": "L4-DW-02",
@@ -3916,7 +4046,12 @@
         "B0",
         "B5"
       ],
-      "fixtureProfile": "F1"
+      "fixtureProfile": "F1",
+      "currentEligibility": {
+        "currentQualificationRequired": false,
+        "classification": "DORMANT_NO_CURRENT_ENTRYPOINT",
+        "activationCondition": "Separate authorized current owner/composition and R1-R4 reassessment; never activate a retired pilot or dormant sender just to run this row."
+      }
     }
   ],
   "crashPoints": [
@@ -3927,7 +4062,10 @@
       "scenarios": [
         "L4-DW-01"
       ],
-      "reason": "S01 command event is not the durable dispatch marker; current direct call has not reached external I/O; business retry covered by DW-01/ESDB-00"
+      "reason": "S01 command event is not the durable dispatch marker; current direct call has not reached external I/O; business retry covered by DW-01/ESDB-00",
+      "currentApplicableScenarios": [
+        "L4-DW-01"
+      ]
     },
     {
       "id": "CP02",
@@ -3936,7 +4074,10 @@
       "scenarios": [
         "L4-ESDB-00"
       ],
-      "reason": "回滚无外发；commit后重复命令不再PLACE"
+      "reason": "回滚无外发；commit后重复命令不再PLACE",
+      "currentApplicableScenarios": [
+        "L4-ESDB-00"
+      ]
     },
     {
       "id": "CP03",
@@ -3945,7 +4086,8 @@
       "scenarios": [
         "L4-MIL-02"
       ],
-      "reason": "可过期接管；旧token/version拒绝"
+      "reason": "可过期接管；旧token/version拒绝",
+      "currentApplicableScenarios": []
     },
     {
       "id": "CP04",
@@ -3955,7 +4097,8 @@
         "L4-KIF-02",
         "L4-MIL-03"
       ],
-      "reason": "不可重新claim；未发出请求也不能盲重试"
+      "reason": "不可重新claim；未发出请求也不能盲重试",
+      "currentApplicableScenarios": []
     },
     {
       "id": "CP05",
@@ -3965,7 +4108,10 @@
         "L4-AT-01",
         "L4-AT-02"
       ],
-      "reason": "真实timeout，1 PLACE"
+      "reason": "真实timeout，1 PLACE",
+      "currentApplicableScenarios": [
+        "L4-AT-01"
+      ]
     },
     {
       "id": "CP06",
@@ -3975,7 +4121,10 @@
         "L4-LA-01",
         "L4-LA-02"
       ],
-      "reason": "ACK bytes与caller未收到证据同时具备"
+      "reason": "ACK bytes与caller未收到证据同时具备",
+      "currentApplicableScenarios": [
+        "L4-LA-02"
+      ]
     },
     {
       "id": "CP07",
@@ -3984,7 +4133,8 @@
       "scenarios": [
         "L4-ESDB-01"
       ],
-      "reason": "外部成功，本地SEND_STARTED"
+      "reason": "外部成功，本地SEND_STARTED",
+      "currentApplicableScenarios": []
     },
     {
       "id": "CP08",
@@ -3993,14 +4143,16 @@
       "scenarios": [
         "L4-ESDB-02"
       ],
-      "reason": "必须证明原子回滚"
+      "reason": "必须证明原子回滚",
+      "currentApplicableScenarios": []
     },
     {
       "id": "CP09",
       "boundary": "receipt committed independently while Intent remains pre-update",
       "classification": "NOT_REACHABLE",
       "scenarios": [],
-      "reason": "S08同一TransactionTemplate，不存在这个独立commit"
+      "reason": "S08同一TransactionTemplate，不存在这个独立commit",
+      "currentApplicableScenarios": []
     },
     {
       "id": "CP10",
@@ -4009,7 +4161,8 @@
       "scenarios": [
         "L4-ESDB-03"
       ],
-      "reason": "commit response loss不可等同rollback"
+      "reason": "commit response loss不可等同rollback",
+      "currentApplicableScenarios": []
     },
     {
       "id": "CP11",
@@ -4019,7 +4172,10 @@
         "L4-ESDB-04",
         "L4-CFR-04"
       ],
-      "reason": "分离事务；commit rejection与陈旧ACK"
+      "reason": "分离事务；commit rejection与陈旧ACK",
+      "currentApplicableScenarios": [
+        "L4-CFR-04"
+      ]
     },
     {
       "id": "CP12",
@@ -4028,7 +4184,10 @@
       "scenarios": [
         "L4-ESDB-05"
       ],
-      "reason": "CANCELLED recovery缺口；FILLED foundation不覆盖"
+      "reason": "CANCELLED recovery缺口；FILLED foundation不覆盖",
+      "currentApplicableScenarios": [
+        "L4-ESDB-05"
+      ]
     },
     {
       "id": "CP13",
@@ -4038,7 +4197,11 @@
         "L4-ESDB-06",
         "L4-PFC-01"
       ],
-      "reason": "F002/F004只覆盖其原受控故障，新增真实连接断开仍MUST执行"
+      "reason": "F002/F004只覆盖其原受控故障，新增真实连接断开仍MUST执行",
+      "currentApplicableScenarios": [
+        "L4-ESDB-06",
+        "L4-PFC-01"
+      ]
     },
     {
       "id": "CP14",
@@ -4047,7 +4210,10 @@
       "scenarios": [
         "L4-ESDB-07"
       ],
-      "reason": "分录/事件/position/snapshot全回滚；不能制造部分提交"
+      "reason": "分录/事件/position/snapshot全回滚；不能制造部分提交",
+      "currentApplicableScenarios": [
+        "L4-ESDB-07"
+      ]
     },
     {
       "id": "CP15",
@@ -4057,7 +4223,10 @@
         "L4-PFC-01",
         "L4-DW-02"
       ],
-      "reason": "复用既有幂等invariant，所有fill行最终追加replay oracle"
+      "reason": "复用既有幂等invariant，所有fill行最终追加replay oracle",
+      "currentApplicableScenarios": [
+        "L4-PFC-01"
+      ]
     },
     {
       "id": "CP16",
@@ -4068,20 +4237,24 @@
         "L4-MIL-03",
         "L4-MIL-04"
       ],
-      "reason": "区分DB fencing与无网络fencing"
+      "reason": "区分DB fencing与无网络fencing",
+      "currentApplicableScenarios": [
+        "L4-MIL-04"
+      ]
     },
     {
       "id": "CP17",
       "boundary": "formatting/log message after all final truths sealed",
       "classification": "NOT_MATERIAL",
       "scenarios": [],
-      "reason": "不改变外部动作、钱、状态或owner，不逐行注入"
+      "reason": "不改变外部动作、钱、状态或owner，不逐行注入",
+      "currentApplicableScenarios": []
     }
   ],
   "findings": [
     {
       "id": "P1-L4-01",
-      "severity": "P1",
+      "severity": null,
       "classification": "PRODUCTION_CORRECTNESS_FIX",
       "sourceRefs": [
         "S10",
@@ -4096,7 +4269,7 @@
       "fact": "provider FILLED -> NO_MUTATION_TERMINAL -> gateway accepted=true -> finalizeAcceptedCancelOrder writes CANCELLED",
       "minimalFix": "保留provider真实terminal state，经core同步，不虚构cancel",
       "validation": "full-fill-before-cancel-query; CANCEL=0, Order FILLED, Trade/Ledger完整",
-      "status": "OPEN_CONFIRMED_BY_TARGETED_REPRODUCTION",
+      "status": "HISTORICAL_DEFECT_NOT_CURRENT_BLOCKER",
       "originalId": "P1-1",
       "title": "CANCEL_AFTER_CONFIRMED_FILL_TERMINAL_OVERWRITE_RISK",
       "reproduction": [
@@ -4104,11 +4277,22 @@
       ],
       "result": "真实 OkxSpotProviderAdapter 先解析 FILLED；cancel 返回 NO_MUTATION_TERMINAL；真实 typed gateway accepted=true；真实 Order service/PG 写 CANCELLED。QUERY=1、CANCEL wire=0、Trade=0、Ledger=0；两轮 REST scan 无补偿，显式 FILLED 对齐被 terminal state machine 拒绝。",
       "implementationOwner": "nq-core OrderCommandWriteService / TradingCancelGatewayResult; nq-infra MinimalPilotTradingVenueGateway",
-      "requiredBatch": "C1",
+      "requiredBatch": null,
       "dependency": [],
       "evidenceLimits": "typed binding/lease/intent persistence 在此 mapping probe 是 mock；Order/Trade/Ledger 为真实 Spring/PG。未证明 pilot authorization、完整 typed wiring 或真实 provider。",
       "acceptance": "FILLED/NO_MUTATION 保留真实 FILLED；CANCELED、REJECTED、NOT_FOUND 各有明确语义；不得统一写 CANCELLED；zero CANCEL mutation，逐fill账务完整。",
-      "disposition": "CONFIRMED_CORRECTNESS_DEFECT"
+      "disposition": "RETIRED_COMPATIBILITY_ONLY",
+      "canonicalReachability": {
+        "R1": "FAIL",
+        "R2": "FAIL",
+        "R3": "NOT_APPLICABLE",
+        "R4": "NOT_RUN",
+        "disposition": "RETIRED_COMPATIBILITY_ONLY",
+        "futureTrigger": "A separately authorized current canonical owner/entrypoint is introduced; reassess R1-R4 before counting as current P1. No automatic reactivation or compatibility edge authorization."
+      },
+      "currentBlockingP1": false,
+      "historicalSeverity": "P1",
+      "historicalReproduction": "CONFIRMED"
     },
     {
       "id": "P1-L4-02",
@@ -4127,7 +4311,7 @@
       "fact": "旧SENT/CANCEL_REQUESTED快照校验后UPDATE orders仅按order_id，能覆盖其他事务已提交terminal state",
       "minimalFix": "短事务内重读并锁/CAS当前行；stale finalize拒绝，外部调用仍在事务外",
       "validation": "B提交FILLED后释放A的旧ACK；最终FILLED，非法迁移0；另测旧cancel快照",
-      "status": "OPEN_CONFIRMED_BY_TARGETED_REPRODUCTION",
+      "status": "OPEN_CANONICAL_REPRODUCED",
       "originalId": "P1-2",
       "title": "ORDER_STATUS_STALE_ACK_WITHOUT_CURRENT_STATE_OR_VERSION_CAS",
       "reproduction": [
@@ -4140,7 +4324,18 @@
       "dependency": [],
       "evidenceLimits": "同 JVM 两个确定性执行线程、真实 PostgreSQL 和 Spring 事务；不是多 JVM 或 L4 final proof。普通 gateway 是受控 fixture，不验证网络 cancel 竞争。",
       "acceptance": "两种旧 ACK 都不能覆盖已提交 terminal；重读与写入在同一锁/CAS短事务；affected rows=0 或显式 stale rejection；不得发虚假 ACCEPTED/CANCELLED audit/event。",
-      "disposition": "CONFIRMED_CORRECTNESS_DEFECT"
+      "disposition": "CANONICAL_REACHABLE_CONFIRMED_DEFECT",
+      "canonicalReachability": {
+        "R1": "PASS",
+        "R2": "PASS",
+        "R3": "PASS",
+        "R4": "PASS",
+        "disposition": "CANONICAL_REACHABLE_CONFIRMED_DEFECT",
+        "futureTrigger": "Not applicable: current defect remains open"
+      },
+      "currentBlockingP1": true,
+      "historicalSeverity": "P1",
+      "historicalReproduction": "CONFIRMED"
     },
     {
       "id": "P1-L4-03",
@@ -4161,7 +4356,7 @@
       "fact": "REST扫描不含CANCELLED；取消终态提交后fill/ledger未完成时失去后续恢复入口",
       "minimalFix": "有界接纳具有稳定identity的cancelled-with-fills恢复，重放canonical ledger",
       "validation": "partial fill->cancel->CANCELLED提交后crash；正常restart扫描恢复f1及4分录",
-      "status": "OPEN_CONFIRMED_BY_TARGETED_REPRODUCTION",
+      "status": "OPEN_CANONICAL_REPRODUCED",
       "originalId": "P1-3",
       "title": "CANCELLED_ORDER_RECONCILIATION_COVERAGE_GAP",
       "reproduction": [
@@ -4171,59 +4366,51 @@
       "implementationOwner": "nq-scheduler OkxRestReconcileService / OkxRecoveryService",
       "requiredBatch": "C2",
       "dependency": [
-        "C1",
-        "C3"
+        "C1"
       ],
       "evidenceLimits": "重复扫描配合静态 candidate predicate 证明正常 REST/restart recovery blind spot；不是对无限时间的观测。WS event store/acceleration 不拥有 missing Trade/Ledger backfill；typed pilot runner 不是普通订单的自动恢复 owner。",
       "acceptance": "有界扫描带稳定identity的 CANCELLED 缺fill订单；不要求把合法部分成交撤单改成 FILLED；补齐每个Trade及2/4分录，restart/replay幂等且保留状态事实。",
-      "disposition": "CONFIRMED_CORRECTNESS_DEFECT"
+      "disposition": "CANONICAL_REACHABLE_CONFIRMED_DEFECT",
+      "canonicalReachability": {
+        "R1": "PASS",
+        "R2": "PASS",
+        "R3": "PASS",
+        "R4": "PASS",
+        "disposition": "CANONICAL_REACHABLE_CONFIRMED_DEFECT",
+        "futureTrigger": "Not applicable: current defect remains open"
+      },
+      "currentBlockingP1": true,
+      "historicalSeverity": "P1",
+      "historicalReproduction": "CONFIRMED"
     }
   ],
   "batches": [
     {
       "id": "C1",
-      "name": "Terminal truth and atomic Order ownership",
+      "name": "Atomic Order ownership against stale ACK",
       "impact": [
         "PRODUCTION_CORRECTNESS_FIX"
       ],
       "dependsOn": [],
-      "scope": "P1-L4-01/02最小终态合同与原子写保护；复用本轮targeted tests；不依赖B0",
-      "acceptance": "FILLED/NO_MUTATION 保留真实 FILLED；CANCELED、REJECTED、NOT_FOUND 各有明确语义；不得统一写 CANCELLED；zero CANCEL mutation，逐fill账务完整。 两种旧 ACK 都不能覆盖已提交 terminal；重读与写入在同一锁/CAS短事务；affected rows=0 或显式 stale rejection；不得发虚假 ACCEPTED/CANCELLED audit/event。",
+      "scope": "P1-L4-02 only: reject stale PLACE/CANCEL finalization after a newer terminal commit.",
+      "acceptance": "FILLED survives both stale ACK schedules; atomic current-state/version check; explicit rejection or affected rows=0; no false ACK audit/event. Do not fix retained typed terminal mapping.",
       "proposedFileScope": [
-        "OrderCommandWriteService / OrderRepository / JdbcOrderRepository",
-        "TradingCancelGatewayResult / MinimalPilotTradingVenueGateway / caller contract tests"
+        "OrderCommandWriteService / OrderRepository / JdbcOrderRepository; canonical application regression tests"
       ]
     },
     {
-      "id": "C3",
-      "name": "Dispatch authority and stale sender",
+      "id": "C2",
+      "name": "Canonical CANCELLED fill backfill",
       "impact": [
         "PRODUCTION_CORRECTNESS_FIX"
       ],
       "dependsOn": [
         "C1"
       ],
-      "scope": "PB2 negative-finality与旧sender停止确认；现有lifecycle足够复现，不预授权production injection seam",
-      "acceptance": "A 在 pre-dispatch 被撤销并确认停止后才允许 negative finality；若无法确认旧sender已停止，则 NOT_FOUND 保持 UNKNOWN，可重复query但不新 mutation。若请求已开始，等待正查询收敛；A/B重复 mutation=0，旧receipt拒绝不能代替wire抑制。",
+      "scope": "P1-L4-03 only: bounded missing-fill discovery and idempotent Trade/Ledger convergence through ordinary recovery.",
+      "acceptance": "CANCELLED fill is discovered through ordinary REST/startup recovery; complete unique Trade/Ledger persists under replay and kill ENGAGED; preserve legitimate partial-fill cancelled terminal. No pilot recovery extraction or kill implementation change.",
       "proposedFileScope": [
-        "ExecutionIntentService / ExecutionAttemptLifecycle / MinimalPilotTradingVenueGateway / WorkerOperationSafetyGate; exact correction subject to PB2 contract review"
-      ]
-    },
-    {
-      "id": "C2",
-      "name": "Recovery admission and query-only convergence",
-      "impact": [
-        "PRODUCTION_CORRECTNESS_FIX"
-      ],
-      "dependsOn": [
-        "C1",
-        "C3"
-      ],
-      "scope": "P1-L4-03 + PB1；CANCELLED补扫及kill-preserving typed recovery composition；不改RiskGate放行条件",
-      "acceptance": "有界扫描带稳定identity的 CANCELLED 缺fill订单；不要求把合法部分成交撤单改成 FILLED；补齐每个Trade及2/4分录，restart/replay幂等且保留状态事实。 正常 typed recovery owner 在未过期/已过期、positive/negative/open truth 下保持 kill ENGAGED；无 resume/disengage/新 PLACE/CANCEL。通过正常服务持久化 Order/Trade/Ledger；negative finality 依赖 C3 的旧sender停止确认。",
-      "proposedFileScope": [
-        "OkxRestReconcileService / OkxRecoveryService",
-        "MinimalLivePilotConfiguration recovery ownership extraction (separate production review)"
+        "OkxRestReconcileService / OkxRecoveryService; canonical recovery regression tests"
       ]
     },
     {
@@ -4234,13 +4421,12 @@
       ],
       "dependsOn": [
         "C1",
-        "C3",
         "C2"
       ],
-      "scope": "独立于实现上下文的correctness review；不自动修复",
-      "acceptance": "5 confirmed defects closed by executable invariants; P0/P1=0 for correction candidate; no authorization weakening",
+      "scope": "Independent review of C1/P1-L4-02 and C2/P1-L4-03 only.",
+      "acceptance": "Both current confirmed defects closed by executable invariants; P0/P1=0 for the correction candidate; no authorization weakening; retired/dormant findings remain historical.",
       "proposedFileScope": [
-        "separate review evidence for C1/C3/C2 immutable candidate"
+        "Separate independent review evidence for immutable C1/C2 candidate"
       ]
     },
     {
@@ -4303,10 +4489,9 @@
       ],
       "dependsOn": [
         "B0",
-        "C2",
-        "C3"
+        "C2"
       ],
-      "scope": "KIF rows",
+      "scope": "Current ORDINARY kill-in-flight row; retained TYPED rows remain inactive until separately established canonical ownership.",
       "acceptance": "初始PLACE计数0/0/1；新命令外发0；kill-engaged恢复",
       "proposedFileScope": [
         "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/l4/ (proposed scenario tests, not created)"
@@ -4340,12 +4525,11 @@
         "B0",
         "C1",
         "C2",
-        "C3",
         "B1",
         "B4"
       ],
-      "scope": "MIL/DW；交易worker与validation lock分别证明",
-      "acceptance": "2 JVM竞争；旧token拒绝；SEND_STARTED不可重claim；负终态后无晚发",
+      "scope": "Current ordinary duplicate-command and scheduler-lock rows; INTENT_WORKER rows remain dormant.",
+      "acceptance": "Current owner idempotency/lock invariants proven with independent processes; no revival of dormant ExecutionIntentService.",
       "proposedFileScope": [
         "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/l4/ (proposed scenario tests, not created)"
       ]
@@ -4364,7 +4548,7 @@
         "B5"
       ],
       "scope": "同一immutable technical candidate全矩阵+独立review；未来显式授权后才CI",
-      "acceptance": "27x3=81 runs；P0/P1=0；skip/flake/checker/divergence=0",
+      "acceptance": "All currently eligible matrix rows run three independent times with zero unexpected skips/flakes/divergence. Historical inactive profiles require explicit canonical reactivation before qualification; never count them as PASS or revive them solely for coverage.",
       "proposedFileScope": [
         "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/l4/ (proposed scenario tests, not created)"
       ]
@@ -4375,7 +4559,7 @@
       "id": "PB1",
       "missingFact": "NONE: runtime behavior is now characterized; required correction remains open",
       "requiredInspection": "COMPLETE: see reproduction/result/evidenceLimits",
-      "minimumPrerequisite": "C2 correctness closure + independent review before dependent qualification",
+      "minimumPrerequisite": "Not a current correctness prerequisite; re-evaluate on future canonical activation.",
       "originalId": "PLAN-BLOCKER-1",
       "title": "KILL_ENGAGED_TYPED_RECOVERY_PATH_NOT_PROVEN",
       "reproduction": [
@@ -4386,22 +4570,30 @@
       ],
       "result": "ENGAGED 下 ordinary new PLACE=RISK_REJECTED；typed new PLACE=GLOBAL_KILL_SWITCH_NOT_DISENGAGED；typed QUERY/FILLS及真实 PG Intent recovery=RECONCILED可执行；ordinary recovery=FILLED/Trade1/Ledger2。完整 pilot runner 的 unexpired consumed resume 却在 query 前请求 disengageForPilot；expired 分支不解除。",
       "implementationOwner": "nq-app MinimalLivePilotConfiguration recovery composition; nq-infra PilotExecutionLeaseService / MinimalPilotTradingVenueGateway",
-      "requiredBatch": "C2",
-      "dependency": [
-        "C1",
-        "C3"
-      ],
+      "requiredBatch": null,
+      "dependency": [],
       "evidenceLimits": "缺陷范围是 L4 要求的 kill-preserving typed recovery composition；不是声称 RiskGate 无差别挡住所有恢复，也不把原 pilot 已授权短窗口行为追认成历史事故。unexpired 单测证明解除调用，不声称触及真实 kill 或已跑完整 runner。",
       "acceptance": "正常 typed recovery owner 在未过期/已过期、positive/negative/open truth 下保持 kill ENGAGED；无 resume/disengage/新 PLACE/CANCEL。通过正常服务持久化 Order/Trade/Ledger；negative finality 依赖 C3 的旧sender停止确认。",
-      "disposition": "CONFIRMED_CORRECTNESS_DEFECT",
-      "severity": "P1",
-      "status": "OPEN_CONFIRMED_BY_TARGETED_REPRODUCTION"
+      "disposition": "RETIRED_COMPATIBILITY_ONLY",
+      "severity": null,
+      "status": "HISTORICAL_DEFECT_NOT_CURRENT_BLOCKER",
+      "canonicalReachability": {
+        "R1": "FAIL",
+        "R2": "FAIL",
+        "R3": "NOT_APPLICABLE",
+        "R4": "NOT_RUN",
+        "disposition": "RETIRED_COMPATIBILITY_ONLY",
+        "futureTrigger": "A separately authorized current canonical owner/entrypoint is introduced; reassess R1-R4 before counting as current P1. No automatic reactivation or compatibility edge authorization."
+      },
+      "currentBlockingP1": false,
+      "historicalSeverity": "P1",
+      "historicalReproduction": "CONFIRMED"
     },
     {
       "id": "PB2",
       "missingFact": "NONE: runtime behavior is now characterized; required correction remains open",
       "requiredInspection": "COMPLETE: see reproduction/result/evidenceLimits",
-      "minimumPrerequisite": "C3 correctness closure + independent review before dependent qualification",
+      "minimumPrerequisite": "Not a current correctness prerequisite; re-evaluate on future canonical activation.",
       "originalId": "PLAN-BLOCKER-2",
       "title": "SEND_STARTED_OLD_SENDER_DISPATCH_AUTHORITY_NOT_PROVEN",
       "reproduction": [
@@ -4409,27 +4601,38 @@
       ],
       "result": "A durable SEND_STARTED 后 latch 停顿；B claim 被拒绝（不会成为新发送owner）；B 使 Intent UNKNOWN 并 query-not-found -> RECONCILED，递增 version 使 A receipt 失权；ENGAGED 下释放 A，A wire=1、B wire=0、QUERY=1，A 最后 receipt CAS rejected，DB仍 QUERY_NOT_FOUND。",
       "implementationOwner": "nq-core ExecutionIntentService / ExecutionAttemptLifecycle; typed dispatch and recovery owner must share negative-finality contract",
-      "requiredBatch": "C3",
-      "dependency": [
-        "C1"
-      ],
+      "requiredBatch": null,
+      "dependency": [],
       "evidenceLimits": "真实 PG repository + 两个 worker service + 真实 loopback HTTP；不是两个 JVM。没有 TTL 人工改写或伪造 B 接管；未证明 duplicate mutation。确认的是 negative finality 后 late dispatch，不能将 DB CAS 称为 network fencing。",
       "acceptance": "A 在 pre-dispatch 被撤销并确认停止后才允许 negative finality；若无法确认旧sender已停止，则 NOT_FOUND 保持 UNKNOWN，可重复query但不新 mutation。若请求已开始，等待正查询收敛；A/B重复 mutation=0，旧receipt拒绝不能代替wire抑制。",
-      "disposition": "CONFIRMED_CORRECTNESS_DEFECT",
-      "severity": "P1",
-      "status": "OPEN_CONFIRMED_BY_TARGETED_REPRODUCTION"
+      "disposition": "DORMANT_NO_CURRENT_ENTRYPOINT",
+      "severity": null,
+      "status": "HISTORICAL_DEFECT_NOT_CURRENT_BLOCKER",
+      "canonicalReachability": {
+        "R1": "FAIL",
+        "R2": "FAIL",
+        "R3": "NOT_APPLICABLE",
+        "R4": "NOT_RUN",
+        "disposition": "DORMANT_NO_CURRENT_ENTRYPOINT",
+        "futureTrigger": "A separately authorized current canonical owner/entrypoint is introduced; reassess R1-R4 before counting as current P1. No automatic reactivation or compatibility edge authorization."
+      },
+      "currentBlockingP1": false,
+      "historicalSeverity": "P1",
+      "historicalReproduction": "CONFIRMED"
     }
   ],
   "recommendedNextAction": {
-    "token": "NQ-GATEAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-IMPLEMENTATION",
-    "batch": "C1",
-    "program": "PHASE6_L4_RUNTIME_CORRECTNESS_REMEDIATION",
-    "matcher": "IMPLEMENTATION",
+    "token": "NQ-GATEAUDIT-PHASE6-L4-PLAN-POST-CI-AUTHORITY-TRANSITION-TO-C1",
+    "batch": "POST_CI_AUTHORITY_TRANSITION",
+    "program": "PHASE6_L4_PLAN_DELIVERY_GATE_REMEDIATION",
+    "matcher": "PLAN_LOCAL_NEXT_TASK",
     "currentAuthorityChanged": false,
-    "activation": "先在后续单独任务做authority transition和明确授权；本轮不进入实施",
-    "whyFirst": "P1-L4-01/02已真实复现且无需B0；C1是最小共同终态修复，随后C3/C2和独立review",
+    "activation": "Only after this follow-up delivery passes all local gates and exact-head CI; separate authorized task, no C1 implementation.",
+    "whyFirst": "Accept immutable corrected plan/reproduction delivery pair while preserving failed lineage, then transition authority to C1; current authority unchanged.",
     "productionChangesAllowedThisTask": false,
-    "tokenNote": "batch分类保留REMEDIATION；machine action不用该词，避免同时匹配FIX与IMPLEMENTATION。"
+    "tokenNote": "batch分类保留REMEDIATION；machine action不用该词，避免同时匹配FIX与IMPLEMENTATION。",
+    "subsequentCorrectnessProgram": "PHASE6_L4_RUNTIME_CORRECTNESS_REMEDIATION",
+    "subsequentCorrectnessSlice": "C1"
   },
   "evidenceContract": {
     "artifacts": [
@@ -4502,7 +4705,13 @@
       "SKIPPED",
       "INCONCLUSIVE",
       "FAIL"
-    ]
+    ],
+    "inventoryMandatoryScenarios": 27,
+    "currentEligibleMandatoryScenarios": 13,
+    "inactiveProfileScenarios": 14,
+    "currentEligiblePlannedRuns": 39,
+    "historicalInventoryPlannedRuns": 81,
+    "scopeNote": "27/81 remain the retained coverage inventory, not current eligible runtime execution count. Deferred profiles are explicit non-applicability, never hidden skips or accepted coverage."
   },
   "validation": {
     "authority": "PASS PS5.1/PS7 errors=0 exit=0",
@@ -4563,7 +4772,7 @@
     ],
     "types": {
       "id": "unique string matching ^L4-[A-Z]+-[0-9]{2}$",
-      "mandatory": "boolean, true for all current rows",
+      "mandatory": "true for all retained inventory rows; currentQualificationRequired explicitly determines current scope; inactive profiles retain future obligations",
       "status": "enum NOT_RUN in plan; future execution verdict separate",
       "sourceRefs": "nonempty array of source-index IDs",
       "processes": "nonempty unique array of roles",
@@ -4711,28 +4920,11 @@
   },
   "reproductionContract": {
     "schemaVersion": "1.0",
-    "totalCases": 8,
-    "knownDefectReproduction": 6,
-    "normalRegression": 2,
+    "totalCases": 4,
+    "knownDefectReproduction": 3,
+    "normalRegression": 1,
     "acceptedCorrectnessEvidence": false,
     "cases": [
-      {
-        "id": "R01",
-        "testFile": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4PlanBlockerPostgresIntegrationTest.java",
-        "testMethod": "filledProviderNoMutationCancelBecomesCancelledAndIsNotAutomaticallyRepaired",
-        "findingId": "P1-1",
-        "registryId": "P1-L4-01",
-        "classification": "KNOWN_DEFECT_REPRODUCTION",
-        "junitTag": "known-defect-reproduction",
-        "currentObservation": "provider FILLED + NO_MUTATION_TERMINAL becomes local CANCELLED with missing Trade/Ledger",
-        "whyPassesToday": "Assertions match the unfixed terminal overwrite and missing recovery",
-        "remediationOwner": "C1",
-        "lifecycle": "TEMPORARY_UNTIL_OWNING_REMEDIATION",
-        "inversionOrRemovalTrigger": "At C1 fix invert to preserved FILLED, no cancel mutation and complete Trade/Ledger via normal recovery",
-        "expectedPostFixDisposition": "CONVERT_TO_NORMAL_REGRESSION_OR_REPLACE_WITH_LINKED_EQUIVALENT",
-        "wrongBehaviorAcceptedAsCorrectnessInvariant": false,
-        "passMeaning": "KNOWN_DEFECT_SUCCESSFULLY_REPRODUCED"
-      },
       {
         "id": "R02",
         "testFile": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4PlanBlockerPostgresIntegrationTest.java",
@@ -4788,8 +4980,8 @@
         "id": "R05",
         "testFile": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4PlanBlockerPostgresIntegrationTest.java",
         "testMethod": "engagedKillRejectsNewPlaceButAllowsOrdinaryReadAndLedgerConvergence",
-        "findingId": "PB1",
-        "registryId": "PB1",
+        "findingId": "NONE",
+        "registryId": "NONE",
         "classification": "NORMAL_REGRESSION",
         "junitTag": "normal-regression",
         "currentObservation": "new PLACE rejected while read/reconciliation/ledger convergence retain ENGAGED",
@@ -4799,62 +4991,19 @@
         "inversionOrRemovalTrigger": "Retain as NORMAL_REGRESSION in C2; never invert rejection of new PLACE or preservation of kill",
         "expectedPostFixDisposition": "RETAIN_NORMAL_REGRESSION",
         "wrongBehaviorAcceptedAsCorrectnessInvariant": false,
-        "passMeaning": "NORMAL_INVARIANT_PRESERVED"
-      },
-      {
-        "id": "R06",
-        "testFile": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
-        "testMethod": "shouldCharacterizeL4KillRecoveryAndLateSenderAfterNegativeQuery",
-        "findingId": "PB2",
-        "registryId": "PB2",
-        "classification": "KNOWN_DEFECT_REPRODUCTION",
-        "junitTag": "known-defect-reproduction",
-        "currentObservation": "A sends one late wire request after B seals QUERY_NOT_FOUND; B mutation=0; only receipt CAS rejects A",
-        "whyPassesToday": "The known-defect assertion accepts the observed late wire only as reproduction evidence",
-        "remediationOwner": "C3",
-        "lifecycle": "TEMPORARY_UNTIL_OWNING_REMEDIATION",
-        "inversionOrRemovalTrigger": "At C3 fix replace/invert to no late dispatch or no negative finality until sender-stop proof; retain or split out PB1 positive typed-query assertions",
-        "expectedPostFixDisposition": "CONVERT_TO_NORMAL_REGRESSION_OR_REPLACE_WITH_LINKED_EQUIVALENT",
-        "wrongBehaviorAcceptedAsCorrectnessInvariant": false,
-        "passMeaning": "KNOWN_DEFECT_SUCCESSFULLY_REPRODUCED"
-      },
-      {
-        "id": "R07",
-        "testFile": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/PilotExecutionLeaseServiceTest.java",
-        "testMethod": "l4UnexpiredRecoveryRequestsDisengageBeforeAnyQuery",
-        "findingId": "PB1",
-        "registryId": "PB1",
-        "classification": "KNOWN_DEFECT_REPRODUCTION",
-        "junitTag": "known-defect-reproduction",
-        "currentObservation": "unexpired consumed recovery requests disengageForPilot before query",
-        "whyPassesToday": "Mockito verifies the current recovery call that violates the requested L4 kill-preserving contract",
-        "remediationOwner": "C2",
-        "lifecycle": "TEMPORARY_UNTIL_OWNING_REMEDIATION",
-        "inversionOrRemovalTrigger": "At C2 fix move/invert to the normal kill-preserving recovery entry: no disengage or mutation; a separately authorized pilot-opening API is a distinct contract",
-        "expectedPostFixDisposition": "CONVERT_TO_NORMAL_REGRESSION_OR_REPLACE_WITH_LINKED_EQUIVALENT",
-        "wrongBehaviorAcceptedAsCorrectnessInvariant": false,
-        "passMeaning": "KNOWN_DEFECT_SUCCESSFULLY_REPRODUCED"
-      },
-      {
-        "id": "R08",
-        "testFile": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/PilotExecutionLeaseServiceTest.java",
-        "testMethod": "l4ExpiredRecoveryDoesNotRequestDisengage",
-        "findingId": "PB1",
-        "registryId": "PB1",
-        "classification": "NORMAL_REGRESSION",
-        "junitTag": "normal-regression",
-        "currentObservation": "expired consumed recovery performs no kill mutation",
-        "whyPassesToday": "The existing expired branch preserves the tested kill invariant",
-        "remediationOwner": "C2",
-        "lifecycle": "RETAIN_NORMAL_INVARIANT",
-        "inversionOrRemovalTrigger": "Retain as NORMAL_REGRESSION in C2 and preserve no-disengage semantics",
-        "expectedPostFixDisposition": "RETAIN_NORMAL_REGRESSION",
-        "wrongBehaviorAcceptedAsCorrectnessInvariant": false,
-        "passMeaning": "NORMAL_INVARIANT_PRESERVED"
+        "passMeaning": "NORMAL_INVARIANT_PRESERVED",
+        "relatedHistoricalObservation": "PB1; this is a current normal recovery control, not PB1 defect reproduction"
       }
     ],
-    "retirementRule": "Owning C1/C2/C3 correction must invert/replace temporary assertions and update this metadata in the same reviewed candidate. No suppression/skip/disabled assertion solely to keep green; removal requires linked equivalent regression and independent review.",
-    "ordinaryCiSemantics": "Canonical CI does not set nq.l4.blockers.enabled, so the 5-case PG class and joint PG case are conditionally disabled there. R07 runs as explicitly tagged characterization; R08 runs as normal regression. Dedicated local delivery command explicitly runs all eight with zero skips. Neither baseline CI success nor known-defect PASS closes any P1."
+    "retirementRule": "C1 must invert stale PLACE/CANCEL ACK assertions to terminal preservation and stale-write rejection; C2 must invert the CANCELLED blind spot to bounded idempotent fill/Trade/Ledger convergence. Update metadata in the same independently reviewed correction; no accepted wrong-state assertions.",
+    "ordinaryCiSemantics": "Canonical CI does not set nq.l4.blockers.enabled: these four tests are conditionally disabled there. Dedicated local admission explicitly enables all four with zero skips. PASS reproduces three defects across two P1s plus one normal recovery control; neither CI nor characterization PASS accepts runtime correctness.",
+    "evidenceScope": "Current permanent canonical characterization; historical eight-case failed delivery retained separately.",
+    "currentPlannedCases": {
+      "knownDefectReproductions": 3,
+      "normalRegressions": 1,
+      "implementation": "DELIVERY_REMEDIATION_EXECUTED_AND_LOCALLY_TESTED; exact-head CI separately required",
+      "lifecycle": "C1 inverts/replaces both stale ACK assertions; C2 inverts CANCELLED blind-spot assertion; retain kill-engaged normal recovery; historical retired/dormant observations kept in plan, not required runtime assertions."
+    }
   },
   "deliveryEvidence": {
     "task": "NQ-GATEAUDIT-PHASE6-L4-FAILURE-MATRIX-PLAN-DELIVERY-AND-EXACT-HEAD-CI",
@@ -5040,5 +5189,1444 @@
     "protectedScope": "PASS / production, current authority and workflow changed paths=0",
     "diffCheck": "PASS",
     "ci": "NOT_RUN_YET / bind exact-head run after immutable commit; no acceptance inferred"
+  },
+  "canonicalReachabilityAssessment": {
+    "task": "NQ-GATEAUDIT-PHASE6-L4-PLAN-CI-GATE-REMEDIATION-AND-EXACT-HEAD-CI",
+    "date": "2026-09-06",
+    "baseline": "378de657ac33b9f9fd666288d489181ac0147b2e",
+    "decision": "BLOCKED / PHASE6_L4_FINDING_CANONICAL_REACHABILITY_NOT_PROVEN",
+    "blockingFindings": [
+      "P1-L4-01",
+      "PB1",
+      "PB2"
+    ],
+    "assessmentKind": "SOURCE_OWNERSHIP_CHECK / NO_NEW_DYNAMIC_REPRODUCTION",
+    "previousDecision": {
+      "plan": "EXECUTABLE_PLAN_COMPLETE",
+      "requestedSuccessToken": "PLAN_EXECUTABLE",
+      "final": "PLANNED / PHASE6_L4_FAILURE_MATRIX_BLOCKERS_DISPOSITIONED / P0_0 / P1_5 / PLAN_EXECUTABLE",
+      "P0Found": 0,
+      "P1Found": 5,
+      "independentReview": "NOT_RUN",
+      "runtime": "TARGETED_REPRODUCTION_PASS; L4_QUALIFICATION_NOT_RUN",
+      "reason": "5 original items dispositioned; 5 runtime correctness remediations remain open. No unknown owner/boundary; plan completion does not mean defect closure.",
+      "counts": {
+        "confirmedCorrectnessDefects": 5,
+        "proofSeamGaps": 0,
+        "falsePositives": 0,
+        "remainingUnknowns": 0
+      }
+    },
+    "historicalReproducedFindings": 5,
+    "currentCanonicalReproducedCount": null,
+    "freshTestsExecuted": 0,
+    "cases": [
+      {
+        "finding": "P1-L4-01",
+        "entrypoint": "OrderCommandService.cancelOrder",
+        "owner": "OrderCommandService; ordinary AdapterBackedTradingVenueGateway",
+        "stablePort": "TradingVenueGateway",
+        "retainedPath": "MinimalLivePilotConfiguration -> MinimalPilotTradingVenueGateway -> SpotExecutionProviderPort -> OkxSpotProviderAdapter",
+        "defectBoundary": "NO_MUTATION_TERMINAL mapped to accepted=true and local CANCELLED",
+        "state": "NOT_PROVEN",
+        "reason": "The ordinary entrypoint exists, but the specific no-mutation terminal mapping is only located in retained minimal-pilot composition. An approved current entrance into that composition has not been established. A generic accepted cancel stub would not prove this typed-provider finding.",
+        "sourceRefs": [
+          "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java:170",
+          "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/AdapterBackedTradingVenueGateway.java:111",
+          "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/MinimalPilotTradingVenueGateway.java:128"
+        ]
+      },
+      {
+        "finding": "P1-L4-02",
+        "entrypoint": "TradingVerificationController.placeOrder/cancelOrder -> OrderCommandService",
+        "owner": "OrderCommandService and current Order persistence",
+        "stablePort": "TradingVenueGateway; OrderRepository",
+        "retainedPath": "Not required for stale Order ACK boundary",
+        "defectBoundary": "An older PLACE/CANCEL ACK finalizes after a newer FILLED transaction commits",
+        "state": "CURRENT_SOURCE_CHAIN_IDENTIFIED",
+        "reason": "R02/R03 previously exercised real Spring/JDBC through OrderCommandService and a stable gateway double. Current owner graph remains present; no fresh execution in this blocked task.",
+        "sourceRefs": [
+          "backend/nq-api/src/main/java/com/guidinglight/nexusquant/trading/api/web/TradingVerificationController.java:249",
+          "backend/nq-api/src/main/java/com/guidinglight/nexusquant/trading/api/web/TradingVerificationController.java:287",
+          "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java:126"
+        ]
+      },
+      {
+        "finding": "P1-L4-03",
+        "entrypoint": "OkxRecoveryService.rebuild / OkxRestReconcileService.scheduledReconcile -> reconcileOnce",
+        "owner": "OkxRestReconcileService",
+        "stablePort": "OrderRepository; TradeRepository; TradeLedgerGateway",
+        "retainedPath": "Not required",
+        "defectBoundary": "CANCELLED is absent from the bounded scan despite missing venue fill persistence",
+        "state": "CURRENT_SOURCE_CHAIN_IDENTIFIED",
+        "reason": "R04 previously exercised the current reconciliation owner with a positive control. Current scan remains present; no fresh execution in this blocked task.",
+        "sourceRefs": [
+          "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRecoveryService.java:138",
+          "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java:131",
+          "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java:148"
+        ]
+      },
+      {
+        "finding": "PB1",
+        "entrypoint": "Retained MinimalPilotRunner.run -> recoverConsumed; current ordinary recovery entrance not proven",
+        "owner": "MinimalLivePilotConfiguration recovery composition -> PilotExecutionLeaseService",
+        "stablePort": "PilotExecutionLeaseControlPlane (resumeConsumed still requires compatibility Correlation)",
+        "retainedPath": "MinimalLivePilotConfiguration -> ExactPilotBinding / MinimalPilotTradingVenueGateway",
+        "defectBoundary": "Unexpired consumed recovery calls disengageForPilot before querying",
+        "state": "NOT_PROVEN",
+        "reason": "Only production resumeConsumed caller is the retained minimal-pilot runner. F009 retired its old pilot entrypoints. Ordinary OkxRecoveryService is a separate recovery owner. Existing internal approved edges do not establish a current normal recovery entrance; no new edge is authorized.",
+        "sourceRefs": [
+          "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java:276",
+          "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java:289",
+          "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/PilotExecutionLeaseControlPlane.java:63",
+          "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/PilotExecutionLeaseService.java:241"
+        ]
+      },
+      {
+        "finding": "PB2",
+        "entrypoint": "Prior R06 directly constructed ExecutionIntentService; current canonical sender entrance not proven",
+        "owner": "ExecutionIntentService fake/local orchestration; retained typed sender/recovery candidate requires separate proof",
+        "stablePort": "ExecutionIntentRepository; FakeExchangeMutationPort",
+        "retainedPath": "Prior test directly constructed JdbcExecutionIntentRepository; Spring supplies that repository port but this alone does not prove the sender owner",
+        "defectBoundary": "SEND_STARTED A resumes wire dispatch after B seals QUERY_NOT_FOUND; A=1/B=0, receipt CAS rejects",
+        "state": "NOT_PROVEN",
+        "reason": "Tracked current production Java contains the service declaration and constructor but no production caller. The prior fake/local interleaving is not a canonical typed-sender reproduction. Similar retained gateway code is insufficient to claim that reproduction.",
+        "sourceRefs": [
+          "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/application/ExecutionIntentService.java:23",
+          "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/application/ExecutionIntentService.java:77",
+          "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/jdbc/JdbcExecutionIntentRepository.java:31"
+        ]
+      }
+    ],
+    "failedDelivery": {
+      "commit": "378de657ac33b9f9fd666288d489181ac0147b2e",
+      "ciRun": 34038345304,
+      "result": "FAILED DELIVERY",
+      "jobs": 9,
+      "success": 7,
+      "failed": 2,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    "containment": {
+      "contracts": 18,
+      "approvedEdgesBefore": 1559,
+      "approvedEdgesAfter": 1559,
+      "newApprovedEdges": 0,
+      "registryChanged": false,
+      "registrySha256": "cbbc9ba41d236296404eccae981b6c1392e5b8deb2e299ea3ab9bd078a0d7385",
+      "exceptionsWidened": false,
+      "existingUnauthorizedCandidateEdges": "NOT_REMEDIATED / prior CI errors remain"
+    },
+    "limits": [
+      "NOT_PROVEN does not mean unreachable or false positive. Conditional Spring composition remains in source; no current approved normal entrance and equivalent reproduction has been established.",
+      "Current-source paths identified for P1-L4-02/03 do not constitute a fresh test run.",
+      "Historical five-finding observations and 68-test result remain source-event evidence, not current canonical reachability acceptance."
+    ],
+    "stopBoundary": "User sections 5, 6 and 11: stop before test refactoring, staging, commit, push or CI when canonical reachability is unproven. Update these original plan files with the actual blocker.",
+    "nextRequirement": "Resolve current approved entrypoint/ownership evidence and reconsider affected finding scope/severity before resuming gate remediation. No compatibility authorization expansion or C1 authority transition.",
+    "deferred": [
+      "exception-bound test restoration",
+      "Phase6 test/fixture refactor",
+      "non-credential sentinel replacement",
+      "targeted PostgreSQL rerun",
+      "local pinned Gitleaks",
+      "follow-up commit/push/new CI"
+    ],
+    "validation": {
+      "stageChecker": {
+        "exitCode": 1,
+        "scanned": 1800,
+        "reviewedExceptions": 177,
+        "unauthorizedCompatibilityCaller": 14,
+        "stageSemantics": 1,
+        "staleException": 1,
+        "errors": 16,
+        "meaning": "Original failed candidate remains; not remediated"
+      },
+      "authorityPS51": "PASS / errors=0 / process-local ExecutionPolicy Bypass; first invocation blocked by host policy",
+      "authorityPS7": "PASS / errors=0",
+      "planConsistency": "PASS / matrix, DAG, historical case contract/evidence unchanged; current BLOCKED/null count and source ranges checked",
+      "docsLinks": {
+        "checked": 65,
+        "warnings": 0,
+        "errors": 0
+      },
+      "diffCheck": "PASS",
+      "notRun": [
+        "targeted Java/PostgreSQL",
+        "stage guard unittest suite",
+        "next-action/lifecycle fixtures",
+        "pinned Gitleaks",
+        "new CI"
+      ],
+      "notRunReason": "Pre-refactor canonical reachability hard gate blocked; no staging/delivery attempted"
+    },
+    "currentValidity": "HISTORICAL_BLOCKED_ASSESSMENT / superseded by canonicalReachabilityClosure"
+  },
+  "canonicalReachabilityClosure": {
+    "task": "NQ-GATEAUDIT-PHASE6-L4-FAILURE-MATRIX-PLAN-CANONICAL-RUNTIME-REACHABILITY-CLOSURE",
+    "baseline": "378de657ac33b9f9fd666288d489181ac0147b2e",
+    "model": {
+      "R1": "current non-retired entrypoint",
+      "R2": "current runtime/Spring composition",
+      "R3": "stable caller ownership without new compatibility edge",
+      "R4": "fresh executable canonical defect"
+    },
+    "cases": [
+      {
+        "finding": "P1-L4-01",
+        "entrypoint": "OrderCommandService.cancelOrder",
+        "owner": "OrderCommandService; ordinary AdapterBackedTradingVenueGateway",
+        "stablePort": "TradingVenueGateway",
+        "retainedPath": "MinimalLivePilotConfiguration -> MinimalPilotTradingVenueGateway -> SpotExecutionProviderPort -> OkxSpotProviderAdapter",
+        "defectBoundary": "NO_MUTATION_TERMINAL mapped to accepted=true and local CANCELLED",
+        "state": "RESOLVED",
+        "reason": "Classified from complete tracked production caller/configuration scan and F009 ownership disposition, not from LIVE being disabled. Existing implementation remains; no defect fix or false-positive assertion.",
+        "sourceRefs": [
+          "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java:170",
+          "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/AdapterBackedTradingVenueGateway.java:111",
+          "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/MinimalPilotTradingVenueGateway.java:128"
+        ],
+        "disposition": "RETIRED_COMPATIBILITY_ONLY",
+        "currentBlockingP1": false,
+        "historicalReproduction": "CONFIRMED",
+        "R1": "FAIL",
+        "R2": "FAIL",
+        "R3": "NOT_APPLICABLE",
+        "R4": "NOT_RUN",
+        "futureTrigger": "A separately authorized current canonical owner/entrypoint is introduced; reassess R1-R4 before counting as current P1. No automatic reactivation or compatibility edge authorization.",
+        "composition": "Retained minimal-pilot conditional composition is absent from current canonical configuration/launcher inputs and from the ordinary probe context; F009 retired its deployment/pilot callers.",
+        "canonicalProbe": "NOT_RUN: no current canonical entrypoint; do not activate retired/dormant code to manufacture reachability.",
+        "observedResult": "Historical defective observation preserved; excluded from current Phase6 blocking P1 set."
+      },
+      {
+        "finding": "P1-L4-02",
+        "entrypoint": "TradingVerificationController.placeOrder/cancelOrder -> OrderCommandService",
+        "owner": "OrderCommandService and current Order persistence",
+        "stablePort": "TradingVenueGateway; OrderRepository",
+        "retainedPath": "Not required for stale Order ACK boundary",
+        "defectBoundary": "An older PLACE/CANCEL ACK finalizes after a newer FILLED transaction commits",
+        "state": "RESOLVED",
+        "reason": "R1-R3 current ownership confirmed in source and Spring context; fresh PG16.15 probe PASS reproduces this defect. No concrete repository or retained compatibility type named by the ephemeral probe.",
+        "sourceRefs": [
+          "backend/nq-api/src/main/java/com/guidinglight/nexusquant/trading/api/web/TradingVerificationController.java:249",
+          "backend/nq-api/src/main/java/com/guidinglight/nexusquant/trading/api/web/TradingVerificationController.java:287",
+          "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java:126"
+        ],
+        "disposition": "CANONICAL_REACHABLE_CONFIRMED_DEFECT",
+        "currentBlockingP1": true,
+        "historicalReproduction": "CONFIRMED",
+        "R1": "PASS",
+        "R2": "PASS",
+        "R3": "PASS",
+        "R4": "PASS",
+        "futureTrigger": "Not applicable: current defect remains open",
+        "composition": "NexusQuantApplication component scan; trading-components.enabled=true in local/test/ci/prod; ordinary Order, RecoveryService and REST reconciliation beans obtained from current Spring. Probe explicitly uses local/synthetic ports and keeps production/global LIVE disabled. Recovery timer disabled for deterministic scheduling, stable rebuild invoked explicitly.",
+        "canonicalProbe": "probe-evidence.json / stalePlaceAckOverwritesCommittedFilledThroughRealSpringTransactions + staleCancelAckOverwritesCommittedFilledThroughRealSpringTransactions",
+        "observedResult": "Committed FILLED overwritten by stale PLACE ACK to ACCEPTED and stale CANCEL ACK to CANCELLED; actual SQL affected=1 in both schedules."
+      },
+      {
+        "finding": "P1-L4-03",
+        "entrypoint": "OkxRecoveryService.rebuild / OkxRestReconcileService.scheduledReconcile -> reconcileOnce",
+        "owner": "OkxRestReconcileService",
+        "stablePort": "OrderRepository; TradeRepository; TradeLedgerGateway",
+        "retainedPath": "Not required",
+        "defectBoundary": "CANCELLED is absent from the bounded scan despite missing venue fill persistence",
+        "state": "RESOLVED",
+        "reason": "R1-R3 current ownership confirmed in source and Spring context; fresh PG16.15 probe PASS reproduces this defect. No concrete repository or retained compatibility type named by the ephemeral probe.",
+        "sourceRefs": [
+          "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRecoveryService.java:138",
+          "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java:131",
+          "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java:148"
+        ],
+        "disposition": "CANONICAL_REACHABLE_CONFIRMED_DEFECT",
+        "currentBlockingP1": true,
+        "historicalReproduction": "CONFIRMED",
+        "R1": "PASS",
+        "R2": "PASS",
+        "R3": "PASS",
+        "R4": "PASS",
+        "futureTrigger": "Not applicable: current defect remains open",
+        "composition": "NexusQuantApplication component scan; trading-components.enabled=true in local/test/ci/prod; ordinary Order, RecoveryService and REST reconciliation beans obtained from current Spring. Probe explicitly uses local/synthetic ports and keeps production/global LIVE disabled. Recovery timer disabled for deterministic scheduling, stable rebuild invoked explicitly.",
+        "canonicalProbe": "probe-evidence.json / cancelledOrderWithVenueFillIsExcludedWhileFilledPositiveControlRecovers",
+        "observedResult": "Two REST scans plus two RecoveryService.rebuild calls leave CANCELLED fillQueries=0/Trade=0/Ledger=0; positive control FILLED/Trade1/Ledger2 remains idempotent."
+      },
+      {
+        "finding": "PB1",
+        "entrypoint": "Retained MinimalPilotRunner.run -> recoverConsumed; current ordinary recovery entrance not proven",
+        "owner": "MinimalLivePilotConfiguration recovery composition -> PilotExecutionLeaseService",
+        "stablePort": "PilotExecutionLeaseControlPlane (resumeConsumed still requires compatibility Correlation)",
+        "retainedPath": "MinimalLivePilotConfiguration -> ExactPilotBinding / MinimalPilotTradingVenueGateway",
+        "defectBoundary": "Unexpired consumed recovery calls disengageForPilot before querying",
+        "state": "RESOLVED",
+        "reason": "Classified from complete tracked production caller/configuration scan and F009 ownership disposition, not from LIVE being disabled. Existing implementation remains; no defect fix or false-positive assertion.",
+        "sourceRefs": [
+          "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java:276",
+          "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java:289",
+          "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/PilotExecutionLeaseControlPlane.java:63",
+          "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/PilotExecutionLeaseService.java:241"
+        ],
+        "disposition": "RETIRED_COMPATIBILITY_ONLY",
+        "currentBlockingP1": false,
+        "historicalReproduction": "CONFIRMED",
+        "R1": "FAIL",
+        "R2": "FAIL",
+        "R3": "NOT_APPLICABLE",
+        "R4": "NOT_RUN",
+        "futureTrigger": "A separately authorized current canonical owner/entrypoint is introduced; reassess R1-R4 before counting as current P1. No automatic reactivation or compatibility edge authorization.",
+        "composition": "Retained minimal-pilot conditional composition is absent from current canonical configuration/launcher inputs and from the ordinary probe context; F009 retired its deployment/pilot callers.",
+        "canonicalProbe": "NOT_RUN: no current canonical entrypoint; do not activate retired/dormant code to manufacture reachability.",
+        "observedResult": "Historical defective observation preserved; excluded from current Phase6 blocking P1 set."
+      },
+      {
+        "finding": "PB2",
+        "entrypoint": "Prior R06 directly constructed ExecutionIntentService; current canonical sender entrance not proven",
+        "owner": "ExecutionIntentService fake/local orchestration; retained typed sender/recovery candidate requires separate proof",
+        "stablePort": "ExecutionIntentRepository; FakeExchangeMutationPort",
+        "retainedPath": "Prior test directly constructed JdbcExecutionIntentRepository; Spring supplies that repository port but this alone does not prove the sender owner",
+        "defectBoundary": "SEND_STARTED A resumes wire dispatch after B seals QUERY_NOT_FOUND; A=1/B=0, receipt CAS rejects",
+        "state": "RESOLVED",
+        "reason": "Classified from complete tracked production caller/configuration scan and F009 ownership disposition, not from LIVE being disabled. Existing implementation remains; no defect fix or false-positive assertion.",
+        "sourceRefs": [
+          "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/application/ExecutionIntentService.java:23",
+          "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/application/ExecutionIntentService.java:77",
+          "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/jdbc/JdbcExecutionIntentRepository.java:31"
+        ],
+        "disposition": "DORMANT_NO_CURRENT_ENTRYPOINT",
+        "currentBlockingP1": false,
+        "historicalReproduction": "CONFIRMED",
+        "R1": "FAIL",
+        "R2": "FAIL",
+        "R3": "NOT_APPLICABLE",
+        "R4": "NOT_RUN",
+        "futureTrigger": "A separately authorized current canonical owner/entrypoint is introduced; reassess R1-R4 before counting as current P1. No automatic reactivation or compatibility edge authorization.",
+        "composition": "No production caller or bean/scheduler/controller composition for ExecutionIntentService/claimAndExecute; repository component presence alone is not a sender runtime.",
+        "canonicalProbe": "NOT_RUN: no current canonical entrypoint; do not activate retired/dormant code to manufacture reachability.",
+        "observedResult": "Historical defective observation preserved; excluded from current Phase6 blocking P1 set."
+      }
+    ],
+    "counts": {
+      "canonicalConfirmedP1Count": 2,
+      "canonicalReachabilityUnknown": 0,
+      "retiredCompatibilityOnly": 2,
+      "dormantNoCurrentEntrypoint": 1,
+      "retiredOrDormant": 3,
+      "canonicalReachableNotReproduced": 0,
+      "canonicalReachableProofBlocked": 0
+    },
+    "previousAssessment": {
+      "task": "NQ-GATEAUDIT-PHASE6-L4-PLAN-CI-GATE-REMEDIATION-AND-EXACT-HEAD-CI",
+      "date": "2026-09-06",
+      "baseline": "378de657ac33b9f9fd666288d489181ac0147b2e",
+      "decision": "BLOCKED / PHASE6_L4_FINDING_CANONICAL_REACHABILITY_NOT_PROVEN",
+      "blockingFindings": [
+        "P1-L4-01",
+        "PB1",
+        "PB2"
+      ],
+      "assessmentKind": "SOURCE_OWNERSHIP_CHECK / NO_NEW_DYNAMIC_REPRODUCTION",
+      "previousDecision": {
+        "plan": "EXECUTABLE_PLAN_COMPLETE",
+        "requestedSuccessToken": "PLAN_EXECUTABLE",
+        "final": "PLANNED / PHASE6_L4_FAILURE_MATRIX_BLOCKERS_DISPOSITIONED / P0_0 / P1_5 / PLAN_EXECUTABLE",
+        "P0Found": 0,
+        "P1Found": 5,
+        "independentReview": "NOT_RUN",
+        "runtime": "TARGETED_REPRODUCTION_PASS; L4_QUALIFICATION_NOT_RUN",
+        "reason": "5 original items dispositioned; 5 runtime correctness remediations remain open. No unknown owner/boundary; plan completion does not mean defect closure.",
+        "counts": {
+          "confirmedCorrectnessDefects": 5,
+          "proofSeamGaps": 0,
+          "falsePositives": 0,
+          "remainingUnknowns": 0
+        }
+      },
+      "historicalReproducedFindings": 5,
+      "currentCanonicalReproducedCount": null,
+      "freshTestsExecuted": 0,
+      "cases": [
+        {
+          "finding": "P1-L4-01",
+          "entrypoint": "OrderCommandService.cancelOrder",
+          "owner": "OrderCommandService; ordinary AdapterBackedTradingVenueGateway",
+          "stablePort": "TradingVenueGateway",
+          "retainedPath": "MinimalLivePilotConfiguration -> MinimalPilotTradingVenueGateway -> SpotExecutionProviderPort -> OkxSpotProviderAdapter",
+          "defectBoundary": "NO_MUTATION_TERMINAL mapped to accepted=true and local CANCELLED",
+          "state": "NOT_PROVEN",
+          "reason": "The ordinary entrypoint exists, but the specific no-mutation terminal mapping is only located in retained minimal-pilot composition. An approved current entrance into that composition has not been established. A generic accepted cancel stub would not prove this typed-provider finding.",
+          "sourceRefs": [
+            "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java:170",
+            "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/AdapterBackedTradingVenueGateway.java:111",
+            "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/MinimalPilotTradingVenueGateway.java:128"
+          ]
+        },
+        {
+          "finding": "P1-L4-02",
+          "entrypoint": "TradingVerificationController.placeOrder/cancelOrder -> OrderCommandService",
+          "owner": "OrderCommandService and current Order persistence",
+          "stablePort": "TradingVenueGateway; OrderRepository",
+          "retainedPath": "Not required for stale Order ACK boundary",
+          "defectBoundary": "An older PLACE/CANCEL ACK finalizes after a newer FILLED transaction commits",
+          "state": "CURRENT_SOURCE_CHAIN_IDENTIFIED",
+          "reason": "R02/R03 previously exercised real Spring/JDBC through OrderCommandService and a stable gateway double. Current owner graph remains present; no fresh execution in this blocked task.",
+          "sourceRefs": [
+            "backend/nq-api/src/main/java/com/guidinglight/nexusquant/trading/api/web/TradingVerificationController.java:249",
+            "backend/nq-api/src/main/java/com/guidinglight/nexusquant/trading/api/web/TradingVerificationController.java:287",
+            "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java:126"
+          ]
+        },
+        {
+          "finding": "P1-L4-03",
+          "entrypoint": "OkxRecoveryService.rebuild / OkxRestReconcileService.scheduledReconcile -> reconcileOnce",
+          "owner": "OkxRestReconcileService",
+          "stablePort": "OrderRepository; TradeRepository; TradeLedgerGateway",
+          "retainedPath": "Not required",
+          "defectBoundary": "CANCELLED is absent from the bounded scan despite missing venue fill persistence",
+          "state": "CURRENT_SOURCE_CHAIN_IDENTIFIED",
+          "reason": "R04 previously exercised the current reconciliation owner with a positive control. Current scan remains present; no fresh execution in this blocked task.",
+          "sourceRefs": [
+            "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRecoveryService.java:138",
+            "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java:131",
+            "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java:148"
+          ]
+        },
+        {
+          "finding": "PB1",
+          "entrypoint": "Retained MinimalPilotRunner.run -> recoverConsumed; current ordinary recovery entrance not proven",
+          "owner": "MinimalLivePilotConfiguration recovery composition -> PilotExecutionLeaseService",
+          "stablePort": "PilotExecutionLeaseControlPlane (resumeConsumed still requires compatibility Correlation)",
+          "retainedPath": "MinimalLivePilotConfiguration -> ExactPilotBinding / MinimalPilotTradingVenueGateway",
+          "defectBoundary": "Unexpired consumed recovery calls disengageForPilot before querying",
+          "state": "NOT_PROVEN",
+          "reason": "Only production resumeConsumed caller is the retained minimal-pilot runner. F009 retired its old pilot entrypoints. Ordinary OkxRecoveryService is a separate recovery owner. Existing internal approved edges do not establish a current normal recovery entrance; no new edge is authorized.",
+          "sourceRefs": [
+            "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java:276",
+            "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java:289",
+            "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/PilotExecutionLeaseControlPlane.java:63",
+            "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/PilotExecutionLeaseService.java:241"
+          ]
+        },
+        {
+          "finding": "PB2",
+          "entrypoint": "Prior R06 directly constructed ExecutionIntentService; current canonical sender entrance not proven",
+          "owner": "ExecutionIntentService fake/local orchestration; retained typed sender/recovery candidate requires separate proof",
+          "stablePort": "ExecutionIntentRepository; FakeExchangeMutationPort",
+          "retainedPath": "Prior test directly constructed JdbcExecutionIntentRepository; Spring supplies that repository port but this alone does not prove the sender owner",
+          "defectBoundary": "SEND_STARTED A resumes wire dispatch after B seals QUERY_NOT_FOUND; A=1/B=0, receipt CAS rejects",
+          "state": "NOT_PROVEN",
+          "reason": "Tracked current production Java contains the service declaration and constructor but no production caller. The prior fake/local interleaving is not a canonical typed-sender reproduction. Similar retained gateway code is insufficient to claim that reproduction.",
+          "sourceRefs": [
+            "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/application/ExecutionIntentService.java:23",
+            "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/application/ExecutionIntentService.java:77",
+            "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/jdbc/JdbcExecutionIntentRepository.java:31"
+          ]
+        }
+      ],
+      "failedDelivery": {
+        "commit": "378de657ac33b9f9fd666288d489181ac0147b2e",
+        "ciRun": 34038345304,
+        "result": "FAILED DELIVERY",
+        "jobs": 9,
+        "success": 7,
+        "failed": 2,
+        "skipped": 0,
+        "cancelled": 0
+      },
+      "containment": {
+        "contracts": 18,
+        "approvedEdgesBefore": 1559,
+        "approvedEdgesAfter": 1559,
+        "newApprovedEdges": 0,
+        "registryChanged": false,
+        "registrySha256": "cbbc9ba41d236296404eccae981b6c1392e5b8deb2e299ea3ab9bd078a0d7385",
+        "exceptionsWidened": false,
+        "existingUnauthorizedCandidateEdges": "NOT_REMEDIATED / prior CI errors remain"
+      },
+      "limits": [
+        "NOT_PROVEN does not mean unreachable or false positive. Conditional Spring composition remains in source; no current approved normal entrance and equivalent reproduction has been established.",
+        "Current-source paths identified for P1-L4-02/03 do not constitute a fresh test run.",
+        "Historical five-finding observations and 68-test result remain source-event evidence, not current canonical reachability acceptance."
+      ],
+      "stopBoundary": "User sections 5, 6 and 11: stop before test refactoring, staging, commit, push or CI when canonical reachability is unproven. Update these original plan files with the actual blocker.",
+      "nextRequirement": "Resolve current approved entrypoint/ownership evidence and reconsider affected finding scope/severity before resuming gate remediation. No compatibility authorization expansion or C1 authority transition.",
+      "deferred": [
+        "exception-bound test restoration",
+        "Phase6 test/fixture refactor",
+        "non-credential sentinel replacement",
+        "targeted PostgreSQL rerun",
+        "local pinned Gitleaks",
+        "follow-up commit/push/new CI"
+      ],
+      "validation": {
+        "stageChecker": {
+          "exitCode": 1,
+          "scanned": 1800,
+          "reviewedExceptions": 177,
+          "unauthorizedCompatibilityCaller": 14,
+          "stageSemantics": 1,
+          "staleException": 1,
+          "errors": 16,
+          "meaning": "Original failed candidate remains; not remediated"
+        },
+        "authorityPS51": "PASS / errors=0 / process-local ExecutionPolicy Bypass; first invocation blocked by host policy",
+        "authorityPS7": "PASS / errors=0",
+        "planConsistency": "PASS / matrix, DAG, historical case contract/evidence unchanged; current BLOCKED/null count and source ranges checked",
+        "docsLinks": {
+          "checked": 65,
+          "warnings": 0,
+          "errors": 0
+        },
+        "diffCheck": "PASS",
+        "notRun": [
+          "targeted Java/PostgreSQL",
+          "stage guard unittest suite",
+          "next-action/lifecycle fixtures",
+          "pinned Gitleaks",
+          "new CI"
+        ],
+        "notRunReason": "Pre-refactor canonical reachability hard gate blocked; no staging/delivery attempted"
+      }
+    },
+    "previousFindings": [
+      {
+        "id": "P1-L4-01",
+        "severity": "P1",
+        "classification": "PRODUCTION_CORRECTNESS_FIX",
+        "sourceRefs": [
+          "S10",
+          "S14",
+          "S04",
+          "T15",
+          "T16"
+        ],
+        "scenarios": [
+          "L4-CFR-01"
+        ],
+        "fact": "provider FILLED -> NO_MUTATION_TERMINAL -> gateway accepted=true -> finalizeAcceptedCancelOrder writes CANCELLED",
+        "minimalFix": "保留provider真实terminal state，经core同步，不虚构cancel",
+        "validation": "full-fill-before-cancel-query; CANCEL=0, Order FILLED, Trade/Ledger完整",
+        "status": "OPEN_CONFIRMED_BY_TARGETED_REPRODUCTION",
+        "originalId": "P1-1",
+        "title": "CANCEL_AFTER_CONFIRMED_FILL_TERMINAL_OVERWRITE_RISK",
+        "reproduction": [
+          "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4PlanBlockerPostgresIntegrationTest.java#filledProviderNoMutationCancelBecomesCancelledAndIsNotAutomaticallyRepaired"
+        ],
+        "result": "真实 OkxSpotProviderAdapter 先解析 FILLED；cancel 返回 NO_MUTATION_TERMINAL；真实 typed gateway accepted=true；真实 Order service/PG 写 CANCELLED。QUERY=1、CANCEL wire=0、Trade=0、Ledger=0；两轮 REST scan 无补偿，显式 FILLED 对齐被 terminal state machine 拒绝。",
+        "implementationOwner": "nq-core OrderCommandWriteService / TradingCancelGatewayResult; nq-infra MinimalPilotTradingVenueGateway",
+        "requiredBatch": "C1",
+        "dependency": [],
+        "evidenceLimits": "typed binding/lease/intent persistence 在此 mapping probe 是 mock；Order/Trade/Ledger 为真实 Spring/PG。未证明 pilot authorization、完整 typed wiring 或真实 provider。",
+        "acceptance": "FILLED/NO_MUTATION 保留真实 FILLED；CANCELED、REJECTED、NOT_FOUND 各有明确语义；不得统一写 CANCELLED；zero CANCEL mutation，逐fill账务完整。",
+        "disposition": "CONFIRMED_CORRECTNESS_DEFECT",
+        "canonicalReachability": {
+          "state": "NOT_PROVEN",
+          "assessmentRef": "canonicalReachabilityAssessment.cases",
+          "freshReproduced": false
+        }
+      },
+      {
+        "id": "P1-L4-02",
+        "severity": "P1",
+        "classification": "PRODUCTION_CORRECTNESS_FIX",
+        "sourceRefs": [
+          "S01",
+          "S04",
+          "S05",
+          "S16",
+          "T15"
+        ],
+        "scenarios": [
+          "L4-CFR-04"
+        ],
+        "fact": "旧SENT/CANCEL_REQUESTED快照校验后UPDATE orders仅按order_id，能覆盖其他事务已提交terminal state",
+        "minimalFix": "短事务内重读并锁/CAS当前行；stale finalize拒绝，外部调用仍在事务外",
+        "validation": "B提交FILLED后释放A的旧ACK；最终FILLED，非法迁移0；另测旧cancel快照",
+        "status": "OPEN_CONFIRMED_BY_TARGETED_REPRODUCTION",
+        "originalId": "P1-2",
+        "title": "ORDER_STATUS_STALE_ACK_WITHOUT_CURRENT_STATE_OR_VERSION_CAS",
+        "reproduction": [
+          "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4PlanBlockerPostgresIntegrationTest.java#stalePlaceAckOverwritesCommittedFilledThroughRealSpringTransactions",
+          "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4PlanBlockerPostgresIntegrationTest.java#staleCancelAckOverwritesCommittedFilledThroughRealSpringTransactions"
+        ],
+        "result": "T1 完成短事务并停在 gateway 返回前；T2 经真实 REST reconciliation 提交 FILLED/Trade1/Ledger2；释放 T1 后旧 PLACE ACK 写 ACCEPTED，旧 CANCEL ACK 写 CANCELLED。生产 UPDATE orders ... WHERE order_id=? affected rows=1。",
+        "implementationOwner": "nq-core OrderCommandWriteService + nq-infra JdbcOrderRepository / OrderRepository contract",
+        "requiredBatch": "C1",
+        "dependency": [],
+        "evidenceLimits": "同 JVM 两个确定性执行线程、真实 PostgreSQL 和 Spring 事务；不是多 JVM 或 L4 final proof。普通 gateway 是受控 fixture，不验证网络 cancel 竞争。",
+        "acceptance": "两种旧 ACK 都不能覆盖已提交 terminal；重读与写入在同一锁/CAS短事务；affected rows=0 或显式 stale rejection；不得发虚假 ACCEPTED/CANCELLED audit/event。",
+        "disposition": "CONFIRMED_CORRECTNESS_DEFECT",
+        "canonicalReachability": {
+          "state": "CURRENT_SOURCE_CHAIN_IDENTIFIED",
+          "assessmentRef": "canonicalReachabilityAssessment.cases",
+          "freshReproduced": false
+        }
+      },
+      {
+        "id": "P1-L4-03",
+        "severity": "P1",
+        "classification": "PRODUCTION_CORRECTNESS_FIX",
+        "sourceRefs": [
+          "S16",
+          "S17",
+          "T15",
+          "S33",
+          "S35",
+          "S36"
+        ],
+        "scenarios": [
+          "L4-ESDB-05",
+          "L4-PFC-02"
+        ],
+        "fact": "REST扫描不含CANCELLED；取消终态提交后fill/ledger未完成时失去后续恢复入口",
+        "minimalFix": "有界接纳具有稳定identity的cancelled-with-fills恢复，重放canonical ledger",
+        "validation": "partial fill->cancel->CANCELLED提交后crash；正常restart扫描恢复f1及4分录",
+        "status": "OPEN_CONFIRMED_BY_TARGETED_REPRODUCTION",
+        "originalId": "P1-3",
+        "title": "CANCELLED_ORDER_RECONCILIATION_COVERAGE_GAP",
+        "reproduction": [
+          "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4PlanBlockerPostgresIntegrationTest.java#cancelledOrderWithVenueFillIsExcludedWhileFilledPositiveControlRecovers"
+        ],
+        "result": "local CANCELLED 后 venue fill 存在，连续2轮 scan 对该订单 fillQuery=0、Trade=0、Ledger=0。另一个 ACCEPTED positive control 在同一服务生成 FILLED/Trade1/Ledger2。",
+        "implementationOwner": "nq-scheduler OkxRestReconcileService / OkxRecoveryService",
+        "requiredBatch": "C2",
+        "dependency": [
+          "C1",
+          "C3"
+        ],
+        "evidenceLimits": "重复扫描配合静态 candidate predicate 证明正常 REST/restart recovery blind spot；不是对无限时间的观测。WS event store/acceleration 不拥有 missing Trade/Ledger backfill；typed pilot runner 不是普通订单的自动恢复 owner。",
+        "acceptance": "有界扫描带稳定identity的 CANCELLED 缺fill订单；不要求把合法部分成交撤单改成 FILLED；补齐每个Trade及2/4分录，restart/replay幂等且保留状态事实。",
+        "disposition": "CONFIRMED_CORRECTNESS_DEFECT",
+        "canonicalReachability": {
+          "state": "CURRENT_SOURCE_CHAIN_IDENTIFIED",
+          "assessmentRef": "canonicalReachabilityAssessment.cases",
+          "freshReproduced": false
+        }
+      },
+      {
+        "id": "PB1",
+        "missingFact": "NONE: runtime behavior is now characterized; required correction remains open",
+        "requiredInspection": "COMPLETE: see reproduction/result/evidenceLimits",
+        "minimumPrerequisite": "C2 correctness closure + independent review before dependent qualification",
+        "originalId": "PLAN-BLOCKER-1",
+        "title": "KILL_ENGAGED_TYPED_RECOVERY_PATH_NOT_PROVEN",
+        "reproduction": [
+          "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4PlanBlockerPostgresIntegrationTest.java#engagedKillRejectsNewPlaceButAllowsOrdinaryReadAndLedgerConvergence",
+          "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java#shouldCharacterizeL4KillRecoveryAndLateSenderAfterNegativeQuery",
+          "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/PilotExecutionLeaseServiceTest.java#l4UnexpiredRecoveryRequestsDisengageBeforeAnyQuery",
+          "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/PilotExecutionLeaseServiceTest.java#l4ExpiredRecoveryDoesNotRequestDisengage"
+        ],
+        "result": "ENGAGED 下 ordinary new PLACE=RISK_REJECTED；typed new PLACE=GLOBAL_KILL_SWITCH_NOT_DISENGAGED；typed QUERY/FILLS及真实 PG Intent recovery=RECONCILED可执行；ordinary recovery=FILLED/Trade1/Ledger2。完整 pilot runner 的 unexpired consumed resume 却在 query 前请求 disengageForPilot；expired 分支不解除。",
+        "implementationOwner": "nq-app MinimalLivePilotConfiguration recovery composition; nq-infra PilotExecutionLeaseService / MinimalPilotTradingVenueGateway",
+        "requiredBatch": "C2",
+        "dependency": [
+          "C1",
+          "C3"
+        ],
+        "evidenceLimits": "缺陷范围是 L4 要求的 kill-preserving typed recovery composition；不是声称 RiskGate 无差别挡住所有恢复，也不把原 pilot 已授权短窗口行为追认成历史事故。unexpired 单测证明解除调用，不声称触及真实 kill 或已跑完整 runner。",
+        "acceptance": "正常 typed recovery owner 在未过期/已过期、positive/negative/open truth 下保持 kill ENGAGED；无 resume/disengage/新 PLACE/CANCEL。通过正常服务持久化 Order/Trade/Ledger；negative finality 依赖 C3 的旧sender停止确认。",
+        "disposition": "CONFIRMED_CORRECTNESS_DEFECT",
+        "severity": "P1",
+        "status": "OPEN_CONFIRMED_BY_TARGETED_REPRODUCTION",
+        "canonicalReachability": {
+          "state": "NOT_PROVEN",
+          "assessmentRef": "canonicalReachabilityAssessment.cases",
+          "freshReproduced": false
+        }
+      },
+      {
+        "id": "PB2",
+        "missingFact": "NONE: runtime behavior is now characterized; required correction remains open",
+        "requiredInspection": "COMPLETE: see reproduction/result/evidenceLimits",
+        "minimumPrerequisite": "C3 correctness closure + independent review before dependent qualification",
+        "originalId": "PLAN-BLOCKER-2",
+        "title": "SEND_STARTED_OLD_SENDER_DISPATCH_AUTHORITY_NOT_PROVEN",
+        "reproduction": [
+          "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java#shouldCharacterizeL4KillRecoveryAndLateSenderAfterNegativeQuery"
+        ],
+        "result": "A durable SEND_STARTED 后 latch 停顿；B claim 被拒绝（不会成为新发送owner）；B 使 Intent UNKNOWN 并 query-not-found -> RECONCILED，递增 version 使 A receipt 失权；ENGAGED 下释放 A，A wire=1、B wire=0、QUERY=1，A 最后 receipt CAS rejected，DB仍 QUERY_NOT_FOUND。",
+        "implementationOwner": "nq-core ExecutionIntentService / ExecutionAttemptLifecycle; typed dispatch and recovery owner must share negative-finality contract",
+        "requiredBatch": "C3",
+        "dependency": [
+          "C1"
+        ],
+        "evidenceLimits": "真实 PG repository + 两个 worker service + 真实 loopback HTTP；不是两个 JVM。没有 TTL 人工改写或伪造 B 接管；未证明 duplicate mutation。确认的是 negative finality 后 late dispatch，不能将 DB CAS 称为 network fencing。",
+        "acceptance": "A 在 pre-dispatch 被撤销并确认停止后才允许 negative finality；若无法确认旧sender已停止，则 NOT_FOUND 保持 UNKNOWN，可重复query但不新 mutation。若请求已开始，等待正查询收敛；A/B重复 mutation=0，旧receipt拒绝不能代替wire抑制。",
+        "disposition": "CONFIRMED_CORRECTNESS_DEFECT",
+        "severity": "P1",
+        "status": "OPEN_CONFIRMED_BY_TARGETED_REPRODUCTION",
+        "canonicalReachability": {
+          "state": "NOT_PROVEN",
+          "assessmentRef": "canonicalReachabilityAssessment.cases",
+          "freshReproduced": false
+        }
+      }
+    ],
+    "dagBefore": [
+      {
+        "id": "C1",
+        "name": "Terminal truth and atomic Order ownership",
+        "impact": [
+          "PRODUCTION_CORRECTNESS_FIX"
+        ],
+        "dependsOn": [],
+        "scope": "P1-L4-01/02最小终态合同与原子写保护；复用本轮targeted tests；不依赖B0",
+        "acceptance": "FILLED/NO_MUTATION 保留真实 FILLED；CANCELED、REJECTED、NOT_FOUND 各有明确语义；不得统一写 CANCELLED；zero CANCEL mutation，逐fill账务完整。 两种旧 ACK 都不能覆盖已提交 terminal；重读与写入在同一锁/CAS短事务；affected rows=0 或显式 stale rejection；不得发虚假 ACCEPTED/CANCELLED audit/event。",
+        "proposedFileScope": [
+          "OrderCommandWriteService / OrderRepository / JdbcOrderRepository",
+          "TradingCancelGatewayResult / MinimalPilotTradingVenueGateway / caller contract tests"
+        ]
+      },
+      {
+        "id": "C3",
+        "name": "Dispatch authority and stale sender",
+        "impact": [
+          "PRODUCTION_CORRECTNESS_FIX"
+        ],
+        "dependsOn": [
+          "C1"
+        ],
+        "scope": "PB2 negative-finality与旧sender停止确认；现有lifecycle足够复现，不预授权production injection seam",
+        "acceptance": "A 在 pre-dispatch 被撤销并确认停止后才允许 negative finality；若无法确认旧sender已停止，则 NOT_FOUND 保持 UNKNOWN，可重复query但不新 mutation。若请求已开始，等待正查询收敛；A/B重复 mutation=0，旧receipt拒绝不能代替wire抑制。",
+        "proposedFileScope": [
+          "ExecutionIntentService / ExecutionAttemptLifecycle / MinimalPilotTradingVenueGateway / WorkerOperationSafetyGate; exact correction subject to PB2 contract review"
+        ]
+      },
+      {
+        "id": "C2",
+        "name": "Recovery admission and query-only convergence",
+        "impact": [
+          "PRODUCTION_CORRECTNESS_FIX"
+        ],
+        "dependsOn": [
+          "C1",
+          "C3"
+        ],
+        "scope": "P1-L4-03 + PB1；CANCELLED补扫及kill-preserving typed recovery composition；不改RiskGate放行条件",
+        "acceptance": "有界扫描带稳定identity的 CANCELLED 缺fill订单；不要求把合法部分成交撤单改成 FILLED；补齐每个Trade及2/4分录，restart/replay幂等且保留状态事实。 正常 typed recovery owner 在未过期/已过期、positive/negative/open truth 下保持 kill ENGAGED；无 resume/disengage/新 PLACE/CANCEL。通过正常服务持久化 Order/Trade/Ledger；negative finality 依赖 C3 的旧sender停止确认。",
+        "proposedFileScope": [
+          "OkxRestReconcileService / OkxRecoveryService",
+          "MinimalLivePilotConfiguration recovery ownership extraction (separate production review)"
+        ]
+      },
+      {
+        "id": "R",
+        "name": "Independent correctness review",
+        "impact": [
+          "NO_CHANGE_REQUIRED"
+        ],
+        "dependsOn": [
+          "C1",
+          "C3",
+          "C2"
+        ],
+        "scope": "独立于实现上下文的correctness review；不自动修复",
+        "acceptance": "5 confirmed defects closed by executable invariants; P0/P1=0 for correction candidate; no authorization weakening",
+        "proposedFileScope": [
+          "separate review evidence for C1/C3/C2 immutable candidate"
+        ]
+      },
+      {
+        "id": "B0",
+        "name": "Harness foundation",
+        "impact": [
+          "TEST_HARNESS",
+          "TEST_ONLY"
+        ],
+        "dependsOn": [
+          "R"
+        ],
+        "scope": "forked Spring launcher、PG16隔离、loopback allowlist、控制协议、独立venue日志、schema及checker；无production变更",
+        "acceptance": "独立PID/真实PG及Spring proxy；baseline后controller无业务写权限；正常回合及坏证据拒绝",
+        "proposedFileScope": [
+          "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/l4/ (proposed, not created)",
+          "backend/nq-app/src/test/resources/l4/ (proposed, not created)",
+          "reuse existing TradingRestartRecoveryPostgresIntegrationTest launcher/fixture and test-only utilities"
+        ]
+      },
+      {
+        "id": "B1",
+        "name": "Transport uncertainty",
+        "impact": [
+          "TEST_ONLY",
+          "TEST_HARNESS"
+        ],
+        "dependsOn": [
+          "B0",
+          "C2"
+        ],
+        "scope": "AT/LA rows；真实timeout与ACK生成后丢失区分",
+        "acceptance": "每row3次；PLACE=1；完整终态",
+        "proposedFileScope": [
+          "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/l4/ (proposed scenario tests, not created)"
+        ]
+      },
+      {
+        "id": "B2",
+        "name": "Cancel/fill and partial continuation",
+        "impact": [
+          "TEST_ONLY"
+        ],
+        "dependsOn": [
+          "B0",
+          "C1",
+          "C2"
+        ],
+        "scope": "CFR/PFC rows",
+        "acceptance": "两个winner、stale ACK、remainder、逐fill Ledger及replay",
+        "proposedFileScope": [
+          "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/l4/ (proposed scenario tests, not created)"
+        ]
+      },
+      {
+        "id": "B3",
+        "name": "Kill in flight",
+        "impact": [
+          "TEST_ONLY"
+        ],
+        "dependsOn": [
+          "B0",
+          "C2",
+          "C3"
+        ],
+        "scope": "KIF rows",
+        "acceptance": "初始PLACE计数0/0/1；新命令外发0；kill-engaged恢复",
+        "proposedFileScope": [
+          "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/l4/ (proposed scenario tests, not created)"
+        ]
+      },
+      {
+        "id": "B4",
+        "name": "Real DB and process failure",
+        "impact": [
+          "TEST_ONLY",
+          "TEST_HARNESS"
+        ],
+        "dependsOn": [
+          "B0",
+          "C1",
+          "C2"
+        ],
+        "scope": "ESDB-00..07；rollback/commit rejection/commit response lost/connection loss/death",
+        "acceptance": "PG及wire evidence独立判故障；原子性及最终断言，无手工修库",
+        "proposedFileScope": [
+          "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/l4/ (proposed scenario tests, not created)"
+        ]
+      },
+      {
+        "id": "B5",
+        "name": "Ownership and duplicate delivery",
+        "impact": [
+          "TEST_ONLY"
+        ],
+        "dependsOn": [
+          "B0",
+          "C1",
+          "C2",
+          "C3",
+          "B1",
+          "B4"
+        ],
+        "scope": "MIL/DW；交易worker与validation lock分别证明",
+        "acceptance": "2 JVM竞争；旧token拒绝；SEND_STARTED不可重claim；负终态后无晚发",
+        "proposedFileScope": [
+          "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/l4/ (proposed scenario tests, not created)"
+        ]
+      },
+      {
+        "id": "B6",
+        "name": "Full matrix qualification",
+        "impact": [
+          "NO_CHANGE_REQUIRED"
+        ],
+        "dependsOn": [
+          "B1",
+          "B2",
+          "B3",
+          "B4",
+          "B5"
+        ],
+        "scope": "同一immutable technical candidate全矩阵+独立review；未来显式授权后才CI",
+        "acceptance": "27x3=81 runs；P0/P1=0；skip/flake/checker/divergence=0",
+        "proposedFileScope": [
+          "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/l4/ (proposed scenario tests, not created)"
+        ]
+      }
+    ],
+    "probeEvidence": {
+      "tests": 4,
+      "knownDefectReproductions": 3,
+      "normalRegressions": 1,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "postgresql": "16.15",
+      "isolation": "READ COMMITTED",
+      "address": "127.0.0.1:38056",
+      "sourceSha256": "f009e0c6268d3a3c9befb2ab4032bd11e663ad021515701e70a84d8803816496",
+      "logSha256": "2630123264e834eb4a7d9e52eaa0413f11839a310fa7bd08a143631323e9d177",
+      "xmlSha256": "57603e6b84012749fbf0871244df2683af4b466c8dc076ae66810fd4e5c4f24b",
+      "methods": [
+        "engagedKillRejectsNewPlaceButAllowsOrdinaryReadAndLedgerConvergence",
+        "cancelledOrderWithVenueFillIsExcludedWhileFilledPositiveControlRecovers",
+        "stalePlaceAckOverwritesCommittedFilledThroughRealSpringTransactions",
+        "staleCancelAckOverwritesCommittedFilledThroughRealSpringTransactions"
+      ],
+      "sourceArchive": "artifacts/20260906-l4-canonical-reachability/probe-source.txt",
+      "ephemeralSource": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4CanonicalReachabilityPostgresIntegrationTest.java",
+      "mavenExit": 0,
+      "elapsedSeconds": 22.608,
+      "finishedAt": "2026-09-06T22:53:58+08:00",
+      "cleanup": "PASS / disposable PG container and tmpfs removed; ephemeral Java source, generated class files and original Surefire reports removed; non-executable evidence archive retained"
+    },
+    "ownershipScan": "artifacts/20260906-l4-canonical-reachability/ownership-scan.json",
+    "ownershipScanSha256": "a12af579cc0c1fed93257ed700c7a0c5591d4caa5e63021fa6be349d571330e3",
+    "failedDelivery": {
+      "commit": "378de657ac33b9f9fd666288d489181ac0147b2e",
+      "ciRun": 34038345304,
+      "result": "FAILED DELIVERY",
+      "jobs": 9,
+      "success": 7,
+      "failed": 2,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    "containment": {
+      "contracts": 18,
+      "approvedEdgesBefore": 1559,
+      "approvedEdgesAfter": 1559,
+      "newApprovedEdges": 0,
+      "registryChanged": false,
+      "registrySha256": "cbbc9ba41d236296404eccae981b6c1392e5b8deb2e299ea3ab9bd078a0d7385",
+      "exceptionsWidened": false,
+      "existingUnauthorizedCandidateEdges": "NOT_REMEDIATED / prior CI errors remain"
+    },
+    "authorityChanged": false,
+    "commit": "NONE",
+    "push": "NONE",
+    "ci": "NOT_RUN",
+    "deliveryIssues": {
+      "stage": "OPEN / existing 16 errors",
+      "secret": "OPEN DELIVERY GATE ISSUE / existing generic-api-key finding; example unchanged"
+    },
+    "nextTask": "NQ-GATEAUDIT-PHASE6-L4-PLAN-CI-GATE-REMEDIATION-AND-EXACT-HEAD-CI",
+    "dagAfter": "C1(P1-L4-02) -> C2(P1-L4-03) -> independent review R -> B0 -> current eligible qualification",
+    "dagReason": "C2 recovered/replayed terminal state must not be overwritten by in-flight stale acknowledgements; establish C1 atomic ownership before accepting C2 convergence. PB2 is dormant, so C3 is not a current prerequisite. Harness work does not implement a new sender runtime.",
+    "failedTestDisposition": [
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
+        "disposition": "REVERT",
+        "scope": "Phase6 addition only; restore exact pre-Phase6 file from 8abe969af8bada6a6a9434ca30b990c5ebec7bd5; never refresh exception hash"
+      },
+      {
+        "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/PilotExecutionLeaseServiceTest.java",
+        "disposition": "REVERT",
+        "scope": "Phase6 R07/R08 additions only; retained pilot semantics are not current recovery findings"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4PlanBlockerPostgresIntegrationTest.java",
+        "disposition": "SPLIT",
+        "scope": "Retire R01 from current set; replace R02/R03/R04 through current stable Spring probes; retain R05 as ordinary recovery normal regression after rewrite"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4TypedGatewayFixture.java",
+        "disposition": "REVERT",
+        "scope": "Remove failed-delivery helper; no new direct caller of retained compatibility types"
+      }
+    ],
+    "validation": {
+      "authorityPS51": "PASS / errors=0 / process-local ExecutionPolicy Bypass",
+      "authorityPS7": "PASS / errors=0",
+      "planConsistency": "PASS / current R1-R4 table, counts, DAG, row dependencies, eligibility and preserved historical evidence",
+      "docsLinks": {
+        "checked": 68,
+        "warnings": 0,
+        "errors": 0
+      },
+      "stageBaseline": {
+        "beforeErrors": 16,
+        "withProbeErrors": 16,
+        "afterErrors": 16,
+        "newErrors": 0,
+        "beforeAfterDiagnostics": "BYTE_IDENTICAL",
+        "checkerExitCode": 1,
+        "knownFailureKept": true
+      },
+      "secretBaseline": {
+        "version": "8.18.4",
+        "platform": "linux_x64 via Ubuntu WSL",
+        "archiveSha256": "ba6dbb656933921c775ee5a2d1c13a91046e7952e9d919f9bac4cec61d628e7d",
+        "officialChecksumMatched": true,
+        "tracked": 3141,
+        "safeScanned": 3139,
+        "beforeFindings": 1,
+        "afterFindings": 1,
+        "newFindings": 0,
+        "rule": "generic-api-key",
+        "file": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_FAILURE_MATRIX_PLAN.md",
+        "sameRedactedMatchAndOriginalCommand": true,
+        "workflowConfigChanged": false,
+        "invocation": "Exact detect --no-git --redact JSON arguments from Invoke-VerifiedGitleaks; direct verified Linux binary because WSL has no pwsh. Reports contain the same single existing finding; nonzero scan exit is expected and not described as clean."
+      },
+      "diffCheck": "PASS",
+      "toolingAttempts": [
+        "Initial safe-copy hit Windows long path; retried with extended absolute paths.",
+        "WSL pwsh unavailable; used verified Linux binary with identical wrapper arguments, no installation or rule change.",
+        "Initial plan validator selected historical section17 row; corrected selector to current section18 and all assertions passed."
+      ],
+      "notRun": [
+        "Full Maven",
+        "frontend",
+        "L4 qualification",
+        "CI",
+        "independent correctness review"
+      ]
+    }
+  },
+  "historicalFailedDeliveryReproductionContract": {
+    "schemaVersion": "1.0",
+    "totalCases": 8,
+    "knownDefectReproduction": 6,
+    "normalRegression": 2,
+    "acceptedCorrectnessEvidence": false,
+    "cases": [
+      {
+        "id": "R01",
+        "testFile": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4PlanBlockerPostgresIntegrationTest.java",
+        "testMethod": "filledProviderNoMutationCancelBecomesCancelledAndIsNotAutomaticallyRepaired",
+        "findingId": "P1-1",
+        "registryId": "P1-L4-01",
+        "classification": "KNOWN_DEFECT_REPRODUCTION",
+        "junitTag": "known-defect-reproduction",
+        "currentObservation": "provider FILLED + NO_MUTATION_TERMINAL becomes local CANCELLED with missing Trade/Ledger",
+        "whyPassesToday": "Assertions match the unfixed terminal overwrite and missing recovery",
+        "remediationOwner": "C1",
+        "lifecycle": "TEMPORARY_UNTIL_OWNING_REMEDIATION",
+        "inversionOrRemovalTrigger": "At C1 fix invert to preserved FILLED, no cancel mutation and complete Trade/Ledger via normal recovery",
+        "expectedPostFixDisposition": "CONVERT_TO_NORMAL_REGRESSION_OR_REPLACE_WITH_LINKED_EQUIVALENT",
+        "wrongBehaviorAcceptedAsCorrectnessInvariant": false,
+        "passMeaning": "KNOWN_DEFECT_SUCCESSFULLY_REPRODUCED"
+      },
+      {
+        "id": "R02",
+        "testFile": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4PlanBlockerPostgresIntegrationTest.java",
+        "testMethod": "stalePlaceAckOverwritesCommittedFilledThroughRealSpringTransactions",
+        "findingId": "P1-2",
+        "registryId": "P1-L4-02",
+        "classification": "KNOWN_DEFECT_REPRODUCTION",
+        "junitTag": "known-defect-reproduction",
+        "currentObservation": "stale PLACE ACK overwrites a committed FILLED with ACCEPTED; SQL affected=1",
+        "whyPassesToday": "Deterministic latch makes the stale write observable and the defective expectation pass",
+        "remediationOwner": "C1",
+        "lifecycle": "TEMPORARY_UNTIL_OWNING_REMEDIATION",
+        "inversionOrRemovalTrigger": "At C1 fix assert FILLED survives and stale finalization is explicitly rejected without false ACK events",
+        "expectedPostFixDisposition": "CONVERT_TO_NORMAL_REGRESSION_OR_REPLACE_WITH_LINKED_EQUIVALENT",
+        "wrongBehaviorAcceptedAsCorrectnessInvariant": false,
+        "passMeaning": "KNOWN_DEFECT_SUCCESSFULLY_REPRODUCED"
+      },
+      {
+        "id": "R03",
+        "testFile": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4PlanBlockerPostgresIntegrationTest.java",
+        "testMethod": "staleCancelAckOverwritesCommittedFilledThroughRealSpringTransactions",
+        "findingId": "P1-2",
+        "registryId": "P1-L4-02",
+        "classification": "KNOWN_DEFECT_REPRODUCTION",
+        "junitTag": "known-defect-reproduction",
+        "currentObservation": "stale CANCEL ACK overwrites a committed FILLED with CANCELLED; SQL affected=1",
+        "whyPassesToday": "Deterministic latch exposes the defective final state",
+        "remediationOwner": "C1",
+        "lifecycle": "TEMPORARY_UNTIL_OWNING_REMEDIATION",
+        "inversionOrRemovalTrigger": "At C1 fix assert FILLED survives and stale cancel persistence is rejected without a false CancelAck",
+        "expectedPostFixDisposition": "CONVERT_TO_NORMAL_REGRESSION_OR_REPLACE_WITH_LINKED_EQUIVALENT",
+        "wrongBehaviorAcceptedAsCorrectnessInvariant": false,
+        "passMeaning": "KNOWN_DEFECT_SUCCESSFULLY_REPRODUCED"
+      },
+      {
+        "id": "R04",
+        "testFile": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4PlanBlockerPostgresIntegrationTest.java",
+        "testMethod": "cancelledOrderWithVenueFillIsExcludedWhileFilledPositiveControlRecovers",
+        "findingId": "P1-3",
+        "registryId": "P1-L4-03",
+        "classification": "KNOWN_DEFECT_REPRODUCTION",
+        "junitTag": "known-defect-reproduction",
+        "currentObservation": "CANCELLED fill queries=0 and Trade/Ledger=0 despite venue fill; positive control recovers",
+        "whyPassesToday": "The test deliberately asserts the existing reconciliation blind spot",
+        "remediationOwner": "C2",
+        "lifecycle": "TEMPORARY_UNTIL_OWNING_REMEDIATION",
+        "inversionOrRemovalTrigger": "At C2 fix invert missing-fill assertions to bounded idempotent backfill; retain the positive control",
+        "expectedPostFixDisposition": "CONVERT_TO_NORMAL_REGRESSION_OR_REPLACE_WITH_LINKED_EQUIVALENT",
+        "wrongBehaviorAcceptedAsCorrectnessInvariant": false,
+        "passMeaning": "KNOWN_DEFECT_SUCCESSFULLY_REPRODUCED"
+      },
+      {
+        "id": "R05",
+        "testFile": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4PlanBlockerPostgresIntegrationTest.java",
+        "testMethod": "engagedKillRejectsNewPlaceButAllowsOrdinaryReadAndLedgerConvergence",
+        "findingId": "PB1",
+        "registryId": "PB1",
+        "classification": "NORMAL_REGRESSION",
+        "junitTag": "normal-regression",
+        "currentObservation": "new PLACE rejected while read/reconciliation/ledger convergence retain ENGAGED",
+        "whyPassesToday": "The existing ordinary read/recovery control satisfies the tested invariant",
+        "remediationOwner": "C2",
+        "lifecycle": "RETAIN_NORMAL_INVARIANT",
+        "inversionOrRemovalTrigger": "Retain as NORMAL_REGRESSION in C2; never invert rejection of new PLACE or preservation of kill",
+        "expectedPostFixDisposition": "RETAIN_NORMAL_REGRESSION",
+        "wrongBehaviorAcceptedAsCorrectnessInvariant": false,
+        "passMeaning": "NORMAL_INVARIANT_PRESERVED"
+      },
+      {
+        "id": "R06",
+        "testFile": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
+        "testMethod": "shouldCharacterizeL4KillRecoveryAndLateSenderAfterNegativeQuery",
+        "findingId": "PB2",
+        "registryId": "PB2",
+        "classification": "KNOWN_DEFECT_REPRODUCTION",
+        "junitTag": "known-defect-reproduction",
+        "currentObservation": "A sends one late wire request after B seals QUERY_NOT_FOUND; B mutation=0; only receipt CAS rejects A",
+        "whyPassesToday": "The known-defect assertion accepts the observed late wire only as reproduction evidence",
+        "remediationOwner": "C3",
+        "lifecycle": "TEMPORARY_UNTIL_OWNING_REMEDIATION",
+        "inversionOrRemovalTrigger": "At C3 fix replace/invert to no late dispatch or no negative finality until sender-stop proof; retain or split out PB1 positive typed-query assertions",
+        "expectedPostFixDisposition": "CONVERT_TO_NORMAL_REGRESSION_OR_REPLACE_WITH_LINKED_EQUIVALENT",
+        "wrongBehaviorAcceptedAsCorrectnessInvariant": false,
+        "passMeaning": "KNOWN_DEFECT_SUCCESSFULLY_REPRODUCED"
+      },
+      {
+        "id": "R07",
+        "testFile": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/PilotExecutionLeaseServiceTest.java",
+        "testMethod": "l4UnexpiredRecoveryRequestsDisengageBeforeAnyQuery",
+        "findingId": "PB1",
+        "registryId": "PB1",
+        "classification": "KNOWN_DEFECT_REPRODUCTION",
+        "junitTag": "known-defect-reproduction",
+        "currentObservation": "unexpired consumed recovery requests disengageForPilot before query",
+        "whyPassesToday": "Mockito verifies the current recovery call that violates the requested L4 kill-preserving contract",
+        "remediationOwner": "C2",
+        "lifecycle": "TEMPORARY_UNTIL_OWNING_REMEDIATION",
+        "inversionOrRemovalTrigger": "At C2 fix move/invert to the normal kill-preserving recovery entry: no disengage or mutation; a separately authorized pilot-opening API is a distinct contract",
+        "expectedPostFixDisposition": "CONVERT_TO_NORMAL_REGRESSION_OR_REPLACE_WITH_LINKED_EQUIVALENT",
+        "wrongBehaviorAcceptedAsCorrectnessInvariant": false,
+        "passMeaning": "KNOWN_DEFECT_SUCCESSFULLY_REPRODUCED"
+      },
+      {
+        "id": "R08",
+        "testFile": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/PilotExecutionLeaseServiceTest.java",
+        "testMethod": "l4ExpiredRecoveryDoesNotRequestDisengage",
+        "findingId": "PB1",
+        "registryId": "PB1",
+        "classification": "NORMAL_REGRESSION",
+        "junitTag": "normal-regression",
+        "currentObservation": "expired consumed recovery performs no kill mutation",
+        "whyPassesToday": "The existing expired branch preserves the tested kill invariant",
+        "remediationOwner": "C2",
+        "lifecycle": "RETAIN_NORMAL_INVARIANT",
+        "inversionOrRemovalTrigger": "Retain as NORMAL_REGRESSION in C2 and preserve no-disengage semantics",
+        "expectedPostFixDisposition": "RETAIN_NORMAL_REGRESSION",
+        "wrongBehaviorAcceptedAsCorrectnessInvariant": false,
+        "passMeaning": "NORMAL_INVARIANT_PRESERVED"
+      }
+    ],
+    "retirementRule": "Owning C1/C2/C3 correction must invert/replace temporary assertions and update this metadata in the same reviewed candidate. No suppression/skip/disabled assertion solely to keep green; removal requires linked equivalent regression and independent review.",
+    "ordinaryCiSemantics": "Canonical CI does not set nq.l4.blockers.enabled, so the 5-case PG class and joint PG case are conditionally disabled there. R07 runs as explicitly tagged characterization; R08 runs as normal regression. Dedicated local delivery command explicitly runs all eight with zero skips. Neither baseline CI success nor known-defect PASS closes any P1.",
+    "evidenceScope": "Historical failed-delivery cases; actual source unchanged this task. Later delivery rewrite follows canonicalReachabilityClosure.failedTestDisposition; current probes are ephemeral.",
+    "currentPlannedCases": {
+      "knownDefectReproductions": 3,
+      "normalRegressions": 1,
+      "implementation": "NOT_DONE / future delivery remediation",
+      "lifecycle": "C1 inverts/replaces both stale ACK assertions; C2 inverts CANCELLED blind-spot assertion; retain kill-engaged normal recovery; historical retired/dormant observations kept in plan, not required runtime assertions."
+    }
+  },
+  "gateRemediation": {
+    "task": "NQ-GATEAUDIT-PHASE6-L4-PLAN-CI-GATE-REMEDIATION-AND-EXACT-HEAD-CI",
+    "startingHead": "378de657ac33b9f9fd666288d489181ac0147b2e",
+    "startingOrigin": "378de657ac33b9f9fd666288d489181ac0147b2e",
+    "failedDelivery": {
+      "commit": "378de657ac33b9f9fd666288d489181ac0147b2e",
+      "ciRun": "34038345304",
+      "status": "FAILED DELIVERY",
+      "jobs": 9,
+      "success": 7,
+      "failed": 2,
+      "rootCauses": [
+        "compatibility containment violations",
+        "exception-bound historical test mutation",
+        "secret-shaped documentation fixture"
+      ]
+    },
+    "restoreSource": "8abe969af8bada6a6a9434ca30b990c5ebec7bd5",
+    "candidatePaths": [
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
+      "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/PilotExecutionLeaseServiceTest.java",
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4TypedGatewayFixture.java",
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4PlanBlockerPostgresIntegrationTest.java",
+      "docs/audit/evidence/GATEAUDIT_PHASE6_L4_FAILURE_MATRIX_PLAN.md",
+      "docs/audit/evidence/GATEAUDIT_PHASE6_L4_FAILURE_MATRIX_PLAN.json"
+    ],
+    "canonicalConfirmedP1Count": 2,
+    "reachabilityUnknown": 0,
+    "productionChanged": false,
+    "authorityChanged": false,
+    "workflowChanged": false,
+    "compatibilityRegistryChanged": false,
+    "scannerConfigChanged": false,
+    "sentinel": {
+      "value": "x",
+      "credential": false,
+      "authentication": "POSTGRES_HOST_AUTH_METHOD=trust",
+      "purpose": "nonblank fixture validation only"
+    },
+    "localAdmission": "PASS; final candidate readback required before exact staging and commit",
+    "exactHeadCi": "NOT_RUN_AT_COMMIT; bind externally to follow-up SHA",
+    "targetedRegression": {
+      "classes": [
+        {
+          "class": "L4PlanBlockerPostgresIntegrationTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "sha256": "1f95c436405fb11d6407104654f4198186e7bcda992bb2b2e98d66c1ee22a1fb"
+        },
+        {
+          "class": "LiveSessionFactModelPostgresIntegrationTest",
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "sha256": "3a35bbf83bf774ccaacf4d31767e0a5f9b1f835b05843dcebf3d35a132a76f9a"
+        },
+        {
+          "class": "TradingChainPostgresIntegrationTest",
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "sha256": "a086bc4fe6d8682f7616a9a13fdc02b93830a03dd39586c449b37aacc8ec14a1"
+        },
+        {
+          "class": "OrderCommandServiceTest",
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "sha256": "d5be394e53423271d868874c12e175bceee83564487f4f5ee43dc49cde775036"
+        },
+        {
+          "class": "OkxRestReconcileServiceTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "sha256": "ca0b3071ea11a47789e253281801fefc931aa914aa7b6967ba4b5b790bbaaac8"
+        },
+        {
+          "class": "ExecutionIntentRuntimeTest",
+          "tests": 11,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "sha256": "e03353e1450a0ab6d0a83878a8740ac012a3a6f6b93631d49b096185136a9746"
+        },
+        {
+          "class": "MinimalPilotTradingVenueGatewayTest",
+          "tests": 7,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "sha256": "7065b6d69bc59cd15f741b2a5af2124b3b79024fac02893de2b23722234c1ac2"
+        },
+        {
+          "class": "OkxSpotProviderAdapterContractTest",
+          "tests": 15,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "sha256": "ee3f0e4a04af115c23972fe5782a5adf2848204534ce6d986eab53255ba2842d"
+        },
+        {
+          "class": "MinimalLivePilotConfigurationTest",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "sha256": "2d013b22afb7c56e620b95cea354ba518628c60cb2ce31cbe734f1d3d0b403ce"
+        },
+        {
+          "class": "PilotExecutionLeaseServiceTest",
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "sha256": "f6d21901211d390e92db7520207bdb019493fa5fb99bb4923e6e15917d96d10a"
+        }
+      ],
+      "tests": 68,
+      "knownDefectReproductionPass": 3,
+      "normalRegressionPass": 1,
+      "existingRegressionPass": 64,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "exitCode": 0,
+      "runtimeCorrectnessAccepted": false
+    },
+    "postgresql": {
+      "port": 39456,
+      "dataDirectory": "/tmp/nq-l4-plan-gate-remediation-20260907",
+      "runtime": "Ubuntu official extracted PostgreSQL 16.15",
+      "authentication": "trust",
+      "database": "nq_l4_blocker",
+      "listen": "127.0.0.1",
+      "cleanup": "STOPPED_AND_DATA_REMOVED"
+    },
+    "sourceEvent": {
+      "finishedAt": "2026-09-07T08:56:17+08:00",
+      "mavenOffline": true,
+      "logPath": "artifacts/20260907-l4-plan-gate-remediation/targeted-regression.log",
+      "logSha256": "f11c113d801c1077e4a75b63dbd367d877ea869612fd26523d7d7bd493ec6ab6"
+    },
+    "materializationEvent": "2026-09-07; new local result summaries, not CI or acceptance",
+    "compatibility": {
+      "approvedEdgesBefore": 1559,
+      "approvedEdgesAfter": 1559,
+      "newApprovedEdges": 0,
+      "contracts": 18,
+      "registrySha256": "cbbc9ba41d236296404eccae981b6c1392e5b8deb2e299ea3ab9bd078a0d7385",
+      "exceptionScopeChanged": false
+    },
+    "inventory": {
+      "scenarios": 27,
+      "currentlyApplicable": 13,
+      "futureTriggered": 14,
+      "crashPoints": 17,
+      "mustProveCrashPointInventory": 12,
+      "qualified": 0
+    },
+    "environmentFailures": [
+      "Docker Desktop startup failed: internal sailor-ingest.sock inaccessible; bounded ordinary restart timed out; no Docker config/reset/internal-file deletion.",
+      "Windows stage guard skipped two symlink tests; all 49 passed under Ubuntu WSL."
+    ],
+    "runtimeCorrectnessAccepted": false,
+    "sourceFiles": [
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
+        "sha256": "b43e0ca2a9b58b9a8328f07c6ad70e34c90c1fd7154445f5ec6dfb0abd0f9683",
+        "gitBlob": "8642ac9f784e6e369539a0c9734c895b569be51a"
+      },
+      {
+        "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/PilotExecutionLeaseServiceTest.java",
+        "sha256": "ac8025e048bb79354844fddde3778c916b13862f8fe9cfa133cfc6f0c6c5ca98",
+        "gitBlob": "116021fc42d76e213cd59fc9b5593126aac8af06"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4PlanBlockerPostgresIntegrationTest.java",
+        "sha256": "c8c31f33897d6dec3ae7ddc1c8d3a9ac6e069553288fcfa76279ed631cfcdbdb",
+        "gitBlob": "3211dd2688ec0331002b0d0e8b1cdb858f6255db"
+      }
+    ],
+    "command": [
+      "mvn.cmd",
+      "-o",
+      "-f",
+      "backend/pom.xml",
+      "-pl",
+      "nq-app",
+      "-am",
+      "-Dnq.l4.blockers.enabled=true",
+      "-Dtest=L4PlanBlockerPostgresIntegrationTest,LiveSessionFactModelPostgresIntegrationTest,TradingChainPostgresIntegrationTest,OrderCommandServiceTest,OkxRestReconcileServiceTest,ExecutionIntentRuntimeTest,MinimalPilotTradingVenueGatewayTest,OkxSpotProviderAdapterContractTest,MinimalLivePilotConfigurationTest,PilotExecutionLeaseServiceTest",
+      "-Dsurefire.failIfNoSpecifiedTests=false",
+      "-Dspring.datasource.url=jdbc:postgresql://127.0.0.1:39456/nq_l4_blocker",
+      "-Dspring.datasource.username=postgres",
+      "-Dspring.datasource.password=",
+      "-Dnq.postgres.smoke.required=true",
+      "-Dnq.postgres.smoke.url=jdbc:postgresql://127.0.0.1:39456/nq_l4_blocker",
+      "-Dnq.postgres.smoke.user=postgres",
+      "-Dnq.postgres.smoke.password=x",
+      "test"
+    ],
+    "initialLocalGovernance": [
+      {
+        "gate": "authority-ps51",
+        "exit": 0
+      },
+      {
+        "gate": "authority-ps7",
+        "exit": 0
+      },
+      {
+        "gate": "next-action",
+        "exit": 0
+      },
+      {
+        "gate": "agent-workflow",
+        "exit": 0
+      },
+      {
+        "gate": "lifecycle",
+        "exit": 0
+      },
+      {
+        "gate": "release-ci",
+        "exit": 0
+      },
+      {
+        "gate": "archive-manifest",
+        "exit": 0
+      },
+      {
+        "gate": "workflow-contract",
+        "exit": 0
+      }
+    ],
+    "localGates": {
+      "targetedJava": "68/68; known-defect=3 normal=1 existing=64 failures/errors/skips=0/0/0",
+      "stageChecker": "PASS errors=0; UNAUTHORIZED_COMPATIBILITY_CALLER/STAGE_SEMANTICS/STALE_EXCEPTION=0/0/0",
+      "stageGuard": "Ubuntu 49/49 PASS skips=0; Windows 49 run, 2 host symlink skips",
+      "authorityPs51": "PASS errors=0",
+      "authorityPs7": "PASS errors=0",
+      "nextAction": "PASS",
+      "agentWorkflow": "PASS",
+      "lifecycle": "PASS",
+      "planConsistency": "PASS",
+      "docsLinks": "PASS 391 checked / 123 historical warnings / 0 errors",
+      "gitleaks": "PASS pinned Linux x64 8.18.4; findings=0; unchanged CI config",
+      "secretBackstop": "PASS full tracked safe tree",
+      "diffCheck": "PASS",
+      "workflowMutations": "135 REJECTED / 0 ACCEPTED",
+      "gitleaksExecutionContract": "PASS",
+      "canonicalReleaseFixtures": "66/66 PASS"
+    },
+    "extraLocalGovernance": [
+      {
+        "gate": "workflow-tests",
+        "exit": 0
+      },
+      {
+        "gate": "gitleaks-execution-tests",
+        "exit": 0
+      },
+      {
+        "gate": "canonical-release-tests",
+        "exit": 0
+      }
+    ],
+    "scannerIdentity": {
+      "version": "8.18.4",
+      "archiveSha256": "ba6dbb656933921c775ee5a2d1c13a91046e7952e9d919f9bac4cec61d628e7d",
+      "verifiedCachedOfficialChecksum": true,
+      "safeFiles": 3138,
+      "deletedCandidateFiles": [
+        "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4TypedGatewayFixture.java"
+      ]
+    },
+    "validationHarnessCorrections": [
+      "Local plan validator initially compared CRLF checkout bytes to LF Git blob for unchanged registry; corrected comparison to Git clean-filter blob identity, no registry edit."
+    ],
+    "independentReview": {
+      "scope": "Delivery source and plan static contract, not C1/C2 correctness closure",
+      "result": "PASS / new P0/P1/P2/P3=0",
+      "finalEvidenceDelta": "Separate read-only review before commit; CI not yet run"
+    }
   }
 }

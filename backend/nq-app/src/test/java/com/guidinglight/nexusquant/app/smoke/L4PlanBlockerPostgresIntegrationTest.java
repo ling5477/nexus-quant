@@ -32,7 +32,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
- * Temporary characterization of three confirmed findings, not L4 qualification.
+ * Three temporary canonical defect reproductions (two findings) and one normal regression, not L4 qualification.
  * Defect assertions intentionally describe the unfixed baseline. No production seams are added.
  * A known-defect-reproduction PASS means the defect was reproduced, never correctness acceptance.
  * Lifecycle owner and post-fix inversion are bound in the plan JSON reproductionContract.cases.
@@ -53,7 +53,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @ContextConfiguration(initializers = TradingChainPostgresIntegrationTest.NoExchangeOutboundInitializer.class)
 class L4PlanBlockerPostgresIntegrationTest {
     @Autowired OrderCommandService commands;
-    @Autowired OrderLifecycleService lifecycle;
     @Autowired OrderRepository orders;
     @Autowired OkxRestReconcileService reconcile;
     @Autowired KillSwitchService kill;
@@ -92,33 +91,6 @@ class L4PlanBlockerPostgresIntegrationTest {
     }
 
     @AfterAll static void restoreProxy() { ExchangeNoOutboundGuard.restoreDefault(); }
-
-    /**
-     * KNOWN_DEFECT_REPRODUCTION R01 / P1-1, owner C1: PASS observes the wrong CANCELLED/empty ledger.
-     * At C1 fix, invert to preserved FILLED and recovered fills; never retain this as an accepted invariant.
-     */
-    @Tag("known-defect-reproduction")
-    @Test void filledProviderNoMutationCancelBecomesCancelledAndIsNotAutomaticallyRepaired() throws Exception {
-        var intentId = UUID.randomUUID();
-        var request = request("terminal", intentId);
-        var order = place(request);
-        gateway.venue.reportFilled(order.externalOrderId());
-        var typed = new L4TypedGatewayFixture(order, null, intentId);
-        gateway.typedCancel = typed;
-        var result = commands.cancelOrder(cancel(order));
-        assertEquals(OrderStatus.CANCELLED, result.status());
-        assertEquals("NO_MUTATION_TERMINAL", typed.cancelReceipt.get().errorCode());
-        assertEquals("ACKNOWLEDGED", typed.cancelReceipt.get().outcome().name());
-        assertEquals(0, typed.cancelWire.get());
-        assertEquals(1, typed.queryWire.get());
-        for (int pass = 0; pass < 2; pass++) assertEquals(0, reconcile.reconcileOnce(100));
-        assertEquals(OrderStatus.CANCELLED, current(order).status());
-        assertNoFillPersistence(order);
-        assertEquals(1L, count("SELECT count(*) FROM audit_logs WHERE trace_id=? AND action='ORDER_CANCELLED'", request.traceId()));
-        assertThrows(IllegalStateException.class,
-                () -> lifecycle.applyExternalStatus(order.orderId(), OrderStatus.FILLED, "PROVIDER_FILLED", order.traceId()));
-        System.out.println("L4-P1-1 provider=FILLED local=CANCELLED cancelWire=0 query=1 Trade=0 Ledger=0 receipt=ACKNOWLEDGED/NO_MUTATION_TERMINAL");
-    }
 
     /**
      * KNOWN_DEFECT_REPRODUCTION R02 / P1-2, owner C1: PASS observes stale PLACE ACK overwriting FILLED.
@@ -204,7 +176,7 @@ class L4PlanBlockerPostgresIntegrationTest {
         System.out.println("L4-P1-3 CANCELLED: scans=2 fillQueries=0 Trade=0 Ledger=0; ACCEPTED positive control -> FILLED/1/2");
     }
 
-    /** NORMAL_REGRESSION R05 / PB1, owner C2: retain rejection of new PLACE and kill-preserving recovery. */
+    /** NORMAL_REGRESSION R05 / current recovery positive control, owner C2: retain rejection of new PLACE and kill-preserving recovery. */
     @Tag("normal-regression")
     @Test void engagedKillRejectsNewPlaceButAllowsOrdinaryReadAndLedgerConvergence() {
         var order = place(request("kill-recovery"));
@@ -220,13 +192,11 @@ class L4PlanBlockerPostgresIntegrationTest {
         assertEquals(1L, count("SELECT count(*) FROM trades WHERE order_id=?", order.orderId()));
         assertEquals(2L, count("SELECT count(*) FROM ledger_entries WHERE trace_id=?", order.traceId()));
         assertEquals(KillSwitchStatus.ENGAGED, kill.snapshot().status());
-        System.out.println("L4-PB1 ordinary: kill=ENGAGED newPLACE=RISK_REJECTED recovery=FILLED/Trade1/Ledger2");
+        System.out.println("L4-R05 ordinary positive control: kill=ENGAGED newPLACE=RISK_REJECTED recovery=FILLED/Trade1/Ledger2");
     }
 
     private PlaceOrderRequest request(String name) {
-        return request(name, UUID.randomUUID());
-    }
-    private PlaceOrderRequest request(String name, UUID intentId) {
+        UUID intentId = UUID.randomUUID();
         String id = UUID.randomUUID().toString().replace("-", "");
         Long account = jdbc.queryForObject("INSERT INTO accounts(account_code,venue,status) VALUES (?,'OKX','ACTIVE') RETURNING account_id",
                 Long.class, "l4-" + id);
@@ -267,11 +237,10 @@ class L4PlanBlockerPostgresIntegrationTest {
         final TradingChainPostgresIntegrationTest.DeterministicFakeVenue venue;
         volatile boolean pausePlace, pauseCancel;
         volatile CountDownLatch reached, release;
-        volatile L4TypedGatewayFixture typedCancel;
         final AtomicReference<OrderRecord> inFlight = new AtomicReference<>();
         ControlledGateway(TradingChainPostgresIntegrationTest.DeterministicFakeVenue venue) { this.venue = venue; reset(); }
         void reset() {
-            venue.reset(); pausePlace = false; pauseCancel = false; typedCancel = null;
+            venue.reset(); pausePlace = false; pauseCancel = false;
             reached = new CountDownLatch(1); release = new CountDownLatch(1); inFlight.set(null);
         }
         private void barrier(OrderRecord order) {
@@ -287,7 +256,6 @@ class L4PlanBlockerPostgresIntegrationTest {
         }
         public TradingCancelGatewayResult cancelOrder(OrderRecord order, CancelOrderRequest request) {
             if (pauseCancel) barrier(order);
-            if (typedCancel != null) return typedCancel.gateway.cancelOrder(order, request);
             return new TradingCancelGatewayResult(true, TradingGatewayResultCategory.ACCEPTED, null, Instant.now(), "SIM");
         }
         public TradingOrderStatusSnapshot getOrderStatus(OrderRecord order, String trace) { return venue.getOrderStatus(order, trace); }

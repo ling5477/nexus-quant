@@ -33,45 +33,6 @@ class PilotExecutionLeaseServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-08-23T00:00:00Z");
 
-    /**
-     * KNOWN_DEFECT_REPRODUCTION R07 / PB1, owner C2: PASS observes the existing resume entry
-     * requesting disengage before query. This is temporary evidence, not an accepted L4 invariant.
-     * At C2 fix, move/invert this assertion onto the normal kill-preserving recovery entry and require
-     * no disengage or new mutation. The separately authorized pilot-opening API may remain distinct.
-     * Machine lifecycle: GATEAUDIT_PHASE6_L4_FAILURE_MATRIX_PLAN.json reproductionContract.cases.
-     */
-    @Test
-    @org.junit.jupiter.api.Tag("known-defect-reproduction")
-    void l4UnexpiredRecoveryRequestsDisengageBeforeAnyQuery() {
-        var leases = mock(PilotExecutionLeaseRepository.class);
-        var sessions = mock(LiveSessionControlService.class);
-        var kill = mock(KillSwitchService.class);
-        var consumed = lease(PilotExecutionLease.Status.CONSUMED, NOW.plusSeconds(60));
-        when(kill.snapshot()).thenReturn(new KillSwitchSnapshot(
-                KillSwitchScope.GLOBAL_TRADING, KillSwitchStatus.ENGAGED, 7,
-                "L4_RECOVERY", "TEST_FIXTURE", NOW, NOW, "l4-trace"));
-        new PilotExecutionLeaseService(leases, sessions, kill, Clock.fixed(NOW, ZoneOffset.UTC))
-                .resumeConsumed(new AuthenticatedLiveControlActor(consumed.createdBy()), consumed,
-                        new ExactPilotBinding.Correlation("l4-request", "l4-trace", "l4-key"));
-        verify(kill).disengageForPilot(org.mockito.ArgumentMatchers.argThat(command ->
-                command.leaseId().equals(consumed.id()) && command.expectedVersion() == 7));
-        System.out.println("L4-PB1 unexpired consumed recovery: ENGAGED -> disengageForPilot requested before runner QUERY");
-    }
-
-    /** NORMAL_REGRESSION R08 / PB1, owner C2: retain expired recovery without kill mutation. */
-    @Test
-    @org.junit.jupiter.api.Tag("normal-regression")
-    void l4ExpiredRecoveryDoesNotRequestDisengage() {
-        var kill = mock(KillSwitchService.class);
-        var consumed = lease(PilotExecutionLease.Status.CONSUMED, NOW.minusSeconds(1));
-        new PilotExecutionLeaseService(mock(PilotExecutionLeaseRepository.class),
-                mock(LiveSessionControlService.class), kill, Clock.fixed(NOW, ZoneOffset.UTC))
-                .resumeConsumed(new AuthenticatedLiveControlActor(consumed.createdBy()), consumed,
-                        new ExactPilotBinding.Correlation("l4-request", "l4-trace", "l4-key"));
-        org.mockito.Mockito.verifyNoInteractions(kill);
-        System.out.println("L4-PB1 expired consumed recovery: no kill mutation");
-    }
-
     @Test
     void startupRecoveryExpiresLeaseAndReengagesKillBeforeExecution() {
         PilotExecutionLeaseRepository leases = mock(PilotExecutionLeaseRepository.class);

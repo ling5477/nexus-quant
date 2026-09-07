@@ -2,16 +2,16 @@
 
 > 文档类型：PROOF_PLAN / NON_RUNTIME_AUTHORITY（证明计划，非运行时或阶段authority）。
 > 基线：`8abe969af8bada6a6a9434ca30b990c5ebec7bd5`；日期：2026-09-06。Primary Skill：java-backend-regression-tests（本次 blocker closure）。
-> 本文保留 blocker closure 事实；本次 delivery 的测试语义、临时生命周期及重新运行证据见第16节。提交时 CI 尚未运行；后续 exact-head CI 结果绑定本提交，不回写本提交。所有27个L4 qualification scenario仍NOT_RUN。
+> 本文保留历史 blocker closure 事实；当前 delivery 的测试语义、临时生命周期及重新运行证据见第19节；第15–18节为历史 source events。提交时 CI 尚未运行；后续 exact-head CI 结果绑定本提交，不回写本提交。所有27个L4 qualification scenario仍NOT_RUN。
 > 人类摘要与[机器矩阵](GATEAUDIT_PHASE6_L4_FAILURE_MATRIX_PLAN.json)构成同一份计划，不是平行authority。
 
 ## 1. 结论、范围与基线
 
-**5 项未知性已关闭，计划可执行；5 项 runtime correctness correction 尚未修复。**
+**当前结论：PLANNED / PHASE6_L4_CANONICAL_RUNTIME_REACHABILITY_RESOLVED / P0_0 / CANONICAL_P1_2 / REACHABILITY_UNKNOWN_0 / PLAN_EXECUTABLE。** P1-2/P1-3已通过R1–R4；P1-1/PB1为RETIRED_COMPATIBILITY_ONLY，PB2为DORMANT_NO_CURRENT_ENTRYPOINT。最终证据见第18节，第17节保留为上一轮BLOCKED历史。计划可执行不代表delivery gate已修复、CI已绿或authority已迁移。
 
 `PLANNED / PHASE6_L4_FAILURE_MATRIX_BLOCKERS_DISPOSITIONED / P0_0 / P1_5 / PLAN_EXECUTABLE`
 
-这是 `EXECUTABLE_PLAN_COMPLETE`，不是 L4 ACCEPTED，也不是 P1=0。3 个 provisional P1 经复现维持 P1；PB1/PB2 分别确认 typed 恢复编排不保持 kill 与负查询终态后的 late dispatch，均按 P1 runtime correction 处理。无 confirmed proof-seam gap，无 false positive，remaining unknowns=0。独立 review 未执行，后续修复必须独立 review。
+上述 P1_5 是原始历史复现计数；第17节记录后续阻塞，第18节完成本次最终分类。当前blocking P1=2、retired/dormant=3、unknown=0；原五项缺陷观察没有被删除或宣称修复。独立review未执行。
 
 - 预检 fetch 成功；branch=`audit/post-gatey-agent-baseline`；HEAD=origin=`8abe969af8bada6a6a9434ca30b990c5ebec7bd5`；初始仅两份 untracked plan，staged=0。
 - [STATUS](../../current/STATUS.md)及[ROADMAP](../../current/ROADMAP.md)不变：Phase5 ACCEPTED/CLOSED，Phase6 READY/NOT_STARTED，work_batch=GateAUDIT-PHASE6-L4-FAILURE-MATRIX，正式 next_action=NQ-GATEAUDIT-PHASE6-L4-FAILURE-MATRIX-PLAN。
@@ -116,9 +116,9 @@ Fixture统一：BUY LIMIT BTC-USDT、price=100、Q=0.10000000；单fill为0.10�
 | L4-CFR-04 | cancel/fill race / ORDINARY | STALE_PLACE_ACK_AFTER_FILLED_COMMIT | FILLED / 1 / 4 | 1 / 0 | B0, B2, C1, R |
 | L4-PFC-01 | partial-fill continuation / ORDINARY | FILL1_DURABLE_BEFORE_RESTART | FILLED / 2 / 8 | 1 / 0 | B0, B2 |
 | L4-PFC-02 | partial-fill continuation / TYPED | PARTIAL_THEN_REMAINDER_CANCEL | CANCELLED / 1 / 4 | 1 / 1 | B0, B2, C2, R |
-| L4-KIF-01 | kill-in-flight / ORDINARY | BEFORE_RISK_EVALUATE | RISK_REJECTED / 0 / 0 | 0 / 0 | B0, B3, C2, C3, R |
-| L4-KIF-02 | kill-in-flight / TYPED | SEND_STARTED_BEFORE_DISPATCH_KILL | CANCELLED / ORDER_NOT_FOUND/OKX_51603 (existing ordinary recovery semantics; typed binding and sender-stop proof required) / 0 / 0 | 0 / 0 | B0, B3, C2, C3, R |
-| L4-KIF-03 | kill-in-flight / TYPED | VENUE_ACCEPTED_KILL_BEFORE_ACK | FILLED / 1 / 4 | 1 / 0 | B0, B3, C2, C3, R |
+| L4-KIF-01 | kill-in-flight / ORDINARY | BEFORE_RISK_EVALUATE | RISK_REJECTED / 0 / 0 | 0 / 0 | B0, B3, C2, R |
+| L4-KIF-02 | kill-in-flight / TYPED | SEND_STARTED_BEFORE_DISPATCH_KILL | CANCELLED / ORDER_NOT_FOUND/OKX_51603 (existing ordinary recovery semantics; typed binding and sender-stop proof required) / 0 / 0 | 0 / 0 | B0, B3, C2, R |
+| L4-KIF-03 | kill-in-flight / TYPED | VENUE_ACCEPTED_KILL_BEFORE_ACK | FILLED / 1 / 4 | 1 / 0 | B0, B3, C2, R |
 | L4-ESDB-00 | external side effect + DB failure / ORDINARY | RISK_ALLOWED_BEFORE_SENT_COMMIT | RISK_REJECTED / 0 / 0 | 0 / 0 | B0, B4 |
 | L4-ESDB-01 | external side effect + DB failure / TYPED | AFTER_EXTERNAL_BEFORE_RECEIPT | FILLED / 1 / 4 | 1 / 0 | B0, B4 |
 | L4-ESDB-02 | external side effect + DB failure / TYPED | RECEIPT_INSERT_BEFORE_INTENT_UPDATE | FILLED / 1 / 4 | 1 / 0 | B0, B4 |
@@ -129,7 +129,7 @@ Fixture统一：BUY LIMIT BTC-USDT、price=100、Q=0.10000000；单fill为0.10�
 | L4-ESDB-07 | external side effect + DB failure / ORDINARY | LEDGER_WRITTEN_NOT_COMMITTED | FILLED / 1 / 4 | 1 / 0 | B0, B4 |
 | L4-MIL-01 | multi-instance / lease / INTENT_WORKER | TWO_WORKERS_BEFORE_CLAIM | FILLED / 1 / 4 | 1 / 0 | B0, B5 |
 | L4-MIL-02 | multi-instance / lease / INTENT_WORKER | EXPIRED_CLAIM_STALE_OWNER | FILLED / 1 / 4 | 1 / 0 | B0, B5 |
-| L4-MIL-03 | multi-instance / lease / INTENT_WORKER | STALE_SENDER_AFTER_QUERY_NOT_FOUND | CANCELLED / ORDER_NOT_FOUND/OKX_51603 (existing ordinary recovery semantics; typed binding and sender-stop proof required) / 0 / 0 | 0 / 0 | B0, B5, C2, C3, R |
+| L4-MIL-03 | multi-instance / lease / INTENT_WORKER | STALE_SENDER_AFTER_QUERY_NOT_FOUND | CANCELLED / ORDER_NOT_FOUND/OKX_51603 (existing ordinary recovery semantics; typed binding and sender-stop proof required) / 0 / 0 | 0 / 0 | B0, B5, C2, R |
 | L4-MIL-04 | multi-instance / lease / SCHEDULER_LOCK | ADVISORY_OWNER_PROCESS_DEATH | NOT_APPLICABLE: no order is created by validation scheduler lock / 0 / 0 | 0 / 0 | B0, B5 |
 | L4-DW-01 | duplicate worker / ORDINARY | SAME_COMMAND_BEFORE_INSERT | FILLED / 1 / 4 | 1 / 0 | B0, B5 |
 | L4-DW-02 | duplicate worker / INTENT_WORKER | DUPLICATE_DELIVERY_AFTER_SEND_STARTED | FILLED / 1 / 4 | 1 / 0 | B0, B5 |
@@ -324,9 +324,9 @@ hash只能证明文件未变，不能证明fixture没造假；必须审查produc
 - 网络证明需要最小socket/transport allowlist及隔离PG绑定，不只复用ExchangeNoOutboundGuard的provider域名denylist。禁止修改系统防火墙/代理，也禁止用互联网连接测试no-outbound。
 - cleanup仅处理已登记PID/PG实例/随机目录；先保留并seal失败证据，再按精确资源ID清理；无法清理记FAIL，不能杀共享进程或扫描生产服务。
 
-## 11. 五项 blocker disposition 与真实合同
+## 11. 历史五项 blocker observation 与合同（当前disposition见第18节）
 
-全部 disposition 均为 `CONFIRMED_CORRECTNESS_DEFECT`；不将 production correction 写成 harness gap。每项结果严格保留本次 proof level。
+本节保留历史五项 observation 的原合同与复现结果，severity/owner 均是当时判断，不能作为当前 blocking set。当前仅 P1-2/P1-3 为 CANONICAL_REACHABLE_CONFIRMED_DEFECT；P1-1/PB1 为 RETIRED_COMPATIBILITY_ONLY，PB2 为 DORMANT_NO_CURRENT_ENTRYPOINT。当前依赖与执行合同以第12、18、19节为准。
 
 ### P1-L4-01 / CANCEL_AFTER_CONFIRMED_FILL_TERMINAL_OVERWRITE_RISK
 
@@ -400,49 +400,44 @@ PB1 判断依据是 L4 要求的恢复期间 kill 保持 ENGAGED，而不是“k
 - PB2：owner=claimed_by + UUID claim_token + version；CLAIMED/未过期/token匹配才可markSendStarted。SEND_STARTED是durable send reservation，不是已发wire事实；一旦写入就不可重claim，即使TTL到期。没有renew API或provider monotonic fencing token。provider clientOrderId从intent稳定映射，防identity漂移但不能撤销旧sender。
 - PB2探针不伪造B取得SEND_STARTED所有权：B claim被真实PG拒绝，随后recovery CAS递增version使A无法提交receipt。A仍持有旧对象并能发wire，最终RECONCILED/QUERY_NOT_FOUND与venue已接受相矛盾。duplicate mutation未复现；negative-finality correctness defect已复现。future WorkerOperationSafetyGate仅返回authorize decision，不自动包围网络发送。
 
-## 12. Implementation batches与dependency DAG
+## 12. Current implementation batches 与重算 DAG
 
-首个 implementation program=`PHASE6_L4_RUNTIME_CORRECTNESS_REMEDIATION`，最小首片=C1。已有本轮test基础足够复现，故不需要先实现B0。
+当前correctness program仍为 `PHASE6_L4_RUNTIME_CORRECTNESS_REMEDIATION`，首片C1只处理P1-2，C2只处理P1-3。原C3和retained-pilot修复不再是当前前置条件。原DAG完整保留在JSON canonicalReachabilityClosure.dagBefore及历史第16节。
 
 | Batch | scope | dependsOn | acceptance |
 | --- | --- | --- | --- |
-| C1 Terminal truth and atomic Order ownership | P1-L4-01/02最小终态合同与原子写保护；复用本轮targeted tests；不依赖B0 | 无 | FILLED/NO_MUTATION 保留真实 FILLED；CANCELED、REJECTED、NOT_FOUND 各有明确语义；不得统一写 CANCELLED；zero CANCEL mutation，逐fill账务完整。 两种旧 ACK 都不能覆盖已提交 terminal；重读与写入在同一锁/CAS短事务；affected rows=0 或显式 stale rejection；不得发虚假 ACCEPTED/CANCELLED audit/event。 |
-| C3 Dispatch authority and stale sender | PB2 negative-finality与旧sender停止确认；现有lifecycle足够复现，不预授权production injection seam | C1 | A 在 pre-dispatch 被撤销并确认停止后才允许 negative finality；若无法确认旧sender已停止，则 NOT_FOUND 保持 UNKNOWN，可重复query但不新 mutation。若请求已开始，等待正查询收敛；A/B重复 mutation=0，旧receipt拒绝不能代替wire抑制。 |
-| C2 Recovery admission and query-only convergence | P1-L4-03 + PB1；CANCELLED补扫及kill-preserving typed recovery composition；不改RiskGate放行条件 | C1, C3 | 有界扫描带稳定identity的 CANCELLED 缺fill订单；不要求把合法部分成交撤单改成 FILLED；补齐每个Trade及2/4分录，restart/replay幂等且保留状态事实。 正常 typed recovery owner 在未过期/已过期、positive/negative/open truth 下保持 kill ENGAGED；无 resume/disengage/新 PLACE/CANCEL。通过正常服务持久化 Order/Trade/Ledger；negative finality 依赖 C3 的旧sender停止确认。 |
-| R Independent correctness review | 独立于实现上下文的correctness review；不自动修复 | C1, C3, C2 | 5 confirmed defects closed by executable invariants; P0/P1=0 for correction candidate; no authorization weakening |
+| C1 Atomic Order ownership against stale ACK | P1-L4-02 only: reject stale PLACE/CANCEL finalization after a newer terminal commit. | 无 | FILLED survives both stale ACK schedules; atomic current-state/version check; explicit rejection or affected rows=0; no false ACK audit/event. Do not fix retained typed terminal mapping. |
+| C2 Canonical CANCELLED fill backfill | P1-L4-03 only: bounded missing-fill discovery and idempotent Trade/Ledger convergence through ordinary recovery. | C1 | CANCELLED fill is discovered through ordinary REST/startup recovery; complete unique Trade/Ledger persists under replay and kill ENGAGED; preserve legitimate partial-fill cancelled terminal. No pilot recovery extraction or kill implementation change. |
+| R Independent correctness review | Independent review of C1/P1-L4-02 and C2/P1-L4-03 only. | C1, C2 | Both current confirmed defects closed by executable invariants; P0/P1=0 for the correction candidate; no authorization weakening; retired/dormant findings remain historical. |
 | B0 Harness foundation | forked Spring launcher、PG16隔离、loopback allowlist、控制协议、独立venue日志、schema及checker；无production变更 | R | 独立PID/真实PG及Spring proxy；baseline后controller无业务写权限；正常回合及坏证据拒绝 |
 | B1 Transport uncertainty | AT/LA rows；真实timeout与ACK生成后丢失区分 | B0, C2 | 每row3次；PLACE=1；完整终态 |
 | B2 Cancel/fill and partial continuation | CFR/PFC rows | B0, C1, C2 | 两个winner、stale ACK、remainder、逐fill Ledger及replay |
-| B3 Kill in flight | KIF rows | B0, C2, C3 | 初始PLACE计数0/0/1；新命令外发0；kill-engaged恢复 |
+| B3 Kill in flight | Current ORDINARY kill-in-flight row; retained TYPED rows remain inactive until separately established canonical ownership. | B0, C2 | 初始PLACE计数0/0/1；新命令外发0；kill-engaged恢复 |
 | B4 Real DB and process failure | ESDB-00..07；rollback/commit rejection/commit response lost/connection loss/death | B0, C1, C2 | PG及wire evidence独立判故障；原子性及最终断言，无手工修库 |
-| B5 Ownership and duplicate delivery | MIL/DW；交易worker与validation lock分别证明 | B0, C1, C2, C3, B1, B4 | 2 JVM竞争；旧token拒绝；SEND_STARTED不可重claim；负终态后无晚发 |
-| B6 Full matrix qualification | 同一immutable technical candidate全矩阵+独立review；未来显式授权后才CI | B1, B2, B3, B4, B5 | 27x3=81 runs；P0/P1=0；skip/flake/checker/divergence=0 |
+| B5 Ownership and duplicate delivery | Current ordinary duplicate-command and scheduler-lock rows; INTENT_WORKER rows remain dormant. | B0, C1, C2, B1, B4 | Current owner idempotency/lock invariants proven with independent processes; no revival of dormant ExecutionIntentService. |
+| B6 Full matrix qualification | 同一immutable technical candidate全矩阵+独立review；未来显式授权后才CI | B1, B2, B3, B4, B5 | All currently eligible matrix rows run three independent times with zero unexpected skips/flakes/divergence. Historical inactive profiles require explicit canonical reactivation before qualification; never count them as PASS or revive them solely for coverage. |
 
 ```mermaid
 graph TD
-  C1[Terminal truth and atomic Order writes] --> C3[Late sender and negative finality]
-  C1 --> C2[Cancelled fills and kill-preserving recovery]
-  C3 --> C2
-  C1 --> R[Independent correctness review]
-  C3 --> R
-  C2 --> R
-  R --> B0[Minimum process harness]
+  C1[Atomic stale ACK rejection: P1-2] --> C2[Canonical CANCELLED fill backfill: P1-3]
+  C2 --> R[Independent correctness review]
+  R --> B0[Current canonical process harness]
   B0 --> B1[Transport uncertainty]
   B0 --> B2[Cancel and fill]
-  B0 --> B3[Kill in flight]
+  B0 --> B3[Current kill-in-flight]
   B0 --> B4[DB and process failure]
-  B1 --> B5[Ownership and duplicate delivery]
+  B1 --> B5[Current ownership and duplicate delivery]
   B4 --> B5
-  B1 --> B6[Full qualification]
+  B1 --> B6[Current eligible qualification]
   B2 --> B6
   B3 --> B6
   B4 --> B6
   B5 --> B6
 ```
 
-JSON contains every direct dependency; diagram is the transitive reduction. C3 follows C1 as a deliberate reviewable sequence; C2 depends on both terminal semantics and sender-stop/negative-finality safety. R must close the confirmed defects before B0/qualification. Harness planning may continue independently, but no large B0 is needed to reproduce these defects.
+依赖理由：C2补账/replay产生的terminal事实必须先受C1原子写保护，避免旧ACK覆盖其结果；因此C1→C2。R审查两个当前P1的闭合，不要求先修复retired/dormant代码。C3仅保留历史/future reactivation触发，不能作为B0或当前qualification的修复前置。JSON列出全部direct edges，图为主要传递约简。
 
-**推荐下一实施 token**：`NQ-GATEAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-IMPLEMENTATION`，范围先限定 C1。Program分类仍为 `PHASE6_L4_RUNTIME_CORRECTNESS_REMEDIATION`；token不用REMEDIATION，避免现有matcher同时匹配FIX与IMPLEMENTATION。正式 authority 仍为 PLAN，须后续单独 authority transition 与实施授权；本轮不改machine status，不授予任何生产操作。Correctness batch与harness batch分离，并逐项独立review。
+当前下一任务为 `NQ-GATEAUDIT-PHASE6-L4-PLAN-CI-GATE-REMEDIATION-AND-EXACT-HEAD-CI`：先按第18节处置failed-delivery tests及既有scanner示例。只有delivery gates修复且exact-head CI通过后，才可单独authority transition，然后另行实施C1。本轮不实施上述任何步骤。
 
 ## 13. Lifecycle、确定性与最终L4 gate
 
@@ -452,14 +447,14 @@ JSON contains every direct dependency; diagram is the transitive reduction. C3 f
 
 无crash或无mutation的row，对不适用phase写带原因的完成事件，不能省略phase。任一phase失败则整个scenario FAIL，尤其FINAL_ASSERT/EVIDENCE_SEAL/CLEANUP不能跳过。Crash后runtime audit不可用必须由独立controller死亡观测覆盖，不能补造旧进程事件。
 
-- 每mandatory row至少3次独立新DB/venue/run，27行至少81 runs；CFR-04 stale-cancel参数变体需额外执行，不用重复次数替代不同语义。此处运行成本未测，保守以最小3次为门槛，后续实际duration据实记录；不能为快而降为偶尔成功。
+- 原覆盖清单每mandatory row至少3次独立新DB/venue/run，27行的81 runs仅是历史完整inventory预算；当前eligible为13行/39 runs，14个inactive profile行按第18节保留future obligation，不算PASS或静默skip。CFR-04 stale-cancel参数变体需额外执行，不用重复次数替代不同语义。此处运行成本未测，保守以最小3次为门槛，后续实际duration据实记录；不能为快而降为偶尔成功。
 - 对比归一化semantic verdict、side-effect count、terminal facts、Trade/Ledger identity关系；PID/UUID/timestamp不要求字节相同。允许有界query次数因恢复轮次不同，但不得改变mutation次数或final facts。
 - mandatory全PASS；unexpected skip=0、flaky=0、duplicate external effect=0、ledger divergence=0、unresolved terminal=0、kill bypass=0、lease ownership violation=0、checker errors=0、P0=0、P1=0。
 - NOT_RUN/SKIPPED/INCONCLUSIVE/FAIL任一mandatory row都阻断acceptance。缺真实process/PG/serialization、未命中fault、仅mock抛异常、只有HTTP200/exit0/长日志均不算通过。
 - 先完成独立技术review及经授权的exact-head CI证据，technical commit/CI pair不可变；后续docs-only authority接受另行同步，不用文档commit冒充技术证明。
 - L5/L6 scale、random chaos、long-duration soak、partition fuzz、resource exhaustion、大集群全部DEFERRED UNTIL L4 ACCEPTED。当前included work=0。
 
-## 14. 精确源码索引
+## 14. 精确源码索引（T15–T17为failed commit历史快照，当前源码见第19节）
 
 以下是本次HEAD读取的source coordinates；后续candidate若改动，须重新绑定commit与行号。表中范围用于源码查证，不是独立runtime proof。
 
@@ -560,7 +555,7 @@ JSON contains every direct dependency; diagram is the transitive reduction. C3 f
 docker run --detach --name nq-l4-blocker-20260906 --publish 127.0.0.1::5432 --tmpfs /var/lib/postgresql/data --env POSTGRES_HOST_AUTH_METHOD=trust --env POSTGRES_DB=nq_l4_blocker postgres@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
 docker port nq-l4-blocker-20260906 5432
 # 将下面39496换成上一步分配的端口；密码字符串仅满足既有fixture的非空规则，隔离实例使用trust。
-mvn -o -f backend/pom.xml -pl nq-app -am '-Dnq.l4.blockers.enabled=true' '-Dtest=L4PlanBlockerPostgresIntegrationTest,LiveSessionFactModelPostgresIntegrationTest#shouldCharacterizeL4KillRecoveryAndLateSenderAfterNegativeQuery+shouldProveF003OrderExecutionIdentityConvergence+shouldMigrateAndEnforceFactModelRepositoryAndConcurrency,TradingChainPostgresIntegrationTest,OrderCommandServiceTest,OkxRestReconcileServiceTest,ExecutionIntentRuntimeTest,MinimalPilotTradingVenueGatewayTest,OkxSpotProviderAdapterContractTest,MinimalLivePilotConfigurationTest,PilotExecutionLeaseServiceTest' '-Dsurefire.failIfNoSpecifiedTests=false' '-Dspring.datasource.url=jdbc:postgresql://127.0.0.1:39496/nq_l4_blocker' '-Dspring.datasource.username=postgres' '-Dspring.datasource.password=' '-Dnq.postgres.smoke.required=true' '-Dnq.postgres.smoke.url=jdbc:postgresql://127.0.0.1:39496/nq_l4_blocker' '-Dnq.postgres.smoke.user=postgres' '-Dnq.postgres.smoke.password=l4-disposable-fixture' test
+mvn -o -f backend/pom.xml -pl nq-app -am '-Dnq.l4.blockers.enabled=true' '-Dtest=L4PlanBlockerPostgresIntegrationTest,LiveSessionFactModelPostgresIntegrationTest#shouldCharacterizeL4KillRecoveryAndLateSenderAfterNegativeQuery+shouldProveF003OrderExecutionIdentityConvergence+shouldMigrateAndEnforceFactModelRepositoryAndConcurrency,TradingChainPostgresIntegrationTest,OrderCommandServiceTest,OkxRestReconcileServiceTest,ExecutionIntentRuntimeTest,MinimalPilotTradingVenueGatewayTest,OkxSpotProviderAdapterContractTest,MinimalLivePilotConfigurationTest,PilotExecutionLeaseServiceTest' '-Dsurefire.failIfNoSpecifiedTests=false' '-Dspring.datasource.url=jdbc:postgresql://127.0.0.1:39496/nq_l4_blocker' '-Dspring.datasource.username=postgres' '-Dspring.datasource.password=' '-Dnq.postgres.smoke.required=true' '-Dnq.postgres.smoke.url=jdbc:postgresql://127.0.0.1:39496/nq_l4_blocker' '-Dnq.postgres.smoke.user=postgres' '-Dnq.postgres.smoke.password=x' test
 docker rm --force nq-l4-blocker-20260906
 ```
 
@@ -574,11 +569,11 @@ Final decision：`PLANNED / PHASE6_L4_FAILURE_MATRIX_BLOCKERS_DISPOSITIONED / P0
 
 建议 commit message（未执行）：`test(gateaudit): 复现L4计划阻塞并明确正确性修复依赖`。回滚既有测试可在确认无后续改动后使用 `git apply -R artifacts/20260906-l4-blocker-closure/tracked-tests.patch`；原计划恢复路径见第1节。后续仅为C1/C3/C2及R，无范围外修复。
 
-## 16. Plan delivery 与 reproduction 临时生命周期
+## 16. 历史 FAILED DELIVERY 与 reproduction 临时生命周期（当前合同见第19节）
 
 本节是 `NQ-GATEAUDIT-PHASE6-L4-FAILURE-MATRIX-PLAN-DELIVERY-AND-EXACT-HEAD-CI` 的提交前事实。第1–15节中的closure运行及NO_COMMIT记录属于前次任务；本任务授权exact-six staging、commit、push与canonical exact-head CI，禁止production fix和authority transition。原计划DAG不变：C1 → C3 → C2 → Independent Correctness Review → B0 → L4 Qualification。
 
-8个新增用例分类为6个 `KNOWN_DEFECT_REPRODUCTION`、2个 `NORMAL_REGRESSION`。每个方法具有对应JUnit tag及说明；machine owner/lifecycle见同名JSON `reproductionContract.cases`。Characterization PASS只表示成功观察到当前缺陷，错误状态不是accepted business invariant。
+8个新增用例分类为6个 `KNOWN_DEFECT_REPRODUCTION`、2个 `NORMAL_REGRESSION`。每个方法具有对应JUnit tag及说明；历史machine owner/lifecycle见同名JSON `historicalFailedDeliveryReproductionContract.cases`。Characterization PASS只表示成功观察到当前缺陷，错误状态不是accepted business invariant。
 
 | Case | test method | classification | finding / owner | current observation | post-fix trigger / disposition |
 | --- | --- | --- | --- | --- | --- |
@@ -602,3 +597,149 @@ Canonical workflow为`.github/workflows/ci.yml / NQ CI Baseline`。该workflow�
 提交前检查状态：PASS：68 targeted tests（0 failure/error/skip）；authority PS5.1/PS7 errors=0；next-action fixtures failed=0；lifecycle 20/20；plan consistency与test blob binding通过；全量docs links 380 checked / 123 historical warnings / 0 errors，计划单独57 checked / 0 warnings / 0 errors；protected scope与git diff --check通过。精确candidate为JSON deliveryEvidence.candidatePaths的6条路径，production paths=0。首个program仍PHASE6_L4_RUNTIME_CORRECTNESS_REMEDIATION，首片C1；27 scenarios、17 crash points（12 MUST_PROVE）、5 confirmed P1、0 unknown均不变。
 
 本提交不嵌入尚未知的自身SHA/CI结果，也不提前写accepted plan或machine implementation。提交成功后记录PHASE6_L4_PLAN_COMMIT，并在任务报告绑定真实exact-head CI run。成功后的唯一下一任务：`NQ-GATEAUDIT-PHASE6-L4-PLAN-POST-CI-AUTHORITY-TRANSITION-TO-C1`；该单独任务只同步authority，之后才可另行进入`NQ-GATEAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C1-IMPLEMENTATION`。
+
+## 17. 历史 CI gate remediation 前置检查（2026-09-06，已由第18节闭合）
+
+当前任务：`NQ-GATEAUDIT-PHASE6-L4-PLAN-CI-GATE-REMEDIATION-AND-EXACT-HEAD-CI`。预检 fetch 后 HEAD=origin=`378de657ac33b9f9fd666288d489181ac0147b2e`，branch=`audit/post-gatey-agent-baseline`，初始工作区干净、staged=0。该提交与 [CI 34038345304](https://github.com/ling5477/nexus-quant/actions/runs/34038345304) 保留为 **FAILED DELIVERY**：9 jobs、7 success、2 failed、0 skipped/cancelled。
+
+结论：**BLOCKED / PHASE6_L4_FINDING_CANONICAL_REACHABILITY_NOT_PROVEN**。本节及 JSON `canonicalReachabilityAssessment` 优先于前文历史 PLAN_EXECUTABLE/P1_5/unknown=0 声明。P1-1、PB1、PB2 存在三个未解决的 canonical reachability 义务；当前 canonical confirmed count=NOT_ESTABLISHED（JSON null），不机械写5，也不把它改成0或宣布误报。原5项观察、6 characterization + 2 normal regression、68-test运行及其hash仍保留为历史事实。
+
+| Finding | 当前入口 → owner → port → compatibility / 缺陷边界 | 本次结论 |
+| --- | --- | --- |
+| P1-L4-01 / P1-1 | OrderCommandService.cancelOrder → ordinary AdapterBackedTradingVenueGateway → TradingVenueGateway/TradingAdapter；特定 NO_MUTATION_TERMINAL→accepted 映射只定位到 retained MinimalPilotTradingVenueGateway → SpotExecutionProviderPort | NOT_PROVEN：普通cancel入口存在，但未建立进入该typed映射的当前approved入口；用通用accepted stub替代不能证明同一finding |
+| P1-L4-02 / P1-2 | TradingVerificationController.placeOrder/cancelOrder → OrderCommandService → TradingVenueGateway / OrderRepository → stale ACK在新FILLED提交后finalize | CURRENT_SOURCE_CHAIN_IDENTIFIED；原R02/R03通过真实Spring/JDBC及stable gateway double复现，本次未重新执行 |
+| P1-L4-03 / P1-3 | OkxRecoveryService.rebuild / scheduledReconcile → OkxRestReconcileService.reconcileOnce → Order/Trade/Ledger ports → bounded scan排除CANCELLED | CURRENT_SOURCE_CHAIN_IDENTIFIED；原R04与positive control证据保留，本次未重新执行 |
+| PB1 | retained MinimalPilotRunner.run → recoverConsumed → PilotExecutionLeaseControlPlane.resumeConsumed → PilotExecutionLeaseService.disengageForPilot | NOT_PROVEN：唯一production resumeConsumed caller是retained pilot runner；未建立当前普通恢复入口；接口本身仍要求compatibility Correlation |
+| PB2 | 原R06 → 直接new ExecutionIntentService → ExecutionIntentRepository / FakeExchangeMutationPort → 直接new JdbcExecutionIntentRepository；SEND_STARTED A在B负查询终态后late wire | NOT_PROVEN：fake/local service无当前production caller；Spring可提供repository port不等于canonical sender已使用该orchestration；类似typed代码不能替代实际复现 |
+
+证据与判断边界：
+
+- [F009 caller graph](GATEAUDIT_PHASE5_F009_LEGACY_GATE_SPECIFIC_ACTIVE_ASSET_CONSOLIDATION_IMPLEMENTATION.md) 第4节明确旧GateY部署/pilot入口整体退役，current restart proof与canonical restore未使用这些caller。18个compatibility contracts仅保留exact approved edges；现有internal edge不自动授予新入口。
+- [MinimalLivePilotConfiguration](../../../backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java) 第65–83行是默认关闭的conditional composition；第276–289行是scope校验后resume，第367行才开始query。源码仍保留该条件图，本次没有证明它不可能激活；缺的是当前approved正常入口和等价复现，不能把“存在@Configuration”直接当成canonical acceptance。
+- [PilotExecutionLeaseControlPlane](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/PilotExecutionLeaseControlPlane.java) 第63–67行的resume仍接受compatibility Correlation；[lease owner](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/PilotExecutionLeaseService.java) 第241–263行保留原解除kill行为。
+- [ExecutionIntentService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/application/ExecutionIntentService.java) 第23–26行自述fake/local orchestration；本次在Git-tracked production Java、资源配置及scripts/deploy/workflow执行入口检索，其名称仅见本类声明/构造器。没有把这个检索结论扩大为动态不可达证明。[repository](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/jdbc/JdbcExecutionIntentRepository.java) 的@Repository/稳定port不能补出缺失sender caller。
+- [ordinary gateway](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/AdapterBackedTradingVenueGateway.java) 第111行进入TradingAdapter.cancelOrder，未走typed NO_MUTATION_TERMINAL映射；[REST reconciliation](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java) 第148行后的扫描仍不含CANCELLED。
+
+Containment：approved edges before=1559、after=1559，contracts=18；新approved edge=0，registry变更=0，exception scope扩展=0。registry SHA256=`cbbc9ba41d236296404eccae981b6c1392e5b8deb2e299ea3ab9bd078a0d7385`。失败提交原有14项unauthorized caller、STAGE_SEMANTICS及STALE_EXCEPTION尚未整改；这里的0指本次未新增授权，不冒充checker errors=0。
+
+停止条件来自用户附件第5、6、11节：先证明五项canonical reachability；未证明即BLOCKED并重新考虑适用范围/disposition。故本次只回填原MD/JSON事实，没有refactor、恢复exception-bound文件、替换fixture sentinel、运行PG/Gitleaks、stage、commit、push或dispatch CI。原计划第563行的scanner finding及两个失败jobs仍未关闭；没有新增allowlist、reflection或间接构造绕过。
+
+27 scenarios、17 crash points、12 MUST_PROVE以及C1 → C3 → C2 → Independent Review → B0 → Qualification作为未获准执行的原计划保留。生产Java/SQL/Flyway、workflow、current authority、compatibility registry、Gitleaks配置和全部测试源码均不变；LIVE DISABLED、kill ENGAGED。
+
+下一步是先解决上述三项canonical入口/ownership证据与finding disposition，再恢复交付门禁修复。当前不满足POST-CI-AUTHORITY-TRANSITION-TO-C1的前提，不进入C1。两个计划文件为未提交的可审查证据变更；可在确认无后续修改后反向应用本次精确diff回滚，失败提交/CI历史保持不变。
+
+本次实际验证：stage checker exit=1，scanned=1800 / reviewed exceptions=177 / errors=16（14 unauthorized、1 stage semantics、1 stale）；authority PS5.1/PS7均errors=0；PS5.1初次被host execution policy拒绝，使用仅进程级ExecutionPolicy Bypass重跑通过，未修改系统策略。计划矩阵/DAG/历史evidence逐字段保持、source ranges、当前BLOCKED/null count及精确两文档范围检查通过；计划docs links=65 checked / 0 warning / 0 error；git diff --check通过。Java/PG、stage guard unittest、next-action/lifecycle fixtures、Gitleaks和新CI因前置硬门禁未执行，不能引用前次通过替代本次执行。
+
+## 18. Canonical runtime reachability closure（2026-09-06，交付问题状态为当时快照）
+
+本任务 `NQ-GATEAUDIT-PHASE6-L4-FAILURE-MATRIX-PLAN-CANONICAL-RUNTIME-REACHABILITY-CLOSURE` 最终判定：**PLANNED / PHASE6_L4_CANONICAL_RUNTIME_REACHABILITY_RESOLVED / P0_0 / CANONICAL_P1_2 / REACHABILITY_UNKNOWN_0 / PLAN_EXECUTABLE**。
+
+R1=current non-retired入口；R2=current Spring/runtime composition；R3=stable API/port且不新增compatibility caller；R4=真实canonical缺陷复现。只有四项PASS才计入当前P1。FAIL表示不满足当前入口/装配条件，不表示历史缺陷已修复。
+
+| Finding | R1 | R2 | R3 | R4 | Disposition | Blocking P1? |
+| --- | --- | --- | --- | --- | --- | --- |
+| P1-L4-01 / P1-1 | FAIL | FAIL | NOT_APPLICABLE | NOT_RUN | RETIRED_COMPATIBILITY_ONLY | NO |
+| P1-L4-02 / P1-2 | PASS | PASS | PASS | PASS | CANONICAL_REACHABLE_CONFIRMED_DEFECT | YES |
+| P1-L4-03 / P1-3 | PASS | PASS | PASS | PASS | CANONICAL_REACHABLE_CONFIRMED_DEFECT | YES |
+| PB1 | FAIL | FAIL | NOT_APPLICABLE | NOT_RUN | RETIRED_COMPATIBILITY_ONLY | NO |
+| PB2 | FAIL | FAIL | NOT_APPLICABLE | NOT_RUN | DORMANT_NO_CURRENT_ENTRYPOINT | NO |
+
+### 18.1 Current owner 与装配证据
+
+- P1-1：普通 `OrderCommandService.cancelOrder → TradingVenueGateway → AdapterBackedTradingVenueGateway → TradingAdapter` 存在；所报的特定 `NO_MUTATION_TERMINAL → accepted` 消费点在retained minimal-pilot gateway。Git-tracked active launcher/config资源中minimal-pilot入口引用=0，F009已退役其pilot caller。保留类型的conditional configuration不是当前canonical入口；不激活它制造R4。
+- PB1：production `.resumeConsumed(` caller=1，仅retained pilot runner；outside retained pilot=0。普通 `RecoveryService → OkxRecoveryService → OkxRestReconcileService → Trade/Ledger` 已在本轮probe执行，在ENGAGED下保持kill并正常收敛。pilot-opening/resume历史语义不等于当前普通恢复语义。
+- PB2：production `ExecutionIntentService` 仅本类声明/构造器两处引用；`claimAndExecute(` 仅本类定义/委托，无production外部caller。`ExecutionIntentRepository` consumers为该fake/local service与retained typed composition；Repository bean本身不构成scheduler/worker。故sender路径为DORMANT_NO_CURRENT_ENTRYPOINT。
+- P1-2：`TradingVerificationController → OrderCommandService → TradingVenueGateway / OrderRepository`；探针从Spring注入commands与repository port，provider阶段通过stable gateway barrier控制，未直接new具体repository。T2的真实FILLED事务在release旧ACK前提交；两次最终SQL affected=1，分别变成ACCEPTED和CANCELLED。
+- P1-3：`RecoveryService.rebuild → OkxRecoveryService → OkxRestReconcileService.reconcileOnce → Order/Trade/Ledger ports`。2次直接REST扫描及2次rebuild之后CANCELLED订单仍fillQueries=0、Trade=0、Ledger=0；positive control得到FILLED/Trade1/Ledger2且replay不重复。
+
+R2已检查 [统一启动入口](../../../backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/NexusQuantApplication.java)、current service的`@Component/@Service/@Profile/@ConditionalOnProperty`、application配置、[RUNBOOK](../../current/RUNBOOK.md)第9–10节和[STATUS](../../current/STATUS.md)。`local/test/ci/prod`均保留trading-components；普通recovery由capability flag控制。Probe使用local+显式trading-components，禁用自动调度/网络并通过当前stable rebuild主动驱动确定性恢复；不把定时器关闭或global LIVE disabled误当作架构不可达。实际Spring断言确认Order/REST/Recovery beans存在，pilot lease/provider beans=0。
+
+完整production引用索引为`artifacts/20260906-l4-canonical-reachability/ownership-scan.json`；仍依据第17节列出的源码位置和F009事实，不修改compatibility owner授权。结论只针对所述五项finding，不推断所有未来sender实现都没有同类风险。
+
+### 18.2 临时 executable probes
+
+4/4 PASS，failures/errors/skips=0/0/0：**3个known-defect characterization（对应2个current P1）+1个normal regression**。Maven offline exit=0，22.608s，完成于2026-09-06T22:53:58+08:00。PG16.15，READ COMMITTED，全新tmpfs实例，loopback `127.0.0.1:38056`；只使用synthetic test facts，无真实provider、生产DB、credential或LIVE操作。
+
+临时test：`backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4CanonicalReachabilityPostgresIntegrationTest.java`，已删除，未纳入candidate。源文本的非执行归档为`artifacts/20260906-l4-canonical-reachability/probe-source.txt`；日志`probe.log`、Surefire归档`probe-surefire.xml`、hash/方法列表`probe-evidence.json`位于同目录。它们是忽略的本地source-event artifacts，MD/JSON摘要可审查，不冒充已提交或CI证据。PG container/tmpfs、临时Java源、生成的class和原Surefire报告均已清理；未创建scratch worktree。
+
+复现入口是在测试源码目录临时放回所归档source后运行以下命令，结束必须删除该临时source并销毁专用PG实例；仅适用于新建隔离loopback数据库：
+
+```powershell
+mvn -o -f backend/pom.xml -pl nq-app -am '-Dnq.l4.blockers.enabled=true' '-Dtest=L4CanonicalReachabilityPostgresIntegrationTest' '-Dsurefire.failIfNoSpecifiedTests=false' '-Dspring.datasource.url=jdbc:postgresql://127.0.0.1:38056/nq_l4_blocker' '-Dspring.datasource.username=postgres' '-Dspring.datasource.password=' test
+```
+
+此probe没有引入nonblank password-shaped示例。源中无ExactPilotBinding、MinimalPilotTradingVenueGateway、JdbcExecutionIntentRepository或JdbcOrderRepository的引用，也无reflection/string-based construction。含probe时stage checker仍为原16 errors；未把failed HEAD的既有违规修掉或掩盖。
+
+### 18.3 当前P1、覆盖清单与DAG
+
+canonicalConfirmedP1Count=2；retiredCompatibilityOnly=2；dormant=1；retiredOrDormant=3；reachableNotReproduced=0；proofBlocked=0；reachabilityUnknown=0。三项非当前finding仍保留historical reproduction=CONFIRMED；当前blocking severity=NO。Future trigger统一为：另有授权的canonical owner/entrypoint上线时重新验证R1–R4，不能自动恢复P1或新增compatibility edge。
+
+DAG从历史C1→C3→C2重算为 **C1(P1-2)→C2(P1-3)→R→B0**，理由与当前direct edges见第12节。C1不修retained typed terminal mapping，C2不抽取pilot recovery，C3不再是当前批次。
+
+原27场景/17 crash points/12 MUST_PROVE覆盖清单全部保留、status仍NOT_RUN。按原runtimePath划分，当前eligible=12 ORDINARY+1 SCHEDULER_LOCK=13行；10 TYPED+4 INTENT_WORKER=14行没有current入口，保留future obligation，不能为跑矩阵而复活旧路径。JSON逐行currentEligibility显式标识；mandatory=true表示inventory义务，当前execution是否required由currentQualificationRequired决定。原81 runs是完整inventory预算，当前39 runs仅是13行×3的后续预算，均未执行。B0只能复用当前owner，不借harness创建production sender。
+
+### 18.4 失败交付文件的后续处置（本轮不实施）
+
+| Failed-delivery file | Disposition | 后续边界 |
+| --- | --- | --- |
+| LiveSessionFactModelPostgresIntegrationTest Phase6 addition | REVERT | 恢复8abe969a精确文件，保持历史exception hash；不迁移dormant PB2为当前P1 |
+| PilotExecutionLeaseServiceTest Phase6 additions | REVERT | 撤销R07/R08新增；保留原历史测试，不新增binding caller |
+| L4PlanBlockerPostgresIntegrationTest | SPLIT | R01退出current集合；R02/R03/R04用stable Spring canonical repro替换；R05保留普通kill恢复normal regression |
+| L4TypedGatewayFixture | REVERT | 移除failed-delivery helper，不授权新compatibility调用 |
+
+后续三个known-defect断言须随C1/C2修复反转/替换并经独立review；当前错误行为不是accepted invariant。原retired/dormant观察保留在historical plan/evidence，不以删除观察冒充修复。
+
+已失败pair `378de657ac33b9f9fd666288d489181ac0147b2e / 34038345304` 不变。既有stage errors=16、plan generic-api-key=1仍是OPEN DELIVERY GATE ISSUE；本轮未改示例或scanner allowlist。当前下一任务为 `NQ-GATEAUDIT-PHASE6-L4-PLAN-CI-GATE-REMEDIATION-AND-EXACT-HEAD-CI`，范围按此处重新生成。delivery gates通过且exact-head CI green后才可单独authority transition。
+
+### 18.5 Validation 与交付边界
+
+Authority PS5.1/PS7均errors=0；计划当前R1–R4、counts、DAG/row dependencies、eligibility、历史evidence保持及hash检查通过；docs links=68 checked / 0 warnings / 0 errors；git diff --check通过。Stage before/after diagnostics逐字一致，均16 errors（14 unauthorized、1 semantics、1 stale），含临时probe时也只有原16项，new errors=0。
+
+Secret baseline采用CI锁定Linux x64 Gitleaks 8.18.4，archive SHA256与delivery lock及官方checksums同时匹配；复制当前tracked safe subset=3139/3141（不读history、不扫untracked/ignored），使用从原workflow提取且未修改的TOML。baseline HEAD与最终计划候选均只有同一generic-api-key finding=1，rule/file/redacted match相同，原复现命令逐字未改；new findings=0。扫描非零退出是保留已知finding，不宣称secret scan全绿。WSL没有pwsh，因此直接执行已校验Linux binary，参数与Invoke-VerifiedGitleaks一致；未安装工具到系统路径或改变规则。
+
+工具过程的非业务失败：第一次safe copy遇Windows长路径，改为extended absolute path后完成；WSL pwsh不可用后使用上述等价binary调用；首次计划验证误选历史表，改为当前第18节表后通过。未靠修改候选业务语义或门禁规避这些问题。
+
+最终仅原两份plan修改，staged=0，commit/push/CI=NONE；production、workflow、authority、1559 approved edges及exception registry均未改变。未执行full Maven/frontend/L4 qualification或独立review。回滚本轮计划更新可使用artifacts/20260906-l4-canonical-reachability/plan-before.md/.json（保存了本轮开始时已有的两份BLOCKED计划），不得回退或覆盖失败提交历史。工具使用PowerShell/Git/rg/Python/Maven/Docker/Ubuntu WSL/Gitleaks；Skill=java-backend-regression-tests；MCP未使用。网络仅origin fetch、官方Gitleaks下载与本地测试loopback，无生产或真实provider调用。
+
+## 19. CI gate remediation follow-up（2026-09-07，当前交付合同）
+
+本轮只修复 failed plan delivery，禁止 C1/C2 production correctness 实现与 authority transition。失败 pair=`378de657ac33b9f9fd666288d489181ac0147b2e / 34038345304` 永久保留为 **FAILED DELIVERY**：9 jobs 中7 success、2 failed。根因为 compatibility containment violations、exception-bound historical test mutation、secret-shaped documentation fixture；不以本轮修复改写历史接受结论。
+
+### 19.1 最小测试清理与生命周期
+
+- LiveSessionFactModelPostgresIntegrationTest、PilotExecutionLeaseServiceTest 恢复到 `8abe969af8bada6a6a9434ca30b990c5ebec7bd5` 的精确内容；删除前者R06和后者R07/R08及专用imports/helpers。
+- 删除 L4TypedGatewayFixture，移除 L4PlanBlockerPostgresIntegrationTest 的R01与全部typedCancel分支/field；未用reflection、字符串构造、wrapper或allowlisted bridge替代。
+- 当前永久源码共4个测试：R02/R03/R04为3个KNOWN_DEFECT_REPRODUCTION（两个P1），R05为1个NORMAL_REGRESSION；历史8项合同单独保存在JSON historicalFailedDeliveryReproductionContract。
+
+| Case | 当前finding/owner | PASS的含义 | 修复后的强制合同 |
+| --- | --- | --- | --- |
+| R02 stale PLACE ACK | P1-2 / C1 | 复现FILLED被旧ACK覆盖成ACCEPTED | terminal preservation + stale write rejection；反转/替换错误断言 |
+| R03 stale CANCEL ACK | P1-2 / C1 | 复现FILLED被旧ACK覆盖成CANCELLED | terminal preservation + stale write rejection；反转/替换错误断言 |
+| R04 CANCELLED reconciliation | P1-3 / C2 | 复现fill查询与Trade/Ledger遗漏 | bounded idempotent fill/Trade/Ledger convergence；保留positive control |
+| R05 kill-engaged recovery | 无当前缺陷 / C2正常回归 | ENGAGED拒绝新PLACE且允许普通reconciliation/ledger收敛 | 保留正常不变量；不是PB1缺陷复现 |
+
+**Known-defect PASS = current defect reproduced；NOT = runtime correctness accepted。** C1/C2修复候选必须同步反转或替换对应临时wrong-state断言，独立正确性review接受后不得残留。普通CI未开启nq.l4.blockers.enabled，4项characterization在CI条件禁用；本地专用命令须显式启用，分别报告缺陷复现、正常与既有回归，不能用CI job success替代执行证据。
+
+### 19.2 当前计划与适用性
+
+canonicalConfirmedP1Count=2，reachabilityUnknown=0。P1-1/PB1=RETIRED_COMPATIBILITY_ONLY，PB2=DORMANT_NO_CURRENT_ENTRYPOINT；历史观察保留，若相应路径重新成为canonical，须重新运行R1–R4。
+
+当前DAG：**C1(P1-2) → C2(P1-3) → Independent Correctness Review → B0 Harness Foundation → L4 Qualification**。C3只在历史/future trigger合同中保留，不是当前blocking DAG节点。
+
+按JSON逐行重算：27 scenario inventory rows，13 currently applicable（12 ORDINARY + 1 SCHEDULER_LOCK），14 future-triggered（10 TYPED + 4 INTENT_WORKER）；17 crash points，其中12 MUST_PROVE inventory。currentEligibility是计划适用性，retired/dormant行不得计为PASS、SKIP或QUALIFIED；所有qualification rows仍NOT_RUN。
+
+第15节历史命令的fixture参数现以 `-Dnq.postgres.smoke.password=x` 安全化展示：**non-credential sentinel only；database uses trust authentication；value exists solely for nonblank fixture validation**。原始失败source event仍由失败commit/CI追溯，不在本文复制被scanner识别的字面量。Gitleaks规则、allowlist、workflow均不变。
+
+### 19.3 本地准入与后续exact-head绑定
+
+本轮source-event日志与可复验脚本位于 `artifacts/20260907-l4-plan-gate-remediation/`（本地忽略artifact，不冒充CI证据）；机器结果写入同一JSON gateRemediation。目标Java已通过：68/68 = 3 known-defect reproduction + 1 normal regression + 64 existing regression，failures/errors/skips=0/0/0。Maven offline exit=0，49.756s，结束于2026-09-07T08:56:17+08:00；PG16.15、READ COMMITTED、真实Spring/JDBC，synthetic venue。完整LiveSession既有6项均执行，因此既有回归比历史交付的60项增加4项；不能只按同为68的总数混用两次证据。Windows/Linux stage guards、authority PS5.1/PS7、next-action、agent workflow、lifecycle、plan consistency、doc links、pinned Gitleaks、secret backstop和diff均通过；最终candidate readback后才commit。
+
+Docker Desktop因内部socket访问失败而无法启动，普通重启超时；改用Ubuntu官方PG16.15包，只解包到本地artifact、不安装系统service。专用WSL临时DB仅监听127.0.0.1:39456、trust认证；Windows测试通过loopback连接，测试后进程停止且数据目录删除。命令的端口由每次新实例动态分配，完整本轮argv见JSON gateRemediation.command。
+
+approved caller edges=1559→1559，new approved edges=0；stage registry、exception scope、checker、scanner config、workflow与current authority均不变。生产实现变更=0；LIVE=DISABLED、kill=ENGAGED。
+
+本地附加CI合同：135 workflow mutations全部REJECTED；Gitleaks execution fail-closed合同PASS；canonical release fixtures=66/66。全量docs links=391 checked / 123 historical warnings / 0 errors。Stage checker errors=0；Linux stage guard=49/49、zero skips（Windows另有两项host symlink skip）。Pinned Linux Gitleaks 8.18.4对3138个当前safe files扫描finding=0；custom backstop=0，删除的fixture不进入最终candidate扫描集合。首次plan一致性脚本误将checkout CRLF与Git LF字节直接比较，改用Git clean-filter blob identity后通过，未改registry。
+
+提交为独立follow-up，不amend失败commit。自身SHA与尚未发生的CI结果不写入本提交，完成后在任务报告绑定exact-head SHA/run。只有9/9 required jobs success、failed/skipped/cancelled jobs=0，才进入单独的 `NQ-GATEAUDIT-PHASE6-L4-PLAN-POST-CI-AUTHORITY-TRANSITION-TO-C1`；该下一任务也不实现C1。
+
+回滚本轮未提交改动使用本地同名starting backups及精确反向diff；它们保存了开始时已有的两份reachability计划，不能用HEAD覆盖用户原有计划更新。提交后不重写历史，若另获回滚授权则创建反向follow-up。未执行生产/LIVE/provider或L4 qualification。
