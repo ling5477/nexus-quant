@@ -19998,3 +19998,13 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 
 - 提交前staged-byte校验发现Git换行转换导致4个旧JSON与新readback的staged bytes不再匹配原digest；为保持source/manifest不重写，根.gitattributes仅增加10条精确evidence路径的-text，随后重新暂存并验证原始SHA。此为必要governance binding，不修改application/workflow或远端规则。
 - 上述精确属性绑定采用-text与cr-at-eol，并保留blank-at-eol/blank-at-eof/space-before-tab检查。对10条路径精确git add --renormalize后，staged manifest=7/7、prior source=9/9、新readback bytes全部一致，cached diff-check=PASS；隔离Git fixture证明真实行尾空格仍exit=2拒绝。原source/manifest未重写。
+
+
+## 2026-09-07 — Accept L4 plan delivery and open C1 authority
+
+- Task=`NQ-GATEAUDIT-PHASE6-L4-PLAN-POST-CI-AUTHORITY-TRANSITION-TO-C1`；starting HEAD/origin=`d79408228ce31c97802afbb674eb2e3d0a2e7bfd`，branch=`audit/post-gatey-agent-baseline`，worktree CLEAN、staged=0；本轮明确授权authority同步、精确stage/commit/push，禁止C1实现与追加review。
+- Attempt 1=`378de657ac33b9f9fd666288d489181ac0147b2e / 34038345304`保持FAILED DELIVERY：compatibility caller governance、exception-bound历史测试改动、secret-shaped plan fixture。Attempt 2=`d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665`，9/9 exact-head green，正式接受plan/reproduction delivery；authority同步是另一个Git事件，不替换technical pair。
+- STATUS/ROADMAP、FACT_SOURCE_INDEX及含stale PLAN摘要的README/RUNBOOK最小同步；TESTING/本ledger只追加；新增[acceptance evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_PLAN_POST_CI_AUTHORITY_TRANSITION_TO_C1.md)。accepted_batch指向Phase6 L4 plan；legacy implementation_commit字段按通用commit合同绑定accepted test delivery，不意味着C1已实现。
+- 当前canonical P1-2→C1、P1-3→C2，count=2 OPEN；P1-1/PB1仅retired compatibility，PB2 dormant/no current entrypoint，历史缺陷没有被宣称修复。对应路径重新canonical后重跑R1–R4。当前DAG=C1→C2→Independent Correctness Review→B0→L4 Qualification，C3不是当前依赖。
+- Phase6 IN_PROGRESS/NOT_FROZEN，L4 plan ACCEPTED/CI_GREEN；C1 NOT_STARTED、C2待C1、B0待review、qualification未开始。安全字段不变，production/test source/workflow/checker/scanner与已接受plan文件不变。治理准入、ROADMAP digest结果与后续commit/push的边界见evidence和本次最终报告。
+- 回滚须使用current文件精确反向补丁、ledger追加纠正；不reset/rebase/amend，不将authority commit当技术接受head。本轮不执行C1/C2、生产、credential、provider、L4 qualification或新technical CI。

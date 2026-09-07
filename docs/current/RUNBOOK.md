@@ -72,7 +72,7 @@ git diff --check
 git diff --stat
 ```
 
-本阶段不运行真实交易所 HTTP / WebSocket，不读取 credential material，不启动 LIVE，不接 AI / DH runtime。F008与F007保持`ACCEPTED / CLOSED`；P5-F009为`ACCEPTED / CLOSED`，F005 platform attestation沿用DEFERRED / NON_BLOCKING disposition，Phase6 READY / NOT_STARTED，下一动作为L4 failure matrix PLAN。仅docs/索引变化时不机械运行完整Maven。
+本阶段不运行真实交易所 HTTP / WebSocket，不读取 credential material，不启动 LIVE，不接 AI / DH runtime。F008与F007保持`ACCEPTED / CLOSED`；P5-F009为`ACCEPTED / CLOSED`，F005 platform attestation沿用DEFERRED / NON_BLOCKING disposition，Phase6 IN_PROGRESS / NOT_FROZEN，L4 plan以`d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665`接受；下一动作为`NQ-GATEAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C1-IMPLEMENTATION`。C1 NOT_STARTED且仅处理P1-2，P1-3留待C2；L4 qualification未开始，两个canonical P1仍OPEN。仅docs/索引变化时不机械运行完整Maven。
 
 ## 9. Canonical production configuration
 

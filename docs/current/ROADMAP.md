@@ -38,9 +38,20 @@ P5-F001 ACCEPTED / CLOSED / ruleset 22381941 / refs/heads/dev / effective 9/9
   ↓
 Phase5 ACCEPTED / CLOSED / remaining blocking 0 / F005 DEFERRED NON_BLOCKING
   ↓
-Phase6 READY / NOT_STARTED
+Phase6 IN_PROGRESS / NOT_FROZEN
   ↓
-NQ-GATEAUDIT-PHASE6-L4-FAILURE-MATRIX-PLAN
+L4 plan ACCEPTED / CI_GREEN
+d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665
+  ↓
+C1(P1-2) NOT_STARTED
+  ↓
+C2(P1-3) NOT_STARTED / BLOCKED_BY_C1
+  ↓
+Independent Correctness Review
+  ↓
+B0 Harness Foundation
+  ↓
+L4 Qualification NOT_STARTED
 ```
 
 ## Phase4 accepted foundation
@@ -102,7 +113,7 @@ NQ-GATEAUDIT-PHASE6-L4-FAILURE-MATRIX-PLAN
 - Closure依据：既有本节要求remaining blocking=0，F005此前已明确非阻断延期；current machine lifecycle只约束工作状态/next-action，未规定所有deferred finding必须关闭。Phase5A/Phase5B与F007/F008/F009 accepted prerequisites均已具备，未发现其他Phase5 closure prerequisite；不修改lifecycle定义。
 - Phase5=`ACCEPTED / CLOSED`；逐项accepted evidence与remaining action见[F001 post-remote acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_POST_REMOTE_AUTHORITY_ACCEPTANCE.md)。F005 remains deferred as explicitly non-blocking follow-on work.
 
-## Phase6 readiness and unproven scope
+## Phase6 accepted plan and unproven qualification
 
 - accepted-timeout与lost ACK；
 - cancel/fill race与partial-fill continuation；
@@ -110,7 +121,23 @@ NQ-GATEAUDIT-PHASE6-L4-FAILURE-MATRIX-PLAN
 - multi-instance/lease/duplicate worker；
 - L5/L6 scale、chaos与长期qualification。
 
-Phase5 closure已成立，deployment+observability accepted prerequisites满足；Phase6=`READY / NOT_STARTED`。L4仍为`PROVE_FIRST`，下一machine action=`NQ-GATEAUDIT-PHASE6-L4-FAILURE-MATRIX-PLAN`：先定义上述failure matrix的可执行证明计划及验收证据。当前合同允许NOT_STARTED对应唯一PLAN类型；READY仅表示前置条件满足，不写入不支持的machine status。L4未accepted前L5/L6继续deferred；本任务不实施或执行任何Phase6 proof。
+Phase5 closure与deployment/observability accepted prerequisites保持；Phase6=`IN_PROGRESS / NOT_FROZEN`。L4 plan/reproduction delivery以`d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665`正式`ACCEPTED / CI_GREEN`；L4 qualification仍`PROVE_FIRST / NOT_STARTED`，不等于L4/Phase6 accepted。当前只有两个canonical blocking P1，unknown=0。完整inventory为27 scenarios、17 crash points、12 MUST_PROVE；13行当前适用，14行future-triggered/currently non-canonical，所有qualification行仍NOT_RUN，不将未来行计PASS、SKIPPED或永久NOT_REQUIRED。
+
+| Observation | Current disposition | Current blocker / owner | Boundary |
+| --- | --- | --- | --- |
+| P1-2 stale PLACE/CANCEL ACK | CANONICAL_REACHABLE_CONFIRMED_DEFECT | P1 OPEN / C1 | T2 FILLED已提交后，T1旧ACK仍覆盖为ACCEPTED/CANCELLED；C1只修此项 |
+| P1-3 CANCELLED reconciliation | CANONICAL_REACHABLE_CONFIRMED_DEFECT | P1 OPEN / C2 | C2在C1接受后单独处理有界fill发现与幂等Trade/Ledger收敛 |
+| P1-1 typed terminal mapping | RETIRED_COMPATIBILITY_ONLY | NON_BLOCKING_FOR_CURRENT_CANONICAL_RUNTIME | 历史缺陷观察保留，未宣称修复或false positive |
+| PB1 retained pilot recovery | RETIRED_COMPATIBILITY_ONLY | NON_BLOCKING_FOR_CURRENT_CANONICAL_RUNTIME | 不把普通kill恢复positive control误作PB1缺陷复现 |
+| PB2 sender dispatch | DORMANT_NO_CURRENT_ENTRYPOINT | NON_BLOCKING_FOR_CURRENT_CANONICAL_RUNTIME | 当前无sender入口，历史观察保留 |
+
+Future trigger：对应retired/dormant路径再次成为canonical时，重新运行R1–R4 reachability，不能自动恢复blocking finding或新增compatibility caller。历史失败pair=`378de657ac33b9f9fd666288d489181ac0147b2e / 34038345304`保持FAILED DELIVERY；接受的是后续remediation pair，详见[authority acceptance evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_PLAN_POST_CI_AUTHORITY_TRANSITION_TO_C1.md)。
+
+当前依赖为 **C1(P1-2) → C2(P1-3) → Independent Correctness Review → B0 Harness Foundation → L4 Qualification**。C3不是当前blocking节点。C1=`NOT_STARTED`；C2=`NOT_STARTED / BLOCKED_BY_C1`；B0=`NOT_STARTED / DEPENDS_ON_CORRECTNESS_REVIEW`；L4 qualification=`NOT_STARTED`，L5/L6继续等待L4 accepted。先后依赖不构成本轮实现授权。
+
+C1的后续目标：较新terminal保留，旧PLACE/CANCEL ACK的stale write按canonical状态机拒绝或no-op，无terminal regression、虚假ACK审计/事件，Trade/Ledger事实完整；同一实现候选中将两个known-defect断言反转/替换为正确不变量。C1不扩大CANCELLED扫描、不实现C2 fill recovery或重设计backfill；如未来发现不可分原子依赖，先报告scope escalation。C2另行反转CANCELLED blind-spot断言为bounded idempotent fill/Trade/Ledger convergence，随后进入独立正确性review。
+
+交付历史68/68=3个known-defect reproduction PASS + 1个kill-engaged normal regression PASS + 64个既有回归PASS。PASS只证明两个当前P1成功复现和既有行为保留，不是runtime correctness acceptance；本轮不重跑这些测试，也不追加review。
 
 ## 下一允许动作
 
@@ -119,14 +146,14 @@ Phase5 closure已成立，deployment+observability accepted prerequisites满足�
 - F007 immutable technical acceptance pair=`0e2efdeb236c185dbace67bb22f94c6af64a563a / 34009290836`；implementation与accepted technical head相同，不由本轮docs-only authority commit替代。
 - F009 immutable technical acceptance pair=`dbb8b9c6a2319338f5ca90b566ad494142a55e20 / 34024427455`；首次delivery=`85d11984d0c65b464ffe4858fe7fd1da51885f12`、failed CI=`34024011663`保留，不由后续authority commit替代。
 - F001 remote acceptance绑定ruleset `22381941 / refs/heads/dev / ACTIVE / effective 9/9`；本次只读readback与authority synchronization commit是独立事件，不能写成新的remote mutation。
-- 当前workstream=`GateAUDIT-PHASE6-L4-FAILURE-MATRIX`，status=`NOT_STARTED / NONE / NOT_RUN`；machine next action=`NQ-GATEAUDIT-PHASE6-L4-FAILURE-MATRIX-PLAN`，matcher=`PLAN`。Phase6可进入L4证明计划，未开始implementation/qualification。
+- 当前workstream=`GateAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C1`，status=`NOT_STARTED / NONE / NOT_RUN`；machine next action=`NQ-GATEAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C1-IMPLEMENTATION`，matcher唯一类型=`IMPLEMENTATION`。仅登记后续C1/P1-2实现入口；C1→targeted validation→independent review→接受，之后才能进入C2。
 - Phase5 ACCEPTED/CLOSED，remaining blocking=0；F005仍DEFERRED/NON_BLOCKING，平台attestation须未来显式授权。详见[F001 post-remote acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_POST_REMOTE_AUTHORITY_ACCEPTANCE.md)。
 
 ## Persistent boundary
 
 - `LIVE=DISABLED`、kill switch=`ENGAGED`；禁止再次pilot、PLACE、CANCEL、transfer、withdraw或credential/生产服务器/生产数据库访问。
 - GateY frozen archive与published tags不可改写。
-- P5-F001/P5-F007/P5-F008/P5-F009均为`ACCEPTED / CLOSED`；Phase5已关闭，Phase6 READY/NOT_STARTED。remote enforcement为APPLIED/VERIFIED/ACCEPTED，platform attestation保持DEFERRED/NON_BLOCKING。
+- P5-F001/P5-F007/P5-F008/P5-F009均为`ACCEPTED / CLOSED`；Phase5已关闭，Phase6 IN_PROGRESS/NOT_FROZEN，L4 plan已接受、C1与L4 qualification未开始。remote enforcement为APPLIED/VERIFIED/ACCEPTED，platform attestation保持DEFERRED/NON_BLOCKING。
 
 ## F009 accepted delivery lineage
 

@@ -15192,3 +15192,11 @@ Attempt-01=`FAIL / CHANGES_REQUIRED`：P1-01=`INTERPROCESS_DURABILITY_CHECK_ABSE
 
 - 提交前staged-byte校验发现Git换行转换导致4个旧JSON与新readback的staged bytes不再匹配原digest；为保持source/manifest不重写，根.gitattributes仅增加10条精确evidence路径的-text，随后重新暂存并验证原始SHA。此为必要governance binding，不修改application/workflow或远端规则。
 - 上述精确属性绑定采用-text与cr-at-eol，并保留blank-at-eol/blank-at-eof/space-before-tab检查。对10条路径精确git add --renormalize后，staged manifest=7/7、prior source=9/9、新readback bytes全部一致，cached diff-check=PASS；隔离Git fixture证明真实行尾空格仍exit=2拒绝。原source/manifest未重写。
+
+
+## 2026-09-07 — Phase6 L4 plan post-CI authority transition to C1
+
+- 本次仅核验已有pair和authority治理，不重跑技术测试、不追加L4 plan/C1 review。GitHub只读readback：accepted=`d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665`，completed/success、9/9 required jobs，failed/skipped/cancelled jobs=0；failed=`378de657ac33b9f9fd666288d489181ac0147b2e / 34038345304`保留FAILED DELIVERY。
+- 既有technical source event（本轮未重跑）：68/68=3 known-defect reproduction+1 normal regression+64 existing regression，failures/errors/skips=0/0/0；3项PASS意味着P1-2/P1-3仍可复现，canonical P1=2 OPEN，不是runtime correctness PASS。其CI条件未启用4项characterization，本地显式执行与CI job success分层记录。
+- 新authority：L4 plan ACCEPTED/CI_GREEN；C1 work batch=`GateAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C1 / NOT_STARTED / NONE / NOT_RUN`，next_action=`NQ-GATEAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C1-IMPLEMENTATION`，matcher唯一IMPLEMENTATION。C2未开始、依赖C1接受；B0未开始、依赖独立正确性review；L4 qualification未开始。27/17/12 inventory、13 current+14 future-triggered、unknown=0保持。
+- 本轮governance-only验证结果、ROADMAP正式digest判定、append-only/stale-claim与secret scan证据见[acceptance evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_PLAN_POST_CI_AUTHORITY_TRANSITION_TO_C1.md)。Maven/PG/frontend/L4 qualification/new technical CI均未执行；authority commit不替换固定technical pair。
