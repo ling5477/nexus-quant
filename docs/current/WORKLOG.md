@@ -20008,3 +20008,16 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - 当前canonical P1-2→C1、P1-3→C2，count=2 OPEN；P1-1/PB1仅retired compatibility，PB2 dormant/no current entrypoint，历史缺陷没有被宣称修复。对应路径重新canonical后重跑R1–R4。当前DAG=C1→C2→Independent Correctness Review→B0→L4 Qualification，C3不是当前依赖。
 - Phase6 IN_PROGRESS/NOT_FROZEN，L4 plan ACCEPTED/CI_GREEN；C1 NOT_STARTED、C2待C1、B0待review、qualification未开始。安全字段不变，production/test source/workflow/checker/scanner与已接受plan文件不变。治理准入、ROADMAP digest结果与后续commit/push的边界见evidence和本次最终报告。
 - 回滚须使用current文件精确反向补丁、ledger追加纠正；不reset/rebase/amend，不将authority commit当技术接受head。本轮不执行C1/C2、生产、credential、provider、L4 qualification或新technical CI。
+
+
+## 2026-09-07 — Phase6 L4 C1 post-CI authority transition to C2
+
+- 本轮接受C1既有交付：implementation=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd`，独立review=`PASS / P0_0 / P1_0`，acceptance head=`eb9740b7519f48ffc1e32968cbb0950261b871ef`，exact-head CI=`34098902705 / completed / success / 9/9`；只读readback已核验。
+- 首次delivery=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd / 34086018265 = FAILED DELIVERY`保留；Docker根因仍`UNCLASSIFIABLE_WITH_RETAINED_EVIDENCE`。新诊断surface存在，accepted CI的PG/Flyway与current-schema V47 restore均SUCCESS；历史Phase5B V46事实不改。
+- P1-2=`REMEDIATED / REVIEWED / CI_GREEN / CLOSED`：durable generation与atomic status/version CAS拒绝stale PLACE/CANCEL ACK、ABA及pre-cancel race；P1-2现为permanent correctness regressions。P1-3仍`OPEN / KNOWN_DEFECT_REPRODUCTION`，canonical blocking P1=1、unknown=0。
+- machine accepted_batch=C1；work_batch=C2 / NOT_STARTED / NONE / NOT_RUN；next_action=`NQ-GATEAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C2-IMPLEMENTATION`。Phase6 IN_PROGRESS/NOT_FROZEN；C2→Independent Correctness Review→B0→L4 Qualification均未开始。C1不追加review，C3不作为当前前置。
+- F009保持ACCEPTED/CLOSED；18 contracts、105 members、1559 caller edges不变，new caller/enforcement delta=0；C1 reviewed paths=12且delivery变更字节=0；ROADMAP正式digest未变，本轮registry不修改。
+- 仅八个文档路径；README/RUNBOOK同步stale current摘要；TESTING/WORKLOG保留全部旧字节，仅追加。技术实现、测试、migration、workflow改动=0。最终治理准入结果另行追加；本轮未运行新技术qualification。
+- 完整身份、证据与交付边界见[C1 acceptance evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_C1_POST_CI_AUTHORITY_TRANSITION_TO_C2.md)。authority commit与immutable technical chain分层；LIVE DISABLED、kill ENGAGED及全部安全字段不变，credential/真实provider/production DB操作=0。
+
+- 本轮治理准入实测：authority PS5.1/PS7 errors=0；matcher failed=0；lifecycle 20/20；agent 12/12；stage scanned=1802/errors=0；stage guard Windows 47 PASS+2既有symlink条件跳过、Linux 49/49 PASS；docs links checked=436/errors=0/历史warnings=123；Gitleaks 8.18.4安全扫描3147文件、findings=0；append-only/history/stale/safety/范围与diff检查均PASS。所有上述命令exit=0，完整命令见本节acceptance evidence；材料化后最终candidate再作stage/docs/consistency/secret/diff准入，失败不提交。

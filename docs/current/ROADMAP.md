@@ -43,13 +43,13 @@ Phase6 IN_PROGRESS / NOT_FROZEN
 L4 plan ACCEPTED / CI_GREEN
 d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665
   ↓
-C1(P1-2) NOT_STARTED
+C1(P1-2) ACCEPTED / CI_GREEN / CLOSED
   ↓
-C2(P1-3) NOT_STARTED / BLOCKED_BY_C1
+C2(P1-3) NOT_STARTED
   ↓
-Independent Correctness Review
+Independent Correctness Review NOT_STARTED
   ↓
-B0 Harness Foundation
+B0 Harness Foundation NOT_STARTED
   ↓
 L4 Qualification NOT_STARTED
 ```
@@ -121,23 +121,23 @@ L4 Qualification NOT_STARTED
 - multi-instance/lease/duplicate worker；
 - L5/L6 scale、chaos与长期qualification。
 
-Phase5 closure与deployment/observability accepted prerequisites保持；Phase6=`IN_PROGRESS / NOT_FROZEN`。L4 plan/reproduction delivery以`d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665`正式`ACCEPTED / CI_GREEN`；L4 qualification仍`PROVE_FIRST / NOT_STARTED`，不等于L4/Phase6 accepted。当前只有两个canonical blocking P1，unknown=0。完整inventory为27 scenarios、17 crash points、12 MUST_PROVE；13行当前适用，14行future-triggered/currently non-canonical，所有qualification行仍NOT_RUN，不将未来行计PASS、SKIPPED或永久NOT_REQUIRED。
+Phase5 closure与deployment/observability accepted prerequisites保持；Phase6=`IN_PROGRESS / NOT_FROZEN`。L4 plan/reproduction delivery以`d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665`正式`ACCEPTED / CI_GREEN`；L4 qualification仍`PROVE_FIRST / NOT_STARTED`，不等于L4/Phase6 accepted。C1已ACCEPTED / CI_GREEN，P1-2已关闭；当前仅P1-3一个canonical blocking P1，unknown=0。完整inventory为27 scenarios、17 crash points、12 MUST_PROVE；13行当前适用，14行future-triggered/currently non-canonical，所有qualification行仍NOT_RUN，不将未来行计PASS、SKIPPED或永久NOT_REQUIRED。
 
 | Observation | Current disposition | Current blocker / owner | Boundary |
 | --- | --- | --- | --- |
-| P1-2 stale PLACE/CANCEL ACK | CANONICAL_REACHABLE_CONFIRMED_DEFECT | P1 OPEN / C1 | T2 FILLED已提交后，T1旧ACK仍覆盖为ACCEPTED/CANCELLED；C1只修此项 |
-| P1-3 CANCELLED reconciliation | CANONICAL_REACHABLE_CONFIRMED_DEFECT | P1 OPEN / C2 | C2在C1接受后单独处理有界fill发现与幂等Trade/Ledger收敛 |
+| P1-2 stale PLACE/CANCEL ACK | REMEDIATED / REVIEWED / CI_GREEN / CLOSED | CLOSED / C1 | durable generation与atomic status/version CAS拒绝旧ACK与ABA，保留较新terminal；关闭绑定implementation、独立review及exact-head CI |
+| P1-3 CANCELLED reconciliation | CANONICAL_REACHABLE_CONFIRMED_DEFECT | P1 OPEN / C2 | C2是唯一当前正确性目标：CANCELLED/fill冲突的bounded、idempotent、canonical fill→Trade→Ledger convergence |
 | P1-1 typed terminal mapping | RETIRED_COMPATIBILITY_ONLY | NON_BLOCKING_FOR_CURRENT_CANONICAL_RUNTIME | 历史缺陷观察保留，未宣称修复或false positive |
 | PB1 retained pilot recovery | RETIRED_COMPATIBILITY_ONLY | NON_BLOCKING_FOR_CURRENT_CANONICAL_RUNTIME | 不把普通kill恢复positive control误作PB1缺陷复现 |
 | PB2 sender dispatch | DORMANT_NO_CURRENT_ENTRYPOINT | NON_BLOCKING_FOR_CURRENT_CANONICAL_RUNTIME | 当前无sender入口，历史观察保留 |
 
 Future trigger：对应retired/dormant路径再次成为canonical时，重新运行R1–R4 reachability，不能自动恢复blocking finding或新增compatibility caller。历史失败pair=`378de657ac33b9f9fd666288d489181ac0147b2e / 34038345304`保持FAILED DELIVERY；接受的是后续remediation pair，详见[authority acceptance evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_PLAN_POST_CI_AUTHORITY_TRANSITION_TO_C1.md)。
 
-当前依赖为 **C1(P1-2) → C2(P1-3) → Independent Correctness Review → B0 Harness Foundation → L4 Qualification**。C3不是当前blocking节点。C1=`NOT_STARTED`；C2=`NOT_STARTED / BLOCKED_BY_C1`；B0=`NOT_STARTED / DEPENDS_ON_CORRECTNESS_REVIEW`；L4 qualification=`NOT_STARTED`，L5/L6继续等待L4 accepted。先后依赖不构成本轮实现授权。
+当前依赖为 **C1(P1-2) → C2(P1-3) → Independent Correctness Review → B0 Harness Foundation → L4 Qualification**。C3不是当前blocking节点。C1=`ACCEPTED / CI_GREEN / CLOSED`；C2=`NOT_STARTED`；Independent Correctness Review=`NOT_STARTED`；B0=`NOT_STARTED / DEPENDS_ON_CORRECTNESS_REVIEW`；L4 qualification=`NOT_STARTED`，L5/L6继续等待L4 accepted。先后依赖不构成本轮实现授权。
 
-C1的后续目标：较新terminal保留，旧PLACE/CANCEL ACK的stale write按canonical状态机拒绝或no-op，无terminal regression、虚假ACK审计/事件，Trade/Ledger事实完整；同一实现候选中将两个known-defect断言反转/替换为正确不变量。C1不扩大CANCELLED扫描、不实现C2 fill recovery或重设计backfill；如未来发现不可分原子依赖，先报告scope escalation。C2另行反转CANCELLED blind-spot断言为bounded idempotent fill/Trade/Ledger convergence，随后进入独立正确性review。
+C1接受身份：implementation=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd`；既有独立review=`PASS / PHASE6_L4_C1_VERSIONED_OCC_INDEPENDENT_REVIEW_ACCEPTED / P0_0 / P1_0 / READY_FOR_C1_DELIVERY`；acceptance head=`eb9740b7519f48ffc1e32968cbb0950261b871ef`、CI=`34098902705 / 9/9 SUCCESS`。首次delivery=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd / 34086018265 = FAILED DELIVERY`另行保留；完整证据见[C1 authority acceptance](../audit/evidence/GATEAUDIT_PHASE6_L4_C1_POST_CI_AUTHORITY_TRANSITION_TO_C2.md)。本轮authority commit不替代技术身份，不追加C1 review。C2只处理local CANCELLED与venue fill冲突；eligible-state positive control已收敛，C2将缺陷断言转为bounded idempotent fill/Trade/Ledger不变量，随后执行current correctness cluster独立review。
 
-交付历史68/68=3个known-defect reproduction PASS + 1个kill-engaged normal regression PASS + 64个既有回归PASS。PASS只证明两个当前P1成功复现和既有行为保留，不是runtime correctness acceptance；本轮不重跑这些测试，也不追加review。
+交付历史68/68=3个known-defect reproduction PASS + 1个kill-engaged normal regression PASS + 64个既有回归PASS。该历史PASS只证明当时两个P1成功复现和既有行为保留，不是L4 qualification acceptance；当前P1-2已转为permanent correctness regressions，P1-3仍为KNOWN_DEFECT_REPRODUCTION；本轮不重跑这些测试，也不追加review。
 
 ## 下一允许动作
 
@@ -146,14 +146,14 @@ C1的后续目标：较新terminal保留，旧PLACE/CANCEL ACK的stale write按c
 - F007 immutable technical acceptance pair=`0e2efdeb236c185dbace67bb22f94c6af64a563a / 34009290836`；implementation与accepted technical head相同，不由本轮docs-only authority commit替代。
 - F009 immutable technical acceptance pair=`dbb8b9c6a2319338f5ca90b566ad494142a55e20 / 34024427455`；首次delivery=`85d11984d0c65b464ffe4858fe7fd1da51885f12`、failed CI=`34024011663`保留，不由后续authority commit替代。
 - F001 remote acceptance绑定ruleset `22381941 / refs/heads/dev / ACTIVE / effective 9/9`；本次只读readback与authority synchronization commit是独立事件，不能写成新的remote mutation。
-- 当前workstream=`GateAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C1`，status=`NOT_STARTED / NONE / NOT_RUN`；machine next action=`NQ-GATEAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C1-IMPLEMENTATION`，matcher唯一类型=`IMPLEMENTATION`。仅登记后续C1/P1-2实现入口；C1→targeted validation→independent review→接受，之后才能进入C2。
+- 当前workstream=`GateAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C2`，status=`NOT_STARTED / NONE / NOT_RUN`；machine next action=`NQ-GATEAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C2-IMPLEMENTATION`，matcher唯一类型=`IMPLEMENTATION`。C2仅拥有P1-3；authority同步与C2实现之间不插入新C1 review，C2之后的Independent Correctness Review仍为当前DAG必需节点。
 - Phase5 ACCEPTED/CLOSED，remaining blocking=0；F005仍DEFERRED/NON_BLOCKING，平台attestation须未来显式授权。详见[F001 post-remote acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_POST_REMOTE_AUTHORITY_ACCEPTANCE.md)。
 
 ## Persistent boundary
 
 - `LIVE=DISABLED`、kill switch=`ENGAGED`；禁止再次pilot、PLACE、CANCEL、transfer、withdraw或credential/生产服务器/生产数据库访问。
 - GateY frozen archive与published tags不可改写。
-- P5-F001/P5-F007/P5-F008/P5-F009均为`ACCEPTED / CLOSED`；Phase5已关闭，Phase6 IN_PROGRESS/NOT_FROZEN，L4 plan已接受、C1与L4 qualification未开始。remote enforcement为APPLIED/VERIFIED/ACCEPTED，platform attestation保持DEFERRED/NON_BLOCKING。
+- P5-F001/P5-F007/P5-F008/P5-F009均为`ACCEPTED / CLOSED`；Phase5已关闭，Phase6 IN_PROGRESS/NOT_FROZEN，L4 plan及C1已接受、C2与L4 qualification未开始。remote enforcement为APPLIED/VERIFIED/ACCEPTED，platform attestation保持DEFERRED/NON_BLOCKING。
 
 ## F009 accepted delivery lineage
 

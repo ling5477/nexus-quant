@@ -41,7 +41,9 @@
 
 - [F001 post-remote acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_POST_REMOTE_AUTHORITY_ACCEPTANCE.md)：F001正式closure、独立remote effective-rule readback、Phase5 closure与Phase6 readiness推导；引用上一remote mutation证据，分类为`ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`，不替代F009 immutable technical pair。
 
-- [Phase6 L4 plan post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_PLAN_POST_CI_AUTHORITY_TRANSITION_TO_C1.md)：接受固定plan/reproduction pair=`d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665`，保留failed delivery=`378de657ac33b9f9fd666288d489181ac0147b2e / 34038345304`；分类为`ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。原[MD计划](../audit/evidence/GATEAUDIT_PHASE6_L4_FAILURE_MATRIX_PLAN.md)与[JSON矩阵](../audit/evidence/GATEAUDIT_PHASE6_L4_FAILURE_MATRIX_PLAN.json)是immutable technical delivery snapshot；其当时next-task文字不替代当前STATUS/ROADMAP。当前canonical P1=2、C1/C2边界与DAG由STATUS/ROADMAP表达，L4资格未接受。
+- [Phase6 L4 plan post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_PLAN_POST_CI_AUTHORITY_TRANSITION_TO_C1.md)：接受固定plan/reproduction pair=`d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665`，保留failed delivery=`378de657ac33b9f9fd666288d489181ac0147b2e / 34038345304`；分类为`ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。原[MD计划](../audit/evidence/GATEAUDIT_PHASE6_L4_FAILURE_MATRIX_PLAN.md)与[JSON矩阵](../audit/evidence/GATEAUDIT_PHASE6_L4_FAILURE_MATRIX_PLAN.json)是immutable technical delivery snapshot；其当时next-task文字不替代当前STATUS/ROADMAP。当时canonical P1=2；当前P1数量、C1/C2边界与DAG由STATUS/ROADMAP表达，L4资格未接受。
+
+- [C1 post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_C1_POST_CI_AUTHORITY_TRANSITION_TO_C2.md)：保留implementation、独立review、failed delivery和accepted exact-head CI，正式关闭P1-2并打开C2/P1-3入口；分类为`ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。当前canonical blocking P1=1，技术身份与authority synchronization commit分层；STATUS仍是唯一machine authority。
 
 ## 5. Agent / Governance
 
