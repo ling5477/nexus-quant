@@ -32,7 +32,7 @@ public class JdbcOrderRepository implements OrderRepository {
 
     private static final String BASE_SELECT = """
             SELECT order_id, account_id, strategy_run_id, venue, symbol, client_order_id, side, type, price, qty,
-                   external_order_id, status, reason, trace_id, trade_env
+                   external_order_id, status, reason, trace_id, trade_env, version
             FROM orders
             """;
 
@@ -80,6 +80,9 @@ public class JdbcOrderRepository implements OrderRepository {
 
     @Override
     public void insert(OrderRecord order, Instant now) {
+        if (order.version() != 0L) {
+            throw new IllegalArgumentException("new order version must be zero");
+        }
         jdbcTemplate.update(
                 """
                         INSERT INTO orders (
@@ -109,20 +112,31 @@ public class JdbcOrderRepository implements OrderRepository {
     }
 
     @Override
-    public void updateStatus(String orderId, OrderStatus status, String reason, Instant now) {
-        jdbcTemplate.update(
-                "UPDATE orders SET status = ?, reason = ?, updated_at = ? WHERE order_id = ?",
+    public int compareAndSetStatus(String orderId, OrderStatus expectedStatus, long expectedVersion,
+            OrderStatus status, String reason, Instant now) {
+        if (expectedVersion < 0 || expectedVersion == Long.MAX_VALUE) {
+            throw new IllegalArgumentException("order version cannot advance");
+        }
+        return jdbcTemplate.update(
+                "UPDATE orders SET status = ?, reason = ?, version = version + 1, updated_at = ?"
+                        + " WHERE order_id = ? AND status = ? AND version = ?",
                 status.name(),
                 reason,
                 Timestamp.from(now),
-                orderId
+                orderId,
+                expectedStatus.name(),
+                expectedVersion
         );
     }
 
     @Override
-    public void updateExternalOrderId(String orderId, String externalOrderId, Instant now) {
-        jdbcTemplate.update(
-                "UPDATE orders SET external_order_id = ?, updated_at = ? WHERE order_id = ?",
+    public int updateExternalOrderId(String orderId, String externalOrderId, Instant now) {
+        if (externalOrderId == null || externalOrderId.isBlank()) {
+            throw new IllegalArgumentException("externalOrderId must not be blank");
+        }
+        return jdbcTemplate.update(
+                "UPDATE orders SET external_order_id = ?, updated_at = ? WHERE order_id = ?"
+                        + " AND (external_order_id IS NULL OR BTRIM(external_order_id) = '')",
                 externalOrderId,
                 Timestamp.from(now),
                 orderId
@@ -161,7 +175,8 @@ public class JdbcOrderRepository implements OrderRepository {
                 OrderStatus.valueOf(resultSet.getString("status")),
                 resultSet.getString("reason"),
                 resultSet.getString("trace_id"),
-                resultSet.getString("trade_env")
+                resultSet.getString("trade_env"),
+                resultSet.getLong("version")
         );
     }
 }

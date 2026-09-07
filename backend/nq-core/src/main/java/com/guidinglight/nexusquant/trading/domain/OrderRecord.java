@@ -25,6 +25,7 @@ import java.math.BigDecimal;
  * @param reason 状态原因
  * @param traceId 链路追踪 ID
  * @param tradeEnv canonical交易环境，固定SIM/LIVE
+ * @param version durable 状态迁移代际；identity-only enrichment 不推进代际
  */
 public record OrderRecord(
         String orderId,
@@ -41,8 +42,17 @@ public record OrderRecord(
         OrderStatus status,
         String reason,
         String traceId,
-        String tradeEnv
+        String tradeEnv,
+        long version
 ) {
+
+    /** 新订单及既有测试构造入口从代际零开始；持久化读取必须使用完整构造器。 */
+    public OrderRecord(String orderId, Long accountId, String strategyRunId, String venue, String symbol,
+            String clientOrderId, String side, String type, BigDecimal price, BigDecimal qty,
+            String externalOrderId, OrderStatus status, String reason, String traceId, String tradeEnv) {
+        this(orderId, accountId, strategyRunId, venue, symbol, clientOrderId, side, type, price, qty,
+                externalOrderId, status, reason, traceId, tradeEnv, 0L);
+    }
 
     /** 兼容既有订单构造器；未显式声明时保持历史SIM默认值。 */
     public OrderRecord(
@@ -66,13 +76,16 @@ public record OrderRecord(
     }
 
     public OrderRecord {
+        if (version < 0) {
+            throw new IllegalArgumentException("order version must be nonnegative");
+        }
         if (!java.util.Set.of("SIM", "LIVE").contains(tradeEnv)) {
             throw new IllegalArgumentException("tradeEnv must be SIM or LIVE");
         }
     }
 
     /**
-     * 基于当前订单构造新的状态快照。
+     * 为成功迁移构造下一代快照；调用方必须先取得数据库 CAS 的迁移所有权。
      *
      * @param nextStatus 迁移后的状态
      * @param nextReason 迁移原因
@@ -94,7 +107,8 @@ public record OrderRecord(
                 nextStatus,
                 nextReason,
                 traceId,
-                tradeEnv
+                tradeEnv,
+                Math.incrementExact(version)
         );
     }
 
@@ -124,7 +138,8 @@ public record OrderRecord(
                 status,
                 reason,
                 traceId,
-                tradeEnv
+                tradeEnv,
+                version
         );
     }
 }

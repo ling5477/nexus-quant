@@ -41,17 +41,21 @@ public interface OrderRepository {
     void insert(OrderRecord order, Instant now);
 
     /**
-     * 更新订单状态与原因。
+     * 原子迁移指定状态代际；状态机合法性由调用方检查。
      *
      * @param orderId 系统订单 ID
+     * @param expectedStatus 快照中的预期状态
+     * @param expectedVersion 快照中的预期代际，不得为旧回执刷新后重试
      * @param status 迁移后的状态
      * @param reason 状态原因
      * @param now 更新时间
+     * @return 实际影响行数：1 成功且 version 加一，0 冲突，其他值由调用方 fail closed
      */
-    void updateStatus(String orderId, OrderStatus status, String reason, Instant now);
+    int compareAndSetStatus(String orderId, OrderStatus expectedStatus, long expectedVersion,
+            OrderStatus status, String reason, Instant now);
 
     /**
-     * 更新订单外部订单号。
+     * 仅填充空的外部订单号，保持已有 identity 和 lifecycle version。
      * <p>
      * Why:
      * GateC-0 要求回执成功后立刻落库 external_order_id，供后续 reconcile/恢复/WS 关联使用。
@@ -59,8 +63,9 @@ public interface OrderRepository {
      * @param orderId 系统订单 ID
      * @param externalOrderId 外部订单号
      * @param now 更新时间
+     * @return 1 填充成功，0 未填充（调用方须读取并确认已有 identity 相同），其他值 fail closed
      */
-    void updateExternalOrderId(String orderId, String externalOrderId, Instant now);
+    int updateExternalOrderId(String orderId, String externalOrderId, Instant now);
 
     /**
      * 查询指定状态集合下的订单。

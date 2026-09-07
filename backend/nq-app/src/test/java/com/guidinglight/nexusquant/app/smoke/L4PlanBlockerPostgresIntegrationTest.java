@@ -32,11 +32,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
- * Three temporary canonical defect reproductions (two findings) and one normal regression, not L4 qualification.
- * Defect assertions intentionally describe the unfixed baseline. No production seams are added.
- * A known-defect-reproduction PASS means the defect was reproduced, never correctness acceptance.
- * Lifecycle owner and post-fix inversion are bound in the plan JSON reproductionContract.cases.
- * Run only against the task-owned disposable PostgreSQL database.
+ * C1 使用真实事务与确定性 barrier 验证 versioned OCC；C2 仍保留已知缺陷复现。
+ * 测试只运行于任务专用临时 PostgreSQL；不代表 L4 qualification 或 C2 correctness。
  */
 @SpringBootTest(classes = {NexusQuantApplication.class,
         L4PlanBlockerPostgresIntegrationTest.Configuration.class}, properties = {
@@ -58,7 +55,9 @@ class L4PlanBlockerPostgresIntegrationTest {
     @Autowired KillSwitchService kill;
     @Autowired ControlledGateway gateway;
     @MockitoSpyBean JdbcTemplate jdbc;
+    @MockitoSpyBean OrderCommandWriteService writes;
     private final List<String> updates = new CopyOnWriteArrayList<>();
+    private final List<CasObservation> cas = new CopyOnWriteArrayList<>();
     private final List<String> createdOrders = new CopyOnWriteArrayList<>();
 
     @BeforeEach void prepare() {
@@ -67,12 +66,18 @@ class L4PlanBlockerPostgresIntegrationTest {
         assertNotNull(url);
         assertTrue(url.startsWith("jdbc:postgresql://127.0.0.1:") && url.contains("/nq_l4_blocker"),
                 "This characterization requires the dedicated disposable database");
+        assertTrue(jdbc.queryForObject("SHOW server_version", String.class).startsWith("16."));
         gateway.reset();
         doAnswer(call -> {
             String sql = call.getArgument(0);
             Object rows = call.callRealMethod();
             if (sql.startsWith("UPDATE orders SET status")) {
                 updates.add(sql + " affected=" + rows + " thread=" + Thread.currentThread().getName());
+                if (sql.contains("AND version = ?")) {
+                    Object[] args = (Object[]) call.getRawArguments()[1];
+                    cas.add(new CasObservation((String) args[3], (String) args[4], (long) args[5],
+                            (String) args[0], (int) rows, TransactionSynchronizationManager.isActualTransactionActive()));
+                }
             }
             return rows;
         }).when(jdbc).update(anyString(), any(Object[].class));
@@ -84,6 +89,7 @@ class L4PlanBlockerPostgresIntegrationTest {
 
     @AfterEach void cleanup() {
         gateway.release.countDown();
+        gateway.oldRelease.countDown(); gateway.newRelease.countDown();
         for (String id : createdOrders) {
             jdbc.update("UPDATE orders SET status='CANCELLED',reason='L4_TEST_CLEANUP' WHERE order_id=?", id);
         }
@@ -92,61 +98,146 @@ class L4PlanBlockerPostgresIntegrationTest {
 
     @AfterAll static void restoreProxy() { ExchangeNoOutboundGuard.restoreDefault(); }
 
-    /**
-     * KNOWN_DEFECT_REPRODUCTION R02 / P1-2, owner C1: PASS observes stale PLACE ACK overwriting FILLED.
-     * At C1 fix, invert to surviving FILLED and explicit stale-write rejection; this is not a business invariant.
-     */
-    @Tag("known-defect-reproduction")
-    @Test void stalePlaceAckOverwritesCommittedFilledThroughRealSpringTransactions() throws Exception {
+    /** R02：较新 FILLED 提交后，旧 PLACE ACK 不得取得迁移所有权。 */
+    @Test void stalePlaceAckPreservesCommittedFilledThroughRealSpringTransactions() throws Exception {
         var request = request("stale-place");
         gateway.pausePlace = true;
         var executor = Executors.newSingleThreadExecutor();
         try {
             var t1 = executor.submit(() -> commands.placeOrder(request));
-            assertTrue(gateway.reached.await(15, TimeUnit.SECONDS));
+            if (!gateway.reached.await(15, TimeUnit.SECONDS)) {
+                t1.get(1, TimeUnit.SECONDS);
+                fail("PLACE did not reach gateway barrier");
+            }
             var old = gateway.inFlight.get();
             createdOrders.add(old.orderId());
             assertEquals(OrderStatus.SENT, current(old).status());
             gateway.venue.reportFilled(gateway.venue.externalOrderId(old.orderId()));
             assertEquals(1, reconcile.reconcileOnce(100));
             assertEquals(OrderStatus.FILLED, current(old).status());
+            long filledVersion = current(old).version();
+            assertEquals(old.version() + 1, filledVersion);
             assertEquals(1L, count("SELECT count(*) FROM trades WHERE order_id=?", old.orderId()));
             gateway.release.countDown();
-            assertEquals(OrderStatus.ACCEPTED, t1.get(15, TimeUnit.SECONDS).status());
-            assertEquals(OrderStatus.ACCEPTED, current(old).status());
-            assertTrue(updates.stream().anyMatch(s -> s.contains("affected=1") && s.contains("pool-")));
+            assertEquals(OrderStatus.FILLED, t1.get(15, TimeUnit.SECONDS).status());
+            assertEquals(OrderStatus.FILLED, current(old).status());
+            assertEquals(filledVersion, current(old).version());
+            assertCas(old, "ACCEPTED", 0);
+            assertEquals(0, eventCount(old, "OrderAck"));
+            assertEquals(0, actionCount(old, "ORDER_ACKED"));
+            assertEquals(0, count("SELECT count(*) FROM audit_logs WHERE actor_id=? AND action='ORDER_STATUS_TRANSITION' AND detail_json->>'to'='ACCEPTED'", old.orderId()));
+            assertEquals(1, actionCount(old, "STALE_PROVIDER_RESULT_IGNORED"));
+            assertEquals(1L, count("SELECT count(*) FROM trades WHERE order_id=?", old.orderId()));
             assertEquals(2L, count("SELECT count(*) FROM ledger_entries WHERE trace_id=?", old.traceId()));
-            System.out.println("L4-P1-2 PLACE: T2 FILLED committed; stale T1 ACK -> ACCEPTED; " + updates);
+            System.out.println("C1 PLACE PASS: FILLED version=" + filledVersion + " Trade=1 Ledger=2 staleCAS=0 " + cas);
         } finally {
             gateway.release.countDown(); executor.shutdownNow();
             assertTrue(executor.awaitTermination(15, TimeUnit.SECONDS));
         }
     }
 
-    /**
-     * KNOWN_DEFECT_REPRODUCTION R03 / P1-2, owner C1: PASS observes stale CANCEL ACK overwriting FILLED.
-     * At C1 fix, invert to surviving FILLED and explicit stale-write rejection; this is not a business invariant.
-     */
-    @Tag("known-defect-reproduction")
-    @Test void staleCancelAckOverwritesCommittedFilledThroughRealSpringTransactions() throws Exception {
+    /** R03：保持现有 reconcile 两步状态图，版本按两次真实迁移递增。 */
+    @Test void staleCancelAckPreservesCommittedFilledThroughRealSpringTransactions() throws Exception {
         var order = place(request("stale-cancel"));
         gateway.pauseCancel = true;
         var executor = Executors.newSingleThreadExecutor();
         try {
             var t1 = executor.submit(() -> commands.cancelOrder(cancel(order)));
             assertTrue(gateway.reached.await(15, TimeUnit.SECONDS));
+            var old = gateway.inFlight.get();
             assertEquals(OrderStatus.CANCEL_REQUESTED, current(order).status());
             gateway.venue.reportFilled(order.externalOrderId());
             assertEquals(1, reconcile.reconcileOnce(100));
             assertEquals(OrderStatus.FILLED, current(order).status());
+            long filledVersion = current(order).version();
+            assertEquals(old.version() + 2, filledVersion);
             gateway.release.countDown();
-            assertEquals(OrderStatus.CANCELLED, t1.get(15, TimeUnit.SECONDS).status());
-            assertEquals(OrderStatus.CANCELLED, current(order).status());
+            assertEquals(OrderStatus.FILLED, t1.get(15, TimeUnit.SECONDS).status());
+            assertEquals(OrderStatus.FILLED, current(order).status());
+            assertEquals(filledVersion, current(order).version());
             assertEquals(1L, count("SELECT count(*) FROM trades WHERE order_id=?", order.orderId()));
-            assertTrue(updates.stream().anyMatch(s -> s.contains("affected=1") && s.contains("pool-")));
-            System.out.println("L4-P1-2 CANCEL: T2 FILLED committed; stale T1 ACK -> CANCELLED; " + updates);
+            assertEquals(2L, count("SELECT count(*) FROM ledger_entries WHERE trace_id=?", order.traceId()));
+            assertCas(old, "CANCELLED", 0);
+            assertEquals(0, eventCount(order, "CancelAck"));
+            assertEquals(0, actionCount(order, "ORDER_CANCELLED"));
+            assertEquals(0, count("SELECT count(*) FROM audit_logs WHERE actor_id=? AND action='ORDER_STATUS_TRANSITION' AND detail_json->>'to'='CANCELLED'", order.orderId()));
+            assertEquals(1, actionCount(order, "STALE_PROVIDER_RESULT_IGNORED"));
+            System.out.println("C1 CANCEL PASS: FILLED version=" + filledVersion + " Trade=1 Ledger=2 staleCAS=0 " + cas);
         } finally {
             gateway.release.countDown(); executor.shutdownNow();
+            assertTrue(executor.awaitTermination(15, TimeUnit.SECONDS));
+        }
+    }
+
+    /** 真实 command/reconcile/command 构成 ABA；旧拒绝不能借同名状态覆盖新撤单代际。 */
+    @Test void staleCancelRejectCannotClaimNewCancelGenerationAfterAba() throws Exception {
+        var order = place(request("aba"));
+        var executor = Executors.newFixedThreadPool(2);
+        try {
+            var oldResult = executor.submit(() -> commands.cancelOrder(new CancelOrderRequest(order.orderId(),
+                    order.accountId(), order.clientOrderId(), "ABA_OLD", order.traceId())));
+            assertTrue(gateway.oldReached.await(15, TimeUnit.SECONDS));
+            var old = current(order);
+            assertEquals(OrderStatus.CANCEL_REQUESTED, old.status());
+            assertEquals(0, reconcile.reconcileOnce(100));
+            assertEquals(OrderStatus.ACCEPTED, current(order).status());
+            assertEquals(old.version() + 2, current(order).version());
+            var newResult = executor.submit(() -> commands.cancelOrder(new CancelOrderRequest(order.orderId(),
+                    order.accountId(), order.clientOrderId(), "ABA_NEW", order.traceId())));
+            assertTrue(gateway.newReached.await(15, TimeUnit.SECONDS));
+            var next = current(order);
+            assertEquals(old.status(), next.status());
+            assertEquals(old.version() + 3, next.version());
+            long transitions = actionCount(order, "ORDER_STATUS_TRANSITION");
+            gateway.oldRelease.countDown();
+            assertEquals(OrderStatus.CANCEL_REQUESTED, oldResult.get(15, TimeUnit.SECONDS).status());
+            assertEquals(next, current(order));
+            assertCas(old, "CANCEL_REJECTED", 0);
+            assertEquals(transitions, actionCount(order, "ORDER_STATUS_TRANSITION"));
+            assertEquals(0, actionCount(order, "ORDER_CANCEL_REJECTED"));
+            assertEquals(0, eventCount(order, "CancelReject"));
+            assertEquals(1, actionCount(order, "STALE_PROVIDER_RESULT_IGNORED"));
+            gateway.newRelease.countDown();
+            assertEquals(OrderStatus.CANCELLED, newResult.get(15, TimeUnit.SECONDS).status());
+            assertEquals(next.version() + 1, current(order).version());
+            assertCas(next, "CANCELLED", 1);
+            assertNoFillPersistence(order);
+            System.out.println("C1 ABA PASS: old=" + old.version() + " new=" + next.version() + " staleCAS=0 " + cas);
+        } finally {
+            gateway.oldRelease.countDown(); gateway.newRelease.countDown(); executor.shutdownNow();
+            assertTrue(executor.awaitTermination(15, TimeUnit.SECONDS));
+        }
+    }
+
+    /** resolve 后在准备事务中暂停，较新 FILLED 提交后必须在 gateway 前失败。 */
+    @Test void stalePreCancelSnapshotNeverDispatchesGateway() throws Exception {
+        var order = place(request("prepare-race"));
+        CountDownLatch reached = new CountDownLatch(1), release = new CountDownLatch(1);
+        doAnswer(call -> {
+            reached.countDown();
+            assertTrue(release.await(15, TimeUnit.SECONDS));
+            return call.callRealMethod();
+        }).when(writes).prepareCancelOrder(any(), any());
+        var executor = Executors.newSingleThreadExecutor();
+        try {
+            var result = executor.submit(() -> commands.cancelOrder(cancel(order)));
+            assertTrue(reached.await(15, TimeUnit.SECONDS));
+            gateway.venue.reportFilled(order.externalOrderId());
+            assertEquals(1, reconcile.reconcileOnce(100));
+            var filled = current(order);
+            release.countDown();
+            ExecutionException failure = assertThrows(ExecutionException.class, () -> result.get(15, TimeUnit.SECONDS));
+            assertInstanceOf(IllegalStateException.class, failure.getCause());
+            assertEquals(filled, current(order));
+            assertEquals(OrderStatus.FILLED, filled.status());
+            assertEquals(0, gateway.cancelCalls.get());
+            assertCas(order, "CANCEL_REQUESTED", 0);
+            assertEquals(0, eventCount(order, "CancelAck"));
+            assertEquals(1L, count("SELECT count(*) FROM trades WHERE order_id=?", order.orderId()));
+            assertEquals(2L, count("SELECT count(*) FROM ledger_entries WHERE trace_id=?", order.traceId()));
+            System.out.println("C1 PRE-CANCEL PASS: FILLED version=" + filled.version() + " outbound=0 " + cas);
+        } finally {
+            release.countDown(); executor.shutdownNow();
             assertTrue(executor.awaitTermination(15, TimeUnit.SECONDS));
         }
     }
@@ -215,6 +306,19 @@ class L4PlanBlockerPostgresIntegrationTest {
         return new CancelOrderRequest(order.orderId(), order.accountId(), order.clientOrderId(), "L4_TEST_CANCEL", order.traceId());
     }
     private OrderRecord current(OrderRecord order) { return orders.findByOrderId(order.orderId()).orElseThrow(); }
+    private long eventCount(OrderRecord order, String type) {
+        return count("SELECT count(*) FROM event_store WHERE trace_id=? AND event_type=?", order.traceId(), type);
+    }
+    private long actionCount(OrderRecord order, String action) {
+        return count("SELECT count(*) FROM audit_logs WHERE actor_id=? AND action=?", order.orderId(), action);
+    }
+    private void assertCas(OrderRecord expected, String target, int affected) {
+        assertEquals(1, cas.stream().filter(c -> c.orderId().equals(expected.orderId())
+                && c.expectedStatus().equals(expected.status().name()) && c.version() == expected.version()
+                && c.target().equals(target) && c.affected() == affected && c.transactionActive()).count());
+    }
+    private record CasObservation(String orderId, String expectedStatus, long version, String target,
+            int affected, boolean transactionActive) { }
     private long count(String sql, Object... args) { return jdbc.queryForObject(sql, Long.class, args); }
     private void assertNoFillPersistence(OrderRecord order) {
         assertEquals(0L, count("SELECT count(*) FROM trades WHERE order_id=?", order.orderId()));
@@ -237,11 +341,15 @@ class L4PlanBlockerPostgresIntegrationTest {
         final TradingChainPostgresIntegrationTest.DeterministicFakeVenue venue;
         volatile boolean pausePlace, pauseCancel;
         volatile CountDownLatch reached, release;
+        volatile CountDownLatch oldReached, oldRelease, newReached, newRelease;
+        final java.util.concurrent.atomic.AtomicInteger cancelCalls = new java.util.concurrent.atomic.AtomicInteger();
         final AtomicReference<OrderRecord> inFlight = new AtomicReference<>();
         ControlledGateway(TradingChainPostgresIntegrationTest.DeterministicFakeVenue venue) { this.venue = venue; reset(); }
         void reset() {
             venue.reset(); pausePlace = false; pauseCancel = false;
             reached = new CountDownLatch(1); release = new CountDownLatch(1); inFlight.set(null);
+            oldReached = new CountDownLatch(1); oldRelease = new CountDownLatch(1);
+            newReached = new CountDownLatch(1); newRelease = new CountDownLatch(1); cancelCalls.set(0);
         }
         private void barrier(OrderRecord order) {
             assertFalse(TransactionSynchronizationManager.isActualTransactionActive(), "provider action must be outside Order transaction");
@@ -255,6 +363,16 @@ class L4PlanBlockerPostgresIntegrationTest {
             return ack;
         }
         public TradingCancelGatewayResult cancelOrder(OrderRecord order, CancelOrderRequest request) {
+            cancelCalls.incrementAndGet();
+            if (request.reason().startsWith("ABA_")) {
+                assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
+                boolean old = request.reason().equals("ABA_OLD");
+                (old ? oldReached : newReached).countDown();
+                try { assertTrue((old ? oldRelease : newRelease).await(15, TimeUnit.SECONDS)); }
+                catch (InterruptedException ex) { Thread.currentThread().interrupt(); throw new AssertionError(ex); }
+                return new TradingCancelGatewayResult(!old, old ? TradingGatewayResultCategory.FATAL_FAILURE
+                        : TradingGatewayResultCategory.ACCEPTED, null, Instant.now(), "SIM");
+            }
             if (pauseCancel) barrier(order);
             return new TradingCancelGatewayResult(true, TradingGatewayResultCategory.ACCEPTED, null, Instant.now(), "SIM");
         }

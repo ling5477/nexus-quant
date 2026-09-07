@@ -322,15 +322,24 @@ class OrderCommandServiceTest {
         }
 
         @Override
-        public void updateStatus(String orderId, OrderStatus status, String reason, Instant now) {
+        public int compareAndSetStatus(String orderId, OrderStatus expectedStatus, long expectedVersion,
+                OrderStatus status, String reason, Instant now) {
             OrderRecord existing = byOrderId.get(orderId);
+            if (existing == null || existing.status() != expectedStatus || existing.version() != expectedVersion) {
+                return 0;
+            }
             byOrderId.put(orderId, existing.withStatus(status, reason));
+            return 1;
         }
 
         @Override
-        public void updateExternalOrderId(String orderId, String externalOrderId, Instant now) {
+        public int updateExternalOrderId(String orderId, String externalOrderId, Instant now) {
             OrderRecord existing = byOrderId.get(orderId);
+            if (existing == null || (existing.externalOrderId() != null && !existing.externalOrderId().isBlank())) {
+                return 0;
+            }
             byOrderId.put(orderId, existing.withExternalOrderId(externalOrderId));
+            return 1;
         }
 
         @Override

@@ -264,7 +264,7 @@ public class OrderCommandWriteService {
      * 在 adapter 接受后补写本地确认事实。
      * Why:
      * 该阶段已经发生外部副作用，因此本地写失败时不能伪装成成功；
-     * 但本地多表写仍必须在一个事务内一起完成，避免留下只写了 external_order_id 却没有状态事件的半套数据。
+     * identity 补充与当前代际的迁移事实在一个事务内完成；旧代际回执仅允许单调补充 identity 并写审计。
      */
     @Transactional
     public PlaceOrderResult finalizeAcceptedPlaceOrder(
@@ -276,15 +276,20 @@ public class OrderCommandWriteService {
         String exchangeOrderId = gatewayResult.exchangeOrderId();
         OrderRecord acceptedSnapshot = sentOrder;
         if (exchangeOrderId != null && !exchangeOrderId.isBlank()) {
-            orderRepository.updateExternalOrderId(sentOrder.orderId(), exchangeOrderId, ackTime);
+            linkExternalOrderId(sentOrder.orderId(), exchangeOrderId, request.traceId());
             acceptedSnapshot = sentOrder.withExternalOrderId(exchangeOrderId);
         }
-        OrderRecord acceptedOrder = transitionOrderInternal(
+        TransitionResult transition = transitionOrderAttempt(
                 acceptedSnapshot,
                 OrderStatus.ACCEPTED,
                 "ORDER_ACKED_BY_ADAPTER",
                 request.traceId()
         );
+        OrderRecord acceptedOrder = transition.order();
+        if (!transition.applied()) {
+            recordStaleProviderResult(sentOrder, acceptedOrder, "PLACE_ACCEPTED", request.requestId(), request.traceId());
+            return new PlaceOrderResult(acceptedOrder.orderId(), acceptedOrder.status(), false);
+        }
         publishEvent(
                 TopicNames.ORDER_EVENT_V1,
                 acceptedOrder.clientOrderId(),
@@ -314,7 +319,7 @@ public class OrderCommandWriteService {
     }
 
     /**
-     * 在 adapter 延迟确认时只保留 SENT 状态并写审计。
+     * 在 adapter 延迟确认时观察当前 durable truth 并写审计，不推进旧代际状态。
      * Why:
      * `DEFERRED / REMOTE_UNAVAILABLE` 等类别不能假装本地已 ACCEPTED/REJECTED，
      * 最稳妥的做法是把订单停在 `SENT`，交由 query-confirm / recovery 继续确认。
@@ -325,6 +330,11 @@ public class OrderCommandWriteService {
             OrderRecord sentOrder,
             TradingPlaceGatewayResult gatewayResult
     ) {
+        OrderRecord durable = loadOrder(sentOrder.orderId());
+        if (durable.version() != sentOrder.version()) {
+            recordStaleProviderResult(sentOrder, durable, "PLACE_DEFERRED", request.requestId(), request.traceId());
+            return new PlaceOrderResult(durable.orderId(), durable.status(), false);
+        }
         TradingGatewayFailure failure = gatewayResult.failure();
         auditLogRepository.append(
                 "ORDER",
@@ -359,12 +369,17 @@ public class OrderCommandWriteService {
         String rejectReason = failure == null || failure.message() == null || failure.message().isBlank()
                 ? "adapter rejected order"
                 : failure.message();
-        OrderRecord rejectedOrder = transitionOrderInternal(
+        TransitionResult transition = transitionOrderAttempt(
                 sentOrder,
                 OrderStatus.REJECTED,
                 rejectCode,
                 request.traceId()
         );
+        OrderRecord rejectedOrder = transition.order();
+        if (!transition.applied()) {
+            recordStaleProviderResult(sentOrder, rejectedOrder, "PLACE_REJECTED", request.requestId(), request.traceId());
+            return new PlaceOrderResult(rejectedOrder.orderId(), rejectedOrder.status(), false);
+        }
         publishEvent(
                 TopicNames.ORDER_EVENT_V1,
                 rejectedOrder.clientOrderId(),
@@ -398,6 +413,7 @@ public class OrderCommandWriteService {
      * Why:
      * `CANCEL_REQUESTED` 与对应状态变更事件必须一并提交，
      * 否则会出现 orders 已推进、event_store 却缺关键事实的问题。
+     * @throws IllegalStateException 旧快照或非法迁移导致准备失败；调用方不得继续调用 gateway
      */
     @Transactional
     public OrderRecord prepareCancelOrder(CancelOrderRequest request, OrderRecord currentOrder) {
@@ -432,12 +448,17 @@ public class OrderCommandWriteService {
             OrderRecord cancelRequestedOrder,
             Instant ackTime
     ) {
-        OrderRecord cancelledOrder = transitionOrderInternal(
+        TransitionResult transition = transitionOrderAttempt(
                 cancelRequestedOrder,
                 OrderStatus.CANCELLED,
                 request.reason(),
                 request.traceId()
         );
+        OrderRecord cancelledOrder = transition.order();
+        if (!transition.applied()) {
+            recordStaleProviderResult(cancelRequestedOrder, cancelledOrder, "CANCEL_ACCEPTED", request.requestId(), request.traceId());
+            return new CancelOrderResult(cancelledOrder.orderId(), cancelledOrder.status(), false);
+        }
         publishEvent(
                 TopicNames.ORDER_EVENT_V1,
                 cancelledOrder.clientOrderId(),
@@ -467,7 +488,7 @@ public class OrderCommandWriteService {
     }
 
     /**
-     * 在撤单结果未知时保留 `CANCEL_REQUESTED` 并写审计。
+     * 在撤单结果未知时观察当前 durable truth 并写审计，不推进旧代际状态。
      */
     @Transactional
     public CancelOrderResult finalizeDeferredCancelOrder(
@@ -475,6 +496,11 @@ public class OrderCommandWriteService {
             OrderRecord cancelRequestedOrder,
             TradingCancelGatewayResult gatewayResult
     ) {
+        OrderRecord durable = loadOrder(cancelRequestedOrder.orderId());
+        if (durable.version() != cancelRequestedOrder.version()) {
+            recordStaleProviderResult(cancelRequestedOrder, durable, "CANCEL_DEFERRED", request.requestId(), request.traceId());
+            return new CancelOrderResult(durable.orderId(), durable.status(), false);
+        }
         TradingGatewayFailure failure = gatewayResult.failure();
         auditLogRepository.append(
                 "ORDER",
@@ -508,12 +534,17 @@ public class OrderCommandWriteService {
         String rejectReason = failure == null || failure.message() == null || failure.message().isBlank()
                 ? "adapter rejected cancel"
                 : failure.message();
-        OrderRecord cancelRejectedOrder = transitionOrderInternal(
+        TransitionResult transition = transitionOrderAttempt(
                 cancelRequestedOrder,
                 OrderStatus.CANCEL_REJECTED,
                 rejectCode,
                 request.traceId()
         );
+        OrderRecord cancelRejectedOrder = transition.order();
+        if (!transition.applied()) {
+            recordStaleProviderResult(cancelRequestedOrder, cancelRejectedOrder, "CANCEL_REJECTED", request.requestId(), request.traceId());
+            return new CancelOrderResult(cancelRejectedOrder.orderId(), cancelRejectedOrder.status(), false);
+        }
         publishEvent(
                 TopicNames.ORDER_EVENT_V1,
                 cancelRejectedOrder.clientOrderId(),
@@ -546,38 +577,57 @@ public class OrderCommandWriteService {
     }
 
     /**
-     * 对既有订单执行显式状态迁移。
+     * 对既有订单执行显式状态迁移；并发冲突时返回 durable truth，不刷新旧意图重试。
      */
     @Transactional
     public OrderRecord transitionOrder(String orderId, OrderStatus nextStatus, String reason, String traceId) {
         OrderRecord currentOrder = orderRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("order not found: " + orderId));
-        return transitionOrderInternal(currentOrder, nextStatus, reason, traceId);
+        return transitionOrderAttempt(currentOrder, nextStatus, reason, traceId).order();
     }
 
     /**
-     * 为既有订单补写外部订单号。
+     * 为既有订单原子填充外部订单号；同号幂等，不同非空 identity 冲突时回滚。
      */
     @Transactional
     public OrderRecord linkExternalOrderId(String orderId, String externalOrderId, String traceId) {
-        OrderRecord currentOrder = orderRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("order not found: " + orderId));
-        if (externalOrderId.equals(currentOrder.externalOrderId())) {
-            return currentOrder;
+        if (externalOrderId == null || externalOrderId.isBlank()) {
+            throw new IllegalArgumentException("externalOrderId must not be blank");
         }
         Instant now = Instant.now(clock);
-        orderRepository.updateExternalOrderId(orderId, externalOrderId, now);
-        auditLogRepository.append(
-                "ORDER",
-                "ORDER_EXTERNAL_ID_LINKED",
-                orderId,
-                traceId,
-                detail("order_id", orderId, "external_order_id", externalOrderId, "venue", currentOrder.venue())
-        );
-        return currentOrder.withExternalOrderId(externalOrderId);
+        int affected = orderRepository.updateExternalOrderId(orderId, externalOrderId, now);
+        if (affected < 0 || affected > 1) {
+            throw new IllegalStateException("invalid order identity affected rows: " + affected);
+        }
+        OrderRecord currentOrder = loadOrder(orderId);
+        if (!externalOrderId.equals(currentOrder.externalOrderId())) {
+            throw new IllegalStateException("order external identity conflict: " + orderId);
+        }
+        if (affected == 1) {
+            auditLogRepository.append(
+                    "ORDER",
+                    "ORDER_EXTERNAL_ID_LINKED",
+                    orderId,
+                    traceId,
+                    detail("order_id", orderId, "external_order_id", externalOrderId, "venue", currentOrder.venue())
+            );
+        }
+        return currentOrder;
     }
 
     private OrderRecord transitionOrderInternal(
+            OrderRecord currentOrder, OrderStatus nextStatus, String reason, String traceId
+    ) {
+        TransitionResult result = transitionOrderAttempt(currentOrder, nextStatus, reason, traceId);
+        // 本地准备未取得代际所有权时必须终止编排，禁止据旧快照发出新的外部动作。
+        if (!result.applied()) {
+            throw new IllegalStateException("stale order preparation: " + currentOrder.orderId());
+        }
+        return result.order();
+    }
+
+    /** 语义检查与数据库代际检查分层；冲突后只观察 durable truth，绝不以新代际重试旧意图。 */
+    private TransitionResult transitionOrderAttempt(
             OrderRecord currentOrder,
             OrderStatus nextStatus,
             String reason,
@@ -586,15 +636,34 @@ public class OrderCommandWriteService {
         Instant now = Instant.now(clock);
         try {
             OrderStatus transitioned = orderStateMachine.transition(currentOrder.status(), nextStatus);
-            orderRepository.updateStatus(currentOrder.orderId(), transitioned, reason, now);
+            if (currentOrder.version() == Long.MAX_VALUE) {
+                throw new IllegalStateException("order version exhausted");
+            }
+            int affected = orderRepository.compareAndSetStatus(currentOrder.orderId(), currentOrder.status(),
+                    currentOrder.version(), transitioned, reason, now);
+            if (affected == 0) {
+                OrderRecord durable = loadOrder(currentOrder.orderId());
+                if (durable.version() <= currentOrder.version()) {
+                    throw new IllegalStateException("order generation invariant violated: " + currentOrder.orderId());
+                }
+                auditLogRepository.append("ORDER", "ORDER_STATUS_TRANSITION_STALE", currentOrder.orderId(), traceId,
+                        detail("expected_version", currentOrder.version(), "durable_version", durable.version(),
+                                "expected_status", currentOrder.status().name(), "durable_status", durable.status().name(),
+                                "target_status", nextStatus.name()));
+                return new TransitionResult(durable, false);
+            }
+            if (affected != 1) {
+                throw new IllegalStateException("invalid order transition affected rows: " + affected);
+            }
             auditLogRepository.append(
                     "ORDER",
                     "ORDER_STATUS_TRANSITION",
                     currentOrder.orderId(),
                     traceId,
-                    detail("from", currentOrder.status().name(), "to", transitioned.name(), "reason", reason)
+                    detail("from", currentOrder.status().name(), "to", transitioned.name(), "reason", reason,
+                            "expected_version", currentOrder.version(), "version", currentOrder.version() + 1)
             );
-            return currentOrder.withStatus(transitioned, reason);
+            return new TransitionResult(currentOrder.withStatus(transitioned, reason), true);
         } catch (IllegalStateException ex) {
             auditLogRepository.append(
                     "ORDER",
@@ -611,6 +680,22 @@ public class OrderCommandWriteService {
             throw ex;
         }
     }
+
+    private OrderRecord loadOrder(String orderId) {
+        return orderRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new IllegalStateException("order missing: " + orderId));
+    }
+
+    /** 旧回执仅落有代际上下文的审计，不复用无法表达回执所属代际的现有事件。 */
+    private void recordStaleProviderResult(OrderRecord expected, OrderRecord durable, String providerResult,
+            String requestId, String traceId) {
+        auditLogRepository.append("ORDER", "STALE_PROVIDER_RESULT_IGNORED", expected.orderId(), traceId,
+                detail("expected_version", expected.version(), "durable_version", durable.version(),
+                        "expected_status", expected.status().name(), "durable_status", durable.status().name(),
+                        "provider_result", providerResult, "request_id", requestId));
+    }
+
+    private record TransitionResult(OrderRecord order, boolean applied) { }
 
     private void publishEvent(String topic, String key, String traceId, Object payload) {
         EventEnvelope<Object> envelope = new EventEnvelope<>(
