@@ -1,0 +1,98 @@
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.032 s -- in com.guidinglight.nexusquant.app.smoke.B0FixtureSafetyTest
+B0_CONTROLLER pid=20484 evidence=E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b0-harness\b65b1448-2bb2-4fcf-8e7b-3ba734568f53
+B0_PG container=nq-b0-0684f21c-0b55-4d1d-be5f-6c8383bed06d id=ea0b899c6bf016096e7e91528a809e2b5f998b4226a9c9764493c6812af61ec5 url=jdbc:postgresql://127.0.0.1:38004/postgres image=postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
+B0_PROCESS label=venue pid=41228 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b0-harness\b65b1448-2bb2-4fcf-8e7b-3ba734568f53\venue.args
+B0_VENUE pid=41228 endpoint=http://127.0.0.1:6578 state=VENUE_OWNED_IN_MEMORY
+B0_PROCESS label=default pid=50300 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b0-harness\b65b1448-2bb2-4fcf-8e7b-3ba734568f53\default.args
+B0_DB db=nq_f002_b0_af54941c4c104df1a437436eaa0eeb8b flyway=48 reader=nq_b0_reader appKillWrite=false pg=16.15 (Debian 16.15-1.pgdg13+2)
+B0_DEFAULT db=nq_f002_b0_af54941c4c104df1a437436eaa0eeb8b kill=ENGAGED risk=REJECT venueCalls=0
+B0_KILLED pid=50300 exit=1
+B0_DB_CLEANUP db=nq_f002_b0_af54941c4c104df1a437436eaa0eeb8b remaining=0
+B0_PROCESS label=smoke-a pid=72468 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b0-harness\b65b1448-2bb2-4fcf-8e7b-3ba734568f53\smoke-a.args
+B0_DB db=nq_f002_b0_a59476b30ed34d1ca2e2978f831b6e83 flyway=48 reader=nq_b0_reader appKillWrite=false pg=16.15 (Debian 16.15-1.pgdg13+2)
+B0_DURABLE db=nq_f002_b0_a59476b30ed34d1ca2e2978f831b6e83 order=ord-8eed6cf1-317e-4b3d-ac9c-3ae4e3168bf6 status=ACCEPTED trades=0 pid=72468
+B0_FACTS order=ord-8eed6cf1-317e-4b3d-ac9c-3ae4e3168bf6 venueOrder=b0-venue-1 status=FILLED trade=1 ledger=2 ledgerEvents=2 price=123.45 qty=0.1 fee=0 ledgerNet=0 position=0.1 account=0.1 intent=0 receipt=0 repeatedRecovery=stable
+B0_KILLED pid=72468 exit=1
+B0_DB_CLEANUP db=nq_f002_b0_a59476b30ed34d1ca2e2978f831b6e83 remaining=0
+B0_PROCESS label=restart-a pid=54860 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b0-harness\b65b1448-2bb2-4fcf-8e7b-3ba734568f53\restart-a.args
+B0_DB db=nq_f002_b0_c11981d29ca34bc5be229152653ca89a flyway=48 reader=nq_b0_reader appKillWrite=false pg=16.15 (Debian 16.15-1.pgdg13+2)
+B0_DURABLE db=nq_f002_b0_c11981d29ca34bc5be229152653ca89a order=ord-f081c50b-4ac8-4ef4-971d-e557520393a4 status=ACCEPTED trades=0 pid=54860
+B0_KILLED pid=54860 exit=1
+B0_PROCESS label=restart-b pid=50788 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b0-harness\b65b1448-2bb2-4fcf-8e7b-3ba734568f53\restart-b.args
+B0_FACTS order=ord-f081c50b-4ac8-4ef4-971d-e557520393a4 venueOrder=b0-venue-2 status=FILLED trade=1 ledger=2 ledgerEvents=2 price=123.45 qty=0.1 fee=0 ledgerNet=0 position=0.1 account=0.1 intent=0 receipt=0 repeatedRecovery=stable
+B0_RESTART db=nq_f002_b0_c11981d29ca34bc5be229152653ca89a oldPid=54860 newPid=50788 sameOrder=ord-f081c50b-4ac8-4ef4-971d-e557520393a4 recovered=true
+B0_KILLED pid=50788 exit=1
+B0_DB_CLEANUP db=nq_f002_b0_c11981d29ca34bc5be229152653ca89a remaining=0
+B0_FAULT mode=DROP venueFactStored=true response=ABSENT
+B0_FAULT mode=CLOSE venueFactStored=true response=ABSENT
+B0_FAULT mode=DELAY venueFactStored=true response=DELAYED
+B0_KILLED pid=41228 exit=1
+B0_CLEANUP container=nq-b0-0684f21c-0b55-4d1d-be5f-6c8383bed06d remaining=0
+B0_ACCEPTANCE PASS defaultSafety smoke restart responseLoss cleanup
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 23.63 s -- in com.guidinglight.nexusquant.app.smoke.B0RealProcessHarnessTest
+B1_EVIDENCE E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e
+B0_PG container=nq-b0-49a22c21-3a46-4bfa-82f1-ce03af9705c3 id=4f8ffa0a1e5f8b523c612fc0e1f37a4c5e77954b92176d82a675111f7e1060f9 url=jdbc:postgresql://127.0.0.1:38382/postgres image=postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
+B0_PROCESS label=venue pid=32992 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-AT-01-1\venue.args
+B0_PROCESS label=nq-a pid=38032 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-AT-01-1\nq-a.args
+B0_KILLED pid=38032 exit=1
+B0_PROCESS label=nq-replay pid=46564 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-AT-01-1\nq-replay.args
+B0_KILLED pid=46564 exit=1
+B0_KILLED pid=32992 exit=1
+B0_CLEANUP container=nq-b0-49a22c21-3a46-4bfa-82f1-ce03af9705c3 remaining=0
+B1_RUN L4-AT-01 repeat=1 verdict=PASS evidence=E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-AT-01-1\proof.json
+B0_PG container=nq-b0-a515f7c3-4e59-49f2-b4c9-efdd48681e02 id=745ba448df7107b9055d22b4d67234d2a01adc272fa918eb845ca9320120dbd2 url=jdbc:postgresql://127.0.0.1:38152/postgres image=postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
+B0_PROCESS label=venue pid=37020 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-AT-01-2\venue.args
+B0_PROCESS label=nq-a pid=73720 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-AT-01-2\nq-a.args
+B0_KILLED pid=73720 exit=1
+B0_PROCESS label=nq-replay pid=33512 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-AT-01-2\nq-replay.args
+B0_KILLED pid=33512 exit=1
+B0_KILLED pid=37020 exit=1
+B0_CLEANUP container=nq-b0-a515f7c3-4e59-49f2-b4c9-efdd48681e02 remaining=0
+B1_RUN L4-AT-01 repeat=2 verdict=PASS evidence=E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-AT-01-2\proof.json
+B0_PG container=nq-b0-3c8fcb32-8a24-4864-8e0f-99fe3557f4dc id=83d8b88630e659e4fc2c0a05d9bc9a22c8a89b3b6826a315ca2d12064ca21f2c url=jdbc:postgresql://127.0.0.1:38920/postgres image=postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
+B0_PROCESS label=venue pid=36016 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-AT-01-3\venue.args
+B0_PROCESS label=nq-a pid=13148 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-AT-01-3\nq-a.args
+B0_KILLED pid=13148 exit=1
+B0_PROCESS label=nq-replay pid=63184 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-AT-01-3\nq-replay.args
+B0_KILLED pid=63184 exit=1
+B0_KILLED pid=36016 exit=1
+B0_CLEANUP container=nq-b0-3c8fcb32-8a24-4864-8e0f-99fe3557f4dc remaining=0
+B1_RUN L4-AT-01 repeat=3 verdict=PASS evidence=E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-AT-01-3\proof.json
+B0_PG container=nq-b0-e6369638-8122-43df-8c97-d876c9f3d089 id=97d8ab6187df7e59bc2498b6c7393b301738759697f32a81afce014a24ce1dda url=jdbc:postgresql://127.0.0.1:38240/postgres image=postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
+B0_PROCESS label=venue pid=72296 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-LA-02-1\venue.args
+B0_PROCESS label=nq-a pid=15956 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-LA-02-1\nq-a.args
+B0_KILLED pid=15956 exit=1
+B0_PROCESS label=nq-b pid=25456 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-LA-02-1\nq-b.args
+B0_KILLED pid=25456 exit=1
+B0_PROCESS label=nq-replay pid=76032 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-LA-02-1\nq-replay.args
+B0_KILLED pid=76032 exit=1
+B0_KILLED pid=72296 exit=1
+B0_CLEANUP container=nq-b0-e6369638-8122-43df-8c97-d876c9f3d089 remaining=0
+B1_RUN L4-LA-02 repeat=1 verdict=PASS evidence=E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-LA-02-1\proof.json
+B0_PG container=nq-b0-433dda59-ed46-4d39-9829-c913b97c15ba id=59b991c59e0d5f59d8d865c4162c3126ada4b78221021d1d65693db88ed9b929 url=jdbc:postgresql://127.0.0.1:38884/postgres image=postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
+B0_PROCESS label=venue pid=68232 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-LA-02-2\venue.args
+B0_PROCESS label=nq-a pid=21072 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-LA-02-2\nq-a.args
+B0_KILLED pid=21072 exit=1
+B0_PROCESS label=nq-b pid=22128 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-LA-02-2\nq-b.args
+B0_KILLED pid=22128 exit=1
+B0_PROCESS label=nq-replay pid=62564 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-LA-02-2\nq-replay.args
+B0_KILLED pid=62564 exit=1
+B0_KILLED pid=68232 exit=1
+B0_CLEANUP container=nq-b0-433dda59-ed46-4d39-9829-c913b97c15ba remaining=0
+B1_RUN L4-LA-02 repeat=2 verdict=PASS evidence=E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-LA-02-2\proof.json
+B0_PG container=nq-b0-eeaf2be9-4a4f-4d96-9649-279b3358a70e id=cfa5ccbf37bf42ace86856c5e53fd601bef0e0be3153b809e6dab7c3c405d63e url=jdbc:postgresql://127.0.0.1:38126/postgres image=postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
+B0_PROCESS label=venue pid=2172 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-LA-02-3\venue.args
+B0_PROCESS label=nq-a pid=31488 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-LA-02-3\nq-a.args
+B0_KILLED pid=31488 exit=1
+B0_PROCESS label=nq-b pid=76268 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-LA-02-3\nq-b.args
+B0_KILLED pid=76268 exit=1
+B0_PROCESS label=nq-replay pid=49704 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-LA-02-3\nq-replay.args
+B0_KILLED pid=49704 exit=1
+B0_KILLED pid=2172 exit=1
+B0_CLEANUP container=nq-b0-eeaf2be9-4a4f-4d96-9649-279b3358a70e remaining=0
+B1_RUN L4-LA-02 repeat=3 verdict=PASS evidence=E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b1-proof\c9c137f6-9751-46ec-92d9-616eabb04c0e\L4-LA-02-3\proof.json
+B1_ALL_ROWS PASS rows=2 independentRuns=6
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 78.35 s -- in com.guidinglight.nexusquant.app.smoke.B1RealProcessProofTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+[INFO] Total time:  01:55 min

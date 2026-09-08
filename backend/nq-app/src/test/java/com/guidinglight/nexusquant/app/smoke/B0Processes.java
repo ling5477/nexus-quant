@@ -145,9 +145,16 @@ final class B0Processes {
         String ready() throws Exception { return await("B0_READY ", 1); }
 
         String send(String command) throws Exception {
-            input.write(command); input.newLine(); input.flush();
-            return await("B0_RESULT ", ++resultCount);
+            startCommand(command);
+            return result();
         }
+
+        void startCommand(String command) throws Exception {
+            input.write(command); input.newLine(); input.flush();
+            resultCount++;
+        }
+
+        String result() throws Exception { return await("B0_RESULT ", resultCount); }
 
         private String await(String prefix, int count) throws Exception {
             long deadline = System.nanoTime() + Duration.ofSeconds(75).toNanos();

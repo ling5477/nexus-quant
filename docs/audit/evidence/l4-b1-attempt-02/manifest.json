@@ -1,0 +1,189 @@
+{
+  "baselineHead": "2b0eb0cc8d6e43f4c365339743f9fd62c9199e54",
+  "baselineCi": "34236471862",
+  "baselineCiStatus": "completed / success / 9 of 9",
+  "candidate": "UNCOMMITTED_TEST_ONLY",
+  "command": "mvn -o -f backend/pom.xml -pl nq-app -am '-Dnq.b1=true' '-Dnq.b0=true' '-Dtest=B1RealProcessProofTest,B0FixtureSafetyTest,B0RealProcessHarnessTest' '-Dsurefire.failIfNoSpecifiedTests=false' test",
+  "exitCode": 0,
+  "tests": 10,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "rows": [
+    {
+      "scenario": "L4-AT-01",
+      "repeat": 1,
+      "database": "nq_f002_b0_7a92dbc35d9d4888b7763e9f599bf04f",
+      "nqPid": 38032,
+      "recoveryPid": null,
+      "replayPid": 46564,
+      "venuePid": 32992,
+      "places": 1,
+      "requestReceived": true,
+      "venueAccepted": true,
+      "ackGenerated": false,
+      "responseDelivered": false,
+      "orderQueries": 3,
+      "fillQueries": 4,
+      "timeoutToQueryNanos": 1997719400,
+      "verdict": "PASS",
+      "negativeChecks": 8
+    },
+    {
+      "scenario": "L4-AT-01",
+      "repeat": 2,
+      "database": "nq_f002_b0_137641870bc1475d98ba7dd87856aa76",
+      "nqPid": 73720,
+      "recoveryPid": null,
+      "replayPid": 33512,
+      "venuePid": 37020,
+      "places": 1,
+      "requestReceived": true,
+      "venueAccepted": true,
+      "ackGenerated": false,
+      "responseDelivered": false,
+      "orderQueries": 3,
+      "fillQueries": 4,
+      "timeoutToQueryNanos": 2007089700,
+      "verdict": "PASS",
+      "negativeChecks": 8
+    },
+    {
+      "scenario": "L4-AT-01",
+      "repeat": 3,
+      "database": "nq_f002_b0_300b9c58494748bb8121eba193b54613",
+      "nqPid": 13148,
+      "recoveryPid": null,
+      "replayPid": 63184,
+      "venuePid": 36016,
+      "places": 1,
+      "requestReceived": true,
+      "venueAccepted": true,
+      "ackGenerated": false,
+      "responseDelivered": false,
+      "orderQueries": 3,
+      "fillQueries": 4,
+      "timeoutToQueryNanos": 1999921900,
+      "verdict": "PASS",
+      "negativeChecks": 8
+    },
+    {
+      "scenario": "L4-LA-02",
+      "repeat": 1,
+      "database": "nq_f002_b0_4811ba5f4fef450798639cf2ead2cc4f",
+      "nqPid": 15956,
+      "recoveryPid": 25456,
+      "replayPid": 76032,
+      "venuePid": 72296,
+      "places": 1,
+      "requestReceived": true,
+      "venueAccepted": true,
+      "ackGenerated": true,
+      "responseDelivered": false,
+      "orderQueries": 2,
+      "fillQueries": 4,
+      "timeoutToQueryNanos": null,
+      "verdict": "PASS",
+      "negativeChecks": 8
+    },
+    {
+      "scenario": "L4-LA-02",
+      "repeat": 2,
+      "database": "nq_f002_b0_cb188f25154f4b8c93a52157c580a068",
+      "nqPid": 21072,
+      "recoveryPid": 22128,
+      "replayPid": 62564,
+      "venuePid": 68232,
+      "places": 1,
+      "requestReceived": true,
+      "venueAccepted": true,
+      "ackGenerated": true,
+      "responseDelivered": false,
+      "orderQueries": 2,
+      "fillQueries": 4,
+      "timeoutToQueryNanos": null,
+      "verdict": "PASS",
+      "negativeChecks": 8
+    },
+    {
+      "scenario": "L4-LA-02",
+      "repeat": 3,
+      "database": "nq_f002_b0_ea66c7597ea34bc689a01b498e7d2d6e",
+      "nqPid": 31488,
+      "recoveryPid": 76268,
+      "replayPid": 49704,
+      "venuePid": 2172,
+      "places": 1,
+      "requestReceived": true,
+      "venueAccepted": true,
+      "ackGenerated": true,
+      "responseDelivered": false,
+      "orderQueries": 2,
+      "fillQueries": 4,
+      "timeoutToQueryNanos": null,
+      "verdict": "PASS",
+      "negativeChecks": 8
+    }
+  ],
+  "sources": [
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0Processes.java",
+      "gitBlob": "f8506f971bf08e91af1ca99c50a3f50c6aa7a58f"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0SyntheticVenueMain.java",
+      "gitBlob": "42ecef96212fd79883232b36dc25fd89d2e5e0b3"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B1RealProcessProofTest.java",
+      "gitBlob": "33cb5249cf1f4485bcd7f8c96ae484d702ad823f"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0NqProcessMain.java",
+      "gitBlob": "48e7694eff0280d703b1f06b60924f2e49caa6c1"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0Fixture.java",
+      "gitBlob": "6497e81bd785fa2a5f464ce8d5bf52bc5f4604c8"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0FixtureSafetyTest.java",
+      "gitBlob": "3779c00d4f23122619fedd2531e9edc5d63aafb5"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0RealProcessHarnessTest.java",
+      "gitBlob": "340a01a5b48bb991dddee69a8235ecff38e0c002"
+    }
+  ],
+  "files": [
+    {
+      "path": "L4-AT-01-1.json",
+      "sha256Utf8Lf": "4ceb1f1b491f70f8eafaebd0fd091bdbe26ee4cff1d6924d166cc9ed5539074d"
+    },
+    {
+      "path": "L4-AT-01-2.json",
+      "sha256Utf8Lf": "a4ed8ac5d697aac4637fbd1ae88a098d08c75054e72af444eb11044ba38625ec"
+    },
+    {
+      "path": "L4-AT-01-3.json",
+      "sha256Utf8Lf": "fc8a625e4210bbeac8ded42d25a27f3d3d110ddfc7ca3b99fd1705ed9b9fcb53"
+    },
+    {
+      "path": "L4-LA-02-1.json",
+      "sha256Utf8Lf": "c95a8b41a9ce2c8abb56fa20596796d87a574362f63fbb48466aba25ba7db9ee"
+    },
+    {
+      "path": "L4-LA-02-2.json",
+      "sha256Utf8Lf": "9261dbe4bd8cfc694ae10c6af1d1ff21cec9b2c43838fdb6507e73ebb8fa4a48"
+    },
+    {
+      "path": "L4-LA-02-3.json",
+      "sha256Utf8Lf": "16a61d9997ec755daff257f244714718eb49ec13d739e2c37cb3d3d332a5543e"
+    },
+    {
+      "path": "observations.txt",
+      "sha256Utf8Lf": "0deb35f7508054a206b3dc09edd350e782036a81cb0bdb28c3cf3dd80861986a"
+    }
+  ],
+  "digestConvention": "SHA256 over UTF-8 text with CRLF normalized to LF; manifest excluded"
+}
