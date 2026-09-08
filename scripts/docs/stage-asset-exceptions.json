@@ -10,14 +10,6 @@
       "removalTrigger": "Current authority or versioned proof contract changes; historical evidence must remain readable."
     },
     {
-      "path": "AGENTS.md",
-      "sha256": "1c5f390975d627ec5cd42abd261d87e2f7dd0dab0b0424ff0cf6ed36f8c2bf94",
-      "kind": "GOVERNANCE_CONTRACT",
-      "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
-      "owner": "Governance and delivery contract owner",
-      "removalTrigger": "Current authority or versioned proof contract changes; historical evidence must remain readable."
-    },
-    {
       "path": "backend/nq-adapter-api/pom.xml",
       "sha256": "fb68ad0670c072d9eddd0fa94a1a7f9ae811044943937a796dd8c9c46073e595",
       "kind": "HISTORICAL_METADATA",
@@ -1314,22 +1306,6 @@
       "removalTrigger": "Current authority or versioned proof contract changes; historical evidence must remain readable."
     },
     {
-      "path": "scripts/docs/agent-workflow-fixtures.json",
-      "sha256": "d8d0fd75d374525cca6f26b48067ad93e6cf07a2ed8c1a12a23c7e05a5f5e01e",
-      "kind": "GOVERNANCE_CONTRACT",
-      "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
-      "owner": "Governance and delivery contract owner",
-      "removalTrigger": "Current authority or versioned proof contract changes; historical evidence must remain readable."
-    },
-    {
-      "path": "scripts/docs/agent-workflow-policy.json",
-      "sha256": "db2f3678377005a234e0ae3d4040cad65e805376265cc0248c53e50dd7ca3d48",
-      "kind": "GOVERNANCE_CONTRACT",
-      "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
-      "owner": "Governance and delivery contract owner",
-      "removalTrigger": "Current authority or versioned proof contract changes; historical evidence must remain readable."
-    },
-    {
       "path": "scripts/docs/check-current-authority.ps1",
       "sha256": "8788cbc41001fe9bd2654a0d3b7bea5e6cf69d314794f3a1f1de40a0fbf74f4b",
       "kind": "GOVERNANCE_CONTRACT",
@@ -1372,14 +1348,6 @@
     {
       "path": "scripts/docs/governance-workflow-lib.ps1",
       "sha256": "424a27cee2d003c214af9d283dc8d9b342b9d619877d279717f727cbce15cb3a",
-      "kind": "GOVERNANCE_CONTRACT",
-      "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
-      "owner": "Governance and delivery contract owner",
-      "removalTrigger": "Current authority or versioned proof contract changes; historical evidence must remain readable."
-    },
-    {
-      "path": "scripts/docs/test-agent-workflow-fixtures.ps1",
-      "sha256": "2b8804972f6af13a19b22a0118d67b2de8164882888c8e5946e2a4ba4929a9d0",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",
