@@ -10,8 +10,8 @@
 - GateY freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`；exact-head CI run=`33037514013 / completed / success / 11 jobs`。
 - Phase 3 findings=`P0 0 / P1 4 / P2 8 / P3 1`；F-001=`95b859ee... / 33347091147`、F-002=`0651a736... / 33387882472`、F-003=`327c2229... / 33399190770`、F-004=`18efc06c... / 33358364678`，均为 `ACCEPTED / CI_GREEN`。
 - Phase4 remaining disposition closeout=`COMPLETE / ACCEPTED / CI_GREEN`，immutable pair=`7ca1fc92... / 33405549149`，blocking P0/P1=`0/0`。
-- Phase5A/Phase5B及P5-F008/P5-F007/P5-F009已接受；F001远端enforcement已接受，Phase5 ACCEPTED/CLOSED，F005 attestation保持DEFERRED/NON_BLOCKING，Phase6 IN_PROGRESS/NOT_FROZEN，L4 plan ACCEPTED/CI_GREEN，C1 ACCEPTED/CI_GREEN/CLOSED，canonical P1=1 OPEN（仅P1-3）。技术接受pair以[STATUS.md](STATUS.md)为准。
-- 当前work batch与唯一下一允许动作从[STATUS.md](STATUS.md)读取，由[ROADMAP.md](ROADMAP.md)解释；下一动作是`NQ-GATEAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C2-IMPLEMENTATION`，仅处理P1-3；C1已接受，C2 NOT_STARTED，B0待独立正确性review，L4 qualification未开始。
+- Phase5A/Phase5B及P5-F008/P5-F007/P5-F009已接受；F001远端enforcement已接受，Phase5 ACCEPTED/CLOSED，F005 attestation保持DEFERRED/NON_BLOCKING，Phase6 IN_PROGRESS/NOT_FROZEN。L4 plan、C1、C2已接受；C2固定pair与安全边界以[STATUS.md](STATUS.md)为准。
+- 当前 work batch 为 pre-B0 CI safety/current authority remediation，`IMPLEMENTED / PENDING_INDEPENDENT_REVIEW`。下一动作由[STATUS.md](STATUS.md)唯一机器区块决定，[ROADMAP.md](ROADMAP.md)解释；尚未启动 B0 或 L4 qualification。
 - Pilot final：PLACE=1、retry=0、CANCEL=0、activeLease=0、LIVE=false、kill=`ENGAGED`、Attempt-02 未创建。
 - Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->

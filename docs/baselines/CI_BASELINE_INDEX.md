@@ -5,8 +5,8 @@
 ## Current CI Authorities
 
 - Current CI status: `../current/STATUS.md`
-- CI baseline pointer: `../current/NQ_CI_BASELINE_PLAN.md`
-- CI security guard pointer: `../current/NQ_CI_SECURITY_GUARD_PLAN.md`
+- CI baseline pointer: [NQ_CI_BASELINE_PLAN.md](../archive/current-cleanup/post-gateq/ci-security-and-no-outbound/NQ_CI_BASELINE_PLAN.md)
+- CI security guard pointer: [NQ_CI_SECURITY_GUARD_PLAN.md](../archive/current-cleanup/post-gateq/ci-security-and-no-outbound/NQ_CI_SECURITY_GUARD_PLAN.md)
 
 ## Historical Evidence
 

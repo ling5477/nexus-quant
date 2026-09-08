@@ -1242,14 +1242,6 @@
       "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
-      "path": "docs/current/NQ_DH_WORKFLOW_ROUTER_SKILL.md",
-      "sha256": "56ae3f5302045cde378ca48cb6377d41991d706f48d83e5601a1e9331f03ca7d",
-      "kind": "GOVERNANCE_CONTRACT",
-      "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
-      "owner": "Governance and delivery contract owner",
-      "removalTrigger": "Current authority or versioned proof contract changes; historical evidence must remain readable."
-    },
-    {
       "path": "docs/current/ROADMAP.md",
       "sha256": "169f8b7c6f907d9b67764de22ce56c6244a5b7f491dc9f3d6e12c4822efead5a",
       "kind": "GOVERNANCE_CONTRACT",
@@ -1275,7 +1267,7 @@
     },
     {
       "path": "scripts/ci/tests/Test-DeliveryEvidence.ps1",
-      "sha256": "92486e59ddfae1afe3f29dc81afe9085a5f1d54b79934bf69d9789e1dddac7a0",
+      "sha256": "b614b40f368e05bfd6017d03b9ab379611712bd148979b552d0a873b65ede19e",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",

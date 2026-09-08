@@ -2,6 +2,19 @@
 
 数据库结构以 Flyway migrations 为准。本文只记录当前数据库事实入口，不复制完整 DDL。
 
+## 当前 repository schema：V48
+
+当前 tracked Flyway inventory 已到 `V48`。本节只同步仓库结构，不声明生产已迁移，也不重跑历史或 C2 验收。下方按历史版本保留的 V42/V47 时点描述及既有验收事实不作改写。
+
+| Migration | 当前结构增量 |
+| --- | --- |
+| [V43](../../backend/nq-infra/src/main/resources/db/migration/V43__gate_y_current_market_snapshot.sql) | `pilot_prerequisite_observations` 增加 market snapshot digest、instrument、best ask 等 typed 行情前置事实字段及约束。 |
+| [V44](../../backend/nq-infra/src/main/resources/db/migration/V44__gate_y_operator_pilot_authority.sql) | `operator_pilot_authorities` 及 live session authority 绑定与约束。 |
+| [V45](../../backend/nq-infra/src/main/resources/db/migration/V45__gate_y_pre_place_zero_intent_recovery.sql) | `pilot_pre_place_recovery_decisions`、lease predecessor/recovery linkage 与 canonical legacy account bridge 约束；不授权 PLACE 重试。 |
+| [V46](../../backend/nq-infra/src/main/resources/db/migration/V46__gate_y_attempt_level_terminal_lease_regeneration.sql) | attempt 层级 terminal lease regeneration 的唯一性、外键和触发器约束调整。 |
+| [V47](../../backend/nq-infra/src/main/resources/db/migration/V47__order_state_optimistic_concurrency.sql) | `orders.version` 持久化状态并发版本及非负约束，用于乐观并发控制。 |
+| [V48](../../backend/nq-infra/src/main/resources/db/migration/V48__reconciliation_scan_cursor.sql) | `reconciliation_scan_cursors` 按 venue 保存扫描进度，不保存订单、成交、账本或授权事实。 |
+
 ## 本地数据库规则
 
 - 本地 PostgreSQL 默认端口：`5432`。

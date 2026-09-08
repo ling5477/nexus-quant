@@ -1,0 +1,10 @@
+Delivery artifact safety invalid-text INVALID_TEXT_ENCODING file=boot/app.jar!BOOT-INF/lib/spring-security-core-6.5.7.j
+ar!org/springframework/security/messages_pt_PT.properties file=boot/app.jar!BOOT-INF/lib/spring-security-core-6.5.7.jar
+ file=boot/app.jar
+At E:\Project\nexus-quant-gateaudit\scripts\ci\Test-DeliveryArtifactSafety.ps1:116 char:72
++ ... y artifact safety')) { throw ($failure.Message + " file=$Location") }
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Delivery artifa...le=boot/app.jar:String) [], RuntimeException
+    + FullyQualifiedErrorId : Delivery artifact safety invalid-text INVALID_TEXT_ENCODING file=boot/app.jar!BOOT-INF/l
+   ib/spring-security-core-6.5.7.jar!org/springframework/security/messages_pt_PT.properties file=boot/app.jar!BOOT-IN
+  F/lib/spring-security-core-6.5.7.jar file=boot/app.jar

@@ -1,0 +1,7 @@
+P1_REPRO PS=5.1.26100.9168 case=normal rejected=True payload_physically_preserved=True
+Unexpected reproduction outcome: forged rejected=True
+At E:\Project\nexus-quant-gateaudit\scripts\ci\tests\Test-ArchiveIntegrityRepro.ps1:37 char:40
++ ... expected) { throw "Unexpected reproduction outcome: $name rejected=$r ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Unexpected repr...d rejected=True:String) [], RuntimeException
+    + FullyQualifiedErrorId : Unexpected reproduction outcome: forged rejected=True

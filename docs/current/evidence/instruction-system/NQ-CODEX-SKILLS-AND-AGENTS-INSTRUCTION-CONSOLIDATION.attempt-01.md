@@ -116,3 +116,9 @@ Old/New delta：Skill-routing、documentation-load、testing、blocking、review
 Global回滚前确认新入口和旧备份存在，移走新AGENTS后复制旧备份为AGENTS.md；保留原备份，不机械覆盖。Project提交前可对精确instruction文件恢复HEAD并清理本轮新Skill；提交后由本证据所在consolidation commit执行git revert。正式仓库不保留bak或旧Skill复制备份。
 
 实现与new-side路由样本完成；高风险不变量在文本、fixture及new-side选择中保留。完整旧新对照和stage-assets兼容性未闭合，最终接受尚未满足；不宣称治理主线已关闭，不推进RESUME_GATEAUDIT_PHASE6_L4_B0，也不新建后续instruction治理任务。
+
+## Engineering discipline 追加整改（2026-09-08）
+
+原 attempt 的体积、benchmark 和交付事实保留。按用户新增范围完成 [九领域 ownership matrix 与原12 Skills规则 disposition](NQ-CODEX-ENGINEERING-DISCIPLINE-COMPLETENESS.attempt-01.md)：区分 DELETE / KEEP / MOVE_TO_REFERENCE / CHECKER_ENFORCED；详细规则按需读取，四 Skill 身份/trigger/policy 不变，Global/NQ AGENTS 不增加。
+
+本追加候选为 `IMPLEMENTED / PENDING_INDEPENDENT_REVIEW / F1_REMEDIATED / F2_REMEDIATED / ENGINEERING_DISCIPLINE_COMPLETENESS_REMEDIATED / CURRENT_AUTHORITY_ALIGNED`；不替换原接受快照，不声称追加候选已独立审查。

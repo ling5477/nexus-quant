@@ -1,0 +1,18 @@
+[
+  {
+    "Path": "scripts/ci/Test-DeliveryArtifactSafety.ps1",
+    "SHA256": "492F179CDCEAED75585C06A8DB4D0B506FF26A7D507F891E0B9BEDD527ABC3DD"
+  },
+  {
+    "Path": "scripts/ci/DeliveryArchiveIntegrity.ps1",
+    "SHA256": "1AF5768D03340D8F86DCCCEA21027827786571F4FD187C77180F505B83C4A041"
+  },
+  {
+    "Path": "scripts/ci/tests/Test-DeliveryArtifactSafety.ps1",
+    "SHA256": "F799C5DD1F761C0CE3CFFBF64D9BF40F5C8A8939452F05D8C27A2414EC50464E"
+  },
+  {
+    "Path": "scripts/ci/tests/Test-ArchiveIntegrityRepro.ps1",
+    "SHA256": "FD505F1A4961152DAEEFB642D624121755A3AE7BCCCA4F3FA11901FF018B6361"
+  }
+]

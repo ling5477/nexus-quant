@@ -1,0 +1,100 @@
+[CmdletBinding()]
+param()
+
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$scanner = Join-Path $PSScriptRoot '../Test-DeliveryArtifactSafety.ps1'
+$tempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar)
+$runRoot = Join-Path $tempRoot ('artifact-safety-' + [guid]::NewGuid().ToString('N'))
+[IO.Directory]::CreateDirectory($runRoot) | Out-Null
+$sentinel = 'AKIA' + ('A' * 16)
+$positive = 0
+$negative = 0
+
+function Write-Zip([string] $Path, [hashtable] $Entries) {
+    $stream = [IO.File]::Create($Path)
+    $zip = $null
+    try {
+        $zip = [IO.Compression.ZipArchive]::new($stream, [IO.Compression.ZipArchiveMode]::Create, $true)
+        foreach ($name in $Entries.Keys) {
+            $entry = $zip.CreateEntry($name)
+            $entryStream = $entry.Open()
+            try {
+                if ($Entries[$name] -is [byte[]]) { $bytes = $Entries[$name] }
+                else { $bytes = [Text.Encoding]::UTF8.GetBytes([string]$Entries[$name]) }
+                $entryStream.Write($bytes, 0, $bytes.Length)
+            } finally { $entryStream.Dispose() }
+        }
+    } finally { if ($null -ne $zip) { $zip.Dispose() }; $stream.Dispose() }
+}
+
+function Test-Case([string] $Name, [scriptblock] $Setup, [string] $Reject, [hashtable] $Limits = @{}) {
+    $root = Join-Path $runRoot $Name
+    [IO.Directory]::CreateDirectory($root) | Out-Null
+    & $Setup $root
+    $failure = $null
+    $messages = New-Object System.Collections.Generic.List[string]
+    try { & $scanner -EvidenceRoot $root @Limits | ForEach-Object { $messages.Add([string]$_) } }
+    catch { $failure = $_.Exception.Message }
+    if (($messages -join "`n").Contains($sentinel)) { throw 'Scanner leaked fixture content in output' }
+    if ($Reject) {
+        if ($null -eq $failure -or $failure -notmatch $Reject) { throw "Expected rejection $Reject in $Name; actual=$failure" }
+        if ($failure.Contains($sentinel)) { throw 'Scanner leaked fixture content in exception' }
+        $script:negative++
+        Write-Output "ARTIFACT_SAFETY_FIXTURE $Name=REJECTED"
+    } else {
+        if ($null -ne $failure) { throw "Clean input failed: $Name $failure" }
+        $script:positive++
+        Write-Output "ARTIFACT_SAFETY_FIXTURE $Name=PASS"
+    }
+}
+
+try {
+    Test-Case 'json-secret' { param($r) [IO.File]::WriteAllText((Join-Path $r 'application.json'), ('{"value":"' + $sentinel + '"}')) } 'violations='
+    Test-Case 'properties-secret' { param($r) [IO.File]::WriteAllText((Join-Path $r 'application.properties'), ('value=' + $sentinel)) } 'violations='
+    Test-Case 'jar-secret' { param($r) Write-Zip (Join-Path $r 'app.jar') @{ 'BOOT-INF/classes/application.properties' = ('value=' + $sentinel) } } 'violations='
+    Test-Case 'zip-case-insensitive-secret' { param($r) Write-Zip (Join-Path $r 'app.ZIP') @{ 'CONFIG/APP.PROPERTIES' = $sentinel } } 'violations='
+    Test-Case 'json-clean' { param($r) [IO.File]::WriteAllText((Join-Path $r 'application.json'), '{"enabled":false}') } ''
+    Test-Case 'properties-clean' { param($r) [IO.File]::WriteAllText((Join-Path $r 'application.properties'), 'enabled=false') } ''
+    Test-Case 'jar-clean' { param($r) Write-Zip (Join-Path $r 'app.jar') @{ 'BOOT-INF/classes/application.properties' = 'enabled=false'; 'Example.class' = [byte[]]@(0xca,0xfe,0xba,0xbe) } } ''
+    Test-Case 'utf16-properties-secret' { param($r) [IO.File]::WriteAllText((Join-Path $r 'application.properties'), $sentinel, [Text.Encoding]::Unicode) } 'violations='
+    Test-Case 'invalid-text' { param($r) [IO.File]::WriteAllBytes((Join-Path $r 'application.properties'), [byte[]]@(0xff,0xff,0xff)) } 'invalid-text'
+    Test-Case 'forbidden-file' { param($r) [IO.File]::WriteAllText((Join-Path $r '.env'), 'value=clean') } 'violations='
+    Test-Case 'forbidden-entry' { param($r) Write-Zip (Join-Path $r 'app.jar') @{ 'secrets/config.txt' = 'clean' } } 'violations='
+    Test-Case 'entry-traversal' { param($r) Write-Zip (Join-Path $r 'app.jar') @{ '../application.properties' = 'clean' } } 'violations='
+    Test-Case 'invalid-archive' { param($r) [IO.File]::WriteAllText((Join-Path $r 'app.jar'), 'not a zip') } 'invalid-archive'
+    Test-Case 'entry-count' { param($r) Write-Zip (Join-Path $r 'app.jar') @{ 'a.txt' = 'a'; 'b.txt' = 'b' } } 'archive-entry-count' @{ MaxArchiveEntries = 1 }
+    Test-Case 'entry-size' { param($r) Write-Zip (Join-Path $r 'app.jar') @{ 'a.properties' = ('a' * 64) } } 'archive-entry-size' @{ MaxEntryBytes = 32 }
+    Test-Case 'text-total' { param($r) Write-Zip (Join-Path $r 'app.jar') @{ 'a.properties' = ('a' * 20); 'b.properties' = ('b' * 20) } } 'expanded-text-bytes' @{ MaxExpandedTextBytes = 32 }
+    Test-Case 'archive-size' { param($r) Write-Zip (Join-Path $r 'app.jar') @{ 'a.txt' = 'clean' } } 'archive-file-size' @{ MaxArchiveBytes = 32 }
+    $inner = Join-Path $runRoot 'inner.jar'
+    Write-Zip $inner @{ 'application.properties' = 'clean' }
+    $cleanNested = [IO.File]::ReadAllBytes($inner)
+    Test-Case 'nested-clean' { param($r) Write-Zip (Join-Path $r 'app.jar') @{ 'BOOT-INF/lib/dependency.jar' = $cleanNested } } ''
+    Test-Case 'nested-depth' { param($r) Write-Zip (Join-Path $r 'app.jar') @{ 'lib/dependency.jar' = $cleanNested } } 'archive-depth' @{ MaxArchiveDepth = 1 }
+    Test-Case 'nested-bytes' { param($r) Write-Zip (Join-Path $r 'app.jar') @{ 'lib/dependency.jar' = $cleanNested } } 'nested-archive-bytes' @{ MaxNestedArchiveBytes = 32 }
+    Test-Case 'nested-global-count' { param($r) Write-Zip (Join-Path $r 'app.jar') @{ 'lib/dependency.jar' = $cleanNested } } 'archive-entry-count' @{ MaxArchiveEntries = 1 }
+    Test-Case 'cross-archive-text-total' {
+        param($r)
+        Write-Zip (Join-Path $r 'a.jar') @{ 'a.properties' = ('a' * 20) }
+        Write-Zip (Join-Path $r 'b.jar') @{ 'b.properties' = ('b' * 20) }
+    } 'expanded-text-bytes' @{ MaxExpandedTextBytes = 32 }
+    Write-Zip $inner @{ 'lib/dependency.jar' = $cleanNested }
+    $twoLevels = [IO.File]::ReadAllBytes($inner)
+    Test-Case 'three-levels-clean' { param($r) Write-Zip (Join-Path $r 'app.jar') @{ 'lib/second.jar' = $twoLevels } } ''
+    Write-Zip $inner @{ 'lib/second.jar' = $twoLevels }
+    $threeLevels = [IO.File]::ReadAllBytes($inner)
+    Test-Case 'four-levels-abusive' { param($r) Write-Zip (Join-Path $r 'app.jar') @{ 'lib/third.jar' = $threeLevels } } 'archive-depth'
+    Write-Zip $inner @{ 'application.properties' = $sentinel }
+    $secretNested = [IO.File]::ReadAllBytes($inner)
+    Test-Case 'nested-secret' { param($r) Write-Zip (Join-Path $r 'app.jar') @{ 'BOOT-INF/lib/dependency.jar' = $secretNested } } 'violations='
+    Test-Case 'exact-text-boundary' { param($r) Write-Zip (Join-Path $r 'app.jar') @{ 'a.txt' = ('a' * 32) } } '' @{ MaxEntryBytes = 32; MaxExpandedTextBytes = 32; MaxArchiveEntries = 1 }
+    Test-Case 'empty-text-clean' { param($r) Write-Zip (Join-Path $r 'app.jar') @{ 'a.properties' = '' } } ''
+    Write-Output "ARTIFACT_SAFETY_TEST positive=$positive negative=$negative credentials=SYNTHETIC_ONLY"
+} finally {
+    $resolved = (Resolve-Path -LiteralPath $runRoot).Path
+    if (-not $resolved.StartsWith($tempRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'Unsafe safety fixture cleanup path' }
+    Remove-Item -LiteralPath $resolved -Recurse -Force
+}

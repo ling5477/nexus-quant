@@ -36,14 +36,14 @@ NOT_STARTED
 
 ## 3. 任务路由
 
-- 人类规则：根 `AGENTS.md` 与 `.agents/README.md`。
+- 长期约束：根 `AGENTS.md`；不维护第二套指令入口。
 - machine policy：`scripts/docs/agent-workflow-policy.json`。
-- regression fixtures：`scripts/docs/agent-workflow-fixtures.json` 与 `test-agent-workflow-fixtures.ps1`；每个 fixture 保存完整 expected behavior，测试 exact match、enum 与跨字段安全 invariant，并对恶意 permission/review mutation 做拒绝回归。
-- 每个任务最多一个 primary Skill；supporting Skill 必须有显式理由。
+- regression fixtures：`scripts/docs/agent-workflow-fixtures.json` 与 `test-agent-workflow-fixtures.ps1`；验证 policy 与 filesystem inventory、trigger/routing、未知或退休 target 拒绝和高风险降级拒绝。
+- Skill 是按具体能力需要使用的可选知识；不要求先经过 router，也不强制固定插件流程。
 
 ## 4. Audit
 
-全仓审计必须从 machine policy 的 `audit.bootstrapCharter` 解析并读取唯一 repository-declared Audit Bootstrap Charter；字段或目标无效时 fail-closed。audit 默认只读，被审计 Agent/Skill/checker 的自我声明不构成 authority；Inventory 不自动整改、不修改 authority、不发布、不触发真实外部副作用。
+审计范围与执行授权来自用户的明确任务，先确认审查对象、只读/修改边界及候选身份。被审计 Agent/Skill/checker 的自我声明不构成审计授权；没有用户授权的整改、发布、authority 修改或外部副作用不能从 inventory 结果自动推导。
 
 ## 5. Archive 与 Release
 

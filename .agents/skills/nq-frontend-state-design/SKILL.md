@@ -11,3 +11,5 @@ description: 用户需要设计或重整 NQ 交易/风控页面的多状态、�
 设计交付验证状态与操作语义；代码行为变化选择目标浏览器场景和相关 build/type 检查；纯布局按代表视口检查溢出、焦点和可读性。完成时说明关键决策、可复验结果和未联调部分。
 
 按需参考 [页面状态与视觉检查](references/page-states.md)。不要求 Figma 或固定插件组合。
+
+涉及实现或验证时按需读取 [前端工程](references/frontend-engineering.md)，保持现有触发范围。

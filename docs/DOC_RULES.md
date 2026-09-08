@@ -11,5 +11,5 @@
 9. 历史迁移 retain-first：先有索引和兼容指针，再做独立、可审查、可回滚的移动；默认不删除。
 10. credential、Secret、Cookie、原始签名串、生产数据和未脱敏响应不得写入文档或 evidence。
 11. canonical 交易环境是 `SIM / LIVE`；venue `DEMO` 只能表达对 `SIM` 的适配映射，历史 `DOME / REAL` 只标记 legacy/import compatibility。
-12. 全仓审计从 machine policy 的 `audit.bootstrapCharter` 解析唯一 Charter，默认只读且不自动整改、发布或修改 authority；字段或目标无效时 fail-closed。
+12. 全仓审计依据用户明确任务界定范围、只读/修改边界和候选身份；仓库自述不能授权自身整改，inventory 不自动授予发布或 authority 修改权限。
 13. 提交前运行最相关的 authority、links、workflow/fixture checker 与 `git diff --check`，并列出未验证项和回滚。

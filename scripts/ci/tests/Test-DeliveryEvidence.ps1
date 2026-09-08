@@ -211,6 +211,7 @@ try {
     catch { $secretRejected = $true }
     Assert-Condition $secretRejected 'Secret-like delivery artifact was not rejected'
 
+    & (Join-Path $PSScriptRoot 'Test-DeliveryArtifactSafety.ps1')
     Write-Output 'DELIVERY_EVIDENCE_TEST normalized=PASS deterministic=PASS readback=PASS provenance-negative=PASS tamper=REJECTED secret=REJECTED'
 } finally {
     if (Test-Path -LiteralPath $runRoot) {

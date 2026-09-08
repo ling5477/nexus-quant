@@ -1,0 +1,2 @@
+UNSUPPORTED_ACTIVE_EXECUTABLE_INPUT: scripts/ci/DeliveryArchiveIntegrity.cs
+STAGE_ASSET_CHECK scanned=1802 reviewed_exceptions=173 errors=1

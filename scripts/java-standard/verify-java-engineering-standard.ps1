@@ -269,17 +269,7 @@ try {
         }
     }
 
-    $skillName = if ($overlays[0] -eq 'nq-java-domain-overlay.md') { 'nq-java-engineering-standard' } else { 'dh-java-engineering-standard' }
-    $skillPath = Join-Path $repoRoot ".agents\skills\$skillName\SKILL.md"
-    Assert-Condition (Test-Path -LiteralPath $skillPath -PathType Leaf) "CONFIG_INVALID" "missing project Skill"
-    $skillText = Get-Content -LiteralPath $skillPath -Raw -Encoding UTF8
-    Assert-Condition ($skillText -match '(?m)^- Role type: `SUPPORTING_CONSTRAINT`\s*$') "CONFIG_INVALID" "Skill Role type binding invalid"
-    Assert-Condition ($skillText -match '(?m)^- Primary responsibility: `HIGH_RISK_JAVA_CONSTRAINT_EVALUATION`\s*$') "CONFIG_INVALID" "Skill Primary responsibility binding invalid"
-    Assert-Condition ($skillText.Contains('platform-profile.json')) "CONFIG_INVALID" "Skill missing platform-profile.json"
-    foreach ($trigger in @('STATIC_RULE_CHANGE','FULL_JAVA_AUDIT')) { Assert-Condition ($skillText.Contains($trigger)) "CONFIG_INVALID" "Skill missing stable trigger marker $trigger" }
-    Assert-Condition ($skillText.Contains('Select only standards relevant to the affected scope.')) "CONFIG_INVALID" "Skill scoped standards selection marker missing"
-    Assert-Condition ($skillText -notmatch '\bJava\s+21\b|Spring Boot\s+3\.\d|Spring Framework\s+6\.\d') "PLATFORM_PROFILE_INVALID" "Skill hard-codes platform versions"
-    Assert-Condition ($skillText -notmatch '\bGate[A-Z0-9-]+\b|\bStage-QDR-\d+\b') "CONFIG_INVALID" "Skill hard-codes current authority"
+    # 工程约束由 standards、platform、architecture 与 baseline 校验；Skill inventory 由独立 policy validator 负责。
 
     $scope = Get-Content -LiteralPath (Join-Path $standardRoot 'java-shadow-scope.json') -Raw -Encoding UTF8 | ConvertFrom-Json
     Assert-Condition ($scope.scanner_mode -eq 'JAVA_LEXICAL_STRUCTURE_AWARE' -and @($scope.production_source_roots).Count -gt 0 -and @($scope.time_restricted_prefixes).Count -gt 0) "CONFIG_INVALID" "architecture scope invalid"
@@ -299,9 +289,9 @@ try {
     $actual = @($baseline.violations | ForEach-Object { $_.fingerprint }); $sorted = @($baseline.violations | Sort-Object rule_id,path,fingerprint | ForEach-Object { $_.fingerprint })
     Assert-Condition (($actual -join "`n") -eq ($sorted -join "`n")) "BASELINE_SCHEMA_INVALID" "baseline order nondeterministic"
 
-    $governed = @(); $governed += @(Get-ChildItem -LiteralPath $standardRoot -File); $governed += @(Get-Item $skillPath); $governed += @(Get-ChildItem -LiteralPath $PSScriptRoot -File)
+    $governed = @(); $governed += @(Get-ChildItem -LiteralPath $standardRoot -File); $governed += @(Get-ChildItem -LiteralPath $PSScriptRoot -File)
     foreach ($file in $governed) { $text = Get-Content -LiteralPath $file.FullName -Raw -Encoding UTF8; Assert-Condition ($text -notmatch '(?i)[A-Z]:[\\/](Users|project)[\\/]') "CONFIG_INVALID" "absolute path in $($file.Name)" }
-    $links = @(); foreach ($scanRoot in @($standardRoot,(Split-Path $skillPath -Parent),$PSScriptRoot)) { $links += @(Get-ChildItem -LiteralPath $scanRoot -Recurse -Force | Where-Object { $_.Attributes -band [IO.FileAttributes]::ReparsePoint }) }
+    $links = @(); foreach ($scanRoot in @($standardRoot,$PSScriptRoot)) { $links += @(Get-ChildItem -LiteralPath $scanRoot -Recurse -Force | Where-Object { $_.Attributes -band [IO.FileAttributes]::ReparsePoint }) }
     Assert-Condition ($links.Count -eq 0) "CONFIG_INVALID" "reparse point or cross-repository link found"
     Assert-JavaShadowCiContract $ciText
 

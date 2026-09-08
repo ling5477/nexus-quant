@@ -72,7 +72,7 @@ git diff --check
 git diff --stat
 ```
 
-本阶段不运行真实交易所 HTTP / WebSocket，不读取 credential material，不启动 LIVE，不接 AI / DH runtime。F008与F007保持`ACCEPTED / CLOSED`；P5-F009为`ACCEPTED / CLOSED`，F005 platform attestation沿用DEFERRED / NON_BLOCKING disposition，Phase6 IN_PROGRESS / NOT_FROZEN，L4 plan以`d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665`接受；下一动作为`NQ-GATEAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C2-IMPLEMENTATION`。C1 ACCEPTED / CI_GREEN / CLOSED，P1-2已关闭；C2 NOT_STARTED且仅处理P1-3，canonical P1=1 OPEN；L4 qualification未开始。当前repository schema=V47，accepted head的current-schema restore已通过；历史Phase5B pair仍记录V46。仅docs/索引变化时不机械运行完整Maven。
+本阶段不运行真实交易所 HTTP / WebSocket，不读取 credential material，不启动 LIVE，不接 AI / DH runtime。F008/F007/F009 与 C1 保持已接受；C2=`ACCEPTED / CLOSED`，固定 pair=`612c2f5887a2e6b3a8b3138d9ae9b193c20e298f / 34183851797`。当前执行 pre-B0 CI safety/current authority remediation，`IMPLEMENTED / PENDING_INDEPENDENT_REVIEW`；下一动作与任务映射见[STATUS.md](STATUS.md)和[ROADMAP.md](ROADMAP.md)。当前 repository schema=`V48`；历史 Phase5B V46、C1 V47 的接受事实仍按原证据保留，不推断生产 schema。本轮不重跑 C2/PostgreSQL、Full Maven 或 Playwright。B0和L4 qualification未开始。
 
 ## 9. Canonical production configuration
 

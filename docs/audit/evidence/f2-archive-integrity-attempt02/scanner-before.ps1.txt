@@ -1,0 +1,150 @@
+﻿[CmdletBinding()]
+param(
+    [Parameter(Mandatory = $true)]
+    [string] $EvidenceRoot,
+    # 调用方只能收紧上限；测试使用较小预算，生产调用沿用默认硬上限。
+    [ValidateRange(1, 50000)][int] $MaxArchiveEntries = 50000,
+    [ValidateRange(1, 67108864)][long] $MaxEntryBytes = 67108864,
+    [ValidateRange(1, 134217728)][long] $MaxExpandedTextBytes = 134217728,
+    [ValidateRange(1, 536870912)][long] $MaxNestedArchiveBytes = 536870912,
+    [ValidateRange(1, 268435456)][long] $MaxArchiveBytes = 268435456,
+    [ValidateRange(1, 3)][int] $MaxArchiveDepth = 3
+)
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+$root = (Resolve-Path -LiteralPath $EvidenceRoot).Path
+$violations = New-Object System.Collections.Generic.List[string]
+$textExtensions = @('.json', '.html', '.js', '.css', '.txt', '.xml', '.yml', '.yaml', '.toml', '.md', '.properties', '.conf', '.config', '.ini', '.cfg', '.csv', '.map', '.mf')
+$archiveExtensions = @('.jar', '.zip', '.war', '.ear')
+$budget = @{ entries = 0L; textBytes = 0L; nestedBytes = 0L }
+$forbiddenPath = '(?i)(^|[\\/])(secrets?|credentials?)([\\/]|$)|(^|[\\/])\.env($|\.)|\.(pem|key|p12|jks|keystore|dump|backup|log)$'
+$contentRules = [ordered]@{
+    aws_access_key = 'AKIA[0-9A-Z]{16}'
+    github_token = '(github_pat_[A-Za-z0-9_]{20,}|gh[pousr]_[A-Za-z0-9]{30,})'
+    provider_key = '(?<![A-Za-z0-9])sk-(proj-|ant-)?[A-Za-z0-9_-]{20,}'
+    private_key = '-----BEGIN (RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY-----'
+    credentials_in_url = '[a-zA-Z][a-zA-Z0-9+.-]*://[^/@\s]+:[^/@\s]+@'
+}
+
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+function Stop-Limit([string] $Rule, [string] $Location) {
+    throw "Delivery artifact safety limit=$Rule file=$Location"
+}
+
+function Read-Bounded([IO.Stream] $Stream, [long] $Limit, [string] $Location) {
+    $buffer = New-Object byte[] 8192
+    $output = [IO.MemoryStream]::new()
+    try {
+        while (($count = $Stream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+            if ($output.Length + $count -gt $Limit) { Stop-Limit 'expanded-bytes' $Location }
+            $output.Write($buffer, 0, $count)
+        }
+        return ,($output.ToArray())
+    } finally { $output.Dispose() }
+}
+
+function Test-TextStream([IO.Stream] $Stream, [string] $Location) {
+    $remaining = [Math]::Min($MaxEntryBytes, $MaxExpandedTextBytes - $budget.textBytes)
+    $bytes = Read-Bounded $Stream $remaining $Location
+    $budget.textBytes += $bytes.LongLength
+    $memory = [IO.MemoryStream]::new($bytes, $false)
+    # 识别 BOM；无 BOM 时严格按 UTF-8 解码，不能把解码失败当作安全内容跳过。
+    $reader = [IO.StreamReader]::new($memory, [Text.UTF8Encoding]::new($false, $true), $true)
+    try { $content = $reader.ReadToEnd() }
+    catch { throw "Delivery artifact safety invalid-text file=$Location" }
+    finally { $reader.Dispose(); $memory.Dispose() }
+    foreach ($rule in $contentRules.GetEnumerator()) {
+        if ([regex]::IsMatch($content, [string]$rule.Value, [Text.RegularExpressions.RegexOptions]::None, [TimeSpan]::FromSeconds(2))) {
+            $violations.Add("$($rule.Key) file=$Location")
+        }
+    }
+}
+
+function Test-ArchiveStream([IO.Stream] $Stream, [int] $Depth, [string] $Location) {
+    if ($Depth -gt $MaxArchiveDepth) { Stop-Limit 'archive-depth' $Location }
+    $archive = $null
+    try {
+        $archive = [IO.Compression.ZipArchive]::new($Stream, [IO.Compression.ZipArchiveMode]::Read, $true)
+        $budget.entries += $archive.Entries.Count
+        if ($budget.entries -gt $MaxArchiveEntries) { Stop-Limit 'archive-entry-count' $Location }
+        foreach ($entry in $archive.Entries) {
+            $entryLocation = "$Location!$($entry.FullName)"
+            $entryName = $entry.FullName.Replace('\', '/')
+            if ($entryName -match $forbiddenPath) {
+                $violations.Add("forbidden_archive_path file=$entryLocation")
+                continue
+            }
+            if ($entryName -match '(^/|^[A-Za-z]:|(^|/)\.\.(/|$))') {
+                $violations.Add("unsafe_archive_path file=$entryLocation")
+                continue
+            }
+            if ($entry.Length -gt $MaxEntryBytes) { Stop-Limit 'archive-entry-size' $entryLocation }
+            $extension = [IO.Path]::GetExtension($entryName).ToLowerInvariant()
+            if ($archiveExtensions -contains $extension) {
+                if ($Depth -ge $MaxArchiveDepth) { Stop-Limit 'archive-depth' $entryLocation }
+                $remaining = [Math]::Min($MaxEntryBytes, $MaxNestedArchiveBytes - $budget.nestedBytes)
+                if ($entry.Length -gt $remaining) { Stop-Limit 'nested-archive-bytes' $entryLocation }
+                $entryStream = $entry.Open()
+                try { $nestedBytes = Read-Bounded $entryStream $remaining $entryLocation }
+                finally { $entryStream.Dispose() }
+                $budget.nestedBytes += $nestedBytes.LongLength
+                $nested = [IO.MemoryStream]::new($nestedBytes, $false)
+                try { Test-ArchiveStream $nested ($Depth + 1) $entryLocation }
+                finally { $nested.Dispose() }
+            } elseif ($textExtensions -contains $extension) {
+                if ($entry.Length -gt $MaxExpandedTextBytes - $budget.textBytes) { Stop-Limit 'expanded-text-bytes' $entryLocation }
+                $entryStream = $entry.Open()
+                try { Test-TextStream $entryStream $entryLocation }
+                finally { $entryStream.Dispose() }
+            }
+        }
+    } catch {
+        # 保留资源拒绝身份，其余归档错误统一失败；不打印内容或第三方异常详情。
+        if ($_.Exception.Message.StartsWith('Delivery artifact safety')) { throw }
+        throw "Delivery artifact safety invalid-archive file=$Location"
+    } finally {
+        if ($null -ne $archive) { $archive.Dispose() }
+    }
+}
+
+function Test-Directory([string] $Directory) {
+    foreach ($file in Get-ChildItem -LiteralPath $Directory -Force) {
+        $relative = $file.FullName.Substring($root.Length).TrimStart('\', '/').Replace('\', '/')
+        if (($file.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+            $violations.Add("link file=$relative")
+            continue
+        }
+        if ($relative -match $forbiddenPath) {
+            $violations.Add("forbidden_path file=$relative")
+            continue
+        }
+        if ($file.PSIsContainer) { Test-Directory $file.FullName; continue }
+        $extension = $file.Extension.ToLowerInvariant()
+        if ($archiveExtensions -contains $extension) {
+            if ($file.Length -gt $MaxArchiveBytes) { Stop-Limit 'archive-file-size' $relative }
+            $stream = [IO.File]::OpenRead($file.FullName)
+            try { Test-ArchiveStream $stream 1 $relative }
+            finally { $stream.Dispose() }
+        } elseif ($textExtensions -contains $extension) {
+            if ($file.Length -gt $MaxEntryBytes -or $file.Length -gt $MaxExpandedTextBytes - $budget.textBytes) {
+                Stop-Limit 'text-size' $relative
+            }
+            $stream = [IO.File]::OpenRead($file.FullName)
+            try { Test-TextStream $stream $relative }
+            finally { $stream.Dispose() }
+        }
+    }
+}
+
+if ((Get-Item -LiteralPath $root -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Delivery artifact safety linked-root' }
+if (-not (Test-Path -LiteralPath $root -PathType Container)) { throw 'Delivery artifact safety invalid-root' }
+Test-Directory $root
+
+if ($violations.Count -gt 0) {
+    Write-Output 'Delivery artifact safety gate failed (rule and path only; matched content is suppressed):'
+    $violations | Sort-Object -Unique | ForEach-Object { Write-Output "  $_" }
+    throw "Delivery artifact safety violations=$($violations.Count)"
+}
+Write-Output "DELIVERY_ARTIFACT_SAFETY=PASS root=$EvidenceRoot"

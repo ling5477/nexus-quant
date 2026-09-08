@@ -1,0 +1,6 @@
+At E:\Project\nexus-quant-gateaudit\scripts\ci\tests\Test-DeliveryArtifactSafety.ps1:84 char:1
++ }
++ ~
+Unexpected token '}' in expression or statement.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : UnexpectedToken

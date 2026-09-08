@@ -1,0 +1,8 @@
+
+Algorithm : SHA256
+Hash      : 8B9384F001E65A587D8F875BE78FC620879D3333333D7D8595B06F239B47423A
+Path      : E:\Project\nexus-quant-gateaudit\artifacts\f2-archive-integrity-attempt02-build\thin\app.jar
+
+Algorithm : SHA256
+Hash      : 0DC12C72C34BACA7B2CEF27C4FF45B2F5B16F378DE03CAA9325014E78EB9E726
+Path      : E:\Project\nexus-quant-gateaudit\artifacts\f2-archive-integrity-attempt02-build\boot\app.jar

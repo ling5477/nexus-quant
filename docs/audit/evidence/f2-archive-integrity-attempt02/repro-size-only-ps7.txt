@@ -1,0 +1,6 @@
+P1_REPRO PS=7.6.5 case=normal rejected=True payload_physically_preserved=True
+Exception: E:\Project\nexus-quant-gateaudit\scripts\ci\tests\Test-ArchiveIntegrityRepro.ps1:37
+Line |
+  37 |  … expected) { throw "Unexpected reproduction outcome: $name rejected=$r …
+     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Unexpected reproduction outcome: forged rejected=True

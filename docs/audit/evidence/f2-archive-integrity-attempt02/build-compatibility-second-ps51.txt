@@ -1,0 +1,8 @@
+Delivery artifact safety invalid-archive MALFORMED_OR_UNVERIFIABLE_ARCHIVE file=boot/app.jar!BOOT-INF/lib/tomcat-embed-
+core-10.1.50.jar file=boot/app.jar
+At E:\Project\nexus-quant-gateaudit\scripts\ci\Test-DeliveryArtifactSafety.ps1:120 char:72
++ ... y artifact safety')) { throw ($failure.Message + " file=$Location") }
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Delivery artifa...le=boot/app.jar:String) [], RuntimeException
+    + FullyQualifiedErrorId : Delivery artifact safety invalid-archive MALFORMED_OR_UNVERIFIABLE_ARCHIVE file=boot/app
+   .jar!BOOT-INF/lib/tomcat-embed-core-10.1.50.jar file=boot/app.jar

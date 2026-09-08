@@ -11,3 +11,5 @@ description: 当 NQ 变更影响交易状态、风控执行顺序、账务、幂
 评审者须满足任务要求的独立性；先核对候选及证据身份，区分原有问题、本次问题和条件性未验证项。依照风险复现关键证明；不以反复全量测试代替分析。
 
 完成标准是受影响不变量有可复验证据，或清楚定位尚未满足的验收条件。按需参考 [证明选择](references/proof-selection.md)。
+
+按命中主题读取 [工程/安全边界](references/engineering-boundaries.md) 或 [回归与交付](references/regression-delivery.md)，无需加载无关标准。

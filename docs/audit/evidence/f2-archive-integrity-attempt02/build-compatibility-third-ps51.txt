@@ -1,0 +1,1 @@
+DELIVERY_ARTIFACT_SAFETY=PASS root=artifacts/f2-archive-integrity-attempt02-build

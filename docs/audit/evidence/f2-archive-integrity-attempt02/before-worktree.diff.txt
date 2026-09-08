@@ -1,0 +1,1272 @@
+diff --git a/.agents/README.md b/.agents/README.md
+index b797c44d..a44172c9 100644
+--- a/.agents/README.md
++++ b/.agents/README.md
+@@ -3,3 +3,5 @@
+ 可选的项目能力位于 skills/。canonical 清单由 `scripts/docs/agent-workflow-policy.json` 声明，现有 fixture 校验检查其与实际目录一致。
+
+ 任务按需要选择能力，也可以不使用 Skill；本索引不要求前置路由。专业细节在各 Skill 的 references 中按需读取。history/ 仅用于追溯，不作为当前执行指令。
++
++按问题直接查详细标准，不要求先调用 Skill：Java/Spring、架构、事务与安全见 [工程边界](skills/nq-trading-correctness-proof/references/engineering-boundaries.md)；测试、CI、Git 与文档见 [回归与交付](skills/nq-trading-correctness-proof/references/regression-delivery.md)；SQL/迁移见 [数据库证明](skills/nq-postgres-migration-review/references/database-proof.md)；前端见 [工程参考](skills/nq-frontend-state-design/references/frontend-engineering.md)；Python 工具与研究见 [工程边界](skills/nq-research-reproducibility/references/engineering.md)。只读命中主题，普通任务仍可零 Skill。
+diff --git a/.agents/skills/nq-frontend-state-design/SKILL.md b/.agents/skills/nq-frontend-state-design/SKILL.md
+index dc3d46a7..1b4fb190 100644
+--- a/.agents/skills/nq-frontend-state-design/SKILL.md
++++ b/.agents/skills/nq-frontend-state-design/SKILL.md
+@@ -11,3 +11,5 @@ description: 用户需要设计或重整 NQ 交易/风控页面的多状态、
+ 设计交付验证状态与操作语义；代码行为变化选择目标浏览器场景和相关 build/type 检查；纯布局按代表视口检查溢出、焦点和可读性。完成时说明关键决策、可复验结果和未联调部分。
+
+ 按需参考 [页面状态与视觉检查](references/page-states.md)。不要求 Figma 或固定插件组合。
++
++涉及实现或验证时按需读取 [前端工程](references/frontend-engineering.md)，保持现有触发范围。
+diff --git a/.agents/skills/nq-postgres-migration-review/references/database-proof.md b/.agents/skills/nq-postgres-migration-review/references/database-proof.md
+index 6c3cbdb1..220748cc 100644
+--- a/.agents/skills/nq-postgres-migration-review/references/database-proof.md
++++ b/.agents/skills/nq-postgres-migration-review/references/database-proof.md
+@@ -10,3 +10,13 @@
+ - recovery：区分事务回滚、前向修复与恢复备份；不能把未经验证的 destructive down migration 当作安全回滚。
+
+ 验证证据注明候选、数据库版本、关键配置、输入、结果及未覆盖情况。命令从现有构建与测试入口推导，不在此冻结版本和全量命令。
++
++## 结构完整性与兼容
++
++- 新表/字段命名表达业务语义；主键、唯一键、外键和关键状态 CHECK 与领域约束一致。交易、风控、恢复、审计表保留幂等和关联追踪字段；表和关键字段有准确 COMMENT。不能为单次页面展示随意加表或省略核心关系约束。
++- 检查新增/历史数据的默认值、nullability、空值映射，以及旧/新应用共存期间读写兼容；字段删除/改名/语义变化须说明调用方和兼容窗口。版本 migration 按 Flyway 顺序执行，不要求版本 DDL 任意重复运行；回填/helper 重跑须单独证明幂等或明确不安全边界。
++- JSONB 使用当前 JDBC 驱动实际支持的显式类型绑定或 SQL cast；TIMESTAMPTZ 验证 UTC、offset、精度及往返。旧 `CAST(? AS jsonb)` / `Timestamp.from(Instant)` 是候选写法，不是可替代真实驱动证明的唯一规范。金额/数量按领域精度与 rounding 验证。
++- 索引与查询的过滤、排序、锁、分页和数据分布一致；避免 N+1、无上限扫描/批量。回填需有分批边界、限流、进度/失败可观测性与中断续跑，检查大表锁时长和事务范围。
++- 在可丢弃 PostgreSQL 上检查实际升级、Flyway validate 和受影响查询/约束的正负例；唯一键冲突、非法状态/null、并发写、事务回滚或独立事务可见性按风险选择。禁止改已执行 migration 或用 repair 改写共享 history。
++
++事务模型还应按问题查 [Spring profile](../../../../docs/standards/java/spring-platform-profile.md) 与 [通用数据库/SQL标准](../../../../docs/standards/java/common-java-engineering-standard.md)。静态 DDL review 不等于 runtime PASS，恢复方案区分事务回滚、forward fix 和经验证备份恢复。
+diff --git a/.agents/skills/nq-research-reproducibility/references/engineering.md b/.agents/skills/nq-research-reproducibility/references/engineering.md
+index 03d5e5e5..78051dc8 100644
+--- a/.agents/skills/nq-research-reproducibility/references/engineering.md
++++ b/.agents/skills/nq-research-reproducibility/references/engineering.md
+@@ -7,3 +7,17 @@ Notebook 适合编排、可视化与实验；需要复用和测试的逻辑提
+ 依赖声明和 lockfile 使用项目已有工具维护；不强制 uv、Poetry、Ruff、mypy、Pydantic 或 async。类型、lint、打包、CLI smoke 只在已配置且受影响时执行。
+
+ 处理大数据时按实际规模判断分批、流式处理、复制和内存；外调需要超时，重试须有界且副作用安全。脚本写入应有适当 dry-run 和重跑保护，无需为无副作用脚本构造完整框架。
++
++## 可维护 Python 与 operational helper 的按需细则
++
++普通 package/helper 任务可直接读取以下命中小节，不因文件类型调用 research Skill；实验可复现性或研究逻辑正式复用才触发原有 Skill。
++
++- 结构：domain logic 与 HTTP/DB/filesystem/subprocess adapter 分离；不制造 god module、utils dumping ground、circular import、隐式全局状态或 import-time 副作用。保留公开 API 与既有 layout，新增抽象/依赖须有明确价值。
++- Typing/model：沿用项目支持的 typing；Iterable/Sequence/Mapping 表达消费契约，dataclass 表达 value object，TypedDict 约束 JSON，Protocol 表达 adapter 边界。仅在实际 runtime validation 需要时引入模型框架，不机械强制继承或 Pydantic。
++- 错误/资源：捕获最窄异常并保留 traceback 和上下文；禁止 bare except、吞错。仅在 process boundary 统一映射日志/状态/exit code。with/async with 管理连接、事务、文件、临时文件和锁；subprocess/thread/process/task 在失败、timeout、cancellation 后均回收。
++- 状态/并发：检查 mutable default、class-level mutable state、late-binding closure、iterator exhaustion、single-use generator、shadowed builtins、thread safety、multiprocessing race。异步函数不隐式执行阻塞 I/O/重 CPU/sleep；并发、queue、fan-out 有界且具备背压和取消语义。
++- 配置/CLI：参数化路径/环境，明确 required/optional、合法值、安全默认值；不 silently fallback 到生产端点。沿用 logging 和 CLI 框架，清晰 main 入口、exit code、stdout/stderr 与错误信息，不输出 secret 或巨大原始 payload。
++- 数据/性能：显式约束 dtype、schema、missing values、index、排序和内存；避免 chained assignment、无控制复制和大循环逐条外调。时间内部 UTC、边界显式转换，不混用 naive/aware；精确金融值采用现有 Decimal/最小货币单位模型，研究 float 使用合理容差，不机械替换算法。
++- 安全：校验路径避免 traversal，安全创建临时文件/解压；SQL 参数化，URL/host 受控，外部 payload 校验；不对不可信输入用 shell=True、eval/exec、pickle 或不安全 YAML loader。重试有界、退避、幂等且失败可观察。
++- helper 写入：校验输入，声明输出与副作用，必要时 dry-run、重跑保护和失败恢复；正常/空/非法/边界输入、缺文件/权限、重复执行、外部依赖失败按影响验证。无副作用脚本无需额外确认框架，生产/破坏性执行仍需明确授权。
++- 测试/交付：fixture 控制 clock/seed/ID/timezone/data version/排序，不依赖真实账户或网络；不过度 mock SQL/序列化/事务。沿用现有测试/type/lint/format 入口，packaging/依赖变化再验证官方工具生成 lockfile、wheel/sdist、安装和 CLI entry point。失败/skip 不写 PASS，不删断言/关闭规则制造通过；发布另需授权。
+diff --git a/.agents/skills/nq-trading-correctness-proof/SKILL.md b/.agents/skills/nq-trading-correctness-proof/SKILL.md
+index 4b242b56..c60db90a 100644
+--- a/.agents/skills/nq-trading-correctness-proof/SKILL.md
++++ b/.agents/skills/nq-trading-correctness-proof/SKILL.md
+@@ -11,3 +11,5 @@ description: 当 NQ 变更影响交易状态、风控执行顺序、账务、幂
+ 评审者须满足任务要求的独立性；先核对候选及证据身份，区分原有问题、本次问题和条件性未验证项。依照风险复现关键证明；不以反复全量测试代替分析。
+
+ 完成标准是受影响不变量有可复验证据，或清楚定位尚未满足的验收条件。按需参考 [证明选择](references/proof-selection.md)。
++
++按命中主题读取 [工程/安全边界](references/engineering-boundaries.md) 或 [回归与交付](references/regression-delivery.md)，无需加载无关标准。
+diff --git a/.agents/skills/nq-trading-correctness-proof/references/proof-selection.md b/.agents/skills/nq-trading-correctness-proof/references/proof-selection.md
+index 07cd2857..4cf60f41 100644
+--- a/.agents/skills/nq-trading-correctness-proof/references/proof-selection.md
++++ b/.agents/skills/nq-trading-correctness-proof/references/proof-selection.md
+@@ -9,3 +9,13 @@
+ 架构与平台：跨模块变更检查依赖方向与相关 ArchUnit；版本升级读当前 POM、CI 和 runtime 配置。`docs/standards/java` 是按主题查询的参考，不要求每次加载整个标准库或扫描所有 Shadow 规则。
+
+ 证据复用：记录代码候选、测试/fixture 身份、环境、命令和结论；代码、依赖、配置、fixture 或覆盖假设变化时评估失效范围。独立 reviewer 自主选择关键复现；发布验收仍遵守实际 exact-head CI 合同。
++
++## 关键交易/数据库断言
++
++- Order 身份、venue order/fill、Trade、Ledger 和 audit 关联必须来自实际可达 producer/consumer 路径；测试直接造出的 fill 只能证明该输入之后的行为，不能宣称完整交易因果成立。
++- 对 reconciliation 保留重复回报、乱序、accepted 后 timeout、本地终态与 venue fill 冲突、账务部分失败后的恢复场景；断言成交/账务唯一性及相关数量、精度、关联、最终收敛，不将本地 CANCELLED 当作永无成交的证明。
++- 并发更新验证 stale result 不覆盖新状态，必要时包含状态往返后的 version 冲突；唯一约束、锁或 CAS 拒绝必须可观察。事务失败时确认多表写入/审计一致性与可恢复事实，而不只断言异常。
++- 扫描候选必须有界且可持续覆盖：按当前契约检查 filter-before-limit、稳定排序与分页/游标、重复旧前缀和跨批进展；当前 reconciliation 的 `limit` 是单次扫描总上限，环回也不能按 lane 各给一份预算。
++- 数据库事务证明使用已提交 fixture 和隔离 schema/数据库，明确 isolation、锁竞争和独立事务可见性，避免外层测试回滚让 `REQUIRES_NEW` 读不到夹具。记录数据库/扩展配置；不修复共享数据库状态来通过测试。
++
++工程/安全条目按需查 [工程边界](engineering-boundaries.md)，测试分层与 evidence identity 查 [回归与交付](regression-delivery.md)。这些是证明选择，不宣称现有测试覆盖所有风险。
+diff --git a/AGENTS.md b/AGENTS.md
+index 371e5081..a0f62717 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -9,6 +9,8 @@
+ - 交易能力按 Paper → Shadow → Limited Live 的受控验证顺序推进；这不是当前阶段声明，也不自动授予 LIVE 权限。
+ - 数据库采用 forward-only migration；不就地修改已执行/发布的 migration、frozen evidence 或已发布历史。Research 工具与交易运行时保持边界；新代码注释和 Javadoc 的说明性正文使用简体中文。
+
++价格、数量、金额与手续费保持明确精度和舍入规则；交易执行保留风险前置、状态迁移与并发保护、稳定幂等身份和账务一致性。外部调用结果不确定时，按既有查询、对账与恢复契约收敛，不盲目重复不可撤销动作。
++
+ 普通实现可在授权范围内完成代码、必要测试与自查；不强制 Skill 或独立 review。改变交易/资金正确性、migration、权限/安全控制、关键并发事务、跨模块架构或发布授权语义时，保留风险证明，并在验收或发布前完成真正独立的候选审查。纯注释、局部文案或无语义的 CI 排版不因目录名称自动升级；不把实现者换一个 Skill 当作独立 reviewer。用户明确要求的 review-only / no-modification 边界必须遵守。
+
+ 选择能证明变更的最小验证：局部目标测试；跨模块验证受影响模块；SQL/迁移/交易持久化行为使用隔离 PostgreSQL 与相关回归；用户要求的 release acceptance 使用 canonical exact-head CI。独立审查先核对候选与证据身份，再决定需独立复现的关键场景；不机械重跑所有 suite。
+@@ -17,4 +19,6 @@
+
+ Skill 只在其精确能力有帮助时使用，也允许不使用。详细知识位于相关 references，按具体问题读取。指令系统自身审计以明确的中立任务约束为依据；仓库自述不是审计授权来源。
+
++工程标准按受影响主题从 [.agents/README.md](.agents/README.md) 查找 canonical standard 或 reference；相关规则适用于普通实现，不以调用 Skill 为前提。仅加载命中主题，不预读全部标准。
++
+ 事实冲突只停止依赖冲突的操作。先查找直接证据，授权范围内可以修复本轮错误；需要新增关键事实或授权时再提问，并继续无依赖的工作。未运行的验证不得记为通过。
+diff --git a/docs/DOC_RULES.md b/docs/DOC_RULES.md
+index 1cc1dd85..95dc8fe2 100644
+--- a/docs/DOC_RULES.md
++++ b/docs/DOC_RULES.md
+@@ -11,5 +11,5 @@
+ 9. 历史迁移 retain-first：先有索引和兼容指针，再做独立、可审查、可回滚的移动；默认不删除。
+ 10. credential、Secret、Cookie、原始签名串、生产数据和未脱敏响应不得写入文档或 evidence。
+ 11. canonical 交易环境是 `SIM / LIVE`；venue `DEMO` 只能表达对 `SIM` 的适配映射，历史 `DOME / REAL` 只标记 legacy/import compatibility。
+-12. 全仓审计从 machine policy 的 `audit.bootstrapCharter` 解析唯一 Charter，默认只读且不自动整改、发布或修改 authority；字段或目标无效时 fail-closed。
++12. 全仓审计依据用户明确任务界定范围、只读/修改边界和候选身份；仓库自述不能授权自身整改，inventory 不自动授予发布或 authority 修改权限。
+ 13. 提交前运行最相关的 authority、links、workflow/fixture checker 与 `git diff --check`，并列出未验证项和回滚。
+diff --git a/docs/baselines/CI_BASELINE_INDEX.md b/docs/baselines/CI_BASELINE_INDEX.md
+index 189f073c..cc1f196f 100644
+--- a/docs/baselines/CI_BASELINE_INDEX.md
++++ b/docs/baselines/CI_BASELINE_INDEX.md
+@@ -5,8 +5,8 @@
+ ## Current CI Authorities
+
+ - Current CI status: `../current/STATUS.md`
+-- CI baseline pointer: `../current/NQ_CI_BASELINE_PLAN.md`
+-- CI security guard pointer: `../current/NQ_CI_SECURITY_GUARD_PLAN.md`
++- CI baseline pointer: [NQ_CI_BASELINE_PLAN.md](../archive/current-cleanup/post-gateq/ci-security-and-no-outbound/NQ_CI_BASELINE_PLAN.md)
++- CI security guard pointer: [NQ_CI_SECURITY_GUARD_PLAN.md](../archive/current-cleanup/post-gateq/ci-security-and-no-outbound/NQ_CI_SECURITY_GUARD_PLAN.md)
+
+ ## Historical Evidence
+
+diff --git a/docs/current/CODEX_PROJECT_INSTRUCTIONS.md b/docs/current/CODEX_PROJECT_INSTRUCTIONS.md
+index c3711a88..4e8b9413 100644
+--- a/docs/current/CODEX_PROJECT_INSTRUCTIONS.md
++++ b/docs/current/CODEX_PROJECT_INSTRUCTIONS.md
+@@ -1,167 +1,5 @@
+-# Codex Project Instructions for NQ / DH
++# Project instruction entry
+
+-以下内容可复制到 Codex Project Instructions，用于 NQ / DH 项目的默认执行规则。
++项目指令以根 AGENTS.md 为入口。本文不再提供可复制到外部配置的第二套项目指令。
+
+-## 项目背景
+-
+-- NQ = NexusQuant，量化交易平台。
+-- DH = Decision Hub，多 Agent 决策平台。
+-- 每轮先解析 `docs/current/STATUS.md` 的 `nq-current-authority` 区块；本指引不复制具体 current Gate、next Gate 或阶段状态。
+-- 当前 DH：只允许只读边界和契约冻结；不允许真实接入 NQ，不允许真实 provider，不允许 LIVE trading。
+-- NQ 技术栈：Java 21、Spring Boot 3.5.x、Maven 多模块、React、Vite、Ant Design、TanStack Query、Playwright、PostgreSQL、Flyway、pytest、mypy、ruff。
+-
+-## 插件路由表
+-
+-| 任务类型 | 插件 |
+-| --- | --- |
+-| `CODE_ANALYSIS` | GitHub |
+-| `CODE_CHANGE` | GitHub；CodeRabbit when PR-style review is needed |
+-| `FRONTEND_UI` | GitHub；Figma；Product Design；Build Web Apps；Browser；Chrome |
+-| `DATA_VISUALIZATION` | GitHub；Build Web Data Visualization；Browser；Chrome；Spreadsheets |
+-| `SECURITY_AUDIT` | GitHub；Codex Security；CodeRabbit |
+-| `EXCHANGE_INTEGRATION` | Binance；GitHub；Documents；Spreadsheets |
+-| `DOCUMENTATION` | GitHub；Documents；Notion |
+-| `SPREADSHEET_MATRIX` | GitHub；Spreadsheets；Documents |
+-| `DEPLOYMENT` | GitHub；Vercel or Netlify for frontend preview only；Browser；Chrome；Codex Security when secrets, CI/CD, Docker, or server deployment are involved |
+-| `CI_CD` | GitHub；CircleCI only when explicitly requested；Codex Security |
+-| `PRODUCT_DESIGN` | Figma；Product Design；Canva only for visual materials |
+-| `INVESTMENT_RESEARCH` | Public Equity Investing；Documents；Spreadsheets |
+-| `PRESENTATION` | Presentations；Documents；Canva |
+-| `DOMAIN_WEBSITE` | Network Solutions；Vercel；Netlify；Documents |
+-
+-## Active Skill 前置规则
+-
+-每次 NQ / DH 任务必须先使用或遵守：
+-
+-- `AGENTS.md`
+-- `nq-dh-workflow-router`
+-- `docs/current/NQ_DH_CODEX_PLUGIN_WORKFLOW.md`
+-- `docs/current/NQ_DH_WORKFLOW_ROUTER_SKILL.md`
+-- `docs/current/NQ_DH_CODEX_TASK_TEMPLATES.md`
+-
+-固定前置流程：
+-
+-1. 先判断任务是否属于 NQ / DH。
+-2. 如果属于 NQ / DH，先按 `nq-dh-workflow-router` 分类任务。
+-3. 按任务类型选择插件组合。
+-4. 先限定 repository、module、target files、excluded files、expected output。
+-5. 不默认调用所有插件。
+-6. 不扫描全仓库。
+-7. 不修改无关模块。
+-8. 不触碰 LIVE trading、credentials、production env、真实交易路径。
+-9. 输出必须包含：
+-   - Task classification
+-   - Plugins selected
+-   - Scope
+-   - Files inspected
+-   - Files changed
+-   - Findings
+-   - Validation
+-   - Risks
+-   - Next concrete action
+-
+-## 文档预算规则
+-
+-- Code-first default：普通任务必须优先产出代码、测试或可验证行为；docs 不得成为默认产物。
+-- Review-only no-diff：review-only / audit-only 默认不修改文件，只输出结论；只有阶段 freeze、合同冻结、高风险计划或用户明确要求时才允许写 docs。
+-- Docs budget：
+-  - 普通代码任务默认不改 docs；确需记录时最多追加 `docs/current/WORKLOG.md` 一行。
+-  - 测试基线任务可改 `docs/current/TESTING.md` + `docs/current/WORKLOG.md`。
+-  - 阶段完成或 Gate freeze 才可同步 `docs/current/STATUS.md`、`docs/current/ROADMAP.md`、`docs/current/TESTING.md`、`docs/current/WORKLOG.md`。
+-  - `README.md` 只在入口、架构、启动方式或阶段总状态变化时修改。
+-  - 专项 PLAN 只用于 CI、migration、security、LIVE、credential、API contract 等高风险 epic。
+-- Freeze compression：plan / review / first-run / rerun / freeze 不得每一步都同步 5-6 份 docs；中间步骤只记录在专项 plan 或 `WORKLOG.md`，最终 freeze 再同步 `STATUS.md` / `TESTING.md`。
+-- No document inertia：不得为了“保持文档一致”而新增 docs-only 任务；必须由代码、测试、CI、migration、安全边界或用户明确要求触发。
+-- Prompt rule：后续给 Codex/Claude 的任务提示词必须明确 docs 预算，例如“docs 默认不改；如需记录，只允许 WORKLOG 一行”。
+-
+-## 禁止事项
+-
+-- 不默认调用所有插件。
+-- 不扫描 `node_modules`、`target`、`build`、`dist`、`.git`、`test-results`、`logs`、`secrets`、`credentials`。
+-- 不做大而全重构。
+-- 不同时修改前端、后端、Python、部署、文档，除非任务明确要求。
+-- 不提交密钥、token、cookie、exchange secret、tenant data、生产 `.env`。
+-- 未执行验证不能写成通过。
+-- 不把 `<NEXT_GATE>` planning 写成 implementation started；Gate 名称和状态必须动态读取 `STATUS.md`。
+-
+-## NQ 边界
+-
+-- 不允许开启 LIVE trading。
+-- 不允许新增真实下单、撤单路径，除非任务明确要求且当前阶段允许。
+-- 不允许泄露 credentials、API key、exchange secret、tenant data。
+-- PAPER 和 LIVE 必须隔离。
+-- DH 不允许修改 NQ 交易状态。
+-- 涉及交易、风控、权限、部署、安全的修改必须输出风险说明。
+-- AI、AI 信号、AI 自动交易、AI Paper Trading、DH integration、多交易所扩展均未开始，除非新的事实源明确更新。
+-
+-## DH 边界
+-
+-- DH 不允许真实连接 NQ。
+-- DH 不允许下单、撤单、启动 Paper Run、访问凭证、修改 NQ 交易状态。
+-- Integration-0 只能准备只读边界和契约冻结。
+-- 不允许新增 real provider、RealClient、第三方 relay、生产交易路径。
+-- 重点检查 HMAC、timestamp、nonce、source allowlist、payload size、tenant binding、replay protection、provider trust policy、audit trail。
+-
+-## 默认执行流程
+-
+-1. 判断任务是否属于 NQ / DH。
+-2. 如果属于 NQ / DH，先按 `nq-dh-workflow-router` 分类任务。
+-3. 按路由表选择必要插件。
+-4. 明确 repository、module、target files、excluded files、expected output。
+-5. 读取 `AGENTS.md`、`README.md`、`docs/current/README.md` 和目标文件。
+-6. 执行最小范围变更或审查。
+-7. 按任务类型验证。
+-8. 输出范围、证据、变更、验证、风险、下一步。
+-
+-## 验证要求
+-
+-后端：
+-
+-```powershell
+-mvn -f backend/pom.xml test
+-```
+-
+-前端：
+-
+-```powershell
+-Set-Location frontend
+-npm run build
+-npm run test:e2e
+-```
+-
+-Python：
+-
+-```powershell
+-Set-Location research/py
+-python -m pytest -q
+-python -m mypy src
+-python -m ruff check .
+-```
+-
+-Docs：
+-
+-```powershell
+-git status --short
+-```
+-
+-并检查链接、路径、阶段状态、禁止边界、重复入口和未执行验证表述。是否写入 `WORKLOG.md` / `TESTING.md` 必须遵守文档预算规则，轻量流程修正和 review-only 默认不新增记录。
+-
+-Deployment：
+-
+-- 检查 Docker、env example、health check、migration、rollback。
+-- 涉及 secrets、CI/CD、Docker、server deployment 时，必须加入 Codex Security 审查。
+-- 禁止提交真实密钥或生产环境配置。
+-
+-## 默认输出格式
+-
+-```text
+-Task classification:
+-Plugins selected:
+-Scope:
+-Files inspected:
+-Files changed:
+-Findings:
+-Validation:
+-Risks:
+-Next concrete action:
+-```
++长期约束见 [AGENTS.md](../../AGENTS.md)，当前阶段与安全状态见 [STATUS.md](STATUS.md)。Skill 是否有帮助由具体任务决定；canonical inventory 由 [policy](../../scripts/docs/agent-workflow-policy.json) 声明和现有 validator 校验，本文不复制清单或建立额外 authority。
+diff --git a/docs/current/DB_SCHEMA.md b/docs/current/DB_SCHEMA.md
+index 83e58661..2e76376e 100644
+--- a/docs/current/DB_SCHEMA.md
++++ b/docs/current/DB_SCHEMA.md
+@@ -2,6 +2,19 @@
+
+ 数据库结构以 Flyway migrations 为准。本文只记录当前数据库事实入口，不复制完整 DDL。
+
++## 当前 repository schema：V48
++
++当前 tracked Flyway inventory 已到 `V48`。本节只同步仓库结构，不声明生产已迁移，也不重跑历史或 C2 验收。下方按历史版本保留的 V42/V47 时点描述及既有验收事实不作改写。
++
++| Migration | 当前结构增量 |
++| --- | --- |
++| [V43](../../backend/nq-infra/src/main/resources/db/migration/V43__gate_y_current_market_snapshot.sql) | `pilot_prerequisite_observations` 增加 market snapshot digest、instrument、best ask 等 typed 行情前置事实字段及约束。 |
++| [V44](../../backend/nq-infra/src/main/resources/db/migration/V44__gate_y_operator_pilot_authority.sql) | `operator_pilot_authorities` 及 live session authority 绑定与约束。 |
++| [V45](../../backend/nq-infra/src/main/resources/db/migration/V45__gate_y_pre_place_zero_intent_recovery.sql) | `pilot_pre_place_recovery_decisions`、lease predecessor/recovery linkage 与 canonical legacy account bridge 约束；不授权 PLACE 重试。 |
++| [V46](../../backend/nq-infra/src/main/resources/db/migration/V46__gate_y_attempt_level_terminal_lease_regeneration.sql) | attempt 层级 terminal lease regeneration 的唯一性、外键和触发器约束调整。 |
++| [V47](../../backend/nq-infra/src/main/resources/db/migration/V47__order_state_optimistic_concurrency.sql) | `orders.version` 持久化状态并发版本及非负约束，用于乐观并发控制。 |
++| [V48](../../backend/nq-infra/src/main/resources/db/migration/V48__reconciliation_scan_cursor.sql) | `reconciliation_scan_cursors` 按 venue 保存扫描进度，不保存订单、成交、账本或授权事实。 |
++
+ ## 本地数据库规则
+
+ - 本地 PostgreSQL 默认端口：`5432`。
+diff --git a/docs/current/GOVERNANCE_WORKFLOW.md b/docs/current/GOVERNANCE_WORKFLOW.md
+index d51f5462..62c3e7fe 100644
+--- a/docs/current/GOVERNANCE_WORKFLOW.md
++++ b/docs/current/GOVERNANCE_WORKFLOW.md
+@@ -36,14 +36,14 @@ NOT_STARTED
+
+ ## 3. 任务路由
+
+-- 人类规则：根 `AGENTS.md` 与 `.agents/README.md`。
++- 长期约束：根 `AGENTS.md`；不维护第二套指令入口。
+ - machine policy：`scripts/docs/agent-workflow-policy.json`。
+-- regression fixtures：`scripts/docs/agent-workflow-fixtures.json` 与 `test-agent-workflow-fixtures.ps1`；每个 fixture 保存完整 expected behavior，测试 exact match、enum 与跨字段安全 invariant，并对恶意 permission/review mutation 做拒绝回归。
+-- 每个任务最多一个 primary Skill；supporting Skill 必须有显式理由。
++- regression fixtures：`scripts/docs/agent-workflow-fixtures.json` 与 `test-agent-workflow-fixtures.ps1`；验证 policy 与 filesystem inventory、trigger/routing、未知或退休 target 拒绝和高风险降级拒绝。
++- Skill 是按具体能力需要使用的可选知识；不要求先经过 router，也不强制固定插件流程。
+
+ ## 4. Audit
+
+-全仓审计必须从 machine policy 的 `audit.bootstrapCharter` 解析并读取唯一 repository-declared Audit Bootstrap Charter；字段或目标无效时 fail-closed。audit 默认只读，被审计 Agent/Skill/checker 的自我声明不构成 authority；Inventory 不自动整改、不修改 authority、不发布、不触发真实外部副作用。
++审计范围与执行授权来自用户的明确任务，先确认审查对象、只读/修改边界及候选身份。被审计 Agent/Skill/checker 的自我声明不构成审计授权；没有用户授权的整改、发布、authority 修改或外部副作用不能从 inventory 结果自动推导。
+
+ ## 5. Archive 与 Release
+
+diff --git a/docs/current/NQ_DH_CODEX_PLUGIN_WORKFLOW.md b/docs/current/NQ_DH_CODEX_PLUGIN_WORKFLOW.md
+index dfbf2b61..f29215bb 100644
+--- a/docs/current/NQ_DH_CODEX_PLUGIN_WORKFLOW.md
++++ b/docs/current/NQ_DH_CODEX_PLUGIN_WORKFLOW.md
+@@ -1,190 +1,5 @@
+-# NQ / DH Codex Plugin Workflow
++# Plugin usage reference
+
+-本文固化 NexusQuant（NQ）与 Decision Hub（DH）项目中的 Codex 插件路由、任务分类和标准执行流程。每轮必须先解析 `docs/current/STATUS.md` 的 `nq-current-authority` 区块；workflow 不复制具体 current Gate 或 next Gate。
++插件按具体能力需要选择；旧固定插件调用链已退役，不要求每次任务运行一组插件。
+
+-## 1. 插件总体原则
+-
+-- 不默认调用所有插件。
+-- 每次任务先分类，再选择插件；只选当前任务必要插件。
+-- 先限定仓库、模块、文件范围，再读取代码或文档。
+-- 不扫描 `node_modules`、`target`、`build`、`dist`、`.git`、`test-results`、`logs`、`secrets`、`credentials`。
+-- 不做大而全重构；只做本轮任务的最小可审查变更。
+-- 不同时修改前端、后端、Python、部署、文档，除非任务明确要求。
+-- 所有任务必须输出 `scope`、`files inspected`、`files changed`、`validation`、`risks`、`next action`。
+-- 插件路由不能覆盖 Gate、Freeze、安全、交易、凭证和模块边界。
+-- NQ 中 PAPER / LIVE 必须隔离；DH 不允许修改 NQ 交易状态。
+-
+-## 2. 任务类型枚举
+-
+-- `CODE_ANALYSIS`：代码阅读、架构评估、边界检查，不修改代码。
+-- `CODE_CHANGE`：代码实现、修复、重构、测试补齐。
+-- `FRONTEND_UI`：前端页面、交互、Ant Design 组件、浏览器验证。
+-- `DATA_VISUALIZATION`：图表、指标看板、可视化数据结构。
+-- `SECURITY_AUDIT`：权限、凭证、交易边界、供应链、CI/CD、部署安全。
+-- `EXCHANGE_INTEGRATION`：交易所公共市场数据、字段对比、adapter 模型建议。
+-- `DOCUMENTATION`：文档、报告、规则、计划、复盘。
+-- `SPREADSHEET_MATRIX`：字段矩阵、对照表、验收矩阵。
+-- `DEPLOYMENT`：部署、预览、健康检查、回滚、环境文件审查。
+-- `CI_CD`：持续集成、流水线、检查失败定位。
+-- `PRODUCT_DESIGN`：产品信息架构、页面目标、设计方向、流程原型。
+-- `INVESTMENT_RESEARCH`：公开权益研究、投资备忘录、财务或市场分析。
+-- `PRESENTATION`：PPT、演示稿、汇报材料。
+-- `DOMAIN_WEBSITE`：域名、网站落地页、前端预览部署。
+-
+-## 3. 插件路由表
+-
+-| 任务类型 | 插件 |
+-| --- | --- |
+-| `CODE_ANALYSIS` | GitHub |
+-| `CODE_CHANGE` | GitHub；CodeRabbit when PR-style review is needed |
+-| `FRONTEND_UI` | GitHub；Figma；Product Design；Build Web Apps；Browser；Chrome |
+-| `DATA_VISUALIZATION` | GitHub；Build Web Data Visualization；Browser；Chrome；Spreadsheets |
+-| `SECURITY_AUDIT` | GitHub；Codex Security；CodeRabbit |
+-| `EXCHANGE_INTEGRATION` | Binance；GitHub；Documents；Spreadsheets |
+-| `DOCUMENTATION` | GitHub；Documents；Notion |
+-| `SPREADSHEET_MATRIX` | GitHub；Spreadsheets；Documents |
+-| `DEPLOYMENT` | GitHub；Vercel or Netlify for frontend preview only；Browser；Chrome；Codex Security when secrets, CI/CD, Docker, or server deployment are involved |
+-| `CI_CD` | GitHub；CircleCI only when explicitly requested；Codex Security |
+-| `PRODUCT_DESIGN` | Figma；Product Design；Canva only for visual materials |
+-| `INVESTMENT_RESEARCH` | Public Equity Investing；Documents；Spreadsheets |
+-| `PRESENTATION` | Presentations；Documents；Canva |
+-| `DOMAIN_WEBSITE` | Network Solutions；Vercel；Netlify；Documents |
+-
+-## 4. 插件优先级
+-
+-1. GitHub
+-2. Browser
+-3. Chrome
+-4. Codex Security
+-5. Figma
+-6. Product Design
+-7. Build Web Apps
+-8. Build Web Data Visualization
+-9. CodeRabbit
+-10. OpenAI Developers
+-11. Binance
+-12. Documents
+-13. Spreadsheets
+-14. Notion
+-15. Vercel
+-16. Netlify
+-17. Canva
+-18. Presentations
+-19. CircleCI
+-20. Public Equity Investing
+-21. Investment Banking
+-22. Network Solutions
+-
+-## 5. 标准执行流程
+-
+-### 5.1 代码任务
+-
+-```text
+-GitHub 读代码
+-→ 修改代码
+-→ 跑相关测试
+-→ CodeRabbit 审查
+-→ Codex Security 安全检查
+-→ 输出 diff 和验证结果
+-```
+-
+-约束：不修改无关模块；不新增未要求 API、migration、交易路径或 provider；涉及交易、风控、权限、安全时必须输出风险说明。
+-
+-### 5.2 前端任务
+-
+-```text
+-Product Design 定义页面目标
+-→ Figma 设计页面结构和组件层级
+-→ Build Web Apps 修改 React 页面
+-→ Browser/Chrome 验证页面
+-→ 输出页面变更和验证结果
+-```
+-
+-约束：NQ / DH 前端默认是专业金融科技后台；优先 Ant Design 企业后台模式；不得私自切换 UI 框架；不得隐藏失败、风控、LIVE、权限、审计和追踪状态。
+-
+-### 5.3 数据可视化任务
+-
+-```text
+-Spreadsheets 整理指标和字段
+-→ Build Web Data Visualization 设计图表
+-→ GitHub 修改前端代码
+-→ Browser/Chrome 验证
+-```
+-
+-约束：先定义指标口径、单位、精度、空值和异常值，再实现图表；不得把未验证数据写成通过。
+-
+-### 5.4 安全审计任务
+-
+-```text
+-GitHub 读取相关代码
+-→ Codex Security 检查风险
+-→ CodeRabbit 做 PR-style review
+-→ 输出 P0/P1/P2/P3 风险清单
+-```
+-
+-约束：优先检查凭证泄露、越权、交易隔离、LIVE 触达、HMAC/timestamp/nonce/replay、tenant binding、audit trail、CI/CD secrets、deployment exposure。
+-
+-### 5.5 交易所集成任务
+-
+-```text
+-Binance 查询/对比交易所字段和规则
+-→ GitHub 对照现有模型
+-→ Spreadsheets 输出字段矩阵
+-→ Documents 输出模型建议
+-```
+-
+-约束：只允许公共只读市场数据查询；禁止下单、撤单、真实账户读取、密钥处理或 LIVE 交易路径。
+-
+-### 5.6 文档任务
+-
+-```text
+-GitHub 读取代码和 docs
+-→ Documents 输出报告
+-→ Notion 沉淀任务和路线图
+-```
+-
+-约束：必须回到仓库事实源核对；未执行验证不能写成通过；阶段状态必须与 `docs/current/STATUS.md` 一致。
+-
+-### 5.7 部署任务
+-
+-```text
+-GitHub 读取部署文件
+-→ Codex Security 检查密钥和权限
+-→ Vercel/Netlify 做前端预览
+-→ Browser/Chrome 验证
+-→ Documents 输出部署说明
+-```
+-
+-约束：禁止提交真实密钥或生产 `.env`；涉及 server deployment、Docker、CI/CD、secrets 时必须输出影响面、回滚方式和健康检查命令。
+-
+-## 6. NQ 边界
+-
+-- 不允许开启 LIVE trading。
+-- 不允许新增真实下单、撤单路径，除非任务明确要求且当前阶段允许。
+-- 不允许泄露 credentials、API key、exchange secret、tenant data。
+-- PAPER 和 LIVE 必须隔离。
+-- DH 不允许修改 NQ 交易状态。
+-- 涉及交易、风控、权限、部署、安全的修改必须输出风险说明。
+-- `<CURRENT_GATE>`、`<NEXT_GATE>` 及 AI、DH、LIVE 等状态必须从 `STATUS.md` 动态读取；不得从本 workflow 的示例推导当前阶段。
+-
+-## 7. DH 边界
+-
+-- DH 不允许真实连接 NQ。
+-- DH 不允许下单、撤单、启动 Paper Run、访问凭证、修改 NQ 交易状态。
+-- Integration-0 只能准备只读边界和契约冻结。
+-- 不允许新增 real provider、RealClient、第三方 relay、生产交易路径。
+-- 重点检查 HMAC、timestamp、nonce、source allowlist、payload size、tenant binding、replay protection、provider trust policy、audit trail。
+-
+-## 8. 默认输出格式
+-
+-```text
+-Task classification:
+-Plugins selected:
+-Scope:
+-Files inspected:
+-Files changed:
+-Findings:
+-Validation:
+-Risks:
+-Next concrete action:
+-```
++长期约束见 [AGENTS.md](../../AGENTS.md)，当前阶段与安全状态见 [STATUS.md](STATUS.md)。Skill 是否有帮助由具体任务决定；canonical inventory 由 [policy](../../scripts/docs/agent-workflow-policy.json) 声明和现有 validator 校验，本文不复制清单或建立额外 authority。
+diff --git a/docs/current/NQ_DH_CODEX_TASK_TEMPLATES.md b/docs/current/NQ_DH_CODEX_TASK_TEMPLATES.md
+index 547fa464..880904c2 100644
+--- a/docs/current/NQ_DH_CODEX_TASK_TEMPLATES.md
++++ b/docs/current/NQ_DH_CODEX_TASK_TEMPLATES.md
+@@ -1,113 +1,5 @@
+-# NQ / DH Codex Task Templates
++# Task request reference
+
+-本文提供常用任务模板。执行时必须先按 `NQ-DH Workflow Router` 分类，再按 `docs/current/NQ_DH_CODEX_PLUGIN_WORKFLOW.md` 选择插件，不默认调用所有插件。
++描述目标、范围、约束和验收即可。旧 router/插件 recipe 模板已退役。
+
+-## 0. 文档语言规则
+-
+-使用本模板生成或更新 NQ/DH 文档时，必须遵守以下语言规则：
+-
+-- 文档正文必须中文为主；`README`、`STATUS`、`ROADMAP`、`TESTING`、`WORKLOG` 和 `docs/current` 说明文档不得整篇英文化。
+-- 允许保留英文任务名、状态枚举、类名、接口名、字段名、文件名、路径、命令、配置键、commit message 和协议原文。
+-- 英文状态值首次出现时必须附中文解释，例如 `PASS`（通过）、`PLAN ONLY`（仅规划）、`READY TO COMMIT`（可进入提交前复核）。
+-- 代码注释中的业务规则说明优先中文；协议字段、API contract、enum 可保留英文或中英双语。
+-- DB comment 使用中文业务语义；表名、字段名、索引名和约束名保持英文。
+-- 不翻译 `docs/archive/**` 与 `docs/gates/**` 历史文档；旧文档只在后续任务自然触碰时顺手修正。
+-- Agent 输出报告的栏目名可以保留英文，但每个栏目内容必须中文为主。
+-- 不得为了中文化改写英文枚举、API 字段、类名、接口名、文件名、release tag 或历史事实。
+-
+-## 1. 代码审查模板
+-
+-按 NQ-DH Workflow Router 执行。
+-
+-```text
+-任务类型：CODE_ANALYSIS + SECURITY_AUDIT
+-项目：NQ
+-范围：backend/nq-app、backend/nq-trading、backend/nq-risk
+-目标：审查交易下单边界、PAPER/LIVE 隔离、接口越权风险。
+-要求：使用 GitHub + Codex Security + CodeRabbit。
+-禁止：不要修改代码，不要扫描 frontend、docs、node_modules。
+-输出：P0/P1/P2/P3 风险清单、证据文件、修复建议。
+-```
+-
+-## 2. 前端页面优化模板
+-
+-按 NQ-DH Workflow Router 执行。
+-
+-```text
+-任务类型：FRONTEND_UI
+-项目：NQ
+-范围：frontend/src/pages/trading、frontend/src/components/trading
+-目标：优化 TradingWorkbenchPage，让它更像专业量化交易终端。
+-要求：使用 GitHub + Figma + Product Design + Build Web Apps + Browser + Chrome。
+-禁止：不要修改后端，不要改接口路径。
+-输出：页面结构、组件层级、交互说明、代码改动、浏览器验证结果。
+-```
+-
+-## 3. 回测图表模板
+-
+-按 NQ-DH Workflow Router 执行。
+-
+-```text
+-任务类型：DATA_VISUALIZATION
+-项目：NQ
+-范围：frontend/src/pages/backtests、frontend/src/components/charts
+-目标：完善回测详情页，增加权益曲线、回撤曲线、收益分布、交易列表。
+-要求：使用 GitHub + Build Web Data Visualization + Browser + Chrome。
+-输出：指标定义、图表设计、代码改动、验证结果。
+-```
+-
+-## 4. 交易所字段对比模板
+-
+-按 NQ-DH Workflow Router 执行。
+-
+-```text
+-任务类型：EXCHANGE_INTEGRATION + SPREADSHEET_MATRIX
+-项目：NQ
+-目标：整理 Binance、OKX、Bybit 的 spot kline、order、account、symbol 字段差异。
+-要求：使用 Binance + Spreadsheets + Documents。
+-禁止：不要下单，不要调用真实交易。
+-输出：字段矩阵、差异说明、NQ 统一模型建议。
+-```
+-
+-## 5. Gate 冻结报告模板
+-
+-按 NQ-DH Workflow Router 执行。
+-
+-```text
+-任务类型：DOCUMENTATION
+-项目：NQ
+-范围：由 scripts/docs/gate-archive-manifest.json 推导的 <CURRENT_GATE> archive roles，以及明确批准的 current authority 文件
+-目标：一次生成 <CURRENT_GATE> 完整 pre-tag archive，并保持 <NEXT_GATE> implementation 未启动。
+-要求：使用 GitHub + Documents + Notion。
+-前置：先解析 docs/current/STATUS.md；allowlist 覆盖全部 mandatory/conditional roles；运行三个 scripts/docs checker。
+-输出：完整 archive manifest、证据正文、边界、验证和 pre-tag handoff。不得把 tag pending 写成 tagged。
+-```
+-
+-普通 Gate freeze 允许一次形成完整 archive；`inventory -> review -> move` 只用于大规模历史迁移、多 Gate 混合迁移、current 物理瘦身、高风险删除或批量重定位。
+-
+-## 6. 一键部署审查模板
+-
+-按 NQ-DH Workflow Router 执行。
+-
+-```text
+-任务类型：DEPLOYMENT + SECURITY_AUDIT
+-项目：NQ
+-范围：docker、scripts、.github、backend、frontend
+-目标：审查当前一键部署能力，判断是否满足单机部署、前后端部署、数据库迁移、健康检查、回滚。
+-要求：使用 GitHub + Codex Security。
+-禁止：不要改生产配置，不要提交真实密钥。
+-输出：部署链路图、缺口清单、修复顺序、验证命令。
+-```
+-
+-## 7. DH Integration-0 模板
+-
+-按 NQ-DH Workflow Router 执行。
+-
+-```text
+-任务类型：CODE_ANALYSIS + SECURITY_AUDIT + DOCUMENTATION
+-项目：DH
+-目标：检查 DH 是否满足 Integration-0，只允许只读边界和契约冻结。
+-要求：使用 GitHub + Codex Security + Documents。
+-禁止：不要真实接入 NQ，不要新增 RealClient，不要新增真实 provider，不要触碰 LIVE trading。
+-输出：边界检查、违规风险、契约建议、下一步任务。
+-```
++长期约束见 [AGENTS.md](../../AGENTS.md)，当前阶段与安全状态见 [STATUS.md](STATUS.md)。Skill 是否有帮助由具体任务决定；canonical inventory 由 [policy](../../scripts/docs/agent-workflow-policy.json) 声明和现有 validator 校验，本文不复制清单或建立额外 authority。
+diff --git a/docs/current/NQ_DH_WORKFLOW_ROUTER_SKILL.md b/docs/current/NQ_DH_WORKFLOW_ROUTER_SKILL.md
+index 34adf2e0..a21677e1 100644
+--- a/docs/current/NQ_DH_WORKFLOW_ROUTER_SKILL.md
++++ b/docs/current/NQ_DH_WORKFLOW_ROUTER_SKILL.md
+@@ -1,131 +1,5 @@
+-# NQ-DH Workflow Router Skill
++# Retired workflow router reference
+
+-本文是 NQ-DH Workflow Router Skill 的源规格与维护规范。`nq-dh-workflow-router` 已作为当前项目 active skill 使用，用于让 NQ / DH 任务自动分类、自动选择相关插件、限定范围、约束验证和固定输出格式，并避免默认调用所有插件。
++旧 router 源规格已退役，不用于重建或加载 Skill。
+
+-后续如需重建、迁移或复制该 Skill，应以本文档为准；外部 Codex App 如需手动创建 Skill，也应从本文档复制规格并同步 `AGENTS.md` 中的 active skills 规则。
+-
+-## Skill 名称
+-
+-`NQ-DH Workflow Router`
+-
+-项目内 active skill 名称为：
+-
+-`nq-dh-workflow-router`
+-
+-## 触发条件
+-
+-当任务涉及 NexusQuant、NQ、Decision Hub、DH、量化交易平台、前端优化、架构评估、部署、安全审计、交易所接入、Gate/FREEZE 规划时，自动使用该 Skill。
+-
+-## 文档语言规则
+-
+-当任务类型为 `DOCUMENTATION`、`DOCS_GOVERNANCE`、`PLAN`、`REVIEW`、`FREEZE`、`STATUS_SYNC`、`TESTING_SYNC`、`WORKLOG_SYNC` 或需要更新 `README`、`STATUS`、`ROADMAP`、`TESTING`、`WORKLOG`、`docs/current` 说明文档、skill、模板、报告时，必须执行以下规则：
+-
+-- 文档正文必须中文为主，不得把 current docs、README、STATUS、ROADMAP、TESTING、WORKLOG 整篇写成英文模板。
+-- 英文任务名、状态枚举、类名、接口名、字段名、文件名、路径、命令、配置键、commit message 和协议原文可以保留英文。
+-- 英文状态值首次出现时必须附中文解释；例如 `PASS`（通过）、`FROZEN`（已冻结）、`ACCEPTED`（已接受）。
+-- 代码注释中的业务规则说明优先中文；协议字段、API contract、enum 可以保留英文或中英双语。
+-- DB comment 使用中文业务语义；表名、字段名、索引名和约束名保持英文。
+-- 不翻译 `docs/archive/**` 或 `docs/gates/**` 历史文档；旧文档只在后续任务自然触碰时顺手修正。
+-- Agent 输出报告的栏目名可以保留英文，但栏目内容必须中文为主。
+-
+-## Skill 执行步骤
+-
+-### Step 1：任务分类
+-
+-从以下类型中选择一个主类型。复合任务允许记录辅助类型，但主类型只能有一个：
+-
+-- `CODE_ANALYSIS`
+-- `CODE_CHANGE`
+-- `FRONTEND_UI`
+-- `DATA_VISUALIZATION`
+-- `SECURITY_AUDIT`
+-- `EXCHANGE_INTEGRATION`
+-- `DOCUMENTATION`
+-- `SPREADSHEET_MATRIX`
+-- `DEPLOYMENT`
+-- `CI_CD`
+-- `PRODUCT_DESIGN`
+-- `INVESTMENT_RESEARCH`
+-- `PRESENTATION`
+-- `DOMAIN_WEBSITE`
+-
+-### Step 2：选择插件
+-
+-严格按照 `docs/current/NQ_DH_CODEX_PLUGIN_WORKFLOW.md` 中的插件路由表选择插件。禁止调用无关插件，禁止因为插件可用就默认启用。
+-
+-### Step 3：限定范围
+-
+-每次执行前必须明确：
+-
+-- repository
+-- module
+-- target files
+-- excluded files
+-- expected output
+-
+-执行任何 Gate/freeze/current-state 任务前，必须先解析 `docs/current/STATUS.md` 的 `nq-current-authority` 区块。当前/下一 Gate 不得硬编码在 router、skills、模板或 `AGENTS.md` 中。
+-
+-Gate freeze 还必须从 `scripts/docs/gate-archive-manifest.json` 推导 mandatory/conditional roles：allowlist 不足时输出 `BLOCKED / ARCHIVE_ALLOWLIST_INCOMPLETE`；archive role/thin body 不完整时输出 `BLOCKED / ARCHIVE_MANIFEST_INCOMPLETE`；current 文档冲突时输出 `BLOCKED / CURRENT_AUTHORITY_CONFLICT`。
+-
+-默认排除：
+-
+-- `node_modules`
+-- `target`
+-- `build`
+-- `dist`
+-- `.git`
+-- `test-results`
+-- `logs`
+-- `secrets`
+-- `credentials`
+-
+-### Step 4：执行
+-
+-- 只使用当前任务相关插件。
+-- 不扫描全仓库，除非任务明确要求全仓库审查。
+-- 不修改无关模块。
+-- 不修改 LIVE trading、credentials、production env、真实交易路径。
+-- NQ 中不得把 `<NEXT_GATE>` planning 写成 implementation started；名称和状态每轮从 `STATUS.md` 读取。
+-- DH 中不得真实接入 NQ、真实 provider、RealClient 或第三方 relay。
+-
+-### Step 5：验证
+-
+-根据任务类型运行对应验证：
+-
+-- Backend：`mvn -f backend/pom.xml test` 或指定模块测试。
+-- Frontend：`Set-Location frontend; npm run build; npm run test:e2e`，页面任务加 Browser/Chrome 验证。
+-- Python：`Set-Location research/py; python -m pytest -q; python -m mypy src; python -m ruff check .`。
+-- Docs：检查链接、路径、阶段状态是否一致，确认未执行验证没有写成通过。
+-- Freeze/tag docs：运行 `scripts/docs/check-current-authority.ps1`、`check-gate-archive.ps1` 和 `check-doc-links.ps1`。
+-- Deployment：检查 docker、env example、health check、migration、rollback。
+-
+-### Step 6：输出
+-
+-必须固定输出：
+-
+-1. Task classification
+-2. Plugins selected
+-3. Scope
+-4. Files inspected
+-5. Files changed
+-6. Findings
+-7. Validation
+-8. Risks
+-9. Next concrete action
+-
+-## NQ 特殊约束
+-
+-- 不允许开启 LIVE trading。
+-- 不允许新增真实下单、撤单路径，除非任务明确要求且当前阶段允许。
+-- 不允许泄露 credentials、API key、exchange secret、tenant data。
+-- PAPER 和 LIVE 必须隔离。
+-- DH 不允许修改 NQ 交易状态。
+-- 涉及交易、风控、权限、部署、安全的修改必须输出风险说明。
+-
+-## DH 特殊约束
+-
+-- DH 不允许真实连接 NQ。
+-- DH 不允许下单、撤单、启动 Paper Run、访问凭证、修改 NQ 交易状态。
+-- Integration-0 只能准备只读边界和契约冻结。
+-- 不允许新增 real provider、RealClient、第三方 relay、生产交易路径。
+-- 安全审查必须覆盖 HMAC、timestamp、nonce、source allowlist、payload size、tenant binding、replay protection、provider trust policy、audit trail。
++长期约束见 [AGENTS.md](../../AGENTS.md)，当前阶段与安全状态见 [STATUS.md](STATUS.md)。Skill 是否有帮助由具体任务决定；canonical inventory 由 [policy](../../scripts/docs/agent-workflow-policy.json) 声明和现有 validator 校验，本文不复制清单或建立额外 authority。
+diff --git a/docs/current/README.md b/docs/current/README.md
+index 5cdb5846..d5775559 100644
+--- a/docs/current/README.md
++++ b/docs/current/README.md
+@@ -10,8 +10,8 @@
+ - GateY freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`；exact-head CI run=`33037514013 / completed / success / 11 jobs`。
+ - Phase 3 findings=`P0 0 / P1 4 / P2 8 / P3 1`；F-001=`95b859ee... / 33347091147`、F-002=`0651a736... / 33387882472`、F-003=`327c2229... / 33399190770`、F-004=`18efc06c... / 33358364678`，均为 `ACCEPTED / CI_GREEN`。
+ - Phase4 remaining disposition closeout=`COMPLETE / ACCEPTED / CI_GREEN`，immutable pair=`7ca1fc92... / 33405549149`，blocking P0/P1=`0/0`。
+-- Phase5A/Phase5B及P5-F008/P5-F007/P5-F009已接受；F001远端enforcement已接受，Phase5 ACCEPTED/CLOSED，F005 attestation保持DEFERRED/NON_BLOCKING，Phase6 IN_PROGRESS/NOT_FROZEN，L4 plan ACCEPTED/CI_GREEN，C1 ACCEPTED/CI_GREEN/CLOSED，canonical P1=1 OPEN（仅P1-3）。技术接受pair以[STATUS.md](STATUS.md)为准。
+-- 当前work batch与唯一下一允许动作从[STATUS.md](STATUS.md)读取，由[ROADMAP.md](ROADMAP.md)解释；下一动作是`NQ-GATEAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C2-IMPLEMENTATION`，仅处理P1-3；C1已接受，C2 NOT_STARTED，B0待独立正确性review，L4 qualification未开始。
++- Phase5A/Phase5B及P5-F008/P5-F007/P5-F009已接受；F001远端enforcement已接受，Phase5 ACCEPTED/CLOSED，F005 attestation保持DEFERRED/NON_BLOCKING，Phase6 IN_PROGRESS/NOT_FROZEN。L4 plan、C1、C2已接受；C2固定pair与安全边界以[STATUS.md](STATUS.md)为准。
++- 当前 work batch 为 pre-B0 CI safety/current authority remediation，`IMPLEMENTED / PENDING_INDEPENDENT_REVIEW`。下一动作由[STATUS.md](STATUS.md)唯一机器区块决定，[ROADMAP.md](ROADMAP.md)解释；尚未启动 B0 或 L4 qualification。
+ - Pilot final：PLACE=1、retry=0、CANCEL=0、activeLease=0、LIVE=false、kill=`ENGAGED`、Attempt-02 未创建。
+ - Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
+ <!-- nq-current-summary:end -->
+diff --git a/docs/current/ROADMAP.md b/docs/current/ROADMAP.md
+index a90a73a8..923830aa 100644
+--- a/docs/current/ROADMAP.md
++++ b/docs/current/ROADMAP.md
+@@ -45,9 +45,11 @@ d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665
+   ↓
+ C1(P1-2) ACCEPTED / CI_GREEN / CLOSED
+   ↓
+-C2(P1-3) NOT_STARTED
++C2(P1-3) ACCEPTED / CI_GREEN / CLOSED
+   ↓
+-Independent Correctness Review NOT_STARTED
++Pre-B0 CI safety/current authority remediation IMPLEMENTED / PENDING_INDEPENDENT_REVIEW
++  ↓
++Targeted independent review → exact delivery / exact-head CI
+   ↓
+ B0 Harness Foundation NOT_STARTED
+   ↓
+@@ -68,7 +70,7 @@ L4 Qualification NOT_STARTED
+
+ | Capability | Current State | Required Baseline | Disposition | Reason | Owner | Trigger | Phase |
+ | --- | --- | --- | --- | --- | --- | --- | --- |
+-| F-013 current authority/current-doc consistency | canonical owners曾有10条stale claim | drift/stale/history-authority=`0/0/0` | `IMPLEMENT_NOW` | current authority correctness | `nq-docs-writer` / governance contract | Phase4 closeout | Phase4 |
++| F-013 current authority/current-doc consistency | canonical owners曾有10条stale claim | drift/stale/history-authority=`0/0/0` | `IMPLEMENT_NOW` | current authority correctness | current docs owner / governance contract | Phase4 closeout | Phase4 |
+ | Phase4 proof foundation | F-001～F-004 accepted | four immutable pairs green | `NOT_REQUIRED` | 不重复实现或Review accepted proof | GateAUDIT | accepted pair失效时才重开 | Phase4 |
+ | Legacy Phase3 identifier F-005 | title/source/owner/consumer均不可恢复 | 不产生任何新语义或implementation mapping | `LEGACY_FINDING_IDENTITY_UNRECOVERABLE / RETIRED` | 保留历史ledger记录，但禁止Phase5继承或猜测未知语义 | Historical evidence only | 仅在找到可验证canonical source时重新审计identity | Retired |
+ | Legacy Phase3 identifier F-011 | title/source/owner/consumer均不可恢复 | 不产生任何新语义或implementation mapping | `LEGACY_FINDING_IDENTITY_UNRECOVERABLE / RETIRED` | 保留历史ledger记录，但禁止Phase5继承或猜测未知语义 | Historical evidence only | 仅在找到可验证canonical source时重新审计identity | Retired |
+@@ -121,23 +123,23 @@ L4 Qualification NOT_STARTED
+ - multi-instance/lease/duplicate worker；
+ - L5/L6 scale、chaos与长期qualification。
+
+-Phase5 closure与deployment/observability accepted prerequisites保持；Phase6=`IN_PROGRESS / NOT_FROZEN`。L4 plan/reproduction delivery以`d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665`正式`ACCEPTED / CI_GREEN`；L4 qualification仍`PROVE_FIRST / NOT_STARTED`，不等于L4/Phase6 accepted。C1已ACCEPTED / CI_GREEN，P1-2已关闭；当前仅P1-3一个canonical blocking P1，unknown=0。完整inventory为27 scenarios、17 crash points、12 MUST_PROVE；13行当前适用，14行future-triggered/currently non-canonical，所有qualification行仍NOT_RUN，不将未来行计PASS、SKIPPED或永久NOT_REQUIRED。
++Phase5 closure与deployment/observability accepted prerequisites保持；Phase6=`IN_PROGRESS / NOT_FROZEN`。L4 plan/reproduction delivery以`d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665`正式`ACCEPTED / CI_GREEN`；L4 qualification仍`PROVE_FIRST / NOT_STARTED`，不等于L4/Phase6 accepted。C1与C2已ACCEPTED / CI_GREEN / CLOSED，P1-2与P1-3已关闭；当前进行pre-B0 CI safety/current authority remediation，不重开已接受正确性实现。完整inventory为27 scenarios、17 crash points、12 MUST_PROVE；13行当前适用，14行future-triggered/currently non-canonical，所有qualification行仍NOT_RUN，不将未来行计PASS、SKIPPED或永久NOT_REQUIRED。
+
+ | Observation | Current disposition | Current blocker / owner | Boundary |
+ | --- | --- | --- | --- |
+ | P1-2 stale PLACE/CANCEL ACK | REMEDIATED / REVIEWED / CI_GREEN / CLOSED | CLOSED / C1 | durable generation与atomic status/version CAS拒绝旧ACK与ABA，保留较新terminal；关闭绑定implementation、独立review及exact-head CI |
+-| P1-3 CANCELLED reconciliation | CANONICAL_REACHABLE_CONFIRMED_DEFECT | P1 OPEN / C2 | C2是唯一当前正确性目标：CANCELLED/fill冲突的bounded、idempotent、canonical fill→Trade→Ledger convergence |
++| P1-3 CANCELLED reconciliation | ACCEPTED / CI_GREEN / CLOSED | CLOSED / C2 | immutable pair=`612c2f5887a2e6b3a8b3138d9ae9b193c20e298f / 34183851797`；不重开实现或 PostgreSQL 验证 |
+ | P1-1 typed terminal mapping | RETIRED_COMPATIBILITY_ONLY | NON_BLOCKING_FOR_CURRENT_CANONICAL_RUNTIME | 历史缺陷观察保留，未宣称修复或false positive |
+ | PB1 retained pilot recovery | RETIRED_COMPATIBILITY_ONLY | NON_BLOCKING_FOR_CURRENT_CANONICAL_RUNTIME | 不把普通kill恢复positive control误作PB1缺陷复现 |
+ | PB2 sender dispatch | DORMANT_NO_CURRENT_ENTRYPOINT | NON_BLOCKING_FOR_CURRENT_CANONICAL_RUNTIME | 当前无sender入口，历史观察保留 |
+
+ Future trigger：对应retired/dormant路径再次成为canonical时，重新运行R1–R4 reachability，不能自动恢复blocking finding或新增compatibility caller。历史失败pair=`378de657ac33b9f9fd666288d489181ac0147b2e / 34038345304`保持FAILED DELIVERY；接受的是后续remediation pair，详见[authority acceptance evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_PLAN_POST_CI_AUTHORITY_TRANSITION_TO_C1.md)。
+
+-当前依赖为 **C1(P1-2) → C2(P1-3) → Independent Correctness Review → B0 Harness Foundation → L4 Qualification**。C3不是当前blocking节点。C1=`ACCEPTED / CI_GREEN / CLOSED`；C2=`NOT_STARTED`；Independent Correctness Review=`NOT_STARTED`；B0=`NOT_STARTED / DEPENDS_ON_CORRECTNESS_REVIEW`；L4 qualification=`NOT_STARTED`，L5/L6继续等待L4 accepted。先后依赖不构成本轮实现授权。
++当前依赖为 **C1/C2（已接受关闭）→ pre-B0 CI safety/current authority remediation → targeted Independent Review → exact delivery / exact-head CI → B0 Harness Foundation → L4 Qualification**。本轮候选状态为 `IMPLEMENTED / PENDING_INDEPENDENT_REVIEW`；B0与L4 qualification仍NOT_STARTED，L5/L6继续等待L4 accepted。
+
+-C1接受身份：implementation=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd`；既有独立review=`PASS / PHASE6_L4_C1_VERSIONED_OCC_INDEPENDENT_REVIEW_ACCEPTED / P0_0 / P1_0 / READY_FOR_C1_DELIVERY`；acceptance head=`eb9740b7519f48ffc1e32968cbb0950261b871ef`、CI=`34098902705 / 9/9 SUCCESS`。首次delivery=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd / 34086018265 = FAILED DELIVERY`另行保留；完整证据见[C1 authority acceptance](../audit/evidence/GATEAUDIT_PHASE6_L4_C1_POST_CI_AUTHORITY_TRANSITION_TO_C2.md)。本轮authority commit不替代技术身份，不追加C1 review。C2只处理local CANCELLED与venue fill冲突；eligible-state positive control已收敛，C2将缺陷断言转为bounded idempotent fill/Trade/Ledger不变量，随后执行current correctness cluster独立review。
++C1接受身份：implementation=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd`；既有独立review=`PASS / PHASE6_L4_C1_VERSIONED_OCC_INDEPENDENT_REVIEW_ACCEPTED / P0_0 / P1_0 / READY_FOR_C1_DELIVERY`；acceptance head=`eb9740b7519f48ffc1e32968cbb0950261b871ef`、CI=`34098902705 / 9/9 SUCCESS`。首次delivery=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd / 34086018265 = FAILED DELIVERY`另行保留；完整证据见[C1 authority acceptance](../audit/evidence/GATEAUDIT_PHASE6_L4_C1_POST_CI_AUTHORITY_TRANSITION_TO_C2.md)。C1历史接受身份不由后续文档同步替代。C2已由`612c2f5887a2e6b3a8b3138d9ae9b193c20e298f / 34183851797`接受关闭，本轮不重复其实现或正确性审查。
+
+-交付历史68/68=3个known-defect reproduction PASS + 1个kill-engaged normal regression PASS + 64个既有回归PASS。该历史PASS只证明当时两个P1成功复现和既有行为保留，不是L4 qualification acceptance；当前P1-2已转为permanent correctness regressions，P1-3仍为KNOWN_DEFECT_REPRODUCTION；本轮不重跑这些测试，也不追加review。
++交付历史68/68=3个known-defect reproduction PASS + 1个kill-engaged normal regression PASS + 64个既有回归PASS。该历史PASS只证明当时两个P1成功复现和既有行为保留，不是L4 qualification acceptance；当前C1/C2已分别接受，旧P1-3 reproduction描述仅属于历史交付，不作为当前开放缺陷；本轮不重跑这些测试。
+
+ ## 下一允许动作
+
+@@ -146,14 +148,28 @@ C1接受身份：implementation=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd`；既
+ - F007 immutable technical acceptance pair=`0e2efdeb236c185dbace67bb22f94c6af64a563a / 34009290836`；implementation与accepted technical head相同，不由本轮docs-only authority commit替代。
+ - F009 immutable technical acceptance pair=`dbb8b9c6a2319338f5ca90b566ad494142a55e20 / 34024427455`；首次delivery=`85d11984d0c65b464ffe4858fe7fd1da51885f12`、failed CI=`34024011663`保留，不由后续authority commit替代。
+ - F001 remote acceptance绑定ruleset `22381941 / refs/heads/dev / ACTIVE / effective 9/9`；本次只读readback与authority synchronization commit是独立事件，不能写成新的remote mutation。
+-- 当前workstream=`GateAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C2`，status=`NOT_STARTED / NONE / NOT_RUN`；machine next action=`NQ-GATEAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C2-IMPLEMENTATION`，matcher唯一类型=`IMPLEMENTATION`。C2仅拥有P1-3；authority同步与C2实现之间不插入新C1 review，C2之后的Independent Correctness Review仍为当前DAG必需节点。
++- 当前 workstream=`GATEAUDIT-PHASE6-PRE-B0-CI-SAFETY-AND-CURRENT-AUTHORITY-REMEDIATION`，status=`IMPLEMENTED|PENDING_REVIEW / NONE / NOT_RUN`；machine next action=`NQ-GATEAUDIT-PHASE6-PRE-B0-SAFETY-INDEPENDENT-REVIEW`，唯一类型=`REVIEW`，映射完整任务名 `NQ-GATEAUDIT-PHASE6-PRE-B0-CI-SAFETY-REMEDIATION-INDEPENDENT-REVIEW`。这一个审查验证 F1/F2 guard 未削弱、F7/F8/F9 未恢复旧 instruction authority，并按用户追加范围核对[九领域 engineering discipline ownership 与原12 Skills规则映射](evidence/instruction-system/NQ-CODEX-ENGINEERING-DISCIPLINE-COMPLETENESS.attempt-01.md)。追加整改已实现，仍待同一次独立审查；四Skill identity/routing与Global/NQ根保持精简。当前不 stage/commit/push；审查 P0/P1=0 后才按用户指令进入 delivery/exact-head CI。
+ - Phase5 ACCEPTED/CLOSED，remaining blocking=0；F005仍DEFERRED/NON_BLOCKING，平台attestation须未来显式授权。详见[F001 post-remote acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_POST_REMOTE_AUTHORITY_ACCEPTANCE.md)。
+
++
++## Pre-B0 residual P2
++
++以下均为 `OPEN / P2 / NON_BLOCKING_FOR_B0`，本任务未修改：
++
++| Finding | 保留的触发条件 |
++| --- | --- |
++| F3 restore proof identity | POST_RESTORE_VALIDATION 输入错误 commit/proof schema/schema target 或相等的空 canary 时仍可能接受。 |
++| F4 SBOM array shape | 规范化遇到单元素数组或空嵌套数组时可能输出对象/null。 |
++| F5 Java shadow committed-change classification | 新增违规提交后，干净 checkout 的 git status 不再将其标记为 NEW_CODE_FINDING。 |
++| F6 manual seed SQL scope | 在含非 fixture admin 账号的数据库手工运行 seed，其默认账号 UPDATE 范围过宽；静态风险，未执行。 |
++
++F1/F2 已完成实现与本地回归，仍待真正独立审查和交付；本轮不宣称整个 GateAUDIT 已结束。
++
+ ## Persistent boundary
+
+ - `LIVE=DISABLED`、kill switch=`ENGAGED`；禁止再次pilot、PLACE、CANCEL、transfer、withdraw或credential/生产服务器/生产数据库访问。
+ - GateY frozen archive与published tags不可改写。
+-- P5-F001/P5-F007/P5-F008/P5-F009均为`ACCEPTED / CLOSED`；Phase5已关闭，Phase6 IN_PROGRESS/NOT_FROZEN，L4 plan及C1已接受、C2与L4 qualification未开始。remote enforcement为APPLIED/VERIFIED/ACCEPTED，platform attestation保持DEFERRED/NON_BLOCKING。
++- P5-F001/P5-F007/P5-F008/P5-F009均为`ACCEPTED / CLOSED`；Phase5已关闭，Phase6 IN_PROGRESS/NOT_FROZEN，L4 plan、C1与C2已接受关闭；当前pre-B0 remediation待独立审查，B0与L4 qualification未开始。remote enforcement为APPLIED/VERIFIED/ACCEPTED，platform attestation保持DEFERRED/NON_BLOCKING。
+
+ ## F009 accepted delivery lineage
+
+diff --git a/docs/current/RUNBOOK.md b/docs/current/RUNBOOK.md
+index 0e4579a9..78c52113 100644
+--- a/docs/current/RUNBOOK.md
++++ b/docs/current/RUNBOOK.md
+@@ -72,7 +72,7 @@ git diff --check
+ git diff --stat
+ ```
+
+-本阶段不运行真实交易所 HTTP / WebSocket，不读取 credential material，不启动 LIVE，不接 AI / DH runtime。F008与F007保持`ACCEPTED / CLOSED`；P5-F009为`ACCEPTED / CLOSED`，F005 platform attestation沿用DEFERRED / NON_BLOCKING disposition，Phase6 IN_PROGRESS / NOT_FROZEN，L4 plan以`d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665`接受；下一动作为`NQ-GATEAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C2-IMPLEMENTATION`。C1 ACCEPTED / CI_GREEN / CLOSED，P1-2已关闭；C2 NOT_STARTED且仅处理P1-3，canonical P1=1 OPEN；L4 qualification未开始。当前repository schema=V47，accepted head的current-schema restore已通过；历史Phase5B pair仍记录V46。仅docs/索引变化时不机械运行完整Maven。
++本阶段不运行真实交易所 HTTP / WebSocket，不读取 credential material，不启动 LIVE，不接 AI / DH runtime。F008/F007/F009 与 C1 保持已接受；C2=`ACCEPTED / CLOSED`，固定 pair=`612c2f5887a2e6b3a8b3138d9ae9b193c20e298f / 34183851797`。当前执行 pre-B0 CI safety/current authority remediation，`IMPLEMENTED / PENDING_INDEPENDENT_REVIEW`；下一动作与任务映射见[STATUS.md](STATUS.md)和[ROADMAP.md](ROADMAP.md)。当前 repository schema=`V48`；历史 Phase5B V46、C1 V47 的接受事实仍按原证据保留，不推断生产 schema。本轮不重跑 C2/PostgreSQL、Full Maven 或 Playwright。B0和L4 qualification未开始。
+
+ ## 9. Canonical production configuration
+
+diff --git a/docs/current/STATUS.md b/docs/current/STATUS.md
+index 7bf62150..611271ad 100644
+--- a/docs/current/STATUS.md
++++ b/docs/current/STATUS.md
+@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatey-freeze
+ last_frozen_gate_commit=72fbf5e78f217a02b572a54fadb17dea204b594f
+ active_gate=GateAUDIT
+ active_gate_status=IN_PROGRESS|NOT_FROZEN
+-accepted_batch=GateAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C1
++accepted_batch=GateAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C2
+ accepted_batch_status=ACCEPTED|CI_GREEN
+-accepted_batch_implementation_commit=41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd
+-accepted_batch_acceptance_head=eb9740b7519f48ffc1e32968cbb0950261b871ef
+-accepted_batch_ci_run=34098902705
+-work_batch=GateAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C2
+-work_batch_status=NOT_STARTED
++accepted_batch_implementation_commit=612c2f5887a2e6b3a8b3138d9ae9b193c20e298f
++accepted_batch_acceptance_head=612c2f5887a2e6b3a8b3138d9ae9b193c20e298f
++accepted_batch_ci_run=34183851797
++work_batch=GATEAUDIT-PHASE6-PRE-B0-CI-SAFETY-AND-CURRENT-AUTHORITY-REMEDIATION
++work_batch_status=IMPLEMENTED|PENDING_REVIEW
+ work_batch_commit=NONE
+ work_batch_ci_run=NOT_RUN
+-next_action=NQ-GATEAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C2-IMPLEMENTATION
++next_action=NQ-GATEAUDIT-PHASE6-PRE-B0-SAFETY-INDEPENDENT-REVIEW
+ production_soak=COMPLETED
+ kill_switch=ENGAGED
+ live=DISABLED
+@@ -54,7 +54,7 @@ nq-current-authority:end -->
+ - GateAUDIT Phase5 F009：`ACCEPTED / CLOSED`（已接受 / 已关闭），local review=`CLOSED / PASS / P0_0 / P1_0`，P1-1/P1-2/P1-3均CLOSED。首次delivery=`85d11984d0c65b464ffe4858fe7fd1da51885f12`、failed CI=`34024011663`保留为失败历史；remediation/accepted technical head=`dbb8b9c6a2319338f5ca90b566ad494142a55e20`、CI=`34024427455 / completed / success / 9 of 9 / failed 0 / skipped 0 / cancelled 0`。本次authority同步不替换technical pair；详见[F009 post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F009_POST_CI_AUTHORITY_ACCEPTANCE.md)。
+ - GateAUDIT Phase5 F001：`ACCEPTED / CLOSED`（已接受 / 已关闭）；remote enforcement事件为ruleset `22381941`创建，目标=`refs/heads/dev`，required checks=9；本轮只读重新验证ACTIVE、effective=YES、missing/unexpected/duplicate=0/0/0、GitHub Actions app=15368，P0=0、P1=0。正式authority acceptance与此前remote mutation分层，详见[F001 post-remote acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_POST_REMOTE_AUTHORITY_ACCEPTANCE.md)。
+ - Phase5=`ACCEPTED / CLOSED`：total=9，accepted/closed=8（F001/F002/F003/F004/F006/F007/F008/F009），open/unclosed=1（仅F005 deferred/non-blocking），blocked=0、remaining blocking=0；非延期open=0。F005 internal SBOM/provenance已接受，platform attestation继续`DEFERRED / NON_BLOCKING / DEFERRED_UNTIL_EXPLICIT_AUTHORIZATION`，不伪装成CLOSED。既有ROADMAP闭合条件已满足，machine lifecycle无必须关闭全部deferred项的额外条件。
+-- Phase6=`IN_PROGRESS / NOT_FROZEN`（进行中 / 未冻结）；L4 plan/reproduction delivery=`ACCEPTED / CI_GREEN`，固定pair=`d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665`。C1=`ACCEPTED / CI_GREEN / CLOSED`：implementation=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd`，独立review=`PASS / P0_0 / P1_0`，acceptance head=`eb9740b7519f48ffc1e32968cbb0950261b871ef`，exact-head CI=`34098902705 / 9/9 SUCCESS / failed 0 / skipped 0 / cancelled 0`。P1-2正式关闭，canonical blocking P1=1 OPEN（仅P1-3）、reachability unknown=0；C2=`NOT_STARTED`，独立正确性review、B0及L4 qualification均未开始，L5/L6继续等待L4 accepted。详见[C1 post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_C1_POST_CI_AUTHORITY_TRANSITION_TO_C2.md)。
++- Phase6=`IN_PROGRESS / NOT_FROZEN`；L4 plan 固定接受 pair=`d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665`，C1 保持 `ACCEPTED / CI_GREEN / CLOSED`。C2=`ACCEPTED / CI_GREEN / CLOSED`，implementation/acceptance head=`612c2f5887a2e6b3a8b3138d9ae9b193c20e298f`，CI=`34183851797`；P1-3 已关闭，本轮不重开 C2。当前 work batch 为 pre-B0 的 F1/F2 guard 整改、F7/F8/F9 文档收口与 engineering discipline completeness 追加整改，状态 `IMPLEMENTED / PENDING_INDEPENDENT_REVIEW`，尚未完成独立审查或 exact-head delivery。B0、L4 qualification 未开始，L5/L6 等待 L4 accepted。
+
+ ## 2. Accepted pilot facts
+
+@@ -83,14 +83,14 @@ updated_commit=72fbf5e78f217a02b572a54fadb17dea204b594f
+
+ ## 5. 下一允许动作
+
+-- Machine action=`NQ-GATEAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C2-IMPLEMENTATION`；work batch=`GateAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C2 / NOT_STARTED / NONE / NOT_RUN`，matcher唯一类型=`IMPLEMENTATION`。
+-- P1-2=`REMEDIATED / REVIEWED / CI_GREEN / CLOSED`：durable version generation与atomic status/version CAS拒绝stale PLACE/CANCEL ACK，保留较新FILLED，拒绝ABA与pre-cancel stale preparation；externalOrderId单调性保持。关闭依据为implementation、既有独立review和accepted exact-head CI，P1-2测试现为permanent correctness regressions。
+-- C2仅处理P1-3：local Order=CANCELLED而venue存在fill时，当前reconciliation扫描未修复该订单，Trade/Ledger不收敛；eligible-state positive control已证明普通路径可收敛。目标为bounded、idempotent、canonical fill→Trade→Ledger convergence；P1-3仍为KNOWN_DEFECT_REPRODUCTION。本轮未开始C2实现。
+-- 当前DAG为C1（已接受）→C2→Independent Correctness Review→B0 Harness Foundation→L4 Qualification。C1既有独立review保持有效，不追加C1 review；C2之后的current correctness cluster review仍NOT_STARTED。C3仅为historical/future-trigger，不是当前依赖。
+-- P1-1/PB1=`RETIRED_COMPATIBILITY_ONLY`，PB2=`DORMANT_NO_CURRENT_ENTRYPOINT`；保留历史缺陷观察，不写FIXED/CLOSED AS CORRECT/FALSE_POSITIVE。对应路径再次canonical时重新运行R1–R4。
+-- 27 scenario inventory rows中13当前适用、14 future-triggered；17 crash points、12 MUST_PROVE inventory points。全部qualification状态仍NOT_RUN，非当前行不计PASS/SKIPPED/永久NOT_REQUIRED。68/68是plan交付时的历史分类（3缺陷复现、1正常回归、64既有回归），不作为当前P1-2测试分类或L4资格证据。
+-- `accepted_batch*`绑定C1 implementation、acceptance head与CI；本轮docs-only authority commit不替代这些身份。C1首次delivery=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd / 34086018265 = FAILED DELIVERY`；历史Docker根因=`UNCLASSIFIABLE_WITH_RETAINED_EVIDENCE`，不改写为TRANSIENT_CONFIRMED。
+-- 当前repository schema=V47；accepted head的PostgreSQL/Flyway与current-schema backup/restore均SUCCESS，新诊断surface=PRESENT。Phase5B固定历史pair的V46事实保留。本轮无新技术qualification；F005仍非阻断延期，全部安全字段不变。
++- 当前任务：`NQ-GATEAUDIT-PHASE6-PRE-B0-CI-SAFETY-AND-CURRENT-AUTHORITY-REMEDIATION`；work batch=`IMPLEMENTED|PENDING_REVIEW / NONE / NOT_RUN`。范围包括既有 F1/F2 实现、F7/F8/F9 收口与用户追加的九领域 engineering discipline 归属补齐，不修改 C2 或业务代码。
++- Machine action=`NQ-GATEAUDIT-PHASE6-PRE-B0-SAFETY-INDEPENDENT-REVIEW`，合同唯一 matcher=`REVIEW`，对应完整任务名 `NQ-GATEAUDIT-PHASE6-PRE-B0-CI-SAFETY-REMEDIATION-INDEPENDENT-REVIEW`。完整标题含 CI/REMEDIATION，故机器动作使用无歧义别名；不修改 matcher 或治理合同。
++- C2 immutable acceptance pair=`612c2f5887a2e6b3a8b3138d9ae9b193c20e298f / 34183851797`，`accepted_batch*` 绑定该 pair。本轮同步用户已给定的接受事实，不把本轮本地测试冒充 C2 CI，不生成新的 C2 acceptance。
++- C1(P1-2) 与 C2(P1-3) 均已接受关闭；历史 C1 首次失败 delivery=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd / 34086018265` 及后续接受 pair=`eb9740b7519f48ffc1e32968cbb0950261b871ef / 34098902705` 保留，不重写历史根因。
++- 当前依赖：pre-B0 remediation → 同一次 F1/F2 guard、current docs 与 engineering discipline completeness 独立审查 → 精确 delivery/exact-head CI → B0 Harness Foundation → L4 Qualification。当前无 stage/commit/push 授权；B0 与 qualification 不在本轮执行。
++- F3 restore proof identity、F4 SBOM array shape、F5 Java shadow committed-change classification、F6 manual seed SQL scope 均为 `OPEN / P2 / NON_BLOCKING_FOR_B0`，触发条件见[本轮 evidence](../audit/evidence/GATEAUDIT_PHASE6_PRE_B0_CI_SAFETY_CURRENT_AUTHORITY_REMEDIATION.md)。不据此宣称 GateAUDIT 已结束。
++- 当前 repository schema=`V48`，以 tracked Flyway inventory 为准；历史 V42/V47 验收和 Phase5B V46 pair 保持原样，不推断生产 schema。本轮不运行 PostgreSQL/Flyway 或 C2 回归。
++- P1-1/PB1=`RETIRED_COMPATIBILITY_ONLY`，PB2=`DORMANT_NO_CURRENT_ENTRYPOINT`；保留历史观察，对应路径再次 canonical 时才重新运行 R1–R4。27 scenarios 中 13 当前适用、14 future-triggered；L4 qualification 仍 NOT_RUN，不把历史 68/68 reproduction 当成 qualification acceptance。
+
+ ## 6. F009 acceptance provenance
+
+@@ -99,3 +99,5 @@ updated_commit=72fbf5e78f217a02b572a54fadb17dea204b594f
+ - 固定technical acceptance pair=`dbb8b9c6a2319338f5ca90b566ad494142a55e20 / 34024427455`；后续governance-only authority commit与此pair分层记录，不能成为新的technical acceptance head。完整记录见[F009 post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F009_POST_CI_AUTHORITY_ACCEPTANCE.md)。
+
+ - C1 delivery remediation仅机械同步三项授权protected hashes：contract count=18、member topology=105、approved caller topology=1559 edges均不变；new compatibility caller=0、enforcement semantic change=0。F009仍`ACCEPTED / CLOSED`，不是新F009实现。
++
++- Engineering discipline 追加整改：`ENGINEERING_DISCIPLINE_COMPLETENESS_REMEDIATED / PENDING_INDEPENDENT_REVIEW`；[九领域 ownership matrix 与证据](evidence/instruction-system/NQ-CODEX-ENGINEERING-DISCIPLINE-COMPLETENESS.attempt-01.md)。仍为原 work batch/REVIEW next action，不另建 workflow 或扩大真实操作授权。
+diff --git a/docs/current/evidence/instruction-system/NQ-CODEX-SKILLS-AND-AGENTS-INSTRUCTION-CONSOLIDATION.attempt-01.md b/docs/current/evidence/instruction-system/NQ-CODEX-SKILLS-AND-AGENTS-INSTRUCTION-CONSOLIDATION.attempt-01.md
+index b6acb0a0..31066033 100644
+--- a/docs/current/evidence/instruction-system/NQ-CODEX-SKILLS-AND-AGENTS-INSTRUCTION-CONSOLIDATION.attempt-01.md
++++ b/docs/current/evidence/instruction-system/NQ-CODEX-SKILLS-AND-AGENTS-INSTRUCTION-CONSOLIDATION.attempt-01.md
+@@ -116,3 +116,9 @@ Old/New delta：Skill-routing、documentation-load、testing、blocking、review
+ Global回滚前确认新入口和旧备份存在，移走新AGENTS后复制旧备份为AGENTS.md；保留原备份，不机械覆盖。Project提交前可对精确instruction文件恢复HEAD并清理本轮新Skill；提交后由本证据所在consolidation commit执行git revert。正式仓库不保留bak或旧Skill复制备份。
+
+ 实现与new-side路由样本完成；高风险不变量在文本、fixture及new-side选择中保留。完整旧新对照和stage-assets兼容性未闭合，最终接受尚未满足；不宣称治理主线已关闭，不推进RESUME_GATEAUDIT_PHASE6_L4_B0，也不新建后续instruction治理任务。
++
++## Engineering discipline 追加整改（2026-09-08）
++
++原 attempt 的体积、benchmark 和交付事实保留。按用户新增范围完成 [九领域 ownership matrix 与原12 Skills规则 disposition](NQ-CODEX-ENGINEERING-DISCIPLINE-COMPLETENESS.attempt-01.md)：区分 DELETE / KEEP / MOVE_TO_REFERENCE / CHECKER_ENFORCED；详细规则按需读取，四 Skill 身份/trigger/policy 不变，Global/NQ AGENTS 不增加。
++
++本追加候选为 `IMPLEMENTED / PENDING_INDEPENDENT_REVIEW / F1_REMEDIATED / F2_REMEDIATED / ENGINEERING_DISCIPLINE_COMPLETENESS_REMEDIATED / CURRENT_AUTHORITY_ALIGNED`；不替换原接受快照，不声称追加候选已独立审查。
+diff --git a/docs/gates/README.md b/docs/gates/README.md
+index 41cd1a64..e810444c 100644
+--- a/docs/gates/README.md
++++ b/docs/gates/README.md
+@@ -10,6 +10,6 @@
+
+ ## Gate release notes
+
+-- GateN historical archive: [gate-n/README.md](gate-n/README.md)（tag：`nq-gaten-freeze`；FINALIZED 最终定版 / FROZEN 已冻结 / ACCEPTED 已接受 / CLOSED 已关闭 / TAGGED 已打 tag；GateN archive closed，11/11 approved GateN process docs moved；inventory 保留于 [../current/NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md](../current/NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md)，plan review 保留于 [../current/NQ_GATEN_ARCHIVE_PLAN_REVIEW.md](../current/NQ_GATEN_ARCHIVE_PLAN_REVIEW.md)，closeout 保留于 [../current/NQ_GATEN_ARCHIVE_CLOSEOUT.md](../current/NQ_GATEN_ARCHIVE_CLOSEOUT.md)）
++- GateN historical archive: [gate-n/README.md](gate-n/README.md)（tag：`nq-gaten-freeze`；FINALIZED 最终定版 / FROZEN 已冻结 / ACCEPTED 已接受 / CLOSED 已关闭 / TAGGED 已打 tag；GateN archive closed，11/11 approved GateN process docs moved；inventory 保留于 [../archive/current-cleanup/post-gateq/legacy-gates/gate-n-current-cleanup/NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md](../archive/current-cleanup/post-gateq/legacy-gates/gate-n-current-cleanup/NQ_GATEN_POST_CURRENT_ARCHIVE_INVENTORY.md)，plan review 保留于 [../archive/current-cleanup/post-gateq/legacy-gates/gate-n-current-cleanup/NQ_GATEN_ARCHIVE_PLAN_REVIEW.md](../archive/current-cleanup/post-gateq/legacy-gates/gate-n-current-cleanup/NQ_GATEN_ARCHIVE_PLAN_REVIEW.md)，closeout 保留于 [../archive/current-cleanup/post-gateq/legacy-gates/gate-n-current-cleanup/NQ_GATEN_ARCHIVE_CLOSEOUT.md](../archive/current-cleanup/post-gateq/legacy-gates/gate-n-current-cleanup/NQ_GATEN_ARCHIVE_CLOSEOUT.md)）
+ - GateM historical archive: [gate-m/README.md](gate-m/README.md)（archive closed；22/22 approved candidates moved）
+ - GateK release/tag prep: [gate-k/GATEK_RELEASE_NOTE_AND_TAG_PREP.md](gate-k/GATEK_RELEASE_NOTE_AND_TAG_PREP.md)
+diff --git a/scripts/ci/Test-DeliveryArtifactSafety.ps1 b/scripts/ci/Test-DeliveryArtifactSafety.ps1
+index f338f7d3..410a1e3b 100644
+--- a/scripts/ci/Test-DeliveryArtifactSafety.ps1
++++ b/scripts/ci/Test-DeliveryArtifactSafety.ps1
+@@ -1,14 +1,23 @@
+-[CmdletBinding()]
++﻿[CmdletBinding()]
+ param(
+     [Parameter(Mandatory = $true)]
+-    [string] $EvidenceRoot
++    [string] $EvidenceRoot,
++    # 调用方只能收紧上限；测试使用较小预算，生产调用沿用默认硬上限。
++    [ValidateRange(1, 50000)][int] $MaxArchiveEntries = 50000,
++    [ValidateRange(1, 67108864)][long] $MaxEntryBytes = 67108864,
++    [ValidateRange(1, 134217728)][long] $MaxExpandedTextBytes = 134217728,
++    [ValidateRange(1, 536870912)][long] $MaxNestedArchiveBytes = 536870912,
++    [ValidateRange(1, 268435456)][long] $MaxArchiveBytes = 268435456,
++    [ValidateRange(1, 3)][int] $MaxArchiveDepth = 3
+ )
+
+ Set-StrictMode -Version Latest
+ $ErrorActionPreference = 'Stop'
+ $root = (Resolve-Path -LiteralPath $EvidenceRoot).Path
+ $violations = New-Object System.Collections.Generic.List[string]
+-$textExtensions = @('.json', '.html', '.js', '.css', '.txt', '.xml', '.yml', '.yaml', '.toml', '.md')
++$textExtensions = @('.json', '.html', '.js', '.css', '.txt', '.xml', '.yml', '.yaml', '.toml', '.md', '.properties', '.conf', '.config', '.ini', '.cfg', '.csv', '.map', '.mf')
++$archiveExtensions = @('.jar', '.zip', '.war', '.ear')
++$budget = @{ entries = 0L; textBytes = 0L; nestedBytes = 0L }
+ $forbiddenPath = '(?i)(^|[\\/])(secrets?|credentials?)([\\/]|$)|(^|[\\/])\.env($|\.)|\.(pem|key|p12|jks|keystore|dump|backup|log)$'
+ $contentRules = [ordered]@{
+     aws_access_key = 'AKIA[0-9A-Z]{16}'
+@@ -18,40 +27,121 @@ $contentRules = [ordered]@{
+     credentials_in_url = '[a-zA-Z][a-zA-Z0-9+.-]*://[^/@\s]+:[^/@\s]+@'
+ }
+
++Add-Type -AssemblyName System.IO.Compression
+ Add-Type -AssemblyName System.IO.Compression.FileSystem
+-foreach ($file in @(Get-ChildItem -LiteralPath $root -File -Recurse -Force)) {
+-    $relative = $file.FullName.Substring($root.Length).TrimStart('\', '/').Replace('\', '/')
+-    if (($file.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+-        $violations.Add("link file=$relative")
+-        continue
+-    }
+-    if ($relative -match $forbiddenPath) {
+-        $violations.Add("forbidden_path file=$relative")
+-        continue
++function Stop-Limit([string] $Rule, [string] $Location) {
++    throw "Delivery artifact safety limit=$Rule file=$Location"
++}
++
++function Read-Bounded([IO.Stream] $Stream, [long] $Limit, [string] $Location) {
++    $buffer = New-Object byte[] 8192
++    $output = [IO.MemoryStream]::new()
++    try {
++        while (($count = $Stream.Read($buffer, 0, $buffer.Length)) -gt 0) {
++            if ($output.Length + $count -gt $Limit) { Stop-Limit 'expanded-bytes' $Location }
++            $output.Write($buffer, 0, $count)
++        }
++        return ,($output.ToArray())
++    } finally { $output.Dispose() }
++}
++
++function Test-TextStream([IO.Stream] $Stream, [string] $Location) {
++    $remaining = [Math]::Min($MaxEntryBytes, $MaxExpandedTextBytes - $budget.textBytes)
++    $bytes = Read-Bounded $Stream $remaining $Location
++    $budget.textBytes += $bytes.LongLength
++    $memory = [IO.MemoryStream]::new($bytes, $false)
++    # 识别 BOM；无 BOM 时严格按 UTF-8 解码，不能把解码失败当作安全内容跳过。
++    $reader = [IO.StreamReader]::new($memory, [Text.UTF8Encoding]::new($false, $true), $true)
++    try { $content = $reader.ReadToEnd() }
++    catch { throw "Delivery artifact safety invalid-text file=$Location" }
++    finally { $reader.Dispose(); $memory.Dispose() }
++    foreach ($rule in $contentRules.GetEnumerator()) {
++        if ([regex]::IsMatch($content, [string]$rule.Value, [Text.RegularExpressions.RegexOptions]::None, [TimeSpan]::FromSeconds(2))) {
++            $violations.Add("$($rule.Key) file=$Location")
++        }
+     }
+-    if ($file.Extension -in @('.jar', '.zip')) {
+-        $archive = [IO.Compression.ZipFile]::OpenRead($file.FullName)
+-        try {
+-            foreach ($entry in $archive.Entries) {
+-                if ($entry.FullName -match $forbiddenPath) {
+-                    $violations.Add("forbidden_archive_path file=$relative entry=$($entry.FullName)")
+-                }
++}
++
++function Test-ArchiveStream([IO.Stream] $Stream, [int] $Depth, [string] $Location) {
++    if ($Depth -gt $MaxArchiveDepth) { Stop-Limit 'archive-depth' $Location }
++    $archive = $null
++    try {
++        $archive = [IO.Compression.ZipArchive]::new($Stream, [IO.Compression.ZipArchiveMode]::Read, $true)
++        $budget.entries += $archive.Entries.Count
++        if ($budget.entries -gt $MaxArchiveEntries) { Stop-Limit 'archive-entry-count' $Location }
++        foreach ($entry in $archive.Entries) {
++            $entryLocation = "$Location!$($entry.FullName)"
++            $entryName = $entry.FullName.Replace('\', '/')
++            if ($entryName -match $forbiddenPath) {
++                $violations.Add("forbidden_archive_path file=$entryLocation")
++                continue
++            }
++            if ($entryName -match '(^/|^[A-Za-z]:|(^|/)\.\.(/|$))') {
++                $violations.Add("unsafe_archive_path file=$entryLocation")
++                continue
++            }
++            if ($entry.Length -gt $MaxEntryBytes) { Stop-Limit 'archive-entry-size' $entryLocation }
++            $extension = [IO.Path]::GetExtension($entryName).ToLowerInvariant()
++            if ($archiveExtensions -contains $extension) {
++                if ($Depth -ge $MaxArchiveDepth) { Stop-Limit 'archive-depth' $entryLocation }
++                $remaining = [Math]::Min($MaxEntryBytes, $MaxNestedArchiveBytes - $budget.nestedBytes)
++                if ($entry.Length -gt $remaining) { Stop-Limit 'nested-archive-bytes' $entryLocation }
++                $entryStream = $entry.Open()
++                try { $nestedBytes = Read-Bounded $entryStream $remaining $entryLocation }
++                finally { $entryStream.Dispose() }
++                $budget.nestedBytes += $nestedBytes.LongLength
++                $nested = [IO.MemoryStream]::new($nestedBytes, $false)
++                try { Test-ArchiveStream $nested ($Depth + 1) $entryLocation }
++                finally { $nested.Dispose() }
++            } elseif ($textExtensions -contains $extension) {
++                if ($entry.Length -gt $MaxExpandedTextBytes - $budget.textBytes) { Stop-Limit 'expanded-text-bytes' $entryLocation }
++                $entryStream = $entry.Open()
++                try { Test-TextStream $entryStream $entryLocation }
++                finally { $entryStream.Dispose() }
+             }
+-        } finally {
+-            $archive.Dispose()
+         }
+-        continue
++    } catch {
++        # 保留资源拒绝身份，其余归档错误统一失败；不打印内容或第三方异常详情。
++        if ($_.Exception.Message.StartsWith('Delivery artifact safety')) { throw }
++        throw "Delivery artifact safety invalid-archive file=$Location"
++    } finally {
++        if ($null -ne $archive) { $archive.Dispose() }
+     }
+-    if ($textExtensions -contains $file.Extension.ToLowerInvariant()) {
+-        $content = [IO.File]::ReadAllText($file.FullName, [Text.Encoding]::UTF8)
+-        foreach ($rule in $contentRules.GetEnumerator()) {
+-            if ([regex]::IsMatch($content, [string]$rule.Value)) {
+-                $violations.Add("$($rule.Key) file=$relative")
++}
++
++function Test-Directory([string] $Directory) {
++    foreach ($file in Get-ChildItem -LiteralPath $Directory -Force) {
++        $relative = $file.FullName.Substring($root.Length).TrimStart('\', '/').Replace('\', '/')
++        if (($file.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
++            $violations.Add("link file=$relative")
++            continue
++        }
++        if ($relative -match $forbiddenPath) {
++            $violations.Add("forbidden_path file=$relative")
++            continue
++        }
++        if ($file.PSIsContainer) { Test-Directory $file.FullName; continue }
++        $extension = $file.Extension.ToLowerInvariant()
++        if ($archiveExtensions -contains $extension) {
++            if ($file.Length -gt $MaxArchiveBytes) { Stop-Limit 'archive-file-size' $relative }
++            $stream = [IO.File]::OpenRead($file.FullName)
++            try { Test-ArchiveStream $stream 1 $relative }
++            finally { $stream.Dispose() }
++        } elseif ($textExtensions -contains $extension) {
++            if ($file.Length -gt $MaxEntryBytes -or $file.Length -gt $MaxExpandedTextBytes - $budget.textBytes) {
++                Stop-Limit 'text-size' $relative
+             }
++            $stream = [IO.File]::OpenRead($file.FullName)
++            try { Test-TextStream $stream $relative }
++            finally { $stream.Dispose() }
+         }
+     }
+ }
+
++if ((Get-Item -LiteralPath $root -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Delivery artifact safety linked-root' }
++if (-not (Test-Path -LiteralPath $root -PathType Container)) { throw 'Delivery artifact safety invalid-root' }
++Test-Directory $root
++
+ if ($violations.Count -gt 0) {
+     Write-Output 'Delivery artifact safety gate failed (rule and path only; matched content is suppressed):'
+     $violations | Sort-Object -Unique | ForEach-Object { Write-Output "  $_" }
+diff --git a/scripts/ci/tests/Test-DeliveryEvidence.ps1 b/scripts/ci/tests/Test-DeliveryEvidence.ps1
+index 04d5e3e4..a796dd4c 100644
+--- a/scripts/ci/tests/Test-DeliveryEvidence.ps1
++++ b/scripts/ci/tests/Test-DeliveryEvidence.ps1
+@@ -211,6 +211,7 @@ try {
+     catch { $secretRejected = $true }
+     Assert-Condition $secretRejected 'Secret-like delivery artifact was not rejected'
+
++    & (Join-Path $PSScriptRoot 'Test-DeliveryArtifactSafety.ps1')
+     Write-Output 'DELIVERY_EVIDENCE_TEST normalized=PASS deterministic=PASS readback=PASS provenance-negative=PASS tamper=REJECTED secret=REJECTED'
+ } finally {
+     if (Test-Path -LiteralPath $runRoot) {
+diff --git a/scripts/docs/stage-asset-exceptions.json b/scripts/docs/stage-asset-exceptions.json
+index f709d2e8..f5039759 100644
+--- a/scripts/docs/stage-asset-exceptions.json
++++ b/scripts/docs/stage-asset-exceptions.json
+@@ -1241,14 +1241,6 @@
+       "owner": "Module owner",
+       "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
+     },
+-    {
+-      "path": "docs/current/NQ_DH_WORKFLOW_ROUTER_SKILL.md",
+-      "sha256": "56ae3f5302045cde378ca48cb6377d41991d706f48d83e5601a1e9331f03ca7d",
+-      "kind": "GOVERNANCE_CONTRACT",
+-      "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
+-      "owner": "Governance and delivery contract owner",
+-      "removalTrigger": "Current authority or versioned proof contract changes; historical evidence must remain readable."
+-    },
+     {
+       "path": "docs/current/ROADMAP.md",
+       "sha256": "169f8b7c6f907d9b67764de22ce56c6244a5b7f491dc9f3d6e12c4822efead5a",
+@@ -1275,7 +1267,7 @@
+     },
+     {
+       "path": "scripts/ci/tests/Test-DeliveryEvidence.ps1",
+-      "sha256": "92486e59ddfae1afe3f29dc81afe9085a5f1d54b79934bf69d9789e1dddac7a0",
++      "sha256": "b614b40f368e05bfd6017d03b9ab379611712bd148979b552d0a873b65ede19e",
+       "kind": "GOVERNANCE_CONTRACT",
+       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
+       "owner": "Governance and delivery contract owner",
+diff --git a/scripts/java-standard/verify-java-engineering-standard.ps1 b/scripts/java-standard/verify-java-engineering-standard.ps1
+index 041eddde..0643974d 100644
+--- a/scripts/java-standard/verify-java-engineering-standard.ps1
++++ b/scripts/java-standard/verify-java-engineering-standard.ps1
+@@ -269,17 +269,7 @@ try {
+         }
+     }
+
+-    $skillName = if ($overlays[0] -eq 'nq-java-domain-overlay.md') { 'nq-java-engineering-standard' } else { 'dh-java-engineering-standard' }
+-    $skillPath = Join-Path $repoRoot ".agents\skills\$skillName\SKILL.md"
+-    Assert-Condition (Test-Path -LiteralPath $skillPath -PathType Leaf) "CONFIG_INVALID" "missing project Skill"
+-    $skillText = Get-Content -LiteralPath $skillPath -Raw -Encoding UTF8
+-    Assert-Condition ($skillText -match '(?m)^- Role type: `SUPPORTING_CONSTRAINT`\s*$') "CONFIG_INVALID" "Skill Role type binding invalid"
+-    Assert-Condition ($skillText -match '(?m)^- Primary responsibility: `HIGH_RISK_JAVA_CONSTRAINT_EVALUATION`\s*$') "CONFIG_INVALID" "Skill Primary responsibility binding invalid"
+-    Assert-Condition ($skillText.Contains('platform-profile.json')) "CONFIG_INVALID" "Skill missing platform-profile.json"
+-    foreach ($trigger in @('STATIC_RULE_CHANGE','FULL_JAVA_AUDIT')) { Assert-Condition ($skillText.Contains($trigger)) "CONFIG_INVALID" "Skill missing stable trigger marker $trigger" }
+-    Assert-Condition ($skillText.Contains('Select only standards relevant to the affected scope.')) "CONFIG_INVALID" "Skill scoped standards selection marker missing"
+-    Assert-Condition ($skillText -notmatch '\bJava\s+21\b|Spring Boot\s+3\.\d|Spring Framework\s+6\.\d') "PLATFORM_PROFILE_INVALID" "Skill hard-codes platform versions"
+-    Assert-Condition ($skillText -notmatch '\bGate[A-Z0-9-]+\b|\bStage-QDR-\d+\b') "CONFIG_INVALID" "Skill hard-codes current authority"
++    # 工程约束由 standards、platform、architecture 与 baseline 校验；Skill inventory 由独立 policy validator 负责。
+
+     $scope = Get-Content -LiteralPath (Join-Path $standardRoot 'java-shadow-scope.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+     Assert-Condition ($scope.scanner_mode -eq 'JAVA_LEXICAL_STRUCTURE_AWARE' -and @($scope.production_source_roots).Count -gt 0 -and @($scope.time_restricted_prefixes).Count -gt 0) "CONFIG_INVALID" "architecture scope invalid"
+@@ -299,9 +289,9 @@ try {
+     $actual = @($baseline.violations | ForEach-Object { $_.fingerprint }); $sorted = @($baseline.violations | Sort-Object rule_id,path,fingerprint | ForEach-Object { $_.fingerprint })
+     Assert-Condition (($actual -join "`n") -eq ($sorted -join "`n")) "BASELINE_SCHEMA_INVALID" "baseline order nondeterministic"
+
+-    $governed = @(); $governed += @(Get-ChildItem -LiteralPath $standardRoot -File); $governed += @(Get-Item $skillPath); $governed += @(Get-ChildItem -LiteralPath $PSScriptRoot -File)
++    $governed = @(); $governed += @(Get-ChildItem -LiteralPath $standardRoot -File); $governed += @(Get-ChildItem -LiteralPath $PSScriptRoot -File)
+     foreach ($file in $governed) { $text = Get-Content -LiteralPath $file.FullName -Raw -Encoding UTF8; Assert-Condition ($text -notmatch '(?i)[A-Z]:[\\/](Users|project)[\\/]') "CONFIG_INVALID" "absolute path in $($file.Name)" }
+-    $links = @(); foreach ($scanRoot in @($standardRoot,(Split-Path $skillPath -Parent),$PSScriptRoot)) { $links += @(Get-ChildItem -LiteralPath $scanRoot -Recurse -Force | Where-Object { $_.Attributes -band [IO.FileAttributes]::ReparsePoint }) }
++    $links = @(); foreach ($scanRoot in @($standardRoot,$PSScriptRoot)) { $links += @(Get-ChildItem -LiteralPath $scanRoot -Recurse -Force | Where-Object { $_.Attributes -band [IO.FileAttributes]::ReparsePoint }) }
+     Assert-Condition ($links.Count -eq 0) "CONFIG_INVALID" "reparse point or cross-repository link found"
+     Assert-JavaShadowCiContract $ciText

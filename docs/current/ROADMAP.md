@@ -45,9 +45,11 @@ d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665
   ↓
 C1(P1-2) ACCEPTED / CI_GREEN / CLOSED
   ↓
-C2(P1-3) NOT_STARTED
+C2(P1-3) ACCEPTED / CI_GREEN / CLOSED
   ↓
-Independent Correctness Review NOT_STARTED
+Pre-B0 CI safety/current authority remediation IMPLEMENTED / PENDING_INDEPENDENT_REVIEW
+  ↓
+Targeted independent review → exact delivery / exact-head CI
   ↓
 B0 Harness Foundation NOT_STARTED
   ↓
@@ -68,7 +70,7 @@ L4 Qualification NOT_STARTED
 
 | Capability | Current State | Required Baseline | Disposition | Reason | Owner | Trigger | Phase |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| F-013 current authority/current-doc consistency | canonical owners曾有10条stale claim | drift/stale/history-authority=`0/0/0` | `IMPLEMENT_NOW` | current authority correctness | `nq-docs-writer` / governance contract | Phase4 closeout | Phase4 |
+| F-013 current authority/current-doc consistency | canonical owners曾有10条stale claim | drift/stale/history-authority=`0/0/0` | `IMPLEMENT_NOW` | current authority correctness | current docs owner / governance contract | Phase4 closeout | Phase4 |
 | Phase4 proof foundation | F-001～F-004 accepted | four immutable pairs green | `NOT_REQUIRED` | 不重复实现或Review accepted proof | GateAUDIT | accepted pair失效时才重开 | Phase4 |
 | Legacy Phase3 identifier F-005 | title/source/owner/consumer均不可恢复 | 不产生任何新语义或implementation mapping | `LEGACY_FINDING_IDENTITY_UNRECOVERABLE / RETIRED` | 保留历史ledger记录，但禁止Phase5继承或猜测未知语义 | Historical evidence only | 仅在找到可验证canonical source时重新审计identity | Retired |
 | Legacy Phase3 identifier F-011 | title/source/owner/consumer均不可恢复 | 不产生任何新语义或implementation mapping | `LEGACY_FINDING_IDENTITY_UNRECOVERABLE / RETIRED` | 保留历史ledger记录，但禁止Phase5继承或猜测未知语义 | Historical evidence only | 仅在找到可验证canonical source时重新审计identity | Retired |
@@ -121,23 +123,23 @@ L4 Qualification NOT_STARTED
 - multi-instance/lease/duplicate worker；
 - L5/L6 scale、chaos与长期qualification。
 
-Phase5 closure与deployment/observability accepted prerequisites保持；Phase6=`IN_PROGRESS / NOT_FROZEN`。L4 plan/reproduction delivery以`d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665`正式`ACCEPTED / CI_GREEN`；L4 qualification仍`PROVE_FIRST / NOT_STARTED`，不等于L4/Phase6 accepted。C1已ACCEPTED / CI_GREEN，P1-2已关闭；当前仅P1-3一个canonical blocking P1，unknown=0。完整inventory为27 scenarios、17 crash points、12 MUST_PROVE；13行当前适用，14行future-triggered/currently non-canonical，所有qualification行仍NOT_RUN，不将未来行计PASS、SKIPPED或永久NOT_REQUIRED。
+Phase5 closure与deployment/observability accepted prerequisites保持；Phase6=`IN_PROGRESS / NOT_FROZEN`。L4 plan/reproduction delivery以`d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665`正式`ACCEPTED / CI_GREEN`；L4 qualification仍`PROVE_FIRST / NOT_STARTED`，不等于L4/Phase6 accepted。C1与C2已ACCEPTED / CI_GREEN / CLOSED，P1-2与P1-3已关闭；当前进行pre-B0 CI safety/current authority remediation，不重开已接受正确性实现。完整inventory为27 scenarios、17 crash points、12 MUST_PROVE；13行当前适用，14行future-triggered/currently non-canonical，所有qualification行仍NOT_RUN，不将未来行计PASS、SKIPPED或永久NOT_REQUIRED。
 
 | Observation | Current disposition | Current blocker / owner | Boundary |
 | --- | --- | --- | --- |
 | P1-2 stale PLACE/CANCEL ACK | REMEDIATED / REVIEWED / CI_GREEN / CLOSED | CLOSED / C1 | durable generation与atomic status/version CAS拒绝旧ACK与ABA，保留较新terminal；关闭绑定implementation、独立review及exact-head CI |
-| P1-3 CANCELLED reconciliation | CANONICAL_REACHABLE_CONFIRMED_DEFECT | P1 OPEN / C2 | C2是唯一当前正确性目标：CANCELLED/fill冲突的bounded、idempotent、canonical fill→Trade→Ledger convergence |
+| P1-3 CANCELLED reconciliation | ACCEPTED / CI_GREEN / CLOSED | CLOSED / C2 | immutable pair=`612c2f5887a2e6b3a8b3138d9ae9b193c20e298f / 34183851797`；不重开实现或 PostgreSQL 验证 |
 | P1-1 typed terminal mapping | RETIRED_COMPATIBILITY_ONLY | NON_BLOCKING_FOR_CURRENT_CANONICAL_RUNTIME | 历史缺陷观察保留，未宣称修复或false positive |
 | PB1 retained pilot recovery | RETIRED_COMPATIBILITY_ONLY | NON_BLOCKING_FOR_CURRENT_CANONICAL_RUNTIME | 不把普通kill恢复positive control误作PB1缺陷复现 |
 | PB2 sender dispatch | DORMANT_NO_CURRENT_ENTRYPOINT | NON_BLOCKING_FOR_CURRENT_CANONICAL_RUNTIME | 当前无sender入口，历史观察保留 |
 
 Future trigger：对应retired/dormant路径再次成为canonical时，重新运行R1–R4 reachability，不能自动恢复blocking finding或新增compatibility caller。历史失败pair=`378de657ac33b9f9fd666288d489181ac0147b2e / 34038345304`保持FAILED DELIVERY；接受的是后续remediation pair，详见[authority acceptance evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_PLAN_POST_CI_AUTHORITY_TRANSITION_TO_C1.md)。
 
-当前依赖为 **C1(P1-2) → C2(P1-3) → Independent Correctness Review → B0 Harness Foundation → L4 Qualification**。C3不是当前blocking节点。C1=`ACCEPTED / CI_GREEN / CLOSED`；C2=`NOT_STARTED`；Independent Correctness Review=`NOT_STARTED`；B0=`NOT_STARTED / DEPENDS_ON_CORRECTNESS_REVIEW`；L4 qualification=`NOT_STARTED`，L5/L6继续等待L4 accepted。先后依赖不构成本轮实现授权。
+当前依赖为 **C1/C2（已接受关闭）→ pre-B0 CI safety/current authority remediation → targeted Independent Review → exact delivery / exact-head CI → B0 Harness Foundation → L4 Qualification**。本轮候选状态为 `IMPLEMENTED / PENDING_INDEPENDENT_REVIEW`；B0与L4 qualification仍NOT_STARTED，L5/L6继续等待L4 accepted。
 
-C1接受身份：implementation=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd`；既有独立review=`PASS / PHASE6_L4_C1_VERSIONED_OCC_INDEPENDENT_REVIEW_ACCEPTED / P0_0 / P1_0 / READY_FOR_C1_DELIVERY`；acceptance head=`eb9740b7519f48ffc1e32968cbb0950261b871ef`、CI=`34098902705 / 9/9 SUCCESS`。首次delivery=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd / 34086018265 = FAILED DELIVERY`另行保留；完整证据见[C1 authority acceptance](../audit/evidence/GATEAUDIT_PHASE6_L4_C1_POST_CI_AUTHORITY_TRANSITION_TO_C2.md)。本轮authority commit不替代技术身份，不追加C1 review。C2只处理local CANCELLED与venue fill冲突；eligible-state positive control已收敛，C2将缺陷断言转为bounded idempotent fill/Trade/Ledger不变量，随后执行current correctness cluster独立review。
+C1接受身份：implementation=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd`；既有独立review=`PASS / PHASE6_L4_C1_VERSIONED_OCC_INDEPENDENT_REVIEW_ACCEPTED / P0_0 / P1_0 / READY_FOR_C1_DELIVERY`；acceptance head=`eb9740b7519f48ffc1e32968cbb0950261b871ef`、CI=`34098902705 / 9/9 SUCCESS`。首次delivery=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd / 34086018265 = FAILED DELIVERY`另行保留；完整证据见[C1 authority acceptance](../audit/evidence/GATEAUDIT_PHASE6_L4_C1_POST_CI_AUTHORITY_TRANSITION_TO_C2.md)。C1历史接受身份不由后续文档同步替代。C2已由`612c2f5887a2e6b3a8b3138d9ae9b193c20e298f / 34183851797`接受关闭，本轮不重复其实现或正确性审查。
 
-交付历史68/68=3个known-defect reproduction PASS + 1个kill-engaged normal regression PASS + 64个既有回归PASS。该历史PASS只证明当时两个P1成功复现和既有行为保留，不是L4 qualification acceptance；当前P1-2已转为permanent correctness regressions，P1-3仍为KNOWN_DEFECT_REPRODUCTION；本轮不重跑这些测试，也不追加review。
+交付历史68/68=3个known-defect reproduction PASS + 1个kill-engaged normal regression PASS + 64个既有回归PASS。该历史PASS只证明当时两个P1成功复现和既有行为保留，不是L4 qualification acceptance；当前C1/C2已分别接受，旧P1-3 reproduction描述仅属于历史交付，不作为当前开放缺陷；本轮不重跑这些测试。
 
 ## 下一允许动作
 
@@ -146,14 +148,28 @@ C1接受身份：implementation=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd`；既
 - F007 immutable technical acceptance pair=`0e2efdeb236c185dbace67bb22f94c6af64a563a / 34009290836`；implementation与accepted technical head相同，不由本轮docs-only authority commit替代。
 - F009 immutable technical acceptance pair=`dbb8b9c6a2319338f5ca90b566ad494142a55e20 / 34024427455`；首次delivery=`85d11984d0c65b464ffe4858fe7fd1da51885f12`、failed CI=`34024011663`保留，不由后续authority commit替代。
 - F001 remote acceptance绑定ruleset `22381941 / refs/heads/dev / ACTIVE / effective 9/9`；本次只读readback与authority synchronization commit是独立事件，不能写成新的remote mutation。
-- 当前workstream=`GateAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C2`，status=`NOT_STARTED / NONE / NOT_RUN`；machine next action=`NQ-GATEAUDIT-PHASE6-L4-RUNTIME-CORRECTNESS-C2-IMPLEMENTATION`，matcher唯一类型=`IMPLEMENTATION`。C2仅拥有P1-3；authority同步与C2实现之间不插入新C1 review，C2之后的Independent Correctness Review仍为当前DAG必需节点。
+- 当前 workstream=`GATEAUDIT-PHASE6-PRE-B0-CI-SAFETY-AND-CURRENT-AUTHORITY-REMEDIATION`，status=`IMPLEMENTED|PENDING_REVIEW / NONE / NOT_RUN`；machine next action=`NQ-GATEAUDIT-PHASE6-PRE-B0-SAFETY-INDEPENDENT-REVIEW`，唯一类型=`REVIEW`，映射完整任务名 `NQ-GATEAUDIT-PHASE6-PRE-B0-CI-SAFETY-REMEDIATION-INDEPENDENT-REVIEW`。这一个审查验证 F1/F2 guard 未削弱、F7/F8/F9 未恢复旧 instruction authority，并按用户追加范围核对[九领域 engineering discipline ownership 与原12 Skills规则映射](evidence/instruction-system/NQ-CODEX-ENGINEERING-DISCIPLINE-COMPLETENESS.attempt-01.md)。追加整改已实现，仍待同一次独立审查；四Skill identity/routing与Global/NQ根保持精简。当前不 stage/commit/push；审查 P0/P1=0 后才按用户指令进入 delivery/exact-head CI。
 - Phase5 ACCEPTED/CLOSED，remaining blocking=0；F005仍DEFERRED/NON_BLOCKING，平台attestation须未来显式授权。详见[F001 post-remote acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_POST_REMOTE_AUTHORITY_ACCEPTANCE.md)。
+
+
+## Pre-B0 residual P2
+
+以下均为 `OPEN / P2 / NON_BLOCKING_FOR_B0`，本任务未修改：
+
+| Finding | 保留的触发条件 |
+| --- | --- |
+| F3 restore proof identity | POST_RESTORE_VALIDATION 输入错误 commit/proof schema/schema target 或相等的空 canary 时仍可能接受。 |
+| F4 SBOM array shape | 规范化遇到单元素数组或空嵌套数组时可能输出对象/null。 |
+| F5 Java shadow committed-change classification | 新增违规提交后，干净 checkout 的 git status 不再将其标记为 NEW_CODE_FINDING。 |
+| F6 manual seed SQL scope | 在含非 fixture admin 账号的数据库手工运行 seed，其默认账号 UPDATE 范围过宽；静态风险，未执行。 |
+
+F1/F2 已完成实现与本地回归，仍待真正独立审查和交付；本轮不宣称整个 GateAUDIT 已结束。
 
 ## Persistent boundary
 
 - `LIVE=DISABLED`、kill switch=`ENGAGED`；禁止再次pilot、PLACE、CANCEL、transfer、withdraw或credential/生产服务器/生产数据库访问。
 - GateY frozen archive与published tags不可改写。
-- P5-F001/P5-F007/P5-F008/P5-F009均为`ACCEPTED / CLOSED`；Phase5已关闭，Phase6 IN_PROGRESS/NOT_FROZEN，L4 plan及C1已接受、C2与L4 qualification未开始。remote enforcement为APPLIED/VERIFIED/ACCEPTED，platform attestation保持DEFERRED/NON_BLOCKING。
+- P5-F001/P5-F007/P5-F008/P5-F009均为`ACCEPTED / CLOSED`；Phase5已关闭，Phase6 IN_PROGRESS/NOT_FROZEN，L4 plan、C1与C2已接受关闭；当前pre-B0 remediation待独立审查，B0与L4 qualification未开始。remote enforcement为APPLIED/VERIFIED/ACCEPTED，platform attestation保持DEFERRED/NON_BLOCKING。
 
 ## F009 accepted delivery lineage
 

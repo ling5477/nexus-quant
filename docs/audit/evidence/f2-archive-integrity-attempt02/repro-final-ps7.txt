@@ -1,0 +1,4 @@
+P1_REPRO PS=7.6.5 case=normal rejected=True payload_physically_preserved=True
+P1_REPRO PS=7.6.5 case=forged rejected=True payload_physically_preserved=True
+P1_REPRO PS=7.6.5 case=nested-forged rejected=True payload_physically_preserved=True
+EXIT=0
