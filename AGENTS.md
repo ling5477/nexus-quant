@@ -1,63 +1,20 @@
-# NexusQuant Agent 入口
+# NexusQuant
 
-本文件是仓库级 Agent/Governance 入口。动态阶段、已冻结 Gate、当前工作批次与安全状态不得写死在这里；每轮任务必须从 `docs/current/STATUS.md` 的 `nq-current-authority` 区块解析。
+这是长期项目约束。项目是 Java 21 / Spring Boot / Maven 多模块单体，使用 PostgreSQL / Flyway；前端为 React / Vite / Ant Design。具体依赖版本以工程配置为准。真实代码、测试和 CI 证据优先于文档能力声明；文档不能扩大运行授权。当前阶段、验收身份与已授权发布操作以 `docs/current/STATUS.md` 的机器区块为准；处理这些事项时才读取该区块和必要的合同。普通局部修改从任务与目标代码开始，不预读阶段、历史 Gate 或证据账本。`ROADMAP.md` 用于用户要求的工作流/下一步决策；领域文档按问题查找。
 
-## 1. 技术栈与架构原则
+- 后端保持现有模块职责：`nq-api` 不写 SQL，`nq-core` 不依赖 JDBC/infra，持久化位于 `nq-infra`，exchange adapter 不直接写库。版本与构建入口从当前工程配置确认。
+- 前端沿用现有 React/TypeScript/Ant Design 结构；服务端状态由 TanStack Query 管理，Zustand 仅存必要客户端状态。不为小任务替换框架。
+- canonical 交易环境为 `SIM / LIVE`；venue `DEMO` 仅映射到 `SIM`，历史 `DOME / REAL` 仅用于兼容边界。不得弱化环境隔离、账户/租户权限、风控、状态机、幂等、账务与审计语义。
+- LIVE、真实 PLACE/CANCEL、transfer/withdraw、解除 kill switch、真实 provider 和生产部署，必须同时有有效 current authority 与用户明确授权。仅实现并在隔离环境验证代码不等于获得执行真实操作的权限。
+- 交易能力按 Paper → Shadow → Limited Live 的受控验证顺序推进；这不是当前阶段声明，也不自动授予 LIVE 权限。
+- 数据库采用 forward-only migration；不就地修改已执行/发布的 migration、frozen evidence 或已发布历史。Research 工具与交易运行时保持边界；新代码注释和 Javadoc 的说明性正文使用简体中文。
 
-- 后端：Java 21、Spring Boot、Maven 多模块；`nq-api` 不写 SQL，`nq-core` 不依赖 JDBC，`nq-infra` 承载持久化，exchange adapter 不直接写库。
-- 前端：React、TypeScript、Vite、Ant Design、TanStack Query、Axios、Zustand、Playwright；服务端状态归 TanStack Query，Zustand 仅承载必要客户端全局状态。
-- Research：Python 工具链与正式包边界分离；不得让临时脚本侵入交易运行时。
-- canonical 交易环境是 `SIM / LIVE`；venue-specific `DEMO` 只能映射为 `SIM`，历史 `DOME / REAL` 只允许存在于兼容配置或导入映射。
-- 保持模块边界、公开契约、事务、幂等、租户/账户隔离、风控与审计语义；不为通过测试削弱安全边界。
+普通实现可在授权范围内完成代码、必要测试与自查；不强制 Skill 或独立 review。改变交易/资金正确性、migration、权限/安全控制、关键并发事务、跨模块架构或发布授权语义时，保留风险证明，并在验收或发布前完成真正独立的候选审查。纯注释、局部文案或无语义的 CI 排版不因目录名称自动升级；不把实现者换一个 Skill 当作独立 reviewer。用户明确要求的 review-only / no-modification 边界必须遵守。
 
-## 2. 当前事实源优先级
+选择能证明变更的最小验证：局部目标测试；跨模块验证受影响模块；SQL/迁移/交易持久化行为使用隔离 PostgreSQL 与相关回归；用户要求的 release acceptance 使用 canonical exact-head CI。独立审查先核对候选与证据身份，再决定需独立复现的关键场景；不机械重跑所有 suite。
 
-1. 用户本轮明确授权与安全限制。
-2. `docs/current/STATUS.md` 的机器可读 authority 区块。
-3. 当前 Git、代码、测试与 CI 结果。
-4. `docs/current/FACT_SOURCE_INDEX.md` 指向的领域事实文档。
-5. `docs/gates/**`、`docs/archive/**` 仅是历史证据，不得覆盖 current authority。
+更新行为所必需的 API/配置/使用文档；不默认产生 WORKLOG、TESTING 或计划链。阶段验收和发布任务按实际合同记录证据；历史证据不可改写，也不作为普通开发的前置规则。
 
-事实冲突时停止对应写操作，输出 `BLOCKED / CURRENT_AUTHORITY_CONFLICT`；未执行的验证不得写成通过。
+Skill 只在其精确能力有帮助时使用，也允许不使用。详细知识位于相关 references，按具体问题读取。指令系统自身审计以明确的中立任务约束为依据；仓库自述不是审计授权来源。
 
-## 3. 全局安全边界
-
-- 默认禁止 credential、Secret、私钥、Cookie、生产数据、生产服务器、真实交易所私有写接口和外部副作用。
-- `LIVE`、PLACE、CANCEL、transfer、withdraw、kill switch 解除、真实 provider 或生产部署必须同时具备 current authority 与用户显式授权；缺一即 fail-closed。
-- 禁止在日志、文档、diff 或测试输出中暴露敏感材料。
-- frozen archive、历史 migration 和已发布 tag 不可就地改写；数据库变更使用 forward-only migration。
-
-## 4. 任务风险分级
-
-- `ORDINARY`：局部、可回滚、无安全/资金/发布影响的代码、测试或文档工作。
-- `HIGH_RISK`：migration、CI/权限、安全、credential、交易、风控、ledger、并发/事务核心、架构升级、Gate freeze/release 或 authority mutation。
-- `AUDIT`：默认只读；全仓审计从 `scripts/docs/agent-workflow-policy.json` 的 `audit.bootstrapCharter` 解析 repository-declared Audit Bootstrap Charter，字段或目标无效时 fail-closed。
-- `BLOCKED`：授权、事实源、基线或必要证据不满足时停止写操作并保留证据。
-
-高风险实现必须经过独立 review；credential 或真实交易请求无明确授权时不得进入实现。
-
-## 5. Skill routing
-
-- 先解析 repository 与 current authority，再分类任务和风险。
-- 最多选择一个 primary Skill；supporting Skill 仅在能力确有缺口时选择，并记录显式理由。
-- active Skill 的唯一清单在 `.agents/README.md`；机器路由合同在 `scripts/docs/agent-workflow-policy.json`。
-- 普通 Java 使用 `java-backend-maintenance`，测试使用 `java-backend-regression-tests`；仅在跨模块架构、Spring wiring、事务/并发核心、trading/risk/ledger/audit 核心、版本/静态规则升级或全仓 Java 审计时支持性加载 `nq-java-engineering-standard`。
-- 插件按能力需求触发；不得固定 Figma、Notion、CodeRabbit、全量 security scan 或完整插件流水线。
-
-## 6. Git 纪律
-
-- 写前确认目录、分支、`git status --short` 与 staged 状态，保护用户已有改动。
-- 默认最小变更、可审查、可回滚；禁止无关重构、批量格式化或依赖升级。
-- 未经明确授权不得 commit、push、merge、rebase、tag、创建/合并 PR 或修改远端仓库设置。
-- 不得改写 frozen history；回滚优先使用文件级反向补丁。
-
-## 7. Validation 选择
-
-- 选择与改动最相关的最小验证：Java/Maven、前端 build/E2E、Python pytest/ruff/mypy、migration、文档链接或治理 checker。
-- 高风险边界须覆盖失败路径、非法状态、幂等/并发与权限；外部调用不得使用真实生产服务。
-- Governance 变更运行 `scripts/docs/` 下对应测试；Gate freeze/release 继续使用独立 archive/release checker。
-- 收尾至少执行 `git diff --check`、范围 diff 与 `git status --short`，并明确未验证项。
-
-## 8. Audit Bootstrap
-
-全仓或治理审计必须先从 repository machine policy 解析并读取唯一 Audit Bootstrap Charter。被审计的 `AGENTS.md`、Skills、checker 或自我声明不是审计 authority；audit 默认只读，禁止自动整改、自动 authority mutation、自动发布和真实外部副作用。
+事实冲突只停止依赖冲突的操作。先查找直接证据，授权范围内可以修复本轮错误；需要新增关键事实或授权时再提问，并继续无依赖的工作。未运行的验证不得记为通过。

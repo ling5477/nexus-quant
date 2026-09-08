@@ -1,307 +1,408 @@
 {
-  "schemaVersion": "1.2.0",
-  "fixtures": [
+  "schemaVersion": 2,
+  "cases": [
     {
-      "id": "ordinary-java-change",
-      "category": "JAVA_CHANGE",
+      "id": "small-java",
+      "input": {
+        "capabilities": [],
+        "riskTags": []
+      },
       "expected": {
-        "taskType": "CODE_CHANGE",
-        "riskLevel": "ORDINARY",
-        "primarySkill": "java-backend-maintenance",
-        "supportingSkills": [],
-        "requiredValidations": [
-          "TARGETED_MAVEN_TEST"
-        ],
+        "skills": [],
+        "risk": "ORDINARY",
         "independentReview": false,
-        "docsBudget": "NONE",
-        "networkPermission": "LOCAL_ONLY",
-        "credentialPermission": "DENIED",
-        "serverPermission": "DENIED",
-        "gitPublicationPermission": "DENIED",
-        "authorityMutationPermission": "DENIED"
+        "proofs": []
       }
     },
     {
-      "id": "java-test-only",
-      "category": "JAVA_TEST",
+      "id": "frontend-copy",
+      "input": {
+        "capabilities": [],
+        "riskTags": []
+      },
       "expected": {
-        "taskType": "TEST_CHANGE",
-        "riskLevel": "ORDINARY",
-        "primarySkill": "java-backend-regression-tests",
-        "supportingSkills": [],
-        "requiredValidations": [
-          "TARGETED_MAVEN_TEST"
-        ],
+        "skills": [],
+        "risk": "ORDINARY",
         "independentReview": false,
-        "docsBudget": "TESTING_AND_WORKLOG_IF_REQUIRED",
-        "networkPermission": "LOCAL_ONLY",
-        "credentialPermission": "DENIED",
-        "serverPermission": "DENIED",
-        "gitPublicationPermission": "DENIED",
-        "authorityMutationPermission": "DENIED"
-      }
-    },
-    {
-      "id": "ordinary-frontend-change",
-      "category": "FRONTEND_CHANGE",
-      "expected": {
-        "taskType": "FRONTEND_UI",
-        "riskLevel": "ORDINARY",
-        "primarySkill": "frontend-antd-page-builder",
-        "supportingSkills": [],
-        "requiredValidations": [
-          "FRONTEND_BUILD",
-          "TARGETED_E2E_IF_BEHAVIOR_CHANGED"
-        ],
-        "independentReview": false,
-        "docsBudget": "NONE",
-        "networkPermission": "LOCAL_ONLY",
-        "credentialPermission": "DENIED",
-        "serverPermission": "DENIED",
-        "gitPublicationPermission": "DENIED",
-        "authorityMutationPermission": "DENIED"
-      }
-    },
-    {
-      "id": "migration-change",
-      "category": "MIGRATION_CHANGE",
-      "expected": {
-        "taskType": "DATABASE_MIGRATION",
-        "riskLevel": "HIGH_RISK",
-        "primarySkill": "db-schema-migration-review",
-        "supportingSkills": [],
-        "requiredValidations": [
-          "MIGRATION_SYNTAX",
-          "FORWARD_ONLY",
-          "HISTORICAL_MIGRATION_IMMUTABLE",
-          "TARGETED_DB_TEST"
-        ],
-        "independentReview": true,
-        "docsBudget": "DB_SCHEMA_TESTING_WORKLOG",
-        "networkPermission": "LOCAL_ONLY",
-        "credentialPermission": "DENIED",
-        "serverPermission": "DENIED",
-        "gitPublicationPermission": "DENIED",
-        "authorityMutationPermission": "DENIED"
-      }
-    },
-    {
-      "id": "ci-workflow-change",
-      "category": "CI_WORKFLOW_CHANGE",
-      "expected": {
-        "taskType": "CI_CD",
-        "riskLevel": "HIGH_RISK",
-        "primarySkill": "nq-dh-workflow-router",
-        "supportingSkills": [],
-        "requiredValidations": [
-          "WORKFLOW_SYNTAX",
-          "PERMISSION_DIFF",
-          "PINNING_CHECK"
-        ],
-        "independentReview": true,
-        "docsBudget": "CI_TESTING_WORKLOG_IF_REQUIRED",
-        "networkPermission": "READ_ONLY_IF_EXPLICIT",
-        "credentialPermission": "DENIED",
-        "serverPermission": "DENIED",
-        "gitPublicationPermission": "DENIED",
-        "authorityMutationPermission": "DENIED"
+        "proofs": []
       }
     },
     {
       "id": "docs-only",
-      "category": "DOCS_ONLY",
+      "input": {
+        "capabilities": [],
+        "riskTags": []
+      },
       "expected": {
-        "taskType": "DOCUMENTATION",
-        "riskLevel": "ORDINARY",
-        "primarySkill": "nq-docs-writer",
-        "supportingSkills": [],
-        "requiredValidations": [
-          "DOC_LINKS",
-          "FACT_CONSISTENCY"
-        ],
+        "skills": [],
+        "risk": "ORDINARY",
         "independentReview": false,
-        "docsBudget": "TASK_SCOPED",
-        "networkPermission": "DENIED",
-        "credentialPermission": "DENIED",
-        "serverPermission": "DENIED",
-        "gitPublicationPermission": "DENIED",
-        "authorityMutationPermission": "DENIED"
+        "proofs": []
       }
     },
     {
-      "id": "security-audit",
-      "category": "SECURITY_AUDIT",
+      "id": "ordinary-service",
+      "input": {
+        "capabilities": [],
+        "riskTags": []
+      },
       "expected": {
-        "taskType": "SECURITY_AUDIT",
-        "riskLevel": "AUDIT",
-        "primarySkill": "nq-dh-workflow-router",
-        "supportingSkills": [],
-        "requiredValidations": [
-          "EVIDENCE_PATHS",
-          "FINDING_SEVERITY"
-        ],
-        "independentReview": true,
-        "docsBudget": "AUDIT_REPORT_ONLY",
-        "networkPermission": "DENIED",
-        "credentialPermission": "DENIED",
-        "serverPermission": "DENIED",
-        "gitPublicationPermission": "DENIED",
-        "authorityMutationPermission": "DENIED"
-      }
-    },
-    {
-      "id": "credential-or-real-exchange",
-      "category": "CREDENTIAL_OR_REAL_EXCHANGE",
-      "expected": {
-        "taskType": "SENSITIVE_EXTERNAL_OPERATION",
-        "riskLevel": "BLOCKED",
-        "primarySkill": "nq-dh-workflow-router",
-        "supportingSkills": [],
-        "requiredValidations": [
-          "EXPLICIT_AUTHORIZATION_REQUIRED"
-        ],
-        "independentReview": true,
-        "docsBudget": "NONE",
-        "networkPermission": "DENIED",
-        "credentialPermission": "DENIED",
-        "serverPermission": "DENIED",
-        "gitPublicationPermission": "DENIED",
-        "authorityMutationPermission": "DENIED"
-      }
-    },
-    {
-      "id": "gate-freeze",
-      "category": "GATE_FREEZE",
-      "expected": {
-        "taskType": "GATE_FREEZE",
-        "riskLevel": "HIGH_RISK",
-        "primarySkill": "nq-docs-writer",
-        "supportingSkills": [],
-        "requiredValidations": [
-          "AUTHORITY",
-          "DOC_LINKS",
-          "ARCHIVE",
-          "EXACT_HEAD_CI"
-        ],
-        "independentReview": true,
-        "docsBudget": "FREEZE_SCOPED",
-        "networkPermission": "READ_ONLY_IF_EXPLICIT",
-        "credentialPermission": "DENIED",
-        "serverPermission": "DENIED",
-        "gitPublicationPermission": "DENIED",
-        "authorityMutationPermission": "TASK_SCOPED"
-      }
-    },
-    {
-      "id": "release-tag",
-      "category": "RELEASE_TAG",
-      "expected": {
-        "taskType": "RELEASE",
-        "riskLevel": "HIGH_RISK",
-        "primarySkill": "nq-docs-writer",
-        "supportingSkills": [],
-        "requiredValidations": [
-          "ANNOTATED_TAG",
-          "REMOTE_OBJECT",
-          "PEELED_TARGET",
-          "BRANCH_ANCESTRY",
-          "EXACT_HEAD_CI"
-        ],
-        "independentReview": true,
-        "docsBudget": "RELEASE_SCOPED",
-        "networkPermission": "READ_ONLY_IF_EXPLICIT",
-        "credentialPermission": "DENIED",
-        "serverPermission": "DENIED",
-        "gitPublicationPermission": "EXPLICIT_AUTHORIZATION_REQUIRED",
-        "authorityMutationPermission": "TASK_SCOPED"
-      }
-    },
-    {
-      "id": "blocked-task",
-      "category": "BLOCKED_TASK",
-      "expected": {
-        "taskType": "BLOCKED",
-        "riskLevel": "BLOCKED",
-        "primarySkill": "nq-dh-workflow-router",
-        "supportingSkills": [],
-        "requiredValidations": [
-          "BLOCKER_EVIDENCE"
-        ],
+        "skills": [],
+        "risk": "ORDINARY",
         "independentReview": false,
-        "docsBudget": "NONE",
-        "networkPermission": "DENIED",
-        "credentialPermission": "DENIED",
-        "serverPermission": "DENIED",
-        "gitPublicationPermission": "DENIED",
-        "authorityMutationPermission": "DENIED"
+        "proofs": []
       }
     },
     {
-      "id": "full-repository-audit",
-      "category": "FULL_REPOSITORY_AUDIT",
-      "expected": {
-        "taskType": "FULL_REPOSITORY_AUDIT",
-        "riskLevel": "AUDIT",
-        "primarySkill": "nq-dh-workflow-router",
-        "supportingSkills": [],
-        "requiredValidations": [
-          "AUDIT_BOOTSTRAP_CHARTER",
-          "FULL_INVENTORY",
-          "GENERATED_OUTPUT_EXCLUSION",
-          "NO_AUTO_REMEDIATION"
+      "id": "migration",
+      "input": {
+        "capabilities": [
+          "postgres_migration_review"
         ],
+        "riskTags": [
+          "migration"
+        ]
+      },
+      "expected": {
+        "skills": [
+          "nq-postgres-migration-review"
+        ],
+        "risk": "HIGH_RISK",
         "independentReview": true,
-        "docsBudget": "AUDIT_REPORT_ONLY",
-        "networkPermission": "DENIED",
-        "credentialPermission": "DENIED",
-        "serverPermission": "DENIED",
-        "gitPublicationPermission": "DENIED",
-        "authorityMutationPermission": "DENIED"
+        "proofs": [
+          "FORWARD_ONLY",
+          "HISTORICAL_MIGRATION_IMMUTABLE",
+          "POSTGRESQL_PROOF"
+        ]
+      }
+    },
+    {
+      "id": "trading-p1",
+      "input": {
+        "capabilities": [
+          "trading_correctness_proof"
+        ],
+        "riskTags": [
+          "trading"
+        ]
+      },
+      "expected": {
+        "skills": [
+          "nq-trading-correctness-proof"
+        ],
+        "risk": "HIGH_RISK",
+        "independentReview": true,
+        "proofs": [
+          "POSTGRESQL_PROOF",
+          "STATE_IDEMPOTENCY_RISK_AUDIT"
+        ]
+      }
+    },
+    {
+      "id": "complex-frontend",
+      "input": {
+        "capabilities": [
+          "complex_frontend_state_design"
+        ],
+        "riskTags": []
+      },
+      "expected": {
+        "skills": [
+          "nq-frontend-state-design"
+        ],
+        "risk": "ORDINARY",
+        "independentReview": false,
+        "proofs": []
+      }
+    },
+    {
+      "id": "research-reproducibility",
+      "input": {
+        "capabilities": [
+          "research_reproducibility"
+        ],
+        "riskTags": []
+      },
+      "expected": {
+        "skills": [
+          "nq-research-reproducibility"
+        ],
+        "risk": "ORDINARY",
+        "independentReview": false,
+        "proofs": []
+      }
+    },
+    {
+      "id": "credential",
+      "input": {
+        "capabilities": [],
+        "riskTags": [
+          "credential"
+        ]
+      },
+      "expected": {
+        "skills": [],
+        "risk": "HIGH_RISK",
+        "independentReview": true,
+        "proofs": [
+          "EXPLICIT_AUTHORIZATION",
+          "SECRET_PROTECTION"
+        ]
+      }
+    },
+    {
+      "id": "live-provider",
+      "input": {
+        "capabilities": [],
+        "riskTags": [
+          "live",
+          "real_provider"
+        ]
+      },
+      "expected": {
+        "skills": [],
+        "risk": "HIGH_RISK",
+        "independentReview": true,
+        "proofs": [
+          "CURRENT_AUTHORITY",
+          "ENVIRONMENT_ISOLATION",
+          "EXPLICIT_AUTHORIZATION"
+        ]
+      }
+    },
+    {
+      "id": "schema",
+      "input": {
+        "capabilities": [],
+        "riskTags": [
+          "schema"
+        ]
+      },
+      "expected": {
+        "skills": [],
+        "risk": "HIGH_RISK",
+        "independentReview": true,
+        "proofs": [
+          "POSTGRESQL_PROOF",
+          "SCHEMA_COMPATIBILITY"
+        ]
+      }
+    },
+    {
+      "id": "accounting",
+      "input": {
+        "capabilities": [],
+        "riskTags": [
+          "accounting"
+        ]
+      },
+      "expected": {
+        "skills": [],
+        "risk": "HIGH_RISK",
+        "independentReview": true,
+        "proofs": [
+          "ACCOUNTING_CONSISTENCY",
+          "POSTGRESQL_PROOF"
+        ]
+      }
+    },
+    {
+      "id": "concurrency",
+      "input": {
+        "capabilities": [],
+        "riskTags": [
+          "concurrency"
+        ]
+      },
+      "expected": {
+        "skills": [],
+        "risk": "HIGH_RISK",
+        "independentReview": true,
+        "proofs": [
+          "TRANSACTION_CONCURRENCY_PROOF"
+        ]
+      }
+    },
+    {
+      "id": "security",
+      "input": {
+        "capabilities": [],
+        "riskTags": [
+          "security"
+        ]
+      },
+      "expected": {
+        "skills": [],
+        "risk": "HIGH_RISK",
+        "independentReview": true,
+        "proofs": [
+          "SECURITY_BOUNDARY_PROOF"
+        ]
+      }
+    },
+    {
+      "id": "production",
+      "input": {
+        "capabilities": [],
+        "riskTags": [
+          "production"
+        ]
+      },
+      "expected": {
+        "skills": [],
+        "risk": "HIGH_RISK",
+        "independentReview": true,
+        "proofs": [
+          "DEPLOYMENT_RECOVERY_PROOF",
+          "EXPLICIT_AUTHORIZATION"
+        ]
+      }
+    },
+    {
+      "id": "release-trust",
+      "input": {
+        "capabilities": [],
+        "riskTags": [
+          "ci_release_trust"
+        ]
+      },
+      "expected": {
+        "skills": [],
+        "risk": "HIGH_RISK",
+        "independentReview": true,
+        "proofs": [
+          "EXACT_HEAD_CI",
+          "TRUST_BOUNDARY_PROOF"
+        ]
+      }
+    },
+    {
+      "id": "migration-capability-implies-risk",
+      "input": {
+        "capabilities": [
+          "postgres_migration_review"
+        ],
+        "riskTags": []
+      },
+      "expected": {
+        "skills": [
+          "nq-postgres-migration-review"
+        ],
+        "risk": "HIGH_RISK",
+        "independentReview": true,
+        "proofs": [
+          "FORWARD_ONLY",
+          "HISTORICAL_MIGRATION_IMMUTABLE",
+          "POSTGRESQL_PROOF"
+        ]
+      }
+    },
+    {
+      "id": "trading-capability-implies-risk",
+      "input": {
+        "capabilities": [
+          "trading_correctness_proof"
+        ],
+        "riskTags": []
+      },
+      "expected": {
+        "skills": [
+          "nq-trading-correctness-proof"
+        ],
+        "risk": "HIGH_RISK",
+        "independentReview": true,
+        "proofs": [
+          "POSTGRESQL_PROOF",
+          "STATE_IDEMPOTENCY_RISK_AUDIT"
+        ]
       }
     }
   ],
-  "maliciousMutations": [
+  "negativeCases": [
     {
-      "id": "release-git-publication-allowed",
-      "category": "RELEASE_TAG",
-      "field": "gitPublicationPermission",
-      "value": "ALLOWED",
-      "expectedError": "RELEASE_PUBLICATION_NOT_EXPLICIT"
+      "id": "unknown-target",
+      "mutation": "unknown_target",
+      "expectedError": "INVENTORY_MISMATCH"
     },
     {
-      "id": "gate-freeze-review-disabled",
-      "category": "GATE_FREEZE",
-      "field": "independentReview",
-      "value": false,
-      "expectedError": "GATE_FREEZE_REVIEW_REQUIRED"
+      "id": "duplicate-identity",
+      "mutation": "duplicate_identity",
+      "expectedError": "DUPLICATE_CANONICAL_IDENTITY"
     },
     {
-      "id": "security-audit-credential-allowed",
-      "category": "SECURITY_AUDIT",
-      "field": "credentialPermission",
-      "value": "ALLOWED",
-      "expectedError": "SECURITY_AUDIT_CREDENTIAL_DENIED"
+      "id": "legacy-active",
+      "mutation": "legacy_active",
+      "expectedError": "LEGACY_ACTIVE_SKILL"
     },
     {
-      "id": "full-audit-server-allowed",
-      "category": "FULL_REPOSITORY_AUDIT",
-      "field": "serverPermission",
-      "value": "ALLOWED",
-      "expectedError": "FULL_AUDIT_SERVER_DENIED"
+      "id": "missing-skill-file",
+      "mutation": "missing_file",
+      "expectedError": "INVENTORY_MISMATCH"
     },
     {
-      "id": "full-audit-authority-mutation-allowed",
-      "category": "FULL_REPOSITORY_AUDIT",
-      "field": "authorityMutationPermission",
-      "value": "ALLOWED",
-      "expectedError": "FULL_AUDIT_AUTHORITY_DENIED"
+      "id": "undeclared-skill",
+      "mutation": "extra_file",
+      "expectedError": "INVENTORY_MISMATCH"
     },
     {
-      "id": "credential-route-unauthorized-credential",
-      "category": "CREDENTIAL_OR_REAL_EXCHANGE",
-      "field": "credentialPermission",
-      "value": "ALLOWED_WITHOUT_EXPLICIT_AUTHORIZATION",
-      "expectedError": "SENSITIVE_CREDENTIAL_DENIED"
+      "id": "false-frontmatter",
+      "mutation": "wrong_name",
+      "expectedError": "SKILL_IDENTITY_MISMATCH"
+    },
+    {
+      "id": "empty-trigger-description",
+      "mutation": "empty_description",
+      "expectedError": "SKILL_DESCRIPTION_MISSING"
+    },
+    {
+      "id": "unknown-capability",
+      "mutation": "unknown_capability",
+      "expectedError": "UNKNOWN_CAPABILITY"
+    },
+    {
+      "id": "unknown-risk",
+      "mutation": "unknown_risk",
+      "expectedError": "UNKNOWN_RISK"
+    },
+    {
+      "id": "ordinary-load-all",
+      "mutation": "ordinary_all",
+      "expectedError": "FIXTURE_MISMATCH"
+    },
+    {
+      "id": "risk-downgrade",
+      "mutation": "risk_downgrade",
+      "expectedError": "HIGH_RISK_REQUIREMENT_WEAKENED"
+    },
+    {
+      "id": "missing-postgres-proof",
+      "mutation": "missing_postgres",
+      "expectedError": "HIGH_RISK_REQUIREMENT_WEAKENED"
+    },
+    {
+      "id": "credential-downgrade",
+      "mutation": "credential_downgrade",
+      "expectedError": "HIGH_RISK_REQUIREMENT_WEAKENED"
+    },
+    {
+      "id": "trading-downgrade",
+      "mutation": "trading_downgrade",
+      "expectedError": "HIGH_RISK_REQUIREMENT_WEAKENED"
+    },
+    {
+      "id": "unsafe-identity-path",
+      "mutation": "unsafe_identity",
+      "expectedError": "INVALID_SKILL_ID"
+    },
+    {
+      "id": "duplicate-trigger",
+      "mutation": "duplicate_trigger",
+      "expectedError": "DUPLICATE_TRIGGER"
+    },
+    {
+      "id": "trigger-risk-downgrade",
+      "mutation": "trigger_risk_downgrade",
+      "expectedError": "FIXTURE_MISMATCH"
     }
   ]
 }
