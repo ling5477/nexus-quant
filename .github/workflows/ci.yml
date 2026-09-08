@@ -1246,6 +1246,24 @@ jobs:
           description = "NQ Batch 4B precise allowlist (fake test keys, PEM protocol constant, placeholder markers)"
           regexTarget = "match"
           regexes = [
+            # 仅豁免 B1 已核实的合成订单和成交身份；完整字段和值精确匹配，不排除路径。
+            '''^(?:client_order_id|client|key_value|key)"[ \t]*:[ \t]*"b00b9c58494748bb8121eba193b54613"$''',
+            '''^(?:client_order_id|client|key_value|key)"[ \t]*:[ \t]*"b011ba5f4fef450798639cf2ead2cc4f"$''',
+            '''^(?:client_order_id|client|key_value|key)"[ \t]*:[ \t]*"b0188f25154f4b8c93a52157c580a068"$''',
+            '''^(?:client_order_id|client|key_value|key)"[ \t]*:[ \t]*"b066c7597ea34bc689a01b498e7d2d6e"$''',
+            '''^(?:client_order_id|client|key_value|key)"[ \t]*:[ \t]*"b092dbc35d9d4888b7763e9f599bf04f"$''',
+            '''^(?:client_order_id|client|key_value|key)"[ \t]*:[ \t]*"ord\-04b2e0c9\-89f2\-4215\-8b55\-477752644469"$''',
+            '''^(?:client_order_id|client|key_value|key)"[ \t]*:[ \t]*"ord\-469e016d\-9c3b\-4ade\-a050\-8a40d6edbab6"$''',
+            '''^(?:client_order_id|client|key_value|key)"[ \t]*:[ \t]*"ord\-85eca42a\-321d\-4066\-b8ae\-2dd7f78ef957"$''',
+            '''^(?:client_order_id|client|key_value|key)"[ \t]*:[ \t]*"ord\-8624135e\-1a5a\-4643\-bb09\-4ea1bdccb039"$''',
+            '''^(?:client_order_id|client|key_value|key)"[ \t]*:[ \t]*"ord\-ace60b76\-d890\-43c5\-92f5\-1e1531d3a1cb"$''',
+            '''^(?:client_order_id|client|key_value|key)"[ \t]*:[ \t]*"ord\-e3f279a1\-cfd9\-4454\-a918\-a5223428158e"$''',
+            '''^(?:client_order_id|client|key_value|key)"[ \t]*:[ \t]*"trd\-1d804fa6\-b636\-49ce\-82a5\-b2270c9c4dac"$''',
+            '''^(?:client_order_id|client|key_value|key)"[ \t]*:[ \t]*"trd\-2f873cc6\-c828\-47fa\-b4a9\-dc6ff3a6c8fa"$''',
+            '''^(?:client_order_id|client|key_value|key)"[ \t]*:[ \t]*"trd\-3d0eee08\-213e\-41eb\-945a\-4ec5b46ff89a"$''',
+            '''^(?:client_order_id|client|key_value|key)"[ \t]*:[ \t]*"trd\-4d005c2b\-df5e\-4a64\-962a\-9c6c73cfd812"$''',
+            '''^(?:client_order_id|client|key_value|key)"[ \t]*:[ \t]*"trd\-8348efdd\-d785\-452b\-b0fd\-c431f18f73e2"$''',
+            '''^(?:client_order_id|client|key_value|key)"[ \t]*:[ \t]*"trd\-b4673aa1\-9178\-43ce\-910b\-e12bea3d9b0e"$''',
             '''REPLACE_WITH_LOCAL''',
             '''CHANGE_ME''',
             '''FAKE-PLACEHOLDER''',
