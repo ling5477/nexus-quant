@@ -352,6 +352,11 @@ class TradingRestartRecoveryPostgresIntegrationTest {
             String baseUrl = requiredEnvironment("SPRING_DATASOURCE_URL");
             String user = requiredEnvironment("SPRING_DATASOURCE_USERNAME");
             String password = System.getenv().getOrDefault("SPRING_DATASOURCE_PASSWORD", "");
+            return create(scenario, baseUrl, user, password);
+        }
+
+        // B0 复用生命周期，但显式传入本轮创建的 disposable 实例，不继承机器 datasource。
+        static RestartDatabase create(String scenario, String baseUrl, String user, String password) throws Exception {
             String caseId = scenario + "_" + UUID.randomUUID().toString().replace("-", "");
             String databaseName = "nq_f002_" + caseId;
             String maintenanceUrl = replaceDatabase(baseUrl, "postgres");
