@@ -123,7 +123,7 @@ public class OkxRestReconcileService {
     /**
      * 执行一次同步。
      *
-     * @param limit 本次扫描上限
+     * @param limit 单次扫描的订单候选总上限，含 CANCELLED；所有状态共享一次查询预算
      * @return 本次新写入的 trade 数量
      */
     public int reconcileOnce(int limit) {
@@ -141,14 +141,15 @@ public class OkxRestReconcileService {
 
     private int reconcileObservedFacts(int limit) {
         int newTrades = 0;
-        for (OrderRecord order : orderCommandService.findOrdersByStatuses(
+        for (OrderRecord order : orderCommandService.reserveReconciliationCandidates("OKX",
                 List.of(
                         OrderStatus.SENT,
                         OrderStatus.ACCEPTED,
                         OrderStatus.PARTIALLY_FILLED,
                         OrderStatus.CANCEL_REQUESTED,
                         OrderStatus.CANCEL_REJECTED,
-                        OrderStatus.FILLED
+                        OrderStatus.FILLED,
+                        OrderStatus.CANCELLED
                 ),
                 limit
         )) {
@@ -160,6 +161,10 @@ public class OkxRestReconcileService {
                     continue;
                 }
                 newTrades += reconcileFilledOrder(order, limit);
+                continue;
+            }
+            if (order.status() == OrderStatus.CANCELLED) {
+                newTrades += reconcileCancelledOrder(order, limit);
                 continue;
             }
             newTrades += reconcileSingleOrder(order, limit);
@@ -193,6 +198,31 @@ public class OkxRestReconcileService {
                         "order_id", order.orderId(),
                         "status", order.status().name(),
                         "external_order_id", String.valueOf(order.externalOrderId()),
+                        "new_trades", newTrades
+                )
+        );
+        return newTrades;
+    }
+
+    /**
+     * 撤单终态可以与真实成交共存；只恢复成交与账本事实，不改变订单状态或版本。
+     * 缺少稳定外部身份时仅记录未收敛观测，禁止猜测身份查询或重新发出交易命令。
+     */
+    private int reconcileCancelledOrder(OrderRecord order, int limit) {
+        if (order.externalOrderId() == null || order.externalOrderId().isBlank()) {
+            observation.record(OKX_RECONCILE, UNRESOLVED, 1);
+            return 0;
+        }
+        int newTrades = reconcileFills(order, limit);
+        auditLogRepository.append(
+                "RECONCILE",
+                "OKX_CANCELLED_ORDER_FILL_BACKFILL_COMPLETED",
+                order.orderId(),
+                order.traceId(),
+                java.util.Map.of(
+                        "order_id", order.orderId(),
+                        "status", order.status().name(),
+                        "external_order_id", order.externalOrderId(),
                         "new_trades", newTrades
                 )
         );

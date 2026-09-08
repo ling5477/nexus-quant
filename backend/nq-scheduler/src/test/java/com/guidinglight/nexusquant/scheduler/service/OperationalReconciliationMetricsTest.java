@@ -68,7 +68,7 @@ class OperationalReconciliationMetricsTest {
         var trade = new PaperTradeRecord("trade-dynamic", order.orderId(), order.accountId(), order.symbol(), "OKX",
                 order.externalOrderId(), "fill-dynamic", BigDecimal.TEN, BigDecimal.ONE, BigDecimal.ZERO, "USDT",
                 order.traceId(), Instant.EPOCH);
-        when(orders.findOrdersByStatuses(any(), eq(10))).thenReturn(List.of(order));
+        when(orders.reserveReconciliationCandidates(eq("OKX"), any(), eq(10))).thenReturn(List.of(order));
         when(adapter.listTradeReports(any(), any(), any())).thenReturn(List.of());
         when(trades.findAllByOrderId(order.orderId(), 10)).thenReturn(List.of(trade));
         doReturn(new LedgerPostingResult(true, false, "POSTED")).when(ledger).postTrade(any());

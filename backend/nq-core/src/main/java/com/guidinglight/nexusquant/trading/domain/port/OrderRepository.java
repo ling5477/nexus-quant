@@ -75,6 +75,20 @@ public interface OrderRepository {
      * @return 订单列表
      */
     List<OrderRecord> findByStatuses(Collection<OrderStatus> statuses, int limit);
+
+    /**
+     * 为 venue 的 canonical 对账扫描预留一批候选，所有状态共享 limit。
+     * 以持久化 (created_at, order_id) 游标循环选择；返回前独立短事务必须提交。
+     * 预留只推进扫描进度，不修改订单；调用方失败或崩溃后候选在下一圈重新可达。
+     * 同 venue 并发预留串行推进；不承诺处理期间的排他所有权或 exactly-once。
+     *
+     * @param venue 非空 venue，必须在数据库 LIMIT 前过滤
+     * @param statuses 非空候选状态集合
+     * @param limit 正的共享订单候选上限
+     * @return 最多 limit 个订单快照；空集合不推进游标
+     * @throws IllegalArgumentException 输入不满足预留约束
+     */
+    List<OrderRecord> reserveReconciliationCandidates(String venue, Collection<OrderStatus> statuses, int limit);
 }
 
 

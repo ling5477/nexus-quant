@@ -94,7 +94,8 @@ import org.springframework.transaction.annotation.Transactional;
         webEnvironment = SpringBootTest.WebEnvironment.MOCK
 )
 @ActiveProfiles("local")
-@ContextConfiguration(initializers = TradingChainPostgresIntegrationTest.NoExchangeOutboundInitializer.class)
+@ContextConfiguration(initializers = {TradingChainPostgresIntegrationTest.NoExchangeOutboundInitializer.class,
+        TradingChainPostgresIntegrationTest.CommittedFixtureSchemaInitializer.class})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @TestPropertySource(properties = {
         "spring.main.allow-bean-definition-overriding=true",
@@ -114,6 +115,33 @@ import org.springframework.transaction.annotation.Transactional;
         "nq.env-safety.no-outbound=true"
 })
 class TradingChainPostgresIntegrationTest {
+
+    /**
+     * 对账预留需要已提交 fixture；每个测试 context 使用独立 schema，替代原外层回滚的隔离。
+     * ContextClosed 在测试事务结束后清理且只允许删除本次生成的 schema，避免跨测试扫描事实。
+     */
+    static class CommittedFixtureSchemaInitializer implements
+            org.springframework.context.ApplicationContextInitializer<org.springframework.context.ConfigurableApplicationContext> {
+        @Override
+        public void initialize(org.springframework.context.ConfigurableApplicationContext context) {
+            String url = context.getEnvironment().getRequiredProperty("spring.datasource.url");
+            String schema = "chain_fixture_" + UUID.randomUUID().toString().replace("-", "");
+            assertTrue(url.startsWith("jdbc:postgresql://"));
+            assertFalse(url.contains("currentSchema="));
+            org.springframework.boot.test.util.TestPropertyValues.of(
+                    "spring.datasource.url=" + url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema + ",public",
+                    "spring.flyway.schemas=" + schema,
+                    "spring.flyway.default-schema=" + schema,
+                    "spring.flyway.create-schemas=true").applyTo(context);
+            context.addApplicationListener((org.springframework.context.ApplicationListener<org.springframework.context.event.ContextClosedEvent>) event -> {
+                if (event.getApplicationContext() == context && context.containsBean("jdbcTemplate")) {
+                    assertTrue(schema.matches("chain_fixture_[0-9a-f]{32}"));
+                    context.getBean(org.springframework.jdbc.core.JdbcTemplate.class)
+                            .execute("DROP SCHEMA IF EXISTS " + schema + " CASCADE");
+                }
+            });
+        }
+    }
 
     private static final BigDecimal ORDER_PRICE = new BigDecimal("100.00000000");
     private static final BigDecimal ORDER_QUANTITY = new BigDecimal("0.10000000");
@@ -164,6 +192,12 @@ class TradingChainPostgresIntegrationTest {
     @Autowired
     private FailOnceTradeLedgerGateway failOnceTradeLedgerGateway;
 
+    /** 独立 reservation 只能读取已提交业务事实，测试不能靠同事务可见性绕过真实边界。 */
+    private void commitReconciliationFixture() {
+        org.springframework.test.context.transaction.TestTransaction.flagForCommit();
+        org.springframework.test.context.transaction.TestTransaction.end();
+    }
+
     @BeforeEach
     void resetFakeVenue() {
         fakeVenue.reset();
@@ -181,6 +215,7 @@ class TradingChainPostgresIntegrationTest {
         assertProductionComposition();
         ScenarioContext scenario = placeAcceptedOrder("negative");
 
+        commitReconciliationFixture();
         assertEquals(0, okxRestReconcileService.reconcileOnce(10));
 
         OrderRecord accepted = orderRepository.findByOrderId(scenario.order().orderId()).orElseThrow();
@@ -211,6 +246,7 @@ class TradingChainPostgresIntegrationTest {
         OrderRecord accepted = scenario.order();
         String expectedExchangeTradeId = fakeVenue.reportFilled(accepted.externalOrderId());
 
+        commitReconciliationFixture();
         assertEquals(1, okxRestReconcileService.reconcileOnce(10));
 
         OrderRecord filled = orderRepository.findByOrderId(accepted.orderId()).orElseThrow();
@@ -427,6 +463,7 @@ class TradingChainPostgresIntegrationTest {
         VenueFill fillB = venueFill(scenario, "B", "125.00000000", "0.06000000", 5);
         fakeVenue.reportFills(scenario.order().externalOrderId(), List.of(fillA, fillB));
 
+        commitReconciliationFixture();
         assertEquals(2, okxRestReconcileService.reconcileOnce(100));
 
         PaperTradeRecord tradeA = tradeByExchangeId(fillA.exchangeTradeId());
@@ -458,6 +495,7 @@ class TradingChainPostgresIntegrationTest {
         assertEquals(0L, ledgerEntryCount(tradeA));
         fakeVenue.reportFills(scenario.order().externalOrderId(), List.of());
 
+        commitReconciliationFixture();
         assertEquals(0, okxRestReconcileService.reconcileOnce(100));
 
         assertLedgerComplete(tradeA);
@@ -482,6 +520,7 @@ class TradingChainPostgresIntegrationTest {
         postCanonicalLedger(scenario.order(), tradeA);
         fakeVenue.reportFills(scenario.order().externalOrderId(), List.of(fillB));
 
+        commitReconciliationFixture();
         assertEquals(1, okxRestReconcileService.reconcileOnce(100));
 
         PaperTradeRecord tradeB = tradeByExchangeId(fillB.exchangeTradeId());
@@ -516,6 +555,7 @@ class TradingChainPostgresIntegrationTest {
         tradeRepository.insert(mismatchedTrade);
         fakeVenue.reportFills(scenario.order().externalOrderId(), List.of());
 
+        commitReconciliationFixture();
         assertThrows(IllegalStateException.class, () -> okxRestReconcileService.reconcileOnce(100));
 
         assertEquals(0L, ledgerEntryCount(mismatchedTrade));
@@ -712,8 +752,9 @@ class TradingChainPostgresIntegrationTest {
 
     private void retireTestOrders(String... orderIds) {
         for (String orderId : orderIds) {
+            // 断言完成后排除已退役的临时订单；CANCELLED 现在仍属于有效成交恢复候选。
             assertEquals(1, jdbc.update(
-                    "UPDATE orders SET status='CANCELLED', reason='GATEAUDIT_TEST_CLEANUP', "
+                    "UPDATE orders SET status='REJECTED', reason='GATEAUDIT_TEST_CLEANUP', "
                             + "updated_at=CURRENT_TIMESTAMP WHERE order_id=?",
                     orderId
             ));

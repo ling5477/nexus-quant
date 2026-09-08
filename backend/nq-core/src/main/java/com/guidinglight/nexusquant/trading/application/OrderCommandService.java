@@ -228,6 +228,14 @@ public class OrderCommandService {
     }
 
     /**
+     * 预留 venue 对账候选；仓储在返回前提交独立扫描事务，之后才允许查询 venue。
+     * 所有候选状态共享正数 limit，进度与订单业务事实分离，异常向调用方传播。
+     */
+    public List<OrderRecord> reserveReconciliationCandidates(String venue, Collection<OrderStatus> statuses, int limit) {
+        return orderRepository.reserveReconciliationCandidates(venue, statuses, limit);
+    }
+
+    /**
      * 按 ID 查询订单。
      */
     public Optional<OrderRecord> findByOrderId(String orderId) {

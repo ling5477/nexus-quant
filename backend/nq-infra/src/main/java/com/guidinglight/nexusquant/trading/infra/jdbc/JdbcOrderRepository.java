@@ -19,6 +19,9 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * JdbcOrderRepository 是订单端口的 JDBC 实现。
@@ -158,6 +161,53 @@ public class JdbcOrderRepository implements OrderRepository {
                 ORDER_ROW_MAPPER
         );
     }
+
+    /**
+     * 同 venue 的 cursor row 锁串行化预留，READ_COMMITTED 在等待后读取已提交进度。
+     * REQUIRES_NEW 保证不把锁带入调用方的 venue I/O；十秒事务超时限制数据库等待。
+     * 一条循环排序查询只使用一份 limit，取出的扫描键与订单来自同一语句快照。
+     */
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED,
+            timeoutString = "${nq.reconciliation.scan-transaction-timeout-seconds:10}")
+    public List<OrderRecord> reserveReconciliationCandidates(String venue, Collection<OrderStatus> statuses, int limit) {
+        if (venue == null || venue.isBlank() || statuses == null || statuses.isEmpty()
+                || statuses.stream().anyMatch(java.util.Objects::isNull) || limit <= 0) {
+            throw new IllegalArgumentException("venue, candidate statuses and positive limit are required");
+        }
+        if (!org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()) {
+            throw new IllegalStateException("reconciliation reservation requires a Spring transaction");
+        }
+        jdbcTemplate.update("INSERT INTO reconciliation_scan_cursors(venue) VALUES (?) ON CONFLICT (venue) DO NOTHING", venue);
+        ScanKey cursor = jdbcTemplate.queryForObject(
+                "SELECT cursor_created_at, cursor_order_id FROM reconciliation_scan_cursors WHERE venue=? FOR UPDATE",
+                (rs, row) -> new ScanKey(rs.getTimestamp("cursor_created_at"), rs.getString("cursor_order_id")), venue);
+        MapSqlParameterSource parameters = new MapSqlParameterSource()
+                .addValue("venue", venue)
+                .addValue("statuses", statuses.stream().map(Enum::name).toList())
+                .addValue("cursorTime", cursor.createdAt(), java.sql.Types.TIMESTAMP)
+                .addValue("cursorId", cursor.orderId(), java.sql.Types.VARCHAR)
+                .addValue("limit", limit);
+        List<ScannedOrder> selected = namedParameterJdbcTemplate.query(
+                BASE_SELECT.replace("SELECT order_id", "SELECT created_at, order_id") + """
+                 WHERE venue = :venue AND status IN (:statuses)
+                 ORDER BY CASE WHEN CAST(:cursorTime AS timestamptz) IS NULL
+                     OR (created_at, order_id) > (CAST(:cursorTime AS timestamptz), :cursorId)
+                     THEN 0 ELSE 1 END, created_at ASC, order_id ASC
+                 LIMIT :limit
+                """, parameters, (rs, row) -> new ScannedOrder(mapOrderRecord(rs, row),
+                        new ScanKey(rs.getTimestamp("created_at"), rs.getString("order_id"))));
+        if (!selected.isEmpty()) {
+            ScanKey last = selected.getLast().key();
+            int updated = jdbcTemplate.update("UPDATE reconciliation_scan_cursors SET cursor_created_at=?, cursor_order_id=?,"
+                    + " revision=revision+1, updated_at=CURRENT_TIMESTAMP WHERE venue=?", last.createdAt(), last.orderId(), venue);
+            if (updated != 1) throw new IllegalStateException("locked reconciliation cursor was lost");
+        }
+        return selected.stream().map(ScannedOrder::order).toList();
+    }
+
+    private record ScanKey(Timestamp createdAt, String orderId) { }
+    private record ScannedOrder(OrderRecord order, ScanKey key) { }
 
     private static OrderRecord mapOrderRecord(ResultSet resultSet, int rowNum) throws SQLException {
         return new OrderRecord(

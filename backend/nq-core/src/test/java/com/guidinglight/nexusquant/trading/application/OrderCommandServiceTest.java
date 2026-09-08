@@ -351,6 +351,11 @@ class OrderCommandServiceTest {
                     .toList();
         }
 
+        @Override
+        public List<OrderRecord> reserveReconciliationCandidates(String venue, Collection<OrderStatus> statuses, int limit) {
+            throw new UnsupportedOperationException("durable scan requires PostgreSQL fixture");
+        }
+
         int insertCount() {
             return insertCount;
         }

@@ -1,6 +1,8 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -28,6 +30,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
@@ -35,6 +40,173 @@ import org.mockito.Mockito;
  * OkxRestReconcileServiceTest 覆盖 OKX reconcile 的状态收敛与成交落库行为。
  */
 class OkxRestReconcileServiceTest {
+
+    /** limit 是公开总预算；终态覆盖不得引入第二次独立扫描。 */
+    @Test
+    void limitOneUsesExactlyOneSharedCandidateScan() {
+        var f = new CancelledFixture("ext-c2");
+        var statuses = List.of(OrderStatus.SENT, OrderStatus.ACCEPTED, OrderStatus.PARTIALLY_FILLED,
+                OrderStatus.CANCEL_REQUESTED, OrderStatus.CANCEL_REJECTED, OrderStatus.FILLED, OrderStatus.CANCELLED);
+        when(f.commands.reserveReconciliationCandidates(eq("OKX"), eq(statuses), eq(1))).thenReturn(List.of(f.order));
+        assertEquals(0, f.service.reconcileOnce(1));
+        verify(f.commands).reserveReconciliationCandidates(eq("OKX"), eq(statuses), eq(1));
+        Mockito.verifyNoMoreInteractions(f.commands);
+        verify(f.adapter).listTradeReports("BTC-USDT", "ext-c2", "trc-c2");
+        verify(f.trades).findAllByOrderId("ord-c2", 1);
+        Mockito.verifyNoInteractions(f.lifecycle, f.events, f.ledger);
+        verify(f.adapter, never()).getOrder(any());
+        verify(f.trades, never()).insert(any());
+    }
+
+    @Test
+    void cancelledPartialFillIsRecoveredOnceWithoutOrderMutation() {
+        var f = new CancelledFixture("ext-c2");
+        var report = f.report("OKX", 2001L, "coid-c2", "ext-c2", "fill-c2");
+        when(f.adapter.listTradeReports(any(), any(), any())).thenReturn(List.of(report));
+        when(f.ledger.postTrade(any())).thenReturn(new LedgerPostingResult(true, false, "POSTED"),
+                new LedgerPostingResult(true, true, "IDEMPOTENT_HIT"));
+        assertEquals(1, f.service.reconcileOnce(10));
+        var trade = ArgumentCaptor.forClass(PaperTradeRecord.class);
+        verify(f.trades).insert(trade.capture());
+        assertTrue(trade.getValue().qty().compareTo(f.order.qty()) < 0);
+        when(f.trades.findByExchangeAndExchangeTradeId("OKX", "fill-c2"))
+                .thenReturn(Optional.of(trade.getValue()));
+        when(f.trades.findAllByOrderId("ord-c2", 10)).thenReturn(List.of(trade.getValue()));
+        assertEquals(0, f.service.reconcileOnce(10));
+        verify(f.trades, times(1)).insert(any());
+        verify(f.events, times(1)).append(eq("trade.event.v1"), any());
+        verify(f.ledger, times(2)).postTrade(any());
+        verify(f.adapter, times(2)).listTradeReports("BTC-USDT", "ext-c2", "trc-c2");
+        verify(f.commands, times(2)).reserveReconciliationCandidates(eq("OKX"), Mockito.argThat(statuses ->
+                statuses.contains(OrderStatus.CANCELLED) && statuses.contains(OrderStatus.FILLED)), eq(10));
+        verify(f.audit).append("RECONCILE", "OKX_CANCELLED_ORDER_FILL_BACKFILL_COMPLETED", "ord-c2", "trc-c2",
+                java.util.Map.of("order_id", "ord-c2", "status", "CANCELLED", "external_order_id", "ext-c2", "new_trades", 1));
+        verify(f.audit).append("RECONCILE", "OKX_CANCELLED_ORDER_FILL_BACKFILL_COMPLETED", "ord-c2", "trc-c2",
+                java.util.Map.of("order_id", "ord-c2", "status", "CANCELLED", "external_order_id", "ext-c2", "new_trades", 0));
+        f.assertNoOrderMutation();
+    }
+
+    @Test
+    void cancelledWithoutFillsDoesNotInventExecution() {
+        var f = new CancelledFixture("ext-c2");
+        assertEquals(0, f.service.reconcileOnce(10));
+        verify(f.adapter).listTradeReports("BTC-USDT", "ext-c2", "trc-c2");
+        verify(f.trades, never()).insert(any());
+        Mockito.verifyNoInteractions(f.events, f.ledger);
+        f.assertNoOrderMutation();
+    }
+
+    @Test
+    void cancelledExistingDurableTradeReplaysLedgerWithoutVenueReport() {
+        var f = new CancelledFixture("ext-c2");
+        var trade = new PaperTradeRecord("trd-c2", "ord-c2", 2001L, "BTC-USDT", "OKX", "ext-c2", "fill-c2",
+                new BigDecimal("100"), new BigDecimal("0.01"), BigDecimal.ZERO, "USDT", "trc-c2", Instant.EPOCH);
+        when(f.trades.findAllByOrderId("ord-c2", 10)).thenReturn(List.of(trade));
+        when(f.ledger.postTrade(any())).thenReturn(new LedgerPostingResult(true, false, "POSTED"));
+        assertEquals(0, f.service.reconcileOnce(10));
+        verify(f.trades, never()).insert(any());
+        Mockito.verifyNoInteractions(f.events);
+        verify(f.ledger).postTrade(Mockito.argThat(request -> request.tradeId().equals("trd-c2")));
+        verify(f.audit).append(eq("RECONCILE"), eq("OKX_LEDGER_RECOVERY_COMPLETED"), eq("ord-c2"), eq("trc-c2"), any());
+        f.assertNoOrderMutation();
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"   "})
+    void cancelledWithoutStableExternalIdentitySkipsAmbiguousQuery(String externalId) {
+        var f = new CancelledFixture(externalId);
+        assertEquals(0, f.service.reconcileOnce(10));
+        Mockito.verifyNoInteractions(f.adapter, f.trades, f.ledger, f.events);
+        f.assertNoOrderMutation();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"venue", "account", "client", "order", "trade"})
+    void cancelledMismatchedVenueIdentityFailsClosed(String mismatch) {
+        var f = new CancelledFixture("ext-c2");
+        when(f.adapter.listTradeReports(any(), any(), any())).thenReturn(List.of(f.report(
+                mismatch.equals("venue") ? "OTHER" : "OKX", mismatch.equals("account") ? 999L : 2001L,
+                mismatch.equals("client") ? "other" : "coid-c2", mismatch.equals("order") ? "other" : "ext-c2",
+                mismatch.equals("trade") ? " " : "fill-c2")));
+        assertTrue(assertThrows(IllegalStateException.class, () -> f.service.reconcileOnce(10))
+                .getMessage().contains("identity mismatch"));
+        verify(f.trades, never()).insert(any());
+        Mockito.verifyNoInteractions(f.events, f.ledger);
+        f.assertNoOrderMutation();
+    }
+
+    @Test
+    void cancelledDuplicateVenueTradeIdRejectsSecondFact() {
+        var f = new CancelledFixture("ext-c2");
+        var report = f.report("OKX", 2001L, "coid-c2", "ext-c2", "fill-c2");
+        when(f.adapter.listTradeReports(any(), any(), any())).thenReturn(List.of(report, report));
+        when(f.ledger.postTrade(any())).thenReturn(new LedgerPostingResult(true, false, "POSTED"));
+        assertTrue(assertThrows(IllegalStateException.class, () -> f.service.reconcileOnce(10))
+                .getMessage().contains("DUPLICATE_VENUE_EXCHANGE_TRADE_ID"));
+        // 既有流水线逐项处理：首项有效事实保留，第二项拒绝，不伪造整批原子性。
+        verify(f.trades, times(1)).insert(any());
+        verify(f.events, times(1)).append(eq("trade.event.v1"), any());
+        verify(f.ledger, times(1)).postTrade(any());
+        f.assertNoOrderMutation();
+    }
+
+    @Test
+    void cancelledVenueReportLimitOverflowFailsBeforeWrites() {
+        var f = new CancelledFixture("ext-c2");
+        when(f.adapter.listTradeReports(any(), any(), any())).thenReturn(java.util.Collections.nCopies(11,
+                f.report("OKX", 2001L, "coid-c2", "ext-c2", "fill-c2")));
+        assertThrows(IllegalStateException.class, () -> f.service.reconcileOnce(10));
+        verify(f.audit).append("RECONCILE", "OKX_LEDGER_RECOVERY_INCOMPLETE", "ord-c2", "trc-c2",
+                java.util.Map.of("order_id", "ord-c2", "reason", "VENUE_REPORT_LIMIT_EXCEEDED"));
+        Mockito.verifyNoInteractions(f.trades, f.events, f.ledger);
+        f.assertNoOrderMutation();
+    }
+
+    @Test
+    void cancelledDurableTradeLimitOverflowFailsBeforeWrites() {
+        var f = new CancelledFixture("ext-c2");
+        when(f.trades.findAllByOrderId("ord-c2", 10)).thenThrow(new IllegalStateException("durable trade limit"));
+        assertThrows(IllegalStateException.class, () -> f.service.reconcileOnce(10));
+        verify(f.audit).append("RECONCILE", "OKX_LEDGER_RECOVERY_INCOMPLETE", "ord-c2", "trc-c2",
+                java.util.Map.of("order_id", "ord-c2", "reason", "DURABLE_TRADE_LIMIT_EXCEEDED"));
+        verify(f.trades, never()).insert(any());
+        Mockito.verifyNoInteractions(f.events, f.ledger);
+        f.assertNoOrderMutation();
+    }
+
+    private static final class CancelledFixture {
+        final OrderCommandService commands = Mockito.mock(OrderCommandService.class);
+        final OrderLifecycleService lifecycle = Mockito.mock(OrderLifecycleService.class);
+        final OkxExchangeAdapter adapter = Mockito.mock(OkxExchangeAdapter.class);
+        final TradeRepository trades = Mockito.mock(TradeRepository.class);
+        final TradeLedgerGateway ledger = Mockito.mock(TradeLedgerGateway.class);
+        final com.guidinglight.nexusquant.contracts.event.EventPublisherPort events =
+                Mockito.mock(com.guidinglight.nexusquant.contracts.event.EventPublisherPort.class);
+        final AuditLogRepository audit = Mockito.mock(AuditLogRepository.class);
+        final OkxRestReconcileService service = new OkxRestReconcileService(commands, lifecycle, adapter, trades, ledger, events, audit);
+        final OrderRecord order;
+
+        CancelledFixture(String externalId) {
+            order = new OrderRecord("ord-c2", 2001L, null, "OKX", "BTC-USDT", "coid-c2", "BUY", "LIMIT",
+                    new BigDecimal("100"), new BigDecimal("0.1"), externalId, OrderStatus.CANCELLED, "TEST", "trc-c2");
+            when(commands.reserveReconciliationCandidates(eq("OKX"), any(), eq(10))).thenReturn(List.of(order));
+        }
+
+        AdapterTradeReport report(String venue, Long account, String client, String external, String tradeId) {
+            return new AdapterTradeReport(venue, account, "BTC-USDT", client, external, tradeId, "BUY",
+                    new BigDecimal("100"), new BigDecimal("0.01"), BigDecimal.ZERO, "USDT", Instant.EPOCH,
+                    "synthetic", "trc-c2", "SIM");
+        }
+
+        void assertNoOrderMutation() {
+            Mockito.verifyNoInteractions(lifecycle);
+            verify(adapter, never()).getOrder(any());
+            verify(commands, Mockito.atLeastOnce()).reserveReconciliationCandidates(eq("OKX"), any(), eq(10));
+            Mockito.verifyNoMoreInteractions(commands);
+            verify(audit, never()).append(any(), eq("OKX_FILLED_ORDER_FILL_BACKFILL_COMPLETED"), any(), any(), any());
+        }
+    }
 
     @Test
     void shouldRecoverFromCancelRequestedToAcceptedViaCancelRejected() {
@@ -73,7 +245,7 @@ class OkxRestReconcileServiceTest {
                 "trc-rec-1"
         );
 
-        when(orderCommandService.findOrdersByStatuses(any(), eq(10))).thenReturn(List.of(cancelRequestedOrder));
+        when(orderCommandService.reserveReconciliationCandidates(eq("OKX"), any(), eq(10))).thenReturn(List.of(cancelRequestedOrder));
         when(okxExchangeAdapter.getOrder(any())).thenReturn(new AdapterOrderSnapshot(
                 cancelRequestedOrder.accountId(),
                 cancelRequestedOrder.venue(),
@@ -152,7 +324,7 @@ class OkxRestReconcileServiceTest {
                 Instant.parse("2026-03-06T01:00:00Z")
         );
 
-        when(orderCommandService.findOrdersByStatuses(any(), eq(10))).thenReturn(List.of(acceptedOrder));
+        when(orderCommandService.reserveReconciliationCandidates(eq("OKX"), any(), eq(10))).thenReturn(List.of(acceptedOrder));
         when(okxExchangeAdapter.getOrder(any())).thenReturn(new AdapterOrderSnapshot(
                 acceptedOrder.accountId(),
                 acceptedOrder.venue(),
@@ -248,7 +420,7 @@ class OkxRestReconcileServiceTest {
                 Instant.parse("2026-03-14T05:58:17Z")
         );
 
-        when(orderCommandService.findOrdersByStatuses(any(), eq(10))).thenReturn(List.of(filledOrder));
+        when(orderCommandService.reserveReconciliationCandidates(eq("OKX"), any(), eq(10))).thenReturn(List.of(filledOrder));
         when(tradeRepository.findAllByOrderId("ord-rec-3", 10)).thenReturn(List.of());
         when(okxExchangeAdapter.listTradeReports("BTC-USDT", "ext-rec-3", "trc-rec-3")).thenReturn(List.of(
                 new AdapterTradeReport(
@@ -334,7 +506,7 @@ class OkxRestReconcileServiceTest {
                 Instant.parse("2026-03-14T05:58:18Z")
         );
 
-        when(orderCommandService.findOrdersByStatuses(any(), eq(10))).thenReturn(List.of(filledOrder));
+        when(orderCommandService.reserveReconciliationCandidates(eq("OKX"), any(), eq(10))).thenReturn(List.of(filledOrder));
         when(okxExchangeAdapter.listTradeReports("BTC-USDT", "ext-rec-4", "trc-rec-4")).thenReturn(List.of());
         when(tradeRepository.findAllByOrderId("ord-rec-4", 10)).thenReturn(List.of(existingTrade));
         when(tradeLedgerGateway.postTrade(any())).thenReturn(new LedgerPostingResult(true, false, "POSTED"));
