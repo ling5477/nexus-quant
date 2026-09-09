@@ -65,6 +65,11 @@ final class B0Fixture implements AutoCloseable {
     }
 
     void initialize(boolean success, String venue, Map<String, String> childEnvironment) throws Exception {
+        initialize(success, venue, childEnvironment, false);
+    }
+
+    /** B3 仅在封存前给真实 repository 最小 ENGAGE 权限；场景与 checker 不持有写连接。 */
+    void initialize(boolean success, String venue, Map<String, String> childEnvironment, boolean canonicalEngage) throws Exception {
         validate(url(), name(), PROFILE, venue, childEnvironment, sealed);
         try (Connection connection = DriverManager.getConnection(url(), "postgres", "");
              var statement = connection.createStatement()) {
@@ -100,6 +105,10 @@ final class B0Fixture implements AutoCloseable {
             statement.execute("REVOKE INSERT,UPDATE,DELETE ON kill_switch_states,kill_switch_events,"
                     + "b0_fixture_identity,accounts FROM nq_b0_app");
             statement.execute("REVOKE CREATE ON SCHEMA public FROM PUBLIC");
+            if (canonicalEngage) {
+                statement.execute("GRANT UPDATE ON kill_switch_states TO nq_b0_app");
+                statement.execute("GRANT INSERT ON kill_switch_events TO nq_b0_app");
+            }
             connection.commit();
             sealed = true;
         }

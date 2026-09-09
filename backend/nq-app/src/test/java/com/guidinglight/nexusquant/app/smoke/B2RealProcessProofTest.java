@@ -214,7 +214,7 @@ class B2RealProcessProofTest {
         }
     }
 
-    private void assertAccounting(Connection reader, JsonNode venue) throws Exception {
+    void assertAccounting(Connection reader, JsonNode venue) throws Exception {
         // 根据每笔真实 fee 验证 canonical 成对分录，不固定每笔分录数量。
         for (JsonNode fill : venue.path("fills")) {
             String fillId = fill.path("tradeId").asText();
@@ -256,7 +256,7 @@ class B2RealProcessProofTest {
         assertEquals(value(reader, "SELECT count(*) FROM ledger_entries"), value(reader, "SELECT count(*) FROM ledger_events"));
     }
 
-    private ObjectNode snapshot(Connection reader) throws Exception {
+    ObjectNode snapshot(Connection reader) throws Exception {
         var result = mapper.createObjectNode();
         reader.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
         reader.setAutoCommit(false);

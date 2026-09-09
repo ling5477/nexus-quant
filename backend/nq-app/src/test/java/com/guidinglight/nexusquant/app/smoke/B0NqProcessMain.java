@@ -88,6 +88,10 @@ public final class B0NqProcessMain {
                         B0Fixture.require(pending != null);
                         System.out.println("B0_RESULT " + pending.get(25, java.util.concurrent.TimeUnit.SECONDS));
                         pending = null;
+                    } else if ("ENGAGE".equals(command)) {
+                        var kill = context.getBean(com.guidinglight.nexusquant.risk.service.KillSwitchService.class);
+                        var engaged = kill.engage(kill.snapshot().version(), "B3_IN_FLIGHT", "B3_TEST", "b3-kill");
+                        System.out.println("B0_RESULT ENGAGE " + engaged.status() + " " + engaged.version());
                     } else if ("RECOVER".equals(command)) {
                         int count = context.getBean(OkxRestReconcileService.class).reconcileOnce(100);
                         System.out.println("B0_RESULT RECOVER " + count);
@@ -100,11 +104,13 @@ public final class B0NqProcessMain {
         }
     }
 
-    /** 异步屏障仍调用真实命令服务；主线程只允许并行运行普通对账，没有业务表写入接口。 */
+    /** 异步屏障仍调用真实命令服务；主线程可运行普通对账或 canonical ENGAGE，没有直接写表接口。 */
     private static String tradingCommand(OrderCommandService commands, JdbcTemplate jdbc, String name, String command) {
-        if ("PLACE".equals(command) || "PLACE_B2".equals(command) || "PLACE_B2_LIVE".equals(command)) {
+        if ("PLACE".equals(command) || "PLACE_B2".equals(command) || "PLACE_B2_LIVE".equals(command)
+                || "PLACE_B3_NEW".equals(command)) {
             Long account = jdbc.queryForObject("SELECT account_id FROM accounts WHERE account_code='b0-account'", Long.class);
             String client = "b0" + name.substring(name.length() - 30);
+            if ("PLACE_B3_NEW".equals(command)) client = "b3" + name.substring(name.length() - 30);
             var result = commands.placeOrder(new PlaceOrderRequest(
                     "b0-request", account, null, "OKX", "BTC-USDT", client, account + ":" + client,
                     "b0_test", OrderSide.BUY, OrderType.LIMIT, new BigDecimal("100.00000000"),

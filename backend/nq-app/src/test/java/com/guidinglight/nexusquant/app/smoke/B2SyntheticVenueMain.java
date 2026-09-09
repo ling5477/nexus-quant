@@ -23,6 +23,8 @@ public final class B2SyntheticVenueMain {
     private int cancels;
     private boolean holdPlace;
     private boolean holdCancel;
+    private boolean holdAcceptance;
+    private int placeRequests;
 
     public static void main(String[] args) throws Exception {
         B0Fixture.require(args.length == 0);
@@ -48,13 +50,22 @@ public final class B2SyntheticVenueMain {
         var data = envelope.putArray("data");
         if ("/facts".equals(path)) {
             envelope.put("pid", ProcessHandle.current().pid()).put("places", places).put("cancels", cancels)
-                    .put("pendingCancel", pendingCancel);
+                    .put("pendingCancel", pendingCancel).put("placeRequests", placeRequests);
             envelope.set("order", order);
             envelope.set("fills", fills);
             envelope.set("events", events);
         } else if ("/control".equals(path)) {
             String command = new String(body, StandardCharsets.UTF_8);
-            if ("HOLD_PLACE".equals(command) || "HOLD_CANCEL".equals(command)) {
+            if ("HOLD_ACCEPTANCE".equals(command)) {
+                holdAcceptance = true;
+                event(command);
+            } else if ("RELEASE_ACCEPTANCE".equals(command)) {
+                holdAcceptance = false;
+                event(command);
+                notifyAll();
+            } else if ("KILL_DURABLE_OBSERVED".equals(command)) {
+                event(command);
+            } else if ("HOLD_PLACE".equals(command) || "HOLD_CANCEL".equals(command)) {
                 if ("HOLD_PLACE".equals(command)) holdPlace = true;
                 else holdCancel = true;
                 event(command);
@@ -94,6 +105,14 @@ public final class B2SyntheticVenueMain {
             data.addObject().put("instId", "BTC-USDT").put("tickSz", "0.01")
                     .put("lotSz", "0.001").put("minSz", "0.001").put("state", "live");
         } else if ("/api/v5/trade/order".equals(path) && "POST".equals(exchange.getRequestMethod())) {
+            placeRequests++;
+            event("PLACE_REQUEST_RECEIVED");
+            long deadline = System.nanoTime() + java.time.Duration.ofSeconds(20).toNanos();
+            while (holdAcceptance) {
+                if (System.nanoTime() >= deadline) throw new java.io.IOException("B3_ACCEPTANCE_BARRIER_TIMEOUT");
+                try { wait(100); }
+                catch (InterruptedException ex) { Thread.currentThread().interrupt(); throw new java.io.IOException(ex); }
+            }
             JsonNode request = mapper.readTree(body);
             if (order != null || request.path("clOrdId").asText().isBlank()) { respond(exchange, 400, envelope); return; }
             places++;
@@ -153,7 +172,8 @@ public final class B2SyntheticVenueMain {
     }
 
     private ObjectNode event(String type) {
-        return events.addObject().put("sequence", events.size() + 1).put("type", type).put("nanoTime", System.nanoTime());
+        return events.addObject().put("sequence", events.size() + 1).put("type", type).put("nanoTime", System.nanoTime())
+                .put("epochMillis", System.currentTimeMillis());
     }
 
     private void respond(HttpExchange exchange, int code, JsonNode value) throws java.io.IOException {
