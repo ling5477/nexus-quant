@@ -205,7 +205,7 @@ public class OkxRestReconcileService {
     }
 
     /**
-     * 撤单终态可以与真实成交共存；只恢复成交与账本事实，不改变订单状态或版本。
+     * 撤单终态可以与部分成交共存；全部 durable 成交足量时才使用专用入口纠正终态。
      * 缺少稳定外部身份时仅记录未收敛观测，禁止猜测身份查询或重新发出交易命令。
      */
     private int reconcileCancelledOrder(OrderRecord order, int limit) {
@@ -214,6 +214,7 @@ public class OkxRestReconcileService {
             return 0;
         }
         int newTrades = reconcileFills(order, limit);
+        OrderRecord corrected = orderLifecycleService.reconcileCancelledExecution(order.orderId(), order.traceId());
         auditLogRepository.append(
                 "RECONCILE",
                 "OKX_CANCELLED_ORDER_FILL_BACKFILL_COMPLETED",
@@ -221,7 +222,7 @@ public class OkxRestReconcileService {
                 order.traceId(),
                 java.util.Map.of(
                         "order_id", order.orderId(),
-                        "status", order.status().name(),
+                        "status", corrected.status().name(),
                         "external_order_id", order.externalOrderId(),
                         "new_trades", newTrades
                 )
@@ -267,9 +268,14 @@ public class OkxRestReconcileService {
                     updatedOrder.traceId()
             );
         }
-        alignOrderStatus(updatedOrder, snapshot.externalStatus(), updatedOrder.traceId());
+        OrderRecord statusCandidate = updatedOrder;
+        int newTrades = reconcileFills(updatedOrder, limit,
+                () -> alignOrderStatus(statusCandidate, snapshot.externalStatus(), statusCandidate.traceId()));
         updatedOrder = orderCommandService.findByOrderId(updatedOrder.orderId()).orElse(updatedOrder);
-        int newTrades = reconcileFills(updatedOrder, limit);
+        // 查询和记账期间 CANCEL ACK 也可能先提交；不能只依据扫描时的旧状态选择纠正入口。
+        if (updatedOrder.status() == OrderStatus.CANCELLED) {
+            updatedOrder = orderLifecycleService.reconcileCancelledExecution(updatedOrder.orderId(), updatedOrder.traceId());
+        }
         auditLogRepository.append(
                 "RECONCILE",
                 "OKX_RECONCILE_COMPLETED",
@@ -348,6 +354,10 @@ public class OkxRestReconcileService {
     }
 
     private int reconcileFills(OrderRecord order, int limit) {
+        return reconcileFills(order, limit, () -> { });
+    }
+
+    private int reconcileFills(OrderRecord order, int limit, Runnable alignValidatedStatus) {
         if (order.externalOrderId() == null || order.externalOrderId().isBlank()) {
             return 0;
         }
@@ -365,12 +375,48 @@ public class OkxRestReconcileService {
         try {
             durableTrades = tradeRepository.findAllByOrderId(order.orderId(), limit);
         } catch (IllegalStateException ex) {
-            auditRecoveryBoundaryFailure(order, "DURABLE_TRADE_LIMIT_EXCEEDED");
+            auditRecoveryBoundaryFailure(order, "TRADE_ORDER_ENVIRONMENT_MISMATCH".equals(ex.getMessage())
+                    ? "TRADE_ORDER_ENVIRONMENT_MISMATCH" : "DURABLE_TRADE_LIMIT_EXCEEDED");
             throw ex;
         }
+        // 先验证完整 durable 集合与本次报告的并集；不能把分页响应当成累计量，也不能先写入 overfill。
+        var uniqueReports = new java.util.LinkedHashMap<String, AdapterTradeReport>();
+        var quantities = new java.util.LinkedHashMap<String, java.math.BigDecimal>();
+        var durableByFill = new java.util.HashMap<String, PaperTradeRecord>();
+        for (PaperTradeRecord trade : durableTrades) {
+            validateTradeOrderIdentity(order, trade);
+            if (trade.qty() == null || trade.qty().signum() <= 0
+                    || durableByFill.putIfAbsent(trade.exchangeTradeId(), trade) != null) {
+                failRecoveryIdentityMismatch(order, trade, "INVALID_DURABLE_FILL_QUANTITY_OR_IDENTITY");
+            }
+            quantities.put(trade.exchangeTradeId(), trade.qty());
+        }
+        for (AdapterTradeReport report : tradeReports) {
+            validateVenueReportOrderIdentity(order, report);
+            if (report.quantity().signum() <= 0) failRecoveryIdentityMismatch(order, null, "INVALID_FILL_QUANTITY");
+            AdapterTradeReport previous = uniqueReports.putIfAbsent(report.exchangeTradeId(), report);
+            if (previous != null && (previous.price().compareTo(report.price()) != 0
+                    || previous.quantity().compareTo(report.quantity()) != 0
+                    || normalizedFee(previous).compareTo(normalizedFee(report)) != 0
+                    || !Objects.equals(previous.feeAsset(), report.feeAsset())
+                    || !Objects.equals(previous.tradeTs(), report.tradeTs()))) {
+                failRecoveryIdentityMismatch(order, null, "CONFLICTING_DUPLICATE_VENUE_FILL");
+            }
+            PaperTradeRecord durable = durableByFill.get(report.exchangeTradeId());
+            if (durable != null) validateTradeVenueReportIdentity(order, durable, report);
+            quantities.putIfAbsent(report.exchangeTradeId(), report.quantity());
+        }
+        java.math.BigDecimal executed = quantities.values().stream()
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        if (order.qty() == null || order.qty().signum() <= 0 || executed.compareTo(order.qty()) > 0) {
+            auditRecoveryBoundaryFailure(order, "RECONCILIATION_OVERFILL");
+            throw new IllegalStateException("RECONCILIATION_OVERFILL: " + order.orderId());
+        }
+        // 先拒绝非法数量，再保持原有 venue 状态推进早于 Trade/Ledger 的恢复契约。
+        alignValidatedStatus.run();
         int newTrades = 0;
         Set<String> reportTradeIds = new HashSet<>();
-        for (AdapterTradeReport tradeReport : tradeReports) {
+        for (AdapterTradeReport tradeReport : uniqueReports.values()) {
             validateVenueReportOrderIdentity(order, tradeReport);
             if (!reportTradeIds.add(tradeReport.exchangeTradeId())) {
                 failRecoveryIdentityMismatch(order, null, "DUPLICATE_VENUE_EXCHANGE_TRADE_ID");
@@ -527,6 +573,14 @@ public class OkxRestReconcileService {
         if (trade.qty().compareTo(report.quantity()) != 0) {
             failRecoveryIdentityMismatch(order, trade, "TRADE_REPORT_QUANTITY_MISMATCH");
         }
+        if (trade.fee() == null || trade.fee().compareTo(normalizedFee(report)) != 0
+                || !Objects.equals(trade.feeCurrency(), report.feeAsset())) {
+            failRecoveryIdentityMismatch(order, trade, "TRADE_REPORT_FEE_MISMATCH");
+        }
+    }
+
+    private java.math.BigDecimal normalizedFee(AdapterTradeReport report) {
+        return report.fee() == null ? java.math.BigDecimal.ZERO : report.fee().abs();
     }
 
     private void failRecoveryIdentityMismatch(OrderRecord order, PaperTradeRecord trade, String reason) {

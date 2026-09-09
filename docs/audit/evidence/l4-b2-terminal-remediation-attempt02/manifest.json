@@ -1,0 +1,147 @@
+{
+  "baseline": "d1cedb6debfaa3dbeacb0e95ef8599c69e5f9da3",
+  "status": "IMPLEMENTED / PENDING_INDEPENDENT_CORRECTNESS_REVIEW",
+  "b2Acceptance": "NOT_ACCEPTED",
+  "hashConvention": "SHA256 of UTF-8 text with CRLF normalized to LF",
+  "proofs": [
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/final-fill-cancel-1.json",
+      "sha256": "0ab26c28847ff0505bdd258ff5d7142e9c6eda5962992e5866998f7b07ae40b2",
+      "database": "nq_f002_b0_82e2c03700174bdabc7aa440849f861c",
+      "nqPid": 42840,
+      "restartPid": null,
+      "venuePid": 13980
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/final-fill-cancel-2.json",
+      "sha256": "dc142897250a597aed57a5188caad919659fd0603e5848916e67d37c9597d988",
+      "database": "nq_f002_b0_9a3381a33d0148339e03ab7faa69182e",
+      "nqPid": 5632,
+      "restartPid": null,
+      "venuePid": 50892
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/final-fill-cancel-3.json",
+      "sha256": "2b1fe6d49c7bf1d1b7bd0426a0ee79b37cda0ccb34214c1c7c93289c1916f1fd",
+      "database": "nq_f002_b0_18863c6f4b7240eb96b75f922896ee3b",
+      "nqPid": 52052,
+      "restartPid": null,
+      "venuePid": 44820
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/partial-cancel-1.json",
+      "sha256": "072683c42d7b21fd54775b7be1d2652b489a8afc5e3f02ed560b343b2a54696a",
+      "database": "nq_f002_b0_af91cccc51bb4bd1837ee95c6f8a59cf",
+      "nqPid": 54700,
+      "restartPid": null,
+      "venuePid": 24764
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/partial-cancel-2.json",
+      "sha256": "7a493474267879762e8a56dfc83605192263d3b6f201e420fda8ca7a9ae5d43f",
+      "database": "nq_f002_b0_55946382767e4bf89c9839006b9b56eb",
+      "nqPid": 71396,
+      "restartPid": null,
+      "venuePid": 73452
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/partial-cancel-3.json",
+      "sha256": "34da71302a06c8d7e0c5deb3d12babfc2f9b2ac214e6f2c3478f729460b42269",
+      "database": "nq_f002_b0_5661dfad77954057943b99f14c6c99b6",
+      "nqPid": 37256,
+      "restartPid": null,
+      "venuePid": 23396
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/restart-final-fill-1.json",
+      "sha256": "74cb9e9368a6a8cf8aa6b894b6f5ce2eea042bbe163a89f2ab0b2cdf37c9fc10",
+      "database": "nq_f002_b0_008c2cd79a3f4feeb7585101a9d3dc50",
+      "nqPid": 49840,
+      "restartPid": 3976,
+      "venuePid": 41376
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/restart-final-fill-2.json",
+      "sha256": "f48b3861bad1e891f1d8a7e1612625a435b6b4269342d399a88d7e294eebbfe4",
+      "database": "nq_f002_b0_3c8cf6a467774f3486e2e189fc7adb1a",
+      "nqPid": 40884,
+      "restartPid": 27776,
+      "venuePid": 62272
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/restart-final-fill-3.json",
+      "sha256": "3af798d6af5298fdee65a3b57c1ed05798a9b703974123c7ad04b1c0366784a3",
+      "database": "nq_f002_b0_6f4af782651d40a7a725cb9f22bce1fa",
+      "nqPid": 37188,
+      "restartPid": 14844,
+      "venuePid": 22492
+    }
+  ],
+  "sources": [
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0NqProcessMain.java",
+      "gitBlob": "e67d9e0ad03fdc6373784241e1f1a5be48358d73"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B2RealProcessProofTest.java",
+      "gitBlob": "17f36f361c3b991ed1c3f0649b8393c9f598a83d"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B2SyntheticVenueMain.java",
+      "gitBlob": "b26ef74fb79c3cd9117ae936239ce3c5bb6bd5f4"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B2TerminalCorrectionPostgresIntegrationTest.java",
+      "gitBlob": "8b5b4c6a5ec4efdbf0063999bb1318cc0391095e"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4PlanBlockerPostgresIntegrationTest.java",
+      "gitBlob": "cd95215d97d388e8c9631efdb83030c2fe69b313"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java",
+      "gitBlob": "0bf1c770c8fb8a2af28d0b9605489c4c7b8213a8"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java",
+      "gitBlob": "ad6820336c729f8695d2b3ea8e6095eed3df067c"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderLifecycleService.java",
+      "gitBlob": "fae6819f9bc01ec163849937ddbd64fa9d7cac5f"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/domain/port/OrderRepository.java",
+      "gitBlob": "af40d9962cab71478c2fc66d68012b56cec72265"
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/scheduler/infra/jdbc/JdbcTradeRepository.java",
+      "gitBlob": "8300274c1d3a88319f98a463fef2afca9568c93f"
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/jdbc/JdbcOrderRepository.java",
+      "gitBlob": "51c15ad5af903c4ed8a06cfd21df2be3d4c1c48e"
+    },
+    {
+      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/scheduler/infra/jdbc/JdbcTradeRepositoryTest.java",
+      "gitBlob": "b36f0ecba2fcea327801146655ae2d1147dff997"
+    },
+    {
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java",
+      "gitBlob": "721f57fd825a5908ac9b7e330e2a7a667cbbbd87"
+    },
+    {
+      "path": "backend/nq-scheduler/src/test/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileServiceTest.java",
+      "gitBlob": "6d8f20255ee06e93d22ce53981074b0d0e4623f7"
+    },
+    {
+      "path": "backend/nq-scheduler/src/test/java/com/guidinglight/nexusquant/trading/application/CancelledExecutionCorrectionTest.java",
+      "gitBlob": "72f9cb24eae46887cb672f9f8b61ccc11f8cedde"
+    }
+  ],
+  "candidateFingerprint": "b61b546b509ed71a22e9ccb33a3945361498aa8cdba5753824ae2484eeac8ba5",
+  "observations": {
+    "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+    "sha256": "fa45aa881f877056973d13d9ccb642352f448f277868e9c52c3c3474f6e83404"
+  }
+}

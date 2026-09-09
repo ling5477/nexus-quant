@@ -1,0 +1,105 @@
+# B2 terminal convergence independent correctness review
+
+Task classification: HIGH_RISK / INDEPENDENT_CORRECTNESS_REVIEW / REVIEW_ONLY / NQ-only
+Review mode: 独立会话；未参与候选实现；只读候选。未委派子代理。
+
+Final decision: **FAIL / B2_NOT_ACCEPTED**
+
+本次 SIM 原始 race 已独立复现并通过，但存在 P1-01 环境兼容缺陷，且最终候选 Full Maven 没有 PASS。不能声明 B2_P1_CLOSED、READY_TO_RESUME_B2_QUALIFICATION 或整个 B2 ACCEPTED。
+
+## Candidate identity
+
+Starting HEAD: `d1cedb6debfaa3dbeacb0e95ef8599c69e5f9da3`
+Ending HEAD: 同上。
+Candidate fingerprint start: `3070163907245ef717b40e59008e1d044d401e578d054ff6f78bd5ce1b69cc9e`
+Candidate fingerprint end: `3070163907245ef717b40e59008e1d044d401e578d054ff6f78bd5ce1b69cc9e`
+Fingerprint match: TRUE；逐行 manifest 内容相同。
+
+算法：`git ls-files --cached --others --exclude-standard` 去重排序，逐文件原始字节 SHA-256；`path + TAB + lowercase hash` 用 LF 连接且无尾换行，再做 UTF-8 SHA-256。缺失文件记 MISSING。共 3,243 文件，覆盖全部 tracked 和未忽略新文件；生成的 ignored target 和仓库外 reviewer 证据不属于候选。另核验实现侧 attempt02 manifest 全部 15 个源码 Git blob，一致。此完整 fingerprint 与实现侧 15 源码 fingerprint 算法/范围不同。
+
+Files changed: reviewer 对 candidate/repository source 的改动为 0；原有候选改动保留。
+Stage: 0。Commit: NONE。Push: NONE。
+V48: 相对 HEAD 无修改，前后 hash 不变。未修改 .github、AGENTS、Skills、B0/B1 已接受证据或 current authority。
+
+## P1-01 — 新终态证明与 canonical Trade 环境写入不兼容
+
+位置：[JdbcOrderRepository.java:51](E:/Project/nexus-quant-gateaudit/backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/jdbc/JdbcOrderRepository.java:51)。关联：[JdbcTradeRepository.java:111](E:/Project/nexus-quant-gateaudit/backend/nq-infra/src/main/java/com/guidinglight/nexusquant/scheduler/infra/jdbc/JdbcTradeRepository.java:111)，V5 migration 的 trades.trade_env default 与 metadata trigger。
+
+新 EXECUTION_PROOF 将 `t.trade_env IS DISTINCT FROM o.trade_env` 判为无效。但 canonical JdbcTradeRepository.insert 不传 trade_env；数据库 DEFAULT 'SIM' 在 BEFORE trigger 前生效，trigger 只在 NULL/blank 时继承订单环境，因此 LIVE Order 的 Trade 被写成 SIM。新纠正服务没有排除 LIVE，调用 durableExecutedQuantity 后会抛错；原子 CAS 也拒绝更新。足量 durable fills 仍无法纠正 CANCELLED。
+
+Reviewer 自建临时 PostgreSQL 16.15/V48 离线仓储夹具：Order 经 JdbcOrderRepository.insert，Trade 经 JdbcTradeRepository.insert 和真实 DataSourceTransactionManager 事务写入；没有直接 SQL 改 orders/trades/ledger 来制造结果。只使用 SQL bootstrap account 与读回。SIM/LIVE 使用相同的 Q=10、成交=10、相同订单/fill 身份规则：
+
+| Order environment | durable Trade environment | durable proof | CAS affected | Final Order |
+| --- | --- | --- | --- | --- |
+| SIM | SIM | 10.00000000 | 1 | FILLED |
+| LIVE | SIM | INVALID_DURABLE_EXECUTION_PROOF | 0 | CANCELLED |
+
+这是离线持久化反例，不是 LIVE 交易运行或 venue 因果证明。Kill 保持 ENGAGED，providerCalls=0；未启动真实 provider、未取得凭证、未进行真实 PLACE/CANCEL。底层默认值是既存行为；此次新增环境校验使 B2 新纠正入口与现有生产写入契约不兼容。P1 指该环境下交易终态无法收敛，不声称当前生产已经发生该事故。
+
+建议：在独立 remediation 中保持 Trade/Order canonical 环境一致，保留身份校验并增加相应隔离回归；不能简单删除 trade_env guard，也不能修改已发布 V5 migration 或历史业务事实。本轮不修复。
+
+证据：[environment-proof.log](environment-proof.log)，[ReviewerEnvironmentProof.java](ReviewerEnvironmentProof.java)。
+
+## Verdicts
+
+| Requested field | Reviewer result |
+| --- | --- |
+| Original B2 P1 | 原 SIM cancel-ACK 后完整成交 race 已复现并通过；整体 remediation 不接受 |
+| Partial-fill verdict | PASS：Q=10，unique executed=4，Order=CANCELLED/v6 |
+| Full-fill-after-cancel verdict | SIM PASS：4+3+3=10，CANCELLED/v6 → FILLED/v7；LIVE 离线仓储反例 FAIL |
+| Overfill | PASS（已运行 SIM 范围）：10.00000001 拒绝；并发额外成交、不同 fill 并发超量与 SQL 重证据 guard 均覆盖 |
+| Remaining quantity | PASS：部分为 6，完整为 0；BigDecimal/NUMERIC 精确计算，无 float 或 clamp；不声称新增持久化 remaining 字段 |
+| OCC/version | PASS：状态+版本 CAS，完整证明重新读取；并发纠正只一次 version+1；重复恢复版本不增长；event 失败回滚 |
+| Stale ACK | PASS：late PLACE、late CANCEL、ABA、pre-cancel 真实 Spring/PostgreSQL 相关回归 |
+| C1 interaction | PASS（本轮相关覆盖），不重新授予 C1 acceptance |
+| C2 interaction | PASS：共享总 limit、durable cursor、CANCELLED missing-fill、identity-missing no-query、Trade/Ledger replay；V48 不变 |
+| Trade | 三笔独立 fill → 三笔 Trade；重复 venue reports 不重复累计 |
+| Ledger | 逐 fill 本金/费用的 canonical key、delta、currency、direction 与重放快照一致 |
+| Fee | 0、0.01、0.02 USDT；金额 400、300、300；不使用固定分录数判定 |
+| Replay | PASS：完整 Order/Trade/Ledger/projection/correction event/audit 快照不变 |
+| Restart | PASS：旧 PID 确认死亡后 venue 才补剩余 fills，新 NQ PID 普通恢复；PLACE 总数=1 |
+
+普通状态机仍拒绝 CANCELLED → FILLED；纠正须专用 reconciliation 入口及完整 durable execution proof、仓储状态/version guard。累计以 canonical fill identity 去重，不对 qty 做 DISTINCT；两个 qty=3 的不同 fill 均计入。
+
+Ledger 观察数为部分 2、完整 10；判定依据为逐笔 canonical 语义，不把固定数量或该成对账本模型的净和解释为真实钱包结算证明。此审查未改变账本模型。
+
+## Real-process proof
+
+Reviewer 使用现有 B0 harness 的真实 Spring NQ JVM、RiskGate、Adapter/HTTP/JSON、独立 Synthetic Venue JVM、PostgreSQL 16.15/V48。仓库外 runner 调用现有 B2 scenario 方法各一次；未改变 candidate 测试，未重跑实现侧全部 9 次。
+
+| Scenario | NQ PID | Restart PID | Venue PID | Final status/version | Unique Trade |
+| --- | --- | --- | --- | --- | --- |
+| partial cancel | 63864 | — | 35700 | CANCELLED/6 | 1 |
+| final fill after cancel ACK | 61364 | — | 26064 | FILLED/7 | 3 |
+| process death then final fills | 52108 | 41932 | 3224 | FILLED/7 | 3 |
+
+Controller PID=10048。三个 scenario 均 PASS。每行 PLACE=1、CANCEL=1；duplicate PLACE/Trade/Ledger=0，status regression=0。读取账户为 B0 reader；运行过程中未直接修改业务表。每个场景使用不同 disposable DB；full/restart 都证明 venue state=filled，最后两笔成交在本地 CANCELLED 后发生。恢复后再次 RECOVER=0。
+
+Proof files: [partial](real-process-0/proof.json)、[full](real-process-1/proof.json)、[restart](real-process-2/proof.json)。Runner：[ReviewerB2Processes.java](ReviewerB2Processes.java)。完整日志：[real-process.log](real-process.log)。
+
+## Tests and Full Maven classification
+
+Targeted tests: **183 / failures 0 / errors 0 / skips 0，exit=0**。其中 B2 PG=9，C1/C2 PG=22+6=28，强证明单测=8，scheduler=21；其余包含订单状态机、仓储、B0 fixture、F004/F002 和全量失败类。三次真实进程场景在此 183 之外。日志：[targeted.log](targeted.log)。
+
+Full Maven: **FAIL，1831 tests / failures 3 / errors 8 / conditional skips 79，exit=1**。命令 `mvn -f backend/pom.xml test`，本轮只执行一次。原始日志：[full-maven.log](full-maven.log)，原始 XML 已在 full-reports 保存，不用后续定向结果覆盖。
+
+Full Maven classification: **ENVIRONMENT_BLOCKER**（reviewer 运行环境及既存空库夹具前置条件）。具体：
+
+- 本次 reviewer 设置的全局 SPRING_PROFILES_ACTIVE=local 影响默认 profile/readiness guard 测试：3 failures、6 errors。此前不该为全量运行统一设置此 profile；这是本轮执行环境设置的问题。
+- 空的 SPRING_DATASOURCE_PASSWORD 覆盖 production 配置 fixture：1 error。后续使用公开非秘密 fixture 字符串。
+- ResearchBacktestHappyPathLocalTest 在 fresh DB 没有 legacy account 时查询失败：1 error。既存测试要求至少一个账户，候选未改该研究测试/实现；实现侧也记录了同样前置条件。
+
+移除全局 profile 等覆盖、使用非空 disposable fixture 密码后，前述全部失败类在同一代码候选定向复验通过；研究测试在已有本轮账户夹具的隔离 DB 通过。没有候选代码修复，也没有重跑 Full Maven。这里证明失败分类，不产生 Full Maven PASS，亦不声称数据库永久不可用。唯一一次全量没有形成接受所需绿色证据。
+
+## Closeout
+
+P0: 0
+P1: 1（P1-01）
+P2: 0（无其他确认 finding）
+P3: 0（无其他确认 finding）
+
+Final decision: FAIL / B2_NOT_ACCEPTED
+Commit recommendation: 不建议作为已接受 remediation 提交；无 commit/push 授权，均未执行。
+Next action: 单独整改 P1-01，固定新 candidate 后独立审查；在正确隔离环境中取得新的最终候选 Full Maven PASS（本轮一次额度已使用）。通过后才能恢复原 B2 qualification 的未完成 matrix，不能直接宣称整个 B2 ACCEPTED。
+
+最终指纹与起始相同，staged=0。本轮 container 72a9d7ad89e7942ea8cba7878de63ae758ab952687f7e58f90345b6bfe9bbefb 经 label/identity 核实后清理；real-process 与 offline probe 的自有容器均输出 remaining=0。相关 NQ/Venue/controller PID 均已退出。仅仓库外临时 reviewer 证据与 ignored target 生成物增加，candidate files unchanged。

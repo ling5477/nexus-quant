@@ -54,6 +54,16 @@ public interface OrderRepository {
     int compareAndSetStatus(String orderId, OrderStatus expectedStatus, long expectedVersion,
             OrderStatus status, String reason, Instant now);
 
+    /** 对完整 durable Trade 集合按 venue fill 身份校验并累计；身份损坏、重复或非法数量必须拒绝。 */
+    default java.math.BigDecimal durableExecutedQuantity(String orderId) {
+        throw new UnsupportedOperationException("durable execution proof unavailable");
+    }
+
+    /** 仅供对账纠正撤单终态；同一 SQL 中重新验证完整成交证明及 expectedVersion，成功只加一代。 */
+    default int compareAndSetCancelledToFilled(String orderId, long expectedVersion, String reason, Instant now) {
+        throw new UnsupportedOperationException("proven terminal correction unavailable");
+    }
+
     /**
      * 仅填充空的外部订单号，保持已有 identity 和 lifecycle version。
      * <p>

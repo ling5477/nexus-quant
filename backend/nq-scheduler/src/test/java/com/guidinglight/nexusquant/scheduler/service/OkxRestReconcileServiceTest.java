@@ -53,7 +53,8 @@ class OkxRestReconcileServiceTest {
         Mockito.verifyNoMoreInteractions(f.commands);
         verify(f.adapter).listTradeReports("BTC-USDT", "ext-c2", "trc-c2");
         verify(f.trades).findAllByOrderId("ord-c2", 1);
-        Mockito.verifyNoInteractions(f.lifecycle, f.events, f.ledger);
+        verify(f.lifecycle).reconcileCancelledExecution("ord-c2", "trc-c2");
+        Mockito.verifyNoInteractions(f.events, f.ledger);
         verify(f.adapter, never()).getOrder(any());
         verify(f.trades, never()).insert(any());
     }
@@ -137,18 +138,40 @@ class OkxRestReconcileServiceTest {
     }
 
     @Test
-    void cancelledDuplicateVenueTradeIdRejectsSecondFact() {
+    void cancelledIdenticalDuplicateVenueFillIsIdempotent() {
         var f = new CancelledFixture("ext-c2");
         var report = f.report("OKX", 2001L, "coid-c2", "ext-c2", "fill-c2");
         when(f.adapter.listTradeReports(any(), any(), any())).thenReturn(List.of(report, report));
         when(f.ledger.postTrade(any())).thenReturn(new LedgerPostingResult(true, false, "POSTED"));
-        assertTrue(assertThrows(IllegalStateException.class, () -> f.service.reconcileOnce(10))
-                .getMessage().contains("DUPLICATE_VENUE_EXCHANGE_TRADE_ID"));
-        // 既有流水线逐项处理：首项有效事实保留，第二项拒绝，不伪造整批原子性。
+        assertEquals(1, f.service.reconcileOnce(10));
+        // 相同报告只处理一次；不同内容的同身份回报必须在任何写入前拒绝。
         verify(f.trades, times(1)).insert(any());
         verify(f.events, times(1)).append(eq("trade.event.v1"), any());
         verify(f.ledger, times(1)).postTrade(any());
         f.assertNoOrderMutation();
+    }
+
+    @Test void conflictingDuplicateFillRejectsWholeResponseBeforeWrites() {
+        var f = new CancelledFixture("ext-c2");
+        var first = f.report("OKX", 2001L, "coid-c2", "ext-c2", "fill-c2");
+        var changed = new AdapterTradeReport("OKX", 2001L, "BTC-USDT", "coid-c2", "ext-c2", "fill-c2", "BUY",
+                new BigDecimal("100"), new BigDecimal("0.02"), BigDecimal.ZERO, "USDT", Instant.EPOCH, "x", "trc-c2", "SIM");
+        when(f.adapter.listTradeReports(any(), any(), any())).thenReturn(List.of(first, changed));
+        assertTrue(assertThrows(IllegalStateException.class, () -> f.service.reconcileOnce(10))
+                .getMessage().contains("CONFLICTING_DUPLICATE"));
+        verify(f.trades, never()).insert(any());
+        Mockito.verifyNoInteractions(f.ledger, f.events, f.lifecycle);
+    }
+
+    @Test void unseenDurableFillsCountTowardOverfillBeforeAnyNewPosting() {
+        var f = new CancelledFixture("ext-c2");
+        var durable = new PaperTradeRecord("old", "ord-c2", 2001L, "BTC-USDT", "OKX", "ext-c2", "old-fill",
+                new BigDecimal("100"), new BigDecimal("0.1"), BigDecimal.ZERO, "USDT", "trc-c2", Instant.EPOCH);
+        when(f.trades.findAllByOrderId("ord-c2", 10)).thenReturn(List.of(durable));
+        when(f.adapter.listTradeReports(any(), any(), any())).thenReturn(List.of(f.report("OKX", 2001L, "coid-c2", "ext-c2", "new-fill")));
+        assertTrue(assertThrows(IllegalStateException.class, () -> f.service.reconcileOnce(10)).getMessage().contains("OVERFILL"));
+        verify(f.trades, never()).insert(any());
+        Mockito.verifyNoInteractions(f.ledger, f.events, f.lifecycle);
     }
 
     @Test
@@ -191,6 +214,7 @@ class OkxRestReconcileServiceTest {
             order = new OrderRecord("ord-c2", 2001L, null, "OKX", "BTC-USDT", "coid-c2", "BUY", "LIMIT",
                     new BigDecimal("100"), new BigDecimal("0.1"), externalId, OrderStatus.CANCELLED, "TEST", "trc-c2");
             when(commands.reserveReconciliationCandidates(eq("OKX"), any(), eq(10))).thenReturn(List.of(order));
+            when(lifecycle.reconcileCancelledExecution("ord-c2", "trc-c2")).thenReturn(order);
         }
 
         AdapterTradeReport report(String venue, Long account, String client, String external, String tradeId) {
@@ -200,7 +224,8 @@ class OkxRestReconcileServiceTest {
         }
 
         void assertNoOrderMutation() {
-            Mockito.verifyNoInteractions(lifecycle);
+            verify(lifecycle, Mockito.atMost(2)).reconcileCancelledExecution("ord-c2", "trc-c2");
+            Mockito.verifyNoMoreInteractions(lifecycle);
             verify(adapter, never()).getOrder(any());
             verify(commands, Mockito.atLeastOnce()).reserveReconciliationCandidates(eq("OKX"), any(), eq(10));
             Mockito.verifyNoMoreInteractions(commands);

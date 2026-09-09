@@ -1,0 +1,306 @@
+diff --git a/backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java b/backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java
+index d78b5e9a..0bf1c770 100644
+--- a/backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java
++++ b/backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java
+@@ -220,6 +220,10 @@ public class OrderCommandService {
+         return orderCommandWriteService.transitionOrder(orderId, nextStatus, reason, traceId);
+     }
+
++    OrderRecord reconcileCancelledExecution(String orderId, String traceId) {
++        return orderCommandWriteService.reconcileCancelledExecution(orderId, traceId);
++    }
++
+     /**
+      * 查询指定状态订单，供 scheduler/恢复流程使用。
+      */
+diff --git a/backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java b/backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java
+index 7ea29d79..ad682033 100644
+--- a/backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java
++++ b/backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java
+@@ -586,6 +586,43 @@ public class OrderCommandWriteService {
+         return transitionOrderAttempt(currentOrder, nextStatus, reason, traceId).order();
+     }
+
++    /**
++     * 仅对账可使用的强成交事实纠正；普通状态机仍禁止 CANCELLED → FILLED。
++     * 冲突后重新读取状态与完整 durable fills，不能把旧 ACK 或旧证明换新 version 重试。
++     */
++    @Transactional
++    public OrderRecord reconcileCancelledExecution(String orderId, String traceId) {
++        final String reason = "RECONCILE_FULL_EXECUTION_PROVEN";
++        for (int attempt = 0; attempt < 3; attempt++) {
++            OrderRecord current = loadOrder(orderId);
++            if (current.status() != OrderStatus.CANCELLED && current.status() != OrderStatus.FILLED) return current;
++            if (current.externalOrderId() == null || current.externalOrderId().isBlank()) return current;
++            java.math.BigDecimal executed = Objects.requireNonNull(orderRepository.durableExecutedQuantity(orderId));
++            int comparison = executed.compareTo(current.qty());
++            if (executed.signum() < 0 || comparison > 0) {
++                throw new IllegalStateException("RECONCILIATION_OVERFILL: " + orderId);
++            }
++            if (comparison < 0 || current.status() == OrderStatus.FILLED) return current;
++            int affected = orderRepository.compareAndSetCancelledToFilled(orderId, current.version(), reason, Instant.now(clock));
++            if (affected == 0) {
++                auditLogRepository.append("RECONCILE", "ORDER_TERMINAL_CORRECTION_STALE", orderId, traceId,
++                        detail("expected_version", current.version(), "executed_qty", executed));
++                continue;
++            }
++            if (affected != 1) throw new IllegalStateException("invalid terminal correction affected rows: " + affected);
++            OrderRecord corrected = current.withStatus(OrderStatus.FILLED, reason);
++            auditLogRepository.append("RECONCILE", "ORDER_TERMINAL_EXECUTION_CORRECTED", orderId, traceId,
++                    detail("from", "CANCELLED", "to", "FILLED", "expected_version", current.version(),
++                            "version", corrected.version(), "original_qty", current.qty(), "executed_qty", executed,
++                            "remaining_qty", current.qty().subtract(executed), "external_order_id", current.externalOrderId()));
++            publishEvent(TopicNames.ORDER_EVENT_V1, current.clientOrderId(), traceId,
++                    new OrderStatusChangedPayload(orderId, current.accountId(), current.clientOrderId(),
++                            OrderStatus.FILLED, reason, Instant.now(clock)));
++            return corrected;
++        }
++        throw new IllegalStateException("terminal correction contention: " + orderId);
++    }
++
+     /**
+      * 为既有订单原子填充外部订单号；同号幂等，不同非空 identity 冲突时回滚。
+      */
+diff --git a/backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderLifecycleService.java b/backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderLifecycleService.java
+index c940e2b2..fae6819f 100644
+--- a/backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderLifecycleService.java
++++ b/backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderLifecycleService.java
+@@ -63,6 +63,11 @@ public class OrderLifecycleService {
+         return orderCommandService.transitionOrder(orderId, OrderStatus.FILLED, reason, traceId);
+     }
+
++    /** 对账专用：在仓储独立证明全部成交后纠正撤单终态，不接受调用方提供数量或任意目标状态。 */
++    public OrderRecord reconcileCancelledExecution(String orderId, String traceId) {
++        return orderCommandService.reconcileCancelledExecution(orderId, traceId);
++    }
++
+     /**
+      * 将订单推进到 CANCEL_REQUESTED。
+      * <p>
+diff --git a/backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/domain/port/OrderRepository.java b/backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/domain/port/OrderRepository.java
+index f615547e..af40d996 100644
+--- a/backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/domain/port/OrderRepository.java
++++ b/backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/domain/port/OrderRepository.java
+@@ -54,6 +54,16 @@ public interface OrderRepository {
+     int compareAndSetStatus(String orderId, OrderStatus expectedStatus, long expectedVersion,
+             OrderStatus status, String reason, Instant now);
+
++    /** 对完整 durable Trade 集合按 venue fill 身份校验并累计；身份损坏、重复或非法数量必须拒绝。 */
++    default java.math.BigDecimal durableExecutedQuantity(String orderId) {
++        throw new UnsupportedOperationException("durable execution proof unavailable");
++    }
++
++    /** 仅供对账纠正撤单终态；同一 SQL 中重新验证完整成交证明及 expectedVersion，成功只加一代。 */
++    default int compareAndSetCancelledToFilled(String orderId, long expectedVersion, String reason, Instant now) {
++        throw new UnsupportedOperationException("proven terminal correction unavailable");
++    }
++
+     /**
+      * 仅填充空的外部订单号，保持已有 identity 和 lifecycle version。
+      * <p>
+diff --git a/backend/nq-infra/src/main/java/com/guidinglight/nexusquant/scheduler/infra/jdbc/JdbcTradeRepository.java b/backend/nq-infra/src/main/java/com/guidinglight/nexusquant/scheduler/infra/jdbc/JdbcTradeRepository.java
+index 59d9ef5a..8300274c 100644
+--- a/backend/nq-infra/src/main/java/com/guidinglight/nexusquant/scheduler/infra/jdbc/JdbcTradeRepository.java
++++ b/backend/nq-infra/src/main/java/com/guidinglight/nexusquant/scheduler/infra/jdbc/JdbcTradeRepository.java
+@@ -93,7 +93,17 @@ public class JdbcTradeRepository implements TradeRepository {
+     }
+
+     @Override
++    @org.springframework.transaction.annotation.Transactional
+     public void insert(PaperTradeRecord trade) {
++        // 并发对账的响应预检不是锁；插入与终态纠正共用订单行锁，并在锁内重新累计已提交成交。
++        java.math.BigDecimal original = jdbcTemplate.queryForObject(
++                "SELECT qty FROM orders WHERE order_id=? FOR UPDATE", java.math.BigDecimal.class, trade.orderId());
++        java.math.BigDecimal executed = jdbcTemplate.queryForObject(
++                "SELECT COALESCE(SUM(qty),0) FROM trades WHERE order_id=?", java.math.BigDecimal.class, trade.orderId());
++        if (original == null || original.signum() <= 0 || trade.qty() == null || trade.qty().signum() <= 0
++                || executed == null || executed.signum() < 0 || executed.add(trade.qty()).compareTo(original) > 0) {
++            throw new IllegalStateException("RECONCILIATION_OVERFILL_OR_INVALID_QUANTITY: " + trade.orderId());
++        }
+         jdbcTemplate.update(
+                 """
+                         INSERT INTO trades (
+diff --git a/backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/jdbc/JdbcOrderRepository.java b/backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/jdbc/JdbcOrderRepository.java
+index 050cdfe8..51c15ad5 100644
+--- a/backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/jdbc/JdbcOrderRepository.java
++++ b/backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/jdbc/JdbcOrderRepository.java
+@@ -41,6 +41,27 @@ public class JdbcOrderRepository implements OrderRepository {
+
+     private static final RowMapper<OrderRecord> ORDER_ROW_MAPPER = JdbcOrderRepository::mapOrderRecord;
+
++    // 不对 qty 做 DISTINCT：等量的不同 fill 必须分别累计；重复身份使证明失效。
++    private static final String EXECUTION_PROOF = """
++            SELECT o.order_id, o.qty AS original_qty, COALESCE(SUM(t.qty),0) AS executed_qty,
++                   COUNT(t.trade_id) AS fill_count,
++                   COUNT(DISTINCT (t.exchange,t.exchange_trade_id)) FILTER (WHERE t.trade_id IS NOT NULL) AS identity_count,
++                   COUNT(*) FILTER (WHERE t.trade_id IS NOT NULL AND (
++                       t.account_id IS DISTINCT FROM o.account_id OR t.symbol IS DISTINCT FROM o.symbol
++                       OR t.exchange IS DISTINCT FROM o.venue OR t.trade_env IS DISTINCT FROM o.trade_env
++                       OR t.external_order_id IS DISTINCT FROM o.external_order_id
++                       OR t.exchange_trade_id IS NULL OR BTRIM(t.exchange_trade_id)=''
++                       OR t.qty IS NULL OR t.qty<=0)) AS invalid_count,
++                   o.external_order_id
++            FROM orders o LEFT JOIN trades t ON t.order_id=o.order_id
++            WHERE o.order_id=? GROUP BY o.order_id
++            """;
++
++    private static final String VALID_EXECUTION_PROOF = """
++            invalid_count=0 AND fill_count=identity_count AND original_qty>0
++            AND external_order_id IS NOT NULL AND BTRIM(external_order_id)<>''
++            """;
++
+     private final JdbcTemplate jdbcTemplate;
+     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
+@@ -206,6 +227,32 @@ public class JdbcOrderRepository implements OrderRepository {
+         return selected.stream().map(ScannedOrder::order).toList();
+     }
+
++    @Override
++    public java.math.BigDecimal durableExecutedQuantity(String orderId) {
++        return jdbcTemplate.queryForObject("SELECT executed_qty, (" + VALID_EXECUTION_PROOF
++                + ") AS valid FROM (" + EXECUTION_PROOF + ") p", (rs, row) -> {
++                    if (!rs.getBoolean("valid")) throw new IllegalStateException("INVALID_DURABLE_EXECUTION_PROOF");
++                    return rs.getBigDecimal("executed_qty");
++                }, orderId);
++    }
++
++    @Override
++    @Transactional
++    public int compareAndSetCancelledToFilled(String orderId, long expectedVersion, String reason, Instant now) {
++        if (expectedVersion < 0 || expectedVersion == Long.MAX_VALUE) {
++            throw new IllegalArgumentException("order version cannot advance");
++        }
++        // 与 canonical Trade 插入共用订单行锁；等待结束后另起语句读取完整证明，避免等待前的旧快照。
++        jdbcTemplate.queryForObject("SELECT order_id FROM orders WHERE order_id=? FOR UPDATE", String.class, orderId);
++        // 数量证明不是调用方传来的布尔值；更新语句自身重新读取已提交成交，并以状态和版本取所有权。
++        return jdbcTemplate.update("WITH proof AS (" + EXECUTION_PROOF + ") "
++                + "UPDATE orders o SET status='FILLED', reason=?, version=o.version+1, updated_at=? "
++                + "WHERE o.order_id=? AND o.status='CANCELLED' AND o.version=? "
++                + "AND EXISTS (SELECT 1 FROM proof p WHERE p.order_id=o.order_id AND "
++                + VALID_EXECUTION_PROOF + " AND executed_qty=original_qty AND executed_qty=o.qty)",
++                orderId, reason, Timestamp.from(now), orderId, expectedVersion);
++    }
++
+     private record ScanKey(Timestamp createdAt, String orderId) { }
+     private record ScannedOrder(OrderRecord order, ScanKey key) { }
+
+diff --git a/backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java b/backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java
+index 172d787d..721f57fd 100644
+--- a/backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java
++++ b/backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java
+@@ -205,7 +205,7 @@ public class OkxRestReconcileService {
+     }
+
+     /**
+-     * 撤单终态可以与真实成交共存；只恢复成交与账本事实，不改变订单状态或版本。
++     * 撤单终态可以与部分成交共存；全部 durable 成交足量时才使用专用入口纠正终态。
+      * 缺少稳定外部身份时仅记录未收敛观测，禁止猜测身份查询或重新发出交易命令。
+      */
+     private int reconcileCancelledOrder(OrderRecord order, int limit) {
+@@ -214,6 +214,7 @@ public class OkxRestReconcileService {
+             return 0;
+         }
+         int newTrades = reconcileFills(order, limit);
++        OrderRecord corrected = orderLifecycleService.reconcileCancelledExecution(order.orderId(), order.traceId());
+         auditLogRepository.append(
+                 "RECONCILE",
+                 "OKX_CANCELLED_ORDER_FILL_BACKFILL_COMPLETED",
+@@ -221,7 +222,7 @@ public class OkxRestReconcileService {
+                 order.traceId(),
+                 java.util.Map.of(
+                         "order_id", order.orderId(),
+-                        "status", order.status().name(),
++                        "status", corrected.status().name(),
+                         "external_order_id", order.externalOrderId(),
+                         "new_trades", newTrades
+                 )
+@@ -267,9 +268,14 @@ public class OkxRestReconcileService {
+                     updatedOrder.traceId()
+             );
+         }
+-        alignOrderStatus(updatedOrder, snapshot.externalStatus(), updatedOrder.traceId());
++        OrderRecord statusCandidate = updatedOrder;
++        int newTrades = reconcileFills(updatedOrder, limit,
++                () -> alignOrderStatus(statusCandidate, snapshot.externalStatus(), statusCandidate.traceId()));
+         updatedOrder = orderCommandService.findByOrderId(updatedOrder.orderId()).orElse(updatedOrder);
+-        int newTrades = reconcileFills(updatedOrder, limit);
++        // 查询和记账期间 CANCEL ACK 也可能先提交；不能只依据扫描时的旧状态选择纠正入口。
++        if (updatedOrder.status() == OrderStatus.CANCELLED) {
++            updatedOrder = orderLifecycleService.reconcileCancelledExecution(updatedOrder.orderId(), updatedOrder.traceId());
++        }
+         auditLogRepository.append(
+                 "RECONCILE",
+                 "OKX_RECONCILE_COMPLETED",
+@@ -348,6 +354,10 @@ public class OkxRestReconcileService {
+     }
+
+     private int reconcileFills(OrderRecord order, int limit) {
++        return reconcileFills(order, limit, () -> { });
++    }
++
++    private int reconcileFills(OrderRecord order, int limit, Runnable alignValidatedStatus) {
+         if (order.externalOrderId() == null || order.externalOrderId().isBlank()) {
+             return 0;
+         }
+@@ -368,9 +378,44 @@ public class OkxRestReconcileService {
+             auditRecoveryBoundaryFailure(order, "DURABLE_TRADE_LIMIT_EXCEEDED");
+             throw ex;
+         }
++        // 先验证完整 durable 集合与本次报告的并集；不能把分页响应当成累计量，也不能先写入 overfill。
++        var uniqueReports = new java.util.LinkedHashMap<String, AdapterTradeReport>();
++        var quantities = new java.util.LinkedHashMap<String, java.math.BigDecimal>();
++        var durableByFill = new java.util.HashMap<String, PaperTradeRecord>();
++        for (PaperTradeRecord trade : durableTrades) {
++            validateTradeOrderIdentity(order, trade);
++            if (trade.qty() == null || trade.qty().signum() <= 0
++                    || durableByFill.putIfAbsent(trade.exchangeTradeId(), trade) != null) {
++                failRecoveryIdentityMismatch(order, trade, "INVALID_DURABLE_FILL_QUANTITY_OR_IDENTITY");
++            }
++            quantities.put(trade.exchangeTradeId(), trade.qty());
++        }
++        for (AdapterTradeReport report : tradeReports) {
++            validateVenueReportOrderIdentity(order, report);
++            if (report.quantity().signum() <= 0) failRecoveryIdentityMismatch(order, null, "INVALID_FILL_QUANTITY");
++            AdapterTradeReport previous = uniqueReports.putIfAbsent(report.exchangeTradeId(), report);
++            if (previous != null && (previous.price().compareTo(report.price()) != 0
++                    || previous.quantity().compareTo(report.quantity()) != 0
++                    || normalizedFee(previous).compareTo(normalizedFee(report)) != 0
++                    || !Objects.equals(previous.feeAsset(), report.feeAsset())
++                    || !Objects.equals(previous.tradeTs(), report.tradeTs()))) {
++                failRecoveryIdentityMismatch(order, null, "CONFLICTING_DUPLICATE_VENUE_FILL");
++            }
++            PaperTradeRecord durable = durableByFill.get(report.exchangeTradeId());
++            if (durable != null) validateTradeVenueReportIdentity(order, durable, report);
++            quantities.putIfAbsent(report.exchangeTradeId(), report.quantity());
++        }
++        java.math.BigDecimal executed = quantities.values().stream()
++                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
++        if (order.qty() == null || order.qty().signum() <= 0 || executed.compareTo(order.qty()) > 0) {
++            auditRecoveryBoundaryFailure(order, "RECONCILIATION_OVERFILL");
++            throw new IllegalStateException("RECONCILIATION_OVERFILL: " + order.orderId());
++        }
++        // 先拒绝非法数量，再保持原有 venue 状态推进早于 Trade/Ledger 的恢复契约。
++        alignValidatedStatus.run();
+         int newTrades = 0;
+         Set<String> reportTradeIds = new HashSet<>();
+-        for (AdapterTradeReport tradeReport : tradeReports) {
++        for (AdapterTradeReport tradeReport : uniqueReports.values()) {
+             validateVenueReportOrderIdentity(order, tradeReport);
+             if (!reportTradeIds.add(tradeReport.exchangeTradeId())) {
+                 failRecoveryIdentityMismatch(order, null, "DUPLICATE_VENUE_EXCHANGE_TRADE_ID");
+@@ -527,6 +572,14 @@ public class OkxRestReconcileService {
+         if (trade.qty().compareTo(report.quantity()) != 0) {
+             failRecoveryIdentityMismatch(order, trade, "TRADE_REPORT_QUANTITY_MISMATCH");
+         }
++        if (trade.fee() == null || trade.fee().compareTo(normalizedFee(report)) != 0
++                || !Objects.equals(trade.feeCurrency(), report.feeAsset())) {
++            failRecoveryIdentityMismatch(order, trade, "TRADE_REPORT_FEE_MISMATCH");
++        }
++    }
++
++    private java.math.BigDecimal normalizedFee(AdapterTradeReport report) {
++        return report.fee() == null ? java.math.BigDecimal.ZERO : report.fee().abs();
+     }
+
+     private void failRecoveryIdentityMismatch(OrderRecord order, PaperTradeRecord trade, String reason) {

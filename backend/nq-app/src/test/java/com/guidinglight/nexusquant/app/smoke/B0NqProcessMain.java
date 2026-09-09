@@ -72,26 +72,53 @@ public final class B0NqProcessMain {
             System.out.println("B0_READY " + ProcessHandle.current().pid());
             System.out.println("B0_COMPOSITION realRisk=true writeProxy=true gateway=AdapterBackedTradingVenueGateway jdbcUser=" + B0Fixture.APP);
             System.out.flush();
-            try (var commands = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))) {
+            try (var executor = java.util.concurrent.Executors.newSingleThreadExecutor();
+                 var commands = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))) {
+                java.util.concurrent.Future<String> pending = null;
                 String command;
                 while ((command = commands.readLine()) != null) {
                     if ("STOP".equals(command)) return;
-                    if ("PLACE".equals(command)) {
-                        Long account = jdbc.queryForObject("SELECT account_id FROM accounts WHERE account_code='b0-account'", Long.class);
-                        String client = "b0" + name.substring(name.length() - 30);
-                        var result = context.getBean(OrderCommandService.class).placeOrder(new PlaceOrderRequest(
-                                "b0-request", account, null, "OKX", "BTC-USDT", client, account + ":" + client,
-                                "b0_test", OrderSide.BUY, OrderType.LIMIT, new BigDecimal("100.00000000"),
-                                new BigDecimal("0.10000000"), "GTC", "b0-trace"));
-                        System.out.println("B0_RESULT PLACE " + result.orderId() + " " + result.status());
+                    if (command.startsWith("BEGIN_")) {
+                        B0Fixture.require(pending == null);
+                        String operation = command.substring(6);
+                        B0Fixture.require(java.util.Set.of("PLACE_B2", "PLACE_B2_LIVE", "CANCEL").contains(operation));
+                        pending = executor.submit(() -> tradingCommand(context.getBean(OrderCommandService.class), jdbc, name, operation));
+                        System.out.println("B0_RESULT BEGIN " + operation);
+                    } else if ("AWAIT".equals(command)) {
+                        B0Fixture.require(pending != null);
+                        System.out.println("B0_RESULT " + pending.get(25, java.util.concurrent.TimeUnit.SECONDS));
+                        pending = null;
                     } else if ("RECOVER".equals(command)) {
                         int count = context.getBean(OkxRestReconcileService.class).reconcileOnce(100);
                         System.out.println("B0_RESULT RECOVER " + count);
-                    } else throw new IllegalArgumentException("unsupported B0 command");
+                    } else {
+                        System.out.println("B0_RESULT " + tradingCommand(context.getBean(OrderCommandService.class), jdbc, name, command));
+                    }
                     System.out.flush();
                 }
             }
         }
+    }
+
+    /** 异步屏障仍调用真实命令服务；主线程只允许并行运行普通对账，没有业务表写入接口。 */
+    private static String tradingCommand(OrderCommandService commands, JdbcTemplate jdbc, String name, String command) {
+        if ("PLACE".equals(command) || "PLACE_B2".equals(command) || "PLACE_B2_LIVE".equals(command)) {
+            Long account = jdbc.queryForObject("SELECT account_id FROM accounts WHERE account_code='b0-account'", Long.class);
+            String client = "b0" + name.substring(name.length() - 30);
+            var result = commands.placeOrder(new PlaceOrderRequest(
+                    "b0-request", account, null, "OKX", "BTC-USDT", client, account + ":" + client,
+                    "b0_test", OrderSide.BUY, OrderType.LIMIT, new BigDecimal("100.00000000"),
+                    new BigDecimal("PLACE".equals(command) ? "0.10000000" : "10.00000000"), "GTC", "b0-trace",
+                    "PLACE_B2_LIVE".equals(command) ? "LIVE" : "SIM", null));
+            return "PLACE " + result.orderId() + " " + result.status();
+        }
+        if ("CANCEL".equals(command)) {
+            String orderId = jdbc.queryForObject("SELECT order_id FROM orders", String.class);
+            var result = commands.cancelOrder(new com.guidinglight.nexusquant.trading.application.CancelOrderRequest(
+                    "b2-cancel", orderId, null, "OKX", "BTC-USDT", null, null, "B2_CANCEL", "b0-trace"));
+            return "CANCEL " + result.orderId() + " " + result.status();
+        }
+        throw new IllegalArgumentException("unsupported B0 command");
     }
 
     static boolean allowedDestination(URI uri, String venue, String db) {
@@ -108,7 +135,7 @@ public final class B0NqProcessMain {
             String venue = System.getenv("NQ_B0_VENUE");
             B0Fixture.requireVenue(venue);
             var transport = new OkxHttpClient(HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build(),
-                    mapper, venue, Duration.ofSeconds(2));
+                    mapper, venue, Duration.ofSeconds(25));
             return new OkxExchangeAdapter(new OkxExchangeAdapter.Dependencies(mapper, transport,
                     new OkxInstrumentsCache(transport, Clock.systemUTC(), Duration.ofHours(1)), Clock.systemUTC(), "SIM"));
         }

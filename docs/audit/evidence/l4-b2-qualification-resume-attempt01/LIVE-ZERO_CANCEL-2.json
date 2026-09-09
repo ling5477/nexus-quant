@@ -1,0 +1,373 @@
+{
+  "scenario" : "ZERO_CANCEL",
+  "repeat" : 2,
+  "controllerPid" : 52760,
+  "orderEnvironment" : "LIVE",
+  "database" : "nq_f002_b0_628d205ad0ae425a929e5e2633a45a7f",
+  "venuePid" : 4780,
+  "venueEndpoint" : "http://127.0.0.1:2572",
+  "nqPid" : 72324,
+  "postgres" : "16.15 (Debian 16.15-1.pgdg13+2)",
+  "schema" : "V48",
+  "zeroFill" : {
+    "orders" : [ {
+      "qty" : 10.0,
+      "side" : "BUY",
+      "type" : "LIMIT",
+      "price" : 100.0,
+      "venue" : "OKX",
+      "reason" : "ORDER_ACKED_BY_ADAPTER",
+      "status" : "ACCEPTED",
+      "symbol" : "BTC-USDT",
+      "version" : 3,
+      "order_id" : "ord-e315a3f3-c454-4838-8757-75552403cfa7",
+      "trace_id" : "b0-trace",
+      "dedup_key" : "1:b08d205ad0ae425a929e5e2633a45a7f",
+      "trade_env" : "LIVE",
+      "account_id" : 1,
+      "created_at" : "2026-09-09T12:54:09.784473+08:00",
+      "request_id" : "b0-trace",
+      "updated_at" : "2026-09-09T12:54:09.925419+08:00",
+      "exchange_code" : "OKX",
+      "client_order_id" : "b08d205ad0ae425a929e5e2633a45a7f",
+      "strategy_run_id" : null,
+      "exchange_order_id" : "b2-venue-1",
+      "external_order_id" : "b2-venue-1"
+    } ],
+    "trades" : [ ],
+    "ledger_entries" : [ ],
+    "ledger_events" : [ ],
+    "positions" : [ ],
+    "account_snapshots" : [ ],
+    "risk_events" : [ {
+      "scope" : "ORDER",
+      "reason" : "RISK_RULES_PASSED",
+      "rule_id" : "RISK_RULES_PASSED",
+      "decision" : "ALLOW",
+      "scope_id" : "ord-e315a3f3-c454-4838-8757-75552403cfa7",
+      "severity" : "LOW",
+      "trace_id" : "b0-trace",
+      "created_at" : "2026-09-09T12:54:09.813255+08:00",
+      "risk_event_id" : "rsk-833a52fa-e6b4-4158-89e9-9f55446832c7"
+    } ],
+    "execution_intents" : [ ],
+    "execution_receipts" : [ ],
+    "database" : "nq_f002_b0_628d205ad0ae425a929e5e2633a45a7f",
+    "correction_audit" : [ ],
+    "correction_events" : [ ]
+  },
+  "afterCancelAck" : {
+    "orders" : [ {
+      "qty" : 10.0,
+      "side" : "BUY",
+      "type" : "LIMIT",
+      "price" : 100.0,
+      "venue" : "OKX",
+      "reason" : "B2_CANCEL",
+      "status" : "CANCELLED",
+      "symbol" : "BTC-USDT",
+      "version" : 5,
+      "order_id" : "ord-e315a3f3-c454-4838-8757-75552403cfa7",
+      "trace_id" : "b0-trace",
+      "dedup_key" : "1:b08d205ad0ae425a929e5e2633a45a7f",
+      "trade_env" : "LIVE",
+      "account_id" : 1,
+      "created_at" : "2026-09-09T12:54:09.784473+08:00",
+      "request_id" : "b0-trace",
+      "updated_at" : "2026-09-09T12:54:10.021415+08:00",
+      "exchange_code" : "OKX",
+      "client_order_id" : "b08d205ad0ae425a929e5e2633a45a7f",
+      "strategy_run_id" : null,
+      "exchange_order_id" : "b2-venue-1",
+      "external_order_id" : "b2-venue-1"
+    } ],
+    "trades" : [ ],
+    "ledger_entries" : [ ],
+    "ledger_events" : [ ],
+    "positions" : [ ],
+    "account_snapshots" : [ ],
+    "risk_events" : [ {
+      "scope" : "ORDER",
+      "reason" : "RISK_RULES_PASSED",
+      "rule_id" : "RISK_RULES_PASSED",
+      "decision" : "ALLOW",
+      "scope_id" : "ord-e315a3f3-c454-4838-8757-75552403cfa7",
+      "severity" : "LOW",
+      "trace_id" : "b0-trace",
+      "created_at" : "2026-09-09T12:54:09.813255+08:00",
+      "risk_event_id" : "rsk-833a52fa-e6b4-4158-89e9-9f55446832c7"
+    } ],
+    "execution_intents" : [ ],
+    "execution_receipts" : [ ],
+    "database" : "nq_f002_b0_628d205ad0ae425a929e5e2633a45a7f",
+    "correction_audit" : [ ],
+    "correction_events" : [ ]
+  },
+  "venueBeforeRecovery" : {
+    "code" : "0",
+    "msg" : "",
+    "data" : [ ],
+    "pid" : 4780,
+    "places" : 1,
+    "cancels" : 1,
+    "pendingCancel" : false,
+    "order" : {
+      "clOrdId" : "b08d205ad0ae425a929e5e2633a45a7f",
+      "ordId" : "b2-venue-1",
+      "instId" : "BTC-USDT",
+      "state" : "canceled",
+      "px" : "100",
+      "sz" : "10",
+      "accFillSz" : "0",
+      "avgPx" : "0",
+      "uTime" : "1788929649921"
+    },
+    "fills" : [ ],
+    "events" : [ {
+      "sequence" : 2,
+      "type" : "PLACE_ACCEPTED",
+      "nanoTime" : 829122683872500
+    }, {
+      "sequence" : 3,
+      "type" : "PLACE_ACK_GENERATED",
+      "nanoTime" : 829122683924100
+    }, {
+      "sequence" : 4,
+      "type" : "PLACE_RESPONSE_DELIVERED",
+      "nanoTime" : 829122684540900
+    }, {
+      "sequence" : 5,
+      "type" : "CANCEL_REQUEST_RECEIVED",
+      "nanoTime" : 829122782697100,
+      "state" : "live"
+    }, {
+      "sequence" : 6,
+      "type" : "CANCEL_ACK_GENERATED",
+      "nanoTime" : 829122782712600
+    }, {
+      "sequence" : 7,
+      "type" : "CANCEL_RESPONSE_DELIVERED",
+      "nanoTime" : 829122783028200
+    }, {
+      "sequence" : 8,
+      "type" : "CANCEL_EFFECT",
+      "nanoTime" : 829122893079400,
+      "state" : "canceled"
+    }, {
+      "sequence" : 9,
+      "type" : "DUPLICATE_REPORTS_ENABLED",
+      "nanoTime" : 829122894565500
+    } ]
+  },
+  "recoveryResult" : "RECOVER 0",
+  "afterRecovery" : {
+    "orders" : [ {
+      "qty" : 10.0,
+      "side" : "BUY",
+      "type" : "LIMIT",
+      "price" : 100.0,
+      "venue" : "OKX",
+      "reason" : "B2_CANCEL",
+      "status" : "CANCELLED",
+      "symbol" : "BTC-USDT",
+      "version" : 5,
+      "order_id" : "ord-e315a3f3-c454-4838-8757-75552403cfa7",
+      "trace_id" : "b0-trace",
+      "dedup_key" : "1:b08d205ad0ae425a929e5e2633a45a7f",
+      "trade_env" : "LIVE",
+      "account_id" : 1,
+      "created_at" : "2026-09-09T12:54:09.784473+08:00",
+      "request_id" : "b0-trace",
+      "updated_at" : "2026-09-09T12:54:10.021415+08:00",
+      "exchange_code" : "OKX",
+      "client_order_id" : "b08d205ad0ae425a929e5e2633a45a7f",
+      "strategy_run_id" : null,
+      "exchange_order_id" : "b2-venue-1",
+      "external_order_id" : "b2-venue-1"
+    } ],
+    "trades" : [ ],
+    "ledger_entries" : [ ],
+    "ledger_events" : [ ],
+    "positions" : [ ],
+    "account_snapshots" : [ ],
+    "risk_events" : [ {
+      "scope" : "ORDER",
+      "reason" : "RISK_RULES_PASSED",
+      "rule_id" : "RISK_RULES_PASSED",
+      "decision" : "ALLOW",
+      "scope_id" : "ord-e315a3f3-c454-4838-8757-75552403cfa7",
+      "severity" : "LOW",
+      "trace_id" : "b0-trace",
+      "created_at" : "2026-09-09T12:54:09.813255+08:00",
+      "risk_event_id" : "rsk-833a52fa-e6b4-4158-89e9-9f55446832c7"
+    } ],
+    "execution_intents" : [ ],
+    "execution_receipts" : [ ],
+    "database" : "nq_f002_b0_628d205ad0ae425a929e5e2633a45a7f",
+    "correction_audit" : [ ],
+    "correction_events" : [ ]
+  },
+  "afterReplay" : {
+    "orders" : [ {
+      "qty" : 10.0,
+      "side" : "BUY",
+      "type" : "LIMIT",
+      "price" : 100.0,
+      "venue" : "OKX",
+      "reason" : "B2_CANCEL",
+      "status" : "CANCELLED",
+      "symbol" : "BTC-USDT",
+      "version" : 5,
+      "order_id" : "ord-e315a3f3-c454-4838-8757-75552403cfa7",
+      "trace_id" : "b0-trace",
+      "dedup_key" : "1:b08d205ad0ae425a929e5e2633a45a7f",
+      "trade_env" : "LIVE",
+      "account_id" : 1,
+      "created_at" : "2026-09-09T12:54:09.784473+08:00",
+      "request_id" : "b0-trace",
+      "updated_at" : "2026-09-09T12:54:10.021415+08:00",
+      "exchange_code" : "OKX",
+      "client_order_id" : "b08d205ad0ae425a929e5e2633a45a7f",
+      "strategy_run_id" : null,
+      "exchange_order_id" : "b2-venue-1",
+      "external_order_id" : "b2-venue-1"
+    } ],
+    "trades" : [ ],
+    "ledger_entries" : [ ],
+    "ledger_events" : [ ],
+    "positions" : [ ],
+    "account_snapshots" : [ ],
+    "risk_events" : [ {
+      "scope" : "ORDER",
+      "reason" : "RISK_RULES_PASSED",
+      "rule_id" : "RISK_RULES_PASSED",
+      "decision" : "ALLOW",
+      "scope_id" : "ord-e315a3f3-c454-4838-8757-75552403cfa7",
+      "severity" : "LOW",
+      "trace_id" : "b0-trace",
+      "created_at" : "2026-09-09T12:54:09.813255+08:00",
+      "risk_event_id" : "rsk-833a52fa-e6b4-4158-89e9-9f55446832c7"
+    } ],
+    "execution_intents" : [ ],
+    "execution_receipts" : [ ],
+    "database" : "nq_f002_b0_628d205ad0ae425a929e5e2633a45a7f",
+    "correction_audit" : [ ],
+    "correction_events" : [ ]
+  },
+  "finalDb" : {
+    "orders" : [ {
+      "qty" : 10.0,
+      "side" : "BUY",
+      "type" : "LIMIT",
+      "price" : 100.0,
+      "venue" : "OKX",
+      "reason" : "B2_CANCEL",
+      "status" : "CANCELLED",
+      "symbol" : "BTC-USDT",
+      "version" : 5,
+      "order_id" : "ord-e315a3f3-c454-4838-8757-75552403cfa7",
+      "trace_id" : "b0-trace",
+      "dedup_key" : "1:b08d205ad0ae425a929e5e2633a45a7f",
+      "trade_env" : "LIVE",
+      "account_id" : 1,
+      "created_at" : "2026-09-09T12:54:09.784473+08:00",
+      "request_id" : "b0-trace",
+      "updated_at" : "2026-09-09T12:54:10.021415+08:00",
+      "exchange_code" : "OKX",
+      "client_order_id" : "b08d205ad0ae425a929e5e2633a45a7f",
+      "strategy_run_id" : null,
+      "exchange_order_id" : "b2-venue-1",
+      "external_order_id" : "b2-venue-1"
+    } ],
+    "trades" : [ ],
+    "ledger_entries" : [ ],
+    "ledger_events" : [ ],
+    "positions" : [ ],
+    "account_snapshots" : [ ],
+    "risk_events" : [ {
+      "scope" : "ORDER",
+      "reason" : "RISK_RULES_PASSED",
+      "rule_id" : "RISK_RULES_PASSED",
+      "decision" : "ALLOW",
+      "scope_id" : "ord-e315a3f3-c454-4838-8757-75552403cfa7",
+      "severity" : "LOW",
+      "trace_id" : "b0-trace",
+      "created_at" : "2026-09-09T12:54:09.813255+08:00",
+      "risk_event_id" : "rsk-833a52fa-e6b4-4158-89e9-9f55446832c7"
+    } ],
+    "execution_intents" : [ ],
+    "execution_receipts" : [ ],
+    "database" : "nq_f002_b0_628d205ad0ae425a929e5e2633a45a7f",
+    "correction_audit" : [ ],
+    "correction_events" : [ ]
+  },
+  "finalVenue" : {
+    "code" : "0",
+    "msg" : "",
+    "data" : [ ],
+    "pid" : 4780,
+    "places" : 1,
+    "cancels" : 1,
+    "pendingCancel" : false,
+    "order" : {
+      "clOrdId" : "b08d205ad0ae425a929e5e2633a45a7f",
+      "ordId" : "b2-venue-1",
+      "instId" : "BTC-USDT",
+      "state" : "canceled",
+      "px" : "100",
+      "sz" : "10",
+      "accFillSz" : "0",
+      "avgPx" : "0",
+      "uTime" : "1788929649921"
+    },
+    "fills" : [ ],
+    "events" : [ {
+      "sequence" : 2,
+      "type" : "PLACE_ACCEPTED",
+      "nanoTime" : 829122683872500
+    }, {
+      "sequence" : 3,
+      "type" : "PLACE_ACK_GENERATED",
+      "nanoTime" : 829122683924100
+    }, {
+      "sequence" : 4,
+      "type" : "PLACE_RESPONSE_DELIVERED",
+      "nanoTime" : 829122684540900
+    }, {
+      "sequence" : 5,
+      "type" : "CANCEL_REQUEST_RECEIVED",
+      "nanoTime" : 829122782697100,
+      "state" : "live"
+    }, {
+      "sequence" : 6,
+      "type" : "CANCEL_ACK_GENERATED",
+      "nanoTime" : 829122782712600
+    }, {
+      "sequence" : 7,
+      "type" : "CANCEL_RESPONSE_DELIVERED",
+      "nanoTime" : 829122783028200
+    }, {
+      "sequence" : 8,
+      "type" : "CANCEL_EFFECT",
+      "nanoTime" : 829122893079400,
+      "state" : "canceled"
+    }, {
+      "sequence" : 9,
+      "type" : "DUPLICATE_REPORTS_ENABLED",
+      "nanoTime" : 829122894565500
+    }, {
+      "sequence" : 10,
+      "type" : "QUERY_FILLS",
+      "nanoTime" : 829122911855700,
+      "reportCount" : 0
+    }, {
+      "sequence" : 11,
+      "type" : "QUERY_FILLS",
+      "nanoTime" : 829123021299500,
+      "reportCount" : 0
+    } ]
+  },
+  "executedQty" : "0",
+  "remainingQty" : "10",
+  "result" : "PASS"
+}

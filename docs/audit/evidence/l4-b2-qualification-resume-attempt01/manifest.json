@@ -1,0 +1,409 @@
+{
+  "head": "d1cedb6debfaa3dbeacb0e95ef8599c69e5f9da3",
+  "productionFingerprint": "7982a8d51e21332e7474be15b24e468249ba0e19a647d651bdd8a5020305910a",
+  "sourceFingerprint": "3bb05345c1675e42698bb0b58dfa9e13f7af72480f5d2cb4c1935ffd019e6eb4",
+  "sourceAlgorithm": "sources order: path SPACE gitBlob, LF join without final LF, UTF8 SHA256",
+  "sources": [
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0NqProcessMain.java",
+      "rawSha256": "aacbf228465a10b52e694acbbdb82414e75e30ce7f9282cc6819d05382ec4040",
+      "gitBlob": "dc0da66d972141f0014df7c04b7f8aaf2b0d8e27"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B2RealProcessProofTest.java",
+      "rawSha256": "5c70d8c6c9b7c5ef7db9f03ba47dcee1744c491b67b7ce5bd8958300b3481cdf",
+      "gitBlob": "01b5ddab10334289c1054f6674fe5441e002ce3a"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B2SyntheticVenueMain.java",
+      "rawSha256": "eaae14f5299f71c62b8fa693f304655eb0b5087824c6ef1e9c86ad61e5904420",
+      "gitBlob": "63e70cc6de5adfdeef034c4000faa642f611d4a1"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B2TerminalCorrectionPostgresIntegrationTest.java",
+      "rawSha256": "0d10a84dc68aa434c898ea9e0a31018cccf0606f1d5f2afc5bcf329336f968cd",
+      "gitBlob": "cb6798cb65194ca4a5224d8cb0a5b9af3a01cb58"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4PlanBlockerPostgresIntegrationTest.java",
+      "rawSha256": "ae8ee06977c9f8a907c35ffacd450606277b886a268583e29bd1101bc933cf79",
+      "gitBlob": "cd95215d97d388e8c9631efdb83030c2fe69b313"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java",
+      "rawSha256": "3b96094d18316f482cca2827bc3b8c7481d0f59cd40efe2adbbbb62726d8ed7c",
+      "gitBlob": "0bf1c770c8fb8a2af28d0b9605489c4c7b8213a8"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java",
+      "rawSha256": "fcac7f08f39c84835c874243586af0a245ba003282579a8cc5ab7eab2d9b74b4",
+      "gitBlob": "ad6820336c729f8695d2b3ea8e6095eed3df067c"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderLifecycleService.java",
+      "rawSha256": "d44aeb756d455afd19e4d3080d0f51b60abccce93671f8a3eb8c6c4ea95db9c1",
+      "gitBlob": "fae6819f9bc01ec163849937ddbd64fa9d7cac5f"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/domain/port/OrderRepository.java",
+      "rawSha256": "4e368b91701ba5d8378145ec13ab73ac55d11023d83d15bea322629f821943cd",
+      "gitBlob": "af40d9962cab71478c2fc66d68012b56cec72265"
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/scheduler/infra/jdbc/JdbcTradeRepository.java",
+      "rawSha256": "c6bf323cbfb386b8a1fddedaffb2fddbe33c476ea89156aa390419af19f21921",
+      "gitBlob": "2fd2b5ae03913290f27d9e998608ca5682418442"
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/jdbc/JdbcOrderRepository.java",
+      "rawSha256": "d0269725974e849d346c05c03f432ea99ab2785ad3f8c1b4cd9f4e479d4a28a6",
+      "gitBlob": "51c15ad5af903c4ed8a06cfd21df2be3d4c1c48e"
+    },
+    {
+      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/scheduler/infra/jdbc/JdbcTradeRepositoryTest.java",
+      "rawSha256": "fc91487e9ccac582c3692f9f33eb13e7e43580bf96870cf0d7fb6cca648bb957",
+      "gitBlob": "b36f0ecba2fcea327801146655ae2d1147dff997"
+    },
+    {
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java",
+      "rawSha256": "140e2d5dc26698e0c6a1f464068a92f5a000cddb029990fc2e8626265b0f9aa2",
+      "gitBlob": "95dfd10b4fca24fc7d13bdcdf6e6fcae64ce492d"
+    },
+    {
+      "path": "backend/nq-scheduler/src/test/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileServiceTest.java",
+      "rawSha256": "49c3a68be5f709fa71eda56562e8ac7a7bea6164ced551ac9d04933da242cb67",
+      "gitBlob": "6d8f20255ee06e93d22ce53981074b0d0e4623f7"
+    },
+    {
+      "path": "backend/nq-scheduler/src/test/java/com/guidinglight/nexusquant/trading/application/CancelledExecutionCorrectionTest.java",
+      "rawSha256": "f895984e5bfeb53af68a43aaf382c71505c3ae7c9ff11ca951c891e1ee511a08",
+      "gitBlob": "72f9cb24eae46887cb672f9f8b61ccc11f8cedde"
+    }
+  ],
+  "realProcessRuns": 48,
+  "targetedTests": {
+    "tests": 108,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "fullMavenRerun": false,
+  "fullMavenReused": {
+    "tests": 1836,
+    "failures": 0,
+    "errors": 0,
+    "skips": 84,
+    "review": "combined-independent-review.md"
+  },
+  "artifacts": [
+    {
+      "path": "accounting-verification.json",
+      "rawSha256": "d120f91e1f7c215b9b659a5e0ef09c686eed7cd86aef3bcf104e0e0f03b0ce82",
+      "gitBlob": "c3cd67196350250b78212da6c6307bf84296ac0e"
+    },
+    {
+      "path": "check-accounting.py",
+      "rawSha256": "e86d3938373c37dc07744e211882e4b757ff0c6829b5e0acf03919c067583f1e",
+      "gitBlob": "fb38dfaabc89b81bcd16418ab9ec84136c674b3a"
+    },
+    {
+      "path": "check-matrix.py",
+      "rawSha256": "d63ed0d3c790ef8124fb4a557d1f58531f823014875f7d6a9acfbbb8f65b329e",
+      "gitBlob": "671484dfd1d3ac382b13388fb51f49c27703d190"
+    },
+    {
+      "path": "combined-independent-review.md",
+      "rawSha256": "3d1e0dad5b087d7bdc0c5b439ceb409f00a4dc70496df04d2b0e9676a14de968",
+      "gitBlob": "d12438954efa89c85baefbcb3114876893e93167"
+    },
+    {
+      "path": "combined-review-raw.zip",
+      "rawSha256": "53033e358e64bc4dfb32af68911cba53370e538146f0e6d1650d18f322daf395",
+      "gitBlob": "42142da7299bf85febcf99550529895fc24a7f95"
+    },
+    {
+      "path": "environment.json",
+      "rawSha256": "b04ec359f5c761965fb7b77e6485dc54a9c69eb781b05204224a020a5cd18ea2",
+      "gitBlob": "42e4cfaa5df54418437a103a5a593118e9b029e4"
+    },
+    {
+      "path": "LIVE-FILL_DURING_CANCEL-1.json",
+      "rawSha256": "0df1037cac12b262b8ecbc81ae25e76bc2c57a3654da790a044f3be61d6d0ab7",
+      "gitBlob": "a6b459bab5b5b3f7cb5dc2a82fc710ab6eaeeb7d"
+    },
+    {
+      "path": "LIVE-FILL_DURING_CANCEL-2.json",
+      "rawSha256": "98aefc805a1b7dc25bcbf44334c10ca588eb0972f6eeeddd54ae69a489b62999",
+      "gitBlob": "4d3c67d1d544252bdc5373a1486c7d2a501ba28c"
+    },
+    {
+      "path": "LIVE-FILL_DURING_CANCEL-3.json",
+      "rawSha256": "bbcae81cc0bed17fb006d1e64961b71f3aaac6209080016a1248c98428151392",
+      "gitBlob": "4325845ee8179c08b770f18ed9ecbf18905a1882"
+    },
+    {
+      "path": "LIVE-LATE_FULL-1.json",
+      "rawSha256": "54fb87a1e5648409b4dd22af1c25aaadac637501c7df27e3a68aee1ef2f76034",
+      "gitBlob": "cbf0450b351f237a29a2410bac7dd6a1e78cb4a8"
+    },
+    {
+      "path": "LIVE-LATE_FULL-2.json",
+      "rawSha256": "bfff7079a390d9a6821049a2dfa12b6ca66a1408a2c9b12b2b40d9db11e26f02",
+      "gitBlob": "c4fe1ea4e7b0cb6396bf083e77c67e2fe6365d9f"
+    },
+    {
+      "path": "LIVE-LATE_FULL-3.json",
+      "rawSha256": "e0bf436db75f6324e5ab5018c6b44c70a86e5ef3ed626d619360b89faa411d60",
+      "gitBlob": "5334c106d7bb726da485cd71ce64f5e7af5d0abb"
+    },
+    {
+      "path": "LIVE-MULTI_PARTIAL-1.json",
+      "rawSha256": "518020162d521944ea0b31c8dc03f6645e98b8a02cae86624d374962c57b488f",
+      "gitBlob": "2611f8167750cb60421d073a070c2ad3823dff3a"
+    },
+    {
+      "path": "LIVE-MULTI_PARTIAL-2.json",
+      "rawSha256": "fd7b1e80e40704c28f907c7f09223abe6b68a2b45acd79a750fb0f7fdd1c9c61",
+      "gitBlob": "2295f16b51a6d83389b4d4aa1944fdf8a2ccf2e2"
+    },
+    {
+      "path": "LIVE-MULTI_PARTIAL-3.json",
+      "rawSha256": "2e7f05e321cf5d29448daab077e2662acef12c69f5387f219f1f620bf098eaf2",
+      "gitBlob": "ca8b0f2763e9775bb26eb740c8f6b971d6b1ea2b"
+    },
+    {
+      "path": "LIVE-PARTIAL_BEFORE_CANCEL-1.json",
+      "rawSha256": "14522a64b60bf21cd626a6ab4043539fa863787ccdac05c7ae6ddb02da3c251e",
+      "gitBlob": "c6b28f667bc19f0d5a5b4a5cc1ca7a2a39659348"
+    },
+    {
+      "path": "LIVE-PARTIAL_BEFORE_CANCEL-2.json",
+      "rawSha256": "acb75e99ace0969c804f2fdd29b23d05516e7de527c55ca418fa6886d138a6e4",
+      "gitBlob": "33104a83170e4199307d4eac6c703ded922499ea"
+    },
+    {
+      "path": "LIVE-PARTIAL_BEFORE_CANCEL-3.json",
+      "rawSha256": "dcc26d6e9065eab0979adb3ca792abe9ff36c65999cf099af7346fd2b4fe2a8f",
+      "gitBlob": "73d4be3d5765ffb8fd83a4a1b0ee6d778c57c0b5"
+    },
+    {
+      "path": "LIVE-RESTART_FULL-1.json",
+      "rawSha256": "29108acf0bc875561b26e8fdcd6cc989256db66342c555571bfa9b3d01af7f28",
+      "gitBlob": "d20734fe8919dd6c2ad75fd871bdc8c128a35763"
+    },
+    {
+      "path": "LIVE-RESTART_FULL-2.json",
+      "rawSha256": "cc8b78547667e432f0a9d914b2591b190c9831671bcfdf9a6ee3f7ffd907ba20",
+      "gitBlob": "a59c85c57891470c24961ca983e9e50877436408"
+    },
+    {
+      "path": "LIVE-RESTART_FULL-3.json",
+      "rawSha256": "50d25ac6edd0cdebdb9e5f7799deed70f3cfe4bd48129348f817a9c16dacd596",
+      "gitBlob": "d9c7f0ba7aeec3251e4507033b5f1552adf88316"
+    },
+    {
+      "path": "LIVE-STALE_CANCEL-1.json",
+      "rawSha256": "1dbc20e754841372f3889e158ac1c1d5a840c88912a2d6ff5fb4438bb2ef014e",
+      "gitBlob": "484c291ae6c6d30a22513b4efb8266a0521d139f"
+    },
+    {
+      "path": "LIVE-STALE_CANCEL-2.json",
+      "rawSha256": "0341c61e83891b5b00efb21b0e7eb7475411ced81620c18d32e578cb7d21d054",
+      "gitBlob": "49ecf80cf1d9a6f5af63d466142085d8ebb2f9d6"
+    },
+    {
+      "path": "LIVE-STALE_CANCEL-3.json",
+      "rawSha256": "f03a4aef8e5be169d0b6c94a43944c36b75c2cdaa62f60febcd241ce9b798b72",
+      "gitBlob": "11d69ad61cc56d497843e27073efe18e6b7b2e51"
+    },
+    {
+      "path": "LIVE-STALE_PLACE-1.json",
+      "rawSha256": "6fdbba1df8fdabf57d002c1460448be274b2168f1ef493f309129734577293c1",
+      "gitBlob": "62fe805ab3f5398dd999ff0deb2bc155ac2556ba"
+    },
+    {
+      "path": "LIVE-STALE_PLACE-2.json",
+      "rawSha256": "9e24e12f276a7fa65cc3071207125c53a6930c4bfe9776c9b4f3025a6dc97189",
+      "gitBlob": "550c99092bd4c1062e30ad8718b5d6649c774a45"
+    },
+    {
+      "path": "LIVE-STALE_PLACE-3.json",
+      "rawSha256": "4de94028dd2e9d1d020dfd49f189194a9bcb3362f4bb9ae8e56f573462a8f136",
+      "gitBlob": "ae38ad57440e1efd964945e48448c08e8d55be63"
+    },
+    {
+      "path": "LIVE-ZERO_CANCEL-1.json",
+      "rawSha256": "d847338c6b2275134a17d252b5acfb8a44212484206dbb40abbe08a53d76e870",
+      "gitBlob": "88905aaca13a18bb50ceb65f2f7ddabd47400d64"
+    },
+    {
+      "path": "LIVE-ZERO_CANCEL-2.json",
+      "rawSha256": "c62102c3376495b0475d249e6f52ce6bfe1158564c493de0dfdd6a823ec6e075",
+      "gitBlob": "7467736308eff8fb89fd3a22a5b0851f912b3842"
+    },
+    {
+      "path": "LIVE-ZERO_CANCEL-3.json",
+      "rawSha256": "271db629e552796b3f28cdc6968e7cdbdcbb67d0dea0d3cecf4c737f58a3e909",
+      "gitBlob": "7dc82355078135b501e5f3bd967f3f152e4ffb92"
+    },
+    {
+      "path": "matrix-summary.json",
+      "rawSha256": "08ee39a65789d0f254bd7baad20b16763ea5a9df6762ad35c0e24e81338932ef",
+      "gitBlob": "204743dccaa7e56cfa074044342655973243405a"
+    },
+    {
+      "path": "production-identity.json",
+      "rawSha256": "0f53224e477dfb1ae3b6a87d8db576d2eb7511de94260b4b6a28bfc3d8974234",
+      "gitBlob": "f47eb5df2eca8b598cda71517cb03f21f8d191cf"
+    },
+    {
+      "path": "production-start.txt",
+      "rawSha256": "7982a8d51e21332e7474be15b24e468249ba0e19a647d651bdd8a5020305910a",
+      "gitBlob": "4626dfb0d0b94614ddce027d28d7615096c8b46c"
+    },
+    {
+      "path": "qualification-logs.zip",
+      "rawSha256": "cd8e2d4bdd6bf559c6a6090266ad3ff8c6f1a293df87b0eb22b64e13231b245e",
+      "gitBlob": "fe314d29fd63683d6b5e816bcfee0f4381bb7d3a"
+    },
+    {
+      "path": "run-targeted.py",
+      "rawSha256": "a8055f79a151ad25d83710df8e83ec278bc1609ce0f3b34f4380da39c6ef32fe",
+      "gitBlob": "0c0520794b1454d45cd10d10795da8908dff7b3c"
+    },
+    {
+      "path": "runs.md",
+      "rawSha256": "d2716230b70a27e3e80e9c20759e377459778f875640a57b528fdcb6798f2e44",
+      "gitBlob": "3bf3532677397dc712e18d7f00abf8cabfe49150"
+    },
+    {
+      "path": "SIM-FILL_DURING_CANCEL-1.json",
+      "rawSha256": "605096df69161fc00e0340fd0adcd30874df1970252d6256fe0a9fc1422df534",
+      "gitBlob": "13b4c307472a57a282c30f298f1c2d71305fdc99"
+    },
+    {
+      "path": "SIM-FILL_DURING_CANCEL-2.json",
+      "rawSha256": "e27be135c8c1e089a113e6b007dc9efc82d4f98432c573b5326e789d0c43c677",
+      "gitBlob": "34ec09864166dc6a93f9a5510ea2844c21e26c6b"
+    },
+    {
+      "path": "SIM-FILL_DURING_CANCEL-3.json",
+      "rawSha256": "9778ee1bf8c4447e7514a17d42e48af2e432f0186a87ee0147bfc841d6d0366c",
+      "gitBlob": "15ff963e2cc8b9a350819817b5a91fcc4091a6cc"
+    },
+    {
+      "path": "SIM-LATE_FULL-1.json",
+      "rawSha256": "9d8b346e93e87e98c4fa10174d47b9fbc150445145db286475f6721b41393b25",
+      "gitBlob": "788b10a3cc099f7620c1a22b8066799ff6d26003"
+    },
+    {
+      "path": "SIM-LATE_FULL-2.json",
+      "rawSha256": "689aff14876d3c34703122c0161313dcb2fbed48dc8d4eb1d9784787a126e53b",
+      "gitBlob": "0f219be842f860bb530b4dcf998dce0c84a7ef31"
+    },
+    {
+      "path": "SIM-LATE_FULL-3.json",
+      "rawSha256": "e246497adf2a77f5cc1dbe2cb6b9248d45f993a3c9f0c343b978822ec9945553",
+      "gitBlob": "e8145f4445f5c5fecaddd8908f57dc0b09954b62"
+    },
+    {
+      "path": "SIM-MULTI_PARTIAL-1.json",
+      "rawSha256": "1a4b813ba1d0835689ebcec6a7218101dcfcf18c9f0c6bf5a841b0a3707b0e6e",
+      "gitBlob": "9301743a50eb5aceb7ef607689b98e5178316ac5"
+    },
+    {
+      "path": "SIM-MULTI_PARTIAL-2.json",
+      "rawSha256": "2a4559e071e06776f3c4c7097adb00f923690637cdb1906da0bcd8660f5ccf60",
+      "gitBlob": "6b141408f85c83f372e3f0cb0ca919d215330696"
+    },
+    {
+      "path": "SIM-MULTI_PARTIAL-3.json",
+      "rawSha256": "3b2bd3496c9bdccd4708ac9729da34d7594892b887f5ebf47aa66b91d0dd5a2e",
+      "gitBlob": "757d7a3cbef1a60aed705b1894844ebc422fb92b"
+    },
+    {
+      "path": "SIM-PARTIAL_BEFORE_CANCEL-1.json",
+      "rawSha256": "535bd736712b0a253a53a081a5f49f3dbf80f449c36fa9dc940e9978d76c6a70",
+      "gitBlob": "9b6146b393fae141d20f776e96e379c17f649f2d"
+    },
+    {
+      "path": "SIM-PARTIAL_BEFORE_CANCEL-2.json",
+      "rawSha256": "f08ede4cfaf683c2e2e0909f39aed839386785039ed7d7b8ba090bd2e86fdcaa",
+      "gitBlob": "a0a8ecc9f92fc50b94fb8fe28c336e1c7a956eee"
+    },
+    {
+      "path": "SIM-PARTIAL_BEFORE_CANCEL-3.json",
+      "rawSha256": "c444efdae708679d5976203478702f53163c5ac4b3987308aa5e79887ccb46d1",
+      "gitBlob": "f2f437894aaa0b5077970f945dba6213677cecee"
+    },
+    {
+      "path": "SIM-RESTART_FULL-1.json",
+      "rawSha256": "0c75bc84fe578e5f741d03f25c358a75004dcf6e0721360b6efccbc018c8268c",
+      "gitBlob": "2d18aa41a9de633e643d17abd54b1f4abacf0e13"
+    },
+    {
+      "path": "SIM-RESTART_FULL-2.json",
+      "rawSha256": "c32148d7533c98409bdc9057d494a8b511da78b2ca02e1a1271679364477a138",
+      "gitBlob": "bb9d59f91e3e5dcc9e161b64c2d2febda8e92c12"
+    },
+    {
+      "path": "SIM-RESTART_FULL-3.json",
+      "rawSha256": "694e54670f1440e4ac21887ddef3d65b3ce03852023f1983fa86f591ac367f84",
+      "gitBlob": "b7119e8c0b617d4906b562180d16575c60fe8883"
+    },
+    {
+      "path": "SIM-STALE_CANCEL-1.json",
+      "rawSha256": "c0f58fa08d8f986b781fb6908922f826fc57cfd5ece31ef2cce85552aa4cefc0",
+      "gitBlob": "1dce246b5fd212adb5b2a67723803b2c63f1abdf"
+    },
+    {
+      "path": "SIM-STALE_CANCEL-2.json",
+      "rawSha256": "c6b9456384252fccbe76333c4465c1b6b59488ff868ceb4d0ba24ef22416a52e",
+      "gitBlob": "c378e8f6a6c014a1f420b29e4a8ad2856341b29a"
+    },
+    {
+      "path": "SIM-STALE_CANCEL-3.json",
+      "rawSha256": "2ff13e55c91590e03f5a4d30eede31c25045d3622f43a1be0dd2f2d1c493273d",
+      "gitBlob": "90d0cac0b3141f77edf9c4d20ec543f284fe7711"
+    },
+    {
+      "path": "SIM-STALE_PLACE-1.json",
+      "rawSha256": "5349f70c56a00ce2e40904d906f80ed50d1afbec33eee8df89109338a6ef079d",
+      "gitBlob": "bd86961bbb6d19527d6a621816e0a54a649917c2"
+    },
+    {
+      "path": "SIM-STALE_PLACE-2.json",
+      "rawSha256": "e99b0131e92227b8fde4f046c207feb551c1878522f6a43139a6914594b7c69c",
+      "gitBlob": "a5d889c85f5b04f68417ab4355e1092706c1ba10"
+    },
+    {
+      "path": "SIM-STALE_PLACE-3.json",
+      "rawSha256": "a4cc1cb6ccea85db836ffb310a249894dac37bb9869d9dcf95c9a889cf42416f",
+      "gitBlob": "5364a587a74f1b742a7fa366d10fbe2a67e7dc3e"
+    },
+    {
+      "path": "SIM-ZERO_CANCEL-1.json",
+      "rawSha256": "c00d35f797ad1d975c56f48253e07a741df63e686d8d1c21f8a4fcf4058b393c",
+      "gitBlob": "88c7d677da3a045e1dbea2eb36a2a33b371e9223"
+    },
+    {
+      "path": "SIM-ZERO_CANCEL-2.json",
+      "rawSha256": "29e61166bad8681a64afa044fe0f81caa65d1a5c6c2a1724352b357da2907b6e",
+      "gitBlob": "0f12edf55725c94487b21dcd0d63ddbdf4d36394"
+    },
+    {
+      "path": "SIM-ZERO_CANCEL-3.json",
+      "rawSha256": "448a42127a86616f9c00d9b3588ab2295787e2bd8b74037378ac8aad87c7e462",
+      "gitBlob": "846f0d7bf445e8a63b28aed7d16ed678c84e89b1"
+    },
+    {
+      "path": "targeted-summary.json",
+      "rawSha256": "63b4b593b11af46c1a83f46eac83a5461c8b87cc2559278c3733e49c4f32271f",
+      "gitBlob": "500812e340ff1f7c2ab3d584feefb81552fe719a"
+    }
+  ],
+  "b2Status": "QUALIFIED / READY_FOR_DELIVERY",
+  "stage": 0,
+  "commit": "NONE",
+  "push": "NONE"
+}

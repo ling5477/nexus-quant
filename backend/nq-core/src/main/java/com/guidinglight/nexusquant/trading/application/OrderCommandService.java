@@ -220,6 +220,10 @@ public class OrderCommandService {
         return orderCommandWriteService.transitionOrder(orderId, nextStatus, reason, traceId);
     }
 
+    OrderRecord reconcileCancelledExecution(String orderId, String traceId) {
+        return orderCommandWriteService.reconcileCancelledExecution(orderId, traceId);
+    }
+
     /**
      * 查询指定状态订单，供 scheduler/恢复流程使用。
      */

@@ -248,9 +248,9 @@ class L4PlanBlockerPostgresIntegrationTest {
         }
     }
 
-    /** R04 / C2：撤单后到达的成交只回补事实，订单终态、version 和状态事件均不改变。 */
+    /** R04 / C2：撤单后到达的部分成交只回补事实，订单终态、version 和状态事件均不改变。 */
     @Test void cancelledOrderWithVenueFillBackfillsTradeAndLedgerIdempotently() {
-        var cancelled = place(request("blind-spot"));
+        var cancelled = place(partialRequest("blind-spot"));
         commands.cancelOrder(cancel(cancelled));
         var before = current(cancelled);
         var factsBefore = orderFacts(cancelled);
@@ -310,7 +310,7 @@ class L4PlanBlockerPostgresIntegrationTest {
 
     /** 真实 Trade 已提交而账本失败后，沿用普通 ledger gateway 重放，不重复成交或事件。 */
     @Test void cancelledDurableTradeRecoversMissingLedgerWithoutNewVenueFill() {
-        var order = place(request("cancel-ledger-recovery"));
+        var order = place(partialRequest("cancel-ledger-recovery"));
         commands.cancelOrder(cancel(order));
         var before = current(order);
         var facts = orderFacts(order);
@@ -351,7 +351,7 @@ class L4PlanBlockerPostgresIntegrationTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void sharedLimitOneProcessesOnlyOneOrder(boolean cancelledFirst) {
-        var terminal = place(request("bounded-terminal"));
+        var terminal = place(partialRequest("bounded-terminal"));
         commands.cancelOrder(cancel(terminal));
         var terminalBefore = current(terminal);
         var terminalFacts = orderFacts(terminal);
@@ -387,7 +387,7 @@ class L4PlanBlockerPostgresIntegrationTest {
     @ParameterizedTest
     @ValueSource(strings = {"0", "0.02"})
     void cancelledFeeFactsConvergeAndReplayWithoutDuplicateLedger(String feeText) {
-        var order = place(request("cancel-fee"));
+        var order = place(partialRequest("cancel-fee"));
         commands.cancelOrder(cancel(order));
         var before = current(order);
         var facts = orderFacts(order);
@@ -395,7 +395,7 @@ class L4PlanBlockerPostgresIntegrationTest {
         int entries = fee.signum() == 0 ? 2 : 4;
         var report = new com.guidinglight.nexusquant.adapter.api.model.AdapterTradeReport(
                 "OKX", order.accountId(), order.symbol(), order.clientOrderId(), order.externalOrderId(),
-                "fee-" + order.orderId(), order.side(), order.price(), order.qty(), fee, "USDT", Instant.EPOCH,
+                "fee-" + order.orderId(), order.side(), order.price(), order.qty().divide(new BigDecimal("2")), fee, "USDT", Instant.EPOCH,
                 "synthetic", order.traceId(), "SIM");
         doReturn(List.of(report)).when(adapter).listTradeReports(order.symbol(), order.externalOrderId(), order.traceId());
         assertEquals(1, reconcile.reconcileOnce(1));
@@ -440,7 +440,7 @@ class L4PlanBlockerPostgresIntegrationTest {
         int budget = prefixSize;
         var prefix = new java.util.ArrayList<OrderRecord>();
         for (int i = 0; i < prefixSize; i++) {
-            var old = place(request("review-old-" + i));
+            var old = place(scenario.equals("filled-converged") ? request("review-old-" + i) : partialRequest("review-old-" + i));
             if (!scenario.equals("filled-converged")) commands.cancelOrder(cancel(old));
             jdbc.update("UPDATE orders SET created_at=TIMESTAMPTZ '2020-01-01' + (? * INTERVAL '1 second') WHERE order_id=?", i, old.orderId());
             if (scenario.endsWith("converged")) {
@@ -460,7 +460,7 @@ class L4PlanBlockerPostgresIntegrationTest {
             }
             prefix.add(current(old));
         }
-        var victim = place(request("review-victim"));
+        var victim = place(scenario.equals("active-victim") ? request("review-victim") : partialRequest("review-victim"));
         if (!scenario.equals("active-victim")) commands.cancelOrder(cancel(victim));
         gateway.venue.reportFilled(victim.externalOrderId());
         jdbc.update("UPDATE orders SET created_at=TIMESTAMPTZ '2020-01-02' WHERE order_id=?", victim.orderId());
@@ -511,8 +511,8 @@ class L4PlanBlockerPostgresIntegrationTest {
 
 
     @Test void reservationFailureDoesNotLoseCandidatesAndVenueQueryHoldsNoCursorLock() {
-        var first = place(request("reservation-failure-a"));
-        var second = place(request("reservation-failure-b"));
+        var first = place(partialRequest("reservation-failure-a"));
+        var second = place(partialRequest("reservation-failure-b"));
         commands.cancelOrder(cancel(first)); commands.cancelOrder(cancel(second));
         jdbc.update("UPDATE orders SET created_at=TIMESTAMPTZ '2020-01-01' WHERE order_id=?", first.orderId());
         jdbc.update("UPDATE orders SET created_at=TIMESTAMPTZ '2020-01-02' WHERE order_id=?", second.orderId());
@@ -611,6 +611,14 @@ class L4PlanBlockerPostgresIntegrationTest {
         assertEquals(OrderStatus.ACCEPTED, result.status());
         return orders.findByOrderId(result.orderId()).orElseThrow();
     }
+    /** C2 验证扫描与部分成交回补；固定 venue fill=0.1，订单=0.2，足量纠正由 B2 单独覆盖。 */
+    private PlaceOrderRequest partialRequest(String name) {
+        var original = request(name);
+        return new PlaceOrderRequest(original.requestId(), original.accountId(), original.strategyRunId(),
+                original.venue(), original.symbol(), original.clientOrderId(), original.idempotencyKey(), original.source(),
+                original.side(), original.type(), original.price(), new BigDecimal("0.2"), original.timeInForce(), original.traceId());
+    }
+
     private CancelOrderRequest cancel(OrderRecord order) {
         return new CancelOrderRequest(order.orderId(), order.accountId(), order.clientOrderId(), "L4_TEST_CANCEL", order.traceId());
     }

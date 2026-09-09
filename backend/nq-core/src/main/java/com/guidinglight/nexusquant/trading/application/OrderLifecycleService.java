@@ -63,6 +63,11 @@ public class OrderLifecycleService {
         return orderCommandService.transitionOrder(orderId, OrderStatus.FILLED, reason, traceId);
     }
 
+    /** 对账专用：在仓储独立证明全部成交后纠正撤单终态，不接受调用方提供数量或任意目标状态。 */
+    public OrderRecord reconcileCancelledExecution(String orderId, String traceId) {
+        return orderCommandService.reconcileCancelledExecution(orderId, traceId);
+    }
+
     /**
      * 将订单推进到 CANCEL_REQUESTED。
      * <p>

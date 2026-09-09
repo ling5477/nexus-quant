@@ -1,0 +1,37 @@
+{
+  "reason": "Authorized evidence-only trailing whitespace / EOF blank-line normalization; historical manifests and SHA fields unchanged",
+  "comparison": "git diff -w --ignore-blank-lines -- affected evidence paths; empty output against original staged candidate",
+  "productionChanged": false,
+  "originalArchive": "pre-format-originals.zip",
+  "originalArchiveSha256": "82035555b4c86dc84fe3a10ba84771140d119b974185f5d4174c4cbd53bbbf2e",
+  "files": [
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/production-environment-only.patch",
+      "historicalRawSha256": "741d06f3ce218a9c409be130a739f450954bf7fdde114ecd3cd8d0611626f16d",
+      "deliveryRawSha256": "aa7cacf3dd719a911273230e634d0682a2949fdc4a2578b2753493ef49a1f71f",
+      "historicalGitBlob": "ee2e32dad8597d241f883b42b3bac70c0c85703f",
+      "deliveryGitBlob": "ed427e1b4154f87b016c6b6027c38ab836160f7e"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/run-targeted.py",
+      "historicalRawSha256": "a8055f79a151ad25d83710df8e83ec278bc1609ce0f3b34f4380da39c6ef32fe",
+      "deliveryRawSha256": "d44f9e61713783dce9faa2871c6a8812902eba905a94477027b42b8a20b8b962",
+      "historicalGitBlob": "0c0520794b1454d45cd10d10795da8908dff7b3c",
+      "deliveryGitBlob": "bf63fc9d5b9a501cc6feabb35373ed9a6fea3b63"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/full-maven-failure-summary.txt",
+      "historicalRawSha256": "099b162a0a393419298902779f340fdba81699a7f5aeafc1265c21cc7ee5a2ff",
+      "deliveryRawSha256": "a411ae65398075c8d2cb3d6133b35eec17ca5cc058331ddb4e8e9916c5f075c4",
+      "historicalGitBlob": "84645504795d20c168b1310652c766a0c82b1b08",
+      "deliveryGitBlob": "12c7501d31edc0f76990e32beb3a922b4fcf40f0"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/production-remediation.patch",
+      "historicalRawSha256": "8588c3f51de0441a3bee551c8664931c75e9ad419e8179ffa45b459c0cab0d88",
+      "deliveryRawSha256": "0465d2171aeb7d9ab855682e6b93cf354e8626c48bdd6213c5baf50f14d868ba",
+      "historicalGitBlob": "a1604758fa4b10db114bb9087f4ae72851660ac3",
+      "deliveryGitBlob": "992b04f5b6359fda7cce39897982319b214a2ca6"
+    }
+  ]
+}

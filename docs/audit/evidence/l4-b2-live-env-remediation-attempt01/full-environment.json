@@ -1,0 +1,10 @@
+{
+  "command": "mvn -f backend/pom.xml test",
+  "profilesActive": "UNSET",
+  "nqOverrides": [],
+  "javaOptions": "UNSET",
+  "datasource": "jdbc:postgresql://127.0.0.1:40037/nq_b2_env_full",
+  "password": "nonempty public disposable fixture value; not logged",
+  "excludedRelevantKeys": [],
+  "database": "new owned DB, V48, only prerequisite account seeded; no Order/Trade/Ledger"
+}

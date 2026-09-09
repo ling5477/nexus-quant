@@ -587,6 +587,43 @@ public class OrderCommandWriteService {
     }
 
     /**
+     * 仅对账可使用的强成交事实纠正；普通状态机仍禁止 CANCELLED → FILLED。
+     * 冲突后重新读取状态与完整 durable fills，不能把旧 ACK 或旧证明换新 version 重试。
+     */
+    @Transactional
+    public OrderRecord reconcileCancelledExecution(String orderId, String traceId) {
+        final String reason = "RECONCILE_FULL_EXECUTION_PROVEN";
+        for (int attempt = 0; attempt < 3; attempt++) {
+            OrderRecord current = loadOrder(orderId);
+            if (current.status() != OrderStatus.CANCELLED && current.status() != OrderStatus.FILLED) return current;
+            if (current.externalOrderId() == null || current.externalOrderId().isBlank()) return current;
+            java.math.BigDecimal executed = Objects.requireNonNull(orderRepository.durableExecutedQuantity(orderId));
+            int comparison = executed.compareTo(current.qty());
+            if (executed.signum() < 0 || comparison > 0) {
+                throw new IllegalStateException("RECONCILIATION_OVERFILL: " + orderId);
+            }
+            if (comparison < 0 || current.status() == OrderStatus.FILLED) return current;
+            int affected = orderRepository.compareAndSetCancelledToFilled(orderId, current.version(), reason, Instant.now(clock));
+            if (affected == 0) {
+                auditLogRepository.append("RECONCILE", "ORDER_TERMINAL_CORRECTION_STALE", orderId, traceId,
+                        detail("expected_version", current.version(), "executed_qty", executed));
+                continue;
+            }
+            if (affected != 1) throw new IllegalStateException("invalid terminal correction affected rows: " + affected);
+            OrderRecord corrected = current.withStatus(OrderStatus.FILLED, reason);
+            auditLogRepository.append("RECONCILE", "ORDER_TERMINAL_EXECUTION_CORRECTED", orderId, traceId,
+                    detail("from", "CANCELLED", "to", "FILLED", "expected_version", current.version(),
+                            "version", corrected.version(), "original_qty", current.qty(), "executed_qty", executed,
+                            "remaining_qty", current.qty().subtract(executed), "external_order_id", current.externalOrderId()));
+            publishEvent(TopicNames.ORDER_EVENT_V1, current.clientOrderId(), traceId,
+                    new OrderStatusChangedPayload(orderId, current.accountId(), current.clientOrderId(),
+                            OrderStatus.FILLED, reason, Instant.now(clock)));
+            return corrected;
+        }
+        throw new IllegalStateException("terminal correction contention: " + orderId);
+    }
+
+    /**
      * 为既有订单原子填充外部订单号；同号幂等，不同非空 identity 冲突时回滚。
      */
     @Transactional

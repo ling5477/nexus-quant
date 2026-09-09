@@ -41,6 +41,27 @@ public class JdbcOrderRepository implements OrderRepository {
 
     private static final RowMapper<OrderRecord> ORDER_ROW_MAPPER = JdbcOrderRepository::mapOrderRecord;
 
+    // 不对 qty 做 DISTINCT：等量的不同 fill 必须分别累计；重复身份使证明失效。
+    private static final String EXECUTION_PROOF = """
+            SELECT o.order_id, o.qty AS original_qty, COALESCE(SUM(t.qty),0) AS executed_qty,
+                   COUNT(t.trade_id) AS fill_count,
+                   COUNT(DISTINCT (t.exchange,t.exchange_trade_id)) FILTER (WHERE t.trade_id IS NOT NULL) AS identity_count,
+                   COUNT(*) FILTER (WHERE t.trade_id IS NOT NULL AND (
+                       t.account_id IS DISTINCT FROM o.account_id OR t.symbol IS DISTINCT FROM o.symbol
+                       OR t.exchange IS DISTINCT FROM o.venue OR t.trade_env IS DISTINCT FROM o.trade_env
+                       OR t.external_order_id IS DISTINCT FROM o.external_order_id
+                       OR t.exchange_trade_id IS NULL OR BTRIM(t.exchange_trade_id)=''
+                       OR t.qty IS NULL OR t.qty<=0)) AS invalid_count,
+                   o.external_order_id
+            FROM orders o LEFT JOIN trades t ON t.order_id=o.order_id
+            WHERE o.order_id=? GROUP BY o.order_id
+            """;
+
+    private static final String VALID_EXECUTION_PROOF = """
+            invalid_count=0 AND fill_count=identity_count AND original_qty>0
+            AND external_order_id IS NOT NULL AND BTRIM(external_order_id)<>''
+            """;
+
     private final JdbcTemplate jdbcTemplate;
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
@@ -204,6 +225,32 @@ public class JdbcOrderRepository implements OrderRepository {
             if (updated != 1) throw new IllegalStateException("locked reconciliation cursor was lost");
         }
         return selected.stream().map(ScannedOrder::order).toList();
+    }
+
+    @Override
+    public java.math.BigDecimal durableExecutedQuantity(String orderId) {
+        return jdbcTemplate.queryForObject("SELECT executed_qty, (" + VALID_EXECUTION_PROOF
+                + ") AS valid FROM (" + EXECUTION_PROOF + ") p", (rs, row) -> {
+                    if (!rs.getBoolean("valid")) throw new IllegalStateException("INVALID_DURABLE_EXECUTION_PROOF");
+                    return rs.getBigDecimal("executed_qty");
+                }, orderId);
+    }
+
+    @Override
+    @Transactional
+    public int compareAndSetCancelledToFilled(String orderId, long expectedVersion, String reason, Instant now) {
+        if (expectedVersion < 0 || expectedVersion == Long.MAX_VALUE) {
+            throw new IllegalArgumentException("order version cannot advance");
+        }
+        // 与 canonical Trade 插入共用订单行锁；等待结束后另起语句读取完整证明，避免等待前的旧快照。
+        jdbcTemplate.queryForObject("SELECT order_id FROM orders WHERE order_id=? FOR UPDATE", String.class, orderId);
+        // 数量证明不是调用方传来的布尔值；更新语句自身重新读取已提交成交，并以状态和版本取所有权。
+        return jdbcTemplate.update("WITH proof AS (" + EXECUTION_PROOF + ") "
+                + "UPDATE orders o SET status='FILLED', reason=?, version=o.version+1, updated_at=? "
+                + "WHERE o.order_id=? AND o.status='CANCELLED' AND o.version=? "
+                + "AND EXISTS (SELECT 1 FROM proof p WHERE p.order_id=o.order_id AND "
+                + VALID_EXECUTION_PROOF + " AND executed_qty=original_qty AND executed_qty=o.qty)",
+                orderId, reason, Timestamp.from(now), orderId, expectedVersion);
     }
 
     private record ScanKey(Timestamp createdAt, String orderId) { }

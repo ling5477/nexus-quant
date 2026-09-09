@@ -1,0 +1,9 @@
+FULL_MAVEN_ONCE: tests=1831 failures=2 errors=2 conditional_skips=79; superseded by focused verification, not a green full run.
+Exception in thread "main" java.lang.IllegalStateException: R1 A order not FILLED
+[ERROR]   TradingChainPostgresIntegrationTest.recoversLedgerAfterDurableTradeAndRemainsIdempotent:373 expected: <FILLED> but was: <ACCEPTED>
+[ERROR]   TradingRestartRecoveryPostgresIntegrationTest.recoversDurableTradeAfterLedgerFailureAcrossDistinctJvmProcesses:38->runChild:238 forked process failed:
+Exception in thread "main" java.lang.IllegalStateException: R1 A order not FILLED
+[ERROR]   ProductionConfigurationApplicationContextInitializerTest.shouldResolveCanonicalProductionEnvironmentKeysWithoutDatabaseAccess:237 ? IllegalState PROD_CONFIGURATION_INVALID: spring.datasource.password must not be blank in prod
+[ERROR]   ResearchBacktestHappyPathLocalTest.shouldRunMinimalDbBackedResearchBacktestEvalHappyPath:59 ? EmptyResultDataAccess Incorrect result size: expected 1, actual 0
+[INFO] BUILD FAILURE
+[INFO] Total time:  01:28 min

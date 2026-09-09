@@ -1,0 +1,101 @@
+{
+  "totals": {
+    "tests": 108,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "classes": [
+    {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.guidinglight.nexusquant.trading.application.OrderCommandServiceTest"
+    },
+    {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.guidinglight.nexusquant.trading.domain.state.InMemoryOrderStateMachineTest"
+    },
+    {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.guidinglight.nexusquant.scheduler.infra.jdbc.JdbcTradeRepositoryTest"
+    },
+    {
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.guidinglight.nexusquant.trading.infra.jdbc.JdbcOrderRepositoryTest"
+    },
+    {
+      "tests": 21,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileServiceTest"
+    },
+    {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.guidinglight.nexusquant.trading.application.CancelledExecutionCorrectionTest"
+    },
+    {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.guidinglight.nexusquant.app.smoke.B0FixtureSafetyTest"
+    },
+    {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.guidinglight.nexusquant.app.smoke.B2RealProcessProofTest"
+    },
+    {
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.guidinglight.nexusquant.app.smoke.B2TerminalCorrectionPostgresIntegrationTest"
+    },
+    {
+      "tests": 22,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.guidinglight.nexusquant.app.smoke.L4PlanBlockerPostgresIntegrationTest"
+    },
+    {
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.guidinglight.nexusquant.app.smoke.ReconciliationCursorPostgresIntegrationTest"
+    },
+    {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.guidinglight.nexusquant.app.smoke.TradingChainPostgresIntegrationTest"
+    },
+    {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "class": "com.guidinglight.nexusquant.app.smoke.TradingRestartRecoveryPostgresIntegrationTest"
+    }
+  ]
+}

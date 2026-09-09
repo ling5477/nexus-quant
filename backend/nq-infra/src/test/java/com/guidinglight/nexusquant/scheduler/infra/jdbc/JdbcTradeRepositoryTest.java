@@ -78,6 +78,11 @@ class JdbcTradeRepositoryTest {
         private String lastUpdateSql;
 
         @Override
+        public <T> T queryForObject(String sql, Class<T> requiredType, Object... args) {
+            return requiredType.cast(sql.contains("FOR UPDATE") ? new BigDecimal("0.1") : BigDecimal.ZERO);
+        }
+
+        @Override
         public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... args) {
             @SuppressWarnings("unchecked")
             List<T> casted = (List<T>) queryResults;

@@ -1,0 +1,104 @@
+--- a/backend/nq-infra/src/main/java/com/guidinglight/nexusquant/scheduler/infra/jdbc/JdbcTradeRepository.java
++++ b/backend/nq-infra/src/main/java/com/guidinglight/nexusquant/scheduler/infra/jdbc/JdbcTradeRepository.java
+@@ -31,11 +31,12 @@
+     public Optional<PaperTradeRecord> findByOrderId(String orderId) {
+         List<PaperTradeRecord> results = jdbcTemplate.query(
+                 """
+-                        SELECT trade_id, order_id, account_id, symbol, exchange, external_order_id, exchange_trade_id, price, qty, fee,
+-                               fee_currency, trace_id, ts
+-                        FROM trades
+-                        WHERE order_id = ?
+-                        ORDER BY ts DESC
++                        SELECT t.trade_id, t.order_id, t.account_id, t.symbol, t.exchange, t.external_order_id,
++                               t.exchange_trade_id, t.price, t.qty, t.fee, t.fee_currency, t.trace_id, t.ts,
++                               t.trade_env, o.trade_env AS order_trade_env
++                        FROM trades t JOIN orders o ON o.order_id=t.order_id
++                        WHERE t.order_id = ?
++                        ORDER BY t.ts DESC
+                         LIMIT 1
+                         """,
+                 TRADE_ROW_MAPPER,
+@@ -54,11 +55,12 @@
+         }
+         List<PaperTradeRecord> results = jdbcTemplate.query(
+                 """
+-                        SELECT trade_id, order_id, account_id, symbol, exchange, external_order_id, exchange_trade_id, price, qty, fee,
+-                               fee_currency, trace_id, ts
+-                        FROM trades
+-                        WHERE order_id = ?
+-                        ORDER BY ts ASC, trade_id ASC
++                        SELECT t.trade_id, t.order_id, t.account_id, t.symbol, t.exchange, t.external_order_id,
++                               t.exchange_trade_id, t.price, t.qty, t.fee, t.fee_currency, t.trace_id, t.ts,
++                               t.trade_env, o.trade_env AS order_trade_env
++                        FROM trades t JOIN orders o ON o.order_id=t.order_id
++                        WHERE t.order_id = ?
++                        ORDER BY t.ts ASC, t.trade_id ASC
+                         LIMIT ?
+                         """,
+                 TRADE_ROW_MAPPER,
+@@ -75,11 +77,12 @@
+     public Optional<PaperTradeRecord> findByExchangeAndExchangeTradeId(String exchange, String exchangeTradeId) {
+         List<PaperTradeRecord> results = jdbcTemplate.query(
+                 """
+-                        SELECT trade_id, order_id, account_id, symbol, exchange, external_order_id, exchange_trade_id, price, qty, fee,
+-                               fee_currency, trace_id, ts
+-                        FROM trades
+-                        WHERE exchange = ? AND exchange_trade_id = ?
+-                        ORDER BY ts DESC
++                        SELECT t.trade_id, t.order_id, t.account_id, t.symbol, t.exchange, t.external_order_id,
++                               t.exchange_trade_id, t.price, t.qty, t.fee, t.fee_currency, t.trace_id, t.ts,
++                               t.trade_env, o.trade_env AS order_trade_env
++                        FROM trades t JOIN orders o ON o.order_id=t.order_id
++                        WHERE t.exchange = ? AND t.exchange_trade_id = ?
++                        ORDER BY t.ts DESC
+                         LIMIT 1
+                         """,
+                 TRADE_ROW_MAPPER,
+@@ -104,12 +107,14 @@
+                 || executed == null || executed.signum() < 0 || executed.add(trade.qty()).compareTo(original) > 0) {
+             throw new IllegalStateException("RECONCILIATION_OVERFILL_OR_INVALID_QUANTITY: " + trade.orderId());
+         }
++        // 环境只继承同一事务中已锁定的父订单；调用方不能另选环境，也不依赖数据库默认值。
+         jdbcTemplate.update(
+                 """
+                         INSERT INTO trades (
+                             trade_id, order_id, account_id, symbol, exchange, external_order_id, exchange_trade_id,
+-                            price, qty, fee, fee_currency, trace_id, ts
+-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
++                            price, qty, fee, fee_currency, trace_id, ts, trade_env
++                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
++                                  (SELECT trade_env FROM orders WHERE order_id=?))
+                         """,
+                 trade.tradeId(),
+                 trade.orderId(),
+@@ -123,11 +128,17 @@
+                 trade.fee(),
+                 trade.feeCurrency(),
+                 trade.traceId(),
+-                Timestamp.from(trade.ts())
++                Timestamp.from(trade.ts()),
++                trade.orderId()
+         );
+     }
+
+     private static PaperTradeRecord mapTrade(ResultSet resultSet, int rowNum) throws SQLException {
++        // 已有误绑定事实不得静默修复或进入账本重放；父订单是唯一环境事实来源。
++        String environment = resultSet.getString("trade_env");
++        if (environment == null || !environment.equals(resultSet.getString("order_trade_env"))) {
++            throw new IllegalStateException("TRADE_ORDER_ENVIRONMENT_MISMATCH");
++        }
+         return new PaperTradeRecord(
+                 resultSet.getString("trade_id"),
+                 resultSet.getString("order_id"),
+--- a/backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java
++++ b/backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java
+@@ -375,7 +375,8 @@
+         try {
+             durableTrades = tradeRepository.findAllByOrderId(order.orderId(), limit);
+         } catch (IllegalStateException ex) {
+-            auditRecoveryBoundaryFailure(order, "DURABLE_TRADE_LIMIT_EXCEEDED");
++            auditRecoveryBoundaryFailure(order, "TRADE_ORDER_ENVIRONMENT_MISMATCH".equals(ex.getMessage())
++                    ? "TRADE_ORDER_ENVIRONMENT_MISMATCH" : "DURABLE_TRADE_LIMIT_EXCEEDED");
+             throw ex;
+         }
+         // 先验证完整 durable 集合与本次报告的并集；不能把分页响应当成累计量，也不能先写入 overfill。

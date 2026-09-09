@@ -1,0 +1,45 @@
+{
+  "startingHead": "d1cedb6debfaa3dbeacb0e95ef8599c69e5f9da3",
+  "originTracking": "d1cedb6debfaa3dbeacb0e95ef8599c69e5f9da3",
+  "productionFingerprint": "7982a8d51e21332e7474be15b24e468249ba0e19a647d651bdd8a5020305910a",
+  "fingerprintAlgorithm": "SHA256 of UTF-8 BOM CRLF production-start.txt; lines path TAB uppercase raw SHA256; seven production candidate files",
+  "sources": [
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java",
+      "rawSha256": "3b96094d18316f482cca2827bc3b8c7481d0f59cd40efe2adbbbb62726d8ed7c",
+      "gitBlob": "0bf1c770c8fb8a2af28d0b9605489c4c7b8213a8"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java",
+      "rawSha256": "fcac7f08f39c84835c874243586af0a245ba003282579a8cc5ab7eab2d9b74b4",
+      "gitBlob": "ad6820336c729f8695d2b3ea8e6095eed3df067c"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderLifecycleService.java",
+      "rawSha256": "d44aeb756d455afd19e4d3080d0f51b60abccce93671f8a3eb8c6c4ea95db9c1",
+      "gitBlob": "fae6819f9bc01ec163849937ddbd64fa9d7cac5f"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/domain/port/OrderRepository.java",
+      "rawSha256": "4e368b91701ba5d8378145ec13ab73ac55d11023d83d15bea322629f821943cd",
+      "gitBlob": "af40d9962cab71478c2fc66d68012b56cec72265"
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/scheduler/infra/jdbc/JdbcTradeRepository.java",
+      "rawSha256": "c6bf323cbfb386b8a1fddedaffb2fddbe33c476ea89156aa390419af19f21921",
+      "gitBlob": "2fd2b5ae03913290f27d9e998608ca5682418442"
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/jdbc/JdbcOrderRepository.java",
+      "rawSha256": "d0269725974e849d346c05c03f432ea99ab2785ad3f8c1b4cd9f4e479d4a28a6",
+      "gitBlob": "51c15ad5af903c4ed8a06cfd21df2be3d4c1c48e"
+    },
+    {
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java",
+      "rawSha256": "140e2d5dc26698e0c6a1f464068a92f5a000cddb029990fc2e8626265b0f9aa2",
+      "gitBlob": "95dfd10b4fca24fc7d13bdcdf6e6fcae64ce492d"
+    }
+  ],
+  "reviewManifest": "nq-b2-review-20260909-121354/end-manifest.txt",
+  "productionUnchanged": true
+}
