@@ -2,6 +2,8 @@
 
 按问题直接读取对应小节；参考归属不等于需要调用交易 Skill。通用测试原则归 [Java standard §6](../../../../docs/standards/java/common-java-engineering-standard.md)，文档事实归 [DOC_RULES](../../../../docs/DOC_RULES.md) 与 [FACT_SOURCE_INDEX](../../../../docs/current/FACT_SOURCE_INDEX.md)。
 
+同类问题重复、修复复发、例外连续增加或机械排错反复出现时，按[重复问题根因治理与工程经验](engineering-lessons.md)启动排查，停止连续修表面症状；该文件统一维护项目经验与可复用 troubleshooting 路径。
+
 ## Synthetic Test Identity Policy
 
 1. Runtime 可使用随机高熵 identity，保留唯一性、幂等及跨进程恢复语义。
