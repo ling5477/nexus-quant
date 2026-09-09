@@ -101,3 +101,12 @@ git diff --check
 ```
 
 scanner 验证程序使用 Linux pinned archive，先校验当前 supply-chain lock，再原样读取当前 CI 配置。Windows worktree 从 WSL 调用时可通过程序的 `--git` 参数指定实际 Windows Git。判定为映射/正例通过、原身份残留为零、凭证负例全部 REJECT、tracked scan 零 findings、stage-assets errors=0；只有实际 changed bound assets 才机械同步对应 hash。发布验收另须 canonical exact-head CI。
+
+## 经验：Durable Source Fan-out Rule
+
+- 症状：Trade 已提交，但进程在后续事件或账务调用前死亡，restart 只能恢复部分必需事实。此前 F004 为 Ledger 增加从 durable Trade 重放；B4 证明同一 source 的 TradeExecuted 仍依赖首次插入后的单次内存调用，因此 F004 的单分支修复未覆盖完整 fan-out。
+- 共同根因：将数据库 commit 后的函数调用误当成可靠持久化传播。进程退出会丢掉未执行调用，重试只检查 source 存在又可能永久跳过派生事实。
+- 规则：每个 REQUIRED durable derived fact 必须与 source 同事务原子提交，或能在 restart/replay 中从 source 幂等重建。同一数据库/事务管理器、ownership 合理时优先原子提交；独立事务应保留可重建路径及持久唯一性。不要因此合并原本独立的 Ledger 事务。
+- 排查：先列 source、全部 required fan-out 与各 commit；逐个核对真实 writer、恢复候选、durable identity/约束、旧事件兼容与冲突处理，再在真实提交边界 kill/rollback。不能只给当前报错位置补 append，也不能用无锁 SELECT-then-INSERT 声称并发唯一。
+- 修复 owner：Trade persistence / required event recovery。当前普通 OKX 将新 Trade+TradeExecuted 原子写入；旧缺口以 source 行锁串行化恢复，稳定 event_id 主键兜底，保留且验证已有随机 ID 事件，冲突拒绝。该写入协议要求参与者遵守同一 source 锁；不据此授权旧新 writer 混跑、历史生产数据清洗或扩大到其他事件。
+- Permanent regression：正常正例；原缺口旧进程→新PID恢复；event durable/ledger未提交；ledger durable/event缺失；反复重启；两个真实PG连接同时竞争source锁；event与ledger各自commit失败；SIM/LIVE与Kill下恢复。检查每个派生事实恰好一次、业务payload来自durable source、源事实及另一分支不被重写。入口：`B4TradeEventRemediationTest`（`nq.b4.remediation=true`）、`B4TradeEventPostgresTest`（`nq.b4.pg=true`）；结果见[B4整改证据](../../../../docs/audit/evidence/GATEAUDIT_PHASE6_L4_B4_TRADE_EVENT_DURABILITY_REMEDIATION_ATTEMPT01.md)。实现证明、独立审查、交付与B4资格验收分别记录，不相互替代。

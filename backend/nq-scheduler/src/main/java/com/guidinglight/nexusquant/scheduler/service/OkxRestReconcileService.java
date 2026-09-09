@@ -13,7 +13,6 @@ import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
 import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
-import com.guidinglight.nexusquant.contracts.event.TradeExecuted;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
@@ -451,8 +450,7 @@ public class OkxRestReconcileService {
                     order.traceId(),
                     tradeReport.tradeTs()
             );
-            tradeRepository.insert(trade);
-            publishTradeEvent(order, tradeReport, normalizedFee, trade.tradeId());
+            tradeRepository.insertWithRequiredEvent(trade);
             ensureLedgerConvergence(order, trade, tradeReport, false);
             newTrades++;
         }
@@ -498,6 +496,7 @@ public class OkxRestReconcileService {
         if (tradeReport != null) {
             validateTradeVenueReportIdentity(order, trade, tradeReport);
         }
+        tradeRepository.ensureRequiredEvent(trade.tradeId());
         return postLedger(order, trade, recovery);
     }
 
@@ -653,33 +652,4 @@ public class OkxRestReconcileService {
         );
     }
 
-    private void publishTradeEvent(OrderRecord order, AdapterTradeReport tradeReport, java.math.BigDecimal normalizedFee, String tradeId) {
-        TradeExecuted payload = new TradeExecuted(
-                tradeId,
-                order.orderId(),
-                order.clientOrderId(),
-                order.accountId(),
-                tradeReport.symbol(),
-                order.venue(),
-                "OKX",
-                tradeReport.exchangeOrderId(),
-                tradeReport.exchangeTradeId(),
-                tradeReport.price(),
-                tradeReport.quantity(),
-                normalizedFee,
-                tradeReport.feeAsset(),
-                tradeReport.tradeTs()
-        );
-        EventEnvelope<TradeExecuted> envelope = new EventEnvelope<>(
-                "evt-" + UUID.randomUUID(),
-                payload.getClass().getSimpleName(),
-                1,
-                Instant.now(clock),
-                SOURCE,
-                order.traceId(),
-                order.clientOrderId(),
-                payload
-        );
-        eventPublisherPort.append(TopicNames.TRADE_EVENT_V1, envelope);
-    }
 }

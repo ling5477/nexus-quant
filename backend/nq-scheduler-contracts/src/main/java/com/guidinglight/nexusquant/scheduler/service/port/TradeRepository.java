@@ -23,4 +23,14 @@ public interface TradeRepository {
     Optional<PaperTradeRecord> findByExchangeAndExchangeTradeId(String exchange, String exchangeTradeId);
 
     void insert(PaperTradeRecord trade);
+
+    /** 原子写入普通 OKX Trade 及其必需事件；不得退化为两个独立提交。 */
+    default void insertWithRequiredEvent(PaperTradeRecord trade) {
+        throw new UnsupportedOperationException("atomic Trade/event persistence is required");
+    }
+
+    /** 从持久化 Trade 恢复必需事件；实现必须在数据库中串行化同一 Trade 的恢复。 */
+    default void ensureRequiredEvent(String tradeId) {
+        throw new UnsupportedOperationException("durable Trade/event recovery is required");
+    }
 }

@@ -56,7 +56,7 @@ class OkxRestReconcileServiceTest {
         verify(f.lifecycle).reconcileCancelledExecution("ord-c2", "trc-c2");
         Mockito.verifyNoInteractions(f.events, f.ledger);
         verify(f.adapter, never()).getOrder(any());
-        verify(f.trades, never()).insert(any());
+        verify(f.trades, never()).insertWithRequiredEvent(any());
     }
 
     @Test
@@ -68,14 +68,14 @@ class OkxRestReconcileServiceTest {
                 new LedgerPostingResult(true, true, "IDEMPOTENT_HIT"));
         assertEquals(1, f.service.reconcileOnce(10));
         var trade = ArgumentCaptor.forClass(PaperTradeRecord.class);
-        verify(f.trades).insert(trade.capture());
+        verify(f.trades).insertWithRequiredEvent(trade.capture());
         assertTrue(trade.getValue().qty().compareTo(f.order.qty()) < 0);
         when(f.trades.findByExchangeAndExchangeTradeId("OKX", "fill-c2"))
                 .thenReturn(Optional.of(trade.getValue()));
         when(f.trades.findAllByOrderId("ord-c2", 10)).thenReturn(List.of(trade.getValue()));
         assertEquals(0, f.service.reconcileOnce(10));
-        verify(f.trades, times(1)).insert(any());
-        verify(f.events, times(1)).append(eq("trade.event.v1"), any());
+        verify(f.trades, times(1)).insertWithRequiredEvent(any());
+        verify(f.trades, times(2)).ensureRequiredEvent(trade.getValue().tradeId());
         verify(f.ledger, times(2)).postTrade(any());
         verify(f.adapter, times(2)).listTradeReports("BTC-USDT", "ext-c2", "trc-c2");
         verify(f.commands, times(2)).reserveReconciliationCandidates(eq("OKX"), Mockito.argThat(statuses ->
@@ -92,7 +92,7 @@ class OkxRestReconcileServiceTest {
         var f = new CancelledFixture("ext-c2");
         assertEquals(0, f.service.reconcileOnce(10));
         verify(f.adapter).listTradeReports("BTC-USDT", "ext-c2", "trc-c2");
-        verify(f.trades, never()).insert(any());
+        verify(f.trades, never()).insertWithRequiredEvent(any());
         Mockito.verifyNoInteractions(f.events, f.ledger);
         f.assertNoOrderMutation();
     }
@@ -105,7 +105,7 @@ class OkxRestReconcileServiceTest {
         when(f.trades.findAllByOrderId("ord-c2", 10)).thenReturn(List.of(trade));
         when(f.ledger.postTrade(any())).thenReturn(new LedgerPostingResult(true, false, "POSTED"));
         assertEquals(0, f.service.reconcileOnce(10));
-        verify(f.trades, never()).insert(any());
+        verify(f.trades, never()).insertWithRequiredEvent(any());
         Mockito.verifyNoInteractions(f.events);
         verify(f.ledger).postTrade(Mockito.argThat(request -> request.tradeId().equals("trd-c2")));
         verify(f.audit).append(eq("RECONCILE"), eq("OKX_LEDGER_RECOVERY_COMPLETED"), eq("ord-c2"), eq("trc-c2"), any());
@@ -132,7 +132,7 @@ class OkxRestReconcileServiceTest {
                 mismatch.equals("trade") ? " " : "fill-c2")));
         assertTrue(assertThrows(IllegalStateException.class, () -> f.service.reconcileOnce(10))
                 .getMessage().contains("identity mismatch"));
-        verify(f.trades, never()).insert(any());
+        verify(f.trades, never()).insertWithRequiredEvent(any());
         Mockito.verifyNoInteractions(f.events, f.ledger);
         f.assertNoOrderMutation();
     }
@@ -145,8 +145,8 @@ class OkxRestReconcileServiceTest {
         when(f.ledger.postTrade(any())).thenReturn(new LedgerPostingResult(true, false, "POSTED"));
         assertEquals(1, f.service.reconcileOnce(10));
         // 相同报告只处理一次；不同内容的同身份回报必须在任何写入前拒绝。
-        verify(f.trades, times(1)).insert(any());
-        verify(f.events, times(1)).append(eq("trade.event.v1"), any());
+        verify(f.trades, times(1)).insertWithRequiredEvent(any());
+        verify(f.trades, times(1)).ensureRequiredEvent(Mockito.anyString());
         verify(f.ledger, times(1)).postTrade(any());
         f.assertNoOrderMutation();
     }
@@ -159,7 +159,7 @@ class OkxRestReconcileServiceTest {
         when(f.adapter.listTradeReports(any(), any(), any())).thenReturn(List.of(first, changed));
         assertTrue(assertThrows(IllegalStateException.class, () -> f.service.reconcileOnce(10))
                 .getMessage().contains("CONFLICTING_DUPLICATE"));
-        verify(f.trades, never()).insert(any());
+        verify(f.trades, never()).insertWithRequiredEvent(any());
         Mockito.verifyNoInteractions(f.ledger, f.events, f.lifecycle);
     }
 
@@ -170,7 +170,7 @@ class OkxRestReconcileServiceTest {
         when(f.trades.findAllByOrderId("ord-c2", 10)).thenReturn(List.of(durable));
         when(f.adapter.listTradeReports(any(), any(), any())).thenReturn(List.of(f.report("OKX", 2001L, "coid-c2", "ext-c2", "new-fill")));
         assertTrue(assertThrows(IllegalStateException.class, () -> f.service.reconcileOnce(10)).getMessage().contains("OVERFILL"));
-        verify(f.trades, never()).insert(any());
+        verify(f.trades, never()).insertWithRequiredEvent(any());
         Mockito.verifyNoInteractions(f.ledger, f.events, f.lifecycle);
     }
 
@@ -193,7 +193,7 @@ class OkxRestReconcileServiceTest {
         assertThrows(IllegalStateException.class, () -> f.service.reconcileOnce(10));
         verify(f.audit).append("RECONCILE", "OKX_LEDGER_RECOVERY_INCOMPLETE", "ord-c2", "trc-c2",
                 java.util.Map.of("order_id", "ord-c2", "reason", "DURABLE_TRADE_LIMIT_EXCEEDED"));
-        verify(f.trades, never()).insert(any());
+        verify(f.trades, never()).insertWithRequiredEvent(any());
         Mockito.verifyNoInteractions(f.events, f.ledger);
         f.assertNoOrderMutation();
     }
@@ -393,7 +393,7 @@ class OkxRestReconcileServiceTest {
 
         assertEquals(1, newTrades);
         ArgumentCaptor<PaperTradeRecord> tradeCaptor = ArgumentCaptor.forClass(PaperTradeRecord.class);
-        verify(tradeRepository, times(1)).insert(tradeCaptor.capture());
+        verify(tradeRepository, times(1)).insertWithRequiredEvent(tradeCaptor.capture());
         assertEquals("ext-rec-2", tradeCaptor.getValue().externalOrderId());
     }
     @Test
@@ -474,7 +474,8 @@ class OkxRestReconcileServiceTest {
         assertEquals(1, newTrades);
         verify(okxExchangeAdapter, never()).getOrder(any());
         verify(orderLifecycleService, never()).applyExternalStatus(any(), any(), any(), any());
-        verify(eventStoreAppender, times(1)).append(eq("trade.event.v1"), any());
+        verify(tradeRepository, times(1)).insertWithRequiredEvent(any());
+        verify(tradeRepository, times(1)).ensureRequiredEvent(Mockito.anyString());
         verify(tradeLedgerGateway, times(1)).postTrade(any());
     }
 
@@ -541,7 +542,7 @@ class OkxRestReconcileServiceTest {
         assertEquals(0, newTrades);
         verify(okxExchangeAdapter, never()).getOrder(any());
         verify(okxExchangeAdapter, times(1)).listTradeReports("BTC-USDT", "ext-rec-4", "trc-rec-4");
-        verify(tradeRepository, never()).insert(any());
+        verify(tradeRepository, never()).insertWithRequiredEvent(any());
         verify(tradeLedgerGateway, times(1)).postTrade(any());
         verify(eventStoreAppender, never()).append(eq("trade.event.v1"), any());
         verify(auditLogRepository, times(1)).append(

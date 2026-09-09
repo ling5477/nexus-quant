@@ -92,6 +92,24 @@ public final class B0NqProcessMain {
                         var kill = context.getBean(com.guidinglight.nexusquant.risk.service.KillSwitchService.class);
                         var engaged = kill.engage(kill.snapshot().version(), "B3_IN_FLIGHT", "B3_TEST", "b3-kill");
                         System.out.println("B0_RESULT ENGAGE " + engaged.status() + " " + engaged.version());
+                    } else if (command.startsWith("ARM_B4_TX ")) {
+                        String[] parts = command.split(" ");
+                        B0Fixture.require(parts.length == 3);
+                        Object target;
+                        String method;
+                        switch (parts[1]) {
+                            case "PREPARE" -> { target = context.getBean(OrderCommandWriteService.class); method = "preparePlaceOrder"; }
+                            case "ACK" -> { target = context.getBean(OrderCommandWriteService.class); method = "finalizeAcceptedPlaceOrder"; }
+                            case "TRADE" -> { target = context.getBean(com.guidinglight.nexusquant.scheduler.service.port.TradeRepository.class); method = "insertWithRequiredEvent"; }
+                            case "LEDGER" -> { target = context.getBean(com.guidinglight.nexusquant.ledger.service.port.TradeLedgerPort.class); method = "postTrade"; }
+                            default -> throw new IllegalArgumentException("unsupported B4 transaction owner");
+                        }
+                        B4TransactionFaults.arm(target, jdbc, method, parts[2]);
+                        System.out.println("B0_RESULT ARMED " + parts[1] + " " + parts[2]);
+                    } else if ("ARM_B4_TRADE_COMMIT".equals(command)) {
+                        B4ProcessFaults.armAfterTradeCommit(context.getBean(
+                                com.guidinglight.nexusquant.scheduler.service.port.TradeRepository.class));
+                        System.out.println("B0_RESULT ARMED AFTER_TRADE_COMMIT");
                     } else if ("RECOVER".equals(command)) {
                         int count = context.getBean(OkxRestReconcileService.class).reconcileOnce(100);
                         System.out.println("B0_RESULT RECOVER " + count);

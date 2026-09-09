@@ -1,0 +1,6 @@
+{
+  "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0NqProcessMain.java": "22817cbd2c9a509efbc4f6f332ddc1dd2c3791f49a9e9c5294d1f0aad5a2a4ae",
+  "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B4TransactionFaults.java": "c8ebc4b82b163b08b1b351473d9bb6cd0018b1d5ea071588a88c1448d11deb8a",
+  "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B4PgWireProxyMain.java": "6a3f29e72dbf5fd7939dc99e9cc2903565e74a50cfc5aba036704d751d0c73d2",
+  "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B4QualificationResumeTest.java": "e504e8dc2cd30c61b9317e926a51acd94b92d3bf31ade4c2a2c6249248c47776"
+}

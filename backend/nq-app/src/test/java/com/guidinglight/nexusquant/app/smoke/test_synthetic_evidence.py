@@ -64,6 +64,22 @@ class SyntheticEvidenceTest(unittest.TestCase):
             self.assertEqual(original, restored, path.name)
             self.assertEqual(len(mapper.identities), len(inverse))
 
+    def test_command_and_ledger_audit_references(self):
+        client, trade, order = (str(uuid.uuid4()) for _ in range(3))
+        original = {"client_order_id": client, "trade_id": trade, "order_id": order,
+                    "command": {"idempotency_key": "42:" + client},
+                    "ledger_audit": {"actor_id": trade}, "order_audit": {"actor_id": order},
+                    "ledger": {"idempotency_key": trade + ":LEDGER:FEE_1"},
+                    "unknown": {"idempotency_key": "42:unregistered", "actor_id": "unknown"},
+                    "credential": {"actor_id": trade, "idempotency_key": "42:" + client}}
+        result = export(original, IdentityMapper("B4", 1))
+        self.assertEqual("42:" + result["client_order_id"], result["command"]["idempotency_key"])
+        self.assertEqual(result["trade_id"], result["ledger_audit"]["actor_id"])
+        self.assertEqual(result["order_id"], result["order_audit"]["actor_id"])
+        self.assertEqual(result["trade_id"] + ":LEDGER:FEE_1", result["ledger"]["idempotency_key"])
+        self.assertEqual(original["unknown"], result["unknown"])
+        self.assertEqual(original["credential"], result["credential"])
+
 
 if __name__ == "__main__":
     unittest.main()

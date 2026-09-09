@@ -122,9 +122,19 @@ final class B0Processes {
         private int resultCount;
 
         Child(Class<?> main, Path directory, String label, Map<String, String> environment) throws Exception {
+            this(main, directory, label, environment, null);
+        }
+
+        /** B4 仅给隔离 JVM 前置由本地历史源码编译的测试 classpath，不修改当前生产类。 */
+        Child(Class<?> main, Path directory, String label, Map<String, String> environment, Path legacyClasses) throws Exception {
             Files.createDirectories(directory);
             log = directory.resolve(label + ".log");
             String classpath = System.getProperty("surefire.test.class.path", System.getProperty("java.class.path"));
+            if (legacyClasses != null) {
+                B0Fixture.require(legacyClasses.toAbsolutePath().normalize()
+                        .startsWith(root().resolve("backend/nq-app/target").toAbsolutePath().normalize()));
+                classpath = legacyClasses.toAbsolutePath() + java.io.File.pathSeparator + classpath;
+            }
             Path argfile = directory.resolve(label + ".args");
             Files.writeString(argfile, "-Dfile.encoding=UTF-8\n-Dstdout.encoding=UTF-8\n-Dstderr.encoding=UTF-8\n"
                     + "-Duser.language=en\n-Duser.country=US\n-cp\n\"" + classpath.replace("\\", "\\\\").replace("\"", "\\\"")

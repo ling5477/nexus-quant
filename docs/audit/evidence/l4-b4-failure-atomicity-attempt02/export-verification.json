@@ -1,0 +1,14 @@
+[
+  {
+    "case": "control",
+    "typedIdentities": 22,
+    "inverseEqualsRaw": true,
+    "rawIdentityLeaks": 0
+  },
+  {
+    "case": "failure",
+    "typedIdentities": 21,
+    "inverseEqualsRaw": true,
+    "rawIdentityLeaks": 0
+  }
+]

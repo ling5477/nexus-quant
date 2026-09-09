@@ -46,7 +46,7 @@ FIELDS = {
     "exchange_order_id": "VENUE", "external_order_id": "VENUE", "venueOrderId": "VENUE", "ordId": "VENUE",
     "exchange_trade_id": "FILL", "exchangeTradeId": "FILL", "fillId": "FILL", "tradeId": "FILL",
 }
-REFERENCES = {"ref_id": ("TRADE",), "scope_id": ("ORDER",), "actor_id": ("ORDER",),
+REFERENCES = {"ref_id": ("TRADE",), "scope_id": ("ORDER",), "actor_id": ("ORDER", "TRADE"),
               "key_value": ("CLIENT", "ORDER", "TRADE"), "key": ("CLIENT", "ORDER", "TRADE"),
               "client": ("CLIENT",)}
 
@@ -75,7 +75,11 @@ def export(proof, mapper):
                 result[field] = account + separator + mapper.reference(client, ("CLIENT",))
             elif isinstance(item, str) and not register and field == "idempotency_key":
                 trade, separator, suffix = item.partition(":")
-                result[field] = mapper.reference(trade, ("TRADE",)) + separator + suffix
+                # canonical PLACE 使用 account:client，Ledger 使用 trade:LEDGER:suffix；只解析已知身份。
+                if trade.isdecimal() and separator and ("CLIENT", suffix) in mapper.identities:
+                    result[field] = trade + separator + mapper.reference(suffix, ("CLIENT",))
+                else:
+                    result[field] = mapper.reference(trade, ("TRADE",)) + separator + suffix
             else:
                 result[field] = visit(item, register)
         return result

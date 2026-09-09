@@ -133,6 +133,20 @@ public class JdbcTradeRepository implements TradeRepository {
         );
     }
 
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void insertWithRequiredEvent(PaperTradeRecord trade) {
+        // 自调用 insert 加入当前外层事务；必需事件失败必须回滚整个 Trade 写入。
+        insert(trade);
+        ensureRequiredEvent(trade.tradeId());
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void ensureRequiredEvent(String tradeId) {
+        new RequiredTradeEventStore(jdbcTemplate).ensure(tradeId);
+    }
+
     private static PaperTradeRecord mapTrade(ResultSet resultSet, int rowNum) throws SQLException {
         // 已有误绑定事实不得静默修复或进入账本重放；父订单是唯一环境事实来源。
         String environment = resultSet.getString("trade_env");

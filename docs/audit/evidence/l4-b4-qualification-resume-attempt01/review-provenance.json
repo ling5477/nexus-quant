@@ -1,0 +1,38 @@
+{
+  "reviewedHead": "e9509e351e6fbc6179e5e081cb03e66c8cb6ad99",
+  "reviewedFullCandidateFingerprint": "1af151b4a4e33bb05d96cf7065c9270f692ea52120959223efa8cceb07f1307c",
+  "reviewedProductionFingerprint": "a681af6653dd387491012e5eea164f64f89ee2dba74fe7bcef5a1e2992993e6d",
+  "production": {
+    "backend/nq-contracts/src/main/java/com/guidinglight/nexusquant/contracts/event/TradeExecuted.java": "cbfe5fba3585a4e2926ed8a964acbb476fe9b4d875c59206929231f0b66d73d1",
+    "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/scheduler/infra/jdbc/JdbcTradeRepository.java": "b75753d32226b78b590046a1d4cea80c43227875a66bbcc510c340fa1b94318b",
+    "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/scheduler/infra/jdbc/RequiredTradeEventStore.java": "413bd93aaf22b550991864bd0bc537b56eae47ae47e09f8950ed7346481d4bba",
+    "backend/nq-scheduler-contracts/src/main/java/com/guidinglight/nexusquant/scheduler/service/port/TradeRepository.java": "7bf48c6dcdef5be8caa57bbd51d95e5adaf133801fc324dbcd73b4cc613d44a8",
+    "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java": "a432341f41ed8dd2a7c0af8f560b60b4bef532b4d399d20f0abcc73ea685d24c"
+  },
+  "reviewReportSha256": "0e34e182b3b30fa2b0e1642d069512805cb9cbfb032b889d7191fb3ad406a1b7",
+  "acceptedDecision": "B4_TRADE_EVENT_DURABILITY_REVIEW_ACCEPTED",
+  "acceptedProof": {
+    "targeted": {
+      "tests": 119,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "exit": 0,
+      "seconds": 298.84,
+      "sourceSummarySha256": "f0211c81de24754a424bbfa76372ebc5a8bb346471e5473842249485a3654c5b"
+    },
+    "full": {
+      "tests": 1839,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 90,
+      "exit": 0,
+      "seconds": 112.7,
+      "sourceSummarySha256": "9571a9b3489505d76dd099d9ad8d86be68cc827e739703595dda9f822fa5383a"
+    }
+  },
+  "reusedProcessCut": "Trade+TradeExecuted committed before Ledger: SIM/LIVE source snapshots retained",
+  "reusedPostgresProof": "B4TradeEventPostgresTest: 4/4, deferred event commit rejection, row-lock concurrency and legacy identity, independent Ledger recovery",
+  "qualificationResumeFullMavenRerun": false,
+  "reviewRerun": false
+}

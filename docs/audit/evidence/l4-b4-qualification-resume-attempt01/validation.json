@@ -1,0 +1,24 @@
+{
+  "protectedFiles": 1328,
+  "productionUnchanged": true,
+  "migrationUnchanged": true,
+  "ciAndInstructionsUnchanged": true,
+  "stage": 0,
+  "commit": "NONE",
+  "push": "NONE",
+  "newSuccessfulScenarios": 28,
+  "reusedProcessScenarios": 2,
+  "harnessFailedAttemptsPreserved": 2,
+  "postgresContainersRemoved": 5,
+  "childProcesses": 119,
+  "killAndWaitConfirmed": 110,
+  "naturalFailureExitWaitConfirmed": 9,
+  "processesUnaccounted": 0,
+  "exporterTests": {
+    "tests": 5,
+    "failures": 0
+  },
+  "payloadQueryFirstVersionReplayIdentityExport": "28/28 PASS",
+  "fullMavenRerun": false,
+  "reviewRerun": false
+}
