@@ -6,60 +6,60 @@
 [INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.080 s -- in com.guidinglight.nexusquant.trading.application.CancelledExecutionCorrectionTest
 [INFO] Tests run: 50, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.828 s -- in com.guidinglight.nexusquant.app.config.env.ProductionConfigurationApplicationContextInitializerTest
 [INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in com.guidinglight.nexusquant.app.smoke.B0FixtureSafetyTest
-B2_CONTROLLER pid=30464 evidence=E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74
-B0_PG container=nq-b0-8bf7c2ad-bc7e-49fd-8619-c78e40f39111 id=aff4816ebc14354fd813a6b7ef06e208408eb0f03db2a4c74f39dfbd3f3c758c url=jdbc:postgresql://127.0.0.1:39337/postgres image=postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
-B0_PROCESS label=venue pid=24764 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\partial-cancel-1\venue.args
-B0_PROCESS label=nq pid=54700 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\partial-cancel-1\nq.args
+B2_CONTROLLER pid=30464 evidence=E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005
+B0_PG container=SYNTH-L4:B2-EXPORT:R01:CONTAINER:002 id=SYNTH-L4:B2-EXPORT:R01:DOCKERID:001 url=jdbc:postgresql://127.0.0.1:39337/postgres image=postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
+B0_PROCESS label=venue pid=24764 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\partial-cancel-1\venue.args
+B0_PROCESS label=nq pid=54700 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\partial-cancel-1\nq.args
 B2_SCENARIO_PASS PARTIAL_FILL_CANCEL
 B0_KILLED pid=54700 exit=1
 B0_KILLED pid=24764 exit=1
-B0_PROCESS label=venue pid=13980 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\final-fill-cancel-1\venue.args
-B0_PROCESS label=nq pid=42840 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\final-fill-cancel-1\nq.args
+B0_PROCESS label=venue pid=13980 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\final-fill-cancel-1\venue.args
+B0_PROCESS label=nq pid=42840 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\final-fill-cancel-1\nq.args
 B2_SCENARIO_PASS FINAL_FILL_BEFORE_CANCEL_EFFECT
 B0_KILLED pid=42840 exit=1
 B0_KILLED pid=13980 exit=1
-B0_PROCESS label=venue pid=41376 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\restart-final-fill-1\venue.args
-B0_PROCESS label=nq pid=49840 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\restart-final-fill-1\nq.args
+B0_PROCESS label=venue pid=41376 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\restart-final-fill-1\venue.args
+B0_PROCESS label=nq pid=49840 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\restart-final-fill-1\nq.args
 B0_KILLED pid=49840 exit=1
-B0_PROCESS label=restart-nq pid=3976 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\restart-final-fill-1\restart-nq.args
+B0_PROCESS label=restart-nq pid=3976 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\restart-final-fill-1\restart-nq.args
 B0_KILLED pid=3976 exit=1
 B2_SCENARIO_PASS FINAL_FILL_BEFORE_CANCEL_EFFECT
 B0_KILLED pid=41376 exit=1
-B0_PROCESS label=venue pid=73452 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\partial-cancel-2\venue.args
-B0_PROCESS label=nq pid=71396 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\partial-cancel-2\nq.args
+B0_PROCESS label=venue pid=73452 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\partial-cancel-2\venue.args
+B0_PROCESS label=nq pid=71396 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\partial-cancel-2\nq.args
 B2_SCENARIO_PASS PARTIAL_FILL_CANCEL
 B0_KILLED pid=71396 exit=1
 B0_KILLED pid=73452 exit=1
-B0_PROCESS label=venue pid=50892 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\final-fill-cancel-2\venue.args
-B0_PROCESS label=nq pid=5632 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\final-fill-cancel-2\nq.args
+B0_PROCESS label=venue pid=50892 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\final-fill-cancel-2\venue.args
+B0_PROCESS label=nq pid=5632 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\final-fill-cancel-2\nq.args
 B2_SCENARIO_PASS FINAL_FILL_BEFORE_CANCEL_EFFECT
 B0_KILLED pid=5632 exit=1
 B0_KILLED pid=50892 exit=1
-B0_PROCESS label=venue pid=62272 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\restart-final-fill-2\venue.args
-B0_PROCESS label=nq pid=40884 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\restart-final-fill-2\nq.args
+B0_PROCESS label=venue pid=62272 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\restart-final-fill-2\venue.args
+B0_PROCESS label=nq pid=40884 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\restart-final-fill-2\nq.args
 B0_KILLED pid=40884 exit=1
-B0_PROCESS label=restart-nq pid=27776 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\restart-final-fill-2\restart-nq.args
+B0_PROCESS label=restart-nq pid=27776 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\restart-final-fill-2\restart-nq.args
 B0_KILLED pid=27776 exit=1
 B2_SCENARIO_PASS FINAL_FILL_BEFORE_CANCEL_EFFECT
 B0_KILLED pid=62272 exit=1
-B0_PROCESS label=venue pid=23396 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\partial-cancel-3\venue.args
-B0_PROCESS label=nq pid=37256 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\partial-cancel-3\nq.args
+B0_PROCESS label=venue pid=23396 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\partial-cancel-3\venue.args
+B0_PROCESS label=nq pid=37256 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\partial-cancel-3\nq.args
 B2_SCENARIO_PASS PARTIAL_FILL_CANCEL
 B0_KILLED pid=37256 exit=1
 B0_KILLED pid=23396 exit=1
-B0_PROCESS label=venue pid=44820 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\final-fill-cancel-3\venue.args
-B0_PROCESS label=nq pid=52052 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\final-fill-cancel-3\nq.args
+B0_PROCESS label=venue pid=44820 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\final-fill-cancel-3\venue.args
+B0_PROCESS label=nq pid=52052 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\final-fill-cancel-3\nq.args
 B2_SCENARIO_PASS FINAL_FILL_BEFORE_CANCEL_EFFECT
 B0_KILLED pid=52052 exit=1
 B0_KILLED pid=44820 exit=1
-B0_PROCESS label=venue pid=22492 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\restart-final-fill-3\venue.args
-B0_PROCESS label=nq pid=37188 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\restart-final-fill-3\nq.args
+B0_PROCESS label=venue pid=22492 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\restart-final-fill-3\venue.args
+B0_PROCESS label=nq pid=37188 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\restart-final-fill-3\nq.args
 B0_KILLED pid=37188 exit=1
-B0_PROCESS label=restart-nq pid=14844 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\8dd96bc5-1ff0-4c73-b4de-1d0e00df9e74\restart-final-fill-3\restart-nq.args
+B0_PROCESS label=restart-nq pid=14844 command=D:\Tool\Java\Java21\bin\java.exe @E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:005\restart-final-fill-3\restart-nq.args
 B0_KILLED pid=14844 exit=1
 B2_SCENARIO_PASS FINAL_FILL_BEFORE_CANCEL_EFFECT
 B0_KILLED pid=22492 exit=1
-B0_CLEANUP container=nq-b0-8bf7c2ad-bc7e-49fd-8619-c78e40f39111 remaining=0
+B0_CLEANUP container=SYNTH-L4:B2-EXPORT:R01:CONTAINER:002 remaining=0
 [INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 67.11 s -- in com.guidinglight.nexusquant.app.smoke.B2RealProcessProofTest
 [INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.738 s -- in com.guidinglight.nexusquant.app.smoke.B2TerminalCorrectionPostgresIntegrationTest
 [INFO] Tests run: 22, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.416 s -- in com.guidinglight.nexusquant.app.smoke.L4PlanBlockerPostgresIntegrationTest

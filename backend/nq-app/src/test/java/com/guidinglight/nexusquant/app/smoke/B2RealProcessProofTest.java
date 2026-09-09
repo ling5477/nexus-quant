@@ -149,12 +149,16 @@ class B2RealProcessProofTest {
                 assertOrderings(proof.path("finalVenue"), scenario);
                 proof.put("executedQty", executed).put("remainingQty", new BigDecimal("10").subtract(new BigDecimal(executed)).toPlainString());
                 proof.put("result", "PASS");
-                Files.writeString(directory.resolve("proof.json"), mapper.writerWithDefaultPrettyPrinter().writeValueAsString(proof));
+                Files.writeString(directory.resolve("raw-proof.json"), mapper.writerWithDefaultPrettyPrinter().writeValueAsString(proof));
+                SyntheticEvidenceExport.write(directory.resolve("raw-proof.json"), "B2",
+                        ("LIVE".equals(environment) ? 24 : 0) + (repeat - 1) * 8 + scenario.ordinal() + 1);
                 System.out.println("B2_SCENARIO_PASS " + environment + " " + scenario + " repeat=" + repeat);
             }
         } catch (Exception | AssertionError failure) {
             proof.put("result", "FAIL").put("failureType", failure.getClass().getName()).put("failure", String.valueOf(failure.getMessage()));
-            Files.writeString(directory.resolve("failed-proof.json"), mapper.writerWithDefaultPrettyPrinter().writeValueAsString(proof));
+            Files.writeString(directory.resolve("raw-failed-proof.json"), mapper.writerWithDefaultPrettyPrinter().writeValueAsString(proof));
+            SyntheticEvidenceExport.write(directory.resolve("raw-failed-proof.json"), "B2",
+                    ("LIVE".equals(environment) ? 24 : 0) + (repeat - 1) * 8 + scenario.ordinal() + 1);
             throw failure;
         }
         assertTrue(postgres.databaseAbsent(database));

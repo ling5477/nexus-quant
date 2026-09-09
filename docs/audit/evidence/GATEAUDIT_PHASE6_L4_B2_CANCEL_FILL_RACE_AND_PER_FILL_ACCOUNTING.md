@@ -46,10 +46,10 @@ Attempt-02，controller/Surefire 之外各场景独立 NQ JVM、独立 venue JVM
 
 | 场景 | NQ PID | Venue PID | DB | 最终结果 |
 | --- | --- | --- | --- | --- |
-| partial fill → cancel | 44564 | 60740 | nq_f002_b0_7378c665cd3946f49c6e86759d327e82 | 单次状态/数量检查通过：CANCELLED、executed=0.04、remaining=0.06 |
-| cancel ACK → final fill → cancel effect → recovery | 13892 | 22824 | nq_f002_b0_01d9bffb8c544203a9865ce45b463dad | FAIL：venue FILLED，本地 CANCELLED；executed=0.10、remaining=0 |
+| partial fill → cancel | 44564 | 60740 | SYNTH-L4:B2:R01:DATABASE:001 | 单次状态/数量检查通过：CANCELLED、executed=0.04、remaining=0.06 |
+| cancel ACK → final fill → cancel effect → recovery | 13892 | 22824 | SYNTH-L4:B2:R02:DATABASE:001 | FAIL：venue FILLED，本地 CANCELLED；executed=0.10、remaining=0 |
 
-- PostgreSQL=`16.15 (Debian 16.15-1.pgdg13+2)`，schema=`V48`，container=`nq-b0-3433d56f-61dd-448d-b64f-29115b527fea`，container ID=`3af9b6bf770630b914ff9ae4da7e20c43b6a5cc034f23d2870e684ae4f34dd8d`。
+- PostgreSQL=`16.15 (Debian 16.15-1.pgdg13+2)`，schema=`V48`，container=`SYNTH-L4:B2-EXPORT:R01:CONTAINER:001`，container ID=`3af9b6bf770630b914ff9ae4da7e20c43b6a5cc034f23d2870e684ae4f34dd8d`。
 - JDBC admin endpoint=`jdbc:postgresql://127.0.0.1:39713/postgres`；镜像=`postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94`，canonical 锁定镜像、`--pull=never`。
 - NQ 实际 composition 输出：`realRisk=true writeProxy=true gateway=AdapterBackedTradingVenueGateway jdbcUser=nq_b0_app`。真实 Spring JVM、OkxExchangeAdapter、HTTP/JSON 与 JDBC 均在路径中。
 - Controller 使用 `nq_b0_reader` 只读连接与 REPEATABLE_READ snapshots；B0 fixture 仅在进程启动前初始化 disposable DB。Runtime Controller/Checker 对 orders/trades/ledger/receipts 写入=0。
@@ -59,13 +59,13 @@ Attempt-02，controller/Surefire 之外各场景独立 NQ JVM、独立 venue JVM
 
 | Fact | 实际值 |
 | --- | --- |
-| Order ID | ord-1476934b-2139-4a27-8315-adcb6999e0e6 |
-| client identity | b0d9bffb8c544203a9865ce45b463dad |
+| Order ID | SYNTH-L4:B2:R02:ORDER:001 |
+| client identity | SYNTH-L4:B2:R02:CLIENT:001 |
 | external_order_id / exchange_order_id | b2-venue-1 / b2-venue-1，全程未漂移 |
 | Order status/version | PARTIALLY_FILLED/4 → CANCELLED/6 → CANCELLED/6 |
 | original / unique executed / remaining | 0.1 / (0.04+0.06)=0.10 / 0，未 clamp |
-| b2-fill-1 → Trade | trd-ce3bcbe6-9d45-4281-9c10-62754857ec44，BUY，100×0.04=4 USDT，fee=0 |
-| b2-fill-2 → Trade | trd-13d0f817-165a-4370-aefa-5c3685410bd1，BUY，100×0.06=6 USDT，fee magnitude=0.01 USDT |
+| b2-fill-1 → Trade | SYNTH-L4:B2:R02:TRADE:001，BUY，100×0.04=4 USDT，fee=0 |
+| b2-fill-2 → Trade | SYNTH-L4:B2:R02:TRADE:002，BUY，100×0.06=6 USDT，fee magnitude=0.01 USDT |
 | Ledger observed | 第一笔 USDT -4/+4；第二笔 -6/+6、fee -0.01/+0.01；共 6 entries、6 ledger events |
 | position / account projection | BTC position=0.1，BTC snapshot=0.1；USDT snapshot=0 |
 | Intent / Receipt | 0 / 0 |
@@ -111,7 +111,7 @@ Docker 起初未运行；本轮启动时 backend 因旧 Unix socket reparse poin
 | B2SyntheticVenueMain.java | ba70ebb1cf3ed48c5908831082214c5be0990cbf |
 | B2RealProcessProofTest.java | b06f53a2ba7ee55525d760d4769c05af6bbe0aa5 |
 
-原始进程 logs/args/proof JSON 位于 ignored `backend/nq-app/target/b2-harness/da27fa00-6065-46c6-8d6d-f4876e0e8880/`。下方将必要原始快照字段投影到本唯一 evidence，避免最小复现仅依赖 ignored 文件。数据库/客户端标识均为随机 synthetic fixture identity。
+原始进程 logs/args/proof JSON 位于 ignored `backend/nq-app/target/b2-harness/SYNTH-L4:B2-EXPORT:R01:RUN:001/`。下方将必要原始快照字段投影到本唯一 evidence，避免最小复现仅依赖 ignored 文件。数据库/客户端标识均为随机 synthetic fixture identity。
 
 本轮 `stage=0 / commit=NONE / push=NONE`。下一步是单独授权 production remediation；整改后重新执行 B2，并按任务要求完成真正独立正确性审查。本次不更新 acceptance 或发布结论。
 
@@ -127,7 +127,7 @@ Raw local proof SHA-256: e4c4221faa5da31256f5acbcf4fc461bdc71b30c6ba7efca5c94a03
 {
   "scenario": "PARTIAL_FILL_CANCEL",
   "controllerPid": 38216,
-  "database": "nq_f002_b0_7378c665cd3946f49c6e86759d327e82",
+  "database": "SYNTH-L4:B2:R01:DATABASE:001",
   "nqPid": 44564,
   "venuePid": 60740,
   "venueEndpoint": "http://127.0.0.1:12230",
@@ -144,19 +144,19 @@ Raw local proof SHA-256: e4c4221faa5da31256f5acbcf4fc461bdc71b30c6ba7efca5c94a03
       "status": "PARTIALLY_FILLED",
       "symbol": "BTC-USDT",
       "version": 4,
-      "order_id": "ord-6cdb590f-c05b-4eca-ae6f-a19a75802a91",
-      "trace_id": "b0-trace",
-      "dedup_key": "1:b078c665cd3946f49c6e86759d327e82",
+      "order_id": "SYNTH-L4:B2:R01:ORDER:001",
+      "trace_id": "SYNTH-L4:B2:R01:TRACE:001",
+      "dedup_key": "1:SYNTH-L4:B2:R01:CLIENT:001",
       "trade_env": "SIM",
       "account_id": 1,
       "created_at": "2026-09-09T08:32:50.054402+08:00",
-      "request_id": "b0-trace",
+      "request_id": "SYNTH-L4:B2:R01:REQUEST:001",
       "updated_at": "2026-09-09T08:32:50.328162+08:00",
       "exchange_code": "OKX",
-      "client_order_id": "b078c665cd3946f49c6e86759d327e82",
+      "client_order_id": "SYNTH-L4:B2:R01:CLIENT:001",
       "strategy_run_id": null,
-      "exchange_order_id": "b2-venue-1",
-      "external_order_id": "b2-venue-1"
+      "exchange_order_id": "SYNTH-L4:B2:R01:VENUE:001",
+      "external_order_id": "SYNTH-L4:B2:R01:VENUE:001"
     }
   ],
   "afterCancelAckOrders": [
@@ -170,19 +170,19 @@ Raw local proof SHA-256: e4c4221faa5da31256f5acbcf4fc461bdc71b30c6ba7efca5c94a03
       "status": "CANCELLED",
       "symbol": "BTC-USDT",
       "version": 6,
-      "order_id": "ord-6cdb590f-c05b-4eca-ae6f-a19a75802a91",
-      "trace_id": "b0-trace",
-      "dedup_key": "1:b078c665cd3946f49c6e86759d327e82",
+      "order_id": "SYNTH-L4:B2:R01:ORDER:001",
+      "trace_id": "SYNTH-L4:B2:R01:TRACE:001",
+      "dedup_key": "1:SYNTH-L4:B2:R01:CLIENT:001",
       "trade_env": "SIM",
       "account_id": 1,
       "created_at": "2026-09-09T08:32:50.054402+08:00",
-      "request_id": "b0-trace",
+      "request_id": "SYNTH-L4:B2:R01:REQUEST:001",
       "updated_at": "2026-09-09T08:32:50.433447+08:00",
       "exchange_code": "OKX",
-      "client_order_id": "b078c665cd3946f49c6e86759d327e82",
+      "client_order_id": "SYNTH-L4:B2:R01:CLIENT:001",
       "strategy_run_id": null,
-      "exchange_order_id": "b2-venue-1",
-      "external_order_id": "b2-venue-1"
+      "exchange_order_id": "SYNTH-L4:B2:R01:VENUE:001",
+      "external_order_id": "SYNTH-L4:B2:R01:VENUE:001"
     }
   ],
   "venueAfterCancelAck": {
@@ -194,8 +194,8 @@ Raw local proof SHA-256: e4c4221faa5da31256f5acbcf4fc461bdc71b30c6ba7efca5c94a03
     "cancels": 1,
     "pendingCancel": true,
     "order": {
-      "clOrdId": "b078c665cd3946f49c6e86759d327e82",
-      "ordId": "b2-venue-1",
+      "clOrdId": "SYNTH-L4:B2:R01:CLIENT:001",
+      "ordId": "SYNTH-L4:B2:R01:VENUE:001",
       "instId": "BTC-USDT",
       "state": "partially_filled",
       "px": "100",
@@ -206,8 +206,8 @@ Raw local proof SHA-256: e4c4221faa5da31256f5acbcf4fc461bdc71b30c6ba7efca5c94a03
     },
     "fills": [
       {
-        "tradeId": "b2-fill-1",
-        "ordId": "b2-venue-1",
+        "tradeId": "SYNTH-L4:B2:R01:FILL:001",
+        "ordId": "SYNTH-L4:B2:R01:VENUE:001",
         "instId": "BTC-USDT",
         "side": "buy",
         "fillPx": "100",
@@ -227,7 +227,7 @@ Raw local proof SHA-256: e4c4221faa5da31256f5acbcf4fc461bdc71b30c6ba7efca5c94a03
         "sequence": 3,
         "type": "FILL",
         "nanoTime": 813443061401100,
-        "tradeId": "b2-fill-1",
+        "tradeId": "SYNTH-L4:B2:R01:FILL:001",
         "qty": "0.04",
         "fee": "0"
       },
@@ -262,19 +262,19 @@ Raw local proof SHA-256: e4c4221faa5da31256f5acbcf4fc461bdc71b30c6ba7efca5c94a03
       "status": "CANCELLED",
       "symbol": "BTC-USDT",
       "version": 6,
-      "order_id": "ord-6cdb590f-c05b-4eca-ae6f-a19a75802a91",
-      "trace_id": "b0-trace",
-      "dedup_key": "1:b078c665cd3946f49c6e86759d327e82",
+      "order_id": "SYNTH-L4:B2:R01:ORDER:001",
+      "trace_id": "SYNTH-L4:B2:R01:TRACE:001",
+      "dedup_key": "1:SYNTH-L4:B2:R01:CLIENT:001",
       "trade_env": "SIM",
       "account_id": 1,
       "created_at": "2026-09-09T08:32:50.054402+08:00",
-      "request_id": "b0-trace",
+      "request_id": "SYNTH-L4:B2:R01:REQUEST:001",
       "updated_at": "2026-09-09T08:32:50.433447+08:00",
       "exchange_code": "OKX",
-      "client_order_id": "b078c665cd3946f49c6e86759d327e82",
+      "client_order_id": "SYNTH-L4:B2:R01:CLIENT:001",
       "strategy_run_id": null,
-      "exchange_order_id": "b2-venue-1",
-      "external_order_id": "b2-venue-1"
+      "exchange_order_id": "SYNTH-L4:B2:R01:VENUE:001",
+      "external_order_id": "SYNTH-L4:B2:R01:VENUE:001"
     }
   ],
   "finalTrades": [
@@ -285,48 +285,48 @@ Raw local proof SHA-256: e4c4221faa5da31256f5acbcf4fc461bdc71b30c6ba7efca5c94a03
       "price": 100.0,
       "symbol": "BTC-USDT",
       "exchange": "OKX",
-      "order_id": "ord-6cdb590f-c05b-4eca-ae6f-a19a75802a91",
-      "trace_id": "b0-trace",
-      "trade_id": "trd-08a024f3-9bf8-48e0-afce-86efecd35214",
+      "order_id": "SYNTH-L4:B2:R01:ORDER:001",
+      "trace_id": "SYNTH-L4:B2:R01:TRACE:001",
+      "trade_id": "SYNTH-L4:B2:R01:TRADE:001",
       "trade_env": "SIM",
       "account_id": 1,
       "created_at": "2026-09-09T08:32:50.339599+08:00",
       "fee_currency": "USDT",
       "exchange_code": "OKX",
       "strategy_run_id": null,
-      "exchange_order_id": "b2-venue-1",
-      "exchange_trade_id": "b2-fill-1",
-      "external_order_id": "b2-venue-1"
+      "exchange_order_id": "SYNTH-L4:B2:R01:VENUE:001",
+      "exchange_trade_id": "SYNTH-L4:B2:R01:FILL:001",
+      "external_order_id": "SYNTH-L4:B2:R01:VENUE:001"
     }
   ],
   "finalLedger": [
     {
       "ts": "2026-09-09T08:32:50.298+08:00",
       "delta": 4.0,
-      "ref_id": "trd-08a024f3-9bf8-48e0-afce-86efecd35214",
+      "ref_id": "SYNTH-L4:B2:R01:TRADE:001",
       "currency": "USDT",
-      "entry_id": "le-5fc4073d-37ea-432c-83a2-71ee3d0268df",
+      "entry_id": "SYNTH-L4:B2:R01:ENTRY:001",
       "ref_type": "TRADE",
-      "trace_id": "b0-trace",
+      "trace_id": "SYNTH-L4:B2:R01:TRACE:001",
       "direction": "CREDIT",
       "account_id": 1,
       "created_at": "2026-09-09T08:32:50.345603+08:00",
       "balance_after": 0.0,
-      "idempotency_key": "trd-08a024f3-9bf8-48e0-afce-86efecd35214:LEDGER:2"
+      "idempotency_key": "SYNTH-L4:B2:R01:TRADE:001:LEDGER:2"
     },
     {
       "ts": "2026-09-09T08:32:50.298+08:00",
       "delta": -4.0,
-      "ref_id": "trd-08a024f3-9bf8-48e0-afce-86efecd35214",
+      "ref_id": "SYNTH-L4:B2:R01:TRADE:001",
       "currency": "USDT",
-      "entry_id": "le-cb484f60-f10e-43e3-817e-652f200dc871",
+      "entry_id": "SYNTH-L4:B2:R01:ENTRY:002",
       "ref_type": "TRADE",
-      "trace_id": "b0-trace",
+      "trace_id": "SYNTH-L4:B2:R01:TRACE:001",
       "direction": "DEBIT",
       "account_id": 1,
       "created_at": "2026-09-09T08:32:50.345603+08:00",
       "balance_after": -4.0,
-      "idempotency_key": "trd-08a024f3-9bf8-48e0-afce-86efecd35214:LEDGER:1"
+      "idempotency_key": "SYNTH-L4:B2:R01:TRADE:001:LEDGER:1"
     }
   ],
   "ledgerEventCount": 2,
@@ -336,11 +336,11 @@ Raw local proof SHA-256: e4c4221faa5da31256f5acbcf4fc461bdc71b30c6ba7efca5c94a03
       "reason": "RISK_RULES_PASSED",
       "rule_id": "RISK_RULES_PASSED",
       "decision": "ALLOW",
-      "scope_id": "ord-6cdb590f-c05b-4eca-ae6f-a19a75802a91",
+      "scope_id": "SYNTH-L4:B2:R01:ORDER:001",
       "severity": "LOW",
-      "trace_id": "b0-trace",
+      "trace_id": "SYNTH-L4:B2:R01:TRACE:001",
       "created_at": "2026-09-09T08:32:50.086733+08:00",
-      "risk_event_id": "rsk-1494417a-8136-4802-973b-7c7be1b131f6"
+      "risk_event_id": "SYNTH-L4:B2:R01:RISK:001"
     }
   ],
   "finalVenue": {
@@ -352,8 +352,8 @@ Raw local proof SHA-256: e4c4221faa5da31256f5acbcf4fc461bdc71b30c6ba7efca5c94a03
     "cancels": 1,
     "pendingCancel": false,
     "order": {
-      "clOrdId": "b078c665cd3946f49c6e86759d327e82",
-      "ordId": "b2-venue-1",
+      "clOrdId": "SYNTH-L4:B2:R01:CLIENT:001",
+      "ordId": "SYNTH-L4:B2:R01:VENUE:001",
       "instId": "BTC-USDT",
       "state": "canceled",
       "px": "100",
@@ -364,8 +364,8 @@ Raw local proof SHA-256: e4c4221faa5da31256f5acbcf4fc461bdc71b30c6ba7efca5c94a03
     },
     "fills": [
       {
-        "tradeId": "b2-fill-1",
-        "ordId": "b2-venue-1",
+        "tradeId": "SYNTH-L4:B2:R01:FILL:001",
+        "ordId": "SYNTH-L4:B2:R01:VENUE:001",
         "instId": "BTC-USDT",
         "side": "buy",
         "fillPx": "100",
@@ -385,7 +385,7 @@ Raw local proof SHA-256: e4c4221faa5da31256f5acbcf4fc461bdc71b30c6ba7efca5c94a03
         "sequence": 3,
         "type": "FILL",
         "nanoTime": 813443061401100,
-        "tradeId": "b2-fill-1",
+        "tradeId": "SYNTH-L4:B2:R01:FILL:001",
         "qty": "0.04",
         "fee": "0"
       },
@@ -430,7 +430,7 @@ Raw local proof SHA-256: cd05eff364d2cfa39e1d09d739acf7615fec969dcfab126935764ab
 {
   "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT",
   "controllerPid": 38216,
-  "database": "nq_f002_b0_01d9bffb8c544203a9865ce45b463dad",
+  "database": "SYNTH-L4:B2:R02:DATABASE:001",
   "nqPid": 13892,
   "venuePid": 22824,
   "venueEndpoint": "http://127.0.0.1:5164",
@@ -447,19 +447,19 @@ Raw local proof SHA-256: cd05eff364d2cfa39e1d09d739acf7615fec969dcfab126935764ab
       "status": "PARTIALLY_FILLED",
       "symbol": "BTC-USDT",
       "version": 4,
-      "order_id": "ord-1476934b-2139-4a27-8315-adcb6999e0e6",
-      "trace_id": "b0-trace",
-      "dedup_key": "1:b0d9bffb8c544203a9865ce45b463dad",
+      "order_id": "SYNTH-L4:B2:R02:ORDER:001",
+      "trace_id": "SYNTH-L4:B2:R02:TRACE:001",
+      "dedup_key": "1:SYNTH-L4:B2:R02:CLIENT:001",
       "trade_env": "SIM",
       "account_id": 1,
       "created_at": "2026-09-09T08:32:56.283029+08:00",
-      "request_id": "b0-trace",
+      "request_id": "SYNTH-L4:B2:R02:REQUEST:001",
       "updated_at": "2026-09-09T08:32:56.518291+08:00",
       "exchange_code": "OKX",
-      "client_order_id": "b0d9bffb8c544203a9865ce45b463dad",
+      "client_order_id": "SYNTH-L4:B2:R02:CLIENT:001",
       "strategy_run_id": null,
-      "exchange_order_id": "b2-venue-1",
-      "external_order_id": "b2-venue-1"
+      "exchange_order_id": "SYNTH-L4:B2:R02:VENUE:001",
+      "external_order_id": "SYNTH-L4:B2:R02:VENUE:001"
     }
   ],
   "afterCancelAckOrders": [
@@ -473,19 +473,19 @@ Raw local proof SHA-256: cd05eff364d2cfa39e1d09d739acf7615fec969dcfab126935764ab
       "status": "CANCELLED",
       "symbol": "BTC-USDT",
       "version": 6,
-      "order_id": "ord-1476934b-2139-4a27-8315-adcb6999e0e6",
-      "trace_id": "b0-trace",
-      "dedup_key": "1:b0d9bffb8c544203a9865ce45b463dad",
+      "order_id": "SYNTH-L4:B2:R02:ORDER:001",
+      "trace_id": "SYNTH-L4:B2:R02:TRACE:001",
+      "dedup_key": "1:SYNTH-L4:B2:R02:CLIENT:001",
       "trade_env": "SIM",
       "account_id": 1,
       "created_at": "2026-09-09T08:32:56.283029+08:00",
-      "request_id": "b0-trace",
+      "request_id": "SYNTH-L4:B2:R02:REQUEST:001",
       "updated_at": "2026-09-09T08:32:56.629257+08:00",
       "exchange_code": "OKX",
-      "client_order_id": "b0d9bffb8c544203a9865ce45b463dad",
+      "client_order_id": "SYNTH-L4:B2:R02:CLIENT:001",
       "strategy_run_id": null,
-      "exchange_order_id": "b2-venue-1",
-      "external_order_id": "b2-venue-1"
+      "exchange_order_id": "SYNTH-L4:B2:R02:VENUE:001",
+      "external_order_id": "SYNTH-L4:B2:R02:VENUE:001"
     }
   ],
   "venueAfterCancelAck": {
@@ -497,8 +497,8 @@ Raw local proof SHA-256: cd05eff364d2cfa39e1d09d739acf7615fec969dcfab126935764ab
     "cancels": 1,
     "pendingCancel": true,
     "order": {
-      "clOrdId": "b0d9bffb8c544203a9865ce45b463dad",
-      "ordId": "b2-venue-1",
+      "clOrdId": "SYNTH-L4:B2:R02:CLIENT:001",
+      "ordId": "SYNTH-L4:B2:R02:VENUE:001",
       "instId": "BTC-USDT",
       "state": "partially_filled",
       "px": "100",
@@ -509,8 +509,8 @@ Raw local proof SHA-256: cd05eff364d2cfa39e1d09d739acf7615fec969dcfab126935764ab
     },
     "fills": [
       {
-        "tradeId": "b2-fill-1",
-        "ordId": "b2-venue-1",
+        "tradeId": "SYNTH-L4:B2:R02:FILL:001",
+        "ordId": "SYNTH-L4:B2:R02:VENUE:001",
         "instId": "BTC-USDT",
         "side": "buy",
         "fillPx": "100",
@@ -530,7 +530,7 @@ Raw local proof SHA-256: cd05eff364d2cfa39e1d09d739acf7615fec969dcfab126935764ab
         "sequence": 3,
         "type": "FILL",
         "nanoTime": 813449262500200,
-        "tradeId": "b2-fill-1",
+        "tradeId": "SYNTH-L4:B2:R02:FILL:001",
         "qty": "0.04",
         "fee": "0"
       },
@@ -565,19 +565,19 @@ Raw local proof SHA-256: cd05eff364d2cfa39e1d09d739acf7615fec969dcfab126935764ab
       "status": "CANCELLED",
       "symbol": "BTC-USDT",
       "version": 6,
-      "order_id": "ord-1476934b-2139-4a27-8315-adcb6999e0e6",
-      "trace_id": "b0-trace",
-      "dedup_key": "1:b0d9bffb8c544203a9865ce45b463dad",
+      "order_id": "SYNTH-L4:B2:R02:ORDER:001",
+      "trace_id": "SYNTH-L4:B2:R02:TRACE:001",
+      "dedup_key": "1:SYNTH-L4:B2:R02:CLIENT:001",
       "trade_env": "SIM",
       "account_id": 1,
       "created_at": "2026-09-09T08:32:56.283029+08:00",
-      "request_id": "b0-trace",
+      "request_id": "SYNTH-L4:B2:R02:REQUEST:001",
       "updated_at": "2026-09-09T08:32:56.629257+08:00",
       "exchange_code": "OKX",
-      "client_order_id": "b0d9bffb8c544203a9865ce45b463dad",
+      "client_order_id": "SYNTH-L4:B2:R02:CLIENT:001",
       "strategy_run_id": null,
-      "exchange_order_id": "b2-venue-1",
-      "external_order_id": "b2-venue-1"
+      "exchange_order_id": "SYNTH-L4:B2:R02:VENUE:001",
+      "external_order_id": "SYNTH-L4:B2:R02:VENUE:001"
     }
   ],
   "finalTrades": [
@@ -588,18 +588,18 @@ Raw local proof SHA-256: cd05eff364d2cfa39e1d09d739acf7615fec969dcfab126935764ab
       "price": 100.0,
       "symbol": "BTC-USDT",
       "exchange": "OKX",
-      "order_id": "ord-1476934b-2139-4a27-8315-adcb6999e0e6",
-      "trace_id": "b0-trace",
-      "trade_id": "trd-ce3bcbe6-9d45-4281-9c10-62754857ec44",
+      "order_id": "SYNTH-L4:B2:R02:ORDER:001",
+      "trace_id": "SYNTH-L4:B2:R02:TRACE:001",
+      "trade_id": "SYNTH-L4:B2:R02:TRADE:001",
       "trade_env": "SIM",
       "account_id": 1,
       "created_at": "2026-09-09T08:32:56.528346+08:00",
       "fee_currency": "USDT",
       "exchange_code": "OKX",
       "strategy_run_id": null,
-      "exchange_order_id": "b2-venue-1",
-      "exchange_trade_id": "b2-fill-1",
-      "external_order_id": "b2-venue-1"
+      "exchange_order_id": "SYNTH-L4:B2:R02:VENUE:001",
+      "exchange_trade_id": "SYNTH-L4:B2:R02:FILL:001",
+      "external_order_id": "SYNTH-L4:B2:R02:VENUE:001"
     },
     {
       "ts": "2026-09-09T08:32:56.728+08:00",
@@ -608,104 +608,104 @@ Raw local proof SHA-256: cd05eff364d2cfa39e1d09d739acf7615fec969dcfab126935764ab
       "price": 100.0,
       "symbol": "BTC-USDT",
       "exchange": "OKX",
-      "order_id": "ord-1476934b-2139-4a27-8315-adcb6999e0e6",
-      "trace_id": "b0-trace",
-      "trade_id": "trd-13d0f817-165a-4370-aefa-5c3685410bd1",
+      "order_id": "SYNTH-L4:B2:R02:ORDER:001",
+      "trace_id": "SYNTH-L4:B2:R02:TRACE:001",
+      "trade_id": "SYNTH-L4:B2:R02:TRADE:002",
       "trade_env": "SIM",
       "account_id": 1,
       "created_at": "2026-09-09T08:32:56.746056+08:00",
       "fee_currency": "USDT",
       "exchange_code": "OKX",
       "strategy_run_id": null,
-      "exchange_order_id": "b2-venue-1",
-      "exchange_trade_id": "b2-fill-2",
-      "external_order_id": "b2-venue-1"
+      "exchange_order_id": "SYNTH-L4:B2:R02:VENUE:001",
+      "exchange_trade_id": "SYNTH-L4:B2:R02:FILL:002",
+      "external_order_id": "SYNTH-L4:B2:R02:VENUE:001"
     }
   ],
   "finalLedger": [
     {
       "ts": "2026-09-09T08:32:56.499+08:00",
       "delta": 4.0,
-      "ref_id": "trd-ce3bcbe6-9d45-4281-9c10-62754857ec44",
+      "ref_id": "SYNTH-L4:B2:R02:TRADE:001",
       "currency": "USDT",
-      "entry_id": "le-a8955b94-d2b4-4233-9885-6bdd69f4a53f",
+      "entry_id": "SYNTH-L4:B2:R02:ENTRY:001",
       "ref_type": "TRADE",
-      "trace_id": "b0-trace",
+      "trace_id": "SYNTH-L4:B2:R02:TRACE:001",
       "direction": "CREDIT",
       "account_id": 1,
       "created_at": "2026-09-09T08:32:56.533688+08:00",
       "balance_after": 0.0,
-      "idempotency_key": "trd-ce3bcbe6-9d45-4281-9c10-62754857ec44:LEDGER:2"
+      "idempotency_key": "SYNTH-L4:B2:R02:TRADE:001:LEDGER:2"
     },
     {
       "ts": "2026-09-09T08:32:56.499+08:00",
       "delta": -4.0,
-      "ref_id": "trd-ce3bcbe6-9d45-4281-9c10-62754857ec44",
+      "ref_id": "SYNTH-L4:B2:R02:TRADE:001",
       "currency": "USDT",
-      "entry_id": "le-d65ad554-1401-4627-939c-dbd99606e7bf",
+      "entry_id": "SYNTH-L4:B2:R02:ENTRY:002",
       "ref_type": "TRADE",
-      "trace_id": "b0-trace",
+      "trace_id": "SYNTH-L4:B2:R02:TRACE:001",
       "direction": "DEBIT",
       "account_id": 1,
       "created_at": "2026-09-09T08:32:56.533688+08:00",
       "balance_after": -4.0,
-      "idempotency_key": "trd-ce3bcbe6-9d45-4281-9c10-62754857ec44:LEDGER:1"
+      "idempotency_key": "SYNTH-L4:B2:R02:TRADE:001:LEDGER:1"
     },
     {
       "ts": "2026-09-09T08:32:56.728+08:00",
       "delta": 0.01,
-      "ref_id": "trd-13d0f817-165a-4370-aefa-5c3685410bd1",
+      "ref_id": "SYNTH-L4:B2:R02:TRADE:002",
       "currency": "USDT",
-      "entry_id": "le-298ae8f8-7fc5-4cf7-bac9-5fe320450e71",
+      "entry_id": "SYNTH-L4:B2:R02:ENTRY:003",
       "ref_type": "TRADE",
-      "trace_id": "b0-trace",
+      "trace_id": "SYNTH-L4:B2:R02:TRACE:001",
       "direction": "CREDIT",
       "account_id": 1,
       "created_at": "2026-09-09T08:32:56.747937+08:00",
       "balance_after": 0.0,
-      "idempotency_key": "trd-13d0f817-165a-4370-aefa-5c3685410bd1:LEDGER:FEE_2"
+      "idempotency_key": "SYNTH-L4:B2:R02:TRADE:002:LEDGER:FEE_2"
     },
     {
       "ts": "2026-09-09T08:32:56.728+08:00",
       "delta": -0.01,
-      "ref_id": "trd-13d0f817-165a-4370-aefa-5c3685410bd1",
+      "ref_id": "SYNTH-L4:B2:R02:TRADE:002",
       "currency": "USDT",
-      "entry_id": "le-49f61312-4a49-4e12-ae7f-f7eb05f444cd",
+      "entry_id": "SYNTH-L4:B2:R02:ENTRY:004",
       "ref_type": "TRADE",
-      "trace_id": "b0-trace",
+      "trace_id": "SYNTH-L4:B2:R02:TRACE:001",
       "direction": "DEBIT",
       "account_id": 1,
       "created_at": "2026-09-09T08:32:56.747937+08:00",
       "balance_after": -0.01,
-      "idempotency_key": "trd-13d0f817-165a-4370-aefa-5c3685410bd1:LEDGER:FEE_1"
+      "idempotency_key": "SYNTH-L4:B2:R02:TRADE:002:LEDGER:FEE_1"
     },
     {
       "ts": "2026-09-09T08:32:56.728+08:00",
       "delta": -6.0,
-      "ref_id": "trd-13d0f817-165a-4370-aefa-5c3685410bd1",
+      "ref_id": "SYNTH-L4:B2:R02:TRADE:002",
       "currency": "USDT",
-      "entry_id": "le-0f988e3d-bd4a-4b4d-a285-d1214f99270d",
+      "entry_id": "SYNTH-L4:B2:R02:ENTRY:005",
       "ref_type": "TRADE",
-      "trace_id": "b0-trace",
+      "trace_id": "SYNTH-L4:B2:R02:TRACE:001",
       "direction": "DEBIT",
       "account_id": 1,
       "created_at": "2026-09-09T08:32:56.747937+08:00",
       "balance_after": -6.0,
-      "idempotency_key": "trd-13d0f817-165a-4370-aefa-5c3685410bd1:LEDGER:1"
+      "idempotency_key": "SYNTH-L4:B2:R02:TRADE:002:LEDGER:1"
     },
     {
       "ts": "2026-09-09T08:32:56.728+08:00",
       "delta": 6.0,
-      "ref_id": "trd-13d0f817-165a-4370-aefa-5c3685410bd1",
+      "ref_id": "SYNTH-L4:B2:R02:TRADE:002",
       "currency": "USDT",
-      "entry_id": "le-c3f43bc3-0fed-4d75-a9f6-bdcde102b37c",
+      "entry_id": "SYNTH-L4:B2:R02:ENTRY:006",
       "ref_type": "TRADE",
-      "trace_id": "b0-trace",
+      "trace_id": "SYNTH-L4:B2:R02:TRACE:001",
       "direction": "CREDIT",
       "account_id": 1,
       "created_at": "2026-09-09T08:32:56.747937+08:00",
       "balance_after": 0.0,
-      "idempotency_key": "trd-13d0f817-165a-4370-aefa-5c3685410bd1:LEDGER:2"
+      "idempotency_key": "SYNTH-L4:B2:R02:TRADE:002:LEDGER:2"
     }
   ],
   "ledgerEventCount": 6,
@@ -715,11 +715,11 @@ Raw local proof SHA-256: cd05eff364d2cfa39e1d09d739acf7615fec969dcfab126935764ab
       "reason": "RISK_RULES_PASSED",
       "rule_id": "RISK_RULES_PASSED",
       "decision": "ALLOW",
-      "scope_id": "ord-1476934b-2139-4a27-8315-adcb6999e0e6",
+      "scope_id": "SYNTH-L4:B2:R02:ORDER:001",
       "severity": "LOW",
-      "trace_id": "b0-trace",
+      "trace_id": "SYNTH-L4:B2:R02:TRACE:001",
       "created_at": "2026-09-09T08:32:56.31387+08:00",
-      "risk_event_id": "rsk-4f75c0a9-00a7-4f42-8bff-0e4714ad02df"
+      "risk_event_id": "SYNTH-L4:B2:R02:RISK:001"
     }
   ],
   "finalVenue": {
@@ -731,8 +731,8 @@ Raw local proof SHA-256: cd05eff364d2cfa39e1d09d739acf7615fec969dcfab126935764ab
     "cancels": 1,
     "pendingCancel": false,
     "order": {
-      "clOrdId": "b0d9bffb8c544203a9865ce45b463dad",
-      "ordId": "b2-venue-1",
+      "clOrdId": "SYNTH-L4:B2:R02:CLIENT:001",
+      "ordId": "SYNTH-L4:B2:R02:VENUE:001",
       "instId": "BTC-USDT",
       "state": "filled",
       "px": "100",
@@ -743,8 +743,8 @@ Raw local proof SHA-256: cd05eff364d2cfa39e1d09d739acf7615fec969dcfab126935764ab
     },
     "fills": [
       {
-        "tradeId": "b2-fill-1",
-        "ordId": "b2-venue-1",
+        "tradeId": "SYNTH-L4:B2:R02:FILL:001",
+        "ordId": "SYNTH-L4:B2:R02:VENUE:001",
         "instId": "BTC-USDT",
         "side": "buy",
         "fillPx": "100",
@@ -754,8 +754,8 @@ Raw local proof SHA-256: cd05eff364d2cfa39e1d09d739acf7615fec969dcfab126935764ab
         "ts": "1788913976499"
       },
       {
-        "tradeId": "b2-fill-2",
-        "ordId": "b2-venue-1",
+        "tradeId": "SYNTH-L4:B2:R02:FILL:002",
+        "ordId": "SYNTH-L4:B2:R02:VENUE:001",
         "instId": "BTC-USDT",
         "side": "buy",
         "fillPx": "100",
@@ -775,7 +775,7 @@ Raw local proof SHA-256: cd05eff364d2cfa39e1d09d739acf7615fec969dcfab126935764ab
         "sequence": 3,
         "type": "FILL",
         "nanoTime": 813449262500200,
-        "tradeId": "b2-fill-1",
+        "tradeId": "SYNTH-L4:B2:R02:FILL:001",
         "qty": "0.04",
         "fee": "0"
       },
@@ -800,7 +800,7 @@ Raw local proof SHA-256: cd05eff364d2cfa39e1d09d739acf7615fec969dcfab126935764ab
         "sequence": 7,
         "type": "FILL",
         "nanoTime": 813449491305000,
-        "tradeId": "b2-fill-2",
+        "tradeId": "SYNTH-L4:B2:R02:FILL:002",
         "qty": "0.06",
         "fee": "0.01"
       },

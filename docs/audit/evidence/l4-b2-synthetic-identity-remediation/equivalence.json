@@ -1,0 +1,3552 @@
+{
+  "technicalCandidateDelta": 0,
+  "evidenceSemanticDelta": 0,
+  "evidenceIdentityRepresentation": "CANONICALIZED",
+  "proofChecks": [
+    {
+      "run": "SYNTH-L4:B2:R01",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "FILL": 1,
+        "TRADE": 1,
+        "ENTRY": 2,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "PARTIAL_FILL_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R02",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "FILL": 2,
+        "TRADE": 2,
+        "ENTRY": 6,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    },
+    {
+      "run": "SYNTH-L4:B2:R03",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    },
+    {
+      "run": "SYNTH-L4:B2:R04",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "PARTIAL_FILL_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R05",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    },
+    {
+      "run": "SYNTH-L4:B2:R06",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    },
+    {
+      "run": "SYNTH-L4:B2:R07",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    },
+    {
+      "run": "SYNTH-L4:B2:R08",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    },
+    {
+      "run": "SYNTH-L4:B2:R09",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "PARTIAL_FILL_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R10",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "PARTIAL_FILL_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R11",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "PARTIAL_FILL_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R12",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    },
+    {
+      "run": "SYNTH-L4:B2:R13",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    },
+    {
+      "run": "SYNTH-L4:B2:R14",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    },
+    {
+      "run": "SYNTH-L4:B2:R15",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "FILL": 1,
+        "TRADE": 1,
+        "ENTRY": 4
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "FILL_DURING_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R16",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "FILL": 1,
+        "TRADE": 1,
+        "ENTRY": 4
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "FILL_DURING_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R17",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "FILL": 1,
+        "TRADE": 1,
+        "ENTRY": 4
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "FILL_DURING_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R18",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "LATE_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R19",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "LATE_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R20",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "LATE_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R21",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "MULTI_PARTIAL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R22",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "MULTI_PARTIAL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R23",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "MULTI_PARTIAL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R24",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "PARTIAL_BEFORE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R25",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "PARTIAL_BEFORE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R26",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "PARTIAL_BEFORE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R27",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "RESTART_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R28",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "RESTART_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R29",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "RESTART_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R30",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "STALE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R31",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "STALE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R32",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "STALE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R33",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "RISK": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "STALE_PLACE"
+    },
+    {
+      "run": "SYNTH-L4:B2:R34",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "RISK": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "STALE_PLACE"
+    },
+    {
+      "run": "SYNTH-L4:B2:R35",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "RISK": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "STALE_PLACE"
+    },
+    {
+      "run": "SYNTH-L4:B2:R36",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "ZERO_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R37",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "ZERO_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R38",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "ZERO_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R39",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "FILL": 1,
+        "TRADE": 1,
+        "ENTRY": 4
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "FILL_DURING_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R40",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "FILL": 1,
+        "TRADE": 1,
+        "ENTRY": 4
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "FILL_DURING_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R41",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "FILL": 1,
+        "TRADE": 1,
+        "ENTRY": 4
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "FILL_DURING_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R42",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "LATE_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R43",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "LATE_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R44",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "LATE_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R45",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "MULTI_PARTIAL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R46",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "MULTI_PARTIAL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R47",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "MULTI_PARTIAL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R48",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "PARTIAL_BEFORE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R49",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "PARTIAL_BEFORE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R50",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "PARTIAL_BEFORE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R51",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "RESTART_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R52",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "RESTART_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R53",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "RESTART_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R54",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "STALE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R55",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "STALE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R56",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "STALE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R57",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "RISK": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "STALE_PLACE"
+    },
+    {
+      "run": "SYNTH-L4:B2:R58",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "RISK": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "STALE_PLACE"
+    },
+    {
+      "run": "SYNTH-L4:B2:R59",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "RISK": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "STALE_PLACE"
+    },
+    {
+      "run": "SYNTH-L4:B2:R60",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "ZERO_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R61",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "ZERO_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R62",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": "PASS",
+      "scenario": "ZERO_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R15",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "FILL": 1,
+        "TRADE": 1,
+        "ENTRY": 4
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FILL_DURING_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R16",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "FILL": 1,
+        "TRADE": 1,
+        "ENTRY": 4
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FILL_DURING_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R17",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "FILL": 1,
+        "TRADE": 1,
+        "ENTRY": 4
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FILL_DURING_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R18",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "LATE_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R19",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "LATE_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R20",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "LATE_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R21",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "MULTI_PARTIAL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R22",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "MULTI_PARTIAL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R23",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "MULTI_PARTIAL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R24",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "PARTIAL_BEFORE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R25",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "PARTIAL_BEFORE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R26",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "PARTIAL_BEFORE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R27",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "RESTART_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R28",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "RESTART_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R29",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "RESTART_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R30",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "STALE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R31",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "STALE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R32",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "STALE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R33",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "RISK": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "STALE_PLACE"
+    },
+    {
+      "run": "SYNTH-L4:B2:R34",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "RISK": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "STALE_PLACE"
+    },
+    {
+      "run": "SYNTH-L4:B2:R35",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "RISK": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "STALE_PLACE"
+    },
+    {
+      "run": "SYNTH-L4:B2:R36",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "ZERO_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R37",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "ZERO_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R38",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "ZERO_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R39",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "FILL": 1,
+        "TRADE": 1,
+        "ENTRY": 4
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FILL_DURING_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R40",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "FILL": 1,
+        "TRADE": 1,
+        "ENTRY": 4
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FILL_DURING_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R41",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "FILL": 1,
+        "TRADE": 1,
+        "ENTRY": 4
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FILL_DURING_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R42",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "LATE_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R43",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "LATE_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R44",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "LATE_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R45",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "MULTI_PARTIAL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R46",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "MULTI_PARTIAL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R47",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "MULTI_PARTIAL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R48",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "PARTIAL_BEFORE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R49",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "PARTIAL_BEFORE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R50",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "PARTIAL_BEFORE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R51",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "RESTART_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R52",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "RESTART_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R53",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "RESTART_FULL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R54",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "STALE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R55",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "STALE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R56",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "STALE_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R57",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "RISK": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "STALE_PLACE"
+    },
+    {
+      "run": "SYNTH-L4:B2:R58",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "RISK": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "STALE_PLACE"
+    },
+    {
+      "run": "SYNTH-L4:B2:R59",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "RISK": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "STALE_PLACE"
+    },
+    {
+      "run": "SYNTH-L4:B2:R60",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "ZERO_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R61",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "ZERO_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R62",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "ZERO_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R63",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    },
+    {
+      "run": "SYNTH-L4:B2:R64",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    },
+    {
+      "run": "SYNTH-L4:B2:R65",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    },
+    {
+      "run": "SYNTH-L4:B2:R63",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": null
+    },
+    {
+      "run": "SYNTH-L4:B2:R64",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": null
+    },
+    {
+      "run": "SYNTH-L4:B2:R65",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": null
+    },
+    {
+      "run": "SYNTH-L4:B2:R66",
+      "identityCounts": {
+        "DATABASE": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": null
+    },
+    {
+      "run": "SYNTH-L4:B2:R67",
+      "identityCounts": {
+        "DATABASE": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": null
+    },
+    {
+      "run": "SYNTH-L4:B2:R68",
+      "identityCounts": {
+        "DATABASE": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": null
+    },
+    {
+      "run": "SYNTH-L4:B2:R69",
+      "identityCounts": {
+        "DATABASE": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": null
+    },
+    {
+      "run": "SYNTH-L4:B2:R70",
+      "identityCounts": {
+        "DATABASE": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": null
+    },
+    {
+      "run": "SYNTH-L4:B2:R71",
+      "identityCounts": {
+        "DATABASE": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": null
+    },
+    {
+      "run": "SYNTH-L4:B2:R66",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "PARTIAL_FILL_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R67",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "PARTIAL_FILL_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R68",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "PARTIAL_FILL_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R69",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    },
+    {
+      "run": "SYNTH-L4:B2:R70",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    },
+    {
+      "run": "SYNTH-L4:B2:R71",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    },
+    {
+      "run": "SYNTH-L4:B2:R72",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    },
+    {
+      "run": "SYNTH-L4:B2:R73",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    },
+    {
+      "run": "SYNTH-L4:B2:R74",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    },
+    {
+      "run": "SYNTH-L4:B2:R72",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": null
+    },
+    {
+      "run": "SYNTH-L4:B2:R73",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": null
+    },
+    {
+      "run": "SYNTH-L4:B2:R74",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": null
+    },
+    {
+      "run": "SYNTH-L4:B2:R75",
+      "identityCounts": {
+        "DATABASE": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": null
+    },
+    {
+      "run": "SYNTH-L4:B2:R76",
+      "identityCounts": {
+        "DATABASE": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": null
+    },
+    {
+      "run": "SYNTH-L4:B2:R77",
+      "identityCounts": {
+        "DATABASE": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": null
+    },
+    {
+      "run": "SYNTH-L4:B2:R78",
+      "identityCounts": {
+        "DATABASE": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": null
+    },
+    {
+      "run": "SYNTH-L4:B2:R79",
+      "identityCounts": {
+        "DATABASE": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": null
+    },
+    {
+      "run": "SYNTH-L4:B2:R80",
+      "identityCounts": {
+        "DATABASE": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": null
+    },
+    {
+      "run": "SYNTH-L4:B2:R75",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "PARTIAL_FILL_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R76",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "PARTIAL_FILL_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R77",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 1,
+        "FILL": 1,
+        "ENTRY": 2,
+        "RISK": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "PARTIAL_FILL_CANCEL"
+    },
+    {
+      "run": "SYNTH-L4:B2:R78",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    },
+    {
+      "run": "SYNTH-L4:B2:R79",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    },
+    {
+      "run": "SYNTH-L4:B2:R80",
+      "identityCounts": {
+        "DATABASE": 1,
+        "ORDER": 1,
+        "TRACE": 1,
+        "REQUEST": 1,
+        "CLIENT": 1,
+        "VENUE": 1,
+        "TRADE": 3,
+        "FILL": 3,
+        "ENTRY": 10,
+        "RISK": 1,
+        "EVENT": 1
+      },
+      "fullTreeInverseEquality": true,
+      "result": null,
+      "scenario": "FINAL_FILL_BEFORE_CANCEL_EFFECT"
+    }
+  ],
+  "bindings": [
+    {
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_B2_CANCEL_FILL_RACE_AND_PER_FILL_ACCOUNTING.md",
+      "beforeSha256": "e6f103d4ef28b8dd2c769fe1dd6634e9ed343c25a608116b7d26448300e508e8",
+      "afterSha256": "83ccf14fe7f39194e8d126906ea2aefdf7d8a0d95ee0b0a871f0da39b1f7fa13",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_B2_CANCEL_FILL_TERMINAL_CONVERGENCE_REMEDIATION_ATTEMPT01.md",
+      "beforeSha256": "7a207e8b201cbdd95ca267017d210cde6cc90a9500d02ea42744dab36af4ab84",
+      "afterSha256": "0d3ec02cd4374c7f03621777cbdd8b0c01bb4bf48938560784f8b1aaa0cd1a03",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_B2_LIVE_TRADE_ENVIRONMENT_CONSISTENCY_REMEDIATION_ATTEMPT01.md",
+      "beforeSha256": "26141e25c4ce569e3ad70f0d716d378f8f8139f9c608a23c10707c58fa694769",
+      "afterSha256": "ff35a8cb607753ca45acbbec8f64acc31ac1ba84f46a193369d65d2c147c21e9",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_B2_QUALIFICATION_RESUME.md",
+      "beforeSha256": "4b36887570541d6596e76b64b99e5f5bfdbe09bd82afc2946768b5784084c73b",
+      "afterSha256": "1131ad501c0e15ba9f6d84eb25232e695329f8655618cc3d7b0b3a85121cbab5",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/live-full.json",
+      "beforeSha256": "69e16b8468e57f73342e4b85026c93568e216079461669795f0193802fc311b5",
+      "afterSha256": "816bbff55532417f1c10fff8fc221b22f510b0e009867820368adb5bf65391cf",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/live-partial.json",
+      "beforeSha256": "5edf9ab0286973f1c4bb2c896821d3b62e6c8a6d985ac18a8a0c634dd6193772",
+      "afterSha256": "0c29bd660ead3814fadb03302d3a5c05d36caa051d56c7c29978bbad988b1f70",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/live-restart.json",
+      "beforeSha256": "ca537f953693c781dc2e4794cb270419529593ad14767dece5613dfb9c7a2617",
+      "afterSha256": "dce017eaf64e640a577d85dfdea257e62d441672c5ebefcaa992dc20ccef73eb",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/prepare-full.log",
+      "beforeSha256": "d2674d757bd1b7950b41149d0e5339ade0cdc79ab1dac912c6b3d0d6ce4a2f48",
+      "afterSha256": null,
+      "disposition": "RAW_EPHEMERAL_ONLY"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/run-logs.zip",
+      "beforeSha256": "2fa75ce682bbc93b47757fdcfaa0fb386dc6966fe4bb3dfe09abf66c070f907a",
+      "afterSha256": null,
+      "disposition": "RAW_EPHEMERAL_ONLY"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/sim-final-fill-cancel-1.json",
+      "beforeSha256": "b24fa13a11c4d8c027e31684a586ce9b6245e76b1a382ca85ccaf3336f88fc69",
+      "afterSha256": "aedc9957fefd903e2e58faa3b3e662622007fcefead8a099a9b961b793297c13",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/sim-final-fill-cancel-2.json",
+      "beforeSha256": "3f76c201d1ed8c09a985163dfea86b130081e5d5622a0ffdf6c64197761dcb6b",
+      "afterSha256": "8fe0da77b6d69e2a41646a790d47cae665093846238df5e78bdce3775ade4264",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/sim-final-fill-cancel-3.json",
+      "beforeSha256": "4908c99d6c1472f8fd7b65c7bf0737d84b4fc35a4643e22048cec3a38955a72f",
+      "afterSha256": "6c5d5ee690fc0eef5f13e9c534c458f47c6483d6627b666cbff05d28496c37b6",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/sim-partial-cancel-1.json",
+      "beforeSha256": "4bcbb4bdaa66f84733dae1365833ee20e1517f8bc753dbb0083e93bdec2e455a",
+      "afterSha256": "0f4d98c8be2fd3e0e954254d32395a8284c30fecb54b87bbf192d699cf46c7d3",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/sim-partial-cancel-2.json",
+      "beforeSha256": "10bf17e06bfa812d9eb9256e04aad9156a0c36e88c5f5b41d2ce6385fb3ede76",
+      "afterSha256": "e998bc9497f9e46f05fa602f57c2ad2a80705b8b165d7030c26a1bc2641eedd0",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/sim-partial-cancel-3.json",
+      "beforeSha256": "128309b3c94b5d1e6e4f06b89000f22e1111100c0e4ca8e4e17f45b2d4385e5e",
+      "afterSha256": "4d134120ce930417e770cd48787ad3eec8d2bc2b9aa4d9bea82239e2f3ea2a26",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/sim-restart-final-fill-1.json",
+      "beforeSha256": "c9b9ee23e11cd6be7e23262049aa2e35c615bd88b1dffde211d5a24744874082",
+      "afterSha256": "63edf548567c646f160a8327614648d4ef8f5723ab5bdcf72afaf4dd1c7006de",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/sim-restart-final-fill-2.json",
+      "beforeSha256": "4bfe6a66d3900865f8d90233b2e49ea1cb83090a90238d419f894fbcb25f944d",
+      "afterSha256": "cc93a5bf243e981451843d968b40211a97ffe263e34650eb4d3e4722a1002843",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/sim-restart-final-fill-3.json",
+      "beforeSha256": "509334ef179feed7a56da709a86925837c239921ddc88052dfbb89e836441c08",
+      "afterSha256": "16a85ac3e8a66bfee01dcb458644d343ab793eaf320e65012c1f44a572838193",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/targeted-summary.txt",
+      "beforeSha256": "e3f79602f74d0dcb71ee52db056f24e348b14a7bf467b800af55680ad26c246f",
+      "afterSha256": "59339adde760863fd606aed9391058f8dcdfa911bd3f2319b9e2f16d4b2f9878",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-precise-delivery/README.md",
+      "beforeSha256": "3f699735cc1960c680ae4e9d5dd3c037a44c7f1180a18faf3dcefaa82f8ae425",
+      "afterSha256": "32ff9dba789a32ff6b96bc084c69f0578af3f2daefe745d72d08c37dbd295594",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-precise-delivery/pre-format-originals.zip",
+      "beforeSha256": "82035555b4c86dc84fe3a10ba84771140d119b974185f5d4174c4cbd53bbbf2e",
+      "afterSha256": null,
+      "disposition": "RAW_EPHEMERAL_ONLY"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-FILL_DURING_CANCEL-1.json",
+      "beforeSha256": "0df1037cac12b262b8ecbc81ae25e76bc2c57a3654da790a044f3be61d6d0ab7",
+      "afterSha256": "ee97f79cfba07581fa9f57684f60da88602e98e8611da70f452718802f426bb2",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-FILL_DURING_CANCEL-2.json",
+      "beforeSha256": "98aefc805a1b7dc25bcbf44334c10ca588eb0972f6eeeddd54ae69a489b62999",
+      "afterSha256": "4aebc722c382dc707c08587d949decc525f12599ee4b63321fed5a3a3d77c5a0",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-FILL_DURING_CANCEL-3.json",
+      "beforeSha256": "bbcae81cc0bed17fb006d1e64961b71f3aaac6209080016a1248c98428151392",
+      "afterSha256": "e8498e649e46d0ba72c5ad8deb2e8a74d6bcc89f48acd4c7046728dc75dae3a7",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-LATE_FULL-1.json",
+      "beforeSha256": "54fb87a1e5648409b4dd22af1c25aaadac637501c7df27e3a68aee1ef2f76034",
+      "afterSha256": "1332c6c7ee943e69251b4024dbacd1b67934d32e02488df629c60a9d5f1a2128",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-LATE_FULL-2.json",
+      "beforeSha256": "bfff7079a390d9a6821049a2dfa12b6ca66a1408a2c9b12b2b40d9db11e26f02",
+      "afterSha256": "6880b51067561c212a6feedaca8e08cc1bc8648cb2fada73f3678b9905818f36",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-LATE_FULL-3.json",
+      "beforeSha256": "e0bf436db75f6324e5ab5018c6b44c70a86e5ef3ed626d619360b89faa411d60",
+      "afterSha256": "7d2700a16f7230947a25793a1317ac0156c9faf1a75113e7d7c15ac9ef8952fd",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-MULTI_PARTIAL-1.json",
+      "beforeSha256": "518020162d521944ea0b31c8dc03f6645e98b8a02cae86624d374962c57b488f",
+      "afterSha256": "36e4fb07652086384072b9b81b49852808107e30998d0a87c438d924b240e181",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-MULTI_PARTIAL-2.json",
+      "beforeSha256": "fd7b1e80e40704c28f907c7f09223abe6b68a2b45acd79a750fb0f7fdd1c9c61",
+      "afterSha256": "3920a81ec559be7f733aa148f7f32e87602cb92a4cf8d276f2a7c07779340653",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-MULTI_PARTIAL-3.json",
+      "beforeSha256": "2e7f05e321cf5d29448daab077e2662acef12c69f5387f219f1f620bf098eaf2",
+      "afterSha256": "d5075ea13ec8c4f2c9abda3aae2cf9440506e53f7a2261fe23381556301b5f54",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-PARTIAL_BEFORE_CANCEL-1.json",
+      "beforeSha256": "14522a64b60bf21cd626a6ab4043539fa863787ccdac05c7ae6ddb02da3c251e",
+      "afterSha256": "7bfe5c29b9d39333405376631d3bbe862a686c1d7b3558e0af87387e093410a8",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-PARTIAL_BEFORE_CANCEL-2.json",
+      "beforeSha256": "acb75e99ace0969c804f2fdd29b23d05516e7de527c55ca418fa6886d138a6e4",
+      "afterSha256": "22b62ce3e326132f424845ef44d143ce20b10b0e29ece5c08d1caa0e451e5705",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-PARTIAL_BEFORE_CANCEL-3.json",
+      "beforeSha256": "dcc26d6e9065eab0979adb3ca792abe9ff36c65999cf099af7346fd2b4fe2a8f",
+      "afterSha256": "4f51de8607bc8ae7e8fead8a82e1151cabf791826f3f809485d12916f6b2f83c",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-RESTART_FULL-1.json",
+      "beforeSha256": "29108acf0bc875561b26e8fdcd6cc989256db66342c555571bfa9b3d01af7f28",
+      "afterSha256": "8f8eed6c343b9799047042d180981b39891e8277d298105b3564ff2a1534d0be",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-RESTART_FULL-2.json",
+      "beforeSha256": "cc8b78547667e432f0a9d914b2591b190c9831671bcfdf9a6ee3f7ffd907ba20",
+      "afterSha256": "53767ace1e7184f366f129ca0fa69652c76666716932097185bd079f29b36d29",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-RESTART_FULL-3.json",
+      "beforeSha256": "50d25ac6edd0cdebdb9e5f7799deed70f3cfe4bd48129348f817a9c16dacd596",
+      "afterSha256": "295892b9c1339adb4dcb1556c5fca4a0c7f4fe412795880e562950770a519dee",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-STALE_CANCEL-1.json",
+      "beforeSha256": "1dbc20e754841372f3889e158ac1c1d5a840c88912a2d6ff5fb4438bb2ef014e",
+      "afterSha256": "79e875fdd1cc9652c31e190078593436061134e962e09611dee2cc9279ea0ca0",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-STALE_CANCEL-2.json",
+      "beforeSha256": "0341c61e83891b5b00efb21b0e7eb7475411ced81620c18d32e578cb7d21d054",
+      "afterSha256": "ee79d03698f458b67569c949d7510af5450ff2f9485d31511282d5803443d001",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-STALE_CANCEL-3.json",
+      "beforeSha256": "f03a4aef8e5be169d0b6c94a43944c36b75c2cdaa62f60febcd241ce9b798b72",
+      "afterSha256": "831fdd25eceb2112ac5bde19fbcbe5508847aad66ab5c1d42948e7f857c48761",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-STALE_PLACE-1.json",
+      "beforeSha256": "6fdbba1df8fdabf57d002c1460448be274b2168f1ef493f309129734577293c1",
+      "afterSha256": "63f0948945fddb5ae4d121b74e3ce984f463fcfc858a3371d440c5d56988a816",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-STALE_PLACE-2.json",
+      "beforeSha256": "9e24e12f276a7fa65cc3071207125c53a6930c4bfe9776c9b4f3025a6dc97189",
+      "afterSha256": "4c1a562277f05abfd7637104394aa4bb3a3e183fc28f8038735ef73c76338231",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-STALE_PLACE-3.json",
+      "beforeSha256": "4de94028dd2e9d1d020dfd49f189194a9bcb3362f4bb9ae8e56f573462a8f136",
+      "afterSha256": "0de50197264b156a8fad87f5a0a53ff5b0333a8c0b0cf8d6407dd4a988f090ef",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-ZERO_CANCEL-1.json",
+      "beforeSha256": "d847338c6b2275134a17d252b5acfb8a44212484206dbb40abbe08a53d76e870",
+      "afterSha256": "34e189fb4fbb5e877518eb33bdb7900f5b76319425b7962b9590ba1a20ca4edf",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-ZERO_CANCEL-2.json",
+      "beforeSha256": "c62102c3376495b0475d249e6f52ce6bfe1158564c493de0dfdd6a823ec6e075",
+      "afterSha256": "fdf749c4d7cb21c1e47400881fa0b470824d5fb2f5f05ffa2210e996ef5e1857",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-ZERO_CANCEL-3.json",
+      "beforeSha256": "271db629e552796b3f28cdc6968e7cdbdcbb67d0dea0d3cecf4c737f58a3e909",
+      "afterSha256": "76e657f716d569090a3326d4e271009819dd0a1f34a11ef34522e828f3b74880",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-FILL_DURING_CANCEL-1.json",
+      "beforeSha256": "605096df69161fc00e0340fd0adcd30874df1970252d6256fe0a9fc1422df534",
+      "afterSha256": "a5ab852dbc9af6809a6f15b2c27dc227a18128e95eaff8e4b4faac8e6257fa51",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-FILL_DURING_CANCEL-2.json",
+      "beforeSha256": "e27be135c8c1e089a113e6b007dc9efc82d4f98432c573b5326e789d0c43c677",
+      "afterSha256": "f67d05dc61aca247f32ad8fcc3ce1cc33fe55304a36c4da628babc58f5aff9cd",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-FILL_DURING_CANCEL-3.json",
+      "beforeSha256": "9778ee1bf8c4447e7514a17d42e48af2e432f0186a87ee0147bfc841d6d0366c",
+      "afterSha256": "346478dc5a722ff5ade4c013202d2d161c0d5799ea8926c618de9a95b03025a9",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-LATE_FULL-1.json",
+      "beforeSha256": "9d8b346e93e87e98c4fa10174d47b9fbc150445145db286475f6721b41393b25",
+      "afterSha256": "66b5aaf07c84136c66aa7aaabf3ca308d69bd459542e342079e67de1bb904a0f",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-LATE_FULL-2.json",
+      "beforeSha256": "689aff14876d3c34703122c0161313dcb2fbed48dc8d4eb1d9784787a126e53b",
+      "afterSha256": "a759d5fc7495cf6f3e935e84637dbd29c118a50cfec8b42b92f5f0e62e064371",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-LATE_FULL-3.json",
+      "beforeSha256": "e246497adf2a77f5cc1dbe2cb6b9248d45f993a3c9f0c343b978822ec9945553",
+      "afterSha256": "3d16058ed6ab59a116d13bba5b24bbd7acaa0780204d6246fb91237bf9ea7fc6",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-MULTI_PARTIAL-1.json",
+      "beforeSha256": "1a4b813ba1d0835689ebcec6a7218101dcfcf18c9f0c6bf5a841b0a3707b0e6e",
+      "afterSha256": "0a9453f91d5830c044d0f9cead4717ecd33665e3a4ed7b381ac489253574ad81",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-MULTI_PARTIAL-2.json",
+      "beforeSha256": "2a4559e071e06776f3c4c7097adb00f923690637cdb1906da0bcd8660f5ccf60",
+      "afterSha256": "8c550514e6597a0248817871d56ce8d9f663db10b65cb717019015ebd1a63132",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-MULTI_PARTIAL-3.json",
+      "beforeSha256": "3b2bd3496c9bdccd4708ac9729da34d7594892b887f5ebf47aa66b91d0dd5a2e",
+      "afterSha256": "a1181623804c48550f740d9ee6894d57307dc33f628f0c0038d6f8fa30a07c73",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-PARTIAL_BEFORE_CANCEL-1.json",
+      "beforeSha256": "535bd736712b0a253a53a081a5f49f3dbf80f449c36fa9dc940e9978d76c6a70",
+      "afterSha256": "978e4ed5ab36ee88bc126ec1706db9ec4e6ee02951646d3bc72d465ce2e86d43",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-PARTIAL_BEFORE_CANCEL-2.json",
+      "beforeSha256": "f08ede4cfaf683c2e2e0909f39aed839386785039ed7d7b8ba090bd2e86fdcaa",
+      "afterSha256": "b664d2cc434f5b0065d97837c2bee59328a3df84796edab9662f0abb2a2cc0dc",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-PARTIAL_BEFORE_CANCEL-3.json",
+      "beforeSha256": "c444efdae708679d5976203478702f53163c5ac4b3987308aa5e79887ccb46d1",
+      "afterSha256": "8a6fc5deff21cda4f75ae32d3e7dda366cf65808b2250be4bd0712ddbd713d26",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-RESTART_FULL-1.json",
+      "beforeSha256": "0c75bc84fe578e5f741d03f25c358a75004dcf6e0721360b6efccbc018c8268c",
+      "afterSha256": "116f3144093bfdb183dd6338b165846d1df8b5ad1c502939c74aa4647b03fe9f",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-RESTART_FULL-2.json",
+      "beforeSha256": "c32148d7533c98409bdc9057d494a8b511da78b2ca02e1a1271679364477a138",
+      "afterSha256": "1d893ddc870b9049cc95b38f9ea81ee7c031f5a576e5101d6cc62b6bc1db4fa0",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-RESTART_FULL-3.json",
+      "beforeSha256": "694e54670f1440e4ac21887ddef3d65b3ce03852023f1983fa86f591ac367f84",
+      "afterSha256": "fa91c7525ccb0383b749132531612ec138dc2932058deb86166435966f61b028",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-STALE_CANCEL-1.json",
+      "beforeSha256": "c0f58fa08d8f986b781fb6908922f826fc57cfd5ece31ef2cce85552aa4cefc0",
+      "afterSha256": "5783d4b1f54fdea0a866401e5223989acbbc07d656a6926657160e7f546e8224",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-STALE_CANCEL-2.json",
+      "beforeSha256": "c6b9456384252fccbe76333c4465c1b6b59488ff868ceb4d0ba24ef22416a52e",
+      "afterSha256": "783fb27402b2621f68169f655a324fd84b9ace2a7099720f68e126ed00bd3ce0",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-STALE_CANCEL-3.json",
+      "beforeSha256": "2ff13e55c91590e03f5a4d30eede31c25045d3622f43a1be0dd2f2d1c493273d",
+      "afterSha256": "8a7cac47e261bf8a86efb1c0656eef276348eec82d293d2e96cc26c4874cb4cc",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-STALE_PLACE-1.json",
+      "beforeSha256": "5349f70c56a00ce2e40904d906f80ed50d1afbec33eee8df89109338a6ef079d",
+      "afterSha256": "4e36e72543e11510a756a42fe92101675207e45f0707245dfe5f2fd9357d7858",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-STALE_PLACE-2.json",
+      "beforeSha256": "e99b0131e92227b8fde4f046c207feb551c1878522f6a43139a6914594b7c69c",
+      "afterSha256": "5f5894ece8018ba17ab9721248e12bd31aadc71df9ba9c51f6a44dff32fc9ed6",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-STALE_PLACE-3.json",
+      "beforeSha256": "a4cc1cb6ccea85db836ffb310a249894dac37bb9869d9dcf95c9a889cf42416f",
+      "afterSha256": "fd02c47c2eb24cef1f103218de21b1452527825e3464d017e8a9f1255ac355fb",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-ZERO_CANCEL-1.json",
+      "beforeSha256": "c00d35f797ad1d975c56f48253e07a741df63e686d8d1c21f8a4fcf4058b393c",
+      "afterSha256": "f51279af6a19044b9685e86361a3f2785bb12e613fd1a4fd55286d97bcba79b5",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-ZERO_CANCEL-2.json",
+      "beforeSha256": "29e61166bad8681a64afa044fe0f81caa65d1a5c6c2a1724352b357da2907b6e",
+      "afterSha256": "6adcd0263e0de7e9f472af7604aa75ec85a7014b62d217883eb7563617431a09",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-ZERO_CANCEL-3.json",
+      "beforeSha256": "448a42127a86616f9c00d9b3588ab2295787e2bd8b74037378ac8aad87c7e462",
+      "afterSha256": "981d2c0a3d77e4087cecebf93bcdb3d1e683c2de499ab42cb93aa37d6329c453",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/combined-review-raw.zip",
+      "beforeSha256": "53033e358e64bc4dfb32af68911cba53370e538146f0e6d1650d18f322daf395",
+      "afterSha256": null,
+      "disposition": "RAW_EPHEMERAL_ONLY"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/environment.json",
+      "beforeSha256": "b04ec359f5c761965fb7b77e6485dc54a9c69eb781b05204224a020a5cd18ea2",
+      "afterSha256": "0f7718d8fa84701a46e833b067c09bdbf3e60c41b48a3c8b511b4ef797ba23ef",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "beforeSha256": "08ee39a65789d0f254bd7baad20b16763ea5a9df6762ad35c0e24e81338932ef",
+      "afterSha256": "3af59b7a9a05bdff98be9ec317bfabf504a8fe8827b59d87676ecc4e0120ce52",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/qualification-logs.zip",
+      "beforeSha256": "cd8e2d4bdd6bf559c6a6090266ad3ff8c6f1a293df87b0eb22b64e13231b245e",
+      "afterSha256": null,
+      "disposition": "RAW_EPHEMERAL_ONLY"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/runs.md",
+      "beforeSha256": "d2716230b70a27e3e80e9c20759e377459778f875640a57b528fdcb6798f2e44",
+      "afterSha256": "b88bbfe35019c8f32db82c203b0a28ead069848b8fece99ed59940044e7e4b9d",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt01/final-fill-cancel-1.json",
+      "beforeSha256": "bf3d071711ce4bec0df9116325518193de4e649b9db57ddfbd6887c10d9c2c40",
+      "afterSha256": "011ec10dc69a445c4018358148062b7bc5122076e0c0e55a1dae08156b8b1c47",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt01/final-fill-cancel-2.json",
+      "beforeSha256": "6f6704620eee065dc5b742831f8a391d70b12c4eeb870f40ddf7ef13710e69c3",
+      "afterSha256": "7e576b1aa6f878bf42429a994dfbbdb300ea3c6dad72214e94459ed839214ceb",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt01/final-fill-cancel-3.json",
+      "beforeSha256": "caa8175715a1d99f3fee7c8400d7e39ac053b88421e9553cca1476f0493793ff",
+      "afterSha256": "f08242ef5ccde253963e9fb37f2dfc62ef4d9be0938d3bc7424eb0f92e58ac21",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt01/manifest.json",
+      "beforeSha256": "af2e2edb3cf61eb5d3f87fec02b68a958f2578bce27ea072efd51066d579eef5",
+      "afterSha256": "47c4837bd070d3f9d1a88a34841047bff75b96929da918d144a1f2fafeb5170c",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt01/partial-cancel-1.json",
+      "beforeSha256": "d11afab3fbe33bda1c2d6aaca283a39e8c9cc3bb938550e9f039c3b2ef7b00a0",
+      "afterSha256": "075f0a2c5cf499c126aaab5f6bacc64761cb23b438fb2cea5d324d787f0a32c8",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt01/partial-cancel-2.json",
+      "beforeSha256": "10ef30239162220e97c94b5063b1c63841824ce18acc538547b593bc16715d42",
+      "afterSha256": "4aeb8ecbcd1013d393fad5d70b9f5605d86d98913dc9bc2bd80fe3712c405b81",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt01/partial-cancel-3.json",
+      "beforeSha256": "6dfd3958085aa8b8c1ab2ac982e16dd2477a8a2e4c4a83f2ecfa682b5c68726b",
+      "afterSha256": "ea141e39ba9e0d8c780a304c641db792e791ad7365c8fcd719e3d01b47bfccd8",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt01/restart-final-fill-1.json",
+      "beforeSha256": "22f295bb716a20253ed6dd9e1df44ed395e4f290f75fed6c2da01017d1301320",
+      "afterSha256": "3b739b951c5c279f8d6b7e02d20f487e1584c0d17032308aa8f48bdb4bc3acdb",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt01/restart-final-fill-2.json",
+      "beforeSha256": "76fb71bcc73842ad0e3394169716ac8549339fdc6c977a673411899976a3f8cc",
+      "afterSha256": "04e1b45345a169173e81b02bbfa2dc0b0f4677fb21204e06712b4e312c287cbd",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt01/restart-final-fill-3.json",
+      "beforeSha256": "b407f0ef7278339bf64f34bc9b189ba818af300b5e4748cd4ca0519089c60a36",
+      "afterSha256": "4bdc5af7fb5ce7f9245fa32a092b75c23d62284422e8ec2106daf890e9f178af",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/final-fill-cancel-1.json",
+      "beforeSha256": "0ab26c28847ff0505bdd258ff5d7142e9c6eda5962992e5866998f7b07ae40b2",
+      "afterSha256": "a3e7bdf288e77b5bceef302ac329f708e713200319fd82a0f5b63a0bed141375",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/final-fill-cancel-2.json",
+      "beforeSha256": "dc142897250a597aed57a5188caad919659fd0603e5848916e67d37c9597d988",
+      "afterSha256": "85cf85d83aa5209d32bdafa6d302003e3781b5cdff996dacd9b41f716aedb536",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/final-fill-cancel-3.json",
+      "beforeSha256": "2b1fe6d49c7bf1d1b7bd0426a0ee79b37cda0ccb34214c1c7c93289c1916f1fd",
+      "afterSha256": "7325a5da52ce48ee11f8edd521d5956be6c20b72fec5daa4ff1ab9951f824cd4",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/manifest.json",
+      "beforeSha256": "616288fdc1d3c68b2134fd543d881c799373ebfb6f7492c5c03d8a276c777754",
+      "afterSha256": "88b9afe62274c6b29f3250c543a28794f2ad40625403395de13df7a4bedb77fd",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "beforeSha256": "fa45aa881f877056973d13d9ccb642352f448f277868e9c52c3c3474f6e83404",
+      "afterSha256": "14a32fbaf050c92c4af4cc0b9d14977d793bb68886c41b0844364ac1451a96d7",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/partial-cancel-1.json",
+      "beforeSha256": "072683c42d7b21fd54775b7be1d2652b489a8afc5e3f02ed560b343b2a54696a",
+      "afterSha256": "fb1aa7521281d4cae2d512a05895cb502f6821b4310edf3755532ff9ff370a43",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/partial-cancel-2.json",
+      "beforeSha256": "7a493474267879762e8a56dfc83605192263d3b6f201e420fda8ca7a9ae5d43f",
+      "afterSha256": "b0f9eeb2754b0329781229f3bd0fa86d1698e0828dc01d9048631a5857ad41f8",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/partial-cancel-3.json",
+      "beforeSha256": "34da71302a06c8d7e0c5deb3d12babfc2f9b2ac214e6f2c3478f729460b42269",
+      "afterSha256": "8f6c720daa2269626f41942006ecfa8ed650a84d217cf73eafd9622f478ac5ac",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/restart-final-fill-1.json",
+      "beforeSha256": "74cb9e9368a6a8cf8aa6b894b6f5ce2eea042bbe163a89f2ab0b2cdf37c9fc10",
+      "afterSha256": "b127c5fdb961a0fa9d71b47de2a7a27452009d71f10a9a8594e8ad6d871c6945",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/restart-final-fill-2.json",
+      "beforeSha256": "f48b3861bad1e891f1d8a7e1612625a435b6b4269342d399a88d7e294eebbfe4",
+      "afterSha256": "c4666759b30187fcabc0bdb24cca0d14b38527fc7e842a188953828f61c62b26",
+      "disposition": "CANONICAL_EXPORT"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/restart-final-fill-3.json",
+      "beforeSha256": "3af798d6af5298fdee65a3b57c1ed05798a9b703974123c7ad04b1c0366784a3",
+      "afterSha256": "0153714e61c08a425559ce1fa3d92448ee403bf43004ba0a9f6dfc6f328c698e",
+      "disposition": "CANONICAL_EXPORT"
+    }
+  ],
+  "rawArtifacts": [
+    "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/prepare-full.log",
+    "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/run-logs.zip",
+    "docs/audit/evidence/l4-b2-precise-delivery/pre-format-originals.zip",
+    "docs/audit/evidence/l4-b2-qualification-resume-attempt01/combined-review-raw.zip",
+    "docs/audit/evidence/l4-b2-qualification-resume-attempt01/qualification-logs.zip"
+  ],
+  "metadataIdentityEdits": [
+    {
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_B2_CANCEL_FILL_RACE_AND_PER_FILL_ACCOUNTING.md",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:001"
+    },
+    {
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_B2_CANCEL_FILL_RACE_AND_PER_FILL_ACCOUNTING.md",
+      "kind": "CONTAINER",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:CONTAINER:001"
+    },
+    {
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_B2_CANCEL_FILL_RACE_AND_PER_FILL_ACCOUNTING.md",
+      "kind": "KNOWN_TABLE_REFERENCE",
+      "reference": "SYNTH-L4:B2:R02:ORDER:001"
+    },
+    {
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_B2_CANCEL_FILL_RACE_AND_PER_FILL_ACCOUNTING.md",
+      "kind": "KNOWN_TABLE_REFERENCE",
+      "reference": "SYNTH-L4:B2:R02:CLIENT:001"
+    },
+    {
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_B2_CANCEL_FILL_RACE_AND_PER_FILL_ACCOUNTING.md",
+      "kind": "KNOWN_TABLE_REFERENCE",
+      "reference": "SYNTH-L4:B2:R02:TRADE:001"
+    },
+    {
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_B2_CANCEL_FILL_RACE_AND_PER_FILL_ACCOUNTING.md",
+      "kind": "KNOWN_TABLE_REFERENCE",
+      "reference": "SYNTH-L4:B2:R02:TRADE:002"
+    },
+    {
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_B2_CANCEL_FILL_TERMINAL_CONVERGENCE_REMEDIATION_ATTEMPT01.md",
+      "kind": "CONTAINER",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:CONTAINER:002"
+    },
+    {
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_B2_CANCEL_FILL_TERMINAL_CONVERGENCE_REMEDIATION_ATTEMPT01.md",
+      "kind": "DOCKERID",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:DOCKERID:001"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/targeted-summary.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:002"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/targeted-summary.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:003"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/targeted-summary.txt",
+      "kind": "CONTAINER",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:CONTAINER:003"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/targeted-summary.txt",
+      "kind": "CONTAINER",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:CONTAINER:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/environment.json",
+      "kind": "DOCKERID",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:DOCKERID:002"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:004"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "RUN",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:RUN:005"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "CONTAINER",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:CONTAINER:002"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "CONTAINER",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:CONTAINER:002"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "kind": "DOCKERID",
+      "reference": "SYNTH-L4:B2-EXPORT:R01:DOCKERID:001"
+    }
+  ]
+}

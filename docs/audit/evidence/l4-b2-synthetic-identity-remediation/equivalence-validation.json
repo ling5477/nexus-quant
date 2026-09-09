@@ -1,0 +1,391 @@
+{
+  "productionFingerprint": "7982a8d51e21332e7474be15b24e468249ba0e19a647d651bdd8a5020305910a",
+  "productionFilesByteIdentical": 7,
+  "uniqueTypedIdentities": 1517,
+  "bijectionCollisions": 0,
+  "TECHNICAL_CANDIDATE_DELTA": 0,
+  "EVIDENCE_SEMANTIC_DELTA": 0,
+  "EVIDENCE_IDENTITY_REPRESENTATION": "CANONICALIZED",
+  "files": [
+    {
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_B2_CANCEL_FILL_RACE_AND_PER_FILL_ACCOUNTING.md",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_B2_CANCEL_FILL_TERMINAL_CONVERGENCE_REMEDIATION_ATTEMPT01.md",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_B2_LIVE_TRADE_ENVIRONMENT_CONSISTENCY_REMEDIATION_ATTEMPT01.md",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L4_B2_QUALIFICATION_RESUME.md",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/live-full.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/live-partial.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/live-restart.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/prepare-full.log",
+      "originalBytesRetained": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/run-logs.zip",
+      "originalBytesRetained": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/sim-final-fill-cancel-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/sim-final-fill-cancel-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/sim-final-fill-cancel-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/sim-partial-cancel-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/sim-partial-cancel-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/sim-partial-cancel-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/sim-restart-final-fill-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/sim-restart-final-fill-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/sim-restart-final-fill-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-live-env-remediation-attempt01/targeted-summary.txt",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-precise-delivery/README.md",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-precise-delivery/pre-format-originals.zip",
+      "originalBytesRetained": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-FILL_DURING_CANCEL-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-FILL_DURING_CANCEL-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-FILL_DURING_CANCEL-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-LATE_FULL-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-LATE_FULL-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-LATE_FULL-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-MULTI_PARTIAL-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-MULTI_PARTIAL-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-MULTI_PARTIAL-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-PARTIAL_BEFORE_CANCEL-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-PARTIAL_BEFORE_CANCEL-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-PARTIAL_BEFORE_CANCEL-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-RESTART_FULL-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-RESTART_FULL-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-RESTART_FULL-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-STALE_CANCEL-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-STALE_CANCEL-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-STALE_CANCEL-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-STALE_PLACE-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-STALE_PLACE-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-STALE_PLACE-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-ZERO_CANCEL-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-ZERO_CANCEL-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/LIVE-ZERO_CANCEL-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-FILL_DURING_CANCEL-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-FILL_DURING_CANCEL-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-FILL_DURING_CANCEL-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-LATE_FULL-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-LATE_FULL-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-LATE_FULL-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-MULTI_PARTIAL-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-MULTI_PARTIAL-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-MULTI_PARTIAL-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-PARTIAL_BEFORE_CANCEL-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-PARTIAL_BEFORE_CANCEL-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-PARTIAL_BEFORE_CANCEL-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-RESTART_FULL-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-RESTART_FULL-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-RESTART_FULL-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-STALE_CANCEL-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-STALE_CANCEL-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-STALE_CANCEL-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-STALE_PLACE-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-STALE_PLACE-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-STALE_PLACE-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-ZERO_CANCEL-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-ZERO_CANCEL-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/SIM-ZERO_CANCEL-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/combined-review-raw.zip",
+      "originalBytesRetained": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/environment.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/matrix-summary.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/qualification-logs.zip",
+      "originalBytesRetained": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-qualification-resume-attempt01/runs.md",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt01/final-fill-cancel-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt01/final-fill-cancel-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt01/final-fill-cancel-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt01/manifest.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt01/partial-cancel-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt01/partial-cancel-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt01/partial-cancel-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt01/restart-final-fill-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt01/restart-final-fill-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt01/restart-final-fill-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/final-fill-cancel-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/final-fill-cancel-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/final-fill-cancel-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/manifest.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/observations.txt",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/partial-cancel-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/partial-cancel-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/partial-cancel-3.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/restart-final-fill-1.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/restart-final-fill-2.json",
+      "fullTextInverseEquality": true
+    },
+    {
+      "path": "docs/audit/evidence/l4-b2-terminal-remediation-attempt02/restart-final-fill-3.json",
+      "fullTextInverseEquality": true
+    }
+  ]
+}

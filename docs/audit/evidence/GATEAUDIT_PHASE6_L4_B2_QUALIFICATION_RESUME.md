@@ -22,7 +22,7 @@ Production candidate fingerprint：`7982a8d51e21332e7474be15b24e468249ba0e19a647
 2. [terminal convergence remediation](GATEAUDIT_PHASE6_L4_B2_CANCEL_FILL_TERMINAL_CONVERGENCE_REMEDIATION_ATTEMPT01.md)。
 3. [此前失败 Independent Review 原文](l4-b2-live-env-remediation-attempt01/previous-independent-review.txt)。
 4. [LIVE Trade environment remediation](GATEAUDIT_PHASE6_L4_B2_LIVE_TRADE_ENVIRONMENT_CONSISTENCY_REMEDIATION_ATTEMPT01.md)。
-5. [上一轮组合候选 Independent Review 原文副本](l4-b2-qualification-resume-attempt01/combined-independent-review.md)；[原始审查日志、Full Maven与指纹归档](l4-b2-qualification-resume-attempt01/combined-review-raw.zip)。该审查是上一轮独立执行的既成事实，本轮 harness 工作不是新增第三轮 review。
+5. [上一轮组合候选 Independent Review 原文副本](l4-b2-qualification-resume-attempt01/combined-independent-review.md)；[原始审查日志、Full Maven与指纹归档](l4-b2-synthetic-identity-remediation/README.md)。该审查是上一轮独立执行的既成事实，本轮 harness 工作不是新增第三轮 review。
 
 STATUS/ROADMAP 仍保留 pre-B0 旧机器状态；本轮依据用户明确隔离 qualification 授权运行，不改 current authority，不将本轮结论扩展为真实 LIVE/发布许可。
 
@@ -41,7 +41,7 @@ Matrix executed：8种场景 × SIM/LIVE × 3次 = **48/48 PASS**。每次使用
 | RESTART_FULL | fill4与CANCELLED durable → kill旧NQ并确认退出 → venue fills3+3及FILLED → 新NQ ordinary recovery；remaining0，PLACE仍1 | 3/3 | 3/3 |
 | MULTI_PARTIAL | fills2+3+1 / fees0+0.01+0.02 → durable6 → cancel剩余4；CANCELLED，三笔独立Trade | 3/3 | 3/3 |
 
-完整48行 PID、DB、状态/version、executed/remaining、Trade/Ledger观察值见 [runs](l4-b2-qualification-resume-attempt01/runs.md) 和 [machine summary](l4-b2-qualification-resume-attempt01/matrix-summary.json)。每行同目录的 `环境-场景-重复.json` 保存全部订单、fills、Trades、Ledger、fees、投影、replay与venue事件。每个场景的NQ/Venue原始日志见 [qualification logs](l4-b2-qualification-resume-attempt01/qualification-logs.zip)。
+完整48行 PID、DB、状态/version、executed/remaining、Trade/Ledger观察值见 [runs](l4-b2-qualification-resume-attempt01/runs.md) 和 [machine summary](l4-b2-qualification-resume-attempt01/matrix-summary.json)。每行同目录的 `环境-场景-重复.json` 保存全部订单、fills、Trades、Ledger、fees、投影、replay与venue事件。每个场景的NQ/Venue原始日志见 [qualification logs](l4-b2-synthetic-identity-remediation/README.md)。
 
 Real-process composition：Java21.0.9 / Spring Boot3.5.10，真实 PreTradeRiskService、OrderCommandService、Spring write proxy、AdapterBackedTradingVenueGateway、OkxExchangeAdapter、HTTP/JSON、JDBC与事务。PG16.15 / V48；canonical锁定镜像`postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94`，`--pull=never`，仅loopback。
 

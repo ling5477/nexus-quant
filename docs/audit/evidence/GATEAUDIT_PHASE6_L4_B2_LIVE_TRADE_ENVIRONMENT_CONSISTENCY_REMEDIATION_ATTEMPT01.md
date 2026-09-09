@@ -81,7 +81,7 @@ C1/C2相关PG=28次PASS，包括stale PLACE/CANCEL、ABA、pre-cancel、OCC/vers
 | 实现阶段Full Maven（仅一次） | 1836 tests，0 failures/errors，84条件性skips，exit0，1:34；实际未skip=1752 |
 | production环境增量回滚patch | `git apply --reverse --check` PASS；未应用 |
 
-详细[定向摘要](l4-b2-live-env-remediation-attempt01/targeted-summary.txt)、[全量摘要](l4-b2-live-env-remediation-attempt01/full-maven-summary.txt)、[原始日志归档](l4-b2-live-env-remediation-attempt01/run-logs.zip)。归档保留定向/全量原始日志和各Synthetic Venue/NQ/restart日志。Full Maven原始输出存在平台编码差异，摘要仅从原始字节提取ASCII测试统计行，不改原始日志；raw SHA见manifest。
+详细[定向摘要](l4-b2-live-env-remediation-attempt01/targeted-summary.txt)、[全量摘要](l4-b2-live-env-remediation-attempt01/full-maven-summary.txt)、[原始日志归档](l4-b2-synthetic-identity-remediation/README.md)。归档保留定向/全量原始日志和各Synthetic Venue/NQ/restart日志。Full Maven原始输出存在平台编码差异，摘要仅从原始字节提取ASCII测试统计行，不改原始日志；raw SHA见manifest。
 
 Full Maven精确命令 `mvn -f backend/pom.xml test`；独立子进程通过环境白名单清除非canonical覆盖。SPRING_PROFILES_ACTIVE=UNSET、NQ overrides=[]、Java options=UNSET；测试通过自身声明选择profile。仅设置本轮loopback datasource及非空公开fixture密码；未打印或读取真实secret。配置记录见 [full-environment.json](l4-b2-live-env-remediation-attempt01/full-environment.json)。
 

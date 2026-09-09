@@ -11,7 +11,7 @@
 [INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.243 s -- in com.guidinglight.nexusquant.app.config.ExchangeAdapterConfigurationReadinessTest
 [INFO] Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.129 s -- in com.guidinglight.nexusquant.app.config.RetiredRuntimeProfileGuardConfigurationTest
 [INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in com.guidinglight.nexusquant.app.smoke.B0FixtureSafetyTest
-B2_CONTROLLER pid=72304 evidence=E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\6da74e94-3cfe-4587-b2d9-2e9ebd5002d1
+B2_CONTROLLER pid=72304 evidence=E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-harness\SYNTH-L4:B2-EXPORT:R01:RUN:002
 B2_SCENARIO_PASS PARTIAL_FILL_CANCEL
 B2_SCENARIO_PASS FINAL_FILL_BEFORE_CANCEL_EFFECT
 B2_SCENARIO_PASS FINAL_FILL_BEFORE_CANCEL_EFFECT
@@ -21,12 +21,12 @@ B2_SCENARIO_PASS FINAL_FILL_BEFORE_CANCEL_EFFECT
 B2_SCENARIO_PASS PARTIAL_FILL_CANCEL
 B2_SCENARIO_PASS FINAL_FILL_BEFORE_CANCEL_EFFECT
 B2_SCENARIO_PASS FINAL_FILL_BEFORE_CANCEL_EFFECT
-B0_CLEANUP container=nq-b0-712ab890-4190-4169-93ca-3c6b7a1c46d8 remaining=0
-B2_LIVE_CONTROLLER pid=72304 evidence=E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-live-environment\d878313a-a785-4731-968f-0321320fb156
+B0_CLEANUP container=SYNTH-L4:B2-EXPORT:R01:CONTAINER:003 remaining=0
+B2_LIVE_CONTROLLER pid=72304 evidence=E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b2-live-environment\SYNTH-L4:B2-EXPORT:R01:RUN:003
 B2_SCENARIO_PASS PARTIAL_FILL_CANCEL
 B2_SCENARIO_PASS FINAL_FILL_BEFORE_CANCEL_EFFECT
 B2_SCENARIO_PASS FINAL_FILL_BEFORE_CANCEL_EFFECT
-B0_CLEANUP container=nq-b0-429c40a2-427d-4844-9deb-12c0e401b8e8 remaining=0
+B0_CLEANUP container=SYNTH-L4:B2-EXPORT:R01:CONTAINER:004 remaining=0
 [INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 88.49 s -- in com.guidinglight.nexusquant.app.smoke.B2RealProcessProofTest
 [INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.658 s -- in com.guidinglight.nexusquant.app.smoke.B2TerminalCorrectionPostgresIntegrationTest
 [INFO] Tests run: 22, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.297 s -- in com.guidinglight.nexusquant.app.smoke.L4PlanBlockerPostgresIntegrationTest

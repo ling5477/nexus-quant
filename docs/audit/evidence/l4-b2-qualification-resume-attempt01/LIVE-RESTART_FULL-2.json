@@ -3,7 +3,7 @@
   "repeat" : 2,
   "controllerPid" : 52760,
   "orderEnvironment" : "LIVE",
-  "database" : "nq_f002_b0_58a22419f1a04907ac533146a02e0368",
+  "database" : "SYNTH-L4:B2:R28:DATABASE:001",
   "venuePid" : 11272,
   "venueEndpoint" : "http://127.0.0.1:2753",
   "nqPid" : 70756,
@@ -20,19 +20,19 @@
       "status" : "ACCEPTED",
       "symbol" : "BTC-USDT",
       "version" : 3,
-      "order_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
-      "trace_id" : "b0-trace",
-      "dedup_key" : "1:b0a22419f1a04907ac533146a02e0368",
+      "order_id" : "SYNTH-L4:B2:R28:ORDER:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
+      "dedup_key" : "1:SYNTH-L4:B2:R28:CLIENT:001",
       "trade_env" : "LIVE",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:44.902329+08:00",
-      "request_id" : "b0-trace",
+      "request_id" : "SYNTH-L4:B2:R28:REQUEST:001",
       "updated_at" : "2026-09-09T12:54:45.042079+08:00",
       "exchange_code" : "OKX",
-      "client_order_id" : "b0a22419f1a04907ac533146a02e0368",
+      "client_order_id" : "SYNTH-L4:B2:R28:CLIENT:001",
       "strategy_run_id" : null,
-      "exchange_order_id" : "b2-venue-1",
-      "external_order_id" : "b2-venue-1"
+      "exchange_order_id" : "SYNTH-L4:B2:R28:VENUE:001",
+      "external_order_id" : "SYNTH-L4:B2:R28:VENUE:001"
     } ],
     "trades" : [ ],
     "ledger_entries" : [ ],
@@ -44,15 +44,15 @@
       "reason" : "RISK_RULES_PASSED",
       "rule_id" : "RISK_RULES_PASSED",
       "decision" : "ALLOW",
-      "scope_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
+      "scope_id" : "SYNTH-L4:B2:R28:ORDER:001",
       "severity" : "LOW",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:44.930051+08:00",
-      "risk_event_id" : "rsk-baf5c932-f408-4ebf-85d2-b507d4630293"
+      "risk_event_id" : "SYNTH-L4:B2:R28:RISK:001"
     } ],
     "execution_intents" : [ ],
     "execution_receipts" : [ ],
-    "database" : "nq_f002_b0_58a22419f1a04907ac533146a02e0368",
+    "database" : "SYNTH-L4:B2:R28:DATABASE:001",
     "correction_audit" : [ ],
     "correction_events" : [ ]
   },
@@ -67,19 +67,19 @@
       "status" : "PARTIALLY_FILLED",
       "symbol" : "BTC-USDT",
       "version" : 4,
-      "order_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
-      "trace_id" : "b0-trace",
-      "dedup_key" : "1:b0a22419f1a04907ac533146a02e0368",
+      "order_id" : "SYNTH-L4:B2:R28:ORDER:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
+      "dedup_key" : "1:SYNTH-L4:B2:R28:CLIENT:001",
       "trade_env" : "LIVE",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:44.902329+08:00",
-      "request_id" : "b0-trace",
+      "request_id" : "SYNTH-L4:B2:R28:REQUEST:001",
       "updated_at" : "2026-09-09T12:54:45.149033+08:00",
       "exchange_code" : "OKX",
-      "client_order_id" : "b0a22419f1a04907ac533146a02e0368",
+      "client_order_id" : "SYNTH-L4:B2:R28:CLIENT:001",
       "strategy_run_id" : null,
-      "exchange_order_id" : "b2-venue-1",
-      "external_order_id" : "b2-venue-1"
+      "exchange_order_id" : "SYNTH-L4:B2:R28:VENUE:001",
+      "external_order_id" : "SYNTH-L4:B2:R28:VENUE:001"
     } ],
     "trades" : [ {
       "ts" : "2026-09-09T12:54:45.128+08:00",
@@ -88,64 +88,64 @@
       "price" : 100.0,
       "symbol" : "BTC-USDT",
       "exchange" : "OKX",
-      "order_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
-      "trace_id" : "b0-trace",
-      "trade_id" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb",
+      "order_id" : "SYNTH-L4:B2:R28:ORDER:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
+      "trade_id" : "SYNTH-L4:B2:R28:TRADE:001",
       "trade_env" : "LIVE",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.151957+08:00",
       "fee_currency" : "USDT",
       "exchange_code" : "OKX",
       "strategy_run_id" : null,
-      "exchange_order_id" : "b2-venue-1",
-      "exchange_trade_id" : "b2-fill-1",
-      "external_order_id" : "b2-venue-1"
+      "exchange_order_id" : "SYNTH-L4:B2:R28:VENUE:001",
+      "exchange_trade_id" : "SYNTH-L4:B2:R28:FILL:001",
+      "external_order_id" : "SYNTH-L4:B2:R28:VENUE:001"
     } ],
     "ledger_entries" : [ {
       "ts" : "2026-09-09T12:54:45.128+08:00",
       "delta" : 400.0,
-      "ref_id" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:001",
       "currency" : "USDT",
-      "entry_id" : "le-4bb8d0d9-6b49-447a-a737-cb9502a787ff",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:001",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "CREDIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
       "balance_after" : 0.0,
-      "idempotency_key" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb:LEDGER:2"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:001:LEDGER:2"
     }, {
       "ts" : "2026-09-09T12:54:45.128+08:00",
       "delta" : -400.0,
-      "ref_id" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:001",
       "currency" : "USDT",
-      "entry_id" : "le-9a77099b-e226-4e65-943f-8591ef3fdd8e",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:002",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "DEBIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
       "balance_after" : -400.0,
-      "idempotency_key" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb:LEDGER:1"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:001:LEDGER:1"
     } ],
     "ledger_events" : [ {
-      "entry_id" : "le-4bb8d0d9-6b49-447a-a737-cb9502a787ff",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : 400.0,
-        "entry_id" : "le-4bb8d0d9-6b49-447a-a737-cb9502a787ff"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:001"
       },
       "ledger_event_id" : 2
     }, {
-      "entry_id" : "le-9a77099b-e226-4e65-943f-8591ef3fdd8e",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:002",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : -400.0,
-        "entry_id" : "le-9a77099b-e226-4e65-943f-8591ef3fdd8e"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:002"
       },
       "ledger_event_id" : 1
     } ],
@@ -153,7 +153,7 @@
       "id" : 1,
       "qty" : 4.0,
       "symbol" : "BTC-USDT",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "avg_price" : 100.0,
       "account_id" : 1,
       "frozen_qty" : 0.0,
@@ -165,7 +165,7 @@
       "frozen" : 0.0,
       "balance" : 0.0,
       "currency" : "USDT",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 0.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
@@ -175,7 +175,7 @@
       "frozen" : 0.0,
       "balance" : 4.0,
       "currency" : "BTC",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 4.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
@@ -186,15 +186,15 @@
       "reason" : "RISK_RULES_PASSED",
       "rule_id" : "RISK_RULES_PASSED",
       "decision" : "ALLOW",
-      "scope_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
+      "scope_id" : "SYNTH-L4:B2:R28:ORDER:001",
       "severity" : "LOW",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:44.930051+08:00",
-      "risk_event_id" : "rsk-baf5c932-f408-4ebf-85d2-b507d4630293"
+      "risk_event_id" : "SYNTH-L4:B2:R28:RISK:001"
     } ],
     "execution_intents" : [ ],
     "execution_receipts" : [ ],
-    "database" : "nq_f002_b0_58a22419f1a04907ac533146a02e0368",
+    "database" : "SYNTH-L4:B2:R28:DATABASE:001",
     "correction_audit" : [ ],
     "correction_events" : [ ]
   },
@@ -209,19 +209,19 @@
       "status" : "CANCELLED",
       "symbol" : "BTC-USDT",
       "version" : 6,
-      "order_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
-      "trace_id" : "b0-trace",
-      "dedup_key" : "1:b0a22419f1a04907ac533146a02e0368",
+      "order_id" : "SYNTH-L4:B2:R28:ORDER:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
+      "dedup_key" : "1:SYNTH-L4:B2:R28:CLIENT:001",
       "trade_env" : "LIVE",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:44.902329+08:00",
-      "request_id" : "b0-trace",
+      "request_id" : "SYNTH-L4:B2:R28:REQUEST:001",
       "updated_at" : "2026-09-09T12:54:45.260353+08:00",
       "exchange_code" : "OKX",
-      "client_order_id" : "b0a22419f1a04907ac533146a02e0368",
+      "client_order_id" : "SYNTH-L4:B2:R28:CLIENT:001",
       "strategy_run_id" : null,
-      "exchange_order_id" : "b2-venue-1",
-      "external_order_id" : "b2-venue-1"
+      "exchange_order_id" : "SYNTH-L4:B2:R28:VENUE:001",
+      "external_order_id" : "SYNTH-L4:B2:R28:VENUE:001"
     } ],
     "trades" : [ {
       "ts" : "2026-09-09T12:54:45.128+08:00",
@@ -230,64 +230,64 @@
       "price" : 100.0,
       "symbol" : "BTC-USDT",
       "exchange" : "OKX",
-      "order_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
-      "trace_id" : "b0-trace",
-      "trade_id" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb",
+      "order_id" : "SYNTH-L4:B2:R28:ORDER:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
+      "trade_id" : "SYNTH-L4:B2:R28:TRADE:001",
       "trade_env" : "LIVE",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.151957+08:00",
       "fee_currency" : "USDT",
       "exchange_code" : "OKX",
       "strategy_run_id" : null,
-      "exchange_order_id" : "b2-venue-1",
-      "exchange_trade_id" : "b2-fill-1",
-      "external_order_id" : "b2-venue-1"
+      "exchange_order_id" : "SYNTH-L4:B2:R28:VENUE:001",
+      "exchange_trade_id" : "SYNTH-L4:B2:R28:FILL:001",
+      "external_order_id" : "SYNTH-L4:B2:R28:VENUE:001"
     } ],
     "ledger_entries" : [ {
       "ts" : "2026-09-09T12:54:45.128+08:00",
       "delta" : 400.0,
-      "ref_id" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:001",
       "currency" : "USDT",
-      "entry_id" : "le-4bb8d0d9-6b49-447a-a737-cb9502a787ff",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:001",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "CREDIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
       "balance_after" : 0.0,
-      "idempotency_key" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb:LEDGER:2"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:001:LEDGER:2"
     }, {
       "ts" : "2026-09-09T12:54:45.128+08:00",
       "delta" : -400.0,
-      "ref_id" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:001",
       "currency" : "USDT",
-      "entry_id" : "le-9a77099b-e226-4e65-943f-8591ef3fdd8e",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:002",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "DEBIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
       "balance_after" : -400.0,
-      "idempotency_key" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb:LEDGER:1"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:001:LEDGER:1"
     } ],
     "ledger_events" : [ {
-      "entry_id" : "le-4bb8d0d9-6b49-447a-a737-cb9502a787ff",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : 400.0,
-        "entry_id" : "le-4bb8d0d9-6b49-447a-a737-cb9502a787ff"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:001"
       },
       "ledger_event_id" : 2
     }, {
-      "entry_id" : "le-9a77099b-e226-4e65-943f-8591ef3fdd8e",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:002",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : -400.0,
-        "entry_id" : "le-9a77099b-e226-4e65-943f-8591ef3fdd8e"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:002"
       },
       "ledger_event_id" : 1
     } ],
@@ -295,7 +295,7 @@
       "id" : 1,
       "qty" : 4.0,
       "symbol" : "BTC-USDT",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "avg_price" : 100.0,
       "account_id" : 1,
       "frozen_qty" : 0.0,
@@ -307,7 +307,7 @@
       "frozen" : 0.0,
       "balance" : 0.0,
       "currency" : "USDT",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 0.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
@@ -317,7 +317,7 @@
       "frozen" : 0.0,
       "balance" : 4.0,
       "currency" : "BTC",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 4.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
@@ -328,15 +328,15 @@
       "reason" : "RISK_RULES_PASSED",
       "rule_id" : "RISK_RULES_PASSED",
       "decision" : "ALLOW",
-      "scope_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
+      "scope_id" : "SYNTH-L4:B2:R28:ORDER:001",
       "severity" : "LOW",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:44.930051+08:00",
-      "risk_event_id" : "rsk-baf5c932-f408-4ebf-85d2-b507d4630293"
+      "risk_event_id" : "SYNTH-L4:B2:R28:RISK:001"
     } ],
     "execution_intents" : [ ],
     "execution_receipts" : [ ],
-    "database" : "nq_f002_b0_58a22419f1a04907ac533146a02e0368",
+    "database" : "SYNTH-L4:B2:R28:DATABASE:001",
     "correction_audit" : [ ],
     "correction_events" : [ ]
   },
@@ -350,8 +350,8 @@
     "cancels" : 1,
     "pendingCancel" : false,
     "order" : {
-      "clOrdId" : "b0a22419f1a04907ac533146a02e0368",
-      "ordId" : "b2-venue-1",
+      "clOrdId" : "SYNTH-L4:B2:R28:CLIENT:001",
+      "ordId" : "SYNTH-L4:B2:R28:VENUE:001",
       "instId" : "BTC-USDT",
       "state" : "filled",
       "px" : "100",
@@ -361,8 +361,8 @@
       "uTime" : "1788929685036"
     },
     "fills" : [ {
-      "tradeId" : "b2-fill-1",
-      "ordId" : "b2-venue-1",
+      "tradeId" : "SYNTH-L4:B2:R28:FILL:001",
+      "ordId" : "SYNTH-L4:B2:R28:VENUE:001",
       "instId" : "BTC-USDT",
       "side" : "buy",
       "fillPx" : "100",
@@ -371,8 +371,8 @@
       "feeCcy" : "USDT",
       "ts" : "1788929685128"
     }, {
-      "tradeId" : "b2-fill-2",
-      "ordId" : "b2-venue-1",
+      "tradeId" : "SYNTH-L4:B2:R28:FILL:002",
+      "ordId" : "SYNTH-L4:B2:R28:VENUE:001",
       "instId" : "BTC-USDT",
       "side" : "buy",
       "fillPx" : "100",
@@ -381,8 +381,8 @@
       "feeCcy" : "USDT",
       "ts" : "1788929685357"
     }, {
-      "tradeId" : "b2-fill-3",
-      "ordId" : "b2-venue-1",
+      "tradeId" : "SYNTH-L4:B2:R28:FILL:003",
+      "ordId" : "SYNTH-L4:B2:R28:VENUE:001",
       "instId" : "BTC-USDT",
       "side" : "buy",
       "fillPx" : "100",
@@ -407,7 +407,7 @@
       "sequence" : 5,
       "type" : "FILL",
       "nanoTime" : 829157890435600,
-      "tradeId" : "b2-fill-1",
+      "tradeId" : "SYNTH-L4:B2:R28:FILL:001",
       "qty" : "4",
       "fee" : "0"
     }, {
@@ -437,14 +437,14 @@
       "sequence" : 11,
       "type" : "FILL",
       "nanoTime" : 829158119984200,
-      "tradeId" : "b2-fill-2",
+      "tradeId" : "SYNTH-L4:B2:R28:FILL:002",
       "qty" : "3",
       "fee" : "0.01"
     }, {
       "sequence" : 12,
       "type" : "FILL",
       "nanoTime" : 829158121578400,
-      "tradeId" : "b2-fill-3",
+      "tradeId" : "SYNTH-L4:B2:R28:FILL:003",
       "qty" : "3",
       "fee" : "0.02"
     }, {
@@ -471,19 +471,19 @@
       "status" : "FILLED",
       "symbol" : "BTC-USDT",
       "version" : 7,
-      "order_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
-      "trace_id" : "b0-trace",
-      "dedup_key" : "1:b0a22419f1a04907ac533146a02e0368",
+      "order_id" : "SYNTH-L4:B2:R28:ORDER:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
+      "dedup_key" : "1:SYNTH-L4:B2:R28:CLIENT:001",
       "trade_env" : "LIVE",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:44.902329+08:00",
-      "request_id" : "b0-trace",
+      "request_id" : "SYNTH-L4:B2:R28:REQUEST:001",
       "updated_at" : "2026-09-09T12:54:48.883672+08:00",
       "exchange_code" : "OKX",
-      "client_order_id" : "b0a22419f1a04907ac533146a02e0368",
+      "client_order_id" : "SYNTH-L4:B2:R28:CLIENT:001",
       "strategy_run_id" : null,
-      "exchange_order_id" : "b2-venue-1",
-      "external_order_id" : "b2-venue-1"
+      "exchange_order_id" : "SYNTH-L4:B2:R28:VENUE:001",
+      "external_order_id" : "SYNTH-L4:B2:R28:VENUE:001"
     } ],
     "trades" : [ {
       "ts" : "2026-09-09T12:54:45.128+08:00",
@@ -492,18 +492,18 @@
       "price" : 100.0,
       "symbol" : "BTC-USDT",
       "exchange" : "OKX",
-      "order_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
-      "trace_id" : "b0-trace",
-      "trade_id" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb",
+      "order_id" : "SYNTH-L4:B2:R28:ORDER:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
+      "trade_id" : "SYNTH-L4:B2:R28:TRADE:001",
       "trade_env" : "LIVE",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.151957+08:00",
       "fee_currency" : "USDT",
       "exchange_code" : "OKX",
       "strategy_run_id" : null,
-      "exchange_order_id" : "b2-venue-1",
-      "exchange_trade_id" : "b2-fill-1",
-      "external_order_id" : "b2-venue-1"
+      "exchange_order_id" : "SYNTH-L4:B2:R28:VENUE:001",
+      "exchange_trade_id" : "SYNTH-L4:B2:R28:FILL:001",
+      "external_order_id" : "SYNTH-L4:B2:R28:VENUE:001"
     }, {
       "ts" : "2026-09-09T12:54:45.357+08:00",
       "fee" : 0.01,
@@ -511,18 +511,18 @@
       "price" : 100.0,
       "symbol" : "BTC-USDT",
       "exchange" : "OKX",
-      "order_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
-      "trace_id" : "b0-trace",
-      "trade_id" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc",
+      "order_id" : "SYNTH-L4:B2:R28:ORDER:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
+      "trade_id" : "SYNTH-L4:B2:R28:TRADE:002",
       "trade_env" : "LIVE",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.829123+08:00",
       "fee_currency" : "USDT",
       "exchange_code" : "OKX",
       "strategy_run_id" : null,
-      "exchange_order_id" : "b2-venue-1",
-      "exchange_trade_id" : "b2-fill-2",
-      "external_order_id" : "b2-venue-1"
+      "exchange_order_id" : "SYNTH-L4:B2:R28:VENUE:001",
+      "exchange_trade_id" : "SYNTH-L4:B2:R28:FILL:002",
+      "external_order_id" : "SYNTH-L4:B2:R28:VENUE:001"
     }, {
       "ts" : "2026-09-09T12:54:45.359+08:00",
       "fee" : 0.02,
@@ -530,248 +530,248 @@
       "price" : 100.0,
       "symbol" : "BTC-USDT",
       "exchange" : "OKX",
-      "order_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
-      "trace_id" : "b0-trace",
-      "trade_id" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb",
+      "order_id" : "SYNTH-L4:B2:R28:ORDER:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
+      "trade_id" : "SYNTH-L4:B2:R28:TRADE:003",
       "trade_env" : "LIVE",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.866944+08:00",
       "fee_currency" : "USDT",
       "exchange_code" : "OKX",
       "strategy_run_id" : null,
-      "exchange_order_id" : "b2-venue-1",
-      "exchange_trade_id" : "b2-fill-3",
-      "external_order_id" : "b2-venue-1"
+      "exchange_order_id" : "SYNTH-L4:B2:R28:VENUE:001",
+      "exchange_trade_id" : "SYNTH-L4:B2:R28:FILL:003",
+      "external_order_id" : "SYNTH-L4:B2:R28:VENUE:001"
     } ],
     "ledger_entries" : [ {
       "ts" : "2026-09-09T12:54:45.128+08:00",
       "delta" : 400.0,
-      "ref_id" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:001",
       "currency" : "USDT",
-      "entry_id" : "le-4bb8d0d9-6b49-447a-a737-cb9502a787ff",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:001",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "CREDIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
       "balance_after" : 0.0,
-      "idempotency_key" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb:LEDGER:2"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:001:LEDGER:2"
     }, {
       "ts" : "2026-09-09T12:54:45.128+08:00",
       "delta" : -400.0,
-      "ref_id" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:001",
       "currency" : "USDT",
-      "entry_id" : "le-9a77099b-e226-4e65-943f-8591ef3fdd8e",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:002",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "DEBIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
       "balance_after" : -400.0,
-      "idempotency_key" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb:LEDGER:1"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:001:LEDGER:1"
     }, {
       "ts" : "2026-09-09T12:54:45.357+08:00",
       "delta" : 0.01,
-      "ref_id" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:002",
       "currency" : "USDT",
-      "entry_id" : "le-23f15574-8586-41eb-8d61-b08655703279",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:003",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "CREDIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "balance_after" : 0.0,
-      "idempotency_key" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc:LEDGER:FEE_2"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:002:LEDGER:FEE_2"
     }, {
       "ts" : "2026-09-09T12:54:45.357+08:00",
       "delta" : -0.01,
-      "ref_id" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:002",
       "currency" : "USDT",
-      "entry_id" : "le-b28f12e5-06f6-4733-8754-c3b2214b8022",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:004",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "DEBIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "balance_after" : -0.01,
-      "idempotency_key" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc:LEDGER:FEE_1"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:002:LEDGER:FEE_1"
     }, {
       "ts" : "2026-09-09T12:54:45.357+08:00",
       "delta" : -300.0,
-      "ref_id" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:002",
       "currency" : "USDT",
-      "entry_id" : "le-22850e3e-55ad-4167-b42e-c62c01c47edf",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:005",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "DEBIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "balance_after" : -300.0,
-      "idempotency_key" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc:LEDGER:1"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:002:LEDGER:1"
     }, {
       "ts" : "2026-09-09T12:54:45.357+08:00",
       "delta" : 300.0,
-      "ref_id" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:002",
       "currency" : "USDT",
-      "entry_id" : "le-3192da49-3944-4a7f-82ee-4d4c7bc9706e",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:006",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "CREDIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "balance_after" : 0.0,
-      "idempotency_key" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc:LEDGER:2"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:002:LEDGER:2"
     }, {
       "ts" : "2026-09-09T12:54:45.359+08:00",
       "delta" : -0.02,
-      "ref_id" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:003",
       "currency" : "USDT",
-      "entry_id" : "le-007171d6-601b-4df2-883b-16bd9083da01",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:007",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "DEBIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "balance_after" : -0.02,
-      "idempotency_key" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb:LEDGER:FEE_1"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:003:LEDGER:FEE_1"
     }, {
       "ts" : "2026-09-09T12:54:45.359+08:00",
       "delta" : 0.02,
-      "ref_id" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:003",
       "currency" : "USDT",
-      "entry_id" : "le-2d013ba7-383f-4e9f-ac98-028816ed04db",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:008",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "CREDIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "balance_after" : 0.0,
-      "idempotency_key" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb:LEDGER:FEE_2"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:003:LEDGER:FEE_2"
     }, {
       "ts" : "2026-09-09T12:54:45.359+08:00",
       "delta" : 300.0,
-      "ref_id" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:003",
       "currency" : "USDT",
-      "entry_id" : "le-49954682-a487-496d-b42d-0fa2310b9bce",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:009",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "CREDIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "balance_after" : 0.0,
-      "idempotency_key" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb:LEDGER:2"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:003:LEDGER:2"
     }, {
       "ts" : "2026-09-09T12:54:45.359+08:00",
       "delta" : -300.0,
-      "ref_id" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:003",
       "currency" : "USDT",
-      "entry_id" : "le-95f0950e-f6b1-4fa5-8dc5-ad14e0f642b4",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:010",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "DEBIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "balance_after" : -300.0,
-      "idempotency_key" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb:LEDGER:1"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:003:LEDGER:1"
     } ],
     "ledger_events" : [ {
-      "entry_id" : "le-007171d6-601b-4df2-883b-16bd9083da01",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:007",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : -0.02,
-        "entry_id" : "le-007171d6-601b-4df2-883b-16bd9083da01"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:007"
       },
       "ledger_event_id" : 9
     }, {
-      "entry_id" : "le-22850e3e-55ad-4167-b42e-c62c01c47edf",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:005",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : -300.0,
-        "entry_id" : "le-22850e3e-55ad-4167-b42e-c62c01c47edf"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:005"
       },
       "ledger_event_id" : 3
     }, {
-      "entry_id" : "le-23f15574-8586-41eb-8d61-b08655703279",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:003",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : 0.01,
-        "entry_id" : "le-23f15574-8586-41eb-8d61-b08655703279"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:003"
       },
       "ledger_event_id" : 6
     }, {
-      "entry_id" : "le-2d013ba7-383f-4e9f-ac98-028816ed04db",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:008",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : 0.02,
-        "entry_id" : "le-2d013ba7-383f-4e9f-ac98-028816ed04db"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:008"
       },
       "ledger_event_id" : 10
     }, {
-      "entry_id" : "le-3192da49-3944-4a7f-82ee-4d4c7bc9706e",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:006",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : 300.0,
-        "entry_id" : "le-3192da49-3944-4a7f-82ee-4d4c7bc9706e"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:006"
       },
       "ledger_event_id" : 4
     }, {
-      "entry_id" : "le-49954682-a487-496d-b42d-0fa2310b9bce",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:009",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : 300.0,
-        "entry_id" : "le-49954682-a487-496d-b42d-0fa2310b9bce"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:009"
       },
       "ledger_event_id" : 8
     }, {
-      "entry_id" : "le-4bb8d0d9-6b49-447a-a737-cb9502a787ff",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : 400.0,
-        "entry_id" : "le-4bb8d0d9-6b49-447a-a737-cb9502a787ff"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:001"
       },
       "ledger_event_id" : 2
     }, {
-      "entry_id" : "le-95f0950e-f6b1-4fa5-8dc5-ad14e0f642b4",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:010",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : -300.0,
-        "entry_id" : "le-95f0950e-f6b1-4fa5-8dc5-ad14e0f642b4"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:010"
       },
       "ledger_event_id" : 7
     }, {
-      "entry_id" : "le-9a77099b-e226-4e65-943f-8591ef3fdd8e",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:002",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : -400.0,
-        "entry_id" : "le-9a77099b-e226-4e65-943f-8591ef3fdd8e"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:002"
       },
       "ledger_event_id" : 1
     }, {
-      "entry_id" : "le-b28f12e5-06f6-4733-8754-c3b2214b8022",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:004",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : -0.01,
-        "entry_id" : "le-b28f12e5-06f6-4733-8754-c3b2214b8022"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:004"
       },
       "ledger_event_id" : 5
     } ],
@@ -779,7 +779,7 @@
       "id" : 1,
       "qty" : 10.0,
       "symbol" : "BTC-USDT",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "avg_price" : 100.0,
       "account_id" : 1,
       "frozen_qty" : 0.0,
@@ -791,7 +791,7 @@
       "frozen" : 0.0,
       "balance" : 0.0,
       "currency" : "USDT",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 0.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
@@ -801,7 +801,7 @@
       "frozen" : 0.0,
       "balance" : 4.0,
       "currency" : "BTC",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 4.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
@@ -811,7 +811,7 @@
       "frozen" : 0.0,
       "balance" : 0.0,
       "currency" : "USDT",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 0.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
@@ -821,7 +821,7 @@
       "frozen" : 0.0,
       "balance" : 7.0,
       "currency" : "BTC",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 7.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
@@ -831,7 +831,7 @@
       "frozen" : 0.0,
       "balance" : 0.0,
       "currency" : "USDT",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 0.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
@@ -841,7 +841,7 @@
       "frozen" : 0.0,
       "balance" : 10.0,
       "currency" : "BTC",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 10.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
@@ -852,21 +852,21 @@
       "reason" : "RISK_RULES_PASSED",
       "rule_id" : "RISK_RULES_PASSED",
       "decision" : "ALLOW",
-      "scope_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
+      "scope_id" : "SYNTH-L4:B2:R28:ORDER:001",
       "severity" : "LOW",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:44.930051+08:00",
-      "risk_event_id" : "rsk-baf5c932-f408-4ebf-85d2-b507d4630293"
+      "risk_event_id" : "SYNTH-L4:B2:R28:RISK:001"
     } ],
     "execution_intents" : [ ],
     "execution_receipts" : [ ],
-    "database" : "nq_f002_b0_58a22419f1a04907ac533146a02e0368",
+    "database" : "SYNTH-L4:B2:R28:DATABASE:001",
     "correction_audit" : [ {
       "id" : 16,
       "action" : "ORDER_TERMINAL_EXECUTION_CORRECTED",
       "domain" : "RECONCILE",
-      "actor_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
-      "trace_id" : "b0-trace",
+      "actor_id" : "SYNTH-L4:B2:R28:ORDER:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.881944+08:00",
       "detail_json" : {
         "to" : "FILLED",
@@ -876,32 +876,32 @@
         "original_qty" : 10.0,
         "remaining_qty" : 0.0,
         "expected_version" : 6,
-        "external_order_id" : "b2-venue-1"
+        "external_order_id" : "SYNTH-L4:B2:R28:VENUE:001"
       }
     } ],
     "correction_events" : [ {
       "topic" : "order.event.v1",
-      "event_id" : "evt-a84a008e-01e7-4f98-ae65-6a4a7c4dd995",
-      "trace_id" : "b0-trace",
-      "key_value" : "b0a22419f1a04907ac533146a02e0368",
+      "event_id" : "SYNTH-L4:B2:R28:EVENT:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
+      "key_value" : "SYNTH-L4:B2:R28:CLIENT:001",
       "created_at" : "2026-09-09T12:54:48.881944+08:00",
       "event_type" : "OrderStatusChangedPayload",
       "payload_json" : {
         "ts" : "2026-09-09T04:54:48.886672300Z",
-        "key" : "b0a22419f1a04907ac533146a02e0368",
+        "key" : "SYNTH-L4:B2:R28:CLIENT:001",
         "type" : "OrderStatusChangedPayload",
         "source" : "nq-core.order-command-write-service",
         "payload" : {
           "ts" : "2026-09-09T04:54:48.886672300Z",
           "reason" : "RECONCILE_FULL_EXECUTION_PROVEN",
           "status" : "FILLED",
-          "order_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
+          "order_id" : "SYNTH-L4:B2:R28:ORDER:001",
           "account_id" : 1,
-          "client_order_id" : "b0a22419f1a04907ac533146a02e0368"
+          "client_order_id" : "SYNTH-L4:B2:R28:CLIENT:001"
         },
         "version" : 1,
-        "event_id" : "evt-a84a008e-01e7-4f98-ae65-6a4a7c4dd995",
-        "trace_id" : "b0-trace"
+        "event_id" : "SYNTH-L4:B2:R28:EVENT:001",
+        "trace_id" : "SYNTH-L4:B2:R28:TRACE:001"
       },
       "schema_version" : 1
     } ]
@@ -917,19 +917,19 @@
       "status" : "FILLED",
       "symbol" : "BTC-USDT",
       "version" : 7,
-      "order_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
-      "trace_id" : "b0-trace",
-      "dedup_key" : "1:b0a22419f1a04907ac533146a02e0368",
+      "order_id" : "SYNTH-L4:B2:R28:ORDER:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
+      "dedup_key" : "1:SYNTH-L4:B2:R28:CLIENT:001",
       "trade_env" : "LIVE",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:44.902329+08:00",
-      "request_id" : "b0-trace",
+      "request_id" : "SYNTH-L4:B2:R28:REQUEST:001",
       "updated_at" : "2026-09-09T12:54:48.883672+08:00",
       "exchange_code" : "OKX",
-      "client_order_id" : "b0a22419f1a04907ac533146a02e0368",
+      "client_order_id" : "SYNTH-L4:B2:R28:CLIENT:001",
       "strategy_run_id" : null,
-      "exchange_order_id" : "b2-venue-1",
-      "external_order_id" : "b2-venue-1"
+      "exchange_order_id" : "SYNTH-L4:B2:R28:VENUE:001",
+      "external_order_id" : "SYNTH-L4:B2:R28:VENUE:001"
     } ],
     "trades" : [ {
       "ts" : "2026-09-09T12:54:45.128+08:00",
@@ -938,18 +938,18 @@
       "price" : 100.0,
       "symbol" : "BTC-USDT",
       "exchange" : "OKX",
-      "order_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
-      "trace_id" : "b0-trace",
-      "trade_id" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb",
+      "order_id" : "SYNTH-L4:B2:R28:ORDER:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
+      "trade_id" : "SYNTH-L4:B2:R28:TRADE:001",
       "trade_env" : "LIVE",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.151957+08:00",
       "fee_currency" : "USDT",
       "exchange_code" : "OKX",
       "strategy_run_id" : null,
-      "exchange_order_id" : "b2-venue-1",
-      "exchange_trade_id" : "b2-fill-1",
-      "external_order_id" : "b2-venue-1"
+      "exchange_order_id" : "SYNTH-L4:B2:R28:VENUE:001",
+      "exchange_trade_id" : "SYNTH-L4:B2:R28:FILL:001",
+      "external_order_id" : "SYNTH-L4:B2:R28:VENUE:001"
     }, {
       "ts" : "2026-09-09T12:54:45.357+08:00",
       "fee" : 0.01,
@@ -957,18 +957,18 @@
       "price" : 100.0,
       "symbol" : "BTC-USDT",
       "exchange" : "OKX",
-      "order_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
-      "trace_id" : "b0-trace",
-      "trade_id" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc",
+      "order_id" : "SYNTH-L4:B2:R28:ORDER:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
+      "trade_id" : "SYNTH-L4:B2:R28:TRADE:002",
       "trade_env" : "LIVE",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.829123+08:00",
       "fee_currency" : "USDT",
       "exchange_code" : "OKX",
       "strategy_run_id" : null,
-      "exchange_order_id" : "b2-venue-1",
-      "exchange_trade_id" : "b2-fill-2",
-      "external_order_id" : "b2-venue-1"
+      "exchange_order_id" : "SYNTH-L4:B2:R28:VENUE:001",
+      "exchange_trade_id" : "SYNTH-L4:B2:R28:FILL:002",
+      "external_order_id" : "SYNTH-L4:B2:R28:VENUE:001"
     }, {
       "ts" : "2026-09-09T12:54:45.359+08:00",
       "fee" : 0.02,
@@ -976,248 +976,248 @@
       "price" : 100.0,
       "symbol" : "BTC-USDT",
       "exchange" : "OKX",
-      "order_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
-      "trace_id" : "b0-trace",
-      "trade_id" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb",
+      "order_id" : "SYNTH-L4:B2:R28:ORDER:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
+      "trade_id" : "SYNTH-L4:B2:R28:TRADE:003",
       "trade_env" : "LIVE",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.866944+08:00",
       "fee_currency" : "USDT",
       "exchange_code" : "OKX",
       "strategy_run_id" : null,
-      "exchange_order_id" : "b2-venue-1",
-      "exchange_trade_id" : "b2-fill-3",
-      "external_order_id" : "b2-venue-1"
+      "exchange_order_id" : "SYNTH-L4:B2:R28:VENUE:001",
+      "exchange_trade_id" : "SYNTH-L4:B2:R28:FILL:003",
+      "external_order_id" : "SYNTH-L4:B2:R28:VENUE:001"
     } ],
     "ledger_entries" : [ {
       "ts" : "2026-09-09T12:54:45.128+08:00",
       "delta" : 400.0,
-      "ref_id" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:001",
       "currency" : "USDT",
-      "entry_id" : "le-4bb8d0d9-6b49-447a-a737-cb9502a787ff",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:001",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "CREDIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
       "balance_after" : 0.0,
-      "idempotency_key" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb:LEDGER:2"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:001:LEDGER:2"
     }, {
       "ts" : "2026-09-09T12:54:45.128+08:00",
       "delta" : -400.0,
-      "ref_id" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:001",
       "currency" : "USDT",
-      "entry_id" : "le-9a77099b-e226-4e65-943f-8591ef3fdd8e",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:002",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "DEBIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
       "balance_after" : -400.0,
-      "idempotency_key" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb:LEDGER:1"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:001:LEDGER:1"
     }, {
       "ts" : "2026-09-09T12:54:45.357+08:00",
       "delta" : 0.01,
-      "ref_id" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:002",
       "currency" : "USDT",
-      "entry_id" : "le-23f15574-8586-41eb-8d61-b08655703279",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:003",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "CREDIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "balance_after" : 0.0,
-      "idempotency_key" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc:LEDGER:FEE_2"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:002:LEDGER:FEE_2"
     }, {
       "ts" : "2026-09-09T12:54:45.357+08:00",
       "delta" : -0.01,
-      "ref_id" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:002",
       "currency" : "USDT",
-      "entry_id" : "le-b28f12e5-06f6-4733-8754-c3b2214b8022",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:004",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "DEBIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "balance_after" : -0.01,
-      "idempotency_key" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc:LEDGER:FEE_1"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:002:LEDGER:FEE_1"
     }, {
       "ts" : "2026-09-09T12:54:45.357+08:00",
       "delta" : -300.0,
-      "ref_id" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:002",
       "currency" : "USDT",
-      "entry_id" : "le-22850e3e-55ad-4167-b42e-c62c01c47edf",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:005",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "DEBIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "balance_after" : -300.0,
-      "idempotency_key" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc:LEDGER:1"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:002:LEDGER:1"
     }, {
       "ts" : "2026-09-09T12:54:45.357+08:00",
       "delta" : 300.0,
-      "ref_id" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:002",
       "currency" : "USDT",
-      "entry_id" : "le-3192da49-3944-4a7f-82ee-4d4c7bc9706e",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:006",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "CREDIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "balance_after" : 0.0,
-      "idempotency_key" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc:LEDGER:2"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:002:LEDGER:2"
     }, {
       "ts" : "2026-09-09T12:54:45.359+08:00",
       "delta" : -0.02,
-      "ref_id" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:003",
       "currency" : "USDT",
-      "entry_id" : "le-007171d6-601b-4df2-883b-16bd9083da01",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:007",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "DEBIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "balance_after" : -0.02,
-      "idempotency_key" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb:LEDGER:FEE_1"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:003:LEDGER:FEE_1"
     }, {
       "ts" : "2026-09-09T12:54:45.359+08:00",
       "delta" : 0.02,
-      "ref_id" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:003",
       "currency" : "USDT",
-      "entry_id" : "le-2d013ba7-383f-4e9f-ac98-028816ed04db",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:008",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "CREDIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "balance_after" : 0.0,
-      "idempotency_key" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb:LEDGER:FEE_2"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:003:LEDGER:FEE_2"
     }, {
       "ts" : "2026-09-09T12:54:45.359+08:00",
       "delta" : 300.0,
-      "ref_id" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:003",
       "currency" : "USDT",
-      "entry_id" : "le-49954682-a487-496d-b42d-0fa2310b9bce",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:009",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "CREDIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "balance_after" : 0.0,
-      "idempotency_key" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb:LEDGER:2"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:003:LEDGER:2"
     }, {
       "ts" : "2026-09-09T12:54:45.359+08:00",
       "delta" : -300.0,
-      "ref_id" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:003",
       "currency" : "USDT",
-      "entry_id" : "le-95f0950e-f6b1-4fa5-8dc5-ad14e0f642b4",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:010",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "DEBIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "balance_after" : -300.0,
-      "idempotency_key" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb:LEDGER:1"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:003:LEDGER:1"
     } ],
     "ledger_events" : [ {
-      "entry_id" : "le-007171d6-601b-4df2-883b-16bd9083da01",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:007",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : -0.02,
-        "entry_id" : "le-007171d6-601b-4df2-883b-16bd9083da01"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:007"
       },
       "ledger_event_id" : 9
     }, {
-      "entry_id" : "le-22850e3e-55ad-4167-b42e-c62c01c47edf",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:005",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : -300.0,
-        "entry_id" : "le-22850e3e-55ad-4167-b42e-c62c01c47edf"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:005"
       },
       "ledger_event_id" : 3
     }, {
-      "entry_id" : "le-23f15574-8586-41eb-8d61-b08655703279",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:003",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : 0.01,
-        "entry_id" : "le-23f15574-8586-41eb-8d61-b08655703279"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:003"
       },
       "ledger_event_id" : 6
     }, {
-      "entry_id" : "le-2d013ba7-383f-4e9f-ac98-028816ed04db",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:008",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : 0.02,
-        "entry_id" : "le-2d013ba7-383f-4e9f-ac98-028816ed04db"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:008"
       },
       "ledger_event_id" : 10
     }, {
-      "entry_id" : "le-3192da49-3944-4a7f-82ee-4d4c7bc9706e",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:006",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : 300.0,
-        "entry_id" : "le-3192da49-3944-4a7f-82ee-4d4c7bc9706e"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:006"
       },
       "ledger_event_id" : 4
     }, {
-      "entry_id" : "le-49954682-a487-496d-b42d-0fa2310b9bce",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:009",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : 300.0,
-        "entry_id" : "le-49954682-a487-496d-b42d-0fa2310b9bce"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:009"
       },
       "ledger_event_id" : 8
     }, {
-      "entry_id" : "le-4bb8d0d9-6b49-447a-a737-cb9502a787ff",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : 400.0,
-        "entry_id" : "le-4bb8d0d9-6b49-447a-a737-cb9502a787ff"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:001"
       },
       "ledger_event_id" : 2
     }, {
-      "entry_id" : "le-95f0950e-f6b1-4fa5-8dc5-ad14e0f642b4",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:010",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : -300.0,
-        "entry_id" : "le-95f0950e-f6b1-4fa5-8dc5-ad14e0f642b4"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:010"
       },
       "ledger_event_id" : 7
     }, {
-      "entry_id" : "le-9a77099b-e226-4e65-943f-8591ef3fdd8e",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:002",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : -400.0,
-        "entry_id" : "le-9a77099b-e226-4e65-943f-8591ef3fdd8e"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:002"
       },
       "ledger_event_id" : 1
     }, {
-      "entry_id" : "le-b28f12e5-06f6-4733-8754-c3b2214b8022",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:004",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : -0.01,
-        "entry_id" : "le-b28f12e5-06f6-4733-8754-c3b2214b8022"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:004"
       },
       "ledger_event_id" : 5
     } ],
@@ -1225,7 +1225,7 @@
       "id" : 1,
       "qty" : 10.0,
       "symbol" : "BTC-USDT",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "avg_price" : 100.0,
       "account_id" : 1,
       "frozen_qty" : 0.0,
@@ -1237,7 +1237,7 @@
       "frozen" : 0.0,
       "balance" : 0.0,
       "currency" : "USDT",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 0.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
@@ -1247,7 +1247,7 @@
       "frozen" : 0.0,
       "balance" : 4.0,
       "currency" : "BTC",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 4.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
@@ -1257,7 +1257,7 @@
       "frozen" : 0.0,
       "balance" : 0.0,
       "currency" : "USDT",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 0.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
@@ -1267,7 +1267,7 @@
       "frozen" : 0.0,
       "balance" : 7.0,
       "currency" : "BTC",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 7.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
@@ -1277,7 +1277,7 @@
       "frozen" : 0.0,
       "balance" : 0.0,
       "currency" : "USDT",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 0.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
@@ -1287,7 +1287,7 @@
       "frozen" : 0.0,
       "balance" : 10.0,
       "currency" : "BTC",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 10.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
@@ -1298,21 +1298,21 @@
       "reason" : "RISK_RULES_PASSED",
       "rule_id" : "RISK_RULES_PASSED",
       "decision" : "ALLOW",
-      "scope_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
+      "scope_id" : "SYNTH-L4:B2:R28:ORDER:001",
       "severity" : "LOW",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:44.930051+08:00",
-      "risk_event_id" : "rsk-baf5c932-f408-4ebf-85d2-b507d4630293"
+      "risk_event_id" : "SYNTH-L4:B2:R28:RISK:001"
     } ],
     "execution_intents" : [ ],
     "execution_receipts" : [ ],
-    "database" : "nq_f002_b0_58a22419f1a04907ac533146a02e0368",
+    "database" : "SYNTH-L4:B2:R28:DATABASE:001",
     "correction_audit" : [ {
       "id" : 16,
       "action" : "ORDER_TERMINAL_EXECUTION_CORRECTED",
       "domain" : "RECONCILE",
-      "actor_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
-      "trace_id" : "b0-trace",
+      "actor_id" : "SYNTH-L4:B2:R28:ORDER:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.881944+08:00",
       "detail_json" : {
         "to" : "FILLED",
@@ -1322,32 +1322,32 @@
         "original_qty" : 10.0,
         "remaining_qty" : 0.0,
         "expected_version" : 6,
-        "external_order_id" : "b2-venue-1"
+        "external_order_id" : "SYNTH-L4:B2:R28:VENUE:001"
       }
     } ],
     "correction_events" : [ {
       "topic" : "order.event.v1",
-      "event_id" : "evt-a84a008e-01e7-4f98-ae65-6a4a7c4dd995",
-      "trace_id" : "b0-trace",
-      "key_value" : "b0a22419f1a04907ac533146a02e0368",
+      "event_id" : "SYNTH-L4:B2:R28:EVENT:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
+      "key_value" : "SYNTH-L4:B2:R28:CLIENT:001",
       "created_at" : "2026-09-09T12:54:48.881944+08:00",
       "event_type" : "OrderStatusChangedPayload",
       "payload_json" : {
         "ts" : "2026-09-09T04:54:48.886672300Z",
-        "key" : "b0a22419f1a04907ac533146a02e0368",
+        "key" : "SYNTH-L4:B2:R28:CLIENT:001",
         "type" : "OrderStatusChangedPayload",
         "source" : "nq-core.order-command-write-service",
         "payload" : {
           "ts" : "2026-09-09T04:54:48.886672300Z",
           "reason" : "RECONCILE_FULL_EXECUTION_PROVEN",
           "status" : "FILLED",
-          "order_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
+          "order_id" : "SYNTH-L4:B2:R28:ORDER:001",
           "account_id" : 1,
-          "client_order_id" : "b0a22419f1a04907ac533146a02e0368"
+          "client_order_id" : "SYNTH-L4:B2:R28:CLIENT:001"
         },
         "version" : 1,
-        "event_id" : "evt-a84a008e-01e7-4f98-ae65-6a4a7c4dd995",
-        "trace_id" : "b0-trace"
+        "event_id" : "SYNTH-L4:B2:R28:EVENT:001",
+        "trace_id" : "SYNTH-L4:B2:R28:TRACE:001"
       },
       "schema_version" : 1
     } ]
@@ -1363,19 +1363,19 @@
       "status" : "FILLED",
       "symbol" : "BTC-USDT",
       "version" : 7,
-      "order_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
-      "trace_id" : "b0-trace",
-      "dedup_key" : "1:b0a22419f1a04907ac533146a02e0368",
+      "order_id" : "SYNTH-L4:B2:R28:ORDER:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
+      "dedup_key" : "1:SYNTH-L4:B2:R28:CLIENT:001",
       "trade_env" : "LIVE",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:44.902329+08:00",
-      "request_id" : "b0-trace",
+      "request_id" : "SYNTH-L4:B2:R28:REQUEST:001",
       "updated_at" : "2026-09-09T12:54:48.883672+08:00",
       "exchange_code" : "OKX",
-      "client_order_id" : "b0a22419f1a04907ac533146a02e0368",
+      "client_order_id" : "SYNTH-L4:B2:R28:CLIENT:001",
       "strategy_run_id" : null,
-      "exchange_order_id" : "b2-venue-1",
-      "external_order_id" : "b2-venue-1"
+      "exchange_order_id" : "SYNTH-L4:B2:R28:VENUE:001",
+      "external_order_id" : "SYNTH-L4:B2:R28:VENUE:001"
     } ],
     "trades" : [ {
       "ts" : "2026-09-09T12:54:45.128+08:00",
@@ -1384,18 +1384,18 @@
       "price" : 100.0,
       "symbol" : "BTC-USDT",
       "exchange" : "OKX",
-      "order_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
-      "trace_id" : "b0-trace",
-      "trade_id" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb",
+      "order_id" : "SYNTH-L4:B2:R28:ORDER:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
+      "trade_id" : "SYNTH-L4:B2:R28:TRADE:001",
       "trade_env" : "LIVE",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.151957+08:00",
       "fee_currency" : "USDT",
       "exchange_code" : "OKX",
       "strategy_run_id" : null,
-      "exchange_order_id" : "b2-venue-1",
-      "exchange_trade_id" : "b2-fill-1",
-      "external_order_id" : "b2-venue-1"
+      "exchange_order_id" : "SYNTH-L4:B2:R28:VENUE:001",
+      "exchange_trade_id" : "SYNTH-L4:B2:R28:FILL:001",
+      "external_order_id" : "SYNTH-L4:B2:R28:VENUE:001"
     }, {
       "ts" : "2026-09-09T12:54:45.357+08:00",
       "fee" : 0.01,
@@ -1403,18 +1403,18 @@
       "price" : 100.0,
       "symbol" : "BTC-USDT",
       "exchange" : "OKX",
-      "order_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
-      "trace_id" : "b0-trace",
-      "trade_id" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc",
+      "order_id" : "SYNTH-L4:B2:R28:ORDER:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
+      "trade_id" : "SYNTH-L4:B2:R28:TRADE:002",
       "trade_env" : "LIVE",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.829123+08:00",
       "fee_currency" : "USDT",
       "exchange_code" : "OKX",
       "strategy_run_id" : null,
-      "exchange_order_id" : "b2-venue-1",
-      "exchange_trade_id" : "b2-fill-2",
-      "external_order_id" : "b2-venue-1"
+      "exchange_order_id" : "SYNTH-L4:B2:R28:VENUE:001",
+      "exchange_trade_id" : "SYNTH-L4:B2:R28:FILL:002",
+      "external_order_id" : "SYNTH-L4:B2:R28:VENUE:001"
     }, {
       "ts" : "2026-09-09T12:54:45.359+08:00",
       "fee" : 0.02,
@@ -1422,248 +1422,248 @@
       "price" : 100.0,
       "symbol" : "BTC-USDT",
       "exchange" : "OKX",
-      "order_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
-      "trace_id" : "b0-trace",
-      "trade_id" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb",
+      "order_id" : "SYNTH-L4:B2:R28:ORDER:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
+      "trade_id" : "SYNTH-L4:B2:R28:TRADE:003",
       "trade_env" : "LIVE",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.866944+08:00",
       "fee_currency" : "USDT",
       "exchange_code" : "OKX",
       "strategy_run_id" : null,
-      "exchange_order_id" : "b2-venue-1",
-      "exchange_trade_id" : "b2-fill-3",
-      "external_order_id" : "b2-venue-1"
+      "exchange_order_id" : "SYNTH-L4:B2:R28:VENUE:001",
+      "exchange_trade_id" : "SYNTH-L4:B2:R28:FILL:003",
+      "external_order_id" : "SYNTH-L4:B2:R28:VENUE:001"
     } ],
     "ledger_entries" : [ {
       "ts" : "2026-09-09T12:54:45.128+08:00",
       "delta" : 400.0,
-      "ref_id" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:001",
       "currency" : "USDT",
-      "entry_id" : "le-4bb8d0d9-6b49-447a-a737-cb9502a787ff",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:001",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "CREDIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
       "balance_after" : 0.0,
-      "idempotency_key" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb:LEDGER:2"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:001:LEDGER:2"
     }, {
       "ts" : "2026-09-09T12:54:45.128+08:00",
       "delta" : -400.0,
-      "ref_id" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:001",
       "currency" : "USDT",
-      "entry_id" : "le-9a77099b-e226-4e65-943f-8591ef3fdd8e",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:002",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "DEBIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
       "balance_after" : -400.0,
-      "idempotency_key" : "trd-ab7b8ea4-c547-4bde-ba65-feb91b1160fb:LEDGER:1"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:001:LEDGER:1"
     }, {
       "ts" : "2026-09-09T12:54:45.357+08:00",
       "delta" : 0.01,
-      "ref_id" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:002",
       "currency" : "USDT",
-      "entry_id" : "le-23f15574-8586-41eb-8d61-b08655703279",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:003",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "CREDIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "balance_after" : 0.0,
-      "idempotency_key" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc:LEDGER:FEE_2"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:002:LEDGER:FEE_2"
     }, {
       "ts" : "2026-09-09T12:54:45.357+08:00",
       "delta" : -0.01,
-      "ref_id" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:002",
       "currency" : "USDT",
-      "entry_id" : "le-b28f12e5-06f6-4733-8754-c3b2214b8022",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:004",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "DEBIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "balance_after" : -0.01,
-      "idempotency_key" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc:LEDGER:FEE_1"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:002:LEDGER:FEE_1"
     }, {
       "ts" : "2026-09-09T12:54:45.357+08:00",
       "delta" : -300.0,
-      "ref_id" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:002",
       "currency" : "USDT",
-      "entry_id" : "le-22850e3e-55ad-4167-b42e-c62c01c47edf",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:005",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "DEBIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "balance_after" : -300.0,
-      "idempotency_key" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc:LEDGER:1"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:002:LEDGER:1"
     }, {
       "ts" : "2026-09-09T12:54:45.357+08:00",
       "delta" : 300.0,
-      "ref_id" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:002",
       "currency" : "USDT",
-      "entry_id" : "le-3192da49-3944-4a7f-82ee-4d4c7bc9706e",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:006",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "CREDIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "balance_after" : 0.0,
-      "idempotency_key" : "trd-bd614af9-3878-4326-96a1-41b08b9021dc:LEDGER:2"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:002:LEDGER:2"
     }, {
       "ts" : "2026-09-09T12:54:45.359+08:00",
       "delta" : -0.02,
-      "ref_id" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:003",
       "currency" : "USDT",
-      "entry_id" : "le-007171d6-601b-4df2-883b-16bd9083da01",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:007",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "DEBIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "balance_after" : -0.02,
-      "idempotency_key" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb:LEDGER:FEE_1"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:003:LEDGER:FEE_1"
     }, {
       "ts" : "2026-09-09T12:54:45.359+08:00",
       "delta" : 0.02,
-      "ref_id" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:003",
       "currency" : "USDT",
-      "entry_id" : "le-2d013ba7-383f-4e9f-ac98-028816ed04db",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:008",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "CREDIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "balance_after" : 0.0,
-      "idempotency_key" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb:LEDGER:FEE_2"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:003:LEDGER:FEE_2"
     }, {
       "ts" : "2026-09-09T12:54:45.359+08:00",
       "delta" : 300.0,
-      "ref_id" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:003",
       "currency" : "USDT",
-      "entry_id" : "le-49954682-a487-496d-b42d-0fa2310b9bce",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:009",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "CREDIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "balance_after" : 0.0,
-      "idempotency_key" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb:LEDGER:2"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:003:LEDGER:2"
     }, {
       "ts" : "2026-09-09T12:54:45.359+08:00",
       "delta" : -300.0,
-      "ref_id" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb",
+      "ref_id" : "SYNTH-L4:B2:R28:TRADE:003",
       "currency" : "USDT",
-      "entry_id" : "le-95f0950e-f6b1-4fa5-8dc5-ad14e0f642b4",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:010",
       "ref_type" : "TRADE",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "direction" : "DEBIT",
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "balance_after" : -300.0,
-      "idempotency_key" : "trd-0be27b3d-8f15-4834-acc4-c8f63c4feddb:LEDGER:1"
+      "idempotency_key" : "SYNTH-L4:B2:R28:TRADE:003:LEDGER:1"
     } ],
     "ledger_events" : [ {
-      "entry_id" : "le-007171d6-601b-4df2-883b-16bd9083da01",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:007",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : -0.02,
-        "entry_id" : "le-007171d6-601b-4df2-883b-16bd9083da01"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:007"
       },
       "ledger_event_id" : 9
     }, {
-      "entry_id" : "le-22850e3e-55ad-4167-b42e-c62c01c47edf",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:005",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : -300.0,
-        "entry_id" : "le-22850e3e-55ad-4167-b42e-c62c01c47edf"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:005"
       },
       "ledger_event_id" : 3
     }, {
-      "entry_id" : "le-23f15574-8586-41eb-8d61-b08655703279",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:003",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : 0.01,
-        "entry_id" : "le-23f15574-8586-41eb-8d61-b08655703279"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:003"
       },
       "ledger_event_id" : 6
     }, {
-      "entry_id" : "le-2d013ba7-383f-4e9f-ac98-028816ed04db",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:008",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : 0.02,
-        "entry_id" : "le-2d013ba7-383f-4e9f-ac98-028816ed04db"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:008"
       },
       "ledger_event_id" : 10
     }, {
-      "entry_id" : "le-3192da49-3944-4a7f-82ee-4d4c7bc9706e",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:006",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : 300.0,
-        "entry_id" : "le-3192da49-3944-4a7f-82ee-4d4c7bc9706e"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:006"
       },
       "ledger_event_id" : 4
     }, {
-      "entry_id" : "le-49954682-a487-496d-b42d-0fa2310b9bce",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:009",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : 300.0,
-        "entry_id" : "le-49954682-a487-496d-b42d-0fa2310b9bce"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:009"
       },
       "ledger_event_id" : 8
     }, {
-      "entry_id" : "le-4bb8d0d9-6b49-447a-a737-cb9502a787ff",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : 400.0,
-        "entry_id" : "le-4bb8d0d9-6b49-447a-a737-cb9502a787ff"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:001"
       },
       "ledger_event_id" : 2
     }, {
-      "entry_id" : "le-95f0950e-f6b1-4fa5-8dc5-ad14e0f642b4",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:010",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : -300.0,
-        "entry_id" : "le-95f0950e-f6b1-4fa5-8dc5-ad14e0f642b4"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:010"
       },
       "ledger_event_id" : 7
     }, {
-      "entry_id" : "le-9a77099b-e226-4e65-943f-8591ef3fdd8e",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:002",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : -400.0,
-        "entry_id" : "le-9a77099b-e226-4e65-943f-8591ef3fdd8e"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:002"
       },
       "ledger_event_id" : 1
     }, {
-      "entry_id" : "le-b28f12e5-06f6-4733-8754-c3b2214b8022",
-      "trace_id" : "b0-trace",
+      "entry_id" : "SYNTH-L4:B2:R28:ENTRY:004",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
       "event_type" : "POSTED",
       "payload_json" : {
         "delta" : -0.01,
-        "entry_id" : "le-b28f12e5-06f6-4733-8754-c3b2214b8022"
+        "entry_id" : "SYNTH-L4:B2:R28:ENTRY:004"
       },
       "ledger_event_id" : 5
     } ],
@@ -1671,7 +1671,7 @@
       "id" : 1,
       "qty" : 10.0,
       "symbol" : "BTC-USDT",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "avg_price" : 100.0,
       "account_id" : 1,
       "frozen_qty" : 0.0,
@@ -1683,7 +1683,7 @@
       "frozen" : 0.0,
       "balance" : 0.0,
       "currency" : "USDT",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 0.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
@@ -1693,7 +1693,7 @@
       "frozen" : 0.0,
       "balance" : 4.0,
       "currency" : "BTC",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 4.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:45.158073+08:00",
@@ -1703,7 +1703,7 @@
       "frozen" : 0.0,
       "balance" : 0.0,
       "currency" : "USDT",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 0.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
@@ -1713,7 +1713,7 @@
       "frozen" : 0.0,
       "balance" : 7.0,
       "currency" : "BTC",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 7.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.845932+08:00",
@@ -1723,7 +1723,7 @@
       "frozen" : 0.0,
       "balance" : 0.0,
       "currency" : "USDT",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 0.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
@@ -1733,7 +1733,7 @@
       "frozen" : 0.0,
       "balance" : 10.0,
       "currency" : "BTC",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "available" : 10.0,
       "account_id" : 1,
       "created_at" : "2026-09-09T12:54:48.869654+08:00",
@@ -1744,21 +1744,21 @@
       "reason" : "RISK_RULES_PASSED",
       "rule_id" : "RISK_RULES_PASSED",
       "decision" : "ALLOW",
-      "scope_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
+      "scope_id" : "SYNTH-L4:B2:R28:ORDER:001",
       "severity" : "LOW",
-      "trace_id" : "b0-trace",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:44.930051+08:00",
-      "risk_event_id" : "rsk-baf5c932-f408-4ebf-85d2-b507d4630293"
+      "risk_event_id" : "SYNTH-L4:B2:R28:RISK:001"
     } ],
     "execution_intents" : [ ],
     "execution_receipts" : [ ],
-    "database" : "nq_f002_b0_58a22419f1a04907ac533146a02e0368",
+    "database" : "SYNTH-L4:B2:R28:DATABASE:001",
     "correction_audit" : [ {
       "id" : 16,
       "action" : "ORDER_TERMINAL_EXECUTION_CORRECTED",
       "domain" : "RECONCILE",
-      "actor_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
-      "trace_id" : "b0-trace",
+      "actor_id" : "SYNTH-L4:B2:R28:ORDER:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
       "created_at" : "2026-09-09T12:54:48.881944+08:00",
       "detail_json" : {
         "to" : "FILLED",
@@ -1768,32 +1768,32 @@
         "original_qty" : 10.0,
         "remaining_qty" : 0.0,
         "expected_version" : 6,
-        "external_order_id" : "b2-venue-1"
+        "external_order_id" : "SYNTH-L4:B2:R28:VENUE:001"
       }
     } ],
     "correction_events" : [ {
       "topic" : "order.event.v1",
-      "event_id" : "evt-a84a008e-01e7-4f98-ae65-6a4a7c4dd995",
-      "trace_id" : "b0-trace",
-      "key_value" : "b0a22419f1a04907ac533146a02e0368",
+      "event_id" : "SYNTH-L4:B2:R28:EVENT:001",
+      "trace_id" : "SYNTH-L4:B2:R28:TRACE:001",
+      "key_value" : "SYNTH-L4:B2:R28:CLIENT:001",
       "created_at" : "2026-09-09T12:54:48.881944+08:00",
       "event_type" : "OrderStatusChangedPayload",
       "payload_json" : {
         "ts" : "2026-09-09T04:54:48.886672300Z",
-        "key" : "b0a22419f1a04907ac533146a02e0368",
+        "key" : "SYNTH-L4:B2:R28:CLIENT:001",
         "type" : "OrderStatusChangedPayload",
         "source" : "nq-core.order-command-write-service",
         "payload" : {
           "ts" : "2026-09-09T04:54:48.886672300Z",
           "reason" : "RECONCILE_FULL_EXECUTION_PROVEN",
           "status" : "FILLED",
-          "order_id" : "ord-a540e203-2651-4213-9486-bf4f28c23735",
+          "order_id" : "SYNTH-L4:B2:R28:ORDER:001",
           "account_id" : 1,
-          "client_order_id" : "b0a22419f1a04907ac533146a02e0368"
+          "client_order_id" : "SYNTH-L4:B2:R28:CLIENT:001"
         },
         "version" : 1,
-        "event_id" : "evt-a84a008e-01e7-4f98-ae65-6a4a7c4dd995",
-        "trace_id" : "b0-trace"
+        "event_id" : "SYNTH-L4:B2:R28:EVENT:001",
+        "trace_id" : "SYNTH-L4:B2:R28:TRACE:001"
       },
       "schema_version" : 1
     } ]
@@ -1807,8 +1807,8 @@
     "cancels" : 1,
     "pendingCancel" : false,
     "order" : {
-      "clOrdId" : "b0a22419f1a04907ac533146a02e0368",
-      "ordId" : "b2-venue-1",
+      "clOrdId" : "SYNTH-L4:B2:R28:CLIENT:001",
+      "ordId" : "SYNTH-L4:B2:R28:VENUE:001",
       "instId" : "BTC-USDT",
       "state" : "filled",
       "px" : "100",
@@ -1818,8 +1818,8 @@
       "uTime" : "1788929685036"
     },
     "fills" : [ {
-      "tradeId" : "b2-fill-1",
-      "ordId" : "b2-venue-1",
+      "tradeId" : "SYNTH-L4:B2:R28:FILL:001",
+      "ordId" : "SYNTH-L4:B2:R28:VENUE:001",
       "instId" : "BTC-USDT",
       "side" : "buy",
       "fillPx" : "100",
@@ -1828,8 +1828,8 @@
       "feeCcy" : "USDT",
       "ts" : "1788929685128"
     }, {
-      "tradeId" : "b2-fill-2",
-      "ordId" : "b2-venue-1",
+      "tradeId" : "SYNTH-L4:B2:R28:FILL:002",
+      "ordId" : "SYNTH-L4:B2:R28:VENUE:001",
       "instId" : "BTC-USDT",
       "side" : "buy",
       "fillPx" : "100",
@@ -1838,8 +1838,8 @@
       "feeCcy" : "USDT",
       "ts" : "1788929685357"
     }, {
-      "tradeId" : "b2-fill-3",
-      "ordId" : "b2-venue-1",
+      "tradeId" : "SYNTH-L4:B2:R28:FILL:003",
+      "ordId" : "SYNTH-L4:B2:R28:VENUE:001",
       "instId" : "BTC-USDT",
       "side" : "buy",
       "fillPx" : "100",
@@ -1864,7 +1864,7 @@
       "sequence" : 5,
       "type" : "FILL",
       "nanoTime" : 829157890435600,
-      "tradeId" : "b2-fill-1",
+      "tradeId" : "SYNTH-L4:B2:R28:FILL:001",
       "qty" : "4",
       "fee" : "0"
     }, {
@@ -1894,14 +1894,14 @@
       "sequence" : 11,
       "type" : "FILL",
       "nanoTime" : 829158119984200,
-      "tradeId" : "b2-fill-2",
+      "tradeId" : "SYNTH-L4:B2:R28:FILL:002",
       "qty" : "3",
       "fee" : "0.01"
     }, {
       "sequence" : 12,
       "type" : "FILL",
       "nanoTime" : 829158121578400,
-      "tradeId" : "b2-fill-3",
+      "tradeId" : "SYNTH-L4:B2:R28:FILL:003",
       "qty" : "3",
       "fee" : "0.02"
     }, {

@@ -50,7 +50,7 @@ CAS 冲突后最多重新读取三次当前 Order 与完整 durable proof：已�
 
 沿用 B0：真实 Spring JVM、RiskGate、OrderCommandService、AdapterBackedTradingVenueGateway、OkxExchangeAdapter、HTTP/JSON、JDBC；独立 Synthetic Venue JVM；PostgreSQL 16.15 / V48。Controller 使用 reader role 与 REPEATABLE_READ 快照，不写 orders/trades/ledger/receipts；bootstrap 只在 disposable DB 启动前初始化。
 
-最终 controller PID=30464；PG container=`nq-b0-8bf7c2ad-bc7e-49fd-8619-c78e40f39111`，ID=`aff4816ebc14354fd813a6b7ef06e208408eb0f03db2a4c74f39dfbd3f3c758c`，loopback port=39337。镜像为 canonical `postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94`，`--pull=never`。每行各有新 DB、新 venue，数据库 identity、fills、Order/Trade/Ledger 和 audit/event 全快照均在对应 JSON。
+最终 controller PID=30464；PG container=`SYNTH-L4:B2-EXPORT:R01:CONTAINER:002`，ID=`SYNTH-L4:B2-EXPORT:R01:DOCKERID:001`，loopback port=39337。镜像为 canonical `postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94`，`--pull=never`。每行各有新 DB、新 venue，数据库 identity、fills、Order/Trade/Ledger 和 audit/event 全快照均在对应 JSON。
 
 | 场景 / repeat | NQ PID | 恢复新 PID | Venue PID | 最终状态/version | executed/remaining | Trade/Ledger |
 | --- | --- | --- | --- | --- | --- | --- |
