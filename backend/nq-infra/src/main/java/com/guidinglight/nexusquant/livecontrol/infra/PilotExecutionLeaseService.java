@@ -20,6 +20,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.Optional;
 
 /**
  * Lease、既有LiveSession状态机与global kill的fail-closed编排。
@@ -127,7 +128,7 @@ public final class PilotExecutionLeaseService implements PilotExecutionLeaseCont
     }
 
     @Override
-    public java.util.Optional<Authorization> prepareZeroIntentReplacement(
+    public Optional<Authorization> prepareZeroIntentReplacement(
             AuthenticatedLiveControlActor actor,
             long exchangeAccountId,
             long credentialReferenceId,
@@ -144,7 +145,7 @@ public final class PilotExecutionLeaseService implements PilotExecutionLeaseCont
             throw new LiveControlException(
                     "PRE_PLACE_RECOVERY_UNAVAILABLE", "pre-place recovery repository is unavailable");
         }
-        java.util.Optional<Authorization> authorization = recoveries.decide(
+        Optional<Authorization> authorization = recoveries.decide(
                 actor.userId(), exchangeAccountId, credentialReferenceId, instrument, maxNotional,
                 UUID.randomUUID(), correlation.requestId(), correlation.traceId(), clock.instant());
         authorization.ifPresent(value -> {
@@ -231,7 +232,7 @@ public final class PilotExecutionLeaseService implements PilotExecutionLeaseCont
     }
 
     @Override
-    public java.util.Optional<PilotExecutionLease> findConsumedForRecovery() {
+    public Optional<PilotExecutionLease> findConsumedForRecovery() {
         return leases.findRecoverable(clock.instant()).stream()
                 .filter(value -> value.status() == PilotExecutionLease.Status.CONSUMED)
                 .findFirst();

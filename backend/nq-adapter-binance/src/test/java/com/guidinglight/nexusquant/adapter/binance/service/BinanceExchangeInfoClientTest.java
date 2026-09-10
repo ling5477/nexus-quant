@@ -14,6 +14,7 @@ import java.net.InetSocketAddress;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.Map;
+import java.math.BigDecimal;
 
 import org.junit.jupiter.api.Test;
 
@@ -62,10 +63,10 @@ class BinanceExchangeInfoClientTest {
             assertNotNull(filters);
             assertEquals("BTC-USDT", filters.internalSymbol());
             assertEquals("TRADING", filters.status());
-            assertEquals(0, filters.tickSize().compareTo(new java.math.BigDecimal("0.01000000")));
-            assertEquals(0, filters.stepSize().compareTo(new java.math.BigDecimal("0.00001000")));
-            assertEquals(0, filters.minQty().compareTo(new java.math.BigDecimal("0.00001000")));
-            assertEquals(0, filters.minNotional().compareTo(new java.math.BigDecimal("5.00000000")));
+            assertEquals(0, filters.tickSize().compareTo(new BigDecimal("0.01000000")));
+            assertEquals(0, filters.stepSize().compareTo(new BigDecimal("0.00001000")));
+            assertEquals(0, filters.minQty().compareTo(new BigDecimal("0.00001000")));
+            assertEquals(0, filters.minNotional().compareTo(new BigDecimal("5.00000000")));
             assertEquals(true, filters.minNotionalAppliesToMarket());
         }
     }

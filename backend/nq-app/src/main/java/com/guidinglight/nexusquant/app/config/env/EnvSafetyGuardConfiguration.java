@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.Locale;
 
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
@@ -120,7 +121,7 @@ public class EnvSafetyGuardConfiguration {
     }
 
     private static boolean testProfileActive(Set<String> activeProfiles) {
-        return activeProfiles.stream().map(profile -> profile.toLowerCase(java.util.Locale.ROOT)).anyMatch(profile ->
+        return activeProfiles.stream().map(profile -> profile.toLowerCase(Locale.ROOT)).anyMatch(profile ->
                 profile.equals("test")
                         || profile.equals("ci")
                         || profile.equals("ci-app-smoke")

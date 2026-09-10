@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -439,7 +440,7 @@ public class ShadowLivePreviewService {
         );
     }
 
-    private java.util.UUID firstDatasetId(StrategyEvaluationGate gate, PaperShadowComparison comparison) {
+    private UUID firstDatasetId(StrategyEvaluationGate gate, PaperShadowComparison comparison) {
         return gate.datasetId() == null ? comparison.datasetId() : gate.datasetId();
     }
 

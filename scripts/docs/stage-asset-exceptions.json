@@ -43,7 +43,7 @@
     },
     {
       "path": "backend/nq-adapter-binance/src/main/java/com/guidinglight/nexusquant/adapter/binance/service/BinanceHistoricalKlineAdapter.java",
-      "sha256": "a1c3858ab7103caa213146b6bb0846def2f622e31f5c2d51e976b80350ad0445",
+      "sha256": "d12877d85d69d69d2a3e6024e9d947fda8392b395e5a09b35b241c1c1841ce3b",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -59,7 +59,7 @@
     },
     {
       "path": "backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/service/OkxHistoricalKlineAdapter.java",
-      "sha256": "306913b33422239c8f84f3670b861db6352d8c1c274699490aa252cd65f0efac",
+      "sha256": "f1c916490bbd06fa584826ce95e928404b1e48f3e5590aa575059fa59e3c4075",
       "kind": "HISTORICAL_METADATA",
       "reason": "Only pre-existing diagnostic messages retain historical provenance. Bean registration uses the existing manual public outbound capability profile and enablement property; no active stage selector.",
       "owner": "Module owner",
@@ -411,7 +411,7 @@
     },
     {
       "path": "backend/nq-api/src/test/java/com/guidinglight/nexusquant/research/api/web/BacktestRunControllerTest.java",
-      "sha256": "554b7ee630e206a88e799254806af34debc2f339988a6cd62bff1383f57e78fe",
+      "sha256": "cf023e4e81eb30772fe5c6e7dae5a13c0e8b58d842708c28ee098bbac97bc0b1",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -419,7 +419,7 @@
     },
     {
       "path": "backend/nq-api/src/test/java/com/guidinglight/nexusquant/research/api/web/PythonEvaluationArtifactBindingPreviewControllerTest.java",
-      "sha256": "6f428b6bd5d77987e5d3cf3b073f0cc9a4152dd262da550bcc1f5bbafbc8253f",
+      "sha256": "60693a8b4352e1a9a3d9debd0067789139df4d3773c8d957c2230fe2bd954959",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -435,7 +435,7 @@
     },
     {
       "path": "backend/nq-api/src/test/java/com/guidinglight/nexusquant/strategy/api/web/PythonEvaluationArtifactPreviewOverviewControllerTest.java",
-      "sha256": "6e36c835e3a56d2a34d655c6cd6abb8bf9c320756548e2d371e32c1be63a38a2",
+      "sha256": "380fea3af559cdc935435edf63734c819574a844989114dd18d8e39d9af77983",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -443,7 +443,7 @@
     },
     {
       "path": "backend/nq-api/src/test/java/com/guidinglight/nexusquant/trading/api/web/TradingPreflightControllerTest.java",
-      "sha256": "26006243006ab28f74c5255859c8ba23814eea3bd21a14f5c0bcfd1d17cdbaed",
+      "sha256": "2852340cdff10410a9555584ef8be53929405c414db4bb000c042914855a038a",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -491,7 +491,7 @@
     },
     {
       "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-      "sha256": "943adee7c274a19c13d1655d1a00a2335aee6b57412162a816308569fecdc240",
+      "sha256": "71c747480f40bbc33f6057da6e90779c1e3ef4a944239c51c16ad1f40b50bd3e",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-app / MinimalLivePilotConfiguration contract owner",
@@ -499,7 +499,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/admission/AdmissionGuardedMaterializationPostgresIntegrationTest.java",
-      "sha256": "d4c6bc3be9e34b04b9cb34b48939af55fcd1237adde49c48ebee66db0fb34821",
+      "sha256": "e983d10f76fa3c7d98fb58ff779376c1760b6cf418e7aea2b41a1c1fad9cfe62",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -507,7 +507,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/admission/AdmissionMaterializationGuardPostgresIntegrationTest.java",
-      "sha256": "44c5bfe9db1892894f664292292db3992f9034a06a962e9fe95925dd88465a5c",
+      "sha256": "226e39c79159be50df0621a074ecd49ccfa44691f11e218a3c15ea8613ed10eb",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -515,7 +515,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/architecture/PackageBoundaryArchTest.java",
-      "sha256": "4624d504a39f4b0eb4e036d456a0ceb98142017be58d0e8680607463ae47ce31",
+      "sha256": "94a73c2a3d2ebaf35cbc5f3e657fbc9f7e6483825f458cee659b9d3442a1988c",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -563,7 +563,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/account/OkxPrivateReadOnlyPermissionProbeSpringContextTest.java",
-      "sha256": "d517384c4a3721a35cdf696b08c82a86ddeaea6c6aef8287d20ef13bda8ea08a",
+      "sha256": "80390a9504fa8f5dd034a38eff70c7a09bb1904634800002298ead185e0f0000",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -571,7 +571,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/env/ProductionSecretProfileRegressionTest.java",
-      "sha256": "1d89eb5d4667485baad3d4ba1e41c26fcc17256b0023c21e6dfeeca960caca9e",
+      "sha256": "8b21dc6c169a62a50bc746923b763663f6ba2d2dbb09d579ba4b0ac77620f825",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -579,7 +579,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfigurationTest.java",
-      "sha256": "a95bd49a16bf7bf2b2acd9f9317415c6ff22d2c0e5c3db3e5bec869e9e8bf154",
+      "sha256": "74c6d98efd1684f0f1498ef99661d65754b85105c0ec1b6a03a9ad27c8aa703a",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -595,7 +595,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
-      "sha256": "f9b9c1545082fb3c95ee2c8d1b627228e12557fee304f7c6c9f18aa87dfa312b",
+      "sha256": "1efe573b77a5e93a10a845ce10074fda06ca3454928bd528d56ebda7305dbacb",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -603,7 +603,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java",
-      "sha256": "6539d1e21b80ea2164f735f24901afada53d60f4a33a1608c55a38eec0ec6a11",
+      "sha256": "00412fef8506bed491e398b0513d45a9bfd7bedf3cf12ffae724e14c2648b9ad",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -627,7 +627,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/research/BacktestPublishArtifactLocatorPostgresIntegrationTest.java",
-      "sha256": "99c366b8bcf9a09281a7d7bdb7e7366328dfc52d42ee1e5aaf1bfced1669dc92",
+      "sha256": "5d5b9188f8fd5aaa23ef16daf59148df17b82f344447d60509034c2663e9fbd2",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -635,7 +635,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/risk/KillSwitchRestartDurabilityPostgresIntegrationTest.java",
-      "sha256": "3c50ac404d415df7321dff4f9cd056aa2d4da63d2132d5adb4f4cbf0dce59c21",
+      "sha256": "022149e5aeb9c1273f7ce9aa5d94dc957f98103576f743010676e252a36622ba",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -643,7 +643,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/shadowrun/ShadowRunProvenancePostgresIntegrationTest.java",
-      "sha256": "497df5e525bbb6aed37e11311b1247441afff8570f0594c8df4cd728a02b274d",
+      "sha256": "0c5d4291229a0b17199d335e86c2e879930a56813d2d46d24c36e8c59a5e4893",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -747,7 +747,7 @@
     },
     {
       "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/domain/ExactPilotBinding.java",
-      "sha256": "b6b053eb48f15348b2d35dd4a1c0618f857d1d3847498b6a6315f91a5191677d",
+      "sha256": "5b3a8c642898126bdbac908a6dc72755b0df57425c309f7390349c90d0de77a7",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-core / ExactPilotBinding contract owner",
@@ -843,7 +843,7 @@
     },
     {
       "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
-      "sha256": "317ad4ac3d8c61000f9632f22c3af366f1a3285670f28ccd3d71b3306d4e1525",
+      "sha256": "2d7ec73cbf4e5f7c6ca22ecdc206bccbfc61164dbbb576cd25dbf1a19c9a9620",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-core / OperationalSafetyAssessmentFactBundle contract owner",
@@ -851,7 +851,7 @@
     },
     {
       "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
-      "sha256": "97168ce61d450be52974c98552041a2a20418d45069eaa7cdb987e1ba35df8a0",
+      "sha256": "34004a277fb475656ca904f64e4fe643cb96ff76f9cecb1d3be7817d3037fbaf",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -883,7 +883,7 @@
     },
     {
       "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/StrategyReleaseShadowRunMaterializationServiceTest.java",
-      "sha256": "2c7cc3be7524bde1822e7dec4c6a0c94366b386e87013be284b92158e1b1c83e",
+      "sha256": "b4b4529127a1e9c144691cf1290ca039b9665acd9955ae4eac6def4e2a542d7d",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -899,7 +899,7 @@
     },
     {
       "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
-      "sha256": "7f3203e208bfb0aa25f148ba9a2b3c51bd2b8247680ad0fc66848807ea52e761",
+      "sha256": "39af614f146e8158eda1342359a3b2a9f6876e7cf15c77c1985818840d75557b",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -947,7 +947,7 @@
     },
     {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/MinimalPilotTradingVenueGateway.java",
-      "sha256": "30ef0c19c9afa4eddd96525cc01205efae1a1aa72d3b9fdb53deffb9481da475",
+      "sha256": "289dcd53100ef33029da8205442e420338732209d7ab210ec29672ebfa63773c",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-infra / MinimalPilotTradingVenueGateway contract owner",
@@ -955,7 +955,7 @@
     },
     {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/jdbc/JdbcExecutionIntentRepository.java",
-      "sha256": "24113605c90cc4a12dad400b04779862b911f9bc1c1badd5f28f3995624b11e4",
+      "sha256": "8b7f637b6055ac432cca2d35a7eae98af8bb605af77a854f9263979379897511",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-infra / JdbcExecutionIntentRepository contract owner",
@@ -963,7 +963,7 @@
     },
     {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/MinimalLivePilotControlService.java",
-      "sha256": "64a151381acc549ac0c46be167bcb15967566d6bea6984372f081d74aa4bd819",
+      "sha256": "5d8fa29431e86f46b211c15a3147569cb24a1970ff1dc02190d3edb412a4c21e",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-infra / MinimalLivePilotControlService contract owner",
@@ -971,7 +971,7 @@
     },
     {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/okx/OkxPilotPrerequisiteObservationAuthority.java",
-      "sha256": "01f8ddc34d685aba2816a6c7b9550a41795a7181ca9a2c9de6e34e572f832701",
+      "sha256": "2ad7c23cd7cf01cde6f98d935c7031348a0112584bdb4be6e314003d07bf5e1c",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-infra / OkxPilotPrerequisiteObservationAuthority contract owner",
@@ -979,7 +979,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/account/infra/probe/OkxRealReadonlyPermissionProbePortTest.java",
-      "sha256": "496a627bfc0558027c7eead219822fa1158b5457a35e62e94dc7bdbc779e3f3c",
+      "sha256": "39d84029fe4d700ccb0d9ab568528612900f647eb774df45faf0fef106c0bcc8",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -1035,7 +1035,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/OperatorPilotAuthorityMigrationContractTest.java",
-      "sha256": "d841e7960e5a757e57acc9c287c57ad77f6cc9cc2280fed1164a845d3f8540fe",
+      "sha256": "7ed9d9917abb13813f7679c0bc449bc02a96d0b3ddad8645377995f69195e1ed",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -1051,7 +1051,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/PrePlaceRecoveryMigrationContractTest.java",
-      "sha256": "a8d1173eab00aa5f5684ccae7eb5096823d9a847807145a03b30650c96abc3a7",
+      "sha256": "d2208d7764058d20ccd12c78f8139a250fa7a440b9a7eb27b3f515aa70a8c745",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -1123,7 +1123,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/ReadOnlyQualificationObservationAuthorityTest.java",
-      "sha256": "e3171f79bce7cf8def464027dffef7bfb25fab11a6cf23fa939b65f8bb2b0d0d",
+      "sha256": "caeab1fe4ba9106777974df71ecc4714671633932b8e56ce005afd78ed877ebc",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -1131,7 +1131,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/okx/OkxPilotPrerequisiteObservationAuthorityTest.java",
-      "sha256": "c92981953740fbcbe76fcbe6d87ba7ac538fc9070f279dd003939cfc5cf7342a",
+      "sha256": "aa3e1fcb38b9aeec096fd4d65dab81cfa8bcb15c2e6338c600c1b16bc63e83e4",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -1147,7 +1147,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/strategy/infra/artifact/ServerControlledStrategyArtifactBindingResolverTest.java",
-      "sha256": "1b0fc00ec2bbfa1f5feed2e8adfb2cd8aafc246b659cebe71bf8db1baf9da84f",
+      "sha256": "4cd2df401ee9f9f0491c232dbd57bda15654af850fa78b15ed341587e03e370b",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -1155,7 +1155,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcStrategyReleaseProvenanceRepositoryTest.java",
-      "sha256": "4b977a96505997d25ab2c41de291f0c8df9f95524e1c1657f66b016a8faa56f8",
+      "sha256": "d30d20644e976b388ca24b062f8e32f7948cfac09525e73961ff2412d51d98b6",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -1163,7 +1163,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/validationreview/infra/jdbc/ValidationReviewRepositoryPostgresIntegrationTest.java",
-      "sha256": "86a20545741e3c5f4d7e4098e5a3322e34d5d0397cb07e866dfc0460b051a538",
+      "sha256": "735c7c5fa98567b7540107d1b71f4eee7f45afdd1b658619da8fefd7f8398e5a",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -2254,7 +2254,7 @@
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration#minimalLivePilotRunner(MinimalLivePilotControlPlane,PilotExecutionLeaseControlPlane,OrderCommandService,OrderLifecycleService,OrderRepository,MinimalPilotTradingVenueGateway,TradeRepository,TradeLedgerGateway,com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository,ExchangeAccountRepository,ExactPilotBindingRepository,JdbcTemplate,ConfigurableApplicationContext,ObjectMapper,long,long,String,ExactPilotBinding.Side,BigDecimal)",
+          "callerMember": "MinimalLivePilotConfiguration#minimalLivePilotRunner(MinimalLivePilotControlPlane,PilotExecutionLeaseControlPlane,OrderCommandService,OrderLifecycleService,OrderRepository,MinimalPilotTradingVenueGateway,TradeRepository,TradeLedgerGateway,AuditLogRepository,ExchangeAccountRepository,ExactPilotBindingRepository,JdbcTemplate,ConfigurableApplicationContext,ObjectMapper,long,long,String,ExactPilotBinding.Side,BigDecimal)",
           "contractMember": "MinimalPilotRunner"
         },
         {
@@ -2372,12 +2372,12 @@
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration#minimalLivePilotControlPlane(ExchangeAccountRepository,InstrumentCatalogReadPort,CredentialPermissionProbeService,PilotScopeControlPlane,PilotScopeRepository,com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingControlPlane,PilotExecutionLeaseControlPlane,CanonicalLegacyAccountBridgeService)",
+          "callerMember": "MinimalLivePilotConfiguration#minimalLivePilotControlPlane(ExchangeAccountRepository,InstrumentCatalogReadPort,CredentialPermissionProbeService,PilotScopeControlPlane,PilotScopeRepository,ExactPilotBindingControlPlane,PilotExecutionLeaseControlPlane,CanonicalLegacyAccountBridgeService)",
           "contractMember": "<typed-use>"
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration#minimalLivePilotControlPlane(ExchangeAccountRepository,InstrumentCatalogReadPort,CredentialPermissionProbeService,PilotScopeControlPlane,PilotScopeRepository,com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingControlPlane,PilotExecutionLeaseControlPlane,CanonicalLegacyAccountBridgeService)",
+          "callerMember": "MinimalLivePilotConfiguration#minimalLivePilotControlPlane(ExchangeAccountRepository,InstrumentCatalogReadPort,CredentialPermissionProbeService,PilotScopeControlPlane,PilotScopeRepository,ExactPilotBindingControlPlane,PilotExecutionLeaseControlPlane,CanonicalLegacyAccountBridgeService)",
           "contractMember": "CredentialPermissionProbeService"
         },
         {
@@ -3183,22 +3183,27 @@
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration#minimalLivePilotRunner(MinimalLivePilotControlPlane,PilotExecutionLeaseControlPlane,OrderCommandService,OrderLifecycleService,OrderRepository,MinimalPilotTradingVenueGateway,TradeRepository,TradeLedgerGateway,com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository,ExchangeAccountRepository,ExactPilotBindingRepository,JdbcTemplate,ConfigurableApplicationContext,ObjectMapper,long,long,String,ExactPilotBinding.Side,BigDecimal)",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "OrderType"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
+          "callerMember": "MinimalLivePilotConfiguration#minimalLivePilotRunner(MinimalLivePilotControlPlane,PilotExecutionLeaseControlPlane,OrderCommandService,OrderLifecycleService,OrderRepository,MinimalPilotTradingVenueGateway,TradeRepository,TradeLedgerGateway,AuditLogRepository,ExchangeAccountRepository,ExactPilotBindingRepository,JdbcTemplate,ConfigurableApplicationContext,ObjectMapper,long,long,String,ExactPilotBinding.Side,BigDecimal)",
           "contractMember": "<typed-use>"
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration#minimalLivePilotRunner(MinimalLivePilotControlPlane,PilotExecutionLeaseControlPlane,OrderCommandService,OrderLifecycleService,OrderRepository,MinimalPilotTradingVenueGateway,TradeRepository,TradeLedgerGateway,com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository,ExchangeAccountRepository,ExactPilotBindingRepository,JdbcTemplate,ConfigurableApplicationContext,ObjectMapper,long,long,String,ExactPilotBinding.Side,BigDecimal)",
+          "callerMember": "MinimalLivePilotConfiguration#minimalLivePilotRunner(MinimalLivePilotControlPlane,PilotExecutionLeaseControlPlane,OrderCommandService,OrderLifecycleService,OrderRepository,MinimalPilotTradingVenueGateway,TradeRepository,TradeLedgerGateway,AuditLogRepository,ExchangeAccountRepository,ExactPilotBindingRepository,JdbcTemplate,ConfigurableApplicationContext,ObjectMapper,long,long,String,ExactPilotBinding.Side,BigDecimal)",
           "contractMember": "ExactPilotBinding"
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration#minimalLivePilotRunner(MinimalLivePilotControlPlane,PilotExecutionLeaseControlPlane,OrderCommandService,OrderLifecycleService,OrderRepository,MinimalPilotTradingVenueGateway,TradeRepository,TradeLedgerGateway,com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository,ExchangeAccountRepository,ExactPilotBindingRepository,JdbcTemplate,ConfigurableApplicationContext,ObjectMapper,long,long,String,ExactPilotBinding.Side,BigDecimal)",
+          "callerMember": "MinimalLivePilotConfiguration#minimalLivePilotRunner(MinimalLivePilotControlPlane,PilotExecutionLeaseControlPlane,OrderCommandService,OrderLifecycleService,OrderRepository,MinimalPilotTradingVenueGateway,TradeRepository,TradeLedgerGateway,AuditLogRepository,ExchangeAccountRepository,ExactPilotBindingRepository,JdbcTemplate,ConfigurableApplicationContext,ObjectMapper,long,long,String,ExactPilotBinding.Side,BigDecimal)",
           "contractMember": "Side"
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration#persistFills(TradeRepository,TradeLedgerGateway,com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository,com.guidinglight.nexusquant.trading.domain.OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation,String)",
+          "callerMember": "MinimalLivePilotConfiguration#persistFills(TradeRepository,TradeLedgerGateway,AuditLogRepository,OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation,String)",
           "contractMember": "<typed-use>"
         },
         {
@@ -3243,17 +3248,17 @@
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration.MinimalPilotRunner#suspendOrFail(com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor,java.util.UUID,ExactPilotBinding.Correlation,String)",
+          "callerMember": "MinimalLivePilotConfiguration.MinimalPilotRunner#suspendOrFail(AuthenticatedLiveControlActor,UUID,ExactPilotBinding.Correlation,String)",
           "contractMember": "<typed-use>"
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration.MinimalPilotRunner#suspendOrFail(com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor,java.util.UUID,ExactPilotBinding.Correlation,String)",
+          "callerMember": "MinimalLivePilotConfiguration.MinimalPilotRunner#suspendOrFail(AuthenticatedLiveControlActor,UUID,ExactPilotBinding.Correlation,String)",
           "contractMember": "Correlation"
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration.MinimalPilotRunner#suspendOrFail(com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor,java.util.UUID,ExactPilotBinding.Correlation,String)",
+          "callerMember": "MinimalLivePilotConfiguration.MinimalPilotRunner#suspendOrFail(AuthenticatedLiveControlActor,UUID,ExactPilotBinding.Correlation,String)",
           "contractMember": "ExactPilotBinding"
         },
         {
@@ -5175,6 +5180,11 @@
           "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/MinimalPilotTradingVenueGateway.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/MinimalPilotTradingVenueGateway.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "OrderType"
         },
         {
           "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/MinimalPilotTradingVenueGateway.java",
@@ -8259,52 +8269,52 @@
         },
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
-          "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,java.time.Instant,Set<OperationalSafetyAssessmentFindingCode>)",
+          "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,Instant,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "<typed-use>"
         },
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
-          "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,java.time.Instant,Set<OperationalSafetyAssessmentFindingCode>)",
+          "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,Instant,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_CONFLICT"
         },
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
-          "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,java.time.Instant,Set<OperationalSafetyAssessmentFindingCode>)",
+          "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,Instant,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_MISSING"
         },
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
-          "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,java.time.Instant,Set<OperationalSafetyAssessmentFindingCode>)",
+          "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,Instant,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_PRESENT"
         },
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
-          "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,java.time.Instant,Set<OperationalSafetyAssessmentFindingCode>)",
+          "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,Instant,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_STALE"
         },
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
-          "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,java.time.Instant,Set<OperationalSafetyAssessmentFindingCode>)",
+          "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,Instant,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_TYPE"
         },
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
-          "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,java.time.Instant,Set<OperationalSafetyAssessmentFindingCode>)",
+          "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,Instant,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "HUMAN_REVIEW_SUBJECT"
         },
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
-          "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,java.time.Instant,Set<OperationalSafetyAssessmentFindingCode>)",
+          "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,Instant,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "HumanReviewEvidence"
         },
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
-          "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,java.time.Instant,Set<OperationalSafetyAssessmentFindingCode>)",
+          "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,Instant,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "HumanReviewEvidenceStatus"
         },
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
-          "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,java.time.Instant,Set<OperationalSafetyAssessmentFindingCode>)",
+          "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,Instant,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "OperationalSafetyAssessmentFactBundle"
         },
         {
@@ -8623,12 +8633,12 @@
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration#minimalLivePilotRunner(MinimalLivePilotControlPlane,PilotExecutionLeaseControlPlane,OrderCommandService,OrderLifecycleService,OrderRepository,MinimalPilotTradingVenueGateway,TradeRepository,TradeLedgerGateway,com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository,ExchangeAccountRepository,ExactPilotBindingRepository,JdbcTemplate,ConfigurableApplicationContext,ObjectMapper,long,long,String,ExactPilotBinding.Side,BigDecimal)",
+          "callerMember": "MinimalLivePilotConfiguration#minimalLivePilotRunner(MinimalLivePilotControlPlane,PilotExecutionLeaseControlPlane,OrderCommandService,OrderLifecycleService,OrderRepository,MinimalPilotTradingVenueGateway,TradeRepository,TradeLedgerGateway,AuditLogRepository,ExchangeAccountRepository,ExactPilotBindingRepository,JdbcTemplate,ConfigurableApplicationContext,ObjectMapper,long,long,String,ExactPilotBinding.Side,BigDecimal)",
           "contractMember": "<typed-use>"
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration#minimalLivePilotRunner(MinimalLivePilotControlPlane,PilotExecutionLeaseControlPlane,OrderCommandService,OrderLifecycleService,OrderRepository,MinimalPilotTradingVenueGateway,TradeRepository,TradeLedgerGateway,com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository,ExchangeAccountRepository,ExactPilotBindingRepository,JdbcTemplate,ConfigurableApplicationContext,ObjectMapper,long,long,String,ExactPilotBinding.Side,BigDecimal)",
+          "callerMember": "MinimalLivePilotConfiguration#minimalLivePilotRunner(MinimalLivePilotControlPlane,PilotExecutionLeaseControlPlane,OrderCommandService,OrderLifecycleService,OrderRepository,MinimalPilotTradingVenueGateway,TradeRepository,TradeLedgerGateway,AuditLogRepository,ExchangeAccountRepository,ExactPilotBindingRepository,JdbcTemplate,ConfigurableApplicationContext,ObjectMapper,long,long,String,ExactPilotBinding.Side,BigDecimal)",
           "contractMember": "MinimalPilotTradingVenueGateway"
         },
         {
@@ -8638,17 +8648,17 @@
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration#persistFills(TradeRepository,TradeLedgerGateway,com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository,com.guidinglight.nexusquant.trading.domain.OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation,String)",
+          "callerMember": "MinimalLivePilotConfiguration#persistFills(TradeRepository,TradeLedgerGateway,AuditLogRepository,OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation,String)",
           "contractMember": "<typed-use>"
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration#persistFills(TradeRepository,TradeLedgerGateway,com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository,com.guidinglight.nexusquant.trading.domain.OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation,String)",
+          "callerMember": "MinimalLivePilotConfiguration#persistFills(TradeRepository,TradeLedgerGateway,AuditLogRepository,OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation,String)",
           "contractMember": "MinimalPilotTradingVenueGateway"
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration#persistFills(TradeRepository,TradeLedgerGateway,com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository,com.guidinglight.nexusquant.trading.domain.OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation,String)",
+          "callerMember": "MinimalLivePilotConfiguration#persistFills(TradeRepository,TradeLedgerGateway,AuditLogRepository,OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation,String)",
           "contractMember": "PilotReconciliation"
         },
         {
@@ -8663,47 +8673,47 @@
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration#requireMatchingTrade(PaperTradeRecord,com.guidinglight.nexusquant.trading.domain.OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation,com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults.FillReference)",
+          "callerMember": "MinimalLivePilotConfiguration#requireMatchingTrade(PaperTradeRecord,OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation,SpotProviderResults.FillReference)",
           "contractMember": "<typed-use>"
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration#requireMatchingTrade(PaperTradeRecord,com.guidinglight.nexusquant.trading.domain.OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation,com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults.FillReference)",
+          "callerMember": "MinimalLivePilotConfiguration#requireMatchingTrade(PaperTradeRecord,OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation,SpotProviderResults.FillReference)",
           "contractMember": "MinimalPilotTradingVenueGateway"
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration#requireMatchingTrade(PaperTradeRecord,com.guidinglight.nexusquant.trading.domain.OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation,com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults.FillReference)",
+          "callerMember": "MinimalLivePilotConfiguration#requireMatchingTrade(PaperTradeRecord,OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation,SpotProviderResults.FillReference)",
           "contractMember": "PilotReconciliation"
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration.MinimalPilotRunner#<init>(MinimalLivePilotControlPlane,PilotExecutionLeaseControlPlane,OrderCommandService,OrderLifecycleService,OrderRepository,MinimalPilotTradingVenueGateway,TradeRepository,TradeLedgerGateway,com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository,ExchangeAccountRepository,ExactPilotBindingRepository,JdbcTemplate,ConfigurableApplicationContext,ObjectMapper,MinimalLivePilotCommand)",
+          "callerMember": "MinimalLivePilotConfiguration.MinimalPilotRunner#<init>(MinimalLivePilotControlPlane,PilotExecutionLeaseControlPlane,OrderCommandService,OrderLifecycleService,OrderRepository,MinimalPilotTradingVenueGateway,TradeRepository,TradeLedgerGateway,AuditLogRepository,ExchangeAccountRepository,ExactPilotBindingRepository,JdbcTemplate,ConfigurableApplicationContext,ObjectMapper,MinimalLivePilotCommand)",
           "contractMember": "<typed-use>"
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration.MinimalPilotRunner#<init>(MinimalLivePilotControlPlane,PilotExecutionLeaseControlPlane,OrderCommandService,OrderLifecycleService,OrderRepository,MinimalPilotTradingVenueGateway,TradeRepository,TradeLedgerGateway,com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository,ExchangeAccountRepository,ExactPilotBindingRepository,JdbcTemplate,ConfigurableApplicationContext,ObjectMapper,MinimalLivePilotCommand)",
+          "callerMember": "MinimalLivePilotConfiguration.MinimalPilotRunner#<init>(MinimalLivePilotControlPlane,PilotExecutionLeaseControlPlane,OrderCommandService,OrderLifecycleService,OrderRepository,MinimalPilotTradingVenueGateway,TradeRepository,TradeLedgerGateway,AuditLogRepository,ExchangeAccountRepository,ExactPilotBindingRepository,JdbcTemplate,ConfigurableApplicationContext,ObjectMapper,MinimalLivePilotCommand)",
           "contractMember": "MinimalPilotTradingVenueGateway"
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration.MinimalPilotRunner#alignOrder(com.guidinglight.nexusquant.trading.domain.OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation,String)",
+          "callerMember": "MinimalLivePilotConfiguration.MinimalPilotRunner#alignOrder(OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation,String)",
           "contractMember": "<typed-use>"
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration.MinimalPilotRunner#alignOrder(com.guidinglight.nexusquant.trading.domain.OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation,String)",
+          "callerMember": "MinimalLivePilotConfiguration.MinimalPilotRunner#alignOrder(OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation,String)",
           "contractMember": "MinimalPilotTradingVenueGateway"
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration.MinimalPilotRunner#alignOrder(com.guidinglight.nexusquant.trading.domain.OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation,String)",
+          "callerMember": "MinimalLivePilotConfiguration.MinimalPilotRunner#alignOrder(OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation,String)",
           "contractMember": "PilotReconciliation"
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration.MinimalPilotRunner#completeReconciliation(com.guidinglight.nexusquant.trading.domain.OrderRecord,String,String)",
+          "callerMember": "MinimalLivePilotConfiguration.MinimalPilotRunner#completeReconciliation(OrderRecord,String,String)",
           "contractMember": "<typed-use>"
         },
         {
@@ -9116,7 +9126,7 @@
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-          "callerMember": "MinimalLivePilotConfiguration#minimalLivePilotControlPlane(ExchangeAccountRepository,InstrumentCatalogReadPort,CredentialPermissionProbeService,PilotScopeControlPlane,PilotScopeRepository,com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingControlPlane,PilotExecutionLeaseControlPlane,CanonicalLegacyAccountBridgeService)",
+          "callerMember": "MinimalLivePilotConfiguration#minimalLivePilotControlPlane(ExchangeAccountRepository,InstrumentCatalogReadPort,CredentialPermissionProbeService,PilotScopeControlPlane,PilotScopeRepository,ExactPilotBindingControlPlane,PilotExecutionLeaseControlPlane,CanonicalLegacyAccountBridgeService)",
           "contractMember": "MinimalLivePilotControlService"
         },
         {
@@ -9206,7 +9216,7 @@
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ReadOnlyProviderObservationConfiguration.java",
-          "callerMember": "ReadOnlyProviderObservationConfiguration#readOnlyProviderObservationAuthority(OkxPrivateCredentialExecutor,KillSwitchService,com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService,ReadOnlyProviderObservationRuntimeIdentity,String)",
+          "callerMember": "ReadOnlyProviderObservationConfiguration#readOnlyProviderObservationAuthority(OkxPrivateCredentialExecutor,KillSwitchService,InstrumentCatalogService,ReadOnlyProviderObservationRuntimeIdentity,String)",
           "contractMember": "OkxPilotPrerequisiteObservationAuthority"
         },
         {

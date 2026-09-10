@@ -1,0 +1,26 @@
+{
+  "startingHead": "86c8ad84542636364f6c21e78bc292a323cbdff7",
+  "reviewedFingerprint": "9be6df6668a2bcbbd3eb453be9a051c046d78a77d12a2d1e08070d70cd17cf00",
+  "startingFingerprintVerified": "9be6df6668a2bcbbd3eb453be9a051c046d78a77d12a2d1e08070d70cd17cf00",
+  "startingCandidateFiles": 3529,
+  "startingAllFilesMatchedReview": true,
+  "protectedFiles": 1336,
+  "protectedMismatch": [],
+  "reviewedBackendManifestFiles": 1788,
+  "reviewedBackendManifestMismatch": [],
+  "changedBaselineFiles": [
+    "docs/audit/evidence/GATEAUDIT_PHASE6_L4_B5_DUPLICATE_COMMAND_SCHEDULER_LOCK_MULTIPROCESS_OWNERSHIP_QUALIFICATION.md"
+  ],
+  "historicalEvidenceBytePrefixPreserved": true,
+  "newSourceFiles": [
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5StrategyScanConcurrencyTest.java"
+  ],
+  "productionChanges": 0,
+  "migrationChanges": 0,
+  "ciChanges": 0,
+  "agentsSkillsChanges": 0,
+  "indexStart": "6bc9c1aecb4c1b9951c2cb734b842af422daf6ed2c32345301a28f487002a221",
+  "indexEnd": "6bc9c1aecb4c1b9951c2cb734b842af422daf6ed2c32345301a28f487002a221",
+  "stagedFiles": [],
+  "note": "Reviewed production/backend unchanged. Overall working-tree fingerprint changes only because of added qualification test and evidence."
+}

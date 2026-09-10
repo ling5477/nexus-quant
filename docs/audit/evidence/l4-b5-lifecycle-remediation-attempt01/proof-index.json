@@ -1,0 +1,56 @@
+{
+  "proofs": [
+    {
+      "path": "ORIGINAL_REVIEW_CREATED.json",
+      "sha256": "4c175693e46932b2f6d40d77016f0cc684cd631d75a37dce532c7abbd43eb11f",
+      "rawPath": "C:\\Users\\Lingyu\\AppData\\Local\\Temp\\nq-b5-independent-review-v1bm91lp\\owner-death-proof.json",
+      "rawSha256": "60ade7d73f3b8d9afb4dbc22f5d33a93759efbfcfa6b11a094cf035dcd980427",
+      "inverseEquality": true,
+      "rawUnchanged": true
+    },
+    {
+      "path": "RUNNING.json",
+      "sha256": "3beb0563edd7d960a8eff0035b02ce757f945a24894158254592528d4ec3c1a6",
+      "rawPath": "backend/nq-app/target/b5-lifecycle-crash/a75527d6-02c3-4dad-92e7-71b1e61450fb/raw-proof.json",
+      "rawSha256": "e080d515f1b63bdb218db1de76229578b9f609734e7aa6039e6b29a09305873c",
+      "inverseEquality": true,
+      "rawUnchanged": true
+    },
+    {
+      "path": "CREATED.json",
+      "sha256": "3da69108f9ba54e678c9fa87051b55031fa055e5a4bb6c0efda6387457aefd46",
+      "rawPath": "backend/nq-app/target/b5-lifecycle-crash/bcc58160-dd1e-426c-9a87-bfc4469e4cce/raw-proof.json",
+      "rawSha256": "84081a4fa1447008b467fe5721637ce7eacef622636473e5fde2207b0d2df2b6",
+      "inverseEquality": true,
+      "rawUnchanged": true
+    },
+    {
+      "path": "BINDING_DIAGNOSTIC.json",
+      "sha256": "8b8d22d9d0cde77702475181b4bb6824f74dabf2e545c5fbad1541f4ee902712",
+      "rawPath": "backend/nq-app/target/b5-lifecycle-remediation-attempt01/raw-binding-proof.json",
+      "rawSha256": "03c0ec918904db6799a78bcd68bec2977757479ca8b933c0f942c6b1da734563",
+      "inverseEquality": true,
+      "rawUnchanged": true
+    }
+  ],
+  "targetTest": {
+    "tests": 2,
+    "failures": 2,
+    "errors": 0,
+    "skipped": 0,
+    "exitCode": 1,
+    "logPath": "backend/nq-app/target/b5-lifecycle-remediation-attempt01/target-red.log",
+    "logSha256": "084e8e1a97eb04423b5b597a47e72202134a39a7f835478d1a45123fbb214016",
+    "sourcePath": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5DurableLifecycleCrashRecoveryTest.java",
+    "sourceSha256": "f836a56871d36400290962f09de643fd9a8ce001340cac60770ad0b90e1ad1f7"
+  },
+  "schemaDiagnostic": {
+    "driver": "SchemaBindingProbe.java",
+    "driverSha256": "501d42087ec1aef7cb4319bd10d5abd357688eb51a2febbb97caa5a43f45b3e0",
+    "logPath": "backend/nq-app/target/b5-lifecycle-remediation-attempt01/binding-probe.log",
+    "logSha256": "6c813800173f5f289ae728deac5d80d131b7be1dde0e1920c3f640d074ad1b2e",
+    "exitCode": 0,
+    "meaning": "GAP_REPRODUCED_NOT_CORRECTNESS_PASS"
+  },
+  "fullMaven": "NOT_RUN_STOP_BEFORE_PRODUCTION_REMEDIATION"
+}

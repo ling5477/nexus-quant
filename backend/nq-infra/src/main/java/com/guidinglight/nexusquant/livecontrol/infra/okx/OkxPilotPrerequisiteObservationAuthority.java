@@ -29,6 +29,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.math.BigDecimal;
+import java.util.HexFormat;
+import java.util.stream.Stream;
 
 /**
  * OKX production prerequisite observation capability；默认 runtime 不装配该 authority。
@@ -306,7 +309,7 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
             throw new IllegalArgumentException("fee digest mismatch");
         }
 
-        java.math.BigDecimal availableBalance = snapshot.availableUsdtBalance()
+        BigDecimal availableBalance = snapshot.availableUsdtBalance()
                 .setScale(8, RoundingMode.DOWN);
         String balanceDigest = PilotObservationCanonicalEncoder.balanceSnapshotDigest(availableBalance);
         String clockDigest = PilotObservationCanonicalEncoder.clockSyncDigest(
@@ -537,7 +540,7 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
                 "GET /api/v5/market/ticker",
                 "GET /api/v5/public/time"
         );
-        String canonical = java.util.stream.Stream.concat(
+        String canonical = Stream.concat(
                         prerequisiteEndpoints.stream(),
                         OkxSpotProviderOperation.exactAllowlist().stream()
                                 .map(operation -> operation.method() + " " + operation.path()))
@@ -548,7 +551,7 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
     }
 
     private static String sha256(String value) {
-        return java.util.HexFormat.of().formatHex(sha256Bytes(value));
+        return HexFormat.of().formatHex(sha256Bytes(value));
     }
 
     private static byte[] sha256Bytes(String value) {

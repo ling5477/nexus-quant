@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.Set;
 
 /**
  * 一次 pilot attempt 的 immutable exact binding；仅表达候选事实，不授予交易权限。
@@ -261,7 +262,7 @@ public record ExactPilotBinding(
             Objects.requireNonNull(exchangeTimeSnapshotIdentity, "exchangeTimeSnapshotIdentity must not be null");
             Objects.requireNonNull(marketSnapshotIdentity, "marketSnapshotIdentity must not be null");
             requireDigest(marketSnapshotDigest, "marketSnapshotDigest");
-            require(java.util.Set.of(
+            require(Set.of(
                             instrumentSnapshotIdentity, feeSnapshotIdentity,
                             balanceSnapshotIdentity, exchangeTimeSnapshotIdentity,
                             marketSnapshotIdentity).size() == 5,

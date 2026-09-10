@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.strategy.infra.jdbc;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseProvenanceFacts;
 
 import java.util.List;
+import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -27,7 +28,7 @@ class JdbcStrategyReleaseProvenanceRepositoryTest {
         assertFalse(result.present());
         assertEquals("pub-gatex-1", result.publishRecordId());
         assertNotNull(jdbcTemplate.lastSql);
-        String normalizedSql = jdbcTemplate.lastSql.toUpperCase(java.util.Locale.ROOT);
+        String normalizedSql = jdbcTemplate.lastSql.toUpperCase(Locale.ROOT);
         assertTrue(normalizedSql.contains("FROM BACKTEST_PUBLISH_RECORDS P"));
         assertTrue(normalizedSql.contains("WHERE P.PUBLISH_RECORD_ID = ?"));
         assertTrue(jdbcTemplate.lastSql.contains("r.dataset_snapshot_json ->> 'datasetId'"));

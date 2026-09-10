@@ -48,6 +48,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 
 class SecurityConfigurationContextTest {
 
@@ -148,10 +149,10 @@ class SecurityConfigurationContextTest {
     @Test
     void minimalPilotCompositionDoesNotUseOrderingSensitiveClassCondition() {
         assertFalse(MinimalLivePilotConfiguration.class.isAnnotationPresent(
-                org.springframework.boot.autoconfigure.condition.ConditionalOnBean.class
+                ConditionalOnBean.class
         ));
         assertFalse(ExactPilotBindingConfiguration.class.isAnnotationPresent(
-                org.springframework.boot.autoconfigure.condition.ConditionalOnBean.class
+                ConditionalOnBean.class
         ));
     }
 

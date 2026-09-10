@@ -1,0 +1,79 @@
+{
+  "reviewReportOriginalPath": "C:\\Users\\Lingyu\\AppData\\Local\\Temp\\nq-b5-independent-review-h5xpb660\\REVIEW.md",
+  "reviewReportSha256": "adf936f587cd28251efd196d5edb39cff7b47ca4a5056d8668da5f6995e7db2c",
+  "reviewReportArchived": "reused-review-original.txt",
+  "reviewFingerprint": "9be6df6668a2bcbbd3eb453be9a051c046d78a77d12a2d1e08070d70cd17cf00",
+  "reviewCandidateFiles": 3529,
+  "reviewBackendManifestSha256": "72eeecc45b2f49de16fbfc423e2b16a74b1caa4ea84252c0910f7ecda4c00c4d",
+  "reviewBackendFiles": 1788,
+  "reviewBackendMismatch": [],
+  "reviewerFull": {
+    "status": "PASS",
+    "tests": 1877,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 102,
+    "fullExitCode": 0,
+    "fixtureVerification": "49|t\n1\n0\n0\n16.15 (Debian 16.15-1.pgdg13+2)",
+    "logSha256": "464fedb0a850299f784a8f0e1a5fcdc46e128897167f223f809a1835f0e7d6fc",
+    "candidateManifestSha256": "b3915f9bbaba2c9217574b22e3fdc98561bfee217f57ea4c9c10bb20991a6552",
+    "changedCandidatePaths": [],
+    "ownedContainerRemoved": true
+  },
+  "reviewFullLogHashVerified": true,
+  "fullMavenRerun": "NONE",
+  "newIndependentReview": "NONE",
+  "acceptedEarlierQualificationRows": [
+    {
+      "path": "docs/audit/evidence/l4-b5-qualification-resume-attempt01/R01.json",
+      "sha256": "d3f2897d5450bd2106bed132a1bdede96dddb1a93d64abb171cfa6c8afd6e7ab",
+      "disposition": "REUSED_ACCEPTED_PROOF"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-qualification-resume-attempt01/R02.json",
+      "sha256": "461ae12c2aa5aa01cfb5029c8bfbd5095051ad024ec101aea35daf3e91fddd8a",
+      "disposition": "REUSED_ACCEPTED_PROOF"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-qualification-resume-attempt01/R03.json",
+      "sha256": "b49e2a8f18f1381032c83ea6e6e1f610bbe261581bca9a23379bb120e3082d71",
+      "disposition": "REUSED_ACCEPTED_PROOF"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-qualification-resume-attempt01/R04.json",
+      "sha256": "a99ddf8dfa5814a9736aeae5c9146b4a610c97a0c9f518a357bf8d9250f94e55",
+      "disposition": "REUSED_ACCEPTED_PROOF"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-qualification-resume-attempt01/R05.json",
+      "sha256": "be7ff31cacc884248e308d9889bba410cabae1918dde97aa189e5e50b11c4883",
+      "disposition": "REUSED_ACCEPTED_PROOF"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-qualification-resume-attempt01/R06.json",
+      "sha256": "657e6124c2204516a20f7a8809996aa68223c6dd8d6542fc28073ee6a372c619",
+      "disposition": "REUSED_ACCEPTED_PROOF"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-qualification-resume-attempt01/R07.json",
+      "sha256": "ae54b08960ed8967b0fb58951b9dff05805fa765d2b405fa2db5d51e7eac1548",
+      "disposition": "REUSED_ACCEPTED_PROOF"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-qualification-resume-attempt01/R08.json",
+      "sha256": "c5955bb62df196880699d2ab54b1bae69ce603760314c3fb99ef49eafdad4c20",
+      "disposition": "REUSED_ACCEPTED_PROOF"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-qualification-resume-attempt01/R09.json",
+      "sha256": "7d62954b781f46f4e15c34cb6b2cf501233e428f904d5dec675a7f968ee37898",
+      "disposition": "REUSED_ACCEPTED_PROOF"
+    }
+  ],
+  "strategyRecoveryProofs": "../l4-b5-strategy-run-recovery-attempt01/proof-index.json",
+  "remainingMatrixDisposition": "STOP_AFTER_NEW_P1",
+  "reuseDoesNotQualifyB5": true,
+  "reviewBackendOriginalManifestSha256": "b3915f9bbaba2c9217574b22e3fdc98561bfee217f57ea4c9c10bb20991a6552",
+  "manifestInverseEquality": true,
+  "manifestFormat": "Existing sourceFileCount/files/path/sha256 schema; original path-keyed manifest retained in reviewer Temp"
+}

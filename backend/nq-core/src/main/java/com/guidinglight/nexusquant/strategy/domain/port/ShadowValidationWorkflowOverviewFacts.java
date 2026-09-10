@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.Locale;
 
 /**
  * ShadowValidationWorkflowOverviewFacts 是 GateT-1 repository 返回给 core 的 SELECT-only 投影。
@@ -96,7 +97,7 @@ public record ShadowValidationWorkflowOverviewFacts(List<OperatorEvidenceFact> o
 
         private static String normalizeStatus(String value) {
             String normalized = normalize(value);
-            return normalized == null ? null : normalized.toUpperCase(java.util.Locale.ROOT);
+            return normalized == null ? null : normalized.toUpperCase(Locale.ROOT);
         }
     }
 }

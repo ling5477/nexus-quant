@@ -13,12 +13,19 @@ import com.guidinglight.nexusquant.trading.application.*;
 import com.guidinglight.nexusquant.trading.application.port.*;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterTradeReport;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
+import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentCanonicalEncoder;
+import com.guidinglight.nexusquant.scheduler.service.LedgerModuleTradeLedgerGateway;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.sql.DriverManager;
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -32,6 +39,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.springframework.jdbc.core.ConnectionCallback;
 
 /**
  * C1 使用真实事务与确定性 barrier 验证 versioned OCC；C2 验证撤单终态的成交与账本回补。
@@ -48,7 +57,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
         "nq.env-safety.real-exchange-enabled=false", "nq.env-safety.no-outbound=true"
 })
 @ActiveProfiles("local")
-@org.junit.jupiter.api.condition.EnabledIfSystemProperty(named = "nq.l4.blockers.enabled", matches = "true")
+@EnabledIfSystemProperty(named = "nq.l4.blockers.enabled", matches = "true")
 @ContextConfiguration(initializers = TradingChainPostgresIntegrationTest.NoExchangeOutboundInitializer.class)
 class L4PlanBlockerPostgresIntegrationTest {
     @Autowired OrderCommandService commands;
@@ -56,8 +65,8 @@ class L4PlanBlockerPostgresIntegrationTest {
     @Autowired OkxRestReconcileService reconcile;
     @Autowired KillSwitchService kill;
     @Autowired ControlledGateway gateway;
-    @MockitoSpyBean com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter adapter;
-    @MockitoSpyBean com.guidinglight.nexusquant.scheduler.service.LedgerModuleTradeLedgerGateway ledgerGateway;
+    @MockitoSpyBean OkxExchangeAdapter adapter;
+    @MockitoSpyBean LedgerModuleTradeLedgerGateway ledgerGateway;
     @MockitoSpyBean JdbcTemplate jdbc;
     @MockitoSpyBean OrderCommandWriteService writes;
     private final List<String> updates = new CopyOnWriteArrayList<>();
@@ -65,7 +74,7 @@ class L4PlanBlockerPostgresIntegrationTest {
     private final List<String> createdOrders = new CopyOnWriteArrayList<>();
 
     @BeforeEach void prepare() {
-        String url = jdbc.execute((org.springframework.jdbc.core.ConnectionCallback<String>)
+        String url = jdbc.execute((ConnectionCallback<String>)
                 c -> c.getMetaData().getURL());
         assertNotNull(url);
         assertTrue(url.startsWith("jdbc:postgresql://127.0.0.1:") && url.contains("/nq_l4_blocker"),
@@ -393,7 +402,7 @@ class L4PlanBlockerPostgresIntegrationTest {
         var facts = orderFacts(order);
         BigDecimal fee = new BigDecimal(feeText);
         int entries = fee.signum() == 0 ? 2 : 4;
-        var report = new com.guidinglight.nexusquant.adapter.api.model.AdapterTradeReport(
+        var report = new AdapterTradeReport(
                 "OKX", order.accountId(), order.symbol(), order.clientOrderId(), order.externalOrderId(),
                 "fee-" + order.orderId(), order.side(), order.price(), order.qty().divide(new BigDecimal("2")), fee, "USDT", Instant.EPOCH,
                 "synthetic", order.traceId(), "SIM");
@@ -438,7 +447,7 @@ class L4PlanBlockerPostgresIntegrationTest {
     void terminalPrefixCannotStarveEligibleVictim(String scenario) {
         int prefixSize = scenario.equals("scheduled") ? 100 : scenario.equals("multiple") ? 2 : 1;
         int budget = prefixSize;
-        var prefix = new java.util.ArrayList<OrderRecord>();
+        var prefix = new ArrayList<OrderRecord>();
         for (int i = 0; i < prefixSize; i++) {
             var old = place(scenario.equals("filled-converged") ? request("review-old-" + i) : partialRequest("review-old-" + i));
             if (!scenario.equals("filled-converged")) commands.cancelOrder(cancel(old));
@@ -526,9 +535,9 @@ class L4PlanBlockerPostgresIntegrationTest {
         assertEquals(1L, jdbc.queryForObject("SELECT revision FROM reconciliation_scan_cursors WHERE venue='OKX'", Long.class));
         doAnswer(call -> {
             assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
-            String url = jdbc.execute((org.springframework.jdbc.core.ConnectionCallback<String>) c -> c.getMetaData().getURL());
+            String url = jdbc.execute((ConnectionCallback<String>) c -> c.getMetaData().getURL());
             // venue 查询边界用另一个真实连接立即加锁；若预留锁尚未释放，NOWAIT 必须失败。
-            try (var connection = java.sql.DriverManager.getConnection(url, "postgres", "");
+            try (var connection = DriverManager.getConnection(url, "postgres", "");
                     var statement = connection.createStatement()) {
                 statement.setQueryTimeout(2);
                 try (var rows = statement.executeQuery("SELECT revision FROM reconciliation_scan_cursors WHERE venue='OKX' FOR UPDATE NOWAIT")) {
@@ -600,7 +609,7 @@ class L4PlanBlockerPostgresIntegrationTest {
         String id = UUID.randomUUID().toString().replace("-", "");
         Long account = jdbc.queryForObject("INSERT INTO accounts(account_code,venue,status) VALUES (?,'OKX','ACTIVE') RETURNING account_id",
                 Long.class, "l4-" + id);
-        String clientId = com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentCanonicalEncoder.stableClientOrderId(intentId);
+        String clientId = ExecutionIntentCanonicalEncoder.stableClientOrderId(intentId);
         return new PlaceOrderRequest("l4-" + name + id, account, null, "OKX", "BTC-USDT", clientId,
                 "l4" + id, "L4_TEST", OrderSide.BUY, OrderType.LIMIT,
                 new BigDecimal("100"), new BigDecimal("0.1"), "GTC", "l4-" + id);
@@ -648,7 +657,7 @@ class L4PlanBlockerPostgresIntegrationTest {
             return new TradingChainPostgresIntegrationTest.DeterministicFakeVenue();
         }
         @Bean(name = "okxTradingAdapter") @Primary
-        com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter okxTradingAdapter(
+        OkxExchangeAdapter okxTradingAdapter(
                 TradingChainPostgresIntegrationTest.DeterministicFakeVenue venue) { return venue.okxAdapter(); }
         @Bean @Primary ControlledGateway controlledGateway(TradingChainPostgresIntegrationTest.DeterministicFakeVenue venue) {
             return new ControlledGateway(venue);
@@ -659,7 +668,7 @@ class L4PlanBlockerPostgresIntegrationTest {
         volatile boolean pausePlace, pauseCancel;
         volatile CountDownLatch reached, release;
         volatile CountDownLatch oldReached, oldRelease, newReached, newRelease;
-        final java.util.concurrent.atomic.AtomicInteger cancelCalls = new java.util.concurrent.atomic.AtomicInteger();
+        final AtomicInteger cancelCalls = new AtomicInteger();
         final AtomicReference<OrderRecord> inFlight = new AtomicReference<>();
         ControlledGateway(TradingChainPostgresIntegrationTest.DeterministicFakeVenue venue) { this.venue = venue; reset(); }
         void reset() {

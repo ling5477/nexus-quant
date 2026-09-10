@@ -35,6 +35,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.mockito.ArgumentMatchers;
 
 class MinimalPilotTradingVenueGatewayTest {
 
@@ -65,11 +66,11 @@ class MinimalPilotTradingVenueGatewayTest {
         when(intents.find(intentId)).thenReturn(Optional.of(sendStarted));
         when(intents.markAmbiguousForRecovery(intentId, 3L, claimToken)).thenReturn(Optional.of(unknown));
         when(intents.appendReceiptAndTransition(
-                org.mockito.ArgumentMatchers.eq(intentId),
-                org.mockito.ArgumentMatchers.eq(4L),
-                org.mockito.ArgumentMatchers.eq(claimToken),
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.eq(ExecutionIntentState.RECONCILED)))
+                ArgumentMatchers.eq(intentId),
+                ArgumentMatchers.eq(4L),
+                ArgumentMatchers.eq(claimToken),
+                ArgumentMatchers.any(),
+                ArgumentMatchers.eq(ExecutionIntentState.RECONCILED)))
                 .thenReturn(reconciled);
         SpotProviderResults.OrderObservation confirmed = new SpotProviderResults.OrderObservation(
                 SpotProviderResults.OrderState.FILLED,
@@ -79,11 +80,11 @@ class MinimalPilotTradingVenueGatewayTest {
 
         assertSame(reconciled, gateway.reconcileIntentObservation(intentId, confirmed));
         verify(intents).appendReceiptAndTransition(
-                org.mockito.ArgumentMatchers.eq(intentId),
-                org.mockito.ArgumentMatchers.eq(4L),
-                org.mockito.ArgumentMatchers.eq(claimToken),
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.eq(ExecutionIntentState.RECONCILED));
+                ArgumentMatchers.eq(intentId),
+                ArgumentMatchers.eq(4L),
+                ArgumentMatchers.eq(claimToken),
+                ArgumentMatchers.any(),
+                ArgumentMatchers.eq(ExecutionIntentState.RECONCILED));
         verify(intents).markAmbiguousForRecovery(intentId, 3L, claimToken);
     }
 

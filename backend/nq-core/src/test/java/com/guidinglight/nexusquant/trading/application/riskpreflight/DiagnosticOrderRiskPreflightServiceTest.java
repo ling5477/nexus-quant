@@ -27,6 +27,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashSet;
 
 import org.junit.jupiter.api.Test;
 
@@ -387,7 +390,7 @@ class DiagnosticOrderRiskPreflightServiceTest {
 
     @Test
     void shouldCopyCredentialMetadataCollections() {
-        java.util.ArrayList<String> types = new java.util.ArrayList<>(List.of("API_KEY"));
+        ArrayList<String> types = new ArrayList<>(List.of("API_KEY"));
         CredentialMetadataSummary summary = credential(1, types);
         types.add("MUTATED");
 
@@ -398,7 +401,7 @@ class DiagnosticOrderRiskPreflightServiceTest {
     @Test
     void shouldKeepFindingGroupsDisjoint() {
         DiagnosticOrderRiskPreflightResult result = evaluateWithMarketdata(Quality.WARNING);
-        Set<DiagnosticOrderRiskPreflightFindingCode> all = new java.util.HashSet<>();
+        Set<DiagnosticOrderRiskPreflightFindingCode> all = new HashSet<>();
 
         assertTrue(result.blockers().stream().allMatch(all::add));
         assertTrue(result.warnings().stream().allMatch(all::add));
@@ -547,7 +550,7 @@ class DiagnosticOrderRiskPreflightServiceTest {
                 true,
                 true,
                 false,
-                new java.math.BigDecimal("100"),
+                new BigDecimal("100"),
                 List.of(OrderPreviewFindingCode.EXECUTION_NOT_AUTHORIZED),
                 List.of(),
                 List.of(OrderPreviewFindingCode.MIN_NOTIONAL_UNKNOWN, OrderPreviewFindingCode.FEE_UNKNOWN),

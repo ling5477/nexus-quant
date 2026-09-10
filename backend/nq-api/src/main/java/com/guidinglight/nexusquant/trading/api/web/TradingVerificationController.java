@@ -14,6 +14,8 @@ import com.guidinglight.nexusquant.trading.application.PlaceOrderResult;
 import com.guidinglight.nexusquant.trading.application.RecoveryReport;
 import com.guidinglight.nexusquant.trading.application.maintenance.TradingMaintenanceService;
 import com.guidinglight.nexusquant.trading.application.query.TradingQueryFacade;
+import com.guidinglight.nexusquant.trading.domain.TradingVenue;
+import com.guidinglight.nexusquant.trading.application.query.OrderQueryView;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -312,9 +314,8 @@ public class TradingVerificationController {
     public OperationTriggerResponse runReconcile(@Valid @RequestBody(required = false) ReconcileRunOnceRequest request) {
         String traceId = TraceIdContext.getOrCreate();
         int limit = request == null || request.limit() == null ? DEFAULT_RECONCILE_LIMIT : request.limit();
-        String venue = request == null || request.venue() == null || request.venue().isBlank()
-                ? "OKX"
-                : request.venue().trim().toUpperCase();
+        String venue = TradingVenue.parse(
+                request == null || request.venue() == null ? "OKX" : request.venue()).name();
         int newTrades = tradingMaintenanceService.runReconcile(venue, limit);
         return new OperationTriggerResponse(
                 "reconcileOnce",
@@ -332,9 +333,8 @@ public class TradingVerificationController {
     })
     public OperationTriggerResponse runRecovery(@Valid @RequestBody(required = false) RecoveryRunOnceRequest request) {
         String traceId = TraceIdContext.getOrCreate();
-        String venue = request == null || request.venue() == null || request.venue().isBlank()
-                ? "OKX"
-                : request.venue().trim().toUpperCase();
+        String venue = TradingVenue.parse(
+                request == null || request.venue() == null ? "OKX" : request.venue()).name();
         RecoveryReport report = tradingMaintenanceService.runRecovery(venue, traceId);
         return new OperationTriggerResponse(
                 "recoveryRunOnce",
@@ -411,7 +411,7 @@ public class TradingVerificationController {
         return normalized.toUpperCase();
     }
 
-    private OrderView toOrderView(com.guidinglight.nexusquant.trading.application.query.OrderQueryView queryView) {
+    private OrderView toOrderView(OrderQueryView queryView) {
         return new OrderView(
                 queryView.orderId(),
                 queryView.accountId(),

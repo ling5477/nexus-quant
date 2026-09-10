@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Objects;
 
 /** Attempt级零intent pre-PLACE recovery判定；不提供lease复活或PLACE重试能力。 */
 public interface PilotPrePlaceRecoveryRepository {
@@ -40,9 +41,9 @@ public interface PilotPrePlaceRecoveryRepository {
             int replacementOrdinal
     ) {
         public Authorization {
-            java.util.Objects.requireNonNull(decisionId);
-            java.util.Objects.requireNonNull(predecessorLeaseId);
-            java.util.Objects.requireNonNull(predecessorSessionId);
+            Objects.requireNonNull(decisionId);
+            Objects.requireNonNull(predecessorLeaseId);
+            Objects.requireNonNull(predecessorSessionId);
             if (replacementOrdinal <= 0) {
                 throw new IllegalArgumentException("replacementOrdinal must be positive");
             }

@@ -18,15 +18,17 @@ import com.guidinglight.nexusquant.trading.application.port.TradingOrderStatusSn
 import com.guidinglight.nexusquant.trading.application.port.TradingPlaceGatewayResult;
 import com.guidinglight.nexusquant.trading.application.port.TradingVenueGateway;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
+import com.guidinglight.nexusquant.trading.domain.EffectiveOrderParameters;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Locale;
+import com.guidinglight.nexusquant.trading.domain.TradingVenue;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -45,7 +47,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class AdapterBackedTradingVenueGateway implements TradingVenueGateway {
 
-    private final Map<String, TradingAdapter> tradingAdapters;
+    private final Map<TradingVenue, TradingAdapter> tradingAdapters;
     private final Clock clock;
 
     @Autowired
@@ -57,13 +59,24 @@ public class AdapterBackedTradingVenueGateway implements TradingVenueGateway {
         this.tradingAdapters = tradingAdapters.stream()
                 .filter(Objects::nonNull)
                 .collect(Collectors.toUnmodifiableMap(
-                        adapter -> normalizeVenue(adapter.venue()),
+                        adapter -> TradingVenue.parse(adapter.venue()),
                         Function.identity(),
                         (left, right) -> {
                             throw new IllegalStateException("duplicate trading adapter for venue: " + left.venue());
                         }
                 ));
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
+    }
+
+    @Override
+    public EffectiveOrderParameters normalizePlaceOrder(PlaceOrderRequest request) {
+        var normalized = requiredTradingAdapter(request.venue()).normalizeOrder(new AdapterOrderRequest(
+                request.requestId(), null, request.accountId(), request.venue(), request.symbol(), request.clientOrderId(),
+                request.idempotencyKey(), request.side().name(), request.type().name(), request.price(), request.quantity(),
+                null, request.timeInForce(), request.source(), request.strategyRunId(), request.traceId()));
+        return normalized.rejection() == null
+                ? new EffectiveOrderParameters(normalized.quantity(), normalized.price(), null)
+                : new EffectiveOrderParameters(null, null, normalized.rejection().code());
     }
 
     @Override
@@ -76,7 +89,7 @@ public class AdapterBackedTradingVenueGateway implements TradingVenueGateway {
                     request.requestId(),
                     order.orderId(),
                     order.accountId(),
-                    order.venue(),
+                    order.canonicalVenue().name(),
                     order.symbol(),
                     order.clientOrderId(),
                     request.idempotencyKey(),
@@ -94,7 +107,7 @@ public class AdapterBackedTradingVenueGateway implements TradingVenueGateway {
                     adapterAck.accepted(),
                     adapterAck.exchangeOrderId(),
                     adapterAck.externalStatus(),
-                    mapCategory(resolveAckCategory(adapterAck)),
+                    mapCategory(resolvePlaceCategory(order, adapterAck)),
                     toFailure(adapterAck.error()),
                     adapterAck.ackTs(),
                     adapterAck.tradeEnv()
@@ -114,7 +127,7 @@ public class AdapterBackedTradingVenueGateway implements TradingVenueGateway {
                     request.requestId(),
                     order.orderId(),
                     order.accountId(),
-                    order.venue(),
+                    order.canonicalVenue().name(),
                     order.symbol(),
                     order.clientOrderId(),
                     order.externalOrderId(),
@@ -140,7 +153,7 @@ public class AdapterBackedTradingVenueGateway implements TradingVenueGateway {
         try {
             AdapterOrderSnapshot snapshot = tradingAdapter.getOrder(new AdapterOrderQuery(
                     order.accountId(),
-                    order.venue(),
+                    order.canonicalVenue().name(),
                     order.symbol(),
                     order.clientOrderId(),
                     order.externalOrderId(),
@@ -167,7 +180,7 @@ public class AdapterBackedTradingVenueGateway implements TradingVenueGateway {
     }
 
     private TradingAdapter requiredTradingAdapter(String venue) {
-        TradingAdapter tradingAdapter = tradingAdapters.get(normalizeVenue(venue));
+        TradingAdapter tradingAdapter = tradingAdapters.get(TradingVenue.parse(venue));
         if (tradingAdapter == null) {
             throw new IllegalArgumentException("TradingAdapter not configured for venue: " + venue);
         }
@@ -209,6 +222,18 @@ public class AdapterBackedTradingVenueGateway implements TradingVenueGateway {
             return null;
         }
         return new TradingGatewayFailure(error.code(), error.message(), error.retryable());
+    }
+
+    private AdapterResultCategory resolvePlaceCategory(OrderRecord order, AdapterOrderAck ack) {
+        AdapterResultCategory category = resolveAckCategory(ack);
+        // 已 arm 的 PLACE 不能把 absent、损坏响应或缺少拒单事实当作确定终态。
+        if (order.canonicalVenue() == TradingVenue.OKX && !ack.accepted()
+                && (category == AdapterResultCategory.NOT_FOUND || ack.error() == null
+                    || ack.error().code() == null || ack.error().code().isBlank()
+                    || Set.of("INVALID_JSON", "OKX_EMPTY_DATA", "OKX_API_ERROR").contains(ack.error().code()))) {
+            return AdapterResultCategory.DEFERRED;
+        }
+        return category;
     }
 
     private AdapterResultCategory resolveAckCategory(AdapterOrderAck adapterAck) {
@@ -253,10 +278,4 @@ public class AdapterBackedTradingVenueGateway implements TradingVenueGateway {
         };
     }
 
-    private String normalizeVenue(String venue) {
-        if (venue == null || venue.isBlank()) {
-            throw new IllegalArgumentException("venue must not be blank");
-        }
-        return venue.trim().toUpperCase(Locale.ROOT);
-    }
 }

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -17,7 +18,7 @@ class OperatorPilotAuthorityMigrationContractTest {
     @Test
     void keepsForwardOnlyConditionalAuthorityAndOneShotHardGates() throws IOException {
         String sql = Files.readString(MIGRATION);
-        for (String fragment : java.util.List.of(
+        for (String fragment : List.of(
                 "CREATE TABLE operator_pilot_authorities",
                 "authority_type VARCHAR(32)",
                 "operator_pilot_authority_id UUID",

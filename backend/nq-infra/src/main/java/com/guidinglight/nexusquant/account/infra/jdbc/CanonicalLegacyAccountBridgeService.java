@@ -6,6 +6,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +17,7 @@ public class CanonicalLegacyAccountBridgeService {
     private final JdbcTemplate jdbc;
 
     public CanonicalLegacyAccountBridgeService(JdbcTemplate jdbc) {
-        this.jdbc = java.util.Objects.requireNonNull(jdbc);
+        this.jdbc = Objects.requireNonNull(jdbc);
     }
 
     @Transactional

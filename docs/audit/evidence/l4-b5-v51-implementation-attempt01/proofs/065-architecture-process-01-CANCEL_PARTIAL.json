@@ -1,0 +1,516 @@
+{
+  "scenario": "CANCEL_PARTIAL",
+  "controllerPid": 63320,
+  "database": "SYNTH-L4:B5-V51:R65:DATABASE:001",
+  "nqPid": 21008,
+  "restartPid": 74504,
+  "successorPid": 70136,
+  "venuePid": 54652,
+  "atCut": {
+    "strategy_runs": [
+      {
+        "status": "RUNNING",
+        "trace_id": "SYNTH-L4:B5-V51:R65:TRACE:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T19:20:49.892442+08:00",
+        "request_id": "SYNTH-L4:B5-V51:R65:REQUEST:001",
+        "started_at": "2026-09-10T19:20:49.891375+08:00",
+        "finished_at": null,
+        "strategy_id": "b5-strategy",
+        "trigger_type": "SCHEDULER",
+        "error_message": null,
+        "exchange_code": "OKX",
+        "config_snapshot": {
+          "side": "BUY",
+          "price": "100",
+          "symbol": "BTC-USDT",
+          "quantity": "10",
+          "orderType": "LIMIT"
+        },
+        "strategy_run_id": "SYNTH-L4:B5-V51:R65:RUN:001",
+        "admission_due_at": "2026-01-01T08:00:00+08:00",
+        "admission_schedule_id": "b5"
+      }
+    ],
+    "strategy_run_dispatch_work": [
+      {
+        "side": "BUY",
+        "price": 100.0,
+        "symbol": "BTC-USDT",
+        "quantity": 10.0,
+        "account_id": 1,
+        "order_type": "LIMIT",
+        "time_in_force": "GTC",
+        "client_order_id": "SYNTH-L4:B5-V51:R65:CLIENT:001",
+        "strategy_run_id": "SYNTH-L4:B5-V51:R65:RUN:001",
+        "definition_version": 1,
+        "work_schema_version": 1
+      }
+    ],
+    "strategy_schedules": [
+      {
+        "enabled": true,
+        "timezone": "UTC",
+        "cron_expr": "0 0 0 1 1 *",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2025-12-31T23:59:59+08:00",
+        "updated_at": "2026-09-10T19:20:49.892442+08:00",
+        "dedup_scope": "SCHEDULE_WINDOW",
+        "strategy_id": "b5-strategy",
+        "exchange_code": "oKx",
+        "schedule_type": "CRON",
+        "window_config": {},
+        "schedule_job_id": "b5",
+        "last_triggered_at": "2026-01-01T08:00:00+08:00"
+      }
+    ],
+    "orders": [
+      {
+        "qty": 10.0,
+        "side": "BUY",
+        "type": "LIMIT",
+        "price": 100.0,
+        "venue": "OKX",
+        "reason": "ORDER_ACKED_BY_ADAPTER",
+        "status": "ACCEPTED",
+        "symbol": "BTC-USDT",
+        "version": 3,
+        "order_id": "SYNTH-L4:B5-V51:R65:ORDER:001",
+        "trace_id": "SYNTH-L4:B5-V51:R65:TRACE:001",
+        "dedup_key": "1:SYNTH-L4:B5-V51:R65:CLIENT:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T19:20:49.915137+08:00",
+        "request_id": "SYNTH-L4:B5-V51:R65:REQUEST:002",
+        "updated_at": "2026-09-10T19:20:50.043725+08:00",
+        "exchange_code": "OKX",
+        "client_order_id": "SYNTH-L4:B5-V51:R65:CLIENT:001",
+        "strategy_run_id": "SYNTH-L4:B5-V51:R65:RUN:001",
+        "exchange_order_id": "SYNTH-L4:B5-V51:R65:VENUE:001",
+        "external_order_id": "SYNTH-L4:B5-V51:R65:VENUE:001"
+      }
+    ],
+    "ordinary_place_authorities": [
+      {
+        "state": "MAY_HAVE_ESCAPED",
+        "order_id": "SYNTH-L4:B5-V51:R65:ORDER:001",
+        "decided_at": "2026-09-10T19:20:49.95373+08:00"
+      }
+    ],
+    "ordinary_order_cancel_finality": [],
+    "trades": [],
+    "b5_run_transitions": [
+      {
+        "new_status": "DISPATCHING",
+        "old_status": "CREATED"
+      },
+      {
+        "new_status": "RUNNING",
+        "old_status": "DISPATCHING"
+      }
+    ]
+  },
+  "bResult": "V51_RECOVERED 0",
+  "cResult": "V51_RECOVERED 0",
+  "beforeOldOwner": {
+    "strategy_runs": [
+      {
+        "status": "FAILED",
+        "trace_id": "SYNTH-L4:B5-V51:R65:TRACE:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T19:20:49.892442+08:00",
+        "request_id": "SYNTH-L4:B5-V51:R65:REQUEST:001",
+        "started_at": "2026-09-10T19:20:49.891375+08:00",
+        "finished_at": "2026-09-10T19:20:50.447723+08:00",
+        "strategy_id": "b5-strategy",
+        "trigger_type": "SCHEDULER",
+        "error_message": "order_status=CANCELLED; executed_quantity=4.00000000",
+        "exchange_code": "OKX",
+        "config_snapshot": {
+          "side": "BUY",
+          "price": "100",
+          "symbol": "BTC-USDT",
+          "quantity": "10",
+          "orderType": "LIMIT"
+        },
+        "strategy_run_id": "SYNTH-L4:B5-V51:R65:RUN:001",
+        "admission_due_at": "2026-01-01T08:00:00+08:00",
+        "admission_schedule_id": "b5"
+      }
+    ],
+    "strategy_run_dispatch_work": [
+      {
+        "side": "BUY",
+        "price": 100.0,
+        "symbol": "BTC-USDT",
+        "quantity": 10.0,
+        "account_id": 1,
+        "order_type": "LIMIT",
+        "time_in_force": "GTC",
+        "client_order_id": "SYNTH-L4:B5-V51:R65:CLIENT:001",
+        "strategy_run_id": "SYNTH-L4:B5-V51:R65:RUN:001",
+        "definition_version": 1,
+        "work_schema_version": 1
+      }
+    ],
+    "strategy_schedules": [
+      {
+        "enabled": true,
+        "timezone": "UTC",
+        "cron_expr": "0 0 0 1 1 *",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2025-12-31T23:59:59+08:00",
+        "updated_at": "2026-09-10T19:20:49.892442+08:00",
+        "dedup_scope": "SCHEDULE_WINDOW",
+        "strategy_id": "b5-strategy",
+        "exchange_code": "oKx",
+        "schedule_type": "CRON",
+        "window_config": {},
+        "schedule_job_id": "b5",
+        "last_triggered_at": "2026-01-01T08:00:00+08:00"
+      }
+    ],
+    "orders": [
+      {
+        "qty": 10.0,
+        "side": "BUY",
+        "type": "LIMIT",
+        "price": 100.0,
+        "venue": "OKX",
+        "reason": "V51_CANCEL_PROOF",
+        "status": "CANCELLED",
+        "symbol": "BTC-USDT",
+        "version": 6,
+        "order_id": "SYNTH-L4:B5-V51:R65:ORDER:001",
+        "trace_id": "SYNTH-L4:B5-V51:R65:TRACE:001",
+        "dedup_key": "1:SYNTH-L4:B5-V51:R65:CLIENT:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T19:20:49.915137+08:00",
+        "request_id": "SYNTH-L4:B5-V51:R65:REQUEST:002",
+        "updated_at": "2026-09-10T19:20:50.219136+08:00",
+        "exchange_code": "OKX",
+        "client_order_id": "SYNTH-L4:B5-V51:R65:CLIENT:001",
+        "strategy_run_id": "SYNTH-L4:B5-V51:R65:RUN:001",
+        "exchange_order_id": "SYNTH-L4:B5-V51:R65:VENUE:001",
+        "external_order_id": "SYNTH-L4:B5-V51:R65:VENUE:001"
+      }
+    ],
+    "ordinary_place_authorities": [
+      {
+        "state": "MAY_HAVE_ESCAPED",
+        "order_id": "SYNTH-L4:B5-V51:R65:ORDER:001",
+        "decided_at": "2026-09-10T19:20:49.95373+08:00"
+      }
+    ],
+    "ordinary_order_cancel_finality": [
+      {
+        "order_id": "SYNTH-L4:B5-V51:R65:ORDER:001",
+        "executed_quantity": 4.0,
+        "observed_order_version": 6
+      }
+    ],
+    "trades": [
+      {
+        "ts": "2026-09-10T19:20:50.092+08:00",
+        "fee": 0.01,
+        "qty": 4.0,
+        "price": 100.0,
+        "symbol": "BTC-USDT",
+        "exchange": "OKX",
+        "order_id": "SYNTH-L4:B5-V51:R65:ORDER:001",
+        "trace_id": "SYNTH-L4:B5-V51:R65:TRACE:001",
+        "trade_id": "SYNTH-L4:B5-V51:R65:TRADE:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T19:20:50.165137+08:00",
+        "fee_currency": "USDT",
+        "exchange_code": "OKX",
+        "strategy_run_id": "SYNTH-L4:B5-V51:R65:RUN:001",
+        "exchange_order_id": "SYNTH-L4:B5-V51:R65:VENUE:001",
+        "exchange_trade_id": "SYNTH-L4:B5-V51:R65:FILL:001",
+        "external_order_id": "SYNTH-L4:B5-V51:R65:VENUE:001"
+      }
+    ],
+    "b5_run_transitions": [
+      {
+        "new_status": "DISPATCHING",
+        "old_status": "CREATED"
+      },
+      {
+        "new_status": "FAILED",
+        "old_status": "RUNNING"
+      },
+      {
+        "new_status": "RUNNING",
+        "old_status": "DISPATCHING"
+      }
+    ]
+  },
+  "final": {
+    "strategy_runs": [
+      {
+        "status": "FAILED",
+        "trace_id": "SYNTH-L4:B5-V51:R65:TRACE:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T19:20:49.892442+08:00",
+        "request_id": "SYNTH-L4:B5-V51:R65:REQUEST:001",
+        "started_at": "2026-09-10T19:20:49.891375+08:00",
+        "finished_at": "2026-09-10T19:20:50.447723+08:00",
+        "strategy_id": "b5-strategy",
+        "trigger_type": "SCHEDULER",
+        "error_message": "order_status=CANCELLED; executed_quantity=4.00000000",
+        "exchange_code": "OKX",
+        "config_snapshot": {
+          "side": "BUY",
+          "price": "100",
+          "symbol": "BTC-USDT",
+          "quantity": "10",
+          "orderType": "LIMIT"
+        },
+        "strategy_run_id": "SYNTH-L4:B5-V51:R65:RUN:001",
+        "admission_due_at": "2026-01-01T08:00:00+08:00",
+        "admission_schedule_id": "b5"
+      }
+    ],
+    "strategy_run_dispatch_work": [
+      {
+        "side": "BUY",
+        "price": 100.0,
+        "symbol": "BTC-USDT",
+        "quantity": 10.0,
+        "account_id": 1,
+        "order_type": "LIMIT",
+        "time_in_force": "GTC",
+        "client_order_id": "SYNTH-L4:B5-V51:R65:CLIENT:001",
+        "strategy_run_id": "SYNTH-L4:B5-V51:R65:RUN:001",
+        "definition_version": 1,
+        "work_schema_version": 1
+      }
+    ],
+    "strategy_schedules": [
+      {
+        "enabled": true,
+        "timezone": "UTC",
+        "cron_expr": "0 0 0 1 1 *",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2025-12-31T23:59:59+08:00",
+        "updated_at": "2026-09-10T19:20:49.892442+08:00",
+        "dedup_scope": "SCHEDULE_WINDOW",
+        "strategy_id": "b5-strategy",
+        "exchange_code": "oKx",
+        "schedule_type": "CRON",
+        "window_config": {},
+        "schedule_job_id": "b5",
+        "last_triggered_at": "2026-01-01T08:00:00+08:00"
+      }
+    ],
+    "orders": [
+      {
+        "qty": 10.0,
+        "side": "BUY",
+        "type": "LIMIT",
+        "price": 100.0,
+        "venue": "OKX",
+        "reason": "V51_CANCEL_PROOF",
+        "status": "CANCELLED",
+        "symbol": "BTC-USDT",
+        "version": 6,
+        "order_id": "SYNTH-L4:B5-V51:R65:ORDER:001",
+        "trace_id": "SYNTH-L4:B5-V51:R65:TRACE:001",
+        "dedup_key": "1:SYNTH-L4:B5-V51:R65:CLIENT:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T19:20:49.915137+08:00",
+        "request_id": "SYNTH-L4:B5-V51:R65:REQUEST:002",
+        "updated_at": "2026-09-10T19:20:50.219136+08:00",
+        "exchange_code": "OKX",
+        "client_order_id": "SYNTH-L4:B5-V51:R65:CLIENT:001",
+        "strategy_run_id": "SYNTH-L4:B5-V51:R65:RUN:001",
+        "exchange_order_id": "SYNTH-L4:B5-V51:R65:VENUE:001",
+        "external_order_id": "SYNTH-L4:B5-V51:R65:VENUE:001"
+      }
+    ],
+    "ordinary_place_authorities": [
+      {
+        "state": "MAY_HAVE_ESCAPED",
+        "order_id": "SYNTH-L4:B5-V51:R65:ORDER:001",
+        "decided_at": "2026-09-10T19:20:49.95373+08:00"
+      }
+    ],
+    "ordinary_order_cancel_finality": [
+      {
+        "order_id": "SYNTH-L4:B5-V51:R65:ORDER:001",
+        "executed_quantity": 4.0,
+        "observed_order_version": 6
+      }
+    ],
+    "trades": [
+      {
+        "ts": "2026-09-10T19:20:50.092+08:00",
+        "fee": 0.01,
+        "qty": 4.0,
+        "price": 100.0,
+        "symbol": "BTC-USDT",
+        "exchange": "OKX",
+        "order_id": "SYNTH-L4:B5-V51:R65:ORDER:001",
+        "trace_id": "SYNTH-L4:B5-V51:R65:TRACE:001",
+        "trade_id": "SYNTH-L4:B5-V51:R65:TRADE:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T19:20:50.165137+08:00",
+        "fee_currency": "USDT",
+        "exchange_code": "OKX",
+        "strategy_run_id": "SYNTH-L4:B5-V51:R65:RUN:001",
+        "exchange_order_id": "SYNTH-L4:B5-V51:R65:VENUE:001",
+        "exchange_trade_id": "SYNTH-L4:B5-V51:R65:FILL:001",
+        "external_order_id": "SYNTH-L4:B5-V51:R65:VENUE:001"
+      }
+    ],
+    "b5_run_transitions": [
+      {
+        "new_status": "DISPATCHING",
+        "old_status": "CREATED"
+      },
+      {
+        "new_status": "FAILED",
+        "old_status": "RUNNING"
+      },
+      {
+        "new_status": "RUNNING",
+        "old_status": "DISPATCHING"
+      }
+    ]
+  },
+  "venue": {
+    "code": "0",
+    "msg": "",
+    "data": [],
+    "pid": 54652,
+    "places": 1,
+    "cancels": 1,
+    "pendingCancel": false,
+    "placeRequests": 1,
+    "apiRequests": 7,
+    "order": {
+      "clOrdId": "SYNTH-L4:B5-V51:R65:CLIENT:001",
+      "ordId": "SYNTH-L4:B5-V51:R65:VENUE:001",
+      "instId": "BTC-USDT",
+      "state": "canceled",
+      "px": "100",
+      "sz": "10",
+      "accFillSz": "4",
+      "avgPx": "100",
+      "uTime": "1789039250037"
+    },
+    "fills": [
+      {
+        "tradeId": "SYNTH-L4:B5-V51:R65:FILL:001",
+        "ordId": "SYNTH-L4:B5-V51:R65:VENUE:001",
+        "instId": "BTC-USDT",
+        "side": "buy",
+        "fillPx": "100",
+        "fillSz": "4",
+        "fee": "-0.01",
+        "feeCcy": "USDT",
+        "ts": "1789039250092"
+      }
+    ],
+    "events": [
+      {
+        "sequence": 2,
+        "type": "PLACE_REQUEST_RECEIVED",
+        "nanoTime": 938723629641300,
+        "epochMillis": 1789039250030
+      },
+      {
+        "sequence": 3,
+        "type": "PLACE_ACCEPTED",
+        "nanoTime": 938723636950300,
+        "epochMillis": 1789039250037
+      },
+      {
+        "sequence": 4,
+        "type": "PLACE_ACK_GENERATED",
+        "nanoTime": 938723636959200,
+        "epochMillis": 1789039250037
+      },
+      {
+        "sequence": 5,
+        "type": "PLACE_RESPONSE_DELIVERED",
+        "nanoTime": 938723637505200,
+        "epochMillis": 1789039250038
+      },
+      {
+        "sequence": 6,
+        "type": "FILL",
+        "nanoTime": 938723690876900,
+        "epochMillis": 1789039250092,
+        "tradeId": "SYNTH-L4:B5-V51:R65:FILL:001",
+        "qty": "4",
+        "fee": "0.01"
+      },
+      {
+        "sequence": 7,
+        "type": "QUERY_ORDER",
+        "nanoTime": 938723730126300,
+        "epochMillis": 1789039250131,
+        "state": "partially_filled"
+      },
+      {
+        "sequence": 8,
+        "type": "QUERY_FILLS",
+        "nanoTime": 938723745226400,
+        "epochMillis": 1789039250146,
+        "reportCount": 1
+      },
+      {
+        "sequence": 9,
+        "type": "CANCEL_REQUEST_RECEIVED",
+        "nanoTime": 938723815794900,
+        "epochMillis": 1789039250217,
+        "state": "partially_filled"
+      },
+      {
+        "sequence": 10,
+        "type": "CANCEL_ACK_GENERATED",
+        "nanoTime": 938723815805600,
+        "epochMillis": 1789039250217
+      },
+      {
+        "sequence": 11,
+        "type": "CANCEL_RESPONSE_DELIVERED",
+        "nanoTime": 938723816107300,
+        "epochMillis": 1789039250217
+      },
+      {
+        "sequence": 12,
+        "type": "CANCEL_EFFECT",
+        "nanoTime": 938724025597500,
+        "epochMillis": 1789039250426,
+        "state": "canceled"
+      },
+      {
+        "sequence": 13,
+        "type": "QUERY_ORDER",
+        "nanoTime": 938724031897300,
+        "epochMillis": 1789039250433,
+        "state": "canceled"
+      },
+      {
+        "sequence": 14,
+        "type": "QUERY_FILLS",
+        "nanoTime": 938724033814800,
+        "epochMillis": 1789039250435,
+        "reportCount": 1
+      }
+    ]
+  },
+  "result": "PASS"
+}

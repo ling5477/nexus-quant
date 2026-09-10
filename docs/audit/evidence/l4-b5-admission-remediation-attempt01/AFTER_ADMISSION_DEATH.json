@@ -1,0 +1,135 @@
+{
+  "scenario": "AFTER_ADMISSION_DEATH",
+  "controllerPid": 65044,
+  "database": "SYNTH-L4:B5-AD:R13:DATABASE:001",
+  "venuePid": 67312,
+  "nqPid": 54300,
+  "restartPid": 31872,
+  "postgres": "16.15 (Debian 16.15-1.pgdg13+2)",
+  "atCut": {
+    "strategy_schedules": [
+      {
+        "enabled": true,
+        "timezone": "UTC",
+        "cron_expr": "0 0 0 1 1 *",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2025-12-31T23:59:59+08:00",
+        "updated_at": "2026-09-10T15:21:54.581736+08:00",
+        "dedup_scope": "SCHEDULE_WINDOW",
+        "strategy_id": "b5-strategy",
+        "exchange_code": "oKx",
+        "schedule_type": "CRON",
+        "window_config": {},
+        "schedule_job_id": "b5",
+        "last_triggered_at": null
+      }
+    ],
+    "strategy_runs": [
+      {
+        "status": "CREATED",
+        "trace_id": "SYNTH-L4:B5-AD:R13:TRACE:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T15:22:01.819013+08:00",
+        "request_id": "SYNTH-L4:B5-AD:R13:REQUEST:001",
+        "started_at": "2026-09-10T15:22:01.817701+08:00",
+        "finished_at": null,
+        "strategy_id": "b5-strategy",
+        "trigger_type": "SCHEDULER",
+        "error_message": null,
+        "exchange_code": "oKx",
+        "config_snapshot": {
+          "side": "BUY",
+          "price": "100",
+          "symbol": "BTC-USDT",
+          "quantity": "10",
+          "orderType": "LIMIT"
+        },
+        "strategy_run_id": "SYNTH-L4:B5-AD:R13:RUN:001",
+        "admission_due_at": "2026-01-01T08:00:00+08:00",
+        "admission_schedule_id": "b5"
+      }
+    ],
+    "orders": [],
+    "ordinary_place_authorities": [],
+    "b5_run_transitions": [],
+    "trades": [],
+    "ledger_entries": [],
+    "event_store": [],
+    "execution_intents": [],
+    "execution_receipts": []
+  },
+  "availabilityDisposition": "NO_ORDER_ADMITTED_RUN_FAIL_CLOSED_NOT_AUTOMATICALLY_RECOVERED",
+  "restart0Pid": 16856,
+  "restart1Pid": 52612,
+  "final": {
+    "strategy_schedules": [
+      {
+        "enabled": true,
+        "timezone": "UTC",
+        "cron_expr": "0 0 0 1 1 *",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2025-12-31T23:59:59+08:00",
+        "updated_at": "2026-09-10T15:21:54.581736+08:00",
+        "dedup_scope": "SCHEDULE_WINDOW",
+        "strategy_id": "b5-strategy",
+        "exchange_code": "oKx",
+        "schedule_type": "CRON",
+        "window_config": {},
+        "schedule_job_id": "b5",
+        "last_triggered_at": null
+      }
+    ],
+    "strategy_runs": [
+      {
+        "status": "CREATED",
+        "trace_id": "SYNTH-L4:B5-AD:R13:TRACE:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T15:22:01.819013+08:00",
+        "request_id": "SYNTH-L4:B5-AD:R13:REQUEST:001",
+        "started_at": "2026-09-10T15:22:01.817701+08:00",
+        "finished_at": null,
+        "strategy_id": "b5-strategy",
+        "trigger_type": "SCHEDULER",
+        "error_message": null,
+        "exchange_code": "oKx",
+        "config_snapshot": {
+          "side": "BUY",
+          "price": "100",
+          "symbol": "BTC-USDT",
+          "quantity": "10",
+          "orderType": "LIMIT"
+        },
+        "strategy_run_id": "SYNTH-L4:B5-AD:R13:RUN:001",
+        "admission_due_at": "2026-01-01T08:00:00+08:00",
+        "admission_schedule_id": "b5"
+      }
+    ],
+    "orders": [],
+    "ordinary_place_authorities": [],
+    "b5_run_transitions": [],
+    "trades": [],
+    "ledger_entries": [],
+    "event_store": [],
+    "execution_intents": [],
+    "execution_receipts": []
+  },
+  "venue": {
+    "code": "0",
+    "msg": "",
+    "data": [],
+    "pid": 67312,
+    "places": 0,
+    "cancels": 0,
+    "pendingCancel": false,
+    "placeRequests": 0,
+    "apiRequests": 0,
+    "order": null,
+    "fills": [],
+    "events": []
+  },
+  "result": "PASS"
+}

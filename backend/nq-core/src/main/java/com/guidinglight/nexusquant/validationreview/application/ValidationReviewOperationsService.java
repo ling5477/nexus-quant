@@ -11,6 +11,7 @@ import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewExcep
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewTransitionCommand;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewTransitionResult;
 import com.guidinglight.nexusquant.validationreview.domain.port.ValidationReviewRepository;
+import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewState;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -280,7 +281,7 @@ public class ValidationReviewOperationsService {
 
     private static ValidationReviewException forbidden(
             UUID caseId,
-            com.guidinglight.nexusquant.validationreview.domain.ValidationReviewState target,
+            ValidationReviewState target,
             String message
     ) {
         return new ValidationReviewException("REVIEW_ACTION_FORBIDDEN", message, caseId, null, target);

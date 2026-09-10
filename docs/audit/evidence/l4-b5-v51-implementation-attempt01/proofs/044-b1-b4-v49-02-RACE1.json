@@ -1,0 +1,283 @@
+{
+  "scenario": "RACE1",
+  "controllerPid": 42640,
+  "database": "SYNTH-L4:B5-V51:R44:DATABASE:001",
+  "venuePid": 58428,
+  "proxyPid": 72616,
+  "externalVenueInput": "okx",
+  "nqPid": 57804,
+  "restartPid": 75692,
+  "atCut": {
+    "orders": [
+      {
+        "qty": 10.0,
+        "side": "BUY",
+        "type": "LIMIT",
+        "price": 100.0,
+        "venue": "OKX",
+        "reason": "ORDER_ROUTED_TO_ADAPTER",
+        "status": "SENT",
+        "symbol": "BTC-USDT",
+        "version": 2,
+        "order_id": "SYNTH-L4:B5-V51:R44:ORDER:001",
+        "trace_id": "SYNTH-L4:B5-V51:R44:TRACE:001",
+        "dedup_key": "1:SYNTH-L4:B5-V51:R44:CLIENT:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T18:58:50.275565+08:00",
+        "request_id": "SYNTH-L4:B5-V51:R44:REQUEST:001",
+        "updated_at": "2026-09-10T18:58:50.322771+08:00",
+        "exchange_code": "OKX",
+        "client_order_id": "SYNTH-L4:B5-V51:R44:CLIENT:001",
+        "strategy_run_id": null,
+        "exchange_order_id": null,
+        "external_order_id": null
+      }
+    ],
+    "ordinary_place_authorities": [
+      {
+        "state": "NOT_ARMED",
+        "order_id": "SYNTH-L4:B5-V51:R44:ORDER:001",
+        "decided_at": null
+      }
+    ],
+    "trades": [],
+    "ledger_entries": []
+  },
+  "final": {
+    "orders": [
+      {
+        "qty": 10.0,
+        "side": "BUY",
+        "type": "LIMIT",
+        "price": 100.0,
+        "venue": "OKX",
+        "reason": "RECONCILE_STATUS_ALIGN",
+        "status": "FILLED",
+        "symbol": "BTC-USDT",
+        "version": 4,
+        "order_id": "SYNTH-L4:B5-V51:R44:ORDER:001",
+        "trace_id": "SYNTH-L4:B5-V51:R44:TRACE:001",
+        "dedup_key": "1:SYNTH-L4:B5-V51:R44:CLIENT:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T18:58:50.275565+08:00",
+        "request_id": "SYNTH-L4:B5-V51:R44:REQUEST:001",
+        "updated_at": "2026-09-10T18:58:50.76787+08:00",
+        "exchange_code": "OKX",
+        "client_order_id": "SYNTH-L4:B5-V51:R44:CLIENT:001",
+        "strategy_run_id": null,
+        "exchange_order_id": "SYNTH-L4:B5-V51:R44:VENUE:001",
+        "external_order_id": "SYNTH-L4:B5-V51:R44:VENUE:001"
+      }
+    ],
+    "ordinary_place_authorities": [
+      {
+        "state": "MAY_HAVE_ESCAPED",
+        "order_id": "SYNTH-L4:B5-V51:R44:ORDER:001",
+        "decided_at": "2026-09-10T18:58:50.429271+08:00"
+      }
+    ],
+    "trades": [
+      {
+        "ts": "2026-09-10T18:58:50.754+08:00",
+        "fee": 0.01,
+        "qty": 10.0,
+        "price": 100.0,
+        "symbol": "BTC-USDT",
+        "exchange": "OKX",
+        "order_id": "SYNTH-L4:B5-V51:R44:ORDER:001",
+        "trace_id": "SYNTH-L4:B5-V51:R44:TRACE:001",
+        "trade_id": "SYNTH-L4:B5-V51:R44:TRADE:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T18:58:50.774256+08:00",
+        "fee_currency": "USDT",
+        "exchange_code": "OKX",
+        "strategy_run_id": null,
+        "exchange_order_id": "SYNTH-L4:B5-V51:R44:VENUE:001",
+        "exchange_trade_id": "SYNTH-L4:B5-V51:R44:FILL:001",
+        "external_order_id": "SYNTH-L4:B5-V51:R44:VENUE:001"
+      }
+    ],
+    "ledger_entries": [
+      {
+        "ts": "2026-09-10T18:58:50.754+08:00",
+        "delta": -0.01,
+        "ref_id": "SYNTH-L4:B5-V51:R44:TRADE:001",
+        "currency": "USDT",
+        "entry_id": "SYNTH-L4:B5-V51:R44:ENTRY:001",
+        "ref_type": "TRADE",
+        "trace_id": "SYNTH-L4:B5-V51:R44:TRACE:001",
+        "direction": "DEBIT",
+        "account_id": 1,
+        "created_at": "2026-09-10T18:58:50.787228+08:00",
+        "balance_after": -0.01,
+        "idempotency_key": "SYNTH-L4:B5-V51:R44:TRADE:001:LEDGER:FEE_1"
+      },
+      {
+        "ts": "2026-09-10T18:58:50.754+08:00",
+        "delta": 0.01,
+        "ref_id": "SYNTH-L4:B5-V51:R44:TRADE:001",
+        "currency": "USDT",
+        "entry_id": "SYNTH-L4:B5-V51:R44:ENTRY:002",
+        "ref_type": "TRADE",
+        "trace_id": "SYNTH-L4:B5-V51:R44:TRACE:001",
+        "direction": "CREDIT",
+        "account_id": 1,
+        "created_at": "2026-09-10T18:58:50.787228+08:00",
+        "balance_after": 0.0,
+        "idempotency_key": "SYNTH-L4:B5-V51:R44:TRADE:001:LEDGER:FEE_2"
+      },
+      {
+        "ts": "2026-09-10T18:58:50.754+08:00",
+        "delta": -1000.0,
+        "ref_id": "SYNTH-L4:B5-V51:R44:TRADE:001",
+        "currency": "USDT",
+        "entry_id": "SYNTH-L4:B5-V51:R44:ENTRY:003",
+        "ref_type": "TRADE",
+        "trace_id": "SYNTH-L4:B5-V51:R44:TRACE:001",
+        "direction": "DEBIT",
+        "account_id": 1,
+        "created_at": "2026-09-10T18:58:50.787228+08:00",
+        "balance_after": -1000.0,
+        "idempotency_key": "SYNTH-L4:B5-V51:R44:TRADE:001:LEDGER:1"
+      },
+      {
+        "ts": "2026-09-10T18:58:50.754+08:00",
+        "delta": 1000.0,
+        "ref_id": "SYNTH-L4:B5-V51:R44:TRADE:001",
+        "currency": "USDT",
+        "entry_id": "SYNTH-L4:B5-V51:R44:ENTRY:004",
+        "ref_type": "TRADE",
+        "trace_id": "SYNTH-L4:B5-V51:R44:TRACE:001",
+        "direction": "CREDIT",
+        "account_id": 1,
+        "created_at": "2026-09-10T18:58:50.787228+08:00",
+        "balance_after": 0.0,
+        "idempotency_key": "SYNTH-L4:B5-V51:R44:TRADE:001:LEDGER:2"
+      }
+    ]
+  },
+  "venue": {
+    "code": "0",
+    "msg": "",
+    "data": [],
+    "pid": 58428,
+    "places": 1,
+    "cancels": 0,
+    "pendingCancel": false,
+    "placeRequests": 1,
+    "apiRequests": 9,
+    "order": {
+      "clOrdId": "SYNTH-L4:B5-V51:R44:CLIENT:001",
+      "ordId": "SYNTH-L4:B5-V51:R44:VENUE:001",
+      "instId": "BTC-USDT",
+      "state": "filled",
+      "px": "100",
+      "sz": "10",
+      "accFillSz": "10",
+      "avgPx": "100",
+      "uTime": "1789037930475"
+    },
+    "fills": [
+      {
+        "tradeId": "SYNTH-L4:B5-V51:R44:FILL:001",
+        "ordId": "SYNTH-L4:B5-V51:R44:VENUE:001",
+        "instId": "BTC-USDT",
+        "side": "buy",
+        "fillPx": "100",
+        "fillSz": "10",
+        "fee": "-0.01",
+        "feeCcy": "USDT",
+        "ts": "1789037930754"
+      }
+    ],
+    "events": [
+      {
+        "sequence": 2,
+        "type": "QUERY_OPEN_ORDERS",
+        "nanoTime": 937404059340900,
+        "epochMillis": 1789037930460,
+        "count": 0
+      },
+      {
+        "sequence": 3,
+        "type": "PLACE_REQUEST_RECEIVED",
+        "nanoTime": 937404067806000,
+        "epochMillis": 1789037930468
+      },
+      {
+        "sequence": 4,
+        "type": "PLACE_ACCEPTED",
+        "nanoTime": 937404074818100,
+        "epochMillis": 1789037930475
+      },
+      {
+        "sequence": 5,
+        "type": "PLACE_ACK_GENERATED",
+        "nanoTime": 937404074831700,
+        "epochMillis": 1789037930475
+      },
+      {
+        "sequence": 6,
+        "type": "PLACE_RESPONSE_DELIVERED",
+        "nanoTime": 937404075231500,
+        "epochMillis": 1789037930476
+      },
+      {
+        "sequence": 7,
+        "type": "QUERY_ORDER",
+        "nanoTime": 937404075871900,
+        "epochMillis": 1789037930476,
+        "state": "live"
+      },
+      {
+        "sequence": 8,
+        "type": "QUERY_ORDER",
+        "nanoTime": 937404090269100,
+        "epochMillis": 1789037930491,
+        "state": "live"
+      },
+      {
+        "sequence": 9,
+        "type": "QUERY_FILLS",
+        "nanoTime": 937404091898400,
+        "epochMillis": 1789037930493,
+        "reportCount": 0
+      },
+      {
+        "sequence": 10,
+        "type": "FILL",
+        "nanoTime": 937404352711900,
+        "epochMillis": 1789037930754,
+        "tradeId": "SYNTH-L4:B5-V51:R44:FILL:001",
+        "qty": "10",
+        "fee": "0.01"
+      },
+      {
+        "sequence": 11,
+        "type": "QUERY_ORDER",
+        "nanoTime": 937404359694600,
+        "epochMillis": 1789037930760,
+        "state": "filled"
+      },
+      {
+        "sequence": 12,
+        "type": "QUERY_FILLS",
+        "nanoTime": 937404361730100,
+        "epochMillis": 1789037930762,
+        "reportCount": 1
+      },
+      {
+        "sequence": 13,
+        "type": "QUERY_FILLS",
+        "nanoTime": 937404473261900,
+        "epochMillis": 1789037930874,
+        "reportCount": 1
+      }
+    ]
+  },
+  "cleanup": true,
+  "result": "PASS"
+}

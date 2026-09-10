@@ -1,0 +1,42 @@
+[
+  {
+    "logPath": "backend/nq-app/target/b5-qualification-resume/run-01.log",
+    "sha256": "0d46a095f3c9094ddfebae81212dfae2dd0fad6ace50919083bb530f087865b9",
+    "build": "SUCCESS",
+    "suites": [
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5QualificationResumeTest"
+      ]
+    ],
+    "scenariosPassed": [
+      "DUPLICATE1",
+      "DUPLICATE2",
+      "DUPLICATE3",
+      "DEATH_BEFORE",
+      "DEATH_AFTER",
+      "EXECUTED_DEATH",
+      "SCHED_RELEASE",
+      "SCHED_DEATH",
+      "SCHED_CONNECTION_LOSS"
+    ]
+  },
+  {
+    "logPath": "backend/nq-app/target/b5-qualification-resume/run-02-strategy-death.log",
+    "sha256": "171625ef0eaa89279b76e45779781ed2aea94083a2203371e11315dd04dccb6a",
+    "build": "FAILURE",
+    "suites": [
+      [
+        "1",
+        "1",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5StrategyOwnerDeathTest"
+      ]
+    ],
+    "scenariosPassed": []
+  }
+]

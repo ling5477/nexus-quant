@@ -25,6 +25,7 @@ import com.guidinglight.nexusquant.trading.application.port.TradingOrderStatusSn
 import com.guidinglight.nexusquant.trading.application.port.TradingPlaceGatewayResult;
 import com.guidinglight.nexusquant.trading.application.port.TradingVenueGateway;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
+import com.guidinglight.nexusquant.trading.application.CancelOrderRequest;
 
 import java.math.BigDecimal;
 import java.net.URLDecoder;
@@ -468,7 +469,7 @@ public final class TradingRestartRecoveryProcessMain {
         @Override
         public TradingCancelGatewayResult cancelOrder(
                 OrderRecord order,
-                com.guidinglight.nexusquant.trading.application.CancelOrderRequest request
+                CancelOrderRequest request
         ) {
             return new TradingCancelGatewayResult(
                     false,

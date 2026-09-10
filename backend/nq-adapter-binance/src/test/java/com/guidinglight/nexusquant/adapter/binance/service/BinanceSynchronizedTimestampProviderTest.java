@@ -15,6 +15,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.time.Duration;
 
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +32,7 @@ class BinanceSynchronizedTimestampProviderTest {
                     HttpClient.newHttpClient(),
                     new ObjectMapper(),
                     server.baseUrl(),
-                    java.time.Duration.ofSeconds(2),
+                    Duration.ofSeconds(2),
                     Clock.fixed(Instant.ofEpochMilli(1_700_000_000_000L), ZoneOffset.UTC),
                     -500L,
                     30_000L
@@ -54,7 +55,7 @@ class BinanceSynchronizedTimestampProviderTest {
                     HttpClient.newHttpClient(),
                     new ObjectMapper(),
                     server.baseUrl(),
-                    java.time.Duration.ofSeconds(2),
+                    Duration.ofSeconds(2),
                     Clock.fixed(Instant.ofEpochMilli(1_700_000_000_000L), ZoneOffset.UTC),
                     -800L,
                     30_000L

@@ -20,6 +20,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.math.BigDecimal;
 
 import org.junit.jupiter.api.Test;
 
@@ -198,7 +199,7 @@ class ReadinessGuardWiringTest {
     private static AdapterOrderRequest orderRequest(String venue) {
         return new AdapterOrderRequest(
                 null, null, 1L, venue, "BTC-USDT", "cli-1", null,
-                "BUY", "LIMIT", java.math.BigDecimal.ONE, java.math.BigDecimal.ONE, null,
+                "BUY", "LIMIT", BigDecimal.ONE, BigDecimal.ONE, null,
                 null, null, null, "trace-1");
     }
 

@@ -39,6 +39,7 @@ PROTECTED = {"credential", "credentials", "secret", "token", "authorization", "p
              "apikey", "apisecret", "passphrase", "accesstoken", "authtoken", "clientsecret"}
 FIELDS = {
     "database": "DATABASE", "runId": "RUN", "run_id": "RUN",
+    "strategy_run_id": "RUN", "strategyRunId": "RUN",
     "order_id": "ORDER", "orderId": "ORDER",
     "client_order_id": "CLIENT", "clientOrderId": "CLIENT", "clOrdId": "CLIENT",
     "trade_id": "TRADE", "entry_id": "ENTRY", "risk_event_id": "RISK", "event_id": "EVENT",
@@ -48,7 +49,36 @@ FIELDS = {
 }
 REFERENCES = {"ref_id": ("TRADE",), "scope_id": ("ORDER",), "actor_id": ("ORDER", "TRADE"),
               "key_value": ("CLIENT", "ORDER", "TRADE"), "key": ("CLIENT", "ORDER", "TRADE"),
-              "client": ("CLIENT",)}
+              "client": ("CLIENT",), "strategy_id": ("RUN",)}
+
+# 仅识别真实观察到的typed admission身份；未知形状和凭证值保持原文供scanner拒绝。
+ADMISSION_FIELDS = {"attemptedCanonicalKeyA", "attemptedCanonicalKeyB"}
+ADMISSION_IDENTITY = re.compile(
+    r"B5_ADMISSION_ATTEMPT key=StrategyDispatchIdentity\[scheduleJobId=[A-Za-z0-9:_-]{1,128}, "
+    r"strategyId=[A-Za-z0-9:_-]{1,128}, accountId=[1-9][0-9]*, "
+    r"dueAt=[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z\]"
+)
+
+# 返回值文本只允许完整已知形状，并仅引用已登记身份；未知内容及凭证子树原样保留。
+RESULT_FIELDS = {"bResult", "cResult", "oldOwnerResult", "replayResult"}
+SCAN_RESULT = re.compile(
+    r"StrategyScheduleScanBatchResult\[(?:[A-Za-z]+Count=[0-9]+, )+"
+    r"results=\[StrategyScheduleScanResult\[scheduleJobId=[A-Za-z0-9:_-]+, "
+    r"strategyId=[A-Za-z0-9:_-]+, outcome=[A-Z_]+, requestId=(?P<request>[A-Za-z0-9:_-]+), "
+    r"strategyRunId=(?P<run>[A-Za-z0-9:_-]+), detail=[a-z_]+\]\]\]"
+)
+PLACE_RESULT = re.compile(r"PLACE (?P<order>ord-[a-f0-9-]+) (?:FILLED|ACCEPTED|SENT|CANCELLED|RISK_REJECTED)")
+
+
+def result_references(value, mapper):
+    match = SCAN_RESULT.fullmatch(value) or PLACE_RESULT.fullmatch(value)
+    if not match:
+        return value
+    kinds = {"request": "REQUEST", "run": "RUN", "order": "ORDER"}
+    for group in sorted(match.groupdict(), key=lambda name: match.start(name), reverse=True):
+        raw = match.group(group)
+        value = value[:match.start(group)] + mapper.reference(raw, (kinds[group],)) + value[match.end(group):]
+    return value
 
 
 def protected(field):
@@ -66,10 +96,14 @@ def export(proof, mapper):
         for field, item in value.items():
             if protected(field):
                 result[field] = copy.deepcopy(item)
+            elif isinstance(item, str) and field in ADMISSION_FIELDS and ADMISSION_IDENTITY.fullmatch(item):
+                result[field] = mapper.register("ADMISSION", item)
             elif isinstance(item, str) and item and field in FIELDS:
                 result[field] = mapper.register(FIELDS[field], item)
             elif isinstance(item, str) and not register and field in REFERENCES:
                 result[field] = mapper.reference(item, REFERENCES[field])
+            elif isinstance(item, str) and not register and field in RESULT_FIELDS:
+                result[field] = result_references(item, mapper)
             elif isinstance(item, str) and not register and field == "dedup_key":
                 account, separator, client = item.partition(":")
                 result[field] = account + separator + mapper.reference(client, ("CLIENT",))

@@ -21,6 +21,7 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStateTrans
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
 import com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcShadowRunFactRepository;
 import com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcShadowRunIllegalTransitionAuditWriter;
+import com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcAdmissionMutationCoordinator;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -179,7 +180,7 @@ class JdbcRepositoryPostgresSmokeTest {
                 jdbcTemplate,
                 objectMapper,
                 new JdbcShadowRunIllegalTransitionAuditWriter(jdbcTemplate, objectMapper, transactionManager),
-                new com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcAdmissionMutationCoordinator(
+                new JdbcAdmissionMutationCoordinator(
                         jdbcTemplate,
                         transactionManager,
                         256
@@ -449,7 +450,7 @@ class JdbcRepositoryPostgresSmokeTest {
                 "SPOT",
                 symbol,
                 BarInterval.ONE_MINUTE.wireValue(),
-                java.sql.Timestamp.from(openTime)
+                Timestamp.from(openTime)
         );
         assertNotNull(closePrice);
         assertEquals(0, new BigDecimal("101.50000000").compareTo(closePrice));
@@ -469,7 +470,7 @@ class JdbcRepositoryPostgresSmokeTest {
                 "SPOT",
                 symbol,
                 BarInterval.ONE_MINUTE.wireValue(),
-                java.sql.Timestamp.from(openTime)
+                Timestamp.from(openTime)
         );
         assertEquals(smokeRunId, payloadRunId);
     }

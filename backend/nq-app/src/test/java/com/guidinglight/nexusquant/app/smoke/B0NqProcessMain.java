@@ -15,6 +15,11 @@ import com.guidinglight.nexusquant.trading.application.OrderCommandService;
 import com.guidinglight.nexusquant.trading.application.OrderCommandWriteService;
 import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
 import com.guidinglight.nexusquant.trading.application.port.TradingVenueGateway;
+import com.guidinglight.nexusquant.ledger.service.port.TradeLedgerPort;
+import com.guidinglight.nexusquant.risk.service.KillSwitchService;
+import com.guidinglight.nexusquant.scheduler.service.OkxRecoveryService;
+import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
+import com.guidinglight.nexusquant.trading.application.CancelOrderRequest;
 import java.math.BigDecimal;
 import java.net.Proxy;
 import java.net.ProxySelector;
@@ -24,6 +29,15 @@ import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -34,6 +48,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 /** 从 stdin 接收有限场景命令的真实 Spring JVM；没有 HTTP 后门或 SQL mutation 命令。 */
 public final class B0NqProcessMain {
+    private static volatile String placeVenue = "OKX";
     public static void main(String[] args) throws Exception {
         B0Fixture.require(args.length == 0);
         String db = System.getenv("NQ_B0_DB");
@@ -47,7 +62,7 @@ public final class B0NqProcessMain {
                 B0Fixture.require(allowedDestination(uri, venue, db));
                 return List.of(Proxy.NO_PROXY);
             }
-            @Override public void connectFailed(URI uri, SocketAddress address, java.io.IOException error) { }
+            @Override public void connectFailed(URI uri, SocketAddress address, IOException error) { }
         });
         try (var context = new SpringApplicationBuilder(NexusQuantApplication.class, VenueConfiguration.class)
                 .web(WebApplicationType.NONE).run(
@@ -56,8 +71,10 @@ public final class B0NqProcessMain {
                         "--spring.datasource.url=" + db, "--spring.datasource.username=" + B0Fixture.APP,
                         "--spring.datasource.password=", "--spring.flyway.enabled=false",
                         "--spring.main.allow-bean-definition-overriding=true",
-                        "--spring.task.scheduling.enabled=false", "--nq.runtime.trading-components.enabled=true",
-                        "--nq.validation-operations.scheduler.enabled=false", "--nq.okx.recovery.enabled=false",
+                        "--spring.task.scheduling.enabled=" + B5QualificationControls.strategyRecoveryEnabled, "--nq.runtime.trading-components.enabled=true",
+                        "--nq.validation-operations.scheduler.enabled=" + B5QualificationControls.schedulerEnabled,
+                        "--nq.validation-operations.scheduler.initial-delay=PT24H",
+                        "--nq.validation-operations.scheduler.execution-timeout=PT1M", "--nq.okx.recovery.enabled=false",
                         "--nq.okx.ws.enabled=false", "--nq.binance.ws.enabled=false",
                         "--nq.instrument.catalog-sync.enabled=false", "--nq.env-safety.live-enabled=false",
                         "--nq.env-safety.ai-enabled=false", "--nq.env-safety.dh-runtime-enabled=false",
@@ -72,24 +89,55 @@ public final class B0NqProcessMain {
             System.out.println("B0_READY " + ProcessHandle.current().pid());
             System.out.println("B0_COMPOSITION realRisk=true writeProxy=true gateway=AdapterBackedTradingVenueGateway jdbcUser=" + B0Fixture.APP);
             System.out.flush();
-            try (var executor = java.util.concurrent.Executors.newSingleThreadExecutor();
-                 var commands = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))) {
-                java.util.concurrent.Future<String> pending = null;
+            try (var qualification = new B5QualificationControls(context);
+                 var executor = Executors.newSingleThreadExecutor();
+                 var commands = new BufferedReader(new InputStreamReader(System.in))) {
+                Future<String> pending = null;
                 String command;
                 while ((command = commands.readLine()) != null) {
                     if ("STOP".equals(command)) return;
+                    String qualificationResult = qualification.handle(command);
+                    if (qualificationResult != null) {
+                        System.out.println("B0_RESULT " + qualificationResult);
+                        System.out.flush();
+                        continue;
+                    }
                     if (command.startsWith("BEGIN_")) {
                         B0Fixture.require(pending == null);
                         String operation = command.substring(6);
-                        B0Fixture.require(java.util.Set.of("PLACE_B2", "PLACE_B2_LIVE", "CANCEL").contains(operation));
+                        B0Fixture.require(Set.of("PLACE_B2", "PLACE_B2_LIVE", "CANCEL").contains(operation));
                         pending = executor.submit(() -> tradingCommand(context.getBean(OrderCommandService.class), jdbc, name, operation));
                         System.out.println("B0_RESULT BEGIN " + operation);
                     } else if ("AWAIT".equals(command)) {
                         B0Fixture.require(pending != null);
-                        System.out.println("B0_RESULT " + pending.get(25, java.util.concurrent.TimeUnit.SECONDS));
+                        System.out.println("B0_RESULT " + pending.get(25, TimeUnit.SECONDS));
                         pending = null;
+                    } else if (command.startsWith("SET_B5_VENUE ")) {
+                        B0Fixture.require(pending == null);
+                        placeVenue = new String(Base64.getDecoder().decode(command.substring(13)),
+                                StandardCharsets.UTF_8);
+                        System.out.println("B0_RESULT VENUE_INPUT_SET");
+                    } else if ("TRY_PLACE_B5".equals(command)) {
+                        try {
+                            System.out.println("B0_RESULT " + tradingCommand(context.getBean(OrderCommandService.class), jdbc, name, "PLACE_B2"));
+                        } catch (IllegalArgumentException rejected) {
+                            System.out.println("B0_RESULT INVALID_VENUE_REJECTED");
+                        }
+                    } else if ("ARM_B5_POST_ARM".equals(command)) {
+                        B5PreSendBarrier.arm(context.getBean(OrderCommandWriteService.class), "armOrdinaryPlace", "POST_ARM");
+                        System.out.println("B0_RESULT ARMED B5_POST_ARM");
+                    } else if ("ARM_B5_PRE_SEND".equals(command)) {
+                        B5PreSendBarrier.arm(context.getBean(OrderCommandWriteService.class));
+                        System.out.println("B0_RESULT ARMED B5_PRE_SEND");
+                    } else if ("RELEASE_B5_PRE_SEND".equals(command)) {
+                        B5PreSendBarrier.release();
+                        System.out.println("B0_RESULT RELEASED B5_PRE_SEND");
+                    } else if ("B5_RECOVERY".equals(command)) {
+                        var report = context.getBean(OkxRecoveryService.class)
+                                .rebuild("b5-recovery");
+                        System.out.println("B0_RESULT B5_RECOVERY " + report);
                     } else if ("ENGAGE".equals(command)) {
-                        var kill = context.getBean(com.guidinglight.nexusquant.risk.service.KillSwitchService.class);
+                        var kill = context.getBean(KillSwitchService.class);
                         var engaged = kill.engage(kill.snapshot().version(), "B3_IN_FLIGHT", "B3_TEST", "b3-kill");
                         System.out.println("B0_RESULT ENGAGE " + engaged.status() + " " + engaged.version());
                     } else if (command.startsWith("ARM_B4_TX ")) {
@@ -99,16 +147,17 @@ public final class B0NqProcessMain {
                         String method;
                         switch (parts[1]) {
                             case "PREPARE" -> { target = context.getBean(OrderCommandWriteService.class); method = "preparePlaceOrder"; }
+                            case "AUTHORITY" -> { target = context.getBean(OrderCommandWriteService.class); method = "armOrdinaryPlace"; }
                             case "ACK" -> { target = context.getBean(OrderCommandWriteService.class); method = "finalizeAcceptedPlaceOrder"; }
-                            case "TRADE" -> { target = context.getBean(com.guidinglight.nexusquant.scheduler.service.port.TradeRepository.class); method = "insertWithRequiredEvent"; }
-                            case "LEDGER" -> { target = context.getBean(com.guidinglight.nexusquant.ledger.service.port.TradeLedgerPort.class); method = "postTrade"; }
+                            case "TRADE" -> { target = context.getBean(TradeRepository.class); method = "insertWithRequiredEvent"; }
+                            case "LEDGER" -> { target = context.getBean(TradeLedgerPort.class); method = "postTrade"; }
                             default -> throw new IllegalArgumentException("unsupported B4 transaction owner");
                         }
                         B4TransactionFaults.arm(target, jdbc, method, parts[2]);
                         System.out.println("B0_RESULT ARMED " + parts[1] + " " + parts[2]);
                     } else if ("ARM_B4_TRADE_COMMIT".equals(command)) {
                         B4ProcessFaults.armAfterTradeCommit(context.getBean(
-                                com.guidinglight.nexusquant.scheduler.service.port.TradeRepository.class));
+                                TradeRepository.class));
                         System.out.println("B0_RESULT ARMED AFTER_TRADE_COMMIT");
                     } else if ("RECOVER".equals(command)) {
                         int count = context.getBean(OkxRestReconcileService.class).reconcileOnce(100);
@@ -130,7 +179,7 @@ public final class B0NqProcessMain {
             String client = "b0" + name.substring(name.length() - 30);
             if ("PLACE_B3_NEW".equals(command)) client = "b3" + name.substring(name.length() - 30);
             var result = commands.placeOrder(new PlaceOrderRequest(
-                    "b0-request", account, null, "OKX", "BTC-USDT", client, account + ":" + client,
+                    "b0-request", account, null, placeVenue, "BTC-USDT", client, account + ":" + client,
                     "b0_test", OrderSide.BUY, OrderType.LIMIT, new BigDecimal("100.00000000"),
                     new BigDecimal("PLACE".equals(command) ? "0.10000000" : "10.00000000"), "GTC", "b0-trace",
                     "PLACE_B2_LIVE".equals(command) ? "LIVE" : "SIM", null));
@@ -138,7 +187,7 @@ public final class B0NqProcessMain {
         }
         if ("CANCEL".equals(command)) {
             String orderId = jdbc.queryForObject("SELECT order_id FROM orders", String.class);
-            var result = commands.cancelOrder(new com.guidinglight.nexusquant.trading.application.CancelOrderRequest(
+            var result = commands.cancelOrder(new CancelOrderRequest(
                     "b2-cancel", orderId, null, "OKX", "BTC-USDT", null, null, "B2_CANCEL", "b0-trace"));
             return "CANCEL " + result.orderId() + " " + result.status();
         }

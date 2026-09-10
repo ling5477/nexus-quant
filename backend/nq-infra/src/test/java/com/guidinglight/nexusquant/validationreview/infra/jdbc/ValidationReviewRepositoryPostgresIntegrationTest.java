@@ -35,6 +35,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -364,7 +365,7 @@ class ValidationReviewRepositoryPostgresIntegrationTest {
                 new ValidationReviewOperationalAuditService(auditRepository),
                 objectMapper
         );
-        ValidationReviewActor operator = new ValidationReviewActor(ownerId, java.util.Set.of("OPERATOR"));
+        ValidationReviewActor operator = new ValidationReviewActor(ownerId, Set.of("OPERATOR"));
         repository.createCase(openCase(auditCaseId, ownerId, "audit-source", baseTime));
 
         ValidationReviewTransitionResult accepted = transactions.execute(status -> operations.transition(

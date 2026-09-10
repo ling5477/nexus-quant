@@ -1,0 +1,392 @@
+[
+  {
+    "scenario": "CREATED_DEATH_SCAN",
+    "proof": "R01.json",
+    "proofReuse": "NEW_RUN",
+    "rawSha256": "ef73c137d0202b7cfc7db86566d595964029ae0ebce4283f4b574efa4dce1af7",
+    "sha256": "41b5d2c91eb7430787f00c4bbdd9ca9ac344b318e26d306060f3a4bacf4173d9",
+    "database": "SYNTH-L4:B5-FINAL:R01:DATABASE:001",
+    "pids": {
+      "controllerPid": 1864,
+      "nqPid": 57588,
+      "restartPid": 17528,
+      "successorPid": 63100,
+      "replayPid": 5176,
+      "venuePid": 59344
+    },
+    "counts": {
+      "strategy_runs": 1,
+      "orders": 1,
+      "ordinary_place_authorities": 1,
+      "trades": 1,
+      "tradeExecuted": 1,
+      "ledger_entries": 4
+    },
+    "places": 1,
+    "cancels": 0,
+    "result": "PASS",
+    "identityMappings": 15,
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "scenario": "CREATED_DEATH_SCAN",
+    "proof": "R02.json",
+    "proofReuse": "NEW_RUN",
+    "rawSha256": "c65ac0a811a0107bf1f9f7aa6deced381735039b8c4983d06cabdcc30208f152",
+    "sha256": "bdd4871380c9eae30eff7809718fcc2c9c8e243895de80845307886b64508a40",
+    "database": "SYNTH-L4:B5-FINAL:R02:DATABASE:001",
+    "pids": {
+      "controllerPid": 1864,
+      "nqPid": 71044,
+      "restartPid": 32868,
+      "successorPid": 37364,
+      "replayPid": 19016,
+      "venuePid": 7872
+    },
+    "counts": {
+      "strategy_runs": 1,
+      "orders": 1,
+      "ordinary_place_authorities": 1,
+      "trades": 1,
+      "tradeExecuted": 1,
+      "ledger_entries": 4
+    },
+    "places": 1,
+    "cancels": 0,
+    "result": "PASS",
+    "identityMappings": 15,
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "scenario": "CREATED_DEATH_SCAN",
+    "proof": "R03.json",
+    "proofReuse": "NEW_RUN",
+    "rawSha256": "dc70538483ee1112e094048b6aedc4464a53ea4543bbb27067ded0b48a9ffc06",
+    "sha256": "14a88efbbe9042ec68ff984b70fdc83e4a02cc30f5dbdc5e1b5af8b7d9a203bc",
+    "database": "SYNTH-L4:B5-FINAL:R03:DATABASE:001",
+    "pids": {
+      "controllerPid": 1864,
+      "nqPid": 9460,
+      "restartPid": 49168,
+      "successorPid": 20920,
+      "replayPid": 12060,
+      "venuePid": 54228
+    },
+    "counts": {
+      "strategy_runs": 1,
+      "orders": 1,
+      "ordinary_place_authorities": 1,
+      "trades": 1,
+      "tradeExecuted": 1,
+      "ledger_entries": 4
+    },
+    "places": 1,
+    "cancels": 0,
+    "result": "PASS",
+    "identityMappings": 15,
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "scenario": "CREATED_PAUSED_SCAN",
+    "proof": "R04.json",
+    "proofReuse": "NEW_RUN",
+    "rawSha256": "d689e9e83104afd6a9b8036c9f4866172b9e861b062783a17d53f19c650152c2",
+    "sha256": "021720e7fa7a2f97d9158e8d47f34f73c20d7232ec63b5bfbdb3e33acbb470e4",
+    "database": "SYNTH-L4:B5-FINAL:R04:DATABASE:001",
+    "pids": {
+      "controllerPid": 1864,
+      "nqPid": 21568,
+      "restartPid": 47160,
+      "successorPid": 24368,
+      "replayPid": 45632,
+      "venuePid": 31720
+    },
+    "counts": {
+      "strategy_runs": 1,
+      "orders": 1,
+      "ordinary_place_authorities": 1,
+      "trades": 1,
+      "tradeExecuted": 1,
+      "ledger_entries": 4
+    },
+    "places": 1,
+    "cancels": 0,
+    "result": "PASS",
+    "identityMappings": 15,
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "scenario": "CREATED_PAUSED_SCAN",
+    "proof": "R05.json",
+    "proofReuse": "NEW_RUN",
+    "rawSha256": "41e38252bda639a959e9c5963ca0a6d626f842ec3c92862335bd81890175c454",
+    "sha256": "63c261b0e62734530e10a459f5b3316ef97b920f6634facc38955c711a9b80f6",
+    "database": "SYNTH-L4:B5-FINAL:R05:DATABASE:001",
+    "pids": {
+      "controllerPid": 1864,
+      "nqPid": 23584,
+      "restartPid": 46792,
+      "successorPid": 53700,
+      "replayPid": 53308,
+      "venuePid": 26964
+    },
+    "counts": {
+      "strategy_runs": 1,
+      "orders": 1,
+      "ordinary_place_authorities": 1,
+      "trades": 1,
+      "tradeExecuted": 1,
+      "ledger_entries": 4
+    },
+    "places": 1,
+    "cancels": 0,
+    "result": "PASS",
+    "identityMappings": 15,
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "scenario": "CREATED_PAUSED_SCAN",
+    "proof": "R06.json",
+    "proofReuse": "NEW_RUN",
+    "rawSha256": "8cf1866089a179f2fa26d12b906f7bf88b53356e23dcd1bcce550f1cfeb40059",
+    "sha256": "ef5fe2ceb3d6b535e297d42cfea91f1ba6eab2307ad36c4c16dcb88b59913200",
+    "database": "SYNTH-L4:B5-FINAL:R06:DATABASE:001",
+    "pids": {
+      "controllerPid": 1864,
+      "nqPid": 27632,
+      "restartPid": 37868,
+      "successorPid": 63308,
+      "replayPid": 34332,
+      "venuePid": 27320
+    },
+    "counts": {
+      "strategy_runs": 1,
+      "orders": 1,
+      "ordinary_place_authorities": 1,
+      "trades": 1,
+      "tradeExecuted": 1,
+      "ledger_entries": 4
+    },
+    "places": 1,
+    "cancels": 0,
+    "result": "PASS",
+    "identityMappings": 15,
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "scenario": "ORDINARY_RESTART",
+    "proof": "R07.json",
+    "proofReuse": "NEW_RUN",
+    "rawSha256": "8f3f639b91572d1a8e7b49c0bba9f5ae198a9434989798923f9e67c5dd619616",
+    "sha256": "3def6541e4a3941e8782da92d71e690a9b831e4b065209f52f8bbb43038ebbd1",
+    "database": "SYNTH-L4:B5-FINAL:R07:DATABASE:001",
+    "pids": {
+      "controllerPid": 1864,
+      "nqPid": 46592,
+      "restartPid": 18552,
+      "successorPid": 56472,
+      "replayPid": 47832,
+      "venuePid": 23904
+    },
+    "counts": {
+      "strategy_runs": 0,
+      "orders": 1,
+      "ordinary_place_authorities": 1,
+      "trades": 1,
+      "tradeExecuted": 1,
+      "ledger_entries": 4
+    },
+    "places": 1,
+    "cancels": 0,
+    "result": "PASS",
+    "identityMappings": 13,
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "scenario": "PRE_ADMISSION_DEATH",
+    "proof": "R08.json",
+    "proofReuse": "NEW_RUN",
+    "rawSha256": "3374b96e248fa4a1ddb544b3e7c7eebd4f41f385bdfcf87245df9a0fc5543004",
+    "sha256": "fe4600db5fee2468bcc873f923bfeef07556154cfcc870c19021b514a78a0903",
+    "database": "SYNTH-L4:B5-FINAL:R08:DATABASE:001",
+    "pids": {
+      "controllerPid": 1864,
+      "nqPid": 71632,
+      "restartPid": 40520,
+      "successorPid": 76292,
+      "replayPid": 49048,
+      "venuePid": 692
+    },
+    "counts": {
+      "strategy_runs": 1,
+      "orders": 1,
+      "ordinary_place_authorities": 1,
+      "trades": 1,
+      "tradeExecuted": 1,
+      "ledger_entries": 4
+    },
+    "places": 1,
+    "cancels": 0,
+    "result": "PASS",
+    "identityMappings": 15,
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "scenario": "PRE_ADMISSION_DEATH",
+    "proof": "R09.json",
+    "proofReuse": "NEW_RUN",
+    "rawSha256": "fc9b3c6efb2ad955e0664056e805d396c4357cdfba24104b9275f307dca11abd",
+    "sha256": "f028f037ec250f937aeb040db594b3e007c2c6cfee18dae58fbe2e3f39dac3fb",
+    "database": "SYNTH-L4:B5-FINAL:R09:DATABASE:001",
+    "pids": {
+      "controllerPid": 1864,
+      "nqPid": 6820,
+      "restartPid": 30756,
+      "successorPid": 8384,
+      "replayPid": 34504,
+      "venuePid": 27324
+    },
+    "counts": {
+      "strategy_runs": 1,
+      "orders": 1,
+      "ordinary_place_authorities": 1,
+      "trades": 1,
+      "tradeExecuted": 1,
+      "ledger_entries": 4
+    },
+    "places": 1,
+    "cancels": 0,
+    "result": "PASS",
+    "identityMappings": 15,
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "scenario": "PRE_ADMISSION_DEATH",
+    "proof": "R10.json",
+    "proofReuse": "NEW_RUN",
+    "rawSha256": "8ea4251e12a4b1cdb54943ae5fe208a24ab1842babecfaa9c040ab5f2831d9e1",
+    "sha256": "56aa3b13edebc92674683dd7305f628ad761d4878f2754c0f475bc995ef80131",
+    "database": "SYNTH-L4:B5-FINAL:R10:DATABASE:001",
+    "pids": {
+      "controllerPid": 1864,
+      "nqPid": 58336,
+      "restartPid": 56780,
+      "successorPid": 28840,
+      "replayPid": 28004,
+      "venuePid": 66340
+    },
+    "counts": {
+      "strategy_runs": 1,
+      "orders": 1,
+      "ordinary_place_authorities": 1,
+      "trades": 1,
+      "tradeExecuted": 1,
+      "ledger_entries": 4
+    },
+    "places": 1,
+    "cancels": 0,
+    "result": "PASS",
+    "identityMappings": 15,
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "scenario": "TERMINAL_SCAN",
+    "proof": "R11.json",
+    "proofReuse": "NEW_RUN",
+    "rawSha256": "17593ffc3d0efe1b6df121d2cba95f786c82cd693d7da4030d0c09dda8687621",
+    "sha256": "15b119d66d13cca72cbfef34a3969a7aabc27bad5c6e465eb0ebf0db4aaa71fd",
+    "database": "SYNTH-L4:B5-FINAL:R11:DATABASE:001",
+    "pids": {
+      "controllerPid": 1864,
+      "nqPid": 23560,
+      "restartPid": 59880,
+      "successorPid": 16232,
+      "replayPid": 39648,
+      "venuePid": 56548
+    },
+    "counts": {
+      "strategy_runs": 1,
+      "orders": 1,
+      "ordinary_place_authorities": 1,
+      "trades": 1,
+      "tradeExecuted": 1,
+      "ledger_entries": 4
+    },
+    "places": 1,
+    "cancels": 0,
+    "result": "PASS",
+    "identityMappings": 15,
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "scenario": "TERMINAL_SCAN",
+    "proof": "R12.json",
+    "proofReuse": "NEW_RUN",
+    "rawSha256": "f177160963ab7e0a3d13db83c705008e6b9a13c3dfda067659c324cd96d41f08",
+    "sha256": "6a1d03412ada5da422d963c8aecd911840f8fa4902b1088ad516da463d6afa03",
+    "database": "SYNTH-L4:B5-FINAL:R12:DATABASE:001",
+    "pids": {
+      "controllerPid": 1864,
+      "nqPid": 54748,
+      "restartPid": 4812,
+      "successorPid": 74928,
+      "replayPid": 33752,
+      "venuePid": 2476
+    },
+    "counts": {
+      "strategy_runs": 1,
+      "orders": 1,
+      "ordinary_place_authorities": 1,
+      "trades": 1,
+      "tradeExecuted": 1,
+      "ledger_entries": 4
+    },
+    "places": 1,
+    "cancels": 0,
+    "result": "PASS",
+    "identityMappings": 15,
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "scenario": "TERMINAL_SCAN",
+    "proof": "R13.json",
+    "proofReuse": "NEW_RUN",
+    "rawSha256": "7339667cb692eb99efc341df803adbe6056d1fa4fc6aefe3de62c63eef1a1b2e",
+    "sha256": "485bf7e7aa7fe027943acd67a6905c53cab53a90a95aefd88df3285bf8fbee77",
+    "database": "SYNTH-L4:B5-FINAL:R13:DATABASE:001",
+    "pids": {
+      "controllerPid": 1864,
+      "nqPid": 65832,
+      "restartPid": 53004,
+      "successorPid": 47860,
+      "replayPid": 49476,
+      "venuePid": 30384
+    },
+    "counts": {
+      "strategy_runs": 1,
+      "orders": 1,
+      "ordinary_place_authorities": 1,
+      "trades": 1,
+      "tradeExecuted": 1,
+      "ledger_entries": 4
+    },
+    "places": 1,
+    "cancels": 0,
+    "result": "PASS",
+    "identityMappings": 15,
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  }
+]

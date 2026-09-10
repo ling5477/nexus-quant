@@ -1,0 +1,194 @@
+{
+  "scenario": "RULE_CHANGE",
+  "database": "SYNTH-L4:B5-EQ:R53:DATABASE:001",
+  "ownerPid": 59284,
+  "venuePid": 52032,
+  "atCut": {
+    "strategy_runs": [
+      {
+        "status": "DISPATCHING",
+        "trace_id": "SYNTH-L4:B5-EQ:R53:TRACE:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T21:28:05.020918+08:00",
+        "request_id": "SYNTH-L4:B5-EQ:R53:REQUEST:001",
+        "started_at": "2026-09-10T21:28:05.018887+08:00",
+        "finished_at": null,
+        "strategy_id": "b5-strategy",
+        "trigger_type": "SCHEDULER",
+        "error_message": null,
+        "exchange_code": "OKX",
+        "config_snapshot": {
+          "side": "BUY",
+          "price": "100.005",
+          "symbol": "BTC-USDT",
+          "quantity": "10.0015",
+          "orderType": "LIMIT"
+        },
+        "strategy_run_id": "SYNTH-L4:B5-EQ:R53:RUN:001",
+        "admission_due_at": "2026-01-01T08:00:00+08:00",
+        "admission_schedule_id": "b5"
+      }
+    ],
+    "strategy_run_dispatch_work": [
+      {
+        "side": "BUY",
+        "price": 100.005,
+        "symbol": "BTC-USDT",
+        "quantity": 10.0015,
+        "account_id": 1,
+        "order_type": "LIMIT",
+        "time_in_force": "GTC",
+        "client_order_id": "SYNTH-L4:B5-EQ:R53:CLIENT:001",
+        "effective_price": 100.0,
+        "strategy_run_id": "SYNTH-L4:B5-EQ:R53:RUN:001",
+        "definition_version": 1,
+        "effective_quantity": 10.001,
+        "work_schema_version": 1,
+        "normalization_rejection": null
+      }
+    ],
+    "orders": [
+      {
+        "qty": 10.001,
+        "side": "BUY",
+        "type": "LIMIT",
+        "price": 100.0,
+        "venue": "OKX",
+        "reason": "ORDER_ROUTED_TO_ADAPTER",
+        "status": "SENT",
+        "symbol": "BTC-USDT",
+        "version": 2,
+        "order_id": "SYNTH-L4:B5-EQ:R53:ORDER:001",
+        "trace_id": "SYNTH-L4:B5-EQ:R53:TRACE:001",
+        "dedup_key": "1:SYNTH-L4:B5-EQ:R53:CLIENT:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T21:28:05.105444+08:00",
+        "request_id": "SYNTH-L4:B5-EQ:R53:REQUEST:002",
+        "updated_at": "2026-09-10T21:28:05.137247+08:00",
+        "exchange_code": "OKX",
+        "client_order_id": "SYNTH-L4:B5-EQ:R53:CLIENT:001",
+        "strategy_run_id": "SYNTH-L4:B5-EQ:R53:RUN:001",
+        "exchange_order_id": null,
+        "external_order_id": null
+      }
+    ],
+    "ordinary_place_authorities": [
+      {
+        "state": "NOT_ARMED",
+        "order_id": "SYNTH-L4:B5-EQ:R53:ORDER:001",
+        "decided_at": null
+      }
+    ],
+    "trades": [],
+    "ledger_entries": []
+  },
+  "successorPid": 49056,
+  "final": {
+    "strategy_runs": [
+      {
+        "status": "FAILED",
+        "trace_id": "SYNTH-L4:B5-EQ:R53:TRACE:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T21:28:05.020918+08:00",
+        "request_id": "SYNTH-L4:B5-EQ:R53:REQUEST:001",
+        "started_at": "2026-09-10T21:28:05.018887+08:00",
+        "finished_at": "2026-09-10T21:28:08.86004+08:00",
+        "strategy_id": "b5-strategy",
+        "trigger_type": "SCHEDULER",
+        "error_message": "order_status=REJECTED; reason=OKX_EFFECTIVE_PARAMETERS_CHANGED",
+        "exchange_code": "OKX",
+        "config_snapshot": {
+          "side": "BUY",
+          "price": "100.005",
+          "symbol": "BTC-USDT",
+          "quantity": "10.0015",
+          "orderType": "LIMIT"
+        },
+        "strategy_run_id": "SYNTH-L4:B5-EQ:R53:RUN:001",
+        "admission_due_at": "2026-01-01T08:00:00+08:00",
+        "admission_schedule_id": "b5"
+      }
+    ],
+    "strategy_run_dispatch_work": [
+      {
+        "side": "BUY",
+        "price": 100.005,
+        "symbol": "BTC-USDT",
+        "quantity": 10.0015,
+        "account_id": 1,
+        "order_type": "LIMIT",
+        "time_in_force": "GTC",
+        "client_order_id": "SYNTH-L4:B5-EQ:R53:CLIENT:001",
+        "effective_price": 100.0,
+        "strategy_run_id": "SYNTH-L4:B5-EQ:R53:RUN:001",
+        "definition_version": 1,
+        "effective_quantity": 10.001,
+        "work_schema_version": 1,
+        "normalization_rejection": null
+      }
+    ],
+    "orders": [
+      {
+        "qty": 10.001,
+        "side": "BUY",
+        "type": "LIMIT",
+        "price": 100.0,
+        "venue": "OKX",
+        "reason": "OKX_EFFECTIVE_PARAMETERS_CHANGED",
+        "status": "REJECTED",
+        "symbol": "BTC-USDT",
+        "version": 3,
+        "order_id": "SYNTH-L4:B5-EQ:R53:ORDER:001",
+        "trace_id": "SYNTH-L4:B5-EQ:R53:TRACE:001",
+        "dedup_key": "1:SYNTH-L4:B5-EQ:R53:CLIENT:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T21:28:05.105444+08:00",
+        "request_id": "SYNTH-L4:B5-EQ:R53:REQUEST:002",
+        "updated_at": "2026-09-10T21:28:08.847337+08:00",
+        "exchange_code": "OKX",
+        "client_order_id": "SYNTH-L4:B5-EQ:R53:CLIENT:001",
+        "strategy_run_id": "SYNTH-L4:B5-EQ:R53:RUN:001",
+        "exchange_order_id": null,
+        "external_order_id": null
+      }
+    ],
+    "ordinary_place_authorities": [
+      {
+        "state": "MAY_HAVE_ESCAPED",
+        "order_id": "SYNTH-L4:B5-EQ:R53:ORDER:001",
+        "decided_at": "2026-09-10T21:28:08.810739+08:00"
+      }
+    ],
+    "trades": [],
+    "ledger_entries": []
+  },
+  "venue": {
+    "code": "0",
+    "msg": "",
+    "data": [],
+    "pid": 52032,
+    "places": 0,
+    "cancels": 0,
+    "pendingCancel": false,
+    "placeRequests": 0,
+    "apiRequests": 2,
+    "order": null,
+    "fills": [],
+    "events": [
+      {
+        "sequence": 2,
+        "type": "RULES_CHANGED",
+        "nanoTime": 946358781245300,
+        "epochMillis": 1789046885182,
+        "lotSize": "0.01",
+        "tickSize": "0.1",
+        "minSize": "0.01"
+      }
+    ]
+  },
+  "result": "PASS"
+}

@@ -1,7 +1,8 @@
 """Reject historical stage identities in active assets; immutable evidence is outside this contract.
 
-The explicit, content-pinned exceptions are reviewed compatibility/test contracts, not
-an automatically learned baseline. There is deliberately no update/accept switch.
+The explicit, content-pinned exceptions are reviewed compatibility/test contracts.
+Registration evolution uses stage-asset-lifecycle.py proposals with separately reviewed
+digests; validation never learns or accepts working-tree changes.
 """
 from __future__ import annotations
 
@@ -135,8 +136,9 @@ def inspect(root: Path, path: str, retired_paths: tuple[str, ...] = ()) -> dict 
             "matches": len(lines)}
 
 
-def load_policy(root: Path) -> tuple[dict[str, dict], tuple[str, ...], list[dict], list[dict]]:
-    policy = json.loads((root / POLICY_PATH).read_text(encoding="utf-8"))
+def load_policy(root: Path, policy: dict | None = None) -> tuple[dict[str, dict], tuple[str, ...], list[dict], list[dict]]:
+    if policy is None:
+        policy = json.loads((root / POLICY_PATH).read_text(encoding="utf-8"))
     if set(policy) != {"schemaVersion", "exceptions", "retiredPaths", "compatibilityContracts", "safeControlPlaneInputs"} or policy["schemaVersion"] != 2 or not isinstance(policy["exceptions"], list):
         raise ValueError("INVALID_EXCEPTION_SCHEMA")
     retired = policy["retiredPaths"]
@@ -541,8 +543,8 @@ def executable_inputs(root: Path, paths: list[str], safe_inputs: list[dict]) -> 
     return errors, executable
 
 
-def check(root: Path) -> tuple[list[str], int, int]:
-    entries, retired, contracts, safe_inputs = load_policy(root)
+def check(root: Path, policy: dict | None = None) -> tuple[list[str], int, int]:
+    entries, retired, contracts, safe_inputs = load_policy(root, policy)
     used = set()
     errors = []
     paths = sources(root)

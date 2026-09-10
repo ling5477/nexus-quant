@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.StreamSupport;
 
 import org.springframework.stereotype.Component;
 
@@ -91,7 +92,7 @@ public class BinanceHistoricalKlineAdapter implements HistoricalKlineAdapter {
     }
 
     private List<HistoricalKlineBar> parseBars(HistoricalKlineRequest request, JsonNode payload) {
-        return java.util.stream.StreamSupport.stream(payload.spliterator(), false)
+        return StreamSupport.stream(payload.spliterator(), false)
                 .map(row -> parseBar(request, row))
                 .toList();
     }

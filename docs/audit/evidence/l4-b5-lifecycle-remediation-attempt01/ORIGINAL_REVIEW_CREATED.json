@@ -1,0 +1,168 @@
+{
+  "controllerPid": 17348,
+  "database": "SYNTH-L4:B5-LC:R04:DATABASE:001",
+  "pgVersion": "16.15 (Debian 16.15-1.pgdg13+2)",
+  "flywayVersion": "50",
+  "ownerPid": 68028,
+  "venuePid": 39140,
+  "atCut": {
+    "strategy_schedules": [
+      {
+        "enabled": true,
+        "timezone": "UTC",
+        "cron_expr": "* * * * * *",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T16:33:28+08:00",
+        "updated_at": "2026-09-10T16:33:30.590703+08:00",
+        "dedup_scope": "SCHEDULE_WINDOW",
+        "strategy_id": "b5-strategy",
+        "exchange_code": "oKx",
+        "schedule_type": "CRON",
+        "window_config": {},
+        "schedule_job_id": "b5",
+        "last_triggered_at": null
+      },
+      {
+        "enabled": true,
+        "timezone": "UTC",
+        "cron_expr": "* * * * * *",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T16:33:55+08:00",
+        "updated_at": "2026-09-10T16:33:30.598024+08:00",
+        "dedup_scope": "SCHEDULE_WINDOW",
+        "strategy_id": "b5-strategy",
+        "exchange_code": "oKx",
+        "schedule_type": "CRON",
+        "window_config": {},
+        "schedule_job_id": "b5-future",
+        "last_triggered_at": null
+      }
+    ],
+    "strategy_runs": [
+      {
+        "status": "CREATED",
+        "trace_id": "SYNTH-L4:B5-LC:R04:TRACE:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T16:33:34.340993+08:00",
+        "request_id": "SYNTH-L4:B5-LC:R04:REQUEST:001",
+        "started_at": "2026-09-10T16:33:34.341945+08:00",
+        "finished_at": null,
+        "strategy_id": "b5-strategy",
+        "trigger_type": "SCHEDULER",
+        "error_message": null,
+        "exchange_code": "oKx",
+        "config_snapshot": {
+          "side": "BUY",
+          "price": "100",
+          "symbol": "BTC-USDT",
+          "quantity": "10",
+          "orderType": "LIMIT"
+        },
+        "strategy_run_id": "SYNTH-L4:B5-LC:R04:RUN:001",
+        "admission_due_at": "2026-09-10T16:33:28+08:00",
+        "admission_schedule_id": "b5"
+      }
+    ],
+    "orders": [],
+    "ordinary_place_authorities": [],
+    "b5_run_transitions": [],
+    "trades": [],
+    "ledger_entries": [],
+    "event_store": []
+  },
+  "successorPid": 71376,
+  "sameWindowScan": "StrategyScheduleScanBatchResult[scannedCount=2, triggeredCount=0, skippedWindowCount=0, skippedDedupCount=0, skippedDisabledCount=0, skippedStrategyDisabledCount=0, skippedBusyCount=1, skippedNotDueCount=1, failedCount=0, results=[StrategyScheduleScanResult[scheduleJobId=b5, strategyId=b5-strategy, outcome=SKIPPED_BUSY, requestId=null, strategyRunId=null, detail=strategy_run_active], StrategyScheduleScanResult[scheduleJobId=b5-future, strategyId=b5-strategy, outcome=SKIPPED_NOT_DUE, requestId=null, strategyRunId=null, detail=not_due]]]",
+  "explicitRecovery": "STRATEGY_RECOVERED 0",
+  "futureDueConfirmed": true,
+  "originalNextWallWindowElapsed": "t",
+  "futureWindowScan": "StrategyScheduleScanBatchResult[scannedCount=2, triggeredCount=0, skippedWindowCount=0, skippedDedupCount=0, skippedDisabledCount=0, skippedStrategyDisabledCount=0, skippedBusyCount=2, skippedNotDueCount=0, failedCount=0, results=[StrategyScheduleScanResult[scheduleJobId=b5, strategyId=b5-strategy, outcome=SKIPPED_BUSY, requestId=null, strategyRunId=null, detail=strategy_run_active], StrategyScheduleScanResult[scheduleJobId=b5-future, strategyId=b5-strategy, outcome=SKIPPED_BUSY, requestId=null, strategyRunId=null, detail=strategy_run_active]]]",
+  "restartPid": 56220,
+  "restartScan": "StrategyScheduleScanBatchResult[scannedCount=2, triggeredCount=0, skippedWindowCount=0, skippedDedupCount=0, skippedDisabledCount=0, skippedStrategyDisabledCount=0, skippedBusyCount=2, skippedNotDueCount=0, failedCount=0, results=[StrategyScheduleScanResult[scheduleJobId=b5, strategyId=b5-strategy, outcome=SKIPPED_BUSY, requestId=null, strategyRunId=null, detail=strategy_run_active], StrategyScheduleScanResult[scheduleJobId=b5-future, strategyId=b5-strategy, outcome=SKIPPED_BUSY, requestId=null, strategyRunId=null, detail=strategy_run_active]]]",
+  "restartRecovery": "STRATEGY_RECOVERED 0",
+  "final": {
+    "strategy_schedules": [
+      {
+        "enabled": true,
+        "timezone": "UTC",
+        "cron_expr": "* * * * * *",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T16:33:28+08:00",
+        "updated_at": "2026-09-10T16:33:30.590703+08:00",
+        "dedup_scope": "SCHEDULE_WINDOW",
+        "strategy_id": "b5-strategy",
+        "exchange_code": "oKx",
+        "schedule_type": "CRON",
+        "window_config": {},
+        "schedule_job_id": "b5",
+        "last_triggered_at": null
+      },
+      {
+        "enabled": true,
+        "timezone": "UTC",
+        "cron_expr": "* * * * * *",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T16:33:55+08:00",
+        "updated_at": "2026-09-10T16:33:30.598024+08:00",
+        "dedup_scope": "SCHEDULE_WINDOW",
+        "strategy_id": "b5-strategy",
+        "exchange_code": "oKx",
+        "schedule_type": "CRON",
+        "window_config": {},
+        "schedule_job_id": "b5-future",
+        "last_triggered_at": null
+      }
+    ],
+    "strategy_runs": [
+      {
+        "status": "CREATED",
+        "trace_id": "SYNTH-L4:B5-LC:R04:TRACE:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T16:33:34.340993+08:00",
+        "request_id": "SYNTH-L4:B5-LC:R04:REQUEST:001",
+        "started_at": "2026-09-10T16:33:34.341945+08:00",
+        "finished_at": null,
+        "strategy_id": "b5-strategy",
+        "trigger_type": "SCHEDULER",
+        "error_message": null,
+        "exchange_code": "oKx",
+        "config_snapshot": {
+          "side": "BUY",
+          "price": "100",
+          "symbol": "BTC-USDT",
+          "quantity": "10",
+          "orderType": "LIMIT"
+        },
+        "strategy_run_id": "SYNTH-L4:B5-LC:R04:RUN:001",
+        "admission_due_at": "2026-09-10T16:33:28+08:00",
+        "admission_schedule_id": "b5"
+      }
+    ],
+    "orders": [],
+    "ordinary_place_authorities": [],
+    "b5_run_transitions": [],
+    "trades": [],
+    "ledger_entries": [],
+    "event_store": []
+  },
+  "venue": {
+    "code": "0",
+    "msg": "",
+    "data": [],
+    "pid": 39140,
+    "places": 0,
+    "cancels": 0,
+    "pendingCancel": false,
+    "placeRequests": 0,
+    "apiRequests": 0,
+    "order": null,
+    "fills": [],
+    "events": []
+  },
+  "finding": "P1 / STRATEGY_CREATED_OWNER_DEATH_PERMANENT_ORPHAN"
+}

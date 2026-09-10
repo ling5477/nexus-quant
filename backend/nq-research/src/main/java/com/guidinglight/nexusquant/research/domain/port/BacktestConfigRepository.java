@@ -103,7 +103,7 @@ public interface BacktestConfigRepository {
             String backtestConfigId,
             String datasetId,
             String datasetSnapshotJson,
-            java.time.Instant updatedAt
+            Instant updatedAt
     ) {
         return false;
     }
@@ -126,7 +126,7 @@ public interface BacktestConfigRepository {
             String strategyVersionId,
             String strategyVersionSnapshotJson,
             String paramSnapshotJson,
-            java.time.Instant updatedAt
+            Instant updatedAt
     ) {
         return false;
     }

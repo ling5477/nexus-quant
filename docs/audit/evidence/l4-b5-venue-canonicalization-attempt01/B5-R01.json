@@ -1,0 +1,1351 @@
+{
+  "scenario": "ORDINARY_PRE_SEND_RECOVERY_STALE_RESUME",
+  "controllerPid": 65528,
+  "database": "SYNTH-L4:B5:R01:DATABASE:001",
+  "venuePid": 31588,
+  "venueEndpoint": "http://127.0.0.1:9014",
+  "nqPid": 70796,
+  "restartPid": 46312,
+  "topology": "A_AND_B_CONCURRENT_SAME_PG_SAME_VENUE_NO_RESTART",
+  "postgres": "16.15 (Debian 16.15-1.pgdg13+2)",
+  "externalVenueInput": "okx",
+  "cutObservedAt": 1789009028672,
+  "atCut": {
+    "orders": [
+      {
+        "qty": 10.0,
+        "side": "BUY",
+        "type": "LIMIT",
+        "price": 100.0,
+        "venue": "OKX",
+        "reason": "ORDER_ROUTED_TO_ADAPTER",
+        "status": "SENT",
+        "symbol": "BTC-USDT",
+        "version": 2,
+        "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "dedup_key": "1:SYNTH-L4:B5:R01:CLIENT:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T10:57:08.566619+08:00",
+        "request_id": "SYNTH-L4:B5:R01:REQUEST:001",
+        "updated_at": "2026-09-10T10:57:08.610547+08:00",
+        "exchange_code": "OKX",
+        "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+        "strategy_run_id": null,
+        "exchange_order_id": null,
+        "external_order_id": null
+      }
+    ],
+    "ordinary_place_authorities": [
+      {
+        "state": "NOT_ARMED",
+        "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "decided_at": null
+      }
+    ],
+    "trades": [],
+    "event_store": [
+      {
+        "topic": "order.command.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.584649+08:00",
+        "event_type": "PlaceOrderCommand",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.570170200Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "PlaceOrderCommand",
+          "source": "nq-core.order-command-service",
+          "payload": {
+            "side": "BUY",
+            "type": "LIMIT",
+            "price": 100.0,
+            "venue": "OKX",
+            "source": "b0_test",
+            "symbol": "BTC-USDT",
+            "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "quantity": 10.0,
+            "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+            "account_id": 1,
+            "request_id": "SYNTH-L4:B5:R01:REQUEST:002",
+            "strategy_id": null,
+            "time_in_force": "GTC",
+            "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+            "idempotency_key": "1:SYNTH-L4:B5:R01:CLIENT:001"
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:001",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:001"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "order.event.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:002",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "event_type": "RiskPassed",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.610546700Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "RiskPassed",
+          "source": "nq-core.order-command-write-service",
+          "payload": {
+            "ts": "2026-09-10T02:57:08.566618900Z",
+            "reason": "RISK_RULES_PASSED",
+            "decision": "ALLOW",
+            "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001"
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:002",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:001"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "order.event.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:003",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "event_type": "OrderCreated",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.594127500Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "OrderCreated",
+          "source": "nq-core.order-command-write-service",
+          "payload": {
+            "ts": "2026-09-10T02:57:08.566618900Z",
+            "qty": 10.0,
+            "side": "BUY",
+            "type": "LIMIT",
+            "price": 100.0,
+            "reason": "ORDER_CREATED",
+            "status": "NEW",
+            "symbol": "BTC-USDT",
+            "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "account_id": 1,
+            "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+            "strategy_run_id": null
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:003",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:001"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "risk.event.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:004",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "event_type": "RiskEventRaised",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.605471300Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "RiskEventRaised",
+          "source": "nq-core.order-command-write-service",
+          "payload": {
+            "ts": "2026-09-10T02:57:08.566618900Z",
+            "scope": "ORDER",
+            "reason": "RISK_RULES_PASSED",
+            "decision": "ALLOW",
+            "scope_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "severity": "LOW"
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:004",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:001"
+        },
+        "schema_version": 1
+      }
+    ],
+    "ledger_entries": [],
+    "audit_logs": [
+      {
+        "id": 1,
+        "action": "ORDER_CREATED",
+        "domain": "ORDER",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "detail_json": {
+          "venue": "OKX",
+          "source": "b0_test",
+          "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+          "request_id": "SYNTH-L4:B5:R01:REQUEST:002",
+          "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+          "idempotency_key": "1:SYNTH-L4:B5:R01:CLIENT:001"
+        }
+      },
+      {
+        "id": 2,
+        "action": "ORDER_STATUS_TRANSITION",
+        "domain": "ORDER",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "detail_json": {
+          "to": "RISK_PASSED",
+          "from": "NEW",
+          "reason": "RISK_RULES_PASSED",
+          "version": 1,
+          "expected_version": 0
+        }
+      },
+      {
+        "id": 3,
+        "action": "ORDER_STATUS_TRANSITION",
+        "domain": "ORDER",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "detail_json": {
+          "to": "SENT",
+          "from": "RISK_PASSED",
+          "reason": "ORDER_ROUTED_TO_ADAPTER",
+          "version": 2,
+          "expected_version": 1
+        }
+      }
+    ],
+    "tradeExecuted": "0"
+  },
+  "afterDuplicate": {
+    "orders": [
+      {
+        "qty": 10.0,
+        "side": "BUY",
+        "type": "LIMIT",
+        "price": 100.0,
+        "venue": "OKX",
+        "reason": "ORDER_ROUTED_TO_ADAPTER",
+        "status": "SENT",
+        "symbol": "BTC-USDT",
+        "version": 2,
+        "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "dedup_key": "1:SYNTH-L4:B5:R01:CLIENT:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T10:57:08.566619+08:00",
+        "request_id": "SYNTH-L4:B5:R01:REQUEST:001",
+        "updated_at": "2026-09-10T10:57:08.610547+08:00",
+        "exchange_code": "OKX",
+        "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+        "strategy_run_id": null,
+        "exchange_order_id": null,
+        "external_order_id": null
+      }
+    ],
+    "ordinary_place_authorities": [
+      {
+        "state": "NOT_ARMED",
+        "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "decided_at": null
+      }
+    ],
+    "trades": [],
+    "event_store": [
+      {
+        "topic": "order.command.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:005",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.743958+08:00",
+        "event_type": "PlaceOrderCommand",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.727651600Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "PlaceOrderCommand",
+          "source": "nq-core.order-command-service",
+          "payload": {
+            "side": "BUY",
+            "type": "LIMIT",
+            "price": 100.0,
+            "venue": "OKX",
+            "source": "b0_test",
+            "symbol": "BTC-USDT",
+            "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "quantity": 10.0,
+            "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+            "account_id": 1,
+            "request_id": "SYNTH-L4:B5:R01:REQUEST:002",
+            "strategy_id": null,
+            "time_in_force": "GTC",
+            "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+            "idempotency_key": "1:SYNTH-L4:B5:R01:CLIENT:001"
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:005",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:001"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "order.command.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.584649+08:00",
+        "event_type": "PlaceOrderCommand",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.570170200Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "PlaceOrderCommand",
+          "source": "nq-core.order-command-service",
+          "payload": {
+            "side": "BUY",
+            "type": "LIMIT",
+            "price": 100.0,
+            "venue": "OKX",
+            "source": "b0_test",
+            "symbol": "BTC-USDT",
+            "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "quantity": 10.0,
+            "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+            "account_id": 1,
+            "request_id": "SYNTH-L4:B5:R01:REQUEST:002",
+            "strategy_id": null,
+            "time_in_force": "GTC",
+            "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+            "idempotency_key": "1:SYNTH-L4:B5:R01:CLIENT:001"
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:001",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:001"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "order.event.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:002",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "event_type": "RiskPassed",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.610546700Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "RiskPassed",
+          "source": "nq-core.order-command-write-service",
+          "payload": {
+            "ts": "2026-09-10T02:57:08.566618900Z",
+            "reason": "RISK_RULES_PASSED",
+            "decision": "ALLOW",
+            "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001"
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:002",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:001"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "order.event.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:003",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "event_type": "OrderCreated",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.594127500Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "OrderCreated",
+          "source": "nq-core.order-command-write-service",
+          "payload": {
+            "ts": "2026-09-10T02:57:08.566618900Z",
+            "qty": 10.0,
+            "side": "BUY",
+            "type": "LIMIT",
+            "price": 100.0,
+            "reason": "ORDER_CREATED",
+            "status": "NEW",
+            "symbol": "BTC-USDT",
+            "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "account_id": 1,
+            "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+            "strategy_run_id": null
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:003",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:001"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "risk.event.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:004",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "event_type": "RiskEventRaised",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.605471300Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "RiskEventRaised",
+          "source": "nq-core.order-command-write-service",
+          "payload": {
+            "ts": "2026-09-10T02:57:08.566618900Z",
+            "scope": "ORDER",
+            "reason": "RISK_RULES_PASSED",
+            "decision": "ALLOW",
+            "scope_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "severity": "LOW"
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:004",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:001"
+        },
+        "schema_version": 1
+      }
+    ],
+    "ledger_entries": [],
+    "audit_logs": [
+      {
+        "id": 1,
+        "action": "ORDER_CREATED",
+        "domain": "ORDER",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "detail_json": {
+          "venue": "OKX",
+          "source": "b0_test",
+          "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+          "request_id": "SYNTH-L4:B5:R01:REQUEST:002",
+          "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+          "idempotency_key": "1:SYNTH-L4:B5:R01:CLIENT:001"
+        }
+      },
+      {
+        "id": 2,
+        "action": "ORDER_STATUS_TRANSITION",
+        "domain": "ORDER",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "detail_json": {
+          "to": "RISK_PASSED",
+          "from": "NEW",
+          "reason": "RISK_RULES_PASSED",
+          "version": 1,
+          "expected_version": 0
+        }
+      },
+      {
+        "id": 3,
+        "action": "ORDER_STATUS_TRANSITION",
+        "domain": "ORDER",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "detail_json": {
+          "to": "SENT",
+          "from": "RISK_PASSED",
+          "reason": "ORDER_ROUTED_TO_ADAPTER",
+          "version": 2,
+          "expected_version": 1
+        }
+      },
+      {
+        "id": 4,
+        "action": "PLACE_ORDER_IDEMPOTENT_HIT",
+        "domain": "ORDER",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "created_at": "2026-09-10T10:57:08.747361+08:00",
+        "detail_json": {
+          "venue": "OKX",
+          "status": "SENT",
+          "account_id": 1,
+          "request_id": "SYNTH-L4:B5:R01:REQUEST:002",
+          "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+          "idempotency_key": "1:SYNTH-L4:B5:R01:CLIENT:001"
+        }
+      }
+    ],
+    "tradeExecuted": "0"
+  },
+  "recoveryCommittedAt": 1789009028953,
+  "afterRecovery": {
+    "orders": [
+      {
+        "qty": 10.0,
+        "side": "BUY",
+        "type": "LIMIT",
+        "price": 100.0,
+        "venue": "OKX",
+        "reason": "ORDER_NOT_FOUND/OKX_51603",
+        "status": "CANCELLED",
+        "symbol": "BTC-USDT",
+        "version": 4,
+        "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "dedup_key": "1:SYNTH-L4:B5:R01:CLIENT:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T10:57:08.566619+08:00",
+        "request_id": "SYNTH-L4:B5:R01:REQUEST:001",
+        "updated_at": "2026-09-10T10:57:08.896229+08:00",
+        "exchange_code": "OKX",
+        "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+        "strategy_run_id": null,
+        "exchange_order_id": null,
+        "external_order_id": null
+      }
+    ],
+    "ordinary_place_authorities": [
+      {
+        "state": "REVOKED_BEFORE_SEND",
+        "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "decided_at": "2026-09-10T10:57:08.889844+08:00"
+      }
+    ],
+    "trades": [],
+    "event_store": [
+      {
+        "topic": "audit.event.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:006",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:002",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.883672+08:00",
+        "event_type": "RecoveryOrderNotFoundAuditPayload",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.881659Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "RecoveryOrderNotFoundAuditPayload",
+          "source": "nq-scheduler.okx-recovery",
+          "payload": {
+            "venue": "OKX",
+            "symbol": "BTC-USDT",
+            "okxCode": "51603",
+            "traceId": "SYNTH-L4:B5:R01:TRACE:002",
+            "accountId": 1,
+            "occurredAt": "2026-09-10T02:57:08.881659Z",
+            "reasonCode": "ORDER_NOT_FOUND/OKX_51603",
+            "clientOrderId": "SYNTH-L4:B5:R01:CLIENT:001",
+            "externalOrderId": null
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:006",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:002"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "order.command.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:005",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.743958+08:00",
+        "event_type": "PlaceOrderCommand",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.727651600Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "PlaceOrderCommand",
+          "source": "nq-core.order-command-service",
+          "payload": {
+            "side": "BUY",
+            "type": "LIMIT",
+            "price": 100.0,
+            "venue": "OKX",
+            "source": "b0_test",
+            "symbol": "BTC-USDT",
+            "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "quantity": 10.0,
+            "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+            "account_id": 1,
+            "request_id": "SYNTH-L4:B5:R01:REQUEST:002",
+            "strategy_id": null,
+            "time_in_force": "GTC",
+            "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+            "idempotency_key": "1:SYNTH-L4:B5:R01:CLIENT:001"
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:005",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:001"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "order.command.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.584649+08:00",
+        "event_type": "PlaceOrderCommand",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.570170200Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "PlaceOrderCommand",
+          "source": "nq-core.order-command-service",
+          "payload": {
+            "side": "BUY",
+            "type": "LIMIT",
+            "price": 100.0,
+            "venue": "OKX",
+            "source": "b0_test",
+            "symbol": "BTC-USDT",
+            "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "quantity": 10.0,
+            "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+            "account_id": 1,
+            "request_id": "SYNTH-L4:B5:R01:REQUEST:002",
+            "strategy_id": null,
+            "time_in_force": "GTC",
+            "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+            "idempotency_key": "1:SYNTH-L4:B5:R01:CLIENT:001"
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:001",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:001"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "order.event.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:002",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "event_type": "RiskPassed",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.610546700Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "RiskPassed",
+          "source": "nq-core.order-command-write-service",
+          "payload": {
+            "ts": "2026-09-10T02:57:08.566618900Z",
+            "reason": "RISK_RULES_PASSED",
+            "decision": "ALLOW",
+            "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001"
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:002",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:001"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "order.event.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:007",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:002",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.886874+08:00",
+        "event_type": "OrderStatusChangedPayload",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.897233600Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "OrderStatusChangedPayload",
+          "source": "nq-core.order-command-write-service",
+          "payload": {
+            "ts": "2026-09-10T02:57:08.897233600Z",
+            "reason": "ORDER_NOT_FOUND/OKX_51603",
+            "status": "CANCELLED",
+            "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "account_id": 1,
+            "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001"
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:007",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:002"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "order.event.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:003",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "event_type": "OrderCreated",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.594127500Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "OrderCreated",
+          "source": "nq-core.order-command-write-service",
+          "payload": {
+            "ts": "2026-09-10T02:57:08.566618900Z",
+            "qty": 10.0,
+            "side": "BUY",
+            "type": "LIMIT",
+            "price": 100.0,
+            "reason": "ORDER_CREATED",
+            "status": "NEW",
+            "symbol": "BTC-USDT",
+            "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "account_id": 1,
+            "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+            "strategy_run_id": null
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:003",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:001"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "order.event.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:008",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:002",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.886874+08:00",
+        "event_type": "OrderStatusChangedPayload",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.893214Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "OrderStatusChangedPayload",
+          "source": "nq-core.order-command-write-service",
+          "payload": {
+            "ts": "2026-09-10T02:57:08.893214Z",
+            "reason": "ORDER_NOT_FOUND/OKX_51603",
+            "status": "CANCEL_REQUESTED",
+            "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "account_id": 1,
+            "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001"
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:008",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:002"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "risk.event.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:004",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "event_type": "RiskEventRaised",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.605471300Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "RiskEventRaised",
+          "source": "nq-core.order-command-write-service",
+          "payload": {
+            "ts": "2026-09-10T02:57:08.566618900Z",
+            "scope": "ORDER",
+            "reason": "RISK_RULES_PASSED",
+            "decision": "ALLOW",
+            "scope_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "severity": "LOW"
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:004",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:001"
+        },
+        "schema_version": 1
+      }
+    ],
+    "ledger_entries": [],
+    "audit_logs": [
+      {
+        "id": 1,
+        "action": "ORDER_CREATED",
+        "domain": "ORDER",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "detail_json": {
+          "venue": "OKX",
+          "source": "b0_test",
+          "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+          "request_id": "SYNTH-L4:B5:R01:REQUEST:002",
+          "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+          "idempotency_key": "1:SYNTH-L4:B5:R01:CLIENT:001"
+        }
+      },
+      {
+        "id": 2,
+        "action": "ORDER_STATUS_TRANSITION",
+        "domain": "ORDER",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "detail_json": {
+          "to": "RISK_PASSED",
+          "from": "NEW",
+          "reason": "RISK_RULES_PASSED",
+          "version": 1,
+          "expected_version": 0
+        }
+      },
+      {
+        "id": 3,
+        "action": "ORDER_STATUS_TRANSITION",
+        "domain": "ORDER",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "detail_json": {
+          "to": "SENT",
+          "from": "RISK_PASSED",
+          "reason": "ORDER_ROUTED_TO_ADAPTER",
+          "version": 2,
+          "expected_version": 1
+        }
+      },
+      {
+        "id": 4,
+        "action": "PLACE_ORDER_IDEMPOTENT_HIT",
+        "domain": "ORDER",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "created_at": "2026-09-10T10:57:08.747361+08:00",
+        "detail_json": {
+          "venue": "OKX",
+          "status": "SENT",
+          "account_id": 1,
+          "request_id": "SYNTH-L4:B5:R01:REQUEST:002",
+          "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+          "idempotency_key": "1:SYNTH-L4:B5:R01:CLIENT:001"
+        }
+      },
+      {
+        "id": 5,
+        "action": "RECOVERY_QUERY_ORDER_NOT_FOUND",
+        "domain": "RECOVERY",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:002",
+        "created_at": "2026-09-10T10:57:08.881687+08:00",
+        "detail_json": {
+          "venue": "OKX",
+          "symbol": "BTC-USDT",
+          "okx_code": "51603",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:002",
+          "account_id": 1,
+          "reason_code": "ORDER_NOT_FOUND/OKX_51603",
+          "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+          "external_order_id": "SYNTH-L4:B5:R01:VENUE:001"
+        }
+      },
+      {
+        "id": 6,
+        "action": "ORDER_STATUS_TRANSITION",
+        "domain": "ORDER",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:002",
+        "created_at": "2026-09-10T10:57:08.886874+08:00",
+        "detail_json": {
+          "to": "CANCEL_REQUESTED",
+          "from": "SENT",
+          "reason": "ORDER_NOT_FOUND/OKX_51603",
+          "version": 3,
+          "expected_version": 2
+        }
+      },
+      {
+        "id": 7,
+        "action": "ORDER_STATUS_TRANSITION",
+        "domain": "ORDER",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:002",
+        "created_at": "2026-09-10T10:57:08.886874+08:00",
+        "detail_json": {
+          "to": "CANCELLED",
+          "from": "CANCEL_REQUESTED",
+          "reason": "ORDER_NOT_FOUND/OKX_51603",
+          "version": 4,
+          "expected_version": 3
+        }
+      },
+      {
+        "id": 8,
+        "action": "OKX_RECOVERY_COMPLETED",
+        "domain": "RECOVERY",
+        "actor_id": "b5-recovery",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:002",
+        "created_at": "2026-09-10T10:57:08.90638+08:00",
+        "detail_json": {
+          "new_trades": 0,
+          "started_at": "2026-09-10T02:57:08.837145100Z",
+          "finished_at": "2026-09-10T02:57:08.905673600Z",
+          "candidate_orders": 1,
+          "order_not_found_resolved": 1,
+          "linked_external_order_ids": 0
+        }
+      }
+    ],
+    "tradeExecuted": "0"
+  },
+  "venueBeforeResume": {
+    "code": "0",
+    "msg": "",
+    "data": [],
+    "pid": 31588,
+    "places": 0,
+    "cancels": 0,
+    "pendingCancel": false,
+    "placeRequests": 0,
+    "order": null,
+    "fills": [],
+    "events": [
+      {
+        "sequence": 2,
+        "type": "QUERY_OPEN_ORDERS",
+        "nanoTime": 908502461466700,
+        "epochMillis": 1789009028862,
+        "count": 0
+      },
+      {
+        "sequence": 3,
+        "type": "QUERY_ORDER_NOT_FOUND",
+        "nanoTime": 908502475935400,
+        "epochMillis": 1789009028876
+      }
+    ]
+  },
+  "releasedAt": 1789009029062,
+  "afterResume": {
+    "orders": [
+      {
+        "qty": 10.0,
+        "side": "BUY",
+        "type": "LIMIT",
+        "price": 100.0,
+        "venue": "OKX",
+        "reason": "ORDER_NOT_FOUND/OKX_51603",
+        "status": "CANCELLED",
+        "symbol": "BTC-USDT",
+        "version": 4,
+        "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "dedup_key": "1:SYNTH-L4:B5:R01:CLIENT:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T10:57:08.566619+08:00",
+        "request_id": "SYNTH-L4:B5:R01:REQUEST:001",
+        "updated_at": "2026-09-10T10:57:08.896229+08:00",
+        "exchange_code": "OKX",
+        "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+        "strategy_run_id": null,
+        "exchange_order_id": null,
+        "external_order_id": null
+      }
+    ],
+    "ordinary_place_authorities": [
+      {
+        "state": "REVOKED_BEFORE_SEND",
+        "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "decided_at": "2026-09-10T10:57:08.889844+08:00"
+      }
+    ],
+    "trades": [],
+    "event_store": [
+      {
+        "topic": "audit.event.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:006",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:002",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.883672+08:00",
+        "event_type": "RecoveryOrderNotFoundAuditPayload",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.881659Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "RecoveryOrderNotFoundAuditPayload",
+          "source": "nq-scheduler.okx-recovery",
+          "payload": {
+            "venue": "OKX",
+            "symbol": "BTC-USDT",
+            "okxCode": "51603",
+            "traceId": "SYNTH-L4:B5:R01:TRACE:002",
+            "accountId": 1,
+            "occurredAt": "2026-09-10T02:57:08.881659Z",
+            "reasonCode": "ORDER_NOT_FOUND/OKX_51603",
+            "clientOrderId": "SYNTH-L4:B5:R01:CLIENT:001",
+            "externalOrderId": null
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:006",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:002"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "order.command.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:005",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.743958+08:00",
+        "event_type": "PlaceOrderCommand",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.727651600Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "PlaceOrderCommand",
+          "source": "nq-core.order-command-service",
+          "payload": {
+            "side": "BUY",
+            "type": "LIMIT",
+            "price": 100.0,
+            "venue": "OKX",
+            "source": "b0_test",
+            "symbol": "BTC-USDT",
+            "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "quantity": 10.0,
+            "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+            "account_id": 1,
+            "request_id": "SYNTH-L4:B5:R01:REQUEST:002",
+            "strategy_id": null,
+            "time_in_force": "GTC",
+            "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+            "idempotency_key": "1:SYNTH-L4:B5:R01:CLIENT:001"
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:005",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:001"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "order.command.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.584649+08:00",
+        "event_type": "PlaceOrderCommand",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.570170200Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "PlaceOrderCommand",
+          "source": "nq-core.order-command-service",
+          "payload": {
+            "side": "BUY",
+            "type": "LIMIT",
+            "price": 100.0,
+            "venue": "OKX",
+            "source": "b0_test",
+            "symbol": "BTC-USDT",
+            "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "quantity": 10.0,
+            "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+            "account_id": 1,
+            "request_id": "SYNTH-L4:B5:R01:REQUEST:002",
+            "strategy_id": null,
+            "time_in_force": "GTC",
+            "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+            "idempotency_key": "1:SYNTH-L4:B5:R01:CLIENT:001"
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:001",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:001"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "order.event.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:002",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "event_type": "RiskPassed",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.610546700Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "RiskPassed",
+          "source": "nq-core.order-command-write-service",
+          "payload": {
+            "ts": "2026-09-10T02:57:08.566618900Z",
+            "reason": "RISK_RULES_PASSED",
+            "decision": "ALLOW",
+            "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001"
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:002",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:001"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "order.event.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:007",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:002",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.886874+08:00",
+        "event_type": "OrderStatusChangedPayload",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.897233600Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "OrderStatusChangedPayload",
+          "source": "nq-core.order-command-write-service",
+          "payload": {
+            "ts": "2026-09-10T02:57:08.897233600Z",
+            "reason": "ORDER_NOT_FOUND/OKX_51603",
+            "status": "CANCELLED",
+            "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "account_id": 1,
+            "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001"
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:007",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:002"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "order.event.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:003",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "event_type": "OrderCreated",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.594127500Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "OrderCreated",
+          "source": "nq-core.order-command-write-service",
+          "payload": {
+            "ts": "2026-09-10T02:57:08.566618900Z",
+            "qty": 10.0,
+            "side": "BUY",
+            "type": "LIMIT",
+            "price": 100.0,
+            "reason": "ORDER_CREATED",
+            "status": "NEW",
+            "symbol": "BTC-USDT",
+            "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "account_id": 1,
+            "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+            "strategy_run_id": null
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:003",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:001"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "order.event.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:008",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:002",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.886874+08:00",
+        "event_type": "OrderStatusChangedPayload",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.893214Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "OrderStatusChangedPayload",
+          "source": "nq-core.order-command-write-service",
+          "payload": {
+            "ts": "2026-09-10T02:57:08.893214Z",
+            "reason": "ORDER_NOT_FOUND/OKX_51603",
+            "status": "CANCEL_REQUESTED",
+            "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "account_id": 1,
+            "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001"
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:008",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:002"
+        },
+        "schema_version": 1
+      },
+      {
+        "topic": "risk.event.v1",
+        "event_id": "SYNTH-L4:B5:R01:EVENT:004",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "key_value": "SYNTH-L4:B5:R01:CLIENT:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "event_type": "RiskEventRaised",
+        "payload_json": {
+          "ts": "2026-09-10T02:57:08.605471300Z",
+          "key": "SYNTH-L4:B5:R01:CLIENT:001",
+          "type": "RiskEventRaised",
+          "source": "nq-core.order-command-write-service",
+          "payload": {
+            "ts": "2026-09-10T02:57:08.566618900Z",
+            "scope": "ORDER",
+            "reason": "RISK_RULES_PASSED",
+            "decision": "ALLOW",
+            "scope_id": "SYNTH-L4:B5:R01:ORDER:001",
+            "severity": "LOW"
+          },
+          "version": 1,
+          "event_id": "SYNTH-L4:B5:R01:EVENT:004",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:001"
+        },
+        "schema_version": 1
+      }
+    ],
+    "ledger_entries": [],
+    "audit_logs": [
+      {
+        "id": 1,
+        "action": "ORDER_CREATED",
+        "domain": "ORDER",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "detail_json": {
+          "venue": "OKX",
+          "source": "b0_test",
+          "order_id": "SYNTH-L4:B5:R01:ORDER:001",
+          "request_id": "SYNTH-L4:B5:R01:REQUEST:002",
+          "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+          "idempotency_key": "1:SYNTH-L4:B5:R01:CLIENT:001"
+        }
+      },
+      {
+        "id": 2,
+        "action": "ORDER_STATUS_TRANSITION",
+        "domain": "ORDER",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "detail_json": {
+          "to": "RISK_PASSED",
+          "from": "NEW",
+          "reason": "RISK_RULES_PASSED",
+          "version": 1,
+          "expected_version": 0
+        }
+      },
+      {
+        "id": 3,
+        "action": "ORDER_STATUS_TRANSITION",
+        "domain": "ORDER",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "created_at": "2026-09-10T10:57:08.591897+08:00",
+        "detail_json": {
+          "to": "SENT",
+          "from": "RISK_PASSED",
+          "reason": "ORDER_ROUTED_TO_ADAPTER",
+          "version": 2,
+          "expected_version": 1
+        }
+      },
+      {
+        "id": 4,
+        "action": "PLACE_ORDER_IDEMPOTENT_HIT",
+        "domain": "ORDER",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "created_at": "2026-09-10T10:57:08.747361+08:00",
+        "detail_json": {
+          "venue": "OKX",
+          "status": "SENT",
+          "account_id": 1,
+          "request_id": "SYNTH-L4:B5:R01:REQUEST:002",
+          "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+          "idempotency_key": "1:SYNTH-L4:B5:R01:CLIENT:001"
+        }
+      },
+      {
+        "id": 5,
+        "action": "RECOVERY_QUERY_ORDER_NOT_FOUND",
+        "domain": "RECOVERY",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:002",
+        "created_at": "2026-09-10T10:57:08.881687+08:00",
+        "detail_json": {
+          "venue": "OKX",
+          "symbol": "BTC-USDT",
+          "okx_code": "51603",
+          "trace_id": "SYNTH-L4:B5:R01:TRACE:002",
+          "account_id": 1,
+          "reason_code": "ORDER_NOT_FOUND/OKX_51603",
+          "client_order_id": "SYNTH-L4:B5:R01:CLIENT:001",
+          "external_order_id": "SYNTH-L4:B5:R01:VENUE:001"
+        }
+      },
+      {
+        "id": 6,
+        "action": "ORDER_STATUS_TRANSITION",
+        "domain": "ORDER",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:002",
+        "created_at": "2026-09-10T10:57:08.886874+08:00",
+        "detail_json": {
+          "to": "CANCEL_REQUESTED",
+          "from": "SENT",
+          "reason": "ORDER_NOT_FOUND/OKX_51603",
+          "version": 3,
+          "expected_version": 2
+        }
+      },
+      {
+        "id": 7,
+        "action": "ORDER_STATUS_TRANSITION",
+        "domain": "ORDER",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:002",
+        "created_at": "2026-09-10T10:57:08.886874+08:00",
+        "detail_json": {
+          "to": "CANCELLED",
+          "from": "CANCEL_REQUESTED",
+          "reason": "ORDER_NOT_FOUND/OKX_51603",
+          "version": 4,
+          "expected_version": 3
+        }
+      },
+      {
+        "id": 8,
+        "action": "OKX_RECOVERY_COMPLETED",
+        "domain": "RECOVERY",
+        "actor_id": "b5-recovery",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:002",
+        "created_at": "2026-09-10T10:57:08.90638+08:00",
+        "detail_json": {
+          "new_trades": 0,
+          "started_at": "2026-09-10T02:57:08.837145100Z",
+          "finished_at": "2026-09-10T02:57:08.905673600Z",
+          "candidate_orders": 1,
+          "order_not_found_resolved": 1,
+          "linked_external_order_ids": 0
+        }
+      },
+      {
+        "id": 9,
+        "action": "PLACE_AUTHORITY_NOT_GRANTED",
+        "domain": "ORDER",
+        "actor_id": "SYNTH-L4:B5:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5:R01:TRACE:001",
+        "created_at": "2026-09-10T10:57:08.962213+08:00",
+        "detail_json": {
+          "expected_version": 2
+        }
+      }
+    ],
+    "tradeExecuted": "0"
+  },
+  "finalVenue": {
+    "code": "0",
+    "msg": "",
+    "data": [],
+    "pid": 31588,
+    "places": 0,
+    "cancels": 0,
+    "pendingCancel": false,
+    "placeRequests": 0,
+    "order": null,
+    "fills": [],
+    "events": [
+      {
+        "sequence": 2,
+        "type": "QUERY_OPEN_ORDERS",
+        "nanoTime": 908502461466700,
+        "epochMillis": 1789009028862,
+        "count": 0
+      },
+      {
+        "sequence": 3,
+        "type": "QUERY_ORDER_NOT_FOUND",
+        "nanoTime": 908502475935400,
+        "epochMillis": 1789009028876
+      }
+    ]
+  },
+  "completedAt": 1789009029177,
+  "latePlaceRequests": 0,
+  "databaseRemoved": true,
+  "allChildProcessesExited": true
+}

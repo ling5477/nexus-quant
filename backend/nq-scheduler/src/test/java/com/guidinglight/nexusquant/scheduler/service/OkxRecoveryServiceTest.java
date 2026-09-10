@@ -17,9 +17,9 @@ import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.application.OrderCommandService;
-import com.guidinglight.nexusquant.trading.application.OrderLifecycleService;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.eventstore.infra.EventStoreAppender;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterError;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -36,7 +36,6 @@ class OkxRecoveryServiceTest {
     @Test
     void shouldNotFailStartupWhenQueryOrderReturnsOrderNotFound() {
         OrderCommandService orderCommandService = Mockito.mock(OrderCommandService.class);
-        OrderLifecycleService orderLifecycleService = Mockito.mock(OrderLifecycleService.class);
         OkxExchangeAdapter okxExchangeAdapter = Mockito.mock(OkxExchangeAdapter.class);
         OkxRestReconcileService okxRestReconcileService = Mockito.mock(OkxRestReconcileService.class);
         AuditLogRepository auditLogRepository = Mockito.mock(AuditLogRepository.class);
@@ -44,7 +43,6 @@ class OkxRecoveryServiceTest {
 
         OkxRecoveryService recoveryService = new OkxRecoveryService(
                 orderCommandService,
-                orderLifecycleService,
                 okxExchangeAdapter,
                 okxRestReconcileService,
                 auditLogRepository,
@@ -67,7 +65,7 @@ class OkxRecoveryServiceTest {
                         query.externalOrderId(),
                         null,
                         AdapterResultCategory.NOT_FOUND,
-                        new com.guidinglight.nexusquant.adapter.api.model.AdapterError(
+                        new AdapterError(
                                 "51603",
                                 "order does not exist",
                                 AdapterResultCategory.NOT_FOUND,
@@ -102,22 +100,12 @@ class OkxRecoveryServiceTest {
                     "SIM"
             );
         });
-        when(orderLifecycleService.requestCancel(
-                eq("ord-nf-1"),
-                eq("ORDER_NOT_FOUND/OKX_51603"),
-                eq("trc-recovery-1")
-        )).thenReturn(notFoundOrder.withStatus(OrderStatus.CANCEL_REQUESTED, "ORDER_NOT_FOUND/OKX_51603"));
-        when(orderLifecycleService.cancel(
-                eq("ord-nf-1"),
-                eq("ORDER_NOT_FOUND/OKX_51603"),
-                eq("trc-recovery-1")
-        )).thenReturn(notFoundOrder.withStatus(OrderStatus.CANCELLED, "ORDER_NOT_FOUND/OKX_51603"));
+        when(orderCommandService.finalizeOrdinaryNoOrder("ord-nf-1", "trc-recovery-1")).thenReturn(true);
         when(okxRestReconcileService.reconcileOnce(anyInt())).thenReturn(0);
 
         assertDoesNotThrow(() -> recoveryService.rebuild("trc-recovery-1"));
 
-        verify(orderLifecycleService).requestCancel("ord-nf-1", "ORDER_NOT_FOUND/OKX_51603", "trc-recovery-1");
-        verify(orderLifecycleService).cancel("ord-nf-1", "ORDER_NOT_FOUND/OKX_51603", "trc-recovery-1");
+        verify(orderCommandService).finalizeOrdinaryNoOrder("ord-nf-1", "trc-recovery-1");
         verify(auditLogRepository, atLeastOnce()).append(
                 eq("RECOVERY"),
                 eq("RECOVERY_QUERY_ORDER_NOT_FOUND"),
@@ -126,7 +114,8 @@ class OkxRecoveryServiceTest {
                 any()
         );
         verify(eventStoreAppender, atLeastOnce()).append(eq(TopicNames.AUDIT_EVENT_V1), any());
-        verify(eventStoreAppender, atLeastOnce()).append(eq(TopicNames.ORDER_EVENT_V1), any());
+        // 状态事件由 atomic finalizer 写入，本查询编排只记录观察。
+
         verify(okxExchangeAdapter, times(2)).getOrder(any(AdapterOrderQuery.class));
         verify(okxRestReconcileService).reconcileOnce(500);
     }
@@ -134,7 +123,6 @@ class OkxRecoveryServiceTest {
     @Test
     void shouldSkipStartupRecoveryWhenDisabled() {
         OrderCommandService orderCommandService = Mockito.mock(OrderCommandService.class);
-        OrderLifecycleService orderLifecycleService = Mockito.mock(OrderLifecycleService.class);
         OkxExchangeAdapter okxExchangeAdapter = Mockito.mock(OkxExchangeAdapter.class);
         OkxRestReconcileService okxRestReconcileService = Mockito.mock(OkxRestReconcileService.class);
         AuditLogRepository auditLogRepository = Mockito.mock(AuditLogRepository.class);
@@ -142,7 +130,6 @@ class OkxRecoveryServiceTest {
 
         OkxRecoveryService recoveryService = new OkxRecoveryService(
                 orderCommandService,
-                orderLifecycleService,
                 okxExchangeAdapter,
                 okxRestReconcileService,
                 auditLogRepository,

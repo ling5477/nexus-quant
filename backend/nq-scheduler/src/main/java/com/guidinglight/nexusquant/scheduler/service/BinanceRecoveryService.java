@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import com.guidinglight.nexusquant.trading.domain.TradingVenue;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -106,7 +107,7 @@ public class BinanceRecoveryService {
                         OrderStatus.CANCEL_REJECTED
                 ),
                 DEFAULT_LIMIT
-        ).stream().filter(order -> VENUE.equals(order.venue())).toList();
+        ).stream().filter(order -> order.canonicalVenue() == TradingVenue.BINANCE).toList();
         long linkedCount = hydrateExternalOrderIds(candidates, traceId);
         int newTrades = binanceRestReconcileService.reconcileOnce(DEFAULT_LIMIT);
         Instant finishedAt = Instant.now(clock);

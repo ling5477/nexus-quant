@@ -14,6 +14,7 @@ import com.guidinglight.nexusquant.trading.application.port.TradingGatewayResult
 import com.guidinglight.nexusquant.trading.application.port.TradingPlaceGatewayResult;
 import com.guidinglight.nexusquant.trading.application.port.TradingVenueGateway;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
+import com.guidinglight.nexusquant.trading.domain.TradingVenue;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +23,13 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * OrderCommandService 负责 GateD 的统一下单/撤单编排。
@@ -85,6 +92,9 @@ public class OrderCommandService {
      */
     public PlaceOrderResult placeOrder(PlaceOrderRequest request) {
         validateRequest(request);
+        if (request.strategyRunId() != null) {
+            throw new IllegalArgumentException("strategy order requires durable run execution entrypoint");
+        }
         Instant now = Instant.now(clock);
         Optional<OrderRecord> existingOrder = orderRepository.findByAccountAndClientOrderId(
                 request.accountId(),
@@ -119,10 +129,20 @@ public class OrderCommandService {
                 candidateOrderId,
                 now
         );
+        return executePreparedPlaceOrder(request, preparation);
+    }
+
+    /** 本地 prepare 已提交后才允许进入这里；返回既有 binding 不等于获得 V49 发送权。 */
+    PlaceOrderResult executePreparedPlaceOrder(PlaceOrderRequest request, OrderCommandWriteService.PlaceOrderPreparation preparation) {
         if (preparation.completedResult() != null) {
             return preparation.completedResult();
         }
         OrderRecord sentOrder = preparation.sentOrder();
+        if (sentOrder.canonicalVenue() == TradingVenue.OKX
+                && !orderCommandWriteService.armOrdinaryPlace(sentOrder)) {
+            OrderRecord durable = orderRepository.findByOrderId(sentOrder.orderId()).orElseThrow();
+            return new PlaceOrderResult(durable.orderId(), durable.status(), false);
+        }
         TradingPlaceGatewayResult gatewayResult = tradingVenueGateway.placeOrder(sentOrder, request);
         Instant ackTime = gatewayResult.acknowledgedAt() == null ? Instant.now(clock) : gatewayResult.acknowledgedAt();
 
@@ -246,6 +266,11 @@ public class OrderCommandService {
         return orderRepository.findByOrderId(orderId);
     }
 
+    /** 仅 query-confirm 的 no-order finalizer 可调用；不授予任何外部发送许可。 */
+    public boolean finalizeOrdinaryNoOrder(String orderId, String traceId) {
+        return orderCommandWriteService.finalizeOrdinaryNoOrder(orderId, traceId);
+    }
+
     /**
      * 按账户与 client_order_id 查询订单，供上游触发器做幂等短路。
      */
@@ -286,7 +311,7 @@ public class OrderCommandService {
         eventPublisherPort.append(topic, envelope);
     }
 
-    private void validateRequest(PlaceOrderRequest request) {
+    static void validateRequest(PlaceOrderRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("request must not be null");
         }
@@ -376,7 +401,8 @@ public class OrderCommandService {
         if (request.accountId() != null && !request.accountId().equals(target.accountId())) {
             throw new IllegalArgumentException("accountId does not match cancel target");
         }
-        if (request.venue() != null && !request.venue().equalsIgnoreCase(target.venue())) {
+        if (request.venue() != null
+                && TradingVenue.parse(request.venue()) != target.canonicalVenue()) {
             throw new IllegalArgumentException("venue does not match cancel target");
         }
         if (request.symbol() != null && !request.symbol().equalsIgnoreCase(target.symbol())) {
@@ -408,5 +434,4 @@ public class OrderCommandService {
         return resultCategory.shouldDeferDecision();
     }
 }
-
 

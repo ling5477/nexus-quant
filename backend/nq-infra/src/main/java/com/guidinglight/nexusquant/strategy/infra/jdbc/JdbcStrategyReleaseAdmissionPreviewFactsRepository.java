@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
+import java.sql.Timestamp;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -234,7 +235,7 @@ public class JdbcStrategyReleaseAdmissionPreviewFactsRepository
         return value == null || value.isBlank() ? null : value.trim().toUpperCase(Locale.ROOT);
     }
 
-    private static Instant toInstant(java.sql.Timestamp timestamp) {
+    private static Instant toInstant(Timestamp timestamp) {
         return timestamp == null ? null : timestamp.toInstant();
     }
 }

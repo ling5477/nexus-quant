@@ -12,6 +12,7 @@ import com.guidinglight.nexusquant.app.integration0.support.Int0RequestFactory;
 import com.guidinglight.nexusquant.app.integration0.support.Int0ValidationResult;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -102,7 +103,7 @@ class NqDhIntegration0ContractValidationTest {
         node.put("tenantId", Int0Contract.FAKE_TENANT);
         node.put("filler", "x".repeat(70 * 1024));
         String body = Int0RequestFactory.toJson(node);
-        assertTrue(body.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > Int0Contract.MAX_PAYLOAD_BYTES);
+        assertTrue(body.getBytes(StandardCharsets.UTF_8).length > Int0Contract.MAX_PAYLOAD_BYTES);
 
         long ts = now();
         Map<String, String> headers = Int0RequestFactory.validHeaders(body, ts, "nonce-int0-t08");

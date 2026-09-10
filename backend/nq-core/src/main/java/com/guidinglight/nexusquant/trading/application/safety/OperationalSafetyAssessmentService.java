@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.time.Instant;
+import java.util.Objects;
 
 /**
  * GateW-4 internal-only operational safety assessment。
@@ -44,7 +46,7 @@ public final class OperationalSafetyAssessmentService {
      * @return diagnostic-only、read-only、no-side-effect 结果
      */
     public OperationalSafetyAssessmentResult assess(OperationalSafetyAssessmentRequest request) {
-        java.util.Objects.requireNonNull(request, "request must not be null");
+        Objects.requireNonNull(request, "request must not be null");
         Set<OperationalSafetyAssessmentFindingCode> blockers = new LinkedHashSet<>();
         Set<OperationalSafetyAssessmentFindingCode> warnings = new LinkedHashSet<>();
         Set<OperationalSafetyAssessmentFindingCode> unknowns = new LinkedHashSet<>();
@@ -131,7 +133,7 @@ public final class OperationalSafetyAssessmentService {
 
     private static OperationalSafetyAssessmentStatus evaluateHumanReview(
             HumanReviewEvidence evidence,
-            java.time.Instant evaluatedAt,
+            Instant evaluatedAt,
             Set<OperationalSafetyAssessmentFindingCode> blockers
     ) {
         if (evidence.status() == HumanReviewEvidenceStatus.HUMAN_REVIEW_EVIDENCE_MISSING) {

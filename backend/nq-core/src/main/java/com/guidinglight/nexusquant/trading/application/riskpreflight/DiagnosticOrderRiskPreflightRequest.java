@@ -6,6 +6,7 @@ import com.guidinglight.nexusquant.trading.application.reconciliation.Reconcilia
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.List;
 
 /**
  * GateW-3 internal-only risk preflight 请求。
@@ -45,7 +46,7 @@ public record DiagnosticOrderRiskPreflightRequest(
     }
 
     private static final class ListHolder {
-        private static final java.util.List<String> SUPPORTED_ENVIRONMENTS = java.util.List.of("SIM", "LIVE");
+        private static final List<String> SUPPORTED_ENVIRONMENTS = List.of("SIM", "LIVE");
 
         private ListHolder() {
         }

@@ -9,6 +9,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 
@@ -66,7 +69,7 @@ public class PaperStrategyEvaluationService {
         }
 
         // 只保留 runRefs 用到的 publishId，避免对全量 publish 解析 backtest。
-        java.util.Set<String> usedPublishIds = new java.util.HashSet<>();
+        Set<String> usedPublishIds = new HashSet<>();
         for (PaperPortfolioSummary.RunRef ref : runRefs) {
             if (ref.publishId() != null && !ref.publishId().isBlank()) {
                 usedPublishIds.add(ref.publishId());
@@ -77,7 +80,7 @@ public class PaperStrategyEvaluationService {
         }
 
         Map<String, String> backtestRunIdByPublishId = new LinkedHashMap<>();
-        java.util.Set<String> backtestRunIds = new java.util.LinkedHashSet<>();
+        Set<String> backtestRunIds = new LinkedHashSet<>();
         for (BacktestPublishRecord record : publishRecordRepository.listAll()) {
             String publishId = record.publishRecordId();
             if (publishId == null || !usedPublishIds.contains(publishId)) {

@@ -1,0 +1,192 @@
+[
+  {
+    "name": "RACE",
+    "scenario": "RACE",
+    "source": "backend/nq-app/target/b5-strategy-recovery/f89ecea6-0617-41e1-a05c-84a27af1407e/RACE/raw-proof.json",
+    "sourceSha256": "efa34c9d6717fee665a2d9b5835fb18e991be805c329392b21de945f4b7c3b4b",
+    "exportedFile": "RACE.json",
+    "exportedSha256": "c8fa898c84ee31f927b0f9574b6d804ef106118f46640b4be9ca9807f1183d12",
+    "inverseEquality": true,
+    "result": "PASS"
+  },
+  {
+    "name": "MAY",
+    "scenario": "MAY",
+    "source": "backend/nq-app/target/b5-strategy-recovery/f89ecea6-0617-41e1-a05c-84a27af1407e/MAY/raw-proof.json",
+    "sourceSha256": "c60ba0bd0a037df3aa64209368d786f5dec1b81b7a143bf54ca1d6c573ab6561",
+    "exportedFile": "MAY.json",
+    "exportedSha256": "7e9be0f44014361840a5cb5349fa166798009beedb603f409d1d58abb6c18977",
+    "inverseEquality": true,
+    "result": "PASS"
+  },
+  {
+    "name": "ACTIVE",
+    "scenario": "ACTIVE",
+    "source": "backend/nq-app/target/b5-strategy-recovery/f89ecea6-0617-41e1-a05c-84a27af1407e/ACTIVE/raw-proof.json",
+    "sourceSha256": "086a4a2e6c2a890f5830f661b63e5bf10b41f6e86f12b92c836bcd5bdad81612",
+    "exportedFile": "ACTIVE.json",
+    "exportedSha256": "94f9550ef526f8e9d840df2d51ec5c76a2bb5e2c44b8c57a2e7c51f903a34fda",
+    "inverseEquality": true,
+    "result": "PASS"
+  },
+  {
+    "name": "LATE",
+    "scenario": "LATE",
+    "source": "backend/nq-app/target/b5-strategy-recovery/f89ecea6-0617-41e1-a05c-84a27af1407e/LATE/raw-proof.json",
+    "sourceSha256": "5f0604f0815fc8236cb4f81b17b45f0c4858f14043c2ddd45e2c22531277b67e",
+    "exportedFile": "LATE.json",
+    "exportedSha256": "1eaf02a99080b6f30c43d93985c01dd3625e189372659d6380d2b94a4ef53b03",
+    "inverseEquality": true,
+    "result": "PASS"
+  },
+  {
+    "name": "BEFORE_DROP",
+    "scenario": "BEFORE_DROP",
+    "source": "backend/nq-app/target/b5-strategy-recovery/f89ecea6-0617-41e1-a05c-84a27af1407e/BEFORE_DROP/raw-proof.json",
+    "sourceSha256": "8a02505de45f5864cbeacdf923fe8ab01cda03abd3ae90ec96ee106de2e108cc",
+    "exportedFile": "BEFORE_DROP.json",
+    "exportedSha256": "0c790aa7518dcbcea6698603a8b24a9c5558b6cec3a9112b98964af964c37300",
+    "inverseEquality": true,
+    "result": "PASS"
+  },
+  {
+    "name": "AFTER_DROP",
+    "scenario": "AFTER_DROP",
+    "source": "backend/nq-app/target/b5-strategy-recovery/f89ecea6-0617-41e1-a05c-84a27af1407e/AFTER_DROP/raw-proof.json",
+    "sourceSha256": "1b3920c8605a5028638b16ab4f8c606ace665f7100e5d58c37a6eaa524e71d16",
+    "exportedFile": "AFTER_DROP.json",
+    "exportedSha256": "3a886c8627632dd89856b12ae048f6ba25a049decfd9c2291b410409258bc071",
+    "inverseEquality": true,
+    "result": "PASS"
+  },
+  {
+    "name": "R10",
+    "scenario": "STRATEGY_SCAN_OWNER_DEATH_BEFORE_AUTHORITY",
+    "source": "backend/nq-app/target/b5-strategy-death/7cc1af3c-60c3-4791-aa18-999199e4c0a6/raw-proof.json",
+    "sourceSha256": "73794c10c2bcbc185cd0b3776b42a6052a069d4804fff33e38dac4c139e7e566",
+    "exportedFile": "R10.json",
+    "exportedSha256": "5f12b3ccd49728a9dca8cddf118c29258a57212fa8e18c053107e4741c9fb768",
+    "inverseEquality": true,
+    "result": "PASS"
+  },
+  {
+    "name": "affected-20",
+    "scenario": "MULTI_PARTIAL",
+    "source": "backend/nq-app/target/b2-v49/c9a5564e-da2e-458c-85cb-6d944e66b94e/LIVE-MULTI_PARTIAL/raw-proof.json",
+    "sourceSha256": "9fa5612a6aeb770cdf872812b28a421e88f9b3765488a2c267cfba24e3f6297b",
+    "exportedFile": "affected-20.json",
+    "exportedSha256": "58fe626600c752ca6ad4a9c257a09b7b8265206faa1d551374ff64c65a3298f8",
+    "inverseEquality": true,
+    "result": "PASS"
+  },
+  {
+    "name": "affected-21",
+    "scenario": "STALE_PLACE",
+    "source": "backend/nq-app/target/b2-v49/c9a5564e-da2e-458c-85cb-6d944e66b94e/LIVE-STALE_PLACE/raw-proof.json",
+    "sourceSha256": "b5a068fe36f3c5158d67ec87bb83c41b1fcca596784253b84e49b1661d7b2c75",
+    "exportedFile": "affected-21.json",
+    "exportedSha256": "a0bdab26d6575ec92f68807dc785b7d27d41f28d307bac79c050310a3c2223b2",
+    "inverseEquality": true,
+    "result": "PASS"
+  },
+  {
+    "name": "affected-22",
+    "scenario": "MULTI_PARTIAL",
+    "source": "backend/nq-app/target/b2-v49/c9a5564e-da2e-458c-85cb-6d944e66b94e/SIM-MULTI_PARTIAL/raw-proof.json",
+    "sourceSha256": "e8eab77b4e14442f833c8b1efa875bbca2e5395eb01cb9aacd06953537a423a2",
+    "exportedFile": "affected-22.json",
+    "exportedSha256": "6f58b2e8a505bfc61803e2c678ce9b83daff69631b7d0e408000dbc9241af4cf",
+    "inverseEquality": true,
+    "result": "PASS"
+  },
+  {
+    "name": "affected-23",
+    "scenario": "STALE_PLACE",
+    "source": "backend/nq-app/target/b2-v49/c9a5564e-da2e-458c-85cb-6d944e66b94e/SIM-STALE_PLACE/raw-proof.json",
+    "sourceSha256": "dba23825fce76bd0b54a51d221cb0a4878f91217d0154338a499ccd3a2923d28",
+    "exportedFile": "affected-23.json",
+    "exportedSha256": "93dbeb70d30732565671a41a32463e8a8c5ec68b9f9bf1b28ee73c0496ee333b",
+    "inverseEquality": true,
+    "result": "PASS"
+  },
+  {
+    "name": "affected-24",
+    "scenario": "PRE_ACCEPT",
+    "source": "backend/nq-app/target/b3-v49/a085e7f1-a9ce-49ba-9712-4c70498533fa/PRE_ACCEPT/raw-proof.json",
+    "sourceSha256": "cb5e8e47e7e036c7ca3bd3a01eb10c9061793b89c4e4b28b7be6a7861504f9c3",
+    "exportedFile": "affected-24.json",
+    "exportedSha256": "46f23c944efbd4c6eb0eeadc8805b9520212763ca2528cd45e343c214e9a16ac",
+    "inverseEquality": true,
+    "result": "PASS"
+  },
+  {
+    "name": "affected-25",
+    "scenario": "RESTART_PRE_ACK",
+    "source": "backend/nq-app/target/b3-v49/a085e7f1-a9ce-49ba-9712-4c70498533fa/RESTART_PRE_ACK/raw-proof.json",
+    "sourceSha256": "05a722adb218b9286078b140eb97c3fcc6addd77d3d7d4f51f47beaa914078ea",
+    "exportedFile": "affected-25.json",
+    "exportedSha256": "d38c9a82346cee4fd4b8f8d9f75d41b68177cceb6bcb6d2c4f7127a9f2d43190",
+    "inverseEquality": true,
+    "result": "PASS"
+  },
+  {
+    "name": "affected-26",
+    "scenario": "ATOMIC_DEATH",
+    "source": "backend/nq-app/target/b4-remediation/5f607433-4e93-450f-88b9-45db6b631d99/LIVE-ATOMIC_DEATH/raw-proof.json",
+    "sourceSha256": "9e3004b4e145a172425ac1e9bf0a006be8a39f9af58762f3a8ddd3e8a3bc9b64",
+    "exportedFile": "affected-26.json",
+    "exportedSha256": "3284e23925c21975fa775d671b30657dd9d4bc276da2c5327a5a47b88a7a73b3",
+    "inverseEquality": true,
+    "result": "PASS"
+  },
+  {
+    "name": "affected-27",
+    "scenario": "ATOMIC_DEATH",
+    "source": "backend/nq-app/target/b4-remediation/5f607433-4e93-450f-88b9-45db6b631d99/SIM-ATOMIC_DEATH/raw-proof.json",
+    "sourceSha256": "91f59ba37449c95aeb6273801fd2701b5abbc82a4fb4385fa8ceac2edce94bc3",
+    "exportedFile": "affected-27.json",
+    "exportedSha256": "dbeedd62f88c0daf4f472a9828db245b51276528140f197ad75b9f745faef052",
+    "inverseEquality": true,
+    "result": "PASS"
+  },
+  {
+    "name": "affected-28",
+    "scenario": "AFTER_DROP",
+    "source": "backend/nq-app/target/b5-authority/43531805-6ec0-4ce0-bf6c-7ebd5779921b/AFTER_DROP/raw-proof.json",
+    "sourceSha256": "af4d296cd88a64466406c0c6fd0c9902124623b5f82e97f8d5267dd374182fb6",
+    "exportedFile": "affected-28.json",
+    "exportedSha256": "f9d4bdcabebd7e6537c3b3173c336431c57d4fb6cd0f3210c54974d0d7ebff86",
+    "inverseEquality": true,
+    "result": "PASS"
+  },
+  {
+    "name": "affected-29",
+    "scenario": "ORDINARY_PRE_SEND_RECOVERY_STALE_RESUME",
+    "source": "backend/nq-app/target/b5-proof/6154cd4e-78be-4a97-a9c9-ae329dcc8535/raw-proof.json",
+    "sourceSha256": "848f76faffb23b0abcc13acfa4204f32b19088f20fefd1a485fe902531fc45ce",
+    "exportedFile": "affected-29.json",
+    "exportedSha256": "10df4ce64906db17772c6e11c055e956757b6967fc403aa8671fca5439d4a7c9",
+    "inverseEquality": true,
+    "result": "PASS"
+  },
+  {
+    "name": "B1-L4-AT-01",
+    "scenario": "L4-AT-01",
+    "source": "backend/nq-app/target/b1-v49/76492404-701d-43c6-9ece-129f1ba03fdd/L4-AT-01-1/proof.json",
+    "sourceSha256": "4374d9a6ae664d83b8048902d0c5a4ecdf6aa328d71636235e4b518884e56dbe",
+    "referenceOnly": true,
+    "result": "PASS",
+    "negativeChecks": 8,
+    "resourcesClosed": true
+  },
+  {
+    "name": "B1-L4-LA-02",
+    "scenario": "L4-LA-02",
+    "source": "backend/nq-app/target/b1-v49/76492404-701d-43c6-9ece-129f1ba03fdd/L4-LA-02-1/proof.json",
+    "sourceSha256": "06b35e39f324ab5175848a3770de7d4a1f68229e73ed9004db241c73dbe4ff5c",
+    "referenceOnly": true,
+    "result": "PASS",
+    "negativeChecks": 8,
+    "resourcesClosed": true
+  }
+]

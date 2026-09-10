@@ -15,7 +15,10 @@ import java.util.HashSet;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** 复用 B0 真实 Spring/PG 与 B2 venue/账务 oracle，显式屏障证明 Kill 的 admission-time 合同。 */
 @EnabledIfSystemProperty(named = "nq.b3", matches = "true")
@@ -26,6 +29,17 @@ class B3RealProcessProofTest {
     private final B2RealProcessProofTest b2 = new B2RealProcessProofTest();
     private final HashSet<Long> pids = new HashSet<>();
     private final HashSet<String> databases = new HashSet<>();
+
+    @Test void v49AffectedKillAndRestartRegression() throws Exception {
+        Path root = B0Processes.root().resolve("backend/nq-app/target/b3-v49/" + UUID.randomUUID());
+        Files.createDirectories(root);
+        System.out.println("B3_V49_ROOT " + root);
+        try (var pg = B0Processes.Pg.start()) {
+            run(pg, root.resolve("PRE_ACCEPT"), Cut.PRE_ACCEPT, 1);
+            run(pg, root.resolve("RESTART_PRE_ACK"), Cut.RESTART_PRE_ACK, 1);
+        }
+        assertEquals(2, databases.size()); assertEquals(5, pids.size());
+    }
 
     @Test void qualifiesKillInFlightMatrix() throws Exception {
         Path root = B0Processes.root().resolve("backend/nq-app/target/b3-proof/" + UUID.randomUUID());
@@ -59,8 +73,8 @@ class B3RealProcessProofTest {
             try (var reader = fixture.checker(); var nq = new B0Processes.Child(B0NqProcessMain.class, directory, "nq-a", env)) {
                 nq.ready(); recordPid(proof, "nqPid", nq);
                 assertEquals(B0Fixture.READER, value(reader, "SELECT current_user"));
-                assertEquals("48", value(reader, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
-                proof.put("postgres", value(reader, "SHOW server_version")).put("schema", "V48");
+                assertEquals("51", value(reader, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
+                proof.put("postgres", value(reader, "SHOW server_version")).put("schema", "V50");
                 assertTrue(proof.path("postgres").asText().startsWith("16."));
                 assertEquals("DISENGAGED", value(reader, "SELECT status FROM kill_switch_states"));
                 assertEquals("false", value(reader, "SELECT has_table_privilege(current_user,'kill_switch_states','UPDATE')::text"));

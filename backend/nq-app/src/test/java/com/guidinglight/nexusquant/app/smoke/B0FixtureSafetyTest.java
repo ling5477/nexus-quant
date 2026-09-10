@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.app.smoke;
 
 import java.util.Map;
+import java.net.URI;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -46,11 +47,11 @@ class B0FixtureSafetyTest {
         }
     }
     @Test void permitsOnlyOwnedJdbcSocketAndSyntheticHttpOrigin() {
-        assertTrue(B0NqProcessMain.allowedDestination(java.net.URI.create("socket://127.0.0.1:15432"), VENUE, URL));
-        assertTrue(B0NqProcessMain.allowedDestination(java.net.URI.create(VENUE + "/api/v5/trade/order"), VENUE, URL));
+        assertTrue(B0NqProcessMain.allowedDestination(URI.create("socket://127.0.0.1:15432"), VENUE, URL));
+        assertTrue(B0NqProcessMain.allowedDestination(URI.create(VENUE + "/api/v5/trade/order"), VENUE, URL));
         for (String target : new String[]{"socket://127.0.0.1:5432", "socket://www.okx.com:443",
                 "https://127.0.0.1:18080", "http://127.0.0.1:15432", "http://www.okx.com:18080"}) {
-            assertFalse(B0NqProcessMain.allowedDestination(java.net.URI.create(target), VENUE, URL));
+            assertFalse(B0NqProcessMain.allowedDestination(URI.create(target), VENUE, URL));
         }
     }
     @Test void rejectsMismatchedChildFixtureIdentity() {

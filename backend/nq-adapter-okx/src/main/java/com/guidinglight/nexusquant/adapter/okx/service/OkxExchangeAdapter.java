@@ -10,6 +10,7 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterOpenOrdersQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderAck;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderRequest;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderNormalization;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterTradeReport;
@@ -128,39 +129,64 @@ public class OkxExchangeAdapter implements TradingAdapter {
      */
     @Override
     public AdapterOrderAck placeOrder(AdapterOrderRequest request) {
-        requireReady(AdapterCapability.PLACE_ORDER);
-        validatePlaceRequest(request);
-        OkxInstrument instrument = instrumentsCache.getRequired(request.symbol(), request.traceId());
-        AdapterError validationError = validateInstrumentTradable(instrument, request.traceId());
-        if (validationError != null) {
-            return rejectedAck(validationError, request.traceId());
+        AdapterOrderNormalization values = normalizeOrder(request);
+        if (values.rejection() != null) return rejectedAck(values.rejection(), request.traceId());
+        if (values.quantity().compareTo(request.quantity()) != 0
+                || (values.price() == null ? request.price() != null
+                    : request.price() == null || values.price().compareTo(request.price()) != 0)) {
+            return rejectedAck(new AdapterError("OKX_EFFECTIVE_PARAMETERS_CHANGED",
+                    "durable order values do not satisfy current venue rules", false), request.traceId());
         }
-
-        BigDecimal trimmedQty = trim(request.quantity(), instrument.lotSize(), NumericType.QTY);
-        if (trimmedQty.compareTo(instrument.minSize()) < 0) {
-            return rejectedAck(
-                    new AdapterError(
-                            "OKX_QTY_BELOW_MIN_SIZE",
-                            "trimmed qty below minSz, symbol=" + request.symbol() + ", minSz=" + instrument.minSize(),
-                            false
-                    ),
-                    request.traceId()
-            );
-        }
-        BigDecimal trimmedPrice = request.price() == null
-                ? null
-                : trim(request.price(), instrument.tickSize(), NumericType.PRICE);
-        String body = buildPlaceOrderBody(request, trimmedPrice, trimmedQty);
+        // 这里只验证规则，不使用再次计算的值；wire 必须逐值来自已持久化的 Order。
+        String body = buildPlaceOrderBody(request, request.price(), request.quantity());
         try {
             JsonNode payload = authenticatedHttpClient.post(TRADE_ORDER_ENDPOINT, body, request.traceId());
             maybeForcePlaceTimeoutEvidenceOnce(request);
             return parsePlaceOrderAck(payload, request.traceId());
         } catch (OkxApiException ex) {
-            if ("HTTP_TIMEOUT".equals(ex.errorCode())) {
-                return queryConfirmAfterTimeout(request);
-            }
+            if ("HTTP_TIMEOUT".equals(ex.errorCode())) return queryConfirmAfterTimeout(request);
             return rejectedAck(OkxErrorClassifier.toAdapterError(ex), request.traceId());
         }
+    }
+
+    /** 唯一的 OKX 数量/价格规范化 owner；只读取 instruments，不产生交易副作用。 */
+    @Override
+    public AdapterOrderNormalization normalizeOrder(AdapterOrderRequest request) {
+        requireReady(AdapterCapability.PLACE_ORDER);
+        validatePlaceRequest(request);
+        OkxInstrument instrument = instrumentsCache.getRequired(request.symbol(), request.traceId());
+        if (instrument.lotSize() == null || instrument.lotSize().signum() <= 0
+                || instrument.tickSize() == null || instrument.tickSize().signum() <= 0
+                || instrument.minSize() == null || instrument.minSize().signum() <= 0) {
+            throw new IllegalStateException("OKX execution constraints unavailable");
+        }
+        AdapterError validationError = validateInstrumentTradable(instrument, request.traceId());
+        if (validationError != null) {
+            return new AdapterOrderNormalization(null, null, validationError);
+        }
+
+        BigDecimal trimmedQty = trim(request.quantity(), instrument.lotSize(), NumericType.QTY);
+        if (trimmedQty.signum() <= 0 || trimmedQty.compareTo(instrument.minSize()) < 0) {
+            return new AdapterOrderNormalization(null, null,
+                    new AdapterError(
+                            "OKX_QTY_BELOW_MIN_SIZE",
+                            "trimmed qty below minSz, symbol=" + request.symbol() + ", minSz=" + instrument.minSize(),
+                            false
+                    )
+            );
+        }
+        BigDecimal trimmedPrice = request.price() == null
+                ? null
+                : trim(request.price(), instrument.tickSize(), NumericType.PRICE);
+        if (trimmedPrice != null && trimmedPrice.signum() <= 0) return new AdapterOrderNormalization(null, null,
+                new AdapterError("OKX_PRICE_BELOW_TICK_SIZE", "normalized price must be positive", false));
+        // 交易所步长可比平台精度更细；不可精确持久化属于确定拒绝，不能再次舍入或留下永久待重试工作。
+        if (NumericPolicy.normalize(NumericType.QTY, trimmedQty).compareTo(trimmedQty) != 0
+                || (trimmedPrice != null && NumericPolicy.normalize(NumericType.PRICE, trimmedPrice).compareTo(trimmedPrice) != 0)) {
+            return new AdapterOrderNormalization(null, null, new AdapterError("OKX_EFFECTIVE_PRECISION_UNSUPPORTED",
+                    "normalized values exceed the supported durable precision", false));
+        }
+        return new AdapterOrderNormalization(trimmedQty, trimmedPrice, null);
     }
 
     /**

@@ -21,6 +21,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.Instant;
 
 /**
  * MarketdataControllerLocalIntegrationTest 验证 RC1-5-A 的 fixture ingest 与真实 DB query 闭环。
@@ -81,7 +84,7 @@ class MarketdataControllerLocalIntegrationTest {
         assertEquals(6, queryResponse.size());
         assertEquals("BTCUSDT", queryResponse.get(0).path("symbol").asText());
         assertEquals("1m", queryResponse.get(0).path("interval").asText());
-        assertEquals(0, new java.math.BigDecimal(queryResponse.get(0).path("closePrice").asText()).compareTo(new java.math.BigDecimal("43010.00")));
+        assertEquals(0, new BigDecimal(queryResponse.get(0).path("closePrice").asText()).compareTo(new BigDecimal("43010.00")));
 
         Integer storedRows = jdbcTemplate.queryForObject(
                 """
@@ -97,8 +100,8 @@ class MarketdataControllerLocalIntegrationTest {
                 "BINANCE",
                 "BTCUSDT",
                 "1m",
-                java.sql.Timestamp.from(java.time.Instant.parse("2025-01-01T00:00:00Z")),
-                java.sql.Timestamp.from(java.time.Instant.parse("2025-01-01T00:05:59Z"))
+                Timestamp.from(Instant.parse("2025-01-01T00:00:00Z")),
+                Timestamp.from(Instant.parse("2025-01-01T00:05:59Z"))
         );
         assertEquals(6, storedRows);
     }

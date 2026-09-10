@@ -19,6 +19,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.math.BigDecimal;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -270,7 +272,7 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
                         FOR UPDATE OF ls,o
                         """, (row, ignored) -> new SessionOrderFacts(
                         row.getString("state"), row.getString("venue"),
-                        java.util.List.of((String[]) row.getArray("symbol_allowlist").getArray()),
+                        List.of((String[]) row.getArray("symbol_allowlist").getArray()),
                         row.getLong("exchange_account_id"),
                         row.getLong("created_by"), row.getLong("owner_user_id"),
                         nullableLong(row, "legacy_account_id"), row.getLong("account_id"),
@@ -552,8 +554,8 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
                 && existing.sessionId().equals(draft.sessionId())
                 && existing.action() == draft.action()
                 && existing.symbol().equals(draft.symbol())
-                && java.util.Objects.equals(existing.side(), draft.side())
-                && java.util.Objects.equals(existing.orderType(), draft.orderType())
+                && Objects.equals(existing.side(), draft.side())
+                && Objects.equals(existing.orderType(), draft.orderType())
                 && decimalEquals(existing.quantity(), draft.quantity())
                 && decimalEquals(existing.limitPrice(), draft.limitPrice())
                 && existing.clientOrderId().equals(draft.clientOrderId())
@@ -567,7 +569,7 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
         return existing;
     }
 
-    private static boolean decimalEquals(java.math.BigDecimal left, java.math.BigDecimal right) {
+    private static boolean decimalEquals(BigDecimal left, BigDecimal right) {
         return left == null ? right == null : right != null && left.compareTo(right) == 0;
     }
 
@@ -579,7 +581,7 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
     }
 
     private Instant currentDatabaseTime() {
-        return java.util.Objects.requireNonNull(
+        return Objects.requireNonNull(
                 jdbc.queryForObject("SELECT CURRENT_TIMESTAMP", Timestamp.class)).toInstant();
     }
 
@@ -608,13 +610,13 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
     }
 
     private static <T> T required(T value) {
-        return java.util.Objects.requireNonNull(value, "transaction returned null");
+        return Objects.requireNonNull(value, "transaction returned null");
     }
 
     private record SessionOrderFacts(
             String sessionState,
             String sessionVenue,
-            java.util.List<String> symbolAllowlist,
+            List<String> symbolAllowlist,
             long exchangeAccountId,
             long sessionCreatorId,
             long accountOwnerId,
@@ -626,8 +628,8 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
             String orderClientOrderId,
             String side,
             String type,
-            java.math.BigDecimal quantity,
-            java.math.BigDecimal price
+            BigDecimal quantity,
+            BigDecimal price
     ) {
     }
 

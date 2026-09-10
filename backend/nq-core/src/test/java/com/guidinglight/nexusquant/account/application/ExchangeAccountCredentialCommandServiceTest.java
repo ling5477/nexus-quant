@@ -18,6 +18,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ArrayList;
+import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -570,7 +572,7 @@ class ExchangeAccountCredentialCommandServiceTest {
     }
 
     private static boolean containsSensitiveAuditMetadata(String metadataJson) {
-        String lower = metadataJson.toLowerCase(java.util.Locale.ROOT);
+        String lower = metadataJson.toLowerCase(Locale.ROOT);
         return lower.contains("secret")
                 || lower.contains("token")
                 || lower.contains("private")
@@ -621,7 +623,7 @@ class ExchangeAccountCredentialCommandServiceTest {
 
     private static final class InMemoryExchangeAccountCredentialRepository implements ExchangeAccountCredentialRepository {
         private final Map<Long, ExchangeAccountCredentialMaterial> storage = new LinkedHashMap<>();
-        private final List<AuditLog> auditLogs = new java.util.ArrayList<>();
+        private final List<AuditLog> auditLogs = new ArrayList<>();
         private long nextId = 1L;
 
         @Override

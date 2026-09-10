@@ -12,10 +12,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Objects;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
 
 /**
  * PostgreSQL lease lifecycle；所有状态变化先锁 lease，provider 调用永远不在本类发生。
@@ -33,7 +35,7 @@ public class JdbcPilotExecutionLeaseRepository implements PilotExecutionLeaseRep
     private final JdbcTemplate jdbc;
 
     public JdbcPilotExecutionLeaseRepository(JdbcTemplate jdbc) {
-        this.jdbc = java.util.Objects.requireNonNull(jdbc, "jdbc must not be null");
+        this.jdbc = Objects.requireNonNull(jdbc, "jdbc must not be null");
     }
 
     @Override
@@ -95,7 +97,7 @@ public class JdbcPilotExecutionLeaseRepository implements PilotExecutionLeaseRep
     ) {
         PilotExecutionLease lease = findLocked(leaseId).orElseThrow(() -> rejected("PILOT_LEASE_NOT_FOUND"));
         if (!lease.activeAt(occurredAt) || !lease.liveSessionId().equals(binding.sessionId())
-                || !java.util.Objects.equals(lease.operatorPilotAuthorityId(),
+                || !Objects.equals(lease.operatorPilotAuthorityId(),
                 binding.operatorPilotAuthority() == null
                         ? null : binding.operatorPilotAuthority().authorityId())
                 || !lease.bindingId().equals(binding.id()) || !lease.bindingDigest().equals(binding.bindingDigest())
@@ -114,7 +116,7 @@ public class JdbcPilotExecutionLeaseRepository implements PilotExecutionLeaseRep
         try {
             jdbc.update("INSERT INTO pilot_execution_lease_intents(lease_id,intent_id,action,created_at) "
                     + "VALUES (?,?,'PLACE',?)", leaseId, intentId, Timestamp.from(occurredAt));
-        } catch (org.springframework.dao.DataIntegrityViolationException conflict) {
+        } catch (DataIntegrityViolationException conflict) {
             throw rejected("PILOT_LEASE_PLACE_ALREADY_BOUND");
         }
         updateStatus(lease, PilotExecutionLease.Status.CONSUMED, occurredAt, occurredAt, null);
@@ -139,7 +141,7 @@ public class JdbcPilotExecutionLeaseRepository implements PilotExecutionLeaseRep
         try {
             jdbc.update("INSERT INTO pilot_execution_lease_intents(lease_id,intent_id,action,created_at) "
                     + "VALUES (?,?,'CANCEL',?)", leaseId, intentId, Timestamp.from(occurredAt));
-        } catch (org.springframework.dao.DataIntegrityViolationException conflict) {
+        } catch (DataIntegrityViolationException conflict) {
             throw rejected("PILOT_LEASE_CANCEL_ALREADY_BOUND");
         }
     }

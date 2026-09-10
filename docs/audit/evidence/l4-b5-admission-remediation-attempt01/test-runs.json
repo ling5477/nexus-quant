@@ -1,0 +1,224 @@
+[
+  {
+    "run": "target-01",
+    "status": "PASS",
+    "counts": [
+      36,
+      0,
+      0,
+      0
+    ],
+    "logPath": "backend/nq-app/target/b5-admission-remediation/target-01.log",
+    "logSha256": "26e5f0be4ffb612aab8abacd8916974a13d6561482cb8cff49d05318100cdfb9",
+    "classification": "TARGETED",
+    "suites": [
+      [
+        "4",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerServiceTest"
+      ],
+      [
+        "6",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.strategy.application.StrategyScheduleScanServiceTest"
+      ],
+      [
+        "2",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcStrategyRunRepositoryTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.architecture.ModuleBoundaryArchTest"
+      ],
+      [
+        "4",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.architecture.PackageBoundaryArchTest"
+      ],
+      [
+        "9",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.architecture.ModuleBoundaryArchTest"
+      ],
+      [
+        "10",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.architecture.PackageBoundaryArchTest"
+      ]
+    ]
+  },
+  {
+    "run": "race-02",
+    "status": "FAIL",
+    "counts": [
+      3,
+      3,
+      0,
+      0
+    ],
+    "logPath": "backend/nq-app/target/b5-admission-remediation/race-02.log",
+    "logSha256": "8d970f09e6744bda4b0aefe6fac445b66c43c49e90d4071901591487d35ddf48",
+    "classification": "FIXTURE_SCHEMA_ASSERTION_49_VS_50_BEFORE_SCENARIO",
+    "suites": [
+      [
+        "3",
+        "3",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5StrategyScanConcurrencyTest"
+      ]
+    ]
+  },
+  {
+    "run": "race-03",
+    "status": "PASS",
+    "counts": [
+      3,
+      0,
+      0,
+      0
+    ],
+    "logPath": "backend/nq-app/target/b5-admission-remediation/race-03.log",
+    "logSha256": "718d0db1f79aff74509bf403120da538fb2cb4a0ba711b6a176ba5149bd44cb8",
+    "classification": "TARGETED",
+    "suites": [
+      [
+        "3",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5StrategyScanConcurrencyTest"
+      ]
+    ]
+  },
+  {
+    "run": "interaction-04",
+    "status": "PASS",
+    "counts": [
+      3,
+      0,
+      0,
+      0
+    ],
+    "logPath": "backend/nq-app/target/b5-admission-remediation/interaction-04.log",
+    "logSha256": "4073a7612e6b59a5881ebff1a1f209fdfc0caa871bc63d985f79d70f8325abef",
+    "classification": "TARGETED",
+    "suites": [
+      [
+        "2",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5AdmissionPostgresTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5AdmissionProcessTest"
+      ]
+    ]
+  },
+  {
+    "run": "final-target-05",
+    "status": "PASS",
+    "counts": [
+      41,
+      0,
+      0,
+      0
+    ],
+    "logPath": "backend/nq-app/target/b5-admission-remediation/final-target-05.log",
+    "logSha256": "f46c8779b5cb03db23e16754a6740479bc4e3da5b5fd8f32d864c0a0c1ef15e4",
+    "classification": "TARGETED",
+    "suites": [
+      [
+        "4",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerServiceTest"
+      ],
+      [
+        "6",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.strategy.application.StrategyScheduleScanServiceTest"
+      ],
+      [
+        "2",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcStrategyRunRepositoryTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.architecture.ModuleBoundaryArchTest"
+      ],
+      [
+        "4",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.architecture.PackageBoundaryArchTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5StrategyOwnerDeathTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5StrategyRunRecoveryPostgresTest"
+      ],
+      [
+        "3",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5StrategyScanConcurrencyTest"
+      ],
+      [
+        "9",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.architecture.ModuleBoundaryArchTest"
+      ],
+      [
+        "10",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.architecture.PackageBoundaryArchTest"
+      ]
+    ]
+  }
+]

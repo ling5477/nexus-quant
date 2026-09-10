@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -50,7 +51,7 @@ class JdkOkxPrivateReadTransportTest {
         OkxPrivateReadResult result = execute(transport, OkxPrivateReadRequest.accountConfiguration(), OkxPrivateEnvironment.DEMO);
 
         assertEquals(URI.create("https://openapi.okx.com/api/v5/account/config"), uri.get());
-        assertEquals(java.util.Set.of("READ_ONLY"), result.normalizedPermissions());
+        assertEquals(Set.of("READ_ONLY"), result.normalizedPermissions());
         assertTrue(result.complete());
         assertTrue(result.ipAllowlistConfigured());
         assertEquals("1", headers.get().get("x-simulated-trading"));

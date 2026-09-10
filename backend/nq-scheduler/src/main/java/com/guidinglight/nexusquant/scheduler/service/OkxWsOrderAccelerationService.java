@@ -14,6 +14,7 @@ import com.guidinglight.nexusquant.trading.application.OrderCommandService;
 import com.guidinglight.nexusquant.trading.application.OrderLifecycleService;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
+import com.guidinglight.nexusquant.trading.domain.TradingVenue;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -287,7 +288,7 @@ public class OkxWsOrderAccelerationService {
                         ),
                         EXTERNAL_LOOKUP_LIMIT
                 ).stream()
-                .filter(order -> "OKX".equals(order.venue()))
+                .filter(order -> order.canonicalVenue() == TradingVenue.OKX)
                 .filter(order -> externalOrderId.equals(order.externalOrderId()))
                 .findFirst();
     }

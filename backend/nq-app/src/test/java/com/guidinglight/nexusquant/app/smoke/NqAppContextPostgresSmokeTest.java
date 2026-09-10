@@ -27,6 +27,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import java.util.Arrays;
 
 /**
  * Batch 2D CI-only nq-app context smoke against a Flyway-migrated PostgreSQL service database.
@@ -142,7 +143,7 @@ class NqAppContextPostgresSmokeTest {
         // startup does not open private WS or real credential probe paths.
         assertNotNull(applicationContext);
         assertTrue(
-                java.util.Arrays.asList(applicationContext.getEnvironment().getActiveProfiles())
+                Arrays.asList(applicationContext.getEnvironment().getActiveProfiles())
                         .contains("ci-app-smoke")
         );
         assertTrue(mockingDetails(okxWsClient).isMock());

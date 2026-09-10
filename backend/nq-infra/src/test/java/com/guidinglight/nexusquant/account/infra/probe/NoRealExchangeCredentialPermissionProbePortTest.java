@@ -13,6 +13,7 @@ import java.net.SocketAddress;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.net.Proxy;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -70,12 +71,12 @@ class NoRealExchangeCredentialPermissionProbePortTest {
      */
     private static final class RejectRealExchangeProxySelector extends ProxySelector {
         @Override
-        public List<java.net.Proxy> select(URI uri) {
+        public List<Proxy> select(URI uri) {
             String host = uri == null ? null : uri.getHost();
             if ("www.okx.com".equalsIgnoreCase(host) || "api.binance.com".equalsIgnoreCase(host)) {
                 throw new AssertionError("real exchange host access is forbidden in tests: " + host);
             }
-            return List.of(java.net.Proxy.NO_PROXY);
+            return List.of(Proxy.NO_PROXY);
         }
 
         @Override

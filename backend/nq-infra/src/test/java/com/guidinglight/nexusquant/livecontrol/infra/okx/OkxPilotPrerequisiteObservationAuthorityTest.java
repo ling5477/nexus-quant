@@ -16,6 +16,7 @@ import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentC
 import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogUpsertStats;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.InstrumentCatalogItem;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.port.InstrumentCatalogRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority;
 import org.junit.jupiter.api.Test;
 import org.springframework.stereotype.Component;
 
@@ -220,11 +221,11 @@ class OkxPilotPrerequisiteObservationAuthorityTest {
     }
 
     private static LiveSession operatorSession() {
-        var authority = com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority.active(
+        var authority = OperatorPilotAuthority.active(
                 UUID.fromString("22222222-3333-4444-5555-666666666666"),
                 OWNER_ID, ACCOUNT_ID, CREDENTIAL_ID, "BTC-USDT",
-                com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority.Side.BUY,
-                com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority.OrderType.LIMIT,
+                OperatorPilotAuthority.Side.BUY,
+                OperatorPilotAuthority.OrderType.LIMIT,
                 new BigDecimal("10.00000000"), NOW, NOW.plusSeconds(120), OWNER_ID, NOW);
         return LiveSession.createOperatorPilot(
                 UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),

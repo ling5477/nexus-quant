@@ -8,10 +8,12 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
+import java.math.BigDecimal;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * JdbcTradeRepository 是 trades 表的 JDBC 访问实现。
@@ -96,13 +98,13 @@ public class JdbcTradeRepository implements TradeRepository {
     }
 
     @Override
-    @org.springframework.transaction.annotation.Transactional
+    @Transactional
     public void insert(PaperTradeRecord trade) {
         // 并发对账的响应预检不是锁；插入与终态纠正共用订单行锁，并在锁内重新累计已提交成交。
-        java.math.BigDecimal original = jdbcTemplate.queryForObject(
-                "SELECT qty FROM orders WHERE order_id=? FOR UPDATE", java.math.BigDecimal.class, trade.orderId());
-        java.math.BigDecimal executed = jdbcTemplate.queryForObject(
-                "SELECT COALESCE(SUM(qty),0) FROM trades WHERE order_id=?", java.math.BigDecimal.class, trade.orderId());
+        BigDecimal original = jdbcTemplate.queryForObject(
+                "SELECT qty FROM orders WHERE order_id=? FOR UPDATE", BigDecimal.class, trade.orderId());
+        BigDecimal executed = jdbcTemplate.queryForObject(
+                "SELECT COALESCE(SUM(qty),0) FROM trades WHERE order_id=?", BigDecimal.class, trade.orderId());
         if (original == null || original.signum() <= 0 || trade.qty() == null || trade.qty().signum() <= 0
                 || executed == null || executed.signum() < 0 || executed.add(trade.qty()).compareTo(original) > 0) {
             throw new IllegalStateException("RECONCILIATION_OVERFILL_OR_INVALID_QUANTITY: " + trade.orderId());
@@ -134,7 +136,7 @@ public class JdbcTradeRepository implements TradeRepository {
     }
 
     @Override
-    @org.springframework.transaction.annotation.Transactional
+    @Transactional
     public void insertWithRequiredEvent(PaperTradeRecord trade) {
         // 自调用 insert 加入当前外层事务；必需事件失败必须回滚整个 Trade 写入。
         insert(trade);
@@ -142,7 +144,7 @@ public class JdbcTradeRepository implements TradeRepository {
     }
 
     @Override
-    @org.springframework.transaction.annotation.Transactional
+    @Transactional
     public void ensureRequiredEvent(String tradeId) {
         new RequiredTradeEventStore(jdbcTemplate).ensure(tradeId);
     }

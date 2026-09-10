@@ -1,0 +1,41 @@
+{
+  "controllerPid": 65756,
+  "database": "SYNTH-L4:B5-LEGACY:R01:DATABASE:001",
+  "nqPid": 18468,
+  "restartPid": 67640,
+  "venuePid": 74964,
+  "venue": {
+    "code": "0",
+    "msg": "",
+    "data": [],
+    "pid": 74964,
+    "places": 0,
+    "cancels": 0,
+    "pendingCancel": false,
+    "placeRequests": 0,
+    "apiRequests": 2,
+    "order": null,
+    "fills": [],
+    "events": [
+      {
+        "sequence": 2,
+        "type": "QUERY_OPEN_ORDERS",
+        "nanoTime": 908852591435400,
+        "epochMillis": 1789009378992,
+        "count": 0
+      },
+      {
+        "sequence": 3,
+        "type": "QUERY_ORDER_NOT_FOUND",
+        "nanoTime": 908852636506100,
+        "epochMillis": 1789009379037
+      }
+    ]
+  },
+  "storedVenue": "okx",
+  "orderStatus": "SENT",
+  "orderVersion": 2,
+  "authorityCount": 0,
+  "manualResolutionRequired": true,
+  "result": "PASS"
+}

@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import com.guidinglight.nexusquant.trading.domain.TradingVenue;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -129,7 +130,7 @@ public class BinanceRestReconcileService {
                 ),
                 limit
         )) {
-            if (!EXCHANGE.equals(order.venue())) {
+            if (order.canonicalVenue() != TradingVenue.BINANCE) {
                 continue;
             }
             try {

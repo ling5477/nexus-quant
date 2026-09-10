@@ -8,13 +8,14 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Clock;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.api.AfterEach;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class OperationalCriticalAlertMetricsTest {
     private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
-    @org.junit.jupiter.api.AfterEach
+    @AfterEach
     void closeRegistry() { registry.close(); }
 
     @Test

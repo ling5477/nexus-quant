@@ -12,6 +12,10 @@ SPEC = importlib.util.spec_from_file_location("stage_guard", Path(__file__).reso
 guard = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(guard)
 
+LIFECYCLE_SPEC = importlib.util.spec_from_file_location("asset_lifecycle", Path(__file__).resolve().parents[1] / "stage-asset-lifecycle.py")
+lifecycle = importlib.util.module_from_spec(LIFECYCLE_SPEC)
+LIFECYCLE_SPEC.loader.exec_module(lifecycle)
+
 
 class StageAssetGuardTest(unittest.TestCase):
     def setUp(self):
@@ -40,6 +44,121 @@ class StageAssetGuardTest(unittest.TestCase):
     def test_empty_stable_tree_and_repeat_are_valid(self):
         self.assertEqual([], guard.check(self.root)[0])
         self.assertEqual(guard.check(self.root), guard.check(self.root))
+
+    def evolution_fixture(self):
+        path = "backend/app/src/test/java/CompatibilityTest.java"
+        self.write(path, 'class CompatibilityTest { String fixture = "GATEY_WIRE_V1"; }')
+        self.policy([dict(path=path, sha256=guard.inspect(self.root, path)["sha256"],
+                          kind="FIXTURE_IDENTITY", reason="negative fixture", owner="test owner",
+                          removalTrigger="fixture retirement")])
+        return path
+
+    def reviewed_plan(self):
+        plan = lifecycle.propose(self.root)
+        output = Path(self.temporary.name).parent / (self.root.name + "-proposal.json")
+        self.addCleanup(lambda: output.unlink(missing_ok=True))
+        raw = lifecycle.encode(plan)
+        output.write_bytes(raw)
+        return output, lifecycle.digest(raw)
+
+    def test_lifecycle_reviewed_evolution_and_unregistered_drift(self):
+        path = self.evolution_fixture()
+        self.write(path, 'class CompatibilityTest { String fixture = "GATEY_WIRE_V2"; }')
+        self.assert_rejected()
+        before = (self.root / guard.POLICY_PATH).read_bytes()
+        plan, identity = self.reviewed_plan()
+        self.assertEqual(before, (self.root / guard.POLICY_PATH).read_bytes())
+        lifecycle.apply_reviewed(self.root, plan, identity)
+        self.assertEqual([], guard.check(self.root)[0])
+        self.write(path, 'class CompatibilityTest { String fixture = "GATEY_WIRE_V3"; }')
+        self.assert_rejected()
+        with self.assertRaises(ValueError):
+            lifecycle.apply_reviewed(self.root, plan, identity)
+
+    def test_lifecycle_new_semantic_asset_cannot_be_auto_registered(self):
+        self.evolution_fixture()
+        self.write("scripts/new-entry.py", 'mode = "gatey"')
+        self.assert_rejected()
+        with self.assertRaises(ValueError):
+            lifecycle.propose(self.root)
+
+    def test_lifecycle_superseded_registration_is_removed_deterministically(self):
+        path = self.evolution_fixture()
+        for removed in (False, True):
+            with self.subTest(removed=removed):
+                path = self.evolution_fixture()
+                if removed:
+                    (self.root / path).unlink()
+                else:
+                    self.write(path, "class CompatibilityTest {}")
+                first = lifecycle.propose(self.root)
+                self.assertEqual(first, lifecycle.propose(self.root))
+                self.assertEqual([], first["policy"]["exceptions"])
+                plan, identity = self.reviewed_plan()
+                lifecycle.apply_reviewed(self.root, plan, identity)
+                self.assertEqual([], guard.check(self.root)[0])
+
+    def test_lifecycle_review_digest_and_proposed_output_are_bound(self):
+        self.evolution_fixture()
+        plan, identity = self.reviewed_plan()
+        before = (self.root / guard.POLICY_PATH).read_bytes()
+        with self.assertRaises(ValueError):
+            lifecycle.apply_reviewed(self.root, plan, "0" * 64)
+        data = json.loads(plan.read_bytes())
+        data["policy"]["exceptions"][0]["owner"] = "unreviewed owner"
+        raw = lifecycle.encode(data)
+        plan.write_bytes(raw)
+        with self.assertRaises(ValueError):
+            lifecycle.apply_reviewed(self.root, plan, lifecycle.digest(raw))
+        self.assertEqual(before, (self.root / guard.POLICY_PATH).read_bytes())
+
+    def test_lifecycle_dynamic_inventory_changes_invalidate_review(self):
+        self.evolution_fixture()
+        plan, identity = self.reviewed_plan()
+        # 任意新中性文件也属于候选变更，不能依赖固定文件数量。
+        self.write("scripts/additional.py", "value = 1")
+        with self.assertRaises(ValueError):
+            lifecycle.apply_reviewed(self.root, plan, identity)
+        fresh = lifecycle.propose(self.root)
+        self.assertIn("scripts/additional.py", {x["path"] for x in fresh["candidate"]})
+
+    def test_lifecycle_duplicate_registration_is_rejected(self):
+        self.evolution_fixture()
+        policy = json.loads((self.root / guard.POLICY_PATH).read_bytes())
+        policy["exceptions"] *= 2
+        self.write(guard.POLICY_PATH, json.dumps(policy))
+        with self.assertRaises(ValueError):
+            lifecycle.propose(self.root)
+
+    def test_lifecycle_new_input_during_apply_is_rejected_without_policy_write(self):
+        self.evolution_fixture()
+        plan, identity = self.reviewed_plan()
+        before = (self.root / guard.POLICY_PATH).read_bytes()
+        real_mkstemp = tempfile.mkstemp
+
+        def concurrent_creation(*args, **kwargs):
+            self.write("scripts/new-entry.py", 'mode = "gatey"')
+            return real_mkstemp(*args, **kwargs)
+
+        with patch.object(lifecycle.tempfile, "mkstemp", side_effect=concurrent_creation):
+            with self.assertRaises(ValueError):
+                lifecycle.apply_reviewed(self.root, plan, identity)
+        self.assertEqual(before, (self.root / guard.POLICY_PATH).read_bytes())
+        self.assertFalse(list(self.root.glob(".asset-registration-*")))
+
+    def test_lifecycle_external_input_change_during_proposal_is_rejected(self):
+        self.write(".github/workflows/run.yml", "run: python tools/neutral.py")
+        self.write("tools/neutral.py", "value = 1")
+        real_check = lifecycle.guard.check
+
+        def concurrent_change(*args, **kwargs):
+            result = real_check(*args, **kwargs)
+            self.write("tools/neutral.py", "value = 2")
+            return result
+
+        with patch.object(lifecycle.guard, "check", side_effect=concurrent_change):
+            with self.assertRaises(ValueError):
+                lifecycle.propose(self.root)
 
     def test_all_stage_names_rejected_in_active_paths(self):
         for stage in ("gate-a", "gateM", "gatew", "gatey", "gatez", "phase2", "freeze"):
@@ -429,6 +548,26 @@ class CompatibilityRelationshipTest(unittest.TestCase):
                 self.write(caller, content)
                 self.assertTrue(any(e.startswith("UNAUTHORIZED_COMPATIBILITY_CALLER:") and caller in e for e in guard.check(self.root)[0]))
                 self.write(path, 'package sample; class Consumer { String existing() { return Contract.VALUE; } }')
+
+    def test_lifecycle_caller_evolution_preserves_precise_negative_guard(self):
+        contract, exception = self.contract_fixture()
+        path = "backend/app/src/main/java/sample/Consumer.java"
+        self.write(path, 'package sample; class Consumer { String existing() { return Contract.VALUE; } }')
+        edges = guard.compatibility_edges(self.root, guard.sources(self.root), [contract])
+        contract["approvedCallers"] = [dict(path=e[1], callerMember=e[2], contractMember=e[3]) for e in sorted(edges)]
+        self.policy([exception], contracts=[contract])
+        self.write(path, 'package sample; class Consumer { String evolved() { return Contract.VALUE; } }')
+        errors = guard.check(self.root)[0]
+        self.assertTrue(any(e.startswith("STALE_COMPATIBILITY_CALLER:") for e in errors))
+        self.assertTrue(any(e.startswith("UNAUTHORIZED_COMPATIBILITY_CALLER:") for e in errors))
+        plan = self.root / "review-proposal.json"
+        raw = lifecycle.encode(lifecycle.propose(self.root))
+        plan.write_bytes(raw)
+        identity = lifecycle.digest(raw)
+        lifecycle.apply_reviewed(self.root, plan, identity)
+        self.assertEqual([], guard.check(self.root)[0])
+        self.write(path, 'package sample; class Consumer { String evolved() { return Contract.VALUE; } String surprise() { return Contract.VALUE; } }')
+        self.assertTrue(any("#surprise()" in e for e in guard.check(self.root)[0]))
 
     def test_static_import_fully_qualified_inheritance_and_typed_uses_are_edges(self):
         contract, exception = self.contract_fixture()

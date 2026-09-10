@@ -9,6 +9,8 @@ import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 import com.guidinglight.nexusquant.risk.service.KillSwitchState;
 import com.guidinglight.nexusquant.risk.service.KillSwitchStateRepository;
 import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
+import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -72,8 +74,8 @@ class ReadOnlyQualificationObservationAuthorityTest {
         PilotPrerequisiteObservationAuthority delegate = new PilotPrerequisiteObservationAuthority() {
             @Override
             public PilotObservationSet resolveTrustedObservationSet(
-                    com.guidinglight.nexusquant.livecontrol.domain.LiveSession session,
-                    com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding scope,
+                    LiveSession session,
+                    PilotScopeBinding scope,
                     Instant resolvedAt
             ) {
                 throw new AssertionError("strategy observation path must not be used");
@@ -81,7 +83,7 @@ class ReadOnlyQualificationObservationAuthorityTest {
 
             @Override
             public TrustedOperatorPilotBootstrap bootstrapTrustedOperatorPilotScope(
-                    com.guidinglight.nexusquant.livecontrol.domain.LiveSession session,
+                    LiveSession session,
                     UUID pilotScopeId,
                     long createdBy,
                     Instant resolvedAt

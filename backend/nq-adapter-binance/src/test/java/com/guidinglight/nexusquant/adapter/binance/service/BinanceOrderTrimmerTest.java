@@ -7,9 +7,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderRequest;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceSymbolFilters;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceTrimResult;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.guidinglight.nexusquant.adapter.binance.model.BinanceApiCredentials;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.net.http.HttpClient;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.ZoneOffset;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -76,21 +83,21 @@ class BinanceOrderTrimmerTest {
     void shouldRejectWhenSymbolDoesNotExistInCache() {
         BinanceFiltersCache cache = new BinanceFiltersCache(
                 new BinanceExchangeInfoClient(new BinanceHttpClient(
-                        java.net.http.HttpClient.newHttpClient(),
-                        new com.fasterxml.jackson.databind.ObjectMapper(),
+                        HttpClient.newHttpClient(),
+                        new ObjectMapper(),
                         "http://127.0.0.1:65535",
-                        java.time.Duration.ofSeconds(1),
+                        Duration.ofSeconds(1),
                         new BinanceRequestSigner(),
                         () -> 1_700_000_000_000L,
-                        new com.guidinglight.nexusquant.adapter.binance.model.BinanceApiCredentials("", "")
+                        new BinanceApiCredentials("", "")
                 )) {
                     @Override
-                    public java.util.Map<String, BinanceSymbolFilters> fetchSpotExchangeInfo(String traceId) {
-                        return java.util.Map.of("BTCUSDT", tradingFilters());
+                    public Map<String, BinanceSymbolFilters> fetchSpotExchangeInfo(String traceId) {
+                        return Map.of("BTCUSDT", tradingFilters());
                     }
                 },
-                java.time.Clock.fixed(Instant.parse("2026-03-06T09:00:00Z"), java.time.ZoneOffset.UTC),
-                java.time.Duration.ofMinutes(5)
+                Clock.fixed(Instant.parse("2026-03-06T09:00:00Z"), ZoneOffset.UTC),
+                Duration.ofMinutes(5)
         );
 
         BinanceTrimResult result = trimmer.trimAndValidate(limitOrder("ETH-USDT", "100.00", "0.1000"), cache);

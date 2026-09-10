@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.trading.application;
 
+import com.guidinglight.nexusquant.trading.domain.TradingVenue;
+
 /**
  * CancelOrderRequest 表示撤单编排入口参数。
  * <p>
@@ -46,7 +48,7 @@ public record CancelOrderRequest(
     public CancelOrderRequest {
         traceId = requireText(traceId, "traceId");
         requestId = normalizeText(requestId, traceId);
-        venue = normalizeText(venue, null);
+        venue = venue == null ? null : TradingVenue.parse(venue).name();
         symbol = normalizeText(symbol, null);
         clientOrderId = normalizeText(clientOrderId, null);
         externalOrderId = normalizeText(externalOrderId, null);

@@ -1,0 +1,114 @@
+{
+  "scenario": "ROLLBACK",
+  "controllerPid": 42640,
+  "database": "SYNTH-L4:B5-V51:R48:DATABASE:001",
+  "venuePid": 42448,
+  "proxyPid": 22256,
+  "externalVenueInput": "okx",
+  "nqPid": 7100,
+  "restartPid": 21856,
+  "atCut": {
+    "orders": [
+      {
+        "qty": 10.0,
+        "side": "BUY",
+        "type": "LIMIT",
+        "price": 100.0,
+        "venue": "OKX",
+        "reason": "ORDER_ROUTED_TO_ADAPTER",
+        "status": "SENT",
+        "symbol": "BTC-USDT",
+        "version": 2,
+        "order_id": "SYNTH-L4:B5-V51:R48:ORDER:001",
+        "trace_id": "SYNTH-L4:B5-V51:R48:TRACE:001",
+        "dedup_key": "1:SYNTH-L4:B5-V51:R48:CLIENT:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T18:59:40.338689+08:00",
+        "request_id": "SYNTH-L4:B5-V51:R48:REQUEST:001",
+        "updated_at": "2026-09-10T18:59:40.387544+08:00",
+        "exchange_code": "OKX",
+        "client_order_id": "SYNTH-L4:B5-V51:R48:CLIENT:001",
+        "strategy_run_id": null,
+        "exchange_order_id": null,
+        "external_order_id": null
+      }
+    ],
+    "ordinary_place_authorities": [
+      {
+        "state": "NOT_ARMED",
+        "order_id": "SYNTH-L4:B5-V51:R48:ORDER:001",
+        "decided_at": null
+      }
+    ],
+    "trades": [],
+    "ledger_entries": []
+  },
+  "final": {
+    "orders": [
+      {
+        "qty": 10.0,
+        "side": "BUY",
+        "type": "LIMIT",
+        "price": 100.0,
+        "venue": "OKX",
+        "reason": "ORDER_NOT_FOUND/OKX_51603",
+        "status": "CANCELLED",
+        "symbol": "BTC-USDT",
+        "version": 4,
+        "order_id": "SYNTH-L4:B5-V51:R48:ORDER:001",
+        "trace_id": "SYNTH-L4:B5-V51:R48:TRACE:001",
+        "dedup_key": "1:SYNTH-L4:B5-V51:R48:CLIENT:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T18:59:40.338689+08:00",
+        "request_id": "SYNTH-L4:B5-V51:R48:REQUEST:001",
+        "updated_at": "2026-09-10T18:59:41.119716+08:00",
+        "exchange_code": "OKX",
+        "client_order_id": "SYNTH-L4:B5-V51:R48:CLIENT:001",
+        "strategy_run_id": null,
+        "exchange_order_id": null,
+        "external_order_id": null
+      }
+    ],
+    "ordinary_place_authorities": [
+      {
+        "state": "REVOKED_BEFORE_SEND",
+        "order_id": "SYNTH-L4:B5-V51:R48:ORDER:001",
+        "decided_at": "2026-09-10T18:59:41.112034+08:00"
+      }
+    ],
+    "trades": [],
+    "ledger_entries": []
+  },
+  "venue": {
+    "code": "0",
+    "msg": "",
+    "data": [],
+    "pid": 42448,
+    "places": 0,
+    "cancels": 0,
+    "pendingCancel": false,
+    "placeRequests": 0,
+    "apiRequests": 2,
+    "order": null,
+    "fills": [],
+    "events": [
+      {
+        "sequence": 2,
+        "type": "QUERY_OPEN_ORDERS",
+        "nanoTime": 937454681976500,
+        "epochMillis": 1789037981082,
+        "count": 0
+      },
+      {
+        "sequence": 3,
+        "type": "QUERY_ORDER_NOT_FOUND",
+        "nanoTime": 937454697823900,
+        "epochMillis": 1789037981098
+      }
+    ]
+  },
+  "cleanup": true,
+  "result": "PASS"
+}

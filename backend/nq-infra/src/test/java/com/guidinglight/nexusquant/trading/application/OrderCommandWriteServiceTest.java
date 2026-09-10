@@ -12,6 +12,7 @@ import com.guidinglight.nexusquant.risk.service.RiskGate;
 import com.guidinglight.nexusquant.trading.application.port.*;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
+import com.guidinglight.nexusquant.trading.domain.port.OrdinaryPlaceAuthorityRepository;
 import com.guidinglight.nexusquant.trading.domain.state.InMemoryOrderStateMachine;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -28,7 +29,8 @@ class OrderCommandWriteServiceTest {
     final AuditLogRepository audit = mock(AuditLogRepository.class);
     final EventPublisherPort events = mock(EventPublisherPort.class);
     final OrderCommandWriteService writes = new OrderCommandWriteService(orders,
-            new InMemoryOrderStateMachine(), mock(RiskGate.class), audit, mock(RiskEventRepository.class), events);
+            new InMemoryOrderStateMachine(), mock(RiskGate.class), audit, mock(RiskEventRepository.class), events,
+            mock(OrdinaryPlaceAuthorityRepository.class));
     OrderRecord durable;
 
     @BeforeEach void repository() {

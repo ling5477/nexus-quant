@@ -25,6 +25,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.HexFormat;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
@@ -247,7 +248,7 @@ class BinanceWsClientLiveDiagnosticTest {
             return "missing";
         }
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        String sha256 = java.util.HexFormat.of().formatHex(digest.digest(signature.getBytes(StandardCharsets.UTF_8)));
+        String sha256 = HexFormat.of().formatHex(digest.digest(signature.getBytes(StandardCharsets.UTF_8)));
         return signature.substring(0, Math.min(6, signature.length()))
                 + "..."
                 + signature.substring(Math.max(0, signature.length() - 6))

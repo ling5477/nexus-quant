@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.CompletionStage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -429,7 +430,7 @@ public class OkxWsClient {
         }
 
         @Override
-        public java.util.concurrent.CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
+        public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
             String raw = data.toString();
             lastMessageEpochMs.set(Instant.now(clock).toEpochMilli());
             OkxWsProtocol.ParsedMessage parsed = OkxWsProtocol.parseInboundMessage(objectMapper, raw);
@@ -474,7 +475,7 @@ public class OkxWsClient {
         }
 
         @Override
-        public java.util.concurrent.CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
+        public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
             log.warn("okx_ws_closed status_code={} reason={}", statusCode, reason);
             scheduleReconnect("listener_close");
             return CompletableFuture.completedFuture(null);

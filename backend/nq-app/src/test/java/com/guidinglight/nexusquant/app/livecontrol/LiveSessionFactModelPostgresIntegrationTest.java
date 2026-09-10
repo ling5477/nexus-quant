@@ -41,6 +41,9 @@ import com.guidinglight.nexusquant.livecontrol.infra.PilotScopeFactTransactionSe
 import com.guidinglight.nexusquant.livecontrol.infra.UnavailablePilotPrerequisiteObservationAuthority;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.infra.jdbc.JdbcOrderRepository;
+import com.guidinglight.nexusquant.livecontrol.application.OperatorPilotAuthorityService;
+import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeCanonicalEncoder;
+import com.guidinglight.nexusquant.livecontrol.infra.jdbc.JdbcOperatorPilotAuthorityRepository;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -55,6 +58,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Locale;
+import java.util.stream.IntStream;
 
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.FlywayException;
@@ -65,6 +73,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.flywaydb.core.api.MigrationInfo;
 
 /**
  * GateY disposable PostgreSQL integration：回放 V1→latest，验证真实 FK/trigger/JDBC/并发。
@@ -99,10 +108,10 @@ class LiveSessionFactModelPostgresIntegrationTest {
         latest.migrate();
         latest.validate();
         try {
-            assertEquals(java.util.Arrays.stream(latest.info().all())
+            assertEquals(Arrays.stream(latest.info().all())
                     .filter(migration -> migration.getScript().startsWith("V"))
-                    .map(org.flywaydb.core.api.MigrationInfo::getVersion)
-                    .max(java.util.Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
+                    .map(MigrationInfo::getVersion)
+                    .max(Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
             assertEquals(historicalFingerprint, historicalFingerprint(jdbc));
             assertSixTablesAndContracts(jdbc);
 
@@ -162,10 +171,10 @@ class LiveSessionFactModelPostgresIntegrationTest {
         latest.validate();
         JdbcTemplate jdbc = jdbc(config, schema);
         try {
-            assertEquals(java.util.Arrays.stream(latest.info().all())
+            assertEquals(Arrays.stream(latest.info().all())
                     .filter(migration -> migration.getScript().startsWith("V"))
-                    .map(org.flywaydb.core.api.MigrationInfo::getVersion)
-                    .max(java.util.Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
+                    .map(MigrationInfo::getVersion)
+                    .max(Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
             ExistingFixture existing = seedExistingFacts(jdbc);
             JdbcLiveControlRepository liveRepository = new JdbcLiveControlRepository(jdbc);
             JdbcLiveControlAuthorization authorization = new JdbcLiveControlAuthorization(jdbc);
@@ -199,7 +208,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
 
             CountDownLatch start = new CountDownLatch(1);
             try (ExecutorService executor = Executors.newFixedThreadPool(4)) {
-                List<Future<ExecutionIntent>> futures = java.util.stream.IntStream.range(0, 4)
+                List<Future<ExecutionIntent>> futures = IntStream.range(0, 4)
                         .mapToObj(index -> executor.submit(() -> {
                             assertTrue(start.await(10, TimeUnit.SECONDS));
                             return firstRepository.createOrGet(first);
@@ -284,10 +293,10 @@ class LiveSessionFactModelPostgresIntegrationTest {
             latest.migrate();
             long v44ElapsedMs = Duration.ofNanos(System.nanoTime() - v44StartedAt).toMillis();
             latest.validate();
-            assertEquals(java.util.Arrays.stream(latest.info().all())
+            assertEquals(Arrays.stream(latest.info().all())
                     .filter(migration -> migration.getScript().startsWith("V"))
-                    .map(org.flywaydb.core.api.MigrationInfo::getVersion)
-                    .max(java.util.Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
+                    .map(MigrationInfo::getVersion)
+                    .max(Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
             assertEquals(0, latest.info().pending().length);
             assertEquals(0, jdbc(config, schema).queryForObject(
                     "SELECT count(*) FROM flyway_schema_history WHERE success=FALSE", Integer.class));
@@ -321,10 +330,10 @@ class LiveSessionFactModelPostgresIntegrationTest {
         latest.validate();
         System.out.println("gatey6e_v39_to_v41_elapsed_ms=" + migrationElapsedMs);
         try {
-            assertEquals(java.util.Arrays.stream(latest.info().all())
+            assertEquals(Arrays.stream(latest.info().all())
                     .filter(migration -> migration.getScript().startsWith("V"))
-                    .map(org.flywaydb.core.api.MigrationInfo::getVersion)
-                    .max(java.util.Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
+                    .map(MigrationInfo::getVersion)
+                    .max(Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
             assertTrue(migrationElapsedMs < 60_000);
             assertEquals(historical.fingerprint(), historicalApprovalFingerprint(jdbc, historical.approvalId()));
             assertEquals("STRATEGY", jdbc.queryForObject(
@@ -360,10 +369,8 @@ class LiveSessionFactModelPostgresIntegrationTest {
             var transactionManager = new DataSourceTransactionManager(jdbc.getDataSource());
             TransactionTemplate transactions = new TransactionTemplate(transactionManager);
             LiveSessionControlService liveService = new LiveSessionControlService(liveRepository, authorization);
-            var operatorAuthorityService = new com.guidinglight.nexusquant.livecontrol.application
-                    .OperatorPilotAuthorityService(
-                    new com.guidinglight.nexusquant.livecontrol.infra.jdbc
-                            .JdbcOperatorPilotAuthorityRepository(jdbc), authorization);
+            var operatorAuthorityService = new OperatorPilotAuthorityService(
+                    new JdbcOperatorPilotAuthorityRepository(jdbc), authorization);
             PilotScopeFactTransactionService pilotTransactions = new PilotScopeFactTransactionService(
                     liveService, operatorAuthorityService, liveRepository, pilotRepository,
                     authorization, transactionManager);
@@ -418,7 +425,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
                         scope.worker_identity, scope.worker_release_digest)
                     FROM pilot_scope_bindings scope WHERE scope.pilot_scope_id=?
                     """, String.class, scope.id());
-            assertEquals(com.guidinglight.nexusquant.livecontrol.domain.PilotScopeCanonicalEncoder.encode(session, scope),
+            assertEquals(PilotScopeCanonicalEncoder.encode(session, scope),
                     postgresCanonical);
             assertEquals(scope.pilotScopeHash(), jdbc.queryForObject(
                     "SELECT gate_y6d_reconstruct_pilot_scope_hash(?)", String.class, scope.id()));
@@ -522,10 +529,10 @@ class LiveSessionFactModelPostgresIntegrationTest {
         try {
             latest.migrate();
             latest.validate();
-            assertEquals(java.util.Arrays.stream(latest.info().all())
+            assertEquals(Arrays.stream(latest.info().all())
                     .filter(migration -> migration.getScript().startsWith("V"))
-                    .map(org.flywaydb.core.api.MigrationInfo::getVersion)
-                    .max(java.util.Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
+                    .map(MigrationInfo::getVersion)
+                    .max(Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
             assertEquals(legacyFingerprint,
                     legacyInstrumentFingerprint(jdbc, legacyObservations.instrumentMetadata().id()));
             assertEquals("LEGACY_V40_REQUIRED", jdbc.queryForObject("""
@@ -668,10 +675,10 @@ class LiveSessionFactModelPostgresIntegrationTest {
         Flyway replay = flyway(config, replaySchema, null);
         replay.migrate();
         try {
-            assertEquals(java.util.Arrays.stream(replay.info().all())
+            assertEquals(Arrays.stream(replay.info().all())
                     .filter(migration -> migration.getScript().startsWith("V"))
-                    .map(org.flywaydb.core.api.MigrationInfo::getVersion)
-                    .max(java.util.Comparator.naturalOrder()).orElseThrow().getVersion(), replay.info().current().getVersion().getVersion());
+                    .map(MigrationInfo::getVersion)
+                    .max(Comparator.naturalOrder()).orElseThrow().getVersion(), replay.info().current().getVersion().getVersion());
             replay.validate();
         } finally {
             replay.clean();
@@ -1529,7 +1536,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
 
     private static String seedRelease(JdbcTemplate jdbc, String suffix, long legacyAccount) {
         String strategyId = "gatey-strategy-" + suffix;
-        String strategyCode = "GATEY_" + suffix.toUpperCase(java.util.Locale.ROOT);
+        String strategyCode = "GATEY_" + suffix.toUpperCase(Locale.ROOT);
         String versionId = "gatey-version-" + suffix;
         String researchId = "gatey-research-" + suffix;
         String configId = "gatey-config-" + suffix;
@@ -1821,7 +1828,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
 
         CountDownLatch createStart = new CountDownLatch(1);
         try (ExecutorService executor = Executors.newFixedThreadPool(4)) {
-            List<Future<ExecutionIntent>> futures = java.util.stream.IntStream.range(0, 4)
+            List<Future<ExecutionIntent>> futures = IntStream.range(0, 4)
                     .mapToObj(index -> executor.submit(() -> {
                         assertTrue(createStart.await(10, TimeUnit.SECONDS));
                         return repository.createOrGet(draft);
@@ -1835,10 +1842,10 @@ class LiveSessionFactModelPostgresIntegrationTest {
                 "SELECT count(*) FROM execution_intents WHERE intent_id=?", Integer.class, intentId));
 
         CountDownLatch claimStart = new CountDownLatch(1);
-        List<UUID> tokens = java.util.stream.IntStream.range(0, 4).mapToObj(ignored -> UUID.randomUUID()).toList();
-        List<Optional<ExecutionIntent>> claims = new java.util.ArrayList<>();
+        List<UUID> tokens = IntStream.range(0, 4).mapToObj(ignored -> UUID.randomUUID()).toList();
+        List<Optional<ExecutionIntent>> claims = new ArrayList<>();
         try (ExecutorService executor = Executors.newFixedThreadPool(4)) {
-            List<Future<Optional<ExecutionIntent>>> futures = java.util.stream.IntStream.range(0, 4)
+            List<Future<Optional<ExecutionIntent>>> futures = IntStream.range(0, 4)
                     .mapToObj(index -> executor.submit(() -> {
                         assertTrue(claimStart.await(10, TimeUnit.SECONDS));
                         return repository.claim(intentId, "worker-" + index, tokens.get(index), Duration.ofMillis(500));
@@ -1937,9 +1944,9 @@ class LiveSessionFactModelPostgresIntegrationTest {
 
         UUID receiptId = UUID.randomUUID();
         CountDownLatch receiptStart = new CountDownLatch(1);
-        List<Object> receiptResults = new java.util.ArrayList<>();
+        List<Object> receiptResults = new ArrayList<>();
         try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
-            List<Future<Object>> futures = java.util.stream.IntStream.range(0, 2)
+            List<Future<Object>> futures = IntStream.range(0, 2)
                     .mapToObj(index -> executor.submit(() -> {
                         assertTrue(receiptStart.await(10, TimeUnit.SECONDS));
                         ExecutionReceiptDraft receipt = ExecutionReceiptCanonicalEncoder.draft(
@@ -2025,7 +2032,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
                           CURRENT_TIMESTAMP+INTERVAL '2 minutes',?,1,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
                 """, leaseId, session.id(), UUID.randomUUID(), DIGEST_A, existing.creatorId());
         CountDownLatch start = new CountDownLatch(1);
-        List<Object> results = new java.util.ArrayList<>();
+        List<Object> results = new ArrayList<>();
         try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
             List<Future<Object>> futures = List.of(firstIntentId, second.intentId()).stream()
                     .map(intentId -> executor.submit(() -> {
@@ -2356,7 +2363,7 @@ class LiveSessionFactModelPostgresIntegrationTest {
         CountDownLatch ready = new CountDownLatch(8);
         CountDownLatch start = new CountDownLatch(1);
         try (ExecutorService executor = Executors.newFixedThreadPool(8)) {
-            List<Future<LiveSessionEvent>> results = java.util.stream.IntStream.rangeClosed(1, 8)
+            List<Future<LiveSessionEvent>> results = IntStream.rangeClosed(1, 8)
                     .mapToObj(index -> executor.submit(() -> {
                         ready.countDown();
                         assertTrue(start.await(10, TimeUnit.SECONDS));

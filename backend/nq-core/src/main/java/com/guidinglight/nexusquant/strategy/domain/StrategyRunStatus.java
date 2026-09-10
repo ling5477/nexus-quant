@@ -7,6 +7,7 @@ public enum StrategyRunStatus {
     CREATED,
     DISPATCHING,
     RUNNING,
+    SUCCEEDED,
     FAILED
 }
 

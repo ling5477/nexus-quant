@@ -6,6 +6,7 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterOpenOrdersQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderAck;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderRequest;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderNormalization;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
 
 import java.util.List;
@@ -32,6 +33,11 @@ public interface TradingAdapter {
      * 统一下单入口。
      */
     AdapterOrderAck placeOrder(AdapterOrderRequest request);
+
+    /** 显式的只读预计算能力；不为尚未支持的 provider 猜测规范化规则。 */
+    default AdapterOrderNormalization normalizeOrder(AdapterOrderRequest request) {
+        throw new UnsupportedOperationException("order normalization unavailable");
+    }
 
     /**
      * 统一撤单入口。

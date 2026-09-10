@@ -1,0 +1,118 @@
+{
+  "scenario": "AFTER_DROP",
+  "controllerPid": 62376,
+  "database": "SYNTH-L4:B5-IMPL:R01:DATABASE:001",
+  "venuePid": 60332,
+  "proxyPid": 9796,
+  "nqPid": 63744,
+  "restartPid": 31080,
+  "atCut": {
+    "orders": [
+      {
+        "qty": 10.0,
+        "side": "BUY",
+        "type": "LIMIT",
+        "price": 100.0,
+        "venue": "OKX",
+        "reason": "ORDER_ROUTED_TO_ADAPTER",
+        "status": "SENT",
+        "symbol": "BTC-USDT",
+        "version": 2,
+        "order_id": "SYNTH-L4:B5-IMPL:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5-IMPL:R01:TRACE:001",
+        "dedup_key": "1:SYNTH-L4:B5-IMPL:R01:CLIENT:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T09:41:43.367759+08:00",
+        "request_id": "SYNTH-L4:B5-IMPL:R01:REQUEST:001",
+        "updated_at": "2026-09-10T09:41:43.420786+08:00",
+        "exchange_code": "OKX",
+        "client_order_id": "SYNTH-L4:B5-IMPL:R01:CLIENT:001",
+        "strategy_run_id": null,
+        "exchange_order_id": null,
+        "external_order_id": null
+      }
+    ],
+    "ordinary_place_authorities": [
+      {
+        "state": "MAY_HAVE_ESCAPED",
+        "order_id": "SYNTH-L4:B5-IMPL:R01:ORDER:001",
+        "decided_at": "2026-09-10T09:41:43.426778+08:00"
+      }
+    ],
+    "trades": [],
+    "ledger_entries": []
+  },
+  "final": {
+    "orders": [
+      {
+        "qty": 10.0,
+        "side": "BUY",
+        "type": "LIMIT",
+        "price": 100.0,
+        "venue": "OKX",
+        "reason": "ORDER_ROUTED_TO_ADAPTER",
+        "status": "SENT",
+        "symbol": "BTC-USDT",
+        "version": 2,
+        "order_id": "SYNTH-L4:B5-IMPL:R01:ORDER:001",
+        "trace_id": "SYNTH-L4:B5-IMPL:R01:TRACE:001",
+        "dedup_key": "1:SYNTH-L4:B5-IMPL:R01:CLIENT:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T09:41:43.367759+08:00",
+        "request_id": "SYNTH-L4:B5-IMPL:R01:REQUEST:001",
+        "updated_at": "2026-09-10T09:41:43.420786+08:00",
+        "exchange_code": "OKX",
+        "client_order_id": "SYNTH-L4:B5-IMPL:R01:CLIENT:001",
+        "strategy_run_id": null,
+        "exchange_order_id": null,
+        "external_order_id": null
+      }
+    ],
+    "ordinary_place_authorities": [
+      {
+        "state": "MAY_HAVE_ESCAPED",
+        "order_id": "SYNTH-L4:B5-IMPL:R01:ORDER:001",
+        "decided_at": "2026-09-10T09:41:43.426778+08:00"
+      }
+    ],
+    "trades": [],
+    "ledger_entries": []
+  },
+  "venue": {
+    "code": "0",
+    "msg": "",
+    "data": [],
+    "pid": 60332,
+    "places": 0,
+    "cancels": 0,
+    "pendingCancel": false,
+    "placeRequests": 0,
+    "order": null,
+    "fills": [],
+    "events": [
+      {
+        "sequence": 2,
+        "type": "QUERY_OPEN_ORDERS",
+        "nanoTime": 903977783916700,
+        "epochMillis": 1789004504184,
+        "count": 0
+      },
+      {
+        "sequence": 3,
+        "type": "QUERY_ORDER_NOT_FOUND",
+        "nanoTime": 903977797745300,
+        "epochMillis": 1789004504198
+      },
+      {
+        "sequence": 4,
+        "type": "QUERY_ORDER_NOT_FOUND",
+        "nanoTime": 903977820052300,
+        "epochMillis": 1789004504220
+      }
+    ]
+  },
+  "cleanup": true,
+  "result": "PASS"
+}

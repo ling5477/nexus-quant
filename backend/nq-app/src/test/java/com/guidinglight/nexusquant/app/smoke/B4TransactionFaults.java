@@ -21,7 +21,7 @@ final class B4TransactionFaults {
                     + "BEGIN IF current_setting('nq.b4_reject',true)='on' THEN "
                     + "RAISE EXCEPTION 'B4_DEFERRED_COMMIT_REJECTION' USING ERRCODE='40001'; "
                     + "END IF; RETURN NEW; END $$");
-            for (String table : Set.of("orders", "trades", "ledger_entries")) {
+            for (String table : Set.of("orders", "trades", "ledger_entries", "ordinary_place_authorities")) {
                 statement.execute("CREATE CONSTRAINT TRIGGER b4_commit_rejection AFTER INSERT OR UPDATE ON "
                         + table + " DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION b4_commit_rejection()");
             }

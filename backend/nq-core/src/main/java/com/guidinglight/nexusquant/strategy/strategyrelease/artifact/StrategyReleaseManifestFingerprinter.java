@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.Locale;
 
 import org.springframework.stereotype.Component;
 
@@ -91,7 +92,7 @@ public final class StrategyReleaseManifestFingerprinter {
     }
 
     private void writeUuid(DataOutputStream output, String tag, UUID value) throws IOException {
-        writeString(output, tag, value == null ? null : value.toString().toLowerCase(java.util.Locale.ROOT));
+        writeString(output, tag, value == null ? null : value.toString().toLowerCase(Locale.ROOT));
     }
 
     private void writeInstant(DataOutputStream output, String tag, Instant value) throws IOException {

@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -197,7 +199,7 @@ public class JdbcMarketdataIngestionJobRepository implements MarketdataIngestion
         );
     }
 
-    private MarketdataIngestionJob mapJob(java.sql.ResultSet rs) throws java.sql.SQLException {
+    private MarketdataIngestionJob mapJob(ResultSet rs) throws SQLException {
         return new MarketdataIngestionJob(
                 rs.getObject("job_id", UUID.class),
                 rs.getString("exchange_code"),
@@ -215,7 +217,7 @@ public class JdbcMarketdataIngestionJobRepository implements MarketdataIngestion
         );
     }
 
-    private MarketdataIngestionRun mapRun(java.sql.ResultSet rs) throws java.sql.SQLException {
+    private MarketdataIngestionRun mapRun(ResultSet rs) throws SQLException {
         return new MarketdataIngestionRun(
                 rs.getObject("run_id", UUID.class),
                 rs.getObject("job_id", UUID.class),

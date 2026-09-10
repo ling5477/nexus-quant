@@ -14,6 +14,9 @@ import com.guidinglight.nexusquant.research.domain.port.BacktestPublishRecordRep
 import com.guidinglight.nexusquant.research.domain.port.ExecutionStrategyDefinitionWriter;
 import com.guidinglight.nexusquant.research.domain.port.StrategyVersionSnapshotQueryPort;
 import com.guidinglight.nexusquant.research.application.config.BacktestConfigService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.guidinglight.nexusquant.research.domain.BacktestRun;
+import com.guidinglight.nexusquant.research.domain.BacktestRunStatus;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -147,7 +150,7 @@ public class BacktestPublishService {
         validateLocatorWrite(existing, artifactLocator);
 
         var backtestRun = backtestRunService.getByBacktestRunId(request.backtestRunId());
-        if (backtestRun.status() != com.guidinglight.nexusquant.research.domain.BacktestRunStatus.SUCCEEDED) {
+        if (backtestRun.status() != BacktestRunStatus.SUCCEEDED) {
             return failPublish(existing, backtestRun, null, now, "RUN_NOT_SUCCEEDED", "backtest run must be SUCCEEDED");
         }
         BacktestEvaluationView evaluationView = backtestEvaluationQueryPort.findByBacktestRunId(backtestRun.backtestRunId())
@@ -223,7 +226,7 @@ public class BacktestPublishService {
 
     private BacktestPublishRecord failPublish(
             BacktestPublishRecord existing,
-            com.guidinglight.nexusquant.research.domain.BacktestRun backtestRun,
+            BacktestRun backtestRun,
             BacktestEvaluationView evaluationView,
             Instant now,
             String failureCode,
@@ -348,7 +351,7 @@ public class BacktestPublishService {
         return node.toString();
     }
 
-    private com.fasterxml.jackson.databind.JsonNode readSnapshotNode(String json) {
+    private JsonNode readSnapshotNode(String json) {
         try {
             return objectMapper.readTree(json == null || json.isBlank() ? "{}" : json);
         } catch (Exception ex) {

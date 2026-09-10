@@ -23,6 +23,8 @@ import com.guidinglight.nexusquant.research.domain.paper.port.PaperRunAlertRepos
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperRunHeartbeatRepository;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperRunScheduleFireRepository;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperRunStabilityCheckRepository;
+import com.guidinglight.nexusquant.research.domain.paper.PaperRunDailyReport;
+import com.guidinglight.nexusquant.research.domain.paper.port.PaperRunDailyReportRepository;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -33,6 +35,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.time.LocalDate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -367,21 +370,21 @@ class PaperRunStabilityCheckServiceTest {
         }
     }
 
-    static class InMemoryDailyReportRepo implements com.guidinglight.nexusquant.research.domain.paper.port.PaperRunDailyReportRepository {
-        final List<com.guidinglight.nexusquant.research.domain.paper.PaperRunDailyReport> records = new ArrayList<>();
+    static class InMemoryDailyReportRepo implements PaperRunDailyReportRepository {
+        final List<PaperRunDailyReport> records = new ArrayList<>();
 
-        @Override public void upsert(com.guidinglight.nexusquant.research.domain.paper.PaperRunDailyReport r) { records.add(r); }
+        @Override public void upsert(PaperRunDailyReport r) { records.add(r); }
 
-        @Override public Optional<com.guidinglight.nexusquant.research.domain.paper.PaperRunDailyReport> findById(String id) {
+        @Override public Optional<PaperRunDailyReport> findById(String id) {
             return Optional.empty();
         }
 
-        @Override public Optional<com.guidinglight.nexusquant.research.domain.paper.PaperRunDailyReport> findByRunIdAndDate(
-                String paperRunId, java.time.LocalDate date) {
+        @Override public Optional<PaperRunDailyReport> findByRunIdAndDate(
+                String paperRunId, LocalDate date) {
             return Optional.empty();
         }
 
-        @Override public List<com.guidinglight.nexusquant.research.domain.paper.PaperRunDailyReport> listByRunId(String paperRunId) {
+        @Override public List<PaperRunDailyReport> listByRunId(String paperRunId) {
             return records.stream().filter(r -> r.paperRunId().equals(paperRunId)).toList();
         }
 

@@ -23,6 +23,7 @@ import com.guidinglight.nexusquant.eventstore.infra.EventStoreAppender;
 import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
 import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
 import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterError;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -316,7 +317,7 @@ class BinanceRestReconcileServiceTest {
                 acceptedOrder.externalOrderId(),
                 null,
                 AdapterResultCategory.DEFERRED,
-                new com.guidinglight.nexusquant.adapter.api.model.AdapterError(
+                new AdapterError(
                         "-2013",
                         "Order does not exist.",
                         AdapterResultCategory.DEFERRED,

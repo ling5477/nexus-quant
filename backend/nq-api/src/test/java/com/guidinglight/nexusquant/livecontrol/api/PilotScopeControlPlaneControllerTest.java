@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.mockito.ArgumentMatchers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -100,7 +101,7 @@ class PilotScopeControlPlaneControllerTest {
                 "sub", "operator", List.of("OPERATOR"), NOW, NOW.plusSeconds(60), "issuer", "jti")));
         when(profiles.findByUsername("operator")).thenReturn(Optional.of(new AuthUserProfile(
                 11L, "operator", "hash", List.of("OPERATOR"), true)));
-        when(controlPlane.preflight(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq(sessionId)))
+        when(controlPlane.preflight(ArgumentMatchers.any(), ArgumentMatchers.eq(sessionId)))
                 .thenReturn(new PilotScopePreflightResult(
                         false, null, null, NOW,
                         List.of(PilotScopePreflightResult.Violation.SCOPE_NOT_MATERIALIZED), List.of()));
@@ -110,7 +111,7 @@ class PilotScopeControlPlaneControllerTest {
 
         ArgumentCaptor<AuthenticatedLiveControlActor> actor =
                 ArgumentCaptor.forClass(AuthenticatedLiveControlActor.class);
-        verify(controlPlane).preflight(actor.capture(), org.mockito.ArgumentMatchers.eq(sessionId));
+        verify(controlPlane).preflight(actor.capture(), ArgumentMatchers.eq(sessionId));
         assertEquals(11L, actor.getValue().userId());
         assertEquals(List.of(PilotScopePreflightResult.Violation.SCOPE_NOT_MATERIALIZED), result.violations());
     }

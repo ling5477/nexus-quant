@@ -1,0 +1,131 @@
+{
+  "scope": "Implementation self-verification only; independent correctness review pending; B5 NOT_QUALIFIED",
+  "fullMaven": {
+    "full01": "FAIL 1891/1/0/115; candidate architecture regression preserved",
+    "full02": "PASS 1891/0/0/115",
+    "full02Result": {
+      "source": "backend/nq-app/target/b5-v51-implementation-attempt01/full-02/result.json",
+      "sha256": "998ec8dd14c297207f9921710a47b5c32606c4833b917732348bfb73a62301e7"
+    }
+  },
+  "processRegression": {
+    "architectureProcess01": "PASS; 13 lifecycle rows + stale/restart + 6 commit cut rows + independent startup/tick",
+    "finalLifecycle02": "PASS 8/0/0/0; original P1s, future window, V50 concurrency, schema and legacy",
+    "b1B4V49": "PASS 5/0/0/0; source log retained"
+  },
+  "proofs": {
+    "count": 80,
+    "inverseEquivalent": true,
+    "outcomes": {
+      "FAIL": 1,
+      "NOT_PRESENT": 2,
+      "PASS": 77
+    },
+    "notDistinctAllPassingScenarios": true
+  },
+  "stageAssets": {
+    "exitCode": 1,
+    "scanned": 1873,
+    "reviewedExceptions": 138,
+    "errors": 144,
+    "errorDelta": 0,
+    "disposition": "DELIVERY_COMPATIBILITY_BLOCKER",
+    "source": "backend/nq-app/target/b5-v51-implementation-attempt01/stage-assets-final.log",
+    "sha256": "ce3caa967fabc8d094f135d0513353e9d807f5a1b51c209829e7822511e4bc92"
+  },
+  "secretPreflight02": {
+    "gitleaks": "8.18.4",
+    "archiveHashVerified": true,
+    "ciConfigSha256": "3651989e01d4838ff313ac55a2579cc17306dbe951dd19f8de7429ada45af503",
+    "files": 108,
+    "candidate": {
+      "exitCode": 0,
+      "findings": 0,
+      "locations": []
+    },
+    "negative": {
+      "exitCode": 2,
+      "findings": 1,
+      "locations": [
+        {
+          "rule": "github-pat",
+          "file": "/tmp/tmp0k6m2eca/negative/secret-control.json",
+          "line": 1
+        }
+      ]
+    },
+    "protectedFieldUnchanged": true,
+    "manifestSha256": "5f86b98224e6827a677e1947e4be3cab263b93d790d70108be344e06fef438c7",
+    "status": "PASS"
+  },
+  "docLinks01": {
+    "checked": 25,
+    "warnings": 0,
+    "errors": 0,
+    "source": "backend/nq-app/target/b5-v51-implementation-attempt01/doc-links-01.log",
+    "sha256": "6871dd6d192cf241e5a7c3bb9174bd44a67b39d3151cdefdc42f3fd63d66bef4"
+  },
+  "finalFrozenTreeScan": {
+    "source": "backend/nq-app/target/b5-v51-implementation-attempt01/secret-final-02/result.json",
+    "manifest": "backend/nq-app/target/b5-v51-implementation-attempt01/secret-final-02/scanned-manifest.json",
+    "storageReason": "Kept external to scanned tree so recording results does not change already-scanned artifacts."
+  },
+  "runners": [
+    {
+      "source": "backend/nq-app/target/b5-v51-implementation-attempt01/run-full.py",
+      "sha256": "e8866994fe3c226b91382994aa08a655e845f9262f9ea6b0f5a1ff755c0318bc"
+    },
+    {
+      "source": "backend/nq-app/target/b5-v51-implementation-attempt01/collect-proof.py",
+      "sha256": "e0af3743f7951c69ae8e484b646498e589861ac714fe806c7efa356dfbd5938f"
+    },
+    {
+      "source": "backend/nq-app/target/b5-v51-implementation-attempt01/scan-final.py",
+      "sha256": "0f534a1ed51d5b1fbaf9ff8e89c2263cbf486d782173ba0562bc0cf476aabc9f"
+    },
+    {
+      "source": "backend/nq-app/target/b5-v51-implementation-attempt01/seal-scope.py",
+      "sha256": "ce80fa4c7024da8f35d571c396156842c3c8753d062325e08239fe2800d72400"
+    },
+    {
+      "source": "backend/nq-app/target/b5-v51-implementation-attempt01/export-manifests.py",
+      "sha256": "351ae5484952cfd387680a3c2fb095168ca1bc4cdb91ae15e9e1e8b899678025"
+    }
+  ],
+  "git": {
+    "stage": 0,
+    "commit": "NONE",
+    "push": "NONE"
+  },
+  "secretFinal01": {
+    "status": "FAIL",
+    "findings": 304,
+    "allMatchedPathToSha256MetadataRows": true,
+    "byFile": {
+      "full-01-tested-manifest.json": 82,
+      "full-02-tested-manifest.json": 82,
+      "protected-manifest.json": 10,
+      "starting-files.json": 130
+    },
+    "source": "backend/nq-app/target/b5-v51-implementation-attempt01/secret-final-01/result.json",
+    "sha256": "93b28c5c99f62d6a9ebe12a4762b28bc012f63134b2be4991f8a8f8a2d51046e"
+  },
+  "manifestExport": {
+    "status": "PASS",
+    "manifests": 4,
+    "inverseByteEquality": true,
+    "source": "docs/audit/evidence/l4-b5-v51-implementation-attempt01/manifest-export-validation.json"
+  },
+  "diffCheck": {
+    "exitCode": 0,
+    "source": "backend/nq-app/target/b5-v51-implementation-attempt01/diff-check-final.log",
+    "sha256": "4d5dd29fc7aa4fca7626a789ed6f7150535282fbe0f32176d9e8fce48ac278c8"
+  },
+  "docLinksFinal": {
+    "checked": 37,
+    "warnings": 0,
+    "errors": 0,
+    "source": "backend/nq-app/target/b5-v51-implementation-attempt01/doc-links-final-02.log",
+    "sha256": "c72eaacc76d56e895d202da508dd31ca4b55f778c190ff7c7bff90ace0648b6a"
+  }
+}

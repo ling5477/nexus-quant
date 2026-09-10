@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
+import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 
@@ -76,8 +77,8 @@ class ShadowValidationWorkflowOverviewQueryServiceTest {
         assertHasMessage(item.warnings(), "VALIDATION_READY_IS_REVIEW_ONLY");
         assertHasMessage(item.warnings(), "METRICS_NOT_INFERRED");
         assertHasNextStep(item.nextSteps(), "MANUAL_OPERATOR_REVIEW");
-        assertFalse(model.toString().toLowerCase(java.util.Locale.ROOT).contains("winrate"));
-        assertFalse(model.toString().toLowerCase(java.util.Locale.ROOT).contains("totalreturn"));
+        assertFalse(model.toString().toLowerCase(Locale.ROOT).contains("winrate"));
+        assertFalse(model.toString().toLowerCase(Locale.ROOT).contains("totalreturn"));
         assertEquals(Availability.AVAILABLE, model.evidenceMetadata().availability());
         assertEquals(FreshnessStatus.FRESH, model.evidenceMetadata().freshnessStatus());
         assertEquals(Instant.parse("2026-07-08T08:59:00Z"), model.evidenceMetadata().lastCalculatedAt());
@@ -246,7 +247,7 @@ class ShadowValidationWorkflowOverviewQueryServiceTest {
 
         ShadowValidationWorkflowOverviewReadModel model = service(facts(sensitive)).overview("trace-safe");
 
-        String rendered = model.toString().toLowerCase(java.util.Locale.ROOT);
+        String rendered = model.toString().toLowerCase(Locale.ROOT);
         assertFalse(rendered.contains("apikey"));
         assertFalse(rendered.contains("token leaked"));
         assertFalse(rendered.contains("ready to trade"));

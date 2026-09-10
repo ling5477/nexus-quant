@@ -1,0 +1,151 @@
+{
+  "baseHead": "86c8ad84542636364f6c21e78bc292a323cbdff7",
+  "files": [
+    {
+      "bytes": 12929,
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0NqProcessMain.java",
+      "sha256": "3e13b188ce70581ecc80894aedd3bc5b79d1f486102c06c38e2ca04feb992b42"
+    },
+    {
+      "bytes": 10115,
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0Processes.java",
+      "sha256": "ae1721e8f858401d47cbbd41eba5a90dbf74f9624bbb83ea97e68e75ad57419e"
+    },
+    {
+      "bytes": 14230,
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0RealProcessHarnessTest.java",
+      "sha256": "e041affe90daef90f83c32ad390b554a6db1775c64e31962027c0897e06034a4"
+    },
+    {
+      "bytes": 18717,
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B1RealProcessProofTest.java",
+      "sha256": "ec5117fd36764da83c23170cf3b447d63d84c18aa7594d0e946fe3fcde0780a7"
+    },
+    {
+      "bytes": 20888,
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B2RealProcessProofTest.java",
+      "sha256": "111c1eeaf904be2392a8d91abf424d5918afa4d3bf330516befd47b19a6ed67b"
+    },
+    {
+      "bytes": 12057,
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B2SyntheticVenueMain.java",
+      "sha256": "d0b171a026f5ced72c009f225c398faaad51ee48d6ffae8fd3ab2b9644b21f23"
+    },
+    {
+      "bytes": 15081,
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B3RealProcessProofTest.java",
+      "sha256": "f8aac7dbddf11484d6ba847e368bd78f2713147bc775bdb2fbaa9c41c1a5ce9b"
+    },
+    {
+      "bytes": 18550,
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B4QualificationResumeTest.java",
+      "sha256": "3f48eb6b9e79dfa62e4a7a1660a5ff11c06700216326fde8f1f6803fce1f1f6c"
+    },
+    {
+      "bytes": 9413,
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B4RealProcessProofTest.java",
+      "sha256": "dbec193ce174375a842a5e1c4ef7d82dd0e7871ab7eb4570c8027dd76ea8f60c"
+    },
+    {
+      "bytes": 9596,
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B4TradeEventRemediationTest.java",
+      "sha256": "9ccaabb99c40c913015dd0aa3f220fc855d516b94ef9910f6df2c1ca5a5bd0e1"
+    },
+    {
+      "bytes": 3140,
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B4TransactionFaults.java",
+      "sha256": "68adc2eaac4804816a2d2eb4254c554dac943497788c7b4fc6ea3981b62d389b"
+    },
+    {
+      "bytes": 8746,
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5AuthorityPostgresTest.java",
+      "sha256": "f315004801ac25c1cf07ea3533d007da4b2041f7138811e9215fcd9b71905220"
+    },
+    {
+      "bytes": 13455,
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5AuthorityProcessTest.java",
+      "sha256": "340174b91c48b0bfa74f3c4f8f78c2d45961058c0d725f4d867f958e7197ae29"
+    },
+    {
+      "bytes": 1638,
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5PreSendBarrier.java",
+      "sha256": "438942d6819f85b3aa3203e90aa97da74852609bf9bbf303d2cc9177d83fe04e"
+    },
+    {
+      "bytes": 7481,
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5RealProcessProofTest.java",
+      "sha256": "0bfedce05ac2d7dd5aa31d43cd6579a94da97695f025f46a6cd48560fbf58c9d"
+    },
+    {
+      "bytes": 29598,
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/TradingRestartRecoveryPostgresIntegrationTest.java",
+      "sha256": "e31f5eb0694cac35c681485201c49f3d11c7a00cb736407941a5ec2f23a29fd6"
+    },
+    {
+      "bytes": 20530,
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java",
+      "sha256": "15bdfb44ea3c16680674856c2d6d4c6140c42a2aa3978bba2feee4fe2dcc7b6e"
+    },
+    {
+      "bytes": 38692,
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java",
+      "sha256": "6f7c2fb0dd49e298549308c28afe855a7bcf0e75eab7546e0bdfa13056754491"
+    },
+    {
+      "bytes": 240,
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/domain/OrdinaryPlaceAuthorityState.java",
+      "sha256": "cd9b44f0693008bc7be932a65d9cb2070339f55e3d5082e5cb8d8c7e8a286668"
+    },
+    {
+      "bytes": 779,
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/domain/port/OrdinaryPlaceAuthorityRepository.java",
+      "sha256": "e158b570b960c4603a31c8d4bfaf4c0df61f58804c827793a6f1140132b7708c"
+    },
+    {
+      "bytes": 23109,
+      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/OrderCommandServiceTest.java",
+      "sha256": "17b500470c9e5da9c3d309b4770d6c924115d4b288e8bf0d97fdf9ff43d86e3d"
+    },
+    {
+      "bytes": 1807,
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/jdbc/JdbcOrdinaryPlaceAuthorityRepository.java",
+      "sha256": "4eb0ec9fc8488c0c1b70b449d316692b5abbe62fcd9d30a94b1854c843ccc0b9"
+    },
+    {
+      "bytes": 8741,
+      "path": "backend/nq-infra/src/main/resources/db/migration/V49__ordinary_place_authorities.sql",
+      "sha256": "ebea77f85cae76d88e052a99b647573ec3b6ba5ea0464f9083012aac2a883b93"
+    },
+    {
+      "bytes": 11704,
+      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteServiceTest.java",
+      "sha256": "b943714e5b5ba4aaed2d9d6e5ec071ecf31981d64d8e4eaf8cf31ccd83a2da11"
+    },
+    {
+      "bytes": 12300,
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/AdapterBackedTradingVenueGateway.java",
+      "sha256": "9240ae550afb1ebd9f8a89e0dfc2f1b3af3c853955ad6dd17aa548e34c36a4df"
+    },
+    {
+      "bytes": 13612,
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRecoveryService.java",
+      "sha256": "888c9ad55b979d37c47ec1d370473de9f4f18a7ac729c09ee2aa1c9c091eebd4"
+    },
+    {
+      "bytes": 7200,
+      "path": "backend/nq-scheduler/src/test/java/com/guidinglight/nexusquant/scheduler/service/OkxRecoveryServiceTest.java",
+      "sha256": "94de68cdfc2155ad06f990d037f490558d82f6fc40896095b25ffb8d7763a4f5"
+    },
+    {
+      "bytes": 2407,
+      "path": "backend/nq-scheduler/src/test/java/com/guidinglight/nexusquant/scheduler/service/OrdinaryPlaceResultClassificationTest.java",
+      "sha256": "937cf561e209ce021486cdffe11dcd0267e39e06ac0334f103cc583c54e7be3f"
+    },
+    {
+      "bytes": 6060,
+      "path": "backend/nq-scheduler/src/test/java/com/guidinglight/nexusquant/trading/application/CancelledExecutionCorrectionTest.java",
+      "sha256": "cbb55dbea554fddf8a4fcceee8cd933b1ef19346f4843ea2a60bca20e07e1e3a"
+    }
+  ],
+  "scope": "production-and-test-working-tree"
+}

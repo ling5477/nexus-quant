@@ -5,12 +5,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.HexFormat;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 /** 独立 venue-owned 内存事实；不链接 NQ DB，不实现任何本地 Order/Trade/Ledger 状态机。 */
 public final class B0SyntheticVenueMain {
@@ -22,8 +31,8 @@ public final class B0SyntheticVenueMain {
     private int dropped;
     private int delayed;
     private String mode = "DELIVER";
-    private final com.fasterxml.jackson.databind.node.ArrayNode events = mapper.createArrayNode();
-    private final java.util.List<HttpExchange> withheld = new java.util.ArrayList<>();
+    private final ArrayNode events = mapper.createArrayNode();
+    private final List<HttpExchange> withheld = new ArrayList<>();
 
     public static void main(String[] args) throws Exception {
         B0Fixture.require(args.length == 0);
@@ -37,11 +46,11 @@ public final class B0SyntheticVenueMain {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> server.stop(0)));
     }
 
-    private synchronized void handle(HttpExchange exchange) throws java.io.IOException {
+    private synchronized void handle(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
         byte[] body = exchange.getRequestBody().readNBytes(8193);
         if (body.length > 8192 || exchange.getRequestHeaders().keySet().stream()
-                .anyMatch(key -> key.toUpperCase(java.util.Locale.ROOT).startsWith("OK-ACCESS"))) {
+                .anyMatch(key -> key.toUpperCase(Locale.ROOT).startsWith("OK-ACCESS"))) {
             respond(exchange, 400, mapper.createObjectNode().put("error", "UNSAFE_REQUEST"));
             return;
         }
@@ -63,7 +72,7 @@ public final class B0SyntheticVenueMain {
                 respond(exchange, 200, mapper.createObjectNode().put("released", true));
                 return;
             }
-            if (!java.util.Set.of("DELIVER", "DROP", "CLOSE", "DELAY", "B1_ACCEPTED_TIMEOUT", "B1_LOST_ACK").contains(requested)) {
+            if (!Set.of("DELIVER", "DROP", "CLOSE", "DELAY", "B1_ACCEPTED_TIMEOUT", "B1_LOST_ACK").contains(requested)) {
                 respond(exchange, 400, mapper.createObjectNode().put("error", "UNKNOWN_MODE"));
                 return;
             }
@@ -110,8 +119,8 @@ public final class B0SyntheticVenueMain {
                     try {
                         event("ACK_GENERATED", client).put("bytes", ack.length)
                                 .put("body", new String(ack, StandardCharsets.UTF_8)).put("sha256",
-                                java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(ack)));
-                    } catch (java.security.NoSuchAlgorithmException ex) { throw new IllegalStateException(ex); }
+                                HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(ack)));
+                    } catch (NoSuchAlgorithmException ex) { throw new IllegalStateException(ex); }
                 }
                 withheld.add(exchange);
                 return;
@@ -159,7 +168,7 @@ public final class B0SyntheticVenueMain {
                 .put("nanoTime", System.nanoTime()).put("client", client);
     }
 
-    private void respond(HttpExchange exchange, int code, JsonNode value) throws java.io.IOException {
+    private void respond(HttpExchange exchange, int code, JsonNode value) throws IOException {
         byte[] bytes = mapper.writeValueAsBytes(value);
         exchange.getResponseHeaders().set("Content-Type", "application/json");
         exchange.sendResponseHeaders(code, bytes.length);

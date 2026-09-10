@@ -52,6 +52,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -413,8 +414,6 @@ class TradingVerificationControllerLocalTest {
 
     @Test
     void shouldReturnUnifiedIllegalArgumentError() throws Exception {
-        when(tradingMaintenanceService.runRecovery(eq("UNKNOWN"), eq("trc-local-invalid-venue")))
-                .thenThrow(new IllegalArgumentException("unsupported recovery venue: UNKNOWN"));
         mockMvc.perform(post("/api/trading/recovery/run-once")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-local-invalid-venue")
                         .with(csrf())
@@ -423,9 +422,10 @@ class TradingVerificationControllerLocalTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(header().string(TraceIdContext.TRACE_ID_HEADER, "trc-local-invalid-venue"))
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"))
-                .andExpect(jsonPath("$.message").value("unsupported recovery venue: UNKNOWN"))
+                .andExpect(jsonPath("$.message").value("unsupported trading venue"))
                 .andExpect(jsonPath("$.path").value("/api/trading/recovery/run-once"))
                 .andExpect(jsonPath("$.traceId").value("trc-local-invalid-venue"));
+        verifyNoInteractions(tradingMaintenanceService);
     }
 
     @Test

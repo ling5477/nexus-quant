@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.junit.jupiter.api.function.Executable;
 
 class JdbcExactPilotScopeAuthorizationRepositoryTest {
 
@@ -138,7 +139,7 @@ class JdbcExactPilotScopeAuthorizationRepositoryTest {
         return row;
     }
 
-    private static void assertRejected(org.junit.jupiter.api.function.Executable executable) {
+    private static void assertRejected(Executable executable) {
         LiveControlException exception = assertThrows(LiveControlException.class, executable);
         assertEquals("EXACT_PILOT_SCOPE_APPROVAL_REJECTED", exception.code());
     }

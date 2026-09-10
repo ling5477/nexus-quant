@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.trading.infra.jdbc;
 
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
+import com.guidinglight.nexusquant.trading.domain.TradingVenue;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
 
 import java.sql.ResultSet;
@@ -12,6 +13,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.math.BigDecimal;
+import java.sql.Types;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -22,6 +26,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * JdbcOrderRepository 是订单端口的 JDBC 实现。
@@ -63,6 +68,13 @@ public class JdbcOrderRepository implements OrderRepository {
             """;
 
     private final JdbcTemplate jdbcTemplate;
+
+    @Override
+    public Optional<OrderRecord> findByStrategyRunId(String strategyRunId) {
+        List<OrderRecord> rows = jdbcTemplate.query(BASE_SELECT + " WHERE strategy_run_id=?", ORDER_ROW_MAPPER, strategyRunId);
+        if (rows.size() > 1) throw new IllegalStateException("STRATEGY_RUN_TO_ORDER_IDENTITY_CONFLICT");
+        return rows.stream().findFirst();
+    }
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @Autowired
@@ -117,7 +129,7 @@ public class JdbcOrderRepository implements OrderRepository {
                 order.orderId(),
                 order.accountId(),
                 order.strategyRunId(),
-                order.venue(),
+                order.canonicalVenue().name(),
                 order.symbol(),
                 order.clientOrderId(),
                 order.side(),
@@ -128,7 +140,7 @@ public class JdbcOrderRepository implements OrderRepository {
                  order.status().name(),
                  order.reason(),
                  order.traceId(),
-                 order.venue(),
+                 order.canonicalVenue().name(),
                  order.tradeEnv(),
                  Timestamp.from(now),
                 Timestamp.from(now)
@@ -192,11 +204,12 @@ public class JdbcOrderRepository implements OrderRepository {
     @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED,
             timeoutString = "${nq.reconciliation.scan-transaction-timeout-seconds:10}")
     public List<OrderRecord> reserveReconciliationCandidates(String venue, Collection<OrderStatus> statuses, int limit) {
+        venue = TradingVenue.parse(venue).name();
         if (venue == null || venue.isBlank() || statuses == null || statuses.isEmpty()
-                || statuses.stream().anyMatch(java.util.Objects::isNull) || limit <= 0) {
+                || statuses.stream().anyMatch(Objects::isNull) || limit <= 0) {
             throw new IllegalArgumentException("venue, candidate statuses and positive limit are required");
         }
-        if (!org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()) {
+        if (!TransactionSynchronizationManager.isActualTransactionActive()) {
             throw new IllegalStateException("reconciliation reservation requires a Spring transaction");
         }
         jdbcTemplate.update("INSERT INTO reconciliation_scan_cursors(venue) VALUES (?) ON CONFLICT (venue) DO NOTHING", venue);
@@ -206,8 +219,8 @@ public class JdbcOrderRepository implements OrderRepository {
         MapSqlParameterSource parameters = new MapSqlParameterSource()
                 .addValue("venue", venue)
                 .addValue("statuses", statuses.stream().map(Enum::name).toList())
-                .addValue("cursorTime", cursor.createdAt(), java.sql.Types.TIMESTAMP)
-                .addValue("cursorId", cursor.orderId(), java.sql.Types.VARCHAR)
+                .addValue("cursorTime", cursor.createdAt(), Types.TIMESTAMP)
+                .addValue("cursorId", cursor.orderId(), Types.VARCHAR)
                 .addValue("limit", limit);
         List<ScannedOrder> selected = namedParameterJdbcTemplate.query(
                 BASE_SELECT.replace("SELECT order_id", "SELECT created_at, order_id") + """
@@ -228,7 +241,7 @@ public class JdbcOrderRepository implements OrderRepository {
     }
 
     @Override
-    public java.math.BigDecimal durableExecutedQuantity(String orderId) {
+    public BigDecimal durableExecutedQuantity(String orderId) {
         return jdbcTemplate.queryForObject("SELECT executed_qty, (" + VALID_EXECUTION_PROOF
                 + ") AS valid FROM (" + EXECUTION_PROOF + ") p", (rs, row) -> {
                     if (!rs.getBoolean("valid")) throw new IllegalStateException("INVALID_DURABLE_EXECUTION_PROOF");

@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.Availability;
 import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.FreshnessStatus;
+import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -17,6 +18,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -238,7 +240,7 @@ class PythonEvaluationArtifactPreviewOverviewQueryServiceTest {
     private PythonEvaluationArtifactPreviewOverviewReadModel overviewWithUnsafeTopLevelPythonReadiness() {
         return new PythonEvaluationArtifactPreviewOverviewReadModel(
                 Instant.parse("2026-07-09T12:00:00Z"),
-                new com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata(
+                new ReadModelEvidenceMetadata(
                         "LOCAL_NO_FILE_EVALUATION_ARTIFACT_PREVIEW",
                         Availability.UNAVAILABLE,
                         null,
@@ -267,9 +269,9 @@ class PythonEvaluationArtifactPreviewOverviewQueryServiceTest {
                 0,
                 null,
                 List.of(),
-                java.util.Map.of(),
-                java.util.Map.of(),
-                java.util.Map.of(),
+                Map.of(),
+                Map.of(),
+                Map.of(),
                 List.of(),
                 List.of(),
                 List.of(),

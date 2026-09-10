@@ -1,0 +1,42 @@
+[
+  {
+    "proof": "interaction-01.json",
+    "sha256": "dab59bd1030efdcdfe485a291b6be9623dcec1c6abaa5e5344e8d3e81fb4131a",
+    "rawSha256": "1598f7b137703cff86e2c95afcc53008e0bb81498b07037fc8e6acbab4a322b2",
+    "scenario": "L4-AT-01",
+    "result": "PASS",
+    "reuse": "NEW_DIRECT_INTERACTION",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "interaction-02.json",
+    "sha256": "de8e8b14555d0aec05525bf2e67c768c5a9a4a63cc2c2a16d4cc6fedbfd4adac",
+    "rawSha256": "ada07467d47a5183c6c0123d745452fd0089f8bd7cf8d0daa4add142d4afd35c",
+    "scenario": "L4-LA-02",
+    "result": "PASS",
+    "reuse": "NEW_DIRECT_INTERACTION",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "interaction-03.json",
+    "sha256": "673fc5aac06d6f3df0407e21c0aa3454ffb67c088388530738fc440753f905d1",
+    "rawSha256": "c11e9fb2e1b2f8a561ce7bc4625ae5dfe6e4f6c13d99a282096ab56d4218ae35",
+    "scenario": "PRE_ACCEPT",
+    "result": "PASS",
+    "reuse": "NEW_DIRECT_INTERACTION",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "interaction-04.json",
+    "sha256": "ca8c69e1dea67a5da288f3381eed1ade3e6120305e35dd4c763eeaf6d2a2cb79",
+    "rawSha256": "9bd2e0bab294786456d797da20ccd588a94ca6346006202c2fc9ab1e1889ad0d",
+    "scenario": "RESTART_PRE_ACK",
+    "result": "PASS",
+    "reuse": "NEW_DIRECT_INTERACTION",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  }
+]

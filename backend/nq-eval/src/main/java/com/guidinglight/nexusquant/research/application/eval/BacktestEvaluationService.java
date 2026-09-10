@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -196,14 +197,14 @@ public class BacktestEvaluationService {
      * GateI-2 第一版只需要展示已生成报告的核心指标，不引入复杂分页或跨表聚合；
      * 页面需要 run 血缘时仍可通过 backtest run 详情读取完整输入快照。
      */
-    public java.util.List<BacktestEvaluationReport> listAll() {
+    public List<BacktestEvaluationReport> listAll() {
         return backtestEvaluationReportRepository.listAll();
     }
 
     /**
      * 按研究配置或回测配置读取评估报告，避免跨配置混入其他 run 的指标。
      */
-    public java.util.List<BacktestEvaluationReport> list(String researchConfigId, String backtestConfigId) {
+    public List<BacktestEvaluationReport> list(String researchConfigId, String backtestConfigId) {
         return backtestEvaluationReportRepository.list(normalizeFilter(researchConfigId), normalizeFilter(backtestConfigId));
     }
 

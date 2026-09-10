@@ -41,6 +41,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,6 +58,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import jakarta.servlet.Filter;
 
 /**
  * AuthSecurityWebMvcTest 验证最小真实认证鉴权链。
@@ -343,12 +345,12 @@ class AuthSecurityWebMvcTest {
                 userId,
                 username,
                 "$2a$10$vwD9EsN2B2E/O6DkKhg60ewPvhbERSY9QNGkW1yocbpRk2BOzsO5S",
-                java.util.List.of(roles),
+                List.of(roles),
                 enabled
         );
     }
 
-    private static int indexOf(java.util.List<jakarta.servlet.Filter> filters, Class<?> type) {
+    private static int indexOf(List<Filter> filters, Class<?> type) {
         for (int index = 0; index < filters.size(); index++) {
             if (type.isInstance(filters.get(index))) {
                 return index;

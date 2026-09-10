@@ -1,0 +1,342 @@
+[
+  {
+    "proof": "reused-01.json",
+    "scenario": "ROUNDED_RUNNING_OWNER_DEATH",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "3e6ebfe9a1873486625d19df680dab67003014150fe9cccde35f326b00eaa67f",
+    "rawSha256": "38bedf5336a772cf04dc54304f9518c1dd4d3dad389edb2911c0eff092eaf4c9",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-02.json",
+    "scenario": "ADJACENT",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "0141d3ba96ea2d3ae770e2af52871a96091846814459a4020230f27f201e2c67",
+    "rawSha256": "65a6913ab57a4f559a79283e79ccc6bf00af75cd038d90181fab68c159386796",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-03.json",
+    "scenario": "BELOW_MIN",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "ec6190b4b8737d49eccf1a741e03422e48634ef10105e2bbe11d8eb2be787dc9",
+    "rawSha256": "1a23d89899d4434f2abf1565066640d825829d4549de29ff70c222f4c36e8ada",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-04.json",
+    "scenario": "CREATED",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "c5c0478eb6594863b83dd51ca504118ee5a60965db05115df39682a45b6c5258",
+    "rawSha256": "e09a1850b30fd47f92f8d04bc4c18c2e44f9f812c7d9f5650cf800a738ccd6e9",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-05.json",
+    "scenario": "EXACT",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "4fabb63811f451b89a864b9044cbe73c73bab9632c3bd82e9b5396924250a1c6",
+    "rawSha256": "953f5edd1de6d661685752ec14796fccf8913ca8475f554020179c03f60060fa",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-06.json",
+    "scenario": "HTTP",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "e12db7ee42a322fb6bd044ad4c762ccf9c30ab19ffdf30a21503da9bbf8cf479",
+    "rawSha256": "659303d437c7e761a526ed49e42e0c3b8567a7de7214e3ac988d0abe9e2352fa",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-07.json",
+    "scenario": "MAY",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "ff5e78d9829989fa74286a1bf40a37d9b59f8d884cb38b4771d2b5c8842b0178",
+    "rawSha256": "b7097dcd6eba1b124bd8574d8bbeec33e329afc8594c81e80b4cbedc9d208ca1",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-08.json",
+    "scenario": "PRE_ARM",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "902b7a46ef6d3bc88fec01687ce00c306895d48eecfbec5da9d2d7840472e804",
+    "rawSha256": "b75aca70c0f5365fe085ac4b12eaa39d43eae18ee4af22b482f342e6349cf856",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-09.json",
+    "scenario": "PRICE_ZERO",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "66812306a54113a3c2ffbe56743f7b16da440c0d3cc1836443f9c5b8c289bfda",
+    "rawSha256": "fd341b49d24e504ace26b558a1614ac4aaa8eec1c4e11fc28f0ec487d07aa6b6",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-10.json",
+    "scenario": "RULE_CHANGE",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "911ed845fd06892097f67f44450bdf39d4dbd61e8a9deaf7b43f642e588cb51a",
+    "rawSha256": "7cdf06c1e2ad97d89558250f13ca03338c362e334043c460885fa1c5453cd4ef",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-11.json",
+    "scenario": "ZERO",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "63dad83e1039b6e7fb6f491986819d0bcc5ed314b266c79a55f09c4262449519",
+    "rawSha256": "0ed64cf679fdb338b22911949f7f9b780e155fe80c83122b3da56b9b9bb72219",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-12.json",
+    "scenario": "SAME_WINDOW_CONCURRENT_STRATEGY_SCAN",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "b6b3cd5bf7a668f804c0d9618c69554f084c7c5cedd5b008ca3697f3fd356fda",
+    "rawSha256": "1d47804862aa14ca871d93888e5ba1b41b075cd8125390a96f34a91ab1eab172",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-13.json",
+    "scenario": "SAME_WINDOW_CONCURRENT_STRATEGY_SCAN",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "4957e181023948285c089367836366dfad3ca7c9599cd47f6611b705601c73a1",
+    "rawSha256": "21d6372489e2207864a1950135ad88275b9010d16850e1f54d16c30d692f4423",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-14.json",
+    "scenario": "SAME_WINDOW_CONCURRENT_STRATEGY_SCAN",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "17d69d089cc1fb055bb30bf4721e4baa2c31b4bbeb4443cced1e56f97f5fc072",
+    "rawSha256": "c64f4008edc3ed345f4a7d2e22a905d5085113c1f5180d9017ce150577988a1b",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-15.json",
+    "scenario": "A_AFTER_DROP",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "17aebc680da3552f2a5c3044d4fea6a8ba50aff9917e425893e1541207c34d2a",
+    "rawSha256": "e4dcd5adbb975e3208568903108c46926ab9fb461568b78575124b6fcb76be26",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-16.json",
+    "scenario": "A_BEFORE_DROP",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "e93a1b2fd657af07dda80116588a184ebfefc511955608a52fcba00af80ee37f",
+    "rawSha256": "7098f3c9aa628c3bf82f89ca57fae3960512a692f1fb7a8935e5daef2f5d7108",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-17.json",
+    "scenario": "B_AFTER_DROP",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "18e20bbfd1283dfbf1608c2e5f0bc82aff645b347ca6ce320c0911beecf6740d",
+    "rawSha256": "7b70e226fdea790cbe10418f5f41ee2ea557aadc72c9b7e1e414a01cba3eed8a",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-18.json",
+    "scenario": "B_BEFORE_DROP",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "bc0bf2d0a3dfc5f7d2bf43a7967ccfce8f175aaa64c1d41eb455d53833b753b5",
+    "rawSha256": "6e7ebf8a48c25ef9e20f5cdb8129d967105eb77929ac714d719ad2adda541e45",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-19.json",
+    "scenario": "C_AFTER_DROP",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "b8ecfa02bdf3086eef53683033bcd0650a22cc04c6e4325f38f9fdb9784b94b1",
+    "rawSha256": "9486caade13e9acec03e9e9e92f6045870b12f247c0d1df49f6eb0f08b36c28e",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-20.json",
+    "scenario": "C_BEFORE_DROP",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "8a1906720e79ae75d9c004740231c0a7c53297f9924bd36943bc8d59ad407983",
+    "rawSha256": "bab7789af6d84c5fa7058bbb575d7cd45ef1be8381f1426caa2bd8cb34a263e3",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-21.json",
+    "scenario": "STALE_SCANNER_RESTART",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "89956f0692e7e0492d10025cbe39f1a9701eaaffce38b8f812152408b738ce81",
+    "rawSha256": "974537e13f90c87547607cfbb48a523a80ff7384815dd988798f425080d9e5d7",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-22.json",
+    "scenario": "B_DEATH",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "6ef59ca7615ef6de631957aadeec91d5217c66cee916121728b94a713f0be2c4",
+    "rawSha256": "bc6afb13da7ecebc0ea5cfe6ea70f1d6dcae821ddb481a74d6f4979c2d23c0ab",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-23.json",
+    "scenario": "B_PAUSE",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "90d8c7b977fa5bce53d76b228b720a57341fed0173aed8c06f1e703b11cc534b",
+    "rawSha256": "cfac0f31227c31038e575e2c4cfb7454fe48630f17b5b6e7eddb9a83033dc42c",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-24.json",
+    "scenario": "B_ROLLBACK",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "f63de6242d074cead564bc6ebc562154e16d34b01e03c697e8c0eaeb040cda6c",
+    "rawSha256": "a861f25ef10ade1f3ce83d59c08e9ec184ae1334ae8c9a448453728d45d1428e",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-25.json",
+    "scenario": "CANCEL_PARTIAL",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "e6481ba9fb7e012b2a788cf27a43170bc2ec1d7efa9e455a9a729d2390935da1",
+    "rawSha256": "aefdd7a12c57008c85b3ba1fbeee554d2c9b2254c0b4eb69bf141cd5e58c45cd",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-26.json",
+    "scenario": "CANCEL_ZERO",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "6aea2885247143d8f87e3c5651a71ac5b2a891932dd5bee6dd107cc232f8367f",
+    "rawSha256": "254c228b6aa3e4f5bbe6a3ec0b8b22581c4944228f7cedf52285e032185663ba",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-27.json",
+    "scenario": "CREATED_PAUSE",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "ecb9d113781bc6535e77646d4df2eb6301e4ff10ddac90ba793df19f7ccc9e66",
+    "rawSha256": "dd8bb3f2127ea4bf4fe2ce1a67829e45a060246564d61b40875d8858da4099cf",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-28.json",
+    "scenario": "CREATED_TWO",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "5c354b932ae2ce11f86909db9ae4df05df8e62ff90bceb562f1990e09d7aec0d",
+    "rawSha256": "d01ea065ee318310d4b6f2ffd31b95bdf589c9fa44aa75a3409acd7f0ec36c13",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-29.json",
+    "scenario": "KILL_CREATED",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "37c041dc76cf041bd13fa00372641b93264d95a62ccaccc342c9d0b09d860122",
+    "rawSha256": "5d08b526791e2bc233bac54afd6f2cfea149a8495cc700b42ac81ee26708578c",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-30.json",
+    "scenario": "MAY_DEATH",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "d31a34b486a959fe3b2d2c261808cfd8a3476f17264b45786a2d066675918740",
+    "rawSha256": "bfeb2f45a18bfa64babb7d8aff1bb9bf6dc5b89af35737026f468d3a7a572c45",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-31.json",
+    "scenario": "MAY_PAUSE",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "fa965670f0e74d7fc836ea40ff213391bdd5bb13464b7976b4823677835af15a",
+    "rawSha256": "3d718bb8c6e60cc3af6d352d44c6ddb9d1e4190b665391e0296814077273b2ef",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-32.json",
+    "scenario": "RECOVERY_SCAN",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "93063fbae15446a30146aa131259f022daea30a4b1d18e31b78d469a1deeece2",
+    "rawSha256": "a484ecc87e0f1716e62ce8faf6cf8482bc65fa359710675e66e53015463a8f7c",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-33.json",
+    "scenario": "REVOKED_PAUSE",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "3d474af90bc4eafe8f253b08242681c8bc83ed6654456d400493f7946f9d64f0",
+    "rawSha256": "83bf9abec891f347389009df7c6091cc5e28a6b7031c442b068775357e11e39f",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  {
+    "proof": "reused-34.json",
+    "scenario": "TERMINAL_TWO",
+    "reuse": "REUSED_ACCEPTED_PROOF",
+    "sha256": "9199579e72e2c9fa180aacb58072cd75d102be77f6276c983837c58d47cf2358",
+    "rawSha256": "6090044ba177a32abf77e18e02d997e3552cd1c3cb6fde4c5343077befe4e4c1",
+    "result": "PASS",
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  }
+]

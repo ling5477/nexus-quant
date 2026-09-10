@@ -1,0 +1,94 @@
+{
+  "scenario": "DISABLED_MANUAL_STARTUP_TICK",
+  "venue": {
+    "code": "0",
+    "msg": "",
+    "data": [],
+    "pid": 55856,
+    "places": 1,
+    "cancels": 0,
+    "pendingCancel": false,
+    "placeRequests": 1,
+    "apiRequests": 4,
+    "order": {
+      "clOrdId": "SYNTH-L4:B5-V51:R21:CLIENT:001",
+      "ordId": "SYNTH-L4:B5-V51:R21:VENUE:001",
+      "instId": "BTC-USDT",
+      "state": "filled",
+      "px": "100",
+      "sz": "7",
+      "accFillSz": "7",
+      "avgPx": "100",
+      "uTime": "1789037205121"
+    },
+    "fills": [
+      {
+        "tradeId": "SYNTH-L4:B5-V51:R21:FILL:001",
+        "ordId": "SYNTH-L4:B5-V51:R21:VENUE:001",
+        "instId": "BTC-USDT",
+        "side": "buy",
+        "fillPx": "100",
+        "fillSz": "7",
+        "fee": "-0.01",
+        "feeCcy": "USDT",
+        "ts": "1789037205166"
+      }
+    ],
+    "events": [
+      {
+        "sequence": 2,
+        "type": "PLACE_REQUEST_RECEIVED",
+        "nanoTime": 936678714895300,
+        "epochMillis": 1789037205115
+      },
+      {
+        "sequence": 3,
+        "type": "PLACE_ACCEPTED",
+        "nanoTime": 936678720933000,
+        "epochMillis": 1789037205121
+      },
+      {
+        "sequence": 4,
+        "type": "PLACE_ACK_GENERATED",
+        "nanoTime": 936678720943200,
+        "epochMillis": 1789037205121
+      },
+      {
+        "sequence": 5,
+        "type": "PLACE_RESPONSE_DELIVERED",
+        "nanoTime": 936678721515200,
+        "epochMillis": 1789037205122
+      },
+      {
+        "sequence": 6,
+        "type": "FILL",
+        "nanoTime": 936678765649500,
+        "epochMillis": 1789037205166,
+        "tradeId": "SYNTH-L4:B5-V51:R21:FILL:001",
+        "qty": "7",
+        "fee": "0.01"
+      },
+      {
+        "sequence": 7,
+        "type": "QUERY_ORDER",
+        "nanoTime": 936678784339400,
+        "epochMillis": 1789037205185,
+        "state": "filled"
+      },
+      {
+        "sequence": 8,
+        "type": "QUERY_FILLS",
+        "nanoTime": 936678786684900,
+        "epochMillis": 1789037205187,
+        "reportCount": 1
+      }
+    ]
+  },
+  "database": "SYNTH-L4:B5-V51:R21:DATABASE:001",
+  "nqPid": 48292,
+  "restartPid": 42724,
+  "venuePid": 55856,
+  "strategyRunId": "SYNTH-L4:B5-V51:R21:RUN:001",
+  "quantity": "7.00000000",
+  "result": "PASS"
+}

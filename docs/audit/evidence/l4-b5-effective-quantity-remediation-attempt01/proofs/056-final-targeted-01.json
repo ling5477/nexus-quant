@@ -1,0 +1,82 @@
+{
+  "scenario": "PRICE_PRECISION",
+  "database": "SYNTH-L4:B5-EQ:R56:DATABASE:001",
+  "ownerPid": 72572,
+  "venuePid": 2648,
+  "successorPid": 67840,
+  "final": {
+    "strategy_runs": [
+      {
+        "status": "FAILED",
+        "trace_id": "SYNTH-L4:B5-EQ:R56:TRACE:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T21:28:35.087426+08:00",
+        "request_id": "SYNTH-L4:B5-EQ:R56:REQUEST:001",
+        "started_at": "2026-09-10T21:28:35.086317+08:00",
+        "finished_at": "2026-09-10T21:28:35.135257+08:00",
+        "strategy_id": "b5-strategy",
+        "trigger_type": "SCHEDULER",
+        "error_message": "EXECUTION_NORMALIZATION_REJECTED/OKX_EFFECTIVE_PRECISION_UNSUPPORTED",
+        "exchange_code": "OKX",
+        "config_snapshot": {
+          "side": "BUY",
+          "price": "100.00000001",
+          "symbol": "BTC-USDT",
+          "quantity": "10.0005",
+          "orderType": "LIMIT"
+        },
+        "strategy_run_id": "SYNTH-L4:B5-EQ:R56:RUN:001",
+        "admission_due_at": "2026-01-01T08:00:00+08:00",
+        "admission_schedule_id": "b5"
+      }
+    ],
+    "strategy_run_dispatch_work": [
+      {
+        "side": "BUY",
+        "price": 100.00000001,
+        "symbol": "BTC-USDT",
+        "quantity": 10.0005,
+        "account_id": 1,
+        "order_type": "LIMIT",
+        "time_in_force": "GTC",
+        "client_order_id": "SYNTH-L4:B5-EQ:R56:CLIENT:001",
+        "effective_price": null,
+        "strategy_run_id": "SYNTH-L4:B5-EQ:R56:RUN:001",
+        "definition_version": 1,
+        "effective_quantity": null,
+        "work_schema_version": 1,
+        "normalization_rejection": "OKX_EFFECTIVE_PRECISION_UNSUPPORTED"
+      }
+    ],
+    "orders": [],
+    "ordinary_place_authorities": [],
+    "trades": [],
+    "ledger_entries": []
+  },
+  "venue": {
+    "code": "0",
+    "msg": "",
+    "data": [],
+    "pid": 2648,
+    "places": 0,
+    "cancels": 0,
+    "pendingCancel": false,
+    "placeRequests": 0,
+    "apiRequests": 1,
+    "order": null,
+    "fills": [],
+    "events": [
+      {
+        "sequence": 2,
+        "type": "RULES_CHANGED",
+        "nanoTime": 946385003624500,
+        "epochMillis": 1789046911404,
+        "lotSize": "0.001",
+        "tickSize": "0.000000003",
+        "minSize": "0.001"
+      }
+    ]
+  },
+  "result": "PASS"
+}

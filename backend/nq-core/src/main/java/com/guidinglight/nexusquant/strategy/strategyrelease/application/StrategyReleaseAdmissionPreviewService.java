@@ -18,6 +18,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * 以 publishRecordId 编排 Strategy Release-to-Shadow admission preview。
@@ -40,7 +41,7 @@ public class StrategyReleaseAdmissionPreviewService {
     private final AdmissionGuardDecisionService guardDecisionService;
     private final boolean guardingEnabled;
 
-    @org.springframework.beans.factory.annotation.Autowired
+    @Autowired
     public StrategyReleaseAdmissionPreviewService(
             StrategyReleaseProductionService releaseProductionService,
             StrategyReleaseAdmissionPreviewFactsRepository factsRepository,

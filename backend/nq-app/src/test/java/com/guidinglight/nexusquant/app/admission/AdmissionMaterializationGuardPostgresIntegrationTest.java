@@ -25,6 +25,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.Locale;
+import java.util.concurrent.ExecutionException;
 
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
@@ -363,7 +365,7 @@ class AdmissionMaterializationGuardPostgresIntegrationTest {
                     paperRunId
             ));
             assertThrows(
-                    java.util.concurrent.ExecutionException.class,
+                    ExecutionException.class,
                     () -> rawWriter.get(2, TimeUnit.SECONDS),
                     "raw source-first writer must fail immediately when admission-state is locked"
             );
@@ -589,7 +591,7 @@ class AdmissionMaterializationGuardPostgresIntegrationTest {
         );
         assertNotNull(accountId);
         String strategyId = "gatex5a-strategy-" + unique;
-        String strategyCode = "GATEX5A_" + unique.replace('-', '_').toUpperCase(java.util.Locale.ROOT);
+        String strategyCode = "GATEX5A_" + unique.replace('-', '_').toUpperCase(Locale.ROOT);
         String strategyVersionId = "gatex5a-version-" + unique;
         String researchId = "gatex5a-research-" + unique;
         String configId = "gatex5a-config-" + unique;

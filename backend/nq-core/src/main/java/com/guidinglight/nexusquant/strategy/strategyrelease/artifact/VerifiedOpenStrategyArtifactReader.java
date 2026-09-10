@@ -27,6 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Linux production artifact 的 verified-open consumption boundary。
@@ -341,8 +342,8 @@ public final class VerifiedOpenStrategyArtifactReader {
         return !observed.tooLarge
                 && observed.size == artifact.sizeBytes()
                 && MessageDigest.isEqual(
-                artifact.sha256().getBytes(java.nio.charset.StandardCharsets.US_ASCII),
-                observed.sha256.getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+                artifact.sha256().getBytes(StandardCharsets.US_ASCII),
+                observed.sha256.getBytes(StandardCharsets.US_ASCII));
     }
 
     private static boolean sameIdentity(BasicFileAttributes left, BasicFileAttributes right) {

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
+import com.guidinglight.nexusquant.auth.application.command.SeedUserCommand;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,7 +42,7 @@ class CurrentUserProfileServiceTest {
         }
 
         @Override
-        public void upsertSeedUser(com.guidinglight.nexusquant.auth.application.command.SeedUserCommand command) {
+        public void upsertSeedUser(SeedUserCommand command) {
             throw new UnsupportedOperationException("not required for CurrentUserProfileServiceTest");
         }
     }

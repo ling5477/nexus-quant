@@ -1,0 +1,80 @@
+{
+  "scenario": "CREATED_PAUSE",
+  "controllerPid": 54232,
+  "database": "SYNTH-L4:B5-EQ:R73:DATABASE:001",
+  "nqPid": 26288,
+  "restartPid": 71996,
+  "successorPid": 21680,
+  "venuePid": 69012,
+  "atCut": {
+    "strategy_runs": [
+      {
+        "status": "CREATED",
+        "trace_id": "SYNTH-L4:B5-EQ:R73:TRACE:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T21:20:50.268116+08:00",
+        "request_id": "SYNTH-L4:B5-EQ:R73:REQUEST:001",
+        "started_at": "2026-09-10T21:20:50.265379+08:00",
+        "finished_at": null,
+        "strategy_id": "b5-strategy",
+        "trigger_type": "SCHEDULER",
+        "error_message": null,
+        "exchange_code": "OKX",
+        "config_snapshot": {
+          "side": "BUY",
+          "price": "100",
+          "symbol": "BTC-USDT",
+          "quantity": "10",
+          "orderType": "LIMIT"
+        },
+        "strategy_run_id": "SYNTH-L4:B5-EQ:R73:RUN:001",
+        "admission_due_at": "2026-01-01T08:00:00+08:00",
+        "admission_schedule_id": "b5"
+      }
+    ],
+    "strategy_run_dispatch_work": [
+      {
+        "side": "BUY",
+        "price": 100.0,
+        "symbol": "BTC-USDT",
+        "quantity": 10.0,
+        "account_id": 1,
+        "order_type": "LIMIT",
+        "time_in_force": "GTC",
+        "client_order_id": "SYNTH-L4:B5-EQ:R73:CLIENT:001",
+        "effective_price": null,
+        "strategy_run_id": "SYNTH-L4:B5-EQ:R73:RUN:001",
+        "definition_version": 1,
+        "effective_quantity": null,
+        "work_schema_version": 1,
+        "normalization_rejection": null
+      }
+    ],
+    "strategy_schedules": [
+      {
+        "enabled": true,
+        "timezone": "UTC",
+        "cron_expr": "0 0 0 1 1 *",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2025-12-31T23:59:59+08:00",
+        "updated_at": "2026-09-10T21:20:50.268116+08:00",
+        "dedup_scope": "SCHEDULE_WINDOW",
+        "strategy_id": "b5-strategy",
+        "exchange_code": "oKx",
+        "schedule_type": "CRON",
+        "window_config": {},
+        "schedule_job_id": "b5",
+        "last_triggered_at": "2026-01-01T08:00:00+08:00"
+      }
+    ],
+    "orders": [],
+    "ordinary_place_authorities": [],
+    "ordinary_order_cancel_finality": [],
+    "trades": [],
+    "b5_run_transitions": []
+  },
+  "result": "FAIL",
+  "failure": "ExecutionException"
+}

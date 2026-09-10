@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.trading.application.reconciliation;
 
+import com.guidinglight.nexusquant.trading.domain.TradingVenue;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
@@ -38,10 +40,11 @@ public record ReconciliationRequest(
         if (ownerId <= 0 || exchangeAccountId <= 0) {
             throw new IllegalArgumentException("ownerId and exchangeAccountId must be positive");
         }
-        if (!"OKX".equals(exchange == null ? null : exchange.trim().toUpperCase(Locale.ROOT))) {
+        if (TradingVenue.parse(exchange)
+                != TradingVenue.OKX) {
             throw new IllegalArgumentException("only OKX is supported");
         }
-        exchange = "OKX";
+        exchange = TradingVenue.OKX.name();
         if (!"SPOT".equals(instrumentType == null ? null : instrumentType.trim().toUpperCase(Locale.ROOT))) {
             throw new IllegalArgumentException("only SPOT is supported");
         }

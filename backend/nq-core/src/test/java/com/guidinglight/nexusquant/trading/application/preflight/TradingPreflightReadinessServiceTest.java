@@ -21,6 +21,9 @@ import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityStatus;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessSourceHealth;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessStatus;
 import com.guidinglight.nexusquant.marketdata.domain.port.MarketdataQualityOverviewRepository;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityBarScopeFacts;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityDatasetCoverageFacts;
+import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityIngestionFacts;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -484,24 +487,24 @@ class TradingPreflightReadinessServiceTest {
 
     private static final class EmptyMarketdataQualityOverviewRepository implements MarketdataQualityOverviewRepository {
         @Override
-        public List<com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityBarScopeFacts> loadBarScopeFacts(
+        public List<MarketdataQualityBarScopeFacts> loadBarScopeFacts(
                 MarketdataQualityOverviewQuery query
         ) {
             return List.of();
         }
 
         @Override
-        public com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityIngestionFacts loadIngestionFacts(
+        public MarketdataQualityIngestionFacts loadIngestionFacts(
                 MarketdataQualityOverviewQuery query
         ) {
-            return com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityIngestionFacts.empty();
+            return MarketdataQualityIngestionFacts.empty();
         }
 
         @Override
-        public com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityDatasetCoverageFacts loadDatasetCoverageFacts(
+        public MarketdataQualityDatasetCoverageFacts loadDatasetCoverageFacts(
                 MarketdataQualityOverviewQuery query
         ) {
-            return com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityDatasetCoverageFacts.empty();
+            return MarketdataQualityDatasetCoverageFacts.empty();
         }
     }
 }

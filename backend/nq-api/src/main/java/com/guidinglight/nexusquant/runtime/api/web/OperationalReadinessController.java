@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,7 @@ public class OperationalReadinessController {
     private final FakeDryRunOperationsService fakeDryRunOperationsService;
 
     public OperationalReadinessController(OperationalReadinessService operationalReadinessService) {
-        this(operationalReadinessService, new FakeDryRunOperationsService(java.util.Optional.empty()));
+        this(operationalReadinessService, new FakeDryRunOperationsService(Optional.empty()));
     }
 
     @Autowired

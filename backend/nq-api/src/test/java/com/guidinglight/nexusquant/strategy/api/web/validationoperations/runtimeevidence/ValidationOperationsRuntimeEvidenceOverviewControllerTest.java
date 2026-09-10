@@ -25,6 +25,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.io.IOException;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -171,7 +172,7 @@ class ValidationOperationsRuntimeEvidenceOverviewControllerTest {
                 HttpServletRequest request,
                 HttpServletResponse response,
                 FilterChain filterChain
-        ) throws ServletException, java.io.IOException {
+        ) throws ServletException, IOException {
             String traceId = TraceIdContext.putOrCreate(request.getHeader(TraceIdContext.TRACE_ID_HEADER));
             request.setAttribute(TraceIdContext.TRACE_ID_REQUEST_ATTRIBUTE, traceId);
             response.setHeader(TraceIdContext.TRACE_ID_HEADER, traceId);

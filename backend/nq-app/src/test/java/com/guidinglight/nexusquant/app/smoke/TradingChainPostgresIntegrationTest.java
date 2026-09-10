@@ -45,6 +45,7 @@ import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
 import com.guidinglight.nexusquant.trading.domain.state.InMemoryOrderStateMachine;
 import com.guidinglight.nexusquant.trading.domain.state.OrderStateMachine;
+import com.guidinglight.nexusquant.trading.application.CancelOrderRequest;
 
 import java.math.BigDecimal;
 import java.net.ProxySelector;
@@ -79,6 +80,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.boot.test.util.TestPropertyValues;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextClosedEvent;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.transaction.TestTransaction;
 
 /**
  * Phase 4A L3 causal proof using the production Spring graph and a real PostgreSQL database.
@@ -121,22 +127,22 @@ class TradingChainPostgresIntegrationTest {
      * ContextClosed 在测试事务结束后清理且只允许删除本次生成的 schema，避免跨测试扫描事实。
      */
     static class CommittedFixtureSchemaInitializer implements
-            org.springframework.context.ApplicationContextInitializer<org.springframework.context.ConfigurableApplicationContext> {
+            ApplicationContextInitializer<ConfigurableApplicationContext> {
         @Override
-        public void initialize(org.springframework.context.ConfigurableApplicationContext context) {
+        public void initialize(ConfigurableApplicationContext context) {
             String url = context.getEnvironment().getRequiredProperty("spring.datasource.url");
             String schema = "chain_fixture_" + UUID.randomUUID().toString().replace("-", "");
             assertTrue(url.startsWith("jdbc:postgresql://"));
             assertFalse(url.contains("currentSchema="));
-            org.springframework.boot.test.util.TestPropertyValues.of(
+            TestPropertyValues.of(
                     "spring.datasource.url=" + url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema + ",public",
                     "spring.flyway.schemas=" + schema,
                     "spring.flyway.default-schema=" + schema,
                     "spring.flyway.create-schemas=true").applyTo(context);
-            context.addApplicationListener((org.springframework.context.ApplicationListener<org.springframework.context.event.ContextClosedEvent>) event -> {
+            context.addApplicationListener((ApplicationListener<ContextClosedEvent>) event -> {
                 if (event.getApplicationContext() == context && context.containsBean("jdbcTemplate")) {
                     assertTrue(schema.matches("chain_fixture_[0-9a-f]{32}"));
-                    context.getBean(org.springframework.jdbc.core.JdbcTemplate.class)
+                    context.getBean(JdbcTemplate.class)
                             .execute("DROP SCHEMA IF EXISTS " + schema + " CASCADE");
                 }
             });
@@ -151,7 +157,7 @@ class TradingChainPostgresIntegrationTest {
     private static final Clock TEST_CLOCK = Clock.fixed(Instant.parse("2026-08-30T00:00:10Z"), ZoneOffset.UTC);
 
     @Autowired
-    private org.springframework.jdbc.core.JdbcTemplate jdbc;
+    private JdbcTemplate jdbc;
 
     @Autowired
     private OrderCommandService orderCommandService;
@@ -194,8 +200,10 @@ class TradingChainPostgresIntegrationTest {
 
     /** 独立 reservation 只能读取已提交业务事实，测试不能靠同事务可见性绕过真实边界。 */
     private void commitReconciliationFixture() {
-        org.springframework.test.context.transaction.TestTransaction.flagForCommit();
-        org.springframework.test.context.transaction.TestTransaction.end();
+        if (TestTransaction.isActive()) {
+            TestTransaction.flagForCommit();
+            TestTransaction.end();
+        }
     }
 
     @BeforeEach
@@ -690,6 +698,8 @@ class TradingChainPostgresIntegrationTest {
         );
 
         int placeCountBefore = fakeVenue.placeCount();
+        // V49 的独立 arm 事务必须看到已提交的账户/Kill fixture；不能持有外层锁跨过 PLACE。
+        commitReconciliationFixture();
         var placeResult = orderCommandService.placeOrder(request);
         assertEquals(OrderStatus.ACCEPTED, placeResult.status());
         assertFalse(placeResult.idempotentHit());
@@ -904,7 +914,7 @@ class TradingChainPostgresIntegrationTest {
         @Override
         public TradingCancelGatewayResult cancelOrder(
                 OrderRecord order,
-                com.guidinglight.nexusquant.trading.application.CancelOrderRequest request
+                CancelOrderRequest request
         ) {
             cancels.incrementAndGet();
             return new TradingCancelGatewayResult(

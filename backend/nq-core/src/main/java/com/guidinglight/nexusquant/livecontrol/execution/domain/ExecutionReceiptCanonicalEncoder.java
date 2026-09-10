@@ -9,11 +9,12 @@ import java.util.Base64;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
+import java.time.format.DateTimeFormatterBuilder;
 
 /** Receipt digest 仅覆盖归一化 allowlist envelope。 */
 public final class ExecutionReceiptCanonicalEncoder {
 
-    private static final DateTimeFormatter INSTANT_FORMAT = new java.time.format.DateTimeFormatterBuilder()
+    private static final DateTimeFormatter INSTANT_FORMAT = new DateTimeFormatterBuilder()
             .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
             .appendFraction(ChronoField.NANO_OF_SECOND, 6, 6, true)
             .appendLiteral('Z')

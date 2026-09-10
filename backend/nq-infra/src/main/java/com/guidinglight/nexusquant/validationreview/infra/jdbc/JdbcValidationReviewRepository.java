@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.time.Instant;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -565,11 +566,11 @@ public class JdbcValidationReviewRepository implements ValidationReviewRepositor
         }
     }
 
-    private static Timestamp timestamp(java.time.Instant value) {
+    private static Timestamp timestamp(Instant value) {
         return value == null ? null : Timestamp.from(value);
     }
 
-    private static java.time.Instant instant(ResultSet resultSet, String column) throws SQLException {
+    private static Instant instant(ResultSet resultSet, String column) throws SQLException {
         Timestamp value = resultSet.getTimestamp(column);
         return value == null ? null : value.toInstant();
     }

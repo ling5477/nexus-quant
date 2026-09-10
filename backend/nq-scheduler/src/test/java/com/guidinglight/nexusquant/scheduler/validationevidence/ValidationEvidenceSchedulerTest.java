@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 
 /** 验证 scheduler 的 default-disabled、advisory lock 映射、无 overlap 与锁后可重跑。 */
 class ValidationEvidenceSchedulerTest {
@@ -52,9 +53,9 @@ class ValidationEvidenceSchedulerTest {
         assertEquals(ValidationEvidenceRefreshResult.Result.SKIPPED_DISABLED, result.result());
         verify(queryService, never()).overview(anyString());
         verify(lock, never()).executeWithLock(
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any()
+                ArgumentMatchers.any(),
+                ArgumentMatchers.any(),
+                ArgumentMatchers.any()
         );
     }
 

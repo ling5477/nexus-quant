@@ -7,6 +7,7 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunEvent;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunEventType;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStateTransitionException;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -114,7 +115,7 @@ public class JdbcShadowRunIllegalTransitionAuditWriter {
         );
     }
 
-    private String writeJson(com.fasterxml.jackson.databind.JsonNode value) {
+    private String writeJson(JsonNode value) {
         try {
             return objectMapper.writeValueAsString(value);
         } catch (JsonProcessingException ex) {

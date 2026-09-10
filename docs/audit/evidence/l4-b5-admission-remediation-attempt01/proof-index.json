@@ -1,0 +1,92 @@
+[
+  {
+    "scenario": "RACE-1",
+    "source": "backend/nq-app/target/b5-scan-concurrency/cf541224-335f-40fb-9e84-12220cabaf5e/raw-proof.json",
+    "sourceSha256": "4dcf1883c3ae78714f7a10bf569d6ca534b6369db7384fa68cad1f896e947bdc",
+    "file": "RACE-1.json",
+    "sha256": "6f6b8639c47bab91773eb92d758b178c338edfb746087356dc4d7d1365bf0c56",
+    "inverseEquality": true,
+    "uuidLeakage": 0,
+    "result": "PASS"
+  },
+  {
+    "scenario": "RACE-2",
+    "source": "backend/nq-app/target/b5-scan-concurrency/f0dccbfc-84ed-4316-ba13-72f78b410129/raw-proof.json",
+    "sourceSha256": "fb7a9f523bd6d92a276163a8bcd6d0264aec21b7cf526f63ee67c015fd0c965d",
+    "file": "RACE-2.json",
+    "sha256": "94461f43d90069aad5e42eda8f8d200bd1f1753e532b829c8f287879e7b305e0",
+    "inverseEquality": true,
+    "uuidLeakage": 0,
+    "result": "PASS"
+  },
+  {
+    "scenario": "RACE-3",
+    "source": "backend/nq-app/target/b5-scan-concurrency/47c01ef0-c892-4061-8b3a-4d1eadb2e25c/raw-proof.json",
+    "sourceSha256": "09ea18e411bb66e8a824b4baa95d2f7d52890df39cb17e1f11be3479adbb34e9",
+    "file": "RACE-3.json",
+    "sha256": "7c540321ea9eb37aa00dc40595aa07f2c25d41c7717020ca89a41e0e0e62a568",
+    "inverseEquality": true,
+    "uuidLeakage": 0,
+    "result": "PASS"
+  },
+  {
+    "scenario": "ORIGINAL-R10",
+    "source": "backend/nq-app/target/b5-strategy-death/19f22010-88bf-4516-aec6-ca61746e1c32/raw-proof.json",
+    "sourceSha256": "66822964dda91bf07e1b174d365b23029435106e975c5d054724dbccae4ed10e",
+    "file": "ORIGINAL-R10.json",
+    "sha256": "a32ab498dd92661079a85b2faeee916a5443eece2d66f62a70705ab63bf3600a",
+    "inverseEquality": true,
+    "uuidLeakage": 0,
+    "result": "PASS"
+  },
+  {
+    "scenario": "STALE",
+    "source": "backend/nq-app/target/b5-admission-process/07c60a26-5c94-47c4-bcae-76eef048f41c/STALE/raw-proof.json",
+    "sourceSha256": "65006966ec2fb623d466e2563231dded79904740b8f15039aac2e5d4a6c07b40",
+    "file": "STALE.json",
+    "sha256": "83816687d87bbf8100e6ab31e5e30e1396bb8dff022aaf81db7c6f62e6e97668",
+    "inverseEquality": true,
+    "uuidLeakage": 0,
+    "result": "PASS"
+  },
+  {
+    "scenario": "BEFORE_ADMISSION_DEATH",
+    "source": "backend/nq-app/target/b5-admission-process/07c60a26-5c94-47c4-bcae-76eef048f41c/BEFORE_ADMISSION_DEATH/raw-proof.json",
+    "sourceSha256": "2fdf763af252c4e1fda7cc4e506ab90a32430ac50c95524d73df1d2915950508",
+    "file": "BEFORE_ADMISSION_DEATH.json",
+    "sha256": "94185ccd0d7f3feb06ec8f5f9301aa28351a182a03ad8bf0da7dc9875554eaed",
+    "inverseEquality": true,
+    "uuidLeakage": 0,
+    "result": "PASS"
+  },
+  {
+    "scenario": "AFTER_ADMISSION_DEATH",
+    "source": "backend/nq-app/target/b5-admission-process/07c60a26-5c94-47c4-bcae-76eef048f41c/AFTER_ADMISSION_DEATH/raw-proof.json",
+    "sourceSha256": "08345bb967c42f4fd84b2cd3d98e71194ca76a34dba814514fe86d6187ad5e1c",
+    "file": "AFTER_ADMISSION_DEATH.json",
+    "sha256": "4d382a4a8c2842638a87b52a1d4cb83a3298ca8a2c9c6355723b3c7cfe13e215",
+    "inverseEquality": true,
+    "uuidLeakage": 0,
+    "result": "PASS"
+  },
+  {
+    "scenario": "RECOVERY_SCAN",
+    "source": "backend/nq-app/target/b5-admission-process/07c60a26-5c94-47c4-bcae-76eef048f41c/RECOVERY_SCAN/raw-proof.json",
+    "sourceSha256": "87fdf6e6684dd02d9e484ea785a43cd2b5a54d604cfc0ded4b2cda0eecc74115",
+    "file": "RECOVERY_SCAN.json",
+    "sha256": "7b46df69d4080309cd52a513bb89db7a8aab234ff26b2f0dd72d7b8de70b7b2e",
+    "inverseEquality": true,
+    "uuidLeakage": 0,
+    "result": "PASS"
+  },
+  {
+    "scenario": "MAY",
+    "source": "backend/nq-app/target/b5-admission-process/07c60a26-5c94-47c4-bcae-76eef048f41c/MAY/raw-proof.json",
+    "sourceSha256": "d18aa846cebbfdce61481090921f213b71e43d8af0b60cd939264591a736f2d6",
+    "file": "MAY.json",
+    "sha256": "83abd6ddad95775260f67321042632b65cbe6a0befdc903ce72e1ca125283516",
+    "inverseEquality": true,
+    "uuidLeakage": 0,
+    "result": "PASS"
+  }
+]

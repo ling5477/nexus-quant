@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.Map;
 import java.util.Set;
+import java.util.Locale;
 
 /** 仅持有本轮新建 DB 的 bootstrap capability；启动前一次性封存，场景不持有写侧连接。 */
 final class B0Fixture implements AutoCloseable {
@@ -47,7 +48,7 @@ final class B0Fixture implements AutoCloseable {
         // 不读取或打印秘密值：任何不在允许清单的进程环境键均拒绝，包括 credential/endpoint 注入。
         Set<String> allowed = Set.of("SYSTEMROOT", "WINDIR", "PATH", "TEMP", "TMP", "COMSPEC",
                 "NQ_B0_DB", "NQ_B0_VENUE", "NQ_B0_PROFILE");
-        require(environment.keySet().stream().allMatch(key -> allowed.contains(key.toUpperCase(java.util.Locale.ROOT))));
+        require(environment.keySet().stream().allMatch(key -> allowed.contains(key.toUpperCase(Locale.ROOT))));
         require(!environment.containsKey("NQ_B0_DB") || url.equals(environment.get("NQ_B0_DB")));
         require(!environment.containsKey("NQ_B0_PROFILE") || profile.equals(environment.get("NQ_B0_PROFILE")));
         require(!environment.containsKey("NQ_B0_VENUE") || venue.equals(environment.get("NQ_B0_VENUE")));

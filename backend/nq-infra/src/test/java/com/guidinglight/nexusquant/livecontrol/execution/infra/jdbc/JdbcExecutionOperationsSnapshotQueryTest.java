@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.livecontrol.execution.infra.jdbc;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.ResultSet;
 import java.time.OffsetDateTime;
@@ -33,8 +34,8 @@ class JdbcExecutionOperationsSnapshotQueryTest {
         when(row.getString("intent_id")).thenReturn("intent-1");
         when(row.getString("intent_state")).thenReturn("UNKNOWN");
         when(row.getString("receipt_state")).thenReturn("TRANSPORT_ERROR");
-        when(jdbc.queryForObject(anyString(), any(org.springframework.jdbc.core.RowMapper.class)))
-                .thenAnswer(invocation -> invocation.<org.springframework.jdbc.core.RowMapper<?>>getArgument(1)
+        when(jdbc.queryForObject(anyString(), any(RowMapper.class)))
+                .thenAnswer(invocation -> invocation.<RowMapper<?>>getArgument(1)
                         .mapRow(row, 0));
 
         var snapshot = new JdbcExecutionOperationsSnapshotQuery(jdbc).currentSnapshot();

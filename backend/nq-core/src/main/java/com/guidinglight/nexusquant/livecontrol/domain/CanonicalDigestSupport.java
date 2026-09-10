@@ -11,6 +11,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.util.HexFormat;
 import java.util.Locale;
+import java.time.format.DateTimeFormatterBuilder;
 
 /** canonical digest 的低层确定性编码工具；不依赖普通 JSON serializer。 */
 final class CanonicalDigestSupport {
@@ -89,7 +90,7 @@ final class CanonicalDigestSupport {
     }
 
     private static final class DateTimeFormatterBuilderHolder {
-        private final DateTimeFormatter formatter = new java.time.format.DateTimeFormatterBuilder()
+        private final DateTimeFormatter formatter = new DateTimeFormatterBuilder()
                 .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
                 .appendFraction(ChronoField.NANO_OF_SECOND, 6, 6, true)
                 .appendLiteral('Z')

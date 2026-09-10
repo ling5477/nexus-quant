@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.context.ApplicationContext;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -175,7 +176,7 @@ class OkxPrivateReadOnlyPermissionProbeSpringContextTest {
     }
 
     private static void assertSelected(
-            org.springframework.context.ApplicationContext context,
+            ApplicationContext context,
             Class<? extends ExchangeCredentialPermissionProbePort> expectedType
     ) {
         assertEquals(1, context.getBeansOfType(ExchangeCredentialPermissionProbePort.class).size());

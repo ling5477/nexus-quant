@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import static com.guidinglight.nexusquant.observability.operational.OperationalObservation.Operation.*;
 import static com.guidinglight.nexusquant.observability.operational.OperationalObservation.Signal.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -17,7 +18,7 @@ import static org.mockito.Mockito.*;
 
 class MicrometerOperationalObservationTest {
     private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
-    @org.junit.jupiter.api.AfterEach
+    @AfterEach
     void closeRegistry() { registry.close(); }
 
     @Test

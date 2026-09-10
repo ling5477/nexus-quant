@@ -12,18 +12,20 @@ import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
 import com.guidinglight.nexusquant.trading.application.OrderCommandService;
 import com.guidinglight.nexusquant.trading.application.OrderLifecycleService;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
+import com.guidinglight.nexusquant.scheduler.service.port.LedgerReconcileRepository;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class OperationalReconciliationMetricsTest {
-    @org.junit.jupiter.api.AfterEach
+    @AfterEach
     void closeRegistry() { registry.close(); }
 
     private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
@@ -32,7 +34,7 @@ class OperationalReconciliationMetricsTest {
 
     @Test
     void ledgerReconciliationReportsMatchMismatchAndOriginalException() {
-        var repo = mock(com.guidinglight.nexusquant.scheduler.service.port.LedgerReconcileRepository.class);
+        var repo = mock(LedgerReconcileRepository.class);
         var service = new LedgerReconcileScheduler(repo, audit, observation);
         doReturn(List.of()).when(repo).findDiffs();
         assertEquals(0, service.reconcileOnce());

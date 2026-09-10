@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 
 class MinimalLivePilotConfigurationTest {
 
@@ -72,7 +73,7 @@ class MinimalLivePilotConfigurationTest {
                 SpotProviderResults.OrderState.FILLED, order.clientOrderId(), order.externalOrderId(),
                 order.qty(), order.qty(), BigDecimal.ZERO, List.of(fill), null, filledAt);
         var reconciliation = new MinimalPilotTradingVenueGateway.PilotReconciliation(
-                mock(com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding.class),
+                mock(ExactPilotBinding.class),
                 observation,
                 new SpotProviderResults.FillPage(order.clientOrderId(), List.of(fill), true, null, filledAt));
         when(trades.findByExchangeAndExchangeTradeId("OKX", existing.exchangeTradeId()))
@@ -83,13 +84,13 @@ class MinimalLivePilotConfigurationTest {
         MinimalLivePilotConfiguration.persistFills(
                 trades, ledger, audit, order, reconciliation, "trace");
 
-        verify(trades, never()).insert(org.mockito.ArgumentMatchers.any());
+        verify(trades, never()).insert(ArgumentMatchers.any());
         verify(ledger).postTrade(argThat(request -> request.tradeId().equals(existing.tradeId())));
         verify(audit).append(
-                org.mockito.ArgumentMatchers.eq("RECONCILE"),
-                org.mockito.ArgumentMatchers.eq("GATEY_PILOT_FILL_LEDGER_RECONCILED"),
-                org.mockito.ArgumentMatchers.eq(order.orderId()),
-                org.mockito.ArgumentMatchers.eq("trace"),
-                org.mockito.ArgumentMatchers.anyMap());
+                ArgumentMatchers.eq("RECONCILE"),
+                ArgumentMatchers.eq("GATEY_PILOT_FILL_LEDGER_RECONCILED"),
+                ArgumentMatchers.eq(order.orderId()),
+                ArgumentMatchers.eq("trace"),
+                ArgumentMatchers.anyMap());
     }
 }

@@ -1,0 +1,5959 @@
+[
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/architecture-process-01.log",
+    "sha256": "6f711f5bdd11a5b9ad1b6f3fdb0a3d711133ba5a957871e2f44f1a945d2b7538",
+    "buildSuccess": true,
+    "buildFailure": false,
+    "suites": [
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.port.OrderCommandStrategyExecutionGatewayTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.architecture.ModuleBoundaryArchTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.architecture.PackageBoundaryArchTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51CommitProcessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51RecoveryProcessTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51RecoveryTickProcessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.architecture.ModuleBoundaryArchTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.architecture.PackageBoundaryArchTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ]
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/b1-b4-v49-01.log",
+    "sha256": "6055229fc45add83667e08324a03067c05d21062f9dd31d708fc95af07dbf5e8",
+    "buildSuccess": false,
+    "buildFailure": true,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/b1-b4-v49-02.log",
+    "sha256": "5094382abb28cff293058f7251bbaa2abb2a8294342ed67f0fa427bfaf4c260b",
+    "buildSuccess": true,
+    "buildFailure": false,
+    "suites": [
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B1RealProcessProofTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B2RealProcessProofTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B3RealProcessProofTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B4RealProcessProofTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5AuthorityProcessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ]
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/commit-tick-01.log",
+    "sha256": "a58b7305167b8a299420ecf715c0d395305a7e0e7dd378578d145c308326f452",
+    "buildSuccess": false,
+    "buildFailure": true,
+    "suites": [
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51CommitProcessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 1,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51RecoveryTickProcessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 1,
+        "skipped": 0
+      }
+    ]
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/commit-tick-02.log",
+    "sha256": "fb921fc406ab9cd3b2c8fe3be16fd92e645f43ac70561966ee1620d0dd60f284",
+    "buildSuccess": true,
+    "buildFailure": false,
+    "suites": [
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51CommitProcessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51RecoveryTickProcessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ]
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/compile-01.log",
+    "sha256": "e7f443dfdabef2ff2a5eff9efe3f44e56466992c535d2b2a58e5580ec60ca5ea",
+    "buildSuccess": true,
+    "buildFailure": false,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/compile-02.log",
+    "sha256": "1518180f16f3f1dd16622abe8d69b76e0eb084d0133c473ed6602b4bc0f0e943",
+    "buildSuccess": true,
+    "buildFailure": false,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/diff-check-02.log",
+    "sha256": "4d5dd29fc7aa4fca7626a789ed6f7150535282fbe0f32176d9e8fce48ac278c8",
+    "buildSuccess": false,
+    "buildFailure": false,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/diff-check-final.log",
+    "sha256": "4d5dd29fc7aa4fca7626a789ed6f7150535282fbe0f32176d9e8fce48ac278c8",
+    "buildSuccess": false,
+    "buildFailure": false,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/diff-check.log",
+    "sha256": "4d5dd29fc7aa4fca7626a789ed6f7150535282fbe0f32176d9e8fce48ac278c8",
+    "buildSuccess": false,
+    "buildFailure": false,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/doc-links-01.log",
+    "sha256": "6871dd6d192cf241e5a7c3bb9174bd44a67b39d3151cdefdc42f3fd63d66bef4",
+    "buildSuccess": false,
+    "buildFailure": false,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/doc-links-final-01.log",
+    "sha256": "9ee5a26faaa5eaca182ff4b68b866172dca1d34e8505fa7d93bd0b3e53657283",
+    "buildSuccess": false,
+    "buildFailure": false,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/doc-links-final-02.log",
+    "sha256": "c72eaacc76d56e895d202da508dd31ca4b55f778c190ff7c7bff90ace0648b6a",
+    "buildSuccess": false,
+    "buildFailure": false,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/exporter-tests-01.log",
+    "sha256": "c9a5ede8090bc6f53cf10998b4be8df6054a7739bf772eca5935cfdbed9cffa2",
+    "buildSuccess": false,
+    "buildFailure": false,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/final-lifecycle-01.log",
+    "sha256": "c084bd7f087fd6912cbe816ffc2b8ea1b4e2a24ff1830385470a4ec9b22b2f96",
+    "buildSuccess": true,
+    "buildFailure": false,
+    "suites": [
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5DurableLifecycleCrashRecoveryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51RecoveryProcessTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51SchemaPostgresTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ]
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/final-lifecycle-02.log",
+    "sha256": "e4cd39b0c97038fba9a9382cbf46846e82e5438f56ba5b9e1cf69f5eb1c894ab",
+    "buildSuccess": true,
+    "buildFailure": false,
+    "suites": [
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5DurableLifecycleCrashRecoveryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5StrategyScanConcurrencyTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51LegacyPostgresTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51SchemaPostgresTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ]
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/full-01/fixture-bootstrap.log",
+    "sha256": "9cc7e398326d023ba1a0beb13449bca2fff9c2613252c74c0b372ac2a5b4ea26",
+    "buildSuccess": false,
+    "buildFailure": false,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/full-01/fixture-build.log",
+    "sha256": "089a9fa0a45932235d93ca3998d51277cac0bc90f033d33e66c516d40c8e03d3",
+    "buildSuccess": true,
+    "buildFailure": false,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/full-01/full-maven.log",
+    "sha256": "12f67a4612ae5e9520c0cb1a802fff403a16347e39776be889021bf7404bbb5d",
+    "buildSuccess": false,
+    "buildFailure": true,
+    "suites": [
+      {
+        "name": "com.guidinglight.nexusquant.contracts.event.EventEnvelopeSerializationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.risk.service.KillSwitchRiskRuleTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.risk.service.KillSwitchServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.risk.service.PreTradeRiskServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.application.CredentialPermissionProbeServiceTest",
+        "tests": 16,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.application.ExchangeAccountCommandServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialCommandServiceTest",
+        "tests": 15,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialVerificationServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.application.ExchangeAccountQueryServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.application.MinimalLivePilotCommandTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.deployment.KillSwitchPropagationPolicyTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialCapabilityPolicyTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.deployment.WorkerDeploymentAdmissionServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBindingCanonicalEncoderTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.domain.ExactPilotScopeAuthorizationCanonicalEncoderTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.domain.LiveSessionDomainTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthorityTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.domain.PilotExecutionLeaseTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.domain.PilotObservationCanonicalEncoderTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.domain.PilotScopeCanonicalEncoderTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.domain.PilotScopeFreshnessPolicyTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSetCanonicalEncoderTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.execution.ExecutionIntentRuntimeTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.execution.provider.SpotProviderContractTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogServiceTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.application.MarketdataBarIngestServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.application.MarketdataQualityOverviewServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.application.MarketdataReadinessServiceTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.domain.instrument.VenueRuleChecksumCalculatorTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.domain.instrument.VenueRuleFreshnessEvaluatorTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.monitoring.application.incident.IncidentReplayOverviewQueryServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.monitoring.application.incidentreview.IncidentReplayReviewOverviewQueryServiceTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.consistencyevidence.ConsistencyEvidenceOverviewQueryServiceTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateServiceTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyValidationOverviewQueryServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonServiceTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.pyartifactbinding.PythonEvaluationArtifactBindingServiceTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.pyartifactpreview.PythonEvaluationArtifactPreviewOverviewQueryServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadataCalculatorTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.shadowlivepreview.ShadowLivePreviewServiceTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.shadowrun.PaperShadowConsistencyDrilldownQueryServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowConsistencyReportServiceTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewQueryServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunReadOnlyQueryServiceTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunRunnerServiceTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.shadowvalidation.ShadowValidationWorkflowOverviewQueryServiceTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.StrategyDefinitionServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerServiceTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.StrategyRunQueryServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.StrategyScheduleScanServiceTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.StrategyScheduleServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.StrategyVersionServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.validationoperations.runtimeevidence.ValidationOperationsRuntimeEvidenceOverviewQueryServiceTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunReleaseBindingModeTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunSensitiveDataGuardTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStateMachineTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionGuardFingerprinterTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.strategyrelease.application.ReleaseToShadowAdmissionServiceTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunMaterializationWriterTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionPreviewServiceTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseProductionServiceTest",
+        "tests": 17,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseShadowRunMaterializationServiceTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.strategyrelease.artifact.StrategyReleaseManifestFingerprinterTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.strategyrelease.artifact.TrustedRootStrategyArtifactVerifierTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 9
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategyrelease.preparation.SensitiveFieldPolicyPrototypeTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategyrelease.preparation.ShadowRunReleaseBindingPrototypeTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategyrelease.preparation.StrategyReleaseAggregateIdempotencyPrototypeTest",
+        "tests": 17,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategyrelease.preparation.StrategyReleaseLifecyclePrototypeTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategyrelease.preparation.StrategyReleaseManifestPrototypeTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategyrelease.preparation.StrategyReleaseToShadowAdmissionPrototypeTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategyrelease.preparation.TrustedRootArtifactVerifierPrototypeTest",
+        "tests": 22,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 3
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.boundary.PaperToRealBoundaryGuardTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.OrderCommandServiceTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.orderpreview.DryRunOrderPreviewServiceTest",
+        "tests": 37,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.port.OrderCommandStrategyExecutionGatewayTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.preflight.TradingPreflightReadinessServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.reconciliation.ReadOnlyOrderReconciliationServiceTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.riskpreflight.DiagnosticOrderRiskPreflightServiceTest",
+        "tests": 31,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.safety.OperationalSafetyAssessmentServiceTest",
+        "tests": 16,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.domain.state.InMemoryOrderStateMachineTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.domain.TradingVenueTest",
+        "tests": 19,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.validationreview.application.ValidationReviewOperationsServiceTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.validationreview.application.ValidationReviewRequestHasherTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.validationreview.domain.ValidationReviewStateMachineTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.observability.operational.MicrometerOperationalObservationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.observability.web.TraceIdFilterTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.BacktestPublishServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.OperationalCriticalAlertMetricsTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperAutoReviewAssemblerTest",
+        "tests": 15,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperAutoReviewServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperExecutionDiagnosticsAssemblerTest",
+        "tests": 16,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperExecutionDiagnosticsServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperPortfolioAssemblerTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperPortfolioServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperRunMonitorRunServiceTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperRunMonitorServiceTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperRunRecoveryServiceTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperRunScheduleServiceTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperRunStabilityCheckServiceTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperRunSummaryAssemblerTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperRunSummaryServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluationAssemblerTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluationServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperTradingMonitorServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperTradingRunServiceTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.ResearchBacktestServiceTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.backtest.BacktestExecutionServiceTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.eval.BacktestEvaluationServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.ledger.service.TradeLedgerPostingServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.api.dataquality.DataQualityFreshnessRuleTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.api.dataquality.DataQualityGapRuleTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.api.dataquality.DataQualitySourceHealthMapperTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.api.model.EndpointPolicyDecisionTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.api.publicmarketdata.JdkPublicMarketDataOutboundClientTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundPolicyTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.api.service.DefaultAdapterReadinessServiceTest",
+        "tests": 21,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.api.service.NoopMarketDataAdapterTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.api.service.ReadinessGuardedAdapterFactoryTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.api.service.ReadinessGuardWiringTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.JdkOkxPrivateReadTransportTest",
+        "tests": 15,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.JdkOkxRealTransportTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxErrorClassifierTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxErrorCodeTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapterBootstrapNoOutboundTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapterRawBodySuppressionTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapterTimeoutEvidenceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxHttpClientTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxInstrumentsCacheTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxNoRealCredentialHardeningTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxPermissionProbeBoundaryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadRequestTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateRequestSignerTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxReconciliationPrivateReadTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxRuntimeConfigTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxSpotCapabilityMatrixTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxSpotEndpointGuardTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderAdapterContractTest",
+        "tests": 15,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxVenueRuleFactsReaderTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxWsEventMapperTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxWsProtocolTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceErrorClassifierTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceExchangeAdapterTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceExchangeInfoClientTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceFiltersCacheTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceHttpClientTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceNoRealCredentialHardeningTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceNoRealEndpointHardeningTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceOrderTrimmerTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinancePermissionProbeBoundaryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceRequestSignerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceRuntimeConfigTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceSynchronizedTimestampProviderTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.ws.BinanceListenKeyClientTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClientLiveDiagnosticTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClientTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsEventMapperTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsProtocolTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.security.token.JwtTokenServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.auth.application.CurrentUserProfileServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.infra.jdbc.JdbcExchangeAccountCredentialRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.infra.jdbc.JdbcExchangeAccountRepositoryTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.infra.okx.readonly.JdbcOkxPrivateCredentialExecutorTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateReadonlyProbeServiceTest",
+        "tests": 13,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.infra.probe.NoRealExchangeCredentialPermissionProbePortTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.infra.probe.OkxRealReadonlyPermissionProbePortTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.audit.infra.jdbc.JdbcAuditLogRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.eventstore.infra.EventStoreAppenderTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.BacktestPublishArtifactLocatorMigrationContractTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.CurrentMarketSnapshotMigrationContractTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.JdbcRepositoryPostgresSmokeTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.KillSwitchStateMigrationContractTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.LiveSessionFactModelMigrationContractTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.MinimalLivePilotExecutionLeaseMigrationContractTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.MinimumOrderValueSemanticRemediationMigrationContractTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.OperatorPilotAuthorityMigrationContractTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.PilotScopePrerequisiteFactModelMigrationContractTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.PrePlaceRecoveryMigrationContractTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.ShadowRunFactModelMigrationContractTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.ShadowRunProvenanceMigrationContractTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.TerminalLeaseRegenerationMigrationContractTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.ValidationReviewFactModelMigrationContractTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.VenueRuleFactsMigrationContractTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.ledger.infra.jdbc.JdbcLedgerPostingRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.ledger.infra.jdbc.JdbcLedgerRiskAuditRepositoryTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.deployment.infra.okx.OkxPrivateReadonlyEndpointPolicyEvidenceFactoryTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.execution.infra.fake.LoopbackFakeExchangeHttpClientTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.execution.infra.jdbc.JdbcExecutionOperationsSnapshotQueryTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.execution.infra.MinimalPilotTradingVenueGatewayTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.ExactPilotBindingServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.ExactPilotScopeAuthorizationServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.ExactPilotScopeControlSurfaceServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.jdbc.JdbcExactPilotBindingRepositoryTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.jdbc.JdbcExactPilotScopeAuthorizationRepositoryTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.JdbcPilotScopeAuthorityResolverTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.MinimalLivePilotControlServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.okx.CredentialScopedOkxSpotProviderTransportTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.okx.OkxCredentialScopedSpotProviderTransportTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.okx.OkxPilotPrerequisiteObservationAuthorityTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.PilotExecutionLeaseServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.PilotScopeControlPlaneServiceTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.ReadOnlyQualificationObservationAuthorityTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.infra.fixture.FixtureHistoricalMarketDataPortTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.infra.jdbc.JdbcMarketdataBarRepositoryTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.monitoring.infra.jdbc.JdbcIncidentReplayOverviewQueryRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.monitoring.infra.jdbc.JdbcIncidentReplayReviewOverviewQueryRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.infra.paper.jdbc.JdbcPaperPortfolioBatchReadTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.risk.infra.jdbc.JdbcRiskEventRepositoryTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.infra.jdbc.JdbcLedgerReconcileRepositoryTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.infra.jdbc.JdbcTradeRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.infra.lock.PostgresAdvisoryLockKeyMapperTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.infra.lock.PostgresAdvisorySchedulerExecutionLockPostgresIntegrationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.infra.lock.PostgresAdvisorySchedulerExecutionLockTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.artifact.ServerControlledStrategyArtifactBindingResolverTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcConsistencyEvidenceOverviewQueryRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcPaperShadowConsistencyDrilldownQueryRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcShadowRunFactRepositoryTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcShadowRunIllegalTransitionAuditWriterTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcShadowValidationWorkflowOverviewQueryRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcStrategyDefinitionRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcStrategyReleaseAdmissionPreviewFactsRepositoryTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcStrategyReleaseProvenanceRepositoryTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcStrategyRunQueryRepositoryTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcStrategyRunRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcStrategyScheduleRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcStrategyValidationOverviewQueryRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.OrderCommandWriteServiceTest",
+        "tests": 27,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.infra.jdbc.JdbcOrderRepositoryTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.infra.reconciliation.ReadOnlyReconciliationAdaptersTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.validationreview.infra.jdbc.ValidationReviewRepositoryPostgresIntegrationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.AdapterInstrumentCatalogSyncServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.BinanceRecoveryServiceTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.BinanceRestReconcileServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.BinanceWsDegradeReconcileCoordinatorTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.BinanceWsOrderAccelerationServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.LedgerReconcileSchedulerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.OkxRecoveryServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileServiceTest",
+        "tests": 21,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.OkxWsDegradeReconcileCoordinatorTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.OkxWsOrderAccelerationServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.OperationalReconciliationMetricsTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.OrdinaryPlaceResultClassificationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.PaperMatchingServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.validationevidence.OperationalSchedulerMetricsTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.validationevidence.ValidationEvidenceRefreshServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.validationevidence.ValidationEvidenceSchedulerConfigurationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.validationevidence.ValidationEvidenceSchedulerPropertiesTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.validationevidence.ValidationEvidenceSchedulerTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.ws.BinanceWsEventStoreBridgeTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.ws.OkxWsEventStoreBridgeTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.CancelledExecutionCorrectionTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.gateway.infra.security.SecurityContextGatewayAuthFacadeTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.api.web.ExchangeAccountControllerWebMvcTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.api.web.ExchangeAccountCredentialControllerWebMvcTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapters.api.AdapterReadinessStatusServiceTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapters.api.web.AdapterReadinessControllerTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.api.PilotScopeControlPlaneControllerTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.api.dto.MarketdataReadinessResponseTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.api.web.InstrumentCatalogControllerTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.api.web.MarketdataControllerTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.monitoring.api.web.IncidentReplayOverviewControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.monitoring.api.web.IncidentReplayReviewOverviewControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.paper.api.dto.PaperAutoReviewResponseTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.paper.api.dto.PaperExecutionDiagnosticsResponseTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.paper.api.dto.PaperPortfolioSummaryResponseTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.paper.api.dto.PaperStrategyEvaluationResponseTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.paper.api.web.PaperAutoReviewControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.paper.api.web.PaperExecutionDiagnosticsControllerTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.paper.api.web.PaperStrategyEvaluationControllerTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.api.web.BacktestConfigControllerTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.api.web.BacktestRunControllerTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.api.web.EvaluationControllerTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.api.web.PythonEvaluationArtifactBindingPreviewControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.api.web.ResearchConfigControllerTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.runtime.api.OperationalReadinessBoundaryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.runtime.api.OperationalReadinessServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.runtime.api.web.OperationalReadinessControllerTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.ConsistencyEvidenceOverviewControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.PaperShadowComparisonControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.PaperShadowConsistencyDrilldownControllerTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.PythonEvaluationArtifactPreviewOverviewControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.ShadowLivePreviewControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.ShadowRunReadOnlyControllerTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.ShadowRunReadOnlyResponseTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.ShadowValidationWorkflowOverviewControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.StrategyEvaluationGateControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.StrategyReleaseAdmissionPreviewControllerTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.StrategyValidationOverviewControllerTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.validationoperations.runtimeevidence.ValidationOperationsRuntimeEvidenceOverviewControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.api.web.TradingPreflightControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.validationreview.api.web.ValidationReviewControllerTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.admission.AdmissionGuardedMaterializationPostgresIntegrationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 3
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.admission.AdmissionMaterializationGuardPostgresIntegrationTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 5
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.architecture.ModuleBoundaryArchTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.architecture.PackageBoundaryArchTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.account.AccountPermissionProbeCompositionTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.account.OkxPrivateReadOnlyDiagnosticsConfigurationTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.account.OkxPrivateReadOnlyPermissionProbeSpringContextTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.auth.SecurityConfigurationContextTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.CapabilityPropertyResolverTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.env.EnvSafetyValidatorTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.env.ProductionConfigurationApplicationContextInitializerTest",
+        "tests": 50,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.env.ProductionSecretProfileRegressionTest",
+        "tests": 68,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.ExchangeAdapterConfigurationReadinessTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.livecontrol.ExactPilotScopeCliConfigurationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.livecontrol.MinimalLivePilotConfigurationTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.livecontrol.ReadOnlyProviderObservationConfigurationTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.livecontrol.ReadOnlyProviderObservationProductionContextTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.livecontrol.ReadOnlyRuntimeDiagnosticEndpointTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.livecontrol.StoredFactExactPilotBindingAuthorityTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.livecontrol.WorkerDeploymentBoundaryConfigurationTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.LocalTestFallbackConfigurationReadinessTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.OkxVenueRuleSyncConfigurationTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.OperationalObservationConfigurationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.PublicMarketDataOutboundConfigurationTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.RetiredRuntimeProfileGuardConfigurationTest",
+        "tests": 21,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.scheduler.SchedulerLockConfigurationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.scheduler.ValidationEvidenceSchedulerApplicationContextTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.strategyrelease.StrategyReleaseArtifactConfigurationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.integration0.NqDhIntegration0ContractValidationTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.integration0.NqDhIntegration0NoSideEffectTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.integration0.NqDhIntegration0SecurityContractTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.integration1.NqDhIntegration1ContractGapGuardTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.integration1.NqDhIntegration1JointMockContractFixtureTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.integration1.NqDhIntegration1StubRecorderNoSideEffectTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.livecontrol.LiveSessionFactModelPostgresIntegrationTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 6
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.livecontrol.OperatorPilotAuthorityPostgresIntegrationTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 4
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.marketdata.MarketdataSandboxFixtureSmokeTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.marketdata.OkxVenueRuleFactsSyncServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.marketdata.VenueRuleFactsPostgresIntegrationTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 2
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.research.BacktestPublishArtifactLocatorPostgresIntegrationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 3
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.risk.KillSwitchRestartDurabilityPostgresIntegrationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.shadowrun.ShadowRunProvenancePostgresIntegrationTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 4
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B0FixtureSafetyTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B0RealProcessHarnessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B1RealProcessProofTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 2
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B2RealProcessProofTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 2
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B2TerminalCorrectionPostgresIntegrationTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 11
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B3RealProcessProofTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 2
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B4QualificationResumeTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B4RealProcessProofTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B4TradeEventPostgresTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 4
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B4TradeEventRemediationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5AdmissionPostgresTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 2
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5AdmissionProcessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5AuthorityPostgresTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5AuthorityProcessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5DurableLifecycleCrashRecoveryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 2
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5LegacyVenuePostgresTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5QualificationResumeTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5RealProcessProofTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5StrategyOwnerDeathTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5StrategyRunRecoveryPostgresTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5StrategyRunRecoveryProcessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5StrategyScanConcurrencyTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51CommitProcessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51LegacyPostgresTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 2
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51RecoveryProcessTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 2
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51RecoveryTickProcessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51SchemaPostgresTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5VenueIdentityProcessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.L4PlanBlockerPostgresIntegrationTest",
+        "tests": 13,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 13
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.ManualPublicOutboundSmokeTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.NoOutboundExchangeGuardTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.NqAppContextPostgresSmokeTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.OrderVersionFlywayPostgresIntegrationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.ReconciliationCursorPostgresIntegrationTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 5
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.SyntheticEvidenceExportTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.TradingChainPostgresIntegrationTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.TradingRestartRecoveryPostgresIntegrationTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.TradingVenueGatewayReadinessRuntimeSmokeTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.ValidationReviewFlywayPostgresIntegrationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.web.AuthSecurityWebMvcTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.web.MarketdataControllerLocalIntegrationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.web.OkxBootstrapNoOutboundLocalContextTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.web.ResearchBacktestHappyPathLocalTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.web.ResearchBacktestQueryControllerLocalTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.web.StrategyReleaseAdmissionPreviewSecurityWebMvcTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.web.StrategyReleaseShadowRunMaterializationSecurityWebMvcTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.web.TradingVerificationControllerLocalTest",
+        "tests": 13,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.integration.dh.DhDryRunJointRuntimeDryRunTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.integration.dh.DhDryRunNoSideEffectBoundaryTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.integration.dh.DhDryRunRequestGenerationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.integration.dh.DhDryRunResponseHandlingTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.integration.dh.DhDryRunRuntimeClientDisabledTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.architecture.ModuleBoundaryArchTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.architecture.PackageBoundaryArchTest",
+        "tests": 10,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0
+      }
+    ]
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/full-02/fixture-bootstrap.log",
+    "sha256": "61ce43c2481a06b9534c323df9cba4c1432f132f963c1b14bce78cf5f25ac8a4",
+    "buildSuccess": false,
+    "buildFailure": false,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/full-02/fixture-build.log",
+    "sha256": "39093324dc86ef809e8c74bb0d98f3110fe797c432634ad2ded51e82c643f9fa",
+    "buildSuccess": true,
+    "buildFailure": false,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/full-02/full-maven.log",
+    "sha256": "1cb60c680bb5a1f8442fc8582a351feb4e59f44916bbcd4c7c770acd5719571c",
+    "buildSuccess": true,
+    "buildFailure": false,
+    "suites": [
+      {
+        "name": "com.guidinglight.nexusquant.contracts.event.EventEnvelopeSerializationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.risk.service.KillSwitchRiskRuleTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.risk.service.KillSwitchServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.risk.service.PreTradeRiskServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.application.CredentialPermissionProbeServiceTest",
+        "tests": 16,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.application.ExchangeAccountCommandServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialCommandServiceTest",
+        "tests": 15,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialVerificationServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.application.ExchangeAccountQueryServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.application.MinimalLivePilotCommandTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.deployment.KillSwitchPropagationPolicyTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialCapabilityPolicyTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.deployment.WorkerDeploymentAdmissionServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBindingCanonicalEncoderTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.domain.ExactPilotScopeAuthorizationCanonicalEncoderTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.domain.LiveSessionDomainTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthorityTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.domain.PilotExecutionLeaseTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.domain.PilotObservationCanonicalEncoderTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.domain.PilotScopeCanonicalEncoderTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.domain.PilotScopeFreshnessPolicyTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSetCanonicalEncoderTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.execution.ExecutionIntentRuntimeTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.execution.provider.SpotProviderContractTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogServiceTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.application.MarketdataBarIngestServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.application.MarketdataQualityOverviewServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.application.MarketdataReadinessServiceTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.domain.instrument.VenueRuleChecksumCalculatorTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.domain.instrument.VenueRuleFreshnessEvaluatorTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.monitoring.application.incident.IncidentReplayOverviewQueryServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.monitoring.application.incidentreview.IncidentReplayReviewOverviewQueryServiceTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.consistencyevidence.ConsistencyEvidenceOverviewQueryServiceTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateServiceTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyValidationOverviewQueryServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonServiceTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.pyartifactbinding.PythonEvaluationArtifactBindingServiceTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.pyartifactpreview.PythonEvaluationArtifactPreviewOverviewQueryServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadataCalculatorTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.shadowlivepreview.ShadowLivePreviewServiceTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.shadowrun.PaperShadowConsistencyDrilldownQueryServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowConsistencyReportServiceTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewQueryServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunReadOnlyQueryServiceTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunRunnerServiceTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.shadowvalidation.ShadowValidationWorkflowOverviewQueryServiceTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.StrategyDefinitionServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerServiceTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.StrategyRunQueryServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.StrategyScheduleScanServiceTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.StrategyScheduleServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.StrategyVersionServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.validationoperations.runtimeevidence.ValidationOperationsRuntimeEvidenceOverviewQueryServiceTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunReleaseBindingModeTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunSensitiveDataGuardTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStateMachineTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionGuardFingerprinterTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.strategyrelease.application.ReleaseToShadowAdmissionServiceTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunMaterializationWriterTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionPreviewServiceTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseProductionServiceTest",
+        "tests": 17,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseShadowRunMaterializationServiceTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.strategyrelease.artifact.StrategyReleaseManifestFingerprinterTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.strategyrelease.artifact.TrustedRootStrategyArtifactVerifierTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 9
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategyrelease.preparation.SensitiveFieldPolicyPrototypeTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategyrelease.preparation.ShadowRunReleaseBindingPrototypeTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategyrelease.preparation.StrategyReleaseAggregateIdempotencyPrototypeTest",
+        "tests": 17,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategyrelease.preparation.StrategyReleaseLifecyclePrototypeTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategyrelease.preparation.StrategyReleaseManifestPrototypeTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategyrelease.preparation.StrategyReleaseToShadowAdmissionPrototypeTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategyrelease.preparation.TrustedRootArtifactVerifierPrototypeTest",
+        "tests": 22,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 3
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.boundary.PaperToRealBoundaryGuardTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.OrderCommandServiceTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.orderpreview.DryRunOrderPreviewServiceTest",
+        "tests": 37,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.port.OrderCommandStrategyExecutionGatewayTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.preflight.TradingPreflightReadinessServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.reconciliation.ReadOnlyOrderReconciliationServiceTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.riskpreflight.DiagnosticOrderRiskPreflightServiceTest",
+        "tests": 31,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.safety.OperationalSafetyAssessmentServiceTest",
+        "tests": 16,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.domain.state.InMemoryOrderStateMachineTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.domain.TradingVenueTest",
+        "tests": 19,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.validationreview.application.ValidationReviewOperationsServiceTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.validationreview.application.ValidationReviewRequestHasherTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.validationreview.domain.ValidationReviewStateMachineTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.observability.operational.MicrometerOperationalObservationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.observability.web.TraceIdFilterTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.BacktestPublishServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.OperationalCriticalAlertMetricsTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperAutoReviewAssemblerTest",
+        "tests": 15,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperAutoReviewServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperExecutionDiagnosticsAssemblerTest",
+        "tests": 16,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperExecutionDiagnosticsServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperPortfolioAssemblerTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperPortfolioServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperRunMonitorRunServiceTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperRunMonitorServiceTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperRunRecoveryServiceTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperRunScheduleServiceTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperRunStabilityCheckServiceTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperRunSummaryAssemblerTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperRunSummaryServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluationAssemblerTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluationServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperTradingMonitorServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.paper.PaperTradingRunServiceTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.ResearchBacktestServiceTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.backtest.BacktestExecutionServiceTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.application.eval.BacktestEvaluationServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.ledger.service.TradeLedgerPostingServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.api.dataquality.DataQualityFreshnessRuleTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.api.dataquality.DataQualityGapRuleTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.api.dataquality.DataQualitySourceHealthMapperTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.api.model.EndpointPolicyDecisionTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.api.publicmarketdata.JdkPublicMarketDataOutboundClientTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundPolicyTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.api.service.DefaultAdapterReadinessServiceTest",
+        "tests": 21,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.api.service.NoopMarketDataAdapterTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.api.service.ReadinessGuardedAdapterFactoryTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.api.service.ReadinessGuardWiringTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.JdkOkxPrivateReadTransportTest",
+        "tests": 15,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.JdkOkxRealTransportTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxErrorClassifierTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxErrorCodeTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapterBootstrapNoOutboundTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapterRawBodySuppressionTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapterTimeoutEvidenceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxHttpClientTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxInstrumentsCacheTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxNoRealCredentialHardeningTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxPermissionProbeBoundaryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadRequestTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateRequestSignerTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxReconciliationPrivateReadTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxRuntimeConfigTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxSpotCapabilityMatrixTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxSpotEndpointGuardTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderAdapterContractTest",
+        "tests": 15,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxVenueRuleFactsReaderTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxWsEventMapperTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.okx.service.OkxWsProtocolTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceErrorClassifierTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceExchangeAdapterTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceExchangeInfoClientTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceFiltersCacheTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceHttpClientTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceNoRealCredentialHardeningTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceNoRealEndpointHardeningTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceOrderTrimmerTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinancePermissionProbeBoundaryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceRequestSignerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceRuntimeConfigTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.service.BinanceSynchronizedTimestampProviderTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.ws.BinanceListenKeyClientTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClientLiveDiagnosticTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClientTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsEventMapperTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsProtocolTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.security.token.JwtTokenServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.auth.application.CurrentUserProfileServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.infra.jdbc.JdbcExchangeAccountCredentialRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.infra.jdbc.JdbcExchangeAccountRepositoryTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.infra.okx.readonly.JdbcOkxPrivateCredentialExecutorTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateReadonlyProbeServiceTest",
+        "tests": 13,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.infra.probe.NoRealExchangeCredentialPermissionProbePortTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.infra.probe.OkxRealReadonlyPermissionProbePortTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.audit.infra.jdbc.JdbcAuditLogRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.eventstore.infra.EventStoreAppenderTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.BacktestPublishArtifactLocatorMigrationContractTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.CurrentMarketSnapshotMigrationContractTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.JdbcRepositoryPostgresSmokeTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.KillSwitchStateMigrationContractTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.LiveSessionFactModelMigrationContractTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.MinimalLivePilotExecutionLeaseMigrationContractTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.MinimumOrderValueSemanticRemediationMigrationContractTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.OperatorPilotAuthorityMigrationContractTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.PilotScopePrerequisiteFactModelMigrationContractTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.PrePlaceRecoveryMigrationContractTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.ShadowRunFactModelMigrationContractTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.ShadowRunProvenanceMigrationContractTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.TerminalLeaseRegenerationMigrationContractTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.ValidationReviewFactModelMigrationContractTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.infra.postgres.VenueRuleFactsMigrationContractTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.ledger.infra.jdbc.JdbcLedgerPostingRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.ledger.infra.jdbc.JdbcLedgerRiskAuditRepositoryTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.deployment.infra.okx.OkxPrivateReadonlyEndpointPolicyEvidenceFactoryTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.execution.infra.fake.LoopbackFakeExchangeHttpClientTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.execution.infra.jdbc.JdbcExecutionOperationsSnapshotQueryTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.execution.infra.MinimalPilotTradingVenueGatewayTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.ExactPilotBindingServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.ExactPilotScopeAuthorizationServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.ExactPilotScopeControlSurfaceServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.jdbc.JdbcExactPilotBindingRepositoryTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.jdbc.JdbcExactPilotScopeAuthorizationRepositoryTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.JdbcPilotScopeAuthorityResolverTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.MinimalLivePilotControlServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.okx.CredentialScopedOkxSpotProviderTransportTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.okx.OkxCredentialScopedSpotProviderTransportTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.okx.OkxPilotPrerequisiteObservationAuthorityTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.PilotExecutionLeaseServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.PilotScopeControlPlaneServiceTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.infra.ReadOnlyQualificationObservationAuthorityTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.infra.fixture.FixtureHistoricalMarketDataPortTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.infra.jdbc.JdbcMarketdataBarRepositoryTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.monitoring.infra.jdbc.JdbcIncidentReplayOverviewQueryRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.monitoring.infra.jdbc.JdbcIncidentReplayReviewOverviewQueryRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.infra.paper.jdbc.JdbcPaperPortfolioBatchReadTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.risk.infra.jdbc.JdbcRiskEventRepositoryTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.infra.jdbc.JdbcLedgerReconcileRepositoryTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.infra.jdbc.JdbcTradeRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.infra.lock.PostgresAdvisoryLockKeyMapperTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.infra.lock.PostgresAdvisorySchedulerExecutionLockPostgresIntegrationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.infra.lock.PostgresAdvisorySchedulerExecutionLockTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.artifact.ServerControlledStrategyArtifactBindingResolverTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcConsistencyEvidenceOverviewQueryRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcPaperShadowConsistencyDrilldownQueryRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcShadowRunFactRepositoryTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcShadowRunIllegalTransitionAuditWriterTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcShadowValidationWorkflowOverviewQueryRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcStrategyDefinitionRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcStrategyReleaseAdmissionPreviewFactsRepositoryTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcStrategyReleaseProvenanceRepositoryTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcStrategyRunQueryRepositoryTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcStrategyRunRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcStrategyScheduleRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcStrategyValidationOverviewQueryRepositoryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.OrderCommandWriteServiceTest",
+        "tests": 27,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.infra.jdbc.JdbcOrderRepositoryTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.infra.reconciliation.ReadOnlyReconciliationAdaptersTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.validationreview.infra.jdbc.ValidationReviewRepositoryPostgresIntegrationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.AdapterInstrumentCatalogSyncServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.BinanceRecoveryServiceTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.BinanceRestReconcileServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.BinanceWsDegradeReconcileCoordinatorTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.BinanceWsOrderAccelerationServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.LedgerReconcileSchedulerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.OkxRecoveryServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileServiceTest",
+        "tests": 21,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.OkxWsDegradeReconcileCoordinatorTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.OkxWsOrderAccelerationServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.OperationalReconciliationMetricsTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.OrdinaryPlaceResultClassificationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.PaperMatchingServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.validationevidence.OperationalSchedulerMetricsTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.validationevidence.ValidationEvidenceRefreshServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.validationevidence.ValidationEvidenceSchedulerConfigurationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.validationevidence.ValidationEvidenceSchedulerPropertiesTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.validationevidence.ValidationEvidenceSchedulerTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.ws.BinanceWsEventStoreBridgeTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.ws.OkxWsEventStoreBridgeTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.CancelledExecutionCorrectionTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.gateway.infra.security.SecurityContextGatewayAuthFacadeTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.api.web.ExchangeAccountControllerWebMvcTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.account.api.web.ExchangeAccountCredentialControllerWebMvcTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapters.api.AdapterReadinessStatusServiceTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.adapters.api.web.AdapterReadinessControllerTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.livecontrol.api.PilotScopeControlPlaneControllerTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.api.dto.MarketdataReadinessResponseTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.api.web.InstrumentCatalogControllerTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.marketdata.api.web.MarketdataControllerTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.monitoring.api.web.IncidentReplayOverviewControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.monitoring.api.web.IncidentReplayReviewOverviewControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.paper.api.dto.PaperAutoReviewResponseTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.paper.api.dto.PaperExecutionDiagnosticsResponseTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.paper.api.dto.PaperPortfolioSummaryResponseTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.paper.api.dto.PaperStrategyEvaluationResponseTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.paper.api.web.PaperAutoReviewControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.paper.api.web.PaperExecutionDiagnosticsControllerTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.paper.api.web.PaperStrategyEvaluationControllerTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.api.web.BacktestConfigControllerTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.api.web.BacktestRunControllerTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.api.web.EvaluationControllerTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.api.web.PythonEvaluationArtifactBindingPreviewControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.research.api.web.ResearchConfigControllerTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.runtime.api.OperationalReadinessBoundaryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.runtime.api.OperationalReadinessServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.runtime.api.web.OperationalReadinessControllerTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.ConsistencyEvidenceOverviewControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.PaperShadowComparisonControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.PaperShadowConsistencyDrilldownControllerTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.PythonEvaluationArtifactPreviewOverviewControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.ShadowLivePreviewControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.ShadowRunReadOnlyControllerTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.ShadowRunReadOnlyResponseTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.ShadowValidationWorkflowOverviewControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.StrategyEvaluationGateControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.StrategyReleaseAdmissionPreviewControllerTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.StrategyValidationOverviewControllerTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.api.web.validationoperations.runtimeevidence.ValidationOperationsRuntimeEvidenceOverviewControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.api.web.TradingPreflightControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.validationreview.api.web.ValidationReviewControllerTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.admission.AdmissionGuardedMaterializationPostgresIntegrationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 3
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.admission.AdmissionMaterializationGuardPostgresIntegrationTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 5
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.architecture.ModuleBoundaryArchTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.architecture.PackageBoundaryArchTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.account.AccountPermissionProbeCompositionTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.account.OkxPrivateReadOnlyDiagnosticsConfigurationTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.account.OkxPrivateReadOnlyPermissionProbeSpringContextTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.auth.SecurityConfigurationContextTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.CapabilityPropertyResolverTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.env.EnvSafetyValidatorTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.env.ProductionConfigurationApplicationContextInitializerTest",
+        "tests": 50,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.env.ProductionSecretProfileRegressionTest",
+        "tests": 68,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.ExchangeAdapterConfigurationReadinessTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.livecontrol.ExactPilotScopeCliConfigurationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.livecontrol.MinimalLivePilotConfigurationTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.livecontrol.ReadOnlyProviderObservationConfigurationTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.livecontrol.ReadOnlyProviderObservationProductionContextTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.livecontrol.ReadOnlyRuntimeDiagnosticEndpointTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.livecontrol.StoredFactExactPilotBindingAuthorityTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.livecontrol.WorkerDeploymentBoundaryConfigurationTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.LocalTestFallbackConfigurationReadinessTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.OkxVenueRuleSyncConfigurationTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.OperationalObservationConfigurationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.PublicMarketDataOutboundConfigurationTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.RetiredRuntimeProfileGuardConfigurationTest",
+        "tests": 21,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.scheduler.SchedulerLockConfigurationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.scheduler.ValidationEvidenceSchedulerApplicationContextTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.config.strategyrelease.StrategyReleaseArtifactConfigurationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.integration0.NqDhIntegration0ContractValidationTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.integration0.NqDhIntegration0NoSideEffectTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.integration0.NqDhIntegration0SecurityContractTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.integration1.NqDhIntegration1ContractGapGuardTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.integration1.NqDhIntegration1JointMockContractFixtureTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.integration1.NqDhIntegration1StubRecorderNoSideEffectTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.livecontrol.LiveSessionFactModelPostgresIntegrationTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 6
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.livecontrol.OperatorPilotAuthorityPostgresIntegrationTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 4
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.marketdata.MarketdataSandboxFixtureSmokeTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.marketdata.OkxVenueRuleFactsSyncServiceTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.marketdata.VenueRuleFactsPostgresIntegrationTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 2
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.research.BacktestPublishArtifactLocatorPostgresIntegrationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 3
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.risk.KillSwitchRestartDurabilityPostgresIntegrationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.shadowrun.ShadowRunProvenancePostgresIntegrationTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 4
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B0FixtureSafetyTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B0RealProcessHarnessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B1RealProcessProofTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 2
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B2RealProcessProofTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 2
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B2TerminalCorrectionPostgresIntegrationTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 11
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B3RealProcessProofTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 2
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B4QualificationResumeTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B4RealProcessProofTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B4TradeEventPostgresTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 4
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B4TradeEventRemediationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5AdmissionPostgresTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 2
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5AdmissionProcessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5AuthorityPostgresTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5AuthorityProcessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5DurableLifecycleCrashRecoveryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 2
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5LegacyVenuePostgresTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5QualificationResumeTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5RealProcessProofTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5StrategyOwnerDeathTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5StrategyRunRecoveryPostgresTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5StrategyRunRecoveryProcessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5StrategyScanConcurrencyTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51CommitProcessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51LegacyPostgresTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 2
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51RecoveryProcessTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 2
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51RecoveryTickProcessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51SchemaPostgresTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5VenueIdentityProcessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.L4PlanBlockerPostgresIntegrationTest",
+        "tests": 13,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 13
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.ManualPublicOutboundSmokeTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.NoOutboundExchangeGuardTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.NqAppContextPostgresSmokeTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.OrderVersionFlywayPostgresIntegrationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.ReconciliationCursorPostgresIntegrationTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 5
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.SyntheticEvidenceExportTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.TradingChainPostgresIntegrationTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.TradingRestartRecoveryPostgresIntegrationTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.TradingVenueGatewayReadinessRuntimeSmokeTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.ValidationReviewFlywayPostgresIntegrationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.web.AuthSecurityWebMvcTest",
+        "tests": 12,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.web.MarketdataControllerLocalIntegrationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.web.OkxBootstrapNoOutboundLocalContextTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.web.ResearchBacktestHappyPathLocalTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.web.ResearchBacktestQueryControllerLocalTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.web.StrategyReleaseAdmissionPreviewSecurityWebMvcTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.web.StrategyReleaseShadowRunMaterializationSecurityWebMvcTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.web.TradingVerificationControllerLocalTest",
+        "tests": 13,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.integration.dh.DhDryRunJointRuntimeDryRunTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.integration.dh.DhDryRunNoSideEffectBoundaryTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.integration.dh.DhDryRunRequestGenerationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.integration.dh.DhDryRunResponseHandlingTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.integration.dh.DhDryRunRuntimeClientDisabledTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.architecture.ModuleBoundaryArchTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.architecture.PackageBoundaryArchTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ]
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/full-launch-01.log",
+    "sha256": "4b87ab7e9619969859cc4a68f48aa61893a2650460d6bff4e601cbaf686cad0b",
+    "buildSuccess": false,
+    "buildFailure": false,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/full-launch-02.log",
+    "sha256": "30e2b58beaad52bd687a07176b1a277e901744b2998ec8949fc1e588d455a0ea",
+    "buildSuccess": false,
+    "buildFailure": false,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/lifecycle-01.log",
+    "sha256": "1977aac6f6a75e4326c93366c311aed90f591f3e190025f27e68aed4ec715eec",
+    "buildSuccess": false,
+    "buildFailure": true,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/lifecycle-02.log",
+    "sha256": "45504bd2e7ad0a55275b7509d525cf87f9a481c4179c7a819d5c2c13c4b3b628",
+    "buildSuccess": true,
+    "buildFailure": false,
+    "suites": [
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5DurableLifecycleCrashRecoveryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51SchemaPostgresTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ]
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/matrix-01.log",
+    "sha256": "b8c6bcd8351cf8c5c4631a2889a9dbdef51d733d66a40d3abecc4a321a8b4add",
+    "buildSuccess": false,
+    "buildFailure": true,
+    "suites": [
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5StrategyScanConcurrencyTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51RecoveryProcessTest",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0
+      }
+    ]
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/matrix-02.log",
+    "sha256": "8c07f87d002ea52796e110abc97dfe2a60a65d3fdd550b6fbb479d0e7413490a",
+    "buildSuccess": true,
+    "buildFailure": false,
+    "suites": [
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51LegacyPostgresTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51RecoveryProcessTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ]
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/schema-01.log",
+    "sha256": "1320897f765806f768f29271804d48a1e47cddcdedfe3dc66395115add49f3c9",
+    "buildSuccess": false,
+    "buildFailure": true,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/schema-02.log",
+    "sha256": "4b20a64901a7616883cbc70a03dbd3558c20a37d0dc8cba78660a33c6b756159",
+    "buildSuccess": false,
+    "buildFailure": true,
+    "suites": [
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51SchemaPostgresTest",
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0
+      }
+    ]
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/schema-03.log",
+    "sha256": "297ae832c603e257223681c93e5c2aff6a3e375060a5f8678340e5847115b9ec",
+    "buildSuccess": true,
+    "buildFailure": false,
+    "suites": [
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51SchemaPostgresTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ]
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/secret-final-launch-01.log",
+    "sha256": "d4a49cca3dfcefadd20745b20bfffd5d088233240fc5195e9d2cb5b4fd5a2a54",
+    "buildSuccess": false,
+    "buildFailure": false,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/secret-preflight-launch-01.log",
+    "sha256": "1577cbeaccf9a98cf43e29085e4f216d731660e1a1e4eb381b052219c36db389",
+    "buildSuccess": false,
+    "buildFailure": false,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/secret-preflight-launch-02.log",
+    "sha256": "c61986c53fd2c18f150ec53ff2f5fea4f44d9d97c7c820e8996584dd0d3b9817",
+    "buildSuccess": false,
+    "buildFailure": false,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/stage-assets-final.log",
+    "sha256": "ce3caa967fabc8d094f135d0513353e9d807f5a1b51c209829e7822511e4bc92",
+    "buildSuccess": false,
+    "buildFailure": false,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/stage-assets.log",
+    "sha256": "2a62f3170c876b91fbc65b9de1811558772ab95e7e47719c18af2d447232603c",
+    "buildSuccess": false,
+    "buildFailure": false,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/targeted-01.log",
+    "sha256": "a6861ba8e65c7f494a8f4ca4f01d03a510c88c597a1cc8a3a745bd989e498bda",
+    "buildSuccess": false,
+    "buildFailure": true,
+    "suites": []
+  },
+  {
+    "log": "backend/nq-app/target/b5-v51-implementation-attempt01/targeted-02.log",
+    "sha256": "4a5c44ed5aab62d205f8ac59febeef24cad1ef9b637df9f49e4074c846307fe5",
+    "buildSuccess": true,
+    "buildFailure": false,
+    "suites": [
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerServiceTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.strategy.application.StrategyScheduleScanServiceTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.trading.application.OrderCommandServiceTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileServiceTest",
+        "tests": 21,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.B5V51SchemaPostgresTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ]
+  }
+]

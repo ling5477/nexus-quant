@@ -1,0 +1,532 @@
+[
+  {
+    "suite": "com.guidinglight.nexusquant.strategy.strategyrelease.artifact.TrustedRootStrategyArtifactVerifierTest",
+    "test": "shouldRejectSymlinkEscapeWhenPlatformAllowsSymlinkCreation",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: SYMLINK_PRIVILEGE_UNAVAILABLE\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.strategy.strategyrelease.artifact.TrustedRootStrategyArtifactVerifierTest.shouldRejectSymlinkEscapeWhenPlatformAllowsSymlinkCreation(TrustedRootStrategyArtifactVerifierTest.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest",
+    "test": "shouldRejectFileToDirectoryAndDirectoryToFileSwaps",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: SUPPORTED_RUNTIME_LINUX_ONLY\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest.assumeLinux(VerifiedOpenStrategyArtifactReaderTest.java:329)\n\tat com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest.shouldRejectFileToDirectoryAndDirectoryToFileSwaps(VerifiedOpenStrategyArtifactReaderTest.java:122)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest",
+    "test": "shouldExposeRequiredStableHandlePrerequisitesOnSupportedLinuxFilesystem",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: SUPPORTED_RUNTIME_LINUX_ONLY\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest.assumeLinux(VerifiedOpenStrategyArtifactReaderTest.java:329)\n\tat com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest.shouldExposeRequiredStableHandlePrerequisitesOnSupportedLinuxFilesystem(VerifiedOpenStrategyArtifactReaderTest.java:50)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest",
+    "test": "shouldRejectRenameOrParentDirectorySwapAfterSetVerification",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: SUPPORTED_RUNTIME_LINUX_ONLY\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest.assumeLinux(VerifiedOpenStrategyArtifactReaderTest.java:329)\n\tat com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest.shouldRejectRenameOrParentDirectorySwapAfterSetVerification(VerifiedOpenStrategyArtifactReaderTest.java:103)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest",
+    "test": "shouldRejectSamePathDifferentIdentityAfterSetVerification",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: SUPPORTED_RUNTIME_LINUX_ONLY\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest.assumeLinux(VerifiedOpenStrategyArtifactReaderTest.java:329)\n\tat com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest.shouldRejectSamePathDifferentIdentityAfterSetVerification(VerifiedOpenStrategyArtifactReaderTest.java:84)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest",
+    "test": "shouldEraseAndInvalidateSnapshotsAfterConsumerFailure",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: SUPPORTED_RUNTIME_LINUX_ONLY\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest.assumeLinux(VerifiedOpenStrategyArtifactReaderTest.java:329)\n\tat com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest.shouldEraseAndInvalidateSnapshotsAfterConsumerFailure(VerifiedOpenStrategyArtifactReaderTest.java:208)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest",
+    "test": "shouldEraseAndInvalidateSnapshotsAfterPartialConsumer",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: SUPPORTED_RUNTIME_LINUX_ONLY\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest.assumeLinux(VerifiedOpenStrategyArtifactReaderTest.java:329)\n\tat com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest.shouldEraseAndInvalidateSnapshotsAfterPartialConsumer(VerifiedOpenStrategyArtifactReaderTest.java:190)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest",
+    "test": "shouldFailClosedWhenTotalImmutableSnapshotLimitIsExceeded",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: SUPPORTED_RUNTIME_LINUX_ONLY\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest.assumeLinux(VerifiedOpenStrategyArtifactReaderTest.java:329)\n\tat com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest.shouldFailClosedWhenTotalImmutableSnapshotLimitIsExceeded(VerifiedOpenStrategyArtifactReaderTest.java:225)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest",
+    "test": "shouldRejectSymlinkSwapAfterSetVerification",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: SUPPORTED_RUNTIME_LINUX_ONLY\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest.assumeLinux(VerifiedOpenStrategyArtifactReaderTest.java:329)\n\tat com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest.shouldRejectSymlinkSwapAfterSetVerification(VerifiedOpenStrategyArtifactReaderTest.java:150)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest",
+    "test": "shouldRejectTruncateBeforeFinalClosureWithoutExposingCallback",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: SUPPORTED_RUNTIME_LINUX_ONLY\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest.assumeLinux(VerifiedOpenStrategyArtifactReaderTest.java:329)\n\tat com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest.shouldRejectTruncateBeforeFinalClosureWithoutExposingCallback(VerifiedOpenStrategyArtifactReaderTest.java:170)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.strategyrelease.preparation.TrustedRootArtifactVerifierPrototypeTest",
+    "test": "shouldRejectSymbolicLinkPointingInsideTrustedRoot",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: SYMLINK_PRIVILEGE_UNAVAILABLE\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.strategyrelease.preparation.TrustedRootArtifactVerifierPrototypeTest.createSymbolicLinkOrAbort(TrustedRootArtifactVerifierPrototypeTest.java:442)\n\tat com.guidinglight.nexusquant.strategyrelease.preparation.TrustedRootArtifactVerifierPrototypeTest.shouldRejectSymbolicLinkPointingInsideTrustedRoot(TrustedRootArtifactVerifierPrototypeTest.java:240)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.strategyrelease.preparation.TrustedRootArtifactVerifierPrototypeTest",
+    "test": "shouldRejectSymbolicLinkPointingOutsideTrustedRoot",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: SYMLINK_PRIVILEGE_UNAVAILABLE\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.strategyrelease.preparation.TrustedRootArtifactVerifierPrototypeTest.createSymbolicLinkOrAbort(TrustedRootArtifactVerifierPrototypeTest.java:442)\n\tat com.guidinglight.nexusquant.strategyrelease.preparation.TrustedRootArtifactVerifierPrototypeTest.shouldRejectSymbolicLinkPointingOutsideTrustedRoot(TrustedRootArtifactVerifierPrototypeTest.java:227)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.strategyrelease.preparation.TrustedRootArtifactVerifierPrototypeTest",
+    "test": "shouldRejectTrustedRootThatIsSymbolicLink",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: SYMLINK_PRIVILEGE_UNAVAILABLE\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.strategyrelease.preparation.TrustedRootArtifactVerifierPrototypeTest.createSymbolicLinkOrAbort(TrustedRootArtifactVerifierPrototypeTest.java:442)\n\tat com.guidinglight.nexusquant.strategyrelease.preparation.TrustedRootArtifactVerifierPrototypeTest.shouldRejectTrustedRootThatIsSymbolicLink(TrustedRootArtifactVerifierPrototypeTest.java:252)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClientLiveDiagnosticTest",
+    "test": "shouldPrintLiveDiagnosticsForClientAndProbe",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: assumption is not true\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:71)\n\tat com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClientLiveDiagnosticTest.shouldPrintLiveDiagnosticsForClientAndProbe(BinanceWsClientLiveDiagnosticTest.java:55)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.infra.postgres.JdbcRepositoryPostgresSmokeTest",
+    "test": "shouldInsertAndReadSelectedRepositoriesAgainstMigratedPostgresSchema",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL repository smoke is disabled without nq.postgres.smoke.* properties\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.infra.postgres.JdbcRepositoryPostgresSmokeTest.shouldInsertAndReadSelectedRepositoriesAgainstMigratedPostgresSchema(JdbcRepositoryPostgresSmokeTest.java:59)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.scheduler.infra.lock.PostgresAdvisorySchedulerExecutionLockPostgresIntegrationTest",
+    "test": "shouldEnforceMultiInstanceMutualExclusionAndAutomaticRelease",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL advisory lock integration is disabled\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.scheduler.infra.lock.PostgresAdvisorySchedulerExecutionLockPostgresIntegrationTest.shouldEnforceMultiInstanceMutualExclusionAndAutomaticRelease(PostgresAdvisorySchedulerExecutionLockPostgresIntegrationTest.java:45)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.strategy.infra.artifact.ServerControlledStrategyArtifactBindingResolverTest",
+    "test": "shouldRejectSymlinkEscapeWhenPlatformAllowsCreation",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: SYMLINK_PRIVILEGE_UNAVAILABLE\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.strategy.infra.artifact.ServerControlledStrategyArtifactBindingResolverTest.shouldRejectSymlinkEscapeWhenPlatformAllowsCreation(ServerControlledStrategyArtifactBindingResolverTest.java:262)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.validationreview.infra.jdbc.ValidationReviewRepositoryPostgresIntegrationTest",
+    "test": "shouldVerifySchemaScopeLockingIdempotencyAndAtomicEvents",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL validation review integration is disabled\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.validationreview.infra.jdbc.ValidationReviewRepositoryPostgresIntegrationTest.shouldVerifySchemaScopeLockingIdempotencyAndAtomicEvents(ValidationReviewRepositoryPostgresIntegrationTest.java:64)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.admission.AdmissionGuardedMaterializationPostgresIntegrationTest",
+    "test": "everyAdmissionMutationShouldMakeOldGuardStaleWithoutWrites",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.admission.AdmissionGuardedMaterializationPostgresIntegrationTest.requireLocalDisposableConfig(AdmissionGuardedMaterializationPostgresIntegrationTest.java:621)\n\tat com.guidinglight.nexusquant.app.admission.AdmissionGuardedMaterializationPostgresIntegrationTest.everyAdmissionMutationShouldMakeOldGuardStaleWithoutWrites(AdmissionGuardedMaterializationPostgresIntegrationTest.java:146)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.admission.AdmissionGuardedMaterializationPostgresIntegrationTest",
+    "test": "concurrencyReplayRerunCreatedExclusionAndRollbackShouldBeAtomic",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.admission.AdmissionGuardedMaterializationPostgresIntegrationTest.requireLocalDisposableConfig(AdmissionGuardedMaterializationPostgresIntegrationTest.java:621)\n\tat com.guidinglight.nexusquant.app.admission.AdmissionGuardedMaterializationPostgresIntegrationTest.concurrencyReplayRerunCreatedExclusionAndRollbackShouldBeAtomic(AdmissionGuardedMaterializationPostgresIntegrationTest.java:227)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.admission.AdmissionGuardedMaterializationPostgresIntegrationTest",
+    "test": "issuanceShouldFirstBindRejectR0R1RaceIdentityMismatchAndUnknownSchema",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.admission.AdmissionGuardedMaterializationPostgresIntegrationTest.requireLocalDisposableConfig(AdmissionGuardedMaterializationPostgresIntegrationTest.java:621)\n\tat com.guidinglight.nexusquant.app.admission.AdmissionGuardedMaterializationPostgresIntegrationTest.issuanceShouldFirstBindRejectR0R1RaceIdentityMismatchAndUnknownSchema(AdmissionGuardedMaterializationPostgresIntegrationTest.java:82)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.admission.AdmissionMaterializationGuardPostgresIntegrationTest",
+    "test": "freshAndV37UpgradeShouldInitializeOnlyUnboundStateAndValidateFlyway",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.admission.AdmissionMaterializationGuardPostgresIntegrationTest.requireLocalDisposableConfig(AdmissionMaterializationGuardPostgresIntegrationTest.java:982)\n\tat com.guidinglight.nexusquant.app.admission.AdmissionMaterializationGuardPostgresIntegrationTest.freshAndV37UpgradeShouldInitializeOnlyUnboundStateAndValidateFlyway(AdmissionMaterializationGuardPostgresIntegrationTest.java:60)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.admission.AdmissionMaterializationGuardPostgresIntegrationTest",
+    "test": "coordinatorShouldLinearizeReverseOrderingAndRollbackTriggerFailures",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.admission.AdmissionMaterializationGuardPostgresIntegrationTest.requireLocalDisposableConfig(AdmissionMaterializationGuardPostgresIntegrationTest.java:982)\n\tat com.guidinglight.nexusquant.app.admission.AdmissionMaterializationGuardPostgresIntegrationTest.coordinatorShouldLinearizeReverseOrderingAndRollbackTriggerFailures(AdmissionMaterializationGuardPostgresIntegrationTest.java:335)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.admission.AdmissionMaterializationGuardPostgresIntegrationTest",
+    "test": "directRevisionAndIdentityRewritesShouldFailClosed",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.admission.AdmissionMaterializationGuardPostgresIntegrationTest.requireLocalDisposableConfig(AdmissionMaterializationGuardPostgresIntegrationTest.java:982)\n\tat com.guidinglight.nexusquant.app.admission.AdmissionMaterializationGuardPostgresIntegrationTest.directRevisionAndIdentityRewritesShouldFailClosed(AdmissionMaterializationGuardPostgresIntegrationTest.java:481)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.admission.AdmissionMaterializationGuardPostgresIntegrationTest",
+    "test": "excessiveFanOutShouldFailClosedBeforeMutationOrPartialBump",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.admission.AdmissionMaterializationGuardPostgresIntegrationTest.requireLocalDisposableConfig(AdmissionMaterializationGuardPostgresIntegrationTest.java:982)\n\tat com.guidinglight.nexusquant.app.admission.AdmissionMaterializationGuardPostgresIntegrationTest.excessiveFanOutShouldFailClosedBeforeMutationOrPartialBump(AdmissionMaterializationGuardPostgresIntegrationTest.java:292)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.admission.AdmissionMaterializationGuardPostgresIntegrationTest",
+    "test": "rawSqlMutationsShouldCoverRevisionPhantomsReorderAndFanOut",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.admission.AdmissionMaterializationGuardPostgresIntegrationTest.requireLocalDisposableConfig(AdmissionMaterializationGuardPostgresIntegrationTest.java:982)\n\tat com.guidinglight.nexusquant.app.admission.AdmissionMaterializationGuardPostgresIntegrationTest.rawSqlMutationsShouldCoverRevisionPhantomsReorderAndFanOut(AdmissionMaterializationGuardPostgresIntegrationTest.java:105)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.livecontrol.LiveSessionFactModelPostgresIntegrationTest",
+    "test": "shouldUpgradePopulatedV40WithoutFabricatingVenueEvidenceAndCoexistWithV2",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL GateY-6E integration is disabled\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.livecontrol.LiveSessionFactModelPostgresIntegrationTest.shouldUpgradePopulatedV40WithoutFabricatingVenueEvidenceAndCoexistWithV2(LiveSessionFactModelPostgresIntegrationTest.java:490)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.livecontrol.LiveSessionFactModelPostgresIntegrationTest",
+    "test": "shouldUpgradeV39WithoutFakeBackfillAndEnforcePilotFacts",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL GateY-6D integration is disabled\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.livecontrol.LiveSessionFactModelPostgresIntegrationTest.shouldUpgradeV39WithoutFakeBackfillAndEnforcePilotFacts(LiveSessionFactModelPostgresIntegrationTest.java:313)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.livecontrol.LiveSessionFactModelPostgresIntegrationTest",
+    "test": "shouldReplayV1ToV41AndRollbackOnMigrationLockTimeout",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL GateY-6D integration is disabled\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.livecontrol.LiveSessionFactModelPostgresIntegrationTest.shouldReplayV1ToV41AndRollbackOnMigrationLockTimeout(LiveSessionFactModelPostgresIntegrationTest.java:670)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.livecontrol.LiveSessionFactModelPostgresIntegrationTest",
+    "test": "shouldMigrateAndEnforceFactModelRepositoryAndConcurrency",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL GateY-2 integration is disabled\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.livecontrol.LiveSessionFactModelPostgresIntegrationTest.shouldMigrateAndEnforceFactModelRepositoryAndConcurrency(LiveSessionFactModelPostgresIntegrationTest.java:96)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.livecontrol.LiveSessionFactModelPostgresIntegrationTest",
+    "test": "shouldProveF003OrderExecutionIdentityConvergence",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL F003 identity convergence proof is disabled\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.livecontrol.LiveSessionFactModelPostgresIntegrationTest.shouldProveF003OrderExecutionIdentityConvergence(LiveSessionFactModelPostgresIntegrationTest.java:164)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.livecontrol.LiveSessionFactModelPostgresIntegrationTest",
+    "test": "shouldForwardMigrateExactV42ToV43ThenV43ToV44WithoutPendingOrFailedMigrations",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL GateY V42 to V43 integration is disabled\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.livecontrol.LiveSessionFactModelPostgresIntegrationTest.shouldForwardMigrateExactV42ToV43ThenV43ToV44WithoutPendingOrFailedMigrations(LiveSessionFactModelPostgresIntegrationTest.java:265)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.livecontrol.OperatorPilotAuthorityPostgresIntegrationTest",
+    "test": "allowsOneConcurrentZeroIntentReplacementAndCanonicalLegacyBridge",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL V45 integration is disabled\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.livecontrol.OperatorPilotAuthorityPostgresIntegrationTest.allowsOneConcurrentZeroIntentReplacementAndCanonicalLegacyBridge(OperatorPilotAuthorityPostgresIntegrationTest.java:382)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.livecontrol.OperatorPilotAuthorityPostgresIntegrationTest",
+    "test": "enforcesOperatorAuthorityIsolationDigestLeaseAndCloseout",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL V44 integration is disabled\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.livecontrol.OperatorPilotAuthorityPostgresIntegrationTest.enforcesOperatorAuthorityIsolationDigestLeaseAndCloseout(OperatorPilotAuthorityPostgresIntegrationTest.java:654)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.livecontrol.OperatorPilotAuthorityPostgresIntegrationTest",
+    "test": "regeneratesTerminalZeroExecutionLineageAndKeepsAttemptPlaceExactlyOnce",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL V46 regeneration integration is disabled\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.livecontrol.OperatorPilotAuthorityPostgresIntegrationTest.regeneratesTerminalZeroExecutionLineageAndKeepsAttemptPlaceExactlyOnce(OperatorPilotAuthorityPostgresIntegrationTest.java:93)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.livecontrol.OperatorPilotAuthorityPostgresIntegrationTest",
+    "test": "migratesExactV45ToV46AndValidates",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL V45 to V46 integration is disabled\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.livecontrol.OperatorPilotAuthorityPostgresIntegrationTest.migratesExactV45ToV46AndValidates(OperatorPilotAuthorityPostgresIntegrationTest.java:61)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.marketdata.VenueRuleFactsPostgresIntegrationTest",
+    "test": "freshDatabaseShouldMigrateFromV1ToV34AndSupportRepositoryLifecycle",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.marketdata.VenueRuleFactsPostgresIntegrationTest.requireLocalDisposableConfig(VenueRuleFactsPostgresIntegrationTest.java:408)\n\tat com.guidinglight.nexusquant.app.marketdata.VenueRuleFactsPostgresIntegrationTest.freshDatabaseShouldMigrateFromV1ToV34AndSupportRepositoryLifecycle(VenueRuleFactsPostgresIntegrationTest.java:47)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.marketdata.VenueRuleFactsPostgresIntegrationTest",
+    "test": "existingV33DatabaseShouldUpgradeToV34WithoutBackfillingLegacyFacts",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.marketdata.VenueRuleFactsPostgresIntegrationTest.requireLocalDisposableConfig(VenueRuleFactsPostgresIntegrationTest.java:408)\n\tat com.guidinglight.nexusquant.app.marketdata.VenueRuleFactsPostgresIntegrationTest.existingV33DatabaseShouldUpgradeToV34WithoutBackfillingLegacyFacts(VenueRuleFactsPostgresIntegrationTest.java:71)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.research.BacktestPublishArtifactLocatorPostgresIntegrationTest",
+    "test": "existingV36DatabaseShouldUpgradeWithoutBackfillAndAllowOnlyFailedToSucceededFirstBinding",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.research.BacktestPublishArtifactLocatorPostgresIntegrationTest.requireLocalDisposableConfig(BacktestPublishArtifactLocatorPostgresIntegrationTest.java:595)\n\tat com.guidinglight.nexusquant.app.research.BacktestPublishArtifactLocatorPostgresIntegrationTest.existingV36DatabaseShouldUpgradeWithoutBackfillAndAllowOnlyFailedToSucceededFirstBinding(BacktestPublishArtifactLocatorPostgresIntegrationTest.java:103)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.research.BacktestPublishArtifactLocatorPostgresIntegrationTest",
+    "test": "concurrentFirstBindingShouldRejectDifferentPairAndAcceptSamePair",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.research.BacktestPublishArtifactLocatorPostgresIntegrationTest.requireLocalDisposableConfig(BacktestPublishArtifactLocatorPostgresIntegrationTest.java:595)\n\tat com.guidinglight.nexusquant.app.research.BacktestPublishArtifactLocatorPostgresIntegrationTest.concurrentFirstBindingShouldRejectDifferentPairAndAcceptSamePair(BacktestPublishArtifactLocatorPostgresIntegrationTest.java:154)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.research.BacktestPublishArtifactLocatorPostgresIntegrationTest",
+    "test": "freshDatabaseShouldMigrateFromV1ToV38AndEnforceLocatorContract",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.research.BacktestPublishArtifactLocatorPostgresIntegrationTest.requireLocalDisposableConfig(BacktestPublishArtifactLocatorPostgresIntegrationTest.java:595)\n\tat com.guidinglight.nexusquant.app.research.BacktestPublishArtifactLocatorPostgresIntegrationTest.freshDatabaseShouldMigrateFromV1ToV38AndEnforceLocatorContract(BacktestPublishArtifactLocatorPostgresIntegrationTest.java:51)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.risk.KillSwitchRestartDurabilityPostgresIntegrationTest",
+    "test": "freshMigrationAndTwoSpringContextsPreserveEngagedState",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: kill-switch PostgreSQL integration is disabled\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.risk.KillSwitchRestartDurabilityPostgresIntegrationTest.freshMigrationAndTwoSpringContextsPreserveEngagedState(KillSwitchRestartDurabilityPostgresIntegrationTest.java:55)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.shadowrun.ShadowRunProvenancePostgresIntegrationTest",
+    "test": "existingV35DatabaseShouldUpgradeWithoutBackfillAndReadLegacyBindingModes",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.shadowrun.ShadowRunProvenancePostgresIntegrationTest.requireLocalDisposableConfig(ShadowRunProvenancePostgresIntegrationTest.java:1002)\n\tat com.guidinglight.nexusquant.app.shadowrun.ShadowRunProvenancePostgresIntegrationTest.existingV35DatabaseShouldUpgradeWithoutBackfillAndReadLegacyBindingModes(ShadowRunProvenancePostgresIntegrationTest.java:117)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.shadowrun.ShadowRunProvenancePostgresIntegrationTest",
+    "test": "idempotencyConflictMatrixShouldPreserveExistingPostgresFacts",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.shadowrun.ShadowRunProvenancePostgresIntegrationTest.requireLocalDisposableConfig(ShadowRunProvenancePostgresIntegrationTest.java:1002)\n\tat com.guidinglight.nexusquant.app.shadowrun.ShadowRunProvenancePostgresIntegrationTest.idempotencyConflictMatrixShouldPreserveExistingPostgresFacts(ShadowRunProvenancePostgresIntegrationTest.java:258)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.shadowrun.ShadowRunProvenancePostgresIntegrationTest",
+    "test": "materializationShouldBeAtomicIdempotentConcurrentAndProvenanceBound",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.shadowrun.ShadowRunProvenancePostgresIntegrationTest.requireLocalDisposableConfig(ShadowRunProvenancePostgresIntegrationTest.java:1002)\n\tat com.guidinglight.nexusquant.app.shadowrun.ShadowRunProvenancePostgresIntegrationTest.materializationShouldBeAtomicIdempotentConcurrentAndProvenanceBound(ShadowRunProvenancePostgresIntegrationTest.java:147)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.shadowrun.ShadowRunProvenancePostgresIntegrationTest",
+    "test": "freshDatabaseShouldMigrateFromV1ToV38AndPreserveProvenanceAcrossLifecycleUpdates",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.shadowrun.ShadowRunProvenancePostgresIntegrationTest.requireLocalDisposableConfig(ShadowRunProvenancePostgresIntegrationTest.java:1002)\n\tat com.guidinglight.nexusquant.app.shadowrun.ShadowRunProvenancePostgresIntegrationTest.freshDatabaseShouldMigrateFromV1ToV38AndPreserveProvenanceAcrossLifecycleUpdates(ShadowRunProvenancePostgresIntegrationTest.java:74)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B0RealProcessHarnessTest",
+    "test": "provesDefaultSafetyCanonicalSmokeRestartAndVenueFaults",
+    "reason": "System property [nq.b0] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B1RealProcessProofTest",
+    "test": "qualifiesCurrentOrdinaryRows",
+    "reason": "System property [nq.b1] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B1RealProcessProofTest",
+    "test": "v49AffectedTimeoutAndLostAckRegression",
+    "reason": "System property [nq.b1] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B2RealProcessProofTest",
+    "test": "provesCompleteCancelFillOrderingMatrix",
+    "reason": "System property [nq.b2] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B2RealProcessProofTest",
+    "test": "v49AffectedOccAndPerFillRegression",
+    "reason": "System property [nq.b2] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B2TerminalCorrectionPostgresIntegrationTest",
+    "test": "concurrentCorrectionsIncrementVersionAndPublishExactlyOnce",
+    "reason": "System property [nq.b2.pg] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B2TerminalCorrectionPostgresIntegrationTest",
+    "test": "failedEventAppendRollsBackStatusVersionAndAudit",
+    "reason": "System property [nq.b2.pg] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B2TerminalCorrectionPostgresIntegrationTest",
+    "test": "liveOrderRejectsExistingSimTradeBeforeLedgerReplay",
+    "reason": "System property [nq.b2.pg] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B2TerminalCorrectionPostgresIntegrationTest",
+    "test": "simOrderRejectsExistingLiveTradeBeforeLedgerReplay",
+    "reason": "System property [nq.b2.pg] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B2TerminalCorrectionPostgresIntegrationTest",
+    "test": "foreignFillIdentityCannotProveFullExecution",
+    "reason": "System property [nq.b2.pg] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B2TerminalCorrectionPostgresIntegrationTest",
+    "test": "partialThenThreeDurableFillsCorrectOnceAndOrdinaryLifecycleCannot",
+    "reason": "System property [nq.b2.pg] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B2TerminalCorrectionPostgresIntegrationTest",
+    "test": "concurrentDifferentFillsCannotOverfillBetweenPreflightAndInsert",
+    "reason": "System property [nq.b2.pg] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B2TerminalCorrectionPostgresIntegrationTest",
+    "test": "livePartialThenFullInheritsCanonicalEnvironment",
+    "reason": "System property [nq.b2.pg] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B2TerminalCorrectionPostgresIntegrationTest",
+    "test": "overfillRejectsServiceAndAtomicRepositoryGuard",
+    "reason": "System property [nq.b2.pg] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B2TerminalCorrectionPostgresIntegrationTest",
+    "test": "sqlRechecksFullProofAfterConcurrentDurableFillCommit",
+    "reason": "System property [nq.b2.pg] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B2TerminalCorrectionPostgresIntegrationTest",
+    "test": "liveOverfillFailsClosed",
+    "reason": "System property [nq.b2.pg] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B3RealProcessProofTest",
+    "test": "qualifiesKillInFlightMatrix",
+    "reason": "System property [nq.b3] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B3RealProcessProofTest",
+    "test": "v49AffectedKillAndRestartRegression",
+    "reason": "System property [nq.b3] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B4QualificationResumeTest",
+    "test": "remainingFailureMatrixConvergesWithoutResendingPlace",
+    "reason": "System property [nq.b4.resume] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B4RealProcessProofTest",
+    "test": "tradeCommitProcessDeathMustRecoverCanonicalTradeEvent",
+    "reason": "System property [nq.b4] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B4TradeEventPostgresTest",
+    "test": "eventAndLedgerFailureDoNotRepeatTheOtherDurableFact",
+    "reason": "System property [nq.b4.pg] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B4TradeEventPostgresTest",
+    "test": "eventCommitRejectionRollsBackTradeAndEventTogether",
+    "reason": "System property [nq.b4.pg] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B4TradeEventPostgresTest",
+    "test": "conflictingHistoricalEventFailsClosedWithoutRewritingSource",
+    "reason": "System property [nq.b4.pg] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B4TradeEventPostgresTest",
+    "test": "concurrentRecoveryAndLegacyEventAreUniqueInBothEnvironments",
+    "reason": "System property [nq.b4.pg] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B4TradeEventRemediationTest",
+    "test": "durableFanoutSurvivesRealProcessDeathAndRepeatedRestart",
+    "reason": "System property [nq.b4.remediation] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5AdmissionPostgresTest",
+    "test": "uniquenessScopeRollbackAndLegacyRefusal",
+    "reason": "System property [nq.b5.admission] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5AdmissionPostgresTest",
+    "test": "v49UpgradePreservesLegacyDuplicatesAndAddsDatabaseConstraints",
+    "reason": "System property [nq.b5.admission] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5AdmissionProcessTest",
+    "test": "staleDeathRestartAndRecoveryInteractions",
+    "reason": "System property [nq.b5.admission] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5AuthorityPostgresTest",
+    "test": "databaseEnforcesOneShotAndRestrictedPaths",
+    "reason": "System property [nq.b5] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5AuthorityProcessTest",
+    "test": "authorityOrderingAndCommitOutcomes",
+    "reason": "System property [nq.b5] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5LegacyVenuePostgresTest",
+    "test": "legacyLowercaseMissingAuthorityRemainsQueryOnly",
+    "reason": "System property [nq.b5] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5QualificationResumeTest",
+    "test": "currentOrdinaryAndSchedulerRows",
+    "reason": "System property [nq.b5.resume] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5RealProcessProofTest",
+    "test": "staleSenderMustNotPlaceAfterAnotherProcessFinalizesNotFound",
+    "reason": "System property [nq.b5] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5StrategyOwnerDeathTest",
+    "test": "deadDispatchMustNotPermanentlyBlockScheduleAfterNoSendFinality",
+    "reason": "System property [nq.b5.resume] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5StrategyRunRecoveryPostgresTest",
+    "test": "durableEligibilityBoundsRollbackAndLateCallback",
+    "reason": "System property [nq.b5.strategy] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5StrategyRunRecoveryProcessTest",
+    "test": "durableRecoveryAndNegativeControls",
+    "reason": "System property [nq.b5.strategy] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5StrategyScanConcurrencyTest",
+    "test": "sameWindowAcrossJvmsMustCreateAtMostOneLogicalDispatch(RepetitionInfo)",
+    "reason": "System property [nq.b5.scan] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5VenueIdentityProcessTest",
+    "test": "caseMatrixAndInvalidInputHaveOneCanonicalBoundary",
+    "reason": "System property [nq.b5] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.L4PlanBlockerPostgresIntegrationTest",
+    "test": "cancelledPartialFillRecoversWithKillEngaged",
+    "reason": "System property [nq.l4.blockers.enabled] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.L4PlanBlockerPostgresIntegrationTest",
+    "test": "terminalPrefixCannotStarveEligibleVictim(String)",
+    "reason": "System property [nq.l4.blockers.enabled] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.L4PlanBlockerPostgresIntegrationTest",
+    "test": "stalePlaceAckPreservesCommittedFilledThroughRealSpringTransactions",
+    "reason": "System property [nq.l4.blockers.enabled] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.L4PlanBlockerPostgresIntegrationTest",
+    "test": "sharedLimitOneProcessesOnlyOneOrder(boolean)",
+    "reason": "System property [nq.l4.blockers.enabled] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.L4PlanBlockerPostgresIntegrationTest",
+    "test": "staleCancelAckPreservesCommittedFilledThroughRealSpringTransactions",
+    "reason": "System property [nq.l4.blockers.enabled] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.L4PlanBlockerPostgresIntegrationTest",
+    "test": "engagedKillRejectsNewPlaceButAllowsOrdinaryReadAndLedgerConvergence",
+    "reason": "System property [nq.l4.blockers.enabled] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.L4PlanBlockerPostgresIntegrationTest",
+    "test": "cancelledWithoutVenueFillHasNoExecutionFacts",
+    "reason": "System property [nq.l4.blockers.enabled] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.L4PlanBlockerPostgresIntegrationTest",
+    "test": "reservationFailureDoesNotLoseCandidatesAndVenueQueryHoldsNoCursorLock",
+    "reason": "System property [nq.l4.blockers.enabled] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.L4PlanBlockerPostgresIntegrationTest",
+    "test": "cancelledDurableTradeRecoversMissingLedgerWithoutNewVenueFill",
+    "reason": "System property [nq.l4.blockers.enabled] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.L4PlanBlockerPostgresIntegrationTest",
+    "test": "stalePreCancelSnapshotNeverDispatchesGateway",
+    "reason": "System property [nq.l4.blockers.enabled] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.L4PlanBlockerPostgresIntegrationTest",
+    "test": "cancelledOrderWithVenueFillBackfillsTradeAndLedgerIdempotently",
+    "reason": "System property [nq.l4.blockers.enabled] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.L4PlanBlockerPostgresIntegrationTest",
+    "test": "cancelledFeeFactsConvergeAndReplayWithoutDuplicateLedger(String)",
+    "reason": "System property [nq.l4.blockers.enabled] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.L4PlanBlockerPostgresIntegrationTest",
+    "test": "staleCancelRejectCannotClaimNewCancelGenerationAfterAba",
+    "reason": "System property [nq.l4.blockers.enabled] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.ManualPublicOutboundSmokeTest",
+    "test": "shouldRunOnlyWhenAllManualPublicOutboundGatesAreExplicitlyEnabled",
+    "reason": "System property [nq.public-marketdata.manualSmoke.required] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.NqAppContextPostgresSmokeTest",
+    "test": "shouldLoadNqAppContextWithoutSeedOrExchangeSideEffects",
+    "reason": "System property [nq.app.context.smoke.required] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.OrderVersionFlywayPostgresIntegrationTest",
+    "test": "migratesAndValidatesVersionContract(boolean)",
+    "reason": "System property [nq.l4.blockers.enabled] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.ReconciliationCursorPostgresIntegrationTest",
+    "test": "reservationCommitsOutsideCallerAndFailuresRollbackProgress",
+    "reason": "System property [nq.l4.blockers.enabled] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.ReconciliationCursorPostgresIntegrationTest",
+    "test": "tiesWrapVenueAndChangingEligibilityRemainReachable",
+    "reason": "System property [nq.l4.blockers.enabled] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.ReconciliationCursorPostgresIntegrationTest",
+    "test": "freshAndV47UpgradePreserveHistoryAndOnlyAddCursor(boolean)",
+    "reason": "System property [nq.l4.blockers.enabled] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.ReconciliationCursorPostgresIntegrationTest",
+    "test": "destroyedInstanceContinuesDatabaseProgressAndCrashedBatchReturnsNextCircle",
+    "reason": "System property [nq.l4.blockers.enabled] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.ReconciliationCursorPostgresIntegrationTest",
+    "test": "twoIndependentInstancesSerializeInitialCreationAndFortyReservations",
+    "reason": "System property [nq.l4.blockers.enabled] does not exist"
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.ValidationReviewFlywayPostgresIntegrationTest",
+    "test": "shouldMigrateEmptyPostgresSchemaThroughGateVVersion33",
+    "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL Flyway integration is disabled\n\tat org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:321)\n\tat org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:120)\n\tat com.guidinglight.nexusquant.app.smoke.ValidationReviewFlywayPostgresIntegrationTest.shouldMigrateEmptyPostgresSchemaThroughGateVVersion33(ValidationReviewFlywayPostgresIntegrationTest.java:33)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)\n\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+  }
+]

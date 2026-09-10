@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.guidinglight.nexusquant.trading.domain.TradingVenue;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -108,7 +109,7 @@ public class PaperMatchingService {
         List<OrderRecord> orders = orderExecutionGateway.findMatchableOrders(limit);
         int newTradeCount = 0;
         for (OrderRecord order : orders) {
-            if (!"PAPER".equals(order.venue())) {
+            if (order.canonicalVenue() != TradingVenue.PAPER) {
                 // Why: GateC 实盘/模拟盘订单必须由各自 adapter + reconcile 驱动，不能再被 paper 本地撮合器碰到。
                 continue;
             }

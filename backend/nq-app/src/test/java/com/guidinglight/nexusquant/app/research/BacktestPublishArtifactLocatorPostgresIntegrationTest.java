@@ -21,6 +21,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.sql.Timestamp;
 
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
@@ -406,7 +407,7 @@ class BacktestPublishArtifactLocatorPostgresIntegrationTest {
                 backtestConfigId,
                 researchId,
                 strategyId,
-                java.sql.Timestamp.from(NOW)
+                Timestamp.from(NOW)
         );
         return new Fixture(publishId, backtestRunId, researchId, backtestConfigId, strategyId);
     }
@@ -422,7 +423,7 @@ class BacktestPublishArtifactLocatorPostgresIntegrationTest {
                 fixture.backtestConfigId(),
                 fixture.sourceStrategyId(),
                 status,
-                "SUCCEEDED".equals(status) ? java.sql.Timestamp.from(NOW) : null
+                "SUCCEEDED".equals(status) ? Timestamp.from(NOW) : null
         );
     }
 

@@ -1,0 +1,22 @@
+{
+  "result": "FAIL",
+  "decision": "L4_B5_CORRECTNESS_FINDING / STOP / PRODUCTION_REMEDIATION_REQUIRED",
+  "tests": 1,
+  "failures": 1,
+  "errors": 0,
+  "skipped": 0,
+  "mavenExit": 1,
+  "rawProofPath": "backend/nq-app/target/b5-scan-concurrency/fc4b3d05-e46f-4187-b209-10a4fc5b316b/raw-proof.json",
+  "rawProofSha256": "98cc0a2cca4a74631e15f187ed0e4ca72d080ce9d5c0be582a850a81e1105970",
+  "canonicalProof": "R01.json",
+  "canonicalSha256": "931339f169e1f84fb9a017fda6beac1e5236a3407dc7d01fd1116f015b0ea4da",
+  "inverseEquality": true,
+  "uuidLeakage": 0,
+  "identityMappings": 9,
+  "logPath": "backend/nq-app/target/b5-qualification-resume-attempt02/run-01.log",
+  "logSha256": "2dd3d72deea3b8950940ea615fffcce32e858d4c2790d9a18d6be35e47b576e2",
+  "command": "mvn -o -f backend/pom.xml -pl nq-app -am test -Dtest=B5StrategyScanConcurrencyTest -Dsurefire.failIfNoSpecifiedTests=false -Dnq.b5.scan=true",
+  "allChildProcessesExited": true,
+  "ownedContainerRemoved": true,
+  "cleanupNotOwnerDeathProof": true
+}

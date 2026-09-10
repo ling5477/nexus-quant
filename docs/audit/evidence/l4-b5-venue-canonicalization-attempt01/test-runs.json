@@ -1,0 +1,297 @@
+[
+  {
+    "run": "targeted-01",
+    "status": "FAIL",
+    "command": [
+      "D:/Tool/Maven/apache-maven-3.9.12/bin/mvn.cmd",
+      "-f",
+      "backend/pom.xml",
+      "-pl",
+      "nq-app",
+      "-am",
+      "test",
+      "-Dtest=TradingVenueTest,OrderCommandServiceTest,OrderCommandWriteServiceTest,OrdinaryPlaceResultClassificationTest,OkxRecoveryServiceTest,B5AuthorityPostgresTest,B5RealProcessProofTest,B5AuthorityProcessTest,B5VenueIdentityProcessTest",
+      "-Dsurefire.failIfNoSpecifiedTests=false",
+      "-Dnq.b5=true"
+    ],
+    "startedAt": "2026-09-10T02:52:10.929568+00:00",
+    "finishedAt": "2026-09-10T02:52:24.227277+00:00",
+    "exitCode": 1,
+    "logPath": "backend/nq-app/target/b5-venue-remediation/targeted-01.log",
+    "logSha256": "25202d1aa279bdf1482b041e2654c41085fa5930d5fee3360b38f824ea57456c",
+    "tests": 57,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 0,
+    "suites": [
+      [
+        "8",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.trading.application.OrderCommandServiceTest"
+      ],
+      [
+        "19",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.trading.domain.TradingVenueTest"
+      ],
+      [
+        "27",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.trading.application.OrderCommandWriteServiceTest"
+      ],
+      [
+        "2",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.scheduler.service.OkxRecoveryServiceTest"
+      ],
+      [
+        "1",
+        "1",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.scheduler.service.OrdinaryPlaceResultClassificationTest"
+      ]
+    ]
+  },
+  {
+    "run": "targeted-02",
+    "status": "PASS",
+    "command": [
+      "D:/Tool/Maven/apache-maven-3.9.12/bin/mvn.cmd",
+      "-f",
+      "backend/pom.xml",
+      "-pl",
+      "nq-app",
+      "-am",
+      "test",
+      "-Dtest=TradingVenueTest,OrderCommandServiceTest,OrderCommandWriteServiceTest,OrdinaryPlaceResultClassificationTest,OkxRecoveryServiceTest,B5AuthorityPostgresTest,B5RealProcessProofTest,B5AuthorityProcessTest,B5VenueIdentityProcessTest",
+      "-Dsurefire.failIfNoSpecifiedTests=false",
+      "-Dnq.b5=true"
+    ],
+    "startedAt": "2026-09-10T02:53:11.158314+00:00",
+    "finishedAt": "2026-09-10T02:58:09.610100+00:00",
+    "exitCode": 0,
+    "logPath": "backend/nq-app/target/b5-venue-remediation/targeted-02.log",
+    "logSha256": "8f18545a3a0e4feb3b58dc6c7e3abf848beac99c7a77561bbf2e9e7630bdf53f",
+    "tests": 61,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "suites": [
+      [
+        "8",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.trading.application.OrderCommandServiceTest"
+      ],
+      [
+        "19",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.trading.domain.TradingVenueTest"
+      ],
+      [
+        "27",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.trading.application.OrderCommandWriteServiceTest"
+      ],
+      [
+        "2",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.scheduler.service.OkxRecoveryServiceTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.scheduler.service.OrdinaryPlaceResultClassificationTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5AuthorityPostgresTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5AuthorityProcessTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5RealProcessProofTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5VenueIdentityProcessTest"
+      ]
+    ]
+  },
+  {
+    "run": "affected-03",
+    "status": "PASS",
+    "command": [
+      "D:/Tool/Maven/apache-maven-3.9.12/bin/mvn.cmd",
+      "-f",
+      "backend/pom.xml",
+      "-pl",
+      "nq-app",
+      "-am",
+      "test",
+      "-Dtest=B5LegacyVenuePostgresTest,B1RealProcessProofTest#v49AffectedTimeoutAndLostAckRegression,B2RealProcessProofTest#v49AffectedOccAndPerFillRegression,B3RealProcessProofTest#v49AffectedKillAndRestartRegression,B4TradeEventRemediationTest,ModuleBoundaryArchTest,PackageBoundaryArchTest",
+      "-Dsurefire.failIfNoSpecifiedTests=false",
+      "-Dnq.b5=true",
+      "-Dnq.b1=true",
+      "-Dnq.b2=true",
+      "-Dnq.b3=true",
+      "-Dnq.b4.remediation=true",
+      "-Dnq.b4.case=ATOMIC_DEATH"
+    ],
+    "startedAt": "2026-09-10T02:58:50.234805+00:00",
+    "finishedAt": "2026-09-10T03:01:58.312101+00:00",
+    "exitCode": 0,
+    "logPath": "backend/nq-app/target/b5-venue-remediation/affected-03.log",
+    "logSha256": "c655072835609e6a141e17bbfbd2284d31938712c16bf10d172988f0dba58ce4",
+    "tests": 29,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "suites": [
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.architecture.ModuleBoundaryArchTest"
+      ],
+      [
+        "4",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.architecture.PackageBoundaryArchTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B1RealProcessProofTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B2RealProcessProofTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B3RealProcessProofTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B4TradeEventRemediationTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5LegacyVenuePostgresTest"
+      ],
+      [
+        "9",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.architecture.ModuleBoundaryArchTest"
+      ],
+      [
+        "10",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.architecture.PackageBoundaryArchTest"
+      ]
+    ]
+  },
+  {
+    "run": "final-observation-04",
+    "status": "PASS",
+    "command": [
+      "D:/Tool/Maven/apache-maven-3.9.12/bin/mvn.cmd",
+      "-f",
+      "backend/pom.xml",
+      "-pl",
+      "nq-app",
+      "-am",
+      "test",
+      "-Dtest=TradingVenueTest,B5VenueIdentityProcessTest,B5LegacyVenuePostgresTest",
+      "-Dsurefire.failIfNoSpecifiedTests=false",
+      "-Dnq.b5=true"
+    ],
+    "startedAt": "2026-09-10T03:02:31.845212+00:00",
+    "finishedAt": "2026-09-10T03:03:58.220193+00:00",
+    "exitCode": 0,
+    "logPath": "backend/nq-app/target/b5-venue-remediation/final-observation-04.log",
+    "logSha256": "ab6285f095144943cca486969130e2c997c368a20e7253fa34c5829c6833b39d",
+    "tests": 21,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "suites": [
+      [
+        "19",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.trading.domain.TradingVenueTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5LegacyVenuePostgresTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5VenueIdentityProcessTest"
+      ]
+    ]
+  }
+]

@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.time.Duration;
 
 /** GateY provider 的 normalized、sanitized 结果；不拥有 Order/Trade/Position/Ledger 真相。 */
 public final class SpotProviderResults {
@@ -198,7 +199,7 @@ public final class SpotProviderResults {
     public record ClockObservation(
             Instant serverTime,
             Instant localClockMidpoint,
-            java.time.Duration observedSkew,
+            Duration observedSkew,
             SpotProviderError error,
             Instant observedAt
     ) {
@@ -208,7 +209,7 @@ public final class SpotProviderResults {
                 Objects.requireNonNull(serverTime, "serverTime must not be null");
                 Objects.requireNonNull(localClockMidpoint, "localClockMidpoint must not be null");
                 Objects.requireNonNull(observedSkew, "observedSkew must not be null");
-                if (!java.time.Duration.between(localClockMidpoint, serverTime).equals(observedSkew)) {
+                if (!Duration.between(localClockMidpoint, serverTime).equals(observedSkew)) {
                     throw new IllegalArgumentException("clock observation is internally inconsistent");
                 }
             } else if (serverTime != null || localClockMidpoint != null || observedSkew != null) {

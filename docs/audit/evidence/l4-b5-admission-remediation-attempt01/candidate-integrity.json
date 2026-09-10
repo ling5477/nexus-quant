@@ -1,0 +1,158 @@
+{
+  "head": "86c8ad84542636364f6c21e78bc292a323cbdff7",
+  "startingFiles": 3537,
+  "changedExistingFiles": [
+    {
+      "path": ".agents/skills/nq-trading-correctness-proof/references/engineering-lessons.md",
+      "before": "436fa61ee10aa060d17aa89dd4b21bc9587f364b7b79ff85b021878f7a24b662",
+      "after": "abafd4a6e24a9bf036c68cf8291d4099c56e9b6d838455e4a99a02b1fbecf262"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0RealProcessHarnessTest.java",
+      "before": "db06487b61586a75a787c7e74d29b44437329417c47b8290afd727d1acc6d0df",
+      "after": "7a76643f7ec31a21345b0dc5ecbc5ba61ad72f8adb010768963c3bfd4c3094da"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B1RealProcessProofTest.java",
+      "before": "2bd0b982b3225f182dc5367a8e6ad0a80a239f371c1c1f4401a522ee4f11866c",
+      "after": "9ef29be9672c8658f815ba9c4969aa5003a2dd76d4f54b0cc352c4653ec40ce4"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B2RealProcessProofTest.java",
+      "before": "11e2c26eff5424f1068ea2c3d217ebb5f95a28209aad38251b118283da6cecf7",
+      "after": "2a61d248138b8eac830ceb406dfb825d0abb6989f395e788aeedf09128e3cfc7"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B3RealProcessProofTest.java",
+      "before": "f8aac7dbddf11484d6ba847e368bd78f2713147bc775bdb2fbaa9c41c1a5ce9b",
+      "after": "f4daeb2ce83032f1c926275b074125bf99ab602530df495e86832dfc05530435"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B4QualificationResumeTest.java",
+      "before": "8d45f213bcdf971ab9804af788336ff81e6e07aa9e36b410f709677b4eef9b0f",
+      "after": "6e4efb44e5b9733fc1d5ddde1aba381fa19aa6433b78d775350edaf66385a376"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B4RealProcessProofTest.java",
+      "before": "dbec193ce174375a842a5e1c4ef7d82dd0e7871ab7eb4570c8027dd76ea8f60c",
+      "after": "88782f953d508a2ab019110cbff085862fc55157e0bb75f8f1daab45c4587bb8"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B4TradeEventRemediationTest.java",
+      "before": "9ccaabb99c40c913015dd0aa3f220fc855d516b94ef9910f6df2c1ca5a5bd0e1",
+      "after": "fa5cbfad6b8f525d93c645086e856cb2603bba18dc776ab68457da5586ae8774"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5AuthorityProcessTest.java",
+      "before": "bf3bc18e80e3e8e431e407aa6184a0ec11f363b62d5afb50b93fa27b019d628a",
+      "after": "5e7c4cc3761b9a3060d512d91845efed1d9bad26af5fc3ef5a47abfca1ac3049"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5QualificationControls.java",
+      "before": "7f303f6b5ef4f54087d02e536ad0a8c7ed9709f9dd9023b3753b6fdfd0fd6641",
+      "after": "c898d3e1851e1fb19f57dec3d0af607cf712ab293e6a8e5381d4edd57806ef14"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5QualificationResumeTest.java",
+      "before": "e9e5811e6d5172733841aa735d5164fe05e88629d768842a53e6189573076b2b",
+      "after": "ce5a08aaf068ef81fcc80001f8bad59e5b46b165b97ea88a4bd400f2d124979d"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5RealProcessProofTest.java",
+      "before": "4c8d404e368c066f9386a7b3536bc5491c50984ae3f41f08aad71386c8832348",
+      "after": "f2fe6dac19fc2113d83c2b186cc3734e153ebe566d49f523a869137d55e4c958"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5StrategyOwnerDeathTest.java",
+      "before": "e680b088ed542d69d5de215c13ea42c3fb2e3919958bb82ea3de4090e5852288",
+      "after": "b6d14b3e8df6e7f5e19ee26ebfb1654d523f5dae9c436cdc69e3f3572dcd0040"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5StrategyRunRecoveryProcessTest.java",
+      "before": "dab7173aac41483d39eababf8cb2eac6104524884c8bd8652f6b5e96294f914d",
+      "after": "64ad4e8609a7bf961b10824cc78d83e6ed0a18e11b353b40b7407c5e1df26e00"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5StrategyScanConcurrencyTest.java",
+      "before": "d14aa69184b63013c480414793d8556356fc6e787394296299d474f53af94840",
+      "after": "85791f585a1fa7741a645639d4d485b4b72a2d55998de9e8589b3f1f4188b819"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5VenueIdentityProcessTest.java",
+      "before": "6725bdc4f4beb33b532b5f8b5d2be25d84316676a4422e6921739dca95d455cf",
+      "after": "7f50ba0a20e3c373c8dcc7b866f3bc56b5c7784ea08e9cfb9ef4ec46e997f72e"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/TradingRestartRecoveryPostgresIntegrationTest.java",
+      "before": "e31f5eb0694cac35c681485201c49f3d11c7a00cb736407941a5ec2f23a29fd6",
+      "after": "9aaf0bd9064e97c534bd472ffae640ce1b9cb08e06df2994a2fedd9d317f3578"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/synthetic_evidence.py",
+      "before": "450c1d436c207227f30cd8ecd41e8bb4083344f796a84fc1d17d98519e69a30a",
+      "after": "1a922fa856355243242616d37fae6fa48db0b11562c51d3cd4c7c2685d600879"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/test_synthetic_evidence.py",
+      "before": "737e7661cdd53b5e4b88a37977b67932c5c50102d569b60c0ec6fcf7c1a6bdab",
+      "after": "0be39560a984ed1ad6a5897f671778a61a08a169c2f67be96cc9d3c4bb613b6a"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/StrategyManualTriggerService.java",
+      "before": "78912b57ddf536385339ee49ce9b31be743f962518c1cc1af507bd0acddd317d",
+      "after": "4da6781988feaf4739e4f0aee42e20bb282c54579ff878bc2ac28d2a9e8bceaf"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/StrategyScheduleScanService.java",
+      "before": "0b680cdfc25b9b4e59a31a5cc6575595369b79d648fdf1878a7e2993b2929229",
+      "after": "cad16b4ae2b4b345e7395f77aee7f0078e7c2e6f25640fafe8f824190fccab1e"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/command/StrategyManualTriggerRequest.java",
+      "before": "5b5aeea9cd848edb44726b35066ad12236def1a62fc08e60d789825bde727ab9",
+      "after": "7886cb48a6bde5c84c6cd890b7867b834e65a73cb674f7c7a3aab87f5595d56e"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/result/StrategyManualTriggerResult.java",
+      "before": "4518c8d5a8386c694c2ddbe1f7c270b60eb76aba10e24134b8cddac163d6ebfc",
+      "after": "a9b25e6e26f4421f6e160a91a62c1619693b16961a11f2dfed5e202a8c420883"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/port/StrategyRunRepository.java",
+      "before": "41a95a30e958e638092ec82c3034939af18095d00e76f8b006eb22c13365ffd0",
+      "after": "b079a842ac8255d1dd56ff751a9750b34413429feae67e2d744cfc780bf00e7e"
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcStrategyRunRepository.java",
+      "before": "7eff69b1eb8b1c5c98f11e0209368871d08f22eb3fcd4d88cbbcaa5b9861e471",
+      "after": "aa4627aa5adc5c17d4230afeb219e63bfe4fc7f5263ea897f483f04b97b68a7b"
+    },
+    {
+      "path": "docs/current/API.md",
+      "before": "44163f6bd06a7d1987072aef964a5fb55b1e6b83391f2a6eaa285c5f5d6f89bc",
+      "after": "0c773d2b34a9122b93b82e76b46a7023ec3ce4bf98333c72975eaa3584bcd05e"
+    },
+    {
+      "path": "docs/current/DB_SCHEMA.md",
+      "before": "43a3efb23d9ed4391ae99b705b1ff3f1a4278cc8aee510053c96e5ac2c2ea797",
+      "after": "183b68eeb25889ec889ad675ba9713a22ab73fdb3ec3633292f27e6fe239634c"
+    }
+  ],
+  "protectedFiles": 57,
+  "protectedMismatch": [],
+  "priorEvidenceUnchanged": true,
+  "reviewedBaselineFingerprint": "9be6df6668a2bcbbd3eb453be9a051c046d78a77d12a2d1e08070d70cd17cf00",
+  "baselineNote": "Admission remediation starts after qualification attempt02 additions; new production candidate supersedes reviewed fingerprint and is pending review.",
+  "testedBackendFiles": 1794,
+  "testedBackendMismatch": [],
+  "v49ProtocolAndTradingVenueUnchanged": true,
+  "existingStrategyRecoveryWriterUnchanged": true,
+  "v1ThroughV49Unchanged": true,
+  "stagedFiles": [],
+  "finalTestedManifestSha256": "68e41ad05b449d73e58e850d104cf54a24b9eec9baa5d96de45a792b67452362",
+  "full02RawManifestSha256": "df56a740159af790c91fe4bf475c795d667580ad5f7494eced3ef3b20ee35200",
+  "full01SupersededOnlyByExporterSourceChanges": [
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/synthetic_evidence.py",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/test_synthetic_evidence.py"
+  ]
+}

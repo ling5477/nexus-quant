@@ -1,0 +1,104 @@
+# B5 Strategy Run Owner Death Recovery 独立审查
+
+结论：本轮 P1 remediation 接受，P0=0、P1=0；B5 仍为 NOT_QUALIFIED。用户追加的全限定类名整改一并审查，发现一项 P3 import 规范遗漏，未发现由该整改引入的交易正确性回归。
+
+## 范围与候选
+
+| 字段 | 核验结果 |
+| --- | --- |
+| Task classification | HIGH_RISK / INDEPENDENT_CORRECTNESS_REVIEW / CRASH_RECOVERY / MULTI_PROCESS_CONCURRENCY / NQ-only；追加 Java 类型引用整改审查 |
+| Review mode | REVIEW_ONLY；本会话未参与候选实现 |
+| Branch | audit/post-gatey-agent-baseline |
+| Starting HEAD | 86c8ad84542636364f6c21e78bc292a323cbdff7 |
+| Worktree | E:\Project\nexus-quant-gateaudit；保留进入审查时的全部已有修改 |
+| Candidate fingerprint start | 9be6df6668a2bcbbd3eb453be9a051c046d78a77d12a2d1e08070d70cd17cf00 |
+| Candidate fingerprint end | 9be6df6668a2bcbbd3eb453be9a051c046d78a77d12a2d1e08070d70cd17cf00 |
+| Candidate unchanged | YES；3529 个 tracked/untracked 非忽略文件，无缺失、漂移或意外新增 |
+| Index start/end | 6bc9c1aecb4c1b9951c2cb734b842af422daf6ed2c32345301a28f487002a221；staged files=0 |
+| Git | 候选 files changed=0；stage=0；commit=NONE；push=NONE |
+
+指纹在用户明确追加全限定类名整改后记录。算法为：排序路径及逐文件原始字节 SHA-256，连同 branch、HEAD、index entries SHA-256、porcelain status，编码为排序键的紧凑 JSON 后取 SHA-256。忽略的 target 输出及仓库外 Temp 报告不属于候选。
+
+原实现 tested manifest 的1788个路径均存在，unexpected=0，但234个 Java 文件因用户授权的新增整改改变，hash mismatch=234；没有将旧 manifest 或旧 Full Maven 强行认定为当前候选证据。独立运行的新 manifest 覆盖相同1788个 backend/CI/fixture文件，结束核验 missing=0、hash mismatch=0、unexpected=0。历史 evidence 全部保持原字节内容。
+
+## 正确性核验
+
+| 字段 | 结果与依据 |
+| --- | --- |
+| Root cause | 已确认为持久 DISPATCHING 跨 JVM 死亡存活，而原 StrategyManualTriggerService 的完成回调消失；原普通 Order recovery 不拥有 strategy_runs 生命周期。不是 JVM busy-set 泄漏 |
+| Recovery writer | StrategyRunRecoveryService → JdbcStrategyRunRecoveryRepository；canonical scan 在 active 查询前调用。Spring REQUIRES_NEW/timeout=5，PG SQL 先筛资格、LIMIT 50、FOR UPDATE OF r SKIP LOCKED，再以 DISPATCHING CAS 更新 FAILED |
+| Durable binding | StrategyExecutionIntent.strategyRunId → PlaceOrderRequest → OrderRecord → nq_create_ordinary_place_order → orders.strategy_run_id；authority 以 order_id 外键关联。同账户/环境、唯一绑定订单、无 Trade 均参加资格判断，无时间邻近或字符串猜测 |
+| Original R10 | PASS；真实 A 在 prepare commit 后、arm 前死亡；ordinary recovery 得到 CANCELLED/REVOKED_BEFORE_SEND，B 与新 C 均不再 strategy_run_active，最终一个 FAILED run、一个 Order、PLACE=0 |
+| Safe orphan | PASS；沿现有 CANCELLED→FAILED 映射收敛，finished_at/error_message 稳定 |
+| MAY_HAVE_ESCAPED negative | PASS；DISPATCHING/SENT/MAY 保留，B/C/新 JVM 继续 active block，PLACE=0，仅 ordinary query/reconcile |
+| Live-run negative | PASS；正常 owner 暂停在 NOT_ARMED/SENT 时其他 JVM recover=0；释放 owner 后仅一次正常 PLACE，run=RUNNING |
+| Two-JVM recovery | PASS；B PID=26748、C PID=62996，独立 Spring JVM 对同一 PG run 返回恢复数1和0。观察触发器与真实业务 UPDATE 同事务，仅一条 DISPATCHING→FAILED；不存在第二个 run/Order/PLACE |
+| Repeated restart | PASS；新 JVM 重复恢复和 scan 的完整持久快照不变，无重复状态迁移、finished_at 改写或下游写入 |
+| Duplicate-dispatch negative | PASS；恢复保持原 request/window/run/Order/authority 身份，原窗口命中 dedup_hit；迟到存活 owner 场景由正常路径推进 lastTriggeredAt 后命中 not_due。duplicate PLACE=0 |
+| Active-run gate | PASS；existsActiveRunByStrategyId 保持只读，查询 CREATED/DISPATCHING/RUNNING；恢复逻辑是独立 writer |
+| JVM busy-set role | 仅本 JVM 重入保护；恢复资格与未决阻塞完全由 PostgreSQL 持久事实决定 |
+| V49 interaction | PASS；恢复仅读取 authority，不 reset/delete/re-arm。旧 sender 被撤销后 PLACE=0；MAY 不重发；arm COMMIT 回复丢失后不盲发 |
+| B1/B2/B3/B4 interaction | PASS；分别验证 timeout/lost ACK 查询优先、SIM/LIVE OCC及逐笔成交去重、Kill 下恢复与新 mutation 拒绝、原子提交后进程死亡及幂等 Trade/Event/Ledger 恢复 |
+| Engineering lesson | 现有 Durable Intermediate State Recovery Rule 与实现一致；没有新增 lesson，也不把所有历史 RUNNING 误作可回收完成态 |
+
+资格 SQL 额外要求 OKX、CANCELLED/ORDER_NOT_FOUND/OKX_51603、REVOKED_BEFORE_SEND、无其他绑定 Order、无 Trade；不依据年龄、PID、sleep 或 startup blanket cleanup。普通生命周期 writer 也加入 expected-state CAS，迟到 callback 不能覆盖恢复后的 FAILED。
+
+此修复没有加入跳过已消费窗口的游标推进，也没有定义 RUNNING 的成功终态。它关闭的是原 DISPATCHING owner-death P1；整个 schedule 可用性与剩余 B5 qualification 不在本轮接受范围。
+
+## 独立运行
+
+| 运行 | 结果 |
+| --- | --- |
+| PostgreSQL tests | 真实 PG16.15/V49；51个安全候选按50+1收敛，60个未决前缀及7个负例受保护；rollback 后0条FAILED/0条观察记录；重复恢复及迟到CAS no-op |
+| Independent real-process tests | 原R10及RACE、MAY、ACTIVE、LATE、BEFORE_DROP、AFTER_DROP全部PASS；真实 Spring/RiskGate、独立 Synthetic Venue JVM，无运行时SQL伪造run结果 |
+| target.log | 15 tests / 0 failures / 0 errors / 0 skips / exit 0 |
+| affected.log | 34 tests / 0 failures / 0 errors / 0 skips / exit 0；含直接交互与两个模块的架构检查 |
+| Implementation Full Maven | 历史1877 tests / 0 failures / 0 errors / 102 conditional skips；原日志、raw manifest、canonical fixture SHA-256核验一致，仅证明旧候选 |
+| Full Maven reuse decision | RERUN_REQUIRED / USER_AUTHORIZED_CANDIDATE_CHANGE；原Full未复用为当前候选PASS |
+| Reviewer Full Maven | 1877 tests / 0 failures / 0 errors / 102 conditional skips / exit 0；2026-09-10 05:52:15Z—05:54:05Z |
+| Full fixture | 专用loopback/tmpfs PG16.15，仓库锁定镜像、Flyway V49、canonical CI legacy PAPER account；exchange_accounts及credentials均0；未继承Spring profile或Java/Maven overrides；结束已验证并删除自有容器 |
+| Mandatory proof skips | 0；上述49个目标/相关测试实际执行，不把Full中的条件skip记为通过 |
+
+Full日志SHA-256：`464fedb0a850299f784a8f0e1a5fcdc46e128897167f223f809a1835f0e7d6fc`。
+
+Reviewer Full manifest文件SHA-256：`b3915f9bbaba2c9217574b22e3fdc98561bfee217f57ea4c9c10bb20991a6552`。
+
+完整核验数据见 [review-verification.json](review-verification.json)，Full见 [result.json](full-01/result.json) 和 [日志](full-01/full-maven.log)。目标日志见 [target.log](target.log)、[affected.log](affected.log)。
+
+本轮原R10新证据目录：`E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b5-strategy-death\c7046a68-0e45-4f71-bfb3-f0f6fab1ecd9`。
+
+本轮6场景新证据目录：`E:\Project\nexus-quant-gateaudit\backend\nq-app\target\b5-strategy-recovery\ed1d7f6d-9746-4fc8-8e6c-4ca253ba9912`。
+
+## 追加全限定类名整改
+
+234个变化的Java文件均纳入候选与重新构建。209个文件通过按显式import展开类型引用后的词法一致性比较；20个已跟踪文件叠加原B5/V49改动，5个为先前未跟踪候选文件，另行核对实际调用、类型绑定和受影响行为。没有把这25个文件宣称为对HEAD的语义零差异。该词法检查是辅助证据，不替代Java类型解析或回归；全量编译与上述实际运行均通过。
+
+扫描排除package/import、注释、字符串和text block后，后端Java正文中常见包名前缀全限定类型引用为0。
+
+**P3 / IMPORT_RULE_INCOMPLETE / NON_BLOCKING**：新增AGENTS规则同时禁止通配符import，但仍有46个文件、132条通配符import，含本次新增的B5StrategyRunRecoveryPostgresTest（7、12、14、17行）和B5StrategyRunRecoveryProcessTest。全限定名整改已消除扫描命中的正文引用，尚不能宣称完整满足新增import规范。建议后续单独完成显式import清理；本轮不修改。完整列表见 [java-style-findings.json](java-style-findings.json)。该问题不破坏本P1的持久化/恢复证明。
+
+## 最终决定
+
+| 字段 | 结果 |
+| --- | --- |
+| P0 | 0 |
+| P1 | 0；STRATEGY_DISPATCH_OWNER_DEATH_PERMANENT_BUSY CLOSED |
+| P2 | concurrent INSERT loser transaction failure，OPEN / NON_BLOCKING，未扩大审查范围 |
+| P3 | 1项import规范遗漏，NON_BLOCKING |
+| Final decision | B5_STRATEGY_RUN_OWNER_DEATH_RECOVERY_REVIEW_ACCEPTED |
+| Next action | READY_TO_RESUME_B5_QUALIFICATION；全限定名相关P3可在单独实现任务处理 |
+
+```text
+PASS /
+B5_STRATEGY_RUN_OWNER_DEATH_RECOVERY_REVIEW_ACCEPTED /
+STRATEGY_DISPATCH_OWNER_DEATH_PERMANENT_BUSY_P1_CLOSED /
+DURABLE_INTERMEDIATE_STATE_RECOVERY_PROVEN /
+UNRESOLVED_RUN_NOT_FALSELY_RECLAIMED /
+MULTIPROCESS_RECOVERY_IDEMPOTENT /
+V49_FAIL_CLOSED_SEMANTICS_PRESERVED /
+P0_0 /
+P1_0 /
+READY_TO_RESUME_B5_QUALIFICATION
+```
+
+B5 != QUALIFIED；B5 != ACCEPTED。未更新current authority，未进行任何Git发布动作。所有新增运行输出仅在target或仓库外Temp；生产、migration、test源码及已有evidence均未修改。

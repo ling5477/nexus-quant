@@ -26,6 +26,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.mockito.ArgumentMatchers;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -66,8 +67,8 @@ class StrategyReleaseAdmissionPreviewSecurityWebMvcTest {
     @WithMockUser(username = "local-viewer", roles = "VIEWER")
     void shouldAllowViewerReadWithoutGrantingWriteAuthority() throws Exception {
         when(previewService.preview(
-                org.mockito.ArgumentMatchers.eq("publish-preview-001"),
-                org.mockito.ArgumentMatchers.anyString()
+                ArgumentMatchers.eq("publish-preview-001"),
+                ArgumentMatchers.anyString()
         )).thenReturn(Optional.of(preview()));
 
         mockMvc.perform(get(ROUTE))

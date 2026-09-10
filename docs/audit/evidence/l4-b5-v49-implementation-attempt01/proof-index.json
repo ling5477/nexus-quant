@@ -1,0 +1,98 @@
+[
+  {
+    "scenario": "AFTER_DROP",
+    "proof": "AFTER_DROP.json",
+    "rawPath": "backend/nq-app/target/b5-authority/131c75af-fe99-4528-b3ab-915fdb56a9c1/AFTER_DROP/raw-proof.json",
+    "rawSha256": "dc5bbfbac917cd1382427e8f2e4b6cfffef26cdf95fa7048dbc60285c19f0681",
+    "proofSha256": "56db4e118ef7e99c7b14a9a760f83e189c96a552e42a5099db0e10eca90250b6",
+    "inverseEquality": true
+  },
+  {
+    "scenario": "BEFORE_DROP",
+    "proof": "BEFORE_DROP.json",
+    "rawPath": "backend/nq-app/target/b5-authority/131c75af-fe99-4528-b3ab-915fdb56a9c1/BEFORE_DROP/raw-proof.json",
+    "rawSha256": "0a7e4f781be0b7fc44703abce0e54f17dfd08364846fd740bcd020d34a2dcb12",
+    "proofSha256": "e41d15cd8c83f2b2c4869aa2177d41f9395aab0a0a2462be8129ff83c5886fd7",
+    "inverseEquality": true
+  },
+  {
+    "scenario": "DEATH",
+    "proof": "DEATH.json",
+    "rawPath": "backend/nq-app/target/b5-authority/131c75af-fe99-4528-b3ab-915fdb56a9c1/DEATH/raw-proof.json",
+    "rawSha256": "8d8776e2c60beda74e0a4d8318cdc7620e17ab7b96873d20fb115fae6adb3e61",
+    "proofSha256": "aee5062617093150a81ed79d62efb9e5bec30c239cbe75e610e865d42daefb33",
+    "inverseEquality": true
+  },
+  {
+    "scenario": "KILL_BEFORE_ARM",
+    "proof": "KILL_BEFORE_ARM.json",
+    "rawPath": "backend/nq-app/target/b5-authority/131c75af-fe99-4528-b3ab-915fdb56a9c1/KILL_BEFORE_ARM/raw-proof.json",
+    "rawSha256": "a6c1ba3b764224c1bbd873ea8c82ac52466f2c995e5932777c6bb5acd4f591ea",
+    "proofSha256": "13b3cacc1ab38e7f3313804a40e8411e0d823546e8710046899fa3171b48aa0a",
+    "inverseEquality": true
+  },
+  {
+    "scenario": "MALFORMED_ACK",
+    "proof": "MALFORMED_ACK.json",
+    "rawPath": "backend/nq-app/target/b5-authority/131c75af-fe99-4528-b3ab-915fdb56a9c1/MALFORMED_ACK/raw-proof.json",
+    "rawSha256": "d4d9837e344a17d795bc467e80931f05760a98784833676ced99e21a87915322",
+    "proofSha256": "3f215c790fdf14c34b5b853817a74701a9dd586bc1920e245447ba495f4f1647",
+    "inverseEquality": true
+  },
+  {
+    "scenario": "RACE1",
+    "proof": "RACE1.json",
+    "rawPath": "backend/nq-app/target/b5-authority/131c75af-fe99-4528-b3ab-915fdb56a9c1/RACE1/raw-proof.json",
+    "rawSha256": "58b1c8abd713d0096a6475e4ffd9cac111951dc3379a3a27338696d38ed9ffc3",
+    "proofSha256": "09c12e527170bf0a459a602f57a891348c5414057e8e13f4ebf253747256cdc9",
+    "inverseEquality": true
+  },
+  {
+    "scenario": "RACE2",
+    "proof": "RACE2.json",
+    "rawPath": "backend/nq-app/target/b5-authority/131c75af-fe99-4528-b3ab-915fdb56a9c1/RACE2/raw-proof.json",
+    "rawSha256": "d39f13046029e924610947af42177f73c71d7ae61323282ab0e40a5b8910c6ec",
+    "proofSha256": "0b3bf6dc2b53bc93a67f76fbcb39dde4c104513a20723404a5a185b0d2c9e9be",
+    "inverseEquality": true
+  },
+  {
+    "scenario": "RACE3",
+    "proof": "RACE3.json",
+    "rawPath": "backend/nq-app/target/b5-authority/131c75af-fe99-4528-b3ab-915fdb56a9c1/RACE3/raw-proof.json",
+    "rawSha256": "b7d0724c749d9ccd1d23eaef35f2ba25018fbd8907419bff071cb66896adae61",
+    "proofSha256": "961650234393929511b878b483165aff0629f8ef58def3def5a27e9b84b34224",
+    "inverseEquality": true
+  },
+  {
+    "scenario": "REJECT",
+    "proof": "REJECT.json",
+    "rawPath": "backend/nq-app/target/b5-authority/131c75af-fe99-4528-b3ab-915fdb56a9c1/REJECT/raw-proof.json",
+    "rawSha256": "d27f7d4e81352123bf7ed6e4722f482d00b11eca246a01c07961802653a50bbc",
+    "proofSha256": "d8d5c7c24932c1c477d21ce28007df2f62d4f944cfd2523744a502e33114400d",
+    "inverseEquality": true
+  },
+  {
+    "scenario": "ROLLBACK",
+    "proof": "ROLLBACK.json",
+    "rawPath": "backend/nq-app/target/b5-authority/131c75af-fe99-4528-b3ab-915fdb56a9c1/ROLLBACK/raw-proof.json",
+    "rawSha256": "b1060523e73678d02923c03deeb2f74ac1999e1e811b2cfea5b2bd73e30f771b",
+    "proofSha256": "2de9fc207f587af8962489559ad1690a9ec010ce73b4a82049d04a575752bd37",
+    "inverseEquality": true
+  },
+  {
+    "scenario": "SENDER_WINS",
+    "proof": "SENDER_WINS.json",
+    "rawPath": "backend/nq-app/target/b5-authority/131c75af-fe99-4528-b3ab-915fdb56a9c1/SENDER_WINS/raw-proof.json",
+    "rawSha256": "10af35a67524c5d56e652b5ec61443ea7de60371beff64a18243206439a8428a",
+    "proofSha256": "7e2230bf0f14d212f9238b92b1a8291915ecf4c5ef7de4ed9a2a25ce974b2714",
+    "inverseEquality": true
+  },
+  {
+    "scenario": "ORIGINAL_P1",
+    "proof": "ORIGINAL_P1.json",
+    "rawPath": "backend/nq-app/target/b5-proof/2fb3ad16-3bd4-4edd-bdd3-0648e72d9b5d/raw-proof.json",
+    "rawSha256": "856bdc70a37df020e492dd9530598dddf947db750f813904e805c9d559a073b5",
+    "proofSha256": "8683daf0372d7ddab25dafc3d30717ef7dbba6793da4fe6171764a5cf1027743",
+    "inverseEquality": true
+  }
+]

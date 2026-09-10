@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
+import java.time.ZoneId;
+import java.util.Iterator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -395,7 +397,7 @@ class JdkOkxRealTransportTest {
                 + "\"feeCcy\":\"USDT\",\"fillTime\":\"1786881600000\"}]}";
     }
 
-    private static List<String> iterable(java.util.Iterator<String> iterator) {
+    private static List<String> iterable(Iterator<String> iterator) {
         List<String> values = new ArrayList<>();
         iterator.forEachRemaining(values::add);
         return values;
@@ -503,12 +505,12 @@ class JdkOkxRealTransportTest {
         }
 
         @Override
-        public java.time.ZoneId getZone() {
+        public ZoneId getZone() {
             return ZoneOffset.UTC;
         }
 
         @Override
-        public Clock withZone(java.time.ZoneId zone) {
+        public Clock withZone(ZoneId zone) {
             if (!ZoneOffset.UTC.equals(zone)) {
                 throw new IllegalArgumentException("only UTC is supported");
             }

@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.strategy.application.shadowrun;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Shadow Run runner skeleton 的本地输入命令。
@@ -22,7 +23,7 @@ public record ShadowRunRunnerCommand(
         String requestId,
         String idempotencyKey,
         String traceId,
-        com.fasterxml.jackson.databind.JsonNode inputMarketdataPayload,
+        JsonNode inputMarketdataPayload,
         StrategyDecisionTrace strategyDecisionTrace,
         RiskPreflightSnapshot riskPreflightSnapshot,
         OrderIntentPreview orderIntentPreview,

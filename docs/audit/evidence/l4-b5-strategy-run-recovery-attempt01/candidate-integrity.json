@@ -1,0 +1,57 @@
+{
+  "head": "86c8ad84542636364f6c21e78bc292a323cbdff7",
+  "baselineManifestSha256": "702eaa308ac5fe709d338e9a19fbc90c939481017a93122b8ba33f171a2c401c",
+  "baselineFiles": 3498,
+  "unchangedBaselineFiles": 3493,
+  "changedExisting": [
+    {
+      "path": ".agents/skills/nq-trading-correctness-proof/references/engineering-lessons.md",
+      "before": "811c2bd97871bcb7bdcd09df8211fcb08315d368c7644303860fac18eb4e913a",
+      "after": "436fa61ee10aa060d17aa89dd4b21bc9587f364b7b79ff85b021878f7a24b662"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5QualificationControls.java",
+      "before": "0fd2e0b8ec222a5363f42bc948341bdf471d9bed1944b7df2e4dbc1babed5088",
+      "after": "5f01885224830d4230c8b4401cfb62b28727a307751fff2cda8157c5ea7f1e75"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/StrategyScheduleScanService.java",
+      "before": "9a8e7310d6cf8705d705f07e5fc65a2a4b73aa173dfb20bd4752b5fd0c33f48b",
+      "after": "0b680cdfc25b9b4e59a31a5cc6575595369b79d648fdf1878a7e2993b2929229"
+    },
+    {
+      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/StrategyScheduleScanServiceTest.java",
+      "before": "a42c20b39b7ee33e87e692c589844e765ef34c867d09bccad552b37c2e459cb8",
+      "after": "08e10f00084afc2d0563d4f1f8358df6eb4005e4441d51737226b877fab540db"
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcStrategyRunRepository.java",
+      "before": "c08b418467b705b1c6da7f9ecc2a18a8395c4ff69cade137c92ea18a0465357b",
+      "after": "7eff69b1eb8b1c5c98f11e0209368871d08f22eb3fcd4d88cbbcaa5b9861e471"
+    }
+  ],
+  "newSourceFiles": [
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5StrategyRunRecoveryPostgresTest.java",
+      "sha256": "e79ab8a0ecac162ff2b70a2c3f3fb0b645002ecd918c6bff528a804270fa61c7"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5StrategyRunRecoveryProcessTest.java",
+      "sha256": "dab7173aac41483d39eababf8cb2eac6104524884c8bd8652f6b5e96294f914d"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/StrategyRunRecoveryService.java",
+      "sha256": "57963a79a33afdb7ec2cb72cdd1e598cc6d82ecab7084de4e541b861c1182846"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/domain/port/StrategyRunRecoveryRepository.java",
+      "sha256": "ed9364695ab29ce8616d3f7349bb9de043e7aba89f7ec884d981dc5e61ec008b"
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcStrategyRunRecoveryRepository.java",
+      "sha256": "ed46c98aa41fe15eea0b328e72b5f302cbbb5e53f420a9e0d7057014a38534f2"
+    }
+  ],
+  "originalR10Unchanged": true,
+  "stagedFiles": []
+}

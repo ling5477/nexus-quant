@@ -22,6 +22,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.PilotPrerequisiteObservati
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotScopeRepository;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.InstrumentCatalogItem;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.port.InstrumentCatalogReadPort;
+import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentCanonicalEncoder;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -160,8 +161,7 @@ public final class MinimalLivePilotControlService implements MinimalLivePilotCon
                 : leases.createAndActivate(
                 actor, binding, command.configuredPilotMaxNotional(), end, correlation);
         UUID placeIntentId = UUID.randomUUID();
-        String clientOrderId = com.guidinglight.nexusquant.livecontrol.execution.domain
-                .ExecutionIntentCanonicalEncoder.stableClientOrderId(placeIntentId);
+        String clientOrderId = ExecutionIntentCanonicalEncoder.stableClientOrderId(placeIntentId);
         return new MinimalLivePilotPermit(
                 actor.userId(), materialized.sessionId(), binding.id(), binding.bindingDigest(), lease.id(),
                 placeIntentId, clientOrderId, requestId, traceId,

@@ -13,6 +13,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * PaperPortfolioAssembler —— 纯函数式组合看板聚合器（GateJ 后产品化 Loop-13）。
@@ -274,7 +275,7 @@ public final class PaperPortfolioAssembler {
 
     private static List<PaperPortfolioSummary.Group> buildGroups(
             List<RunMetrics> metrics,
-            java.util.function.Function<PaperPortfolioSummary.RunRef, String> keyFn
+            Function<PaperPortfolioSummary.RunRef, String> keyFn
     ) {
         // 用 LinkedHashMap 保持首次出现顺序，便于排序前的稳定性。
         Map<String, List<RunMetrics>> grouped = new LinkedHashMap<>();

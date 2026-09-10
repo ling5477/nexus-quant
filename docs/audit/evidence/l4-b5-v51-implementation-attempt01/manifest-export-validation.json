@@ -1,0 +1,42 @@
+{
+  "status": "PASS",
+  "transformation": "Only path-to-hash dictionary representation becomes explicit path/sha256 fields; all original values, order and source serialization retained.",
+  "manifests": [
+    {
+      "file": "starting-files.json",
+      "source": "backend/nq-app/target/b5-v51-implementation-attempt01/starting-files.json",
+      "sourceSha256": "29aec41695edff5d10b1370e42a5e6975da4135258780461b4e0573502de8f5c",
+      "exportedSha256": "d14744bac4764a866b5f64de2adaf691a9e8f04c7b4a534165d33535ec98d7f6",
+      "entries": 3571,
+      "inverseSemanticEquality": true,
+      "inverseByteEquality": true
+    },
+    {
+      "file": "full-01-tested-manifest.json",
+      "source": "backend/nq-app/target/b5-v51-implementation-attempt01/full-01/tested-manifest.json",
+      "sourceSha256": "dc64d9aab7fb7dae5637f0e890d0da36f923888656800dabd7c3a9674d4d0551",
+      "exportedSha256": "95a05b30226247c1dea396a57fd3a4e5252cfce29f5f51277c56b752aab54e25",
+      "entries": 1812,
+      "inverseSemanticEquality": true,
+      "inverseByteEquality": true
+    },
+    {
+      "file": "full-02-tested-manifest.json",
+      "source": "backend/nq-app/target/b5-v51-implementation-attempt01/full-02/tested-manifest.json",
+      "sourceSha256": "af4773a4bcb128577d6164c209ead858443dd955bd70c1743f3c39f3d7e7e076",
+      "exportedSha256": "1397f0312bccb7101746676ac4057149b3f85f38a44b01b7134d9e93b72a214d",
+      "entries": 1813,
+      "inverseSemanticEquality": true,
+      "inverseByteEquality": true
+    },
+    {
+      "file": "protected-manifest.json",
+      "source": "backend/nq-app/target/b5-v51-implementation-attempt01/protected-manifest-original.json",
+      "sourceSha256": "55afa51487a800e9a2e97834745a4cbc7bbac7d98f08117982280e33d9bd54c8",
+      "exportedSha256": "3706ff785dba83820e4af1e2aa9c068b7edb72fe4a5266f1aa6a0b1bbb0dde73",
+      "entries": 471,
+      "inverseSemanticEquality": true,
+      "inverseByteEquality": true
+    }
+  ]
+}

@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
+import java.time.Instant;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -194,7 +195,7 @@ public class JdbcBacktestPublishRecordRepository implements BacktestPublishRecor
         );
     }
 
-    private static Timestamp toTimestamp(java.time.Instant value) {
+    private static Timestamp toTimestamp(Instant value) {
         return value == null ? null : Timestamp.from(value);
     }
 }

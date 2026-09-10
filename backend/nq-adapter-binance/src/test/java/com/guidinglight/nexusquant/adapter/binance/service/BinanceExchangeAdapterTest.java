@@ -17,6 +17,7 @@ import com.guidinglight.nexusquant.adapter.binance.model.BinanceSymbolFilters;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -80,7 +81,7 @@ class BinanceExchangeAdapterTest {
             assertTrue(ack.accepted());
             assertEquals("BINANCE", ack.exchangeCode());
             assertEquals("889900", ack.externalOrderId());
-            assertEquals(com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory.ACCEPTED, ack.resultCategory());
+            assertEquals(AdapterResultCategory.ACCEPTED, ack.resultCategory());
             assertNull(ack.rawPayload());
             RecordedExchange exchange = exchangeRef.get();
             assertEquals("POST", exchange.method());
@@ -131,7 +132,7 @@ class BinanceExchangeAdapterTest {
                     "trc-binance-get-1"
             ));
             assertEquals("ACCEPTED", snapshot.externalStatus());
-            assertEquals(com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory.SUCCESS, snapshot.resultCategory());
+            assertEquals(AdapterResultCategory.SUCCESS, snapshot.resultCategory());
             assertEquals("BTC-USDT", snapshot.symbol());
             assertNull(snapshot.rawPayload());
             assertTrue(getExchange.get().uri().contains("orderId=889900"));
@@ -190,7 +191,7 @@ class BinanceExchangeAdapterTest {
             assertFalse(ack.accepted());
             assertNotNull(ack.error());
             assertEquals("-2010", ack.error().code());
-            assertEquals(com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory.FATAL_FAILURE, ack.resultCategory());
+            assertEquals(AdapterResultCategory.FATAL_FAILURE, ack.resultCategory());
             assertTrue(ack.error().message().contains("insufficient balance"));
             assertEquals("POST", exchangeRef.get().method());
         }

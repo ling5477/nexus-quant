@@ -1,0 +1,137 @@
+[
+  {
+    "log": "backend/nq-app/target/b5-v49-affected-08.log",
+    "sha256": "57eb4005e64dd269a3127b5655f6f96747c54bc72944a999106976ce4b2fa8ac",
+    "result": "PASS",
+    "tests": 53,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "log": "backend/nq-app/target/b5-v49-compile-04.log",
+    "sha256": "2e79930b0649617054e08d5b87e432135f9f41c1863ac8892904089c5dbb0412",
+    "result": "PASS",
+    "tests": 0,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "log": "backend/nq-app/target/b5-v49-final-targeted-09.log",
+    "sha256": "2e4fea6841ac80b5c8bc2780b14496d70a7ece24f3dafdf499fd6eb8e67b7765",
+    "result": "FAIL",
+    "tests": 46,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "log": "backend/nq-app/target/b5-v49-final-targeted-10.log",
+    "sha256": "bf7686c2a97e0bf7592591bd4ab8ba5139944fb34a690e38ccb85a460261ae01",
+    "result": "FAIL",
+    "tests": 57,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "log": "backend/nq-app/target/b5-v49-final-targeted-11.log",
+    "sha256": "bc9a6badaec63082669984a4dfbddfef91ad59dd7bba3b87b0ed0ff2782e6fcc",
+    "result": "PASS",
+    "tests": 3,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "log": "backend/nq-app/target/b5-v49-full-failure-remediation-12.log",
+    "sha256": "bc30212efff2ac6e1d03457f8567a8724dded57ad352b37c01c86a3ac96cf0af",
+    "result": "FAIL",
+    "tests": 13,
+    "failures": 0,
+    "errors": 1,
+    "skipped": 0
+  },
+  {
+    "log": "backend/nq-app/target/b5-v49-full-failure-remediation-13.log",
+    "sha256": "0406635f65e18fec429975138dcf2dcdea4d4c18c52a4afbef7ec6ee5c7bd0fa",
+    "result": "PASS",
+    "tests": 1,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "log": "backend/nq-app/target/b5-v49-full-maven-01.log",
+    "sha256": "eb33da144218dd2edbde5e8fc1a7612b47c790fd59b0f5fab077cd2d37378766",
+    "result": "FAIL",
+    "tests": 1852,
+    "failures": 0,
+    "errors": 12,
+    "skipped": 97
+  },
+  {
+    "log": "backend/nq-app/target/b5-v49-pg-05.log",
+    "sha256": "2697e3586d781ab7ae983f3f11d229a0515813d027a9a77a16f0c544b8503dc1",
+    "result": "FAIL",
+    "tests": 1,
+    "failures": 0,
+    "errors": 1,
+    "skipped": 0
+  },
+  {
+    "log": "backend/nq-app/target/b5-v49-targeted-01.log",
+    "sha256": "120da653573fb976a86e515f538a62cdc1e49e4518e887d603c9ec4028e2e3f6",
+    "result": "FAIL",
+    "tests": 0,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "log": "backend/nq-app/target/b5-v49-targeted-02.log",
+    "sha256": "b4ccafb874819855bf780d92b7e0d95a574f3256262804ff176936312fa60d89",
+    "result": "FAIL",
+    "tests": 35,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "log": "backend/nq-app/target/b5-v49-targeted-03.log",
+    "sha256": "0edadeaf0fb5a8a8d5285fffa04948f33c9f63803fc8e283c40a423cde2eb76c",
+    "result": "FAIL",
+    "tests": 46,
+    "failures": 0,
+    "errors": 1,
+    "skipped": 0
+  },
+  {
+    "log": "backend/nq-app/target/b5-v49-targeted-06.log",
+    "sha256": "41063c60b9a84c8591f61d35a9d364454c6c0eae8595104459ac05a70be4e049",
+    "result": "FAIL",
+    "tests": 3,
+    "failures": 3,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "log": "backend/nq-app/target/b5-v49-targeted-07.log",
+    "sha256": "e812ad9e7ed6d1f42c9f301bc2b42099255e0a469a98517db1ad61967e540af3",
+    "result": "PASS",
+    "tests": 3,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  {
+    "log": "backend/nq-app/target/b5-v49-full-maven-02.log",
+    "sha256": "6aab83e00d5fc87da5936ea9c36ddb2ff65788aa69d4813741cae4075f24e460",
+    "result": "PASS",
+    "tests": 1852,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 96
+  }
+]

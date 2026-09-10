@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.mockito.ArgumentMatchers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -58,8 +59,8 @@ class StrategyReleaseAdmissionPreviewControllerTest {
     @Test
     void shouldReturnSafeEligiblePreview() throws Exception {
         when(previewService.preview(
-                org.mockito.ArgumentMatchers.eq(PUBLISH_ID),
-                org.mockito.ArgumentMatchers.anyString()
+                ArgumentMatchers.eq(PUBLISH_ID),
+                ArgumentMatchers.anyString()
         ))
                 .thenReturn(Optional.of(preview()));
 
@@ -83,8 +84,8 @@ class StrategyReleaseAdmissionPreviewControllerTest {
                 .andReturn();
 
         verify(previewService).preview(
-                org.mockito.ArgumentMatchers.eq(PUBLISH_ID),
-                org.mockito.ArgumentMatchers.anyString()
+                ArgumentMatchers.eq(PUBLISH_ID),
+                ArgumentMatchers.anyString()
         );
         assertNoForbiddenResponseFields(result.getResponse().getContentAsString());
     }
@@ -92,8 +93,8 @@ class StrategyReleaseAdmissionPreviewControllerTest {
     @Test
     void shouldReturn404WhenPublishRecordDoesNotExist() throws Exception {
         when(previewService.preview(
-                org.mockito.ArgumentMatchers.eq(PUBLISH_ID),
-                org.mockito.ArgumentMatchers.anyString()
+                ArgumentMatchers.eq(PUBLISH_ID),
+                ArgumentMatchers.anyString()
         ))
                 .thenReturn(Optional.empty());
 

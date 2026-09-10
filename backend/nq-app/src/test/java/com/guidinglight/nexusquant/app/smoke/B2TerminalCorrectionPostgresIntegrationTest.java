@@ -9,10 +9,16 @@ import com.guidinglight.nexusquant.trading.application.OrderCommandWriteService;
 import com.guidinglight.nexusquant.trading.application.OrderLifecycleService;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
+import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
+import com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.*;
+import java.sql.DriverManager;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +27,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.jdbc.core.ConnectionCallback;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -43,15 +50,15 @@ class B2TerminalCorrectionPostgresIntegrationTest {
     @Autowired OrderCommandWriteService writes;
     @Autowired OrderLifecycleService lifecycle;
     @Autowired TradeRepository trades;
-    @Autowired com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileService reconcile;
-    @MockitoSpyBean com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter adapter;
+    @Autowired OkxRestReconcileService reconcile;
+    @MockitoSpyBean OkxExchangeAdapter adapter;
     @MockitoSpyBean OrderRepository orders;
     @MockitoSpyBean EventPublisherPort events;
     private OrderRecord order;
     private String url;
 
     @BeforeEach void fixture(TestInfo info) {
-        url = jdbc.execute((org.springframework.jdbc.core.ConnectionCallback<String>) c -> c.getMetaData().getURL());
+        url = jdbc.execute((ConnectionCallback<String>) c -> c.getMetaData().getURL());
         assertTrue(url.startsWith("jdbc:postgresql://127.0.0.1:") && url.endsWith("/nq_l4_blocker"));
         assertTrue(jdbc.queryForObject("SHOW server_version", String.class).startsWith("16."));
         String id = UUID.randomUUID().toString();
@@ -109,7 +116,7 @@ class B2TerminalCorrectionPostgresIntegrationTest {
         assertThrows(IllegalStateException.class, () -> trades.findAllByOrderId(order.orderId(), 100));
         assertThrows(IllegalStateException.class, () -> lifecycle.reconcileCancelledExecution(order.orderId(), order.traceId()));
         assertEquals(0, orders.compareAndSetCancelledToFilled(order.orderId(), 0, "proof", Instant.now()));
-        doReturn(java.util.List.of()).when(adapter).listTradeReports(order.symbol(), order.externalOrderId(), order.traceId());
+        doReturn(List.of()).when(adapter).listTradeReports(order.symbol(), order.externalOrderId(), order.traceId());
         assertEquals("TRADE_ORDER_ENVIRONMENT_MISMATCH", assertThrows(IllegalStateException.class,
                 () -> reconcile.reconcileOnce(100)).getMessage());
         assertEquals(order, orders.findByOrderId(order.orderId()).orElseThrow());
@@ -139,12 +146,12 @@ class B2TerminalCorrectionPostgresIntegrationTest {
 
     @Test void sqlRechecksFullProofAfterConcurrentDurableFillCommit() {
         fill("10", "0");
-        var once = new java.util.concurrent.atomic.AtomicBoolean();
+        var once = new AtomicBoolean();
         doAnswer(call -> {
             Object result = call.callRealMethod();
             if (once.compareAndSet(false, true)) {
                 // 独立连接提交，不能被待测 Spring 事务的失败一起回滚。
-                try (var c = java.sql.DriverManager.getConnection(url, "postgres", "");
+                try (var c = DriverManager.getConnection(url, "postgres", "");
                      var s = c.prepareStatement("INSERT INTO trades(trade_id,order_id,account_id,symbol,exchange,external_order_id,exchange_trade_id,price,qty,fee,fee_currency,trace_id,ts) VALUES (?,?,?,'BTC-USDT','OKX',?,?,100,0.01,0,'USDT',?,CURRENT_TIMESTAMP)")) {
                     String id = UUID.randomUUID().toString();
                     s.setString(1, id); s.setString(2, order.orderId()); s.setLong(3, order.accountId());
@@ -184,7 +191,7 @@ class B2TerminalCorrectionPostgresIntegrationTest {
     @Test void concurrentDifferentFillsCannotOverfillBetweenPreflightAndInsert() throws Exception {
         fill("4", "0");
         var start = new CountDownLatch(1);
-        java.util.concurrent.Callable<Boolean> insert = () -> {
+        Callable<Boolean> insert = () -> {
             assertTrue(start.await(5, TimeUnit.SECONDS));
             try { fill("4", "0.01"); return true; }
             catch (IllegalStateException ex) { assertTrue(ex.getMessage().contains("OVERFILL")); return false; }

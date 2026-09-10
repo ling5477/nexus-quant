@@ -16,6 +16,7 @@ import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
 import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialCapabilityPolicy;
 import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialReference;
 import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialReference.RemoteIpVerificationStatus;
+import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialCapability;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -164,7 +165,7 @@ public final class OkxPrivateReadonlyProbeService {
     private ScopedPrivateReadonlyProbeObservation scopedProbeBlocked(
             Instant observedAt,
             long credentialReference,
-            com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialCapability capability,
+            ScopedCredentialCapability capability,
             String blocker
     ) {
         return new ScopedPrivateReadonlyProbeObservation(
@@ -172,7 +173,7 @@ public final class OkxPrivateReadonlyProbeService {
                 observedAt,
                 credentialReference,
                 capability == null
-                        ? com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialCapability.FORBIDDEN
+                        ? ScopedCredentialCapability.FORBIDDEN
                         : capability,
                 Set.of(),
                 false,

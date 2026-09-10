@@ -10,6 +10,7 @@ import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.time.format.DateTimeFormatterBuilder;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -19,7 +20,7 @@ import javax.crypto.spec.SecretKeySpec;
 public final class OkxPrivateRequestSigner {
 
     private static final String HMAC_SHA256 = "HmacSHA256";
-    private static final DateTimeFormatter TIMESTAMP_FORMATTER = new java.time.format.DateTimeFormatterBuilder()
+    private static final DateTimeFormatter TIMESTAMP_FORMATTER = new DateTimeFormatterBuilder()
             .appendInstant(3)
             .toFormatter();
 

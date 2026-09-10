@@ -1,0 +1,57 @@
+{
+  "stageAssets": {
+    "exit": 1,
+    "existing": 144,
+    "current": 144,
+    "new": 0,
+    "removed": 0,
+    "sameErrorSet": true,
+    "summary": "STAGE_ASSET_CHECK scanned=1879 reviewed_exceptions=138 errors=144",
+    "sha256": "4dbe94ec95fa69c04fa82e09275264f069eeb244955903a6b3936e66b8c30719"
+  },
+  "secretScan": {
+    "gitleaks": "8.18.4",
+    "archiveHashVerified": true,
+    "ciConfigSha256": "3651989e01d4838ff313ac55a2579cc17306dbe951dd19f8de7429ada45af503",
+    "files": 64,
+    "candidateExit": 0,
+    "findings": 0,
+    "protectedNegativeExit": 2,
+    "protectedNegativeFindings": 6,
+    "protectedFieldsUnchanged": true
+  },
+  "exporterTests": {
+    "tests": 8,
+    "failures": 0
+  },
+  "rawOracle": {
+    "proofs": 13,
+    "passed": 13,
+    "mutationsRejected": 5
+  },
+  "canonicalOracle": {
+    "proofs": 13,
+    "passed": 13,
+    "mutationsRejected": 5
+  },
+  "proofExports": {
+    "new": 13,
+    "reused": 34,
+    "interaction": 4,
+    "inverseEquivalent": true,
+    "uuidLeaks": 0
+  },
+  "initialExportCheck": "REJECTED_UNMAPPED_RESULT_REFERENCES; raw unchanged; strict known-format exporter fixed and independently reviewed",
+  "fullMavenRerun": "NONE",
+  "git": {
+    "stage": 0,
+    "commit": "NONE",
+    "push": "NONE"
+  },
+  "docLinks": {
+    "checked": 42,
+    "warnings": 0,
+    "errors": 0
+  },
+  "diffCheckExit": 0
+}

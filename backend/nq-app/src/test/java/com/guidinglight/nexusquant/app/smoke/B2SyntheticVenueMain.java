@@ -5,17 +5,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.math.BigDecimal;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executors;
+import java.io.IOException;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /** 独立交易所事实：撤单请求受理与撮合端撤单生效分开，不连接 NQ 数据库。 */
 public final class B2SyntheticVenueMain {
     private final ObjectMapper mapper = new ObjectMapper();
-    private final com.fasterxml.jackson.databind.node.ArrayNode fills = mapper.createArrayNode();
-    private final com.fasterxml.jackson.databind.node.ArrayNode events = mapper.createArrayNode();
+    private final ArrayNode fills = mapper.createArrayNode();
+    private final ArrayNode events = mapper.createArrayNode();
     private ObjectNode order;
     private boolean pendingCancel;
     private boolean duplicateReports;
@@ -25,6 +32,11 @@ public final class B2SyntheticVenueMain {
     private boolean holdCancel;
     private boolean holdAcceptance;
     private int placeRequests;
+    private int apiRequests;
+    private boolean malformedAck;
+    private String lotSize = "0.001";
+    private String tickSize = "0.01";
+    private String minSize = "0.001";
 
     public static void main(String[] args) throws Exception {
         B0Fixture.require(args.length == 0);
@@ -38,25 +50,37 @@ public final class B2SyntheticVenueMain {
         System.out.flush();
     }
 
-    private synchronized void handle(HttpExchange exchange) throws java.io.IOException {
+    private synchronized void handle(HttpExchange exchange) throws IOException {
         byte[] body = exchange.getRequestBody().readNBytes(8193);
         if (body.length > 8192 || exchange.getRequestHeaders().keySet().stream()
-                .anyMatch(key -> key.toUpperCase(java.util.Locale.ROOT).startsWith("OK-ACCESS"))) {
+                .anyMatch(key -> key.toUpperCase(Locale.ROOT).startsWith("OK-ACCESS"))) {
             respond(exchange, 400, mapper.createObjectNode().put("error", "UNSAFE_REQUEST"));
             return;
         }
         String path = exchange.getRequestURI().getPath();
+        if (path.startsWith("/api/")) apiRequests++;
         var envelope = mapper.createObjectNode().put("code", "0").put("msg", "");
         var data = envelope.putArray("data");
         if ("/facts".equals(path)) {
             envelope.put("pid", ProcessHandle.current().pid()).put("places", places).put("cancels", cancels)
-                    .put("pendingCancel", pendingCancel).put("placeRequests", placeRequests);
+                    .put("pendingCancel", pendingCancel).put("placeRequests", placeRequests).put("apiRequests", apiRequests);
             envelope.set("order", order);
             envelope.set("fills", fills);
             envelope.set("events", events);
         } else if ("/control".equals(path)) {
             String command = new String(body, StandardCharsets.UTF_8);
-            if ("HOLD_ACCEPTANCE".equals(command)) {
+            if (command.startsWith("RULES ")) {
+                String[] values = command.split(" ");
+                if (values.length != 4) { respond(exchange, 400, envelope); return; }
+                for (int i = 1; i < 4; i++) if (new BigDecimal(values[i]).signum() <= 0) {
+                    respond(exchange, 400, envelope); return;
+                }
+                lotSize = values[1]; tickSize = values[2]; minSize = values[3];
+                event("RULES_CHANGED").put("lotSize", lotSize).put("tickSize", tickSize).put("minSize", minSize);
+            } else if ("MALFORMED_PLACE_ACK".equals(command)) {
+                malformedAck = true;
+                event(command);
+            } else if ("HOLD_ACCEPTANCE".equals(command)) {
                 holdAcceptance = true;
                 event(command);
             } else if ("RELEASE_ACCEPTANCE".equals(command)) {
@@ -102,16 +126,16 @@ public final class B2SyntheticVenueMain {
                 event("CANCEL_EFFECT").put("state", order.path("state").asText());
             } else { respond(exchange, 400, envelope); return; }
         } else if ("/api/v5/public/instruments".equals(path)) {
-            data.addObject().put("instId", "BTC-USDT").put("tickSz", "0.01")
-                    .put("lotSz", "0.001").put("minSz", "0.001").put("state", "live");
+            data.addObject().put("instId", "BTC-USDT").put("tickSz", tickSize)
+                    .put("lotSz", lotSize).put("minSz", minSize).put("state", "live");
         } else if ("/api/v5/trade/order".equals(path) && "POST".equals(exchange.getRequestMethod())) {
             placeRequests++;
             event("PLACE_REQUEST_RECEIVED");
-            long deadline = System.nanoTime() + java.time.Duration.ofSeconds(20).toNanos();
+            long deadline = System.nanoTime() + Duration.ofSeconds(20).toNanos();
             while (holdAcceptance) {
-                if (System.nanoTime() >= deadline) throw new java.io.IOException("B3_ACCEPTANCE_BARRIER_TIMEOUT");
+                if (System.nanoTime() >= deadline) throw new IOException("B3_ACCEPTANCE_BARRIER_TIMEOUT");
                 try { wait(100); }
-                catch (InterruptedException ex) { Thread.currentThread().interrupt(); throw new java.io.IOException(ex); }
+                catch (InterruptedException ex) { Thread.currentThread().interrupt(); throw new IOException(ex); }
             }
             JsonNode request = mapper.readTree(body);
             if (order != null || request.path("clOrdId").asText().isBlank()) { respond(exchange, 400, envelope); return; }
@@ -124,6 +148,12 @@ public final class B2SyntheticVenueMain {
             data.addObject().put("ordId", "b2-venue-1").put("clOrdId", order.path("clOrdId").asText()).put("sCode", "0");
             awaitRelease(true);
             event("PLACE_ACK_GENERATED");
+            if (malformedAck) {
+                malformedAck = false;
+                byte[] invalid = "{broken-ack".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(200, invalid.length);
+                exchange.getResponseBody().write(invalid); exchange.close(); return;
+            }
         } else if ("/api/v5/trade/cancel-order".equals(path) && "POST".equals(exchange.getRequestMethod())) {
             JsonNode request = mapper.readTree(body);
             if (order == null || !(order.path("ordId").asText().equals(request.path("ordId").asText())
@@ -136,8 +166,12 @@ public final class B2SyntheticVenueMain {
             data.addObject().put("ordId", "b2-venue-1").put("clOrdId", order.path("clOrdId").asText()).put("sCode", "0");
             awaitRelease(false);
             event("CANCEL_ACK_GENERATED");
+        } else if ("/api/v5/trade/orders-pending".equals(path)) {
+            // 普通 recovery 的只读查询，完全依据 venue 自身状态返回。
+            if (order != null && Set.of("live", "partially_filled").contains(order.path("state").asText())) data.add(order);
+            event("QUERY_OPEN_ORDERS").put("count", data.size());
         } else if ("/api/v5/trade/order".equals(path) || "/api/v5/trade/fills".equals(path)) {
-            var query = new java.util.HashMap<String, String>();
+            var query = new HashMap<String, String>();
             String raw = exchange.getRequestURI().getRawQuery();
             if (raw != null) for (String part : raw.split("&")) {
                 String[] pair = part.split("=", 2);
@@ -151,6 +185,9 @@ public final class B2SyntheticVenueMain {
                     event("QUERY_FILLS").put("reportCount", data.size());
                 }
                 else { data.add(order); event("QUERY_ORDER").put("state", order.path("state").asText()); }
+            } else if (path.endsWith("/order")) {
+                envelope.put("code", "51603").put("msg", "Order does not exist");
+                event("QUERY_ORDER_NOT_FOUND");
             }
         } else { respond(exchange, 404, envelope); return; }
         respond(exchange, 200, envelope);
@@ -161,13 +198,13 @@ public final class B2SyntheticVenueMain {
     }
 
     /** 等待释放时让出 monitor，使撮合、查询与 ACK 屏障具备实际独立时序。 */
-    private void awaitRelease(boolean place) throws java.io.IOException {
-        long deadline = System.nanoTime() + java.time.Duration.ofSeconds(20).toNanos();
+    private void awaitRelease(boolean place) throws IOException {
+        long deadline = System.nanoTime() + Duration.ofSeconds(20).toNanos();
         while (place ? holdPlace : holdCancel) {
             long remaining = deadline - System.nanoTime();
-            if (remaining <= 0) throw new java.io.IOException("B2_ACK_BARRIER_TIMEOUT");
-            try { wait(Math.max(1, java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(remaining))); }
-            catch (InterruptedException ex) { Thread.currentThread().interrupt(); throw new java.io.IOException(ex); }
+            if (remaining <= 0) throw new IOException("B2_ACK_BARRIER_TIMEOUT");
+            try { wait(Math.max(1, TimeUnit.NANOSECONDS.toMillis(remaining))); }
+            catch (InterruptedException ex) { Thread.currentThread().interrupt(); throw new IOException(ex); }
         }
     }
 
@@ -176,7 +213,7 @@ public final class B2SyntheticVenueMain {
                 .put("epochMillis", System.currentTimeMillis());
     }
 
-    private void respond(HttpExchange exchange, int code, JsonNode value) throws java.io.IOException {
+    private void respond(HttpExchange exchange, int code, JsonNode value) throws IOException {
         byte[] body = mapper.writeValueAsBytes(value);
         exchange.getResponseHeaders().set("Content-Type", "application/json");
         exchange.sendResponseHeaders(code, body.length);

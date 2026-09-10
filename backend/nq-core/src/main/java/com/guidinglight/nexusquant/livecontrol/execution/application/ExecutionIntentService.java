@@ -12,6 +12,7 @@ import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentS
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptCanonicalEncoder;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptDraft;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptOutcome;
+import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentAction;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -98,7 +99,7 @@ public final class ExecutionIntentService {
         lifecycle.beforeFakeMutation(sendStarted);
 
         FakeExchangeResult result = sendStarted.action()
-                == com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentAction.PLACE
+                == ExecutionIntentAction.PLACE
                 ? exchange.place(sendStarted)
                 : exchange.cancel(sendStarted);
         lifecycle.afterFakeMutation(sendStarted, result);

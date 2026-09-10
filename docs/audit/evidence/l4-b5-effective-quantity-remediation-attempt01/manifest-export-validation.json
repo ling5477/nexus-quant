@@ -1,0 +1,19 @@
+{
+  "status": "PASS",
+  "manifests": [
+    {
+      "path": "starting-files.json",
+      "sha256": "27894e1839bbb8dc8044ed8f18830a4d5ad305fa9b6d2ae84535e97e7e32bd45",
+      "entries": 3683,
+      "inverseSemanticEquality": true,
+      "inverseByteEquality": true
+    },
+    {
+      "path": "full-01-tested-manifest.json",
+      "sha256": "7520b88953b237fd1a7c663c4e371458523e73150c0560f143b05f64fa7357fa",
+      "entries": 1818,
+      "inverseSemanticEquality": true,
+      "inverseByteEquality": true
+    }
+  ]
+}

@@ -184,7 +184,7 @@ public class JdbcBacktestRunRepository implements BacktestRunRepository {
         );
     }
 
-    private static Timestamp toTimestamp(java.time.Instant value) {
+    private static Timestamp toTimestamp(Instant value) {
         return value == null ? null : Timestamp.from(value);
     }
 }

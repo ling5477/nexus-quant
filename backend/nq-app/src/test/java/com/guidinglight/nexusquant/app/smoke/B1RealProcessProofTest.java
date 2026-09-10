@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.app.smoke;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -13,15 +14,32 @@ import java.sql.Connection;
 import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.HashSet;
+import java.util.HexFormat;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** B1 普通链路：独立 venue 制造网络不确定性，只读 checker 从真实进程和数据库判定收敛。 */
 @EnabledIfSystemProperty(named = "nq.b1", matches = "true")
 class B1RealProcessProofTest {
     private final ObjectMapper mapper = new ObjectMapper();
     private final HttpClient http = HttpClient.newHttpClient();
+
+    @Test void v49AffectedTimeoutAndLostAckRegression() throws Exception {
+        Path root = B0Processes.root().resolve("backend/nq-app/target/b1-v49/" + UUID.randomUUID());
+        Files.createDirectories(root);
+        System.out.println("B1_V49_ROOT " + root);
+        run(root, "L4-AT-01", 1);
+        run(root, "L4-LA-02", 1);
+    }
 
     @Test void qualifiesCurrentOrdinaryRows() throws Exception {
         Path root = B0Processes.root().resolve("backend/nq-app/target/b1-proof/" + UUID.randomUUID());
@@ -30,8 +48,8 @@ class B1RealProcessProofTest {
         for (String scenario : new String[]{"L4-AT-01", "L4-LA-02"}) {
             for (int repeat = 1; repeat <= 3; repeat++) run(root, scenario, repeat);
         }
-        var databases = new java.util.HashSet<String>();
-        var venues = new java.util.HashSet<Long>();
+        var databases = new HashSet<String>();
+        var venues = new HashSet<Long>();
         for (String scenario : new String[]{"L4-AT-01", "L4-LA-02"}) {
             for (int repeat = 1; repeat <= 3; repeat++) {
                 JsonNode proof = mapper.readTree(root.resolve(scenario + "-" + repeat + "/proof.json").toFile());
@@ -69,7 +87,7 @@ class B1RealProcessProofTest {
                     assertNotEquals(ProcessHandle.current().pid(), first.process.pid());
                     proof.put("pgVersion", value(checker, "SHOW server_version"));
                     assertTrue(proof.path("pgVersion").asText().startsWith("16."));
-                    assertEquals("48", value(checker, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
+                    assertEquals("51", value(checker, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
                     assertEquals(fixture.name(), value(checker, "SELECT current_database()"));
                     assertEquals("nq_b0_reader", value(checker, "SELECT current_user"));
                     proof.set("preFault", snapshot(checker));
@@ -177,9 +195,9 @@ class B1RealProcessProofTest {
         assertEquals(lost ? 1 : 0, count(venue, "ACK_GENERATED"));
         if (lost) {
             assertTrue(event(venue, "ACK_GENERATED").path("sha256").asText().matches("[a-f0-9]{64}"));
-            byte[] bytes = event(venue, "ACK_GENERATED").path("body").asText().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            byte[] bytes = event(venue, "ACK_GENERATED").path("body").asText().getBytes(StandardCharsets.UTF_8);
             assertEquals(bytes.length, event(venue, "ACK_GENERATED").path("bytes").asInt());
-            assertEquals(java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(bytes)),
+            assertEquals(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)),
                     event(venue, "ACK_GENERATED").path("sha256").asText());
             assertTrue(proof.path("callerAckAbsentBeforeDeath").asBoolean());
             assertTrue(proof.path("oldProcessDeadBeforeRecovery").asBoolean());
@@ -197,17 +215,17 @@ class B1RealProcessProofTest {
         JsonNode trade = db.path("trades").get(0);
         assertEquals(order.path("order_id"), trade.path("order_id"));
         assertEquals("b0-fill-" + order.path("external_order_id").asText(), trade.path("exchange_trade_id").asText());
-        assertEquals(0, trade.path("price").decimalValue().compareTo(new java.math.BigDecimal("100")));
-        assertEquals(0, trade.path("qty").decimalValue().compareTo(new java.math.BigDecimal("0.1")));
-        assertEquals(0, trade.path("fee").decimalValue().abs().compareTo(new java.math.BigDecimal("0.01")));
+        assertEquals(0, trade.path("price").decimalValue().compareTo(new BigDecimal("100")));
+        assertEquals(0, trade.path("qty").decimalValue().compareTo(new BigDecimal("0.1")));
+        assertEquals(0, trade.path("fee").decimalValue().abs().compareTo(new BigDecimal("0.01")));
         assertEquals(4, db.path("ledger_entries").size());
         assertEquals(4, db.path("ledger_events").size());
-        java.math.BigDecimal net = java.math.BigDecimal.ZERO;
+        BigDecimal net = BigDecimal.ZERO;
         for (JsonNode entry : db.path("ledger_entries")) {
             assertEquals(trade.path("trade_id"), entry.path("ref_id"));
             net = net.add(entry.path("delta").decimalValue());
         }
-        assertEquals(0, net.compareTo(java.math.BigDecimal.ZERO));
+        assertEquals(0, net.compareTo(BigDecimal.ZERO));
         assertTrue(db.path("audit_logs").size() > 0);
         assertTrue(db.path("event_store").size() > 0);
         assertEquals(0, db.path("execution_intents").size());
@@ -238,7 +256,7 @@ class B1RealProcessProofTest {
                 case 0 -> ((ObjectNode) bad.path("venueFinal")).put("places", 2);
                 case 1 -> bad.remove("atFault");
                 case 2 -> ((ObjectNode) bad.path("finalDb")).put("databaseIdentity", "wrong_run");
-                case 3 -> ((com.fasterxml.jackson.databind.node.ArrayNode) bad.path("finalDb").path("ledger_entries")).remove(0);
+                case 3 -> ((ArrayNode) bad.path("finalDb").path("ledger_entries")).remove(0);
                 case 4 -> ((ObjectNode) bad.path("finalDb").path("trades").get(0)).put("exchange_trade_id", "wrong_fill");
                 case 5 -> ((ObjectNode) bad.path("venueFinal")).put("delivered", 1);
                 case 6 -> ((ObjectNode) bad.path("finalDb").path("orders").get(0)).put("version", -1);

@@ -4,6 +4,7 @@ import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewState
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewCase;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewEvent;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewStateMachine;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.time.Instant;
 import java.util.List;
@@ -200,7 +201,7 @@ public record OperationalSafetyAssessmentFactBundle(
             return expectedFrom == reviewCase.state() && previousAt.equals(reviewCase.updatedAt());
         }
 
-        private static String text(com.fasterxml.jackson.databind.JsonNode node) {
+        private static String text(JsonNode node) {
             return node == null || !node.isTextual() || node.textValue().isBlank()
                     ? null
                     : node.textValue().trim();

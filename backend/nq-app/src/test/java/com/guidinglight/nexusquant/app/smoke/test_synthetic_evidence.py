@@ -9,6 +9,64 @@ from synthetic_evidence import IdentityMapper, export
 
 
 class SyntheticEvidenceTest(unittest.TestCase):
+    def test_known_result_text_references_are_reversible_and_unknown_secrets_survive(self):
+        run = "run-" + str(uuid.uuid4())
+        order = "ord-" + str(uuid.uuid4())
+        scan = ("StrategyScheduleScanBatchResult[scannedCount=1, triggeredCount=1, results=["
+                "StrategyScheduleScanResult[scheduleJobId=b5, strategyId=b5-strategy, outcome=TRIGGERED, "
+                "requestId=request-known, strategyRunId=" + run + ", detail=triggered]]]")
+        original = {"strategy_run_id": run, "order_id": order, "request_id": "request-known",
+                    "oldOwnerResult": scan, "cResult": scan, "replayResult": "PLACE " + order + " FILLED",
+                    "credential": {"cResult": scan}, "unknown": {"cResult": scan + " secret=keep-me"},
+                    "unregistered": {"replayResult": "PLACE ord-123 ACCEPTED"},
+                    "otherField": scan}
+        mapper = IdentityMapper("B5-FINAL", 1)
+        result = export(original, mapper)
+        self.assertNotIn(run, result["cResult"])
+        self.assertNotIn(order, result["replayResult"])
+        for key in ["credential", "unknown", "unregistered", "otherField"]:
+            self.assertEqual(original[key], result[key])
+        restored = json.dumps(result)
+        for (_, raw), canonical in mapper.identities.items():
+            restored = restored.replace(canonical, raw)
+        self.assertEqual(original, json.loads(restored))
+
+    def test_admission_identity_pair_is_bijective_and_secret_shapes_remain_visible(self):
+        identity = ("B5_ADMISSION_ATTEMPT key=StrategyDispatchIdentity[scheduleJobId=test-schedule, "
+                    "strategyId=test-strategy, accountId=1, dueAt=2026-01-01T00:00:00Z]")
+        other = identity.replace("2026-01-01", "2026-01-02")
+        original = {"first": {"attemptedCanonicalKeyA": identity, "attemptedCanonicalKeyB": identity},
+                    "second": {"attemptedCanonicalKeyA": other},
+                    "credential": {"attemptedCanonicalKeyA": identity},
+                    "unknown": {"attemptedCanonicalKeyA": "unrecognized-secret-shaped-value"}}
+        mapper = IdentityMapper("B5-AD", 1)
+        result = export(original, mapper)
+        self.assertEqual(result["first"]["attemptedCanonicalKeyA"], result["first"]["attemptedCanonicalKeyB"])
+        self.assertNotEqual(result["first"]["attemptedCanonicalKeyA"], result["second"]["attemptedCanonicalKeyA"])
+        self.assertEqual(original["credential"], result["credential"])
+        self.assertEqual(original["unknown"], result["unknown"])
+        serialized = json.dumps(result)
+        for (_, raw), canonical in mapper.identities.items():
+            serialized = serialized.replace(canonical, raw)
+        self.assertEqual(original, json.loads(serialized))
+
+    def test_strategy_run_owner_and_order_reference_share_identity(self):
+        raw = "run-" + str(uuid.uuid4())
+        proof = {"strategy_runs": [{"strategy_run_id": raw}],
+                 "orders": [{"strategy_run_id": raw}], "result": {"strategyRunId": raw},
+                 "command": {"strategy_id": raw}, "definition": {"strategy_id": "strategy-stable"},
+                 "credential": {"strategy_run_id": raw}}
+        mapper = IdentityMapper("B5-R", 10)
+        result = export(proof, mapper)
+        reference = result["strategy_runs"][0]["strategy_run_id"]
+        self.assertEqual(reference, result["orders"][0]["strategy_run_id"])
+        self.assertEqual(reference, result["result"]["strategyRunId"])
+        self.assertEqual(reference, result["command"]["strategy_id"])
+        self.assertEqual(proof["definition"], result["definition"])
+        self.assertEqual(proof["credential"], result["credential"])
+        self.assertEqual(1, len(mapper.identities))
+        self.assertEqual(proof, json.loads(json.dumps(result).replace(reference, raw)))
+
     def test_identity_namespaces_and_runs(self):
         first, second = IdentityMapper("B3", 1), IdentityMapper("B3", 2)
         raw, other = str(uuid.uuid4()), str(uuid.uuid4())

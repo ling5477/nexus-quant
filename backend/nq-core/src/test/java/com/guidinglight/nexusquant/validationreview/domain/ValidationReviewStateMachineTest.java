@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.time.Instant;
 import java.util.Set;
@@ -198,7 +199,7 @@ class ValidationReviewStateMachineTest {
         return current;
     }
 
-    private ValidationReviewCase openCase(com.fasterxml.jackson.databind.JsonNode evidenceAnchor) {
+    private ValidationReviewCase openCase(JsonNode evidenceAnchor) {
         return new ValidationReviewCase(
                 UUID.randomUUID(),
                 ValidationReviewCase.LOCAL_TENANT_KEY,

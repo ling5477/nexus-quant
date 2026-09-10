@@ -9,13 +9,14 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class OperationalSchedulerMetricsTest {
     private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
-    @org.junit.jupiter.api.AfterEach
+    @AfterEach
     void closeRegistry() { registry.close(); }
 
     @Test

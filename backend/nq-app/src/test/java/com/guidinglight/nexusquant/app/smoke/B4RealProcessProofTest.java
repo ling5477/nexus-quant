@@ -14,7 +14,10 @@ import java.time.Duration;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** B4 原截点的当前候选回归；旧 producer 缺口由 B4TradeEventRemediationTest 独立重现。 */
 @EnabledIfSystemProperty(named = "nq.b4", matches = "true")
@@ -53,8 +56,8 @@ class B4RealProcessProofTest {
                     assertEquals(B0Fixture.READER, value(reader, "SELECT current_user"));
                     proof.put("postgres", value(reader, "SHOW server_version"));
                     assertTrue(proof.path("postgres").asText().startsWith("16."));
-                    assertEquals("48", value(reader, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
-                    proof.put("schema", "V48");
+                    assertEquals("51", value(reader, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
+                    proof.put("schema", "V50");
                     assertTrue(nq.send("PLACE_B2").endsWith("ACCEPTED"));
                     control(endpoint, "FILL 10 0.01");
                     if (injectDeath) {

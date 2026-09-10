@@ -27,6 +27,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.http.HttpStatus;
 
 /**
  * SecurityConfiguration 负责正式认证鉴权链的最终装配。
@@ -85,7 +86,7 @@ public class SecurityConfiguration {
         return (request, response, authException) -> errorWriter.write(
                 request,
                 response,
-                org.springframework.http.HttpStatus.UNAUTHORIZED,
+                HttpStatus.UNAUTHORIZED,
                 "UNAUTHORIZED",
                 "authentication required"
         );
@@ -96,7 +97,7 @@ public class SecurityConfiguration {
         return (request, response, accessDeniedException) -> errorWriter.write(
                 request,
                 response,
-                org.springframework.http.HttpStatus.FORBIDDEN,
+                HttpStatus.FORBIDDEN,
                 "FORBIDDEN",
                 "access denied"
         );

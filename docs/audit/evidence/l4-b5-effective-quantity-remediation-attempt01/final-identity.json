@@ -1,0 +1,450 @@
+{
+  "status": "IMPLEMENTED / PENDING_INDEPENDENT_CORRECTNESS_REVIEW",
+  "b5": "NOT_QUALIFIED",
+  "v51": "NOT_ACCEPTED",
+  "head": "86c8ad84542636364f6c21e78bc292a323cbdff7",
+  "branch": "audit/post-gatey-agent-baseline",
+  "indexSha256": "67d0e2a40f423491211b9b48b17ac7a43ceebb67c38f62929eacc759d31db106",
+  "stagedPaths": [],
+  "aggregateExcludingThisFile": "0502bc83ec532c6f8ec26fb7a21ffda03e986cd6d86018d4b0184eeb55032411",
+  "algorithm": "sorted path + NUL + fileSHA256 + LF, UTF-8; excludes only this identity file",
+  "fileCountExcludingThisFile": 3796,
+  "nonEvidenceDirectoryDeltaCount": 22,
+  "protectedCount": 3667,
+  "protectedChanged": 0,
+  "v1ToV50Unchanged": 50,
+  "fullCandidateStillMatches": true,
+  "fullManifestSha256": "435fe9c9576dadf31647ee9a7e922b7d6b4e188591869ffba228de601caa7983",
+  "v51PreviousSha256": "7a333f1e0cca154564a0b0b13a677a241f6a8880e4b4ca099a7de8c186d342f8",
+  "v51RevisedSha256": "afbc3211b824b8f717912707b584d2382f47fe9f8df86802e7c4a1c8a6cd9942",
+  "evidenceFiles": [
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/execution-helpers.json",
+      "sha256": "3af016eead1a309fc35c16406819e91ba90c1ecff3f68027fa47e58b8e4cac7a"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/full-01-result.json",
+      "sha256": "eefba066a56fdc28bfcccb3f17dd672369bbd9018df050ecab1e216e573c6ce6"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/full-01-tested-manifest.json",
+      "sha256": "7520b88953b237fd1a7c663c4e371458523e73150c0560f143b05f64fa7357fa"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/manifest-export-validation.json",
+      "sha256": "32ac184fb68cb6865926009b7abc440e99ecf2c818387dcb1db70daad8d6a3fa"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proof-index.json",
+      "sha256": "ed1be16fe5619953a1ccfe72d45548de0e51417b3d7f294d0e1457e18fbd7c9e"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/001-affected-01.json",
+      "sha256": "786e325de5ea141703cd125bd7286cab26e9ce1966ef58fba7de72f6c9caee5a"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/002-affected-01.json",
+      "sha256": "7554f5bcb5e01dc94178ffe2e17a632ea8081ce5184b473124f699c0811237fc"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/003-affected-01.json",
+      "sha256": "21aec2e0e22cc8657b83174626d178a81b939eb93b80914e46dfe053061962ca"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/004-affected-01.json",
+      "sha256": "3e216a3c466dd41681a967496e6b51b352d698ba56554bffe99d92571ec40539"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/005-affected-01.json",
+      "sha256": "4411f531a4156d503b84782e8739557567acb6b85042db18229267ddeda95f29"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/006-affected-01.json",
+      "sha256": "7c0d4bad08ff6a5b200a56ea2c0439c578d300bbaf7bc0ded9e9533212685a99"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/007-affected-01.json",
+      "sha256": "a4c2d9ec2822088ad66959b75375388af945edf937d69b0f4e5e76b384cda75b"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/008-affected-01.json",
+      "sha256": "e484af272b45cbae3324d5ba291b16a57c3623c714f373ae989d004f133c4cc4"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/009-affected-01.json",
+      "sha256": "2e6aa256996d479c2e04d08e313f14f303a072cc79e5b18bd9256e7e2d758d49"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/010-affected-01.json",
+      "sha256": "76b8f0d900e9082004efd0d2ce37a1906a2102d84ec10994762e4c9221bed09e"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/011-affected-01.json",
+      "sha256": "77ffca8aa13ffb5a7d6fb24042bd89aa5e02ace54026e8a2464e7f9b63ab4996"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/012-affected-01.json",
+      "sha256": "328f82364b0eb06ece18db943cd27c030bb53c51477e7237cd0057e0f690a51d"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/013-affected-01.json",
+      "sha256": "b043adf70dd34c95feb3f054c5cc0139363b657b3aa24fbf8f8252359f3be4fb"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/014-affected-01.json",
+      "sha256": "a10f211610b1abe4822a4e7ac68e39ef621860d8455b3e7db161f2a156f53eaf"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/015-affected-01.json",
+      "sha256": "fbe52a56114fd998797e48270b1581c2a9f4006b0075d059d81e9235b6615302"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/016-affected-01.json",
+      "sha256": "09c43c9dbafc119057f90e33374a3448711aabeccc256207acbadaed971aeb51"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/017-affected-01.json",
+      "sha256": "2abac7a290ce90b9cedc6325616e796c57305fca34fb041f6eaa59fbc0b23f10"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/018-affected-01.json",
+      "sha256": "b5b48ac9b61e3c85af830a88703738fb55cdf9ecf10652f8cc3945289bd67acb"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/019-affected-01.json",
+      "sha256": "afb0073bcadc55978ff6e91320220da928d6380600b09cc9ab80313cc2381047"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/020-affected-01.json",
+      "sha256": "16ebcb4dec818196063e164b4a27e8262c714e28fe7ac1b8535405f31478a342"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/021-affected-01.json",
+      "sha256": "71df49d64c38927246aeae900b4602535ff5df95a0793dcc904f41523be737ef"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/022-affected-01.json",
+      "sha256": "f3021113612bf219ebcd7507a25eefd614ef728b93c7dc30ac612361ab0a314f"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/023-affected-01.json",
+      "sha256": "2329abc266ffeb9c306268bb439bbb2e206c5fb21b8b539ed2a9c38b7bf6fbf5"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/024-affected-01.json",
+      "sha256": "4846b0839ffe2f33ee5282fbcbb4fbaef503c513741b81bfc795d70ba6c5bae8"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/025-affected-01.json",
+      "sha256": "fd6b7b6ff9de5dc1e8b4302de01a46bcce3d776c57be98ed5efb63518d701954"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/026-affected-01.json",
+      "sha256": "c432c2ae1b7355462d064f29a84beb9c60aa868a616f325f04b489a6f68b8763"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/027-affected-01.json",
+      "sha256": "dd4ba4ecaee1a43f2485a816c398d3536ef7753e7369271cb20edffa1284fd27"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/028-affected-01.json",
+      "sha256": "6e30c9fcda3a3782689cd40f68d48e4b3b37ad7732344770ba3c8df509b97f38"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/029-affected-01.json",
+      "sha256": "0648df18bfb12fe2d133348c3059eb1a0d9c0ba19edee29468194eb32a1dea4b"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/030-final-regression-01.json",
+      "sha256": "b946c22ab26f6ff036ea5094031d12006873d0c1582374485381e8b309f0a6e7"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/031-final-regression-01.json",
+      "sha256": "8b985bc662f2bf1a9ba592bec0d047bd4cd6dbdb844f32d5b10fe5a5a78c4eaa"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/032-final-regression-01.json",
+      "sha256": "cb5c083e5ac0b1e7f808500e00fb16473594d7925c6be95f5c4fe95d4c6874db"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/033-final-regression-01.json",
+      "sha256": "c487be9c55203e681939b054145012a4ab4f6be05d9f8166ed78bf61951490bc"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/034-final-regression-01.json",
+      "sha256": "183c81edcc5f11f434b784d3559797896335bc03a7d199433dea34c5212f1c6d"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/035-final-regression-01.json",
+      "sha256": "2cdc39a9f1c7ea3c90c99475753c17b91dd056bf10d842201a39e8dad5ebeee8"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/036-final-regression-01.json",
+      "sha256": "bcf8f12e8f3861e3e24c5f9e102acce3d4f77d96b6f3cc915eaeca16944a97bf"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/037-final-regression-01.json",
+      "sha256": "a4b13311017d7c1022dc7a3a57376260836a80b100015556c5910f281d423055"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/038-final-regression-01.json",
+      "sha256": "e17035903f2c5948271253ddaae4313efbe1990cd28dd34c9f3c0a7254c57e8b"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/039-final-regression-01.json",
+      "sha256": "67e8a34ee727eab96e247354098a92f9878454fdaacda8e73ad1b6f12125c78b"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/040-final-regression-01.json",
+      "sha256": "bdccbec3d5814ee33403e3a2e55244535e993e4fc9ae9ba5195cf85a5690245e"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/041-final-regression-01.json",
+      "sha256": "a06ce0754fe2f5135da0500b1099cbd58c7a584e11e90a5671f6dc0e4847a5e1"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/042-final-targeted-01.json",
+      "sha256": "284fd39de6f2c2d64f8b82079391d68ce42590de512f54320057fdf44a81eee0"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/043-final-targeted-01.json",
+      "sha256": "0b0c4e2f3bc11729c9b4dcb1e56103547fe14bea4bde70eba09c31c8304a316b"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/044-final-targeted-01.json",
+      "sha256": "227734cfbdc27f816cc8018a86ebb6ba69c7be2f293359023f4d5c58b0912274"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/045-final-targeted-01.json",
+      "sha256": "43bc757905971b2712190d6c53e0fe528d85b7813835b1ec16fe4244391e5d70"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/046-final-targeted-01.json",
+      "sha256": "d77e293eb6258e8b34a9224d554e42b2a1a9c28d1a4b86f5d4738fc611f33f13"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/047-final-targeted-01.json",
+      "sha256": "8a5e2953868a27900a0571da7e868a5cb09b64a9ccc872430893214069e5b434"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/048-final-targeted-01.json",
+      "sha256": "14ff8d0af533f1ee8790342c7ee78b979b0d7d694be3b59dd402724399459292"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/049-final-targeted-01.json",
+      "sha256": "72d1cb8d6f0533f86b091734e4904b0e16c24db39c7663fd1cd765dc2a08477b"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/050-final-targeted-01.json",
+      "sha256": "a97b95fdd0d11ea3a899bd82ce402239a1e037f1b3b93df5c2be8ae698f6e0dc"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/051-final-targeted-01.json",
+      "sha256": "2a1abda2c371199bc2fe90e5827db8ee10ce04c94c38d6fa8aedebbb5dc72d11"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/052-final-targeted-01.json",
+      "sha256": "c76603c28a51127da2d79c9f31577b390f78d8ef5f7e393278c4060a6e159667"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/053-final-targeted-01.json",
+      "sha256": "35c90ab1381ac7a1e30bcb2dce2a67838a33559e848137458c506934dd26ebc7"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/054-final-targeted-01.json",
+      "sha256": "485f135b26e86248d305259cae854779eaacd7b54d8f7a0d93b8303816e34083"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/055-final-targeted-01.json",
+      "sha256": "403856ef017b18b953cb564f8d5e505740f226d9139767397120d242f32980db"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/056-final-targeted-01.json",
+      "sha256": "cccf8b28d632625521a9f1f6a5841438a74922ce89e5dfd457d945cbdbab5671"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/057-final-targeted-01.json",
+      "sha256": "5a612755c683ee4a245e841947976d3d98693957a697cd16c54b03c67ea673d8"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/058-final-targeted-01.json",
+      "sha256": "c9f2e4070d6c907c956df624cf3163eabfbe4abeccb4e735390e0fce1461f286"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/059-final-targeted-01.json",
+      "sha256": "8f8687167d318acc42ea894e8d615f09b64c958fd1ed23147ffbdb8477d46d96"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/060-final-targeted-01.json",
+      "sha256": "6fbabf04ee4f415c20ea5bb931af8d56fdc5ca970839d4df3e6c29cf1bb32060"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/061-final-targeted-01.json",
+      "sha256": "13152ff299a27854b6097187e5de7abdef4fda5e46ac8348e3cf2ec7daf38f98"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/062-final-targeted-01.json",
+      "sha256": "c6909dcc032f6124bde656db72cd644f423ac78ff80e93aa0c808e4917c67cbc"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/063-final-targeted-01.json",
+      "sha256": "bc4f76d033ae4ac2834c1bd6f3743f492c4cfc7bc259cadf10e418705db1702e"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/064-final-targeted-01.json",
+      "sha256": "e653ba371c143d294b0d15c20110cf17f03be0101f5b80cb3f64c428eecb3fcc"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/065-final-targeted-01.json",
+      "sha256": "3918e59779bd3deb07fbb868cb9bed406eea9f5a4d3114630112a2efbf24b8fd"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/066-final-targeted-01.json",
+      "sha256": "df58ddd85cd4664d647006a53646ae5637551397ba771a71bec9ad13b154c681"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/067-final-targeted-01.json",
+      "sha256": "4fe22c27314c212377548f4441d4b317304ce879306e6316a350f9580d617608"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/068-final-targeted-01.json",
+      "sha256": "3eaedd6be55efc880f40b7d15510969c9b6643c3ad3807c385e895f3933bf5aa"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/069-final-targeted-01.json",
+      "sha256": "3f910bafeca2fda43b13822fb2e66d703bc1090743b9063aa018b36b56930a39"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/070-final-targeted-01.json",
+      "sha256": "3eb1c83584f1b8446d30d258aae37298727e05979c3f3ad98776ba4f8596ea28"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/071-green-01.json",
+      "sha256": "4f97b1a9f19ccec24b0d7ad6431102ba0149c62d9a3df9ef9f630f948c06d80c"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/072-precision-lock-01.json",
+      "sha256": "c1c4163dcf797f58ac401f0f60014b7388779e502926bb48c075e32ce651fa66"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/073-precision-lock-01.json",
+      "sha256": "f95a0fc100712e9d448ed37fd58b0fae2b5472bc14376948e38e195a5d89b031"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/074-precision-red-01.json",
+      "sha256": "2b3826acd0cdd9793fa51561d02506168e2f364d9ed5966044f5670283f808dc"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/075-precision-red-02.json",
+      "sha256": "d8d4443685ea747db7b056ec65d03f989e528cc4fc126d1af27110fcc81134b7"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/076-quantity-01.json",
+      "sha256": "9b0073b3f9919ead7123f965ebb74fe1c66deb6598b5f977b87683e892d9d1a9"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/077-quantity-01.json",
+      "sha256": "7fc04702cb6a00697b690190de9e105b80e10c3791640264e649a67dd28c1c19"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/078-quantity-01.json",
+      "sha256": "a51a3df004ba0bcc860537cb8471dd6a23d4abd443adfa7db8118593905e3c63"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/079-quantity-01.json",
+      "sha256": "d9959f6f21be49e96aa45cd8cf58379ab8dd4a89791c1d1d905f20e5bc8b5569"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/080-quantity-01.json",
+      "sha256": "23fd5f22e49cb0bafedc8e3c4f990a92fc3ede08812bfe1ab9ec387ed0318334"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/081-quantity-01.json",
+      "sha256": "0a6c136dc2f5b2b4dd8938fbee0a3179a7c6a994333659223b619114c766cfff"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/082-quantity-01.json",
+      "sha256": "5dd6143e1bd25deb65052165faae4b8ce01578105e313d3d52b5deed4f6482b0"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/083-quantity-01.json",
+      "sha256": "67659aa4f4c6c510f21d80d19881833c40674709df4ac7f2e45dc6ee9ccbd9ca"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/084-quantity-01.json",
+      "sha256": "b838029bcbc60237c70a16ba72d7d5ce60e8780568fe1f00083901698f1e355b"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/085-quantity-01.json",
+      "sha256": "35fdc9432f2ed6cccd87b9fed84d048519df1fd8f61c64e91d1ab82e23a83416"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/086-quantity-01.json",
+      "sha256": "bcfc98eaa8a9a390f6c170e2cb94ad93dfa6d45623d9006b6467b75fff7a2a65"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/087-quantity-final-01.json",
+      "sha256": "160df0c3bab21638e48009be12d8586ff854fa4d26b328a12c326155709fc556"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/088-quantity-final-01.json",
+      "sha256": "7e6eb9c9584730f9cf5df95899c6c1914b48a4287e4a64146f2f4b2ad013c1b7"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/089-quantity-final-01.json",
+      "sha256": "cb564c4cdc9a9f6cb246bbf505fdbd7b57f2089d147d90599009b64659309faf"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/090-quantity-final-01.json",
+      "sha256": "7ef52ef2712a5fb58cc36eae6576588e6944bcc24a5cf8bfed0e6430df46faf9"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/091-quantity-final-01.json",
+      "sha256": "ad88ecd97bffdb9701ad283d22ea0220717be701d832b0d1fbc8052df6f2be82"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/092-quantity-final-01.json",
+      "sha256": "79dcebd2d5d0f81aee11e337d0b4c163ee1b8bd3e250f26d2f670033243339d6"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/093-quantity-final-01.json",
+      "sha256": "f56f31e1234c284bff142074d438cefd38a42d92e2d65767931ba06e1238969e"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/094-quantity-final-01.json",
+      "sha256": "cc8b04b6459126242ede2ff4dcb6470cac3ff30452183a4ee502ade951749dae"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/095-quantity-final-01.json",
+      "sha256": "55dd8f5ee76fd7cc317851df18319d7a075f835a40553b1ff36c710173d06df1"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/096-quantity-final-01.json",
+      "sha256": "05dd533aabfe4546b7a78d4a4155e2e80b5c7aa0658b20d2025b620f9be37c9a"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/097-quantity-final-01.json",
+      "sha256": "c0ed569ca3d84de7b97c4e08db4a1a15a5dcc6f8d2f5464c01653e5e63fcbfea"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/proofs/098-red-01.json",
+      "sha256": "8d70794fdf967d4e33736cc05c28635faebee0c2f5728dd417a1220741fc666d"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/protected-manifest.json",
+      "sha256": "63f19c5cc67d9ed5f6fe6a529bcb3f1b48d37f0acfcaefad8acdf06fdb2b1449"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/scope-manifest.json",
+      "sha256": "0eb30746efa7a5d5e308d127aef3c1d202151b2aba3afba3df144f18143dcd76"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/starting-files.json",
+      "sha256": "27894e1839bbb8dc8044ed8f18830a4d5ad305fa9b6d2ae84535e97e7e32bd45"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/validation-log-index.json",
+      "sha256": "beeb03361750d6dfcda25d3588c9d9895c9fb9dec9b74fe0f9e164d840709a69"
+    }
+  ]
+}

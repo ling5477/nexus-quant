@@ -25,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -408,7 +409,7 @@ class CredentialPermissionProbeServiceTest {
         if (text == null) {
             return false;
         }
-        String lower = text.toLowerCase(java.util.Locale.ROOT);
+        String lower = text.toLowerCase(Locale.ROOT);
         return lower.contains("secret")
                 || lower.contains("token")
                 || lower.contains("signature")

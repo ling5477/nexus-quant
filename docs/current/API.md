@@ -381,6 +381,8 @@ Credential API 固定边界：
 - `GET /api/trading/accounts/{accountId}`：查询账户余额快照；`accountId` 仍由后端兼容映射到 legacy trading account。
 - `GET /api/trading/positions/{accountId}/{symbol}`：查询账户和交易对维度持仓快照。
 - `POST /api/trading/orders`：触发既有下单编排，仍走服务端风控与状态机。
+  - ordinary `venue` 由 application 的 `TradingVenue.parse` 统一解析：去除首尾空白、忽略大小写，当前只支持 `OKX / BINANCE / PAPER`。新 Order 保存大写 canonical 值；空白或未知值在 Order/authority/event 创建和 adapter 调用前拒绝。此身份校验不授予 adapter readiness 或真实交易权限。
+  - 撤单提供 `venue` 时使用同一规则；reconcile/recovery 仅省略 venue 时默认 `OKX`，显式空白或未知值拒绝。历史非 canonical Order 不自动改写、不补发 PLACE，缺 authority 的旧单维持 query/manual-resolution 语义。
 - `POST /api/trading/orders/cancel`：触发既有撤单编排。
 - `POST /api/trading/reconciliation/run-once`：触发既有对账维护动作。
 - `POST /api/trading/recovery/run-once`：触发既有恢复维护动作。
@@ -723,3 +725,16 @@ GateJ-3 固定范围：
 - 不接 AI、AI 信号、AI Paper Trading。
 - 不改交易核心状态机、策略核心算法、回测核心算法。
 - 不调用真实交易所下单接口。
+# Strategy durable execution：V51 候选契约
+
+`POST /api/strategy-schedules/scan-once` 保持响应结构。strategy/account/schedule/dueAt 定义逻辑窗口；并发输家返回 `SKIPPED_DEDUP / duplicate_admission` 和原 run ID。新 admission 原子提交 run、不可变请求工作和 `lastTriggeredAt=dueAt`。每次扫描每个 schedule 最多消费一个按 dueAt 排序的积压窗口；旧 scan-now 水位与已有 V50 最大 due 取较大者。未到期返回 `not_due`，活动 run 仍阻止下一次 admission。
+
+手动 trigger 的 HTTP 请求结构不变；原始 quantity/price 意图保存到原 run 的 typed work。重试须复用首次 requestId，相同账户/client 和相同意图返回原 run；不同意图冲突。丢失响应且未保留 requestId/runId 的新客户端请求不能声称 exactly-once。策略 Order 只能通过 durable run 执行入口创建，generic Order command 不接受 strategyRunId override。
+
+ordinary OKX 的 lot/tick/min 校验及规范化由 adapter 单一实现负责，在事务 B 前读取 instruments。B 一次冻结 effective quantity/price，并与唯一 Order、DISPATCHING、RiskGate 和初始 V49 同事务提交；原始意图不覆盖，审计保留 requested/effective/delta。确定规范化无效（如取整为零或低于 min）则同事务保存拒绝并将原 run 置 FAILED，不创建 Order、V49 或 PLACE。已有有效决定在恢复时直接读取，不根据最新策略配置或 venue metadata 改写。adapter 发送时校验当前规则并逐值发送 durable Order 参数；规则变化使冻结参数不再合法时明确拒绝，不能静默取整或换单。直接调用 OKX 下单边界的兼容性变化：未规范化参数返回 `OKX_EFFECTIVE_PARAMETERS_CHANGED`（或具体无效值拒绝），不再自动改变 wire 数量/价格。
+
+run 状态为 `CREATED / DISPATCHING / RUNNING / SUCCEEDED / FAILED`。`SUCCEEDED` 表示唯一原 Order 为 FILLED 且有效唯一 durable fills 累计量严格等于该 Order 的 effective quantity；例如 requested=10.0005、effective=10、executed=10 是完整成交，不产生 0.0005 虚假残量。它不代表 Ledger 全部完成。`FAILED` 包含确定规范化/风险/下单拒绝、V49 no-send 及已证明最终取消，可能已有部分成交。cancel ACK、超时和 MAY 未决不构成终态。旧二进制的 enum reader 不能与新增 SUCCEEDED 混跑。
+
+恢复按最多 50 条的持久循环游标检查三个非终态，与计划 enabled/window/due 独立。启用 trading-components 且 `spring.task.scheduling.enabled` 非 false 时，启动及每个独立恢复 tick 执行一次；`nq.strategy.recovery.fixed-delay-ms` 默认 5000，范围 1000–60000。自动 resume-dispatch 只覆盖 ordinary OKX，始终经过原 Risk/Kill/V49 边界。legacy 无完整 work 不猜参数，已有唯一 Order 可按真实终结事实收敛；未决保留查询/人工处置责任。
+
+本节描述已实现、待独立正确性审查的 V51 工作树候选，不表示 B5 qualification、部署或真实交易授权已完成。

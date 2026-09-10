@@ -1,0 +1,50 @@
+{
+  "changedExisting": [
+    ".agents/skills/nq-trading-correctness-proof/references/engineering-lessons.md"
+  ],
+  "newFiles": [
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5DurableLifecycleCrashRecoveryTest.java",
+    "docs/audit/evidence/GATEAUDIT_PHASE6_L4_B5_STRATEGY_RUN_DURABLE_LIFECYCLE_CRASH_RECOVERY_REMEDIATION_ATTEMPT01.md",
+    "docs/audit/evidence/l4-b5-lifecycle-remediation-attempt01/BINDING_DIAGNOSTIC.json",
+    "docs/audit/evidence/l4-b5-lifecycle-remediation-attempt01/CREATED.json",
+    "docs/audit/evidence/l4-b5-lifecycle-remediation-attempt01/ORIGINAL_REVIEW_CREATED.json",
+    "docs/audit/evidence/l4-b5-lifecycle-remediation-attempt01/RUNNING.json",
+    "docs/audit/evidence/l4-b5-lifecycle-remediation-attempt01/SchemaBindingProbe.java",
+    "docs/audit/evidence/l4-b5-lifecycle-remediation-attempt01/proof-index.json",
+    "docs/audit/evidence/l4-b5-lifecycle-remediation-attempt01/checks.json"
+  ],
+  "productionChanged": [],
+  "migrationChanged": [],
+  "priorEvidenceChanged": [],
+  "stage": [],
+  "stageAssets": {
+    "scanned": 1856,
+    "reviewedExceptions": 138,
+    "errors": 144,
+    "newErrors": [],
+    "removedErrors": []
+  },
+  "commit": "NONE",
+  "push": "NONE",
+  "secretScan": {
+    "exitCode": 0,
+    "findings": 0,
+    "files": 9,
+    "gitleaks": "8.18.4",
+    "archiveHashVerified": true
+  },
+  "docLinks": {
+    "checked": 14,
+    "missing": 0
+  },
+  "gitDiffCheck": "PASS",
+  "fullMaven": "NOT_RUN_STOP_BEFORE_PRODUCTION_REMEDIATION",
+  "outcome": "STOP_STRATEGY_RUN_TO_ORDER_IDEMPOTENCY_GAP_SCHEMA_REVIEW_REQUIRED",
+  "P0": 0,
+  "P1": {
+    "CREATED": "OPEN",
+    "RUNNING": "NEW_P1_OPEN"
+  },
+  "ownedContainersRemoved": 3,
+  "newFilesUtf8Whitespace": "PASS"
+}

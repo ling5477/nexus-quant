@@ -2,6 +2,9 @@ package com.guidinglight.nexusquant.strategy.domain.port;
 
 import com.guidinglight.nexusquant.strategy.domain.StrategyRun;
 import com.guidinglight.nexusquant.strategy.domain.StrategyRunStatus;
+import com.guidinglight.nexusquant.strategy.domain.StrategyDispatchIdentity;
+import com.guidinglight.nexusquant.strategy.domain.StrategyRunAdmission;
+import com.guidinglight.nexusquant.strategy.domain.StrategyDispatchWork;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -19,6 +22,16 @@ public interface StrategyRunRepository {
      * 都必须先写入 run，再继续进入执行链。
      */
     void insert(StrategyRun strategyRun);
+
+    /** 短事务原子认领逻辑窗口；冲突返回既有 run，调用方不得继续下游。未实现的适配器必须拒绝。 */
+    default StrategyRunAdmission admit(StrategyRun run, StrategyDispatchIdentity identity) {
+        throw new UnsupportedOperationException("durable strategy admission is not implemented");
+    }
+
+    /** V51 的唯一新 admission 入口；manual identity 为 null，仍必须原子保存有效 work。 */
+    default StrategyRunAdmission admit(StrategyRun run, StrategyDispatchWork work, StrategyDispatchIdentity identity) {
+        throw new UnsupportedOperationException("immutable strategy work admission is not implemented");
+    }
 
     /**
      * 按运行级身份查询 run。

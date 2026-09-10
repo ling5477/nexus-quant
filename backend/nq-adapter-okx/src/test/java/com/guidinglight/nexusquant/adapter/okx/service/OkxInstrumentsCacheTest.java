@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.adapter.okx.model.OkxApiCredentials;
 import com.sun.net.httpserver.HttpServer;
+import com.guidinglight.nexusquant.adapter.okx.model.OkxInstrument;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -49,7 +50,7 @@ class OkxInstrumentsCacheTest {
                     Duration.ofMinutes(5)
             );
 
-            Map<String, com.guidinglight.nexusquant.adapter.okx.model.OkxInstrument> snapshot = cache.snapshot("trc-cache");
+            Map<String, OkxInstrument> snapshot = cache.snapshot("trc-cache");
 
             assertTrue(snapshot.containsKey("BTC-USDT"));
             assertEquals("0.10000000", snapshot.get("BTC-USDT").tickSize().setScale(8).toPlainString());
@@ -73,7 +74,7 @@ class OkxInstrumentsCacheTest {
 
         assertEquals(0, publicClient.getCount());
 
-        Map<String, com.guidinglight.nexusquant.adapter.okx.model.OkxInstrument> snapshot = cache.snapshot("trc-first-read");
+        Map<String, OkxInstrument> snapshot = cache.snapshot("trc-first-read");
 
         assertEquals(1, publicClient.getCount());
         assertTrue(snapshot.containsKey("BTC-USDT"));
@@ -121,7 +122,7 @@ class OkxInstrumentsCacheTest {
                     Duration.ofMinutes(5)
             );
 
-            Map<String, com.guidinglight.nexusquant.adapter.okx.model.OkxInstrument> snapshot = cache.snapshot("trc-cache");
+            Map<String, OkxInstrument> snapshot = cache.snapshot("trc-cache");
 
             assertTrue(snapshot.containsKey("BTC-USDT"));
             assertFalse(snapshot.containsKey("ROBO-USDT"));

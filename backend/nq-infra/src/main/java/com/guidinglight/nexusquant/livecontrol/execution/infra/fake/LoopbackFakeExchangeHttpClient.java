@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Disposable fake venue transport。只允许明文 loopback HTTP，禁止 DNS、redirect 与 fallback。
@@ -73,7 +74,7 @@ public final class LoopbackFakeExchangeHttpClient implements FakeExchangeMutatio
     private Map<String, String> send(String path, Map<String, String> values) {
         String body = values.entrySet().stream()
                 .map(entry -> encode(entry.getKey()) + "=" + encode(entry.getValue()))
-                .collect(java.util.stream.Collectors.joining("&"));
+                .collect(Collectors.joining("&"));
         HttpRequest request = HttpRequest.newBuilder(endpoint.resolve(path))
                 .timeout(requestTimeout)
                 .header("Content-Type", "application/x-www-form-urlencoded")

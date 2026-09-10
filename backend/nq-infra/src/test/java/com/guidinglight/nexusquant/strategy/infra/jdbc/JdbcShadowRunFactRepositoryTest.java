@@ -25,6 +25,7 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStateMachi
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStateTransitionException;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionMutationCoordinator;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.time.Instant;
 import java.util.ArrayDeque;
@@ -34,6 +35,8 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
+import java.util.Collection;
+import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -41,6 +44,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.PlatformTransactionManager;
 
 class JdbcShadowRunFactRepositoryTest {
 
@@ -395,8 +399,8 @@ class JdbcShadowRunFactRepositoryTest {
     private static final class DirectAdmissionMutationCoordinator implements AdmissionMutationCoordinator {
         @Override
         public <T> T withLockedAdmissionStates(
-                java.util.Collection<String> publishRecordIds,
-                java.util.function.Supplier<T> mutation
+                Collection<String> publishRecordIds,
+                Supplier<T> mutation
         ) {
             return mutation.get();
         }
@@ -447,7 +451,7 @@ class JdbcShadowRunFactRepositoryTest {
             String evaluationId,
             Instant windowStart,
             Instant windowEnd,
-            com.fasterxml.jackson.databind.JsonNode sideEffectPolicy,
+            JsonNode sideEffectPolicy,
             ShadowRunAuthorizationBoundary authorizationBoundary
     ) {
         return new ShadowRun(
@@ -566,7 +570,7 @@ class JdbcShadowRunFactRepositoryTest {
         }
     }
 
-    private static final class RecordingTransactionManager implements org.springframework.transaction.PlatformTransactionManager {
+    private static final class RecordingTransactionManager implements PlatformTransactionManager {
 
         private final List<Integer> propagationBehaviors = new ArrayList<>();
 

@@ -11,6 +11,7 @@ import com.guidinglight.nexusquant.strategy.strategyrelease.artifact.StrategyArt
 import com.guidinglight.nexusquant.strategy.strategyrelease.artifact.TrustedRootStrategyArtifactVerifier;
 import com.guidinglight.nexusquant.strategy.strategyrelease.domain.StrategyRelease;
 import com.guidinglight.nexusquant.strategy.strategyrelease.domain.StrategyReleaseStatus;
+import com.guidinglight.nexusquant.strategy.domain.port.StrategyValidationOverviewFacts;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -45,7 +46,7 @@ class StrategyReleaseAdmissionPreviewServiceTest {
         releaseService = new StubReleaseProductionService();
         factsRepository = new StubFactsRepository(validFacts(policy()));
         StrategyValidationOverviewQueryService validationService = new StrategyValidationOverviewQueryService(
-                () -> new com.guidinglight.nexusquant.strategy.domain.port.StrategyValidationOverviewFacts(
+                () -> new StrategyValidationOverviewFacts(
                         0, 0, 0, 0, 0, 0, Optional.empty()
                 )
         );

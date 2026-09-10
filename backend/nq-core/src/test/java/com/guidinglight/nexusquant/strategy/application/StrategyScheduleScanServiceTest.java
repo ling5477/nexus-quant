@@ -52,9 +52,9 @@ class StrategyScheduleScanServiceTest {
         assertNotNull(result.requestId());
         assertEquals("run-schedule-1", result.strategyRunId());
         assertEquals(result.requestId(), fixture.triggerGateway.lastRequest.requestId());
-        assertTrue(
-                fixture.scheduleRepository.findByScheduleJobId("sch-1").orElseThrow().lastTriggeredAt().isAfter(schedule.lastTriggeredAt())
-        );
+        // gateway stub 不拥有真实 admission；scanner 回调不能自行推进 durable cursor。
+        assertEquals(schedule.lastTriggeredAt(), fixture.scheduleRepository.findByScheduleJobId("sch-1").orElseThrow().lastTriggeredAt());
+        assertEquals(Instant.parse("2026-03-23T09:01:00Z"), fixture.triggerGateway.lastRequest.dispatchIdentity().dueAt());
     }
 
     @Test
@@ -110,11 +110,13 @@ class StrategyScheduleScanServiceTest {
                 "trc-existing"
         ));
 
+        fixture.triggerGateway.duplicate = true;
         StrategyScheduleScanResult result = fixture.scanService.scanOnce("trc-schedule-scan-3").results().getFirst();
 
         assertEquals(StrategyScheduleScanOutcome.SKIPPED_DEDUP, result.outcome());
         assertEquals("req-schedule-sch-3-window-1774256460000", result.requestId());
-        assertEquals(0, fixture.triggerGateway.invocationCount);
+        assertEquals(1, fixture.triggerGateway.invocationCount);
+        assertEquals("duplicate_admission", result.detail());
     }
 
     @Test
@@ -163,6 +165,7 @@ class StrategyScheduleScanServiceTest {
                 scheduleService,
                 definitionRepository,
                 runRepository,
+                new StrategyRunRecoveryService((strategyId, limit) -> 0),
                 triggerGateway,
                 new ObjectMapper()
         );
@@ -290,6 +293,7 @@ class StrategyScheduleScanServiceTest {
                 scheduleService,
                 definitionRepository,
                 runRepository,
+                new StrategyRunRecoveryService((strategyId, limit) -> 0),
                 triggerGateway,
                 new ObjectMapper()
         );
@@ -298,11 +302,14 @@ class StrategyScheduleScanServiceTest {
     private static final class CapturingStrategyTriggerGateway implements StrategyTriggerGateway {
         private StrategyManualTriggerRequest lastRequest;
         private int invocationCount;
+        private boolean duplicate;
 
         @Override
         public StrategyManualTriggerResult trigger(StrategyManualTriggerRequest request) {
             this.lastRequest = request;
             this.invocationCount++;
+            if (duplicate) return new StrategyManualTriggerResult(request.strategyId(), "run-existing", request.requestId(),
+                    null, null, StrategyRunStatus.FAILED, true, true);
             return new StrategyManualTriggerResult(
                     request.strategyId(),
                     "run-schedule-1",

@@ -1,0 +1,77 @@
+{
+  "command": "mvn -f backend/pom.xml test",
+  "attempts": 1,
+  "result": "FAIL",
+  "tests": 1852,
+  "failures": 0,
+  "errors": 12,
+  "skipped": 97,
+  "log": "backend/nq-app/target/b5-v49-full-maven-01.log",
+  "logSha256": "eb33da144218dd2edbde5e8fc1a7612b47c790fd59b0f5fab077cd2d37378766",
+  "skipCategories": {
+    "conditional-other": 48,
+    "explicit-system-property-opt-in": 49
+  },
+  "errorCases": [
+    {
+      "class": "TradingChainPostgresIntegrationTest",
+      "test": "createsExactlyOneTradeFromVenueFillAndRemainsIdempotent",
+      "classification": "candidate-test-transaction-boundary"
+    },
+    {
+      "class": "TradingChainPostgresIntegrationTest",
+      "test": "doesNotCreateTradeBeforeVenueReportsFill",
+      "classification": "candidate-test-transaction-boundary"
+    },
+    {
+      "class": "TradingChainPostgresIntegrationTest",
+      "test": "keepsOneCanonicalOrderForRetryAndSeparatesIndependentEconomicActions",
+      "classification": "candidate-test-transaction-boundary"
+    },
+    {
+      "class": "TradingChainPostgresIntegrationTest",
+      "test": "processesMultipleVenueFillsAsIndependentTrades",
+      "classification": "candidate-test-transaction-boundary"
+    },
+    {
+      "class": "TradingChainPostgresIntegrationTest",
+      "test": "processesNewFillWhenAnotherTradeAlreadyExists",
+      "classification": "candidate-test-transaction-boundary"
+    },
+    {
+      "class": "TradingChainPostgresIntegrationTest",
+      "test": "recoversOlderNonLatestTradeWithoutChangingCompletedLatestTrade",
+      "classification": "candidate-test-transaction-boundary"
+    },
+    {
+      "class": "TradingChainPostgresIntegrationTest",
+      "test": "rejectsRecoveryWhenDurableTradeDoesNotBelongToOwningOrder",
+      "classification": "candidate-test-transaction-boundary"
+    },
+    {
+      "class": "TradingRestartRecoveryPostgresIntegrationTest",
+      "test": "continuesPartialFillAcrossDistinctJvmProcesses",
+      "classification": "isolated-datasource-not-configured"
+    },
+    {
+      "class": "TradingRestartRecoveryPostgresIntegrationTest",
+      "test": "recoversDurableTradeAfterLedgerFailureAcrossDistinctJvmProcesses",
+      "classification": "isolated-datasource-not-configured"
+    },
+    {
+      "class": "MarketdataControllerLocalIntegrationTest",
+      "test": "shouldIngestFixtureAndQueryRealBarsFromDatabase",
+      "classification": "default-local-db-existing-V45-FK-inconsistency"
+    },
+    {
+      "class": "OkxBootstrapNoOutboundLocalContextTest",
+      "test": "shouldBootstrapLocalContextWithoutOkxPublicInstrumentsOutbound",
+      "classification": "default-local-db-existing-V45-FK-inconsistency"
+    },
+    {
+      "class": "ResearchBacktestHappyPathLocalTest",
+      "test": "shouldRunMinimalDbBackedResearchBacktestEvalHappyPath",
+      "classification": "default-local-db-existing-V45-FK-inconsistency"
+    }
+  ]
+}

@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.StreamSupport;
 
 import org.springframework.stereotype.Component;
 import org.springframework.context.annotation.Profile;
@@ -100,7 +101,7 @@ public class OkxHistoricalKlineAdapter implements HistoricalKlineAdapter {
             if (!data.isArray()) {
                 throw new HistoricalKlineAdapterException("OKX history-candles data is not an array");
             }
-            return java.util.stream.StreamSupport.stream(data.spliterator(), false)
+            return StreamSupport.stream(data.spliterator(), false)
                     .map(row -> parseBar(request, row))
                     .toList();
         } catch (RuntimeException ex) {

@@ -13,8 +13,13 @@ public record StrategyManualTriggerResult(
         String orderId,
         OrderStatus orderStatus,
         StrategyRunStatus strategyRunStatus,
-        boolean idempotentHit
+        boolean idempotentHit,
+        boolean duplicateAdmission
 ) {
+    public StrategyManualTriggerResult(String strategyId, String strategyRunId, String requestId, String orderId,
+                                       OrderStatus orderStatus, StrategyRunStatus strategyRunStatus, boolean idempotentHit) {
+        this(strategyId, strategyRunId, requestId, orderId, orderStatus, strategyRunStatus, idempotentHit, false);
+    }
 }
 
 

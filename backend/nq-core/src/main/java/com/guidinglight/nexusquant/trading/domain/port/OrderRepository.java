@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.math.BigDecimal;
 
 /**
  * OrderRepository 定义订单持久化端口。
@@ -32,6 +33,11 @@ public interface OrderRepository {
      */
     Optional<OrderRecord> findByOrderId(String orderId);
 
+    /** 由 PostgreSQL 的同 run UNIQUE 保证至多一行；不能用该查询代替唯一约束。 */
+    default Optional<OrderRecord> findByStrategyRunId(String strategyRunId) {
+        throw new UnsupportedOperationException("strategy order binding lookup is not implemented");
+    }
+
     /**
      * 新建订单事实。
      *
@@ -55,7 +61,7 @@ public interface OrderRepository {
             OrderStatus status, String reason, Instant now);
 
     /** 对完整 durable Trade 集合按 venue fill 身份校验并累计；身份损坏、重复或非法数量必须拒绝。 */
-    default java.math.BigDecimal durableExecutedQuantity(String orderId) {
+    default BigDecimal durableExecutedQuantity(String orderId) {
         throw new UnsupportedOperationException("durable execution proof unavailable");
     }
 

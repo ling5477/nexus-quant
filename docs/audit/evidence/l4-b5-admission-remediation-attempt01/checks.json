@@ -1,0 +1,112 @@
+{
+  "exporterTests": {
+    "tests": 7,
+    "failures": 0,
+    "errors": 0
+  },
+  "canonicalProofCount": 9,
+  "fullTreeInverseEquality": true,
+  "randomUuidLeakage": 0,
+  "manifestInverseEquality": true,
+  "secretNegatives": [
+    {
+      "case": "legacy-new-value",
+      "exit": 2,
+      "findings": 1,
+      "expectedExit": 2
+    },
+    {
+      "case": "legacy-real-shaped",
+      "exit": 2,
+      "findings": 1,
+      "expectedExit": 2
+    },
+    {
+      "case": "legacy-extended-value",
+      "exit": 2,
+      "findings": 1,
+      "expectedExit": 2
+    },
+    {
+      "case": "apiKey",
+      "exit": 2,
+      "findings": 1,
+      "expectedExit": 2
+    },
+    {
+      "case": "token",
+      "exit": 2,
+      "findings": 1,
+      "expectedExit": 2
+    },
+    {
+      "case": "Authorization",
+      "exit": 2,
+      "findings": 1,
+      "expectedExit": 2
+    }
+  ],
+  "workingTreeScan": {
+    "case": "tracked-working-tree",
+    "exit": 0,
+    "findings": 0,
+    "expectedExit": 0
+  },
+  "gitleaksVersion": "8.18.4",
+  "archiveDigestVerified": "ba6dbb656933921c775ee5a2d1c13a91046e7952e9d919f9bac4cec61d628e7d",
+  "stageAssets": {
+    "exit": 1,
+    "scanned": 1855,
+    "reviewedExceptions": 138,
+    "errors": 144,
+    "delta": {
+      "newErrors": [],
+      "removedErrors": []
+    },
+    "decision": "DELIVERY_COMPATIBILITY_BLOCKER_PENDING_ROOT_CAUSE",
+    "finalLogSha256": "870c412fe5555a29aaf476f8a2298fce4e90cd812ed1ce13417823b211eff94e"
+  },
+  "finalArtifactScan": {
+    "exit": 0,
+    "findings": 0,
+    "logSha256": "9361e49a684703ed30aee46618acd73bdda6f3d92eff2cbe0fda3a8e7081e95a"
+  },
+  "priorEvidenceUnchanged": true,
+  "v1ThroughV49Unchanged": true,
+  "stage": 0,
+  "commit": "NONE",
+  "push": "NONE",
+  "additionalAdmissionSecretNegatives": [
+    {
+      "field": "attemptedCanonicalKeyA",
+      "exit": 2,
+      "findings": 1,
+      "sourceUnchanged": true
+    },
+    {
+      "field": "attemptedCanonicalKeyB",
+      "exit": 2,
+      "findings": 1,
+      "sourceUnchanged": true
+    }
+  ],
+  "artifactScanAttempt01": {
+    "exit": 2,
+    "findings": 6,
+    "reason": "Typed admission identity observations were not registered by the shared field-aware exporter",
+    "logSha256": "4b2424d786cf357d80b883965bd3b6ec0c8917cf7eacd05a32dfee5948bee329"
+  },
+  "docLinks": {
+    "checked": 32,
+    "warnings": 0,
+    "errors": 0
+  },
+  "gitDiffCheck": "PASS",
+  "full02CandidateMismatch": [],
+  "newFilesUtf8Whitespace": "PASS",
+  "finalBackendManifestMismatch": [],
+  "filesChanged": {
+    "existing": 27,
+    "added": 24
+  }
+}

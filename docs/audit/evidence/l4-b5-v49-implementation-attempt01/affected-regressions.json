@@ -1,0 +1,140 @@
+{
+  "sourceRun": "b5-v49-final-targeted-10.log",
+  "overallRun": "FAIL bootstrap competition in separate B5 case",
+  "affectedCases": [
+    {
+      "batch": "B1",
+      "source": "backend/nq-app/target/b1-v49/3b341623-6b0e-4aab-998d-8cb8e43f9c1c/L4-AT-01-1/proof.json",
+      "sourceSha256": "af16187ab1a91badb35472107facd7321f63bfeb83a39e82e5f127b7d7a2d2cf",
+      "testResult": "PASS",
+      "counters": {
+        "venueAtFault.places": 1,
+        "venueFinal.places": 1
+      }
+    },
+    {
+      "batch": "B1",
+      "source": "backend/nq-app/target/b1-v49/3b341623-6b0e-4aab-998d-8cb8e43f9c1c/L4-LA-02-1/proof.json",
+      "sourceSha256": "b559d6d4c4a631cb632ff456687bdb8fb5e5df3e99025e7e8622bec3ed598b2f",
+      "testResult": "PASS",
+      "counters": {
+        "venueAtFault.places": 1,
+        "venueFinal.places": 1
+      }
+    },
+    {
+      "batch": "B2",
+      "source": "backend/nq-app/target/b2-v49/7d7fde55-3d2e-4cee-9c12-6ad0ae8ab21f/LIVE-MULTI_PARTIAL/proof.json",
+      "sourceSha256": "b77a0206f039a0846e1b27e15ae9140add9d39232f97b87e64eae996f3732cf6",
+      "testResult": "PASS",
+      "counters": {
+        "venueBeforeRecovery.places": 1,
+        "venueBeforeRecovery.cancels": 1,
+        "venueBeforeRecovery.placeRequests": 1,
+        "finalVenue.places": 1,
+        "finalVenue.cancels": 1,
+        "finalVenue.placeRequests": 1
+      }
+    },
+    {
+      "batch": "B2",
+      "source": "backend/nq-app/target/b2-v49/7d7fde55-3d2e-4cee-9c12-6ad0ae8ab21f/LIVE-STALE_PLACE/proof.json",
+      "sourceSha256": "3210510b5272ede14175274e878b895e90890672f93537e99e38f23d20ab0185",
+      "testResult": "PASS",
+      "counters": {
+        "venueBeforeRecovery.places": 1,
+        "venueBeforeRecovery.cancels": 0,
+        "venueBeforeRecovery.placeRequests": 1,
+        "finalVenue.places": 1,
+        "finalVenue.cancels": 0,
+        "finalVenue.placeRequests": 1
+      }
+    },
+    {
+      "batch": "B2",
+      "source": "backend/nq-app/target/b2-v49/7d7fde55-3d2e-4cee-9c12-6ad0ae8ab21f/SIM-MULTI_PARTIAL/proof.json",
+      "sourceSha256": "2d1a7d0bbd92078c9f40f792cc17261e0cdd262376c15fff2ce18b9117ef70e9",
+      "testResult": "PASS",
+      "counters": {
+        "venueBeforeRecovery.places": 1,
+        "venueBeforeRecovery.cancels": 1,
+        "venueBeforeRecovery.placeRequests": 1,
+        "finalVenue.places": 1,
+        "finalVenue.cancels": 1,
+        "finalVenue.placeRequests": 1
+      }
+    },
+    {
+      "batch": "B2",
+      "source": "backend/nq-app/target/b2-v49/7d7fde55-3d2e-4cee-9c12-6ad0ae8ab21f/SIM-STALE_PLACE/proof.json",
+      "sourceSha256": "e18415419ad433dfb575674888c2ec4098ded052b0e1dc40c1f5786808324e1a",
+      "testResult": "PASS",
+      "counters": {
+        "venueBeforeRecovery.places": 1,
+        "venueBeforeRecovery.cancels": 0,
+        "venueBeforeRecovery.placeRequests": 1,
+        "finalVenue.places": 1,
+        "finalVenue.cancels": 0,
+        "finalVenue.placeRequests": 1
+      }
+    },
+    {
+      "batch": "B3",
+      "source": "backend/nq-app/target/b3-v49/7db3a0b5-1f34-44e2-a1c5-f1813398b87c/PRE_ACCEPT/proof.json",
+      "sourceSha256": "e5b9803c4fef6fb86e48965da836a783a0bf831ba3fbbc21d4441584d499c622",
+      "testResult": "PASS",
+      "counters": {
+        "venueBeforeKill.places": 0,
+        "venueBeforeKill.cancels": 0,
+        "venueBeforeKill.placeRequests": 1,
+        "finalVenue.places": 1,
+        "finalVenue.cancels": 0,
+        "finalVenue.placeRequests": 1,
+        "blindRetries": 0
+      }
+    },
+    {
+      "batch": "B3",
+      "source": "backend/nq-app/target/b3-v49/7db3a0b5-1f34-44e2-a1c5-f1813398b87c/RESTART_PRE_ACK/proof.json",
+      "sourceSha256": "8dff79076580b68c8b43359c7516c9cab53dd7a76919556161b65ca476041248",
+      "testResult": "PASS",
+      "counters": {
+        "venueBeforeKill.places": 1,
+        "venueBeforeKill.cancels": 0,
+        "venueBeforeKill.placeRequests": 1,
+        "finalVenue.places": 1,
+        "finalVenue.cancels": 0,
+        "finalVenue.placeRequests": 1,
+        "blindRetries": 0
+      }
+    },
+    {
+      "batch": "B4",
+      "source": "backend/nq-app/target/b4-proof/1ccca7bf-0353-49b8-bc8e-111f93a0691c/proof.json",
+      "sourceSha256": "e0524f85c69e9abe6cc6ec5b7db91767679a48fab557ce1b312d9073af814734",
+      "testResult": "PASS",
+      "counters": {
+        "finalVenue.places": 1,
+        "finalVenue.cancels": 0,
+        "finalVenue.placeRequests": 1,
+        "blindRetries": 0
+      }
+    },
+    {
+      "batch": "B4",
+      "source": "backend/nq-app/target/b4-proof/0e5242c1-b308-4ba4-b0e2-f9e6482b6268/proof.json",
+      "sourceSha256": "3115e29c1dae3bec1d90a8badbc266e330f975fe07c0bbb98825db40c93e0fa3",
+      "testResult": "PASS",
+      "counters": {
+        "venueAtCut.places": 1,
+        "venueAtCut.cancels": 0,
+        "venueAtCut.placeRequests": 1,
+        "finalVenue.places": 1,
+        "finalVenue.cancels": 0,
+        "finalVenue.placeRequests": 1,
+        "blindRetries": 0
+      }
+    }
+  ],
+  "b4PostgresTests": 4
+}

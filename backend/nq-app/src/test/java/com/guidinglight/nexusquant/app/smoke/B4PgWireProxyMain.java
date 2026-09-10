@@ -6,6 +6,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.HashMap;
+import java.util.Map;
 
 /** 单个隔离PG的有界明文协议转发器：在选中事务的COMMIT边界断连或暂停。 */
 public final class B4PgWireProxyMain {
@@ -63,8 +65,8 @@ public final class B4PgWireProxyMain {
         private volatile String mode = "NONE";
         private volatile boolean commit;
         private boolean marker;
-        private final java.util.Map<String, String> statements = new java.util.HashMap<>();
-        private final java.util.Map<String, String> portals = new java.util.HashMap<>();
+        private final Map<String, String> statements = new HashMap<>();
+        private final Map<String, String> portals = new HashMap<>();
         private final CountDownLatch released = new CountDownLatch(1);
 
         Link(Socket client) throws IOException {

@@ -1,0 +1,68 @@
+{
+  "reviewTaskTitle": "独立审查 V51 B5 正确性",
+  "reviewAcceptance": "B5_STRATEGY_RUN_DURABLE_EXECUTION_V51_REVIEW_ATTEMPT02_ACCEPTED",
+  "currentReviewTests": 21,
+  "fullMaven": [
+    1898,
+    0,
+    0,
+    121
+  ],
+  "sourceFiles": [
+    {
+      "path": "backend/nq-app/target/b5-independent-review-attempt02.log",
+      "sha256": "95bde8bdd60c7cb68c4aae63b06ae93e1d4d753fdd4085e376254655db892bb3"
+    },
+    {
+      "path": "backend/nq-app/target/b5-independent-review-attempt02-v49-b2.log",
+      "sha256": "b2fcb6338cf227049a8d7efb33cf5c4281850bafd5dc9941dc9d72e2e7356bc6"
+    },
+    {
+      "path": "backend/nq-app/target/b5-effective-quantity-attempt01/full-01/full-maven.log",
+      "sha256": "c273a1f0410b49a59ad99ec521c2814cc84889f20b968be26541aacce3228dc1"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/scope-manifest.json",
+      "sha256": "0eb30746efa7a5d5e308d127aef3c1d202151b2aba3afba3df144f18143dcd76"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/protected-manifest.json",
+      "sha256": "63f19c5cc67d9ed5f6fe6a529bcb3f1b48d37f0acfcaefad8acdf06fdb2b1449"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/full-01-tested-manifest.json",
+      "sha256": "7520b88953b237fd1a7c663c4e371458523e73150c0560f143b05f64fa7357fa"
+    },
+    {
+      "path": "docs/audit/evidence/l4-b5-effective-quantity-remediation-attempt01/final-identity.json",
+      "sha256": "90de21835bd5d90639f2cc01a0969d67bf3bd724eb1b1d7e1fb7a916341a7e00"
+    }
+  ],
+  "automaticScheduler": [
+    {
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/validationevidence/ValidationEvidenceSchedulerConfiguration.java",
+      "sha256": "adf9f331733c6ee62fab0ebbd2987313d22f1c53a15934f8da546b898d0f91ed",
+      "sameAsAccepted": true
+    },
+    {
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/validationevidence/ValidationEvidenceScheduler.java",
+      "sha256": "baff05713b0ae1669d012293f5207306804c3406c29572b13f5c70ec1a8fceb1",
+      "sameAsAccepted": true
+    },
+    {
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/validationevidence/ValidationEvidenceRefreshService.java",
+      "sha256": "5edbf0be9b4cf8b831fe6bddfbdc14989f32ade94425ec69b7e1f54563884c4f",
+      "sameAsAccepted": true
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/scheduler/infra/lock/PostgresAdvisorySchedulerExecutionLock.java",
+      "sha256": "4848eb12a8c58c8456bc46807b6603a30c48c879b5dd239920fc188a22d11413",
+      "sameAsAccepted": true
+    }
+  ],
+  "schedulerProofs": [
+    "../l4-b5-qualification-resume-attempt01/R07.json",
+    "../l4-b5-qualification-resume-attempt01/R08.json",
+    "../l4-b5-qualification-resume-attempt01/R09.json"
+  ]
+}

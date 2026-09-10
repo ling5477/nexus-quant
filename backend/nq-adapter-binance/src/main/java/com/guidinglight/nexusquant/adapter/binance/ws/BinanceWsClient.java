@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -770,7 +771,7 @@ public class BinanceWsClient {
     private String buildWsApiSignaturePayload(LinkedHashMap<String, String> params) {
         StringBuilder builder = new StringBuilder();
         params.entrySet().stream()
-                .sorted(java.util.Map.Entry.comparingByKey())
+                .sorted(Map.Entry.comparingByKey())
                 .forEach(entry -> {
                     if (!builder.isEmpty()) {
                         builder.append('&');

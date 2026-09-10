@@ -1,0 +1,139 @@
+{
+  "correctnessResult": "FAIL / L4_B5_CORRECTNESS_FINDING / STOP / PRODUCTION_REMEDIATION_REQUIRED",
+  "exporterTests": {
+    "tests": 6,
+    "failures": 0,
+    "errors": 0
+  },
+  "proofInverseEquality": true,
+  "proofRandomUuidLeakage": 0,
+  "manifestInverseEquality": true,
+  "secretNegatives": [
+    {
+      "case": "legacy-new-value",
+      "exit": 2,
+      "findings": 1,
+      "expectedExit": 2
+    },
+    {
+      "case": "legacy-real-shaped",
+      "exit": 2,
+      "findings": 1,
+      "expectedExit": 2
+    },
+    {
+      "case": "legacy-extended-value",
+      "exit": 2,
+      "findings": 1,
+      "expectedExit": 2
+    },
+    {
+      "case": "apiKey",
+      "exit": 2,
+      "findings": 1,
+      "expectedExit": 2
+    },
+    {
+      "case": "token",
+      "exit": 2,
+      "findings": 1,
+      "expectedExit": 2
+    },
+    {
+      "case": "Authorization",
+      "exit": 2,
+      "findings": 1,
+      "expectedExit": 2
+    }
+  ],
+  "trackedWorkingTreeScan": {
+    "case": "tracked-working-tree",
+    "exit": 0,
+    "findings": 0,
+    "expectedExit": 0
+  },
+  "gitleaksVersion": "8.18.4",
+  "scannerArchiveSha256Verified": "ba6dbb656933921c775ee5a2d1c13a91046e7952e9d919f9bac4cec61d628e7d",
+  "newArtifactScanAttempt01": {
+    "exit": 2,
+    "findings": 82,
+    "source": "reviewed-backend-manifest.json",
+    "classification": "File SHA256 values under path-shaped JSON keys; manifest export schema issue, not credential or runtime-identity leakage",
+    "rawReportPath": "backend/nq-app/target/b5-qualification-resume-attempt02/secret-validation/new-artifacts-01.json",
+    "logSha256": "dd2ac0318f7b3fc983a3a2f8b2748d94538f29ccdcc2434320fdaa3a71c67410"
+  },
+  "newArtifactScanAttempt02": {
+    "exit": 0,
+    "findings": 0,
+    "logSha256": "13a11a3ac4373f7e8e5bfc6a1cd1ca44888105b258544e5762c8f96a839b063b",
+    "formatCorrection": "Existing files/path/sha256 manifest schema; inverse mapping equals reviewer original; no allowlist/scanner changes"
+  },
+  "stageAssets": {
+    "exit": 1,
+    "counts": {
+      "UNAUTHORIZED_COMPATIBILITY_CALLER": 38,
+      "STALE_COMPATIBILITY_CALLER": 36,
+      "STAGE_SEMANTICS": 35,
+      "STALE_EXCEPTION": 35
+    },
+    "affectedPaths": [
+      "backend/nq-adapter-binance/src/main/java/com/guidinglight/nexusquant/adapter/binance/service/BinanceHistoricalKlineAdapter.java",
+      "backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/service/OkxHistoricalKlineAdapter.java",
+      "backend/nq-api/src/test/java/com/guidinglight/nexusquant/research/api/web/BacktestRunControllerTest.java",
+      "backend/nq-api/src/test/java/com/guidinglight/nexusquant/research/api/web/PythonEvaluationArtifactBindingPreviewControllerTest.java",
+      "backend/nq-api/src/test/java/com/guidinglight/nexusquant/strategy/api/web/PythonEvaluationArtifactPreviewOverviewControllerTest.java",
+      "backend/nq-api/src/test/java/com/guidinglight/nexusquant/trading/api/web/TradingPreflightControllerTest.java",
+      "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
+      "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ReadOnlyProviderObservationConfiguration.java",
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/admission/AdmissionGuardedMaterializationPostgresIntegrationTest.java",
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/admission/AdmissionMaterializationGuardPostgresIntegrationTest.java",
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/architecture/PackageBoundaryArchTest.java",
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/account/OkxPrivateReadOnlyPermissionProbeSpringContextTest.java",
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/env/ProductionSecretProfileRegressionTest.java",
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfigurationTest.java",
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java",
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/research/BacktestPublishArtifactLocatorPostgresIntegrationTest.java",
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/risk/KillSwitchRestartDurabilityPostgresIntegrationTest.java",
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/shadowrun/ShadowRunProvenancePostgresIntegrationTest.java",
+      "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/domain/ExactPilotBinding.java",
+      "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+      "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
+      "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+      "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/StrategyReleaseShadowRunMaterializationServiceTest.java",
+      "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+      "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/MinimalPilotTradingVenueGateway.java",
+      "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/jdbc/JdbcExecutionIntentRepository.java",
+      "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/MinimalLivePilotControlService.java",
+      "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/okx/OkxPilotPrerequisiteObservationAuthority.java",
+      "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/account/infra/probe/OkxRealReadonlyPermissionProbePortTest.java",
+      "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/OperatorPilotAuthorityMigrationContractTest.java",
+      "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/PrePlaceRecoveryMigrationContractTest.java",
+      "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/ReadOnlyQualificationObservationAuthorityTest.java",
+      "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/okx/OkxPilotPrerequisiteObservationAuthorityTest.java",
+      "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/strategy/infra/artifact/ServerControlledStrategyArtifactBindingResolverTest.java",
+      "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcStrategyReleaseProvenanceRepositoryTest.java",
+      "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/validationreview/infra/jdbc/ValidationReviewRepositoryPostgresIntegrationTest.java"
+    ],
+    "affectedPathsChangedInThisTurn": [],
+    "newTestNamedInFailures": false,
+    "classification": "PRE_EXISTING_CANDIDATE_GUARD_DRIFT; NOT_REPAIRED; NOT_A_NEW_RUNTIME_P1",
+    "scanned": 1851,
+    "reviewedExceptions": 138,
+    "errors": 144,
+    "logPath": "backend/nq-app/target/b5-qualification-resume-attempt02/stage-assets.log",
+    "logSha256": "29fd56b6ba456e03bed5d2a0ccabf9c6937ee6390da1798da2d3018189265ade"
+  },
+  "docLinks": {
+    "checked": 34,
+    "warnings": 0,
+    "errors": 0
+  },
+  "gitDiffCheck": "PASS",
+  "newJavaExplicitImports": true,
+  "protectedCandidateMismatch": [],
+  "fullMavenRerun": "NONE",
+  "stage": 0,
+  "commit": "NONE",
+  "push": "NONE"
+}

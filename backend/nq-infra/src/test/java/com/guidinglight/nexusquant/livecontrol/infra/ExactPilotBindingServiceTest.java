@@ -18,6 +18,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
 import com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSet;
 import com.guidinglight.nexusquant.livecontrol.domain.port.ExactPilotBindingRepository;
+import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingConsumption;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -416,7 +417,7 @@ class ExactPilotBindingServiceTest {
         }
 
         @Override
-        public com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingConsumption consume(
+        public ExactPilotBindingConsumption consume(
                 ExactPilotBinding value,
                 LiveSession ignoredSession,
                 ExactPilotBinding.Correlation ignoredCorrelation,
@@ -426,7 +427,7 @@ class ExactPilotBindingServiceTest {
                 throw new LiveControlException("EXACT_PILOT_BINDING_ALREADY_CONSUMED", "already consumed");
             }
             consumed = true;
-            return new com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingConsumption(
+            return new ExactPilotBindingConsumption(
                     value.id(), value.bindingDigest(), consumedAt, false, false);
         }
     }

@@ -4,6 +4,7 @@ import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Set;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.springframework.aop.framework.Advised;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -17,7 +18,7 @@ final class B4ProcessFaults {
         var armed = new AtomicBoolean(true);
         ((Advised) repository).addAdvice(0, (MethodInterceptor) invocation -> {
             Object result = invocation.proceed();
-            if (java.util.Set.of("insert", "insertWithRequiredEvent").contains(invocation.getMethod().getName())
+            if (Set.of("insert", "insertWithRequiredEvent").contains(invocation.getMethod().getName())
                     && armed.compareAndSet(true, false)) {
                 // 外层 proceed 已经过完整 TransactionInterceptor；另由只读数据库连接确认 durable facts。
                 B0Fixture.require(!TransactionSynchronizationManager.isActualTransactionActive());

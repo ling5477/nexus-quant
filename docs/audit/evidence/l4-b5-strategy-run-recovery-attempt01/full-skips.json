@@ -1,0 +1,650 @@
+[
+  {
+    "suite": "com.guidinglight.nexusquant.strategy.strategyrelease.artifact.TrustedRootStrategyArtifactVerifierTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "shouldRejectSymlinkEscapeWhenPlatformAllowsSymlinkCreation",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: SYMLINK_PRIVILEGE_UNAVAILABLE"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReaderTest",
+    "skipped": 9,
+    "reasons": [
+      {
+        "test": "shouldRejectFileToDirectoryAndDirectoryToFileSwaps",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: SUPPORTED_RUNTIME_LINUX_ONLY"
+      },
+      {
+        "test": "shouldExposeRequiredStableHandlePrerequisitesOnSupportedLinuxFilesystem",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: SUPPORTED_RUNTIME_LINUX_ONLY"
+      },
+      {
+        "test": "shouldRejectRenameOrParentDirectorySwapAfterSetVerification",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: SUPPORTED_RUNTIME_LINUX_ONLY"
+      },
+      {
+        "test": "shouldRejectSamePathDifferentIdentityAfterSetVerification",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: SUPPORTED_RUNTIME_LINUX_ONLY"
+      },
+      {
+        "test": "shouldEraseAndInvalidateSnapshotsAfterConsumerFailure",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: SUPPORTED_RUNTIME_LINUX_ONLY"
+      },
+      {
+        "test": "shouldEraseAndInvalidateSnapshotsAfterPartialConsumer",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: SUPPORTED_RUNTIME_LINUX_ONLY"
+      },
+      {
+        "test": "shouldFailClosedWhenTotalImmutableSnapshotLimitIsExceeded",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: SUPPORTED_RUNTIME_LINUX_ONLY"
+      },
+      {
+        "test": "shouldRejectSymlinkSwapAfterSetVerification",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: SUPPORTED_RUNTIME_LINUX_ONLY"
+      },
+      {
+        "test": "shouldRejectTruncateBeforeFinalClosureWithoutExposingCallback",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: SUPPORTED_RUNTIME_LINUX_ONLY"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.strategyrelease.preparation.TrustedRootArtifactVerifierPrototypeTest",
+    "skipped": 3,
+    "reasons": [
+      {
+        "test": "shouldRejectSymbolicLinkPointingInsideTrustedRoot",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: SYMLINK_PRIVILEGE_UNAVAILABLE"
+      },
+      {
+        "test": "shouldRejectSymbolicLinkPointingOutsideTrustedRoot",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: SYMLINK_PRIVILEGE_UNAVAILABLE"
+      },
+      {
+        "test": "shouldRejectTrustedRootThatIsSymbolicLink",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: SYMLINK_PRIVILEGE_UNAVAILABLE"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClientLiveDiagnosticTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "shouldPrintLiveDiagnosticsForClientAndProbe",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: assumption is not true"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.infra.postgres.JdbcRepositoryPostgresSmokeTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "shouldInsertAndReadSelectedRepositoriesAgainstMigratedPostgresSchema",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL repository smoke is disabled without nq.postgres.smoke.* properties"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.scheduler.infra.lock.PostgresAdvisorySchedulerExecutionLockPostgresIntegrationTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "shouldEnforceMultiInstanceMutualExclusionAndAutomaticRelease",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL advisory lock integration is disabled"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.strategy.infra.artifact.ServerControlledStrategyArtifactBindingResolverTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "shouldRejectSymlinkEscapeWhenPlatformAllowsCreation",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: SYMLINK_PRIVILEGE_UNAVAILABLE"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.validationreview.infra.jdbc.ValidationReviewRepositoryPostgresIntegrationTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "shouldVerifySchemaScopeLockingIdempotencyAndAtomicEvents",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL validation review integration is disabled"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.admission.AdmissionGuardedMaterializationPostgresIntegrationTest",
+    "skipped": 3,
+    "reasons": [
+      {
+        "test": "everyAdmissionMutationShouldMakeOldGuardStaleWithoutWrites",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured"
+      },
+      {
+        "test": "concurrencyReplayRerunCreatedExclusionAndRollbackShouldBeAtomic",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured"
+      },
+      {
+        "test": "issuanceShouldFirstBindRejectR0R1RaceIdentityMismatchAndUnknownSchema",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.admission.AdmissionMaterializationGuardPostgresIntegrationTest",
+    "skipped": 5,
+    "reasons": [
+      {
+        "test": "freshAndV37UpgradeShouldInitializeOnlyUnboundStateAndValidateFlyway",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured"
+      },
+      {
+        "test": "coordinatorShouldLinearizeReverseOrderingAndRollbackTriggerFailures",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured"
+      },
+      {
+        "test": "directRevisionAndIdentityRewritesShouldFailClosed",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured"
+      },
+      {
+        "test": "excessiveFanOutShouldFailClosedBeforeMutationOrPartialBump",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured"
+      },
+      {
+        "test": "rawSqlMutationsShouldCoverRevisionPhantomsReorderAndFanOut",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.livecontrol.LiveSessionFactModelPostgresIntegrationTest",
+    "skipped": 6,
+    "reasons": [
+      {
+        "test": "shouldUpgradePopulatedV40WithoutFabricatingVenueEvidenceAndCoexistWithV2",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL GateY-6E integration is disabled"
+      },
+      {
+        "test": "shouldUpgradeV39WithoutFakeBackfillAndEnforcePilotFacts",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL GateY-6D integration is disabled"
+      },
+      {
+        "test": "shouldReplayV1ToV41AndRollbackOnMigrationLockTimeout",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL GateY-6D integration is disabled"
+      },
+      {
+        "test": "shouldMigrateAndEnforceFactModelRepositoryAndConcurrency",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL GateY-2 integration is disabled"
+      },
+      {
+        "test": "shouldProveF003OrderExecutionIdentityConvergence",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL F003 identity convergence proof is disabled"
+      },
+      {
+        "test": "shouldForwardMigrateExactV42ToV43ThenV43ToV44WithoutPendingOrFailedMigrations",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL GateY V42 to V43 integration is disabled"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.livecontrol.OperatorPilotAuthorityPostgresIntegrationTest",
+    "skipped": 4,
+    "reasons": [
+      {
+        "test": "allowsOneConcurrentZeroIntentReplacementAndCanonicalLegacyBridge",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL V45 integration is disabled"
+      },
+      {
+        "test": "enforcesOperatorAuthorityIsolationDigestLeaseAndCloseout",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL V44 integration is disabled"
+      },
+      {
+        "test": "regeneratesTerminalZeroExecutionLineageAndKeepsAttemptPlaceExactlyOnce",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL V46 regeneration integration is disabled"
+      },
+      {
+        "test": "migratesExactV45ToV46AndValidates",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL V45 to V46 integration is disabled"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.marketdata.VenueRuleFactsPostgresIntegrationTest",
+    "skipped": 2,
+    "reasons": [
+      {
+        "test": "freshDatabaseShouldMigrateFromV1ToV34AndSupportRepositoryLifecycle",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured"
+      },
+      {
+        "test": "existingV33DatabaseShouldUpgradeToV34WithoutBackfillingLegacyFacts",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.research.BacktestPublishArtifactLocatorPostgresIntegrationTest",
+    "skipped": 3,
+    "reasons": [
+      {
+        "test": "existingV36DatabaseShouldUpgradeWithoutBackfillAndAllowOnlyFailedToSucceededFirstBinding",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured"
+      },
+      {
+        "test": "concurrentFirstBindingShouldRejectDifferentPairAndAcceptSamePair",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured"
+      },
+      {
+        "test": "freshDatabaseShouldMigrateFromV1ToV38AndEnforceLocatorContract",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.risk.KillSwitchRestartDurabilityPostgresIntegrationTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "freshMigrationAndTwoSpringContextsPreserveEngagedState",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: kill-switch PostgreSQL integration is disabled"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.shadowrun.ShadowRunProvenancePostgresIntegrationTest",
+    "skipped": 4,
+    "reasons": [
+      {
+        "test": "existingV35DatabaseShouldUpgradeWithoutBackfillAndReadLegacyBindingModes",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured"
+      },
+      {
+        "test": "idempotencyConflictMatrixShouldPreserveExistingPostgresFacts",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured"
+      },
+      {
+        "test": "materializationShouldBeAtomicIdempotentConcurrentAndProvenanceBound",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured"
+      },
+      {
+        "test": "freshDatabaseShouldMigrateFromV1ToV38AndPreserveProvenanceAcrossLifecycleUpdates",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: local disposable PostgreSQL properties are not configured"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B0RealProcessHarnessTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "provesDefaultSafetyCanonicalSmokeRestartAndVenueFaults",
+        "reason": "System property [nq.b0] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B1RealProcessProofTest",
+    "skipped": 2,
+    "reasons": [
+      {
+        "test": "qualifiesCurrentOrdinaryRows",
+        "reason": "System property [nq.b1] does not exist"
+      },
+      {
+        "test": "v49AffectedTimeoutAndLostAckRegression",
+        "reason": "System property [nq.b1] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B2RealProcessProofTest",
+    "skipped": 2,
+    "reasons": [
+      {
+        "test": "provesCompleteCancelFillOrderingMatrix",
+        "reason": "System property [nq.b2] does not exist"
+      },
+      {
+        "test": "v49AffectedOccAndPerFillRegression",
+        "reason": "System property [nq.b2] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B2TerminalCorrectionPostgresIntegrationTest",
+    "skipped": 11,
+    "reasons": [
+      {
+        "test": "concurrentCorrectionsIncrementVersionAndPublishExactlyOnce",
+        "reason": "System property [nq.b2.pg] does not exist"
+      },
+      {
+        "test": "failedEventAppendRollsBackStatusVersionAndAudit",
+        "reason": "System property [nq.b2.pg] does not exist"
+      },
+      {
+        "test": "liveOrderRejectsExistingSimTradeBeforeLedgerReplay",
+        "reason": "System property [nq.b2.pg] does not exist"
+      },
+      {
+        "test": "simOrderRejectsExistingLiveTradeBeforeLedgerReplay",
+        "reason": "System property [nq.b2.pg] does not exist"
+      },
+      {
+        "test": "foreignFillIdentityCannotProveFullExecution",
+        "reason": "System property [nq.b2.pg] does not exist"
+      },
+      {
+        "test": "partialThenThreeDurableFillsCorrectOnceAndOrdinaryLifecycleCannot",
+        "reason": "System property [nq.b2.pg] does not exist"
+      },
+      {
+        "test": "concurrentDifferentFillsCannotOverfillBetweenPreflightAndInsert",
+        "reason": "System property [nq.b2.pg] does not exist"
+      },
+      {
+        "test": "livePartialThenFullInheritsCanonicalEnvironment",
+        "reason": "System property [nq.b2.pg] does not exist"
+      },
+      {
+        "test": "overfillRejectsServiceAndAtomicRepositoryGuard",
+        "reason": "System property [nq.b2.pg] does not exist"
+      },
+      {
+        "test": "sqlRechecksFullProofAfterConcurrentDurableFillCommit",
+        "reason": "System property [nq.b2.pg] does not exist"
+      },
+      {
+        "test": "liveOverfillFailsClosed",
+        "reason": "System property [nq.b2.pg] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B3RealProcessProofTest",
+    "skipped": 2,
+    "reasons": [
+      {
+        "test": "qualifiesKillInFlightMatrix",
+        "reason": "System property [nq.b3] does not exist"
+      },
+      {
+        "test": "v49AffectedKillAndRestartRegression",
+        "reason": "System property [nq.b3] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B4QualificationResumeTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "remainingFailureMatrixConvergesWithoutResendingPlace",
+        "reason": "System property [nq.b4.resume] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B4RealProcessProofTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "tradeCommitProcessDeathMustRecoverCanonicalTradeEvent",
+        "reason": "System property [nq.b4] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B4TradeEventPostgresTest",
+    "skipped": 4,
+    "reasons": [
+      {
+        "test": "eventAndLedgerFailureDoNotRepeatTheOtherDurableFact",
+        "reason": "System property [nq.b4.pg] does not exist"
+      },
+      {
+        "test": "eventCommitRejectionRollsBackTradeAndEventTogether",
+        "reason": "System property [nq.b4.pg] does not exist"
+      },
+      {
+        "test": "conflictingHistoricalEventFailsClosedWithoutRewritingSource",
+        "reason": "System property [nq.b4.pg] does not exist"
+      },
+      {
+        "test": "concurrentRecoveryAndLegacyEventAreUniqueInBothEnvironments",
+        "reason": "System property [nq.b4.pg] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B4TradeEventRemediationTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "durableFanoutSurvivesRealProcessDeathAndRepeatedRestart",
+        "reason": "System property [nq.b4.remediation] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5AuthorityPostgresTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "databaseEnforcesOneShotAndRestrictedPaths",
+        "reason": "System property [nq.b5] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5AuthorityProcessTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "authorityOrderingAndCommitOutcomes",
+        "reason": "System property [nq.b5] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5LegacyVenuePostgresTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "legacyLowercaseMissingAuthorityRemainsQueryOnly",
+        "reason": "System property [nq.b5] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5QualificationResumeTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "currentOrdinaryAndSchedulerRows",
+        "reason": "System property [nq.b5.resume] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5RealProcessProofTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "staleSenderMustNotPlaceAfterAnotherProcessFinalizesNotFound",
+        "reason": "System property [nq.b5] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5StrategyOwnerDeathTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "deadDispatchMustNotPermanentlyBlockScheduleAfterNoSendFinality",
+        "reason": "System property [nq.b5.resume] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5StrategyRunRecoveryPostgresTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "durableEligibilityBoundsRollbackAndLateCallback",
+        "reason": "System property [nq.b5.strategy] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5StrategyRunRecoveryProcessTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "durableRecoveryAndNegativeControls",
+        "reason": "System property [nq.b5.strategy] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.B5VenueIdentityProcessTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "caseMatrixAndInvalidInputHaveOneCanonicalBoundary",
+        "reason": "System property [nq.b5] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.L4PlanBlockerPostgresIntegrationTest",
+    "skipped": 13,
+    "reasons": [
+      {
+        "test": "cancelledPartialFillRecoversWithKillEngaged",
+        "reason": "System property [nq.l4.blockers.enabled] does not exist"
+      },
+      {
+        "test": "terminalPrefixCannotStarveEligibleVictim(String)",
+        "reason": "System property [nq.l4.blockers.enabled] does not exist"
+      },
+      {
+        "test": "stalePlaceAckPreservesCommittedFilledThroughRealSpringTransactions",
+        "reason": "System property [nq.l4.blockers.enabled] does not exist"
+      },
+      {
+        "test": "sharedLimitOneProcessesOnlyOneOrder(boolean)",
+        "reason": "System property [nq.l4.blockers.enabled] does not exist"
+      },
+      {
+        "test": "staleCancelAckPreservesCommittedFilledThroughRealSpringTransactions",
+        "reason": "System property [nq.l4.blockers.enabled] does not exist"
+      },
+      {
+        "test": "engagedKillRejectsNewPlaceButAllowsOrdinaryReadAndLedgerConvergence",
+        "reason": "System property [nq.l4.blockers.enabled] does not exist"
+      },
+      {
+        "test": "cancelledWithoutVenueFillHasNoExecutionFacts",
+        "reason": "System property [nq.l4.blockers.enabled] does not exist"
+      },
+      {
+        "test": "reservationFailureDoesNotLoseCandidatesAndVenueQueryHoldsNoCursorLock",
+        "reason": "System property [nq.l4.blockers.enabled] does not exist"
+      },
+      {
+        "test": "cancelledDurableTradeRecoversMissingLedgerWithoutNewVenueFill",
+        "reason": "System property [nq.l4.blockers.enabled] does not exist"
+      },
+      {
+        "test": "stalePreCancelSnapshotNeverDispatchesGateway",
+        "reason": "System property [nq.l4.blockers.enabled] does not exist"
+      },
+      {
+        "test": "cancelledOrderWithVenueFillBackfillsTradeAndLedgerIdempotently",
+        "reason": "System property [nq.l4.blockers.enabled] does not exist"
+      },
+      {
+        "test": "cancelledFeeFactsConvergeAndReplayWithoutDuplicateLedger(String)",
+        "reason": "System property [nq.l4.blockers.enabled] does not exist"
+      },
+      {
+        "test": "staleCancelRejectCannotClaimNewCancelGenerationAfterAba",
+        "reason": "System property [nq.l4.blockers.enabled] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.ManualPublicOutboundSmokeTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "shouldRunOnlyWhenAllManualPublicOutboundGatesAreExplicitlyEnabled",
+        "reason": "System property [nq.public-marketdata.manualSmoke.required] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.NqAppContextPostgresSmokeTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "shouldLoadNqAppContextWithoutSeedOrExchangeSideEffects",
+        "reason": "System property [nq.app.context.smoke.required] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.OrderVersionFlywayPostgresIntegrationTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "migratesAndValidatesVersionContract(boolean)",
+        "reason": "System property [nq.l4.blockers.enabled] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.ReconciliationCursorPostgresIntegrationTest",
+    "skipped": 5,
+    "reasons": [
+      {
+        "test": "reservationCommitsOutsideCallerAndFailuresRollbackProgress",
+        "reason": "System property [nq.l4.blockers.enabled] does not exist"
+      },
+      {
+        "test": "tiesWrapVenueAndChangingEligibilityRemainReachable",
+        "reason": "System property [nq.l4.blockers.enabled] does not exist"
+      },
+      {
+        "test": "freshAndV47UpgradePreserveHistoryAndOnlyAddCursor(boolean)",
+        "reason": "System property [nq.l4.blockers.enabled] does not exist"
+      },
+      {
+        "test": "destroyedInstanceContinuesDatabaseProgressAndCrashedBatchReturnsNextCircle",
+        "reason": "System property [nq.l4.blockers.enabled] does not exist"
+      },
+      {
+        "test": "twoIndependentInstancesSerializeInitialCreationAndFortyReservations",
+        "reason": "System property [nq.l4.blockers.enabled] does not exist"
+      }
+    ]
+  },
+  {
+    "suite": "com.guidinglight.nexusquant.app.smoke.ValidationReviewFlywayPostgresIntegrationTest",
+    "skipped": 1,
+    "reasons": [
+      {
+        "test": "shouldMigrateEmptyPostgresSchemaThroughGateVVersion33",
+        "reason": "org.opentest4j.TestAbortedException: Assumption failed: PostgreSQL Flyway integration is disabled"
+      }
+    ]
+  }
+]

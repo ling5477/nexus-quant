@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * PaperAutoReviewResponse.from() 映射单测：字段全量映射、Paper-only safety（5 个布尔均 true）、
@@ -107,7 +108,7 @@ class PaperAutoReviewResponseTest {
         var response = PaperAutoReviewResponse.from(review);
 
         assertEquals(0, response.overview().totalRuns());
-        org.junit.jupiter.api.Assertions.assertNull(response.overview().topIssueCause());
+        Assertions.assertNull(response.overview().topIssueCause());
         assertTrue(response.runReviews().isEmpty());
         assertTrue(response.strategyReviews().isEmpty());
         assertTrue(response.publishReviews().isEmpty());

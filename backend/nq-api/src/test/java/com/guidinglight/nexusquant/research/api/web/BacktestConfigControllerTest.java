@@ -18,6 +18,8 @@ import com.guidinglight.nexusquant.research.domain.BacktestConfig;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.io.IOException;
+import java.util.UUID;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -165,7 +167,7 @@ class BacktestConfigControllerTest {
                 Instant.parse("2026-03-20T00:00:00Z"),
                 Instant.parse("2026-03-21T00:00:00Z")
         );
-        when(marketdataDatasetService.buildDatasetSnapshot(java.util.UUID.fromString(datasetId)))
+        when(marketdataDatasetService.buildDatasetSnapshot(UUID.fromString(datasetId)))
                 .thenReturn(datasetSnapshot);
         when(applicationService.bindDataset("bcf-1", datasetId, datasetSnapshot)).thenReturn(bound);
 
@@ -197,7 +199,7 @@ class BacktestConfigControllerTest {
                 HttpServletRequest request,
                 HttpServletResponse response,
                 FilterChain filterChain
-        ) throws ServletException, java.io.IOException {
+        ) throws ServletException, IOException {
             String incoming = request.getHeader(TraceIdContext.TRACE_ID_HEADER);
             String traceId = TraceIdContext.putOrCreate(incoming);
             request.setAttribute(TraceIdContext.TRACE_ID_REQUEST_ATTRIBUTE, traceId);

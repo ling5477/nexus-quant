@@ -60,7 +60,9 @@ public class JdbcStrategyScheduleRepository implements StrategyScheduleRepositor
                 """
                         SELECT schedule_job_id, strategy_id, schedule_type, cron_expr, timezone, enabled,
                                window_config::text AS window_config, dedup_scope, exchange_code, account_id, trade_env,
-                               last_triggered_at, created_at, updated_at
+                               greatest(last_triggered_at, (SELECT max(r.admission_due_at) FROM strategy_runs r
+                                   WHERE r.admission_schedule_id=strategy_schedules.schedule_job_id)) AS last_triggered_at,
+                               created_at, updated_at
                         FROM strategy_schedules
                         WHERE schedule_job_id = ?
                         """,
@@ -76,7 +78,9 @@ public class JdbcStrategyScheduleRepository implements StrategyScheduleRepositor
                 """
                         SELECT schedule_job_id, strategy_id, schedule_type, cron_expr, timezone, enabled,
                                window_config::text AS window_config, dedup_scope, exchange_code, account_id, trade_env,
-                               last_triggered_at, created_at, updated_at
+                               greatest(last_triggered_at, (SELECT max(r.admission_due_at) FROM strategy_runs r
+                                   WHERE r.admission_schedule_id=strategy_schedules.schedule_job_id)) AS last_triggered_at,
+                               created_at, updated_at
                         FROM strategy_schedules
                         WHERE strategy_id = ?
                         ORDER BY created_at DESC, schedule_job_id DESC
@@ -92,7 +96,9 @@ public class JdbcStrategyScheduleRepository implements StrategyScheduleRepositor
                 """
                         SELECT schedule_job_id, strategy_id, schedule_type, cron_expr, timezone, enabled,
                                window_config::text AS window_config, dedup_scope, exchange_code, account_id, trade_env,
-                               last_triggered_at, created_at, updated_at
+                               greatest(last_triggered_at, (SELECT max(r.admission_due_at) FROM strategy_runs r
+                                   WHERE r.admission_schedule_id=strategy_schedules.schedule_job_id)) AS last_triggered_at,
+                               created_at, updated_at
                         FROM strategy_schedules
                         ORDER BY updated_at ASC, schedule_job_id ASC
                         """,
@@ -106,7 +112,9 @@ public class JdbcStrategyScheduleRepository implements StrategyScheduleRepositor
                 """
                         SELECT schedule_job_id, strategy_id, schedule_type, cron_expr, timezone, enabled,
                                window_config::text AS window_config, dedup_scope, exchange_code, account_id, trade_env,
-                               last_triggered_at, created_at, updated_at
+                               greatest(last_triggered_at, (SELECT max(r.admission_due_at) FROM strategy_runs r
+                                   WHERE r.admission_schedule_id=strategy_schedules.schedule_job_id)) AS last_triggered_at,
+                               created_at, updated_at
                         FROM strategy_schedules
                         WHERE enabled = TRUE
                         ORDER BY updated_at ASC, schedule_job_id ASC

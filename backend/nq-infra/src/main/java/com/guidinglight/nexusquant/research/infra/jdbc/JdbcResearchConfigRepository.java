@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.research.domain.ResearchConfig;
 import com.guidinglight.nexusquant.research.domain.port.ResearchConfigRepository;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -160,7 +161,7 @@ public class JdbcResearchConfigRepository implements ResearchConfigRepository {
     }
 
     private String buildConfigJson(ResearchConfig researchConfig) {
-        com.fasterxml.jackson.databind.node.ObjectNode configJson = objectMapper.createObjectNode();
+        ObjectNode configJson = objectMapper.createObjectNode();
         configJson.set("parameterSchema", readJson(researchConfig.parameterSchema()));
         configJson.set("parameterDefaults", readJson(researchConfig.parameterDefaults()));
         configJson.set("datasetSpec", readJson(researchConfig.datasetSpec()));

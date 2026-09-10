@@ -14,6 +14,7 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterReadinessStatus;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -304,7 +305,7 @@ class DefaultAdapterReadinessServiceTest {
                 AdapterReadinessStatus.NOT_READY,
                 true,
                 false,
-                java.util.List.of(AdapterReadinessReason.LIVE_DISABLED),
+                List.of(AdapterReadinessReason.LIVE_DISABLED),
                 Instant.now(FIXED_CLOCK),
                 "should fail"));
     }
@@ -318,7 +319,7 @@ class DefaultAdapterReadinessServiceTest {
                 AdapterReadinessStatus.NOT_READY,
                 false,
                 false,
-                java.util.List.of(),
+                List.of(),
                 Instant.now(FIXED_CLOCK),
                 "missing reason"));
     }

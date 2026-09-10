@@ -23,6 +23,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.PilotScopePreflightResult;
 import com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSet;
 import com.guidinglight.nexusquant.livecontrol.domain.port.LiveControlRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotScopeRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionAuthorityType;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -199,7 +200,7 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
         LiveSession session = liveControlRepository.findSession(command.sessionId())
                 .orElseThrow(() -> new LiveControlException("LIVE_SESSION_NOT_FOUND", "live session was not found"));
         if (session.authorityType()
-                == com.guidinglight.nexusquant.livecontrol.domain.LiveSessionAuthorityType.OPERATOR_PILOT) {
+                == LiveSessionAuthorityType.OPERATOR_PILOT) {
             throw new LiveControlException(
                     "OPERATOR_PILOT_EXTERNAL_APPROVAL_FORBIDDEN",
                     "operator pilot approval is carried by its explicit authority");

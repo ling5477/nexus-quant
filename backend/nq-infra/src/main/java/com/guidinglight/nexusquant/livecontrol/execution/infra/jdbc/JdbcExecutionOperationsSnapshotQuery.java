@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
 
 
 /**
@@ -58,7 +59,7 @@ public class JdbcExecutionOperationsSnapshotQuery implements ExecutionOperations
 
     private static ExecutionOperationsSnapshot map(ResultSet row, int ignored) throws SQLException {
         return new ExecutionOperationsSnapshot(
-                row.getObject("observed_at", java.time.OffsetDateTime.class).toInstant(),
+                row.getObject("observed_at", OffsetDateTime.class).toInstant(),
                 row.getString("kill_state"), row.getString("session_id"), row.getString("session_state"),
                 row.getString("approval_state"), row.getString("risk_digest"), row.getString("worker_health"),
                 row.getString("worker_identity"), row.getString("release_identity"), row.getString("release_digest"),

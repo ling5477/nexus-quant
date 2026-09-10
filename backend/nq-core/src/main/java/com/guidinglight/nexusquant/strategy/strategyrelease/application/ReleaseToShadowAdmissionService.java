@@ -19,6 +19,7 @@ import java.util.HexFormat;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
+import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 
@@ -162,7 +163,7 @@ public class ReleaseToShadowAdmissionService {
             reasons.add(ReasonCode.MANIFEST_SCHEMA_UNSUPPORTED);
         }
         if (textsDiffer(release.strategyVersionId(), manifest.strategyVersionId())
-                || !java.util.Objects.equals(release.datasetId(), manifest.datasetId())
+                || !Objects.equals(release.datasetId(), manifest.datasetId())
                 || textsDiffer(release.evaluationId(), manifest.evaluationId())
                 || textsDiffer(release.artifactDigest(), manifest.artifactDigest())) {
             reasons.add(ReasonCode.MANIFEST_PROVENANCE_MISMATCH);
@@ -232,7 +233,7 @@ public class ReleaseToShadowAdmissionService {
         if (hasText(request.strategyVersionId()) && textsDiffer(release.strategyVersionId(), request.strategyVersionId())) {
             reasons.add(ReasonCode.STRATEGY_VERSION_MISMATCH);
         }
-        if (request.datasetId() != null && !java.util.Objects.equals(release.datasetId(), request.datasetId())) {
+        if (request.datasetId() != null && !Objects.equals(release.datasetId(), request.datasetId())) {
             reasons.add(ReasonCode.DATASET_MISMATCH);
         }
         if (hasText(request.evaluationId()) && textsDiffer(release.evaluationId(), request.evaluationId())) {
@@ -252,7 +253,7 @@ public class ReleaseToShadowAdmissionService {
             return;
         }
         if (request.release() != null
-                && !java.util.Objects.equals(request.release().artifactDigest(), request.artifactDigest())) {
+                && !Objects.equals(request.release().artifactDigest(), request.artifactDigest())) {
             reasons.add(ReasonCode.ARTIFACT_DIGEST_MISMATCH);
         }
     }

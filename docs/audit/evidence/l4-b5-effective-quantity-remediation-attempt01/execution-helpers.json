@@ -1,0 +1,33 @@
+{
+  "scope": "Local orchestration helpers; permanent regression entrypoints remain repository JUnit tests",
+  "files": [
+    {
+      "path": "backend/nq-app/target/b5-effective-quantity-attempt01/collect-evidence.py",
+      "sha256": "d711275cb8fbdc46d1ac151894eb811a5ba1abb513ea873406a54dcbe4e5d9f1"
+    },
+    {
+      "path": "backend/nq-app/target/b5-effective-quantity-attempt01/finish-validation.py",
+      "sha256": "71e09c564a5fb55caeb2ba2f1a28158374ad2920e5af8854080b8e25278cd0ba"
+    },
+    {
+      "path": "backend/nq-app/target/b5-effective-quantity-attempt01/run-full.py",
+      "sha256": "e8866994fe3c226b91382994aa08a655e845f9262f9ea6b0f5a1ff755c0318bc"
+    },
+    {
+      "path": "backend/nq-app/target/b5-effective-quantity-attempt01/run-tests.py",
+      "sha256": "030a8f6f25b56cc85e0e21e7c326fe9fe4f3b1c5db2382a4ab46b351c8092f8a"
+    },
+    {
+      "path": "backend/nq-app/target/b5-effective-quantity-attempt01/run-with-pglogs.py",
+      "sha256": "9529d0b6dcbde11e3d85e6abbb212b8063e27d25e21885e42eb6805eb3b75fec"
+    },
+    {
+      "path": "backend/nq-app/target/b5-effective-quantity-attempt01/scan-final.py",
+      "sha256": "e91e4292bc5f0dc25f1cb8080604c2667c5bfd9db37102e60a2287515c87644f"
+    },
+    {
+      "path": "backend/nq-app/target/b5-effective-quantity-attempt01/seal-scope.py",
+      "sha256": "501f96678c4b4b4710eda4319878cbdd62dade34954192f0778785e7d201cfaa"
+    }
+  ]
+}

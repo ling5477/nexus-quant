@@ -2,6 +2,14 @@
 
 数据库结构以 Flyway migrations 为准。本文只记录当前数据库事实入口，不复制完整 DDL。
 
+## 工作树候选：V50 strategy window admission（待独立审查）
+
+[V50](../../backend/nq-infra/src/main/resources/db/migration/V50__strategy_window_admission.sql)在现有`strategy_runs`增加可空的`admission_schedule_id`（计划外键）和`admission_due_at`（CRON逻辑到期时刻）。部分唯一索引覆盖`strategy_id + account_id + admission_schedule_id + admission_due_at`，只覆盖新结构化admission；列对必须同时为空或同时非空，非空行必须为SCHEDULER。触发器禁止更换已消费的身份。不同到期时刻可独立认领，FAILED或恢复不会释放旧窗口。
+
+V1–V49不修改。历史行不设默认窗口、不推测回填，保留既存重复和NULL列；新writer对同策略/账户下精确匹配三种历史schedule请求格式的旧行保守返回duplicate。新唯一性保证要求所有扫描writer升级，迁移时须停止旧扫描进程，禁止旧/新scan二进制混跑；旧writer不会填写新列，不能作为安全回退版本。新旧迁移文件不授予生产执行权限。
+
+V50使用5秒DDL锁等待、30秒语句上限，超时失败不静默跳过；唯一索引需扫描表，生产规模和窗口须在获授权部署前评估。无down migration；回退应停止扫描并前向修复，不能通过删除admission身份或重写历史恢复执行。本候选尚未接受/交付，不声明生产已迁移。旧表和其他领域的既有版本说明保留如下。
+
 ## 当前 repository schema：V48
 
 当前 tracked Flyway inventory 已到 `V48`。本节只同步仓库结构，不声明生产已迁移，也不重跑历史或 C2 验收。下方按历史版本保留的 V42/V47 时点描述及既有验收事实不作改写。
@@ -729,3 +737,17 @@ Disposable PostgreSQL 17.7 已验证 V39→V40、V1→V40 full replay、Flyway v
 - migration 使用 5s lock timeout、60s statement timeout；没有历史 backfill、现有交易表 rewrite、credential material、raw response 或资金 mutation。
 
 PostgreSQL 17.7 随机 schema 已验证 V39/V40→V42、fresh V1→V42、Flyway validate、direct SQL immutability、global single pilot 与 concurrent double PLACE exactly-one。生产尚未迁移到 V42；当前 source 状态为 `REVIEW ACCEPTED / READY TO COMMIT`，不等于 production schema accepted。
+
+## StrategyRun durable execution（V51 候选）
+
+V51 新增 `strategy_run_dispatch_work`：run PK/FK、work schema version、definition version、account/client、symbol/side/type、requested quantity/price、显式 TIF；原始意图不可改。原 run 的配置快照、request/trace、作用域与 admission 身份冻结。新 run/work 同事务提交；历史缺失 work 不回填猜测。
+
+尚未交付的 V51 修订候选增加 `effective_quantity / effective_price / normalization_rejection` 三列。effective 由 canonical adapter 计算，SQL 只验证正数、精度、与原意图的范围及决定结构，不复制舍入规则。`nq_bind_strategy_effective` 锁原 run，只能从 CREATED 的未决定状态绑定一次；并发输家重读已提交决定。有效数量/价格必须与唯一 Order.qty/price 相等，和 B 的其余事实原子提交，不能独立提交有效值再创建 Order。确定无效的规范化决定则与 FAILED/finishedAt/审计一起提交且不允许 Order。requested 和已绑定 effective/rejection 均不可重写；审计记录 requested/effective/delta。旧 V51 候选被拒绝，新候选须重新独立审查；V1–V50 保持原字节，不新增 V52。
+
+`orders(strategy_run_id) WHERE strategy_run_id IS NOT NULL` 全局唯一，绑定不可解绑、改绑、删除或通过 TRUNCATE 释放。既有多 Order 历史使迁移回滚，禁止清洗绕过约束。相同账户/client 的工作保留与普通 Order 插入按事务锁串行化，避免 CREATED 工作身份被抢占。run 身份不可修改，V51 prepare/project/cancel writer 使用 `FOR NO KEY UPDATE` 保持 run 写入互斥，同时允许持有 Order 锁的事务执行 run 外键 `KEY SHARE` 检查，避免 ACK 与 projector 形成锁环。
+
+`ordinary_order_cancel_finality` 以 order_id 为主键，仅保存查询前 Order version 和已验证最终累计成交量。它与原 run 的 FAILED/finishedAt/审计同事务提交；最终取消查询的版本、作用域和累计量必须匹配原 Order 及唯一 durable fills。
+
+`strategy_run_recovery_scan_cursor` 只存 singleton 扫描位置 `(started_at,run_id)`，每批最多 50，循环覆盖三个非终态；不代表 owner/lease/发送权。schedule.last_triggered_at 的新写入为 admission dueAt 水位，和 V50 run/work 同事务推进；禁止回退或无 admission 的盲写。事务 B 原子提交 effective 决定、DISPATCHING、Order、初始 V49 和原 RiskGate 事实；事务 C 从 Order/Trade 事实 CAS 原 run，新增唯一成功状态 SUCCEEDED。完整成交继续要求唯一有效 durable fills 累计量严格等于原 Order.qty，该字段已表示实际有效提交量；不引入 epsilon、不放松 overfill/partial-fill 或 B2 账务语义。V49 发送协议及 V1–V50 文件保持原合同。
+
+此为实施候选结构说明；迁移目标预检、完整验证和独立正确性审查结果以本轮 implementation evidence 为准，不能据此认为生产已升级。

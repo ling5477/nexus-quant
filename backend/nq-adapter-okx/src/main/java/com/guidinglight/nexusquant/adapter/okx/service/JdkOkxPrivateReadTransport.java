@@ -27,6 +27,8 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Semaphore;
 import java.util.regex.Pattern;
+import java.util.Arrays;
+import java.util.function.Supplier;
 
 /**
  * OKX global host 专用 credential-scoped typed transport。
@@ -208,7 +210,7 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateRealTransport
                 return parse(request, responseBody);
             } finally {
                 if (responseBody != null) {
-                    java.util.Arrays.fill(responseBody, (byte) 0);
+                    Arrays.fill(responseBody, (byte) 0);
                 }
             }
         } catch (HttpTimeoutException ex) {
@@ -486,7 +488,7 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateRealTransport
         return new OkxPrivateHttpExchange.Response(response.statusCode(), response.body());
     }
 
-    private <T> T withPermit(java.util.function.Supplier<T> operation) {
+    private <T> T withPermit(Supplier<T> operation) {
         if (!concurrency.tryAcquire()) {
             throw new OkxPrivateReadException(OkxPrivateReadError.RATE_LIMITED);
         }
@@ -618,7 +620,7 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateRealTransport
                     int size = buffer.remaining();
                     if (received > limit - size) {
                         subscription.cancel();
-                        java.util.Arrays.fill(this.buffer, (byte) 0);
+                        Arrays.fill(this.buffer, (byte) 0);
                         body.completeExceptionally(new ResponseTooLargeIOException());
                         return;
                     }
@@ -629,21 +631,21 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateRealTransport
                 subscription.request(1);
             } catch (RuntimeException ex) {
                 subscription.cancel();
-                java.util.Arrays.fill(buffer, (byte) 0);
+                Arrays.fill(buffer, (byte) 0);
                 body.completeExceptionally(ex);
             }
         }
 
         @Override
         public void onError(Throwable throwable) {
-            java.util.Arrays.fill(buffer, (byte) 0);
+            Arrays.fill(buffer, (byte) 0);
             body.completeExceptionally(throwable);
         }
 
         @Override
         public void onComplete() {
-            byte[] result = java.util.Arrays.copyOf(buffer, received);
-            java.util.Arrays.fill(buffer, (byte) 0);
+            byte[] result = Arrays.copyOf(buffer, received);
+            Arrays.fill(buffer, (byte) 0);
             body.complete(result);
         }
     }

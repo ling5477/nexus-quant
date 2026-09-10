@@ -29,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.math.RoundingMode;
 
 /**
  * BinanceExchangeAdapter 是 GateC-2 的 Binance Spot REST-only 适配实现。
@@ -581,7 +582,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
         if (executedQty == null || executedQty.compareTo(BigDecimal.ZERO) <= 0 || cumulativeQuoteQty == null) {
             return null;
         }
-        return cumulativeQuoteQty.divide(executedQty, 8, java.math.RoundingMode.HALF_UP).stripTrailingZeros();
+        return cumulativeQuoteQty.divide(executedQty, 8, RoundingMode.HALF_UP).stripTrailingZeros();
     }
 
     private static Dependencies createDefaultDependencies() {

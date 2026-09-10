@@ -25,6 +25,8 @@ import java.util.Set;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.ArrayList;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -232,7 +234,7 @@ class JdbcOkxPrivateCredentialExecutorTest {
         executor.withActiveCredential(7L, 9L, "OKX_API_V5", session -> {
             captured.set(session);
             CompletionException asynchronous = assertThrows(CompletionException.class,
-                    () -> java.util.concurrent.CompletableFuture.supplyAsync(() -> session.execute(
+                    () -> CompletableFuture.supplyAsync(() -> session.execute(
                             OkxPrivateReadRequest.accountConfiguration(),
                             OkxPrivateEnvironment.DEMO
                     )).join());
@@ -330,8 +332,8 @@ class JdbcOkxPrivateCredentialExecutorTest {
         private final int candidates;
         private final String payload;
         private final AtomicInteger decryptCalls = new AtomicInteger();
-        private final List<String> sql = new java.util.ArrayList<>();
-        private final List<Object[]> arguments = new java.util.ArrayList<>();
+        private final List<String> sql = new ArrayList<>();
+        private final List<Object[]> arguments = new ArrayList<>();
 
         private StubJdbcTemplate(int candidates, String payload) {
             this.candidates = candidates;

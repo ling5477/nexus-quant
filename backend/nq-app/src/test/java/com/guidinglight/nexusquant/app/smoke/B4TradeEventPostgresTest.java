@@ -13,6 +13,7 @@ import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
 import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.infra.jdbc.JdbcOrderRepository;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.concurrent.*;
@@ -130,7 +131,7 @@ class B4TradeEventPostgresTest {
             var c=new AnnotationConfigApplicationContext();c.register(Transactions.class);
             c.registerBean(JdbcTemplate.class,()->new JdbcTemplate(source));
             c.registerBean(ObjectMapper.class,()->new ObjectMapper().findAndRegisterModules()
-                    .disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS));
+                    .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS));
             c.registerBean("transactionManager",DataSourceTransactionManager.class,()->new DataSourceTransactionManager(source));
             c.register(JdbcTradeRepository.class,EventStoreAppender.class,JdbcLedgerPostingRepository.class,
                     JdbcLedgerRiskAuditRepository.class,TradeLedgerPostingService.class);c.refresh();return c;

@@ -1,0 +1,191 @@
+{
+  "baseHead": "86c8ad84542636364f6c21e78bc292a323cbdff7",
+  "branch": "audit/post-gatey-agent-baseline",
+  "preRemediationWorkspaceFingerprint": "b916029577df1bf1f46a27037edcb0eec79946705fdb8fd91c589e0a2d5ee6b0",
+  "baselineSnapshotPath": "backend/nq-app/target/b5-venue-remediation/start-workspace.json",
+  "baselineSnapshotSha256": "b916029577df1bf1f46a27037edcb0eec79946705fdb8fd91c589e0a2d5ee6b0",
+  "manifestContract": "Task delta backend files vs pre-remediation raw-byte snapshot; sorted path + space + SHA256, LF joined, no trailing LF.",
+  "taskBackendFingerprint": "65006b496f6c992de5b6595bdf537c843268a166856b75219ac1ee5f083e8f29",
+  "files": [
+    {
+      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/trading/api/web/TradingVerificationController.java",
+      "sha256": "a2ef1c4420e0b80174b20678918e151a2b307544d0434c3de8e6b7ee5beba9b1",
+      "bytes": 24733,
+      "baselineSha256": "cdfcb8866a1c184e3d3d6686a258ef6b643a116035d2b667f1fe4a24ba1a6718"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0NqProcessMain.java",
+      "sha256": "bcb5f294a1ef1e36aca5be5fbf74b54fcfeecdfd7b76f6569f49f403d0a49d7f",
+      "bytes": 13795,
+      "baselineSha256": "3e13b188ce70581ecc80894aedd3bc5b79d1f486102c06c38e2ca04feb992b42"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B2SyntheticVenueMain.java",
+      "sha256": "a5a50321b54062470ede38a5d8d34f5c2d0aa9d8a3d221e1c3d8e11082cfe13f",
+      "bytes": 12171,
+      "baselineSha256": "d0b171a026f5ced72c009f225c398faaad51ee48d6ffae8fd3ab2b9644b21f23"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5AuthorityProcessTest.java",
+      "sha256": "5725db019daa72f3a60966fc7f99394ced0edd78bb134432f69528c2049a80da",
+      "bytes": 13660,
+      "baselineSha256": "340174b91c48b0bfa74f3c4f8f78c2d45961058c0d725f4d867f958e7197ae29"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5LegacyVenuePostgresTest.java",
+      "sha256": "4c3948dd3b4d4bd4429ad53c1a256c513a4e855da324f79df4876f20cde02bf6",
+      "bytes": 4693,
+      "baselineSha256": null
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5RealProcessProofTest.java",
+      "sha256": "4c8d404e368c066f9386a7b3536bc5491c50984ae3f41f08aad71386c8832348",
+      "bytes": 7930,
+      "baselineSha256": "0bfedce05ac2d7dd5aa31d43cd6579a94da97695f025f46a6cd48560fbf58c9d"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5VenueIdentityProcessTest.java",
+      "sha256": "6725bdc4f4beb33b532b5f8b5d2be25d84316676a4422e6921739dca95d455cf",
+      "bytes": 6400,
+      "baselineSha256": null
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/web/TradingVerificationControllerLocalTest.java",
+      "sha256": "8b7a33ee6073bdf0701a2d96609b1925d6d97d43f494272b01c7f6fb218c32b6",
+      "bytes": 24484,
+      "baselineSha256": "f9652c894f9c04746b44f982c354fccc8e83234882cd711eaabb0799a3aa3593"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java",
+      "sha256": "6c0ef9da11afdbbc62aebe06e14d04164f5be057c98b460de1bbfe41f912da2e",
+      "bytes": 20688,
+      "baselineSha256": "15bdfb44ea3c16680674856c2d6d4c6140c42a2aa3978bba2feee4fe2dcc7b6e"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java",
+      "sha256": "c3ddd2ca7638798cb508e5900fab5fa85c3ddddef49333049cef466cd6028e6d",
+      "bytes": 39051,
+      "baselineSha256": "6f7c2fb0dd49e298549308c28afe855a7bcf0e75eab7546e0bdfa13056754491"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/command/CancelOrderRequest.java",
+      "sha256": "3a890d81fd7297106ee4935c3ca7fde1757f9cd84e1f251343bf33920fe30e9d",
+      "bytes": 3055,
+      "baselineSha256": "89de5e676489e0a4a8661a3c72a508d5bc5c1dc3f4cca84e5ea26e2648cb1245"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/command/PlaceOrderRequest.java",
+      "sha256": "73c58fda50eabdddd058cbc4797a5a0c32bbee6a64f98bf7f6614658e83ea4f7",
+      "bytes": 6613,
+      "baselineSha256": "83a6d3936436e7bfa099ba6f0d1d966c2cdb0eeb233667ba96463530a71d00f1"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/reconciliation/ReconciliationRequest.java",
+      "sha256": "916ff0d8d7bb2e084022e9eacd9b0f6092bfd504a658aac67193671a24bea08c",
+      "bytes": 4019,
+      "baselineSha256": "a1303e55625227f9e5ff8983a86a0e3f862f869b16efb84a9c605a85e82cf8ef"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/domain/OrderRecord.java",
+      "sha256": "61af8aec4c05a45d67d6a27acaad365a6d469ca7c64c46611f88b3b0dab5cf5f",
+      "bytes": 5190,
+      "baselineSha256": "a565fa03312e89127acf92d15e3f6e559b0bbc93efc396d60615f808864c93e4"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/domain/TradingVenue.java",
+      "sha256": "2173a48ba3744e0f8c0c7ef90ce6e6387c9adae8b687c2db5a13fab7aa2df579",
+      "bytes": 823,
+      "baselineSha256": null
+    },
+    {
+      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/OrderCommandServiceTest.java",
+      "sha256": "28302342d87720672fb5c81d4e5593d6361c489eec4513c94faff6bddf407754",
+      "bytes": 23103,
+      "baselineSha256": "17b500470c9e5da9c3d309b4770d6c924115d4b288e8bf0d97fdf9ff43d86e3d"
+    },
+    {
+      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/domain/TradingVenueTest.java",
+      "sha256": "d05d33ea5342d8bf7484c9deb3411230efdfd56f5b3e19323341a7927d2cc94f",
+      "bytes": 1134,
+      "baselineSha256": null
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/jdbc/JdbcOrderRepository.java",
+      "sha256": "9701237f0a9778e4c3d91e960b3f206a320e3fe4a2ba7ca10170fdadf9a8de98",
+      "bytes": 14329,
+      "baselineSha256": "d0269725974e849d346c05c03f432ea99ab2785ad3f8c1b4cd9f4e479d4a28a6"
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/jdbc/JdbcOrdinaryPlaceAuthorityRepository.java",
+      "sha256": "cc2c726d62baf192ede4f20ef694ceefa880bbb6e1eddd9edb687a760297e6a2",
+      "bytes": 2019,
+      "baselineSha256": "4eb0ec9fc8488c0c1b70b449d316692b5abbe62fcd9d30a94b1854c843ccc0b9"
+    },
+    {
+      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteServiceTest.java",
+      "sha256": "8cb38edc6f742d0eebcd852762644054286242a73ed33bcd933c9fe614708f2e",
+      "bytes": 11746,
+      "baselineSha256": "b943714e5b5ba4aaed2d9d6e5ec071ecf31981d64d8e4eaf8cf31ccd83a2da11"
+    },
+    {
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/AdapterBackedTradingVenueGateway.java",
+      "sha256": "b92fff0621422f12ec8bbe45fd196e3f85dbaa9a36d3a0d3ae49eb180349ea14",
+      "bytes": 12159,
+      "baselineSha256": "9240ae550afb1ebd9f8a89e0dfc2f1b3af3c853955ad6dd17aa548e34c36a4df"
+    },
+    {
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/BinanceRecoveryService.java",
+      "sha256": "a04d8788b8304ddbb1dd40b4916b34e872846ad2df620430851f47624cdd3021",
+      "bytes": 8204,
+      "baselineSha256": "245aae02c8afc82b9083eb5a27c8bd2c97d721c6890835034daeb43e3988edaf"
+    },
+    {
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/BinanceRestReconcileService.java",
+      "sha256": "0125babbec8f4c024b391e212bf2f8ba0680ae0c49fef56aaacbbf57e57b9906",
+      "bytes": 17888,
+      "baselineSha256": "74fe9d0a416722e38d12f43cb269d9dc115430d0a0ef6ee190ecbfd3145fbded"
+    },
+    {
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRecoveryService.java",
+      "sha256": "5b3c36092398065b0941a5a93e7cf0b0de14d4ac09bda854d67723347dec5826",
+      "bytes": 13720,
+      "baselineSha256": "888c9ad55b979d37c47ec1d370473de9f4f18a7ac729c09ee2aa1c9c091eebd4"
+    },
+    {
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java",
+      "sha256": "cef5ac8264c5378fa04de66d9fa44ac6ec77fd190a25a46b93ec29f290e6e340",
+      "bytes": 32686,
+      "baselineSha256": "a432341f41ed8dd2a7c0af8f560b60b4bef532b4d399d20f0abcc73ea685d24c"
+    },
+    {
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxWsOrderAccelerationService.java",
+      "sha256": "068a107d7b0d781a06e9f9e2d045abd59992f6ab1c701ed73d58520d23e17e08",
+      "bytes": 15518,
+      "baselineSha256": "e0b793cb608a355a92d1637bc95af3094cec3de2fad218c5176cb293752abd15"
+    },
+    {
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/PaperMatchingService.java",
+      "sha256": "225e96e96226d1064a5f238310d83d07776033f46a1276fe1c34991fa4c342a2",
+      "bytes": 13428,
+      "baselineSha256": "6d6374dc4329b0b09a58502f8c1decef44ed74fe0a7becab77623c0f74d7787e"
+    },
+    {
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/SchedulerTradingMaintenanceService.java",
+      "sha256": "751d6b241df20390a45844ac4f148bab55a94b83b5c22353a87b417513f6e8e9",
+      "bytes": 3034,
+      "baselineSha256": "22476230d5743373cf1b11bb59e43f3cf8161ef3923d9603b561cb566b96526b"
+    },
+    {
+      "path": "backend/nq-scheduler/src/test/java/com/guidinglight/nexusquant/scheduler/service/OrdinaryPlaceResultClassificationTest.java",
+      "sha256": "fdbc2d26a2759ed93e6b288f2f1a0c88fe5f822f1520fdfcb8f1340aaf979c54",
+      "bytes": 2442,
+      "baselineSha256": "937cf561e209ce021486cdffe11dcd0267e39e06ac0334f103cc583c54e7be3f"
+    }
+  ],
+  "protectedBaselineFilesChecked": 367,
+  "protectedChanges": [],
+  "indexUnchanged": true,
+  "stage": 0,
+  "commit": "NONE",
+  "push": "NONE"
+}

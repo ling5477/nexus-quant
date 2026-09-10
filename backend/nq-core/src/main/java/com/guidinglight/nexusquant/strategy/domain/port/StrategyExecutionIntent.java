@@ -25,6 +25,13 @@ public record StrategyExecutionIntent(
         BigDecimal price,
         BigDecimal quantity,
         String timeInForce,
-        String traceId
+        String traceId,
+        String tradeEnv
 ) {
+    public StrategyExecutionIntent(String requestId, Long accountId, String strategyRunId, String venue,
+            String symbol, String clientOrderId, String idempotencyKey, String source, OrderSide side,
+            OrderType type, BigDecimal price, BigDecimal quantity, String timeInForce, String traceId) {
+        this(requestId, accountId, strategyRunId, venue, symbol, clientOrderId, idempotencyKey, source,
+                side, type, price, quantity, timeInForce, traceId, "SIM");
+    }
 }

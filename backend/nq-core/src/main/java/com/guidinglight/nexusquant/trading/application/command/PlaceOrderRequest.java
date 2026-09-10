@@ -2,9 +2,11 @@ package com.guidinglight.nexusquant.trading.application;
 
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
+import com.guidinglight.nexusquant.trading.domain.TradingVenue;
 
 import java.math.BigDecimal;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * PlaceOrderRequest 表示下单编排入口参数。
@@ -136,14 +138,14 @@ public record PlaceOrderRequest(
     public PlaceOrderRequest {
         traceId = requireText(traceId, "traceId");
         requestId = normalizeText(requestId, traceId);
-        venue = requireText(venue, "venue");
+        venue = TradingVenue.parse(venue).name();
         symbol = requireText(symbol, "symbol");
         clientOrderId = requireText(clientOrderId, "clientOrderId");
         idempotencyKey = normalizeText(idempotencyKey, buildDefaultIdempotencyKey(accountId, clientOrderId));
         source = normalizeText(source, defaultSource(strategyRunId));
         timeInForce = normalizeText(timeInForce, defaultTimeInForce(type));
         tradeEnv = normalizeText(tradeEnv, "SIM").toUpperCase(Locale.ROOT);
-        if (!java.util.Set.of("SIM", "LIVE").contains(tradeEnv)) {
+        if (!Set.of("SIM", "LIVE").contains(tradeEnv)) {
             throw new IllegalArgumentException("tradeEnv must be SIM or LIVE");
         }
         executionScopeId = normalizeText(executionScopeId, null);

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.guidinglight.nexusquant.adapter.okx.model.OkxApiCredentials;
 import com.sun.net.httpserver.HttpServer;
+import com.guidinglight.nexusquant.adapter.okx.model.OkxInstrument;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -46,7 +47,7 @@ class OkxExchangeAdapterBootstrapNoOutboundTest {
 
             assertEquals(0, server.hitCount());
 
-            Map<String, com.guidinglight.nexusquant.adapter.okx.model.OkxInstrument> snapshot =
+            Map<String, OkxInstrument> snapshot =
                     adapter.instrumentsCache().snapshot("trc-default-dependencies-first-read");
 
             assertEquals(1, server.hitCount());

@@ -31,6 +31,7 @@ import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRu
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionPreviewFactsRepository;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionStateRepository;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.VerifiedStrategyReleaseIdentity;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.net.URI;
 import java.lang.reflect.InvocationTargetException;
@@ -43,6 +44,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.Optional;
+import java.sql.Timestamp;
 
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
@@ -270,7 +272,7 @@ class ShadowRunProvenancePostgresIntegrationTest {
                     existing.id(),
                     existing.requestId(),
                     existing.traceId(),
-                    java.sql.Timestamp.from(existing.createdAt())
+                    Timestamp.from(existing.createdAt())
             );
 
             ObjectNode policyConflict = (ObjectNode) existing.sideEffectPolicy().deepCopy();
@@ -677,7 +679,7 @@ class ShadowRunProvenancePostgresIntegrationTest {
                 backtestConfigId,
                 researchId,
                 strategyId,
-                java.sql.Timestamp.from(START)
+                Timestamp.from(START)
         );
         jdbc.update(
                 "INSERT INTO strategy_versions (strategy_version_id, strategy_code, version, version_name, status, "
@@ -691,7 +693,7 @@ class ShadowRunProvenancePostgresIntegrationTest {
                         + "VALUES (?, ?, 'SUCCEEDED', ?)",
                 evaluationId,
                 backtestRunId,
-                java.sql.Timestamp.from(START)
+                Timestamp.from(START)
         );
         jdbc.update(
                 "INSERT INTO backtest_publish_records (publish_record_id, backtest_run_id, research_config_id, "
@@ -712,8 +714,8 @@ class ShadowRunProvenancePostgresIntegrationTest {
                         + "'GATEX2_TEST', 'gatex2-test', '{}'::jsonb)",
                 datasetId,
                 "gatex2-dataset-" + unique,
-                java.sql.Timestamp.from(START),
-                java.sql.Timestamp.from(START.plusSeconds(60))
+                Timestamp.from(START),
+                Timestamp.from(START.plusSeconds(60))
         );
         return new Fixture(strategyVersionId, datasetId, publishId, evaluationId);
     }
@@ -726,7 +728,7 @@ class ShadowRunProvenancePostgresIntegrationTest {
                 jdbc,
                 objectMapper,
                 new JdbcShadowRunIllegalTransitionAuditWriter(jdbc, objectMapper, transactionManager),
-                new com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcAdmissionMutationCoordinator(
+                new JdbcAdmissionMutationCoordinator(
                         jdbc,
                         transactionManager,
                         256
@@ -765,8 +767,8 @@ class ShadowRunProvenancePostgresIntegrationTest {
                 "paper-" + fixture.publishId(),
                 fixture.publishId(),
                 fixture.strategyVersionId(),
-                java.sql.Timestamp.from(START),
-                java.sql.Timestamp.from(START)
+                Timestamp.from(START),
+                Timestamp.from(START)
         );
     }
 
@@ -824,7 +826,7 @@ class ShadowRunProvenancePostgresIntegrationTest {
             String evaluationId,
             Instant windowStart,
             Instant windowEnd,
-            com.fasterxml.jackson.databind.JsonNode sideEffectPolicy,
+            JsonNode sideEffectPolicy,
             ShadowRunAuthorizationBoundary authorizationBoundary
     ) {
         return new ShadowRun(

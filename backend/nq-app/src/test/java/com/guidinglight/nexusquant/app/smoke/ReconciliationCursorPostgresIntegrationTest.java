@@ -13,6 +13,8 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.HashSet;
+import java.util.Map;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -36,7 +38,7 @@ class ReconciliationCursorPostgresIntegrationTest {
     void freshAndV47UpgradePreserveHistoryAndOnlyAddCursor(boolean upgrade) {
         try (var f = new Fixture(false)) {
             var previous = f.flyway("47");
-            List<java.util.Map<String, Object>> history = List.of();
+            List<Map<String, Object>> history = List.of();
             long tablesBefore = 0;
             if (upgrade) {
                 assertEquals(47, previous.migrate().migrationsExecuted);
@@ -121,7 +123,7 @@ class ReconciliationCursorPostgresIntegrationTest {
             var b = second.getBean(OrderRepository.class);
             var pool = Executors.newFixedThreadPool(2);
             try {
-                var all = new java.util.HashSet<String>();
+                var all = new HashSet<String>();
                 for (int round = 0; round < 20; round++) {
                     var ready = new CountDownLatch(2);
                     var release = new CountDownLatch(1);

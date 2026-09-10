@@ -14,6 +14,7 @@ import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 
 import java.util.Set;
+import java.io.IOException;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -90,7 +91,7 @@ class AdapterReadinessControllerTest {
                 HttpServletRequest request,
                 HttpServletResponse response,
                 FilterChain filterChain
-        ) throws ServletException, java.io.IOException {
+        ) throws ServletException, IOException {
             String incoming = request.getHeader(TraceIdContext.TRACE_ID_HEADER);
             String traceId = TraceIdContext.putOrCreate(incoming);
             request.setAttribute(TraceIdContext.TRACE_ID_REQUEST_ATTRIBUTE, traceId);

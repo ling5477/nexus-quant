@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.time.Duration;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assertions;
 
 /** 验证 scheduler 配置默认关闭，并在启动前 fail-fast 拒绝越界 duration 与 lock key。 */
 class ValidationEvidenceSchedulerPropertiesTest {
@@ -15,7 +16,7 @@ class ValidationEvidenceSchedulerPropertiesTest {
         ValidationEvidenceSchedulerProperties properties = new ValidationEvidenceSchedulerProperties();
 
         assertDoesNotThrow(properties::afterPropertiesSet);
-        org.junit.jupiter.api.Assertions.assertFalse(properties.isEnabled());
+        Assertions.assertFalse(properties.isEnabled());
     }
 
     @Test

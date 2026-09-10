@@ -1,0 +1,91 @@
+**PASS：当前冻结 V51 remediation candidate 通过独立正确性审查，三个 P1 关闭。B5 仍为 NOT_QUALIFIED，未进行资格验收或 Git 发布。**
+
+| 项目 | 结果 |
+|---|---|
+| Task classification | HIGH_RISK / INDEPENDENT_CORRECTNESS_REVIEW / NQ-only |
+| Review mode | REVIEW_ONLY；本会话未参与候选实现 |
+| Branch | `audit/post-gatey-agent-baseline` |
+| Starting / ending HEAD | `86c8ad84542636364f6c21e78bc292a323cbdff7` |
+| Worktree | `E:\Project\nexus-quant-gateaudit` |
+| Manifest integrity | scope 22、protected 3667、Full 绑定文件 1818；missing / mismatch / unexpected = **0 / 0 / 0** |
+| V1–V50 | 50 个文件 byte-for-byte unchanged |
+| Candidate unchanged | **YES**；既有工作树改动保留 |
+| Index | 起止一致，暂存路径 0 |
+
+Candidate fingerprint start = end，按 final identity 指定算法、排除 identity 自身：
+
+```text
+0502bc83ec532c6f8ec26fb7a21ffda03e986cd6d86018d4b0184eeb55032411
+```
+
+| 执行契约 | 独立核对结果 |
+|---|---|
+| Requested quantity | `10.00050000`，原始意图保留、可审计 |
+| Effective quantity | `10.00000000` |
+| Wire quantity | `10.00000000` |
+| Venue executed quantity | `10`，venue=FILLED |
+| Price | `100.005` → durable effective=`100.00000000`，wire 同值 |
+| Normalization owner | [OkxExchangeAdapter.normalizeOrder](/E:/Project/nexus-quant-gateaudit/backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/service/OkxExchangeAdapter.java:154)；发送端校验后直接使用冻结 Order 值 |
+| Immutable recovery | 配置变化不覆盖原 work；已有 effective 不重新计算。规则变化导致冻结值不再合法时明确拒绝，PLACE=0，原 effective 不变 |
+| Invalid normalization | 归零、低于最小量、数量/价格超精度、无效价格均实际拒绝；Order=0、authority=0、PLACE=0 |
+| Terminal predicate | [终态 SQL](/E:/Project/nexus-quant-gateaudit/backend/nq-infra/src/main/resources/db/migration/V51__strategy_run_durable_execution.sql:381) 严格比较 `executed=o.qty`；Order.qty 已绑定 effective，无 epsilon |
+
+| 恢复与并发 | 结果 |
+|---|---|
+| Rounded full-fill | PASS；死亡时 Order=FILLED、run=RUNNING，重启后同 run=SUCCEEDED |
+| Same-run Order / Concurrent binding | PASS；一个 Order、一个 effective 决定、一条 V49 lineage，PLACE≤1 |
+| CREATED owner-death | PASS；同 run 恢复，重复重启幂等 |
+| Paused owner | PASS；successor 推进后旧 owner 恢复，没有第二次订单或发送 |
+| Order-before-V49 crash | PASS；复用同 Order 和冻结数量/价格 |
+| DISPATCHING | PASS；B 原子提交或回滚，重启复用已有 binding |
+| MAY_HAVE_ESCAPED | PASS；不改有效契约、不授予第二次 PLACE |
+| RUNNING owner-death exact / rounded | 均 PASS |
+| Future-window CREATED / rounded RUNNING | 均 PASS；后续不同 dueAt 成功 admission |
+| V49 | 保持；REVOKED→PLACE=0，提交响应丢失→调用者不 PLACE |
+| V50 | 保持；三轮同窗口双 JVM、restart、不同窗口正例通过 |
+| Kill | PASS；允许恢复 bookkeeping，禁止新发送 |
+
+Crash-window inventory 覆盖 CREATED、B 未提交、DISPATCHING、MAY、HTTP/ACK、RUNNING 满成与取消最终性。**本轮审查范围内未发现未覆盖的非终态窗口。** MAY 后无外部事实的场景仍保留 `CORRECTNESS_REQUIRED_UNRESOLVED`，没有将其伪装成成功或重新发送。
+
+| 成交与账务 | 结果 |
+|---|---|
+| Trade | 原 rounded 场景 1 条，累计数量=10 |
+| TradeExecuted | 1 条，数量取自 durable Trade |
+| Ledger | 4 条唯一账目，成交金额 1000、手续费 0.01；重放不重复 |
+| Phantom residual | 未发现 0.0005 虚假残余、虚假超额成交或重复账务 |
+| Reconciliation candidate behavior | FILLED 继续参与既有有界账务恢复；不按 requested 差额生成剩余工作 |
+| Partial / cancel compatibility | 取消 ACK 不当作最终取消；零成交、部分成交取消及分笔成交兼容性通过 |
+
+本轮独立执行结果见[主审查日志](/E:/Project/nexus-quant-gateaudit/backend/nq-app/target/b5-independent-review-attempt02.log)和[V49/B2 补验日志](/E:/Project/nexus-quant-gateaudit/backend/nq-app/target/b5-independent-review-attempt02-v49-b2.log)。
+
+| 验证与限制 | 结果 |
+|---|---|
+| PostgreSQL tests | 真实隔离 PostgreSQL 16.15 / V51；原子绑定、并发、终态、重放、恢复、唯一性均通过 |
+| Independent real-process tests | 真实 Spring / production gateway / OKX adapter / 独立 Synthetic Venue JVM；关键矩阵实际执行 |
+| 本轮测试合计 | **21 tests / 0 failures / 0 errors / 0 skips** |
+| Implementation Full Maven | 核验最终文件绑定及原日志 hash；1898 / 0 / 0 / 121 conditional skips |
+| Full Maven reuse | `NOT_REQUIRED / FINAL_CANDIDATE_RUN_REUSED`；mandatory proof 已另行非 skip 执行 |
+| Stage-assets existing / delta | 既存 144；新增=0、移除=0，仍保留原 delivery blocker |
+| P0 / P1 | **0 / 0** |
+| P2 / P3 | 本轮新增 **0 / 0** |
+| Git | 候选文件变更=0；stage=0；commit=NONE；push=NONE |
+| 资源清理 | 20 个自有 PostgreSQL 容器全部清理 |
+
+```text
+PASS /
+B5_STRATEGY_RUN_DURABLE_EXECUTION_V51_REVIEW_ATTEMPT02_ACCEPTED /
+STRATEGY_CREATED_OWNER_DEATH_PERMANENT_ORPHAN_P1_CLOSED /
+STRATEGY_RUNNING_OWNER_DEATH_PERMANENT_BUSY_P1_CLOSED /
+ROUNDED_FULL_FILL_TERMINALIZATION_P1_CLOSED /
+EFFECTIVE_EXECUTION_CONTRACT_ACCEPTED /
+WIRE_AND_DURABLE_EXECUTION_ALIGNED /
+SAME_RUN_ORDER_IDEMPOTENCY_ACCEPTED /
+DURABLE_STATE_CRASH_WINDOW_COMPLETENESS_ACCEPTED /
+FUTURE_WINDOW_PROGRESS_ACCEPTED /
+V49_V50_INVARIANTS_PRESERVED /
+P0_0 /
+P1_0 /
+READY_TO_RESUME_B5_QUALIFICATION
+```
+
+Next action：恢复 B5 qualification。本结论仅接受当前 V51 remediation，**不表示 B5 QUALIFIED 或 B5 ACCEPTED**。

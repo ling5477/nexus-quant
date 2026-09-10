@@ -4,15 +4,14 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxRuntimeConfig;
+import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
-import com.guidinglight.nexusquant.contracts.event.OrderStatusChangedPayload;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.application.RecoveryReport;
 import com.guidinglight.nexusquant.trading.application.RecoveryService;
 import com.guidinglight.nexusquant.trading.application.OrderCommandService;
-import com.guidinglight.nexusquant.trading.application.OrderLifecycleService;
 import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 
 import java.time.Clock;
@@ -24,6 +23,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+import com.guidinglight.nexusquant.trading.domain.TradingVenue;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterOpenOrdersQuery;
+import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -31,6 +33,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.slf4j.LoggerFactory;
 
 /**
  * OkxRecoveryService 负责 GateC-1 的 REST-only 恢复入口。
@@ -62,17 +65,15 @@ public class OkxRecoveryService implements RecoveryService {
     );
 
     private final OrderCommandService orderCommandService;
-    private final OrderLifecycleService orderLifecycleService;
     private final OkxExchangeAdapter okxExchangeAdapter;
     private final OkxRestReconcileService okxRestReconcileService;
-    private final com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository auditLogRepository;
+    private final AuditLogRepository auditLogRepository;
     private final EventPublisherPort eventPublisherPort;
     private final boolean recoveryEnabled;
     private final Clock clock;
 
     /**
      * @param orderCommandService     订单编排服务
-     * @param orderLifecycleService   订单生命周期入口
      * @param okxExchangeAdapter      OKX adapter
      * @param okxRestReconcileService REST reconcile 服务
      * @param auditLogRepository      审计仓储
@@ -81,15 +82,13 @@ public class OkxRecoveryService implements RecoveryService {
      */
     public OkxRecoveryService(
             OrderCommandService orderCommandService,
-            OrderLifecycleService orderLifecycleService,
             OkxExchangeAdapter okxExchangeAdapter,
             OkxRestReconcileService okxRestReconcileService,
-            com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository auditLogRepository,
+            AuditLogRepository auditLogRepository,
             EventPublisherPort eventPublisherPort,
             @Value("${nq.okx.recovery.enabled:true}") boolean recoveryEnabled
     ) {
         this.orderCommandService = Objects.requireNonNull(orderCommandService, "orderCommandService must not be null");
-        this.orderLifecycleService = Objects.requireNonNull(orderLifecycleService, "orderLifecycleService must not be null");
         this.okxExchangeAdapter = Objects.requireNonNull(okxExchangeAdapter, "okxExchangeAdapter must not be null");
         this.okxRestReconcileService = Objects.requireNonNull(
                 okxRestReconcileService,
@@ -110,7 +109,7 @@ public class OkxRecoveryService implements RecoveryService {
             // Why: local 验收首先要保证 nq-app 能启动到登录阶段；
             // 本地未显式开启恢复链时，跳过启动恢复比在 ContextRefreshed 阶段直接拖死应用更可审计也更安全。
             OkxRuntimeConfig runtimeConfig = OkxRuntimeConfig.fromSystemEnv();
-            org.slf4j.LoggerFactory.getLogger(OkxRecoveryService.class).warn(
+            LoggerFactory.getLogger(OkxRecoveryService.class).warn(
                     "okx_recovery_startup_skipped reason=recovery_disabled configured_okx_env={} mapped_trade_env={}",
                     runtimeConfig.envName(),
                     runtimeConfig.simulatedTrading() ? "SIM" : "LIVE"
@@ -148,7 +147,7 @@ public class OkxRecoveryService implements RecoveryService {
                         OrderStatus.CANCEL_REJECTED
                 ),
                 DEFAULT_LIMIT
-        ).stream().filter(order -> "OKX".equals(order.venue())).toList();
+        ).stream().filter(order -> order.canonicalVenue() == TradingVenue.OKX).toList();
         long linkedCount = hydrateExternalOrderIds(candidates, traceId);
         long orderNotFoundResolved = resolveOrderNotFoundDuringQueryConfirm(candidates, traceId);
         int newTrades = safeReconcile(traceId);
@@ -177,7 +176,7 @@ public class OkxRecoveryService implements RecoveryService {
             List<AdapterOrderSnapshot> openOrders = openOrdersBySymbol.computeIfAbsent(
                     order.symbol(),
                     symbol -> okxExchangeAdapter.listOpenOrders(
-                            new com.guidinglight.nexusquant.adapter.api.model.AdapterOpenOrdersQuery(
+                            new AdapterOpenOrdersQuery(
                                     order.accountId(),
                                     order.venue(),
                                     symbol,
@@ -206,7 +205,7 @@ public class OkxRecoveryService implements RecoveryService {
      * <p>
      * Why:
      * 真实盘场景下，本地可能残留“非终态但交易所已不存在”的历史订单。
-     * 这类订单不应让恢复 fail-fast；需要保留证据链后把本地状态推进到终态。
+     * 只有发送前撤销与终态能原子提交时才允许负面终态；可能已发送的订单保留未决事实。
      */
     private long resolveOrderNotFoundDuringQueryConfirm(List<OrderRecord> candidates, String traceId) {
         long resolvedCount = 0L;
@@ -214,7 +213,7 @@ public class OkxRecoveryService implements RecoveryService {
             if (!QUERY_CONFIRM_STATUSES.contains(order.status())) {
                 continue;
             }
-            AdapterOrderSnapshot snapshot = okxExchangeAdapter.getOrder(new com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery(
+            AdapterOrderSnapshot snapshot = okxExchangeAdapter.getOrder(new AdapterOrderQuery(
                     order.accountId(),
                     order.venue(),
                     order.symbol(),
@@ -225,7 +224,7 @@ public class OkxRecoveryService implements RecoveryService {
             if (snapshot.resultCategory() == AdapterResultCategory.NOT_FOUND) {
                 appendOrderNotFoundAudit(order, traceId, snapshot.error() == null ? "51603" : snapshot.error().code());
                 appendOrderNotFoundAuditEvent(order, traceId, snapshot.error() == null ? "51603" : snapshot.error().code());
-                if (transitionToCancelled(order, traceId)) {
+                if (orderCommandService.finalizeOrdinaryNoOrder(order.orderId(), traceId)) {
                     resolvedCount++;
                 }
                 continue;
@@ -238,44 +237,6 @@ public class OkxRecoveryService implements RecoveryService {
             }
         }
         return resolvedCount;
-    }
-
-    private boolean transitionToCancelled(OrderRecord order, String traceId) {
-        try {
-            OrderRecord snapshot = order;
-            if (snapshot.status() != OrderStatus.CANCEL_REQUESTED && snapshot.status() != OrderStatus.CANCELLED) {
-                snapshot = orderLifecycleService.requestCancel(
-                        snapshot.orderId(),
-                        ORDER_NOT_FOUND_REASON,
-                        traceId
-                );
-                appendOrderStatusEvent(snapshot, traceId, ORDER_NOT_FOUND_REASON);
-            }
-            if (snapshot.status() != OrderStatus.CANCELLED) {
-                snapshot = orderLifecycleService.cancel(
-                        snapshot.orderId(),
-                        ORDER_NOT_FOUND_REASON,
-                        traceId
-                );
-                appendOrderStatusEvent(snapshot, traceId, ORDER_NOT_FOUND_REASON);
-            }
-            return true;
-        } catch (IllegalStateException transitionEx) {
-            auditLogRepository.append(
-                    "RECOVERY",
-                    "RECOVERY_QUERY_ORDER_NOT_FOUND_TRANSITION_FAILED",
-                    order.orderId(),
-                    traceId,
-                    Map.of(
-                            "order_id", order.orderId(),
-                            "from_status", order.status().name(),
-                            "target_status", OrderStatus.CANCELLED.name(),
-                            "reason_code", ORDER_NOT_FOUND_REASON,
-                            "error", transitionEx.getMessage()
-                    )
-            );
-            return false;
-        }
     }
 
     private int safeReconcile(String traceId) {
@@ -324,27 +285,6 @@ public class OkxRecoveryService implements RecoveryService {
                 payload
         );
         eventPublisherPort.append(TopicNames.AUDIT_EVENT_V1, envelope);
-    }
-
-    private void appendOrderStatusEvent(OrderRecord order, String traceId, String reason) {
-        EventEnvelope<OrderStatusChangedPayload> envelope = new EventEnvelope<>(
-                "evt-" + UUID.randomUUID(),
-                OrderStatusChangedPayload.class.getSimpleName(),
-                1,
-                Instant.now(clock),
-                SOURCE,
-                traceId,
-                order.clientOrderId(),
-                new OrderStatusChangedPayload(
-                        order.orderId(),
-                        order.accountId(),
-                        order.clientOrderId(),
-                        order.status(),
-                        reason,
-                        Instant.now(clock)
-                )
-        );
-        eventPublisherPort.append(TopicNames.ORDER_EVENT_V1, envelope);
     }
 
     private record RecoveryOrderNotFoundAuditPayload(

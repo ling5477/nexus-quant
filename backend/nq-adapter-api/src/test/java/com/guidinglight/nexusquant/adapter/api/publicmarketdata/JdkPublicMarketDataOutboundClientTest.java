@@ -19,6 +19,7 @@ import java.time.ZoneOffset;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -298,7 +299,7 @@ class JdkPublicMarketDataOutboundClientTest {
     }
 
     private static void respond(HttpExchange exchange, int statusCode, String body) throws IOException {
-        byte[] bytes = body.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
         exchange.sendResponseHeaders(statusCode, bytes.length);
         exchange.getResponseBody().write(bytes);
     }

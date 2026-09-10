@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.contracts.event;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.math.BigDecimal;
 import java.time.Instant;
 
@@ -38,7 +39,7 @@ public record TradeExecuted(
         @JsonProperty("fee") BigDecimal fee,
         @JsonProperty("fee_currency") String feeCurrency,
         @JsonProperty("ts") Instant ts,
-        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonProperty("trade_env") String tradeEnv
 ) {
     /** 保持已有 producer 的事件兼容性；普通 OKX 必需事件由 durable source 明确提供环境。 */

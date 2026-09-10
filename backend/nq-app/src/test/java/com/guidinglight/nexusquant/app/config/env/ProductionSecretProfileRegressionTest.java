@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+import java.util.stream.IntStream;
 
 import com.guidinglight.nexusquant.security.token.JwtTokenService;
 import com.guidinglight.nexusquant.security.token.JwtTokenSettings;
@@ -35,6 +36,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.core.env.SystemEnvironmentPropertySource;
+import org.springframework.boot.context.properties.bind.Binder;
 
 /** Real ConfigData/profile expansion and automatic initializer discovery; no ambient DB/config sources. */
 @ExtendWith(OutputCaptureExtension.class)
@@ -195,7 +197,7 @@ class ProductionSecretProfileRegressionTest {
         try (var context = start(properties, external, arguments.toArray(String[]::new))) {
             assertTrue(JWT_KEY.equals(context.getEnvironment().getProperty(JWT_PROPERTY)), "JWT effective identity");
             // Compare using Binder, which handles the camelCase JSON alias identically to the guard.
-            assertTrue(MASTER_KEY.equals(org.springframework.boot.context.properties.bind.Binder.get(context.getEnvironment())
+            assertTrue(MASTER_KEY.equals(Binder.get(context.getEnvironment())
                     .bind(MASTER_PROPERTY, String.class).orElseThrow(IllegalStateException::new)), "Master effective identity");
             assertEquals(List.of("prod"), List.of(context.getEnvironment().getActiveProfiles()));
         }
@@ -280,7 +282,7 @@ class ProductionSecretProfileRegressionTest {
     private static Stream<String> secretCases() {
         return Stream.of("jwt", "master").flatMap(property -> Stream.concat(
                 Stream.of(property + ":missing", property + ":blank", property + ":whitespace"),
-                java.util.stream.IntStream.range(0, publicDefaults().size()).mapToObj(i -> property + ":" + i)));
+                IntStream.range(0, publicDefaults().size()).mapToObj(i -> property + ":" + i)));
     }
 
     private static List<String> publicDefaults() {

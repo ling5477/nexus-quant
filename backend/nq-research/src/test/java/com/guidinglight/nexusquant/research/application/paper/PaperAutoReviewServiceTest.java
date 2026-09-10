@@ -12,6 +12,7 @@ import com.guidinglight.nexusquant.research.domain.paper.PaperTradingOrder;
 import com.guidinglight.nexusquant.research.domain.paper.PaperTradingRun;
 import com.guidinglight.nexusquant.research.domain.paper.PaperTradingRunStatus;
 import com.guidinglight.nexusquant.research.domain.paper.PaperTradingTrade;
+import com.guidinglight.nexusquant.research.domain.publish.BacktestEvaluationView;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -163,9 +164,9 @@ class PaperAutoReviewServiceTest {
                 Instant.parse("2026-06-02T00:00:00Z"), Instant.parse("2026-06-02T00:00:00Z"));
     }
 
-    private static com.guidinglight.nexusquant.research.domain.publish.BacktestEvaluationView btView(
+    private static BacktestEvaluationView btView(
             String backtestRunId, String returnRate, String maxDrawdownRate) {
-        return new com.guidinglight.nexusquant.research.domain.publish.BacktestEvaluationView(
+        return new BacktestEvaluationView(
                 "eval-" + backtestRunId, backtestRunId, "SUCCEEDED", Instant.parse("2026-05-31T00:00:00Z"),
                 null, null, new BigDecimal(returnRate), new BigDecimal(maxDrawdownRate),
                 null, null, null, null, null, null, null);

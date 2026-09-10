@@ -12,6 +12,7 @@ import com.guidinglight.nexusquant.livecontrol.execution.application.provider.Sp
 import com.guidinglight.nexusquant.livecontrol.infra.KillSwitchGuardedProviderObservationAuthority;
 import com.guidinglight.nexusquant.livecontrol.infra.okx.OkxPilotPrerequisiteObservationAuthority;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
+import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService;
 
 import java.time.Clock;
 import java.util.function.BooleanSupplier;
@@ -94,7 +95,7 @@ public class ReadOnlyProviderObservationConfiguration {
     public PilotPrerequisiteObservationAuthority readOnlyProviderObservationAuthority(
             OkxPrivateCredentialExecutor credentialExecutor,
             KillSwitchService killSwitchService,
-            com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService
+            InstrumentCatalogService
                     instrumentCatalogService,
             ReadOnlyProviderObservationRuntimeIdentity runtimeIdentity,
             @Value("${NQ_RELEASE_MANIFEST_SHA256}") String releaseManifestSha256

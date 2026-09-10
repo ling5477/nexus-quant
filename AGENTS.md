@@ -3,6 +3,7 @@
 这是长期项目约束。项目是 Java 21 / Spring Boot / Maven 多模块单体，使用 PostgreSQL / Flyway；前端为 React / Vite / Ant Design。具体依赖版本以工程配置为准。真实代码、测试和 CI 证据优先于文档能力声明；文档不能扩大运行授权。当前阶段、验收身份与已授权发布操作以 `docs/current/STATUS.md` 的机器区块为准；处理这些事项时才读取该区块和必要的合同。普通局部修改从任务与目标代码开始，不预读阶段、历史 Gate 或证据账本。`ROADMAP.md` 用于用户要求的工作流/下一步决策；领域文档按问题查找。
 
 - 后端保持现有模块职责：`nq-api` 不写 SQL，`nq-core` 不依赖 JDBC/infra，持久化位于 `nq-infra`，exchange adapter 不直接写库。版本与构建入口从当前工程配置确认。
+- Java 源码与测试通过显式 `import` 引用类型，正文使用简单类名或 `Outer.Inner`，不使用包名开头的全限定类名，也不使用通配符 import。确有同名类型冲突时先调整导入或使用外层类型限定；仍无法消除时说明原因，不为消除全限定写法改变公开契约或业务语义。字符串中的反射类名与配置类名不受此限制。
 - 前端沿用现有 React/TypeScript/Ant Design 结构；服务端状态由 TanStack Query 管理，Zustand 仅存必要客户端状态。不为小任务替换框架。
 - canonical 交易环境为 `SIM / LIVE`；venue `DEMO` 仅映射到 `SIM`，历史 `DOME / REAL` 仅用于兼容边界。不得弱化环境隔离、账户/租户权限、风控、状态机、幂等、账务与审计语义。
 - LIVE、真实 PLACE/CANCEL、transfer/withdraw、解除 kill switch、真实 provider 和生产部署，必须同时有有效 current authority 与用户明确授权。仅实现并在隔离环境验证代码不等于获得执行真实操作的权限。

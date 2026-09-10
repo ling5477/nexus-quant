@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Objects;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -32,7 +33,7 @@ public class JdbcOperatorPilotAuthorityRepository implements OperatorPilotAuthor
     private final JdbcTemplate jdbc;
 
     public JdbcOperatorPilotAuthorityRepository(JdbcTemplate jdbc) {
-        this.jdbc = java.util.Objects.requireNonNull(jdbc, "jdbc must not be null");
+        this.jdbc = Objects.requireNonNull(jdbc, "jdbc must not be null");
     }
 
     @Override

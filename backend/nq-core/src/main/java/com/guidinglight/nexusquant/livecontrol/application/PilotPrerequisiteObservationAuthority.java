@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.livecontrol.application;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationSet;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -28,7 +29,7 @@ public interface PilotPrerequisiteObservationAuthority {
             long createdBy,
             Instant resolvedAt
     ) {
-        throw new com.guidinglight.nexusquant.livecontrol.domain.LiveControlException(
+        throw new LiveControlException(
                 "TRUSTED_OPERATOR_PILOT_SCOPE_BOOTSTRAP_UNAVAILABLE",
                 "trusted operator pilot scope bootstrap is unavailable"
         );

@@ -20,6 +20,9 @@ import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewEvent
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewEventType;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewSeverity;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewState;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -34,6 +37,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
+import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -269,8 +273,8 @@ class OperationalSafetyAssessmentServiceTest {
         Instant acknowledged = NOW.minusSeconds(30);
         Instant resolved = NOW.minusSeconds(20);
         Instant closed = NOW.minusSeconds(10);
-        com.fasterxml.jackson.databind.node.ObjectNode anchor =
-                com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+        ObjectNode anchor =
+                JsonNodeFactory.instance.objectNode();
         anchor.put("subject", HUMAN_REVIEW_SUBJECT);
         anchor.put("reference", "gatew4-local-evidence-v1");
         return new ValidationReviewCase(
@@ -303,8 +307,8 @@ class OperationalSafetyAssessmentServiceTest {
     private static List<ValidationReviewEvent> reviewEvents() {
         UUID caseId = UUID.fromString("00000000-0000-0000-0000-000000004004");
         Instant created = NOW.minusSeconds(40);
-        com.fasterxml.jackson.databind.node.ObjectNode metadata =
-                com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+        ObjectNode metadata =
+                JsonNodeFactory.instance.objectNode();
         return List.of(
                 reviewEvent(caseId, 1, ValidationReviewState.OPEN,
                         ValidationReviewState.ACKNOWLEDGED, created.plusSeconds(10), metadata),
@@ -321,10 +325,10 @@ class OperationalSafetyAssessmentServiceTest {
             ValidationReviewState from,
             ValidationReviewState to,
             Instant createdAt,
-            com.fasterxml.jackson.databind.JsonNode metadata
+            JsonNode metadata
     ) {
         return new ValidationReviewEvent(
-                UUID.nameUUIDFromBytes(("gatew4-event-" + version).getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                UUID.nameUUIDFromBytes(("gatew4-event-" + version).getBytes(StandardCharsets.UTF_8)),
                 caseId,
                 ValidationReviewCase.LOCAL_TENANT_KEY,
                 ValidationReviewEventType.valueOf(to.name()),

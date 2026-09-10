@@ -3,6 +3,9 @@ package com.guidinglight.nexusquant.strategy.strategyrelease.application;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunAuthorizationBoundary;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunReleaseBindingMode;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyValidationDecision;
+import com.guidinglight.nexusquant.strategy.strategyrelease.artifact.StrategyArtifactVerificationResult;
+import com.guidinglight.nexusquant.strategy.strategyrelease.domain.StrategyReleaseStatus;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -196,9 +199,9 @@ class StrategyReleaseShadowRunMaterializationServiceTest {
                 UUID.fromString("11111111-1111-4111-8111-111111111111"),
                 "evaluation-001",
                 ShadowRunReleaseBindingMode.RELEASE_BOUND,
-                com.guidinglight.nexusquant.strategy.strategyrelease.domain.StrategyReleaseStatus.VERIFIED,
-                com.guidinglight.nexusquant.strategy.strategyrelease.artifact.StrategyArtifactVerificationResult.Status.VERIFIED,
-                com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyValidationDecision.APPROVED,
+                StrategyReleaseStatus.VERIFIED,
+                StrategyArtifactVerificationResult.Status.VERIFIED,
+                StrategyValidationDecision.APPROVED,
                 ReleaseToShadowAdmissionDecision.Decision.ELIGIBLE,
                 List.of("ELIGIBLE_FOR_CREATION_PLAN_ONLY"),
                 "a".repeat(64)

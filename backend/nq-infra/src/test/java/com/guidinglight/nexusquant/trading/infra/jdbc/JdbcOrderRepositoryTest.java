@@ -13,6 +13,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -34,12 +37,12 @@ class JdbcOrderRepositoryTest {
                 OrderStatus.CANCELLED, "test", Instant.EPOCH));
         assertEquals("UPDATE orders SET status = ?, reason = ?, version = version + 1, updated_at = ?"
                 + " WHERE order_id = ? AND status = ? AND version = ?", jdbc.lastUpdateSql);
-        assertArrayEquals(new Object[]{"CANCELLED", "test", java.sql.Timestamp.from(Instant.EPOCH),
+        assertArrayEquals(new Object[]{"CANCELLED", "test", Timestamp.from(Instant.EPOCH),
                 "ord-1", "CANCEL_REQUESTED", 9L}, jdbc.lastArgs);
     }
 
     @Test void persistedMappingReadsVersionAndIdentityCopyPreservesIt() throws Exception {
-        java.sql.ResultSet rs = mock(java.sql.ResultSet.class);
+        ResultSet rs = mock(ResultSet.class);
         when(rs.getString("status")).thenReturn("SENT");
         when(rs.getString("trade_env")).thenReturn("SIM");
         when(rs.getLong("version")).thenReturn(41L);
@@ -47,7 +50,7 @@ class JdbcOrderRepositoryTest {
             @Override public <T> List<T> query(String sql, RowMapper<T> mapper, Object... args) {
                 assertTrue(sql.contains("trade_env, version"));
                 try { return List.of(mapper.mapRow(rs, 0)); }
-                catch (java.sql.SQLException ex) { throw new AssertionError(ex); }
+                catch (SQLException ex) { throw new AssertionError(ex); }
             }
         };
         OrderRecord order = new JdbcOrderRepository(jdbc).findByOrderId("ord-1").orElseThrow();

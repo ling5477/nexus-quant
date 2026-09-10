@@ -32,6 +32,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.io.IOException;
 
 class ExchangeAccountControllerWebMvcTest {
 
@@ -94,7 +95,7 @@ class ExchangeAccountControllerWebMvcTest {
 
     private static final class TestTraceIdFilter extends OncePerRequestFilter {
         @Override
-        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, java.io.IOException {
+        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
             String incoming = request.getHeader(TraceIdContext.TRACE_ID_HEADER);
             String traceId = TraceIdContext.putOrCreate(incoming);
             request.setAttribute(TraceIdContext.TRACE_ID_REQUEST_ATTRIBUTE, traceId);

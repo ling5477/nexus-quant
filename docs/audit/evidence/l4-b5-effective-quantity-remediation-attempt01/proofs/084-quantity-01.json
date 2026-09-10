@@ -1,0 +1,72 @@
+{
+  "scenario": "PRICE_ZERO",
+  "database": "SYNTH-L4:B5-EQ:R84:DATABASE:001",
+  "ownerPid": 14864,
+  "venuePid": 1620,
+  "successorPid": 66016,
+  "final": {
+    "strategy_runs": [
+      {
+        "status": "FAILED",
+        "trace_id": "SYNTH-L4:B5-EQ:R84:TRACE:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T20:55:04.392994+08:00",
+        "request_id": "SYNTH-L4:B5-EQ:R84:REQUEST:001",
+        "started_at": "2026-09-10T20:55:04.390606+08:00",
+        "finished_at": "2026-09-10T20:55:04.488123+08:00",
+        "strategy_id": "b5-strategy",
+        "trigger_type": "SCHEDULER",
+        "error_message": "EXECUTION_NORMALIZATION_REJECTED/OKX_PRICE_BELOW_TICK_SIZE",
+        "exchange_code": "OKX",
+        "config_snapshot": {
+          "side": "BUY",
+          "price": "0.009",
+          "symbol": "BTC-USDT",
+          "quantity": "10.0005",
+          "orderType": "LIMIT"
+        },
+        "strategy_run_id": "SYNTH-L4:B5-EQ:R84:RUN:001",
+        "admission_due_at": "2026-01-01T08:00:00+08:00",
+        "admission_schedule_id": "b5"
+      }
+    ],
+    "strategy_run_dispatch_work": [
+      {
+        "side": "BUY",
+        "price": 0.009,
+        "symbol": "BTC-USDT",
+        "quantity": 10.0005,
+        "account_id": 1,
+        "order_type": "LIMIT",
+        "time_in_force": "GTC",
+        "client_order_id": "SYNTH-L4:B5-EQ:R84:CLIENT:001",
+        "effective_price": null,
+        "strategy_run_id": "SYNTH-L4:B5-EQ:R84:RUN:001",
+        "definition_version": 1,
+        "effective_quantity": null,
+        "work_schema_version": 1,
+        "normalization_rejection": "OKX_PRICE_BELOW_TICK_SIZE"
+      }
+    ],
+    "orders": [],
+    "ordinary_place_authorities": [],
+    "trades": [],
+    "ledger_entries": []
+  },
+  "venue": {
+    "code": "0",
+    "msg": "",
+    "data": [],
+    "pid": 1620,
+    "places": 0,
+    "cancels": 0,
+    "pendingCancel": false,
+    "placeRequests": 0,
+    "apiRequests": 1,
+    "order": null,
+    "fills": [],
+    "events": []
+  },
+  "result": "PASS"
+}

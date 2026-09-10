@@ -13,6 +13,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -237,7 +239,7 @@ public class JdbcTradingQueryFacade implements TradingQueryFacade {
         args.add(value.trim());
     }
 
-    private OrderQueryView mapOrder(java.sql.ResultSet resultSet) throws java.sql.SQLException {
+    private OrderQueryView mapOrder(ResultSet resultSet) throws SQLException {
         return new OrderQueryView(
                 resultSet.getString("order_id"),
                 resultSet.getLong("account_id"),

@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.runtime.api;
 
 import com.guidinglight.nexusquant.runtime.api.dto.OperationalReadinessResponse;
 import com.guidinglight.nexusquant.runtime.api.dto.OperationalReadinessStatusResponse;
+import com.guidinglight.nexusquant.runtime.api.dto.FakeDryRunOperationsResponse;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -54,12 +55,12 @@ public class OperationalReadinessService {
      * @return safe fail-closed operational readiness response
      */
     public OperationalReadinessResponse currentSummary() {
-        return currentSummary(com.guidinglight.nexusquant.runtime.api.dto.FakeDryRunOperationsResponse
+        return currentSummary(FakeDryRunOperationsResponse
                 .unavailable(Instant.now(clock)));
     }
 
     public OperationalReadinessResponse currentSummary(
-            com.guidinglight.nexusquant.runtime.api.dto.FakeDryRunOperationsResponse operations
+            FakeDryRunOperationsResponse operations
     ) {
         Instant generatedAt = Instant.now(clock);
         return new OperationalReadinessResponse(

@@ -1,12 +1,13 @@
 package com.guidinglight.nexusquant.strategy.application;
 
-import com.guidinglight.nexusquant.contracts.model.OrderStatus;
+import com.guidinglight.nexusquant.contracts.model.OrderType;
+import com.guidinglight.nexusquant.strategy.domain.StrategyDispatchWork;
+import com.guidinglight.nexusquant.trading.domain.TradingVenue;
 import com.guidinglight.nexusquant.strategy.domain.StrategyDefinition;
 import com.guidinglight.nexusquant.strategy.domain.StrategyRun;
 import com.guidinglight.nexusquant.strategy.domain.StrategyRunStatus;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyDefinitionRepository;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionGateway;
-import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionIntent;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionResult;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyRunRepository;
 
@@ -47,8 +48,11 @@ public class StrategyManualTriggerService {
 
     public StrategyManualTriggerResult trigger(StrategyManualTriggerRequest request) {
         validateTriggerRequest(request);
-        StrategyDefinition definition = strategyDefinitionRepository.findByStrategyId(request.strategyId())
-                .orElseThrow(() -> new IllegalArgumentException("strategy definition not found: " + request.strategyId()));
+        StrategyDefinition definition = request.definitionSnapshot() == null
+                ? strategyDefinitionRepository.findByStrategyId(request.strategyId())
+                    .orElseThrow(() -> new IllegalArgumentException("strategy definition not found: " + request.strategyId()))
+                : request.definitionSnapshot();
+        if (!definition.strategyId().equals(request.strategyId())) throw new IllegalArgumentException("definition identity mismatch");
         if (!definition.enabled()) {
             throw new IllegalStateException("strategy definition is disabled: " + request.strategyId());
         }
@@ -62,9 +66,9 @@ public class StrategyManualTriggerService {
                 strategyRunId,
                 definition.strategyId(),
                 definition.accountId(),
-                definition.exchangeCode(),
+                TradingVenue.parse(definition.exchangeCode()).name(),
                 definition.tradeEnv(),
-                "MANUAL",
+                request.dispatchIdentity() == null ? "MANUAL" : "SCHEDULER",
                 StrategyRunStatus.CREATED,
                 definition.configSnapshot(),
                 requestId,
@@ -73,38 +77,19 @@ public class StrategyManualTriggerService {
                 null,
                 request.traceId()
         );
-        strategyRunRepository.insert(createdRun);
-        strategyRunRepository.updateStatus(strategyRunId, StrategyRunStatus.DISPATCHING, null, null);
-
-        StrategyExecutionResult executionResult = strategyExecutionGateway.execute(new StrategyExecutionIntent(
-                requestId,
-                definition.accountId(),
-                strategyRunId,
-                definition.exchangeCode(),
-                request.symbol(),
-                clientOrderId,
-                definition.accountId() + ":" + clientOrderId,
-                "strategy_manual",
-                request.side(),
-                request.orderType(),
-                request.price(),
-                request.quantity(),
-                null,
-                request.traceId()
-        ));
-
-        StrategyRunStatus finalStatus = isTriggerAccepted(executionResult.status())
-                ? StrategyRunStatus.RUNNING
-                : StrategyRunStatus.FAILED;
-        String errorMessage = finalStatus == StrategyRunStatus.FAILED
-                ? "order_status=" + executionResult.status().name()
-                : null;
-        strategyRunRepository.updateStatus(
-                strategyRunId,
-                finalStatus,
-                finalStatus == StrategyRunStatus.FAILED ? Instant.now(clock) : null,
-                errorMessage
-        );
+        var work = new StrategyDispatchWork(strategyRunId, 1, definition.version(), definition.accountId(),
+                clientOrderId, request.symbol(), request.side(), request.orderType(), request.quantity(), request.price(),
+                request.orderType() == OrderType.MARKET ? "IOC" : "GTC");
+        work.intent(createdRun);
+        var admission = strategyRunRepository.admit(createdRun, work, request.dispatchIdentity());
+        if (!admission.admitted()) {
+            var existing = admission.run();
+            return new StrategyManualTriggerResult(existing.strategyId(), existing.strategyRunId(), existing.requestId(),
+                    null, null, existing.status(), true, true);
+        }
+        // DISPATCHING 与 Order prepare 同事务；原 callback 不再猜测成功/失败或推进 cursor。
+        StrategyExecutionResult executionResult = strategyExecutionGateway.execute(work.intent(admission.run()));
+        StrategyRunStatus finalStatus = strategyRunRepository.findByStrategyRunId(strategyRunId).orElseThrow().status();
 
         return new StrategyManualTriggerResult(
                 definition.strategyId(),
@@ -129,13 +114,6 @@ public class StrategyManualTriggerService {
         if (request.traceId() == null || request.traceId().isBlank()) {
             throw new IllegalArgumentException("traceId must not be blank");
         }
-    }
-
-    private boolean isTriggerAccepted(OrderStatus orderStatus) {
-        return orderStatus == OrderStatus.SENT
-                || orderStatus == OrderStatus.ACCEPTED
-                || orderStatus == OrderStatus.PARTIALLY_FILLED
-                || orderStatus == OrderStatus.FILLED;
     }
 
     private String normalizeRequestId(String requestId) {

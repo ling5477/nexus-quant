@@ -23,11 +23,14 @@ import com.guidinglight.nexusquant.eventstore.infra.EventStoreAppender;
 import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
 import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
 import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
+import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Collections;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -81,9 +84,9 @@ class OkxRestReconcileServiceTest {
         verify(f.commands, times(2)).reserveReconciliationCandidates(eq("OKX"), Mockito.argThat(statuses ->
                 statuses.contains(OrderStatus.CANCELLED) && statuses.contains(OrderStatus.FILLED)), eq(10));
         verify(f.audit).append("RECONCILE", "OKX_CANCELLED_ORDER_FILL_BACKFILL_COMPLETED", "ord-c2", "trc-c2",
-                java.util.Map.of("order_id", "ord-c2", "status", "CANCELLED", "external_order_id", "ext-c2", "new_trades", 1));
+                Map.of("order_id", "ord-c2", "status", "CANCELLED", "external_order_id", "ext-c2", "new_trades", 1));
         verify(f.audit).append("RECONCILE", "OKX_CANCELLED_ORDER_FILL_BACKFILL_COMPLETED", "ord-c2", "trc-c2",
-                java.util.Map.of("order_id", "ord-c2", "status", "CANCELLED", "external_order_id", "ext-c2", "new_trades", 0));
+                Map.of("order_id", "ord-c2", "status", "CANCELLED", "external_order_id", "ext-c2", "new_trades", 0));
         f.assertNoOrderMutation();
     }
 
@@ -177,11 +180,11 @@ class OkxRestReconcileServiceTest {
     @Test
     void cancelledVenueReportLimitOverflowFailsBeforeWrites() {
         var f = new CancelledFixture("ext-c2");
-        when(f.adapter.listTradeReports(any(), any(), any())).thenReturn(java.util.Collections.nCopies(11,
+        when(f.adapter.listTradeReports(any(), any(), any())).thenReturn(Collections.nCopies(11,
                 f.report("OKX", 2001L, "coid-c2", "ext-c2", "fill-c2")));
         assertThrows(IllegalStateException.class, () -> f.service.reconcileOnce(10));
         verify(f.audit).append("RECONCILE", "OKX_LEDGER_RECOVERY_INCOMPLETE", "ord-c2", "trc-c2",
-                java.util.Map.of("order_id", "ord-c2", "reason", "VENUE_REPORT_LIMIT_EXCEEDED"));
+                Map.of("order_id", "ord-c2", "reason", "VENUE_REPORT_LIMIT_EXCEEDED"));
         Mockito.verifyNoInteractions(f.trades, f.events, f.ledger);
         f.assertNoOrderMutation();
     }
@@ -192,7 +195,7 @@ class OkxRestReconcileServiceTest {
         when(f.trades.findAllByOrderId("ord-c2", 10)).thenThrow(new IllegalStateException("durable trade limit"));
         assertThrows(IllegalStateException.class, () -> f.service.reconcileOnce(10));
         verify(f.audit).append("RECONCILE", "OKX_LEDGER_RECOVERY_INCOMPLETE", "ord-c2", "trc-c2",
-                java.util.Map.of("order_id", "ord-c2", "reason", "DURABLE_TRADE_LIMIT_EXCEEDED"));
+                Map.of("order_id", "ord-c2", "reason", "DURABLE_TRADE_LIMIT_EXCEEDED"));
         verify(f.trades, never()).insertWithRequiredEvent(any());
         Mockito.verifyNoInteractions(f.events, f.ledger);
         f.assertNoOrderMutation();
@@ -204,8 +207,8 @@ class OkxRestReconcileServiceTest {
         final OkxExchangeAdapter adapter = Mockito.mock(OkxExchangeAdapter.class);
         final TradeRepository trades = Mockito.mock(TradeRepository.class);
         final TradeLedgerGateway ledger = Mockito.mock(TradeLedgerGateway.class);
-        final com.guidinglight.nexusquant.contracts.event.EventPublisherPort events =
-                Mockito.mock(com.guidinglight.nexusquant.contracts.event.EventPublisherPort.class);
+        final EventPublisherPort events =
+                Mockito.mock(EventPublisherPort.class);
         final AuditLogRepository audit = Mockito.mock(AuditLogRepository.class);
         final OkxRestReconcileService service = new OkxRestReconcileService(commands, lifecycle, adapter, trades, ledger, events, audit);
         final OrderRecord order;

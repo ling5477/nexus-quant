@@ -8,6 +8,7 @@ import com.guidinglight.nexusquant.risk.service.RiskGate;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
 import com.guidinglight.nexusquant.trading.domain.state.InMemoryOrderStateMachine;
+import com.guidinglight.nexusquant.trading.domain.port.OrdinaryPlaceAuthorityRepository;
 import java.math.BigDecimal;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -21,7 +22,8 @@ class CancelledExecutionCorrectionTest {
     private final AuditLogRepository audit = mock(AuditLogRepository.class);
     private final EventPublisherPort events = mock(EventPublisherPort.class);
     private final OrderCommandWriteService service = new OrderCommandWriteService(orders,
-            new InMemoryOrderStateMachine(), mock(RiskGate.class), audit, mock(RiskEventRepository.class), events);
+            new InMemoryOrderStateMachine(), mock(RiskGate.class), audit, mock(RiskEventRepository.class), events,
+            mock(OrdinaryPlaceAuthorityRepository.class));
     private final OrderRecord cancelled = new OrderRecord("o", 1L, null, "OKX", "BTC-USDT", "c", "BUY", "LIMIT",
             new BigDecimal("100"), new BigDecimal("10"), "ext", OrderStatus.CANCELLED, "cancel", "trace");
 

@@ -22,6 +22,7 @@ import jakarta.validation.constraints.Size;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.security.core.Authentication;
@@ -149,7 +150,7 @@ public class BacktestConfigController {
             @Valid @RequestBody BacktestDatasetBindingRequestBody request
     ) {
         TraceIdContext.getOrCreate();
-        String datasetSnapshot = marketdataDatasetService.buildDatasetSnapshot(java.util.UUID.fromString(request.datasetId()));
+        String datasetSnapshot = marketdataDatasetService.buildDatasetSnapshot(UUID.fromString(request.datasetId()));
         return BacktestConfigResponse.from(applicationService.bindDataset(
                 configId,
                 request.datasetId(),

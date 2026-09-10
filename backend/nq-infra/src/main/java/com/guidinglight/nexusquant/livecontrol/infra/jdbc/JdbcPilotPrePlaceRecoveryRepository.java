@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Objects;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -22,7 +23,7 @@ public class JdbcPilotPrePlaceRecoveryRepository implements PilotPrePlaceRecover
     private final JdbcTemplate jdbc;
 
     public JdbcPilotPrePlaceRecoveryRepository(JdbcTemplate jdbc) {
-        this.jdbc = java.util.Objects.requireNonNull(jdbc);
+        this.jdbc = Objects.requireNonNull(jdbc);
     }
 
     @Override
@@ -83,7 +84,7 @@ public class JdbcPilotPrePlaceRecoveryRepository implements PilotPrePlaceRecover
                 row.getString("status"), row.getTimestamp("consumed_at") != null,
                 row.getLong("owner_id"), row.getLong("exchange_account_id"),
                 row.getLong("credential_reference"),
-                java.util.List.of((String[]) row.getArray("symbol_allowlist").getArray()),
+                List.of((String[]) row.getArray("symbol_allowlist").getArray()),
                 row.getBigDecimal("capital_cap"), row.getLong("lease_intents"),
                 row.getLong("intents"), row.getLong("sends"), row.getLong("receipts"),
                 row.getLong("orders_count"), row.getLong("trades_count"), row.getLong("ledger_count")));

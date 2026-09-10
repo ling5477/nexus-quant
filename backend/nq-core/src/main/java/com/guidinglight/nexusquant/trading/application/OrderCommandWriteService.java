@@ -20,7 +20,9 @@ import com.guidinglight.nexusquant.trading.application.port.TradingCancelGateway
 import com.guidinglight.nexusquant.trading.application.port.TradingGatewayFailure;
 import com.guidinglight.nexusquant.trading.application.port.TradingPlaceGatewayResult;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
+import com.guidinglight.nexusquant.trading.domain.TradingVenue;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
+import com.guidinglight.nexusquant.trading.domain.port.OrdinaryPlaceAuthorityRepository;
 import com.guidinglight.nexusquant.core.service.port.RiskEventRepository;
 import com.guidinglight.nexusquant.trading.domain.state.OrderStateMachine;
 import com.guidinglight.nexusquant.risk.model.RiskContext;
@@ -34,10 +36,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.math.BigDecimal;
+import java.util.Set;
 
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 /**
  * OrderCommandWriteService 负责 `OrderCommandService` 的本地数据库写阶段。
@@ -53,6 +58,7 @@ public class OrderCommandWriteService {
     private static final String SOURCE = "nq-core.order-command-write-service";
 
     private final OrderRepository orderRepository;
+    private final OrdinaryPlaceAuthorityRepository placeAuthorities;
     private final OrderStateMachine orderStateMachine;
     private final RiskGate riskGate;
     private final AuditLogRepository auditLogRepository;
@@ -66,7 +72,8 @@ public class OrderCommandWriteService {
             RiskGate riskGate,
             AuditLogRepository auditLogRepository,
             RiskEventRepository riskEventRepository,
-            EventPublisherPort eventPublisherPort
+            EventPublisherPort eventPublisherPort,
+            OrdinaryPlaceAuthorityRepository placeAuthorities
     ) {
         this.orderRepository = Objects.requireNonNull(orderRepository, "orderRepository must not be null");
         this.orderStateMachine = Objects.requireNonNull(orderStateMachine, "orderStateMachine must not be null");
@@ -75,6 +82,7 @@ public class OrderCommandWriteService {
         this.riskEventRepository = Objects.requireNonNull(riskEventRepository, "riskEventRepository must not be null");
         this.eventPublisherPort = Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
         this.clock = Clock.systemUTC();
+        this.placeAuthorities = Objects.requireNonNull(placeAuthorities, "placeAuthorities must not be null");
     }
 
     /**
@@ -116,7 +124,8 @@ public class OrderCommandWriteService {
         );
 
         try {
-            orderRepository.insert(createdOrder, now);
+            if (createdOrder.canonicalVenue() == TradingVenue.OKX) placeAuthorities.insertOrder(createdOrder, now);
+            else orderRepository.insert(createdOrder, now);
         } catch (DuplicateKeyException ex) {
             Optional<OrderRecord> duplicated = orderRepository.findByAccountAndClientOrderId(
                     request.accountId(),
@@ -586,6 +595,41 @@ public class OrderCommandWriteService {
         return transitionOrderAttempt(currentOrder, nextStatus, reason, traceId).order();
     }
 
+    /** 返回到非事务编排器前必须已确认提交；异常/提交未知不返回一次性发送许可。 */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public boolean armOrdinaryPlace(OrderRecord expected) {
+        boolean granted = placeAuthorities.arm(expected);
+        auditLogRepository.append("ORDER", granted ? "PLACE_MAY_HAVE_ESCAPED" : "PLACE_AUTHORITY_NOT_GRANTED",
+                expected.orderId(), expected.traceId(), detail("expected_version", expected.version()));
+        return granted;
+    }
+
+    /** 负面查询仅是观察；撤销与两个合法状态迁移必须在同一提交边界完成。 */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public boolean finalizeOrdinaryNoOrder(String orderId, String traceId) {
+        OrderRecord current = loadOrder(orderId);
+        if (current.canonicalVenue() != TradingVenue.OKX || !Set.of(OrderStatus.SENT, OrderStatus.ACCEPTED,
+                OrderStatus.PARTIALLY_FILLED, OrderStatus.CANCEL_REQUESTED, OrderStatus.CANCEL_REJECTED)
+                .contains(current.status())) return false;
+        if (!placeAuthorities.revoke(current)) {
+            auditLogRepository.append("RECOVERY", "MANUAL_RESOLUTION_REQUIRED", orderId, traceId,
+                    detail("reason", "PLACE_MAY_HAVE_ESCAPED_OR_AUTHORITY_MISSING", "status", current.status().name()));
+            return false;
+        }
+        String reason = "ORDER_NOT_FOUND/OKX_51603";
+        if (current.status() != OrderStatus.CANCEL_REQUESTED) {
+            current = transitionOrderInternal(current, OrderStatus.CANCEL_REQUESTED, reason, traceId);
+            publishEvent(TopicNames.ORDER_EVENT_V1, current.clientOrderId(), traceId,
+                    new OrderStatusChangedPayload(orderId, current.accountId(), current.clientOrderId(),
+                            current.status(), reason, Instant.now(clock)));
+        }
+        current = transitionOrderInternal(current, OrderStatus.CANCELLED, reason, traceId);
+        publishEvent(TopicNames.ORDER_EVENT_V1, current.clientOrderId(), traceId,
+                new OrderStatusChangedPayload(orderId, current.accountId(), current.clientOrderId(),
+                        current.status(), reason, Instant.now(clock)));
+        return true;
+    }
+
     /**
      * 仅对账可使用的强成交事实纠正；普通状态机仍禁止 CANCELLED → FILLED。
      * 冲突后重新读取状态与完整 durable fills，不能把旧 ACK 或旧证明换新 version 重试。
@@ -597,7 +641,7 @@ public class OrderCommandWriteService {
             OrderRecord current = loadOrder(orderId);
             if (current.status() != OrderStatus.CANCELLED && current.status() != OrderStatus.FILLED) return current;
             if (current.externalOrderId() == null || current.externalOrderId().isBlank()) return current;
-            java.math.BigDecimal executed = Objects.requireNonNull(orderRepository.durableExecutedQuantity(orderId));
+            BigDecimal executed = Objects.requireNonNull(orderRepository.durableExecutedQuantity(orderId));
             int comparison = executed.compareTo(current.qty());
             if (executed.signum() < 0 || comparison > 0) {
                 throw new IllegalStateException("RECONCILIATION_OVERFILL: " + orderId);

@@ -1,0 +1,192 @@
+[
+  {
+    "label": "target-01",
+    "status": "FAIL",
+    "logPath": "backend/nq-app/target/b5-strategy-remediation/target-01.log",
+    "logSha256": "bee72c60028e8292fd11b08349af483046c7ef6b0465118e5b62f4181c969944",
+    "tests": 14,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 0,
+    "suites": [
+      [
+        "4",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerServiceTest"
+      ],
+      [
+        "6",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.strategy.application.StrategyScheduleScanServiceTest"
+      ],
+      [
+        "2",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcStrategyRunRepositoryTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5StrategyOwnerDeathTest"
+      ],
+      [
+        "1",
+        "1",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5StrategyRunRecoveryProcessTest"
+      ]
+    ]
+  },
+  {
+    "label": "target-02",
+    "status": "PASS",
+    "logPath": "backend/nq-app/target/b5-strategy-remediation/target-02.log",
+    "logSha256": "39ff78473eae6d7cfa5b6e6770f69505b2aa78352dd8ba3952b45f21d9448508",
+    "tests": 26,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "suites": [
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.architecture.ModuleBoundaryArchTest"
+      ],
+      [
+        "4",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.architecture.PackageBoundaryArchTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5StrategyRunRecoveryPostgresTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5StrategyRunRecoveryProcessTest"
+      ],
+      [
+        "9",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.architecture.ModuleBoundaryArchTest"
+      ],
+      [
+        "10",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.architecture.PackageBoundaryArchTest"
+      ]
+    ]
+  },
+  {
+    "label": "affected-03",
+    "status": "PASS",
+    "logPath": "backend/nq-app/target/b5-strategy-remediation/affected-03.log",
+    "logSha256": "76bd2cec73c4cdca6d6df5b3220016a4c6dddf22aac60a598f1bdfda40c71bb4",
+    "tests": 23,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "suites": [
+      [
+        "4",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerServiceTest"
+      ],
+      [
+        "6",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.strategy.application.StrategyScheduleScanServiceTest"
+      ],
+      [
+        "2",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcStrategyRunRepositoryTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B1RealProcessProofTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B2RealProcessProofTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B3RealProcessProofTest"
+      ],
+      [
+        "4",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B4TradeEventPostgresTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B4TradeEventRemediationTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5AuthorityProcessTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5RealProcessProofTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B5StrategyOwnerDeathTest"
+      ]
+    ]
+  }
+]

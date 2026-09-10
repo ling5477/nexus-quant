@@ -21,6 +21,8 @@ import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentD
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentState;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentStateMachine;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptDraft;
+import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptCanonicalEncoder;
+import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptOutcome;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -348,19 +350,19 @@ class ExecutionIntentRuntimeTest {
         assertThrows(IllegalArgumentException.class, () -> ExecutionIntentCanonicalEncoder.place(
                 UUID.randomUUID(), SESSION_ID, "BTC-USDT\nside=SELL", "BUY",
                 BigDecimal.ONE, BigDecimal.TEN, "order-1"));
-        var nullValue = com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptCanonicalEncoder.draft(
+        var nullValue = ExecutionReceiptCanonicalEncoder.draft(
                 UUID.randomUUID(), INTENT_ID,
-                com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptOutcome.UNKNOWN,
+                ExecutionReceiptOutcome.UNKNOWN,
                 null, null, null, null, NOW);
-        var literalNull = com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptCanonicalEncoder.draft(
+        var literalNull = ExecutionReceiptCanonicalEncoder.draft(
                 nullValue.receiptId(), INTENT_ID,
-                com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptOutcome.UNKNOWN,
+                ExecutionReceiptOutcome.UNKNOWN,
                 "null", null, null, null, NOW);
         assertNotEquals(nullValue.payloadDigest(), literalNull.payloadDigest());
         assertThrows(IllegalArgumentException.class,
-                () -> com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptCanonicalEncoder.draft(
+                () -> ExecutionReceiptCanonicalEncoder.draft(
                         UUID.randomUUID(), INTENT_ID,
-                        com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptOutcome.UNKNOWN,
+                        ExecutionReceiptOutcome.UNKNOWN,
                         "request\nsecret", null, null, null, NOW));
     }
 

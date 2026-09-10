@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.strategy.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -11,6 +12,9 @@ import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
 import com.guidinglight.nexusquant.strategy.domain.StrategyDefinition;
 import com.guidinglight.nexusquant.strategy.domain.StrategyRun;
+import com.guidinglight.nexusquant.strategy.domain.StrategyRunAdmission;
+import com.guidinglight.nexusquant.strategy.domain.StrategyDispatchIdentity;
+import com.guidinglight.nexusquant.strategy.domain.StrategyDispatchWork;
 import com.guidinglight.nexusquant.strategy.domain.StrategyRunStatus;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyDefinitionRepository;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionGateway;
@@ -22,13 +26,15 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.math.BigDecimal;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
 class StrategyManualTriggerServiceTest {
 
     @Test
-    void shouldTriggerEnabledStrategyAndCreateRunningStrategyRun() {
+    void shouldPersistWorkAndReturnStoredStateWithoutInferringLifecycleFromAck() {
         InMemoryStrategyDefinitionRepository definitionRepository = new InMemoryStrategyDefinitionRepository();
         InMemoryStrategyRunRepository runRepository = new InMemoryStrategyRunRepository();
         CapturingStrategyExecutionGateway executionGateway = new CapturingStrategyExecutionGateway(
@@ -49,15 +55,17 @@ class StrategyManualTriggerServiceTest {
                 "BTC-USDT",
                 OrderSide.BUY,
                 OrderType.LIMIT,
-                new java.math.BigDecimal("0.01"),
-                new java.math.BigDecimal("100.00"),
+                new BigDecimal("0.01"),
+                new BigDecimal("100.00"),
                 "trc-trigger-1"
         ));
 
         assertEquals(definition.strategyId(), result.strategyId());
         assertEquals("req-trigger-1", result.requestId());
         assertEquals(OrderStatus.ACCEPTED, result.orderStatus());
-        assertEquals(StrategyRunStatus.RUNNING, result.strategyRunStatus());
+        assertEquals(StrategyRunStatus.CREATED, result.strategyRunStatus());
+        assertEquals(new BigDecimal("0.01000000"), runRepository.work.quantity());
+        assertEquals("GTC", runRepository.work.timeInForce());
         assertNotNull(result.strategyRunId());
         assertTrue(runRepository.findByStrategyRunId(result.strategyRunId()).isPresent());
         assertEquals(result.strategyRunId(), executionGateway.lastRequest.strategyRunId());
@@ -81,7 +89,7 @@ class StrategyManualTriggerServiceTest {
                 "BTC-USDT",
                 OrderSide.BUY,
                 OrderType.MARKET,
-                new java.math.BigDecimal("0.01"),
+                new BigDecimal("0.01"),
                 null,
                 "trc-trigger-2"
         )));
@@ -101,14 +109,14 @@ class StrategyManualTriggerServiceTest {
                 "BTC-USDT",
                 OrderSide.BUY,
                 OrderType.MARKET,
-                new java.math.BigDecimal("0.01"),
+                new BigDecimal("0.01"),
                 null,
                 "trc-trigger-3"
         )));
     }
 
     @Test
-    void shouldMarkStrategyRunFailedWhenOrderSubmissionFails() {
+    void shouldNotInferDurableFailureFromTransientGatewayRejection() {
         InMemoryStrategyDefinitionRepository definitionRepository = new InMemoryStrategyDefinitionRepository();
         InMemoryStrategyRunRepository runRepository = new InMemoryStrategyRunRepository();
         StrategyManualTriggerService service = new StrategyManualTriggerService(
@@ -125,16 +133,16 @@ class StrategyManualTriggerServiceTest {
                 "BTC-USDT",
                 OrderSide.BUY,
                 OrderType.LIMIT,
-                new java.math.BigDecimal("0.01"),
-                new java.math.BigDecimal("100.00"),
+                new BigDecimal("0.01"),
+                new BigDecimal("100.00"),
                 "trc-trigger-4"
         ));
 
-        assertEquals(StrategyRunStatus.FAILED, result.strategyRunStatus());
+        assertEquals(StrategyRunStatus.CREATED, result.strategyRunStatus());
         StrategyRun stored = runRepository.findByStrategyRunId(result.strategyRunId()).orElseThrow();
-        assertEquals(StrategyRunStatus.FAILED, stored.status());
-        assertTrue(stored.errorMessage().contains("REJECTED"));
-        assertNotNull(stored.finishedAt());
+        assertEquals(StrategyRunStatus.CREATED, stored.status());
+        assertNull(stored.errorMessage());
+        assertNull(stored.finishedAt());
     }
 
     private StrategyDefinition enabledDefinition(String strategyId, String strategyCode) {
@@ -191,7 +199,7 @@ class StrategyManualTriggerServiceTest {
         }
 
         @Override
-        public java.util.List<StrategyDefinition> listAll() {
+        public List<StrategyDefinition> listAll() {
             return storage.values().stream().toList();
         }
 
@@ -209,6 +217,14 @@ class StrategyManualTriggerServiceTest {
     private static final class InMemoryStrategyRunRepository implements StrategyRunRepository {
 
         private final Map<String, StrategyRun> storage = new LinkedHashMap<>();
+        private StrategyDispatchWork work;
+
+        @Override
+        public StrategyRunAdmission admit(StrategyRun run, StrategyDispatchWork work, StrategyDispatchIdentity identity) {
+            this.work = work;
+            insert(run);
+            return new StrategyRunAdmission(true, run);
+        }
 
         @Override
         public void insert(StrategyRun strategyRun) {

@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Clock;
+import java.util.List;
 
 /**
  * TradingRuntimeConfiguration 负责 trading 域仍需保留在 composition root 的最小运行时装配。
@@ -49,7 +50,7 @@ public class TradingRuntimeConfiguration {
 
     @Bean
     public RiskGate riskGate(KillSwitchService killSwitchService, PreTradeRiskSettings preTradeRiskSettings) {
-        return new PreTradeRiskService(new RiskRuleRegistry(java.util.List.of(
+        return new PreTradeRiskService(new RiskRuleRegistry(List.of(
                 new KillSwitchRiskRule(killSwitchService),
                 new AccountTradingEnabledRule(preTradeRiskSettings),
                 new SymbolEnabledRule(preTradeRiskSettings),

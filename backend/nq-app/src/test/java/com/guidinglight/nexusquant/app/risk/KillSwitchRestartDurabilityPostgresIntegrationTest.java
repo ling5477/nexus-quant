@@ -17,6 +17,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.UUID;
+import java.sql.Timestamp;
 
 import javax.sql.DataSource;
 
@@ -161,7 +162,7 @@ class KillSwitchRestartDurabilityPostgresIntegrationTest {
                             trace_id = 'trace-test-disengaged'
                         WHERE scope = 'GLOBAL_TRADING' AND version = 1 AND status = 'ENGAGED'
                         """,
-                java.sql.Timestamp.from(occurredAt)
+                Timestamp.from(occurredAt)
         );
         assertEquals(1, updated);
         jdbc.update(
@@ -174,7 +175,7 @@ class KillSwitchRestartDurabilityPostgresIntegrationTest {
                                   'integration-test', 'trace-test-disengaged', ?)
                         """,
                 UUID.randomUUID(),
-                java.sql.Timestamp.from(occurredAt)
+                Timestamp.from(occurredAt)
         );
     }
 

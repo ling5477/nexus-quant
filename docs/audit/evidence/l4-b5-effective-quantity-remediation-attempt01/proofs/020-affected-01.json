@@ -1,0 +1,225 @@
+{
+  "scenario": "SAME_WINDOW_CONCURRENT_STRATEGY_SCAN",
+  "controllerPid": 11668,
+  "boundary": "AFTER_ACTIVE_AND_WINDOW_DEDUP_BEFORE_PRODUCTION_TRIGGER",
+  "identityRule": "SCHEDULE_WINDOW: schedule_job_id + dueAt; client_order_id = coid- + request_id",
+  "database": "SYNTH-L4:B5-EQ:R20:DATABASE:001",
+  "nqPid": 26932,
+  "restartPid": 19440,
+  "venuePid": 43388,
+  "topology": "A_AND_B_CONCURRENT_NO_RESTART",
+  "postgresVersion": "16.15 (Debian 16.15-1.pgdg13+2)",
+  "schemaVersion": "51",
+  "before": {
+    "strategy_schedules": [
+      {
+        "enabled": true,
+        "timezone": "UTC",
+        "cron_expr": "0 0 0 1 1 *",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2025-12-31T23:59:59+08:00",
+        "updated_at": "2026-09-10T21:11:12.005066+08:00",
+        "dedup_scope": "SCHEDULE_WINDOW",
+        "strategy_id": "b5-strategy",
+        "exchange_code": "oKx",
+        "schedule_type": "CRON",
+        "window_config": {},
+        "schedule_job_id": "b5",
+        "last_triggered_at": null
+      }
+    ],
+    "strategy_runs": [],
+    "orders": [],
+    "ordinary_place_authorities": [],
+    "b5_run_transitions": [],
+    "trades": [],
+    "ledger_entries": [],
+    "execution_intents": [],
+    "execution_receipts": [],
+    "tradeExecuted": []
+  },
+  "attemptedCanonicalKeyA": "SYNTH-L4:B5-EQ:R20:ADMISSION:001",
+  "attemptedCanonicalKeyB": "SYNTH-L4:B5-EQ:R20:ADMISSION:001",
+  "bothAtCut": {
+    "strategy_schedules": [
+      {
+        "enabled": true,
+        "timezone": "UTC",
+        "cron_expr": "0 0 0 1 1 *",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2025-12-31T23:59:59+08:00",
+        "updated_at": "2026-09-10T21:11:12.005066+08:00",
+        "dedup_scope": "SCHEDULE_WINDOW",
+        "strategy_id": "b5-strategy",
+        "exchange_code": "oKx",
+        "schedule_type": "CRON",
+        "window_config": {},
+        "schedule_job_id": "b5",
+        "last_triggered_at": null
+      }
+    ],
+    "strategy_runs": [],
+    "orders": [],
+    "ordinary_place_authorities": [],
+    "b5_run_transitions": [],
+    "trades": [],
+    "ledger_entries": [],
+    "execution_intents": [],
+    "execution_receipts": [],
+    "tradeExecuted": []
+  },
+  "bothAtCutObservedEpochMillis": 1789045879365,
+  "aTriggered": true,
+  "bTriggered": false,
+  "aFailed": false,
+  "bFailed": false,
+  "final": {
+    "strategy_schedules": [
+      {
+        "enabled": true,
+        "timezone": "UTC",
+        "cron_expr": "0 0 0 1 1 *",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2025-12-31T23:59:59+08:00",
+        "updated_at": "2026-09-10T21:11:19.368825+08:00",
+        "dedup_scope": "SCHEDULE_WINDOW",
+        "strategy_id": "b5-strategy",
+        "exchange_code": "oKx",
+        "schedule_type": "CRON",
+        "window_config": {},
+        "schedule_job_id": "b5",
+        "last_triggered_at": "2026-01-01T08:00:00+08:00"
+      }
+    ],
+    "strategy_runs": [
+      {
+        "status": "RUNNING",
+        "trace_id": "SYNTH-L4:B5-EQ:R20:TRACE:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T21:11:19.368825+08:00",
+        "request_id": "SYNTH-L4:B5-EQ:R20:REQUEST:001",
+        "started_at": "2026-09-10T21:11:19.366601+08:00",
+        "finished_at": null,
+        "strategy_id": "b5-strategy",
+        "trigger_type": "SCHEDULER",
+        "error_message": null,
+        "exchange_code": "OKX",
+        "config_snapshot": {
+          "side": "BUY",
+          "price": "100",
+          "symbol": "BTC-USDT",
+          "quantity": "10",
+          "orderType": "LIMIT"
+        },
+        "strategy_run_id": "SYNTH-L4:B5-EQ:R20:RUN:001",
+        "admission_due_at": "2026-01-01T08:00:00+08:00",
+        "admission_schedule_id": "b5"
+      }
+    ],
+    "orders": [
+      {
+        "qty": 10.0,
+        "side": "BUY",
+        "type": "LIMIT",
+        "price": 100.0,
+        "venue": "OKX",
+        "reason": "ORDER_ACKED_BY_ADAPTER",
+        "status": "ACCEPTED",
+        "symbol": "BTC-USDT",
+        "version": 3,
+        "order_id": "SYNTH-L4:B5-EQ:R20:ORDER:001",
+        "trace_id": "SYNTH-L4:B5-EQ:R20:TRACE:001",
+        "dedup_key": "1:SYNTH-L4:B5-EQ:R20:CLIENT:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T21:11:19.429275+08:00",
+        "request_id": "SYNTH-L4:B5-EQ:R20:REQUEST:002",
+        "updated_at": "2026-09-10T21:11:19.491241+08:00",
+        "exchange_code": "OKX",
+        "client_order_id": "SYNTH-L4:B5-EQ:R20:CLIENT:001",
+        "strategy_run_id": "SYNTH-L4:B5-EQ:R20:RUN:001",
+        "exchange_order_id": "SYNTH-L4:B5-EQ:R20:VENUE:001",
+        "external_order_id": "SYNTH-L4:B5-EQ:R20:VENUE:001"
+      }
+    ],
+    "ordinary_place_authorities": [
+      {
+        "state": "MAY_HAVE_ESCAPED",
+        "order_id": "SYNTH-L4:B5-EQ:R20:ORDER:001",
+        "decided_at": "2026-09-10T21:11:19.474932+08:00"
+      }
+    ],
+    "b5_run_transitions": [
+      {
+        "new_status": "DISPATCHING",
+        "old_status": "CREATED"
+      },
+      {
+        "new_status": "RUNNING",
+        "old_status": "DISPATCHING"
+      }
+    ],
+    "trades": [],
+    "ledger_entries": [],
+    "execution_intents": [],
+    "execution_receipts": [],
+    "tradeExecuted": []
+  },
+  "venue": {
+    "code": "0",
+    "msg": "",
+    "data": [],
+    "pid": 43388,
+    "places": 1,
+    "cancels": 0,
+    "pendingCancel": false,
+    "placeRequests": 1,
+    "apiRequests": 2,
+    "order": {
+      "clOrdId": "SYNTH-L4:B5-EQ:R20:CLIENT:001",
+      "ordId": "SYNTH-L4:B5-EQ:R20:VENUE:001",
+      "instId": "BTC-USDT",
+      "state": "live",
+      "px": "100.00000000",
+      "sz": "10.00000000",
+      "accFillSz": "0",
+      "avgPx": "0",
+      "uTime": "1789045879486"
+    },
+    "fills": [],
+    "events": [
+      {
+        "sequence": 2,
+        "type": "PLACE_REQUEST_RECEIVED",
+        "nanoTime": 945353077027200,
+        "epochMillis": 1789045879478
+      },
+      {
+        "sequence": 3,
+        "type": "PLACE_ACCEPTED",
+        "nanoTime": 945353084853800,
+        "epochMillis": 1789045879486
+      },
+      {
+        "sequence": 4,
+        "type": "PLACE_ACK_GENERATED",
+        "nanoTime": 945353084869300,
+        "epochMillis": 1789045879486
+      },
+      {
+        "sequence": 5,
+        "type": "PLACE_RESPONSE_DELIVERED",
+        "nanoTime": 945353085301700,
+        "epochMillis": 1789045879486
+      }
+    ]
+  },
+  "finalObservedEpochMillis": 1789045879698,
+  "logicalDispatchCount": 1,
+  "orderCount": 1,
+  "result": "PASS"
+}

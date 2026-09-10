@@ -34,6 +34,7 @@ import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewExcep
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewSeverity;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewState;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewTransitionResult;
+import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewStateMachine;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -47,6 +48,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.io.IOException;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,6 +64,9 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.junit.jupiter.api.Assertions;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 
 /** GateV-2 Controller mappings、可信 actor、统一错误与 safety contract 回归。 */
 class ValidationReviewControllerTest {
@@ -94,7 +99,7 @@ class ValidationReviewControllerTest {
                 ValidationReviewState.ACKNOWLEDGED, 1L, 11L, "idem", "hash", "req", "trc",
                 JsonNodeFactory.instance.objectNode(), NOW
         );
-        ValidationReviewCase acknowledged = new com.guidinglight.nexusquant.validationreview.domain.ValidationReviewStateMachine()
+        ValidationReviewCase acknowledged = new ValidationReviewStateMachine()
                 .transition(reviewCase, ValidationReviewState.ACKNOWLEDGED, 11L, NOW);
         transitionResult = new ValidationReviewTransitionResult(acknowledged, event, false);
 
@@ -188,7 +193,7 @@ class ValidationReviewControllerTest {
 
         ArgumentCaptor<ValidationReviewActor> actor = ArgumentCaptor.forClass(ValidationReviewActor.class);
         ArgumentCaptor<ValidationReviewAction> action = ArgumentCaptor.forClass(ValidationReviewAction.class);
-        verify(operationsService, org.mockito.Mockito.times(4)).transition(
+        verify(operationsService, Mockito.times(4)).transition(
                 actor.capture(), any(), action.capture(), any(), any(), any(), any(), anyString(), anyString()
         );
         actor.getAllValues().forEach(value -> assertEquals(11L, value.userId()));
@@ -237,14 +242,14 @@ class ValidationReviewControllerTest {
                 .andExpect(jsonPath("$.traceId").value("trc-malformed"));
 
         verify(operationalAuditService).recordRejected(
-                org.mockito.ArgumentMatchers.eq(CASE_ID),
-                org.mockito.ArgumentMatchers.eq(ValidationReviewAction.ACKNOWLEDGE),
-                org.mockito.ArgumentMatchers.isNull(),
-                org.mockito.ArgumentMatchers.eq(ValidationReviewState.ACKNOWLEDGED),
-                org.mockito.ArgumentMatchers.eq(11L),
+                ArgumentMatchers.eq(CASE_ID),
+                ArgumentMatchers.eq(ValidationReviewAction.ACKNOWLEDGE),
+                ArgumentMatchers.isNull(),
+                ArgumentMatchers.eq(ValidationReviewState.ACKNOWLEDGED),
+                ArgumentMatchers.eq(11L),
                 anyString(),
-                org.mockito.ArgumentMatchers.eq("trc-malformed"),
-                org.mockito.ArgumentMatchers.eq("REVIEW_REQUEST_INVALID")
+                ArgumentMatchers.eq("trc-malformed"),
+                ArgumentMatchers.eq("REVIEW_REQUEST_INVALID")
         );
     }
 
@@ -268,7 +273,7 @@ class ValidationReviewControllerTest {
                 .map(value -> value.toLowerCase(Locale.ROOT))
                 .reduce("", (left, right) -> left + "," + right);
         for (String required : List.of("acknowledge", "escalate", "resolve", "close")) {
-            org.junit.jupiter.api.Assertions.assertTrue(routes.contains(required));
+            Assertions.assertTrue(routes.contains(required));
         }
         for (String forbidden : List.of("reopen", "approve", "authorize", "execute", "trade", "delete")) {
             assertFalse(routes.contains(forbidden));
@@ -301,7 +306,7 @@ class ValidationReviewControllerTest {
                 HttpServletRequest request,
                 HttpServletResponse response,
                 FilterChain filterChain
-        ) throws ServletException, java.io.IOException {
+        ) throws ServletException, IOException {
             String traceId = TraceIdContext.putOrCreate(request.getHeader(TraceIdContext.TRACE_ID_HEADER));
             request.setAttribute(TraceIdContext.TRACE_ID_REQUEST_ATTRIBUTE, traceId);
             response.setHeader(TraceIdContext.TRACE_ID_HEADER, traceId);

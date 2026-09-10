@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.time.Instant;
 
 import org.springframework.stereotype.Component;
 
@@ -37,7 +38,7 @@ public class AdapterHistoricalKlineProvider implements HistoricalKlineProvider {
     }
 
     @Override
-    public List<HistoricalBar> fetchBars(MarketdataIngestionJob job, java.time.Instant startTime, java.time.Instant endTime) {
+    public List<HistoricalBar> fetchBars(MarketdataIngestionJob job, Instant startTime, Instant endTime) {
         HistoricalKlineAdapter adapter = adapters.get(job.exchangeCode());
         if (adapter == null) {
             throw new IllegalArgumentException("historical kline adapter not found: " + job.exchangeCode());

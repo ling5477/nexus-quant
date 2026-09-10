@@ -4,6 +4,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority;
 import com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSet;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionState;
+import java.util.Objects;
 
 /**
  * 重新解析 account、credential、release、risk 与 runtime immutable authority 的 server-side port。
@@ -28,14 +29,14 @@ public interface PilotScopeAuthorityResolver {
     ) {
         public ResolvedMinimalAuthority {
             if (ownerId <= 0) throw new IllegalArgumentException("ownerId must be positive");
-            java.util.Objects.requireNonNull(operatorPilotAuthority, "operatorPilotAuthority must not be null");
+            Objects.requireNonNull(operatorPilotAuthority, "operatorPilotAuthority must not be null");
         }
     }
 
     record ResolvedAuthority(RiskLimitSet riskLimitSet, ResolvedScopeBindings scopeBindings) {
         public ResolvedAuthority {
-            java.util.Objects.requireNonNull(riskLimitSet, "riskLimitSet must not be null");
-            java.util.Objects.requireNonNull(scopeBindings, "scopeBindings must not be null");
+            Objects.requireNonNull(riskLimitSet, "riskLimitSet must not be null");
+            Objects.requireNonNull(scopeBindings, "scopeBindings must not be null");
         }
     }
 

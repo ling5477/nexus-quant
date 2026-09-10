@@ -19,6 +19,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.sql.Connection;
+import java.sql.Types;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -243,7 +245,7 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
             if (value.authorityType() == LiveSessionAuthorityType.STRATEGY) {
                 statement.setLong(index++, value.releaseAdmissionRevision());
             } else {
-                statement.setNull(index++, java.sql.Types.BIGINT);
+                statement.setNull(index++, Types.BIGINT);
             }
             statement.setObject(index++, value.riskLimitSetId());
             statement.setString(index++, value.riskLimitSetDigest());
@@ -423,7 +425,7 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
         );
     }
 
-    private static Array textArray(java.sql.Connection connection, List<String> values) throws SQLException {
+    private static Array textArray(Connection connection, List<String> values) throws SQLException {
         return connection.createArrayOf("TEXT", values.toArray(String[]::new));
     }
 

@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.time.Duration;
 
 import org.junit.jupiter.api.Test;
 
@@ -216,7 +217,7 @@ class PublicMarketDataOutboundPolicyTest {
                 PublicMarketDataEndpointCategory.TICKER,
                 PublicMarketDataOutboundErrorCategory.NONE,
                 200,
-                java.time.Duration.ofSeconds(3),
+                Duration.ofSeconds(3),
                 1,
                 PublicMarketDataQualitySummary.DataOrigin.FAKE_SERVER,
                 1,
@@ -230,7 +231,7 @@ class PublicMarketDataOutboundPolicyTest {
                 PublicMarketDataEndpointCategory.OHLCV,
                 PublicMarketDataOutboundErrorCategory.GAP,
                 200,
-                java.time.Duration.ofMillis(50),
+                Duration.ofMillis(50),
                 1,
                 PublicMarketDataQualitySummary.DataOrigin.FAKE_SERVER,
                 1,

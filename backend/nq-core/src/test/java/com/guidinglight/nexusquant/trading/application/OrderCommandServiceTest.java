@@ -2,23 +2,42 @@ package com.guidinglight.nexusquant.trading.application;
 
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
 import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
-import com.guidinglight.nexusquant.contracts.model.*;
+import com.guidinglight.nexusquant.contracts.model.OrderSide;
+import com.guidinglight.nexusquant.contracts.model.OrderStatus;
+import com.guidinglight.nexusquant.contracts.model.OrderType;
+import com.guidinglight.nexusquant.contracts.model.RiskDecision;
+import com.guidinglight.nexusquant.contracts.model.RiskSeverity;
 import com.guidinglight.nexusquant.core.service.port.RiskEventRepository;
 import com.guidinglight.nexusquant.risk.model.RiskContext;
 import com.guidinglight.nexusquant.risk.model.RiskDecisionResult;
 import com.guidinglight.nexusquant.risk.service.RiskGate;
-import com.guidinglight.nexusquant.trading.application.port.*;
+import com.guidinglight.nexusquant.trading.application.port.TradingCancelGatewayResult;
+import com.guidinglight.nexusquant.trading.application.port.TradingGatewayFailure;
+import com.guidinglight.nexusquant.trading.application.port.TradingGatewayResultCategory;
+import com.guidinglight.nexusquant.trading.application.port.TradingOrderStatusSnapshot;
+import com.guidinglight.nexusquant.trading.application.port.TradingPlaceGatewayResult;
+import com.guidinglight.nexusquant.trading.application.port.TradingVenueGateway;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
+import com.guidinglight.nexusquant.trading.domain.port.OrdinaryPlaceAuthorityRepository;
 import com.guidinglight.nexusquant.trading.domain.state.InMemoryOrderStateMachine;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * OrderCommandServiceTest 覆盖 PRE-1 之后的 trading anti-corruption 行为。
@@ -28,6 +47,18 @@ import static org.junit.jupiter.api.Assertions.*;
  * 同时继续保持幂等、状态推进与 accepted/cancel 回执落库行为不变。
  */
 class OrderCommandServiceTest {
+
+    @Test
+    void genericCommandCannotInventStrategyBinding() {
+        var orders = new InMemoryOrderRepository();
+        var venue = new RecordingTradingVenueGateway();
+        var service = createService(orders, new RecordingAuditLogRepository(), venue);
+        var request = new PlaceOrderRequest(1001L, "unadmitted-run", "PAPER", "strategy-client", "BTC-USDT",
+                OrderSide.BUY, OrderType.MARKET, null, new BigDecimal("0.01"), "strategy-boundary");
+        assertThrows(IllegalArgumentException.class, () -> service.placeOrder(request));
+        assertEquals(0, orders.insertCount());
+        assertEquals(0, venue.placeInvocationCount());
+    }
 
     /**
      * 验证 placeOrder 会经由内部 gateway，并在成功回执后把 external_order_id 写回订单快照。
@@ -256,7 +287,8 @@ class OrderCommandServiceTest {
                 new AlwaysAllowRiskGate(),
                 auditLogRepository,
                 new NoopRiskEventRepository(),
-                new RecordingEventPublisherPort()
+                new RecordingEventPublisherPort(),
+                unusedPlaceAuthority()
         );
         return createService(orderRepository, auditLogRepository, tradingVenueGateway, writeService);
     }
@@ -279,7 +311,7 @@ class OrderCommandServiceTest {
     private PlaceOrderRequest createRequest(String clientOrderId) {
         return new PlaceOrderRequest(
                 1001L,
-                "run-1001",
+                null,
                 "PAPER",
                 clientOrderId,
                 "BTC-USDT",
@@ -483,6 +515,15 @@ class OrderCommandServiceTest {
         }
     }
 
+    /** 本类仅测 PAPER；意外进入 ordinary authority 必须失败。 */
+    private static OrdinaryPlaceAuthorityRepository unusedPlaceAuthority() {
+        return new OrdinaryPlaceAuthorityRepository() {
+            public void insertOrder(OrderRecord o, Instant time) { throw new AssertionError("unexpected ordinary insert"); }
+            public boolean arm(OrderRecord o) { throw new AssertionError("unexpected ordinary arm"); }
+            public boolean revoke(OrderRecord o) { throw new AssertionError("unexpected ordinary revoke"); }
+        };
+    }
+
     private static final class FailingFinalizeOrderCommandWriteService extends OrderCommandWriteService {
 
         private FailingFinalizeOrderCommandWriteService(
@@ -499,7 +540,8 @@ class OrderCommandServiceTest {
                     riskGate,
                     auditLogRepository,
                     riskEventRepository,
-                    eventPublisherPort
+                    eventPublisherPort,
+                    unusedPlaceAuthority()
             );
         }
 

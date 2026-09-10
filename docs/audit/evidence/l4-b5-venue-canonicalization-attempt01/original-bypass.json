@@ -1,0 +1,29 @@
+{
+  "status": "FAIL",
+  "finding": "P1 / AUTHORITY_BYPASS_PATH",
+  "observedMarker": "LOWERCASE_PROBE venue=okx status=ACCEPTED authorities=0 placeRequests=1",
+  "rawArtifacts": [
+    {
+      "path": "backend/nq-app/target/b5-venue-remediation/review-attempt01/b5-independent-targeted.log",
+      "sha256": "da296e471fa1734ba11c3f883310bef3208bb41cadd97d1bb94a5376b62b2ec2"
+    },
+    {
+      "path": "backend/nq-app/target/b5-venue-remediation/review-attempt01/lowercase-authority-probe.log",
+      "sha256": "587d9cbb5df31c45b4a463167e059c0b37d4a64f94c3cc70849b2a203fe19642"
+    },
+    {
+      "path": "backend/nq-app/target/b5-venue-remediation/review-attempt01/LowercaseVenueAuthorityProbe.java",
+      "sha256": "4f97f24da0889cdd9a15a7a19e795c4529eac8c4da824e492af7a31b91162715"
+    },
+    {
+      "path": "backend/nq-app/target/b5-venue-remediation/review-attempt01/review-end.json",
+      "sha256": "b916029577df1bf1f46a27037edcb0eec79946705fdb8fd91c589e0a2d5ee6b0"
+    },
+    {
+      "path": "backend/nq-app/target/b5-venue-remediation/review-attempt01/review-start.json",
+      "sha256": "b916029577df1bf1f46a27037edcb0eec79946705fdb8fd91c589e0a2d5ee6b0"
+    }
+  ],
+  "reviewText": "review-attempt01-original.md",
+  "preservation": "Original raw artifacts retained byte-for-byte in target; preceding review text formatting normalized, verdict and finding unchanged."
+}

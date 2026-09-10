@@ -1,0 +1,38 @@
+{
+  "command": [
+    "D:/Tool/Maven/apache-maven-3.9.12/bin/mvn.cmd",
+    "-o",
+    "-f",
+    "backend/pom.xml",
+    "-pl",
+    "nq-app",
+    "-am",
+    "test",
+    "-Dsurefire.failIfNoSpecifiedTests=false",
+    "-Dtest=B1RealProcessProofTest#v49AffectedTimeoutAndLostAckRegression,B3RealProcessProofTest#v49AffectedKillAndRestartRegression",
+    "-Dnq.b1=true",
+    "-Dnq.b3=true"
+  ],
+  "exit": 0,
+  "seconds": 95.37116503715515,
+  "logSha256": "9a6847e1394dcd9233525831f9751941c015b4c8cba149cc3e09421e17d7cf05",
+  "logEncoding": "gb18030",
+  "testResults": [
+    [
+      "1",
+      "0",
+      "0",
+      "0",
+      "com.guidinglight.nexusquant.app.smoke.B1RealProcessProofTest"
+    ],
+    [
+      "1",
+      "0",
+      "0",
+      "0",
+      "com.guidinglight.nexusquant.app.smoke.B3RealProcessProofTest"
+    ]
+  ],
+  "containersStarted": 3,
+  "containersRemoved": 3
+}

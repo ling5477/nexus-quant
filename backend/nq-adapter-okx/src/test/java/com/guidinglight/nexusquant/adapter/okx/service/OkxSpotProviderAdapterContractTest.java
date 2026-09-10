@@ -40,6 +40,7 @@ import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntent;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentCanonicalEncoder;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentDraft;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentState;
+import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderRequests;
 
 import java.lang.reflect.RecordComponent;
 import java.lang.reflect.Modifier;
@@ -54,6 +55,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 
@@ -453,7 +455,7 @@ class OkxSpotProviderAdapterContractTest {
     void shouldFailClosedOnOversizeDuplicateAndInconsistentOrderFacts() {
         FakeTransport fake = new FakeTransport();
         SpotExecutionProviderPort provider = provider(fake);
-        List<RawFill> oversizedFills = java.util.stream.IntStream.range(0, 101)
+        List<RawFill> oversizedFills = IntStream.range(0, 101)
                 .mapToObj(index -> rawFill("trade-" + index))
                 .toList();
         fake.placeResponse = new PlaceResponse(
@@ -509,7 +511,7 @@ class OkxSpotProviderAdapterContractTest {
 
         fake.fillResponse = new FillResponse(
                 metadata(OkxSpotProviderOperation.READ_FILLS, 512),
-                java.util.stream.IntStream.range(0, 101)
+                IntStream.range(0, 101)
                         .mapToObj(index -> rawFill("trade-" + index))
                         .toList(),
                 true,
@@ -643,8 +645,7 @@ class OkxSpotProviderAdapterContractTest {
     private static OrderQuery orderQuery(RequestContext context) {
         return new OrderQuery(
                 providerClientOrderId(),
-                com.guidinglight.nexusquant.livecontrol.execution.application.provider
-                        .SpotProviderRequests.Venue.OKX_SPOT,
+                SpotProviderRequests.Venue.OKX_SPOT,
                 "BTC-USDT",
                 context
         );

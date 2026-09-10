@@ -1,0 +1,92 @@
+{
+  "scenario": "SCHEMA_BINDING_DIAGNOSTIC",
+  "productionDispatchProof": false,
+  "bothTransactionsCommitted": true,
+  "database": "SYNTH-L4:B5-LC:R03:DATABASE:001",
+  "postgres": "16.15 (Debian 16.15-1.pgdg13+2)",
+  "flyway": "50",
+  "strategy_runs": [
+    {
+      "status": "CREATED",
+      "trace_id": "SYNTH-L4:B5-LC:R03:TRACE:001",
+      "trade_env": "SIM",
+      "account_id": 1,
+      "created_at": "2026-09-10T16:51:45.901377+08:00",
+      "request_id": "SYNTH-L4:B5-LC:R03:REQUEST:001",
+      "started_at": "2026-09-10T16:51:45.88667+08:00",
+      "finished_at": null,
+      "strategy_id": "b5-strategy",
+      "trigger_type": "SCHEDULER",
+      "error_message": null,
+      "exchange_code": "OKX",
+      "config_snapshot": {},
+      "strategy_run_id": "SYNTH-L4:B5-LC:R03:RUN:001",
+      "admission_due_at": "2026-01-01T08:00:00+08:00",
+      "admission_schedule_id": "b5"
+    }
+  ],
+  "orders": [
+    {
+      "qty": 1.0,
+      "side": "BUY",
+      "type": "LIMIT",
+      "price": 100.0,
+      "venue": "OKX",
+      "reason": "ORDER_CREATED",
+      "status": "NEW",
+      "symbol": "BTC-USDT",
+      "version": 0,
+      "order_id": "SYNTH-L4:B5-LC:R03:ORDER:001",
+      "trace_id": "SYNTH-L4:B5-LC:R03:TRACE:001",
+      "dedup_key": "1:SYNTH-L4:B5-LC:R03:CLIENT:001",
+      "trade_env": "SIM",
+      "account_id": 1,
+      "created_at": "2026-09-10T16:51:45.914182+08:00",
+      "request_id": "SYNTH-L4:B5-LC:R03:REQUEST:001",
+      "updated_at": "2026-09-10T16:51:45.914182+08:00",
+      "exchange_code": "OKX",
+      "client_order_id": "SYNTH-L4:B5-LC:R03:CLIENT:001",
+      "strategy_run_id": "SYNTH-L4:B5-LC:R03:RUN:001",
+      "exchange_order_id": null,
+      "external_order_id": null
+    },
+    {
+      "qty": 1.0,
+      "side": "BUY",
+      "type": "LIMIT",
+      "price": 100.0,
+      "venue": "OKX",
+      "reason": "ORDER_CREATED",
+      "status": "NEW",
+      "symbol": "BTC-USDT",
+      "version": 0,
+      "order_id": "SYNTH-L4:B5-LC:R03:ORDER:002",
+      "trace_id": "SYNTH-L4:B5-LC:R03:TRACE:001",
+      "dedup_key": "1:SYNTH-L4:B5-LC:R03:CLIENT:002",
+      "trade_env": "SIM",
+      "account_id": 1,
+      "created_at": "2026-09-10T16:51:45.914182+08:00",
+      "request_id": "SYNTH-L4:B5-LC:R03:REQUEST:001",
+      "updated_at": "2026-09-10T16:51:45.914182+08:00",
+      "exchange_code": "OKX",
+      "client_order_id": "SYNTH-L4:B5-LC:R03:CLIENT:002",
+      "strategy_run_id": "SYNTH-L4:B5-LC:R03:RUN:001",
+      "exchange_order_id": null,
+      "external_order_id": null
+    }
+  ],
+  "ordinary_place_authorities": [
+    {
+      "state": "NOT_ARMED",
+      "order_id": "SYNTH-L4:B5-LC:R03:ORDER:002",
+      "decided_at": null
+    },
+    {
+      "state": "NOT_ARMED",
+      "order_id": "SYNTH-L4:B5-LC:R03:ORDER:001",
+      "decided_at": null
+    }
+  ],
+  "sameClientConflictSqlState": "23505",
+  "sameTransactionReadSqlState": "25P02"
+}

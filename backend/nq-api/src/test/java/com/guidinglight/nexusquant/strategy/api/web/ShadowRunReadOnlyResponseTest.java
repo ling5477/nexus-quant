@@ -20,6 +20,7 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunEventType;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunSnapshot;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunSnapshotType;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
+import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunListResult;
 
 import java.time.Instant;
 import java.util.List;
@@ -40,7 +41,7 @@ class ShadowRunReadOnlyResponseTest {
     @Test
     void shouldSerializeReadOnlyDtosWithoutForbiddenSensitiveFields() throws Exception {
         String body = OBJECT_MAPPER.writeValueAsString(List.of(
-                ShadowRunListResponse.from(new com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunListResult(
+                ShadowRunListResponse.from(new ShadowRunListResult(
                         List.of(run()),
                         50,
                         0,

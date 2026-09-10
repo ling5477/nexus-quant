@@ -14,6 +14,7 @@ import com.guidinglight.nexusquant.livecontrol.application.port.LiveControlAutho
 import com.guidinglight.nexusquant.livecontrol.domain.port.LiveControlRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.OperatorPilotAuthorityRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotPrePlaceRecoveryRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionApprovalScopeEncoder;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -260,8 +261,8 @@ public class LiveSessionControlService {
                 command.reason(), command.occurredAt(), command.expiresAt()
         );
         LiveSessionState target = command.decision() == OperatorApproval.Decision.APPROVED
-                ? stateMachine.transition(current.state(), com.guidinglight.nexusquant.livecontrol.domain.LiveSessionCommand.APPROVE)
-                : stateMachine.transition(current.state(), com.guidinglight.nexusquant.livecontrol.domain.LiveSessionCommand.REJECT);
+                ? stateMachine.transition(current.state(), LiveSessionCommand.APPROVE)
+                : stateMachine.transition(current.state(), LiveSessionCommand.REJECT);
         LiveSession updated = current.recordApprovalDecision(target, command.occurredAt());
         repository.appendApproval(approval);
         if (!repository.compareAndSetSession(current, updated)) {
@@ -339,7 +340,7 @@ public class LiveSessionControlService {
                 command == LiveSessionCommand.APPROVE
                         ? "MINIMAL_PILOT_INTERNAL_APPROVAL" : "MINIMAL_PILOT_" + command.name(),
                 idempotencyKey,
-                com.guidinglight.nexusquant.livecontrol.domain.LiveSessionApprovalScopeEncoder.digest(current),
+                LiveSessionApprovalScopeEncoder.digest(current),
                 occurredAt
         ));
         return updated;
@@ -397,7 +398,7 @@ public class LiveSessionControlService {
                     current, target, "MINIMAL_PILOT_" + command.name(), actor.userId(),
                     requestId, traceId, "PRE_PLACE_REGENERATION_" + command.name(),
                     idempotencyKey,
-                    com.guidinglight.nexusquant.livecontrol.domain.LiveSessionApprovalScopeEncoder.digest(current),
+                    LiveSessionApprovalScopeEncoder.digest(current),
                     occurredAt));
             current = updated;
         }
@@ -456,7 +457,7 @@ public class LiveSessionControlService {
                     current, target, "MINIMAL_PILOT_" + command.name(), actor.userId(),
                     requestId, traceId, "POST_EXECUTION_RECONCILIATION_" + command.name(),
                     idempotencyKey,
-                    com.guidinglight.nexusquant.livecontrol.domain.LiveSessionApprovalScopeEncoder.digest(current),
+                    LiveSessionApprovalScopeEncoder.digest(current),
                     occurredAt));
             current = updated;
         }
@@ -515,7 +516,7 @@ public class LiveSessionControlService {
         repository.appendSessionEvent(event(
                 current, target, "MINIMAL_PILOT_REJECT", actor.userId(), requestId, traceId,
                 "PRE_PLACE_PREPARATION_EXPIRED", idempotencyKey,
-                com.guidinglight.nexusquant.livecontrol.domain.LiveSessionApprovalScopeEncoder.digest(current),
+                LiveSessionApprovalScopeEncoder.digest(current),
                 occurredAt));
         operatorAuthorities.close(
                 current.operatorPilotAuthorityId(), OperatorPilotAuthority.Status.EXPIRED, occurredAt);

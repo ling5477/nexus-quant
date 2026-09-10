@@ -13,9 +13,16 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.time.Duration;
 import java.util.UUID;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** 顺序运行真实时序矩阵；首个失败退出，Controller 只读业务表。 */
 @EnabledIfSystemProperty(named = "nq.b2", matches = "true")
@@ -25,12 +32,24 @@ class B2RealProcessProofTest {
     private enum Scenario { ZERO_CANCEL, PARTIAL_BEFORE_CANCEL, FILL_DURING_CANCEL,
         LATE_FULL, STALE_CANCEL, STALE_PLACE, RESTART_FULL, MULTI_PARTIAL }
 
+    @Test void v49AffectedOccAndPerFillRegression() throws Exception {
+        Path root = B0Processes.root().resolve("backend/nq-app/target/b2-v49/" + UUID.randomUUID());
+        Files.createDirectories(root);
+        System.out.println("B2_V49_ROOT " + root);
+        try (var pg = B0Processes.Pg.start()) {
+            for (String environment : List.of("SIM", "LIVE")) {
+                scenario(pg, root.resolve(environment + "-STALE_PLACE"), Scenario.STALE_PLACE, environment, 1);
+                scenario(pg, root.resolve(environment + "-MULTI_PARTIAL"), Scenario.MULTI_PARTIAL, environment, 1);
+            }
+        }
+    }
+
     @Test void provesCompleteCancelFillOrderingMatrix() throws Exception {
         Path directory = B0Processes.root().resolve("backend/nq-app/target/b2-qualification/" + UUID.randomUUID());
         Files.createDirectories(directory);
         System.out.println("B2_MATRIX_CONTROLLER pid=" + ProcessHandle.current().pid() + " evidence=" + directory);
         try (var postgres = B0Processes.Pg.start()) {
-            for (String environment : java.util.List.of("SIM", "LIVE")) {
+            for (String environment : List.of("SIM", "LIVE")) {
                 for (int repeat = 1; repeat <= 3; repeat++) {
                     for (Scenario scenario : Scenario.values()) {
                         scenario(postgres, directory.resolve(environment + "-" + scenario + "-" + repeat), scenario, environment, repeat);
@@ -43,7 +62,7 @@ class B2RealProcessProofTest {
     private void scenario(B0Processes.Pg postgres, Path directory, Scenario scenario,
                           String environment, int repeat) throws Exception {
         Files.createDirectories(directory);
-        boolean full = java.util.Set.of(Scenario.LATE_FULL, Scenario.STALE_CANCEL, Scenario.STALE_PLACE, Scenario.RESTART_FULL).contains(scenario);
+        boolean full = Set.of(Scenario.LATE_FULL, Scenario.STALE_CANCEL, Scenario.STALE_PLACE, Scenario.RESTART_FULL).contains(scenario);
         String executed = full ? "10" : scenario == Scenario.ZERO_CANCEL ? "0" : scenario == Scenario.MULTI_PARTIAL ? "6" : "4";
         var proof = mapper.createObjectNode().put("scenario", scenario.name()).put("repeat", repeat)
                 .put("controllerPid", ProcessHandle.current().pid()).put("orderEnvironment", environment);
@@ -60,9 +79,9 @@ class B2RealProcessProofTest {
                 nq.ready(); proof.put("nqPid", nq.process.pid());
                 assertNotEquals(nq.process.pid(), venue.process.pid());
                 assertNotEquals(ProcessHandle.current().pid(), nq.process.pid());
-                assertEquals("48", value(reader, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
+                assertEquals("51", value(reader, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
                 assertEquals(B0Fixture.READER, value(reader, "SELECT current_user"));
-                proof.put("postgres", value(reader, "SHOW server_version")).put("schema", "V48");
+                proof.put("postgres", value(reader, "SHOW server_version")).put("schema", "V50");
                 assertTrue(proof.path("postgres").asText().startsWith("16."));
                 String place = "LIVE".equals(environment) ? "PLACE_B2_LIVE" : "PLACE_B2";
                 if (scenario == Scenario.STALE_PLACE) {
@@ -229,7 +248,7 @@ class B2RealProcessProofTest {
                     assertEquals("USDT", rows.getString(5)); assertFalse(rows.next());
                 }
             }
-            var expected = new java.util.HashMap<String, BigDecimal>();
+            var expected = new HashMap<String, BigDecimal>();
             BigDecimal amount = new BigDecimal(fill.path("fillPx").asText()).multiply(new BigDecimal(fill.path("fillSz").asText()));
             BigDecimal fee = new BigDecimal(fill.path("fee").asText()).abs();
             expected.put(tradeId + ":LEDGER:1", amount.negate()); expected.put(tradeId + ":LEDGER:2", amount);

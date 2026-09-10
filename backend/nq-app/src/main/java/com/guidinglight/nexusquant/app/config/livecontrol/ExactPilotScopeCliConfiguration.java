@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +77,7 @@ public class ExactPilotScopeCliConfiguration {
                 throw new IllegalArgumentException("exact pilot input file is invalid");
             }
             return value.toRealPath(LinkOption.NOFOLLOW_LINKS);
-        } catch (java.io.IOException exception) {
+        } catch (IOException exception) {
             throw new IllegalArgumentException("exact pilot input file is unavailable", exception);
         }
     }

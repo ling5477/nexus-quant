@@ -16,6 +16,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.port.LiveControlRepository
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import java.time.Duration;
 
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +36,7 @@ class CredentialScopedOkxSpotProviderTransportTest {
         var expected = new OkxSpotProviderTransport.ClockResponse(
                 new OkxSpotProviderTransport.ResponseMetadata(
                         OkxSpotProviderOperation.READ_CLOCK, 64, null, Instant.EPOCH),
-                Instant.EPOCH, Instant.EPOCH, java.time.Duration.ZERO, null);
+                Instant.EPOCH, Instant.EPOCH, Duration.ZERO, null);
         when(sessions.findSession(sessionId)).thenReturn(Optional.of(session));
         when(realTransport.readClock(command)).thenReturn(expected);
         var transport = new CredentialScopedOkxSpotProviderTransport(sessions, credentials, realTransport);

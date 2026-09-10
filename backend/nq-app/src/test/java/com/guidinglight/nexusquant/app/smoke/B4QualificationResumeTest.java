@@ -9,6 +9,9 @@ import java.nio.file.*;
 import java.sql.Connection;
 import java.time.Duration;
 import java.util.UUID;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import static org.junit.jupiter.api.Assertions.*;
@@ -51,7 +54,7 @@ class B4QualificationResumeTest {
         int run = 0;
         try (var pg = B0Processes.Pg.start()) {
             for (String environment : new String[]{"SIM", "LIVE"}) for (Row row : Row.values()) {
-                var excluded = java.util.List.of(System.getProperty("nq.b4.resume.exclude", "").split(","));
+                var excluded = List.of(System.getProperty("nq.b4.resume.exclude", "").split(","));
                 if (excluded.contains(row.name()) || excluded.contains(environment + ":" + row.name())) continue;
                 if (!System.getProperty("nq.b4.resume.row", "ALL").equals("ALL")
                         && !row.name().equals(System.getProperty("nq.b4.resume.row"))) continue;
@@ -78,14 +81,14 @@ class B4QualificationResumeTest {
                     var env = B0Processes.cleanEnvironment(); env.put("NQ_B0_DB", fixture.url());
                     env.put("NQ_B0_VENUE", endpoint); env.put("NQ_B0_PROFILE", "b0-test");
                     fixture.initialize(true, endpoint, env, true);
-                    var firstEnv = new java.util.LinkedHashMap<>(env); firstEnv.put("NQ_B0_DB", proxied);
+                    var firstEnv = new LinkedHashMap<>(env); firstEnv.put("NQ_B0_DB", proxied);
                     proof.put("database", database).put("venuePid", venue.process.pid()).put("proxyPid", proxy.process.pid());
                     try (var reader = fixture.checker();
                          var nq = new B0Processes.Child(B0NqProcessMain.class, directory, "nq-a", firstEnv)) {
                         nq.ready(); proof.put("nqPid", nq.process.pid());
                         proof.put("postgres", value(reader, "SHOW server_version")).put("schema", value(reader,
                                 "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
-                        assertTrue(proof.path("postgres").asText().startsWith("16.")); assertEquals("48", proof.path("schema").asText());
+                        assertTrue(proof.path("postgres").asText().startsWith("16.")); assertEquals("50", proof.path("schema").asText());
                         assertNotEquals(nq.process.pid(), venue.process.pid());
                         String place = environment.equals("SIM") ? "PLACE_B2" : "PLACE_B2_LIVE";
                         if (row == Row.HEALTHY) {
@@ -108,7 +111,7 @@ class B4QualificationResumeTest {
                                 if (row.fault.endsWith("PAUSE")) assertTrue(nq.process.isAlive(), "must kill a still-running NQ");
                                 proof.set("beforeKill", snapshot(reader));
                             } else {
-                                assertTrue(nq.process.waitFor(25, java.util.concurrent.TimeUnit.SECONDS), "fault must leave caller without success");
+                                assertTrue(nq.process.waitFor(25, TimeUnit.SECONDS), "fault must leave caller without success");
                                 String log = Files.readString(nq.log);
                                 assertTrue(log.contains(row.fault.equals("REJECT") ? "B4_DEFERRED_COMMIT_REJECTION" : "B4_EXPLICIT_ROLLBACK_BEFORE_COMMIT"));
                             }

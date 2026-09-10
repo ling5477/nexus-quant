@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -59,7 +60,7 @@ class OkxRealReadonlyPermissionProbePortTest {
         assertEquals("GET", observedRequest.get().operation().method());
         assertEquals("/api/v5/account/config", observedRequest.get().pathWithQuery());
         assertEquals("203.0.113.8", observedRequest.get().expectedIp());
-        assertTrue(java.util.Arrays.stream(ExchangeCredentialPermissionProbeRequest.class.getRecordComponents())
+        assertTrue(Arrays.stream(ExchangeCredentialPermissionProbeRequest.class.getRecordComponents())
                 .noneMatch(component -> component.getName().toLowerCase().contains("payload")));
     }
 

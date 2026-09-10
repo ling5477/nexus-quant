@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.trading.domain;
 
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import java.math.BigDecimal;
+import java.util.Set;
 
 /**
  * OrderRecord 表示订单在持久化层的完整快照。
@@ -46,6 +47,11 @@ public record OrderRecord(
         long version
 ) {
 
+    /** 保留历史原始持久值用于事实校验，所有交易分支使用解析后的身份，未知值拒绝。 */
+    public TradingVenue canonicalVenue() {
+        return TradingVenue.parse(venue);
+    }
+
     /** 新订单及既有测试构造入口从代际零开始；持久化读取必须使用完整构造器。 */
     public OrderRecord(String orderId, Long accountId, String strategyRunId, String venue, String symbol,
             String clientOrderId, String side, String type, BigDecimal price, BigDecimal qty,
@@ -79,7 +85,7 @@ public record OrderRecord(
         if (version < 0) {
             throw new IllegalArgumentException("order version must be nonnegative");
         }
-        if (!java.util.Set.of("SIM", "LIVE").contains(tradeEnv)) {
+        if (!Set.of("SIM", "LIVE").contains(tradeEnv)) {
             throw new IllegalArgumentException("tradeEnv must be SIM or LIVE");
         }
     }

@@ -37,7 +37,7 @@ export const SCHEDULE_TYPE_OPTIONS = ['CRON'].map((value) => ({label: value, val
 
 export const SCHEDULE_STATUS_OPTIONS = ['ENABLED', 'DISABLED'].map((value) => ({label: value, value}));
 
-export const RUN_STATUS_OPTIONS = ['CREATED', 'DISPATCHING', 'RUNNING', 'FAILED'].map((value) => ({
+export const RUN_STATUS_OPTIONS = ['CREATED', 'DISPATCHING', 'RUNNING', 'SUCCEEDED', 'FAILED'].map((value) => ({
     label: value,
     value,
 }));

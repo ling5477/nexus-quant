@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -17,7 +18,7 @@ class PrePlaceRecoveryMigrationContractTest {
     @Test
     void keepsAttemptExactlyOnceWhileAllowingOneZeroIntentReplacement() throws IOException {
         String sql = Files.readString(MIGRATION);
-        for (String fragment : java.util.List.of(
+        for (String fragment : List.of(
                 "CREATE TABLE pilot_pre_place_recovery_decisions",
                 "REPLACEMENT_ALLOWED_ZERO_INTENT",
                 "PRE_PLACE_ZERO_INTENT_FAILURE",

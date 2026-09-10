@@ -32,6 +32,10 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.concurrent.Callable;
 
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
@@ -40,6 +44,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.flywaydb.core.api.MigrationInfo;
 
 /**
  * V44-V46 disposable PostgreSQL：operator authority、conditional session 与 lease lifecycle。
@@ -69,10 +74,10 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
         try {
             latest.migrate();
             latest.validate();
-            assertEquals(java.util.Arrays.stream(latest.info().all())
+            assertEquals(Arrays.stream(latest.info().all())
                     .filter(migration -> migration.getScript().startsWith("V"))
-                    .map(org.flywaydb.core.api.MigrationInfo::getVersion)
-                    .max(java.util.Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
+                    .map(MigrationInfo::getVersion)
+                    .max(Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
         } finally {
             latest.clean();
         }
@@ -189,10 +194,10 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
 
             latest.migrate();
             latest.validate();
-            assertEquals(java.util.Arrays.stream(latest.info().all())
+            assertEquals(Arrays.stream(latest.info().all())
                     .filter(migration -> migration.getScript().startsWith("V"))
-                    .map(org.flywaydb.core.api.MigrationInfo::getVersion)
-                    .max(java.util.Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
+                    .map(MigrationInfo::getVersion)
+                    .max(Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
             var decision1 = recoveries.decide(
                     fixture.ownerId(), fixture.accountId(), fixture.credentialId(), "BTC-USDT",
                     new BigDecimal("10.00000000"), UUID.randomUUID(),
@@ -211,7 +216,7 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
                     actor, session2, authority2, createdEvent(session2, fixture.ownerId(), "ordinal2")));
             AtomicInteger regenerationWinners = new AtomicInteger();
             try (var executor = Executors.newFixedThreadPool(2)) {
-                java.util.concurrent.Callable<Void> insert = () -> {
+                Callable<Void> insert = () -> {
                     try {
                         insertLease(new JdbcTemplate(new DriverManagerDataSource(schemaUrl, user, password)),
                                 UUID.randomUUID(), session2.id(), authority2.id(), fixture.ownerId(),
@@ -329,7 +334,7 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
             UUID intentB = insertCreatedPlaceIntent(jdbc, session3.id(), legacyId, 2, "v46-b", "b".repeat(64));
             AtomicInteger placeWinners = new AtomicInteger();
             try (var executor = Executors.newFixedThreadPool(2)) {
-                java.util.ArrayList<Future<?>> futures = new java.util.ArrayList<>();
+                ArrayList<Future<?>> futures = new ArrayList<>();
                 for (UUID intent : List.of(intentA, intentB)) {
                     futures.add(executor.submit(() -> {
                         try {
@@ -577,7 +582,7 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
 
             AtomicInteger succeeded = new AtomicInteger();
             try (var executor = Executors.newFixedThreadPool(2)) {
-                java.util.concurrent.Callable<Void> insert = () -> {
+                Callable<Void> insert = () -> {
                     try {
                         new JdbcTemplate(new DriverManagerDataSource(schemaUrl, user, password)).update("""
                                 INSERT INTO pilot_execution_leases(
@@ -591,7 +596,7 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
                                 Timestamp.from(secondNow), Timestamp.from(secondNow), predecessor,
                                 recovery.decisionId());
                         succeeded.incrementAndGet();
-                    } catch (org.springframework.dao.DataIntegrityViolationException expected) {
+                    } catch (DataIntegrityViolationException expected) {
                         // 数据库唯一约束/trigger必须让并发loser失败。
                     }
                     return null;
@@ -659,10 +664,10 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
         flyway.migrate();
         flyway.validate();
         try {
-            assertEquals(java.util.Arrays.stream(flyway.info().all())
+            assertEquals(Arrays.stream(flyway.info().all())
                     .filter(migration -> migration.getScript().startsWith("V"))
-                    .map(org.flywaydb.core.api.MigrationInfo::getVersion)
-                    .max(java.util.Comparator.naturalOrder()).orElseThrow().getVersion(), flyway.info().current().getVersion().getVersion());
+                    .map(MigrationInfo::getVersion)
+                    .max(Comparator.naturalOrder()).orElseThrow().getVersion(), flyway.info().current().getVersion().getVersion());
             DriverManagerDataSource dataSource = new DriverManagerDataSource(schemaUrl, user, password);
             JdbcTemplate jdbc = new JdbcTemplate(dataSource);
             Fixture fixture = seedOperator(jdbc);

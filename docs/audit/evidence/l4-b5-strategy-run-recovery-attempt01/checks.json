@@ -1,0 +1,34 @@
+{
+  "syntheticExporterTests": {
+    "tests": 6,
+    "failures": 0
+  },
+  "stageAssets": {
+    "scanned": 1850,
+    "reviewedExceptions": 173,
+    "errors": 0
+  },
+  "documentLinks": {
+    "checked": 18,
+    "warnings": 0,
+    "errors": 0
+  },
+  "gitDiffCheck": {
+    "exit": 0
+  },
+  "stagedFiles": 0,
+  "finalSourceManifestFiles": 1788,
+  "finalSourceManifestMismatches": 0,
+  "newArtifactsScanner": {
+    "version": "8.18.4",
+    "exit": 0,
+    "findings": 0,
+    "rawReportPath": "backend/nq-app/target/b5-strategy-remediation/secret-validation/new-artifacts.json",
+    "rawReportSha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "logPath": "backend/nq-app/target/b5-strategy-remediation/new-artifacts-scan.log",
+    "logSha256": "e1449725758d66a6574c2b2d506f8dc80290ae164384284e6223af276700da0e"
+  },
+  "fullWorkingTreeScanner": "secret-validation.json",
+  "credentialNegativeCases": 6,
+  "credentialNegativeCasesRejected": 6
+}

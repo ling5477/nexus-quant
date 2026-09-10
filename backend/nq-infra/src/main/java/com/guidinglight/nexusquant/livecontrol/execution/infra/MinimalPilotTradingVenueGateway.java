@@ -26,6 +26,8 @@ import com.guidinglight.nexusquant.trading.application.port.TradingOrderStatusSn
 import com.guidinglight.nexusquant.trading.application.port.TradingPlaceGatewayResult;
 import com.guidinglight.nexusquant.trading.application.port.TradingVenueGateway;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
+import com.guidinglight.nexusquant.contracts.model.OrderType;
+import com.guidinglight.nexusquant.livecontrol.execution.application.provider.ProviderClientOrderId;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -34,6 +36,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.math.BigDecimal;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,7 +99,7 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
         SpotProviderResults.OrderObservation observation = result.observation();
         if (completed.state() == ExecutionIntentState.UNKNOWN) {
             observation = provider.queryOrderByClientOrderId(new SpotProviderRequests.OrderQuery(
-                    com.guidinglight.nexusquant.livecontrol.execution.application.provider.ProviderClientOrderId
+                    ProviderClientOrderId
                             .fromIntent(completed),
                     SpotProviderRequests.Venue.OKX_SPOT, binding.order().exchangeInstrumentId(), context));
             completed = appendQueryReceipt(completed, observation);
@@ -110,7 +113,7 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
         PilotExecutionLease lease = lease(place.leaseId());
         ExactPilotBinding binding = binding(lease);
         SpotProviderRequests.RequestContext context = context(binding, binding.correlation());
-        var clientId = com.guidinglight.nexusquant.livecontrol.execution.application.provider.ProviderClientOrderId
+        var clientId = ProviderClientOrderId
                 .from(place.intentId(), order.clientOrderId());
         var query = new SpotProviderRequests.OrderQuery(
                 clientId, SpotProviderRequests.Venue.OKX_SPOT, binding.order().exchangeInstrumentId(), context);
@@ -138,7 +141,7 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
         LeasePlace place = findLeasePlace(order.clientOrderId());
         ExactPilotBinding binding = binding(lease(place.leaseId()));
         var observation = provider.readOrderStatus(new SpotProviderRequests.OrderQuery(
-                com.guidinglight.nexusquant.livecontrol.execution.application.provider.ProviderClientOrderId
+                ProviderClientOrderId
                         .from(place.intentId(), order.clientOrderId()),
                 SpotProviderRequests.Venue.OKX_SPOT, binding.order().exchangeInstrumentId(),
                 context(binding, binding.correlation())));
@@ -156,7 +159,7 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
         SpotProviderRequests.RequestContext context = refreshedReadOnlyContext(
                 frozenContext, provider.readClock(frozenContext), clock.instant());
         var orderQuery = new SpotProviderRequests.OrderQuery(
-                com.guidinglight.nexusquant.livecontrol.execution.application.provider.ProviderClientOrderId
+                ProviderClientOrderId
                         .from(place.intentId(), order.clientOrderId()),
                 SpotProviderRequests.Venue.OKX_SPOT, binding.order().exchangeInstrumentId(), context);
         SpotProviderResults.OrderObservation observation = provider.readOrderStatus(orderQuery);
@@ -181,9 +184,9 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
         if (fillPage.error() != null || !fillPage.complete()) {
             throw rejected("PILOT_RECONCILIATION_FILLS_INCOMPLETE");
         }
-        java.math.BigDecimal total = fillPage.fills().stream()
+        BigDecimal total = fillPage.fills().stream()
                 .map(SpotProviderResults.FillReference::quantity)
-                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
         if (!order.symbol().equals(binding.order().exchangeInstrumentId())
                 || !order.side().equals(binding.order().side().name())
                 || order.price() == null || order.price().compareTo(binding.order().price()) != 0
@@ -385,7 +388,7 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
                 && order.qty().compareTo(binding.order().quantity()) == 0
                 && order.price() != null && order.price().compareTo(binding.order().price()) == 0
                 && "LIVE".equals(order.tradeEnv()) && "LIVE".equals(request.tradeEnv())
-                && request.type() == com.guidinglight.nexusquant.contracts.model.OrderType.LIMIT;
+                && request.type() == OrderType.LIMIT;
     }
 
     private static TradingPlaceGatewayResult placeResult(

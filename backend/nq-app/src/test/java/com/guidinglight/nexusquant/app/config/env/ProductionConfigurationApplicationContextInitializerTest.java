@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+import java.util.UUID;
 
 import javax.sql.DataSource;
 
@@ -241,8 +242,8 @@ class ProductionConfigurationApplicationContextInitializerTest {
                 "--NQ_PROD_DB_URL=" + VALID_URL,
                 "--NQ_PROD_DB_USER=" + VALID_USERNAME,
                 "--NQ_PROD_DB_PASSWORD=" + SYNTHETIC_SECRET,
-                "--nq.security.secret=" + java.util.UUID.randomUUID() + java.util.UUID.randomUUID(),
-                "--nq.account.credentials.master-key=" + java.util.UUID.randomUUID()
+                "--nq.security.secret=" + UUID.randomUUID() + UUID.randomUUID(),
+                "--nq.account.credentials.master-key=" + UUID.randomUUID()
         )) {
             assertTrue(context.getEnvironment().matchesProfiles("prod"));
         }
@@ -394,8 +395,8 @@ class ProductionConfigurationApplicationContextInitializerTest {
                 "spring.datasource.username", VALID_USERNAME,
                 "spring.datasource.password", SYNTHETIC_SECRET,
                 "spring.datasource.driver-class-name", "org.postgresql.Driver",
-                "nq.security.secret", java.util.UUID.randomUUID().toString(),
-                "nq.account.credentials.master-key", java.util.UUID.randomUUID().toString()
+                "nq.security.secret", UUID.randomUUID().toString(),
+                "nq.account.credentials.master-key", UUID.randomUUID().toString()
         ));
     }
 
@@ -405,8 +406,8 @@ class ProductionConfigurationApplicationContextInitializerTest {
                 "spring.datasource.username", VALID_USERNAME,
                 "spring.datasource.password", SYNTHETIC_SECRET,
                 "spring.datasource.driver-class-name", "org.postgresql.Driver",
-                "nq.security.secret", java.util.UUID.randomUUID().toString(),
-                "nq.account.credentials.master-key", java.util.UUID.randomUUID().toString()
+                "nq.security.secret", UUID.randomUUID().toString(),
+                "nq.account.credentials.master-key", UUID.randomUUID().toString()
         ));
     }
 

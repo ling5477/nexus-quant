@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.time.Duration;
 
 /**
  * GateY provider 的可注入 transport port。
@@ -216,7 +217,7 @@ public interface OkxSpotProviderTransport {
             ResponseMetadata metadata,
             Instant serverTime,
             Instant localClockMidpoint,
-            java.time.Duration observedSkew,
+            Duration observedSkew,
             TransportFailure failure
     ) {
     }

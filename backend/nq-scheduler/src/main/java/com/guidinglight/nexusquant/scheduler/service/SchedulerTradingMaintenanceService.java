@@ -4,7 +4,7 @@ import com.guidinglight.nexusquant.trading.application.RecoveryReport;
 import com.guidinglight.nexusquant.trading.application.RecoveryService;
 import com.guidinglight.nexusquant.trading.application.maintenance.TradingMaintenanceService;
 
-import java.util.Locale;
+import com.guidinglight.nexusquant.trading.domain.TradingVenue;
 import java.util.Objects;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -44,25 +44,22 @@ public class SchedulerTradingMaintenanceService implements TradingMaintenanceSer
 
     @Override
     public int runReconcile(String venue, int limit) {
-        String normalizedVenue = normalizeVenue(venue);
+        TradingVenue normalizedVenue = TradingVenue.parse(venue == null ? TradingVenue.OKX.name() : venue);
         return switch (normalizedVenue) {
-            case "OKX" -> okxRestReconcileService.reconcileOnce(limit);
-            case "BINANCE" -> binanceRestReconcileService.reconcileOnce(limit);
+            case OKX -> okxRestReconcileService.reconcileOnce(limit);
+            case BINANCE -> binanceRestReconcileService.reconcileOnce(limit);
             default -> throw new IllegalArgumentException("unsupported reconcile venue: " + normalizedVenue);
         };
     }
 
     @Override
     public RecoveryReport runRecovery(String venue, String traceId) {
-        String normalizedVenue = normalizeVenue(venue);
+        TradingVenue normalizedVenue = TradingVenue.parse(venue == null ? TradingVenue.OKX.name() : venue);
         return switch (normalizedVenue) {
-            case "OKX" -> recoveryService.rebuild(traceId);
-            case "BINANCE" -> binanceRecoveryService.rebuild(traceId);
+            case OKX -> recoveryService.rebuild(traceId);
+            case BINANCE -> binanceRecoveryService.rebuild(traceId);
             default -> throw new IllegalArgumentException("unsupported recovery venue: " + normalizedVenue);
         };
     }
 
-    private String normalizeVenue(String venue) {
-        return venue == null || venue.isBlank() ? "OKX" : venue.trim().toUpperCase(Locale.ROOT);
-    }
 }

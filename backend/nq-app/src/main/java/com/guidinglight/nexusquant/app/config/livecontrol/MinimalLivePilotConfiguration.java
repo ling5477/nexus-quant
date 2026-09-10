@@ -40,11 +40,21 @@ import com.guidinglight.nexusquant.scheduler.service.TradeLedgerGateway;
 import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
 import com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
+import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
+import com.guidinglight.nexusquant.contracts.model.OrderSide;
+import com.guidinglight.nexusquant.contracts.model.OrderType;
+import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor;
+import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingControlPlane;
+import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults;
+import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.Objects;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,7 +117,7 @@ public class MinimalLivePilotConfiguration {
             CredentialPermissionProbeService permissionProbeService,
             PilotScopeControlPlane scopes,
             PilotScopeRepository scopeRepository,
-            com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingControlPlane bindings,
+            ExactPilotBindingControlPlane bindings,
             PilotExecutionLeaseControlPlane leases,
             CanonicalLegacyAccountBridgeService legacyBridge
     ) {
@@ -159,7 +169,7 @@ public class MinimalLivePilotConfiguration {
             MinimalPilotTradingVenueGateway gateway,
             TradeRepository trades,
             TradeLedgerGateway ledger,
-            com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository audit,
+            AuditLogRepository audit,
             ExchangeAccountRepository accounts,
             ExactPilotBindingRepository bindingRepository,
             JdbcTemplate jdbc,
@@ -189,7 +199,7 @@ public class MinimalLivePilotConfiguration {
         private final MinimalPilotTradingVenueGateway gateway;
         private final TradeRepository trades;
         private final TradeLedgerGateway ledger;
-        private final com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository audit;
+        private final AuditLogRepository audit;
         private final ExchangeAccountRepository accounts;
         private final ExactPilotBindingRepository bindingRepository;
         private final JdbcTemplate jdbc;
@@ -206,7 +216,7 @@ public class MinimalLivePilotConfiguration {
                 MinimalPilotTradingVenueGateway gateway,
                 TradeRepository trades,
                 TradeLedgerGateway ledger,
-                com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository audit,
+                AuditLogRepository audit,
                 ExchangeAccountRepository accounts,
                 ExactPilotBindingRepository bindingRepository,
                 JdbcTemplate jdbc,
@@ -262,7 +272,7 @@ public class MinimalLivePilotConfiguration {
                 success = true;
                 LOGGER.info("MINIMAL_LIVE_PILOT_RESULT={}", objectMapper.writeValueAsString(result));
             } finally {
-                var actor = new com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor(
+                var actor = new AuthenticatedLiveControlActor(
                         permit.ownerId());
                 if (success) {
                     leases.close(actor, permit.leaseId(), PilotExecutionLease.Status.CLOSED,
@@ -284,7 +294,7 @@ public class MinimalLivePilotConfiguration {
                     || lease.maxNotional().compareTo(command.configuredPilotMaxNotional()) != 0) {
                 throw new IllegalStateException("PILOT_RECOVERY_OPERATOR_SCOPE_MISMATCH");
             }
-            var actor = new com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor(
+            var actor = new AuthenticatedLiveControlActor(
                     binding.account().ownerId());
             leases.resumeConsumed(actor, lease, binding.correlation());
             String orderId = jdbc.queryForObject("""
@@ -344,8 +354,8 @@ public class MinimalLivePilotConfiguration {
         }
 
         private void suspendOrFail(
-                com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor actor,
-                java.util.UUID leaseId,
+                AuthenticatedLiveControlActor actor,
+                UUID leaseId,
                 ExactPilotBinding.Correlation correlation,
                 String reasonCode
         ) {
@@ -360,7 +370,7 @@ public class MinimalLivePilotConfiguration {
         }
 
         private void completeReconciliation(
-                com.guidinglight.nexusquant.trading.domain.OrderRecord stored,
+                OrderRecord stored,
                 String requestId,
                 String traceId
         ) {
@@ -385,11 +395,9 @@ public class MinimalLivePilotConfiguration {
 
         private static boolean isOpen(MinimalPilotTradingVenueGateway.PilotReconciliation reconciliation) {
             return reconciliation.observation().state()
-                    == com.guidinglight.nexusquant.livecontrol.execution.application.provider
-                    .SpotProviderResults.OrderState.OPEN
+                    == SpotProviderResults.OrderState.OPEN
                     || reconciliation.observation().state()
-                    == com.guidinglight.nexusquant.livecontrol.execution.application.provider
-                    .SpotProviderResults.OrderState.PARTIALLY_FILLED;
+                    == SpotProviderResults.OrderState.PARTIALLY_FILLED;
         }
 
         private static void awaitOpenOrderObservationWindow() {
@@ -402,7 +410,7 @@ public class MinimalLivePilotConfiguration {
         }
 
         private void alignOrder(
-                com.guidinglight.nexusquant.trading.domain.OrderRecord order,
+                OrderRecord order,
                 MinimalPilotTradingVenueGateway.PilotReconciliation reconciliation,
                 String traceId
         ) {
@@ -422,13 +430,10 @@ public class MinimalLivePilotConfiguration {
         private static void requireTerminal(
                 MinimalPilotTradingVenueGateway.PilotReconciliation reconciliation
         ) {
-            if (!java.util.Set.of(
-                    com.guidinglight.nexusquant.livecontrol.execution.application.provider
-                            .SpotProviderResults.OrderState.FILLED,
-                    com.guidinglight.nexusquant.livecontrol.execution.application.provider
-                            .SpotProviderResults.OrderState.CANCELED,
-                    com.guidinglight.nexusquant.livecontrol.execution.application.provider
-                            .SpotProviderResults.OrderState.REJECTED
+            if (!Set.of(
+                    SpotProviderResults.OrderState.FILLED,
+                    SpotProviderResults.OrderState.CANCELED,
+                    SpotProviderResults.OrderState.REJECTED
             ).contains(reconciliation.observation().state())) {
                 throw new IllegalStateException("REAL_ORDER_RECONCILIATION_DIVERGENCE");
             }
@@ -446,8 +451,8 @@ public class MinimalLivePilotConfiguration {
                 permit.requestId(), legacyAccountId,
                 null, "OKX", command.instrument(),
                 permit.clientOrderId(), permit.clientOrderId(), MinimalPilotTradingVenueGateway.SOURCE,
-                com.guidinglight.nexusquant.contracts.model.OrderSide.valueOf(command.side().name()),
-                com.guidinglight.nexusquant.contracts.model.OrderType.LIMIT,
+                OrderSide.valueOf(command.side().name()),
+                OrderType.LIMIT,
                 permit.limitPrice(), permit.quantity(), "GTC", permit.traceId(),
                 "LIVE",
                 permit.leaseId() + "|" + permit.placeIntentId());
@@ -456,8 +461,8 @@ public class MinimalLivePilotConfiguration {
     static void persistFills(
             TradeRepository trades,
             TradeLedgerGateway ledger,
-            com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository audit,
-            com.guidinglight.nexusquant.trading.domain.OrderRecord order,
+            AuditLogRepository audit,
+            OrderRecord order,
             MinimalPilotTradingVenueGateway.PilotReconciliation reconciliation,
             String traceId
     ) {
@@ -475,22 +480,21 @@ public class MinimalLivePilotConfiguration {
                     });
             var posted = ledger.postTrade(new TradeLedgerRequest(
                     trade.tradeId(), trade.orderId(), trade.accountId(), trade.symbol(),
-                    com.guidinglight.nexusquant.contracts.model.OrderSide.valueOf(order.side()),
+                    OrderSide.valueOf(order.side()),
                     trade.price(), trade.qty(), trade.fee(), trade.feeCurrency(), traceId, trade.ts()));
             if (!posted.posted() && !posted.idempotentHit()) {
                 throw new IllegalStateException("REAL_ORDER_RECONCILIATION_DIVERGENCE");
             }
             audit.append("RECONCILE", "GATEY_PILOT_FILL_LEDGER_RECONCILED", order.orderId(), traceId,
-                    java.util.Map.of("trade_id", trade.tradeId(), "exchange_trade_id", fill.exchangeTradeId()));
+                    Map.of("trade_id", trade.tradeId(), "exchange_trade_id", fill.exchangeTradeId()));
         }
     }
 
     private static PaperTradeRecord requireMatchingTrade(
             PaperTradeRecord trade,
-            com.guidinglight.nexusquant.trading.domain.OrderRecord order,
+            OrderRecord order,
             MinimalPilotTradingVenueGateway.PilotReconciliation reconciliation,
-            com.guidinglight.nexusquant.livecontrol.execution.application.provider
-                    .SpotProviderResults.FillReference fill
+            SpotProviderResults.FillReference fill
     ) {
         if (!trade.orderId().equals(order.orderId())
                 || !trade.accountId().equals(order.accountId())
@@ -508,7 +512,7 @@ public class MinimalLivePilotConfiguration {
     }
 
     private static String stableTradeId(String exchangeTradeId) {
-        return "trd-" + java.util.UUID.nameUUIDFromBytes(
+        return "trd-" + UUID.nameUUIDFromBytes(
                 ("OKX\n" + exchangeTradeId).getBytes(StandardCharsets.UTF_8));
     }
 }

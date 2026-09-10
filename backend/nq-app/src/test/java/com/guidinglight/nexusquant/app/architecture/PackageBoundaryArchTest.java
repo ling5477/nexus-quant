@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import org.junit.jupiter.api.Test;
 
@@ -191,7 +192,7 @@ class PackageBoundaryArchTest {
             return Files.readAllLines(path).stream()
                     .map(String::trim)
                     .map(PACKAGE_PATTERN::matcher)
-                    .filter(java.util.regex.Matcher::matches)
+                    .filter(Matcher::matches)
                     .map(matcher -> matcher.group(1))
                     .findFirst()
                     .orElse(null);

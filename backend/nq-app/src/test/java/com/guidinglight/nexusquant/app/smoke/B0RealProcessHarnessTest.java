@@ -13,6 +13,7 @@ import java.sql.Connection;
 import java.util.Map;
 import java.util.UUID;
 import java.time.Duration;
+import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import static org.junit.jupiter.api.Assertions.*;
@@ -158,12 +159,12 @@ class B0RealProcessHarnessTest {
     private void assertIdentityAndPermissions(Connection connection, B0Fixture fixture) throws Exception {
         assertEquals(fixture.name(), value(connection, "SELECT current_database()"));
         assertEquals(B0Fixture.READER, value(connection, "SELECT current_user"));
-        assertEquals("48", value(connection, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
+        assertEquals("50", value(connection, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
         assertEquals("f", value(connection, "SELECT has_table_privilege('nq_b0_app','kill_switch_states','UPDATE')"));
         assertEquals("f", value(connection, "SELECT has_table_privilege('nq_b0_reader','orders','UPDATE')"));
         assertEquals("f", value(connection, "SELECT has_table_privilege('nq_b0_reader','trades','INSERT')"));
         assertEquals("f", value(connection, "SELECT has_table_privilege('nq_b0_reader','ledger_entries','INSERT')"));
-        System.out.println("B0_DB db=" + fixture.name() + " flyway=48 reader=nq_b0_reader appKillWrite=false pg="
+        System.out.println("B0_DB db=" + fixture.name() + " flyway=49 reader=nq_b0_reader appKillWrite=false pg="
                 + value(connection, "SHOW server_version"));
     }
 
@@ -177,7 +178,7 @@ class B0RealProcessHarnessTest {
                 assertEquals(200, request(endpoint + "/api/v5/trade/order", body).statusCode());
                 assertTrue(Duration.ofNanos(System.nanoTime() - started).toMillis() >= 500);
             } else {
-                assertThrows(java.io.IOException.class, () -> request(endpoint + "/api/v5/trade/order", body));
+                assertThrows(IOException.class, () -> request(endpoint + "/api/v5/trade/order", body));
             }
             assertEquals(++before, facts(endpoint).path("orders").asInt(), "venue stored before loss");
             System.out.println("B0_FAULT mode=" + mode + " venueFactStored=true response=" + (mode.equals("DELAY") ? "DELAYED" : "ABSENT"));

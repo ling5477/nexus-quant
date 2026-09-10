@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.sql.SQLException;
 
 /** 沿用 F002 ProcessBuilder/日志/PID 方式；B0 增加交互屏障和拥有实例身份的 PostgreSQL。 */
 final class B0Processes {
@@ -77,7 +80,7 @@ final class B0Processes {
                 long deadline = System.nanoTime() + Duration.ofSeconds(40).toNanos();
                 while (true) {
                     try (var connection = DriverManager.getConnection(pg.url, "postgres", "")) { break; }
-                    catch (java.sql.SQLException failure) {
+                    catch (SQLException failure) {
                         if (System.nanoTime() > deadline) throw failure;
                         Thread.sleep(100);
                     }
@@ -118,7 +121,7 @@ final class B0Processes {
     static final class Child implements AutoCloseable {
         final Process process;
         final Path log;
-        private final java.io.BufferedWriter input;
+        private final BufferedWriter input;
         private int resultCount;
 
         Child(Class<?> main, Path directory, String label, Map<String, String> environment) throws Exception {
@@ -133,7 +136,7 @@ final class B0Processes {
             if (legacyClasses != null) {
                 B0Fixture.require(legacyClasses.toAbsolutePath().normalize()
                         .startsWith(root().resolve("backend/nq-app/target").toAbsolutePath().normalize()));
-                classpath = legacyClasses.toAbsolutePath() + java.io.File.pathSeparator + classpath;
+                classpath = legacyClasses.toAbsolutePath() + File.pathSeparator + classpath;
             }
             Path argfile = directory.resolve(label + ".args");
             Files.writeString(argfile, "-Dfile.encoding=UTF-8\n-Dstdout.encoding=UTF-8\n-Dstderr.encoding=UTF-8\n"
@@ -153,6 +156,12 @@ final class B0Processes {
         }
 
         String ready() throws Exception { return await("B0_READY ", 1); }
+
+        /** 先完成一次性 bootstrap，再启动第二个业务竞争者；失败时不泄漏构造出的进程。 */
+        Child awaitReady() throws Exception {
+            try { ready(); return this; }
+            catch (Exception | AssertionError failure) { close(); throw failure; }
+        }
 
         String send(String command) throws Exception {
             startCommand(command);

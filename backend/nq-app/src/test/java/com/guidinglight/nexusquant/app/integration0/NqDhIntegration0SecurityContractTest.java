@@ -13,8 +13,11 @@ import com.guidinglight.nexusquant.app.integration0.support.Int0CredentialAccess
 import com.guidinglight.nexusquant.app.integration0.support.Int0NonceStore;
 import com.guidinglight.nexusquant.app.integration0.support.Int0RequestFactory;
 import com.guidinglight.nexusquant.app.integration0.support.Int0ValidationResult;
+import com.guidinglight.nexusquant.app.integration0.support.Int0Signing;
 import java.time.Instant;
 import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -81,7 +84,7 @@ class NqDhIntegration0SecurityContractTest {
                 validator.validate(good, body, payload, ts, Int0Contract.FAKE_SECRET, new Int0NonceStore());
         assertTrue(okResult.accepted(), "correct signature must be accepted");
 
-        Map<String, String> bad = new java.util.LinkedHashMap<>(good);
+        Map<String, String> bad = new LinkedHashMap<>(good);
         bad.put(Int0Contract.H_SIGNATURE, "deadbeefdeadbeefdeadbeef");
         Int0ValidationResult badResult =
                 validator.validate(bad, body, payload, ts, Int0Contract.FAKE_SECRET, new Int0NonceStore());
@@ -96,7 +99,7 @@ class NqDhIntegration0SecurityContractTest {
     }
 
     private String Int0Signing_canonical(Map<String, String> headers, String body) {
-        return com.guidinglight.nexusquant.app.integration0.support.Int0Signing.canonical(headers, body);
+        return Int0Signing.canonical(headers, body);
     }
 
     /** INT0-T05：timestamp 窗口。RFC3339 UTC Z 窗口内通过；过去超窗与未来超窗均拒绝。 */
@@ -150,7 +153,7 @@ class NqDhIntegration0SecurityContractTest {
     private void assertTimestampInvalid(
             JsonNode payload, String body, long checkNow, String timestampValue, String message) {
         Map<String, String> headers =
-                new java.util.LinkedHashMap<>(Int0RequestFactory.validHeaders(body, checkNow, "nonce-" + timestampValue));
+                new LinkedHashMap<>(Int0RequestFactory.validHeaders(body, checkNow, "nonce-" + timestampValue));
         headers.put(Int0Contract.H_TIMESTAMP, timestampValue);
         Int0ValidationResult result = validate(payload, headers, checkNow, new Int0NonceStore());
         assertFalse(result.accepted(), message);
@@ -268,7 +271,7 @@ class NqDhIntegration0SecurityContractTest {
 
         // 跑一组校验（accept + 各类 reject），validation 管线不应触达凭证。
         for (String fixture :
-                java.util.List.of(
+                List.of(
                         "fx-candidate-valid.json",
                         "fx-feedback-valid.json",
                         "fx-forbidden-fields.json",

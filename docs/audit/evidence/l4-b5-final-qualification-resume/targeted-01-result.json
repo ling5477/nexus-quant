@@ -1,0 +1,30 @@
+{
+  "command": [
+    "D:/Tool/Maven/apache-maven-3.9.12/bin/mvn.cmd",
+    "-o",
+    "-f",
+    "backend/pom.xml",
+    "-pl",
+    "nq-app",
+    "-am",
+    "test",
+    "-Dsurefire.failIfNoSpecifiedTests=false",
+    "-Dtest=B5FinalQualificationInteractionTest",
+    "-Dnq.b5.final=true"
+  ],
+  "exit": 0,
+  "seconds": 303.94896483421326,
+  "logSha256": "578c2836b5d0676d6f3a2afa51cbd21865dc9938e026a5fe7750b8de16833bc1",
+  "logEncoding": "gb18030",
+  "testResults": [
+    [
+      "1",
+      "0",
+      "0",
+      "0",
+      "com.guidinglight.nexusquant.app.smoke.B5FinalQualificationInteractionTest"
+    ]
+  ],
+  "containersStarted": 13,
+  "containersRemoved": 13
+}

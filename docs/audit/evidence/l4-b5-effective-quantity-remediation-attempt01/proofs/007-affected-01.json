@@ -1,0 +1,159 @@
+{
+  "scenario": "DEATH",
+  "controllerPid": 11668,
+  "database": "SYNTH-L4:B5-EQ:R07:DATABASE:001",
+  "venuePid": 46632,
+  "proxyPid": 2408,
+  "externalVenueInput": "okx",
+  "nqPid": 64800,
+  "restartPid": 60608,
+  "atCut": {
+    "orders": [
+      {
+        "qty": 10.0,
+        "side": "BUY",
+        "type": "LIMIT",
+        "price": 100.0,
+        "venue": "OKX",
+        "reason": "ORDER_ROUTED_TO_ADAPTER",
+        "status": "SENT",
+        "symbol": "BTC-USDT",
+        "version": 2,
+        "order_id": "SYNTH-L4:B5-EQ:R07:ORDER:001",
+        "trace_id": "SYNTH-L4:B5-EQ:R07:TRACE:001",
+        "dedup_key": "1:SYNTH-L4:B5-EQ:R07:CLIENT:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T21:06:38.214808+08:00",
+        "request_id": "SYNTH-L4:B5-EQ:R07:REQUEST:001",
+        "updated_at": "2026-09-10T21:06:38.264887+08:00",
+        "exchange_code": "OKX",
+        "client_order_id": "SYNTH-L4:B5-EQ:R07:CLIENT:001",
+        "strategy_run_id": null,
+        "exchange_order_id": null,
+        "external_order_id": null
+      }
+    ],
+    "ordinary_place_authorities": [
+      {
+        "state": "MAY_HAVE_ESCAPED",
+        "order_id": "SYNTH-L4:B5-EQ:R07:ORDER:001",
+        "decided_at": "2026-09-10T21:06:38.268992+08:00"
+      }
+    ],
+    "trades": [],
+    "ledger_entries": []
+  },
+  "newRestartPid": 9044,
+  "final": {
+    "orders": [
+      {
+        "qty": 10.0,
+        "side": "BUY",
+        "type": "LIMIT",
+        "price": 100.0,
+        "venue": "OKX",
+        "reason": "ORDER_ROUTED_TO_ADAPTER",
+        "status": "SENT",
+        "symbol": "BTC-USDT",
+        "version": 2,
+        "order_id": "SYNTH-L4:B5-EQ:R07:ORDER:001",
+        "trace_id": "SYNTH-L4:B5-EQ:R07:TRACE:001",
+        "dedup_key": "1:SYNTH-L4:B5-EQ:R07:CLIENT:001",
+        "trade_env": "SIM",
+        "account_id": 1,
+        "created_at": "2026-09-10T21:06:38.214808+08:00",
+        "request_id": "SYNTH-L4:B5-EQ:R07:REQUEST:001",
+        "updated_at": "2026-09-10T21:06:38.264887+08:00",
+        "exchange_code": "OKX",
+        "client_order_id": "SYNTH-L4:B5-EQ:R07:CLIENT:001",
+        "strategy_run_id": null,
+        "exchange_order_id": null,
+        "external_order_id": null
+      }
+    ],
+    "ordinary_place_authorities": [
+      {
+        "state": "MAY_HAVE_ESCAPED",
+        "order_id": "SYNTH-L4:B5-EQ:R07:ORDER:001",
+        "decided_at": "2026-09-10T21:06:38.268992+08:00"
+      }
+    ],
+    "trades": [],
+    "ledger_entries": []
+  },
+  "venue": {
+    "code": "0",
+    "msg": "",
+    "data": [],
+    "pid": 46632,
+    "places": 0,
+    "cancels": 0,
+    "pendingCancel": false,
+    "placeRequests": 0,
+    "apiRequests": 9,
+    "order": null,
+    "fills": [],
+    "events": [
+      {
+        "sequence": 2,
+        "type": "QUERY_OPEN_ORDERS",
+        "nanoTime": 945072001133000,
+        "epochMillis": 1789045598402,
+        "count": 0
+      },
+      {
+        "sequence": 3,
+        "type": "QUERY_ORDER_NOT_FOUND",
+        "nanoTime": 945072017289400,
+        "epochMillis": 1789045598418
+      },
+      {
+        "sequence": 4,
+        "type": "QUERY_ORDER_NOT_FOUND",
+        "nanoTime": 945072056637000,
+        "epochMillis": 1789045598457
+      },
+      {
+        "sequence": 5,
+        "type": "QUERY_OPEN_ORDERS",
+        "nanoTime": 945072188085000,
+        "epochMillis": 1789045598589,
+        "count": 0
+      },
+      {
+        "sequence": 6,
+        "type": "QUERY_ORDER_NOT_FOUND",
+        "nanoTime": 945072190217000,
+        "epochMillis": 1789045598591
+      },
+      {
+        "sequence": 7,
+        "type": "QUERY_ORDER_NOT_FOUND",
+        "nanoTime": 945072199689300,
+        "epochMillis": 1789045598601
+      },
+      {
+        "sequence": 8,
+        "type": "QUERY_OPEN_ORDERS",
+        "nanoTime": 945075710591100,
+        "epochMillis": 1789045602111,
+        "count": 0
+      },
+      {
+        "sequence": 9,
+        "type": "QUERY_ORDER_NOT_FOUND",
+        "nanoTime": 945075727042400,
+        "epochMillis": 1789045602128
+      },
+      {
+        "sequence": 10,
+        "type": "QUERY_ORDER_NOT_FOUND",
+        "nanoTime": 945075764609500,
+        "epochMillis": 1789045602166
+      }
+    ]
+  },
+  "cleanup": true,
+  "result": "PASS"
+}

@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.time.Instant;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -125,11 +126,11 @@ public class JdbcPaperRunDailyReportRepository implements PaperRunDailyReportRep
     }
 
     @Override
-    public int countByRunIdAndDateRange(String paperRunId, java.time.Instant start, java.time.Instant end) {
+    public int countByRunIdAndDateRange(String paperRunId, Instant start, Instant end) {
         Integer count = jdbcTemplate.queryForObject("""
                 SELECT COUNT(*) FROM paper_run_daily_reports
                 WHERE paper_run_id = ? AND created_at >= ? AND created_at < ?
-                """, Integer.class, paperRunId, java.sql.Timestamp.from(start), java.sql.Timestamp.from(end));
+                """, Integer.class, paperRunId, Timestamp.from(start), Timestamp.from(end));
         return count != null ? count : 0;
     }
 

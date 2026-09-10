@@ -13,7 +13,7 @@ import java.util.UUID;
 public interface LiveControlRepository {
 
     /** 返回当前数据库事务时间，避免信任客户端 wall clock。 */
-    java.time.Instant currentTime();
+    Instant currentTime();
 
     void createRiskLimitSet(RiskLimitSet riskLimitSet);
 

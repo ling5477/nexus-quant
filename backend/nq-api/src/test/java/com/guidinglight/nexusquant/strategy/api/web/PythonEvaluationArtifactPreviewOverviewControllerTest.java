@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.io.IOException;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -287,7 +288,7 @@ class PythonEvaluationArtifactPreviewOverviewControllerTest {
                 HttpServletRequest request,
                 HttpServletResponse response,
                 FilterChain filterChain
-        ) throws ServletException, java.io.IOException {
+        ) throws ServletException, IOException {
             String incoming = request.getHeader(TraceIdContext.TRACE_ID_HEADER);
             String traceId = TraceIdContext.putOrCreate(incoming);
             request.setAttribute(TraceIdContext.TRACE_ID_REQUEST_ATTRIBUTE, traceId);

@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.trading.application.port;
 import com.guidinglight.nexusquant.trading.application.CancelOrderRequest;
 import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
+import com.guidinglight.nexusquant.trading.domain.EffectiveOrderParameters;
 
 /**
  * TradingVenueGateway 定义 trading application 访问外部交易 venue 的统一边界。
@@ -13,6 +14,11 @@ import com.guidinglight.nexusquant.trading.domain.OrderRecord;
  * 该网关把 core 允许依赖的最小语义固定下来，避免继续直接依赖 `adapter-api`。
  */
 public interface TradingVenueGateway {
+
+    /** 发送决定前的只读规则计算，不允许在数据库写事务中调用。 */
+    default EffectiveOrderParameters normalizePlaceOrder(PlaceOrderRequest request) {
+        throw new UnsupportedOperationException("order normalization unavailable");
+    }
 
     /**
      * 执行一次统一下单。

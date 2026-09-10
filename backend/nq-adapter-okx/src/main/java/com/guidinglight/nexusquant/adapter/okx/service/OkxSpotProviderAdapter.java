@@ -39,6 +39,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.math.BigDecimal;
 
 /**
  * OKX Spot provider contract implementation；transport 可为 fake 或显式 credential-scoped capability。
@@ -425,9 +426,9 @@ public final class OkxSpotProviderAdapter implements SpotExecutionProviderPort {
                 OrderState.UNKNOWN,
                 clientOrderId,
                 null,
-                java.math.BigDecimal.ZERO,
-                java.math.BigDecimal.ZERO,
-                java.math.BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
                 List.of(),
                 error,
                 observedAt

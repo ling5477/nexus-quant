@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
+import java.security.InvalidKeyException;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -36,7 +37,7 @@ public final class Int0Signing {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
             return hex(mac.doFinal(canonical.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException | java.security.InvalidKeyException ex) {
+        } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
             throw new IllegalStateException("HMAC init failed", ex);
         }
     }

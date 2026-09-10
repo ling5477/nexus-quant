@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -106,7 +107,7 @@ public class ShadowRunOverviewQueryService {
                         facts.latestEvent().map(ShadowRunOverviewEvidenceFact::sourceTimestamp),
                         facts.latestSnapshot().map(ShadowRunOverviewEvidenceFact::sourceTimestamp)
                 )
-                .flatMap(java.util.Optional::stream)
+                .flatMap(Optional::stream)
                 .filter(Objects::nonNull)
                 .max(Comparator.naturalOrder())
                 .orElse(null);

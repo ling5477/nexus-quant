@@ -9,6 +9,7 @@ import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.Locale;
 
 /** 进程内有限指标集合；快照表示最近观测事实，不代表数据库实时积压量。 */
 public final class MicrometerOperationalObservation implements OperationalObservation {
@@ -67,7 +68,7 @@ public final class MicrometerOperationalObservation implements OperationalObserv
                 default -> "nq.operational.executions";
             };
             state.counters.put(signal, Counter.builder(name).tags(tags)
-                    .tag("result", signal.name().toLowerCase(java.util.Locale.ROOT)).register(registry));
+                    .tag("result", signal.name().toLowerCase(Locale.ROOT)).register(registry));
         }
         state.registered = true;
     }

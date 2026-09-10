@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.livecontrol.domain;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.time.Instant;
 
 /**
  * prerequisite observation 与 instrument item 的确定性 canonical encoder。
@@ -65,7 +66,7 @@ public final class PilotObservationCanonicalEncoder {
     public static String marketSnapshotDigest(
             String instrument,
             BigDecimal bestAsk,
-            java.time.Instant observedAt,
+            Instant observedAt,
             String sourceIdentity,
             String sourceSchemaVersion
     ) {

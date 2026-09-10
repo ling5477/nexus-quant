@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 /** OKX raw state 到 NQ provider observation 的 fail-closed translation。 */
 final class OkxVenueStateTranslator {
@@ -105,7 +106,7 @@ final class OkxVenueStateTranslator {
                         fill.exchangeTradeId(),
                         nonNegative(fill.price()),
                         nonNegative(fill.quantity()),
-                        java.util.Objects.requireNonNull(fill.fee(), "fee must not be null"),
+                        Objects.requireNonNull(fill.fee(), "fee must not be null"),
                         fill.feeCurrency(),
                         fill.filledAt()))
                 .toList();

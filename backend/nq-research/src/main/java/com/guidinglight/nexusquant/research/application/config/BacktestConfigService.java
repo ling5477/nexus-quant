@@ -9,6 +9,7 @@ import com.guidinglight.nexusquant.research.domain.port.BacktestConfigRepository
 import com.guidinglight.nexusquant.research.domain.port.StrategyVersionSnapshotQueryPort;
 import com.guidinglight.nexusquant.research.application.ResearchConfigService;
 import com.guidinglight.nexusquant.research.application.backtest.command.BacktestConfigCreateRequest;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -53,7 +55,7 @@ public class BacktestConfigService {
             ObjectMapper objectMapper,
             Clock clock
     ) {
-        this(backtestConfigRepository, id -> java.util.Optional.empty(), researchConfigService, objectMapper, clock);
+        this(backtestConfigRepository, id -> Optional.empty(), researchConfigService, objectMapper, clock);
     }
 
     public BacktestConfigService(
@@ -263,7 +265,7 @@ public class BacktestConfigService {
 
     private String buildConfigSnapshot(BacktestConfigCreateRequest request) {
         try {
-            com.fasterxml.jackson.databind.node.ObjectNode snapshot = objectMapper.createObjectNode();
+            ObjectNode snapshot = objectMapper.createObjectNode();
             snapshot.put("startTime", request.startTime().toString());
             snapshot.put("endTime", request.endTime().toString());
             snapshot.put("initialCapital", request.initialCapital().stripTrailingZeros().toPlainString());
@@ -277,7 +279,7 @@ public class BacktestConfigService {
 
     private String strategyVersionSnapshotJson(StrategyVersionSnapshotView snapshot) {
         try {
-            com.fasterxml.jackson.databind.node.ObjectNode node = objectMapper.createObjectNode();
+            ObjectNode node = objectMapper.createObjectNode();
             node.put("strategyVersionId", snapshot.strategyVersionId());
             node.put("strategyCode", snapshot.strategyCode());
             node.put("version", snapshot.version());

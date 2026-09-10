@@ -16,6 +16,7 @@ import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.sql.Timestamp;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -90,8 +91,8 @@ class ResearchBacktestHappyPathLocalTest {
                 true,
                 "{\"strategy\":\"fixture\"}",
                 1,
-                java.sql.Timestamp.from(Instant.parse("2026-04-06T00:00:00Z")),
-                java.sql.Timestamp.from(Instant.parse("2026-04-06T00:00:00Z"))
+                Timestamp.from(Instant.parse("2026-04-06T00:00:00Z")),
+                Timestamp.from(Instant.parse("2026-04-06T00:00:00Z"))
         );
 
         try {

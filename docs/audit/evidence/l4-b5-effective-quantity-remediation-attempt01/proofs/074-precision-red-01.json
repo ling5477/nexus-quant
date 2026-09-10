@@ -1,0 +1,8 @@
+{
+  "scenario": "PRECISION",
+  "database": "SYNTH-L4:B5-EQ:R74:DATABASE:001",
+  "ownerPid": 41940,
+  "venuePid": 73392,
+  "successorPid": 15184,
+  "result": "FAIL"
+}

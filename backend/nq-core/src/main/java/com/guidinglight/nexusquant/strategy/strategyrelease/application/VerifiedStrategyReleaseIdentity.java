@@ -4,6 +4,7 @@ import com.guidinglight.nexusquant.strategy.strategyrelease.artifact.StrategyArt
 import com.guidinglight.nexusquant.strategy.strategyrelease.artifact.StrategyReleaseManifestFingerprinter;
 import com.guidinglight.nexusquant.strategy.strategyrelease.domain.StrategyRelease;
 import com.guidinglight.nexusquant.strategy.strategyrelease.domain.StrategyReleaseStatus;
+import com.guidinglight.nexusquant.strategy.strategyrelease.artifact.StrategyArtifactVerificationResult;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -47,7 +48,7 @@ public record VerifiedStrategyReleaseIdentity(
         if (release.releaseStatus() != StrategyReleaseStatus.VERIFIED
                 || release.verificationResult() == null
                 || release.verificationResult().status()
-                != com.guidinglight.nexusquant.strategy.strategyrelease.artifact.StrategyArtifactVerificationResult.Status.VERIFIED) {
+                != StrategyArtifactVerificationResult.Status.VERIFIED) {
             throw new IllegalArgumentException("only a server-verified release can bind identity");
         }
         StrategyArtifactManifest manifest = Objects.requireNonNull(

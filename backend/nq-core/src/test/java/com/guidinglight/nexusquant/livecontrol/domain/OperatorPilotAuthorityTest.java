@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -77,11 +78,11 @@ class OperatorPilotAuthorityTest {
         RiskLimitSet risk = new RiskLimitSet(
                 UUID.randomUUID(), 1, new BigDecimal("25"), new BigDecimal("10"),
                 new BigDecimal("25"), new BigDecimal("1"), new BigDecimal("2"), 1, 1,
-                java.util.List.of("BTC-USDT"), 300, BigDecimal.ONE, BigDecimal.ONE,
+                List.of("BTC-USDT"), 300, BigDecimal.ONE, BigDecimal.ONE,
                 1000, 10000, 2, NOW);
         LiveSession strategy = LiveSession.create(
                 UUID.randomUUID(), 2, 1, "release-1", "b".repeat(64), 1,
-                risk.id(), risk.canonicalDigest(), 2, java.util.List.of("BTC-USDT"),
+                risk.id(), risk.canonicalDigest(), 2, List.of("BTC-USDT"),
                 new BigDecimal("10"), NOW, NOW.plusSeconds(120), 2, NOW);
         assertEquals(LiveSessionAuthorityType.STRATEGY, strategy.authorityType());
         assertEquals(LiveSession.APPROVAL_SCOPE_SCHEMA, strategy.approvalScopeSchemaVersion());

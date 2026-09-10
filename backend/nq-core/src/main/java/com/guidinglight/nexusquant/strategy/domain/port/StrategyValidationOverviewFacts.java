@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Locale;
 
 /**
  * StrategyValidationOverviewFacts 是 GateS-3 read model 的 SELECT-only repository 投影。
@@ -90,7 +91,7 @@ public record StrategyValidationOverviewFacts(
 
         private static String normalizeStatus(String value) {
             String normalized = normalize(value);
-            return normalized == null ? null : normalized.toUpperCase(java.util.Locale.ROOT);
+            return normalized == null ? null : normalized.toUpperCase(Locale.ROOT);
         }
     }
 

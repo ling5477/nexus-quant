@@ -17,6 +17,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * PaperStrategyEvaluationAssembler —— 纯函数式 Paper 策略评估聚合器（GateK Batch K3）。
@@ -126,7 +129,7 @@ public final class PaperStrategyEvaluationAssembler {
         int drawdownSampleCount = 0;
         BigDecimal worstDrawdown = null;
         Instant latest = null;
-        java.util.Set<String> publishes = new java.util.HashSet<>();
+        Set<String> publishes = new HashSet<>();
 
         for (PaperPortfolioSummary.RunRef ref : members) {
             boolean comparableRun = ref.currentEquity() != null && ref.initialEquity() != null;
@@ -361,7 +364,7 @@ public final class PaperStrategyEvaluationAssembler {
         int returnCount = 0;
         BigDecimal sumDrawdown = BigDecimal.ZERO;
         int drawdownCount = 0;
-        java.util.Set<String> seenPublishes = new java.util.HashSet<>();
+        Set<String> seenPublishes = new HashSet<>();
         for (PaperPortfolioSummary.RunRef ref : members) {
             String publishId = ref.publishId();
             if (publishId == null || !seenPublishes.add(publishId)) {
@@ -528,7 +531,7 @@ public final class PaperStrategyEvaluationAssembler {
 
     private static List<String> rankKeys(
             List<StrategyEvaluation> strategies, Comparator<StrategyEvaluation> comparator,
-            java.util.function.Predicate<StrategyEvaluation> include
+            Predicate<StrategyEvaluation> include
     ) {
         return strategies.stream()
                 .filter(include)
@@ -538,7 +541,7 @@ public final class PaperStrategyEvaluationAssembler {
                 .toList();
     }
 
-    private static List<String> filterKeys(List<StrategyEvaluation> strategies, java.util.function.Predicate<StrategyEvaluation> include) {
+    private static List<String> filterKeys(List<StrategyEvaluation> strategies, Predicate<StrategyEvaluation> include) {
         return strategies.stream()
                 .filter(include)
                 .limit(MAX_RANKING_SIZE)
