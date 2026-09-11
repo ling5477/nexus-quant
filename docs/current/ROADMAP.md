@@ -47,13 +47,12 @@ C1(P1-2) ACCEPTED / CI_GREEN / CLOSED
   ↓
 C2(P1-3) ACCEPTED / CI_GREEN / CLOSED
   ↓
-Pre-B0 CI safety/current authority remediation IMPLEMENTED / PENDING_INDEPENDENT_REVIEW
+Phase6 L4 ACCEPTED / B0–B5 ACCEPTED / B6 AGGREGATE_ACCEPTED
+3d103cea2072b3c2d9d1009cc5841c18a958ee80 / 34501806297 / 9 of 9 SUCCESS
   ↓
-Targeted independent review → exact delivery / exact-head CI
+Phase6 L5/L6 NEXT / NOT_STARTED
   ↓
-B0 Harness Foundation NOT_STARTED
-  ↓
-L4 Qualification NOT_STARTED
+NQ-GATEAUDIT-PHASE6-L5-L6-SCOPE-AND-QUALIFICATION-PLAN
 ```
 
 ## Phase4 accepted foundation
@@ -80,8 +79,8 @@ L4 Qualification NOT_STARTED
 | Canonical deployment rebuild | immutable pair=`a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848` | single canonical deploy/release/restore path | `NOT_REQUIRED` | P5-F002与P5-F003已由9/9 exact-head CI接受并关闭 | Phase5 deployment/recovery owner | acceptance pair失效时才重开 | Phase5B |
 | Minimum observability baseline | F007最小运行观测已由immutable technical pair接受 | deployment health/log/metric/alert minimum | `NOT_REQUIRED` | F007已ACCEPTED / CLOSED，不重复实现 | Phase5 observability owner | accepted pair失效时才重开 | Phase5 |
 | Selected frontend E2E expansion | Phase5A historical pair接受`5 specs / 20 cases`；Phase5B current baseline=`5 specs / 27 cases` | Phase5 selected critical-flow matrix | `NOT_REQUIRED` | 当前loopback=`25/25`、real-backend=`2/2`、skip/fixme=`0/0`，不重复扩展 | Phase5 frontend QA owner | acceptance pair或critical scope失效时才重开 | Phase5A/Phase5B |
-| accepted-timeout / lost ACK / cancel-fill race / kill-in-flight / external-side-effect+DB failure / multi-instance lease | 尚未证明 | real-process deterministic L4 matrix | `PROVE_FIRST` | F-002只接受restart foundation | Phase6 qualification owner | Phase5 deployment+observability baseline accepted | Phase6 L4 |
-| L5/L6 scale、chaos与长期qualification | 未执行 | Phase6 L4 accepted | `PROVE_FIRST` | 不得越过L4直接实现 | Phase6 qualification owner | L4 accepted后 | Phase6 L5/L6 |
+| Current eligible L4 correctness obligations | 28/28 accepted；missing=0、invalid=0 | 最终technical SHA及B6 aggregate evidence | `ACCEPTED` | B0–B5与B6聚合均已接受；inactive/future不计PASS | Phase6 qualification owner | 不重开L4 | Phase6 L4 |
+| L5/L6 scale、故障与长期运行验证 | NEXT / NOT_STARTED | Phase6 L4 ACCEPTED | `PLAN_NEXT` | 先解析真实scope、测试边界与exit criteria | Phase6 qualification owner | 下一正式scope与qualification计划 | Phase6 L5/L6 |
 | 第二pilot、通用LIVE、真实交易扩展、transfer/withdraw | 未授权 | explicit future authority + safety review | `REJECT` | 超出GateAUDIT与Phase4/5/6 proof边界 | future trading governance | 新任务与显式授权同时存在 | Not scheduled |
 
 ## Phase5 inputs
@@ -115,15 +114,11 @@ L4 Qualification NOT_STARTED
 - Closure依据：既有本节要求remaining blocking=0，F005此前已明确非阻断延期；current machine lifecycle只约束工作状态/next-action，未规定所有deferred finding必须关闭。Phase5A/Phase5B与F007/F008/F009 accepted prerequisites均已具备，未发现其他Phase5 closure prerequisite；不修改lifecycle定义。
 - Phase5=`ACCEPTED / CLOSED`；逐项accepted evidence与remaining action见[F001 post-remote acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_POST_REMOTE_AUTHORITY_ACCEPTANCE.md)。F005 remains deferred as explicitly non-blocking follow-on work.
 
-## Phase6 accepted plan and unproven qualification
+## Phase6 L4 accepted / L5-L6 next
 
-- accepted-timeout与lost ACK；
-- cancel/fill race与partial-fill continuation；
-- kill-in-flight、external side effect + DB failure；
-- multi-instance/lease/duplicate worker；
-- L5/L6 scale、chaos与长期qualification。
+Phase6=`IN_PROGRESS / NOT_FROZEN`，L4=`ACCEPTED`；B0–B5=`ACCEPTED`，B6=`AGGREGATE_ACCEPTED`。最终technical pair=`3d103cea2072b3c2d9d1009cc5841c18a958ee80 / 34501806297 / 9 of 9 SUCCESS`，current eligible matrix=`28/28 / missing=0 / invalid=0`，P0=0、P1=0；接受依据为[B6 aggregate evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_B6_AGGREGATE_QUALIFICATION_ACCEPTANCE.md)，不由本次docs-only同步替换。P2 ordinary concurrent INSERT loser与P3 wildcard-import residual保持`OPEN / NON_BLOCKING`。
 
-Phase5 closure与deployment/observability accepted prerequisites保持；Phase6=`IN_PROGRESS / NOT_FROZEN`。L4 plan/reproduction delivery以`d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665`正式`ACCEPTED / CI_GREEN`；L4 qualification仍`PROVE_FIRST / NOT_STARTED`，不等于L4/Phase6 accepted。C1与C2已ACCEPTED / CI_GREEN / CLOSED，P1-2与P1-3已关闭；当前进行pre-B0 CI safety/current authority remediation，不重开已接受正确性实现。完整inventory为27 scenarios、17 crash points、12 MUST_PROVE；13行当前适用，14行future-triggered/currently non-canonical，所有qualification行仍NOT_RUN，不将未来行计PASS、SKIPPED或永久NOT_REQUIRED。
+Phase6 L5/L6=`NEXT / NOT_STARTED`，目标为后续规模、故障与长期运行验证。下一正式任务先从当前仓库及既有Phase6 planning evidence解析L5/L6真实scope、规模/故障/soak边界、复用能力、新实现需求与exit criteria；不创造L5-1、L5-2或L6-1，不重开L4。
 
 | Observation | Current disposition | Current blocker / owner | Boundary |
 | --- | --- | --- | --- |
@@ -135,7 +130,7 @@ Phase5 closure与deployment/observability accepted prerequisites保持；Phase6=
 
 Future trigger：对应retired/dormant路径再次成为canonical时，重新运行R1–R4 reachability，不能自动恢复blocking finding或新增compatibility caller。历史失败pair=`378de657ac33b9f9fd666288d489181ac0147b2e / 34038345304`保持FAILED DELIVERY；接受的是后续remediation pair，详见[authority acceptance evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_PLAN_POST_CI_AUTHORITY_TRANSITION_TO_C1.md)。
 
-当前依赖为 **C1/C2（已接受关闭）→ pre-B0 CI safety/current authority remediation → targeted Independent Review → exact delivery / exact-head CI → B0 Harness Foundation → L4 Qualification**。本轮候选状态为 `IMPLEMENTED / PENDING_INDEPENDENT_REVIEW`；B0与L4 qualification仍NOT_STARTED，L5/L6继续等待L4 accepted。
+当前依赖为 **L4 ACCEPTED → L5/L6 scope与qualification计划**；14个历史inactive scenario继续保留future obligation，不算PASS或静默skip。
 
 C1接受身份：implementation=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd`；既有独立review=`PASS / PHASE6_L4_C1_VERSIONED_OCC_INDEPENDENT_REVIEW_ACCEPTED / P0_0 / P1_0 / READY_FOR_C1_DELIVERY`；acceptance head=`eb9740b7519f48ffc1e32968cbb0950261b871ef`、CI=`34098902705 / 9/9 SUCCESS`。首次delivery=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd / 34086018265 = FAILED DELIVERY`另行保留；完整证据见[C1 authority acceptance](../audit/evidence/GATEAUDIT_PHASE6_L4_C1_POST_CI_AUTHORITY_TRANSITION_TO_C2.md)。C1历史接受身份不由后续文档同步替代。C2已由`612c2f5887a2e6b3a8b3138d9ae9b193c20e298f / 34183851797`接受关闭，本轮不重复其实现或正确性审查。
 
@@ -148,7 +143,7 @@ C1接受身份：implementation=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd`；既
 - F007 immutable technical acceptance pair=`0e2efdeb236c185dbace67bb22f94c6af64a563a / 34009290836`；implementation与accepted technical head相同，不由本轮docs-only authority commit替代。
 - F009 immutable technical acceptance pair=`dbb8b9c6a2319338f5ca90b566ad494142a55e20 / 34024427455`；首次delivery=`85d11984d0c65b464ffe4858fe7fd1da51885f12`、failed CI=`34024011663`保留，不由后续authority commit替代。
 - F001 remote acceptance绑定ruleset `22381941 / refs/heads/dev / ACTIVE / effective 9/9`；本次只读readback与authority synchronization commit是独立事件，不能写成新的remote mutation。
-- 当前 workstream=`GATEAUDIT-PHASE6-PRE-B0-CI-SAFETY-AND-CURRENT-AUTHORITY-REMEDIATION`，status=`IMPLEMENTED|PENDING_REVIEW / NONE / NOT_RUN`；machine next action=`NQ-GATEAUDIT-PHASE6-PRE-B0-SAFETY-INDEPENDENT-REVIEW`，唯一类型=`REVIEW`，映射完整任务名 `NQ-GATEAUDIT-PHASE6-PRE-B0-CI-SAFETY-REMEDIATION-INDEPENDENT-REVIEW`。这一个审查验证 F1/F2 guard 未削弱、F7/F8/F9 未恢复旧 instruction authority，并按用户追加范围核对[九领域 engineering discipline ownership 与原12 Skills规则映射](evidence/instruction-system/NQ-CODEX-ENGINEERING-DISCIPLINE-COMPLETENESS.attempt-01.md)。追加整改已实现，仍待同一次独立审查；四Skill identity/routing与Global/NQ根保持精简。当前不 stage/commit/push；审查 P0/P1=0 后才按用户指令进入 delivery/exact-head CI。
+- 当前workstream及下一动作=`NQ-GATEAUDIT-PHASE6-L5-L6-SCOPE-AND-QUALIFICATION-PLAN`，status=`NOT_STARTED / NONE / NOT_RUN`。本次仅同步L4接受事实与精确docs交付；不启动下一任务，不新增L4 review或qualification。
 - Phase5 ACCEPTED/CLOSED，remaining blocking=0；F005仍DEFERRED/NON_BLOCKING，平台attestation须未来显式授权。详见[F001 post-remote acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_POST_REMOTE_AUTHORITY_ACCEPTANCE.md)。
 
 
@@ -163,13 +158,13 @@ C1接受身份：implementation=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd`；既
 | F5 Java shadow committed-change classification | 新增违规提交后，干净 checkout 的 git status 不再将其标记为 NEW_CODE_FINDING。 |
 | F6 manual seed SQL scope | 在含非 fixture admin 账号的数据库手工运行 seed，其默认账号 UPDATE 范围过宽；静态风险，未执行。 |
 
-F1/F2 已完成实现与本地回归，仍待真正独立审查和交付；本轮不宣称整个 GateAUDIT 已结束。
+上述pre-B0历史残余来源保留；其旧审查/交付next action已由最终L4接受事实推进，不再作为当前前置。不宣称整个GateAUDIT已结束。
 
 ## Persistent boundary
 
 - `LIVE=DISABLED`、kill switch=`ENGAGED`；禁止再次pilot、PLACE、CANCEL、transfer、withdraw或credential/生产服务器/生产数据库访问。
 - GateY frozen archive与published tags不可改写。
-- P5-F001/P5-F007/P5-F008/P5-F009均为`ACCEPTED / CLOSED`；Phase5已关闭，Phase6 IN_PROGRESS/NOT_FROZEN，L4 plan、C1与C2已接受关闭；当前pre-B0 remediation待独立审查，B0与L4 qualification未开始。remote enforcement为APPLIED/VERIFIED/ACCEPTED，platform attestation保持DEFERRED/NON_BLOCKING。
+- P5-F001/P5-F007/P5-F008/P5-F009均为`ACCEPTED / CLOSED`；Phase5已关闭，Phase6 IN_PROGRESS/NOT_FROZEN，L4 ACCEPTED，L5/L6 NEXT/NOT_STARTED。remote enforcement为APPLIED/VERIFIED/ACCEPTED，platform attestation保持DEFERRED/NON_BLOCKING。
 
 ## F009 accepted delivery lineage
 

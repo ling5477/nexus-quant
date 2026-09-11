@@ -20021,3 +20021,9 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - 完整身份、证据与交付边界见[C1 acceptance evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_C1_POST_CI_AUTHORITY_TRANSITION_TO_C2.md)。authority commit与immutable technical chain分层；LIVE DISABLED、kill ENGAGED及全部安全字段不变，credential/真实provider/production DB操作=0。
 
 - 本轮治理准入实测：authority PS5.1/PS7 errors=0；matcher failed=0；lifecycle 20/20；agent 12/12；stage scanned=1802/errors=0；stage guard Windows 47 PASS+2既有symlink条件跳过、Linux 49/49 PASS；docs links checked=436/errors=0/历史warnings=123；Gitleaks 8.18.4安全扫描3147文件、findings=0；append-only/history/stale/safety/范围与diff检查均PASS。所有上述命令exit=0，完整命令见本节acceptance evidence；材料化后最终candidate再作stage/docs/consistency/secret/diff准入，失败不提交。
+
+
+## 2026-09-11 — Phase6 L4 B6 aggregate acceptance
+
+- L4 B6 aggregate acceptance已完成，见[B6 aggregate evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_B6_AGGREGATE_QUALIFICATION_ACCEPTANCE.md)。Final decision=`PASS / L4_B6_AGGREGATE_QUALIFICATION_ACCEPTED / PHASE6_L4_ACCEPTED`。
+- 本次仅同步STATUS/ROADMAP并纳入上述证据；immutable technical pair=`3d103cea2072b3c2d9d1009cc5841c18a958ee80 / 34501806297 / 9 of 9 SUCCESS`不变。L5/L6=`NEXT / NOT_STARTED`，下一任务先解析scope；不重跑或重开L4。
