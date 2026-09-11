@@ -24,7 +24,7 @@ public interface TradeRepository {
 
     void insert(PaperTradeRecord trade);
 
-    /** 原子写入普通 OKX Trade 及其必需事件；不得退化为两个独立提交。 */
+    /** 原子写入普通 OKX Trade 及其必需事件；同 fill 重放无新增，调用方按 venue fill key 读取持久身份。 */
     default void insertWithRequiredEvent(PaperTradeRecord trade) {
         throw new UnsupportedOperationException("atomic Trade/event persistence is required");
     }

@@ -16,6 +16,7 @@ import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * JdbcLedgerPostingRepository 是记账模块的 JDBC 实现。
@@ -29,6 +30,50 @@ public class JdbcLedgerPostingRepository implements LedgerPostingRepository {
 
     public JdbcLedgerPostingRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @Override
+    public void lockSnapshotCurrencies(Long accountId, List<String> currencies) {
+        if (!TransactionSynchronizationManager.isActualTransactionActive()
+                || !"read committed".equals(jdbcTemplate.queryForObject("SHOW transaction_isolation", String.class))) {
+            throw new IllegalStateException("PROJECTION_REQUIRES_READ_COMMITTED_TRANSACTION");
+        }
+        // 币种快照没有常驻 head 行；事务级 advisory lock 同样覆盖首条快照，进程死亡自动释放。
+        // 按实际锁键排序避免多币种死锁；哈希碰撞只会增加等待，不会漏锁。最多 base/quote/fee 三种。
+        if (currencies.isEmpty() || currencies.size() > 3) {
+            throw new IllegalArgumentException("projection currency lock budget exceeded");
+        }
+        List<Long> keys = currencies.stream().distinct().map(currency -> jdbcTemplate.queryForObject(
+                "SELECT hashtextextended(?, 0)", Long.class,
+                "nq:account-snapshot:" + accountId + ":" + currency)).distinct().sorted().toList();
+        for (Long key : keys) {
+            jdbcTemplate.queryForObject("SELECT pg_advisory_xact_lock(?)", Object.class, key);
+        }
+    }
+
+    @Override
+    public void lockPosition(Long accountId, String symbol, String traceId) {
+        if (!TransactionSynchronizationManager.isActualTransactionActive()) {
+            throw new IllegalStateException("position lock requires a transaction");
+        }
+        jdbcTemplate.update("""
+                INSERT INTO positions(account_id, symbol, trace_id) VALUES (?, ?, ?)
+                ON CONFLICT (account_id, symbol) DO NOTHING
+                """, accountId, symbol, traceId);
+        jdbcTemplate.queryForObject("SELECT id FROM positions WHERE account_id=? AND symbol=? FOR UPDATE",
+                Long.class, accountId, symbol);
+    }
+
+    @Override
+    public Optional<PositionProjection> findAssetPosition(Long accountId, String currency) {
+        List<PositionProjection> rows = jdbcTemplate.query("""
+                SELECT account_id, ? AS symbol, SUM(qty) AS qty, SUM(available_qty) AS available_qty,
+                       0 AS avg_price, '' AS trace_id
+                FROM positions
+                WHERE account_id=? AND split_part(replace(symbol, '/', '-'), '-', 1)=?
+                GROUP BY account_id
+                """, POSITION_ROW_MAPPER, currency, accountId, currency);
+        return rows.stream().findFirst();
     }
 
     @Override

@@ -20,9 +20,17 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.RejectedExecutionException;
 
 /** 独立 venue-owned 内存事实；不链接 NQ DB，不实现任何本地 Order/Trade/Ledger 状态机。 */
 public final class B0SyntheticVenueMain {
+    static boolean boundedWorkload;
+    private ThreadPoolExecutor boundedExecutor;
+    private final AtomicInteger rejectedTasks = new AtomicInteger();
     private final ObjectMapper mapper = new ObjectMapper();
     private final Map<String, ObjectNode> orders = new LinkedHashMap<>();
     private int placeCalls;
@@ -39,7 +47,16 @@ public final class B0SyntheticVenueMain {
         var venue = new B0SyntheticVenueMain();
         var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 16);
         server.createContext("/", venue::handle);
-        server.setExecutor(Executors.newFixedThreadPool(4));
+        if (boundedWorkload) {
+            venue.boundedExecutor = new ThreadPoolExecutor(4, 4, 0, TimeUnit.MILLISECONDS,
+                    new ArrayBlockingQueue<>(16), (task, executor) -> {
+                        venue.rejectedTasks.incrementAndGet();
+                        throw new RejectedExecutionException("bounded venue queue exhausted");
+                    });
+            server.setExecutor(venue.boundedExecutor);
+        } else {
+            server.setExecutor(Executors.newFixedThreadPool(4));
+        }
         server.start();
         System.out.println("B0_READY " + server.getAddress().getPort());
         System.out.flush();
@@ -56,8 +73,21 @@ public final class B0SyntheticVenueMain {
         }
         if ("/control".equals(path)) {
             String requested = new String(body, StandardCharsets.UTF_8);
-            if ("FILL".equals(requested) && mode.startsWith("B1_")) {
+            if ("FILL_NEW".equals(requested) && boundedWorkload && "L5_OPEN".equals(mode)) {
+                orders.values().stream().skip(60).filter(order -> !"filled".equals(order.path("state").asText())).forEach(order -> {
+                    order.put("uTime", Long.toString(System.currentTimeMillis()));
+                    order.put("state", "filled").put("accFillSz", order.path("sz").asText())
+                            .put("avgPx", "100.00000000").put("fee", "-0.01000000");
+                    event("FILL", order.path("clOrdId").asText()).put("tradeId", "b0-fill-" + order.path("ordId").asText());
+                });
+                respond(exchange, 200, mapper.createObjectNode().put("filledNew", true));
+                return;
+            }
+            if ("FILL".equals(requested) && (mode.startsWith("B1_") || "L5_OPEN".equals(mode))) {
                 orders.values().forEach(order -> {
+                    // L5 成交时间取实际状态转换时间；已生成的成交事实不得在后续 FILL 中改写。
+                    if (boundedWorkload && "filled".equals(order.path("state").asText())) return;
+                    if (boundedWorkload) order.put("uTime", Long.toString(System.currentTimeMillis()));
                     order.put("state", "filled").put("accFillSz", order.path("sz").asText())
                             .put("avgPx", "100.00000000").put("fee", "-0.01000000");
                     event("FILL", order.path("clOrdId").asText()).put("tradeId", "b0-fill-" + order.path("ordId").asText());
@@ -72,13 +102,16 @@ public final class B0SyntheticVenueMain {
                 respond(exchange, 200, mapper.createObjectNode().put("released", true));
                 return;
             }
-            if (!Set.of("DELIVER", "DROP", "CLOSE", "DELAY", "B1_ACCEPTED_TIMEOUT", "B1_LOST_ACK").contains(requested)) {
+            if (!Set.of("DELIVER", "DROP", "CLOSE", "DELAY", "B1_ACCEPTED_TIMEOUT", "B1_LOST_ACK", "L5_OPEN").contains(requested)) {
                 respond(exchange, 400, mapper.createObjectNode().put("error", "UNKNOWN_MODE"));
                 return;
             }
             mode = requested;
             respond(exchange, 200, mapper.createObjectNode().put("mode", mode));
             return;
+        }
+        if ("/l5-metrics".equals(path) && boundedExecutor != null) {
+            respond(exchange, 200, executorMetrics()); return;
         }
         if ("/facts".equals(path)) {
             ObjectNode facts = mapper.createObjectNode().put("pid", ProcessHandle.current().pid())
@@ -87,6 +120,11 @@ public final class B0SyntheticVenueMain {
             var data = facts.putArray("data");
             orders.values().forEach(data::add);
             facts.set("events", events.deepCopy());
+            if (boundedExecutor != null) {
+                facts.put("executorActive", boundedExecutor.getActiveCount()).put("executorQueue", boundedExecutor.getQueue().size())
+                        .put("executorCompleted", boundedExecutor.getCompletedTaskCount()).put("executorRejected", rejectedTasks.get())
+                        .put("executorQueueCapacity", 16);
+            }
             respond(exchange, 200, facts);
             return;
         }
@@ -99,6 +137,9 @@ public final class B0SyntheticVenueMain {
             JsonNode request = mapper.readTree(body);
             String client = request.path("clOrdId").asText();
             if (client.isBlank()) { respond(exchange, 400, envelope); return; }
+            if (boundedWorkload && !orders.containsKey(client) && orders.size() >= 300) {
+                respond(exchange, 429, mapper.createObjectNode().put("error", "L5_ORDER_BUDGET")); return;
+            }
             placeCalls++;
             event("REQUEST_RECEIVED", client);
             ObjectNode order = orders.computeIfAbsent(client, key -> mapper.createObjectNode()
@@ -108,7 +149,7 @@ public final class B0SyntheticVenueMain {
                     .put("accFillSz", request.path("sz").asText()).put("avgPx", "123.45000000")
                     .put("uTime", Long.toString(System.currentTimeMillis())));
             event("VENUE_ACCEPTED", client).put("ordId", order.path("ordId").asText());
-            if (mode.startsWith("B1_")) {
+            if (mode.startsWith("B1_") || "L5_OPEN".equals(mode)) {
                 order.put("state", "live").put("accFillSz", "0").put("avgPx", "0");
             }
             data.addObject().put("ordId", order.path("ordId").asText()).put("clOrdId", client).put("sCode", "0");
@@ -148,6 +189,11 @@ public final class B0SyntheticVenueMain {
                             || value.path("clOrdId").asText().equals(query.get("clOrdId"))).findFirst().orElse(null);
             event(path.endsWith("/order") ? "QUERY_ORDER" : "QUERY_FILLS", query.getOrDefault("clOrdId", ""))
                     .put("ordId", query.getOrDefault("ordId", "")).put("found", order != null);
+            // V51准备已提交但尚未PLACE时，真实不存在必须复用B2的NOT_FOUND协议，不能返回成功空数据。
+            if (boundedWorkload && order == null && path.endsWith("/order")) {
+                envelope.put("code", "51603").put("msg", "Order does not exist");
+                event("QUERY_ORDER_NOT_FOUND", query.getOrDefault("clOrdId", ""));
+            }
             if (order != null && path.endsWith("/order")) data.add(order);
             if (order != null && path.endsWith("/fills") && "filled".equals(order.path("state").asText())) {
                 fillQueries++;
@@ -166,6 +212,12 @@ public final class B0SyntheticVenueMain {
     private ObjectNode event(String type, String client) {
         return events.addObject().put("sequence", events.size() + 1).put("type", type)
                 .put("nanoTime", System.nanoTime()).put("client", client);
+    }
+
+    private ObjectNode executorMetrics() {
+        return mapper.createObjectNode().put("active", boundedExecutor.getActiveCount())
+                .put("queue", boundedExecutor.getQueue().size()).put("completed", boundedExecutor.getCompletedTaskCount())
+                .put("rejected", rejectedTasks.get()).put("capacity", 16);
     }
 
     private void respond(HttpExchange exchange, int code, JsonNode value) throws IOException {

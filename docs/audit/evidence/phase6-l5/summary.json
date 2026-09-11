@@ -1,0 +1,2942 @@
+{
+  "task": "NQ-GATEAUDIT-PHASE6-L5-AGGREGATE-QUALIFICATION-ACCEPTANCE-RESUME",
+  "decision": "PASS / PHASE6_L5_AGGREGATE_QUALIFICATION_ACCEPTED / PHASE6_L5_ACCEPTED / BOUNDED_SCALE_ACCEPTED / CONCURRENT_SCALE_ACCEPTED / REPEATED_FAULT_UNDER_LOAD_ACCEPTED / KILL_TRANSITION_UNDER_LOAD_ACCEPTED / ACCOUNTING_PROJECTION_SCALE_CORRECTNESS_ACCEPTED / BACKLOG_AND_FAIRNESS_ACCEPTED / MULTIJVM_RECOVERY_UNDER_LOAD_ACCEPTED / NO_DUPLICATE_MUTATION / NO_DUPLICATE_ACCOUNTING / NO_DURABLE_ORPHAN / P0_0 / P1_0",
+  "l5Accepted": true,
+  "boundedBatch": {
+    "task": "NQ-GATEAUDIT-PHASE6-L5-BOUNDED-WORKLOAD-AND-MEASUREMENT",
+    "classification": "HIGH_RISK / SCALE_QUALIFICATION / TEST_HARNESS_AND_MEASUREMENT / NQ-only",
+    "startingHead": "991187fe772ad8b03746a4a9ddfc3ea9010e5896",
+    "endingHead": "991187fe772ad8b03746a4a9ddfc3ea9010e5896",
+    "branch": "audit/post-gatey-agent-baseline",
+    "planningSha256Start": "80e339594be7223f07783d30e7f18913a53187ecde59b360ecdbf9223c9e45ac",
+    "planningSha256End": "80e339594be7223f07783d30e7f18913a53187ecde59b360ecdbf9223c9e45ac",
+    "decision": "PASS / PHASE6_L5_BOUNDED_WORKLOAD_AND_MEASUREMENT_ACCEPTED",
+    "review": "SELF_REVIEWED",
+    "l5Accepted": false,
+    "productionDelta": 0,
+    "migrationDelta": 0,
+    "authorityDelta": 0,
+    "stage": 0,
+    "commit": "NONE",
+    "push": "NONE",
+    "nextAction": "NQ-GATEAUDIT-PHASE6-L5-CONCURRENT-WORKLOAD-AND-BACKLOG",
+    "levels": [
+      {
+        "level": "S1",
+        "concurrency": 1,
+        "expectedOrders": 120,
+        "expectedStrategyRuns": 0,
+        "initialBacklog": 120,
+        "finalBacklog": 0,
+        "scanIterations": 2,
+        "drainSeconds": 2.8359837,
+        "elapsedSeconds": 57.7212759,
+        "cleanup": true,
+        "result": "PASS",
+        "oracleMutationNegatives": [
+          "duplicate_place",
+          "duplicate_trade",
+          "missing_event",
+          "ledger_amount",
+          "lost_order",
+          "lineage",
+          "backlog",
+          "measurement_gap",
+          "cleanup",
+          "unapproved_scale",
+          "event_payload",
+          "balance",
+          "position",
+          "ledger_event",
+          "pool_not_released",
+          "venue_rejection",
+          "missing_progress"
+        ],
+        "peakBacklog": 120,
+        "progressSamples": 186,
+        "resourceSamples": 192,
+        "poolMax": 10,
+        "activePeak": 1,
+        "waitingPeak": 0,
+        "threadsPeak": 19,
+        "correctnessRequiredUnresolved": 0,
+        "businessCounts": {
+          "orders": 120,
+          "ordinary_place_authorities": 120,
+          "trades": 120,
+          "ledger_entries": 480,
+          "ledger_events": 480,
+          "positions": 1,
+          "account_snapshots": 240,
+          "strategy_runs": 0,
+          "strategy_run_dispatch_work": 0,
+          "events": 120
+        },
+        "processed": 120,
+        "venueExecutor": {
+          "executorActive": 1,
+          "executorQueue": 0,
+          "executorCompleted": 803,
+          "executorRejected": 0,
+          "executorQueueCapacity": 16
+        },
+        "transactionDelta": 2693,
+        "resourcesReleased": {
+          "nq": 0,
+          "venue": 0,
+          "ownedContainers": 0,
+          "venuePortReleased": true,
+          "databasePortReleased": true
+        },
+        "canonicalRun": "runs/S1.json",
+        "canonicalSha256": "33fb8783d9c74a688651b7ea5403007120cd409b55c7d0f52caec2b3a5c5b62c",
+        "rawProofSha256": "6119f5d1302ff97a9440f4c0b0576ac4b6b71432a0c72bf8359a20bfabc433fc",
+        "log": "backend/nq-app/target/l5-s1-attempt04.log",
+        "logSha256": "3ce2a32a6ff76b502e64dcccdd175eba33d530930353720693b4873879dd990b",
+        "rawLocator": "L5_ROOT in run log",
+        "actionablePeak": 120,
+        "unresolvedPeak": 1,
+        "poolIdlePeak": 10,
+        "venueQueuePeak": 0,
+        "venueWorkersPeak": 1
+      },
+      {
+        "level": "S2",
+        "concurrency": 2,
+        "expectedOrders": 120,
+        "expectedStrategyRuns": 0,
+        "initialBacklog": 120,
+        "finalBacklog": 0,
+        "scanIterations": 2,
+        "drainSeconds": 3.2772079,
+        "elapsedSeconds": 40.3375973,
+        "cleanup": true,
+        "result": "PASS",
+        "oracleMutationNegatives": [
+          "duplicate_place",
+          "duplicate_trade",
+          "missing_event",
+          "ledger_amount",
+          "lost_order",
+          "lineage",
+          "backlog",
+          "measurement_gap",
+          "cleanup",
+          "unapproved_scale",
+          "event_payload",
+          "balance",
+          "position",
+          "ledger_event",
+          "pool_not_released",
+          "venue_rejection",
+          "missing_progress"
+        ],
+        "peakBacklog": 120,
+        "progressSamples": 105,
+        "resourceSamples": 232,
+        "poolMax": 10,
+        "activePeak": 1,
+        "waitingPeak": 0,
+        "threadsPeak": 19,
+        "correctnessRequiredUnresolved": 0,
+        "businessCounts": {
+          "orders": 120,
+          "ordinary_place_authorities": 120,
+          "trades": 120,
+          "ledger_entries": 480,
+          "ledger_events": 480,
+          "positions": 1,
+          "account_snapshots": 240,
+          "strategy_runs": 0,
+          "strategy_run_dispatch_work": 0,
+          "events": 120
+        },
+        "processed": 120,
+        "venueExecutor": {
+          "executorActive": 1,
+          "executorQueue": 0,
+          "executorCompleted": 642,
+          "executorRejected": 0,
+          "executorQueueCapacity": 16
+        },
+        "transactionDelta": 3233,
+        "resourcesReleased": {
+          "nq": 0,
+          "venue": 0,
+          "ownedContainers": 0,
+          "venuePortReleased": true,
+          "databasePortReleased": true
+        },
+        "canonicalRun": "runs/S2.json",
+        "canonicalSha256": "41f51efc10d207d2c1eff0f95a3c3df83a136b92d1b365b0025dbe54aeabce1a",
+        "rawProofSha256": "cfafd02356c3cb37aa6b89c29f23a86e3b15746099e06988b30abde71718b87e",
+        "log": "backend/nq-app/target/l5-s2-attempt01.log",
+        "logSha256": "cc8b5721b2f6ad9249ba4cd01a0f160b1ff52d7b6fc9a9eae04b3b028e181888",
+        "rawLocator": "L5_ROOT in run log",
+        "actionablePeak": 119,
+        "unresolvedPeak": 2,
+        "poolIdlePeak": 10,
+        "venueQueuePeak": 0,
+        "venueWorkersPeak": 1
+      },
+      {
+        "level": "S3",
+        "concurrency": 4,
+        "expectedOrders": 240,
+        "expectedStrategyRuns": 12,
+        "initialBacklog": 240,
+        "finalBacklog": 0,
+        "scanIterations": 10,
+        "drainSeconds": 10.0268884,
+        "elapsedSeconds": 59.356364,
+        "cleanup": true,
+        "result": "PASS",
+        "oracleMutationNegatives": [
+          "duplicate_place",
+          "duplicate_trade",
+          "missing_event",
+          "ledger_amount",
+          "lost_order",
+          "lineage",
+          "backlog",
+          "measurement_gap",
+          "cleanup",
+          "unapproved_scale",
+          "event_payload",
+          "balance",
+          "position",
+          "ledger_event",
+          "pool_not_released",
+          "venue_rejection",
+          "missing_progress",
+          "orphan_run",
+          "duplicate_window"
+        ],
+        "peakBacklog": 240,
+        "progressSamples": 147,
+        "resourceSamples": 701,
+        "poolMax": 10,
+        "activePeak": 1,
+        "waitingPeak": 0,
+        "threadsPeak": 19,
+        "correctnessRequiredUnresolved": 0,
+        "businessCounts": {
+          "orders": 252,
+          "ordinary_place_authorities": 252,
+          "trades": 252,
+          "ledger_entries": 1008,
+          "ledger_events": 1008,
+          "positions": 1,
+          "account_snapshots": 504,
+          "strategy_runs": 12,
+          "strategy_run_dispatch_work": 12,
+          "events": 252
+        },
+        "processed": 252,
+        "venueExecutor": {
+          "executorActive": 1,
+          "executorQueue": 0,
+          "executorCompleted": 1798,
+          "executorRejected": 0,
+          "executorQueueCapacity": 16
+        },
+        "transactionDelta": 7770,
+        "resourcesReleased": {
+          "nq": 0,
+          "venue": 0,
+          "ownedContainers": 0,
+          "venuePortReleased": true,
+          "databasePortReleased": true
+        },
+        "canonicalRun": "runs/S3.json",
+        "canonicalSha256": "069abfcfd8c87f9451f813e142f70f560c2ca833e6c9b0287e322f393a2cca8d",
+        "rawProofSha256": "4f828e767b8fe7595fbca4109fc64bfda2dc2c3c8ab5e3a9a8e977d8f4f3743c",
+        "log": "backend/nq-app/target/l5-s3-attempt01.log",
+        "logSha256": "38cf66c66ba2b525dc06a5cfea1d4958350ff1012bc553e240a94a810491dde2",
+        "rawLocator": "L5_ROOT in run log",
+        "actionablePeak": 240,
+        "unresolvedPeak": 4,
+        "poolIdlePeak": 10,
+        "venueQueuePeak": 0,
+        "venueWorkersPeak": 2
+      }
+    ],
+    "invariants": {
+      "duplicateMutation": 0,
+      "duplicateAccounting": 0,
+      "lostLogicalWork": 0,
+      "durableOrphan": 0,
+      "actionableBacklog": "CONVERGED",
+      "resourceUsage": "BOUNDED",
+      "forwardProgress": "CONTINUOUS_SAMPLED",
+      "cleanup": "PASS"
+    },
+    "findings": {
+      "P0": 0,
+      "P1": 0,
+      "existingP2": "OPEN / NON_BLOCKING",
+      "existingP3": "OPEN / NON_BLOCKING"
+    },
+    "validation": {
+      "driverJUnit": "2/2 PASS",
+      "fixtureSafety": "8/8 PASS",
+      "existingExporterJUnit": "2/2 PASS",
+      "existingIdentityPython": "8/8 PASS",
+      "l5MeasurementPython": "4/4 PASS",
+      "oracleNegatives": [
+        17,
+        17,
+        19
+      ],
+      "finalRuntimeJUnit": "S1: 1 PASS; S2: 1 PASS; S3: 1 PASS; 0 skipped",
+      "fullMaven": "NOT_RUN",
+      "stageAssets": "1887 scanned / 173 reviewed exceptions / 0 errors",
+      "gitleaks": "8.18.4 / 3869 safe files / 0 findings",
+      "secretNegatives": "6/6 REJECTED",
+      "newEvidenceSecretScan": "PASS / pinned 8.18.4 / 5 recursive batch files plus immutable plan / 0 findings",
+      "diffAndLinks": "PASS / tracked diff and new-file whitespace / 6 links / exact inventory / candidate hashes unchanged"
+    },
+    "candidate": [
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0NqProcessMain.java",
+        "sha256": "e9724b8536b100d89f53d1143050ccb46323c83fc304e2a93338526c1be5a013"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0Processes.java",
+        "sha256": "93338ba17908c940d6c8a86d6aebd9749dafa2f7d6d173d7a42f46df7e42b41c"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0SyntheticVenueMain.java",
+        "sha256": "050ffe522e27331e5c47c818d88e5f7eb512a79d15df6831d897d95a0a2821d2"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5BoundedWorkloadTest.java",
+        "sha256": "c3e73de7c6e55a37fdd2f480bf6dc35c6a427089c1db467c04199982615dc61f"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5DriverContractTest.java",
+        "sha256": "1fd13a58a536412c49bee1d7817ea4d4eb5990f6b1f940caae73bc1c2a7779fa"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5NqProcessMain.java",
+        "sha256": "14529272421a2b4fee9555e7c146da3327660baa1481ddc54b353ecfac823478"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5QualificationControls.java",
+        "sha256": "decfb527153b0bb6c3385667fc825a14f2ef1f13c31fc11f62f813eba59d508f"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5VenueProcessMain.java",
+        "sha256": "de4d9e1aeac468a504114b8c92d52e7384dbfe019c9497942442db63bf9ca3a0"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l5_measurement.py",
+        "sha256": "52b01554bd9028690bf40b17c504be0375069536cc2dd26357ffb5a6bf32ce47"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/test_l5_measurement.py",
+        "sha256": "cac55863568d340d61f2ebac3eba04126c1534632dcb5459ead4ba0787d6067f"
+      }
+    ],
+    "configuration": [
+      {
+        "path": "backend/pom.xml",
+        "sha256": "caa6aa99caafdf7e4c9d69c24def9676a52ec02ca80486a1aae528839b2264e2"
+      },
+      {
+        "path": "backend/nq-app/pom.xml",
+        "sha256": "d26cc8f89a95bd3acd667e4a38539419f695dfcc824c089cb7a04bd8a89aa3e1"
+      },
+      {
+        "path": "backend/nq-app/src/main/resources/application.yml",
+        "sha256": "9db8be6254312b27c93611b03e41a98350861c13ab8dfb831188207a30a1848c"
+      },
+      {
+        "path": "backend/nq-app/src/main/resources/application-local.yml",
+        "sha256": "2f974cf538d389e03ff186e8e77d7f17b8416f340f9dfdbab64b78eb7810cbae"
+      },
+      {
+        "path": "scripts/ci/delivery-supply-chain-lock.json",
+        "sha256": "ddf318fd46c7d4b53d95b2b9109a56e322f80ff611ef25abd9aa5b6f66c1509d"
+      },
+      {
+        "path": ".github/workflows/ci.yml",
+        "sha256": "34c0a7e8f13035f6a464198058da21fb675a7a5ccf44c22f72421921b0ad1d36"
+      }
+    ],
+    "provenance": "Fingerprints captured at completion; Java driver/fixture unchanged after final S1 through S3. Final Python schema/secret rejection validation added after runtime; all three unchanged raw proofs reverified and re-exported. These are working-tree test results, not committed/exact-head CI acceptance.",
+    "dimensions": "Manual commands concurrently issued to 1/2/4 JVMs, at most one pending command per JVM; reconciliation rounds serially distributed across JVMs. S3 strategy phase uses one real scanner after ordinary backlog drains. Automatic schedulers remain disabled. No faults, SLA, L6, or full L5 acceptance.",
+    "attempts": [
+      {
+        "log": "l5-s1-attempt01.log",
+        "result": "SETUP_ERROR",
+        "reason": "Windows Docker API bridge hung; no business started"
+      },
+      {
+        "log": "l5-s1-attempt02.log",
+        "result": "DRIVER_PACING_FAILURE",
+        "reason": "Real 5/s risk rule rejected sixth fast request; test driver pacing fixed"
+      },
+      {
+        "log": "l5-s1-attempt03.log",
+        "result": "PASS_SUPERSEDED",
+        "reason": "Final bounded fixture and accounting/resource oracle superseded this candidate"
+      },
+      {
+        "log": "l5-secret-check-attempt02.log",
+        "result": "INVENTORY_ERROR",
+        "reason": "Linux git cannot resolve Windows absolute worktree gitdir; existing Windows git option fixed inventory"
+      }
+    ]
+  },
+  "concurrentBatch": {
+    "task": "NQ-GATEAUDIT-PHASE6-L5-CONCURRENT-WORKLOAD-AND-BACKLOG",
+    "classification": "HIGH_RISK / SCALE_QUALIFICATION / CONCURRENT_RECONCILIATION / BACKLOG_CONVERGENCE / NQ-only",
+    "startingHead": "991187fe772ad8b03746a4a9ddfc3ea9010e5896",
+    "endingHead": "991187fe772ad8b03746a4a9ddfc3ea9010e5896",
+    "branch": "audit/post-gatey-agent-baseline",
+    "planningSha256Start": "80e339594be7223f07783d30e7f18913a53187ecde59b360ecdbf9223c9e45ac",
+    "planningSha256End": "80e339594be7223f07783d30e7f18913a53187ecde59b360ecdbf9223c9e45ac",
+    "decision": "FAIL / PHASE6_L5_CONCURRENT_SCALE_CORRECTNESS_FINDING / PRODUCTION_REMEDIATION_REQUIRED / STOP",
+    "levels": {
+      "C1": "FAIL / P1_POSITION_LOST_UPDATE",
+      "C2": "NOT_RUN / STOP_AFTER_C1",
+      "C3": "NOT_RUN / STOP_AFTER_C1"
+    },
+    "finding": {
+      "id": "P1_L5_CONCURRENT_POSITION_LOST_UPDATE",
+      "expectedPosition": "12.0",
+      "actualPosition": "11.7",
+      "missingQuantity": "0.3",
+      "latestBtcAccountSnapshot": "11.6",
+      "productionRemediated": false,
+      "mechanism": "Unlocked position read followed by absolute-value upsert; independent per-order transactions can overwrite concurrent position increments."
+    },
+    "run": {
+      "path": "runs/C1-failure.json",
+      "sha256": "a1aeecbc8c2962059eb4ba3562134e90f235b1e9cd8668cdd1ed65d7f3cb9dab",
+      "rawProofSha256": "d8e06730b1ca62f09f905333396908219649eb54654ddcf82d55f8486718ceea",
+      "rawLocator": "L5_ROOT in backend/nq-app/target/l5c-c1-attempt03.log",
+      "logSha256": "61a8d8397a42eb4ff9697dfed6be1ea38434a2585db61ecffea68bb70f89464e"
+    },
+    "observed": {
+      "duplicatePlace": 0,
+      "duplicateTrade": 0,
+      "duplicateTradeExecuted": 0,
+      "duplicateLedgerFact": 0,
+      "lostOrder": 0,
+      "lostPositionProjection": "0.3 BTC",
+      "durableOrphan": "No missing Order/Trade/Event/Ledger join observed; strategy not run",
+      "initialBacklog": 60,
+      "newCandidates": 60,
+      "peakBacklog": 64,
+      "finalActionable": 0,
+      "finalUnresolved": 0,
+      "cursorReservations": 48,
+      "cursorWraps": 21,
+      "candidatesObserved": 120,
+      "duplicateObservations": 1860,
+      "newerFilledWhileOlderPersistent": 56,
+      "concurrentReconciliationActors": 2,
+      "maxSimultaneousNqJvms": 2,
+      "distinctNqLifetimes": 3,
+      "normalRestartPreservedCursor": true,
+      "resourcesReleased": true
+    },
+    "attempts": [
+      {
+        "log": "l5c-c1-attempt01.log",
+        "outcome": "REJECTED / QUALIFICATION_FIXTURE_TIME_ERROR",
+        "reason": "L5 FILL retained order creation time; raw account snapshot rejection preserved. Corrected actual fill-transition time and immutable filled facts before same-level rerun."
+      },
+      {
+        "log": "l5c-c1-attempt02.log",
+        "outcome": "PASS / SUPERSEDED_DRIVER",
+        "reason": "Before final one-operation-per-JVM scheduling bound; does not qualify final candidate."
+      },
+      {
+        "log": "l5c-c1-attempt03.log",
+        "outcome": "FAIL / PRODUCTION_POSITION_LOSS",
+        "reason": "120 real unique trades total12.0; position11.7; replay preserves loss. No C2/C3 after this finding."
+      }
+    ],
+    "validation": {
+      "environmentSanity": "Docker29.7.2 / create inspect remove readback PASS",
+      "targetedMaven": "attempt03: driver2 PASS; C1 ERROR at correctness exporter; 3 tests / 1 error / 0 skipped",
+      "failureOracle": "4 offline tests PASS; observed business failure REJECTED; 8 cursor/concurrency negatives REJECTED",
+      "postgres": "Real PG16/schemaV51 exercised by C1; additional cursor suite NOT_RUN after STOP",
+      "fullMaven": "NOT_RUN",
+      "stageAssets": "1890 scanned / 173 exceptions / 0 errors",
+      "gitleaks": "pinned8.18.4 / 3872 safe files / 0 findings",
+      "secretNegatives": "6/6 REJECTED",
+      "evidenceScan": "7 recursive batch files plus immutable plan / 0 findings",
+      "diffLinks": "PASS / 13 links / exact inventory / whitespace / Java explicit imports / original run summaries unchanged"
+    },
+    "candidate": [
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0SyntheticVenueMain.java",
+        "sha256": "635d3ba212da83798948882b7714dec7c0198c6bb4670b4e9fcc5f6615c02bc6"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5BoundedWorkloadTest.java",
+        "sha256": "c0f10a9b6e438e04bbc317299e538fd39039e821eb044ea9d1c9399623d47281"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5DriverContractTest.java",
+        "sha256": "a048facaaa890dd2b1f8a8245c44a1af2b6f4aad9766c184dc5e349368fb358f"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5QualificationControls.java",
+        "sha256": "c560da6ebb1894a33eb31bf4c19e2d440f0caec8eeec1f1acafa459157796561"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5ConcurrentControls.java",
+        "sha256": "001841615285bb98e6665d545b3b52a277edc19f6823d3d7911c7b3d76449659"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l5_measurement.py",
+        "sha256": "65b77e9286e7979f57c0e24d7ec88b9dd933591de64b104643c77d3aab86e3d7"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l5_concurrent_oracle.py",
+        "sha256": "2f8a30ae5b8ede6147345b52f3c8bc8c968ad76477b48b16f080a124a4b9b80b"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/test_l5_concurrent_oracle.py",
+        "sha256": "42742f6bc2aa483442ebbb53f651c9bab1036f0492b944bea0310a054498dfff"
+      }
+    ],
+    "productionSources": [
+      {
+        "path": "backend/nq-ledger/src/main/java/com/guidinglight/nexusquant/ledger/service/TradeLedgerPostingService.java",
+        "sha256": "30fdddd151c9b827420cea3d84ff8bacd1cceff38799240f8182d0c2d332e67d"
+      },
+      {
+        "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/ledger/infra/jdbc/JdbcLedgerPostingRepository.java",
+        "sha256": "9b641e85684410c495bc1c816ac219a99a839dd40a8dc1fc3d3c4cee6b0b44e8"
+      },
+      {
+        "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/query/JdbcTradingQueryFacade.java",
+        "sha256": "b009044c929ecc6d2e346c2cf2a80f53cb08f363cee8abddcac2b1a59de04ee8"
+      }
+    ],
+    "provenance": "Final Java runtime candidate is unchanged since C1 attempt03. Failure exporter and offline checks completed afterward against unchanged raw facts. Batch1 historical evidence retained separately.",
+    "productionDelta": 0,
+    "migrationDelta": 0,
+    "authorityDelta": 0,
+    "stage": 0,
+    "commit": "NONE",
+    "push": "NONE",
+    "findings": {
+      "P0": 0,
+      "P1": 1,
+      "existingP2": "OPEN / NON_BLOCKING",
+      "existingP3": "OPEN / NON_BLOCKING"
+    },
+    "l5Accepted": false,
+    "review": "Failure triage and test-tooling self-check; no independent review or production repair",
+    "nextAction": "Separate production remediation for concurrent position lost updates, then rerun C1-C3 before repeated-fault qualification"
+  },
+  "concurrentResumeBatch": {
+    "task": "NQ-GATEAUDIT-PHASE6-L5-CONCURRENT-WORKLOAD-AND-BACKLOG-RESUME",
+    "classification": "HIGH_RISK / SCALE_QUALIFICATION / CONCURRENT_RECONCILIATION / BACKLOG_CONVERGENCE / NQ-only",
+    "decision": "FAIL / PHASE6_L5_CONCURRENT_WORKLOAD_AND_BACKLOG_NOT_ACCEPTED / C3_QUALIFICATION_INCOMPLETE / PRODUCTION_REMEDIATION_REQUIRED",
+    "head": "991187fe772ad8b03746a4a9ddfc3ea9010e5896",
+    "branch": "audit/post-gatey-agent-baseline",
+    "planningSha256": "80e339594be7223f07783d30e7f18913a53187ecde59b360ecdbf9223c9e45ac",
+    "reviewedWorkspaceFingerprintAtEntry": "3d6c5a9e69daf92514ba3f042a650e2970dc25d67665fdef31c9ed66a7245d4f",
+    "projectionCandidateManifestSha256": "8ac8b3557acf269f04be34106a3e7bf20b148b4a3ca53968e0fdb1a802e52279",
+    "candidateFiles": 1828,
+    "environmentSanity": "PASS: Docker info/create/inspect/remove",
+    "runs": {
+      "C1": {
+        "path": "runs/C1-resume.json",
+        "sha256": "ca8e3f85863ed8755f74d184aee7154cb23fff6db2f29f3ec721c2f8c6e41b3b",
+        "result": "PASS"
+      },
+      "C2": {
+        "path": "runs/C2-resume.json",
+        "sha256": "bb05b6bc2ac041beb3a320bcbbfe3fda59eaf1f8572e6f573cfaaff8b33849d7",
+        "result": "PASS"
+      },
+      "C3": {
+        "path": "runs/C3-resume-failure.json",
+        "sha256": "a7919f4ed2a322b75a7e84db0e7b51697dccf275f173beecbaac19b810ef2b3c",
+        "result": "FAIL / QUALIFICATION_INCOMPLETE"
+      }
+    },
+    "projectionOracle": {
+      "C1": "12.0 == Position == latest BTC Snapshot",
+      "C2": "24.0 == Position == latest BTC Snapshot",
+      "C3": "2.8 == Position == latest BTC Snapshot at 28-Trade failure cut only",
+      "source": "SUM signed Trade.qty - base fee grouped by account/asset; non-base current balance from canonical Ledger SUM(delta)",
+      "allPlannedWorkloadQualified": false
+    },
+    "findings": {
+      "P0": 0,
+      "confirmedP1": 0,
+      "newProductionP2": 1,
+      "newProductionP2Code": "CONCURRENT_SAME_FILL_INSERT_FALSE_OVERFILL",
+      "qualificationBlocking": true,
+      "permanentProductionLivenessLoss": "NOT_PROVEN",
+      "existingOrdinaryOrderInsertP2": "OPEN / NON_BLOCKING / UNCHANGED",
+      "existingWildcardImportP3": "OPEN / NON_BLOCKING / UNCHANGED",
+      "fixtureCleanupGap": "Observed one child surviving driver teardown; exact identity cleanup completed"
+    },
+    "fullMaven": {
+      "rerun": "NOT_REQUIRED",
+      "reusedTests": 1909,
+      "failures": 0,
+      "errors": 0,
+      "conditionalSkips": 130,
+      "binding": "Accepted projection remediation final technical candidate unchanged"
+    },
+    "tests": {
+      "C1": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0
+      },
+      "C2": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0
+      },
+      "C3": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 1,
+        "skips": 0
+      },
+      "offlineExporter": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0
+      },
+      "incompleteC3Rejected": true
+    },
+    "historicalProjectionRepair": "HISTORICAL_PROJECTION_REPAIR_REQUIRED / NON_BLOCKING_FOR_CURRENT_QUALIFICATION",
+    "originalReportSha256": "c376b66e1abd009bea083e56a83e5aa092689a5cf2f773c475fa3364617be902",
+    "historicalConcurrentBatchPreserved": true,
+    "productionDelta": 0,
+    "migrationDelta": 0,
+    "harnessDelta": 0,
+    "planDelta": 0,
+    "stage": 0,
+    "commit": "NONE",
+    "push": "NONE",
+    "review": "SELF_REVIEWED / NO_ACCEPTANCE / no additional independent review",
+    "l5Accepted": false,
+    "nextAction": "PRODUCTION_REMEDIATION_REQUIRED",
+    "repeatedFault": "NOT_STARTED",
+    "validation": {
+      "status": "PASS",
+      "stageAssets": {
+        "scanned": 1893,
+        "reviewedExceptions": 173,
+        "errors": 0
+      },
+      "links": {
+        "checked": 14,
+        "warnings": 0,
+        "errors": 0
+      },
+      "diffCheck": "PASS",
+      "gitleaks": {
+        "version": "8.18.4",
+        "archiveHashVerified": true,
+        "safeFiles": 3890,
+        "exit": 0,
+        "findings": 0,
+        "ciConfigurationSha256": "3651989e01d4838ff313ac55a2579cc17306dbe951dd19f8de7429ada45af503"
+      },
+      "secretNegatives": [
+        {
+          "case": "negative-apiKey",
+          "exit": 2,
+          "findings": 1
+        },
+        {
+          "case": "negative-secret",
+          "exit": 2,
+          "findings": 1
+        },
+        {
+          "case": "negative-token",
+          "exit": 2,
+          "findings": 1
+        },
+        {
+          "case": "negative-password",
+          "exit": 2,
+          "findings": 1
+        },
+        {
+          "case": "negative-Authorization",
+          "exit": 2,
+          "findings": 1
+        },
+        {
+          "case": "negative-credential",
+          "exit": 2,
+          "findings": 1
+        }
+      ],
+      "protectedFieldsUnchanged": true,
+      "finalEvidenceScanArtifact": "backend/nq-app/target/l5-resume/final-evidence/result.json",
+      "productionCandidateUnchanged": true,
+      "planningHashUnchanged": true,
+      "originalFailureAndRemediationEvidencePreserved": true
+    }
+  },
+  "concurrentC3ResumeBatch": {
+    "task": "NQ-GATEAUDIT-PHASE6-L5-CONCURRENT-WORKLOAD-AND-BACKLOG-C3-RESUME",
+    "classification": "HIGH_RISK / SCALE_QUALIFICATION / MIXED_STRATEGY_AND_RECONCILIATION / NQ-only",
+    "decision": "PASS / PHASE6_L5_CONCURRENT_WORKLOAD_AND_BACKLOG_ACCEPTED / C1_REUSED_ACCEPTED_PROOF / C2_REUSED_ACCEPTED_PROOF / C3_PASS / CONCURRENT_RECONCILIATION_PROVEN / CONCURRENT_PROJECTION_PROVEN / ACTIONABLE_BACKLOG_CONVERGED / CANDIDATE_FAIRNESS_PRESERVED / FILL_IDEMPOTENCY_PRESERVED / TRUE_OVERFILL_GUARD_PRESERVED / STRATEGY_SCALE_CORRECTNESS_PRESERVED / NO_DUPLICATE_MUTATION / NO_DUPLICATE_ACCOUNTING / NO_DURABLE_ORPHAN / P0_0 / P1_0 / READY_FOR_L5_REPEATED_FAULT",
+    "head": "991187fe772ad8b03746a4a9ddfc3ea9010e5896",
+    "branch": "audit/post-gatey-agent-baseline",
+    "reviewedCandidateFingerprint": "f1b807ed3acbb69f208baae284249d5b9c3887f1961443a705413efadf3c9354",
+    "candidateManifestSha256": "fd1091e5497fe8b80583c99efa19003e5729e4059c92bff705c03f18ebb7f9e1",
+    "planningSha256": "80e339594be7223f07783d30e7f18913a53187ecde59b360ecdbf9223c9e45ac",
+    "levels": {
+      "C1": "REUSED_ACCEPTED_PROOF / PASS",
+      "C2": "REUSED_ACCEPTED_PROOF / PASS",
+      "C3": "NEW_QUALIFICATION_RUN / PASS"
+    },
+    "runs": {
+      "C1": {
+        "path": "runs/C1-resume.json",
+        "sha256": "ca8e3f85863ed8755f74d184aee7154cb23fff6db2f29f3ec721c2f8c6e41b3b",
+        "result": "REUSED_PASS"
+      },
+      "C2": {
+        "path": "runs/C2-resume.json",
+        "sha256": "bb05b6bc2ac041beb3a320bcbbfe3fda59eaf1f8572e6f573cfaaff8b33849d7",
+        "result": "REUSED_PASS"
+      },
+      "C3": {
+        "path": "runs/C3-resume-accepted.json",
+        "sha256": "e25394cfd638ca1fdf9126027045c3fbc7b2dafc5a06b96acb0fc651eb131ea9",
+        "result": "PASS / NEW_QUALIFICATION_RUN"
+      }
+    },
+    "independentReview": {
+      "decision": "L5_CONCURRENT_FILL_IDEMPOTENCY_REVIEW_ACCEPTED",
+      "tests": 37,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "reviewedCandidateUnchanged": true,
+      "C1Reuse": true,
+      "C2Reuse": true
+    },
+    "fullMaven": {
+      "rerun": "NOT_RUN / FINAL_CANDIDATE_RUN_REUSED",
+      "tests": 1919,
+      "failures": 0,
+      "errors": 0,
+      "conditionalSkips": 140
+    },
+    "productionDelta": 0,
+    "migrationDelta": 0,
+    "harnessDelta": 0,
+    "resourceCleanup": {
+      "registeredJvms": 6,
+      "registeredPgContainers": 1,
+      "remainingPgContainers": 0,
+      "remainingOwnedJvms": 0
+    },
+    "trueOverfillGuard": "PRESERVED / REUSED_ACCEPTED_REAL_POSTGRES_NEGATIVE_PROOF / NO_PRODUCTION_DELTA",
+    "validation": {
+      "status": "PASS",
+      "stageAssets": {
+        "scanned": 1897,
+        "reviewedExceptions": 173,
+        "errors": 0
+      },
+      "links": {
+        "checked": 17,
+        "warnings": 0,
+        "errors": 0
+      },
+      "diffCheck": "PASS",
+      "gitleaks": {
+        "version": "8.18.4",
+        "archiveHashVerified": true,
+        "ciConfigurationSha256": "3651989e01d4838ff313ac55a2579cc17306dbe951dd19f8de7429ada45af503",
+        "safeFiles": 3,
+        "exit": 0,
+        "findings": 0
+      },
+      "secretNegatives": [
+        {
+          "case": "negative-apiKey",
+          "exit": 2,
+          "findings": 1
+        },
+        {
+          "case": "negative-secret",
+          "exit": 2,
+          "findings": 1
+        },
+        {
+          "case": "negative-token",
+          "exit": 2,
+          "findings": 1
+        },
+        {
+          "case": "negative-password",
+          "exit": 2,
+          "findings": 1
+        },
+        {
+          "case": "negative-Authorization",
+          "exit": 2,
+          "findings": 1
+        },
+        {
+          "case": "negative-credential",
+          "exit": 2,
+          "findings": 1
+        }
+      ],
+      "protectedFieldsUnchanged": true,
+      "finalEvidenceScanArtifact": "backend/nq-app/target/l5-c3-resume-mqdn2uhm/final-evidence/result.json",
+      "productionCandidateUnchanged": true,
+      "planningHashUnchanged": true,
+      "originalFailureAndRemediationEvidencePreserved": true
+    },
+    "P0": 0,
+    "P1": 0,
+    "blockingP2": 0,
+    "historicalResiduals": [
+      "ordinary concurrent INSERT loser P2 OPEN / NON_BLOCKING",
+      "wildcard-import P3 OPEN / NON_BLOCKING",
+      "HISTORICAL_PROJECTION_REPAIR_REQUIRED / NON_BLOCKING_FOR_CURRENT_QUALIFICATION"
+    ],
+    "stage": 0,
+    "commit": "NONE",
+    "push": "NONE",
+    "L5": "NOT_ACCEPTED",
+    "nextAction": "NQ-GATEAUDIT-PHASE6-L5-REPEATED-FAULT-UNDER-LOAD"
+  },
+  "repeatedFaultBatch": {
+    "task": "NQ-GATEAUDIT-PHASE6-L5-REPEATED-FAULT-UNDER-LOAD",
+    "result": "BLOCKED",
+    "decision": "L5_REPEATED_FAULT_HARNESS_GAP",
+    "review": "SELF_REVIEWED / NO_ACCEPTANCE",
+    "startingHead": "991187fe772ad8b03746a4a9ddfc3ea9010e5896",
+    "branch": "audit/post-gatey-agent-baseline",
+    "planningSha256": "80e339594be7223f07783d30e7f18913a53187ecde59b360ecdbf9223c9e45ac",
+    "acceptedManifestSha256": "fd1091e5497fe8b80583c99efa19003e5729e4059c92bff705c03f18ebb7f9e1",
+    "candidateFingerprint": "1958e6af80032712b7137ecfe30e2a90f2962ed6df082308f8e773633c7d3991",
+    "candidateInputs": 1835,
+    "candidateLocator": "backend/nq-app/target/l5-repeated-fault/final-candidate.json",
+    "harnessDelta": [
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0NqProcessMain.java",
+        "sha256": "8f1e030d7945cdc113a471df076b02bd9da02c3a31ea2b6b4d3bfa3978533b2c"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0Processes.java",
+        "sha256": "f3e4ae0a94deb41520c59fc9ac553775fbd12918bcc891d1b624946b6976c602"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0SyntheticVenueMain.java",
+        "sha256": "9aa9fcd1d84bfc63edb36a0c72cd98938fb4fa1f1e277a699b7e73beb3fa404e"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5BoundedWorkloadTest.java",
+        "sha256": "6b86cdf483b66dd7c39317caf9901c12e046ebd181b117af7781713f028e30cb"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5ConcurrentControls.java",
+        "sha256": "a66ef5292f57103c9b8a1694e966a44da714aba040d5e335178fa32586f405c5"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5FaultNqProcessMain.java",
+        "sha256": "b23eddbc42cf5489eb64f62c053ea35a3c82e027a68da7a1d779c3456fc60d18"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5QualificationControls.java",
+        "sha256": "b4a8f86481c94a4269819a5c6b54a15b1aedd88e42af00520ecb7711c3914524"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5RepeatedFaultContractTest.java",
+        "sha256": "1e08ffab472df13d8897f6ad84812a0b6b4f40bf46231dcf6238247f42180472"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l5_concurrent_oracle.py",
+        "sha256": "a6166aeb74abc93a3d5caefb9bc880730e11d2cdc226cd23ea993d2a1c41315d"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l5_measurement.py",
+        "sha256": "4e3da4847654e0eab74c6e5ad99097edcebc0f9967ebd123ae4db1808ce820d5"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l5_repeated_fault_oracle.py",
+        "sha256": "046f6f28b2fa95957a50854930fd823e033e35445f61e338f604c7d9587a0ba1"
+      }
+    ],
+    "productionDelta": 0,
+    "migrationDelta": 0,
+    "independentDatabases": 5,
+    "independentProcessIds": 32,
+    "repetitions": [
+      {
+        "family": "F1",
+        "repetition": 1,
+        "result": "PASS",
+        "faultMode": "B1_ACCEPTED_TIMEOUT",
+        "faultTarget": null,
+        "faults": 1,
+        "affectedPlaceRequests": 4,
+        "nqPeak": 4,
+        "nqLifetimes": 5,
+        "actors": 4,
+        "candidates": 240,
+        "strategies": 4,
+        "windows": 3,
+        "counts": {
+          "orders": 240,
+          "ordinary_place_authorities": 240,
+          "trades": 240,
+          "ledger_entries": 960,
+          "ledger_events": 960,
+          "positions": 1,
+          "account_snapshots": 480,
+          "strategy_runs": 12,
+          "strategy_run_dispatch_work": 12,
+          "events": 240
+        },
+        "venuePlace": 240,
+        "venueCancel": 0,
+        "reconstruction": [
+          {
+            "account": 1,
+            "asset": "BTC",
+            "expected": "24.0",
+            "snapshot": "24.0"
+          },
+          {
+            "account": 1,
+            "asset": "USDT",
+            "expected": "0.00",
+            "snapshot": "0.0"
+          }
+        ],
+        "position": "24.0",
+        "initialActionable": 60,
+        "newActionable": 180,
+        "peakActionable": 72,
+        "processed": 240,
+        "finalActionable": 0,
+        "unresolved": 0,
+        "cursor": {
+          "reservations": 166,
+          "wraps": 48,
+          "coverage": 240,
+          "newerFilled": 180,
+          "final": {
+            "revision": 166,
+            "order_id": "SYNTH-L4:B5-RF-F1:R01:ORDER:001"
+          }
+        },
+        "forwardProgress": "PASS",
+        "duplicateMutation": 0,
+        "duplicateAccounting": 0,
+        "lostWork": 0,
+        "durableOrphan": 0,
+        "appConnectionsPeak": 40,
+        "resources": [
+          {
+            "identity": "JVM:1",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 18,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          },
+          {
+            "identity": "JVM:2",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 18,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          },
+          {
+            "identity": "JVM:3",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 18,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          },
+          {
+            "identity": "JVM:4",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 19,
+            "queuePeak": 0,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          },
+          {
+            "identity": "JVM:5",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 18,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          }
+        ],
+        "resourceAccumulation": "NONE_OBSERVED",
+        "cleanup": "PASS",
+        "proxyPortReleased": null,
+        "progressSamples": 266,
+        "resourceSamples": 1178,
+        "durationSeconds": 92.5164937,
+        "drainSeconds": 3.3454783,
+        "faultWindowSeconds": 25.071,
+        "throughputOrdersPerSecond": 2.5941320342104577,
+        "faultNegativeRejections": [
+          "missing_fault",
+          "resource_accumulation",
+          "owned_limit",
+          "forward_progress_loss",
+          "residual_backlog",
+          "duplicate_mutation"
+        ],
+        "rawLocator": "backend/nq-app/target/l5-bounded/969f9bdb-2cca-4340-a014-0478284f8a2a/C3/raw-proof.json",
+        "rawSha256": "a5854bb8e07a311e0b188a7cdad895f3bd163827594f08b56623ebbebe56f4f0",
+        "logLocator": "backend/nq-app/target/l5-repeated-fault/final-F1-1.log",
+        "logSha256": "3127abcb30162b77c45c2822d44fcb2d5585d194f198d1a2225e525f99b5d026"
+      },
+      {
+        "family": "F1",
+        "repetition": 2,
+        "result": "PASS",
+        "faultMode": "B1_LOST_ACK",
+        "faultTarget": null,
+        "faults": 1,
+        "affectedPlaceRequests": 4,
+        "nqPeak": 4,
+        "nqLifetimes": 5,
+        "actors": 4,
+        "candidates": 240,
+        "strategies": 4,
+        "windows": 3,
+        "counts": {
+          "orders": 240,
+          "ordinary_place_authorities": 240,
+          "trades": 240,
+          "ledger_entries": 960,
+          "ledger_events": 960,
+          "positions": 1,
+          "account_snapshots": 480,
+          "strategy_runs": 12,
+          "strategy_run_dispatch_work": 12,
+          "events": 240
+        },
+        "venuePlace": 240,
+        "venueCancel": 0,
+        "reconstruction": [
+          {
+            "account": 1,
+            "asset": "BTC",
+            "expected": "24.0",
+            "snapshot": "24.0"
+          },
+          {
+            "account": 1,
+            "asset": "USDT",
+            "expected": "0.00",
+            "snapshot": "0.0"
+          }
+        ],
+        "position": "24.0",
+        "initialActionable": 60,
+        "newActionable": 180,
+        "peakActionable": 71,
+        "processed": 240,
+        "finalActionable": 0,
+        "unresolved": 0,
+        "cursor": {
+          "reservations": 165,
+          "wraps": 48,
+          "coverage": 240,
+          "newerFilled": 180,
+          "final": {
+            "revision": 165,
+            "order_id": "SYNTH-L4:B5-RF-F1:R02:ORDER:001"
+          }
+        },
+        "forwardProgress": "PASS",
+        "duplicateMutation": 0,
+        "duplicateAccounting": 0,
+        "lostWork": 0,
+        "durableOrphan": 0,
+        "appConnectionsPeak": 40,
+        "resources": [
+          {
+            "identity": "JVM:1",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 18,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          },
+          {
+            "identity": "JVM:2",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 18,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          },
+          {
+            "identity": "JVM:3",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 18,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          },
+          {
+            "identity": "JVM:4",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 19,
+            "queuePeak": 0,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          },
+          {
+            "identity": "JVM:5",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 18,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          }
+        ],
+        "resourceAccumulation": "NONE_OBSERVED",
+        "cleanup": "PASS",
+        "proxyPortReleased": null,
+        "progressSamples": 266,
+        "resourceSamples": 1170,
+        "durationSeconds": 92.4393841,
+        "drainSeconds": 3.1335998,
+        "faultWindowSeconds": 25.285,
+        "throughputOrdersPerSecond": 2.5962959655850844,
+        "faultNegativeRejections": [
+          "missing_fault",
+          "resource_accumulation",
+          "owned_limit",
+          "forward_progress_loss",
+          "residual_backlog",
+          "duplicate_mutation"
+        ],
+        "rawLocator": "backend/nq-app/target/l5-bounded/ee41030c-ea6a-49b7-bc5e-6b1bc1f601f7/C3/raw-proof.json",
+        "rawSha256": "661dadf6c98665e68880305bce836294c548c42b8cd9cbdc5f28872aa7eefee6",
+        "logLocator": "backend/nq-app/target/l5-repeated-fault/final-F1-2.log",
+        "logSha256": "3a73b0a9fc27fe771e3380933f83cfe85318a56970711a1ec7fe9cabf0ae4df7"
+      },
+      {
+        "family": "F1",
+        "repetition": 3,
+        "result": "PASS",
+        "faultMode": "B1_ACCEPTED_TIMEOUT",
+        "faultTarget": null,
+        "faults": 1,
+        "affectedPlaceRequests": 4,
+        "nqPeak": 4,
+        "nqLifetimes": 5,
+        "actors": 4,
+        "candidates": 240,
+        "strategies": 4,
+        "windows": 3,
+        "counts": {
+          "orders": 240,
+          "ordinary_place_authorities": 240,
+          "trades": 240,
+          "ledger_entries": 960,
+          "ledger_events": 960,
+          "positions": 1,
+          "account_snapshots": 480,
+          "strategy_runs": 12,
+          "strategy_run_dispatch_work": 12,
+          "events": 240
+        },
+        "venuePlace": 240,
+        "venueCancel": 0,
+        "reconstruction": [
+          {
+            "account": 1,
+            "asset": "BTC",
+            "expected": "24.0",
+            "snapshot": "24.0"
+          },
+          {
+            "account": 1,
+            "asset": "USDT",
+            "expected": "0.00",
+            "snapshot": "0.0"
+          }
+        ],
+        "position": "24.0",
+        "initialActionable": 60,
+        "newActionable": 180,
+        "peakActionable": 72,
+        "processed": 240,
+        "finalActionable": 0,
+        "unresolved": 0,
+        "cursor": {
+          "reservations": 168,
+          "wraps": 49,
+          "coverage": 240,
+          "newerFilled": 180,
+          "final": {
+            "revision": 168,
+            "order_id": "SYNTH-L4:B5-RF-F1:R03:ORDER:001"
+          }
+        },
+        "forwardProgress": "PASS",
+        "duplicateMutation": 0,
+        "duplicateAccounting": 0,
+        "lostWork": 0,
+        "durableOrphan": 0,
+        "appConnectionsPeak": 40,
+        "resources": [
+          {
+            "identity": "JVM:1",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 18,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          },
+          {
+            "identity": "JVM:2",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 18,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          },
+          {
+            "identity": "JVM:3",
+            "killed": false,
+            "activePeak": 0,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 19,
+            "queuePeak": 0,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          },
+          {
+            "identity": "JVM:4",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 18,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          },
+          {
+            "identity": "JVM:5",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 18,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          }
+        ],
+        "resourceAccumulation": "NONE_OBSERVED",
+        "cleanup": "PASS",
+        "proxyPortReleased": null,
+        "progressSamples": 268,
+        "resourceSamples": 1179,
+        "durationSeconds": 91.9642073,
+        "drainSeconds": 3.9978435,
+        "faultWindowSeconds": 25.306,
+        "throughputOrdersPerSecond": 2.609710963060734,
+        "faultNegativeRejections": [
+          "missing_fault",
+          "resource_accumulation",
+          "owned_limit",
+          "forward_progress_loss",
+          "residual_backlog",
+          "duplicate_mutation"
+        ],
+        "rawLocator": "backend/nq-app/target/l5-bounded/15046f38-e5a1-45b3-ab76-c1d9530afe08/C3/raw-proof.json",
+        "rawSha256": "e1e0181f1c3e63a6575789f35dd0d028387d114c2a1484764167326644ed75c8",
+        "logLocator": "backend/nq-app/target/l5-repeated-fault/final-F1-3.log",
+        "logSha256": "0f0821146267401b238215a33a5da9228fc2a58e7ad96b60763bbbe3d80d4de4"
+      },
+      {
+        "family": "F2",
+        "repetition": 1,
+        "result": "PASS",
+        "faultMode": "AFTER_VENUE_ACCEPTED",
+        "faultTarget": null,
+        "faults": 1,
+        "affectedPlaceRequests": null,
+        "nqPeak": 4,
+        "nqLifetimes": 6,
+        "actors": 4,
+        "candidates": 240,
+        "strategies": 4,
+        "windows": 3,
+        "counts": {
+          "orders": 240,
+          "ordinary_place_authorities": 240,
+          "trades": 240,
+          "ledger_entries": 960,
+          "ledger_events": 960,
+          "positions": 1,
+          "account_snapshots": 480,
+          "strategy_runs": 12,
+          "strategy_run_dispatch_work": 12,
+          "events": 240
+        },
+        "venuePlace": 240,
+        "venueCancel": 0,
+        "reconstruction": [
+          {
+            "account": 1,
+            "asset": "BTC",
+            "expected": "24.0",
+            "snapshot": "24.0"
+          },
+          {
+            "account": 1,
+            "asset": "USDT",
+            "expected": "0.00",
+            "snapshot": "0.0"
+          }
+        ],
+        "position": "24.0",
+        "initialActionable": 60,
+        "newActionable": 180,
+        "peakActionable": 68,
+        "processed": 240,
+        "finalActionable": 0,
+        "unresolved": 0,
+        "cursor": {
+          "reservations": 194,
+          "wraps": 59,
+          "coverage": 240,
+          "newerFilled": 180,
+          "final": {
+            "revision": 194,
+            "order_id": "SYNTH-L4:B5-RF-F2:R01:ORDER:001"
+          }
+        },
+        "forwardProgress": "PASS",
+        "duplicateMutation": 0,
+        "duplicateAccounting": 0,
+        "lostWork": 0,
+        "durableOrphan": 0,
+        "appConnectionsPeak": 40,
+        "resources": [
+          {
+            "identity": "JVM:1",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 21,
+            "threadsFinal": 18,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          },
+          {
+            "identity": "JVM:2",
+            "killed": true,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 20,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "DEAD_VERIFIED"
+          },
+          {
+            "identity": "JVM:3",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 18,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          },
+          {
+            "identity": "JVM:4",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 18,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          },
+          {
+            "identity": "JVM:5",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 19,
+            "queuePeak": 0,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          },
+          {
+            "identity": "JVM:6",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 18,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          }
+        ],
+        "resourceAccumulation": "NONE_OBSERVED",
+        "cleanup": "PASS",
+        "proxyPortReleased": null,
+        "progressSamples": 288,
+        "resourceSamples": 1153,
+        "durationSeconds": 97.8858352,
+        "drainSeconds": 4.2151856,
+        "faultWindowSeconds": 30.026,
+        "throughputOrdersPerSecond": 2.4518358505051605,
+        "faultNegativeRejections": [
+          "missing_fault",
+          "resource_accumulation",
+          "owned_limit",
+          "forward_progress_loss",
+          "residual_backlog",
+          "duplicate_mutation",
+          "old_process_alive"
+        ],
+        "rawLocator": "backend/nq-app/target/l5-bounded/cc1bf194-2465-409e-aaeb-d2cb20fba269/C3/raw-proof.json",
+        "rawSha256": "3aca3c63406dfdf8b42ff29f937c83e73129b90a04221fa1298bc87537d2903d",
+        "logLocator": "backend/nq-app/target/l5-repeated-fault/final-F2-1.log",
+        "logSha256": "4b3d1cfbdcebdc4831d9bda0269902e8171d8d1289930427959cc52892b7cad4"
+      },
+      {
+        "family": "F2",
+        "repetition": 3,
+        "result": "PASS",
+        "faultMode": "V51_B",
+        "faultTarget": null,
+        "faults": 1,
+        "affectedPlaceRequests": null,
+        "nqPeak": 4,
+        "nqLifetimes": 6,
+        "actors": 4,
+        "candidates": 240,
+        "strategies": 4,
+        "windows": 3,
+        "counts": {
+          "orders": 240,
+          "ordinary_place_authorities": 240,
+          "trades": 240,
+          "ledger_entries": 960,
+          "ledger_events": 960,
+          "positions": 1,
+          "account_snapshots": 480,
+          "strategy_runs": 12,
+          "strategy_run_dispatch_work": 12,
+          "events": 240
+        },
+        "venuePlace": 240,
+        "venueCancel": 0,
+        "reconstruction": [
+          {
+            "account": 1,
+            "asset": "BTC",
+            "expected": "24.0",
+            "snapshot": "24.0"
+          },
+          {
+            "account": 1,
+            "asset": "USDT",
+            "expected": "0.00",
+            "snapshot": "0.0"
+          }
+        ],
+        "position": "24.0",
+        "initialActionable": 60,
+        "newActionable": 180,
+        "peakActionable": 70,
+        "processed": 240,
+        "finalActionable": 0,
+        "unresolved": 0,
+        "cursor": {
+          "reservations": 200,
+          "wraps": 63,
+          "coverage": 240,
+          "newerFilled": 180,
+          "final": {
+            "revision": 200,
+            "order_id": "SYNTH-L4:B5-RF-F2:R03:ORDER:001"
+          }
+        },
+        "forwardProgress": "PASS",
+        "duplicateMutation": 0,
+        "duplicateAccounting": 0,
+        "lostWork": 0,
+        "durableOrphan": 0,
+        "appConnectionsPeak": 40,
+        "resources": [
+          {
+            "identity": "JVM:1",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 18,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          },
+          {
+            "identity": "JVM:2",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 18,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          },
+          {
+            "identity": "JVM:3",
+            "killed": false,
+            "activePeak": 0,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 19,
+            "queuePeak": 0,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          },
+          {
+            "identity": "JVM:4",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 18,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          },
+          {
+            "identity": "JVM:5",
+            "killed": true,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 20,
+            "threadsFinal": 20,
+            "queuePeak": 1,
+            "activeFinal": 1,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "DEAD_VERIFIED"
+          },
+          {
+            "identity": "JVM:6",
+            "killed": false,
+            "activePeak": 1,
+            "pendingPeak": 0,
+            "threadsInitial": 15,
+            "threadsPeak": 21,
+            "threadsFinal": 18,
+            "queuePeak": 1,
+            "activeFinal": 0,
+            "pendingFinal": 0,
+            "queueFinal": 0,
+            "terminal": "QUIESCENT_THEN_EXITED"
+          }
+        ],
+        "resourceAccumulation": "NONE_OBSERVED",
+        "cleanup": "PASS",
+        "proxyPortReleased": null,
+        "progressSamples": 198,
+        "resourceSamples": 876,
+        "durationSeconds": 73.2009791,
+        "drainSeconds": 4.0993054,
+        "faultWindowSeconds": 6.32,
+        "throughputOrdersPerSecond": 3.278644670478185,
+        "faultNegativeRejections": [
+          "missing_fault",
+          "resource_accumulation",
+          "owned_limit",
+          "forward_progress_loss",
+          "residual_backlog",
+          "duplicate_mutation",
+          "old_process_alive"
+        ],
+        "rawLocator": "backend/nq-app/target/l5-bounded/8f626a62-2399-46bf-90a6-6fe91ea88a6f/C3/raw-proof.json",
+        "rawSha256": "343259fe88ac6f12a5efe9faf0d530de3aa1314b6b7434e91f68af4b5c33d592",
+        "logLocator": "backend/nq-app/target/l5-repeated-fault/F2-R3-attempt02.log",
+        "logSha256": "2a7fe0ce6809f1231d6e6cb5a71fb2cd5840fadf3f6e711b40b5ac9b448151b0"
+      }
+    ],
+    "F4": "PARTIAL_COMBINED_OBSERVATIONS / NOT_ACCEPTED",
+    "fullMaven": {
+      "rerun": false,
+      "reusedTests": 1919,
+      "failures": 0,
+      "errors": 0,
+      "conditionalSkips": 140
+    },
+    "P0": 0,
+    "P1": 0,
+    "blockingP2": 0,
+    "historicalProjectionRepair": "HISTORICAL_PROJECTION_REPAIR_REQUIRED / NON_BLOCKING_FOR_CURRENT_QUALIFICATION",
+    "git": {
+      "stage": 0,
+      "commit": "NONE",
+      "push": "NONE"
+    },
+    "L5": "NOT_ACCEPTED / REPEATED_FAULT_BLOCKED",
+    "nextAction": "Repair deterministic targeting within the existing bounded driver, then resume this task; aggregate acceptance is not eligible",
+    "familyStatus": {
+      "F1": "3/3 PASS",
+      "F2": "2 complete validated repetitions; required family NOT_ACCEPTED",
+      "F3": "0 final repetitions; earlier pre-commit exploratory run is not family acceptance",
+      "F4": "partial combined observations only"
+    },
+    "failures": [
+      {
+        "kind": "CUT_NOT_REACHED",
+        "result": "NOT_ACCEPTED",
+        "logLocator": "backend/nq-app/target/l5-repeated-fault/final-F2-2.log",
+        "logSha256": "ea8eec70b2eaed7d77144fe2d05001c0ecff9e79586aaca5406b78c711f07aef",
+        "rawLocator": "backend/nq-app/target/l5-bounded/97be2803-e3b1-4b78-b9d7-074c50fdb3c9/C3/raw-proof.json",
+        "rawSha256": "0f46f5be60f38486b4f9c45666e2797ed7de047c4c371450098b2b9e557039ae",
+        "counts": {
+          "orders": 112,
+          "ordinary_place_authorities": 112,
+          "trades": 52,
+          "ledger_entries": 208,
+          "ledger_events": 208,
+          "positions": 1,
+          "account_snapshots": 104,
+          "strategy_runs": 0,
+          "strategy_run_dispatch_work": 0,
+          "events": 52
+        },
+        "orderStatuses": {
+          "ACCEPTED": 60,
+          "FILLED": 52
+        },
+        "position": "5.2",
+        "plannedCandidates": 240,
+        "completeQualification": false
+      },
+      {
+        "kind": "OFFLINE_NEGATIVE_SELECTED_KILLED_JVM",
+        "result": "NOT_ACCEPTED",
+        "logLocator": "backend/nq-app/target/l5-repeated-fault/final-F2-2-failed-export.log",
+        "logSha256": "b7c8f40f7534928adecbdde92349dbbc835add782ce6155c7aacfd6e5bd25532",
+        "rawLocator": "backend/nq-app/target/l5-bounded/c48cadeb-2ba7-470f-9835-acd7d919ffa3/C3/raw-proof.json",
+        "rawSha256": "7adba576491b1d34165716877c6d9612a90aed5361bb81ee6b0aa3f10daae2e0",
+        "counts": {
+          "orders": 240,
+          "ordinary_place_authorities": 240,
+          "trades": 240,
+          "ledger_entries": 960,
+          "ledger_events": 960,
+          "positions": 1,
+          "account_snapshots": 480,
+          "strategy_runs": 12,
+          "strategy_run_dispatch_work": 12,
+          "events": 240
+        },
+        "orderStatuses": {
+          "FILLED": 240
+        },
+        "position": "24.0",
+        "plannedCandidates": 240,
+        "completeQualification": false
+      }
+    ],
+    "oracleOnlyChange": {
+      "beforeCandidate": "930290903060d57f5e2fb74ece3c8d1b9806ae7a315173107a5be32e9946b3f6",
+      "afterCandidate": "1958e6af80032712b7137ecfe30e2a90f2962ed6df082308f8e773633c7d3991",
+      "changedFile": "l5_measurement.py",
+      "runtimeInputDelta": 0,
+      "reverifiedRawProofs": 5,
+      "rawProofBytesUnchanged": true
+    },
+    "P3": [
+      {
+        "status": "OPEN / BLOCKING_QUALIFICATION",
+        "finding": "Trade-commit fault target is not deterministic under the accepted bounded actor/producer schedule"
+      },
+      {
+        "status": "RESOLVED / FAILED_ATTEMPTS_PRESERVED",
+        "finding": "controller encoding/cleanup, risk-aware pacing, observer shutdown, command entry gating, truthful venue NOT_FOUND, survivor pool negative targeting"
+      }
+    ],
+    "P2": "Existing non-blocking obligations preserved; no new production P2 classification",
+    "validation": {
+      "stageAssets": {
+        "scanned": 1900,
+        "reviewedExceptions": 173,
+        "errors": 0
+      },
+      "gitleaks": {
+        "version": "8.18.4",
+        "changedFiles": 13,
+        "findings": 0,
+        "archiveHashVerified": true
+      },
+      "secretNegatives": "6/6 REJECT",
+      "links": {
+        "checked": 2,
+        "warnings": 0,
+        "errors": 0
+      },
+      "gitDiffCheck": "PASS",
+      "stagedPaths": 0,
+      "productionInputsCompared": 1659,
+      "productionDrift": 0,
+      "candidateCheck": "PASS"
+    },
+    "cleanup": {
+      "registeredProcessIds": 108,
+      "registeredContainers": 22,
+      "registeredPorts": 40,
+      "ownedJvmsRemaining": [],
+      "ownedContainersRemaining": [],
+      "openRegisteredPorts": []
+    },
+    "tests": {
+      "completedQualifiedRuns": 5,
+      "familyF1Pass": 3,
+      "familyF2CompletedPass": 2,
+      "cleanupAndCommandTests": {
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "offlineOracleTests": {
+        "tests": 4,
+        "failures": 0
+      },
+      "failedMavenLogsPreserved": true,
+      "F2TradeCutLatest": "NOT_REACHED",
+      "F3FinalRuns": "NOT_RUN"
+    }
+  },
+  "deterministicTargetingRemediationBatch": {
+    "task": "NQ-GATEAUDIT-PHASE6-L5-REPEATED-FAULT-DETERMINISTIC-TARGETING-HARNESS-REMEDIATION",
+    "result": "PASS",
+    "decision": "L5_REPEATED_FAULT_DETERMINISTIC_TARGETING_READY",
+    "review": "SELF_REVIEWED",
+    "startingHead": "991187fe772ad8b03746a4a9ddfc3ea9010e5896",
+    "candidateLocator": "backend/nq-app/target/l5-targeting/final-candidate-v2.json",
+    "candidateSha256": "53f7b9c7f8fe1434db88649bf78b5fe2b9c463de4a2341868edfbe6d72de19b9",
+    "candidateInputs": 1838,
+    "productionInputsUnchanged": 1659,
+    "productionDelta": 0,
+    "migrationDelta": 0,
+    "originalBlocker": "L5_REPEATED_FAULT_HARNESS_GAP",
+    "blockerDisposition": "FAULT_TARGETING_HARNESS_GAP_CLOSED",
+    "target": {
+      "logicalOrder": 85,
+      "fill": "b0-fill-b0-venue-85",
+      "trace": "l5-trace-85",
+      "expectedTradeKey": "OKX / b0-fill-b0-venue-85",
+      "clientDerivation": "l5 + isolated database last20 + 0085",
+      "qualificationRunId": "fresh isolated database; raw mapping in proof",
+      "trade": "production random UUID independently bound by exchange/fill",
+      "boundary": "TRADE_AND_REQUIRED_EVENT_COMMITTED_BEFORE_LEDGER",
+      "oldPid": 33152,
+      "newPid": 24288,
+      "handshake": [
+        {
+          "state": "ARMED",
+          "timeMillis": 1789121038813
+        },
+        {
+          "state": "TARGET_MATCHED",
+          "timeMillis": 1789121050003
+        },
+        {
+          "state": "DURABLE_BOUNDARY_CONFIRMED",
+          "timeMillis": 1789121050018
+        },
+        {
+          "state": "FAULT_READY",
+          "timeMillis": 1789121050037
+        },
+        {
+          "state": "FAULT_INJECTED",
+          "timeMillis": 1789121050038
+        },
+        {
+          "state": "RECOVERY_RELEASED",
+          "timeMillis": 1789121050363
+        }
+      ],
+      "gateMilliseconds": 1620,
+      "gateScope": "all four qualification actors briefly paused; no business locks",
+      "timeouts": {
+        "readerNetworkSeconds": 5,
+        "pauseSeconds": 5,
+        "stepSeconds": 5,
+        "maxSteps": 6,
+        "preKillGateDeadlineSeconds": 15,
+        "barrierReleaseSeconds": 20,
+        "childCommandSeconds": 75,
+        "killSeconds": 10
+      }
+    },
+    "businessMutationByHarness": 0,
+    "arbitraryFaultKills": 0,
+    "exactTargetFaultKills": 1,
+    "cleanup": {
+      "ownedNq": 0,
+      "ownedVenue": 0,
+      "ownedPg": 0
+    },
+    "fixtures": [
+      {
+        "outcome": "ASSERTION",
+        "rawLocator": "backend/nq-app/target/l5-targeting/ASSERTION-8409537724281253065/raw-proof.json",
+        "rawSha256": "bc4bab7c0dfd9f1c5128e84bd407074ab8d8b088219ba42dce9371a19feac555",
+        "cleanup": {
+          "ownedNq": 0,
+          "ownedVenue": 0,
+          "ownedPg": 0
+        },
+        "faultKills": 0,
+        "handshake": [
+          "ARMED",
+          "TARGET_MATCHED",
+          "DURABLE_BOUNDARY_CONFIRMED",
+          "FAULT_READY"
+        ]
+      },
+      {
+        "outcome": "EXCEPTION",
+        "rawLocator": "backend/nq-app/target/l5-targeting/EXCEPTION-4895028957256975008/raw-proof.json",
+        "rawSha256": "a3670ba1e67c77fc89d05b0c7abd98773bd75de3c3a0249bfc94f209fd4fe9b5",
+        "cleanup": {
+          "ownedNq": 0,
+          "ownedVenue": 0,
+          "ownedPg": 0
+        },
+        "faultKills": 0,
+        "handshake": [
+          "ARMED",
+          "TARGET_MATCHED",
+          "DURABLE_BOUNDARY_CONFIRMED",
+          "FAULT_READY"
+        ]
+      },
+      {
+        "outcome": "TIMEOUT",
+        "rawLocator": "backend/nq-app/target/l5-targeting/TIMEOUT-13117843091260352770/raw-proof.json",
+        "rawSha256": "aaff04410fd4369782586e9c5f7ee088ee415818fef4929abdb59c9e23b11cac",
+        "cleanup": {
+          "ownedNq": 0,
+          "ownedVenue": 0,
+          "ownedPg": 0
+        },
+        "faultKills": 0,
+        "handshake": [
+          "ARMED"
+        ]
+      },
+      {
+        "outcome": "RELEASE",
+        "rawLocator": "backend/nq-app/target/l5-targeting/RELEASE-2205680010726773266/raw-proof.json",
+        "rawSha256": "290169ce19d8172d268fd504381e6d8e40c274e666f5e6c408f9a439fdaa1696",
+        "cleanup": {
+          "ownedNq": 0,
+          "ownedVenue": 0,
+          "ownedPg": 0
+        },
+        "faultKills": 0,
+        "handshake": [
+          "ARMED",
+          "TARGET_MATCHED",
+          "DURABLE_BOUNDARY_CONFIRMED",
+          "FAULT_READY"
+        ]
+      }
+    ],
+    "fullDryProof": {
+      "result": "PASS",
+      "countedAsRepetition": true,
+      "repetition": 2,
+      "scope": "one exact Trade-post-commit F2 repetition; prior distinct-boundary proofs retained, no family or aggregate acceptance",
+      "rawLocator": "backend/nq-app/target/l5-bounded/dde5ca9d-cd16-4698-9199-849e5b49dd8b/C3/raw-proof.json",
+      "rawSha256": "f2142a320c1d344c130616d7daa9c1c9e8c53bb1b06461eeafd398ee87bfb237",
+      "logLocator": "backend/nq-app/target/l5-targeting/final-stable02.log",
+      "logSha256": "6e136f2b10f76142a0e53c6a870df67150d0d4b15700a5f2209cdae75ca44d4a",
+      "counts": {
+        "orders": 240,
+        "ordinary_place_authorities": 240,
+        "trades": 240,
+        "ledger_entries": 960,
+        "ledger_events": 960,
+        "positions": 1,
+        "account_snapshots": 480,
+        "strategy_runs": 12,
+        "strategy_run_dispatch_work": 12,
+        "events": 240
+      },
+      "finalBacklog": 0,
+      "strategies": 4,
+      "windows": 3,
+      "actors": 4,
+      "nqPeak": 4
+    },
+    "previousF2": [
+      {
+        "oldRepetition": 1,
+        "boundary": "AFTER_VENUE_ACCEPTED",
+        "correctness": "PRESERVED_PASS_AT_ORIGINAL_BOUNDARY",
+        "exactTradePostCommit": "NOT_PROVEN_NOT_REUSED_FOR_THIS_BOUNDARY",
+        "rawLocator": "backend/nq-app/target/l5-bounded/cc1bf194-2465-409e-aaeb-d2cb20fba269/C3/raw-proof.json",
+        "rawSha256": "3aca3c63406dfdf8b42ff29f937c83e73129b90a04221fa1298bc87537d2903d"
+      },
+      {
+        "oldRepetition": 3,
+        "boundary": "V51_B",
+        "correctness": "PRESERVED_PASS_AT_ORIGINAL_BOUNDARY",
+        "exactTradePostCommit": "NOT_PROVEN_NOT_REUSED_FOR_THIS_BOUNDARY",
+        "rawLocator": "backend/nq-app/target/l5-bounded/8f626a62-2399-46bf-90a6-6fe91ea88a6f/C3/raw-proof.json",
+        "rawSha256": "343259fe88ac6f12a5efe9faf0d530de3aa1314b6b7434e91f68af4b5c33d592"
+      }
+    ],
+    "F1": "REUSE_3_OF_3_NO_RERUN",
+    "F3": "NOT_COMPLETE_NOT_EXECUTED",
+    "F4": "NOT_COMPLETE_NOT_EXECUTED",
+    "futureTargeting": "identity-scope unit expression only; future DB/commit/recovery hook wiring not qualified",
+    "harnessTests": {
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "oracles": {
+      "businessNegativeRejections": 19,
+      "concurrentNegativeRejections": 9,
+      "exactFaultNegativeRejections": 20,
+      "result": {
+        "family": "F2",
+        "mode": "AFTER_TRADE_COMMIT",
+        "newPidVerified": true,
+        "finalActionable": 0,
+        "businessOracle": "PASS",
+        "negativeRejections": [
+          "missing_fault",
+          "resource_accumulation",
+          "owned_limit",
+          "forward_progress_loss",
+          "residual_backlog",
+          "duplicate_mutation",
+          "old_process_alive",
+          "wrong_owner",
+          "wrong_fill",
+          "wrong_trade",
+          "missing_target_trade",
+          "missing_target_event",
+          "ledger_before_kill",
+          "business_mutation",
+          "gate_mutation",
+          "arming_mutation",
+          "handshake_reordered",
+          "late_arming",
+          "arbitrary_kill",
+          "residual_target_resource"
+        ]
+      }
+    },
+    "fullMaven": {
+      "status": "NOT_REQUIRED_REUSED",
+      "tests": 1919,
+      "failures": 0,
+      "errors": 0,
+      "conditionalSkips": 140
+    },
+    "P0": 0,
+    "P1": 0,
+    "P2": "existing non-blocking obligations preserved",
+    "P3": "targeting blocker closed; existing wildcard-import residual preserved",
+    "git": {
+      "stage": 0,
+      "commit": "NONE",
+      "push": "NONE"
+    },
+    "nextAction": "NQ-GATEAUDIT-PHASE6-L5-REPEATED-FAULT-UNDER-LOAD-RESUME",
+    "validation": {
+      "stageAssets": "PASS / errors=0",
+      "links": "PASS / checked=2 / warnings=0 / errors=0",
+      "gitleaks": "8.18.4 / pinned archive and canonical CI config / zero findings",
+      "secretNegatives": "6/6 REJECTED; protected fields preserved",
+      "diffCheck": "PASS",
+      "stagedFiles": 0
+    },
+    "failedAttemptsPreserved": [
+      "harness-tests01.log: test generic compile error",
+      "final-deterministic01.log: exporter rejected new root field; no acceptance"
+    ],
+    "exploratoryProof": "deterministic-attempt01.log: earlier candidate, not counted"
+  },
+  "repeatedFaultResumeBatch": {
+    "task": "NQ-GATEAUDIT-PHASE6-L5-REPEATED-FAULT-UNDER-LOAD-RESUME",
+    "classification": "HIGH_RISK / SCALE_QUALIFICATION / REPEATED_FAULT / MULTI_PROCESS_RECOVERY / NQ-only",
+    "review": "SELF_REVIEWED",
+    "startingHead": "991187fe772ad8b03746a4a9ddfc3ea9010e5896",
+    "candidateLocator": "backend/nq-app/target/l5-fault-resume/final-candidate.json",
+    "candidateFingerprint": "797463469707f83919deb517dcad4efaed329003a972808a7c29a03b1134d126",
+    "planningHash": "80e339594be7223f07783d30e7f18913a53187ecde59b360ecdbf9223c9e45ac",
+    "F1": [
+      "REUSED_PASS",
+      "REUSED_PASS",
+      "REUSED_PASS"
+    ],
+    "F2": {
+      "exact": "3/3 PASS",
+      "R1": {
+        "result": "REUSED_PASS",
+        "rawLocator": "backend/nq-app/target/l5-bounded/dde5ca9d-cd16-4698-9199-849e5b49dd8b/C3/raw-proof.json",
+        "rawSha256": "f2142a320c1d344c130616d7daa9c1c9e8c53bb1b06461eeafd398ee87bfb237"
+      },
+      "R2": "PASS",
+      "R3": "PASS",
+      "oldDistinctBoundaries": "correctness observations preserved; excluded from exact repetitions"
+    },
+    "F3": {
+      "result": "3/3 PASS",
+      "R1": "ACK BEFORE_PAUSE / COMMIT_NOT_FORWARDED",
+      "R2": "ACK AFTER_PAUSE / SERVER_COMMIT_CONFIRMED_RESPONSE_WITHHELD",
+      "R3": "ACK AFTER_PAUSE / SERVER_COMMIT_CONFIRMED_RESPONSE_WITHHELD",
+      "driverModeNote": "R3 intentionally reuses driver repetition=2 mode; independent fresh run, not duplicate evidence"
+    },
+    "F4": {
+      "result": "PASS / SUFFICIENT_COMBINED_PROOF",
+      "primaryRun": "F2-R3",
+      "supportingRuns": [
+        "F2-R2",
+        "F3-R1",
+        "F3-R2",
+        "F3-R3"
+      ],
+      "initialActionable": 60,
+      "newCandidates": 180,
+      "actors": 4,
+      "nqMax": 4,
+      "candidates": 240,
+      "strategies": 4,
+      "windows": 3,
+      "extraFaultRun": false
+    },
+    "repetitions": [
+      {
+        "label": "F2-R2",
+        "rawLocator": "backend/nq-app/target/l5-bounded/6c0a514b-ddcd-4bec-8f64-a29af8c09034/C3/raw-proof.json",
+        "rawSha256": "b66a7f70e598d0c2d6fe78ee8b2d10a9f0d7e4ece5454002fa4ee73c6d6d4ff4",
+        "counts": {
+          "orders": 240,
+          "ordinary_place_authorities": 240,
+          "trades": 240,
+          "ledger_entries": 960,
+          "ledger_events": 960,
+          "positions": 1,
+          "account_snapshots": 480,
+          "strategy_runs": 12,
+          "strategy_run_dispatch_work": 12,
+          "events": 240
+        },
+        "initial": 60,
+        "peak": 68,
+        "processed": 240,
+        "final": 0,
+        "unresolved": 0,
+        "venuePlace": 240,
+        "venueCancel": 0,
+        "durationSeconds": 74.6568827,
+        "poolMax": 10,
+        "activePeak": 1,
+        "idlePeak": 10,
+        "pendingPeak": 0,
+        "threadsPeak": 21,
+        "queuePeak": 1,
+        "oldPid": 35308,
+        "newPid": 40948,
+        "cleanup": true,
+        "portsReleased": true,
+        "result": "PASS",
+        "newActionable": 180,
+        "mode": "AFTER_TRADE_COMMIT",
+        "boundary": "TRADE_AND_REQUIRED_EVENT_COMMITTED_BEFORE_LEDGER",
+        "logLocator": "backend/nq-app/target/l5-fault-resume/F2-exact-R2.log",
+        "logSha256": "214e3d633a657bf653edea73ebf9ce4d2941a9a8b3d80934f79664a8e6296061",
+        "target": {
+          "logicalOrder": 85,
+          "clientDerivation": "l5 + isolated database last20 + 0085",
+          "ownerPid": 35308,
+          "tradeDerivedKey": "OKX / b0-fill-b0-venue-85"
+        },
+        "cursor": {
+          "iterations": 194,
+          "wrapCount": 60,
+          "candidatesObserved": 240,
+          "newerFilledWithOlderPersistent": 180,
+          "overlappingCallsDuringProducer": 4
+        },
+        "position": "BTC24 exact authoritative reconstruction",
+        "snapshot": "BTC24 / USDT0 latest equivalent",
+        "effectiveStrategyOrders": 12,
+        "requestedQuantity": "0.1005",
+        "effectiveQuantity": "0.100",
+        "wireEqualsEffective": true,
+        "phantomResidual": 0,
+        "duplicateMutation": 0,
+        "duplicateAccounting": 0,
+        "lostWork": 0,
+        "durableOrphan": 0,
+        "forwardProgress": "RESTORED",
+        "resourceResidual": 0,
+        "businessNegatives": 19,
+        "concurrentNegatives": 9,
+        "faultNegatives": 20,
+        "candidateManifest": "entry-manifest.json",
+        "candidateSha256": "53f7b9c7f8fe1434db88649bf78b5fe2b9c463de4a2341868edfbe6d72de19b9"
+      },
+      {
+        "label": "F2-R3",
+        "rawLocator": "backend/nq-app/target/l5-bounded/6d21501a-c49f-4b80-905c-bcb284ff32a2/C3/raw-proof.json",
+        "rawSha256": "ae3af4d36ed011ea9f4caddf1ce1cbdd4daa9fd7523bcc3bae7e877fc1d55f86",
+        "counts": {
+          "orders": 240,
+          "ordinary_place_authorities": 240,
+          "trades": 240,
+          "ledger_entries": 960,
+          "ledger_events": 960,
+          "positions": 1,
+          "account_snapshots": 480,
+          "strategy_runs": 12,
+          "strategy_run_dispatch_work": 12,
+          "events": 240
+        },
+        "initial": 60,
+        "peak": 70,
+        "processed": 240,
+        "final": 0,
+        "unresolved": 0,
+        "venuePlace": 240,
+        "venueCancel": 0,
+        "durationSeconds": 76.6954863,
+        "poolMax": 10,
+        "activePeak": 1,
+        "idlePeak": 10,
+        "pendingPeak": 0,
+        "threadsPeak": 21,
+        "queuePeak": 1,
+        "oldPid": 39596,
+        "newPid": 31752,
+        "cleanup": true,
+        "portsReleased": true,
+        "result": "PASS",
+        "newActionable": 180,
+        "mode": "AFTER_TRADE_COMMIT",
+        "boundary": "TRADE_AND_REQUIRED_EVENT_COMMITTED_BEFORE_LEDGER",
+        "logLocator": "backend/nq-app/target/l5-fault-resume/F2-exact-R3.log",
+        "logSha256": "0d235971ea3a8287267ed2b7937a256c35b88ba0b9f39ba84b60c816a97d5c6e",
+        "target": {
+          "logicalOrder": 85,
+          "clientDerivation": "l5 + isolated database last20 + 0085",
+          "ownerPid": 39596,
+          "tradeDerivedKey": "OKX / b0-fill-b0-venue-85"
+        },
+        "cursor": {
+          "iterations": 199,
+          "wrapCount": 61,
+          "candidatesObserved": 240,
+          "newerFilledWithOlderPersistent": 180,
+          "overlappingCallsDuringProducer": 4
+        },
+        "position": "BTC24 exact authoritative reconstruction",
+        "snapshot": "BTC24 / USDT0 latest equivalent",
+        "effectiveStrategyOrders": 12,
+        "requestedQuantity": "0.1005",
+        "effectiveQuantity": "0.100",
+        "wireEqualsEffective": true,
+        "phantomResidual": 0,
+        "duplicateMutation": 0,
+        "duplicateAccounting": 0,
+        "lostWork": 0,
+        "durableOrphan": 0,
+        "forwardProgress": "RESTORED",
+        "resourceResidual": 0,
+        "businessNegatives": 19,
+        "concurrentNegatives": 9,
+        "faultNegatives": 20,
+        "candidateManifest": "entry-manifest.json",
+        "candidateSha256": "53f7b9c7f8fe1434db88649bf78b5fe2b9c463de4a2341868edfbe6d72de19b9"
+      },
+      {
+        "label": "F3-R1",
+        "rawLocator": "backend/nq-app/target/l5-bounded/72f80381-07e2-4fe7-b981-20301661d012/C3/raw-proof.json",
+        "rawSha256": "574e355efcd20344f25eb3220a8bc3531615882e978e57b57bea534198ee0b77",
+        "counts": {
+          "orders": 240,
+          "ordinary_place_authorities": 240,
+          "trades": 240,
+          "ledger_entries": 960,
+          "ledger_events": 960,
+          "positions": 1,
+          "account_snapshots": 480,
+          "strategy_runs": 12,
+          "strategy_run_dispatch_work": 12,
+          "events": 240
+        },
+        "initial": 60,
+        "peak": 72,
+        "processed": 240,
+        "final": 0,
+        "unresolved": 0,
+        "venuePlace": 240,
+        "venueCancel": 0,
+        "durationSeconds": 73.5068019,
+        "poolMax": 10,
+        "activePeak": 1,
+        "idlePeak": 10,
+        "pendingPeak": 0,
+        "threadsPeak": 21,
+        "queuePeak": 1,
+        "oldPid": 41720,
+        "newPid": 8896,
+        "cleanup": true,
+        "portsReleased": true,
+        "result": "PASS",
+        "newActionable": 180,
+        "mode": "BEFORE_PAUSE",
+        "boundary": "B4_WIRE_CUT BEFORE_PAUSE COMMIT_NOT_FORWARDED",
+        "logLocator": "backend/nq-app/target/l5-fault-resume/F3-R1.log",
+        "logSha256": "bec27dad766dfc1a503d1bf7e6e8f7f8dad16dd742e3e2c90f2bd5f9a77add9c",
+        "target": {
+          "logicalOrder": 85,
+          "clientDerivation": "l5 + isolated database last20 + 0085",
+          "ownerPid": 41720,
+          "tradeDerivedKey": "ordinary ACK transaction for logical Order 85"
+        },
+        "cursor": {
+          "iterations": 193,
+          "wrapCount": 59,
+          "candidatesObserved": 240,
+          "newerFilledWithOlderPersistent": 180,
+          "overlappingCallsDuringProducer": 4
+        },
+        "position": "BTC24 exact authoritative reconstruction",
+        "snapshot": "BTC24 / USDT0 latest equivalent",
+        "effectiveStrategyOrders": 12,
+        "requestedQuantity": "0.1005",
+        "effectiveQuantity": "0.100",
+        "wireEqualsEffective": true,
+        "phantomResidual": 0,
+        "duplicateMutation": 0,
+        "duplicateAccounting": 0,
+        "lostWork": 0,
+        "durableOrphan": 0,
+        "forwardProgress": "RESTORED",
+        "resourceResidual": 0,
+        "businessNegatives": 19,
+        "concurrentNegatives": 9,
+        "faultNegatives": 7,
+        "candidateManifest": "f3-candidate.json",
+        "candidateSha256": "39b94eaeaa47ab748637bec4947ab428efce60fa5609ea374afdd64959da70ad"
+      },
+      {
+        "label": "F3-R2",
+        "rawLocator": "backend/nq-app/target/l5-bounded/51107864-c277-42b2-b1b7-216c538b102d/C3/raw-proof.json",
+        "rawSha256": "0386b8e0e3a469145a8141b2413b36e3ce31e7e4ca711d2d2168830c13671f8f",
+        "counts": {
+          "orders": 240,
+          "ordinary_place_authorities": 240,
+          "trades": 240,
+          "ledger_entries": 960,
+          "ledger_events": 960,
+          "positions": 1,
+          "account_snapshots": 480,
+          "strategy_runs": 12,
+          "strategy_run_dispatch_work": 12,
+          "events": 240
+        },
+        "initial": 60,
+        "peak": 71,
+        "processed": 240,
+        "final": 0,
+        "unresolved": 0,
+        "venuePlace": 240,
+        "venueCancel": 0,
+        "durationSeconds": 73.3033992,
+        "poolMax": 10,
+        "activePeak": 1,
+        "idlePeak": 10,
+        "pendingPeak": 0,
+        "threadsPeak": 21,
+        "queuePeak": 1,
+        "oldPid": 14832,
+        "newPid": 39532,
+        "cleanup": true,
+        "portsReleased": true,
+        "result": "PASS",
+        "newActionable": 180,
+        "mode": "AFTER_PAUSE",
+        "boundary": "B4_WIRE_CUT AFTER_PAUSE SERVER_COMMIT_CONFIRMED_RESPONSE_WITHHELD",
+        "logLocator": "backend/nq-app/target/l5-fault-resume/F3-R2-attempt03.log",
+        "logSha256": "b2b0f34a4dcd8bddc625399236791923c03c6475ca0624f9ba2a1fcb562d18ea",
+        "target": {
+          "logicalOrder": 85,
+          "clientDerivation": "l5 + isolated database last20 + 0085",
+          "ownerPid": 14832,
+          "tradeDerivedKey": "ordinary ACK transaction for logical Order 85"
+        },
+        "cursor": {
+          "iterations": 193,
+          "wrapCount": 59,
+          "candidatesObserved": 240,
+          "newerFilledWithOlderPersistent": 180,
+          "overlappingCallsDuringProducer": 4
+        },
+        "position": "BTC24 exact authoritative reconstruction",
+        "snapshot": "BTC24 / USDT0 latest equivalent",
+        "effectiveStrategyOrders": 12,
+        "requestedQuantity": "0.1005",
+        "effectiveQuantity": "0.100",
+        "wireEqualsEffective": true,
+        "phantomResidual": 0,
+        "duplicateMutation": 0,
+        "duplicateAccounting": 0,
+        "lostWork": 0,
+        "durableOrphan": 0,
+        "forwardProgress": "RESTORED",
+        "resourceResidual": 0,
+        "businessNegatives": 19,
+        "concurrentNegatives": 9,
+        "faultNegatives": 7,
+        "candidateManifest": "final-candidate.json",
+        "candidateSha256": "797463469707f83919deb517dcad4efaed329003a972808a7c29a03b1134d126"
+      },
+      {
+        "label": "F3-R3",
+        "rawLocator": "backend/nq-app/target/l5-bounded/65dae6f0-d4a7-452f-b672-08e946aff659/C3/raw-proof.json",
+        "rawSha256": "a07c25015f8bdea73e8bea3bd43d1ac1a347d9855e995139da394f7a29cdeda0",
+        "counts": {
+          "orders": 240,
+          "ordinary_place_authorities": 240,
+          "trades": 240,
+          "ledger_entries": 960,
+          "ledger_events": 960,
+          "positions": 1,
+          "account_snapshots": 480,
+          "strategy_runs": 12,
+          "strategy_run_dispatch_work": 12,
+          "events": 240
+        },
+        "initial": 60,
+        "peak": 72,
+        "processed": 240,
+        "final": 0,
+        "unresolved": 0,
+        "venuePlace": 240,
+        "venueCancel": 0,
+        "durationSeconds": 73.8593893,
+        "poolMax": 10,
+        "activePeak": 1,
+        "idlePeak": 10,
+        "pendingPeak": 0,
+        "threadsPeak": 21,
+        "queuePeak": 1,
+        "oldPid": 37956,
+        "newPid": 39176,
+        "cleanup": true,
+        "portsReleased": true,
+        "result": "PASS",
+        "newActionable": 180,
+        "mode": "AFTER_PAUSE",
+        "boundary": "B4_WIRE_CUT AFTER_PAUSE SERVER_COMMIT_CONFIRMED_RESPONSE_WITHHELD",
+        "logLocator": "backend/nq-app/target/l5-fault-resume/F3-R3.log",
+        "logSha256": "8921e27d92e4e0b55fe172d771b3a145e97a28fabe8c363ee3b12ff78105f1af",
+        "target": {
+          "logicalOrder": 85,
+          "clientDerivation": "l5 + isolated database last20 + 0085",
+          "ownerPid": 37956,
+          "tradeDerivedKey": "ordinary ACK transaction for logical Order 85"
+        },
+        "cursor": {
+          "iterations": 190,
+          "wrapCount": 59,
+          "candidatesObserved": 240,
+          "newerFilledWithOlderPersistent": 180,
+          "overlappingCallsDuringProducer": 4
+        },
+        "position": "BTC24 exact authoritative reconstruction",
+        "snapshot": "BTC24 / USDT0 latest equivalent",
+        "effectiveStrategyOrders": 12,
+        "requestedQuantity": "0.1005",
+        "effectiveQuantity": "0.100",
+        "wireEqualsEffective": true,
+        "phantomResidual": 0,
+        "duplicateMutation": 0,
+        "duplicateAccounting": 0,
+        "lostWork": 0,
+        "durableOrphan": 0,
+        "forwardProgress": "RESTORED",
+        "resourceResidual": 0,
+        "businessNegatives": 19,
+        "concurrentNegatives": 9,
+        "faultNegatives": 7,
+        "candidateManifest": "final-candidate.json",
+        "candidateSha256": "797463469707f83919deb517dcad4efaed329003a972808a7c29a03b1134d126"
+      }
+    ],
+    "resourceAccumulation": "NONE_OBSERVED_IN_BOUNDED_REPETITIONS; all owned resources released between runs",
+    "tests": {
+      "completeFaultRuns": 5,
+      "driverContractTests": 2,
+      "successfulFinalExecutions": 7,
+      "failedHarnessAttempts": 2
+    },
+    "fullMaven": {
+      "status": "NOT_REQUIRED_REUSED",
+      "tests": 1919,
+      "failures": 0,
+      "errors": 0,
+      "conditionalSkips": 140
+    },
+    "productionDelta": 0,
+    "migrationDelta": 0,
+    "P0": 0,
+    "P1": 0,
+    "P2": "existing non-blocking obligations preserved; no new residual resource observation",
+    "P3": "prior targeting blocker remains CLOSED; wildcard-import residual preserved",
+    "failedAttempts": [
+      {
+        "log": "F3-R2.log",
+        "classification": "HARNESS_INPUT_SETUP_REJECTED",
+        "reason": "effective-test environment variable rejected by unchanged fixture validation before workload",
+        "productionFinding": false
+      },
+      {
+        "log": "F3-R2-attempt02.log",
+        "classification": "HARNESS_INPUT_BOUNDARY_NOT_REACHED",
+        "reason": "ordinary misaligned quantity correctly REJECTED; ACK target never reached; unneeded extension reverted",
+        "productionFinding": false
+      }
+    ],
+    "candidateReuseAnalysis": "Production/projection/fill/V49/V50/V51 unchanged. F2 uses exact accepted harness. F3 final delta is pre-workload target metadata only; failed input extensions fully reverted. Earlier F3-R1 effective flag disabled; its exercised business/control path identical. No prior pass is represented as having run against a different manifest.",
+    "decision": "PHASE6_L5_REPEATED_FAULT_UNDER_LOAD_ACCEPTED",
+    "L5": "NOT_ACCEPTED_PENDING_AGGREGATE_QUALIFICATION_ACCEPTANCE",
+    "nextAction": "NQ-GATEAUDIT-PHASE6-L5-AGGREGATE-QUALIFICATION-ACCEPTANCE",
+    "git": {
+      "stage": 0,
+      "commit": "NONE",
+      "push": "NONE"
+    },
+    "validation": {
+      "stageAssetsErrors": 0,
+      "gitleaksFindings": 0,
+      "gitleaksVersion": "8.18.4",
+      "secretNegativesRejected": 6,
+      "links": "PASS",
+      "diffCheck": "PASS",
+      "ownedProcessAudit": {
+        "alive": [],
+        "checked": 44
+      }
+    }
+  },
+  "killUnderLoadClosureBatch": {
+    "task": "NQ-GATEAUDIT-PHASE6-L5-KILL-TRANSITION-UNDER-LOAD-EVIDENCE-CLOSURE",
+    "classification": "HIGH_RISK / QUALIFICATION_EVIDENCE_CLOSURE / KILL_UNDER_LOAD / NQ-only",
+    "startingHead": "991187fe772ad8b03746a4a9ddfc3ea9010e5896",
+    "branch": "audit/post-gatey-agent-baseline",
+    "entryWorkspaceFingerprint": "7b464ff76ca8bb32d1dc1e1466ea4cf6bee1ffba0e5f8b0a41704244db0ff975",
+    "candidateManifest": "backend/nq-app/target/l5-kill-closure/final-candidate.json",
+    "candidateFingerprint": "67e6b158af9db95d84356f864cfe3045d264fe67948b76a7c7db4e5aa7b68b04",
+    "technicalInputs": 1842,
+    "runtimeCandidateFingerprint": "bb90c14d88e52bb5121447f6c8127c0e95cb18ccc9c39f35322ea2af2a3a3b68",
+    "planningSha256": "80e339594be7223f07783d30e7f18913a53187ecde59b360ecdbf9223c9e45ac",
+    "decision": "PASS / PHASE6_L5_KILL_TRANSITION_UNDER_LOAD_PROVEN / POST_KILL_NEW_MUTATION_0 / RECOVERY_UNDER_KILL_CONVERGED / ACTIONABLE_BACKLOG_CONVERGED / ACCOUNTING_CORRECTNESS_PRESERVED / P0_0 / P1_0 / READY_TO_RESUME_L5_AGGREGATE_ACCEPTANCE",
+    "run": {
+      "path": "runs/KILL-UNDER-LOAD.json",
+      "sha256": "e62f334a77870f7f27500ccfcafb31acc7edc9dbe31205e646c86424815fe4d8"
+    },
+    "proof": {
+      "jvms": 2,
+      "actors": 2,
+      "logicalIdentities": 125,
+      "preAdmitted": 121,
+      "newRejected": 4,
+      "postKillNewVenueMutation": 0,
+      "backlogInitialPeakFinal": [
+        60,
+        66,
+        0
+      ],
+      "beforeKillBacklog": 61,
+      "trades": 121,
+      "tradeExecuted": 121,
+      "ledger": 484,
+      "position": "12.1",
+      "latestSnapshotBTC": "12.1",
+      "latestSnapshotUSDT": "0",
+      "strategyRunsSucceeded": 1,
+      "cleanup": true
+    },
+    "validation": {
+      "dynamicRuns": 1,
+      "cleanupTests": "4/4 PASS",
+      "commandTests": "3/3 PASS",
+      "maven": "8 tests / 0 failures / 1 exporter ERROR / 0 skips; original BUILD FAILURE preserved",
+      "offlineOracle": "PASS on unchanged complete raw after correcting oracle assumptions",
+      "businessNegativesRejected": 18,
+      "killNegativesRejected": 17,
+      "historicalRawPositiveChecks": 15,
+      "ownedPidsChecked": 16,
+      "ownedPidsAlive": 0,
+      "fullMaven": "NOT_RUN",
+      "stageAssetsErrors": 0,
+      "stageAssetsScanned": 1907,
+      "gitleaksVersion": "8.18.4",
+      "gitleaksSafeFiles": 66,
+      "gitleaksFindings": 0,
+      "secretNegativesRejected": 6,
+      "links": "15 checked / warnings0 / errors0 / PASS",
+      "diffCheck": "PASS",
+      "ownedContainersChecked": 5,
+      "ownedContainersRemaining": 0
+    },
+    "failureDisposition": "EXPORTER_CONTRACT_ASSUMPTION_ERROR; Flyway bootstrap event retained; rejected V49 NOT_ARMED is expected. Runtime bytes and raw unchanged; no second workload.",
+    "productionDelta": 0,
+    "migrationDelta": 0,
+    "review": "SELF_REVIEWED",
+    "P0": 0,
+    "P1": 0,
+    "historicalResiduals": "ordinary INSERT loser P2, wildcard-import P3, HISTORICAL_PROJECTION_REPAIR_REQUIRED remain OPEN / NON_BLOCKING",
+    "L5": "NOT_ACCEPTED_PENDING_AGGREGATE_RESUME",
+    "aggregateHistory": "BLOCKED / missing=1 / invalid=0 retained; this task closes the single proof gap, does not issue aggregate acceptance",
+    "nextAction": "NQ-GATEAUDIT-PHASE6-L5-AGGREGATE-QUALIFICATION-ACCEPTANCE-RESUME",
+    "git": {
+      "stage": 0,
+      "commit": "NONE",
+      "push": "NONE"
+    }
+  },
+  "historicalTopLevelBeforeAggregateAcceptance": {
+    "task": "NQ-GATEAUDIT-PHASE6-L5-CONCURRENT-WORKLOAD-AND-BACKLOG-C3-RESUME",
+    "decision": "PASS / PHASE6_L5_CONCURRENT_WORKLOAD_AND_BACKLOG_ACCEPTED / C1_REUSED_ACCEPTED_PROOF / C2_REUSED_ACCEPTED_PROOF / C3_PASS / CONCURRENT_RECONCILIATION_PROVEN / CONCURRENT_PROJECTION_PROVEN / ACTIONABLE_BACKLOG_CONVERGED / CANDIDATE_FAIRNESS_PRESERVED / FILL_IDEMPOTENCY_PRESERVED / TRUE_OVERFILL_GUARD_PRESERVED / STRATEGY_SCALE_CORRECTNESS_PRESERVED / NO_DUPLICATE_MUTATION / NO_DUPLICATE_ACCOUNTING / NO_DURABLE_ORPHAN / P0_0 / P1_0 / READY_FOR_L5_REPEATED_FAULT",
+    "l5Accepted": false
+  },
+  "aggregateAcceptanceResumeBatch": {
+    "task": "NQ-GATEAUDIT-PHASE6-L5-AGGREGATE-QUALIFICATION-ACCEPTANCE-RESUME",
+    "classification": "HIGH_RISK / AGGREGATE_ACCEPTANCE / EVIDENCE_RECONCILIATION / REVIEW_ONLY / NQ-only",
+    "startingHead": "991187fe772ad8b03746a4a9ddfc3ea9010e5896",
+    "branch": "audit/post-gatey-agent-baseline",
+    "entryWorkspaceFingerprint": "8212b7280404172342a26255aedb58d1b942b54221a3b36a5c4599aa0802a112",
+    "currentCandidateFingerprint": "67e6b158af9db95d84356f864cfe3045d264fe67948b76a7c7db4e5aa7b68b04",
+    "candidateManifest": "backend/nq-app/target/l5-kill-closure/final-candidate.json",
+    "technicalInputs": 1842,
+    "planningSha256": "80e339594be7223f07783d30e7f18913a53187ecde59b360ecdbf9223c9e45ac",
+    "productionDelta": 0,
+    "migrationDelta": 0,
+    "batchAcceptance": {
+      "boundedWorkload": "ACCEPTED",
+      "concurrentWorkload": "ACCEPTED",
+      "repeatedFault": "ACCEPTED",
+      "killUnderLoad": "ACCEPTED"
+    },
+    "priorAggregate": {
+      "decision": "BLOCKED / MISSING_L5_ACCEPTANCE_EVIDENCE",
+      "missing": 1,
+      "invalid": 0,
+      "reportSha256AtEntry": "4e66fc11fe6cdd5675218458deb3f0391ba0abc47360f34732618d0e1f28c82c",
+      "historicalSupersededGroups": 6
+    },
+    "currentL5Matrix": {
+      "eligibleRows": 20,
+      "accepted": 1,
+      "reused": 19,
+      "supersededHistoricalGroups": 6,
+      "missing": 0,
+      "invalid": 0,
+      "rows": [
+        {
+          "id": "S1",
+          "disposition": "REUSED_ACCEPTED_PROOF",
+          "source": "runs/S1.json"
+        },
+        {
+          "id": "S2",
+          "disposition": "REUSED_ACCEPTED_PROOF",
+          "source": "runs/S2.json"
+        },
+        {
+          "id": "S3",
+          "disposition": "REUSED_ACCEPTED_PROOF",
+          "source": "runs/S3.json"
+        },
+        {
+          "id": "C1",
+          "disposition": "REUSED_ACCEPTED_PROOF",
+          "source": "runs/C1-resume.json"
+        },
+        {
+          "id": "C2",
+          "disposition": "REUSED_ACCEPTED_PROOF",
+          "source": "runs/C2-resume.json"
+        },
+        {
+          "id": "C3",
+          "disposition": "REUSED_ACCEPTED_PROOF",
+          "source": "runs/C3-resume-accepted.json"
+        },
+        {
+          "id": "F1-R1",
+          "disposition": "REUSED_ACCEPTED_PROOF",
+          "source": "summary.json#repeatedFaultResumeBatch"
+        },
+        {
+          "id": "F1-R2",
+          "disposition": "REUSED_ACCEPTED_PROOF",
+          "source": "summary.json#repeatedFaultResumeBatch"
+        },
+        {
+          "id": "F1-R3",
+          "disposition": "REUSED_ACCEPTED_PROOF",
+          "source": "summary.json#repeatedFaultResumeBatch"
+        },
+        {
+          "id": "F2 exact-R1",
+          "disposition": "REUSED_ACCEPTED_PROOF",
+          "source": "summary.json#repeatedFaultResumeBatch"
+        },
+        {
+          "id": "F2 exact-R2",
+          "disposition": "REUSED_ACCEPTED_PROOF",
+          "source": "summary.json#repeatedFaultResumeBatch"
+        },
+        {
+          "id": "F2 exact-R3",
+          "disposition": "REUSED_ACCEPTED_PROOF",
+          "source": "summary.json#repeatedFaultResumeBatch"
+        },
+        {
+          "id": "F3-R1",
+          "disposition": "REUSED_ACCEPTED_PROOF",
+          "source": "summary.json#repeatedFaultResumeBatch"
+        },
+        {
+          "id": "F3-R2",
+          "disposition": "REUSED_ACCEPTED_PROOF",
+          "source": "summary.json#repeatedFaultResumeBatch"
+        },
+        {
+          "id": "F3-R3",
+          "disposition": "REUSED_ACCEPTED_PROOF",
+          "source": "summary.json#repeatedFaultResumeBatch"
+        },
+        {
+          "id": "F4 combined",
+          "disposition": "REUSED_ACCEPTED_PROOF",
+          "source": "summary.json#repeatedFaultResumeBatch.F4"
+        },
+        {
+          "id": "Position/Snapshot remediation review",
+          "disposition": "REUSED_ACCEPTED_PROOF",
+          "source": "L5_AGGREGATE_QUALIFICATION_ACCEPTANCE.md"
+        },
+        {
+          "id": "Fill idempotency remediation review",
+          "disposition": "REUSED_ACCEPTED_PROOF",
+          "source": "L5_AGGREGATE_QUALIFICATION_ACCEPTANCE.md"
+        },
+        {
+          "id": "Deterministic targeting readiness",
+          "disposition": "REUSED_ACCEPTED_PROOF",
+          "source": "summary.json#deterministicTargetingRemediationBatch"
+        },
+        {
+          "id": "KILL_SWITCH_TRANSITION_UNDER_LOAD",
+          "disposition": "ACCEPTED_PROOF",
+          "source": "runs/KILL-UNDER-LOAD.json",
+          "sha256": "e62f334a77870f7f27500ccfcafb31acc7edc9dbe31205e646c86424815fe4d8"
+        }
+      ],
+      "countingNote": "Kill is newly incorporated accepted proof from the prior closure; no new dynamic qualification in this task. Original 19 row dispositions unchanged."
+    },
+    "crossBatch": {
+      "unresolved": 0,
+      "invariants": [
+        {
+          "invariant": "Scale-Projection",
+          "status": "ACCEPTED_RECONCILED",
+          "unresolved": 0
+        },
+        {
+          "invariant": "Fault-Projection",
+          "status": "ACCEPTED_RECONCILED",
+          "unresolved": 0
+        },
+        {
+          "invariant": "Reconciliation-Fill idempotency",
+          "status": "ACCEPTED_RECONCILED",
+          "unresolved": 0
+        },
+        {
+          "invariant": "Scale-V49/V50/V51",
+          "status": "ACCEPTED_RECONCILED",
+          "unresolved": 0
+        },
+        {
+          "invariant": "Fault-Backlog",
+          "status": "ACCEPTED_RECONCILED",
+          "unresolved": 0
+        },
+        {
+          "invariant": "Kill-Recovery",
+          "status": "ACCEPTED_RECONCILED",
+          "unresolved": 0
+        }
+      ]
+    },
+    "kill": {
+      "source": "runs/KILL-UNDER-LOAD.json",
+      "sha256": "e62f334a77870f7f27500ccfcafb31acc7edc9dbe31205e646c86424815fe4d8",
+      "initial": "DISENGAGED v2",
+      "final": "ENGAGED v3",
+      "path": "KillSwitchService.engage -> JdbcKillSwitchStateRepository transaction/CAS/event",
+      "preAdmitted": 121,
+      "transitionActionable": 61,
+      "newCommands": 4,
+      "riskRejects": 4,
+      "newVenueMutation": 0,
+      "finalBacklog": 0,
+      "trade": 121,
+      "tradeExecuted": 121,
+      "ledger": 484,
+      "positionBTC": "12.1",
+      "snapshotBTC": "12.1",
+      "snapshotUSDT": "0",
+      "strategyRun": "RUNNING -> SUCCEEDED",
+      "originalBuildFailure": "PRESERVED",
+      "oracleOnlyRemediation": "ACCEPTED_ON_UNCHANGED_RAW",
+      "rawSha256": "c3015d731bb5745833c01c1a14df72a4dc5e49a6708cf135db34a7c7d32086ad",
+      "failedLogSha256": "e86b5c38ac191f42b73dcd191b2197b872985e6c5c9f26bfeeb51b7b8c381d8c"
+    },
+    "finalInvariants": {
+      "duplicateMutation": 0,
+      "duplicateAccounting": 0,
+      "lostWork": 0,
+      "durableOrphan": 0,
+      "positionSnapshot": "EXACT",
+      "actionableBacklog": "CONVERGED",
+      "fairness": "PRESERVED",
+      "forwardProgress": "PRESERVED",
+      "faultRecovery": "CONVERGED",
+      "resourceUsage": "BOUNDED_FOR_L5_SCOPE",
+      "P0": 0,
+      "P1": 0
+    },
+    "openItems": [
+      {
+        "id": "ordinary concurrent INSERT loser",
+        "severity": "P2",
+        "status": "OPEN / NON_BLOCKING"
+      },
+      {
+        "id": "wildcard-import residual",
+        "severity": "P3",
+        "status": "OPEN / NON_BLOCKING"
+      },
+      {
+        "id": "HISTORICAL_PROJECTION_REPAIR_REQUIRED",
+        "status": "OPEN / NON_BLOCKING_FOR_L5_ACCEPTANCE",
+        "nextBoundary": "pre-freeze / release baseline verification"
+      }
+    ],
+    "inactiveFuture": {
+      "inheritedL4Rows": 14,
+      "countedAsPass": false,
+      "items": [
+        ">4 JVM",
+        ">240 candidates",
+        "real exchange",
+        "LIVE",
+        "multi-day stability",
+        "retired/dormant runtime paths"
+      ]
+    },
+    "reusePolicy": "Original aggregate 19 accepted rows and 6 historical groups reused without new review; no Independent Review or dynamic retest",
+    "validation": {
+      "candidateManifest": "1842 matched / drift0",
+      "planningHash": "UNCHANGED",
+      "killEvidenceConsistency": "PASS",
+      "dynamicTests": "NOT_RUN",
+      "fullMaven": "NOT_RUN",
+      "stageAssetsScanned": 1907,
+      "stageAssetsErrors": 0,
+      "gitleaksVersion": "8.18.4",
+      "gitleaksSafeFiles": 66,
+      "gitleaksFindings": 0,
+      "secretNegatives": "6/6 REJECT",
+      "links": "16 checked / warnings0 / errors0 / PASS",
+      "diffCheck": "PASS",
+      "filesChanged": [
+        "docs/audit/evidence/phase6-l5/L5_AGGREGATE_QUALIFICATION_ACCEPTANCE.md",
+        "docs/audit/evidence/phase6-l5/summary.json"
+      ]
+    },
+    "decision": "PASS / PHASE6_L5_AGGREGATE_QUALIFICATION_ACCEPTED / PHASE6_L5_ACCEPTED / BOUNDED_SCALE_ACCEPTED / CONCURRENT_SCALE_ACCEPTED / REPEATED_FAULT_UNDER_LOAD_ACCEPTED / KILL_TRANSITION_UNDER_LOAD_ACCEPTED / ACCOUNTING_PROJECTION_SCALE_CORRECTNESS_ACCEPTED / BACKLOG_AND_FAIRNESS_ACCEPTED / MULTIJVM_RECOVERY_UNDER_LOAD_ACCEPTED / NO_DUPLICATE_MUTATION / NO_DUPLICATE_ACCOUNTING / NO_DURABLE_ORPHAN / P0_0 / P1_0",
+    "l5Status": "ACCEPTED_QUALIFICATION",
+    "deliveryStatus": "NOT_DELIVERED / EXACT_HEAD_CI_PENDING",
+    "nextAction": "NQ-GATEAUDIT-PHASE6-L5-PRECISE-DELIVERY",
+    "l6EntryCondition": "L5 delivery commit exact-head CI green",
+    "git": {
+      "stage": 0,
+      "commit": "NONE",
+      "push": "NONE"
+    }
+  }
+}

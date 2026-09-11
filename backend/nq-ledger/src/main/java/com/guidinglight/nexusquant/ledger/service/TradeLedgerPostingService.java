@@ -4,7 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.common.numeric.NumericPolicy;
 import com.guidinglight.nexusquant.common.numeric.NumericType;
-import com.guidinglight.nexusquant.contracts.event.*;
+import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
+import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
+import com.guidinglight.nexusquant.contracts.event.LedgerPostFailed;
+import com.guidinglight.nexusquant.contracts.event.LedgerPosted;
+import com.guidinglight.nexusquant.contracts.event.PositionUpdated;
+import com.guidinglight.nexusquant.contracts.event.RiskEventRaised;
+import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.LedgerDirection;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
@@ -17,12 +23,18 @@ import com.guidinglight.nexusquant.ledger.service.port.LedgerPostingRepository;
 import com.guidinglight.nexusquant.ledger.service.port.LedgerRiskAuditRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
 /**
  * TradeLedgerPostingService 负责 Gate B 成交记账与仓位投影。
@@ -74,23 +86,32 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
      * @return 记账结果
      */
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED, timeout = 30)
     public LedgerPostingResult postTrade(TradeLedgerRequest request) {
         validateRequest(request);
         List<LedgerPostingEntry> entries = buildEntries(request);
         if (!isBalanced(entries)) {
             return handleImbalance(request, entries, "LEDGER_NOT_BALANCED");
         }
-        boolean allEntriesAlreadyPosted = entries.stream()
-                .allMatch(entry -> ledgerPostingRepository.existsByIdempotencyKey(entry.idempotencyKey()));
-        if (allEntriesAlreadyPosted) {
+        List<String> currencies = new ArrayList<>(List.of(resolveBaseCurrency(request.symbol()),
+                resolveQuoteCurrency(request.symbol())));
+        if (request.feeCurrency() != null && !request.feeCurrency().isBlank()) {
+            currencies.add(request.feeCurrency());
+        }
+        // 先锁币种、再锁品种；所有读取、幂等判定和快照发布均在同一提交边界内。
+        ledgerPostingRepository.lockSnapshotCurrencies(request.accountId(), currencies);
+        ledgerPostingRepository.lockPosition(request.accountId(), request.symbol(), request.traceId());
+        long postedEntries = entries.stream()
+                .filter(entry -> ledgerPostingRepository.existsByIdempotencyKey(entry.idempotencyKey())).count();
+        if (postedEntries == entries.size()) {
             return new LedgerPostingResult(true, true, "IDEMPOTENT_HIT");
+        }
+        // 正常 writer 原子提交全套分录与投影；残缺旧事实不能猜测已应用数量后再次增加仓位。
+        if (postedEntries != 0) {
+            throw new IllegalStateException("INCOMPLETE_ACCOUNTING_APPLICATION");
         }
 
         for (LedgerPostingEntry entry : entries) {
-            if (ledgerPostingRepository.existsByIdempotencyKey(entry.idempotencyKey())) {
-                continue;
-            }
             BigDecimal balanceAfter = ledgerPostingRepository.currentBalance(entry.accountId(), entry.currency())
                     .add(entry.delta());
             LedgerPostingEntry persistedEntry = new LedgerPostingEntry(
@@ -116,7 +137,7 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
         }
 
         PositionProjection positionProjection = updatePositionProjection(request);
-        writeAccountSnapshots(request, positionProjection);
+        writeAccountSnapshots(request, currencies);
         publishEvent(
                 TopicNames.LEDGER_EVENT_V1,
                 request.tradeId(),
@@ -290,32 +311,25 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
      * 最小口径补快照，先让本地读链可验证，再留待后续真实交易所同步路径继续细化。
      *
      * @param request            成交记账请求
-     * @param positionProjection 最新持仓投影
+     * @param currencies 本事务已锁定的账户币种
      */
-    private void writeAccountSnapshots(TradeLedgerRequest request, PositionProjection positionProjection) {
+    private void writeAccountSnapshots(TradeLedgerRequest request, List<String> currencies) {
         Instant snapshotTs = request.ts() == null ? Instant.now(clock) : request.ts();
         Map<String, AccountSnapshotProjection> snapshots = new LinkedHashMap<>();
-
-        String baseCurrency = resolveBaseCurrency(request.symbol());
-        snapshots.put(
-                baseCurrency,
-                new AccountSnapshotProjection(
-                        request.accountId(),
-                        baseCurrency,
-                        NumericPolicy.normalize(NumericType.QTY, positionProjection.qty()),
-                        NumericPolicy.normalize(NumericType.QTY, positionProjection.availableQty()),
-                        NumericPolicy.normalize(
-                                NumericType.QTY,
-                                positionProjection.qty().subtract(positionProjection.availableQty())
-                        ),
-                        snapshotTs,
-                        request.traceId()
-                )
-        );
-
-        appendLedgerBackedSnapshot(snapshots, request.accountId(), resolveQuoteCurrency(request.symbol()), snapshotTs, request.traceId());
-        if (request.feeCurrency() != null && !request.feeCurrency().isBlank()) {
-            appendLedgerBackedSnapshot(snapshots, request.accountId(), request.feeCurrency(), snapshotTs, request.traceId());
+        for (String currency : currencies.stream().distinct().toList()) {
+            // 账户按币种发布，不能由最后成交的单一 symbol 覆盖其他同 base 仓位。
+            // ts 保留成交观察时间；发布顺序由持锁期间分配的 snapshot_id 决定。
+            var position = ledgerPostingRepository.findAssetPosition(request.accountId(), currency);
+            if (position.isPresent()) {
+                PositionProjection asset = position.orElseThrow();
+                snapshots.put(currency, new AccountSnapshotProjection(request.accountId(), currency,
+                        NumericPolicy.normalize(NumericType.QTY, asset.qty()),
+                        NumericPolicy.normalize(NumericType.QTY, asset.availableQty()),
+                        NumericPolicy.normalize(NumericType.QTY, asset.qty().subtract(asset.availableQty())),
+                        snapshotTs, request.traceId()));
+            } else {
+                appendLedgerBackedSnapshot(snapshots, request.accountId(), currency, snapshotTs, request.traceId());
+            }
         }
 
         for (AccountSnapshotProjection snapshot : snapshots.values()) {

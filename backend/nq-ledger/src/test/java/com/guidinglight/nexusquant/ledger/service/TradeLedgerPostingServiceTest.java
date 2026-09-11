@@ -23,6 +23,7 @@ import com.guidinglight.nexusquant.ledger.service.port.LedgerRiskAuditRepository
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -124,6 +125,18 @@ class TradeLedgerPostingServiceTest {
     }
 
     private static final class InMemoryLedgerPostingRepository implements LedgerPostingRepository {
+
+        @Override
+        public void lockSnapshotCurrencies(Long accountId, List<String> currencies) { }
+
+        @Override
+        public void lockPosition(Long accountId, String symbol, String traceId) { }
+
+        @Override
+        public Optional<PositionProjection> findAssetPosition(Long accountId, String currency) {
+            return positions.values().stream().filter(p -> p.accountId().equals(accountId)
+                    && p.symbol().startsWith(currency + "-")).findFirst();
+        }
 
         private final Map<String, LedgerPostingEntry> entriesByIdempotencyKey = new HashMap<>();
         private final Map<String, PositionProjection> positions = new HashMap<>();

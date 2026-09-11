@@ -378,7 +378,7 @@ Credential API 固定边界：
 - `GET /api/trading/orders`：按正式 `exchangeAccountId` 账户上下文查询订单列表，支持 `orderId`、`symbol`、`status`、`environment`、分页筛选。
 - `GET /api/trading/orders/{orderId}`：查询单笔订单详情。
 - `GET /api/trading/orders/{orderId}/trade`：查询订单最近一笔成交事实。
-- `GET /api/trading/accounts/{accountId}`：查询账户余额快照；`accountId` 仍由后端兼容映射到 legacy trading account。
+- `GET /api/trading/accounts/{accountId}`：查询账户余额快照；`accountId` 仍由后端兼容映射到 legacy trading account。每个币种取最新已提交的投影发布记录；`ts` 保留源成交观察时间，不用于判断当前余额的新旧。base 币种按同账户的相关持仓汇总，其他币种沿用现有 Ledger 余额口径。
 - `GET /api/trading/positions/{accountId}/{symbol}`：查询账户和交易对维度持仓快照。
 - `POST /api/trading/orders`：触发既有下单编排，仍走服务端风控与状态机。
   - ordinary `venue` 由 application 的 `TradingVenue.parse` 统一解析：去除首尾空白、忽略大小写，当前只支持 `OKX / BINANCE / PAPER`。新 Order 保存大写 canonical 值；空白或未知值在 Order/authority/event 创建和 adapter 调用前拒绝。此身份校验不授予 adapter readiness 或真实交易权限。

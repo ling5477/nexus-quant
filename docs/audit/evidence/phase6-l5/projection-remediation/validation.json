@@ -1,0 +1,303 @@
+{
+  "task": "NQ-GATEAUDIT-PHASE6-L5-CONCURRENT-POSITION-AND-ACCOUNT-PROJECTION-REMEDIATION",
+  "status": "IMPLEMENTED / PENDING_INDEPENDENT_CORRECTNESS_REVIEW",
+  "l5": "NOT_ACCEPTED",
+  "C2": "NOT_RUN",
+  "C3": "NOT_RUN",
+  "head": "991187fe772ad8b03746a4a9ddfc3ea9010e5896",
+  "candidateManifest": "candidate-manifest.json",
+  "candidateManifestSha256": "8ac8b3557acf269f04be34106a3e7bf20b148b4a3ca53968e0fdb1a802e52279",
+  "candidateFiles": 1828,
+  "changedCandidatePathsAfterTests": [],
+  "implementationChanges": [
+    {
+      "path": ".agents/skills/nq-trading-correctness-proof/references/engineering-lessons.md",
+      "beforeSha256": "19afabe58080949b6db82830a5bfb1b3926db3717d100e4bb3a23fa578b0f9a1",
+      "sha256": "c6a0e067f8888f32a22490184bda30fd98dd2d3bdfe916b670c0f5f0a9bcf353"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0Processes.java",
+      "beforeSha256": "93338ba17908c940d6c8a86d6aebd9749dafa2f7d6d173d7a42f46df7e42b41c",
+      "sha256": "86a0d07f150cf382c1784a90619814a4c51fc5d1edf116ac578818eb6509d9cd"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l5_measurement.py",
+      "beforeSha256": "65b77e9286e7979f57c0e24d7ec88b9dd933591de64b104643c77d3aab86e3d7",
+      "sha256": "bfa2fa20a270a2427700d745a907019891130b9f32d37f2541d82b2c5e76170f"
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/ledger/infra/jdbc/JdbcLedgerPostingRepository.java",
+      "beforeSha256": "9b641e85684410c495bc1c816ac219a99a839dd40a8dc1fc3d3c4cee6b0b44e8",
+      "sha256": "7ea89b6c8d34181ba86fc308a8f64d54e48a9b5cc38064ee962f6dc5a1fa11a0"
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/scheduler/infra/jdbc/JdbcLedgerReconcileRepository.java",
+      "beforeSha256": "be1e53ebeabdfb75d22a38b799aa9fc86b8801104387b0d557a8c02183bdecbc",
+      "sha256": "401df376351f6ab9a4bd74cb160714750181341c425139c229926014807325e7"
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/query/JdbcTradingQueryFacade.java",
+      "beforeSha256": "b009044c929ecc6d2e346c2cf2a80f53cb08f363cee8abddcac2b1a59de04ee8",
+      "sha256": "33f0a23dab393be31128688a6a12117bbc5608ec98f8fe1dd9699d7989290ac0"
+    },
+    {
+      "path": "backend/nq-ledger-contracts/src/main/java/com/guidinglight/nexusquant/ledger/contracts/model/AccountSnapshotProjection.java",
+      "beforeSha256": "e4335b3e4d7f7837f4edc3dbf2c525cb38f40371773069476437b6b7b132ee51",
+      "sha256": "9726a94c76d325e8345134934d9afd56c4ae26b7000b76e158ed4889b9d81a69"
+    },
+    {
+      "path": "backend/nq-ledger-contracts/src/main/java/com/guidinglight/nexusquant/ledger/service/port/LedgerPostingRepository.java",
+      "beforeSha256": "408025c46ec754abfed536e76fc10deeb578b47a56205671ebe4c410f9ce3d5c",
+      "sha256": "7f81d9e05c6e97bbbfcc24911bd52759081780218af947ceeafa125e26b4de5d"
+    },
+    {
+      "path": "backend/nq-ledger/src/main/java/com/guidinglight/nexusquant/ledger/service/TradeLedgerPostingService.java",
+      "beforeSha256": "30fdddd151c9b827420cea3d84ff8bacd1cceff38799240f8182d0c2d332e67d",
+      "sha256": "ad5ca82bf5cd669f35eeb9b17bcaa6577a80efed2add0c8b32b519740e4ac35d"
+    },
+    {
+      "path": "backend/nq-ledger/src/test/java/com/guidinglight/nexusquant/ledger/service/TradeLedgerPostingServiceTest.java",
+      "beforeSha256": "04c75f0b897dc2e2e7a851f54d2fc1fa93c068a4717e20e06a3674ab307a40a0",
+      "sha256": "8f96b2396d50c986aba862ffff39906a4e0bbaa9c63cf6df6d49ecf5a8e2a12d"
+    },
+    {
+      "path": "docs/current/API.md",
+      "beforeSha256": "0dc7bd8976bab5ff8709a28efd2fcea719fe62422cd54fc94745e21bcac19618",
+      "sha256": "e90939d946e628950b1d81abc0525069a9afae163f40fed001ef872459732a61"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5ProjectionConcurrencyTest.java",
+      "beforeSha256": null,
+      "sha256": "f321ec1bb1ef9c5dbc951a6983813f48235e62f48da5744fcbf686c2074feb81"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5ProjectionProcessMain.java",
+      "beforeSha256": null,
+      "sha256": "83ddb79df5959f90c7b936c909008563ea84c0b853acf4d3f6e4d4866f59bcc4"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5ProjectionRecoveryTest.java",
+      "beforeSha256": null,
+      "sha256": "9ffbdb2c0b25258d251ce839605d5b7fd8a6b24b8c0879d434fd15ff1b548e99"
+    }
+  ],
+  "focused": {
+    "tests": 15,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "C1": {
+    "summary": "C1-regression.json",
+    "summarySha256": "2b6e81ee83dcbe77e24af350348d714c4ea3425bfbe1534aafa09d1c746e9968",
+    "rawProofSha256": "9a132442716d7fb1a6ed01c6519792cecaa2ee65f6fb684fc5293edfd4d7b875",
+    "rawLocator": "L5_ROOT in backend/nq-app/target/l5-projection-remediation/focused-final05.log",
+    "trades": 120,
+    "tradeExecuted": 120,
+    "ledgerRows": 480,
+    "expectedPosition": "12.0",
+    "position": "12.0",
+    "latestBtcSnapshot": "12.0",
+    "actionableBacklog": 0,
+    "duplicatePlace": 0,
+    "duplicateTrade": 0,
+    "duplicateLedger": 0,
+    "replay": "UNCHANGED"
+  },
+  "fullMaven": {
+    "command": "mvn -f backend/pom.xml test",
+    "exit": 0,
+    "tests": 1909,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 130,
+    "cleanCopyByteMatchFiles": 1828,
+    "copiedInputFiles": 3888,
+    "environment": "Fresh loopback PG16.15/V51; canonical BackendCiLegacyAccountFixture; CI no-outbound environment and scoped datasource aliases",
+    "mirrorInputsManifestSha256": "b1526c5535d366e47a13053ced488660bab0398a46883c1127cbd5a677be0e80",
+    "fixtureSourceSha256": "27f5d89ee6d031b7e84438c2ff40a9cbe857cc1187971a2b38fd0b320f54c75e",
+    "ciSourceSha256": "34c0a7e8f13035f6a464198058da21fb675a7a5ccf44c22f72421921b0ad1d36",
+    "ownedContainerRemoved": true,
+    "xmlCounts": {
+      "tests": 1904,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 130
+    },
+    "xmlReportingDifference": "ModuleBoundaryArchTest has Jupiter 1 + ArchUnit 9; PackageBoundaryArchTest has Jupiter 4 + ArchUnit 10. ArchUnit overwrites same-name XML. All 5 Jupiter cases PASS in retained full log; Maven module totals match engine log totals.",
+    "reportArchiveSha256": "083d79301f5e464e99aa9b73f674f014c116b1e8fb112c717ce3f298f2cf8e50",
+    "firstFull": {
+      "exit": 1,
+      "tests": 1909,
+      "failures": 1,
+      "errors": 5,
+      "skipped": 131,
+      "classification": "Target staged-tree source contamination; missing explicit datasource fixture"
+    },
+    "collectorFailure": "Windows long-path copy failed after Maven exit 0; raw XML and full log successfully archived by ZIP collector; original failure metadata retained"
+  },
+  "logs": [
+    {
+      "path": "backend/nq-app/target/l5-projection-remediation/targeted-attempt01.log",
+      "sha256": "7a07a6a1718541a1674f5b6b9005bbc331e570da9ff447f806249e651b372a2d"
+    },
+    {
+      "path": "backend/nq-app/target/l5-projection-remediation/direct-attempt01.log",
+      "sha256": "39a5a2e664bd6b1e1b1141b7276a8e46d811ecd6a1fa57c1f69038a9bee0c885"
+    },
+    {
+      "path": "backend/nq-app/target/l5-projection-remediation/direct-and-recovery-attempt02.log",
+      "sha256": "f57aee20427ebd842eaedbb6dd156449558f06ee0b33d8dfcc017773ed075ffa"
+    },
+    {
+      "path": "backend/nq-app/target/l5-projection-remediation/recovery-attempt03.log",
+      "sha256": "8ab586e7fd4536afc4d239a789ae5104fe6fd164b545bb5727c0659ba27c63a9"
+    },
+    {
+      "path": "backend/nq-app/target/l5-projection-remediation/focused-attempt04.log",
+      "sha256": "00da68c23c025bff677feec9c4b3fd4aae4a510d1a2d8db5d182950c53a9d801"
+    },
+    {
+      "path": "backend/nq-app/target/l5-projection-remediation/focused-final05.log",
+      "sha256": "6eff7681ca4db1cf820fe445753492cdf1ff079ef98e4f6b4b555325229bae0b"
+    },
+    {
+      "path": "backend/nq-app/target/l5-projection-remediation/full-maven-final01.log",
+      "sha256": "282fb59f59b8f65f5cb763ece97c7c6a4156723a4e4f53fe82db512fd02db30e"
+    },
+    {
+      "path": "backend/nq-app/target/l5-projection-remediation/clean-full-runner.log",
+      "sha256": "3bdd279f89294c6137aeddd631c8e2bb16df68697371c1a0d1ad2977394e6027"
+    },
+    {
+      "path": "backend/nq-app/target/l5-projection-remediation/full02/fixture-build.log",
+      "sha256": "19fe687d48e7caa3ac3a6c271a8bdd35ab0bd0047855904d92f10369cde2aa2b"
+    },
+    {
+      "path": "backend/nq-app/target/l5-projection-remediation/full02/fixture-bootstrap.log",
+      "sha256": "6b1be12cca9d0a95802594d3203bfc6219d1e6c3553f7afd6b77572218ddc79c"
+    },
+    {
+      "path": "backend/nq-app/target/l5-projection-remediation/full02/full-maven.log",
+      "sha256": "97b542131617f2c0c119d14562882be6d38e2546d7ac9de66f43f4232abf7de0"
+    }
+  ],
+  "historicalL5Evidence": [
+    {
+      "path": "docs/audit/evidence/phase6-l5/BOUNDED_WORKLOAD_AND_MEASUREMENT.md",
+      "sha256": "9e00c629b35b79e0996afa03d6025ca719291526c97b02607b9f1f30be8e8ea7",
+      "unchanged": true
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l5/CONCURRENT_WORKLOAD_AND_BACKLOG.md",
+      "sha256": "c376b66e1abd009bea083e56a83e5aa092689a5cf2f773c475fa3364617be902",
+      "unchanged": true
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l5/runs/C1-failure.json",
+      "sha256": "a1aeecbc8c2962059eb4ba3562134e90f235b1e9cd8668cdd1ed65d7f3cb9dab",
+      "unchanged": true
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l5/runs/S1.json",
+      "sha256": "33fb8783d9c74a688651b7ea5403007120cd409b55c7d0f52caec2b3a5c5b62c",
+      "unchanged": true
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l5/runs/S2.json",
+      "sha256": "41f51efc10d207d2c1eff0f95a3c3df83a136b92d1b365b0025dbe54aeabce1a",
+      "unchanged": true
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l5/runs/S3.json",
+      "sha256": "069abfcfd8c87f9451f813e142f70f560c2ca833e6c9b0287e322f393a2cca8d",
+      "unchanged": true
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l5/summary.json",
+      "sha256": "16ffc900ede887e9b96b7a8983dd51826997a64bdd8706d3af3293138c300539",
+      "unchanged": true
+    }
+  ],
+  "secretScan": {
+    "version": "8.18.4",
+    "safeFiles": 3875,
+    "results": [
+      {
+        "case": "legacy-new-value",
+        "exit": 2,
+        "findings": 1,
+        "expectedExit": 2
+      },
+      {
+        "case": "legacy-real-shaped",
+        "exit": 2,
+        "findings": 1,
+        "expectedExit": 2
+      },
+      {
+        "case": "legacy-extended-value",
+        "exit": 2,
+        "findings": 1,
+        "expectedExit": 2
+      },
+      {
+        "case": "apiKey",
+        "exit": 2,
+        "findings": 1,
+        "expectedExit": 2
+      },
+      {
+        "case": "token",
+        "exit": 2,
+        "findings": 1,
+        "expectedExit": 2
+      },
+      {
+        "case": "Authorization",
+        "exit": 2,
+        "findings": 1,
+        "expectedExit": 2
+      },
+      {
+        "case": "tracked-working-tree",
+        "exit": 0,
+        "findings": 0,
+        "expectedExit": 0
+      }
+    ]
+  },
+  "stage": 0,
+  "commit": "NONE",
+  "push": "NONE",
+  "findings": {
+    "P0": 0,
+    "LOCAL_P1": 0,
+    "scope": "Current projection remediation implementation self-check; independent correctness review pending"
+  },
+  "nextAction": "NQ-GATEAUDIT-PHASE6-L5-CONCURRENT-POSITION-PROJECTION-INDEPENDENT-CORRECTNESS-REVIEW",
+  "artifactChecks": {
+    "stageAssets": {
+      "scanned": 1893,
+      "reviewedExceptions": 173,
+      "errors": 0
+    },
+    "docLinks": {
+      "checked": 26,
+      "warnings": 0,
+      "errors": 0
+    },
+    "whitespace": "PASS",
+    "protectedInputFilesUnchanged": 67,
+    "newEvidenceSecretScan": {
+      "version": "8.18.4",
+      "exit": 0,
+      "findings": 0,
+      "files": 11,
+      "scope": "docs/audit/evidence/phase6-l5",
+      "details": []
+    },
+    "ownedFullTestScratchRemoved": true,
+    "reportArchiveIntegrity": "PASS"
+  }
+}

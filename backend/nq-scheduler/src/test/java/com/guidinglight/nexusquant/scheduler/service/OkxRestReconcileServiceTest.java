@@ -44,6 +44,19 @@ import org.mockito.Mockito;
  */
 class OkxRestReconcileServiceTest {
 
+    /** 写入后读取 durable identity；模拟已有 void 仓储契约，不用临时 ID 代替真实回读。 */
+    private static TradeRepository tradeRepository() {
+        TradeRepository repository = Mockito.mock(TradeRepository.class);
+        Mockito.doAnswer(invocation -> {
+            PaperTradeRecord trade = invocation.getArgument(0);
+            when(repository.findByExchangeAndExchangeTradeId(trade.exchange(), trade.exchangeTradeId()))
+                    .thenReturn(Optional.of(trade));
+            return null;
+        }).when(repository).insertWithRequiredEvent(any());
+        return repository;
+    }
+
+
     /** limit 是公开总预算；终态覆盖不得引入第二次独立扫描。 */
     @Test
     void limitOneUsesExactlyOneSharedCandidateScan() {
@@ -205,7 +218,7 @@ class OkxRestReconcileServiceTest {
         final OrderCommandService commands = Mockito.mock(OrderCommandService.class);
         final OrderLifecycleService lifecycle = Mockito.mock(OrderLifecycleService.class);
         final OkxExchangeAdapter adapter = Mockito.mock(OkxExchangeAdapter.class);
-        final TradeRepository trades = Mockito.mock(TradeRepository.class);
+        final TradeRepository trades = tradeRepository();
         final TradeLedgerGateway ledger = Mockito.mock(TradeLedgerGateway.class);
         final EventPublisherPort events =
                 Mockito.mock(EventPublisherPort.class);
@@ -241,7 +254,7 @@ class OkxRestReconcileServiceTest {
         OrderCommandService orderCommandService = Mockito.mock(OrderCommandService.class);
         OrderLifecycleService orderLifecycleService = Mockito.mock(OrderLifecycleService.class);
         OkxExchangeAdapter okxExchangeAdapter = Mockito.mock(OkxExchangeAdapter.class);
-        TradeRepository tradeRepository = Mockito.mock(TradeRepository.class);
+        TradeRepository tradeRepository = tradeRepository();
         TradeLedgerGateway tradeLedgerGateway = Mockito.mock(TradeLedgerGateway.class);
         EventStoreAppender eventStoreAppender = Mockito.mock(EventStoreAppender.class);
         AuditLogRepository auditLogRepository = Mockito.mock(AuditLogRepository.class);
@@ -308,7 +321,7 @@ class OkxRestReconcileServiceTest {
         OrderCommandService orderCommandService = Mockito.mock(OrderCommandService.class);
         OrderLifecycleService orderLifecycleService = Mockito.mock(OrderLifecycleService.class);
         OkxExchangeAdapter okxExchangeAdapter = Mockito.mock(OkxExchangeAdapter.class);
-        TradeRepository tradeRepository = Mockito.mock(TradeRepository.class);
+        TradeRepository tradeRepository = tradeRepository();
         TradeLedgerGateway tradeLedgerGateway = Mockito.mock(TradeLedgerGateway.class);
         EventStoreAppender eventStoreAppender = Mockito.mock(EventStoreAppender.class);
         AuditLogRepository auditLogRepository = Mockito.mock(AuditLogRepository.class);
@@ -404,7 +417,7 @@ class OkxRestReconcileServiceTest {
         OrderCommandService orderCommandService = Mockito.mock(OrderCommandService.class);
         OrderLifecycleService orderLifecycleService = Mockito.mock(OrderLifecycleService.class);
         OkxExchangeAdapter okxExchangeAdapter = Mockito.mock(OkxExchangeAdapter.class);
-        TradeRepository tradeRepository = Mockito.mock(TradeRepository.class);
+        TradeRepository tradeRepository = tradeRepository();
         TradeLedgerGateway tradeLedgerGateway = Mockito.mock(TradeLedgerGateway.class);
         EventStoreAppender eventStoreAppender = Mockito.mock(EventStoreAppender.class);
         AuditLogRepository auditLogRepository = Mockito.mock(AuditLogRepository.class);
@@ -487,7 +500,7 @@ class OkxRestReconcileServiceTest {
         OrderCommandService orderCommandService = Mockito.mock(OrderCommandService.class);
         OrderLifecycleService orderLifecycleService = Mockito.mock(OrderLifecycleService.class);
         OkxExchangeAdapter okxExchangeAdapter = Mockito.mock(OkxExchangeAdapter.class);
-        TradeRepository tradeRepository = Mockito.mock(TradeRepository.class);
+        TradeRepository tradeRepository = tradeRepository();
         TradeLedgerGateway tradeLedgerGateway = Mockito.mock(TradeLedgerGateway.class);
         EventStoreAppender eventStoreAppender = Mockito.mock(EventStoreAppender.class);
         AuditLogRepository auditLogRepository = Mockito.mock(AuditLogRepository.class);

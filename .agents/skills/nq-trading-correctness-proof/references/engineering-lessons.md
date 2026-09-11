@@ -2,6 +2,24 @@
 
 本文件是项目统一的 engineering lessons / troubleshooting reference，按共同机制追加短条目，相关 Skill 按需读取。具体任务的原始证据保留在其既有位置，以链接引用；不为每个小问题创建独立长文档，不把历史 Gate、commit、CI run 清单加入默认 Agent 上下文。
 
+## 经验：Idempotency Before Business Validation Rule
+
+- 症状与首因：L5 C3 中，同一 venue fill 的两个 reconciliation actor 都通过锁外不存在预检；赢家提交后，输家把同一数量再次加入 executed total，误报 overfill。根因是 `IDEMPOTENCY_CLASSIFICATION_AFTER_QUANTITY_VALIDATION`，不是实际超额成交；原 C3 失败证据保持不变。
+- Rule：对可重放 durable event/fill，在同一数据库 accounting boundary 内先区分 `NEW / ALREADY_APPLIED`。只有 NEW 才参与 quantity accumulation、overfill、balance delta 和 projection delta：`duplicate detection → business validation → durable apply`。重复 delivery 不能被解释成新的业务事实；同 key 而内容冲突必须拒绝。
+- Canonical owner：`JdbcTradeRepository.insertWithRequiredEvent` 锁定 Order 后复用 `(exchange, exchange_trade_id)` 唯一契约，核对订单/账户/品种/外部订单/金额数量费用/成交时间。正常重放使用赢家 durable trade_id，不能用本次随机内部 ID 再造 Event/Ledger；上限继续读取 durable effective Order.qty。
+- 为什么既有修复未覆盖：先前 Order 行锁与数量重验保护不同 fill 的总量，锁外去重只优化通常路径；B4 保护 source/event 原子性，projection 修复保护同一 source 的增量唯一。它们不证明“同 fill 两次预检均不存在”后的正确分类。无需增加唯一键、吞 unique exception 或改变数量上限；既有数据库锁、唯一约束与真实错误拒绝均保留。
+- 排查：真实 venue/Order/unique Trade 数量 → canonical fill key → 锁外预检 → 事务锁内去重与数量检查顺序 → 后续使用的 durable trade_id → Ledger/Position/Snapshot 重放。永久入口为 `L5FillIdempotencyTest`、`L5FillPostgresTest`，使用 `nq.l5.fill=true`；保留两/四 JVM 的实际 PostgreSQL 等待、相同 fill 重放、不同 fill 真 overfill 负例和真实 COMMIT 响应中断。原复现与结果见[整改证据](../../../../docs/audit/evidence/phase6-l5/CONCURRENT_FILL_IDEMPOTENCY_REMEDIATION.md)。
+- 伴随 fixture 教训：STOP/关闭 stdin 的异常不能跳过其他 owned child；每个进程均在 finally 终止并检查退出，批量清理继续处理剩余资源。actor 关闭失败也必须停止 sampler、关闭 writer。`L5FixtureCleanupTest` 分开证明 PASS、assertion、exception/closed-stdin 和 setup failure，不将清理结果混入 production correctness。
+
+## 经验：Concurrent Projection Update Rule
+
+- 症状与根因：L5 C1 的 120 个唯一 Trade 合计 12.0 BTC，Position 仅 11.7；最新账户查询为 11.6。不同事务无锁读取同一旧 Position 后绝对覆盖会丢增量；快照又按成交时间选 latest，导致较晚应用的旧成交被排在旧投影之后。这是一个 projection-concurrency correctness cluster，包含两个独立机制。
+- Rule：跨 JVM projection 不得 `read current → calculate absolute result → blind overwrite`，除非完整读写边界受数据库 serialization/version fencing 保护。原子增量也必须同时证明 exactly-once application / replay idempotency，不能只把 SQL 改为 `qty=qty+delta`。
+- Canonical owner：当前 Position 按 Trade.qty、Order.side 和 base fee 更新；现有 Ledger 金额成对分录不能冒充 base 数量 oracle。沿用同一记账事务与 `tradeId:LEDGER:*` 唯一键，完整分录、Position 和 Snapshot 原子提交；不完整历史应用 fail closed。数据库锁在读取前取得，首次建行、提交失败、进程死亡及结果不确定均不能绕过身份判定。
+- Snapshot publication：币种快照需在对应账户/币种数据库锁内读状态并发布，按持锁期间分配的单调 sequence 选当前值；成交时间只表示观察时间。历史 snapshot_id 若无此前的串行发布保证，不可追认成旧投影的正确性证明。共享币种需串行，不相交账户/币种应有可并行正例，不能用全局锁或降低 reconciliation concurrency 掩盖问题。
+- 排查顺序：`authoritative facts → projection writer → read/write transaction boundary → concurrency primitive → replay identity → snapshot publication order → independent reconstruction oracle`。分别检查事实唯一、不同事实无丢失、重放不增量，以及旧 writer 能否晚于新 writer 发布。
+- 永久回归：保留原 C1 红色证据；`L5ProjectionConcurrencyTest` 与 `L5ProjectionRecoveryTest` 使用真实 PostgreSQL/独立 JVM，检查 1/2/4 路竞争、首次初始化、暂停旧 writer、账户/币种隔离、replay、kill/restart 和真实 COMMIT 响应中断。原 `L5BoundedWorkloadTest` 仅以 `nq.l5.level=C1` 运行 120 Trade 回归，不扩展 C2/C3。候选与实际结果见[整改证据](../../../../docs/audit/evidence/phase6-l5/CONCURRENT_POSITION_AND_ACCOUNT_PROJECTION_REMEDIATION.md)；实现证明不替代独立审查和 L5 qualification。
+
 ## 触发条件与排除项
 
 满足下列任一条件，必须启动根因排查，不得继续只修表面症状：

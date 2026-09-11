@@ -49,7 +49,7 @@ public class JdbcLedgerReconcileRepository implements LedgerReconcileRepository 
                                     FROM account_snapshots s
                                     WHERE s.account_id = le.account_id
                                       AND s.currency = le.currency
-                                    ORDER BY s.ts DESC, s.snapshot_id DESC
+                                    ORDER BY s.snapshot_id DESC
                                     LIMIT 1
                                 ), 0) AS snapshot_balance,
                                 CASE
@@ -80,7 +80,7 @@ public class JdbcLedgerReconcileRepository implements LedgerReconcileRepository 
                                 FROM account_snapshots s2
                                 WHERE s2.account_id = s.account_id
                                   AND s2.currency = s.currency
-                                ORDER BY s2.ts DESC, s2.snapshot_id DESC
+                                ORDER BY s2.snapshot_id DESC
                                 LIMIT 1
                         )
                           AND NOT EXISTS (

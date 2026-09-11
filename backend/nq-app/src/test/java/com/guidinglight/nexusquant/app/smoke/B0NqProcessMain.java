@@ -90,12 +90,18 @@ public final class B0NqProcessMain {
             System.out.println("B0_COMPOSITION realRisk=true writeProxy=true gateway=AdapterBackedTradingVenueGateway jdbcUser=" + B0Fixture.APP);
             System.out.flush();
             try (var qualification = new B5QualificationControls(context);
+                 var l5 = L5QualificationControls.enabled ? new L5QualificationControls(context) : null;
                  var executor = Executors.newSingleThreadExecutor();
                  var commands = new BufferedReader(new InputStreamReader(System.in))) {
                 Future<String> pending = null;
                 String command;
                 while ((command = commands.readLine()) != null) {
                     if ("STOP".equals(command)) return;
+                    if (l5 != null && !L5QualificationControls.isRepeatedFaultCommand(command)) {
+                        System.out.println("B0_RESULT " + l5.handle(command));
+                        System.out.flush();
+                        continue;
+                    }
                     String qualificationResult = qualification.handle(command);
                     if (qualificationResult != null) {
                         System.out.println("B0_RESULT " + qualificationResult);
@@ -155,6 +161,9 @@ public final class B0NqProcessMain {
                         }
                         B4TransactionFaults.arm(target, jdbc, method, parts[2]);
                         System.out.println("B0_RESULT ARMED " + parts[1] + " " + parts[2]);
+                    } else if ("ARM_L5_FILL".equals(command)) {
+                        L5FillControls.arm(context.getBean(TradeRepository.class));
+                        System.out.println("B0_RESULT ARMED L5_FILL");
                     } else if ("ARM_B4_TRADE_COMMIT".equals(command)) {
                         B4ProcessFaults.armAfterTradeCommit(context.getBean(
                                 TradeRepository.class));

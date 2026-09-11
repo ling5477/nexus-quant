@@ -1,0 +1,242 @@
+{
+  "status": "IMPLEMENTED / PENDING_INDEPENDENT_CORRECTNESS_REVIEW",
+  "head": "991187fe772ad8b03746a4a9ddfc3ea9010e5896",
+  "candidateFiles": 1832,
+  "candidateManifestSha256": "fd1091e5497fe8b80583c99efa19003e5729e4059c92bff705c03f18ebb7f9e1",
+  "focused": {
+    "tests": 51,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "candidateDrift": [],
+    "suites": [
+      [
+        "2",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.ledger.service.TradeLedgerPostingServiceTest"
+      ],
+      [
+        "2",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.ledger.infra.jdbc.JdbcLedgerPostingRepositoryTest"
+      ],
+      [
+        "1",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.scheduler.infra.jdbc.JdbcLedgerReconcileRepositoryTest"
+      ],
+      [
+        "2",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.scheduler.infra.jdbc.JdbcTradeRepositoryTest"
+      ],
+      [
+        "21",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileServiceTest"
+      ],
+      [
+        "4",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.B4TradeEventPostgresTest"
+      ],
+      [
+        "2",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.L5DriverContractTest"
+      ],
+      [
+        "3",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.L5FillIdempotencyTest"
+      ],
+      [
+        "3",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.L5FillPostgresTest"
+      ],
+      [
+        "4",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.L5FixtureCleanupTest"
+      ],
+      [
+        "5",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.L5ProjectionConcurrencyTest"
+      ],
+      [
+        "2",
+        "0",
+        "0",
+        "0",
+        "com.guidinglight.nexusquant.app.smoke.L5ProjectionRecoveryTest"
+      ]
+    ],
+    "logSha256": "063a41b89d964dcc71c76cca075e03727436e37544d78bfef14361bef7867cc0",
+    "archiveSha256": "a57d86cce651c3e9142f3698f9e96fc5825610f8fbe2e0f0b3059ee52930b496"
+  },
+  "scenarios": [
+    {
+      "artifact": "backend/nq-app/target/l5-fill-remediation/commit-unknown-4711068457941156581/raw-proof.json",
+      "sha256": "0da90cc77cce619c2534214d41478e6a08d49c247d7cb1b6a99a72b5b4ab02c3",
+      "result": "PASS"
+    },
+    {
+      "artifact": "backend/nq-app/target/l5-fill-remediation/race-4-6690691531382728013/raw-proof.json",
+      "sha256": "6b4d9b71577980a9b030e9bb8b14f95e24a80ef031359d517556561077d0fab5",
+      "result": "PASS",
+      "actors": 4,
+      "observedPgWaiters": 4,
+      "replayUnchanged": true
+    },
+    {
+      "artifact": "backend/nq-app/target/l5-fill-remediation/race-2-15938308443454665070/raw-proof.json",
+      "sha256": "0e7f279e557b8e10998c45213a13fd4a73192b4dd3d7a7f0ab8611b8cded9b31",
+      "result": "PASS",
+      "actors": 2,
+      "observedPgWaiters": 2,
+      "replayUnchanged": true
+    },
+    {
+      "artifact": "backend/nq-app/target/l5-fill-remediation/cleanup-ASSERTION-18310048448125735819/cleanup-result.txt",
+      "sha256": "9a47e8112b270d331e2784b4b42e94347d7c1e022cff01247fe6e200a765ae66",
+      "result": "ASSERTION ownedNq=0 ownedVenue=0 ownedPg=0"
+    },
+    {
+      "artifact": "backend/nq-app/target/l5-fill-remediation/cleanup-SETUP-5644969358801785340/cleanup-result.txt",
+      "sha256": "b966cfe5e79fb5990ff9e134f4e970c3567d20d0074fbf9e4bfae3e9697ea5a6",
+      "result": "SETUP ownedNq=0 ownedVenue=0 ownedPg=0"
+    },
+    {
+      "artifact": "backend/nq-app/target/l5-fill-remediation/cleanup-PASS-8101589974443868439/cleanup-result.txt",
+      "sha256": "183b8972ddb53b00623a9d47dc254cf6787828fc6f7f71408436d363d33f401e",
+      "result": "PASS ownedNq=0 ownedVenue=0 ownedPg=0"
+    },
+    {
+      "artifact": "backend/nq-app/target/l5-fill-remediation/cleanup-EXCEPTION-4345548400130610992/cleanup-result.txt",
+      "sha256": "5a7f0473534928d1ae3f1f2e013b634e24887ed4a09fb2902ed1034d89aaad1f",
+      "result": "EXCEPTION ownedNq=0 ownedVenue=0 ownedPg=0"
+    }
+  ],
+  "qualificationExecuted": false,
+  "stage": 0,
+  "commit": "NONE",
+  "push": "NONE",
+  "fullMaven": {
+    "status": "PASS",
+    "exit": 0,
+    "tests": 1919,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 140,
+    "startedAt": "2026-09-11T07:57:35.076435+00:00",
+    "fullStartedAt": "2026-09-11T07:57:49.376593+00:00",
+    "finishedAt": "2026-09-11T07:59:40.919672+00:00",
+    "copiedFiles": 3897,
+    "candidateManifestSha256": "fd1091e5497fe8b80583c99efa19003e5729e4059c92bff705c03f18ebb7f9e1",
+    "fixtureSourceSha256": "27f5d89ee6d031b7e84438c2ff40a9cbe857cc1187971a2b38fd0b320f54c75e",
+    "ciSourceSha256": "34c0a7e8f13035f6a464198058da21fb675a7a5ccf44c22f72421921b0ad1d36",
+    "image": "postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94",
+    "fixtureVerification": "51|t\n1\n0\n0\n16.15 (Debian 16.15-1.pgdg13+2)",
+    "inheritedProfiles": false,
+    "inheritedDatasource": false,
+    "changedCandidatePaths": [],
+    "fullLogSha256": "624ad1e14626ceed17ded6fcd52aec76dd53f30d2fa4d06734930dcca62b443d",
+    "archiveSha256": "099ca04f6fb0f629c051938bd2ed135f7759be54e204a275fa6fe1f23d2ea1ca",
+    "ownedContainerRemoved": true,
+    "xmlCounts": {
+      "tests": 1914,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 140
+    },
+    "countingNote": "Maven per-engine totals include Jupiter cases overwritten by same-name ArchUnit XML; raw log and XML retained together."
+  },
+  "resources": {
+    "registeredJvms": 80,
+    "registeredPostgresContainers": 34,
+    "remainingOwnedJvms": 0,
+    "remainingOwnedPostgresContainers": 0,
+    "fullMavenPostgresRemaining": 0
+  },
+  "attempts": [
+    {
+      "name": "red-attempt01",
+      "log": "backend/nq-app/target/l5-fill-remediation/red-attempt01.log",
+      "sha256": "004ad8bba9d38f521f9feababc5c676bc1fc769b212beb0b633d12ed7cf1cf38",
+      "exit": 1
+    },
+    {
+      "name": "green-attempt01",
+      "log": "backend/nq-app/target/l5-fill-remediation/green-attempt01.log",
+      "sha256": "c9e1bd8e2688d5f7a28c8a4baa9b7f9d80ce1f64280f8a3ecd87a81b3c7c0bca",
+      "exit": 0
+    },
+    {
+      "name": "boundaries-cleanup-attempt01",
+      "log": "backend/nq-app/target/l5-fill-remediation/boundaries-cleanup-attempt01.log",
+      "sha256": "4db30b0f6a79d9d60302bfc3cc46bc52a19e2fc9d9a32cab2eca5cdc315abc19",
+      "exit": 1
+    },
+    {
+      "name": "cleanup-attempt02",
+      "log": "backend/nq-app/target/l5-fill-remediation/cleanup-attempt02.log",
+      "sha256": "ea3cf53b829607bcc4876887978bda662ba053542f5d4f8ce05060c06a3a828b",
+      "exit": 0
+    },
+    {
+      "name": "focused-final01",
+      "log": "backend/nq-app/target/l5-fill-remediation/focused-final01.log",
+      "sha256": "063a41b89d964dcc71c76cca075e03727436e37544d78bfef14361bef7867cc0",
+      "exit": 0
+    }
+  ],
+  "localFindings": {
+    "P0": 0,
+    "LOCAL_P1": 0,
+    "LOCAL_BLOCKING_P2": 0,
+    "basis": "implementation self-check and real targeted tests, not independent acceptance"
+  },
+  "L5": "NOT_ACCEPTED",
+  "validation": {
+    "stageAssets": {
+      "errors": 0,
+      "scanned": 1897,
+      "reviewedExceptions": 173
+    },
+    "docLinks": {
+      "checked": 17,
+      "warnings": 0,
+      "errors": 0
+    },
+    "gitleaks": {
+      "version": "8.18.4",
+      "files": 16,
+      "findings": 0
+    },
+    "gitDiffCheck": "PASS"
+  }
+}

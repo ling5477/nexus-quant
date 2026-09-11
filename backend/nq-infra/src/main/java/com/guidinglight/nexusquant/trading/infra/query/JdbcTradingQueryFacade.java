@@ -166,6 +166,7 @@ public class JdbcTradingQueryFacade implements TradingQueryFacade {
         if (accountId == null || accountId <= 0) {
             return Optional.empty();
         }
+        // 成交时间可能逆序；唯一生产 writer 在币种锁内分配并提交 snapshot_id，故按发布顺序取当前值。
         List<AccountBalanceQueryView> balances = jdbcTemplate.query(
                 """
                         SELECT latest.currency, latest.balance, latest.available, latest.frozen, latest.ts, latest.trace_id
@@ -173,7 +174,7 @@ public class JdbcTradingQueryFacade implements TradingQueryFacade {
                             SELECT snapshot_id, account_id, currency, balance, available, frozen, ts, trace_id,
                                    ROW_NUMBER() OVER (
                                        PARTITION BY account_id, currency
-                                       ORDER BY ts DESC, snapshot_id DESC
+                                       ORDER BY snapshot_id DESC
                                    ) AS rn
                             FROM account_snapshots
                             WHERE account_id = ?

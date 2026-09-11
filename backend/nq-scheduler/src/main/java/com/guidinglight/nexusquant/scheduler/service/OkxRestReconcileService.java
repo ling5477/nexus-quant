@@ -494,8 +494,12 @@ public class OkxRestReconcileService {
                     tradeReport.tradeTs()
             );
             tradeRepository.insertWithRequiredEvent(trade);
-            ensureLedgerConvergence(order, trade, tradeReport, false);
-            newTrades++;
+            // void 写入契约允许并发幂等命中；后续记账只能使用真实 durable Trade 的内部身份。
+            PaperTradeRecord durable = tradeRepository.findByExchangeAndExchangeTradeId("OKX", tradeReport.exchangeTradeId())
+                    .orElseThrow(() -> new IllegalStateException("DURABLE_TRADE_MISSING_AFTER_APPLY"));
+            boolean inserted = durable.tradeId().equals(trade.tradeId());
+            ensureLedgerConvergence(order, durable, tradeReport, !inserted);
+            if (inserted) newTrades++;
         }
         for (PaperTradeRecord durableTrade : durableTrades) {
             if (reportTradeIds.contains(durableTrade.exchangeTradeId())) {

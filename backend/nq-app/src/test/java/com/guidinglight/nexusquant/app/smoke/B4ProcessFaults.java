@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.app.smoke;
 
 import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
+import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -12,6 +13,18 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 /** 真实事务代理外层的一次性提交后屏障；不替换仓储、不写表，由父进程执行强杀。 */
 final class B4ProcessFaults {
     private B4ProcessFaults() { }
+
+    /** 与旧B4相同的事务外层hook，目标身份只决定是否暂停，不改变调用。 */
+    static void armAfterTradeCommit(TradeRepository repository, L5TradeTargetBarrier target) {
+        B0Fixture.require(repository instanceof Advised);
+        ((Advised) repository).addAdvice(0, (MethodInterceptor) invocation -> {
+            Object result = invocation.proceed();
+            if ("insertWithRequiredEvent".equals(invocation.getMethod().getName())) {
+                target.afterCommit((PaperTradeRecord) invocation.getArguments()[0]);
+            }
+            return result;
+        });
+    }
 
     static void armAfterTradeCommit(TradeRepository repository) {
         B0Fixture.require(repository instanceof Advised);

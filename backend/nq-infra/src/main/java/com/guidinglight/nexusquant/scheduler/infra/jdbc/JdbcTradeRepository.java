@@ -100,9 +100,16 @@ public class JdbcTradeRepository implements TradeRepository {
     @Override
     @Transactional
     public void insert(PaperTradeRecord trade) {
-        // 并发对账的响应预检不是锁；插入与终态纠正共用订单行锁，并在锁内重新累计已提交成交。
-        BigDecimal original = jdbcTemplate.queryForObject(
-                "SELECT qty FROM orders WHERE order_id=? FOR UPDATE", BigDecimal.class, trade.orderId());
+        insertNew(trade, lockOrderQuantity(trade.orderId()));
+    }
+
+    private BigDecimal lockOrderQuantity(String orderId) {
+        return jdbcTemplate.queryForObject(
+                "SELECT qty FROM orders WHERE order_id=? FOR UPDATE", BigDecimal.class, orderId);
+    }
+
+    private void insertNew(PaperTradeRecord trade, BigDecimal original) {
+        // 只有新的 durable fact 才累加数量；上限来自同一事务中锁定的 effective Order。
         BigDecimal executed = jdbcTemplate.queryForObject(
                 "SELECT COALESCE(SUM(qty),0) FROM trades WHERE order_id=?", BigDecimal.class, trade.orderId());
         if (original == null || original.signum() <= 0 || trade.qty() == null || trade.qty().signum() <= 0
@@ -138,8 +145,25 @@ public class JdbcTradeRepository implements TradeRepository {
     @Override
     @Transactional
     public void insertWithRequiredEvent(PaperTradeRecord trade) {
-        // 自调用 insert 加入当前外层事务；必需事件失败必须回滚整个 Trade 写入。
-        insert(trade);
+        // 锁外预检不能分类并发输家；同一 Order 的全部插入必须在锁内重新判断既有 fill。
+        BigDecimal original = lockOrderQuantity(trade.orderId());
+        var existing = findByExchangeAndExchangeTradeId(trade.exchange(), trade.exchangeTradeId());
+        if (existing.isPresent()) {
+            String durableId = existing.orElseThrow().tradeId();
+            // 唯一键相同而业务内容冲突不能当幂等成功；时间由 PostgreSQL 按持久精度比较。
+            Boolean matches = jdbcTemplate.queryForObject("""
+                    SELECT order_id=? AND account_id=? AND symbol=? AND external_order_id IS NOT DISTINCT FROM ?
+                      AND price=? AND qty=? AND fee IS NOT DISTINCT FROM ?
+                      AND fee_currency IS NOT DISTINCT FROM ? AND ts=?
+                    FROM trades WHERE trade_id=?
+                    """, Boolean.class, trade.orderId(), trade.accountId(), trade.symbol(), trade.externalOrderId(),
+                    trade.price(), trade.qty(), trade.fee(), trade.feeCurrency(), Timestamp.from(trade.ts()), durableId);
+            if (!Boolean.TRUE.equals(matches)) throw new IllegalStateException("TRADE_FILL_IDENTITY_CONFLICT");
+            // 使用赢家身份恢复必需事件；不得给本次临时 trade_id 再造事件。
+            ensureRequiredEvent(durableId);
+            return;
+        }
+        insertNew(trade, original);
         ensureRequiredEvent(trade.tradeId());
     }
 

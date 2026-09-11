@@ -12,10 +12,30 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 
 /** 沿用 F002 ProcessBuilder/日志/PID 方式；B0 增加交互屏障和拥有实例身份的 PostgreSQL。 */
 final class B0Processes {
+    /** STOP 失败不能跳过任何已登记的进程；只操作本 session 持有的 Process 对象。 */
+    static void closeChildren(List<Child> children) throws Exception {
+        Exception failure = null;
+        for (var child : children.reversed()) {
+            try {
+                try {
+                    if (child.process.isAlive()) {
+                        child.startCommand("STOP");
+                        child.process.waitFor(5, TimeUnit.SECONDS);
+                    }
+                } catch (IOException closedInput) {
+                    System.out.println("L5_CLEANUP stop_pipe_closed pid=" + child.process.pid());
+                } finally { child.close(); }
+            } catch (Exception error) {
+                if (failure == null) failure = error; else failure.addSuppressed(error);
+            }
+        }
+        if (failure != null) throw failure;
+    }
     static Map<String, String> cleanEnvironment() {
         Map<String, String> result = new LinkedHashMap<>();
         // 仅读取必要的 OS 变量，既不继承也不读取机器 NQ、Spring、Java options 或 provider 凭证。
@@ -60,6 +80,14 @@ final class B0Processes {
         private Pg(String name, String container, String url) { this.name = name; this.container = container; this.url = url; }
 
         static Pg start() throws Exception {
+            return start(false);
+        }
+
+        static Pg startBounded() throws Exception {
+            return start(true);
+        }
+
+        private static Pg start(boolean bounded) throws Exception {
             var lock = new ObjectMapper().readTree(root().resolve("scripts/ci/delivery-supply-chain-lock.json").toFile());
             // 复用 canonical CI 锁定镜像；只允许本地缓存，默认测试不向 registry 发起下载。
             String digest = null;
@@ -69,7 +97,11 @@ final class B0Processes {
             B0Fixture.require(digest != null && digest.matches("sha256:[a-f0-9]{64}"));
             String image = "postgres:16@" + digest;
             String name = "nq-b0-" + UUID.randomUUID();
-            String container = command("docker", "run", "--detach", "--pull=never", "--name", name,
+            String container = bounded ? command("docker", "run", "--detach", "--pull=never", "--name", name,
+                    "--memory", "768m", "--memory-swap", "768m",
+                    "--label", "nq.b0.identity=" + name, "--tmpfs", "/var/lib/postgresql/data:size=256m",
+                    "--publish", "127.0.0.1::5432", "--env", "POSTGRES_HOST_AUTH_METHOD=trust", image)
+                    : command("docker", "run", "--detach", "--pull=never", "--name", name,
                     "--label", "nq.b0.identity=" + name, "--tmpfs", "/var/lib/postgresql/data",
                     "--publish", "127.0.0.1::5432", "--env", "POSTGRES_HOST_AUTH_METHOD=trust", image);
             Pg pg = new Pg(name, container, "");
@@ -101,6 +133,8 @@ final class B0Processes {
             B0Fixture.require(url.equals("jdbc:postgresql://" + binding + "/postgres"));
             return url;
         }
+
+        String ownedContainerId() throws Exception { ownedUrl(); return container; }
 
         boolean databaseAbsent(String database) throws Exception {
             try (var connection = DriverManager.getConnection(ownedUrl(), "postgres", "");
@@ -139,7 +173,9 @@ final class B0Processes {
                 classpath = legacyClasses.toAbsolutePath() + File.pathSeparator + classpath;
             }
             Path argfile = directory.resolve(label + ".args");
-            Files.writeString(argfile, "-Dfile.encoding=UTF-8\n-Dstdout.encoding=UTF-8\n-Dstderr.encoding=UTF-8\n"
+            Files.writeString(argfile, ((main == L5NqProcessMain.class || main == L5FaultNqProcessMain.class || main == L5KillNqProcessMain.class) ? "-Xmx512m\n"
+                    : main == L5VenueProcessMain.class || main == L5ProjectionProcessMain.class ? "-Xmx256m\n" : "")
+                    + "-Dfile.encoding=UTF-8\n-Dstdout.encoding=UTF-8\n-Dstderr.encoding=UTF-8\n"
                     + "-Duser.language=en\n-Duser.country=US\n-cp\n\"" + classpath.replace("\\", "\\\\").replace("\"", "\\\"")
                     + "\"\n" + main.getName() + "\n");
             String executable = Path.of(System.getProperty("java.home"), "bin",
@@ -160,7 +196,10 @@ final class B0Processes {
         /** 先完成一次性 bootstrap，再启动第二个业务竞争者；失败时不泄漏构造出的进程。 */
         Child awaitReady() throws Exception {
             try { ready(); return this; }
-            catch (Exception | AssertionError failure) { close(); throw failure; }
+            catch (Exception | AssertionError failure) {
+                try { close(); } catch (Exception cleanup) { failure.addSuppressed(cleanup); }
+                throw failure;
+            }
         }
 
         String send(String command) throws Exception {
@@ -193,8 +232,16 @@ final class B0Processes {
         }
 
         @Override public void close() throws Exception {
-            if (process.isAlive()) kill();
-            input.close();
+            try {
+                if (process.isAlive()) kill();
+            } finally {
+                try { input.close(); }
+                catch (IOException closedInput) {
+                    // 已确认退出后，刷新失效 stdin 的错误不再代表资源未回收；存活进程仍拒绝。
+                    if (process.isAlive()) throw closedInput;
+                    System.out.println("L5_CLEANUP closed_input_after_exit pid=" + process.pid());
+                }
+            }
             B0Fixture.require(!process.isAlive());
         }
     }

@@ -1,0 +1,435 @@
+{
+  "level": "C3",
+  "concurrency": 4,
+  "expectedOrders": 228,
+  "expectedStrategyRuns": 12,
+  "result": "PASS",
+  "businessCounts": {
+    "orders": 240,
+    "ordinary_place_authorities": 240,
+    "trades": 240,
+    "ledger_entries": 960,
+    "ledger_events": 960,
+    "positions": 1,
+    "account_snapshots": 480,
+    "strategy_runs": 12,
+    "strategy_run_dispatch_work": 12,
+    "events": 240
+  },
+  "processed": 240,
+  "jvms": [
+    {
+      "identity": "JVM:1",
+      "samples": 140,
+      "activePeak": 1,
+      "totalPeak": 10,
+      "poolMax": 10,
+      "waitingPeak": 0,
+      "activeFinal": 0,
+      "waitingFinal": 0,
+      "threadsInitial": 15,
+      "threadsFinal": 18,
+      "threadsPeak": 20,
+      "commandsCompleted": 58,
+      "idleInitial": 1,
+      "idleFinal": 10,
+      "activeInitial": 0,
+      "pendingInitial": 0,
+      "queueInitial": 0,
+      "queuePeak": 1,
+      "queueFinal": 0,
+      "queueCapacity": 1
+    },
+    {
+      "identity": "JVM:2",
+      "samples": 215,
+      "activePeak": 1,
+      "totalPeak": 10,
+      "poolMax": 10,
+      "waitingPeak": 0,
+      "activeFinal": 0,
+      "waitingFinal": 0,
+      "threadsInitial": 15,
+      "threadsFinal": 18,
+      "threadsPeak": 20,
+      "commandsCompleted": 70,
+      "idleInitial": 1,
+      "idleFinal": 10,
+      "activeInitial": 0,
+      "pendingInitial": 0,
+      "queueInitial": 0,
+      "queuePeak": 1,
+      "queueFinal": 0,
+      "queueCapacity": 1
+    },
+    {
+      "identity": "JVM:3",
+      "samples": 182,
+      "activePeak": 1,
+      "totalPeak": 10,
+      "poolMax": 10,
+      "waitingPeak": 0,
+      "activeFinal": 0,
+      "waitingFinal": 0,
+      "threadsInitial": 15,
+      "threadsFinal": 18,
+      "threadsPeak": 20,
+      "commandsCompleted": 58,
+      "idleInitial": 1,
+      "idleFinal": 10,
+      "activeInitial": 0,
+      "pendingInitial": 0,
+      "queueInitial": 0,
+      "queuePeak": 1,
+      "queueFinal": 0,
+      "queueCapacity": 1
+    },
+    {
+      "identity": "JVM:4",
+      "samples": 199,
+      "activePeak": 1,
+      "totalPeak": 10,
+      "poolMax": 10,
+      "waitingPeak": 0,
+      "activeFinal": 0,
+      "waitingFinal": 0,
+      "threadsInitial": 15,
+      "threadsFinal": 18,
+      "threadsPeak": 20,
+      "commandsCompleted": 58,
+      "idleInitial": 1,
+      "idleFinal": 10,
+      "activeInitial": 0,
+      "pendingInitial": 0,
+      "queueInitial": 0,
+      "queuePeak": 1,
+      "queueFinal": 0,
+      "queueCapacity": 1
+    },
+    {
+      "identity": "JVM:5",
+      "samples": 12,
+      "activePeak": 1,
+      "totalPeak": 10,
+      "poolMax": 10,
+      "waitingPeak": 0,
+      "activeFinal": 0,
+      "waitingFinal": 0,
+      "threadsInitial": 15,
+      "threadsFinal": 19,
+      "threadsPeak": 20,
+      "commandsCompleted": 0,
+      "idleInitial": 1,
+      "idleFinal": 10,
+      "activeInitial": 0,
+      "pendingInitial": 0,
+      "queueInitial": 0,
+      "queuePeak": 0,
+      "queueFinal": 0,
+      "queueCapacity": 1
+    }
+  ],
+  "venueExecutor": {
+    "executorActive": 1,
+    "executorQueue": 0,
+    "executorCompleted": 9633,
+    "executorRejected": 0,
+    "executorQueueCapacity": 16
+  },
+  "resourcesReleased": {
+    "nq": 0,
+    "venue": 0,
+    "ownedContainers": 0,
+    "venuePortReleased": true,
+    "databasePortReleased": true
+  },
+  "progressCheckpoints": [
+    {
+      "timeMillis": 1789115214361,
+      "backlog": 0,
+      "correctnessRequiredUnresolved": 0,
+      "actionable": 0,
+      "orders": 0,
+      "terminal": 0,
+      "trades": 0,
+      "ledger": 0,
+      "runsSucceeded": 0,
+      "transactions": 318,
+      "idleInTransaction": 0,
+      "venueExecutor": {
+        "active": 1,
+        "queue": 0,
+        "completed": 2,
+        "rejected": 0,
+        "capacity": 16
+      }
+    },
+    {
+      "timeMillis": 1789115224976,
+      "backlog": 68,
+      "correctnessRequiredUnresolved": 0,
+      "actionable": 68,
+      "orders": 92,
+      "terminal": 24,
+      "trades": 24,
+      "ledger": 96,
+      "runsSucceeded": 0,
+      "transactions": 4668,
+      "idleInTransaction": 0,
+      "venueExecutor": {
+        "active": 2,
+        "queue": 0,
+        "completed": 2001,
+        "rejected": 0,
+        "capacity": 16
+      }
+    },
+    {
+      "timeMillis": 1789115235812,
+      "backlog": 66,
+      "correctnessRequiredUnresolved": 0,
+      "actionable": 66,
+      "orders": 168,
+      "terminal": 102,
+      "trades": 102,
+      "ledger": 408,
+      "runsSucceeded": 0,
+      "transactions": 19444,
+      "idleInTransaction": 0,
+      "venueExecutor": {
+        "active": 1,
+        "queue": 0,
+        "completed": 5808,
+        "rejected": 0,
+        "capacity": 16
+      }
+    },
+    {
+      "timeMillis": 1789115246670,
+      "backlog": 64,
+      "correctnessRequiredUnresolved": 1,
+      "actionable": 63,
+      "orders": 240,
+      "terminal": 176,
+      "trades": 176,
+      "ledger": 704,
+      "runsSucceeded": 8,
+      "transactions": 33601,
+      "idleInTransaction": 0,
+      "venueExecutor": {
+        "active": 1,
+        "queue": 0,
+        "completed": 8989,
+        "rejected": 0,
+        "capacity": 16
+      }
+    },
+    {
+      "timeMillis": 1789115257271,
+      "backlog": 0,
+      "correctnessRequiredUnresolved": 0,
+      "actionable": 0,
+      "orders": 240,
+      "terminal": 240,
+      "trades": 240,
+      "ledger": 960,
+      "runsSucceeded": 12,
+      "transactions": 37792,
+      "idleInTransaction": 0,
+      "venueExecutor": {
+        "active": 1,
+        "queue": 0,
+        "completed": 9747,
+        "rejected": 0,
+        "capacity": 16
+      }
+    }
+  ],
+  "transactionDelta": 37474,
+  "oracleMutationNegatives": [
+    "duplicate_place",
+    "duplicate_trade",
+    "missing_event",
+    "ledger_amount",
+    "lost_order",
+    "lineage",
+    "backlog",
+    "measurement_gap",
+    "cleanup",
+    "unapproved_scale",
+    "event_payload",
+    "balance",
+    "position",
+    "ledger_event",
+    "pool_not_released",
+    "venue_rejection",
+    "missing_progress",
+    "orphan_run",
+    "duplicate_window"
+  ],
+  "concurrentMutationNegatives": [
+    "cursor_revision",
+    "cursor_last_key",
+    "total_limit",
+    "restart_identity",
+    "no_overlap",
+    "actor_failure",
+    "version_runaway",
+    "fairness_lost",
+    "effective_mismatch"
+  ],
+  "rawLocator": "backend/nq-app/target/l5-bounded/b85ffa89-367d-4144-8efb-9162ae6360bf/C3/raw-proof.json",
+  "rawSha256": "b778d5983bda3b0b0509139fbd8bc73396030d285d11a8ebc011898c06eb5ea8",
+  "logLocator": "backend/nq-app/target/l5-c3-resume-mqdn2uhm/C3-qualification.log",
+  "logSha256": "71ca5197019e2cf1b8baafe8ab8e6f5c7c46bf9b75b1da21eb449bd4491ea1d7",
+  "candidateManifestSha256": "fd1091e5497fe8b80583c99efa19003e5729e4059c92bff705c03f18ebb7f9e1",
+  "initialActionable": 60,
+  "newActionable": 180,
+  "peakActionable": 73,
+  "finalActionable": 0,
+  "validUnresolved": 0,
+  "drainSeconds": 3.5696843,
+  "elapsedSeconds": 64.2719551,
+  "progressSamples": 163,
+  "resourceSamples": 748,
+  "projections": [
+    {
+      "account": 1,
+      "asset": "BTC",
+      "authority": "Trade.qty + Order.side - base fee",
+      "expected": "24.0",
+      "position": "24.0",
+      "latestSnapshot": "24.0",
+      "latestSnapshotSequence": 479
+    },
+    {
+      "account": 1,
+      "asset": "USDT",
+      "authority": "Ledger SUM(delta)",
+      "expected": "0.00",
+      "position": null,
+      "latestSnapshot": "0.0",
+      "latestSnapshotSequence": 480
+    }
+  ],
+  "positionOracle": "INDEPENDENT_CANONICAL_FACT_RECONSTRUCTION_PASS",
+  "replay": "UNCHANGED_ASSERTED_BY_DRIVER",
+  "duplicateMutation": 0,
+  "duplicateAccounting": 0,
+  "lostWork": 0,
+  "durableOrphan": 0,
+  "cursor": {
+    "reconciliationActors": 4,
+    "overlappingCallsDuringProducer": 4,
+    "initialBacklog": 60,
+    "newCandidatesGenerated": 180,
+    "finalActionable": 0,
+    "cursorStartingPosition": null,
+    "iterations": 153,
+    "wrapCount": 46,
+    "candidatesObserved": 240,
+    "duplicateObservations": 5940,
+    "newerFilledWithOlderPersistent": 176,
+    "restartSafe": true,
+    "cursorFinal": {
+      "revision": 153,
+      "order_id": "SYNTH-L4:B5-L5C:R03:ORDER:047"
+    },
+    "producerSeconds": 25.562,
+    "effectiveStrategyOrders": 12
+  },
+  "strategyRunStatuses": {
+    "SUCCEEDED": 12
+  },
+  "strategyWindows": [
+    "2024-01-01T08:00:00+08:00",
+    "2025-01-01T08:00:00+08:00",
+    "2026-01-01T08:00:00+08:00"
+  ],
+  "requestedEffective": [
+    {
+      "requested": "0.1005",
+      "effective": "0.1"
+    },
+    {
+      "requested": "0.1005",
+      "effective": "0.1"
+    },
+    {
+      "requested": "0.1005",
+      "effective": "0.1"
+    },
+    {
+      "requested": "0.1005",
+      "effective": "0.1"
+    },
+    {
+      "requested": "0.1005",
+      "effective": "0.1"
+    },
+    {
+      "requested": "0.1005",
+      "effective": "0.1"
+    },
+    {
+      "requested": "0.1005",
+      "effective": "0.1"
+    },
+    {
+      "requested": "0.1005",
+      "effective": "0.1"
+    },
+    {
+      "requested": "0.1005",
+      "effective": "0.1"
+    },
+    {
+      "requested": "0.1005",
+      "effective": "0.1"
+    },
+    {
+      "requested": "0.1005",
+      "effective": "0.1"
+    },
+    {
+      "requested": "0.1005",
+      "effective": "0.1"
+    }
+  ],
+  "placeCount": 240,
+  "cancelCount": 0,
+  "forwardProgress": {
+    "ordersIncreased": true,
+    "tradesIncreased": true,
+    "ledgerIncreased": true,
+    "backlogDecreased": true,
+    "reconciliationReportedNewTrades": 240,
+    "venueQueuePeak": 0,
+    "venueActivePeak": 2
+  },
+  "qualification": "NEW_QUALIFICATION_RUN",
+  "fillDuplicateProof": {
+    "sameFilledOrderObservedInOverlappingActorCalls": 33,
+    "overlappingPairCount": 98,
+    "venueFilledQueryCount": 3425,
+    "fillsQueriedMoreThanOnce": 240,
+    "falseOverfill": 0,
+    "reconciliationErrors": 0,
+    "uniqueFills": 240,
+    "strategyRunWindows": 12,
+    "strategies": 4,
+    "windowsPerStrategy": 3,
+    "requested": "0.1005",
+    "effectiveOrderWireExecuted": "0.1",
+    "phantomResidual": "0",
+    "trueOverfillGuard": "PRESERVED / REUSED_ACCEPTED_REAL_POSTGRES_NEGATIVE_PROOF / NO_PRODUCTION_DELTA",
+    "proofBasis": "distinct actor reservations of an already-filled Order within overlapping reconcile calls; Venue QUERY_FILLS after immutable FILL; unique durable chain"
+  },
+  "resourceAudit": {
+    "registeredJvms": 6,
+    "registeredPgContainers": 1,
+    "remainingPgContainers": 0,
+    "remainingOwnedJvms": 0
+  },
+  "reviewedCandidateFingerprint": "f1b807ed3acbb69f208baae284249d5b9c3887f1961443a705413efadf3c9354"
+}

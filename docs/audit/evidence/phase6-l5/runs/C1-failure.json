@@ -1,0 +1,712 @@
+{
+  "result": "FAIL",
+  "finding": "P1_L5_CONCURRENT_POSITION_LOST_UPDATE",
+  "level": "C1",
+  "businessCounts": {
+    "orders": 120,
+    "ordinary_place_authorities": 120,
+    "trades": 120,
+    "ledger_entries": 480,
+    "ledger_events": 480,
+    "positions": 1,
+    "account_snapshots": 240,
+    "strategy_runs": 0,
+    "strategy_run_dispatch_work": 0,
+    "events": 120
+  },
+  "expectedPosition": "12.0",
+  "actualPosition": "11.7",
+  "missingQuantity": "0.3",
+  "latestBtcSnapshot": "11.6",
+  "orderStatuses": {
+    "FILLED": 120
+  },
+  "orderVersions": {
+    "4": 120
+  },
+  "venuePlaces": 120,
+  "initialBacklog": 60,
+  "peakBacklog": 64,
+  "finalBacklog": 0,
+  "finalUnresolved": 0,
+  "elapsedSeconds": 48.4259866,
+  "drainSeconds": 3.2028889,
+  "cleanup": true,
+  "progressSamples": 136,
+  "resourceSamples": 281,
+  "portsReleased": true,
+  "concurrent": {
+    "reconciliationActors": 2,
+    "overlappingCallsDuringProducer": 2,
+    "initialBacklog": 60,
+    "newCandidatesGenerated": 60,
+    "finalActionable": 0,
+    "cursorStartingPosition": null,
+    "iterations": 48,
+    "wrapCount": 21,
+    "candidatesObserved": 120,
+    "duplicateObservations": 1860,
+    "newerFilledWithOlderPersistent": 56,
+    "restartSafe": true,
+    "cursorFinal": {
+      "revision": 48,
+      "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:043"
+    },
+    "producerSeconds": 13.159,
+    "candidateObservations": [
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:116",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:069",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:062",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:107",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:092",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:095",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:073",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:115",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:074",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:110",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:072",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:090",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:089",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:098",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:103",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:114",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:064",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:065",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:068",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:112",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:088",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:097",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:066",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:082",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:086",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:106",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:096",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:109",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:067",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:119",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:070",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:079",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:063",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:099",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:083",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:084",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:102",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:105",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:085",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:117",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:094",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:076",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:075",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:118",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:077",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:080",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:081",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:100",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:091",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:104",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:078",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:087",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:071",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:120",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:093",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:108",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:061",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:101",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:111",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:113",
+        "observations": 22
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:001",
+        "observations": 21
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:002",
+        "observations": 21
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:004",
+        "observations": 20
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:003",
+        "observations": 20
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:005",
+        "observations": 19
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:006",
+        "observations": 19
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:007",
+        "observations": 19
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:008",
+        "observations": 19
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:009",
+        "observations": 18
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:010",
+        "observations": 18
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:012",
+        "observations": 16
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:011",
+        "observations": 16
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:013",
+        "observations": 16
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:014",
+        "observations": 16
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:015",
+        "observations": 15
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:016",
+        "observations": 15
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:018",
+        "observations": 15
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:017",
+        "observations": 15
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:019",
+        "observations": 14
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:020",
+        "observations": 14
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:022",
+        "observations": 13
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:021",
+        "observations": 13
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:023",
+        "observations": 13
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:024",
+        "observations": 13
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:025",
+        "observations": 12
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:026",
+        "observations": 12
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:027",
+        "observations": 12
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:028",
+        "observations": 12
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:029",
+        "observations": 11
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:030",
+        "observations": 11
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:032",
+        "observations": 10
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:031",
+        "observations": 10
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:033",
+        "observations": 10
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:034",
+        "observations": 10
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:035",
+        "observations": 9
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:036",
+        "observations": 9
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:037",
+        "observations": 9
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:038",
+        "observations": 9
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:039",
+        "observations": 9
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:040",
+        "observations": 9
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:041",
+        "observations": 8
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:042",
+        "observations": 8
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:043",
+        "observations": 7
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:044",
+        "observations": 6
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:045",
+        "observations": 6
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:046",
+        "observations": 6
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:047",
+        "observations": 5
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:048",
+        "observations": 5
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:049",
+        "observations": 5
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:050",
+        "observations": 5
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:051",
+        "observations": 5
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:052",
+        "observations": 5
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:053",
+        "observations": 4
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:054",
+        "observations": 4
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:055",
+        "observations": 4
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:056",
+        "observations": 4
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:058",
+        "observations": 3
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:057",
+        "observations": 3
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:060",
+        "observations": 3
+      },
+      {
+        "order_id": "SYNTH-L4:B5-L5C:R01:ORDER:059",
+        "observations": 2
+      }
+    ],
+    "effectiveStrategyOrders": 0
+  },
+  "jvms": [
+    {
+      "identity": "JVM:1",
+      "samples": 13,
+      "poolMax": 10,
+      "activePeak": 1,
+      "waitingPeak": 0,
+      "activeFinal": 0,
+      "idleFinal": 10,
+      "waitingFinal": 0,
+      "threadsInitial": 15,
+      "threadsPeak": 20,
+      "threadsFinal": 19,
+      "queueInitial": 0,
+      "queuePeak": 0,
+      "queueFinal": 0
+    },
+    {
+      "identity": "JVM:2",
+      "samples": 115,
+      "poolMax": 10,
+      "activePeak": 1,
+      "waitingPeak": 0,
+      "activeFinal": 0,
+      "idleFinal": 10,
+      "waitingFinal": 0,
+      "threadsInitial": 15,
+      "threadsPeak": 20,
+      "threadsFinal": 18,
+      "queueInitial": 0,
+      "queuePeak": 1,
+      "queueFinal": 0
+    },
+    {
+      "identity": "JVM:3",
+      "samples": 153,
+      "poolMax": 10,
+      "activePeak": 1,
+      "waitingPeak": 0,
+      "activeFinal": 0,
+      "idleFinal": 10,
+      "waitingFinal": 0,
+      "threadsInitial": 15,
+      "threadsPeak": 20,
+      "threadsFinal": 18,
+      "queueInitial": 0,
+      "queuePeak": 1,
+      "queueFinal": 0
+    }
+  ],
+  "trades": [
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:001","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:001","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:001","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:002","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:002","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:002","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:003","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:003","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:003","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:004","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:004","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:004","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:005","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:005","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:005","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:006","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:006","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:006","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:007","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:007","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:007","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:008","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:008","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:008","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:009","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:009","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:009","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:010","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:010","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:010","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:011","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:011","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:011","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:012","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:012","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:012","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:013","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:013","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:013","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:014","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:014","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:014","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:015","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:015","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:015","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:016","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:016","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:016","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:017","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:017","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:017","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:018","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:018","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:018","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:019","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:019","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:019","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:020","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:020","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:020","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:021","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:021","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:021","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:022","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:022","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:022","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:023","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:023","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:023","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:024","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:024","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:024","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:025","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:025","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:025","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:026","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:026","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:026","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:027","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:027","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:027","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:028","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:028","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:028","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:029","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:029","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:029","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:030","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:030","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:030","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:031","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:031","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:031","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:032","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:032","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:032","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:033","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:033","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:033","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:034","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:034","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:034","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:035","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:035","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:035","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:036","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:036","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:036","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:037","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:037","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:037","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:038","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:038","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:038","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:039","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:039","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:039","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:040","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:040","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:040","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:041","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:041","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:041","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:042","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:042","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:042","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:043","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:043","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:043","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:044","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:044","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:044","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:045","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:045","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:045","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:046","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:046","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:046","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:047","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:047","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:047","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:048","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:048","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:048","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:049","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:049","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:049","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:050","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:050","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:050","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:051","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:051","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:051","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:052","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:052","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:052","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:053","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:053","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:053","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:054","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:054","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:054","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:055","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:055","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:055","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:056","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:056","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:056","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:057","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:057","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:057","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:058","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:058","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:058","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:059","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:059","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:059","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:060","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:060","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:060","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:061","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:061","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:061","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:062","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:062","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:062","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:063","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:063","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:063","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:064","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:064","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:064","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:065","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:065","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:065","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:066","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:066","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:066","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:067","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:067","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:067","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:068","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:068","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:068","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:069","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:069","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:069","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:070","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:070","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:070","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:071","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:071","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:071","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:072","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:072","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:072","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:073","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:073","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:073","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:074","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:074","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:074","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:075","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:075","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:075","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:076","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:076","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:076","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:077","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:077","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:077","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:078","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:078","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:078","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:079","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:079","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:079","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:080","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:080","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:080","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:081","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:081","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:081","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:082","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:082","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:082","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:083","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:083","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:083","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:084","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:084","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:084","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:085","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:085","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:085","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:086","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:086","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:086","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:087","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:087","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:087","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:088","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:088","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:088","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:089","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:089","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:089","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:090","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:090","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:090","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:091","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:091","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:091","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:092","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:092","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:092","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:093","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:093","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:093","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:094","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:094","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:094","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:095","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:095","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:095","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:096","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:096","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:096","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:097","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:097","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:097","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:098","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:098","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:098","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:099","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:099","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:099","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:100","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:100","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:100","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:101","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:101","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:101","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:102","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:102","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:102","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:103","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:103","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:103","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:104","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:104","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:104","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:105","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:105","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:105","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:106","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:106","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:106","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:107","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:107","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:107","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:108","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:108","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:108","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:109","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:109","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:109","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:110","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:110","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:110","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:111","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:111","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:111","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:112","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:112","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:112","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:113","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:113","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:113","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:114","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:114","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:114","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:115","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:115","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:115","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:116","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:116","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:116","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:117","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:117","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:117","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:118","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:118","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:118","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:119","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:119","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:119","qty":0.1,"side":"BUY","fee_currency":"USDT"},
+    {"order_id":"SYNTH-L4:B5-L5C:R01:ORDER:120","trade_id":"SYNTH-L4:B5-L5C:R01:TRADE:120","exchange_trade_id":"SYNTH-L4:B5-L5C:R01:FILL:120","qty":0.1,"side":"BUY","fee_currency":"USDT"}
+  ]
+}
