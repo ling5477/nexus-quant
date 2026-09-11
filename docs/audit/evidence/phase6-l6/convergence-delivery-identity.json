@@ -1,0 +1,504 @@
+{
+  "schema": 1,
+  "task": "NQ-GATEAUDIT-PHASE6-L6-CONVERGENCE-DELIVERY-IDENTITY-CANONICALIZATION-AND-PRECISE-DELIVERY",
+  "baseHead": "23548b75093a62d7614e16f8abcaf9ff2ea32ed7",
+  "reviewManifestSha256": "39dd19b9ed7573137ec309165a4a577713291617d3fcea719f4c7256b656f338",
+  "reviewedCandidateFingerprint": "d05ae696cfe8e2dadef5ba25b4039907fef5b4fe1a2dd9933ab1c646c75a0e20",
+  "reviewEvidenceSha256": "aa839bc6b046a58427ecac0951674b17b9c3045fb01bce8bd763834c30257d93",
+  "identityContract": {
+    "reviewed": "SHA256 of original raw review bytes; original manifest preserved",
+    "delivery": "SHA256 of canonical Git index blob bytes",
+    "fingerprintAlgorithm": "SHA256 of UTF-8 LF-joined path + single space + canonicalStageSha256 in candidate manifest order, without trailing LF",
+    "manifestNote": "reviewManifestSha256 identifies reviewed raw source, not its normalized committed blob; evidenceMappings binds both"
+  },
+  "gitLineEndingContract": {
+    "coreAutocrlf": true,
+    "origin": "file:D:/Tool/Git/etc/gitconfig",
+    "rootAttributesSha256": "e10e277f7b1ea3a8de30325632a8f349e9309fea757ac919bc0fb96643f556be",
+    "infoAttributesAbsent": true,
+    "candidateAttributes": {
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0NqProcessMain.java": {
+        "text": "unspecified",
+        "eol": "unspecified",
+        "working-tree-encoding": "unspecified",
+        "filter": "unspecified",
+        "ident": "unspecified"
+      },
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0Processes.java": {
+        "text": "unspecified",
+        "eol": "unspecified",
+        "working-tree-encoding": "unspecified",
+        "filter": "unspecified",
+        "ident": "unspecified"
+      },
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B4TradeEventRemediationTest.java": {
+        "text": "unspecified",
+        "eol": "unspecified",
+        "working-tree-encoding": "unspecified",
+        "filter": "unspecified",
+        "ident": "unspecified"
+      },
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5BoundedWorkloadTest.java": {
+        "text": "unspecified",
+        "eol": "unspecified",
+        "working-tree-encoding": "unspecified",
+        "filter": "unspecified",
+        "ident": "unspecified"
+      },
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_oracle.py": {
+        "text": "unspecified",
+        "eol": "unspecified",
+        "working-tree-encoding": "unspecified",
+        "filter": "unspecified",
+        "ident": "unspecified"
+      },
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ActiveStabilityTest.java": {
+        "text": "unspecified",
+        "eol": "unspecified",
+        "working-tree-encoding": "unspecified",
+        "filter": "unspecified",
+        "ident": "unspecified"
+      },
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ConvergenceBaseline.java": {
+        "text": "unspecified",
+        "eol": "unspecified",
+        "working-tree-encoding": "unspecified",
+        "filter": "unspecified",
+        "ident": "unspecified"
+      },
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ConvergenceBoundaryProcessTest.java": {
+        "text": "unspecified",
+        "eol": "unspecified",
+        "working-tree-encoding": "unspecified",
+        "filter": "unspecified",
+        "ident": "unspecified"
+      },
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ConvergenceControls.java": {
+        "text": "unspecified",
+        "eol": "unspecified",
+        "working-tree-encoding": "unspecified",
+        "filter": "unspecified",
+        "ident": "unspecified"
+      },
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ConvergenceNqMain.java": {
+        "text": "unspecified",
+        "eol": "unspecified",
+        "working-tree-encoding": "unspecified",
+        "filter": "unspecified",
+        "ident": "unspecified"
+      },
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ConvergenceProcessTest.java": {
+        "text": "unspecified",
+        "eol": "unspecified",
+        "working-tree-encoding": "unspecified",
+        "filter": "unspecified",
+        "ident": "unspecified"
+      },
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6NqProcessMain.java": {
+        "text": "unspecified",
+        "eol": "unspecified",
+        "working-tree-encoding": "unspecified",
+        "filter": "unspecified",
+        "ident": "unspecified"
+      },
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ProcessOutputTest.java": {
+        "text": "unspecified",
+        "eol": "unspecified",
+        "working-tree-encoding": "unspecified",
+        "filter": "unspecified",
+        "ident": "unspecified"
+      },
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6QualificationControls.java": {
+        "text": "unspecified",
+        "eol": "unspecified",
+        "working-tree-encoding": "unspecified",
+        "filter": "unspecified",
+        "ident": "unspecified"
+      },
+      "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java": {
+        "text": "unspecified",
+        "eol": "unspecified",
+        "working-tree-encoding": "unspecified",
+        "filter": "unspecified",
+        "ident": "unspecified"
+      },
+      "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java": {
+        "text": "unspecified",
+        "eol": "unspecified",
+        "working-tree-encoding": "unspecified",
+        "filter": "unspecified",
+        "ident": "unspecified"
+      },
+      "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderLifecycleService.java": {
+        "text": "unspecified",
+        "eol": "unspecified",
+        "working-tree-encoding": "unspecified",
+        "filter": "unspecified",
+        "ident": "unspecified"
+      },
+      "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java": {
+        "text": "unspecified",
+        "eol": "unspecified",
+        "working-tree-encoding": "unspecified",
+        "filter": "unspecified",
+        "ident": "unspecified"
+      },
+      "backend/nq-scheduler/src/test/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileServiceTest.java": {
+        "text": "unspecified",
+        "eol": "unspecified",
+        "working-tree-encoding": "unspecified",
+        "filter": "unspecified",
+        "ident": "unspecified"
+      }
+    },
+    "repositoryPolicyModified": false,
+    "originalCrlfToLfCount": 9,
+    "crlfOnlyMappingCount": 8,
+    "eofWhitespaceMappingCount": 1,
+    "eofPathAlsoHasCrlfNormalization": true
+  },
+  "files": [
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0NqProcessMain.java",
+      "reviewedRawSha256": "0a6327e251c7d80d6965e7832e6d5b8c19987615ad963ff81e47db21ce0e5d58",
+      "mappingType": "CRLF_TO_LF_BY_GIT",
+      "gitCrlfNormalizationApplied": true,
+      "reviewedNormalizedSha256": "433361d9775bb9e6e65146cd6218bff571e5b6fd99ac83bd83bda4f7990745b6",
+      "canonicalStageBlobOid": "0ade24292c869bc0701f381b0c0b466783abef64",
+      "canonicalStageSha256": "433361d9775bb9e6e65146cd6218bff571e5b6fd99ac83bd83bda4f7990745b6",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0Processes.java",
+      "reviewedRawSha256": "8ba21351ec6ad11c9b1df15b4b81a9e408c68ea37a93560e191015b33ba822e6",
+      "mappingType": "CRLF_TO_LF_BY_GIT",
+      "gitCrlfNormalizationApplied": true,
+      "reviewedNormalizedSha256": "00ea33eb09718cb2c532a1446b6fa1a6d027d5b5d9271433c7c0433c2a14f049",
+      "canonicalStageBlobOid": "e55fa71fbc86ed00e3dd82f9ac04c0969add33c0",
+      "canonicalStageSha256": "00ea33eb09718cb2c532a1446b6fa1a6d027d5b5d9271433c7c0433c2a14f049",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B4TradeEventRemediationTest.java",
+      "reviewedRawSha256": "b6381d82eacaae0287e9f54c9cc43513a9d509c7b2b2b948ee47ab203bf3c60b",
+      "mappingType": "CRLF_TO_LF_BY_GIT",
+      "gitCrlfNormalizationApplied": true,
+      "reviewedNormalizedSha256": "e45db96fef27aa0aa52dbc9fdcca3e2293bb711e945d750bbaedf1180a5233c5",
+      "canonicalStageBlobOid": "869d2244eee69826f063ca94249ad44fc6a0fc8d",
+      "canonicalStageSha256": "e45db96fef27aa0aa52dbc9fdcca3e2293bb711e945d750bbaedf1180a5233c5",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5BoundedWorkloadTest.java",
+      "reviewedRawSha256": "76f7906c09a6b7dc0e6daa5a49cbfeba3c7aaa3b815cbd26617063d032107d8f",
+      "mappingType": "CRLF_TO_LF_BY_GIT",
+      "gitCrlfNormalizationApplied": true,
+      "reviewedNormalizedSha256": "2fa5d290a5e158ba1e42a50084cd38bcb6b0e72319e25353724c4be9ceeb0c40",
+      "canonicalStageBlobOid": "807944470359f7b91ad59cc5f1b4e95e2a47c37b",
+      "canonicalStageSha256": "2fa5d290a5e158ba1e42a50084cd38bcb6b0e72319e25353724c4be9ceeb0c40",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_oracle.py",
+      "reviewedRawSha256": "2be92968a0b10dbf20b7ae38ce3420a8fb59bc75db33c7ef527b73189fd01969",
+      "mappingType": "EOF_WHITESPACE_ONLY",
+      "gitCrlfNormalizationApplied": true,
+      "reviewedNormalizedSha256": "1af73ded7ba52ac81a1df8e4c2308f7f4b98520b84d95532eab6bc734ee797fc",
+      "canonicalStageBlobOid": "97708b86551087ed14e9195c42830391db068bed",
+      "canonicalStageSha256": "4a872533a1b8366ed768e09f6b6f7fc95a50f64a32ee4b5a73816330489d6ea0",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 1
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ActiveStabilityTest.java",
+      "reviewedRawSha256": "d00fb4e213c720b0d5bb68fee539283361f41dd71c6c94c7f42c652cff1259df",
+      "mappingType": "CRLF_TO_LF_BY_GIT",
+      "gitCrlfNormalizationApplied": true,
+      "reviewedNormalizedSha256": "997dcd6d51e5465ea4b2c3db72c3653efb50209b735116a5263733090385feab",
+      "canonicalStageBlobOid": "7273fcf709ab76830d3bdd8fe546a8484de35208",
+      "canonicalStageSha256": "997dcd6d51e5465ea4b2c3db72c3653efb50209b735116a5263733090385feab",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ConvergenceBaseline.java",
+      "reviewedRawSha256": "6417146180147189128678549672b508846acdc59b41f030984fe15c97eaaaa6",
+      "mappingType": "BYTE_IDENTICAL",
+      "gitCrlfNormalizationApplied": false,
+      "reviewedNormalizedSha256": "6417146180147189128678549672b508846acdc59b41f030984fe15c97eaaaa6",
+      "canonicalStageBlobOid": "0336f682dff07f1efab5e50bcd8a2fcb900d0335",
+      "canonicalStageSha256": "6417146180147189128678549672b508846acdc59b41f030984fe15c97eaaaa6",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ConvergenceBoundaryProcessTest.java",
+      "reviewedRawSha256": "4b8deabdad8028f7567013f0074c32f4d4e37324c5e5675024863271b925097b",
+      "mappingType": "BYTE_IDENTICAL",
+      "gitCrlfNormalizationApplied": false,
+      "reviewedNormalizedSha256": "4b8deabdad8028f7567013f0074c32f4d4e37324c5e5675024863271b925097b",
+      "canonicalStageBlobOid": "606e73509c3b3f5bf2538257d69949822bda1038",
+      "canonicalStageSha256": "4b8deabdad8028f7567013f0074c32f4d4e37324c5e5675024863271b925097b",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ConvergenceControls.java",
+      "reviewedRawSha256": "4aecd6ec4fb78a1e13baf9a7ad8c9e27db7a3db91daff467dd36a6f6acbfa644",
+      "mappingType": "BYTE_IDENTICAL",
+      "gitCrlfNormalizationApplied": false,
+      "reviewedNormalizedSha256": "4aecd6ec4fb78a1e13baf9a7ad8c9e27db7a3db91daff467dd36a6f6acbfa644",
+      "canonicalStageBlobOid": "a8a463aad8b9fca49799f2b77e0691099847d1f8",
+      "canonicalStageSha256": "4aecd6ec4fb78a1e13baf9a7ad8c9e27db7a3db91daff467dd36a6f6acbfa644",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ConvergenceNqMain.java",
+      "reviewedRawSha256": "9a048fbd8fe4fcdd90c200f08b554feea76c03644bd0ee7ffcecdcff0737f14b",
+      "mappingType": "BYTE_IDENTICAL",
+      "gitCrlfNormalizationApplied": false,
+      "reviewedNormalizedSha256": "9a048fbd8fe4fcdd90c200f08b554feea76c03644bd0ee7ffcecdcff0737f14b",
+      "canonicalStageBlobOid": "964b19a1b3bb259e4999826626f9b9f11a0cde58",
+      "canonicalStageSha256": "9a048fbd8fe4fcdd90c200f08b554feea76c03644bd0ee7ffcecdcff0737f14b",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ConvergenceProcessTest.java",
+      "reviewedRawSha256": "040db58955bfd82ed732201121c36bfebd4c113e01f2a3ba75c78fec418cde11",
+      "mappingType": "BYTE_IDENTICAL",
+      "gitCrlfNormalizationApplied": false,
+      "reviewedNormalizedSha256": "040db58955bfd82ed732201121c36bfebd4c113e01f2a3ba75c78fec418cde11",
+      "canonicalStageBlobOid": "822df0dccae1601ed3ea7e8315f204f53bfe1b38",
+      "canonicalStageSha256": "040db58955bfd82ed732201121c36bfebd4c113e01f2a3ba75c78fec418cde11",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6NqProcessMain.java",
+      "reviewedRawSha256": "a0e26935c4b99a2168d4fdb8afdd98dc16b8d6b2933f5c07fd93d386ee3629c1",
+      "mappingType": "BYTE_IDENTICAL",
+      "gitCrlfNormalizationApplied": false,
+      "reviewedNormalizedSha256": "a0e26935c4b99a2168d4fdb8afdd98dc16b8d6b2933f5c07fd93d386ee3629c1",
+      "canonicalStageBlobOid": "13cce12b72cf5cd317d413a487a135c31d35b4d8",
+      "canonicalStageSha256": "a0e26935c4b99a2168d4fdb8afdd98dc16b8d6b2933f5c07fd93d386ee3629c1",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ProcessOutputTest.java",
+      "reviewedRawSha256": "73c29997dee48b75d4ec8a9f512d0806039230b5dad90db0f1659bbdd2e98d79",
+      "mappingType": "BYTE_IDENTICAL",
+      "gitCrlfNormalizationApplied": false,
+      "reviewedNormalizedSha256": "73c29997dee48b75d4ec8a9f512d0806039230b5dad90db0f1659bbdd2e98d79",
+      "canonicalStageBlobOid": "2a35d6fe9e99ffb178a83f2e454b168eb2788804",
+      "canonicalStageSha256": "73c29997dee48b75d4ec8a9f512d0806039230b5dad90db0f1659bbdd2e98d79",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6QualificationControls.java",
+      "reviewedRawSha256": "e084f4fb51d1ec00193dae36d0eeb0b2ea27f0ca9c51ae0bbcd2d0bca5fb7a4d",
+      "mappingType": "BYTE_IDENTICAL",
+      "gitCrlfNormalizationApplied": false,
+      "reviewedNormalizedSha256": "e084f4fb51d1ec00193dae36d0eeb0b2ea27f0ca9c51ae0bbcd2d0bca5fb7a4d",
+      "canonicalStageBlobOid": "d92a23ffdce07c937fff3a688e73a0f14629919b",
+      "canonicalStageSha256": "e084f4fb51d1ec00193dae36d0eeb0b2ea27f0ca9c51ae0bbcd2d0bca5fb7a4d",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java",
+      "reviewedRawSha256": "36c02147edb4d895d016c71fc47fb0837e8a23d88fa5a390b1bde1381a552002",
+      "mappingType": "BYTE_IDENTICAL",
+      "gitCrlfNormalizationApplied": false,
+      "reviewedNormalizedSha256": "36c02147edb4d895d016c71fc47fb0837e8a23d88fa5a390b1bde1381a552002",
+      "canonicalStageBlobOid": "b15c33aed47c3ad033b803682e9f5c859763f54c",
+      "canonicalStageSha256": "36c02147edb4d895d016c71fc47fb0837e8a23d88fa5a390b1bde1381a552002",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java",
+      "reviewedRawSha256": "9a32839e59eb7c44138e97a898e68c733f48a2ca84277d934f2d9d915ff043cb",
+      "mappingType": "CRLF_TO_LF_BY_GIT",
+      "gitCrlfNormalizationApplied": true,
+      "reviewedNormalizedSha256": "72ea86bc3c05e2a22fc9933b7d00fc546384d35f491bfce32c51e7525ad5cd98",
+      "canonicalStageBlobOid": "2a15571de3d63ad1fbad001fb270c4e80143abea",
+      "canonicalStageSha256": "72ea86bc3c05e2a22fc9933b7d00fc546384d35f491bfce32c51e7525ad5cd98",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderLifecycleService.java",
+      "reviewedRawSha256": "bbc845ef3db7540cfeb8ede91787a189b71e05cd12c1a68be3003f254e4eed2c",
+      "mappingType": "CRLF_TO_LF_BY_GIT",
+      "gitCrlfNormalizationApplied": true,
+      "reviewedNormalizedSha256": "ae841c9a85e280743fcda1e152aea951e4d133f952b245c3bfac84ccdc28c247",
+      "canonicalStageBlobOid": "6c7a0098c78f54efd6a4d3c08c28b8d79bf3653c",
+      "canonicalStageSha256": "ae841c9a85e280743fcda1e152aea951e4d133f952b245c3bfac84ccdc28c247",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java",
+      "reviewedRawSha256": "8f21e409295e291e0d12769e79ace61bf25d929bb5641af42f068d6b3c00e2ae",
+      "mappingType": "BYTE_IDENTICAL",
+      "gitCrlfNormalizationApplied": false,
+      "reviewedNormalizedSha256": "8f21e409295e291e0d12769e79ace61bf25d929bb5641af42f068d6b3c00e2ae",
+      "canonicalStageBlobOid": "a74ab6fe79865bb233a32b80427f46f54447f281",
+      "canonicalStageSha256": "8f21e409295e291e0d12769e79ace61bf25d929bb5641af42f068d6b3c00e2ae",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "backend/nq-scheduler/src/test/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileServiceTest.java",
+      "reviewedRawSha256": "9d325d0e24e82f28c6b269c5308061c41709d8e93c0e4c3c917e6106cd749f68",
+      "mappingType": "CRLF_TO_LF_BY_GIT",
+      "gitCrlfNormalizationApplied": true,
+      "reviewedNormalizedSha256": "57518d4b8fe202045fcc8f9905fa37fa872903226192c00575941288316e7b5b",
+      "canonicalStageBlobOid": "76b9e5040e0d95152ef04bf48515ec96fdf6dad4",
+      "canonicalStageSha256": "57518d4b8fe202045fcc8f9905fa37fa872903226192c00575941288316e7b5b",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    }
+  ],
+  "evidenceMappings": [
+    {
+      "path": ".agents/skills/nq-trading-correctness-proof/references/engineering-lessons.md",
+      "reviewedRawSha256": "8d16a141004bc6e3549a5f47607b9d58a64be6146942b167a36a3c1c625d759c",
+      "mappingType": "BYTE_IDENTICAL",
+      "gitCrlfNormalizationApplied": false,
+      "reviewedNormalizedSha256": "8d16a141004bc6e3549a5f47607b9d58a64be6146942b167a36a3c1c625d759c",
+      "canonicalStageBlobOid": "0f70e0bd60663226e6fb84781a8c7639078e2df3",
+      "canonicalStageSha256": "8d16a141004bc6e3549a5f47607b9d58a64be6146942b167a36a3c1c625d759c",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/ACTIVE_STABILITY.md",
+      "reviewedRawSha256": "7d685c9dcf9fb7d472c9460401f13c077c42b72a8d2c46a89e4185e97f67c333",
+      "mappingType": "CRLF_TO_LF_BY_GIT",
+      "gitCrlfNormalizationApplied": true,
+      "reviewedNormalizedSha256": "55f559ef5c580ecce0fff984be5a6d7e8637956fd515c19a2c0b7b11a08b1251",
+      "canonicalStageBlobOid": "3918b20fd00de9941bd2cc375c61f86fb9657d62",
+      "canonicalStageSha256": "55f559ef5c580ecce0fff984be5a6d7e8637956fd515c19a2c0b7b11a08b1251",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/RECONCILIATION_SAME_STATE_CONVERGENCE_CORRECTNESS_REVIEW.md",
+      "reviewedRawSha256": "aa839bc6b046a58427ecac0951674b17b9c3045fb01bce8bd763834c30257d93",
+      "mappingType": "BYTE_IDENTICAL",
+      "gitCrlfNormalizationApplied": false,
+      "reviewedNormalizedSha256": "aa839bc6b046a58427ecac0951674b17b9c3045fb01bce8bd763834c30257d93",
+      "canonicalStageBlobOid": "e70c2bf3e5c58b03a57ffcc51a12c203c55f9d6d",
+      "canonicalStageSha256": "aa839bc6b046a58427ecac0951674b17b9c3045fb01bce8bd763834c30257d93",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/RECONCILIATION_SAME_STATE_CONVERGENCE_REMEDIATION.md",
+      "reviewedRawSha256": "80bdd83e292483af48689b6fb2fa75a6b583b35443e8caaa386f153a7301d169",
+      "mappingType": "BYTE_IDENTICAL",
+      "gitCrlfNormalizationApplied": false,
+      "reviewedNormalizedSha256": "80bdd83e292483af48689b6fb2fa75a6b583b35443e8caaa386f153a7301d169",
+      "canonicalStageBlobOid": "d55ff1405b35da7fef9dddaf80b2434e11af7714",
+      "canonicalStageSha256": "80bdd83e292483af48689b6fb2fa75a6b583b35443e8caaa386f153a7301d169",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/convergence-candidate.json",
+      "reviewedRawSha256": "39dd19b9ed7573137ec309165a4a577713291617d3fcea719f4c7256b656f338",
+      "mappingType": "CRLF_TO_LF_BY_GIT",
+      "gitCrlfNormalizationApplied": true,
+      "reviewedNormalizedSha256": "65e1413730a863c899bd8418a727be5570bfda352a45e76e5914d612251ef9aa",
+      "canonicalStageBlobOid": "7b9905bdee63cde73780d526841099d54aca6084",
+      "canonicalStageSha256": "65e1413730a863c899bd8418a727be5570bfda352a45e76e5914d612251ef9aa",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/convergence-evidence-manifest.json",
+      "reviewedRawSha256": "02e49e6548c6a955ca36ea1f268878cd42ff191c194f6f04431c1be4eb455a98",
+      "mappingType": "CRLF_TO_LF_BY_GIT",
+      "gitCrlfNormalizationApplied": true,
+      "reviewedNormalizedSha256": "248376d2abb203f4381f9fbc64fb431aad4c0671f8b04838f1f2ca932f4dd110",
+      "canonicalStageBlobOid": "64a8e9f1f86816b624af193318291a4de3f2f4d2",
+      "canonicalStageSha256": "248376d2abb203f4381f9fbc64fb431aad4c0671f8b04838f1f2ca932f4dd110",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/convergence-validation.json",
+      "reviewedRawSha256": "dff0a730300de0f83c99bfcb8c767ee6c56be03a2d9f5bab556d0d76b301773e",
+      "mappingType": "CRLF_TO_LF_BY_GIT",
+      "gitCrlfNormalizationApplied": true,
+      "reviewedNormalizedSha256": "2708adaf88af435f271c2c0f159e1d372a0236975924d9a18fdda7747ba0c54b",
+      "canonicalStageBlobOid": "75e3f5be1d57ebff4c109cbf23ac3696af1b241f",
+      "canonicalStageSha256": "2708adaf88af435f271c2c0f159e1d372a0236975924d9a18fdda7747ba0c54b",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/metrics/summary.json",
+      "reviewedRawSha256": "96c99ef3b5e3af34872fd57c89f73ccbaaee01619d92c1a78942267365b1cd04",
+      "mappingType": "CRLF_TO_LF_BY_GIT",
+      "gitCrlfNormalizationApplied": true,
+      "reviewedNormalizedSha256": "b3200c5aee2fc1f045e1b2a87f78c8ae453c135843be1d6aba255095b69b08fb",
+      "canonicalStageBlobOid": "366963f47d59a9545e6ec99abde99a52fa1b0724",
+      "canonicalStageSha256": "b3200c5aee2fc1f045e1b2a87f78c8ae453c135843be1d6aba255095b69b08fb",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/summary.json",
+      "reviewedRawSha256": "0adc4172a1cbacd0916c18d79f83486a0ec36e2ef232c570313b0e07395ec608",
+      "mappingType": "CRLF_TO_LF_BY_GIT",
+      "gitCrlfNormalizationApplied": true,
+      "reviewedNormalizedSha256": "c2145309bdb027d0662244c06d1fead17bd89912dc85ed97f0e75cc67a75b069",
+      "canonicalStageBlobOid": "1440c173e99e0683a8dc812194a5044b0a0177e5",
+      "canonicalStageSha256": "c2145309bdb027d0662244c06d1fead17bd89912dc85ed97f0e75cc67a75b069",
+      "normalizedContentVerified": true,
+      "eofBlankLinesRemoved": 0
+    }
+  ],
+  "eofVerification": {
+    "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_oracle.py",
+    "beforeRawSha256": "2be92968a0b10dbf20b7ae38ce3420a8fb59bc75db33c7ef527b73189fd01969",
+    "afterRawSha256": "6e2268f10af60e9bc7bdb6f86f4249fc64c4329edae288301a66c7b27b50fa84",
+    "astEquivalent": true,
+    "pyCompileExit": 0,
+    "oracleExit": 0,
+    "readinessCheckpointSha256": "15aa8f29373cef4dc16f0e55c12f1af1ae7f8c90bc9f01e19520c5d36eeb7f17",
+    "oracleResult": {
+      "orders": 2,
+      "trades": 2,
+      "ledger": 8,
+      "position": "0.2",
+      "duplicates": 0,
+      "orphans": 0
+    },
+    "proofScope": "Offline reuse of the saved readiness checkpoint; no readiness workload or soak executed"
+  },
+  "previousAttempt": {
+    "decision": "BLOCKED / STAGED_CANDIDATE_IDENTITY_MISMATCH",
+    "evidenceSha256": "8d0a8ba5fdbb16e048e84b1cd88b0afc2e3a67eb7de80831871d8c1fdbabbefc",
+    "historyPreserved": true
+  },
+  "deliveryCandidateFingerprint": "047f90d9ec8a786b4ed922cb4df2cdac5c3c44ca9264b4f9e751109a22d42b11",
+  "unexpectedSemanticDelta": 0,
+  "unexpectedPathDelta": 0,
+  "unexpectedFilterDelta": 0,
+  "reviewDecision": "RECONCILIATION_SAME_STATE_CONVERGENCE_CORRECTNESS_REVIEW_ACCEPTED",
+  "targetBlocker": "TARGET_QUALIFICATION_BLOCKER_CLOSED",
+  "l6": "NOT_ACCEPTED",
+  "l6AResumed": false,
+  "soak": "NOT_RUN"
+}

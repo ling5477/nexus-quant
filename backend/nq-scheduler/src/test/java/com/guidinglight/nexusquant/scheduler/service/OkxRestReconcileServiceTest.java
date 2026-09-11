@@ -312,8 +312,8 @@ class OkxRestReconcileServiceTest {
         int newTrades = service.reconcileOnce(10);
 
         assertEquals(0, newTrades);
-        verify(orderLifecycleService).rejectCancel("ord-rec-1", "RECONCILE_CANCEL_REJECTED", "trc-rec-1");
-        verify(orderLifecycleService).applyExternalStatus("ord-rec-1", OrderStatus.ACCEPTED, "RECONCILE_STATUS_ALIGN", "trc-rec-1");
+        verify(orderLifecycleService).reconcileExternalStatus("ord-rec-1", OrderStatus.CANCEL_REJECTED, "RECONCILE_CANCEL_REJECTED", "trc-rec-1");
+        verify(orderLifecycleService).reconcileExternalStatus("ord-rec-1", OrderStatus.ACCEPTED, "RECONCILE_STATUS_ALIGN", "trc-rec-1");
     }
 
     @Test
@@ -489,7 +489,7 @@ class OkxRestReconcileServiceTest {
 
         assertEquals(1, newTrades);
         verify(okxExchangeAdapter, never()).getOrder(any());
-        verify(orderLifecycleService, never()).applyExternalStatus(any(), any(), any(), any());
+        verify(orderLifecycleService, never()).reconcileExternalStatus(any(), any(), any(), any());
         verify(tradeRepository, times(1)).insertWithRequiredEvent(any());
         verify(tradeRepository, times(1)).ensureRequiredEvent(Mockito.anyString());
         verify(tradeLedgerGateway, times(1)).postTrade(any());

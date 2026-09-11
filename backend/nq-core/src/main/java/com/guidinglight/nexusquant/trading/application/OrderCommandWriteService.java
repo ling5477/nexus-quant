@@ -595,6 +595,22 @@ public class OrderCommandWriteService {
         return transitionOrderAttempt(currentOrder, nextStatus, reason, traceId).order();
     }
 
+    /**
+     * 对账专用的状态收敛：事务回读已等于目标时为 ALREADY_CONVERGED，不产生迁移事实。
+     * 仅跳过 Order 迁移；调用方仍须完成 Trade/Event/Ledger 恢复。不同状态沿用状态机与 OCC，
+     * CAS 失利后只返回 durable truth，不用新的 version 重试旧观察。普通命令不使用此入口。
+     */
+    @Transactional
+    public OrderRecord reconcileOrderStatus(String orderId, OrderStatus desiredStatus, String reason, String traceId) {
+        switch (desiredStatus) {
+            case ACCEPTED, PARTIALLY_FILLED, FILLED, CANCEL_REQUESTED, CANCELLED, CANCEL_REJECTED, REJECTED -> { }
+            default -> throw new IllegalArgumentException("unsupported reconciliation status: " + desiredStatus);
+        }
+        OrderRecord current = loadOrder(orderId);
+        if (current.status() == desiredStatus) return current;
+        return transitionOrderAttempt(current, desiredStatus, reason, traceId).order();
+    }
+
     /** 返回到非事务编排器前必须已确认提交；异常/提交未知不返回一次性发送许可。 */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean armOrdinaryPlace(OrderRecord expected) {

@@ -1,0 +1,122 @@
+{
+  "task": "NQ-GATEAUDIT-PHASE6-L6-A-ACTIVE-STABILITY",
+  "classification": "HIGH_RISK / LONG_RUNNING_QUALIFICATION / ACTIVE_SOAK / RESOURCE_STABILITY / NQ-only",
+  "startingHead": "23548b75093a62d7614e16f8abcaf9ff2ea32ed7",
+  "baselineCi": 34608208969,
+  "planningHash": "80e339594be7223f07783d30e7f18913a53187ecde59b360ecdbf9223c9e45ac",
+  "decision": "BLOCKED / L6_ACTIVE_STABILITY_READINESS_FAILED",
+  "l6Status": "NOT_ACCEPTED",
+  "activeDurationSeconds": 0,
+  "warmup": "FAILED_BEFORE_COMPLETION",
+  "drain": "NOT_COMPLETED",
+  "formalSoak": "NOT_STARTED",
+  "workload": {
+    "nqJvms": 2,
+    "reconciliationActors": 2,
+    "strategies": 2,
+    "plannedOrderRatePerMinute": 2,
+    "plannedActiveSeconds": 3600,
+    "plannedWarmupSeconds": 120,
+    "plannedDrainDeadlineSeconds": 120,
+    "orderCap": 240,
+    "lastVerifiedOrders": 2,
+    "lastVerifiedTrades": 2,
+    "laterObservedTriggeredStrategyRuns": 2,
+    "finalBusinessState": "NOT_CAPTURED"
+  },
+  "finding": {
+    "id": "L6_RECONCILIATION_SAME_STATE_RACE",
+    "error": "invalid order transition: FILLED -> FILLED",
+    "confirmed": "Production reconciliation invocation threw; test command launcher exited",
+    "rootCause": "State check in alignOrderStatus is separate from transaction reload; same target may be committed before transitionOrderAttempt validates state, before CAS",
+    "priority": "UNASSESSED / IMPACT_TRIAGE_REQUIRED",
+    "qualificationBlocking": true,
+    "duplicateAccounting": "NOT_OBSERVED_AT_LAST_CHECKPOINT / FINAL_NOT_VERIFIED",
+    "permanentProductionStall": "NOT_PROVEN",
+    "historicalL5Acceptance": "NOT_REWRITTEN"
+  },
+  "correctness": {
+    "checkpoints": 1,
+    "lastCheckpoint": "PASS / 2 Orders / 2 Trades / 2 TradeExecuted / 8 Ledger / BTC0.2 / USDT0",
+    "wholeRun": "INCOMPLETE",
+    "backlogLastVerified": 0,
+    "finalBacklog": "NOT_VERIFIED",
+    "positionSnapshot": "EXACT_AT_ONE_CHECKPOINT_ONLY"
+  },
+  "paper": {
+    "normalControl": true,
+    "criticalAlerts": 1,
+    "reportCount": 1,
+    "reportAlertCount": 1,
+    "f007Emitted": 1,
+    "relation": "INDEPENDENT_CREATED_PAPER_RUN / NO_AUTOMATIC_LINK_TO_ORDINARY_LEDGER"
+  },
+  "resources": {
+    "stability": "NOT_QUALIFIED",
+    "confirmedLeak": "NONE_OBSERVED / INSUFFICIENT_DURATION",
+    "cleanup": "OWNED_NQ_0 / OWNED_VENUE_0 / OWNED_PG_0",
+    "logRotation": "LOG_ROTATION_NOT_YET_QUALIFIED",
+    "portsReleased": true
+  },
+  "productionDelta": 0,
+  "migrationDelta": 0,
+  "P0Confirmed": 0,
+  "P1Confirmed": 0,
+  "priorityCaveat": "Zero confirmed P1 is not L6 acceptance; new reconciliation failure requires impact assessment",
+  "P2": "ordinary concurrent INSERT loser OPEN / NON_BLOCKING",
+  "P3": "wildcard-import OPEN / NON_BLOCKING",
+  "historicalProjectionRepair": "OPEN / pre-freeze release-baseline obligation",
+  "artifacts": [
+    {
+      "path": "backend/nq-app/target/l6-readiness-attempt01.log",
+      "sha256": "191dd9b4cf39674b15419b03dbf9703fb9fa61dfef45a3805a21a9ff26991baf"
+    },
+    {
+      "path": "backend/nq-app/target/l6-readiness-attempt02.log",
+      "sha256": "13454e9fed6b482e738ddb6dce520770ea75cc10a45f42bb8d7e0adb8c5fb364"
+    },
+    {
+      "path": "backend/nq-app/target/l6-active/b2b6871b-b3d7-4287-a6f5-d3816d7317ab/proof.json",
+      "sha256": "35626e2df08139d8bc646965c0294b7c6dfffe92b7cebc33f5e4cb06fc37b268"
+    },
+    {
+      "path": "backend/nq-app/target/l6-active/b2b6871b-b3d7-4287-a6f5-d3816d7317ab/checkpoint-001.json",
+      "sha256": "15aa8f29373cef4dc16f0e55c12f1af1ae7f8c90bc9f01e19520c5d36eeb7f17"
+    },
+    {
+      "path": "backend/nq-app/target/l6-active/b2b6871b-b3d7-4287-a6f5-d3816d7317ab/progress.ndjson",
+      "sha256": "0b73a43639830fb04f9ea9db473065e34c1d15cdcbd76aaa83e1a32cbc0c4b41"
+    },
+    {
+      "path": "backend/nq-app/target/l6-active/b2b6871b-b3d7-4287-a6f5-d3816d7317ab/checkpoints.ndjson",
+      "sha256": "9cf049e77a88bcf07b41d387aeaba04c4171240b62876346dfeb62d3449b685c"
+    },
+    {
+      "path": "backend/nq-app/target/l6-active/b2b6871b-b3d7-4287-a6f5-d3816d7317ab/nq-0.log",
+      "sha256": "61db8b7b4a31b14189fb460f67d73bdde66732c59376df82e2ee34e22054704b"
+    },
+    {
+      "path": "backend/nq-app/target/l6-active/b2b6871b-b3d7-4287-a6f5-d3816d7317ab/nq-1.log",
+      "sha256": "d23cef2e4d2648e21361277e34b8290e03ad6f9bff9f28773b937f67ec4f3a1d"
+    },
+    {
+      "path": "backend/nq-app/target/l6-closeout/readiness-candidate.json",
+      "sha256": "70c3de03e87224902cb3e5b98b208bd88c103c7531ea478e02bd7133152f851a"
+    }
+  ],
+  "hygiene": {
+    "stageAssetsErrors": 0,
+    "gitleaksFindings": 0,
+    "gitleaksVersion": "8.18.4",
+    "secretNegatives": "6/6 REJECT",
+    "links": "5 checked / 0 warnings / 0 errors / PASS",
+    "diffCheck": "PASS",
+    "outputProtocolTest": "1/0/0/0 PASS",
+    "oracleMutationNegatives": "6/6 REJECT"
+  },
+  "stage": 0,
+  "commit": "NONE",
+  "push": "NONE",
+  "nextAction": "Investigate/remediate the same-state reconciliation race with appropriate independent correctness review, then resume L6-A; do not enter L6-B",
+  "postReadinessToolingDelta": "B0 incremental reader rejects incomplete lines; one isolated child protocol test passed. No business qualification rerun."
+}

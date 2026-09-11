@@ -1,0 +1,142 @@
+{
+  "task": "NQ-GATEAUDIT-PHASE6-L6-RECONCILIATION-SAME-STATE-CONVERGENCE-REMEDIATION",
+  "implementation": "IMPLEMENTED",
+  "review": "PENDING_INDEPENDENT_CORRECTNESS_REVIEW",
+  "severity": "P2_RECONCILIATION_SAME_STATE_CONCURRENCY_REMEDIATED",
+  "p0_confirmed": 0,
+  "local_p1_confirmed": 0,
+  "l6": "NOT_ACCEPTED",
+  "l6a": "BLOCKED / READINESS_FAILED",
+  "soak": "NOT_STARTED",
+  "stage": 0,
+  "commit": "NONE",
+  "push": "NONE",
+  "candidate_fingerprint": "d05ae696cfe8e2dadef5ba25b4039907fef5b4fe1a2dd9933ab1c646c75a0e20",
+  "candidate_drift": 0,
+  "finite_targets": [
+    "ACCEPTED",
+    "PARTIALLY_FILLED",
+    "FILLED",
+    "CANCELLED",
+    "REJECTED",
+    "CANCEL_REQUESTED",
+    "CANCEL_REJECTED"
+  ],
+  "postfix_l6_process_scenarios": 12,
+  "baseline_invocation_error": "invalid order transition: FILLED -> FILLED",
+  "baseline_scheduler": "TICKS 3 ERRORS 1",
+  "postfix_scheduler": "TICKS 3 ERRORS 0",
+  "same_target": "PASS",
+  "four_jvm": "PASS",
+  "version_event_no_churn": "PASS",
+  "missing_accounting_recovery": "PASS",
+  "conflicting_target": "PASS / REJECTION_PRESERVED",
+  "stale_cas": "PASS / NO_RETRY",
+  "batch": "PASS",
+  "b2": "4 scenarios PASS",
+  "b4": "2 scenarios PASS after V51 fixture assertion sync",
+  "b5": "RUNNING owner-death PASS",
+  "full_maven": {
+    "status": "PASS",
+    "mavenExit": 0,
+    "tests": 1934,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 148,
+    "candidateFingerprint": "d05ae696cfe8e2dadef5ba25b4039907fef5b4fe1a2dd9933ab1c646c75a0e20",
+    "candidateDrift": 0,
+    "mirrorByteMatch": true,
+    "ownedContainerRemoved": true,
+    "reportCount": 828,
+    "fullLogSha256": "63fc0b8af02d3aa578ceed4d575a7d0367a4f89bf243abdc742202fa862da83b",
+    "surefireZipSha256": "742ac1303b24b362be66995a1d65ddcd0f4de98b0a3b7f566d784c66814364d0",
+    "xmlTotals": [
+      1929,
+      0,
+      0,
+      148
+    ],
+    "repeatedSuiteReports": {
+      "com.guidinglight.nexusquant.app.architecture.ModuleBoundaryArchTest": [
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          9,
+          0,
+          0,
+          0
+        ]
+      ],
+      "com.guidinglight.nexusquant.app.architecture.PackageBoundaryArchTest": [
+        [
+          4,
+          0,
+          0,
+          0
+        ],
+        [
+          10,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    "collectorRecovery": "ZIP avoids Windows destination path limit; original failed driver result retained"
+  },
+  "failed_full_maven": {
+    "exit": 1,
+    "tests": 1934,
+    "failures": 1,
+    "errors": 5,
+    "skipped": 149,
+    "disposition": "ENVIRONMENT_FAILURE_RETAINED"
+  },
+  "scope_note": "Zero state-transition audit/event growth; existing diagnostic audit writes remain. LIVE labels occur only in isolated synthetic fixtures.",
+  "logs": [
+    {
+      "path": "backend/nq-app/target/l6-convergence/baseline-maven.log",
+      "sha256": "d244626ead44c565df8abec7ef5b44a63cb2d05c88cac6024eb72071f5689ed2"
+    },
+    {
+      "path": "backend/nq-app/target/l6-convergence/baseline-maven-02.log",
+      "sha256": "ce6968a77db0023e821687869d3a6e965d6a00ddf777a508a5a56aee2f7f42ea"
+    },
+    {
+      "path": "backend/nq-app/target/l6-convergence/targeted-01.log",
+      "sha256": "0bfa86374605c3bbea9cd260de6fcd87658f99b3118ec17ecaf8b97ca0b51076"
+    },
+    {
+      "path": "backend/nq-app/target/l6-convergence/boundary-01.log",
+      "sha256": "a1174572b2149517b47d7249e48afb121722c6e59d677264296ad0cda9f72e57"
+    },
+    {
+      "path": "backend/nq-app/target/l6-convergence/targeted-02.log",
+      "sha256": "36016e80eb176a02d6a768426e09ae97244db266f6da87414bc768de0ffe8d9d"
+    },
+    {
+      "path": "backend/nq-app/target/l6-convergence/targeted-final.log",
+      "sha256": "254d61c9aca0f2d59d57c9e7961549dae697f4e19a5e9a4f3801e9b270643df9"
+    },
+    {
+      "path": "backend/nq-app/target/l6-convergence/b4-baseline-final.log",
+      "sha256": "f51084317365711de2269207faca3600924193870b65c50b5d5101a1a3d3daf0"
+    },
+    {
+      "path": "backend/nq-app/target/l6-convergence/full-maven.log",
+      "sha256": "09076b122a0f47daa8e71ddcc317036966533207619caa95084d0d6536e27be1"
+    },
+    {
+      "path": "backend/nq-app/target/l6-convergence/full-isolated/full-maven.log",
+      "sha256": "63fc0b8af02d3aa578ceed4d575a7d0367a4f89bf243abdc742202fa862da83b"
+    },
+    {
+      "path": "backend/nq-app/target/l6-convergence/full-isolated/collected-result.json",
+      "sha256": "6282fbc8406e0e733eef47c0b0a2f6adc16fa5ef79fcb5e3327ff1db12b5ab1e"
+    }
+  ]
+}

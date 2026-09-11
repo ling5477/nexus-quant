@@ -1,0 +1,584 @@
+{
+  "checkpoints": [
+    {
+      "timeMillis": 1789137652687,
+      "phase": "warmup",
+      "orders": 2,
+      "terminal": 2,
+      "trades": 2,
+      "ledger": 8,
+      "runsSucceeded": 2,
+      "actionable": 0,
+      "correctnessRequiredUnresolved": 0,
+      "auditRows": 36,
+      "eventRows": 16,
+      "databaseBytes": 14507031,
+      "logBytes": 11594,
+      "rawBytes": 69687,
+      "rawFiles": 11,
+      "oracle": {
+        "orders": 2,
+        "trades": 2,
+        "ledger": 8,
+        "position": "0.2",
+        "duplicates": 0,
+        "orphans": 0
+      }
+    }
+  ],
+  "resourceProcesses": [
+    {
+      "identity": "NQ:1",
+      "samples": 3,
+      "series": [
+        {
+          "timeMillis": 1789137651316,
+          "heapUsed": 79611640,
+          "heapCommitted": 116391936,
+          "heapMax": 536870912,
+          "threads": 19,
+          "peakThreads": 19,
+          "active": 0,
+          "idle": 2,
+          "pending": 0,
+          "poolMax": 10,
+          "tickStarted": 0,
+          "tickCompleted": 0,
+          "tickFailed": 0,
+          "commands": 0,
+          "commandQueue": 0,
+          "gc": [
+            {
+              "name": "G1 Young Generation",
+              "count": 9,
+              "timeMillis": 33
+            },
+            {
+              "name": "G1 Concurrent GC",
+              "count": 4,
+              "timeMillis": 5
+            },
+            {
+              "name": "G1 Old Generation",
+              "count": 0,
+              "timeMillis": 0
+            }
+          ],
+          "observations": {
+            "validation_refresh": {
+              "observed": false,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {}
+            },
+            "ledger_reconcile": {
+              "observed": false,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {},
+              "lastObservedUnresolved": -1
+            },
+            "okx_reconcile": {
+              "observed": false,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {}
+            },
+            "durable_trade_replay": {
+              "observed": false,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {}
+            },
+            "critical_alert": {
+              "observed": false,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {}
+            }
+          }
+        },
+        {
+          "timeMillis": 1789137661339,
+          "heapUsed": 90097400,
+          "heapCommitted": 116391936,
+          "heapMax": 536870912,
+          "threads": 21,
+          "peakThreads": 22,
+          "active": 0,
+          "idle": 10,
+          "pending": 0,
+          "poolMax": 10,
+          "tickStarted": 2,
+          "tickCompleted": 2,
+          "tickFailed": 0,
+          "commands": 6,
+          "commandQueue": 0,
+          "gc": [
+            {
+              "name": "G1 Young Generation",
+              "count": 9,
+              "timeMillis": 33
+            },
+            {
+              "name": "G1 Concurrent GC",
+              "count": 4,
+              "timeMillis": 5
+            },
+            {
+              "name": "G1 Old Generation",
+              "count": 0,
+              "timeMillis": 0
+            }
+          ],
+          "observations": {
+            "validation_refresh": {
+              "observed": false,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {}
+            },
+            "ledger_reconcile": {
+              "observed": false,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {},
+              "lastObservedUnresolved": -1
+            },
+            "okx_reconcile": {
+              "observed": true,
+              "lastExecutionEpochSeconds": 1789137656,
+              "lastSuccessEpochSeconds": 1789137656,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {
+                "ATTEMPT": 3.0,
+                "SUCCESS": 3.0,
+                "FAILURE": 0.0,
+                "SKIPPED": 0.0,
+                "DEGRADED": 0.0,
+                "UNRESOLVED": 0.0
+              }
+            },
+            "durable_trade_replay": {
+              "observed": true,
+              "lastExecutionEpochSeconds": 1789137656,
+              "lastSuccessEpochSeconds": 1789137656,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {
+                "ATTEMPT": 6.0,
+                "SUCCESS": 6.0,
+                "FAILURE": 0.0,
+                "SKIPPED": 0.0,
+                "DEGRADED": 0.0,
+                "UNRESOLVED": 0.0
+              }
+            },
+            "critical_alert": {
+              "observed": false,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {}
+            }
+          }
+        },
+        {
+          "timeMillis": 1789137662404,
+          "heapUsed": 92194552,
+          "heapCommitted": 116391936,
+          "heapMax": 536870912,
+          "threads": 20,
+          "peakThreads": 22,
+          "active": 0,
+          "idle": 10,
+          "pending": 0,
+          "poolMax": 10,
+          "tickStarted": 2,
+          "tickCompleted": 2,
+          "tickFailed": 0,
+          "commands": 8,
+          "commandQueue": 0,
+          "gc": [
+            {
+              "name": "G1 Young Generation",
+              "count": 9,
+              "timeMillis": 33
+            },
+            {
+              "name": "G1 Concurrent GC",
+              "count": 4,
+              "timeMillis": 5
+            },
+            {
+              "name": "G1 Old Generation",
+              "count": 0,
+              "timeMillis": 0
+            }
+          ],
+          "observations": {
+            "validation_refresh": {
+              "observed": false,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {}
+            },
+            "ledger_reconcile": {
+              "observed": false,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {},
+              "lastObservedUnresolved": -1
+            },
+            "okx_reconcile": {
+              "observed": true,
+              "lastExecutionEpochSeconds": 1789137661,
+              "lastSuccessEpochSeconds": 1789137661,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {
+                "ATTEMPT": 4.0,
+                "SUCCESS": 4.0,
+                "FAILURE": 0.0,
+                "SKIPPED": 0.0,
+                "DEGRADED": 0.0,
+                "UNRESOLVED": 0.0
+              }
+            },
+            "durable_trade_replay": {
+              "observed": true,
+              "lastExecutionEpochSeconds": 1789137661,
+              "lastSuccessEpochSeconds": 1789137661,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {
+                "ATTEMPT": 8.0,
+                "SUCCESS": 8.0,
+                "FAILURE": 0.0,
+                "SKIPPED": 0.0,
+                "DEGRADED": 0.0,
+                "UNRESOLVED": 0.0
+              }
+            },
+            "critical_alert": {
+              "observed": false,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {}
+            }
+          }
+        }
+      ]
+    },
+    {
+      "identity": "NQ:2",
+      "samples": 3,
+      "series": [
+        {
+          "timeMillis": 1789137647632,
+          "heapUsed": 92923600,
+          "heapCommitted": 111149056,
+          "heapMax": 536870912,
+          "threads": 19,
+          "peakThreads": 19,
+          "active": 0,
+          "idle": 2,
+          "pending": 0,
+          "poolMax": 10,
+          "tickStarted": 0,
+          "tickCompleted": 0,
+          "tickFailed": 0,
+          "commands": 0,
+          "commandQueue": 0,
+          "gc": [
+            {
+              "name": "G1 Young Generation",
+              "count": 9,
+              "timeMillis": 32
+            },
+            {
+              "name": "G1 Concurrent GC",
+              "count": 4,
+              "timeMillis": 5
+            },
+            {
+              "name": "G1 Old Generation",
+              "count": 0,
+              "timeMillis": 0
+            }
+          ],
+          "observations": {
+            "validation_refresh": {
+              "observed": false,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {}
+            },
+            "ledger_reconcile": {
+              "observed": false,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {},
+              "lastObservedUnresolved": -1
+            },
+            "okx_reconcile": {
+              "observed": false,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {}
+            },
+            "durable_trade_replay": {
+              "observed": false,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {}
+            },
+            "critical_alert": {
+              "observed": false,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {}
+            }
+          }
+        },
+        {
+          "timeMillis": 1789137657655,
+          "heapUsed": 58517920,
+          "heapCommitted": 111149056,
+          "heapMax": 536870912,
+          "threads": 21,
+          "peakThreads": 22,
+          "active": 1,
+          "idle": 9,
+          "pending": 0,
+          "poolMax": 10,
+          "tickStarted": 2,
+          "tickCompleted": 1,
+          "tickFailed": 0,
+          "commands": 7,
+          "commandQueue": 0,
+          "gc": [
+            {
+              "name": "G1 Young Generation",
+              "count": 10,
+              "timeMillis": 36
+            },
+            {
+              "name": "G1 Concurrent GC",
+              "count": 4,
+              "timeMillis": 5
+            },
+            {
+              "name": "G1 Old Generation",
+              "count": 0,
+              "timeMillis": 0
+            }
+          ],
+          "observations": {
+            "validation_refresh": {
+              "observed": false,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {}
+            },
+            "ledger_reconcile": {
+              "observed": false,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {},
+              "lastObservedUnresolved": -1
+            },
+            "okx_reconcile": {
+              "observed": true,
+              "lastExecutionEpochSeconds": 1789137656,
+              "lastSuccessEpochSeconds": 1789137656,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {
+                "ATTEMPT": 3.0,
+                "SUCCESS": 3.0,
+                "FAILURE": 0.0,
+                "SKIPPED": 0.0,
+                "DEGRADED": 0.0,
+                "UNRESOLVED": 0.0
+              }
+            },
+            "durable_trade_replay": {
+              "observed": true,
+              "lastExecutionEpochSeconds": 1789137656,
+              "lastSuccessEpochSeconds": 1789137656,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {
+                "ATTEMPT": 4.0,
+                "SUCCESS": 4.0,
+                "FAILURE": 0.0,
+                "SKIPPED": 0.0,
+                "DEGRADED": 0.0,
+                "UNRESOLVED": 0.0
+              }
+            },
+            "critical_alert": {
+              "observed": true,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {
+                "EMITTED": 1.0
+              }
+            }
+          }
+        },
+        {
+          "timeMillis": 1789137661805,
+          "heapUsed": 59566496,
+          "heapCommitted": 111149056,
+          "heapMax": 536870912,
+          "threads": 20,
+          "peakThreads": 22,
+          "active": 0,
+          "idle": 10,
+          "pending": 0,
+          "poolMax": 10,
+          "tickStarted": 2,
+          "tickCompleted": 2,
+          "tickFailed": 0,
+          "commands": 9,
+          "commandQueue": 0,
+          "gc": [
+            {
+              "name": "G1 Young Generation",
+              "count": 10,
+              "timeMillis": 36
+            },
+            {
+              "name": "G1 Concurrent GC",
+              "count": 4,
+              "timeMillis": 5
+            },
+            {
+              "name": "G1 Old Generation",
+              "count": 0,
+              "timeMillis": 0
+            }
+          ],
+          "observations": {
+            "validation_refresh": {
+              "observed": false,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {}
+            },
+            "ledger_reconcile": {
+              "observed": false,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {},
+              "lastObservedUnresolved": -1
+            },
+            "okx_reconcile": {
+              "observed": true,
+              "lastExecutionEpochSeconds": 1789137661,
+              "lastSuccessEpochSeconds": 1789137656,
+              "lastFailureEpochSeconds": 1789137661,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {
+                "ATTEMPT": 4.0,
+                "SUCCESS": 3.0,
+                "FAILURE": 1.0,
+                "SKIPPED": 0.0,
+                "DEGRADED": 0.0,
+                "UNRESOLVED": 0.0
+              }
+            },
+            "durable_trade_replay": {
+              "observed": true,
+              "lastExecutionEpochSeconds": 1789137661,
+              "lastSuccessEpochSeconds": 1789137661,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {
+                "ATTEMPT": 5.0,
+                "SUCCESS": 5.0,
+                "FAILURE": 0.0,
+                "SKIPPED": 0.0,
+                "DEGRADED": 0.0,
+                "UNRESOLVED": 0.0
+              }
+            },
+            "critical_alert": {
+              "observed": true,
+              "lastExecutionEpochSeconds": -1,
+              "lastSuccessEpochSeconds": -1,
+              "lastFailureEpochSeconds": -1,
+              "lastDegradedEpochSeconds": -1,
+              "totals": {
+                "EMITTED": 1.0
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "durationScope": "FAILED_READINESS_ONLY / NOT_60_MINUTES",
+  "heapTrend": "NOT_QUALIFIED",
+  "handles": [
+    {
+      "identity": "PROCESS:1",
+      "handles": 502,
+      "workingSetBytes": 97509376
+    },
+    {
+      "identity": "PROCESS:2",
+      "handles": 662,
+      "workingSetBytes": 285917184
+    },
+    {
+      "identity": "PROCESS:3",
+      "handles": 664,
+      "workingSetBytes": 295178240
+    }
+  ]
+}

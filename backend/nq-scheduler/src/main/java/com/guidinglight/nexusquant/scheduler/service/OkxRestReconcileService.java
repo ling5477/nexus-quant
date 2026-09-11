@@ -353,7 +353,7 @@ public class OkxRestReconcileService {
         // 避免直接 CANCEL_REQUESTED -> ACCEPTED/PARTIALLY_FILLED 的非法迁移。
         if (currentStatus == OrderStatus.CANCEL_REQUESTED && targetStatus != OrderStatus.CANCELLED) {
             try {
-                orderLifecycleService.rejectCancel(order.orderId(), "RECONCILE_CANCEL_REJECTED", traceId);
+                orderLifecycleService.reconcileExternalStatus(order.orderId(), OrderStatus.CANCEL_REJECTED, "RECONCILE_CANCEL_REJECTED", traceId);
             } catch (IllegalStateException ex) {
                 OrderStatus latestStatus = orderCommandService.findByOrderId(order.orderId())
                         .map(OrderRecord::status)
@@ -364,18 +364,18 @@ public class OkxRestReconcileService {
                 throw ex;
             }
             if (targetStatus != OrderStatus.CANCEL_REJECTED) {
-                orderLifecycleService.applyExternalStatus(order.orderId(), targetStatus, "RECONCILE_STATUS_ALIGN", traceId);
+                orderLifecycleService.reconcileExternalStatus(order.orderId(), targetStatus, "RECONCILE_STATUS_ALIGN", traceId);
             }
             return;
         }
         if (targetStatus == OrderStatus.PARTIALLY_FILLED && currentStatus == OrderStatus.SENT) {
-            orderLifecycleService.acknowledge(order.orderId(), "RECONCILE_CONFIRM_ACCEPTED", traceId);
-            orderLifecycleService.markPartiallyFilled(order.orderId(), "RECONCILE_PARTIAL_FILL", traceId);
+            orderLifecycleService.reconcileExternalStatus(order.orderId(), OrderStatus.ACCEPTED, "RECONCILE_CONFIRM_ACCEPTED", traceId);
+            orderLifecycleService.reconcileExternalStatus(order.orderId(), OrderStatus.PARTIALLY_FILLED, "RECONCILE_PARTIAL_FILL", traceId);
             return;
         }
         if (targetStatus == OrderStatus.CANCELLED && currentStatus != OrderStatus.CANCEL_REQUESTED) {
             try {
-                orderLifecycleService.requestCancel(order.orderId(), "RECONCILE_CANCEL_REQUESTED", traceId);
+                orderLifecycleService.reconcileExternalStatus(order.orderId(), OrderStatus.CANCEL_REQUESTED, "RECONCILE_CANCEL_REQUESTED", traceId);
             } catch (IllegalStateException ex) {
                 OrderStatus latestStatus = orderCommandService.findByOrderId(order.orderId())
                         .map(OrderRecord::status)
@@ -385,10 +385,10 @@ public class OkxRestReconcileService {
                 }
                 throw ex;
             }
-            orderLifecycleService.cancel(order.orderId(), "RECONCILE_CANCELLED", traceId);
+            orderLifecycleService.reconcileExternalStatus(order.orderId(), OrderStatus.CANCELLED, "RECONCILE_CANCELLED", traceId);
             return;
         }
-        orderLifecycleService.applyExternalStatus(order.orderId(), targetStatus, "RECONCILE_STATUS_ALIGN", traceId);
+        orderLifecycleService.reconcileExternalStatus(order.orderId(), targetStatus, "RECONCILE_STATUS_ALIGN", traceId);
     }
 
     private boolean isTerminalStatus(OrderStatus status) {

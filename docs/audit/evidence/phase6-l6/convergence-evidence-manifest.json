@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "scope": "Review handoff evidence plus unchanged readiness history; excludes this manifest itself",
+  "files": [
+    {
+      "path": ".agents/skills/nq-trading-correctness-proof/references/engineering-lessons.md",
+      "sha256": "8d16a141004bc6e3549a5f47607b9d58a64be6146942b167a36a3c1c625d759c"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/ACTIVE_STABILITY.md",
+      "sha256": "7d685c9dcf9fb7d472c9460401f13c077c42b72a8d2c46a89e4185e97f67c333"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/convergence-candidate.json",
+      "sha256": "39dd19b9ed7573137ec309165a4a577713291617d3fcea719f4c7256b656f338"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/convergence-validation.json",
+      "sha256": "dff0a730300de0f83c99bfcb8c767ee6c56be03a2d9f5bab556d0d76b301773e"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/metrics/summary.json",
+      "sha256": "96c99ef3b5e3af34872fd57c89f73ccbaaee01619d92c1a78942267365b1cd04"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/RECONCILIATION_SAME_STATE_CONVERGENCE_REMEDIATION.md",
+      "sha256": "80bdd83e292483af48689b6fb2fa75a6b583b35443e8caaa386f153a7301d169"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/summary.json",
+      "sha256": "0adc4172a1cbacd0916c18d79f83486a0ec36e2ef232c570313b0e07395ec608"
+    }
+  ]
+}

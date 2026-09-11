@@ -20,6 +20,16 @@
 - 排查顺序：`authoritative facts → projection writer → read/write transaction boundary → concurrency primitive → replay identity → snapshot publication order → independent reconstruction oracle`。分别检查事实唯一、不同事实无丢失、重放不增量，以及旧 writer 能否晚于新 writer 发布。
 - 永久回归：保留原 C1 红色证据；`L5ProjectionConcurrencyTest` 与 `L5ProjectionRecoveryTest` 使用真实 PostgreSQL/独立 JVM，检查 1/2/4 路竞争、首次初始化、暂停旧 writer、账户/币种隔离、replay、kill/restart 和真实 COMMIT 响应中断。原 `L5BoundedWorkloadTest` 仅以 `nq.l5.level=C1` 运行 120 Trade 回归，不扩展 C2/C3。候选与实际结果见[整改证据](../../../../docs/audit/evidence/phase6-l5/CONCURRENT_POSITION_AND_ACCOUNT_PROJECTION_REMEDIATION.md)；实现证明不替代独立审查和 L5 qualification。
 
+## 经验：Concurrent Convergence No-op Rule
+
+- 症状：L6 readiness 的对账 actor 在外层读取非终态后，另一 JVM 已提交 FILLED；事务层回读 FILLED 后仍验证 FILLED → FILLED，于 CAS 前失败。外层同态检查只缩小窗口，无法保护事务回读与应用边界。
+- Rule：并发 actor 发现同一目标事实已被正确提交时，在 canonical application boundary 识别 `ALREADY_APPLIED / ALREADY_CONVERGED`。相同目标不是新的业务变更；不得增加 version、重复状态迁移审计或业务事件。只优化相同目标，不能把不同目标、损坏身份或非法数量也当作成功。
+- Owner：`OrderCommandWriteService.reconcileOrderStatus` 在事务内读当前事实，先识别同态，再由既有状态机和 expected-state/version CAS 处理真实变化。普通命令与 `applyExternalStatus` 保持严格迁移语义；CAS 失败仍只返回 durable truth，不刷新 version 重试旧观察。无需 migration 或全局放开同态状态机。
+- Accounting：只跳过 Order transition，不跳过 fill identity/quantity 校验和 Trade/Event/Ledger/Position/Snapshot 恢复。既有 accepted 顺序为完整成交集合校验 → 状态对齐 → Trade/Event → Ledger；FILLED 仍可对应尚未完成的 downstream facts。诊断审计与状态迁移审计应分别统计，不以业务 no-op 声称所有观测写入为零。
+- 与既往修复的关系：duplicate fill、duplicate command 与 same-window admission 都要求在 durable 边界辨识重复事实。它们的唯一键/锁保护不同 owner，不自动覆盖 Order 状态机校验前的竞态。保留外层快速检查与 B2 冲突/终态纠正逻辑；新增事务层同态判定补齐正确性，不能靠额外 catch 或降低并发遮蔽缺口。
+- 排查顺序：candidate/venue observation → desired state → 外层读 → 事务回读 → 状态机 → CAS → version/audit/event owner → downstream 恢复。严重度按 invocation、batch、scheduler 后续轮次与 JVM 实际存活判定，不能从 qualification launcher 退出直接推断永久运行故障。
+- 永久回归：`L6ConvergenceProcessTest`、`L6ConvergenceBoundaryProcessTest` 使用隔离 PG16/V51、真实 Spring 和独立 JVM，覆盖同目标竞争、重放、相邻状态、旧 CAS、冲突、batch 与真实 crash 缺账恢复；开关为 `nq.l6.convergence=true`。`nq.l6.convergence.baseline=true` 选用固定旧 scheduler 复现原失败。结果与限制见[整改证据](../../../../docs/audit/evidence/phase6-l6/RECONCILIATION_SAME_STATE_CONVERGENCE_REMEDIATION.md)。
+
 ## 触发条件与排除项
 
 满足下列任一条件，必须启动根因排查，不得继续只修表面症状：

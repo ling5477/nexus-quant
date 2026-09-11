@@ -240,6 +240,10 @@ public class OrderCommandService {
         return orderCommandWriteService.transitionOrder(orderId, nextStatus, reason, traceId);
     }
 
+    OrderRecord reconcileOrderStatus(String orderId, OrderStatus desiredStatus, String reason, String traceId) {
+        return orderCommandWriteService.reconcileOrderStatus(orderId, desiredStatus, reason, traceId);
+    }
+
     OrderRecord reconcileCancelledExecution(String orderId, String traceId) {
         return orderCommandWriteService.reconcileCancelledExecution(orderId, traceId);
     }
@@ -434,4 +438,3 @@ public class OrderCommandService {
         return resultCategory.shouldDeferDecision();
     }
 }
-

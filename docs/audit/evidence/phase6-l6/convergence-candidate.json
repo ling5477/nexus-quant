@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "base_head": "23548b75093a62d7614e16f8abcaf9ff2ea32ed7",
+  "kind": "UNSTAGED_WORKTREE_CANDIDATE",
+  "hash_mode": "SHA256_RAW_FILE_BYTES",
+  "fingerprint": "d05ae696cfe8e2dadef5ba25b4039907fef5b4fe1a2dd9933ab1c646c75a0e20",
+  "files": [
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0NqProcessMain.java",
+      "sha256": "0a6327e251c7d80d6965e7832e6d5b8c19987615ad963ff81e47db21ce0e5d58"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0Processes.java",
+      "sha256": "8ba21351ec6ad11c9b1df15b4b81a9e408c68ea37a93560e191015b33ba822e6"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B4TradeEventRemediationTest.java",
+      "sha256": "b6381d82eacaae0287e9f54c9cc43513a9d509c7b2b2b948ee47ab203bf3c60b"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5BoundedWorkloadTest.java",
+      "sha256": "76f7906c09a6b7dc0e6daa5a49cbfeba3c7aaa3b815cbd26617063d032107d8f"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_oracle.py",
+      "sha256": "2be92968a0b10dbf20b7ae38ce3420a8fb59bc75db33c7ef527b73189fd01969"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ActiveStabilityTest.java",
+      "sha256": "d00fb4e213c720b0d5bb68fee539283361f41dd71c6c94c7f42c652cff1259df"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ConvergenceBaseline.java",
+      "sha256": "6417146180147189128678549672b508846acdc59b41f030984fe15c97eaaaa6"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ConvergenceBoundaryProcessTest.java",
+      "sha256": "4b8deabdad8028f7567013f0074c32f4d4e37324c5e5675024863271b925097b"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ConvergenceControls.java",
+      "sha256": "4aecd6ec4fb78a1e13baf9a7ad8c9e27db7a3db91daff467dd36a6f6acbfa644"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ConvergenceNqMain.java",
+      "sha256": "9a048fbd8fe4fcdd90c200f08b554feea76c03644bd0ee7ffcecdcff0737f14b"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ConvergenceProcessTest.java",
+      "sha256": "040db58955bfd82ed732201121c36bfebd4c113e01f2a3ba75c78fec418cde11"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6NqProcessMain.java",
+      "sha256": "a0e26935c4b99a2168d4fdb8afdd98dc16b8d6b2933f5c07fd93d386ee3629c1"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ProcessOutputTest.java",
+      "sha256": "73c29997dee48b75d4ec8a9f512d0806039230b5dad90db0f1659bbdd2e98d79"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6QualificationControls.java",
+      "sha256": "e084f4fb51d1ec00193dae36d0eeb0b2ea27f0ca9c51ae0bbcd2d0bca5fb7a4d"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java",
+      "sha256": "36c02147edb4d895d016c71fc47fb0837e8a23d88fa5a390b1bde1381a552002"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java",
+      "sha256": "9a32839e59eb7c44138e97a898e68c733f48a2ca84277d934f2d9d915ff043cb"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderLifecycleService.java",
+      "sha256": "bbc845ef3db7540cfeb8ede91787a189b71e05cd12c1a68be3003f254e4eed2c"
+    },
+    {
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java",
+      "sha256": "8f21e409295e291e0d12769e79ace61bf25d929bb5641af42f068d6b3c00e2ae"
+    },
+    {
+      "path": "backend/nq-scheduler/src/test/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileServiceTest.java",
+      "sha256": "9d325d0e24e82f28c6b269c5308061c41709d8e93c0e4c3c917e6106cd749f68"
+    }
+  ]
+}

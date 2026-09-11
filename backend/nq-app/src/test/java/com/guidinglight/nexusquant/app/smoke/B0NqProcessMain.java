@@ -71,9 +71,9 @@ public final class B0NqProcessMain {
                         "--spring.datasource.url=" + db, "--spring.datasource.username=" + B0Fixture.APP,
                         "--spring.datasource.password=", "--spring.flyway.enabled=false",
                         "--spring.main.allow-bean-definition-overriding=true",
-                        "--spring.task.scheduling.enabled=" + B5QualificationControls.strategyRecoveryEnabled, "--nq.runtime.trading-components.enabled=true",
-                        "--nq.validation-operations.scheduler.enabled=" + B5QualificationControls.schedulerEnabled,
-                        "--nq.validation-operations.scheduler.initial-delay=PT24H",
+                        "--spring.task.scheduling.enabled=" + (B5QualificationControls.strategyRecoveryEnabled || L6QualificationControls.enabled), "--nq.runtime.trading-components.enabled=true",
+                        "--nq.validation-operations.scheduler.enabled=" + (B5QualificationControls.schedulerEnabled || L6QualificationControls.enabled),
+                        "--nq.validation-operations.scheduler.initial-delay=" + (L6QualificationControls.enabled ? "PT30S" : "PT24H"),
                         "--nq.validation-operations.scheduler.execution-timeout=PT1M", "--nq.okx.recovery.enabled=false",
                         "--nq.okx.ws.enabled=false", "--nq.binance.ws.enabled=false",
                         "--nq.instrument.catalog-sync.enabled=false", "--nq.env-safety.live-enabled=false",
@@ -90,6 +90,8 @@ public final class B0NqProcessMain {
             System.out.println("B0_COMPOSITION realRisk=true writeProxy=true gateway=AdapterBackedTradingVenueGateway jdbcUser=" + B0Fixture.APP);
             System.out.flush();
             try (var qualification = new B5QualificationControls(context);
+                 var convergence = L6ConvergenceControls.enabled ? new L6ConvergenceControls(context) : null;
+                 var l6 = L6QualificationControls.enabled ? new L6QualificationControls(context) : null;
                  var l5 = L5QualificationControls.enabled ? new L5QualificationControls(context) : null;
                  var executor = Executors.newSingleThreadExecutor();
                  var commands = new BufferedReader(new InputStreamReader(System.in))) {
@@ -97,6 +99,17 @@ public final class B0NqProcessMain {
                 String command;
                 while ((command = commands.readLine()) != null) {
                     if ("STOP".equals(command)) return;
+                    String convergenceResult = convergence == null ? null : convergence.handle(command);
+                    if (convergenceResult != null) {
+                        System.out.println("B0_RESULT " + convergenceResult);
+                        System.out.flush();
+                        continue;
+                    }
+                    if (l6 != null) {
+                        System.out.println("B0_RESULT " + l6.handle(command));
+                        System.out.flush();
+                        continue;
+                    }
                     if (l5 != null && !L5QualificationControls.isRepeatedFaultCommand(command)) {
                         System.out.println("B0_RESULT " + l5.handle(command));
                         System.out.flush();

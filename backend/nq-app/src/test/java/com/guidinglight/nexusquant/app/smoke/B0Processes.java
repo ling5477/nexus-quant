@@ -13,6 +13,8 @@ import java.util.concurrent.TimeUnit;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 
 /** 沿用 F002 ProcessBuilder/日志/PID 方式；B0 增加交互屏障和拥有实例身份的 PostgreSQL。 */
@@ -157,6 +159,9 @@ final class B0Processes {
         final Path log;
         private final BufferedWriter input;
         private int resultCount;
+        private long readOffset;
+        private int seenResults;
+        private String readyValue;
 
         Child(Class<?> main, Path directory, String label, Map<String, String> environment) throws Exception {
             this(main, directory, label, environment, null);
@@ -173,7 +178,7 @@ final class B0Processes {
                 classpath = legacyClasses.toAbsolutePath() + File.pathSeparator + classpath;
             }
             Path argfile = directory.resolve(label + ".args");
-            Files.writeString(argfile, ((main == L5NqProcessMain.class || main == L5FaultNqProcessMain.class || main == L5KillNqProcessMain.class) ? "-Xmx512m\n"
+            Files.writeString(argfile, ((main == L6NqProcessMain.class || main == L5NqProcessMain.class || main == L5FaultNqProcessMain.class || main == L5KillNqProcessMain.class) ? "-Xmx512m\n"
                     : main == L5VenueProcessMain.class || main == L5ProjectionProcessMain.class ? "-Xmx256m\n" : "")
                     + "-Dfile.encoding=UTF-8\n-Dstdout.encoding=UTF-8\n-Dstderr.encoding=UTF-8\n"
                     + "-Duser.language=en\n-Duser.country=US\n-cp\n\"" + classpath.replace("\\", "\\\\").replace("\"", "\\\"")
@@ -217,9 +222,27 @@ final class B0Processes {
         private String await(String prefix, int count) throws Exception {
             long deadline = System.nanoTime() + Duration.ofSeconds(75).toNanos();
             while (System.nanoTime() < deadline) {
-                List<String> matches = Files.readAllLines(log).stream().filter(line -> line.startsWith(prefix)).toList();
-                if (matches.size() >= count) return matches.get(count - 1).substring(prefix.length());
-                if (!process.isAlive()) throw new AssertionError("B0 child exited: " + Files.readString(log));
+                // 长跑只读取新增日志，避免每条命令重新物化全部历史日志。
+                try (var file = new RandomAccessFile(log.toFile(), "r")) {
+                    file.seek(readOffset);
+                    String line;
+                    while ((line = file.readLine()) != null) {
+                        long nextOffset = file.getFilePointer();
+                        file.seek(nextOffset - 1);
+                        if (file.read() != '\n') break;
+                        // 未写完的行留到下次读取，不把截断的结果当作完整协议消息。
+                        readOffset = nextOffset;
+                        line = new String(line.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
+                        if (line.startsWith("B0_READY ")) readyValue = line.substring(9);
+                        if (line.startsWith("B0_RESULT ")) {
+                            seenResults++;
+                            if (prefix.equals("B0_RESULT ") && seenResults == count) return line.substring(10);
+                        }
+                        if (prefix.equals("B0_READY ") && readyValue != null) return readyValue;
+                    }
+                }
+                if (prefix.equals("B0_READY ") && readyValue != null) return readyValue;
+                if (!process.isAlive()) throw new AssertionError("B0 child exited; retained log=" + log);
                 Thread.sleep(100);
             }
             throw new AssertionError("B0 child timeout, log=" + log);

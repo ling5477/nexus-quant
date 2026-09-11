@@ -643,7 +643,7 @@ class L5BoundedWorkloadTest {
         for (var child : children) assertEquals("L5_PLACE ACCEPTED", child.result());
     }
 
-    private static JsonNode cursor(Connection reader) throws Exception {
+    static JsonNode cursor(Connection reader) throws Exception {
         return JSON.readTree(value(reader, "SELECT coalesce(jsonb_agg(to_jsonb(c))::text,'[]') FROM reconciliation_scan_cursors c WHERE venue='OKX'"));
     }
 
@@ -659,7 +659,7 @@ class L5BoundedWorkloadTest {
         assertEquals(0, number(reader, BACKLOG), "L5 actionable backlog failed to converge within fair scan budget");
     }
 
-    private static ObjectNode sample(Connection reader) throws Exception {
+    static ObjectNode sample(Connection reader) throws Exception {
         ObjectNode result = JSON.createObjectNode().put("timeMillis", System.currentTimeMillis());
         result.put("backlog", number(reader, BACKLOG));
         result.put("correctnessRequiredUnresolved", number(reader, UNKNOWN));
@@ -675,7 +675,7 @@ class L5BoundedWorkloadTest {
         return result;
     }
 
-    private static ObjectNode facts(Connection reader) throws Exception {
+    static ObjectNode facts(Connection reader) throws Exception {
         ObjectNode result = JSON.createObjectNode();
         for (String table : List.of("orders", "ordinary_place_authorities", "trades", "ledger_entries", "ledger_events", "positions", "account_snapshots", "strategy_runs", "strategy_run_dispatch_work")) {
             result.set(table, JSON.readTree(value(reader, "SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text)::text,'[]') FROM " + table + " t")));
@@ -684,7 +684,7 @@ class L5BoundedWorkloadTest {
         return result;
     }
 
-    private static JsonNode http(String endpoint, String command) throws Exception {
+    static JsonNode http(String endpoint, String command) throws Exception {
         B0Fixture.requireVenue(endpoint);
         try (var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build()) {
             boolean read = command == null || "METRICS".equals(command);
@@ -706,8 +706,8 @@ class L5BoundedWorkloadTest {
         }
     }
 
-    private static long number(Connection connection, String sql) throws Exception { return Long.parseLong(value(connection, sql)); }
-    private static String value(Connection connection, String sql) throws Exception {
+    static long number(Connection connection, String sql) throws Exception { return Long.parseLong(value(connection, sql)); }
+    static String value(Connection connection, String sql) throws Exception {
         try (var statement = connection.createStatement()) {
             statement.setQueryTimeout(5);
             try (var result = statement.executeQuery(sql)) { assertTrue(result.next()); return result.getString(1); }

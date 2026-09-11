@@ -52,8 +52,8 @@ class B4TradeEventRemediationTest {
                 try (var reader=fixture.checker();
                      var nq=new B0Processes.Child(B0NqProcessMain.class,directory,"nq-a",env,old?legacy:null)) {
                     nq.ready();proof.put("nqPid",nq.process.pid());
-                    assertEquals("50",value(reader,"SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
-                    proof.put("postgres",value(reader,"SHOW server_version")).put("schema","V50");
+                assertEquals("51",value(reader,"SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
+                    proof.put("postgres",value(reader,"SHOW server_version")).put("schema","V51");
                     assertTrue(nq.send(environment.equals("LIVE")?"PLACE_B2_LIVE":"PLACE_B2").endsWith("ACCEPTED"));
                     control(endpoint,"FILL 10 0.01");
                     if (cut==Cut.NORMAL || cut==Cut.LEGACY_COMPLETE) {

@@ -68,6 +68,11 @@ public class OrderLifecycleService {
         return orderCommandService.reconcileCancelledExecution(orderId, traceId);
     }
 
+    /** 对账收敛入口；同态仅观察，不放宽普通生命周期与命令的状态机契约。 */
+    public OrderRecord reconcileExternalStatus(String orderId, OrderStatus desiredStatus, String reason, String traceId) {
+        return orderCommandService.reconcileOrderStatus(orderId, desiredStatus, reason, traceId);
+    }
+
     /**
      * 将订单推进到 CANCEL_REQUESTED。
      * <p>
