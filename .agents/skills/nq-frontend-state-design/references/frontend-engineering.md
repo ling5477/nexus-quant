@@ -1,6 +1,6 @@
 # Frontend engineering
 
-普通组件/API 接线可直接读本参考，不触发复杂页面设计 Skill；状态/权限流程重整才使用该 Skill。版本和命令查当前 [package.json](../../../../frontend/package.json)，视觉 token 查 [FRONTEND_DESIGN_SYSTEM](../../../../docs/current/FRONTEND_DESIGN_SYSTEM.md)，状态表达查 [page-states](page-states.md)。
+按变更读取相关小节；CSS 不要求 API/状态流程分析。版本和命令查当前 [package.json](../../../../frontend/package.json)，视觉 token 查 [FRONTEND_DESIGN_SYSTEM](../../../../docs/current/FRONTEND_DESIGN_SYSTEM.md)。
 
 ## API / types / state
 

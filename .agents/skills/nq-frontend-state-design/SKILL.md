@@ -1,15 +1,11 @@
 ---
 name: nq-frontend-state-design
-description: 用户需要设计或重整 NQ 交易/风控页面的多状态、多权限操作流程或复杂信息层级时使用；已有设计下的普通组件实现、局部文案、单点 bug 和纯视觉微调无需使用。
+description: 用于 NQ 前端页面、组件、CSS 和交互状态的实现或设计；仅讨论前端的文档不触发。
 ---
-# 金融后台状态设计
+# 前端产品与状态
 
-从用户决策、已有 API 能力与当前页面出发，明确关键状态、可用动作、结果和失败反馈。不得虚构后端能力、掩盖拒绝/过期/错误、混淆 SIM/LIVE 或弱化危险操作提示。
+从受影响页面、现有 API 和用户动作出发，沿用 React/Vite/Ant Design 与既有 tokens。局部 CSS 只处理对应视觉问题；复杂状态再分析权限、动作前提和失败反馈，不虚构后端能力。
 
-按页面需要选择布局和状态表达，不固定 PageHero、卡片、表格、Drawer 的数量与顺序。沿用既有组件、tokens 和状态管理方式；复杂页面可将设计与必要实现一起完成，避免人为拆成四个 Skill 交接。
+按需读取[前端工程](references/frontend-engineering.md)命中小节。测试、审查和 Git 统一使用[回归与交付](../nq-trading-correctness-proof/references/regression-delivery.md)；不要求固定插件或完整 E2E。
 
-设计交付验证状态与操作语义；代码行为变化选择目标浏览器场景和相关 build/type 检查；纯布局按代表视口检查溢出、焦点和可读性。完成时说明关键决策、可复验结果和未联调部分。
-
-按需参考 [页面状态与视觉检查](references/page-states.md)。不要求 Figma 或固定插件组合。
-
-涉及实现或验证时按需读取 [前端工程](references/frontend-engineering.md)，保持现有触发范围。
+API 缺失或未知权限只阻塞依赖部分；不得通过隐藏错误、mock 成功或前端绕过服务端权限完成任务。

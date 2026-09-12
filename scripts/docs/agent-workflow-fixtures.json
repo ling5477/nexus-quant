@@ -72,7 +72,8 @@
         "proofs": [
           "FORWARD_ONLY",
           "HISTORICAL_MIGRATION_IMMUTABLE",
-          "POSTGRESQL_PROOF"
+          "POSTGRESQL_PROOF",
+          "FLYWAY_VALIDATE"
         ]
       }
     },
@@ -293,7 +294,8 @@
         "proofs": [
           "FORWARD_ONLY",
           "HISTORICAL_MIGRATION_IMMUTABLE",
-          "POSTGRESQL_PROOF"
+          "POSTGRESQL_PROOF",
+          "FLYWAY_VALIDATE"
         ]
       }
     },
@@ -314,6 +316,43 @@
         "proofs": [
           "POSTGRESQL_PROOF",
           "STATE_IDEMPOTENCY_RISK_AUDIT"
+        ]
+      }
+    },
+    {
+      "id": "frontend-implementation",
+      "input": {
+        "capabilities": [
+          "frontend_implementation"
+        ],
+        "riskTags": []
+      },
+      "expected": {
+        "skills": [
+          "nq-frontend-state-design"
+        ],
+        "risk": "ORDINARY",
+        "independentReview": false,
+        "proofs": []
+      }
+    },
+    {
+      "id": "release-capability",
+      "input": {
+        "capabilities": [
+          "release_deployment"
+        ],
+        "riskTags": []
+      },
+      "expected": {
+        "skills": [
+          "nq-release-deployment"
+        ],
+        "risk": "HIGH_RISK",
+        "independentReview": true,
+        "proofs": [
+          "TRUST_BOUNDARY_PROOF",
+          "EXACT_HEAD_CI"
         ]
       }
     }
@@ -403,6 +442,249 @@
       "id": "trigger-risk-downgrade",
       "mutation": "trigger_risk_downgrade",
       "expectedError": "FIXTURE_MISMATCH"
+    },
+    {
+      "id": "missing-flyway-proof",
+      "mutation": "missing_flyway",
+      "expectedError": "HIGH_RISK_REQUIREMENT_WEAKENED"
+    },
+    {
+      "id": "semantic-rule-removed",
+      "mutation": "semantic_rule_removed",
+      "expectedError": "SEMANTIC_ROUTING_MISMATCH"
+    }
+  ],
+  "semanticCases": [
+    {
+      "id": "R1-java",
+      "prompt": "修复 Java DTO 空值导致的异常；不改变交易和事务。",
+      "facts": {
+        "changeKind": "code",
+        "effects": [
+          "local_java"
+        ]
+      },
+      "expected": {
+        "skills": [],
+        "testScope": "TARGETED",
+        "independentReview": false,
+        "proofs": [],
+        "repoWideAudit": false,
+        "fullMavenDefault": false
+      }
+    },
+    {
+      "id": "R2-reconciliation",
+      "prompt": "修复 reconciliation 多进程并发重复应用，保留恢复语义。",
+      "facts": {
+        "changeKind": "code",
+        "effects": [
+          "trading_state",
+          "concurrency"
+        ]
+      },
+      "expected": {
+        "skills": [
+          "nq-trading-correctness-proof"
+        ],
+        "testScope": "TARGETED_PROOF",
+        "independentReview": true,
+        "proofs": [
+          "POSTGRESQL_PROOF",
+          "STATE_IDEMPOTENCY_RISK_AUDIT",
+          "TRANSACTION_CONCURRENCY_PROOF"
+        ],
+        "repoWideAudit": false,
+        "fullMavenDefault": false
+      }
+    },
+    {
+      "id": "R3-flyway",
+      "prompt": "新增 Flyway migration，检查旧数据升级和约束。",
+      "facts": {
+        "changeKind": "schema",
+        "effects": [
+          "migration"
+        ]
+      },
+      "expected": {
+        "skills": [
+          "nq-postgres-migration-review"
+        ],
+        "testScope": "POSTGRESQL_FLYWAY",
+        "independentReview": true,
+        "proofs": [
+          "POSTGRESQL_PROOF",
+          "FORWARD_ONLY",
+          "HISTORICAL_MIGRATION_IMMUTABLE",
+          "FLYWAY_VALIDATE"
+        ],
+        "repoWideAudit": false,
+        "fullMavenDefault": false
+      }
+    },
+    {
+      "id": "R4-login-css",
+      "prompt": "调整 Login 页面 CSS 间距和焦点样式。",
+      "facts": {
+        "changeKind": "style",
+        "effects": [
+          "frontend"
+        ]
+      },
+      "expected": {
+        "skills": [
+          "nq-frontend-state-design"
+        ],
+        "testScope": "VISUAL",
+        "independentReview": false,
+        "proofs": [],
+        "repoWideAudit": false,
+        "fullMavenDefault": false
+      }
+    },
+    {
+      "id": "R5-readme",
+      "prompt": "修正 README 拼写。",
+      "facts": {
+        "changeKind": "docs",
+        "effects": []
+      },
+      "expected": {
+        "skills": [],
+        "testScope": "MINIMAL",
+        "independentReview": false,
+        "proofs": [],
+        "repoWideAudit": false,
+        "fullMavenDefault": false
+      }
+    },
+    {
+      "id": "N1-strategy-copy",
+      "prompt": "修改 strategy 帮助文案拼写，没有执行逻辑变化。",
+      "facts": {
+        "changeKind": "docs",
+        "effects": []
+      },
+      "expected": {
+        "skills": [],
+        "testScope": "MINIMAL",
+        "independentReview": false,
+        "proofs": [],
+        "repoWideAudit": false,
+        "fullMavenDefault": false
+      }
+    },
+    {
+      "id": "N2-database-history",
+      "prompt": "修正文档中 database 历史说明，不修改 schema。",
+      "facts": {
+        "changeKind": "docs",
+        "effects": []
+      },
+      "expected": {
+        "skills": [],
+        "testScope": "MINIMAL",
+        "independentReview": false,
+        "proofs": [],
+        "repoWideAudit": false,
+        "fullMavenDefault": false
+      }
+    },
+    {
+      "id": "N3-deploy-history",
+      "prompt": "修正历史 deploy 说明，不执行部署。",
+      "facts": {
+        "changeKind": "docs",
+        "effects": []
+      },
+      "expected": {
+        "skills": [],
+        "testScope": "MINIMAL",
+        "independentReview": false,
+        "proofs": [],
+        "repoWideAudit": false,
+        "fullMavenDefault": false
+      }
+    },
+    {
+      "id": "N4-strategy-java",
+      "prompt": "修复 strategy 展示 DTO 的空值，不改变交易、配置或调度。",
+      "facts": {
+        "changeKind": "code",
+        "effects": [
+          "local_java"
+        ]
+      },
+      "expected": {
+        "skills": [],
+        "testScope": "TARGETED",
+        "independentReview": false,
+        "proofs": [],
+        "repoWideAudit": false,
+        "fullMavenDefault": false
+      }
+    },
+    {
+      "id": "R6-release",
+      "prompt": "验证发布候选制品和 exact-head CI，不执行生产写入。",
+      "facts": {
+        "changeKind": "release",
+        "effects": [
+          "release_delivery"
+        ]
+      },
+      "expected": {
+        "skills": [
+          "nq-release-deployment"
+        ],
+        "testScope": "RELEASE_REGRESSION_EXACT_HEAD",
+        "independentReview": true,
+        "proofs": [
+          "TRUST_BOUNDARY_PROOF",
+          "EXACT_HEAD_CI"
+        ],
+        "repoWideAudit": false,
+        "fullMavenDefault": false
+      }
+    },
+    {
+      "id": "R7-cross-module",
+      "prompt": "修改跨模块普通查询契约。",
+      "facts": {
+        "changeKind": "code",
+        "effects": [
+          "cross_module"
+        ]
+      },
+      "expected": {
+        "skills": [],
+        "testScope": "RELEVANT_MODULES",
+        "independentReview": false,
+        "proofs": [],
+        "repoWideAudit": false,
+        "fullMavenDefault": false
+      }
+    },
+    {
+      "id": "R8-research",
+      "prompt": "修复 backtest seed 和时间输入可复现性。",
+      "facts": {
+        "changeKind": "research",
+        "effects": [
+          "research_reproducibility"
+        ]
+      },
+      "expected": {
+        "skills": [
+          "nq-research-reproducibility"
+        ],
+        "testScope": "TARGETED",
+        "independentReview": false,
+        "proofs": [],
+        "repoWideAudit": false,
+        "fullMavenDefault": false
+      }
     }
   ]
 }

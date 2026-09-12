@@ -23,7 +23,8 @@
     {
       "id": "nq-frontend-state-design",
       "triggers": [
-        "complex_frontend_state_design"
+        "complex_frontend_state_design",
+        "frontend_implementation"
       ],
       "riskTags": []
     },
@@ -33,6 +34,15 @@
         "research_reproducibility"
       ],
       "riskTags": []
+    },
+    {
+      "id": "nq-release-deployment",
+      "triggers": [
+        "release_deployment"
+      ],
+      "riskTags": [
+        "ci_release_trust"
+      ]
     }
   ],
   "retiredSkills": [
@@ -56,7 +66,8 @@
       "proofs": [
         "POSTGRESQL_PROOF",
         "FORWARD_ONLY",
-        "HISTORICAL_MIGRATION_IMMUTABLE"
+        "HISTORICAL_MIGRATION_IMMUTABLE",
+        "FLYWAY_VALIDATE"
       ]
     },
     "schema": {
@@ -139,5 +150,120 @@
         "EXACT_HEAD_CI"
       ]
     }
+  },
+  "semanticRouting": {
+    "purpose": "Optional mapping from reviewed task facts, not keyword classification or runtime authority.",
+    "changeKinds": [
+      "code",
+      "style",
+      "docs",
+      "schema",
+      "release",
+      "research"
+    ],
+    "effects": [
+      "local_java",
+      "cross_module",
+      "trading_state",
+      "accounting",
+      "concurrency",
+      "migration",
+      "frontend",
+      "release_delivery",
+      "research_reproducibility",
+      "security"
+    ],
+    "rules": [
+      {
+        "changeKinds": [
+          "code"
+        ],
+        "effectsAny": [
+          "trading_state",
+          "accounting"
+        ],
+        "capabilities": [
+          "trading_correctness_proof"
+        ],
+        "riskTags": []
+      },
+      {
+        "changeKinds": [
+          "schema",
+          "code"
+        ],
+        "effectsAny": [
+          "migration"
+        ],
+        "capabilities": [
+          "postgres_migration_review"
+        ],
+        "riskTags": []
+      },
+      {
+        "changeKinds": [
+          "code",
+          "style"
+        ],
+        "effectsAny": [
+          "frontend"
+        ],
+        "capabilities": [
+          "frontend_implementation"
+        ],
+        "riskTags": []
+      },
+      {
+        "changeKinds": [
+          "release",
+          "code"
+        ],
+        "effectsAny": [
+          "release_delivery"
+        ],
+        "capabilities": [
+          "release_deployment"
+        ],
+        "riskTags": []
+      },
+      {
+        "changeKinds": [
+          "research",
+          "code"
+        ],
+        "effectsAny": [
+          "research_reproducibility"
+        ],
+        "capabilities": [
+          "research_reproducibility"
+        ],
+        "riskTags": []
+      },
+      {
+        "changeKinds": [
+          "code",
+          "schema"
+        ],
+        "effectsAny": [
+          "concurrency"
+        ],
+        "capabilities": [],
+        "riskTags": [
+          "concurrency"
+        ]
+      },
+      {
+        "changeKinds": [
+          "code"
+        ],
+        "effectsAny": [
+          "security"
+        ],
+        "capabilities": [],
+        "riskTags": [
+          "security"
+        ]
+      }
+    ]
   }
 }

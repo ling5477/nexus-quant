@@ -56,7 +56,7 @@ function Read-SkillInventory([string] $Root) {
 
 # 此处只保留安全语义下限；能力名称、数量与触发词均从 policy 读取。
 $minimumProofs = @{
-    migration = @('POSTGRESQL_PROOF', 'FORWARD_ONLY', 'HISTORICAL_MIGRATION_IMMUTABLE')
+    migration = @('POSTGRESQL_PROOF', 'FORWARD_ONLY', 'HISTORICAL_MIGRATION_IMMUTABLE', 'FLYWAY_VALIDATE')
     schema = @('POSTGRESQL_PROOF', 'SCHEMA_COMPATIBILITY')
     trading = @('POSTGRESQL_PROOF', 'STATE_IDEMPOTENCY_RISK_AUDIT')
     accounting = @('POSTGRESQL_PROOF', 'ACCOUNTING_CONSISTENCY')
@@ -96,6 +96,19 @@ function Assert-Policy($Policy, $Inventory) {
         Assert-Condition ($names.Count -eq 1 -and $names[0].Groups['value'].Value.Trim() -ceq $item.id) 'SKILL_IDENTITY_MISMATCH'
         $descriptions = [regex]::Matches($front.Groups['body'].Value, '(?m)^description:[ \t]*(?<value>[^\r\n]*)\r?$')
         Assert-Condition ($descriptions.Count -eq 1 -and -not [string]::IsNullOrWhiteSpace($descriptions[0].Groups['value'].Value)) 'SKILL_DESCRIPTION_MISSING'
+    }
+    Assert-Strings $Policy.semanticRouting.changeKinds 'SEMANTIC_POLICY_INVALID'
+    Assert-Strings $Policy.semanticRouting.effects 'SEMANTIC_POLICY_INVALID'
+    Assert-Condition ($Policy.semanticRouting.rules -is [array] -and $Policy.semanticRouting.rules.Count -gt 0) 'SEMANTIC_POLICY_INVALID'
+    foreach ($mapping in $Policy.semanticRouting.rules) {
+        Assert-Strings $mapping.changeKinds 'SEMANTIC_POLICY_INVALID'
+        Assert-Strings $mapping.effectsAny 'SEMANTIC_POLICY_INVALID'
+        Assert-Strings $mapping.capabilities 'SEMANTIC_POLICY_INVALID' -AllowEmpty
+        Assert-Strings $mapping.riskTags 'SEMANTIC_POLICY_INVALID' -AllowEmpty
+        foreach ($kind in $mapping.changeKinds) { Assert-Condition ($Policy.semanticRouting.changeKinds -ccontains $kind) 'SEMANTIC_POLICY_INVALID' }
+        foreach ($effect in $mapping.effectsAny) { Assert-Condition ($Policy.semanticRouting.effects -ccontains $effect) 'SEMANTIC_POLICY_INVALID' }
+        foreach ($trigger in $mapping.capabilities) { Assert-Condition ($triggers -ccontains $trigger) 'UNKNOWN_CAPABILITY' }
+        foreach ($tag in $mapping.riskTags) { Assert-Condition ($Policy.riskRequirements.PSObject.Properties.Name -ccontains $tag) 'UNKNOWN_RISK' }
     }
     foreach ($tag in $minimumProofs.Keys) {
         Assert-Condition ($Policy.riskRequirements.PSObject.Properties.Name -ccontains $tag) 'HIGH_RISK_REQUIREMENT_WEAKENED'
@@ -139,6 +152,40 @@ function Assert-Case($Policy, $Case) {
     Assert-Condition ($Case.expected.independentReview -is [bool] -and $actual.independentReview -eq $Case.expected.independentReview -and $actual.risk -ceq $Case.expected.risk) 'FIXTURE_MISMATCH'
 }
 
+
+# 输入是审阅后的变更事实，prompt 仅用于核对语义；不扫描关键词或伪称模型推理测试。
+function Resolve-SemanticTask($Policy, $Facts) {
+    Assert-Condition ($Policy.semanticRouting.changeKinds -ccontains $Facts.changeKind) 'UNKNOWN_CHANGE_KIND'
+    Assert-Strings $Facts.effects 'INVALID_EFFECTS' -AllowEmpty
+    foreach ($effect in $Facts.effects) {
+        Assert-Condition ($Policy.semanticRouting.effects -ccontains $effect) 'UNKNOWN_EFFECT'
+    }
+    Assert-Condition (-not ($Facts.changeKind -ceq 'docs' -and $Facts.effects.Count -gt 0)) 'CONTRADICTORY_TASK_FACTS'
+    $capabilities = @(); $riskTags = @()
+    foreach ($rule in $Policy.semanticRouting.rules) {
+        if ($rule.changeKinds -ccontains $Facts.changeKind -and @($Facts.effects | Where-Object { $rule.effectsAny -ccontains $_ }).Count -gt 0) {
+            $capabilities += $rule.capabilities; $riskTags += $rule.riskTags
+        }
+    }
+    $route = Resolve-Capabilities $Policy ([pscustomobject]@{ capabilities=@($capabilities | Sort-Object -Unique); riskTags=@($riskTags | Sort-Object -Unique) })
+    $scope = 'TARGETED'
+    if ($Facts.changeKind -ceq 'docs') { $scope = 'MINIMAL' }
+    elseif ($route.proofs -ccontains 'FLYWAY_VALIDATE') { $scope = 'POSTGRESQL_FLYWAY' }
+    elseif ($route.proofs -ccontains 'EXACT_HEAD_CI') { $scope = 'RELEASE_REGRESSION_EXACT_HEAD' }
+    elseif ($route.independentReview) { $scope = 'TARGETED_PROOF' }
+    elseif ($Facts.changeKind -ceq 'style') { $scope = 'VISUAL' }
+    elseif ($Facts.effects -ccontains 'cross_module') { $scope = 'RELEVANT_MODULES' }
+    return [pscustomobject]@{ skills=$route.skills; proofs=$route.proofs; independentReview=$route.independentReview; testScope=$scope; repoWideAudit=$false; fullMavenDefault=$false }
+}
+function Assert-SemanticCase($Policy, $Case) {
+    $actual = Resolve-SemanticTask $Policy $Case.facts
+    Assert-SameSet $actual.skills $Case.expected.skills 'SEMANTIC_ROUTING_MISMATCH'
+    Assert-SameSet $actual.proofs $Case.expected.proofs 'SEMANTIC_ROUTING_MISMATCH'
+    foreach ($field in @('independentReview','testScope','repoWideAudit','fullMavenDefault')) {
+        Assert-Condition ($actual.$field -ceq $Case.expected.$field) 'SEMANTIC_ROUTING_MISMATCH'
+    }
+}
+
 $policy = Read-Json $PolicyPath
 $fixtures = Read-Json $FixturePath
 $inventory = @(Read-SkillInventory $AgentRoot)
@@ -157,7 +204,7 @@ foreach ($trigger in @($policy.canonicalSkills | ForEach-Object { $_.triggers })
 foreach ($tag in $policy.riskRequirements.PSObject.Properties.Name) {
     Assert-Condition (@($fixtures.cases | Where-Object { $_.input.riskTags -ccontains $tag }).Count -gt 0) 'RISK_COVERAGE_MISSING'
 }
-$requiredMutations = @('unknown_target','duplicate_identity','legacy_active','missing_file','extra_file','wrong_name','empty_description','unknown_capability','unknown_risk','ordinary_all','risk_downgrade','missing_postgres','credential_downgrade','trading_downgrade','unsafe_identity','duplicate_trigger','trigger_risk_downgrade')
+$requiredMutations = @('unknown_target','duplicate_identity','legacy_active','missing_file','extra_file','wrong_name','empty_description','unknown_capability','unknown_risk','ordinary_all','risk_downgrade','missing_postgres','credential_downgrade','trading_downgrade','unsafe_identity','duplicate_trigger','trigger_risk_downgrade','missing_flyway','semantic_rule_removed')
 Assert-SameSet @($fixtures.negativeCases | ForEach-Object { $_.mutation }) $requiredMutations 'NEGATIVE_COVERAGE_MISSING'
 foreach ($negative in $fixtures.negativeCases) {
     $candidate = Copy-Data $policy
@@ -177,6 +224,8 @@ foreach ($negative in $fixtures.negativeCases) {
             'unknown_risk' { $ordinary.input.riskTags = @('unknown-risk') }
             'ordinary_all' { $ordinary.expected.skills = @($candidate.canonicalSkills | ForEach-Object { $_.id }) }
             'risk_downgrade' { $candidate.riskRequirements.migration.risk = 'ORDINARY' }
+            'missing_flyway' { $candidate.riskRequirements.migration.proofs = @($candidate.riskRequirements.migration.proofs | Where-Object { $_ -cne 'FLYWAY_VALIDATE' }) }
+            'semantic_rule_removed' { $candidate.semanticRouting.rules = @(); foreach ($semantic in $fixtures.semanticCases) { Assert-SemanticCase $candidate $semantic } }
             'missing_postgres' { $candidate.riskRequirements.migration.proofs = @('FORWARD_ONLY','HISTORICAL_MIGRATION_IMMUTABLE') }
             'credential_downgrade' { $candidate.riskRequirements.credential.independentReview = $false }
             'trading_downgrade' { $candidate.riskRequirements.trading.proofs = @('POSTGRESQL_PROOF') }
@@ -203,3 +252,32 @@ Assert-Policy $extended $extendedView
 Assert-Case $extended ([pscustomobject]@{ input=[pscustomobject]@{ capabilities=@('extension_probe'); riskTags=@() }; expected=[pscustomobject]@{ skills=@('extension-probe'); risk='ORDINARY'; independentReview=$false; proofs=@() } })
 Write-Output "PASS dynamic-inventory-extension=$($extended.canonicalSkills.Count)"
 Write-Output "SUMMARY canonical=$($policy.canonicalSkills.Count) filesystem=$($inventory.Count) fixtures=$($fixtures.cases.Count) negative=$($fixtures.negativeCases.Count) legacy-active=0 duplicate-identities=0 unknown-targets=0"
+
+Assert-Condition ($fixtures.semanticCases.Count -gt 0) 'SEMANTIC_CASES_MISSING'
+Assert-Strings @($fixtures.semanticCases | ForEach-Object { $_.id }) 'DUPLICATE_SEMANTIC_ID'
+foreach ($case in $fixtures.semanticCases) {
+    Assert-Condition (-not [string]::IsNullOrWhiteSpace($case.prompt)) 'SEMANTIC_PROMPT_MISSING'
+    Assert-SemanticCase $policy $case
+    Write-Output "PASS semantic=$($case.id) scope=$($case.expected.testScope)"
+}
+# 事实不变而措辞带历史词时，映射结果不应变化。
+$paraphrase = Copy-Data $fixtures.semanticCases[0]
+$paraphrase.prompt = 'Historical strategy database deploy references; actual change remains a local Java fix.'
+Assert-SemanticCase $policy $paraphrase
+# 合理收敛可减少目录，校验器不绑定历史数量或文件名。
+$reduced = Copy-Data $policy
+$removedId = $reduced.canonicalSkills[-1].id
+$removedTriggers = @($reduced.canonicalSkills[-1].triggers)
+$reduced.semanticRouting.rules = @($reduced.semanticRouting.rules | Where-Object { @($_.capabilities | Where-Object { $removedTriggers -ccontains $_ }).Count -eq 0 })
+$reduced.canonicalSkills = @($reduced.canonicalSkills | Where-Object { $_.id -cne $removedId })
+Assert-Policy $reduced @($inventory | Where-Object { $_.id -cne $removedId })
+foreach ($invalid in @(
+    [pscustomobject]@{ facts=[pscustomobject]@{ changeKind='docs'; effects=@('trading_state') }; code='CONTRADICTORY_TASK_FACTS' },
+    [pscustomobject]@{ facts=[pscustomobject]@{ changeKind='unknown'; effects=@() }; code='UNKNOWN_CHANGE_KIND' },
+    [pscustomobject]@{ facts=[pscustomobject]@{ changeKind='code'; effects=@('unknown') }; code='UNKNOWN_EFFECT' }
+)) {
+    $errorCode = $null
+    try { $null = Resolve-SemanticTask $policy $invalid.facts } catch { $errorCode = $_.Exception.Message }
+    Assert-Condition ($errorCode -ceq $invalid.code) 'SEMANTIC_NEGATIVE_FAILED'
+}
+Write-Output "SUMMARY semantic=$($fixtures.semanticCases.Count) paraphrase=1 invalid-facts=3 dynamic-consolidation=PASS"
