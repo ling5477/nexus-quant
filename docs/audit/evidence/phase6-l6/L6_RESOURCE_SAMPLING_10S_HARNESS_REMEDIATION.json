@@ -1,0 +1,848 @@
+{
+  "result": "PASS",
+  "runId": "0634d254-c0d2-45c3-9c7c-bad6a166dc0c",
+  "runPath": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-active\\0634d254-c0d2-45c3-9c7c-bad6a166dc0c",
+  "samples": 12,
+  "sampleIntervalMillis": 10000,
+  "mandatoryMissing": 0,
+  "cadenceViolations": 0,
+  "cachedStaleSubstitutions": 0,
+  "maxStartLagMillis": 15,
+  "maxCollectionMillis": 389,
+  "actualIntervalsMillis": [
+    10005,
+    10009,
+    9988,
+    10010,
+    9988,
+    10007,
+    10007,
+    9996,
+    9997,
+    9994,
+    10008
+  ],
+  "phaseSamples": {
+    "WARMUP": 2,
+    "ACTIVE": 9,
+    "DRAIN": 1
+  },
+  "perResource": {
+    "nq0": {
+      "acquisitionTimeoutCount": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0.0,
+        "max": 0.0,
+        "first": 0.0,
+        "last": 0.0
+      },
+      "acquisitionTimeoutDelta": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0.0,
+        "max": 0.0,
+        "first": 0.0,
+        "last": 0.0
+      },
+      "active": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0,
+        "max": 1,
+        "first": 0,
+        "last": 0
+      },
+      "candidateAge": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12
+      },
+      "commandQueue": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12
+      },
+      "gc": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12
+      },
+      "heapCommitted": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 128974848,
+        "max": 128974848,
+        "first": 128974848,
+        "last": 128974848
+      },
+      "heapMax": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 536870912,
+        "max": 536870912,
+        "first": 536870912,
+        "last": 536870912
+      },
+      "heapUsed": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 69785352,
+        "max": 93902600,
+        "first": 69785352,
+        "last": 93902600
+      },
+      "idle": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 9,
+        "max": 10,
+        "first": 10,
+        "last": 10
+      },
+      "metricsExecutor": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12
+      },
+      "observations": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12
+      },
+      "peakThreads": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 22,
+        "max": 25,
+        "first": 22,
+        "last": 25
+      },
+      "pending": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "poolMax": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 10,
+        "max": 10,
+        "first": 10,
+        "last": 10
+      },
+      "threads": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 22,
+        "max": 24,
+        "first": 22,
+        "last": 23
+      },
+      "tickCompleted": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0,
+        "max": 22,
+        "first": 0,
+        "last": 22
+      },
+      "tickFailed": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "tickStarted": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0,
+        "max": 22,
+        "first": 0,
+        "last": 22
+      }
+    },
+    "nq1": {
+      "acquisitionTimeoutCount": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0.0,
+        "max": 0.0,
+        "first": 0.0,
+        "last": 0.0
+      },
+      "acquisitionTimeoutDelta": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0.0,
+        "max": 0.0,
+        "first": 0.0,
+        "last": 0.0
+      },
+      "active": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0,
+        "max": 1,
+        "first": 1,
+        "last": 0
+      },
+      "candidateAge": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12
+      },
+      "commandQueue": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12
+      },
+      "gc": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12
+      },
+      "heapCommitted": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 124780544,
+        "max": 124780544,
+        "first": 124780544,
+        "last": 124780544
+      },
+      "heapMax": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 536870912,
+        "max": 536870912,
+        "first": 536870912,
+        "last": 536870912
+      },
+      "heapUsed": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 54892176,
+        "max": 103180616,
+        "first": 85354824,
+        "last": 58037904
+      },
+      "idle": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 9,
+        "max": 10,
+        "first": 9,
+        "last": 10
+      },
+      "metricsExecutor": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12
+      },
+      "observations": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12
+      },
+      "peakThreads": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 22,
+        "max": 25,
+        "first": 22,
+        "last": 25
+      },
+      "pending": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "poolMax": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 10,
+        "max": 10,
+        "first": 10,
+        "last": 10
+      },
+      "threads": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 22,
+        "max": 24,
+        "first": 22,
+        "last": 23
+      },
+      "tickCompleted": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0,
+        "max": 22,
+        "first": 0,
+        "last": 22
+      },
+      "tickFailed": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "tickStarted": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0,
+        "max": 22,
+        "first": 0,
+        "last": 22
+      }
+    },
+    "venue": {
+      "active": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 1,
+        "max": 1,
+        "first": 1,
+        "last": 1
+      },
+      "capacity": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 16,
+        "max": 16,
+        "first": 16,
+        "last": 16
+      },
+      "completed": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 3,
+        "max": 225,
+        "first": 3,
+        "last": 225
+      },
+      "queue": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "rejected": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      }
+    },
+    "postgres": {
+      "actionable": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "appConnections": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 20,
+        "max": 20,
+        "first": 20,
+        "last": 20
+      },
+      "auditRows": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0,
+        "max": 330,
+        "first": 0,
+        "last": 330
+      },
+      "backlog": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "cursor": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12
+      },
+      "databaseConnections": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 22,
+        "max": 22,
+        "first": 22,
+        "last": 22
+      },
+      "eventRows": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0,
+        "max": 32,
+        "first": 0,
+        "last": 32
+      },
+      "idleInTransaction": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 0,
+        "max": 1,
+        "first": 1,
+        "last": 0
+      },
+      "transactions": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 319,
+        "max": 2149,
+        "first": 319,
+        "last": 2149
+      }
+    },
+    "os": {
+      "fd": {
+        "availability": [
+          "NOT_APPLICABLE"
+        ],
+        "sampleCount": 12
+      },
+      "handles": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 2369,
+        "max": 2419,
+        "first": 2409,
+        "last": 2419
+      },
+      "processes": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12
+      }
+    },
+    "files": {
+      "logBytes": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 12316,
+        "max": 185412,
+        "first": 12316,
+        "last": 185412
+      },
+      "logDeltaBytes": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 6768,
+        "max": 18033,
+        "first": 6768,
+        "last": 18033
+      },
+      "ownedTempBytes": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 51814,
+        "max": 487138,
+        "first": 51814,
+        "last": 487138
+      },
+      "ownedTempFileCount": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 9,
+        "max": 19,
+        "first": 9,
+        "last": 19
+      }
+    },
+    "ownership": {
+      "ownedContainerCount": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 1,
+        "max": 1,
+        "first": 1,
+        "last": 1
+      },
+      "ownedProcessCount": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12,
+        "min": 4,
+        "max": 4,
+        "first": 4,
+        "last": 4
+      },
+      "pidGenerations": {
+        "availability": [
+          "MEASURED"
+        ],
+        "sampleCount": 12
+      }
+    }
+  },
+  "phases": [
+    {
+      "phase": "warmup",
+      "startElapsedNanos": 1097400,
+      "endElapsedNanos": 15000316500,
+      "scheduledEndElapsedNanos": 15000000000,
+      "durationNanos": 14999219100
+    },
+    {
+      "phase": "active",
+      "startElapsedNanos": 15000361700,
+      "endElapsedNanos": 105001042600,
+      "scheduledEndElapsedNanos": 105000000000,
+      "durationNanos": 90000680900
+    },
+    {
+      "phase": "drain",
+      "startElapsedNanos": 105001073700,
+      "endElapsedNanos": 115000954600,
+      "scheduledEndElapsedNanos": 115000000000,
+      "durationNanos": 9999880900
+    }
+  ],
+  "business": {
+    "orders": 4,
+    "trades": 4,
+    "ledger": 16,
+    "position": "0.4",
+    "duplicates": 0,
+    "orphans": 0
+  },
+  "checkpoints": 5,
+  "sameStateErrors": 0,
+  "backlogFinal": 0,
+  "cleanup": true,
+  "productionDelta": 0,
+  "existingEvidenceUnchanged": true,
+  "tests": {
+    "targeted-01": {
+      "tests": 12,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "targeted-02": {
+      "tests": 12,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "short-01": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "candidate": [
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ActiveStabilityTest.java",
+      "sha256": "93d3de81f4b12a277a0acc8dcca200143ee6daebdb6263b6c4807a0b4fe7a6f1"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6MetricsEndpoint.java",
+      "sha256": "d6d9101e542ea474103b82a1cb7e05a2ca60f5363a33fc35b78ac05d22988620"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6QualificationControls.java",
+      "sha256": "f377149d17d8b005a7348c08d6b694ca4a058fd4d7e8d60d076c50e95f668d9f"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ResourceSampler.java",
+      "sha256": "5f587bff542dc3d206898ceaf2e3579384e6abaddfa1ced02a5964ba88ac8b36"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ResourceSamplerTest.java",
+      "sha256": "a58598f841f9f86b80bd4c4d71034c7920108f6f465f2a2ebe8fc651dec0a158"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6RuntimeResources.java",
+      "sha256": "855cb9232c62d9604ee094a3273e0258b1e575f5838f7676410022ba577d28a1"
+    }
+  ],
+  "baselineHead": "23a7135ad8e0574373c1b818dfed010dc7479a71",
+  "formalRun": "NOT_RUN",
+  "l6": "NOT_ACCEPTED",
+  "noiseBand": "NOT_CHANGED_NOT_CALIBRATED_IN_SAMPLING_TASK",
+  "task": "NQ-GATEAUDIT-PHASE6-L6-RESOURCE-SAMPLING-10S-HARNESS-REMEDIATION",
+  "decision": "PASS / L6_RESOURCE_SAMPLING_10S_HARNESS_READY / MANDATORY_RESOURCE_CADENCE_10S_VERIFIED / CHECKPOINT_AND_SAMPLER_SEPARATED / MANDATORY_MEASUREMENT_MISSING_0 / PRODUCTION_DELTA_0 / P0_0 / P1_0 / READY_FOR_EXACT_HEAD_CI",
+  "originalBlocker": "L6_A_MANDATORY_RESOURCE_CADENCE_MISMATCH / historical preflight BLOCKED preserved",
+  "beforeCadence": "JVM fixed delay 10s; Venue/OS/files/audit/event measurements in >=30s heavy checkpoints",
+  "afterCadence": "One controller fixed-rate 10s clock, fresh observations from all seven collectors; checkpoint only business oracle",
+  "cadenceBudget": {
+    "intervalMillis": 10000,
+    "maxStartLagMillis": 2000,
+    "maxCollectionMillis": 8000,
+    "frozenBeforeRuntime": true,
+    "notLeakThresholds": true
+  },
+  "resourcesOwnership": "Owned run directory only; 2 NQ + Venue + controller PID generations; exact owned PG container ID; no global process/directory/docker scan",
+  "independentReview": "NOT_REQUIRED_TEST_HARNESS_ONLY_PER_USER_SECTION_13",
+  "severity": {
+    "P0": 0,
+    "P1": 0,
+    "newP2": 0,
+    "newP3": 0,
+    "originalSamplingP3": "CLOSED_IN_CURRENT_HARNESS; historical BLOCKED unchanged",
+    "historicalOtherP2P3": "UNCHANGED_NOT_REASSESSED"
+  },
+  "cleanupReadback": {
+    "checkedPids": [
+      12088,
+      5108,
+      22020,
+      8316
+    ],
+    "survivors": [],
+    "container": "3e370bd7691ebee6c9604c5ba164faef3b112492b8fa1253d9e9ccae2af2560d",
+    "remainingContainer": null,
+    "checkedAt": "2026-09-13T05:11:34.4806574Z"
+  },
+  "rawArtifacts": [
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\baseline-ci.json",
+      "sha256": "7760c95633cb23797f59b3566bbd74c117e68ec0233a5c80c74105b14d19fd16",
+      "bytes": 22176
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\baseline-inventory.json",
+      "sha256": "97b19456710fe5d1aa6dca6e441a7985d2794262248e0600d1dbd10b3aa0c83a",
+      "bytes": 792651
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\baseline-status.txt",
+      "sha256": "d88d20e057e1d830bffd953e6dfda4475de7ec2be5af667d763fb444acfba95b",
+      "bytes": 325
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\candidate-harness.json",
+      "sha256": "ef37322f4b9f592d1782825a8eaa1761239ed742795ff528ac10fc9822be9181",
+      "bytes": 1212
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\cleanup.json",
+      "sha256": "6a9ddf251dee58567614a0dc2e9ea8967cfa40063de5cbb4fb661804fa3becfc",
+      "bytes": 259
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\run.py",
+      "sha256": "818a287c9328a9fa8e8f44393f11205546e858089ae5a2880681e52ab1aa6d37",
+      "bytes": 1696
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\short-01-command.json",
+      "sha256": "ce010d8e1e5d2421321402e8d0615520101994cae1edfad3c3bb3e272b24c3f0",
+      "bytes": 626
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\short-01-xml\\TEST-com.guidinglight.nexusquant.app.smoke.L6ActiveStabilityTest.xml",
+      "sha256": "368be3e41559ee23ffd667ac9de5bfccb3702b0718eccf60dac07b38fa873b6c",
+      "bytes": 42107
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\short-01.log",
+      "sha256": "257891f8ea1af3211a476f1832378103e97239dbd7d209c020fbb4b08709c637",
+      "bytes": 41563
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\short-run-raw.zip",
+      "sha256": "a860ba0d1965aa03bbac0d9085be4fb42d2b427338836dbad95c635ff92a03f5",
+      "bytes": 70542
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\targeted-01-command.json",
+      "sha256": "43cbd131908acc8b7d9d1b66baeebf760123aa5b477f3a92db3122bf671e5a62",
+      "bytes": 617
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\targeted-01-xml\\TEST-com.guidinglight.nexusquant.app.smoke.L6ProcessOutputTest.xml",
+      "sha256": "4a2908f240856786823c40a033c39d8096e1c8deb887bb3ab8b60a4cd0606eee",
+      "bytes": 31803
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\targeted-01-xml\\TEST-com.guidinglight.nexusquant.app.smoke.L6ReadinessContractTest.xml",
+      "sha256": "2f17fcb0b59f163610b3704ac680121405425b8fdd30dc3d40dded4576a1d140",
+      "bytes": 32214
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\targeted-01-xml\\TEST-com.guidinglight.nexusquant.app.smoke.L6ResourceSamplerTest.xml",
+      "sha256": "7656c16197fece42f9ab4a055286725d26caf6419af9050fcf835a6bf0faf845",
+      "bytes": 32410
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\targeted-01.log",
+      "sha256": "6912d3f3e8ce11f2a12c5009ab8b089c43fe3a01b35dde5c6fc7f12706acbce8",
+      "bytes": 31793
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\targeted-02-command.json",
+      "sha256": "42411ccffc4196e4b0eacd6e26c7a6b862c88607c7b256303e739d7bf3e2be21",
+      "bytes": 617
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\targeted-02-xml\\TEST-com.guidinglight.nexusquant.app.smoke.L6ProcessOutputTest.xml",
+      "sha256": "b76c25ccb016254d5572c35c9984d691b3599533205512b66aefd4dbf0b7be12",
+      "bytes": 31800
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\targeted-02-xml\\TEST-com.guidinglight.nexusquant.app.smoke.L6ReadinessContractTest.xml",
+      "sha256": "864a3441fdd1163f18d0c58bf291eb9c054afc72bacf6810ae895f20a6d64dce",
+      "bytes": 32211
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\targeted-02-xml\\TEST-com.guidinglight.nexusquant.app.smoke.L6ResourceSamplerTest.xml",
+      "sha256": "f49cb1788eb2bd2cd63d50e2c0aea4d9254bfaf016d6b410429b60782270c020",
+      "bytes": 32406
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\targeted-02.log",
+      "sha256": "a076a0faf1c306d61f4be551c618c7964ebaba62326ee26d5b28862200179863",
+      "bytes": 31793
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\verification-output.json",
+      "sha256": "057893e48fa27bb5a4100895b5996e0163ca97439573799a5474c5320b13bcbd",
+      "bytes": 2099
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\verified-results.json",
+      "sha256": "a2b286d78cbfdfd1548549d14be43678744bd3d8cea67f504c16d43368dc7975",
+      "bytes": 15259
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\verify.py",
+      "sha256": "a1130b96bc64f23e18a2c562cba9913b7b5edc1b249916d92c0fce11c241fff7",
+      "bytes": 6388
+    }
+  ]
+}

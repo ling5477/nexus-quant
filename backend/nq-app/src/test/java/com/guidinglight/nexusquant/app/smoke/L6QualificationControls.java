@@ -32,9 +32,6 @@ import java.time.ZoneOffset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.io.BufferedWriter;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -49,7 +46,6 @@ final class L6QualificationControls implements AutoCloseable {
     static boolean enabled;
     private final ConfigurableApplicationContext context;
     private final ObjectMapper json = new ObjectMapper();
-    private final ScheduledExecutorService sampler = Executors.newSingleThreadScheduledExecutor();
     private final AtomicReference<Throwable> failure = new AtomicReference<>();
     private final AtomicInteger tickStarted = new AtomicInteger();
     private final AtomicInteger tickCompleted = new AtomicInteger();
@@ -60,8 +56,7 @@ final class L6QualificationControls implements AutoCloseable {
     private final AtomicReference<ValidationOperationsRuntimeEvidenceOverviewReadModel> validation = new AtomicReference<>();
     private final Counter acquisitionTimeout;
     private final double timeoutStart;
-    private final BufferedWriter output;
-    private int samples;
+    private final L6MetricsEndpoint metricsEndpoint;
     private String paper;
 
     L6QualificationControls(ConfigurableApplicationContext context) throws Exception {
@@ -106,18 +101,13 @@ final class L6QualificationControls implements AutoCloseable {
             return result;
         });
         ReflectionTestUtils.setField(context.getBean(ValidationEvidenceRefreshService.class), "queryService", aggregateProxy.getProxy());
-        output = Files.newBufferedWriter(Path.of("l6-resources-" + ProcessHandle.current().pid() + ".ndjson"));
-        sampler.scheduleWithFixedDelay(() -> {
-            try { sample(); } catch (Throwable error) { failure.compareAndSet(null, error); }
-        }, 0, 10, TimeUnit.SECONDS);
-    }
-
-    private synchronized void sample() throws Exception {
-        if (++samples > 500) throw new IllegalStateException("L6 resource sample budget");
-        output.write(json.writeValueAsString(resources())); output.newLine(); output.flush();
+        metricsEndpoint = new L6MetricsEndpoint(this::resources);
+        try { metricsEndpoint.publish(Path.of("l6-metrics-" + ProcessHandle.current().pid() + ".endpoint")); }
+        catch (Exception error) { metricsEndpoint.close(); throw error; }
     }
 
     private ObjectNode resources() {
+        if (failure.get() != null) throw new IllegalStateException("L6 timer failure", failure.get());
         var pool = context.getBean(HikariDataSource.class);
         var bean = pool.getHikariPoolMXBean();
         var heap = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
@@ -191,16 +181,15 @@ final class L6QualificationControls implements AutoCloseable {
     }
 
     @Override public void close() throws Exception {
-        commandExecutor.shutdown();
-        if (!commandExecutor.awaitTermination(15, TimeUnit.SECONDS)) {
-            commandExecutor.shutdownNow();
-            throw new IllegalStateException("L6 command executor shutdown");
-        }
-        sampler.shutdown();
         try {
-            if (!sampler.awaitTermination(15, TimeUnit.SECONDS)) throw new IllegalStateException("L6 sampler shutdown");
-            sample();
-            if (failure.get() != null) throw new IllegalStateException("L6 sampler failed", failure.get());
-        } finally { output.close(); }
+            commandExecutor.shutdown();
+            if (!commandExecutor.awaitTermination(15, TimeUnit.SECONDS)) {
+                commandExecutor.shutdownNow();
+                throw new IllegalStateException("L6 command executor shutdown");
+            }
+        } finally {
+            metricsEndpoint.close();
+        }
+        if (failure.get() != null) throw new IllegalStateException("L6 timer failed", failure.get());
     }
 }
