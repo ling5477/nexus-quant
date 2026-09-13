@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/resource-summary.json",
+      "fileSha256": "87a09df4006fc80025d90a3a66563d72314ce876d6ce5fa71dfbecbd69ca9065",
+      "ruleId": "generic-api-key",
+      "startLine": 5335,
+      "endLine": 5335,
+      "fieldName": "sampleToken",
+      "fullValueSha256": "82cac9c09c2ee00122f7c9acd9741d3e12acf0f0045751f044900edd0068cf9a",
+      "reason": "已核实为L6ResourceSampler随机UUID加采样序号的完整关联身份；原始run与采样时间对应，gitleaks分块仅报告前缀。",
+      "owner": "Qualification evidence and CI security owners",
+      "removalTrigger": "文件、行、字段或完整值变化必须重新验证来源并审查；扫描器不再报告该项时删除登记。"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/metrics/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/resource-summary.json",
+      "fileSha256": "777d8495db68d5a1bdd39dc656efd2974e690fcaed5189707f0eee596c33aed2",
+      "ruleId": "generic-api-key",
+      "startLine": 12736,
+      "endLine": 12736,
+      "fieldName": "sampleToken",
+      "fullValueSha256": "f2414afae0bec91e6074396f7dce9f6d839c1b4fab4303efd3737a783de2fbcf",
+      "reason": "已核实为L6ResourceSampler随机UUID加采样序号的完整关联身份；原始run与采样时间对应，gitleaks分块仅报告前缀。",
+      "owner": "Qualification evidence and CI security owners",
+      "removalTrigger": "文件、行、字段或完整值变化必须重新验证来源并审查；扫描器不再报告该项时删除登记。"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/metrics/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/resource-summary.json",
+      "fileSha256": "777d8495db68d5a1bdd39dc656efd2974e690fcaed5189707f0eee596c33aed2",
+      "ruleId": "generic-api-key",
+      "startLine": 18567,
+      "endLine": 18567,
+      "fieldName": "sampleToken",
+      "fullValueSha256": "1602d3e2f9ba4cb5cef37b437fe1528e971c9eaf71a48155da3aac290e700ffb",
+      "reason": "已核实为L6ResourceSampler随机UUID加采样序号的完整关联身份；原始run与采样时间对应，gitleaks分块仅报告前缀。",
+      "owner": "Qualification evidence and CI security owners",
+      "removalTrigger": "文件、行、字段或完整值变化必须重新验证来源并审查；扫描器不再报告该项时删除登记。"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/calibration-run.json",
+      "fileSha256": "cba8dff24e7c534acb379ef48da43e9b3514d98a414447c659c27bfd426190bb",
+      "ruleId": "generic-api-key",
+      "startLine": 23221,
+      "endLine": 23221,
+      "fieldName": "sampleToken",
+      "fullValueSha256": "c0a6e7b0200a4600e9ddb8a789553d716cc5524ccfb6a33dc8ff0f7ae7f73c0f",
+      "reason": "已核实为L6ResourceSampler随机UUID加采样序号的完整关联身份；原始run与采样时间对应，gitleaks分块仅报告前缀。",
+      "owner": "Qualification evidence and CI security owners",
+      "removalTrigger": "文件、行、字段或完整值变化必须重新验证来源并审查；扫描器不再报告该项时删除登记。"
+    }
+  ]
+}

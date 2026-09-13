@@ -3,7 +3,7 @@
   "exceptions": [
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "9d1c2b35447221bd51d7340850ad61f9708d7cd1023e70698d816ebd31789eb3",
+      "sha256": "02e4ab025000ca1c2962d8b0ce67c1df362b2da3d52b707ca728c577c869c083",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",
@@ -650,6 +650,14 @@
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
     },
     {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalManifest.java",
+      "sha256": "4cc5777de0256e17712147c9be5fb8fd9c083195c88c6cddee3ec2dcb8000620",
+      "kind": "FIXTURE_IDENTITY",
+      "reason": "只读加载冻结qualification manifest的test-only fixture身份；没有部署profile或生产阶段入口。",
+      "owner": "L6 qualification harness owner",
+      "removalTrigger": "Manifest fixture格式或受保护合同变更时重新审查；保留等效fail-closed证明后方可退休。"
+    },
+    {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/TradingVenueGatewayReadinessRuntimeSmokeTest.java",
       "sha256": "f6320b466bbd1894638096c59c1f51b1c28ff42e5883d4db102dca8523400889",
       "kind": "FIXTURE_IDENTITY",
@@ -1264,6 +1272,14 @@
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",
       "removalTrigger": "Current authority or versioned proof contract changes; historical evidence must remain readable."
+    },
+    {
+      "path": "scripts/ci/reviewed-gitleaks-findings.json",
+      "sha256": "96c7c889aa0d969eccd96eac953029705415428db6f9b47e6e9961ec1b6264d2",
+      "kind": "GOVERNANCE_CONTRACT",
+      "reason": "精确绑定已审synthetic采样finding的文件和完整字段hash；阶段名称仅为不可变证据来源定位，不是运行阶段选择。",
+      "owner": "CI security and qualification evidence owners",
+      "removalTrigger": "批准的来源或误报合同变化时重新审查；扫描不再返回已审项时删除相应登记。"
     },
     {
       "path": "scripts/ci/tests/Test-DeliveryEvidence.ps1",

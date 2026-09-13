@@ -45,6 +45,19 @@ class StageAssetGuardTest(unittest.TestCase):
         self.assertEqual([], guard.check(self.root)[0])
         self.assertEqual(guard.check(self.root), guard.check(self.root))
 
+    def test_formal_manifest_registration_rejects_content_drift(self):
+        repository = Path(__file__).resolve().parents[3]
+        entries = json.loads((repository / guard.POLICY_PATH).read_text(encoding="utf-8"))["exceptions"]
+        entry = next(e for e in entries if e["path"].endswith("/L6FormalManifest.java"))
+        source = (repository / entry["path"]).read_text(encoding="utf-8")
+        self.write(entry["path"], source)
+        self.policy([entry])
+        self.assertEqual([], guard.check(self.root)[0])
+        # 修改实际fixture的常量字节；不能借已审路径接受新语义。
+        self.assertIn("2_000_000", source)
+        self.write(entry["path"], source.replace("2_000_000", "3_000_000", 1))
+        self.assert_rejected()
+
     def evolution_fixture(self):
         path = "backend/app/src/test/java/CompatibilityTest.java"
         self.write(path, 'class CompatibilityTest { String fixture = "GATEY_WIRE_V1"; }')
