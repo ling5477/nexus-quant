@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.Availability;
 import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.FreshnessStatus;
+import com.guidinglight.nexusquant.strategy.application.shadowvalidation.ShadowValidationWorkflowOverviewQueryService;
+import com.guidinglight.nexusquant.strategy.domain.port.ShadowValidationWorkflowOverviewFacts;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunFactRepository;
@@ -27,6 +29,8 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatusUpda
 
 import java.time.Clock;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.time.Duration;
 import java.time.ZoneOffset;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -214,7 +218,7 @@ class ShadowRunReadOnlyQueryServiceTest {
         assertEquals(1, overview.staleRuns());
         assertEquals(Availability.PARTIAL, overview.evidenceMetadata().availability());
         assertEquals(FreshnessStatus.UNKNOWN, overview.evidenceMetadata().freshnessStatus());
-        assertEquals(null, overview.evidenceMetadata().staleAfterSeconds());
+        assertEquals(existingShadowPolicySeconds(), overview.evidenceMetadata().staleAfterSeconds());
         assertEquals("SOURCE_PARTIAL", overview.evidenceMetadata().staleReason());
         assertEquals(RUN_ID, overview.latestRun().shadowRunId());
         assertEquals("COMPLETED", overview.latestRun().status());
@@ -292,8 +296,58 @@ class ShadowRunReadOnlyQueryServiceTest {
 
     @Test
     void shouldKeepOverviewServiceDependencyAwayFromRunnerAdapterAccountLedgerAndOrderPorts() {
-        List<String> dependencyNames = List.of(ShadowRunOverviewQueryService.class.getDeclaredFields()).stream()
+        assertOverviewDependencies(List.of(ShadowRunOverviewQueryService.class.getDeclaredFields()));
+    }
+
+    @Test
+    void shouldUseExistingShadowPolicyAtFreshnessBoundaryWithoutRefreshingFactTime() {
+        long policySeconds = existingShadowPolicySeconds();
+        ShadowRunOverviewFacts completeFacts = facts(1, 0, 0, 0, 1, 0,
+                Optional.of(run()), Optional.of(report(NOW)));
+        for (long age : new long[]{policySeconds - 1, policySeconds, policySeconds + 1}) {
+            var metadata = new ShadowRunOverviewQueryService(
+                    new InMemoryShadowRunOverviewQueryPort(completeFacts),
+                    Clock.fixed(NOW.plusSeconds(age), ZoneOffset.UTC))
+                    .overview("trace-policy-boundary").evidenceMetadata();
+            assertEquals(Availability.AVAILABLE, metadata.availability());
+            assertEquals(policySeconds, metadata.staleAfterSeconds());
+            assertEquals(NOW, metadata.lastCalculatedAt());
+            assertEquals(age, metadata.ageSeconds());
+            assertEquals(age <= policySeconds ? FreshnessStatus.FRESH : FreshnessStatus.STALE,
+                    metadata.freshnessStatus());
+            assertEquals(age <= policySeconds ? null : "STALE_THRESHOLD_EXCEEDED", metadata.staleReason());
+        }
+    }
+
+    private long existingShadowPolicySeconds() {
+        // 从同类生产 owner 的公开响应读取策略，并固定七天契约，避免两个 owner 同时漂移仍通过。
+        Long seconds = new ShadowValidationWorkflowOverviewQueryService(ShadowValidationWorkflowOverviewFacts::empty)
+                .overview("trace-existing-shadow-policy").evidenceMetadata().staleAfterSeconds();
+        assertEquals(Duration.ofDays(7).getSeconds(), seconds);
+        return seconds;
+    }
+
+    @Test
+    void shouldRejectUnexpectedInstanceStateAndMutableStaticField() {
+        for (Field unexpected : UnexpectedOverviewFields.class.getDeclaredFields()) {
+            var fields = new ArrayList<>(List.of(ShadowRunOverviewQueryService.class.getDeclaredFields()));
+            fields.add(unexpected);
+            assertThrows(AssertionError.class, () -> assertOverviewDependencies(fields), unexpected.getName());
+        }
+    }
+
+    private static final class UnexpectedOverviewFields {
+        private Duration unexpectedState;
+        private static Duration mutableState;
+    }
+
+    private void assertOverviewDependencies(List<Field> fields) {
+        List<String> dependencyNames = fields.stream()
                 .filter(field -> !field.isSynthetic())
+                // 仅豁免已接受的不可变策略常量；未知字段、实例状态和可变静态字段仍参与精确比较。
+                .filter(field -> !(field.getDeclaringClass() == ShadowRunOverviewQueryService.class
+                        && field.getName().equals("STALE_AFTER") && field.getType() == Duration.class
+                        && Modifier.isStatic(field.getModifiers()) && Modifier.isFinal(field.getModifiers())))
                 .map(Field::getType)
                 .map(Class::getName)
                 .toList();
