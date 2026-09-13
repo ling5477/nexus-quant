@@ -1,0 +1,2656 @@
+{
+  "mode" : "FORMAL_L6_A",
+  "shortSmoke" : true,
+  "runId" : "f2a895a6-0202-42d1-844f-df4ae648ccf8",
+  "formalCalibrationAccepted" : true,
+  "l6AAccepted" : false,
+  "l6Accepted" : false,
+  "HEAD" : "d94f8512108fd7f8e9cbdeee14cfc8b064f2d5d8",
+  "controllerPid" : 19824,
+  "capacityPreflight" : "PASS",
+  "runOrderBudget" : 10,
+  "venueLogicalCapacity" : 10,
+  "l6SafetyCap" : 3000,
+  "manifestEntry" : {
+    "path" : "E:\\Project\\nexus-quant-gateaudit\\docs\\audit\\evidence\\phase6-l6\\L6_FORMAL_CALIBRATION_MANIFEST.json",
+    "sha256" : "922253c8934e32b7626ced2f9e42407a2a4313c665256b89c483e847ce6abaa6",
+    "semanticFingerprint" : "48ef0d8309ca356cf257ad791ee5511698d76aef269e6adab706bcf60936a6ab"
+  },
+  "frozenInput" : {
+    "schemaVersion" : 1,
+    "decision" : "PASS / L6_15MIN_NO_FAULT_CALIBRATION_ACCEPTED / HEALTHY_SUSTAINED_RATE_FROZEN / L6_25_PERCENT_ARRIVAL_RATE_FROZEN / RESOURCE_NOISE_BANDS_FROZEN / FORMAL_CALIBRATION_MANIFEST_ACCEPTED / CORRECTNESS_PRESERVED / P0_0 / P1_0 / L6_NOT_ACCEPTED / READY_TO_RESTART_L6_A_60MIN",
+    "formalCalibrationAccepted" : true,
+    "L6Accepted" : false,
+    "mode" : "L6_CALIBRATION",
+    "rawHarnessMode" : "CALIBRATION",
+    "runId" : "dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a",
+    "branch" : "audit/post-gatey-agent-baseline",
+    "sourceHead" : "d94f8512108fd7f8e9cbdeee14cfc8b064f2d5d8",
+    "sourceTree" : "0c010b7d80327f5e8ec994cd6a7073e6853fe3ea",
+    "exactHeadCi" : {
+      "runId" : 34753536151,
+      "head" : "d94f8512108fd7f8e9cbdeee14cfc8b064f2d5d8",
+      "status" : "SUCCESS",
+      "jobs" : 9,
+      "url" : "https://github.com/ling5477/nexus-quant/actions/runs/34753536151",
+      "verification" : "live gh run view; raw response hash bound"
+    },
+    "environment" : {
+      "os" : "Windows",
+      "jdk" : "21.0.9",
+      "postgres" : "16.15 (Debian 16.15-1.pgdg13+2)",
+      "flyway" : "V51",
+      "schemaValidated" : true,
+      "ownedPostgres" : 1,
+      "ownedVenue" : 1,
+      "nqActors" : 2,
+      "controller" : 1,
+      "tradeEnvironment" : "SIM",
+      "venue" : "Synthetic loopback",
+      "faults" : 0,
+      "restarts" : 0,
+      "killInjection" : 0,
+      "realProvider" : false,
+      "live" : false
+    },
+    "capacity" : {
+      "mode" : "L6_CALIBRATION",
+      "runOrderBudget" : 600,
+      "venueLogicalCapacity" : 600,
+      "l6SafetyCap" : 3000,
+      "preflight" : "PASS",
+      "businessOrdersAtPreflight" : 0,
+      "preflightEvidence" : "QualificationCapacity.start validates before executeCalibration creates fixture or runtime; parameters.json records PASS",
+      "l5Default300UsedForCeiling" : false
+    },
+    "warmupSeconds" : 300,
+    "measurementSeconds" : 600,
+    "measurement" : {
+      "measurementStart" : "2026-09-13T11:24:37.501960+00:00",
+      "measurementEnd" : "2026-09-13T11:34:37.501960+00:00",
+      "timestampBasis" : "UTC derived from recorded T0 plus monotonic offset; phase actuals retained separately",
+      "measurementElapsedMonotonic" : 600,
+      "measurementElapsedUnits" : "seconds",
+      "actualPhases" : [ {
+        "phase" : "WARMUP",
+        "startElapsedMillis" : 1,
+        "endElapsedMillis" : 300007,
+        "actualDurationMillis" : 300006
+      }, {
+        "phase" : "MEASUREMENT",
+        "startElapsedMillis" : 300007,
+        "endElapsedMillis" : 900012,
+        "actualDurationMillis" : 600005
+      } ],
+      "ordersAdmitted" : 240,
+      "ordersTerminal" : 240,
+      "fills" : 240,
+      "trades" : 240,
+      "TradeExecuted" : 240,
+      "ledgerCompleted" : 240,
+      "ledgerEntries" : 960,
+      "fullChainCompleted" : 240,
+      "totalFullChainCompleted" : 360,
+      "warmupFullChainCompleted" : 120,
+      "producerActiveSeconds" : 427.059,
+      "producerPausedSeconds" : 172.941,
+      "explicitBackpressureSeconds" : 172.934,
+      "eligibleSteadySeconds" : 427.059,
+      "completedPerMinute" : [ 24, 24, 24, 24, 24, 24, 24, 24, 24, 24 ],
+      "maximumFullChainObservationGapMillis" : 7057,
+      "maximumPauseMillis" : 2254,
+      "pauseIntervals" : [ {
+        "start" : 364,
+        "end" : 1111,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 5230,
+        "end" : 5980,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 10341,
+        "end" : 11078,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 15370,
+        "end" : 16120,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 20357,
+        "end" : 21110,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 25378,
+        "end" : 26236,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 30389,
+        "end" : 31348,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 35386,
+        "end" : 36344,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 40392,
+        "end" : 41362,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 45511,
+        "end" : 46482,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 50543,
+        "end" : 51500,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 55552,
+        "end" : 56525,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 60551,
+        "end" : 61516,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 65557,
+        "end" : 66516,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 70559,
+        "end" : 71628,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 75560,
+        "end" : 76748,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 80588,
+        "end" : 81763,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 85600,
+        "end" : 86795,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 90708,
+        "end" : 91893,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 95615,
+        "end" : 96790,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 100729,
+        "end" : 101915,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 105738,
+        "end" : 107036,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 110747,
+        "end" : 112048,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 115754,
+        "end" : 117031,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 120764,
+        "end" : 122172,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 125875,
+        "end" : 127282,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 130778,
+        "end" : 132178,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 135919,
+        "end" : 137308,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 140937,
+        "end" : 142330,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 145934,
+        "end" : 147437,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 150936,
+        "end" : 152428,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 155933,
+        "end" : 157446,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 160947,
+        "end" : 162453,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 165958,
+        "end" : 167568,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 171082,
+        "end" : 172695,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 176099,
+        "end" : 177722,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 181101,
+        "end" : 182714,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 186112,
+        "end" : 187722,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 191121,
+        "end" : 192746,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 196120,
+        "end" : 197856,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 201137,
+        "end" : 202859,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 206145,
+        "end" : 207881,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 211268,
+        "end" : 212999,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 216280,
+        "end" : 218123,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 221284,
+        "end" : 223224,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 226292,
+        "end" : 228228,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 231295,
+        "end" : 233246,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 236312,
+        "end" : 238266,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 241332,
+        "end" : 243286,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 246326,
+        "end" : 248254,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 251338,
+        "end" : 253287,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 256340,
+        "end" : 258268,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 261355,
+        "end" : 263297,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 266364,
+        "end" : 268305,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 271377,
+        "end" : 273317,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 276391,
+        "end" : 278332,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 281397,
+        "end" : 283350,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 286399,
+        "end" : 288337,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 291421,
+        "end" : 293362,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 296427,
+        "end" : 298356,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 300000,
+        "end" : 300007,
+        "reason" : "BOUNDARY"
+      }, {
+        "start" : 305899,
+        "end" : 307852,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 315898,
+        "end" : 317848,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 320913,
+        "end" : 322853,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 325916,
+        "end" : 327861,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 331026,
+        "end" : 332981,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 345935,
+        "end" : 347885,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 350958,
+        "end" : 352911,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 360976,
+        "end" : 362936,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 365989,
+        "end" : 367938,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 376000,
+        "end" : 377949,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 391030,
+        "end" : 392983,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 406055,
+        "end" : 407997,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 426085,
+        "end" : 428132,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 436087,
+        "end" : 438044,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 451108,
+        "end" : 453057,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 491165,
+        "end" : 493122,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 496192,
+        "end" : 498144,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 501183,
+        "end" : 503117,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 506183,
+        "end" : 508136,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 556234,
+        "end" : 558155,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 561250,
+        "end" : 563200,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 566254,
+        "end" : 568206,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 571261,
+        "end" : 573209,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 576276,
+        "end" : 578238,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 581274,
+        "end" : 583232,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 586284,
+        "end" : 588237,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 591294,
+        "end" : 593236,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 596305,
+        "end" : 598246,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 601326,
+        "end" : 603264,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 606329,
+        "end" : 608284,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 611332,
+        "end" : 613269,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 616343,
+        "end" : 618279,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 621342,
+        "end" : 623298,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 626348,
+        "end" : 628286,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 631354,
+        "end" : 633294,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 636389,
+        "end" : 638328,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 641387,
+        "end" : 643332,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 646381,
+        "end" : 648330,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 651409,
+        "end" : 653360,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 656414,
+        "end" : 658360,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 661431,
+        "end" : 663374,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 666435,
+        "end" : 668391,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 671441,
+        "end" : 673396,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 676444,
+        "end" : 678393,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 681558,
+        "end" : 683812,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 686460,
+        "end" : 688405,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 691487,
+        "end" : 693441,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 696484,
+        "end" : 698435,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 701496,
+        "end" : 703436,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 706512,
+        "end" : 708456,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 711512,
+        "end" : 713464,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 716527,
+        "end" : 718462,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 721544,
+        "end" : 723493,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 726547,
+        "end" : 728389,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 731561,
+        "end" : 733516,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 736676,
+        "end" : 738830,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 741685,
+        "end" : 743743,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 746682,
+        "end" : 748725,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 751569,
+        "end" : 753724,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 756568,
+        "end" : 758727,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 761579,
+        "end" : 763511,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 766596,
+        "end" : 768536,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 771601,
+        "end" : 773557,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 776607,
+        "end" : 778542,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 781639,
+        "end" : 783588,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 786641,
+        "end" : 788595,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 791639,
+        "end" : 793557,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 796650,
+        "end" : 798587,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 801666,
+        "end" : 803618,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 806668,
+        "end" : 808602,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 811674,
+        "end" : 813616,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 816685,
+        "end" : 818622,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 821690,
+        "end" : 823644,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 826690,
+        "end" : 828630,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 831688,
+        "end" : 833638,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 836708,
+        "end" : 838634,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 841721,
+        "end" : 843660,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 846725,
+        "end" : 848680,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 851735,
+        "end" : 853691,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 856742,
+        "end" : 858680,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 861752,
+        "end" : 863688,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 866758,
+        "end" : 868695,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 871764,
+        "end" : 873700,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 876786,
+        "end" : 878729,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 881783,
+        "end" : 883722,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 886788,
+        "end" : 888851,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 891793,
+        "end" : 893962,
+        "reason" : "BACKPRESSURE"
+      }, {
+        "start" : 896800,
+        "end" : 898969,
+        "reason" : "BACKPRESSURE"
+      } ],
+      "actorProgress" : {
+        "nq0" : {
+          "pid" : 25696,
+          "tickCompletedStart" : 60,
+          "tickCompletedEnd" : 178,
+          "reconciliationSuccessStart" : 121.0,
+          "reconciliationSuccessEnd" : 325.0
+        },
+        "nq1" : {
+          "pid" : 29236,
+          "tickCompletedStart" : 59,
+          "tickCompletedEnd" : 177,
+          "reconciliationSuccessStart" : 121.0,
+          "reconciliationSuccessEnd" : 325.0
+        }
+      },
+      "maximumSampledBacklog" : 0,
+      "identityProof" : "240 measurement-admitted identities completed before 900000ms; each completion follows delivered full relational oracle, never Order/Trade count alone"
+    },
+    "healthySustainedRate" : 0.5619832388499013,
+    "healthySustainedRateExact" : "80000/142353",
+    "raw25PercentRate" : 0.14049580971247533,
+    "raw25PercentRateExact" : "20000/142353",
+    "safetyCap" : 1,
+    "safetyCapApplied" : false,
+    "finalL6ArrivalRate" : 0.14049580971247533,
+    "finalL6ArrivalRateExact" : "20000/142353",
+    "units" : "orders/second",
+    "roundingPolicy" : "No rate rounding. Exact rational values authoritative; decimal JSON values are shortest round-trip binary64 representations. Reciprocal pacing is exactly representable in integer nanoseconds.",
+    "pacingInterval" : 7.11765,
+    "pacingIntervalUnits" : "seconds",
+    "pacingIntervalNanos" : 7117650000,
+    "formula" : "eligible observed full-chain completions / eligible measurement seconds",
+    "arrivalFormula" : "min(healthySustainedRate * 0.25, 1 order/second)",
+    "algorithmSource" : "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6CalibrationEvidence.java",
+    "sampling" : {
+      "intervalMillis" : 10000,
+      "totalSampleCount" : 90,
+      "warmupSampleCount" : 30,
+      "measurementSampleCount" : 60,
+      "measurementSampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+      "mandatoryMissing" : 0,
+      "staleReuse" : 0,
+      "cadenceViolation" : 0,
+      "maxStartLagMillis" : 16,
+      "maxCollectionMillis" : 392,
+      "maxStartLagMillisAllowed" : 2000,
+      "maxCollectionMillisAllowed" : 8000,
+      "samplerImplementation" : "com.guidinglight.nexusquant.app.smoke.L6ResourceSampler",
+      "collectorImplementation" : "com.guidinglight.nexusquant.app.smoke.L6RuntimeResources",
+      "platformExemption" : "FD NOT_APPLICABLE_WINDOWS; actual Windows handles measured for controller, Venue and both actors"
+    },
+    "noiseBands" : {
+      "heap" : [ {
+        "owner" : "nq0",
+        "pid" : 25696,
+        "collector" : "G1 Young Generation",
+        "status" : "FROZEN",
+        "method" : "distinct natural post-GC heapUsedAfterGc; same PID and collector; GC uptime maps event into measurement; no forced GC",
+        "sampleCount" : 25,
+        "lowWaterMin" : 53248800,
+        "lowWaterMax" : 53798664,
+        "range" : 549864,
+        "units" : "bytes",
+        "events" : [ {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 31,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 18,
+          "startUptimeMillis" : 308025,
+          "endUptimeMillis" : 308026,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 53252064,
+          "eventStartElapsedMillis" : 300285,
+          "eventEndElapsedMillis" : 300286
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 33,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 19,
+          "startUptimeMillis" : 333079,
+          "endUptimeMillis" : 333081,
+          "durationMillis" : 2,
+          "heapUsedAfterGc" : 53248800,
+          "eventStartElapsedMillis" : 325338,
+          "eventEndElapsedMillis" : 325340
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 36,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 20,
+          "startUptimeMillis" : 358166,
+          "endUptimeMillis" : 358168,
+          "durationMillis" : 2,
+          "heapUsedAfterGc" : 53266448,
+          "eventStartElapsedMillis" : 350425,
+          "eventEndElapsedMillis" : 350427
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 38,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 21,
+          "startUptimeMillis" : 383164,
+          "endUptimeMillis" : 383166,
+          "durationMillis" : 2,
+          "heapUsedAfterGc" : 53252496,
+          "eventStartElapsedMillis" : 375423,
+          "eventEndElapsedMillis" : 375425
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 41,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 22,
+          "startUptimeMillis" : 413266,
+          "endUptimeMillis" : 413268,
+          "durationMillis" : 2,
+          "heapUsedAfterGc" : 53256224,
+          "eventStartElapsedMillis" : 405525,
+          "eventEndElapsedMillis" : 405527
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 44,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 23,
+          "startUptimeMillis" : 443309,
+          "endUptimeMillis" : 443310,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 53331448,
+          "eventStartElapsedMillis" : 435568,
+          "eventEndElapsedMillis" : 435569
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 47,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 24,
+          "startUptimeMillis" : 473299,
+          "endUptimeMillis" : 473301,
+          "durationMillis" : 2,
+          "heapUsedAfterGc" : 53570896,
+          "eventStartElapsedMillis" : 465558,
+          "eventEndElapsedMillis" : 465560
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 50,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 25,
+          "startUptimeMillis" : 504329,
+          "endUptimeMillis" : 504330,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 53640600,
+          "eventStartElapsedMillis" : 496589,
+          "eventEndElapsedMillis" : 496590
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 53,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 26,
+          "startUptimeMillis" : 535048,
+          "endUptimeMillis" : 535048,
+          "durationMillis" : 0,
+          "heapUsedAfterGc" : 53536160,
+          "eventStartElapsedMillis" : 527307,
+          "eventEndElapsedMillis" : 527307
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 57,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 27,
+          "startUptimeMillis" : 569164,
+          "endUptimeMillis" : 569164,
+          "durationMillis" : 0,
+          "heapUsedAfterGc" : 53623320,
+          "eventStartElapsedMillis" : 561424,
+          "eventEndElapsedMillis" : 561424
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 59,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 28,
+          "startUptimeMillis" : 589485,
+          "endUptimeMillis" : 589486,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 53643608,
+          "eventStartElapsedMillis" : 581745,
+          "eventEndElapsedMillis" : 581746
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 61,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 29,
+          "startUptimeMillis" : 613339,
+          "endUptimeMillis" : 613340,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 53659696,
+          "eventStartElapsedMillis" : 605598,
+          "eventEndElapsedMillis" : 605599
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 63,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 30,
+          "startUptimeMillis" : 633653,
+          "endUptimeMillis" : 633654,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 53675448,
+          "eventStartElapsedMillis" : 625912,
+          "eventEndElapsedMillis" : 625913
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 65,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 31,
+          "startUptimeMillis" : 653977,
+          "endUptimeMillis" : 653977,
+          "durationMillis" : 0,
+          "heapUsedAfterGc" : 53688440,
+          "eventStartElapsedMillis" : 646237,
+          "eventEndElapsedMillis" : 646237
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 67,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 32,
+          "startUptimeMillis" : 674406,
+          "endUptimeMillis" : 674407,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 53707488,
+          "eventStartElapsedMillis" : 666666,
+          "eventEndElapsedMillis" : 666667
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 69,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 33,
+          "startUptimeMillis" : 694807,
+          "endUptimeMillis" : 694808,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 53746640,
+          "eventStartElapsedMillis" : 687066,
+          "eventEndElapsedMillis" : 687067
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 72,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 34,
+          "startUptimeMillis" : 718560,
+          "endUptimeMillis" : 718560,
+          "durationMillis" : 0,
+          "heapUsedAfterGc" : 53747872,
+          "eventStartElapsedMillis" : 710819,
+          "eventEndElapsedMillis" : 710819
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 74,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 35,
+          "startUptimeMillis" : 738830,
+          "endUptimeMillis" : 738831,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 53740080,
+          "eventStartElapsedMillis" : 731090,
+          "eventEndElapsedMillis" : 731091
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 76,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 36,
+          "startUptimeMillis" : 759095,
+          "endUptimeMillis" : 759095,
+          "durationMillis" : 0,
+          "heapUsedAfterGc" : 53753088,
+          "eventStartElapsedMillis" : 751354,
+          "eventEndElapsedMillis" : 751354
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 78,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 37,
+          "startUptimeMillis" : 779384,
+          "endUptimeMillis" : 779384,
+          "durationMillis" : 0,
+          "heapUsedAfterGc" : 53752560,
+          "eventStartElapsedMillis" : 771644,
+          "eventEndElapsedMillis" : 771644
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 80,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 38,
+          "startUptimeMillis" : 799630,
+          "endUptimeMillis" : 799631,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 53767344,
+          "eventStartElapsedMillis" : 791890,
+          "eventEndElapsedMillis" : 791891
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 82,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 39,
+          "startUptimeMillis" : 819900,
+          "endUptimeMillis" : 819900,
+          "durationMillis" : 0,
+          "heapUsedAfterGc" : 53774104,
+          "eventStartElapsedMillis" : 812160,
+          "eventEndElapsedMillis" : 812160
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 84,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 40,
+          "startUptimeMillis" : 843644,
+          "endUptimeMillis" : 843645,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 53690472,
+          "eventStartElapsedMillis" : 835904,
+          "eventEndElapsedMillis" : 835905
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 86,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 41,
+          "startUptimeMillis" : 863968,
+          "endUptimeMillis" : 863968,
+          "durationMillis" : 0,
+          "heapUsedAfterGc" : 53790560,
+          "eventStartElapsedMillis" : 856227,
+          "eventEndElapsedMillis" : 856227
+        }, {
+          "actor" : "nq0",
+          "pid" : 25696,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 88,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 42,
+          "startUptimeMillis" : 884294,
+          "endUptimeMillis" : 884294,
+          "durationMillis" : 0,
+          "heapUsedAfterGc" : 53798664,
+          "eventStartElapsedMillis" : 876554,
+          "eventEndElapsedMillis" : 876554
+        } ]
+      }, {
+        "owner" : "nq1",
+        "pid" : 29236,
+        "collector" : "G1 Young Generation",
+        "status" : "FROZEN",
+        "method" : "distinct natural post-GC heapUsedAfterGc; same PID and collector; GC uptime maps event into measurement; no forced GC",
+        "sampleCount" : 24,
+        "lowWaterMin" : 46012184,
+        "lowWaterMax" : 51079224,
+        "range" : 5067040,
+        "units" : "bytes",
+        "events" : [ {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 32,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 19,
+          "startUptimeMillis" : 321126,
+          "endUptimeMillis" : 321128,
+          "durationMillis" : 2,
+          "heapUsedAfterGc" : 50596472,
+          "eventStartElapsedMillis" : 317098,
+          "eventEndElapsedMillis" : 317100
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 35,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 20,
+          "startUptimeMillis" : 344464,
+          "endUptimeMillis" : 344466,
+          "durationMillis" : 2,
+          "heapUsedAfterGc" : 50770216,
+          "eventStartElapsedMillis" : 340436,
+          "eventEndElapsedMillis" : 340438
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 37,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 21,
+          "startUptimeMillis" : 369296,
+          "endUptimeMillis" : 369298,
+          "durationMillis" : 2,
+          "heapUsedAfterGc" : 50720960,
+          "eventStartElapsedMillis" : 365269,
+          "eventEndElapsedMillis" : 365271
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 40,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 22,
+          "startUptimeMillis" : 394886,
+          "endUptimeMillis" : 394888,
+          "durationMillis" : 2,
+          "heapUsedAfterGc" : 50769976,
+          "eventStartElapsedMillis" : 390859,
+          "eventEndElapsedMillis" : 390861
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 43,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 23,
+          "startUptimeMillis" : 424793,
+          "endUptimeMillis" : 424795,
+          "durationMillis" : 2,
+          "heapUsedAfterGc" : 50749200,
+          "eventStartElapsedMillis" : 420767,
+          "eventEndElapsedMillis" : 420769
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 46,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 24,
+          "startUptimeMillis" : 454632,
+          "endUptimeMillis" : 454633,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 50971920,
+          "eventStartElapsedMillis" : 450605,
+          "eventEndElapsedMillis" : 450606
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 49,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 25,
+          "startUptimeMillis" : 489758,
+          "endUptimeMillis" : 489759,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 51006240,
+          "eventStartElapsedMillis" : 485732,
+          "eventEndElapsedMillis" : 485733
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 51,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 26,
+          "startUptimeMillis" : 511372,
+          "endUptimeMillis" : 511373,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 51002616,
+          "eventStartElapsedMillis" : 507345,
+          "eventEndElapsedMillis" : 507346
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 55,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 27,
+          "startUptimeMillis" : 549927,
+          "endUptimeMillis" : 549928,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 51008096,
+          "eventStartElapsedMillis" : 545900,
+          "eventEndElapsedMillis" : 545901
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 58,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 28,
+          "startUptimeMillis" : 575084,
+          "endUptimeMillis" : 575085,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 51022000,
+          "eventStartElapsedMillis" : 571058,
+          "eventEndElapsedMillis" : 571059
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 60,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 29,
+          "startUptimeMillis" : 596073,
+          "endUptimeMillis" : 596073,
+          "durationMillis" : 0,
+          "heapUsedAfterGc" : 51012632,
+          "eventStartElapsedMillis" : 592047,
+          "eventEndElapsedMillis" : 592047
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 62,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 30,
+          "startUptimeMillis" : 616240,
+          "endUptimeMillis" : 616241,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 51023576,
+          "eventStartElapsedMillis" : 612212,
+          "eventEndElapsedMillis" : 612213
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 64,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 32,
+          "startUptimeMillis" : 639523,
+          "endUptimeMillis" : 639524,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 50969160,
+          "eventStartElapsedMillis" : 635496,
+          "eventEndElapsedMillis" : 635497
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 66,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 33,
+          "startUptimeMillis" : 659749,
+          "endUptimeMillis" : 659750,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 51079224,
+          "eventStartElapsedMillis" : 655723,
+          "eventEndElapsedMillis" : 655724
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 68,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 34,
+          "startUptimeMillis" : 679892,
+          "endUptimeMillis" : 679894,
+          "durationMillis" : 2,
+          "heapUsedAfterGc" : 47997216,
+          "eventStartElapsedMillis" : 675864,
+          "eventEndElapsedMillis" : 675866
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 70,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 35,
+          "startUptimeMillis" : 700357,
+          "endUptimeMillis" : 700358,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 48272168,
+          "eventStartElapsedMillis" : 696330,
+          "eventEndElapsedMillis" : 696331
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 72,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 36,
+          "startUptimeMillis" : 721612,
+          "endUptimeMillis" : 721613,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 48315512,
+          "eventStartElapsedMillis" : 717585,
+          "eventEndElapsedMillis" : 717586
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 75,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 37,
+          "startUptimeMillis" : 744896,
+          "endUptimeMillis" : 744896,
+          "durationMillis" : 0,
+          "heapUsedAfterGc" : 48330392,
+          "eventStartElapsedMillis" : 740870,
+          "eventEndElapsedMillis" : 740870
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 77,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 38,
+          "startUptimeMillis" : 765330,
+          "endUptimeMillis" : 765331,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 47136976,
+          "eventStartElapsedMillis" : 761303,
+          "eventEndElapsedMillis" : 761304
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 79,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 39,
+          "startUptimeMillis" : 786703,
+          "endUptimeMillis" : 786704,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 47289064,
+          "eventStartElapsedMillis" : 782676,
+          "eventEndElapsedMillis" : 782677
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 81,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 40,
+          "startUptimeMillis" : 810059,
+          "endUptimeMillis" : 810060,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 47338224,
+          "eventStartElapsedMillis" : 806033,
+          "eventEndElapsedMillis" : 806034
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 83,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 41,
+          "startUptimeMillis" : 831122,
+          "endUptimeMillis" : 831123,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 46012184,
+          "eventStartElapsedMillis" : 827096,
+          "eventEndElapsedMillis" : 827097
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 85,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 42,
+          "startUptimeMillis" : 852065,
+          "endUptimeMillis" : 852066,
+          "durationMillis" : 1,
+          "heapUsedAfterGc" : 46264792,
+          "eventStartElapsedMillis" : 848037,
+          "eventEndElapsedMillis" : 848038
+        }, {
+          "actor" : "nq1",
+          "pid" : 29236,
+          "collector" : "G1 Young Generation",
+          "observedSampleIndex" : 88,
+          "observedPhase" : "MEASUREMENT",
+          "id" : 43,
+          "startUptimeMillis" : 875503,
+          "endUptimeMillis" : 875503,
+          "durationMillis" : 0,
+          "heapUsedAfterGc" : 46281224,
+          "eventStartElapsedMillis" : 871477,
+          "eventEndElapsedMillis" : 871477
+        } ]
+      } ],
+      "resources" : [ {
+        "phase" : "MEASUREMENT",
+        "source" : "nq0",
+        "field" : ".heapCommitted",
+        "sampleCount" : 60,
+        "min" : 127926272,
+        "max" : 127926272,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "nq0",
+        "field" : ".heapMax",
+        "sampleCount" : 60,
+        "min" : 536870912,
+        "max" : 536870912,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "nq0",
+        "field" : ".threads",
+        "sampleCount" : 60,
+        "min" : 23,
+        "max" : 23,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "nq0",
+        "field" : ".active",
+        "sampleCount" : 60,
+        "min" : 0,
+        "max" : 0,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "nq0",
+        "field" : ".idle",
+        "sampleCount" : 60,
+        "min" : 10,
+        "max" : 10,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "nq0",
+        "field" : ".pending",
+        "sampleCount" : 60,
+        "min" : 0,
+        "max" : 0,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "nq0",
+        "field" : ".poolMax",
+        "sampleCount" : 60,
+        "min" : 10,
+        "max" : 10,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "nq0",
+        "field" : ".commandQueue.queueSize",
+        "sampleCount" : 60,
+        "min" : 0,
+        "max" : 0,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "nq0",
+        "field" : ".metricsExecutor.queueSize",
+        "sampleCount" : 60,
+        "min" : 0,
+        "max" : 0,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "nq1",
+        "field" : ".heapCommitted",
+        "sampleCount" : 60,
+        "min" : 123731968,
+        "max" : 123731968,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "nq1",
+        "field" : ".heapMax",
+        "sampleCount" : 60,
+        "min" : 536870912,
+        "max" : 536870912,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "nq1",
+        "field" : ".threads",
+        "sampleCount" : 60,
+        "min" : 23,
+        "max" : 23,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "nq1",
+        "field" : ".active",
+        "sampleCount" : 60,
+        "min" : 0,
+        "max" : 0,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "nq1",
+        "field" : ".idle",
+        "sampleCount" : 60,
+        "min" : 10,
+        "max" : 10,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "nq1",
+        "field" : ".pending",
+        "sampleCount" : 60,
+        "min" : 0,
+        "max" : 0,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "nq1",
+        "field" : ".poolMax",
+        "sampleCount" : 60,
+        "min" : 10,
+        "max" : 10,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "nq1",
+        "field" : ".commandQueue.queueSize",
+        "sampleCount" : 60,
+        "min" : 0,
+        "max" : 0,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "nq1",
+        "field" : ".metricsExecutor.queueSize",
+        "sampleCount" : 60,
+        "min" : 0,
+        "max" : 0,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "venue",
+        "field" : ".active",
+        "sampleCount" : 60,
+        "min" : 1,
+        "max" : 1,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "venue",
+        "field" : ".queue",
+        "sampleCount" : 60,
+        "min" : 0,
+        "max" : 0,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "postgres",
+        "field" : ".appConnections",
+        "sampleCount" : 60,
+        "min" : 20,
+        "max" : 20,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "postgres",
+        "field" : ".idleInTransaction",
+        "sampleCount" : 60,
+        "min" : 0,
+        "max" : 1,
+        "maxMinusMin" : 1,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "postgres",
+        "field" : ".databaseConnections",
+        "sampleCount" : 60,
+        "min" : 22,
+        "max" : 22,
+        "maxMinusMin" : 0,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "os",
+        "field" : ".handles",
+        "sampleCount" : 60,
+        "min" : 2470,
+        "max" : 2489,
+        "maxMinusMin" : 19,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "files",
+        "field" : ".ownedTempFileCount",
+        "sampleCount" : 60,
+        "min" : 74,
+        "max" : 192,
+        "maxMinusMin" : 118,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      }, {
+        "phase" : "MEASUREMENT",
+        "source" : "files",
+        "field" : ".ownedTempBytes",
+        "sampleCount" : 60,
+        "min" : 59825168,
+        "max" : 700092346,
+        "maxMinusMin" : 640267178,
+        "sampleIndices" : [ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89 ],
+        "frozenNoiseBand" : true
+      } ],
+      "growth" : [ {
+        "resource" : "logBytes",
+        "sampleCount" : 60,
+        "startSampleIndex" : 30,
+        "endSampleIndex" : 89,
+        "startElapsedMillis" : 300007,
+        "endElapsedMillis" : 890009,
+        "start" : 123312,
+        "end" : 348039,
+        "absoluteGrowth" : 224727,
+        "ordersDelta" : 236,
+        "fullChainDelta" : 236,
+        "perOrderGrowth" : 952.2330508474577,
+        "perFullChainGrowth" : 952.2330508474577,
+        "coverage" : "measurement 10s sample endpoints [300s,890s]; does not invent a 900s resource sample",
+        "cleanupQuietBehavior" : "Producer stops at 900012ms; 794ms bounded drain leaves 360 orders and zero backlog. Owned JVMs/container stop. Raw logs and evidence files retained. No separate long quiet interval was run."
+      }, {
+        "resource" : "auditRows",
+        "sampleCount" : 60,
+        "startSampleIndex" : 30,
+        "endSampleIndex" : 89,
+        "startElapsedMillis" : 300007,
+        "endElapsedMillis" : 890009,
+        "start" : 29645,
+        "end" : 113841,
+        "absoluteGrowth" : 84196,
+        "ordersDelta" : 236,
+        "fullChainDelta" : 236,
+        "perOrderGrowth" : 356.76271186440675,
+        "perFullChainGrowth" : 356.76271186440675,
+        "coverage" : "measurement 10s sample endpoints [300s,890s]; does not invent a 900s resource sample",
+        "cleanupQuietBehavior" : "Producer stops at 900012ms; 794ms bounded drain leaves 360 orders and zero backlog. Owned JVMs/container stop. Raw logs and evidence files retained. No separate long quiet interval was run."
+      }, {
+        "resource" : "eventRows",
+        "sampleCount" : 60,
+        "startSampleIndex" : 30,
+        "endSampleIndex" : 89,
+        "startElapsedMillis" : 300007,
+        "endElapsedMillis" : 890009,
+        "start" : 960,
+        "end" : 2848,
+        "absoluteGrowth" : 1888,
+        "ordersDelta" : 236,
+        "fullChainDelta" : 236,
+        "perOrderGrowth" : 8.0,
+        "perFullChainGrowth" : 8.0,
+        "coverage" : "measurement 10s sample endpoints [300s,890s]; does not invent a 900s resource sample",
+        "cleanupQuietBehavior" : "Producer stops at 900012ms; 794ms bounded drain leaves 360 orders and zero backlog. Owned JVMs/container stop. Raw logs and evidence files retained. No separate long quiet interval was run."
+      } ]
+    },
+    "correctness" : {
+      "checkpointsVerified" : 181,
+      "duplicateExternalMutation" : 0,
+      "duplicateTrade" : 0,
+      "duplicateTradeExecuted" : 0,
+      "duplicateAccounting" : 0,
+      "filledToFilledErrors" : 0,
+      "unauthorizedSend" : 0,
+      "durableOrphan" : 0,
+      "tradeFillIdentityExact" : true,
+      "ledgerBalanced" : true,
+      "positionSnapshotReconstructable" : true,
+      "totalOrders" : 360,
+      "totalTrades" : 360,
+      "totalTradeExecuted" : 360,
+      "totalLedgerEntries" : 1440,
+      "totalSnapshots" : 720,
+      "positionBTC" : "36",
+      "unexpectedValidationDegradation" : 0,
+      "hikariAcquisitionTimeoutDelta" : 0,
+      "validationWarmupActivation" : "First three warmup samples precede first validation refresh; all 60 measurement samples and cleanup include qualified validation. Only existing artifact-preview exemption used.",
+      "P0" : 0,
+      "P1" : 0
+    },
+    "cleanup" : {
+      "status" : "PASS",
+      "producerStopElapsedMillis" : 900012,
+      "boundedDrainMillis" : 794,
+      "actionableBacklog" : 0,
+      "correctnessRequiredUnresolved" : 0,
+      "oldestCandidateAge" : null,
+      "oldestCandidateAgeStatus" : "NONE",
+      "commandQueue" : 0,
+      "venueQueue" : 0,
+      "hikariPending" : 0,
+      "idleInTransaction" : 0,
+      "ownedNq" : 0,
+      "ownedVenue" : 0,
+      "ownedPostgres" : 0,
+      "ownedController" : 0,
+      "ownedSurvivors" : 0,
+      "pids" : [ 29556, 29516, 25696, 29236 ],
+      "container" : "6b665d5ce909b4d7bf640420645cfaf352f56b134b8652383fd863224e0095fb",
+      "evidence" : "Harness close/port/container assertions, followed by host Get-Process and docker ps -a verification; B0_KILLED is post-run Venue cleanup, not fault injection"
+    },
+    "rawArtifacts" : [ {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/calibration-analysis.json",
+      "bytes" : 387848,
+      "sha256" : "7443c3d41ddb87c9edaa9a073e6d9f50a4b359c72edc4f9e564f6bc710243595"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/calibration-run.json",
+      "bytes" : 2124664,
+      "sha256" : "cba8dff24e7c534acb379ef48da43e9b3514d98a414447c659c27bfd426190bb"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-001.json",
+      "bytes" : 14988,
+      "sha256" : "9278b8dd6bb00207b9143e9d27077f787132818e0f6345d7fb8f5f40df4462bf"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-002.json",
+      "bytes" : 30229,
+      "sha256" : "f570c44d65a569abd1d81c934635351dd81f4e2c1ccfb267aab55097dda12b0c"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-003.json",
+      "bytes" : 46345,
+      "sha256" : "6386ad87fe9b2568fcb752edebf459f8a76eaa8ea7564c542d128d7bdf648cf1"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-004.json",
+      "bytes" : 63364,
+      "sha256" : "7073c623a12cb2fe98d8fbd99af6d6dc3c4a75152c238ef495bab3bfc56add63"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-005.json",
+      "bytes" : 81321,
+      "sha256" : "cc85fe996212e09ff63a872c7c06838e1e16e3010bc75bcd8241589d5302a88f"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-006.json",
+      "bytes" : 100171,
+      "sha256" : "f0f438b49fef5421cae712072295db8ee46e1cda378ef4bcf3313aadabc5e6de"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-007.json",
+      "bytes" : 119926,
+      "sha256" : "2e2243d76c8b085be43077c6de38eb3297f2f6bb88d999adc810e2396cc90f3a"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-008.json",
+      "bytes" : 140575,
+      "sha256" : "af630e21a2082dc379a6c858683c04ff3b7bd3bef6d825cb258ab9a7df73b310"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-009.json",
+      "bytes" : 162123,
+      "sha256" : "95dc56426cc19f806f3258137715a5d0c56d6cdcd4b4b405e2114bca63cb99f5"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-010.json",
+      "bytes" : 184566,
+      "sha256" : "222dd38a67766143375374f1db41fa20f65c2baeab2a53a908799606262ada06"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-011.json",
+      "bytes" : 207903,
+      "sha256" : "2c9735cf4dfd67c2afa1221063e5b79f8c31c43a694dd93bb61680130a3d1750"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-012.json",
+      "bytes" : 232138,
+      "sha256" : "c0b71e6b7f69a2fd62a785315a7f4e6594bbf1d03bf5c8131e49a700a75c0920"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-013.json",
+      "bytes" : 257273,
+      "sha256" : "57cf65a89de3c734cfec96c018892faf36cecc6de32596e3ceb59f210c1b3f93"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-014.json",
+      "bytes" : 283284,
+      "sha256" : "45553a1051708576bdf79108ebd379f37472ff3849e6904efa353c9730f6b86f"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-015.json",
+      "bytes" : 310328,
+      "sha256" : "4f4888892f7558cd77132b92fc7a793585b70fb408c8e73785aec977b83f48cc"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-016.json",
+      "bytes" : 338294,
+      "sha256" : "fc55e92343b2c881b405ed690559ea30c985e6d8dd32b57d7a2acd93b0ea22db"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-017.json",
+      "bytes" : 367161,
+      "sha256" : "f6a11e441a9cd71efa4e882de9e36930444b9c1135f656e68f89092e7ff1900a"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-018.json",
+      "bytes" : 396933,
+      "sha256" : "113a44e6776388e59b2fe909b2946c8b360738d8c1e62fbdd378b77f1c193ff3"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-019.json",
+      "bytes" : 427611,
+      "sha256" : "5997d09ee0bab164bae2df84219fee4d7331830933ccf90d0d2c656916aee6ab"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-020.json",
+      "bytes" : 459192,
+      "sha256" : "262f2b5b2ba68624132bb505c35355f62ef0f53d49c35d507fda4a4f60c95569"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-021.json",
+      "bytes" : 491676,
+      "sha256" : "14db2bcbdb89bb17a8d860b24302b967962c3db6d42bcc5d674df06b4c83dbc8"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-022.json",
+      "bytes" : 525064,
+      "sha256" : "276cea9602fe448778d334091e4e1f496815d7c5b14df25adcbf22f286d9decd"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-023.json",
+      "bytes" : 559353,
+      "sha256" : "345cf28a50ea7087d382b074899ea060eb86a9ed2bb54dd75ea7984d915c5732"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-024.json",
+      "bytes" : 594550,
+      "sha256" : "392e43bc95a4b1721686448ba81b1066d8a1ca6e5aaebba292e6da26784d2a3e"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-025.json",
+      "bytes" : 630636,
+      "sha256" : "9bdfe915485a48d1fdb2cefa9e8ce4032e57bda9ceeffed30b839f24b84e1038"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-026.json",
+      "bytes" : 667645,
+      "sha256" : "4319515a7a199c3c640e5dc7c388eb231b505f65b1e9423cc7b2034ef6d5a6d0"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-027.json",
+      "bytes" : 705556,
+      "sha256" : "810e215cbffffd0e04d510b3ee112fe27965645e9b63ca45d0fe1ba35fe53311"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-028.json",
+      "bytes" : 744373,
+      "sha256" : "d0e9c6e6492ab69aac67f8fe033ca233b25d0a8d90c7270455bf3eb68c8c232f"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-029.json",
+      "bytes" : 784094,
+      "sha256" : "9dfa4456ab0e033bdf91e5ece0e894a4e6752bc1416bd24cf333c81d1677e0ee"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-030.json",
+      "bytes" : 824702,
+      "sha256" : "eae99cf9e0fd94e8594d25389f98723607d7130f7439c7a969ae3f0a04fe9fe3"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-031.json",
+      "bytes" : 866232,
+      "sha256" : "3ee4d11285b1e5dee0de2139346e7a94a9e1de86ec112b6414bafc25dc7d16aa"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-032.json",
+      "bytes" : 908666,
+      "sha256" : "2f0d73944e5dbb619988c8562bd857f69bf270fc8cba80a3a09c865a52baecb7"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-033.json",
+      "bytes" : 952001,
+      "sha256" : "4cf2e0bcc5e7a7f00b0cfb31250d2a7c45ad84782c55d02a27a8953a5dcd229a"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-034.json",
+      "bytes" : 996242,
+      "sha256" : "42c7cd613a61cb63a1b0ae75463ea66095cf5f277ffbebd1959f71683176d9ea"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-035.json",
+      "bytes" : 1041372,
+      "sha256" : "56d99f4fce354b5dbb40380403cfffd232bdbef9073204ede94b72ca92df52a1"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-036.json",
+      "bytes" : 1087422,
+      "sha256" : "362b1041a140441efc48191bdc5f26c37b4de04c43bfb55b06461c8656c838d7"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-037.json",
+      "bytes" : 1134373,
+      "sha256" : "5c2c0b8238d4cc1f3d6a67c1eab374f93f317588cfee089f6265cf100c4f15fd"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-038.json",
+      "bytes" : 1182228,
+      "sha256" : "8f70bc72096dc31763a4759f535086ef76955601c258b3cc14572592e6ced09b"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-039.json",
+      "bytes" : 1230989,
+      "sha256" : "4705b8f626202778ba8c00b3a1c3093c5e672c40582eea963101bd7397d64f6c"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-040.json",
+      "bytes" : 1280654,
+      "sha256" : "5eeb5efad0f73f5e7daaa0556a0e9ac98219c85cb206343b28132abec1ca67b3"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-041.json",
+      "bytes" : 1331214,
+      "sha256" : "70f25ce7f10f88b22bc726b0454f49a00cf1f3ed0aa18a02dc1fbc2fc1f54025"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-042.json",
+      "bytes" : 1382686,
+      "sha256" : "a644137abc4fdb6c0424dea9a08b739fe17d124dde91f956a656cebb7a77cc62"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-043.json",
+      "bytes" : 1435062,
+      "sha256" : "2973f91fe827d91e5464b6f7be6034ecc3be3dc9feaf9ff20c7eb763174aa3af"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-044.json",
+      "bytes" : 1488326,
+      "sha256" : "fcb9eba77f972bfc103ce676cdda0baab29e36efd04edebb34b8e84fbf2e01a8"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-045.json",
+      "bytes" : 1542500,
+      "sha256" : "0f570e26c2b102e59cf7e9478279e091442df5e503c8986ea13e17e6e923f008"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-046.json",
+      "bytes" : 1597589,
+      "sha256" : "655c39ccb6d78594fdf83e2ffadcff22d8176db522dfb42229bdf1ed5707272e"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-047.json",
+      "bytes" : 1653580,
+      "sha256" : "b4fd7b271a81320ae6492bc7355dece4dd7ab5dff610e10884b1656a95117701"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-048.json",
+      "bytes" : 1710461,
+      "sha256" : "486ceb575055d65b554457f7c82893fb46dbf2cce492b7b503f0e2dc1910c846"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-049.json",
+      "bytes" : 1768552,
+      "sha256" : "371b1720e6757b1ffdcd845241240edd730b2acda495ca9ce1d3447ab7e167f1"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-050.json",
+      "bytes" : 1827693,
+      "sha256" : "fd1cd806a0c681f56f24bbeeeaff35147422c410ff850018876ddf09c31c0225"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-051.json",
+      "bytes" : 1886616,
+      "sha256" : "2bc7382599727c2edd3f06e8e3f9850882855f5e1daca79c287654a05bacaa1f"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-052.json",
+      "bytes" : 1945763,
+      "sha256" : "61cc36dd119d6494ab1d2c1db402d8039ca4614bc91201aab7904881a645e3c1"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-053.json",
+      "bytes" : 2004923,
+      "sha256" : "16e797cb86edcd9f8953b7ea95a690654e60e74585af53ad1fd20084acd1c5ae"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-054.json",
+      "bytes" : 2064101,
+      "sha256" : "43acf2f323eaea2af437e205e517b7119d880279319685c7498d522f21900a47"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-055.json",
+      "bytes" : 2123285,
+      "sha256" : "2bd92408a0581af449a9a7972ee34d40dacd13c4b509e20e2e62531e51ee5048"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-056.json",
+      "bytes" : 2182470,
+      "sha256" : "bb2e740d369efb450866a841ccf8488e8e878a55f7de24e7f65483008a722797"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-057.json",
+      "bytes" : 2241672,
+      "sha256" : "0902cbeb6ae9d7b7f47f6ca63a9b611554d6c4f511f968c749d22157d2a6b292"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-058.json",
+      "bytes" : 2300878,
+      "sha256" : "21c46fb4c1a6e24d63bc84ce037eab0a1d9d2520fccf1756d6ab5c9914478ce8"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-059.json",
+      "bytes" : 2360088,
+      "sha256" : "3395f892cc8ad2dee17d03dc310aaa1ae3dfc15447bff96f3055a72ed8cb37cd"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-060.json",
+      "bytes" : 2419317,
+      "sha256" : "d54bfe4d3544a63ba679708620d7c93cbfe714cb5765c108e3bbf76418deb4bb"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-061.json",
+      "bytes" : 2455457,
+      "sha256" : "f744de008533724e64cdd856e2a089e3ad1b60fb34dbf1ab4bba80c07bdcb98d"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-062.json",
+      "bytes" : 2514697,
+      "sha256" : "c5ea36881d0434a2ca3022babf680d664f4f284070d20a2dc466fd2940791b3a"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-063.json",
+      "bytes" : 2551098,
+      "sha256" : "1e9b69c295d596c8f56184a48ecb1a442e252a890f9ce88cd2c0502149febf1e"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-064.json",
+      "bytes" : 2610320,
+      "sha256" : "c461f2f6d5ed6fe642022fccdd369302d3ed3f485e0addb6e829d915f7384792"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-065.json",
+      "bytes" : 2669565,
+      "sha256" : "0131b3310c916aab1cf96ef312032528795e4e9f643c8cbe92dca67d4efa0db8"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-066.json",
+      "bytes" : 2728816,
+      "sha256" : "d31e6c8da1406e36049a69b2501d8589d00c2c948d0f58997acceab967712070"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-067.json",
+      "bytes" : 2788072,
+      "sha256" : "9846c8e25b03cb7bc49006d6c013ec6d7b98043fc64f3267507b8cc6852059ba"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-068.json",
+      "bytes" : 2824507,
+      "sha256" : "6d5aa2642b0610f0f772d7ea55da48b0885f341b6d666e177de119e6552b0b3d"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-069.json",
+      "bytes" : 2860685,
+      "sha256" : "8f960656a2b0fb878d3c30018c9fe064f9c3e44431a95ed5ecf0e8275d1a668b"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-070.json",
+      "bytes" : 2919730,
+      "sha256" : "4643f04c01faafb0791c7543c117333617b45239fdeef80d1fa173866da817ba"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-071.json",
+      "bytes" : 2978781,
+      "sha256" : "87286bd3a8843b80de7bdedddd242e1c27f8e51db8691276990f6be7dc82c659"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-072.json",
+      "bytes" : 3014956,
+      "sha256" : "7032bf77906c1e8928aae42a2ab558a39b43d5133572f0bbbc7e28e97421fd92"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-073.json",
+      "bytes" : 3073991,
+      "sha256" : "42f0754d4f6975881c4f861e624922c1a1ca2fa1b4a1899731e8cd34335d1a88"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-074.json",
+      "bytes" : 3133063,
+      "sha256" : "779e892a15a09c6c84cd6c4bedee3dad66afb1cc8ab20e6886217749bb0473bc"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-075.json",
+      "bytes" : 3169235,
+      "sha256" : "c45e037dce536f04ed475a98916bc059f58908e16b51f37ff13676531fd1d7e9"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-076.json",
+      "bytes" : 3228304,
+      "sha256" : "57cec9aee2ccb1db115903e9d2d7bcfab1a6b2554b62e9ccdb7b715f452d4820"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-077.json",
+      "bytes" : 3264702,
+      "sha256" : "808ad5b1b416ebba884ae543483076736a151ae6685971c00edec17ccfa439d2"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-078.json",
+      "bytes" : 3300887,
+      "sha256" : "52e18bf93349bb2cddff8a254f917ebb3b42df7887d3c9204a2d120fa18765c1"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-079.json",
+      "bytes" : 3359984,
+      "sha256" : "e71cf599808554cbce10496d014985dfaf71ddce8a79cbce5380e3d4e4eeb39f"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-080.json",
+      "bytes" : 3396184,
+      "sha256" : "9c1aa4a514ba0f44cf68a57d509ac5cf0a419bf17a679f2880487981ffacdee3"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-081.json",
+      "bytes" : 3432374,
+      "sha256" : "7b411830b0d9e7c831db026380be6351e720373fc3322149c5becb84f4844c0d"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-082.json",
+      "bytes" : 3491501,
+      "sha256" : "3ff686554666761b92c34fbde42bbccaaf7b75ffd287205ba27e47298c566368"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-083.json",
+      "bytes" : 3527932,
+      "sha256" : "000bac2d0afb139f759364d20beaf17f40d18b18bfc9e2d473e32505d6c4d8f3"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-084.json",
+      "bytes" : 3564124,
+      "sha256" : "8727d2a71e97441a8174a3c5fb5fe100fee910ed115986ab54f1133a68078a70"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-085.json",
+      "bytes" : 3600336,
+      "sha256" : "fabb7b2e035ce74138950ab2f91f4f8962018aaa748da654ee8c44df88261a31"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-086.json",
+      "bytes" : 3659463,
+      "sha256" : "58d9b5a0ab22d525803e88bc4f1b1e8be914da02f43389d1fa2797d755832859"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-087.json",
+      "bytes" : 3695911,
+      "sha256" : "dc5c1bed8914e3acfb0cab040340579e7a8f866e1fe62e2ea2dec22e49404f9a"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-088.json",
+      "bytes" : 3754989,
+      "sha256" : "98129f697bd6776cb34b916c6f4569a4f90ab6e58de2074e24c653ca7e456d9d"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-089.json",
+      "bytes" : 3791197,
+      "sha256" : "a4a370f75f547cd3fd95d95527183fdc02e6b4be2f5945b18f97121b30846db1"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-090.json",
+      "bytes" : 3827406,
+      "sha256" : "d5cd4baa9e45d8d6086ff7589a8fea3d38c27a7a10ce447e75313c6d404fb3a5"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-091.json",
+      "bytes" : 3886522,
+      "sha256" : "345355987e47e6c52edc3425e18b04b60e636d66ddb27c65846d2487b8684723"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-092.json",
+      "bytes" : 3922761,
+      "sha256" : "86fd7ecf2ecb168a61c7d12fd990e426a72564ae96b5d86bd6626805fb374950"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-093.json",
+      "bytes" : 3959000,
+      "sha256" : "a6e37c78b905bda7f7d87456336d178264d2c57ee689591431f7f41640eb8df9"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-094.json",
+      "bytes" : 3995222,
+      "sha256" : "cf7fa7f41e3e8a8137491c7db0c9eadc4402810314ee269ff4641719bf7c5249"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-095.json",
+      "bytes" : 4031462,
+      "sha256" : "5dfcea42a797db7037203f2b1dc60e21d3f3fceb7b774d6a0bf2bd479f93526d"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-096.json",
+      "bytes" : 4067701,
+      "sha256" : "2e1b2194d1b96450fad859c5603a679ea870ac7fac188c4c5f887364d45eb29f"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-097.json",
+      "bytes" : 4104172,
+      "sha256" : "35f6ee5283fa7ffa78c475340114ffd7a1620b856b9f29a4852269db5648d19c"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-098.json",
+      "bytes" : 4140623,
+      "sha256" : "f2c93a2fcfabc34b721e706c62b8c01fea1a6959c8baef8fb12101b14779992c"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-099.json",
+      "bytes" : 4199747,
+      "sha256" : "981dbb92371a257017185ae0f3dcb1e6d5b1814347ab77474350c26a2571953f"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-100.json",
+      "bytes" : 4258863,
+      "sha256" : "370ed93591514fb6318cfac16afaddc3dc2d588b983785a2534e352b27ef8d06"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-101.json",
+      "bytes" : 4318001,
+      "sha256" : "701c36e31ebe2baf924e9c3c9c59389b079b0d542187b04c52aad3961ab757b3"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-102.json",
+      "bytes" : 4377138,
+      "sha256" : "42e86c407dd76dc58bdcb4beea3c6dd10efeba1030341d09dd98deecbe568b80"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-103.json",
+      "bytes" : 4413380,
+      "sha256" : "decae0f488a48ffd273245bfbb4b8ea77f45fc46fea90ebc06acba1314d582d1"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-104.json",
+      "bytes" : 4449612,
+      "sha256" : "caae662289674c758216121b756fecc13010bb7d2b1253aacc4b03db4496cd3e"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-105.json",
+      "bytes" : 4485851,
+      "sha256" : "290b2e9f77543981cdc03da62c46cec8649ee15241f9c614ba00d488afa4ff1c"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-106.json",
+      "bytes" : 4522093,
+      "sha256" : "d6677e5b7f0f1b5591adfc015cab1d5aecc56256a8f134b79739539d856a22b6"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-107.json",
+      "bytes" : 4558319,
+      "sha256" : "063eaea44ae0e0975a17a23ad67fc26721d8382f488a4c30231f4e0ce40205a0"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-108.json",
+      "bytes" : 4594559,
+      "sha256" : "33b85f786f8f6937437bff558b3fb4ff5dda27a3b81e53a2f206767dc6143b7a"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-109.json",
+      "bytes" : 4630800,
+      "sha256" : "ad2e8cf2911afa6f2dcc35bc2ad305860d9cd1a6293de941c0dbd9ad13f6a27c"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-110.json",
+      "bytes" : 4667048,
+      "sha256" : "7b275a7a0fd8221a79b44f526fa2c71546e9b694db59966acb5a5f7ba3a520f5"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-111.json",
+      "bytes" : 4703309,
+      "sha256" : "de2dbe9b970c97a47fdb9e11b4709b4f92fb83001cb536ae20313d092a5c508a"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-112.json",
+      "bytes" : 4762478,
+      "sha256" : "1ef4b54526e3b78af804de7522be1a113acae5eccb74db42659ffaf85fcbd79a"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-113.json",
+      "bytes" : 4821642,
+      "sha256" : "1083eab67b788fe7731b5d0f037a6dfd2ec1940a1d938e55ed9f684d1cfd7fcb"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-114.json",
+      "bytes" : 4880764,
+      "sha256" : "0670aaf5946dc29aee1804f3580e09ece675ba04887abb2277c0a0ed4d718da2"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-115.json",
+      "bytes" : 4939905,
+      "sha256" : "e7303c67504f977674265277ceabc4e1ea8e4e7e3d147e5d1b23e98d057e1e9a"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-116.json",
+      "bytes" : 4999102,
+      "sha256" : "d083052817e6f99b4662919d9c2a18e9dfe4a04f218937cdaceec7fc6ac66723"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-117.json",
+      "bytes" : 5058263,
+      "sha256" : "018b153fdbed6bec26e0f3563143cdefa2602bed84f0d693980879326e2ff7a6"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-118.json",
+      "bytes" : 5117386,
+      "sha256" : "0ceb2c582922d69e2eab50073f1bdc7b3b4df8bd8a0b601c4f6ec7255918a9d8"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-119.json",
+      "bytes" : 5176580,
+      "sha256" : "7e6d58c8fad9cf45a7552aa824ee9212258fbc0ea554378562268d565ff3eeac"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-120.json",
+      "bytes" : 5235747,
+      "sha256" : "7beeb55ae92a401ca1f26aab4da97c05cf874c1617c3746c4cece03a0056c77c"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-121.json",
+      "bytes" : 5294848,
+      "sha256" : "6b5e3a8d7b8f0fa880c3c4881e5cfef1388f08159f52cc93f14adde41b2ee72b"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-122.json",
+      "bytes" : 5354054,
+      "sha256" : "ff93895b07b1c70bfd08dfbd64bd745a3999df0809676e02a0adc599228368de"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-123.json",
+      "bytes" : 5413218,
+      "sha256" : "ad1c7df5bbcd3a61340eaae78b7007b57f8448168122f68decdc8b3155dbef73"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-124.json",
+      "bytes" : 5472369,
+      "sha256" : "6b848fee33287895f74f16bfb8a4719009642e306b394d72f9b7ae4f31be51fe"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-125.json",
+      "bytes" : 5531595,
+      "sha256" : "d2517dc0e900a62269f8a162dea1ce96fb5f488eba01b01a1d960a36a9400167"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-126.json",
+      "bytes" : 5590733,
+      "sha256" : "e79914ab5d88a93c311ee20a935946b5d8802e6fc05d88f66ed9b69debd72c12"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-127.json",
+      "bytes" : 5649954,
+      "sha256" : "df64af203c29196cb04b2755bf3ef57c6c4c31f1a26ad58060a892e9466a367f"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-128.json",
+      "bytes" : 5709114,
+      "sha256" : "5847f66d7a65b182d88cf126797deb7ca5960f1442714b8539df7b63527fbe2f"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-129.json",
+      "bytes" : 5768306,
+      "sha256" : "587c0efe59eb6f41feb1ca9fcfa664bda18c8aac3d81bce5674a48348463185b"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-130.json",
+      "bytes" : 5827505,
+      "sha256" : "cf00efa4039ce49008636f2ef8d9b0af4b0942caa0728f309007c835adfec35e"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-131.json",
+      "bytes" : 5886680,
+      "sha256" : "6c0c144cb418cfbe02022ffc0fcd4b6c92208fbe89b272039dbb77c0ae7414ad"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-132.json",
+      "bytes" : 5945868,
+      "sha256" : "6e11030dcfbcf67ca171f3401cef1565d0532ca1e505b1c9905318af7062ad89"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-133.json",
+      "bytes" : 6005039,
+      "sha256" : "e8db60d3db84d097b5b0cc8ea624191c35cb1a8c663d50fddad5fe8851e8a02b"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-134.json",
+      "bytes" : 6064258,
+      "sha256" : "e6a3de43aa947e696af4d0b8c7440447c487cb12fb7dc08b4c1344831f1cb006"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-135.json",
+      "bytes" : 6123437,
+      "sha256" : "60c1d4fb4956fb6afd5318e6eea5e2299782e467e43375ef64b8344c2783ec7d"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-136.json",
+      "bytes" : 6182645,
+      "sha256" : "b00f42668743634159ed948bcfd6d492422c27fb4f05c68ce97b2c4a678cf1da"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-137.json",
+      "bytes" : 6241843,
+      "sha256" : "4e757222ef99db92cbd04090b91e4ad0fefe880c8748741dd37dd913ad8703fb"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-138.json",
+      "bytes" : 6301000,
+      "sha256" : "553ec53313e4a142b82f57f760357fd33d64617ca770a357ab9b7cccb9206f38"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-139.json",
+      "bytes" : 6360235,
+      "sha256" : "5eea14a0e76e17d5187921aa3896dfcf8feb28da60e7b9d2f68c14fa7e074694"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-140.json",
+      "bytes" : 6419381,
+      "sha256" : "21f90735c88df09ae5083c0cc9978d6095ce3eb7c6b5e5d7a1fd0a7710eeb228"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-141.json",
+      "bytes" : 6478630,
+      "sha256" : "c62e7ca339e70cf6c7446c1bf1cf2ceb15f2a7532746102a8e74e3e1928f6472"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-142.json",
+      "bytes" : 6537781,
+      "sha256" : "ee7394627487f05fe52a85fab4867f8d80b5481b21fb43fa353f39b823c75dd2"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-143.json",
+      "bytes" : 6596998,
+      "sha256" : "a9c9ea643dd900c0cfb4008e22066ef1454e625c786867bb2a120f2aaca73ff5"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-144.json",
+      "bytes" : 6656212,
+      "sha256" : "605dded2de7934d02577c0cb3e19dd4bd0e30ca7083fcdc3f0de4ac2609b0eb6"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-145.json",
+      "bytes" : 6715377,
+      "sha256" : "cf010bbb80d17424f85398018bfdf4f741d33e9895ac3f251668d460fe81b629"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-146.json",
+      "bytes" : 6774626,
+      "sha256" : "0fadd5e2a0bf0caaaf324dc55991c8dc4aa7092caa7598d60c1a4ccde3f6b8f7"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-147.json",
+      "bytes" : 6833811,
+      "sha256" : "01c37017051c7a84e01dc90985ae1437cefb87ca63d2342e8bbf717caac413a9"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-148.json",
+      "bytes" : 6893004,
+      "sha256" : "c342204cf7ddc4da5a576b378d754257ddd9d9aeed97263e0c89828bc27f3f3b"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-149.json",
+      "bytes" : 6952242,
+      "sha256" : "96823fdeefa66b9a8196eb37971e158fbd73cd849b02232407ca77b74dce563f"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-150.json",
+      "bytes" : 7011431,
+      "sha256" : "025200bbd36ca58009c5449c6b2e4101735b16e896ac83f1bb510a2608eb37cf"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-151.json",
+      "bytes" : 7070633,
+      "sha256" : "b816d0f7409b54d3135f229f4adbbb39cae1e0d6fcb25a12d60b31ef187f0c83"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-152.json",
+      "bytes" : 7129879,
+      "sha256" : "132844a8fa68e76f58590893f0663e9ad04177d6a869a263cbe16e47bb33a941"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-153.json",
+      "bytes" : 7189085,
+      "sha256" : "fb353c547f06134141e4b681007924ca586cb6208d9be4d0ecde24848246ba4c"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-154.json",
+      "bytes" : 7248243,
+      "sha256" : "6215730d7e1059dd342d98fd2fff3ce5309d2907bec15eef0c8f1b24bb2102e1"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-155.json",
+      "bytes" : 7307492,
+      "sha256" : "828fa618577e4bca6326e6767ec2ba4f5e21d9f8ac6b0d34485aefad27a13b89"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-156.json",
+      "bytes" : 7366741,
+      "sha256" : "24667d5298a54aa0ae98e455b9b16a7ae350ae2b96e4cfc7e94c5ecda0cfa639"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-157.json",
+      "bytes" : 7425904,
+      "sha256" : "19a15c598df1cf5d9efe3785eccc2254406e0d22f068ccc0f887c670b2e61269"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-158.json",
+      "bytes" : 7485119,
+      "sha256" : "877d7e67aeb853aa235478862a192157e0df8878a57d12a7472b9741b0f00fd4"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-159.json",
+      "bytes" : 7544367,
+      "sha256" : "8016bf8a76391e799af59ce285c35e83108a6703ca36e5cb00b1b8d1c0c0c535"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-160.json",
+      "bytes" : 7603597,
+      "sha256" : "01904a313240e920cf00cb4ca7a21cd569211cbc2daaf0e7d4de69799e475ff6"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-161.json",
+      "bytes" : 7662762,
+      "sha256" : "186df63df186334d414c192e4101b6101bd9aa3cdf110737c667ab171185070b"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-162.json",
+      "bytes" : 7721992,
+      "sha256" : "61925b34bd57f31bfc0879842271afb74a60e4fda01ed4f76c9ddddc2b8db556"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-163.json",
+      "bytes" : 7781242,
+      "sha256" : "bd5649fa2e4f90d90d40e60c9cf099cb33d207c7aa626b2d0bb923bb8e8e9af7"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-164.json",
+      "bytes" : 7840491,
+      "sha256" : "b498e1827f216a1eafb55b05c5797c2d0ca3e46019396dc47409f2e748b907a3"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-165.json",
+      "bytes" : 7899690,
+      "sha256" : "1877a700a8a123c5157ca8e594014762cc8b1fb2034404c2d89054c220ad844a"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-166.json",
+      "bytes" : 7958862,
+      "sha256" : "6093f512c9f05e553402b8802caf12fdc43a80586539adbbf2cad6cffe62975e"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-167.json",
+      "bytes" : 8018110,
+      "sha256" : "a1e9fa97e0c3acc567ee5f6e8ca47bffe2a967cb4c5a04bac10ac091692fb80c"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-168.json",
+      "bytes" : 8077359,
+      "sha256" : "ef85314a7fbaea1ca01293f5d7112e038d44668c9ccd524536e7c5fcbfba3d91"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-169.json",
+      "bytes" : 8136592,
+      "sha256" : "ed9f887f81fea29c3be32f91901f528951ab66a7508c071006b38915c40da190"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-170.json",
+      "bytes" : 8195810,
+      "sha256" : "77b611b5976eb5f4487f8e163a19d2384c7e90b477b1aae1cce1259abc97b695"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-171.json",
+      "bytes" : 8254999,
+      "sha256" : "c87ea80f8a4912cc2c4c73ea19f7325403cd2ae85c3d6672ee122525f3cdfad1"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-172.json",
+      "bytes" : 8314228,
+      "sha256" : "c7ee537b5f63b477d06d8b73bd712f5db09bd1fa35174b82dcfba92b20232cad"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-173.json",
+      "bytes" : 8373476,
+      "sha256" : "d0f0c8852f33331455d37de0fe6956214f1553d46d9c2c36062bff2f0e95f2e8"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-174.json",
+      "bytes" : 8432726,
+      "sha256" : "57edaec2192b87809b0a3e208f1382c51603e8eb6e6eea5de2c3ce912c6c5517"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-175.json",
+      "bytes" : 8491974,
+      "sha256" : "c285ee4f9b3305480ecccf0b04c50f7fadd7ee4501314bfe31dcff4d4c55a624"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-176.json",
+      "bytes" : 8551221,
+      "sha256" : "b591e3b8f3161026ef7bb32e454243e4d221d6ee46aa37337ad6224cef970da3"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-177.json",
+      "bytes" : 8610429,
+      "sha256" : "24c8a10d29733718ce6fc8a1d005d23a2714aa1e8d85113b16bc3f61cb1a3afa"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-178.json",
+      "bytes" : 8669633,
+      "sha256" : "fe1e7a52063f6ee0612097ffcd0b380bc25c182f3312c78531f27e88772e8171"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-179.json",
+      "bytes" : 8728844,
+      "sha256" : "184a5faff8c3418af769f17f007375f5bd0b2035a137151afb3540f88118572e"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-180.json",
+      "bytes" : 8788094,
+      "sha256" : "39fe7af8b9f24381a4e67a01c8b9b32fe6b80525bad40263c6cefe6f224106a5"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoint-181.json",
+      "bytes" : 8788094,
+      "sha256" : "0f7e85e237790876cc6696a1d141c97b187ce3b7a91eec84dd5e71eaaf8dfc16"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoints.ndjson",
+      "bytes" : 1559001,
+      "sha256" : "a16b4017de3837a5e987d95bc3f5e0150f166c907e3ad310df53a1963bd75cee"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/l6-metrics-25696.endpoint",
+      "bytes" : 21,
+      "sha256" : "5103535096c5215c48e18518b2a4d5c6a3700fda461b85c81ee3dfa43de097bc"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/l6-metrics-29236.endpoint",
+      "bytes" : 21,
+      "sha256" : "225d3ac582603fe283a08f64a130ff3a3ee41e69e231c42fcd08671d5c332afc"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/l6-validation-25696.ndjson",
+      "bytes" : 7909,
+      "sha256" : "cc140b7fcc54c323aa4593473faced8aec0e557d93400787fa6231b64769dab5"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/l6-validation-29236.ndjson",
+      "bytes" : 7906,
+      "sha256" : "029b61615f4ce780bd3464943468f9d7674323bfd25d06b0cac3d32afaaac60a"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/nq-0.args",
+      "bytes" : 13034,
+      "sha256" : "d1e246e86eda9833bc4a6f2de572d123418e64db4deaf6e06cdffe06d04bd73a"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/nq-0.log",
+      "bytes" : 178143,
+      "sha256" : "6361423deca2506ba113736c8ecdb9f27e632a5f32a22224bfd395ac6af90f31"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/nq-1.args",
+      "bytes" : 13034,
+      "sha256" : "d1e246e86eda9833bc4a6f2de572d123418e64db4deaf6e06cdffe06d04bd73a"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/nq-1.log",
+      "bytes" : 182092,
+      "sha256" : "ef7d9a0f159bd20ff29f7e5ceff22c4e57014b041c8b3144118c0775f3eafb4e"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/parameters.json",
+      "bytes" : 909,
+      "sha256" : "6bc0517efcbe2a60ed46a315e020be1635fb52346171f3be039f63a5def402e3"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/progress.ndjson",
+      "bytes" : 2975131,
+      "sha256" : "1f6a2505ce7820c98f63fc9496d6cbb12119c86a81f69a587039aed428f72b28"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/resource-samples.ndjson",
+      "bytes" : 1160215,
+      "sha256" : "e8844a03fd1f12a96a09821c947a58b186a0aa64713001762c4560dd8649d00b"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/resource-summary.json",
+      "bytes" : 1934380,
+      "sha256" : "777d8495db68d5a1bdd39dc656efd2974e690fcaed5189707f0eee596c33aed2"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/venue.args",
+      "bytes" : 13048,
+      "sha256" : "db1366f7cdb772e198f4f0f908589ca8ec28b4d1f5731005e8dab513fb2748ef"
+    }, {
+      "path" : "backend/nq-app/target/l6-calibration/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/venue.log",
+      "bytes" : 15,
+      "sha256" : "3a931d447aeb8f2d7d2195917dc793fd18f65c23e3e877b419924b06cb8d227f"
+    } ],
+    "supportArtifacts" : [ {
+      "path" : "backend/nq-app/target/l6-formal-calibration-20260913-attempt02/com.guidinglight.nexusquant.app.smoke.L6CalibrationTest.txt",
+      "bytes" : 364,
+      "sha256" : "5c072b3808ab375d059c738e07661440f141ea5604ab5b790ba014f87789c894"
+    }, {
+      "path" : "backend/nq-app/target/l6-formal-calibration-20260913-attempt02/exact-head-ci.json",
+      "bytes" : 22201,
+      "sha256" : "4923213be3d5bcf9e7ff844f92f45fd505b6537b3a12fdb0beb47d65e5eb3242"
+    }, {
+      "path" : "backend/nq-app/target/l6-formal-calibration-20260913-attempt02/maven-exit.txt",
+      "bytes" : 1,
+      "sha256" : "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+    }, {
+      "path" : "backend/nq-app/target/l6-formal-calibration-20260913-attempt02/maven.log",
+      "bytes" : 52489,
+      "sha256" : "4217a201da284c85633d4270b59595e1361e257899e4a39657889074bca5e56e"
+    }, {
+      "path" : "backend/nq-app/target/l6-formal-calibration-20260913-attempt02/package-evidence.py",
+      "bytes" : 18435,
+      "sha256" : "c7fe812261c9be4b807b496c1349d7a95927b4589c56d7205f0f21fcf69ec3c0"
+    }, {
+      "path" : "backend/nq-app/target/l6-formal-calibration-20260913-attempt02/pre-packaging-integrity.json",
+      "bytes" : 280,
+      "sha256" : "047bcb082aebb58cad0239f77a64e084ac02e1f14cd4f931779862d09a7efaca"
+    }, {
+      "path" : "backend/nq-app/target/l6-formal-calibration-20260913-attempt02/start-inventory.json",
+      "bytes" : 877978,
+      "sha256" : "3756f0a6b626cee397562d82bf76a2629fca77041f5679643e5701de9cf2274a"
+    }, {
+      "path" : "backend/nq-app/target/l6-formal-calibration-20260913-attempt02/start-status.txt",
+      "bytes" : 2024,
+      "sha256" : "9905698d0722ef234cd7a98283e507e64e66842286a5efe321b5232dd3b89236"
+    }, {
+      "path" : "backend/nq-app/target/l6-formal-calibration-20260913-attempt02/TEST-com.guidinglight.nexusquant.app.smoke.L6CalibrationTest.xml",
+      "bytes" : 52928,
+      "sha256" : "1cf797016ad9f512d313108398e21d4ecaae70a7a9889c6b5e2f0b07ae64153c"
+    } ],
+    "implementationHashes" : [ {
+      "path" : "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6CalibrationTest.java",
+      "sha256" : "907e54608142b020406af39ebf6bbcadf35a2fe8f16ce308a3e2ff2b92bd4c04"
+    }, {
+      "path" : "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6CalibrationEvidence.java",
+      "sha256" : "6ebcbb55d83966e3be4102cc8e2770af06fd10d59ec4552ed2fad06153fae5ed"
+    }, {
+      "path" : "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6CalibrationContract.java",
+      "sha256" : "53ad9253c7357d17011b9032983bab3948528116142e2ed3137bc9a437380c7e"
+    }, {
+      "path" : "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6CalibrationBudget.java",
+      "sha256" : "850433d5d39719c43ad3663e08fe48ef76467dc7b223c8483b04a00b8c162d34"
+    }, {
+      "path" : "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/QualificationCapacity.java",
+      "sha256" : "af578f29161840bb7468a5e13180caf218020f7decc74b603cb998b99ea70a00"
+    }, {
+      "path" : "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ResourceSampler.java",
+      "sha256" : "537f5117497f52ab30a78393364b2fc77ed04b7ac26c926d1d3b796fb3b04d3d"
+    }, {
+      "path" : "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6RuntimeResources.java",
+      "sha256" : "ae278bd0b18bec372c56bdd111171ee9bfccc76c3f0f988379a67c7124a92ccb"
+    }, {
+      "path" : "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6BusinessCheckpoint.java",
+      "sha256" : "01909550376dda5e285d6985a483e38f79e1228ae83d812d8c6b5192f17c4407"
+    }, {
+      "path" : "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_calibration_analyzer.py",
+      "sha256" : "90aa80af92926430afb3c5fca77191f44cdacbc2e574c546518835714ab4c19e"
+    }, {
+      "path" : "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_oracle.py",
+      "sha256" : "5c18a7df915353a62403ddd3fb07bec64dbeb6c7dad432e46a3780886dca418b"
+    }, {
+      "path" : "backend/nq-app/src/test/resources/l6-calibration/budget.json",
+      "sha256" : "102c114f9d003581b95fe9159e0fca488a2cdc9d5fd18c715b6a707bdae1e73c"
+    } ],
+    "rawArtifactBytes" : 730981899,
+    "limitations" : [ "Calibration acceptance only. L6-A 60min and L6-B 180min NOT_STARTED; L6 NOT_ACCEPTED.", "Bounded no-fault SIM workload on Windows/JDK21/owned PG16.15/V51 with two actors; not a maximum-capacity benchmark or production proof.", "Heap band uses natural G1 Young post-collection low-water by actor/PID. No full-GC or long-duration leak conclusion.", "Noise bands describe this calibration workload and sampling method. They do not establish a separate noise experiment at the future 25 percent arrival rate.", "Log/audit/event endpoint growth covers the observed 300s through 890s resource samples; final 900s business totals and cleanup remain separately recorded.", "Temp bytes/count include intentionally retained growing checkpoint/raw evidence. Audit/replay growth is business/observation activity, not automatically a leak.", "No extra quiet interval beyond bounded drain and owned process shutdown; preserved artifact stability is observed after shutdown.", "STATUS retains older repository stage facts; this isolated calibration scope comes from the explicit current user request. Historical P2/P3 residuals are not reclassified." ],
+    "git" : {
+      "stage" : 0,
+      "commit" : "NONE",
+      "push" : "NONE",
+      "preexistingFilesUnchangedBeforePackaging" : 4002
+    },
+    "nextAction" : "NQ-GATEAUDIT-PHASE6-L6-ACTIVE-STABILITY-60MIN-QUALIFICATION",
+    "nextActionExecuted" : false,
+    "frozenAt" : "2026-09-13T11:40:07.334530+00:00"
+  },
+  "container" : "39d5d7a173c59595877326aa67020050253f05db02cf595cde4bf2aa010e0bb9",
+  "venuePid" : 36512,
+  "result" : "FAILED",
+  "failure" : "java.lang.IllegalStateException: BLOCKED / UNSAFE_TEST_FIXTURE_TARGET",
+  "manifestExit" : {
+    "path" : "E:\\Project\\nexus-quant-gateaudit\\docs\\audit\\evidence\\phase6-l6\\L6_FORMAL_CALIBRATION_MANIFEST.json",
+    "sha256" : "922253c8934e32b7626ced2f9e42407a2a4313c665256b89c483e847ce6abaa6",
+    "semanticFingerprint" : "48ef0d8309ca356cf257ad791ee5511698d76aef269e6adab706bcf60936a6ab"
+  },
+  "ownedNqRemaining" : 0
+}

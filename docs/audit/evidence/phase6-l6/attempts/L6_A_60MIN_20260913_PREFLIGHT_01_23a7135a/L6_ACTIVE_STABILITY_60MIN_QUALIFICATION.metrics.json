@@ -1,0 +1,22 @@
+{
+  "status": "NOT_MEASURED_RUN_NOT_STARTED",
+  "runtimeSampleCount": 0,
+  "businessCheckpointCount": 0,
+  "phaseTimestamps": [],
+  "actualFormalDurationSeconds": 0,
+  "activeResourceWindows": [],
+  "resourceMinMaxLowWaterHighWater": null,
+  "validationSourceStates": null,
+  "backlogHistory": [],
+  "workloadTotals": null,
+  "correctnessTotals": null,
+  "leakAssessment": "NOT_ASSESSED",
+  "requiredCadenceSeconds": 10,
+  "staticCadence": {
+    "jvmHeapGcThreadsHikariCommandQueueCandidateAge": "fixed delay 10 seconds",
+    "postgresConnectionsIdleInTransaction": "5 second driver loop subject to command/checkpoint duration",
+    "venueExecutorQueueOsHandlesAuditEventLogRawFiles": "checkpoint; next checkpoint eligible >=30 seconds after previous completion"
+  },
+  "missingRuntimeDataConvertedToZero": false,
+  "note": "零样本表示未运行；所有业务和资源结果均未验证，不表示实测零。"
+}

@@ -1,0 +1,130 @@
+{
+  "decision": "PASS / L6_RESOURCE_SAMPLING_10S_HARNESS_READY / EXACT_HEAD_CI_GREEN / READY_TO_RESTART_L6_A_60MIN",
+  "recordedAtUtc": "2026-09-13T05:27:11.733406+00:00",
+  "commit": "1208abd904c318b832af152c9c52f8a5f4b46df3",
+  "tree": "cf989b24331f38b9a3618b1fd58de68d3a26c302",
+  "remote": "1208abd904c318b832af152c9c52f8a5f4b46df3",
+  "ciRun": "34739867074",
+  "ciUrl": "https://github.com/ling5477/nexus-quant/actions/runs/34739867074/attempts/2",
+  "acceptedAttempt": 2,
+  "effectiveJobs": [
+    {
+      "name": "PostgreSQL and Flyway",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Runtime safety and no-outbound",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Secret scanning",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Delivery SBOM and provenance",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Java architecture guard",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Repository hygiene and governance",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Backend regression",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Frontend build and critical E2E",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Research quality",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "success": 9,
+  "failed": 0,
+  "cancelled": 0,
+  "skipped": 0,
+  "firstAttempt": {
+    "result": "FAILURE_PRESERVED",
+    "success": 8,
+    "failed": 1,
+    "job": "PostgreSQL and Flyway",
+    "step": "Run current-schema backup and restore drill",
+    "reason": "Disposable PostgreSQL database nq_canonical_restore did not yet exist after pg_isready",
+    "disposition": "Unchanged-head job rerun passed; initialization timing issue observed; no deployment script/config/workflow changes"
+  },
+  "tests": {
+    "targeted": 12,
+    "shortHarness": 1,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0
+  },
+  "runtime": {
+    "samples": 12,
+    "intervalMillis": 10000,
+    "mandatoryMissing": 0,
+    "cadenceViolations": 0,
+    "cachedStaleSubstitutions": 0,
+    "ownedSurvivors": 0
+  },
+  "productionDelta": 0,
+  "newP0": 0,
+  "newP1": 0,
+  "existingEvidenceUnchanged": true,
+  "staged": 0,
+  "formal60min": "NOT_RUN",
+  "l6": "NOT_ACCEPTED",
+  "nextAction": "NQ-GATEAUDIT-PHASE6-L6-ACTIVE-STABILITY-60MIN-QUALIFICATION; restart at T=0 with 10/40/10",
+  "collectionNotes": [
+    "Optional first-attempt backend full-log download exceeded 60-second fetch timeout; CI job metadata and local XML are preserved; not a test failure"
+  ],
+  "rawArtifacts": [
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\ci-attempt1-final.json",
+      "sha256": "a6edfb727c1114f3b2ef6d5e1bc779aed713fcb524b7314a0a723726675d99b6"
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\ci-pg-attempt1.log",
+      "sha256": "9591089f4264131b91890f42d15c3379252e82f035e8a2f2ea4b07d6a8bb1ff0"
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\ci-attempt2-final.json",
+      "sha256": "a983e08ef98a56544000c3f5502f0927fc6607cc277bf95af0efa17440025df8"
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\delivery-identity.json",
+      "sha256": "61e20cec573a0810c8969b9666058abd4f7b178f8fc23632428b12ce9416c591"
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\staged-manifest.json",
+      "sha256": "a75d5823642bc88bf0e3352c45e4dfda0919124f5ec79e74ebefc2c67db6b9b3"
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\short-run-raw.zip",
+      "sha256": "a860ba0d1965aa03bbac0d9085be4fb42d2b427338836dbad95c635ff92a03f5"
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\verified-results.json",
+      "sha256": "a2b286d78cbfdfd1548549d14be43678744bd3d8cea67f504c16d43368dc7975"
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-sampling-remediation-20260913\\cleanup.json",
+      "sha256": "6a9ddf251dee58567614a0dc2e9ea8967cfa40063de5cbb4fb661804fa3becfc"
+    }
+  ]
+}

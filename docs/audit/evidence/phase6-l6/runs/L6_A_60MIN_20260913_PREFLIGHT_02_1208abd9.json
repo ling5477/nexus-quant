@@ -1,0 +1,236 @@
+{
+  "task": "NQ-GATEAUDIT-PHASE6-L6-ACTIVE-STABILITY-60MIN-QUALIFICATION",
+  "recordedAtUtc": "2026-09-13T09:01:21.646975+00:00",
+  "runId": "L6_A_60MIN_20260913_PREFLIGHT_02_1208abd9",
+  "runtimeRunId": null,
+  "decision": "BLOCKED",
+  "classification": "QUALIFICATION_INFRASTRUCTURE_FAILURE",
+  "formalRun": "NOT_STARTED",
+  "completion": "NOT_COMPLETED",
+  "timerStarted": false,
+  "elapsedMillis": 0,
+  "phases": [
+    {
+      "phase": "WARMUP",
+      "requiredDurationSeconds": 600,
+      "start": null,
+      "end": null,
+      "actualDurationSeconds": null,
+      "sampleCount": 0,
+      "status": "NOT_STARTED"
+    },
+    {
+      "phase": "ACTIVE",
+      "requiredDurationSeconds": 2400,
+      "start": null,
+      "end": null,
+      "actualDurationSeconds": null,
+      "sampleCount": 0,
+      "status": "NOT_STARTED"
+    },
+    {
+      "phase": "DRAIN",
+      "requiredDurationSeconds": 600,
+      "start": null,
+      "end": null,
+      "actualDurationSeconds": null,
+      "sampleCount": 0,
+      "status": "NOT_STARTED"
+    }
+  ],
+  "sampleCount": 0,
+  "checkpointCount": 0,
+  "activeWindows": [],
+  "measurementState": "UNAVAILABLE",
+  "measurementReason": "Formal runtime was not started; no measurements, no substitutions, no cached samples",
+  "businessCounts": null,
+  "correctnessTotals": null,
+  "validationPerSource": null,
+  "schedulerProgress": null,
+  "backlogHistory": [],
+  "resourceWindows": [],
+  "stabilityAssessment": "NOT_ASSESSED",
+  "ownedSurvivors": 0,
+  "cleanup": "NONE_REQUIRED_NO_RUNTIME_CREATED",
+  "l6A": "BLOCKED",
+  "l6": "NOT_ACCEPTED",
+  "reasonCode": "L6_FORMAL_CALIBRATION_MANIFEST_MISSING",
+  "baseline": {
+    "branch": "audit/post-gatey-agent-baseline",
+    "head": "1208abd904c318b832af152c9c52f8a5f4b46df3",
+    "upstream": "1208abd904c318b832af152c9c52f8a5f4b46df3",
+    "tree": "cf989b24331f38b9a3618b1fd58de68d3a26c302",
+    "trackedDiff": 0,
+    "stagedFiles": 0
+  },
+  "ci": {
+    "run": 34739867074,
+    "head": "1208abd904c318b832af152c9c52f8a5f4b46df3",
+    "url": "https://github.com/ling5477/nexus-quant/actions/runs/34739867074",
+    "success": 9,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0
+  },
+  "planning": {
+    "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L5_L6_SCOPE_AND_QUALIFICATION_PLAN.md",
+    "sha256": "80e339594be7223f07783d30e7f18913a53187ecde59b360ecdbf9223c9e45ac"
+  },
+  "environment": {
+    "os": "Windows-11-10.0.26200-SP0",
+    "jdk": "java version \"21.0.9\" 2025-10-21 LTS\nJava(TM) SE Runtime Environment (build 21.0.9+7-LTS-338)\nJava HotSpot(TM) 64-Bit Server VM (build 21.0.9+7-LTS-338, mixed mode, sharing)\n",
+    "postgresImage": "postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94",
+    "postgresRuntimeVersion": null,
+    "schemaRequired": "V51",
+    "schemaObserved": null
+  },
+  "qualificationCommand": {
+    "execution": "NOT_EXECUTED",
+    "argv": [
+      "mvn",
+      "-f",
+      "backend/pom.xml",
+      "-pl",
+      "nq-app",
+      "-am",
+      "test",
+      "-Dtest=L6ActiveStabilityTest",
+      "-Dsurefire.failIfNoSpecifiedTests=false",
+      "-Dnq.l6=true",
+      "-Dnq.l6.diagnostic=false",
+      "-DargLine=-Xmx512m"
+    ]
+  },
+  "pidGenerations": [],
+  "runtimeCreated": false,
+  "findings": [
+    {
+      "priority": "P3",
+      "type": "QUALIFICATION_ENTRY_CALIBRATION_GAP",
+      "qualificationBlocking": true,
+      "reasonCodes": [
+        "L6_A_ARRIVAL_RATE_BINDING_UNVERIFIED",
+        "L6_A_FROZEN_NOISE_BAND_UNBOUND"
+      ],
+      "productionDefect": "NOT_DEMONSTRATED",
+      "sourceLocations": {
+        "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ActiveStabilityTest.java": [
+          139,
+          152,
+          153,
+          223,
+          225
+        ],
+        "docs/audit/evidence/GATEAUDIT_PHASE6_L5_L6_SCOPE_AND_QUALIFICATION_PLAN.md": [
+          134,
+          159,
+          186
+        ]
+      },
+      "searchScope": "L5/L6 evidence plus docs/target manifest, summary, metrics and L5/L6 named evidence; no claim of exhaustive filesystem absence"
+    }
+  ],
+  "severity": {
+    "newConfirmedP0": 0,
+    "newConfirmedP1": 0,
+    "newConfirmedP2": 0,
+    "newConfirmedP3": 1,
+    "existingP2P3": "PRESERVED_NOT_REASSESSED"
+  },
+  "identityVerification": {
+    "inputFiles": 3965,
+    "allExistingBytesUnchanged": true,
+    "startSha256": "1c834276f42c9b17e398562a86ac4bb9168d9faa8e6392b24ffd0a703d9846d1",
+    "endSha256": "1c834276f42c9b17e398562a86ac4bb9168d9faa8e6392b24ffd0a703d9846d1"
+  },
+  "productionDelta": 0,
+  "testHarnessDelta": 0,
+  "configurationDelta": 0,
+  "stage": 0,
+  "commit": "NONE",
+  "push": "NONE",
+  "nextAction": "NQ-GATEAUDIT-PHASE6-L6-FORMAL-CALIBRATION-MANIFEST-CLOSURE",
+  "report": {
+    "path": "docs/audit/evidence/phase6-l6/attempts/L6_A_60MIN_20260913_PREFLIGHT_02_1208abd9/L6_ACTIVE_STABILITY_60MIN_QUALIFICATION.md",
+    "sha256": "d1c048c0af132f2281386f83959c47363e0487eae944b10e2b51cc972947cb59"
+  },
+  "metricsArtifact": {
+    "path": "docs/audit/evidence/phase6-l6/metrics/L6_A_60MIN_20260913_PREFLIGHT_02_1208abd9/summary.json",
+    "sha256": "83a5e3314074266e4decfc33c51c5452f2b9bf1ef8055ed9548cb6d1ccf06870"
+  },
+  "rawArtifacts": [
+    {
+      "path": "backend/nq-app/target/l6-a-preflight-20260913-02-1208abd9/baseline.json",
+      "bytes": 1841,
+      "sha256": "ae6f6f8d61aa4f665704a4cd931d09f6b5331a90689553c2eb17dcfb4e838df4"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-preflight-20260913-02-1208abd9/calibration-search.json",
+      "bytes": 3678,
+      "sha256": "b4db0c2bb6baa502d97cfdce17d970487dcef12fc724c60f4040f0dd68d43aa9"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-preflight-20260913-02-1208abd9/canonical-pg-image.json",
+      "bytes": 1719,
+      "sha256": "b94b1f479b9c9df167a162351647f9806b5f2f011796a2a8cbc62a67731e63bc"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-preflight-20260913-02-1208abd9/ci-command.json",
+      "bytes": 25253,
+      "sha256": "6c51e1a1f7557d2a71f3ad5db011c6e9098d4f4fb1e04e882f2b17e2549a9276"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-preflight-20260913-02-1208abd9/collect.py",
+      "bytes": 3579,
+      "sha256": "9641cbc594bd2316d5660a3020d4658146a951d0daae08e44fcd87f3304172af"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-preflight-20260913-02-1208abd9/environment.json",
+      "bytes": 1346,
+      "sha256": "53b24edbdfe9a8ceea0cbe094aba4f3d34118dfd88f4e38bd8445f2f5dc78733"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-preflight-20260913-02-1208abd9/exact-head-ci.json",
+      "bytes": 34697,
+      "sha256": "eb62016ffc80d0d7da4b0a1434e8db04fa0294a36183d1e91d263fdec4ebeaa1"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-preflight-20260913-02-1208abd9/finalize.py",
+      "bytes": 11754,
+      "sha256": "c2488386f23590968945259c4c657321dfbf4290f4c5910164beed70be832370"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-preflight-20260913-02-1208abd9/git-final.json",
+      "bytes": 1552,
+      "sha256": "5a16a5b99e380bd6f651d0c994f2ab56b365a9d15dfbc15937d3f75d78884393"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-preflight-20260913-02-1208abd9/input-inventory-end.json",
+      "bytes": 873995,
+      "sha256": "1c834276f42c9b17e398562a86ac4bb9168d9faa8e6392b24ffd0a703d9846d1"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-preflight-20260913-02-1208abd9/input-inventory-start.json",
+      "bytes": 873995,
+      "sha256": "1c834276f42c9b17e398562a86ac4bb9168d9faa8e6392b24ffd0a703d9846d1"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-preflight-20260913-02-1208abd9/l5-existing-measurements.json",
+      "bytes": 21554,
+      "sha256": "4a2e605418118e7081f39ea99f406e268229595e15fece1020024dd8213ab3a6"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-preflight-20260913-02-1208abd9/source-evidence.json",
+      "bytes": 129189,
+      "sha256": "34ef9e3c6bc2f24c77816a030fc6b170e5036b192a047affd1a2004030ef5f2c"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-preflight-20260913-02-1208abd9/user-closure-direction.json",
+      "bytes": 492,
+      "sha256": "d659407ef3c3da105fe59269bd62461d48b95980043a7354792d46fc7481eee9"
+    }
+  ],
+  "userConfirmedManifestMissing": true,
+  "nextActionExecuted": false,
+  "stopDirection": "Save BLOCKED evidence and stop; no formal runtime, no closure task, no new calibration"
+}

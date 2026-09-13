@@ -1,0 +1,51 @@
+{
+  "status": "NOT_MEASURED_RUNTIME_NOT_STARTED",
+  "runtimeStarted": false,
+  "runtimeRunId": null,
+  "attemptId": "L6_A_60MIN_20260913_PREFLIGHT_03_d94f8512",
+  "phaseTimestamps": [],
+  "actualDurationsSeconds": {
+    "warmup": null,
+    "active": null,
+    "drain": null,
+    "total": null
+  },
+  "plannedDurationsSeconds": {
+    "warmup": 600,
+    "active": 2400,
+    "drain": 600,
+    "total": 3600
+  },
+  "frozenInput": {
+    "finalL6ArrivalRate": 0.14049580971247533,
+    "pacingInterval": 7.11765,
+    "pacingIntervalNanos": 7117650000,
+    "units": "orders/second",
+    "source": "read verbatim from canonical manifest; no recalculation"
+  },
+  "businessCounts": null,
+  "fullChainCounts": null,
+  "runtimeSamplesCollected": 0,
+  "businessCheckpointsCollected": 0,
+  "activeWindows": [],
+  "windowByWindowNoiseComparison": null,
+  "correctness": null,
+  "validation": null,
+  "backlog": null,
+  "mandatoryMissing": null,
+  "staleReuse": null,
+  "cadenceViolation": null,
+  "hikariTimeout": null,
+  "resourceResult": "NOT_ASSESSED",
+  "leakSuspect": "NOT_ASSESSED",
+  "paperNormalControl": "NOT_RUN",
+  "criticalPositiveControl": "NOT_RUN",
+  "dailyReport": "NOT_RUN",
+  "sameDateRegeneration": "NOT_RUN",
+  "pgVersion": null,
+  "flywaySchema": null,
+  "ownedResourcesCreated": 0,
+  "ownedSurvivors": 0,
+  "cleanup": "NONE_REQUIRED_NO_RUNTIME_CREATED",
+  "note": "零样本/零创建资源表示未启动；业务、正确性、采样缺项和资源结果为null，不表示实测零或PASS。"
+}

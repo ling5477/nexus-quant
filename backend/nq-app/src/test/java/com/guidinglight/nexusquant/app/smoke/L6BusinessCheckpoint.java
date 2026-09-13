@@ -20,6 +20,11 @@ final class L6BusinessCheckpoint {
     private static final ObjectMapper JSON = new ObjectMapper();
     static ObjectNode verify(Connection reader, String endpoint, List<B0Processes.Child> children,
                              Path dir, String phase, int checkIndex, boolean calibration) throws Exception {
+        return verify(reader, endpoint, children, dir, phase, checkIndex, calibration, 0, List.of());
+    }
+    static ObjectNode verify(Connection reader, String endpoint, List<B0Processes.Child> children,
+                             Path dir, String phase, int checkIndex, boolean calibration, int formalBudget,
+                             List<L6DeterministicPacer.Slot> slots) throws Exception {
         // 真实完成后才用完整源账务重建；短暂在途状态不能被误报成投影损坏。
         long deadline=System.nanoTime()+Duration.ofSeconds(120).toNanos();
         long waitingFrom = -1;
@@ -53,6 +58,10 @@ final class L6BusinessCheckpoint {
         check.put("expectedStrategyRuns",number(reader,"SELECT count(*) FROM strategy_runs"));reader.commit();
         check.set("venue",http(endpoint,null));
         if (calibration) check.put("mode", "CALIBRATION");
+        if (formalBudget > 0) {
+            check.put("mode", "FORMAL_L6_A").put("runOrderBudget", formalBudget);
+            check.set("pacingSlots", JSON.valueToTree(slots));
+        }
         Path file=dir.resolve(String.format("checkpoint-%03d.json",checkIndex));
         Files.writeString(file,JSON.writeValueAsString(check));
         String oracle=B0Processes.command("python","-X","utf8",B0Processes.root().resolve(

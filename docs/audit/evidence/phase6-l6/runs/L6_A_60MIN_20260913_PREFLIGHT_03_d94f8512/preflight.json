@@ -1,0 +1,269 @@
+{
+  "task": "NQ-GATEAUDIT-PHASE6-L6-ACTIVE-STABILITY-60MIN-QUALIFICATION",
+  "attemptId": "L6_A_60MIN_20260913_PREFLIGHT_03_d94f8512",
+  "decision": "BLOCKED / QUALIFICATION_INFRASTRUCTURE_FAILURE",
+  "reasonCode": "L6_A_FROZEN_CONTRACT_NOT_CONSUMED",
+  "scope": "PRE_RUN_ENTRY_CHECK_ONLY",
+  "formalRun": "NOT_STARTED",
+  "runtimeRunId": null,
+  "l6A": "NOT_ACCEPTED",
+  "l6": "NOT_ACCEPTED",
+  "extended180min": "NOT_STARTED",
+  "baseline": {
+    "branch": "audit/post-gatey-agent-baseline",
+    "head": "d94f8512108fd7f8e9cbdeee14cfc8b064f2d5d8",
+    "tree": "0c010b7d80327f5e8ec994cd6a7073e6853fe3ea",
+    "upstream": "d94f8512108fd7f8e9cbdeee14cfc8b064f2d5d8",
+    "stage": 0,
+    "unexplainedCandidateDrift": false
+  },
+  "ci": {
+    "runId": 34753536151,
+    "head": "d94f8512108fd7f8e9cbdeee14cfc8b064f2d5d8",
+    "conclusion": "success",
+    "successJobs": 9,
+    "url": "https://github.com/ling5477/nexus-quant/actions/runs/34753536151",
+    "verifiedLive": true
+  },
+  "calibrationManifest": {
+    "path": "docs/audit/evidence/phase6-l6/L6_FORMAL_CALIBRATION_MANIFEST.json",
+    "entrySize": 134009,
+    "exitSize": 134009,
+    "entrySha256": "922253c8934e32b7626ced2f9e42407a2a4313c665256b89c483e847ce6abaa6",
+    "exitSha256": "922253c8934e32b7626ced2f9e42407a2a4313c665256b89c483e847ce6abaa6",
+    "identityUnchanged": true,
+    "valueMatch": true,
+    "calibrationAccepted": true,
+    "healthySustainedRate": 0.5619832388499013,
+    "finalL6ArrivalRate": 0.14049580971247533,
+    "pacingInterval": 7.11765,
+    "pacingIntervalNanos": 7117650000,
+    "noiseBandsSource": "canonical manifest, unchanged, not recalculated"
+  },
+  "environment": {
+    "os": "Windows NT 10.0.26200.0",
+    "jdk": "21.0.9+7-LTS-338",
+    "runtimePgVersion": null,
+    "runtimeSchema": null
+  },
+  "finding": {
+    "id": "L6_A_FROZEN_CONTRACT_NOT_CONSUMED",
+    "priority": "P1",
+    "domain": "TEST_HARNESS",
+    "qualificationBlocking": true,
+    "expected": "Formal producer reads immutable manifest and applies exact 7.11765s pacing in WARMUP/ACTIVE; comparisons use frozen noise bands; capacity is independently preflighted.",
+    "actual": "The delivered formal entry never reads the manifest. It seeds two per-minute cron schedules and scans every five seconds. Formal capacity and working-set checks remain fixed at 240.",
+    "locations": [
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ActiveStabilityTest.java",
+        "lines": [
+          49,
+          75,
+          145,
+          146,
+          160,
+          169,
+          199
+        ]
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/QualificationCapacity.java",
+        "lines": [
+          27
+        ]
+      }
+    ],
+    "implications": [
+      "The existing entry cannot execute the user-required frozen arrival/pacing contract without a harness change.",
+      "No delivered consumer of frozen resource noise bands was found in tracked backend/scripts. Offline comparisons alone cannot correct a runtime with wrong pacing.",
+      "240/240/240 currently validates internally for its old workload; this is not a claim that capacity preflight dynamically failed or that the cap was exhausted in this unstarted attempt."
+    ],
+    "productionDefectProven": false,
+    "repairApplied": false
+  },
+  "findings": {
+    "newConfirmedP0": 0,
+    "newConfirmedP1": 1,
+    "newConfirmedP2": 0,
+    "newConfirmedP3": 0,
+    "scope": "P1 is a qualification harness blocker, not a demonstrated production correctness defect",
+    "historicalP2P3": "UNCHANGED / NOT_REASSESSED"
+  },
+  "measurement": {
+    "status": "NOT_MEASURED_RUNTIME_NOT_STARTED",
+    "runtimeStarted": false,
+    "runtimeRunId": null,
+    "attemptId": "L6_A_60MIN_20260913_PREFLIGHT_03_d94f8512",
+    "phaseTimestamps": [],
+    "actualDurationsSeconds": {
+      "warmup": null,
+      "active": null,
+      "drain": null,
+      "total": null
+    },
+    "plannedDurationsSeconds": {
+      "warmup": 600,
+      "active": 2400,
+      "drain": 600,
+      "total": 3600
+    },
+    "frozenInput": {
+      "finalL6ArrivalRate": 0.14049580971247533,
+      "pacingInterval": 7.11765,
+      "pacingIntervalNanos": 7117650000,
+      "units": "orders/second",
+      "source": "read verbatim from canonical manifest; no recalculation"
+    },
+    "businessCounts": null,
+    "fullChainCounts": null,
+    "runtimeSamplesCollected": 0,
+    "businessCheckpointsCollected": 0,
+    "activeWindows": [],
+    "windowByWindowNoiseComparison": null,
+    "correctness": null,
+    "validation": null,
+    "backlog": null,
+    "mandatoryMissing": null,
+    "staleReuse": null,
+    "cadenceViolation": null,
+    "hikariTimeout": null,
+    "resourceResult": "NOT_ASSESSED",
+    "leakSuspect": "NOT_ASSESSED",
+    "paperNormalControl": "NOT_RUN",
+    "criticalPositiveControl": "NOT_RUN",
+    "dailyReport": "NOT_RUN",
+    "sameDateRegeneration": "NOT_RUN",
+    "pgVersion": null,
+    "flywaySchema": null,
+    "ownedResourcesCreated": 0,
+    "ownedSurvivors": 0,
+    "cleanup": "NONE_REQUIRED_NO_RUNTIME_CREATED",
+    "note": "零样本/零创建资源表示未启动；业务、正确性、采样缺项和资源结果为null，不表示实测零或PASS。"
+  },
+  "preservedHistoricalEvidence": [
+    {
+      "original": "docs/audit/evidence/phase6-l6/L6_ACTIVE_STABILITY_60MIN_QUALIFICATION.md",
+      "archive": "docs/audit/evidence/phase6-l6/attempts/L6_A_60MIN_20260913_PREFLIGHT_01_23a7135a/L6_ACTIVE_STABILITY_60MIN_QUALIFICATION.md",
+      "sha256": "3466309bff0f773ce10b02689375976bc4043c95a03dbfdc5fcc9768627073f3"
+    },
+    {
+      "original": "docs/audit/evidence/phase6-l6/L6_ACTIVE_STABILITY_60MIN_QUALIFICATION.json",
+      "archive": "docs/audit/evidence/phase6-l6/attempts/L6_A_60MIN_20260913_PREFLIGHT_01_23a7135a/L6_ACTIVE_STABILITY_60MIN_QUALIFICATION.json",
+      "sha256": "f9ce922d51271427f30347d37b89aff790baf075013b23e3b0bc3f7cbb94e643"
+    },
+    {
+      "original": "docs/audit/evidence/phase6-l6/L6_ACTIVE_STABILITY_60MIN_QUALIFICATION.metrics.json",
+      "archive": "docs/audit/evidence/phase6-l6/attempts/L6_A_60MIN_20260913_PREFLIGHT_01_23a7135a/L6_ACTIVE_STABILITY_60MIN_QUALIFICATION.metrics.json",
+      "sha256": "896bf3406e68d6105330b56bfe88639421c7c80aa189f5b5c5ef1194f5d8cefa"
+    }
+  ],
+  "rawArtifacts": [
+    {
+      "path": "backend/nq-app/target/l6-a-60min-preflight-20260913-03-d94f8512/entry-search.json",
+      "size": 2910,
+      "sha256": "4a363527594e58a9aec6c5097ca208e180d88876f01a66abbef7c54a5a12d48c"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-60min-preflight-20260913-03-d94f8512/exact-head-ci.json",
+      "size": 22201,
+      "sha256": "4923213be3d5bcf9e7ff844f92f45fd505b6537b3a12fdb0beb47d65e5eb3242"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-60min-preflight-20260913-03-d94f8512/l6_oracle.py.committed.txt",
+      "size": 7282,
+      "sha256": "8af6a543fd660119cb4d073694d9c16c45f5cec12140f0948f9cec669fe21108"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-60min-preflight-20260913-03-d94f8512/l6_oracle.py.numbered.txt",
+      "size": 7738,
+      "sha256": "620142bb14582e5a6bfb66c79087df5e810fc10a8d12dfeace45b5a0f40e2634"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-60min-preflight-20260913-03-d94f8512/L6ActiveStabilityTest.java.committed.txt",
+      "size": 15660,
+      "sha256": "9b1c0d76759c8b184906a2acdec1730412592a22c9048888215535a454b535db"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-60min-preflight-20260913-03-d94f8512/L6ActiveStabilityTest.java.numbered.txt",
+      "size": 16800,
+      "sha256": "8bc2241a1f61adbadb3704bb768d246b4aa4286c50ae4c59c118b0f560b85ff5"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-60min-preflight-20260913-03-d94f8512/L6BusinessCheckpoint.java.committed.txt",
+      "size": 4871,
+      "sha256": "efef1faa051d99b5a5fe27601bbcee612f5880925749e0ae8cde8f21eae2cdd8"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-60min-preflight-20260913-03-d94f8512/L6BusinessCheckpoint.java.numbered.txt",
+      "size": 5202,
+      "sha256": "638584aee82cd11e1499d4a1dec24e990b758e2276d84a954ab0604133dc098b"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-60min-preflight-20260913-03-d94f8512/L6DurationContract.java.committed.txt",
+      "size": 1476,
+      "sha256": "593d547659097086bb82ae5b6d12b4536548de5aa12b4066d626fcc5ad98e4dc"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-60min-preflight-20260913-03-d94f8512/L6DurationContract.java.numbered.txt",
+      "size": 1647,
+      "sha256": "cda700b91cc1c41797d3297754ceba2a73e1f88bed6dd0fd6cf846a0af488493"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-60min-preflight-20260913-03-d94f8512/L6FormalVenueProcessMain.java.committed.txt",
+      "size": 534,
+      "sha256": "c29bacd88bd8b186f33ed4db831f477a530696dcb6fa41f0008f64a7bac6ccba"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-60min-preflight-20260913-03-d94f8512/L6FormalVenueProcessMain.java.numbered.txt",
+      "size": 585,
+      "sha256": "069e47e77f1751d4476f9473a27551b6df10a912050fcb1947dbf0533ada10aa"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-60min-preflight-20260913-03-d94f8512/manifest-entry.json",
+      "size": 543,
+      "sha256": "d4f99e89d59042fee5f420880679dd19bb07461cc72eaa3f1b04ce2e65164a19"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-60min-preflight-20260913-03-d94f8512/manifest-exit.json",
+      "size": 237,
+      "sha256": "3ba1ef6c7d398b28e3956e8dbcd47fc601e1fa60dce26443414d28ec98f83b05"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-60min-preflight-20260913-03-d94f8512/QualificationCapacity.java.committed.txt",
+      "size": 1835,
+      "sha256": "912f0b1e7dc05e124bda4f2b006069f84c5dd008e4fc29c178754f4158c3fe1f"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-60min-preflight-20260913-03-d94f8512/QualificationCapacity.java.numbered.txt",
+      "size": 1966,
+      "sha256": "e742c47ba3eb86b27af1967a9fb28f0255430dbfd38b90d4c68633b5d09b5e0e"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-60min-preflight-20260913-03-d94f8512/source-index.json",
+      "size": 2576,
+      "sha256": "c132ff16e567dcb4d3dc5ce34826a22f880f013a517eac29b8a08cd253a0d47e"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-60min-preflight-20260913-03-d94f8512/start-inventory.json",
+      "size": 880659,
+      "sha256": "63fa8503a3217580740e58e1e31a5e4df2a621ac1984ddcd48bcfe8f8259f45a"
+    },
+    {
+      "path": "backend/nq-app/target/l6-a-60min-preflight-20260913-03-d94f8512/start-status.txt",
+      "size": 3197,
+      "sha256": "d0c26c5724e5a6a924ad4ae9e3602620b4f85cb5ab5de3a7617d47c482e2a9d6"
+    }
+  ],
+  "implementationChange": false,
+  "harnessChange": false,
+  "manifestChange": false,
+  "calibrationRerun": false,
+  "git": {
+    "stage": 0,
+    "commit": "NONE",
+    "push": "NONE"
+  },
+  "previousReadinessCorrection": "Previous calibration READY_TO_RESTART language established the input artifact only; formal harness consumption had not been verified. This preflight confirms that separate gap. Calibration acceptance is unchanged.",
+  "nextAction": "Separately authorize and deliver the bounded formal harness manifest/pacing/capacity integration, then rerun L6-A from T=0. No repair or 180min run in this task.",
+  "recordedAt": "2026-09-13T11:56:45.812830+00:00"
+}

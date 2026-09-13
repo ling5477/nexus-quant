@@ -1,0 +1,3519 @@
+{
+  "task": "NQ-GATEAUDIT-PHASE6-L6-FORMAL-CALIBRATION-MANIFEST-CLOSURE",
+  "taskClassification": "EVIDENCE_RECONCILIATION / OFFLINE_CALIBRATION_ASSESSMENT / NO_DYNAMIC_RUN",
+  "recordedAtUtc": "2026-09-13T09:21:11.791761+00:00",
+  "decision": "BLOCKED / L6_FORMAL_CALIBRATION_EVIDENCE_INSUFFICIENT / MINIMAL_CALIBRATION_RUN_REQUIRED",
+  "additionalBlockers": [
+    "HEALTHY_RATE_CALIBRATION_EVIDENCE_INSUFFICIENT",
+    "CALIBRATION_HARNESS_CHANGE_REQUIRED"
+  ],
+  "baseline": {
+    "branch": "audit/post-gatey-agent-baseline",
+    "head": "1208abd904c318b832af152c9c52f8a5f4b46df3",
+    "upstream": "1208abd904c318b832af152c9c52f8a5f4b46df3",
+    "tree": "cf989b24331f38b9a3618b1fd58de68d3a26c302",
+    "ciRun": 34739867074,
+    "ciSuccess": 9,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "staged": 0
+  },
+  "sourceL5Acceptance": {
+    "path": "docs/audit/evidence/phase6-l5/summary.json",
+    "pointer": "aggregateAcceptanceResumeBatch.currentL5Matrix",
+    "sha256": "8412a3caa244d8b058daba697a3e7f8b3cb3e37bd22a5f6d06de6052ba564b77",
+    "accepted": 1,
+    "reused": 19,
+    "missing": 0,
+    "invalid": 0,
+    "scope": "BOUNDED_FOR_L5_SCOPE; no inferred calibration acceptance"
+  },
+  "sourceRuns": [
+    {
+      "id": "S1",
+      "disposition": "REUSED_ACCEPTED_PROOF",
+      "class": "BOUNDED_NO_FAULT",
+      "raw": "backend/nq-app/target/l5-bounded/cc102d5a-94c1-4f99-9a2f-d3fc88273bc6/S1/raw-proof.json",
+      "expectedRawSha256": "6119f5d1302ff97a9440f4c0b0576ac4b6b71432a0c72bf8359a20bfabc433fc",
+      "log": "backend/nq-app/target/l5-s1-attempt04.log",
+      "expectedLogSha256": "3ce2a32a6ff76b502e64dcccdd175eba33d530930353720693b4873879dd990b",
+      "source": "summary.json#boundedBatch.levels",
+      "rawExists": true,
+      "logExists": true,
+      "actualRawSha256": "6119f5d1302ff97a9440f4c0b0576ac4b6b71432a0c72bf8359a20bfabc433fc",
+      "actualLogSha256": "3ce2a32a6ff76b502e64dcccdd175eba33d530930353720693b4873879dd990b",
+      "rawHashMatch": true,
+      "logHashMatch": true,
+      "runId": "cc102d5a-94c1-4f99-9a2f-d3fc88273bc6/S1",
+      "rawResult": "MEASURED",
+      "database": "nq_f002_b0_d09be7fa335c4e4ea9e11ab025c9c3d8"
+    },
+    {
+      "id": "S2",
+      "disposition": "REUSED_ACCEPTED_PROOF",
+      "class": "BOUNDED_NO_FAULT",
+      "raw": "backend/nq-app/target/l5-bounded/b1ecd5a9-7083-4ed3-a24a-7c00e06d2fcd/S2/raw-proof.json",
+      "expectedRawSha256": "cfafd02356c3cb37aa6b89c29f23a86e3b15746099e06988b30abde71718b87e",
+      "log": "backend/nq-app/target/l5-s2-attempt01.log",
+      "expectedLogSha256": "cc8b5721b2f6ad9249ba4cd01a0f160b1ff52d7b6fc9a9eae04b3b028e181888",
+      "source": "summary.json#boundedBatch.levels",
+      "rawExists": true,
+      "logExists": true,
+      "actualRawSha256": "cfafd02356c3cb37aa6b89c29f23a86e3b15746099e06988b30abde71718b87e",
+      "actualLogSha256": "cc8b5721b2f6ad9249ba4cd01a0f160b1ff52d7b6fc9a9eae04b3b028e181888",
+      "rawHashMatch": true,
+      "logHashMatch": true,
+      "runId": "b1ecd5a9-7083-4ed3-a24a-7c00e06d2fcd/S2",
+      "rawResult": "MEASURED",
+      "database": "nq_f002_b0_92f2de87084248fd83bc6690832174b0"
+    },
+    {
+      "id": "S3",
+      "disposition": "REUSED_ACCEPTED_PROOF",
+      "class": "BOUNDED_NO_FAULT",
+      "raw": "backend/nq-app/target/l5-bounded/7c7ac68f-4235-44d6-928d-c265dddf316b/S3/raw-proof.json",
+      "expectedRawSha256": "4f828e767b8fe7595fbca4109fc64bfda2dc2c3c8ab5e3a9a8e977d8f4f3743c",
+      "log": "backend/nq-app/target/l5-s3-attempt01.log",
+      "expectedLogSha256": "38cf66c66ba2b525dc06a5cfea1d4958350ff1012bc553e240a94a810491dde2",
+      "source": "summary.json#boundedBatch.levels",
+      "rawExists": true,
+      "logExists": true,
+      "actualRawSha256": "4f828e767b8fe7595fbca4109fc64bfda2dc2c3c8ab5e3a9a8e977d8f4f3743c",
+      "actualLogSha256": "38cf66c66ba2b525dc06a5cfea1d4958350ff1012bc553e240a94a810491dde2",
+      "rawHashMatch": true,
+      "logHashMatch": true,
+      "runId": "7c7ac68f-4235-44d6-928d-c265dddf316b/S3",
+      "rawResult": "MEASURED",
+      "database": "nq_f002_b0_b54f5fadf3394632aa5e7eb71bbd245d"
+    },
+    {
+      "id": "C1",
+      "disposition": "REUSED_ACCEPTED_PROOF",
+      "class": "CONCURRENT_NO_FAULT",
+      "raw": "backend/nq-app/target/l5-bounded/6fedf20a-b76f-41d3-b86d-49924fdb01bd/C1/raw-proof.json",
+      "expectedRawSha256": "7179fa7d9e748c7b7a4c476b5f9c0e926e314212656b1b624d19f2342517bbaa",
+      "log": "backend/nq-app/target/l5-resume/C1-qualification.log",
+      "expectedLogSha256": "625165f4e0bda409dd998acfbc36c61d574ede51b664a24c0af7194ec52d7438",
+      "source": "docs/audit/evidence/phase6-l5/runs/C1-resume.json",
+      "rawExists": true,
+      "logExists": true,
+      "actualRawSha256": "7179fa7d9e748c7b7a4c476b5f9c0e926e314212656b1b624d19f2342517bbaa",
+      "actualLogSha256": "625165f4e0bda409dd998acfbc36c61d574ede51b664a24c0af7194ec52d7438",
+      "rawHashMatch": true,
+      "logHashMatch": true,
+      "runId": "6fedf20a-b76f-41d3-b86d-49924fdb01bd/C1",
+      "rawResult": "MEASURED",
+      "database": "nq_f002_b0_0f6e3269f4ac45eba399fc7670e2de9c"
+    },
+    {
+      "id": "C2",
+      "disposition": "REUSED_ACCEPTED_PROOF",
+      "class": "CONCURRENT_NO_FAULT",
+      "raw": "backend/nq-app/target/l5-bounded/7cac8335-7311-4630-b97f-eb65c7141b27/C2/raw-proof.json",
+      "expectedRawSha256": "5fd631118135c4c89054e07c38cbdc3ccabc1ffdcea02fe97ad5e3b3c9dee197",
+      "log": "backend/nq-app/target/l5-resume/C2-qualification.log",
+      "expectedLogSha256": "83f72184d46925205f35b92eacaa0511e51d010cd3b80d33dfa67b454daf9415",
+      "source": "docs/audit/evidence/phase6-l5/runs/C2-resume.json",
+      "rawExists": true,
+      "logExists": true,
+      "actualRawSha256": "5fd631118135c4c89054e07c38cbdc3ccabc1ffdcea02fe97ad5e3b3c9dee197",
+      "actualLogSha256": "83f72184d46925205f35b92eacaa0511e51d010cd3b80d33dfa67b454daf9415",
+      "rawHashMatch": true,
+      "logHashMatch": true,
+      "runId": "7cac8335-7311-4630-b97f-eb65c7141b27/C2",
+      "rawResult": "MEASURED",
+      "database": "nq_f002_b0_ffa86330832f41ee90bfe3418da57902"
+    },
+    {
+      "id": "C3",
+      "disposition": "REUSED_ACCEPTED_PROOF",
+      "class": "CONCURRENT_NO_FAULT",
+      "raw": "backend/nq-app/target/l5-bounded/b85ffa89-367d-4144-8efb-9162ae6360bf/C3/raw-proof.json",
+      "expectedRawSha256": "b778d5983bda3b0b0509139fbd8bc73396030d285d11a8ebc011898c06eb5ea8",
+      "log": "backend/nq-app/target/l5-c3-resume-mqdn2uhm/C3-qualification.log",
+      "expectedLogSha256": "71ca5197019e2cf1b8baafe8ab8e6f5c7c46bf9b75b1da21eb449bd4491ea1d7",
+      "source": "docs/audit/evidence/phase6-l5/runs/C3-resume-accepted.json",
+      "rawExists": true,
+      "logExists": true,
+      "actualRawSha256": "b778d5983bda3b0b0509139fbd8bc73396030d285d11a8ebc011898c06eb5ea8",
+      "actualLogSha256": "71ca5197019e2cf1b8baafe8ab8e6f5c7c46bf9b75b1da21eb449bd4491ea1d7",
+      "rawHashMatch": true,
+      "logHashMatch": true,
+      "runId": "b85ffa89-367d-4144-8efb-9162ae6360bf/C3",
+      "rawResult": "MEASURED",
+      "database": "nq_f002_b0_be73a9c97773447eabc02becaf7486b1"
+    },
+    {
+      "id": "K1",
+      "disposition": "ACCEPTED_PROOF",
+      "class": "KILL_TRANSITION",
+      "raw": "backend/nq-app/target/l5-kill-closure/run-23e7ec18-7850-43b3-bea5-fa56d4e5aa01/raw-proof.json",
+      "expectedRawSha256": "c3015d731bb5745833c01c1a14df72a4dc5e49a6708cf135db34a7c7d32086ad",
+      "log": "backend/nq-app/target/l5-kill-closure/qualification-attempt01.log",
+      "expectedLogSha256": "e86b5c38ac191f42b73dcd191b2197b872985e6c5c9f26bfeeb51b7b8c381d8c",
+      "source": "docs/audit/evidence/phase6-l5/runs/KILL-UNDER-LOAD.json",
+      "rawExists": true,
+      "logExists": true,
+      "actualRawSha256": "c3015d731bb5745833c01c1a14df72a4dc5e49a6708cf135db34a7c7d32086ad",
+      "actualLogSha256": "e86b5c38ac191f42b73dcd191b2197b872985e6c5c9f26bfeeb51b7b8c381d8c",
+      "rawHashMatch": true,
+      "logHashMatch": true,
+      "runId": "l5-kill-closure/run-23e7ec18-7850-43b3-bea5-fa56d4e5aa01",
+      "rawResult": "MEASURED",
+      "database": "nq_f002_b0_ec49bda082784fa09d00e9bd63a2aa84"
+    },
+    {
+      "id": "F1-R1",
+      "disposition": "REUSED_ACCEPTED_PROOF",
+      "class": "FAULT_RUN",
+      "raw": "backend/nq-app/target/l5-bounded/969f9bdb-2cca-4340-a014-0478284f8a2a/C3/raw-proof.json",
+      "expectedRawSha256": "a5854bb8e07a311e0b188a7cdad895f3bd163827594f08b56623ebbebe56f4f0",
+      "log": "backend/nq-app/target/l5-repeated-fault/final-F1-1.log",
+      "expectedLogSha256": "3127abcb30162b77c45c2822d44fcb2d5585d194f198d1a2225e525f99b5d026",
+      "source": "docs/audit/evidence/phase6-l5/summary.json",
+      "rawExists": true,
+      "logExists": true,
+      "actualRawSha256": "a5854bb8e07a311e0b188a7cdad895f3bd163827594f08b56623ebbebe56f4f0",
+      "actualLogSha256": "3127abcb30162b77c45c2822d44fcb2d5585d194f198d1a2225e525f99b5d026",
+      "rawHashMatch": true,
+      "logHashMatch": true,
+      "runId": "969f9bdb-2cca-4340-a014-0478284f8a2a/C3",
+      "rawResult": "MEASURED",
+      "database": "nq_f002_b0_b3fdbff87ee54207a75b50e7dbb2f38e"
+    },
+    {
+      "id": "F1-R2",
+      "disposition": "REUSED_ACCEPTED_PROOF",
+      "class": "FAULT_RUN",
+      "raw": "backend/nq-app/target/l5-bounded/ee41030c-ea6a-49b7-bc5e-6b1bc1f601f7/C3/raw-proof.json",
+      "expectedRawSha256": "661dadf6c98665e68880305bce836294c548c42b8cd9cbdc5f28872aa7eefee6",
+      "log": "backend/nq-app/target/l5-repeated-fault/final-F1-2.log",
+      "expectedLogSha256": "3a73b0a9fc27fe771e3380933f83cfe85318a56970711a1ec7fe9cabf0ae4df7",
+      "source": "docs/audit/evidence/phase6-l5/summary.json",
+      "rawExists": true,
+      "logExists": true,
+      "actualRawSha256": "661dadf6c98665e68880305bce836294c548c42b8cd9cbdc5f28872aa7eefee6",
+      "actualLogSha256": "3a73b0a9fc27fe771e3380933f83cfe85318a56970711a1ec7fe9cabf0ae4df7",
+      "rawHashMatch": true,
+      "logHashMatch": true,
+      "runId": "ee41030c-ea6a-49b7-bc5e-6b1bc1f601f7/C3",
+      "rawResult": "MEASURED",
+      "database": "nq_f002_b0_a977a586a24342c4bb1d6730581a1064"
+    },
+    {
+      "id": "F1-R3",
+      "disposition": "REUSED_ACCEPTED_PROOF",
+      "class": "FAULT_RUN",
+      "raw": "backend/nq-app/target/l5-bounded/15046f38-e5a1-45b3-ab76-c1d9530afe08/C3/raw-proof.json",
+      "expectedRawSha256": "e1e0181f1c3e63a6575789f35dd0d028387d114c2a1484764167326644ed75c8",
+      "log": "backend/nq-app/target/l5-repeated-fault/final-F1-3.log",
+      "expectedLogSha256": "0f0821146267401b238215a33a5da9228fc2a58e7ad96b60763bbbe3d80d4de4",
+      "source": "docs/audit/evidence/phase6-l5/summary.json",
+      "rawExists": true,
+      "logExists": true,
+      "actualRawSha256": "e1e0181f1c3e63a6575789f35dd0d028387d114c2a1484764167326644ed75c8",
+      "actualLogSha256": "0f0821146267401b238215a33a5da9228fc2a58e7ad96b60763bbbe3d80d4de4",
+      "rawHashMatch": true,
+      "logHashMatch": true,
+      "runId": "15046f38-e5a1-45b3-ab76-c1d9530afe08/C3",
+      "rawResult": "MEASURED",
+      "database": "nq_f002_b0_1a160fb6c36641758331988eb45354f9"
+    },
+    {
+      "id": "F2-exact-R1",
+      "disposition": "REUSED_ACCEPTED_PROOF",
+      "class": "FAULT_RUN",
+      "raw": "backend/nq-app/target/l5-bounded/dde5ca9d-cd16-4698-9199-849e5b49dd8b/C3/raw-proof.json",
+      "expectedRawSha256": "f2142a320c1d344c130616d7daa9c1c9e8c53bb1b06461eeafd398ee87bfb237",
+      "log": "backend/nq-app/target/l5-targeting/final-stable02.log",
+      "expectedLogSha256": "6e136f2b10f76142a0e53c6a870df67150d0d4b15700a5f2209cdae75ca44d4a",
+      "source": "docs/audit/evidence/phase6-l5/summary.json",
+      "rawExists": true,
+      "logExists": true,
+      "actualRawSha256": "f2142a320c1d344c130616d7daa9c1c9e8c53bb1b06461eeafd398ee87bfb237",
+      "actualLogSha256": "6e136f2b10f76142a0e53c6a870df67150d0d4b15700a5f2209cdae75ca44d4a",
+      "rawHashMatch": true,
+      "logHashMatch": true,
+      "runId": "dde5ca9d-cd16-4698-9199-849e5b49dd8b/C3",
+      "rawResult": "MEASURED",
+      "database": "nq_f002_b0_ff584b69c66e4dcd802156abc52b23fa"
+    },
+    {
+      "id": "F2-exact-R2",
+      "disposition": "REUSED_ACCEPTED_PROOF",
+      "class": "FAULT_RUN",
+      "raw": "backend/nq-app/target/l5-bounded/6c0a514b-ddcd-4bec-8f64-a29af8c09034/C3/raw-proof.json",
+      "expectedRawSha256": "b66a7f70e598d0c2d6fe78ee8b2d10a9f0d7e4ece5454002fa4ee73c6d6d4ff4",
+      "log": "backend/nq-app/target/l5-fault-resume/F2-exact-R2.log",
+      "expectedLogSha256": "214e3d633a657bf653edea73ebf9ce4d2941a9a8b3d80934f79664a8e6296061",
+      "source": "docs/audit/evidence/phase6-l5/summary.json",
+      "rawExists": true,
+      "logExists": true,
+      "actualRawSha256": "b66a7f70e598d0c2d6fe78ee8b2d10a9f0d7e4ece5454002fa4ee73c6d6d4ff4",
+      "actualLogSha256": "214e3d633a657bf653edea73ebf9ce4d2941a9a8b3d80934f79664a8e6296061",
+      "rawHashMatch": true,
+      "logHashMatch": true,
+      "runId": "6c0a514b-ddcd-4bec-8f64-a29af8c09034/C3",
+      "rawResult": "MEASURED",
+      "database": "nq_f002_b0_6279813d4e7f45cb99b1bf9b7c4ea16e"
+    },
+    {
+      "id": "F2-exact-R3",
+      "disposition": "REUSED_ACCEPTED_PROOF",
+      "class": "FAULT_RUN",
+      "raw": "backend/nq-app/target/l5-bounded/6d21501a-c49f-4b80-905c-bcb284ff32a2/C3/raw-proof.json",
+      "expectedRawSha256": "ae3af4d36ed011ea9f4caddf1ce1cbdd4daa9fd7523bcc3bae7e877fc1d55f86",
+      "log": "backend/nq-app/target/l5-fault-resume/F2-exact-R3.log",
+      "expectedLogSha256": "0d235971ea3a8287267ed2b7937a256c35b88ba0b9f39ba84b60c816a97d5c6e",
+      "source": "docs/audit/evidence/phase6-l5/summary.json",
+      "rawExists": true,
+      "logExists": true,
+      "actualRawSha256": "ae3af4d36ed011ea9f4caddf1ce1cbdd4daa9fd7523bcc3bae7e877fc1d55f86",
+      "actualLogSha256": "0d235971ea3a8287267ed2b7937a256c35b88ba0b9f39ba84b60c816a97d5c6e",
+      "rawHashMatch": true,
+      "logHashMatch": true,
+      "runId": "6d21501a-c49f-4b80-905c-bcb284ff32a2/C3",
+      "rawResult": "MEASURED",
+      "database": "nq_f002_b0_90d3bee6d24e4de29c69b59910fa9c97"
+    },
+    {
+      "id": "F3-R1",
+      "disposition": "REUSED_ACCEPTED_PROOF",
+      "class": "FAULT_RUN",
+      "raw": "backend/nq-app/target/l5-bounded/72f80381-07e2-4fe7-b981-20301661d012/C3/raw-proof.json",
+      "expectedRawSha256": "574e355efcd20344f25eb3220a8bc3531615882e978e57b57bea534198ee0b77",
+      "log": "backend/nq-app/target/l5-fault-resume/F3-R1.log",
+      "expectedLogSha256": "bec27dad766dfc1a503d1bf7e6e8f7f8dad16dd742e3e2c90f2bd5f9a77add9c",
+      "source": "docs/audit/evidence/phase6-l5/summary.json",
+      "rawExists": true,
+      "logExists": true,
+      "actualRawSha256": "574e355efcd20344f25eb3220a8bc3531615882e978e57b57bea534198ee0b77",
+      "actualLogSha256": "bec27dad766dfc1a503d1bf7e6e8f7f8dad16dd742e3e2c90f2bd5f9a77add9c",
+      "rawHashMatch": true,
+      "logHashMatch": true,
+      "runId": "72f80381-07e2-4fe7-b981-20301661d012/C3",
+      "rawResult": "MEASURED",
+      "database": "nq_f002_b0_833262513bd6424da7c94bc7bf2c686f"
+    },
+    {
+      "id": "F3-R2",
+      "disposition": "REUSED_ACCEPTED_PROOF",
+      "class": "FAULT_RUN",
+      "raw": "backend/nq-app/target/l5-bounded/51107864-c277-42b2-b1b7-216c538b102d/C3/raw-proof.json",
+      "expectedRawSha256": "0386b8e0e3a469145a8141b2413b36e3ce31e7e4ca711d2d2168830c13671f8f",
+      "log": "backend/nq-app/target/l5-fault-resume/F3-R2-attempt03.log",
+      "expectedLogSha256": "b2b0f34a4dcd8bddc625399236791923c03c6475ca0624f9ba2a1fcb562d18ea",
+      "source": "docs/audit/evidence/phase6-l5/summary.json",
+      "rawExists": true,
+      "logExists": true,
+      "actualRawSha256": "0386b8e0e3a469145a8141b2413b36e3ce31e7e4ca711d2d2168830c13671f8f",
+      "actualLogSha256": "b2b0f34a4dcd8bddc625399236791923c03c6475ca0624f9ba2a1fcb562d18ea",
+      "rawHashMatch": true,
+      "logHashMatch": true,
+      "runId": "51107864-c277-42b2-b1b7-216c538b102d/C3",
+      "rawResult": "MEASURED",
+      "database": "nq_f002_b0_e68533d95dae4fcbb8be0efd0d08dab5"
+    },
+    {
+      "id": "F3-R3",
+      "disposition": "REUSED_ACCEPTED_PROOF",
+      "class": "FAULT_RUN",
+      "raw": "backend/nq-app/target/l5-bounded/65dae6f0-d4a7-452f-b672-08e946aff659/C3/raw-proof.json",
+      "expectedRawSha256": "a07c25015f8bdea73e8bea3bd43d1ac1a347d9855e995139da394f7a29cdeda0",
+      "log": "backend/nq-app/target/l5-fault-resume/F3-R3.log",
+      "expectedLogSha256": "8921e27d92e4e0b55fe172d771b3a145e97a28fabe8c363ee3b12ff78105f1af",
+      "source": "docs/audit/evidence/phase6-l5/summary.json",
+      "rawExists": true,
+      "logExists": true,
+      "actualRawSha256": "a07c25015f8bdea73e8bea3bd43d1ac1a347d9855e995139da394f7a29cdeda0",
+      "actualLogSha256": "8921e27d92e4e0b55fe172d771b3a145e97a28fabe8c363ee3b12ff78105f1af",
+      "rawHashMatch": true,
+      "logHashMatch": true,
+      "runId": "65dae6f0-d4a7-452f-b672-08e946aff659/C3",
+      "rawResult": "MEASURED",
+      "database": "nq_f002_b0_0f0387d6e37e4764806bc0672602ecf8"
+    }
+  ],
+  "sourceArtifactHashes": {
+    "docs/audit/evidence/GATEAUDIT_PHASE6_L5_L6_SCOPE_AND_QUALIFICATION_PLAN.md": "80e339594be7223f07783d30e7f18913a53187ecde59b360ecdbf9223c9e45ac",
+    "docs/audit/evidence/phase6-l5/BOUNDED_WORKLOAD_AND_MEASUREMENT.md": "9e00c629b35b79e0996afa03d6025ca719291526c97b02607b9f1f30be8e8ea7",
+    "docs/audit/evidence/phase6-l5/CONCURRENT_FILL_IDEMPOTENCY_REMEDIATION.md": "d39e8f6f8c74e3339b0bfb5042797d847d55efa8303cf37c07fd72413c9e841c",
+    "docs/audit/evidence/phase6-l5/CONCURRENT_POSITION_AND_ACCOUNT_PROJECTION_REMEDIATION.md": "671cf72acc24f9be4a928f6ab664966b385a6a3f6e18d348be02d50552e740f4",
+    "docs/audit/evidence/phase6-l5/CONCURRENT_WORKLOAD_AND_BACKLOG.md": "55dfcc1e7ae19485a523487b2b4fe42318dcec0e7b75e7803fbc8b9e0afc78bf",
+    "docs/audit/evidence/phase6-l5/fill-idempotency-remediation/candidate-manifest.json": "fd1091e5497fe8b80583c99efa19003e5729e4059c92bff705c03f18ebb7f9e1",
+    "docs/audit/evidence/phase6-l5/fill-idempotency-remediation/results.json": "28b3329106d4fdf820ba39ebe303b49fec32aaf386216346d6a005891670a707",
+    "docs/audit/evidence/phase6-l5/L5_AGGREGATE_QUALIFICATION_ACCEPTANCE.md": "611f3aa2e5e32d1fc0ce9eed467dc791fa2d44460fb7f08fb0897b9f40f367e7",
+    "docs/audit/evidence/phase6-l5/projection-remediation/C1-regression.json": "2b6e81ee83dcbe77e24af350348d714c4ea3425bfbe1534aafa09d1c746e9968",
+    "docs/audit/evidence/phase6-l5/projection-remediation/candidate-manifest.json": "8ac8b3557acf269f04be34106a3e7bf20b148b4a3ca53968e0fdb1a802e52279",
+    "docs/audit/evidence/phase6-l5/projection-remediation/validation.json": "8551699db2805332e0992da514d2660976159e5d7c6df487f0f29b0aff54178c",
+    "docs/audit/evidence/phase6-l5/REPEATED_FAULT_UNDER_LOAD.md": "097ffa344469ab903545b27a7b9cef14503ed212964f39af306d35e124787482",
+    "docs/audit/evidence/phase6-l5/runs/C1-failure.json": "a1aeecbc8c2962059eb4ba3562134e90f235b1e9cd8668cdd1ed65d7f3cb9dab",
+    "docs/audit/evidence/phase6-l5/runs/C1-resume.json": "ca8e3f85863ed8755f74d184aee7154cb23fff6db2f29f3ec721c2f8c6e41b3b",
+    "docs/audit/evidence/phase6-l5/runs/C2-resume.json": "bb05b6bc2ac041beb3a320bcbbfe3fda59eaf1f8572e6f573cfaaff8b33849d7",
+    "docs/audit/evidence/phase6-l5/runs/C3-resume-accepted.json": "e25394cfd638ca1fdf9126027045c3fbc7b2dafc5a06b96acb0fc651eb131ea9",
+    "docs/audit/evidence/phase6-l5/runs/C3-resume-failure.json": "a7919f4ed2a322b75a7e84db0e7b51697dccf275f173beecbaac19b810ef2b3c",
+    "docs/audit/evidence/phase6-l5/runs/KILL-UNDER-LOAD.json": "e62f334a77870f7f27500ccfcafb31acc7edc9dbe31205e646c86424815fe4d8",
+    "docs/audit/evidence/phase6-l5/runs/S1.json": "33fb8783d9c74a688651b7ea5403007120cd409b55c7d0f52caec2b3a5c5b62c",
+    "docs/audit/evidence/phase6-l5/runs/S2.json": "41f51efc10d207d2c1eff0f95a3c3df83a136b92d1b365b0025dbe54aeabce1a",
+    "docs/audit/evidence/phase6-l5/runs/S3.json": "069abfcfd8c87f9451f813e142f70f560c2ca833e6c9b0287e322f393a2cca8d",
+    "docs/audit/evidence/phase6-l5/summary.json": "8412a3caa244d8b058daba697a3e7f8b3cb3e37bd22a5f6d06de6052ba564b77",
+    "docs/audit/evidence/phase6-l6/ACTIVE_STABILITY.md": "7d685c9dcf9fb7d472c9460401f13c077c42b72a8d2c46a89e4185e97f67c333",
+    "docs/audit/evidence/phase6-l6/attempts/L6_A_60MIN_20260913_PREFLIGHT_02_1208abd9/L6_ACTIVE_STABILITY_60MIN_QUALIFICATION.md": "d1c048c0af132f2281386f83959c47363e0487eae944b10e2b51cc972947cb59",
+    "docs/audit/evidence/phase6-l6/convergence-candidate.json": "39dd19b9ed7573137ec309165a4a577713291617d3fcea719f4c7256b656f338",
+    "docs/audit/evidence/phase6-l6/convergence-delivery-identity.json": "563dff1ca79a2accb3a647140657e1e3fad25392016aa7dcb08fb769a6a1c844",
+    "docs/audit/evidence/phase6-l6/convergence-evidence-manifest.json": "02e49e6548c6a955ca36ea1f268878cd42ff191c194f6f04431c1be4eb455a98",
+    "docs/audit/evidence/phase6-l6/convergence-validation.json": "dff0a730300de0f83c99bfcb8c767ee6c56be03a2d9f5bab556d0d76b301773e",
+    "docs/audit/evidence/phase6-l6/L6_ACTIVE_STABILITY_60MIN_QUALIFICATION.json": "f9ce922d51271427f30347d37b89aff790baf075013b23e3b0bc3f7cbb94e643",
+    "docs/audit/evidence/phase6-l6/L6_ACTIVE_STABILITY_60MIN_QUALIFICATION.md": "3466309bff0f773ce10b02689375976bc4043c95a03dbfdc5fcc9768627073f3",
+    "docs/audit/evidence/phase6-l6/L6_ACTIVE_STABILITY_60MIN_QUALIFICATION.metrics.json": "896bf3406e68d6105330b56bfe88639421c7c80aa189f5b5c5ef1194f5d8cefa",
+    "docs/audit/evidence/phase6-l6/L6_ACTIVE_STABILITY_READINESS_RESUME.json": "684662469637f8ee2624764988a80245bda3f1f9913cc8cb10cb9a1e7f40dbbd",
+    "docs/audit/evidence/phase6-l6/L6_ACTIVE_STABILITY_READINESS_RESUME.md": "370ffd1751651aee1d4618770c4b3182d869e3fa111ddb5701a1792bbc0b58e0",
+    "docs/audit/evidence/phase6-l6/L6_FRESHNESS_CI_TEST_CONTRACT_REMEDIATION.md": "84033d6c32098708aecca1c01dd7cc4962074fd48441306a5a228d5f5c1ce2c7",
+    "docs/audit/evidence/phase6-l6/L6_MANDATORY_MEASUREMENT_AND_TIMER_CLOSURE.json": "3c29fb38ab20ab045176124e290fcd3aa5b6ae425b84996c39be5cca0f2fef23",
+    "docs/audit/evidence/phase6-l6/L6_MANDATORY_MEASUREMENT_AND_TIMER_CLOSURE.md": "ef30ffc433804bf42bbaea0ffdd80e4abdac0f3aa9dfba181ca9a75710ef1cd8",
+    "docs/audit/evidence/phase6-l6/L6_RESOURCE_SAMPLING_10S_DELIVERY_ACCEPTANCE.json": "d297a04ad211041c4c6b28a4af2309c3074188aaca5e3d917d7b6d9ad850de01",
+    "docs/audit/evidence/phase6-l6/L6_RESOURCE_SAMPLING_10S_DELIVERY_ACCEPTANCE.md": "57e4817d2ae882bf363db1064bdcfcc3c4edc1cd4f2d2a126c19f6e7b993bea3",
+    "docs/audit/evidence/phase6-l6/L6_RESOURCE_SAMPLING_10S_HARNESS_REMEDIATION.json": "a0011910d08a823d49d2eee5443d59d4c825001547ddaebdc1010814da51e1f6",
+    "docs/audit/evidence/phase6-l6/L6_RESOURCE_SAMPLING_10S_HARNESS_REMEDIATION.md": "a3cc9618a2953e5f93c7d17e6c80da6baf413afbfb816527d13f678100dddcea",
+    "docs/audit/evidence/phase6-l6/L6_SHADOW_RUNS_FRESHNESS_AND_READINESS_CLOSURE.attempt-01.json": "cc6b2934517404bee9ed78a5f78db94acf192f69a9506c262a3f03d1ddb8c8e3",
+    "docs/audit/evidence/phase6-l6/L6_SHADOW_RUNS_FRESHNESS_AND_READINESS_CLOSURE.attempt-01.md": "5e9fd2f3d370b3f7b0a4ac83039484eb010b6d88949337fbd45477534c0dbd27",
+    "docs/audit/evidence/phase6-l6/L6_SHADOW_RUNS_FRESHNESS_CORRECTNESS_REVIEW.md": "d18c89689634631ee56e56d1f979477902059a776cb7fa97a6a640f6f69921f0",
+    "docs/audit/evidence/phase6-l6/L6_SHADOW_RUNS_FRESHNESS_DELIVERY_ACCEPTANCE.md": "472587fd2864ba2fc7020c53e97b3d23a0742e66444c809f3ba50b1dd9a1c54b",
+    "docs/audit/evidence/phase6-l6/L6_VALIDATION_CONTRACT_AND_MEASUREMENT_CLOSURE.json": "540142624949be0a2ee822138a5a51c8a5ae297195e0292794cc70fe13d5b894",
+    "docs/audit/evidence/phase6-l6/L6_VALIDATION_CONTRACT_AND_MEASUREMENT_CLOSURE.md": "43b2dfed91856179b8e364ec474f7bb6aa987ac93c3ca0f990ac24e4850d7abf",
+    "docs/audit/evidence/phase6-l6/metrics/L6_A_60MIN_20260913_PREFLIGHT_02_1208abd9/summary.json": "83a5e3314074266e4decfc33c51c5452f2b9bf1ef8055ed9548cb6d1ccf06870",
+    "docs/audit/evidence/phase6-l6/metrics/summary.json": "96c99ef3b5e3af34872fd57c89f73ccbaaee01619d92c1a78942267365b1cd04",
+    "docs/audit/evidence/phase6-l6/RECONCILIATION_SAME_STATE_CONVERGENCE_CORRECTNESS_REVIEW.md": "aa839bc6b046a58427ecac0951674b17b9c3045fb01bce8bd763834c30257d93",
+    "docs/audit/evidence/phase6-l6/RECONCILIATION_SAME_STATE_CONVERGENCE_DELIVERY_ACCEPTANCE.md": "605ff2fbeb122d5def94951840c2bf112804207f81e4fda79bd2f5b99a2ba233",
+    "docs/audit/evidence/phase6-l6/RECONCILIATION_SAME_STATE_CONVERGENCE_REMEDIATION.md": "80bdd83e292483af48689b6fb2fa75a6b583b35443e8caaa386f153a7301d169",
+    "docs/audit/evidence/phase6-l6/runs/L6_A_60MIN_20260913_PREFLIGHT_02_1208abd9.json": "c42846078beb731e5ded620b9990034ff6cfd4f1bb69c5d11f3b863391c9f2f9",
+    "docs/audit/evidence/phase6-l6/summary.json": "0adc4172a1cbacd0916c18d79f83486a0ec36e2ef232c570313b0e07395ec608"
+  },
+  "acceptedProofsInspected": 16,
+  "rawLogPairsVerified": 32,
+  "noFaultCandidateRuns": [
+    "S1",
+    "S2",
+    "S3",
+    "C1",
+    "C2",
+    "C3"
+  ],
+  "acceptedFormalCalibrationSourceRuns": [],
+  "rejectedOrLimitedSources": [
+    {
+      "source": "S1 setup/pacing/early PASS_SUPERSEDED attempts",
+      "proofDisposition": "SUPERSEDED/FAIL",
+      "reason": "not final accepted raw"
+    },
+    {
+      "source": "C1-failure.json",
+      "proofDisposition": "FAIL",
+      "reason": "real lost-update failure"
+    },
+    {
+      "source": "C3-resume-failure.json",
+      "proofDisposition": "FAIL/QUALIFICATION_INCOMPLETE",
+      "reason": "false-overfill failure, superseded by accepted C3"
+    },
+    {
+      "source": "F1/F2/F3 and F4-combined",
+      "proofDisposition": "REUSED_ACCEPTED_PROOF",
+      "calibrationDisposition": "REJECTED_FOR_HEALTHY_BASELINE",
+      "reason": "fault windows and 4-actor recovery workload; F4 is reused evidence, not an extra run"
+    },
+    {
+      "source": "KILL-UNDER-LOAD.json",
+      "proofDisposition": "ACCEPTED_PROOF",
+      "calibrationDisposition": "REJECTED_FOR_HEALTHY_BASELINE",
+      "reason": "intentional Kill transition; cannot present as continuous no-fault load"
+    },
+    {
+      "source": "old distinct-boundary F2 / targeting/export/input failed attempts",
+      "proofDisposition": "SUPERSEDED/FAIL_OR_DIFFERENT_SCOPE",
+      "reason": "preserved original scope, not new healthy baseline"
+    },
+    {
+      "source": "L6 readiness/freshness/sampling short runs and phase6-l6/summary.json plannedOrderRatePerMinute=2",
+      "proofDisposition": "SCOPE_SPECIFIC_ACCEPTANCE_OR_FAIL",
+      "calibrationDisposition": "REJECTED_FOR_L5_CALIBRATION",
+      "reason": "not L5-B accepted calibration; old 2/min planned parameter not derived from healthy rate"
+    }
+  ],
+  "healthySustainedRate": {
+    "status": "CALIBRATION_REQUIRED",
+    "value": null,
+    "unit": "orders/second",
+    "formula": "N_unique_full_chain_completed_in_declared_steady_window / monotonic_window_seconds",
+    "calculationWindow": null,
+    "reason": "No uniquely frozen steady full-chain completion window/method and same-load baseline; do not convert arrival count, fairness snapshot count or whole-run elapsed into accepted sustained rate",
+    "confidence": "High for evidence insufficiency; no claimed rate estimate"
+  },
+  "l6ArrivalRate": {
+    "value": null,
+    "unit": "orders/second",
+    "multiplier": "0.25",
+    "formula": "healthySustainedRate * 0.25",
+    "maxOrdersPerSecond": 1,
+    "status": "BLOCKED_UPSTREAM_CALIBRATION",
+    "clippingAllowed": false
+  },
+  "concurrencyTarget": 2,
+  "concurrencyHardMax": 4,
+  "noiseBands": [
+    {
+      "resource": "heapGcLowWater",
+      "historicalAvailability": "ABSENT",
+      "status": "CALIBRATION_REQUIRED",
+      "samplingCompatibility": "NOT_COMPARABLE_WITH_CURRENT_SAMPLING",
+      "reason": "No heap/GC counters or natural GC linked low-water samples",
+      "baselineMin": null,
+      "baselineMax": null,
+      "maxMinusMin": null,
+      "sampleCount": null,
+      "units": "bytes/count as applicable; not a frozen band",
+      "historicalObservationSource": "backend/nq-app/target/l6-calibration-closure-20260913-01/historical-observations.json"
+    },
+    {
+      "resource": "threads",
+      "historicalAvailability": "PRESENT_SCALAR",
+      "status": "CALIBRATION_REQUIRED",
+      "samplingCompatibility": "NOT_COMPARABLE_WITH_CURRENT_SAMPLING",
+      "reason": "ThreadMXBean primitive exists; old L5 actors lack current L6 timer/HTTP sampler/executor topology and matched load",
+      "baselineMin": null,
+      "baselineMax": null,
+      "maxMinusMin": null,
+      "sampleCount": null,
+      "units": "bytes/count as applicable; not a frozen band",
+      "historicalObservationSource": "backend/nq-app/target/l6-calibration-closure-20260913-01/historical-observations.json"
+    },
+    {
+      "resource": "hikariActivePendingConnections",
+      "historicalAvailability": "PRESENT_SCALAR",
+      "status": "CALIBRATION_REQUIRED",
+      "samplingCompatibility": "NOT_COMPARABLE_WITH_CURRENT_SAMPLING",
+      "reason": "Old active/idle/waiting/total per PID sampled at fixed delay 250ms; current composite 10s timing and observer load differ; no timeout counter",
+      "baselineMin": null,
+      "baselineMax": null,
+      "maxMinusMin": null,
+      "sampleCount": null,
+      "units": "bytes/count as applicable; not a frozen band",
+      "historicalObservationSource": "backend/nq-app/target/l6-calibration-closure-20260913-01/historical-observations.json"
+    },
+    {
+      "resource": "postgresConnections",
+      "historicalAvailability": "PARTIAL",
+      "status": "CALIBRATION_REQUIRED",
+      "samplingCompatibility": "NOT_COMPARABLE_WITH_CURRENT_SAMPLING",
+      "reason": "Old progress lacks full databaseConnections and current observer ownership; cannot reconstruct total connections",
+      "baselineMin": null,
+      "baselineMax": null,
+      "maxMinusMin": null,
+      "sampleCount": null,
+      "units": "bytes/count as applicable; not a frozen band",
+      "historicalObservationSource": "backend/nq-app/target/l6-calibration-closure-20260913-01/historical-observations.json"
+    },
+    {
+      "resource": "handlesOrFd",
+      "historicalAvailability": "ABSENT",
+      "status": "CALIBRATION_REQUIRED",
+      "samplingCompatibility": "NOT_COMPARABLE_WITH_CURRENT_SAMPLING",
+      "reason": "No same-method per PID/generation handle or FD timeline",
+      "baselineMin": null,
+      "baselineMax": null,
+      "maxMinusMin": null,
+      "sampleCount": null,
+      "units": "bytes/count as applicable; not a frozen band",
+      "historicalObservationSource": "backend/nq-app/target/l6-calibration-closure-20260913-01/historical-observations.json"
+    },
+    {
+      "resource": "commandQueue",
+      "historicalAvailability": "PRESENT_DIFFERENT_OWNER",
+      "status": "CALIBRATION_REQUIRED",
+      "samplingCompatibility": "NOT_COMPARABLE_WITH_CURRENT_SAMPLING",
+      "reason": "Old workloadSlot.getQueueLength vs current commandExecutor metric object; queue ownership differs",
+      "baselineMin": null,
+      "baselineMax": null,
+      "maxMinusMin": null,
+      "sampleCount": null,
+      "units": "bytes/count as applicable; not a frozen band",
+      "historicalObservationSource": "backend/nq-app/target/l6-calibration-closure-20260913-01/historical-observations.json"
+    },
+    {
+      "resource": "venueQueue",
+      "historicalAvailability": "PRESENT_SCALAR",
+      "status": "CALIBRATION_REQUIRED",
+      "samplingCompatibility": "NOT_COMPARABLE_WITH_CURRENT_SAMPLING",
+      "reason": "Same executor concept but old polling cadence/observer traffic and load differ",
+      "baselineMin": null,
+      "baselineMax": null,
+      "maxMinusMin": null,
+      "sampleCount": null,
+      "units": "bytes/count as applicable; not a frozen band",
+      "historicalObservationSource": "backend/nq-app/target/l6-calibration-closure-20260913-01/historical-observations.json"
+    },
+    {
+      "resource": "tempCountBytes",
+      "historicalAvailability": "ABSENT",
+      "status": "CALIBRATION_REQUIRED",
+      "samplingCompatibility": "NOT_COMPARABLE_WITH_CURRENT_SAMPLING",
+      "reason": "Final rawBytesBeforeProof/file size does not reconstruct a time series",
+      "baselineMin": null,
+      "baselineMax": null,
+      "maxMinusMin": null,
+      "sampleCount": null,
+      "units": "bytes/count as applicable; not a frozen band",
+      "historicalObservationSource": "backend/nq-app/target/l6-calibration-closure-20260913-01/historical-observations.json"
+    },
+    {
+      "resource": "logGrowth",
+      "historicalAvailability": "ABSENT",
+      "status": "CALIBRATION_REQUIRED",
+      "samplingCompatibility": "NOT_COMPARABLE_WITH_CURRENT_SAMPLING",
+      "reason": "Present log files are immutable byte evidence; no periodic historical file-size measurements",
+      "baselineMin": null,
+      "baselineMax": null,
+      "maxMinusMin": null,
+      "sampleCount": null,
+      "units": "bytes/count as applicable; not a frozen band",
+      "historicalObservationSource": "backend/nq-app/target/l6-calibration-closure-20260913-01/historical-observations.json"
+    }
+  ],
+  "historicalObservations": [
+    {
+      "id": "S1",
+      "raw": "backend/nq-app/target/l5-bounded/cc102d5a-94c1-4f99-9a2f-d3fc88273bc6/S1/raw-proof.json",
+      "rawSha256": "6119f5d1302ff97a9440f4c0b0576ac4b6b71432a0c72bf8359a20bfabc433fc",
+      "runId": "cc102d5a-94c1-4f99-9a2f-d3fc88273bc6/S1",
+      "concurrency": 1,
+      "resourceCount": 192,
+      "progressCount": 186,
+      "resourceFields": [
+        "active",
+        "activeCommands",
+        "commandQueue",
+        "completedCommands",
+        "idle",
+        "max",
+        "pid",
+        "threads",
+        "timeMillis",
+        "total",
+        "waiting"
+      ],
+      "progressFields": [
+        "actionable",
+        "backlog",
+        "correctnessRequiredUnresolved",
+        "idleInTransaction",
+        "ledger",
+        "orders",
+        "runsSucceeded",
+        "terminal",
+        "timeMillis",
+        "trades",
+        "transactions",
+        "venueExecutor"
+      ],
+      "resourceHistoricalObservations": {
+        "5380": {
+          "allSampleCount": 192,
+          "intervalMillis": {
+            "baselineMin": 17,
+            "baselineMax": 266,
+            "maxMinusMin": 249,
+            "sampleCount": 191
+          },
+          "producerSampleCount": 0,
+          "producerOnly": {
+            "threads": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "active": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "idle": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "waiting": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "total": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "activeCommands": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "commandQueue": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "reconcileActive": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            }
+          },
+          "allPhases": {
+            "threads": {
+              "baselineMin": 15,
+              "baselineMax": 19,
+              "maxMinusMin": 4,
+              "sampleCount": 192
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 192
+            },
+            "idle": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 192
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 192
+            },
+            "total": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 192
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 192
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 192
+            }
+          },
+          "formalNoiseBand": false
+        }
+      },
+      "producerInterval": {
+        "startEpochMillis": null,
+        "endEpochMillis": null,
+        "durationMillis": null,
+        "clock": "System.currentTimeMillis; no paired monotonic producer boundary recorded"
+      },
+      "calibrationEligible": false,
+      "calibrationStatus": "CALIBRATION_REQUIRED",
+      "rateLimitation": "No producer boundary fields. Ordinary orders deliberately accumulate before FILL and serial drain; S3 adds separate strategy/drain windows.",
+      "missingMetrics": [
+        "heapUsed/committed/max",
+        "GC count/time and natural GC low-water",
+        "handles/FD",
+        "owned temp file count/bytes time series",
+        "log bytes/growth time series",
+        "current sampler request token/sampleIndex/elapsedMillis/phase",
+        "Hikari acquisition timeout counter",
+        "total PG connections including observer ownership"
+      ]
+    },
+    {
+      "id": "S2",
+      "raw": "backend/nq-app/target/l5-bounded/b1ecd5a9-7083-4ed3-a24a-7c00e06d2fcd/S2/raw-proof.json",
+      "rawSha256": "cfafd02356c3cb37aa6b89c29f23a86e3b15746099e06988b30abde71718b87e",
+      "runId": "b1ecd5a9-7083-4ed3-a24a-7c00e06d2fcd/S2",
+      "concurrency": 2,
+      "resourceCount": 232,
+      "progressCount": 105,
+      "resourceFields": [
+        "active",
+        "activeCommands",
+        "commandQueue",
+        "completedCommands",
+        "idle",
+        "max",
+        "pid",
+        "threads",
+        "timeMillis",
+        "total",
+        "waiting"
+      ],
+      "progressFields": [
+        "actionable",
+        "backlog",
+        "correctnessRequiredUnresolved",
+        "idleInTransaction",
+        "ledger",
+        "orders",
+        "runsSucceeded",
+        "terminal",
+        "timeMillis",
+        "trades",
+        "transactions",
+        "venueExecutor"
+      ],
+      "resourceHistoricalObservations": {
+        "12468": {
+          "allSampleCount": 110,
+          "intervalMillis": {
+            "baselineMin": 111,
+            "baselineMax": 266,
+            "maxMinusMin": 155,
+            "sampleCount": 109
+          },
+          "producerSampleCount": 0,
+          "producerOnly": {
+            "threads": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "active": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "idle": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "waiting": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "total": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "activeCommands": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "commandQueue": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "reconcileActive": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            }
+          },
+          "allPhases": {
+            "threads": {
+              "baselineMin": 15,
+              "baselineMax": 19,
+              "maxMinusMin": 4,
+              "sampleCount": 110
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 110
+            },
+            "idle": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 110
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 110
+            },
+            "total": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 110
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 110
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 110
+            }
+          },
+          "formalNoiseBand": false
+        },
+        "18080": {
+          "allSampleCount": 122,
+          "intervalMillis": {
+            "baselineMin": 126,
+            "baselineMax": 267,
+            "maxMinusMin": 141,
+            "sampleCount": 121
+          },
+          "producerSampleCount": 0,
+          "producerOnly": {
+            "threads": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "active": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "idle": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "waiting": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "total": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "activeCommands": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "commandQueue": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "reconcileActive": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            }
+          },
+          "allPhases": {
+            "threads": {
+              "baselineMin": 15,
+              "baselineMax": 19,
+              "maxMinusMin": 4,
+              "sampleCount": 122
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 122
+            },
+            "idle": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 122
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 122
+            },
+            "total": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 122
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 122
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 122
+            }
+          },
+          "formalNoiseBand": false
+        }
+      },
+      "producerInterval": {
+        "startEpochMillis": null,
+        "endEpochMillis": null,
+        "durationMillis": null,
+        "clock": "System.currentTimeMillis; no paired monotonic producer boundary recorded"
+      },
+      "calibrationEligible": false,
+      "calibrationStatus": "CALIBRATION_REQUIRED",
+      "rateLimitation": "No producer boundary fields. Ordinary orders deliberately accumulate before FILL and serial drain; S3 adds separate strategy/drain windows.",
+      "missingMetrics": [
+        "heapUsed/committed/max",
+        "GC count/time and natural GC low-water",
+        "handles/FD",
+        "owned temp file count/bytes time series",
+        "log bytes/growth time series",
+        "current sampler request token/sampleIndex/elapsedMillis/phase",
+        "Hikari acquisition timeout counter",
+        "total PG connections including observer ownership"
+      ]
+    },
+    {
+      "id": "S3",
+      "raw": "backend/nq-app/target/l5-bounded/7c7ac68f-4235-44d6-928d-c265dddf316b/S3/raw-proof.json",
+      "rawSha256": "4f828e767b8fe7595fbca4109fc64bfda2dc2c3c8ab5e3a9a8e977d8f4f3743c",
+      "runId": "7c7ac68f-4235-44d6-928d-c265dddf316b/S3",
+      "concurrency": 4,
+      "resourceCount": 701,
+      "progressCount": 147,
+      "resourceFields": [
+        "active",
+        "activeCommands",
+        "commandQueue",
+        "completedCommands",
+        "idle",
+        "max",
+        "pid",
+        "threads",
+        "timeMillis",
+        "total",
+        "waiting"
+      ],
+      "progressFields": [
+        "actionable",
+        "backlog",
+        "correctnessRequiredUnresolved",
+        "idleInTransaction",
+        "ledger",
+        "orders",
+        "runsSucceeded",
+        "terminal",
+        "timeMillis",
+        "trades",
+        "transactions",
+        "venueExecutor"
+      ],
+      "resourceHistoricalObservations": {
+        "608": {
+          "allSampleCount": 169,
+          "intervalMillis": {
+            "baselineMin": 220,
+            "baselineMax": 272,
+            "maxMinusMin": 52,
+            "sampleCount": 168
+          },
+          "producerSampleCount": 0,
+          "producerOnly": {
+            "threads": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "active": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "idle": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "waiting": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "total": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "activeCommands": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "commandQueue": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "reconcileActive": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            }
+          },
+          "allPhases": {
+            "threads": {
+              "baselineMin": 15,
+              "baselineMax": 19,
+              "maxMinusMin": 4,
+              "sampleCount": 169
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 169
+            },
+            "idle": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 169
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 169
+            },
+            "total": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 169
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 169
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 169
+            }
+          },
+          "formalNoiseBand": false
+        },
+        "7460": {
+          "allSampleCount": 181,
+          "intervalMillis": {
+            "baselineMin": 63,
+            "baselineMax": 266,
+            "maxMinusMin": 203,
+            "sampleCount": 180
+          },
+          "producerSampleCount": 0,
+          "producerOnly": {
+            "threads": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "active": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "idle": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "waiting": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "total": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "activeCommands": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "commandQueue": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "reconcileActive": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            }
+          },
+          "allPhases": {
+            "threads": {
+              "baselineMin": 15,
+              "baselineMax": 19,
+              "maxMinusMin": 4,
+              "sampleCount": 181
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 181
+            },
+            "idle": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 181
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 181
+            },
+            "total": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 181
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 181
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 181
+            }
+          },
+          "formalNoiseBand": false
+        },
+        "9140": {
+          "allSampleCount": 158,
+          "intervalMillis": {
+            "baselineMin": 124,
+            "baselineMax": 266,
+            "maxMinusMin": 142,
+            "sampleCount": 157
+          },
+          "producerSampleCount": 0,
+          "producerOnly": {
+            "threads": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "active": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "idle": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "waiting": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "total": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "activeCommands": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "commandQueue": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "reconcileActive": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            }
+          },
+          "allPhases": {
+            "threads": {
+              "baselineMin": 15,
+              "baselineMax": 19,
+              "maxMinusMin": 4,
+              "sampleCount": 158
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 158
+            },
+            "idle": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 158
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 158
+            },
+            "total": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 158
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 158
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 158
+            }
+          },
+          "formalNoiseBand": false
+        },
+        "11248": {
+          "allSampleCount": 193,
+          "intervalMillis": {
+            "baselineMin": 48,
+            "baselineMax": 276,
+            "maxMinusMin": 228,
+            "sampleCount": 192
+          },
+          "producerSampleCount": 0,
+          "producerOnly": {
+            "threads": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "active": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "idle": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "waiting": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "total": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "activeCommands": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "commandQueue": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "reconcileActive": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            }
+          },
+          "allPhases": {
+            "threads": {
+              "baselineMin": 15,
+              "baselineMax": 19,
+              "maxMinusMin": 4,
+              "sampleCount": 193
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 193
+            },
+            "idle": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 193
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 193
+            },
+            "total": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 193
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 193
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 193
+            }
+          },
+          "formalNoiseBand": false
+        }
+      },
+      "producerInterval": {
+        "startEpochMillis": null,
+        "endEpochMillis": null,
+        "durationMillis": null,
+        "clock": "System.currentTimeMillis; no paired monotonic producer boundary recorded"
+      },
+      "calibrationEligible": false,
+      "calibrationStatus": "CALIBRATION_REQUIRED",
+      "rateLimitation": "No producer boundary fields. Ordinary orders deliberately accumulate before FILL and serial drain; S3 adds separate strategy/drain windows.",
+      "missingMetrics": [
+        "heapUsed/committed/max",
+        "GC count/time and natural GC low-water",
+        "handles/FD",
+        "owned temp file count/bytes time series",
+        "log bytes/growth time series",
+        "current sampler request token/sampleIndex/elapsedMillis/phase",
+        "Hikari acquisition timeout counter",
+        "total PG connections including observer ownership"
+      ]
+    },
+    {
+      "id": "C1",
+      "raw": "backend/nq-app/target/l5-bounded/6fedf20a-b76f-41d3-b86d-49924fdb01bd/C1/raw-proof.json",
+      "rawSha256": "7179fa7d9e748c7b7a4c476b5f9c0e926e314212656b1b624d19f2342517bbaa",
+      "runId": "6fedf20a-b76f-41d3-b86d-49924fdb01bd/C1",
+      "concurrency": 2,
+      "resourceCount": 285,
+      "progressCount": 138,
+      "resourceFields": [
+        "active",
+        "activeCommands",
+        "commandQueue",
+        "completedCommands",
+        "idle",
+        "max",
+        "pid",
+        "reconcileActive",
+        "threads",
+        "timeMillis",
+        "total",
+        "waiting"
+      ],
+      "progressFields": [
+        "actionable",
+        "backlog",
+        "correctnessRequiredUnresolved",
+        "idleInTransaction",
+        "ledger",
+        "orders",
+        "runsSucceeded",
+        "terminal",
+        "timeMillis",
+        "trades",
+        "transactions",
+        "venueExecutor"
+      ],
+      "resourceHistoricalObservations": {
+        "15484": {
+          "allSampleCount": 14,
+          "intervalMillis": {
+            "baselineMin": 156,
+            "baselineMax": 269,
+            "maxMinusMin": 113,
+            "sampleCount": 13
+          },
+          "producerSampleCount": 0,
+          "producerOnly": {
+            "threads": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "active": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "idle": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "waiting": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "total": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "activeCommands": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "commandQueue": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "reconcileActive": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            }
+          },
+          "allPhases": {
+            "threads": {
+              "baselineMin": 15,
+              "baselineMax": 20,
+              "maxMinusMin": 5,
+              "sampleCount": 14
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 14
+            },
+            "idle": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 14
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 14
+            },
+            "total": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 14
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 14
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 14
+            }
+          },
+          "formalNoiseBand": false
+        },
+        "33752": {
+          "allSampleCount": 115,
+          "intervalMillis": {
+            "baselineMin": 250,
+            "baselineMax": 266,
+            "maxMinusMin": 16,
+            "sampleCount": 114
+          },
+          "producerSampleCount": 51,
+          "producerOnly": {
+            "threads": {
+              "baselineMin": 20,
+              "baselineMax": 20,
+              "maxMinusMin": 0,
+              "sampleCount": 51
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 51
+            },
+            "idle": {
+              "baselineMin": 9,
+              "baselineMax": 10,
+              "maxMinusMin": 1,
+              "sampleCount": 51
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 51
+            },
+            "total": {
+              "baselineMin": 10,
+              "baselineMax": 10,
+              "maxMinusMin": 0,
+              "sampleCount": 51
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 51
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 51
+            },
+            "reconcileActive": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 51
+            }
+          },
+          "allPhases": {
+            "threads": {
+              "baselineMin": 15,
+              "baselineMax": 20,
+              "maxMinusMin": 5,
+              "sampleCount": 115
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 115
+            },
+            "idle": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 115
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 115
+            },
+            "total": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 115
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 115
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 115
+            }
+          },
+          "formalNoiseBand": false
+        },
+        "37796": {
+          "allSampleCount": 156,
+          "intervalMillis": {
+            "baselineMin": 83,
+            "baselineMax": 266,
+            "maxMinusMin": 183,
+            "sampleCount": 155
+          },
+          "producerSampleCount": 51,
+          "producerOnly": {
+            "threads": {
+              "baselineMin": 20,
+              "baselineMax": 20,
+              "maxMinusMin": 0,
+              "sampleCount": 51
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 51
+            },
+            "idle": {
+              "baselineMin": 9,
+              "baselineMax": 10,
+              "maxMinusMin": 1,
+              "sampleCount": 51
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 51
+            },
+            "total": {
+              "baselineMin": 10,
+              "baselineMax": 10,
+              "maxMinusMin": 0,
+              "sampleCount": 51
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 51
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 51
+            },
+            "reconcileActive": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 51
+            }
+          },
+          "allPhases": {
+            "threads": {
+              "baselineMin": 15,
+              "baselineMax": 20,
+              "maxMinusMin": 5,
+              "sampleCount": 156
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 156
+            },
+            "idle": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 156
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 156
+            },
+            "total": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 156
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 156
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 156
+            }
+          },
+          "formalNoiseBand": false
+        }
+      },
+      "producerInterval": {
+        "startEpochMillis": 1789108581275,
+        "endEpochMillis": 1789108594559,
+        "durationMillis": 13284,
+        "clock": "System.currentTimeMillis; no paired monotonic producer boundary recorded"
+      },
+      "calibrationEligible": false,
+      "calibrationStatus": "CALIBRATION_REQUIRED",
+      "producerProgress": {
+        "sampleCount": 51,
+        "first": {
+          "timeMillis": 1789108581306,
+          "backlog": 60,
+          "correctnessRequiredUnresolved": 0,
+          "actionable": 60,
+          "orders": 60,
+          "terminal": 0,
+          "trades": 0,
+          "ledger": 0,
+          "runsSucceeded": 0,
+          "transactions": 815,
+          "idleInTransaction": 0,
+          "venueExecutor": {
+            "active": 1,
+            "queue": 0,
+            "completed": 312,
+            "rejected": 0,
+            "capacity": 16
+          }
+        },
+        "last": {
+          "timeMillis": 1789108594555,
+          "backlog": 62,
+          "correctnessRequiredUnresolved": 0,
+          "actionable": 62,
+          "orders": 120,
+          "terminal": 58,
+          "trades": 58,
+          "ledger": 232,
+          "runsSucceeded": 0,
+          "transactions": 8593,
+          "idleInTransaction": 0,
+          "venueExecutor": {
+            "active": 1,
+            "queue": 0,
+            "completed": 3106,
+            "rejected": 0,
+            "capacity": 16
+          }
+        },
+        "actionable": {
+          "baselineMin": 60,
+          "baselineMax": 66,
+          "maxMinusMin": 6,
+          "sampleCount": 51
+        },
+        "venueQueue": {
+          "baselineMin": 0,
+          "baselineMax": 0,
+          "maxMinusMin": 0,
+          "sampleCount": 51
+        },
+        "idleInTransaction": {
+          "baselineMin": 0,
+          "baselineMax": 0,
+          "maxMinusMin": 0,
+          "sampleCount": 51
+        }
+      },
+      "persistentPrefix": 60,
+      "postProducerFairnessCounts": {
+        "orders": 120,
+        "ordinary_place_authorities": 120,
+        "trades": 58,
+        "ledger_entries": 232,
+        "ledger_events": 232,
+        "positions": 1,
+        "account_snapshots": 116,
+        "strategy_runs": 0,
+        "strategy_run_dispatch_work": 0,
+        "events": 58
+      },
+      "timestampDiagnosticCounts": {
+        "orders": 60,
+        "trades": 58,
+        "ledger_entries": 232,
+        "events": null,
+        "account_snapshots": 116
+      },
+      "timestampLimitations": "created_at is a database row timestamp, not an independent commit-complete signal; fairness snapshot occurs after producerStopMillis; neither freezes a steady full-chain completion boundary",
+      "newOrdersExpected": 60,
+      "missingMetrics": [
+        "heapUsed/committed/max",
+        "GC count/time and natural GC low-water",
+        "handles/FD",
+        "owned temp file count/bytes time series",
+        "log bytes/growth time series",
+        "current sampler request token/sampleIndex/elapsedMillis/phase",
+        "Hikari acquisition timeout counter",
+        "total PG connections including observer ownership"
+      ]
+    },
+    {
+      "id": "C2",
+      "raw": "backend/nq-app/target/l5-bounded/7cac8335-7311-4630-b97f-eb65c7141b27/C2/raw-proof.json",
+      "rawSha256": "5fd631118135c4c89054e07c38cbdc3ccabc1ffdcea02fe97ad5e3b3c9dee197",
+      "runId": "7cac8335-7311-4630-b97f-eb65c7141b27/C2",
+      "concurrency": 4,
+      "resourceCount": 694,
+      "progressCount": 149,
+      "resourceFields": [
+        "active",
+        "activeCommands",
+        "commandQueue",
+        "completedCommands",
+        "idle",
+        "max",
+        "pid",
+        "reconcileActive",
+        "threads",
+        "timeMillis",
+        "total",
+        "waiting"
+      ],
+      "progressFields": [
+        "actionable",
+        "backlog",
+        "correctnessRequiredUnresolved",
+        "idleInTransaction",
+        "ledger",
+        "orders",
+        "runsSucceeded",
+        "terminal",
+        "timeMillis",
+        "trades",
+        "transactions",
+        "venueExecutor"
+      ],
+      "resourceHistoricalObservations": {
+        "17528": {
+          "allSampleCount": 183,
+          "intervalMillis": {
+            "baselineMin": 81,
+            "baselineMax": 266,
+            "maxMinusMin": 185,
+            "sampleCount": 182
+          },
+          "producerSampleCount": 89,
+          "producerOnly": {
+            "threads": {
+              "baselineMin": 20,
+              "baselineMax": 20,
+              "maxMinusMin": 0,
+              "sampleCount": 89
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 89
+            },
+            "idle": {
+              "baselineMin": 9,
+              "baselineMax": 10,
+              "maxMinusMin": 1,
+              "sampleCount": 89
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 89
+            },
+            "total": {
+              "baselineMin": 10,
+              "baselineMax": 10,
+              "maxMinusMin": 0,
+              "sampleCount": 89
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 89
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 89
+            },
+            "reconcileActive": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 89
+            }
+          },
+          "allPhases": {
+            "threads": {
+              "baselineMin": 15,
+              "baselineMax": 20,
+              "maxMinusMin": 5,
+              "sampleCount": 183
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 183
+            },
+            "idle": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 183
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 183
+            },
+            "total": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 183
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 183
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 183
+            }
+          },
+          "formalNoiseBand": false
+        },
+        "28968": {
+          "allSampleCount": 195,
+          "intervalMillis": {
+            "baselineMin": 35,
+            "baselineMax": 266,
+            "maxMinusMin": 231,
+            "sampleCount": 194
+          },
+          "producerSampleCount": 88,
+          "producerOnly": {
+            "threads": {
+              "baselineMin": 20,
+              "baselineMax": 20,
+              "maxMinusMin": 0,
+              "sampleCount": 88
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 88
+            },
+            "idle": {
+              "baselineMin": 9,
+              "baselineMax": 10,
+              "maxMinusMin": 1,
+              "sampleCount": 88
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 88
+            },
+            "total": {
+              "baselineMin": 10,
+              "baselineMax": 10,
+              "maxMinusMin": 0,
+              "sampleCount": 88
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 88
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 88
+            },
+            "reconcileActive": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 88
+            }
+          },
+          "allPhases": {
+            "threads": {
+              "baselineMin": 15,
+              "baselineMax": 20,
+              "maxMinusMin": 5,
+              "sampleCount": 195
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 195
+            },
+            "idle": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 195
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 195
+            },
+            "total": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 195
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 195
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 195
+            }
+          },
+          "formalNoiseBand": false
+        },
+        "30236": {
+          "allSampleCount": 18,
+          "intervalMillis": {
+            "baselineMin": 142,
+            "baselineMax": 266,
+            "maxMinusMin": 124,
+            "sampleCount": 17
+          },
+          "producerSampleCount": 0,
+          "producerOnly": {
+            "threads": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "active": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "idle": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "waiting": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "total": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "activeCommands": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "commandQueue": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "reconcileActive": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            }
+          },
+          "allPhases": {
+            "threads": {
+              "baselineMin": 15,
+              "baselineMax": 20,
+              "maxMinusMin": 5,
+              "sampleCount": 18
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 18
+            },
+            "idle": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 18
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 18
+            },
+            "total": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 18
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 18
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 18
+            }
+          },
+          "formalNoiseBand": false
+        },
+        "33336": {
+          "allSampleCount": 171,
+          "intervalMillis": {
+            "baselineMin": 98,
+            "baselineMax": 267,
+            "maxMinusMin": 169,
+            "sampleCount": 170
+          },
+          "producerSampleCount": 89,
+          "producerOnly": {
+            "threads": {
+              "baselineMin": 20,
+              "baselineMax": 20,
+              "maxMinusMin": 0,
+              "sampleCount": 89
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 89
+            },
+            "idle": {
+              "baselineMin": 9,
+              "baselineMax": 10,
+              "maxMinusMin": 1,
+              "sampleCount": 89
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 89
+            },
+            "total": {
+              "baselineMin": 10,
+              "baselineMax": 10,
+              "maxMinusMin": 0,
+              "sampleCount": 89
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 89
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 89
+            },
+            "reconcileActive": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 89
+            }
+          },
+          "allPhases": {
+            "threads": {
+              "baselineMin": 15,
+              "baselineMax": 20,
+              "maxMinusMin": 5,
+              "sampleCount": 171
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 171
+            },
+            "idle": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 171
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 171
+            },
+            "total": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 171
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 171
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 171
+            }
+          },
+          "formalNoiseBand": false
+        },
+        "38640": {
+          "allSampleCount": 127,
+          "intervalMillis": {
+            "baselineMin": 207,
+            "baselineMax": 266,
+            "maxMinusMin": 59,
+            "sampleCount": 126
+          },
+          "producerSampleCount": 89,
+          "producerOnly": {
+            "threads": {
+              "baselineMin": 20,
+              "baselineMax": 20,
+              "maxMinusMin": 0,
+              "sampleCount": 89
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 89
+            },
+            "idle": {
+              "baselineMin": 9,
+              "baselineMax": 10,
+              "maxMinusMin": 1,
+              "sampleCount": 89
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 89
+            },
+            "total": {
+              "baselineMin": 10,
+              "baselineMax": 10,
+              "maxMinusMin": 0,
+              "sampleCount": 89
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 89
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 89
+            },
+            "reconcileActive": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 89
+            }
+          },
+          "allPhases": {
+            "threads": {
+              "baselineMin": 15,
+              "baselineMax": 20,
+              "maxMinusMin": 5,
+              "sampleCount": 127
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 127
+            },
+            "idle": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 127
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 127
+            },
+            "total": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 127
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 127
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 127
+            }
+          },
+          "formalNoiseBand": false
+        }
+      },
+      "producerInterval": {
+        "startEpochMillis": 1789108734698,
+        "endEpochMillis": 1789108757858,
+        "durationMillis": 23160,
+        "clock": "System.currentTimeMillis; no paired monotonic producer boundary recorded"
+      },
+      "calibrationEligible": false,
+      "calibrationStatus": "CALIBRATION_REQUIRED",
+      "producerProgress": {
+        "sampleCount": 88,
+        "first": {
+          "timeMillis": 1789108734730,
+          "backlog": 60,
+          "correctnessRequiredUnresolved": 0,
+          "actionable": 60,
+          "orders": 60,
+          "terminal": 0,
+          "trades": 0,
+          "ledger": 0,
+          "runsSucceeded": 0,
+          "transactions": 1000,
+          "idleInTransaction": 0,
+          "venueExecutor": {
+            "active": 1,
+            "queue": 0,
+            "completed": 422,
+            "rejected": 0,
+            "capacity": 16
+          }
+        },
+        "last": {
+          "timeMillis": 1789108757746,
+          "backlog": 69,
+          "correctnessRequiredUnresolved": 0,
+          "actionable": 69,
+          "orders": 239,
+          "terminal": 170,
+          "trades": 170,
+          "ledger": 680,
+          "runsSucceeded": 0,
+          "transactions": 30611,
+          "idleInTransaction": 0,
+          "venueExecutor": {
+            "active": 1,
+            "queue": 0,
+            "completed": 8216,
+            "rejected": 0,
+            "capacity": 16
+          }
+        },
+        "actionable": {
+          "baselineMin": 60,
+          "baselineMax": 69,
+          "maxMinusMin": 9,
+          "sampleCount": 88
+        },
+        "venueQueue": {
+          "baselineMin": 0,
+          "baselineMax": 1,
+          "maxMinusMin": 1,
+          "sampleCount": 88
+        },
+        "idleInTransaction": {
+          "baselineMin": 0,
+          "baselineMax": 0,
+          "maxMinusMin": 0,
+          "sampleCount": 88
+        }
+      },
+      "persistentPrefix": 60,
+      "postProducerFairnessCounts": {
+        "orders": 240,
+        "ordinary_place_authorities": 240,
+        "trades": 170,
+        "ledger_entries": 680,
+        "ledger_events": 680,
+        "positions": 1,
+        "account_snapshots": 340,
+        "strategy_runs": 0,
+        "strategy_run_dispatch_work": 0,
+        "events": 170
+      },
+      "timestampDiagnosticCounts": {
+        "orders": 180,
+        "trades": 170,
+        "ledger_entries": 680,
+        "events": null,
+        "account_snapshots": 340
+      },
+      "timestampLimitations": "created_at is a database row timestamp, not an independent commit-complete signal; fairness snapshot occurs after producerStopMillis; neither freezes a steady full-chain completion boundary",
+      "newOrdersExpected": 180,
+      "missingMetrics": [
+        "heapUsed/committed/max",
+        "GC count/time and natural GC low-water",
+        "handles/FD",
+        "owned temp file count/bytes time series",
+        "log bytes/growth time series",
+        "current sampler request token/sampleIndex/elapsedMillis/phase",
+        "Hikari acquisition timeout counter",
+        "total PG connections including observer ownership"
+      ]
+    },
+    {
+      "id": "C3",
+      "raw": "backend/nq-app/target/l5-bounded/b85ffa89-367d-4144-8efb-9162ae6360bf/C3/raw-proof.json",
+      "rawSha256": "b778d5983bda3b0b0509139fbd8bc73396030d285d11a8ebc011898c06eb5ea8",
+      "runId": "b85ffa89-367d-4144-8efb-9162ae6360bf/C3",
+      "concurrency": 4,
+      "resourceCount": 748,
+      "progressCount": 163,
+      "resourceFields": [
+        "active",
+        "activeCommands",
+        "commandQueue",
+        "completedCommands",
+        "idle",
+        "max",
+        "pid",
+        "reconcileActive",
+        "threads",
+        "timeMillis",
+        "total",
+        "waiting"
+      ],
+      "progressFields": [
+        "actionable",
+        "backlog",
+        "correctnessRequiredUnresolved",
+        "idleInTransaction",
+        "ledger",
+        "orders",
+        "runsSucceeded",
+        "terminal",
+        "timeMillis",
+        "trades",
+        "transactions",
+        "venueExecutor"
+      ],
+      "resourceHistoricalObservations": {
+        "12008": {
+          "allSampleCount": 140,
+          "intervalMillis": {
+            "baselineMin": 163,
+            "baselineMax": 267,
+            "maxMinusMin": 104,
+            "sampleCount": 139
+          },
+          "producerSampleCount": 98,
+          "producerOnly": {
+            "threads": {
+              "baselineMin": 20,
+              "baselineMax": 20,
+              "maxMinusMin": 0,
+              "sampleCount": 98
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 98
+            },
+            "idle": {
+              "baselineMin": 9,
+              "baselineMax": 10,
+              "maxMinusMin": 1,
+              "sampleCount": 98
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 98
+            },
+            "total": {
+              "baselineMin": 10,
+              "baselineMax": 10,
+              "maxMinusMin": 0,
+              "sampleCount": 98
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 98
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 98
+            },
+            "reconcileActive": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 98
+            }
+          },
+          "allPhases": {
+            "threads": {
+              "baselineMin": 15,
+              "baselineMax": 20,
+              "maxMinusMin": 5,
+              "sampleCount": 140
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 140
+            },
+            "idle": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 140
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 140
+            },
+            "total": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 140
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 140
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 140
+            }
+          },
+          "formalNoiseBand": false
+        },
+        "13000": {
+          "allSampleCount": 215,
+          "intervalMillis": {
+            "baselineMin": 69,
+            "baselineMax": 266,
+            "maxMinusMin": 197,
+            "sampleCount": 214
+          },
+          "producerSampleCount": 98,
+          "producerOnly": {
+            "threads": {
+              "baselineMin": 20,
+              "baselineMax": 20,
+              "maxMinusMin": 0,
+              "sampleCount": 98
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 98
+            },
+            "idle": {
+              "baselineMin": 9,
+              "baselineMax": 10,
+              "maxMinusMin": 1,
+              "sampleCount": 98
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 98
+            },
+            "total": {
+              "baselineMin": 10,
+              "baselineMax": 10,
+              "maxMinusMin": 0,
+              "sampleCount": 98
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 98
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 98
+            },
+            "reconcileActive": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 98
+            }
+          },
+          "allPhases": {
+            "threads": {
+              "baselineMin": 15,
+              "baselineMax": 20,
+              "maxMinusMin": 5,
+              "sampleCount": 215
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 215
+            },
+            "idle": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 215
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 215
+            },
+            "total": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 215
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 215
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 215
+            }
+          },
+          "formalNoiseBand": false
+        },
+        "29264": {
+          "allSampleCount": 182,
+          "intervalMillis": {
+            "baselineMin": 144,
+            "baselineMax": 267,
+            "maxMinusMin": 123,
+            "sampleCount": 181
+          },
+          "producerSampleCount": 97,
+          "producerOnly": {
+            "threads": {
+              "baselineMin": 20,
+              "baselineMax": 20,
+              "maxMinusMin": 0,
+              "sampleCount": 97
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 97
+            },
+            "idle": {
+              "baselineMin": 9,
+              "baselineMax": 10,
+              "maxMinusMin": 1,
+              "sampleCount": 97
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 97
+            },
+            "total": {
+              "baselineMin": 10,
+              "baselineMax": 10,
+              "maxMinusMin": 0,
+              "sampleCount": 97
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 97
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 97
+            },
+            "reconcileActive": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 97
+            }
+          },
+          "allPhases": {
+            "threads": {
+              "baselineMin": 15,
+              "baselineMax": 20,
+              "maxMinusMin": 5,
+              "sampleCount": 182
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 182
+            },
+            "idle": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 182
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 182
+            },
+            "total": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 182
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 182
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 182
+            }
+          },
+          "formalNoiseBand": false
+        },
+        "31276": {
+          "allSampleCount": 199,
+          "intervalMillis": {
+            "baselineMin": 85,
+            "baselineMax": 266,
+            "maxMinusMin": 181,
+            "sampleCount": 198
+          },
+          "producerSampleCount": 98,
+          "producerOnly": {
+            "threads": {
+              "baselineMin": 20,
+              "baselineMax": 20,
+              "maxMinusMin": 0,
+              "sampleCount": 98
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 98
+            },
+            "idle": {
+              "baselineMin": 9,
+              "baselineMax": 10,
+              "maxMinusMin": 1,
+              "sampleCount": 98
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 98
+            },
+            "total": {
+              "baselineMin": 10,
+              "baselineMax": 10,
+              "maxMinusMin": 0,
+              "sampleCount": 98
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 98
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 98
+            },
+            "reconcileActive": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 98
+            }
+          },
+          "allPhases": {
+            "threads": {
+              "baselineMin": 15,
+              "baselineMax": 20,
+              "maxMinusMin": 5,
+              "sampleCount": 199
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 199
+            },
+            "idle": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 199
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 199
+            },
+            "total": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 199
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 199
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 199
+            }
+          },
+          "formalNoiseBand": false
+        },
+        "39036": {
+          "allSampleCount": 12,
+          "intervalMillis": {
+            "baselineMin": 145,
+            "baselineMax": 269,
+            "maxMinusMin": 124,
+            "sampleCount": 11
+          },
+          "producerSampleCount": 0,
+          "producerOnly": {
+            "threads": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "active": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "idle": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "waiting": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "total": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "activeCommands": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "commandQueue": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            },
+            "reconcileActive": {
+              "baselineMin": null,
+              "baselineMax": null,
+              "maxMinusMin": null,
+              "sampleCount": 0
+            }
+          },
+          "allPhases": {
+            "threads": {
+              "baselineMin": 15,
+              "baselineMax": 20,
+              "maxMinusMin": 5,
+              "sampleCount": 12
+            },
+            "active": {
+              "baselineMin": 0,
+              "baselineMax": 1,
+              "maxMinusMin": 1,
+              "sampleCount": 12
+            },
+            "idle": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 12
+            },
+            "waiting": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 12
+            },
+            "total": {
+              "baselineMin": 1,
+              "baselineMax": 10,
+              "maxMinusMin": 9,
+              "sampleCount": 12
+            },
+            "activeCommands": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 12
+            },
+            "commandQueue": {
+              "baselineMin": 0,
+              "baselineMax": 0,
+              "maxMinusMin": 0,
+              "sampleCount": 12
+            }
+          },
+          "formalNoiseBand": false
+        }
+      },
+      "producerInterval": {
+        "startEpochMillis": 1789115221231,
+        "endEpochMillis": 1789115246793,
+        "durationMillis": 25562,
+        "clock": "System.currentTimeMillis; no paired monotonic producer boundary recorded"
+      },
+      "calibrationEligible": false,
+      "calibrationStatus": "CALIBRATION_REQUIRED",
+      "producerProgress": {
+        "sampleCount": 97,
+        "first": {
+          "timeMillis": 1789115221262,
+          "backlog": 60,
+          "correctnessRequiredUnresolved": 0,
+          "actionable": 60,
+          "orders": 60,
+          "terminal": 0,
+          "trades": 0,
+          "ledger": 0,
+          "runsSucceeded": 0,
+          "transactions": 882,
+          "idleInTransaction": 0,
+          "venueExecutor": {
+            "active": 1,
+            "queue": 0,
+            "completed": 420,
+            "rejected": 0,
+            "capacity": 16
+          }
+        },
+        "last": {
+          "timeMillis": 1789115246670,
+          "backlog": 64,
+          "correctnessRequiredUnresolved": 1,
+          "actionable": 63,
+          "orders": 240,
+          "terminal": 176,
+          "trades": 176,
+          "ledger": 704,
+          "runsSucceeded": 8,
+          "transactions": 33601,
+          "idleInTransaction": 0,
+          "venueExecutor": {
+            "active": 1,
+            "queue": 0,
+            "completed": 8989,
+            "rejected": 0,
+            "capacity": 16
+          }
+        },
+        "actionable": {
+          "baselineMin": 60,
+          "baselineMax": 73,
+          "maxMinusMin": 13,
+          "sampleCount": 97
+        },
+        "venueQueue": {
+          "baselineMin": 0,
+          "baselineMax": 0,
+          "maxMinusMin": 0,
+          "sampleCount": 97
+        },
+        "idleInTransaction": {
+          "baselineMin": 0,
+          "baselineMax": 0,
+          "maxMinusMin": 0,
+          "sampleCount": 97
+        }
+      },
+      "persistentPrefix": 60,
+      "postProducerFairnessCounts": {
+        "orders": 240,
+        "ordinary_place_authorities": 240,
+        "trades": 176,
+        "ledger_entries": 704,
+        "ledger_events": 704,
+        "positions": 1,
+        "account_snapshots": 352,
+        "strategy_runs": 12,
+        "strategy_run_dispatch_work": 12,
+        "events": 176
+      },
+      "timestampDiagnosticCounts": {
+        "orders": 180,
+        "trades": 176,
+        "ledger_entries": 704,
+        "events": null,
+        "account_snapshots": 352
+      },
+      "timestampLimitations": "created_at is a database row timestamp, not an independent commit-complete signal; fairness snapshot occurs after producerStopMillis; neither freezes a steady full-chain completion boundary",
+      "newOrdersExpected": 180,
+      "missingMetrics": [
+        "heapUsed/committed/max",
+        "GC count/time and natural GC low-water",
+        "handles/FD",
+        "owned temp file count/bytes time series",
+        "log bytes/growth time series",
+        "current sampler request token/sampleIndex/elapsedMillis/phase",
+        "Hikari acquisition timeout counter",
+        "total PG connections including observer ownership"
+      ]
+    }
+  ],
+  "missingCalibrationFields": [
+    "healthySustainedRate.value",
+    "healthySustainedRate.uniqueSteadyWindow",
+    "healthySustainedRate.fullChainCompletionBoundary",
+    "healthySustainedRate.backpressureIntervalClassification",
+    "l6ArrivalRate.value",
+    "noiseBands.heapGcLowWater",
+    "noiseBands.threads",
+    "noiseBands.hikariActivePendingConnections",
+    "noiseBands.postgresConnections",
+    "noiseBands.handlesOrFd",
+    "noiseBands.commandQueue",
+    "noiseBands.venueQueue",
+    "noiseBands.tempCountBytes",
+    "noiseBands.logGrowth",
+    "samplingCompatibility.sameLoadSameMethod",
+    "calibrationRunIds",
+    "frozenAt"
+  ],
+  "calibratedFromExistingAcceptedEvidence": false,
+  "canonicalManifestCreated": false,
+  "frozenAt": null,
+  "dynamicCalibrationRequired": true,
+  "dynamicRunExecuted": false,
+  "minimalCalibrationRunRequired": {
+    "required": true,
+    "status": "PROPOSED_NOT_EXECUTED_NOT_FROZEN",
+    "purpose": "Fill rate and same-load same-method noise evidence only; no L4/L5 correctness or fault requalification",
+    "sameAcceptedProductionCandidate": "1208abd904c318b832af152c9c52f8a5f4b46df3",
+    "harnessChangeRequired": true,
+    "candidateRule": "Reuse current sampler bytes and accepted production/PG/Venue contracts. Any new calibration orchestration must have its own manifest/hash; do not label changed harness as exact-head 1208abd9.",
+    "runtimeComposition": {
+      "postgres": 1,
+      "postgresMajor": 16,
+      "schema": "V51",
+      "syntheticVenue": 1,
+      "nqActors": 2,
+      "controller": 1,
+      "concurrencyTarget": 2,
+      "concurrencyHardMax": 4,
+      "faults": 0,
+      "runtimeRestarts": 0,
+      "loopbackOnly": true,
+      "credentials": false,
+      "realProvider": false
+    },
+    "duration": {
+      "proposalSeconds": 900,
+      "phases": [
+        {
+          "name": "WARMUP",
+          "seconds": 120
+        },
+        {
+          "name": "HEALTHY_RATE_MEASUREMENT",
+          "seconds": 300
+        },
+        {
+          "name": "STOP_AND_CONVERGE",
+          "seconds": 60
+        },
+        {
+          "name": "MATCHED_L6_NOISE_CONTROL",
+          "seconds": 300
+        },
+        {
+          "name": "QUIET_DRAIN",
+          "seconds": 120
+        }
+      ],
+      "meaning": "A proposed bounded first calibration attempt, not an already accepted duration or sufficiency guarantee. Exceeding any bound or lacking natural GC/comparable observations returns INCONCLUSIVE/BLOCKED, with no in-run extension."
+    },
+    "arrivalPattern": {
+      "healthyOfferedCapOrdersPerSecond": 4,
+      "globalSpacingMillis": 250,
+      "dispatch": "alternate two actors; at most one pending business command per actor; pause without catch-up burst when slots/backpressure block; exact unique identities; normal continuous fills and reconciliation; no deliberately persistent 60-order prefix",
+      "proposalRationale": "4/s is a proposed offered workload ceiling consistent with exact 25% and L6 <=1/s; it is NOT measured healthy rate or a frozen acceptance value. Keep real risk checks and accepted workload limits.",
+      "noiseControl": "Use only r_L6 = r_H * 0.25 derived by the predeclared rule after the healthy phase and completed identity checks; no clipping/min(1,r_L6), no default 2/min; reject if r_L6 >1/s. Same timers/collector topology/load pattern as the future L6 run."
+    },
+    "rateRuleProposal": {
+      "windows": "three fixed 100s windows within the 300s healthy interval, specified before T=0",
+      "unit": "unique full-chain completed orders/second",
+      "formula": "r_i = N_i / actual monotonic seconds_i; r_H = min(r_1,r_2,r_3); r_L6 = r_H * 0.25",
+      "numerator": "Unique identities admitted and fully completed inside each declared window; completion requires read-only durable evidence through TradeExecuted/Ledger/Position/Snapshot and matching Venue fill. Record boundary carry separately, never count it twice.",
+      "eligibility": "No fault/restart, no unexplained rejection or stalled consumer, no unclassified backpressure, all intervals present. Keep offered/admitted/completed/rejected rates distinct. This new prospective rule requires explicit freezing before a future run; it is not a reconstruction of an old accepted definition."
+    },
+    "sampling": {
+      "collector": "Current L6ResourceSampler plus L6RuntimeResources, byte-bound",
+      "intervalMillis": 10000,
+      "sampleIndexAndMonotonicElapsed": true,
+      "maxStartLagMillis": 2000,
+      "maxCollectionMillis": 8000,
+      "proposedNominalSamples": 90,
+      "noiseSamples": 30,
+      "quietSamples": 12,
+      "missingOrCachedSubstitution": "BLOCKED",
+      "phaseStartEndActualDurationAndCount": true
+    },
+    "resources": [
+      "heap used/committed/max and natural GC count/time/observed low-water by actor PID generation",
+      "threads live/peak and owner topology",
+      "Hikari active/idle/pending/max/timeout delta",
+      "PG app/database connections and idle-in-transaction",
+      "command/metrics/Venue executor queues",
+      "Windows handles or Linux FD by owned generation",
+      "owned temp count/bytes and log bytes/delta growth",
+      "audit/event growth normalized by completed orders/scans",
+      "scheduler/reconciliation/backlog-age/cursor",
+      "owned process/container counts"
+    ],
+    "noiseDerivation": "Use matched L6-noise-control and quiet-drain separately, per resource owner/generation. Emit min/max/max-min/count/method and exact sample indices. Associate heap lows with repeated natural GC observations; never System.gc. Normalize legitimate log/temp/audit growth by time/business work and retain raw cumulative values; do not compare inevitable evidence-file growth to a zero-growth recovery threshold.",
+    "safetyBudgetProposal": {
+      "ordersMax": 2000,
+      "fillsPerOrderMax": 4,
+      "rawBytesMax": 1073741824,
+      "memory": "reuse accepted process heaps/PG limits; total budget <=60% entry available memory",
+      "disk": "retain >=2GiB and >=20% entry free space",
+      "termination": "Stop producer, bounded drain, preserve evidence, cleanup owned only; no budget relaxation"
+    },
+    "exactOutputs": [
+      "calibration-parameters.json with pre-run formulas/phases/pacing/budgets/head/tree/candidate/sampler/fixture hashes",
+      "phase-timing.json",
+      "arrival-completion.ndjson with offered/admitted/filled/durable-completed identities and monotonic timestamps",
+      "backpressure.ndjson with pause/resume reason and intervals",
+      "resources.ndjson from unchanged current 10s sampler",
+      "noise-band-observations.json with phase/owner/source indices and natural GC linkage",
+      "rate-calculation.json with numerators/denominators/units/window validity and exact 25% calculation",
+      "raw-proof.json and business oracle result using existing accepted invariants as guardrails only",
+      "cleanup.json with owned PID generations/container/ports/survivors",
+      "artifact-sha256.json and calibration-summary.json",
+      "L6_FORMAL_CALIBRATION_MANIFEST.json ONLY after every mandatory field is sufficient; otherwise blocked summary with null values"
+    ],
+    "notRunnableAtCurrentHead": [
+      "L5BoundedWorkloadTest selects S/C fixed count modes and embeds old 250ms sampling; no current L6 collector wiring",
+      "L6DurationContract only 15/90/10 diagnostic or 600/2400/600 formal",
+      "L6ActiveStabilityTest fixed 2 cron strategies/minute and <=240 orders; no offered-rate/calculation/paired no-fault control phases",
+      "No current producer full-chain timestamp and backpressure interval exporter for a prospective calibration definition"
+    ],
+    "command": "NONE: no existing exact command fulfils this proposal; do not run the old 2/min L6 harness as calibration"
+  },
+  "productionDelta": 0,
+  "testHarnessDelta": 0,
+  "configDelta": 0,
+  "stage": 0,
+  "commit": "NONE",
+  "push": "NONE",
+  "l6": "NOT_ACCEPTED",
+  "60min": "NOT_STARTED",
+  "180min": "NOT_STARTED",
+  "nextAction": "Minimal no-fault calibration only after separately scoped harness gap closure and candidate binding; no 60/180min now",
+  "report": {
+    "path": "docs/audit/evidence/phase6-l6/L6_FORMAL_CALIBRATION_MANIFEST_CLOSURE.md",
+    "sha256": "e09b55c07ae95f02139548ae4da97303b044d4b5cf748ee3809d9239fdf80afe"
+  },
+  "verification": {
+    "rawLogHashesMatched": 32,
+    "existingGitVisibleFilesUnchanged": 3968,
+    "producerDurationsRecomputed": 3,
+    "perPidHistoricalRangesRecomputed": true,
+    "missingEventTimestampNotZero": true,
+    "formalRatesAndNoiseValuesRemainNull": true,
+    "canonicalManifestAbsent": true,
+    "budgetProposalArithmetic": true,
+    "gitDiffCheck": "PASS",
+    "stage": 0
+  },
+  "rawArtifacts": [
+    {
+      "path": "backend/nq-app/target/l6-calibration-closure-20260913-01/accepted-artifact-verification.json",
+      "bytes": 15428,
+      "sha256": "7e73a13aec7fb8ef143d15bb899c372b350d8c744a0a82339cf04c8dae02c9fb"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration-closure-20260913-01/accepted-matrix.json",
+      "bytes": 3234,
+      "sha256": "ea6136b462c7fa1848967c26e6ca4d046d833bacf8513b181f3ebf724c7d6f64"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration-closure-20260913-01/analysis-correction.json",
+      "bytes": 377,
+      "sha256": "db626df8b3849d989c1285be956d185ea264f6702b2468e88faf3582ed363121"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration-closure-20260913-01/analyze.py",
+      "bytes": 8905,
+      "sha256": "e6d7cdc93dba7e19637503238a9fe876f2b4df9d86c334bda6046d918f65ef4c"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration-closure-20260913-01/baseline.json",
+      "bytes": 2288,
+      "sha256": "b1c4eb30bb7d4b816fbe23316c900e7d5d9b52e151c29ed770219399dded8db2"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration-closure-20260913-01/close.py",
+      "bytes": 27800,
+      "sha256": "23c32fcbdae2f65184a81dc20086d498d45b75a50ae14f648c825e793b5bb51f"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration-closure-20260913-01/current-harness-evidence.json",
+      "bytes": 220710,
+      "sha256": "da3e87c051a4e1bec3b626122eef5e6920a31496e92fa44aa7a9830f36d9b0bf"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration-closure-20260913-01/evidence-relevant-excerpts.json",
+      "bytes": 110341,
+      "sha256": "bedf6f6849318d70d30c39c1ce2b13d1c393fee8505234bb3aae1d95025bb612"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration-closure-20260913-01/evidence-source-index.json",
+      "bytes": 31488,
+      "sha256": "267993b280429f5eba36540a7b767fcf1a7cd892755a85623d80d55d60453fc0"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration-closure-20260913-01/exact-head-ci.json",
+      "bytes": 34697,
+      "sha256": "eb62016ffc80d0d7da4b0a1434e8db04fa0294a36183d1e91d263fdec4ebeaa1"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration-closure-20260913-01/git-final.json",
+      "bytes": 1706,
+      "sha256": "c9873c46705f386631a4d8d93847412856ff5210057c062dfeefa5a993a9a6cd"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration-closure-20260913-01/historical-observations.json",
+      "bytes": 74654,
+      "sha256": "159c1eab5b9331ba46bfcdf5bed3b85eee00e05bb75947bab5a67efcc44b8f28"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration-closure-20260913-01/inputs-end.json",
+      "bytes": 874681,
+      "sha256": "1efbc74311c2ffb25680ca5975c27f35a0ba5069c974dd8a00e4a6fa1f289fb1"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration-closure-20260913-01/inputs-start.json",
+      "bytes": 874681,
+      "sha256": "1efbc74311c2ffb25680ca5975c27f35a0ba5069c974dd8a00e4a6fa1f289fb1"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration-closure-20260913-01/verification.json",
+      "bytes": 366,
+      "sha256": "b279138b5b06b6f7adfe659d2ed9732f8d9e7de568fde43e99ca1238346e350f"
+    }
+  ]
+}

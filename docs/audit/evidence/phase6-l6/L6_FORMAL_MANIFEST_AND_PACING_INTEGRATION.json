@@ -1,0 +1,413 @@
+{
+  "task": "NQ-GATEAUDIT-PHASE6-L6-FORMAL-MANIFEST-AND-DETERMINISTIC-PACING-INTEGRATION",
+  "status": "LOCAL_INTEGRATION_PASS / PRECISE_DELIVERY_PENDING / NEW_HEAD_CI_PENDING",
+  "integrationAccepted": false,
+  "baseline": "d94f8512108fd7f8e9cbdeee14cfc8b064f2d5d8",
+  "manifest": {
+    "path": "docs/audit/evidence/phase6-l6/L6_FORMAL_CALIBRATION_MANIFEST.json",
+    "entrySha256": "922253c8934e32b7626ced2f9e42407a2a4313c665256b89c483e847ce6abaa6",
+    "currentSha256": "922253c8934e32b7626ced2f9e42407a2a4313c665256b89c483e847ce6abaa6",
+    "unchanged": true
+  },
+  "contract": {
+    "mode": "FORMAL_L6_A",
+    "intervalNanos": 7117650000,
+    "rateReadOnly": 0.14049580971247533,
+    "absoluteDeadline": "start + slotIndex * interval",
+    "missedSlotDebt": 0,
+    "drainEnabled": false,
+    "derived60minCapacity": 422,
+    "l5Default": 300,
+    "l6SafetyCap": 3000,
+    "samplerSemanticsChanged": false,
+    "calibrationRecomputed": false
+  },
+  "implementationFiles": [
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ActiveStabilityTest.java",
+      "sha256": "7299dec0ec7edd608c141c386c05715f9e62bebf3785251988d97ee1db0d79d1"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6BusinessCheckpoint.java",
+      "sha256": "fb8ae17c05cce3adfb678082dd96b3f569b43f74748312abd28388c864bb2606"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6DeterministicPacer.java",
+      "sha256": "2dee5e858f7c7956033948766669645368e823ae581d19221d821a966079b7b4"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalContractTest.java",
+      "sha256": "afb6731adfe4d187d554a86a63445e293dac12a564684791a04c978a10a74489"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalManifest.java",
+      "sha256": "efdad257aa185b3817658c2b98383429a1e2181ddb50cfe6a551453d9afef887"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalRuntime.java",
+      "sha256": "5fd36c002698151cc30e7183fb52c2336f9b4023e8de05bf9392dbb8b6d8346c"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalTrigger.java",
+      "sha256": "c6f329ae4dbc66edf885413ae68af2c867430d41fef6c9e3d9c0e03ca99d0275"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalVenueProcessMain.java",
+      "sha256": "e7348309376fbb80859619f17ed158e2e494d1ce8666eedee4a94b9aaca75412"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6QualificationControls.java",
+      "sha256": "c461cdec19fc0937131fd19b43e72d73f17ac29e693ed02ee5ccf6b2af07a67d"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_oracle.py",
+      "sha256": "bcb49611390cfc4e32c1d8c7e8bc58443724380503f8a85c9c4399b6072dc44c"
+    }
+  ],
+  "validation": {
+    "targetedJavaTests": 18,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "calibrationPythonRegressionTests": 3,
+    "independentReview": "Revised code candidate acceptable; open P0/P1=0 at code layer; smoke and delivery still unproven",
+    "reviewFixes": [
+      "Absolute slot deadlines no longer depend on last service completion; repeated100ms cost regression added",
+      "Child monotonic deadline and parent late-completion failure retain STOPPED identity; successful drain cannot hide crossing admission"
+    ]
+  },
+  "smoke": {
+    "attempts": 2,
+    "runId": "f2a895a6-0202-42d1-844f-df4ae648ccf8",
+    "result": "FAILED_BEFORE_NQ_TIMER_WORKLOAD",
+    "reason": "B0Fixture environment allowlist rejected newly introduced metadata keys",
+    "correctiveChange": "Removed metadata environment injection; children verify canonical SHA from run-local parameters, B0 allowlist unchanged",
+    "formalTimerStarted": false,
+    "nqStarted": 0,
+    "ordersCreated": 0,
+    "ownedSurvivors": 0,
+    "shortSmokeAccepted": true,
+    "retryExecuted": true,
+    "retryApproval": "AUTHORIZED_ONE_ADDITIONAL_100S",
+    "plannedPhasesSeconds": [
+      20,
+      50,
+      30
+    ],
+    "historicalClassification": "SETUP/INFRASTRUCTURE_FAILURE",
+    "retry": {
+      "runId": "fa631e1a-71b4-4223-9fb5-44a0932e01c8",
+      "result": "FORMAL_MODE_SMOKE_PASS",
+      "mode": "FORMAL_L6_A_SHORT_SMOKE",
+      "phasesSeconds": [
+        20,
+        50,
+        30
+      ],
+      "retryAuthorized": 1,
+      "retryExecuted": 1,
+      "implementationChangedAfterStart": false,
+      "manifestUnchanged": true,
+      "emitted": 6,
+      "paused": 4,
+      "skippedPhase": 5,
+      "minimumDispatchIntervalNanos": 7121507300,
+      "maximumInstantaneousProducerRate": 0.14041971142822532,
+      "fullChains": 6,
+      "schedulerScans": 40,
+      "schedulerTriggered": 0,
+      "newOrdersDuringDrain": 0,
+      "duplicateMutation": 0,
+      "duplicateAccounting": 0,
+      "mandatoryMeasurementMissing": 0,
+      "samples": 10,
+      "finalBacklog": 0,
+      "oldestCandidateAge": "NONE",
+      "ownedSurvivors": 0,
+      "hostProcessAndContainerCheck": "ABSENT",
+      "implementationHashesMatchReview": true
+    }
+  },
+  "productionDelta": 0,
+  "productFindings": {
+    "confirmedNewP0": 0,
+    "confirmedNewP1": 0,
+    "scope": "No new product P0/P1 established; short formal runtime correctness proved, no 60min qualification"
+  },
+  "qualificationBlocker": "LOCAL_DYNAMIC_PROOF_CLOSED / EXACT_HEAD_DELIVERY_PENDING",
+  "rawArtifacts": [
+    {
+      "path": "backend/nq-app/target/l6-formal-manifest-pacing-integration/com.guidinglight.nexusquant.app.smoke.L6ActiveStabilityTest.txt",
+      "size": 1570,
+      "sha256": "48e0bc9d5fe4885a6e07db5bd8ff52366e82a28430855e32b33abba625292609"
+    },
+    {
+      "path": "backend/nq-app/target/l6-formal-manifest-pacing-integration/com.guidinglight.nexusquant.app.smoke.L6FormalContractTest.txt",
+      "size": 370,
+      "sha256": "d0648f3b7d8ccfdaa498eb4815aec35ed4edf2a33a90fe4fb63b524a1de0ffef"
+    },
+    {
+      "path": "backend/nq-app/target/l6-formal-manifest-pacing-integration/python-calibration-regression.log",
+      "size": 664,
+      "sha256": "dc3817bd612eec3e4900052b3cc808236dee831654347ead6d2c5f213a79485f"
+    },
+    {
+      "path": "backend/nq-app/target/l6-formal-manifest-pacing-integration/smoke-attempt01.log",
+      "size": 43262,
+      "sha256": "2a934c70063a6cd24073ee517e17511c20967b3bc9696d028a86ea26c76c5ab2"
+    },
+    {
+      "path": "backend/nq-app/target/l6-formal-manifest-pacing-integration/smoke-exit.txt",
+      "size": 1,
+      "sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+    },
+    {
+      "path": "backend/nq-app/target/l6-formal-manifest-pacing-integration/start-inventory.json",
+      "size": 882099,
+      "sha256": "435f9ed01f38ed5d354e814789cb6d6d2bd277eda42bde85938544fb5beb152b"
+    },
+    {
+      "path": "backend/nq-app/target/l6-formal-manifest-pacing-integration/targeted-attempt01.log",
+      "size": 32106,
+      "sha256": "dd16d7f2ec23cce258d7bf85fa9a19c540ae6b49deb5e0ecaa44c4b82724f72d"
+    },
+    {
+      "path": "backend/nq-app/target/l6-formal-manifest-pacing-integration/targeted-attempt02.log",
+      "size": 32106,
+      "sha256": "033adb51d1dfc5089037226422478ae018035e60ad147a53bf5072c66d1edc41"
+    },
+    {
+      "path": "backend/nq-app/target/l6-formal-manifest-pacing-integration/TEST-com.guidinglight.nexusquant.app.smoke.L6ActiveStabilityTest.xml",
+      "size": 42703,
+      "sha256": "7bdc20596281b1b600f2d0b4a12d6cff6afe1693fd12202a0d18e2883e1ee38c"
+    },
+    {
+      "path": "backend/nq-app/target/l6-formal-manifest-pacing-integration/TEST-com.guidinglight.nexusquant.app.smoke.L6FormalContractTest.xml",
+      "size": 32499,
+      "sha256": "65b7c5584c06b3d605af0ef97379041cd1ab65d0132c42008c1e4b58437cfbab"
+    },
+    {
+      "path": "backend/nq-app/target/l6-formal/f2a895a6-0202-42d1-844f-df4ae648ccf8/parameters.json",
+      "size": 84059,
+      "sha256": "56489b23bb2e9f1e015411d3ad2a15a56477a23c6342bbee3b5abd3e5046a63b"
+    },
+    {
+      "path": "backend/nq-app/target/l6-formal/f2a895a6-0202-42d1-844f-df4ae648ccf8/proof.json",
+      "size": 115680,
+      "sha256": "0a5b880701c3d24664306a523995f1888ff137ab74e8f504a8e414129ff92249"
+    },
+    {
+      "path": "backend/nq-app/target/l6-formal/f2a895a6-0202-42d1-844f-df4ae648ccf8/venue.args",
+      "size": 13043,
+      "sha256": "9c6dd2afdb0284118ba8204ef7967955f16b2aaf764eba46a08d701559c6dcab"
+    },
+    {
+      "path": "backend/nq-app/target/l6-formal/f2a895a6-0202-42d1-844f-df4ae648ccf8/venue.log",
+      "size": 15,
+      "sha256": "602165e2361194f14c6f4297a42ea9455b87fc7aa10fed5ee1049423ca6bef5c"
+    }
+  ],
+  "git": {
+    "stage": 0,
+    "commit": "NONE",
+    "push": "NONE",
+    "newHeadCi": "NOT_RUN"
+  },
+  "L6": "NOT_ACCEPTED",
+  "formal60min": "NOT_RUN",
+  "formal180min": "NOT_RUN",
+  "recordedAt": "2026-09-13T13:02:41.314978+00:00",
+  "independentReview": {
+    "reviewer": "/root/formal_review",
+    "mode": "REVIEW_ONLY",
+    "initialP1": 2,
+    "remainingP0": 0,
+    "remainingP1": 0,
+    "codeCandidateAccepted": true,
+    "integrationAccepted": false,
+    "dynamicSmokeProven": true,
+    "stage": 0,
+    "files": [
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ActiveStabilityTest.java",
+        "entrySha256": "7299dec0ec7edd608c141c386c05715f9e62bebf3785251988d97ee1db0d79d1",
+        "exitSha256": "7299dec0ec7edd608c141c386c05715f9e62bebf3785251988d97ee1db0d79d1"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6BusinessCheckpoint.java",
+        "entrySha256": "fb8ae17c05cce3adfb678082dd96b3f569b43f74748312abd28388c864bb2606",
+        "exitSha256": "fb8ae17c05cce3adfb678082dd96b3f569b43f74748312abd28388c864bb2606"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalVenueProcessMain.java",
+        "entrySha256": "e7348309376fbb80859619f17ed158e2e494d1ce8666eedee4a94b9aaca75412",
+        "exitSha256": "e7348309376fbb80859619f17ed158e2e494d1ce8666eedee4a94b9aaca75412"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6QualificationControls.java",
+        "entrySha256": "c461cdec19fc0937131fd19b43e72d73f17ac29e693ed02ee5ccf6b2af07a67d",
+        "exitSha256": "c461cdec19fc0937131fd19b43e72d73f17ac29e693ed02ee5ccf6b2af07a67d"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6DeterministicPacer.java",
+        "entrySha256": "2dee5e858f7c7956033948766669645368e823ae581d19221d821a966079b7b4",
+        "exitSha256": "2dee5e858f7c7956033948766669645368e823ae581d19221d821a966079b7b4"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalContractTest.java",
+        "entrySha256": "afb6731adfe4d187d554a86a63445e293dac12a564684791a04c978a10a74489",
+        "exitSha256": "afb6731adfe4d187d554a86a63445e293dac12a564684791a04c978a10a74489"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalManifest.java",
+        "entrySha256": "efdad257aa185b3817658c2b98383429a1e2181ddb50cfe6a551453d9afef887",
+        "exitSha256": "efdad257aa185b3817658c2b98383429a1e2181ddb50cfe6a551453d9afef887"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalRuntime.java",
+        "entrySha256": "5fd36c002698151cc30e7183fb52c2336f9b4023e8de05bf9392dbb8b6d8346c",
+        "exitSha256": "5fd36c002698151cc30e7183fb52c2336f9b4023e8de05bf9392dbb8b6d8346c"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalTrigger.java",
+        "entrySha256": "c6f329ae4dbc66edf885413ae68af2c867430d41fef6c9e3d9c0e03ca99d0275",
+        "exitSha256": "c6f329ae4dbc66edf885413ae68af2c867430d41fef6c9e3d9c0e03ca99d0275"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_oracle.py",
+        "entrySha256": "bcb49611390cfc4e32c1d8c7e8bc58443724380503f8a85c9c4399b6072dc44c",
+        "exitSha256": "bcb49611390cfc4e32c1d8c7e8bc58443724380503f8a85c9c4399b6072dc44c"
+      }
+    ],
+    "limitations": "No Maven/smoke/commit by reviewer; actual unit tests proved separately by primary agent; failed smoke initialization retained"
+  },
+  "deliveryArtifacts": [
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/checkpoint-001.json",
+      "size": 7625,
+      "sha256": "db5fd9bbcba4dc51674f1aa6a8fc95f14025c6862efc36d4a9bb10d931f3afb3"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/checkpoint-002.json",
+      "size": 24401,
+      "sha256": "0c3736c5331341469578c35e2b74a9eb29aa0c747654bbe8eeac67ab78b9630a"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/checkpoint-003.json",
+      "size": 51707,
+      "sha256": "afe2563f42573f76dec24924deaa80464a66ddca77fcf9ff4766cbe4d57a8a69"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/checkpoint-004.json",
+      "size": 61872,
+      "sha256": "36ed460d28efb1fe2f3b9b60a4ea0411aa4cc4d7fe6a670b5cc8933cd5ebbb31"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/checkpoint-005.json",
+      "size": 63617,
+      "sha256": "a93d663b476d002e8a939f814b31441b4322de3ca7f400f8e1ff470bf5c08cdb"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/checkpoints.ndjson",
+      "size": 4375,
+      "sha256": "eeb5ffd9bbdd17c215e65a010bf99a799376843fc46d6ebde22f29b313bfecbd"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/l6-validation-32824.ndjson",
+      "size": 2633,
+      "sha256": "af03552da956b3d5ef08052db5355ea410fd7bd78bb9b856f9a8cc2df3aa4025"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/l6-validation-7324.ndjson",
+      "size": 2633,
+      "sha256": "42617a14f2cf8e77abdfd3270df924b0f700fc8d1743009e098f48654a224907"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/pacing.ndjson",
+      "size": 3249,
+      "sha256": "39d329e71a20385d5b4405c91d39b3535222976976434cc141fad1c2b061389c"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/parameters.json",
+      "size": 84059,
+      "sha256": "a1f9dae0d0daf9a5d6798fc75326fa9fe92d81a0736c11462a74642a97aeb053"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/progress.ndjson",
+      "size": 3604,
+      "sha256": "c33352cb65886184e8dbb3c2dafbf3d83c2b44cefaeb2247dbcac2ba902cb214"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/proof.json",
+      "size": 344537,
+      "sha256": "dc4f961c14c773f4fb2409c0663b6e568cf6b95e8ae969773a37f59b4c1d4f47"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/resource-summary.json",
+      "size": 204102,
+      "sha256": "87a09df4006fc80025d90a3a66563d72314ce876d6ce5fa71dfbecbd69ca9065"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/resources.ndjson",
+      "size": 121857,
+      "sha256": "ce37dd7690dcb7c0a13f90a39a1ab0acbb534d2380b96ef8b2aae68e6e813c41"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/scheduler.ndjson",
+      "size": 23134,
+      "sha256": "721f46ada5c42518daf94eb818636939234dde3476558de9d1787ce617acfdcc"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/validation/com.guidinglight.nexusquant.app.smoke.L6ActiveStabilityTest.txt",
+      "size": 372,
+      "sha256": "9becba047ac1481ff159af406cfa0d3b16b16d05f6a658b384c19fbb839dadd4"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/validation/smoke-attempt02-exit.txt",
+      "size": 3,
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/validation/TEST-com.guidinglight.nexusquant.app.smoke.L6ActiveStabilityTest.xml",
+      "size": 42152,
+      "sha256": "613fa8cdb991fc053b3b3bb210c778ed4be96eb482cfaf8968b588edbba6289b"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/verification.json",
+      "size": 803,
+      "sha256": "cefd0a98cd7a1a559544d7501b659c492660a20f5b3ac662a443128b772380a5"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/attempts/f2a895a6-0202-42d1-844f-df4ae648ccf8/parameters.json",
+      "size": 84059,
+      "sha256": "56489b23bb2e9f1e015411d3ad2a15a56477a23c6342bbee3b5abd3e5046a63b"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/attempts/f2a895a6-0202-42d1-844f-df4ae648ccf8/proof.json",
+      "size": 115680,
+      "sha256": "0a5b880701c3d24664306a523995f1888ff137ab74e8f504a8e414129ff92249"
+    }
+  ],
+  "rawLogArchive": {
+    "path": "docs/audit/evidence/phase6-l6/runs/fa631e1a-71b4-4223-9fb5-44a0932e01c8/validation/raw-logs.zip",
+    "sha256": "b4c3f62345f652be0dc831eb6b1f588e75566df6752e52bbc02f9297cb1c9c50",
+    "members": [
+      {
+        "name": "python-calibration-regression.log",
+        "sha256": "dc3817bd612eec3e4900052b3cc808236dee831654347ead6d2c5f213a79485f"
+      },
+      {
+        "name": "smoke-attempt01.log",
+        "sha256": "2a934c70063a6cd24073ee517e17511c20967b3bc9696d028a86ea26c76c5ab2"
+      },
+      {
+        "name": "smoke-attempt02.log",
+        "sha256": "17380a43ab3a7140ea2cdb3cfff48bff0c88ccf188fe77036dac35c582d29f3d"
+      },
+      {
+        "name": "targeted-attempt02.log",
+        "sha256": "033adb51d1dfc5089037226422478ae018035e60ad147a53bf5072c66d1edc41"
+      }
+    ]
+  }
+}

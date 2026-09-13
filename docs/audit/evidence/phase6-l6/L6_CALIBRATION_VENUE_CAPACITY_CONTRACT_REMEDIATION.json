@@ -1,0 +1,186 @@
+{
+  "task": "NQ-GATEAUDIT-PHASE6-L6-CALIBRATION-VENUE-CAPACITY-CONTRACT-REMEDIATION",
+  "decision": "BLOCKED / CALIBRATION_DESIGN_INCOMPATIBLE_WITH_ACCEPTED_VENUE_CAP",
+  "disposition": "DECISION_B",
+  "sourceHead": "3f2671bf9e5292d0d0194c0b4f830ae8c2ba8525",
+  "sourceTree": "d5ef2879f7e9e927e5872ef97ff813294c5acd48",
+  "sourceCi": 34750388230,
+  "recordedAt": "2026-09-13T10:47:45.306173+00:00",
+  "capOwner": "test-only B0SyntheticVenueMain.java:140-141; enabled by L5VenueProcessMain.java:6",
+  "capSemantics": "L5 per-run distinct logical order safety budget enforced by fixture map admission; not executor queue, production limit, or protocol identity invariant",
+  "planningAuthority": "GATEAUDIT_PHASE6_L5_L6_SCOPE_AND_QUALIFICATION_PLAN.md section 4 line 75: Hard upper bound 300 distinct orders",
+  "scopeDistinction": "Section 6 separately permits global L6 cap 3000; does not make L5 300 a convenience-only value. User Decision B forbids increasing accepted safety boundary in this task. No claim that 300 is universal production or L6 global cap.",
+  "l5AcceptedEvidence": "BOUNDED_WORKLOAD_AND_MEASUREMENT.md preserves planning SHA256 80e339594be7223f07783d30e7f18913a53187ecde59b360ecdbf9223c9e45ac; aggregate evidence preserves same plan and accepts L5 coverage",
+  "budget600Owners": [
+    "L6CalibrationTest.java proof orderBudget",
+    "L6CalibrationEvidence.java admission/backlog checks",
+    "l6_oracle.py explicit CALIBRATION branch"
+  ],
+  "lifecycle": "warmup and measurement share same Venue map and evidence instance; cleanup does not reset budget",
+  "feasibility": {
+    "unchangedTypicalWarmupOrders": 120,
+    "unchangedTypicalMeasurementOrders": 240,
+    "unchangedTypicalTotalOrders": 360,
+    "cap": 300,
+    "remainingAfterWarmup": 180,
+    "interpretation": "Typical calculation is an infeasibility witness, not an upper-bound proof; phase-boundary/scanner catch-up cannot justify lowering this requirement. No accepted proof supports rate validity after pacing reduction.",
+    "healthyRate": null,
+    "noiseBand": "NOT_FROZEN"
+  },
+  "failedAttempt": {
+    "runId": "3408f2f2-b017-4239-b005-a721a278bb54",
+    "decision": "BLOCKED / CALIBRATION_INFRASTRUCTURE_FAILURE",
+    "measurementSamples": 58,
+    "expectedMeasurementSamples": 60,
+    "fullChains": 300,
+    "unresolved": 2,
+    "convergenceTimeoutSeconds": 120,
+    "rawHashesPreserved": true
+  },
+  "draft": {
+    "createdBeforeFullSafetyAudit": true,
+    "withdrawn": true,
+    "testResults": [
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.L6CalibrationCapacityTest",
+        "tests": "3",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.L6CalibrationContractTest",
+        "tests": "5",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.L6ReadinessContractTest",
+        "tests": "5",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.L6ResourceSamplerTest",
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      }
+    ],
+    "testsApplicability": "Withdrawn candidate only; not delivery or repaired baseline proof",
+    "formalCalibrationRun": false,
+    "calibrationSmokeRun": false,
+    "venueProtocolTestsRan": true,
+    "compiledOutputsReusable": false,
+    "nextRunRequiresRebuildOfSelectedCandidate": true
+  },
+  "finalState": {
+    "inputFilesUnchanged": 3990,
+    "productionDelta": 0,
+    "testHarnessDelta": 0,
+    "configDelta": 0,
+    "stage": 0,
+    "commit": "NONE",
+    "push": "NONE",
+    "newExactHeadCi": "NOT_RUN_NO_DELIVERY",
+    "preflightDelivered": false,
+    "capacityConflictClosed": false
+  },
+  "severity": {
+    "productionP0Identified": 0,
+    "productionP1Identified": 0,
+    "existingCalibrationP1Blocker": "OPEN",
+    "historicalP2P3": "PRESERVED"
+  },
+  "artifacts": [
+    {
+      "path": "backend/nq-app/target/l6-capacity-remediation-20260913/failed-raw-inventory.json",
+      "size": 37481,
+      "sha256": "0724c11db50aaa1dbc2110938f16240ad78a0335df225b89a8e9aedab39487f5"
+    },
+    {
+      "path": "backend/nq-app/target/l6-capacity-remediation-20260913/inputs-start.json",
+      "size": 875435,
+      "sha256": "1c0cdb976f425417a0b59a597902080ff0cf63f095e60592d8a43ef347c2afd1"
+    },
+    {
+      "path": "backend/nq-app/target/l6-capacity-remediation-20260913/targeted-01.log",
+      "size": 32338,
+      "sha256": "5588fd3a9e277f20b494ae6c7fa02f6c62a5bfea02df2cdf04311bf201a51d66"
+    },
+    {
+      "path": "backend/nq-app/target/l6-capacity-remediation-20260913/TEST-com.guidinglight.nexusquant.app.smoke.L6CalibrationCapacityTest.xml",
+      "size": 32348,
+      "sha256": "16543661935ab4fd894d43703d88607cb6b8a23cc74cb4359d724684ac4eec81"
+    },
+    {
+      "path": "backend/nq-app/target/l6-capacity-remediation-20260913/TEST-com.guidinglight.nexusquant.app.smoke.L6CalibrationContractTest.xml",
+      "size": 32257,
+      "sha256": "1f24d8858ce7ce22bba56c060df440bf2bd3c9a5671bfe01db0c0ce84dac1deb"
+    },
+    {
+      "path": "backend/nq-app/target/l6-capacity-remediation-20260913/TEST-com.guidinglight.nexusquant.app.smoke.L6ReadinessContractTest.xml",
+      "size": 32225,
+      "sha256": "96aedae94222f19b0d412a066d5645e61be700dfc8c38ad993661dd7a58e33fa"
+    },
+    {
+      "path": "backend/nq-app/target/l6-capacity-remediation-20260913/TEST-com.guidinglight.nexusquant.app.smoke.L6ResourceSamplerTest.xml",
+      "size": 32423,
+      "sha256": "088b0db1938180b723e56f1f8b48760b875753af3f44259be2193de3621c45e6"
+    },
+    {
+      "path": "backend/nq-app/target/l6-capacity-remediation-20260913/withdrawn-draft/B0Processes.java",
+      "size": 14180,
+      "sha256": "f75e8dc238cd6c9b8ef70c72d40fdd230febe821440515f0a813415b586535eb"
+    },
+    {
+      "path": "backend/nq-app/target/l6-capacity-remediation-20260913/withdrawn-draft/B0SyntheticVenueMain.java",
+      "size": 13603,
+      "sha256": "399750600b157096424819e3ae19ce4b491c2d3ac742a4ccc65bbaea60f87b20"
+    },
+    {
+      "path": "backend/nq-app/target/l6-capacity-remediation-20260913/withdrawn-draft/budget.json",
+      "size": 136,
+      "sha256": "c5c2e4936e98b095f8c07293ec4d64cc891891640948643087f2801b74d4b6ce"
+    },
+    {
+      "path": "backend/nq-app/target/l6-capacity-remediation-20260913/withdrawn-draft/l6_oracle.py",
+      "size": 7375,
+      "sha256": "5c18a7df915353a62403ddd3fb07bec64dbeb6c7dad432e46a3780886dca418b"
+    },
+    {
+      "path": "backend/nq-app/target/l6-capacity-remediation-20260913/withdrawn-draft/L6CalibrationBudget.java",
+      "size": 2066,
+      "sha256": "b71b08a88b74e80372b8bd15abc44b9ba8a09b09a939953a1e7c58dae9ac0f57"
+    },
+    {
+      "path": "backend/nq-app/target/l6-capacity-remediation-20260913/withdrawn-draft/L6CalibrationCapacityTest.java",
+      "size": 5150,
+      "sha256": "0037a77b75b607d2fd4ced3d198587a8a6a09450268aa9bddf3e5888e0836166"
+    },
+    {
+      "path": "backend/nq-app/target/l6-capacity-remediation-20260913/withdrawn-draft/L6CalibrationEvidence.java",
+      "size": 4889,
+      "sha256": "6ebcbb55d83966e3be4102cc8e2770af06fd10d59ec4552ed2fad06153fae5ed"
+    },
+    {
+      "path": "backend/nq-app/target/l6-capacity-remediation-20260913/withdrawn-draft/L6CalibrationTest.java",
+      "size": 12943,
+      "sha256": "6199e6e95b8aa10f1dd37d9340c8cedee677342f674ebf72fda9abb28cba4e08"
+    },
+    {
+      "path": "backend/nq-app/target/l6-capacity-remediation-20260913/withdrawn-draft/L6CalibrationVenueProcessMain.java",
+      "size": 531,
+      "sha256": "92b98678be59663e2d2cebb41cccfb1e014bc2e2d9fa269d325458c275a8b0f9"
+    },
+    {
+      "path": "backend/nq-app/target/l6-capacity-remediation-20260913/withdrawn-draft.patch",
+      "size": 10676,
+      "sha256": "989e93fbb785ddffc893000740c38613bffbaae847181b89dc15f85db29a9204"
+    }
+  ],
+  "nextAction": "Explicitly reconcile calibration capacity authority with the accepted L5 fixture safety boundary, or provide an accepted <=300 calibration design preserving measurement validity; no automatic implementation or retry"
+}

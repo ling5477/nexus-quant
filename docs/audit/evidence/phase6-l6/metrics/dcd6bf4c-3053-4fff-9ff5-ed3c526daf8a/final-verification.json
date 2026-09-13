@@ -1,0 +1,36 @@
+{
+  "status": "PASS",
+  "startFiles": 4002,
+  "unchangedExistingFiles": 4001,
+  "changedExistingFiles": [
+    "docs/audit/evidence/phase6-l6/L6_15MIN_NO_FAULT_CALIBRATION.md"
+  ],
+  "oldReportArchiveSha256": "ff547650e694fc892ebd88897400d999ffe96eb7bb0e7e76081263380840755d",
+  "newFiles": [
+    "docs/audit/evidence/phase6-l6/L6_FORMAL_CALIBRATION_MANIFEST.json",
+    "docs/audit/evidence/phase6-l6/attempts/3408f2f2-b017-4239-b005-a721a278bb54/L6_15MIN_NO_FAULT_CALIBRATION.md",
+    "docs/audit/evidence/phase6-l6/metrics/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/calibration-analysis.json",
+    "docs/audit/evidence/phase6-l6/metrics/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/resource-samples.ndjson",
+    "docs/audit/evidence/phase6-l6/metrics/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/resource-summary.json",
+    "docs/audit/evidence/phase6-l6/metrics/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/summary.json",
+    "docs/audit/evidence/phase6-l6/runs/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/calibration-run.json",
+    "docs/audit/evidence/phase6-l6/runs/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/checkpoints.ndjson",
+    "docs/audit/evidence/phase6-l6/runs/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/parameters.json",
+    "docs/audit/evidence/phase6-l6/runs/dcd6bf4c-3053-4fff-9ff5-ed3c526daf8a/progress.ndjson"
+  ],
+  "rawHashesVerified": 198,
+  "sourceHashesVerified": 11,
+  "supportHashesVerified": 9,
+  "rawStableAfterShutdown": true,
+  "manifestSha256": "922253c8934e32b7626ced2f9e42407a2a4313c665256b89c483e847ce6abaa6",
+  "reportSha256": "e3a0a72d0094e7bc37be2d24679f62a24038068e855fdffc1b6a71628711ea46",
+  "junit": {
+    "tests": "1",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  "stage": 0,
+  "commit": "NONE",
+  "push": "NONE"
+}

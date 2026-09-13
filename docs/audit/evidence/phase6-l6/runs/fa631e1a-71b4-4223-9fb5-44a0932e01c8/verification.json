@@ -1,0 +1,31 @@
+{
+  "result": "FORMAL_MODE_SMOKE_PASS",
+  "mode": "FORMAL_L6_A_SHORT_SMOKE",
+  "phasesSeconds": [
+    20,
+    50,
+    30
+  ],
+  "retryAuthorized": 1,
+  "retryExecuted": 1,
+  "implementationChangedAfterStart": false,
+  "manifestUnchanged": true,
+  "emitted": 6,
+  "paused": 4,
+  "skippedPhase": 5,
+  "minimumDispatchIntervalNanos": 7121507300,
+  "maximumInstantaneousProducerRate": 0.14041971142822532,
+  "fullChains": 6,
+  "schedulerScans": 40,
+  "schedulerTriggered": 0,
+  "newOrdersDuringDrain": 0,
+  "duplicateMutation": 0,
+  "duplicateAccounting": 0,
+  "mandatoryMeasurementMissing": 0,
+  "samples": 10,
+  "finalBacklog": 0,
+  "oldestCandidateAge": "NONE",
+  "ownedSurvivors": 0,
+  "hostProcessAndContainerCheck": "ABSENT",
+  "implementationHashesMatchReview": true
+}

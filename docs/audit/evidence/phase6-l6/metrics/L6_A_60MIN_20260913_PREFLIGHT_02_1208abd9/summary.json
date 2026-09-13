@@ -1,0 +1,56 @@
+{
+  "runId": "L6_A_60MIN_20260913_PREFLIGHT_02_1208abd9",
+  "runtimeRunId": null,
+  "decision": "BLOCKED",
+  "classification": "QUALIFICATION_INFRASTRUCTURE_FAILURE",
+  "formalRun": "NOT_STARTED",
+  "completion": "NOT_COMPLETED",
+  "timerStarted": false,
+  "elapsedMillis": 0,
+  "phases": [
+    {
+      "phase": "WARMUP",
+      "requiredDurationSeconds": 600,
+      "start": null,
+      "end": null,
+      "actualDurationSeconds": null,
+      "sampleCount": 0,
+      "status": "NOT_STARTED"
+    },
+    {
+      "phase": "ACTIVE",
+      "requiredDurationSeconds": 2400,
+      "start": null,
+      "end": null,
+      "actualDurationSeconds": null,
+      "sampleCount": 0,
+      "status": "NOT_STARTED"
+    },
+    {
+      "phase": "DRAIN",
+      "requiredDurationSeconds": 600,
+      "start": null,
+      "end": null,
+      "actualDurationSeconds": null,
+      "sampleCount": 0,
+      "status": "NOT_STARTED"
+    }
+  ],
+  "sampleCount": 0,
+  "checkpointCount": 0,
+  "activeWindows": [],
+  "measurementState": "UNAVAILABLE",
+  "measurementReason": "Formal runtime was not started; no measurements, no substitutions, no cached samples",
+  "businessCounts": null,
+  "correctnessTotals": null,
+  "validationPerSource": null,
+  "schedulerProgress": null,
+  "backlogHistory": [],
+  "resourceWindows": [],
+  "stabilityAssessment": "NOT_ASSESSED",
+  "ownedSurvivors": 0,
+  "cleanup": "NONE_REQUIRED_NO_RUNTIME_CREATED",
+  "l6A": "BLOCKED",
+  "l6": "NOT_ACCEPTED",
+  "reasonCode": "L6_FORMAL_CALIBRATION_MANIFEST_MISSING"
+}

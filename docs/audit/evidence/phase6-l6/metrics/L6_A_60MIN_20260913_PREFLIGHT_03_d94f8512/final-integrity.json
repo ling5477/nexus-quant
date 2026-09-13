@@ -1,0 +1,30 @@
+{
+  "status": "PASS",
+  "checkedAt": "2026-09-13T11:57:20.428591+00:00",
+  "entryFiles": 4014,
+  "unchangedExistingFiles": 4011,
+  "changedExistingQualificationFiles": [
+    "docs/audit/evidence/phase6-l6/L6_ACTIVE_STABILITY_60MIN_QUALIFICATION.json",
+    "docs/audit/evidence/phase6-l6/L6_ACTIVE_STABILITY_60MIN_QUALIFICATION.md",
+    "docs/audit/evidence/phase6-l6/L6_ACTIVE_STABILITY_60MIN_QUALIFICATION.metrics.json"
+  ],
+  "newQualificationFiles": [
+    "docs/audit/evidence/phase6-l6/attempts/L6_A_60MIN_20260913_PREFLIGHT_01_23a7135a/L6_ACTIVE_STABILITY_60MIN_QUALIFICATION.json",
+    "docs/audit/evidence/phase6-l6/attempts/L6_A_60MIN_20260913_PREFLIGHT_01_23a7135a/L6_ACTIVE_STABILITY_60MIN_QUALIFICATION.md",
+    "docs/audit/evidence/phase6-l6/attempts/L6_A_60MIN_20260913_PREFLIGHT_01_23a7135a/L6_ACTIVE_STABILITY_60MIN_QUALIFICATION.metrics.json",
+    "docs/audit/evidence/phase6-l6/metrics/L6_A_60MIN_20260913_PREFLIGHT_03_d94f8512/summary.json",
+    "docs/audit/evidence/phase6-l6/runs/L6_A_60MIN_20260913_PREFLIGHT_03_d94f8512/preflight.json"
+  ],
+  "historicalRootEvidenceArchivedExact": true,
+  "manifestEntrySha256": "922253c8934e32b7626ced2f9e42407a2a4313c665256b89c483e847ce6abaa6",
+  "manifestExitSha256": "922253c8934e32b7626ced2f9e42407a2a4313c665256b89c483e847ce6abaa6",
+  "manifestSize": 134009,
+  "rawHashesVerified": 19,
+  "sourceHead": "d94f8512108fd7f8e9cbdeee14cfc8b064f2d5d8",
+  "productionTestHarnessConfigDelta": 0,
+  "runtimeStarted": false,
+  "ownedResourcesCreated": 0,
+  "stage": 0,
+  "commit": "NONE",
+  "push": "NONE"
+}

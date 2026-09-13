@@ -1,0 +1,170 @@
+{
+  "task": "NQ-GATEAUDIT-PHASE6-L6-ACTIVE-STABILITY-60MIN-QUALIFICATION",
+  "attempt": "20260913-preflight-01",
+  "recordedAtUtc": "2026-09-13T04:52:01.148348+00:00",
+  "decision": "BLOCKED / QUALIFICATION_INFRASTRUCTURE_FAILURE",
+  "reasonCode": "L6_A_MANDATORY_RESOURCE_CADENCE_MISMATCH",
+  "scope": "PRE_RUN_ENTRY_CHECK_ONLY",
+  "formalRun": "NOT_STARTED",
+  "runId": null,
+  "l6A": "NOT_ACCEPTED",
+  "l6": "NOT_ACCEPTED",
+  "soak": "NOT_RUN",
+  "baseline": {
+    "status": "?? docs/audit/evidence/phase6-l6/L6_SHADOW_RUNS_FRESHNESS_DELIVERY_ACCEPTANCE.md",
+    "branch": "audit/post-gatey-agent-baseline",
+    "head": "23a7135ad8e0574373c1b818dfed010dc7479a71",
+    "tree": "e2aadb0665c8af50138860746a7922dface25d8a",
+    "upstream": "23a7135ad8e0574373c1b818dfed010dc7479a71",
+    "diffCheck": "",
+    "stagedFiles": "",
+    "trackedDiff": ""
+  },
+  "ci": {
+    "run": "34738227591",
+    "head": "23a7135ad8e0574373c1b818dfed010dc7479a71",
+    "url": "https://github.com/ling5477/nexus-quant/actions/runs/34738227591",
+    "success": 9,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0
+  },
+  "planning": {
+    "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L5_L6_SCOPE_AND_QUALIFICATION_PLAN.md",
+    "sha256": "80e339594be7223f07783d30e7f18913a53187ecde59b360ecdbf9223c9e45ac"
+  },
+  "formalContractSeconds": [
+    600,
+    2400,
+    600
+  ],
+  "finding": {
+    "priority": "P3",
+    "type": "QUALIFICATION_HARNESS_CONTRACT_GAP",
+    "qualificationBlocking": true,
+    "requirement": "Current user request section 9: all listed mandatory resources sampled every 10 seconds",
+    "actual": "Venue executor, OS handles, audit/event rows, log/raw file sizes collected only in >=30-second checkpoints",
+    "locations": {
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ActiveStabilityTest.java": [
+        55,
+        142,
+        144,
+        169,
+        170,
+        191,
+        192,
+        195,
+        198,
+        200
+      ],
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6QualificationControls.java": [
+        110,
+        112,
+        121,
+        161
+      ]
+    },
+    "productionDefect": "NOT_DEMONSTRATED",
+    "disposition": "STOP_BEFORE_FORMAL_TIMER; no code or sampling harness change authorized in this task"
+  },
+  "remainingEntryChecks": {
+    "noiseBand": "No frozen numeric noise-band manifest located in searched L5/L6 evidence; NOT_VERIFIED, not a separately proven absence",
+    "arrivalRateCalibration": "L5 healthy-rate 25% binding NOT_VERIFIED; existing two-strategy minute schedule alone is insufficient",
+    "note": "Not promoted to additional confirmed findings; formal runtime acceptance checks not reached"
+  },
+  "environment": {
+    "os": "Windows-11-10.0.26200-SP0",
+    "jdk": "java version \"21.0.9\" 2025-10-21 LTS\nJava(TM) SE Runtime Environment (build 21.0.9+7-LTS-338)\nJava HotSpot(TM) 64-Bit Server VM (build 21.0.9+7-LTS-338, mixed mode, sharing)",
+    "dockerContainers": "c5c330f38ef8 nq-c1-occ-20260907 f1c3376c26f2 127.0.0.1:32768->5432/tcp",
+    "cachedPostgresImages": "REPOSITORY   TAG       DIGEST                                                                    IMAGE ID       CREATED       SIZE\npostgres     <none>    sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94   f1c3376c26f2   2 weeks ago   642MB",
+    "postgresRuntimeVersion": "NOT_STARTED",
+    "schemaRuntime": "NOT_STARTED"
+  },
+  "pidGenerations": [],
+  "qualificationCommand": {
+    "execution": "NOT_EXECUTED",
+    "argv": [
+      "mvn",
+      "-f",
+      "backend/pom.xml",
+      "-pl",
+      "nq-app",
+      "-am",
+      "test",
+      "-Dtest=L6ActiveStabilityTest",
+      "-Dsurefire.failIfNoSpecifiedTests=false",
+      "-Dnq.l6=true",
+      "-Dnq.l6.diagnostic=false",
+      "-DargLine=-Xmx512m"
+    ]
+  },
+  "cleanup": {
+    "runtimeLaunched": false,
+    "ownedProcessesCreated": 0,
+    "ownedContainersCreated": 0,
+    "ownedSurvivors": 0,
+    "action": "NONE_REQUIRED_NO_RUNTIME_CREATED"
+  },
+  "severity": {
+    "newConfirmedP0": 0,
+    "newConfirmedP1": 0,
+    "newConfirmedP2": 0,
+    "newConfirmedP3": 1,
+    "existingP2P3": "PRESERVED_NOT_REASSESSED",
+    "qualificationAcceptance": false
+  },
+  "productionDelta": 0,
+  "testHarnessDelta": 0,
+  "configurationDelta": 0,
+  "stage": 0,
+  "commit": "NONE",
+  "push": "NONE",
+  "nextAction": "Separate remediation of the resource cadence contract; do not start 180-minute qualification",
+  "identityVerification": {
+    "inputFiles": 3954,
+    "allExistingBytesUnchanged": true,
+    "startSha256": "ee450bf157f01371616a6f436fec13abd79ca9dc15b2273936f196cad39bd953",
+    "endSha256": "ee450bf157f01371616a6f436fec13abd79ca9dc15b2273936f196cad39bd953"
+  },
+  "rawArtifacts": [
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-a-60min-preflight-20260913\\collect.py",
+      "bytes": 8852,
+      "sha256": "7719ca46ca8bc992aa152e2feb65512865bd4c3730aeb81e149cbdc3f14e3a11"
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-a-60min-preflight-20260913\\commands.json",
+      "bytes": 452069,
+      "sha256": "bafbc1103ae53d57860d39e1cb9be07a142992df9072807f8f375de953b9e8d3"
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-a-60min-preflight-20260913\\committed-harness-source.json",
+      "bytes": 71965,
+      "sha256": "e67edf644d88881473dc2bd7f32c0c120e78a94c04d99f832ea1ca272c1d5498"
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-a-60min-preflight-20260913\\environment.json",
+      "bytes": 696,
+      "sha256": "beb0fd107053d1d96e01510c3b76fac80b358e77094b0ba819fecaf478273763"
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-a-60min-preflight-20260913\\exact-head-ci.json",
+      "bytes": 33638,
+      "sha256": "9ee2270c1c7b9e430635a9935939b76044c198131e906f65865967f27304815c"
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-a-60min-preflight-20260913\\input-inventory-end.json",
+      "bytes": 851891,
+      "sha256": "ee450bf157f01371616a6f436fec13abd79ca9dc15b2273936f196cad39bd953"
+    },
+    {
+      "path": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-a-60min-preflight-20260913\\input-inventory.json",
+      "bytes": 851891,
+      "sha256": "ee450bf157f01371616a6f436fec13abd79ca9dc15b2273936f196cad39bd953"
+    }
+  ],
+  "metricsArtifact": {
+    "path": "E:\\Project\\nexus-quant-gateaudit\\docs\\audit\\evidence\\phase6-l6\\L6_ACTIVE_STABILITY_60MIN_QUALIFICATION.metrics.json",
+    "sha256": "896bf3406e68d6105330b56bfe88639421c7c80aa189f5b5c5ef1194f5d8cefa"
+  }
+}

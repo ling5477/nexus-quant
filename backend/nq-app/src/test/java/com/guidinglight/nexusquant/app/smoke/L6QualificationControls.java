@@ -151,6 +151,13 @@ final class L6QualificationControls implements AutoCloseable {
     private String execute(String command) throws Exception {
         if (failure.get() != null) throw new IllegalStateException("L6 sampling/timer failure", failure.get());
         if (commands.incrementAndGet() > 4000) throw new IllegalStateException("L6 command budget");
+        if (command.equals("L6_CLOCK")) return Long.toString(System.nanoTime());
+        if (command.startsWith("L6_EMIT ")) return L6FormalTrigger.emit(context, command);
+        if (command.equals("L6_OBSERVER_SCAN")) {
+            var result = context.getBean(StrategyScheduleScanService.class).scanOnce("l6-observer");
+            B0Fixture.require(result.failedCount() == 0 && result.triggeredCount() == 0 && result.scannedCount() == 2);
+            return json.writeValueAsString(result);
+        }
         return switch (command) {
             case "L6_SCAN" -> "SCAN " + context.getBean(StrategyScheduleScanService.class).scanOnce("l6-scan");
             case "L6_RECONCILE" -> "RECONCILE " + context.getBean(OkxRestReconcileService.class).reconcileOnce(100);

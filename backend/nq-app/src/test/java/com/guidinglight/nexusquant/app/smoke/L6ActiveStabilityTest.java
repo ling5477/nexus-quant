@@ -46,7 +46,11 @@ class L6ActiveStabilityTest {
     private final ObjectNode proof = JSON.createObjectNode();
 
     @Test void activeSoak() throws Exception {
-        QualificationCapacity.formal().start(this::executeSoak);
+        if (diagnostic) { QualificationCapacity.formal().start(this::executeSoak); return; }
+        boolean smoke = Boolean.getBoolean("nq.l6.formal.smoke");
+        var timing = L6FormalManifest.timing(smoke);
+        L6FormalManifest.start(B0Processes.root().resolve(L6FormalManifest.CANONICAL), timing,
+                (manifest, capacity) -> new L6FormalRuntime(manifest, capacity, timing, smoke).run());
     }
 
     private void executeSoak() throws Exception {

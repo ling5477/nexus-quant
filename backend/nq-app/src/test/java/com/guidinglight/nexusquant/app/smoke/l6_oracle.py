@@ -8,9 +8,16 @@ from l5_measurement import validate_export_input, require, unique
 def verify(proof):
     validate_export_input(proof)
     calibration = proof.get('mode') == 'CALIBRATION'
-    require(set(proof) == ({'facts','venue','expectedStrategyRuns','mode'} if calibration else {'facts','venue','expectedStrategyRuns'}), 'unknown checkpoint schema')
+    formal = proof.get('mode') == 'FORMAL_L6_A'
+    keys = {'facts','venue','expectedStrategyRuns','mode','runOrderBudget','pacingSlots'} if formal else ({'facts','venue','expectedStrategyRuns','mode'} if calibration else {'facts','venue','expectedStrategyRuns'})
+    require(set(proof) == keys, 'unknown checkpoint schema')
     facts=proof['facts'];expected=proof['expectedStrategyRuns']
-    require(0 < expected <= (json.loads((Path(__file__).resolve().parents[6] / "resources/l6-calibration/budget.json").read_text(encoding="utf-8"))["runOrderBudget"] if calibration else 240), 'L6 finite order budget')
+    budget = proof['runOrderBudget'] if formal else (json.loads((Path(__file__).resolve().parents[6] / "resources/l6-calibration/budget.json").read_text(encoding="utf-8"))["runOrderBudget"] if calibration else 240)
+    require(isinstance(budget, int) and 0 < budget <= (3000 if formal else 600) and 0 < expected <= budget, 'L6 finite order budget')
+    emitted = [s for s in proof['pacingSlots'] if s['decision'] == 'EMITTED'] if formal else []
+    if formal:
+        unique(emitted, 'slotIndex'); unique(emitted, 'logicalOrderId')
+        require(len(emitted) == expected, 'unpaced workload')
     orders = unique(facts['orders'], 'order_id')
     trades = unique(facts['trades'], 'trade_id')
     authorities = unique(facts['ordinary_place_authorities'], 'order_id')
@@ -64,7 +71,14 @@ def verify(proof):
             require(run['status'] == 'SUCCEEDED' and run_id in work, 'durable orphan')
             require(work[run_id]['client_order_id'] == order['client_order_id']
                     and Decimal(str(work[run_id]['effective_quantity'])) == Decimal(str(order['qty'])), 'durable work binding')
-            key = (run['admission_schedule_id'], run['admission_due_at'])
+            if formal:
+                slot = next((s for s in emitted if s['logicalOrderId'] == oid), None)
+                require(slot is not None and run['trigger_type'] == 'MANUAL', 'workload authority')
+                require(run['admission_schedule_id'] is None and run['admission_due_at'] is None, 'cron workload forbidden')
+                require(run['request_id'] == 'l6p-%04d' % slot['slotIndex'], 'slot request identity')
+                key = run['request_id']
+            else:
+                key = (run['admission_schedule_id'], run['admission_due_at'])
             require(key not in logical, 'duplicate window')
             logical.add(key)
         result.append({'order_id': oid, 'client_order_id': order['client_order_id'], 'account_id': order['account_id'],
@@ -84,8 +98,11 @@ def verify(proof):
         snapshots = [s for s in facts['account_snapshots'] if s['currency'] == currency]
         latest = max(snapshots, key=lambda s: s['snapshot_id'])
         require(Decimal(str(latest['balance'])) == balance, 'account balance inconsistent')
-    require(len({(r['admission_schedule_id'],r['admission_due_at']) for r in runs.values()})==expected, 'duplicate schedule window')
-    require(set(r['strategy_id'] for r in runs.values())=={'l6-strategy-1','l6-strategy-2'}, 'missing strategy')
+    if not formal:
+        require(len({(r['admission_schedule_id'],r['admission_due_at']) for r in runs.values()})==expected, 'duplicate schedule window')
+        require(set(r['strategy_id'] for r in runs.values())=={'l6-strategy-1','l6-strategy-2'}, 'missing strategy')
+    else:
+        require(set(r['strategy_id'] for r in runs.values()) <= {'l6-strategy-1','l6-strategy-2'}, 'unexpected strategy')
     require(all(Decimal(str(w['quantity'])) != Decimal(str(w['effective_quantity'])) for w in work.values()), 'effective coverage missing')
     return {'orders':expected,'trades':len(trades),'ledger':len(entries),'position':str(Decimal(expected)/10),'duplicates':0,'orphans':0}
 

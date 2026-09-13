@@ -1,0 +1,1143 @@
+{
+  "decision": "PASS / L6_SCOPED_VENUE_CAPACITY_CONTRACT_ACCEPTED / L5_300_ORDER_SAFETY_BOUNDARY_PRESERVED / L6_3000_ORDER_SAFETY_AUTHORITY_ENFORCED / CALIBRATION_CAPACITY_DERIVED_FROM_RUN_CONTRACT / BUDGET_CAPACITY_PREFLIGHT_FAIL_FAST_ACCEPTED / PRODUCTION_DELTA_0 / EXACT_HEAD_CI_GREEN / P0_0 / P1_0 / FORMAL_CALIBRATION_NOT_ACCEPTED / L6_NOT_ACCEPTED / READY_TO_RERUN_L6_15MIN_NO_FAULT_CALIBRATION",
+  "head": "d94f8512108fd7f8e9cbdeee14cfc8b064f2d5d8",
+  "tree": "0c010b7d80327f5e8ec994cd6a7073e6853fe3ea",
+  "branch": "audit/post-gatey-agent-baseline",
+  "remoteMatches": true,
+  "stage": 0,
+  "ci": {
+    "conclusion": "success",
+    "databaseId": 34753536151,
+    "headSha": "d94f8512108fd7f8e9cbdeee14cfc8b064f2d5d8",
+    "jobs": [
+      {
+        "completedAt": "2026-09-13T11:08:51Z",
+        "conclusion": "success",
+        "databaseId": 103713962259,
+        "name": "PostgreSQL and Flyway",
+        "startedAt": "2026-09-13T11:05:41Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-13T11:05:43Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-13T11:05:42Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:12Z",
+            "conclusion": "success",
+            "name": "Initialize containers",
+            "number": 2,
+            "startedAt": "2026-09-13T11:05:43Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:12Z",
+            "conclusion": "success",
+            "name": "Mask CI-only PostgreSQL connection values",
+            "number": 3,
+            "startedAt": "2026-09-13T11:06:12Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:15Z",
+            "conclusion": "success",
+            "name": "Checkout",
+            "number": 4,
+            "startedAt": "2026-09-13T11:06:12Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:17Z",
+            "conclusion": "success",
+            "name": "Set up Java",
+            "number": 5,
+            "startedAt": "2026-09-13T11:06:15Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:25Z",
+            "conclusion": "success",
+            "name": "Install PostgreSQL client",
+            "number": 6,
+            "startedAt": "2026-09-13T11:06:17Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:44Z",
+            "conclusion": "success",
+            "name": "Prepare Flyway runtime classpath",
+            "number": 7,
+            "startedAt": "2026-09-13T11:06:25Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:48Z",
+            "conclusion": "success",
+            "name": "Run empty database Flyway smoke",
+            "number": 8,
+            "startedAt": "2026-09-13T11:06:44Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:48Z",
+            "conclusion": "success",
+            "name": "Generate PostgreSQL schema artifacts",
+            "number": 9,
+            "startedAt": "2026-09-13T11:06:48Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:48Z",
+            "conclusion": "success",
+            "name": "Pre-upload redaction gate (PostgreSQL schema artifacts)",
+            "number": 10,
+            "startedAt": "2026-09-13T11:06:48Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:49Z",
+            "conclusion": "success",
+            "name": "Upload PostgreSQL schema artifacts",
+            "number": 11,
+            "startedAt": "2026-09-13T11:06:48Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:07:03Z",
+            "conclusion": "success",
+            "name": "Run repository PostgreSQL smoke",
+            "number": 12,
+            "startedAt": "2026-09-13T11:06:49Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:07:27Z",
+            "conclusion": "success",
+            "name": "Run nq-app PostgreSQL context smoke",
+            "number": 13,
+            "startedAt": "2026-09-13T11:07:03Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:08:47Z",
+            "conclusion": "success",
+            "name": "Run current-schema backup and restore drill",
+            "number": 14,
+            "startedAt": "2026-09-13T11:07:27Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:08:47Z",
+            "conclusion": "success",
+            "name": "Verify canonical backup creation and integrity",
+            "number": 15,
+            "startedAt": "2026-09-13T11:08:47Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:08:48Z",
+            "conclusion": "success",
+            "name": "Verify canonical post-restore validation",
+            "number": 16,
+            "startedAt": "2026-09-13T11:08:47Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:08:48Z",
+            "conclusion": "success",
+            "name": "Post Set up Java",
+            "number": 30,
+            "startedAt": "2026-09-13T11:08:48Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:08:48Z",
+            "conclusion": "success",
+            "name": "Post Checkout",
+            "number": 31,
+            "startedAt": "2026-09-13T11:08:48Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:08:48Z",
+            "conclusion": "success",
+            "name": "Stop containers",
+            "number": 32,
+            "startedAt": "2026-09-13T11:08:48Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:08:48Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 33,
+            "startedAt": "2026-09-13T11:08:48Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/ling5477/nexus-quant/actions/runs/34753536151/job/103713962259"
+      },
+      {
+        "completedAt": "2026-09-13T11:11:34Z",
+        "conclusion": "success",
+        "databaseId": 103713962311,
+        "name": "Frontend build and critical E2E",
+        "startedAt": "2026-09-13T11:05:40Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-13T11:05:42Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-13T11:05:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:04Z",
+            "conclusion": "success",
+            "name": "Initialize containers",
+            "number": 2,
+            "startedAt": "2026-09-13T11:05:42Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:04Z",
+            "conclusion": "success",
+            "name": "Mask CI-only PostgreSQL connection values",
+            "number": 3,
+            "startedAt": "2026-09-13T11:06:04Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:06Z",
+            "conclusion": "success",
+            "name": "Checkout",
+            "number": 4,
+            "startedAt": "2026-09-13T11:06:04Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:07Z",
+            "conclusion": "success",
+            "name": "Set up Java",
+            "number": 5,
+            "startedAt": "2026-09-13T11:06:06Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:08Z",
+            "conclusion": "success",
+            "name": "Set up Node",
+            "number": 6,
+            "startedAt": "2026-09-13T11:06:07Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:17Z",
+            "conclusion": "success",
+            "name": "Install frontend dependencies",
+            "number": 7,
+            "startedAt": "2026-09-13T11:06:08Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:27Z",
+            "conclusion": "success",
+            "name": "Build frontend production artifact",
+            "number": 8,
+            "startedAt": "2026-09-13T11:06:17Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:39Z",
+            "conclusion": "success",
+            "name": "Generate normalized frontend CycloneDX SBOM and artifact manifest",
+            "number": 9,
+            "startedAt": "2026-09-13T11:06:27Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:07:12Z",
+            "conclusion": "success",
+            "name": "Package backend application artifact",
+            "number": 10,
+            "startedAt": "2026-09-13T11:06:39Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:07:31Z",
+            "conclusion": "success",
+            "name": "Generate normalized backend CycloneDX SBOM and artifact manifest",
+            "number": 11,
+            "startedAt": "2026-09-13T11:07:12Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:07:34Z",
+            "conclusion": "success",
+            "name": "Build canonical release and external admission",
+            "number": 12,
+            "startedAt": "2026-09-13T11:07:31Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:07:36Z",
+            "conclusion": "success",
+            "name": "Verify canonical release and external admission",
+            "number": 13,
+            "startedAt": "2026-09-13T11:07:34Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:07:40Z",
+            "conclusion": "success",
+            "name": "Install and activate admitted canonical release",
+            "number": 14,
+            "startedAt": "2026-09-13T11:07:36Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:07:59Z",
+            "conclusion": "success",
+            "name": "Install Playwright Chromium",
+            "number": 15,
+            "startedAt": "2026-09-13T11:07:40Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:10:43Z",
+            "conclusion": "success",
+            "name": "Run loopback critical E2E allowlist",
+            "number": 16,
+            "startedAt": "2026-09-13T11:07:59Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:10:43Z",
+            "conclusion": "success",
+            "name": "Start nq-app local backend",
+            "number": 17,
+            "startedAt": "2026-09-13T11:10:43Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:11Z",
+            "conclusion": "success",
+            "name": "Wait for backend health UP",
+            "number": 18,
+            "startedAt": "2026-09-13T11:10:43Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:22Z",
+            "conclusion": "success",
+            "name": "Run real-backend critical E2E allowlist",
+            "number": 19,
+            "startedAt": "2026-09-13T11:11:11Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:23Z",
+            "conclusion": "success",
+            "name": "Cleanup backend and Playwright output",
+            "number": 20,
+            "startedAt": "2026-09-13T11:11:22Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:26Z",
+            "conclusion": "success",
+            "name": "Validate deterministic delivery evidence tooling",
+            "number": 21,
+            "startedAt": "2026-09-13T11:11:23Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:27Z",
+            "conclusion": "success",
+            "name": "Generate internal provenance manifest",
+            "number": 22,
+            "startedAt": "2026-09-13T11:11:26Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:28Z",
+            "conclusion": "success",
+            "name": "Validate internal provenance admission",
+            "number": 23,
+            "startedAt": "2026-09-13T11:11:27Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:30Z",
+            "conclusion": "success",
+            "name": "Upload backend delivery evidence",
+            "number": 24,
+            "startedAt": "2026-09-13T11:11:28Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:31Z",
+            "conclusion": "success",
+            "name": "Upload frontend delivery evidence",
+            "number": 25,
+            "startedAt": "2026-09-13T11:11:30Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:32Z",
+            "conclusion": "success",
+            "name": "Upload internal provenance manifest",
+            "number": 26,
+            "startedAt": "2026-09-13T11:11:31Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:32Z",
+            "conclusion": "success",
+            "name": "Post Set up Node",
+            "number": 49,
+            "startedAt": "2026-09-13T11:11:32Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:32Z",
+            "conclusion": "success",
+            "name": "Post Set up Java",
+            "number": 50,
+            "startedAt": "2026-09-13T11:11:32Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:32Z",
+            "conclusion": "success",
+            "name": "Post Checkout",
+            "number": 51,
+            "startedAt": "2026-09-13T11:11:32Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:32Z",
+            "conclusion": "success",
+            "name": "Stop containers",
+            "number": 52,
+            "startedAt": "2026-09-13T11:11:32Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:32Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 53,
+            "startedAt": "2026-09-13T11:11:32Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/ling5477/nexus-quant/actions/runs/34753536151/job/103713962311"
+      },
+      {
+        "completedAt": "2026-09-13T11:09:21Z",
+        "conclusion": "success",
+        "databaseId": 103713962356,
+        "name": "Backend regression",
+        "startedAt": "2026-09-13T11:05:41Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-13T11:05:43Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-13T11:05:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:06Z",
+            "conclusion": "success",
+            "name": "Initialize containers",
+            "number": 2,
+            "startedAt": "2026-09-13T11:05:43Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:08Z",
+            "conclusion": "success",
+            "name": "Checkout",
+            "number": 3,
+            "startedAt": "2026-09-13T11:06:06Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:10Z",
+            "conclusion": "success",
+            "name": "Set up Java",
+            "number": 4,
+            "startedAt": "2026-09-13T11:06:08Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:33Z",
+            "conclusion": "success",
+            "name": "Run production configuration fail-closed regression",
+            "number": 5,
+            "startedAt": "2026-09-13T11:06:10Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:55Z",
+            "conclusion": "success",
+            "name": "Prepare backend CI legacy account fixture",
+            "number": 6,
+            "startedAt": "2026-09-13T11:06:33Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:09:18Z",
+            "conclusion": "success",
+            "name": "Run backend tests",
+            "number": 7,
+            "startedAt": "2026-09-13T11:06:55Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:09:18Z",
+            "conclusion": "success",
+            "name": "Post Set up Java",
+            "number": 12,
+            "startedAt": "2026-09-13T11:09:18Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:09:18Z",
+            "conclusion": "success",
+            "name": "Post Checkout",
+            "number": 13,
+            "startedAt": "2026-09-13T11:09:18Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:09:19Z",
+            "conclusion": "success",
+            "name": "Stop containers",
+            "number": 14,
+            "startedAt": "2026-09-13T11:09:18Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:09:19Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 15,
+            "startedAt": "2026-09-13T11:09:19Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/ling5477/nexus-quant/actions/runs/34753536151/job/103713962356"
+      },
+      {
+        "completedAt": "2026-09-13T11:06:16Z",
+        "conclusion": "success",
+        "databaseId": 103713962363,
+        "name": "Runtime safety and no-outbound",
+        "startedAt": "2026-09-13T11:05:41Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-13T11:05:43Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-13T11:05:42Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:46Z",
+            "conclusion": "success",
+            "name": "Checkout",
+            "number": 2,
+            "startedAt": "2026-09-13T11:05:43Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:49Z",
+            "conclusion": "success",
+            "name": "Set up Java",
+            "number": 3,
+            "startedAt": "2026-09-13T11:05:46Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:49Z",
+            "conclusion": "success",
+            "name": "Verify no exchange credential env is injected",
+            "number": 4,
+            "startedAt": "2026-09-13T11:05:49Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:49Z",
+            "conclusion": "success",
+            "name": "Verify exchange denylist coverage",
+            "number": 5,
+            "startedAt": "2026-09-13T11:05:49Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:14Z",
+            "conclusion": "success",
+            "name": "Run consolidated runtime safety regression",
+            "number": 6,
+            "startedAt": "2026-09-13T11:05:49Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:14Z",
+            "conclusion": "success",
+            "name": "Post Set up Java",
+            "number": 11,
+            "startedAt": "2026-09-13T11:06:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:14Z",
+            "conclusion": "success",
+            "name": "Post Checkout",
+            "number": 12,
+            "startedAt": "2026-09-13T11:06:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:14Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 13,
+            "startedAt": "2026-09-13T11:06:14Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/ling5477/nexus-quant/actions/runs/34753536151/job/103713962363"
+      },
+      {
+        "completedAt": "2026-09-13T11:12:20Z",
+        "conclusion": "success",
+        "databaseId": 103713962373,
+        "name": "Repository hygiene and governance",
+        "startedAt": "2026-09-13T11:05:41Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-13T11:05:43Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-13T11:05:42Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:48Z",
+            "conclusion": "success",
+            "name": "Checkout",
+            "number": 2,
+            "startedAt": "2026-09-13T11:05:43Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:49Z",
+            "conclusion": "success",
+            "name": "Set up Java",
+            "number": 3,
+            "startedAt": "2026-09-13T11:05:48Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:49Z",
+            "conclusion": "success",
+            "name": "Check whitespace in changed files",
+            "number": 4,
+            "startedAt": "2026-09-13T11:05:49Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:15Z",
+            "conclusion": "success",
+            "name": "Run blocking governance regression",
+            "number": 5,
+            "startedAt": "2026-09-13T11:05:49Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:51Z",
+            "conclusion": "success",
+            "name": "Reject retired stage runtime assets",
+            "number": 6,
+            "startedAt": "2026-09-13T11:06:15Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:12:18Z",
+            "conclusion": "success",
+            "name": "Validate canonical delivery workflow contract",
+            "number": 7,
+            "startedAt": "2026-09-13T11:06:51Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:12:18Z",
+            "conclusion": "success",
+            "name": "Post Set up Java",
+            "number": 13,
+            "startedAt": "2026-09-13T11:12:18Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:12:18Z",
+            "conclusion": "success",
+            "name": "Post Checkout",
+            "number": 14,
+            "startedAt": "2026-09-13T11:12:18Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:12:18Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 15,
+            "startedAt": "2026-09-13T11:12:18Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/ling5477/nexus-quant/actions/runs/34753536151/job/103713962373"
+      },
+      {
+        "completedAt": "2026-09-13T11:06:00Z",
+        "conclusion": "success",
+        "databaseId": 103713962376,
+        "name": "Secret scanning",
+        "startedAt": "2026-09-13T11:05:40Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-13T11:05:42Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-13T11:05:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:44Z",
+            "conclusion": "success",
+            "name": "Checkout",
+            "number": 2,
+            "startedAt": "2026-09-13T11:05:42Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:48Z",
+            "conclusion": "success",
+            "name": "Load canonical gitleaks identity",
+            "number": 3,
+            "startedAt": "2026-09-13T11:05:44Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:50Z",
+            "conclusion": "success",
+            "name": "Install verified gitleaks CLI in runner temp",
+            "number": 4,
+            "startedAt": "2026-09-13T11:05:48Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:50Z",
+            "conclusion": "success",
+            "name": "Build tracked safe-file list",
+            "number": 5,
+            "startedAt": "2026-09-13T11:05:50Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:58Z",
+            "conclusion": "success",
+            "name": "Run pinned gitleaks secret scan (tracked working tree, no history)",
+            "number": 6,
+            "startedAt": "2026-09-13T11:05:50Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:59Z",
+            "conclusion": "success",
+            "name": "Run custom regex secret backstop",
+            "number": 7,
+            "startedAt": "2026-09-13T11:05:58Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:59Z",
+            "conclusion": "success",
+            "name": "Verify CI log redaction proof",
+            "number": 8,
+            "startedAt": "2026-09-13T11:05:59Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:59Z",
+            "conclusion": "success",
+            "name": "Post Checkout",
+            "number": 16,
+            "startedAt": "2026-09-13T11:05:59Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:59Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 17,
+            "startedAt": "2026-09-13T11:05:59Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/ling5477/nexus-quant/actions/runs/34753536151/job/103713962376"
+      },
+      {
+        "completedAt": "2026-09-13T11:05:57Z",
+        "conclusion": "success",
+        "databaseId": 103713962389,
+        "name": "Research quality",
+        "startedAt": "2026-09-13T11:05:42Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-13T11:05:43Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-13T11:05:43Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:45Z",
+            "conclusion": "success",
+            "name": "Checkout",
+            "number": 2,
+            "startedAt": "2026-09-13T11:05:43Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:47Z",
+            "conclusion": "success",
+            "name": "Set up Python",
+            "number": 3,
+            "startedAt": "2026-09-13T11:05:45Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:54Z",
+            "conclusion": "success",
+            "name": "Install research dev dependencies",
+            "number": 4,
+            "startedAt": "2026-09-13T11:05:47Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:54Z",
+            "conclusion": "success",
+            "name": "Run pytest",
+            "number": 5,
+            "startedAt": "2026-09-13T11:05:54Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:55Z",
+            "conclusion": "success",
+            "name": "Run mypy",
+            "number": 6,
+            "startedAt": "2026-09-13T11:05:54Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:55Z",
+            "conclusion": "success",
+            "name": "Run ruff",
+            "number": 7,
+            "startedAt": "2026-09-13T11:05:55Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:55Z",
+            "conclusion": "success",
+            "name": "Post Set up Python",
+            "number": 13,
+            "startedAt": "2026-09-13T11:05:55Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:56Z",
+            "conclusion": "success",
+            "name": "Post Checkout",
+            "number": 14,
+            "startedAt": "2026-09-13T11:05:55Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:56Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 15,
+            "startedAt": "2026-09-13T11:05:56Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/ling5477/nexus-quant/actions/runs/34753536151/job/103713962389"
+      },
+      {
+        "completedAt": "2026-09-13T11:06:02Z",
+        "conclusion": "success",
+        "databaseId": 103713962395,
+        "name": "Java architecture guard",
+        "startedAt": "2026-09-13T11:05:40Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-13T11:05:42Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-13T11:05:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:44Z",
+            "conclusion": "success",
+            "name": "Checkout",
+            "number": 2,
+            "startedAt": "2026-09-13T11:05:42Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:05:50Z",
+            "conclusion": "success",
+            "name": "Validate Java governance configuration",
+            "number": 3,
+            "startedAt": "2026-09-13T11:05:44Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:00Z",
+            "conclusion": "success",
+            "name": "Run Java engineering Shadow checker",
+            "number": 4,
+            "startedAt": "2026-09-13T11:05:50Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:00Z",
+            "conclusion": "success",
+            "name": "Upload Java Shadow report",
+            "number": 5,
+            "startedAt": "2026-09-13T11:06:00Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:01Z",
+            "conclusion": "success",
+            "name": "Post Checkout",
+            "number": 10,
+            "startedAt": "2026-09-13T11:06:00Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:06:01Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 11,
+            "startedAt": "2026-09-13T11:06:01Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/ling5477/nexus-quant/actions/runs/34753536151/job/103713962395"
+      },
+      {
+        "completedAt": "2026-09-13T11:11:53Z",
+        "conclusion": "success",
+        "databaseId": 103714642967,
+        "name": "Delivery SBOM and provenance",
+        "startedAt": "2026-09-13T11:11:37Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-13T11:11:40Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-13T11:11:38Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:42Z",
+            "conclusion": "success",
+            "name": "Checkout",
+            "number": 2,
+            "startedAt": "2026-09-13T11:11:40Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:42Z",
+            "conclusion": "success",
+            "name": "Set up Java",
+            "number": 3,
+            "startedAt": "2026-09-13T11:11:42Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:43Z",
+            "conclusion": "success",
+            "name": "Set up Node",
+            "number": 4,
+            "startedAt": "2026-09-13T11:11:42Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:44Z",
+            "conclusion": "success",
+            "name": "Download backend and frontend delivery evidence",
+            "number": 5,
+            "startedAt": "2026-09-13T11:11:43Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:45Z",
+            "conclusion": "success",
+            "name": "Download internal provenance manifest",
+            "number": 6,
+            "startedAt": "2026-09-13T11:11:44Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:50Z",
+            "conclusion": "success",
+            "name": "Validate uploaded provenance readback",
+            "number": 7,
+            "startedAt": "2026-09-13T11:11:45Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:50Z",
+            "conclusion": "success",
+            "name": "Post Set up Node",
+            "number": 12,
+            "startedAt": "2026-09-13T11:11:50Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:51Z",
+            "conclusion": "success",
+            "name": "Post Set up Java",
+            "number": 13,
+            "startedAt": "2026-09-13T11:11:50Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:51Z",
+            "conclusion": "success",
+            "name": "Post Checkout",
+            "number": 14,
+            "startedAt": "2026-09-13T11:11:51Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-13T11:11:51Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 15,
+            "startedAt": "2026-09-13T11:11:51Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/ling5477/nexus-quant/actions/runs/34753536151/job/103714642967"
+      }
+    ],
+    "status": "completed",
+    "updatedAt": "2026-09-13T11:12:21Z",
+    "url": "https://github.com/ling5477/nexus-quant/actions/runs/34753536151"
+  },
+  "successJobs": 9,
+  "failedJobs": 0,
+  "cancelledJobs": 0,
+  "skippedJobs": 0,
+  "files": [
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6CalibrationBudget.java",
+      "blob": "d4b1dcb5489262fde048870f8be885971278a32a"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6CalibrationCapacityTest.java",
+      "blob": "2d54f04eaeb05f0706375f5e18b4704a22b718aa"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6CalibrationVenueProcessMain.java",
+      "blob": "9485b6d985774d4edd74daeabc97382da083293d"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalVenueProcessMain.java",
+      "blob": "a825238c62804e496df28b1a3e8a3a23b9222a68"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/QualificationCapacity.java",
+      "blob": "318ca361076f55fc25e9250b3bd6c2dae76d4420"
+    },
+    {
+      "path": "backend/nq-app/src/test/resources/l6-calibration/budget.json",
+      "blob": "678d34607bb9d896b85ac4e1dbc733a5f464158d"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0Processes.java",
+      "blob": "3b78b0f0de2cacf2bf352cf9333ce26bfe5ae97a"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0SyntheticVenueMain.java",
+      "blob": "f8bf7b5c847e2efd784ef5e6a07123db7c1b8c7f"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5VenueProcessMain.java",
+      "blob": "4b02b0a4d960ef17e54c581e5b3af9c959f86a9b"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ActiveStabilityTest.java",
+      "blob": "d404138d31fa93d432a82f11b01d136bbac77751"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6CalibrationEvidence.java",
+      "blob": "2ef9c011dcc498665ab8cdcf11a4a6071c4222a9"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6CalibrationTest.java",
+      "blob": "7a4c5a0d9e5060681cfcf637cab852d546e5b513"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_oracle.py",
+      "blob": "c138dfa772b8f4619cbe6bf64fe5bc59f3f8aafd"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/L6_SCOPED_VENUE_CAPACITY_CONTRACT.md",
+      "blob": "a76b5d8c18e7c7bcca607afbae491272f6743ed7"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/L6_SCOPED_VENUE_CAPACITY_CONTRACT.json",
+      "blob": "909578cf6fae86acc5b5cd4abe3bf7928df2f190"
+    }
+  ],
+  "productionDelta": 0,
+  "historicalEvidenceUnchanged": true,
+  "formalCalibrationThisTask": "NOT_RUN",
+  "formalCalibrationAccepted": false,
+  "l6Accepted": false,
+  "nextAction": "NQ-GATEAUDIT-PHASE6-L6-15MIN-NO-FAULT-CALIBRATION",
+  "recordedAt": "2026-09-13T11:13:33.526115+00:00",
+  "postCiRecord": "Local evidence; not part of delivery commit"
+}
