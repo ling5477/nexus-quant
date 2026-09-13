@@ -1,0 +1,119 @@
+{
+  "task": "NQ-GATEAUDIT-PHASE6-L6-MANDATORY-MEASUREMENT-AND-TIMER-READINESS-CLOSURE",
+  "decision": "BLOCKED / L6_PRODUCTION_OBSERVABILITY_CHANGE_REQUIRED",
+  "beforeBlocker": "L6_MANDATORY_MEASUREMENT_NOT_READY",
+  "head": "b733b75b7d5b018dc2f72f508ba11d1450a3bddb",
+  "tree": "b4aeb5a3bee8c6195c36fdebc35486b3769ac012",
+  "ci": {
+    "run": 34622315529,
+    "exactHead": true,
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": 9
+  },
+  "reason": "The real no-file evaluation artifact preview source always returns UNAVAILABLE with missing authoritative time; fixed five-source aggregate cannot become AVAILABLE/FRESH; refresh cannot report SUCCESS from any data-only fixture. Changing real source capability or aggregate admission semantics requires src/main scope.",
+  "productDefect": "NOT_ESTABLISHED; intentional no-file fail-closed baseline",
+  "sourceReferences": [
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/PythonEvaluationArtifactPreviewOverviewQueryService.java",
+      "sha256": "4fa042684bc9e3d290aa3678c8a51f2bd1d7af36d677f5b0c5ceecc87d67d4c3"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/validationoperations/runtimeevidence/ValidationOperationsRuntimeEvidenceOverviewQueryService.java",
+      "sha256": "06a6cbae0ab6010726ff0312fd5cfaae2bd3b154370e99ad9674b9252f2058e3"
+    },
+    {
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/validationevidence/ValidationEvidenceRefreshService.java",
+      "sha256": "5edbf0be9b4cf8b831fe6bddfbdc14989f32ade94425ec69b7e1f54563884c4f"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6QualificationControls.java",
+      "sha256": "e084f4fb51d1ec00193dae36d0eeb0b2ea27f0ca9c51ae0bbcd2d0bca5fb7a4d"
+    }
+  ],
+  "tests": [
+    {
+      "name": "com.guidinglight.nexusquant.strategy.application.pyartifactpreview.PythonEvaluationArtifactPreviewOverviewQueryServiceTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.guidinglight.nexusquant.scheduler.validationevidence.ValidationEvidenceRefreshServiceTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    }
+  ],
+  "targetedElapsedSeconds": 10.361658499998157,
+  "testScope": "Real no-file source unit test; refresh decision unit tests use mocked aggregate input, not runtime SUCCESS proof",
+  "readinessRerun": "NOT_RUN / STOP_AT_AUTHORIZED_BOUNDARY",
+  "changes": {
+    "production": 0,
+    "testHarness": 0,
+    "oracle": 0,
+    "planning": 0
+  },
+  "remaining": [
+    "real command queue measurement/model",
+    "canonical oldest candidate age time series",
+    "real Hikari acquisition timeout counter",
+    "formal 10/40/10 duration contract",
+    "real Validation SUCCESS fixture",
+    "short readiness rerun"
+  ],
+  "historicalEvidenceUnchanged": true,
+  "preExistingFilesUnchanged": true,
+  "rawRoot": "C:\\Users\\Lingyu\\AppData\\Local\\Temp\\nq-l6-measurement-closure-20260912",
+  "rawArtifacts": [
+    {
+      "name": "ci.json",
+      "sha256": "8bf5b8ce800c6471fa1bbd2cd854989877b878c19ea6397b43dad8f67a51d5a0"
+    },
+    {
+      "name": "command.json",
+      "sha256": "687a9203d64327a81d01bd740150d0fb19f7a5152fdd395ead36685cfdc70457"
+    },
+    {
+      "name": "result.json",
+      "sha256": "2013596d258d2742030c426e313331d83104c932670dc305e923a344a9bfc1a6"
+    },
+    {
+      "name": "run.py",
+      "sha256": "753257a8d585820ccbe60b846dfb618404585abd20a58a3f21bd28a7995a5656"
+    },
+    {
+      "name": "source-hashes.json",
+      "sha256": "26f5a5190e48bee5693200e2419545195ac6a68dd66a062c4c9a67e915a7e3c8"
+    },
+    {
+      "name": "targeted.log",
+      "sha256": "8b876783599342c2d997238f8a279b8658da2d1ac8c9c95b3f0137c40325763e"
+    },
+    {
+      "name": "TEST-com.guidinglight.nexusquant.scheduler.validationevidence.ValidationEvidenceRefreshServiceTest.xml",
+      "sha256": "03e7ebedcf9abe3a4c512290d9f3761c03972fc5379187cb58a8ecb877620a80"
+    },
+    {
+      "name": "TEST-com.guidinglight.nexusquant.strategy.application.pyartifactpreview.PythonEvaluationArtifactPreviewOverviewQueryServiceTest.xml",
+      "sha256": "a815c1cf837d65b98fe4ea6cf779a59211a046e96a293c3eaa8a7162dae7ae29"
+    },
+    {
+      "name": "write.py",
+      "sha256": "46f0686e0cc2bb086324234ffe7ed7ad929a318f1f6661679b48712cffac682e"
+    }
+  ],
+  "cleanup": "No PostgreSQL, Venue or NQ workload started; targeted Maven completed",
+  "P0Confirmed": 0,
+  "P1Confirmed": 0,
+  "existingP2P3": "UNCHANGED",
+  "stage": 0,
+  "commit": "NONE",
+  "push": "NONE",
+  "L6": "NOT_ACCEPTED",
+  "L6_A": "NOT_ACCEPTED",
+  "SOAK": "NOT_RUN",
+  "readyToStart60Min": false
+}

@@ -1,0 +1,160 @@
+{
+  "task": "NQ-GATEAUDIT-PHASE6-L6-VALIDATION-CONTRACT-AND-MEASUREMENT-READINESS-CLOSURE",
+  "decision": "FAIL / VALIDATION_UNEXPECTED_DEGRADATION",
+  "stop": "STOP / INDEPENDENT_REVIEW_REQUIRED",
+  "boundary": "BLOCKED / PRODUCTION_CHANGE_REQUIRED",
+  "head": "b733b75b7d5b018dc2f72f508ba11d1450a3bddb",
+  "tree": "b4aeb5a3bee8c6195c36fdebc35486b3769ac012",
+  "baselineCi": {
+    "run": 34622315529,
+    "jobs": 9,
+    "status": "completed/success"
+  },
+  "productionDelta": 0,
+  "candidateStatus": "TEST_ONLY_DRAFT / NOT_QUALIFIED / NOT_STAGED",
+  "candidateFiles": [
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6DurationContract.java",
+      "rawSha256": "841be85f22fe34a67900c94c744e129e4c37aee2ca592c4f14ab63fc545d2d8b"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6MeasurementPostgresTest.java",
+      "rawSha256": "17e8a427d89cbfc5c4210e2ea6963335146b8133aefe00e52b07d74c92f676b3"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6Measurements.java",
+      "rawSha256": "ca855e432a1452a4ca745902bfca3f830babd3f28f943230e441b7a455768a1e"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ReadinessContractTest.java",
+      "rawSha256": "46e36caff0baaa7b92ec2eec164bef4a44fa705dddd617a89f1923507b7953d2"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ValidationContract.java",
+      "rawSha256": "0300a6ba757df2b7d0818c20e70df8303a25332227c55aaf60ce4e2d2758ba76"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ValidationFixture.java",
+      "rawSha256": "b1591f833d08b70ee0aa1708c272c8f0f3903be8adbbcd36a73f62d142673a28"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ActiveStabilityTest.java",
+      "rawSha256": "5a17c55f1e9a179b03ae8bb9692e7f48251fb08db754f53d74e43eb0125b558f"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6QualificationControls.java",
+      "rawSha256": "90279390ff5841782a874494c7283177beb6e4f5d1ddf608d0436697ab2eb0ce"
+    }
+  ],
+  "unchangedHistoricalEvidence": true,
+  "newCapabilityException": "NONE; only EVALUATION_ARTIFACT_PREVIEW allowed",
+  "cause": {
+    "sourceKey": "SHADOW_RUNS",
+    "source": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunOverviewQueryService.java",
+    "sourceSha256": "794ea571579baa30ea0a2f253bcfd6497e573afb45d9bfec9aff30bf43cd0458",
+    "calculator": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/readmodel/ReadModelEvidenceMetadataCalculator.java",
+    "calculatorSha256": "1cf17b674b612a06e8fddc9c79e36ad0cc3505e9920071bbb899202416398aaf",
+    "reason": "Production ShadowRunOverviewQueryService always passes staleAfter=null. Calculator returns UNKNOWN even with AVAILABLE and valid authoritative time. This cannot be repaired by more complete fixture facts.",
+    "runtime": "Both real scheduler executions returned DEGRADED/PARTIAL/UNKNOWN with blockerCount=1 and warningCount=1; L6 exact-source guard threw VALIDATION_UNEXPECTED_DEGRADATION",
+    "limit": "Per-source overview was not serialized before the failing guard; warning attribution is code-derived from actual source and calculator. Do not present it as exported per-source runtime JSON."
+  },
+  "tests": {
+    "targeted01": "COMPILE_FAILED: SimpleMeterRegistry is not AutoCloseable",
+    "targeted02": "6 tests / 2 failures / 0 errors / 0 skips: JSON LongNode vs IntNode comparison only",
+    "targeted03": "6 tests / 0 failures / 0 errors / 0 skips",
+    "readiness01": "1 test / 1 failure / 0 errors / 0 skips",
+    "realHikariPositive": "hikaricp.connections.timeout 0->1 on isolated pool exhaustion",
+    "negatives": "Additional unavailable/unknown/partial/stale sources, wrong/missing/duplicate source, scheduler failure/incomplete execution, absent meter, absent eligibility, full command queue rejected",
+    "formalTiming": "10/50/60 minute monotonic boundary tests PASS; formal run NOT_RUN"
+  },
+  "readiness": {
+    "warmupSeconds": 15.0144582,
+    "active": "INCOMPLETE",
+    "drain": "NOT_RUN",
+    "checkpoints": 1,
+    "progressSamples": 6,
+    "ageSamples": 6,
+    "resourceSampleCounts": {
+      "l6-resources-27176.ndjson": 3,
+      "l6-resources-28020.ndjson": 3
+    },
+    "lastVerifiedBusiness": {
+      "orders": 2,
+      "trades": 2,
+      "ledger": 8,
+      "position": "0.2",
+      "duplicates": 0,
+      "orphans": 0
+    },
+    "sameStateExceptionObserved": false,
+    "finalBusinessOracle": "NOT_CAPTURED / NOT_QUALIFIED",
+    "candidateAgePositiveCount": 4,
+    "candidateAgePositiveRangeMillis": [
+      97,
+      262
+    ],
+    "lastCheckpointAge": [
+      {
+        "sampledAt": "2026-09-11T17:16:39.582265Z",
+        "scanEligibleCandidateCount": 2,
+        "eligibleCandidateCount": 0,
+        "oldestCandidateAgeMillis": null,
+        "oldestAgeStatus": "NONE"
+      },
+      {
+        "sampledAt": "2026-09-11T17:16:39.686281Z",
+        "scanEligibleCandidateCount": 2,
+        "eligibleCandidateCount": 0,
+        "oldestCandidateAgeMillis": null,
+        "oldestAgeStatus": "NONE"
+      }
+    ],
+    "hikariCounters": {
+      "27176": {
+        "metric": "hikaricp.connections.timeout",
+        "start": 0.0,
+        "last": 0.0,
+        "delta": 0.0
+      },
+      "28020": {
+        "metric": "hikaricp.connections.timeout",
+        "start": 0.0,
+        "last": 0.0,
+        "delta": 0.0
+      }
+    },
+    "controllerPid": 25064,
+    "nqPids": [
+      28020,
+      27176
+    ],
+    "venuePid": 25024
+  },
+  "cleanup": {
+    "containersRemaining": [],
+    "survivors": [],
+    "ownedPids": [
+      25024,
+      28020,
+      27176,
+      40432,
+      14972,
+      25064
+    ]
+  },
+  "evidenceRoot": "C:\\Users\\Lingyu\\AppData\\Local\\Temp\\nq-l6-contract-closure-20260912",
+  "rawArtifactIndexSha256": "97715d47a4dee1f1017a4d9a4d91cb33cf9c3cce525f6c46f44c2fe0a5d90432",
+  "rawArtifactCount": 42,
+  "P0Confirmed": 0,
+  "P1Confirmed": 0,
+  "productionDefect": "NOT_ESTABLISHED: source intentionally has no stale policy",
+  "P2P3AndFutureObligations": "UNCHANGED",
+  "L6": "NOT_ACCEPTED",
+  "L6_A": "NOT_ACCEPTED",
+  "SOAK": "NOT_RUN",
+  "readyToStart60Min": false,
+  "stage": 0,
+  "commit": "NONE",
+  "push": "NONE",
+  "newExactHeadCi": "NOT_RUN / NO_DELIVERY_COMMIT"
+}

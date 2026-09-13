@@ -14,11 +14,24 @@ import com.guidinglight.nexusquant.research.application.paper.PaperRunMonitorRun
 import com.guidinglight.nexusquant.research.application.paper.PaperRunAlertCreateCommand;
 import com.guidinglight.nexusquant.research.application.paper.PaperRunDailyReportGenerateCommand;
 import com.zaxxer.hikari.HikariDataSource;
+import com.guidinglight.nexusquant.trading.application.OrderCommandService;
+import com.guidinglight.nexusquant.contracts.model.OrderStatus;
+import com.guidinglight.nexusquant.scheduler.validationevidence.ValidationEvidenceRefreshService;
+import com.guidinglight.nexusquant.strategy.application.validationoperations.runtimeevidence.ValidationOperationsRuntimeEvidenceOverviewQueryService;
+import com.guidinglight.nexusquant.strategy.application.validationoperations.runtimeevidence.ValidationOperationsRuntimeEvidenceOverviewReadModel;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ExecutionException;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import java.lang.management.ManagementFactory;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.io.BufferedWriter;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -42,6 +55,11 @@ final class L6QualificationControls implements AutoCloseable {
     private final AtomicInteger tickCompleted = new AtomicInteger();
     private final AtomicInteger tickFailed = new AtomicInteger();
     private final AtomicInteger commands = new AtomicInteger();
+    private final ThreadPoolExecutor commandExecutor = L6Measurements.commands();
+    private final AtomicReference<List<String>> candidateStatuses = new AtomicReference<>();
+    private final AtomicReference<ValidationOperationsRuntimeEvidenceOverviewReadModel> validation = new AtomicReference<>();
+    private final Counter acquisitionTimeout;
+    private final double timeoutStart;
     private final BufferedWriter output;
     private int samples;
     private String paper;
@@ -59,6 +77,35 @@ final class L6QualificationControls implements AutoCloseable {
             catch (Throwable error) { tickFailed.incrementAndGet(); failure.compareAndSet(null, error); throw error; }
         });
         ReflectionTestUtils.setField(context.getBean(StrategyRunRecoveryTick.class), "recovery", proxy.getProxy());
+        acquisitionTimeout = L6Measurements.timeoutCounter(context.getBean(HikariDataSource.class), context.getBean(MeterRegistry.class));
+        timeoutStart = acquisitionTimeout.count();
+        var orderProxy = new ProxyFactory(context.getBean(OrderCommandService.class));
+        orderProxy.setProxyTargetClass(true);
+        orderProxy.addAdvice((MethodInterceptor) call -> {
+            if (call.getMethod().getName().equals("reserveReconciliationCandidates")) {
+                @SuppressWarnings("unchecked")
+                Collection<OrderStatus> statuses = (Collection<OrderStatus>) call.getArguments()[1];
+                candidateStatuses.set(statuses.stream().map(Enum::name).toList());
+            }
+            return call.proceed();
+        });
+        ReflectionTestUtils.setField(context.getBean(OkxRestReconcileService.class), "orderCommandService", orderProxy.getProxy());
+        // 空库真实扫描捕获生产传入的候选合同，不复制生产状态列表。
+        context.getBean(OkxRestReconcileService.class).reconcileOnce(100);
+        var aggregateProxy = new ProxyFactory(context.getBean(ValidationOperationsRuntimeEvidenceOverviewQueryService.class));
+        aggregateProxy.setProxyTargetClass(true);
+        aggregateProxy.addAdvice((MethodInterceptor) call -> {
+            Object result = call.proceed();
+            if (result instanceof ValidationOperationsRuntimeEvidenceOverviewReadModel model) {
+                // 先保存真实逐来源结果，再交给资格判定；失败时也保留原始降级原因和事实时间。
+                Files.writeString(Path.of("l6-validation-" + ProcessHandle.current().pid() + ".ndjson"),
+                        context.getBean(ObjectMapper.class).writeValueAsString(model) + "\n",
+                        StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+                validation.set(model);
+            }
+            return result;
+        });
+        ReflectionTestUtils.setField(context.getBean(ValidationEvidenceRefreshService.class), "queryService", aggregateProxy.getProxy());
         output = Files.newBufferedWriter(Path.of("l6-resources-" + ProcessHandle.current().pid() + ".ndjson"));
         sampler.scheduleWithFixedDelay(() -> {
             try { sample(); } catch (Throwable error) { failure.compareAndSet(null, error); }
@@ -82,17 +129,37 @@ final class L6QualificationControls implements AutoCloseable {
                 .put("active", bean.getActiveConnections()).put("idle", bean.getIdleConnections())
                 .put("pending", bean.getThreadsAwaitingConnection()).put("poolMax", pool.getMaximumPoolSize())
                 .put("tickStarted", tickStarted.get()).put("tickCompleted", tickCompleted.get())
-                .put("tickFailed", tickFailed.get()).put("commands", commands.get()).put("commandQueue", 0);
+                .put("tickFailed", tickFailed.get()).put("commands", commands.get());
+        n.set("commandQueue", L6Measurements.queue(commandExecutor));
+        n.set("candidateAge", L6Measurements.age(context.getBean(NamedParameterJdbcTemplate.class), candidateStatuses.get()));
+        n.put("acquisitionTimeoutMetric", acquisitionTimeout.getId().getName())
+                .put("acquisitionTimeoutCount", acquisitionTimeout.count()).put("counterStart", timeoutStart)
+                .put("counterEnd", acquisitionTimeout.count()).put("acquisitionTimeoutDelta", acquisitionTimeout.count() - timeoutStart);
+        if (acquisitionTimeout.count() != timeoutStart) throw new IllegalStateException("UNEXPECTED_HIKARI_ACQUISITION_TIMEOUT");
         var gc = n.putArray("gc");
         ManagementFactory.getGarbageCollectorMXBeans().forEach(b -> gc.addObject().put("name", b.getName())
                 .put("count", b.getCollectionCount()).put("timeMillis", b.getCollectionTime()));
         n.set("observations", json.valueToTree(context.getBean(MicrometerOperationalObservation.class).snapshot()));
+        var observed = n.path("observations").path("validation_refresh").path("totals");
+        if (observed.path("FAILURE").asLong() != 0) throw new IllegalStateException("VALIDATION_SCHEDULER_EXECUTION_FAILED");
+        long completed = observed.path("DEGRADED").asLong() + observed.path("SUCCESS").asLong();
+        if (completed > 0) n.set("validationQualification", L6ValidationContract.evaluate(validation.get(),
+                observed.path("ATTEMPT").asLong(), completed, observed.path("FAILURE").asLong()));
         var names = n.putArray("threadNames");
         for (var info : threads.getThreadInfo(threads.getAllThreadIds())) if (info != null) names.add(info.getThreadName());
+        L6Measurements.requireMandatory(n);
         return n;
     }
 
     String handle(String command) throws Exception {
+        try { return commandExecutor.submit(() -> execute(command)).get(45, TimeUnit.SECONDS); }
+        catch (ExecutionException error) {
+            if (error.getCause() instanceof Exception cause) throw cause;
+            throw error;
+        }
+    }
+
+    private String execute(String command) throws Exception {
         if (failure.get() != null) throw new IllegalStateException("L6 sampling/timer failure", failure.get());
         if (commands.incrementAndGet() > 4000) throw new IllegalStateException("L6 command budget");
         return switch (command) {
@@ -124,6 +191,11 @@ final class L6QualificationControls implements AutoCloseable {
     }
 
     @Override public void close() throws Exception {
+        commandExecutor.shutdown();
+        if (!commandExecutor.awaitTermination(15, TimeUnit.SECONDS)) {
+            commandExecutor.shutdownNow();
+            throw new IllegalStateException("L6 command executor shutdown");
+        }
         sampler.shutdown();
         try {
             if (!sampler.awaitTermination(15, TimeUnit.SECONDS)) throw new IllegalStateException("L6 sampler shutdown");

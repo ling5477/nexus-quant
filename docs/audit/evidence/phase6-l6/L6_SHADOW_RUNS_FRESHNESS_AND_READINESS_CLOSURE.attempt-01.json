@@ -1,0 +1,539 @@
+{
+  "task": "NQ-GATEAUDIT-PHASE6-L6-SHADOW-RUNS-FRESHNESS-AND-READINESS-CLOSURE",
+  "classification": "PRODUCTION_FRESHNESS_CONTRACT / TEST_ONLY_MEASUREMENT_CLOSURE / ISOLATED_READINESS",
+  "date": "2026-09-13 Asia/Shanghai",
+  "baseline": {
+    "branch": "audit/post-gatey-agent-baseline",
+    "head": "70d9d183046635aff1f81bf79bba439713b2cf9a"
+  },
+  "existingWip": {
+    "codeDraftCount": 8,
+    "historicalEvidenceCount": 7,
+    "files": [
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6DurationContract.java",
+        "length": 1384,
+        "sha256": "3a771bd643bfc9df7efd9ad2a852a06a1f4683902c3c550790bb444e6c5e4613",
+        "backupSha256": "3a771bd643bfc9df7efd9ad2a852a06a1f4683902c3c550790bb444e6c5e4613"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6MeasurementPostgresTest.java",
+        "length": 4565,
+        "sha256": "83ea4e48f7adafb2c27232044e1a853ed9a1d3e2d09a181737c3b14fbeb8b8a4",
+        "backupSha256": "83ea4e48f7adafb2c27232044e1a853ed9a1d3e2d09a181737c3b14fbeb8b8a4"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6Measurements.java",
+        "length": 4556,
+        "sha256": "15ed5f96d4e648cdea46a90612ff2b286595805af168793ee4a145bd7dc1ca44",
+        "backupSha256": "15ed5f96d4e648cdea46a90612ff2b286595805af168793ee4a145bd7dc1ca44"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ReadinessContractTest.java",
+        "length": 7640,
+        "sha256": "4e8fc8411506e2c5277a14ea4561127ca694e0b2299ae87960f18b77ac8f0b01",
+        "backupSha256": "4e8fc8411506e2c5277a14ea4561127ca694e0b2299ae87960f18b77ac8f0b01"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ValidationContract.java",
+        "length": 3610,
+        "sha256": "32c38cebd8c3ec084a62009d1a3cfe4e7b3b8391a294f39648a1141561c027c1",
+        "backupSha256": "32c38cebd8c3ec084a62009d1a3cfe4e7b3b8391a294f39648a1141561c027c1"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ValidationFixture.java",
+        "length": 2581,
+        "sha256": "ccf81e43941d85830341b7bed0bc4bbbf7df29a9337132a985ef9bb4c7a842b0",
+        "backupSha256": "ccf81e43941d85830341b7bed0bc4bbbf7df29a9337132a985ef9bb4c7a842b0"
+      },
+      {
+        "path": "docs/audit/evidence/phase6-l6/L6_ACTIVE_STABILITY_READINESS_RESUME.json",
+        "length": 13859,
+        "sha256": "684662469637f8ee2624764988a80245bda3f1f9913cc8cb10cb9a1e7f40dbbd",
+        "backupSha256": "684662469637f8ee2624764988a80245bda3f1f9913cc8cb10cb9a1e7f40dbbd"
+      },
+      {
+        "path": "docs/audit/evidence/phase6-l6/L6_ACTIVE_STABILITY_READINESS_RESUME.md",
+        "length": 9123,
+        "sha256": "370ffd1751651aee1d4618770c4b3182d869e3fa111ddb5701a1792bbc0b58e0",
+        "backupSha256": "370ffd1751651aee1d4618770c4b3182d869e3fa111ddb5701a1792bbc0b58e0"
+      },
+      {
+        "path": "docs/audit/evidence/phase6-l6/L6_MANDATORY_MEASUREMENT_AND_TIMER_CLOSURE.json",
+        "length": 4935,
+        "sha256": "3c29fb38ab20ab045176124e290fcd3aa5b6ae425b84996c39be5cca0f2fef23",
+        "backupSha256": "3c29fb38ab20ab045176124e290fcd3aa5b6ae425b84996c39be5cca0f2fef23"
+      },
+      {
+        "path": "docs/audit/evidence/phase6-l6/L6_MANDATORY_MEASUREMENT_AND_TIMER_CLOSURE.md",
+        "length": 5608,
+        "sha256": "ef30ffc433804bf42bbaea0ffdd80e4abdac0f3aa9dfba181ca9a75710ef1cd8",
+        "backupSha256": "ef30ffc433804bf42bbaea0ffdd80e4abdac0f3aa9dfba181ca9a75710ef1cd8"
+      },
+      {
+        "path": "docs/audit/evidence/phase6-l6/L6_VALIDATION_CONTRACT_AND_MEASUREMENT_CLOSURE.json",
+        "length": 6677,
+        "sha256": "540142624949be0a2ee822138a5a51c8a5ae297195e0292794cc70fe13d5b894",
+        "backupSha256": "540142624949be0a2ee822138a5a51c8a5ae297195e0292794cc70fe13d5b894"
+      },
+      {
+        "path": "docs/audit/evidence/phase6-l6/L6_VALIDATION_CONTRACT_AND_MEASUREMENT_CLOSURE.md",
+        "length": 9553,
+        "sha256": "43b2dfed91856179b8e364ec474f7bb6aa987ac93c3ca0f990ac24e4850d7abf",
+        "backupSha256": "43b2dfed91856179b8e364ec474f7bb6aa987ac93c3ca0f990ac24e4850d7abf"
+      },
+      {
+        "path": "docs/audit/evidence/phase6-l6/RECONCILIATION_SAME_STATE_CONVERGENCE_DELIVERY_ACCEPTANCE.md",
+        "length": 5965,
+        "sha256": "605ff2fbeb122d5def94951840c2bf112804207f81e4fda79bd2f5b99a2ba233",
+        "backupSha256": "605ff2fbeb122d5def94951840c2bf112804207f81e4fda79bd2f5b99a2ba233"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ActiveStabilityTest.java",
+        "length": 17491,
+        "sha256": "f5a571c710729dc5681b0385a8bff2bc3fbca5321da19d973ccb0069eec147cd",
+        "backupSha256": "f5a571c710729dc5681b0385a8bff2bc3fbca5321da19d973ccb0069eec147cd"
+      },
+      {
+        "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6QualificationControls.java",
+        "length": 13375,
+        "sha256": "90279390ff5841782a874494c7283177beb6e4f5d1ddf608d0436697ab2eb0ce",
+        "backupSha256": "90279390ff5841782a874494c7283177beb6e4f5d1ddf608d0436697ab2eb0ce"
+      }
+    ],
+    "inventorySha256": "5d7116be4967c9c1cae09f62e07807a16b6a7d289b0fb957bde5bb9f1e891aab",
+    "backupVerified": true,
+    "unrelatedWorktreeDrift": false,
+    "resetCleanStashRestore": "NONE"
+  },
+  "freshness": {
+    "disposition": "IMPLEMENT_NOW",
+    "sourceKey": "SHADOW_RUNS",
+    "owner": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunOverviewQueryService.java",
+    "currentEligible": true,
+    "consumer": "ValidationOperationsRuntimeEvidenceOverviewQueryService -> ValidationEvidenceRefreshService; read-only Shadow overview API",
+    "businessFact": "Local diagnostic Shadow Run lifecycle/events/snapshots/consistency evidence; freshness is not run success or trading authorization",
+    "source": "LOCAL_DB_SHADOW_FACTS",
+    "queryOwner": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcShadowRunOverviewQueryRepository.java",
+    "tables": [
+      "shadow_runs",
+      "shadow_run_events",
+      "shadow_run_snapshots",
+      "shadow_consistency_reports"
+    ],
+    "canonicalTimestamp": "max(latestRun.updated_at, latestReport.generated_at, latestEvent.created_at, latestSnapshot.captured_at)",
+    "priorBehavior": "AVAILABLE with valid timestamp still UNKNOWN / STALE_THRESHOLD_NOT_DEFINED because staleAfter=null",
+    "thresholdAuthorityPriority": 3,
+    "thresholdSeconds": 604800,
+    "thresholdAuthority": "Existing analogous local Shadow evidence policy: ShadowValidationWorkflowOverviewQueryService.STALE_AFTER=7 days, JDBC reads same Shadow updated_at/generated_at/created_at; ConsistencyEvidenceOverviewQueryService also uses 7 days; GateT-2 WO lines 265-271 records same report/snapshot/event evidence window",
+    "configurationOwner": "NONE: existing diagnostic policies are typed Duration constants; no new configuration surface",
+    "refreshCadence": "Shadow runner is caller-driven local skeleton with no background scheduling; Validation fixed-delay PT5M only re-reads aggregate and does not refresh persisted Shadow facts",
+    "comparisonContract": "Existing calculator compares integer ageSeconds <= staleAfterSeconds (604800 inclusive); no shared calculator change",
+    "availability": "No facts -> UNAVAILABLE/UNKNOWN; missing completeness -> PARTIAL/UNKNOWN; complete facts -> AVAILABLE; age determines FRESH/STALE only for AVAILABLE",
+    "invalidThreshold": "No runtime configuration/parser exists. Typed production constant; shared calculator negative-duration rejection and null-threshold UNKNOWN covered by targeted tests",
+    "futureTimestamp": "UNKNOWN / LAST_CALCULATED_AT_IN_FUTURE",
+    "productionDelta": "One owner only: import Duration + seven-day constant + replace null threshold; timestamps, queries, availability and aggregate unchanged"
+  },
+  "aggregate": {
+    "schedulerExecution": "COMPLETED; scheduler result remains DEGRADED",
+    "productionHealth": "PARTIAL / UNKNOWN due only to no-file source",
+    "allowedGap": "EVALUATION_ARTIFACT_PREVIEW / LOCAL_NO_FILE_EVALUATION_ARTIFACT_PREVIEW / UNAVAILABLE / UNKNOWN / no timestamp",
+    "gapDisposition": "EXPECTED_UNAVAILABLE / DEFER_UNTIL_TRIGGER / NOT_REQUIRED_FOR_L6",
+    "shadowExpectedUnknown": false,
+    "unexpectedUnknownOrDegraded": "REJECTED / VALIDATION_UNEXPECTED_DEGRADATION",
+    "newExceptions": 0
+  },
+  "measurements": {
+    "status": "L6_MANDATORY_MEASUREMENTS_READY",
+    "queue": "Actual bounded command executor capacity 1; positive queued task/rejection/completion test",
+    "age": "Actual production scan status arguments + existing L5/L6 actionable backlog predicate + PostgreSQL fact created_at",
+    "hikari": "Exact hikaricp.connections.timeout Counter resolved by actual pool tag; positive exhaustion 0 -> 1; missing meter rejects",
+    "mandatoryMissing": 0,
+    "measurementZero": "MEASURED_ZERO only for an observed zero",
+    "notApplicable": "Linux FD metric NOT_APPLICABLE_WINDOWS; no current mandatory queue/counter/age field is exempt",
+    "unavailable": "Missing executor/meter/eligibility/required serialized field fails; never converted to zero",
+    "formalDuration": {
+      "warmupSeconds": 600,
+      "activeSeconds": 2400,
+      "drainSeconds": 600,
+      "totalSeconds": 3600,
+      "clock": "System.nanoTime absolute 10/50/60 minute phase endpoints",
+      "boundaryTest": "PASS",
+      "execution": "NOT_RUN"
+    },
+    "readinessDurationSeconds": [
+      15,
+      90,
+      10
+    ],
+    "additionalClosure": "Monotonic checkpoint interval; save full per-source runtime JSON before qualification; mandatory snapshot guard"
+  },
+  "verification": {
+    "readiness": {
+      "proof": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-active\\e7216627-635c-46c8-85c9-d68506d1bbcf\\proof.json",
+      "mode": "READINESS",
+      "checks": 5,
+      "iterations": 23,
+      "phases": [
+        {
+          "phase": "warmup",
+          "startElapsedNanos": 7700,
+          "endElapsedNanos": 15010456300,
+          "scheduledEndElapsedNanos": 15000000000,
+          "durationNanos": 15010448600
+        },
+        {
+          "phase": "active",
+          "startElapsedNanos": 15010543500,
+          "endElapsedNanos": 105000258000,
+          "scheduledEndElapsedNanos": 105000000000,
+          "durationNanos": 89989714500
+        },
+        {
+          "phase": "drain",
+          "startElapsedNanos": 105000301100,
+          "endElapsedNanos": 115015388900,
+          "scheduledEndElapsedNanos": 115000000000,
+          "durationNanos": 10015087800
+        }
+      ],
+      "finalBusiness": {
+        "orders": 6,
+        "trades": 6,
+        "ledger": 24,
+        "position": "0.6",
+        "duplicates": 0,
+        "orphans": 0
+      },
+      "backlogFinal": 0,
+      "sameStateTransitionExceptions": 0,
+      "duplicateTransitionAudit": 0,
+      "mandatoryMeasurementsMissing": 0,
+      "candidateAgeSamples": 46,
+      "positiveAgeCount": 6,
+      "positiveAgeRangeMillis": [
+        95,
+        264
+      ],
+      "resources": {
+        "l6-resources-13044.ndjson": {
+          "samples": 13,
+          "firstMillis": 1789234718501,
+          "lastMillis": 1789234834316,
+          "queueCompletedFinal": 73,
+          "timeoutStart": 0.0,
+          "timeoutEnd": 0.0,
+          "timeoutDelta": 0,
+          "ageFinal": {
+            "sampledAt": "2026-09-12T17:40:34.317992Z",
+            "scanEligibleCandidateCount": 6,
+            "eligibleCandidateCount": 0,
+            "oldestCandidateAgeMillis": null,
+            "oldestAgeStatus": "NONE"
+          }
+        },
+        "l6-resources-37588.ndjson": {
+          "samples": 13,
+          "firstMillis": 1789234714872,
+          "lastMillis": 1789234834827,
+          "queueCompletedFinal": 74,
+          "timeoutStart": 0.0,
+          "timeoutEnd": 0.0,
+          "timeoutDelta": 0,
+          "ageFinal": {
+            "sampledAt": "2026-09-12T17:40:34.829027Z",
+            "scanEligibleCandidateCount": 6,
+            "eligibleCandidateCount": 0,
+            "oldestCandidateAgeMillis": null,
+            "oldestAgeStatus": "NONE"
+          }
+        }
+      },
+      "validation": {
+        "l6-validation-13044.ndjson": {
+          "executions": 1,
+          "shadow": {
+            "source": "LOCAL_DB_SHADOW_FACTS",
+            "availability": "AVAILABLE",
+            "lastCalculatedAt": "2026-09-12T17:38:30.227733Z",
+            "freshnessStatus": "FRESH",
+            "ageSeconds": 38,
+            "staleAfterSeconds": 604800,
+            "staleReason": null,
+            "diagnosticOnly": true,
+            "noSideEffect": true,
+            "notTradingAuthorization": true,
+            "liveDisabled": true
+          }
+        },
+        "l6-validation-37588.ndjson": {
+          "executions": 1,
+          "shadow": {
+            "source": "LOCAL_DB_SHADOW_FACTS",
+            "availability": "AVAILABLE",
+            "lastCalculatedAt": "2026-09-12T17:38:30.227733Z",
+            "freshnessStatus": "FRESH",
+            "ageSeconds": 34,
+            "staleAfterSeconds": 604800,
+            "staleReason": null,
+            "diagnosticOnly": true,
+            "noSideEffect": true,
+            "notTradingAuthorization": true,
+            "liveDisabled": true
+          }
+        }
+      }
+    },
+    "tests": [
+      {
+        "suite": "com.guidinglight.nexusquant.app.smoke.L6MeasurementPostgresTest",
+        "tests": 1,
+        "raw": "\\\\?\\C:\\Users\\Lingyu\\AppData\\Local\\Temp\\nq-l6-shadow-freshness-20260913-013029\\passed-targeted-reports\\nq-app\\TEST-com.guidinglight.nexusquant.app.smoke.L6MeasurementPostgresTest.xml",
+        "sha256": "f99565de02e8ed7630bdce4be0894c21ca66320b22510e38fc929b1e3b25bc83"
+      },
+      {
+        "suite": "com.guidinglight.nexusquant.app.smoke.L6ProcessOutputTest",
+        "tests": 1,
+        "raw": "\\\\?\\C:\\Users\\Lingyu\\AppData\\Local\\Temp\\nq-l6-shadow-freshness-20260913-013029\\passed-targeted-reports\\nq-app\\TEST-com.guidinglight.nexusquant.app.smoke.L6ProcessOutputTest.xml",
+        "sha256": "45ffbf9a98f4e07e6b656c3f1c99867fb532b891a6c527e2f25e7a79a8903c2e"
+      },
+      {
+        "suite": "com.guidinglight.nexusquant.app.smoke.L6ReadinessContractTest",
+        "tests": 5,
+        "raw": "\\\\?\\C:\\Users\\Lingyu\\AppData\\Local\\Temp\\nq-l6-shadow-freshness-20260913-013029\\passed-targeted-reports\\nq-app\\TEST-com.guidinglight.nexusquant.app.smoke.L6ReadinessContractTest.xml",
+        "sha256": "2d585d31bdf7b616a4bbe8d9577db8d745ce81452f562f1c0fd955006a89095a"
+      },
+      {
+        "suite": "com.guidinglight.nexusquant.strategy.application.pyartifactpreview.PythonEvaluationArtifactPreviewOverviewQueryServiceTest",
+        "tests": 5,
+        "raw": "\\\\?\\C:\\Users\\Lingyu\\AppData\\Local\\Temp\\nq-l6-shadow-freshness-20260913-013029\\passed-targeted-reports\\nq-core\\TEST-com.guidinglight.nexusquant.strategy.application.pyartifactpreview.PythonEvaluationArtifactPreviewOverviewQueryServiceTest.xml",
+        "sha256": "4740f01a38093aba8f94d483b708c751a9069a606f5c5267336a66a1f9d9f771"
+      },
+      {
+        "suite": "com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadataCalculatorTest",
+        "tests": 8,
+        "raw": "\\\\?\\C:\\Users\\Lingyu\\AppData\\Local\\Temp\\nq-l6-shadow-freshness-20260913-013029\\passed-targeted-reports\\nq-core\\TEST-com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadataCalculatorTest.xml",
+        "sha256": "a46a8bb01ed081a6d11bec151a3b5f9afedc475d707f67612dfa730ef381431c"
+      },
+      {
+        "suite": "com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewQueryServiceTest",
+        "tests": 4,
+        "raw": "\\\\?\\C:\\Users\\Lingyu\\AppData\\Local\\Temp\\nq-l6-shadow-freshness-20260913-013029\\passed-targeted-reports\\nq-core\\TEST-com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewQueryServiceTest.xml",
+        "sha256": "49e84a84e5ff040a97cea409c3cbeb2dae975f7e90e5bf00d95717c917d64f21"
+      },
+      {
+        "suite": "com.guidinglight.nexusquant.strategy.application.shadowvalidation.ShadowValidationWorkflowOverviewQueryServiceTest",
+        "tests": 8,
+        "raw": "\\\\?\\C:\\Users\\Lingyu\\AppData\\Local\\Temp\\nq-l6-shadow-freshness-20260913-013029\\passed-targeted-reports\\nq-core\\TEST-com.guidinglight.nexusquant.strategy.application.shadowvalidation.ShadowValidationWorkflowOverviewQueryServiceTest.xml",
+        "sha256": "e570ea1ebe6b0e30e9edc8ba786b63c37bcd719f2f52d3f106b1a7d1e53b58f7"
+      },
+      {
+        "suite": "com.guidinglight.nexusquant.strategy.application.validationoperations.runtimeevidence.ValidationOperationsRuntimeEvidenceOverviewQueryServiceTest",
+        "tests": 6,
+        "raw": "\\\\?\\C:\\Users\\Lingyu\\AppData\\Local\\Temp\\nq-l6-shadow-freshness-20260913-013029\\passed-targeted-reports\\nq-core\\TEST-com.guidinglight.nexusquant.strategy.application.validationoperations.runtimeevidence.ValidationOperationsRuntimeEvidenceOverviewQueryServiceTest.xml",
+        "sha256": "046e544083d47545efc6e4a0f36688af94ce0638738ae3abc5fe30e4a490e61d"
+      },
+      {
+        "suite": "com.guidinglight.nexusquant.scheduler.validationevidence.ValidationEvidenceRefreshServiceTest",
+        "tests": 3,
+        "raw": "\\\\?\\C:\\Users\\Lingyu\\AppData\\Local\\Temp\\nq-l6-shadow-freshness-20260913-013029\\passed-targeted-reports\\nq-scheduler\\TEST-com.guidinglight.nexusquant.scheduler.validationevidence.ValidationEvidenceRefreshServiceTest.xml",
+        "sha256": "7cff55935359c137199d544bc5156edcdebe4c758a6bf3fa0061b8ab17908abe"
+      }
+    ],
+    "targetedTests": 41,
+    "readinessTests": 1,
+    "skips": 0,
+    "cleanup": {
+      "ownedPids": [
+        3624,
+        13044,
+        32068,
+        35700,
+        37588,
+        38604
+      ],
+      "survivors": [],
+      "container": "f707f20ad2b03b1f52dcfd996740e4f555b05911abc2c1b68de16c6a6f060eb8",
+      "containersRemaining": []
+    },
+    "existingHistoricalEvidenceUnchanged": true,
+    "testedCandidateUnchanged": true
+  },
+  "candidateFiles": [
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6DurationContract.java",
+      "sha256": "3a771bd643bfc9df7efd9ad2a852a06a1f4683902c3c550790bb444e6c5e4613",
+      "bytes": 1384
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6MeasurementPostgresTest.java",
+      "sha256": "83ea4e48f7adafb2c27232044e1a853ed9a1d3e2d09a181737c3b14fbeb8b8a4",
+      "bytes": 4565
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6Measurements.java",
+      "sha256": "d93d37522757b0da93da916da3413b4939b322d27c0fbd096c1b374a931133b5",
+      "bytes": 6294
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ReadinessContractTest.java",
+      "sha256": "f4c61f6c2d5cdd0222ebad07456b97a3263847a18170c69f5859e277ca15e260",
+      "bytes": 9838
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ValidationContract.java",
+      "sha256": "32c38cebd8c3ec084a62009d1a3cfe4e7b3b8391a294f39648a1141561c027c1",
+      "bytes": 3610
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ValidationFixture.java",
+      "sha256": "ccf81e43941d85830341b7bed0bc4bbbf7df29a9337132a985ef9bb4c7a842b0",
+      "bytes": 2581
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ActiveStabilityTest.java",
+      "sha256": "03ed9817e8b9ad7d9087929f90debe41f76aea8b956328c37aa8d8277fae6064",
+      "bytes": 17627
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6QualificationControls.java",
+      "sha256": "18b56a795c82c65e24dd97d513491aa1b30d39f1ef8cd8d0229879b612961ddc",
+      "bytes": 13897
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunOverviewQueryService.java",
+      "sha256": "2984c7a63a3f59ae939a0e8f8a1f4f16311071779cb398dc4ae0a54e35b9e435",
+      "bytes": 13654
+    },
+    {
+      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/readmodel/ReadModelEvidenceMetadataCalculatorTest.java",
+      "sha256": "b989914cd8579fb6015df33c01ad9dfa76c521cd180ed4bd159e510e9e132336",
+      "bytes": 4816
+    },
+    {
+      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunOverviewQueryServiceTest.java",
+      "sha256": "5138087126f0ae8e76058cb2ae3b0e22ae25c94bc8e4e3d7609cef31bade03f3",
+      "bytes": 6775
+    }
+  ],
+  "candidateInventorySha256": "2bebdbb514f60609a55ff38f569b73ec9bfa8cf85b122659d19670150cf7d47d",
+  "failureHistory": [
+    {
+      "record": "L6_VALIDATION_CONTRACT_AND_MEASUREMENT_CLOSURE.json",
+      "result": "FAIL / VALIDATION_UNEXPECTED_DEGRADATION / STALE_THRESHOLD_NOT_DEFINED",
+      "preserved": true
+    },
+    {
+      "attempt": "targeted-01",
+      "result": "COMPILE_FAILED",
+      "cause": "Introduced Mockito import unavailable in nq-core; replaced with real domain records; no dependency added"
+    },
+    {
+      "attempt": "targeted-02",
+      "result": "40 tests / 0 failures / 1 error / 0 skips",
+      "cause": "Docker engine not running; 34 source/aggregate tests passed; original app reports preserved"
+    },
+    {
+      "attempt": "targeted-03",
+      "result": "7 tests / 0 failures / 0 errors / 0 skips",
+      "cause": "Docker started locally; final measurement candidate passed"
+    },
+    {
+      "attempt": "evidence-collection",
+      "result": "Windows long-path parse error then temporary script quoting error; fixed without rerunning tests",
+      "technicalResultAffected": false
+    }
+  ],
+  "rawRoot": "C:\\Users\\Lingyu\\AppData\\Local\\Temp\\nq-l6-shadow-freshness-20260913-013029",
+  "rawArtifactCount": 75,
+  "rawArtifactIndexSha256": "91f1758d094c646e9ab17b5b924f871951c34d7aee12e8c27967bddbb614252f",
+  "sourceAuthorityHashes": [
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunOverviewQueryService.java",
+      "sha256": "2984c7a63a3f59ae939a0e8f8a1f4f16311071779cb398dc4ae0a54e35b9e435"
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcShadowRunOverviewQueryRepository.java",
+      "sha256": "7ae2423603f333c4ca6e8c8fc9c32c7e9fd83d88fa496f7298ed0a2583dece73"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/readmodel/ReadModelEvidenceMetadataCalculator.java",
+      "sha256": "1cf17b674b612a06e8fddc9c79e36ad0cc3505e9920071bbb899202416398aaf"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowvalidation/ShadowValidationWorkflowOverviewQueryService.java",
+      "sha256": "6ab42aea58799b6ef5640b635ea754fcf8041674402be679fb55d08202164e73"
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcShadowValidationWorkflowOverviewQueryRepository.java",
+      "sha256": "43ea6caa6ebee80ea171f4dc5d4e5f8750645ba71171ce1ba203b68f2a33e7ae"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/consistencyevidence/ConsistencyEvidenceOverviewQueryService.java",
+      "sha256": "bc24f00d3b0ae1ae9e11a51bc8cbd6b0e3a749a66b4623137f35e477917a3f49"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/validationoperations/runtimeevidence/ValidationOperationsRuntimeEvidenceOverviewQueryService.java",
+      "sha256": "06a6cbae0ab6010726ff0312fd5cfaae2bd3b154370e99ad9674b9252f2058e3"
+    },
+    {
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/validationevidence/ValidationEvidenceRefreshService.java",
+      "sha256": "5edbf0be9b4cf8b831fe6bddfbdc14989f32ade94425ec69b7e1f54563884c4f"
+    },
+    {
+      "path": "backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/validationevidence/ValidationEvidenceSchedulerProperties.java",
+      "sha256": "580853650f4f1ca22cdb49f89febd1877c95c2efe23971d7a84b015ecdf7bd70"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerService.java",
+      "sha256": "95f2e1b2e42f67b872833669d90e26a20072de7fc037e5fd5ff0b9ef7dfd8a36"
+    },
+    {
+      "path": "docs/gates/gate-t/source/GATET_2_CONSISTENCY_EVIDENCE_REFINEMENT_WO.md",
+      "sha256": "04546b4dd9c40f6adb073970b2897c29ab8dbbf8863f50c47743d9aea1352ee7"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_oracle.py",
+      "sha256": "6e2268f10af60e9bc7bdb6f86f4249fc64c4329edae288301a66c7b27b50fa84"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5BoundedWorkloadTest.java",
+      "sha256": "76f7906c09a6b7dc0e6daa5a49cbfeba3c7aaa3b815cbd26617063d032107d8f"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0NqProcessMain.java",
+      "sha256": "0a6327e251c7d80d6965e7832e6d5b8c19987615ad963ff81e47db21ce0e5d58"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0Processes.java",
+      "sha256": "8ba21351ec6ad11c9b1df15b4b81a9e408c68ea37a93560e191015b33ba822e6"
+    },
+    {
+      "path": "scripts/ci/delivery-supply-chain-lock.json",
+      "sha256": "ddf318fd46c7d4b53d95b2b9109a56e322f80ff611ef25abd9aa5b6f66c1509d"
+    }
+  ],
+  "selfReview": "PASS / scoped owner delta, immutable timestamps, no allowlist widening, final candidate hashes match tests",
+  "P0Confirmed": 0,
+  "P1Confirmed": 0,
+  "P2": "Existing ordinary concurrent INSERT loser OPEN / NON_BLOCKING; no reassessment",
+  "P3": "Existing wildcard-import residual OPEN / NON_BLOCKING; no reassessment",
+  "L6": "NOT_ACCEPTED",
+  "soak": "NOT_RUN",
+  "fullMaven": "NOT_RUN",
+  "L4L5Qualification": "NOT_RUN",
+  "stage": 0,
+  "commit": "NONE",
+  "push": "NONE",
+  "newCi": "NOT_RUN",
+  "independentReview": "PENDING_INDEPENDENT_REVIEW",
+  "decision": "IMPLEMENTED / SHADOW_RUNS_FRESHNESS_CONTRACT_READY / VALIDATION_UNEXPECTED_DEGRADATION_CLOSED / L6_MANDATORY_MEASUREMENTS_READY / FORMAL_10_40_10_READY / L6_ACTIVE_STABILITY_READINESS_PASS / P0_0 / P1_0 / PENDING_INDEPENDENT_REVIEW / L6_NOT_ACCEPTED / SOAK_NOT_RUN",
+  "nextAction": "NQ-GATEAUDIT-PHASE6-L6-SHADOW-RUNS-FRESHNESS-CORRECTNESS-REVIEW",
+  "reviewScope": [
+    "SHADOW_RUNS freshness semantics",
+    "threshold authority",
+    "Validation aggregate fail-closed behavior",
+    "L6 measurement/readiness interaction"
+  ],
+  "afterReviewPass": "Exact delivery + exact-head CI, then formally authorized L6-A 60min; no extra readiness review"
+}

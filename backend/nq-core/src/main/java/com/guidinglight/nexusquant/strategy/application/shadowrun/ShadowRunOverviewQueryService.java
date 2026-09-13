@@ -16,6 +16,7 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyRe
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRun;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -38,6 +39,10 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class ShadowRunOverviewQueryService {
+
+    // 复用 ShadowValidationWorkflowOverviewQueryService 对同类本地 Shadow 事实的七天窗口；
+    // 该阈值只判断诊断证据新鲜度，不表示运行成功或授予交易权限。
+    private static final Duration STALE_AFTER = Duration.ofDays(7);
 
     private final ShadowRunOverviewQueryPort queryPort;
     private final Clock clock;
@@ -128,7 +133,7 @@ public class ShadowRunOverviewQueryService {
                 "LOCAL_DB_SHADOW_FACTS",
                 availability,
                 lastCalculatedAt,
-                null
+                STALE_AFTER
         );
     }
 

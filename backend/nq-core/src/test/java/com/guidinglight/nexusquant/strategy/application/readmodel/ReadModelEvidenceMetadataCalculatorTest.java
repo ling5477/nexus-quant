@@ -109,6 +109,12 @@ class ReadModelEvidenceMetadataCalculatorTest {
     }
 
     @Test
+    void shouldRejectNegativeThresholdInsteadOfReportingFresh() {
+        assertThrows(IllegalArgumentException.class, () -> CALCULATOR.calculate(
+                "LOCAL_DB_SHADOW_FACTS", Availability.AVAILABLE, NOW, Duration.ofSeconds(-1)));
+    }
+
+    @Test
     void shouldRejectBlankSourceInsteadOfInventingFactOrigin() {
         assertThrows(IllegalArgumentException.class, () -> CALCULATOR.calculate(
                 " ",
