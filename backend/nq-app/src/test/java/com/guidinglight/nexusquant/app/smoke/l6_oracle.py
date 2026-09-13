@@ -10,7 +10,7 @@ def verify(proof):
     calibration = proof.get('mode') == 'CALIBRATION'
     require(set(proof) == ({'facts','venue','expectedStrategyRuns','mode'} if calibration else {'facts','venue','expectedStrategyRuns'}), 'unknown checkpoint schema')
     facts=proof['facts'];expected=proof['expectedStrategyRuns']
-    require(0 < expected <= (600 if calibration else 240), 'L6 finite order budget')
+    require(0 < expected <= (json.loads((Path(__file__).resolve().parents[6] / "resources/l6-calibration/budget.json").read_text(encoding="utf-8"))["runOrderBudget"] if calibration else 240), 'L6 finite order budget')
     orders = unique(facts['orders'], 'order_id')
     trades = unique(facts['trades'], 'trade_id')
     authorities = unique(facts['ordinary_place_authorities'], 'order_id')

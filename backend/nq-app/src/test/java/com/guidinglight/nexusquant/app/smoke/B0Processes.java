@@ -179,7 +179,7 @@ final class B0Processes {
             }
             Path argfile = directory.resolve(label + ".args");
             Files.writeString(argfile, ((main == L6NqProcessMain.class || main == L5NqProcessMain.class || main == L5FaultNqProcessMain.class || main == L5KillNqProcessMain.class) ? "-Xmx512m\n"
-                    : main == L5VenueProcessMain.class || main == L5ProjectionProcessMain.class ? "-Xmx256m\n" : "")
+                    : main == L5VenueProcessMain.class || main == L6CalibrationVenueProcessMain.class || main == L6FormalVenueProcessMain.class || main == L5ProjectionProcessMain.class ? "-Xmx256m\n" : "")
                     + "-Dfile.encoding=UTF-8\n-Dstdout.encoding=UTF-8\n-Dstderr.encoding=UTF-8\n"
                     + "-Duser.language=en\n-Duser.country=US\n-cp\n\"" + classpath.replace("\\", "\\\\").replace("\"", "\\\"")
                     + "\"\n" + main.getName() + "\n");

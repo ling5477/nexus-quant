@@ -1,0 +1,373 @@
+{
+  "task": "NQ-GATEAUDIT-PHASE6-L6-SCOPED-VENUE-CAPACITY-CONTRACT",
+  "decision": "LOCAL_PASS / PENDING_NEW_EXACT_HEAD_CI",
+  "baselineHead": "3f2671bf9e5292d0d0194c0b4f830ae8c2ba8525",
+  "authority": {
+    "L5": 300,
+    "L6": 3000,
+    "source": "User explicit scoped authority clarification; frozen plan unchanged"
+  },
+  "codeManifest": [
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6CalibrationBudget.java",
+      "size": 1659,
+      "sha256": "850433d5d39719c43ad3663e08fe48ef76467dc7b223c8483b04a00b8c162d34"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6CalibrationCapacityTest.java",
+      "size": 6235,
+      "sha256": "06b6c5c88659f1c2006076ac215c12256ed2831a37dc0f571a1495d838cb3a2c"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6CalibrationVenueProcessMain.java",
+      "size": 534,
+      "sha256": "7287064d91dad86da44fbbcaa5401a852b266bda1579f989db9c1e530b926b10"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalVenueProcessMain.java",
+      "size": 546,
+      "sha256": "764ada08c614044777f360f2d00ddacbd0a31f2e9fb6835f2b041b89ab092f76"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/QualificationCapacity.java",
+      "size": 1863,
+      "sha256": "af578f29161840bb7468a5e13180caf218020f7decc74b603cb998b99ea70a00"
+    },
+    {
+      "path": "backend/nq-app/src/test/resources/l6-calibration/budget.json",
+      "size": 125,
+      "sha256": "102c114f9d003581b95fe9159e0fca488a2cdc9d5fd18c715b6a707bdae1e73c"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0Processes.java",
+      "size": 14222,
+      "sha256": "20e3008e97b03f3956e171db6c4b4104707f0a67d7e86a3b41a9fd95efa1acfd"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0SyntheticVenueMain.java",
+      "size": 13603,
+      "sha256": "399750600b157096424819e3ae19ce4b491c2d3ac742a4ccc65bbaea60f87b20"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L5VenueProcessMain.java",
+      "size": 401,
+      "sha256": "01e36489a680d59c260b554d3ee3717e742e8397fc0d8941f489de9f7d9c1db5"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ActiveStabilityTest.java",
+      "size": 15868,
+      "sha256": "c3ebee0ab481902cd9f078deabee16d81b41bd189c4f1a6c04c61913aa3b4594"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6CalibrationEvidence.java",
+      "size": 4889,
+      "sha256": "6ebcbb55d83966e3be4102cc8e2770af06fd10d59ec4552ed2fad06153fae5ed"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6CalibrationTest.java",
+      "size": 13238,
+      "sha256": "907e54608142b020406af39ebf6bbcadf35a2fe8f16ce308a3e2ff2b92bd4c04"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_oracle.py",
+      "size": 7375,
+      "sha256": "5c18a7df915353a62403ddd3fb07bec64dbeb6c7dad432e46a3780886dca418b"
+    }
+  ],
+  "derivation": {
+    "runOrderBudget": 600,
+    "warmupSeconds": 300,
+    "measurementSeconds": 600,
+    "cadenceSeconds": 5,
+    "actors": 2,
+    "schedules": 2,
+    "warmupMaximumScanWaves": 60,
+    "measurementMaximumScanWaves": 120,
+    "maximumNewIdentitiesPerWave": 4,
+    "unconstrainedScanIdentityUpperBound": 720,
+    "producerLifecycleBound": 600,
+    "maximumPossibleDistinctOrdersForRun": 600,
+    "venueLogicalOrderCapacity": 600,
+    "globalStageSafetyCap": 3000,
+    "headroom": 0,
+    "formula": "min(runOrderBudget, (ceil(warmup/cadence)+ceil(measurement/cadence))*actors*schedules)",
+    "replayRecoveryAdditionalDistinctIdentities": 0,
+    "cleanupAdditionalDistinctIdentities": 0,
+    "smoke": "Same formal envelope and factory; shortened execution only"
+  },
+  "tests": {
+    "javaTargeted": 20,
+    "nestedPython": 3,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "realVenueBoundary": "L5 accepts300/rejects301; explicit L6 accepts301; same replay identity/request counters/fill identity/queue16",
+    "negatives": [
+      "L5 301",
+      "L6 3001",
+      "capacity599 for budget600",
+      "unknown/null mode",
+      "capacity>budget cannot extend producer"
+    ]
+  },
+  "smoke": {
+    "runId": "d5950cb5-e216-4636-9347-6bb681a98caa",
+    "mode": "L6_CALIBRATION",
+    "result": "CALIBRATION_SMOKE_MEASURED",
+    "preflight": "PASS",
+    "capacity": 600,
+    "fullChains": 20,
+    "ledger": 80,
+    "checkpointCount": 11,
+    "sampleCount": 5,
+    "mandatoryMissing": 0,
+    "samplingViolations": 0,
+    "backlogFinal": 0,
+    "oldestCandidateAge": "NONE",
+    "ownedSurvivors": 0,
+    "cleanup": "PASS",
+    "oracle": {
+      "orders": 20,
+      "trades": 20,
+      "ledger": 80,
+      "position": "2",
+      "duplicates": 0,
+      "orphans": 0
+    },
+    "formalCalibrationAccepted": false
+  },
+  "productionDelta": 0,
+  "configDelta": 0,
+  "review": "SELF_REVIEWED / NO_INDEPENDENT_REVIEW",
+  "historicalBlockers": "PRESERVED; failed 3408f2f2-b017-4239-b005-a721a278bb54 remains BLOCKED",
+  "severity": {
+    "P0": 0,
+    "P1": 0,
+    "historicalP2P3": "PRESERVED"
+  },
+  "formalCalibration": "NOT_RUN_THIS_TASK / NOT_ACCEPTED",
+  "l6Accepted": false,
+  "rawArtifacts": [
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/calibration-analysis.json",
+      "size": 102663,
+      "sha256": "97e7ecfa217a168cc6d77aeed34d63cdeab8172a1ee2d5634416dd25642153c6"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/calibration-run.json",
+      "size": 121743,
+      "sha256": "200447ec37ec21d39a58aed4ffac4c00d484c37340d679c0a5292e48c38465b5"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/checkpoint-001.json",
+      "size": 14992,
+      "sha256": "2ed45683b88d5badabcffce04838ee6dfa191ee2be62555efcac95ea60ff7fa9"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/checkpoint-002.json",
+      "size": 30234,
+      "sha256": "a9d88a46187a3c1e5a27ad5a7f88bcdb75a99d421e4e4f8c45f81d8dae254e85"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/checkpoint-003.json",
+      "size": 46356,
+      "sha256": "4a3b9c7091931ccc83cc7964d2e0651d7fa557684609accd2929600de78f3d85"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/checkpoint-004.json",
+      "size": 63382,
+      "sha256": "a29791d70d4ede91f244d7df3b17fbca46b9281171fec8d6a280e367bb8019fc"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/checkpoint-005.json",
+      "size": 81323,
+      "sha256": "2ca5174415de7ee3f48a5a79dc74e37237fd40bfe89291396f5969d5f2c7d1a1"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/checkpoint-006.json",
+      "size": 100181,
+      "sha256": "9903de6bb88587ef5c177a2fa4672dde74d6c270b1f0074e28199af26b408905"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/checkpoint-007.json",
+      "size": 119934,
+      "sha256": "445838f2c628de5ad44fca5ebbb6619cf0a820467a8e49e8b7a4754a5dfb6905"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/checkpoint-008.json",
+      "size": 140558,
+      "sha256": "03b1262130b6726742a7c0e9720b6a8558575554f2004ee35930be51e140eaf7"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/checkpoint-009.json",
+      "size": 162106,
+      "sha256": "b2aae504976cc4cb73a2110979106a7132f8a1138978cf4c875f284f5d9de395"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/checkpoint-010.json",
+      "size": 184547,
+      "sha256": "122553e5ec52151c338bbfab02bebe48b0822aa7ef374b3d3192b3488859ced6"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/checkpoint-011.json",
+      "size": 184547,
+      "sha256": "9c05ae84c4d08b7996194f7176cf90bfe8ec9713d228daa9be145d0cc9ccd1ca"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/checkpoints.ndjson",
+      "size": 14139,
+      "sha256": "49c9a116b9fbe25aee29db02e087e3007a253c6add2c8667302e2893f6168155"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/l6-metrics-18352.endpoint",
+      "size": 21,
+      "sha256": "c5df2a8311f0da37ce95777eaa90937901fc77b1da1a2777beb7e3576cbea18b"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/l6-metrics-26608.endpoint",
+      "size": 21,
+      "sha256": "979fde1c8e6a0ab8c2b340c4b3ed782ae8dea10c78ceafffdd48c7440c95aec0"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/l6-validation-18352.ndjson",
+      "size": 2633,
+      "sha256": "efc616876582c8a2199bfcc293bb928104ee969a493fb8166ba7e67040dd4596"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/l6-validation-26608.ndjson",
+      "size": 2633,
+      "sha256": "fe6aac54b59a07978090db11006b267d66bb390ebe28d25893d3d051e6d8d9c0"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/nq-0.args",
+      "size": 13034,
+      "sha256": "d1e246e86eda9833bc4a6f2de572d123418e64db4deaf6e06cdffe06d04bd73a"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/nq-0.log",
+      "size": 17987,
+      "sha256": "ab6de5e4d411302088e712933ad0bbafb3dfd0d15b4c3d3aca288b3085ae200d"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/nq-1.args",
+      "size": 13034,
+      "sha256": "d1e246e86eda9833bc4a6f2de572d123418e64db4deaf6e06cdffe06d04bd73a"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/nq-1.log",
+      "size": 16024,
+      "sha256": "c5d9bca4013e11a017bb9393556bbc3f82368d46c5bcf213145303f032c56a5f"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/parameters.json",
+      "size": 906,
+      "sha256": "4f5b198eda46e9af7180ecebf665f952fafa66ef9e0ad60dbd935bf823170ae7"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/progress.ndjson",
+      "size": 19028,
+      "sha256": "b8d2a27ae3e3cd790ab0d352eb766192bc201e6408b7a8bb240cdceada0b9ee5"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/resource-samples.ndjson",
+      "size": 57853,
+      "sha256": "41897abc1a28e763f450d35312bcadbffae87d47bad3b8e8f161efec0ebd56c0"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/resource-summary.json",
+      "size": 96848,
+      "sha256": "2085c0a2f55abc9ed46bab48ed1807adf54df08ccb230ed93dafc7fec1a812aa"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/venue.args",
+      "size": 13048,
+      "sha256": "db1366f7cdb772e198f4f0f908589ca8ec28b4d1f5731005e8dab513fb2748ef"
+    },
+    {
+      "path": "backend/nq-app/target/l6-calibration/d5950cb5-e216-4636-9347-6bb681a98caa/venue.log",
+      "size": 16,
+      "sha256": "60f244b4a42ff6f299fb7e34c962ebf1c546cac1fe9361c9d58d5f1651158b2a"
+    },
+    {
+      "path": "backend/nq-app/target/l6-scoped-capacity/before-smoke.json",
+      "size": 800701,
+      "sha256": "4b9eb75160f3ca08ef6239deec4a526150491ef878b4f2a8a10340611658e172"
+    },
+    {
+      "path": "backend/nq-app/target/l6-scoped-capacity/code-paths.json",
+      "size": 1251,
+      "sha256": "5a269cbaf85a7a437ae582185161e51296f024ba7a5c89d931bd5351eec78def"
+    },
+    {
+      "path": "backend/nq-app/target/l6-scoped-capacity/inputs.json",
+      "size": 799503,
+      "sha256": "4f0637f1a9386c7c0efc4e4fe42d68efd79dd75d0ca57dd77848a80c439ccc56"
+    },
+    {
+      "path": "backend/nq-app/target/l6-scoped-capacity/smoke.log",
+      "size": 42193,
+      "sha256": "bbe6807a13105e27f0581a310acb42fff7450cccd4c51da039457d3003165777"
+    },
+    {
+      "path": "backend/nq-app/target/l6-scoped-capacity/smoke.xml",
+      "size": 42629,
+      "sha256": "435da69ef8e4497bd152171bc19707b23b10f46c5aa7d1391c29d0d249cd9a9f"
+    },
+    {
+      "path": "backend/nq-app/target/l6-scoped-capacity/TEST-com.guidinglight.nexusquant.app.smoke.L6ActiveStabilityTest.xml",
+      "size": 42107,
+      "sha256": "368be3e41559ee23ffd667ac9de5bfccb3702b0718eccf60dac07b38fa873b6c"
+    },
+    {
+      "path": "backend/nq-app/target/l6-scoped-capacity/TEST-com.guidinglight.nexusquant.app.smoke.L6CalibrationCapacityTest.xml",
+      "size": 32506,
+      "sha256": "9469c86b02355945fc3267b1766f5551c53836e1b2ec0095a9c1275c590d1204"
+    },
+    {
+      "path": "backend/nq-app/target/l6-scoped-capacity/TEST-com.guidinglight.nexusquant.app.smoke.L6CalibrationContractTest.xml",
+      "size": 32253,
+      "sha256": "4e879c90bdcefd88ce6ccfe5e3036706d18bbc39b162a69ed899a87a70d752e4"
+    },
+    {
+      "path": "backend/nq-app/target/l6-scoped-capacity/TEST-com.guidinglight.nexusquant.app.smoke.L6CalibrationTest.xml",
+      "size": 51514,
+      "sha256": "47e896152af982d93b21e2ce6e20873891b8ef1a4391c63eb1683572b79445d3"
+    },
+    {
+      "path": "backend/nq-app/target/l6-scoped-capacity/TEST-com.guidinglight.nexusquant.app.smoke.L6ConvergenceBoundaryProcessTest.xml",
+      "size": 31975,
+      "sha256": "514262efe8e1abd7bc7dff93500569219143d5ae31999ecd91df6d610f0db393"
+    },
+    {
+      "path": "backend/nq-app/target/l6-scoped-capacity/TEST-com.guidinglight.nexusquant.app.smoke.L6ConvergenceProcessTest.xml",
+      "size": 31962,
+      "sha256": "2c84222a26c2591379ef1bb43db742ff614544892d9d3bf5b8c4b3996bf5046b"
+    },
+    {
+      "path": "backend/nq-app/target/l6-scoped-capacity/TEST-com.guidinglight.nexusquant.app.smoke.L6MeasurementPostgresTest.xml",
+      "size": 32842,
+      "sha256": "3cb90229450f88ddc4c4bb5b2e56b80046c3f7c749709388dae7b310d0eda209"
+    },
+    {
+      "path": "backend/nq-app/target/l6-scoped-capacity/TEST-com.guidinglight.nexusquant.app.smoke.L6ProcessOutputTest.xml",
+      "size": 31800,
+      "sha256": "b76c25ccb016254d5572c35c9984d691b3599533205512b66aefd4dbf0b7be12"
+    },
+    {
+      "path": "backend/nq-app/target/l6-scoped-capacity/TEST-com.guidinglight.nexusquant.app.smoke.L6ReadinessContractTest.xml",
+      "size": 32222,
+      "sha256": "6a7a06e9fa8c6329e45a711ef5ccbf09b9afc3ac4c3fa06970fea4763ab648f8"
+    },
+    {
+      "path": "backend/nq-app/target/l6-scoped-capacity/TEST-com.guidinglight.nexusquant.app.smoke.L6ResourceSamplerTest.xml",
+      "size": 32419,
+      "sha256": "34d0d62035e4e75f3fd48d81b80c177844806e471ad82181f57242727568a5e9"
+    },
+    {
+      "path": "backend/nq-app/target/l6-scoped-capacity/tests.log",
+      "size": 32336,
+      "sha256": "548fadb2b71db2df85f79eff06240aa74a5f0f433b131de61d11c518771cb9ad"
+    }
+  ],
+  "nextAction": "Exact commit/push and new 9/9 CI, then separate NQ-GATEAUDIT-PHASE6-L6-15MIN-NO-FAULT-CALIBRATION"
+}

@@ -29,6 +29,8 @@ import java.util.concurrent.RejectedExecutionException;
 /** 独立 venue-owned 内存事实；不链接 NQ DB，不实现任何本地 Order/Trade/Ledger 状态机。 */
 public final class B0SyntheticVenueMain {
     static boolean boundedWorkload;
+    static final int DEFAULT_ORDER_CAPACITY = 300;
+    static int boundedOrderCapacity = DEFAULT_ORDER_CAPACITY;
     private ThreadPoolExecutor boundedExecutor;
     private final AtomicInteger rejectedTasks = new AtomicInteger();
     private final ObjectMapper mapper = new ObjectMapper();
@@ -137,7 +139,7 @@ public final class B0SyntheticVenueMain {
             JsonNode request = mapper.readTree(body);
             String client = request.path("clOrdId").asText();
             if (client.isBlank()) { respond(exchange, 400, envelope); return; }
-            if (boundedWorkload && !orders.containsKey(client) && orders.size() >= 300) {
+            if (boundedWorkload && !orders.containsKey(client) && orders.size() >= boundedOrderCapacity) {
                 respond(exchange, 429, mapper.createObjectNode().put("error", "L5_ORDER_BUDGET")); return;
             }
             placeCalls++;

@@ -46,6 +46,10 @@ class L6ActiveStabilityTest {
     private final ObjectNode proof = JSON.createObjectNode();
 
     @Test void activeSoak() throws Exception {
+        QualificationCapacity.formal().start(this::executeSoak);
+    }
+
+    private void executeSoak() throws Exception {
         dir = B0Processes.root().resolve("backend/nq-app/target/l6-active/" + UUID.randomUUID());
         Files.createDirectories(dir);
         System.out.println("L6_ROOT " + dir);
@@ -54,12 +58,15 @@ class L6ActiveStabilityTest {
                 .put("drainRequiredSeconds", TimeUnit.NANOSECONDS.toSeconds(duration.drainNanos()))
                 .put("totalRequiredSeconds", TimeUnit.NANOSECONDS.toSeconds(duration.total()))
                 .put("checkpointSeconds", 30).put("resourceSampleSeconds", 10).put("drainDeadlineSeconds", 120)
-                .put("orderBudget", 240).put("workingSetBudget", 240).put("controllerPid", ProcessHandle.current().pid());
+                .put("qualificationMode", "L6_FORMAL").put("capacityPreflight", "PASS")
+                .put("venueLogicalOrderCapacity", QualificationCapacity.formal().venueLogicalOrderCapacity())
+                .put("globalStageSafetyCap", QualificationCapacity.formal().globalStageSafetyCap())
+                .put("orderBudget", QualificationCapacity.formal().runOrderBudget()).put("workingSetBudget", 240).put("controllerPid", ProcessHandle.current().pid());
         Files.writeString(dir.resolve("parameters.json"), JSON.writerWithDefaultPrettyPrinter().writeValueAsString(proof));
         int pgPort=0, venuePort=0; long venuePid=0; String container=null;
         try {
             try (var pg = B0Processes.Pg.startBounded(); var fixture = B0Fixture.create(pg);
-                 var venue = new B0Processes.Child(L5VenueProcessMain.class, dir, "venue", B0Processes.cleanEnvironment())) {
+                 var venue = new B0Processes.Child(L6FormalVenueProcessMain.class, dir, "venue", B0Processes.cleanEnvironment())) {
                 container=pg.ownedContainerId(); pgPort=URI.create(pg.ownedUrl().substring(5)).getPort();
                 venuePid=venue.process.pid(); venuePort=Integer.parseInt(venue.ready());
                 String endpoint="http://127.0.0.1:"+venuePort;
@@ -135,7 +142,9 @@ class L6ActiveStabilityTest {
         while(System.nanoTime()<until) {
             resourceSampler.checkHealthy();
             long tick=System.nanoTime();
-            if(produce) { for(var c:children)c.startCommand("L6_SCAN");for(var c:children)c.result(); }
+            if(produce) {
+                QualificationCapacity.formal().reserve(number(reader,"SELECT count(*) FROM orders"), 4); reader.commit();
+                for(var c:children)c.startCommand("L6_SCAN");for(var c:children)c.result(); }
             ObjectNode before = JSON.createObjectNode().put("phase", phase).put("point", "BEFORE_FILL");
             var ages = before.putArray("actors");
             for (var c : children) {

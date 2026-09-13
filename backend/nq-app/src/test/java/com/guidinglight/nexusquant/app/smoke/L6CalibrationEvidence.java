@@ -18,9 +18,9 @@ final class L6CalibrationEvidence {
     private int rising;
 
     void admit(List<String> ids, long elapsed) {
-        if (elapsed < 0 || ids.size() > 600) throw new IllegalArgumentException("admission bounds");
+        if (elapsed < 0 || ids.size() > L6CalibrationBudget.ORDER_BUDGET) throw new IllegalArgumentException("admission bounds");
         ids.forEach(id -> admitted.putIfAbsent(id, elapsed));
-        if (admitted.size() > 600) throw new IllegalStateException("CALIBRATION_ORDER_BUDGET");
+        if (admitted.size() > L6CalibrationBudget.ORDER_BUDGET) throw new IllegalStateException("CALIBRATION_ORDER_BUDGET");
     }
 
     void complete(List<String> ids, long elapsed) {
@@ -39,7 +39,7 @@ final class L6CalibrationEvidence {
     }
 
     void backlog(long value) {
-        if (value < 0 || value > 600) throw new IllegalStateException("CALIBRATION_BACKLOG_BOUND");
+        if (value < 0 || value > L6CalibrationBudget.ORDER_BUDGET) throw new IllegalStateException("CALIBRATION_BACKLOG_BOUND");
         rising = value > lastBacklog ? rising + 1 : 0;
         lastBacklog = value;
         if (rising >= 3) throw new IllegalStateException("CALIBRATION_BACKLOG_RUNAWAY");

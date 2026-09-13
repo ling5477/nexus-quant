@@ -36,6 +36,10 @@ class L6CalibrationTest {
     private L6ResourceSampler sampler;
 
     @Test void calibration() throws Exception {
+        L6CalibrationBudget.frozen().start(this::executeCalibration);
+    }
+
+    private void executeCalibration() throws Exception {
         assertTrue(System.getProperty("nq.l5.fault", "NONE").equals("NONE"));
         assertTrue(!Boolean.getBoolean("nq.l6") && !Boolean.getBoolean("nq.l5.kill"));
         dir = B0Processes.root().resolve("backend/nq-app/target/l6-calibration/" + UUID.randomUUID());
@@ -49,7 +53,12 @@ class L6CalibrationTest {
                 .put("measurementRequiredSeconds", TimeUnit.NANOSECONDS.toSeconds(contract.measurement()))
                 .put("samplerImplementation", L6ResourceSampler.class.getName())
                 .put("collectorImplementation", L6RuntimeResources.class.getName())
-                .put("orderBudget", 600).put("producerCadenceSeconds", 5).put("strategies", 2)
+                .put("orderBudget", L6CalibrationBudget.ORDER_BUDGET)
+                .put("venueLogicalOrderCapacity", L6CalibrationBudget.frozen().venueLogicalOrderCapacity())
+                .put("globalStageSafetyCap", L6CalibrationBudget.frozen().globalStageSafetyCap()).put("capacityPreflight", "PASS")
+                .put("qualificationMode", "L6_CALIBRATION").put("capacityHeadroom", 0)
+                .put("maximumPossibleDistinctOrdersForRun", L6CalibrationBudget.frozen().maximumPossibleDistinctOrdersForRun())
+                .put("producerCadenceSeconds", L6CalibrationBudget.CADENCE_SECONDS).put("strategies", L6CalibrationBudget.SCHEDULES)
                 .put("offeredPattern", "two legitimate strategy windows per five seconds; bounded input, not final L6 rate")
                 .put("controllerPid", ProcessHandle.current().pid()).put("formalCalibrationAccepted", false)
                 .put("L6Accepted", false).put("faults", 0).put("restarts", 0);
@@ -57,7 +66,7 @@ class L6CalibrationTest {
         int pgPort = 0, venuePort = 0; long venuePid = 0; String container = null;
         try {
             try (var pg = B0Processes.Pg.startBounded(); var fixture = B0Fixture.create(pg);
-                 var venue = new B0Processes.Child(L5VenueProcessMain.class, dir, "venue", B0Processes.cleanEnvironment())) {
+                 var venue = new B0Processes.Child(L6CalibrationVenueProcessMain.class, dir, "venue", B0Processes.cleanEnvironment())) {
                 container = pg.ownedContainerId(); pgPort = URI.create(pg.ownedUrl().substring(5)).getPort();
                 venuePid = venue.process.pid(); venuePort = Integer.parseInt(venue.ready());
                 String endpoint = "http://127.0.0.1:" + venuePort;
@@ -66,7 +75,7 @@ class L6CalibrationTest {
                 fixture.initialize(true, endpoint, env); L6ActiveStabilityTest.seed(fixture, true);
                 proof.put("database", fixture.name()).put("container", container).put("venuePid", venuePid);
                 try {
-                    for (int i = 0; i < 2; i++) actors.add(new B0Processes.Child(L6NqProcessMain.class, dir, "nq-" + i, env).awaitReady());
+                    for (int i = 0; i < L6CalibrationBudget.ACTORS; i++) actors.add(new B0Processes.Child(L6NqProcessMain.class, dir, "nq-" + i, env).awaitReady());
                     proof.set("paper", JSON.readTree(actors.getFirst().send("L6_PAPER")));
                     http(endpoint, "L5_OPEN");
                     try (var reader = fixture.checker(); var resourceReader = fixture.checker();
@@ -132,6 +141,7 @@ class L6CalibrationTest {
             boolean pressure = before.path("actionable").asLong() > 0;
             long pauseStart = elapsed();
             if (!pressure) {
+                L6CalibrationBudget.frozen().reserve(before.path("orders").asLong(), L6CalibrationBudget.ACTORS * L6CalibrationBudget.SCHEDULES);
                 for (var actor : actors) actor.startCommand("L6_SCAN");
                 for (var actor : actors) actor.result();
             }
@@ -155,7 +165,7 @@ class L6CalibrationTest {
                     .put("producerBackpressured", pressure).put("sampledAt", Instant.now().toString());
             point.set("admittedOrderIds", JSON.valueToTree(admitted));
             Files.writeString(dir.resolve("progress.ndjson"), JSON.writeValueAsString(point) + "\n", StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-            long wait = Math.min(started + endNanos, tick + TimeUnit.SECONDS.toNanos(5)) - System.nanoTime();
+            long wait = Math.min(started + endNanos, tick + TimeUnit.SECONDS.toNanos(L6CalibrationBudget.CADENCE_SECONDS)) - System.nanoTime();
             if (wait > 0) TimeUnit.NANOSECONDS.sleep(wait);
         }
         proof.withArray("phases").addObject().put("phase", phase).put("startElapsedMillis", phaseStart)
