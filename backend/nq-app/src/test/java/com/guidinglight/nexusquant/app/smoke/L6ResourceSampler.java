@@ -36,7 +36,7 @@ final class L6ResourceSampler implements AutoCloseable {
     private final LongSupplier nanoTime;
     private final Supplier<Instant> wallTime;
     private final long startedNanos;
-    private final L6DurationContract duration;
+    private final L6SamplingSchedule duration;
     private final String identity = UUID.randomUUID().toString();
     private final Path output;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
@@ -49,7 +49,7 @@ final class L6ResourceSampler implements AutoCloseable {
 
     L6ResourceSampler(Map<String, Collector> collectors, Map<String, java.util.Set<String>> required,
                       LongSupplier nanoTime, Supplier<Instant> wallTime, long startedNanos,
-                      L6DurationContract duration, Path output) {
+                      L6SamplingSchedule duration, Path output) {
         if (collectors.isEmpty() || !collectors.keySet().equals(required.keySet())) {
             throw new IllegalArgumentException("mandatory collector topology");
         }
@@ -78,7 +78,7 @@ final class L6ResourceSampler implements AutoCloseable {
         long elapsed = TimeUnit.NANOSECONDS.toMillis(begin - startedNanos);
         long lag = elapsed - index * INTERVAL_MILLIS;
         Stamp stamp = new Stamp(index, wallTime.get().toString(), elapsed,
-                duration.phase(begin - startedNanos).name(), identity + ":" + index);
+                duration.samplePhase(begin - startedNanos), identity + ":" + index);
         ObjectNode record = stamp.json().put("scheduledElapsedMillis", index * INTERVAL_MILLIS);
         ObjectNode sources = record.putObject("sources");
         try {

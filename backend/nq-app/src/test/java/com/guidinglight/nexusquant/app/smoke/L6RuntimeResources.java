@@ -20,7 +20,7 @@ import static com.guidinglight.nexusquant.app.smoke.L5BoundedWorkloadTest.number
 /** 所有collector只读取本轮持有的连接、PID、容器和目录；不扫描其他任务资源。 */
 final class L6RuntimeResources implements AutoCloseable {
     private static final ObjectMapper JSON = new ObjectMapper();
-    static final Set<String> ACTOR_FIELDS = Set.of("heapUsed", "heapCommitted", "heapMax", "gc", "threads", "peakThreads",
+    static final Set<String> ACTOR_FIELDS = Set.of("jvmUptimeMillis", "heapUsed", "heapCommitted", "heapMax", "gc", "threads", "peakThreads",
             "commandQueue", "metricsExecutor", "active", "idle", "pending", "poolMax", "acquisitionTimeoutCount",
             "acquisitionTimeoutDelta", "tickStarted", "tickCompleted", "tickFailed", "observations", "candidateAge");
     private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(1)).build();
@@ -75,7 +75,7 @@ final class L6RuntimeResources implements AutoCloseable {
             return measured(stamp, value, required.get("venue"));
         });
         add("postgres", Set.of("appConnections", "databaseConnections", "idleInTransaction", "backlog", "actionable",
-                "auditRows", "eventRows", "transactions", "cursor"), stamp -> {
+                "auditRows", "eventRows", "transactions", "cursor", "orders"), stamp -> {
             ObjectNode value = L5BoundedWorkloadTest.sample(reader);
             value.put("databaseConnections", number(reader, "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database()"));
             value.put("idleInTransaction", number(reader, "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND state LIKE 'idle in transaction%'"));
@@ -99,6 +99,11 @@ final class L6RuntimeResources implements AutoCloseable {
             value.set("pidGenerations", JSON.valueToTree(generations));
             return measured(stamp, value, required.get("ownership"));
         });
+    }
+
+    L6ResourceSampler sampler(L6SamplingSchedule schedule, long startedNanos, Path output) {
+        return new L6ResourceSampler(collectors(), required(), System::nanoTime, java.time.Instant::now,
+                startedNanos, schedule, output);
     }
 
     Map<String, L6ResourceSampler.Collector> collectors() { return collectors; }

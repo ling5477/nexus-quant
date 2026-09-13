@@ -113,6 +113,7 @@ final class L6QualificationControls implements AutoCloseable {
         var heap = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
         var threads = ManagementFactory.getThreadMXBean();
         ObjectNode n = json.createObjectNode().put("timeMillis", System.currentTimeMillis())
+                .put("jvmUptimeMillis", ManagementFactory.getRuntimeMXBean().getUptime())
                 .put("pid", ProcessHandle.current().pid()).put("heapUsed", heap.getUsed())
                 .put("heapCommitted", heap.getCommitted()).put("heapMax", heap.getMax())
                 .put("threads", threads.getThreadCount()).put("peakThreads", threads.getPeakThreadCount())
@@ -126,9 +127,7 @@ final class L6QualificationControls implements AutoCloseable {
                 .put("acquisitionTimeoutCount", acquisitionTimeout.count()).put("counterStart", timeoutStart)
                 .put("counterEnd", acquisitionTimeout.count()).put("acquisitionTimeoutDelta", acquisitionTimeout.count() - timeoutStart);
         if (acquisitionTimeout.count() != timeoutStart) throw new IllegalStateException("UNEXPECTED_HIKARI_ACQUISITION_TIMEOUT");
-        var gc = n.putArray("gc");
-        ManagementFactory.getGarbageCollectorMXBeans().forEach(b -> gc.addObject().put("name", b.getName())
-                .put("count", b.getCollectionCount()).put("timeMillis", b.getCollectionTime()));
+        n.set("gc", L6GcEvidence.read());
         n.set("observations", json.valueToTree(context.getBean(MicrometerOperationalObservation.class).snapshot()));
         var observed = n.path("observations").path("validation_refresh").path("totals");
         if (observed.path("FAILURE").asLong() != 0) throw new IllegalStateException("VALIDATION_SCHEDULER_EXECUTION_FAILED");

@@ -78,8 +78,7 @@ class L6ActiveStabilityTest {
                         try (var resourceReader = fixture.checker();
                              var runtimeResources = new L6RuntimeResources(resourceReader, dir, children, venue, endpoint, container)) {
                             startedNanos=System.nanoTime();
-                            resourceSampler = new L6ResourceSampler(runtimeResources.collectors(), runtimeResources.required(),
-                                    System::nanoTime, java.time.Instant::now, startedNanos, duration, dir.resolve("resources.ndjson"));
+                            resourceSampler = runtimeResources.sampler(duration, startedNanos, dir.resolve("resources.ndjson"));
                             try (var sampling = resourceSampler) {
                                 sampling.start();
                                 long warmStart=startedNanos;
@@ -169,60 +168,26 @@ class L6ActiveStabilityTest {
     }
 
     private ObjectNode checkpoint(Connection reader,String endpoint,B0Processes.Child venue,String phase) throws Exception {
-        // 真实完成后才用完整源账务重建；短暂在途状态不能被误报成投影损坏。
-        long deadline=System.nanoTime()+Duration.ofSeconds(120).toNanos();
-        while(true) {
-            long busy=number(reader,"SELECT count(*) FROM strategy_runs WHERE status<>'SUCCEEDED'");
-            ObjectNode sample=sample(reader);reader.commit();
-            if(busy==0 && sample.path("backlog").asInt()==0)break;
-            if(System.nanoTime()>deadline)throw new AssertionError("L6 work failed bounded convergence");
-            http(endpoint,"FILL");
-            for(var c:children)c.send("L6_RECONCILE");Thread.sleep(500);
-        }
-        ObjectNode point=sample(reader);point.put("phase",phase).put("check",++checks);
-        point.put("nonActionable",number(reader,"SELECT count(*) FROM orders WHERE status IN ('FILLED','CANCELLED','RISK_REJECTED')"));
-        point.set("cursor",cursor(reader));
-        point.put("auditRows",number(reader,"SELECT count(*) FROM audit_logs"));
-        point.put("eventRows",number(reader,"SELECT count(*) FROM event_store"));
-        long transitionAudits=number(reader,"SELECT count(*) FROM audit_logs WHERE action='ORDER_STATUS_TRANSITION'");
-        long duplicateTransitions=number(reader,"SELECT count(*) FROM (SELECT actor_id,detail_json->>'expected_version',"
-                + "detail_json->>'version' FROM audit_logs WHERE action='ORDER_STATUS_TRANSITION' GROUP BY 1,2,3 HAVING count(*)>1) d");
-        assertEquals(0,duplicateTransitions);
-        assertEquals(0,number(reader,"SELECT count(*) FROM audit_logs WHERE action='ORDER_STATUS_TRANSITION' "
-                + "AND detail_json->>'from'=detail_json->>'to'"));
-        assertEquals(0,number(reader,"SELECT count(*) FROM orders WHERE version<>4 OR status<>'FILLED'"));
-        assertEquals(4*point.path("orders").asLong(),transitionAudits);
-        point.put("transitionAuditRows",transitionAudits).put("duplicateTransitionAudit",duplicateTransitions);
-        point.put("databaseBytes",number(reader,"SELECT pg_database_size(current_database())"));
-        ObjectNode check=JSON.createObjectNode();check.set("facts",facts(reader));
-        check.put("expectedStrategyRuns",number(reader,"SELECT count(*) FROM strategy_runs"));reader.commit();
-        check.set("venue",http(endpoint,null));
-        Path file=dir.resolve(String.format("checkpoint-%03d.json",checks));
-        Files.writeString(file,JSON.writeValueAsString(check));
-        String oracle=B0Processes.command("python","-X","utf8",B0Processes.root().resolve(
-                "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_oracle.py").toString(),file.toString());
-        point.set("oracle",JSON.readTree(oracle));
-        // 重型业务快照不再承担资源采样；独立采样线程使用自己的只读连接和HTTP端点。
-        append("checkpoints.ndjson",point);
-        System.out.println("L6_PROGRESS phase="+phase+" checks="+checks+" orders="+point.path("orders")+" backlog="+point.path("actionable"));
-        System.out.flush();return point;
+        return L6BusinessCheckpoint.verify(reader, endpoint, children, dir, phase, ++checks, false);
     }
 
     private void append(String name,JsonNode value) throws Exception {
         Files.writeString(dir.resolve(name),JSON.writeValueAsString(value)+"\n",StandardOpenOption.CREATE,StandardOpenOption.APPEND);
     }
-    private static void released(int port) throws Exception {
+    static void released(int port) throws Exception {
         try(var socket=new Socket()) { socket.connect(new InetSocketAddress("127.0.0.1",port),500);throw new AssertionError("owned port remains open"); }
         catch(IOException expected) { }
     }
-    private static void seed(B0Fixture fixture) throws Exception {
+    static void seed(B0Fixture fixture) throws Exception { seed(fixture, false); }
+
+    static void seed(B0Fixture fixture, boolean calibration) throws Exception {
         // 所有定义/研究 fixture 在 NQ 启动前初始化；运行期 controller 只拥有 SELECT。
         try(var owner=DriverManager.getConnection(fixture.url(),"postgres","");var s=owner.createStatement()) {
             // 仅owned fixture授权统计可见性，防止其他角色的state被PG隐藏后误记idle-in-transaction=0。
             s.execute("GRANT pg_read_all_stats TO nq_b0_reader");
             for(int index=1;index<=2;index++) {
                 s.execute("INSERT INTO strategy_definitions(strategy_id,strategy_code,strategy_name,strategy_type,exchange_code,account_id,trade_env,enabled,config_snapshot) SELECT 'l6-strategy-"+index+"','l6-strategy-"+index+"','L6 fixture','TEST','OKX',account_id,'SIM',true,'{\"symbol\":\"BTC-USDT\",\"side\":\"BUY\",\"orderType\":\"LIMIT\",\"price\":\"100\",\"quantity\":\"0.1005\"}'::jsonb FROM accounts WHERE account_code='b0-account'");
-                s.execute("INSERT INTO strategy_schedules(schedule_job_id,strategy_id,cron_expr,timezone,enabled,dedup_scope,exchange_code,account_id,trade_env,created_at) SELECT 'l6-schedule-"+index+"','l6-strategy-"+index+"','0 * * * * *','UTC',true,'SCHEDULE_WINDOW','OKX',account_id,'SIM',CURRENT_TIMESTAMP-INTERVAL '60 seconds' FROM accounts WHERE account_code='b0-account'");
+                s.execute("INSERT INTO strategy_schedules(schedule_job_id,strategy_id,cron_expr,timezone,enabled,dedup_scope,exchange_code,account_id,trade_env,created_at) SELECT 'l6-schedule-"+index+"','l6-strategy-"+index+"','"+(calibration ? "*/5 * * * * *" : "0 * * * * *")+"','UTC',true,'SCHEDULE_WINDOW','OKX',account_id,'SIM',CURRENT_TIMESTAMP-INTERVAL '60 seconds' FROM accounts WHERE account_code='b0-account'");
             }
             L6ValidationFixture.seed(owner);
             s.execute("INSERT INTO research_configs(research_config_id,source_strategy_id,name,strategy_snapshot) VALUES('l6-research','l6-strategy-1','L6 Paper fixture','{}')");

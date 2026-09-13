@@ -7,9 +7,10 @@ from l5_measurement import validate_export_input, require, unique
 
 def verify(proof):
     validate_export_input(proof)
-    require(set(proof)=={'facts','venue','expectedStrategyRuns'}, 'unknown checkpoint schema')
+    calibration = proof.get('mode') == 'CALIBRATION'
+    require(set(proof) == ({'facts','venue','expectedStrategyRuns','mode'} if calibration else {'facts','venue','expectedStrategyRuns'}), 'unknown checkpoint schema')
     facts=proof['facts'];expected=proof['expectedStrategyRuns']
-    require(0 < expected <= 240, 'L6 finite order budget')
+    require(0 < expected <= (600 if calibration else 240), 'L6 finite order budget')
     orders = unique(facts['orders'], 'order_id')
     trades = unique(facts['trades'], 'trade_id')
     authorities = unique(facts['ordinary_place_authorities'], 'order_id')

@@ -3,7 +3,7 @@ package com.guidinglight.nexusquant.app.smoke;
 import java.time.Duration;
 
 /** 固定绝对阶段边界；正式模式不读取任何时长覆盖参数。 */
-record L6DurationContract(long warmupNanos, long activeNanos, long drainNanos) {
+record L6DurationContract(long warmupNanos, long activeNanos, long drainNanos) implements L6SamplingSchedule {
     enum Phase { WARMUP, ACTIVE, DRAIN, COMPLETE }
 
     L6DurationContract {
@@ -22,7 +22,9 @@ record L6DurationContract(long warmupNanos, long activeNanos, long drainNanos) {
     }
 
     long activeEnd() { return warmupNanos + activeNanos; }
-    long total() { return activeEnd() + drainNanos; }
+    public long total() { return activeEnd() + drainNanos; }
+
+    public String samplePhase(long elapsedNanos) { return phase(elapsedNanos).name(); }
 
     Phase phase(long elapsedNanos) {
         if (elapsedNanos < 0) throw new IllegalArgumentException("negative elapsed time");
