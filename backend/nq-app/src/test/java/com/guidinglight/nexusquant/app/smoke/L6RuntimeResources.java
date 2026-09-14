@@ -40,6 +40,11 @@ final class L6RuntimeResources implements AutoCloseable {
 
     L6RuntimeResources(Connection reader, Path directory, List<B0Processes.Child> actors,
                        B0Processes.Child venue, String endpoint, String container, boolean formalStorage) throws Exception {
+        this(reader, directory, actors, venue, endpoint, container, formalStorage, false);
+    }
+
+    L6RuntimeResources(Connection reader, Path directory, List<B0Processes.Child> actors,
+                       B0Processes.Child venue, String endpoint, String container, boolean formalStorage, boolean storageCalibration) throws Exception {
         this.reader = reader;
         this.directory = directory.toAbsolutePath().normalize();
         this.container = container;
@@ -83,7 +88,13 @@ final class L6RuntimeResources implements AutoCloseable {
                 "auditRows", "eventRows", "transactions", "cursor", "orders"));
         // 仅正式入口增加存储必测项；L5、readiness 与已接受 calibration 合同保持原样。
         if (formalStorage) postgresFields.addAll(L6PgStorageObservation.FIELDS);
+        if (storageCalibration) postgresFields.addAll(Set.of("terminalOrders", "fills", "trades", "TradeExecuted", "ledgerEntries", "fullChainCompleted", "fullChainOrderIds", "databaseBytes", "walBytes"));
         add("postgres", Set.copyOf(postgresFields), stamp -> {
+            if (storageCalibration) {
+                reader.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
+                reader.setAutoCommit(false);
+            }
+            try {
             ObjectNode value = L5BoundedWorkloadTest.sample(reader);
             value.put("databaseConnections", number(reader, "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database()"));
             value.put("idleInTransaction", number(reader, "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND state LIKE 'idle in transaction%'"));
@@ -91,8 +102,20 @@ final class L6RuntimeResources implements AutoCloseable {
             value.put("eventRows", number(reader, "SELECT count(*) FROM event_store"));
             value.set("cursor", L5BoundedWorkloadTest.cursor(reader));
             if (formalStorage) value.setAll(L6PgStorageObservation.collect(reader, container, this::command));
+            if (storageCalibration) {
+                var facts = L5BoundedWorkloadTest.facts(reader);
+                var input = JSON.createObjectNode(); input.set("facts", facts);
+                input.set("venue", L5BoundedWorkloadTest.http(endpoint, null));
+                Path raw = directory.resolve("storage-business-" + stamp.sampleIndex() + ".json");
+                Files.writeString(raw, JSON.writeValueAsString(input));
+                value.setAll((ObjectNode) JSON.readTree(command("python", "-X", "utf8",
+                        B0Processes.root().resolve("backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_storage_counter.py").toString(), raw.toString())));
+                value.set("databaseBytes", value.get("pgDatabaseSizeBytes"));
+                value.set("walBytes", value.get("pgWalAllocatedBytes"));
+            }
             if (value.path("transactions").asLong() > 1_000_000) throw new IllegalStateException("L6_TRANSACTION_BUDGET");
             return measured(stamp, value, required.get("postgres"));
+            } finally { if (storageCalibration) { reader.rollback(); reader.setAutoCommit(true); } }
         });
         add("os", Set.of("handles", "fd", "processes"), this::os);
         add("files", Set.of("logBytes", "logDeltaBytes", "ownedTempFileCount", "ownedTempBytes"), this::files);

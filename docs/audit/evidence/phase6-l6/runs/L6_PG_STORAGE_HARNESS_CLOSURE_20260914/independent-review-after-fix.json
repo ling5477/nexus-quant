@@ -1,0 +1,13 @@
+{
+  "reviewer": "independent storage_harness_review agent",
+  "reviewOnly": true,
+  "sourceFingerprintStartEndEqual": true,
+  "candidate": "candidate-after-smoke-fix.json",
+  "aggregateSha256": "3bde0f4a7b230f5a757cb9fabb43a1426533cdcf357f9b6ba8b6a2235ae6aa00",
+  "stage": 0,
+  "staticIncrementalReview": "PASS",
+  "targetedJavaTests": 32,
+  "fullSmokeForFixedCandidate": "NOT_RUN",
+  "delivery": "BLOCKED_PENDING_AUTHORIZED_SUCCESSFUL_SMOKE",
+  "writesByReviewer": 0
+}

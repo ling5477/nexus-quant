@@ -22,6 +22,7 @@ final class L6FormalRuntime {
     private final QualificationCapacity capacity;
     private final L6DurationContract duration;
     private final boolean smoke;
+    private final L6StorageCapacityGuard storageGuard;
     private final List<B0Processes.Child> actors = new ArrayList<>();
     private final List<L6DeterministicPacer.Slot> slots = new ArrayList<>();
     private final List<Long> childClockOffsets = new ArrayList<>();
@@ -32,15 +33,22 @@ final class L6FormalRuntime {
 
     L6FormalRuntime(L6FormalManifest manifest, QualificationCapacity capacity, L6DurationContract duration, boolean smoke) {
         this.manifest = manifest; this.capacity = capacity; this.duration = duration; this.smoke = smoke;
+        this.storageGuard = null;
     }
+    L6FormalRuntime(L6FormalManifest manifest, QualificationCapacity capacity, L6StorageCalibrationContract contract) {
+        this.manifest = manifest; this.capacity = capacity; this.duration = contract.timing(); this.smoke = contract.smoke();
+        this.storageGuard = new L6StorageCapacityGuard();
+    }
+    private boolean storage() { return storageGuard != null; }
     void run() throws Exception {
-        dir = B0Processes.root().resolve("backend/nq-app/target/l6-formal/" + UUID.randomUUID()); Files.createDirectories(dir);
+        dir = B0Processes.root().resolve((storage() ? "backend/nq-app/target/l6-storage-calibration/" : "backend/nq-app/target/l6-formal/") + UUID.randomUUID()); Files.createDirectories(dir);
         System.out.println("L6_FORMAL_ROOT " + dir);
-        proof.put("mode", "FORMAL_L6_A").put("shortSmoke", smoke).put("runId", dir.getFileName().toString())
+        proof.put("mode", storage() ? L6StorageCalibrationContract.MODE : "FORMAL_L6_A").put("shortSmoke", smoke).put("runId", dir.getFileName().toString())
                 .put("formalCalibrationAccepted", true).put("l6AAccepted", false).put("l6Accepted", false)
                 .put("HEAD", B0Processes.command("git", "rev-parse", "HEAD").trim()).put("controllerPid", ProcessHandle.current().pid())
                 .put("capacityPreflight", "PASS").put("runOrderBudget", capacity.runOrderBudget())
                 .put("venueLogicalCapacity", capacity.venueLogicalOrderCapacity()).put("l6SafetyCap", capacity.globalStageSafetyCap());
+        proof.put("storageCalibrationAccepted", false);
         proof.set("manifestEntry", manifest.identity()); proof.set("frozenInput", manifest.frozen());
         Files.writeString(dir.resolve("parameters.json"), JSON.writeValueAsString(proof));
         String container = null; long venuePid = 0;
@@ -66,14 +74,37 @@ final class L6FormalRuntime {
                         }
                         proof.set("paper", JSON.readTree(actors.getFirst().send("L6_PAPER"))); http(endpoint, "L5_OPEN");
                         try (var reader = fixture.checker(); var resourceReader = fixture.checker();
-                             var resources = new L6RuntimeResources(resourceReader, dir, actors, venue, endpoint, container, true)) {
+                             var resources = new L6RuntimeResources(resourceReader, dir, actors, venue, endpoint, container, true, storage())) {
                             proof.put("postgresVersion", value(reader, "SHOW server_version")).put("schema", value(reader,"SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
                             assertEquals("51", proof.path("schema").asText());
                             reader.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ); reader.setAutoCommit(false);
-                            start = System.nanoTime(); proof.put("startedAt", Instant.now().toString()).put("formalTimerStarted", true);
-                            try (var sampler = resources.sampler(duration, start, dir.resolve("resources.ndjson"))) {
-                                sampler.start(); drive(reader, endpoint, sampler); sampler.requireComplete();
+                            start = System.nanoTime(); proof.put("startedAt", Instant.now().toString()).put("formalTimerStarted", !storage()).put("storageTimerStarted", storage());
+                            L6SamplingSchedule schedule = storage() ? new L6SamplingSchedule() {
+                                public long total() { return duration.total(); }
+                                public String samplePhase(long elapsed) {
+                                    return storageGuard.stopped() ? "DRAIN" : duration.phase(elapsed) == L6DurationContract.Phase.ACTIVE ? "MEASUREMENT" : duration.samplePhase(elapsed);
+                                }
+                            } : duration;
+                            try (var sampler = resources.sampler(schedule, start, dir.resolve("resources.ndjson"))) {
+                                if (storage()) {
+                                    sampler.observeWith(record -> storageGuard.observe(record, elapsed()));
+                                    sampler.sample();
+                                }
+                                sampler.start(); drive(reader, endpoint, sampler);
+                                if (!storage() || !storageGuard.stopped()) sampler.requireComplete();
+                                if (storage()) proof.set("storageGuard", storageGuard.evidence());
+                                if (!storage() || !storageGuard.stopped()) {
                                 var end = checkpoint(reader, endpoint, "FINAL"); reader.commit(); proof.set("final", end);
+                                if (storage()) {
+                                    long complete = sampler.latest().path("sources").path("postgres").path("values").path("fullChainCompleted").asLong();
+                                    assertTrue(complete > 0);
+                                    assertEquals(end.path("oracle").path("orders").asLong(), complete);
+                                    var boundaryNames = new java.util.HashSet<String>();
+                                    for (var row : sampler.summary().path("samples")) {
+                                        row.path("boundaryNames").forEach(name -> boundaryNames.add(name.asText()));
+                                    }
+                                    assertEquals(java.util.Set.of("WARMUP_END", "MEASUREMENT_START", "MEASUREMENT_END", "DRAIN_START", "DRAIN_END"), boundaryNames);
+                                }
                                 assertEquals(0, end.path("backlog").asInt()); assertEquals(0, end.path("idleInTransaction").asInt());
                                 var finalActors = proof.putArray("finalActorMetrics");
                                 for (var actor : actors) {
@@ -84,6 +115,7 @@ final class L6FormalRuntime {
                                     assertTrue(metrics.has("validationQualification")); assertTrue(metrics.path("tickCompleted").asInt() > 0);
                                 }
                                 assertEquals(0, http(endpoint, null).path("executorQueue").asInt());
+                                }
                                 proof.set("sampling", sampler.summary());
                             }
                         }
@@ -92,8 +124,11 @@ final class L6FormalRuntime {
             }
             assertFalse(ProcessHandle.of(venuePid).map(ProcessHandle::isAlive).orElse(false));
             assertTrue(B0Processes.command("docker", "ps", "-a", "--filter", "id=" + container, "--format", "{{.ID}}").isBlank());
-            proof.put("cleanup", "PASS").put("ownedSurvivors", 0).put("result", smoke ? "FORMAL_MODE_SMOKE_PASS" : "FORMAL_MEASURED_PENDING_QUALIFICATION");
-        } catch (Exception | AssertionError error) { proof.put("result", "FAILED").put("failure", error.toString()); throw error; }
+            proof.put("cleanup", "PASS").put("ownedSurvivors", 0).put("result", storage()
+                    ? storageGuard.stopped() ? "BLOCKED / STORAGE_CALIBRATION_CAPACITY_AT_RISK"
+                    : smoke ? "STORAGE_CALIBRATION_SMOKE_PASS" : "STORAGE_CALIBRATION_MEASURED_PENDING_QUALIFICATION"
+                    : smoke ? "FORMAL_MODE_SMOKE_PASS" : "FORMAL_MEASURED_PENDING_QUALIFICATION");
+        } catch (Exception | AssertionError error) { proof.put("result", storage() && storageGuard.stopped() ? "BLOCKED / STORAGE_CALIBRATION_CAPACITY_AT_RISK" : "FAILED").put("failure", error.toString()); throw error; }
         finally {
             manifest.verifyUnchanged(); proof.set("manifestExit", manifest.identity());
             proof.put("ownedNqRemaining", actors.stream().filter(a -> a.process.isAlive()).count());
@@ -105,45 +140,84 @@ final class L6FormalRuntime {
         long nextObserver = 0, nextCheck = 0, drainOrders = -1;
         int scans = 0; String phase = ""; long phaseStart = 0;
         while (elapsed() < duration.total()) {
-            sampler.checkHealthy(); long now = elapsed(); String current = duration.phase(now).name();
+            try {
+            sampler.checkHealthy(); long now = elapsed();
+            String current = storage() ? storageGuard.phase(duration.phase(now).name()) : duration.phase(now).name();
+            if (storage() && current.equals("ACTIVE")) current = "MEASUREMENT";
             if (!current.equals(phase)) {
                 if (!phase.isEmpty()) timing(phase, phaseStart, now);
+                if (storage() && !phase.isEmpty()) {
+                    if (current.equals("MEASUREMENT")) sampler.boundaryAt("WARMUP_END/MEASUREMENT_START", current, duration.warmupNanos());
+                    if (current.equals("DRAIN")) sampler.boundaryAt(storageGuard.stopped() ? "CAPACITY_RISK_STOP/DRAIN_START" : "MEASUREMENT_END/DRAIN_START", current, storageGuard.stopped() ? now : duration.activeEnd());
+                }
                 phase = current; phaseStart = now;
                 if (current.equals("DRAIN")) { drainOrders = number(reader, "SELECT count(*) FROM orders"); reader.commit(); proof.put("ordersAtDrainStart", drainOrders); }
             }
+            if (storage() && storageGuard.drainExpired(elapsed())) break;
             long orders = number(reader, "SELECT count(*) FROM orders"); long backlog = sample(reader).path("backlog").asLong(); reader.commit();
-            pacer.poll(backlog > 0, slot -> {
+            try {
+            if (!storage() || storageGuard.producerAllowed()) pacer.poll(backlog > 0, slot -> {
                 capacity.reserve(orders, 1);
                 int actorIndex = (int) (slot % 2);
                 long childDeadline = start + duration.activeEnd() + childClockOffsets.get(actorIndex);
-                var response = JSON.readTree(actors.get(actorIndex).send("L6_EMIT " + slot + " " + childDeadline));
+                String command = "L6_EMIT " + slot + " " + childDeadline;
+                var actor = actors.get(actorIndex);
+                String reply;
+                if (storage()) {
+                    storageGuard.produce(() -> actor.startCommand(command));
+                    reply = actor.resultBefore(System.nanoTime() + 5_000_000_000L);
+                } else reply = actor.send(command);
+                var response = JSON.readTree(reply);
                 assertEquals(slot, response.path("slotIndex").asLong()); return response.path("logicalOrderId").asText();
             }, slot -> { slots.add(slot); append("pacing.ndjson", JSON.valueToTree(slot)); });
+            } catch (L6StorageCapacityGuard.ProducerStopped stopped) { continue; }
             if (elapsed() >= nextObserver) {
                 long before = number(reader, "SELECT count(*) FROM orders"); reader.commit();
                 for (var actor : actors) {
                     var observation = JSON.createObjectNode().put("elapsedNanos", elapsed()).put("pid", actor.process.pid());
-                    observation.set("scan", JSON.readTree(actor.send("L6_OBSERVER_SCAN"))); append("scheduler.ndjson", observation); scans++;
+                    observation.set("scan", JSON.readTree(runtimeCommand(actor, "L6_OBSERVER_SCAN"))); append("scheduler.ndjson", observation); scans++;
                 }
                 assertEquals(before, number(reader, "SELECT count(*) FROM orders")); reader.commit();
-                http(endpoint, "FILL"); for (var actor : actors) actor.send("L6_RECONCILE");
+                http(endpoint, "FILL"); for (var actor : actors) runtimeCommand(actor, "L6_RECONCILE");
                 nextObserver = (elapsed() / 5_000_000_000L + 1) * 5_000_000_000L;
             }
-            if (elapsed() >= nextCheck && orders > 0) {
-                http(endpoint, "FILL"); for (var actor : actors) actor.send("L6_RECONCILE");
-                var point = checkpoint(reader, endpoint, current); reader.commit();
-                point.put("completedObservedElapsedNanos", elapsed()); append("progress.ndjson", point);
-                assertTrue(point.path("transactions").asLong() <= 1_000_000);
+            if (elapsed() >= nextCheck && orders > 0 && (!storage() || (!storageGuard.stopped()
+                    && nextBoundary(elapsed()) - elapsed() > 8_000_000_000L))) {
+                http(endpoint, "FILL"); for (var actor : actors) runtimeCommand(actor, "L6_RECONCILE");
+                try {
+                    var point = checkpoint(reader, endpoint, current); reader.commit();
+                    point.put("completedObservedElapsedNanos", elapsed()); append("progress.ndjson", point);
+                    assertTrue(point.path("transactions").asLong() <= 1_000_000);
+                } catch (L6BusinessCheckpoint.StoragePending pending) { reader.rollback(); }
                 nextCheck = elapsed() + 30_000_000_000L;
             }
             if (drainOrders >= 0) { assertEquals(drainOrders, number(reader, "SELECT count(*) FROM orders")); reader.commit(); }
+            if (storage() && storageGuard.stopped()) {
+                if (drainOrders >= 0) assertEquals(drainOrders, number(reader, "SELECT count(*) FROM orders"));
+                reader.commit(); TimeUnit.MILLISECONDS.sleep(100); continue;
+            }
             long next = Math.min(duration.total(), Math.min(nextObserver, Math.min(nextCheck, pacer.nextElapsed())));
-            next = Math.min(next, current.equals("WARMUP") ? duration.warmupNanos() : current.equals("ACTIVE") ? duration.activeEnd() : duration.total());
+            next = Math.min(next, current.equals("WARMUP") ? duration.warmupNanos() : (current.equals("ACTIVE") || current.equals("MEASUREMENT")) ? duration.activeEnd() : duration.total());
             long wait = start + next - System.nanoTime();
             if (wait > 0) TimeUnit.NANOSECONDS.sleep(wait);
+            } catch (L6StorageCapacityGuard.DrainComplete complete) { break; }
+        }
+        if (storage()) {
+            // 风险可在observer调用中触发；紧急退出也必须先登记零时长drain及真实订单基线。
+            if (storageGuard.stopped() && drainOrders < 0) {
+                long transition = elapsed();
+                sampler.boundaryAt("CAPACITY_RISK_STOP/DRAIN_START", "DRAIN", transition);
+                drainOrders = number(reader, "SELECT count(*) FROM orders"); reader.commit();
+                proof.put("ordersAtDrainStart", drainOrders);
+                if (!phase.isEmpty()) timing(phase, phaseStart, transition);
+                phase = "DRAIN"; phaseStart = transition;
+            }
+            sampler.boundaryAt("DRAIN_END", "DRAIN", storageGuard.stopped() ? elapsed() : duration.total());
+            proof.set("storageGuard", storageGuard.evidence());
         }
         timing(phase, phaseStart, elapsed());
         proof.put("schedulerScans", scans).put("newOrdersDuringDrain", number(reader,"SELECT count(*) FROM orders") - drainOrders); reader.commit();
+        if (storage() && storageGuard.stopped()) return;
         var emitted = slots.stream().filter(s -> s.decision().equals("EMITTED")).toList(); assertTrue(emitted.size() >= 3);
         long minGap = Long.MAX_VALUE;
         for (int i = 1; i < emitted.size(); i++) {
@@ -156,9 +230,18 @@ final class L6FormalRuntime {
         assertTrue(1e9 / minGap <= manifest.frozen().path("finalL6ArrivalRate").asDouble());
     }
     private ObjectNode checkpoint(Connection reader, String endpoint, String phase) throws Exception {
-        return L6BusinessCheckpoint.verify(reader, endpoint, actors, dir, phase, ++checks, false, capacity.runOrderBudget(), slots);
+        return L6BusinessCheckpoint.verify(reader, endpoint, actors, dir, phase, ++checks, false, capacity.runOrderBudget(), slots, storage() ? L6StorageCalibrationContract.MODE : "FORMAL_L6_A");
     }
     private void timing(String phase, long from, long to) { proof.withArray("phases").addObject().put("phase", phase).put("startElapsedNanos", from).put("endElapsedNanos", to).put("durationNanos", to - from); }
+    private String runtimeCommand(B0Processes.Child actor, String command) throws Exception {
+        if (!storage()) return actor.send(command);
+        if (storageGuard.drainExpired(elapsed())) throw new L6StorageCapacityGuard.DrainComplete();
+        actor.startCommand(command);
+        return actor.resultBefore(System.nanoTime() + 5_000_000_000L);
+    }
+    private long nextBoundary(long elapsed) {
+        return elapsed < duration.warmupNanos() ? duration.warmupNanos() : elapsed < duration.activeEnd() ? duration.activeEnd() : duration.total();
+    }
     private long elapsed() { return System.nanoTime() - start; }
     private void append(String name, com.fasterxml.jackson.databind.JsonNode value) throws Exception { Files.writeString(dir.resolve(name), JSON.writeValueAsString(value) + "\n", StandardOpenOption.CREATE, StandardOpenOption.APPEND); }
 }

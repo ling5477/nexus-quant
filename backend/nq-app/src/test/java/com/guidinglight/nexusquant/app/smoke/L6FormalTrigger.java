@@ -12,7 +12,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 /** 测试 producer 只调用既有 canonical trigger；slot 重复按失败处理，绝不盲重发。 */
 final class L6FormalTrigger {
     static String emit(ConfigurableApplicationContext context, String command) throws Exception {
-        L6FormalManifest.fromRunDirectory();
+        L6StorageCalibrationContract.runManifest();
         B0Fixture.require(command.matches("L6_EMIT [0-9]{1,4} -?[0-9]{1,19}"));
         String[] parts = command.split(" ");
         int slot = Integer.parseInt(parts[1]); long deadline = Long.parseLong(parts[2]);

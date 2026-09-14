@@ -1,0 +1,287 @@
+{
+  "status": "BLOCKED / SMOKE_FAILED_RETRY_REQUIRES_AUTHORIZATION",
+  "baseline": "d9ff58f489c5514e55758459198c2c4acb914bca",
+  "smokeRunId": "681bd1d1-ec7b-4af0-9939-21590c74810c",
+  "smokeInvocations": 1,
+  "smokeResult": "FAILED",
+  "cause": "Boundary token UUID:boundary:1 rejected by existing UUID:digits metrics endpoint; close repeated exception caused self-suppression",
+  "fix": "Boundary token uses reserved 501..512 sequence in unchanged wire protocol; close wraps primary cause",
+  "testsAfterFix": [
+    {
+      "name": "L6StorageContractTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "L6PgStorageObservationTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "L6ResourceSamplerTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "L6FormalContractTest",
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "L6CalibrationContractTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "L6ProcessOutputTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "pythonTests": 5,
+  "historicalRealFactCheckpointsVerified": 107,
+  "sourceAfterFix": [
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0Processes.java",
+      "sha256": "8786b51d1fb2da58dcb157c4a64a8035d874999258b661385bee37a11516f869"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6BusinessCheckpoint.java",
+      "sha256": "954844a488e0667f803f8205f9b4aab3c260823347f8fb9ec1187fae55043398"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalRuntime.java",
+      "sha256": "0e34477a98e3b8014acbe13cfef828c54b69bee41ae1caba02c5c7a2f2f32b83"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalTrigger.java",
+      "sha256": "9df2a0bd5839dc955ab49c2ff73c8451276295aaeab982c3bbb310bc996ad1de"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalVenueProcessMain.java",
+      "sha256": "a77197a22ef26b2c5b336dcfcf5ddcf30467a04d923a2d1d4e1b23481d5746ae"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ProcessOutputTest.java",
+      "sha256": "2cd82da18bd165c814469393aeb3b61e216c8bc49a8312fc345f6de42ef40c76"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ResourceSampler.java",
+      "sha256": "44403df67644b6337807c2b094b9b5c34aa034ded4181ab47126906eaf5fbc80"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6RuntimeResources.java",
+      "sha256": "1fa522a341a5a0bf4ada95352fe513106c32917b916fb2e4d605c1f8c8d8056c"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6StorageCalibrationContract.java",
+      "sha256": "afefcae582adb077a977b145e211383a99f95c50daf0056a3bd6eb33229ba441"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6StorageCalibrationTest.java",
+      "sha256": "3835a61771a77b9249f8b49fe113c20338c5d1bd4591e1485ff4ce9273582495"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6StorageCapacityGuard.java",
+      "sha256": "c8aefe7ab26c2183371cd2ee40e2f6f778aa453eba35ea4c5aaa75f7009a780c"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6StorageContractTest.java",
+      "sha256": "175f79708322619ca2bd02bab06d20f5f030c0d9752d0409839d655c63c3b1b7"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_oracle.py",
+      "sha256": "20776753a8d4eb41f67bbc3a4ad557e800f182de5b82a90ffdbd25ac5eb73ff0"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_storage_counter.py",
+      "sha256": "44aad3090d9f32acc3367618718b49d1b10f0955210f4bcc29a1802fef86aaea"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/test_l6_storage_counter.py",
+      "sha256": "facba6bd816ed0a84f6ef9d05478ed9204aea84eda14cf379714fd9051bd3aba"
+    }
+  ],
+  "formal35MinuteCalibration": "NOT_RUN",
+  "capacityFrozen": false,
+  "formal60PercentPreflight": "NOT_IMPLEMENTED",
+  "formalProjectionGuard": "NOT_IMPLEMENTED",
+  "stage": 0,
+  "commit": "NONE",
+  "push": "NONE",
+  "exactHeadCi": "NOT_RUN_FOR_CURRENT_CANDIDATE",
+  "productP0": 0,
+  "productP1": 0,
+  "harnessP1": {
+    "smokeAcceptance": "OPEN_PENDING_FULL_SMOKE"
+  },
+  "rawManifest": [
+    {
+      "path": "failed-smoke/l6-metrics-33692.endpoint",
+      "bytes": 21,
+      "sha256": "04947fc27f9953e142a629adfb9ba51abe07f56f29aa2ea78b34c3fd5f44e2b2"
+    },
+    {
+      "path": "failed-smoke/l6-metrics-43216.endpoint",
+      "bytes": 21,
+      "sha256": "b83ff843e6ef74380718922140d148fe142f78e7165686d340f64a25bcf8937e"
+    },
+    {
+      "path": "failed-smoke/nq-0.args",
+      "bytes": 13034,
+      "sha256": "d1e246e86eda9833bc4a6f2de572d123418e64db4deaf6e06cdffe06d04bd73a"
+    },
+    {
+      "path": "failed-smoke/nq-0.log",
+      "bytes": 5692,
+      "sha256": "d2b0c664bd8940450db47ebe1dbba47da8f3182aa54dde9fb1be8b35a0407c62"
+    },
+    {
+      "path": "failed-smoke/nq-1.args",
+      "bytes": 13034,
+      "sha256": "d1e246e86eda9833bc4a6f2de572d123418e64db4deaf6e06cdffe06d04bd73a"
+    },
+    {
+      "path": "failed-smoke/nq-1.log",
+      "bytes": 5263,
+      "sha256": "a317026eeea47bb38f6060078bcff04ed50e4f13d0f570823df1a996f9581a27"
+    },
+    {
+      "path": "failed-smoke/pacing.ndjson",
+      "bytes": 657,
+      "sha256": "20e2c256f52f8c95532f482d12d92d003c10b43a1454d342b13c002e2866dd16"
+    },
+    {
+      "path": "failed-smoke/parameters.json",
+      "bytes": 84108,
+      "sha256": "4d068a8a9221053aea8aac054895a4e71113a3046092af0bf898ada6ba40e255"
+    },
+    {
+      "path": "failed-smoke/proof.json",
+      "bytes": 116271,
+      "sha256": "75f28d18f759780ec76b0ab7e6dd0933a6be95893990690da87120d77d2033e9"
+    },
+    {
+      "path": "failed-smoke/resource-summary.json",
+      "bytes": 113790,
+      "sha256": "c6750fa0756be43a11fef7b68d27e9e42ed5c5dbb4c354d4e5b6aa463c56f39f"
+    },
+    {
+      "path": "failed-smoke/resources.ndjson",
+      "bytes": 65949,
+      "sha256": "c63c1905b263ae5eecc80e81a6b48ff497dd63f7c87bab209eb4edcf5974ec46"
+    },
+    {
+      "path": "failed-smoke/scheduler.ndjson",
+      "bytes": 4626,
+      "sha256": "56da1c8962d9693343c51767cadda1fa54f29591b96dcd90592173883efe8c9e"
+    },
+    {
+      "path": "failed-smoke/storage-business-0.json",
+      "bytes": 434,
+      "sha256": "a150810475fef5befacae77130f35c3919f0daf40848b1ed6126e6a2157ddfab"
+    },
+    {
+      "path": "failed-smoke/storage-business-1.json",
+      "bytes": 7552,
+      "sha256": "1c6175009e99f302018e66096540e4e17e0e1cfedc4036419f8c974a1167fbbb"
+    },
+    {
+      "path": "failed-smoke/storage-business-2.json",
+      "bytes": 14508,
+      "sha256": "fc1f139ad0bd8a7a1df92c152c0359ee8334c291f3aad11f54723c188f95ed05"
+    },
+    {
+      "path": "failed-smoke/venue.args",
+      "bytes": 13043,
+      "sha256": "9c6dd2afdb0284118ba8204ef7967955f16b2aaf764eba46a08d701559c6dcab"
+    },
+    {
+      "path": "failed-smoke/venue.log",
+      "bytes": 15,
+      "sha256": "9fa982e8739c75bb57fbe928182d5d402fd0a2a19c4748cb9c357b903e79e749"
+    },
+    {
+      "path": "validation/com.guidinglight.nexusquant.app.smoke.L6StorageCalibrationTest.txt",
+      "bytes": 2138,
+      "sha256": "44400be5044ca6db3a4986defb55ddaddeea9c0d33f1d352cd67c5a51fa32ae9"
+    },
+    {
+      "path": "validation/TEST-com.guidinglight.nexusquant.app.smoke.L6StorageCalibrationTest.xml",
+      "bytes": 43674,
+      "sha256": "aaf2d527fa6ebd3a9473e50e9f1bcd62d5dcea74a508fda0b30fc6206663e622"
+    },
+    {
+      "path": "logs/l6-storage-calibration-smoke-01.log",
+      "bytes": 44168,
+      "sha256": "48268a1a22ebcb263c9cd5e88542ba0d6229708d838249cac4db72e33c424655"
+    },
+    {
+      "path": "logs/l6-storage-harness-after-smoke-fix.log",
+      "bytes": 32672,
+      "sha256": "d746924a8c2cb6e5653163aaea9bd02dff7b38ec8f27e098d6a4d2aa85a44193"
+    },
+    {
+      "path": "logs/l6-storage-harness-compile.log",
+      "bytes": 28869,
+      "sha256": "b372d9e09deed79e8871d8fd3aebd91479e30e000ae0234513d78178061a7938"
+    },
+    {
+      "path": "logs/l6-storage-harness-targeted-01.log",
+      "bytes": 32083,
+      "sha256": "888b609a85ce069915a3e9c28cb951c3daadb35655aac4cf481c64ab5c108f39"
+    },
+    {
+      "path": "logs/l6-storage-harness-targeted-02.log",
+      "bytes": 32083,
+      "sha256": "20020238ff3f41ea0825597037d116933f6a6590e0cd2b0c7239b2b10d3ca06e"
+    },
+    {
+      "path": "logs/l6-storage-harness-targeted-final.log",
+      "bytes": 32671,
+      "sha256": "394b07cf1e8a21e31e5324ad79e2f5e86b520d6acbb7c8dccfafff13b07fa2aa"
+    },
+    {
+      "path": "validation/TEST-com.guidinglight.nexusquant.app.smoke.L6StorageContractTest.xml",
+      "bytes": 32548,
+      "sha256": "c9319825aa09bdea5b6c181a5a8d60600ad49fa6c3c472402175fe2fb34862c0"
+    },
+    {
+      "path": "validation/TEST-com.guidinglight.nexusquant.app.smoke.L6PgStorageObservationTest.xml",
+      "bytes": 31952,
+      "sha256": "27a42f51c31e1f38a5f2011ac2fc6bc6b2a38ec9ccef5b5acf333b21328e459c"
+    },
+    {
+      "path": "validation/TEST-com.guidinglight.nexusquant.app.smoke.L6ResourceSamplerTest.xml",
+      "bytes": 32418,
+      "sha256": "7d78e2800889d1db235255ac9de8f17bd9ffc164443c78031b5014f8031c3a12"
+    },
+    {
+      "path": "validation/TEST-com.guidinglight.nexusquant.app.smoke.L6FormalContractTest.xml",
+      "bytes": 32830,
+      "sha256": "e5774b6fe77f4ef48aa0dcadd5a2142e96b70d5e4e3454db77ccf7d29d391469"
+    },
+    {
+      "path": "validation/TEST-com.guidinglight.nexusquant.app.smoke.L6CalibrationContractTest.xml",
+      "bytes": 32253,
+      "sha256": "0b995948b4ddc02f55f40ca6ec25eba598727a357e1def40319613aacc60b472"
+    },
+    {
+      "path": "validation/TEST-com.guidinglight.nexusquant.app.smoke.L6ProcessOutputTest.xml",
+      "bytes": 32222,
+      "sha256": "297602a38ba9304fc8d2faa0922d97c785bc1325da5f337279290ba614dc2c69"
+    }
+  ]
+}

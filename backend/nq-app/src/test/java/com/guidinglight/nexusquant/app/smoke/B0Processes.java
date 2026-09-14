@@ -219,8 +219,12 @@ final class B0Processes {
 
         String result() throws Exception { return await("B0_RESULT ", resultCount); }
 
+        String resultBefore(long deadline) throws Exception { return await("B0_RESULT ", resultCount, deadline); }
+
         private String await(String prefix, int count) throws Exception {
-            long deadline = System.nanoTime() + Duration.ofSeconds(75).toNanos();
+            return await(prefix, count, System.nanoTime() + Duration.ofSeconds(75).toNanos());
+        }
+        private String await(String prefix, int count, long deadline) throws Exception {
             while (System.nanoTime() < deadline) {
                 // 长跑只读取新增日志，避免每条命令重新物化全部历史日志。
                 try (var file = new RandomAccessFile(log.toFile(), "r")) {

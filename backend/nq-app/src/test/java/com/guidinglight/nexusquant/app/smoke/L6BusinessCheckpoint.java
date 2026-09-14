@@ -18,6 +18,7 @@ import static com.guidinglight.nexusquant.app.smoke.L5BoundedWorkloadTest.http;
 /** 校准和正式运行复用同一持久化与Venue关系检查，未完成状态不算全链成功。 */
 final class L6BusinessCheckpoint {
     private static final ObjectMapper JSON = new ObjectMapper();
+    static final class StoragePending extends RuntimeException { }
     static ObjectNode verify(Connection reader, String endpoint, List<B0Processes.Child> children,
                              Path dir, String phase, int checkIndex, boolean calibration) throws Exception {
         return verify(reader, endpoint, children, dir, phase, checkIndex, calibration, 0, List.of());
@@ -25,6 +26,11 @@ final class L6BusinessCheckpoint {
     static ObjectNode verify(Connection reader, String endpoint, List<B0Processes.Child> children,
                              Path dir, String phase, int checkIndex, boolean calibration, int formalBudget,
                              List<L6DeterministicPacer.Slot> slots) throws Exception {
+        return verify(reader, endpoint, children, dir, phase, checkIndex, calibration, formalBudget, slots, "FORMAL_L6_A");
+    }
+    static ObjectNode verify(Connection reader, String endpoint, List<B0Processes.Child> children,
+                             Path dir, String phase, int checkIndex, boolean calibration, int formalBudget,
+                             List<L6DeterministicPacer.Slot> slots, String qualificationMode) throws Exception {
         // 真实完成后才用完整源账务重建；短暂在途状态不能被误报成投影损坏。
         long deadline=System.nanoTime()+Duration.ofSeconds(120).toNanos();
         long waitingFrom = -1;
@@ -32,6 +38,8 @@ final class L6BusinessCheckpoint {
             long busy=number(reader,"SELECT count(*) FROM strategy_runs WHERE status<>'SUCCEEDED'");
             ObjectNode sample=sample(reader);reader.commit();
             if(busy==0 && sample.path("backlog").asInt()==0)break;
+            // storage采样不能进入旧120秒等待；未完成交由既有5秒reconcile周期继续推进。
+            if (L6StorageCalibrationContract.MODE.equals(qualificationMode)) throw new StoragePending();
             if (waitingFrom < 0) waitingFrom = System.nanoTime();
             if(System.nanoTime()>deadline)throw new AssertionError("L6 work failed bounded convergence");
             http(endpoint,"FILL");
@@ -59,7 +67,7 @@ final class L6BusinessCheckpoint {
         check.set("venue",http(endpoint,null));
         if (calibration) check.put("mode", "CALIBRATION");
         if (formalBudget > 0) {
-            check.put("mode", "FORMAL_L6_A").put("runOrderBudget", formalBudget);
+            check.put("mode", qualificationMode).put("runOrderBudget", formalBudget);
             check.set("pacingSlots", JSON.valueToTree(slots));
         }
         Path file=dir.resolve(String.format("checkpoint-%03d.json",checkIndex));

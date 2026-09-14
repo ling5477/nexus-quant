@@ -1,0 +1,671 @@
+{
+  "status": "STORAGE_CALIBRATION_SMOKE_PASS",
+  "runId": "89f91f58-c269-4ce6-8024-e412ca2154d9",
+  "authorizedRetry": 1,
+  "sourceFingerprintUnchanged": true,
+  "periodicSamples": 10,
+  "boundaryObservations": 3,
+  "boundaryNames": {
+    "WARMUP_END": 20468,
+    "MEASUREMENT_START": 20468,
+    "MEASUREMENT_END": 70462,
+    "DRAIN_START": 70462,
+    "DRAIN_END": 100445
+  },
+  "maxBoundaryStartLagMillis": 468,
+  "maxPeriodicStartLagMillis": 15,
+  "maxCollectionMillis": 570,
+  "fullChainCompleted": 6,
+  "finalCounters": {
+    "timeMillis": 1789359392652,
+    "backlog": 0,
+    "correctnessRequiredUnresolved": 0,
+    "actionable": 0,
+    "orders": 6,
+    "terminal": 6,
+    "trades": 6,
+    "ledger": 24,
+    "runsSucceeded": 6,
+    "transactions": 5425,
+    "appConnections": 20,
+    "idleInTransaction": 0,
+    "databaseConnections": 22,
+    "auditRows": 443,
+    "eventRows": 48,
+    "cursor": [
+      {
+        "venue": "OKX",
+        "revision": 48,
+        "updated_at": "2026-09-14T12:16:32.53109+08:00",
+        "cursor_order_id": "ord-b265517a-22da-4f16-a0a3-48b03d0b6788",
+        "cursor_created_at": "2026-09-14T12:14:52.863948+08:00"
+      }
+    ],
+    "pgTmpfsCapacityBytes": 268435456,
+    "pgTmpfsUsedBytes": 49729536,
+    "pgTmpfsFreeBytes": 218705920,
+    "pgTmpfsUsageRatio": 0.1852569580078125,
+    "pgBaseAllocatedBytes": 32243712,
+    "pgWalAllocatedBytes": 16777216,
+    "pgGlobalAllocatedBytes": 610304,
+    "pgDataAllocatedBytes": 49729536,
+    "pgOtherAllocatedBytes": 98304,
+    "pgDatabaseSizeBytes": 14901775,
+    "pgRelationStorage": [
+      {
+        "schema": "public",
+        "relation": "audit_logs",
+        "tableBytes": 163840,
+        "indexBytes": 172032,
+        "totalBytes": 335872
+      },
+      {
+        "schema": "public",
+        "relation": "orders",
+        "tableBytes": 16384,
+        "indexBytes": 196608,
+        "totalBytes": 212992
+      },
+      {
+        "schema": "public",
+        "relation": "trades",
+        "tableBytes": 16384,
+        "indexBytes": 163840,
+        "totalBytes": 180224
+      },
+      {
+        "schema": "public",
+        "relation": "event_store",
+        "tableBytes": 73728,
+        "indexBytes": 65536,
+        "totalBytes": 139264
+      },
+      {
+        "schema": "public",
+        "relation": "strategy_runs",
+        "tableBytes": 16384,
+        "indexBytes": 114688,
+        "totalBytes": 131072
+      },
+      {
+        "schema": "public",
+        "relation": "backtest_runs",
+        "tableBytes": 16384,
+        "indexBytes": 98304,
+        "totalBytes": 114688
+      },
+      {
+        "schema": "public",
+        "relation": "shadow_runs",
+        "tableBytes": 16384,
+        "indexBytes": 81920,
+        "totalBytes": 98304
+      },
+      {
+        "schema": "public",
+        "relation": "strategy_versions",
+        "tableBytes": 16384,
+        "indexBytes": 81920,
+        "totalBytes": 98304
+      },
+      {
+        "schema": "public",
+        "relation": "ledger_entries",
+        "tableBytes": 8192,
+        "indexBytes": 81920,
+        "totalBytes": 90112
+      },
+      {
+        "schema": "public",
+        "relation": "backtest_configs",
+        "tableBytes": 16384,
+        "indexBytes": 65536,
+        "totalBytes": 81920
+      },
+      {
+        "schema": "public",
+        "relation": "backtest_publish_records",
+        "tableBytes": 16384,
+        "indexBytes": 65536,
+        "totalBytes": 81920
+      },
+      {
+        "schema": "public",
+        "relation": "marketdata_datasets",
+        "tableBytes": 16384,
+        "indexBytes": 65536,
+        "totalBytes": 81920
+      },
+      {
+        "schema": "public",
+        "relation": "paper_run_alerts",
+        "tableBytes": 16384,
+        "indexBytes": 65536,
+        "totalBytes": 81920
+      },
+      {
+        "schema": "public",
+        "relation": "paper_run_daily_reports",
+        "tableBytes": 16384,
+        "indexBytes": 65536,
+        "totalBytes": 81920
+      },
+      {
+        "schema": "public",
+        "relation": "paper_trading_runs",
+        "tableBytes": 16384,
+        "indexBytes": 65536,
+        "totalBytes": 81920
+      },
+      {
+        "schema": "public",
+        "relation": "pilot_execution_leases",
+        "tableBytes": 0,
+        "indexBytes": 73728,
+        "totalBytes": 73728
+      },
+      {
+        "schema": "public",
+        "relation": "execution_intents",
+        "tableBytes": 8192,
+        "indexBytes": 57344,
+        "totalBytes": 65536
+      },
+      {
+        "schema": "public",
+        "relation": "live_sessions",
+        "tableBytes": 8192,
+        "indexBytes": 57344,
+        "totalBytes": 65536
+      },
+      {
+        "schema": "public",
+        "relation": "risk_events",
+        "tableBytes": 16384,
+        "indexBytes": 49152,
+        "totalBytes": 65536
+      },
+      {
+        "schema": "public",
+        "relation": "shadow_consistency_reports",
+        "tableBytes": 16384,
+        "indexBytes": 49152,
+        "totalBytes": 65536
+      },
+      {
+        "schema": "public",
+        "relation": "shadow_run_snapshots",
+        "tableBytes": 16384,
+        "indexBytes": 49152,
+        "totalBytes": 65536
+      },
+      {
+        "schema": "public",
+        "relation": "strategy_definitions",
+        "tableBytes": 16384,
+        "indexBytes": 49152,
+        "totalBytes": 65536
+      },
+      {
+        "schema": "public",
+        "relation": "strategy_schedules",
+        "tableBytes": 16384,
+        "indexBytes": 49152,
+        "totalBytes": 65536
+      },
+      {
+        "schema": "public",
+        "relation": "validation_review_cases",
+        "tableBytes": 8192,
+        "indexBytes": 57344,
+        "totalBytes": 65536
+      },
+      {
+        "schema": "public",
+        "relation": "kill_switch_events",
+        "tableBytes": 8192,
+        "indexBytes": 49152,
+        "totalBytes": 57344
+      },
+      {
+        "schema": "public",
+        "relation": "paper_run_stability_checks",
+        "tableBytes": 8192,
+        "indexBytes": 49152,
+        "totalBytes": 57344
+      },
+      {
+        "schema": "public",
+        "relation": "pilot_prerequisite_observations",
+        "tableBytes": 8192,
+        "indexBytes": 49152,
+        "totalBytes": 57344
+      },
+      {
+        "schema": "public",
+        "relation": "positions",
+        "tableBytes": 8192,
+        "indexBytes": 49152,
+        "totalBytes": 57344
+      },
+      {
+        "schema": "public",
+        "relation": "execution_receipts",
+        "tableBytes": 8192,
+        "indexBytes": 40960,
+        "totalBytes": 49152
+      },
+      {
+        "schema": "public",
+        "relation": "flyway_schema_history",
+        "tableBytes": 16384,
+        "indexBytes": 32768,
+        "totalBytes": 49152
+      },
+      {
+        "schema": "public",
+        "relation": "ledger_events",
+        "tableBytes": 16384,
+        "indexBytes": 32768,
+        "totalBytes": 49152
+      },
+      {
+        "schema": "public",
+        "relation": "live_session_events",
+        "tableBytes": 8192,
+        "indexBytes": 40960,
+        "totalBytes": 49152
+      },
+      {
+        "schema": "public",
+        "relation": "paper_run_recovery_events",
+        "tableBytes": 8192,
+        "indexBytes": 40960,
+        "totalBytes": 49152
+      },
+      {
+        "schema": "public",
+        "relation": "research_configs",
+        "tableBytes": 16384,
+        "indexBytes": 32768,
+        "totalBytes": 49152
+      },
+      {
+        "schema": "public",
+        "relation": "shadow_run_events",
+        "tableBytes": 16384,
+        "indexBytes": 32768,
+        "totalBytes": 49152
+      },
+      {
+        "schema": "public",
+        "relation": "validation_review_events",
+        "tableBytes": 8192,
+        "indexBytes": 40960,
+        "totalBytes": 49152
+      },
+      {
+        "schema": "public",
+        "relation": "account_snapshots",
+        "tableBytes": 8192,
+        "indexBytes": 32768,
+        "totalBytes": 40960
+      },
+      {
+        "schema": "public",
+        "relation": "accounts",
+        "tableBytes": 8192,
+        "indexBytes": 32768,
+        "totalBytes": 40960
+      },
+      {
+        "schema": "public",
+        "relation": "backtest_eval_reports",
+        "tableBytes": 8192,
+        "indexBytes": 32768,
+        "totalBytes": 40960
+      },
+      {
+        "schema": "public",
+        "relation": "credential_audit_logs",
+        "tableBytes": 8192,
+        "indexBytes": 32768,
+        "totalBytes": 40960
+      },
+      {
+        "schema": "public",
+        "relation": "exchange_accounts",
+        "tableBytes": 0,
+        "indexBytes": 40960,
+        "totalBytes": 40960
+      },
+      {
+        "schema": "public",
+        "relation": "instrument_catalog",
+        "tableBytes": 8192,
+        "indexBytes": 32768,
+        "totalBytes": 40960
+      },
+      {
+        "schema": "public",
+        "relation": "marketdata_bars",
+        "tableBytes": 8192,
+        "indexBytes": 32768,
+        "totalBytes": 40960
+      },
+      {
+        "schema": "public",
+        "relation": "operator_approvals",
+        "tableBytes": 8192,
+        "indexBytes": 32768,
+        "totalBytes": 40960
+      },
+      {
+        "schema": "public",
+        "relation": "paper_run_schedule_fires",
+        "tableBytes": 8192,
+        "indexBytes": 32768,
+        "totalBytes": 40960
+      },
+      {
+        "schema": "public",
+        "relation": "paper_run_schedules",
+        "tableBytes": 8192,
+        "indexBytes": 32768,
+        "totalBytes": 40960
+      },
+      {
+        "schema": "public",
+        "relation": "pilot_scope_bindings",
+        "tableBytes": 8192,
+        "indexBytes": 32768,
+        "totalBytes": 40960
+      },
+      {
+        "schema": "public",
+        "relation": "risk_limit_sets",
+        "tableBytes": 8192,
+        "indexBytes": 32768,
+        "totalBytes": 40960
+      },
+      {
+        "schema": "public",
+        "relation": "roles",
+        "tableBytes": 8192,
+        "indexBytes": 32768,
+        "totalBytes": 40960
+      },
+      {
+        "schema": "public",
+        "relation": "strategy_run_dispatch_work",
+        "tableBytes": 8192,
+        "indexBytes": 32768,
+        "totalBytes": 40960
+      },
+      {
+        "schema": "public",
+        "relation": "users",
+        "tableBytes": 8192,
+        "indexBytes": 32768,
+        "totalBytes": 40960
+      },
+      {
+        "schema": "public",
+        "relation": "b0_fixture_identity",
+        "tableBytes": 16384,
+        "indexBytes": 16384,
+        "totalBytes": 32768
+      },
+      {
+        "schema": "public",
+        "relation": "emergency_stop_events",
+        "tableBytes": 8192,
+        "indexBytes": 24576,
+        "totalBytes": 32768
+      },
+      {
+        "schema": "public",
+        "relation": "operator_pilot_authorities",
+        "tableBytes": 0,
+        "indexBytes": 32768,
+        "totalBytes": 32768
+      },
+      {
+        "schema": "public",
+        "relation": "paper_trading_orders",
+        "tableBytes": 8192,
+        "indexBytes": 24576,
+        "totalBytes": 32768
+      },
+      {
+        "schema": "public",
+        "relation": "paper_trading_trades",
+        "tableBytes": 0,
+        "indexBytes": 32768,
+        "totalBytes": 32768
+      },
+      {
+        "schema": "public",
+        "relation": "pilot_execution_lease_intents",
+        "tableBytes": 0,
+        "indexBytes": 32768,
+        "totalBytes": 32768
+      },
+      {
+        "schema": "public",
+        "relation": "exchange_account_credentials",
+        "tableBytes": 8192,
+        "indexBytes": 16384,
+        "totalBytes": 24576
+      },
+      {
+        "schema": "public",
+        "relation": "kill_switch_states",
+        "tableBytes": 8192,
+        "indexBytes": 16384,
+        "totalBytes": 24576
+      },
+      {
+        "schema": "public",
+        "relation": "marketdata_dataset_coverage",
+        "tableBytes": 8192,
+        "indexBytes": 16384,
+        "totalBytes": 24576
+      },
+      {
+        "schema": "public",
+        "relation": "marketdata_ingestion_jobs",
+        "tableBytes": 8192,
+        "indexBytes": 16384,
+        "totalBytes": 24576
+      },
+      {
+        "schema": "public",
+        "relation": "marketdata_ingestion_runs",
+        "tableBytes": 8192,
+        "indexBytes": 16384,
+        "totalBytes": 24576
+      },
+      {
+        "schema": "public",
+        "relation": "ordinary_place_authorities",
+        "tableBytes": 8192,
+        "indexBytes": 16384,
+        "totalBytes": 24576
+      },
+      {
+        "schema": "public",
+        "relation": "paper_risk_check_results",
+        "tableBytes": 8192,
+        "indexBytes": 16384,
+        "totalBytes": 24576
+      },
+      {
+        "schema": "public",
+        "relation": "paper_run_heartbeats",
+        "tableBytes": 8192,
+        "indexBytes": 16384,
+        "totalBytes": 24576
+      },
+      {
+        "schema": "public",
+        "relation": "paper_trading_positions",
+        "tableBytes": 0,
+        "indexBytes": 24576,
+        "totalBytes": 24576
+      },
+      {
+        "schema": "public",
+        "relation": "position_curve_snapshots",
+        "tableBytes": 0,
+        "indexBytes": 24576,
+        "totalBytes": 24576
+      },
+      {
+        "schema": "public",
+        "relation": "reconciliation_scan_cursors",
+        "tableBytes": 8192,
+        "indexBytes": 16384,
+        "totalBytes": 24576
+      },
+      {
+        "schema": "public",
+        "relation": "sim_orders",
+        "tableBytes": 8192,
+        "indexBytes": 16384,
+        "totalBytes": 24576
+      },
+      {
+        "schema": "public",
+        "relation": "sim_positions",
+        "tableBytes": 0,
+        "indexBytes": 24576,
+        "totalBytes": 24576
+      },
+      {
+        "schema": "public",
+        "relation": "sim_trades",
+        "tableBytes": 8192,
+        "indexBytes": 16384,
+        "totalBytes": 24576
+      },
+      {
+        "schema": "public",
+        "relation": "strategy_release_admission_state",
+        "tableBytes": 8192,
+        "indexBytes": 16384,
+        "totalBytes": 24576
+      },
+      {
+        "schema": "public",
+        "relation": "strategy_run_recovery_scan_cursor",
+        "tableBytes": 8192,
+        "indexBytes": 16384,
+        "totalBytes": 24576
+      },
+      {
+        "schema": "public",
+        "relation": "trade_replay_records",
+        "tableBytes": 8192,
+        "indexBytes": 16384,
+        "totalBytes": 24576
+      },
+      {
+        "schema": "public",
+        "relation": "user_roles",
+        "tableBytes": 8192,
+        "indexBytes": 16384,
+        "totalBytes": 24576
+      },
+      {
+        "schema": "public",
+        "relation": "equity_curve_snapshots",
+        "tableBytes": 0,
+        "indexBytes": 16384,
+        "totalBytes": 16384
+      },
+      {
+        "schema": "public",
+        "relation": "pilot_execution_lease_events",
+        "tableBytes": 0,
+        "indexBytes": 16384,
+        "totalBytes": 16384
+      },
+      {
+        "schema": "public",
+        "relation": "pilot_pre_place_recovery_decisions",
+        "tableBytes": 0,
+        "indexBytes": 16384,
+        "totalBytes": 16384
+      },
+      {
+        "schema": "public",
+        "relation": "sim_pnl_snapshots",
+        "tableBytes": 0,
+        "indexBytes": 16384,
+        "totalBytes": 16384
+      },
+      {
+        "schema": "public",
+        "relation": "ordinary_order_cancel_finality",
+        "tableBytes": 0,
+        "indexBytes": 8192,
+        "totalBytes": 8192
+      },
+      {
+        "schema": "public",
+        "relation": "pilot_instrument_observation_items",
+        "tableBytes": 0,
+        "indexBytes": 8192,
+        "totalBytes": 8192
+      }
+    ],
+    "terminalOrders": 6,
+    "fills": 6,
+    "TradeExecuted": 6,
+    "ledgerEntries": 24,
+    "fullChainCompleted": 6,
+    "fullChainOrderIds": [
+      "ord-10bfe9e4-2aa1-41df-acaa-46eeda9a87ac",
+      "ord-38a284f5-310b-4ce8-b3f8-bfc38d0e44cd",
+      "ord-3ea54d73-e0b6-4e7e-9f59-f62587134425",
+      "ord-b265517a-22da-4f16-a0a3-48b03d0b6788",
+      "ord-c809a8eb-f4b3-4fea-8079-be6003ab0c9d",
+      "ord-dc4514d3-e978-4dab-965b-1132337bb884"
+    ],
+    "databaseBytes": 14901775,
+    "walBytes": 16777216
+  },
+  "capacityRisk": false,
+  "drainNewWorkload": 0,
+  "finalBacklog": 0,
+  "oldestCandidateAge": "NONE",
+  "duplicates": 0,
+  "orphans": 0,
+  "manifestSha256": "922253c8934e32b7626ced2f9e42407a2a4313c665256b89c483e847ce6abaa6",
+  "ownedSurvivors": 0,
+  "cleanup": "PASS",
+  "phaseTimingRaw": [
+    {
+      "phase": "WARMUP",
+      "startElapsedNanos": 574333200,
+      "endElapsedNanos": 20006239100,
+      "durationNanos": 19431905900
+    },
+    {
+      "phase": "MEASUREMENT",
+      "startElapsedNanos": 20006239100,
+      "endElapsedNanos": 70015027800,
+      "durationNanos": 50008788700
+    },
+    {
+      "phase": "DRAIN",
+      "startElapsedNanos": 70015027800,
+      "endElapsedNanos": 100896815499,
+      "durationNanos": 30881787699
+    }
+  ],
+  "timingNote": "Fixed warmup clock interval is [T0,20s); initial synchronous sample executes within it. Raw phase driver starts at 574ms after that sample; this does not shift the absolute 20s boundary. Boundary observations retain actual sampling lag.",
+  "formal35MinuteCalibration": "NOT_RUN",
+  "firstAttemptClassification": "SETUP/HARNESS_PROTOCOL_FAILURE; raw failure retained; not an accepted smoke"
+}

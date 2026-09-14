@@ -42,6 +42,8 @@ final class L6ResourceSampler implements AutoCloseable {
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final ObjectNode summary = JSON.createObjectNode();
     private long index;
+    private long boundaryIndex;
+    private java.util.function.Consumer<ObjectNode> observer = record -> { };
     private long maximumLag;
     private long maximumCollection;
     private volatile RuntimeException failure;
@@ -69,23 +71,46 @@ final class L6ResourceSampler implements AutoCloseable {
         scheduler.scheduleAtFixedRate(() -> {
             if (failure != null || nanoTime.getAsLong() - startedNanos >= duration.total()) return;
             try { sample(); } catch (RuntimeException error) { failure = error; }
-        }, 0, INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
+        }, Math.max(0, index * INTERVAL_MILLIS - TimeUnit.NANOSECONDS.toMillis(nanoTime.getAsLong() - startedNanos)), INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
     }
 
-    synchronized void sample() {
+    synchronized void sample() { collectRecord(null, null, null); }
+
+    synchronized ObjectNode boundary(String name, String phase) {
+        return collectRecord(name, phase, null);
+    }
+
+    synchronized ObjectNode boundaryAt(String name, String phase, long targetNanos) {
+        return collectRecord(name, phase, TimeUnit.NANOSECONDS.toMillis(targetNanos));
+    }
+
+    synchronized void observeWith(java.util.function.Consumer<ObjectNode> listener) { observer = listener; }
+
+    private ObjectNode collectRecord(String boundary, String boundaryPhase, Long targetMillis) {
         checkHealthy();
         long begin = nanoTime.getAsLong();
         long elapsed = TimeUnit.NANOSECONDS.toMillis(begin - startedNanos);
         long lag = elapsed - index * INTERVAL_MILLIS;
-        Stamp stamp = new Stamp(index, wallTime.get().toString(), elapsed,
-                duration.samplePhase(begin - startedNanos), identity + ":" + index);
-        ObjectNode record = stamp.json().put("scheduledElapsedMillis", index * INTERVAL_MILLIS);
+        Stamp stamp = new Stamp(boundary == null ? index : -(++boundaryIndex), wallTime.get().toString(), elapsed,
+                boundary == null ? duration.samplePhase(begin - startedNanos) : boundaryPhase,
+                identity + ":" + (boundary == null ? index : 500 + boundaryIndex));
+        ObjectNode record = stamp.json().put("scheduledElapsedMillis", index * INTERVAL_MILLIS)
+                .put("sampleType", boundary == null ? "PERIODIC" : "PHASE_BOUNDARY");
+        if (boundary != null) {
+            record.put("boundary", boundary).put("scheduledElapsedMillis", targetMillis == null ? elapsed : targetMillis);
+            var names = record.putArray("boundaryNames");
+            for (String name : boundary.split("/")) names.add(name);
+            if (targetMillis != null) record.put("boundaryStartLagMillis", elapsed - targetMillis);
+        }
         ObjectNode sources = record.putObject("sources");
         try {
-            if (index >= 500 || lag < 0 || lag > MAX_START_LAG_MILLIS) {
+            if (targetMillis != null && (elapsed < targetMillis || elapsed - targetMillis > MAX_START_LAG_MILLIS)) {
+                throw new IllegalStateException("L6_STORAGE_BOUNDARY_DELAY");
+            }
+            if (index >= 500 || boundaryIndex > 12 || (boundary == null && (lag < 0 || lag > MAX_START_LAG_MILLIS))) {
                 throw new IllegalStateException("L6_RESOURCE_CADENCE_VIOLATION");
             }
-            maximumLag = Math.max(maximumLag, lag);
+            if (boundary == null) maximumLag = Math.max(maximumLag, lag);
             for (var entry : collectors.entrySet()) {
                 ObjectNode source = sources.putObject(entry.getKey());
                 try {
@@ -120,8 +145,9 @@ final class L6ResourceSampler implements AutoCloseable {
             record.put("collectionMillis", collection);
             if (collection > MAX_COLLECTION_MILLIS) throw new IllegalStateException("L6_RESOURCE_COLLECTION_OVERRUN");
             record.put("status", "MEASURED");
+            observer.accept(record.deepCopy());
             latest = record.deepCopy();
-            index++;
+            if (boundary == null) index++;
         } catch (Exception error) {
             for (String key : collectors.keySet()) {
                 if (!sources.has(key)) {
@@ -142,6 +168,7 @@ final class L6ResourceSampler implements AutoCloseable {
             } catch (Exception error) { failure = new IllegalStateException("L6_RESOURCE_EVIDENCE_WRITE_FAILED", error); }
         }
         checkHealthy();
+        return record.deepCopy();
     }
 
     void checkHealthy() { if (failure != null) throw failure; }
@@ -159,7 +186,7 @@ final class L6ResourceSampler implements AutoCloseable {
     }
 
     synchronized ObjectNode summary() {
-        return summary.deepCopy().put("sampleCount", index).put("maxStartLagMillis", maximumLag)
+        return summary.deepCopy().put("sampleCount", index).put("boundarySampleCount", boundaryIndex).put("totalObservationCount", index + boundaryIndex).put("maxStartLagMillis", maximumLag)
                 .put("maxCollectionMillis", maximumCollection).put("status", failure == null ? "MEASURED" : "UNAVAILABLE");
     }
 
@@ -170,6 +197,7 @@ final class L6ResourceSampler implements AutoCloseable {
             if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) throw new IllegalStateException("L6_SAMPLER_SURVIVOR");
         }
         Files.writeString(output.resolveSibling("resource-summary.json"), JSON.writerWithDefaultPrettyPrinter().writeValueAsString(summary()));
-        checkHealthy();
+        // try-with-resources不能把同一异常对象suppressed到自身；包装保留最初采样原因。
+        if (failure != null) throw new IllegalStateException("L6_SAMPLER_CLOSED_WITH_FAILURE", failure);
     }
 }

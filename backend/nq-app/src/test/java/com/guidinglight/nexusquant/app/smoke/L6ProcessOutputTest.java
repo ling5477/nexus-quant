@@ -9,6 +9,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** 验证长跑增量读取不会把正在写入的半行或旧结果当作新响应。 */
 class L6ProcessOutputTest {
+    @Test void explicitResultDeadlineDoesNotWaitForLegacyDefault() throws Exception {
+        var dir = Files.createTempDirectory(B0Processes.root().resolve("backend/nq-app/target"), "l6-deadline-");
+        try (var child = new B0Processes.Child(FragmentedOutput.class, dir, "echo", B0Processes.cleanEnvironment())) {
+            child.ready(); child.startCommand("one");
+            long started = System.nanoTime();
+            org.junit.jupiter.api.Assertions.assertThrows(AssertionError.class, () -> child.resultBefore(started + 50_000_000L));
+            org.junit.jupiter.api.Assertions.assertTrue(System.nanoTime() - started < 1_000_000_000L);
+        }
+    }
+
     @Test void waitsForCompleteUtf8LineAndPreservesResultSequence() throws Exception {
         var dir = Files.createTempDirectory(B0Processes.root().resolve("backend/nq-app/target"), "l6-output-");
         var child = new B0Processes.Child(FragmentedOutput.class, dir, "echo", B0Processes.cleanEnvironment());

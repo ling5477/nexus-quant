@@ -1,0 +1,62 @@
+[
+  {
+    "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0Processes.java",
+    "sha256": "8786b51d1fb2da58dcb157c4a64a8035d874999258b661385bee37a11516f869"
+  },
+  {
+    "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6BusinessCheckpoint.java",
+    "sha256": "954844a488e0667f803f8205f9b4aab3c260823347f8fb9ec1187fae55043398"
+  },
+  {
+    "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalRuntime.java",
+    "sha256": "0e34477a98e3b8014acbe13cfef828c54b69bee41ae1caba02c5c7a2f2f32b83"
+  },
+  {
+    "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalTrigger.java",
+    "sha256": "9df2a0bd5839dc955ab49c2ff73c8451276295aaeab982c3bbb310bc996ad1de"
+  },
+  {
+    "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalVenueProcessMain.java",
+    "sha256": "a77197a22ef26b2c5b336dcfcf5ddcf30467a04d923a2d1d4e1b23481d5746ae"
+  },
+  {
+    "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ProcessOutputTest.java",
+    "sha256": "2cd82da18bd165c814469393aeb3b61e216c8bc49a8312fc345f6de42ef40c76"
+  },
+  {
+    "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ResourceSampler.java",
+    "sha256": "74b7255c976202e93f957ef7675d5e40f7f3e08fae5d3d219682c5670ff32bec"
+  },
+  {
+    "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6RuntimeResources.java",
+    "sha256": "1fa522a341a5a0bf4ada95352fe513106c32917b916fb2e4d605c1f8c8d8056c"
+  },
+  {
+    "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6StorageCalibrationContract.java",
+    "sha256": "afefcae582adb077a977b145e211383a99f95c50daf0056a3bd6eb33229ba441"
+  },
+  {
+    "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6StorageCalibrationTest.java",
+    "sha256": "3835a61771a77b9249f8b49fe113c20338c5d1bd4591e1485ff4ce9273582495"
+  },
+  {
+    "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6StorageCapacityGuard.java",
+    "sha256": "c8aefe7ab26c2183371cd2ee40e2f6f778aa453eba35ea4c5aaa75f7009a780c"
+  },
+  {
+    "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6StorageContractTest.java",
+    "sha256": "15a89a10e62577310569686e10cf351789d66493fa7bd8c2830b822c08ade7ec"
+  },
+  {
+    "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_oracle.py",
+    "sha256": "20776753a8d4eb41f67bbc3a4ad557e800f182de5b82a90ffdbd25ac5eb73ff0"
+  },
+  {
+    "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_storage_counter.py",
+    "sha256": "44aad3090d9f32acc3367618718b49d1b10f0955210f4bcc29a1802fef86aaea"
+  },
+  {
+    "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/test_l6_storage_counter.py",
+    "sha256": "facba6bd816ed0a84f6ef9d05478ed9204aea84eda14cf379714fd9051bd3aba"
+  }
+]
