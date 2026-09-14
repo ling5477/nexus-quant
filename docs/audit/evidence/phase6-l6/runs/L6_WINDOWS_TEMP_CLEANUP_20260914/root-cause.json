@@ -1,0 +1,24 @@
+{
+  "previousRunId": "9e7c7b06-9cd6-45e5-8388-bfcaae07f77d",
+  "failure": "java.nio.file.FileSystemException: C:\\Users\\Lingyu\\AppData\\Local\\Temp\\nq-b0-command-8813910613010930111.log: 另一个程序正在使用此文件，进程无法访问。",
+  "site": "B0Processes.commandUntil finally Files.deleteIfExists(log), B0Processes.java:82",
+  "historicalCommandExit": "NOT_RECORDED",
+  "historicalOutputRead": "Not separately instrumented; helper stdout contains valid oracle result, old control flow reads before deletion but finally can also run after earlier failures. Do not infer missing exit/read telemetry.",
+  "historicalProcessSurvivors": 0,
+  "directMechanism": "Unconditional Files.deleteIfExists in finally throws FileSystemException and overrides command return or primary exception. Reproduced with actual Windows NOSHARE_DELETE handle after output capture in new probe.",
+  "lockOwner": "UNKNOWN",
+  "originalOracleOutput": {
+    "orders": 236,
+    "trades": 236,
+    "ledger": 944,
+    "position": "23.6",
+    "duplicates": 0,
+    "orphans": 0
+  },
+  "evidenceHashes": {
+    "docs/audit/evidence/phase6-l6/runs/9e7c7b06-9cd6-45e5-8388-bfcaae07f77d/failure-evidence.json": "cdc7514413a7d33b0d7bf8d73fdd62380462d24b31fbadab2604c1d089a13813",
+    "docs/audit/evidence/phase6-l6/runs/9e7c7b06-9cd6-45e5-8388-bfcaae07f77d/proof.json": "378ee7ed3e831ff23ba2284d64c61260201b220615e2a48482c70b7532a12c09",
+    "docs/audit/evidence/phase6-l6/runs/9e7c7b06-9cd6-45e5-8388-bfcaae07f77d/cleanup-verification.json": "776f7d6216ade4b80ac66ee07ff854a11f3783e014e37678e8884515efc9b244"
+  },
+  "historicalDecisionUnchanged": "FAIL / INFRASTRUCTURE / NOT_ACCEPTED"
+}

@@ -62,25 +62,7 @@ final class B0Processes {
     }
 
     static String commandUntil(java.util.function.BooleanSupplier stop, String... args) throws Exception {
-        Path log = Files.createTempFile("nq-b0-command-", ".log");
-        Process process = null;
-        try {
-            process = new ProcessBuilder(args).redirectErrorStream(true).redirectOutput(log.toFile()).start();
-            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(45);
-            while (!process.waitFor(100, TimeUnit.MILLISECONDS)) {
-                if (stop.getAsBoolean()) throw new L6BusinessCheckpoint.StoragePending();
-                if (System.nanoTime() >= deadline) throw new IllegalStateException("B0 command timeout: " + args[0]);
-            }
-            String result = Files.readString(log);
-            if (process.exitValue() != 0) throw new IllegalStateException("B0 command failed: " + result);
-            return result.trim();
-        } finally {
-            if (process != null && process.isAlive()) {
-                process.destroyForcibly();
-                if (!process.waitFor(5, TimeUnit.SECONDS)) throw new IllegalStateException("B0 command cleanup failed");
-            }
-            Files.deleteIfExists(log);
-        }
+        return B0CommandRunner.DEFAULT.run(stop, args);
     }
 
     static final class Pg implements AutoCloseable {
@@ -167,7 +149,7 @@ final class B0Processes {
         }
 
         @Override public void close() throws Exception {
-            command("docker", "rm", "--force", container);
+            B0CommandRunner.removeOwnedContainer(container);
             String remaining = command("docker", "ps", "-a", "--filter", "id=" + container, "--format", "{{.ID}}");
             B0Fixture.require(remaining.isBlank());
             System.out.println("B0_CLEANUP container=" + name + " remaining=0");

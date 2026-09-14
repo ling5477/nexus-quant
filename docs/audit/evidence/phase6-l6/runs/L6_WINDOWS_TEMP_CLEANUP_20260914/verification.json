@@ -1,0 +1,56 @@
+{
+  "decision": "LOCAL_TESTS_AND_REVIEW_PASS / DELIVERY_CI_PENDING",
+  "baselineHead": "f6f4d7a9a3cae8eedc9871b03d2f41c9e78b90db",
+  "candidate": {
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0Processes.java": "aaf73f27405eb4f529308858223f0d0b66d3207d1488285f6387586708f95a5d",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0CommandRunner.java": "380fb7597f02e27bcfbee5fb974dc19e82bf81e544ee21f61224966954d5e784",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0TempLogs.java": "df9a5309a35d74db6d8dac5cbb027a34a98bf0d61e968b08abbfa8d182cba1e4",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0CommandCleanupTest.java": "44c26fcf98ff1f3bee9b319080454f042a6446412ae743f0a92b234cdf3feb4b",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0TempLogWindowsProbeTest.java": "dc0121774470154f2773afdf2a6df9dfe98a1ca47a539438de737a20b1d9db4f"
+  },
+  "tests": [
+    {
+      "file": "docs\\audit\\evidence\\phase6-l6\\runs\\L6_WINDOWS_TEMP_CLEANUP_20260914\\targeted-04-xml\\TEST-com.guidinglight.nexusquant.app.smoke.B0CommandCleanupTest.xml",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "file": "docs\\audit\\evidence\\phase6-l6\\runs\\L6_WINDOWS_TEMP_CLEANUP_20260914\\targeted-04-xml\\TEST-com.guidinglight.nexusquant.app.smoke.L6ProcessOutputTest.xml",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "file": "docs\\audit\\evidence\\phase6-l6\\runs\\L6_WINDOWS_TEMP_CLEANUP_20260914\\probe-02-xml\\TEST-com.guidinglight.nexusquant.app.smoke.B0TempLogWindowsProbeTest.xml",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "windowsProbe": {
+    "commands": 24,
+    "realDeleteFailures": 72,
+    "ownedSurvivors": 0,
+    "retainedFiles": 0
+  },
+  "productionDelta": 0,
+  "manifestDelta": 0,
+  "capacityModelDelta": 0,
+  "projectionGuardDelta": 0,
+  "pacingDelta": 0,
+  "durationDelta": 0,
+  "historicalEvidenceUnchanged": true,
+  "protectedFilesChecked": 4462,
+  "unexpectedDrift": [],
+  "formalL6ARun": false,
+  "l6AAccepted": false,
+  "l6Accepted": false,
+  "review": "PASS",
+  "P0": 0,
+  "P1": 0,
+  "validationArchiveSha256": "7a405ca71c0cc2ba676ad814f692f9ddc81aa98e6bc83844f69b2a127f239cf3"
+}

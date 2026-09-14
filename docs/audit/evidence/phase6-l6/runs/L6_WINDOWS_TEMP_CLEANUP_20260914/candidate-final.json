@@ -1,0 +1,7 @@
+{
+  "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0Processes.java": "aaf73f27405eb4f529308858223f0d0b66d3207d1488285f6387586708f95a5d",
+  "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0CommandRunner.java": "380fb7597f02e27bcfbee5fb974dc19e82bf81e544ee21f61224966954d5e784",
+  "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0TempLogs.java": "df9a5309a35d74db6d8dac5cbb027a34a98bf0d61e968b08abbfa8d182cba1e4",
+  "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0CommandCleanupTest.java": "44c26fcf98ff1f3bee9b319080454f042a6446412ae743f0a92b234cdf3feb4b",
+  "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0TempLogWindowsProbeTest.java": "dc0121774470154f2773afdf2a6df9dfe98a1ca47a539438de737a20b1d9db4f"
+}
