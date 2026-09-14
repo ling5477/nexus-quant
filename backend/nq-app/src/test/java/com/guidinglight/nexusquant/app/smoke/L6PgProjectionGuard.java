@@ -16,6 +16,7 @@ final class L6PgProjectionGuard {
     static final class ProducerStopped extends RuntimeException { }
     record Point(long scheduledMillis, long used, long orders, int phase) { }
     private final L6PgCapacityContract contract;
+    private final long runCapacity;
     private final ArrayDeque<Point> recent = new ArrayDeque<>();
     private final long[] rates;
     private long stoppedAt = -1;
@@ -23,7 +24,7 @@ final class L6PgProjectionGuard {
     private ObjectNode last;
     private final List<ObjectNode> history = new ArrayList<>();
 
-    L6PgProjectionGuard(L6PgCapacityContract contract) { this.contract = contract; rates = new long[]{contract.rate(0), contract.rate(1), contract.rate(2)}; }
+    L6PgProjectionGuard(L6PgCapacityContract contract, L6PgRunCapacity run) { run.requireModel(contract); this.runCapacity = run.capacity(); this.contract = contract; rates = new long[]{contract.rate(0), contract.rate(1), contract.rate(2)}; }
     synchronized boolean stopped() { return stoppedAt >= 0; }
     synchronized boolean producerAllowed() { return !stopped(); }
     synchronized long stoppedAt() { return stoppedAt; }
@@ -55,7 +56,7 @@ final class L6PgProjectionGuard {
         if (!"PERIODIC".equals(sample.path("sampleType").asText()) || !"MEASURED".equals(sample.path("status").asText())) throw new IllegalStateException("L6_PROJECTION_SAMPLE_INVALID");
         long capacity = nonnegative(v,"pgTmpfsCapacityBytes"), used = nonnegative(v,"pgTmpfsUsedBytes"), free = nonnegative(v,"pgTmpfsFreeBytes");
         long orders = nonnegative(v,"orders"), backlog = nonnegative(v,"backlog"), at = nonnegative(sample,"scheduledElapsedMillis");
-        if (capacity != contract.capacity() || Math.addExact(used, free) != capacity || at > 3_600_000) throw new IllegalStateException("L6_PROJECTION_CAPACITY_DRIFT");
+        if (capacity != runCapacity || Math.addExact(used, free) != capacity || at > 3_600_000) throw new IllegalStateException("L6_PROJECTION_CAPACITY_DRIFT");
         int phase = stopped() ? 2 : at < 600_000 ? 0 : at < 3_000_000 ? 1 : 2;
         if ((recent.isEmpty() && at != 0) || (!recent.isEmpty() && (at - recent.getLast().scheduledMillis() != 10_000 || orders < recent.getLast().orders()))) throw new IllegalStateException("L6_PROJECTION_CADENCE_OR_INVENTORY_DRIFT");
         if (elapsed < at * 1_000_000 || elapsed > (at + 10_000) * 1_000_000) throw new IllegalStateException("L6_PROJECTION_STALE_SAMPLE");
@@ -79,7 +80,8 @@ final class L6PgProjectionGuard {
             if (free < drainNeed) drainBudgetUnavailable = true;
         }
         last = new ObjectMapper().createObjectNode().put("elapsedNanos", elapsed).put("phase", phase == 0 ? "WARMUP" : phase == 1 ? "ACTIVE" : "DRAIN")
-                .put("freeBytes", free).put("projectedRemainingStorageNeed", required).put("orders", orders).put("backlog", backlog)
+                .put("freeBytes", free).put("usedBytes", used).put("runCapacityBytes", runCapacity)
+                .put("freeMinusNeedBytes", free-required).put("projectedRemainingStorageNeed", required).put("orders", orders).put("backlog", backlog)
                 .put("warmupRate", rates[0]).put("activeRate", rates[1]).put("drainRate", rates[2])
                 .put("producerDisabled", stopped() || elapsed >= 3_000_000_000_000L).put("triggered", stopped());
         if (history.size() >= 361) throw new IllegalStateException("L6_PROJECTION_HISTORY_BOUND");

@@ -13,6 +13,7 @@ class L6PgCapacityContractTest {
     private static final ObjectMapper JSON = new ObjectMapper();
     @TempDir Path temporary;
     static L6PgCapacityContract contract() { return L6PgCapacityContract.read(B0Processes.root().resolve(L6PgCapacityContract.CANONICAL)); }
+    static L6PgRunCapacity run(L6PgCapacityContract c) { return L6PgRunCapacity.derive(c, 48_910_336); }
     @Test void rawReplayGoldenIsDeterministicAndMatchesEntireCanonicalContract() throws Exception {
         String script = B0Processes.root().resolve("backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_capacity_calculator.py").toString();
         String first = B0Processes.command("python", "-X", "utf8", script, B0Processes.root().toString(), L6FormalManifest.CANONICAL.toString(), contract().sourceRelative());
@@ -20,8 +21,8 @@ class L6PgCapacityContractTest {
         var calculated = JSON.readTree(first);
         assertEquals(JSON.readTree(B0Processes.root().resolve(L6PgCapacityContract.CANONICAL).toFile()), calculated);
         var p = calculated.path("projection");
-        assertEquals(1_304_428_544L, p.path("requiredCapacityBytes").asLong());
-        assertEquals(1_000_225_764L, p.path("projectedFormalEndPeakBytes").asLong());
+        assertEquals(1_304_428_544L, p.path("calibrationReference").path("legacyCapacityBytes").asLong());
+        assertEquals(1_000_225_764L, p.path("calibrationReference").path("projectedEndBytes").asLong());
         assertEquals(304_052_400, p.path("reserveBytes").asLong());
         assertEquals(731_429_368, p.path("projected40minActiveGrowthBytes").asLong());
         assertEquals(532_197_125, p.path("crossChecks").path("inventoryTimeAdjustedPerChainActiveBytes").asLong());
@@ -35,10 +36,11 @@ class L6PgCapacityContractTest {
     @Test void missingMalformedExtraFieldsWrongScopeAndInconsistentFormulaReject() throws Exception {
         assertThrows(IllegalStateException.class, () -> L6PgCapacityContract.read(temporary.resolve("missing")));
         String original = Files.readString(B0Processes.root().resolve(L6PgCapacityContract.CANONICAL));
-        for (String invalid : new String[]{"{}", "null", original + "{}", original.replace("\"schemaVersion\": 1", "\"schemaVersion\": 1, \"schemaVersion\": 1"),
+        for (String invalid : new String[]{"{}", "null", original + "{}", original.replace("\"schemaVersion\": 2", "\"schemaVersion\": 2, \"schemaVersion\": 2"),
                 original.replace("L6_A_60MIN", "L6_B_180MIN"), original.replace("1304428544", "1304428545"),
+                original.replace("17473536", "17473535"),
                 original.replace("7117650000", "7117650001"), original.replace("\"maximumFraction\": 0.6", "\"maximumFraction\": 0.7"),
-                original.replace("\"status\": \"ACCEPTED\"", "\"status\": \"DRAFT\""), original.replace("\"schemaVersion\": 1", "\"unexpected\": 1, \"schemaVersion\": 1")}) {
+                original.replace("\"status\": \"ACCEPTED\"", "\"status\": \"DRAFT\""), original.replace("\"schemaVersion\": 2", "\"unexpected\": 1, \"schemaVersion\": 2")}) {
             Path path = temporary.resolve("invalid.json"); Files.writeString(path, invalid);
             assertThrows(IllegalStateException.class, () -> L6PgCapacityContract.read(path));
         }
@@ -62,35 +64,35 @@ class L6PgCapacityContractTest {
     }
     @Test void boundedL5AndFormalScopeRemainSeparate() {
         assertEquals(256L*1_048_576, B0Processes.Pg.defaultTmpfsBytes());
-        assertEquals(1244L*1_048_576, contract().capacity());
-        assertEquals(2012L*1_048_576, contract().pgMemory());
+        assertEquals(1261L*1_048_576, run(contract()).capacity());
+        assertEquals(2029L*1_048_576, contract().pgMemory(run(contract()).capacity()));
         assertEquals(7_117_650_000L, contract().interval());
         assertEquals(10_000, L6ResourceSampler.INTERVAL_MILLIS);
         assertEquals(3_600_000_000_000L, L6DurationContract.forMode(false).total());
     }
     @Test void sixtyPercentBoundaryAndNegativeNeverReachRuntime() throws Exception {
-        var c = contract(); long budget = L6HostMemoryPreflight.budget(c);
-        assertEquals(6364L*1_048_576, budget);
+        var c = contract(); long budget = L6HostMemoryPreflight.budget(c, run(c).capacity());
+        assertEquals(6381L*1_048_576, budget);
         long minimumAvailable = Math.ceilDiv(budget*5, 3);
         var called = new AtomicBoolean();
-        L6HostMemoryPreflight.beforeRuntime(c, new L6HostMemoryPreflight.Entry(minimumAvailable, 512L*1_048_576, 512L*1_048_576), p -> {
+        L6HostMemoryPreflight.beforeRuntime(c, run(c).capacity(), new L6HostMemoryPreflight.Entry(minimumAvailable, 512L*1_048_576, 512L*1_048_576), p -> {
             assertFalse(p.path("pgStarted").asBoolean()); assertEquals(0, p.path("orders").asInt()); called.set(true);
         });
         assertTrue(called.get()); called.set(false);
-        var error = assertThrows(IllegalStateException.class, () -> L6HostMemoryPreflight.beforeRuntime(c,
+        var error = assertThrows(IllegalStateException.class, () -> L6HostMemoryPreflight.beforeRuntime(c, run(c).capacity(),
                 new L6HostMemoryPreflight.Entry(minimumAvailable-1, 512L*1_048_576, 512L*1_048_576), p -> called.set(true)));
         assertEquals(L6HostMemoryPreflight.EXCEEDED, error.getMessage()); assertFalse(called.get());
         ObjectNode divisible = (ObjectNode) JSON.readTree(B0Processes.root().resolve(L6PgCapacityContract.CANONICAL).toFile());
         ((ObjectNode) divisible.path("hostMemory")).put("nativeAndToolsBudgetBytes", c.memory("nativeAndToolsBudgetBytes") + (3-budget%3)%3);
         Path path = temporary.resolve("exact.json"); Files.writeString(path, divisible.toString()); var exact = L6PgCapacityContract.read(path);
-        long exactBudget = L6HostMemoryPreflight.budget(exact);
+        long exactBudget = L6HostMemoryPreflight.budget(exact, run(exact).capacity());
         assertEquals(0, exactBudget%3);
-        assertEquals("PASS", L6HostMemoryPreflight.verify(exact, new L6HostMemoryPreflight.Entry(exactBudget/3*5, 512L*1_048_576, 512L*1_048_576)).path("status").asText());
+        assertEquals("PASS", L6HostMemoryPreflight.verify(exact, run(exact).capacity(), new L6HostMemoryPreflight.Entry(exactBudget/3*5, 512L*1_048_576, 512L*1_048_576)).path("status").asText());
     }
     @Test void unboundedOrUnavailableHeapsFailBeforeRuntime() {
         var c = contract();
         for (var entry : new L6HostMemoryPreflight.Entry[]{new L6HostMemoryPreflight.Entry(Long.MAX_VALUE, 0, 1),
                 new L6HostMemoryPreflight.Entry(Long.MAX_VALUE, 1, 1024L*1_048_576), new L6HostMemoryPreflight.Entry(0, 1, 1)})
-            assertThrows(IllegalStateException.class, () -> L6HostMemoryPreflight.verify(c, entry));
+            assertThrows(IllegalStateException.class, () -> L6HostMemoryPreflight.verify(c, run(c).capacity(), entry));
     }
 }

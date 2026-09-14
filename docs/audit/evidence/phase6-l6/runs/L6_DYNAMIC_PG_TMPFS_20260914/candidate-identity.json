@@ -1,0 +1,21 @@
+{
+  "head": "7f2c9431b966cf102e75d6be42014e834450bcdc",
+  "stageCount": 0,
+  "files": {
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0Processes.java": "bccf011c7360d12dc19467192796da049eb2d4fd3bdf3014468bfa1c051810eb",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalRuntime.java": "6ffd67257a202cca160ebfad787198738a06fdd09e8eb23e3b4a7636e24d7cc8",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6HostMemoryPreflight.java": "92892928d98238d1532a11d0b4c97e88132bf2b6789058131a23f25ac6debabc",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6PgCapacityContract.java": "76169b25ffc2d95e6f15d07da4fa757e943a29ef5f1afe56c7be1e244e223218",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6PgCapacityContractTest.java": "c02c33d16c41c54cee39bb767db45abf693b236bfba0c302ecc27095f195bbb2",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6PgCapacityFixtureTest.java": "582cfef3b3741f46e6e2613541bdb038fd9b4c8e2baefb844434d426746ac6d7",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6PgProjectionGuard.java": "3af160ad07e8541a46e5f9e858129de4ea60b96ac157669a0b50ade18511ce73",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6PgProjectionGuardTest.java": "9bfc0f4be9d0137bd0be98dd9123a5cce41325c3dcec21138b280dbc303b1e73",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_capacity_calculator.py": "ecde6ebe08c1119b33256d00131067f8c6890335a9ab99349ff02a7d986fcef0",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6PgRunCapacity.java": "f5ed42671f06fcdcdd9af0c40f6e8020d64d147513b70e9a747e3705e21a27c6",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6PgBaselinePreflight.java": "fe37dcd64209d2558ee33791ccf24a39c0975ecf775efdcea894ccc73175c81c",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6DynamicCapacityTest.java": "49eb3d39a541ebe406ab1418dd238ccce04cf332f287f5c8f71d1c758ac6a439",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6DynamicCapacityProbeTest.java": "c42eb80eb2b2aec26462193fd1590a5a2a3a1be21bec936d2773e139ede83840",
+    "docs/audit/evidence/phase6-l6/L6_PG_TMPFS_CAPACITY_CONTRACT.json": "41b819d8ac572209e87112027cdfcdf0bd34c8c79d1e8a5bb033c697c2cd8c4c"
+  },
+  "fingerprint": "6a38ce4d0c7c6e4159e0ceec630e3ed8cf9068b97997fd6505e45ed7072e2e3b"
+}

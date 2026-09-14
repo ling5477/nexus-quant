@@ -38,21 +38,23 @@ final class L6HostMemoryPreflight {
         return new Entry(available, Runtime.getRuntime().maxMemory(), heap);
     }
 
-    static long budget(L6PgCapacityContract c) {
+    static long budget(L6PgCapacityContract c, long capacity) {
+        L6PgCapacityContract.require(capacity >= B0Processes.Pg.defaultTmpfsBytes());
         long result = Math.addExact(2*c.memory("nqHeapEachBytes"), c.memory("venueHeapBytes"));
         for (String key : new String[]{"controllerHeapBytes", "mavenHeapBytes", "nativeAndToolsBudgetBytes"}) result = Math.addExact(result, c.memory(key));
-        return Math.addExact(result, c.pgMemory());
+        return Math.addExact(result, c.pgMemory(capacity));
     }
 
-    static ObjectNode verify(L6PgCapacityContract c, Entry entry) {
-        long budget = budget(c);
+    static ObjectNode verify(L6PgCapacityContract c, long capacity, Entry entry) {
+        long budget = budget(c, capacity);
         var proof = JSON.createObjectNode().put("availableHostMemoryAtEntry", entry.availableBytes())
                 .put("totalQualificationOwnedBudget", budget).put("maximumFraction", "0.60")
-                .put("pgContainerBudgetBytes", c.pgMemory()).put("pgTmpfsMaximumBytes", c.capacity())
+                .put("pgContainerBudgetBytes", c.pgMemory(capacity)).put("pgTmpfsMaximumBytes", capacity)
                 .put("tmpfsAlreadyIncludedInPgContainerBudget", true)
                 .put("controllerActualMaxHeapBytes", entry.controllerHeapBytes()).put("mavenActualMaxHeapBytes", entry.mavenHeapBytes())
                 .put("pgStarted", false).put("venueStarted", false).put("nqStarted", false)
-                .put("formalTimerStarted", false).put("orders", 0);
+                .put("formalTimerStarted", false).put("orders", 0)
+                .put("host60PercentLimitBytes", BigInteger.valueOf(entry.availableBytes()).multiply(BigInteger.valueOf(3)).divide(BigInteger.valueOf(5)).longValueExact());
         if (entry.availableBytes() <= 0 || entry.controllerHeapBytes() <= 0 || entry.mavenHeapBytes() <= 0
                 || entry.controllerHeapBytes() > c.memory("controllerHeapBytes") || entry.mavenHeapBytes() > c.memory("mavenHeapBytes")) {
             throw new IllegalStateException("BLOCKED / L6_HOST_MEMORY_RUNTIME_BUDGET_UNBOUNDED");
@@ -64,5 +66,5 @@ final class L6HostMemoryPreflight {
     }
 
     @FunctionalInterface interface Ready { void run(ObjectNode proof) throws Exception; }
-    static void beforeRuntime(L6PgCapacityContract c, Entry entry, Ready ready) throws Exception { ready.run(verify(c, entry)); }
+    static void beforeRuntime(L6PgCapacityContract c, long capacity, Entry entry, Ready ready) throws Exception { ready.run(verify(c, capacity, entry)); }
 }

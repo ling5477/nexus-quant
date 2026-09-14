@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-/** 只有已提交的canonical合同可授予正式fixture容量；fixture测试只读取同一模型。 */
+/** 已提交合同只冻结增长模型；容量由本次同生命周期测量推导。 */
 final class L6PgCapacityContract {
     static final long MIB = 1_048_576;
     static final Path CANONICAL = L6FormalManifest.CANONICAL.resolveSibling("L6_PG_TMPFS_CAPACITY_CONTRACT.json");
@@ -39,7 +39,7 @@ final class L6PgCapacityContract {
             require(fields.equals(Set.of("schemaVersion", "status", "scope", "sourceHead", "sourceStorageCalibrationRun",
                     "sourceArtifactHashes", "sourceRawArchiveSha256", "manifestSha256", "observed", "projection",
                     "hostMemory", "samplingIntervalSeconds", "limitations")));
-            require(n.path("schemaVersion").isIntegralNumber() && n.path("schemaVersion").asInt() == 1);
+            require(n.path("schemaVersion").isIntegralNumber() && n.path("schemaVersion").asInt() == 2);
             require("ACCEPTED".equals(n.path("status").asText()) && "L6_A_60MIN".equals(n.path("scope").asText()));
             require(n.path("sourceHead").asText().matches("[a-f0-9]{40}"));
             require(n.path("sourceStorageCalibrationRun").asText().matches("[a-f0-9-]{36}"));
@@ -48,7 +48,7 @@ final class L6PgCapacityContract {
             var model = n.path("projection");
             var observed = n.path("observed");
             for (String key : List.of("peakUsedBytes", "startUsedBytes", "maxRolling10MinuteGrowthBytes", "drainGrowthBytes", "measurementGrowthBytes", "measurementFullChainDelta")) positive(observed, key);
-            require(positive(observed, "startUsedBytes") == positive(model, "formalStartBaselineBytes"));
+            require(positive(observed, "startUsedBytes") == positive(model.path("calibrationReference"), "baselineBytes"));
             require(n.path("limitations").isArray() && n.path("limitations").toString().contains("L6B_CAPACITY_REQUIRES_SEPARATE_PROJECTION"));
             require("ORDER_TIME_ENVELOPE_V1".equals(model.path("model").asText()));
             require(model.path("formalSeconds").equals(JSON.readTree("[600,2400,600]")));
@@ -56,16 +56,20 @@ final class L6PgCapacityContract {
             require(contract.interval() == L6FormalManifest.read(B0Processes.root().resolve(L6FormalManifest.CANONICAL)).intervalNanos());
             require(contract.maximumOrders() == Math.ceilDiv(3_000_000_000_000L, contract.interval()));
             long[] limits = {0, 600_000_000_000L, 3_000_000_000_000L, 3_600_000_000_000L};
-            long sum = positive(model, "formalStartBaselineBytes");
+            long sum = positive(model.path("calibrationReference"), "baselineBytes");
             String[] keys = {"projectedWarmupGrowthBytes", "projected40minActiveGrowthBytes", "projected10minDrainGrowthBytes"};
             for (int i = 0; i < 3; i++) {
                 long expected = contract.growth(limits[i], limits[i+1], contract.rate(i), -1);
                 require(expected == positive(model, keys[i])); sum = Math.addExact(sum, expected);
             }
-            require(sum == positive(model, "projectedFormalEndPeakBytes"));
+            require(sum == positive(model.path("calibrationReference"), "projectedEndBytes"));
             require(contract.reserve() == Math.multiplyExact(contract.rate(1), Math.multiplyExact(1 + contract.maximumOrders(), 600)));
-            require(contract.capacity() == Math.multiplyExact(Math.ceilDiv(Math.addExact(sum, contract.reserve()), MIB), MIB));
-            require(contract.capacity() >= positive(n.path("observed"), "peakUsedBytes"));
+            require(contract.referenceCapacity() == Math.multiplyExact(Math.ceilDiv(Math.addExact(sum, contract.reserve()), MIB), MIB));
+            require(contract.referenceCapacity() >= positive(n.path("observed"), "peakUsedBytes"));
+            require("ACTORS_READY_PAPER_READY_VENUE_OPEN_BEFORE_WORKLOAD".equals(model.path("baselineLifecycle").asText()));
+            require(positive(model, "allocationGranularityBytes") == MIB && positive(model, "minimumCapacityBytes") == 256*MIB);
+            positive(model, "allocationBurstBytes");
+            require("MAX_POSITIVE_ACCEPTED_PERIODIC_10S_DELTA_CONSUMABLE_NOT_REQUIRED_FREE".equals(model.path("allocationBurstRule").asText()));
             for (String k : List.of("nqHeapEachBytes", "venueHeapBytes", "controllerHeapBytes", "mavenHeapBytes", "nativeAndToolsBudgetBytes", "pgNonTmpfsBudgetBytes")) positive(n.path("hostMemory"), k);
             require(n.path("hostMemory").path("maximumFraction").isNumber()
                     && n.path("hostMemory").path("maximumFraction").decimalValue().compareTo(new java.math.BigDecimal("0.60")) == 0);
@@ -82,6 +86,7 @@ final class L6PgCapacityContract {
                     && relative.getParent().getParent().equals(CANONICAL.getParent().resolve("runs")));
             Path archive = B0Processes.root().resolve(source.getKey());
             require(Files.size(archive) <= 4*MIB && hash(Files.readAllBytes(archive)).equals(source.getValue().asText()));
+            require(contract.burst() == replayAllocationBurst(archive));
             require(hash(Files.readAllBytes(B0Processes.root().resolve(L6FormalManifest.CANONICAL))).equals(n.path("manifestSha256").asText()));
             return contract;
         } catch (Exception failure) { throw new IllegalStateException(INVALID, failure); }
@@ -108,14 +113,46 @@ final class L6PgCapacityContract {
         JsonNode n = node.path(key); require(n.isIntegralNumber() && n.canConvertToLong() && n.longValue() > 0); return n.longValue();
     }
     static String hash(byte[] bytes) throws Exception { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)); }
-    long capacity() { return positive(value.path("projection"), "requiredCapacityBytes"); }
+    private static long replayAllocationBurst(Path archive) throws Exception {
+        try (var zip = new java.util.zip.ZipFile(archive.toFile())) {
+            var entry = zip.getEntry("resources.ndjson");
+            require(entry != null && entry.getSize() > 0 && entry.getSize() <= 8*MIB);
+            byte[] bytes;
+            try (var input = zip.getInputStream(entry)) { bytes = input.readNBytes((int) (8*MIB+1)); }
+            require(bytes.length <= 8*MIB);
+            long previous = -1, burst = 0; int index = 0;
+            for (String line : new String(bytes, java.nio.charset.StandardCharsets.UTF_8).lines().toList()) {
+                var row = JSON.readTree(line);
+                require("MEASURED".equals(row.path("status").asText()) && "PERIODIC".equals(row.path("sampleType").asText())
+                        && row.path("sampleIndex").asInt(-1) == index && row.path("scheduledElapsedMillis").asLong(-1) == index*10_000L);
+                long used = positive(row.path("sources").path("postgres").path("values"), "pgTmpfsUsedBytes");
+                if (previous >= 0) burst = Math.max(burst, used-previous);
+                previous = used; index++;
+            }
+            require(index == 210 && burst > 0);
+            return burst;
+        }
+    }
+    long referenceCapacity() { return positive(value.path("projection").path("calibrationReference"), "legacyCapacityBytes"); }
+    long burst() { return positive(value.path("projection"), "allocationBurstBytes"); }
+    long growth(int phase) {
+        long[] bounds = {0, 600_000_000_000L, 3_000_000_000_000L, 3_600_000_000_000L};
+        return growth(bounds[phase], bounds[phase+1], rate(phase), -1);
+    }
+    long deriveCapacity(long baseline) {
+        require(baseline > 0);
+        long total = Math.addExact(baseline, Math.addExact(reserve(), burst()));
+        for (int phase = 0; phase < 3; phase++) total = Math.addExact(total, growth(phase));
+        return Math.max(256*MIB, Math.multiplyExact(Math.ceilDiv(total, MIB), MIB));
+    }
+    String manifestSha() { return value.path("manifestSha256").asText(); }
     String sourceRelative() { return value.path("sourceArtifactHashes").fieldNames().next(); }
     long interval() { return positive(value.path("projection"), "pacingIntervalNanos"); }
     long maximumOrders() { return positive(value.path("projection"), "maximumOrders"); }
     long reserve() { return positive(value.path("projection"), "reserveBytes"); }
     long backlogUnit() { return positive(value.path("projection"), "backlogBytesPerChain"); }
     long memory(String key) { return positive(value.path("hostMemory"), key); }
-    long pgMemory() { return Math.addExact(memory("pgNonTmpfsBudgetBytes"), capacity()); }
+    long pgMemory(long capacity) { return Math.addExact(memory("pgNonTmpfsBudgetBytes"), capacity); }
     long rate(int phase) { return positive(value.path("projection"), List.of("warmupBytesPerOrderSecond", "activeBytesPerOrderSecond", "drainBytesPerOrderSecond").get(phase)); }
 
     /** 纳秒积分保留slot边界；DRAIN只计算已有库存，不新增潜在producer。 */
@@ -136,6 +173,6 @@ final class L6PgCapacityContract {
         return numerator.add(BigInteger.valueOf(denominator-1)).divide(BigInteger.valueOf(denominator)).longValueExact();
     }
     ObjectNode identity() { return JSON.createObjectNode().put("path", file.toString()).put("sha256", sha)
-            .put("scope", "L6_A_60MIN").put("requiredCapacityBytes", capacity()); }
+            .put("scope", "L6_A_60MIN").put("authority", "FROZEN_CAPACITY_MODEL"); }
     void verifyUnchanged() throws Exception { require(hash(Files.readAllBytes(file)).equals(sha)); }
 }

@@ -1,0 +1,25 @@
+{
+  "stageAssetCheckFirst": {
+    "result": "FAILED",
+    "finding": "STAGE_SEMANTICS: L6DynamicCapacityTest.java direct evidence path"
+  },
+  "remediation": "Derive test fixture path from existing canonical model path; exception policy unchanged",
+  "targeted03": {
+    "tests": 3,
+    "failures": 0,
+    "errors": 0
+  },
+  "stageAssetCheckFinal": {
+    "scanned": 1979,
+    "reviewedExceptions": 175,
+    "errors": 0
+  },
+  "docLinks": {
+    "checked": 3,
+    "warnings": 0,
+    "errors": 0
+  },
+  "productionDelta": 0,
+  "protectedHistoricalFilesUnchanged": 236,
+  "formal60minQualification": "NOT_RUN"
+}

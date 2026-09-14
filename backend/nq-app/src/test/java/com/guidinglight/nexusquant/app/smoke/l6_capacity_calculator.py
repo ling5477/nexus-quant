@@ -1,4 +1,4 @@
-"""从已接受原始样本计算L6-A容量；只输出合同，不运行或修改数据库。"""
+"""从已接受原始样本冻结L6-A增长与分配模型；只输出合同，不运行或修改数据库。"""
 import hashlib
 import json
 import math
@@ -112,7 +112,7 @@ def calculate(root, manifest_relative, bundle_relative):
     if adjusted_chain != phase_cross or active_rate < phase_rate or active_rate < p95_rate:
         raise ValueError('L6_PG_TMPFS_CAPACITY_MODEL_INCONSISTENT')
     return {
-        'schemaVersion': 1, 'status': 'ACCEPTED', 'scope': 'L6_A_60MIN',
+        'schemaVersion': 2, 'status': 'ACCEPTED', 'scope': 'L6_A_60MIN',
         'sourceHead': p['HEAD'], 'sourceStorageCalibrationRun': RUN,
         'sourceArtifactHashes': {Path(bundle_relative).as_posix(): hashlib.sha256(bundle.read_bytes()).hexdigest()},
         'sourceRawArchiveSha256': raw_manifest['archiveSha256'],
@@ -124,13 +124,16 @@ def calculate(root, manifest_relative, bundle_relative):
         'projection': {'model': MODEL, **coefficients, 'formalSeconds': [600, 2400, 600],
                        'maximumOrders': total, 'warmupMaximumOrders': warm_chains,
                        'activeMaximumOrders': active_chains, 'pacingIntervalNanos': interval,
-                       'formalStartBaselineBytes': baseline,
+                       'baselineLifecycle': 'ACTORS_READY_PAPER_READY_VENUE_OPEN_BEFORE_WORKLOAD',
+                       'allocationGranularityBytes': MIB, 'minimumCapacityBytes': 256*MIB,
+                       'allocationBurstBytes': max(used(y)-used(x) for x,y in zip(a,a[1:])),
+                       'allocationBurstRule': 'MAX_POSITIVE_ACCEPTED_PERIODIC_10S_DELTA_CONSUMABLE_NOT_REQUIRED_FREE',
                        'projectedWarmupGrowthBytes': growths[0],
                        'projected40minActiveGrowthBytes': growths[1],
                        'projected10minDrainGrowthBytes': growths[2],
-                       'projectedFormalEndPeakBytes': projected, 'reserveBytes': reserve,
+                       'reserveBytes': reserve,
                        'backlogBytesPerChain': ceil(Fraction(active_growth, chains)),
-                       'requiredCapacityBytes': capacity,
+                       'calibrationReference': {'baselineBytes': baseline, 'projectedEndBytes': projected, 'legacyCapacityBytes': capacity},
                        'reserveRationale': 'One additional 600s worst normalized healthy window at maximum formal inventory, outside the scheduled 3600s projection; conditional uncertainty allowance, not duplicated scheduled growth.',
                        'crossChecks': {'windows': len(windows), 'maxRateFraction': str(active_rate),
                                        'p95RateFraction': str(p95_rate), 'phaseRateFraction': str(phase_rate),

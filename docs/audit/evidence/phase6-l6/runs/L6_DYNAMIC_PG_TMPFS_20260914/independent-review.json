@@ -1,0 +1,32 @@
+{
+  "decision": "PASS",
+  "scope": "L6_DYNAMIC_PG_TMPFS_PREFLIGHT_SIZING",
+  "reviewer": "independent_capacity_review",
+  "mode": "REVIEW_ONLY",
+  "P0": 0,
+  "P1": 0,
+  "P2": 0,
+  "startFingerprint": "6a38ce4d0c7c6e4159e0ceec630e3ed8cf9068b97997fd6505e45ed7072e2e3b",
+  "endFingerprint": "6a38ce4d0c7c6e4159e0ceec630e3ed8cf9068b97997fd6505e45ed7072e2e3b",
+  "startHead": "7f2c9431b966cf102e75d6be42014e834450bcdc",
+  "endHead": "7f2c9431b966cf102e75d6be42014e834450bcdc",
+  "startStageCount": 0,
+  "endStageCount": 0,
+  "candidateFilesVerified": 14,
+  "independentChecks": [
+    "210 source samples and max 10-second burst recalculated; entire calculator output matches canonical",
+    "original trigger -279335 bytes independently reproduced",
+    "new raw replay margin 17546457 bytes",
+    "baseline startup ordering and immutable run capacity",
+    "60 percent budget including tmpfs once and L5/default isolation",
+    "24 runtime archive member hashes verified; summary equals raw proof",
+    "31 archived tests pass and 3 subsequent mechanical-path tests pass"
+  ],
+  "findings": [],
+  "limitations": [
+    "Conditional evidence-derived healthy storage model; no unconditional bound under unobserved faults",
+    "Short probe does not qualify formal L6-A"
+  ],
+  "l6AAccepted": false,
+  "l6Accepted": false
+}

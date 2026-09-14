@@ -1,0 +1,51 @@
+[
+  {
+    "name": "com.guidinglight.nexusquant.app.smoke.L6PgCapacityContractTest",
+    "tests": "8",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "com.guidinglight.nexusquant.app.smoke.L6PgProjectionGuardTest",
+    "tests": "5",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "com.guidinglight.nexusquant.app.smoke.L6DynamicCapacityTest",
+    "tests": "3",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "com.guidinglight.nexusquant.app.smoke.L6CalibrationCapacityTest",
+    "tests": "4",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "com.guidinglight.nexusquant.app.smoke.L6FormalContractTest",
+    "tests": "9",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "com.guidinglight.nexusquant.app.smoke.L6DynamicCapacityProbeTest",
+    "tests": "1",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "com.guidinglight.nexusquant.app.smoke.L6PgCapacityFixtureTest",
+    "tests": "1",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  }
+]

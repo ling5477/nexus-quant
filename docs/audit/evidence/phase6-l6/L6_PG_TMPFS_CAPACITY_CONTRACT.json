@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "status": "ACCEPTED",
   "scope": "L6_A_60MIN",
   "sourceHead": "2f2ecdff063d5657e606cf27ada6ba7db0d659c3",
@@ -31,14 +31,21 @@
     "warmupMaximumOrders": 85,
     "activeMaximumOrders": 337,
     "pacingIntervalNanos": 7117650000,
-    "formalStartBaselineBytes": 48910336,
+    "baselineLifecycle": "ACTORS_READY_PAPER_READY_VENUE_OPEN_BEFORE_WORKLOAD",
+    "allocationGranularityBytes": 1048576,
+    "minimumCapacityBytes": 268435456,
+    "allocationBurstBytes": 17473536,
+    "allocationBurstRule": "MAX_POSITIVE_ACCEPTED_PERIODIC_10S_DELTA_CONSUMABLE_NOT_REQUIRED_FREE",
     "projectedWarmupGrowthBytes": 126995260,
     "projected40minActiveGrowthBytes": 731429368,
     "projected10minDrainGrowthBytes": 92890800,
-    "projectedFormalEndPeakBytes": 1000225764,
     "reserveBytes": 304052400,
     "backlogBytesPerChain": 805839,
-    "requiredCapacityBytes": 1304428544,
+    "calibrationReference": {
+      "baselineBytes": 48910336,
+      "projectedEndBytes": 1000225764,
+      "legacyCapacityBytes": 1304428544
+    },
     "reserveRationale": "One additional 600s worst normalized healthy window at maximum formal inventory, outside the scheduled 3600s projection; conditional uncertainty allowance, not duplicated scheduled growth.",
     "crossChecks": {
       "windows": 61,

@@ -1,0 +1,40 @@
+{
+  "baselineHead": "7f2c9431b966cf102e75d6be42014e834450bcdc",
+  "originalRunId": "47ceae97-ab0e-4596-afa3-cd6782d69b6f",
+  "originalHead": "0851dffcf23436b47defcff7ef22d85986173cb6",
+  "originalRawFileHashes": {
+    "resources.ndjson": "55a75c37f543b7b626f303deb0069a8f180b30fe1fb724ab03cb263303669178",
+    "proof.json": "6a3adfdeb3689ad630a44186604137ec01e6ef8a17aef5a52d8855f6a74bd8e3"
+  },
+  "contractBaselineBytes": 48910336,
+  "actualEntryUsedBytes": 48910336,
+  "actualEntryFreeBytes": 1255518208,
+  "triggerUsedBytes": 49451008,
+  "triggerFreeBytes": 1254977536,
+  "scheduledTriggerMillis": 10000,
+  "observedTriggerNanos": 10442928500,
+  "remainingWarmupGrowthBytes": 126884303,
+  "remainingActiveGrowthBytes": 731429368,
+  "remainingDrainGrowthBytes": 92890800,
+  "reserveBytes": 304052400,
+  "backlogAllowanceBytes": 0,
+  "projectedRemainingStorageNeed": 1255256871,
+  "freeMinusNeed": -279335,
+  "initialHeadroomBytes": 150380,
+  "actualFirst10sGrowthBytes": 540672,
+  "modeledFirst10sGrowthBytes": 110957,
+  "rootCauses": [
+    "EARLY_GROWTH_MODEL_UNDERESTIMATE_AT_SUBWINDOW_ALLOCATION_SCALE",
+    "STATIC_CAPACITY_BOUND_TO_CALIBRATION_BASELINE_IS_SEPARATE_DESIGN_LIMITATION"
+  ],
+  "notSupportedByThisFailure": [
+    "FORMAL_ENTRY_BASELINE_MISMATCH",
+    "TMPFS_MEASUREMENT_SEMANTIC_MISMATCH",
+    "PROJECTION_GUARD_ALGEBRA_ERROR"
+  ],
+  "newBurstAllowanceBytes": 17473536,
+  "burstSourceScheduledMillis": [
+    1270000,
+    1280000
+  ]
+}

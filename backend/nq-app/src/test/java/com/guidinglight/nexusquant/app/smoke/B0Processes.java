@@ -99,9 +99,10 @@ final class B0Processes {
 
         static long defaultTmpfsBytes() { return 256L * 1024 * 1024; }
 
-        static Pg startL6(L6PgCapacityContract contract) throws Exception {
+        static Pg startL6(L6PgCapacityContract contract, L6PgRunCapacity run) throws Exception {
             contract.verifyUnchanged();
-            return start(true, contract.capacity(), contract.pgMemory());
+            run.requireModel(contract);
+            return start(true, run.capacity(), contract.pgMemory(run.capacity()));
         }
 
         private static Pg start(boolean bounded) throws Exception {
