@@ -66,7 +66,7 @@ final class L6FormalRuntime {
                         }
                         proof.set("paper", JSON.readTree(actors.getFirst().send("L6_PAPER"))); http(endpoint, "L5_OPEN");
                         try (var reader = fixture.checker(); var resourceReader = fixture.checker();
-                             var resources = new L6RuntimeResources(resourceReader, dir, actors, venue, endpoint, container)) {
+                             var resources = new L6RuntimeResources(resourceReader, dir, actors, venue, endpoint, container, true)) {
                             proof.put("postgresVersion", value(reader, "SHOW server_version")).put("schema", value(reader,"SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
                             assertEquals("51", proof.path("schema").asText());
                             reader.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ); reader.setAutoCommit(false);

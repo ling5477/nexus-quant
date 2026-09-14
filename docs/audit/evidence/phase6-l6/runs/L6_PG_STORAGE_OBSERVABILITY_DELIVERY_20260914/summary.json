@@ -1,0 +1,163 @@
+{
+  "status": "LOCAL_VERIFIED_PENDING_EXACT_HEAD_CI",
+  "startingHead": "5a9d1470e7d59a3970dff768bd9fcf920b752115",
+  "acceptedSourcePaths": [
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalRuntime.java",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6RuntimeResources.java",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6PgStorageObservation.java",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6PgStorageObservationTest.java",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6PgStoragePostgresTest.java"
+  ],
+  "sourceLfSha256": {
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalRuntime.java": "ef1a77bced3989bb07aeb2a14762bde2f9b704bbd336b8e273fbb8d6b2b6ac8f",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6RuntimeResources.java": "0e8c5e613684e92a035530461ecf72b3825a56c7d93fff3e26fe70d1a2890534",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6PgStorageObservation.java": "eb66dc172e01f28d16dfdf34bed8d06b220c9d28b2f3cf9a454f9892cc1f238f",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6PgStorageObservationTest.java": "91e4f3899007d0638131a8d74cde5240d0921fb4ca3e26b2ae9db2df656742c1",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6PgStoragePostgresTest.java": "23f52cfdf404c4213bda6bea05d12caab8e4a32ed6eba5c230565e75a1c3276f"
+  },
+  "tests": [
+    {
+      "name": "L6PgStorageObservationTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "L6ResourceSamplerTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "L6FormalContractTest",
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "L6PgStoragePostgresTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "probeRunId": "af5887bc-3095-46f9-8329-14656e8e449c",
+  "probeBefore": {
+    "pgTmpfsCapacityBytes": 268435456,
+    "pgTmpfsUsedBytes": 40284160,
+    "pgTmpfsFreeBytes": 228151296,
+    "pgTmpfsUsageRatio": 0.1500701904296875,
+    "pgBaseAllocatedBytes": 22798336,
+    "pgWalAllocatedBytes": 16777216,
+    "pgGlobalAllocatedBytes": 610304,
+    "pgDataAllocatedBytes": 40284160,
+    "pgOtherAllocatedBytes": 98304,
+    "pgDatabaseSizeBytes": 7699479,
+    "pgRelationStorage": []
+  },
+  "probeAfter": {
+    "pgTmpfsCapacityBytes": 268435456,
+    "pgTmpfsUsedBytes": 40488960,
+    "pgTmpfsFreeBytes": 227946496,
+    "pgTmpfsUsageRatio": 0.1508331298828125,
+    "pgBaseAllocatedBytes": 23003136,
+    "pgWalAllocatedBytes": 16777216,
+    "pgGlobalAllocatedBytes": 610304,
+    "pgDataAllocatedBytes": 40488960,
+    "pgOtherAllocatedBytes": 98304,
+    "pgDatabaseSizeBytes": 7904279,
+    "pgRelationStorage": [
+      {
+        "schema": "public",
+        "relation": "l6_storage_probe",
+        "tableBytes": 188416,
+        "indexBytes": 16384,
+        "totalBytes": 204800
+      }
+    ]
+  },
+  "samples": 3,
+  "usedPlusFreeEqualsCapacity": true,
+  "readWrite": "PASS",
+  "cleanup": "PASS",
+  "ownedPgRemaining": 0,
+  "measurementRole": "l6_storage_reader",
+  "measurementRoleSuperuser": false,
+  "capacityDecision": "NOT_MADE",
+  "formal60PercentPreflight": "NOT_IMPLEMENTED",
+  "runtimeProjectionGuard": "NOT_IMPLEMENTED",
+  "capacityStatus": "BLOCKED / L6_PG_TMPFS_CAPACITY_EVIDENCE_INSUFFICIENT",
+  "productionDelta": 0,
+  "capacityValueDelta": 0,
+  "manifestDelta": 0,
+  "pacingDelta": 0,
+  "productP0": 0,
+  "productP1": 0,
+  "L6_A": "NOT_ACCEPTED",
+  "L6": "NOT_ACCEPTED",
+  "unchangedRawSha256": {
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0Processes.java": "20e3008e97b03f3956e171db6c4b4104707f0a67d7e86a3b41a9fd95efa1acfd",
+    "docs/audit/evidence/phase6-l6/L6_FORMAL_CALIBRATION_MANIFEST.json": "922253c8934e32b7626ced2f9e42407a2a4313c665256b89c483e847ce6abaa6"
+  },
+  "archive": {
+    "path": "validation.zip",
+    "sha256": "8ae33921ad48577281d3306999ffa1b92ae5f2b97c72e6719ab789400075faac",
+    "entries": [
+      {
+        "path": "probe/proof.json",
+        "sha256": "ab88f9a7ea383bd6a8d7bfd9c8cd980b6f06eb6dbf903ca503ffe00e8b84bd53",
+        "bytes": 7885
+      },
+      {
+        "path": "probe/resource-summary.json",
+        "sha256": "bfbc87d7fd9274e4a34a4bbcd8607305ba2a57df3dedcfbacb03ba08f9c175b1",
+        "bytes": 5887
+      },
+      {
+        "path": "probe/resources.ndjson",
+        "sha256": "2fe977f3275452ec5ffe939f9005f16886d7d3eccf12aee6de10c31562f3fe66",
+        "bytes": 3787
+      },
+      {
+        "path": "logs/final-pg-probe.log",
+        "sha256": "93d4bde71d7fca6eccd6560fc24c1342ead7c43788866a5922167618c0e525a6",
+        "bytes": 31650
+      },
+      {
+        "path": "logs/targeted-tests-retry.log",
+        "sha256": "7472e6b13b850bc35b3e49706e927cbd7bb1ee6da96470b0e7ac359bfc4d3ad1",
+        "bytes": 31631
+      },
+      {
+        "path": "logs/targeted-tests.log",
+        "sha256": "8b3a684de100d41a889a967f808d9c179e1f9f43fc74c8d022c4661ac4ad03f8",
+        "bytes": 5476
+      },
+      {
+        "path": "validation/TEST-com.guidinglight.nexusquant.app.smoke.L6PgStorageObservationTest.xml",
+        "sha256": "c8ae57263fb8cb07b1d2898b756508873d5df8c116d3f4afaa4bc044190ade5c",
+        "bytes": 31884
+      },
+      {
+        "path": "validation/TEST-com.guidinglight.nexusquant.app.smoke.L6ResourceSamplerTest.xml",
+        "sha256": "356b20e5f86055168a6e8d1b6bf63eb35599f0db39f515a408a1bc4884e5a6a7",
+        "bytes": 32351
+      },
+      {
+        "path": "validation/TEST-com.guidinglight.nexusquant.app.smoke.L6FormalContractTest.xml",
+        "sha256": "e62bb8d4a531349cfe77b34312bf97a8e019ee7373fdcb7e7dd68d21f9f93210",
+        "bytes": 32761
+      },
+      {
+        "path": "validation/TEST-com.guidinglight.nexusquant.app.smoke.L6PgStoragePostgresTest.xml",
+        "sha256": "14dd62142e014a353b85a247c2e7c0f46dfb8c2ede994dfd1888778da458372a",
+        "bytes": 32096
+      }
+    ]
+  },
+  "failedInvocation": "targeted-tests.log: PowerShell argument parsing; no tests executed; corrected invocation retained separately"
+}

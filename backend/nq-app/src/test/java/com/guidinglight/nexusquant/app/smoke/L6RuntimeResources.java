@@ -35,6 +35,11 @@ final class L6RuntimeResources implements AutoCloseable {
 
     L6RuntimeResources(Connection reader, Path directory, List<B0Processes.Child> actors,
                        B0Processes.Child venue, String endpoint, String container) throws Exception {
+        this(reader, directory, actors, venue, endpoint, container, false);
+    }
+
+    L6RuntimeResources(Connection reader, Path directory, List<B0Processes.Child> actors,
+                       B0Processes.Child venue, String endpoint, String container, boolean formalStorage) throws Exception {
         this.reader = reader;
         this.directory = directory.toAbsolutePath().normalize();
         this.container = container;
@@ -74,14 +79,18 @@ final class L6RuntimeResources implements AutoCloseable {
             }
             return measured(stamp, value, required.get("venue"));
         });
-        add("postgres", Set.of("appConnections", "databaseConnections", "idleInTransaction", "backlog", "actionable",
-                "auditRows", "eventRows", "transactions", "cursor", "orders"), stamp -> {
+        var postgresFields = new java.util.HashSet<>(Set.of("appConnections", "databaseConnections", "idleInTransaction", "backlog", "actionable",
+                "auditRows", "eventRows", "transactions", "cursor", "orders"));
+        // 仅正式入口增加存储必测项；L5、readiness 与已接受 calibration 合同保持原样。
+        if (formalStorage) postgresFields.addAll(L6PgStorageObservation.FIELDS);
+        add("postgres", Set.copyOf(postgresFields), stamp -> {
             ObjectNode value = L5BoundedWorkloadTest.sample(reader);
             value.put("databaseConnections", number(reader, "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database()"));
             value.put("idleInTransaction", number(reader, "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND state LIKE 'idle in transaction%'"));
             value.put("auditRows", number(reader, "SELECT count(*) FROM audit_logs"));
             value.put("eventRows", number(reader, "SELECT count(*) FROM event_store"));
             value.set("cursor", L5BoundedWorkloadTest.cursor(reader));
+            if (formalStorage) value.setAll(L6PgStorageObservation.collect(reader, container, this::command));
             if (value.path("transactions").asLong() > 1_000_000) throw new IllegalStateException("L6_TRANSACTION_BUDGET");
             return measured(stamp, value, required.get("postgres"));
         });
