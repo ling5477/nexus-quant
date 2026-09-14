@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.app.smoke;
 
 import java.util.function.LongSupplier;
+import java.util.function.BooleanSupplier;
 
 /** slot 属于绝对时钟；不递归移动deadline，间隔不足的slot丢弃而不积累债务。 */
 final class L6DeterministicPacer {
@@ -10,13 +11,18 @@ final class L6DeterministicPacer {
     @FunctionalInterface interface Record { void save(Slot slot) throws Exception; }
     private final LongSupplier clock;
     private final long start, interval, producerEnd, total;
+    private final BooleanSupplier admission;
     private long index;
     private long lastActual = Long.MIN_VALUE;
 
     L6DeterministicPacer(LongSupplier clock, long start, long interval, L6DurationContract duration) {
+        this(clock, start, interval, duration, () -> true);
+    }
+    L6DeterministicPacer(LongSupplier clock, long start, long interval, L6DurationContract duration, BooleanSupplier admission) {
         if (interval < 1_000_000_000L || duration.total() / interval > 3000) throw new IllegalArgumentException("pacer bounds");
         this.clock = clock; this.start = start; this.interval = interval;
         this.producerEnd = duration.activeEnd(); this.total = duration.total();
+        this.admission = admission;
     }
     long nextElapsed() {
         return index * interval;
@@ -37,6 +43,11 @@ final class L6DeterministicPacer {
         if (backpressure) { record.save(slot(index - 1, due, now, "PAUSED_BACKPRESSURE", null, now, "WORKLOAD_GATE")); return; }
         if (lastActual != Long.MIN_VALUE && now - lastActual < interval) {
             record.save(slot(index - 1, due, now, "PAUSED_BACKPRESSURE", null, now, "MINIMUM_DISPATCH_INTERVAL")); return;
+        }
+        // emit前重新读取monotonic authority；迟到的sampler或检查点不能延长admission。
+        long dispatchNow = clock.getAsLong() - start;
+        if (dispatchNow >= producerEnd || !admission.getAsBoolean()) {
+            record.save(slot(index - 1, due, dispatchNow, "SKIPPED_PHASE", null, dispatchNow, "PRODUCER_DISABLED")); return;
         }
         String id = emit.send(index - 1);
         if (id == null || id.isBlank()) throw new IllegalStateException("emission identity missing");

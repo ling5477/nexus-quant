@@ -29,6 +29,7 @@ final class L6RuntimeResources implements AutoCloseable {
     private final List<ProcessHandle> processes;
     private final Map<Long, String> generations = new LinkedHashMap<>();
     private final String container;
+    private final L6ResourceFileLifecycle fileLifecycle;
     private long previousLogBytes;
     private final Map<String, L6ResourceSampler.Collector> collectors = new LinkedHashMap<>();
     private final Map<String, Set<String>> required = new LinkedHashMap<>();
@@ -45,7 +46,14 @@ final class L6RuntimeResources implements AutoCloseable {
 
     L6RuntimeResources(Connection reader, Path directory, List<B0Processes.Child> actors,
                        B0Processes.Child venue, String endpoint, String container, boolean formalStorage, boolean storageCalibration) throws Exception {
+        this(reader, directory, actors, venue, endpoint, container, formalStorage, storageCalibration, new L6ResourceFileLifecycle());
+    }
+
+    L6RuntimeResources(Connection reader, Path directory, List<B0Processes.Child> actors,
+                       B0Processes.Child venue, String endpoint, String container, boolean formalStorage,
+                       boolean storageCalibration, L6ResourceFileLifecycle fileLifecycle) throws Exception {
         this.reader = reader;
+        this.fileLifecycle = fileLifecycle;
         this.directory = directory.toAbsolutePath().normalize();
         this.container = container;
         B0Fixture.require(container.matches("[a-f0-9]{64}"));
@@ -200,12 +208,11 @@ final class L6RuntimeResources implements AutoCloseable {
         long logs = logBytes(), bytes = 0, count = 0;
         try (var paths = Files.walk(directory)) {
             var iterator = paths.iterator();
-            while (iterator.hasNext()) {
-                Path path = iterator.next();
-                if (Files.isSymbolicLink(path)) throw new IllegalStateException("L6_UNOWNED_PATH_LINK");
-                if (Files.isRegularFile(path)) {
+            long fileBytes;
+            while ((fileBytes = fileLifecycle.nextFileBytes(iterator)) != L6ResourceFileLifecycle.END_OF_FILES) {
+                if (fileBytes >= 0) {
                     if (++count > 10_000) throw new IllegalStateException("L6_FILE_COUNT_SAFETY_LIMIT");
-                    bytes += Files.size(path);
+                    bytes += fileBytes;
                 }
             }
         }
@@ -235,7 +242,7 @@ final class L6RuntimeResources implements AutoCloseable {
                 process.destroyForcibly();
                 if (!process.waitFor(2, java.util.concurrent.TimeUnit.SECONDS)) throw new IllegalStateException("L6_RESOURCE_COMMAND_SURVIVOR");
             }
-            Files.deleteIfExists(log);
+            fileLifecycle.deleteTemporary(log);
         }
     }
 

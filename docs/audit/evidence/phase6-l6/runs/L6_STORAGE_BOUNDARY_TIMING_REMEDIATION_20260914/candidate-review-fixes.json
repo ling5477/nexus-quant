@@ -1,0 +1,38 @@
+{
+  "head": "0f34b6b1d7aeb0ad3404c04731ff0fed8f978873",
+  "sourceFiles": [
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6StoragePhaseController.java",
+      "sha256": "2f5309c726f1430bba2ea0b75cc7488a05f24331c9fb11d8d05625bfbcc206f2"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6StoragePhaseControllerTest.java",
+      "sha256": "c7bf8d65a943c35d1ca86ac0dada12c9ba36dfc1beb2aceaa9f75c0d3caead13"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6DeterministicPacer.java",
+      "sha256": "3a440e91e6ee000b0243c6dc29c20afb57593262fbe2a4eb1ffddabc18cd3f32"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalRuntime.java",
+      "sha256": "79226c146e94209affedde15292dfb703aac5202ea3fb907eb5075dde2c8e7a7"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ResourceSampler.java",
+      "sha256": "e43ddec85ab711d788a61d4dcb93ed708e46c5a8d3aed99b6cbfbbd5533e9da7"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6RuntimeResources.java",
+      "sha256": "5b6d3e944c8da0c85360c193d95865c589fdaeaf78df66a6cfca8e82ea8e33a0"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ResourceFileLifecycle.java",
+      "sha256": "49b6cee8498e925c5b3afc0684fe3f0b4e131f02b7ce27a42bbd05bcfe72cd94"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ResourceFileLifecycleTest.java",
+      "sha256": "20b17e4a7d2ea665863fe0d592b60a827b7c88cc40023eab01739b3293900d26"
+    }
+  ],
+  "fingerprint": "d96183818c4f4117b225fa304d690a826b94456ce2bb8efed5deed65b0752c90"
+}

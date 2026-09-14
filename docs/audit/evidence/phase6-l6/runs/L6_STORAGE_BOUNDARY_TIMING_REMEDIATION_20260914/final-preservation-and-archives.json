@@ -1,0 +1,43 @@
+{
+  "entryFiles": 4186,
+  "preservedUnchanged": 4182,
+  "authorizedSourceChanges": [
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6DeterministicPacer.java",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalRuntime.java",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ResourceSampler.java",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6RuntimeResources.java"
+  ],
+  "unexpectedChangedOrMissing": [],
+  "archivesReadback": [
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/L6_STORAGE_BOUNDARY_TIMING_REMEDIATION_20260914/jitter-smoke-raw.zip",
+      "sha256": "3c641ae9bed9366dac2656ae5629f44774dd16feff2912a328ee7220177279db",
+      "entries": 40,
+      "bytes": 262255
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/L6_STORAGE_BOUNDARY_TIMING_REMEDIATION_20260914/review-fixes-final-validation.zip",
+      "sha256": "915c596f71a20d9c35086d45e3eca0ed1b88c44caa2714a93d7868db08185985",
+      "entries": 8,
+      "bytes": 31814
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/L6_STORAGE_BOUNDARY_TIMING_REMEDIATION_20260914/review-fixes-validation.zip",
+      "sha256": "63f270794b24f2e9b49e13c9e5a33119605faf4d3f133e4ef146a92e2a2af8a6",
+      "entries": 8,
+      "bytes": 31795
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/L6_STORAGE_BOUNDARY_TIMING_REMEDIATION_20260914/targeted-validation.zip",
+      "sha256": "8ab14b7ea5f033e2214c8b1f7a2ea2eda1bb84a838df52177ba14172d12a2a63",
+      "entries": 14,
+      "bytes": 42671
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/L6_STORAGE_BOUNDARY_TIMING_REMEDIATION_20260914/smoke-validation.zip",
+      "sha256": "d0fcb585657e991a263a51681ea3cb36415acfbf1de16d9db50dcc803881b58c",
+      "entries": 3,
+      "bytes": 5625
+    }
+  ]
+}

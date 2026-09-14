@@ -1,0 +1,153 @@
+{
+  "status": "PASS / STORAGE_TIMING_JITTER_SMOKE_ONLY",
+  "runId": "5c5d31a4-ceae-4348-9507-0284bf4ab213",
+  "head": "0f34b6b1d7aeb0ad3404c04731ff0fed8f978873",
+  "candidateFingerprint": "84dc2bb046d00fd3e753ee92d2065c4f196effe0e7c8320fdce3cbb6adea1c45",
+  "durationSeconds": [
+    20,
+    50,
+    30
+  ],
+  "periodicSamples": 10,
+  "boundarySamples": 5,
+  "uniqueObservationTokens": 15,
+  "boundaryObservations": [
+    {
+      "boundaryType": "WARMUP_END",
+      "scheduledElapsedNanos": 20000000000,
+      "observedElapsedNanos": 20012574000,
+      "latenessMillis": 12.574,
+      "phaseBefore": "WARMUP",
+      "phaseAfter": "MEASUREMENT",
+      "phase": "WARMUP",
+      "status": "MEASURED",
+      "collectionMillis": 501
+    },
+    {
+      "boundaryType": "MEASUREMENT_START",
+      "scheduledElapsedNanos": 20000000000,
+      "observedElapsedNanos": 20515218199,
+      "latenessMillis": 515.218199,
+      "phaseBefore": "WARMUP",
+      "phaseAfter": "MEASUREMENT",
+      "phase": "MEASUREMENT",
+      "status": "MEASURED",
+      "collectionMillis": 487
+    },
+    {
+      "boundaryType": "MEASUREMENT_END",
+      "scheduledElapsedNanos": 70000000000,
+      "observedElapsedNanos": 70008340300,
+      "latenessMillis": 8.3403,
+      "phaseBefore": "MEASUREMENT",
+      "phaseAfter": "DRAIN",
+      "phase": "MEASUREMENT",
+      "status": "MEASURED",
+      "collectionMillis": 486
+    },
+    {
+      "boundaryType": "DRAIN_START",
+      "scheduledElapsedNanos": 70000000000,
+      "observedElapsedNanos": 70495166699,
+      "latenessMillis": 495.166699,
+      "phaseBefore": "MEASUREMENT",
+      "phaseAfter": "DRAIN",
+      "phase": "DRAIN",
+      "status": "MEASURED",
+      "collectionMillis": 451
+    },
+    {
+      "boundaryType": "DRAIN_END",
+      "scheduledElapsedNanos": 100000000000,
+      "observedElapsedNanos": 100013005700,
+      "latenessMillis": 13.0057,
+      "phaseBefore": "DRAIN",
+      "phaseAfter": "COMPLETE",
+      "phase": "DRAIN",
+      "status": "MEASURED",
+      "collectionMillis": 487
+    }
+  ],
+  "phaseTransitionLatenessMillis": [
+    10,
+    7,
+    12
+  ],
+  "maxPeriodicSamplerLatenessMillis": 15,
+  "maxCollectionMillis": 575,
+  "mandatoryMissing": 0,
+  "cadenceViolation": 0,
+  "staleReuse": 0,
+  "checkpointJitter": {
+    "kind": "CHECKPOINT_CHANNEL_JITTER",
+    "startedElapsedNanos": 65010994800,
+    "measurementEndNanos": 70000000000,
+    "endedElapsedNanos": 74029728900,
+    "phaseAfter": "DRAIN",
+    "producerAllowedAfter": false
+  },
+  "periodicJitterInjection": false,
+  "jitterScope": "Checkpoint/controller business channel blocked across measurement deadline; periodic sampler remains valid. Separate controllable-clock test proves >3178ms late periodic cadence rejects without delaying phase/cutoff.",
+  "newOrdersDuringDrain": 0,
+  "newAdmissionsAtOrAfterDeadline": 0,
+  "frozenMeasurementWorkloadSlots": [
+    0,
+    2,
+    3,
+    5,
+    6,
+    7,
+    9
+  ],
+  "fullChainCompleted": 7,
+  "businessFinal": {
+    "orders": 7,
+    "trades": 7,
+    "ledger": 28,
+    "position": "0.7",
+    "duplicates": 0,
+    "orphans": 0
+  },
+  "oldestCandidateAge": "NONE",
+  "commandQueue": 0,
+  "venueQueue": 0,
+  "storageGuard": {
+    "triggered": false
+  },
+  "manifestEntrySha256": "922253c8934e32b7626ced2f9e42407a2a4313c665256b89c483e847ce6abaa6",
+  "manifestExitSha256": "922253c8934e32b7626ced2f9e42407a2a4313c665256b89c483e847ce6abaa6",
+  "configuredTmpfsBytes": 268435456,
+  "postgres": "16.15 (Debian 16.15-1.pgdg13+2)",
+  "schema": "V51",
+  "cleanup": {
+    "ownedSurvivors": 0,
+    "processes": [
+      {
+        "pid": 15904,
+        "alive": false
+      },
+      {
+        "pid": 43968,
+        "alive": false
+      },
+      {
+        "pid": 13764,
+        "alive": false
+      },
+      {
+        "pid": 26252,
+        "alive": false
+      },
+      {
+        "pid": 17220,
+        "alive": false
+      }
+    ],
+    "containerRemaining": "",
+    "verifiedAt": "2026-09-14T05:40:29.626803+00:00"
+  },
+  "formalStorageCalibration": "NOT_RUN / NOT_ACCEPTED",
+  "L6_A": "NOT_ACCEPTED",
+  "L6": "NOT_ACCEPTED",
+  "formalCapacityFrozen": false
+}

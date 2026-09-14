@@ -1,0 +1,38 @@
+{
+  "args": [
+    "D:\\Tool\\Maven\\apache-maven-3.9.12\\bin\\mvn.cmd",
+    "-B",
+    "-ntp",
+    "-pl",
+    "nq-app",
+    "-am",
+    "-Dtest=L6StorageCalibrationTest",
+    "-Dsurefire.failIfNoSpecifiedTests=false",
+    "-Dnq.l6.storage.calibration=true",
+    "-Dnq.l6.storage.calibration.smoke=true",
+    "-Dnq.l6.storage.timing.jitter=true",
+    "-Dfile.encoding=UTF-8",
+    "-Dstdout.encoding=UTF-8",
+    "-Dstderr.encoding=UTF-8",
+    "test"
+  ],
+  "cwd": "E:\\Project\\nexus-quant-gateaudit\\backend",
+  "environmentNames": [
+    "APPDATA",
+    "COMSPEC",
+    "JAVA_HOME",
+    "LOCALAPPDATA",
+    "OS",
+    "PATH",
+    "PATHEXT",
+    "PROGRAMDATA",
+    "PROGRAMFILES",
+    "PROGRAMFILES(X86)",
+    "SYSTEMROOT",
+    "TEMP",
+    "TMP",
+    "USERPROFILE",
+    "WINDIR"
+  ],
+  "startedAt": "2026-09-14T05:36:24.362339+00:00"
+}

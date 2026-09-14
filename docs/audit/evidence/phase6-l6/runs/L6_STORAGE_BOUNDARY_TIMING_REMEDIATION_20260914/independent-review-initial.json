@@ -1,0 +1,42 @@
+{
+  "role": "INDEPENDENT_REVIEW_ONLY",
+  "reviewer": "/root/timing_review",
+  "scope": "timing-only",
+  "initialStatus": "NOT_ACCEPTED / P2_FINDINGS_REQUIRE_CLOSURE",
+  "initialFingerprint": "84dc2bb046d00fd3e753ee92d2065c4f196effe0e7c8320fdce3cbb6adea1c45",
+  "initialStartEndFingerprintEqual": true,
+  "initialStageStartEnd": [
+    0,
+    0
+  ],
+  "initialFindings": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 3,
+    "P3": 0
+  },
+  "findings": [
+    {
+      "id": "TIMING-REVIEW-01",
+      "severity": "P2",
+      "description": "Mid-iteration deadline crossing bypasses top-of-loop drainReady gate",
+      "status": "FIX_IMPLEMENTED_PENDING_TARGETED_CONFIRMATION"
+    },
+    {
+      "id": "TIMING-REVIEW-02",
+      "severity": "P2",
+      "description": "Top-level timing failures collapse to generic FAILED",
+      "status": "FIX_IMPLEMENTED_PENDING_TARGETED_CONFIRMATION"
+    },
+    {
+      "id": "TIMING-REVIEW-03",
+      "severity": "P2",
+      "description": "New concurrent collectors share ephemeral file metadata/delete lifecycle",
+      "status": "FIX_IMPLEMENTED_PENDING_TARGETED_CONFIRMATION"
+    }
+  ],
+  "reviewFixCandidate": "d96183818c4f4117b225fa304d690a826b94456ce2bb8efed5deed65b0752c90",
+  "scopeNotExpanded": true,
+  "secondFullReview": "NOT_RUN",
+  "extraSmoke": "NOT_RUN"
+}

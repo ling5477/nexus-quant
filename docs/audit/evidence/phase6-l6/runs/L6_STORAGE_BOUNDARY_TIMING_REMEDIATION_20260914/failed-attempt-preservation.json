@@ -1,0 +1,13 @@
+{
+  "runId": "0674a301-3329-498f-9b50-e2a6560635f4",
+  "status": "BLOCKED / PG_STORAGE_CALIBRATION_INFRASTRUCTURE_FAILURE",
+  "validPeriodicSamples": 151,
+  "fullChains": 128,
+  "boundaryLatenessMillis": 3178,
+  "drain": "NOT_COMPLETED",
+  "rawArchiveSha256": "54bb15482a9df0d6b0a3e79358819603907d82435de8a9348b521f425200dbe1",
+  "summarySha256": "b8c59c381d9d6e12cc445a2bdd2b3a7bf3aa53b147b7e15e360b891f2aec4608",
+  "rawFiles": 204,
+  "capacityFreezeEligible": false,
+  "nextFormalRunMustStartAtZero": true
+}

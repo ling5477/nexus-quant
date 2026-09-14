@@ -1,0 +1,37 @@
+[
+  {
+    "name": "com.guidinglight.nexusquant.app.smoke.L6StoragePhaseControllerTest",
+    "tests": "8",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "com.guidinglight.nexusquant.app.smoke.L6StorageContractTest",
+    "tests": "7",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "com.guidinglight.nexusquant.app.smoke.L6FormalContractTest",
+    "tests": "9",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "com.guidinglight.nexusquant.app.smoke.L6ResourceSamplerTest",
+    "tests": "6",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "com.guidinglight.nexusquant.app.smoke.L6ProcessOutputTest",
+    "tests": "2",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  }
+]

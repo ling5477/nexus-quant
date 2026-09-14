@@ -1,0 +1,52 @@
+{
+  "candidateFingerprint": "631f7aa46e96d1c47e53044d4f6f39b454d17fdcc82f50e45d1ff3ac90d162f6",
+  "suites": [
+    {
+      "name": "com.guidinglight.nexusquant.app.smoke.L6StoragePhaseControllerTest",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.guidinglight.nexusquant.app.smoke.L6ResourceFileLifecycleTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.guidinglight.nexusquant.app.smoke.L6StorageContractTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.guidinglight.nexusquant.app.smoke.L6FormalContractTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.guidinglight.nexusquant.app.smoke.L6ResourceSamplerTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.guidinglight.nexusquant.app.smoke.L6ProcessOutputTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    }
+  ],
+  "tests": 35,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "archiveSha256": "915c596f71a20d9c35086d45e3eca0ed1b88c44caa2714a93d7868db08185985"
+}

@@ -74,19 +74,25 @@ final class L6ResourceSampler implements AutoCloseable {
         }, Math.max(0, index * INTERVAL_MILLIS - TimeUnit.NANOSECONDS.toMillis(nanoTime.getAsLong() - startedNanos)), INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
     }
 
-    synchronized void sample() { collectRecord(null, null, null); }
+    synchronized void sample() { collectRecord(null, null, null, null); }
 
     synchronized ObjectNode boundary(String name, String phase) {
-        return collectRecord(name, phase, null);
+        return collectRecord(name, phase, null, null);
     }
 
     synchronized ObjectNode boundaryAt(String name, String phase, long targetNanos) {
-        return collectRecord(name, phase, TimeUnit.NANOSECONDS.toMillis(targetNanos));
+        return collectRecord(name, phase, TimeUnit.NANOSECONDS.toMillis(targetNanos), null);
+    }
+
+    synchronized ObjectNode boundaryAt(L6StoragePhaseController.Boundary boundary) {
+        return collectRecord(boundary.type(), boundary.observationPhase(),
+                TimeUnit.NANOSECONDS.toMillis(boundary.scheduledElapsedNanos()), boundary);
     }
 
     synchronized void observeWith(java.util.function.Consumer<ObjectNode> listener) { observer = listener; }
 
-    private ObjectNode collectRecord(String boundary, String boundaryPhase, Long targetMillis) {
+    private ObjectNode collectRecord(String boundary, String boundaryPhase, Long targetMillis,
+                                     L6StoragePhaseController.Boundary timing) {
         checkHealthy();
         long begin = nanoTime.getAsLong();
         long elapsed = TimeUnit.NANOSECONDS.toMillis(begin - startedNanos);
@@ -101,11 +107,22 @@ final class L6ResourceSampler implements AutoCloseable {
             var names = record.putArray("boundaryNames");
             for (String name : boundary.split("/")) names.add(name);
             if (targetMillis != null) record.put("boundaryStartLagMillis", elapsed - targetMillis);
+            long targetNanos = timing == null ? TimeUnit.MILLISECONDS.toNanos(targetMillis == null ? elapsed : targetMillis)
+                    : timing.scheduledElapsedNanos();
+            record.put("boundaryType", boundary).put("scheduledElapsedNanos", targetNanos)
+                    .put("observedElapsedNanos", begin - startedNanos)
+                    .put("latenessMillis", (begin - startedNanos - targetNanos) / 1_000_000.0)
+                    .put("boundaryObservationLatenessMillis", (begin - startedNanos - targetNanos) / 1_000_000.0)
+                    .put("phaseBefore", timing == null ? boundaryPhase : timing.phaseBefore())
+                    .put("phaseAfter", timing == null ? boundaryPhase : timing.phaseAfter());
+        } else {
+            record.put("periodicSamplerLatenessMillis", lag);
         }
         ObjectNode sources = record.putObject("sources");
         try {
-            if (targetMillis != null && (elapsed < targetMillis || elapsed - targetMillis > MAX_START_LAG_MILLIS)) {
-                throw new IllegalStateException("L6_STORAGE_BOUNDARY_DELAY");
+            if (targetMillis != null && (record.path("latenessMillis").asDouble() < 0
+                    || record.path("latenessMillis").asDouble() > L6StoragePhaseController.MAX_BOUNDARY_LATENESS_MILLIS)) {
+                throw new IllegalStateException("BOUNDARY_OBSERVATION_DEADLINE_VIOLATION");
             }
             if (index >= 500 || boundaryIndex > 12 || (boundary == null && (lag < 0 || lag > MAX_START_LAG_MILLIS))) {
                 throw new IllegalStateException("L6_RESOURCE_CADENCE_VIOLATION");
@@ -143,7 +160,8 @@ final class L6ResourceSampler implements AutoCloseable {
             long collection = TimeUnit.NANOSECONDS.toMillis(nanoTime.getAsLong() - begin);
             maximumCollection = Math.max(maximumCollection, collection);
             record.put("collectionMillis", collection);
-            if (collection > MAX_COLLECTION_MILLIS) throw new IllegalStateException("L6_RESOURCE_COLLECTION_OVERRUN");
+            if (collection > MAX_COLLECTION_MILLIS) throw new IllegalStateException(boundary == null
+                    ? "L6_RESOURCE_COLLECTION_OVERRUN" : "BOUNDARY_OBSERVATION_DEADLINE_VIOLATION");
             record.put("status", "MEASURED");
             observer.accept(record.deepCopy());
             latest = record.deepCopy();

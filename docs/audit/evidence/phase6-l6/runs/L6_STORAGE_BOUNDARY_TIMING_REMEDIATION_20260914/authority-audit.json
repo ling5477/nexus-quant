@@ -1,0 +1,12 @@
+{
+  "status": "AUTHORITY_AUDIT_COMPLETED",
+  "baseline": "0f34b6b1d7aeb0ad3404c04731ff0fed8f978873",
+  "periodicBudgetOrigin": "1208abd9:L6ResourceSampler.MAX_START_LAG_MILLIS=2000; L6_RESOURCE_SAMPLING_10S_HARNESS_REMEDIATION.md defines 10s cadence / 2s start / 8s collection",
+  "boundaryReuseOrigin": "0f34b6b1 adds boundaryAt and reuses MAX_START_LAG_MILLIS; HARNESS_CLOSURE.md records existing 2s tolerance",
+  "frozenPlanContainsNumericPhaseLatenessLimit": false,
+  "formalStorageDurationContractContainsNumericPhaseLatenessLimit": false,
+  "historicallyDeliveredBoundaryLimitMillis": 2000,
+  "decision": "Preserve 2000ms but separate controller-dispatch, boundary-start and periodic-start budgets; monotonic phase and producer cutoff have no added grace. Boundary total collection keeps existing 8000ms ceiling. No frozen plan changes.",
+  "failedAttemptRetained": "0674a301-3329-498f-9b50-e2a6560635f4",
+  "createdAt": "2026-09-14T05:25:07.238579+00:00"
+}

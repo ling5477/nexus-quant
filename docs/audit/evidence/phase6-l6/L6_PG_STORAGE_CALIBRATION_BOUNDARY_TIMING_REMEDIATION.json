@@ -1,0 +1,362 @@
+{
+  "status": "IMPLEMENTED / TARGETED_TESTS_PASS / SCOPED_INDEPENDENT_TIMING_REVIEW_ACCEPTED / EXACT_HEAD_CI_PENDING",
+  "baselineHead": "0f34b6b1d7aeb0ad3404c04731ff0fed8f978873",
+  "baselineCi": 34805659823,
+  "candidateFingerprint": "631f7aa46e96d1c47e53044d4f6f39b454d17fdcc82f50e45d1ff3ac90d162f6",
+  "sourceFiles": [
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6StoragePhaseController.java",
+      "sha256": "2f5309c726f1430bba2ea0b75cc7488a05f24331c9fb11d8d05625bfbcc206f2"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6StoragePhaseControllerTest.java",
+      "sha256": "c7bf8d65a943c35d1ca86ac0dada12c9ba36dfc1beb2aceaa9f75c0d3caead13"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6DeterministicPacer.java",
+      "sha256": "3a440e91e6ee000b0243c6dc29c20afb57593262fbe2a4eb1ffddabc18cd3f32"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalRuntime.java",
+      "sha256": "79226c146e94209affedde15292dfb703aac5202ea3fb907eb5075dde2c8e7a7"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ResourceSampler.java",
+      "sha256": "e43ddec85ab711d788a61d4dcb93ed708e46c5a8d3aed99b6cbfbbd5533e9da7"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6RuntimeResources.java",
+      "sha256": "8b088333961425a52c6b417c365ef1655fe28c133ab79d582addaa3770fff4f8"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ResourceFileLifecycle.java",
+      "sha256": "014e6c316fcc0e33639a7b51adf2cf06134db5b70bfba86591596439701edbf6"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6ResourceFileLifecycleTest.java",
+      "sha256": "008a50b2a37f78cc0f3c851ae8db187e937677d8a47ab79186ef64a236bf1be2"
+    }
+  ],
+  "authorityAudit": {
+    "status": "AUTHORITY_AUDIT_COMPLETED",
+    "baseline": "0f34b6b1d7aeb0ad3404c04731ff0fed8f978873",
+    "periodicBudgetOrigin": "1208abd9:L6ResourceSampler.MAX_START_LAG_MILLIS=2000; L6_RESOURCE_SAMPLING_10S_HARNESS_REMEDIATION.md defines 10s cadence / 2s start / 8s collection",
+    "boundaryReuseOrigin": "0f34b6b1 adds boundaryAt and reuses MAX_START_LAG_MILLIS; HARNESS_CLOSURE.md records existing 2s tolerance",
+    "frozenPlanContainsNumericPhaseLatenessLimit": false,
+    "formalStorageDurationContractContainsNumericPhaseLatenessLimit": false,
+    "historicallyDeliveredBoundaryLimitMillis": 2000,
+    "decision": "Preserve 2000ms but separate controller-dispatch, boundary-start and periodic-start budgets; monotonic phase and producer cutoff have no added grace. Boundary total collection keeps existing 8000ms ceiling. No frozen plan changes.",
+    "failedAttemptRetained": "0674a301-3329-498f-9b50-e2a6560635f4",
+    "createdAt": "2026-09-14T05:25:07.238579+00:00"
+  },
+  "targetedTests": [
+    {
+      "name": "com.guidinglight.nexusquant.app.smoke.L6StoragePhaseControllerTest",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.guidinglight.nexusquant.app.smoke.L6ResourceFileLifecycleTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.guidinglight.nexusquant.app.smoke.L6StorageContractTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.guidinglight.nexusquant.app.smoke.L6FormalContractTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.guidinglight.nexusquant.app.smoke.L6ResourceSamplerTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.guidinglight.nexusquant.app.smoke.L6ProcessOutputTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    }
+  ],
+  "smoke": {
+    "status": "PASS / STORAGE_TIMING_JITTER_SMOKE_ONLY",
+    "runId": "5c5d31a4-ceae-4348-9507-0284bf4ab213",
+    "head": "0f34b6b1d7aeb0ad3404c04731ff0fed8f978873",
+    "candidateFingerprint": "84dc2bb046d00fd3e753ee92d2065c4f196effe0e7c8320fdce3cbb6adea1c45",
+    "durationSeconds": [
+      20,
+      50,
+      30
+    ],
+    "periodicSamples": 10,
+    "boundarySamples": 5,
+    "uniqueObservationTokens": 15,
+    "boundaryObservations": [
+      {
+        "boundaryType": "WARMUP_END",
+        "scheduledElapsedNanos": 20000000000,
+        "observedElapsedNanos": 20012574000,
+        "latenessMillis": 12.574,
+        "phaseBefore": "WARMUP",
+        "phaseAfter": "MEASUREMENT",
+        "phase": "WARMUP",
+        "status": "MEASURED",
+        "collectionMillis": 501
+      },
+      {
+        "boundaryType": "MEASUREMENT_START",
+        "scheduledElapsedNanos": 20000000000,
+        "observedElapsedNanos": 20515218199,
+        "latenessMillis": 515.218199,
+        "phaseBefore": "WARMUP",
+        "phaseAfter": "MEASUREMENT",
+        "phase": "MEASUREMENT",
+        "status": "MEASURED",
+        "collectionMillis": 487
+      },
+      {
+        "boundaryType": "MEASUREMENT_END",
+        "scheduledElapsedNanos": 70000000000,
+        "observedElapsedNanos": 70008340300,
+        "latenessMillis": 8.3403,
+        "phaseBefore": "MEASUREMENT",
+        "phaseAfter": "DRAIN",
+        "phase": "MEASUREMENT",
+        "status": "MEASURED",
+        "collectionMillis": 486
+      },
+      {
+        "boundaryType": "DRAIN_START",
+        "scheduledElapsedNanos": 70000000000,
+        "observedElapsedNanos": 70495166699,
+        "latenessMillis": 495.166699,
+        "phaseBefore": "MEASUREMENT",
+        "phaseAfter": "DRAIN",
+        "phase": "DRAIN",
+        "status": "MEASURED",
+        "collectionMillis": 451
+      },
+      {
+        "boundaryType": "DRAIN_END",
+        "scheduledElapsedNanos": 100000000000,
+        "observedElapsedNanos": 100013005700,
+        "latenessMillis": 13.0057,
+        "phaseBefore": "DRAIN",
+        "phaseAfter": "COMPLETE",
+        "phase": "DRAIN",
+        "status": "MEASURED",
+        "collectionMillis": 487
+      }
+    ],
+    "phaseTransitionLatenessMillis": [
+      10,
+      7,
+      12
+    ],
+    "maxPeriodicSamplerLatenessMillis": 15,
+    "maxCollectionMillis": 575,
+    "mandatoryMissing": 0,
+    "cadenceViolation": 0,
+    "staleReuse": 0,
+    "checkpointJitter": {
+      "kind": "CHECKPOINT_CHANNEL_JITTER",
+      "startedElapsedNanos": 65010994800,
+      "measurementEndNanos": 70000000000,
+      "endedElapsedNanos": 74029728900,
+      "phaseAfter": "DRAIN",
+      "producerAllowedAfter": false
+    },
+    "periodicJitterInjection": false,
+    "jitterScope": "Checkpoint/controller business channel blocked across measurement deadline; periodic sampler remains valid. Separate controllable-clock test proves >3178ms late periodic cadence rejects without delaying phase/cutoff.",
+    "newOrdersDuringDrain": 0,
+    "newAdmissionsAtOrAfterDeadline": 0,
+    "frozenMeasurementWorkloadSlots": [
+      0,
+      2,
+      3,
+      5,
+      6,
+      7,
+      9
+    ],
+    "fullChainCompleted": 7,
+    "businessFinal": {
+      "orders": 7,
+      "trades": 7,
+      "ledger": 28,
+      "position": "0.7",
+      "duplicates": 0,
+      "orphans": 0
+    },
+    "oldestCandidateAge": "NONE",
+    "commandQueue": 0,
+    "venueQueue": 0,
+    "storageGuard": {
+      "triggered": false
+    },
+    "manifestEntrySha256": "922253c8934e32b7626ced2f9e42407a2a4313c665256b89c483e847ce6abaa6",
+    "manifestExitSha256": "922253c8934e32b7626ced2f9e42407a2a4313c665256b89c483e847ce6abaa6",
+    "configuredTmpfsBytes": 268435456,
+    "postgres": "16.15 (Debian 16.15-1.pgdg13+2)",
+    "schema": "V51",
+    "cleanup": {
+      "ownedSurvivors": 0,
+      "processes": [
+        {
+          "pid": 15904,
+          "alive": false
+        },
+        {
+          "pid": 43968,
+          "alive": false
+        },
+        {
+          "pid": 13764,
+          "alive": false
+        },
+        {
+          "pid": 26252,
+          "alive": false
+        },
+        {
+          "pid": 17220,
+          "alive": false
+        }
+      ],
+      "containerRemaining": "",
+      "verifiedAt": "2026-09-14T05:40:29.626803+00:00"
+    },
+    "formalStorageCalibration": "NOT_RUN / NOT_ACCEPTED",
+    "L6_A": "NOT_ACCEPTED",
+    "L6": "NOT_ACCEPTED",
+    "formalCapacityFrozen": false
+  },
+  "failedAttempt": {
+    "runId": "0674a301-3329-498f-9b50-e2a6560635f4",
+    "status": "BLOCKED / PG_STORAGE_CALIBRATION_INFRASTRUCTURE_FAILURE",
+    "validPeriodicSamples": 151,
+    "fullChains": 128,
+    "boundaryLatenessMillis": 3178,
+    "drain": "NOT_COMPLETED",
+    "rawArchiveSha256": "54bb15482a9df0d6b0a3e79358819603907d82435de8a9348b521f425200dbe1",
+    "summarySha256": "b8c59c381d9d6e12cc445a2bdd2b3a7bf3aa53b147b7e15e360b891f2aec4608",
+    "rawFiles": 204,
+    "capacityFreezeEligible": false,
+    "nextFormalRunMustStartAtZero": true
+  },
+  "independentReview": {
+    "role": "INDEPENDENT_REVIEW_ONLY",
+    "reviewer": "/root/timing_review",
+    "scope": "timing-only",
+    "initialStatus": "NOT_ACCEPTED / P2_FINDINGS_REQUIRE_CLOSURE",
+    "initialFingerprint": "84dc2bb046d00fd3e753ee92d2065c4f196effe0e7c8320fdce3cbb6adea1c45",
+    "initialStartEndFingerprintEqual": true,
+    "initialStageStartEnd": [
+      0,
+      0
+    ],
+    "initialFindings": {
+      "P0": 0,
+      "P1": 0,
+      "P2": 3,
+      "P3": 0
+    },
+    "findings": [
+      {
+        "id": "TIMING-REVIEW-01",
+        "severity": "P2",
+        "description": "Mid-iteration deadline crossing bypasses top-of-loop drainReady gate",
+        "status": "CLOSED"
+      },
+      {
+        "id": "TIMING-REVIEW-02",
+        "severity": "P2",
+        "description": "Top-level timing failures collapse to generic FAILED",
+        "status": "CLOSED"
+      },
+      {
+        "id": "TIMING-REVIEW-03",
+        "severity": "P2",
+        "description": "New concurrent collectors share ephemeral file metadata/delete lifecycle",
+        "status": "CLOSED"
+      }
+    ],
+    "reviewFixCandidate": "d96183818c4f4117b225fa304d690a826b94456ce2bb8efed5deed65b0752c90",
+    "scopeNotExpanded": true,
+    "secondFullReview": "NOT_RUN",
+    "extraSmoke": "NOT_RUN",
+    "confirmationHistory": [
+      {
+        "candidateFingerprint": "d96183818c4f4117b225fa304d690a826b94456ce2bb8efed5deed65b0752c90",
+        "closed": [
+          "TIMING-REVIEW-01",
+          "TIMING-REVIEW-02"
+        ],
+        "remaining": "TIMING-REVIEW-03: Files.walk iterator attribute reads outside shared lifecycle lock",
+        "startEndFingerprintEqual": true,
+        "stageStartEnd": [
+          0,
+          0
+        ]
+      },
+      {
+        "candidateFingerprint": "631f7aa46e96d1c47e53044d4f6f39b454d17fdcc82f50e45d1ff3ac90d162f6",
+        "closed": [
+          "TIMING-REVIEW-01",
+          "TIMING-REVIEW-02",
+          "TIMING-REVIEW-03"
+        ],
+        "remaining": [],
+        "startEndFingerprintEqual": true,
+        "stageStartEnd": [
+          0,
+          0
+        ],
+        "tests": 35,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ],
+    "status": "SCOPED_INDEPENDENT_TIMING_REVIEW_PASS",
+    "finalFingerprint": "631f7aa46e96d1c47e53044d4f6f39b454d17fdcc82f50e45d1ff3ac90d162f6",
+    "finalStartFingerprint": "631f7aa46e96d1c47e53044d4f6f39b454d17fdcc82f50e45d1ff3ac90d162f6",
+    "finalEndFingerprint": "631f7aa46e96d1c47e53044d4f6f39b454d17fdcc82f50e45d1ff3ac90d162f6",
+    "openFindings": {
+      "P0": 0,
+      "P1": 0,
+      "P2": 0,
+      "P3": 0
+    },
+    "writes": 0,
+    "smokeReuse": "Initial five-file candidate runtime evidence only; unchanged phase/pacer/boundary jitter observations reused in limited scope. Final eight-file fixes covered by targeted tests and scoped confirmation; no smoke rerun."
+  },
+  "productionDelta": 0,
+  "manifestDelta": 0,
+  "pacingValueDelta": 0,
+  "tmpfsCapacityDelta": 0,
+  "formalStorageCalibration": "NOT_RUN / NOT_ACCEPTED",
+  "capacityFrozen": false,
+  "L6_A": "NOT_ACCEPTED",
+  "L6": "NOT_ACCEPTED",
+  "createdAt": "2026-09-14T05:42:19.378862+00:00",
+  "targetedTestsTotal": 35,
+  "smokeEvidenceScope": "Initial five-file candidate runtime evidence only; unchanged phase/pacer/boundary jitter observations reused in limited scope. Final eight-file fixes covered by targeted tests and scoped confirmation; no smoke rerun.",
+  "productP0": 0,
+  "productP1": 0
+}
