@@ -14,6 +14,6 @@
 
 `strategy` 文案不自动选择交易证明，文档里的 `database` 不选择迁移，历史 `deploy` 不选择发布。先判断本次改变的行为及风险，再选能力；仅文件路径或关键词不足以升级风险。
 
-跨领域测试、独立审查、Git、证据和 subagent 选择唯一维护于[回归与交付合同](skills/nq-trading-correctness-proof/references/regression-delivery.md)。重复故障按需查[机制参考](skills/nq-trading-correctness-proof/references/engineering-lessons.md)；普通 Python/helper 直接查[Python 工程](skills/nq-research-reproducibility/references/engineering.md)。
+跨领域执行、发现分类、qualification 非阻塞继续、测试、独立审查、Git、证据和 subagent 选择唯一维护于[执行、回归与交付合同](skills/nq-trading-correctness-proof/references/regression-delivery.md)。重复故障按需查[机制参考](skills/nq-trading-correctness-proof/references/engineering-lessons.md)；普通 Python/helper 直接查[Python 工程](skills/nq-research-reproducibility/references/engineering.md)。
 
 任务提示使用 [Work Order](../docs/templates/WORK_ORDER.md)。能力 inventory 与语义事实映射在 scripts/docs/agent-workflow-policy.json，回归验证该映射及安全下限，不模拟自然语言模型、固定 Skill 数量或要求每次调用 router。
