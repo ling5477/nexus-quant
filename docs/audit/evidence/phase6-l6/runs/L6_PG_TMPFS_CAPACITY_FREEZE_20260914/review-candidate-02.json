@@ -1,0 +1,62 @@
+{
+  "head": "2f2ecdff063d5657e606cf27ada6ba7db0d659c3",
+  "stageCount": 0,
+  "files": [
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0Processes.java",
+      "sha256": "58be52c72d337c7eeaad376160bb3b8d1466f89df7314a537be921056fa19e76"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_capacity_calculator_test.py",
+      "sha256": "058ac183fba5a6fe135554aace4e980abb1f44ce057354341e29237f3b9d45b7"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_capacity_calculator.py",
+      "sha256": "7e3213cfed9bf29bc24a6bc6e26f8e1751aee5cef4c59ba4e585ee435299ee5d"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6BusinessCheckpoint.java",
+      "sha256": "ebab2f16101da481b6bffaf2dd16c583be64c6a93a9badcc17df3cf50f75ec17"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalRuntime.java",
+      "sha256": "00a0dfb7e07b4e3a66a4f5211aeed354dcbd85e164162835ac20f1dce601195f"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6HostMemoryPreflight.java",
+      "sha256": "44fc2fa3cc9984e68555361da790aa6c76a091436402b5dc8753029affafbfbe"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6PgCapacityContract.java",
+      "sha256": "65d9f19e5e20fe1152e88c3c1936c0beed501c86457eb693e558ba5f8122aee0"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6PgCapacityContractTest.java",
+      "sha256": "3f9276c20f1fe2c505ceaf2fbfd89cabb8cb6de2df812eaf852aca06564a7858"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6PgCapacityFixtureTest.java",
+      "sha256": "589153367462a2c4437a30a7c25b8947c1e2addf9e7eb44ac697217176e13a86"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6PgProjectionGuard.java",
+      "sha256": "22f5f0899c88e295084a92493c18359a3ea5b8bba0ecfbf77de8b957fcdca8ae"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6PgProjectionGuardTest.java",
+      "sha256": "531c723e20d2d9aba64fb331f6af8d2297319ed0da56d2745d7f155bc4c6d6e9"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/L6_PG_TMPFS_CAPACITY_CONTRACT.json",
+      "sha256": "aad068d92c2eccdb9ff9c60e87bb04de9ae1416e4479fa82a782ef49e81b93f5"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/L6_PG_TMPFS_CAPACITY_FREEZE_AND_PREFLIGHT.md",
+      "sha256": "13bb92f43b0a82dc28d37e9ffdefae14f4974d0f7538a5d1efbd01d09017fa15"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/L6_PG_TMPFS_CAPACITY_FREEZE_20260914/calibration-replay.zip",
+      "sha256": "6b0fdc7eeb71174248320aa75a4287da1a8dd466b0a94e0b338575ed64318fb6"
+    }
+  ]
+}

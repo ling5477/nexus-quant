@@ -1,0 +1,20 @@
+{
+  "entryFiles": 4289,
+  "changed": [
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B0Processes.java",
+      "allowedCandidate": true
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6BusinessCheckpoint.java",
+      "allowedCandidate": true
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalRuntime.java",
+      "allowedCandidate": true
+    }
+  ],
+  "unexpectedChanges": [],
+  "head": "2f2ecdff063d5657e606cf27ada6ba7db0d659c3",
+  "stageCount": 0
+}

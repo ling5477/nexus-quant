@@ -1,0 +1,97 @@
+{
+  "formalRunStarted" : false,
+  "orders" : 0,
+  "contract" : {
+    "path" : "E:\\Project\\nexus-quant-gateaudit\\docs\\audit\\evidence\\phase6-l6\\L6_PG_TMPFS_CAPACITY_CONTRACT.json",
+    "sha256" : "aad068d92c2eccdb9ff9c60e87bb04de9ae1416e4479fa82a782ef49e81b93f5",
+    "scope" : "L6_A_60MIN",
+    "requiredCapacityBytes" : 1304428544
+  },
+  "hostMemoryPreflight" : {
+    "availableHostMemoryAtEntry" : 28203237376,
+    "totalQualificationOwnedBudget" : 6673137664,
+    "maximumFraction" : "0.60",
+    "pgContainerBudgetBytes" : 2109734912,
+    "pgTmpfsMaximumBytes" : 1304428544,
+    "tmpfsAlreadyIncludedInPgContainerBudget" : true,
+    "controllerActualMaxHeapBytes" : 536870912,
+    "mavenActualMaxHeapBytes" : 536870912,
+    "pgStarted" : false,
+    "venueStarted" : false,
+    "nqStarted" : false,
+    "formalTimerStarted" : false,
+    "orders" : 0,
+    "status" : "PASS"
+  },
+  "containers" : [ {
+    "scope" : "L5_DEFAULT",
+    "id" : "3fc15243c61de2a0bdf74a4aa579d4d09832621773c525bca5df9baf3d55d1df",
+    "memoryLimitBytes" : 805306368,
+    "readWrite" : "PASS",
+    "observation" : {
+      "pgTmpfsCapacityBytes" : 268435456,
+      "pgTmpfsUsedBytes" : 40292352,
+      "pgTmpfsFreeBytes" : 228143104,
+      "pgTmpfsUsageRatio" : 0.1501007080078125,
+      "pgBaseAllocatedBytes" : 22831104,
+      "pgWalAllocatedBytes" : 16777216,
+      "pgGlobalAllocatedBytes" : 585728,
+      "pgDataAllocatedBytes" : 40292352,
+      "pgOtherAllocatedBytes" : 98304,
+      "pgDatabaseSizeBytes" : 7732247,
+      "pgRelationStorage" : [ {
+        "schema" : "public",
+        "relation" : "capacity_fixture",
+        "tableBytes" : 16384,
+        "indexBytes" : 16384,
+        "totalBytes" : 32768
+      } ]
+    }
+  }, {
+    "scope" : "FORMAL_L6_A",
+    "id" : "dec223821c26b0ec05b8e01e96c1347470d8f3d2c3112f236342417529d334b0",
+    "memoryLimitBytes" : 2109734912,
+    "readWrite" : "PASS",
+    "observation" : {
+      "pgTmpfsCapacityBytes" : 1304428544,
+      "pgTmpfsUsedBytes" : 40292352,
+      "pgTmpfsFreeBytes" : 1264136192,
+      "pgTmpfsUsageRatio" : 0.03088889168006431,
+      "pgBaseAllocatedBytes" : 22831104,
+      "pgWalAllocatedBytes" : 16777216,
+      "pgGlobalAllocatedBytes" : 585728,
+      "pgDataAllocatedBytes" : 40292352,
+      "pgOtherAllocatedBytes" : 98304,
+      "pgDatabaseSizeBytes" : 7732247,
+      "pgRelationStorage" : [ {
+        "schema" : "public",
+        "relation" : "capacity_fixture",
+        "tableBytes" : 16384,
+        "indexBytes" : 16384,
+        "totalBytes" : 32768
+      } ]
+    },
+    "projectionGuard" : {
+      "triggered" : false,
+      "stoppedAtElapsedNanos" : -1,
+      "drainBudgetUnavailable" : false,
+      "result" : "MEASURED",
+      "samples" : [ {
+        "elapsedNanos" : 0,
+        "phase" : "WARMUP",
+        "freeBytes" : 1264136192,
+        "projectedRemainingStorageNeed" : 1255367828,
+        "orders" : 0,
+        "backlog" : 0,
+        "warmupRate" : 4849,
+        "activeRate" : 1198,
+        "drainRate" : 366,
+        "producerDisabled" : false,
+        "triggered" : false
+      } ]
+    }
+  } ],
+  "cleanup" : "PASS",
+  "ownedSurvivors" : 0,
+  "result" : "SHORT_PG_FIXTURE_PASS"
+}

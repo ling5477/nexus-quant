@@ -1,0 +1,20 @@
+{
+  "reviewer": "/root/capacity_review",
+  "mode": "REVIEW_ONLY",
+  "candidate": "review-candidate-01.json",
+  "headStart": "2f2ecdff063d5657e606cf27ada6ba7db0d659c3",
+  "headEnd": "2f2ecdff063d5657e606cf27ada6ba7db0d659c3",
+  "candidateFileCount": 14,
+  "startEndShaEqual": true,
+  "stageStart": 0,
+  "stageEnd": 0,
+  "P0": 0,
+  "P1": 0,
+  "P2": 1,
+  "finding": "L6FormalRuntime exit verifyUnchanged could throw before proof.json write, losing drift failure and guard/cleanup evidence. Save evidence while preserving failure.",
+  "independentMath": "Recomputed exposure by summing individual order remaining lifetimes from replay ZIP, without calling calculator.exposure; rates, phase growth, peak, reserve, capacity and host budget all matched.",
+  "requiredCapacityBytes": 1304428544,
+  "hostBudgetBytes": 6673137664,
+  "coverage": "47 targeted tests and real short PG fixture checked; normal projection has real fixture evidence, risk/emergency drain have targeted unit evidence.",
+  "disposition": "P2 remediation and bounded confirmation by the same reviewer pending. No second review chain."
+}

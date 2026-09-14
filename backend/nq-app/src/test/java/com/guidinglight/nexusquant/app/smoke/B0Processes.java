@@ -58,11 +58,19 @@ final class B0Processes {
     }
 
     static String command(String... args) throws Exception {
+        return commandUntil(() -> false, args);
+    }
+
+    static String commandUntil(java.util.function.BooleanSupplier stop, String... args) throws Exception {
         Path log = Files.createTempFile("nq-b0-command-", ".log");
         Process process = null;
         try {
             process = new ProcessBuilder(args).redirectErrorStream(true).redirectOutput(log.toFile()).start();
-            if (!process.waitFor(45, TimeUnit.SECONDS)) throw new IllegalStateException("B0 command timeout: " + args[0]);
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(45);
+            while (!process.waitFor(100, TimeUnit.MILLISECONDS)) {
+                if (stop.getAsBoolean()) throw new L6BusinessCheckpoint.StoragePending();
+                if (System.nanoTime() >= deadline) throw new IllegalStateException("B0 command timeout: " + args[0]);
+            }
             String result = Files.readString(log);
             if (process.exitValue() != 0) throw new IllegalStateException("B0 command failed: " + result);
             return result.trim();
@@ -89,7 +97,18 @@ final class B0Processes {
             return start(true);
         }
 
+        static long defaultTmpfsBytes() { return 256L * 1024 * 1024; }
+
+        static Pg startL6(L6PgCapacityContract contract) throws Exception {
+            contract.verifyUnchanged();
+            return start(true, contract.capacity(), contract.pgMemory());
+        }
+
         private static Pg start(boolean bounded) throws Exception {
+            return start(bounded, defaultTmpfsBytes(), 768L * 1024 * 1024);
+        }
+
+        private static Pg start(boolean bounded, long tmpfsBytes, long memoryBytes) throws Exception {
             var lock = new ObjectMapper().readTree(root().resolve("scripts/ci/delivery-supply-chain-lock.json").toFile());
             // 复用 canonical CI 锁定镜像；只允许本地缓存，默认测试不向 registry 发起下载。
             String digest = null;
@@ -100,8 +119,8 @@ final class B0Processes {
             String image = "postgres:16@" + digest;
             String name = "nq-b0-" + UUID.randomUUID();
             String container = bounded ? command("docker", "run", "--detach", "--pull=never", "--name", name,
-                    "--memory", "768m", "--memory-swap", "768m",
-                    "--label", "nq.b0.identity=" + name, "--tmpfs", "/var/lib/postgresql/data:size=256m",
+                    "--memory", Long.toString(memoryBytes), "--memory-swap", Long.toString(memoryBytes),
+                    "--label", "nq.b0.identity=" + name, "--tmpfs", "/var/lib/postgresql/data:size=" + tmpfsBytes,
                     "--publish", "127.0.0.1::5432", "--env", "POSTGRES_HOST_AUTH_METHOD=trust", image)
                     : command("docker", "run", "--detach", "--pull=never", "--name", name,
                     "--label", "nq.b0.identity=" + name, "--tmpfs", "/var/lib/postgresql/data",

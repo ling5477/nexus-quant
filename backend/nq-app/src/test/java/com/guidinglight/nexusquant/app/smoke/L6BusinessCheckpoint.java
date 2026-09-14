@@ -31,21 +31,31 @@ final class L6BusinessCheckpoint {
     static ObjectNode verify(Connection reader, String endpoint, List<B0Processes.Child> children,
                              Path dir, String phase, int checkIndex, boolean calibration, int formalBudget,
                              List<L6DeterministicPacer.Slot> slots, String qualificationMode) throws Exception {
+        return verify(reader, endpoint, children, dir, phase, checkIndex, calibration, formalBudget, slots, qualificationMode, null);
+    }
+    static ObjectNode verify(Connection reader, String endpoint, List<B0Processes.Child> children,
+                             Path dir, String phase, int checkIndex, boolean calibration, int formalBudget,
+                             List<L6DeterministicPacer.Slot> slots, String qualificationMode,
+                             java.util.function.BooleanSupplier capacityStop) throws Exception {
+        boolean boundedFormal = capacityStop != null;
+        if (capacityStop == null) capacityStop = () -> false;
         // 真实完成后才用完整源账务重建；短暂在途状态不能被误报成投影损坏。
         long deadline=System.nanoTime()+Duration.ofSeconds(120).toNanos();
         long waitingFrom = -1;
         while(true) {
+            if (capacityStop.getAsBoolean()) throw new StoragePending();
             long busy=number(reader,"SELECT count(*) FROM strategy_runs WHERE status<>'SUCCEEDED'");
             ObjectNode sample=sample(reader);reader.commit();
             if(busy==0 && sample.path("backlog").asInt()==0)break;
             // storage采样不能进入旧120秒等待；未完成交由既有5秒reconcile周期继续推进。
-            if (L6StorageCalibrationContract.MODE.equals(qualificationMode)) throw new StoragePending();
+            if (L6StorageCalibrationContract.MODE.equals(qualificationMode) || boundedFormal) throw new StoragePending();
             if (waitingFrom < 0) waitingFrom = System.nanoTime();
             if(System.nanoTime()>deadline)throw new AssertionError("L6 work failed bounded convergence");
             http(endpoint,"FILL");
             for(var c:children)c.send("L6_RECONCILE");Thread.sleep(500);
         }
         ObjectNode point=sample(reader);
+        if (capacityStop.getAsBoolean()) throw new StoragePending();
         if (waitingFrom >= 0) point.put("convergenceWaitStartedNanos", waitingFrom).put("convergenceWaitEndedNanos", System.nanoTime());
         point.put("phase",phase).put("check",checkIndex);
         point.put("nonActionable",number(reader,"SELECT count(*) FROM orders WHERE status IN ('FILLED','CANCELLED','RISK_REJECTED')"));
@@ -63,6 +73,7 @@ final class L6BusinessCheckpoint {
         point.put("transitionAuditRows",transitionAudits).put("duplicateTransitionAudit",duplicateTransitions);
         point.put("databaseBytes",number(reader,"SELECT pg_database_size(current_database())"));
         ObjectNode check=JSON.createObjectNode();check.set("facts",facts(reader));
+        if (capacityStop.getAsBoolean()) throw new StoragePending();
         check.put("expectedStrategyRuns",number(reader,"SELECT count(*) FROM strategy_runs"));reader.commit();
         check.set("venue",http(endpoint,null));
         if (calibration) check.put("mode", "CALIBRATION");
@@ -72,7 +83,7 @@ final class L6BusinessCheckpoint {
         }
         Path file=dir.resolve(String.format("checkpoint-%03d.json",checkIndex));
         Files.writeString(file,JSON.writeValueAsString(check));
-        String oracle=B0Processes.command("python","-X","utf8",B0Processes.root().resolve(
+        String oracle=B0Processes.commandUntil(capacityStop,"python","-X","utf8",B0Processes.root().resolve(
                 "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/l6_oracle.py").toString(),file.toString());
         point.set("oracle",JSON.readTree(oracle));
         var ids=point.putArray("fullChainOrderIds");

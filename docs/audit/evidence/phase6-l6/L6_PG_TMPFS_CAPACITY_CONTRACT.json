@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "status": "ACCEPTED",
+  "scope": "L6_A_60MIN",
+  "sourceHead": "2f2ecdff063d5657e606cf27ada6ba7db0d659c3",
+  "sourceStorageCalibrationRun": "40c5ba3a-ea8b-4040-82de-f4ac49cff476",
+  "sourceArtifactHashes": {
+    "docs/audit/evidence/phase6-l6/runs/L6_PG_TMPFS_CAPACITY_FREEZE_20260914/calibration-replay.zip": "6b0fdc7eeb71174248320aa75a4287da1a8dd466b0a94e0b338575ed64318fb6"
+  },
+  "sourceRawArchiveSha256": "8f70aa4693f5bfa7da9e931f0821e142187e80618fba38f7a49fdd8c62c80986",
+  "manifestSha256": "922253c8934e32b7626ced2f9e42407a2a4313c665256b89c483e847ce6abaa6",
+  "observed": {
+    "peakUsedBytes": 181473280,
+    "startUsedBytes": 48910336,
+    "maxRolling10MinuteGrowthBytes": 61538304,
+    "drainGrowthBytes": 28712960,
+    "measurementGrowthBytes": 83001344,
+    "measurementFullChainDelta": 103
+  },
+  "projection": {
+    "model": "ORDER_TIME_ENVELOPE_V1",
+    "warmupBytesPerOrderSecond": 4849,
+    "activeBytesPerOrderSecond": 1198,
+    "drainBytesPerOrderSecond": 366,
+    "formalSeconds": [
+      600,
+      2400,
+      600
+    ],
+    "maximumOrders": 422,
+    "warmupMaximumOrders": 85,
+    "activeMaximumOrders": 337,
+    "pacingIntervalNanos": 7117650000,
+    "formalStartBaselineBytes": 48910336,
+    "projectedWarmupGrowthBytes": 126995260,
+    "projected40minActiveGrowthBytes": 731429368,
+    "projected10minDrainGrowthBytes": 92890800,
+    "projectedFormalEndPeakBytes": 1000225764,
+    "reserveBytes": 304052400,
+    "backlogBytesPerChain": 805839,
+    "requiredCapacityBytes": 1304428544,
+    "reserveRationale": "One additional 600s worst normalized healthy window at maximum formal inventory, outside the scheduled 3600s projection; conditional uncertainty allowance, not duplicated scheduled growth.",
+    "crossChecks": {
+      "windows": 61,
+      "maxRateFraction": "9547776/7975",
+      "p95RateFraction": "5877760/5179",
+      "phaseRateFraction": "20750336/23805",
+      "naivePerChainActiveBytes": 271567505,
+      "inventoryTimeAdjustedPerChainActiveBytes": 532197125,
+      "inventoryTimeAdjustedPhaseActiveBytes": 532197125,
+      "rollingUpperToPhaseRatio": "11097891/8080270",
+      "reason": "Per-chain naive extrapolation omits repeated audit over larger inventory and longer time. Inventory-time normalization reconciles chain and phase projections exactly. Rolling upper exceeds average because WAL allocation is bursty; upper and p95 are compared without smoothing away bursts."
+    }
+  },
+  "hostMemory": {
+    "maximumFraction": 0.6,
+    "nqHeapEachBytes": 536870912,
+    "venueHeapBytes": 268435456,
+    "controllerHeapBytes": 536870912,
+    "mavenHeapBytes": 536870912,
+    "nativeAndToolsBudgetBytes": 2147483648,
+    "pgNonTmpfsBudgetBytes": 805306368,
+    "accounting": "PG cgroup maximum = non-tmpfs allowance + tmpfs maximum; sum this cgroup budget once, not again with tmpfs. Heap plus explicit native/tools allowance is a conservative budget, not observed RSS."
+  },
+  "samplingIntervalSeconds": 10,
+  "limitations": [
+    "L6B_CAPACITY_REQUIRES_SEPARATE_PROJECTION",
+    "Order-time upper envelope assumes accepted healthy workload semantics; runtime guard rejects newly observed higher comparable-window growth.",
+    "Native/tools budget is a conservative planning allowance, not an exact physical RSS measurement.",
+    "No claim of an unconditional storage bound under unobserved faults."
+  ]
+}
