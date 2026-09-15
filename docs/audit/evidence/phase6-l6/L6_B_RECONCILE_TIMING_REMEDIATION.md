@@ -8,7 +8,7 @@
 
 失败对象为 actor0/generation2/PID46412，调用栈为 `drive → reconcile → command → Child.resultBefore → await`。最后采样 command count=1263、completed=1262、active=1；Hikari active=1、pending=0，tickFailed=0、backlog=0。日志最终1263条结果，末条 `RECONCILE 0`。
 
-历史未保存逐命令dispatch、上一成功reconcile时间/latency、精确deadline时进程/线程/PG锁等待状态。末条结果与失败请求的身份以及相对于5秒期限的可见时间均 **UNKNOWN**；正常慢调用、执行迟到和读取迟到无法从历史证据严格区分，永久hang未被证明。回归fixture保留这些null/UNKNOWN，不伪造精确时间或把末条结果追认为成功。完整历史与原始ZIP保留在 [原正式结果](runs/L6_B_180MIN_20260915_a6a9f5a7/formal-01-result.md)。
+历史未保存逐命令dispatch、上一成功reconcile时间/latency、精确deadline时进程/线程/PG锁等待状态。末条结果与失败请求的身份以及相对于5秒期限的可见时间均 **UNKNOWN**；正常慢调用、执行迟到和读取迟到无法从历史证据严格区分，永久hang未被证明。回归fixture保留这些null/UNKNOWN，不伪造精确时间或把末条结果追认为成功。完整历史与原始ZIP保留在本地归档目录 `docs/audit/evidence/phase6-l6/runs/L6_B_180MIN_20260915_a6a9f5a7/`，入口为 `formal-01-result.md`；这些正式证据按任务要求未提交Git。
 
 ## 当前权威与整改
 
@@ -51,3 +51,5 @@ Future.cancel只是中断请求，不证明任意JDBC或业务线程已经终止
 入场4847个文件经SHA复核，授权候选之外漂移0。stage-assets扫描2021项/errors0；本报告链接检查errors0。正式重跑将绑定整改交付的新HEAD与新的9/9 CI，不复用基线CI接受新候选。
 
 独立REVIEW_ONLY最终结论：**PASS / 两项P1 CLOSED / P0=0 / P1=0**。14个代码/fixture文件start=end指纹为 `030e98d8ce115a04ec5c8077e87db8b799c61c003341ef2fb4e8aa0b8978751c`，审查HEAD始终为上述基线、stage0、production delta0；审查者未修改任何候选、证据或编译输出。审查接受限本轮整改，交付CI和完整180min结论单独保存。
+
+首个交付候选 `028f1b27f863186c67771fbe0d17a5187fab8bc5` 的CI `34978387345` 在治理检查发现本报告链接指向仅本地保留的正式证据。该失败保留；后续只将引用明确为本地归档路径，未提交正式证据、未调整链接检查规则、未修改已审查代码。必须以文档修正后的新exact-head CI接受最终交付。
