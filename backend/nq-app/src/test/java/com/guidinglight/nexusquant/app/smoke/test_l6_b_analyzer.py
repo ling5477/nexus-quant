@@ -1,14 +1,33 @@
 """防止跨代低值、重复GC及缺失数据制造稳定结论。"""
 import copy
 import hashlib
+import gzip
 import json
 import tempfile
 import unittest
 from pathlib import Path
-from l6_b_analyzer import generation_series, trend, progress, bound_manifest, resources, verify_analysis_identity
+from l6_b_analyzer import generation_series, trend, progress, bound_manifest, resources, verify_analysis_identity, verify_strategy_barrier
 
 
 class RestartAggregationTest(unittest.TestCase):
+    def test_strategy_barrier_binds_original_durable_owner(self):
+        with tempfile.TemporaryDirectory() as folder:
+            directory = Path(folder)
+            def write(name, status):
+                payload = gzip.compress(json.dumps({'facts':{'strategy_runs':[{'strategy_run_id':'old-run','status':status}]}}).encode())
+                (directory/name).write_bytes(payload)
+                return hashlib.sha256(payload).hexdigest()
+            event = {'beforeSnapshot':'before.gz','beforeSnapshotSha256':write('before.gz','RUNNING'),
+                     'recoveredFullChain':{'checkpointPath':'after.gz','checkpointSha256':write('after.gz','SUCCEEDED')},
+                     'activeRunsBefore':[{'strategy_run_id':'old-run'}], 'activeRunsAfter':[], 'strategyRunBarrier':'CONVERGED'}
+            verify_strategy_barrier(directory,event)
+            wrong = copy.deepcopy(event);wrong['activeRunsBefore']=[{'strategy_run_id':'new-run'}]
+            with self.assertRaises(ValueError):verify_strategy_barrier(directory,wrong)
+            wrong = copy.deepcopy(event);wrong['activeRunsAfter']=[{'strategy_run_id':'old-run'}]
+            with self.assertRaises(ValueError):verify_strategy_barrier(directory,wrong)
+            event['recoveredFullChain']['checkpointSha256']=write('after.gz','RUNNING')
+            with self.assertRaises(ValueError):verify_strategy_barrier(directory,event)
+
     def test_analysis_dependency_and_head_are_bound(self):
         with tempfile.TemporaryDirectory() as folder:
             directory=Path(folder)

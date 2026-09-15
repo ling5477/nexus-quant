@@ -64,6 +64,7 @@ final class L6QualificationControls implements AutoCloseable {
         this.context = context;
         var tasks = context.getBeansOfType(ScheduledAnnotationBeanPostProcessor.class);
         B0Fixture.require(tasks.size() == 1 && tasks.values().iterator().next().getScheduledTasks().size() == 1);
+        if (l6B) L6BRecoveryTrace.installIfRequested(context);
         var proxy = new ProxyFactory(context.getBean(StrategyRunRecoveryService.class));
         proxy.setProxyTargetClass(true);
         proxy.addAdvice((MethodInterceptor) call -> {
@@ -170,7 +171,7 @@ final class L6QualificationControls implements AutoCloseable {
         if (failure.get() != null) throw new IllegalStateException("L6 sampling/timer failure", failure.get());
         if (commands.incrementAndGet() > (l6B ? L6BContract.COMMAND_CAP : 4000)) throw new IllegalStateException("L6 command budget");
         if (command.equals("L6_CLOCK")) return Long.toString(System.nanoTime());
-        if (command.startsWith("L6_EMIT ")) return L6FormalTrigger.emit(context, command);
+        if (command.startsWith("L6_EMIT ")) return l6B ? L6BAdmission.emit(context, command) : L6FormalTrigger.emit(context, command);
         if (command.equals("L6_OBSERVER_SCAN")) {
             var result = context.getBean(StrategyScheduleScanService.class).scanOnce("l6-observer");
             B0Fixture.require(result.failedCount() == 0 && result.triggeredCount() == 0 && result.scannedCount() == 2);

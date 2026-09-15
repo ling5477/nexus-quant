@@ -9,6 +9,8 @@ final class L6DeterministicPacer {
                 double driftMillis, String logicalOrderId, long completedElapsed, String reason) { }
     @FunctionalInterface interface Emit { String send(long slot) throws Exception; }
     @FunctionalInterface interface Record { void save(Slot slot) throws Exception; }
+    /** 只表示明确未产生admission的busy拒绝，不承接超时或UNKNOWN外部结果。 */
+    static final class AdmissionBusy extends Exception { }
     private final LongSupplier clock;
     private final long start, interval, producerEnd, total;
     private final BooleanSupplier admission;
@@ -49,7 +51,13 @@ final class L6DeterministicPacer {
         if (dispatchNow >= producerEnd || !admission.getAsBoolean()) {
             record.save(slot(index - 1, due, dispatchNow, "SKIPPED_PHASE", null, dispatchNow, "PRODUCER_DISABLED")); return;
         }
-        String id = emit.send(index - 1);
+        String id;
+        try { id = emit.send(index - 1); }
+        catch (AdmissionBusy rejected) {
+            record.save(slot(index - 1, due, now, "PAUSED_BACKPRESSURE", null,
+                    clock.getAsLong() - start, "STRATEGY_RUN_ACTIVE"));
+            return;
+        }
         if (id == null || id.isBlank()) throw new IllegalStateException("emission identity missing");
         long completed = clock.getAsLong() - start;
         if (completed >= producerEnd) {

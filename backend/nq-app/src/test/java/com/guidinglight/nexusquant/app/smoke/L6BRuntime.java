@@ -28,6 +28,7 @@ final class L6BRuntime {
     private L6BFingerprint fingerprint;
     private L6BBudgets budgets;
     private L6BProjectionGuard projection;
+    private L6BAdmission admission;
     private Path dir;
     private long start, reconciliationCalls;
     private int checks;
@@ -43,6 +44,7 @@ final class L6BRuntime {
                 .put("HEAD",B0Processes.command("git","rev-parse","HEAD").trim())
                 .put("controllerPid",ProcessHandle.current().pid());
         write("parameters.json",proof);System.out.println("L6_B_ROOT "+dir);
+        admission = new L6BAdmission(row -> append("admission.ndjson", row));
         try {
             fingerprint=new L6BFingerprint(!contract.probe);write("candidate-entry.json",fingerprint.evidence());
             var preparation=L6PgBaselinePreflight.measure(contract.base,dir.resolve("baseline-preparation"));
@@ -114,6 +116,7 @@ final class L6BRuntime {
             if(actors!=null){proof.set("generations",actors.evidence());proof.put("ownedNqSurvivors",actors.survivors());}
             if(budgets!=null)proof.set("hardBudgets",budgets.evidence());
             if(projection!=null)proof.set("projection",projection.evidence());
+            if(admission!=null)proof.set("admission",admission.summary());
             proof.set("restarts",JSON.valueToTree(restarts));proof.put("reconciliationCalls",reconciliationCalls);
             proof.put("completedAt",Instant.now().toString());
             try{contract.verifyUnchanged();if(fingerprint!=null){fingerprint.verify();proof.put("candidateUnchanged",true);}}catch(Exception drift){proof.put("result","FROZEN_INPUT_DRIFT");throw drift;}
@@ -146,14 +149,22 @@ final class L6BRuntime {
             if(projection.drainExpired(now))break;
             boolean restartDue=restart<3 && now>=contract.restartSeconds[restart]*L6BContract.SECOND && !projection.stopped();
             if(restartDue && restart==2 && !delayArmed){http(endpoint,"L6B_DELAY_NEXT_PLACE");delayArmed=true;}
-            long orders=number(reader,"SELECT count(*) FROM orders");long backlog=sample(reader).path("backlog").asLong();reader.commit();
+            long orders=number(reader,"SELECT count(*) FROM orders");
+            boolean blocked=admission.observe(reader,sample(reader),elapsed());reader.commit();
             int before=slots.size();final int target=restartDue?new int[]{0,1,0}[restart]:-1;
-            pacer.poll(backlog>0,slot->{
+            pacer.poll(blocked,slot->{
                 contract.capacity().reserve(orders,1);
                 int actor=target>=0?target:(int)(slot%2);
                 var generation=actors.get(actor);
                 String reply=command(actor,"L6_EMIT "+slot+" "+(start+contract.timing.activeEnd()+generation.childClockOffset));
-                var result=JSON.readTree(reply);assertEquals(slot,result.path("slotIndex").asLong());return result.path("logicalOrderId").asText();
+                var result=JSON.readTree(reply);assertEquals(slot,result.path("slotIndex").asLong());
+                if ("SKIPPED_BUSY".equals(result.path("outcome").asText())) {
+                    assertTrue(result.path("admissionRolledBack").asBoolean());
+                    assertEquals("strategy_run_active", result.path("reason").asText());
+                    append("admission-rejections.ndjson",JSON.createObjectNode().put("elapsedNanos",elapsed()).set("response",result));
+                    throw new L6DeterministicPacer.AdmissionBusy();
+                }
+                return result.path("logicalOrderId").asText();
             },slot->{slots.add(slot);append("pacing.ndjson",JSON.valueToTree(slot));});
             boolean emitted=slots.subList(before,slots.size()).stream().anyMatch(s->s.decision().equals("EMITTED"));
             if(restartDue && emitted) {
@@ -199,6 +210,7 @@ final class L6BRuntime {
                 .put("restartTimestamp",Instant.now().toString()).put("startedElapsedNanos",elapsed()).put("oldPid",old.child.process.pid())
                 .put("logicalActor",actor).put("ordersBefore",orders).put("backlogBefore",before.path("backlog").asLong())
                 .put("reason",index==0?"GRACEFUL":index==1?"FORCED_DEATH":"DELAY_AND_RECOVERY_RESTART");
+        event.set("activeRunsBefore",L6BAdmission.activeRuns(reader));reader.commit();
         event.set("beforeActorMetrics",JSON.readTree(command(actor,"L6_METRICS")));
         var durable=JSON.createObjectNode();durable.set("facts",facts(reader));reader.commit();durable.set("venue",http(endpoint,null));
         Path snapshot=dir.resolve("restart-"+index+"-before.json.gz");
@@ -214,17 +226,19 @@ final class L6BRuntime {
         continuity(reader,pg,venue);
         long revision=number(reader,"SELECT coalesce(max(revision),0) FROM reconciliation_scan_cursors WHERE venue='OKX'");reader.commit();
         long requiredRounds=2*Math.ceilDiv(orders,100);
-        long deadline=System.nanoTime()+Math.min(600,Math.max(20,requiredRounds*10))*L6BContract.SECOND;
+        long deadline=System.nanoTime()+L6BAdmission.recoveryBoundNanos(orders);
         event.put("requiredCursorAdvances",requiredRounds).put("cursorRevisionBeforeRecovery",revision);
         boolean recovered=false;
         while(System.nanoTime()<deadline) {
             sampler.checkHealthy();assertFalse(projection.stopped());http(endpoint,"FILL");reconcile();
-            var sample=sample(reader);long after=number(reader,"SELECT coalesce(max(revision),0) FROM reconciliation_scan_cursors WHERE venue='OKX'");reader.commit();
+            var sample=sample(reader);long after=number(reader,"SELECT coalesce(max(revision),0) FROM reconciliation_scan_cursors WHERE venue='OKX'");
+            var active=L6BAdmission.activeRuns(reader);reader.commit();
             var metric=JSON.readTree(command(actor,"L6_METRICS"));
-            if(sample.path("backlog").asLong()==0 && after-revision>=requiredRounds && metric.path("tickCompleted").asLong()>0) {
+            if(active.isEmpty() && sample.path("backlog").asLong()==0 && after-revision>=requiredRounds && metric.path("tickCompleted").asLong()>0) {
                 var complete=checkpoint(reader,endpoint,"RESTART_"+index+"_RECOVERED");reader.commit();
                 assertEquals(orders,complete.path("oracle").path("orders").asLong());
                 event.set("recoveredFullChain",complete);event.set("afterActorMetrics",metric);
+                event.set("activeRunsAfter",active);event.put("strategyRunBarrier","CONVERGED");
                 event.put("cursorRevisionAfterRecovery",after).put("backlogAfter",0).put("recoveryCompletedElapsedNanos",elapsed())
                         .put("recoveryDurationMillis",(System.nanoTime()-from)/1_000_000).put("schedulerResumed",true).put("reconciliationResumed",true).put("result","RECOVERED");
                 recovered=true;break;

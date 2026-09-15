@@ -1,5 +1,6 @@
 """只读重建B证据；同代窗口及自然GC独立判定，短probe永不升级为正式接受。"""
 import hashlib
+import gzip
 import json
 import sys
 from pathlib import Path
@@ -215,6 +216,21 @@ def progress(rows, points, scans, pacing):
     return windows
 
 
+def verify_strategy_barrier(directory, event):
+    def snapshot(name, digest):
+        path = directory/name
+        require(path.parent == directory and hashlib.sha256(path.read_bytes()).hexdigest() == digest, 'restart strategy snapshot identity')
+        return json.loads(gzip.decompress(path.read_bytes()))['facts']['strategy_runs']
+    before = snapshot(event['beforeSnapshot'], event['beforeSnapshotSha256'])
+    recovered = event['recoveredFullChain']
+    after = snapshot(recovered['checkpointPath'], recovered['checkpointSha256'])
+    active = {r['strategy_run_id'] for r in before if r['status'] in ('CREATED','DISPATCHING','RUNNING')}
+    require(active and active == {r['strategy_run_id'] for r in event['activeRunsBefore']}, 'pre-restart active owner binding')
+    require(event['strategyRunBarrier'] == 'CONVERGED' and event['activeRunsAfter'] == [], 'strategy recovery barrier missing')
+    terminal = {r['strategy_run_id'] for r in after if r['status'] == 'SUCCEEDED'}
+    require(active <= terminal, 'pre-restart StrategyRun not converged')
+
+
 def analyze(directory, manifest):
     directory = Path(directory)
     proof = read_json(directory/'proof.json')
@@ -248,6 +264,8 @@ def analyze(directory, manifest):
         require(event['plannedSeconds'] <= event['startedElapsedNanos']/1e9 < event['plannedSeconds']+45, 'restart timing')
         require(event['result'] == 'RECOVERED' and event['backlogBefore'] > 0 and event['backlogAfter'] == 0, 'restart recovery')
         require(event['oldPid'] != event['newPid'] and event['freshChainAfterRecovery']['oracle']['orders'] > event['ordersBefore'], 'fresh generation progress')
+        verify_strategy_barrier(directory, event)
+    require(proof['admission']['busySinceNanos'] == -1, 'final admission barrier unresolved')
     require(proof['venueFinal']['boundedDelayApplied'] == 1 and proof['final']['backlog'] == 0 and proof['newOrdersDuringDrain'] == 0, 'delay/drain')
     budget = proof['hardBudgets']
     require(budget['status'] == 'SUFFICIENT' and budget['finalTransactionDelta'] <= budget['transactionHardCap'], 'hard budgets')
