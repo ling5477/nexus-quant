@@ -8,7 +8,7 @@ from l5_measurement import validate_export_input, require, unique
 def verify(proof):
     validate_export_input(proof)
     calibration = proof.get('mode') == 'CALIBRATION'
-    formal = proof.get('mode') in ('FORMAL_L6_A', 'L6_PG_STORAGE_CALIBRATION')
+    formal = proof.get('mode') in ('FORMAL_L6_A', 'L6_PG_STORAGE_CALIBRATION', 'FORMAL_L6_B')
     keys = {'facts','venue','expectedStrategyRuns','mode','runOrderBudget','pacingSlots'} if formal else ({'facts','venue','expectedStrategyRuns','mode'} if calibration else {'facts','venue','expectedStrategyRuns'})
     require(set(proof) == keys, 'unknown checkpoint schema')
     facts=proof['facts'];expected=proof['expectedStrategyRuns']

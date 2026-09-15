@@ -1,0 +1,52 @@
+{
+  "reviewer": "/root/l6b_independent_review",
+  "mode": "REVIEW_ONLY",
+  "HEAD": "23a0b46b96950aab9f0b8309d3beb8f446c73dce",
+  "startFingerprint": "2bf93741e5419089a45c5ef542d5c4c690cab5bb3df7aa888fef1c9705da1991",
+  "endFingerprint": "2bf93741e5419089a45c5ef542d5c4c690cab5bb3df7aa888fef1c9705da1991",
+  "files": 32,
+  "stageStart": 0,
+  "stageEnd": 0,
+  "productionDelta": 0,
+  "candidateModifiedByReviewer": false,
+  "P0": 0,
+  "P1": 1,
+  "verdict": "FINDINGS_REQUIRE_REMEDIATION",
+  "findings": [
+    {
+      "id": "R1",
+      "classification": "P1_BLOCKING",
+      "file": "l6_b_analyzer.py",
+      "line": 214,
+      "finding": "Offline analyzer does not bind supplied noise manifest to proof.manifestEntry.sha256",
+      "requiredFix": "Bind raw manifest hash, candidate HEAD, contract and analyzer dependency identity; reject replacement manifest."
+    },
+    {
+      "id": "R2",
+      "classification": "BLOCKING_QUALIFICATION_VALIDITY",
+      "file": "L6BResources.java",
+      "line": 205,
+      "finding": "Rechecking complete maximum owned budget against already reduced current free memory double-counts own allocation",
+      "requiredFix": "Freeze prestartup 60 percent ceiling; observe current free and protect entry 40 percent reserve. Correct lifecycle flags in formal-entry memory receipt."
+    }
+  ],
+  "independentReproductions": {
+    "pythonAnalyzerTests": 3,
+    "pythonOracleTests": 6,
+    "probeCheckpointReplays": 6,
+    "probeRunId": "f5c08b5f-a4a8-402a-b66c-fc38cdee86fd",
+    "orders": 22,
+    "trades": 22,
+    "ledger": 88,
+    "duplicates": 0,
+    "orphans": 0,
+    "generations": 5,
+    "distinctGcEvents": 15
+  },
+  "notVerified": [
+    "formal180min",
+    "finalCandidateCI",
+    "fullDurationResourceStability"
+  ],
+  "followupContract": "Fix findings and verify affected cases/probe; no review-of-review."
+}

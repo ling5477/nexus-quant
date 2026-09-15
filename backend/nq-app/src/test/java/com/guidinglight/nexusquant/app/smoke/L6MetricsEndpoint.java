@@ -19,6 +19,7 @@ final class L6MetricsEndpoint implements AutoCloseable {
     private final ThreadPoolExecutor executor = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,
             new ArrayBlockingQueue<>(1), new ThreadPoolExecutor.AbortPolicy());
     private final AtomicLong observations = new AtomicLong();
+    private final boolean l6B = L6BContract.inRunDirectory();
 
     L6MetricsEndpoint(Supplier<ObjectNode> resources) throws Exception {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 1);
@@ -27,7 +28,8 @@ final class L6MetricsEndpoint implements AutoCloseable {
             try (exchange) {
                 String token = exchange.getRequestHeaders().getFirst("X-L6-Sample");
                 if (!exchange.getRequestMethod().equals("GET") || !exchange.getRequestURI().getPath().equals("/metrics")
-                        || token == null || !token.matches("[a-f0-9-]{36}:[0-9]{1,3}")) {
+                        || token == null || !token.matches(l6B
+                                ? "[a-f0-9-]{36}:[0-9]{1,4}" : "[a-f0-9-]{36}:[0-9]{1,3}")) {
                     exchange.sendResponseHeaders(400, -1); return;
                 }
                 try {

@@ -58,6 +58,7 @@ final class L6QualificationControls implements AutoCloseable {
     private final double timeoutStart;
     private final L6MetricsEndpoint metricsEndpoint;
     private String paper;
+    private final boolean l6B = L6BContract.inRunDirectory();
 
     L6QualificationControls(ConfigurableApplicationContext context) throws Exception {
         this.context = context;
@@ -67,7 +68,7 @@ final class L6QualificationControls implements AutoCloseable {
         proxy.setProxyTargetClass(true);
         proxy.addAdvice((MethodInterceptor) call -> {
             if (!call.getMethod().getName().equals("recoverAll")) return call.proceed();
-            if (tickStarted.incrementAndGet() > 1000) throw new IllegalStateException("L6 tick budget");
+            if (tickStarted.incrementAndGet() > (l6B ? L6BContract.TICK_CAP : 1000)) throw new IllegalStateException("L6 tick budget");
             try { Object result = call.proceed(); tickCompleted.incrementAndGet(); return result; }
             catch (Throwable error) { tickFailed.incrementAndGet(); failure.compareAndSet(null, error); throw error; }
         });
@@ -167,7 +168,7 @@ final class L6QualificationControls implements AutoCloseable {
 
     private String execute(String command) throws Exception {
         if (failure.get() != null) throw new IllegalStateException("L6 sampling/timer failure", failure.get());
-        if (commands.incrementAndGet() > 4000) throw new IllegalStateException("L6 command budget");
+        if (commands.incrementAndGet() > (l6B ? L6BContract.COMMAND_CAP : 4000)) throw new IllegalStateException("L6 command budget");
         if (command.equals("L6_CLOCK")) return Long.toString(System.nanoTime());
         if (command.startsWith("L6_EMIT ")) return L6FormalTrigger.emit(context, command);
         if (command.equals("L6_OBSERVER_SCAN")) {

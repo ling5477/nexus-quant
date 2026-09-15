@@ -31,6 +31,9 @@ public final class B0SyntheticVenueMain {
     static boolean boundedWorkload;
     static final int DEFAULT_ORDER_CAPACITY = 300;
     static int boundedOrderCapacity = DEFAULT_ORDER_CAPACITY;
+    static L6BVenueJournal l6BJournal;
+    private int l6BDelayRemaining;
+    private int l6BDelayApplied;
     private ThreadPoolExecutor boundedExecutor;
     private final AtomicInteger rejectedTasks = new AtomicInteger();
     private final ObjectMapper mapper = new ObjectMapper();
@@ -75,6 +78,14 @@ public final class B0SyntheticVenueMain {
         }
         if ("/control".equals(path)) {
             String requested = new String(body, StandardCharsets.UTF_8);
+            if ("L6B_DELAY_NEXT_PLACE".equals(requested) && l6BJournal != null && "L5_OPEN".equals(mode)) {
+                if (l6BDelayRemaining != 0 || l6BDelayApplied != 0) {
+                    respond(exchange,409,mapper.createObjectNode().put("error","L6_B_DELAY_ALREADY_ARMED_OR_USED")); return;
+                }
+                l6BDelayRemaining=1;
+                event("L6B_DELAY_ARMED", "").put("delayMillis",700);
+                respond(exchange,200,mapper.createObjectNode().put("armed",true)); return;
+            }
             if ("FILL_NEW".equals(requested) && boundedWorkload && "L5_OPEN".equals(mode)) {
                 orders.values().stream().skip(60).filter(order -> !"filled".equals(order.path("state").asText())).forEach(order -> {
                     order.put("uTime", Long.toString(System.currentTimeMillis()));
@@ -121,7 +132,8 @@ public final class B0SyntheticVenueMain {
                     .put("delivered", delivered).put("dropped", dropped).put("delayed", delayed);
             var data = facts.putArray("data");
             orders.values().forEach(data::add);
-            facts.set("events", events.deepCopy());
+            if (l6BJournal == null) facts.set("events", events.deepCopy());
+            else { facts.set("eventJournal",l6BJournal.snapshot()); facts.put("boundedDelayApplied",l6BDelayApplied); }
             if (boundedExecutor != null) {
                 facts.put("executorActive", boundedExecutor.getActiveCount()).put("executorQueue", boundedExecutor.getQueue().size())
                         .put("executorCompleted", boundedExecutor.getCompletedTaskCount()).put("executorRejected", rejectedTasks.get())
@@ -179,6 +191,13 @@ public final class B0SyntheticVenueMain {
                 try { Thread.sleep(700); } catch (InterruptedException ex) { Thread.currentThread().interrupt(); }
             }
             delivered++;
+            // 延迟只推迟一次原响应；L5_OPEN、订单、成交价格、费用和身份均不改变。
+            if (l6BDelayRemaining > 0) {
+                l6BDelayRemaining--; l6BDelayApplied++;
+                event("L6B_DELAY_BEGIN",client).put("delayMillis",700);
+                try { Thread.sleep(700); } catch (InterruptedException ex) { Thread.currentThread().interrupt(); throw new IOException(ex); }
+                event("L6B_DELAY_END",client);
+            }
         } else if ("/api/v5/trade/order".equals(path) || "/api/v5/trade/fills".equals(path)) {
             Map<String, String> query = new LinkedHashMap<>();
             String raw = exchange.getRequestURI().getRawQuery();
@@ -212,6 +231,7 @@ public final class B0SyntheticVenueMain {
     }
 
     private ObjectNode event(String type, String client) {
+        if (l6BJournal != null) return l6BJournal.event(type,client);
         return events.addObject().put("sequence", events.size() + 1).put("type", type)
                 .put("nanoTime", System.nanoTime()).put("client", client);
     }
@@ -223,6 +243,7 @@ public final class B0SyntheticVenueMain {
     }
 
     private void respond(HttpExchange exchange, int code, JsonNode value) throws IOException {
+        if (l6BJournal != null) l6BJournal.flush();
         byte[] bytes = mapper.writeValueAsBytes(value);
         exchange.getResponseHeaders().set("Content-Type", "application/json");
         exchange.sendResponseHeaders(code, bytes.length);

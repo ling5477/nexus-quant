@@ -87,6 +87,13 @@ final class B0Processes {
             return start(true, run.capacity(), contract.pgMemory(run.capacity()));
         }
 
+        static Pg startL6B(L6BContract contract, long baseline) throws Exception {
+            contract.verifyUnchanged();
+            long capacity=contract.deriveCapacity(baseline);
+            L6HostMemoryPreflight.verify(contract.base,capacity,L6HostMemoryPreflight.observe());
+            return start(true,capacity,contract.base.pgMemory(capacity));
+        }
+
         private static Pg start(boolean bounded) throws Exception {
             return start(bounded, defaultTmpfsBytes(), 768L * 1024 * 1024);
         }
@@ -181,7 +188,8 @@ final class B0Processes {
             }
             Path argfile = directory.resolve(label + ".args");
             Files.writeString(argfile, ((main == L6NqProcessMain.class || main == L5NqProcessMain.class || main == L5FaultNqProcessMain.class || main == L5KillNqProcessMain.class) ? "-Xmx512m\n"
-                    : main == L5VenueProcessMain.class || main == L6CalibrationVenueProcessMain.class || main == L6FormalVenueProcessMain.class || main == L5ProjectionProcessMain.class ? "-Xmx256m\n" : "")
+                    : main == L5VenueProcessMain.class || main == L6CalibrationVenueProcessMain.class || main == L6FormalVenueProcessMain.class || main == L6BVenueProcessMain.class || main == L5ProjectionProcessMain.class ? "-Xmx256m\n"
+                    : main == L6BOwnershipChildMain.class ? "-Xmx64m\n" : "")
                     + "-Dfile.encoding=UTF-8\n-Dstdout.encoding=UTF-8\n-Dstderr.encoding=UTF-8\n"
                     + "-Duser.language=en\n-Duser.country=US\n-cp\n\"" + classpath.replace("\\", "\\\\").replace("\"", "\\\"")
                     + "\"\n" + main.getName() + "\n");

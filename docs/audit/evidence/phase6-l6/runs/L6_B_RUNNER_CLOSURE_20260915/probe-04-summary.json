@@ -1,0 +1,115 @@
+{
+  "mode": "SHORT_PROBE_NOT_FORMAL_QUALIFICATION",
+  "runId": "5970a70e-91bf-4243-a2a1-49aa37c02e6a",
+  "result": "PASS",
+  "durationSeconds": 300.0020203,
+  "samples": 30,
+  "generations": [
+    {
+      "logicalActor": "NQ-0",
+      "generation": 0,
+      "pid": 34172,
+      "startTimestamp": "2026-09-15T06:10:04.494Z",
+      "stopTimestamp": "2026-09-15T06:11:26.925256100Z",
+      "restartReason": "INITIAL",
+      "lifecycle": "DOWN",
+      "processAlive": false
+    },
+    {
+      "logicalActor": "NQ-1",
+      "generation": 0,
+      "pid": 19660,
+      "startTimestamp": "2026-09-15T06:10:08.969Z",
+      "stopTimestamp": "2026-09-15T06:12:30.779281500Z",
+      "restartReason": "INITIAL",
+      "lifecycle": "DOWN",
+      "processAlive": false
+    },
+    {
+      "logicalActor": "NQ-0",
+      "generation": 1,
+      "pid": 34384,
+      "startTimestamp": "2026-09-15T06:11:27.516Z",
+      "stopTimestamp": "2026-09-15T06:13:35.565303900Z",
+      "restartReason": "GRACEFUL",
+      "lifecycle": "DOWN",
+      "processAlive": false
+    },
+    {
+      "logicalActor": "NQ-1",
+      "generation": 1,
+      "pid": 46224,
+      "startTimestamp": "2026-09-15T06:12:31.373Z",
+      "stopTimestamp": "2026-09-15T06:15:14.958755700Z",
+      "restartReason": "FORCED_DEATH",
+      "lifecycle": "DOWN",
+      "processAlive": false
+    },
+    {
+      "logicalActor": "NQ-0",
+      "generation": 2,
+      "pid": 27168,
+      "startTimestamp": "2026-09-15T06:13:36.161Z",
+      "stopTimestamp": "2026-09-15T06:15:14.958755700Z",
+      "restartReason": "DELAY_AND_RECOVERY_RESTART",
+      "lifecycle": "DOWN",
+      "processAlive": false
+    }
+  ],
+  "distinctNaturalGcEvents": 14,
+  "restarts": [
+    {
+      "index": 0,
+      "logicalActor": 0,
+      "oldPid": 34172,
+      "newPid": 34384,
+      "generation": 1,
+      "backlogBefore": 1,
+      "backlogAfter": 0,
+      "downtimeMillis": 5025,
+      "recoveryDurationMillis": 11694,
+      "result": "RECOVERED"
+    },
+    {
+      "index": 1,
+      "logicalActor": 1,
+      "oldPid": 19660,
+      "newPid": 46224,
+      "generation": 1,
+      "backlogBefore": 1,
+      "backlogAfter": 0,
+      "downtimeMillis": 4757,
+      "recoveryDurationMillis": 11778,
+      "result": "RECOVERED"
+    },
+    {
+      "index": 2,
+      "logicalActor": 0,
+      "oldPid": 34384,
+      "newPid": 27168,
+      "generation": 2,
+      "backlogBefore": 1,
+      "backlogAfter": 0,
+      "downtimeMillis": 4641,
+      "recoveryDurationMillis": 11760,
+      "result": "RECOVERED"
+    }
+  ],
+  "oracle": {
+    "orders": 21,
+    "trades": 21,
+    "ledger": 84,
+    "position": "2.1",
+    "duplicates": 0,
+    "orphans": 0
+  },
+  "transactionDelta": 12852,
+  "transactionCap": 64000,
+  "rawBytes": 4967316,
+  "archiveSha256": "b23e5c9ab344ed4defe39e0a91c08aecb6627e2f5679a29e9415fabf8c5bb845",
+  "candidateUnchanged": true,
+  "analysisInputIdentity": "PASS",
+  "cleanup": "PASS",
+  "ownedSurvivors": 0,
+  "formalAccepted": false
+}

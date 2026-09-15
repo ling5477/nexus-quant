@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "mode": "FORMAL_L6_B",
+  "status": "FROZEN",
+  "sourceModelSha256": "41b819d8ac572209e87112027cdfcdf0bd34c8c79d1e8a5bb033c697c2cd8c4c",
+  "sourceManifestSha256": "922253c8934e32b7626ced2f9e42407a2a4313c665256b89c483e847ce6abaa6",
+  "sourceL6AReportSha256": "80c99c4fad7f7263886bba0f805d4928f3629f96e177d90b2f5af6c4d6f71f50",
+  "formalSeconds": [
+    600,
+    9600,
+    600
+  ],
+  "restartSeconds": [
+    2400,
+    4800,
+    7200
+  ],
+  "checkpointCompressionNumerator": 8,
+  "checkpointCompressionDenominator": 16,
+  "evidenceVolumeAnalysisSha256": "d9f9fc40e0544e26ceb48e267400ef06e85a16da621318bfc1eb99ac6630b1ed",
+  "planArtifact": {
+    "path": "docs/audit/evidence/GATEAUDIT_PHASE6_L5_L6_SCOPE_AND_QUALIFICATION_PLAN.md",
+    "sha256": "80e339594be7223f07783d30e7f18913a53187ecde59b360ecdbf9223c9e45ac"
+  }
+}

@@ -48,10 +48,20 @@ final class L6ResourceSampler implements AutoCloseable {
     private long maximumCollection;
     private volatile RuntimeException failure;
     private ObjectNode latest;
+    private final long periodicCap;
+    private final boolean durationDerived;
+    private final Object collectionLock;
 
     L6ResourceSampler(Map<String, Collector> collectors, Map<String, java.util.Set<String>> required,
                       LongSupplier nanoTime, Supplier<Instant> wallTime, long startedNanos,
                       L6SamplingSchedule duration, Path output) {
+        this(collectors,required,nanoTime,wallTime,startedNanos,duration,output,false,null);
+    }
+
+    /** B入口按时长派生边界；共享生命周期锁只覆盖一次采集，不覆盖进程启动等待。 */
+    L6ResourceSampler(Map<String, Collector> collectors, Map<String, java.util.Set<String>> required,
+                      LongSupplier nanoTime, Supplier<Instant> wallTime, long startedNanos,
+                      L6SamplingSchedule duration, Path output, boolean durationDerived, Object collectionLock) {
         if (collectors.isEmpty() || !collectors.keySet().equals(required.keySet())) {
             throw new IllegalArgumentException("mandatory collector topology");
         }
@@ -62,6 +72,10 @@ final class L6ResourceSampler implements AutoCloseable {
         this.startedNanos = startedNanos;
         this.duration = duration;
         this.output = output;
+        this.durationDerived=durationDerived;
+        this.periodicCap=durationDerived ? Math.ceilDiv(duration.total(),TimeUnit.MILLISECONDS.toNanos(INTERVAL_MILLIS)) : 500;
+        if (periodicCap<=0 || periodicCap>1080) throw new IllegalArgumentException("L6 sampling duration bound");
+        this.collectionLock=collectionLock==null ? this : collectionLock;
         summary.put("sampleIntervalMillis", INTERVAL_MILLIS).put("maxStartLagMillisAllowed", MAX_START_LAG_MILLIS)
                 .put("maxCollectionMillisAllowed", MAX_COLLECTION_MILLIS);
         summary.putArray("samples");
@@ -74,7 +88,7 @@ final class L6ResourceSampler implements AutoCloseable {
         }, Math.max(0, index * INTERVAL_MILLIS - TimeUnit.NANOSECONDS.toMillis(nanoTime.getAsLong() - startedNanos)), INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
     }
 
-    synchronized void sample() { collectRecord(null, null, null, null); }
+    synchronized void sample() { synchronized(collectionLock) { collectRecord(null, null, null, null); } }
 
     synchronized ObjectNode boundary(String name, String phase) {
         return collectRecord(name, phase, null, null);
@@ -99,7 +113,7 @@ final class L6ResourceSampler implements AutoCloseable {
         long lag = elapsed - index * INTERVAL_MILLIS;
         Stamp stamp = new Stamp(boundary == null ? index : -(++boundaryIndex), wallTime.get().toString(), elapsed,
                 boundary == null ? duration.samplePhase(begin - startedNanos) : boundaryPhase,
-                identity + ":" + (boundary == null ? index : 500 + boundaryIndex));
+                identity + ":" + (boundary == null ? index : periodicCap + boundaryIndex));
         ObjectNode record = stamp.json().put("scheduledElapsedMillis", index * INTERVAL_MILLIS)
                 .put("sampleType", boundary == null ? "PERIODIC" : "PHASE_BOUNDARY");
         if (boundary != null) {
@@ -124,7 +138,7 @@ final class L6ResourceSampler implements AutoCloseable {
                     || record.path("latenessMillis").asDouble() > L6StoragePhaseController.MAX_BOUNDARY_LATENESS_MILLIS)) {
                 throw new IllegalStateException("BOUNDARY_OBSERVATION_DEADLINE_VIOLATION");
             }
-            if (index >= 500 || boundaryIndex > 12 || (boundary == null && (lag < 0 || lag > MAX_START_LAG_MILLIS))) {
+            if ((index >= periodicCap && (!durationDerived || boundary == null)) || boundaryIndex > 12 || (boundary == null && (lag < 0 || lag > MAX_START_LAG_MILLIS))) {
                 throw new IllegalStateException("L6_RESOURCE_CADENCE_VIOLATION");
             }
             if (boundary == null) maximumLag = Math.max(maximumLag, lag);

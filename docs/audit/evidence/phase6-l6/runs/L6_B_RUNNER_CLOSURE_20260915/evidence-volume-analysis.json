@@ -1,0 +1,436 @@
+{
+  "sourceRawArchiveSha256": "2535937411fde485d183cbd4a86c2a0296f1ce4e380456e9e86f16fa405c1cc2",
+  "snapshotCount": 45,
+  "maxObservedCompressionRatio": 0.2444477346757477,
+  "frozenNumerator": 8,
+  "frozenDenominator": 16,
+  "rule": "max(1/4, roundUpToSixteenth(2*maxObservedRatio)); includes fixed gzip overhead separately",
+  "rawClassifications": {
+    "MANDATORY_RAW": [
+      "resource samples",
+      "business DB facts at checkpoints",
+      "unique Venue event journal",
+      "process logs",
+      "PG storage observations",
+      "restart lifecycle and before/after facts"
+    ],
+    "DERIVABLE": [
+      "oracle summaries from hash-bound raw",
+      "generation aggregation"
+    ],
+    "REDUNDANT": [
+      "repeated full Venue journal in every snapshot",
+      "duplicated static metadata"
+    ],
+    "DEBUG_ONLY": [
+      "none deleted from historical evidence"
+    ]
+  },
+  "samples": [
+    {
+      "path": "checkpoint-001.json",
+      "sourceBytes": 7627,
+      "snapshotWithoutJournalBytes": 6754,
+      "gzipBytes": 1651,
+      "ratio": 0.2444477346757477,
+      "journalEventCount": 8,
+      "maximumJournalEventBytes": 112
+    },
+    {
+      "path": "checkpoint-002.json",
+      "sourceBytes": 50584,
+      "snapshotWithoutJournalBytes": 38085,
+      "gzipBytes": 4821,
+      "ratio": 0.1265852697912564,
+      "journalEventCount": 114,
+      "maximumJournalEventBytes": 113
+    },
+    {
+      "path": "checkpoint-006.json",
+      "sourceBytes": 374818,
+      "snapshotWithoutJournalBytes": 169481,
+      "gzipBytes": 21249,
+      "ratio": 0.12537688590461468,
+      "journalEventCount": 1838,
+      "maximumJournalEventBytes": 116
+    },
+    {
+      "path": "checkpoint-008.json",
+      "sourceBytes": 615864,
+      "snapshotWithoutJournalBytes": 232077,
+      "gzipBytes": 29912,
+      "ratio": 0.12888825691473088,
+      "journalEventCount": 3422,
+      "maximumJournalEventBytes": 116
+    },
+    {
+      "path": "checkpoint-009.json",
+      "sourceBytes": 756720,
+      "snapshotWithoutJournalBytes": 263594,
+      "gzipBytes": 34075,
+      "ratio": 0.12927077247585303,
+      "journalEventCount": 4392,
+      "maximumJournalEventBytes": 116
+    },
+    {
+      "path": "checkpoint-010.json",
+      "sourceBytes": 910685,
+      "snapshotWithoutJournalBytes": 294886,
+      "gzipBytes": 38527,
+      "ratio": 0.1306504886634157,
+      "journalEventCount": 5480,
+      "maximumJournalEventBytes": 116
+    },
+    {
+      "path": "checkpoint-011.json",
+      "sourceBytes": 1085427,
+      "snapshotWithoutJournalBytes": 332276,
+      "gzipBytes": 43873,
+      "ratio": 0.13203782397765712,
+      "journalEventCount": 6698,
+      "maximumJournalEventBytes": 116
+    },
+    {
+      "path": "checkpoint-012.json",
+      "sourceBytes": 1270814,
+      "snapshotWithoutJournalBytes": 363576,
+      "gzipBytes": 48601,
+      "ratio": 0.13367494004004665,
+      "journalEventCount": 8064,
+      "maximumJournalEventBytes": 116
+    },
+    {
+      "path": "checkpoint-014.json",
+      "sourceBytes": 1682855,
+      "snapshotWithoutJournalBytes": 426517,
+      "gzipBytes": 57908,
+      "ratio": 0.13576950039506044,
+      "journalEventCount": 11148,
+      "maximumJournalEventBytes": 117
+    },
+    {
+      "path": "checkpoint-016.json",
+      "sourceBytes": 2150675,
+      "snapshotWithoutJournalBytes": 489495,
+      "gzipBytes": 67475,
+      "ratio": 0.13784614756024066,
+      "journalEventCount": 14704,
+      "maximumJournalEventBytes": 117
+    },
+    {
+      "path": "checkpoint-017.json",
+      "sourceBytes": 2404047,
+      "snapshotWithoutJournalBytes": 520838,
+      "gzipBytes": 72095,
+      "ratio": 0.13842115974640867,
+      "journalEventCount": 16654,
+      "maximumJournalEventBytes": 117
+    },
+    {
+      "path": "checkpoint-018.json",
+      "sourceBytes": 2671143,
+      "snapshotWithoutJournalBytes": 552453,
+      "gzipBytes": 76830,
+      "ratio": 0.13907065397418422,
+      "journalEventCount": 18722,
+      "maximumJournalEventBytes": 117
+    },
+    {
+      "path": "checkpoint-019.json",
+      "sourceBytes": 2945120,
+      "snapshotWithoutJournalBytes": 577942,
+      "gzipBytes": 80509,
+      "ratio": 0.13930290582792046,
+      "journalEventCount": 20904,
+      "maximumJournalEventBytes": 117
+    },
+    {
+      "path": "checkpoint-021.json",
+      "sourceBytes": 3544167,
+      "snapshotWithoutJournalBytes": 641011,
+      "gzipBytes": 89468,
+      "ratio": 0.13957326785343777,
+      "journalEventCount": 25610,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-023.json",
+      "sourceBytes": 4158921,
+      "snapshotWithoutJournalBytes": 704121,
+      "gzipBytes": 98718,
+      "ratio": 0.14020033488562336,
+      "journalEventCount": 30450,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-024.json",
+      "sourceBytes": 4466591,
+      "snapshotWithoutJournalBytes": 735815,
+      "gzipBytes": 103169,
+      "ratio": 0.1402105148712652,
+      "journalEventCount": 32870,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-025.json",
+      "sourceBytes": 4774123,
+      "snapshotWithoutJournalBytes": 767280,
+      "gzipBytes": 107705,
+      "ratio": 0.14037248462099886,
+      "journalEventCount": 35290,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-028.json",
+      "sourceBytes": 5697455,
+      "snapshotWithoutJournalBytes": 861879,
+      "gzipBytes": 121307,
+      "ratio": 0.1407471350386771,
+      "journalEventCount": 42550,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-029.json",
+      "sourceBytes": 6005512,
+      "snapshotWithoutJournalBytes": 893554,
+      "gzipBytes": 125978,
+      "ratio": 0.1409853237745005,
+      "journalEventCount": 44970,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-030.json",
+      "sourceBytes": 6336282,
+      "snapshotWithoutJournalBytes": 925020,
+      "gzipBytes": 130477,
+      "ratio": 0.1410531664180234,
+      "journalEventCount": 47590,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-031.json",
+      "sourceBytes": 6644475,
+      "snapshotWithoutJournalBytes": 956701,
+      "gzipBytes": 135287,
+      "ratio": 0.14140990758868235,
+      "journalEventCount": 50010,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-032.json",
+      "sourceBytes": 6952716,
+      "snapshotWithoutJournalBytes": 988395,
+      "gzipBytes": 139953,
+      "ratio": 0.1415962241816278,
+      "journalEventCount": 52430,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-033.json",
+      "sourceBytes": 7260803,
+      "snapshotWithoutJournalBytes": 1019862,
+      "gzipBytes": 144496,
+      "ratio": 0.14168191382755707,
+      "journalEventCount": 54850,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-036.json",
+      "sourceBytes": 8179178,
+      "snapshotWithoutJournalBytes": 1108542,
+      "gzipBytes": 157030,
+      "ratio": 0.1416545336126191,
+      "journalEventCount": 62106,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-038.json",
+      "sourceBytes": 8795914,
+      "snapshotWithoutJournalBytes": 1171673,
+      "gzipBytes": 166049,
+      "ratio": 0.141719575342267,
+      "journalEventCount": 66946,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-039.json",
+      "sourceBytes": 9110855,
+      "snapshotWithoutJournalBytes": 1209279,
+      "gzipBytes": 171028,
+      "ratio": 0.1414297279618682,
+      "journalEventCount": 69370,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-040.json",
+      "sourceBytes": 9442099,
+      "snapshotWithoutJournalBytes": 1240738,
+      "gzipBytes": 175570,
+      "ratio": 0.1415044916815637,
+      "journalEventCount": 71990,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-041.json",
+      "sourceBytes": 9750738,
+      "snapshotWithoutJournalBytes": 1272433,
+      "gzipBytes": 180255,
+      "ratio": 0.14166168277622476,
+      "journalEventCount": 74410,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-043.json",
+      "sourceBytes": 10367828,
+      "snapshotWithoutJournalBytes": 1335527,
+      "gzipBytes": 189586,
+      "ratio": 0.14195594697823405,
+      "journalEventCount": 79250,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-044.json",
+      "sourceBytes": 10676574,
+      "snapshotWithoutJournalBytes": 1367221,
+      "gzipBytes": 194121,
+      "ratio": 0.14198216674553713,
+      "journalEventCount": 81670,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-045.json",
+      "sourceBytes": 10985086,
+      "snapshotWithoutJournalBytes": 1398681,
+      "gzipBytes": 198586,
+      "ratio": 0.14198090915655537,
+      "journalEventCount": 84090,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-046.json",
+      "sourceBytes": 11293804,
+      "snapshotWithoutJournalBytes": 1430347,
+      "gzipBytes": 203067,
+      "ratio": 0.14197044493399155,
+      "journalEventCount": 86510,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-047.json",
+      "sourceBytes": 11625279,
+      "snapshotWithoutJournalBytes": 1461770,
+      "gzipBytes": 207377,
+      "ratio": 0.14186705158814314,
+      "journalEventCount": 89130,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-049.json",
+      "sourceBytes": 12236350,
+      "snapshotWithoutJournalBytes": 1519001,
+      "gzipBytes": 215505,
+      "ratio": 0.1418728493266298,
+      "journalEventCount": 93966,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-051.json",
+      "sourceBytes": 12847421,
+      "snapshotWithoutJournalBytes": 1576168,
+      "gzipBytes": 224225,
+      "ratio": 0.1422595814659351,
+      "journalEventCount": 98802,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-052.json",
+      "sourceBytes": 13125535,
+      "snapshotWithoutJournalBytes": 1578098,
+      "gzipBytes": 224475,
+      "ratio": 0.14224401779864115,
+      "journalEventCount": 101202,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-053.json",
+      "sourceBytes": 13404614,
+      "snapshotWithoutJournalBytes": 1579809,
+      "gzipBytes": 224698,
+      "ratio": 0.14223111781234313,
+      "journalEventCount": 103602,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-054.json",
+      "sourceBytes": 13707018,
+      "snapshotWithoutJournalBytes": 1581741,
+      "gzipBytes": 224944,
+      "ratio": 0.14221291602101735,
+      "journalEventCount": 106202,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-055.json",
+      "sourceBytes": 13986314,
+      "snapshotWithoutJournalBytes": 1583669,
+      "gzipBytes": 225180,
+      "ratio": 0.14218880334211254,
+      "journalEventCount": 108602,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-056.json",
+      "sourceBytes": 14265359,
+      "snapshotWithoutJournalBytes": 1585384,
+      "gzipBytes": 225392,
+      "ratio": 0.1421687111765982,
+      "journalEventCount": 111002,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-057.json",
+      "sourceBytes": 14544706,
+      "snapshotWithoutJournalBytes": 1587313,
+      "gzipBytes": 225633,
+      "ratio": 0.14214776795754838,
+      "journalEventCount": 113402,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-058.json",
+      "sourceBytes": 14823741,
+      "snapshotWithoutJournalBytes": 1589028,
+      "gzipBytes": 225842,
+      "ratio": 0.14212587820982386,
+      "journalEventCount": 115802,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-059.json",
+      "sourceBytes": 15126190,
+      "snapshotWithoutJournalBytes": 1590957,
+      "gzipBytes": 226076,
+      "ratio": 0.14210063502659093,
+      "journalEventCount": 118402,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-060.json",
+      "sourceBytes": 15405224,
+      "snapshotWithoutJournalBytes": 1592671,
+      "gzipBytes": 226285,
+      "ratio": 0.14207893532311444,
+      "journalEventCount": 120802,
+      "maximumJournalEventBytes": 118
+    },
+    {
+      "path": "checkpoint-061.json",
+      "sourceBytes": 15521651,
+      "snapshotWithoutJournalBytes": 1593530,
+      "gzipBytes": 226393,
+      "ratio": 0.14207012105200403,
+      "journalEventCount": 121802,
+      "maximumJournalEventBytes": 118
+    }
+  ]
+}

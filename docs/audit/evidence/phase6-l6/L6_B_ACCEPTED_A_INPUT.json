@@ -1,0 +1,604 @@
+{
+  "decision": "PASS / L6_A_60MIN_ACTIVE_STABILITY_QUALIFICATION_ACCEPTED / FORMAL_10_40_10_COMPLETED / ALL_PREFLIGHT_BUDGETS_SUFFICIENT / NO_LATE_HARD_BUDGET_BLOCKER / DYNAMIC_PG_CAPACITY_ACCEPTED / HOST_MEMORY_60_PERCENT_GATE_PASSED / PROJECTION_GUARD_PRESERVED / ALL_ACTIVE_WINDOWS_VALID / BUSINESS_FORWARD_PROGRESS_PRESERVED / RECONCILIATION_CONVERGED / ACCOUNTING_CORRECT / RESOURCE_STABILITY_ACCEPTED_FOR_60MIN_SCOPE / PG_STORAGE_STABLE_FOR_60MIN_SCOPE / NO_DUPLICATE_MUTATION / NO_DUPLICATE_ACCOUNTING / NO_DURABLE_ORPHAN / OWNED_SURVIVORS_0 / P0_0 / P1_0 / L6_NOT_ACCEPTED",
+  "runId": "12f2838d-f952-45d7-a8b8-3667d97c46f6",
+  "HEAD": "23a0b46b96950aab9f0b8309d3beb8f446c73dce",
+  "branch": "audit/post-gatey-agent-baseline",
+  "upstream": "23a0b46b96950aab9f0b8309d3beb8f446c73dce",
+  "CI": 34922938228,
+  "l6AAccepted": true,
+  "l6Accepted": false,
+  "actualFormalEndSeconds": 3600.0018127,
+  "contractSeconds": [
+    600,
+    2400,
+    600
+  ],
+  "observedPhaseRegistration": [
+    {
+      "phase": "WARMUP",
+      "startElapsedNanos": 465620300,
+      "endElapsedNanos": 600013333100,
+      "durationNanos": 599547712800
+    },
+    {
+      "phase": "ACTIVE",
+      "startElapsedNanos": 600013333100,
+      "endElapsedNanos": 3000003559600,
+      "durationNanos": 2399990226500
+    },
+    {
+      "phase": "DRAIN",
+      "startElapsedNanos": 3000003559600,
+      "endElapsedNanos": 3600001812700,
+      "durationNanos": 599998253100
+    }
+  ],
+  "sampling": {
+    "count": 360,
+    "expected": 360,
+    "statuses": {
+      "MEASURED": 360
+    },
+    "sourceIdentityViolations": [],
+    "indicesContiguous": true,
+    "scheduledCadenceExact": true,
+    "maximumLatenessMillis": 17,
+    "maximumCollectionMillis": 461
+  },
+  "windows": [
+    {
+      "window": "WARMUP",
+      "sampleCount": 60,
+      "progressCheckCount": 6,
+      "newlyProvenFullChainCount": 47,
+      "oracleFirstLast": [
+        {
+          "orders": 1,
+          "trades": 1,
+          "ledger": 4,
+          "position": "0.1",
+          "duplicates": 0,
+          "orphans": 0
+        },
+        {
+          "orders": 47,
+          "trades": 47,
+          "ledger": 188,
+          "position": "4.7",
+          "duplicates": 0,
+          "orphans": 0
+        }
+      ],
+      "schedulerTickDeltas": {
+        "nq0": 117,
+        "nq1": 117
+      },
+      "cursorRevisionFirstLast": [
+        [
+          0
+        ],
+        [
+          236
+        ]
+      ]
+    },
+    {
+      "window": "A1",
+      "sampleCount": 60,
+      "progressCheckCount": 7,
+      "newlyProvenFullChainCount": 45,
+      "oracleFirstLast": [
+        {
+          "orders": 53,
+          "trades": 53,
+          "ledger": 212,
+          "position": "5.3",
+          "duplicates": 0,
+          "orphans": 0
+        },
+        {
+          "orders": 92,
+          "trades": 92,
+          "ledger": 368,
+          "position": "9.2",
+          "duplicates": 0,
+          "orphans": 0
+        }
+      ],
+      "schedulerTickDeltas": {
+        "nq0": 118,
+        "nq1": 118
+      },
+      "cursorRevisionFirstLast": [
+        [
+          240
+        ],
+        [
+          476
+        ]
+      ]
+    },
+    {
+      "window": "A2",
+      "sampleCount": 60,
+      "progressCheckCount": 7,
+      "newlyProvenFullChainCount": 55,
+      "oracleFirstLast": [
+        {
+          "orders": 102,
+          "trades": 102,
+          "ledger": 408,
+          "position": "10.2",
+          "duplicates": 0,
+          "orphans": 0
+        },
+        {
+          "orders": 147,
+          "trades": 147,
+          "ledger": 588,
+          "position": "14.7",
+          "duplicates": 0,
+          "orphans": 0
+        }
+      ],
+      "schedulerTickDeltas": {
+        "nq0": 118,
+        "nq1": 118
+      },
+      "cursorRevisionFirstLast": [
+        [
+          480
+        ],
+        [
+          716
+        ]
+      ]
+    },
+    {
+      "window": "A3",
+      "sampleCount": 60,
+      "progressCheckCount": 7,
+      "newlyProvenFullChainCount": 50,
+      "oracleFirstLast": [
+        {
+          "orders": 152,
+          "trades": 152,
+          "ledger": 608,
+          "position": "15.2",
+          "duplicates": 0,
+          "orphans": 0
+        },
+        {
+          "orders": 197,
+          "trades": 197,
+          "ledger": 788,
+          "position": "19.7",
+          "duplicates": 0,
+          "orphans": 0
+        }
+      ],
+      "schedulerTickDeltas": {
+        "nq0": 117,
+        "nq1": 118
+      },
+      "cursorRevisionFirstLast": [
+        [
+          720
+        ],
+        [
+          956
+        ]
+      ]
+    },
+    {
+      "window": "A4",
+      "sampleCount": 60,
+      "progressCheckCount": 7,
+      "newlyProvenFullChainCount": 44,
+      "oracleFirstLast": [
+        {
+          "orders": 202,
+          "trades": 202,
+          "ledger": 808,
+          "position": "20.2",
+          "duplicates": 0,
+          "orphans": 0
+        },
+        {
+          "orders": 241,
+          "trades": 241,
+          "ledger": 964,
+          "position": "24.1",
+          "duplicates": 0,
+          "orphans": 0
+        }
+      ],
+      "schedulerTickDeltas": {
+        "nq0": 118,
+        "nq1": 117
+      },
+      "cursorRevisionFirstLast": [
+        [
+          960
+        ],
+        [
+          1196
+        ]
+      ]
+    },
+    {
+      "window": "DRAIN",
+      "sampleCount": 60,
+      "progressCheckCount": 10,
+      "newlyProvenFullChainCount": 9,
+      "oracleFirstLast": [
+        {
+          "orders": 250,
+          "trades": 250,
+          "ledger": 1000,
+          "position": "25",
+          "duplicates": 0,
+          "orphans": 0
+        },
+        {
+          "orders": 250,
+          "trades": 250,
+          "ledger": 1000,
+          "position": "25",
+          "duplicates": 0,
+          "orphans": 0
+        }
+      ],
+      "schedulerTickDeltas": {
+        "nq0": 118,
+        "nq1": 118
+      },
+      "cursorRevisionFirstLast": [
+        [
+          1200
+        ],
+        [
+          1436
+        ]
+      ]
+    }
+  ],
+  "correctness": {
+    "orders": 250,
+    "trades": 250,
+    "tradeExecuted": 250,
+    "ledger": 1000,
+    "position": "25",
+    "duplicateExternalMutation": 0,
+    "duplicateTrade": 0,
+    "duplicateTradeExecuted": 0,
+    "duplicateAccounting": 0,
+    "durableOrphan": 0,
+    "unauthorizedSend": 0,
+    "ledgerIntegrity": "VALID",
+    "successfulFullChainCheckpoints": 45
+  },
+  "transactions": {
+    "baselineAbsolute": 349,
+    "finalAbsolute": 873191,
+    "finalDelta": 872842,
+    "cap": 1212000,
+    "margin": 339158,
+    "lastPeriodicDelta": 870570,
+    "lastPeriodicAtMillis": 3590014
+  },
+  "budgets": [
+    {
+      "name": "DB transaction run delta",
+      "actual": 872842,
+      "cap": 1212000,
+      "margin": 339158,
+      "kind": "HARD_CAP",
+      "status": "SUFFICIENT"
+    },
+    {
+      "name": "Distinct orders / Venue logical capacity",
+      "actual": 250,
+      "cap": 422,
+      "margin": 172,
+      "kind": "HARD_CAP",
+      "status": "SUFFICIENT"
+    },
+    {
+      "name": "Global stage order safety",
+      "actual": 250,
+      "cap": 3000,
+      "margin": 2750,
+      "kind": "HARD_CAP",
+      "status": "SUFFICIENT"
+    },
+    {
+      "name": "Maximum fills per order",
+      "actual": 1,
+      "cap": 1,
+      "margin": 0,
+      "kind": "FORMAL_NO_FAULT_CONTRACT",
+      "status": "SUFFICIENT"
+    },
+    {
+      "name": "Maximum fills per order global safety",
+      "actual": 1,
+      "cap": 4,
+      "margin": 3,
+      "kind": "HARD_CAP",
+      "status": "SUFFICIENT"
+    },
+    {
+      "name": "Scheduler callbacks nq0",
+      "actual": 719,
+      "cap": 1000,
+      "margin": 281,
+      "kind": "HARD_CAP",
+      "status": "SUFFICIENT"
+    },
+    {
+      "name": "Commands nq0",
+      "actual": 1574,
+      "cap": 4000,
+      "margin": 2426,
+      "kind": "HARD_CAP",
+      "status": "SUFFICIENT"
+    },
+    {
+      "name": "Scheduler callbacks nq1",
+      "actual": 718,
+      "cap": 1000,
+      "margin": 282,
+      "kind": "HARD_CAP",
+      "status": "SUFFICIENT"
+    },
+    {
+      "name": "Commands nq1",
+      "actual": 1563,
+      "cap": 4000,
+      "margin": 2437,
+      "kind": "HARD_CAP",
+      "status": "SUFFICIENT"
+    },
+    {
+      "name": "Reconciliation invocations",
+      "actual": 1440,
+      "cap": 1440,
+      "margin": 0,
+      "kind": "FROZEN_CADENCE_ENVELOPE",
+      "status": "SUFFICIENT"
+    },
+    {
+      "name": "Checkpoint attempts including FINAL",
+      "actual": 61,
+      "cap": 61,
+      "margin": 0,
+      "kind": "FROZEN_FULL_RUN_ENVELOPE",
+      "status": "SUFFICIENT"
+    },
+    {
+      "name": "Raw bytes including preparation and exit artifacts",
+      "actual": 384426555,
+      "cap": 1073741824,
+      "margin": 689315269,
+      "kind": "HARD_CAP",
+      "status": "SUFFICIENT"
+    },
+    {
+      "name": "Periodic samples",
+      "actual": 360,
+      "cap": 500,
+      "margin": 140,
+      "kind": "HARD_CAP",
+      "status": "SUFFICIENT"
+    },
+    {
+      "name": "Raw file count",
+      "actual": 76,
+      "cap": 10000,
+      "margin": 9924,
+      "kind": "HARD_CAP",
+      "status": "SUFFICIENT"
+    },
+    {
+      "name": "Raw file count projection",
+      "actual": 76,
+      "cap": 256,
+      "margin": 180,
+      "kind": "FROZEN_FULL_RUN_ENVELOPE",
+      "status": "SUFFICIENT"
+    },
+    {
+      "name": "App PostgreSQL connections",
+      "actual": 20,
+      "cap": 20,
+      "margin": 0,
+      "kind": "HARD_CAP",
+      "status": "SUFFICIENT"
+    },
+    {
+      "name": "Maximum command queue",
+      "actual": 0,
+      "cap": 1,
+      "margin": 1,
+      "kind": "HARD_CAP",
+      "status": "SUFFICIENT"
+    },
+    {
+      "name": "Maximum Venue queue",
+      "actual": 0,
+      "cap": 16,
+      "margin": 16,
+      "kind": "HARD_CAP",
+      "status": "SUFFICIENT"
+    },
+    {
+      "name": "Restarts",
+      "actual": 0,
+      "cap": 6,
+      "margin": 6,
+      "kind": "HARD_CAP",
+      "status": "SUFFICIENT"
+    },
+    {
+      "name": "Injected faults",
+      "actual": 0,
+      "cap": 0,
+      "margin": 0,
+      "kind": "FORMAL_NO_FAULT_CONTRACT",
+      "status": "SUFFICIENT"
+    }
+  ],
+  "disk": {
+    "minimumFreeBytes": 226055245824,
+    "floorBytes": 45278942003,
+    "marginBytes": 180776303821
+  },
+  "capacity": {
+    "path": "E:\\Project\\nexus-quant-gateaudit\\docs\\audit\\evidence\\phase6-l6\\L6_PG_TMPFS_CAPACITY_CONTRACT.json",
+    "sha256": "41b819d8ac572209e87112027cdfcdf0bd34c8c79d1e8a5bb033c697c2cd8c4c",
+    "scope": "L6_A_60MIN",
+    "authority": "FROZEN_CAPACITY_MODEL",
+    "modelContractSha": "41b819d8ac572209e87112027cdfcdf0bd34c8c79d1e8a5bb033c697c2cd8c4c",
+    "manifestSha": "922253c8934e32b7626ced2f9e42407a2a4313c665256b89c483e847ce6abaa6",
+    "baselineLifecycle": "ACTORS_READY_PAPER_READY_VENUE_OPEN_BEFORE_WORKLOAD",
+    "preparationBaselineBytes": 48910336,
+    "projectedWarmupGrowthBytes": 126995260,
+    "projectedActiveGrowthBytes": 731429368,
+    "projectedDrainGrowthBytes": 92890800,
+    "reserveBytes": 304052400,
+    "consumableAllocationBurstBytes": 17473536,
+    "allocationGranularityBytes": 1048576,
+    "requiredRunCapacityBytes": 1322254336,
+    "capacityImmutableAfterPgStartup": true,
+    "formalEntryBaselineBytes": 48910336,
+    "entryDerivedCapacityBytes": 1322254336,
+    "actualPgTmpfsCapacityBytes": 1322254336,
+    "preflightResult": "PASS",
+    "hostMemoryPreflight": {
+      "availableHostMemoryAtEntry": 31141421056,
+      "totalQualificationOwnedBudget": 6690963456,
+      "maximumFraction": "0.60",
+      "pgContainerBudgetBytes": 2127560704,
+      "pgTmpfsMaximumBytes": 1322254336,
+      "tmpfsAlreadyIncludedInPgContainerBudget": true,
+      "controllerActualMaxHeapBytes": 536870912,
+      "mavenActualMaxHeapBytes": 536870912,
+      "pgStarted": true,
+      "venueStarted": true,
+      "nqStarted": true,
+      "formalTimerStarted": false,
+      "orders": 0,
+      "host60PercentLimitBytes": 18684852633,
+      "status": "PASS"
+    }
+  },
+  "hostMemoryEntry": {
+    "availableHostMemoryAtEntry": 31141421056,
+    "totalQualificationOwnedBudget": 6690963456,
+    "maximumFraction": "0.60",
+    "pgContainerBudgetBytes": 2127560704,
+    "pgTmpfsMaximumBytes": 1322254336,
+    "tmpfsAlreadyIncludedInPgContainerBudget": true,
+    "controllerActualMaxHeapBytes": 536870912,
+    "mavenActualMaxHeapBytes": 536870912,
+    "pgStarted": true,
+    "venueStarted": true,
+    "nqStarted": true,
+    "formalTimerStarted": false,
+    "orders": 0,
+    "host60PercentLimitBytes": 18684852633,
+    "status": "PASS"
+  },
+  "operatorHostMinimumAvailableBytes": 29995155456,
+  "storage": {
+    "sampledPeakUsedBytes": 235024384,
+    "sampledPeakUsageRatio": 0.1777452170896114,
+    "minimumFreeBytes": 1087229952,
+    "projectionMinimumMarginBytes": 16993386,
+    "guardTriggers": 0
+  },
+  "pacing": {
+    "slotCount": 506,
+    "decisions": {
+      "EMITTED": 250,
+      "PAUSED_BACKPRESSURE": 172,
+      "SKIPPED_PHASE": 84
+    },
+    "reasons": {
+      "READY": 250,
+      "MINIMUM_DISPATCH_INTERVAL": 170,
+      "WORKLOAD_GATE": 2,
+      "PRODUCER_DISABLED": 84
+    },
+    "emittedCount": 250,
+    "firstEmittedNanos": 474391400,
+    "lastEmittedNanos": 2996775523600,
+    "minDispatchIntervalNanos": 7117703400,
+    "contractIntervalNanos": 7117650000,
+    "catchUpViolations": 0,
+    "emitsDuringDrain": 0,
+    "emittedIdsUnique": true,
+    "emittedSlotsUnique": true
+  },
+  "drain": {
+    "newLogicalWorkload": 0,
+    "finalBacklog": 0,
+    "oldestCandidateAge": "NONE",
+    "commandQueue": 0,
+    "VenueQueue": 0,
+    "HikariPending": 0,
+    "idleInTransaction": 0,
+    "deferredFullChainProofFromActive": 9
+  },
+  "resourceStability": "ACCEPTED_FOR_60MIN_SCOPE",
+  "cleanup": {
+    "checkedAt": "2026-09-15T04:31:09.107696+00:00",
+    "registeredPids": [
+      12160,
+      18800,
+      20060,
+      30920,
+      31224,
+      44596,
+      45976
+    ],
+    "survivors": [],
+    "formalContainer": "1eb6563d36c13914b7284954606406b4d00ddaad840af7aaa9d2c5d988aa5717",
+    "formalContainerPresent": false,
+    "harnessCleanup": "PASS",
+    "harnessOwnedSurvivors": 0,
+    "allDockerContainers": [
+      "c5c330f38ef8 nq-c1-occ-20260907"
+    ]
+  },
+  "P0": 0,
+  "P1": 0,
+  "nextBlocker": null,
+  "observations": [
+    "Sixteen busy checkpoints deferred; all ACTIVE windows have seven successful full-chain checkpoints.",
+    "Nine ACTIVE chains first proven by complete checkpoint in DRAIN; no new DRAIN workload.",
+    "Expected preview-source degradation only; first three WARMUP samples precede validation timer completion.",
+    "Short Hikari/JDBC thread changes recover; no cross-window resource leak evidence."
+  ],
+  "codeDelta": 0,
+  "harnessDelta": 0,
+  "manifestDelta": 0,
+  "capacityModelDelta": 0,
+  "hardBudgetContractDelta": 0,
+  "stage": 0,
+  "commit": "NONE",
+  "push": "NONE",
+  "L6BStarted": false,
+  "protectedFilesUnchangedBeforeReportUpdate": 5152,
+  "rawEvidence": {
+    "runId": "12f2838d-f952-45d7-a8b8-3667d97c46f6",
+    "rawSource": "E:\\Project\\nexus-quant-gateaudit\\backend\\nq-app\\target\\l6-formal\\12f2838d-f952-45d7-a8b8-3667d97c46f6",
+    "sourceFileCount": 76,
+    "sourceTotalBytes": 384426555,
+    "archiveSha256": "2535937411fde485d183cbd4a86c2a0296f1ce4e380456e9e86f16fa405c1cc2",
+    "archiveBytes": 38051926,
+    "allSourceAndArchiveEntryHashesEqual": true
+  },
+  "completedAt": "2026-09-15T04:36:22.829245+00:00"
+}

@@ -11,6 +11,7 @@ record L6StorageCalibrationContract(boolean smoke) {
     private static long seconds(long value) { return TimeUnit.SECONDS.toNanos(value); }
 
     static L6FormalManifest runManifest() throws Exception {
+        if (L6BContract.inRunDirectory()) return L6BContract.runManifest();
         var parameters = new com.fasterxml.jackson.databind.ObjectMapper().readTree(
                 java.nio.file.Files.readAllBytes(java.nio.file.Path.of("parameters.json")));
         if (!MODE.equals(parameters.path("mode").asText())) return L6FormalManifest.fromRunDirectory();
