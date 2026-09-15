@@ -1,0 +1,42 @@
+{
+  "status": "V2_CONTENT_BINDING_VERIFIED_PENDING_NEW_EXACT_HEAD_CI",
+  "failedCi": 34936341503,
+  "failedHead": "c2e42b69abb2d39b26a89b284cf942ad0d7baf05",
+  "failure": "3 L6BBudgetTest constructor errors at V1 source model raw SHA binding; 625 total nq-app tests, 0 failures, 3 errors, 142 skips",
+  "V1Preserved": true,
+  "acceptedAInputsUnchanged": true,
+  "newContract": "L6_B_RUNNER_CONTRACT_V2.json",
+  "normalizedInputs": [
+    "sourceModelSha256",
+    "sourceL6AReportSha256",
+    "evidenceVolumeAnalysisSha256"
+  ],
+  "normalization": "CRLF to LF only; no trim, no JSON reserialization, no source rewrite",
+  "manifestAndPlanRawShaPreserved": true,
+  "runtimeRawFingerprintPreserved": true,
+  "fingerprintCoverageAdded": [
+    "raw PG model",
+    "Git attributes"
+  ],
+  "independentTargetedVerification": {
+    "reviewer": "/root/l6b_independent_review",
+    "status": "PASS",
+    "startFingerprint": "e33f3fe15b04adbf794ec3adaee0e8ce5ae5421ed085f53f3ec87602ec7adbef",
+    "endFingerprint": "e33f3fe15b04adbf794ec3adaee0e8ce5ae5421ed085f53f3ec87602ec7adbef",
+    "scope": "4 source files and V2 input; subsequent raw fingerprint coverage addition verified locally",
+    "stage": 0,
+    "P0": 0,
+    "P1": 0
+  },
+  "targeted05": "9/9 PASS",
+  "targeted06": "9/9 PASS; final fingerprint includes raw model",
+  "independentPythonTests": "6/6 PASS",
+  "gitBlobParity": "checkout-byte-binding-proof.json",
+  "probeReuse": {
+    "runId": "5970a70e-91bf-4243-a2a1-49aa37c02e6a",
+    "scope": "unchanged runtime orchestration, workload, resources and budgets",
+    "notReused": "old probe is not a V2 formal acceptance or a V2 exact-head proof"
+  },
+  "formalStarted": false,
+  "productionDelta": 0
+}

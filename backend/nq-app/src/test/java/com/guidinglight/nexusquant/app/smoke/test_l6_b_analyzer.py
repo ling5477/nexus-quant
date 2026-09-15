@@ -16,7 +16,7 @@ class RestartAggregationTest(unittest.TestCase):
             manifest.write_text('{"noiseBands":{}}',encoding='utf-8')
             sha=hashlib.sha256(manifest.read_bytes()).hexdigest()
             proof={'HEAD':'h','sha256':'c','manifestEntry':{'sha256':sha}}
-            inputs={'inputs/L6_B_RUNNER_CONTRACT.json':'c','inputs/L6_FORMAL_CALIBRATION_MANIFEST.json':sha}
+            inputs={'inputs/L6_B_RUNNER_CONTRACT_V2.json':'c','inputs/L6_FORMAL_CALIBRATION_MANIFEST.json':sha}
             for name in ('l6_b_analyzer.py','l6_b_oracle.py','l6_oracle.py','l5_measurement.py','synthetic_evidence.py'):
                 inputs['code/'+name]=hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
             entry=directory/'candidate-entry.json'

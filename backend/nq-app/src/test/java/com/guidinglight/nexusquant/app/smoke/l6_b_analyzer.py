@@ -27,7 +27,7 @@ def verify_analysis_identity(directory, proof, manifest):
     entry = read_json(directory/'candidate-entry.json')
     require(entry['HEAD'] == proof['HEAD'], 'candidate HEAD identity')
     inputs = entry['files']
-    contract_paths = [p for p in inputs if p.endswith('/L6_B_RUNNER_CONTRACT.json')]
+    contract_paths = [p for p in inputs if p.endswith('/L6_B_RUNNER_CONTRACT_V2.json')]
     manifest_paths = [p for p in inputs if p.endswith('/L6_FORMAL_CALIBRATION_MANIFEST.json')]
     require(len(contract_paths) == len(manifest_paths) == 1, 'candidate contract inputs')
     require(inputs[contract_paths[0]] == proof['sha256'] and inputs[manifest_paths[0]] == proof['manifestEntry']['sha256'], 'candidate frozen input hashes')

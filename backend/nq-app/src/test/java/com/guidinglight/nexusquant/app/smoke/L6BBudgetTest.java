@@ -60,6 +60,7 @@ class L6BBudgetTest {
     }
     @Test void candidateInputAdditionRejected() throws Exception {
         var fingerprint=new L6BFingerprint(false);fingerprint.verify();
+        assertTrue(fingerprint.evidence().path("files").has(L6PgCapacityContract.CANONICAL.toString().replace('\\','/')));
         var file=java.nio.file.Files.createTempFile(B0Processes.root().resolve("backend"),"l6-fingerprint-",".txt");
         try { assertThrows(IllegalStateException.class,fingerprint::verify); }
         finally { java.nio.file.Files.delete(file); }
@@ -71,6 +72,12 @@ class L6BBudgetTest {
         L6BResources.verifyMemory(18*gib,30*gib,12*gib);
         assertThrows(IllegalStateException.class,()->L6BResources.verifyMemory(18*gib+1,30*gib,30*gib));
         assertThrows(IllegalStateException.class,()->L6BResources.verifyMemory(15*gib,30*gib,12*gib-1));
+    }
+    @Test void gitCheckoutLineEndingsPreserveContentBinding() throws Exception {
+        var utf8=java.nio.charset.StandardCharsets.UTF_8;
+        assertEquals(L6BContract.textHash("{\"value\":1}\n".getBytes(utf8)),L6BContract.textHash("{\"value\":1}\r\n".getBytes(utf8)));
+        assertNotEquals(L6BContract.textHash("{\"value\":1}\n".getBytes(utf8)),L6BContract.textHash("{\"value\":2}\n".getBytes(utf8)));
+        assertNotEquals(L6BContract.textHash("{\"value\":1}\n".getBytes(utf8)),L6BContract.textHash("{\"value\":1}".getBytes(utf8)));
     }
     @Test void planArtifactCannotEscapeOwnedEvidence() throws Exception {
         var input=json.readTree(java.nio.file.Files.readAllBytes(B0Processes.root().resolve(L6BContract.CANONICAL)));

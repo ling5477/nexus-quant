@@ -17,13 +17,15 @@ final class L6BFingerprint {
     }
     private ObjectNode capture() throws Exception {
         Path root=B0Processes.root();
-        String[] areas={"backend","scripts",".github",".agents","AGENTS.md","pom.xml"};
+        String[] areas={"backend","scripts",".github",".agents","AGENTS.md","pom.xml",".gitattributes"};
         var command=new java.util.ArrayList<String>(java.util.List.of("git","-C",root.toString(),"ls-files","--cached","--others","--exclude-standard","--"));
         command.addAll(java.util.List.of(areas));
         var paths=new TreeSet<String>();
         for(String name:B0Processes.command(command.toArray(String[]::new)).split("\\R"))if(!name.isBlank())paths.add(name);
         paths.add(L6BContract.planPath(new ObjectMapper().readTree(Files.readAllBytes(root.resolve(L6BContract.CANONICAL)))).toString().replace('\\','/'));
         paths.add(L6BContract.CANONICAL.toString().replace('\\','/'));
+        paths.add(L6PgCapacityContract.CANONICAL.toString().replace('\\','/'));
+        paths.add(L6BContract.CANONICAL.resolveSibling(".gitattributes").toString().replace('\\','/'));
         paths.add(L6FormalManifest.CANONICAL.toString().replace('\\','/'));
         paths.add(L6BContract.CANONICAL.resolveSibling("L6_B_ACCEPTED_A_INPUT.json").toString().replace('\\','/'));
         paths.add(L6BContract.CANONICAL.getParent().resolve("runs/L6_B_RUNNER_CLOSURE_20260915/evidence-volume-analysis.json").toString().replace('\\','/'));

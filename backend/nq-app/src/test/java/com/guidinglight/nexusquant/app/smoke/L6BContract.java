@@ -10,7 +10,7 @@ import java.nio.file.Path;
 /** L6-B独立时长与预算；只复用L6-A已接受模型，不修改其合同或运行入口。 */
 final class L6BContract {
     static final String MODE = "FORMAL_L6_B";
-    static final Path CANONICAL = L6PgCapacityContract.CANONICAL.resolveSibling("L6_B_RUNNER_CONTRACT.json");
+    static final Path CANONICAL = L6PgCapacityContract.CANONICAL.resolveSibling("L6_B_RUNNER_CONTRACT_V2.json");
     static final long SECOND = 1_000_000_000L;
     static final int RESTARTS = 3, READY_SECONDS = 75, RECOVERY_SECONDS = 600;
     static final int TICK_CAP = 3000;
@@ -39,14 +39,15 @@ final class L6BContract {
         authoritySha = L6PgCapacityContract.hash(bytes);
         authority = new ObjectMapper().enable(com.fasterxml.jackson.core.JsonParser.Feature.STRICT_DUPLICATE_DETECTION).enable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS).readTree(bytes);
         var fields=new java.util.HashSet<String>();authority.fieldNames().forEachRemaining(fields::add);
-        require(fields.equals(java.util.Set.of("schemaVersion","mode","status","sourceModelSha256","sourceManifestSha256","sourceL6AReportSha256","formalSeconds","restartSeconds","checkpointCompressionNumerator","checkpointCompressionDenominator","evidenceVolumeAnalysisSha256","planArtifact")));
+        require(fields.equals(java.util.Set.of("schemaVersion","mode","status","sourceModelSha256","sourceManifestSha256","sourceL6AReportSha256","formalSeconds","restartSeconds","checkpointCompressionNumerator","checkpointCompressionDenominator","evidenceVolumeAnalysisSha256","planArtifact","sourceTextHashMode")));
         require(java.util.Set.of("CANDIDATE","FROZEN").contains(authority.path("status").asText()));
         require(authority.path("schemaVersion").isIntegralNumber() && authority.path("schemaVersion").asInt() == 1 && MODE.equals(authority.path("mode").asText()));
-        require(authority.path("sourceModelSha256").asText().equals(base.identity().path("sha256").asText()));
+        require("UTF8_LF_EXACT_CONTENT".equals(authority.path("sourceTextHashMode").asText()));
+        require(authority.path("sourceModelSha256").asText().equals(textHash(Files.readAllBytes(B0Processes.root().resolve(L6PgCapacityContract.CANONICAL)))));
         require(authority.path("sourceManifestSha256").asText().equals(manifest.identity().path("sha256").asText()));
         require(authority.path("formalSeconds").equals(new ObjectMapper().readTree("[600,9600,600]")));
         require(authority.path("restartSeconds").equals(new ObjectMapper().readTree("[2400,4800,7200]")));
-        require(authority.path("sourceL6AReportSha256").asText().equals(L6PgCapacityContract.hash(Files.readAllBytes(
+        require(authority.path("sourceL6AReportSha256").asText().equals(textHash(Files.readAllBytes(
                 B0Processes.root().resolve(L6FormalManifest.CANONICAL.resolveSibling("L6_B_ACCEPTED_A_INPUT.json"))))));
         require(authority.path("checkpointCompressionNumerator").isIntegralNumber() && authority.path("checkpointCompressionDenominator").isIntegralNumber()
                 && authority.path("checkpointCompressionNumerator").asInt() > 0
@@ -55,7 +56,7 @@ final class L6BContract {
         Path volumePath=B0Processes.root().resolve(CANONICAL.getParent().resolve("runs/L6_B_RUNNER_CLOSURE_20260915/evidence-volume-analysis.json"));
         Path plan=planPath(authority);
         require(authority.path("planArtifact").path("sha256").asText().equals(L6PgCapacityContract.hash(Files.readAllBytes(B0Processes.root().resolve(plan)))));
-        require(authority.path("evidenceVolumeAnalysisSha256").asText().equals(L6PgCapacityContract.hash(Files.readAllBytes(volumePath))));
+        require(authority.path("evidenceVolumeAnalysisSha256").asText().equals(textHash(Files.readAllBytes(volumePath))));
         var volume=new ObjectMapper().readTree(Files.readAllBytes(volumePath));
         require(volume.path("frozenNumerator").asInt()==authority.path("checkpointCompressionNumerator").asInt());
         var accepted=new ObjectMapper().readTree(Files.readAllBytes(B0Processes.root().resolve(
@@ -85,6 +86,14 @@ final class L6BContract {
         // 每个快照独立gzip；完整Venue事件仅保存一份append-only journal，索引绑定长度与SHA。
         rawCap = Math.ceilDiv(checkpoints*compressed + journalBytes + 128*MIB + snapshot*2, MIB)*MIB;
         require(orders > 0 && orders <= 3000 && samples <= 1080 && checkpoints <= 190);
+    }
+
+    static String textHash(byte[] bytes) throws Exception {
+        // 仅模型、A报告副本与volume JSON按Git文本换行归一化；保留全部内容与尾部换行。
+        // 原文件不重写，运行指纹仍绑定现场原始字节；manifest和计划仍按原raw SHA验证。
+        byte[] lf=new String(bytes,java.nio.charset.StandardCharsets.UTF_8).replace("\r\n","\n")
+                .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        return L6PgCapacityContract.hash(lf);
     }
 
     static Path planPath(JsonNode authority) throws Exception {

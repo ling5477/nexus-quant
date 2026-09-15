@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "path": "docs/audit/evidence/phase6-l6/L6_PG_TMPFS_CAPACITY_CONTRACT.json",
+      "diskRawSha256": "41b819d8ac572209e87112027cdfcdf0bd34c8c79d1e8a5bb033c697c2cd8c4c",
+      "gitBlobAndNormalizedSha256": "5daeae450bc5c33ffbe78e26cf210afb8028ac928756148f8a7ef6e756072708"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/L6_B_ACCEPTED_A_INPUT.json",
+      "diskRawSha256": "80c99c4fad7f7263886bba0f805d4928f3629f96e177d90b2f5af6c4d6f71f50",
+      "gitBlobAndNormalizedSha256": "ffc1ac9f6407a53e3b510a16ebdf50c69c8d2528233ecae3b26d4e4592662c19"
+    },
+    {
+      "path": "docs/audit/evidence/phase6-l6/runs/L6_B_RUNNER_CLOSURE_20260915/evidence-volume-analysis.json",
+      "diskRawSha256": "d9f9fc40e0544e26ceb48e267400ef06e85a16da621318bfc1eb99ac6630b1ed",
+      "gitBlobAndNormalizedSha256": "945839d89122c3e93efc9f7fcfce6e53fae92b4d249c9a2c89eafb4b5c1a487e"
+    }
+  ],
+  "oldFrozenContractModified": false,
+  "acceptedAInputsModified": false
+}
