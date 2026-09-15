@@ -53,3 +53,5 @@ Future.cancel只是中断请求，不证明任意JDBC或业务线程已经终止
 独立REVIEW_ONLY最终结论：**PASS / 两项P1 CLOSED / P0=0 / P1=0**。14个代码/fixture文件start=end指纹为 `030e98d8ce115a04ec5c8077e87db8b799c61c003341ef2fb4e8aa0b8978751c`，审查HEAD始终为上述基线、stage0、production delta0；审查者未修改任何候选、证据或编译输出。审查接受限本轮整改，交付CI和完整180min结论单独保存。
 
 首个交付候选 `028f1b27f863186c67771fbe0d17a5187fab8bc5` 的CI `34978387345` 在治理检查发现本报告链接指向仅本地保留的正式证据。该失败保留；后续只将引用明确为本地归档路径，未提交正式证据、未调整链接检查规则、未修改已审查代码。必须以文档修正后的新exact-head CI接受最终交付。
+
+正式T=0之前，发现新增latency parser的固定128MiB上限未由现有预算推导：100次probe产生约3.2MB计时证据，正式合法call cap投影可能超过该固定值。因此仅将分析读取边界改为原冻结 `rawHardCap` / `reconciliationCallsCap`，逐行读取且严格校验事件总数；原计时、ID、失败和恢复判定不变，Java及全部运行预算不变。Python最终11项PASS，原最终probe重放结果完全一致。同一独立审查仅补验此读取边界并PASS/P0=0/P1=0；两个文件start=end SHA分别为 `b4df602694dbd44a2f927f3885bdadfccab45ed9f23679a8e5fdb188522bfc21`、`9fea29f725054c00900d23db569df514c3a1dd3e5a0a85ac5011c36680d82165`，stage0。原Java/fixture审查及真实probe证据继续有效；正式运行必须等待最终postprocessing候选的新exact-head CI。

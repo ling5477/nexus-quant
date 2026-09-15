@@ -1,9 +1,23 @@
 import copy
 import unittest
-from l6_b_latency import distribution, verify_rows
+import json
+import tempfile
+from pathlib import Path
+from l6_b_latency import distribution, verify_rows, read_events
 
 
 class LatencyTest(unittest.TestCase):
+    def test_reader_uses_frozen_budgets_and_rejects_excess_or_missing_events(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder)/'events.ndjson'
+            events = self.rows()
+            path.write_text(''.join(json.dumps(row)+'\n' for row in events), encoding='utf-8')
+            size = path.stat().st_size
+            self.assertEqual(events, read_events(path, 4, 4415, size))
+            for calls, cap, raw in ((4, 3, size), (4, 4415, size-1), (3, 4415, size), (5, 4415, size)):
+                with self.assertRaises(ValueError):
+                    read_events(path, calls, cap, raw)
+
     def rows(self):
         events = []
         for index, start in enumerate([0, 6_000_000_000, 17_000_000_000, 23_000_000_000]):

@@ -46,12 +46,24 @@ def verify_rows(events, expected_calls):
     return completed
 
 
+def read_events(path, expected_calls, call_cap, raw_cap):
+    require(0 < expected_calls <= call_cap, 'reconciliation call budget')
+    require(0 < path.stat().st_size <= raw_cap, 'latency raw evidence budget')
+    events = []
+    with path.open(encoding='utf-8') as stream:
+        for line in stream:
+            require(len(events) < 2*expected_calls and len(line) < 2_000_000, 'latency event budget')
+            events.append(json.loads(line))
+    require(len(events) == 2*expected_calls, 'latency event coverage')
+    return events
+
+
 def analyze(directory):
     directory = Path(directory)
     proof = json.loads((directory/'proof.json').read_text(encoding='utf-8-sig'))
     path = directory/'reconcile-latency.ndjson'
-    require(path.stat().st_size <= 128*1024*1024, 'latency evidence bound')
-    events = [json.loads(line) for line in path.read_text(encoding='utf-8').splitlines()]
+    events = read_events(path, proof['reconciliationCalls'], proof['hardBudgets']['reconciliationCallsCap'],
+                         proof['hardBudgets']['rawHardCap'])
     rows = verify_rows(events, proof['reconciliationCalls'])
     points = [json.loads(line) for line in (directory/'business-progress.ndjson').read_text(encoding='utf-8').splitlines()]
     slow = []
