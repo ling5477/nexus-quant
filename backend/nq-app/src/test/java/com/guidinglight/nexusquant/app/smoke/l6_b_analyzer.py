@@ -32,10 +32,16 @@ def verify_analysis_identity(directory, proof, manifest):
     manifest_paths = [p for p in inputs if p.endswith('/L6_FORMAL_CALIBRATION_MANIFEST.json')]
     require(len(contract_paths) == len(manifest_paths) == 1, 'candidate contract inputs')
     require(inputs[contract_paths[0]] == proof['sha256'] and inputs[manifest_paths[0]] == proof['manifestEntry']['sha256'], 'candidate frozen input hashes')
-    for name in ('l6_b_analyzer.py','l6_b_oracle.py','l6_oracle.py','l5_measurement.py','synthetic_evidence.py'):
+    for name in ('l6_b_analyzer.py','l6_b_latency.py','l6_b_oracle.py','l6_oracle.py','l5_measurement.py','synthetic_evidence.py'):
         paths = [p for p in inputs if p.endswith('/'+name)]
         require(len(paths) == 1 and hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() == inputs[paths[0]], 'analysis dependency identity: '+name)
     return frozen
+
+
+def verify_recovery_deadline(event):
+    require(event['recoveryStartedElapsedNanos'] <= event['recoveryCompletedElapsedNanos'] < event['recoveryDeadlineElapsedNanos'], 'restart recovery total deadline')
+    recovery_bound = min(600, max(20, 2*((event['ordersBefore']+99)//100)*10))*1_000_000_000
+    require(event['recoveryDeadlineElapsedNanos']-event['recoveryStartedElapsedNanos'] == recovery_bound, 'restart recovery bound identity')
 
 
 def ndjson(path, cap):
@@ -263,6 +269,7 @@ def analyze(directory, manifest):
         require(event['index'] == i and event['plannedSeconds'] == (2400,4800,7200)[i], 'restart schedule')
         require(event['plannedSeconds'] <= event['startedElapsedNanos']/1e9 < event['plannedSeconds']+45, 'restart timing')
         require(event['result'] == 'RECOVERED' and event['backlogBefore'] > 0 and event['backlogAfter'] == 0, 'restart recovery')
+        verify_recovery_deadline(event)
         require(event['oldPid'] != event['newPid'] and event['freshChainAfterRecovery']['oracle']['orders'] > event['ordersBefore'], 'fresh generation progress')
         verify_strategy_barrier(directory, event)
     require(proof['admission']['busySinceNanos'] == -1, 'final admission barrier unresolved')
@@ -281,7 +288,10 @@ def analyze(directory, manifest):
                 seq = [r['sources'][source]['values'][field] for r in part]
                 summary[source+'.'+field] = {'start':seq[0], 'end':seq[-1], 'min':min(seq), 'max':max(seq), 'delta':seq[-1]-seq[0]}
         growth.append(summary)
+    from l6_b_latency import analyze as analyze_latency
+    latency = analyze_latency(directory)
     return {'status':'ACCEPTED' if not stability['findings'] else 'COMPLETED_NOT_ACCEPTED',
+            'reconcileLatency':latency,
             'runId':proof['runId'], 'HEAD':proof['HEAD'], 'fullDurationSeconds':proof['actualEndElapsedNanos']/1e9,
             'sampleCount':len(rows), 'checkpointCount':len(points), 'businessWindows':windows,
             'resourceStability':stability, 'durableAndEvidenceGrowth':growth,

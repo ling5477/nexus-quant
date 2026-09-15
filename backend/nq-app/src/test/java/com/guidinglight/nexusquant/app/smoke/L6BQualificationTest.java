@@ -10,6 +10,10 @@ class L6BQualificationTest {
     void shortRestartProbe() throws Exception { new L6BRuntime(true).run(); }
 
     @Test
+    @EnabledIfSystemProperty(named="nq.l6b.probe",matches="true")
+    void slowReconcileProbe() throws Exception { new L6BRuntime(true, true).run(); }
+
+    @Test
     @EnabledIfSystemProperty(named="nq.l6b.formal",matches="true")
     void formal180Minutes() throws Exception {
         L6BContract.require(!Boolean.getBoolean("nq.l6b.probe"));

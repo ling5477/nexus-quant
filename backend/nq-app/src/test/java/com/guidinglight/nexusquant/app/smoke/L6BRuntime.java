@@ -34,13 +34,21 @@ final class L6BRuntime {
     private int checks;
     private String container, databaseIdentity, postgresStarted;
     private long venuePid;
-    L6BRuntime(boolean probe) throws Exception { contract=new L6BContract(probe); }
+    private final L6BReconcileTiming reconcileTiming = new L6BReconcileTiming();
+    private final boolean timingProbe;
+    private volatile ObjectNode latestResources;
+    private long reconcileSequence;
+    L6BRuntime(boolean probe) throws Exception { this(probe, false); }
+    L6BRuntime(boolean probe, boolean timingProbe) throws Exception {
+        if (timingProbe && !probe) throw new IllegalArgumentException("L6_TIMING_INJECTION_FORMAL_FORBIDDEN");
+        contract=new L6BContract(probe); this.timingProbe=timingProbe;
+    }
 
     void run() throws Exception {
         dir=B0Processes.root().resolve("backend/nq-app/target/l6-b/"+UUID.randomUUID());Files.createDirectories(dir);
         proof.setAll(contract.identity());proof.set("manifestEntry",contract.manifest.identity());
         proof.put("runId",dir.getFileName().toString()).put("runOrderBudget",contract.orders)
-                .put("shortSmoke",false).put("formalTimerStarted",false)
+                .put("shortSmoke",false).put("formalTimerStarted",false).put("timingProbe", timingProbe)
                 .put("HEAD",B0Processes.command("git","rev-parse","HEAD").trim())
                 .put("controllerPid",ProcessHandle.current().pid());
         write("parameters.json",proof);System.out.println("L6_B_ROOT "+dir);
@@ -82,7 +90,7 @@ final class L6BRuntime {
                             fingerprint.verify();
                             start=System.nanoTime();proof.put("startedAt",Instant.now().toString()).put("formalTimerStarted",!contract.probe);
                             try(var sampler=resources.sampler(contract.timing,start,dir.resolve("resources.ndjson"))) {
-                                sampler.observeWith(row->{budgets.observe(row);projection.observe(row,elapsed());});
+                                sampler.observeWith(row->{budgets.observe(row);projection.observe(row,elapsed());latestResources=row.deepCopy();});
                                 sampler.sample();sampler.start();drive(reader,endpoint,env,pg,venue,sampler);
                                 if(!projection.stopped())sampler.requireComplete();
                                 if(projection.stopped())throw new IllegalStateException(L6BProjectionGuard.RESULT);
@@ -177,7 +185,7 @@ final class L6BRuntime {
                     var observation=JSON.createObjectNode().put("elapsedNanos",elapsed());observation.set("generation",actors.get(i).evidence());
                     observation.set("scan",JSON.readTree(command(i,"L6_OBSERVER_SCAN")));append("scheduler.ndjson",observation);
                 }
-                http(endpoint,"FILL");reconcile();observer=(elapsed()/(5*L6BContract.SECOND)+1)*(5*L6BContract.SECOND);
+                http(endpoint,"FILL");reconcile();observer=reconcileTiming.next();
             }
             if(elapsed()>=nextCheck && orders>0 && !projection.stopped()) {
                 try{var point=checkpoint(reader,endpoint,current);reader.commit();append("progress.ndjson",point);
@@ -226,7 +234,9 @@ final class L6BRuntime {
         continuity(reader,pg,venue);
         long revision=number(reader,"SELECT coalesce(max(revision),0) FROM reconciliation_scan_cursors WHERE venue='OKX'");reader.commit();
         long requiredRounds=2*Math.ceilDiv(orders,100);
-        long deadline=System.nanoTime()+L6BAdmission.recoveryBoundNanos(orders);
+        long recoveryStart=System.nanoTime();
+        long deadline=recoveryStart+L6BAdmission.recoveryBoundNanos(orders);
+        event.put("recoveryStartedElapsedNanos",recoveryStart-start).put("recoveryDeadlineElapsedNanos",deadline-start);
         event.put("requiredCursorAdvances",requiredRounds).put("cursorRevisionBeforeRecovery",revision);
         boolean recovered=false;
         while(System.nanoTime()<deadline) {
@@ -234,12 +244,15 @@ final class L6BRuntime {
             var sample=sample(reader);long after=number(reader,"SELECT coalesce(max(revision),0) FROM reconciliation_scan_cursors WHERE venue='OKX'");
             var active=L6BAdmission.activeRuns(reader);reader.commit();
             var metric=JSON.readTree(command(actor,"L6_METRICS"));
+            requireRecoveryBeforeDeadline(System.nanoTime(),deadline);
             if(active.isEmpty() && sample.path("backlog").asLong()==0 && after-revision>=requiredRounds && metric.path("tickCompleted").asLong()>0) {
                 var complete=checkpoint(reader,endpoint,"RESTART_"+index+"_RECOVERED");reader.commit();
                 assertEquals(orders,complete.path("oracle").path("orders").asLong());
+                long recoveryCompleted=System.nanoTime();
+                requireRecoveryBeforeDeadline(recoveryCompleted,deadline);
                 event.set("recoveredFullChain",complete);event.set("afterActorMetrics",metric);
                 event.set("activeRunsAfter",active);event.put("strategyRunBarrier","CONVERGED");
-                event.put("cursorRevisionAfterRecovery",after).put("backlogAfter",0).put("recoveryCompletedElapsedNanos",elapsed())
+                event.put("cursorRevisionAfterRecovery",after).put("backlogAfter",0).put("recoveryCompletedElapsedNanos",recoveryCompleted-start)
                         .put("recoveryDurationMillis",(System.nanoTime()-from)/1_000_000).put("schedulerResumed",true).put("reconciliationResumed",true).put("result","RECOVERED");
                 recovered=true;break;
             }
@@ -266,9 +279,56 @@ final class L6BRuntime {
     }
     private String command(int actor,String command) throws Exception {
         var generation=actors.get(actor);actors.assertOwned(generation,generation.child.process.pid());
-        generation.child.startCommand(command);return generation.child.resultBefore(System.nanoTime()+5*L6BContract.SECOND);
+        return generation.child.sendBounded(command);
     }
-    private void reconcile() throws Exception { for(int i=0;i<2;i++){budgets.reconciliation(reconciliationCalls+1);command(i,"L6_RECONCILE");reconciliationCalls++;} }
+    static void requireRecoveryBeforeDeadline(long completed,long deadline) {
+        assertTrue(completed<deadline,"L6_B_RESTART_RECOVERY_DEADLINE");
+    }
+    private void reconcile() throws Exception {
+        long wait = reconcileTiming.next()-elapsed();
+        if(wait>0)TimeUnit.NANOSECONDS.sleep(wait);
+        reconcileTiming.begin(elapsed());
+        for(int i=0;i<2;i++) {
+            budgets.reconciliation(reconciliationCalls+1);
+            String id=Long.toString(++reconcileSequence);
+            var generation=actors.get(i);
+            var row=JSON.createObjectNode().put("commandId",id).put("actor",i).put("generation",generation.generation)
+                    .put("pid",generation.child.process.pid()).put("dispatchElapsedNanos",elapsed())
+                    .put("dispatchAt",Instant.now().toString()).put("phase",contract.timing.samplePhase(elapsed()))
+                    .put("executionBoundSeconds",L6CommandExecution.EXECUTION_SECONDS)
+                    .put("responseBoundSeconds",B0Processes.Child.RESPONSE_SECONDS).put("state","DISPATCHED");
+            if(restarts.isEmpty())row.putNull("restartDistanceNanos");
+            else row.put("restartDistanceNanos",elapsed()-restarts.getLast().path("startedElapsedNanos").asLong());
+            row.set("before",latencyContext(i));append("reconcile-latency.ndjson",row);
+            try {
+                var reply=JSON.readTree(command(i,"L6_RECONCILE "+id));
+                assertEquals(id,reply.path("commandId").asText(),"L6_RECONCILE_RESPONSE_ID_MISMATCH");
+                assertEquals("SUCCESS",reply.path("result").asText());
+                row.set("reply",reply);row.put("state","SUCCESS");reconciliationCalls++;
+            } catch(Exception | AssertionError failure) {
+                row.put("state","FAILED").put("failure",failure.toString());throw failure;
+            } finally {
+                long completion=elapsed();
+                row.put("completionElapsedNanos",completion).put("latencyMillis",(completion-row.path("dispatchElapsedNanos").asLong())/1_000_000.0)
+                        .put("processAlive",generation.child.process.isAlive());
+                row.set("after",latencyContext(i));append("reconcile-latency.ndjson",row);
+            }
+        }
+        reconcileTiming.complete(elapsed());
+    }
+
+    private ObjectNode latencyContext(int actor) {
+        var row=JSON.createObjectNode().put("scope","LATEST_INDEPENDENT_SAMPLE_NOT_COMMAND_TIME_SNAPSHOT");
+        var sample=latestResources;
+        if(sample==null)return row.put("availability","UNKNOWN");
+        row.put("sampleIndex",sample.path("sampleIndex").asLong()).put("sampleElapsedMillis",sample.path("elapsedMillis").asLong())
+                .put("sampleAgeMillis",elapsed()/1_000_000-sample.path("elapsedMillis").asLong());
+        var metric=sample.path("sources").path("nq"+actor).path("values");
+        var values=row.putObject("actor");
+        for(String key:List.of("pid","generation","active","idle","pending","poolMax","commandQueue","candidateAge","tickFailed"))values.set(key,metric.path(key));
+        row.set("pg",sample.path("sources").path("postgres").path("values"));
+        return row;
+    }
     private long elapsed(){return System.nanoTime()-start;}
     private void phase(String name,long from,long to){proof.withArray("phases").addObject().put("phase",name).put("fromNanos",from).put("toNanos",to);}
     private void write(String name,JsonNode value)throws Exception{Files.writeString(dir.resolve(name),JSON.writerWithDefaultPrettyPrinter().writeValueAsString(value));}

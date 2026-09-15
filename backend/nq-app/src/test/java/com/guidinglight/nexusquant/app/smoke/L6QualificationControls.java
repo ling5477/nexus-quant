@@ -24,7 +24,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.ExecutionException;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import java.lang.management.ManagementFactory;
 import java.time.LocalDate;
@@ -32,6 +31,7 @@ import java.time.ZoneOffset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.FileAlreadyExistsException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -51,6 +51,9 @@ final class L6QualificationControls implements AutoCloseable {
     private final AtomicInteger tickCompleted = new AtomicInteger();
     private final AtomicInteger tickFailed = new AtomicInteger();
     private final AtomicInteger commands = new AtomicInteger();
+    private final AtomicInteger selectedCandidates = new AtomicInteger();
+    private int timedReconciliations;
+    private boolean timingProbe;
     private final ThreadPoolExecutor commandExecutor = L6Measurements.commands();
     private final AtomicReference<List<String>> candidateStatuses = new AtomicReference<>();
     private final AtomicReference<ValidationOperationsRuntimeEvidenceOverviewReadModel> validation = new AtomicReference<>();
@@ -62,6 +65,11 @@ final class L6QualificationControls implements AutoCloseable {
 
     L6QualificationControls(ConfigurableApplicationContext context) throws Exception {
         this.context = context;
+        if (l6B) {
+            var parameters = json.readTree(Files.readString(Path.of("parameters.json")));
+            timingProbe = parameters.path("timingProbe").asBoolean();
+            B0Fixture.require(!timingProbe || (parameters.path("probe").asBoolean() && !parameters.path("formalTimerStarted").asBoolean()));
+        }
         var tasks = context.getBeansOfType(ScheduledAnnotationBeanPostProcessor.class);
         B0Fixture.require(tasks.size() == 1 && tasks.values().iterator().next().getScheduledTasks().size() == 1);
         if (l6B) L6BRecoveryTrace.installIfRequested(context);
@@ -84,7 +92,10 @@ final class L6QualificationControls implements AutoCloseable {
                 Collection<OrderStatus> statuses = (Collection<OrderStatus>) call.getArguments()[1];
                 candidateStatuses.set(statuses.stream().map(Enum::name).toList());
             }
-            return call.proceed();
+            Object result = call.proceed();
+            if (call.getMethod().getName().equals("reserveReconciliationCandidates") && result instanceof Collection<?> selected)
+                selectedCandidates.set(selected.size());
+            return result;
         });
         ReflectionTestUtils.setField(context.getBean(OkxRestReconcileService.class), "orderCommandService", orderProxy.getProxy());
         // 空库真实扫描捕获生产传入的候选合同，不复制生产状态列表。
@@ -149,15 +160,27 @@ final class L6QualificationControls implements AutoCloseable {
     }
 
     String handle(String command) throws Exception {
-        try { return commandExecutor.submit(() -> L6TransactionAccounting.within(origin(command), () -> execute(command))).get(45, TimeUnit.SECONDS); }
-        catch (ExecutionException error) {
-            if (error.getCause() instanceof Exception cause) throw cause;
+        if (failure.get() != null) throw new IllegalStateException("L6_COMMAND_GENERATION_FAILED", failure.get());
+        long dispatched = System.nanoTime();
+        try { return L6CommandExecution.await(commandExecutor, () -> L6TransactionAccounting.within(origin(command), () -> execute(command))); }
+        catch (Exception | AssertionError error) {
+            failure.compareAndSet(null, error);
+            if (l6B && command.startsWith("L6_RECONCILE ")) {
+                var row = json.createObjectNode().put("commandId", command.substring(13)).put("pid", ProcessHandle.current().pid())
+                        .put("childDispatchNanos", dispatched).put("failureNanos", System.nanoTime())
+                        .put("failureType", error.getClass().getName()).put("lastSelectedCandidateCount", selectedCandidates.get());
+                row.set("poolAtFailure", poolState()); row.set("executorAtFailure", L6Measurements.queue(commandExecutor));
+                try { Files.writeString(Path.of("l6-command-failures-"+ProcessHandle.current().pid()+".ndjson"), row+"\n",
+                        StandardOpenOption.CREATE, StandardOpenOption.APPEND); }
+                catch (Exception evidenceFailure) { error.addSuppressed(evidenceFailure); }
+            }
             throw error;
         }
     }
 
     private static String origin(String command) {
         if (command.startsWith("L6_EMIT ")) return "BUSINESS_EMIT";
+        if (command.startsWith("L6_RECONCILE ")) return "QUALIFICATION_RECONCILIATION";
         return switch (command) {
             case "L6_RECONCILE" -> "QUALIFICATION_RECONCILIATION";
             case "L6_OBSERVER_SCAN", "L6_SCAN" -> "SCHEDULER_OBSERVATION";
@@ -171,6 +194,7 @@ final class L6QualificationControls implements AutoCloseable {
         if (failure.get() != null) throw new IllegalStateException("L6 sampling/timer failure", failure.get());
         if (commands.incrementAndGet() > (l6B ? L6BContract.COMMAND_CAP : 4000)) throw new IllegalStateException("L6 command budget");
         if (command.equals("L6_CLOCK")) return Long.toString(System.nanoTime());
+        if (l6B && command.startsWith("L6_RECONCILE ")) return timedReconcile(command.substring(13));
         if (command.startsWith("L6_EMIT ")) return l6B ? L6BAdmission.emit(context, command) : L6FormalTrigger.emit(context, command);
         if (command.equals("L6_OBSERVER_SCAN")) {
             var result = context.getBean(StrategyScheduleScanService.class).scanOnce("l6-observer");
@@ -184,6 +208,31 @@ final class L6QualificationControls implements AutoCloseable {
             case "L6_PAPER" -> paper();
             default -> throw new IllegalArgumentException("L6 command outside frozen allowlist");
         };
+    }
+
+    private String timedReconcile(String id) throws Exception {
+        if (!id.matches("[0-9]+")) throw new IllegalArgumentException("L6_RECONCILE_ID_INVALID");
+        long dispatch = System.nanoTime();
+        var row = json.createObjectNode().put("commandId", id).put("childStartNanos", dispatch);
+        row.set("poolBefore", poolState());
+        // 短probe的原子领取文件保证五个代际总共只注入一次，不修改Venue或生产服务。
+        if (++timedReconciliations == 3 && timingProbe) {
+            boolean claimed = false;
+            try { Files.writeString(Path.of("timing-probe-claimed"), id, StandardOpenOption.CREATE_NEW); claimed = true; }
+            catch (FileAlreadyExistsException alreadyClaimed) { /* 另一个已登记代际已领取。 */ }
+            if (claimed) TimeUnit.MILLISECONDS.sleep(6000);
+        }
+        int trades = context.getBean(OkxRestReconcileService.class).reconcileOnce(100);
+        row.put("candidateCount", selectedCandidates.get()).put("newTrades", trades)
+                .put("childCompletionNanos", System.nanoTime()).put("result", "SUCCESS");
+        row.set("poolAfter", poolState());
+        return json.writeValueAsString(row);
+    }
+
+    private ObjectNode poolState() {
+        var pool = context.getBean(HikariDataSource.class).getHikariPoolMXBean();
+        return json.createObjectNode().put("active", pool.getActiveConnections()).put("idle", pool.getIdleConnections())
+                .put("pending", pool.getThreadsAwaitingConnection());
     }
 
     private String paper() throws Exception {

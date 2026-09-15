@@ -223,16 +223,41 @@ final class B0Processes {
         }
 
         void startCommand(String command) throws Exception {
+            requireSynchronizedProtocol();
             input.write(command); input.newLine(); input.flush();
             resultCount++;
         }
 
-        String result() throws Exception { return await("B0_RESULT ", resultCount); }
+        private boolean protocolFailed;
+        static final long RESPONSE_SECONDS = 75;
 
-        String resultBefore(long deadline) throws Exception { return await("B0_RESULT ", resultCount, deadline); }
+        private void requireSynchronizedProtocol() {
+            if (protocolFailed) throw new IllegalStateException("B0_COMMAND_GENERATION_FAILED: " + log);
+        }
+
+        /** 有界串行命令；任何不确定应答都永久闭锁此代，迟到结果不能成为下一条命令的应答。 */
+        synchronized String sendBounded(String command) throws Exception {
+            requireSynchronizedProtocol();
+            if (seenResults != resultCount) throw new IllegalStateException("B0_COMMAND_ALREADY_IN_FLIGHT");
+            try {
+                startCommand(command);
+                return resultBefore(System.nanoTime() + Duration.ofSeconds(RESPONSE_SECONDS).toNanos());
+            } catch (Exception | AssertionError failure) {
+                protocolFailed = true;
+                throw failure;
+            }
+        }
+
+        String result() throws Exception { return resultBefore(System.nanoTime() + Duration.ofSeconds(RESPONSE_SECONDS).toNanos()); }
+
+        String resultBefore(long deadline) throws Exception {
+            requireSynchronizedProtocol();
+            try { return await("B0_RESULT ", resultCount, deadline); }
+            catch (Exception | AssertionError failure) { protocolFailed = true; throw failure; }
+        }
 
         private String await(String prefix, int count) throws Exception {
-            return await(prefix, count, System.nanoTime() + Duration.ofSeconds(75).toNanos());
+            return await(prefix, count, System.nanoTime() + Duration.ofSeconds(RESPONSE_SECONDS).toNanos());
         }
         private String await(String prefix, int count, long deadline) throws Exception {
             while (System.nanoTime() < deadline) {

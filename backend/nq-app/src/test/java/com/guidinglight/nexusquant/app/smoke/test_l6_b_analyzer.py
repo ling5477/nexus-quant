@@ -7,9 +7,20 @@ import tempfile
 import unittest
 from pathlib import Path
 from l6_b_analyzer import generation_series, trend, progress, bound_manifest, resources, verify_analysis_identity, verify_strategy_barrier
+from l6_b_analyzer import verify_recovery_deadline
 
 
 class RestartAggregationTest(unittest.TestCase):
+    def test_recovery_success_must_finish_before_original_deadline(self):
+        event = dict(ordersBefore=100, recoveryStartedElapsedNanos=10_000_000_000,
+                     recoveryDeadlineElapsedNanos=30_000_000_000, recoveryCompletedElapsedNanos=29_999_999_999)
+        verify_recovery_deadline(event)
+        for completion in (30_000_000_000, 75_000_000_000):
+            with self.assertRaises(ValueError):
+                verify_recovery_deadline({**event, 'recoveryCompletedElapsedNanos': completion})
+        with self.assertRaises(ValueError):
+            verify_recovery_deadline({**event, 'recoveryDeadlineElapsedNanos': 75_000_000_000})
+
     def test_strategy_barrier_binds_original_durable_owner(self):
         with tempfile.TemporaryDirectory() as folder:
             directory = Path(folder)
@@ -36,12 +47,17 @@ class RestartAggregationTest(unittest.TestCase):
             sha=hashlib.sha256(manifest.read_bytes()).hexdigest()
             proof={'HEAD':'h','sha256':'c','manifestEntry':{'sha256':sha}}
             inputs={'inputs/L6_B_RUNNER_CONTRACT_V2.json':'c','inputs/L6_FORMAL_CALIBRATION_MANIFEST.json':sha}
-            for name in ('l6_b_analyzer.py','l6_b_oracle.py','l6_oracle.py','l5_measurement.py','synthetic_evidence.py'):
+            for name in ('l6_b_analyzer.py','l6_b_latency.py','l6_b_oracle.py','l6_oracle.py','l5_measurement.py','synthetic_evidence.py'):
                 inputs['code/'+name]=hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
             entry=directory/'candidate-entry.json'
             entry.write_text(json.dumps({'HEAD':'h','files':inputs}),encoding='utf-8')
             verify_analysis_identity(directory,proof,manifest)
             with self.assertRaises(ValueError):verify_analysis_identity(directory,{**proof,'HEAD':'other'},manifest)
+            original = inputs['code/l6_b_latency.py']
+            inputs['code/l6_b_latency.py']='0'*64
+            entry.write_text(json.dumps({'HEAD':'h','files':inputs}),encoding='utf-8')
+            with self.assertRaises(ValueError):verify_analysis_identity(directory,proof,manifest)
+            inputs['code/l6_b_latency.py']=original
             inputs['code/l6_b_analyzer.py']='0'*64
             entry.write_text(json.dumps({'HEAD':'h','files':inputs}),encoding='utf-8')
             with self.assertRaises(ValueError):verify_analysis_identity(directory,proof,manifest)
