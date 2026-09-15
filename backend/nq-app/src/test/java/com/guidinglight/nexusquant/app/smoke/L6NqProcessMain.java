@@ -4,6 +4,7 @@ package com.guidinglight.nexusquant.app.smoke;
 public final class L6NqProcessMain {
     public static void main(String[] args) throws Exception {
         L6QualificationControls.enabled = true;
+        System.setProperty("spring.datasource.driver-class-name", L6AccountingDriver.class.getName());
         B0NqProcessMain.main(args);
     }
 }

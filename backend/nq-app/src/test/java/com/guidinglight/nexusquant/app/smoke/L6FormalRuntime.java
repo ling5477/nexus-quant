@@ -36,6 +36,7 @@ final class L6FormalRuntime {
     private L6PgProjectionGuard projection;
     private L6PgRunCapacity runCapacity;
     private boolean capacityProbe;
+    private L6HardBudgets hardBudgets;
     private final L6ResourceFileLifecycle resourceFileLifecycle = new L6ResourceFileLifecycle();
 
     L6FormalRuntime(L6FormalManifest manifest, QualificationCapacity capacity, L6DurationContract duration, boolean smoke) {
@@ -102,7 +103,8 @@ final class L6FormalRuntime {
                             childClockOffsets.add(childNanos - System.nanoTime());
                         }
                         proof.set("paper", JSON.readTree(actors.getFirst().send("L6_PAPER"))); http(endpoint, "L5_OPEN");
-                        try (var reader = fixture.checker(); var resourceReader = fixture.checker();
+                        try (var reader = L6TransactionAccounting.wrap(fixture.checker(), "CONTROLLER_HELPER");
+                             var resourceReader = L6TransactionAccounting.wrap(fixture.checker(), "SAMPLER_PG");
                              var boundaryReader = storage() ? fixture.checker() : null;
                              var resources = new L6RuntimeResources(resourceReader, dir, actors, venue, endpoint, container, true, storage(), resourceFileLifecycle);
                              var boundaryResources = storage() ? new L6RuntimeResources(boundaryReader, dir, actors, venue, endpoint, container, true, true, resourceFileLifecycle) : null) {
@@ -123,6 +125,16 @@ final class L6FormalRuntime {
                                 entryCapacity.set("hostMemoryPreflight", entryMemoryProof);
                                 proof.set("runSpecificCapacity", entryCapacity);
                                 Files.writeString(dir.resolve("run-capacity.json"), JSON.writerWithDefaultPrettyPrinter().writeValueAsString(entryCapacity));
+                            }
+                            if (!storage()) {
+                                var entryActors = JSON.createArrayNode();
+                                for (var actor : actors) entryActors.add(JSON.readTree(actor.send("L6_METRICS")));
+                                long transactionBaseline = number(reader, "SELECT xact_commit+xact_rollback FROM pg_stat_database WHERE datname=current_database()"); reader.commit();
+                                hardBudgets = new L6HardBudgets(duration, manifest.intervalNanos(), capacity, transactionBaseline,
+                                        Files.getFileStore(dir).getUsableSpace(), entryActors);
+                                var admission = hardBudgets.admission(proof.path("runSpecificCapacity"), proof.path("formalEntryHostMemoryPreflight"));
+                                Files.writeString(dir.resolve("hard-budget-preflight.json"), JSON.writerWithDefaultPrettyPrinter().writeValueAsString(admission));
+                                proof.set("hardBudgetPreflight", admission);
                             }
                             start = System.nanoTime(); proof.put("startedAt", Instant.now().toString()).put("formalTimerStarted", !storage() && !capacityProbe).put("storageTimerStarted", storage());
                             L6SamplingSchedule schedule = storage() ? new L6SamplingSchedule() {
@@ -145,7 +157,7 @@ final class L6FormalRuntime {
                                     controller.start();
                                     sampler.sample();
                                 } else {
-                                    sampler.observeWith(record -> projection.observe(record, elapsed()));
+                                    sampler.observeWith(record -> { hardBudgets.observe(record); projection.observe(record, elapsed()); });
                                     sampler.sample();
                                 }
                                 sampler.start();
@@ -155,6 +167,10 @@ final class L6FormalRuntime {
                                 if (storage()) proof.set("storageGuard", storageGuard.evidence());
                                 if (!capacityStopped()) {
                                 var end = checkpoint(reader, endpoint, "FINAL"); reader.commit(); proof.set("final", end);
+                                if (!storage()) {
+                                    hardBudgets.checkFinal(number(reader, "SELECT xact_commit+xact_rollback FROM pg_stat_database WHERE datname=current_database()"));
+                                    reader.commit();
+                                }
                                 if (storage()) {
                                     long complete = boundarySampler.latest().path("sources").path("postgres").path("values").path("fullChainCompleted").asLong();
                                     assertTrue(complete > 0);
@@ -195,6 +211,7 @@ final class L6FormalRuntime {
                 : error.getMessage() != null && error.getMessage().startsWith("BLOCKED /") ? error.getMessage() : "FAILED").put("failure", error.toString()); throw error; }
         finally {
             if (phaseController != null) proof.set("phaseTiming", phaseController.summary());
+            if (hardBudgets != null) { proof.set("hardBudgets", hardBudgets.evidence()); hardBudgets.write(dir.resolve("hard-budget-exit.json")); }
             if (projection != null) proof.set("storageProjectionGuard", projection.evidence());
             persistExit(dir.resolve("proof.json"), proof, () -> {
                 if (pgContract != null) { pgContract.verifyUnchanged(); proof.set("capacityContractExit", pgContract.identity()); }
@@ -300,14 +317,16 @@ final class L6FormalRuntime {
             }
             if (elapsed() >= nextCheck && orders > 0 && !capacityStopped() && (!storage() || (!storageGuard.stopped()
                     && nextBoundary(elapsed()) - elapsed() > 8_000_000_000L))) {
-                runtimeFill(endpoint); for (var actor : actors) runtimeCommand(actor, "L6_RECONCILE");
+                // 正式路径沿用5秒对账；检查点只验证真实事实，避免再次重放整个候选批次。
+                if (storage()) { runtimeFill(endpoint); for (var actor : actors) runtimeCommand(actor, "L6_RECONCILE"); }
                 try {
                     var point = checkpoint(reader, endpoint, current); reader.commit();
                     point.put("completedObservedElapsedNanos", elapsed()); append("progress.ndjson", point);
-                    assertTrue(point.path("transactions").asLong() <= 1_000_000);
+                    if (storage()) assertTrue(point.path("transactions").asLong() <= 1_000_000);
                 } catch (L6BusinessCheckpoint.StoragePending pending) { reader.rollback(); }
-                nextCheck = elapsed() + 30_000_000_000L;
+                nextCheck = elapsed() + (storage() ? 30_000_000_000L : L6HardBudgets.CHECKPOINT_NANOS);
             }
+            if (orders == 0 && nextCheck <= elapsed()) nextCheck = elapsed() + 5_000_000_000L;
             if (drainOrders >= 0) { assertEquals(drainOrders, number(reader, "SELECT count(*) FROM orders")); reader.commit(); }
             if (capacityStopped()) {
                 if (drainOrders >= 0) assertEquals(drainOrders, number(reader, "SELECT count(*) FROM orders"));
@@ -356,8 +375,8 @@ final class L6FormalRuntime {
     }
     private ObjectNode checkpoint(Connection reader, String endpoint, String phase) throws Exception {
         if (storage()) phaseController.requireBusinessDispatchReady();
-        return L6BusinessCheckpoint.verify(reader, endpoint, actors, dir, phase, ++checks, false, capacity.runOrderBudget(), slots,
-                storage() ? L6StorageCalibrationContract.MODE : "FORMAL_L6_A", storage() ? () -> false : projection::stopped);
+        return L6TransactionAccounting.within("CHECKPOINT_ORACLE", () -> L6BusinessCheckpoint.verify(reader, endpoint, actors, dir, phase, ++checks, false, capacity.runOrderBudget(), slots,
+                storage() ? L6StorageCalibrationContract.MODE : "FORMAL_L6_A", storage() ? () -> false : projection::stopped));
     }
     private void timing(String phase, long from, long to) { proof.withArray("phases").addObject().put("phase", phase).put("startElapsedNanos", from).put("endElapsedNanos", to).put("durationNanos", to - from); }
     private String runtimeCommand(B0Processes.Child actor, String command) throws Exception {

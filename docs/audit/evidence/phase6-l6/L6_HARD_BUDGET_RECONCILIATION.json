@@ -1,0 +1,349 @@
+{
+  "status": "ACCOUNTING_RECONSTRUCTED_WITH_EXPLICIT_RESIDUAL",
+  "formalRunStarted": false,
+  "L6AAccepted": false,
+  "L6Accepted": false,
+  "sourceRun": "0f2f3be9-5d96-421a-a000-eb3e1c19e808",
+  "sourceHash": "f956c366d8dbdde43b06c8ece2cd0f871619e2e259ced873b7343f4e0477598e",
+  "probeHash": "4fb1e38d1d6f1dfd422b588438f8c7927592a1f23c68e55ba5c8787677562900",
+  "unitCosts": {
+    "terminalReplayPerFill": {
+      "trade": 3,
+      "ledger": 1,
+      "audit": 2,
+      "jdbcSession": 1
+    },
+    "cursorPerInvocation": {
+      "order": 1,
+      "jdbcSession": 1
+    },
+    "newFillPerOrder": 11,
+    "emitPerOrder": 13,
+    "schedulerPerTick": 1,
+    "schedulerCompletionPerOrder": 2,
+    "schedulerObservationPerCall": 2,
+    "validationPerRefresh": 1,
+    "monitorReportSetup": 21
+  },
+  "oldPrefix": {
+    "throughElapsedMillis": 3520006,
+    "startAbsoluteTransactions": 349,
+    "lastAbsoluteTransactions": 997507,
+    "observedDelta": 997158,
+    "groups": {
+      "business_emit": 3367,
+      "qualification_reconciliation_new_fill": 2849,
+      "qualification_reconciliation_terminal_replay": 961275,
+      "qualification_reconciliation_cursor": 3256,
+      "production_scheduler": 1923,
+      "validation": 24,
+      "sampler_postgres": 5984,
+      "sampler_actor": 704,
+      "scheduler_observation": 2816,
+      "checkpoint_oracle": 202,
+      "monitor_report_after_t0": 0
+    },
+    "classified": 982400,
+    "unclassifiedAndSampleSkew": 14758,
+    "classifiedFraction": 0.9851999382244339,
+    "qualifiedObserverAttributed": 977086,
+    "observerFraction": 0.9798707927931181,
+    "orders": 259,
+    "terminalReplays": 137325,
+    "reconciliationInvocations": 1628,
+    "checkpointAttemptsThroughLastSuccess": 110,
+    "successfulCheckpoints": 92,
+    "windows": [
+      {
+        "phase": "WARMUP",
+        "samples": 60,
+        "firstTransactions": 349,
+        "lastTransactions": 59610
+      },
+      {
+        "phase": "A1",
+        "samples": 60,
+        "firstTransactions": 61250,
+        "lastTransactions": 222372
+      },
+      {
+        "phase": "A2",
+        "samples": 60,
+        "firstTransactions": 225367,
+        "lastTransactions": 421678
+      },
+      {
+        "phase": "A3",
+        "samples": 60,
+        "firstTransactions": 424690,
+        "lastTransactions": 622202
+      },
+      {
+        "phase": "A4",
+        "samples": 60,
+        "firstTransactions": 625770,
+        "lastTransactions": 822009
+      },
+      {
+        "phase": "DRAIN",
+        "samples": 53,
+        "firstTransactions": 825495,
+        "lastTransactions": 997507
+      }
+    ]
+  },
+  "independentProcessAccounting": {
+    "serverDelta": 1962,
+    "actorCounted": 1822,
+    "controllerCounted": 106,
+    "unclassified": 34,
+    "unclassifiedFraction": 0.017329255861365953
+  },
+  "rawBytes": {
+    "observedFinal": 792189372,
+    "maximumVenueEventBytes": 119,
+    "venueEventCounts": {
+      "REQUEST_RECEIVED": 259,
+      "VENUE_ACCEPTED": 259,
+      "FILL": 259,
+      "QUERY_ORDER": 259,
+      "QUERY_FILLS": 137984
+    },
+    "checkpointCount": 93
+  },
+  "limits": [
+    "Retrospective groups reconstruct call-site unit costs; old raw did not instrument individual JDBC transactions.",
+    "Residual contains controller transactions, pool health/setup and cross-source collection skew; it is not zero.",
+    "The failed T=3530 sample does not serialize the exact over-cap PG count; only >1000000 is known.",
+    "Initial Paper monitor/report work is before T=0; 21 unit-cost transactions are not charged again to the run delta.",
+    "Runtime duration qualification is still incomplete; accounting cannot upgrade the historical failure."
+  ],
+  "fullFormalBudget": {
+    "status": "SUFFICIENT",
+    "frozenBeforeT0": true,
+    "startTransactions": 349,
+    "transactionSemantics": "RUN_DELTA_AND_ROLLING_RATE",
+    "projectedTransactions": 1185966,
+    "reserveTransactions": 25342,
+    "transactionHardCap": 1212000,
+    "projectedRawBytes": 825348096,
+    "rawReserveBytes": 38666240,
+    "rawHardCap": 1073741824,
+    "entryFreeDiskBytes": 226380337152,
+    "diskFreeFloorBytes": 45276067430,
+    "orders": 422,
+    "fillsPerOrder": 1,
+    "fillSafetyCap": 4,
+    "faults": 0,
+    "restarts": 0,
+    "restartSafetyCap": 6,
+    "reconciliationInvocations": 1440,
+    "ticksPerActor": 720,
+    "tickSafetyCap": 1000,
+    "commandsPerActorUpper": 1926,
+    "commandSafetyCap": 4000,
+    "resourceSamples": 360,
+    "sampleSafetyCap": 500,
+    "checkpointCountUpper": 61,
+    "checkpointIntervalSeconds": 60,
+    "fileCountUpper": 256,
+    "fileCountSafetyCap": 10000,
+    "pgStorage": "SUFFICIENT",
+    "hostMemory": "SUFFICIENT",
+    "transactionGroups": {
+      "businessChain": 21100,
+      "qualificationReconciliation": 1010880,
+      "scheduler": 1440,
+      "schedulerObservation": 2880,
+      "validation": 96,
+      "sampler": 1440,
+      "controller": 3867,
+      "checkpoint": 183,
+      "connectionHealthAndSetup": 144080
+    },
+    "observedTransactionDelta": 0,
+    "lastObservedMillis": -1,
+    "finalAbsoluteTransactions": null,
+    "failure": null
+  },
+  "verification": {
+    "capacityProbeResult": "DYNAMIC_CAPACITY_PROBE_PASS",
+    "formalTimerStarted": false,
+    "capacityProbeHash": "d761e2c6ec5a1926f7cceb7c1664f6909860d327b58ac48834558918d165f746",
+    "probeCleanup": "PASS",
+    "runaway": {
+      "samples": [
+        {
+          "elapsedMillis": 10007,
+          "serverTransactions": 6002
+        },
+        {
+          "elapsedMillis": 20007,
+          "serverTransactions": 12004
+        },
+        {
+          "elapsedMillis": 30009,
+          "serverTransactions": 18008
+        },
+        {
+          "elapsedMillis": 40014,
+          "serverTransactions": 24010
+        },
+        {
+          "elapsedMillis": 50012,
+          "serverTransactions": 30012
+        }
+      ],
+      "guard": {
+        "status": "SUFFICIENT",
+        "frozenBeforeT0": true,
+        "startTransactions": 0,
+        "transactionSemantics": "RUN_DELTA_AND_ROLLING_RATE",
+        "projectedTransactions": 1185966,
+        "reserveTransactions": 25342,
+        "transactionHardCap": 1212000,
+        "projectedRawBytes": 825348096,
+        "rawReserveBytes": 38666240,
+        "rawHardCap": 1073741824,
+        "entryFreeDiskBytes": 107374182400,
+        "diskFreeFloorBytes": 21474836480,
+        "orders": 422,
+        "fillsPerOrder": 1,
+        "fillSafetyCap": 4,
+        "faults": 0,
+        "restarts": 0,
+        "restartSafetyCap": 6,
+        "reconciliationInvocations": 1440,
+        "ticksPerActor": 720,
+        "tickSafetyCap": 1000,
+        "commandsPerActorUpper": 1926,
+        "commandSafetyCap": 4000,
+        "resourceSamples": 360,
+        "sampleSafetyCap": 500,
+        "checkpointCountUpper": 61,
+        "checkpointIntervalSeconds": 60,
+        "fileCountUpper": 256,
+        "fileCountSafetyCap": 10000,
+        "pgStorage": "REQUIRES_EXISTING_DYNAMIC_CAPACITY_PREFLIGHT_AND_RUNTIME_GUARD",
+        "hostMemory": "REQUIRES_EXISTING_60_PERCENT_ENTRY_PREFLIGHT",
+        "transactionGroups": {
+          "businessChain": 21100,
+          "qualificationReconciliation": 1010880,
+          "scheduler": 1440,
+          "schedulerObservation": 2880,
+          "validation": 96,
+          "sampler": 1440,
+          "controller": 3867,
+          "checkpoint": 183,
+          "connectionHealthAndSetup": 144080
+        },
+        "observedTransactionDelta": 24010,
+        "lastObservedMillis": 40014,
+        "finalAbsoluteTransactions": null,
+        "failure": "L6_HARD_BUDGET_TRANSACTION_RATE_AMPLIFICATION"
+      }
+    },
+    "runawayHash": "1099c3c8f6dd81bf4b243e1002134b40d65e246528b854ba00488884d0f43b1f",
+    "targetedTests": [
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.L6CalibrationCapacityTest",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "1.415",
+        "sha256": "69cca2c27cff12239d18426d4af2ee3ffb41087c5ccc7051159954eb19478749"
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.L6DynamicCapacityProbeTest",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "88.6",
+        "sha256": "a3c47f799afcdc78d09ab2c6c0d37456e6a8a2a0a881afe4b4049277f753a103"
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.L6DynamicCapacityTest",
+        "tests": "3",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.102",
+        "sha256": "25423a20d0248c8b1b434ce92ac519c3332da36aa0dd07c1339f8c75416813e0"
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.L6FormalContractTest",
+        "tests": "9",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.125",
+        "sha256": "0e37ee1c103e5cef5a6dfc0d4d54dcb8eeff2bc706b2e12af590159eeee6e604"
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.L6HardBudgetsTest",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.011",
+        "sha256": "30dde708bfe8ec605799939b1b6f18233ed897bbf945fb6db59feb0eb6398b83"
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.L6PgCapacityContractTest",
+        "tests": "8",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "1.094",
+        "sha256": "9e81d9489f47a1eebd786dde8acb53b50dd8c31aeeda8869a3eb7bf3df8beed8"
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.L6PgProjectionGuardTest",
+        "tests": "5",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "5.426",
+        "sha256": "7f409d9eb718318860de1e438c14341e966485026b6c21b700eda154419c387b"
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.L6ReadinessContractTest",
+        "tests": "5",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.01",
+        "sha256": "73a7f2dbbd40693dfd36cf5eeea536f34e07a3172799cebb557e22d633607d08"
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.L6ResourceSamplerTest",
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.079",
+        "sha256": "6a510ff5b5029c53214192ecba5100c8c8764818510526f618c0f90347c880cf"
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.L6TransactionAccountingPostgresTest",
+        "tests": "2",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "62.191",
+        "sha256": "35c9c3401b8960912a028576c8f544377a6ab6e5bd8380ade1a2c477f2b9ee6d"
+      },
+      {
+        "name": "com.guidinglight.nexusquant.app.smoke.L6TransactionProcessTest",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "83.052",
+        "sha256": "10b8e07e701db82c465f393010288a93fbd7e3b730cc4c8ebffaa03134a61852"
+      }
+    ]
+  }
+}

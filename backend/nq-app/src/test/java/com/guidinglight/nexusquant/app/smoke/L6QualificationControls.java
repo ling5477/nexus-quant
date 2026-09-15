@@ -107,6 +107,11 @@ final class L6QualificationControls implements AutoCloseable {
     }
 
     private ObjectNode resources() {
+        try { return L6TransactionAccounting.within("SAMPLER_ACTOR", this::measuredResources); }
+        catch (Exception failure) { throw new IllegalStateException("L6_ACCOUNTING_MEASUREMENT_FAILED", failure); }
+    }
+
+    private ObjectNode measuredResources() {
         if (failure.get() != null) throw new IllegalStateException("L6 timer failure", failure.get());
         var pool = context.getBean(HikariDataSource.class);
         var bean = pool.getHikariPoolMXBean();
@@ -136,16 +141,28 @@ final class L6QualificationControls implements AutoCloseable {
                 observed.path("ATTEMPT").asLong(), completed, observed.path("FAILURE").asLong()));
         var names = n.putArray("threadNames");
         for (var info : threads.getThreadInfo(threads.getAllThreadIds())) if (info != null) names.add(info.getThreadName());
+        n.set("transactionsByOriginAndOwner", L6TransactionAccounting.snapshot());
         L6Measurements.requireMandatory(n);
         return n;
     }
 
     String handle(String command) throws Exception {
-        try { return commandExecutor.submit(() -> execute(command)).get(45, TimeUnit.SECONDS); }
+        try { return commandExecutor.submit(() -> L6TransactionAccounting.within(origin(command), () -> execute(command))).get(45, TimeUnit.SECONDS); }
         catch (ExecutionException error) {
             if (error.getCause() instanceof Exception cause) throw cause;
             throw error;
         }
+    }
+
+    private static String origin(String command) {
+        if (command.startsWith("L6_EMIT ")) return "BUSINESS_EMIT";
+        return switch (command) {
+            case "L6_RECONCILE" -> "QUALIFICATION_RECONCILIATION";
+            case "L6_OBSERVER_SCAN", "L6_SCAN" -> "SCHEDULER_OBSERVATION";
+            case "L6_PAPER" -> "MONITOR_REPORT";
+            case "L6_METRICS" -> "SAMPLER_ACTOR";
+            default -> "CONTROLLER_HELPER";
+        };
     }
 
     private String execute(String command) throws Exception {

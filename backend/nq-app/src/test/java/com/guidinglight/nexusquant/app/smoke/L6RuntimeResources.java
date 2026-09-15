@@ -22,7 +22,7 @@ final class L6RuntimeResources implements AutoCloseable {
     private static final ObjectMapper JSON = new ObjectMapper();
     static final Set<String> ACTOR_FIELDS = Set.of("jvmUptimeMillis", "heapUsed", "heapCommitted", "heapMax", "gc", "threads", "peakThreads",
             "commandQueue", "metricsExecutor", "active", "idle", "pending", "poolMax", "acquisitionTimeoutCount",
-            "acquisitionTimeoutDelta", "tickStarted", "tickCompleted", "tickFailed", "observations", "candidateAge");
+            "acquisitionTimeoutDelta", "tickStarted", "tickCompleted", "tickFailed", "observations", "candidateAge", "transactionsByOriginAndOwner");
     private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(1)).build();
     private final Connection reader;
     private final Path directory;
@@ -98,7 +98,7 @@ final class L6RuntimeResources implements AutoCloseable {
         if (formalStorage) postgresFields.addAll(L6PgStorageObservation.FIELDS);
         if (storageCalibration) postgresFields.addAll(Set.of("terminalOrders", "fills", "trades", "TradeExecuted", "ledgerEntries", "fullChainCompleted", "fullChainOrderIds", "databaseBytes", "walBytes"));
         add("postgres", Set.copyOf(postgresFields), stamp -> {
-            if (storageCalibration) {
+            if (formalStorage) {
                 reader.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
                 reader.setAutoCommit(false);
             }
@@ -109,7 +109,11 @@ final class L6RuntimeResources implements AutoCloseable {
             value.put("auditRows", number(reader, "SELECT count(*) FROM audit_logs"));
             value.put("eventRows", number(reader, "SELECT count(*) FROM event_store"));
             value.set("cursor", L5BoundedWorkloadTest.cursor(reader));
-            if (formalStorage) value.setAll(L6PgStorageObservation.collect(reader, container, this::command));
+            value.set("controllerTransactionsByOriginAndOwner", L6TransactionAccounting.snapshot());
+            if (formalStorage) {
+                value.setAll(L6PgStorageObservation.collect(reader, container, this::command));
+                value.put("maximumFillsPerOrder", number(reader, "SELECT coalesce(max(fills),0) FROM (SELECT count(*) fills FROM trades GROUP BY order_id) t"));
+            }
             if (storageCalibration) {
                 var facts = L5BoundedWorkloadTest.facts(reader);
                 var input = JSON.createObjectNode(); input.set("facts", facts);
@@ -121,9 +125,9 @@ final class L6RuntimeResources implements AutoCloseable {
                 value.set("databaseBytes", value.get("pgDatabaseSizeBytes"));
                 value.set("walBytes", value.get("pgWalAllocatedBytes"));
             }
-            if (value.path("transactions").asLong() > 1_000_000) throw new IllegalStateException("L6_TRANSACTION_BUDGET");
+            if ((!formalStorage || storageCalibration) && value.path("transactions").asLong() > 1_000_000) throw new IllegalStateException("L6_TRANSACTION_BUDGET");
             return measured(stamp, value, required.get("postgres"));
-            } finally { if (storageCalibration) { reader.rollback(); reader.setAutoCommit(true); } }
+            } finally { if (formalStorage) { reader.rollback(); reader.setAutoCommit(true); } }
         });
         add("os", Set.of("handles", "fd", "processes"), this::os);
         add("files", Set.of("logBytes", "logDeltaBytes", "ownedTempFileCount", "ownedTempBytes"), this::files);
@@ -221,7 +225,7 @@ final class L6RuntimeResources implements AutoCloseable {
         }
         if (logs < previousLogBytes) throw new IllegalStateException("L6_UNEXPLAINED_LOG_TRUNCATION");
         ObjectNode value = JSON.createObjectNode().put("logBytes", logs).put("logDeltaBytes", logs - previousLogBytes)
-                .put("ownedTempFileCount", count).put("ownedTempBytes", bytes).put("ownedPath", directory.toString());
+                .put("freeDiskBytes", Files.getFileStore(directory).getUsableSpace()).put("ownedTempFileCount", count).put("ownedTempBytes", bytes).put("ownedPath", directory.toString());
         previousLogBytes = logs;
         return measured(stamp, value, required.get("files"));
     }
