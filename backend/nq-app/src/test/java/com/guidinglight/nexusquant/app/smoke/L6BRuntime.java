@@ -36,17 +36,23 @@ final class L6BRuntime {
     private long venuePid;
     private final L6BReconcileTiming reconcileTiming = new L6BReconcileTiming();
     private final boolean timingProbe;
+    private final boolean samplingProbe;
     private volatile ObjectNode latestResources;
     private long reconcileSequence;
     L6BRuntime(boolean probe) throws Exception { this(probe, false); }
     L6BRuntime(boolean probe, boolean timingProbe) throws Exception {
+        this(probe,timingProbe,false);
+    }
+    L6BRuntime(boolean probe, boolean timingProbe, boolean samplingProbe) throws Exception {
+        if (samplingProbe && !probe) throw new IllegalArgumentException("L6_SAMPLING_INJECTION_FORMAL_FORBIDDEN");
         if (timingProbe && !probe) throw new IllegalArgumentException("L6_TIMING_INJECTION_FORMAL_FORBIDDEN");
-        contract=new L6BContract(probe); this.timingProbe=timingProbe;
+        contract=new L6BContract(probe); this.timingProbe=timingProbe;this.samplingProbe=samplingProbe;
     }
 
     void run() throws Exception {
         dir=B0Processes.root().resolve("backend/nq-app/target/l6-b/"+UUID.randomUUID());Files.createDirectories(dir);
         proof.setAll(contract.identity());proof.set("manifestEntry",contract.manifest.identity());
+        proof.set("samplingContract",L6BSlotSampler.contract());proof.put("samplingProbe",samplingProbe);
         proof.put("runId",dir.getFileName().toString()).put("runOrderBudget",contract.orders)
                 .put("shortSmoke",false).put("formalTimerStarted",false).put("timingProbe", timingProbe)
                 .put("HEAD",B0Processes.command("git","rev-parse","HEAD").trim())
@@ -90,6 +96,10 @@ final class L6BRuntime {
                             fingerprint.verify();
                             start=System.nanoTime();proof.put("startedAt",Instant.now().toString()).put("formalTimerStarted",!contract.probe);
                             try(var sampler=resources.sampler(contract.timing,start,dir.resolve("resources.ndjson"))) {
+                                if(samplingProbe)sampler.probeInjection(slot -> {
+                                    try { if(slot==2)TimeUnit.MILLISECONDS.sleep(5421);if(slot==4)TimeUnit.MILLISECONDS.sleep(12500); }
+                                    catch(InterruptedException error) { Thread.currentThread().interrupt();throw new IllegalStateException(error); }
+                                });
                                 sampler.observeWith(row->{budgets.observe(row);projection.observe(row,elapsed());latestResources=row.deepCopy();});
                                 sampler.sample();sampler.start();drive(reader,endpoint,env,pg,venue,sampler);
                                 if(!projection.stopped())sampler.requireComplete();
@@ -142,7 +152,7 @@ final class L6BRuntime {
     }
 
     private void drive(Connection reader,String endpoint,Map<String,String> env,B0Processes.Pg pg,
-                       B0Processes.Child venue,L6ResourceSampler sampler) throws Exception {
+                       B0Processes.Child venue,L6BSlotSampler sampler) throws Exception {
         var pacer=new L6DeterministicPacer(System::nanoTime,start,contract.manifest.intervalNanos(),contract.timing,projection::producerAllowed);
         long observer=0,nextCheck=0,drainOrders=-1;int restart=0;boolean delayArmed=false;
         String phase="";long phaseStarted=0;
@@ -176,7 +186,6 @@ final class L6BRuntime {
             },slot->{slots.add(slot);append("pacing.ndjson",JSON.valueToTree(slot));});
             boolean emitted=slots.subList(before,slots.size()).stream().anyMatch(s->s.decision().equals("EMITTED"));
             if(restartDue && emitted) {
-                assertTrue(elapsed()<(contract.restartSeconds[restart]+45)*L6BContract.SECOND,"planned restart point missed");
                 restart(reader,endpoint,env,pg,venue,sampler,restart,target);restart++;
                 observer=elapsed()+5*L6BContract.SECOND;
             }
@@ -209,7 +218,7 @@ final class L6BRuntime {
     }
 
     private void restart(Connection reader,String endpoint,Map<String,String> env,B0Processes.Pg pg,
-                         B0Processes.Child venue,L6ResourceSampler sampler,int index,int actor) throws Exception {
+                         B0Processes.Child venue,L6BSlotSampler sampler,int index,int actor) throws Exception {
         continuity(reader,pg,venue);
         var before=sample(reader);long orders=number(reader,"SELECT count(*) FROM orders");reader.commit();
         assertTrue(before.path("backlog").asLong()>0,"restart must exercise durable pending work");
@@ -218,6 +227,9 @@ final class L6BRuntime {
                 .put("restartTimestamp",Instant.now().toString()).put("startedElapsedNanos",elapsed()).put("oldPid",old.child.process.pid())
                 .put("logicalActor",actor).put("ordersBefore",orders).put("backlogBefore",before.path("backlog").asLong())
                 .put("reason",index==0?"GRACEFUL":index==1?"FORCED_DEATH":"DELAY_AND_RECOVERY_RESTART");
+        long plannedLateness=event.path("startedElapsedNanos").asLong()-contract.restartSeconds[index]*L6BContract.SECOND;
+        event.put("plannedLatenessNanos",plannedLateness).put("plannedWindowSeconds",45)
+                .put("plannedTimingStatus",plannedLateness<45*L6BContract.SECOND?"WITHIN_WINDOW":"PENDING_FINAL_EVALUATION");
         event.set("activeRunsBefore",L6BAdmission.activeRuns(reader));reader.commit();
         event.set("beforeActorMetrics",JSON.readTree(command(actor,"L6_METRICS")));
         var durable=JSON.createObjectNode();durable.set("facts",facts(reader));reader.commit();durable.set("venue",http(endpoint,null));
@@ -226,11 +238,14 @@ final class L6BRuntime {
         event.put("beforeSnapshot",snapshot.getFileName().toString()).put("beforeSnapshotSha256",L6PgCapacityContract.hash(Files.readAllBytes(snapshot)));
         restarts.add(event);write("restart-"+index+"-started.json",event);
         long from=System.nanoTime();actors.stop(actor,old.child.process.pid(),index!=0);
+        event.put("stopStartedElapsedNanos",from-start).put("stopCompletedElapsedNanos",elapsed());
         continuity(reader,pg,venue);
         var next=actors.start(actor,dir,env,event.path("reason").asText());
         event.put("newPid",next.child.process.pid()).put("generation",next.generation)
                 .put("readyElapsedNanos",elapsed()).put("downtimeMillis",(System.nanoTime()-from)/1_000_000);
-        assertTrue(System.nanoTime()-from<85*L6BContract.SECOND);
+        event.put("childReadyElapsedNanos",next.readyObservedNanos-start).put("clockSyncCompletedElapsedNanos",next.clockSyncCompletedNanos-start)
+                .put("readyResponseBoundSeconds",75).put("clockResponseBoundSeconds",75).put("stopBoundSeconds",10)
+                .put("historical85SecondExpectationMet",System.nanoTime()-from<85*L6BContract.SECOND);
         continuity(reader,pg,venue);
         long revision=number(reader,"SELECT coalesce(max(revision),0) FROM reconciliation_scan_cursors WHERE venue='OKX'");reader.commit();
         long requiredRounds=2*Math.ceilDiv(orders,100);

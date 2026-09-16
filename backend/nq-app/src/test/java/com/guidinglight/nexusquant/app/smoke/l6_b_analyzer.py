@@ -32,7 +32,7 @@ def verify_analysis_identity(directory, proof, manifest):
     manifest_paths = [p for p in inputs if p.endswith('/L6_FORMAL_CALIBRATION_MANIFEST.json')]
     require(len(contract_paths) == len(manifest_paths) == 1, 'candidate contract inputs')
     require(inputs[contract_paths[0]] == proof['sha256'] and inputs[manifest_paths[0]] == proof['manifestEntry']['sha256'], 'candidate frozen input hashes')
-    for name in ('l6_b_analyzer.py','l6_b_latency.py','l6_b_oracle.py','l6_oracle.py','l5_measurement.py','synthetic_evidence.py'):
+    for name in ('l6_b_analyzer.py','l6_b_latency.py','l6_b_sampling.py','l6_b_oracle.py','l6_oracle.py','l5_measurement.py','synthetic_evidence.py'):
         paths = [p for p in inputs if p.endswith('/'+name)]
         require(len(paths) == 1 and hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() == inputs[paths[0]], 'analysis dependency identity: '+name)
     return frozen
@@ -246,10 +246,10 @@ def analyze(directory, manifest):
     require(proof['actualEndElapsedNanos'] >= 10_800_000_000_000, 'duration incomplete')
     require(proof['candidateUnchanged'] and proof['cleanup'] == 'PASS' and proof['ownedSurvivors'] == proof['ownedNqSurvivors'] == 0, 'identity/cleanup')
     rows = ndjson(directory/'resources.ndjson', 1092)
-    require(len(rows) == 1080, 'periodic sample count')
-    for i, row in enumerate(rows):
-        require(row['sampleIndex'] == i and row['sampleType'] == 'PERIODIC' and row['status'] == 'MEASURED', 'sample identity')
-        require(0 <= row['elapsedMillis'] - i*10000 <= 2000 and row['collectionMillis'] <= 8000, 'sample cadence')
+    from l6_b_sampling import verify_rows as verify_sampling
+    sampling = verify_sampling(rows, proof['samplingContract'])
+    rows = [row for row in rows if row['status'] == 'MEASURED']
+    for row in rows:
         require(set(row['sources']) == {'nq0','nq1','venue','postgres','os','files','ownership'}, 'mandatory collectors')
         for observation in row['sources'].values():
             require(observation['status'] == 'MEASURED' and observation['sampleToken'] == row['sampleToken'], 'mandatory stale observation')
@@ -265,9 +265,12 @@ def analyze(directory, manifest):
     for item in continuity:
         require(item['status'] == 'PRESERVED' and all(item[k] == proof[k] for k in ('container','databaseIdentity','postgresStartedAt','venuePid')), 'same PG/Venue identity')
     require(len(proof['restarts']) == 3, 'restart count')
+    timing_findings = []
     for i, event in enumerate(proof['restarts']):
         require(event['index'] == i and event['plannedSeconds'] == (2400,4800,7200)[i], 'restart schedule')
-        require(event['plannedSeconds'] <= event['startedElapsedNanos']/1e9 < event['plannedSeconds']+45, 'restart timing')
+        require(event['plannedSeconds'] <= event['startedElapsedNanos']/1e9, 'early restart')
+        if event['startedElapsedNanos']/1e9 >= event['plannedSeconds']+45:
+            timing_findings.append('RESTART_PLANNED_WINDOW_MISSED:'+str(i))
         require(event['result'] == 'RECOVERED' and event['backlogBefore'] > 0 and event['backlogAfter'] == 0, 'restart recovery')
         verify_recovery_deadline(event)
         require(event['oldPid'] != event['newPid'] and event['freshChainAfterRecovery']['oracle']['orders'] > event['ordersBefore'], 'fresh generation progress')
@@ -290,8 +293,8 @@ def analyze(directory, manifest):
         growth.append(summary)
     from l6_b_latency import analyze as analyze_latency
     latency = analyze_latency(directory)
-    return {'status':'ACCEPTED' if not stability['findings'] else 'COMPLETED_NOT_ACCEPTED',
-            'reconcileLatency':latency,
+    return {'status':'ACCEPTED' if not stability['findings'] and not timing_findings and sampling['status']=='ACCEPTED' else 'COMPLETED_NOT_ACCEPTED',
+            'reconcileLatency':latency, 'sampling':sampling, 'timingFindings':timing_findings,
             'runId':proof['runId'], 'HEAD':proof['HEAD'], 'fullDurationSeconds':proof['actualEndElapsedNanos']/1e9,
             'sampleCount':len(rows), 'checkpointCount':len(points), 'businessWindows':windows,
             'resourceStability':stability, 'durableAndEvidenceGrowth':growth,

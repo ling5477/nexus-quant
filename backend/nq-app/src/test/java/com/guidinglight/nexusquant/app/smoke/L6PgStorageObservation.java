@@ -19,6 +19,11 @@ final class L6PgStorageObservation {
     @FunctionalInterface interface Command { String run(String... args) throws Exception; }
 
     static ObjectNode collect(Connection reader, String ownedContainer, Command command) throws Exception {
+        return collect(reader,ownedContainer,command,()->2);
+    }
+
+    /** B只读采集共享诊断截止；其他入口仍使用原查询上限。 */
+    static ObjectNode collect(Connection reader, String ownedContainer, Command command, java.util.function.IntSupplier timeout) throws Exception {
         if (ownedContainer == null || !ownedContainer.matches("[a-f0-9]{64}")) throw unavailable();
         ObjectNode value = parseStat(command.run("docker", "exec", ownedContainer,
                 "stat", "-f", "-c", "%T %S %b %f %a", DATA));
@@ -26,13 +31,14 @@ final class L6PgStorageObservation {
         value.setAll(parseAllocated(command.run("docker", "exec", ownedContainer, "du", "--count-links",
                 "--summarize", "--block-size=1", "--", DATA + "/base", DATA + "/pg_wal", DATA + "/global", DATA)));
         try (var statement = reader.createStatement()) {
-            statement.setQueryTimeout(2);
+            statement.setQueryTimeout(timeout.getAsInt());
             try (var result = statement.executeQuery("SELECT pg_database_size(current_database())")) {
                 if (!result.next()) throw unavailable();
                 long bytes = result.getLong(1);
                 if (result.wasNull() || bytes < 0 || result.next()) throw unavailable();
                 value.put("pgDatabaseSizeBytes", bytes);
             }
+            statement.setQueryTimeout(timeout.getAsInt());
             // 一次有界目录查询保留所有用户关系；TOAST 已包含在 table bytes 中，不重复相加。
             try (var result = statement.executeQuery("""
                     SELECT n.nspname, c.relname, pg_table_size(c.oid), pg_indexes_size(c.oid),

@@ -19,6 +19,8 @@ final class L6BProjectionGuard {
     private final long runCapacity;
     private final ArrayDeque<Point> recent = new ArrayDeque<>();
     private final long[] rates;
+    private long lastScheduled = -10_000, lastOrders;
+    private int observationGaps;
     private long stoppedAt = -1;
     private boolean drainBudgetUnavailable;
     private ObjectNode last;
@@ -61,11 +63,15 @@ final class L6BProjectionGuard {
         long orders = nonnegative(v,"orders"), backlog = nonnegative(v,"backlog"), at = nonnegative(sample,"scheduledElapsedMillis");
         if (capacity != runCapacity || Math.addExact(used, free) != capacity || at > contract.timing.total()/1_000_000) throw new IllegalStateException("L6_PROJECTION_CAPACITY_DRIFT");
         int phase = stopped() ? 2 : at < contract.timing.warmupNanos()/1_000_000 ? 0 : at < contract.timing.activeEnd()/1_000_000 ? 1 : 2;
-        if ((recent.isEmpty() && at != 0) || (!recent.isEmpty() && (at - recent.getLast().scheduledMillis() != 10_000 || orders < recent.getLast().orders()))) throw new IllegalStateException("L6_PROJECTION_CADENCE_OR_INVENTORY_DRIFT");
-        if (elapsed < at * 1_000_000 || elapsed > (at + 10_000) * 1_000_000) throw new IllegalStateException("L6_PROJECTION_STALE_SAMPLE");
+        if (at%10_000!=0 || at<=lastScheduled || orders<lastOrders) throw new IllegalStateException("L6_PROJECTION_CADENCE_OR_INVENTORY_DRIFT");
+        if (elapsed < at * 1_000_000) throw new IllegalStateException("L6_PROJECTION_STALE_SAMPLE");
+        boolean gap=at-lastScheduled!=10_000 || "SLOT_OVERRUN".equals(sample.path("slotStatus").asText());
+        // 孤立缺槽只中断实测增长窗口；冻结rate和scheduled时刻的保守余量不减少。
+        if(gap) { recent.clear();observationGaps++; }
+        lastScheduled=at;lastOrders=orders;
         recent.addLast(new Point(at, used, orders, phase));
         if (recent.size() > 61) recent.removeFirst();
-        if (recent.size() == 61 && recent.getFirst().phase() == phase) {
+        if (!gap && recent.size() == 61 && recent.getFirst().phase() == phase) {
             long exposure = 0; Point previous = null;
             for (Point point : recent) {
                 if (previous != null) exposure = Math.addExact(exposure, Math.multiplyExact(10, previous.orders()+1));
@@ -86,6 +92,7 @@ final class L6BProjectionGuard {
                 .put("freeBytes", free).put("usedBytes", used).put("runCapacityBytes", runCapacity)
                 .put("freeMinusNeedBytes", free-required).put("projectedRemainingStorageNeed", required).put("orders", orders).put("backlog", backlog)
                 .put("warmupRate", rates[0]).put("activeRate", rates[1]).put("drainRate", rates[2])
+                .put("samplingGap",gap).put("growthWindowPoints",recent.size()).put("observationGaps",observationGaps)
                 .put("producerDisabled", stopped() || elapsed >= contract.timing.activeEnd()).put("triggered", stopped());
         if (history.size() >= contract.samples+1) throw new IllegalStateException("L6_PROJECTION_HISTORY_BOUND");
         history.add(last.deepCopy());

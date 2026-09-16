@@ -1,0 +1,23 @@
+{
+  "runId": "583c7da1-65ba-4532-9ecd-0f2116f47d07",
+  "HEAD": "55ad67b16436ded33524c422bb24ef24d5ab38c0",
+  "proofSha256": "8f85ee7b2f421ad9277b899cbdefd3eedaf57b6244f65fe555573f9e5ce0f6ff",
+  "resourcesSha256": "6625963a533f44c5b2855b91eada8fd813da84b27fade8479e653eafbe5e1a78",
+  "sampleIndex": 761,
+  "scheduledElapsedMillis": 7610000,
+  "actualStartElapsedMillis": 7615421,
+  "startLagMillis": 5421,
+  "previousStartElapsedMillis": 7600009,
+  "previousCollectionMillis": 693,
+  "previousEndElapsedMillis": 7600702,
+  "historicalCompletion": null,
+  "historicalResult": "UNAVAILABLE",
+  "rootCause": "UNKNOWN",
+  "previousSlotStillCollecting": false,
+  "samplerRunnableAtTarget": "UNKNOWN",
+  "controllerPaused": "UNKNOWN",
+  "hostDelayed": "UNKNOWN",
+  "lockContention": "UNKNOWN",
+  "lastReconcileId": "2250",
+  "lastReconcileLatencyMillis": 6582.0156
+}

@@ -15,7 +15,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import static com.guidinglight.nexusquant.app.smoke.L5BoundedWorkloadTest.number;
 
 /** 所有collector只读取本轮持有的连接、PID、容器和目录；不扫描其他任务资源。 */
 final class L6BResources implements AutoCloseable {
@@ -23,7 +22,7 @@ final class L6BResources implements AutoCloseable {
     static final Set<String> ACTOR_FIELDS = Set.of("jvmUptimeMillis", "heapUsed", "heapCommitted", "heapMax", "gc", "threads", "peakThreads",
             "commandQueue", "metricsExecutor", "active", "idle", "pending", "poolMax", "acquisitionTimeoutCount",
             "acquisitionTimeoutDelta", "tickStarted", "tickCompleted", "tickFailed", "observations", "candidateAge", "transactionsByOriginAndOwner");
-    private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(1)).build();
+    private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofNanos(L6BSlotSampler.INTERVAL)).build();
     private final Connection reader;
     private final Path directory;
     private final L6BActors actors;
@@ -52,7 +51,7 @@ final class L6BResources implements AutoCloseable {
         B0Fixture.require(container.matches("[a-f0-9]{64}"));
         B0Fixture.requireVenue(endpoint);
         previousLogBytes = logBytes();
-        try (var statement = reader.createStatement()) { statement.execute("SET statement_timeout='2000ms'"); }
+        try (var statement = reader.createStatement()) { statement.execute("SET statement_timeout='"+(L6BSlotSampler.INTERVAL/1_000_000)+"ms'"); }
         for (int i=0;i<2;i++) {
             final int actorIndex=i;
             final long[] sequence={0}, priorPid={-1};
@@ -104,15 +103,15 @@ final class L6BResources implements AutoCloseable {
                 reader.setAutoCommit(false);
             }
             try {
-            ObjectNode value = L5BoundedWorkloadTest.sample(reader);
+            ObjectNode value = L5BoundedWorkloadTest.sample(reader,L6BResources::number);
             value.put("databaseConnections", number(reader, "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database()"));
             value.put("idleInTransaction", number(reader, "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND state LIKE 'idle in transaction%'"));
             value.put("auditRows", number(reader, "SELECT count(*) FROM audit_logs"));
             value.put("eventRows", number(reader, "SELECT count(*) FROM event_store"));
-            value.set("cursor", L5BoundedWorkloadTest.cursor(reader));
+            value.set("cursor", JSON.readTree(value(reader,"SELECT coalesce(jsonb_agg(to_jsonb(c))::text,'[]') FROM reconciliation_scan_cursors c WHERE venue='OKX'")));
             value.set("controllerTransactionsByOriginAndOwner", L6TransactionAccounting.snapshot());
             if (formalStorage) {
-                value.setAll(L6PgStorageObservation.collect(reader, container, this::command));
+                value.setAll(L6PgStorageObservation.collect(reader, container, this::command, ()->querySeconds(reader)));
                 value.put("maximumFillsPerOrder", number(reader, "SELECT coalesce(max(fills),0) FROM (SELECT count(*) fills FROM trades GROUP BY order_id) t"));
             }
             if ((!formalStorage || storageCalibration) && value.path("transactions").asLong() > 1_000_000) throw new IllegalStateException("L6_TRANSACTION_BUDGET");
@@ -134,9 +133,9 @@ final class L6BResources implements AutoCloseable {
         });
     }
 
-    L6ResourceSampler sampler(L6SamplingSchedule schedule, long startedNanos, Path output) {
-        return new L6ResourceSampler(collectors(), required(), System::nanoTime, java.time.Instant::now,
-                startedNanos, schedule, output, true, actors);
+    L6BSlotSampler sampler(L6SamplingSchedule schedule, long startedNanos, Path output) {
+        return new L6BSlotSampler(collectors(), required(), System::nanoTime, java.time.Instant::now,
+                startedNanos, schedule, output, actors);
     }
 
     private List<ProcessHandle> processes() {
@@ -157,7 +156,7 @@ final class L6BResources implements AutoCloseable {
     }
 
     private ObjectNode get(String url, String token) throws Exception {
-        var request = HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofSeconds(2))
+        var request = HttpRequest.newBuilder(URI.create(url)).timeout(L6BCollectionBudget.remaining())
                 .header("X-L6-Sample", token).GET().build();
         var response = client.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() != 200) throw new IllegalStateException("L6_RESOURCE_HTTP_UNAVAILABLE: " + response.body());
@@ -250,14 +249,14 @@ final class L6BResources implements AutoCloseable {
     }
 
     private String command(String... arguments) throws Exception {
-        // 采集子进程日志也属于本轮目录；两秒超时后只回收本次创建的Process。
+        // 采集操作共享本次槽长的诊断预算；超时后只回收本次创建的Process。
         Path log = Files.createTempFile(directory, "resource-command-", ".tmp");
         Process process = null;
         try {
             var builder = new ProcessBuilder(arguments).redirectErrorStream(true).redirectOutput(log.toFile());
             builder.environment().clear(); builder.environment().putAll(B0Processes.cleanEnvironment());
             process = builder.start();
-            if (!process.waitFor(2, java.util.concurrent.TimeUnit.SECONDS)) throw new IllegalStateException("L6_RESOURCE_COMMAND_TIMEOUT");
+            if (!process.waitFor(L6BCollectionBudget.remaining().toNanos(), java.util.concurrent.TimeUnit.NANOSECONDS)) throw new IllegalStateException("L6_RESOURCE_COMMAND_TIMEOUT");
             if (process.exitValue() != 0) throw new IllegalStateException("L6_RESOURCE_COMMAND_FAILED: " + Files.readString(log));
             return Files.readString(log);
         } finally {
@@ -266,6 +265,27 @@ final class L6BResources implements AutoCloseable {
                 if (!process.waitFor(2, java.util.concurrent.TimeUnit.SECONDS)) throw new IllegalStateException("L6_RESOURCE_COMMAND_SURVIVOR");
             }
             fileLifecycle.deleteTemporary(log);
+        }
+    }
+
+    private static int querySeconds(Connection reader) {
+        try(var timeout=reader.createStatement()) {
+            timeout.execute("SET LOCAL statement_timeout='"+Math.max(1,L6BCollectionBudget.remaining().toMillis())+"ms'");
+            return L6BCollectionBudget.querySeconds();
+        } catch(Exception error) { throw new IllegalStateException("L6_RESOURCE_SQL_DEADLINE",error); }
+    }
+    private static long number(Connection reader,String sql) throws Exception {
+        return Long.parseLong(value(reader,sql));
+    }
+    private static String value(Connection reader,String sql) throws Exception {
+        try(var statement=reader.createStatement()) {
+            statement.setQueryTimeout(querySeconds(reader));
+            try(var rows=statement.executeQuery(sql)) {
+                if(!rows.next())throw new IllegalStateException("L6_QUERY_EMPTY");
+                String value=rows.getString(1);
+                if(value==null || rows.next())throw new IllegalStateException("L6_QUERY_SHAPE");
+                return value;
+            }
         }
     }
 

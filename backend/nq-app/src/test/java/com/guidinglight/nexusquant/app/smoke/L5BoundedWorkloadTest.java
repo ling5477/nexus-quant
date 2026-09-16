@@ -659,19 +659,22 @@ class L5BoundedWorkloadTest {
         assertEquals(0, number(reader, BACKLOG), "L5 actionable backlog failed to converge within fair scan budget");
     }
 
-    static ObjectNode sample(Connection reader) throws Exception {
+    @FunctionalInterface interface SampleQuery { long number(Connection reader,String sql) throws Exception; }
+    static ObjectNode sample(Connection reader) throws Exception { return sample(reader,L5BoundedWorkloadTest::number); }
+    /** B采集可提供同一事实查询的剩余额度；默认L5调用保留原查询实现。 */
+    static ObjectNode sample(Connection reader,SampleQuery query) throws Exception {
         ObjectNode result = JSON.createObjectNode().put("timeMillis", System.currentTimeMillis());
-        result.put("backlog", number(reader, BACKLOG));
-        result.put("correctnessRequiredUnresolved", number(reader, UNKNOWN));
+        result.put("backlog", query.number(reader, BACKLOG));
+        result.put("correctnessRequiredUnresolved", query.number(reader, UNKNOWN));
         result.put("actionable", result.path("backlog").asLong() - result.path("correctnessRequiredUnresolved").asLong());
-        result.put("orders", number(reader, "SELECT count(*) FROM orders"));
-        result.put("terminal", number(reader, "SELECT count(*) FROM orders WHERE status='FILLED'"));
-        result.put("trades", number(reader, "SELECT count(*) FROM trades"));
-        result.put("ledger", number(reader, "SELECT count(*) FROM ledger_entries"));
-        result.put("runsSucceeded", number(reader, "SELECT count(*) FROM strategy_runs WHERE status='SUCCEEDED'"));
-        result.put("transactions", number(reader, "SELECT xact_commit+xact_rollback FROM pg_stat_database WHERE datname=current_database()"));
-        result.put("appConnections", number(reader, "SELECT count(*) FROM pg_stat_activity WHERE usename='nq_b0_app'"));
-        result.put("idleInTransaction", number(reader, "SELECT count(*) FROM pg_stat_activity WHERE usename='nq_b0_app' AND state='idle in transaction'"));
+        result.put("orders", query.number(reader, "SELECT count(*) FROM orders"));
+        result.put("terminal", query.number(reader, "SELECT count(*) FROM orders WHERE status='FILLED'"));
+        result.put("trades", query.number(reader, "SELECT count(*) FROM trades"));
+        result.put("ledger", query.number(reader, "SELECT count(*) FROM ledger_entries"));
+        result.put("runsSucceeded", query.number(reader, "SELECT count(*) FROM strategy_runs WHERE status='SUCCEEDED'"));
+        result.put("transactions", query.number(reader, "SELECT xact_commit+xact_rollback FROM pg_stat_database WHERE datname=current_database()"));
+        result.put("appConnections", query.number(reader, "SELECT count(*) FROM pg_stat_activity WHERE usename='nq_b0_app'"));
+        result.put("idleInTransaction", query.number(reader, "SELECT count(*) FROM pg_stat_activity WHERE usename='nq_b0_app' AND state='idle in transaction'"));
         return result;
     }
 

@@ -18,6 +18,7 @@ final class L6BActors implements AutoCloseable {
         final String reason;
         String state="STARTING", stoppedAt;
         long childClockOffset;
+        long readyObservedNanos, clockSyncCompletedNanos;
         Generation(int actor,int generation,B0Processes.Child child,String reason) {
             this.actor=actor;this.generation=generation;this.child=child;this.reason=reason;
             osStartedAt=child.process.info().startInstant().orElseThrow().toString();
@@ -55,7 +56,9 @@ final class L6BActors implements AutoCloseable {
         catch(RuntimeException failure) { child.close();throw failure; }
         try {
             child.awaitReady();
+            next.readyObservedNanos=System.nanoTime();
             long clock=Long.parseLong(child.send("L6_CLOCK"));
+            next.clockSyncCompletedNanos=System.nanoTime();
             synchronized(this) {
                 assertOwned(next,child.process.pid()); next.childClockOffset=clock-System.nanoTime(); next.state="RUNNING";
             }
