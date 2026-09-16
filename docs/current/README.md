@@ -10,8 +10,8 @@
 - GateY freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`；exact-head CI run=`33037514013 / completed / success / 11 jobs`。
 - Phase 3 findings=`P0 0 / P1 4 / P2 8 / P3 1`；F-001=`95b859ee... / 33347091147`、F-002=`0651a736... / 33387882472`、F-003=`327c2229... / 33399190770`、F-004=`18efc06c... / 33358364678`，均为 `ACCEPTED / CI_GREEN`。
 - Phase4 remaining disposition closeout=`COMPLETE / ACCEPTED / CI_GREEN`，immutable pair=`7ca1fc92... / 33405549149`，blocking P0/P1=`0/0`。
-- Phase5A/Phase5B及P5-F008/P5-F007/P5-F009已接受；F001远端enforcement已接受，Phase5 ACCEPTED/CLOSED，F005 attestation保持DEFERRED/NON_BLOCKING，Phase6 IN_PROGRESS/NOT_FROZEN。L4 plan、C1、C2已接受；C2固定pair与安全边界以[STATUS.md](STATUS.md)为准。
-- 当前 work batch 为 pre-B0 CI safety/current authority remediation，`IMPLEMENTED / PENDING_INDEPENDENT_REVIEW`。下一动作由[STATUS.md](STATUS.md)唯一机器区块决定，[ROADMAP.md](ROADMAP.md)解释；尚未启动 B0 或 L4 qualification。
+- Phase5A/Phase5B及P5-F008/P5-F007/P5-F009已接受；F001远端enforcement已接受，Phase5 ACCEPTED/CLOSED，F005 attestation保持DEFERRED/NON_BLOCKING，Phase6 ACCEPTED/COMPLETE，L4/L5/L6已接受，Phase7 NOT_STARTED；各固定pair与安全边界以[STATUS.md](STATUS.md)为准。
+- 当前 work batch 为 Frontend localization / Error UX / Error Catalog consolidation，`NOT_STARTED`。下一动作由[STATUS.md](STATUS.md)唯一机器区块决定，[ROADMAP.md](ROADMAP.md)解释；L4/L5/L6已接受，Phase7未开始。
 - Pilot final：PLACE=1、retry=0、CANCEL=0、activeLease=0、LIVE=false、kill=`ENGAGED`、Attempt-02 未创建。
 - Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
@@ -35,6 +35,6 @@
 
 ## Current Is Not
 
-- F-002 只接受 Phase4 restart foundation；Phase6 full L4 failure matrix仍未执行，不得解释为完整故障资格已完成。
+- F-002 只接受 Phase4 restart foundation；Phase6 full L4资格已由后续B6聚合接受，L5/L6也已接受，详见[Phase6 final acceptance](../audit/evidence/GATEAUDIT_PHASE6_L5_L6_FINAL_ACCEPTANCE.md)；不得用早期F-002 foundation替代后续资格证据。
 - 不是第二 pilot、通用 LIVE、自动策略交易、多订单、多账户、多交易所、合约/杠杆或资金移动已授权。
 - 不是 AI/DH runtime 可执行交易。

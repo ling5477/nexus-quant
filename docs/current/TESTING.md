@@ -15213,3 +15213,16 @@ Attempt-01=`FAIL / CHANGES_REQUIRED`：P1-01=`INTERPROCESS_DURABILITY_CHECK_ABSE
 - 完整身份、证据与交付边界见[C1 acceptance evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_C1_POST_CI_AUTHORITY_TRANSITION_TO_C2.md)。authority commit与immutable technical chain分层；LIVE DISABLED、kill ENGAGED及全部安全字段不变，credential/真实provider/production DB操作=0。
 
 - 本轮治理准入实测：authority PS5.1/PS7 errors=0；matcher failed=0；lifecycle 20/20；agent 12/12；stage scanned=1802/errors=0；stage guard Windows 47 PASS+2既有symlink条件跳过、Linux 49/49 PASS；docs links checked=436/errors=0/历史warnings=123；Gitleaks 8.18.4安全扫描3147文件、findings=0；append-only/history/stale/safety/范围与diff检查均PASS。所有上述命令exit=0，完整命令见本节acceptance evidence；材料化后最终candidate再作stage/docs/consistency/secret/diff准入，失败不提交。
+
+
+## 2026-09-16 — Phase6 acceptance authority 同步
+
+本条是最新接受同步；此前L5/L6 NOT_STARTED、L6 NOT_ACCEPTED及旧next-action均为历史时点，原文保留。
+
+- Phase6=`ACCEPTED / COMPLETE`；L4 eligible28/28、L5 20/20、L6-A 60min 360/360、L6-B 180min 1080/1080均接受；remaining mandatory=0、blocking P0/P1=0/0。
+- 四组technical/CI：L4 `3d103cea2072b3c2d9d1009cc5841c18a958ee80 / 34501806297`；L5 `23548b75093a62d7614e16f8abcaf9ff2ea32ed7 / 34608208969`；A `23a0b46b96950aab9f0b8309d3beb8f446c73dce / 34922938228`；B/L6 `dbf9662add09388cd77ca7552de276bb019f0f74 / 35043157675`，本轮只读确认各9/9 SUCCESS。
+- [Canonical acceptance matrix与hash索引](../audit/evidence/GATEAUDIT_PHASE6_L5_L6_FINAL_ACCEPTANCE.md)保留L6本地raw位置，未将大体积raw/ZIP纳入Git；既有L6-A三项dirty不混入交付。
+- STATUS accepted_batch从L4推进Phase6，技术pair绑定dbf9662a/35043157675；work_batch/next_action从L5/L6规划推进`NQ-GATEAUDIT-FRONTEND-LOCALIZATION-ERROR-UX-CATALOG-IMPLEMENTATION`，NOT_STARTED/NONE/NOT_RUN。链为Frontend localization → Error UX consolidation → Error Catalog → NQ-TRD-1001 / ORDER_VERSION_CONFLICT → Phase7。GateAUDIT仍未冻结，Phase7 NOT_STARTED，安全fields不变。
+- P2 ordinary concurrent INSERT loser、P3 wildcard-import residual、historical projection repair、F005 attestation及inactive/future保留原OPEN/DEFERRED/NON_BLOCKING分类；历史5421ms rootCause仍UNKNOWN，FAIL/BLOCKED/remediation不改写。
+- 已通过：current-authority errors0、next-action正/负fixtures failed0、lifecycle20/20、stage-assets2028 scanned/175 exceptions/errors0、目标current/index/summary links75 checked/errors0/warnings0。phase/status按canonical矩阵与current正文核对一致；索引由已有link validator覆盖，没有新建validator。
+- code/production delta=0；未运行Full Maven、本地frontend E2E/integration、qualification或新独立技术审查。本次docs-only交付CI独立绑定新提交，不替换既有technical pair；远端交付结果以新exact-head run为准。

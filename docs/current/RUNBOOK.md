@@ -72,7 +72,7 @@ git diff --check
 git diff --stat
 ```
 
-本阶段不运行真实交易所 HTTP / WebSocket，不读取 credential material，不启动 LIVE，不接 AI / DH runtime。F008/F007/F009 与 C1 保持已接受；C2=`ACCEPTED / CLOSED`，固定 pair=`612c2f5887a2e6b3a8b3138d9ae9b193c20e298f / 34183851797`。当前执行 pre-B0 CI safety/current authority remediation，`IMPLEMENTED / PENDING_INDEPENDENT_REVIEW`；下一动作与任务映射见[STATUS.md](STATUS.md)和[ROADMAP.md](ROADMAP.md)。当前 repository schema=`V48`；历史 Phase5B V46、C1 V47 的接受事实仍按原证据保留，不推断生产 schema。本轮不重跑 C2/PostgreSQL、Full Maven 或 Playwright。B0和L4 qualification未开始。
+本阶段不运行真实交易所 HTTP / WebSocket，不读取 credential material，不启动 LIVE，不接 AI / DH runtime。F008/F007/F009 与 C1 保持已接受；C2=`ACCEPTED / CLOSED`，固定 pair=`612c2f5887a2e6b3a8b3138d9ae9b193c20e298f / 34183851797`。Phase6 L4/L5/L6已接受，Phase6=`ACCEPTED / COMPLETE`；下一工作为Frontend localization / Error UX / Error Catalog consolidation，`NOT_STARTED`；下一动作与任务映射见[STATUS.md](STATUS.md)和[ROADMAP.md](ROADMAP.md)。当前 repository schema=`V51`；历史 Phase5B V46、C1 V47 的接受事实仍按原证据保留，不推断生产 schema。本轮不重跑 C2/PostgreSQL、Full Maven 或 Playwright。Phase7=`NOT_STARTED`；本轮不重新执行已接受的L4/L5/L6资格。
 
 ## 9. Canonical production configuration
 

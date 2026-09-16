@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatey-freeze
 last_frozen_gate_commit=72fbf5e78f217a02b572a54fadb17dea204b594f
 active_gate=GateAUDIT
 active_gate_status=IN_PROGRESS|NOT_FROZEN
-accepted_batch=GateAUDIT-PHASE6-L4
+accepted_batch=GateAUDIT-PHASE6
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=3d103cea2072b3c2d9d1009cc5841c18a958ee80
-accepted_batch_acceptance_head=3d103cea2072b3c2d9d1009cc5841c18a958ee80
-accepted_batch_ci_run=34501806297
-work_batch=NQ-GATEAUDIT-PHASE6-L5-L6-SCOPE-AND-QUALIFICATION-PLAN
+accepted_batch_implementation_commit=dbf9662add09388cd77ca7552de276bb019f0f74
+accepted_batch_acceptance_head=dbf9662add09388cd77ca7552de276bb019f0f74
+accepted_batch_ci_run=35043157675
+work_batch=NQ-GATEAUDIT-FRONTEND-LOCALIZATION-ERROR-UX-CATALOG-IMPLEMENTATION
 work_batch_status=NOT_STARTED
 work_batch_commit=NONE
 work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEAUDIT-PHASE6-L5-L6-SCOPE-AND-QUALIFICATION-PLAN
+next_action=NQ-GATEAUDIT-FRONTEND-LOCALIZATION-ERROR-UX-CATALOG-IMPLEMENTATION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -54,7 +54,7 @@ nq-current-authority:end -->
 - GateAUDIT Phase5 F009：`ACCEPTED / CLOSED`（已接受 / 已关闭），local review=`CLOSED / PASS / P0_0 / P1_0`，P1-1/P1-2/P1-3均CLOSED。首次delivery=`85d11984d0c65b464ffe4858fe7fd1da51885f12`、failed CI=`34024011663`保留为失败历史；remediation/accepted technical head=`dbb8b9c6a2319338f5ca90b566ad494142a55e20`、CI=`34024427455 / completed / success / 9 of 9 / failed 0 / skipped 0 / cancelled 0`。本次authority同步不替换technical pair；详见[F009 post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F009_POST_CI_AUTHORITY_ACCEPTANCE.md)。
 - GateAUDIT Phase5 F001：`ACCEPTED / CLOSED`（已接受 / 已关闭）；remote enforcement事件为ruleset `22381941`创建，目标=`refs/heads/dev`，required checks=9；本轮只读重新验证ACTIVE、effective=YES、missing/unexpected/duplicate=0/0/0、GitHub Actions app=15368，P0=0、P1=0。正式authority acceptance与此前remote mutation分层，详见[F001 post-remote acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_POST_REMOTE_AUTHORITY_ACCEPTANCE.md)。
 - Phase5=`ACCEPTED / CLOSED`：total=9，accepted/closed=8（F001/F002/F003/F004/F006/F007/F008/F009），open/unclosed=1（仅F005 deferred/non-blocking），blocked=0、remaining blocking=0；非延期open=0。F005 internal SBOM/provenance已接受，platform attestation继续`DEFERRED / NON_BLOCKING / DEFERRED_UNTIL_EXPLICIT_AUTHORIZATION`，不伪装成CLOSED。既有ROADMAP闭合条件已满足，machine lifecycle无必须关闭全部deferred项的额外条件。
-- GateAUDIT Phase6=`IN_PROGRESS / NOT_FROZEN`；Phase6 L4=`ACCEPTED`，B0–B5=`ACCEPTED`，B6=`AGGREGATE_ACCEPTED / AGGREGATE_QUALIFICATION_ACCEPTED`。最终 technical SHA=`3d103cea2072b3c2d9d1009cc5841c18a958ee80`，exact-head CI=`34501806297 / 9 of 9 SUCCESS`；current eligible matrix=`28/28 ACCEPTED / missing=0 / invalid=0`，L4范围P0=0、P1=0。完整接受事实见[B6 aggregate evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_B6_AGGREGATE_QUALIFICATION_ACCEPTANCE.md)。本次docs-only authority同步不替代该technical pair，也不表示整个Phase6或GateAUDIT已结束。
+- GateAUDIT Phase6=`ACCEPTED / COMPLETE`；Phase6 L4=`ACCEPTED`，B0–B5=`ACCEPTED`，B6=`AGGREGATE_ACCEPTED / AGGREGATE_QUALIFICATION_ACCEPTED`。最终 technical SHA=`3d103cea2072b3c2d9d1009cc5841c18a958ee80`，exact-head CI=`34501806297 / 9 of 9 SUCCESS`；current eligible matrix=`28/28 ACCEPTED / missing=0 / invalid=0`，L4范围P0=0、P1=0。完整接受事实见[B6 aggregate evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_B6_AGGREGATE_QUALIFICATION_ACCEPTANCE.md)。本次docs-only authority同步不替代该technical pair，Phase6 L5、L6-A、L6-B及L6均已接受，mandatory remaining=0；GateAUDIT整体仍未冻结，Phase7=`NOT_STARTED`。完整矩阵与各技术身份见[Phase6 final acceptance](../audit/evidence/GATEAUDIT_PHASE6_L5_L6_FINAL_ACCEPTANCE.md)。
 
 ## 2. Accepted pilot facts
 
@@ -83,12 +83,12 @@ updated_commit=72fbf5e78f217a02b572a54fadb17dea204b594f
 
 ## 5. 下一允许动作
 
-- Phase6 L5/L6=`NEXT / NOT_STARTED`；下一正式任务=`NQ-GATEAUDIT-PHASE6-L5-L6-SCOPE-AND-QUALIFICATION-PLAN`。目标为后续规模、故障与长期运行验证；先从当前仓库与既有Phase6 planning evidence解析真实scope、能力复用与实现缺口、测试边界和exit criteria，不预设L5/L6子阶段。
-- L4 immutable technical pair=`3d103cea2072b3c2d9d1009cc5841c18a958ee80 / 34501806297`；accepted_batch绑定该pair，不由本次文档提交或其CI替换。不重开L4，不重跑B0–B6 qualification或新增Independent Review。
+- Phase6 L4/L5/L6=`ACCEPTED`，Phase6=`ACCEPTED / COMPLETE`。下一正式任务=`NQ-GATEAUDIT-FRONTEND-LOCALIZATION-ERROR-UX-CATALOG-IMPLEMENTATION`，`NOT_STARTED`：Frontend localization → Error UX consolidation → Error Catalog → stable error identity（`NQ-TRD-1001 / ORDER_VERSION_CONFLICT`）；完成后才进入Phase7 final baseline/archive/freeze，Phase7保持`NOT_STARTED`。
+- L4历史technical pair保持`3d103cea2072b3c2d9d1009cc5841c18a958ee80 / 34501806297`；accepted_batch推进为Phase6聚合，绑定最后技术候选`dbf9662add09388cd77ca7552de276bb019f0f74 / 35043157675`（9/9 SUCCESS），不由本次docs提交替换。不重开已接受资格或技术审查。
 - 当前repository schema=`V51`，不推断生产schema；历史migration与接受身份保持不变。
 - P2 ordinary concurrent INSERT loser、P3 wildcard-import residual均为`OPEN / NON_BLOCKING`；不以L4 P0/P1=0宣称全部问题清零。其他历史非阻断残余不在本次重评，原记录保留于[pre-B0 evidence](../audit/evidence/GATEAUDIT_PHASE6_PRE_B0_CI_SAFETY_CURRENT_AUTHORITY_REMEDIATION.md)。
 - P1-1/PB1=`RETIRED_COMPATIBILITY_ONLY`，PB2=`DORMANT_NO_CURRENT_ENTRYPOINT`；14个历史inactive scenario与其他future obligations不计PASS。仅在路径重新canonical时重新评估reachability，不为覆盖率复活入口，详见[B6 aggregate evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_B6_AGGREGATE_QUALIFICATION_ACCEPTANCE.md)。
-- 本次授权仅docs-only同步及精确commit/push；后续L5/L6尚未开始，生产、LIVE、真实provider和资金操作仍无授权。
+- 本次仅docs-only authority同步及精确commit/push/CI；不实施下一工作包，不启动Phase7，生产、LIVE、真实provider和资金操作仍无授权。
 
 ## 6. F009 acceptance provenance
 
