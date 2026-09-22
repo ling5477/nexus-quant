@@ -61,9 +61,13 @@ python -m ruff check .
 - `/api/auth/login` 失败：确认后端已启动、DB migration 已完成、local admin 用户配置与认证数据源一致。
 - `/api/auth/me` 失败：确认请求携带 `<redacted-authorization-header-example>`，并先通过 `/api/auth/login` 获取 token。
 
-## 8. GateAUDIT Phase5 current boundary
+## 8. GateAUDIT current boundary
 
-Phase5A、Phase5B、F008与F007已由各自immutable technical pair接受；当前work batch与下一动作从[STATUS.md](STATUS.md)读取，F009已ACCEPTED / CLOSED，F001 remote enforcement已ACCEPTED / CLOSED（ruleset 22381941，dev effective 9/9），Phase5 ACCEPTED / CLOSED。Authority reconciliation和后续docs-only同步运行以下一致性检查：
+Phase5A、Phase5B、F008与F007已由各自immutable technical pair接受；F009已ACCEPTED / CLOSED，F001 remote enforcement已ACCEPTED / CLOSED（ruleset 22381941，dev effective 9/9），Phase5 ACCEPTED / CLOSED。
+
+GateAUDIT 当前阶段、accepted/work batch、Phase7 状态与唯一 next action 必须从 [STATUS.md](STATUS.md) 的 machine authority 读取，[ROADMAP.md](ROADMAP.md) 只解释下一允许工作。RUNBOOK 不复制或覆盖动态 lifecycle 值。
+
+Authority reconciliation 和后续 docs-only 同步运行以下一致性检查：
 
 ```powershell
 git status --short
@@ -72,7 +76,7 @@ git diff --check
 git diff --stat
 ```
 
-本阶段不运行真实交易所 HTTP / WebSocket，不读取 credential material，不启动 LIVE，不接 AI / DH runtime。F008/F007/F009 与 C1 保持已接受；C2=`ACCEPTED / CLOSED`，固定 pair=`612c2f5887a2e6b3a8b3138d9ae9b193c20e298f / 34183851797`。Phase6 L4/L5/L6已接受，Phase6=`ACCEPTED / COMPLETE`；下一工作为Frontend localization / Error UX / Error Catalog consolidation，`NOT_STARTED`；下一动作与任务映射见[STATUS.md](STATUS.md)和[ROADMAP.md](ROADMAP.md)。当前 repository schema=`V51`；历史 Phase5B V46、C1 V47 的接受事实仍按原证据保留，不推断生产 schema。本轮不重跑 C2/PostgreSQL、Full Maven 或 Playwright。Phase7=`NOT_STARTED`；本轮不重新执行已接受的L4/L5/L6资格。
+本节不运行真实交易所 HTTP / WebSocket，不读取 credential material，不启动 LIVE，不接 AI / DH runtime。F008/F007/F009 与 C1 保持已接受；C2=`ACCEPTED / CLOSED`，固定 pair=`612c2f5887a2e6b3a8b3138d9ae9b193c20e298f / 34183851797`。Phase6 L4/L5/L6已接受，Phase6=`ACCEPTED / COMPLETE`。当前 repository schema=`V51`；历史 Phase5B V46、C1 V47 的接受事实仍按原证据保留，不推断生产 schema。本节不重跑 C2/PostgreSQL、Full Maven 或 Playwright，也不重新执行已接受的 L4/L5/L6 qualification。
 
 ## 9. Canonical production configuration
 
