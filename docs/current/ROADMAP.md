@@ -58,7 +58,8 @@ NQ-GATEAUDIT-FRONTEND-LOCALIZATION-ERROR-UX-CATALOG-IMPLEMENTATION / COMPLETED /
 NQ-GATEAUDIT-FRONTEND-CONSOLE-VISUAL-SYSTEM-V3-IMPLEMENTATION / ACCEPTED / CI_GREEN
 07453f8b16e798bd580070a3727aa9eb7e88a193 / 35720426791 / 9 of 9 SUCCESS
   ↓
-Phase7-A final baseline inventory IMPLEMENTED / SELF_REVIEWED / CI_PENDING
+Phase7-A final baseline inventory ACCEPTED / CI_GREEN
+baa01f0f0034bb46a24f9fe8f62acf60bb56e3f6 / 35729125034 / 9 of 9 SUCCESS
   ↓
 Phase7 B-F governance taxonomy normalization REQUIRED BEFORE PHASE7-B
   ↓
@@ -140,7 +141,7 @@ L5 A/B/C与Kill-under-load已接受，20/20、missing=0、invalid=0；L6-A 60min
 
 Future trigger：对应retired/dormant路径再次成为canonical时，重新运行R1–R4 reachability，不能自动恢复blocking finding或新增compatibility caller。历史失败pair=`378de657ac33b9f9fd666288d489181ac0147b2e / 34038345304`保持FAILED DELIVERY；接受的是后续remediation pair，详见[authority acceptance evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_PLAN_POST_CI_AUTHORITY_TRANSITION_TO_C1.md)。
 
-当前依赖为 **Phase6 ACCEPTED → Frontend localization / Error UX / Error Catalog / stable error identity ACCEPTED → NQ Console Visual System V3 ACCEPTED → Phase7-A final baseline inventory implemented/self-reviewed → precise commit → exact-head CI → authority acceptance**。UI V3 固定 technical pair=`07453f8b16e798bd580070a3727aa9eb7e88a193 / 35720426791`，不由 Phase7-A docs candidate 替换。Phase7-A inventory 已完成 21 行 acceptance owner、17 组 technical/CI binding、ancestry、17 行 residual、historical projection handoff、release boundary 与 B～F taxonomy preflight；当前尚未 CI acceptance，不进入 Phase7-B、archive 或 freeze。既有 AntD deprecation 与 JS bundle-size warning 保持 observation；14个历史inactive scenario继续保留future obligation，不算PASS或静默skip。
+当前依赖为 **Phase6 ACCEPTED → Frontend localization / Error UX / Error Catalog / stable error identity ACCEPTED → NQ Console Visual System V3 ACCEPTED → Phase7-A final baseline inventory ACCEPTED / CI_GREEN → governance taxonomy normalization → Phase7-B**。UI V3 固定 technical pair=`07453f8b16e798bd580070a3727aa9eb7e88a193 / 35720426791`，不由 Phase7-A docs candidate 替换。Phase7-A immutable pair=`baa01f0f0034bb46a24f9fe8f62acf60bb56e3f6 / 35729125034 / 9 of 9 SUCCESS`；21 行 acceptance owner、17 组 technical/CI binding、ancestry、17 行 residual、historical projection handoff、release boundary 与 B～F taxonomy preflight均完成。既有 AntD deprecation 与 JS bundle-size warning 保持 observation；14个历史inactive scenario继续保留future obligation，不算PASS或静默skip。
 
 C1接受身份：implementation=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd`；既有独立review=`PASS / PHASE6_L4_C1_VERSIONED_OCC_INDEPENDENT_REVIEW_ACCEPTED / P0_0 / P1_0 / READY_FOR_C1_DELIVERY`；acceptance head=`eb9740b7519f48ffc1e32968cbb0950261b871ef`、CI=`34098902705 / 9/9 SUCCESS`。首次delivery=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd / 34086018265 = FAILED DELIVERY`另行保留；完整证据见[C1 authority acceptance](../audit/evidence/GATEAUDIT_PHASE6_L4_C1_POST_CI_AUTHORITY_TRANSITION_TO_C2.md)。C1历史接受身份不由后续文档同步替代。C2已由`612c2f5887a2e6b3a8b3138d9ae9b193c20e298f / 34183851797`接受关闭，本轮不重复其实现或正确性审查。
 
@@ -153,8 +154,8 @@ C1接受身份：implementation=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd`；既
 - F007 immutable technical acceptance pair=`0e2efdeb236c185dbace67bb22f94c6af64a563a / 34009290836`；implementation与accepted technical head相同，不由本轮docs-only authority commit替代。
 - F009 immutable technical acceptance pair=`dbb8b9c6a2319338f5ca90b566ad494142a55e20 / 34024427455`；首次delivery=`85d11984d0c65b464ffe4858fe7fd1da51885f12`、failed CI=`34024011663`保留，不由后续authority commit替代。
 - F001 remote acceptance绑定ruleset `22381941 / refs/heads/dev / ACTIVE / effective 9/9`；本次只读readback与authority synchronization commit是独立事件，不能写成新的remote mutation。
-- 当前workstream=`NQ-GATEAUDIT-PHASE7-A-FINAL-BASELINE-INVENTORY`，`IMPLEMENTED / SELF_REVIEWED`；source HEAD/tree=`02357cd904af787b410e6ad7cd0fd661980913e4 / ac39412c8ea7e71dd57469b02eafbb98b4050593`，见[Phase7-A inventory](../audit/evidence/GATEAUDIT_PHASE7_A_FINAL_BASELINE_INVENTORY.md)。下一动作=`NQ-GATEAUDIT-PHASE7-A-COMMIT`（`COMMIT / UNIQUE`）；提交及 exact-head CI green 前不得写 ACCEPTED。
-- Phase7 B～F taxonomy preflight：B/D=`UNKNOWN`，C/E=`AMBIGUOUS`，F=`RELEASE / status-incompatible`。这是 `GOVERNANCE_FUTURE_ACTION_CONTRACT_GAP`，不阻断 Phase7-A，但阻止直接进入 Phase7-B。Phase7-A 接受后的唯一后续 action 已由当前 classifier/fixture 验证为 `NQ-GATEAUDIT-PHASE7-GOVERNANCE-TAXONOMY-NORMALIZATION-IMPLEMENTATION / IMPLEMENTATION / UNIQUE / allowed`；本任务不启动它。
+- 当前workstream=`NQ-GATEAUDIT-PHASE7-A-FINAL-BASELINE-INVENTORY`，`ACCEPTED / CI_GREEN`；source HEAD/tree=`02357cd904af787b410e6ad7cd0fd661980913e4 / ac39412c8ea7e71dd57469b02eafbb98b4050593`，delivery pair=`baa01f0f0034bb46a24f9fe8f62acf60bb56e3f6 / 35729125034`，见[Phase7-A inventory](../audit/evidence/GATEAUDIT_PHASE7_A_FINAL_BASELINE_INVENTORY.md)。本次 authority sync commit 不替代该 pair。
+- Phase7 B～F taxonomy preflight：B/D=`UNKNOWN`，C/E=`AMBIGUOUS`，F=`RELEASE / status-incompatible`。这是 `GOVERNANCE_FUTURE_ACTION_CONTRACT_GAP`，不阻断 Phase7-A，但阻止直接进入 Phase7-B。当前唯一下一 action=`NQ-GATEAUDIT-PHASE7-GOVERNANCE-TAXONOMY-NORMALIZATION-IMPLEMENTATION / IMPLEMENTATION / UNIQUE / allowed`；本任务不启动它。
 - Phase5 ACCEPTED/CLOSED，remaining blocking=0；F005仍DEFERRED/NON_BLOCKING，平台attestation须未来显式授权。详见[F001 post-remote acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_POST_REMOTE_AUTHORITY_ACCEPTANCE.md)。
 
 

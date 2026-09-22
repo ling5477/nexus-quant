@@ -1,6 +1,6 @@
 # GateAUDIT Phase7-A Final Baseline Inventory
 
-结论：`PASS / PHASE7_A_FINAL_BASELINE_INVENTORY_IMPLEMENTED / FINAL_ACCEPTANCE_MATRIX_COMPLETE / ACCEPTED_IDENTITIES_VALID / CI_BINDINGS_VALID / ANCESTRY_MATRIX_COMPLETE / RESIDUAL_INVENTORY_COMPLETE / PROJECTION_HANDOFF_DEFINED / RELEASE_BRANCH_PROMOTION_REQUIREMENT_RECORDED / PHASE7_B_F_ACTION_TAXONOMY_PREFLIGHT_RECORDED / P0_0 / P1_0 / CI_PENDING`。
+结论：`PASS / PHASE7_A_FINAL_BASELINE_INVENTORY_ACCEPTED / FINAL_ACCEPTANCE_MATRIX_COMPLETE / ACCEPTED_IDENTITIES_VALID / CI_BINDINGS_VALID / ANCESTRY_MATRIX_COMPLETE / RESIDUAL_INVENTORY_COMPLETE / PROJECTION_HANDOFF_DEFINED / RELEASE_BRANCH_PROMOTION_REQUIREMENT_RECORDED / PHASE7_B_F_ACTION_TAXONOMY_PREFLIGHT_RECORDED / P0_0 / P1_0 / CI_GREEN`。
 
 本文是 Phase7-A 的 canonical inventory 与 evidence locator。它不执行 Phase7-B，不修复 projection，不创建 archive/freeze/tag，不修改治理合同，不访问生产数据库，也不触发真实交易或生产发布。Phase7-A source identity 只是本次 inventory 的输入身份，不是 freeze identity。
 
@@ -158,7 +158,7 @@ Canonical source 为 [L5 aggregate acceptance](phase6-l5/L5_AGGREGATE_QUALIFICAT
 
 ## 9. Verification and Assertions
 
-已执行且通过：current authority validator、next-action fixtures/classifier、accepted Git object checks、candidate ancestry checks、GitHub CI readback、canonical evidence existence checks、targeted doc links、stage-assets validator、精确 staged diff review 与 `git diff --check`。这些治理验证的最终 staged/exact-head 结果记录于 current TESTING/WORKLOG；Full Maven、frontend E2E、L6、load/stress/soak、Docker fault 与 real exchange 均 `NOT_RUN / NOT_REQUIRED`。
+已执行且通过：current authority validator、next-action fixtures/classifier、accepted Git object checks、candidate ancestry checks、GitHub CI readback、canonical evidence existence checks、targeted doc links、stage-assets validator、精确 staged diff review 与 `git diff --check`。Phase7-A inventory delivery commit=`baa01f0f0034bb46a24f9fe8f62acf60bb56e3f6`；exact-head CI=`35729125034 / NQ CI Baseline / completed / success / 9 of 9`，headSha 精确相等。后续 docs-only authority synchronization commit 不替代该 immutable Phase7-A acceptance pair。Full Maven、frontend E2E、L6、load/stress/soak、Docker fault 与 real exchange 均 `NOT_RUN / NOT_REQUIRED`。
 
 ```text
 FINAL_ACCEPTANCE_ROWS=21

@@ -15236,3 +15236,11 @@ Attempt-01=`FAIL / CHANGES_REQUIRED`：P1-01=`INTERPROCESS_DURABILITY_CHECK_ABSE
 - Residual共17行且互斥分类：mandatory Phase7-B closure 1、deferred 1、non-blocking 7、retired 2、dormant 1、future 2、historical-only 1、observation 2。historical projection 的Trade/Ledger source、Position/Snapshot target、owner、comparison与read/repair authority已定义；未访问production/historical external data。
 - 当前 classifier 只读结果：B/D UNKNOWN、C/E AMBIGUOUS、F RELEASE但status-incompatible；future governance gap 不计产品P1。合法替代入口 `NQ-GATEAUDIT-PHASE7-GOVERNANCE-TAXONOMY-NORMALIZATION-IMPLEMENTATION`=`IMPLEMENTATION / UNIQUE / allowed`。治理合同、library、checker/tests均无修改。
 - Full Maven、frontend E2E、L6、load/stress/soak、Docker fault、real exchange均NOT_RUN/NOT_REQUIRED。最终 current-authority、fixtures、targeted links、stage-assets、staged diff与diff-check将在精确暂存后复核；本条为pre-CI，不能宣称exact-head acceptance。
+
+
+## 2026-09-22 — Phase7-A exact-head CI and authority acceptance
+
+- Phase7-A inventory delivery commit=`baa01f0f0034bb46a24f9fe8f62acf60bb56e3f6`，仅包含6个授权docs/current/evidence文件；push到`origin/audit/post-gatey-agent-baseline`成功，未push dev。
+- Exact-head CI run=`35729125034 / NQ CI Baseline / workflow_dispatch / completed / success`，headSha精确等于delivery commit；9个jobs全部success，failed/skipped/cancelled=`0/0/0`。该run只接受Phase7-A inventory delivery，不替代17组历史technical/CI pair。
+- Precommit治理实测：current authority errors0、next-action fixtures failed0、lifecycle 20/20、targeted links 307 checked/errors0/历史warnings123、stage-assets 2031 scanned/175 reviewed exceptions/errors0、staged allowlist 6/6、cached diff-check PASS。warnings均为既存append-only ledger断链降级，本轮新增链接errors=0。
+- Phase7-A正式`ACCEPTED / CI_GREEN`，P0/P1=`0/0`。B～F taxonomy gap保持future governance gap；下一动作固定为已验证合法的normalization IMPLEMENTATION，不启动Phase7-B、projection comparison/repair、archive、freeze或tag。
