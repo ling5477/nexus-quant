@@ -49,6 +49,10 @@
 
 - [前端本地化与错误目录](../error-catalog/README.md)：本批实现范围、兼容错误身份和本地化契约；[验证记录](../error-catalog/VERIFICATION.md)绑定 technical acceptance pair=`1b4c87129f2a79e13e379aa56501042ddd5bd42f / 35684433673`，9/9 SUCCESS；不是第二份运行时 catalog 或 current authority。
 
+- [NQ Console Visual System V3 acceptance](../audit/evidence/GATEAUDIT_FRONTEND_CONSOLE_VISUAL_SYSTEM_V3_ACCEPTANCE.md)：绑定 technical acceptance pair=`07453f8b16e798bd580070a3727aa9eb7e88a193 / 35720426791`，9/9 SUCCESS，并索引[前端视觉系统](FRONTEND_DESIGN_SYSTEM.md)；分类为 `ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。AntD deprecation 与 JS bundle-size warning 保持 observation；STATUS 仍是唯一 current machine authority。
+
+- [Phase7 final baseline plan](../audit/evidence/GATEAUDIT_PHASE7_FINAL_BASELINE_PLAN.md)：`ACCEPTED PLAN / PHASE7_NOT_STARTED`，定义 final acceptance matrix、residual disposition、archive/freeze/tag sequence，并把 UI V3 作为 accepted final-baseline input；分类为 `ACCEPTED_PLAN / NON_RUNTIME_AUTHORITY`，不表示 Phase7 已启动或已冻结。
+
 ## 5. Agent / Governance
 
 - 根 `AGENTS.md`：仓库级入口。
