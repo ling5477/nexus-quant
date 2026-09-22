@@ -14,10 +14,10 @@ accepted_batch_implementation_commit=dbf9662add09388cd77ca7552de276bb019f0f74
 accepted_batch_acceptance_head=dbf9662add09388cd77ca7552de276bb019f0f74
 accepted_batch_ci_run=35043157675
 work_batch=NQ-GATEAUDIT-FRONTEND-LOCALIZATION-ERROR-UX-CATALOG-IMPLEMENTATION
-work_batch_status=REVIEW_ACCEPTED|READY_TO_COMMIT
-work_batch_commit=NONE
-work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEAUDIT-FRONTEND-LOCALIZATION-ERROR-UX-CATALOG-COMMIT
+work_batch_status=ACCEPTED|CI_GREEN
+work_batch_commit=1b4c87129f2a79e13e379aa56501042ddd5bd42f
+work_batch_ci_run=35684433673
+next_action=NQ-GATEAUDIT-PHASE7-FINAL-BASELINE-PLAN
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -83,7 +83,7 @@ updated_commit=72fbf5e78f217a02b572a54fadb17dea204b594f
 
 ## 5. 下一允许动作
 
-- Phase6 L4/L5/L6=`ACCEPTED`，Phase6=`ACCEPTED / COMPLETE`。Frontend localization / Error UX / Error Catalog / stable error identity（`NQ-TRD-1001 / ORDER_VERSION_CONFLICT`）已实现并通过独立审查，P0=0/P1=0，待精确交付；见[验证记录](../error-catalog/VERIFICATION.md)。完成后下一步为 Phase7 planning/final baseline entry；Phase7 保持 `NOT_STARTED`，不自动执行 freeze。
+- Phase6 L4/L5/L6=`ACCEPTED`，Phase6=`ACCEPTED / COMPLETE`。Frontend localization / Error UX / Error Catalog / stable error identity（`NQ-TRD-1001 / ORDER_VERSION_CONFLICT`）工作包 `COMPLETED / ACCEPTED / CI_GREEN`，P0=0/P1=0；technical acceptance pair=`1b4c87129f2a79e13e379aa56501042ddd5bd42f / 35684433673`，exact-head CI=`9/9 SUCCESS`，见[验证记录](../error-catalog/VERIFICATION.md)。下一动作=`NQ-GATEAUDIT-PHASE7-FINAL-BASELINE-PLAN`，仅为 Phase7 planning/final baseline entry；Phase7 保持 `NOT_STARTED`，不自动执行 freeze。
 - L4历史technical pair保持`3d103cea2072b3c2d9d1009cc5841c18a958ee80 / 34501806297`；accepted_batch推进为Phase6聚合，绑定最后技术候选`dbf9662add09388cd77ca7552de276bb019f0f74 / 35043157675`（9/9 SUCCESS），不由本次docs提交替换。不重开已接受资格或技术审查。
 - 当前repository schema=`V51`，不推断生产schema；历史migration与接受身份保持不变。
 - P2 ordinary concurrent INSERT loser、P3 wildcard-import residual均为`OPEN / NON_BLOCKING`；不以L4 P0/P1=0宣称全部问题清零。其他历史非阻断残余不在本次重评，原记录保留于[pre-B0 evidence](../audit/evidence/GATEAUDIT_PHASE6_PRE_B0_CI_SAFETY_CURRENT_AUTHORITY_REMEDIATION.md)。

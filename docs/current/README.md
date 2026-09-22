@@ -11,7 +11,7 @@
 - Phase 3 findings=`P0 0 / P1 4 / P2 8 / P3 1`；F-001=`95b859ee... / 33347091147`、F-002=`0651a736... / 33387882472`、F-003=`327c2229... / 33399190770`、F-004=`18efc06c... / 33358364678`，均为 `ACCEPTED / CI_GREEN`。
 - Phase4 remaining disposition closeout=`COMPLETE / ACCEPTED / CI_GREEN`，immutable pair=`7ca1fc92... / 33405549149`，blocking P0/P1=`0/0`。
 - Phase5A/Phase5B及P5-F008/P5-F007/P5-F009已接受；F001远端enforcement已接受，Phase5 ACCEPTED/CLOSED，F005 attestation保持DEFERRED/NON_BLOCKING，Phase6 ACCEPTED/COMPLETE，L4/L5/L6已接受，Phase7 NOT_STARTED；各固定pair与安全边界以[STATUS.md](STATUS.md)为准。
-- 当前 work batch 为 Frontend localization / Error UX / Error Catalog consolidation，已实现并通过独立审查，待精确交付。下一动作由[STATUS.md](STATUS.md)唯一机器区块决定，[ROADMAP.md](ROADMAP.md)解释；L4/L5/L6已接受，Phase7未开始。
+- 当前 work batch 为 Frontend localization / Error UX / Error Catalog consolidation，`COMPLETED / ACCEPTED / CI_GREEN`，见[验证记录](../error-catalog/VERIFICATION.md)。下一动作由[STATUS.md](STATUS.md)唯一机器区块决定，[ROADMAP.md](ROADMAP.md)解释，进入 Phase7 planning/final baseline entry；L4/L5/L6已接受，Phase7仍未开始。
 - Pilot final：PLACE=1、retry=0、CANCEL=0、activeLease=0、LIVE=false、kill=`ENGAGED`、Attempt-02 未创建。
 - Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->

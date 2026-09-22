@@ -40,6 +40,10 @@
 
 独立审查 `PASS / P0_0 / P1_0`。审查者未参与实现，起止 96 文件指纹均为上述指纹，HEAD 均为基线，stage=0；独立复现 22 个前端测试，在仓库外重新编译六个候选 Java 源并执行 7 个合同测试，全部通过；核验后端 135 项和 E2E 37 项证据。报告位于持久证据目录 `independent-review/REVIEW.md`。技术审查不包含后续 authority 文档和远端交付 CI。
 
-本地 PASS 和独立审查不等于 exact-head CI 或最终接受。真实后端的两个关键浏览器用例由 canonical CI 在隔离环境中执行，本地未对未知既存后端发请求。
+实现及 technical acceptance SHA=`1b4c87129f2a79e13e379aa56501042ddd5bd42f`，canonical [CI 35684433673](https://github.com/ling5477/nexus-quant/actions/runs/35684433673) 为 `completed / success / 9 of 9 / failed 0 / skipped 0`。仓库治理、安全边界、秘密扫描、架构、研究、前端、后端、PostgreSQL/Flyway、交付 SBOM/provenance 均通过；真实后端的两个关键浏览器用例由该 CI 在隔离环境中执行并通过。本地未对未知既存后端发请求。
+
+本批结果：`PASS / FRONTEND_LOCALIZATION_ACCEPTED / ZH_CN_CANONICAL / EN_US_ACCEPTED / ANTD_LOCALE_SYNCHRONIZED / ERROR_UX_CONSOLIDATED / ERROR_CATALOG_ACCEPTED / STABLE_ERROR_IDENTITY_ACCEPTED / NQ_TRD_1001_ORDER_VERSION_CONFLICT_ACCEPTED / RAW_BACKEND_MESSAGE_NOT_PRIMARY_UX / TRACE_ID_PRESERVED / MUTATION_AUTO_RETRY_DISABLED_FOR_VERSION_CONFLICT / PHASE6_ACCEPTED_UNCHANGED / P0_0 / P1_0 / PHASE7_NOT_STARTED`。
+
+后续 current authority 同步提交与其 exact-head CI 是独立的文档交付，不替代上述技术接受 pair。最终文档 HEAD 的 CI readback 单独保留在持久证据目录，避免文档提交自引用尚未产生的自身 SHA/CI。
 
 Phase6 保持 ACCEPTED / COMPLETE；Phase7 保持 NOT_STARTED。最终接受后仅将下一动作推进至 Phase7 planning/final baseline entry，不执行 freeze。

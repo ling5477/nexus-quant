@@ -47,7 +47,7 @@
 
 - [Phase6 L4/L5/L6 final acceptance](../audit/evidence/GATEAUDIT_PHASE6_L5_L6_FINAL_ACCEPTANCE.md)：mandatory矩阵、四组technical/CI身份及本地raw hash/index；`ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。Phase6 ACCEPTED/COMPLETE，Phase7 NOT_STARTED；STATUS是唯一current authority，ROADMAP解释当前下一动作。历史证据中的NOT_STARTED/NOT_ACCEPTED仅代表原时点。
 
-- [前端本地化与错误目录](../error-catalog/README.md)：本批实现范围、兼容错误身份和本地化契约；不是第二份运行时 catalog 或 current authority。
+- [前端本地化与错误目录](../error-catalog/README.md)：本批实现范围、兼容错误身份和本地化契约；[验证记录](../error-catalog/VERIFICATION.md)绑定 technical acceptance pair=`1b4c87129f2a79e13e379aa56501042ddd5bd42f / 35684433673`，9/9 SUCCESS；不是第二份运行时 catalog 或 current authority。
 
 ## 5. Agent / Governance
 
