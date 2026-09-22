@@ -123,6 +123,8 @@ $positiveActions = @(
     @{ Action = 'NQ-WAIT-CI'; Type = 'CI' },
     @{ Action = 'NQ-MODULE-REMEDIATION'; Type = 'FIX' },
     @{ Action = 'NQ-FULL-REPOSITORY-AUDIT-AND-CONSOLIDATION'; Type = 'AUDIT' },
+    @{ Action = 'NQ-FINAL-BASELINE-INVENTORY'; Type = 'AUDIT' },
+    @{ Action = 'NQ-GATEAUDIT-PHASE7-A-FINAL-BASELINE-INVENTORY'; Type = 'AUDIT' },
     @{ Action = 'NONE'; Type = 'NONE' }
 )
 foreach ($case in $positiveActions) {
@@ -143,6 +145,18 @@ foreach ($action in $ambiguousActions) {
 }
 Assert-True (Test-GovernanceNextActionForWorkBatch $contract 'IMPLEMENTED|PENDING_REVIEW' 'Generic-Batch' 'NQ-MODULE-INDEPENDENT-REVIEW' $null) 'Unique review action was rejected.'
 Assert-True (-not (Test-GovernanceNextActionForWorkBatch $contract 'IMPLEMENTED|PENDING_REVIEW' 'Generic-Batch' 'NQ-MODULE-COMMIT' $null)) 'Review gate bypassed.'
+
+$finalBaselineInventory = 'NQ-GATEAUDIT-PHASE7-A-FINAL-BASELINE-INVENTORY'
+Assert-True (Test-GovernanceNextActionForWorkBatch $contract 'ACCEPTED|CI_GREEN' 'Generic-Batch' $finalBaselineInventory $null) 'Accepted work batch rejected final baseline inventory audit.'
+Assert-True (Test-GovernanceNextActionForWorkBatch $contract 'NOT_STARTED' 'Generic-Batch' $finalBaselineInventory $null) 'Not-started work batch rejected final baseline inventory audit.'
+Assert-True (-not (Test-GovernanceNextActionForWorkBatch $contract 'IMPLEMENTED|PENDING_REVIEW' 'Generic-Batch' $finalBaselineInventory $null)) 'Review gate accepted final baseline inventory audit.'
+Write-Output 'PASS final-baseline-inventory=accepted-ci-green-and-not-started type=AUDIT'
+
+foreach ($action in @('NQ-MODULE-INVENTORY', 'NQ-INVENTORY', 'NQ-GATEAUDIT-INVENTORY')) {
+    Assert-True ((Get-GovernanceNextActionType $contract $action) -ceq 'UNKNOWN') "Generic inventory action was classified: $action"
+    Assert-True (-not (Test-GovernanceNextActionForWorkBatch $contract 'ACCEPTED|CI_GREEN' 'Generic-Batch' $action $null)) "Generic inventory action was accepted: $action"
+    Write-Output "PASS generic-inventory=$action result=UNKNOWN"
+}
 
 $base = @'
 # Current Status Fixture
@@ -259,5 +273,5 @@ foreach ($forbidden in @('PlanPath', 'Attempt-13', 'GATEW-specific', 'GateV defa
     Assert-True (-not $checkerText.Contains($forbidden)) "Gate-specific checker residue found: $forbidden"
 }
 
-Write-Output 'SUMMARY current-authority-next-action positive-actions=7 ambiguous-actions=4 safety-negative=9 schema-negative=4 whitespace-negative=5 failed=0'
+Write-Output 'SUMMARY current-authority-next-action positive-actions=9 ambiguous-actions=4 final-baseline-statuses=3 generic-inventory-negative=3 safety-negative=9 schema-negative=4 whitespace-negative=5 failed=0'
 exit 0

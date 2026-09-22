@@ -57,7 +57,7 @@ try {
 }
 
 $runtimeText = [System.IO.File]::ReadAllText($contractPath) + [System.IO.File]::ReadAllText((Join-Path $PSScriptRoot 'governance-workflow-lib.ps1'))
-Assert-True ($runtimeText -notmatch '(?i)Gate[WXY]|Attempt[-_ ]?(?:09|10|11|12|13)|NQ-GATE[WXY]-') 'Task-specific runtime rule remains.'
+Assert-True ($runtimeText -notmatch '(?i)Gate[WXY]|Phase7|Attempt[-_ ]?(?:09|10|11|12|13)|NQ-GATE[WXY]-') 'Task-specific runtime rule remains.'
 foreach ($lifecycle in @('ordinary', 'highRisk', 'ciFailed', 'blocked', 'freeze', 'release', 'soak')) {
     Assert-True ($null -ne (Get-GovernancePropertyValue $contract.lifecycles $lifecycle)) "Lifecycle missing: $lifecycle"
 }

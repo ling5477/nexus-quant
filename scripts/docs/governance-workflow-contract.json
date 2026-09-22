@@ -72,7 +72,7 @@
       "FROZEN|ACCEPTED|TAGGED": { "commitPattern": "^[0-9a-f]{40}$", "ciPattern": "^[0-9]+$" }
     },
     "nextActionTypes": [
-      { "name": "AUDIT", "pattern": "(?i)(^|-)FULL-REPOSITORY-AUDIT(?:-|$)|(^|-)REPOSITORY-AUDIT(?:-|$)" },
+      { "name": "AUDIT", "pattern": "(?i)(^|-)FULL-REPOSITORY-AUDIT(?:-|$)|(^|-)REPOSITORY-AUDIT(?:-|$)|(^|-)FINAL-BASELINE-INVENTORY(?:-|$)" },
       { "name": "FREEZE", "pattern": "(?i)(^|-)FREEZE(?:-|$)" },
       { "name": "RELEASE", "pattern": "(?i)(^|-)RELEASE(?:-|$)|(^|-)TAG(?:-|$)" },
       { "name": "CI", "pattern": "(?i)(^|-)CI(?:-|$)|(^|-)WAIT-CI(?:-|$)" },
