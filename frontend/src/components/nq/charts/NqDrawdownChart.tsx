@@ -1,3 +1,5 @@
+import {t} from '@/i18n';
+import {useTranslation} from 'react-i18next';
 import {useMemo} from 'react';
 
 import {useEChart} from '@/components/nq/charts/useEChart';
@@ -21,6 +23,7 @@ interface NqDrawdownChartProps {
 }
 
 export function NqDrawdownChart({data, height = 180}: NqDrawdownChartProps) {
+    const {i18n} = useTranslation();
     const option = useMemo(() => {
         if (data.length === 0) {
             return null;
@@ -52,7 +55,7 @@ export function NqDrawdownChart({data, height = 180}: NqDrawdownChartProps) {
             },
             series: [
                 {
-                    name: '回撤',
+                    name: t('chart.drawdown'),
                     type: 'line',
                     showSymbol: false,
                     data: sorted.map((item) => Number(item.drawdown) * 100),
@@ -62,7 +65,7 @@ export function NqDrawdownChart({data, height = 180}: NqDrawdownChartProps) {
                 },
             ],
         };
-    }, [data]);
+    }, [data, i18n.resolvedLanguage]);
 
     const containerRef = useEChart(option);
 

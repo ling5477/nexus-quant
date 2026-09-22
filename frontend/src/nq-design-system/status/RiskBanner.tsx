@@ -1,3 +1,4 @@
+import {useTranslation} from 'react-i18next';
 // RiskBanner.tsx — 页级阻断/熔断/警报横幅(B0 / Design Tokens v2)。放页头下方,不可藏角落。
 import type { ReactNode } from 'react';
 
@@ -19,7 +20,9 @@ export interface RiskBannerProps {
 }
 
 export function RiskBanner({ severity, message, actions, onDismiss }: RiskBannerProps) {
-  const { color, label } = SEV[severity];
+  const {t} = useTranslation();
+  const {color} = SEV[severity];
+  const label = t(`risk.${severity}`);
   return (
     <div
       role="alert"
@@ -39,7 +42,7 @@ export function RiskBanner({ severity, message, actions, onDismiss }: RiskBanner
       {onDismiss && (
         <button
           onClick={onDismiss}
-          aria-label="dismiss"
+          aria-label={t('risk.dismiss')}
           style={{ background: 'transparent', border: 'none', color: 'var(--nq-text-tertiary)', cursor: 'pointer', fontSize: 14 }}
         >
           ×

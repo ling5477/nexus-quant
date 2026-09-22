@@ -3,6 +3,7 @@ import type {ReactNode} from 'react';
 
 import {formatApiError} from '@/api/errors';
 import type {AppApiError} from '@/types/api';
+import {useTranslation} from 'react-i18next';
 
 /**
  * Nq 状态组件族 — 空态 / 错误态 / 加载态统一表达。
@@ -33,16 +34,18 @@ interface NqErrorStateProps {
     onRetry?: () => void;
 }
 
-export function NqErrorState({title = '查询失败', error, description, onRetry}: NqErrorStateProps) {
+export function NqErrorState({title, error, description, onRetry}: NqErrorStateProps) {
+    const {t} = useTranslation();
     return (
         <Alert
             type="error"
             showIcon
-            message={title}
+            data-error-presentation="PAGE_STATE_ERROR"
+            message={title ?? t('queryFailed')}
             description={description ?? (error ? formatApiError(error) : undefined)}
             action={onRetry ? (
                 <Button size="small" onClick={onRetry}>
-                    重试
+                    {t('retry')}
                 </Button>
             ) : undefined}
         />
@@ -53,11 +56,12 @@ interface NqLoadingStateProps {
     message?: string;
 }
 
-export function NqLoadingState({message = '加载中...'}: NqLoadingStateProps) {
+export function NqLoadingState({message}: NqLoadingStateProps) {
+    const {t} = useTranslation();
     return (
         <Space size={8} style={{padding: '8px 0'}}>
             <Spin size="small"/>
-            <Typography.Text type="secondary">{message}</Typography.Text>
+            <Typography.Text type="secondary">{message ?? t('loading')}</Typography.Text>
         </Space>
     );
 }

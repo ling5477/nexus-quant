@@ -1,3 +1,5 @@
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {Alert, Button, Card, Space, Table, Tag, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 
@@ -25,35 +27,35 @@ function statusPresentation(status: string): LabeledTone {
     switch (status) {
         case 'READY':
             // 当前 baseline 不会出现；保留映射但不作为默认。
-            return {label: '就绪 READY', color: 'green'};
+            return {label: t('pages:readyReady'), color: 'green'};
         case 'NOT_READY':
-            return {label: '未就绪 NOT_READY', color: 'red'};
+            return {label: t('pages:notReadyNotReady'), color: 'red'};
         case 'NO_REAL':
-            return {label: '模拟·无真实 NO_REAL', color: 'default'};
+            return {label: t('pages:simulationOnlyNoReal'), color: 'default'};
         case 'DISABLED_SENTINEL':
-            return {label: '端点禁用 DISABLED_SENTINEL', color: 'orange'};
+            return {label: t('pages:endpointDisabledDisabledSentinel'), color: 'orange'};
         case 'CREDENTIAL_UNCONFIGURED':
-            return {label: '凭证未配置 CREDENTIAL_UNCONFIGURED', color: 'orange'};
+            return {label: t('pages:credentialsNotConfiguredCredentialUnconfigured'), color: 'orange'};
         case 'LIVE_NOT_AUTHORIZED':
-            return {label: 'LIVE 未授权 LIVE_NOT_AUTHORIZED', color: 'red'};
+            return {label: t('pages:liveNotAuthorizedLiveNotAuthorized'), color: 'red'};
         case 'CAPABILITY_NOT_IMPLEMENTED':
-            return {label: '能力未实现 CAPABILITY_NOT_IMPLEMENTED', color: 'orange'};
+            return {label: t('pages:capabilityNotImplementedCapabilityNotImplemented'), color: 'orange'};
         case 'UNKNOWN_REQUIRES_REVIEW':
-            return {label: '未知需复核 UNKNOWN_REQUIRES_REVIEW', color: 'red'};
+            return {label: t('pages:unknownReviewRequiredUnknownRequiresReview'), color: 'red'};
         default:
-            return {label: `未就绪 ${status}`, color: 'red'};
+            return {label: t('pages:notReadyValue1', {value1: status}), color: 'red'};
     }
 }
 
 const REASON_LABELS: Record<string, string> = {
-    NO_REAL_DISABLED: 'Noop 无真实能力',
-    ENDPOINT_DISABLED_SENTINEL: '端点禁用 sentinel',
-    CREDENTIALS_MISSING: '凭证未配置',
-    REAL_PROVIDER_NOT_IMPLEMENTED: '真实 provider 未实现',
-    LIVE_DISABLED: 'LIVE 已禁用',
-    CAPABILITY_FORBIDDEN_IN_GATEL: '当前阶段禁止',
-    RAW_PAYLOAD_SUPPRESSED: '原始负载已抑制',
-    UNKNOWN_REQUIRES_REVIEW: '未知需复核',
+    get NO_REAL_DISABLED() { return t('pages:noopHasNoRealCapability'); },
+    get ENDPOINT_DISABLED_SENTINEL() { return t('pages:endpointDisabledSentinel'); },
+    get CREDENTIALS_MISSING() { return t('pages:credentialsNotConfigured'); },
+    get REAL_PROVIDER_NOT_IMPLEMENTED() { return t('pages:realProviderNotImplemented2'); },
+    get LIVE_DISABLED() { return t('pages:liveDisabled3'); },
+    get CAPABILITY_FORBIDDEN_IN_GATEL() { return t('pages:prohibitedInTheCurrentPhase'); },
+    get RAW_PAYLOAD_SUPPRESSED() { return t('pages:rawPayloadSuppressed'); },
+    get UNKNOWN_REQUIRES_REVIEW() { return t('pages:unknownReviewRequired'); },
 };
 
 function reasonLabel(reason: string): string {
@@ -63,7 +65,7 @@ function reasonLabel(reason: string): string {
 function buildColumns(): ColumnsType<AdapterReadinessItem> {
     return [
         {
-            title: 'Venue',
+            title: t('pages:venue'),
             dataIndex: 'venue',
             key: 'venue',
             width: 130,
@@ -72,14 +74,14 @@ function buildColumns(): ColumnsType<AdapterReadinessItem> {
             ),
         },
         {
-            title: 'Capability',
+            title: t('pages:capability'),
             dataIndex: 'capability',
             key: 'capability',
             width: 200,
             render: (capability: string) => <Text code>{capability}</Text>,
         },
         {
-            title: '状态 Status',
+            title: t('pages:status2'),
             dataIndex: 'status',
             key: 'status',
             width: 280,
@@ -89,29 +91,29 @@ function buildColumns(): ColumnsType<AdapterReadinessItem> {
             },
         },
         {
-            title: '可用 Allowed',
+            title: t('pages:allowed'),
             dataIndex: 'allowed',
             key: 'allowed',
             width: 130,
             render: (allowed: boolean) => (
                 allowed
-                    ? <Tag color="green">可用</Tag>
-                    : <Tag color="red">不可用</Tag>
+                    ? <Tag color="green">{t('pages:available')}</Tag>
+                    : <Tag color="red">{t('pages:unavailable')}</Tag>
             ),
         },
         {
-            title: 'LIVE 授权',
+            title: t('pages:liveAuthorization'),
             dataIndex: 'liveAuthorized',
             key: 'liveAuthorized',
             width: 140,
             render: (liveAuthorized: boolean) => (
                 liveAuthorized
-                    ? <Tag color="green">LIVE 已授权</Tag>
-                    : <Tag color="red">LIVE 未授权</Tag>
+                    ? <Tag color="green">{t('pages:liveAuthorized')}</Tag>
+                    : <Tag color="red">{t('pages:liveNotAuthorized')}</Tag>
             ),
         },
         {
-            title: '原因 Reasons',
+            title: t('pages:reasons'),
             dataIndex: 'reasons',
             key: 'reasons',
             width: 320,
@@ -124,7 +126,7 @@ function buildColumns(): ColumnsType<AdapterReadinessItem> {
             ),
         },
         {
-            title: '说明 Message',
+            title: t('pages:explanation'),
             dataIndex: 'message',
             key: 'message',
             render: (message: string) => <Text type="secondary">{message}</Text>,
@@ -141,6 +143,7 @@ function buildColumns(): ColumnsType<AdapterReadinessItem> {
  * 失败态显示 "readiness API unavailable" 并按 fail-closed 处理，绝不回退成可用 / 可交易。
  */
 export function AdapterReadinessPage() {
+    useTranslation('pages');
     const readinessQuery = useAdapterReadinessQuery();
     const items = readinessQuery.data?.items ?? [];
 
@@ -148,34 +151,33 @@ export function AdapterReadinessPage() {
         <Space direction="vertical" size={16} style={{display: 'flex'}}>
             <Card className="page-card" bordered={false}>
                 <PageHero
-                    title="Adapter Readiness"
-                    description="只读查看各交易所适配器与能力的运行时 readiness。当前为 No-Real / LIVE 禁用基线：所有交易所能力均未就绪、不可真实交易、不可真实下单/撤单/行情订阅。"
-                    badge="只读 · 安全边界"
+                    title={t('pages:adapterReadiness')}
+                    description={t('pages:readOnlyRuntimeReadinessForExchangeAdaptersAndCapabilitiesUnderTheNoRealLiveDisabledBaselineCapabili')}
+                    badge={t('pages:readOnlySafetyBoundaries')}
                 />
             </Card>
 
             <Alert
                 type="warning"
                 showIcon
-                message="当前所有交易所适配器未就绪（NOT READY / NOT FROZEN / NOT AUTHORIZED）"
-                description="LIVE 已禁用，OKX / Binance 不可真实下单、撤单或行情订阅；Noop / Paper / Sim 为模拟无真实能力。本页仅展示只读 readiness 状态，不提供任何真实交易入口。"
+                message={t('pages:allExchangeAdaptersAreNotReadyNotFrozenNotAuthorized')}
+                description={t('pages:liveIsDisabledOkxBinanceCannotPlaceOrCancelRealOrdersOrSubscribeToMarketDataNoopPaperSimAreSimulatio')}
             />
 
             <Card
                 className="page-section"
                 bordered={false}
-                title="Adapter readiness 状态"
+                title={t('pages:adapterReadinessStatus')}
                 extra={(
                     <Space size={12}>
                         {readinessQuery.data?.generatedAt ? (
-                            <Text type="secondary">生成时间：{formatDateTime(readinessQuery.data.generatedAt)}</Text>
+                            <Text type="secondary">{t('pages:generatedAt2')}{formatDateTime(readinessQuery.data.generatedAt)}</Text>
                         ) : null}
                         <Button
                             onClick={() => readinessQuery.refetch()}
                             loading={readinessQuery.isFetching}
                         >
-                            刷新
-                        </Button>
+                            {t('pages:refresh')}</Button>
                     </Space>
                 )}
             >
@@ -183,12 +185,10 @@ export function AdapterReadinessPage() {
                     <Alert
                         type="error"
                         showIcon
-                        message="readiness API unavailable"
+                        message={t('pages:readinessApiUnavailable')}
                         description={(
                             <Paragraph style={{marginBottom: 0}}>
-                                未能获取 adapter readiness；按安全策略一律视为<strong>未就绪（fail-closed）</strong>，
-                                不代表任何 venue 已就绪或允许下单。请稍后重试或联系运维。
-                                <br />
+                                {t('pages:adapterReadinessCouldNotBeRetrievedSafetyPolicyTreatsItAs')}<strong>{t('pages:notReadyFailClosed')}</strong>{t('pages:noVenueIsConsideredReadyOrPermittedToPlaceOrdersTryAgainLaterOrContactOperations')}<br />
                                 <Text type="secondary">{formatApiError(readinessQuery.error as AppApiError)}</Text>
                             </Paragraph>
                         )}
@@ -201,7 +201,7 @@ export function AdapterReadinessPage() {
                         loading={readinessQuery.isLoading || readinessQuery.isFetching}
                         pagination={false}
                         scroll={{x: 1280}}
-                        locale={{emptyText: '暂无 adapter readiness 数据'}}
+                        locale={{emptyText: t('pages:noAdapterReadinessData')}}
                     />
                 )}
             </Card>

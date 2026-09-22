@@ -1,3 +1,5 @@
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {Alert, Space, Typography} from 'antd';
 
 import {usePaperAutoReviewsQuery, usePaperStrategyEvaluationsQuery} from '@/hooks/usePaperTradingQuery';
@@ -20,6 +22,7 @@ import {PaperStrategyEvaluationDashboard} from './components/PaperStrategyEvalua
  * - 页面切换只走 React Router 挂载卸载，不做交叉 refetch。
  */
 export function PaperReviewsPage() {
+    useTranslation('pages');
     const strategyEvaluationsQuery = usePaperStrategyEvaluationsQuery();
     const autoReviewsQuery = usePaperAutoReviewsQuery();
 
@@ -28,22 +31,20 @@ export function PaperReviewsPage() {
             <Alert
                 type="info"
                 showIcon
-                message="Paper-only reviews · Strategy evaluation + rules-based auto review"
+                message={t('pages:paperOnlyReviewsStrategyEvaluationAndRuleBasedReviews')}
                 description={(
                     <Typography.Text type="secondary">
-                        本页只消费 Paper strategy evaluations 与 auto reviews 两个只读 query；no investment advice，
-                        不代表 LIVE 或真实交易表现，也不读取 credential 或访问真实交易所。
-                    </Typography.Text>
+                        {t('pages:thisPageReadsPaperStrategyEvaluationsAndAutomatedReviewsOnlyItProvidesNoInvestmentAdviceOrLivePerfor')}</Typography.Text>
                 )}
             />
 
-            <section aria-label="Strategy Evaluation Dashboard">
-                <Typography.Text strong>Section A · Strategy Evaluation Dashboard</Typography.Text>
+            <section aria-label={t('pages:strategyEvaluationDashboard')}>
+                <Typography.Text strong>{t('pages:sectionAStrategyEvaluationDashboard')}</Typography.Text>
                 <PaperStrategyEvaluationDashboard query={strategyEvaluationsQuery}/>
             </section>
 
-            <section aria-label="Auto Review Dashboard">
-                <Typography.Text strong>Section B · Auto Review Dashboard</Typography.Text>
+            <section aria-label={t('pages:automatedReviewDashboard')}>
+                <Typography.Text strong>{t('pages:sectionBAutomatedReviewDashboard')}</Typography.Text>
                 <PaperAutoReviewDashboard query={autoReviewsQuery}/>
             </section>
         </Space>

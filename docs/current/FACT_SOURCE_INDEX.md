@@ -45,7 +45,9 @@
 
 - [C1 post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_C1_POST_CI_AUTHORITY_TRANSITION_TO_C2.md)：保留implementation、独立review、failed delivery和accepted exact-head CI，正式关闭P1-2并打开C2/P1-3入口；分类为`ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。该历史时点canonical blocking P1=1；后续C2与L4/L5/L6已接受，当前数量由STATUS表达，技术身份与authority synchronization commit分层；STATUS仍是唯一machine authority。
 
-- [Phase6 L4/L5/L6 final acceptance](../audit/evidence/GATEAUDIT_PHASE6_L5_L6_FINAL_ACCEPTANCE.md)：mandatory矩阵、四组technical/CI身份及本地raw hash/index；`ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。Phase6 ACCEPTED/COMPLETE，Phase7 NOT_STARTED；STATUS是唯一current authority，ROADMAP拥有Frontend/Error consolidation下一动作。历史证据中的NOT_STARTED/NOT_ACCEPTED仅代表原时点。
+- [Phase6 L4/L5/L6 final acceptance](../audit/evidence/GATEAUDIT_PHASE6_L5_L6_FINAL_ACCEPTANCE.md)：mandatory矩阵、四组technical/CI身份及本地raw hash/index；`ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。Phase6 ACCEPTED/COMPLETE，Phase7 NOT_STARTED；STATUS是唯一current authority，ROADMAP解释当前下一动作。历史证据中的NOT_STARTED/NOT_ACCEPTED仅代表原时点。
+
+- [前端本地化与错误目录](../error-catalog/README.md)：本批实现范围、兼容错误身份和本地化契约；不是第二份运行时 catalog 或 current authority。
 
 ## 5. Agent / Governance
 

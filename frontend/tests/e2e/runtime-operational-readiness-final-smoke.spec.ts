@@ -124,6 +124,7 @@ async function loginWithoutAccountFixture(page: Page): Promise<LoginSession> {
     expect(Array.isArray(session.roles), 'final smoke requires roles from /api/auth/login').toBeTruthy();
 
     await page.addInitScript((payload: LoginSession) => {
+        window.localStorage.setItem('nq.locale', 'en-US');
         window.localStorage.setItem('nexus-quant.console.auth', JSON.stringify(payload));
     }, session);
 
@@ -205,7 +206,7 @@ test.describe('runtime operational readiness final smoke', () => {
 
         const overview = page.getByTestId('operational-readiness-overview');
         await expect(overview).toBeVisible();
-        await expect(overview.getByText('Operational Readiness', {exact: true})).toBeVisible();
+        await expect(overview.getByText('Operational readiness', {exact: true})).toBeVisible();
 
         for (const text of [
             'LIVE status',
@@ -222,8 +223,8 @@ test.describe('runtime operational readiness final smoke', () => {
             'SKIPPED',
             'Operational readiness summary is fail-closed',
             'Actuator health is process health only, not LIVE authorization.',
-            'Runtime UI does not prove real provider readiness',
-            'Paper-only / SKIPPED / NoReal signals are not real-ready.',
+            'Runtime UI does not establish real provider readiness',
+            'Paper-only / SKIPPED / NoReal are not real-ready.',
         ]) {
             await expect(overview).toContainText(text);
         }

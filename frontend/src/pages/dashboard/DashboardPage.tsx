@@ -1,3 +1,5 @@
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {ArrowRightOutlined} from '@ant-design/icons';
 import {Button, Card, Col, List, Row, Space, Tag, Typography} from 'antd';
 import {useMemo} from 'react';
@@ -13,6 +15,7 @@ import {
     usePaperTradingRiskResultsQuery,
 } from '@/hooks/usePaperTradingQuery';
 import {appNavItems} from '@/router/navigation';
+import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import type {AppApiError} from '@/types/api';
 import type {PaperTradingRunItem} from '@/types/paper-trading';
 import {appEnv} from '@/utils/env';
@@ -27,6 +30,7 @@ import {formatDateTime} from '@/utils/formatters';
  * 当前产品口径：仅 Paper Trading，LIVE 能力 disabled。
  */
 export function DashboardPage() {
+    const {i18n: pageI18n} = useTranslation('pages');
     const navigate = useNavigate();
 
     // searchVersion 固定为 1：总览页打开即加载，不需要手动触发查询
@@ -70,7 +74,7 @@ export function DashboardPage() {
     const recentEvents = useMemo(() => {
         const alertEvents = (alertsQuery.data ?? []).slice(0, 5).map((alert) => ({
             key: `alert-${alert.alertId}`,
-            kind: '告警',
+            kind: t('pages:alert'),
             status: alert.status,
             tone: alert.status === 'OPEN' ? ('danger' as const) : undefined,
             title: alert.title,
@@ -78,7 +82,7 @@ export function DashboardPage() {
         }));
         const recoveryEvents = (recoveryEventsQuery.data ?? []).slice(0, 5).map((event) => ({
             key: `recovery-${event.recoveryEventId}`,
-            kind: '恢复',
+            kind: t('pages:recovery'),
             status: event.status,
             tone: undefined,
             title: event.recoveryType + (event.reason ? `：${event.reason}` : ''),
@@ -88,45 +92,45 @@ export function DashboardPage() {
         return [...alertEvents, ...recoveryEvents]
             .sort((left, right) => new Date(right.time).getTime() - new Date(left.time).getTime())
             .slice(0, 8);
-    }, [alertsQuery.data, recoveryEventsQuery.data]);
+    }, [alertsQuery.data, recoveryEventsQuery.data, pageI18n.resolvedLanguage]);
 
     // 安全横幅级别：失败 run / CRITICAL 告警 > 未处理告警 / 心跳滞后 > 正常运行 > 无 run
     const banner = useMemo(() => {
         if (runsQuery.error) {
             return {
                 level: 'danger' as const,
-                message: '无法获取 Paper Trading 运行状态',
-                description: '运行列表查询失败，系统安全状态未知，请优先排查 API 与后端服务。',
+                message: t('pages:unableToRetrievePaperTradingStatus'),
+                description: t('pages:theRunQueryFailedAndSystemSafetyIsUnknownCheckTheApiAndBackendServiceFirst'),
             };
         }
         if (failedCount > 0 || openCriticalCount > 0) {
             return {
                 level: 'danger' as const,
-                message: failedCount > 0 ? `存在 ${failedCount} 个 FAILED Paper Run` : '存在未处理的 CRITICAL 告警',
-                description: '请进入模拟交易页面处理失败运行与告警后再继续观察。',
+                message: failedCount > 0 ? t('pages:failedPaperRuns', {count: failedCount}) : t('pages:unresolvedCriticalAlerts'),
+                description: t('pages:reviewFailedRunsAndAlertsOnThePaperTradingPageBeforeContinuing'),
             };
         }
         if (openAlerts.length > 0 || latestHeartbeat?.status === 'LAGGING' || latestHeartbeat?.status === 'STOPPED') {
             return {
                 level: 'warning' as const,
-                message: openAlerts.length > 0 ? `存在 ${openAlerts.length} 条未处理告警` : '焦点 run 心跳异常',
-                description: '系统仍在运行，但存在需要人工确认的风险信号。',
+                message: openAlerts.length > 0 ? t('pages:unresolvedAlertCount', {count: openAlerts.length}) : t('pages:focusedRunHeartbeatIsAbnormal'),
+                description: t('pages:theSystemIsRunningButRiskSignalsRequireManualReview'),
             };
         }
         if (runningCount > 0) {
             return {
                 level: 'success' as const,
-                message: 'Paper Trading 运行正常',
-                description: '当前无 FAILED run、无未处理告警，心跳正常。',
+                message: t('pages:paperTradingIsRunningNormally'),
+                description: t('pages:noFailedRunsOrUnresolvedAlertsTheHeartbeatIsNormal'),
             };
         }
 
         return {
             level: 'info' as const,
-            message: '当前没有运行中的 Paper Run',
-            description: '系统处于待机状态，可在模拟交易页面创建并启动 Paper Run。',
+            message: t('pages:noActivePaperRun'),
+            description: t('pages:theSystemIsIdleCreateAndStartAPaperRunOnThePaperTradingPage'),
         };
-    }, [failedCount, latestHeartbeat, openAlerts.length, openCriticalCount, runningCount, runsQuery.error]);
+    }, [failedCount, latestHeartbeat, openAlerts.length, openCriticalCount, runningCount, runsQuery.error, pageI18n.resolvedLanguage]);
 
     const focusLoading = Boolean(focusRunId) && dailyReportsQuery.isPending;
 
@@ -134,14 +138,14 @@ export function DashboardPage() {
         <Space direction="vertical" size={12} style={{display: 'flex'}}>
             <Card className="page-card" bordered={false}>
                 <NqPageHeader
-                    title="控制台总览"
-                    description="安全总览：系统健康、当前环境、Paper Trading 运行状态与风险信号。"
+                    title={t('pages:dashboard')}
+                    description={t('pages:safetyOverviewOfSystemHealthTheCurrentEnvironmentPaperTradingStatusAndRiskSignals')}
                     badge={<Tag color="processing">{appEnv.envLabel}</Tag>}
                     tip={(
                         <NqRiskBanner
                             level={banner.level}
                             message={banner.message}
-                            description={`${banner.description} 环境：${appEnv.envLabel} · LIVE 交易未开启 · 交易模式：Paper Trading（模拟交易）。`}
+                            description={t('pages:dashboardEnvironmentBoundary', {description: banner.description, environment: appEnv.envLabel})}
                         />
                     )}
                 />
@@ -149,7 +153,7 @@ export function DashboardPage() {
 
             <div className="nq-status-strip">
                 <NqMetricCard
-                    label="Paper Run 总数"
+                    label={t('pages:totalPaperRuns')}
                     value={runsQuery.isPending ? '-' : formatNqNumber(runs.length, {precision: 0})}
                     loading={runsQuery.isPending}
                 />
@@ -166,21 +170,21 @@ export function DashboardPage() {
                     loading={runsQuery.isPending}
                 />
                 <NqMetricCard
-                    label="运行策略数量"
+                    label={t('pages:runningStrategies')}
                     value={formatNqNumber(runningStrategyCount, {precision: 0})}
                     loading={runsQuery.isPending}
                 />
                 <NqMetricCard
-                    label="未处理告警"
+                    label={t('pages:unresolvedAlerts')}
                     value={focusRunId ? formatNqNumber(openAlerts.length, {precision: 0}) : '-'}
                     tone={openAlerts.length > 0 ? 'warning' : 'muted'}
-                    footer={focusRunId ? '焦点 run 范围' : '暂无 Paper Run'}
+                    footer={focusRunId ? t('pages:focusedRunScope') : t('pages:noPaperRuns')}
                     loading={Boolean(focusRunId) && alertsQuery.isPending}
                 />
                 <NqMetricCard
-                    label="心跳状态"
+                    label={t('pages:heartbeatStatus')}
                     value={latestHeartbeat ? <NqStatusTag status={latestHeartbeat.status}/> : '-'}
-                    footer={latestHeartbeat ? formatDateTime(latestHeartbeat.heartbeatTime) : '焦点 run 范围'}
+                    footer={latestHeartbeat ? formatDateTime(latestHeartbeat.heartbeatTime) : t('pages:focusedRunScope')}
                     loading={Boolean(focusRunId) && heartbeatsQuery.isPending}
                 />
             </div>
@@ -189,43 +193,42 @@ export function DashboardPage() {
                 data-testid="dashboard-runtime-readiness-card"
                 className="page-section"
                 bordered={false}
-                title="Runtime Readiness"
+                title={t('pages:runtimeReadiness')}
                 extra={<NqStatusTag status="LIVE_DISABLED" tone="danger"/>}
             >
                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
                     <NqRiskBanner
                         level="warning"
-                        message="Runtime guarded: LIVE disabled"
-                        description="Dashboard 仅展示当前运行边界摘要，不提供交易执行入口。Paper-ready、DB-fresh 与 permission probe SKIPPED 都不构成 real-ready。"
+                        message={t('pages:runtimeGuardedLiveDisabled')}
+                        description={t('pages:theDashboardSummarizesRuntimeBoundariesAndHasNoTradingExecutionEntryPaperReadyDbFreshAndPermissionPr')}
                     />
                     <div className="nq-status-strip">
                         <NqMetricCard
                             label="LIVE"
-                            value={<NqStatusTag status="Disabled" tone="danger"/>}
+                            value={<StatusTag status="Disabled" label={t('pages:disabled')} tone="danger" title="" variant="pill"/>}
                             tone="danger"
                         />
                         <NqMetricCard
-                            label="Real provider"
-                            value={<NqStatusTag status="Not implemented" tone="warning"/>}
+                            label={t('pages:realProvider')}
+                            value={<StatusTag status="Not implemented" label={t('pages:notImplemented')} tone="warning" title="" variant="pill"/>}
                             tone="warning"
                         />
                         <NqMetricCard
-                            label="Paper"
-                            value={<NqStatusTag status="Simulated only" tone="info"/>}
+                            label={t('pages:paper')}
+                            value={<StatusTag status="Simulated only" label={t('pages:simulationOnly')} tone="info" title="" variant="pill"/>}
                             tone="muted"
                         />
                         <NqMetricCard
-                            label="Permission probe"
-                            value={<NqStatusTag status="Skipped / NoReal" tone="neutral"/>}
+                            label={t('pages:permissionProbe')}
+                            value={<StatusTag status="Skipped / NoReal" label={t('pages:skippedNoReal')} tone="neutral" title="" variant="pill"/>}
                             tone="muted"
                         />
                     </div>
                     <Typography.Text type="secondary">
-                        NoReal/Fake/Stub/FutureReal not live-ready. Permission probe SKIPPED / disabled is not verified.
-                    </Typography.Text>
+                        {t('pages:norealFakeStubFuturerealAreNotLiveReadyASkippedOrDisabledPermissionProbeIsNotVerified')}</Typography.Text>
                     <Space size={12} wrap>
-                        <Link to="/runtime/readiness">View Runtime Readiness</Link>
-                        <Link to="/marketdata">View MarketData Readiness</Link>
+                        <Link to="/runtime/readiness">{t('pages:viewRuntimeReadiness')}</Link>
+                        <Link to="/marketdata">{t('pages:viewMarketDataReadiness')}</Link>
                     </Space>
                 </Space>
             </Card>
@@ -235,7 +238,7 @@ export function DashboardPage() {
                     <Card
                         className="page-section"
                         bordered={false}
-                        title="焦点 Paper Run 绩效"
+                        title={t('pages:focusedPaperRunPerformance')}
                         extra={focusRun ? (
                             <Typography.Text type="secondary" className="nq-mono">
                                 {focusRun.paperRunId}
@@ -243,56 +246,55 @@ export function DashboardPage() {
                         ) : null}
                     >
                         {!focusRun ? (
-                            <NqEmptyState description="暂无 Paper Run，创建并启动后这里展示最新日报指标。"/>
+                            <NqEmptyState description={t('pages:createAndStartAPaperRunToSeeItsLatestDailyMetricsHere')}/>
                         ) : !latestDailyReport && !focusLoading ? (
-                            <NqEmptyState description="焦点 run 暂无日报数据，可在模拟交易详情页生成日报。"/>
+                            <NqEmptyState description={t('pages:noDailyReportForTheFocusedRunGenerateOneFromPaperTradingDetails')}/>
                         ) : (
                             <div className="nq-status-strip">
                                 <NqMetricCard
-                                    label="总权益"
+                                    label={t('pages:totalEquity')}
                                     value={formatNqNumber(latestDailyReport?.totalEquity, {precision: 2})}
                                     loading={focusLoading}
                                 />
                                 <NqMetricCard
-                                    label="今日盈亏"
+                                    label={t('pages:todaySPnl')}
                                     value={formatNqNumber(latestDailyReport?.dailyPnl, {precision: 2, signed: true})}
                                     tone={Number(latestDailyReport?.dailyPnl ?? 0) > 0 ? 'up' : Number(latestDailyReport?.dailyPnl ?? 0) < 0 ? 'down' : 'default'}
                                     loading={focusLoading}
                                 />
                                 <NqMetricCard
-                                    label="日收益率"
+                                    label={t('pages:dailyReturn')}
                                     value={<NqPercentText value={latestDailyReport?.dailyReturn} ratio colorBySign/>}
                                     loading={focusLoading}
                                 />
                                 <NqMetricCard
-                                    label="最大回撤"
+                                    label={t('pages:maximumDrawdown')}
                                     value={<NqPercentText value={latestDailyReport?.maxDrawdown} ratio signed={false}/>}
                                     tone="warning"
                                     loading={focusLoading}
                                 />
                                 <NqMetricCard
-                                    label="风控状态"
+                                    label={t('pages:riskStatus')}
                                     value={latestRiskResult ? <NqStatusTag status={latestRiskResult.status}/> : '-'}
-                                    footer={latestRiskResult ? latestRiskResult.checkType : '暂无风控检查结果'}
+                                    footer={latestRiskResult ? latestRiskResult.checkType : t('pages:noRiskCheckResults')}
                                     loading={Boolean(focusRunId) && riskResultsQuery.isPending}
                                 />
                             </div>
                         )}
                         {latestDailyReport ? (
                             <Typography.Paragraph type="secondary" style={{margin: '12px 0 0', fontSize: 12}}>
-                                数据来源：{latestDailyReport.reportDate} 日报（生成于 {formatDateTime(latestDailyReport.generatedAt)}）。
-                            </Typography.Paragraph>
+                                {t('pages:dataSource')}{latestDailyReport.reportDate} {t('pages:dailyReportGeneratedAt')}{formatDateTime(latestDailyReport.generatedAt)}{t('pages:sentenceClose')}</Typography.Paragraph>
                         ) : null}
                     </Card>
                 </Col>
                 <Col xs={24} xl={10}>
-                    <Card className="page-section" bordered={false} title="最近事件">
+                    <Card className="page-section" bordered={false} title={t('pages:recentEvents')}>
                         {!focusRunId ? (
-                            <NqEmptyState description="暂无 Paper Run，事件流为空。"/>
+                            <NqEmptyState description={t('pages:noPaperRunsTheEventFeedIsEmpty')}/>
                         ) : alertsQuery.error ? (
-                            <NqErrorState title="事件查询失败" error={alertsQuery.error as AppApiError}/>
+                            <NqErrorState title={t('pages:failedToQueryEvents')} error={alertsQuery.error as AppApiError}/>
                         ) : recentEvents.length === 0 ? (
-                            <NqEmptyState description="焦点 run 暂无告警与恢复事件。"/>
+                            <NqEmptyState description={t('pages:noAlertsOrRecoveryEventsForTheFocusedRun')}/>
                         ) : (
                             <List
                                 size="small"
@@ -317,7 +319,7 @@ export function DashboardPage() {
                 </Col>
             </Row>
 
-            <Card className="page-section" bordered={false} title="业务入口">
+            <Card className="page-section" bordered={false} title={t('pages:workspaces')}>
                 <Row gutter={[12, 12]}>
                     {appNavItems
                         .filter((item) => item.key !== 'dashboard')
@@ -337,8 +339,7 @@ export function DashboardPage() {
                                             {item.description}
                                         </Typography.Paragraph>
                                         <Button type="link" size="small" icon={<ArrowRightOutlined/>} style={{paddingInline: 0}}>
-                                            进入页面
-                                        </Button>
+                                            {t('pages:openPage')}</Button>
                                     </Space>
                                 </Card>
                             </Col>

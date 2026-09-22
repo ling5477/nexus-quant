@@ -1,3 +1,5 @@
+import {t} from '@/i18n';
+import {useTranslation} from 'react-i18next';
 import { useEffect, useMemo, useRef } from 'react';
 import {
   CandlestickSeries,
@@ -28,12 +30,13 @@ export function NqKlineChart({
   error = null,
   stale = false,
   staleDetail,
-  sourceLabel = 'Kline source',
+  sourceLabel = t('chart.klineSource'),
   convention = DEFAULT_MARKET_CONVENTION,
-  title = 'K-line',
-  emptyText = '暂无 K 线数据',
+  title = t('chart.kline'),
+  emptyText = t('chart.klineEmpty'),
   className,
 }: NqChartBaseProps) {
+    useTranslation();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const data = useMemo(() => toCandlestickData(bars), [bars]);
@@ -88,7 +91,7 @@ export function NqKlineChart({
         ) : null}
       </div>
       <div ref={containerRef} className="nq-chart__canvas" style={{height: height - 34}}/>
-      {loading ? <div className="nq-chart__state">K 线加载中</div> : null}
+      {loading ? <div className="nq-chart__state">{t('chart.klineLoading')}</div> : null}
       {!loading && !errorText && data.length === 0 ? <div className="nq-chart__state">{emptyText}</div> : null}
       {errorText ? <div className="nq-chart__state nq-chart__state--error">{errorText}</div> : null}
     </div>

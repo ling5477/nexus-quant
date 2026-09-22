@@ -14,10 +14,10 @@ accepted_batch_implementation_commit=dbf9662add09388cd77ca7552de276bb019f0f74
 accepted_batch_acceptance_head=dbf9662add09388cd77ca7552de276bb019f0f74
 accepted_batch_ci_run=35043157675
 work_batch=NQ-GATEAUDIT-FRONTEND-LOCALIZATION-ERROR-UX-CATALOG-IMPLEMENTATION
-work_batch_status=NOT_STARTED
+work_batch_status=REVIEW_ACCEPTED|READY_TO_COMMIT
 work_batch_commit=NONE
 work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEAUDIT-FRONTEND-LOCALIZATION-ERROR-UX-CATALOG-IMPLEMENTATION
+next_action=NQ-GATEAUDIT-FRONTEND-LOCALIZATION-ERROR-UX-CATALOG-COMMIT
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -83,12 +83,12 @@ updated_commit=72fbf5e78f217a02b572a54fadb17dea204b594f
 
 ## 5. 下一允许动作
 
-- Phase6 L4/L5/L6=`ACCEPTED`，Phase6=`ACCEPTED / COMPLETE`。下一正式任务=`NQ-GATEAUDIT-FRONTEND-LOCALIZATION-ERROR-UX-CATALOG-IMPLEMENTATION`，`NOT_STARTED`：Frontend localization → Error UX consolidation → Error Catalog → stable error identity（`NQ-TRD-1001 / ORDER_VERSION_CONFLICT`）；完成后才进入Phase7 final baseline/archive/freeze，Phase7保持`NOT_STARTED`。
+- Phase6 L4/L5/L6=`ACCEPTED`，Phase6=`ACCEPTED / COMPLETE`。Frontend localization / Error UX / Error Catalog / stable error identity（`NQ-TRD-1001 / ORDER_VERSION_CONFLICT`）已实现并通过独立审查，P0=0/P1=0，待精确交付；见[验证记录](../error-catalog/VERIFICATION.md)。完成后下一步为 Phase7 planning/final baseline entry；Phase7 保持 `NOT_STARTED`，不自动执行 freeze。
 - L4历史technical pair保持`3d103cea2072b3c2d9d1009cc5841c18a958ee80 / 34501806297`；accepted_batch推进为Phase6聚合，绑定最后技术候选`dbf9662add09388cd77ca7552de276bb019f0f74 / 35043157675`（9/9 SUCCESS），不由本次docs提交替换。不重开已接受资格或技术审查。
 - 当前repository schema=`V51`，不推断生产schema；历史migration与接受身份保持不变。
 - P2 ordinary concurrent INSERT loser、P3 wildcard-import residual均为`OPEN / NON_BLOCKING`；不以L4 P0/P1=0宣称全部问题清零。其他历史非阻断残余不在本次重评，原记录保留于[pre-B0 evidence](../audit/evidence/GATEAUDIT_PHASE6_PRE_B0_CI_SAFETY_CURRENT_AUTHORITY_REMEDIATION.md)。
 - P1-1/PB1=`RETIRED_COMPATIBILITY_ONLY`，PB2=`DORMANT_NO_CURRENT_ENTRYPOINT`；14个历史inactive scenario与其他future obligations不计PASS。仅在路径重新canonical时重新评估reachability，不为覆盖率复活入口，详见[B6 aggregate evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_B6_AGGREGATE_QUALIFICATION_ACCEPTANCE.md)。
-- 本次仅docs-only authority同步及精确commit/push/CI；不实施下一工作包，不启动Phase7，生产、LIVE、真实provider和资金操作仍无授权。
+- 本批只实施前端本地化、统一错误展示和兼容附加错误身份，并完成对应审查与交付；不启动Phase7，生产、LIVE、真实provider和资金操作仍无授权。
 
 ## 6. F009 acceptance provenance
 

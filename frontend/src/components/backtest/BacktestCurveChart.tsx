@@ -1,3 +1,5 @@
+import {t} from '@/i18n';
+import {useTranslation} from 'react-i18next';
 import {useEffect, useRef} from 'react';
 
 import {echarts} from '@/components/nq/charts/echarts-core';
@@ -29,6 +31,7 @@ interface BacktestCurveChartProps {
  * 3) 卸载时 dispose,ResizeObserver 自适应,避免泄漏。
  */
 export function BacktestCurveChart({points, height = 260, kind = 'equity', unavailableText}: BacktestCurveChartProps) {
+    useTranslation();
     const containerRef = useRef<HTMLDivElement | null>(null);
     const hasData = Array.isArray(points) && points.length > 0;
 
@@ -89,7 +92,7 @@ export function BacktestCurveChart({points, height = 260, kind = 'equity', unava
                     background: 'var(--nq-bg-panel)',
                 }}
             >
-                {unavailableText ?? '暂无时间序列数据'}
+                {unavailableText ?? t('chart.empty')}
             </div>
         );
     }

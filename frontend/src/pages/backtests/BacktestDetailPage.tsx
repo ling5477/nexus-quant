@@ -1,3 +1,5 @@
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {Alert, Button, Card, Col, Descriptions, Empty, Row, Space, Spin, Typography} from 'antd';
 import {useEffect, useMemo, type ReactNode} from 'react';
 import {useQuery} from '@tanstack/react-query';
@@ -51,6 +53,7 @@ function pickEvaluation(list: BacktestEvaluationListItem[] | undefined): Backtes
 const UNAVAILABLE = '—';
 
 function MetricCard({label, children}: {label: string; children: ReactNode}) {
+    useTranslation('pages');
     return (
         <Card size="small" variant="outlined" style={{height: '100%'}}>
             <div style={{fontSize: 12, color: 'var(--nq-text-tertiary)', marginBottom: 4}}>{label}</div>
@@ -60,6 +63,7 @@ function MetricCard({label, children}: {label: string; children: ReactNode}) {
 }
 
 export function BacktestDetailPage() {
+    useTranslation('pages');
     const navigate = useNavigate();
     const {backtestConfigId} = useParams<{backtestConfigId: string}>();
     const configId = backtestConfigId ?? '';
@@ -143,10 +147,10 @@ export function BacktestDetailPage() {
 
     // 无 runId / 错误 / 空快照的明确原因(不编造曲线)。
     const curveUnavailable = !runId
-        ? '所选评估缺少 backtestRunId,无法定位回测运行的权益序列。'
+        ? t('pages:theSelectedEvaluationHasNoBacktestrunidSoItsEquitySeriesCannotBeLocated')
         : pnlLive.status === 'error'
-            ? pnlLive.errorReason ?? '权益快照加载失败。'
-            : '该回测运行暂无权益快照(sim_pnl_snapshots 为空)。';
+            ? pnlLive.errorReason ?? t('pages:failedToLoadEquitySnapshots')
+            : t('pages:thisBacktestRunHasNoEquitySnapshotsSimPnlSnapshotsIsEmpty');
 
     const refreshAll = () => {
         void configQuery.refetch();
@@ -157,16 +161,16 @@ export function BacktestDetailPage() {
     };
 
     if (!configId) {
-        return <Alert type="error" showIcon message="缺少 backtestConfigId 路由参数。"/>;
+        return <Alert type="error" showIcon message={t('pages:theBacktestconfigidRouteParameterIsMissing')}/>;
     }
 
     const freshnessDetail = evaluation?.evaluatedAt
-        ? `评估于 ${formatDateTime(evaluation.evaluatedAt)}`
+        ? t('pages:evaluatedAtTime', {time: formatDateTime(evaluation.evaluatedAt)})
         : evalLive.status === 'error'
-            ? evalLive.errorReason ?? '加载失败'
+            ? evalLive.errorReason ?? t('pages:loadingFailed')
             : evalReportId
-                ? '加载中'
-                : '尚无评估';
+                ? t('pages:loading2')
+                : t('pages:noEvaluations');
 
     return (
         <Space direction="vertical" size={16} style={{display: 'flex'}}>
@@ -176,8 +180,7 @@ export function BacktestDetailPage() {
                     <Col>
                         <Space direction="vertical" size={2}>
                             <Typography.Title level={4} style={{margin: 0}}>
-                                回测详情可视化
-                            </Typography.Title>
+                                {t('pages:backtestVisualization')}</Typography.Title>
                             <Typography.Text type="secondary">
                                 {config?.name ? `${config.name} · ` : ''}
                                 <Typography.Text code copyable={{text: configId}}>{configId}</Typography.Text>
@@ -186,12 +189,11 @@ export function BacktestDetailPage() {
                     </Col>
                     <Col>
                         <Space size={12} wrap>
-                            <DataFreshness source="回测评估" state={evalLive.freshnessState} detail={freshnessDetail} inline/>
+                            <DataFreshness source={t('pages:backtestEvaluation')} state={evalLive.freshnessState} detail={freshnessDetail} inline/>
                             {selectedEvaluation && <StatusCell status={selectedEvaluation.evaluationStatus}/>}
-                            <Button onClick={() => navigate('/backtests')}>返回列表</Button>
+                            <Button onClick={() => navigate('/backtests')}>{t('pages:backToList')}</Button>
                             <Button type="primary" onClick={refreshAll} loading={evalLive.isFetching || configQuery.isFetching}>
-                                刷新
-                            </Button>
+                                {t('pages:refresh')}</Button>
                         </Space>
                     </Col>
                 </Row>
@@ -205,78 +207,78 @@ export function BacktestDetailPage() {
                 <Alert
                     type="error"
                     showIcon
-                    message="回测配置加载失败"
+                    message={t('pages:failedToLoadBacktestConfiguration')}
                     description={formatApiError(configQuery.error as AppApiError)}
-                    action={<Button size="small" onClick={() => configQuery.refetch()}>重试</Button>}
+                    action={<Button size="small" onClick={() => configQuery.refetch()}>{t('pages:retry')}</Button>}
                 />
             ) : (
                 <>
                     {/* 关键指标摘要 */}
-                    <Card className="page-section" variant="borderless" title="关键指标摘要">
+                    <Card className="page-section" variant="borderless" title={t('pages:keyMetrics')}>
                         {evaluationsQuery.isLoading ? (
                             <Spin/>
                         ) : evaluationsQuery.error ? (
                             <Alert
                                 type="error"
                                 showIcon
-                                message="评估列表加载失败"
+                                message={t('pages:failedToLoadEvaluations')}
                                 description={formatApiError(evaluationsQuery.error as AppApiError)}
                             />
                         ) : !selectedEvaluation ? (
-                            <Empty description="尚无评估结果。请先运行回测并执行评估后再查看指标。"/>
+                            <Empty description={t('pages:runABacktestAndEvaluateItBeforeViewingMetrics')}/>
                         ) : (
                             <Row gutter={[12, 12]}>
                                 <Col xs={12} md={8} xl={6}>
-                                    <MetricCard label="总收益">
+                                    <MetricCard label={t('pages:totalReturn')}>
                                         {evaluation?.totalReturn != null
                                             ? <ChangeCell value={evaluation.totalReturn} precision={2}/>
                                             : UNAVAILABLE}
                                     </MetricCard>
                                 </Col>
                                 <Col xs={12} md={8} xl={6}>
-                                    <MetricCard label="总收益率">
+                                    <MetricCard label={t('pages:totalReturnRate')}>
                                         {evaluation?.totalReturnRate != null
                                             ? <ChangeCell value={evaluation.totalReturnRate} percent ratio/>
                                             : UNAVAILABLE}
                                     </MetricCard>
                                 </Col>
                                 <Col xs={12} md={8} xl={6}>
-                                    <MetricCard label="最大回撤">
+                                    <MetricCard label={t('pages:maximumDrawdown')}>
                                         {evaluation?.maxDrawdownRate != null
                                             ? <PercentCell value={evaluation.maxDrawdownRate} ratio signed={false} colorBySign={false}/>
                                             : UNAVAILABLE}
                                     </MetricCard>
                                 </Col>
                                 <Col xs={12} md={8} xl={6}>
-                                    <MetricCard label="夏普比率">
+                                    <MetricCard label={t('pages:sharpeRatio')}>
                                         {evaluation?.sharpeRatio != null
                                             ? <NumberCell value={evaluation.sharpeRatio} precision={2}/>
                                             : UNAVAILABLE}
                                     </MetricCard>
                                 </Col>
                                 <Col xs={12} md={8} xl={6}>
-                                    <MetricCard label="胜率">
+                                    <MetricCard label={t('pages:winRate')}>
                                         {evaluation?.winRate != null
                                             ? <PercentCell value={evaluation.winRate} ratio signed={false}/>
                                             : UNAVAILABLE}
                                     </MetricCard>
                                 </Col>
                                 <Col xs={12} md={8} xl={6}>
-                                    <MetricCard label="成交笔数">
+                                    <MetricCard label={t('pages:tradeCount')}>
                                         {evaluation?.tradeCount != null
                                             ? <NumberCell value={evaluation.tradeCount} precision={0}/>
                                             : UNAVAILABLE}
                                     </MetricCard>
                                 </Col>
                                 <Col xs={12} md={8} xl={6}>
-                                    <MetricCard label="净盈亏">
+                                    <MetricCard label={t('pages:netPnl')}>
                                         {evaluation?.netPnl != null
                                             ? <ChangeCell value={evaluation.netPnl} precision={2}/>
                                             : UNAVAILABLE}
                                     </MetricCard>
                                 </Col>
                                 <Col xs={12} md={8} xl={6}>
-                                    <MetricCard label="期末权益">
+                                    <MetricCard label={t('pages:closingEquity')}>
                                         {evaluation?.finalEquity != null
                                             ? <MoneyCell value={evaluation.finalEquity} precision={2}/>
                                             : UNAVAILABLE}
@@ -285,25 +287,24 @@ export function BacktestDetailPage() {
                             </Row>
                         )}
                         <Typography.Text type="secondary" style={{display: 'block', marginTop: 8, fontSize: 12}}>
-                            比率字段(收益率 / 回撤率 / 胜率)按后端比例值 ×100 展示;若后端已是百分比口径需后端对齐。
-                        </Typography.Text>
+                            {t('pages:returnDrawdownAndWinRatiosAreDisplayedAsBackendRatios100BackendValuesMustUseTheSameRatioConvention')}</Typography.Text>
                     </Card>
 
                     {/* 权益 / 回撤曲线:真实来源 GET /api/backtest-runs/{runId}/pnl-snapshots;回撤客户端派生 */}
                     <Card
                         className="page-section"
                         variant="borderless"
-                        title="权益 / 回撤曲线"
+                        title={t('pages:equityAndDrawdownCurves')}
                         extra={runId ? (
                             <DataFreshness
-                                source="权益序列"
+                                source={t('pages:equitySeries')}
                                 state={pnlLive.freshnessState}
                                 detail={
                                     pnlLive.status === 'error'
-                                        ? pnlLive.errorReason ?? '加载失败'
+                                        ? pnlLive.errorReason ?? t('pages:loadingFailed')
                                         : snapshots
-                                            ? `${snapshots.length} 点 · ${pnlLive.latencyMs ?? '-'}ms`
-                                            : '加载中'
+                                            ? t('pages:seriesPointsLatency', {count: snapshots.length, latency: pnlLive.latencyMs ?? '-'})
+                                            : t('pages:loading2')
                                 }
                                 inline
                             />
@@ -312,66 +313,62 @@ export function BacktestDetailPage() {
                         <Row gutter={[16, 16]}>
                             <Col xs={24} xl={12}>
                                 <div style={{fontSize: 12, color: 'var(--nq-text-tertiary)', marginBottom: 4}}>
-                                    权益曲线(equity)
-                                </div>
+                                    {t('pages:equityCurve')}</div>
                                 <BacktestCurveChart points={equityPoints} kind="equity" unavailableText={curveUnavailable}/>
                             </Col>
                             <Col xs={24} xl={12}>
                                 <div style={{fontSize: 12, color: 'var(--nq-text-tertiary)', marginBottom: 4}}>
-                                    回撤曲线(equity − 运行峰值,≤0)
-                                </div>
+                                    {t('pages:drawdownCurveEquityMinusRunningPeak0')}</div>
                                 <BacktestCurveChart points={drawdownPoints} kind="drawdown" unavailableText={curveUnavailable}/>
                             </Col>
                         </Row>
                         <Typography.Text type="secondary" style={{display: 'block', marginTop: 8, fontSize: 12}}>
-                            来源:GET /api/backtest-runs/{'{runId}'}/pnl-snapshots(sim_pnl_snapshots,按 snapshotTime 升序);
-                            回撤为客户端派生 equity − 运行峰值(≤0),口径同后端 DrawdownCalculator。
-                        </Typography.Text>
+                            {t('pages:sourceGetApiBacktestRuns')}{'{runId}'}{t('pages:pnlSnapshotsSimPnlSnapshotsOrderedBySnapshottimeAscendingDrawdownIsDerivedAsEquityMinusTheRunningPea')}</Typography.Text>
                     </Card>
 
                     {/* 交易 / 风险摘要(聚合,复用 B0.2 列组件) */}
-                    <Card className="page-section" variant="borderless" title="交易 / 风险摘要">
+                    <Card className="page-section" variant="borderless" title={t('pages:tradeAndRiskSummary')}>
                         {!evaluation ? (
-                            <Empty description="尚无评估明细。"/>
+                            <Empty description={t('pages:noEvaluationDetails')}/>
                         ) : (
-                            <table className={nqTableClassName('standard')} aria-label="交易风险摘要">
+                            <table className={nqTableClassName('standard')} aria-label={t('pages:tradeRiskSummary')}>
                                 <thead>
                                     <tr>
-                                        <th>指标</th>
-                                        <th className="nq-ds-col-num">值</th>
-                                        <th>指标</th>
-                                        <th className="nq-ds-col-num">值</th>
+                                        <th>{t('pages:metric')}</th>
+                                        <th className="nq-ds-col-num">{t('pages:value')}</th>
+                                        <th>{t('pages:metric')}</th>
+                                        <th className="nq-ds-col-num">{t('pages:value')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td>订单数</td>
+                                        <td>{t('pages:orderCount')}</td>
                                         <td className="nq-ds-col-num"><NumberCell value={evaluation.orderCount} precision={0}/></td>
-                                        <td>成交数</td>
+                                        <td>{t('pages:tradeCount2')}</td>
                                         <td className="nq-ds-col-num"><NumberCell value={evaluation.tradeCount} precision={0}/></td>
                                     </tr>
                                     <tr>
-                                        <td>盈利笔数</td>
+                                        <td>{t('pages:winningTrades')}</td>
                                         <td className="nq-ds-col-num"><NumberCell value={evaluation.winningTradeCount} precision={0}/></td>
-                                        <td>亏损笔数</td>
+                                        <td>{t('pages:losingTrades')}</td>
                                         <td className="nq-ds-col-num"><NumberCell value={evaluation.losingTradeCount} precision={0}/></td>
                                     </tr>
                                     <tr>
-                                        <td>持平笔数</td>
+                                        <td>{t('pages:breakEvenTrades')}</td>
                                         <td className="nq-ds-col-num"><NumberCell value={evaluation.flatTradeCount} precision={0}/></td>
-                                        <td>盈亏比</td>
+                                        <td>{t('pages:profitLossRatio')}</td>
                                         <td className="nq-ds-col-num"><NumberCell value={evaluation.profitLossRatio} precision={2}/></td>
                                     </tr>
                                     <tr>
-                                        <td>已实现盈亏</td>
+                                        <td>{t('pages:realizedPnl')}</td>
                                         <td className="nq-ds-col-num"><ChangeCell value={evaluation.realizedPnl} precision={2}/></td>
-                                        <td>未实现盈亏</td>
+                                        <td>{t('pages:unrealizedPnl')}</td>
                                         <td className="nq-ds-col-num"><ChangeCell value={evaluation.unrealizedPnl} precision={2}/></td>
                                     </tr>
                                     <tr>
-                                        <td>总手续费</td>
+                                        <td>{t('pages:totalFees')}</td>
                                         <td className="nq-ds-col-num"><MoneyCell value={evaluation.totalFee} precision={2}/></td>
-                                        <td>总滑点</td>
+                                        <td>{t('pages:totalSlippage')}</td>
                                         <td className="nq-ds-col-num"><MoneyCell value={evaluation.totalSlippage} precision={2}/></td>
                                     </tr>
                                 </tbody>
@@ -382,70 +379,70 @@ export function BacktestDetailPage() {
                                 style={{marginTop: 12}}
                                 type="warning"
                                 showIcon
-                                message={`评估失败:${evaluation.failureCode ?? ''}`}
-                                description={evaluation.failureMessage}
+                                message={t('pages:evaluationFailure', {code: evaluation.failureCode ?? ''})}
+                                description={<details><summary>{t('pages:failureDiagnostics')}</summary>{evaluation.failureMessage}</details>}
                             />
                         )}
                     </Card>
 
                     {/* 数据集快照 */}
-                    <Card className="page-section" variant="borderless" title="数据集快照">
+                    <Card className="page-section" variant="borderless" title={t('pages:datasetSnapshot')}>
                         {!config?.datasetId ? (
-                            <Empty description="该回测配置尚未绑定数据集。"/>
+                            <Empty description={t('pages:noDatasetIsBoundToThisBacktestConfiguration')}/>
                         ) : datasetsQuery.isLoading ? (
                             <Spin/>
                         ) : !dataset ? (
                             <Alert
                                 type="warning"
                                 showIcon
-                                message="未在数据集目录中找到绑定的数据集"
+                                message={t('pages:theBoundDatasetWasNotFoundInTheCatalog')}
                                 description={`Dataset ID: ${config.datasetId}`}
                             />
                         ) : (
                             <Descriptions bordered column={2} size="small">
-                                <Descriptions.Item label="标的">{dataset.exchangeCode} {dataset.symbol}</Descriptions.Item>
-                                <Descriptions.Item label="周期">{dataset.interval}</Descriptions.Item>
-                                <Descriptions.Item label="区间" span={2}>
+                                <Descriptions.Item label={t('pages:instrument')}>{dataset.exchangeCode} {dataset.symbol}</Descriptions.Item>
+                                <Descriptions.Item label={t('pages:interval')}>{dataset.interval}</Descriptions.Item>
+                                <Descriptions.Item label={t('pages:range')} span={2}>
                                     {formatDateTime(dataset.startTime)} ~ {formatDateTime(dataset.endTime)}
                                 </Descriptions.Item>
-                                <Descriptions.Item label="Bar 数量">
+                                <Descriptions.Item label={t('pages:barCount')}>
                                     <NumberCell value={dataset.barCount} precision={0}/>
                                 </Descriptions.Item>
-                                <Descriptions.Item label="缺口数量">
+                                <Descriptions.Item label={t('pages:gapCount')}>
                                     <NumberCell value={dataset.gapCount} precision={0}/>
                                 </Descriptions.Item>
-                                <Descriptions.Item label="质量状态"><StatusCell status={dataset.qualityStatus}/></Descriptions.Item>
-                                <Descriptions.Item label="数据集状态"><StatusCell status={dataset.status}/></Descriptions.Item>
+                                <Descriptions.Item label={t('pages:qualityStatus')}><StatusCell status={dataset.qualityStatus}/></Descriptions.Item>
+                                <Descriptions.Item label={t('pages:datasetStatus')}><StatusCell status={dataset.status}/></Descriptions.Item>
                             </Descriptions>
                         )}
                     </Card>
 
                     {/* 参数 / 策略 / 配置快照 */}
-                    <Card className="page-section" variant="borderless" title="参数 / 策略快照">
+                    <Card className="page-section" variant="borderless" title={t('pages:parameterAndStrategySnapshots')}>
                         <Descriptions bordered column={2} size="small">
-                            <Descriptions.Item label="策略版本 ID" span={2}>
+                            <Descriptions.Item label={t('pages:strategyVersionId')} span={2}>
                                 {config?.strategyVersionId
                                     ? <Typography.Text copyable>{config.strategyVersionId}</Typography.Text>
-                                    : '未绑定'}
+                                    : t('pages:notBound')}
                             </Descriptions.Item>
-                            <Descriptions.Item label="回测区间" span={2}>
+                            <Descriptions.Item label={t('pages:backtestRange')} span={2}>
                                 {config ? `${formatDateTime(config.startTime)} ~ ${formatDateTime(config.endTime)}` : UNAVAILABLE}
                             </Descriptions.Item>
-                            <Descriptions.Item label="初始资金">
+                            <Descriptions.Item label={t('pages:initialCapital')}>
                                 {config?.initialCapital != null
                                     ? <MoneyCell value={config.initialCapital} precision={2}/>
                                     : UNAVAILABLE}
                             </Descriptions.Item>
-                            <Descriptions.Item label="创建时间">
+                            <Descriptions.Item label={t('pages:createdAt')}>
                                 {config ? formatDateTime(config.createdAt) : UNAVAILABLE}
                             </Descriptions.Item>
-                            <Descriptions.Item label="参数快照(paramSnapshotJson)" span={2}>
+                            <Descriptions.Item label={t('pages:parameterSnapshotParamsnapshotjson')} span={2}>
                                 <JsonSnapshot value={config?.paramSnapshotJson}/>
                             </Descriptions.Item>
-                            <Descriptions.Item label="策略版本快照(strategyVersionSnapshotJson)" span={2}>
+                            <Descriptions.Item label={t('pages:strategyVersionSnapshotStrategyversionsnapshotjson')} span={2}>
                                 <JsonSnapshot value={config?.strategyVersionSnapshotJson}/>
                             </Descriptions.Item>
-                            <Descriptions.Item label="配置快照(configSnapshotJson)" span={2}>
+                            <Descriptions.Item label={t('pages:configurationSnapshotConfigsnapshotjson')} span={2}>
                                 <JsonSnapshot value={config?.configSnapshotJson}/>
                             </Descriptions.Item>
                         </Descriptions>
@@ -458,6 +455,7 @@ export function BacktestDetailPage() {
 
 /** JSON 快照美化展示:能 parse 则缩进展示,否则原样;空则 unavailable。 */
 function JsonSnapshot({value}: {value: string | null | undefined}) {
+    useTranslation('pages');
     const pretty = useMemo(() => {
         if (!value) {
             return null;
@@ -470,7 +468,7 @@ function JsonSnapshot({value}: {value: string | null | undefined}) {
     }, [value]);
 
     if (!pretty) {
-        return <Typography.Text type="secondary">暂无快照</Typography.Text>;
+        return <Typography.Text type="secondary">{t('pages:noSnapshots')}</Typography.Text>;
     }
 
     return (

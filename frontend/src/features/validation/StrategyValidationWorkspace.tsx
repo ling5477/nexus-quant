@@ -1,3 +1,6 @@
+import {useLocalizedForm} from '@/i18n/useLocalizedForm';
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {
     ClearOutlined,
     ReloadOutlined,
@@ -286,77 +289,77 @@ interface ValidationOperationsOperatorQueueRow {
 }
 
 const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
-    APPROVED: {label: '验证层通过，非交易授权', tone: 'info'},
-    REJECTED: {label: '验证层拒绝', tone: 'danger'},
-    NEEDS_REVIEW: {label: '需要复核', tone: 'warning'},
-    BLOCKED: {label: '阻断', tone: 'danger'},
-    NO_EVIDENCE: {label: '无证据', tone: 'neutral'},
-    STALE_EVIDENCE: {label: '证据过期或不完整', tone: 'warning'},
-    NO_ARTIFACT_SOURCE_CONFIGURED: {label: '未配置 artifact source', tone: 'warning'},
-    NO_FILE_BASELINE: {label: 'No-file baseline', tone: 'warning'},
-    DIAGNOSTIC_ONLY: {label: '仅诊断', tone: 'info'},
-    VALID: {label: 'checksum 自洽，非策略有效', tone: 'info'},
-    INVALID: {label: 'checksum 失败', tone: 'danger'},
-    NOT_CHECKED: {label: '未检查', tone: 'neutral'},
-    FAKE_FIXTURE_ONLY: {label: '测试 fixture，非真实表现', tone: 'warning'},
-    PRESENT: {label: '摘要存在，非收益结论', tone: 'info'},
-    INCOMPLETE: {label: '摘要不完整', tone: 'warning'},
-    CONSISTENT: {label: '证据一致，非盈利结论', tone: 'info'},
-    DIVERGED: {label: '证据偏离', tone: 'warning'},
-    NO_REPORT: {label: '无一致性报告', tone: 'neutral'},
-    NOT_COMPARABLE: {label: '不可比较', tone: 'warning'},
-    NO_CONSISTENCY_EVIDENCE: {label: '无 consistency evidence', tone: 'warning'},
-    INTAKE: {label: '待进入证据流转', tone: 'info'},
-    EVIDENCE_REVIEW: {label: '证据复核中', tone: 'warning'},
-    NEEDS_EVIDENCE: {label: '需要补充证据', tone: 'warning'},
-    READY_FOR_OPERATOR_REVIEW: {label: '可人工复核，非交易授权', tone: 'info'},
-    VALIDATION_READY: {label: '验证材料可复核，非交易授权', tone: 'info'},
-    CLOSED_RECOMMENDATION: {label: '建议闭环，非真实关闭', tone: 'info'},
-    NEEDS_OPERATOR_REVIEW: {label: '需要人工复核', tone: 'warning'},
-    ACKNOWLEDGED_RECOMMENDATION: {label: '建议人工确认，非自动处置', tone: 'info'},
-    ESCALATED_RECOMMENDATION: {label: '建议人工升级复核', tone: 'danger'},
-    NO_DECISION: {label: '未形成诊断建议', tone: 'neutral'},
-    REVIEW_NEEDED: {label: '需要复核', tone: 'warning'},
-    ACKNOWLEDGE_RECOMMENDED: {label: '建议人工确认，非自动处置', tone: 'info'},
-    ESCALATE_RECOMMENDED: {label: '建议人工升级复核，非系统已升级', tone: 'danger'},
-    CLOSEOUT_RECOMMENDED: {label: '建议形成诊断闭环，非真实关闭', tone: 'info'},
-    READY_FOR_SHADOW_REVIEW: {label: '可进入 Shadow 评审', tone: 'info'},
-    READY_FOR_COMPARISON: {label: '可查看只读对照', tone: 'info'},
-    READY_FOR_NO_SIDE_EFFECT_PREVIEW: {label: '可生成无副作用预览', tone: 'info'},
-    VALID_FOR_BINDING_PREVIEW: {label: '可进入只读绑定预览', tone: 'info'},
-    PENDING_FRONTEND_SUPPORT: {label: '等待前端接入支持', tone: 'warning'},
-    NOT_CONNECTED: {label: '未接入', tone: 'warning'},
-    ACTION_REQUIRED: {label: '需要后续处理', tone: 'warning'},
-    SKELETON_AVAILABLE: {label: '骨架可用', tone: 'info'},
-    PREVIEW_ONLY: {label: '仅预览', tone: 'info'},
-    NOT_EXECUTED: {label: '未执行', tone: 'neutral'},
-    NOT_IMPLEMENTED: {label: '能力未实现', tone: 'warning'},
-    UNKNOWN: {label: '未知', tone: 'neutral'},
-    NOT_AVAILABLE: {label: '不可用', tone: 'neutral'},
-    PARTIAL: {label: '部分可见', tone: 'warning'},
-    BLOCKED_SHADOW_NOT_IMPLEMENTED: {label: 'Shadow 未实现阻断', tone: 'danger'},
-    PREVIEW_BLOCKED_SHADOW_FACTS_NOT_AVAILABLE: {label: 'Shadow facts 不可用', tone: 'danger'},
-    PREVIEW_BLOCKED_TRACE_CHAIN_INCOMPLETE: {label: '追踪链不完整', tone: 'danger'},
-    PREVIEW_BLOCKED_EVALUATION_GATE: {label: 'Evaluation Gate 阻断', tone: 'danger'},
-    PREVIEW_BLOCKED_PAPER_SHADOW_COMPARISON: {label: 'Paper / Shadow 对照阻断', tone: 'danger'},
-    SATISFIED: {label: '已满足', tone: 'success'},
-    MISSING: {label: '缺失', tone: 'warning'},
-    FAILED: {label: '失败', tone: 'danger'},
-    FORBIDDEN: {label: '禁止', tone: 'danger'},
-    BLOCKER: {label: '阻断', tone: 'danger'},
-    WARNING: {label: '警告', tone: 'warning'},
-    SUCCEEDED: {label: '成功', tone: 'success'},
-    ACTIVE: {label: '有效', tone: 'success'},
-    CREATED: {label: '已创建', tone: 'info'},
-    READY: {label: '诊断就绪，非交易放行', tone: 'info'},
-    RUNNING: {label: '诊断运行中', tone: 'info'},
-    COMPLETED: {label: '诊断完成，非收益结论', tone: 'info'},
-    STOPPED: {label: '已停止', tone: 'neutral'},
-    CANCELLED: {label: '已取消', tone: 'neutral'},
-    LOW: {label: '低偏离', tone: 'warning'},
-    MEDIUM: {label: '中等偏离', tone: 'warning'},
-    HIGH: {label: '高偏离', tone: 'danger'},
-    CRITICAL: {label: '严重偏离', tone: 'danger'},
+    APPROVED: {get label() { return t('pages:validationPassedNotTradingAuthorization'); }, tone: 'info'},
+    REJECTED: {get label() { return t('pages:validationRejected'); }, tone: 'danger'},
+    NEEDS_REVIEW: {get label() { return t('pages:reviewRequired'); }, tone: 'warning'},
+    BLOCKED: {get label() { return t('pages:blocked2'); }, tone: 'danger'},
+    NO_EVIDENCE: {get label() { return t('pages:noEvidence'); }, tone: 'neutral'},
+    STALE_EVIDENCE: {get label() { return t('pages:staleOrIncompleteEvidence'); }, tone: 'warning'},
+    NO_ARTIFACT_SOURCE_CONFIGURED: {get label() { return t('pages:artifactSourceNotConfigured'); }, tone: 'warning'},
+    NO_FILE_BASELINE: {get label() { return t('pages:noFileBaseline'); }, tone: 'warning'},
+    DIAGNOSTIC_ONLY: {get label() { return t('pages:diagnosticOnly'); }, tone: 'info'},
+    VALID: {get label() { return t('pages:checksumConsistentNotStrategyValidity'); }, tone: 'info'},
+    INVALID: {get label() { return t('pages:checksumFailed'); }, tone: 'danger'},
+    NOT_CHECKED: {get label() { return t('pages:notChecked'); }, tone: 'neutral'},
+    FAKE_FIXTURE_ONLY: {get label() { return t('pages:testFixtureNotRealPerformance'); }, tone: 'warning'},
+    PRESENT: {get label() { return t('pages:summaryAvailableNotAReturnConclusion'); }, tone: 'info'},
+    INCOMPLETE: {get label() { return t('pages:incompleteSummary'); }, tone: 'warning'},
+    CONSISTENT: {get label() { return t('pages:evidenceConsistentNotAProfitConclusion'); }, tone: 'info'},
+    DIVERGED: {get label() { return t('pages:evidenceDiverged'); }, tone: 'warning'},
+    NO_REPORT: {get label() { return t('pages:noConsistencyReport'); }, tone: 'neutral'},
+    NOT_COMPARABLE: {get label() { return t('pages:notComparable'); }, tone: 'warning'},
+    NO_CONSISTENCY_EVIDENCE: {get label() { return t('pages:noConsistencyEvidence'); }, tone: 'warning'},
+    INTAKE: {get label() { return t('pages:awaitingEvidenceWorkflow'); }, tone: 'info'},
+    EVIDENCE_REVIEW: {get label() { return t('pages:evidenceUnderReview'); }, tone: 'warning'},
+    NEEDS_EVIDENCE: {get label() { return t('pages:additionalEvidenceRequired'); }, tone: 'warning'},
+    READY_FOR_OPERATOR_REVIEW: {get label() { return t('pages:readyForManualReviewNotTradingAuthorization'); }, tone: 'info'},
+    VALIDATION_READY: {get label() { return t('pages:validationEvidenceReviewableNotTradingAuthorization'); }, tone: 'info'},
+    CLOSED_RECOMMENDATION: {get label() { return t('pages:closeoutRecommendedNotActualClosure'); }, tone: 'info'},
+    NEEDS_OPERATOR_REVIEW: {get label() { return t('pages:manualReviewRequired'); }, tone: 'warning'},
+    ACKNOWLEDGED_RECOMMENDATION: {get label() { return t('pages:manualAcknowledgmentRecommendedNotAutomaticHandling'); }, tone: 'info'},
+    ESCALATED_RECOMMENDATION: {get label() { return t('pages:manualEscalationRecommended'); }, tone: 'danger'},
+    NO_DECISION: {get label() { return t('pages:noDiagnosticRecommendation'); }, tone: 'neutral'},
+    REVIEW_NEEDED: {get label() { return t('pages:reviewRequired'); }, tone: 'warning'},
+    ACKNOWLEDGE_RECOMMENDED: {get label() { return t('pages:manualAcknowledgmentRecommendedNotAutomaticHandling'); }, tone: 'info'},
+    ESCALATE_RECOMMENDED: {get label() { return t('pages:manualEscalationRecommendedNotSystemEscalation'); }, tone: 'danger'},
+    CLOSEOUT_RECOMMENDED: {get label() { return t('pages:diagnosticCloseoutRecommendedNotActualClosure'); }, tone: 'info'},
+    READY_FOR_SHADOW_REVIEW: {get label() { return t('pages:readyForShadowReview'); }, tone: 'info'},
+    READY_FOR_COMPARISON: {get label() { return t('pages:readOnlyComparisonAvailable'); }, tone: 'info'},
+    READY_FOR_NO_SIDE_EFFECT_PREVIEW: {get label() { return t('pages:noSideEffectPreviewAvailable'); }, tone: 'info'},
+    VALID_FOR_BINDING_PREVIEW: {get label() { return t('pages:readOnlyBindingPreviewAvailable'); }, tone: 'info'},
+    PENDING_FRONTEND_SUPPORT: {get label() { return t('pages:awaitingFrontendSupport'); }, tone: 'warning'},
+    NOT_CONNECTED: {get label() { return t('pages:notConnected'); }, tone: 'warning'},
+    ACTION_REQUIRED: {get label() { return t('pages:followUpRequired'); }, tone: 'warning'},
+    SKELETON_AVAILABLE: {get label() { return t('pages:skeletonAvailable'); }, tone: 'info'},
+    PREVIEW_ONLY: {get label() { return t('pages:previewOnly'); }, tone: 'info'},
+    NOT_EXECUTED: {get label() { return t('pages:notExecuted'); }, tone: 'neutral'},
+    NOT_IMPLEMENTED: {get label() { return t('pages:capabilityNotImplemented'); }, tone: 'warning'},
+    UNKNOWN: {get label() { return t('pages:unknown'); }, tone: 'neutral'},
+    NOT_AVAILABLE: {get label() { return t('pages:unavailable'); }, tone: 'neutral'},
+    PARTIAL: {get label() { return t('pages:partiallyAvailable'); }, tone: 'warning'},
+    BLOCKED_SHADOW_NOT_IMPLEMENTED: {get label() { return t('pages:blockedShadowNotImplemented'); }, tone: 'danger'},
+    PREVIEW_BLOCKED_SHADOW_FACTS_NOT_AVAILABLE: {get label() { return t('pages:shadowFactsUnavailable'); }, tone: 'danger'},
+    PREVIEW_BLOCKED_TRACE_CHAIN_INCOMPLETE: {get label() { return t('pages:traceChainIncomplete'); }, tone: 'danger'},
+    PREVIEW_BLOCKED_EVALUATION_GATE: {get label() { return t('pages:evaluationGateBlocked'); }, tone: 'danger'},
+    PREVIEW_BLOCKED_PAPER_SHADOW_COMPARISON: {get label() { return t('pages:paperShadowComparisonBlocked'); }, tone: 'danger'},
+    SATISFIED: {get label() { return t('pages:satisfied'); }, tone: 'success'},
+    MISSING: {get label() { return t('pages:missing'); }, tone: 'warning'},
+    FAILED: {get label() { return t('pages:failed'); }, tone: 'danger'},
+    FORBIDDEN: {get label() { return t('pages:prohibited'); }, tone: 'danger'},
+    BLOCKER: {get label() { return t('pages:blocked2'); }, tone: 'danger'},
+    WARNING: {get label() { return t('pages:warnings'); }, tone: 'warning'},
+    SUCCEEDED: {get label() { return t('pages:success'); }, tone: 'success'},
+    ACTIVE: {get label() { return t('pages:valid'); }, tone: 'success'},
+    CREATED: {get label() { return t('pages:created2'); }, tone: 'info'},
+    READY: {get label() { return t('pages:diagnosticsReadyNotTradingClearance'); }, tone: 'info'},
+    RUNNING: {get label() { return t('pages:diagnosticsRunning'); }, tone: 'info'},
+    COMPLETED: {get label() { return t('pages:diagnosticsCompleteNotAReturnConclusion'); }, tone: 'info'},
+    STOPPED: {get label() { return t('pages:stopped2'); }, tone: 'neutral'},
+    CANCELLED: {get label() { return t('pages:cancelled2'); }, tone: 'neutral'},
+    LOW: {get label() { return t('pages:lowDivergence'); }, tone: 'warning'},
+    MEDIUM: {get label() { return t('pages:mediumDivergence'); }, tone: 'warning'},
+    HIGH: {get label() { return t('pages:highDivergence'); }, tone: 'danger'},
+    CRITICAL: {get label() { return t('pages:criticalDivergence'); }, tone: 'danger'},
 };
 
 const EVIDENCE_CATEGORY_LABELS: Record<EvidenceMatrixCategory, string> = {
@@ -370,38 +373,38 @@ const EVIDENCE_CATEGORY_LABELS: Record<EvidenceMatrixCategory, string> = {
 const STATUS_EXPLANATIONS: StatusExplanationRow[] = [
     {
         status: 'READY_FOR_SHADOW_REVIEW',
-        meaning: '可进入 Shadow 评审',
-        boundary: '只表示研究与评估证据可进入后续评审，不表示可交易、可下单或可启用 LIVE。',
+        get meaning() { return t('pages:readyForShadowReview'); },
+        get boundary() { return t('pages:researchAndEvaluationEvidenceMayProceedToReviewThisDoesNotPermitTradingOrderPlacementOrEnablingLive'); },
     },
     {
         status: 'READY_FOR_COMPARISON',
-        meaning: '可查看只读对照',
-        boundary: '只表示 Paper / Shadow 只读证据可比较，不创建 Shadow run，不表示交易授权。',
+        get meaning() { return t('pages:readOnlyComparisonAvailable'); },
+        get boundary() { return t('pages:readOnlyPaperAndShadowEvidenceCanBeComparedNoShadowRunIsCreatedAndNoTradingAuthorizationIsGranted'); },
     },
     {
         status: 'READY_FOR_NO_SIDE_EFFECT_PREVIEW',
-        meaning: '可生成无副作用预览',
-        boundary: '只表示可以生成 no-side-effect preview，不执行策略、不提交订单、不写真实状态。',
+        get meaning() { return t('pages:noSideEffectPreviewAvailable'); },
+        get boundary() { return t('pages:aNoSideEffectPreviewMayBeGeneratedNoStrategyExecutionOrderSubmissionOrRealStateWriteOccurs'); },
     },
     {
         status: 'VALID_FOR_BINDING_PREVIEW',
-        meaning: '可进入绑定预览',
-        boundary: '只表示 artifact 可做只读校验预览，不代表已入库、已发布、ML ready 或 live execution ready。',
+        get meaning() { return t('pages:bindingPreviewAvailable'); },
+        get boundary() { return t('pages:theArtifactSupportsReadOnlyValidationPreviewOnlyNotImportPublicationMlReadinessOrLiveExecutionReadin'); },
     },
     {
         status: 'UNKNOWN / NOT_AVAILABLE / NOT_IMPLEMENTED / BLOCKED_*',
-        meaning: '未知、不可用、能力未实现或阻断',
-        boundary: '必须按缺失或阻断展示，不能显示为成功态；页面必须保留 blockers 与 nextSteps。',
+        get meaning() { return t('pages:unknownUnavailableUnimplementedOrBlocked'); },
+        get boundary() { return t('pages:displayAsMissingOrBlockedNeverSuccessRetainBlockersAndNextsteps'); },
     },
 ];
 
 const FORBIDDEN_BOUNDARY_ITEMS = [
-    '不提交真实订单',
-    '不读取真实凭证',
-    '不启用 LIVE',
-    '不调用 private endpoint',
-    '不写真实账户 / 资金 / ledger',
-    '不接 AI / DH runtime 执行链路',
+    'pages:noRealOrderSubmission',
+    'pages:noRealCredentialReads',
+    'pages:noLiveEnablement',
+    'pages:noPrivateEndpointCalls',
+    'pages:noRealAccountFundOrLedgerWrites',
+    'pages:noAiDhRuntimeExecution',
 ];
 
 const TONE_TO_COLOR: Record<StatusTone, string> = {
@@ -434,21 +437,21 @@ const FIELD_LABELS: Record<keyof StrategyValidationQuery, string> = {
 
 const evidenceColumns: ColumnsType<StrategyValidationEvidence> = [
     {
-        title: 'Code',
+        get title() { return t('pages:code'); },
         dataIndex: 'code',
         key: 'code',
         width: 220,
         render: (value: string) => <Text code>{value}</Text>,
     },
     {
-        title: '状态',
+        get title() { return t('pages:status'); },
         dataIndex: 'status',
         key: 'status',
         width: 180,
         render: (value: string) => <StatusTag status={value}/>,
     },
     {
-        title: '说明',
+        get title() { return t('pages:explanation2'); },
         dataIndex: 'message',
         key: 'message',
         render: (value: string) => <Text type="secondary">{value}</Text>,
@@ -457,21 +460,21 @@ const evidenceColumns: ColumnsType<StrategyValidationEvidence> = [
 
 const reasonColumns: ColumnsType<StrategyValidationReason> = [
     {
-        title: 'Code',
+        get title() { return t('pages:code'); },
         dataIndex: 'code',
         key: 'code',
         width: 260,
         render: (value: string) => <Text code>{value}</Text>,
     },
     {
-        title: '级别',
+        get title() { return t('pages:level'); },
         dataIndex: 'severity',
         key: 'severity',
         width: 140,
         render: (value: string) => <StatusTag status={value}/>,
     },
     {
-        title: '说明',
+        get title() { return t('pages:explanation2'); },
         dataIndex: 'message',
         key: 'message',
         render: (value: string) => <Text type="secondary">{value}</Text>,
@@ -480,21 +483,21 @@ const reasonColumns: ColumnsType<StrategyValidationReason> = [
 
 const sideEffectColumns: ColumnsType<ShadowLiveSideEffectPolicy> = [
     {
-        title: 'Policy',
+        get title() { return t('pages:policy'); },
         dataIndex: 'code',
         key: 'code',
         width: 260,
         render: (value: string) => <Text code>{value}</Text>,
     },
     {
-        title: '状态',
+        get title() { return t('pages:status'); },
         dataIndex: 'status',
         key: 'status',
         width: 140,
         render: (value: string) => <StatusTag status={value}/>,
     },
     {
-        title: '边界说明',
+        get title() { return t('pages:scope'); },
         dataIndex: 'message',
         key: 'message',
         render: (value: string) => <Text type="secondary">{value}</Text>,
@@ -503,7 +506,7 @@ const sideEffectColumns: ColumnsType<ShadowLiveSideEffectPolicy> = [
 
 const lifecycleColumns: ColumnsType<LifecycleTraceItem> = [
     {
-        title: '节点',
+        get title() { return t('pages:node'); },
         dataIndex: 'label',
         key: 'label',
         width: 230,
@@ -515,28 +518,28 @@ const lifecycleColumns: ColumnsType<LifecycleTraceItem> = [
         ),
     },
     {
-        title: 'Trace value',
+        get title() { return t('pages:traceValue'); },
         dataIndex: 'value',
         key: 'value',
         width: 220,
         render: (value?: string | null) => optionalCode(value),
     },
     {
-        title: '状态',
+        get title() { return t('pages:status'); },
         dataIndex: 'status',
         key: 'status',
         width: 220,
         render: (value: string) => <StatusTag status={value}/>,
     },
     {
-        title: '来源',
+        get title() { return t('pages:source'); },
         dataIndex: 'source',
         key: 'source',
         width: 260,
         render: (value: string) => <Text type="secondary">{value}</Text>,
     },
     {
-        title: '边界说明',
+        get title() { return t('pages:scope'); },
         dataIndex: 'detail',
         key: 'detail',
         render: (value: ReactNode) => <Text type="secondary">{value}</Text>,
@@ -545,35 +548,35 @@ const lifecycleColumns: ColumnsType<LifecycleTraceItem> = [
 
 const evidenceMatrixColumns: ColumnsType<EvidenceMatrixRow> = [
     {
-        title: '来源',
+        get title() { return t('pages:source'); },
         dataIndex: 'source',
         key: 'source',
         width: 210,
         render: (value: string) => <Text>{value}</Text>,
     },
     {
-        title: '类别',
+        get title() { return t('pages:category'); },
         dataIndex: 'category',
         key: 'category',
         width: 170,
         render: (value: EvidenceMatrixCategory) => <Text code>{EVIDENCE_CATEGORY_LABELS[value]}</Text>,
     },
     {
-        title: 'Code',
+        get title() { return t('pages:code'); },
         dataIndex: 'code',
         key: 'code',
         width: 260,
         render: (value: string) => <Text code>{value}</Text>,
     },
     {
-        title: '状态',
+        get title() { return t('pages:status'); },
         dataIndex: 'status',
         key: 'status',
         width: 180,
         render: (value: string) => <StatusTag status={value}/>,
     },
     {
-        title: '说明 / nextSteps',
+        get title() { return t('pages:explanationNextsteps'); },
         dataIndex: 'message',
         key: 'message',
         render: (value: string) => <Text type="secondary">{value}</Text>,
@@ -582,21 +585,21 @@ const evidenceMatrixColumns: ColumnsType<EvidenceMatrixRow> = [
 
 const statusExplanationColumns: ColumnsType<StatusExplanationRow> = [
     {
-        title: '状态',
+        get title() { return t('pages:status'); },
         dataIndex: 'status',
         key: 'status',
         width: 280,
         render: (value: string) => <Text code>{value}</Text>,
     },
     {
-        title: '页面解释',
+        get title() { return t('pages:pageInterpretation'); },
         dataIndex: 'meaning',
         key: 'meaning',
         width: 220,
         render: (value: string) => <Text>{value}</Text>,
     },
     {
-        title: '禁止误读',
+        get title() { return t('pages:invalidInterpretation'); },
         dataIndex: 'boundary',
         key: 'boundary',
         render: (value: string) => <Text type="secondary">{value}</Text>,
@@ -605,32 +608,32 @@ const statusExplanationColumns: ColumnsType<StatusExplanationRow> = [
 
 const overviewIssueColumns: ColumnsType<StrategyValidationOverviewIssue> = [
     {
-        title: 'Code',
+        get title() { return t('pages:code'); },
         dataIndex: 'code',
         key: 'code',
         width: 260,
         render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '级别',
+        get title() { return t('pages:level'); },
         dataIndex: 'severity',
         key: 'severity',
         width: 150,
         render: (value: string) => <StatusTag status={value}/>,
     },
     {
-        title: '来源',
+        get title() { return t('pages:source'); },
         key: 'source',
         width: 240,
         render: (_, record) => (
             <Space direction="vertical" size={2}>
                 <Text>{record.sourceType}</Text>
-                {record.sourceId ? <Text code>{record.sourceId}</Text> : <Text type="secondary">无 sourceId</Text>}
+                {record.sourceId ? <Text code>{record.sourceId}</Text> : <Text type="secondary">{t('pages:noSourceid')}</Text>}
             </Space>
         ),
     },
     {
-        title: '说明',
+        get title() { return t('pages:explanation2'); },
         dataIndex: 'message',
         key: 'message',
         render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
@@ -639,36 +642,36 @@ const overviewIssueColumns: ColumnsType<StrategyValidationOverviewIssue> = [
 
 const overviewNextStepColumns: ColumnsType<StrategyValidationNextStep> = [
     {
-        title: 'Code',
+        get title() { return t('pages:code'); },
         dataIndex: 'code',
         key: 'code',
         width: 240,
         render: (value: string) => <Text code>{value}</Text>,
     },
     {
-        title: 'Owner',
+        get title() { return t('pages:owner'); },
         dataIndex: 'owner',
         key: 'owner',
         width: 160,
     },
     {
-        title: '动作',
+        get title() { return t('pages:action'); },
         dataIndex: 'action',
         key: 'action',
         render: (value: string) => <Text>{value}</Text>,
     },
     {
-        title: '完成条件',
+        get title() { return t('pages:completionCriteria'); },
         dataIndex: 'completionCondition',
         key: 'completionCondition',
         render: (value: string) => <Text type="secondary">{value}</Text>,
     },
     {
-        title: '边界关键',
+        get title() { return t('pages:boundaryCritical'); },
         dataIndex: 'boundaryCritical',
         key: 'boundaryCritical',
         width: 130,
-        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? '是' : '否'}</Tag>,
+        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? t('pages:yes') : t('pages:no')}</Tag>,
     },
 ];
 
@@ -749,34 +752,34 @@ const incidentLatestEvidenceColumns: ColumnsType<IncidentReplayLatestEvidence> =
 
 const incidentOverviewIssueColumns: ColumnsType<IncidentReplayOverviewIssue> = [
     {
-        title: 'Code',
+        get title() { return t('pages:code'); },
         dataIndex: 'code',
         key: 'code',
         width: 260,
         render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '级别',
+        get title() { return t('pages:level'); },
         dataIndex: 'severity',
         key: 'severity',
         width: 150,
         render: (value: string) => <StatusTag status={value}/>,
     },
     {
-        title: '来源',
+        get title() { return t('pages:source'); },
         key: 'source',
         width: 240,
         render: (_, record) => (
             <Space direction="vertical" size={2}>
                 <Text>{workbenchSafeText(record.sourceType)}</Text>
                 {record.sourceId ? <Text code>{workbenchSafeText(record.sourceId)}</Text> : (
-                    <Text type="secondary">无 sourceId</Text>
+                    <Text type="secondary">{t('pages:noSourceid')}</Text>
                 )}
             </Space>
         ),
     },
     {
-        title: '说明',
+        get title() { return t('pages:explanation2'); },
         dataIndex: 'message',
         key: 'message',
         render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
@@ -785,34 +788,34 @@ const incidentOverviewIssueColumns: ColumnsType<IncidentReplayOverviewIssue> = [
 
 const shadowValidationWorkflowIssueColumns: ColumnsType<ShadowValidationWorkflowIssue> = [
     {
-        title: 'Code',
+        get title() { return t('pages:code'); },
         dataIndex: 'code',
         key: 'code',
         width: 260,
         render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '诊断优先级',
+        get title() { return t('pages:diagnosticPriority'); },
         dataIndex: 'severity',
         key: 'severity',
         width: 190,
         render: (value: string) => <WorkflowStatusTag status={value}/>,
     },
     {
-        title: '来源',
+        get title() { return t('pages:source'); },
         key: 'source',
         width: 240,
         render: (_, record) => (
             <Space direction="vertical" size={2}>
                 <Text>{workbenchSafeText(record.sourceType)}</Text>
                 {record.sourceId ? <Text code>{workbenchSafeText(record.sourceId)}</Text> : (
-                    <Text type="secondary">无 sourceId</Text>
+                    <Text type="secondary">{t('pages:noSourceid')}</Text>
                 )}
             </Space>
         ),
     },
     {
-        title: '说明',
+        get title() { return t('pages:explanation2'); },
         dataIndex: 'message',
         key: 'message',
         render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
@@ -821,37 +824,37 @@ const shadowValidationWorkflowIssueColumns: ColumnsType<ShadowValidationWorkflow
 
 const shadowValidationWorkflowNextStepColumns: ColumnsType<ShadowValidationNextStep> = [
     {
-        title: 'Code',
+        get title() { return t('pages:code'); },
         dataIndex: 'code',
         key: 'code',
         width: 240,
         render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: 'Owner',
+        get title() { return t('pages:owner'); },
         dataIndex: 'owner',
         key: 'owner',
         width: 150,
         render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '动作',
+        get title() { return t('pages:action'); },
         dataIndex: 'action',
         key: 'action',
         render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '完成条件',
+        get title() { return t('pages:completionCriteria'); },
         dataIndex: 'completionCondition',
         key: 'completionCondition',
         render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '边界关键',
+        get title() { return t('pages:boundaryCritical'); },
         dataIndex: 'boundaryCritical',
         key: 'boundaryCritical',
         width: 130,
-        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? '是' : '否'}</Tag>,
+        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? t('pages:yes') : t('pages:no')}</Tag>,
     },
 ];
 
@@ -936,7 +939,7 @@ const shadowValidationWorkflowOperatorColumns: ColumnsType<ShadowValidationOpera
         render: (value: string) => <WorkflowStatusTag status={value}/>,
     },
     {
-        title: '来源',
+        get title() { return t('pages:source'); },
         key: 'source',
         width: 260,
         render: (_, record) => (
@@ -947,7 +950,7 @@ const shadowValidationWorkflowOperatorColumns: ColumnsType<ShadowValidationOpera
         ),
     },
     {
-        title: 'blockers / warnings',
+        get title() { return t('pages:blockersWarnings'); },
         key: 'signals',
         width: 190,
         render: (_, record) => (
@@ -965,34 +968,34 @@ const shadowValidationWorkflowOperatorColumns: ColumnsType<ShadowValidationOpera
 
 const consistencyEvidenceIssueColumns: ColumnsType<ConsistencyEvidenceOverviewIssue> = [
     {
-        title: 'Code',
+        get title() { return t('pages:code'); },
         dataIndex: 'code',
         key: 'code',
         width: 260,
         render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '诊断优先级',
+        get title() { return t('pages:diagnosticPriority'); },
         dataIndex: 'severity',
         key: 'severity',
         width: 190,
         render: (value: string) => <WorkflowStatusTag status={value}/>,
     },
     {
-        title: '来源',
+        get title() { return t('pages:source'); },
         key: 'source',
         width: 240,
         render: (_, record) => (
             <Space direction="vertical" size={2}>
                 <Text>{workbenchSafeText(record.sourceType)}</Text>
                 {record.sourceId ? <Text code>{workbenchSafeText(record.sourceId)}</Text> : (
-                    <Text type="secondary">无 sourceId</Text>
+                    <Text type="secondary">{t('pages:noSourceid')}</Text>
                 )}
             </Space>
         ),
     },
     {
-        title: '说明',
+        get title() { return t('pages:explanation2'); },
         dataIndex: 'message',
         key: 'message',
         render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
@@ -1001,37 +1004,37 @@ const consistencyEvidenceIssueColumns: ColumnsType<ConsistencyEvidenceOverviewIs
 
 const consistencyEvidenceNextStepColumns: ColumnsType<ConsistencyEvidenceNextStep> = [
     {
-        title: 'Code',
+        get title() { return t('pages:code'); },
         dataIndex: 'code',
         key: 'code',
         width: 240,
         render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: 'Owner',
+        get title() { return t('pages:owner'); },
         dataIndex: 'owner',
         key: 'owner',
         width: 150,
         render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '动作',
+        get title() { return t('pages:action'); },
         dataIndex: 'action',
         key: 'action',
         render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '完成条件',
+        get title() { return t('pages:completionCriteria'); },
         dataIndex: 'completionCondition',
         key: 'completionCondition',
         render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '边界关键',
+        get title() { return t('pages:boundaryCritical'); },
         dataIndex: 'boundaryCritical',
         key: 'boundaryCritical',
         width: 130,
-        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? '是' : '否'}</Tag>,
+        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? t('pages:yes') : t('pages:no')}</Tag>,
     },
 ];
 
@@ -1081,14 +1084,14 @@ const consistencyEvidenceAnchorColumns: ColumnsType<ConsistencyEvidenceAnchor> =
 
 const consistencyEvidenceBucketColumns: ColumnsType<ConsistencyEvidenceBucketRow> = [
     {
-        title: '来源',
+        get title() { return t('pages:source'); },
         dataIndex: 'source',
         key: 'source',
         width: 190,
         render: (value: string) => <Text code>{value}</Text>,
     },
     {
-        title: 'Bucket',
+        get title() { return t('pages:bucket'); },
         dataIndex: 'bucket',
         key: 'bucket',
         width: 220,
@@ -1132,7 +1135,7 @@ const consistencyEvidenceMetricColumns: ColumnsType<ConsistencyEvidenceMetricDel
         width: 140,
         render: (value: boolean) => (
             <Tag color={value ? 'processing' : 'warning'}>
-                {value ? 'true（可诊断比较）' : 'false（不可比较）'}
+                {value ? t('pages:trueDiagnosticallyComparable') : t('pages:falseNotComparable')}
             </Tag>
         ),
     },
@@ -1174,28 +1177,28 @@ const consistencyEvidenceItemColumns: ColumnsType<ConsistencyEvidenceItem> = [
         render: (value: string) => <WorkflowStatusTag status={value}/>,
     },
     {
-        title: '关联 id',
+        get title() { return t('pages:relatedId'); },
         key: 'ids',
         width: 300,
         render: (_, record) => (
             <Space direction="vertical" size={2}>
                 <Text>shadowRunId {record.shadowRunId ?
-                    <Text code>{workbenchSafeText(record.shadowRunId)}</Text> : '无'}</Text>
+                    <Text code>{workbenchSafeText(record.shadowRunId)}</Text> : t('pages:none')}</Text>
                 <Text>paperRunId {record.paperRunId ?
-                    <Text code>{workbenchSafeText(record.paperRunId)}</Text> : '无'}</Text>
+                    <Text code>{workbenchSafeText(record.paperRunId)}</Text> : t('pages:none')}</Text>
                 <Text>consistencyReportId {record.consistencyReportId ? (
                     <Text code>{workbenchSafeText(record.consistencyReportId)}</Text>
-                ) : '无'}</Text>
+                ) : t('pages:none')}</Text>
             </Space>
         ),
     },
     {
-        title: 'divergenceReasons / limitations',
+        get title() { return t('pages:divergenceReasonsLimitations'); },
         key: 'summaries',
         render: (_, record) => (
             <Space direction="vertical" size={2}>
-                <Text type="secondary">reasons: {safeTextListSummary(record.divergenceReasons)}</Text>
-                <Text type="secondary">limitations: {safeTextListSummary(record.limitations)}</Text>
+                <Text type="secondary">{t('pages:reasons3')}{safeTextListSummary(record.divergenceReasons)}</Text>
+                <Text type="secondary">{t('pages:limitations')}{safeTextListSummary(record.limitations)}</Text>
             </Space>
         ),
     },
@@ -1203,34 +1206,34 @@ const consistencyEvidenceItemColumns: ColumnsType<ConsistencyEvidenceItem> = [
 
 const incidentReplayReviewIssueColumns: ColumnsType<IncidentReplayReviewOverviewIssue> = [
     {
-        title: 'Code',
+        get title() { return t('pages:code'); },
         dataIndex: 'code',
         key: 'code',
         width: 260,
         render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '诊断优先级',
+        get title() { return t('pages:diagnosticPriority'); },
         dataIndex: 'severity',
         key: 'severity',
         width: 190,
         render: (value: string) => <WorkflowStatusTag status={value}/>,
     },
     {
-        title: '来源',
+        get title() { return t('pages:source'); },
         key: 'source',
         width: 240,
         render: (_, record) => (
             <Space direction="vertical" size={2}>
                 <Text>{workbenchSafeText(record.sourceType)}</Text>
                 {record.sourceId ? <Text code>{workbenchSafeText(record.sourceId)}</Text> : (
-                    <Text type="secondary">无 sourceId</Text>
+                    <Text type="secondary">{t('pages:noSourceid')}</Text>
                 )}
             </Space>
         ),
     },
     {
-        title: '说明',
+        get title() { return t('pages:explanation2'); },
         dataIndex: 'message',
         key: 'message',
         render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
@@ -1239,37 +1242,37 @@ const incidentReplayReviewIssueColumns: ColumnsType<IncidentReplayReviewOverview
 
 const incidentReplayReviewNextStepColumns: ColumnsType<IncidentReplayReviewNextStep> = [
     {
-        title: 'Code',
+        get title() { return t('pages:code'); },
         dataIndex: 'code',
         key: 'code',
         width: 240,
         render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: 'Owner',
+        get title() { return t('pages:owner'); },
         dataIndex: 'owner',
         key: 'owner',
         width: 150,
         render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '动作',
+        get title() { return t('pages:action'); },
         dataIndex: 'action',
         key: 'action',
         render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '完成条件',
+        get title() { return t('pages:completionCriteria'); },
         dataIndex: 'completionCondition',
         key: 'completionCondition',
         render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '边界关键',
+        get title() { return t('pages:boundaryCritical'); },
         dataIndex: 'boundaryCritical',
         key: 'boundaryCritical',
         width: 130,
-        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? '是' : '否'}</Tag>,
+        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? t('pages:yes') : t('pages:no')}</Tag>,
     },
 ];
 
@@ -1319,14 +1322,14 @@ const incidentReplayReviewEvidenceAnchorColumns: ColumnsType<IncidentReplayRevie
 
 const incidentReplayReviewBucketColumns: ColumnsType<IncidentReplayReviewBucketRow> = [
     {
-        title: '来源',
+        get title() { return t('pages:source'); },
         dataIndex: 'source',
         key: 'source',
         width: 190,
         render: (value: string) => <Text code>{value}</Text>,
     },
     {
-        title: 'Bucket',
+        get title() { return t('pages:bucket'); },
         dataIndex: 'bucket',
         key: 'bucket',
         width: 220,
@@ -1378,32 +1381,32 @@ const incidentReplayReviewItemColumns: ColumnsType<IncidentReplayReviewItem> = [
         render: (value: string) => <WorkflowStatusTag status={value}/>,
     },
     {
-        title: '关联 id',
+        get title() { return t('pages:relatedId'); },
         key: 'ids',
         width: 320,
         render: (_, record) => (
             <Space direction="vertical" size={2}>
                 <Text>source {workbenchSafeText(record.sourceType)} / <Text code>{workbenchSafeText(record.sourceId)}</Text></Text>
-                <Text>shadowRunId {record.shadowRunId ? <Text code>{workbenchSafeText(record.shadowRunId)}</Text> : '无'}</Text>
-                <Text>paperRunId {record.paperRunId ? <Text code>{workbenchSafeText(record.paperRunId)}</Text> : '无'}</Text>
+                <Text>shadowRunId {record.shadowRunId ? <Text code>{workbenchSafeText(record.shadowRunId)}</Text> : t('pages:none')}</Text>
+                <Text>paperRunId {record.paperRunId ? <Text code>{workbenchSafeText(record.paperRunId)}</Text> : t('pages:none')}</Text>
                 <Text>consistencyReportId {record.consistencyReportId ? (
                     <Text code>{workbenchSafeText(record.consistencyReportId)}</Text>
-                ) : '无'}</Text>
+                ) : t('pages:none')}</Text>
             </Space>
         ),
     },
     {
-        title: 'summary / limitations',
+        get title() { return t('pages:summaryLimitations'); },
         key: 'summaries',
         render: (_, record) => (
             <Space direction="vertical" size={2}>
                 <Text>{workbenchSafeText(record.summary)}</Text>
-                <Text type="secondary">limitations: {safeTextListSummary(record.limitations)}</Text>
+                <Text type="secondary">{t('pages:limitations')}{safeTextListSummary(record.limitations)}</Text>
             </Space>
         ),
     },
     {
-        title: 'blockers / warnings',
+        get title() { return t('pages:blockersWarnings'); },
         key: 'signals',
         width: 190,
         render: (_, record) => (
@@ -1421,34 +1424,34 @@ const incidentReplayReviewItemColumns: ColumnsType<IncidentReplayReviewItem> = [
 
 const evaluationArtifactPreviewIssueColumns: ColumnsType<EvaluationArtifactPreviewOverviewIssue> = [
     {
-        title: 'Code',
+        get title() { return t('pages:code'); },
         dataIndex: 'code',
         key: 'code',
         width: 280,
         render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '诊断优先级',
+        get title() { return t('pages:diagnosticPriority'); },
         dataIndex: 'severity',
         key: 'severity',
         width: 180,
         render: (value: string) => <WorkflowStatusTag status={value}/>,
     },
     {
-        title: '来源',
+        get title() { return t('pages:source'); },
         key: 'source',
         width: 250,
         render: (_, record) => (
             <Space direction="vertical" size={2}>
                 <Text>{workbenchSafeText(record.sourceType)}</Text>
                 {record.sourceId ? <Text code>{workbenchSafeText(record.sourceId)}</Text> : (
-                    <Text type="secondary">无 sourceId</Text>
+                    <Text type="secondary">{t('pages:noSourceid')}</Text>
                 )}
             </Space>
         ),
     },
     {
-        title: '说明',
+        get title() { return t('pages:explanation2'); },
         dataIndex: 'message',
         key: 'message',
         render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
@@ -1457,37 +1460,37 @@ const evaluationArtifactPreviewIssueColumns: ColumnsType<EvaluationArtifactPrevi
 
 const evaluationArtifactPreviewNextStepColumns: ColumnsType<EvaluationArtifactPreviewNextStep> = [
     {
-        title: 'Code',
+        get title() { return t('pages:code'); },
         dataIndex: 'code',
         key: 'code',
         width: 260,
         render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: 'Owner',
+        get title() { return t('pages:owner'); },
         dataIndex: 'owner',
         key: 'owner',
         width: 150,
         render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '动作',
+        get title() { return t('pages:action'); },
         dataIndex: 'action',
         key: 'action',
         render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '完成条件',
+        get title() { return t('pages:completionCriteria'); },
         dataIndex: 'completionCondition',
         key: 'completionCondition',
         render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '边界关键',
+        get title() { return t('pages:boundaryCritical'); },
         dataIndex: 'boundaryCritical',
         key: 'boundaryCritical',
         width: 130,
-        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? '是' : '否'}</Tag>,
+        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? t('pages:yes') : t('pages:no')}</Tag>,
     },
 ];
 
@@ -1537,14 +1540,14 @@ const evaluationArtifactPreviewEvidenceAnchorColumns: ColumnsType<EvaluationArti
 
 const evaluationArtifactPreviewBucketColumns: ColumnsType<EvaluationArtifactPreviewBucketRow> = [
     {
-        title: '来源',
+        get title() { return t('pages:source'); },
         dataIndex: 'source',
         key: 'source',
         width: 230,
         render: (value: string) => <Text code>{value}</Text>,
     },
     {
-        title: 'Bucket',
+        get title() { return t('pages:bucket'); },
         dataIndex: 'bucket',
         key: 'bucket',
         width: 260,
@@ -1589,35 +1592,35 @@ const evaluationArtifactPreviewItemColumns: ColumnsType<PythonEvaluationArtifact
         render: (value: string) => <WorkflowStatusTag status={value}/>,
     },
     {
-        title: 'Schema / source',
+        get title() { return t('pages:schemaSource'); },
         key: 'schemaSource',
         width: 320,
         render: (_, record) => (
             <Space direction="vertical" size={2}>
-                <Text>schemaVersion {record.schemaVersion ? <Text code>{workbenchSafeText(record.schemaVersion)}</Text> : '无'}</Text>
-                <Text>source {record.source ? <Text code>{workbenchSafeText(record.source)}</Text> : '无'}</Text>
+                <Text>schemaVersion {record.schemaVersion ? <Text code>{workbenchSafeText(record.schemaVersion)}</Text> : t('pages:none')}</Text>
+                <Text>source {record.source ? <Text code>{workbenchSafeText(record.source)}</Text> : t('pages:none')}</Text>
             </Space>
         ),
     },
     {
-        title: '关联 id',
+        get title() { return t('pages:relatedId'); },
         key: 'ids',
         width: 360,
         render: (_, record) => (
             <Space direction="vertical" size={2}>
-                <Text>artifactId {record.artifactId ? <Text code>{workbenchSafeText(record.artifactId)}</Text> : '无'}</Text>
+                <Text>artifactId {record.artifactId ? <Text code>{workbenchSafeText(record.artifactId)}</Text> : t('pages:none')}</Text>
                 <Text>strategyVersionId {record.strategyVersionId ? (
                     <Text code>{workbenchSafeText(record.strategyVersionId)}</Text>
-                ) : '无'}</Text>
-                <Text>datasetId {record.datasetId ? <Text code>{workbenchSafeText(record.datasetId)}</Text> : '无'}</Text>
+                ) : t('pages:none')}</Text>
+                <Text>datasetId {record.datasetId ? <Text code>{workbenchSafeText(record.datasetId)}</Text> : t('pages:none')}</Text>
                 <Text>parameterSetId {record.parameterSetId ? (
                     <Text code>{workbenchSafeText(record.parameterSetId)}</Text>
-                ) : '无'}</Text>
+                ) : t('pages:none')}</Text>
             </Space>
         ),
     },
     {
-        title: 'Assumptions',
+        get title() { return t('pages:assumptions'); },
         key: 'assumptions',
         width: 300,
         render: (_, record) => (
@@ -1628,17 +1631,17 @@ const evaluationArtifactPreviewItemColumns: ColumnsType<PythonEvaluationArtifact
         ),
     },
     {
-        title: 'warnings / limitations',
+        get title() { return t('pages:warningsLimitations'); },
         key: 'diagnostics',
         render: (_, record) => (
             <Space direction="vertical" size={2}>
-                <Text type="secondary">warnings: {safeTextListSummary(record.validationWarnings)}</Text>
-                <Text type="secondary">limitations: {safeTextListSummary(record.limitations)}</Text>
+                <Text type="secondary">{t('pages:warnings4')}{safeTextListSummary(record.validationWarnings)}</Text>
+                <Text type="secondary">{t('pages:limitations')}{safeTextListSummary(record.limitations)}</Text>
             </Space>
         ),
     },
     {
-        title: 'readiness flags',
+        get title() { return t('pages:readinessFlags'); },
         key: 'readinessFlags',
         width: 260,
         render: (_, record) => (
@@ -1659,37 +1662,37 @@ const evaluationArtifactPreviewItemColumns: ColumnsType<PythonEvaluationArtifact
 
 const incidentNextStepColumns: ColumnsType<IncidentReplayNextStep> = [
     {
-        title: 'Code',
+        get title() { return t('pages:code'); },
         dataIndex: 'code',
         key: 'code',
         width: 240,
         render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: 'Owner',
+        get title() { return t('pages:owner'); },
         dataIndex: 'owner',
         key: 'owner',
         width: 160,
         render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '动作',
+        get title() { return t('pages:action'); },
         dataIndex: 'action',
         key: 'action',
         render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '完成条件',
+        get title() { return t('pages:completionCriteria'); },
         dataIndex: 'completionCondition',
         key: 'completionCondition',
         render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '边界关键',
+        get title() { return t('pages:boundaryCritical'); },
         dataIndex: 'boundaryCritical',
         key: 'boundaryCritical',
         width: 130,
-        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? '是' : '否'}</Tag>,
+        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? t('pages:yes') : t('pages:no')}</Tag>,
     },
 ];
 
@@ -1733,13 +1736,13 @@ const incidentEvidenceAnchorColumns: ColumnsType<IncidentReplayEvidenceAnchor> =
 
 const workbenchSignalColumns: ColumnsType<WorkbenchSignalRow> = [
     {
-        title: '来源',
+        get title() { return t('pages:source'); },
         dataIndex: 'source',
         key: 'source',
         width: 210,
     },
     {
-        title: '类别',
+        get title() { return t('pages:category'); },
         dataIndex: 'kind',
         key: 'kind',
         width: 120,
@@ -1748,21 +1751,21 @@ const workbenchSignalColumns: ColumnsType<WorkbenchSignalRow> = [
         ),
     },
     {
-        title: 'Code',
+        get title() { return t('pages:code'); },
         dataIndex: 'code',
         key: 'code',
         width: 260,
         render: (value: string) => <Text code>{value}</Text>,
     },
     {
-        title: '级别',
+        get title() { return t('pages:level'); },
         dataIndex: 'severity',
         key: 'severity',
         width: 150,
         render: (value: string) => <StatusTag status={value}/>,
     },
     {
-        title: '说明',
+        get title() { return t('pages:explanation2'); },
         dataIndex: 'message',
         key: 'message',
         render: (value: string) => <Text type="secondary">{value}</Text>,
@@ -1771,49 +1774,49 @@ const workbenchSignalColumns: ColumnsType<WorkbenchSignalRow> = [
 
 const workbenchNextStepColumns: ColumnsType<WorkbenchNextStepRow> = [
     {
-        title: '来源',
+        get title() { return t('pages:source'); },
         dataIndex: 'source',
         key: 'source',
         width: 210,
     },
     {
-        title: 'Code',
+        get title() { return t('pages:code'); },
         dataIndex: 'code',
         key: 'code',
         width: 240,
         render: (value: string) => <Text code>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: 'Owner',
+        get title() { return t('pages:owner'); },
         dataIndex: 'owner',
         key: 'owner',
         width: 150,
         render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '动作',
+        get title() { return t('pages:action'); },
         dataIndex: 'action',
         key: 'action',
         render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '证据 / 完成条件',
+        get title() { return t('pages:evidenceCompletionCriteria'); },
         dataIndex: 'evidence',
         key: 'evidence',
         render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '阻断',
+        get title() { return t('pages:blocked2'); },
         dataIndex: 'blocking',
         key: 'blocking',
         width: 110,
-        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? '是' : '否'}</Tag>,
+        render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? t('pages:yes') : t('pages:no')}</Tag>,
     },
 ];
 
 const workbenchEvidenceAnchorColumns: ColumnsType<WorkbenchEvidenceAnchorRow> = [
     {
-        title: '来源',
+        get title() { return t('pages:source'); },
         dataIndex: 'source',
         key: 'source',
         width: 210,
@@ -1857,21 +1860,21 @@ const workbenchEvidenceAnchorColumns: ColumnsType<WorkbenchEvidenceAnchorRow> = 
 
 const validationOperationsSummaryColumns: ColumnsType<ValidationOperationsSummaryRow> = [
     {
-        title: '运营主线',
+        get title() { return t('pages:operationalTrack'); },
         dataIndex: 'lane',
         key: 'lane',
         width: 240,
         render: (value: string) => <Text strong>{value}</Text>,
     },
     {
-        title: '状态',
+        get title() { return t('pages:status'); },
         dataIndex: 'status',
         key: 'status',
         width: 240,
         render: (value: string) => <StatusTag status={value}/>,
     },
     {
-        title: '核心指标',
+        get title() { return t('pages:keyMetrics2'); },
         dataIndex: 'primaryMetric',
         key: 'primaryMetric',
         width: 260,
@@ -1909,35 +1912,35 @@ const validationOperationsSummaryColumns: ColumnsType<ValidationOperationsSummar
 
 const validationOperationsEvidenceColumns: ColumnsType<ValidationOperationsEvidenceRow> = [
     {
-        title: 'Evidence lane',
+        get title() { return t('pages:evidenceLane'); },
         dataIndex: 'lane',
         key: 'lane',
         width: 230,
         render: (value: string) => <Text strong>{value}</Text>,
     },
     {
-        title: 'Evidence',
+        get title() { return t('pages:evidence'); },
         dataIndex: 'evidence',
         key: 'evidence',
         width: 230,
         render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '状态',
+        get title() { return t('pages:status'); },
         dataIndex: 'status',
         key: 'status',
         width: 230,
         render: (value: string) => <StatusTag status={value}/>,
     },
     {
-        title: '数量',
+        get title() { return t('pages:quantity'); },
         dataIndex: 'count',
         key: 'count',
         width: 180,
         render: (value: string) => <Text>{workbenchSafeText(value)}</Text>,
     },
     {
-        title: '说明',
+        get title() { return t('pages:explanation2'); },
         dataIndex: 'detail',
         key: 'detail',
         render: (value: string) => <Text type="secondary">{workbenchSafeText(value)}</Text>,
@@ -1946,7 +1949,7 @@ const validationOperationsEvidenceColumns: ColumnsType<ValidationOperationsEvide
 
 const validationOperationsOperatorQueueColumns: ColumnsType<ValidationOperationsOperatorQueueRow> = [
     {
-        title: '来源',
+        get title() { return t('pages:source'); },
         dataIndex: 'source',
         key: 'source',
         width: 210,
@@ -1980,7 +1983,7 @@ const validationOperationsOperatorQueueColumns: ColumnsType<ValidationOperations
         render: (value: string) => <StatusTag status={value}/>,
     },
     {
-        title: 'decision / recommendation',
+        get title() { return t('pages:decisionRecommendation'); },
         dataIndex: 'decision',
         key: 'decision',
         width: 280,
@@ -2055,7 +2058,7 @@ function optionalCode(value: string | null | undefined): ReactNode {
 function workbenchSafeText(value: string | null | undefined): string {
     const normalized = value?.trim();
     if (!normalized) {
-        return '无';
+        return t('pages:none');
     }
     if (WORKBENCH_SENSITIVE_TEXT_PATTERN.test(normalized) || WORKBENCH_FORBIDDEN_ACTION_TEXT_PATTERN.test(normalized)) {
         return '[filtered diagnostic text]';
@@ -2099,6 +2102,7 @@ function ReadModelEvidenceMetadataSummary({metadata, testId}: {
     metadata?: ReadModelEvidenceMetadata | null;
     testId?: string;
 }) {
+    useTranslation('pages');
     const source = metadata?.source?.trim() || 'UNKNOWN_SOURCE';
     const availability = normalizeStatus(metadata?.availability) || 'UNKNOWN';
     const freshness = normalizeStatus(metadata?.freshnessStatus) || 'UNKNOWN';
@@ -2108,21 +2112,21 @@ function ReadModelEvidenceMetadataSummary({metadata, testId}: {
             ? 'warning'
             : availability === 'UNAVAILABLE' ? 'error' : 'default';
     const freshnessText = freshness === 'FRESH'
-        ? '新鲜'
-        : freshness === 'STALE' ? '已过期' : '无法判断新鲜度';
+        ? t('pages:fresh')
+        : freshness === 'STALE' ? t('pages:stale') : t('pages:freshnessUnknown');
 
     return (
         <Space data-testid={testId ?? 'read-model-evidence-metadata'} direction="vertical" size={6}
                style={{display: 'flex'}}>
             <DataFreshness
-                source={`数据来源：${source}`}
+                source={t('pages:dataSourceValue1', {value1: source})}
                 state={readModelFreshnessState(metadata)}
                 detail={metadata?.ageSeconds == null ? freshnessText : `${freshnessText}；age ${metadata.ageSeconds}s`}
             />
             <Space size={[8, 6]} wrap>
-                <Tag color={availabilityColor}>可用性：{availability}</Tag>
-                <Text>新鲜度：{freshness}（{freshnessText}）</Text>
-                <Text>最近计算时间：{metadata?.lastCalculatedAt ? formatDateTime(metadata.lastCalculatedAt) : '未提供'}</Text>
+                <Tag color={availabilityColor}>{t('pages:availability')}{availability}</Tag>
+                <Text>{t('pages:freshness')}{freshness}（{freshnessText}）</Text>
+                <Text>{t('pages:lastComputed')}{metadata?.lastCalculatedAt ? formatDateTime(metadata.lastCalculatedAt) : t('pages:notProvided')}</Text>
             </Space>
         </Space>
     );
@@ -2134,34 +2138,32 @@ function ReadModelEvidenceMetadataSummary({metadata, testId}: {
 function ValidationOperationsRuntimeEvidenceOverviewPanel({query}: {
     query: PanelQueryState<ValidationOperationsRuntimeEvidenceOverviewResponse>
 }) {
+    useTranslation('pages');
     const overview = query.data;
     return (
         <Card
             className="page-section"
             data-testid="validation-operations-runtime-evidence-card"
             variant="borderless"
-            title="运行证据总览"
+            title={t('pages:runtimeEvidenceOverview')}
             extra={(
                 <Button size="small" icon={<ReloadOutlined/>} loading={query.isFetching} onClick={() => query.refetch()}>
-                    刷新总览
-                </Button>
+                    {t('pages:refreshOverview2')}</Button>
             )}
         >
             <Space data-testid="validation-operations-runtime-evidence-panel" direction="vertical" size={12}
                    style={{display: 'flex'}}>
                 <Paragraph type="secondary" style={{marginBottom: 0}}>
-                    只读消费五个既有 evidence metadata 的 aggregate GET；用于识别证据是否完整，不替代来源详情，
-                    不构成交易授权，也不会启动 runner、scheduler 或任何写侧动作。
-                </Paragraph>
+                    {t('pages:readOnlyAggregateGetOverFiveExistingEvidenceMetadataSourcesToAssessCompletenessItDoesNotReplaceSourc')}</Paragraph>
                 {query.isLoading ? <Skeleton active paragraph={{rows: 5}}/> : query.isError ? (
                     <Alert
                         type="error"
                         showIcon
-                        message="运行证据总览查询失败"
-                        description={`聚合 GET 失败按不可用处理；不会显示为全部正常、可执行或已获交易授权。${formatApiError(query.error as AppApiError)}`}
+                        message={t('pages:failedToQueryRuntimeEvidenceOverview')}
+                        description={t('pages:aFailedAggregateGetIsUnavailableNotHealthyExecutableOrAuthorizedForTradingValue1', {value1: formatApiError(query.error as AppApiError)})}
                     />
                 ) : !overview ? (
-                    <Empty description="暂无运行证据总览；按 fail-closed 处理。"/>
+                    <Empty description={t('pages:noRuntimeEvidenceOverviewFailClosedHandlingApplies')}/>
                 ) : (
                     <>
                         <ReadModelEvidenceMetadataSummary
@@ -2169,28 +2171,28 @@ function ValidationOperationsRuntimeEvidenceOverviewPanel({query}: {
                             testId="validation-operations-runtime-evidence-metadata"
                         />
                         <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
-                            <Descriptions.Item label="证据来源数">{overview.sourceCount}</Descriptions.Item>
-                            <Descriptions.Item label="可用 / 不完整 / 不可用 / 未知">
+                            <Descriptions.Item label={t('pages:evidenceSourceCount')}>{overview.sourceCount}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:availableIncompleteUnavailableUnknown')}>
                                 {`${overview.availableCount} / ${overview.partialCount} / ${overview.unavailableCount} / ${overview.unknownAvailabilityCount}`}
                             </Descriptions.Item>
-                            <Descriptions.Item label="新鲜 / 过期 / 未知">
+                            <Descriptions.Item label={t('pages:freshStaleUnknown')}>
                                 {`${overview.freshCount} / ${overview.staleCount} / ${overview.unknownFreshnessCount}`}
                             </Descriptions.Item>
-                            <Descriptions.Item label="最新事实时间">
+                            <Descriptions.Item label={t('pages:latestFactTime')}>
                                 {overview.evidenceMetadata.lastCalculatedAt
                                     ? formatDateTime(overview.evidenceMetadata.lastCalculatedAt)
-                                    : '暂无权威事实时间'}
+                                    : t('pages:noAuthoritativeFactTime')}
                             </Descriptions.Item>
                         </Descriptions>
                         <div>
-                            <Text strong>证据来源</Text>
+                            <Text strong>{t('pages:evidenceSources')}</Text>
                             <Descriptions size="small" bordered column={{xs: 1, sm: 1, md: 2}}>
                                 {overview.sources.map((source: ValidationOperationsRuntimeEvidenceSource) => (
                                     <Descriptions.Item key={source.sourceKey} label={source.displayName}>
                                         <Space size={[8, 6]} wrap>
                                             <Text code>{source.sourceKey}</Text>
-                                            <Text>可用性：{source.evidenceMetadata.availability}</Text>
-                                            <Text>新鲜度：{source.evidenceMetadata.freshnessStatus}</Text>
+                                            <Text>{t('pages:availability')}{source.evidenceMetadata.availability}</Text>
+                                            <Text>{t('pages:freshness')}{source.evidenceMetadata.freshnessStatus}</Text>
                                         </Space>
                                     </Descriptions.Item>
                                 ))}
@@ -2199,8 +2201,8 @@ function ValidationOperationsRuntimeEvidenceOverviewPanel({query}: {
                         <Alert
                             type="info"
                             showIcon
-                            message="仅用于诊断"
-                            description="五个来源当前均可用也只表示诊断证据可用；不构成交易授权，LIVE 保持已禁用。"
+                            message={t('pages:forDiagnosticsOnly')}
+                            description={t('pages:evenIfAllFiveSourcesAreAvailableOnlyDiagnosticEvidenceIsAvailableNoTradingAuthorizationIsGrantedAndL')}
                         />
                     </>
                 )}
@@ -2244,26 +2246,26 @@ function numberValue(value: number | null | undefined): number {
 
 function jsonSummary(value: JsonValue | null | undefined): string {
     if (value === null || value === undefined) {
-        return '无';
+        return t('pages:none');
     }
     if (Array.isArray(value)) {
-        return value.length === 0 ? '空数组' : `数组 ${value.length} 项`;
+        return value.length === 0 ? t('pages:emptyArray') : t('pages:arrayWithValue1Items', {value1: value.length});
     }
     if (typeof value === 'object') {
-        return `对象 ${Object.keys(value).length} 个字段`;
+        return t('pages:objectWithValue1Fields', {value1: Object.keys(value).length});
     }
     if (typeof value === 'string') {
-        return value.trim() ? workbenchSafeText(value) : '空文本';
+        return value.trim() ? workbenchSafeText(value) : t('pages:emptyText');
     }
     return String(value);
 }
 
 function safeTextListSummary(items: string[] | null | undefined): string {
     const values = (items ?? [])
-        .map((item) => workbenchSafeText(item))
-        .filter((item) => item !== '无');
+        .filter((item) => Boolean(item?.trim()) && item.trim() !== '无')
+        .map((item) => workbenchSafeText(item));
     if (values.length === 0) {
-        return '无';
+        return t('pages:none');
     }
     return values.slice(0, 3).join('；');
 }
@@ -2291,12 +2293,12 @@ function workbenchSignalRows(
         });
     };
 
-    pushIssues('Strategy Validation', 'blocker', strategyOverview?.blockers ?? []);
-    pushIssues('Strategy Validation', 'warning', strategyOverview?.warnings ?? []);
-    pushIssues('Shadow Run Overview', 'blocker', shadowOverview?.blockers ?? []);
-    pushIssues('Shadow Run Overview', 'warning', shadowOverview?.warnings ?? []);
-    pushIssues('Paper / Shadow Drilldown', 'blocker', drilldown?.blockers ?? []);
-    pushIssues('Paper / Shadow Drilldown', 'warning', drilldown?.warnings ?? []);
+    pushIssues(t('pages:strategyValidation'), 'blocker', strategyOverview?.blockers ?? []);
+    pushIssues(t('pages:strategyValidation'), 'warning', strategyOverview?.warnings ?? []);
+    pushIssues(t('pages:shadowRunOverview'), 'blocker', shadowOverview?.blockers ?? []);
+    pushIssues(t('pages:shadowRunOverview'), 'warning', shadowOverview?.warnings ?? []);
+    pushIssues(t('pages:paperShadowDrilldown'), 'blocker', drilldown?.blockers ?? []);
+    pushIssues(t('pages:paperShadowDrilldown'), 'warning', drilldown?.warnings ?? []);
     return rows;
 }
 
@@ -2308,7 +2310,7 @@ function workbenchNextStepRows(
     return [
         ...(strategyOverview?.nextSteps ?? []).slice(0, 4).map((item, index) => ({
             key: `strategy-${index}`,
-            source: 'Strategy Validation',
+            source: t('pages:strategyValidation'),
             code: workbenchSafeText(item.code),
             owner: workbenchSafeText(item.owner),
             action: workbenchSafeText(item.action),
@@ -2317,7 +2319,7 @@ function workbenchNextStepRows(
         })),
         ...(shadowOverview?.nextSteps ?? []).slice(0, 4).map((item, index) => ({
             key: `shadow-overview-${index}`,
-            source: 'Shadow Run Overview',
+            source: t('pages:shadowRunOverview'),
             code: workbenchSafeText(item.code),
             owner: workbenchSafeText(item.owner),
             action: workbenchSafeText(item.action),
@@ -2326,7 +2328,7 @@ function workbenchNextStepRows(
         })),
         ...(drilldown?.nextSteps ?? []).slice(0, 4).map((item, index) => ({
             key: `drilldown-${index}`,
-            source: 'Paper / Shadow Drilldown',
+            source: t('pages:paperShadowDrilldown'),
             code: workbenchSafeText(item.code),
             owner: workbenchSafeText(item.owner),
             action: workbenchSafeText(item.action),
@@ -2361,9 +2363,9 @@ function workbenchEvidenceRows(
     }));
 
     return [
-        ...toRows('Strategy Validation', strategyOverview?.evidenceAnchors ?? []),
-        ...toRows('Shadow Run Overview', shadowOverview?.evidenceAnchors ?? []),
-        ...toRows('Paper / Shadow Drilldown', drilldown?.evidenceAnchors ?? []),
+        ...toRows(t('pages:strategyValidation'), strategyOverview?.evidenceAnchors ?? []),
+        ...toRows(t('pages:shadowRunOverview'), shadowOverview?.evidenceAnchors ?? []),
+        ...toRows(t('pages:paperShadowDrilldown'), drilldown?.evidenceAnchors ?? []),
     ];
 }
 
@@ -2461,11 +2463,11 @@ function evaluationArtifactPreviewMatrixRows(
     if (!overview) {
         return [{
             key: 'Python Artifact Binding Preview-overview-unknown',
-            source: 'Python Artifact Binding Preview',
+            source: t('pages:pythonArtifactBindingPreview'),
             category: 'missingEvidence',
             code: 'EVALUATION_ARTIFACT_PREVIEW_OVERVIEW',
             status: 'UNKNOWN',
-            message: 'Evaluation Artifact Preview overview 尚未返回；页面按 fail-closed 处理，不补造 artifact source。',
+            message: t('pages:theArtifactPreviewOverviewIsUnavailableThePageRemainsFailClosedAndDoesNotFabricateAnArtifactSource'),
         }];
     }
 
@@ -2473,7 +2475,7 @@ function evaluationArtifactPreviewMatrixRows(
     overview.blockers.forEach((blocker) => {
         rows.push({
             key: `Python Artifact Binding Preview-blocker-${blocker.code}-${blocker.sourceId ?? 'none'}`,
-            source: 'Python Artifact Binding Preview',
+            source: t('pages:pythonArtifactBindingPreview'),
             category: 'blockers',
             code: workbenchSafeText(blocker.code),
             status: workbenchSafeText(blocker.severity),
@@ -2483,7 +2485,7 @@ function evaluationArtifactPreviewMatrixRows(
     overview.warnings.forEach((warning) => {
         rows.push({
             key: `Python Artifact Binding Preview-warning-${warning.code}-${warning.sourceId ?? 'none'}`,
-            source: 'Python Artifact Binding Preview',
+            source: t('pages:pythonArtifactBindingPreview'),
             category: 'warnings',
             code: workbenchSafeText(warning.code),
             status: workbenchSafeText(warning.severity),
@@ -2493,17 +2495,17 @@ function evaluationArtifactPreviewMatrixRows(
     if (evaluationArtifactPreviewIsNoFileBaseline(overview)) {
         rows.push({
             key: 'Python Artifact Binding Preview-no-file-baseline',
-            source: 'Python Artifact Binding Preview',
+            source: t('pages:pythonArtifactBindingPreview'),
             category: 'missingEvidence',
             code: 'NO_ARTIFACT_SOURCE_CONFIGURED',
             status: 'NO_FILE_BASELINE',
-            message: '当前未配置 artifact source；不读取 artifact 文件、不执行 Python、不导入 DB。',
+            message: t('pages:noArtifactSourceIsConfiguredNoArtifactFilesAreReadPythonIsNotExecutedAndNoDatabaseImportOccurs'),
         });
     }
     overview.nextSteps.forEach((step) => {
         rows.push({
             key: `Python Artifact Binding Preview-next-${step.code}`,
-            source: 'Python Artifact Binding Preview',
+            source: t('pages:pythonArtifactBindingPreview'),
             category: 'nextSteps',
             code: workbenchSafeText(step.code),
             status: 'ACTION_REQUIRED',
@@ -2530,7 +2532,7 @@ function validationOperationsSummaryRows(
     return [
         {
             key: 'strategy-validation',
-            lane: 'Strategy validation',
+            lane: t('pages:strategyValidation'),
             status: strategyOverview ? decisionOf(strategyOverview) : 'UNKNOWN',
             primaryMetric: `versions ${numberValue(strategyOverview?.evaluatedStrategyVersions)}/${numberValue(strategyOverview?.totalStrategyVersions)} · needsReview ${numberValue(strategyOverview?.needsReview)}`,
             blockers: strategyOverview?.blockers.length ?? 0,
@@ -2540,7 +2542,7 @@ function validationOperationsSummaryRows(
         },
         {
             key: 'shadow-validation-workflow',
-            lane: 'Shadow validation workflow',
+            lane: t('pages:shadowValidationWorkflow'),
             status: shadowWorkflow?.latestOperatorItem?.workflowState ?? (shadowWorkflow ? 'NO_OPERATOR_ITEMS' : 'UNKNOWN'),
             primaryMetric: `operatorItems ${numberValue(shadowWorkflow?.totalOperatorItems)} · readyForOperatorReview ${numberValue(shadowWorkflow?.readyForOperatorReviewCount)}`,
             blockers: shadowWorkflow?.blockers.length ?? 0,
@@ -2550,7 +2552,7 @@ function validationOperationsSummaryRows(
         },
         {
             key: 'consistency-evidence',
-            lane: 'Consistency evidence',
+            lane: t('pages:consistencyEvidence'),
             status: consistencyEvidence?.latestEvidenceItem?.comparisonStatus ?? (consistencyEvidence ? 'NO_EVIDENCE' : 'UNKNOWN'),
             primaryMetric: `evidenceItems ${numberValue(consistencyEvidence?.totalEvidenceItems)} · diverged ${numberValue(consistencyEvidence?.divergedCount)} · stale ${numberValue(consistencyEvidence?.staleEvidenceCount)}`,
             blockers: consistencyEvidence?.blockers.length ?? 0,
@@ -2560,7 +2562,7 @@ function validationOperationsSummaryRows(
         },
         {
             key: 'incident-replay-review',
-            lane: 'Incident / replay review',
+            lane: t('pages:incidentReplayReview'),
             status: incidentReplayReview?.latestReviewItem?.reviewState ?? (incidentReplayReview ? 'NO_REVIEW_ITEMS' : 'UNKNOWN'),
             primaryMetric: `reviewItems ${numberValue(incidentReplayReview?.totalReviewItems)} · acknowledged ${numberValue(incidentReplayReview?.acknowledgedRecommendationCount)} · escalated ${numberValue(incidentReplayReview?.escalatedRecommendationCount)}`,
             blockers: incidentReplayReview?.blockers.length ?? 0,
@@ -2570,7 +2572,7 @@ function validationOperationsSummaryRows(
         },
         {
             key: 'evaluation-artifact-preview',
-            lane: 'Evaluation artifact preview',
+            lane: t('pages:evaluationArtifactPreview'),
             status: artifactPreview
                 ? evaluationArtifactPreviewIsNoFileBaseline(artifactPreview)
                     ? 'NO_ARTIFACT_SOURCE_CONFIGURED'
@@ -2595,39 +2597,39 @@ function validationOperationsEvidenceRows(
     return [
         {
             key: 'strategy-validation-evidence',
-            lane: 'strategy validation',
+            lane: t('pages:strategyValidation'),
             evidence: 'latestDecision / evidenceAnchors / blockers',
             status: strategyOverview ? decisionOf(strategyOverview) : 'UNKNOWN',
             count: `anchors ${numberValue(strategyOverview?.evidenceAnchors.length)} · blockers ${numberValue(strategyOverview?.blockers.length)}`,
-            detail: '验证材料只用于人工复核，不代表交易授权。',
+            detail: t('pages:validationEvidenceIsForManualReviewOnlyNotTradingAuthorization'),
         },
         {
             key: 'shadow-validation-evidence',
-            lane: 'shadow validation',
+            lane: t('pages:shadowValidation'),
             evidence: 'operatorItems / workflowState / evidenceFreshness',
             status: shadowWorkflow?.latestOperatorItem?.validationDecision ?? (shadowWorkflow ? 'NO_DECISION' : 'UNKNOWN'),
             count: `operatorItems ${numberValue(shadowWorkflow?.totalOperatorItems)} · needsEvidence ${numberValue(shadowWorkflow?.needsEvidenceCount)}`,
-            detail: 'operator item 是 derived diagnostic row，不是 approve / reject / execute 写侧任务。',
+            detail: t('pages:anOperatorItemIsADerivedDiagnosticRowNotAnApproveRejectOrExecuteWriteTask'),
         },
         {
             key: 'consistency-evidence',
-            lane: 'consistency evidence',
+            lane: t('pages:consistencyEvidence'),
             evidence: 'latestEvidenceItem / metricDeltaSummary / freshnessSummary',
             status: consistencyEvidence?.latestEvidenceItem?.comparisonStatus ?? (consistencyEvidence ? 'NO_REPORT' : 'UNKNOWN'),
             count: `consistent ${numberValue(consistencyEvidence?.consistentCount)} · diverged ${numberValue(consistencyEvidence?.divergedCount)}`,
-            detail: 'CONSISTENT 只表示本地 evidence 一致，不表示可交易。',
+            detail: t('pages:consistentMeansLocalEvidenceAgreesNotThatTradingIsPermitted'),
         },
         {
             key: 'incident-replay-review-evidence',
-            lane: 'incident / replay review',
+            lane: t('pages:incidentReplayReview'),
             evidence: 'reviewItems / recommendation / replay anchors',
             status: incidentReplayReview?.latestReviewItem?.reviewDecision ?? (incidentReplayReview ? 'NO_DECISION' : 'UNKNOWN'),
             count: `reviewItems ${numberValue(incidentReplayReview?.totalReviewItems)} · blocked ${numberValue(incidentReplayReview?.blockedCount)}`,
-            detail: 'ACKNOWLEDGE_RECOMMENDED / ESCALATE_RECOMMENDED 只表示建议人工复核。',
+            detail: t('pages:acknowledgeRecommendedEscalateRecommendedRecommendManualReviewOnly'),
         },
         {
             key: 'python-artifact-preview-evidence',
-            lane: 'Python artifact preview',
+            lane: t('pages:pythonArtifactPreview'),
             evidence: 'no-file baseline / checksum / schema coverage',
             status: artifactPreview
                 ? evaluationArtifactPreviewIsNoFileBaseline(artifactPreview)
@@ -2635,7 +2637,7 @@ function validationOperationsEvidenceRows(
                     : artifactPreview.latestArtifactPreview?.checksumStatus ?? 'NOT_CHECKED'
                 : 'UNKNOWN',
             count: `previews ${numberValue(artifactPreview?.totalArtifactPreviews)} · stale ${numberValue(artifactPreview?.staleArtifactCount)}`,
-            detail: 'checksum VALID 不表示策略有效；Python artifact preview 不表示 ML ready 或 live execution ready。',
+            detail: t('pages:aValidChecksumDoesNotEstablishStrategyValidityPythonArtifactPreviewDoesNotEstablishMlOrLiveExecution'),
         },
     ];
 }
@@ -2647,7 +2649,7 @@ function validationOperationsOperatorQueueRows(
     return [
         ...(shadowWorkflow?.operatorItems ?? []).slice(0, 5).map((item) => ({
             key: `operator-${item.operatorItemId}`,
-            source: 'derived operator item',
+            source: t('pages:derivedOperatorItem'),
             itemId: item.operatorItemId,
             state: item.workflowState,
             severity: item.severity,
@@ -2657,7 +2659,7 @@ function validationOperationsOperatorQueueRows(
         })),
         ...(incidentReplayReview?.reviewItems ?? []).slice(0, 5).map((item) => ({
             key: `review-${item.reviewItemId}`,
-            source: 'review item',
+            source: t('pages:reviewItem'),
             itemId: item.reviewItemId,
             state: item.reviewState,
             severity: item.severity,
@@ -2669,6 +2671,7 @@ function validationOperationsOperatorQueueRows(
 }
 
 function StatusTag({status}: { status?: string | null }) {
+    useTranslation('pages');
     const presentation = statusPresentation(status);
     return (
         <CanonicalStatusTag
@@ -2689,242 +2692,243 @@ function workflowStatusPresentation(status: string | null | undefined): {
     switch (normalized) {
         case 'INTAKE':
             return {
-                label: '已进入 intake',
+                label: t('pages:enteredIntake'),
                 color: 'default',
-                tooltip: 'INTAKE 只表示 item 已进入只读派生队列，尚未形成复核材料结论。',
+                tooltip: t('pages:intakeMeansTheItemEnteredADerivedReadOnlyQueueNoReviewConclusionExistsYet'),
             };
         case 'EVIDENCE_REVIEW':
             return {
-                label: '证据复核中',
+                label: t('pages:evidenceUnderReview'),
                 color: 'warning',
-                tooltip: 'EVIDENCE_REVIEW 表示需要继续查看 evidence，不代表验证通过。',
+                tooltip: t('pages:evidenceReviewRequiresFurtherEvidenceInspectionItIsNotAValidationPass'),
             };
         case 'NEEDS_OPERATOR_REVIEW':
             return {
-                label: '需要人工复核',
+                label: t('pages:manualReviewRequired'),
                 color: 'warning',
-                tooltip: 'NEEDS_OPERATOR_REVIEW 表示需要 operator 人工复核诊断证据，不表示系统已处置。',
+                tooltip: t('pages:needsOperatorReviewRequiresManualDiagnosticReviewTheSystemHasNotHandledTheIssue'),
             };
         case 'NEEDS_EVIDENCE':
             return {
-                label: '需要补证据',
+                label: t('pages:evidenceRequired'),
                 color: 'warning',
-                tooltip: 'NEEDS_EVIDENCE 表示证据缺失或不足，必须 fail-closed 展示。',
+                tooltip: t('pages:needsEvidenceMeansEvidenceIsMissingOrInsufficientAndMustRemainFailClosed'),
             };
         case 'READY_FOR_OPERATOR_REVIEW':
             return {
-                label: '可人工复核，非交易授权',
+                label: t('pages:readyForManualReviewNotTradingAuthorization'),
                 color: 'processing',
-                tooltip: 'READY_FOR_OPERATOR_REVIEW 只表示材料可给 operator 人工复核，不表示可交易。',
+                tooltip: t('pages:readyForOperatorReviewMeansEvidenceCanBeManuallyReviewedNotTradedOn'),
             };
         case 'BLOCKED':
             return {
-                label: '阻断',
+                label: t('pages:blocked2'),
                 color: 'error',
-                tooltip: 'BLOCKED 表示诊断阻断，不能自动处置或触发交易动作。',
+                tooltip: t('pages:blockedMeansDiagnosticsAreBlockedNoAutomaticHandlingOrTradingActionsArePermitted'),
             };
         case 'CLOSED_RECOMMENDATION':
             return {
-                label: '诊断建议已形成，非自动处置',
+                label: t('pages:diagnosticRecommendationFormedNoAutomaticHandling'),
                 color: 'processing',
-                tooltip: 'CLOSED_RECOMMENDATION 只表示建议已形成，不表示处置完成或交易放行。',
+                tooltip: t('pages:closedRecommendationMeansARecommendationExistsNotCompletedHandlingOrTradingClearance'),
             };
         case 'ACKNOWLEDGED_RECOMMENDATION':
             return {
-                label: '建议人工确认诊断事实',
+                label: t('pages:manualAcknowledgmentOfDiagnosticFactsRecommended'),
                 color: 'processing',
-                tooltip: 'ACKNOWLEDGED_RECOMMENDATION 只表示形成确认建议，不表示系统已自动确认或处置。',
+                tooltip: t('pages:acknowledgedRecommendationRecordsAnAcknowledgmentRecommendationNotAutomaticAcknowledgmentOrHandling'),
             };
         case 'ESCALATED_RECOMMENDATION':
             return {
-                label: '建议人工升级复核',
+                label: t('pages:manualEscalationRecommended'),
                 color: 'warning',
-                tooltip: 'ESCALATED_RECOMMENDATION 只表示建议升级人工复核，不表示系统已执行升级。',
+                tooltip: t('pages:escalatedRecommendationRecommendsManualEscalationTheSystemHasNotEscalatedAnything'),
             };
         case 'VALIDATION_READY':
             return {
-                label: '验证材料可复核，非交易授权',
+                label: t('pages:validationEvidenceReviewableNotTradingAuthorization'),
                 color: 'processing',
-                tooltip: 'VALIDATION_READY 只表示材料可进入人工复核，不表示策略批准或交易授权。',
+                tooltip: t('pages:validationReadyMeansEvidenceIsReadyForManualReviewNotStrategyApprovalOrTradingAuthorization'),
             };
         case 'REVIEW_NEEDED':
             return {
-                label: '需要复核',
+                label: t('pages:reviewRequired'),
                 color: 'warning',
-                tooltip: 'REVIEW_NEEDED 表示需要人工 review，不表示自动处置或交易授权。',
+                tooltip: t('pages:reviewNeededRequiresManualReviewNotAutomaticHandlingOrTradingAuthorization'),
             };
         case 'NEEDS_REVIEW':
             return {
-                label: '需要人工查看',
+                label: t('pages:manualInspectionRequired'),
                 color: 'warning',
-                tooltip: 'NEEDS_REVIEW 表示仍需人工检查 evidence、blockers、warnings 与 nextSteps。',
+                tooltip: t('pages:needsReviewRequiresManualInspectionOfEvidenceBlockersWarningsAndNextsteps'),
             };
         case 'ACKNOWLEDGE_RECOMMENDED':
             return {
-                label: '建议人工确认，非自动处置',
+                label: t('pages:manualAcknowledgmentRecommendedNotAutomaticHandling'),
                 color: 'processing',
-                tooltip: 'ACKNOWLEDGE_RECOMMENDED 只表示建议人工确认诊断事实，不表示系统已处置。',
+                tooltip: t('pages:acknowledgeRecommendedRecommendsManualAcknowledgmentOfDiagnosticFactsNoSystemHandlingIsImplied'),
             };
         case 'ESCALATE_RECOMMENDED':
             return {
-                label: '建议人工升级复核，非系统已升级',
+                label: t('pages:manualEscalationRecommendedNotSystemEscalation'),
                 color: 'warning',
-                tooltip: 'ESCALATE_RECOMMENDED 只表示建议人工升级复核，不表示系统已执行升级。',
+                tooltip: t('pages:escalateRecommendedRecommendsManualEscalationTheSystemHasNotEscalatedAnything'),
             };
         case 'CLOSEOUT_RECOMMENDED':
             return {
-                label: '建议形成诊断闭环，非真实关闭',
+                label: t('pages:diagnosticCloseoutRecommendedNotActualClosure'),
                 color: 'processing',
-                tooltip: 'CLOSEOUT_RECOMMENDED 只表示形成诊断闭环建议，不表示真实 incident 已关闭。',
+                tooltip: t('pages:closeoutRecommendedIsADiagnosticCloseoutRecommendationNotClosureOfARealIncident'),
             };
         case 'REJECTED':
             return {
-                label: '验证条件不满足',
+                label: t('pages:validationCriteriaNotMet'),
                 color: 'error',
-                tooltip: 'REJECTED 是验证材料层面的拒绝，不表示行情方向。',
+                tooltip: t('pages:rejectedAppliesToValidationEvidenceNotMarketDirection'),
             };
         case 'STALE_EVIDENCE':
             return {
-                label: '证据过期',
+                label: t('pages:staleEvidence'),
                 color: 'warning',
-                tooltip: 'STALE_EVIDENCE 表示证据新鲜度不足，需要补证据。',
+                tooltip: t('pages:staleEvidenceMeansEvidenceIsNotFreshEnoughAndNeedsUpdating'),
             };
         case 'VALID':
             return {
-                label: 'checksum 自洽，非策略有效',
+                label: t('pages:checksumConsistentNotStrategyValidity'),
                 color: 'processing',
-                tooltip: 'VALID checksum 只表示 artifact payload 与 checksum 自洽，不表示策略有效、ML ready、收益真实或交易授权。',
+                tooltip: t('pages:aValidChecksumVerifiesPayloadIntegrityOnlyNotStrategyValidityMlReadinessRealReturnsOrTradingAuthoriz'),
             };
         case 'INVALID':
             return {
-                label: 'checksum 失败',
+                label: t('pages:checksumFailed'),
                 color: 'error',
-                tooltip: 'INVALID checksum 表示 artifact 校验失败，必须 fail-closed 展示。',
+                tooltip: t('pages:anInvalidChecksumMeansArtifactVerificationFailedAndMustBeShownFailClosed'),
             };
         case 'NOT_CHECKED':
             return {
-                label: '未检查',
+                label: t('pages:notChecked'),
                 color: 'default',
-                tooltip: 'NOT_CHECKED 表示 No-file baseline 或未配置 source，没有执行 artifact 校验。',
+                tooltip: t('pages:notCheckedMeansANoFileBaselineOrUnconfiguredSourceArtifactVerificationWasNotPerformed'),
             };
         case 'PRESENT':
             return {
-                label: '摘要存在，非收益结论',
+                label: t('pages:summaryAvailableNotAReturnConclusion'),
                 color: 'processing',
-                tooltip: 'PRESENT 只表示离线 metric summary 存在，不表示真实收益、策略有效或交易授权。',
+                tooltip: t('pages:presentMeansAnOfflineMetricSummaryExistsNotRealReturnsStrategyValidityOrTradingAuthorization'),
             };
         case 'INCOMPLETE':
             return {
-                label: '摘要不完整',
+                label: t('pages:incompleteSummary'),
                 color: 'warning',
-                tooltip: 'INCOMPLETE 表示 metric summary 不完整，必须按诊断风险展示。',
+                tooltip: t('pages:incompleteMeansTheMetricSummaryIsIncompleteAndMustBeShownAsADiagnosticRisk'),
             };
         case 'FAKE_FIXTURE_ONLY':
             return {
-                label: '测试 fixture，非真实表现',
+                label: t('pages:testFixtureNotRealPerformance'),
                 color: 'warning',
-                tooltip: 'FAKE_FIXTURE_ONLY 只能解释为测试 fixture，不是真实策略表现或收益结论。',
+                tooltip: t('pages:fakeFixtureOnlyIsATestFixtureNotRealStrategyPerformanceOrReturns'),
             };
         case 'CONSISTENT':
             return {
-                label: '诊断一致，非交易授权',
+                label: t('pages:diagnosticsConsistentNoTradingAuthorization'),
                 color: 'processing',
-                tooltip: 'CONSISTENT 只表示 Paper vs Shadow evidence 暂未发现差异，不表示盈利、批准或交易授权。',
+                tooltip: t('pages:consistentMeansNoDifferencesWereFoundInPaperVersusShadowEvidenceNotProfitApprovalOrTradingAuthorizat'),
             };
         case 'DIVERGED':
             return {
-                label: 'Paper / Shadow 证据不一致',
+                label: t('pages:paperShadowEvidenceDiffers'),
                 color: 'warning',
-                tooltip: 'DIVERGED 只表示本地 Paper vs Shadow 证据不一致，需要复核，不表示行情方向或自动处置。',
+                tooltip: t('pages:divergedMeansLocalPaperAndShadowEvidenceDiffersAndNeedsReviewNotMarketDirectionOrAutomaticHandling'),
             };
         case 'NOT_COMPARABLE':
             return {
-                label: '不可比较',
+                label: t('pages:notComparable'),
                 color: 'warning',
-                tooltip: 'NOT_COMPARABLE 表示比较基础不足或 schema 不兼容，必须 fail-closed 展示。',
+                tooltip: t('pages:notComparableMeansInsufficientComparisonDataOrIncompatibleSchemasAndMustRemainFailClosed'),
             };
         case 'FAILED':
             return {
-                label: '诊断失败',
+                label: t('pages:diagnosticsFailed'),
                 color: 'error',
-                tooltip: 'FAILED 表示一致性诊断读取或计算失败，需要排查，不表示自动处置。',
+                tooltip: t('pages:failedMeansConsistencyDiagnosticsCouldNotBeReadOrCalculatedAndRequireInvestigationNotAutomaticHandli'),
             };
         case 'NO_REPORT':
             return {
-                label: '无一致性报告',
+                label: t('pages:noConsistencyReport'),
                 color: 'default',
-                tooltip: 'NO_REPORT 表示缺少本地 consistency report，页面不会自动创建 report。',
+                tooltip: t('pages:noReportMeansNoLocalConsistencyReportExistsThePageDoesNotCreateOneAutomatically'),
             };
         case 'NO_DECISION':
             return {
-                label: '无判断',
+                label: t('pages:noDecision'),
                 color: 'default',
-                tooltip: 'NO_DECISION 表示当前无法形成验证材料判断。',
+                tooltip: t('pages:noDecisionMeansValidationEvidenceCannotCurrentlySupportADecision'),
             };
         case 'FRESH':
             return {
-                label: '证据新鲜，仍需复核',
+                label: t('pages:evidenceFreshReviewStillRequired'),
                 color: 'processing',
-                tooltip: 'FRESH 只描述 evidence freshness，不代表收益、批准或授权。',
+                tooltip: t('pages:freshDescribesEvidenceFreshnessOnlyNotReturnsApprovalOrAuthorization'),
             };
         case 'STALE':
             return {
-                label: '证据过期',
+                label: t('pages:staleEvidence'),
                 color: 'warning',
-                tooltip: 'STALE 表示 evidence 需要刷新或补齐。',
+                tooltip: t('pages:staleMeansEvidenceNeedsRefreshingOrCompletion'),
             };
         case 'MISSING':
             return {
-                label: '证据缺失',
+                label: t('pages:evidenceMissing'),
                 color: 'warning',
-                tooltip: 'MISSING 表示缺少 evidence，不得显示为通过。',
+                tooltip: t('pages:missingMeansEvidenceIsAbsentAndMustNotBeShownAsAPass'),
             };
         case 'PARTIAL':
             return {
-                label: '证据部分可见',
+                label: t('pages:evidencePartiallyAvailable'),
                 color: 'warning',
-                tooltip: 'PARTIAL 表示证据不完整，仍需人工补充或确认。',
+                tooltip: t('pages:partialMeansEvidenceIsIncompleteAndRequiresManualCompletionOrConfirmation'),
             };
         case 'NONE':
             return {
-                label: '无诊断优先级',
+                label: t('pages:noDiagnosticPriority'),
                 color: 'default',
-                tooltip: 'NONE 表示无当前诊断优先级，不代表流程完成。',
+                tooltip: t('pages:noneMeansNoCurrentDiagnosticPriorityNotWorkflowCompletion'),
             };
         case 'INFO':
             return {
-                label: '普通诊断信息',
+                label: t('pages:generalDiagnosticInformation'),
                 color: 'processing',
-                tooltip: 'INFO 只表示普通诊断信息。',
+                tooltip: t('pages:infoIndicatesGeneralDiagnosticInformationOnly'),
             };
         case 'WARNING':
             return {
-                label: '诊断警告',
+                label: t('pages:diagnosticWarning'),
                 color: 'warning',
-                tooltip: 'WARNING 表示需要查看的诊断警告。',
+                tooltip: t('pages:warningIndicatesADiagnosticWarningRequiringInspection'),
             };
         case 'HIGH':
             return {
-                label: '高诊断优先级',
+                label: t('pages:highDiagnosticPriority'),
                 color: 'error',
-                tooltip: 'HIGH 只表示诊断优先级高，不表示自动处置或交易状态。',
+                tooltip: t('pages:highIndicatesDiagnosticPriorityNotAutomaticHandlingOrTradingState'),
             };
         case 'CRITICAL':
             return {
-                label: '严重诊断优先级',
+                label: t('pages:criticalDiagnosticPriority'),
                 color: 'error',
-                tooltip: 'CRITICAL 只表示需要优先复核，不表示自动处置完成。',
+                tooltip: t('pages:criticalRequiresPriorityReviewAutomaticHandlingIsNotComplete'),
             };
         default:
             return {
-                label: normalized === 'UNKNOWN' ? '未知状态' : normalized,
+                label: normalized === 'UNKNOWN' ? t('pages:unknownState') : normalized,
                 color: normalized === 'UNKNOWN' ? 'default' : statusPresentation(normalized).tone === 'danger' ? 'error' : TONE_TO_COLOR[statusPresentation(normalized).tone],
-                tooltip: '未知或未专门映射的状态按 fail-closed 展示，不能解释为授权或成功。',
+                tooltip: t('pages:unknownOrUnmappedStatesRemainFailClosedAndCannotMeanAuthorizationOrSuccess'),
             };
     }
 }
 
 function WorkflowStatusTag({status}: { status?: string | null }) {
+    useTranslation('pages');
     const normalized = normalizeStatus(status);
     const presentation = workflowStatusPresentation(normalized);
     const tone = presentation.color === 'error'
@@ -2956,14 +2960,15 @@ function QueryForm({
     onReset: () => void;
     loading: boolean;
 }) {
-    const [form] = Form.useForm<StrategyValidationQuery>();
+    useTranslation('pages');
+    const [form] = useLocalizedForm<StrategyValidationQuery>();
 
     useEffect(() => {
         form.setFieldsValue(initialValues);
     }, [form, initialValues]);
 
     return (
-        <Card className="page-section" variant="borderless" title="只读查询条件">
+        <Card className="page-section" variant="borderless" title={t('pages:readOnlyQueryFilters')}>
             <Form<StrategyValidationQuery>
                 form={form}
                 layout="vertical"
@@ -2973,14 +2978,13 @@ function QueryForm({
                 <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12}}>
                     {QUERY_FIELDS.map((field) => (
                         <Form.Item key={field} label={FIELD_LABELS[field]} name={field}>
-                            <Input allowClear placeholder={`输入 ${FIELD_LABELS[field]}`}/>
+                            <Input allowClear placeholder={t('pages:enterValue1', {value1: FIELD_LABELS[field]})}/>
                         </Form.Item>
                     ))}
                 </div>
                 <Space size={8} wrap>
                     <Button type="primary" htmlType="submit" icon={<SearchOutlined/>} loading={loading}>
-                        查询只读证据
-                    </Button>
+                        {t('pages:queryReadOnlyEvidence')}</Button>
                     <Button
                         icon={<ClearOutlined/>}
                         onClick={() => {
@@ -2988,8 +2992,7 @@ function QueryForm({
                             onReset();
                         }}
                     >
-                        清空
-                    </Button>
+                        {t('pages:clear')}</Button>
                 </Space>
             </Form>
         </Card>
@@ -3010,6 +3013,7 @@ function ResultPanel<TData>({
                                 boundaryDescription,
                                 children,
                             }: ResultPanelProps<TData>) {
+    useTranslation('pages');
     return (
         <Card
             className="page-section"
@@ -3018,40 +3022,39 @@ function ResultPanel<TData>({
             extra={submitted ? (
                 <Button size="small" icon={<ReloadOutlined/>} loading={query.isFetching}
                         onClick={() => query.refetch()}>
-                    刷新
-                </Button>
+                    {t('pages:refresh')}</Button>
             ) : null}
         >
             {!submitted ? (
-                <Empty description="尚未提交只读查询条件"/>
+                <Empty description={t('pages:noReadOnlyQuerySubmitted')}/>
             ) : query.isLoading ? (
                 <Skeleton active paragraph={{rows: 6}}/>
             ) : query.isError ? (
                 <Alert
                     type="error"
                     showIcon
-                    message={`${title} 查询失败`}
+                    message={t('pages:failedToQueryValue1', {value1: title})}
                     description={(
                         <Paragraph style={{marginBottom: 0}}>
-                            该结果按不可用处理，不会显示为通过或授权。{formatApiError(query.error as AppApiError)}
+                            {t('pages:thisResultIsUnavailableNotPassedOrAuthorized')}{formatApiError(query.error as AppApiError)}
                         </Paragraph>
                     )}
                 />
             ) : !query.data ? (
-                <Empty description="只读 API 暂无可展示数据"/>
+                <Empty description={t('pages:noDataAvailableFromTheReadOnlyApi')}/>
             ) : (
                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
                     <Space size={8} wrap>
                         <StatusTag status={status}/>
                         <Text type="secondary">{subtitle}</Text>
                     </Space>
-                    <Alert type="info" showIcon message="只读边界" description={boundaryDescription}/>
+                    <Alert type="info" showIcon message={t('pages:readOnlyBoundary')} description={boundaryDescription}/>
                     {isProblemStatus(status) ? (
                         <Alert
                             type="warning"
                             showIcon
-                            message="查询结果不是通过态"
-                            description="UNKNOWN / NOT_AVAILABLE / NOT_IMPLEMENTED / BLOCKED 状态不会显示为成功；请先处理 blockers 与 nextSteps。"
+                            message={t('pages:theQueryResultIsNotAPass')}
+                            description={t('pages:unknownNotAvailableNotImplementedBlockedAreNotSuccessStatesAddressBlockersAndNextstepsFirst')}
                         />
                     ) : null}
                     {children}
@@ -3071,10 +3074,11 @@ function EvidenceTables({
     requiredEvidence: StrategyValidationEvidence[];
     missingEvidence: StrategyValidationEvidence[];
 }) {
+    useTranslation('pages');
     return (
         <Space direction="vertical" size={12} style={{display: 'flex'}}>
             <div>
-                <Text strong>Required evidence</Text>
+                <Text strong>{t('pages:requiredEvidence')}</Text>
                 <Table<StrategyValidationEvidence>
                     size="small"
                     rowKey={(record) => record.code}
@@ -3082,11 +3086,11 @@ function EvidenceTables({
                     dataSource={requiredEvidence}
                     pagination={false}
                     scroll={{x: 720}}
-                    locale={{emptyText: '暂无 required evidence'}}
+                    locale={{emptyText: t('pages:noRequiredEvidence')}}
                 />
             </div>
             <div>
-                <Text strong>Missing evidence</Text>
+                <Text strong>{t('pages:missingEvidence')}</Text>
                 <Table<StrategyValidationEvidence>
                     size="small"
                     rowKey={(record) => record.code}
@@ -3094,7 +3098,7 @@ function EvidenceTables({
                     dataSource={missingEvidence}
                     pagination={false}
                     scroll={{x: 720}}
-                    locale={{emptyText: '暂无 missing evidence'}}
+                    locale={{emptyText: t('pages:noMissingEvidence')}}
                 />
             </div>
         </Space>
@@ -3108,10 +3112,11 @@ function ReasonTables({
     blockers: StrategyValidationReason[];
     warnings: StrategyValidationReason[];
 }) {
+    useTranslation('pages');
     return (
         <Space direction="vertical" size={12} style={{display: 'flex'}}>
             <div>
-                <Text strong>Blockers</Text>
+                <Text strong>{t('pages:blockers2')}</Text>
                 <Table<StrategyValidationReason>
                     size="small"
                     rowKey={(record) => `${record.code}-${record.severity}`}
@@ -3119,11 +3124,11 @@ function ReasonTables({
                     dataSource={blockers}
                     pagination={false}
                     scroll={{x: 760}}
-                    locale={{emptyText: '暂无 blockers'}}
+                    locale={{emptyText: t('pages:noBlockers')}}
                 />
             </div>
             <div>
-                <Text strong>Warnings</Text>
+                <Text strong>{t('pages:warnings3')}</Text>
                 <Table<StrategyValidationReason>
                     size="small"
                     rowKey={(record) => `${record.code}-${record.severity}`}
@@ -3131,7 +3136,7 @@ function ReasonTables({
                     dataSource={warnings}
                     pagination={false}
                     scroll={{x: 760}}
-                    locale={{emptyText: '暂无 warnings'}}
+                    locale={{emptyText: t('pages:noWarnings2')}}
                 />
             </div>
         </Space>
@@ -3139,13 +3144,14 @@ function ReasonTables({
 }
 
 function NextStepsList({nextSteps}: { nextSteps: string[] }) {
+    useTranslation('pages');
     if (!nextSteps.length) {
         return (
             <Alert
                 type="info"
                 showIcon
-                message="Next steps"
-                description="当前响应未返回 nextSteps；页面不会把缺失下一步解释为已完成。"
+                message={t('pages:nextSteps')}
+                description={t('pages:theResponseContainsNoNextstepsMissingNextStepsDoNotMeanCompletion')}
             />
         );
     }
@@ -3153,7 +3159,7 @@ function NextStepsList({nextSteps}: { nextSteps: string[] }) {
         <Alert
             type="warning"
             showIcon
-            message="Next steps"
+            message={t('pages:nextSteps')}
             description={(
                 <ul style={{margin: 0, paddingInlineStart: 20}}>
                     {nextSteps.map((step) => (
@@ -3200,53 +3206,54 @@ function resolveOverviewState(overview: StrategyValidationOverviewResponse): Ove
     if (overviewIsEmpty(overview)) {
         return {
             level: 'info',
-            message: 'Strategy Validation overview 暂无数据',
-            description: '当前只读响应为空；页面不会补造 evidence，也不会把空态解释为验证通过。',
+            message: t('pages:noStrategyValidationOverviewData'),
+            description: t('pages:theReadOnlyResponseIsEmptyEvidenceIsNotFabricatedAndAnEmptyStateIsNotAValidationPass'),
         };
     }
     if (overviewHasNoEvidence(overview)) {
         return {
             level: 'warning',
-            message: 'Strategy Validation overview 缺少 evidence',
-            description: 'NO_EVIDENCE / 无 evidence anchors 表示验证证据不足，需要先补齐只读事实来源。',
+            message: t('pages:strategyValidationOverviewLacksEvidence'),
+            description: t('pages:noEvidenceOrMissingAnchorsMeansInsufficientValidationEvidenceCompleteTheReadOnlyFactSourcesFirst'),
         };
     }
     if (decision === 'BLOCKED' || countValue(overview.blocked) > 0 || overview.blockers.length > 0) {
         return {
             level: 'error',
-            message: 'Strategy Validation overview 被阻断',
-            description: 'blocked 只表示 validation 诊断链路阻断，需要处理 blockers；不代表交易状态变化。',
+            message: t('pages:strategyValidationOverviewBlocked'),
+            description: t('pages:blockedRefersToTheValidationDiagnosticChainAddressBlockersTradingStateIsUnchanged'),
         };
     }
     if (decision === 'REJECTED' || countValue(overview.rejectedForValidation) > 0) {
         return {
             level: 'error',
-            message: 'Strategy Validation overview 被拒绝',
-            description: 'REJECTED 表示 validation 层证据不满足进入后续 review 的条件，不是交易方向或行情判断。',
+            message: t('pages:strategyValidationOverviewRejected'),
+            description: t('pages:rejectedMeansValidationEvidenceDoesNotQualifyForFurtherReviewNotATradingOrMarketDirectionJudgment'),
         };
     }
     if (decision === 'NEEDS_REVIEW' || countValue(overview.needsReview) > 0 || decision === 'STALE_EVIDENCE') {
         return {
             level: 'warning',
-            message: 'Strategy Validation overview 需要复核',
-            description: '需要人工检查 decisionReasons、limitations、warnings 与 nextSteps；不得解释为放行。',
+            message: t('pages:strategyValidationOverviewNeedsReview'),
+            description: t('pages:manuallyInspectDecisionreasonsLimitationsWarningsAndNextstepsThisIsNotClearance'),
         };
     }
     if (decision === 'APPROVED' || countValue(overview.approvedForValidation) > 0) {
         return {
             level: 'info',
-            message: 'Strategy Validation overview 验证层通过',
-            description: 'APPROVED 只表示 validation evidence 暂时满足后续 review，不表示交易授权、LIVE enable 或实盘就绪。',
+            message: t('pages:strategyValidationEvidencePassed'),
+            description: t('pages:approvedMeansValidationEvidenceCurrentlySupportsFurtherReviewNotTradingAuthorizationLiveEnablementOr'),
         };
     }
     return {
         level: 'info',
-        message: 'Strategy Validation overview 已加载',
-        description: '当前结果只用于只读 validation 诊断，不产生任何交易或运行副作用。',
+        message: t('pages:strategyValidationOverviewLoaded'),
+        description: t('pages:thisResultSupportsReadOnlyValidationDiagnosticsOnlyWithoutTradingOrRuntimeSideEffects'),
     };
 }
 
 function BoundaryBadge({label, tooltip, color}: { label: string; tooltip: string; color?: string }) {
+    useTranslation('pages');
     return (
         <Tooltip title={tooltip}>
             <Tag color={color}>{label}</Tag>
@@ -3255,41 +3262,43 @@ function BoundaryBadge({label, tooltip, color}: { label: string; tooltip: string
 }
 
 function StrategyValidationOverviewBoundaryBadges({overview}: { overview?: StrategyValidationOverviewResponse }) {
-    const pending = overview ? '' : '；overview 尚未返回时按 fail-closed 展示';
+    useTranslation('pages');
+    const pending = overview ? '' : t('pages:unavailableOverviewDataRemainsFailClosed');
     return (
         <Space size={[8, 8]} wrap>
             <BoundaryBadge
                 color="error"
-                label="LIVE DISABLED（LIVE 关闭）"
-                tooltip={`liveDisabled=true，页面不得展示 LIVE 可用或实盘就绪${pending}`}
+                label={t('pages:liveDisabled')}
+                tooltip={t('pages:livedisabledTrueThisPageMustNotShowLiveAvailabilityOrRealTradingReadinessValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="Real provider NOT IMPLEMENTED（真实 provider 未实现）"
-                tooltip={`realProviderImplemented=false，不存在真实 provider 可用结论${pending}`}
+                label={t('pages:realProviderNotImplemented')}
+                tooltip={t('pages:realproviderimplementedFalseRealProviderAvailabilityIsNotEstablishedValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="Private trading NOT IMPLEMENTED（私有交易未实现）"
-                tooltip={`privateTradingImplemented=false，不存在下单、撤单、转账或提现入口${pending}`}
+                label={t('pages:privateTradingNotImplemented')}
+                tooltip={t('pages:privatetradingimplementedFalseNoOrdersCancellationsTransfersOrWithdrawalsValue1', {value1: pending})}
             />
             <BoundaryBadge
                 color="warning"
-                label="Validation is not trading authorization（验证不是交易授权）"
-                tooltip={`validation 结果仅用于 review，不能解释为交易授权${pending}`}
+                label={t('pages:validationIsNotTradingAuthorization')}
+                tooltip={t('pages:validationResultsAreForReviewOnlyNotTradingAuthorizationValue1', {value1: pending})}
             />
             <BoundaryBadge
                 color="error"
-                label="Not trading authorization（非交易授权）"
-                tooltip={`notTradingAuthorization=true，APPROVED 也不能解释为可交易${pending}`}
+                label={t('pages:notTradingAuthorization')}
+                tooltip={t('pages:nottradingauthorizationTrueApprovedDoesNotMeanTradableValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="AI/DH runtime not integrated（AI/DH runtime 未集成）"
-                tooltip={`aiDhRuntimeIntegrated=false，不表示 AI started 或 DH integrated${pending}`}
+                label={t('pages:aiDhRuntimeNotIntegrated')}
+                tooltip={t('pages:aidhruntimeintegratedFalseNeitherAiStartedNorDhIntegratedValue1', {value1: pending})}
             />
         </Space>
     );
 }
 
 function OverviewBoundaryDriftAlert({overview}: { overview?: StrategyValidationOverviewResponse }) {
+    useTranslation('pages');
     if (!overview) {
         return null;
     }
@@ -3305,13 +3314,14 @@ function OverviewBoundaryDriftAlert({overview}: { overview?: StrategyValidationO
         <Alert
             type="error"
             showIcon
-            message="Overview boundary flags 与当前安全基线不一致"
-            description="页面按 fail-closed 处理该响应；本前端不会把异常 flags 展示成可交易、可执行或实盘就绪。"
+            message={t('pages:overviewBoundaryFlagsConflictWithTheSafetyBaseline')}
+            description={t('pages:theResponseRemainsFailClosedUnexpectedFlagsDoNotIndicateTradabilityExecutabilityOrRealTradingReadine')}
         />
     ) : null;
 }
 
 function OverviewCounts({overview}: { overview?: StrategyValidationOverviewResponse }) {
+    useTranslation('pages');
     return (
         <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
             <Descriptions.Item label="totalStrategyVersions">
@@ -3337,11 +3347,12 @@ function OverviewCounts({overview}: { overview?: StrategyValidationOverviewRespo
 }
 
 function LatestDecisionSummary({latestDecision}: { latestDecision?: StrategyValidationLatestDecision | null }) {
+    useTranslation('pages');
     return (
         <Space direction="vertical" size={12} style={{display: 'flex'}}>
             <Descriptions size="small" bordered column={{xs: 1, sm: 1, md: 2}}>
                 <Descriptions.Item label="latestDecision.decision">
-                    <Tooltip title="APPROVED 只表示 validation 层面通过，不表示交易授权。">
+                    <Tooltip title={t('pages:approvedIsAValidationLevelPassOnlyNotTradingAuthorization')}>
                         <span><StatusTag status={latestDecision?.decision}/></span>
                     </Tooltip>
                 </Descriptions.Item>
@@ -3363,18 +3374,19 @@ function LatestDecisionSummary({latestDecision}: { latestDecision?: StrategyVali
             <TextList
                 title="decisionReasons"
                 items={latestDecision?.decisionReasons ?? []}
-                emptyText="暂无 decisionReasons；不能补造通过原因。"
+                emptyText={t('pages:noDecisionreasonsApprovalReasonsMustNotBeFabricated')}
             />
             <TextList
                 title="limitations"
                 items={latestDecision?.limitations ?? []}
-                emptyText="暂无 limitations；仍需遵守固定安全边界。"
+                emptyText={t('pages:noLimitationsListedFixedSafetyBoundariesStillApply')}
             />
         </Space>
     );
 }
 
 function TextList({title, items, emptyText}: { title: string; items: string[]; emptyText: string }) {
+    useTranslation('pages');
     return (
         <section aria-label={title}>
             <Text strong>{title}</Text>
@@ -3398,10 +3410,11 @@ function OverviewIssueTables({
     blockers: StrategyValidationBlocker[];
     warnings: StrategyValidationWarning[];
 }) {
+    useTranslation('pages');
     return (
         <Space direction="vertical" size={12} style={{display: 'flex'}}>
             <div>
-                <Text strong>Blockers</Text>
+                <Text strong>{t('pages:blockers2')}</Text>
                 <Table<StrategyValidationBlocker>
                     size="small"
                     rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
@@ -3409,11 +3422,11 @@ function OverviewIssueTables({
                     dataSource={blockers}
                     pagination={false}
                     scroll={{x: 930}}
-                    locale={{emptyText: '暂无 blockers；仍需遵守固定安全边界。'}}
+                    locale={{emptyText: t('pages:noBlockersListedFixedSafetyBoundariesStillApply')}}
                 />
             </div>
             <div>
-                <Text strong>Warnings</Text>
+                <Text strong>{t('pages:warnings3')}</Text>
                 <Table<StrategyValidationWarning>
                     size="small"
                     rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
@@ -3421,7 +3434,7 @@ function OverviewIssueTables({
                     dataSource={warnings}
                     pagination={false}
                     scroll={{x: 930}}
-                    locale={{emptyText: '暂无 warnings；仍需遵守固定安全边界。'}}
+                    locale={{emptyText: t('pages:noWarningsFixedSafetyBoundariesStillApply')}}
                 />
             </div>
         </Space>
@@ -3429,6 +3442,7 @@ function OverviewIssueTables({
 }
 
 function StrategyValidationOverviewPanel({query}: { query: PanelQueryState<StrategyValidationOverviewResponse> }) {
+    useTranslation('pages');
     const overview = query.data;
     const overviewState = overview ? resolveOverviewState(overview) : null;
     const stateAlertType = overviewState?.level ?? 'info';
@@ -3437,19 +3451,16 @@ function StrategyValidationOverviewPanel({query}: { query: PanelQueryState<Strat
         <Card
             className="page-section"
             variant="borderless"
-            title="Strategy Validation Overview"
+            title={t('pages:strategyValidationOverview')}
             extra={(
                 <Button size="small" icon={<ReloadOutlined/>} loading={query.isFetching}
                         onClick={() => query.refetch()}>
-                    刷新 overview
-                </Button>
+                    {t('pages:refreshOverview')}</Button>
             )}
         >
             <Space direction="vertical" size={12} style={{display: 'flex'}}>
                 <Paragraph type="secondary" style={{marginBottom: 0}}>
-                    只读消费 GET /api/strategy-validation/overview；用于 validation runtime baseline 总览，不新增
-                    route、Dashboard v2 或写侧动作。
-                </Paragraph>
+                    {t('pages:readOnlyGetApiStrategyValidationOverviewForTheValidationRuntimeBaselineWithoutNewRoutesDashboardV2Or')}</Paragraph>
                 <StrategyValidationOverviewBoundaryBadges overview={overview}/>
                 <OverviewBoundaryDriftAlert overview={overview}/>
                 <OverviewCounts overview={overview}/>
@@ -3459,16 +3470,15 @@ function StrategyValidationOverviewPanel({query}: { query: PanelQueryState<Strat
                     <Alert
                         type="error"
                         showIcon
-                        message="Strategy Validation overview 查询失败"
+                        message={t('pages:failedToQueryStrategyValidationOverview')}
                         description={(
                             <Paragraph style={{marginBottom: 0}}>
-                                overview
-                                失败时按不可用处理，不会显示为通过、授权或可执行。{formatApiError(query.error as AppApiError)}
+                                {t('pages:aFailedOverviewIsUnavailableNotPassedAuthorizedOrExecutable')}{formatApiError(query.error as AppApiError)}
                             </Paragraph>
                         )}
                     />
                 ) : !overview ? (
-                    <Empty description="暂无 Strategy Validation overview 响应；固定安全边界仍按 fail-closed 展示。"/>
+                    <Empty description={t('pages:noStrategyValidationOverviewResponseFixedSafetyBoundariesRemainFailClosed')}/>
                 ) : (
                     <>
                         {overviewState ? (
@@ -3483,8 +3493,8 @@ function StrategyValidationOverviewPanel({query}: { query: PanelQueryState<Strat
                             <Alert
                                 type="warning"
                                 showIcon
-                                message="No evidence / 无证据"
-                                description="没有 evidenceAnchors 或 decision=NO_EVIDENCE 时，页面只展示缺证据状态，不补造 evidence。"
+                                message={t('pages:noEvidence2')}
+                                description={t('pages:missingEvidenceanchorsOrDecisionNoEvidenceMeansEvidenceIsMissingThePageDoesNotFabricateIt')}
                             />
                         ) : null}
                         <LatestDecisionSummary latestDecision={overview.latestDecision}/>
@@ -3496,7 +3506,7 @@ function StrategyValidationOverviewPanel({query}: { query: PanelQueryState<Strat
                             dataSource={overview.nextSteps}
                             pagination={false}
                             scroll={{x: 1000}}
-                            locale={{emptyText: '暂无 nextSteps；不能解释为已经允许交易。'}}
+                            locale={{emptyText: t('pages:noNextstepsThisDoesNotPermitTrading2')}}
                         />
                         <Table<StrategyValidationEvidenceAnchor>
                             size="small"
@@ -3505,7 +3515,7 @@ function StrategyValidationOverviewPanel({query}: { query: PanelQueryState<Strat
                             dataSource={overview.evidenceAnchors}
                             pagination={false}
                             scroll={{x: 1030}}
-                            locale={{emptyText: '暂无 evidenceAnchors；不能解释为证据完整。'}}
+                            locale={{emptyText: t('pages:noEvidenceanchorsEvidenceCannotBeConsideredComplete')}}
                         />
                     </>
                 )}
@@ -3564,82 +3574,83 @@ function resolveShadowValidationWorkflowState(overview: ShadowValidationWorkflow
     if (shadowWorkflowIsEmpty(overview) || shadowWorkflowHasNoEvidence(overview)) {
         return {
             level: 'warning',
-            message: 'Shadow Validation Workflow 暂无 operator items 或缺少 evidence',
-            description: 'empty / no evidence 表示没有足够本地事实支撑复核；页面不会补造 operator item，也不会显示为通过。',
+            message: t('pages:shadowValidationWorkflowHasNoOperatorItemsOrLacksEvidence'),
+            description: t('pages:emptyOrNoEvidenceMeansInsufficientLocalFactsForReviewOperatorItemsAreNotFabricatedAndThisIsNotAPass'),
         };
     }
     if (shadowWorkflowBlocked(overview)) {
         return {
             level: 'error',
-            message: 'Shadow Validation Workflow 被阻断',
-            description: 'BLOCKED 只表示诊断阻断，需要处理 blockers；不代表交易状态、风险处置或自动关闭。',
+            message: t('pages:shadowValidationWorkflowBlocked'),
+            description: t('pages:blockedRefersToDiagnosticsAddressBlockersItDoesNotChangeTradingStateHandleRiskOrCloseItemsAutomatica'),
         };
     }
     if (shadowWorkflowNeedsEvidence(overview)) {
         return {
             level: 'warning',
-            message: 'Shadow Validation Workflow 需要补证据',
-            description: 'NEEDS_EVIDENCE / STALE_EVIDENCE / STALE / PARTIAL 表示材料不足或过期，必须先补齐只读 evidence。',
+            message: t('pages:shadowValidationWorkflowNeedsEvidence'),
+            description: t('pages:needsEvidenceStaleEvidenceStalePartialRequireCompletingOrRefreshingReadOnlyEvidenceFirst'),
         };
     }
     if (state === 'EVIDENCE_REVIEW' || decision === 'NEEDS_REVIEW' || decision === 'REJECTED') {
         return {
             level: decision === 'REJECTED' ? 'error' : 'warning',
-            message: 'Shadow Validation Workflow 处于 evidence review',
-            description: 'EVIDENCE_REVIEW / NEEDS_REVIEW / REJECTED 均要求人工查看证据、警告和下一步；不表示交易授权。',
+            message: t('pages:shadowValidationWorkflowUnderEvidenceReview'),
+            description: t('pages:evidenceReviewNeedsReviewRejectedRequireManualReviewOfEvidenceWarningsAndNextStepsNoTradingAuthoriza'),
         };
     }
     if (state === 'READY_FOR_OPERATOR_REVIEW' || decision === 'VALIDATION_READY') {
         return {
             level: 'info',
-            message: 'Shadow Validation Workflow 可进入人工复核',
-            description: 'READY_FOR_OPERATOR_REVIEW / VALIDATION_READY 只表示验证材料可人工复核，不表示可交易、已批准或 LIVE 可用。',
+            message: t('pages:shadowValidationWorkflowReadyForManualReview'),
+            description: t('pages:readyForOperatorReviewValidationReadyMeanEvidenceIsReviewableNotTradableApprovedOrLiveReady'),
         };
     }
     if (state === 'CLOSED_RECOMMENDATION') {
         return {
             level: 'info',
-            message: 'Shadow Validation Workflow 已形成诊断建议',
-            description: 'CLOSED_RECOMMENDATION 只表示诊断建议已形成，不表示自动处置完成或交易链路已放行。',
+            message: t('pages:shadowValidationWorkflowHasADiagnosticRecommendation'),
+            description: t('pages:closedRecommendationMeansADiagnosticRecommendationExistsNotCompletedHandlingOrTradingClearance'),
         };
     }
     return {
         level: 'info',
-        message: 'Shadow Validation Workflow 已加载',
-        description: '当前结果只用于只读 operator review 诊断，不产生任何交易、运行或持久化副作用。',
+        message: t('pages:shadowValidationWorkflowLoaded'),
+        description: t('pages:thisResultSupportsReadOnlyOperatorReviewDiagnosticsWithoutTradingRuntimeOrPersistenceSideEffects'),
     };
 }
 
 function ShadowValidationWorkflowBoundaryBadges({overview}: { overview?: ShadowValidationWorkflowOverviewResponse }) {
-    const pending = overview ? '' : '；overview 尚未返回时按 fail-closed 展示';
+    useTranslation('pages');
+    const pending = overview ? '' : t('pages:unavailableOverviewDataRemainsFailClosed');
     return (
         <Space size={[8, 8]} wrap>
             <BoundaryBadge
                 color="error"
-                label="LIVE DISABLED（LIVE 关闭）"
-                tooltip={`liveDisabled=true；本 workflow 不表示 LIVE 可用${pending}`}
+                label={t('pages:liveDisabled')}
+                tooltip={t('pages:livedisabledTrueThisWorkflowDoesNotEstablishLiveAvailabilityValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="Real provider NOT IMPLEMENTED（真实 provider 未实现）"
-                tooltip={`realProviderImplemented=false；本 workflow 不调用真实 provider${pending}`}
+                label={t('pages:realProviderNotImplemented')}
+                tooltip={t('pages:realproviderimplementedFalseThisWorkflowDoesNotCallRealProvidersValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="Private trading NOT IMPLEMENTED（私有交易未实现）"
-                tooltip={`privateTradingImplemented=false；本 workflow 不提供下单、撤单、转账或提现入口${pending}`}
+                label={t('pages:privateTradingNotImplemented')}
+                tooltip={t('pages:privatetradingimplementedFalseThisWorkflowOffersNoOrdersCancellationsTransfersOrWithdrawalsValue1', {value1: pending})}
             />
             <BoundaryBadge
                 color="warning"
-                label="Validation workflow is diagnostic only（验证 workflow 仅诊断）"
-                tooltip={`diagnosticOnly=true；operator items 是 derived 诊断条目，不持久化、不执行${pending}`}
+                label={t('pages:validationWorkflowIsDiagnosticOnly')}
+                tooltip={t('pages:diagnosticonlyTrueOperatorItemsAreDerivedDiagnosticsWithoutPersistenceOrExecutionValue1', {value1: pending})}
             />
             <BoundaryBadge
                 color="error"
-                label="Not trading authorization（非交易授权）"
-                tooltip={`notTradingAuthorization=true；VALIDATION_READY 也不能解释为交易授权${pending}`}
+                label={t('pages:notTradingAuthorization')}
+                tooltip={t('pages:nottradingauthorizationTrueValidationReadyDoesNotGrantTradingAuthorizationValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="AI/DH runtime not integrated（AI/DH runtime 未集成）"
-                tooltip={`aiDhRuntimeIntegrated=false；不表示 AI started 或 DH integrated${pending}`}
+                label={t('pages:aiDhRuntimeNotIntegrated')}
+                tooltip={t('pages:aidhruntimeintegratedFalseNeitherAiStartedNorDhIntegratedValue12', {value1: pending})}
             />
         </Space>
     );
@@ -3648,6 +3659,7 @@ function ShadowValidationWorkflowBoundaryBadges({overview}: { overview?: ShadowV
 function ShadowValidationWorkflowBoundaryDriftAlert({overview}: {
     overview?: ShadowValidationWorkflowOverviewResponse
 }) {
+    useTranslation('pages');
     if (!overview) {
         return null;
     }
@@ -3670,13 +3682,14 @@ function ShadowValidationWorkflowBoundaryDriftAlert({overview}: {
         <Alert
             type="error"
             showIcon
-            message="Shadow Validation Workflow boundary flags 与当前安全基线不一致"
-            description="页面按 fail-closed 处理该响应；不会把异常 flags 展示成可执行、可交易、可处置或实盘可用。"
+            message={t('pages:shadowValidationWorkflowBoundaryFlagsConflictWithTheSafetyBaseline')}
+            description={t('pages:theResponseRemainsFailClosedUnexpectedFlagsDoNotPermitExecutionTradingHandlingOrLiveUse')}
         />
     ) : null;
 }
 
 function ShadowValidationWorkflowCounts({overview}: { overview?: ShadowValidationWorkflowOverviewResponse }) {
+    useTranslation('pages');
     return (
         <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
             <Descriptions.Item label="totalOperatorItems">
@@ -3711,6 +3724,7 @@ function ShadowValidationWorkflowCounts({overview}: { overview?: ShadowValidatio
 }
 
 function ShadowValidationLatestOperatorItem({item}: { item?: ShadowValidationOperatorItem | null }) {
+    useTranslation('pages');
     return (
         <Descriptions size="small" bordered column={{xs: 1, sm: 1, md: 2}}>
             <Descriptions.Item label="workflowState">
@@ -3743,10 +3757,11 @@ function ShadowValidationWorkflowIssueTables({
     blockers: ShadowValidationBlocker[];
     warnings: ShadowValidationWarning[];
 }) {
+    useTranslation('pages');
     return (
         <Space direction="vertical" size={12} style={{display: 'flex'}}>
             <div>
-                <Text strong>Blockers（阻断项）</Text>
+                <Text strong>{t('pages:blockers')}</Text>
                 <Table<ShadowValidationBlocker>
                     size="small"
                     rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
@@ -3754,11 +3769,11 @@ function ShadowValidationWorkflowIssueTables({
                     dataSource={blockers}
                     pagination={false}
                     scroll={{x: 930}}
-                    locale={{emptyText: '暂无 blockers；仍需遵守固定安全边界。'}}
+                    locale={{emptyText: t('pages:noBlockersListedFixedSafetyBoundariesStillApply')}}
                 />
             </div>
             <div>
-                <Text strong>Warnings（警告项）</Text>
+                <Text strong>{t('pages:warnings2')}</Text>
                 <Table<ShadowValidationWarning>
                     size="small"
                     rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
@@ -3766,7 +3781,7 @@ function ShadowValidationWorkflowIssueTables({
                     dataSource={warnings}
                     pagination={false}
                     scroll={{x: 930}}
-                    locale={{emptyText: '暂无 warnings；不能解释为 workflow 已完成。'}}
+                    locale={{emptyText: t('pages:noWarningsTheWorkflowIsNotNecessarilyComplete')}}
                 />
             </div>
         </Space>
@@ -3774,6 +3789,7 @@ function ShadowValidationWorkflowIssueTables({
 }
 
 function ShadowValidationWorkflowPanel({query}: { query: PanelQueryState<ShadowValidationWorkflowOverviewResponse> }) {
+    useTranslation('pages');
     const overview = query.data;
     const panelState = overview ? resolveShadowValidationWorkflowState(overview) : null;
 
@@ -3781,20 +3797,17 @@ function ShadowValidationWorkflowPanel({query}: { query: PanelQueryState<ShadowV
         <Card
             className="page-section"
             variant="borderless"
-            title="影子验证工作流总览（Shadow Validation Workflow Overview）"
+            title={t('pages:shadowValidationWorkflowOverview')}
             extra={(
                 <Button size="small" icon={<ReloadOutlined/>} loading={query.isFetching}
                         onClick={() => query.refetch()}>
-                    刷新总览
-                </Button>
+                    {t('pages:refreshOverview2')}</Button>
             )}
         >
             <Space data-testid="shadow-validation-workflow-panel" direction="vertical" size={12}
                    style={{display: 'flex'}}>
                 <Paragraph type="secondary" style={{marginBottom: 0}}>
-                    只读消费 GET /api/shadow-validation/workflow/overview；展示 derived operator items、workflowState、
-                    validationDecision、evidenceFreshness、evidence anchors 与 traceId，不新增 route、review 动作、交易按钮或写侧请求。
-                </Paragraph>
+                    {t('pages:readOnlyGetApiShadowValidationWorkflowOverviewShowsDerivedOperatorItemsWorkflowstateValidationdecisi')}</Paragraph>
                 <ShadowValidationWorkflowBoundaryBadges overview={overview}/>
                 <ShadowValidationWorkflowBoundaryDriftAlert overview={overview}/>
                 <ReadModelEvidenceMetadataSummary metadata={overview?.evidenceMetadata}/>
@@ -3805,17 +3818,16 @@ function ShadowValidationWorkflowPanel({query}: { query: PanelQueryState<ShadowV
                     <Alert
                         type="error"
                         showIcon
-                        message="Shadow Validation Workflow overview 查询失败"
+                        message={t('pages:failedToQueryShadowValidationWorkflowOverview')}
                         description={(
                             <Paragraph style={{marginBottom: 0}}>
-                                workflow overview 失败时按不可用处理，不会显示为可复核、授权、自动处置或可执行。
-                                {formatApiError(query.error as AppApiError)}
+                                {t('pages:aFailedWorkflowOverviewIsUnavailableNotReviewReadyAuthorizedAutomaticallyHandledOrExecutable')}{formatApiError(query.error as AppApiError)}
                             </Paragraph>
                         )}
                     />
                 ) : !overview ? (
                     <Empty
-                        description="暂无 Shadow Validation Workflow overview 响应；固定安全边界仍按 fail-closed 展示。"/>
+                        description={t('pages:noShadowValidationWorkflowOverviewResponseFixedSafetyBoundariesRemainFailClosed')}/>
                 ) : (
                     <>
                         {panelState ? (
@@ -3827,7 +3839,7 @@ function ShadowValidationWorkflowPanel({query}: { query: PanelQueryState<ShadowV
                             />
                         ) : null}
                         {shadowWorkflowIsEmpty(overview) ? (
-                            <Empty description="暂无 operator items；空态不表示验证完成、建议关闭或可交易。"/>
+                            <Empty description={t('pages:noOperatorItemsAnEmptyStateDoesNotMeanValidationCompletionRecommendedClosureOrTradability')}/>
                         ) : null}
                         <ShadowValidationLatestOperatorItem item={overview.latestOperatorItem}/>
                         <ShadowValidationWorkflowIssueTables blockers={overview.blockers} warnings={overview.warnings}/>
@@ -3838,7 +3850,7 @@ function ShadowValidationWorkflowPanel({query}: { query: PanelQueryState<ShadowV
                             dataSource={overview.nextSteps}
                             pagination={false}
                             scroll={{x: 1000}}
-                            locale={{emptyText: '暂无 nextSteps；不能解释为已经完成复核或处置。'}}
+                            locale={{emptyText: t('pages:noNextstepsReviewOrHandlingCannotBeConsideredComplete')}}
                         />
                         <Table<ShadowValidationEvidenceAnchor>
                             size="small"
@@ -3847,7 +3859,7 @@ function ShadowValidationWorkflowPanel({query}: { query: PanelQueryState<ShadowV
                             dataSource={overview.evidenceAnchors}
                             pagination={false}
                             scroll={{x: 1190}}
-                            locale={{emptyText: '暂无 evidenceAnchors；不能解释为证据完整。'}}
+                            locale={{emptyText: t('pages:noEvidenceanchorsEvidenceCannotBeConsideredComplete')}}
                         />
                         <Table<ShadowValidationOperatorItem>
                             size="small"
@@ -3856,7 +3868,7 @@ function ShadowValidationWorkflowPanel({query}: { query: PanelQueryState<ShadowV
                             dataSource={overview.operatorItems}
                             pagination={false}
                             scroll={{x: 1550}}
-                            locale={{emptyText: '暂无 operatorItems；不能补造复核条目。'}}
+                            locale={{emptyText: t('pages:noOperatoritemsReviewEntriesMustNotBeFabricated')}}
                         />
                     </>
                 )}
@@ -3917,102 +3929,104 @@ function resolveConsistencyEvidenceState(overview: ConsistencyEvidenceOverviewRe
     if (consistencyEvidenceIsEmpty(overview) || consistencyEvidenceHasNoEvidence(overview)) {
         return {
             level: 'warning',
-            message: 'Consistency Evidence overview 暂无 consistency evidence',
-            description: 'empty / no consistency evidence 表示本地 Paper vs Shadow 证据不足；页面不会补造 evidence item，也不会创建 consistency report。',
+            message: t('pages:noConsistencyEvidenceInTheOverview'),
+            description: t('pages:emptyOrMissingConsistencyEvidenceMeansInsufficientLocalPaperVersusShadowEvidenceThePageFabricatesNoI'),
         };
     }
     if (countValue(overview.failedCount) > 0 || comparisonStatus === 'FAILED' || countValue(overview.criticalSeverityCount) > 0 || divergenceSeverity === 'CRITICAL') {
         return {
             level: 'error',
-            message: 'Consistency Evidence overview 存在 failed / critical 诊断阻断',
-            description: 'FAILED / CRITICAL 只表示诊断优先级或读取计算失败，需要人工排查；不表示自动处置、交易拒绝完成或交易授权。',
+            message: t('pages:consistencyEvidenceOverviewContainsFailedOrCriticalDiagnosticBlockers'),
+            description: t('pages:failedCriticalDescribeDiagnosticPriorityOrReadCalculationFailuresRequiringInvestigationNotAutomaticH'),
         };
     }
     if (countValue(overview.highSeverityCount) > 0 || divergenceSeverity === 'HIGH') {
         return {
             level: 'warning',
-            message: 'Consistency Evidence overview 存在 high diagnostic priority',
-            description: 'HIGH 只表示诊断优先级高，需要优先复核 Paper vs Shadow 证据，不表示自动处置或交易状态。',
+            message: t('pages:consistencyEvidenceOverviewHasHighDiagnosticPriority'),
+            description: t('pages:highPrioritizesPaperVersusShadowEvidenceReviewNotAutomaticHandlingOrTradingState'),
         };
     }
     if (countValue(overview.divergedCount) > 0 || comparisonStatus === 'DIVERGED') {
         return {
             level: 'warning',
-            message: 'Consistency Evidence overview 存在 Paper vs Shadow 证据不一致',
-            description: 'DIVERGED 只表示本地 consistency evidence 不一致，需要查看 divergenceReasons、limitations 和 anchors，不表示行情方向。',
+            message: t('pages:consistencyEvidenceOverviewContainsPaperVersusShadowDifferences'),
+            description: t('pages:divergedMeansLocalEvidenceDiffersInspectDivergencereasonsLimitationsAndAnchorsItDoesNotIndicateMarke'),
         };
     }
     if (countValue(overview.partialCount) > 0 || countValue(overview.notComparableCount) > 0 || comparisonStatus === 'PARTIAL' || comparisonStatus === 'NOT_COMPARABLE') {
         return {
             level: 'warning',
-            message: 'Consistency Evidence overview 存在 partial / not comparable evidence',
-            description: 'PARTIAL / NOT_COMPARABLE 表示证据不完整或不可比较，必须按 fail-closed 展示并保留 nextSteps。',
+            message: t('pages:consistencyEvidenceOverviewContainsPartialOrIncomparableEvidence'),
+            description: t('pages:partialNotComparableRemainFailClosedForIncompleteOrIncomparableEvidenceRetainingNextsteps'),
         };
     }
     if (consistencyEvidenceHasStaleEvidence(overview)) {
         return {
             level: 'warning',
-            message: 'Consistency Evidence overview 存在 stale evidence',
-            description: 'STALE / MISSING / PARTIAL / UNKNOWN freshness 只描述本地 evidence 新鲜度不足，不能显示为完成或通过。',
+            message: t('pages:consistencyEvidenceOverviewContainsStaleEvidence'),
+            description: t('pages:staleMissingPartialUnknownFreshnessIndicateInsufficientLocalEvidenceFreshnessNotCompletionOrAPass'),
         };
     }
     if (consistencyEvidenceHasUnknown(overview)) {
         return {
             level: 'warning',
-            message: 'Consistency Evidence overview 存在 unknown 状态',
-            description: 'UNKNOWN 状态按 fail-closed 处理；页面不会把未知 comparison / severity / freshness 解释为一致或可继续。',
+            message: t('pages:consistencyEvidenceOverviewContainsUnknownStates'),
+            description: t('pages:unknownRemainsFailClosedUnknownComparisonSeverityOrFreshnessDoesNotMeanConsistencyOrPermissionToCont'),
         };
     }
     if (comparisonStatus === 'CONSISTENT' || countValue(overview.consistentCount) > 0) {
         return {
             level: 'info',
-            message: 'Consistency Evidence overview 证据一致（非交易授权）',
-            description: 'CONSISTENT 只表示当前本地 Paper vs Shadow evidence 未发现差异，不表示盈利、交易批准、LIVE 可用或自动处置完成。',
+            message: t('pages:consistencyEvidenceAgreesNoTradingAuthorization'),
+            description: t('pages:consistentMeansNoLocalPaperVersusShadowDifferencesWereFoundNotProfitTradeApprovalLiveAvailabilityOrC'),
         };
     }
     return {
         level: 'info',
-        message: 'Consistency Evidence overview 已加载',
-        description: '当前结果只用于只读 consistency evidence 诊断，不产生任何交易、运行、报告创建或持久化副作用。',
+        message: t('pages:consistencyEvidenceOverviewLoaded'),
+        description: t('pages:readOnlyConsistencyEvidenceDiagnosticsOnlyWithoutTradingRuntimeReportCreationOrPersistenceSideEffect'),
     };
 }
 
 function ConsistencyEvidenceBoundaryBadges({overview}: { overview?: ConsistencyEvidenceOverviewResponse }) {
-    const pending = overview ? '' : '；overview 尚未返回时按 fail-closed 展示';
+    useTranslation('pages');
+    const pending = overview ? '' : t('pages:unavailableOverviewDataRemainsFailClosed');
     return (
         <Space size={[8, 8]} wrap>
             <BoundaryBadge
                 color="error"
-                label="LIVE DISABLED（LIVE 关闭）"
-                tooltip={`liveDisabled=true；本 consistency evidence 不表示 LIVE 可用${pending}`}
+                label={t('pages:liveDisabled')}
+                tooltip={t('pages:livedisabledTrueConsistencyEvidenceDoesNotEstablishLiveAvailabilityValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="Real provider NOT IMPLEMENTED（真实 provider 未实现）"
-                tooltip={`realProviderImplemented=false；本 overview 不调用真实 provider${pending}`}
+                label={t('pages:realProviderNotImplemented')}
+                tooltip={t('pages:realproviderimplementedFalseThisOverviewDoesNotCallRealProvidersValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="Private trading NOT IMPLEMENTED（私有交易未实现）"
-                tooltip={`privateTradingImplemented=false；本 overview 不提供下单、撤单、转账或提现入口${pending}`}
+                label={t('pages:privateTradingNotImplemented')}
+                tooltip={t('pages:privatetradingimplementedFalseThisOverviewOffersNoOrdersCancellationsTransfersOrWithdrawalsValue1', {value1: pending})}
             />
             <BoundaryBadge
                 color="warning"
-                label="Consistency evidence is diagnostic only（一致性证据仅诊断）"
-                tooltip={`diagnosticOnly=true；evidence items 是 derived 诊断条目，不持久化、不执行${pending}`}
+                label={t('pages:consistencyEvidenceIsDiagnosticOnly')}
+                tooltip={t('pages:diagnosticonlyTrueEvidenceItemsAreDerivedDiagnosticsWithoutPersistenceOrExecutionValue1', {value1: pending})}
             />
             <BoundaryBadge
                 color="error"
-                label="Not trading authorization（非交易授权）"
-                tooltip={`notTradingAuthorization=true；CONSISTENT 也不能解释为交易授权${pending}`}
+                label={t('pages:notTradingAuthorization')}
+                tooltip={t('pages:nottradingauthorizationTrueConsistentDoesNotGrantTradingAuthorizationValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="AI/DH runtime not integrated（AI/DH runtime 未集成）"
-                tooltip={`aiDhRuntimeIntegrated=false；不表示 AI started 或 DH integrated${pending}`}
+                label={t('pages:aiDhRuntimeNotIntegrated')}
+                tooltip={t('pages:aidhruntimeintegratedFalseNeitherAiStartedNorDhIntegratedValue12', {value1: pending})}
             />
         </Space>
     );
 }
 
 function ConsistencyEvidenceBoundaryDriftAlert({overview}: { overview?: ConsistencyEvidenceOverviewResponse }) {
+    useTranslation('pages');
     if (!overview) {
         return null;
     }
@@ -4038,13 +4052,14 @@ function ConsistencyEvidenceBoundaryDriftAlert({overview}: { overview?: Consiste
         <Alert
             type="error"
             showIcon
-            message="Consistency Evidence boundary flags 与当前安全基线不一致"
-            description="页面按 fail-closed 处理该响应；不会把异常 flags、raw metricDelta、收益推断或交易信号展示成可执行、可交易或实盘可用。"
+            message={t('pages:consistencyEvidenceBoundaryFlagsConflictWithTheSafetyBaseline')}
+            description={t('pages:theResponseRemainsFailClosedUnexpectedFlagsRawMetricdeltaInferredReturnsOrTradingSignalsDoNotIndicat')}
         />
     ) : null;
 }
 
 function ConsistencyEvidenceCounts({overview}: { overview?: ConsistencyEvidenceOverviewResponse }) {
+    useTranslation('pages');
     return (
         <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
             <Descriptions.Item label="totalEvidenceItems">{countValue(overview?.totalEvidenceItems)}</Descriptions.Item>
@@ -4064,8 +4079,9 @@ function ConsistencyEvidenceCounts({overview}: { overview?: ConsistencyEvidenceO
 }
 
 function ConsistencyEvidenceLatestItem({item}: { item?: ConsistencyEvidenceItem | null }) {
+    useTranslation('pages');
     if (!item) {
-        return <Empty description="暂无 latestEvidenceItem；空态不表示 evidence 完整、可比较或可交易。"/>;
+        return <Empty description={t('pages:noLatestevidenceitemAnEmptyStateDoesNotMeanCompleteComparableOrTradableEvidence')}/>;
     }
     return (
         <Descriptions size="small" bordered column={{xs: 1, sm: 1, md: 2}}>
@@ -4096,6 +4112,7 @@ function ConsistencyEvidenceMetricDeltaSummary({
                                                }: {
     summary?: ConsistencyEvidenceOverviewResponse['metricDeltaSummary'];
 }) {
+    useTranslation('pages');
     return (
         <Space direction="vertical" size={12} style={{display: 'flex'}}>
             <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
@@ -4111,18 +4128,15 @@ function ConsistencyEvidenceMetricDeltaSummary({
                 </Descriptions.Item>
                 <Descriptions.Item label="rawMetricDeltaExposed">
                     <Tag color={summary?.rawMetricDeltaExposed ? 'error' : 'default'}>
-                        {String(Boolean(summary?.rawMetricDeltaExposed))}（raw metricDelta 不应暴露）
-                    </Tag>
+                        {String(Boolean(summary?.rawMetricDeltaExposed))}{t('pages:rawMetricdeltaMustNotBeExposed')}</Tag>
                 </Descriptions.Item>
                 <Descriptions.Item label="profitConclusionInferred">
                     <Tag color={summary?.profitConclusionInferred ? 'error' : 'default'}>
-                        {String(Boolean(summary?.profitConclusionInferred))}（不推断收益结论）
-                    </Tag>
+                        {String(Boolean(summary?.profitConclusionInferred))}{t('pages:noInferredReturnConclusions')}</Tag>
                 </Descriptions.Item>
                 <Descriptions.Item label="tradingSignalInferred">
                     <Tag color={summary?.tradingSignalInferred ? 'error' : 'default'}>
-                        {String(Boolean(summary?.tradingSignalInferred))}（不生成交易信号）
-                    </Tag>
+                        {String(Boolean(summary?.tradingSignalInferred))}{t('pages:noTradingSignalsGenerated')}</Tag>
                 </Descriptions.Item>
                 <Descriptions.Item label="limitationCodes">
                     {safeTextListSummary(summary?.limitationCodes)}
@@ -4135,7 +4149,7 @@ function ConsistencyEvidenceMetricDeltaSummary({
                 dataSource={summary?.topDeltaMetrics ?? []}
                 pagination={false}
                 scroll={{x: 980}}
-                locale={{emptyText: '暂无 topDeltaMetrics；不能补造 metric delta 或收益结论。'}}
+                locale={{emptyText: t('pages:noTopdeltametricsMetricDeltasAndReturnConclusionsMustNotBeFabricated')}}
             />
         </Space>
     );
@@ -4148,10 +4162,11 @@ function ConsistencyEvidenceIssueTables({
     blockers: ConsistencyEvidenceBlocker[];
     warnings: ConsistencyEvidenceWarning[];
 }) {
+    useTranslation('pages');
     return (
         <Space direction="vertical" size={12} style={{display: 'flex'}}>
             <div>
-                <Text strong>Blockers（阻断项）</Text>
+                <Text strong>{t('pages:blockers')}</Text>
                 <Table<ConsistencyEvidenceBlocker>
                     size="small"
                     rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
@@ -4159,11 +4174,11 @@ function ConsistencyEvidenceIssueTables({
                     dataSource={blockers}
                     pagination={false}
                     scroll={{x: 930}}
-                    locale={{emptyText: '暂无 blockers；仍需遵守固定安全边界。'}}
+                    locale={{emptyText: t('pages:noBlockersListedFixedSafetyBoundariesStillApply')}}
                 />
             </div>
             <div>
-                <Text strong>Warnings（警告项）</Text>
+                <Text strong>{t('pages:warnings2')}</Text>
                 <Table<ConsistencyEvidenceWarning>
                     size="small"
                     rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
@@ -4171,7 +4186,7 @@ function ConsistencyEvidenceIssueTables({
                     dataSource={warnings}
                     pagination={false}
                     scroll={{x: 930}}
-                    locale={{emptyText: '暂无 warnings；不能解释为 consistency evidence 已完成。'}}
+                    locale={{emptyText: t('pages:noWarningsConsistencyEvidenceIsNotNecessarilyComplete')}}
                 />
             </div>
         </Space>
@@ -4179,6 +4194,7 @@ function ConsistencyEvidenceIssueTables({
 }
 
 function ConsistencyEvidenceOverviewPanel({query}: { query: PanelQueryState<ConsistencyEvidenceOverviewResponse> }) {
+    useTranslation('pages');
     const overview = query.data;
     const panelState = overview ? resolveConsistencyEvidenceState(overview) : null;
     const bucketRows = overview ? [
@@ -4190,26 +4206,22 @@ function ConsistencyEvidenceOverviewPanel({query}: { query: PanelQueryState<Cons
         <Card
             className="page-section"
             variant="borderless"
-            title="一致性证据总览（Consistency Evidence Overview）"
+            title={t('pages:consistencyEvidenceOverview')}
             extra={(
                 <Button size="small" icon={<ReloadOutlined/>} loading={query.isFetching}
                         onClick={() => query.refetch()}>
-                    刷新证据
-                </Button>
+                    {t('pages:refreshEvidence')}</Button>
             )}
         >
             <Space data-testid="consistency-evidence-overview-panel" direction="vertical" size={12}
                    style={{display: 'flex'}}>
                 <Paragraph type="secondary" style={{marginBottom: 0}}>
-                    只读消费 GET /api/paper-shadow/consistency/evidence/overview；展示 evidence counts、
-                    latestEvidenceItem、severityBuckets、freshnessSummary、metricDeltaSummary、blockers / warnings /
-                    nextSteps、evidenceAnchors 与 traceId，不新增 route、review 动作、交易按钮或写侧请求。
-                </Paragraph>
+                    {t('pages:readOnlyGetApiPaperShadowConsistencyEvidenceOverviewShowsEvidenceCountsLatestevidenceitemSeveritybuc')}</Paragraph>
                 <Alert
                     type="info"
                     showIcon
-                    message="文案边界"
-                    description="CONSISTENT 不表示盈利或可交易；DIVERGED 只表示 Paper vs Shadow 证据不一致；HIGH / CRITICAL 只表示诊断优先级；metricDelta 只显示诊断差异摘要。"
+                    message={t('pages:interpretationBoundary')}
+                    description={t('pages:consistentDoesNotMeanProfitOrTradabilityDivergedMeansPaperVersusShadowEvidenceDiffersHighCriticalInd')}
                 />
                 <ConsistencyEvidenceBoundaryBadges overview={overview}/>
                 <ConsistencyEvidenceBoundaryDriftAlert overview={overview}/>
@@ -4224,16 +4236,15 @@ function ConsistencyEvidenceOverviewPanel({query}: { query: PanelQueryState<Cons
                     <Alert
                         type="error"
                         showIcon
-                        message="Consistency Evidence overview 查询失败"
+                        message={t('pages:failedToQueryConsistencyEvidenceOverview')}
                         description={(
                             <Paragraph style={{marginBottom: 0}}>
-                                consistency evidence overview 失败时按不可用处理，不会显示为一致、授权、自动处置或可执行。
-                                {formatApiError(query.error as AppApiError)}
+                                {t('pages:aFailedConsistencyOverviewIsUnavailableNotConsistentAuthorizedAutomaticallyHandledOrExecutable')}{formatApiError(query.error as AppApiError)}
                             </Paragraph>
                         )}
                     />
                 ) : !overview ? (
-                    <Empty description="暂无 Consistency Evidence overview 响应；固定安全边界仍按 fail-closed 展示。"/>
+                    <Empty description={t('pages:noConsistencyEvidenceOverviewResponseSafetyBoundariesRemainFailClosed')}/>
                 ) : (
                     <>
                         {panelState ? (
@@ -4245,11 +4256,11 @@ function ConsistencyEvidenceOverviewPanel({query}: { query: PanelQueryState<Cons
                             />
                         ) : null}
                         {consistencyEvidenceIsEmpty(overview) ? (
-                            <Empty description="暂无 consistency evidence；空态不表示证据完整、可比较、已复核或可交易。"/>
+                            <Empty description={t('pages:noConsistencyEvidenceAnEmptyStateDoesNotMeanEvidenceIsCompleteComparableReviewedOrTradable')}/>
                         ) : null}
                         <ConsistencyEvidenceLatestItem item={overview.latestEvidenceItem}/>
                         <div>
-                            <Text strong>Evidence summaries（证据摘要）</Text>
+                            <Text strong>{t('pages:evidenceSummaries')}</Text>
                             <Table<ConsistencyEvidenceBucketRow>
                                 size="small"
                                 rowKey={(record) => record.key}
@@ -4257,11 +4268,11 @@ function ConsistencyEvidenceOverviewPanel({query}: { query: PanelQueryState<Cons
                                 dataSource={bucketRows}
                                 pagination={false}
                                 scroll={{x: 560}}
-                                locale={{emptyText: '暂无 severityBuckets / freshnessSummary；不能补造桶统计。'}}
+                                locale={{emptyText: t('pages:noSeveritybucketsOrFreshnesssummaryBucketStatisticsMustNotBeFabricated')}}
                             />
                         </div>
                         <div>
-                            <Text strong>metricDeltaSummary（诊断差异摘要）</Text>
+                            <Text strong>{t('pages:metricdeltasummaryDiagnosticDifferences')}</Text>
                             <ConsistencyEvidenceMetricDeltaSummary summary={overview.metricDeltaSummary}/>
                         </div>
                         <ConsistencyEvidenceIssueTables blockers={overview.blockers} warnings={overview.warnings}/>
@@ -4272,7 +4283,7 @@ function ConsistencyEvidenceOverviewPanel({query}: { query: PanelQueryState<Cons
                             dataSource={overview.nextSteps}
                             pagination={false}
                             scroll={{x: 1000}}
-                            locale={{emptyText: '暂无 nextSteps；不能解释为已经完成复核或处置。'}}
+                            locale={{emptyText: t('pages:noNextstepsReviewOrHandlingCannotBeConsideredComplete')}}
                         />
                         <Table<ConsistencyEvidenceAnchor>
                             size="small"
@@ -4281,7 +4292,7 @@ function ConsistencyEvidenceOverviewPanel({query}: { query: PanelQueryState<Cons
                             dataSource={overview.evidenceAnchors}
                             pagination={false}
                             scroll={{x: 1190}}
-                            locale={{emptyText: '暂无 evidenceAnchors；不能解释为证据完整。'}}
+                            locale={{emptyText: t('pages:noEvidenceanchorsEvidenceCannotBeConsideredComplete')}}
                         />
                         <Table<ConsistencyEvidenceItem>
                             size="small"
@@ -4290,7 +4301,7 @@ function ConsistencyEvidenceOverviewPanel({query}: { query: PanelQueryState<Cons
                             dataSource={overview.evidenceItems}
                             pagination={false}
                             scroll={{x: 1660}}
-                            locale={{emptyText: '暂无 evidenceItems；不能补造 consistency evidence。'}}
+                            locale={{emptyText: t('pages:noEvidenceitemsConsistencyEvidenceMustNotBeFabricated')}}
                         />
                     </>
                 )}
@@ -4364,116 +4375,118 @@ function resolveIncidentReplayReviewState(overview: IncidentReplayReviewOverview
     if (incidentReplayReviewIsEmpty(overview) || incidentReplayReviewHasNoEvidence(overview)) {
         return {
             level: 'warning',
-            message: 'Incident / Replay Review overview 暂无 review evidence',
-            description: 'empty / no review evidence 表示没有足够本地事实支撑复核；页面不会补造 review item，也不会显示为已确认、已升级或已关闭。',
+            message: t('pages:incidentReplayReviewOverviewHasNoEvidence'),
+            description: t('pages:missingReviewEvidenceMeansInsufficientLocalFactsReviewItemsAreNotFabricatedOrShownAsAcknowledgedEsca'),
         };
     }
     if (incidentReplayReviewBlocked(overview)) {
         return {
             level: 'error',
-            message: 'Incident / Replay Review overview 被阻断',
-            description: 'BLOCKED 只表示诊断复核阻断，需要处理 blockers；不代表交易状态变化、风险处置完成或真实 incident 关闭。',
+            message: t('pages:incidentReplayReviewOverviewBlocked'),
+            description: t('pages:blockedMeansDiagnosticReviewIsBlockedAddressBlockersTradingStateRiskHandlingAndRealIncidentClosureAr'),
         };
     }
     if (priority === 'critical') {
         return {
             level: 'error',
-            message: 'Incident / Replay Review overview 存在 CRITICAL diagnostic priority',
-            description: 'CRITICAL 只表示诊断优先级严重，需要人工优先复核；不表示系统自动处置、自动升级、真实 incident 已关闭或交易授权。',
+            message: t('pages:incidentReplayReviewHasCriticalDiagnosticPriority'),
+            description: t('pages:criticalRequiresPriorityManualReviewNotAutomaticHandlingEscalationIncidentClosureOrTradingAuthorizat'),
         };
     }
     if (priority === 'high') {
         return {
             level: 'warning',
-            message: 'Incident / Replay Review overview 存在 HIGH diagnostic priority',
-            description: 'HIGH 只表示诊断优先级高，需要人工查看 review items、blockers、warnings 与 nextSteps；不表示自动处置或交易状态。',
+            message: t('pages:incidentReplayReviewHasHighDiagnosticPriority'),
+            description: t('pages:highRequiresManualInspectionOfReviewItemsBlockersWarningsAndNextstepsNotAutomaticHandlingOrTradingCh'),
         };
     }
     if (incidentReplayReviewHasStaleEvidence(overview)) {
         return {
             level: 'warning',
-            message: 'Incident / Replay Review overview 存在 stale evidence',
-            description: 'STALE_EVIDENCE / STALE / MISSING / PARTIAL / UNKNOWN freshness 只描述本地 evidence 新鲜度不足，必须先补齐只读事实来源。',
+            message: t('pages:incidentReplayReviewContainsStaleEvidence'),
+            description: t('pages:staleEvidenceStaleMissingPartialUnknownRequireCompletingOrRefreshingReadOnlyLocalFactSourcesFirst'),
         };
     }
     if (state === 'EVIDENCE_REVIEW' || state === 'NEEDS_OPERATOR_REVIEW' || decision === 'REVIEW_NEEDED') {
         return {
             level: 'warning',
-            message: 'Incident / Replay Review overview 需要人工复核',
-            description: 'EVIDENCE_REVIEW / NEEDS_OPERATOR_REVIEW / REVIEW_NEEDED 均只表示需要人工查看诊断事实，不表示系统已处置。',
+            message: t('pages:incidentReplayReviewNeedsManualReview'),
+            description: t('pages:evidenceReviewNeedsOperatorReviewReviewNeededRequireManualDiagnosticInspectionNoSystemHandlingIsImpl'),
         };
     }
     if (state === 'ACKNOWLEDGED_RECOMMENDATION' || decision === 'ACKNOWLEDGE_RECOMMENDED') {
         return {
             level: 'info',
-            message: 'Incident / Replay Review overview 建议人工确认',
-            description: 'ACKNOWLEDGE_RECOMMENDED 只表示建议人工确认诊断事实，不表示系统已确认、自动处置或交易授权。',
+            message: t('pages:incidentReplayReviewRecommendsManualAcknowledgment'),
+            description: t('pages:acknowledgeRecommendedSuggestsManualAcknowledgmentNotSystemAcknowledgmentAutomaticHandlingOrTradingA'),
         };
     }
     if (state === 'ESCALATED_RECOMMENDATION' || decision === 'ESCALATE_RECOMMENDED') {
         return {
             level: 'warning',
-            message: 'Incident / Replay Review overview 建议人工升级复核',
-            description: 'ESCALATE_RECOMMENDED 只表示建议人工升级复核，不表示系统已执行升级或触发外部流程。',
+            message: t('pages:incidentReplayReviewRecommendsManualEscalation'),
+            description: t('pages:escalateRecommendedSuggestsManualEscalationNoSystemEscalationOrExternalProcessIsTriggered'),
         };
     }
     if (state === 'CLOSED_RECOMMENDATION' || decision === 'CLOSEOUT_RECOMMENDED') {
         return {
             level: 'info',
-            message: 'Incident / Replay Review overview 已形成诊断闭环建议',
-            description: 'CLOSED_RECOMMENDATION / CLOSEOUT_RECOMMENDED 只表示诊断闭环建议，不表示真实 incident 已关闭或自动处置完成。',
+            message: t('pages:incidentReplayReviewHasADiagnosticCloseoutRecommendation'),
+            description: t('pages:closedRecommendationCloseoutRecommendedSuggestDiagnosticCloseoutNotActualIncidentClosureOrCompletedA'),
         };
     }
     if (state === 'INTAKE') {
         return {
             level: 'info',
-            message: 'Incident / Replay Review overview 处于 intake',
-            description: 'INTAKE 只表示 derived review item 已进入诊断复核视图，不表示已经形成处置或关闭建议。',
+            message: t('pages:incidentReplayReviewIsInIntake'),
+            description: t('pages:intakeMeansADerivedReviewItemEnteredTheDiagnosticViewNoHandlingOrClosureRecommendationExistsYet'),
         };
     }
     return {
         level: 'info',
-        message: 'Incident / Replay Review overview 已加载',
-        description: '当前结果只用于只读 incident / replay review 诊断，不产生 review 持久化、升级、关闭、交易或运行副作用。',
+        message: t('pages:incidentReplayReviewOverviewLoaded'),
+        description: t('pages:readOnlyIncidentReplayReviewDiagnosticsOnlyWithoutPersistenceEscalationClosureTradingOrRuntimeSideEf'),
     };
 }
 
 function IncidentReplayReviewBoundaryBadges({overview}: { overview?: IncidentReplayReviewOverviewResponse }) {
-    const pending = overview ? '' : '；overview 尚未返回时按 fail-closed 展示';
+    useTranslation('pages');
+    const pending = overview ? '' : t('pages:unavailableOverviewDataRemainsFailClosed');
     return (
         <Space size={[8, 8]} wrap>
             <BoundaryBadge
                 color="error"
-                label="LIVE DISABLED（LIVE 关闭）"
-                tooltip={`liveDisabled=true；本 review overview 不表示 LIVE 可用${pending}`}
+                label={t('pages:liveDisabled')}
+                tooltip={t('pages:livedisabledTrueThisReviewOverviewDoesNotEstablishLiveAvailabilityValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="Real provider NOT IMPLEMENTED（真实 provider 未实现）"
-                tooltip={`realProviderImplemented=false；本 review overview 不调用真实 provider${pending}`}
+                label={t('pages:realProviderNotImplemented')}
+                tooltip={t('pages:realproviderimplementedFalseThisReviewOverviewDoesNotCallRealProvidersValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="Private trading NOT IMPLEMENTED（私有交易未实现）"
-                tooltip={`privateTradingImplemented=false；本 review overview 不提供下单、撤单、转账或提现入口${pending}`}
+                label={t('pages:privateTradingNotImplemented')}
+                tooltip={t('pages:privatetradingimplementedFalseThisReviewOverviewOffersNoOrdersCancellationsTransfersOrWithdrawalsVal', {value1: pending})}
             />
             <BoundaryBadge
                 color="warning"
-                label="Incident / Replay review is diagnostic only（Incident / Replay review 仅诊断）"
-                tooltip={`diagnosticOnly=true；review items 是 derived 诊断条目，不持久化、不自动处置${pending}`}
+                label={t('pages:incidentReplayReviewIsDiagnosticOnly')}
+                tooltip={t('pages:diagnosticonlyTrueReviewItemsAreDerivedDiagnosticsWithoutPersistenceOrAutomaticHandlingValue1', {value1: pending})}
             />
             <BoundaryBadge
                 color="error"
-                label="Not trading authorization（非交易授权）"
-                tooltip={`notTradingAuthorization=true；ACKNOWLEDGE / ESCALATE / CLOSED recommendation 都不能解释为交易授权${pending}`}
+                label={t('pages:notTradingAuthorization')}
+                tooltip={t('pages:nottradingauthorizationTrueAcknowledgeEscalateClosedRecommendationsDoNotGrantTradingAuthorizationVal', {value1: pending})}
             />
             <BoundaryBadge
-                label="AI/DH runtime not integrated（AI/DH runtime 未集成）"
-                tooltip={`aiDhRuntimeIntegrated=false；不表示 AI started 或 DH integrated${pending}`}
+                label={t('pages:aiDhRuntimeNotIntegrated')}
+                tooltip={t('pages:aidhruntimeintegratedFalseNeitherAiStartedNorDhIntegratedValue12', {value1: pending})}
             />
         </Space>
     );
 }
 
 function IncidentReplayReviewBoundaryDriftAlert({overview}: { overview?: IncidentReplayReviewOverviewResponse }) {
+    useTranslation('pages');
     if (!overview) {
         return null;
     }
@@ -4496,13 +4509,14 @@ function IncidentReplayReviewBoundaryDriftAlert({overview}: { overview?: Inciden
         <Alert
             type="error"
             showIcon
-            message="Incident / Replay Review boundary flags 与当前安全基线不一致"
-            description="页面按 fail-closed 处理该响应；不会把异常 flags 展示成已确认、已升级、已关闭、可交易、可执行或实盘可用。"
+            message={t('pages:incidentReplayReviewBoundaryFlagsConflictWithTheSafetyBaseline')}
+            description={t('pages:theResponseRemainsFailClosedUnexpectedFlagsDoNotMeanAcknowledgmentEscalationClosureTradabilityExecut')}
         />
     ) : null;
 }
 
 function IncidentReplayReviewCounts({overview}: { overview?: IncidentReplayReviewOverviewResponse }) {
+    useTranslation('pages');
     return (
         <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
             <Descriptions.Item label="totalReviewItems">{countValue(overview?.totalReviewItems)}</Descriptions.Item>
@@ -4524,8 +4538,9 @@ function IncidentReplayReviewCounts({overview}: { overview?: IncidentReplayRevie
 }
 
 function IncidentReplayReviewLatestItem({item}: { item?: IncidentReplayReviewItem | null }) {
+    useTranslation('pages');
     if (!item) {
-        return <Empty description="暂无 latestReviewItem；空态不表示 review evidence 已完成、已确认、已升级或可交易。"/>;
+        return <Empty description={t('pages:noLatestreviewitemAnEmptyStateDoesNotMeanReviewEvidenceIsCompleteAcknowledgedEscalatedOrTradable')}/>;
     }
     return (
         <Descriptions size="small" bordered column={{xs: 1, sm: 1, md: 2}}>
@@ -4561,10 +4576,11 @@ function IncidentReplayReviewIssueTables({
     blockers: IncidentReplayReviewBlocker[];
     warnings: IncidentReplayReviewWarning[];
 }) {
+    useTranslation('pages');
     return (
         <Space direction="vertical" size={12} style={{display: 'flex'}}>
             <div>
-                <Text strong>Blockers（阻断项）</Text>
+                <Text strong>{t('pages:blockers')}</Text>
                 <Table<IncidentReplayReviewBlocker>
                     size="small"
                     rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
@@ -4572,11 +4588,11 @@ function IncidentReplayReviewIssueTables({
                     dataSource={blockers}
                     pagination={false}
                     scroll={{x: 930}}
-                    locale={{emptyText: '暂无 blockers；仍需遵守固定安全边界。'}}
+                    locale={{emptyText: t('pages:noBlockersListedFixedSafetyBoundariesStillApply')}}
                 />
             </div>
             <div>
-                <Text strong>Warnings（警告项）</Text>
+                <Text strong>{t('pages:warnings2')}</Text>
                 <Table<IncidentReplayReviewWarning>
                     size="small"
                     rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
@@ -4584,7 +4600,7 @@ function IncidentReplayReviewIssueTables({
                     dataSource={warnings}
                     pagination={false}
                     scroll={{x: 930}}
-                    locale={{emptyText: '暂无 warnings；不能解释为 review 已完成、已确认或已关闭。'}}
+                    locale={{emptyText: t('pages:noWarningsReviewIsNotNecessarilyCompleteAcknowledgedOrClosed')}}
                 />
             </div>
         </Space>
@@ -4594,6 +4610,7 @@ function IncidentReplayReviewIssueTables({
 function IncidentReplayReviewOverviewPanel({query}: {
     query: PanelQueryState<IncidentReplayReviewOverviewResponse>
 }) {
+    useTranslation('pages');
     const overview = query.data;
     const panelState = overview ? resolveIncidentReplayReviewState(overview) : null;
     const bucketRows = overview ? [
@@ -4605,21 +4622,17 @@ function IncidentReplayReviewOverviewPanel({query}: {
         <Card
             className="page-section"
             variant="borderless"
-            title="事件回放复核总览（Incident / Replay Review Overview）"
+            title={t('pages:incidentReplayReviewOverview')}
         >
             <Space data-testid="incident-replay-review-overview-panel" direction="vertical" size={12}
                    style={{display: 'flex'}}>
                 <Paragraph type="secondary" style={{marginBottom: 0}}>
-                    只读消费 GET /api/incidents/replay/review/overview；展示 review counts、latestReviewItem、
-                    reviewItems、severityBuckets、freshnessSummary、blockers / warnings / nextSteps、
-                    evidenceAnchors 与 traceId，不新增 route、review / acknowledge / escalate / closeout 写侧、
-                    交易按钮或执行请求。
-                </Paragraph>
+                    {t('pages:readOnlyGetApiIncidentsReplayReviewOverviewShowsReviewCountsItemsSeverityFreshnessBlockersWarningsNe')}</Paragraph>
                 <Alert
                     type="info"
                     showIcon
-                    message="文案边界"
-                    description="ACKNOWLEDGE_RECOMMENDED 只表示建议人工确认诊断事实；ESCALATE_RECOMMENDED 只表示建议人工升级复核；CLOSEOUT_RECOMMENDED / CLOSED_RECOMMENDATION 只表示诊断闭环建议；HIGH / CRITICAL 只表示诊断优先级。"
+                    message={t('pages:interpretationBoundary')}
+                    description={t('pages:acknowledgeRecommendedSuggestsManualAcknowledgmentEscalateRecommendedSuggestsManualEscalationCloseou')}
                 />
                 <IncidentReplayReviewBoundaryBadges overview={overview}/>
                 <IncidentReplayReviewBoundaryDriftAlert overview={overview}/>
@@ -4634,16 +4647,15 @@ function IncidentReplayReviewOverviewPanel({query}: {
                     <Alert
                         type="error"
                         showIcon
-                        message="Incident / Replay Review overview 查询失败"
+                        message={t('pages:failedToQueryIncidentReplayReviewOverview')}
                         description={(
                             <Paragraph style={{marginBottom: 0}}>
-                                review overview 失败时按不可用处理，不会显示为已确认、已升级、已关闭、授权、
-                                自动处置或可执行。{formatApiError(query.error as AppApiError)}
+                                {t('pages:aFailedReviewOverviewIsUnavailableNotAcknowledgedEscalatedClosedAuthorizedAutomaticallyHandledOrExec')}{formatApiError(query.error as AppApiError)}
                             </Paragraph>
                         )}
                     />
                 ) : !overview ? (
-                    <Empty description="暂无 Incident / Replay Review overview 响应；固定安全边界仍按 fail-closed 展示。"/>
+                    <Empty description={t('pages:noIncidentReplayReviewOverviewResponseSafetyBoundariesRemainFailClosed')}/>
                 ) : (
                     <>
                         {panelState ? (
@@ -4655,11 +4667,11 @@ function IncidentReplayReviewOverviewPanel({query}: {
                             />
                         ) : null}
                         {incidentReplayReviewIsEmpty(overview) ? (
-                            <Empty description="暂无 review evidence；空态不表示 incident 已关闭、建议已确认或可交易。"/>
+                            <Empty description={t('pages:noReviewEvidenceAnEmptyStateDoesNotMeanIncidentClosureAcknowledgedRecommendationsOrTradability')}/>
                         ) : null}
                         <IncidentReplayReviewLatestItem item={overview.latestReviewItem}/>
                         <div>
-                            <Text strong>Review summaries（复核摘要）</Text>
+                            <Text strong>{t('pages:reviewSummaries')}</Text>
                             <Table<IncidentReplayReviewBucketRow>
                                 size="small"
                                 rowKey={(record) => record.key}
@@ -4667,7 +4679,7 @@ function IncidentReplayReviewOverviewPanel({query}: {
                                 dataSource={bucketRows}
                                 pagination={false}
                                 scroll={{x: 560}}
-                                locale={{emptyText: '暂无 severityBuckets / freshnessSummary；不能补造桶统计。'}}
+                                locale={{emptyText: t('pages:noSeveritybucketsOrFreshnesssummaryBucketStatisticsMustNotBeFabricated')}}
                             />
                         </div>
                         <IncidentReplayReviewIssueTables blockers={overview.blockers} warnings={overview.warnings}/>
@@ -4678,7 +4690,7 @@ function IncidentReplayReviewOverviewPanel({query}: {
                             dataSource={overview.nextSteps}
                             pagination={false}
                             scroll={{x: 1000}}
-                            locale={{emptyText: '暂无 nextSteps；不能解释为已经完成复核、升级、关闭或处置。'}}
+                            locale={{emptyText: t('pages:noNextstepsReviewEscalationClosureOrHandlingCannotBeConsideredComplete')}}
                         />
                         <Table<IncidentReplayReviewEvidenceAnchor>
                             size="small"
@@ -4687,7 +4699,7 @@ function IncidentReplayReviewOverviewPanel({query}: {
                             dataSource={overview.evidenceAnchors}
                             pagination={false}
                             scroll={{x: 1190}}
-                            locale={{emptyText: '暂无 evidenceAnchors；不能解释为证据完整。'}}
+                            locale={{emptyText: t('pages:noEvidenceanchorsEvidenceCannotBeConsideredComplete')}}
                         />
                         <Table<IncidentReplayReviewItem>
                             size="small"
@@ -4696,7 +4708,7 @@ function IncidentReplayReviewOverviewPanel({query}: {
                             dataSource={overview.reviewItems}
                             pagination={false}
                             scroll={{x: 1820}}
-                            locale={{emptyText: '暂无 reviewItems；不能补造复核条目。'}}
+                            locale={{emptyText: t('pages:noReviewitemsReviewEntriesMustNotBeFabricated')}}
                         />
                     </>
                 )}
@@ -4773,92 +4785,93 @@ function resolveEvaluationArtifactPreviewState(
     if (evaluationArtifactPreviewHasChecksumFailed(overview)) {
         return {
             level: 'error',
-            message: 'Evaluation Artifact Preview checksum failed',
-            description: 'checksum invalid / failed 只能解释为 artifact 校验失败，必须 fail-closed；VALID checksum 也不代表策略有效、ML ready 或交易授权。',
+            message: t('pages:evaluationArtifactPreviewChecksumFailed'),
+            description: t('pages:invalidOrFailedChecksumsMeanFailedArtifactValidationAndRemainFailClosedValidChecksumsDoNotEstablishS'),
         };
     }
     if (evaluationArtifactPreviewIsNoFileBaseline(overview)) {
         return {
             level: 'warning',
-            message: '当前未配置 artifact source',
-            description: '当前评估产物预览采用 No-file baseline：不读取 artifact 文件或 manifest，不接受路径或上传，不执行 Python，不导入 DB。',
+            message: t('pages:noArtifactSourceConfigured'),
+            description: t('pages:theEvaluationArtifactPreviewUsesANoFileBaselineNoFileOrManifestReadsPathsUploadsPythonExecutionOrDat'),
         };
     }
     if (evaluationArtifactPreviewHasChecksumMissing(overview)) {
         return {
             level: 'warning',
-            message: 'Evaluation Artifact Preview checksum missing',
-            description: 'checksum missing 表示没有足够完整性证据，页面不会把 artifact 显示为有效、可发布或可执行。',
+            message: t('pages:evaluationArtifactPreviewChecksumMissing'),
+            description: t('pages:aMissingChecksumMeansInsufficientIntegrityEvidenceTheArtifactIsNotShownAsValidPublishableOrExecutabl'),
         };
     }
     if (evaluationArtifactPreviewHasFakeFixture(overview)) {
         return {
             level: 'warning',
-            message: 'Evaluation Artifact Preview 包含 fake fixture',
-            description: 'FAKE_FIXTURE_ONLY 只表示测试 fixture，不是真实策略表现、真实收益或 live execution readiness。',
+            message: t('pages:evaluationArtifactPreviewContainsAFakeFixture'),
+            description: t('pages:fakeFixtureOnlyIsATestFixtureNotRealStrategyPerformanceReturnsOrLiveExecutionReadiness'),
         };
     }
     if (evaluationArtifactPreviewHasStaleArtifact(overview)) {
         return {
             level: 'warning',
-            message: 'Evaluation Artifact Preview 存在 stale artifact',
-            description: 'STALE 只表示 artifact freshness 不足，必须补齐受控来源后复核，不能显示为 ready。',
+            message: t('pages:evaluationArtifactPreviewContainsAStaleArtifact'),
+            description: t('pages:staleMeansInsufficientArtifactFreshnessCompleteControlledSourcesAndReviewBeforeConsideringReadiness'),
         };
     }
     if (evaluationArtifactPreviewHasUnknown(overview)) {
         return {
             level: 'warning',
-            message: 'Evaluation Artifact Preview 存在 unknown fail-closed 状态',
-            description: 'UNKNOWN / NOT_CHECKED 说明当前无法确认 schema、checksum 或 metric 覆盖，页面按 fail-closed 处理。',
+            message: t('pages:evaluationArtifactPreviewHasAnUnknownFailClosedState'),
+            description: t('pages:unknownNotCheckedMeanSchemaChecksumOrMetricCoverageCannotBeConfirmedFailClosedHandlingApplies'),
         };
     }
     return {
         level: 'info',
-        message: 'Evaluation Artifact Preview 已加载',
-        description: '当前结果只用于 Python offline artifact 诊断预览，不表示 ML ready、live execution ready、交易授权或真实收益。',
+        message: t('pages:evaluationArtifactPreviewLoaded'),
+        description: t('pages:pythonOfflineArtifactDiagnosticPreviewOnlyNotMlReadinessLiveExecutionReadinessTradingAuthorizationOr'),
     };
 }
 
 function EvaluationArtifactPreviewBoundaryBadges({overview}: {
     overview?: PythonEvaluationArtifactPreviewOverviewResponse
 }) {
-    const pending = overview ? '' : '；overview 尚未返回时按 fail-closed 展示';
+    useTranslation('pages');
+    const pending = overview ? '' : t('pages:unavailableOverviewDataRemainsFailClosed');
     return (
         <Space size={[8, 8]} wrap>
             <BoundaryBadge
                 color="error"
-                label="LIVE DISABLED（LIVE 关闭）"
-                tooltip={`liveDisabled=true；artifact preview 不表示 LIVE 可用${pending}`}
+                label={t('pages:liveDisabled')}
+                tooltip={t('pages:livedisabledTrueArtifactPreviewDoesNotEstablishLiveAvailabilityValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="Real provider NOT IMPLEMENTED（真实 provider 未实现）"
-                tooltip={`realProviderImplemented=false；本 overview 不调用真实 provider${pending}`}
+                label={t('pages:realProviderNotImplemented')}
+                tooltip={t('pages:realproviderimplementedFalseThisOverviewDoesNotCallRealProvidersValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="Private trading NOT IMPLEMENTED（私有交易未实现）"
-                tooltip={`privateTradingImplemented=false；本 overview 不提供下单、撤单、转账或提现入口${pending}`}
+                label={t('pages:privateTradingNotImplemented')}
+                tooltip={t('pages:privatetradingimplementedFalseThisOverviewOffersNoOrdersCancellationsTransfersOrWithdrawalsValue1', {value1: pending})}
             />
             <BoundaryBadge
                 color="warning"
-                label="Python artifact preview is diagnostic only（Python artifact preview 仅诊断）"
-                tooltip={`diagnosticOnly=true；preview items 是离线诊断材料预览，不导入、不执行、不持久化${pending}`}
+                label={t('pages:pythonArtifactPreviewIsDiagnosticOnly')}
+                tooltip={t('pages:diagnosticonlyTruePreviewsShowOfflineDiagnosticMaterialsWithoutImportExecutionOrPersistenceValue1', {value1: pending})}
             />
             <BoundaryBadge
                 color="error"
-                label="Not trading authorization（非交易授权）"
-                tooltip={`notTradingAuthorization=true；VALID checksum、metric summary 或 artifact preview 都不能解释为交易授权${pending}`}
+                label={t('pages:notTradingAuthorization')}
+                tooltip={t('pages:nottradingauthorizationTrueValidChecksumsMetricSummariesAndArtifactPreviewsDoNotGrantTradingAuthoriz', {value1: pending})}
             />
             <BoundaryBadge
-                label="Python ML ready NO（Python ML ready 否）"
-                tooltip={`pythonMlReady=false；不表示 Python ML ready${pending}`}
+                label={t('pages:pythonMlReadyNo')}
+                tooltip={t('pages:pythonmlreadyFalsePythonMlReadinessIsNotEstablishedValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="Python live execution ready NO（Python live execution ready 否）"
-                tooltip={`pythonLiveExecutionReady=false；不表示 Python live execution ready${pending}`}
+                label={t('pages:pythonLiveExecutionReadyNo')}
+                tooltip={t('pages:pythonliveexecutionreadyFalsePythonLiveExecutionReadinessIsNotEstablishedValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="AI/DH runtime not integrated（AI/DH runtime 未集成）"
-                tooltip={`aiDhRuntimeIntegrated=false；不表示 AI started 或 DH integrated${pending}`}
+                label={t('pages:aiDhRuntimeNotIntegrated')}
+                tooltip={t('pages:aidhruntimeintegratedFalseNeitherAiStartedNorDhIntegratedValue12', {value1: pending})}
             />
         </Space>
     );
@@ -4867,6 +4880,7 @@ function EvaluationArtifactPreviewBoundaryBadges({overview}: {
 function EvaluationArtifactPreviewBoundaryDriftAlert({overview}: {
     overview?: PythonEvaluationArtifactPreviewOverviewResponse
 }) {
+    useTranslation('pages');
     if (!overview) {
         return null;
     }
@@ -4890,8 +4904,8 @@ function EvaluationArtifactPreviewBoundaryDriftAlert({overview}: {
         <Alert
             type="error"
             showIcon
-            message="Evaluation Artifact Preview boundary flags 与当前安全基线不一致"
-            description="页面按 fail-closed 处理该响应；不会把异常 flags 展示成 ML ready、live execution ready、交易授权、可执行或实盘可用。"
+            message={t('pages:evaluationArtifactPreviewBoundaryFlagsConflictWithTheSafetyBaseline')}
+            description={t('pages:theResponseRemainsFailClosedUnexpectedFlagsDoNotEstablishMlReadinessLiveExecutionReadinessTradingAut')}
         />
     ) : null;
 }
@@ -4899,6 +4913,7 @@ function EvaluationArtifactPreviewBoundaryDriftAlert({overview}: {
 function EvaluationArtifactPreviewCounts({overview}: {
     overview?: PythonEvaluationArtifactPreviewOverviewResponse
 }) {
+    useTranslation('pages');
     return (
         <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
             <Descriptions.Item label="totalArtifactPreviews">{countValue(overview?.totalArtifactPreviews)}</Descriptions.Item>
@@ -4915,37 +4930,32 @@ function EvaluationArtifactPreviewCounts({overview}: {
 function EvaluationArtifactPreviewReadinessFlags({overview}: {
     overview?: PythonEvaluationArtifactPreviewOverviewResponse
 }) {
+    useTranslation('pages');
     return (
         <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
             <Descriptions.Item label="diagnosticOnly">
                 <Tag color={overview?.diagnosticOnly === false ? 'error' : 'default'}>
-                    {String(Boolean(overview?.diagnosticOnly))}（只读诊断）
-                </Tag>
+                    {String(Boolean(overview?.diagnosticOnly))}{t('pages:readOnlyDiagnostics')}</Tag>
             </Descriptions.Item>
             <Descriptions.Item label="noSideEffect">
                 <Tag color={overview?.noSideEffect === false ? 'error' : 'default'}>
-                    {String(Boolean(overview?.noSideEffect))}（无副作用）
-                </Tag>
+                    {String(Boolean(overview?.noSideEffect))}{t('pages:noSideEffects')}</Tag>
             </Descriptions.Item>
             <Descriptions.Item label="notTradingAuthorization">
                 <Tag color={overview?.notTradingAuthorization === false ? 'error' : 'default'}>
-                    {String(Boolean(overview?.notTradingAuthorization))}（非交易授权）
-                </Tag>
+                    {String(Boolean(overview?.notTradingAuthorization))}{t('pages:noTradingAuthorization')}</Tag>
             </Descriptions.Item>
             <Descriptions.Item label="liveDisabled">
                 <Tag color={overview?.liveDisabled === false ? 'error' : 'default'}>
-                    {String(Boolean(overview?.liveDisabled))}（LIVE 关闭）
-                </Tag>
+                    {String(Boolean(overview?.liveDisabled))}{t('pages:liveDisabled4')}</Tag>
             </Descriptions.Item>
             <Descriptions.Item label="pythonMlReady">
                 <Tag color={overview?.pythonMlReady ? 'error' : 'default'}>
-                    {String(Boolean(overview?.pythonMlReady))}（Python ML ready NO）
-                </Tag>
+                    {String(Boolean(overview?.pythonMlReady))}{t('pages:pythonMlReadyNo2')}</Tag>
             </Descriptions.Item>
             <Descriptions.Item label="pythonLiveExecutionReady">
                 <Tag color={overview?.pythonLiveExecutionReady ? 'error' : 'default'}>
-                    {String(Boolean(overview?.pythonLiveExecutionReady))}（Python live execution ready NO）
-                </Tag>
+                    {String(Boolean(overview?.pythonLiveExecutionReady))}{t('pages:pythonLiveExecutionReadyNo2')}</Tag>
             </Descriptions.Item>
         </Descriptions>
     );
@@ -4954,8 +4964,9 @@ function EvaluationArtifactPreviewReadinessFlags({overview}: {
 function EvaluationArtifactPreviewLatestItem({item}: {
     item?: PythonEvaluationArtifactPreviewItem | null
 }) {
+    useTranslation('pages');
     if (!item) {
-        return <Empty description="当前未配置 artifact source；No-file baseline 不读取 artifact 文件、不执行 Python、不导入 DB。"/>;
+        return <Empty description={t('pages:noArtifactSourceIsConfiguredTheNoFileBaselineReadsNoArtifactFilesExecutesNoPythonAndImportsNothingIn')}/>;
     }
     return (
         <Descriptions size="small" bordered column={{xs: 1, sm: 1, md: 2}}>
@@ -4988,10 +4999,11 @@ function EvaluationArtifactPreviewIssueTables({
     blockers: EvaluationArtifactPreviewBlocker[];
     warnings: EvaluationArtifactPreviewWarning[];
 }) {
+    useTranslation('pages');
     return (
         <Space direction="vertical" size={12} style={{display: 'flex'}}>
             <div>
-                <Text strong>Blockers（阻断项）</Text>
+                <Text strong>{t('pages:blockers')}</Text>
                 <Table<EvaluationArtifactPreviewBlocker>
                     size="small"
                     rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
@@ -4999,11 +5011,11 @@ function EvaluationArtifactPreviewIssueTables({
                     dataSource={blockers}
                     pagination={false}
                     scroll={{x: 960}}
-                    locale={{emptyText: '暂无 blockers；仍需遵守固定安全边界。'}}
+                    locale={{emptyText: t('pages:noBlockersListedFixedSafetyBoundariesStillApply')}}
                 />
             </div>
             <div>
-                <Text strong>Warnings（警告项）</Text>
+                <Text strong>{t('pages:warnings2')}</Text>
                 <Table<EvaluationArtifactPreviewWarning>
                     size="small"
                     rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
@@ -5011,7 +5023,7 @@ function EvaluationArtifactPreviewIssueTables({
                     dataSource={warnings}
                     pagination={false}
                     scroll={{x: 960}}
-                    locale={{emptyText: '暂无 warnings；不能解释为 artifact source 已配置或 Python 可执行。'}}
+                    locale={{emptyText: t('pages:noWarningsThisDoesNotMeanAnArtifactSourceIsConfiguredOrPythonExecutionIsAvailable')}}
                 />
             </div>
         </Space>
@@ -5021,6 +5033,7 @@ function EvaluationArtifactPreviewIssueTables({
 function EvaluationArtifactPreviewOverviewPanel({query}: {
     query: PanelQueryState<PythonEvaluationArtifactPreviewOverviewResponse>
 }) {
+    useTranslation('pages');
     const overview = query.data;
     const panelState = overview ? resolveEvaluationArtifactPreviewState(overview) : null;
     const bucketRows = overview ? [
@@ -5033,21 +5046,17 @@ function EvaluationArtifactPreviewOverviewPanel({query}: {
         <Card
             className="page-section"
             variant="borderless"
-            title="Python Evaluation Artifact Preview（No-file baseline）"
+            title={t('pages:pythonEvaluationArtifactPreviewNoFileBaseline')}
         >
             <Space data-testid="evaluation-artifact-preview-overview-panel" direction="vertical" size={12}
                    style={{display: 'flex'}}>
                 <Paragraph type="secondary" style={{marginBottom: 0}}>
-                    只读消费 GET /api/strategy-validation/evaluation-artifacts/preview/overview；展示 No-file
-                    baseline、artifact preview counts、schema / checksum / metric coverage、warnings /
-                    nextSteps、evidenceAnchors 与 traceId，不新增 route、上传、导入、文件路径输入、Python 执行、
-                    review 写侧或交易入口。
-                </Paragraph>
+                    {t('pages:readOnlyGetApiStrategyValidationEvaluationArtifactsPreviewOverviewShowsTheNoFileBaselinePreviewCount')}</Paragraph>
                 <Alert
                     type="info"
                     showIcon
-                    message="文案边界"
-                    description="页面颜色只表示诊断状态，success 不表示盈利，danger 不表示下跌；VALID checksum 只表示 payload integrity，不表示策略有效；metricSummary 不表示真实收益；FAKE_FIXTURE_ONLY 是测试 fixture，不是真实策略表现；pythonMlReady=false 与 pythonLiveExecutionReady=false 必须保持可见。"
+                    message={t('pages:interpretationBoundary')}
+                    description={t('pages:colorsShowDiagnosticsNotProfitOrMarketDirectionValidChecksumsIndicatePayloadIntegrityNotStrategyVali')}
                 />
                 <EvaluationArtifactPreviewBoundaryBadges overview={overview}/>
                 <EvaluationArtifactPreviewBoundaryDriftAlert overview={overview}/>
@@ -5063,17 +5072,15 @@ function EvaluationArtifactPreviewOverviewPanel({query}: {
                     <Alert
                         type="error"
                         showIcon
-                        message="Evaluation Artifact Preview overview 查询失败"
+                        message={t('pages:failedToQueryEvaluationArtifactPreviewOverview')}
                         description={(
                             <Paragraph style={{marginBottom: 0}}>
-                                artifact preview overview 失败时按不可用处理，不会显示为 artifact source 已配置、
-                                Python 可执行、ML ready、live execution ready、授权或可交易。
-                                {formatApiError(query.error as AppApiError)}
+                                {t('pages:aFailedArtifactOverviewIsUnavailableNotAConfiguredSourcePythonExecutionMlReadinessLiveExecutionReadi')}{formatApiError(query.error as AppApiError)}
                             </Paragraph>
                         )}
                     />
                 ) : !overview ? (
-                    <Empty description="暂无 Evaluation Artifact Preview overview 响应；固定安全边界仍按 fail-closed 展示。"/>
+                    <Empty description={t('pages:noEvaluationArtifactPreviewOverviewResponseSafetyBoundariesRemainFailClosed')}/>
                 ) : (
                     <>
                         {panelState ? (
@@ -5088,16 +5095,16 @@ function EvaluationArtifactPreviewOverviewPanel({query}: {
                             <Alert
                                 type="warning"
                                 showIcon
-                                message="checksum missing"
-                                description="checksum 缺失不能显示为 artifact valid、策略有效、ML ready 或交易授权。"
+                                message={t('pages:checksumMissing')}
+                                description={t('pages:missingChecksumsCannotIndicateArtifactOrStrategyValidityMlReadinessOrTradingAuthorization')}
                             />
                         ) : null}
                         {evaluationArtifactPreviewHasChecksumFailed(overview) ? (
                             <Alert
                                 type="error"
                                 showIcon
-                                message="checksum invalid / failed"
-                                description="checksum 失败必须 fail-closed；页面不会允许继续上传、导入、执行或交易。"
+                                message={t('pages:checksumInvalidFailed')}
+                                description={t('pages:checksumFailuresRemainFailClosedUploadsImportsExecutionAndTradingAreNotPermitted')}
                             />
                         ) : null}
                         {evaluationArtifactPreviewHasFakeFixture(overview) ? (
@@ -5105,20 +5112,20 @@ function EvaluationArtifactPreviewOverviewPanel({query}: {
                                 type="warning"
                                 showIcon
                                 message="FAKE_FIXTURE_ONLY"
-                                description="FAKE_FIXTURE_ONLY 只表示测试 fixture，不是真实策略表现、真实收益或 live execution readiness。"
+                                description={t('pages:fakeFixtureOnlyIsATestFixtureNotRealStrategyPerformanceReturnsOrLiveExecutionReadiness')}
                             />
                         ) : null}
                         {evaluationArtifactPreviewHasUnknown(overview) ? (
                             <Alert
                                 type="warning"
                                 showIcon
-                                message="unknown fail-closed"
-                                description="UNKNOWN / NOT_CHECKED 表示当前无法确认 source、checksum 或 metric 覆盖；页面按 fail-closed 展示。"
+                                message={t('pages:unknownFailClosed')}
+                                description={t('pages:unknownNotCheckedMeanSourceChecksumOrMetricCoverageCannotBeConfirmedThePageRemainsFailClosed')}
                             />
                         ) : null}
                         <EvaluationArtifactPreviewLatestItem item={overview.latestArtifactPreview}/>
                         <div>
-                            <Text strong>Schema / checksum / metric coverage（覆盖摘要）</Text>
+                            <Text strong>{t('pages:schemaChecksumMetricCoverage')}</Text>
                             <Table<EvaluationArtifactPreviewBucketRow>
                                 size="small"
                                 rowKey={(record) => record.key}
@@ -5126,7 +5133,7 @@ function EvaluationArtifactPreviewOverviewPanel({query}: {
                                 dataSource={bucketRows}
                                 pagination={false}
                                 scroll={{x: 640}}
-                                locale={{emptyText: '暂无 coverage summary；不能补造 schema / checksum / metric 状态。'}}
+                                locale={{emptyText: t('pages:noCoverageSummarySchemaChecksumOrMetricStatusMustNotBeFabricated')}}
                             />
                         </div>
                         <EvaluationArtifactPreviewIssueTables
@@ -5140,7 +5147,7 @@ function EvaluationArtifactPreviewOverviewPanel({query}: {
                             dataSource={overview.nextSteps}
                             pagination={false}
                             scroll={{x: 1040}}
-                            locale={{emptyText: '暂无 nextSteps；不能解释为 artifact source 已配置、Python 可执行或已完成。'}}
+                            locale={{emptyText: t('pages:noNextstepsThisDoesNotMeanAConfiguredArtifactSourcePythonExecutionOrCompletion')}}
                         />
                         <Table<EvaluationArtifactPreviewEvidenceAnchor>
                             size="small"
@@ -5149,7 +5156,7 @@ function EvaluationArtifactPreviewOverviewPanel({query}: {
                             dataSource={overview.evidenceAnchors}
                             pagination={false}
                             scroll={{x: 1190}}
-                            locale={{emptyText: '暂无 evidenceAnchors；不能解释为证据完整。'}}
+                            locale={{emptyText: t('pages:noEvidenceanchorsEvidenceCannotBeConsideredComplete')}}
                         />
                         <Table<PythonEvaluationArtifactPreviewItem>
                             size="small"
@@ -5158,7 +5165,7 @@ function EvaluationArtifactPreviewOverviewPanel({query}: {
                             dataSource={overview.artifactPreviews}
                             pagination={false}
                             scroll={{x: 2300}}
-                            locale={{emptyText: 'No-file baseline：当前未配置 artifact source，不读取 artifact 文件、不执行 Python、不导入 DB。'}}
+                            locale={{emptyText: t('pages:noFileBaselineNoArtifactSourceConfiguredNoArtifactFileReadsNoPythonExecutionAndNoDatabaseImport')}}
                         />
                     </>
                 )}
@@ -5184,57 +5191,58 @@ function incidentSeverityPresentation(severity: IncidentReplaySeverity | null | 
             return {
                 alertType: 'error',
                 color: 'error',
-                label: 'CRITICAL（严重诊断优先级）',
-                message: 'Incident / Replay overview：CRITICAL 诊断优先级',
-                description: 'CRITICAL 只表示需要优先人工复核本地诊断证据；页面不会自动处置、不会授权交易、不会启动 replay。',
+                label: t('pages:criticalCriticalDiagnosticPriority'),
+                message: t('pages:incidentReplayOverviewCriticalDiagnosticPriority'),
+                description: t('pages:criticalPrioritizesManualLocalEvidenceReviewThePageDoesNotHandleIssuesAutomaticallyAuthorizeTradingO'),
             };
         case 'HIGH':
             return {
                 alertType: 'error',
                 color: 'error',
-                label: 'HIGH（高诊断优先级）',
-                message: 'Incident / Replay overview：HIGH 诊断优先级',
-                description: 'HIGH 只表示诊断证据需要尽快复核；不表示自动恢复、自动执行或交易授权。',
+                label: t('pages:highHighDiagnosticPriority'),
+                message: t('pages:incidentReplayOverviewHighDiagnosticPriority'),
+                description: t('pages:highMeansDiagnosticEvidenceNeedsPromptReviewNotAutomaticRecoveryExecutionOrTradingAuthorization'),
             };
         case 'WARNING':
             return {
                 alertType: 'warning',
                 color: 'warning',
-                label: 'WARNING（诊断警告）',
-                message: 'Incident / Replay overview：WARNING 诊断警告',
-                description: 'WARNING 表示存在需要复核的诊断信号；不表示行情方向、收益或自动处置。',
+                label: t('pages:warningDiagnosticWarning'),
+                message: t('pages:incidentReplayOverviewWarning'),
+                description: t('pages:warningIndicatesDiagnosticSignalsRequiringReviewNotMarketDirectionReturnsOrAutomaticHandling'),
             };
         case 'NONE':
             return {
                 alertType: 'info',
                 color: 'default',
-                label: 'NONE（无当前诊断优先级）',
-                message: 'Incident / Replay overview：暂无诊断优先级',
-                description: 'NONE 只表示当前 overview 未给出 incident-like priority；仍需遵守固定安全边界。',
+                label: t('pages:noneNoCurrentDiagnosticPriority'),
+                message: t('pages:incidentReplayOverviewNoDiagnosticPriority'),
+                description: t('pages:noneMeansNoIncidentLikePriorityWasProvidedFixedSafetyBoundariesStillApply'),
             };
         case 'INFO':
             return {
                 alertType: 'info',
                 color: 'processing',
-                label: 'INFO（诊断信息）',
-                message: 'Incident / Replay overview：INFO 诊断信息',
-                description: 'INFO 只表示普通诊断信息；不代表通过、收益、交易授权或 LIVE readiness。',
+                label: t('pages:infoDiagnosticInformation'),
+                message: t('pages:incidentReplayOverviewInfo'),
+                description: t('pages:infoIndicatesGeneralDiagnosticsNotAPassReturnsTradingAuthorizationOrLiveReadiness'),
             };
         default:
             return {
                 alertType: 'warning',
                 color: 'warning',
-                label: `${normalized}（未知诊断优先级）`,
-                message: 'Incident / Replay overview：未知诊断优先级',
-                description: '未知 severity 按 fail-closed 展示，需要人工确认后端事实来源和边界语义。',
+                label: t('pages:value1UnknownDiagnosticPriority', {value1: normalized}),
+                message: t('pages:incidentReplayOverviewUnknownDiagnosticPriority'),
+                description: t('pages:unknownSeverityRemainsFailClosedAndRequiresManualConfirmationOfBackendFactsAndBoundaryMeanings'),
             };
     }
 }
 
 function IncidentSeverityTag({severity}: { severity?: IncidentReplaySeverity | null }) {
+    useTranslation('pages');
     const presentation = incidentSeverityPresentation(severity);
     return (
-        <Tooltip title="severity 只表示诊断优先级，不表示自动处置、交易授权或实盘就绪。">
+        <Tooltip title={t('pages:severityIndicatesDiagnosticPriorityOnlyNotAutomaticHandlingTradingAuthorizationOrRealTradingReadines')}>
             <Tag color={presentation.color}>{presentation.label}</Tag>
         </Tooltip>
     );
@@ -5274,41 +5282,43 @@ function incidentReplayHasPartialData(overview: IncidentReplayOverviewResponse):
 }
 
 function IncidentReplayBoundaryBadges({overview}: { overview?: IncidentReplayOverviewResponse }) {
-    const pending = overview ? '' : '；overview 尚未返回时按 fail-closed 展示';
+    useTranslation('pages');
+    const pending = overview ? '' : t('pages:unavailableOverviewDataRemainsFailClosed');
     return (
         <Space size={[8, 8]} wrap>
             <BoundaryBadge
                 color="error"
-                label="LIVE DISABLED（LIVE 关闭）"
-                tooltip={`liveDisabled=true；Incident / Replay overview 不表示实盘就绪${pending}`}
+                label={t('pages:liveDisabled')}
+                tooltip={t('pages:livedisabledTrueIncidentReplayOverviewDoesNotEstablishRealTradingReadinessValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="Real provider NOT IMPLEMENTED（真实 provider 未实现）"
-                tooltip={`realProviderImplemented=false；本面板不调用真实 provider${pending}`}
+                label={t('pages:realProviderNotImplemented')}
+                tooltip={t('pages:realproviderimplementedFalseThisPanelDoesNotCallRealProvidersValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="Private trading NOT IMPLEMENTED（私有交易未实现）"
-                tooltip={`privateTradingImplemented=false；本面板不提供下单、撤单、转账或提现入口${pending}`}
+                label={t('pages:privateTradingNotImplemented')}
+                tooltip={t('pages:privatetradingimplementedFalseThisPanelOffersNoOrdersCancellationsTransfersOrWithdrawalsValue1', {value1: pending})}
             />
             <BoundaryBadge
                 color="warning"
-                label="Incident / Replay is diagnostic only（仅诊断）"
-                tooltip={`diagnosticOnly=true；只聚合本地诊断证据，不创建 incident 或启动 replay${pending}`}
+                label={t('pages:incidentReplayIsDiagnosticOnly')}
+                tooltip={t('pages:diagnosticonlyTrueAggregatesLocalDiagnosticEvidenceOnlyWithoutCreatingIncidentsOrStartingReplayValue', {value1: pending})}
             />
             <BoundaryBadge
                 color="error"
-                label="Not trading authorization（非交易授权）"
-                tooltip={`notTradingAuthorization=true；HIGH / CRITICAL 也不能解释为交易授权${pending}`}
+                label={t('pages:notTradingAuthorization')}
+                tooltip={t('pages:nottradingauthorizationTrueHighCriticalDoNotGrantTradingAuthorizationValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="AI/DH runtime not integrated（AI/DH runtime 未集成）"
-                tooltip={`aiDhRuntimeIntegrated=false；不表示 AI started 或 DH integrated${pending}`}
+                label={t('pages:aiDhRuntimeNotIntegrated')}
+                tooltip={t('pages:aidhruntimeintegratedFalseNeitherAiStartedNorDhIntegratedValue12', {value1: pending})}
             />
         </Space>
     );
 }
 
 function IncidentReplayBoundaryDriftAlert({overview}: { overview?: IncidentReplayOverviewResponse }) {
+    useTranslation('pages');
     if (!overview) {
         return null;
     }
@@ -5324,13 +5334,14 @@ function IncidentReplayBoundaryDriftAlert({overview}: { overview?: IncidentRepla
         <Alert
             type="error"
             showIcon
-            message="Incident / Replay boundary flags 与当前安全基线不一致"
-            description="页面按 fail-closed 处理该响应；不会把异常 flags 展示成可执行、可交易或实盘就绪。"
+            message={t('pages:incidentReplayBoundaryFlagsConflictWithTheSafetyBaseline')}
+            description={t('pages:theResponseRemainsFailClosedUnexpectedFlagsDoNotMeanExecutableTradableOrLiveReady')}
         />
     ) : null;
 }
 
 function IncidentReplayCounts({overview}: { overview?: IncidentReplayOverviewResponse }) {
+    useTranslation('pages');
     return (
         <Descriptions size="small" bordered column={{xs: 1, sm: 2, md: 3}}>
             <Descriptions.Item label="incidentSeverity">
@@ -5371,10 +5382,11 @@ function IncidentReplayIssueTables({
     blockers: IncidentReplayBlocker[];
     warnings: IncidentReplayWarning[];
 }) {
+    useTranslation('pages');
     return (
         <Space direction="vertical" size={12} style={{display: 'flex'}}>
             <div>
-                <Text strong>Blockers</Text>
+                <Text strong>{t('pages:blockers2')}</Text>
                 <Table<IncidentReplayBlocker>
                     size="small"
                     rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
@@ -5382,11 +5394,11 @@ function IncidentReplayIssueTables({
                     dataSource={blockers}
                     pagination={false}
                     scroll={{x: 930}}
-                    locale={{emptyText: '暂无 blockers；仍需遵守固定安全边界。'}}
+                    locale={{emptyText: t('pages:noBlockersListedFixedSafetyBoundariesStillApply')}}
                 />
             </div>
             <div>
-                <Text strong>Warnings</Text>
+                <Text strong>{t('pages:warnings3')}</Text>
                 <Table<IncidentReplayWarning>
                     size="small"
                     rowKey={(record) => `${record.code}-${record.severity}-${record.sourceId ?? 'none'}`}
@@ -5394,7 +5406,7 @@ function IncidentReplayIssueTables({
                     dataSource={warnings}
                     pagination={false}
                     scroll={{x: 930}}
-                    locale={{emptyText: '暂无 warnings；不能解释为诊断链路已完成。'}}
+                    locale={{emptyText: t('pages:noWarningsTheDiagnosticChainIsNotNecessarilyComplete')}}
                 />
             </div>
         </Space>
@@ -5402,6 +5414,7 @@ function IncidentReplayIssueTables({
 }
 
 function IncidentReplayOverviewPanel({query}: { query: PanelQueryState<IncidentReplayOverviewResponse> }) {
+    useTranslation('pages');
     const overview = query.data;
     const severity = overview ? incidentSeverityPresentation(overview.incidentSeverity) : null;
     const sourceUnavailable = overview ? incidentReplayHasSourceUnavailable(overview) : false;
@@ -5411,20 +5424,17 @@ function IncidentReplayOverviewPanel({query}: { query: PanelQueryState<IncidentR
         <Card
             className="page-section"
             variant="borderless"
-            title="Incident / Replay Overview"
+            title={t('pages:incidentReplayOverview')}
             extra={(
                 <Button size="small" icon={<ReloadOutlined/>} loading={query.isFetching}
                         onClick={() => query.refetch()}>
-                    刷新 Incident / Replay
-                </Button>
+                    {t('pages:refreshIncidentReplay')}</Button>
             )}
         >
             <Space data-testid="incident-replay-overview-panel" direction="vertical" size={12}
                    style={{display: 'flex'}}>
                 <Paragraph type="secondary" style={{marginBottom: 0}}>
-                    只读消费 GET /api/incidents/replay/overview；用于聚合本地 Shadow event、consistency divergence、
-                    Paper alert、recovery 与 replay 诊断证据，不创建 incident、不启动 replay、不新增任何交易动作。
-                </Paragraph>
+                    {t('pages:readOnlyGetApiIncidentsReplayOverviewAggregatesLocalShadowConsistencyPaperAlertRecoveryAndReplayDiag')}</Paragraph>
                 <IncidentReplayBoundaryBadges overview={overview}/>
                 <IncidentReplayBoundaryDriftAlert overview={overview}/>
                 <IncidentReplayCounts overview={overview}/>
@@ -5434,31 +5444,30 @@ function IncidentReplayOverviewPanel({query}: { query: PanelQueryState<IncidentR
                     <Alert
                         type="error"
                         showIcon
-                        message="Incident / Replay overview 查询失败"
+                        message={t('pages:failedToQueryIncidentReplayOverview')}
                         description={(
                             <Paragraph style={{marginBottom: 0}}>
-                                overview 失败时按 source unavailable 处理，不会显示为通过、授权、自动处置或可执行。
-                                {formatApiError(query.error as AppApiError)}
+                                {t('pages:aFailedOverviewMeansTheSourceIsUnavailableNotPassedAuthorizedAutomaticallyHandledOrExecutable')}{formatApiError(query.error as AppApiError)}
                             </Paragraph>
                         )}
                     />
                 ) : !overview ? (
-                    <Empty description="暂无 Incident / Replay overview 响应；固定安全边界仍按 fail-closed 展示。"/>
+                    <Empty description={t('pages:noIncidentReplayOverviewResponseSafetyBoundariesRemainFailClosed')}/>
                 ) : (
                     <>
                         {sourceUnavailable ? (
                             <Alert
                                 type="error"
                                 showIcon
-                                message="Source unavailable / 事实源不可用"
-                                description="overview 返回了不可用或缺失事实源信号；页面只展示已返回证据，不补造 counts、latestEvidence 或 nextSteps。"
+                                message={t('pages:sourceUnavailable')}
+                                description={t('pages:theOverviewReportsUnavailableOrMissingSourcesOnlyReturnedEvidenceIsShownCountsLatestevidenceAndNexts')}
                             />
                         ) : partialData ? (
                             <Alert
                                 type="warning"
                                 showIcon
-                                message="Partial data / 部分数据"
-                                description="latestEvidence、evidenceAnchors、sourceStatus 或 severity 不完整时，面板仅展示可用事实，不把缺失数据解释为正常。"
+                                message={t('pages:partialData')}
+                                description={t('pages:whenLatestevidenceAnchorsSourcestatusOrSeverityIsIncompleteOnlyAvailableFactsAreShownMissingDataIsNo')}
                             />
                         ) : severity ? (
                             <Alert
@@ -5469,7 +5478,7 @@ function IncidentReplayOverviewPanel({query}: { query: PanelQueryState<IncidentR
                             />
                         ) : null}
                         {incidentReplayIsEmpty(overview) ? (
-                            <Empty description="暂无 Incident / Replay evidence；空态不表示事件已解决或可交易。"/>
+                            <Empty description={t('pages:noIncidentReplayEvidenceAnEmptyStateDoesNotMeanResolutionOrTradability')}/>
                         ) : null}
                         <Table<IncidentReplayLatestEvidence>
                             size="small"
@@ -5478,7 +5487,7 @@ function IncidentReplayOverviewPanel({query}: { query: PanelQueryState<IncidentR
                             dataSource={overview.latestEvidence}
                             pagination={false}
                             scroll={{x: 1080}}
-                            locale={{emptyText: '暂无 latestEvidence；不能补造最新证据。'}}
+                            locale={{emptyText: t('pages:noLatestevidenceLatestEvidenceMustNotBeFabricated')}}
                         />
                         <IncidentReplayIssueTables blockers={overview.blockers} warnings={overview.warnings}/>
                         <Table<IncidentReplayNextStep>
@@ -5488,7 +5497,7 @@ function IncidentReplayOverviewPanel({query}: { query: PanelQueryState<IncidentR
                             dataSource={overview.nextSteps}
                             pagination={false}
                             scroll={{x: 1000}}
-                            locale={{emptyText: '暂无 nextSteps；不能解释为已经完成处置。'}}
+                            locale={{emptyText: t('pages:noNextstepsHandlingCannotBeConsideredComplete')}}
                         />
                         <Table<IncidentReplayEvidenceAnchor>
                             size="small"
@@ -5497,7 +5506,7 @@ function IncidentReplayOverviewPanel({query}: { query: PanelQueryState<IncidentR
                             dataSource={overview.evidenceAnchors}
                             pagination={false}
                             scroll={{x: 1030}}
-                            locale={{emptyText: '暂无 evidenceAnchors；不能解释为证据完整。'}}
+                            locale={{emptyText: t('pages:noEvidenceanchorsEvidenceCannotBeConsideredComplete')}}
                         />
                     </>
                 )}
@@ -5507,43 +5516,45 @@ function IncidentReplayOverviewPanel({query}: { query: PanelQueryState<IncidentR
 }
 
 function ValidationOperationsBoundaryStrip() {
+    useTranslation('pages');
     return (
         <Space data-testid="validation-operations-boundary-strip" size={[8, 8]} wrap>
             <BoundaryBadge
                 color="error"
                 label="LIVE DISABLED"
-                tooltip="LIVE 关闭；本 Workbench 不展示实盘就绪、交易批准或真实交易能力。"
+                tooltip={t('pages:liveIsDisabledThisWorkbenchDoesNotIndicateRealTradingReadinessApprovalOrCapability')}
             />
             <BoundaryBadge
-                label="Real provider NOT IMPLEMENTED"
-                tooltip="真实 provider 未实现；本页不调用真实交易所。"
+                label={t('pages:realProviderNotImplemented3')}
+                tooltip={t('pages:realProvidersAreNotImplementedThisPageDoesNotCallRealExchanges')}
             />
             <BoundaryBadge
-                label="Private trading NOT IMPLEMENTED"
-                tooltip="私有交易能力未实现；不提供下单、撤单、转账、提现或 private endpoint。"
+                label={t('pages:privateTradingNotImplemented2')}
+                tooltip={t('pages:privateTradingIsNotImplementedNoOrdersCancellationsTransfersWithdrawalsOrPrivateEndpointsAreProvided')}
             />
             <BoundaryBadge
                 color="warning"
-                label="Not trading authorization"
-                tooltip="Validation / consistency / review / artifact preview 均不是交易授权。"
+                label={t('pages:notTradingAuthorization3')}
+                tooltip={t('pages:validationConsistencyReviewAndArtifactPreviewDoNotGrantTradingAuthorization')}
             />
             <BoundaryBadge
-                label="Python ML ready NO"
-                tooltip="Python artifact preview 不表示 Python ML ready。"
+                label={t('pages:pythonMlReadyNo3')}
+                tooltip={t('pages:pythonArtifactPreviewDoesNotMeanPythonMlReadiness')}
             />
             <BoundaryBadge
-                label="Python live execution ready NO"
-                tooltip="Python artifact preview 不表示 live execution ready。"
+                label={t('pages:pythonLiveExecutionReadyNo3')}
+                tooltip={t('pages:pythonArtifactPreviewDoesNotMeanLiveExecutionReadiness')}
             />
             <BoundaryBadge
-                label="AI/DH runtime not integrated"
-                tooltip="AI 仍 NOT STARTED；DH runtime 仍 NOT INTEGRATED。"
+                label={t('pages:aiDhRuntimeNotIntegrated2')}
+                tooltip={t('pages:aiRemainsNotStartedDhRuntimeRemainsNotIntegrated')}
             />
         </Space>
     );
 }
 
 function ValidationOperationsTopSummary({queries}: { queries: ValidationOperationsQueryBundle }) {
+    const {i18n: pageI18n} = useTranslation('pages');
     const rows = useMemo(
         () => validationOperationsSummaryRows(
             queries.strategyOverview.data,
@@ -5558,12 +5569,12 @@ function ValidationOperationsTopSummary({queries}: { queries: ValidationOperatio
             queries.consistencyEvidence.data,
             queries.incidentReplayReview.data,
             queries.artifactPreview.data,
-        ],
+        , pageI18n.resolvedLanguage],
     );
 
     return (
         <div data-testid="validation-operations-top-summary">
-            <Text strong>Top summary / 验证运营总览</Text>
+            <Text strong>{t('pages:validationOperationsSummary')}</Text>
             <Table<ValidationOperationsSummaryRow>
                 size="small"
                 rowKey={(record) => record.key}
@@ -5571,13 +5582,14 @@ function ValidationOperationsTopSummary({queries}: { queries: ValidationOperatio
                 dataSource={rows}
                 pagination={false}
                 scroll={{x: 1450}}
-                locale={{emptyText: '暂无 summary；不能解释为验证运营已完成。'}}
+                locale={{emptyText: t('pages:noSummaryValidationOperationsCannotBeConsideredComplete')}}
             />
         </div>
     );
 }
 
 function ValidationOperationsEvidenceMatrix({queries}: { queries: ValidationOperationsQueryBundle }) {
+    const {i18n: pageI18n} = useTranslation('pages');
     const rows = useMemo(
         () => validationOperationsEvidenceRows(
             queries.strategyOverview.data,
@@ -5592,12 +5604,12 @@ function ValidationOperationsEvidenceMatrix({queries}: { queries: ValidationOper
             queries.consistencyEvidence.data,
             queries.incidentReplayReview.data,
             queries.artifactPreview.data,
-        ],
+        , pageI18n.resolvedLanguage],
     );
 
     return (
         <div data-testid="validation-operations-evidence-matrix">
-            <Text strong>Evidence matrix / 证据矩阵</Text>
+            <Text strong>{t('pages:evidenceMatrix')}</Text>
             <Table<ValidationOperationsEvidenceRow>
                 size="small"
                 rowKey={(record) => record.key}
@@ -5605,24 +5617,25 @@ function ValidationOperationsEvidenceMatrix({queries}: { queries: ValidationOper
                 dataSource={rows}
                 pagination={false}
                 scroll={{x: 1150}}
-                locale={{emptyText: '暂无 evidence matrix；不能解释为证据完整。'}}
+                locale={{emptyText: t('pages:noEvidenceMatrixEvidenceCannotBeConsideredComplete')}}
             />
         </div>
     );
 }
 
 function ValidationOperationsOperatorQueuePreview({queries}: { queries: ValidationOperationsQueryBundle }) {
+    const {i18n: pageI18n} = useTranslation('pages');
     const rows = useMemo(
         () => validationOperationsOperatorQueueRows(
             queries.shadowWorkflow.data,
             queries.incidentReplayReview.data,
         ),
-        [queries.shadowWorkflow.data, queries.incidentReplayReview.data],
+        [queries.shadowWorkflow.data, queries.incidentReplayReview.data, pageI18n.resolvedLanguage],
     );
 
     return (
         <div data-testid="validation-operations-operator-queue">
-            <Text strong>Operator queue preview / 人工复核队列预览</Text>
+            <Text strong>{t('pages:operatorReviewQueuePreview')}</Text>
             <Table<ValidationOperationsOperatorQueueRow>
                 size="small"
                 rowKey={(record) => record.key}
@@ -5630,13 +5643,14 @@ function ValidationOperationsOperatorQueuePreview({queries}: { queries: Validati
                 dataSource={rows}
                 pagination={false}
                 scroll={{x: 1500}}
-                locale={{emptyText: '暂无 operator / review items；不能解释为已确认、已升级或已关闭。'}}
+                locale={{emptyText: t('pages:noOperatorOrReviewItemsThisDoesNotMeanAcknowledgmentEscalationOrClosure')}}
             />
         </div>
     );
 }
 
 function ValidationOperationsWorkbench({queries}: { queries: ValidationOperationsQueryBundle }) {
+    useTranslation('pages');
     const isLoading = queries.strategyOverview.isLoading
         || queries.shadowWorkflow.isLoading
         || queries.consistencyEvidence.isLoading
@@ -5670,27 +5684,23 @@ function ValidationOperationsWorkbench({queries}: { queries: ValidationOperation
         <Card
             className="page-section"
             variant="borderless"
-            title="Validation Operations Workbench"
+            title={t('pages:validationOperationsWorkbench')}
             extra={(
                 <Button size="small" icon={<ReloadOutlined/>} loading={isFetching} onClick={refetchWorkbench}>
-                    刷新 Workbench
-                </Button>
+                    {t('pages:refreshWorkbench')}</Button>
             )}
         >
             <Space data-testid="validation-operations-workbench" direction="vertical" size={14}
                    style={{display: 'flex'}}>
                 <Paragraph type="secondary" style={{marginBottom: 0}}>
-                    汇总 Shadow Validation Workflow、Consistency Evidence、Incident / Replay Review 与 Evaluation
-                    Artifact Preview 的只读诊断结果；用于人工复核排序、证据链路检查和边界确认，不新增 route、API、DB
-                    migration 或交易入口。
-                </Paragraph>
+                    {t('pages:aggregatesReadOnlyShadowWorkflowConsistencyEvidenceIncidentReplayReviewAndArtifactPreviewDiagnostics')}</Paragraph>
                 <ValidationOperationsBoundaryStrip/>
                 {hasError ? (
                     <Alert
                         type="error"
                         showIcon
-                        message="Workbench 存在只读数据加载失败"
-                        description="失败主线按 blocked / unknown fail-closed 处理；页面不会把缺失响应解释为通过、已确认或交易授权。"
+                        message={t('pages:workbenchReadOnlyDataFailedToLoad')}
+                        description={t('pages:failedTracksRemainBlockedOrUnknownAndFailClosedMissingResponsesDoNotMeanAPassAcknowledgmentOrTrading')}
                     />
                 ) : null}
                 {isLoading ? <Skeleton active paragraph={{rows: 8}}/> : null}
@@ -5698,8 +5708,8 @@ function ValidationOperationsWorkbench({queries}: { queries: ValidationOperation
                     <Alert
                         type="warning"
                         showIcon
-                        message="Partial data / 部分数据"
-                        description="缺少任一验证运营或影子运行 overview 时，Workbench 只展示已返回事实；不会补造 evidence、review decision 或 artifact readiness。"
+                        message={t('pages:partialData')}
+                        description={t('pages:whenAnyValidationOrShadowOverviewIsMissingOnlyReturnedFactsAreShownEvidenceReviewDecisionsAndArtifac')}
                     />
                 ) : null}
                 <ValidationOperationsTopSummary queries={queries}/>
@@ -5708,8 +5718,8 @@ function ValidationOperationsWorkbench({queries}: { queries: ValidationOperation
                 <Alert
                     type="info"
                     showIcon
-                    message="Detail sections 保留"
-                    description="下方保留现有影子运行与验证运营只读 panel，用于查看每条主线的原始 summary、blockers、warnings、nextSteps、traceId 和 evidence anchors。"
+                    message={t('pages:detailSectionsRetained')}
+                    description={t('pages:readOnlyShadowAndValidationPanelsBelowRetainEachTrackSOriginalSummaryBlockersWarningsNextstepsTracei')}
                 />
             </Space>
         </Card>
@@ -5717,14 +5727,15 @@ function ValidationOperationsWorkbench({queries}: { queries: ValidationOperation
 }
 
 function ValidationOperationsDetailSections({children}: { children: ReactNode }) {
+    useTranslation('pages');
     return (
         <Space data-testid="validation-operations-detail-sections" direction="vertical" size={16}
                style={{display: 'flex'}}>
             <Alert
                 type="info"
                 showIcon
-                message="Detail sections / 只读详情区"
-                description="以下 panel 保留既有只读诊断语义；Workbench summary 用于复核顺序，detail sections 用于证据展开。"
+                message={t('pages:readOnlyDetailSections')}
+                description={t('pages:panelsRetainReadOnlyDiagnosticSemanticsTheSummaryPrioritizesReviewsDetailsExpandTheEvidence')}
             />
             {children}
         </Space>
@@ -5732,6 +5743,7 @@ function ValidationOperationsDetailSections({children}: { children: ReactNode })
 }
 
 function StrategyValidationShadowWorkbench({queries}: { queries: WorkbenchQueryBundle }) {
+    const {i18n: pageI18n} = useTranslation('pages');
     const strategyOverview = queries.strategyOverview.data;
     const shadowOverview = queries.shadowOverview.data;
     const drilldown = queries.drilldown.data;
@@ -5740,27 +5752,27 @@ function StrategyValidationShadowWorkbench({queries}: { queries: WorkbenchQueryB
     const hasPartialData = !strategyOverview || !shadowOverview || !queries.shadowRunId || !drilldown;
     const signalRows = useMemo(
         () => workbenchSignalRows(strategyOverview, shadowOverview, drilldown),
-        [strategyOverview, shadowOverview, drilldown],
+        [strategyOverview, shadowOverview, drilldown, pageI18n.resolvedLanguage],
     );
     const nextStepRows = useMemo(
         () => workbenchNextStepRows(strategyOverview, shadowOverview, drilldown),
-        [strategyOverview, shadowOverview, drilldown],
+        [strategyOverview, shadowOverview, drilldown, pageI18n.resolvedLanguage],
     );
     const evidenceRows = useMemo(
         () => workbenchEvidenceRows(strategyOverview, shadowOverview, drilldown),
-        [strategyOverview, shadowOverview, drilldown],
+        [strategyOverview, shadowOverview, drilldown, pageI18n.resolvedLanguage],
     );
 
     return (
         <Card
             className="page-section"
             variant="borderless"
-            title="Strategy Validation / Shadow Workbench"
+            title={t('pages:strategyValidationShadowWorkbench')}
             extra={(
                 <Space size={8} wrap>
                     {queries.shadowRunId ? (
                         <Link to={`/strategies/shadow-runs/${queries.shadowRunId}`}>
-                            <Button size="small">查看 Shadow Run detail</Button>
+                            <Button size="small">{t('pages:viewShadowRunDetails')}</Button>
                         </Link>
                     ) : null}
                     <Button
@@ -5775,44 +5787,41 @@ function StrategyValidationShadowWorkbench({queries}: { queries: WorkbenchQueryB
                             }
                         }}
                     >
-                        刷新 Workbench
-                    </Button>
+                        {t('pages:refreshWorkbench')}</Button>
                 </Space>
             )}
         >
             <Space data-testid="strategy-validation-shadow-workbench" direction="vertical" size={14}
                    style={{display: 'flex'}}>
                 <Paragraph type="secondary" style={{marginBottom: 0}}>
-                    聚合 Strategy Validation overview、Shadow Run overview 与 Paper vs Shadow drilldown 的只读运营视角；不新增
-                    route、不触发 runner、不接 Python artifact，也不创建任何交易动作。
-                </Paragraph>
+                    {t('pages:readOnlyOperationalViewOfStrategyValidationShadowRunsAndPaperVersusShadowDrilldownNoNewRoutesRunners')}</Paragraph>
                 <Space size={[8, 8]} wrap>
                     <BoundaryBadge
                         color="error"
-                        label="LIVE DISABLED（LIVE 关闭）"
-                        tooltip="LIVE 仍关闭；本 Workbench 不展示 live-ready 或实盘可用结论。"
+                        label={t('pages:liveDisabled')}
+                        tooltip={t('pages:liveRemainsDisabledThisWorkbenchDoesNotEstablishLiveReadinessOrAvailability')}
                     />
                     <BoundaryBadge
-                        label="Real provider NOT IMPLEMENTED（真实 provider 未实现）"
-                        tooltip="真实 provider 未实现；本页不调用真实交易所。"
+                        label={t('pages:realProviderNotImplemented')}
+                        tooltip={t('pages:realProvidersAreNotImplementedThisPageDoesNotCallRealExchanges')}
                     />
                     <BoundaryBadge
-                        label="Private trading NOT IMPLEMENTED（私有交易未实现）"
-                        tooltip="不提供下单、撤单、转账、提现或 private endpoint 能力。"
-                    />
-                    <BoundaryBadge
-                        color="warning"
-                        label="Validation is not trading authorization（验证不是交易授权）"
-                        tooltip="APPROVED 只表示 validation 层通过，不表示交易授权。"
+                        label={t('pages:privateTradingNotImplemented')}
+                        tooltip={t('pages:noOrdersCancellationsTransfersWithdrawalsOrPrivateEndpointCapability')}
                     />
                     <BoundaryBadge
                         color="warning"
-                        label="Shadow Run is diagnostic only（Shadow Run 仅诊断）"
-                        tooltip="Shadow Run facts 仅用于诊断和回放，不代表 Shadow trading enabled。"
+                        label={t('pages:validationIsNotTradingAuthorization')}
+                        tooltip={t('pages:approvedIsAValidationLevelPassNotTradingAuthorization')}
                     />
                     <BoundaryBadge
-                        label="AI/DH runtime not integrated（AI/DH runtime 未集成）"
-                        tooltip="AI 仍 NOT STARTED；DH runtime 仍 NOT INTEGRATED。"
+                        color="warning"
+                        label={t('pages:shadowRunIsDiagnosticOnly2')}
+                        tooltip={t('pages:shadowRunFactsAreForDiagnosticsAndReplayOnlyNotEnabledShadowTrading')}
+                    />
+                    <BoundaryBadge
+                        label={t('pages:aiDhRuntimeNotIntegrated')}
+                        tooltip={t('pages:aiRemainsNotStartedDhRuntimeRemainsNotIntegrated')}
                     />
                 </Space>
 
@@ -5820,8 +5829,8 @@ function StrategyValidationShadowWorkbench({queries}: { queries: WorkbenchQueryB
                     <Alert
                         type="error"
                         showIcon
-                        message="Workbench 存在只读数据加载失败"
-                        description="失败区块按不可用处理；页面保留已返回的 partial data，但不会把缺失数据解释为通过或授权。"
+                        message={t('pages:workbenchReadOnlyDataFailedToLoad')}
+                        description={t('pages:failedSectionsRemainUnavailableReturnedPartialDataIsRetainedMissingDataIsNotAPassOrAuthorization')}
                     />
                 ) : null}
                 {isLoading ? <Skeleton active paragraph={{rows: 8}}/> : null}
@@ -5829,8 +5838,8 @@ function StrategyValidationShadowWorkbench({queries}: { queries: WorkbenchQueryB
                     <Alert
                         type="warning"
                         showIcon
-                        message="Partial data / 部分数据"
-                        description="缺少 Strategy overview、Shadow overview、shadowRunId 或 drilldown 时，Workbench 只展示可用事实；不会补造 evidence、comparison 或 nextSteps。"
+                        message={t('pages:partialData')}
+                        description={t('pages:missingStrategyOrShadowOverviewsShadowrunidOrDrilldownLimitTheWorkbenchToAvailableFactsEvidenceCompa')}
                     />
                 ) : null}
 
@@ -5854,7 +5863,7 @@ function StrategyValidationShadowWorkbench({queries}: { queries: WorkbenchQueryB
                         {numberValue(strategyOverview?.blocked)}
                     </Descriptions.Item>
                     <Descriptions.Item label="latestDecision.decision">
-                        <Tooltip title="APPROVED 只表示验证层通过，不表示交易授权。">
+                        <Tooltip title={t('pages:approvedMeansValidationPassedNotTradingAuthorization')}>
                             <span><StatusTag status={strategyOverview?.latestDecision?.decision}/></span>
                         </Tooltip>
                     </Descriptions.Item>
@@ -5906,7 +5915,7 @@ function StrategyValidationShadowWorkbench({queries}: { queries: WorkbenchQueryB
 
                 {signalRows.length === 0 && nextStepRows.length === 0 && evidenceRows.length === 0 ? (
                     <Empty
-                        description="暂无 blockers / warnings / nextSteps / evidence anchors；不能解释为证据完整或可执行。"/>
+                        description={t('pages:noBlockersWarningsNextstepsOrAnchorsEvidenceIsNotNecessarilyCompleteOrExecutable')}/>
                 ) : null}
                 <Table<WorkbenchSignalRow>
                     size="small"
@@ -5915,7 +5924,7 @@ function StrategyValidationShadowWorkbench({queries}: { queries: WorkbenchQueryB
                     dataSource={signalRows}
                     pagination={false}
                     scroll={{x: 980}}
-                    locale={{emptyText: '暂无 blockers / warnings；仍需遵守固定安全边界。'}}
+                    locale={{emptyText: t('pages:noBlockersOrWarningsFixedSafetyBoundariesStillApply')}}
                 />
                 <Table<WorkbenchNextStepRow>
                     size="small"
@@ -5924,7 +5933,7 @@ function StrategyValidationShadowWorkbench({queries}: { queries: WorkbenchQueryB
                     dataSource={nextStepRows}
                     pagination={false}
                     scroll={{x: 1180}}
-                    locale={{emptyText: '暂无 nextSteps；不能解释为已经允许交易。'}}
+                    locale={{emptyText: t('pages:noNextstepsThisDoesNotPermitTrading2')}}
                 />
                 <Table<WorkbenchEvidenceAnchorRow>
                     size="small"
@@ -5933,7 +5942,7 @@ function StrategyValidationShadowWorkbench({queries}: { queries: WorkbenchQueryB
                     dataSource={evidenceRows}
                     pagination={false}
                     scroll={{x: 1190}}
-                    locale={{emptyText: '暂无 evidence anchors；不能补造证据。'}}
+                    locale={{emptyText: t('pages:noEvidenceAnchorsEvidenceMustNotBeFabricated')}}
                 />
             </Space>
         </Card>
@@ -5947,11 +5956,12 @@ function EvaluationGatePanel({
     submitted: boolean;
     query: PanelQueryState<StrategyEvaluationGateResponse>;
 }) {
+    useTranslation('pages');
     const data = query.data;
     return (
         <ResultPanel
-            title="Strategy Evaluation Gate"
-            subtitle="评估 gate 只说明研究与评估证据是否可进入 Shadow 评审。"
+            title={t('pages:strategyEvaluationGate')}
+            subtitle={t('pages:theEvaluationGateOnlyIndicatesWhetherResearchEvidenceCanEnterShadowReview')}
             status={data?.gateStatus}
             submitted={submitted}
             query={query}
@@ -5960,7 +5970,7 @@ function EvaluationGatePanel({
             blockers={data?.blockers}
             warnings={data?.warnings}
             nextSteps={data?.nextSteps}
-            boundaryDescription="Evaluation Gate 不代表交易授权，不代表 LIVE 已启用，也不代表策略可实盘运行。"
+            boundaryDescription={t('pages:theEvaluationGateDoesNotGrantTradingAuthorizationEnableLiveOrPermitRealStrategyExecution')}
         >
             <Descriptions size="small" bordered column={{xs: 1, sm: 1, md: 2}}>
                 <Descriptions.Item label="strategyVersionId">{optionalCode(data?.strategyVersionId)}</Descriptions.Item>
@@ -5986,11 +5996,12 @@ function PaperShadowPanel({
     submitted: boolean;
     query: PanelQueryState<PaperShadowComparisonResponse>;
 }) {
+    useTranslation('pages');
     const data = query.data;
     return (
         <ResultPanel
-            title="Paper vs Shadow Comparison"
-            subtitle="Paper / Shadow 对照只说明证据是否完整和是否可查看。"
+            title={t('pages:paperVersusShadowComparison')}
+            subtitle={t('pages:paperShadowComparisonOnlyIndicatesEvidenceCompletenessAndAvailability')}
             status={data?.comparisonStatus}
             submitted={submitted}
             query={query}
@@ -5999,7 +6010,7 @@ function PaperShadowPanel({
             blockers={data?.blockers}
             warnings={data?.warnings}
             nextSteps={data?.nextSteps}
-            boundaryDescription="Paper vs Shadow Comparison 不代表交易授权，不代表 Shadow Live 已可执行，也不创建或启动 Shadow run。"
+            boundaryDescription={t('pages:paperVersusShadowComparisonDoesNotGrantTradingAuthorizationEnableShadowLiveExecutionOrCreateOrStartA')}
         >
             <Descriptions size="small" bordered column={{xs: 1, sm: 1, md: 2}}>
                 <Descriptions.Item label="paperRunId">{optionalCode(data?.paperRunId)}</Descriptions.Item>
@@ -6016,8 +6027,8 @@ function PaperShadowPanel({
                 <Descriptions.Item label="dataQualityStatus"><StatusTag
                     status={data?.dataQualityStatus}/></Descriptions.Item>
                 <Descriptions.Item label="comparable">
-                    {data?.comparable ? <Tag color="processing">true（只读可比较）</Tag> :
-                        <Tag color="default">false（不可比较）</Tag>}
+                    {data?.comparable ? <Tag color="processing">{t('pages:trueReadOnlyComparisonAvailable')}</Tag> :
+                        <Tag color="default">{t('pages:falseNotComparable')}</Tag>}
                 </Descriptions.Item>
                 <Descriptions.Item label="generatedAt">{generatedAtText(data?.generatedAt)}</Descriptions.Item>
             </Descriptions>
@@ -6032,11 +6043,12 @@ function ShadowLivePreviewPanel({
     submitted: boolean;
     query: PanelQueryState<ShadowLivePreviewResponse>;
 }) {
+    useTranslation('pages');
     const data = query.data;
     return (
         <ResultPanel
-            title="Shadow Live No-side-effect Preview"
-            subtitle="Shadow Live preview 只生成无副作用预览计划，不执行策略或订单。"
+            title={t('pages:shadowLiveNoSideEffectPreview')}
+            subtitle={t('pages:shadowLivePreviewGeneratesNoSideEffectPlansOnlyItExecutesNoStrategiesOrOrders')}
             status={data?.previewStatus}
             submitted={submitted}
             query={query}
@@ -6045,7 +6057,7 @@ function ShadowLivePreviewPanel({
             blockers={data?.blockers}
             warnings={data?.warnings}
             nextSteps={data?.nextSteps}
-            boundaryDescription="Shadow Live Preview 是 no-side-effect preview：不写库、不外联、不读取真实凭证、不提交真实订单。"
+            boundaryDescription={t('pages:shadowLivePreviewHasNoSideEffectsNoDatabaseWritesExternalConnectionsRealCredentialReadsOrRealOrderSu')}
         >
             <Descriptions size="small" bordered column={{xs: 1, sm: 1, md: 2}}>
                 <Descriptions.Item label="runnerStatus"><StatusTag status={data?.runnerStatus}/></Descriptions.Item>
@@ -6067,9 +6079,10 @@ function ShadowLivePreviewPanel({
 }
 
 function SideEffectPolicyTable({policies}: { policies: ShadowLiveSideEffectPolicy[] }) {
+    useTranslation('pages');
     return (
         <div>
-            <Text strong>No-side-effect policy</Text>
+            <Text strong>{t('pages:noSideEffectPolicy')}</Text>
             <Table<ShadowLiveSideEffectPolicy>
                 size="small"
                 rowKey={(record) => record.code}
@@ -6077,7 +6090,7 @@ function SideEffectPolicyTable({policies}: { policies: ShadowLiveSideEffectPolic
                 dataSource={policies}
                 pagination={false}
                 scroll={{x: 760}}
-                locale={{emptyText: '暂无 sideEffectPolicy；不能解释为允许执行。'}}
+                locale={{emptyText: t('pages:noSideeffectpolicyExecutionIsNotPermitted')}}
             />
         </div>
     );
@@ -6096,6 +6109,7 @@ function TraceabilityChain({
     preview?: ShadowLivePreviewResponse;
     artifactPreview?: PythonEvaluationArtifactPreviewOverviewResponse;
 }) {
+    useTranslation('pages');
     const scope = firstScope(submittedQuery, gate, comparison, preview);
     const artifactPreviewStatus = artifactPreview
         ? evaluationArtifactPreviewIsNoFileBaseline(artifactPreview) ? 'NO_ARTIFACT_SOURCE_CONFIGURED' : 'DIAGNOSTIC_ONLY'
@@ -6103,82 +6117,82 @@ function TraceabilityChain({
     const items: LifecycleTraceItem[] = [
         {
             key: 'strategyVersion',
-            label: 'Strategy Version',
+            label: t('pages:strategyVersion'),
             value: scope.strategyVersionId,
             status: scope.strategyVersionId ? gate?.gateStatus ?? 'SATISFIED' : 'NOT_AVAILABLE',
-            source: 'Strategy Evaluation Gate / query',
-            detail: 'strategy version 是本页查询链路的主锚点。',
+            source: t('pages:strategyEvaluationGateQuery'),
+            detail: t('pages:theStrategyVersionIsTheMainAnchorForThisQueryChain'),
         },
         {
             key: 'dataset',
-            label: 'Dataset',
+            label: t('pages:dataset'),
             value: scope.datasetId,
             status: gate?.datasetQualityStatus ?? comparison?.dataQualityStatus ?? 'NOT_AVAILABLE',
-            source: 'Evaluation Gate / Paper Shadow',
-            detail: 'dataset 只用于评估证据追踪，不代表行情可交易。',
+            source: t('pages:evaluationGatePaperShadow'),
+            detail: t('pages:theDatasetTracesEvaluationEvidenceOnlyNotTradableMarketData'),
         },
         {
             key: 'evaluationGate',
-            label: 'Evaluation Gate',
+            label: t('pages:evaluationGate'),
             value: scope.evaluationId,
             status: gate?.gateStatus ?? comparison?.evaluationGateStatus ?? 'NOT_AVAILABLE',
             source: 'GateQ-1 GET /api/strategies/evaluation-gate',
-            detail: 'Evaluation Gate 只表示可进入 Shadow 评审的只读证据，不代表策略批准或交易授权。',
+            detail: t('pages:theEvaluationGateProvidesReadOnlyEvidenceForShadowReviewNotStrategyApprovalOrTradingAuthorization'),
         },
         {
             key: 'publishTrace',
-            label: 'Publish Trace',
+            label: t('pages:publishTrace'),
             value: scope.publishId,
             status: gate?.publishTraceStatus ?? 'NOT_AVAILABLE',
-            source: 'Strategy Evaluation Gate',
-            detail: 'publish trace 仅为链路证据，不触发发布写侧。',
+            source: t('pages:strategyEvaluationGate'),
+            detail: t('pages:publishTracesProvideChainEvidenceOnlyAndTriggerNoPublishWrites'),
         },
         {
             key: 'paperRun',
-            label: 'Paper Run',
+            label: t('pages:paperRun'),
             value: scope.paperRunId,
             status: comparison?.paperRunStatus ?? gate?.paperEvidenceStatus ?? 'NOT_AVAILABLE',
-            source: 'Evaluation Gate / Paper Shadow',
-            detail: 'Paper evidence 只表示 SIM/Paper 事实，不启动 Paper run。',
+            source: t('pages:evaluationGatePaperShadow'),
+            detail: t('pages:paperEvidenceDescribesSimPaperFactsOnlyAndStartsNoPaperRun'),
         },
         {
             key: 'paperShadowComparison',
-            label: 'Paper / Shadow Comparison',
+            label: t('pages:paperShadowComparison'),
             value: scope.shadowRunId,
             status: comparison?.comparisonStatus ?? 'NOT_AVAILABLE',
             source: 'GateQ-2 GET /api/strategies/paper-shadow/comparison',
-            detail: '只读对照只说明是否可比较；Shadow 缺失、未知或未实现不能显示为成功。',
+            detail: t('pages:readOnlyComparisonIndicatesComparabilityOnlyMissingUnknownOrUnimplementedShadowDataIsNotSuccess'),
         },
         {
             key: 'shadowLivePreview',
-            label: 'Shadow Live Preview',
+            label: t('pages:shadowLivePreview'),
             value: scope.shadowRunId,
             status: preview?.previewStatus ?? comparison?.shadowRunStatus ?? 'NOT_AVAILABLE',
             source: 'GateQ-3 GET /api/strategies/shadow-live/preview',
-            detail: 'Shadow Live Preview 是 no-side-effect preview，不执行策略、不提交真实订单。',
+            detail: t('pages:shadowLivePreviewHasNoSideEffectsAndExecutesNoStrategiesOrRealOrders'),
         },
         {
             key: 'pythonArtifactBindingPreview',
-            label: 'Python Artifact Binding Preview',
+            label: t('pages:pythonArtifactBindingPreview'),
             value: artifactPreview?.traceId ?? 'NO_FILE_BASELINE',
             status: artifactPreviewStatus,
             source: 'GateT-4 GET /api/strategy-validation/evaluation-artifacts/preview/overview',
-            detail: '当前页面只消费 No-file baseline overview；不读取 artifact 文件、不上传、不导入、不执行 Python、不写 Java fact-source。',
+            detail: t('pages:thisPageConsumesTheNoFileOverviewOnlyNoArtifactReadsUploadsImportsPythonExecutionOrJavaFactSourceWri'),
         },
     ];
 
     return (
-        <Card className="page-section" variant="borderless" title="生命周期追溯链">
+        <Card className="page-section" variant="borderless" title={t('pages:lifecycleTraceChain')}>
             {!submittedQuery ? (
                 <Empty
-                    description="提交查询后展示 strategy version -> dataset -> evaluation gate -> publish -> paper run -> Paper / Shadow Comparison -> Shadow Live Preview -> Python Artifact Binding Preview 链路"/>
+                    description={t('pages:searchToViewStrategyVersionDatasetEvaluationGatePublishPaperRunPaperShadowComparisonShadowLivePrevie')}/>
             ) : (
                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
                     <Alert
                         type="info"
                         showIcon
-                        message="Trace path"
-                        description="strategyVersion -> dataset -> evaluation -> publish -> paper -> shadow -> pythonArtifactBindingPreview。所有节点均为只读展示；缺失、未知、未实现或阻断节点不会显示为成功。"
+                        message={t('pages:tracePath')}
+                        description={t('pages:strategyversionDatasetEvaluationPublishPaperShadowPythonartifactbindingpreviewAllNodesAreReadOnlyMis')}
                     />
                     <Table<LifecycleTraceItem>
                         size="small"
@@ -6207,25 +6221,26 @@ function EvidenceMatrix({
     preview?: ShadowLivePreviewResponse;
     artifactPreview?: PythonEvaluationArtifactPreviewOverviewResponse;
 }) {
+    const {i18n: pageI18n} = useTranslation('pages');
     const rows = useMemo(() => [
-        ...evidenceMatrixRows('Evaluation Gate', gate),
-        ...evidenceMatrixRows('Paper / Shadow Comparison', comparison),
-        ...evidenceMatrixRows('Shadow Live Preview', preview),
+        ...evidenceMatrixRows(t('pages:evaluationGate'), gate),
+        ...evidenceMatrixRows(t('pages:paperShadowComparison'), comparison),
+        ...evidenceMatrixRows(t('pages:shadowLivePreview'), preview),
         ...evaluationArtifactPreviewMatrixRows(artifactPreview),
-    ], [gate, comparison, preview, artifactPreview]);
+    ], [gate, comparison, preview, artifactPreview, pageI18n.resolvedLanguage]);
 
     return (
-        <Card className="page-section" variant="borderless" title="Evidence Matrix / 证据矩阵">
+        <Card className="page-section" variant="borderless" title={t('pages:evidenceMatrix2')}>
             {!submittedQuery ? (
                 <Empty
-                    description="提交查询后展示 requiredEvidence / missingEvidence / blockers / warnings / nextSteps"/>
+                    description={t('pages:searchToViewRequiredevidenceMissingevidenceBlockersWarningsAndNextsteps')}/>
             ) : (
                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
                     <Alert
                         type="info"
                         showIcon
-                        message="证据矩阵只聚合前端已收到的只读响应"
-                        description="requiredEvidence、missingEvidence、blockers、warnings 与 nextSteps 仅用于追溯和评审；缺失 nextSteps 不会被解释为已完成。"
+                        message={t('pages:theEvidenceMatrixAggregatesReceivedReadOnlyResponsesOnly')}
+                        description={t('pages:requiredevidenceMissingevidenceBlockersWarningsAndNextstepsSupportTraceabilityAndReviewOnlyMissingNe')}
                     />
                     <Table<EvidenceMatrixRow>
                         size="small"
@@ -6234,7 +6249,7 @@ function EvidenceMatrix({
                         dataSource={rows}
                         pagination={false}
                         scroll={{x: 1080}}
-                        locale={{emptyText: '暂无 evidence matrix；不能解释为证据完整。'}}
+                        locale={{emptyText: t('pages:noEvidenceMatrixEvidenceCannotBeConsideredComplete')}}
                     />
                 </Space>
             )}
@@ -6243,8 +6258,9 @@ function EvidenceMatrix({
 }
 
 function StatusSemantics() {
+    useTranslation('pages');
     return (
-        <Card className="page-section" variant="borderless" title="状态解释">
+        <Card className="page-section" variant="borderless" title={t('pages:statusMeanings')}>
             <Table<StatusExplanationRow>
                 size="small"
                 rowKey={(record) => record.status}
@@ -6258,21 +6274,22 @@ function StatusSemantics() {
 }
 
 function BoundarySummary() {
+    useTranslation('pages');
     return (
-        <Card className="page-section" variant="borderless" title="No-side-effect / authorization boundary">
+        <Card className="page-section" variant="borderless" title={t('pages:noSideEffectAuthorizationBoundary')}>
             <Space direction="vertical" size={12} style={{display: 'flex'}}>
                 <Alert
                     type="warning"
                     showIcon
-                    message="本页仅用于策略生命周期追溯与只读证据检查"
-                    description="Evaluation Gate 不代表交易授权；Paper / Shadow Comparison 不代表交易授权；Shadow Live Preview 是 no-side-effect preview，不提交真实订单；Python artifact binding preview 不代表 artifact 已入库、不代表 ML ready、不代表 live execution ready。"
+                    message={t('pages:thisPageIsForStrategyLifecycleTracingAndReadOnlyEvidenceInspection')}
+                    description={t('pages:theEvaluationGateAndPaperShadowComparisonDoNotGrantTradingAuthorizationShadowLivePreviewSubmitsNoRea')}
                 />
                 <Space size={[8, 8]} wrap>
-                    <Tag color="default">只读验证</Tag>
-                    <Tag color="error">不代表交易授权</Tag>
-                    <Tag color="error">不代表 LIVE 已启用</Tag>
+                    <Tag color="default">{t('pages:readOnlyValidation')}</Tag>
+                    <Tag color="error">{t('pages:notTradingAuthorization2')}</Tag>
+                    <Tag color="error">{t('pages:liveIsNotEnabled')}</Tag>
                     {FORBIDDEN_BOUNDARY_ITEMS.map((item) => (
-                        <Tag key={item} color="error">{item}</Tag>
+                        <Tag key={item} color="error">{t(item)}</Tag>
                     ))}
                     <Tag color="default">LIVE: DISABLED</Tag>
                     <Tag color="default">real provider: NOT_IMPLEMENTED</Tag>
@@ -6284,8 +6301,8 @@ function BoundarySummary() {
                 <Alert
                     type="info"
                     showIcon
-                    message="缺失态处理"
-                    description="UNKNOWN、NOT_AVAILABLE、NOT_IMPLEMENTED、PENDING_FRONTEND_SUPPORT 与 BLOCKED_* 均按非成功态展示，必须结合 blockers 与 nextSteps 处理。"
+                    message={t('pages:missingStateHandling')}
+                    description={t('pages:unknownNotAvailableNotImplementedPendingFrontendSupportAndBlockedAreNonSuccessStatesAddressBlockersA')}
                 />
             </Space>
         </Card>
@@ -6303,6 +6320,7 @@ export function StrategyValidationWorkspace({
     onSubmit: (query: StrategyValidationQuery) => void;
     onReset: () => void;
 }) {
+    useTranslation('pages');
     const {
         overviewQuery,
         shadowValidationWorkflowQuery,

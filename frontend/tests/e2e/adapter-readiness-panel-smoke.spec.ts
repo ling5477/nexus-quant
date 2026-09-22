@@ -149,7 +149,7 @@ test.describe('adapter readiness panel', () => {
 
         await page.goto('/adapter-readiness');
 
-        await expect(page.getByRole('heading', {name: 'Adapter Readiness'})).toBeVisible();
+        await expect(page.getByRole('heading', {name: '适配器就绪状态'})).toBeVisible();
         await expect(page.getByText('当前所有交易所适配器未就绪（NOT READY / NOT FROZEN / NOT AUTHORIZED）')).toBeVisible();
 
         // OKX PLACE_ORDER 行：未就绪 / 不可用 / LIVE 未授权。
@@ -184,8 +184,8 @@ test.describe('adapter readiness panel', () => {
 
         await page.goto('/adapter-readiness');
 
-        await expect(page.getByRole('heading', {name: 'Adapter Readiness'})).toBeVisible();
-        await expect(page.getByText('readiness API unavailable')).toBeVisible();
+        await expect(page.getByRole('heading', {name: '适配器就绪状态'})).toBeVisible();
+        await expect(page.getByText('就绪状态 API 不可用')).toBeVisible();
         await expect(page.getByText('未就绪（fail-closed）')).toBeVisible();
 
         await assertNoReadyOrSecret(page);

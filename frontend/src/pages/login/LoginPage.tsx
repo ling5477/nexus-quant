@@ -1,7 +1,7 @@
 import {LockOutlined, LoginOutlined, SafetyCertificateOutlined, UserOutlined} from '@ant-design/icons';
 import {Alert, Button, Form, Input} from 'antd';
 import {useMutation} from '@tanstack/react-query';
-import {startTransition} from 'react';
+import {startTransition, useState} from 'react';
 import {Navigate, useNavigate, useSearchParams} from 'react-router-dom';
 
 import {authApi} from '@/api/auth';
@@ -9,6 +9,11 @@ import {AppLoadingScreen} from '@/components/app/AppLoadingScreen';
 import {StandaloneSurface} from '@/components/standalone/StandaloneSurface';
 import {selectIsAuthenticated, useAuthStore} from '@/store/auth-store';
 import type {AppApiError} from '@/types/api';
+import {useTranslation} from 'react-i18next';
+import {LanguageSelect} from '@/i18n/LanguageSelect';
+import {ApiErrorNotice} from '@/errors/ApiErrorNotice';
+import {readAuthError, clearAuthError} from '@/errors/auth-error';
+import {useLocalizedForm} from '@/i18n/useLocalizedForm';
 
 import './LoginPage.css';
 
@@ -22,10 +27,10 @@ interface LoginFormValues {
  * 不出现 Gate 名称、里程碑、DEV/PAPER/LOCAL 等交付语义(降到 footer 极小号元信息)。
  */
 const CAPABILITIES: string[] = [
-    '策略研究与回测',
-    '模拟交易(Paper)',
-    '风控前置拦截',
-    '全链路审计追踪',
+    'auth.research',
+    'auth.paper',
+    'auth.risk',
+    'auth.audit',
 ];
 
 /**
@@ -37,6 +42,8 @@ const CAPABILITIES: string[] = [
  * 边界:不展示任何默认凭证/明文,不新增认证协议,不改鉴权逻辑,不开启 LIVE/AI/DH。
  */
 export function LoginPage() {
+    const {t} = useTranslation();
+    const [redirectError, setRedirectError] = useState(readAuthError);
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const isAuthenticated = useAuthStore(selectIsAuthenticated);
@@ -49,6 +56,7 @@ export function LoginPage() {
     const loginMutation = useMutation({
         mutationFn: authApi.login,
         onSuccess: (payload) => {
+            clearAuthError();
             startTransition(() => {
                 // 登录成功后写入既有 session;currentUser 真源仍由 /auth/me 查询补全,这里不塞临时对象。
                 setSession(payload);
@@ -60,8 +68,8 @@ export function LoginPage() {
     if (bootstrapStatus === 'loading' && isAuthenticated) {
         return (
             <AppLoadingScreen
-                message="正在进入控制台"
-                detail="登录态已恢复,正在跳转到受保护区域。"
+                message={t('auth.entering')}
+                detail={t('auth.restored')}
             />
         );
     }
@@ -71,17 +79,21 @@ export function LoginPage() {
     }
 
     return (
-        <StandaloneSurface className="nq-login" ariaLabel="登录 NexusQuant 控制台">
+        <StandaloneSurface className="nq-login" ariaLabel={t('auth.aria')}>
             <div className="nq-login__inner">
                 <ProductNarrative/>
                 <LoginCard
                     loading={loginMutation.isPending}
-                    error={loginMutation.error}
-                    onSubmit={(values) => loginMutation.mutate({
+                    error={loginMutation.error ?? redirectError}
+                    onSubmit={(values) => {
+                        clearAuthError();
+                        setRedirectError(null);
+                        loginMutation.mutate({
                         // 自动填充/复制可能带入尾随空格,提交前 trim 减少误判;密码只用于本次提交。
                         username: values.username.trim(),
                         password: values.password.trim(),
-                    })}
+                        });
+                    }}
                 />
             </div>
         </StandaloneSurface>
@@ -92,27 +104,28 @@ export function LoginPage() {
  * ProductNarrative — 左区产品叙事:系统是什么、能做什么、风控/审计边界、为什么可信。
  */
 function ProductNarrative() {
+    const {t} = useTranslation();
     return (
         <section className="nq-login__narrative" aria-labelledby="nq-login-title">
             <div className="nq-login__brand-mark" aria-hidden="true">NQ</div>
             <h1 id="nq-login-title" className="nq-login__brand">NexusQuant</h1>
-            <p className="nq-login__tagline">量化交易基础设施控制台</p>
+            <p className="nq-login__tagline">{t('auth.tagline')}</p>
             <p className="nq-login__lede">
-                在一个受控控制台内完成策略研究、回测、模拟交易、风控与审计的闭环。
+                {t('auth.lede')}
             </p>
 
-            <ul className="nq-login__capabilities" aria-label="NexusQuant 能力">
+            <ul className="nq-login__capabilities" aria-label={t('auth.capabilities')}>
                 {CAPABILITIES.map((item) => (
                     <li className="nq-login__capability" key={item}>
                         <span className="nq-login__capability-dot" aria-hidden="true"/>
-                        {item}
+                        {t(item)}
                     </li>
                 ))}
             </ul>
 
             <p className="nq-login__promise">
                 <SafetyCertificateOutlined aria-hidden="true"/>
-                <span>默认不启用 LIVE 交易;每一笔交易动作都先过风控,并保留完整审计追踪。</span>
+                <span>{t('auth.promise')}</span>
             </p>
         </section>
     );
@@ -128,35 +141,38 @@ interface LoginCardProps {
  * LoginCard — 右区认证卡片。只收集账号/密码并交给既有登录接口,不承载任何环境/权限开关。
  */
 function LoginCard({loading, error, onSubmit}: LoginCardProps) {
+    const {t} = useTranslation();
+    const [form] = useLocalizedForm<LoginFormValues>();
     return (
-        <section className="nq-login__auth" aria-label="登录控制台">
+        <section className="nq-login__auth" aria-label={t('auth.title')}>
             <div className="nq-login__card">
-                <h2 className="nq-login__card-title">登录控制台</h2>
-                <p className="nq-login__card-caption">输入账号凭证进入受保护控制台</p>
+                <LanguageSelect/>
+                <h2 className="nq-login__card-title">{t('auth.title')}</h2>
+                <p className="nq-login__card-caption">{t('auth.caption')}</p>
 
                 {error ? <LoginErrorNotice error={error}/> : null}
 
-                <Form<LoginFormValues> layout="vertical" requiredMark={false} onFinish={onSubmit}>
+                <Form<LoginFormValues> form={form} layout="vertical" requiredMark={false} onFinish={onSubmit}>
                     <Form.Item
-                        label="账号"
+                        label={t('auth.username')}
                         name="username"
-                        rules={[{required: true, message: '请输入账号'}]}
+                        rules={[{required: true, message: t('auth.usernameRequired')}]}
                     >
                         <Input
                             prefix={<UserOutlined/>}
                             autoComplete="username"
-                            placeholder="请输入账号"
+                            placeholder={t('auth.usernameRequired')}
                         />
                     </Form.Item>
                     <Form.Item
-                        label="密码"
+                        label={t('auth.password')}
                         name="password"
-                        rules={[{required: true, message: '请输入密码'}]}
+                        rules={[{required: true, message: t('auth.passwordRequired')}]}
                     >
                         <Input.Password
                             prefix={<LockOutlined/>}
                             autoComplete="current-password"
-                            placeholder="请输入密码"
+                            placeholder={t('auth.passwordRequired')}
                         />
                     </Form.Item>
                     <Button
@@ -167,7 +183,7 @@ function LoginCard({loading, error, onSubmit}: LoginCardProps) {
                         loading={loading}
                         block
                     >
-                        登录
+                        {t('auth.submit')}
                     </Button>
                 </Form>
 
@@ -176,11 +192,11 @@ function LoginCard({loading, error, onSubmit}: LoginCardProps) {
                     type="info"
                     showIcon
                     icon={<SafetyCertificateOutlined/>}
-                    message="安全边界"
-                    description="本控制台默认不启用 LIVE 交易;所有交易相关操作都需经过风控、审计与环境隔离。"
+                    message={t('auth.security')}
+                    description={t('auth.securityDescription')}
                 />
 
-                <p className="nq-login__footer">受控环境 · 默认 PAPER · LIVE 已禁用</p>
+                <p className="nq-login__footer">{t('auth.footer')}</p>
             </div>
         </section>
     );
@@ -188,25 +204,9 @@ function LoginCard({loading, error, onSubmit}: LoginCardProps) {
 
 /**
  * LoginErrorNotice — 登录错误脱敏展示。
- * 只按 HTTP 状态粗分,不在未认证页面暴露 traceId / 内部 path / 异常类名等后端细节。
+ * 使用统一 catalog，不泄露内部 path 或后端消息；traceId 保留用于支持定位。
  */
 function LoginErrorNotice({error}: {error: unknown}) {
-    const appError = error as Partial<AppApiError>;
-    let description = '登录请求未完成。请检查网络与输入后重试。';
-
-    if (appError.status === 401 || appError.status === 403) {
-        description = '账号或密码不正确,或该账号不被允许访问控制台。';
-    } else if (typeof appError.status === 'number' && appError.status >= 500) {
-        description = '认证服务暂时不可用。请稍后重试,或联系运维。';
-    }
-
-    return (
-        <Alert
-            className="nq-login__error"
-            type="error"
-            showIcon
-            message="登录失败"
-            description={description}
-        />
-    );
+    return <ApiErrorNotice className="nq-login__error" error={error as Partial<AppApiError>}
+        presentation="AUTH_REDIRECT_OR_PROMPT"/>;
 }

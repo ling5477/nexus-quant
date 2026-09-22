@@ -1,6 +1,8 @@
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {App, Button, Card, Space} from 'antd';
 
-import {formatApiError} from '@/api/errors';
+import {showApiError} from '@/api/errors';
 import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqStatusTag} from '@/components/nq';
 import {
     useAckAlertMutation,
@@ -24,6 +26,7 @@ interface NqAlertPanelProps {
 }
 
 export function NqAlertPanel({paperRunId}: NqAlertPanelProps) {
+    useTranslation('pages');
     const {message} = App.useApp();
     const alertsQuery = usePaperAlertsQuery(paperRunId);
     const createAlertMutation = useCreateAlertMutation();
@@ -36,7 +39,7 @@ export function NqAlertPanel({paperRunId}: NqAlertPanelProps) {
         <Card
             className="page-section"
             size="small"
-            title="告警"
+            title={t('pages:alert')}
             extra={(
                 <Button
                     size="small"
@@ -50,14 +53,13 @@ export function NqAlertPanel({paperRunId}: NqAlertPanelProps) {
                                 request: {alertType: 'SYSTEM_NOTICE', severity: 'LOW', title: '手动测试告警', message: '手动创建的测试告警', source: 'MANUAL'},
                             },
                             {
-                                onSuccess: () => message.success('告警已创建。'),
-                                onError: (err) => message.error(formatApiError(err as AppApiError)),
+                                onSuccess: () => message.success(t('pages:alertCreated')),
+                                onError: (err) => showApiError(err as AppApiError, message),
                             },
                         );
                     }}
                 >
-                    创建测试告警
-                </Button>
+                    {t('pages:createTestAlert')}</Button>
             )}
         >
             {alertsQuery.isFetching && data.length === 0 ? (
@@ -65,7 +67,7 @@ export function NqAlertPanel({paperRunId}: NqAlertPanelProps) {
             ) : alertsQuery.error ? (
                 <NqErrorState error={alertsQuery.error as AppApiError} onRetry={() => alertsQuery.refetch()}/>
             ) : data.length === 0 ? (
-                <NqEmptyState description="当前 Paper run 暂无告警。"/>
+                <NqEmptyState description={t('pages:noAlertsForThisPaperRun')}/>
             ) : (
                 <NqDataTable<PaperRunAlertItem>
                     rowKey="alertId"
@@ -73,31 +75,29 @@ export function NqAlertPanel({paperRunId}: NqAlertPanelProps) {
                     dataSource={data}
                     scroll={{y: 240}}
                     columns={[
-                        {title: '类型', dataIndex: 'alertType', key: 'alertType', width: 140},
-                        {title: '严重程度', dataIndex: 'severity', key: 'severity', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'CRITICAL' || v === 'HIGH' ? 'danger' : v === 'MEDIUM' ? 'warning' : 'neutral'}/>},
-                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'OPEN' ? 'danger' : v === 'ACKED' ? 'warning' : 'success'}/>},
-                        {title: '标题', dataIndex: 'title', key: 'title'},
-                        {title: '来源', dataIndex: 'source', key: 'source', width: 100},
-                        {title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 170, render: (v: string) => formatDateTime(v)},
+                        {title: t('pages:type'), dataIndex: 'alertType', key: 'alertType', width: 140},
+                        {title: t('pages:severity'), dataIndex: 'severity', key: 'severity', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'CRITICAL' || v === 'HIGH' ? 'danger' : v === 'MEDIUM' ? 'warning' : 'neutral'}/>},
+                        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'OPEN' ? 'danger' : v === 'ACKED' ? 'warning' : 'success'}/>},
+                        {title: t('pages:title'), dataIndex: 'title', key: 'title'},
+                        {title: t('pages:source'), dataIndex: 'source', key: 'source', width: 100},
+                        {title: t('pages:createdAt'), dataIndex: 'createdAt', key: 'createdAt', width: 170, render: (v: string) => formatDateTime(v)},
                         {
-                            title: '操作', key: 'action', width: 130, fixed: 'right',
+                            title: t('pages:actions'), key: 'action', width: 130, fixed: 'right',
                             render: (_, record) => (
                                 <Space size={4}>
                                     {record.status === 'OPEN' && (
                                         <Button
                                             type="link" size="small" loading={ackAlertMutation.isPending}
-                                            onClick={() => ackAlertMutation.mutate({paperRunId, alertId: record.alertId}, {onSuccess: () => message.success('已确认。')})}
+                                            onClick={() => ackAlertMutation.mutate({paperRunId, alertId: record.alertId}, {onSuccess: () => message.success(t('pages:acknowledged'))})}
                                         >
-                                            确认
-                                        </Button>
+                                            {t('pages:acknowledge')}</Button>
                                     )}
                                     {record.status !== 'RESOLVED' && (
                                         <Button
                                             type="link" size="small" loading={resolveAlertMutation.isPending}
-                                            onClick={() => resolveAlertMutation.mutate({paperRunId, alertId: record.alertId}, {onSuccess: () => message.success('已解决。')})}
+                                            onClick={() => resolveAlertMutation.mutate({paperRunId, alertId: record.alertId}, {onSuccess: () => message.success(t('pages:resolved'))})}
                                         >
-                                            解决
-                                        </Button>
+                                            {t('pages:resolve')}</Button>
                                     )}
                                 </Space>
                             ),

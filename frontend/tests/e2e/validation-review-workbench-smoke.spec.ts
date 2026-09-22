@@ -217,21 +217,21 @@ test.describe('GateV-4 validation review workbench', () => {
         await page.goto('/strategies/validation');
 
         const workbench = page.getByTestId('validation-review-workbench');
-        await expect(workbench).toContainText('Validation Review Workbench');
+        await expect(workbench.getByRole('heading', {name: '验证复核工作台', exact: true})).toBeVisible();
         await expect(workbench).toContainText('诊断审查流程，不构成交易授权，也不会启动 LIVE 或 Shadow trading。');
-        await expect(page.getByLabel('Owner ID')).toBeVisible();
+        await expect(page.getByLabel('所有者 ID')).toBeVisible();
         await expect(page.getByTestId('validation-review-queue').locator('tbody tr.ant-table-row')).toHaveCount(20);
         await page.getByRole('button', {name: '下一页'}).click();
         await expect.poll(() => requests.some((item) => item.url.includes('offset=20'))).toBeTruthy();
         await page.getByRole('button', {name: '上一页'}).click();
 
-        await page.getByRole('combobox', {name: 'Review state'}).click();
+        await page.getByRole('combobox', {name: '复核状态'}).click();
         await page.getByTitle('OPEN').click();
         await expect.poll(() => requests.some((item) => item.url.includes('state=OPEN'))).toBeTruthy();
-        await page.getByRole('combobox', {name: 'Review severity'}).click();
+        await page.getByRole('combobox', {name: '复核严重度'}).click();
         await page.getByTitle('CRITICAL').click();
         await expect.poll(() => requests.some((item) => item.url.includes('severity=CRITICAL'))).toBeTruthy();
-        await page.getByLabel('Owner ID').fill('7');
+        await page.getByLabel('所有者 ID').fill('7');
         await expect.poll(() => requests.some((item) => item.url.includes('ownerId=7'))).toBeTruthy();
 
         await page.getByTestId('validation-review-queue').getByText(CASE_ID).click();
@@ -249,7 +249,7 @@ test.describe('GateV-4 validation review workbench', () => {
         await page.reload();
         await expect(page.getByTestId('validation-review-case-drawer')).toContainText(CASE_ID);
 
-        await page.getByTestId('validation-review-case-drawer').getByRole('button', {name: 'Close'}).click();
+        await page.getByTestId('validation-review-case-drawer').getByRole('button', {name: /关闭|Close/}).click();
         const forbiddenEndpoint = /\/api\/(orders?|accounts?|ledger|exchange|credentials?|live|shadow)(\/|\?|$)/i;
         expect(requests.filter((item) => item.method === 'POST').every((item) => item.url.includes('/api/validation-review-cases/'))).toBeTruthy();
         expect(requests.some((item) => forbiddenEndpoint.test(new URL(item.url).pathname))).toBeFalsy();
@@ -295,7 +295,8 @@ test.describe('GateV-4 validation review workbench', () => {
         await page.getByRole('button', {name: '确认已阅'}).click();
         await page.getByLabel('复核原因').fill('冲突回归');
         await page.getByRole('button', {name: '确认提交'}).click();
-        await expect(page.getByText('Case 状态已变化或流转不再合法，已重新获取最新详情。')).toBeVisible();
+        await expect(page.getByTestId('validation-review-case-drawer')).toContainText('其他操作已更新该审查记录，请刷新后重新确认。');
+        await expect(page.getByTestId('validation-review-case-drawer')).toContainText('REVIEW_CASE_VERSION_CONFLICT');
         await expect.poll(() => reviewRequestCount(conflictRequests, 'GET', '/api/validation-review-cases')).toBeGreaterThan(beforeList);
         await expect.poll(() => reviewRequestCount(conflictRequests, 'GET', `/api/validation-review-cases/${CASE_ID}`)).toBeGreaterThan(beforeDetail);
         await expect.poll(() => reviewRequestCount(conflictRequests, 'GET', `/api/validation-review-cases/${CASE_ID}/events`)).toBeGreaterThan(beforeEvents);
@@ -307,14 +308,16 @@ test.describe('GateV-4 validation review workbench', () => {
         await page.getByRole('button', {name: '确认已阅'}).click();
         await page.getByLabel('复核原因').fill('非法流转回归');
         await page.getByRole('button', {name: '确认提交'}).click();
-        await expect(page.getByText('Case 状态已变化或流转不再合法，已重新获取最新详情。')).toBeVisible();
+        await expect(page.getByTestId('validation-review-case-drawer')).toContainText('其他操作已更新该审查记录，请刷新后重新确认。');
+        await expect(page.getByTestId('validation-review-case-drawer')).toContainText('REVIEW_CASE_VERSION_CONFLICT');
 
         const forbiddenAudit = await seedReviewWorkbench(page, {actionStatus: 403});
         await page.reload();
         await page.getByRole('button', {name: '确认已阅'}).click();
         await page.getByLabel('复核原因').fill('权限回归');
         await page.getByRole('button', {name: '确认提交'}).click();
-        await expect(page.getByText('当前身份无权执行该复核动作。')).toBeVisible();
+        await expect(page.getByTestId('validation-review-case-drawer')).toContainText('当前账户无权执行此操作。');
+        await expect(page.getByTestId('validation-review-case-drawer')).toContainText('REVIEW_ACTION_FORBIDDEN');
         await expect(page.getByRole('button', {name: '确认已阅'})).toBeDisabled();
         expectOnlyAllowedReviewRequests(conflictRequests);
         expectOnlyAllowedReviewRequests(invalidTransitionAudit.requests);
@@ -328,7 +331,7 @@ test.describe('GateV-4 validation review workbench', () => {
         const loadingAudit = await seedReviewWorkbench(page, {roles: ['OPERATOR'], listMode: 'delayed'});
         await page.goto('/strategies/validation');
         await expect(page.getByTestId('validation-review-queue').locator('.ant-spin-spinning')).toBeVisible();
-        await expect(page.getByLabel('Owner ID')).toHaveCount(0);
+        await expect(page.getByLabel('所有者 ID')).toHaveCount(0);
         expectOnlyAllowedReviewRequests(loadingAudit.requests);
         expectNoUnexpectedRuntimeErrors(loadingAudit);
     });
@@ -344,7 +347,8 @@ test.describe('GateV-4 validation review workbench', () => {
     test('queue API error 展示加载失败', async ({page}) => {
         const errorAudit = await seedReviewWorkbench(page, {listMode: 'error'});
         await page.goto('/strategies/validation');
-        await expect(page.getByText('Review queue 加载失败')).toBeVisible();
+        await expect(page.getByTestId('validation-review-queue')).toContainText('服务异常');
+        await expect(page.getByTestId('validation-review-queue')).toContainText('SERVER_ERROR');
         expectOnlyAllowedReviewRequests(errorAudit.requests);
         expectNoUnexpectedRuntimeErrors(errorAudit);
     });
@@ -352,7 +356,8 @@ test.describe('GateV-4 validation review workbench', () => {
     test('queue permission denied 展示无权访问', async ({page}) => {
         const permissionAudit = await seedReviewWorkbench(page, {listMode: 'forbidden'});
         await page.goto('/strategies/validation');
-        await expect(page.getByText('无权访问 review queue')).toBeVisible();
+        await expect(page.getByTestId('validation-review-queue')).toContainText('权限不足');
+        await expect(page.getByTestId('validation-review-queue')).toContainText('REVIEW_ACTION_FORBIDDEN');
         expectOnlyAllowedReviewRequests(permissionAudit.requests);
         expectNoUnexpectedRuntimeErrors(permissionAudit);
     });
@@ -360,7 +365,8 @@ test.describe('GateV-4 validation review workbench', () => {
     test('detail 404 展示 case 已不存在', async ({page}) => {
         const notFoundAudit = await seedReviewWorkbench(page, {detailNotFound: true});
         await page.goto(`/strategies/validation?reviewCaseId=${SECOND_CASE_ID}`);
-        await expect(page.getByText('Case 已不存在')).toBeVisible();
+        await expect(page.getByTestId('validation-review-case-drawer')).toContainText('未找到记录');
+        await expect(page.getByTestId('validation-review-case-drawer')).toContainText('REVIEW_CASE_NOT_FOUND');
         expectOnlyAllowedReviewRequests(notFoundAudit.requests);
         expectNoUnexpectedRuntimeErrors(notFoundAudit);
     });

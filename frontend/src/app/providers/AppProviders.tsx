@@ -10,29 +10,35 @@ import type {AppApiError} from '@/types/api';
 import {subscribeAppError} from '@/utils/error-events';
 import {useAuthStore} from '@/store/auth-store';
 import {appEnv} from '@/utils/env';
+import {useTranslation} from 'react-i18next';
+import zhCN from 'antd/es/locale/zh_CN';
+import enUS from 'antd/es/locale/en_US';
+import dayjs from 'dayjs';
+import 'dayjs/locale/zh-cn';
+import 'dayjs/locale/en';
+import '@/i18n';
+import {describeApiError, formatApiError} from '@/api/errors';
+import {shouldRetryQuery, mutationRetry} from '@/errors/retry-policy';
 
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            retry: (failureCount, error) => {
-                const appError = error as AppApiError;
-                return appError.status !== 401 && appError.status !== 403 && failureCount < 1;
-            },
+            retry: shouldRetryQuery,
             refetchOnWindowFocus: false,
             staleTime: 60_000,
         },
+        mutations: {retry: mutationRetry},
     },
 });
 
 function AppErrorBridge() {
+    useTranslation('errors');
     const [api, contextHolder] = notification.useNotification();
     const onAppError = useEffectEvent((error: AppApiError) => {
-        const title = error.status === 403 ? '权限不足' : error.status >= 500 ? '服务异常' : '请求失败';
-        const description = error.traceId ? `${error.message}（traceId: ${error.traceId}）` : error.message;
-
-        api.error({
-            message: title,
-            description,
+        const view = describeApiError(error);
+        api[view.catalog.severity]({
+            message: <ErrorNotificationText error={error} title/>,
+            description: <ErrorNotificationText error={error}/>,
             placement: 'topRight',
         });
     });
@@ -40,6 +46,11 @@ function AppErrorBridge() {
     useEffect(() => subscribeAppError(onAppError), [onAppError]);
 
     return contextHolder;
+}
+
+function ErrorNotificationText({error, title = false}: {error: AppApiError; title?: boolean}) {
+    useTranslation('errors');
+    return title ? describeApiError(error).title : formatApiError(error);
 }
 
 function AuthBootstrap({children}: PropsWithChildren) {
@@ -93,12 +104,16 @@ function AuthBootstrap({children}: PropsWithChildren) {
 }
 
 export function AppProviders({children}: PropsWithChildren) {
+    const {i18n} = useTranslation();
+    const chinese = i18n.resolvedLanguage !== 'en-US';
+    dayjs.locale(chinese ? 'zh-cn' : 'en');
     useEffect(() => {
         document.title = appEnv.appTitle;
-    }, []);
+        document.documentElement.lang = chinese ? 'zh-CN' : 'en-US';
+    }, [chinese]);
 
     return (
-        <ConfigProvider theme={nqAntdTheme}>
+        <ConfigProvider theme={nqAntdTheme} locale={chinese ? zhCN : enUS}>
             <AntApp>
                 <QueryClientProvider client={queryClient}>
                     <AppErrorBridge/>

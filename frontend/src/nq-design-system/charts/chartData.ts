@@ -1,3 +1,4 @@
+import {formatApiError} from '@/api/errors';
 import type { CandlestickData, HistogramData, Time, UTCTimestamp } from 'lightweight-charts';
 
 import { marketColors, type MarketConvention } from '../tokens/nq-tokens';
@@ -94,5 +95,5 @@ export function chartErrorText(error: string | Error | null | undefined): string
     return null;
   }
 
-  return typeof error === 'string' ? error : error.message;
+  return typeof error === 'string' ? error : formatApiError(error);
 }

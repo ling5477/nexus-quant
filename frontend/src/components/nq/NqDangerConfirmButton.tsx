@@ -1,6 +1,7 @@
 import {App, Button} from 'antd';
 import type {ButtonProps} from 'antd';
 import type {ReactNode} from 'react';
+import {useTranslation} from 'react-i18next';
 
 /**
  * NqDangerConfirmButton — 危险操作统一二次确认按钮。
@@ -21,11 +22,12 @@ interface NqDangerConfirmButtonProps extends Omit<ButtonProps, 'onClick' | 'dang
 export function NqDangerConfirmButton({
     confirmTitle,
     confirmContent,
-    okText = '确认执行',
+    okText,
     onConfirm,
     children,
     ...buttonProps
 }: NqDangerConfirmButtonProps) {
+    const {t} = useTranslation();
     const {modal} = App.useApp();
 
     return (
@@ -36,9 +38,9 @@ export function NqDangerConfirmButton({
                 modal.confirm({
                     title: confirmTitle,
                     content: confirmContent,
-                    okText,
+                    okText: okText ?? t('confirm'),
                     okButtonProps: {danger: true},
-                    cancelText: '取消',
+                    cancelText: t('cancel'),
                     onOk: onConfirm,
                 });
             }}

@@ -13,6 +13,7 @@ const simAccount = {
 
 async function seedAuthAndGuardStubs(page: Page): Promise<void> {
     await page.addInitScript(() => {
+        window.localStorage.setItem('nq.locale', 'en-US');
         window.localStorage.setItem('nexus-quant.console.auth', JSON.stringify({
             accessToken: 'runtime-paper-boundary-smoke-session',
             tokenType: 'Bearer',

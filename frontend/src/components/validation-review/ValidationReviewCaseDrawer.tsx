@@ -1,5 +1,9 @@
+import {useLocalizedForm} from '@/i18n/useLocalizedForm';
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {App, Alert, Button, Descriptions, Drawer, Empty, Form, Input, Modal, Space, Timeline, Typography} from 'antd';
 import {useEffect, useMemo, useState} from 'react';
+import {describeApiError, formatApiError} from '@/api/errors';
 
 import {NqStatusTag} from '@/components/nq';
 import {
@@ -18,10 +22,10 @@ import {formatDateTime} from '@/utils/formatters';
 const {Paragraph, Text} = Typography;
 
 const ACTION_LABELS: Record<ValidationReviewAction, string> = {
-    acknowledge: '确认已阅',
-    escalate: '升级处理',
-    resolve: '标记已解决',
-    close: '关闭 Case',
+    get acknowledge() { return t('pages:acknowledgeReview'); },
+    get escalate() { return t('pages:escalate'); },
+    get resolve() { return t('pages:markResolved'); },
+    get close() { return t('pages:closeCase'); },
 };
 
 const ACTIONS_BY_STATE: Record<ValidationReviewState, ValidationReviewAction[]> = {
@@ -49,24 +53,17 @@ function createIdempotencyKey(): string {
     return key;
 }
 
-function actionErrorMessage(error: AppApiError): string {
-    if (error.status === 403) return '当前身份无权执行该复核动作。';
-    if (error.status === 404) return 'Case 已不存在或不在当前可见范围。';
-    if (error.status === 409 || error.status === 422) return 'Case 状态已变化或流转不再合法，已重新获取最新详情。';
-    if (error.status === 401) return '认证已失效，请重新登录。';
-    return error.status >= 500 ? '服务暂时不可用，请稍后重试。' : '请求未被接受，请检查输入后重试。';
-}
-
 /**
  * Case detail Drawer 展示后端 allowlisted 字段、最多 100 条 events 与真实状态机动作。
  * 不展示 raw metadata、credential、stack trace 或服务端未公开的诊断锚点。
  */
 export function ValidationReviewCaseDrawer({caseId, onClose}: ValidationReviewCaseDrawerProps) {
+    useTranslation('pages');
     const {message} = App.useApp();
-    const [form] = Form.useForm<ValidationReviewLifecycleRequest>();
+    const [form] = useLocalizedForm<ValidationReviewLifecycleRequest>();
     const [action, setAction] = useState<ValidationReviewAction | null>(null);
     const [actionForbidden, setActionForbidden] = useState(false);
-    const [actionNotice, setActionNotice] = useState<string | null>(null);
+    const [actionNotice, setActionNotice] = useState<{key: string} | {error: AppApiError} | null>(null);
     const detailQuery = useValidationReviewDetailQuery(caseId);
     const eventsQuery = useValidationReviewEventsQuery(caseId);
     const mutation = useValidationReviewLifecycleMutation();
@@ -88,14 +85,14 @@ export function ValidationReviewCaseDrawer({caseId, onClose}: ValidationReviewCa
     function submitAction(values: ValidationReviewLifecycleRequest) {
         if (!caseId || !action || !detailQuery.data) return;
         if (!allowedActions.includes(action) || !Number.isSafeInteger(detailQuery.data.version) || detailQuery.data.version < 0) {
-            setActionNotice('Case 状态或 version 不可用于提交；未发送请求，请刷新最新详情。');
+            setActionNotice({key: 'pages:theCaseStateOrVersionCannotBeSubmittedNoRequestWasSentRefreshTheLatestDetails'});
             return;
         }
         let idempotencyKey: string;
         try {
             idempotencyKey = createIdempotencyKey();
         } catch {
-            setActionNotice('无法生成安全的 Idempotency-Key；本次请求未发送。');
+            setActionNotice({key: 'pages:unableToGenerateASafeIdempotencyKeyTheRequestWasNotSent'});
             return;
         }
         mutation.mutate({
@@ -105,7 +102,7 @@ export function ValidationReviewCaseDrawer({caseId, onClose}: ValidationReviewCa
             payload: {expectedVersion: detailQuery.data.version, reason: values.reason.trim()},
         }, {
             onSuccess: () => {
-                message.success(`${ACTION_LABELS[action]}已提交。`);
+                message.success(t('pages:reviewActionSubmitted', {action: ACTION_LABELS[action]}));
                 setAction(null);
                 setActionNotice(null);
                 form.resetFields();
@@ -113,7 +110,7 @@ export function ValidationReviewCaseDrawer({caseId, onClose}: ValidationReviewCa
             onError: (error) => {
                 const apiError = error as AppApiError;
                 if (apiError.status === 403) setActionForbidden(true);
-                setActionNotice(actionErrorMessage(apiError));
+                setActionNotice({error: apiError});
             },
         });
     }
@@ -123,7 +120,7 @@ export function ValidationReviewCaseDrawer({caseId, onClose}: ValidationReviewCa
             <Drawer
                 open={Boolean(caseId)}
                 width={760}
-                title="Validation Review Case"
+                title={t('pages:validationReviewCase')}
                 onClose={onClose}
                 destroyOnClose={false}
                 data-testid="validation-review-case-drawer"
@@ -132,36 +129,33 @@ export function ValidationReviewCaseDrawer({caseId, onClose}: ValidationReviewCa
                     <Alert
                         type="warning"
                         showIcon
-                        message="诊断审查，不构成交易授权"
-                        description="Lifecycle 状态仅记录本地人工复核进度，不会启动 LIVE、Shadow trading 或任何交易动作。"
+                        message={t('pages:diagnosticReviewNoTradingAuthorization')}
+                        description={t('pages:lifecycleStatusRecordsLocalManualReviewProgressOnlyItDoesNotStartLiveShadowTradingOrTradingActions')}
                     />
-                    {detailError?.status === 404 ? (
-                        <Alert type="error" showIcon message="Case 已不存在" description="该 case 不存在或不在当前权限范围。"/>
-                    ) : detailError ? (
-                        <Alert type="error" showIcon message="Case detail 加载失败" description="未展示后端原始错误信息。"/>
+                    {detailError ? (
+                        <Alert type="error" showIcon message={describeApiError(detailError).title} description={formatApiError(detailError)}/>
                     ) : null}
-                    {detailQuery.isLoading ? <Text type="secondary">正在加载 case detail…</Text> : null}
+                    {detailQuery.isLoading ? <Text type="secondary">{t('pages:loadingCaseDetails')}</Text> : null}
                     {detailQuery.data ? (
                         <Descriptions bordered size="small" column={2}>
-                            <Descriptions.Item label="Case ID" span={2}><Text code copyable>{detailQuery.data.id}</Text></Descriptions.Item>
-                            <Descriptions.Item label="State"><NqStatusTag status={detailQuery.data.state}/></Descriptions.Item>
-                            <Descriptions.Item label="Severity"><NqStatusTag status={detailQuery.data.severity}/></Descriptions.Item>
-                            <Descriptions.Item label="Owner">{detailQuery.data.ownerId}</Descriptions.Item>
-                            <Descriptions.Item label="Version">{detailQuery.data.version}</Descriptions.Item>
-                            <Descriptions.Item label="Evidence type">{detailQuery.data.evidenceType}</Descriptions.Item>
-                            <Descriptions.Item label="Evidence source">{detailQuery.data.evidenceSource}</Descriptions.Item>
-                            <Descriptions.Item label="Title" span={2}>{detailQuery.data.title}</Descriptions.Item>
-                            <Descriptions.Item label="Summary" span={2}>{detailQuery.data.summary}</Descriptions.Item>
-                            <Descriptions.Item label="Created">{formatDateTime(detailQuery.data.createdAt)}</Descriptions.Item>
-                            <Descriptions.Item label="Updated">{formatDateTime(detailQuery.data.updatedAt)}</Descriptions.Item>
-                            <Descriptions.Item label="Retention until" span={2}>{formatDateTime(detailQuery.data.retentionUntil)}</Descriptions.Item>
-                            <Descriptions.Item label="诊断元数据" span={2}>
-                                后端安全 DTO 未公开 trace/schema/checksum/evidence anchor；前端不推断或补造。
-                            </Descriptions.Item>
+                            <Descriptions.Item label={t('pages:caseId')} span={2}><Text code copyable>{detailQuery.data.id}</Text></Descriptions.Item>
+                            <Descriptions.Item label={t('pages:state')}><NqStatusTag status={detailQuery.data.state}/></Descriptions.Item>
+                            <Descriptions.Item label={t('pages:severity2')}><NqStatusTag status={detailQuery.data.severity}/></Descriptions.Item>
+                            <Descriptions.Item label={t('pages:owner')}>{detailQuery.data.ownerId}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:version')}>{detailQuery.data.version}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:evidenceType')}>{detailQuery.data.evidenceType}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:evidenceSource')}>{detailQuery.data.evidenceSource}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:title')} span={2}>{detailQuery.data.title}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:summary')} span={2}>{detailQuery.data.summary}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:created')}>{formatDateTime(detailQuery.data.createdAt)}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:updated2')}>{formatDateTime(detailQuery.data.updatedAt)}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:retentionUntil')} span={2}>{formatDateTime(detailQuery.data.retentionUntil)}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:diagnosticMetadata')} span={2}>
+                                {t('pages:theSafeBackendDtoDoesNotExposeTraceSchemaChecksumOrEvidenceAnchorsTheFrontendDoesNotInferOrFabricate')}</Descriptions.Item>
                         </Descriptions>
                     ) : null}
 
-                    {actionNotice ? <Alert type="warning" showIcon message={actionNotice}/> : null}
+                    {actionNotice ? <Alert type="warning" showIcon message={'error' in actionNotice ? formatApiError(actionNotice.error) : t(actionNotice.key)}/> : null}
                     {detailQuery.data ? (
                         <Space wrap data-testid="validation-review-actions">
                             {allowedActions.map((item) => (
@@ -177,18 +171,18 @@ export function ValidationReviewCaseDrawer({caseId, onClose}: ValidationReviewCa
                                     {ACTION_LABELS[item]}
                                 </Button>
                             ))}
-                            {allowedActions.length === 0 ? <Text type="secondary">当前状态没有可执行动作。</Text> : null}
+                            {allowedActions.length === 0 ? <Text type="secondary">{t('pages:noActionsAreAvailableInTheCurrentState')}</Text> : null}
                         </Space>
                     ) : null}
 
                     <div data-testid="validation-review-event-timeline">
-                        <Text strong>Lifecycle events（最多 100 条）</Text>
+                        <Text strong>{t('pages:lifecycleEventsUpTo100')}</Text>
                         {eventsError ? (
-                            <Alert type="error" showIcon message="Event timeline 加载失败" description="失败不会被解释为没有历史事件。"/>
+                            <Alert type="error" showIcon message={describeApiError(eventsError).title} description={formatApiError(eventsError)}/>
                         ) : eventsQuery.isLoading ? (
-                            <Paragraph type="secondary">正在加载 events…</Paragraph>
+                            <Paragraph type="secondary">{t('pages:loadingEvents')}</Paragraph>
                         ) : (eventsQuery.data ?? []).length === 0 ? (
-                            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无 lifecycle event"/>
+                            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('pages:noLifecycleEvents')}/>
                         ) : (
                             <Timeline
                                 items={(eventsQuery.data ?? []).map((event) => ({
@@ -208,9 +202,9 @@ export function ValidationReviewCaseDrawer({caseId, onClose}: ValidationReviewCa
 
             <Modal
                 open={Boolean(action)}
-                title={action && caseId ? `${ACTION_LABELS[action]}确认 · ${caseId}` : 'Lifecycle action'}
-                okText="确认提交"
-                cancelText="取消"
+                title={action && caseId ? t('pages:confirmReviewAction', {action: ACTION_LABELS[action], caseId}) : t('pages:lifecycleAction')}
+                okText={t('pages:confirmAndSubmit')}
+                cancelText={t('pages:cancel')}
                 confirmLoading={mutation.isPending}
                 okButtonProps={{disabled: actionForbidden || mutation.isPending}}
                 zIndex={1100}
@@ -219,13 +213,13 @@ export function ValidationReviewCaseDrawer({caseId, onClose}: ValidationReviewCa
                 destroyOnHidden
                 forceRender
             >
-                <Alert type="warning" showIcon message="此操作仅更新本地复核状态，不构成交易授权。" style={{marginBottom: 16}}/>
+                <Alert type="warning" showIcon message={t('pages:thisActionUpdatesLocalReviewStatusOnlyItGrantsNoTradingAuthorization')} style={{marginBottom: 16}}/>
                 <Form form={form} layout="vertical" onFinish={submitAction}>
-                    <Form.Item name="reason" label="复核原因" rules={[
-                        {required: true, whitespace: true, message: '请输入复核原因。'},
-                        {max: 1000, message: '复核原因不能超过 1000 个字符。'},
+                    <Form.Item name="reason" label={t('pages:reviewReason')} rules={[
+                        {required: true, whitespace: true, message: t('pages:enterAReviewReason')},
+                        {max: 1000, message: t('pages:theReviewReasonMustNotExceed1000Characters')},
                     ]}>
-                        <Input.TextArea rows={4} placeholder="仅填写脱敏的人工复核说明"/>
+                        <Input.TextArea rows={4} placeholder={t('pages:enterSanitizedManualReviewNotesOnly')}/>
                     </Form.Item>
                 </Form>
             </Modal>

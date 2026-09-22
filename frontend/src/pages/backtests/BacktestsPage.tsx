@@ -1,3 +1,6 @@
+import {useLocalizedForm} from '@/i18n/useLocalizedForm';
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {
     Alert,
     App,
@@ -22,7 +25,7 @@ import {useState} from 'react';
 import {useQuery} from '@tanstack/react-query';
 import {useNavigate} from 'react-router-dom';
 
-import {formatApiError} from '@/api/errors';
+import {formatApiError, showApiError} from '@/api/errors';
 import {marketdataApi} from '@/api/marketdata';
 import {PageHero} from '@/components/page/PageHero';
 import {
@@ -71,12 +74,13 @@ function toIsoDateTime(value: DateFormValue): string {
 }
 
 export function BacktestsPage() {
+    useTranslation('pages');
     const {message} = App.useApp();
     const navigate = useNavigate();
-    const [queryForm] = Form.useForm<BacktestsListFilters>();
-    const [createForm] = Form.useForm<BacktestConfigCreateFormValues>();
-    const [bindDatasetForm] = Form.useForm<{datasetId: string}>();
-    const [bindStrategyVersionForm] = Form.useForm<{strategyVersionId: string}>();
+    const [queryForm] = useLocalizedForm<BacktestsListFilters>();
+    const [createForm] = useLocalizedForm<BacktestConfigCreateFormValues>();
+    const [bindDatasetForm] = useLocalizedForm<{datasetId: string}>();
+    const [bindStrategyVersionForm] = useLocalizedForm<{strategyVersionId: string}>();
     const [submittedFilters, setSubmittedFilters] = useState<BacktestsListFilters>(defaultBacktestsListFilters);
     const [searchVersion, setSearchVersion] = useState(0);
     const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null);
@@ -103,87 +107,85 @@ export function BacktestsPage() {
 
     const backtestColumns: ColumnsType<BacktestRow> = [
         {
-            title: '回测配置 ID',
+            title: t('pages:backtestConfigurationId'),
             dataIndex: 'backtestConfigId',
             key: 'backtestConfigId',
             width: 220,
             render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
         },
         {
-            title: '研究配置 ID',
+            title: t('pages:researchConfigurationId'),
             dataIndex: 'researchConfigId',
             key: 'researchConfigId',
             width: 220,
             render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
         },
         {
-            title: '名称',
+            title: t('pages:name'),
             dataIndex: 'name',
             key: 'name',
             width: 180,
         },
         {
-            title: '描述',
+            title: t('pages:description'),
             dataIndex: 'description',
             key: 'description',
             width: 240,
             render: (value: string) => value || '-',
         },
         {
-            title: '开始时间',
+            title: t('pages:startTime'),
             dataIndex: 'startTime',
             key: 'startTime',
             width: 180,
             render: (value: string) => formatDateTime(value),
         },
         {
-            title: '结束时间',
+            title: t('pages:endTime'),
             dataIndex: 'endTime',
             key: 'endTime',
             width: 180,
             render: (value: string) => formatDateTime(value),
         },
         {
-            title: '初始资金',
+            title: t('pages:initialCapital'),
             dataIndex: 'initialCapital',
             key: 'initialCapital',
             width: 140,
             render: (value: number | null) => formatNumber(value, 2),
         },
         {
-            title: '策略版本 ID',
+            title: t('pages:strategyVersionId'),
             dataIndex: 'strategyVersionId',
             key: 'strategyVersionId',
             width: 220,
-            render: (value: string | null) => value ? <Typography.Text copyable>{value}</Typography.Text> : '未绑定',
+            render: (value: string | null) => value ? <Typography.Text copyable>{value}</Typography.Text> : t('pages:notBound'),
         },
         {
-            title: 'Dataset ID',
+            title: t('pages:datasetId'),
             dataIndex: 'datasetId',
             key: 'datasetId',
             width: 220,
-            render: (value: string | null) => value ? <Typography.Text copyable>{value}</Typography.Text> : '未绑定',
+            render: (value: string | null) => value ? <Typography.Text copyable>{value}</Typography.Text> : t('pages:notBound'),
         },
         {
-            title: '更新时间',
+            title: t('pages:updatedAt'),
             dataIndex: 'updatedAt',
             key: 'updatedAt',
             width: 180,
             render: (value: string) => formatDateTime(value),
         },
         {
-            title: '操作',
+            title: t('pages:actions'),
             key: 'action',
             fixed: 'right',
             width: 180,
             render: (_, record) => (
                 <Space size={0}>
                     <Button type="link" onClick={() => setSelectedConfigId(record.backtestConfigId)}>
-                        查看详情
-                    </Button>
+                        {t('pages:viewDetails')}</Button>
                     <Button type="link" onClick={() => navigate(`/backtests/${record.backtestConfigId}`)}>
-                        可视化
-                    </Button>
+                        {t('pages:visualization')}</Button>
                 </Space>
             ),
         },
@@ -223,13 +225,13 @@ export function BacktestsPage() {
             },
             {
                 onSuccess: () => {
-                    message.success('回测配置已创建。');
+                    message.success(t('pages:backtestConfigurationCreated'));
                     setCreateOpen(false);
                     createForm.resetFields();
                     setSearchVersion((value) => (value === 0 ? 1 : value + 1));
                 },
                 onError: (error) => {
-                    message.error(formatApiError(error as AppApiError));
+                    showApiError(error as AppApiError, message);
                 },
             },
         );
@@ -241,11 +243,11 @@ export function BacktestsPage() {
         }
         bindDatasetMutation.mutate(values, {
             onSuccess: () => {
-                message.success('Dataset 已绑定到回测配置。');
+                message.success(t('pages:datasetBoundToTheBacktestConfiguration'));
                 bindDatasetForm.resetFields();
             },
             onError: (error) => {
-                message.error(formatApiError(error as AppApiError));
+                showApiError(error as AppApiError, message);
             },
         });
     };
@@ -258,11 +260,11 @@ export function BacktestsPage() {
             {strategyVersionId: normalizeOptionalText(values.strategyVersionId)},
             {
                 onSuccess: () => {
-                    message.success('Strategy Version 已绑定到回测配置。');
+                    message.success(t('pages:strategyVersionBoundToTheBacktestConfiguration'));
                     bindStrategyVersionForm.resetFields();
                 },
                 onError: (error) => {
-                    message.error(formatApiError(error as AppApiError));
+                    showApiError(error as AppApiError, message);
                 },
             },
         );
@@ -274,11 +276,11 @@ export function BacktestsPage() {
         }
         createBacktestRunMutation.mutate(selectedConfigId, {
             onSuccess: (run) => {
-                message.success('回测运行已创建，已固化当前配置快照。');
+                message.success(t('pages:backtestRunCreatedWithTheCurrentConfigurationSnapshotFrozen'));
                 setSelectedRunId(run.backtestRunId);
             },
             onError: (error) => {
-                message.error(formatApiError(error as AppApiError));
+                showApiError(error as AppApiError, message);
             },
         });
     };
@@ -288,23 +290,21 @@ export function BacktestsPage() {
             <Space direction="vertical" size={16} style={{display: 'flex'}}>
                 <Card className="page-card" bordered={false}>
                     <PageHero
-                        title="回测配置"
-                        description="查看回测配置、Dataset 绑定和策略版本快照，并提供既有契约下的最小新建动作闭环。"
+                        title={t('pages:backtestConfigurations')}
+                        description={t('pages:viewBacktestConfigurationsDatasetBindingsAndStrategyVersionSnapshotsOrCreateAConfiguration')}
                         badge="Backtests"
                     />
                 </Card>
                 <Card
                     className="page-section"
                     bordered={false}
-                    title="查询区"
+                    title={t('pages:filters')}
                     extra={(
                         <Space>
                             <Button type="primary" onClick={() => queryForm.submit()}>
-                                查询
-                            </Button>
+                                {t('pages:search')}</Button>
                             <Button onClick={handleReset}>
-                                重置
-                            </Button>
+                                {t('pages:reset')}</Button>
                         </Space>
                     )}
                 >
@@ -316,18 +316,18 @@ export function BacktestsPage() {
                     >
                         <Row gutter={[16, 0]}>
                             <Col xs={24} md={12} xl={8}>
-                                <Form.Item label="研究配置 ID" name="researchConfigId">
-                                    <Input placeholder="按研究配置 ID 筛选"/>
+                                <Form.Item label={t('pages:researchConfigurationId')} name="researchConfigId">
+                                    <Input placeholder={t('pages:filterByResearchConfigurationId')}/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={8}>
-                                <Form.Item label="回测配置 ID" name="backtestConfigId">
-                                    <Input placeholder="按回测配置 ID 筛选"/>
+                                <Form.Item label={t('pages:backtestConfigurationId')} name="backtestConfigId">
+                                    <Input placeholder={t('pages:filterByBacktestConfigurationId')}/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={8}>
-                                <Form.Item label="名称" name="name">
-                                    <Input placeholder="按配置名称筛选"/>
+                                <Form.Item label={t('pages:name')} name="name">
+                                    <Input placeholder={t('pages:filterByConfigurationName')}/>
                                 </Form.Item>
                             </Col>
                         </Row>
@@ -336,38 +336,36 @@ export function BacktestsPage() {
                 <Card
                     className="page-section"
                     bordered={false}
-                    title="动作区"
+                    title={t('pages:actions2')}
                     extra={(
                         <Button type="primary" onClick={() => setCreateOpen(true)}>
-                            新建回测配置
-                        </Button>
+                            {t('pages:createBacktestConfiguration')}</Button>
                     )}
                 >
                     <Alert
                         type="info"
                         showIcon
-                        message="当前页面动作区仅接入最小 create 动作；详情抽屉展示为只读，避免扩成大而全编辑页。"
+                        message={t('pages:createAConfigurationFromTheActionsAreaTheDetailsDrawerIsReadOnly')}
                     />
                 </Card>
                 <Card
                     className="page-section"
                     bordered={false}
-                    title="查询结果"
+                    title={t('pages:results')}
                     extra={hasSearched ?
-                        <Typography.Text type="secondary">共 {visibleItems.length} 条记录</Typography.Text> : null}
+                        <Typography.Text type="secondary">{t('pages:total')}{visibleItems.length} {t('pages:records')}</Typography.Text> : null}
                 >
                     {!hasSearched ? (
-                        <Empty description="点击查询后加载回测配置列表。"/>
+                        <Empty description={t('pages:searchToLoadBacktestConfigurations')}/>
                     ) : backtestsQuery.error ? (
                         <Alert
                             type="error"
                             showIcon
-                            message="回测配置列表查询失败"
+                            message={t('pages:failedToQueryBacktestConfigurations')}
                             description={formatApiError(backtestsQuery.error as AppApiError)}
                             action={(
                                 <Button size="small" onClick={() => setSearchVersion((value) => value + 1)}>
-                                    重试
-                                </Button>
+                                    {t('pages:retry')}</Button>
                             )}
                         />
                     ) : (
@@ -379,7 +377,7 @@ export function BacktestsPage() {
                             pagination={{pageSize: 10, showSizeChanger: false}}
                             scroll={{x: 2040}}
                             locale={{
-                                emptyText: '当前筛选条件下没有匹配的回测配置。',
+                                emptyText: t('pages:noBacktestConfigurationsMatchTheseFilters'),
                             }}
                         />
                     )}
@@ -388,7 +386,7 @@ export function BacktestsPage() {
             <Drawer
                 open={Boolean(selectedConfigId)}
                 width={760}
-                title="回测配置详情"
+                title={t('pages:backtestConfigurationDetails')}
                 onClose={() => {
                     setSelectedConfigId(null);
                     setSelectedRunId(null);
@@ -396,114 +394,113 @@ export function BacktestsPage() {
                 destroyOnClose
             >
                 {backtestDetailQuery.isLoading ? (
-                    <Alert type="info" showIcon message="正在加载回测配置详情..."/>
+                    <Alert type="info" showIcon message={t('pages:loadingBacktestConfigurationDetails')}/>
                 ) : backtestDetailQuery.error ? (
                     <Alert
                         type="error"
                         showIcon
-                        message="回测配置详情加载失败"
+                        message={t('pages:failedToLoadBacktestConfigurationDetails')}
                         description={formatApiError(backtestDetailQuery.error as AppApiError)}
                     />
                 ) : backtestDetailQuery.data ? (
                     <Space direction="vertical" size={16} style={{display: 'flex'}}>
                         <Descriptions bordered column={2} size="small">
                             <Descriptions.Item
-                                label="回测配置 ID">{backtestDetailQuery.data.backtestConfigId}</Descriptions.Item>
+                                label={t('pages:backtestConfigurationId')}>{backtestDetailQuery.data.backtestConfigId}</Descriptions.Item>
                             <Descriptions.Item
-                                label="研究配置 ID">{backtestDetailQuery.data.researchConfigId}</Descriptions.Item>
-                            <Descriptions.Item label="名称">{backtestDetailQuery.data.name}</Descriptions.Item>
+                                label={t('pages:researchConfigurationId')}>{backtestDetailQuery.data.researchConfigId}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:name')}>{backtestDetailQuery.data.name}</Descriptions.Item>
                             <Descriptions.Item
-                                label="描述">{backtestDetailQuery.data.description || '-'}</Descriptions.Item>
+                                label={t('pages:description')}>{backtestDetailQuery.data.description || '-'}</Descriptions.Item>
                             <Descriptions.Item
-                                label="开始时间">{formatDateTime(backtestDetailQuery.data.startTime)}</Descriptions.Item>
+                                label={t('pages:startTime')}>{formatDateTime(backtestDetailQuery.data.startTime)}</Descriptions.Item>
                             <Descriptions.Item
-                                label="结束时间">{formatDateTime(backtestDetailQuery.data.endTime)}</Descriptions.Item>
+                                label={t('pages:endTime')}>{formatDateTime(backtestDetailQuery.data.endTime)}</Descriptions.Item>
                             <Descriptions.Item
-                                label="初始资金">{formatNumber(backtestDetailQuery.data.initialCapital, 2)}</Descriptions.Item>
+                                label={t('pages:initialCapital')}>{formatNumber(backtestDetailQuery.data.initialCapital, 2)}</Descriptions.Item>
                             <Descriptions.Item
-                                label="创建时间">{formatDateTime(backtestDetailQuery.data.createdAt)}</Descriptions.Item>
+                                label={t('pages:createdAt')}>{formatDateTime(backtestDetailQuery.data.createdAt)}</Descriptions.Item>
                             <Descriptions.Item
-                                label="更新时间">{formatDateTime(backtestDetailQuery.data.updatedAt)}</Descriptions.Item>
-                            <Descriptions.Item label="执行参数" span={2}>
+                                label={t('pages:updatedAt')}>{formatDateTime(backtestDetailQuery.data.updatedAt)}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:executionParameters')} span={2}>
                                 <Typography.Paragraph style={{marginBottom: 0}}>
                                     {backtestDetailQuery.data.executionSpec || '-'}
                                 </Typography.Paragraph>
                             </Descriptions.Item>
-                            <Descriptions.Item label="评估参数" span={2}>
+                            <Descriptions.Item label={t('pages:evaluationParameters')} span={2}>
                                 <Typography.Paragraph style={{marginBottom: 0}}>
                                     {backtestDetailQuery.data.evaluationSpec || '-'}
                                 </Typography.Paragraph>
                             </Descriptions.Item>
-                            <Descriptions.Item label="Strategy Version ID" span={2}>
+                            <Descriptions.Item label={t('pages:strategyVersionId')} span={2}>
                                 <Typography.Text copyable={Boolean(backtestDetailQuery.data.strategyVersionId)}>
-                                    {backtestDetailQuery.data.strategyVersionId || '未绑定'}
+                                    {backtestDetailQuery.data.strategyVersionId || t('pages:notBound')}
                                 </Typography.Text>
                             </Descriptions.Item>
-                            <Descriptions.Item label="Strategy Version Snapshot" span={2}>
+                            <Descriptions.Item label={t('pages:strategyVersionSnapshot')} span={2}>
                                 <Typography.Paragraph style={{marginBottom: 0}}>
                                     {backtestDetailQuery.data.strategyVersionSnapshotJson || '{}'}
                                 </Typography.Paragraph>
                             </Descriptions.Item>
-                            <Descriptions.Item label="Param Snapshot" span={2}>
+                            <Descriptions.Item label={t('pages:parameterSnapshot')} span={2}>
                                 <Typography.Paragraph style={{marginBottom: 0}}>
                                     {backtestDetailQuery.data.paramSnapshotJson || '{}'}
                                 </Typography.Paragraph>
                             </Descriptions.Item>
-                            <Descriptions.Item label="Dataset ID" span={2}>
+                            <Descriptions.Item label={t('pages:datasetId')} span={2}>
                                 <Typography.Text copyable={Boolean(backtestDetailQuery.data.datasetId)}>
-                                    {backtestDetailQuery.data.datasetId || '未绑定'}
+                                    {backtestDetailQuery.data.datasetId || t('pages:notBound')}
                                 </Typography.Text>
                             </Descriptions.Item>
-                            <Descriptions.Item label="Dataset Snapshot" span={2}>
+                            <Descriptions.Item label={t('pages:datasetSnapshot')} span={2}>
                                 <Typography.Paragraph style={{marginBottom: 0}}>
                                     {backtestDetailQuery.data.datasetSnapshotJson || '{}'}
                                 </Typography.Paragraph>
                             </Descriptions.Item>
-                            <Descriptions.Item label="Config Snapshot JSON" span={2}>
+                            <Descriptions.Item label={t('pages:configurationSnapshotJson')} span={2}>
                                 <Typography.Paragraph style={{marginBottom: 0}}>
                                     {backtestDetailQuery.data.configSnapshotJson || '{}'}
                                 </Typography.Paragraph>
                             </Descriptions.Item>
-                            <Descriptions.Item label="配置快照" span={2}>
+                            <Descriptions.Item label={t('pages:configurationSnapshot')} span={2}>
                                 <Typography.Paragraph style={{marginBottom: 0}}>
                                     {backtestDetailQuery.data.configSnapshot || '-'}
                                 </Typography.Paragraph>
                             </Descriptions.Item>
                         </Descriptions>
-                        <Card title="动作区" size="small">
+                        <Card title={t('pages:actions2')} size="small">
                             <Space direction="vertical" size={12} style={{display: 'flex'}}>
                                 <Alert type="info" showIcon
-                                       message="当前仅绑定 strategy version 和 marketdata dataset，不会启动回测或修改策略逻辑。"/>
+                                       message={t('pages:bindingAStrategyVersionOrMarketDataDatasetDoesNotStartABacktestOrChangeStrategyLogic')}/>
                                 <Form
                                     form={bindStrategyVersionForm}
                                     layout="inline"
                                     onFinish={handleBindStrategyVersion}
                                 >
                                     <Form.Item
-                                        label="Strategy Version"
+                                        label={t('pages:strategyVersion')}
                                         name="strategyVersionId"
-                                        rules={[{required: true, message: '请输入 strategy version ID'}]}
+                                        rules={[{required: true, message: t('pages:enterAStrategyVersionId')}]}
                                     >
-                                        <Input style={{width: 360}} placeholder="例如：sv-..."/>
+                                        <Input style={{width: 360}} placeholder={t('pages:forExampleSv')}/>
                                     </Form.Item>
                                     <Button
                                         type="primary"
                                         htmlType="submit"
                                         loading={bindStrategyVersionMutation.isPending}
                                     >
-                                        绑定 Strategy Version
-                                    </Button>
+                                        {t('pages:bindStrategyVersion')}</Button>
                                 </Form>
                                 <Form form={bindDatasetForm} layout="inline" onFinish={handleBindDataset}>
                                     <Form.Item
-                                        label="Dataset"
+                                        label={t('pages:dataset')}
                                         name="datasetId"
-                                        rules={[{required: true, message: '请选择 dataset'}]}
+                                        rules={[{required: true, message: t('pages:selectADataset')}]}
                                     >
                                         <Select
                                             showSearch
                                             style={{width: 420}}
-                                            placeholder="选择 marketdata dataset"
+                                            placeholder={t('pages:selectAMarketDataDataset')}
                                             loading={datasetsQuery.isLoading || datasetsQuery.isFetching}
                                             options={datasetOptions}
                                             optionFilterProp="label"
@@ -515,68 +512,65 @@ export function BacktestsPage() {
                                         loading={bindDatasetMutation.isPending}
                                         disabled={datasetOptions.length === 0}
                                     >
-                                        绑定 Dataset
-                                    </Button>
+                                        {t('pages:bindDataset')}</Button>
                                 </Form>
                                 {datasetsQuery.error ? (
                                     <Alert
                                         type="error"
                                         showIcon
-                                        message="Dataset 列表加载失败"
+                                        message={t('pages:failedToLoadDatasets')}
                                         description={formatApiError(datasetsQuery.error as AppApiError)}
                                     />
                                 ) : datasetOptions.length === 0 ? (
-                                    <Alert type="warning" showIcon message="暂无可绑定 dataset，请先在 Marketdata 页面创建。"/>
+                                    <Alert type="warning" showIcon message={t('pages:noDatasetsAreAvailableCreateOneOnTheMarketDataPageFirst')}/>
                                 ) : null}
                                 <Button onClick={() => backtestDetailQuery.refetch()}>
-                                    刷新详情
-                                </Button>
+                                    {t('pages:refreshDetails')}</Button>
                                 <Button
                                     onClick={handleCreateRun}
                                     loading={createBacktestRunMutation.isPending}
                                 >
-                                    创建回测运行
-                                </Button>
+                                    {t('pages:createBacktestRun')}</Button>
                             </Space>
                         </Card>
-                        <Card title="回测运行详情" size="small">
+                        <Card title={t('pages:backtestRunDetails')} size="small">
                             {!selectedRunId ? (
-                                <Empty description="创建回测运行后展示 run 级固化快照。"/>
+                                <Empty description={t('pages:theFrozenRunSnapshotAppearsAfterTheBacktestRunIsCreated')}/>
                             ) : backtestRunDetailQuery.isLoading ? (
-                                <Alert type="info" showIcon message="正在加载回测运行详情..."/>
+                                <Alert type="info" showIcon message={t('pages:loadingBacktestRunDetails')}/>
                             ) : backtestRunDetailQuery.error ? (
                                 <Alert
                                     type="error"
                                     showIcon
-                                    message="回测运行详情加载失败"
+                                    message={t('pages:failedToLoadBacktestRunDetails')}
                                     description={formatApiError(backtestRunDetailQuery.error as AppApiError)}
                                 />
                             ) : backtestRunDetailQuery.data ? (
                                 <Descriptions bordered column={2} size="small">
-                                    <Descriptions.Item label="回测运行 ID" span={2}>
+                                    <Descriptions.Item label={t('pages:backtestRunId')} span={2}>
                                         <Typography.Text copyable>
                                             {backtestRunDetailQuery.data.backtestRunId}
                                         </Typography.Text>
                                     </Descriptions.Item>
-                                    <Descriptions.Item label="运行状态">{backtestRunDetailQuery.data.status}</Descriptions.Item>
+                                    <Descriptions.Item label={t('pages:runStatus')}>{backtestRunDetailQuery.data.status}</Descriptions.Item>
                                     <Descriptions.Item
-                                        label="请求时间">{formatDateTime(backtestRunDetailQuery.data.requestedAt)}</Descriptions.Item>
-                                    <Descriptions.Item label="Strategy Version Snapshot" span={2}>
+                                        label={t('pages:requestedAt')}>{formatDateTime(backtestRunDetailQuery.data.requestedAt)}</Descriptions.Item>
+                                    <Descriptions.Item label={t('pages:strategyVersionSnapshot')} span={2}>
                                         <Typography.Paragraph style={{marginBottom: 0}}>
                                             {backtestRunDetailQuery.data.strategyVersionSnapshotJson || '{}'}
                                         </Typography.Paragraph>
                                     </Descriptions.Item>
-                                    <Descriptions.Item label="Dataset Snapshot" span={2}>
+                                    <Descriptions.Item label={t('pages:datasetSnapshot')} span={2}>
                                         <Typography.Paragraph style={{marginBottom: 0}}>
                                             {backtestRunDetailQuery.data.datasetSnapshotJson || '{}'}
                                         </Typography.Paragraph>
                                     </Descriptions.Item>
-                                    <Descriptions.Item label="Param Snapshot" span={2}>
+                                    <Descriptions.Item label={t('pages:parameterSnapshot')} span={2}>
                                         <Typography.Paragraph style={{marginBottom: 0}}>
                                             {backtestRunDetailQuery.data.paramSnapshotJson || '{}'}
                                         </Typography.Paragraph>
                                     </Descriptions.Item>
-                                    <Descriptions.Item label="Config Snapshot" span={2}>
+                                    <Descriptions.Item label={t('pages:configurationSnapshot')} span={2}>
                                         <Typography.Paragraph style={{marginBottom: 0}}>
                                             {backtestRunDetailQuery.data.configSnapshotJson || '{}'}
                                         </Typography.Paragraph>
@@ -590,48 +584,46 @@ export function BacktestsPage() {
             <Drawer
                 open={createOpen}
                 width={720}
-                title="新建回测配置"
+                title={t('pages:createBacktestConfiguration')}
                 onClose={() => setCreateOpen(false)}
                 destroyOnClose
             >
                 <Form form={createForm} layout="vertical" onFinish={handleCreate}>
-                    <Form.Item label="研究配置 ID" name="researchConfigId"
-                               rules={[{required: true, message: '请输入 researchConfigId'}]}>
+                    <Form.Item label={t('pages:researchConfigurationId')} name="researchConfigId"
+                               rules={[{required: true, message: t('pages:enterResearchconfigid')}]}>
                         <Input/>
                     </Form.Item>
-                    <Form.Item label="名称" name="name" rules={[{required: true, message: '请输入名称'}]}>
+                    <Form.Item label={t('pages:name')} name="name" rules={[{required: true, message: t('pages:enterAName')}]}>
                         <Input/>
                     </Form.Item>
-                    <Form.Item label="描述" name="description">
+                    <Form.Item label={t('pages:description')} name="description">
                         <Input.TextArea rows={3}/>
                     </Form.Item>
-                    <Form.Item label="开始时间" name="startTime"
-                               rules={[{required: true, message: '请选择开始时间'}]}>
+                    <Form.Item label={t('pages:startTime')} name="startTime"
+                               rules={[{required: true, message: t('pages:selectAStartTime')}]}>
                         <DatePicker showTime style={{width: '100%'}}/>
                     </Form.Item>
-                    <Form.Item label="结束时间" name="endTime"
-                               rules={[{required: true, message: '请选择结束时间'}]}>
+                    <Form.Item label={t('pages:endTime')} name="endTime"
+                               rules={[{required: true, message: t('pages:selectAnEndTime')}]}>
                         <DatePicker showTime style={{width: '100%'}}/>
                     </Form.Item>
-                    <Form.Item label="初始资金" name="initialCapital"
-                               rules={[{required: true, message: '请输入初始资金'}]}>
+                    <Form.Item label={t('pages:initialCapital')} name="initialCapital"
+                               rules={[{required: true, message: t('pages:enterInitialCapital')}]}>
                         <InputNumber style={{width: '100%'}} min={0.0001}/>
                     </Form.Item>
-                    <Form.Item label="执行参数" name="executionSpec"
-                               rules={[{required: true, message: '请输入 executionSpec'}]}>
+                    <Form.Item label={t('pages:executionParameters')} name="executionSpec"
+                               rules={[{required: true, message: t('pages:enterExecutionspec')}]}>
                         <Input.TextArea rows={4}/>
                     </Form.Item>
-                    <Form.Item label="评估参数" name="evaluationSpec"
-                               rules={[{required: true, message: '请输入 evaluationSpec'}]}>
+                    <Form.Item label={t('pages:evaluationParameters')} name="evaluationSpec"
+                               rules={[{required: true, message: t('pages:enterEvaluationspec')}]}>
                         <Input.TextArea rows={4}/>
                     </Form.Item>
                     <Space>
                         <Button type="primary" htmlType="submit" loading={createBacktestMutation.isPending}>
-                            提交创建
-                        </Button>
+                            {t('pages:create')}</Button>
                         <Button onClick={() => setCreateOpen(false)}>
-                            取消
-                        </Button>
+                            {t('pages:cancel')}</Button>
                     </Space>
                 </Form>
             </Drawer>

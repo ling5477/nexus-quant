@@ -718,7 +718,7 @@ public class OrderCommandWriteService {
         TransitionResult result = transitionOrderAttempt(currentOrder, nextStatus, reason, traceId);
         // 本地准备未取得代际所有权时必须终止编排，禁止据旧快照发出新的外部动作。
         if (!result.applied()) {
-            throw new IllegalStateException("stale order preparation: " + currentOrder.orderId());
+            throw new OrderVersionConflictException(currentOrder.orderId());
         }
         return result.order();
     }

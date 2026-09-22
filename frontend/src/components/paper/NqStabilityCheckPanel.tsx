@@ -1,6 +1,8 @@
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {App, Button, Card, Space, Typography} from 'antd';
 
-import {formatApiError} from '@/api/errors';
+import {showApiError} from '@/api/errors';
 import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqPercentText, NqStatusTag, nqNumericColumn} from '@/components/nq';
 import {useGenerateStabilityCheckMutation, usePaperStabilityChecksQuery} from '@/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
@@ -19,6 +21,7 @@ interface NqStabilityCheckPanelProps {
 }
 
 export function NqStabilityCheckPanel({paperRunId}: NqStabilityCheckPanelProps) {
+    useTranslation('pages');
     const {message} = App.useApp();
     const stabilityChecksQuery = usePaperStabilityChecksQuery(paperRunId);
     const generateStabilityCheckMutation = useGenerateStabilityCheckMutation();
@@ -29,7 +32,7 @@ export function NqStabilityCheckPanel({paperRunId}: NqStabilityCheckPanelProps) 
         <Card
             className="page-section"
             size="small"
-            title="稳定性验收"
+            title={t('pages:stabilityCheck')}
             extra={(
                 <Button
                     size="small"
@@ -41,24 +44,22 @@ export function NqStabilityCheckPanel({paperRunId}: NqStabilityCheckPanelProps) 
                         const start = new Date(end.getTime() - 24 * 60 * 60 * 1000);
                         generateStabilityCheckMutation.mutate(
                             {paperRunId, request: {checkWindowStart: start.toISOString(), checkWindowEnd: end.toISOString()}},
-                            {onSuccess: () => message.success('稳定性验收已生成。'), onError: (err) => message.error(formatApiError(err as AppApiError))},
+                            {onSuccess: () => message.success(t('pages:stabilityCheckGenerated')), onError: (err) => showApiError(err as AppApiError, message)},
                         );
                     }}
                 >
-                    生成最近 24h 稳定性验收
-                </Button>
+                    {t('pages:generateAStabilityCheckForTheLast24Hours')}</Button>
             )}
         >
             <Space direction="vertical" size={8} style={{display: 'flex'}}>
                 <Typography.Text type="secondary" style={{fontSize: 12}}>
-                    第一版口径：有心跳 + 无 CRITICAL 未处理告警 + 无失败触发 = PASSED；不等同于正式 7 天稳定性验收。
-                </Typography.Text>
+                    {t('pages:initialCriteriaHeartbeatPresentNoUnresolvedCriticalAlertsAndNoFailedTriggersMeansPassedThisIsNotForm')}</Typography.Text>
                 {stabilityChecksQuery.isFetching && data.length === 0 ? (
                     <NqLoadingState/>
                 ) : stabilityChecksQuery.error ? (
                     <NqErrorState error={stabilityChecksQuery.error as AppApiError} onRetry={() => stabilityChecksQuery.refetch()}/>
                 ) : data.length === 0 ? (
-                    <NqEmptyState description="当前 Paper run 暂无稳定性验收。"/>
+                    <NqEmptyState description={t('pages:noStabilityChecksForThisPaperRun')}/>
                 ) : (
                     <NqDataTable<PaperRunStabilityCheckItem>
                         rowKey="stabilityCheckId"
@@ -66,15 +67,15 @@ export function NqStabilityCheckPanel({paperRunId}: NqStabilityCheckPanelProps) 
                         dataSource={data}
                         scroll={{x: 920, y: 240}}
                         columns={[
-                            {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'PASSED' ? 'success' : v === 'PARTIAL' ? 'warning' : 'danger'}/>},
-                            nqNumericColumn({title: '在线率', dataIndex: 'uptimeRatio', key: 'uptimeRatio', width: 100, render: (v) => <NqPercentText value={v as string} ratio signed={false}/>}),
-                            nqNumericColumn({title: '心跳', dataIndex: 'heartbeatCount', key: 'heartbeatCount', width: 80}),
-                            nqNumericColumn({title: '告警', dataIndex: 'alertCount', key: 'alertCount', width: 80}),
-                            nqNumericColumn({title: '失败触发', dataIndex: 'failedFireCount', key: 'failedFireCount', width: 100}),
-                            nqNumericColumn({title: '恢复', dataIndex: 'recoveryCount', key: 'recoveryCount', width: 80}),
-                            nqNumericColumn({title: '日报', dataIndex: 'reportCount', key: 'reportCount', width: 80}),
-                            {title: '窗口开始', dataIndex: 'checkWindowStart', key: 'checkWindowStart', width: 170, render: (v: string) => formatDateTime(v)},
-                            {title: '窗口结束', dataIndex: 'checkWindowEnd', key: 'checkWindowEnd', width: 170, render: (v: string) => formatDateTime(v)},
+                            {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'PASSED' ? 'success' : v === 'PARTIAL' ? 'warning' : 'danger'}/>},
+                            nqNumericColumn({title: t('pages:uptimeRate'), dataIndex: 'uptimeRatio', key: 'uptimeRatio', width: 100, render: (v) => <NqPercentText value={v as string} ratio signed={false}/>}),
+                            nqNumericColumn({title: t('pages:heartbeat'), dataIndex: 'heartbeatCount', key: 'heartbeatCount', width: 80}),
+                            nqNumericColumn({title: t('pages:alert'), dataIndex: 'alertCount', key: 'alertCount', width: 80}),
+                            nqNumericColumn({title: t('pages:failedTriggers'), dataIndex: 'failedFireCount', key: 'failedFireCount', width: 100}),
+                            nqNumericColumn({title: t('pages:recovery'), dataIndex: 'recoveryCount', key: 'recoveryCount', width: 80}),
+                            nqNumericColumn({title: t('pages:dailyReport'), dataIndex: 'reportCount', key: 'reportCount', width: 80}),
+                            {title: t('pages:windowStart'), dataIndex: 'checkWindowStart', key: 'checkWindowStart', width: 170, render: (v: string) => formatDateTime(v)},
+                            {title: t('pages:windowEnd'), dataIndex: 'checkWindowEnd', key: 'checkWindowEnd', width: 170, render: (v: string) => formatDateTime(v)},
                         ]}
                     />
                 )}

@@ -21,9 +21,9 @@ export const TRADE_ENV_OPTIONS = [
 ];
 
 export const BOOLEAN_FILTER_OPTIONS = [
-    {label: '全部', value: 'all'},
-    {label: '已启用', value: 'true'},
-    {label: '未启用', value: 'false'},
+    {get label() {return t('all');}, value: 'all'},
+    {get label() {return t('enabled');}, value: 'true'},
+    {get label() {return t('disabled');}, value: 'false'},
 ];
 
 export const STRATEGY_TYPE_OPTIONS = ['GRID', 'BUY_AND_HOLD_FIXTURE', 'E2E_SMOKE'].map((value) => ({
@@ -52,3 +52,4 @@ export const PAPER_RUN_STATUS_OPTIONS = ['CREATED', 'RUNNING', 'STOPPED', 'FAILE
 export const EVALUATION_STATUS_OPTIONS = ['SUCCEEDED', 'FAILED'].map((value) => ({label: value, value}));
 
 export const PUBLISH_STATUS_OPTIONS = ['SUCCEEDED', 'FAILED'].map((value) => ({label: value, value}));
+import {t} from '@/i18n';

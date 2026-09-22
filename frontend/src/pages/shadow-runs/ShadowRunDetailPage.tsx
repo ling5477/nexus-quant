@@ -1,3 +1,5 @@
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {ArrowLeftOutlined, ReloadOutlined} from '@ant-design/icons';
 import {Alert, Button, Card, Col, Descriptions, Empty, Row, Space, Table, Tag, Timeline, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
@@ -102,6 +104,7 @@ function safeJsonText(value: unknown): string | null {
 }
 
 function OptionalCode({value}: { value: string | number | null | undefined }) {
+    useTranslation('pages');
     if (value === null || value === undefined || value === '') {
         return <Text type="secondary">-</Text>;
     }
@@ -110,6 +113,7 @@ function OptionalCode({value}: { value: string | number | null | undefined }) {
 }
 
 function SafeText({value}: { value: string | null | undefined }) {
+    useTranslation('pages');
     if (!value) {
         return <Text type="secondary">-</Text>;
     }
@@ -120,6 +124,7 @@ function SafeText({value}: { value: string | null | undefined }) {
 }
 
 function SafeJsonBlock({value, emptyText}: { value: unknown; emptyText: string }) {
+    useTranslation('pages');
     const pretty = useMemo(() => safeJsonText(value), [value]);
 
     if (!pretty) {
@@ -225,37 +230,37 @@ function resolveDrilldownState(drilldown: PaperShadowConsistencyDrilldownRespons
     if (!drilldown.latestConsistency || comparisonStatus === 'NO_REPORT') {
         return {
             key: 'no-report',
-            label: 'NO_REPORT（无一致性报告）',
+            label: t('pages:noReportNoConsistencyReport'),
             tone: 'neutral',
             alertType: 'warning',
-            description: '当前 Shadow Run 尚无 latest consistency report；不能把缺失报告解释为 comparison 通过。',
+            description: t('pages:thisShadowRunHasNoLatestConsistencyReportAMissingReportDoesNotMeanTheComparisonPassed'),
         };
     }
     if (comparisonStatus === 'FAILED' || runStatus.includes('FAILED')) {
         return {
             key: 'failed',
-            label: 'FAILED（本地证据失败）',
+            label: t('pages:failedLocalEvidenceFailure'),
             tone: 'danger',
             alertType: 'error',
-            description: '失败只表示本地诊断证据或 comparison 失败，需要继续复核 traceId、metricDelta 与 evidence anchors。',
+            description: t('pages:localDiagnosticEvidenceOrComparisonFailedReviewTraceidMetricdeltaAndEvidenceAnchors'),
         };
     }
     if (runStatus.includes('BLOCKED')) {
         return {
             key: 'blocked',
-            label: 'BLOCKED（Shadow Run 阻断）',
+            label: t('pages:blockedShadowRunBlocked'),
             tone: 'danger',
             alertType: 'error',
-            description: 'Shadow Run 当前处于阻断状态；该状态不表达交易授权变化，也不允许触发执行动作。',
+            description: t('pages:theShadowRunIsBlockedThisDoesNotChangeTradingAuthorizationOrAllowExecutionActions'),
         };
     }
     if (comparisonStatus === 'DIVERGED' || divergenceSeverity === 'HIGH' || divergenceSeverity === 'CRITICAL') {
         return {
             key: 'diverged',
-            label: 'DIVERGED（证据存在偏离）',
+            label: t('pages:divergedEvidenceDiffers'),
             tone: 'warning',
             alertType: 'warning',
-            description: '偏离只表达 Paper 与 Shadow 本地证据不一致；颜色不表示盈利、亏损、上涨或下跌。',
+            description: t('pages:divergenceMeansLocalPaperAndShadowEvidenceDiffersColorsDoNotIndicateProfitLossOrMarketDirection'),
         };
     }
     if (
@@ -265,26 +270,28 @@ function resolveDrilldownState(drilldown: PaperShadowConsistencyDrilldownRespons
     ) {
         return {
             key: 'stale',
-            label: 'STALE_EVIDENCE（证据不完整或过期）',
+            label: t('pages:staleEvidenceIncompleteOrStaleEvidence'),
             tone: 'warning',
             alertType: 'warning',
-            description: '证据不完整时只能进入诊断复核，不能补造 snapshot/event，也不能视为 comparison 已通过。',
+            description: t('pages:incompleteEvidenceRequiresDiagnosticReviewSnapshotsAndEventsMustNotBeFabricatedAndTheComparisonHasNo'),
         };
     }
     return {
         key: 'normal',
-        label: 'NORMAL（只读诊断可查看）',
+        label: t('pages:normalReadOnlyDiagnosticsAvailable'),
         tone: 'info',
         alertType: 'info',
-        description: '当前仅表示 drilldown 数据可读；comparisonStatus 仍只表达证据状态，不表达交易准入。',
+        description: t('pages:drilldownDataIsReadableComparisonstatusDescribesEvidenceOnlyNotTradingAdmission'),
     };
 }
 
 function BoundaryFlag({label, enabled}: { label: string; enabled: boolean }) {
+    useTranslation('pages');
     return <Tag color={enabled ? 'success' : 'error'}>{label}: {enabled ? 'true' : 'false'}</Tag>;
 }
 
 function BoundarySummary({detail}: { detail?: ShadowRunDetailResponse }) {
+    useTranslation('pages');
     const flags = detail?.sideEffectFlags;
     const diagnosticOnly = detail?.authorizationBoundary === 'DIAGNOSTIC_ONLY';
 
@@ -293,31 +300,31 @@ function BoundarySummary({detail}: { detail?: ShadowRunDetailResponse }) {
             <Space direction="vertical" size={12} style={{display: 'flex'}}>
                 <NqRiskBanner
                     level="warning"
-                    message="Diagnostic only / no trading authorization"
-                    description="Shadow Run detail / replay 只展示本地诊断事实；consistency report 不是 approval，不代表实盘就绪，不允许据此下单、撤单、转账或提现。"
+                    message={t('pages:diagnosticsOnlyNoTradingAuthorization')}
+                    description={t('pages:shadowDetailAndReplayShowLocalDiagnosticFactsOnlyAConsistencyReportIsNotApprovalOrLiveReadinessAndDo')}
                 />
                 <Space size={[8, 8]} wrap>
-                    <Tag color="error">LIVE disabled</Tag>
-                    <Tag color={diagnosticOnly ? 'success' : 'error'}>Diagnostic only</Tag>
+                    <Tag color="error">{t('pages:liveDisabled3')}</Tag>
+                    <Tag color={diagnosticOnly ? 'success' : 'error'}>{t('pages:diagnosticsOnly')}</Tag>
                     <Tag color="default">AI: NOT STARTED</Tag>
                     <Tag color="default">DH runtime: NOT INTEGRATED</Tag>
                     <Tag color="default">RealClient: NOT IMPLEMENTED</Tag>
                     {flags ? (
                         <>
-                            <BoundaryFlag label="No order submission" enabled={flags.noOrderSubmission}/>
-                            <BoundaryFlag label="No credential access" enabled={flags.noCredentialAccess}/>
-                            <BoundaryFlag label="No private endpoint" enabled={flags.noPrivateEndpoint}/>
-                            <BoundaryFlag label="No ledger mutation" enabled={flags.noLedgerMutation}/>
-                            <BoundaryFlag label="No account mutation" enabled={flags.noAccountMutation}/>
-                            <BoundaryFlag label="No external private I/O" enabled={flags.noExternalPrivateIo}/>
+                            <BoundaryFlag label={t('pages:noOrderSubmission')} enabled={flags.noOrderSubmission}/>
+                            <BoundaryFlag label={t('pages:noCredentialAccess')} enabled={flags.noCredentialAccess}/>
+                            <BoundaryFlag label={t('pages:noPrivateEndpoint')} enabled={flags.noPrivateEndpoint}/>
+                            <BoundaryFlag label={t('pages:noLedgerMutation')} enabled={flags.noLedgerMutation}/>
+                            <BoundaryFlag label={t('pages:noAccountMutation')} enabled={flags.noAccountMutation}/>
+                            <BoundaryFlag label={t('pages:noExternalPrivateIO')} enabled={flags.noExternalPrivateIo}/>
                         </>
                     ) : (
                         <>
-                            <Tag color="error">No order submission: unavailable</Tag>
-                            <Tag color="error">No credential access: unavailable</Tag>
-                            <Tag color="error">No private endpoint: unavailable</Tag>
-                            <Tag color="error">No ledger mutation: unavailable</Tag>
-                            <Tag color="error">No account mutation: unavailable</Tag>
+                            <Tag color="error">{t('pages:noOrderSubmissionUnavailable')}</Tag>
+                            <Tag color="error">{t('pages:noCredentialAccessUnavailable')}</Tag>
+                            <Tag color="error">{t('pages:noPrivateEndpointUnavailable')}</Tag>
+                            <Tag color="error">{t('pages:noLedgerMutationUnavailable')}</Tag>
+                            <Tag color="error">{t('pages:noAccountMutationUnavailable')}</Tag>
                         </>
                     )}
                 </Space>
@@ -327,14 +334,15 @@ function BoundarySummary({detail}: { detail?: ShadowRunDetailResponse }) {
 }
 
 function DrilldownBoundaryBadges({drilldown}: { drilldown?: PaperShadowConsistencyDrilldownResponse }) {
+    useTranslation('pages');
     return (
         <Space size={[8, 8]} wrap>
             <Tag color={drilldown?.liveDisabled === false ? 'warning' : 'error'}>LIVE DISABLED</Tag>
-            <Tag color={drilldown?.realProviderImplemented ? 'warning' : 'default'}>Real provider NOT IMPLEMENTED</Tag>
-            <Tag color={drilldown?.privateTradingImplemented ? 'warning' : 'default'}>Private trading NOT IMPLEMENTED</Tag>
-            <Tag color={drilldown?.diagnosticOnly === false ? 'warning' : 'blue'}>Shadow Run is diagnostic only</Tag>
-            <Tag color={drilldown?.notTradingAuthorization === false ? 'warning' : 'volcano'}>Not trading authorization</Tag>
-            <Tag color={drilldown?.aiDhRuntimeIntegrated ? 'warning' : 'default'}>AI/DH runtime not integrated</Tag>
+            <Tag color={drilldown?.realProviderImplemented ? 'warning' : 'default'}>{t('pages:realProviderNotImplemented3')}</Tag>
+            <Tag color={drilldown?.privateTradingImplemented ? 'warning' : 'default'}>{t('pages:privateTradingNotImplemented2')}</Tag>
+            <Tag color={drilldown?.diagnosticOnly === false ? 'warning' : 'blue'}>{t('pages:shadowRunIsDiagnosticOnly3')}</Tag>
+            <Tag color={drilldown?.notTradingAuthorization === false ? 'warning' : 'volcano'}>{t('pages:notTradingAuthorization3')}</Tag>
+            <Tag color={drilldown?.aiDhRuntimeIntegrated ? 'warning' : 'default'}>{t('pages:aiDhRuntimeNotIntegrated2')}</Tag>
         </Space>
     );
 }
@@ -348,6 +356,7 @@ function DrilldownMessageTable({
     items: DrilldownBoundaryMessage[];
     emptyText: string;
 }) {
+    const {i18n: pageI18n} = useTranslation('pages');
     const columns = useMemo<ColumnsType<DrilldownBoundaryMessage>>(() => [
         {
             title: 'code',
@@ -380,7 +389,7 @@ function DrilldownMessageTable({
                 </Space>
             ),
         },
-    ], []);
+    ], [pageI18n.resolvedLanguage]);
 
     return (
         <section aria-label={title}>
@@ -402,6 +411,7 @@ function DrilldownMessageTable({
 }
 
 function DrilldownNextStepsTable({items}: { items: PaperShadowConsistencyNextStep[] }) {
+    const {i18n: pageI18n} = useTranslation('pages');
     const columns = useMemo<ColumnsType<PaperShadowConsistencyNextStep>>(() => [
         {
             title: 'code',
@@ -435,13 +445,13 @@ function DrilldownNextStepsTable({items}: { items: PaperShadowConsistencyNextSte
             width: 110,
             render: (value: boolean) => <Tag color={value ? 'error' : 'default'}>{value ? 'true' : 'false'}</Tag>,
         },
-    ], []);
+    ], [pageI18n.resolvedLanguage]);
 
     return (
-        <section aria-label="Paper Shadow drilldown next steps">
-            <Typography.Title level={5}>NextSteps</Typography.Title>
+        <section aria-label={t('pages:paperShadowDrilldownNextSteps')}>
+            <Typography.Title level={5}>{t('pages:nextSteps')}</Typography.Title>
             {items.length === 0 ? (
-                <Empty description="暂无 nextSteps；不能自行补造执行动作。"/>
+                <Empty description={t('pages:noNextstepsExecutionActionsMustNotBeInvented')}/>
             ) : (
                 <Table<PaperShadowConsistencyNextStep>
                     size="small"
@@ -457,6 +467,7 @@ function DrilldownNextStepsTable({items}: { items: PaperShadowConsistencyNextSte
 }
 
 function DrilldownEvidenceAnchorsTable({items}: { items: PaperShadowConsistencyEvidenceAnchor[] }) {
+    const {i18n: pageI18n} = useTranslation('pages');
     const columns = useMemo<ColumnsType<PaperShadowConsistencyEvidenceAnchor>>(() => [
         {
             title: 'sourceType',
@@ -493,13 +504,13 @@ function DrilldownEvidenceAnchorsTable({items}: { items: PaperShadowConsistencyE
             width: 220,
             render: (value: string | null) => <OptionalCode value={value}/>,
         },
-    ], []);
+    ], [pageI18n.resolvedLanguage]);
 
     return (
-        <section aria-label="Paper Shadow drilldown evidence anchors">
-            <Typography.Title level={5}>Evidence anchors</Typography.Title>
+        <section aria-label={t('pages:paperShadowDrilldownEvidenceAnchors')}>
+            <Typography.Title level={5}>{t('pages:evidenceAnchors2')}</Typography.Title>
             {items.length === 0 ? (
-                <Empty description="暂无 evidence anchors；不能补造证据锚点。"/>
+                <Empty description={t('pages:noEvidenceAnchorsAnchorsMustNotBeFabricated')}/>
             ) : (
                 <Table<PaperShadowConsistencyEvidenceAnchor>
                     size="small"
@@ -527,66 +538,67 @@ export function PaperShadowConsistencyDrilldownPanel({
     onRetry: () => void;
     shadowRunId: string;
 }) {
+    useTranslation('pages');
     const usableDrilldown = isUsableDrilldownResponse(drilldown) ? drilldown : undefined;
     const state = usableDrilldown ? resolveDrilldownState(usableDrilldown) : null;
 
     if (isNotFound(error)) {
         return (
-            <Card className="page-section" variant="borderless" title="Paper vs Shadow Consistency Drilldown">
+            <Card className="page-section" variant="borderless" title={t('pages:paperVersusShadowConsistencyDrilldown')}>
                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
                     <DrilldownBoundaryBadges/>
-                    <NqEmptyState description={`drilldown missing / Shadow Run 不存在或 drilldown 不可用：${shadowRunId}`}/>
+                    <NqEmptyState description={t('pages:drilldownMissingShadowRunNotFoundOrDrilldownUnavailableValue1', {value1: shadowRunId})}/>
                 </Space>
             </Card>
         );
     }
     if (error) {
         return (
-            <Card className="page-section" variant="borderless" title="Paper vs Shadow Consistency Drilldown">
+            <Card className="page-section" variant="borderless" title={t('pages:paperVersusShadowConsistencyDrilldown')}>
                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
                     <DrilldownBoundaryBadges/>
-                    <NqErrorState title="Consistency drilldown 加载失败" error={asAppApiError(error)} onRetry={onRetry}/>
+                    <NqErrorState title={t('pages:failedToLoadConsistencyDrilldown')} error={asAppApiError(error)} onRetry={onRetry}/>
                 </Space>
             </Card>
         );
     }
     if (loading) {
         return (
-            <Card className="page-section" variant="borderless" title="Paper vs Shadow Consistency Drilldown">
+            <Card className="page-section" variant="borderless" title={t('pages:paperVersusShadowConsistencyDrilldown')}>
                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
                     <DrilldownBoundaryBadges/>
-                    <NqLoadingState message="Consistency drilldown loading"/>
+                    <NqLoadingState message={t('pages:loadingConsistencyDrilldown')}/>
                 </Space>
             </Card>
         );
     }
     if (!usableDrilldown || !state) {
         return (
-            <Card className="page-section" variant="borderless" title="Paper vs Shadow Consistency Drilldown">
+            <Card className="page-section" variant="borderless" title={t('pages:paperVersusShadowConsistencyDrilldown')}>
                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
                     <DrilldownBoundaryBadges/>
-                    <NqEmptyState description="暂无可用 drilldown response；不能解释为 report 已生成或 comparison 已通过。"/>
+                    <NqEmptyState description={t('pages:noDrilldownResponseThisDoesNotMeanAReportWasGeneratedOrTheComparisonPassed')}/>
                 </Space>
             </Card>
         );
     }
 
     return (
-        <Card className="page-section" variant="borderless" title="Paper vs Shadow Consistency Drilldown">
-            <section aria-label="Paper Shadow consistency drilldown panel">
+        <Card className="page-section" variant="borderless" title={t('pages:paperVersusShadowConsistencyDrilldown')}>
+            <section aria-label={t('pages:paperShadowConsistencyDrilldownPanel')}>
                 <Space direction="vertical" size={14} style={{display: 'flex'}}>
                     <DrilldownBoundaryBadges drilldown={usableDrilldown}/>
                     <Alert
                         type={state.alertType}
                         showIcon
                         message={state.label}
-                        description={`${state.description} notTradingAuthorization=${String(usableDrilldown.notTradingAuthorization)}，本区块不是 trading authorization，也不是实盘就绪依据。`}
+                        description={t('pages:value1NottradingauthorizationValue2ThisSectionGrantsNoTradingAuthorizationAndEstablishesNoRealTradin', {value1: state.description, value2: String(usableDrilldown.notTradingAuthorization)})}
                     />
                     <Alert
                         type="info"
                         showIcon
-                        message="颜色与状态说明"
-                        description="success / warning / danger 只用于诊断证据层级；不表示盈利、亏损、上涨、下跌、可交易或交易放行。comparisonStatus 只表达证据状态。"
+                        message={t('pages:colorAndStatusMeanings')}
+                        description={t('pages:successWarningAndDangerDescribeDiagnosticEvidenceLevelsOnlyNotReturnsMarketDirectionOrTradingAuthori')}
                     />
                     <Descriptions size="small" bordered column={1}>
                         <Descriptions.Item label="comparisonStatus">
@@ -619,7 +631,7 @@ export function PaperShadowConsistencyDrilldownPanel({
 
                     <Row gutter={[12, 12]}>
                         <Col xs={24} lg={8}>
-                            <Descriptions size="small" bordered column={1} title="Snapshot summary">
+                            <Descriptions size="small" bordered column={1} title={t('pages:snapshotSummary')}>
                                 <Descriptions.Item label="totalSnapshots">
                                     {usableDrilldown.snapshotSummary.totalSnapshots}
                                 </Descriptions.Item>
@@ -646,7 +658,7 @@ export function PaperShadowConsistencyDrilldownPanel({
                             </Descriptions>
                         </Col>
                         <Col xs={24} lg={8}>
-                            <Descriptions size="small" bordered column={1} title="Event summary">
+                            <Descriptions size="small" bordered column={1} title={t('pages:eventSummary')}>
                                 <Descriptions.Item label="totalEvents">
                                     {usableDrilldown.eventSummary.totalEvents}
                                 </Descriptions.Item>
@@ -662,7 +674,7 @@ export function PaperShadowConsistencyDrilldownPanel({
                             </Descriptions>
                         </Col>
                         <Col xs={24} lg={8}>
-                            <Descriptions size="small" bordered column={1} title="Latest report">
+                            <Descriptions size="small" bordered column={1} title={t('pages:latestReport')}>
                                 <Descriptions.Item label="reportId">
                                     <OptionalCode value={usableDrilldown.latestConsistency?.reportId}/>
                                 </Descriptions.Item>
@@ -678,35 +690,35 @@ export function PaperShadowConsistencyDrilldownPanel({
 
                     <Row gutter={[12, 12]}>
                         <Col xs={24} lg={8}>
-                            <section aria-label="Paper Shadow drilldown metricDelta">
+                            <section aria-label={t('pages:paperShadowDrilldownMetricdelta')}>
                                 <Typography.Title level={5}>metricDelta</Typography.Title>
-                                <SafeJsonBlock value={usableDrilldown.metricDelta} emptyText="metricDelta 为空。"/>
+                                <SafeJsonBlock value={usableDrilldown.metricDelta} emptyText={t('pages:metricdeltaIsEmpty')}/>
                             </section>
                         </Col>
                         <Col xs={24} lg={8}>
-                            <section aria-label="Paper Shadow drilldown divergence reasons">
+                            <section aria-label={t('pages:paperShadowDrilldownDivergenceReasons')}>
                                 <Typography.Title level={5}>divergenceReasons</Typography.Title>
                                 <SafeJsonBlock value={usableDrilldown.divergenceReasons}
-                                               emptyText="divergenceReasons 为空。"/>
+                                               emptyText={t('pages:divergencereasonsIsEmpty')}/>
                             </section>
                         </Col>
                         <Col xs={24} lg={8}>
-                            <section aria-label="Paper Shadow drilldown limitations">
+                            <section aria-label={t('pages:paperShadowDrilldownLimitations')}>
                                 <Typography.Title level={5}>limitations</Typography.Title>
-                                <SafeJsonBlock value={usableDrilldown.limitations} emptyText="limitations 为空。"/>
+                                <SafeJsonBlock value={usableDrilldown.limitations} emptyText={t('pages:limitationsIsEmpty')}/>
                             </section>
                         </Col>
                     </Row>
 
                     <DrilldownMessageTable
-                        title="Blockers"
+                        title={t('pages:blockers2')}
                         items={usableDrilldown.blockers}
-                        emptyText="暂无 blockers；仍不代表交易放行。"
+                        emptyText={t('pages:noBlockersThisStillDoesNotAuthorizeTrading')}
                     />
                     <DrilldownMessageTable
-                        title="Warnings"
+                        title={t('pages:warnings3')}
                         items={usableDrilldown.warnings}
-                        emptyText="暂无 warnings。"
+                        emptyText={t('pages:noWarnings')}
                     />
                     <DrilldownNextStepsTable items={usableDrilldown.nextSteps}/>
                     <DrilldownEvidenceAnchorsTable items={usableDrilldown.evidenceAnchors}/>
@@ -717,8 +729,9 @@ export function PaperShadowConsistencyDrilldownPanel({
 }
 
 function ShadowRunDetailPanel({detail}: { detail: ShadowRunDetailResponse }) {
+    useTranslation('pages');
     return (
-        <Card className="page-section" variant="borderless" title="Shadow Run 基本信息">
+        <Card className="page-section" variant="borderless" title={t('pages:shadowRunInformation')}>
             <Space direction="vertical" size={14} style={{display: 'flex'}}>
                 <Descriptions size="small" bordered column={1}>
                     <Descriptions.Item label="shadowRunId"><OptionalCode
@@ -751,21 +764,21 @@ function ShadowRunDetailPanel({detail}: { detail: ShadowRunDetailResponse }) {
 
                 <Row gutter={[12, 12]}>
                     <Col xs={24} lg={8}>
-                        <section aria-label="Shadow Run blockers">
-                            <Typography.Title level={5}>Blockers</Typography.Title>
-                            <SafeJsonBlock value={detail.blockers} emptyText="暂无 blockers；不能解释为交易放行。"/>
+                        <section aria-label={t('pages:shadowRunBlockers')}>
+                            <Typography.Title level={5}>{t('pages:blockers2')}</Typography.Title>
+                            <SafeJsonBlock value={detail.blockers} emptyText={t('pages:noBlockersThisDoesNotAuthorizeTrading')}/>
                         </section>
                     </Col>
                     <Col xs={24} lg={8}>
-                        <section aria-label="Shadow Run warnings">
-                            <Typography.Title level={5}>Warnings</Typography.Title>
-                            <SafeJsonBlock value={detail.warnings} emptyText="暂无 warnings。"/>
+                        <section aria-label={t('pages:shadowRunWarnings')}>
+                            <Typography.Title level={5}>{t('pages:warnings3')}</Typography.Title>
+                            <SafeJsonBlock value={detail.warnings} emptyText={t('pages:noWarnings')}/>
                         </section>
                     </Col>
                     <Col xs={24} lg={8}>
-                        <section aria-label="Shadow Run next steps">
-                            <Typography.Title level={5}>NextSteps</Typography.Title>
-                            <SafeJsonBlock value={detail.nextSteps} emptyText="暂无 nextSteps。"/>
+                        <section aria-label={t('pages:shadowRunNextSteps')}>
+                            <Typography.Title level={5}>{t('pages:nextSteps')}</Typography.Title>
+                            <SafeJsonBlock value={detail.nextSteps} emptyText={t('pages:noNextsteps')}/>
                         </section>
                     </Col>
                 </Row>
@@ -785,28 +798,29 @@ export function ShadowRunEventTimeline({
     error: unknown;
     onRetry: () => void;
 }) {
+    useTranslation('pages');
     const orderedEvents = useMemo(() => sortedEvents(events), [events]);
 
     if (loading) {
         return (
-            <Card className="page-section" variant="borderless" title="Events 时间线">
-                <NqLoadingState message="Events timeline loading"/>
+            <Card className="page-section" variant="borderless" title={t('pages:eventTimeline')}>
+                <NqLoadingState message={t('pages:loadingEventTimeline')}/>
             </Card>
         );
     }
     if (error) {
         return (
-            <Card className="page-section" variant="borderless" title="Events 时间线">
-                <NqErrorState title="Events timeline 加载失败" error={asAppApiError(error)} onRetry={onRetry}/>
+            <Card className="page-section" variant="borderless" title={t('pages:eventTimeline')}>
+                <NqErrorState title={t('pages:failedToLoadEventTimeline')} error={asAppApiError(error)} onRetry={onRetry}/>
             </Card>
         );
     }
 
     return (
-        <Card className="page-section" variant="borderless" title="Events 时间线">
-            <section aria-label="Shadow Run events timeline">
+        <Card className="page-section" variant="borderless" title={t('pages:eventTimeline')}>
+            <section aria-label={t('pages:shadowRunEventTimeline')}>
                 {orderedEvents.length === 0 ? (
-                    <Empty description="暂无 events；不能补造生命周期事件。"/>
+                    <Empty description={t('pages:noEventsLifecycleEventsMustNotBeFabricated')}/>
                 ) : (
                     <Timeline
                         items={orderedEvents.map((event) => ({
@@ -819,13 +833,13 @@ export function ShadowRunEventTimeline({
                                         <Text code>{event.reasonCode ?? '-'}</Text>
                                     </Space>
                                     <Paragraph style={{marginBottom: 0}}>
-                                        {event.message ?? '无事件说明。'}
+                                        {event.message ?? t('pages:noEventDescription')}
                                     </Paragraph>
                                     <Text type="secondary">
                                         {event.fromStatus ?? '-'} -&gt; {event.toStatus ?? '-'} ·
                                         traceId {event.traceId ?? '-'}
                                     </Text>
-                                    <SafeJsonBlock value={event.metadata} emptyText="metadata 为空。"/>
+                                    <SafeJsonBlock value={event.metadata} emptyText={t('pages:metadataIsEmpty')}/>
                                 </Space>
                             ),
                         }))}
@@ -847,6 +861,7 @@ export function ShadowRunSnapshotPanel({
     error: unknown;
     onRetry: () => void;
 }) {
+    const {i18n: pageI18n} = useTranslation('pages');
     const orderedSnapshots = useMemo(() => sortedSnapshots(snapshots), [snapshots]);
     const [selectedSnapshotKey, setSelectedSnapshotKey] = useState<string | null>(null);
     const selectedSnapshot = orderedSnapshots.find((snapshot) => snapshotKey(snapshot) === selectedSnapshotKey)
@@ -899,35 +914,35 @@ export function ShadowRunSnapshotPanel({
             width: 190,
             render: (value: string) => formatDateTime(value),
         },
-    ], []);
+    ], [pageI18n.resolvedLanguage]);
 
     if (loading) {
         return (
-            <Card className="page-section" variant="borderless" title="Snapshots 列表与详情">
-                <NqLoadingState message="Snapshots loading"/>
+            <Card className="page-section" variant="borderless" title={t('pages:snapshotListAndDetails')}>
+                <NqLoadingState message={t('pages:loadingSnapshots')}/>
             </Card>
         );
     }
     if (error) {
         return (
-            <Card className="page-section" variant="borderless" title="Snapshots 列表与详情">
-                <NqErrorState title="Snapshots 加载失败" error={asAppApiError(error)} onRetry={onRetry}/>
+            <Card className="page-section" variant="borderless" title={t('pages:snapshotListAndDetails')}>
+                <NqErrorState title={t('pages:failedToLoadSnapshots')} error={asAppApiError(error)} onRetry={onRetry}/>
             </Card>
         );
     }
 
     return (
-        <Card className="page-section" variant="borderless" title="Snapshots 列表与详情">
-            <section aria-label="Shadow Run snapshots panel">
+        <Card className="page-section" variant="borderless" title={t('pages:snapshotListAndDetails')}>
+            <section aria-label={t('pages:shadowRunSnapshotPanel')}>
                 {orderedSnapshots.length === 0 ? (
-                    <Empty description="暂无 snapshots；不能补造 replay evidence。"/>
+                    <Empty description={t('pages:noSnapshotsReplayEvidenceMustNotBeFabricated')}/>
                 ) : (
                     <Space direction="vertical" size={12} style={{display: 'flex'}}>
                         <Alert
                             type="info"
                             showIcon
-                            message="Snapshots 按 snapshotType + sequenceNo 排序"
-                            description="payload 只做安全渲染；敏感 key/value 会被前端兜底过滤。"
+                            message={t('pages:snapshotsAreOrderedBySnapshottypeAndSequenceno')}
+                            description={t('pages:payloadsAreRenderedSafelySensitiveKeysAndValuesAreFilteredByTheFrontend')}
                         />
                         <Table<ShadowRunSnapshotResponse>
                             size="small"
@@ -952,7 +967,7 @@ export function ShadowRunSnapshotPanel({
                                 <Descriptions.Item label="traceId"><OptionalCode
                                     value={selectedSnapshot.traceId}/></Descriptions.Item>
                                 <Descriptions.Item label="payload">
-                                    <SafeJsonBlock value={selectedSnapshot.payload} emptyText="payload 为空。"/>
+                                    <SafeJsonBlock value={selectedSnapshot.payload} emptyText={t('pages:payloadIsEmpty')}/>
                                 </Descriptions.Item>
                             </Descriptions>
                         ) : null}
@@ -974,42 +989,43 @@ export function ShadowConsistencyReportPanel({
     error: unknown;
     onRetry: () => void;
 }) {
+    useTranslation('pages');
     if (loading) {
         return (
-            <Card className="page-section" variant="borderless" title="Latest consistency report">
-                <NqLoadingState message="Consistency report loading"/>
+            <Card className="page-section" variant="borderless" title={t('pages:latestConsistencyReport')}>
+                <NqLoadingState message={t('pages:loadingConsistencyReport')}/>
             </Card>
         );
     }
     if (error) {
         return (
-            <Card className="page-section" variant="borderless" title="Latest consistency report">
+            <Card className="page-section" variant="borderless" title={t('pages:latestConsistencyReport')}>
                 {isNotFound(error) ? (
                     <NqEmptyState
-                        description="latest consistency report not found / 尚未生成 latest consistency report。"/>
+                        description={t('pages:theLatestConsistencyReportHasNotBeenGenerated')}/>
                 ) : (
-                    <NqErrorState title="Consistency report 加载失败" error={asAppApiError(error)} onRetry={onRetry}/>
+                    <NqErrorState title={t('pages:failedToLoadTheConsistencyReport')} error={asAppApiError(error)} onRetry={onRetry}/>
                 )}
             </Card>
         );
     }
     if (!report) {
         return (
-            <Card className="page-section" variant="borderless" title="Latest consistency report">
-                <NqEmptyState description="暂无 latest consistency report；不能解释为 comparison 已通过。"/>
+            <Card className="page-section" variant="borderless" title={t('pages:latestConsistencyReport')}>
+                <NqEmptyState description={t('pages:noLatestConsistencyReportThisDoesNotMeanTheComparisonPassed')}/>
             </Card>
         );
     }
 
     return (
-        <Card className="page-section" variant="borderless" title="Latest consistency report">
-            <section aria-label="Shadow consistency report panel">
+        <Card className="page-section" variant="borderless" title={t('pages:latestConsistencyReport')}>
+            <section aria-label={t('pages:shadowConsistencyReportPanel')}>
                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
                     <Alert
                         type="warning"
                         showIcon
-                        message="comparisonStatus 仅为诊断结果"
-                        description="Consistency report 不是 approval，不代表 trading authorization，不代表实盘就绪。"
+                        message={t('pages:comparisonstatusIsADiagnosticResultOnly')}
+                        description={t('pages:aConsistencyReportIsNotApprovalTradingAuthorizationOrLiveReadiness')}
                     />
                     <Descriptions size="small" bordered column={1}>
                         <Descriptions.Item label="reportId"><OptionalCode value={report.id}/></Descriptions.Item>
@@ -1023,13 +1039,13 @@ export function ShadowConsistencyReportPanel({
                         <Descriptions.Item label="generatedAt">{formatDateTime(report.generatedAt)}</Descriptions.Item>
                         <Descriptions.Item label="traceId"><OptionalCode value={report.traceId}/></Descriptions.Item>
                         <Descriptions.Item label="metricDelta">
-                            <SafeJsonBlock value={report.metricDelta} emptyText="metricDelta 为空。"/>
+                            <SafeJsonBlock value={report.metricDelta} emptyText={t('pages:metricdeltaIsEmpty')}/>
                         </Descriptions.Item>
                         <Descriptions.Item label="divergenceReasons">
-                            <SafeJsonBlock value={report.divergenceReasons} emptyText="divergenceReasons 为空。"/>
+                            <SafeJsonBlock value={report.divergenceReasons} emptyText={t('pages:divergencereasonsIsEmpty')}/>
                         </Descriptions.Item>
                         <Descriptions.Item label="limitations">
-                            <SafeJsonBlock value={report.limitations} emptyText="limitations 为空。"/>
+                            <SafeJsonBlock value={report.limitations} emptyText={t('pages:limitationsIsEmpty')}/>
                         </Descriptions.Item>
                     </Descriptions>
                 </Space>
@@ -1039,6 +1055,7 @@ export function ShadowConsistencyReportPanel({
 }
 
 export function ShadowRunDetailPage() {
+    useTranslation('pages');
     const navigate = useNavigate();
     const {shadowRunId} = useParams<{ shadowRunId: string }>();
     const normalizedShadowRunId = shadowRunId?.trim() || null;
@@ -1066,24 +1083,22 @@ export function ShadowRunDetailPage() {
     };
 
     if (!normalizedShadowRunId) {
-        return <Alert type="error" showIcon message="缺少 shadowRunId 路由参数。"/>;
+        return <Alert type="error" showIcon message={t('pages:theShadowrunidRouteParameterIsMissing')}/>;
     }
 
     return (
         <Space data-testid="shadow-run-detail-page" direction="vertical" size={16} style={{display: 'flex'}}>
             <Card className="page-card" variant="borderless">
                 <NqPageHeader
-                    title="Shadow Run detail / replay"
-                    description="只读查看 Shadow Run 基本信息、Paper vs Shadow consistency drilldown、events 时间线、snapshots 和 latest consistency report。"
-                    badge="影子运行详情 · 只读诊断"
+                    title={t('pages:shadowRunDetailsReplay')}
+                    description={t('pages:readOnlyShadowRunInformationPaperVersusShadowConsistencyDrilldownEventTimelineSnapshotsAndLatestCons')}
+                    badge={t('pages:shadowRunDetailsReadOnlyDiagnostics')}
                     extra={(
                         <Space size={8} wrap>
                             <Button icon={<ArrowLeftOutlined/>} onClick={() => navigate('/strategies/shadow-runs')}>
-                                返回 Shadow Run 列表
-                            </Button>
+                                {t('pages:backToShadowRuns')}</Button>
                             <Button icon={<ReloadOutlined/>} onClick={refreshAll} loading={fetching}>
-                                刷新只读数据
-                            </Button>
+                                {t('pages:refreshReadOnlyData')}</Button>
                         </Space>
                     )}
                 />
@@ -1093,16 +1108,16 @@ export function ShadowRunDetailPage() {
 
             {detailQuery.isLoading ? (
                 <Card className="page-section" variant="borderless">
-                    <NqLoadingState message="Shadow Run detail loading"/>
+                    <NqLoadingState message={t('pages:loadingShadowRunDetails')}/>
                 </Card>
             ) : detailQuery.isError ? (
                 <Card className="page-section" variant="borderless">
                     {isNotFound(detailQuery.error) ? (
                         <NqEmptyState
-                            description={`Shadow Run not found / Shadow Run 不存在：${normalizedShadowRunId}`}/>
+                            description={t('pages:shadowRunNotFoundValue1', {value1: normalizedShadowRunId})}/>
                     ) : (
                         <NqErrorState
-                            title="Shadow Run detail 加载失败"
+                            title={t('pages:failedToLoadShadowRunDetails')}
                             error={asAppApiError(detailQuery.error)}
                             onRetry={() => detailQuery.refetch()}
                         />
@@ -1112,7 +1127,7 @@ export function ShadowRunDetailPage() {
                 <ShadowRunDetailPanel detail={detailQuery.data}/>
             ) : (
                 <Card className="page-section" variant="borderless">
-                    <NqEmptyState description="暂无 Shadow Run detail。"/>
+                    <NqEmptyState description={t('pages:noShadowRunDetails')}/>
                 </Card>
             )}
 

@@ -17,7 +17,7 @@ test.describe('design system chart foundation smoke (B0.4)', () => {
         await expect(kline.locator('canvas').first()).toBeVisible({timeout: 15_000});
         await expect(volume.locator('canvas').first()).toBeVisible({timeout: 15_000});
         await expect(kline).toContainText('Mock Kline Source');
-        await expect(kline).toContainText('Stale');
+        await expect(kline).toContainText('已过期');
 
         await expect(section.getByText('暂无 chart foundation 样本数据')).toBeVisible();
         await expect(section.getByText('K 线加载中')).toBeVisible();

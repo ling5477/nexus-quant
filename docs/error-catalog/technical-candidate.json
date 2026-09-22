@@ -1,0 +1,482 @@
+[
+  {
+    "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/api/web/ApiErrorIdentity.java",
+    "sha256": "6834BA0B34D718A851F1B9A459CC7EC1E994652859F9F7BCAD95A77A4DF7B757",
+    "gitBlob": "6ad18da5e2b7432cbe04e138b94a96216ed445c2"
+  },
+  {
+    "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/api/web/ApiErrorResponse.java",
+    "sha256": "B7137DC15E6106030559E97605D85820BCE762E45BEBEABDAECA93B559EE1AA1",
+    "gitBlob": "02f9607fd5beffb21113dd8f0b5d4d2687f5c91c"
+  },
+  {
+    "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/api/web/ApiExceptionHandler.java",
+    "sha256": "D10AA4E5E733CECBE08FB63D6ADEF546AB4F5A4327232B921272E3B87C901FFA",
+    "gitBlob": "cc3c87965e78f221cf2ce08b879cd3cf405f3969"
+  },
+  {
+    "path": "backend/nq-api/src/test/java/com/guidinglight/nexusquant/api/web/ApiErrorIdentityContractTest.java",
+    "sha256": "E8BDB7BE298E8CEEB4E69894CCFB9E41BE3B03DA9ABFA02998A7F050FDAB0AC7",
+    "gitBlob": "b618d1437d02688cc9435faab9337bab0e569765"
+  },
+  {
+    "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java",
+    "sha256": "0C6CCB44797A7A36DF38FD233FD5B811CB38110B7E3615D8370F371D775A0372",
+    "gitBlob": "feb0585dc57e14872f141ba89c2f3d524b7d414d"
+  },
+  {
+    "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderVersionConflictException.java",
+    "sha256": "13F30B03C7A25224E98505A558AB60312915878A2ED8B6BD2297D79DD7303D2A",
+    "gitBlob": "aaee185247c430ad31c494ef70640f66b9e6c8c5"
+  },
+  {
+    "path": "frontend/package-lock.json",
+    "sha256": "18920B9BF8228EFA8F831DC8AAD36413ED82C513E9506A3D79AE5E3A2F798439",
+    "gitBlob": "428af33f1d5cd7f2357a22fbf01da127c08650d1"
+  },
+  {
+    "path": "frontend/package.json",
+    "sha256": "62A45ECD9664C7EDB6D551A81460F3DE2C7111567F4BF3F5A014CEF42817BB60",
+    "gitBlob": "9c46ec2a146ee4bb78ec4418c46e866f3e8c2373"
+  },
+  {
+    "path": "frontend/src/api/client.ts",
+    "sha256": "D3B2BE33B32D1637CF14809FB9C9C02259975D97D0CF19DAC1E8E6FFD4884EEC",
+    "gitBlob": "cc8e21040ddce442fa51fd5f8bdc7ec76f096d23"
+  },
+  {
+    "path": "frontend/src/api/errors.ts",
+    "sha256": "818031157654E14B8171DE816E431122EC356F8D107B2E78C19F2C664E9D2110",
+    "gitBlob": "4c07e0c3f3fe59b3e49313795a340abad477b22a"
+  },
+  {
+    "path": "frontend/src/app/providers/AppProviders.tsx",
+    "sha256": "6BDEF231B5EFF9D31B9C7772D537FAD9F0A997CDB55C00D44E0D08ED8F38A043",
+    "gitBlob": "216a7602268b350e405fd9e6bce0d6aa35540299"
+  },
+  {
+    "path": "frontend/src/components/backtest/BacktestCurveChart.tsx",
+    "sha256": "D0E3D0C87CC08CA9BC35C55A87487A7FD1EB31C4CAE8131E874E8D66745398D4",
+    "gitBlob": "59903bd0dfbf426a5d7d547b5c97b4f6eced5b6b"
+  },
+  {
+    "path": "frontend/src/components/layout/AppHeader.tsx",
+    "sha256": "A94BB9AA777D27BAD0472C7EBABB2F97D33CF69CEB79AACE5B4856ED5B8A0B7D",
+    "gitBlob": "33373d38c9e5caa42114d7eb9d75a64f2ce901ad"
+  },
+  {
+    "path": "frontend/src/components/layout/AppSiderMenu.tsx",
+    "sha256": "99150ED23BFFC800846BB71AA03A6B8CD588176C709DED5052F41DAE361590DD",
+    "gitBlob": "d1aa9c6416ac7ccca37d7d2cb1439679d369f328"
+  },
+  {
+    "path": "frontend/src/components/nq/charts/NqDrawdownChart.tsx",
+    "sha256": "3E9A3FB3C3A1793AF7B3322227873C5066D2863396E5128BBD8EEADA0F67A381",
+    "gitBlob": "d723e327ad5fe5316ba5bfc81222975271f85729"
+  },
+  {
+    "path": "frontend/src/components/nq/charts/NqEquityCurveChart.tsx",
+    "sha256": "62D417F063E8656321251EC2104F5E3CE47A0E175A496CDB448B7E6869A1BCCA",
+    "gitBlob": "8d476d9671ded3f72715f3540518266d185e7b53"
+  },
+  {
+    "path": "frontend/src/components/nq/charts/NqPortfolioCurveChart.tsx",
+    "sha256": "036701AABAF0394095F6759846450DB99FE1B2752E9D7A30A7A1168FFC698430",
+    "gitBlob": "85e232662165b6528fe2fecd90ea7f2f19306025"
+  },
+  {
+    "path": "frontend/src/components/nq/NqDangerConfirmButton.tsx",
+    "sha256": "165C9ED39796F19FF3BC40A974A4AD53D9D17BBF638395C2ACC053CB227851D4",
+    "gitBlob": "c46d94679c9e90a2f4d5eaff373285a6d2d23b4c"
+  },
+  {
+    "path": "frontend/src/components/nq/NqFilterBar.tsx",
+    "sha256": "2DA422D6C727057D31B160B4CAD2E00B5B3E597F2D1C12421CE6BC63C85C8D49",
+    "gitBlob": "f218d83bee6f08bc16729c482ed57a09f4969b3f"
+  },
+  {
+    "path": "frontend/src/components/nq/NqStates.tsx",
+    "sha256": "0F05A0A82424886FEFAC0DE7C43248C54D43F50998990171D09BAE0AF51BE033",
+    "gitBlob": "2eeffc1bfff31f46d8e707fed5d3be27d8a869c8"
+  },
+  {
+    "path": "frontend/src/components/nq/RuntimeGuardBanner.tsx",
+    "sha256": "A4B870378D33CD96589F01A19627DC8933D9409324C072F13E325341F141B0F4",
+    "gitBlob": "fbcb2efc664427461e885ec9360189ae5939aee3"
+  },
+  {
+    "path": "frontend/src/components/paper/NqAlertPanel.tsx",
+    "sha256": "5D735C671BD5CF107463AA985F8C038E5525CBE67A4101F4447A6292C1A69E34",
+    "gitBlob": "0a24612c9f6d4a95faa867954b3af7cb62362ea4"
+  },
+  {
+    "path": "frontend/src/components/paper/NqHeartbeatPanel.tsx",
+    "sha256": "426A54D6D36DEF770CB9782128376203CD2E21535E2FF5331EEE82632D894A26",
+    "gitBlob": "e32e09899e4fceb54cdaafa7d2b43a77417c7f78"
+  },
+  {
+    "path": "frontend/src/components/paper/NqRecoveryPanel.tsx",
+    "sha256": "6A751556A72F8F5348E99C30546F3C0F026DDC84911A394B7FDBA59F6A12966D",
+    "gitBlob": "366a59ee96f970587e2a95c098959e278d18829b"
+  },
+  {
+    "path": "frontend/src/components/paper/NqScheduleFirePanel.tsx",
+    "sha256": "191D80095E060CD64308192CD34EDF18591C1062BED01CB409880548542B1D16",
+    "gitBlob": "d65395e7ffcf9f19a65bda14675710375d0de2c5"
+  },
+  {
+    "path": "frontend/src/components/paper/NqStabilityCheckPanel.tsx",
+    "sha256": "319874747364B62C745C7DB7EBA288646AD568F154F9C57D8B4C3C9EBAE9314C",
+    "gitBlob": "56b05540dc7d6b3a12dde93c78af8877aa86cc28"
+  },
+  {
+    "path": "frontend/src/components/validation-review/ValidationReviewCaseDrawer.tsx",
+    "sha256": "508D6A8B4252B8D5FD7482487E9383331386B0429C386EBE008927229006F756",
+    "gitBlob": "8423c8886270ff87fccef35c59660dc59112b2cc"
+  },
+  {
+    "path": "frontend/src/components/validation-review/ValidationReviewQueue.tsx",
+    "sha256": "53775A523F3DA8C733C2ABF705536A15056D305BF943A6B774530F8DF4B80045",
+    "gitBlob": "fbb1f1b1b70abf5e045bacb01b8b241d1abd33cb"
+  },
+  {
+    "path": "frontend/src/components/validation-review/ValidationReviewWorkbench.tsx",
+    "sha256": "418690FFFB17B25BC91F6AF031186FA87FF82E121127C80DDE50B67F9FA19AEE",
+    "gitBlob": "f0f75afa1d964494a7db074493a8d51aa9cb463f"
+  },
+  {
+    "path": "frontend/src/constants/filter-options.ts",
+    "sha256": "664D387DD4EB4DA0FD1D447E8949AC15170A8C5FE7627E270968118FA34C077F",
+    "gitBlob": "daef12d1a7add23490becb495d9399114216cd89"
+  },
+  {
+    "path": "frontend/src/errors/ApiErrorNotice.tsx",
+    "sha256": "F1ED050AE85B25223C9F1154019AAD1C580CB768E23993EDC673F662945A7E20",
+    "gitBlob": "0e4b6c14806e13e1a6894f3b7b7f95220ea30796"
+  },
+  {
+    "path": "frontend/src/errors/auth-error.ts",
+    "sha256": "52C74EA3A928026CC034AF04F74FA7B8513B55360287B22B1586CC0F71A958F3",
+    "gitBlob": "95260fc2530094f8d8b52e6988c1fe44c1be8f34"
+  },
+  {
+    "path": "frontend/src/errors/catalog.ts",
+    "sha256": "12E8FAD068CAA653539DE0B6478BA5B7CD09503F81F1D634F78D7C706F2B5865",
+    "gitBlob": "ba0e7f408296e6728b2b96766b3c9d010084ade3"
+  },
+  {
+    "path": "frontend/src/errors/retry-policy.ts",
+    "sha256": "6A9A46C89A0233092CFDA66F22050DA25CED4AB5FC4EFFCE90699C8469DA9094",
+    "gitBlob": "8b98370c0cdc77c86aa8f77ff1cc4f4eca84c557"
+  },
+  {
+    "path": "frontend/src/features/validation/review/ValidationReviewSection.tsx",
+    "sha256": "D9AED69BDF49E92CB73342507BE1505D36F55EB35D2578C6E96CA531600FB60B",
+    "gitBlob": "726a669f50d90a3b9e28c70be84edbab090ca68f"
+  },
+  {
+    "path": "frontend/src/features/validation/StrategyReleaseAdmissionPreviewPanel.tsx",
+    "sha256": "FE923F3369C933F7A781D351F38FB0713925EDA14DD39BA7036497A71E498B90",
+    "gitBlob": "6c06a045bd0d502cf37d0e75aa20ec75dc0a15ea"
+  },
+  {
+    "path": "frontend/src/features/validation/StrategyValidationWorkspace.tsx",
+    "sha256": "991A26471363ADCA0E0FBA7DF7E8B9B38DC1FDCCF52FBF5BAC5401EB6C26F69A",
+    "gitBlob": "568335c88c85b40141fc6b5b7af5033bcbceeac9"
+  },
+  {
+    "path": "frontend/src/hooks/useLiveQuery.ts",
+    "sha256": "98B49646AFA97C249AE6177D1C2CC1EB71715D46451F8A573BE981FB9038036A",
+    "gitBlob": "b6c4ef93fbf32e4941c0b8a83d3dea3262e4f455"
+  },
+  {
+    "path": "frontend/src/i18n/index.ts",
+    "sha256": "9367B6514C707ECA490BE5F8194B2E090601FA5D0F44AD4E8758E8327BD0B833",
+    "gitBlob": "36ab61bd58e543f70b2c4d27bc9c7741d7e9030f"
+  },
+  {
+    "path": "frontend/src/i18n/LanguageSelect.tsx",
+    "sha256": "B5AE4F9D95B6DB3B74A5D7B9DD4D6F8F57ABAC979E65AA07BA98F21671C370B0",
+    "gitBlob": "492470107c5f4d6e4083276b493e63aaaf903b83"
+  },
+  {
+    "path": "frontend/src/i18n/locales/en-US/common.json",
+    "sha256": "658A062F355B0586F47091C6885DF644DEDF9593C407CBD0C27A298870DBA7CE",
+    "gitBlob": "ecacb82b0898c2dcae02613f1a0d490ae613ea9f"
+  },
+  {
+    "path": "frontend/src/i18n/locales/en-US/errors.json",
+    "sha256": "6D67B0976A9D8E46864FD3F28E08C94472031018E6422D42BA6CD1849615A40A",
+    "gitBlob": "97b426b681b3e525a515a46185d6e1fcf4f88a68"
+  },
+  {
+    "path": "frontend/src/i18n/locales/en-US/pages.json",
+    "sha256": "4EF369B0E27A7BFB9F1CAE2BCE2E3D1E40BE45DEAF4B78BF5EB6184390365996",
+    "gitBlob": "61df2aa958852422547cbe2d7f4ad348c59b7220"
+  },
+  {
+    "path": "frontend/src/i18n/locales/zh-CN/common.json",
+    "sha256": "0F280997B7E5590891EFA75010CDFCE5722A7307E0F470A3DC9ABDBC222D7448",
+    "gitBlob": "d1ad525234c507f65febc3610bf43db40a93112a"
+  },
+  {
+    "path": "frontend/src/i18n/locales/zh-CN/errors.json",
+    "sha256": "F0B42318A0DFEA3287DBA5B69200538F129670C2BE067D5AFBA1EFB9A0CD237B",
+    "gitBlob": "15d69ed672d36cbb72afc3cf76ff2d73d276daa4"
+  },
+  {
+    "path": "frontend/src/i18n/locales/zh-CN/pages.json",
+    "sha256": "194259F8D2AF78A9B712DD614ED1D3419A760988CA3EA3388619F161EFDB8F94",
+    "gitBlob": "6a4468fffbd56d131ab024d995ac45c1ae8fb3ef"
+  },
+  {
+    "path": "frontend/src/i18n/useLocalizedForm.ts",
+    "sha256": "78FB7D283CEB9CBBF10AD848448D2B8C535B2183EB6C86339491AB21C04DAF93",
+    "gitBlob": "c3a6b64a49168199d49b3c6d4fd1eff1e61acfdc"
+  },
+  {
+    "path": "frontend/src/layouts/ConsoleLayout.tsx",
+    "sha256": "1764822FD2AE2DF68420278948A2AC88E8A263854ECC7D4FEE31DD245EEFBF80",
+    "gitBlob": "34076b26361e7a49bd0268c7ccaf0a96471c45ee"
+  },
+  {
+    "path": "frontend/src/nq-design-system/charts/chartData.ts",
+    "sha256": "687618075B16F3487EEB3AD72FE9B223D0E03B06FBBA62E57BB7FFEE6FD70099",
+    "gitBlob": "bd1826e8f90b54eaff3e051cf69baba71da137eb"
+  },
+  {
+    "path": "frontend/src/nq-design-system/charts/NqKlineChart.tsx",
+    "sha256": "7968B1201443C409122EC862170BA73FC9EA84997950AEF6EFC6AEF1A0534BDB",
+    "gitBlob": "57ec518b53c5e02d07923f807e077f34f76d23b3"
+  },
+  {
+    "path": "frontend/src/nq-design-system/charts/NqVolumeChart.tsx",
+    "sha256": "14F16FAE96306109866B0CD526C224D59ADE2D251E7AF20EBF6752AE66F377E9",
+    "gitBlob": "47f11f65ec422732f059f8aad3068847224686a3"
+  },
+  {
+    "path": "frontend/src/nq-design-system/status/DataFreshness.tsx",
+    "sha256": "06859DF585C13BE2912AEA1DF31BB5884A8102E3026D12BE788A2CC50E91219E",
+    "gitBlob": "052ba1208f13d8e1cd402387a5bb4aa235057dda"
+  },
+  {
+    "path": "frontend/src/nq-design-system/status/RiskBanner.tsx",
+    "sha256": "48A2E2A8DD1E98D6A1D1C50E1933245473CA78A214D4F14DAAC626DF39E2BD79",
+    "gitBlob": "77ed57e302456649308a93ce9a75e1b6d64ea557"
+  },
+  {
+    "path": "frontend/src/pages/accounts/AccountsPage.tsx",
+    "sha256": "406EE5B0B8AA6D552FE42E5FEB53C2A7F66D86D6FD9A2D97B2EBCACD66C953B4",
+    "gitBlob": "f5a797c3a6d7e013ab45aade97698b21d546043b"
+  },
+  {
+    "path": "frontend/src/pages/adapters/AdapterReadinessPage.tsx",
+    "sha256": "B4C2D2199A0E3C679846D2ADCC9019D0D82C44B21B5DB2C02B832E152A34CAA2",
+    "gitBlob": "0e9e874ef3c380279d90d8441f6df8725e10ad3f"
+  },
+  {
+    "path": "frontend/src/pages/backtests/BacktestDetailPage.tsx",
+    "sha256": "717329BCF9B3A997432992242344229ABDA5E00AACC2623BB3A0E692B86E7E4D",
+    "gitBlob": "3e2c7c173c9b70346d4da682ef87d00faaf1520f"
+  },
+  {
+    "path": "frontend/src/pages/backtests/BacktestsPage.tsx",
+    "sha256": "DA34C58DE63F191F69F8EFE586729048A3505174A40CE9C835E27741789B1BC0",
+    "gitBlob": "461c3115e21c526b38ac933aaf467832bd47ec6b"
+  },
+  {
+    "path": "frontend/src/pages/dashboard/DashboardPage.tsx",
+    "sha256": "CCB1F035970D567178983EF55522F627A013EBC5954CF27DDC5CDCE66C4120D4",
+    "gitBlob": "663a8e38df89e94ea091651db7135cb07ec7f132"
+  },
+  {
+    "path": "frontend/src/pages/evaluations/EvaluationsPage.tsx",
+    "sha256": "A9DEB9562F949E23A908D69E39D855DF0DAE262CF049DEAE81CFF1617E7C630C",
+    "gitBlob": "bc46331c1cd96e525eb89338c456171866da1860"
+  },
+  {
+    "path": "frontend/src/pages/exceptions/AuthFailurePage.tsx",
+    "sha256": "F1C06234B969F2F6FA7E0031961FBFD263EF0B31CEA4368BD901730B3A8EACB3",
+    "gitBlob": "5054f47a9341b3b6914402ee9c0371a7f2b2a535"
+  },
+  {
+    "path": "frontend/src/pages/exceptions/ForbiddenPage.tsx",
+    "sha256": "D2604B2B74F363D2463F850898D3D9342B50D42957A05B90FAA8792AAF9692E7",
+    "gitBlob": "db229e066666875be4489b949bc2691f2e2c612a"
+  },
+  {
+    "path": "frontend/src/pages/exceptions/SystemErrorPage.tsx",
+    "sha256": "6BB1B6D2817B94912EBAED906F8377F5A2BED3E2B6D41A94C928117027B5F4A5",
+    "gitBlob": "0f60b59bf815d3f69234dfdd959ad39f4372fdee"
+  },
+  {
+    "path": "frontend/src/pages/exceptions/WelcomePage.tsx",
+    "sha256": "E3FB8DFDE8EB426EBDBB3293975C7E433E7945C818E6656A6567B6B0A438FFB5",
+    "gitBlob": "d1b20d55a39a80c60c29a54c701b7ed90bf9093b"
+  },
+  {
+    "path": "frontend/src/pages/instruments/InstrumentsPage.tsx",
+    "sha256": "578968FE877837FD9CCF41A082216A0F376A36F13C2D8160C732E7E22322CE8D",
+    "gitBlob": "20262bca53f2cdd3de6ddea9b25041a114ed8e95"
+  },
+  {
+    "path": "frontend/src/pages/login/LoginPage.tsx",
+    "sha256": "A7C8E5303A8E94E85A2B0D6FFC7DAFA29EEB5976936E0B05A389BA7F5E2D7022",
+    "gitBlob": "7577572d805a5d6866fe2f1ef3d61080670e9f2c"
+  },
+  {
+    "path": "frontend/src/pages/marketdata/MarketdataPage.tsx",
+    "sha256": "8B8835B3C753B4F6A4EB144748BA19002F9C0A054AEEA9BBD1D2DD32D47579B4",
+    "gitBlob": "e1239e04230bb0d50f44dda4da33f0e0d6d5477c"
+  },
+  {
+    "path": "frontend/src/pages/not-found/NotFoundPage.tsx",
+    "sha256": "BC4AE805E754B46AD21C26F8A5E84F5A4660C9171C468A176EFA7DBC5C63A5AC",
+    "gitBlob": "c32aca8f4eac36e3b6def287acb558ff066af343"
+  },
+  {
+    "path": "frontend/src/pages/paper-trading/components/PaperAutoReviewDashboard.tsx",
+    "sha256": "D45F843C97A7E7DE9AC587F78A9AD9D38FF842E783966F820CCA8F7F0A135D14",
+    "gitBlob": "3894c6b8ab3cccd9aaf4fc7b62c784db5ae178e7"
+  },
+  {
+    "path": "frontend/src/pages/paper-trading/components/PaperExecutionDiagnosticsDashboard.tsx",
+    "sha256": "580D2079E421BA49E60030659B4EEEE982C9B1391F92D93592C1646E06CB2DBA",
+    "gitBlob": "a210742be411ec9082cfcd16f81f3a697b8a11d9"
+  },
+  {
+    "path": "frontend/src/pages/paper-trading/components/PaperPortfolioDashboard.tsx",
+    "sha256": "05AE70A0F3FD87D52BF7DD883B5401762B31B676E4435D4760743EE98C1FDA73",
+    "gitBlob": "5b585cf73f0dd1a04a72bfb7937fe435f42b0fb3"
+  },
+  {
+    "path": "frontend/src/pages/paper-trading/components/paperPortfolioShared.tsx",
+    "sha256": "AB8DD2A46B58233CBC5DD88FB1CE52440B8DBD956A69B86F75B90087E07DC75E",
+    "gitBlob": "0f312c9c4f95979fe5f92009b3c7376ebbf683a3"
+  },
+  {
+    "path": "frontend/src/pages/paper-trading/components/PaperRiskDashboard.tsx",
+    "sha256": "3CDF54B3F1742FA2C12CD13EBBC16D20522066929945BF250F6B688CF4A6EF42",
+    "gitBlob": "420080f57a046c9e6c8b90dc955da8c60e3b25e8"
+  },
+  {
+    "path": "frontend/src/pages/paper-trading/components/PaperStrategyEvaluationDashboard.tsx",
+    "sha256": "CC2C6F3C537999EDF983FE38654B0376E980C24CF95949B534F8EFA6ABBD5188",
+    "gitBlob": "8fa9ba8b784e925e8745636ff9fa33d7f322e387"
+  },
+  {
+    "path": "frontend/src/pages/paper-trading/components/PaperStrategyRankingDashboard.tsx",
+    "sha256": "0DA1B87E0B88BAAFB1173100013E66D5BFC64741147FD8EC8CD27815734C17E5",
+    "gitBlob": "d643b4e96a6b8a2cc93cd29dddee9f2f7d6bfaf3"
+  },
+  {
+    "path": "frontend/src/pages/paper-trading/PaperReviewsPage.tsx",
+    "sha256": "E75297A9E9451FF07ECAD90835051AECC919BB8964C6757EF3705556E68A528B",
+    "gitBlob": "17eb372cf97cd9b8c300f7590b79a5f0ab979e98"
+  },
+  {
+    "path": "frontend/src/pages/paper-trading/PaperTradingPlaceholderPage.tsx",
+    "sha256": "7EC4653110AE4D87BE9140E7D273946EF5974963278B8260748BBCCDB5757C48",
+    "gitBlob": "74dd7a2474a286c943340514ab12b387fbd2b5fe"
+  },
+  {
+    "path": "frontend/src/pages/paper-trading/PaperTradingRouteShell.tsx",
+    "sha256": "EA28F1BBA21649DBCDCAD1E12EAB91A7750D4DB4CA4B9F28BF7EF6551A47D6DB",
+    "gitBlob": "4c64c23ef09c0e4d8ca3222e84f322928bbcf4fb"
+  },
+  {
+    "path": "frontend/src/pages/paper-trading/PaperTradingRunsPage.tsx",
+    "sha256": "15DE02DBD426789FC5BA33FC88EB76D5C05C1B31F76513FDB3EF8721512A7D6F",
+    "gitBlob": "134fa6c9e3b77497433a6059e42d2d06da8339b7"
+  },
+  {
+    "path": "frontend/src/pages/publishes/PublishesPage.tsx",
+    "sha256": "F05DBEDF4182A5C2F62CC8B810A59B31A648CA250613D9D82D9D79C0A0BFB470",
+    "gitBlob": "a4872d6c4d9292b7db21014ddda40a4edef07ec7"
+  },
+  {
+    "path": "frontend/src/pages/research/ResearchPage.tsx",
+    "sha256": "71A83A77D20276BED8917A893D034971D2348551598999D8B4E25A5CE6216B78",
+    "gitBlob": "401cbebb045e6656294a099b305658cb9bcab887"
+  },
+  {
+    "path": "frontend/src/pages/runs/RunsPage.tsx",
+    "sha256": "19765207EFF2B1868ED6A044C3F780DB0789632CFE412F31374179B00BAFFD8D",
+    "gitBlob": "a4556393c49a3f2db97d8a1bc074e2eccae3728e"
+  },
+  {
+    "path": "frontend/src/pages/runtime/RuntimeReadinessPage.tsx",
+    "sha256": "CDB2C110D7E6D85D52857D687A921B5ED561897F21363EF2F30FAFE00543FDFA",
+    "gitBlob": "c9fdf422ef738879f26cc1a0edd8338342dd6de4"
+  },
+  {
+    "path": "frontend/src/pages/schedules/SchedulesPage.tsx",
+    "sha256": "B4D73935DB7E48E3CB1A786772B8BB996DC4C2A1A33D7A1D0ACDE18A01F87BFD",
+    "gitBlob": "f2dce13dba5f2956b629f0d1cc0067b6ad8457fa"
+  },
+  {
+    "path": "frontend/src/pages/shadow-runs/ShadowRunDetailPage.tsx",
+    "sha256": "9F93DA69CD6E7548C4D9919B937974366D8CF2D49B950141B7B9E7FCC394D411",
+    "gitBlob": "6de04be2a2a87396f0c507da56fd52394aabcf6e"
+  },
+  {
+    "path": "frontend/src/pages/shadow-runs/ShadowRunListPage.tsx",
+    "sha256": "ACF47D63AAD3F76CDB8EBA0EA1D4D5F41832CE0110A3D07D6B820CE82C51F60C",
+    "gitBlob": "20024168e990bb2ca072638bc9236b789f98431d"
+  },
+  {
+    "path": "frontend/src/pages/strategies/StrategiesPage.tsx",
+    "sha256": "2FD04FD2728155E2D47A27C2B268431FF1A672299DDFF0B368C7A993018F1B1A",
+    "gitBlob": "d03e3a4d4053c131e155874209573eef945626ce"
+  },
+  {
+    "path": "frontend/src/pages/trading/TradingWorkbenchPage.tsx",
+    "sha256": "7325AE13AAE9B48B08B948ACD6CEC3BD86EFD32ACAED9E52F19EF4F87A01FE4B",
+    "gitBlob": "a30df99d15ed5217400043c7bdf58897600be5ea"
+  },
+  {
+    "path": "frontend/src/router/navigation.tsx",
+    "sha256": "1011519A73550275D04D13145E4CD3587A3C8C675531BF87C286B1D2DF73AF9F",
+    "gitBlob": "6820958cc59bf12e818963e7d715407f99576315"
+  },
+  {
+    "path": "frontend/src/router/RequireAuth.tsx",
+    "sha256": "2FD608F99D9DF341D335D5C6D1D156B601B39F5F2E0C8C0B4F147518340C64D5",
+    "gitBlob": "6ce5d5c372ec148031c74ade0808379fb7c4479e"
+  },
+  {
+    "path": "frontend/src/router/routes.tsx",
+    "sha256": "588D82E492D8C9183B2529E301FC14143AAE6B20F6CEBDD87FAC7BFB3AE16738",
+    "gitBlob": "6bdea762cdcccc4db877c677dd88c635792db5e6"
+  },
+  {
+    "path": "frontend/src/types/api.ts",
+    "sha256": "0AFE6D30E8793B94D9AC7AF038DB91229CEC49777E2AF41AE56A12584E1DA953",
+    "gitBlob": "b268cd9478bae994bb91b97f856861a7fbfd3661"
+  },
+  {
+    "path": "frontend/src/utils/env.ts",
+    "sha256": "9A7DC040CF42191F6A9FE8D1E59FE5093AC2C3487BD119EB2EE4794F97ABF451",
+    "gitBlob": "518e01358826ebd4e0a5b4e0ac887134fba44a92"
+  },
+  {
+    "path": "frontend/src/utils/error-events.ts",
+    "sha256": "B6A008A83A4FC96AE55A2237A060F0A9A2BD8D9DEE7B77125332DFB83C12A1F2",
+    "gitBlob": "a8a4c0f98dc7560516184a552d29ba2e73c0fc45"
+  },
+  {
+    "path": "frontend/tests/unit/error-catalog.test.ts",
+    "sha256": "F9305182150EDDB62FCAA6AC795399206AF5DDED4813BA4584D9C774FE3D3F5A",
+    "gitBlob": "f7131e7fea7a18ead1b658e3be6408a1c0ecab74"
+  },
+  {
+    "path": "frontend/tests/unit/i18n-source-contract.test.ts",
+    "sha256": "364E880F13FF8132D6DFFEF2C4F680ADDF02616419A04368F931FA6AD904E2D8",
+    "gitBlob": "ce464ef1627e813ad4ca2133d3553da6bc820ac3"
+  },
+  {
+    "path": "frontend/vitest.config.ts",
+    "sha256": "F48F035BA4EF6ACD319AEFAEF78819C8A02DC2B024D425D792B33F8AA508A515",
+    "gitBlob": "e281176887c3bc6e029acd62fd7b3fd75936208e"
+  }
+]

@@ -1,6 +1,11 @@
 import type {AppApiError} from '@/types/api';
 
 const APP_ERROR_EVENT_NAME = 'nq:app-error';
+const globalErrors = new WeakSet<object>();
+
+export function hasGlobalErrorPresentation(error: object): boolean {
+    return globalErrors.has(error);
+}
 
 type AppErrorListener = (error: AppApiError) => void;
 
@@ -9,6 +14,7 @@ export function emitAppError(error: AppApiError): void {
         return;
     }
 
+    globalErrors.add(error);
     window.dispatchEvent(new CustomEvent<AppApiError>(APP_ERROR_EVENT_NAME, {detail: error}));
 }
 

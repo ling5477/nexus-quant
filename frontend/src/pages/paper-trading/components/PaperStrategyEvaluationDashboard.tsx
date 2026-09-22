@@ -1,3 +1,5 @@
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {Button, Card, Descriptions, Segmented, Select, Space, Tag, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
@@ -31,13 +33,13 @@ import {toNullableNumber} from './paperFormatters';
 // ---- GateK K3B：Paper 策略评估展示映射、筛选与排序（消费 K3 endpoint，纯前端只读展示）----
 
 export const RATING_LABEL_TEXT: Record<PaperStrategyRatingLabel, string> = {
-    STRONG_PAPER_PERFORMER: '稳健表现',
-    WATCHLIST: '观察',
-    HIGH_RISK: '高风险',
-    SAMPLE_INSUFFICIENT: '样本不足',
-    DATA_INSUFFICIENT: '数据不足',
-    EXECUTION_PROBLEM: '执行问题',
-    UNKNOWN: '未知',
+    get STRONG_PAPER_PERFORMER() { return t('pages:strongPerformance'); },
+    get WATCHLIST() { return t('pages:watchlist'); },
+    get HIGH_RISK() { return t('pages:highRisk'); },
+    get SAMPLE_INSUFFICIENT() { return t('pages:insufficientSamples'); },
+    get DATA_INSUFFICIENT() { return t('pages:insufficientData'); },
+    get EXECUTION_PROBLEM() { return t('pages:executionProblems'); },
+    get UNKNOWN() { return t('pages:unknown'); },
 };
 
 export const RATING_LABEL_TONE: Record<PaperStrategyRatingLabel, NqStatusTone> = {
@@ -72,25 +74,25 @@ type EvalSortDim =
 type EvalSortDir = 'desc' | 'asc';
 
 const EVAL_RATING_FILTER_OPTIONS: ReadonlyArray<{label: string; value: EvalRatingFilter}> = [
-    {label: '全部评级', value: 'all'},
-    {label: '稳健表现 STRONG_PAPER_PERFORMER', value: 'STRONG_PAPER_PERFORMER'},
-    {label: '观察 WATCHLIST', value: 'WATCHLIST'},
-    {label: '高风险 HIGH_RISK', value: 'HIGH_RISK'},
-    {label: '样本不足 SAMPLE_INSUFFICIENT', value: 'SAMPLE_INSUFFICIENT'},
-    {label: '数据不足 DATA_INSUFFICIENT', value: 'DATA_INSUFFICIENT'},
-    {label: '执行问题 EXECUTION_PROBLEM', value: 'EXECUTION_PROBLEM'},
-    {label: '未知 UNKNOWN', value: 'UNKNOWN'},
+    {get label() { return t('pages:allRatings'); }, value: 'all'},
+    {get label() { return t('pages:strongPerformanceStrongPaperPerformer'); }, value: 'STRONG_PAPER_PERFORMER'},
+    {get label() { return t('pages:watchlistWatchlist'); }, value: 'WATCHLIST'},
+    {get label() { return t('pages:highRiskHighRisk'); }, value: 'HIGH_RISK'},
+    {get label() { return t('pages:insufficientSamplesSampleInsufficient'); }, value: 'SAMPLE_INSUFFICIENT'},
+    {get label() { return t('pages:insufficientDataDataInsufficient'); }, value: 'DATA_INSUFFICIENT'},
+    {get label() { return t('pages:executionProblemExecutionProblem'); }, value: 'EXECUTION_PROBLEM'},
+    {get label() { return t('pages:unknownUnknown'); }, value: 'UNKNOWN'},
 ];
 
 const EVAL_CONFIDENCE_FILTER_OPTIONS: ReadonlyArray<{label: string; value: EvalConfidenceFilter}> = [
-    {label: '全部可信度', value: 'all'},
+    {get label() { return t('pages:allConfidenceLevels'); }, value: 'all'},
     {label: 'HIGH', value: 'HIGH'},
     {label: 'MEDIUM', value: 'MEDIUM'},
     {label: 'LOW', value: 'LOW'},
 ];
 
 const EVAL_DEVIATION_FILTER_OPTIONS: ReadonlyArray<{label: string; value: EvalDeviationFilter}> = [
-    {label: '全部偏差', value: 'all'},
+    {get label() { return t('pages:allDeviations'); }, value: 'all'},
     {label: 'LOW', value: 'LOW'},
     {label: 'MEDIUM', value: 'MEDIUM'},
     {label: 'HIGH', value: 'HIGH'},
@@ -98,15 +100,15 @@ const EVAL_DEVIATION_FILTER_OPTIONS: ReadonlyArray<{label: string; value: EvalDe
 ];
 
 const EVAL_SORT_OPTIONS: ReadonlyArray<{label: string; value: EvalSortDim}> = [
-    {label: '综合分', value: 'compositeScore'},
-    {label: '收益率', value: 'totalReturn'},
-    {label: '最大回撤', value: 'maxDrawdown'},
-    {label: '胜率', value: 'winRate'},
-    {label: '样本分', value: 'sampleScore'},
-    {label: '风险分', value: 'riskScore'},
-    {label: '执行分', value: 'executionScore'},
-    {label: 'Backtest 偏差分', value: 'backtestDeviationScore'},
-    {label: '最近运行', value: 'latestRunTime'},
+    {get label() { return t('pages:overallScore'); }, value: 'compositeScore'},
+    {get label() { return t('pages:returnRate'); }, value: 'totalReturn'},
+    {get label() { return t('pages:maximumDrawdown'); }, value: 'maxDrawdown'},
+    {get label() { return t('pages:winRate'); }, value: 'winRate'},
+    {get label() { return t('pages:sampleScore'); }, value: 'sampleScore'},
+    {get label() { return t('pages:riskScore'); }, value: 'riskScore'},
+    {get label() { return t('pages:executionScore'); }, value: 'executionScore'},
+    {get label() { return t('pages:backtestDeviationScore'); }, value: 'backtestDeviationScore'},
+    {get label() { return t('pages:latestRun'); }, value: 'latestRunTime'},
 ];
 
 function ratingTag(rating: PaperStrategyRatingLabel) {
@@ -141,7 +143,7 @@ function sortStrategyEvals(rows: PaperStrategyEvaluationItem[], dim: EvalSortDim
 /** 分数单元：可空分数（如 backtestDeviationScore）缺失时显示「数据不足」，不伪造 0。 */
 function scoreCell(score: number | null) {
     if (score === null || score === undefined) {
-        return <Typography.Text type="secondary" style={{fontSize: 12}}>数据不足</Typography.Text>;
+        return <Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:insufficientData')}</Typography.Text>;
     }
     return <span className="nq-num">{score}</span>;
 }
@@ -153,6 +155,7 @@ function scoreCell(score: number | null) {
  * 独立 query：加载 / 错误 / 空 / 兼容回退均限定本区域，不连累其他模块。评分为 Paper 内部启发式分、非真实投资评级、不构成投资建议。
  */
 export function PaperStrategyEvaluationDashboard({query}: {query: ReturnType<typeof usePaperStrategyEvaluationsQuery>}) {
+    useTranslation('pages');
     const raw = query.data;
     const evaluation: PaperStrategyEvaluationsResponse | null =
         raw && !Array.isArray(raw) && (raw as PaperStrategyEvaluationsResponse).overview
@@ -160,35 +163,34 @@ export function PaperStrategyEvaluationDashboard({query}: {query: ReturnType<typ
             : null;
 
     return (
-      <section aria-label="Paper 策略评估">
+      <section aria-label={t('pages:paperStrategyEvaluation')}>
         <Card
             className="page-section"
             bordered={false}
-            title="Paper 策略评估"
-            extra={<Typography.Text type="secondary" style={{fontSize: 12}}>SIM/Paper only · Internal evaluation</Typography.Text>}
+            title={t('pages:paperStrategyEvaluation')}
+            extra={<Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:simPaperOnlyInternalEvaluation')}</Typography.Text>}
         >
             <Space direction="vertical" size={12} style={{display: 'flex'}}>
                 <Typography.Text type="secondary" style={{fontSize: 12}}>
-                    基于 Paper 表现、执行质量、样本充足性与 Backtest 偏差的内部评估。
-                </Typography.Text>
+                    {t('pages:internalEvaluationOfPaperPerformanceExecutionQualitySampleSufficiencyAndBacktestDeviation')}</Typography.Text>
                 <NqRiskBanner
                     level="info"
-                    message="从 strategyVersionId / publishId 维度评估 Paper 模拟表现、Paper vs Backtest 偏差、样本充足性与风险调整评分。"
-                    description="该评分是 Paper 内部启发式评估，不是真实投资评级。该结果不代表 LIVE 或真实交易表现，也不构成投资建议。Backtest 偏差用于比较 Paper 与回测表现差异，缺失数据不会被伪造。"
+                    message={t('pages:evaluatePaperPerformanceDeviationsFromBacktestsSampleSufficiencyAndRiskAdjustedScoresByStrategyversi')}
+                    description={t('pages:scoresAreInternalPaperHeuristicsNotInvestmentRatingsLivePerformanceOrInvestmentAdviceBacktestDeviati')}
                 />
                 {query.error ? (
                     <NqErrorState
-                        title="Paper 策略评估加载失败"
+                        title={t('pages:failedToLoadPaperStrategyEvaluations')}
                         error={query.error as AppApiError}
-                        description="策略评估不可用（旧后端可能尚未提供该接口）；其余 Paper 模块不受影响。"
+                        description={t('pages:strategyEvaluationIsUnavailableOlderBackendsMayLackThisApiOtherPaperModulesAreUnaffected')}
                         onRetry={() => query.refetch()}
                     />
                 ) : query.isFetching && !evaluation ? (
-                    <NqLoadingState message="加载 Paper 策略评估中..."/>
+                    <NqLoadingState message={t('pages:loadingPaperStrategyEvaluations')}/>
                 ) : !evaluation ? (
-                    <NqEmptyState description="暂无 Paper 策略评估数据（接口未返回评估结构）。"/>
+                    <NqEmptyState description={t('pages:noStrategyEvaluationsTheResponseContainsNoEvaluationStructure')}/>
                 ) : evaluation.overview.strategyCount === 0 ? (
-                    <NqEmptyState description="暂无 Paper 策略评估数据，创建并运行 Paper run 后自动生成策略评估。"/>
+                    <NqEmptyState description={t('pages:createAndExecutePaperRunsToGenerateStrategyEvaluations')}/>
                 ) : (
                     <PaperStrategyEvaluationBody evaluation={evaluation}/>
                 )}
@@ -199,6 +201,7 @@ export function PaperStrategyEvaluationDashboard({query}: {query: ReturnType<typ
 }
 
 function PaperStrategyEvaluationBody({evaluation}: {evaluation: PaperStrategyEvaluationsResponse}) {
+    useTranslation('pages');
     const {overview, strategyEvaluations, publishEvaluations, rankings} = evaluation;
 
     const [ratingFilter, setRatingFilter] = useState<EvalRatingFilter>('all');
@@ -216,168 +219,168 @@ function PaperStrategyEvaluationBody({evaluation}: {evaluation: PaperStrategyEva
     });
     const strategyRowsView = sortStrategyEvals(filteredStrategies, sortDim, sortDir);
     const filtered = ratingFilter !== 'all' || confidenceFilter !== 'all' || deviationFilter !== 'all';
-    const sortDimLabel = EVAL_SORT_OPTIONS.find((o) => o.value === sortDim)?.label ?? '综合分';
+    const sortDimLabel = EVAL_SORT_OPTIONS.find((o) => o.value === sortDim)?.label ?? t('pages:overallScore');
 
     const subScoreColumns: ColumnsType<PaperStrategyEvaluationItem> = [
-        nqNumericColumn({title: '样本分', dataIndex: 'sampleScore', key: 'sampleScore', width: 80}),
-        nqNumericColumn({title: '收益分', dataIndex: 'returnScore', key: 'returnScore', width: 80}),
-        nqNumericColumn({title: '风险分', dataIndex: 'riskScore', key: 'riskScore', width: 80}),
-        nqNumericColumn({title: '执行分', dataIndex: 'executionScore', key: 'executionScore', width: 80}),
-        nqNumericColumn({title: 'Backtest 偏差分', key: 'backtestDeviationScore', width: 130,
+        nqNumericColumn({title: t('pages:sampleScore'), dataIndex: 'sampleScore', key: 'sampleScore', width: 80}),
+        nqNumericColumn({title: t('pages:returnScore'), dataIndex: 'returnScore', key: 'returnScore', width: 80}),
+        nqNumericColumn({title: t('pages:riskScore'), dataIndex: 'riskScore', key: 'riskScore', width: 80}),
+        nqNumericColumn({title: t('pages:executionScore'), dataIndex: 'executionScore', key: 'executionScore', width: 80}),
+        nqNumericColumn({title: t('pages:backtestDeviationScore'), key: 'backtestDeviationScore', width: 130,
             render: (_: unknown, r: PaperStrategyEvaluationItem) => scoreCell(r.backtestDeviationScore)}),
     ];
 
     const strategyColumns: ColumnsType<PaperStrategyEvaluationItem> = [
-        {title: '策略版本', dataIndex: 'strategyVersionId', key: 'strategyVersionId', width: 160, render: (v: string) => <span className="nq-mono">{v}</span>},
-        nqNumericColumn({title: 'Run', dataIndex: 'runCount', key: 'runCount', width: 70}),
-        nqNumericColumn({title: '可比', dataIndex: 'comparableRunCount', key: 'comparableRunCount', width: 70}),
-        nqNumericColumn({title: '发布', dataIndex: 'publishCount', key: 'publishCount', width: 70}),
-        nqNumericColumn({title: '收益率', key: 'totalReturn', width: 100,
+        {title: t('pages:strategyVersions'), dataIndex: 'strategyVersionId', key: 'strategyVersionId', width: 160, render: (v: string) => <span className="nq-mono">{v}</span>},
+        nqNumericColumn({title: t('pages:run'), dataIndex: 'runCount', key: 'runCount', width: 70}),
+        nqNumericColumn({title: t('pages:comparable'), dataIndex: 'comparableRunCount', key: 'comparableRunCount', width: 70}),
+        nqNumericColumn({title: t('pages:publish2'), dataIndex: 'publishCount', key: 'publishCount', width: 70}),
+        nqNumericColumn({title: t('pages:returnRate'), key: 'totalReturn', width: 100,
             render: (_: unknown, r: PaperStrategyEvaluationItem) => r.totalReturn != null
                 ? <NqPercentText value={r.totalReturn as string | number} ratio colorBySign/> : '-'}),
-        nqNumericColumn({title: '最大回撤', key: 'maxDrawdown', width: 100,
+        nqNumericColumn({title: t('pages:maximumDrawdown'), key: 'maxDrawdown', width: 100,
             render: (_: unknown, r: PaperStrategyEvaluationItem) => r.maxDrawdown != null
                 ? <NqPercentText value={r.maxDrawdown as string | number} ratio signed={false}/> : '-'}),
-        nqNumericColumn({title: '胜率', key: 'winRate', width: 90,
+        nqNumericColumn({title: t('pages:winRate'), key: 'winRate', width: 90,
             render: (_: unknown, r: PaperStrategyEvaluationItem) => r.winRate != null
                 ? <NqPercentText value={r.winRate as string | number} ratio signed={false}/> : '-'}),
-        nqNumericColumn({title: '综合分', key: 'compositeScore', width: 90,
+        nqNumericColumn({title: t('pages:overallScore'), key: 'compositeScore', width: 90,
             render: (_: unknown, r: PaperStrategyEvaluationItem) => <span className="nq-num"><strong>{r.compositeScore}</strong></span>}),
         ...subScoreColumns,
-        {title: '评级', key: 'ratingLabel', width: 110, render: (_: unknown, r) => ratingTag(r.ratingLabel)},
-        {title: '可信度', key: 'evaluationConfidence', width: 100, render: (_: unknown, r) => <NqStatusTag status={r.evaluationConfidence} tone={EVAL_CONFIDENCE_TONE[r.evaluationConfidence]}/>},
-        {title: '主要短板', dataIndex: 'primaryWeakness', key: 'primaryWeakness', width: 130, render: (v: string) => <Typography.Text type="secondary" style={{fontSize: 12}}>{v}</Typography.Text>},
+        {title: t('pages:rating'), key: 'ratingLabel', width: 110, render: (_: unknown, r) => ratingTag(r.ratingLabel)},
+        {title: t('pages:confidence'), key: 'evaluationConfidence', width: 100, render: (_: unknown, r) => <NqStatusTag status={r.evaluationConfidence} tone={EVAL_CONFIDENCE_TONE[r.evaluationConfidence]}/>},
+        {title: t('pages:mainWeaknesses'), dataIndex: 'primaryWeakness', key: 'primaryWeakness', width: 130, render: (v: string) => <Typography.Text type="secondary" style={{fontSize: 12}}>{v}</Typography.Text>},
         {
-            title: '警告', key: 'warnings', width: 220,
+            title: t('pages:warnings'), key: 'warnings', width: 220,
             render: (_: unknown, r) => r.warnings.length > 0
                 ? <Space size={4} wrap>{r.warnings.map((w) => <Tag key={w} color="warning">{w}</Tag>)}</Space>
                 : <Typography.Text type="secondary">-</Typography.Text>,
         },
-        {title: '最近运行', dataIndex: 'latestRunTime', key: 'latestRunTime', width: 170, render: (v: string | null) => v ? formatDateTime(v) : '-'},
+        {title: t('pages:latestRun'), dataIndex: 'latestRunTime', key: 'latestRunTime', width: 170, render: (v: string | null) => v ? formatDateTime(v) : '-'},
     ];
 
     const publishColumns: ColumnsType<PaperPublishEvaluationItem> = [
-        {title: '发布', dataIndex: 'publishId', key: 'publishId', width: 160, render: (v: string) => <span className="nq-mono">{v}</span>},
-        {title: '策略版本', dataIndex: 'strategyVersionId', key: 'strategyVersionId', width: 150, render: (v: string | null) => v ? <span className="nq-mono">{v}</span> : '-'},
-        nqNumericColumn({title: 'Run', dataIndex: 'runCount', key: 'runCount', width: 70}),
-        nqNumericColumn({title: '可比', dataIndex: 'comparableRunCount', key: 'comparableRunCount', width: 70}),
-        nqNumericColumn({title: '收益率', key: 'totalReturn', width: 100,
+        {title: t('pages:publish2'), dataIndex: 'publishId', key: 'publishId', width: 160, render: (v: string) => <span className="nq-mono">{v}</span>},
+        {title: t('pages:strategyVersions'), dataIndex: 'strategyVersionId', key: 'strategyVersionId', width: 150, render: (v: string | null) => v ? <span className="nq-mono">{v}</span> : '-'},
+        nqNumericColumn({title: t('pages:run'), dataIndex: 'runCount', key: 'runCount', width: 70}),
+        nqNumericColumn({title: t('pages:comparable'), dataIndex: 'comparableRunCount', key: 'comparableRunCount', width: 70}),
+        nqNumericColumn({title: t('pages:returnRate'), key: 'totalReturn', width: 100,
             render: (_: unknown, r: PaperPublishEvaluationItem) => r.totalReturn != null
                 ? <NqPercentText value={r.totalReturn as string | number} ratio colorBySign/> : '-'}),
-        nqNumericColumn({title: '最大回撤', key: 'maxDrawdown', width: 100,
+        nqNumericColumn({title: t('pages:maximumDrawdown'), key: 'maxDrawdown', width: 100,
             render: (_: unknown, r: PaperPublishEvaluationItem) => r.maxDrawdown != null
                 ? <NqPercentText value={r.maxDrawdown as string | number} ratio signed={false}/> : '-'}),
-        nqNumericColumn({title: '胜率', key: 'winRate', width: 90,
+        nqNumericColumn({title: t('pages:winRate'), key: 'winRate', width: 90,
             render: (_: unknown, r: PaperPublishEvaluationItem) => r.winRate != null
                 ? <NqPercentText value={r.winRate as string | number} ratio signed={false}/> : '-'}),
-        nqNumericColumn({title: '综合分', key: 'compositeScore', width: 90,
+        nqNumericColumn({title: t('pages:overallScore'), key: 'compositeScore', width: 90,
             render: (_: unknown, r: PaperPublishEvaluationItem) => <span className="nq-num"><strong>{r.compositeScore}</strong></span>}),
-        nqNumericColumn({title: '样本分', dataIndex: 'sampleScore', key: 'sampleScore', width: 80}),
-        nqNumericColumn({title: '风险分', dataIndex: 'riskScore', key: 'riskScore', width: 80}),
-        nqNumericColumn({title: '执行分', dataIndex: 'executionScore', key: 'executionScore', width: 80}),
-        nqNumericColumn({title: 'Backtest 偏差分', key: 'backtestDeviationScore', width: 130,
+        nqNumericColumn({title: t('pages:sampleScore'), dataIndex: 'sampleScore', key: 'sampleScore', width: 80}),
+        nqNumericColumn({title: t('pages:riskScore'), dataIndex: 'riskScore', key: 'riskScore', width: 80}),
+        nqNumericColumn({title: t('pages:executionScore'), dataIndex: 'executionScore', key: 'executionScore', width: 80}),
+        nqNumericColumn({title: t('pages:backtestDeviationScore'), key: 'backtestDeviationScore', width: 130,
             render: (_: unknown, r: PaperPublishEvaluationItem) => scoreCell(r.backtestDeviationScore)}),
-        {title: '评级', key: 'ratingLabel', width: 110, render: (_: unknown, r) => ratingTag(r.ratingLabel)},
-        {title: '可信度', key: 'evaluationConfidence', width: 100, render: (_: unknown, r) => <NqStatusTag status={r.evaluationConfidence} tone={EVAL_CONFIDENCE_TONE[r.evaluationConfidence]}/>},
+        {title: t('pages:rating'), key: 'ratingLabel', width: 110, render: (_: unknown, r) => ratingTag(r.ratingLabel)},
+        {title: t('pages:confidence'), key: 'evaluationConfidence', width: 100, render: (_: unknown, r) => <NqStatusTag status={r.evaluationConfidence} tone={EVAL_CONFIDENCE_TONE[r.evaluationConfidence]}/>},
         {
-            title: '警告', key: 'warnings', width: 200,
+            title: t('pages:warnings'), key: 'warnings', width: 200,
             render: (_: unknown, r) => r.warnings.length > 0
                 ? <Space size={4} wrap>{r.warnings.map((w) => <Tag key={w} color="warning">{w}</Tag>)}</Space>
                 : <Typography.Text type="secondary">-</Typography.Text>,
         },
-        {title: '最近运行', dataIndex: 'latestRunTime', key: 'latestRunTime', width: 170, render: (v: string | null) => v ? formatDateTime(v) : '-'},
+        {title: t('pages:latestRun'), dataIndex: 'latestRunTime', key: 'latestRunTime', width: 170, render: (v: string | null) => v ? formatDateTime(v) : '-'},
     ];
 
     // Paper vs Backtest 偏差表：每个策略一行；无 backtest 时 level=UNAVAILABLE、数值显示「-」。
     const deviationColumns: ColumnsType<PaperStrategyEvaluationItem> = [
-        {title: '策略版本', dataIndex: 'strategyVersionId', key: 'strategyVersionId', width: 160, render: (v: string) => <span className="nq-mono">{v}</span>},
-        nqNumericColumn({title: 'Backtest 收益', key: 'backtestReturn', width: 110,
+        {title: t('pages:strategyVersions'), dataIndex: 'strategyVersionId', key: 'strategyVersionId', width: 160, render: (v: string) => <span className="nq-mono">{v}</span>},
+        nqNumericColumn({title: t('pages:backtestReturn'), key: 'backtestReturn', width: 110,
             render: (_: unknown, r: PaperStrategyEvaluationItem) => r.backtestDeviation?.backtestReturn != null
                 ? <NqPercentText value={r.backtestDeviation.backtestReturn as string | number} ratio colorBySign/> : '-'}),
-        nqNumericColumn({title: 'Paper 收益', key: 'paperReturn', width: 110,
+        nqNumericColumn({title: t('pages:paperReturn'), key: 'paperReturn', width: 110,
             render: (_: unknown, r: PaperStrategyEvaluationItem) => r.backtestDeviation?.paperReturn != null
                 ? <NqPercentText value={r.backtestDeviation.paperReturn as string | number} ratio colorBySign/> : '-'}),
-        nqNumericColumn({title: '收益偏差', key: 'returnDeviation', width: 110,
+        nqNumericColumn({title: t('pages:returnDeviation'), key: 'returnDeviation', width: 110,
             render: (_: unknown, r: PaperStrategyEvaluationItem) => r.backtestDeviation?.returnDeviation != null
                 ? <NqPercentText value={r.backtestDeviation.returnDeviation as string | number} ratio colorBySign/> : '-'}),
-        nqNumericColumn({title: 'Backtest 回撤', key: 'backtestMaxDrawdown', width: 120,
+        nqNumericColumn({title: t('pages:backtestDrawdown'), key: 'backtestMaxDrawdown', width: 120,
             render: (_: unknown, r: PaperStrategyEvaluationItem) => r.backtestDeviation?.backtestMaxDrawdown != null
                 ? <NqPercentText value={r.backtestDeviation.backtestMaxDrawdown as string | number} ratio signed={false}/> : '-'}),
-        nqNumericColumn({title: 'Paper 回撤', key: 'paperMaxDrawdown', width: 110,
+        nqNumericColumn({title: t('pages:paperDrawdown'), key: 'paperMaxDrawdown', width: 110,
             render: (_: unknown, r: PaperStrategyEvaluationItem) => r.backtestDeviation?.paperMaxDrawdown != null
                 ? <NqPercentText value={r.backtestDeviation.paperMaxDrawdown as string | number} ratio signed={false}/> : '-'}),
-        nqNumericColumn({title: '回撤偏差', key: 'drawdownDeviation', width: 110,
+        nqNumericColumn({title: t('pages:drawdownDeviation'), key: 'drawdownDeviation', width: 110,
             render: (_: unknown, r: PaperStrategyEvaluationItem) => r.backtestDeviation?.drawdownDeviation != null
                 ? <NqPercentText value={r.backtestDeviation.drawdownDeviation as string | number} ratio colorBySign/> : '-'}),
-        {title: '偏差等级', key: 'deviationLevel', width: 120,
+        {title: t('pages:deviationLevel'), key: 'deviationLevel', width: 120,
             render: (_: unknown, r: PaperStrategyEvaluationItem) => {
                 const level: PaperBacktestDeviationLevel = r.backtestDeviation?.deviationLevel ?? 'UNAVAILABLE';
                 return <NqStatusTag status={level} tone={DEVIATION_LEVEL_TONE[level]}/>;
             }},
-        {title: '说明', key: 'deviationExplanation', width: 320,
+        {title: t('pages:explanation2'), key: 'deviationExplanation', width: 320,
             render: (_: unknown, r: PaperStrategyEvaluationItem) => (
                 <Typography.Text type="secondary" style={{fontSize: 12}}>
-                    {r.backtestDeviation?.deviationExplanation ?? 'Backtest 不可用，无法计算偏差。'}
+                    {r.backtestDeviation?.deviationExplanation ?? t('pages:backtestUnavailableDeviationCannotBeCalculated')}
                 </Typography.Text>
             )},
     ];
 
     const rankingItems: Array<{label: string; keys: string[]}> = [
-        {label: '综合分最高', keys: rankings.topCompositeStrategies},
-        {label: '综合分最低', keys: rankings.worstCompositeStrategies},
-        {label: '收益最高', keys: rankings.topReturnStrategies},
-        {label: '回撤最大', keys: rankings.worstDrawdownStrategies},
-        {label: '样本不足', keys: rankings.sampleInsufficientStrategies},
-        {label: '高偏差', keys: rankings.highDeviationStrategies},
-        {label: '高风险', keys: rankings.highRiskStrategies},
+        {label: t('pages:highestOverallScore'), keys: rankings.topCompositeStrategies},
+        {label: t('pages:lowestOverallScore'), keys: rankings.worstCompositeStrategies},
+        {label: t('pages:highestReturn'), keys: rankings.topReturnStrategies},
+        {label: t('pages:largestDrawdown'), keys: rankings.worstDrawdownStrategies},
+        {label: t('pages:insufficientSamples'), keys: rankings.sampleInsufficientStrategies},
+        {label: t('pages:highDeviation'), keys: rankings.highDeviationStrategies},
+        {label: t('pages:highRisk'), keys: rankings.highRiskStrategies},
     ];
 
     return (
         <Space direction="vertical" size={12} style={{display: 'flex'}}>
             {/* A) 评估总览 */}
             <div className="nq-status-strip">
-                <NqMetricCard label="策略数" value={String(overview.strategyCount)} footer="strategyVersionId"/>
-                <NqMetricCard label="发布数" value={String(overview.publishCount)}/>
-                <NqMetricCard label="纳入评估 run" value={String(overview.evaluatedRunCount)}/>
-                <NqMetricCard label="可比 run" value={String(overview.comparableRunCount)}/>
-                <NqMetricCard label="样本不足策略" value={String(overview.sampleInsufficientStrategyCount)} tone={overview.sampleInsufficientStrategyCount > 0 ? 'warning' : 'muted'}/>
-                <NqMetricCard label="盈利策略" value={String(overview.profitableStrategyCount)} tone={overview.profitableStrategyCount > 0 ? 'success' : 'muted'}/>
-                <NqMetricCard label="亏损策略" value={String(overview.lossStrategyCount)} tone={overview.lossStrategyCount > 0 ? 'warning' : 'muted'}/>
-                <NqMetricCard label="高风险策略" value={String(overview.highRiskStrategyCount)} tone={overview.highRiskStrategyCount > 0 ? 'danger' : 'muted'}/>
-                <NqMetricCard label="高偏差策略" value={String(overview.backtestDeviationStrategyCount)} tone={overview.backtestDeviationStrategyCount > 0 ? 'danger' : 'muted'}/>
-                <NqMetricCard label="最高综合分" value={overview.topCompositeScore != null ? String(overview.topCompositeScore) : '-'}/>
-                <NqMetricCard label="最低综合分" value={overview.worstCompositeScore != null ? String(overview.worstCompositeScore) : '-'}/>
+                <NqMetricCard label={t('pages:strategyCount')} value={String(overview.strategyCount)} footer="strategyVersionId"/>
+                <NqMetricCard label={t('pages:publishCount')} value={String(overview.publishCount)}/>
+                <NqMetricCard label={t('pages:runsIncludedInEvaluation')} value={String(overview.evaluatedRunCount)}/>
+                <NqMetricCard label={t('pages:comparableRuns')} value={String(overview.comparableRunCount)}/>
+                <NqMetricCard label={t('pages:strategiesWithInsufficientSamples')} value={String(overview.sampleInsufficientStrategyCount)} tone={overview.sampleInsufficientStrategyCount > 0 ? 'warning' : 'muted'}/>
+                <NqMetricCard label={t('pages:profitableStrategies')} value={String(overview.profitableStrategyCount)} tone={overview.profitableStrategyCount > 0 ? 'success' : 'muted'}/>
+                <NqMetricCard label={t('pages:losingStrategies')} value={String(overview.lossStrategyCount)} tone={overview.lossStrategyCount > 0 ? 'warning' : 'muted'}/>
+                <NqMetricCard label={t('pages:highRiskStrategies')} value={String(overview.highRiskStrategyCount)} tone={overview.highRiskStrategyCount > 0 ? 'danger' : 'muted'}/>
+                <NqMetricCard label={t('pages:highDeviationStrategies')} value={String(overview.backtestDeviationStrategyCount)} tone={overview.backtestDeviationStrategyCount > 0 ? 'danger' : 'muted'}/>
+                <NqMetricCard label={t('pages:highestOverallScore2')} value={overview.topCompositeScore != null ? String(overview.topCompositeScore) : '-'}/>
+                <NqMetricCard label={t('pages:lowestOverallScore2')} value={overview.worstCompositeScore != null ? String(overview.worstCompositeScore) : '-'}/>
             </div>
 
             {/* B) Strategy Evaluation 表（受评级 / 可信度 / 偏差筛选 + 排序控件） */}
             <Card
                 size="small"
                 title={filtered
-                    ? `策略评估 · 当前筛选命中 ${strategyRowsView.length} 条`
-                    : 'Strategy Version 策略评估'}
+                    ? t('pages:strategyEvaluationsValue1MatchingItems', {value1: strategyRowsView.length})
+                    : t('pages:strategyVersionEvaluation')}
                 extra={filtered ? (
-                    <Button size="small" type="link" onClick={() => {setRatingFilter('all'); setConfidenceFilter('all'); setDeviationFilter('all');}}>查看全部</Button>
+                    <Button size="small" type="link" onClick={() => {setRatingFilter('all'); setConfidenceFilter('all'); setDeviationFilter('all');}}>{t('pages:viewAll')}</Button>
                 ) : null}
             >
                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
                     <div
                         role="group"
-                        aria-label="Paper 策略评估筛选"
+                        aria-label={t('pages:paperStrategyEvaluationFilters')}
                         style={{display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center'}}
                     >
-                        <Typography.Text type="secondary" style={{fontSize: 12}}>评级</Typography.Text>
+                        <Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:rating')}</Typography.Text>
                         <Select<EvalRatingFilter>
                             size="small" value={ratingFilter} onChange={setRatingFilter}
                             options={EVAL_RATING_FILTER_OPTIONS as Array<{label: string; value: EvalRatingFilter}>}
                             style={{width: 240}} virtual={false}
                         />
-                        <Typography.Text type="secondary" style={{fontSize: 12}}>可信度</Typography.Text>
+                        <Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:confidence')}</Typography.Text>
                         <Select<EvalConfidenceFilter>
                             size="small" value={confidenceFilter} onChange={setConfidenceFilter}
                             options={EVAL_CONFIDENCE_FILTER_OPTIONS as Array<{label: string; value: EvalConfidenceFilter}>}
                             style={{width: 140}} virtual={false}
                         />
-                        <Typography.Text type="secondary" style={{fontSize: 12}}>Backtest 偏差</Typography.Text>
+                        <Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:backtestDeviation')}</Typography.Text>
                         <Select<EvalDeviationFilter>
                             size="small" value={deviationFilter} onChange={setDeviationFilter}
                             options={EVAL_DEVIATION_FILTER_OPTIONS as Array<{label: string; value: EvalDeviationFilter}>}
@@ -386,10 +389,10 @@ function PaperStrategyEvaluationBody({evaluation}: {evaluation: PaperStrategyEva
                     </div>
                     <div
                         role="group"
-                        aria-label="Paper 策略评估排序"
+                        aria-label={t('pages:paperStrategyEvaluationSorting')}
                         style={{display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center'}}
                     >
-                        <Typography.Text type="secondary" style={{fontSize: 12}}>排序维度</Typography.Text>
+                        <Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:sortBy')}</Typography.Text>
                         <Select<EvalSortDim>
                             size="small" value={sortDim} onChange={setSortDim}
                             options={EVAL_SORT_OPTIONS as Array<{label: string; value: EvalSortDim}>}
@@ -398,71 +401,68 @@ function PaperStrategyEvaluationBody({evaluation}: {evaluation: PaperStrategyEva
                         <Segmented
                             size="small" value={sortDir}
                             onChange={(v) => setSortDir(v as EvalSortDir)}
-                            options={[{label: '降序', value: 'desc'}, {label: '升序', value: 'asc'}]}
+                            options={[{label: t('pages:descending'), value: 'desc'}, {label: t('pages:ascending'), value: 'asc'}]}
                         />
                         <Typography.Text type="secondary" style={{fontSize: 12}}>
-                            当前：{sortDimLabel} · {sortDir === 'desc' ? '降序' : '升序'} · 命中 {strategyRowsView.length} / {strategyEvaluations.length}（null 分恒排末尾）
-                        </Typography.Text>
+                            {t('pages:current')}{sortDimLabel} · {sortDir === 'desc' ? t('pages:descending') : t('pages:ascending')} {t('pages:matches3')}{strategyRowsView.length} / {strategyEvaluations.length}{t('pages:nullScoresAlwaysAppearLast')}</Typography.Text>
                     </div>
                     <Typography.Text type="secondary" style={{fontSize: 12}}>
-                        综合分为 0~100 Paper 内部启发式分（样本/收益/风险/执行/Backtest 偏差加权）；缺 Backtest 偏差分时显示「数据不足」，不伪造 0。
-                    </Typography.Text>
-                    <div role="region" aria-label="Paper 策略评估表">
+                        {t('pages:theOverallScoreIsA0100InternalPaperHeuristicWeightedBySamplesReturnRiskExecutionAndBacktestDeviation')}</Typography.Text>
+                    <div role="region" aria-label={t('pages:paperStrategyEvaluationTable')}>
                         <NqDataTable<PaperStrategyEvaluationItem>
                             rowKey="strategyVersionId"
                             pagination={false}
                             dataSource={strategyRowsView}
                             columns={strategyColumns}
                             scroll={{x: 1980, y: 320}}
-                            locale={{emptyText: '当前筛选条件下暂无匹配的策略评估。'}}
+                            locale={{emptyText: t('pages:noStrategyEvaluationsMatchTheseFilters')}}
                         />
                     </div>
                 </Space>
             </Card>
 
             {/* C) Publish Evaluation 表 */}
-            <Card size="small" title="Publish 策略评估">
-                <div role="region" aria-label="Paper 发布评估表">
+            <Card size="small" title={t('pages:publishStrategyEvaluation')}>
+                <div role="region" aria-label={t('pages:paperPublishEvaluationTable')}>
                     <NqDataTable<PaperPublishEvaluationItem>
                         rowKey="publishId"
                         pagination={false}
                         dataSource={publishEvaluations}
                         columns={publishColumns}
                         scroll={{x: 1760, y: 280}}
-                        locale={{emptyText: '暂无可聚合的发布评估。'}}
+                        locale={{emptyText: t('pages:noPublishEvaluationsToAggregate')}}
                     />
                 </div>
             </Card>
 
             {/* D) Paper vs Backtest 偏差表 */}
-            <Card size="small" title="Paper vs Backtest 偏差">
+            <Card size="small" title={t('pages:paperVersusBacktestDeviation')}>
                 <Space direction="vertical" size={8} style={{display: 'flex'}}>
                     <Typography.Text type="secondary" style={{fontSize: 12}}>
-                        Backtest 偏差用于比较 Paper 与回测表现差异，缺失数据显示 UNAVAILABLE，不会被伪造。
-                    </Typography.Text>
-                    <div role="region" aria-label="Paper 回测偏差表">
+                        {t('pages:backtestDeviationComparesPaperAndBacktestPerformanceMissingDataRemainsUnavailableAndIsNotFabricated')}</Typography.Text>
+                    <div role="region" aria-label={t('pages:paperBacktestDeviationTable')}>
                         <NqDataTable<PaperStrategyEvaluationItem>
                             rowKey="strategyVersionId"
                             pagination={false}
                             dataSource={strategyEvaluations}
                             columns={deviationColumns}
                             scroll={{x: 1310, y: 260}}
-                            locale={{emptyText: '暂无可对照的 Backtest 偏差。'}}
+                            locale={{emptyText: t('pages:noComparableBacktestDeviation')}}
                         />
                     </div>
                 </Space>
             </Card>
 
             {/* E) Rankings */}
-            <Card size="small" title="策略评估榜单">
-                <div role="region" aria-label="Paper 策略评估榜单">
+            <Card size="small" title={t('pages:strategyEvaluationRankings')}>
+                <div role="region" aria-label={t('pages:paperStrategyEvaluationRankings')}>
                     <Descriptions bordered size="small" column={1}>
                         {rankingItems.map((item) => (
                             <Descriptions.Item key={item.label} label={item.label}>
                                 {item.keys.length > 0 ? (
                                     <Space size={4} wrap>{item.keys.map((k) => <Tag key={k} className="nq-mono">{k}</Tag>)}</Space>
                                 ) : (
-                                    <Typography.Text type="secondary" style={{fontSize: 12}}>无</Typography.Text>
+                                    <Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:none')}</Typography.Text>
                                 )}
                             </Descriptions.Item>
                         ))}
@@ -471,8 +471,7 @@ function PaperStrategyEvaluationBody({evaluation}: {evaluation: PaperStrategyEva
             </Card>
 
             <Typography.Text type="secondary" style={{fontSize: 12}}>
-                该评分是 Paper 内部启发式评估，不是真实投资评级；不代表 LIVE 或真实交易表现，也不构成投资建议。
-            </Typography.Text>
+                {t('pages:scoresAreInternalPaperHeuristicsNotInvestmentRatingsLivePerformanceOrInvestmentAdvice')}</Typography.Text>
         </Space>
     );
 }

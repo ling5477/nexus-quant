@@ -1,3 +1,5 @@
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {Alert, Button, Card, Space, Tag, Typography} from 'antd';
 import {useNavigate} from 'react-router-dom';
 
@@ -14,6 +16,7 @@ interface PaperTradingPlaceholderPageProps {
  * 后续迁移路径，并重复展示 Paper-only 安全边界。
  */
 export function PaperTradingPlaceholderPage({title}: PaperTradingPlaceholderPageProps) {
+    useTranslation('pages');
     const navigate = useNavigate();
 
     return (
@@ -24,28 +27,26 @@ export function PaperTradingPlaceholderPage({title}: PaperTradingPlaceholderPage
                         {title}
                     </Typography.Title>
                     <Typography.Paragraph type="secondary" style={{margin: 0}}>
-                        该模块将在 K5-C 迁移到当前子路由，当前完整视图仍在 Runs 兼容页可用。
-                    </Typography.Paragraph>
+                        {t('pages:thisModuleWillMoveHereInK5CItsFullViewRemainsAvailableOnTheCompatibleRunsPage')}</Typography.Paragraph>
                 </Space>
 
                 <Space size={6} wrap>
-                    <Tag color="blue">SIM/Paper only</Tag>
-                    <Tag color="red">LIVE 未开启</Tag>
-                    <Tag color="default">不接真实交易所</Tag>
-                    <Tag color="default">不构成投资建议</Tag>
+                    <Tag color="blue">{t('pages:simPaperOnly')}</Tag>
+                    <Tag color="red">{t('pages:liveDisabled2')}</Tag>
+                    <Tag color="default">{t('pages:noRealExchangeConnection')}</Tag>
+                    <Tag color="default">{t('pages:notInvestmentAdvice')}</Tag>
                 </Space>
 
                 <Alert
                     type="info"
                     showIcon
-                    message="Paper-only placeholder"
-                    description="本页仅为 K5-B 子路由壳，不读取 credential、不访问真实交易所、不新增查询，也不构成投资建议。"
+                    message={t('pages:paperOnlyPlaceholder')}
+                    description={t('pages:thisK5BRouteShellDoesNotReadCredentialsAccessRealExchangesOrIssueNewQueriesItIsNotInvestmentAdvice')}
                 />
 
                 <div>
                     <Button type="primary" onClick={() => navigate('/paper-trading/runs')}>
-                        返回 Runs
-                    </Button>
+                        {t('pages:backToRuns')}</Button>
                 </div>
             </Space>
         </Card>

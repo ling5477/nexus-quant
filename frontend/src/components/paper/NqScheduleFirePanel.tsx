@@ -1,7 +1,10 @@
+import {useLocalizedForm} from '@/i18n/useLocalizedForm';
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {App, Button, Card, Form, Input, Modal, Space} from 'antd';
 import {useState} from 'react';
 
-import {formatApiError} from '@/api/errors';
+import {showApiError} from '@/api/errors';
 import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqStatusTag, nqNumericColumn} from '@/components/nq';
 import {
     useCreateScheduleMutation,
@@ -25,8 +28,9 @@ interface NqScheduleFirePanelProps {
 }
 
 export function NqScheduleFirePanel({paperRunId}: NqScheduleFirePanelProps) {
+    useTranslation('pages');
     const {message} = App.useApp();
-    const [scheduleForm] = Form.useForm<PaperRunScheduleCreateRequest>();
+    const [scheduleForm] = useLocalizedForm<PaperRunScheduleCreateRequest>();
     const [createOpen, setCreateOpen] = useState(false);
     const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
 
@@ -42,11 +46,10 @@ export function NqScheduleFirePanel({paperRunId}: NqScheduleFirePanelProps) {
         <Card
             className="page-section"
             size="small"
-            title="调度计划"
+            title={t('pages:schedules')}
             extra={(
                 <Button size="small" type="primary" ghost onClick={() => setCreateOpen(true)}>
-                    创建调度
-                </Button>
+                    {t('pages:createSchedule')}</Button>
             )}
         >
             <Space direction="vertical" size={8} style={{display: 'flex'}}>
@@ -55,7 +58,7 @@ export function NqScheduleFirePanel({paperRunId}: NqScheduleFirePanelProps) {
                 ) : schedulesQuery.error ? (
                     <NqErrorState error={schedulesQuery.error as AppApiError} onRetry={() => schedulesQuery.refetch()}/>
                 ) : data.length === 0 ? (
-                    <NqEmptyState description="当前 Paper run 暂无调度计划。"/>
+                    <NqEmptyState description={t('pages:noSchedulesForThisPaperRun')}/>
                 ) : (
                     <NqDataTable<PaperRunScheduleItem>
                         rowKey="scheduleId"
@@ -63,28 +66,27 @@ export function NqScheduleFirePanel({paperRunId}: NqScheduleFirePanelProps) {
                         dataSource={data}
                         scroll={{x: 760, y: 240}}
                         columns={[
-                            {title: '名称', dataIndex: 'scheduleName', key: 'scheduleName', width: 140},
+                            {title: t('pages:name'), dataIndex: 'scheduleName', key: 'scheduleName', width: 140},
                             {title: 'Cron', dataIndex: 'cronExpr', key: 'cronExpr', width: 140, className: 'nq-mono'},
-                            {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v}/>},
-                            {title: '上次触发', dataIndex: 'lastFireTime', key: 'lastFireTime', width: 170, render: (v: string | null) => formatDateTime(v)},
+                            {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v}/>},
+                            {title: t('pages:lastTrigger'), dataIndex: 'lastFireTime', key: 'lastFireTime', width: 170, render: (v: string | null) => formatDateTime(v)},
                             {
-                                title: '操作', key: 'action', width: 220, fixed: 'right',
+                                title: t('pages:actions'), key: 'action', width: 220, fixed: 'right',
                                 render: (_, record) => (
                                     <Space size={4}>
-                                        <Button type="link" size="small" onClick={() => setSelectedScheduleId(record.scheduleId)}>触发记录</Button>
+                                        <Button type="link" size="small" onClick={() => setSelectedScheduleId(record.scheduleId)}>{t('pages:triggerRecords')}</Button>
                                         <Button
                                             type="link" size="small" loading={runScheduleOnceMutation.isPending} disabled={record.status !== 'ENABLED'}
                                             onClick={() => runScheduleOnceMutation.mutate(record.scheduleId, {
-                                                onSuccess: () => message.success('调度已触发。'),
-                                                onError: (err) => message.error(formatApiError(err as AppApiError)),
+                                                onSuccess: () => message.success(t('pages:scheduleTriggered')),
+                                                onError: (err) => showApiError(err as AppApiError, message),
                                             })}
                                         >
-                                            执行一次
-                                        </Button>
+                                            {t('pages:runOnce')}</Button>
                                         {record.status === 'ENABLED' ? (
-                                            <Button type="link" size="small" onClick={() => updateScheduleStatusMutation.mutate({scheduleId: record.scheduleId, request: {status: 'DISABLED'}}, {onSuccess: () => message.success('已禁用。')})}>禁用</Button>
+                                            <Button type="link" size="small" onClick={() => updateScheduleStatusMutation.mutate({scheduleId: record.scheduleId, request: {status: 'DISABLED'}}, {onSuccess: () => message.success(t('pages:disabled2'))})}>{t('pages:disable2')}</Button>
                                         ) : (
-                                            <Button type="link" size="small" onClick={() => updateScheduleStatusMutation.mutate({scheduleId: record.scheduleId, request: {status: 'ENABLED'}}, {onSuccess: () => message.success('已启用。')})}>启用</Button>
+                                            <Button type="link" size="small" onClick={() => updateScheduleStatusMutation.mutate({scheduleId: record.scheduleId, request: {status: 'ENABLED'}}, {onSuccess: () => message.success(t('pages:enabled2'))})}>{t('pages:enable')}</Button>
                                         )}
                                     </Space>
                                 ),
@@ -96,15 +98,15 @@ export function NqScheduleFirePanel({paperRunId}: NqScheduleFirePanelProps) {
                 {selectedScheduleId && (
                     <Card
                         size="small"
-                        title={`触发记录 (${selectedScheduleId.substring(0, 12)}...)`}
-                        extra={<Button type="link" size="small" onClick={() => setSelectedScheduleId(null)}>关闭</Button>}
+                        title={t('pages:triggerRecordsValue1', {value1: selectedScheduleId.substring(0, 12)})}
+                        extra={<Button type="link" size="small" onClick={() => setSelectedScheduleId(null)}>{t('pages:close')}</Button>}
                     >
                         {firesQuery.isFetching && (firesQuery.data ?? []).length === 0 ? (
                             <NqLoadingState/>
                         ) : firesQuery.error ? (
                             <NqErrorState error={firesQuery.error as AppApiError} onRetry={() => firesQuery.refetch()}/>
                         ) : (firesQuery.data ?? []).length === 0 ? (
-                            <NqEmptyState description="暂无触发记录。"/>
+                            <NqEmptyState description={t('pages:noTriggerRecords')}/>
                         ) : (
                             <NqDataTable<PaperRunScheduleFireItem>
                                 rowKey="fireId"
@@ -112,10 +114,10 @@ export function NqScheduleFirePanel({paperRunId}: NqScheduleFirePanelProps) {
                                 dataSource={firesQuery.data ?? []}
                                 scroll={{y: 200}}
                                 columns={[
-                                    {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v}/>},
-                                    {title: '触发时间', dataIndex: 'firedAt', key: 'firedAt', width: 170, render: (v: string) => formatDateTime(v)},
-                                    nqNumericColumn({title: '耗时(ms)', dataIndex: 'durationMs', key: 'durationMs', width: 100}),
-                                    {title: '错误', dataIndex: 'errorMessage', key: 'errorMessage'},
+                                    {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v}/>},
+                                    {title: t('pages:triggeredAt'), dataIndex: 'firedAt', key: 'firedAt', width: 170, render: (v: string) => formatDateTime(v)},
+                                    nqNumericColumn({title: t('pages:durationMs'), dataIndex: 'durationMs', key: 'durationMs', width: 100}),
+                                    {title: t('pages:error'), dataIndex: 'errorMessage', key: 'errorMessage'},
                                 ]}
                             />
                         )}
@@ -125,7 +127,7 @@ export function NqScheduleFirePanel({paperRunId}: NqScheduleFirePanelProps) {
 
             <Modal
                 open={createOpen}
-                title="创建调度计划"
+                title={t('pages:createSchedulePlan')}
                 onCancel={() => setCreateOpen(false)}
                 onOk={() => scheduleForm.submit()}
                 confirmLoading={createScheduleMutation.isPending}
@@ -138,21 +140,21 @@ export function NqScheduleFirePanel({paperRunId}: NqScheduleFirePanelProps) {
                     onFinish={(values) => {
                         createScheduleMutation.mutate({...values, paperRunId}, {
                             onSuccess: () => {
-                                message.success('调度已创建。');
+                                message.success(t('pages:scheduleCreated'));
                                 setCreateOpen(false);
                                 scheduleForm.resetFields();
                             },
-                            onError: (err) => message.error(formatApiError(err as AppApiError)),
+                            onError: (err) => showApiError(err as AppApiError, message),
                         });
                     }}
                 >
-                    <Form.Item label="调度名称" name="scheduleName" rules={[{required: true, message: '请输入调度名称'}]}>
-                        <Input placeholder="如：每5分钟心跳"/>
+                    <Form.Item label={t('pages:scheduleName')} name="scheduleName" rules={[{required: true, message: t('pages:enterAScheduleName')}]}>
+                        <Input placeholder={t('pages:forExampleHeartbeatEvery5Minutes')}/>
                     </Form.Item>
-                    <Form.Item label="Cron 表达式" name="cronExpr" rules={[{required: true, message: '请输入 cron 表达式'}]}>
+                    <Form.Item label={t('pages:cronExpression')} name="cronExpr" rules={[{required: true, message: t('pages:enterACronExpression')}]}>
                         <Input placeholder="0 */5 * * * *"/>
                     </Form.Item>
-                    <Form.Item label="时区" name="timezone">
+                    <Form.Item label={t('pages:timeZone')} name="timezone">
                         <Input placeholder="UTC"/>
                     </Form.Item>
                 </Form>

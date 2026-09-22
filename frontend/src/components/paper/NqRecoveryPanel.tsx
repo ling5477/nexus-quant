@@ -1,6 +1,8 @@
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {App, Button, Card, Space} from 'antd';
 
-import {formatApiError} from '@/api/errors';
+import {showApiError} from '@/api/errors';
 import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqStatusTag} from '@/components/nq';
 import {
     usePaperRecoveryEventsQuery,
@@ -23,6 +25,7 @@ interface NqRecoveryPanelProps {
 }
 
 export function NqRecoveryPanel({paperRunId}: NqRecoveryPanelProps) {
+    useTranslation('pages');
     const {message} = App.useApp();
     const recoveryEventsQuery = usePaperRecoveryEventsQuery(paperRunId);
     const recoverMutation = useRecoverMutation();
@@ -35,39 +38,36 @@ export function NqRecoveryPanel({paperRunId}: NqRecoveryPanelProps) {
         <Card
             className="page-section"
             size="small"
-            title="恢复事件"
+            title={t('pages:recoveryEvents')}
             extra={(
                 <Space size={4} wrap>
                     <Button
                         size="small" type="primary" ghost loading={recoverMutation.isPending}
                         onClick={() => recoverMutation.mutate(
                             {paperRunId, request: {reason: '手动恢复测试'}},
-                            {onSuccess: () => message.success('已记录恢复事件。'), onError: (err) => message.error(formatApiError(err as AppApiError))},
+                            {onSuccess: () => message.success(t('pages:recoveryEventRecorded')), onError: (err) => showApiError(err as AppApiError, message)},
                         )}
                     >
-                        执行恢复
-                    </Button>
+                        {t('pages:runRecovery')}</Button>
                     <Button
                         size="small" loading={retryFailedStepMutation.isPending}
                         onClick={() => retryFailedStepMutation.mutate(
                             {paperRunId, request: {failedStep: 'manual-test', reason: '手动重试测试'}},
-                            {onSuccess: () => message.success('已记录重试事件。'), onError: (err) => message.error(formatApiError(err as AppApiError))},
+                            {onSuccess: () => message.success(t('pages:retryEventRecorded')), onError: (err) => showApiError(err as AppApiError, message)},
                         )}
                     >
-                        重试失败步骤
-                    </Button>
+                        {t('pages:retryFailedStep')}</Button>
                     <Button
                         size="small" loading={runMonitorOnceMutation.isPending}
                         onClick={() => runMonitorOnceMutation.mutate(
                             {paperRunId},
                             {
-                                onSuccess: (result) => message.success(`监控守护已执行，新建告警 ${result.createdAlertCount} 条。`),
-                                onError: (err) => message.error(formatApiError(err as AppApiError)),
+                                onSuccess: (result) => message.success(t('pages:monitoringGuardCompletedValue1AlertsCreated', {value1: result.createdAlertCount})),
+                                onError: (err) => showApiError(err as AppApiError, message),
                             },
                         )}
                     >
-                        执行监控守护
-                    </Button>
+                        {t('pages:runMonitoringGuard')}</Button>
                 </Space>
             )}
         >
@@ -76,7 +76,7 @@ export function NqRecoveryPanel({paperRunId}: NqRecoveryPanelProps) {
             ) : recoveryEventsQuery.error ? (
                 <NqErrorState error={recoveryEventsQuery.error as AppApiError} onRetry={() => recoveryEventsQuery.refetch()}/>
             ) : data.length === 0 ? (
-                <NqEmptyState description="当前 Paper run 暂无恢复事件。"/>
+                <NqEmptyState description={t('pages:noRecoveryEventsForThisPaperRun')}/>
             ) : (
                 <NqDataTable<PaperRunRecoveryEventItem>
                     rowKey="recoveryEventId"
@@ -84,11 +84,11 @@ export function NqRecoveryPanel({paperRunId}: NqRecoveryPanelProps) {
                     dataSource={data}
                     scroll={{y: 240}}
                     columns={[
-                        {title: '类型', dataIndex: 'recoveryType', key: 'recoveryType', width: 180},
-                        {title: '状态', dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <NqStatusTag status={v} tone={v === 'SUCCEEDED' ? 'success' : v === 'FAILED' ? 'danger' : v === 'SKIPPED' ? 'neutral' : 'info'}/>},
-                        {title: '原因', dataIndex: 'reason', key: 'reason'},
-                        {title: '开始时间', dataIndex: 'startedAt', key: 'startedAt', width: 170, render: (v: string) => formatDateTime(v)},
-                        {title: '完成时间', dataIndex: 'finishedAt', key: 'finishedAt', width: 170, render: (v: string | null) => (v ? formatDateTime(v) : '-')},
+                        {title: t('pages:type'), dataIndex: 'recoveryType', key: 'recoveryType', width: 180},
+                        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <NqStatusTag status={v} tone={v === 'SUCCEEDED' ? 'success' : v === 'FAILED' ? 'danger' : v === 'SKIPPED' ? 'neutral' : 'info'}/>},
+                        {title: t('pages:reason'), dataIndex: 'reason', key: 'reason'},
+                        {title: t('pages:startTime'), dataIndex: 'startedAt', key: 'startedAt', width: 170, render: (v: string) => formatDateTime(v)},
+                        {title: t('pages:completedAt'), dataIndex: 'finishedAt', key: 'finishedAt', width: 170, render: (v: string | null) => (v ? formatDateTime(v) : '-')},
                     ]}
                 />
             )}

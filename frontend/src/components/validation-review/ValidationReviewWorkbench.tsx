@@ -1,3 +1,5 @@
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {Alert, Button, Card, Space, Typography} from 'antd';
 import {useMemo, useState} from 'react';
 import {useSearchParams} from 'react-router-dom';
@@ -28,6 +30,7 @@ function normalizeReviewCaseId(value: string | null): string | null {
  * lifecycle actions。后端仍是权限与状态机最终来源；本组件不创建 case、不保存服务端数据到 Zustand。
  */
 export function ValidationReviewWorkbench() {
+    useTranslation('pages');
     const [searchParams, setSearchParams] = useSearchParams();
     const currentUser = useAuthStore((state) => state.currentUser);
     const isAdmin = Boolean(currentUser?.roles.some((role) => role.toUpperCase() === 'ADMIN'));
@@ -59,25 +62,24 @@ export function ValidationReviewWorkbench() {
         <Card className="page-section" variant="borderless" data-testid="validation-review-workbench">
             <Space direction="vertical" size={16} style={{display: 'flex'}}>
                 <div>
-                    <Title level={3} style={{marginBottom: 4}}>Validation Review Workbench</Title>
-                    <Text strong>本地验证审查工作台</Text>
+                    <Title level={3} style={{marginBottom: 4}}>{t('pages:validationReviewWorkbench')}</Title>
+                    <Text strong>{t('pages:localValidationReviewWorkbench')}</Text>
                     <Paragraph type="secondary" style={{marginTop: 8, marginBottom: 0}}>
-                        查询持久化人工复核 cases，查看安全详情和 lifecycle events，并执行四类有限人工动作。
-                    </Paragraph>
+                        {t('pages:queryDurableManualReviewCasesInspectSafeDetailsAndLifecycleEventsAndPerformFourBoundedManualActions')}</Paragraph>
                 </div>
                 <Alert
                     type="warning"
                     showIcon
-                    message="诊断审查流程，不构成交易授权，也不会启动 LIVE 或 Shadow trading。"
-                    description="所有权限、owner scope、乐观锁和状态流转仍由后端强制执行；按钮隐藏不替代服务端安全控制。"
+                    message={t('pages:diagnosticReviewDoesNotGrantTradingAuthorizationOrStartLiveOrShadowTrading')}
+                    description={t('pages:permissionsOwnerScopeOptimisticLockingAndStateTransitionsRemainEnforcedByTheBackendHiddenButtonsDoNo')}
                 />
                 {invalidSelection ? (
                     <Alert
                         type="error"
                         showIcon
-                        message="reviewCaseId 无效"
-                        description="非法或超长 case ID 不会触发 detail/events 请求。"
-                        action={<Button size="small" onClick={() => selectCase(null)}>清除失效选择</Button>}
+                        message={t('pages:invalidReviewcaseid')}
+                        description={t('pages:invalidOrExcessivelyLongCaseIdsDoNotTriggerDetailOrEventRequests')}
+                        action={<Button size="small" onClick={() => selectCase(null)}>{t('pages:clearInvalidSelection')}</Button>}
                     />
                 ) : null}
                 <ValidationReviewQueue

@@ -52,7 +52,7 @@ Phase6 L4 ACCEPTED / B0–B5 ACCEPTED / B6 AGGREGATE_ACCEPTED
   ↓
 Phase6 L5 / L6-A / L6-B / L6 ACCEPTED
   ↓
-NQ-GATEAUDIT-FRONTEND-LOCALIZATION-ERROR-UX-CATALOG-IMPLEMENTATION / NOT_STARTED
+NQ-GATEAUDIT-FRONTEND-LOCALIZATION-ERROR-UX-CATALOG-IMPLEMENTATION / REVIEW_ACCEPTED / READY_TO_COMMIT
   ↓
 Phase7 final baseline / archive / freeze NOT_STARTED
 ```
@@ -132,7 +132,7 @@ L5 A/B/C与Kill-under-load已接受，20/20、missing=0、invalid=0；L6-A 60min
 
 Future trigger：对应retired/dormant路径再次成为canonical时，重新运行R1–R4 reachability，不能自动恢复blocking finding或新增compatibility caller。历史失败pair=`378de657ac33b9f9fd666288d489181ac0147b2e / 34038345304`保持FAILED DELIVERY；接受的是后续remediation pair，详见[authority acceptance evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_PLAN_POST_CI_AUTHORITY_TRANSITION_TO_C1.md)。
 
-当前依赖为 **Phase6 ACCEPTED → Frontend localization → Error UX consolidation → Error Catalog → stable error identity（NQ-TRD-1001 / ORDER_VERSION_CONFLICT）→ Phase7 final baseline/archive/freeze**。前端/错误整理作为独立工作包，尚未开始；Phase7=`NOT_STARTED`。14个历史inactive scenario继续保留future obligation，不算PASS或静默skip。
+当前依赖为 **Phase6 ACCEPTED → Frontend localization / Error UX / Error Catalog / stable error identity 接受 → Phase7 planning/final baseline entry**。前端/错误整理已实现并通过独立审查，待精确交付；Phase7=`NOT_STARTED`，本批不执行 freeze。14个历史inactive scenario继续保留future obligation，不算PASS或静默skip。
 
 C1接受身份：implementation=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd`；既有独立review=`PASS / PHASE6_L4_C1_VERSIONED_OCC_INDEPENDENT_REVIEW_ACCEPTED / P0_0 / P1_0 / READY_FOR_C1_DELIVERY`；acceptance head=`eb9740b7519f48ffc1e32968cbb0950261b871ef`、CI=`34098902705 / 9/9 SUCCESS`。首次delivery=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd / 34086018265 = FAILED DELIVERY`另行保留；完整证据见[C1 authority acceptance](../audit/evidence/GATEAUDIT_PHASE6_L4_C1_POST_CI_AUTHORITY_TRANSITION_TO_C2.md)。C1历史接受身份不由后续文档同步替代。C2已由`612c2f5887a2e6b3a8b3138d9ae9b193c20e298f / 34183851797`接受关闭，本轮不重复其实现或正确性审查。
 
@@ -145,7 +145,7 @@ C1接受身份：implementation=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd`；既
 - F007 immutable technical acceptance pair=`0e2efdeb236c185dbace67bb22f94c6af64a563a / 34009290836`；implementation与accepted technical head相同，不由本轮docs-only authority commit替代。
 - F009 immutable technical acceptance pair=`dbb8b9c6a2319338f5ca90b566ad494142a55e20 / 34024427455`；首次delivery=`85d11984d0c65b464ffe4858fe7fd1da51885f12`、failed CI=`34024011663`保留，不由后续authority commit替代。
 - F001 remote acceptance绑定ruleset `22381941 / refs/heads/dev / ACTIVE / effective 9/9`；本次只读readback与authority synchronization commit是独立事件，不能写成新的remote mutation。
-- 当前workstream及下一动作=`NQ-GATEAUDIT-FRONTEND-LOCALIZATION-ERROR-UX-CATALOG-IMPLEMENTATION`，status=`NOT_STARTED / NONE / NOT_RUN`。本次仅同步Phase6接受事实，不实施前端/error功能，不启动Phase7。
+- 当前workstream=`NQ-GATEAUDIT-FRONTEND-LOCALIZATION-ERROR-UX-CATALOG-IMPLEMENTATION`，已实现并通过独立审查，待精确交付。当前下一动作以 STATUS 机器区块为准；接受后仅打开 Phase7 planning/final baseline entry，Phase7 保持 NOT_STARTED。
 - Phase5 ACCEPTED/CLOSED，remaining blocking=0；F005仍DEFERRED/NON_BLOCKING，平台attestation须未来显式授权。详见[F001 post-remote acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_POST_REMOTE_AUTHORITY_ACCEPTANCE.md)。
 
 

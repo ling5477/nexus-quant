@@ -1,3 +1,5 @@
+import {t} from '@/i18n';
+import {useTranslation} from 'react-i18next';
 import { useEffect, useMemo, useRef } from 'react';
 import {
   HistogramSeries,
@@ -25,12 +27,13 @@ export function NqVolumeChart({
   error = null,
   stale = false,
   staleDetail,
-  sourceLabel = 'Volume source',
+  sourceLabel = t('chart.volumeSource'),
   convention = DEFAULT_MARKET_CONVENTION,
-  title = 'Volume',
-  emptyText = '暂无成交量数据',
+  title = t('chart.volume'),
+  emptyText = t('chart.volumeEmpty'),
   className,
 }: NqChartBaseProps) {
+    useTranslation();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const data = useMemo(() => toHistogramData(bars, convention), [bars, convention]);
@@ -85,7 +88,7 @@ export function NqVolumeChart({
         ) : null}
       </div>
       <div ref={containerRef} className="nq-chart__canvas" style={{height: height - 34}}/>
-      {loading ? <div className="nq-chart__state">成交量加载中</div> : null}
+      {loading ? <div className="nq-chart__state">{t('chart.volumeLoading')}</div> : null}
       {!loading && !errorText && data.length === 0 ? <div className="nq-chart__state">{emptyText}</div> : null}
       {errorText ? <div className="nq-chart__state nq-chart__state--error">{errorText}</div> : null}
     </div>

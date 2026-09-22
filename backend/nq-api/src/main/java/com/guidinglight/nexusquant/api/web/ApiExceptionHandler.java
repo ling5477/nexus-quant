@@ -12,6 +12,7 @@ import com.guidinglight.nexusquant.strategy.strategyrelease.application.Admissio
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunMaterializationAuthorizationException;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunMaterializationRejectedException;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewException;
+import com.guidinglight.nexusquant.trading.application.OrderVersionConflictException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.MDC;
@@ -97,6 +98,15 @@ public class ApiExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiErrorResponse handleIllegalArgumentException(IllegalArgumentException ex, HttpServletRequest request) {
         return build(HttpStatus.BAD_REQUEST, "BAD_REQUEST", ex.getMessage(), request, List.of());
+    }
+
+    /** 精确识别订单准备的代际冲突，不依据异常文本匹配，也不向 API 泄露订单内部信息。 */
+    @ExceptionHandler(OrderVersionConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiErrorResponse handleOrderVersionConflict(OrderVersionConflictException ex, HttpServletRequest request) {
+        return build(HttpStatus.CONFLICT, "STATE_CONFLICT",
+                "order changed concurrently; refresh the latest state before trying again", request, List.of(),
+                ApiErrorIdentity.ORDER_VERSION_CONFLICT);
     }
 
     @ExceptionHandler(IllegalStateException.class)
@@ -269,6 +279,18 @@ public class ApiExceptionHandler {
             HttpServletRequest request,
             List<ApiFieldError> fieldErrors
     ) {
+        return build(status, code, message, request, fieldErrors, null);
+    }
+
+    /** 仅已明确识别的异常附加身份，避免通用状态冲突被错误归类为订单冲突。 */
+    private ApiErrorResponse build(
+            HttpStatus status,
+            String code,
+            String message,
+            HttpServletRequest request,
+            List<ApiFieldError> fieldErrors,
+            ApiErrorIdentity identity
+    ) {
         return new ApiErrorResponse(
                 Instant.now(),
                 status.value(),
@@ -277,7 +299,9 @@ public class ApiExceptionHandler {
                 message == null || message.isBlank() ? status.getReasonPhrase() : message,
                 request.getRequestURI(),
                 resolveTraceId(request),
-                fieldErrors
+                fieldErrors,
+                identity == null ? null : identity.errorId(),
+                identity == null ? null : identity.errorKey()
         );
     }
 

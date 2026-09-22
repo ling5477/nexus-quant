@@ -4,6 +4,7 @@ import {normalizeApiError} from '@/api/errors';
 import {emitAppError} from '@/utils/error-events';
 import {useAuthStore} from '@/store/auth-store';
 import {appEnv} from '@/utils/env';
+import {saveAuthError} from '@/errors/auth-error';
 
 function redirectToLogin(reason: 'expired' | 'unauthorized'): void {
     if (typeof window === 'undefined') {
@@ -50,9 +51,10 @@ apiClient.interceptors.response.use(
         const isLoginRequest = requestUrl.includes('/auth/login');
 
         if (normalizedError.status === 401 && !isLoginRequest) {
+            saveAuthError(normalizedError);
             useAuthStore.getState().clearAuth('expired');
             redirectToLogin('expired');
-        } else if (normalizedError.status === 403 || normalizedError.status >= 500) {
+        } else if (!isLoginRequest && (normalizedError.status === 403 || normalizedError.status >= 500)) {
             emitAppError(normalizedError);
         }
 

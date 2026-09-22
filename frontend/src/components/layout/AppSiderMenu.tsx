@@ -3,17 +3,19 @@ import {useLocation, useNavigate} from 'react-router-dom';
 
 import {appNavItems, resolveMenuKey} from '@/router/navigation';
 import type {AppNavItem} from '@/types/navigation';
+import {useTranslation} from 'react-i18next';
 
 interface AppSiderMenuProps {
     collapsed: boolean;
 }
 
 export function AppSiderMenu({collapsed}: AppSiderMenuProps) {
+    const {t} = useTranslation();
     const location = useLocation();
     const navigate = useNavigate();
     const groupedItems = Array.from(
         appNavItems.reduce((map, item) => {
-            const section = item.section ?? '未分组';
+            const section = item.section ?? t('shell.ungrouped');
             const current = map.get(section) ?? [];
             current.push(item);
             map.set(section, current);
@@ -31,7 +33,7 @@ export function AppSiderMenu({collapsed}: AppSiderMenuProps) {
                             NexusQuant
                         </Typography.Text>
                         <Typography.Text type="secondary" style={{color: 'rgba(248, 251, 255, 0.68)'}}>
-                            Trading Console
+                            {t('shell.console')}
                         </Typography.Text>
                     </div>
                 ) : null}

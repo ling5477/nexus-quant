@@ -1,10 +1,13 @@
+import {useLocalizedForm} from '@/i18n/useLocalizedForm';
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {Alert, Button, Card, DatePicker, Descriptions, Form, Input, Select, Space, Table, Tag, Typography, message} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useMemo, useState, type ReactNode} from 'react';
 import {useSearchParams} from 'react-router-dom';
 
-import {formatApiError} from '@/api/errors';
+import {formatApiError, showApiError} from '@/api/errors';
 import {marketdataApi} from '@/api/marketdata';
 import {marketdataQueryKeys} from '@/api/query-keys';
 import {PageHero} from '@/components/page/PageHero';
@@ -33,26 +36,26 @@ import type {
 import {formatDateTime, formatNumber} from '@/utils/formatters';
 
 const columns: ColumnsType<MarketdataBar> = [
-    {title: 'Exchange', dataIndex: 'exchangeCode', key: 'exchangeCode', width: 120},
-    {title: 'Market', dataIndex: 'marketType', key: 'marketType', width: 100},
-    {title: 'Symbol', dataIndex: 'symbol', key: 'symbol', width: 140},
-    {title: 'Interval', dataIndex: 'interval', key: 'interval', width: 100},
-    {title: 'Open Time', dataIndex: 'openTime', key: 'openTime', width: 180, render: (value: string) => formatDateTime(value)},
-    {title: 'Close Time', dataIndex: 'closeTime', key: 'closeTime', width: 180, render: (value: string) => formatDateTime(value)},
-    {title: 'Open', dataIndex: 'openPrice', key: 'openPrice', width: 120, render: (value: number) => formatNumber(value, 8)},
-    {title: 'High', dataIndex: 'highPrice', key: 'highPrice', width: 120, render: (value: number) => formatNumber(value, 8)},
-    {title: 'Low', dataIndex: 'lowPrice', key: 'lowPrice', width: 120, render: (value: number) => formatNumber(value, 8)},
-    {title: 'Close', dataIndex: 'closePrice', key: 'closePrice', width: 120, render: (value: number) => formatNumber(value, 8)},
-    {title: 'Volume', dataIndex: 'volume', key: 'volume', width: 120, render: (value: number) => formatNumber(value, 8)},
-    {title: 'Quote Volume', dataIndex: 'quoteVolume', key: 'quoteVolume', width: 140, render: (value?: number | null) => value == null ? '-' : formatNumber(value, 8)},
+    {get title() { return t('pages:exchange'); }, dataIndex: 'exchangeCode', key: 'exchangeCode', width: 120},
+    {get title() { return t('pages:market'); }, dataIndex: 'marketType', key: 'marketType', width: 100},
+    {get title() { return t('pages:symbol'); }, dataIndex: 'symbol', key: 'symbol', width: 140},
+    {get title() { return t('pages:interval'); }, dataIndex: 'interval', key: 'interval', width: 100},
+    {get title() { return t('pages:openTime'); }, dataIndex: 'openTime', key: 'openTime', width: 180, render: (value: string) => formatDateTime(value)},
+    {get title() { return t('pages:closeTime'); }, dataIndex: 'closeTime', key: 'closeTime', width: 180, render: (value: string) => formatDateTime(value)},
+    {get title() { return t('pages:open'); }, dataIndex: 'openPrice', key: 'openPrice', width: 120, render: (value: number) => formatNumber(value, 8)},
+    {get title() { return t('pages:high'); }, dataIndex: 'highPrice', key: 'highPrice', width: 120, render: (value: number) => formatNumber(value, 8)},
+    {get title() { return t('pages:low'); }, dataIndex: 'lowPrice', key: 'lowPrice', width: 120, render: (value: number) => formatNumber(value, 8)},
+    {get title() { return t('pages:close2'); }, dataIndex: 'closePrice', key: 'closePrice', width: 120, render: (value: number) => formatNumber(value, 8)},
+    {get title() { return t('pages:volume'); }, dataIndex: 'volume', key: 'volume', width: 120, render: (value: number) => formatNumber(value, 8)},
+    {get title() { return t('pages:quoteVolume'); }, dataIndex: 'quoteVolume', key: 'quoteVolume', width: 140, render: (value?: number | null) => value == null ? '-' : formatNumber(value, 8)},
     {
-        title: 'Quality',
+        get title() { return t('pages:quality'); },
         dataIndex: 'qualityStatus',
         key: 'qualityStatus',
         width: 130,
         render: (value?: string | null) => value
             ? <Tag color={value === 'OK' ? 'green' : 'orange'}>{value}</Tag>
-            : <Tag>unavailable</Tag>,
+            : <Tag>{t('pages:unavailable')}</Tag>,
     },
 ];
 
@@ -61,7 +64,7 @@ const OK_QUALITY_STATUSES = new Set(['OK', 'GOOD']);
 
 type QualityReadinessStatus = 'GOOD' | 'WARN' | 'STALE' | 'GAP' | 'ERROR' | 'UNKNOWN';
 
-const STABLE_FACT_PENDING_TEXT = '暂无稳定事实';
+const stableFactPendingText = () => t('pages:noStableFacts');
 
 const READINESS_STATUS_COLOR: Record<string, string> = {
     ENABLED: 'blue',
@@ -370,10 +373,10 @@ function summarizeBarsFreshness(
     loading: boolean,
 ): BarsFreshnessSummary {
     if (error) {
-        return {state: 'error', detail: 'bars query failed', stale: false};
+        return {state: 'error', detail: t('pages:barQueryFailed'), stale: false};
     }
     if (!submittedQuery) {
-        return {state: 'disabled', detail: 'not queried', stale: false};
+        return {state: 'disabled', detail: t('pages:notQueried'), stale: false};
     }
     if (loading) {
         return {state: 'delayed', detail: 'loading', stale: false};
@@ -431,36 +434,36 @@ function summarizeDataQualityReadiness(
         return {
             status: 'ERROR',
             title: 'ERROR',
-            detail: 'bars query failed; data quality cannot be trusted for this request',
+            detail: t('pages:barQueryFailedDataQualityCannotBeTrustedForThisRequest'),
             sourceHealth: 'UNAVAILABLE',
-            sourceHealthDetail: 'readiness API unavailable; using bars fallback',
+            sourceHealthDetail: t('pages:readinessApiUnavailableUsingBarDerivedFallback'),
         };
     }
     if (!submittedQuery) {
         return {
             status: 'UNKNOWN',
             title: 'UNKNOWN',
-            detail: 'submit a bars query to evaluate current data quality',
+            detail: t('pages:queryBarsToEvaluateCurrentDataQuality'),
             sourceHealth: 'UNAVAILABLE',
-            sourceHealthDetail: 'readiness API unavailable; using bars fallback',
+            sourceHealthDetail: t('pages:readinessApiUnavailableUsingBarDerivedFallback'),
         };
     }
     if (loading) {
         return {
             status: 'UNKNOWN',
             title: 'UNKNOWN',
-            detail: 'bars query is still loading',
+            detail: t('pages:barQueryIsStillLoading'),
             sourceHealth: 'UNAVAILABLE',
-            sourceHealthDetail: 'readiness API unavailable; using bars fallback',
+            sourceHealthDetail: t('pages:readinessApiUnavailableUsingBarDerivedFallback'),
         };
     }
     if (bars.length === 0) {
         return {
             status: 'UNKNOWN',
             title: 'UNKNOWN',
-            detail: 'no bars returned for the submitted window',
+            detail: t('pages:noBarsReturnedForTheSelectedWindow'),
             sourceHealth: 'UNAVAILABLE',
-            sourceHealthDetail: 'readiness API unavailable; using bars fallback',
+            sourceHealthDetail: t('pages:readinessApiUnavailableUsingBarDerivedFallback'),
         };
     }
     if (quality.gapCount > 0) {
@@ -469,34 +472,34 @@ function summarizeDataQualityReadiness(
             title: 'GAP',
             detail: `${quality.gapCount} gap signal(s) detected from qualityStatus or interval sequence`,
             sourceHealth: 'UNAVAILABLE',
-            sourceHealthDetail: 'readiness API unavailable; using bars fallback',
+            sourceHealthDetail: t('pages:readinessApiUnavailableUsingBarDerivedFallback'),
         };
     }
     if (freshness.stale) {
         return {
             status: 'STALE',
             title: 'STALE',
-            detail: 'last bar does not cover the submitted query end window',
+            detail: t('pages:theLastBarDoesNotCoverTheQueryEnd'),
             sourceHealth: 'UNAVAILABLE',
-            sourceHealthDetail: 'readiness API unavailable; using bars fallback',
+            sourceHealthDetail: t('pages:readinessApiUnavailableUsingBarDerivedFallback'),
         };
     }
     if (quality.unknownQualityCount > 0 || quality.nonOkQualityCount > 0 || quality.gapDetectionUnavailable) {
         return {
             status: 'WARN',
             title: 'WARN',
-            detail: 'qualityStatus is incomplete or contains non-OK values',
+            detail: t('pages:qualitystatusIsIncompleteOrContainsNonOkValues'),
             sourceHealth: 'UNAVAILABLE',
-            sourceHealthDetail: 'readiness API unavailable; using bars fallback',
+            sourceHealthDetail: t('pages:readinessApiUnavailableUsingBarDerivedFallback'),
         };
     }
 
     return {
         status: 'GOOD',
         title: 'GOOD',
-        detail: 'bars are present, sequential and qualityStatus is OK',
+        detail: t('pages:barsArePresentSequentialAndQualitystatusIsOk'),
         sourceHealth: 'UNAVAILABLE',
-        sourceHealthDetail: 'readiness API unavailable; using bars fallback',
+        sourceHealthDetail: t('pages:readinessApiUnavailableUsingBarDerivedFallback'),
     };
 }
 
@@ -554,8 +557,8 @@ function summarizeSandboxSourceDisplay(
         ?? (readinessLoading ? 'PENDING_BACKEND_SUPPORT' : readiness);
     const reasonText = backendReadiness?.sourceHealthReason
         ?? (readinessLoading
-            ? '等待现有 readiness API 返回；当前 UI 不发起外部交易所请求。'
-            : `${dataQualityReadiness.detail}；当前 UI 只展示本地 bars/readiness 结果。`);
+            ? t('pages:waitingForTheReadinessApiThisUiDoesNotRequestExternalExchanges')
+            : t('pages:value1ThisUiShowsLocalBarsReadinessResultsOnly', {value1: dataQualityReadiness.detail}));
     const barsCapabilityReadiness = submittedQuery ? readiness : 'PENDING_BACKEND_SUPPORT';
 
     return {
@@ -567,36 +570,37 @@ function summarizeSandboxSourceDisplay(
         checkedAt: backendReadiness?.generatedAt ?? 'PENDING_BACKEND_SUPPORT',
         noEgress: 'PENDING_BACKEND_SUPPORT',
         sourceLabel: submittedQuery
-            ? 'Local DB marketdata readiness'
-            : 'Local DB readiness pending query',
+            ? t('pages:localDatabaseMarketDataReadiness')
+            : t('pages:localDatabaseReadinessAwaitsAQuery'),
         capabilities: [
             {
                 capability: 'bars',
                 readiness: barsCapabilityReadiness,
                 reason: submittedQuery
-                    ? '现有 bars/readiness API 返回本地行情事实。'
-                    : '提交查询后展示 bars source 状态。',
+                    ? t('pages:theBarsReadinessApisReturnLocalMarketDataFacts')
+                    : t('pages:searchToViewTheBarSourceStatus'),
             },
             {
                 capability: 'instrument metadata',
                 readiness: 'PENDING_BACKEND_SUPPORT',
-                reason: '当前接口未暴露 metadata source diagnostic。',
+                reason: t('pages:metadataSourceDiagnosticsAreNotExposedByThisApi'),
             },
             {
                 capability: 'ticker',
                 readiness: 'PENDING_BACKEND_SUPPORT',
-                reason: '当前接口未暴露 ticker source diagnostic。',
+                reason: t('pages:tickerSourceDiagnosticsAreNotExposedByThisApi'),
             },
             {
                 capability: 'exchange status',
                 readiness: 'PENDING_BACKEND_SUPPORT',
-                reason: '当前接口未暴露 exchange status source diagnostic。',
+                reason: t('pages:exchangeStatusSourceDiagnosticsAreNotExposedByThisApi'),
             },
         ],
     };
 }
 
 function SandboxSourceDisplay({summary}: {summary: SandboxSourceDisplaySummary}) {
+    useTranslation('pages');
     return (
         <div
             data-testid="marketdata-sandbox-source-display"
@@ -609,10 +613,10 @@ function SandboxSourceDisplay({summary}: {summary: SandboxSourceDisplaySummary})
         >
             <Space direction="vertical" size={10} style={{display: 'flex'}}>
                 <Space size={8} wrap>
-                    <Typography.Text strong>Sandbox Source</Typography.Text>
-                    <Tag color="blue">Sandbox</Tag>
-                    <Tag>No-egress</Tag>
-                    <Tag>Public candidate</Tag>
+                    <Typography.Text strong>{t('pages:sandboxSource')}</Typography.Text>
+                    <Tag color="blue">{t('pages:sandbox')}</Tag>
+                    <Tag>{t('pages:noEgress')}</Tag>
+                    <Tag>{t('pages:publicCandidate')}</Tag>
                     <Tag color={readinessStatusColor(summary.readiness)}>{summary.readiness}</Tag>
                 </Space>
                 <Descriptions
@@ -638,16 +642,16 @@ function SandboxSourceDisplay({summary}: {summary: SandboxSourceDisplaySummary})
                     ))}
                 </Space>
                 <Typography.Text type="secondary">
-                    当前区块只消费现有 bars/readiness 和本地查询上下文；缺失的 sandbox source 字段显示 PENDING_BACKEND_SUPPORT（等待后端支持），不代表交易授权。
-                </Typography.Text>
+                    {t('pages:thisSectionUsesBarsReadinessAndTheLocalQueryContextOnlyMissingSandboxSourceFieldsRemainPendingBacken')}</Typography.Text>
             </Space>
         </div>
     );
 }
 
 function QualityTags({quality}: {quality: BarsQualitySummary}) {
+    useTranslation('pages');
     if (!quality.hasQualityStatus) {
-        return <Tag>qualityStatus unavailable</Tag>;
+        return <Tag>{t('pages:qualitystatusUnavailable')}</Tag>;
     }
 
     return (
@@ -670,23 +674,23 @@ function readinessFreshnessState(status?: string | null): FreshnessState {
 }
 
 function countText(value?: number | null): string {
-    return value == null ? STABLE_FACT_PENDING_TEXT : String(value);
+    return value == null ? stableFactPendingText() : String(value);
 }
 
 function dateText(value?: string | null): string {
-    return value ? formatDateTime(value) : STABLE_FACT_PENDING_TEXT;
+    return value ? formatDateTime(value) : stableFactPendingText();
 }
 
 function optionalText(value?: string | null): string {
-    return value && value.trim() ? value : STABLE_FACT_PENDING_TEXT;
+    return value && value.trim() ? value : stableFactPendingText();
 }
 
 function numberText(value?: number | null, suffix = ''): string {
-    return value == null ? STABLE_FACT_PENDING_TEXT : `${formatNumber(value, 2)}${suffix}`;
+    return value == null ? stableFactPendingText() : `${formatNumber(value, 2)}${suffix}`;
 }
 
 function percentText(value?: number | null): string {
-    return value == null ? STABLE_FACT_PENDING_TEXT : `${formatNumber(value * 100, 2)}%`;
+    return value == null ? stableFactPendingText() : `${formatNumber(value * 100, 2)}%`;
 }
 
 function readinessSourceHealth(readiness: MarketdataReadinessSummary): string {
@@ -698,10 +702,12 @@ function readinessUpdatedAt(readiness: MarketdataReadinessSummary): string | nul
 }
 
 function MarketDataStatusBadge({status}: {status?: string | null}) {
+    useTranslation('pages');
     return <Tag color={readinessStatusColor(status)}>{status ?? 'UNKNOWN'}</Tag>;
 }
 
 function MarketDataOriginBadge({origin}: {origin?: string | null}) {
+    useTranslation('pages');
     const color = origin === 'LOCAL_DB'
         ? 'blue'
         : origin === 'FIXTURE' || origin === 'FAKE_SERVER'
@@ -729,18 +735,18 @@ interface MarketDataSourceHealthRow {
 }
 
 const sourceHealthColumns: ColumnsType<MarketDataSourceHealthRow> = [
-    {title: '数据源', dataIndex: 'sourceCode', key: 'sourceCode', width: 180, render: (value: string) => <MetricText>{value}</MetricText>},
-    {title: '数据来源', dataIndex: 'dataOrigin', key: 'dataOrigin', width: 150, render: (value: string) => <MarketDataOriginBadge origin={value} />},
-    {title: '交易所', dataIndex: 'exchange', key: 'exchange', width: 120},
-    {title: '交易对', dataIndex: 'symbol', key: 'symbol', width: 140},
-    {title: '周期', dataIndex: 'timeframe', key: 'timeframe', width: 100},
-    {title: '源状态', dataIndex: 'sourceStatus', key: 'sourceStatus', width: 130, render: (value: string) => <MarketDataStatusBadge status={value} />},
-    {title: '健康状态', dataIndex: 'sourceHealth', key: 'sourceHealth', width: 130, render: (value: string) => <MarketDataStatusBadge status={value} />},
-    {title: '新鲜度', dataIndex: 'freshnessStatus', key: 'freshnessStatus', width: 130, render: (value: string) => <MarketDataStatusBadge status={value} />},
-    {title: '缺口', dataIndex: 'gapStatus', key: 'gapStatus', width: 120, render: (value: string) => <MarketDataStatusBadge status={value} />},
-    {title: '错误类别', dataIndex: 'errorCategory', key: 'errorCategory', width: 170, render: (value: string) => <MarketDataStatusBadge status={value} />},
-    {title: '更新时间', dataIndex: 'updatedAt', key: 'updatedAt', width: 190, render: (value: string) => <MetricText>{value}</MetricText>},
-    {title: '原因', dataIndex: 'reason', key: 'reason', width: 360, ellipsis: true},
+    {get title() { return t('pages:dataSource2'); }, dataIndex: 'sourceCode', key: 'sourceCode', width: 180, render: (value: string) => <MetricText>{value}</MetricText>},
+    {get title() { return t('pages:dataOrigin'); }, dataIndex: 'dataOrigin', key: 'dataOrigin', width: 150, render: (value: string) => <MarketDataOriginBadge origin={value} />},
+    {get title() { return t('pages:exchange'); }, dataIndex: 'exchange', key: 'exchange', width: 120},
+    {get title() { return t('pages:tradingPair'); }, dataIndex: 'symbol', key: 'symbol', width: 140},
+    {get title() { return t('pages:interval'); }, dataIndex: 'timeframe', key: 'timeframe', width: 100},
+    {get title() { return t('pages:sourceStatus'); }, dataIndex: 'sourceStatus', key: 'sourceStatus', width: 130, render: (value: string) => <MarketDataStatusBadge status={value} />},
+    {get title() { return t('pages:healthStatus'); }, dataIndex: 'sourceHealth', key: 'sourceHealth', width: 130, render: (value: string) => <MarketDataStatusBadge status={value} />},
+    {get title() { return t('pages:freshness2'); }, dataIndex: 'freshnessStatus', key: 'freshnessStatus', width: 130, render: (value: string) => <MarketDataStatusBadge status={value} />},
+    {get title() { return t('pages:gaps'); }, dataIndex: 'gapStatus', key: 'gapStatus', width: 120, render: (value: string) => <MarketDataStatusBadge status={value} />},
+    {get title() { return t('pages:errorCategory'); }, dataIndex: 'errorCategory', key: 'errorCategory', width: 170, render: (value: string) => <MarketDataStatusBadge status={value} />},
+    {get title() { return t('pages:updatedAt'); }, dataIndex: 'updatedAt', key: 'updatedAt', width: 190, render: (value: string) => <MetricText>{value}</MetricText>},
+    {get title() { return t('pages:reason'); }, dataIndex: 'reason', key: 'reason', width: 360, ellipsis: true},
 ];
 
 function sourceHealthRows(
@@ -752,30 +758,30 @@ function sourceHealthRows(
             key: 'pending-readiness',
             sourceCode: submittedQuery
                 ? `${submittedQuery.exchangeCode}:${submittedQuery.symbol}:${submittedQuery.interval}`
-                : STABLE_FACT_PENDING_TEXT,
+                : stableFactPendingText(),
             dataOrigin: 'UNKNOWN',
-            exchange: submittedQuery?.exchangeCode ?? STABLE_FACT_PENDING_TEXT,
-            symbol: submittedQuery?.symbol ?? STABLE_FACT_PENDING_TEXT,
-            timeframe: submittedQuery?.interval ?? STABLE_FACT_PENDING_TEXT,
+            exchange: submittedQuery?.exchangeCode ?? stableFactPendingText(),
+            symbol: submittedQuery?.symbol ?? stableFactPendingText(),
+            timeframe: submittedQuery?.interval ?? stableFactPendingText(),
             sourceStatus: 'UNKNOWN',
             sourceHealth: 'UNKNOWN',
             freshnessStatus: submittedQuery ? 'UNKNOWN' : 'NO_DATA',
             gapStatus: 'UNKNOWN',
             errorCategory: 'UNKNOWN',
-            updatedAt: STABLE_FACT_PENDING_TEXT,
+            updatedAt: stableFactPendingText(),
             reason: submittedQuery
-                ? '等待 /api/marketdata/readiness 返回本地 DB 诊断事实；页面不会发起外部交易所请求。'
-                : '提交查询后展示 readiness 只读诊断。',
+                ? t('pages:waitingForLocalDatabaseDiagnosticsFromApiMarketdataReadinessNoExternalExchangeRequestsAreMade')
+                : t('pages:searchToViewReadOnlyReadinessDiagnostics'),
         }];
     }
 
     return [{
         key: readiness.sourceCode ?? `${readiness.exchangeCode}:${readiness.symbol}:${readiness.interval}`,
-        sourceCode: readiness.sourceCode ?? STABLE_FACT_PENDING_TEXT,
+        sourceCode: readiness.sourceCode ?? stableFactPendingText(),
         dataOrigin: readiness.dataOrigin ?? 'UNKNOWN',
-        exchange: readiness.exchangeCode ?? readiness.exchange ?? STABLE_FACT_PENDING_TEXT,
-        symbol: readiness.symbol ?? STABLE_FACT_PENDING_TEXT,
-        timeframe: readiness.interval ?? readiness.timeframe ?? STABLE_FACT_PENDING_TEXT,
+        exchange: readiness.exchangeCode ?? readiness.exchange ?? stableFactPendingText(),
+        symbol: readiness.symbol ?? stableFactPendingText(),
+        timeframe: readiness.interval ?? readiness.timeframe ?? stableFactPendingText(),
         sourceStatus: readiness.sourceStatus ?? 'UNKNOWN',
         sourceHealth: readinessSourceHealth(readiness),
         freshnessStatus: readiness.freshnessStatus ?? 'UNKNOWN',
@@ -785,7 +791,7 @@ function sourceHealthRows(
         reason: readiness.disabledReason
             ?? readiness.degradedReason
             ?? readiness.sourceHealthReason
-            ?? STABLE_FACT_PENDING_TEXT,
+            ?? stableFactPendingText(),
     }];
 }
 
@@ -798,6 +804,7 @@ function MarketDataSourceHealthTable({
     submittedQuery: MarketdataBarsQuery | null;
     loading: boolean;
 }) {
+    useTranslation('pages');
     return (
         <Table<MarketDataSourceHealthRow>
             size="small"
@@ -812,17 +819,18 @@ function MarketDataSourceHealthTable({
 }
 
 function MarketDataQualityNotice() {
+    useTranslation('pages');
     return (
         <Alert
             type="warning"
             showIcon
-            message="行情数据质量只读诊断"
+            message={t('pages:readOnlyMarketDataQualityDiagnostics')}
             description={(
                 <Space direction="vertical" size={2}>
-                    <span>本页仅展示行情数据质量诊断结果。</span>
-                    <span>数据质量正常不代表可以交易。</span>
-                    <span>Public marketdata readiness 不等于 trading authorization。</span>
-                    <span>LIVE 当前禁用，private trading / permission probe / real provider 未实现。</span>
+                    <span>{t('pages:thisPageShowsMarketDataQualityDiagnosticsOnly')}</span>
+                    <span>{t('pages:goodDataQualityDoesNotPermitTrading')}</span>
+                    <span>{t('pages:publicMarketDataReadinessDoesNotGrantTradingAuthorization')}</span>
+                    <span>{t('pages:liveIsDisabledPrivateTradingPermissionProbesAndRealProvidersAreNotImplemented')}</span>
                 </Space>
             )}
         />
@@ -919,7 +927,7 @@ function metricStatusColor(status?: string | null): string {
 
 function metricValueText(metric?: MarketdataQualityMetric | null): string {
     if (!metric) {
-        return STABLE_FACT_PENDING_TEXT;
+        return stableFactPendingText();
     }
     if (metric.status === 'AVAILABLE' && metric.value != null) {
         return String(metric.value);
@@ -928,18 +936,20 @@ function metricValueText(metric?: MarketdataQualityMetric | null): string {
 }
 
 function overviewCountText(value?: number | null): string {
-    return value == null ? STABLE_FACT_PENDING_TEXT : String(value);
+    return value == null ? stableFactPendingText() : String(value);
 }
 
 function ScopeValue({value}: {value?: string | null}) {
-    return <MetricText>{value && value.trim() ? value : STABLE_FACT_PENDING_TEXT}</MetricText>;
+    useTranslation('pages');
+    return <MetricText>{value && value.trim() ? value : stableFactPendingText()}</MetricText>;
 }
 
 function ReadinessQualityTags({readiness}: {readiness: MarketdataReadinessSummary}) {
+    useTranslation('pages');
     const entries = Object.entries(readiness.qualityStatusSummary?.statuses ?? {});
 
     if (entries.length === 0) {
-        return <Tag>qualityStatus unavailable</Tag>;
+        return <Tag>{t('pages:qualitystatusUnavailable')}</Tag>;
     }
 
     return (
@@ -954,10 +964,12 @@ function ReadinessQualityTags({readiness}: {readiness: MarketdataReadinessSummar
 }
 
 function MetricText({children}: {children: ReactNode}) {
+    useTranslation('pages');
     return <Typography.Text style={{fontFamily: 'var(--nq-font-mono)'}}>{children}</Typography.Text>;
 }
 
 function MetricTile({label, value, detail}: {label: string; value: ReactNode; detail?: ReactNode}) {
+    useTranslation('pages');
     return (
         <div
             style={{
@@ -999,34 +1011,35 @@ function issueSeverityColor(severity: string): string {
 
 const qualityIssueColumns: ColumnsType<MarketdataQualityIssue> = [
     {
-        title: 'Issue code',
+        get title() { return t('pages:issueCode'); },
         dataIndex: 'code',
         key: 'code',
         width: 190,
         render: (value: string) => <MetricText>{value}</MetricText>,
     },
     {
-        title: 'Severity',
+        get title() { return t('pages:severity2'); },
         dataIndex: 'severity',
         key: 'severity',
         width: 130,
         render: (value: string) => <Tag color={issueSeverityColor(value)}>{value}</Tag>,
     },
     {
-        title: 'Count',
+        get title() { return t('pages:count'); },
         dataIndex: 'count',
         key: 'count',
         width: 100,
         render: (value: number) => <MetricText>{value}</MetricText>,
     },
     {
-        title: 'Message',
+        get title() { return t('pages:message'); },
         dataIndex: 'message',
         key: 'message',
     },
 ];
 
 function QualityMetricTile({label, metric}: {label: string; metric?: MarketdataQualityMetric | null}) {
+    useTranslation('pages');
     return (
         <MetricTile
             label={label}
@@ -1034,7 +1047,7 @@ function QualityMetricTile({label, metric}: {label: string; metric?: MarketdataQ
             detail={(
                 <Space direction="vertical" size={2}>
                     <Tag color={metricStatusColor(metric?.status)}>{metric?.status ?? 'UNKNOWN'}</Tag>
-                    <span>{metric?.reason ?? '缺少稳定本地事实时不推断为 0。'}</span>
+                    <span>{metric?.reason ?? t('pages:missingStableLocalFactsAreNotInferredAsZero')}</span>
                 </Space>
             )}
         />
@@ -1063,39 +1076,40 @@ function MarketdataQualityCenterPanel({
     error: unknown;
     unavailable: boolean;
 }) {
+    useTranslation('pages');
     const errorText = error ? formatApiError(error as AppApiError) : null;
 
     return (
-        <Card className="page-section" bordered={false} title="Data Quality Center">
+        <Card className="page-section" bordered={false} title={t('pages:dataQualityCenter')}>
             <div data-testid="marketdata-data-quality-center" style={{display: 'flex', flexDirection: 'column', gap: 16}}>
                 <Alert
                     type="warning"
                     showIcon
-                    message="Data Quality diagnostic only"
-                    description="Data Quality Center 只表示数据质量诊断；数据质量通过不等于 trading authorization，不代表 LIVE 可用、private trading 可用、权限探活通过或 real provider 可用。"
+                    message={t('pages:dataQualityDiagnosticsOnly')}
+                    description={t('pages:dataQualityDiagnosticsDoNotGrantTradingAuthorizationOrEstablishLivePrivateTradingPermissionProbeOrRe')}
                 />
                 {!submittedQuery ? (
                     <Alert
                         type="info"
                         showIcon
-                        message="等待查询条件"
-                        description="提交查询后只读调用 GET /api/marketdata/quality/overview。当前不会触发采集、refresh-quality、permission probe 或真实交易所外联。"
+                        message={t('pages:waitingForQueryFilters')}
+                        description={t('pages:searchCallsGetApiMarketdataQualityOverviewInReadOnlyModeItDoesNotTriggerIngestionQualityRefreshPermi')}
                     />
                 ) : null}
                 {errorText ? (
                     <Alert
                         type="error"
                         showIcon
-                        message="Data Quality Center unavailable"
-                        description={`overview API failed: ${errorText}; 页面不会用 bars fallback 伪造 overview 通过态。`}
+                        message={t('pages:dataQualityCenterUnavailable')}
+                        description={t('pages:overviewApiFailedValue1BarDataIsNotUsedToFabricateAPassingOverview', {value1: errorText})}
                     />
                 ) : null}
                 {unavailable ? (
                     <Alert
                         type="warning"
                         showIcon
-                        message="Data Quality Center payload incomplete"
-                        description="后端响应缺少 overview 必需字段；页面保持 fail-closed，不把缺失字段推断为 0 或 READY。"
+                        message={t('pages:dataQualityResponseIncomplete')}
+                        description={t('pages:requiredOverviewFieldsAreMissingThePageRemainsFailClosedAndDoesNotInterpretMissingFieldsAsZeroOrRead')}
                     />
                 ) : null}
 
@@ -1110,9 +1124,9 @@ function MarketdataQualityCenterPanel({
                         {key: 'scopeSourceType', label: 'scope.sourceType', children: <ScopeValue value={overview?.scope.sourceType} />},
                         {key: 'scopeDataOrigin', label: 'scope.dataOrigin', children: <ScopeValue value={overview?.scope.dataOrigin} />},
                         {key: 'scopeDatasetId', label: 'scope.datasetId', children: <ScopeValue value={overview?.scope.datasetId} />},
-                        {key: 'scopeFrom', label: 'scope.from', children: <MetricText>{overview?.scope.from ? formatDateTime(overview.scope.from) : (submittedQuery ? formatDateTime(submittedQuery.startTime) : STABLE_FACT_PENDING_TEXT)}</MetricText>},
-                        {key: 'scopeTo', label: 'scope.to', children: <MetricText>{overview?.scope.to ? formatDateTime(overview.scope.to) : (submittedQuery ? formatDateTime(submittedQuery.endTime) : STABLE_FACT_PENDING_TEXT)}</MetricText>},
-                        {key: 'generatedAt', label: 'generatedAt', children: <MetricText>{overview ? formatDateTime(overview.generatedAt) : STABLE_FACT_PENDING_TEXT}</MetricText>},
+                        {key: 'scopeFrom', label: 'scope.from', children: <MetricText>{overview?.scope.from ? formatDateTime(overview.scope.from) : (submittedQuery ? formatDateTime(submittedQuery.startTime) : stableFactPendingText())}</MetricText>},
+                        {key: 'scopeTo', label: 'scope.to', children: <MetricText>{overview?.scope.to ? formatDateTime(overview.scope.to) : (submittedQuery ? formatDateTime(submittedQuery.endTime) : stableFactPendingText())}</MetricText>},
+                        {key: 'generatedAt', label: 'generatedAt', children: <MetricText>{overview ? formatDateTime(overview.generatedAt) : stableFactPendingText()}</MetricText>},
                     ]}
                 />
 
@@ -1125,61 +1139,61 @@ function MarketdataQualityCenterPanel({
                 >
                     <MetricTile
                         label="totalBars"
-                        value={<MetricText>{overview?.totalBars ?? (loading || fetching ? 'LOADING' : STABLE_FACT_PENDING_TEXT)}</MetricText>}
-                        detail="本地 bars 聚合计数；0 只在后端明确返回时显示。"
+                        value={<MetricText>{overview?.totalBars ?? (loading || fetching ? 'LOADING' : stableFactPendingText())}</MetricText>}
+                        detail={t('pages:localBarAggregateCountZeroAppearsOnlyWhenExplicitlyReturnedByTheBackend')}
                     />
                     <MetricTile
                         label="expectedBars"
                         value={<MetricText>{overviewCountText(overview?.expectedBars)}</MetricText>}
-                        detail="null 表示暂无稳定 expected 事实。"
+                        detail={t('pages:nullMeansNoStableExpectedCountFactIsAvailable')}
                     />
                     <MetricTile
                         label="gapCount"
                         value={<MetricText>{overviewCountText(overview?.gapCount)}</MetricText>}
-                        detail="null 不等于无缺口；缺少事实时保持未知。"
+                        detail={t('pages:nullDoesNotMeanNoGapsMissingFactsRemainUnknown')}
                     />
                     <QualityMetricTile label="duplicateCount" metric={overview?.duplicateCount} />
                     <QualityMetricTile label="outOfOrderCount" metric={overview?.outOfOrderCount} />
                     <QualityMetricTile label="staleCount" metric={overview?.staleCount} />
                     <MetricTile
                         label="latestBarTime"
-                        value={<MetricText>{overview ? dateText(overview.latestBarTime) : STABLE_FACT_PENDING_TEXT}</MetricText>}
-                        detail={overview?.latestBarTime ?? 'NO_DATA / UNKNOWN 时保持空态。'}
+                        value={<MetricText>{overview ? dateText(overview.latestBarTime) : stableFactPendingText()}</MetricText>}
+                        detail={overview?.latestBarTime ?? t('pages:noDataUnknownRemainEmptyStates')}
                     />
                     <MetricTile
                         label="earliestBarTime"
-                        value={<MetricText>{overview ? dateText(overview.earliestBarTime) : STABLE_FACT_PENDING_TEXT}</MetricText>}
-                        detail={overview?.earliestBarTime ?? 'NO_DATA / UNKNOWN 时保持空态。'}
+                        value={<MetricText>{overview ? dateText(overview.earliestBarTime) : stableFactPendingText()}</MetricText>}
+                        detail={overview?.earliestBarTime ?? t('pages:noDataUnknownRemainEmptyStates')}
                     />
                     <MetricTile
                         label="lastSuccessAt"
-                        value={<MetricText>{overview ? dateText(overview.lastSuccessAt) : STABLE_FACT_PENDING_TEXT}</MetricText>}
-                        detail={overview?.lastSuccessAt ?? '暂无 ingestion success 事实。'}
+                        value={<MetricText>{overview ? dateText(overview.lastSuccessAt) : stableFactPendingText()}</MetricText>}
+                        detail={overview?.lastSuccessAt ?? t('pages:noIngestionSuccessFacts')}
                     />
                     <MetricTile
                         label="lastFailureAt"
-                        value={<MetricText>{overview ? dateText(overview.lastFailureAt) : STABLE_FACT_PENDING_TEXT}</MetricText>}
-                        detail={overview?.lastFailureAt ?? '暂无 ingestion failure 事实。'}
+                        value={<MetricText>{overview ? dateText(overview.lastFailureAt) : stableFactPendingText()}</MetricText>}
+                        detail={overview?.lastFailureAt ?? t('pages:noIngestionFailureFacts')}
                     />
                     <MetricTile
                         label="lastIngestionRunId"
-                        value={<MetricText>{overview?.lastIngestionRunId ?? STABLE_FACT_PENDING_TEXT}</MetricText>}
-                        detail="仅显示 run id，不显示 raw request、headers 或 credential。"
+                        value={<MetricText>{overview?.lastIngestionRunId ?? stableFactPendingText()}</MetricText>}
+                        detail={t('pages:onlyRunIdsAreDisplayedNeverRawRequestsHeadersOrCredentials')}
                     />
                     <MetricTile
                         label="sourceHealth"
                         value={<MarketDataStatusBadge status={overview?.sourceHealth ?? (submittedQuery ? 'UNKNOWN' : 'NO_DATA')} />}
-                        detail="sourceHealth 是数据源健康诊断，不代表 provider 交易权限。"
+                        detail={t('pages:sourcehealthDiagnosesDataSourceHealthNotProviderTradingPermissions')}
                     />
                     <MetricTile
                         label="freshnessStatus"
                         value={<MarketDataStatusBadge status={overview?.freshnessStatus ?? (submittedQuery ? 'UNKNOWN' : 'NO_DATA')} />}
-                        detail="NO_DATA / UNKNOWN 均为显式非通过态。"
+                        detail={t('pages:noDataUnknownExplicitlyDoNotIndicateAPass')}
                     />
                     <MetricTile
                         label="qualityStatus"
                         value={<MarketDataStatusBadge status={overview?.qualityStatus ?? (submittedQuery ? 'UNKNOWN' : 'NO_DATA')} />}
-                        detail="INCOMPLETE / INVALID / GAP_DETECTED 不会被隐藏。"
+                        detail={t('pages:incompleteInvalidGapDetectedRemainVisible')}
                     />
                 </div>
 
@@ -1190,29 +1204,28 @@ function MarketdataQualityCenterPanel({
                     items={[
                         {key: 'requestedDataOrigin', label: 'requestedDataOrigin', children: <ScopeValue value={overview?.dataOriginSummary.requestedDataOrigin} />},
                         {key: 'effectiveDataOrigin', label: 'effectiveDataOrigin', children: <MarketDataOriginBadge origin={overview?.dataOriginSummary.effectiveDataOrigin ?? 'UNKNOWN'} />},
-                        {key: 'localDbBars', label: 'localDbBars', children: <MetricText>{overview?.dataOriginSummary.localDbBars ?? STABLE_FACT_PENDING_TEXT}</MetricText>},
-                        {key: 'fixtureBars', label: 'fixtureBars', children: <MetricText>{overview?.dataOriginSummary.fixtureBars ?? STABLE_FACT_PENDING_TEXT}</MetricText>},
-                        {key: 'unknownOriginBars', label: 'unknownOriginBars', children: <MetricText>{overview?.dataOriginSummary.unknownOriginBars ?? STABLE_FACT_PENDING_TEXT}</MetricText>},
-                        {key: 'supportLevel', label: 'supportLevel', children: <MetricText>{overview?.dataOriginSummary.supportLevel ?? STABLE_FACT_PENDING_TEXT}</MetricText>},
+                        {key: 'localDbBars', label: 'localDbBars', children: <MetricText>{overview?.dataOriginSummary.localDbBars ?? stableFactPendingText()}</MetricText>},
+                        {key: 'fixtureBars', label: 'fixtureBars', children: <MetricText>{overview?.dataOriginSummary.fixtureBars ?? stableFactPendingText()}</MetricText>},
+                        {key: 'unknownOriginBars', label: 'unknownOriginBars', children: <MetricText>{overview?.dataOriginSummary.unknownOriginBars ?? stableFactPendingText()}</MetricText>},
+                        {key: 'supportLevel', label: 'supportLevel', children: <MetricText>{overview?.dataOriginSummary.supportLevel ?? stableFactPendingText()}</MetricText>},
                     ]}
                 />
                 <Typography.Text type="secondary">
-                    `effectiveDataOrigin=LOCAL_DB` 表示当前只读聚合本地事实；请求或历史 decision 中出现 PUBLIC_OUTBOUND 不代表 public outbound runtime provider 已启用。
-                </Typography.Text>
+                    {t('pages:effectivedataoriginLocalDbMeansLocalFactsAreAggregatedReadOnlyPublicOutboundInARequestOrHistoricalDe')}</Typography.Text>
 
                 <Descriptions
                     title="datasetCoverageSummary"
                     size="small"
                     column={{xs: 1, sm: 2, md: 4}}
                     items={[
-                        {key: 'datasetCount', label: 'datasetCount', children: <MetricText>{overview?.datasetCoverageSummary.datasetCount ?? STABLE_FACT_PENDING_TEXT}</MetricText>},
+                        {key: 'datasetCount', label: 'datasetCount', children: <MetricText>{overview?.datasetCoverageSummary.datasetCount ?? stableFactPendingText()}</MetricText>},
                         {key: 'coverageExpected', label: 'expectedBars', children: <MetricText>{overviewCountText(overview?.datasetCoverageSummary.expectedBars)}</MetricText>},
                         {key: 'actualBars', label: 'actualBars', children: <MetricText>{overviewCountText(overview?.datasetCoverageSummary.actualBars)}</MetricText>},
                         {key: 'missingBars', label: 'missingBars', children: <MetricText>{overviewCountText(overview?.datasetCoverageSummary.missingBars)}</MetricText>},
                         {key: 'duplicateBars', label: 'duplicateBars', children: <MetricText>{overviewCountText(overview?.datasetCoverageSummary.duplicateBars)}</MetricText>},
                         {key: 'invalidBars', label: 'invalidBars', children: <MetricText>{overviewCountText(overview?.datasetCoverageSummary.invalidBars)}</MetricText>},
                         {key: 'latestDatasetId', label: 'latestDatasetId', children: <ScopeValue value={overview?.datasetCoverageSummary.latestDatasetId} />},
-                        {key: 'latestCoverageAt', label: 'latestCoverageAt', children: <MetricText>{overview ? dateText(overview.datasetCoverageSummary.latestCoverageAt) : STABLE_FACT_PENDING_TEXT}</MetricText>},
+                        {key: 'latestCoverageAt', label: 'latestCoverageAt', children: <MetricText>{overview ? dateText(overview.datasetCoverageSummary.latestCoverageAt) : stableFactPendingText()}</MetricText>},
                     ]}
                 />
 
@@ -1224,7 +1237,7 @@ function MarketdataQualityCenterPanel({
                     pagination={false}
                     size="small"
                     scroll={{x: 760}}
-                    locale={{emptyText: '暂无 topIssues；这只表示后端未返回问题项，不代表交易授权。'}}
+                    locale={{emptyText: t('pages:noTopissuesWereReturnedThisDoesNotGrantTradingAuthorization')}}
                 />
             </div>
         </Card>
@@ -1235,58 +1248,57 @@ const jobColumns = (
     onRunOnce: (jobId: string) => void,
     pendingJobId: string | null,
 ): ColumnsType<MarketdataIngestionJob> => [
-    {title: 'Job ID', dataIndex: 'jobId', key: 'jobId', width: 260, ellipsis: true},
-    {title: 'Exchange', dataIndex: 'exchangeCode', key: 'exchangeCode', width: 120},
-    {title: 'Market', dataIndex: 'marketType', key: 'marketType', width: 100},
-    {title: 'Symbol', dataIndex: 'symbol', key: 'symbol', width: 130},
-    {title: 'Interval', dataIndex: 'interval', key: 'interval', width: 100},
-    {title: 'Status', dataIndex: 'status', key: 'status', width: 120, render: (value: string) => <Tag color={value === 'SUCCEEDED' ? 'green' : value === 'FAILED' ? 'red' : 'blue'}>{value}</Tag>},
-    {title: 'Start', dataIndex: 'startTime', key: 'startTime', width: 180, render: (value: string) => formatDateTime(value)},
-    {title: 'End', dataIndex: 'endTime', key: 'endTime', width: 180, render: (value: string) => formatDateTime(value)},
-    {title: 'Updated', dataIndex: 'updatedAt', key: 'updatedAt', width: 180, render: (value: string) => formatDateTime(value)},
+    {title: t('pages:jobId'), dataIndex: 'jobId', key: 'jobId', width: 260, ellipsis: true},
+    {title: t('pages:exchange'), dataIndex: 'exchangeCode', key: 'exchangeCode', width: 120},
+    {title: t('pages:market'), dataIndex: 'marketType', key: 'marketType', width: 100},
+    {title: t('pages:symbol'), dataIndex: 'symbol', key: 'symbol', width: 130},
+    {title: t('pages:interval'), dataIndex: 'interval', key: 'interval', width: 100},
+    {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 120, render: (value: string) => <Tag color={value === 'SUCCEEDED' ? 'green' : value === 'FAILED' ? 'red' : 'blue'}>{value}</Tag>},
+    {title: t('pages:start2'), dataIndex: 'startTime', key: 'startTime', width: 180, render: (value: string) => formatDateTime(value)},
+    {title: t('pages:end'), dataIndex: 'endTime', key: 'endTime', width: 180, render: (value: string) => formatDateTime(value)},
+    {title: t('pages:updated2'), dataIndex: 'updatedAt', key: 'updatedAt', width: 180, render: (value: string) => formatDateTime(value)},
     {
-        title: 'Action',
+        title: t('pages:action2'),
         key: 'action',
         fixed: 'right',
         width: 130,
         render: (_, record) => (
             <Button size="small" loading={pendingJobId === record.jobId} onClick={() => onRunOnce(record.jobId)}>
-                Run once
-            </Button>
+                {t('pages:runOnce')}</Button>
         ),
     },
 ];
 
 const runColumns: ColumnsType<MarketdataIngestionRun> = [
-    {title: 'Run ID', dataIndex: 'runId', key: 'runId', width: 260, ellipsis: true},
-    {title: 'Status', dataIndex: 'status', key: 'status', width: 120, render: (value: string) => <Tag color={value === 'SUCCEEDED' ? 'green' : value === 'FAILED' ? 'red' : 'blue'}>{value}</Tag>},
-    {title: 'Fetched', dataIndex: 'fetchedBars', key: 'fetchedBars', width: 100},
-    {title: 'Inserted', dataIndex: 'insertedBars', key: 'insertedBars', width: 100},
-    {title: 'Updated', dataIndex: 'updatedBars', key: 'updatedBars', width: 100},
-    {title: 'Skipped', dataIndex: 'skippedBars', key: 'skippedBars', width: 100},
-    {title: 'Started', dataIndex: 'startedAt', key: 'startedAt', width: 180, render: (value: string) => formatDateTime(value)},
-    {title: 'Finished', dataIndex: 'finishedAt', key: 'finishedAt', width: 180, render: (value?: string | null) => value ? formatDateTime(value) : '-'},
-    {title: 'Error', dataIndex: 'errorMessage', key: 'errorMessage', width: 280, ellipsis: true, render: (value?: string | null) => value || '-'},
+    {get title() { return t('pages:runId'); }, dataIndex: 'runId', key: 'runId', width: 260, ellipsis: true},
+    {get title() { return t('pages:status'); }, dataIndex: 'status', key: 'status', width: 120, render: (value: string) => <Tag color={value === 'SUCCEEDED' ? 'green' : value === 'FAILED' ? 'red' : 'blue'}>{value}</Tag>},
+    {get title() { return t('pages:fetched'); }, dataIndex: 'fetchedBars', key: 'fetchedBars', width: 100},
+    {get title() { return t('pages:inserted'); }, dataIndex: 'insertedBars', key: 'insertedBars', width: 100},
+    {get title() { return t('pages:updated2'); }, dataIndex: 'updatedBars', key: 'updatedBars', width: 100},
+    {get title() { return t('pages:skipped'); }, dataIndex: 'skippedBars', key: 'skippedBars', width: 100},
+    {get title() { return t('pages:started'); }, dataIndex: 'startedAt', key: 'startedAt', width: 180, render: (value: string) => formatDateTime(value)},
+    {get title() { return t('pages:finished'); }, dataIndex: 'finishedAt', key: 'finishedAt', width: 180, render: (value?: string | null) => value ? formatDateTime(value) : '-'},
+    {get title() { return t('pages:error'); }, dataIndex: 'errorMessage', key: 'errorMessage', width: 280, ellipsis: true, render: (value?: string | null) => value || '-'},
 ];
 
 const datasetColumns = (
     onRefreshQuality: (datasetId: string) => void,
     pendingDatasetId: string | null,
 ): ColumnsType<MarketdataDataset> => [
-    {title: 'Dataset ID', dataIndex: 'datasetId', key: 'datasetId', width: 260, ellipsis: true},
-    {title: 'Name', dataIndex: 'datasetName', key: 'datasetName', width: 180},
-    {title: 'Exchange', dataIndex: 'exchangeCode', key: 'exchangeCode', width: 120},
-    {title: 'Market', dataIndex: 'marketType', key: 'marketType', width: 100},
-    {title: 'Symbol', dataIndex: 'symbol', key: 'symbol', width: 130},
-    {title: 'Interval', dataIndex: 'interval', key: 'interval', width: 100},
-    {title: 'Status', dataIndex: 'status', key: 'status', width: 120, render: (value: string) => <Tag color={value === 'READY' ? 'green' : value === 'INVALID' ? 'red' : 'blue'}>{value}</Tag>},
-    {title: 'Quality', dataIndex: 'qualityStatus', key: 'qualityStatus', width: 140, render: (value: string) => <Tag color={value === 'OK' ? 'green' : value === 'GAP_DETECTED' ? 'orange' : 'red'}>{value}</Tag>},
-    {title: 'Bars', dataIndex: 'barCount', key: 'barCount', width: 100},
-    {title: 'Gaps', dataIndex: 'gapCount', key: 'gapCount', width: 100},
-    {title: 'Start', dataIndex: 'startTime', key: 'startTime', width: 180, render: (value: string) => formatDateTime(value)},
-    {title: 'End', dataIndex: 'endTime', key: 'endTime', width: 180, render: (value: string) => formatDateTime(value)},
+    {title: t('pages:datasetId'), dataIndex: 'datasetId', key: 'datasetId', width: 260, ellipsis: true},
+    {title: t('pages:name'), dataIndex: 'datasetName', key: 'datasetName', width: 180},
+    {title: t('pages:exchange'), dataIndex: 'exchangeCode', key: 'exchangeCode', width: 120},
+    {title: t('pages:market'), dataIndex: 'marketType', key: 'marketType', width: 100},
+    {title: t('pages:symbol'), dataIndex: 'symbol', key: 'symbol', width: 130},
+    {title: t('pages:interval'), dataIndex: 'interval', key: 'interval', width: 100},
+    {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 120, render: (value: string) => <Tag color={value === 'READY' ? 'green' : value === 'INVALID' ? 'red' : 'blue'}>{value}</Tag>},
+    {title: t('pages:quality'), dataIndex: 'qualityStatus', key: 'qualityStatus', width: 140, render: (value: string) => <Tag color={value === 'OK' ? 'green' : value === 'GAP_DETECTED' ? 'orange' : 'red'}>{value}</Tag>},
+    {title: t('pages:bars'), dataIndex: 'barCount', key: 'barCount', width: 100},
+    {title: t('pages:gaps'), dataIndex: 'gapCount', key: 'gapCount', width: 100},
+    {title: t('pages:start2'), dataIndex: 'startTime', key: 'startTime', width: 180, render: (value: string) => formatDateTime(value)},
+    {title: t('pages:end'), dataIndex: 'endTime', key: 'endTime', width: 180, render: (value: string) => formatDateTime(value)},
     {
-        title: 'Action',
+        title: t('pages:action2'),
         key: 'action',
         fixed: 'right',
         width: 150,
@@ -1296,16 +1308,16 @@ const datasetColumns = (
                 loading={pendingDatasetId === record.datasetId}
                 onClick={() => onRefreshQuality(record.datasetId)}
             >
-                Refresh quality
-            </Button>
+                {t('pages:refreshQuality')}</Button>
         ),
     },
 ];
 
 export function MarketdataPage() {
-    const [form] = Form.useForm<MarketdataBarsFormValues>();
-    const [jobForm] = Form.useForm<CreateMarketdataIngestionJobFormValues>();
-    const [datasetForm] = Form.useForm<CreateMarketdataDatasetFormValues>();
+    const {i18n: pageI18n} = useTranslation('pages');
+    const [form] = useLocalizedForm<MarketdataBarsFormValues>();
+    const [jobForm] = useLocalizedForm<CreateMarketdataIngestionJobFormValues>();
+    const [datasetForm] = useLocalizedForm<CreateMarketdataDatasetFormValues>();
     const [searchParams] = useSearchParams();
     const [messageApi, contextHolder] = message.useMessage();
     const queryClient = useQueryClient();
@@ -1372,10 +1384,10 @@ export function MarketdataPage() {
         mutationFn: marketdataApi.createIngestionJob,
         onSuccess: async (job) => {
             setSelectedJobId(job.jobId);
-            messageApi.success('Marketdata ingestion job created');
+            messageApi.success(t('pages:marketDataIngestionJobCreated'));
             await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.ingestionJobs()});
         },
-        onError: (error) => messageApi.error(formatApiError(error as AppApiError)),
+        onError: (error) => showApiError(error as AppApiError, messageApi),
     });
     const runOnceMutation = useMutation({
         mutationFn: marketdataApi.runIngestionJobOnce,
@@ -1389,7 +1401,7 @@ export function MarketdataPage() {
             await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.readinessAll()});
             await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.qualityOverviewAll()});
         },
-        onError: (error) => messageApi.error(formatApiError(error as AppApiError)),
+        onError: (error) => showApiError(error as AppApiError, messageApi),
         onSettled: () => setPendingJobId(null),
     });
     const createDatasetMutation = useMutation({
@@ -1399,7 +1411,7 @@ export function MarketdataPage() {
             await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.datasets()});
             await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.qualityOverviewAll()});
         },
-        onError: (error) => messageApi.error(formatApiError(error as AppApiError)),
+        onError: (error) => showApiError(error as AppApiError, messageApi),
     });
     const refreshDatasetMutation = useMutation({
         mutationFn: marketdataApi.refreshDatasetQuality,
@@ -1409,7 +1421,7 @@ export function MarketdataPage() {
             await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.datasets()});
             await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.qualityOverviewAll()});
         },
-        onError: (error) => messageApi.error(formatApiError(error as AppApiError)),
+        onError: (error) => showApiError(error as AppApiError, messageApi),
         onSettled: () => setPendingDatasetId(null),
     });
     const bars = barsQuery.data ?? [];
@@ -1434,7 +1446,7 @@ export function MarketdataPage() {
     const barsQuality = useMemo(() => summarizeBarsQuality(bars, submittedQuery?.interval), [bars, submittedQuery?.interval]);
     const barsFreshness = useMemo(
         () => summarizeBarsFreshness(submittedQuery, bars, barsQuality, barsQuery.error, barsQuery.isLoading),
-        [bars, barsQuality, barsQuery.error, barsQuery.isLoading, submittedQuery],
+        [bars, barsQuality, barsQuery.error, barsQuery.isLoading, submittedQuery, pageI18n.resolvedLanguage],
     );
     const dataQualityReadiness = useMemo(
         () => summarizeDataQualityReadiness(
@@ -1445,7 +1457,7 @@ export function MarketdataPage() {
             barsQuery.error,
             barsQuery.isLoading,
         ),
-        [bars, barsFreshness, barsQuality, barsQuery.error, barsQuery.isLoading, submittedQuery],
+        [bars, barsFreshness, barsQuality, barsQuery.error, barsQuery.isLoading, submittedQuery, pageI18n.resolvedLanguage],
     );
     const firstBar = bars.length > 0 ? bars[0] : null;
     const lastBar = bars.length > 0 ? bars[bars.length - 1] : null;
@@ -1458,30 +1470,30 @@ export function MarketdataPage() {
             readinessLoading,
             chartError,
         ),
-        [backendReadiness, chartError, dataQualityReadiness, readinessLoading, submittedQuery],
+        [backendReadiness, chartError, dataQualityReadiness, readinessLoading, submittedQuery, pageI18n.resolvedLanguage],
     );
     const chartEmptyText = submittedQuery
-        ? '当前查询没有返回 OHLCV bars'
-        : '提交查询后展示 K 线主图';
+        ? t('pages:noOhlcvBarsReturnedForThisQuery')
+        : t('pages:searchToViewCandlesticks');
     const chartSourceLabel = submittedQuery
         ? `${submittedQuery.exchangeCode} ${submittedQuery.symbol} ${submittedQuery.interval}`
-        : 'Marketdata bars';
+        : t('pages:marketDataBars');
 
     return (
         <Space direction="vertical" size={16} style={{display: 'flex'}}>
             {contextHolder}
             <Card className="page-card" bordered={false}>
                 <PageHero
-                    title="Marketdata"
-                    description="SPOT 历史 OHLCV 查询、接入任务和 Dataset 管理入口，固定使用当前 freeze 可验收的交易所、交易对和周期范围。"
-                    badge="Marketdata"
+                    title={t('pages:marketData')}
+                    description={t('pages:queryHistoricalSpotOhlcvManageIngestionJobsAndDatasetsWithinTheExchangesSymbolsAndIntervalsAcceptedF')}
+                    badge={t('pages:marketData')}
                 />
             </Card>
             <Card
                 className="page-section"
                 bordered={false}
-                title="查询条件"
-                extra={<Button type="primary" onClick={() => form.submit()}>查询</Button>}
+                title={t('pages:queryFilters')}
+                extra={<Button type="primary" onClick={() => form.submit()}>{t('pages:search')}</Button>}
             >
                 <Form<MarketdataBarsFormValues>
                     form={form}
@@ -1497,50 +1509,50 @@ export function MarketdataPage() {
                     onFinish={(values) => setSubmittedQuery(normalizeBarsQuery(values))}
                 >
                     <Space align="start" size={16} wrap>
-                        <Form.Item label="交易所" name="exchangeCode">
+                        <Form.Item label={t('pages:exchange')} name="exchangeCode">
                             <Select style={{width: 140}} options={EXCHANGE_OPTIONS} />
                         </Form.Item>
-                        <Form.Item label="市场" name="marketType">
+                        <Form.Item label={t('pages:market')} name="marketType">
                             <Select style={{width: 120}} options={MARKET_TYPE_OPTIONS} />
                         </Form.Item>
-                        <Form.Item label="交易对" name="symbol">
+                        <Form.Item label={t('pages:tradingPair')} name="symbol">
                             <Select showSearch style={{width: 160}} options={SYMBOL_OPTIONS} />
                         </Form.Item>
-                        <Form.Item label="周期" name="interval">
+                        <Form.Item label={t('pages:interval')} name="interval">
                             <Select style={{width: 120}} options={INTERVAL_OPTIONS} />
                         </Form.Item>
-                        <Form.Item label="开始时间" name="startTime" rules={[{required: true, message: '请选择开始时间'}]}>
+                        <Form.Item label={t('pages:startTime')} name="startTime" rules={[{required: true, message: t('pages:selectAStartTime')}]}>
                             <DatePicker showTime style={{width: 220}} />
                         </Form.Item>
-                        <Form.Item label="结束时间" name="endTime" rules={[{required: true, message: '请选择结束时间'}]}>
+                        <Form.Item label={t('pages:endTime')} name="endTime" rules={[{required: true, message: t('pages:selectAnEndTime')}]}>
                             <DatePicker showTime style={{width: 220}} />
                         </Form.Item>
                     </Space>
                 </Form>
-                <Typography.Text type="secondary">默认交易所来自当前账户上下文：{contextExchangeCode ?? '未选择'}</Typography.Text>
+                <Typography.Text type="secondary">{t('pages:defaultExchangeFromTheCurrentAccountContext')}{contextExchangeCode ?? t('pages:notSelected')}</Typography.Text>
                 {hasRuntimeDeepLink ? (
                     <Alert
                         data-testid="marketdata-runtime-deep-link"
                         type="info"
                         showIcon
                         style={{marginTop: 12}}
-                        message="Runtime readiness context applied"
-                        description="已从 /runtime/readiness 安全预填 exchangeCode / marketType / symbol / interval。页面不会自动触发采集、ingestion run-once 或任何写端点；点击查询后仅调用既有只读 bars/readiness API。"
+                        message={t('pages:runtimeReadinessContextApplied')}
+                        description={t('pages:exchangecodeMarkettypeSymbolIntervalArePrefilledFromRuntimeReadinessNoIngestionOrWriteEndpointIsTrig')}
                     />
                 ) : null}
             </Card>
-            <Card className="page-section" bordered={false} title="K 线 readiness 视图">
+            <Card className="page-section" bordered={false} title={t('pages:candlestickReadinessView')}>
                 <div data-testid="marketdata-kline-readiness-view" style={{display: 'flex', flexDirection: 'column', gap: 16}}>
                     <Descriptions
                         size="small"
                         column={{xs: 1, sm: 2, md: 3}}
                         items={[
-                            {key: 'exchange', label: 'Exchange', children: <MetricText>{submittedQuery?.exchangeCode ?? '-'}</MetricText>},
-                            {key: 'symbol', label: 'Instrument', children: <MetricText>{submittedQuery?.symbol ?? '-'}</MetricText>},
-                            {key: 'interval', label: 'Timeframe', children: <MetricText>{submittedQuery?.interval ?? '-'}</MetricText>},
-                            {key: 'barCount', label: 'Bar count', children: <MetricText>{bars.length}</MetricText>},
-                            {key: 'lastBar', label: 'Last bar time', children: <MetricText>{lastBar ? formatDateTime(lastBar.closeTime ?? lastBar.openTime) : '-'}</MetricText>},
-                            {key: 'quality', label: 'Data quality', children: <QualityTags quality={barsQuality}/>},
+                            {key: 'exchange', label: t('pages:exchange'), children: <MetricText>{submittedQuery?.exchangeCode ?? '-'}</MetricText>},
+                            {key: 'symbol', label: t('pages:instrument2'), children: <MetricText>{submittedQuery?.symbol ?? '-'}</MetricText>},
+                            {key: 'interval', label: t('pages:timeframe'), children: <MetricText>{submittedQuery?.interval ?? '-'}</MetricText>},
+                            {key: 'barCount', label: t('pages:barCount2'), children: <MetricText>{bars.length}</MetricText>},
+                            {key: 'lastBar', label: t('pages:lastBarTime'), children: <MetricText>{lastBar ? formatDateTime(lastBar.closeTime ?? lastBar.openTime) : '-'}</MetricText>},
+                            {key: 'quality', label: t('pages:dataQuality'), children: <QualityTags quality={barsQuality}/>},
                         ]}
                     />
                     <Space size={12} wrap>
@@ -1551,34 +1563,34 @@ export function MarketdataPage() {
                             inline
                         />
                         {barsQuality.gapCount > 0 ? (
-                            <Tag color="orange">gap / qualityStatus: {barsQuality.gapCount}</Tag>
+                            <Tag color="orange">{t('pages:gapQualitystatus')}{barsQuality.gapCount}</Tag>
                         ) : null}
                         {!barsQuality.hasQualityStatus && bars.length > 0 ? (
-                            <Tag>qualityStatus missing: non-blocking</Tag>
+                            <Tag>{t('pages:qualitystatusMissingNonBlocking')}</Tag>
                         ) : null}
                     </Space>
                     {barsFreshness.state === 'stale' ? (
                         <Alert
                             type="warning"
                             showIcon
-                            message="Marketdata bars stale"
-                            description="最后一根 K 线未覆盖查询结束时间；本视图只展示已有历史 bars，不做实时刷新或 WebSocket 补齐。"
+                            message={t('pages:marketDataBarsAreStale')}
+                            description={t('pages:theLastBarDoesNotCoverTheEndOfTheQueryThisViewShowsHistoricalBarsWithoutLiveRefreshOrWebsocketBackfi')}
                         />
                     ) : null}
                     {barsQuality.gapCount > 0 ? (
                         <Alert
                             type="warning"
                             showIcon
-                            message="Marketdata bars quality degraded"
-                            description="后端返回了非 OK qualityStatus；图表继续展示已有 bars，gap 修复仍由 MarketData ingestion / dataset quality 流程处理。"
+                            message={t('pages:marketDataQualityDegraded')}
+                            description={t('pages:theBackendReturnedANonOkQualitystatusExistingBarsRemainVisibleIngestionAndDatasetQualityWorkflowsHan')}
                         />
                     ) : null}
                     {!barsQuality.hasQualityStatus && bars.length > 0 ? (
                         <Alert
                             type="info"
                             showIcon
-                            message="qualityStatus unavailable"
-                            description="当前 bars payload 未携带 qualityStatus；这是非阻断提示，不会伪造 gap 状态。"
+                            message={t('pages:qualitystatusUnavailable')}
+                            description={t('pages:theBarsResponseHasNoQualitystatusThisAdvisoryDoesNotFabricateAGapStatus')}
                         />
                     ) : null}
                     <div
@@ -1595,7 +1607,7 @@ export function MarketdataPage() {
                             stale={barsFreshness.stale}
                             staleDetail={barsFreshness.detail}
                             sourceLabel={chartSourceLabel}
-                            title="OHLCV K-line"
+                            title={t('pages:ohlcvCandlesticks')}
                             emptyText={chartEmptyText}
                             height={320}
                         />
@@ -1604,14 +1616,13 @@ export function MarketdataPage() {
                             loading={barsQuery.isLoading}
                             error={chartError}
                             sourceLabel={chartSourceLabel}
-                            title="Volume"
-                            emptyText={submittedQuery ? '当前查询没有返回成交量 bars' : '提交查询后展示成交量'}
+                            title={t('pages:volume')}
+                            emptyText={submittedQuery ? t('pages:noVolumeBarsReturnedForThisQuery') : t('pages:searchToViewVolume')}
                             height={180}
                         />
                     </div>
                     <Typography.Text type="secondary">
-                        本视图复用现有 /api/marketdata/bars 与 marketdataApi.listBars()；不接 WebSocket、不接真实交易所私有流、不做买卖点或指标系统。
-                    </Typography.Text>
+                        {t('pages:thisViewUsesApiMarketdataBarsAndMarketdataapiListbarsItHasNoWebsocketPrivateExchangeFeedTradingSigna')}</Typography.Text>
                 </div>
             </Card>
             <MarketdataQualityCenterPanel
@@ -1622,21 +1633,21 @@ export function MarketdataPage() {
                 error={qualityOverviewQuery.error}
                 unavailable={qualityOverviewUnavailable}
             />
-            <Card className="page-section" bordered={false} title="Data Quality / Readiness">
+            <Card className="page-section" bordered={false} title={t('pages:dataQualityAndReadiness')}>
                 <div data-testid="marketdata-quality-readiness-view" style={{display: 'flex', flexDirection: 'column', gap: 16}}>
                     <MarketDataQualityNotice />
                     <Descriptions
                         size="small"
                         column={{xs: 1, sm: 2, md: 3}}
                         items={[
-                            {key: 'queryExchange', label: 'Exchange', children: <MetricText>{submittedQuery?.exchangeCode ?? '-'}</MetricText>},
-                            {key: 'queryInstrument', label: 'Instrument / Symbol', children: <MetricText>{submittedQuery?.symbol ?? '-'}</MetricText>},
-                            {key: 'queryInterval', label: 'Interval / timeframe', children: <MetricText>{submittedQuery?.interval ?? '-'}</MetricText>},
-                            {key: 'queryStart', label: 'Query start', children: <MetricText>{submittedQuery ? formatDateTime(submittedQuery.startTime) : '-'}</MetricText>},
-                            {key: 'queryEnd', label: 'Query end', children: <MetricText>{submittedQuery ? formatDateTime(submittedQuery.endTime) : '-'}</MetricText>},
+                            {key: 'queryExchange', label: t('pages:exchange'), children: <MetricText>{submittedQuery?.exchangeCode ?? '-'}</MetricText>},
+                            {key: 'queryInstrument', label: t('pages:instrumentSymbol'), children: <MetricText>{submittedQuery?.symbol ?? '-'}</MetricText>},
+                            {key: 'queryInterval', label: t('pages:intervalTimeframe'), children: <MetricText>{submittedQuery?.interval ?? '-'}</MetricText>},
+                            {key: 'queryStart', label: t('pages:queryStart'), children: <MetricText>{submittedQuery ? formatDateTime(submittedQuery.startTime) : '-'}</MetricText>},
+                            {key: 'queryEnd', label: t('pages:queryEnd'), children: <MetricText>{submittedQuery ? formatDateTime(submittedQuery.endTime) : '-'}</MetricText>},
                             {
                                 key: 'readinessStatus',
-                                label: 'Readiness status',
+                                label: t('pages:readinessStatus'),
                                 children: (
                                     <Tag color={readinessStatusColor(backendReadiness?.status ?? dataQualityReadiness.status)}>
                                         {backendReadiness?.status ?? dataQualityReadiness.title}
@@ -1645,35 +1656,35 @@ export function MarketdataPage() {
                             },
                             {
                                 key: 'sourceHealthStatus',
-                                label: 'Source health status',
+                                label: t('pages:sourceHealthStatus'),
                                 children: (
                                     <MarketDataStatusBadge status={backendReadiness ? readinessSourceHealth(backendReadiness) : (readinessLoading ? 'LOADING' : 'UNAVAILABLE')} />
                                 ),
                             },
                             {
                                 key: 'sourceStatus',
-                                label: 'Source status',
+                                label: t('pages:sourceStatus2'),
                                 children: (
                                     <MarketDataStatusBadge status={backendReadiness?.sourceStatus ?? (readinessLoading ? 'LOADING' : 'UNKNOWN')} />
                                 ),
                             },
                             {
                                 key: 'dataOrigin',
-                                label: 'Data origin',
+                                label: t('pages:dataOrigin'),
                                 children: (
                                     <MarketDataOriginBadge origin={backendReadiness?.dataOrigin ?? 'UNKNOWN'} />
                                 ),
                             },
                             {
                                 key: 'gapStatus',
-                                label: 'Gap status',
+                                label: t('pages:gapStatus'),
                                 children: (
                                     <MarketDataStatusBadge status={backendReadiness?.gapStatus ?? 'UNKNOWN'} />
                                 ),
                             },
                             {
                                 key: 'backendSupportLevel',
-                                label: 'Backend support',
+                                label: t('pages:backendSupport'),
                                 children: <MetricText>{backendReadiness?.backendSupportLevel ?? (submittedQuery ? 'UNAVAILABLE' : '-')}</MetricText>,
                             },
                         ]}
@@ -1692,148 +1703,148 @@ export function MarketdataPage() {
                         }}
                     >
                         <MetricTile
-                            label="Bars loaded"
+                            label={t('pages:barsLoaded')}
                             value={<MetricText>{backendReadiness?.barCount ?? bars.length}</MetricText>}
-                            detail={backendReadiness ? 'from /api/marketdata/readiness' : (submittedQuery ? 'from /api/marketdata/bars fallback' : 'pending query')}
+                            detail={backendReadiness ? t('pages:fromApiMarketdataReadiness') : (submittedQuery ? t('pages:fromApiMarketdataBarsFallback') : t('pages:pendingQuery'))}
                         />
                         <MetricTile
-                            label="First bar time"
+                            label={t('pages:firstBarTime')}
                             value={<MetricText>{backendReadiness ? dateText(backendReadiness.firstBarTime) : (firstBar ? formatDateTime(firstBar.openTime) : '-')}</MetricText>}
-                            detail={backendReadiness ? (backendReadiness.firstBarTime ?? 'no data') : (firstBar ? firstBar.openTime : 'no data')}
+                            detail={backendReadiness ? (backendReadiness.firstBarTime ?? t('pages:noData2')) : (firstBar ? firstBar.openTime : t('pages:noData2'))}
                         />
                         <MetricTile
-                            label="Last bar time"
+                            label={t('pages:lastBarTime')}
                             value={<MetricText>{backendReadiness ? dateText(backendReadiness.lastBarTime) : (lastBar ? formatDateTime(lastBar.closeTime ?? lastBar.openTime) : '-')}</MetricText>}
-                            detail={backendReadiness ? (backendReadiness.lastBarTime ?? 'no data') : (lastBar ? (lastBar.closeTime ?? lastBar.openTime) : 'no data')}
+                            detail={backendReadiness ? (backendReadiness.lastBarTime ?? t('pages:noData2')) : (lastBar ? (lastBar.closeTime ?? lastBar.openTime) : t('pages:noData2'))}
                         />
                         <MetricTile
-                            label="Latest close"
+                            label={t('pages:latestClose')}
                             value={<MetricText>{lastBar ? formatNumber(lastBar.closePrice, 8) : '-'}</MetricText>}
-                            detail={lastBar ? 'last returned bar' : 'no data'}
+                            detail={lastBar ? t('pages:lastReturnedBar') : t('pages:noData2')}
                         />
                         <MetricTile
-                            label="Latest volume"
+                            label={t('pages:latestVolume')}
                             value={<MetricText>{lastBar ? formatNumber(lastBar.volume, 8) : '-'}</MetricText>}
-                            detail={lastBar ? 'last returned bar' : 'no data'}
+                            detail={lastBar ? t('pages:lastReturnedBar') : t('pages:noData2')}
                         />
                         <MetricTile
-                            label="Freshness"
+                            label={t('pages:freshness2')}
                             value={(
                                 <DataFreshness
-                                    source={backendReadiness ? 'backend readiness' : 'bars'}
+                                    source={backendReadiness ? t('pages:backendReadiness') : 'bars'}
                                     state={backendReadiness ? readinessFreshnessState(backendReadiness.freshnessStatus) : barsFreshness.state}
                                     detail={backendReadiness?.freshnessStatus ?? barsFreshness.detail}
                                     inline
                                 />
                             )}
-                            detail={backendReadiness ? 'from /api/marketdata/readiness' : (barsFreshness.stale ? 'stale by query interval estimate' : 'front-end estimate')}
+                            detail={backendReadiness ? t('pages:fromApiMarketdataReadiness') : (barsFreshness.stale ? t('pages:staleByQueryIntervalEstimate') : t('pages:frontendEstimate'))}
                         />
                         <MetricTile
-                            label="Quality status"
+                            label={t('pages:qualityStatus')}
                             value={backendReadiness ? <ReadinessQualityTags readiness={backendReadiness}/> : <QualityTags quality={barsQuality}/>}
-                            detail={backendReadiness ? `ok=${backendReadiness.qualityStatusSummary.okCount}, gap=${backendReadiness.qualityStatusSummary.gapSignalCount}, invalid=${backendReadiness.qualityStatusSummary.invalidCount}` : (barsQuality.hasQualityStatus ? 'aggregated from bars payload' : 'unavailable / readiness unavailable')}
+                            detail={backendReadiness ? `ok=${backendReadiness.qualityStatusSummary.okCount}, gap=${backendReadiness.qualityStatusSummary.gapSignalCount}, invalid=${backendReadiness.qualityStatusSummary.invalidCount}` : (barsQuality.hasQualityStatus ? t('pages:aggregatedFromBarData') : t('pages:unavailableReadinessUnavailable'))}
                         />
                         <MetricTile
-                            label="Gap count"
+                            label={t('pages:gapCount')}
                             value={<MetricText>{backendReadiness ? countText(backendReadiness.gapCount) : (barsQuality.gapDetectionUnavailable ? '-' : barsQuality.gapCount)}</MetricText>}
-                            detail={backendReadiness ? `expected=${countText(backendReadiness.expectedBarCount)}` : (barsQuality.gapDetectionUnavailable ? 'gap detection unavailable' : `quality=${barsQuality.qualityGapCount}, sequence=${barsQuality.sequenceGapCount ?? '-'}`)}
+                            detail={backendReadiness ? `expected=${countText(backendReadiness.expectedBarCount)}` : (barsQuality.gapDetectionUnavailable ? t('pages:gapDetectionUnavailable') : `quality=${barsQuality.qualityGapCount}, sequence=${barsQuality.sequenceGapCount ?? '-'}`)}
                         />
                         <MetricTile
-                            label="Gap status"
+                            label={t('pages:gapStatus')}
                             value={<MarketDataStatusBadge status={backendReadiness?.gapStatus ?? 'UNKNOWN'} />}
-                            detail={backendReadiness ? `missingFrom=${dateText(backendReadiness.missingFrom)}, missingTo=${dateText(backendReadiness.missingTo)}` : STABLE_FACT_PENDING_TEXT}
+                            detail={backendReadiness ? `missingFrom=${dateText(backendReadiness.missingFrom)}, missingTo=${dateText(backendReadiness.missingTo)}` : stableFactPendingText()}
                         />
                         <MetricTile
-                            label="Unknown quality count"
+                            label={t('pages:unknownQualityCount')}
                             value={<MetricText>{backendReadiness?.unknownQualityCount ?? barsQuality.unknownQualityCount}</MetricText>}
-                            detail={backendReadiness ? 'from backend qualityStatusSummary' : (barsQuality.unknownQualityCount > 0 ? 'qualityStatus missing on returned bars' : 'none')}
+                            detail={backendReadiness ? t('pages:fromBackendQualitystatussummary') : (barsQuality.unknownQualityCount > 0 ? t('pages:qualitystatusMissingOnReturnedBars') : 'none')}
                         />
                         <MetricTile
-                            label="Source health"
+                            label={t('pages:sourceHealth')}
                             value={(
                                 <MarketDataStatusBadge status={backendReadiness ? readinessSourceHealth(backendReadiness) : (readinessLoading ? 'LOADING' : 'UNAVAILABLE')} />
                             )}
-                            detail={backendReadiness?.sourceHealthReason ?? (readinessLoading ? 'loading /api/marketdata/readiness' : dataQualityReadiness.sourceHealthDetail)}
+                            detail={backendReadiness?.sourceHealthReason ?? (readinessLoading ? t('pages:loadingApiMarketdataReadiness') : dataQualityReadiness.sourceHealthDetail)}
                         />
                         <MetricTile
-                            label="Source status"
+                            label={t('pages:sourceStatus2')}
                             value={<MarketDataStatusBadge status={backendReadiness?.sourceStatus ?? 'UNKNOWN'} />}
-                            detail="sourceStatus 只表示数据源诊断状态，不代表 provider 或交易授权。"
+                            detail={t('pages:sourcestatusDescribesDiagnosticsOnlyNotProviderOrTradingAuthorization')}
                         />
                         <MetricTile
-                            label="Data origin"
+                            label={t('pages:dataOrigin')}
                             value={<MarketDataOriginBadge origin={backendReadiness?.dataOrigin ?? 'UNKNOWN'} />}
-                            detail="LOCAL_DB / FIXTURE / FAKE_SERVER / PUBLIC_CANDIDATE 均为诊断来源，不代表真实外联已执行。"
+                            detail={t('pages:localDbFixtureFakeServerPublicCandidateAreDiagnosticOriginsNotProofOfRealExternalConnections')}
                         />
                         <MetricTile
-                            label="Error category"
+                            label={t('pages:errorCategory')}
                             value={<MarketDataStatusBadge status={backendReadiness?.errorCategory ?? 'UNKNOWN'} />}
-                            detail={backendReadiness ? optionalText(backendReadiness.degradedReason ?? backendReadiness.disabledReason) : STABLE_FACT_PENDING_TEXT}
+                            detail={backendReadiness ? optionalText(backendReadiness.degradedReason ?? backendReadiness.disabledReason) : stableFactPendingText()}
                         />
                         <MetricTile
-                            label="Error rate"
-                            value={<MetricText>{backendReadiness ? percentText(backendReadiness.errorRate) : STABLE_FACT_PENDING_TEXT}</MetricText>}
-                            detail="null 表示暂无稳定事实，不显示为 0%。"
+                            label={t('pages:errorRate')}
+                            value={<MetricText>{backendReadiness ? percentText(backendReadiness.errorRate) : stableFactPendingText()}</MetricText>}
+                            detail={t('pages:nullMeansNoStableFactItIsNotDisplayedAs0')}
                         />
                         <MetricTile
-                            label="Latency"
-                            value={<MetricText>{backendReadiness ? numberText(backendReadiness.latencyMs, ' ms') : STABLE_FACT_PENDING_TEXT}</MetricText>}
-                            detail="null 表示暂无稳定事实，不硬编码延迟阈值。"
+                            label={t('pages:latency')}
+                            value={<MetricText>{backendReadiness ? numberText(backendReadiness.latencyMs, ' ms') : stableFactPendingText()}</MetricText>}
+                            detail={t('pages:nullMeansNoStableFactLatencyThresholdsAreNotHardcoded')}
                         />
                         <MetricTile
-                            label="Missing from"
-                            value={<MetricText>{backendReadiness ? dateText(backendReadiness.missingFrom) : STABLE_FACT_PENDING_TEXT}</MetricText>}
-                            detail="缺口起点；null 不等于无缺口。"
+                            label={t('pages:missingFrom')}
+                            value={<MetricText>{backendReadiness ? dateText(backendReadiness.missingFrom) : stableFactPendingText()}</MetricText>}
+                            detail={t('pages:gapStartNullDoesNotMeanNoGap')}
                         />
                         <MetricTile
-                            label="Missing to"
-                            value={<MetricText>{backendReadiness ? dateText(backendReadiness.missingTo) : STABLE_FACT_PENDING_TEXT}</MetricText>}
-                            detail="缺口终点；null 不等于无缺口。"
+                            label={t('pages:missingTo')}
+                            value={<MetricText>{backendReadiness ? dateText(backendReadiness.missingTo) : stableFactPendingText()}</MetricText>}
+                            detail={t('pages:gapEndNullDoesNotMeanNoGap')}
                         />
                         <MetricTile
-                            label="Last observed"
-                            value={<MetricText>{backendReadiness ? dateText(backendReadiness.lastObservedAt) : STABLE_FACT_PENDING_TEXT}</MetricText>}
-                            detail="最近观测到的本地行情或 ingestion 事实。"
+                            label={t('pages:lastObserved')}
+                            value={<MetricText>{backendReadiness ? dateText(backendReadiness.lastObservedAt) : stableFactPendingText()}</MetricText>}
+                            detail={t('pages:latestObservedLocalMarketDataOrIngestionFact')}
                         />
                         <MetricTile
-                            label="Updated at"
-                            value={<MetricText>{backendReadiness ? dateText(readinessUpdatedAt(backendReadiness)) : STABLE_FACT_PENDING_TEXT}</MetricText>}
-                            detail={backendReadiness ? '优先使用 updatedAt，兼容 generatedAt。' : STABLE_FACT_PENDING_TEXT}
+                            label={t('pages:updatedAt')}
+                            value={<MetricText>{backendReadiness ? dateText(readinessUpdatedAt(backendReadiness)) : stableFactPendingText()}</MetricText>}
+                            detail={backendReadiness ? t('pages:usesUpdatedatWithGeneratedatAsACompatibleFallback') : stableFactPendingText()}
                         />
                         <MetricTile
-                            label="Stale threshold"
-                            value={<MetricText>{backendReadiness ? numberText(backendReadiness.staleAfterSeconds, ' s') : STABLE_FACT_PENDING_TEXT}</MetricText>}
-                            detail="过期阈值来自后端只读事实；前端不推导业务阈值。"
+                            label={t('pages:staleThreshold')}
+                            value={<MetricText>{backendReadiness ? numberText(backendReadiness.staleAfterSeconds, ' s') : stableFactPendingText()}</MetricText>}
+                            detail={t('pages:theStaleThresholdComesFromBackendReadOnlyFactsTheFrontendDoesNotDeriveBusinessThresholds')}
                         />
                         <MetricTile
-                            label="Degraded reason"
-                            value={<MetricText>{backendReadiness ? optionalText(backendReadiness.degradedReason) : STABLE_FACT_PENDING_TEXT}</MetricText>}
-                            detail="仅显示脱敏诊断原因。"
+                            label={t('pages:degradedReason')}
+                            value={<MetricText>{backendReadiness ? optionalText(backendReadiness.degradedReason) : stableFactPendingText()}</MetricText>}
+                            detail={t('pages:onlySanitizedDiagnosticReasonsAreShown')}
                         />
                         <MetricTile
-                            label="Disabled reason"
-                            value={<MetricText>{backendReadiness ? optionalText(backendReadiness.disabledReason) : STABLE_FACT_PENDING_TEXT}</MetricText>}
-                            detail="仅显示脱敏禁用原因。"
+                            label={t('pages:disabledReason')}
+                            value={<MetricText>{backendReadiness ? optionalText(backendReadiness.disabledReason) : stableFactPendingText()}</MetricText>}
+                            detail={t('pages:onlySanitizedDisabledReasonsAreShown')}
                         />
                         <MetricTile
-                            label="Trace / Request"
-                            value={<MetricText>{backendReadiness ? `${optionalText(backendReadiness.traceId)} / ${optionalText(backendReadiness.requestId)}` : STABLE_FACT_PENDING_TEXT}</MetricText>}
-                            detail="traceId/requestId 可为空；不得显示 credential、header 或 raw payload。"
+                            label={t('pages:traceRequest')}
+                            value={<MetricText>{backendReadiness ? `${optionalText(backendReadiness.traceId)} / ${optionalText(backendReadiness.requestId)}` : stableFactPendingText()}</MetricText>}
+                            detail={t('pages:traceidRequestidMayBeEmptyCredentialsHeadersAndRawPayloadsMustNotBeDisplayed')}
                         />
                         <MetricTile
-                            label="Backend support"
+                            label={t('pages:backendSupport')}
                             value={<MetricText>{backendReadiness?.backendSupportLevel ?? (submittedQuery ? 'UNAVAILABLE' : '-')}</MetricText>}
-                            detail={backendReadiness ? `generated ${formatDateTime(backendReadiness.generatedAt)}` : 'readiness API fallback'}
+                            detail={backendReadiness ? `generated ${formatDateTime(backendReadiness.generatedAt)}` : t('pages:readinessApiFallback')}
                         />
                         <MetricTile
-                            label="Last success"
+                            label={t('pages:lastSuccess')}
                             value={<MetricText>{backendReadiness ? dateText(backendReadiness.lastSuccessAt) : '-'}</MetricText>}
-                            detail={backendReadiness?.lastSuccessAt ?? STABLE_FACT_PENDING_TEXT}
+                            detail={backendReadiness?.lastSuccessAt ?? stableFactPendingText()}
                         />
                         <MetricTile
-                            label="Last failure"
+                            label={t('pages:lastFailure')}
                             value={<MetricText>{backendReadiness ? dateText(backendReadiness.lastFailureAt) : '-'}</MetricText>}
-                            detail={backendReadiness?.lastFailureAt ?? STABLE_FACT_PENDING_TEXT}
+                            detail={backendReadiness?.lastFailureAt ?? stableFactPendingText()}
                         />
                     </div>
                     <Space size={8} wrap>
@@ -1843,59 +1854,59 @@ export function MarketdataPage() {
                         {backendReadiness ? (
                             <>
                                 <Tag color={readinessStatusColor(backendReadiness.freshnessStatus)}>
-                                    freshness: {backendReadiness.freshnessStatus}
+                                    {t('pages:freshness')}{backendReadiness.freshnessStatus}
                                 </Tag>
                                 <Tag color={readinessStatusColor(readinessSourceHealth(backendReadiness))}>
-                                    source health: {readinessSourceHealth(backendReadiness)}
+                                    {t('pages:sourceHealth2')}{readinessSourceHealth(backendReadiness)}
                                 </Tag>
                                 <Tag color={readinessStatusColor(backendReadiness.gapStatus)}>
-                                    gap: {backendReadiness.gapStatus ?? 'UNKNOWN'}
+                                    {t('pages:gap')}{backendReadiness.gapStatus ?? 'UNKNOWN'}
                                 </Tag>
                                 <Tag color={readinessStatusColor(backendReadiness.sourceStatus)}>
-                                    source status: {backendReadiness.sourceStatus ?? 'UNKNOWN'}
+                                    {t('pages:sourceStatus3')}{backendReadiness.sourceStatus ?? 'UNKNOWN'}
                                 </Tag>
-                                <Tag>data origin: {backendReadiness.dataOrigin ?? 'UNKNOWN'}</Tag>
-                                <Tag>backend support: {backendReadiness.backendSupportLevel}</Tag>
+                                <Tag>{t('pages:dataOrigin2')}{backendReadiness.dataOrigin ?? 'UNKNOWN'}</Tag>
+                                <Tag>{t('pages:backendSupport2')}{backendReadiness.backendSupportLevel}</Tag>
                             </>
                         ) : (
-                            <Tag>source health: {readinessLoading ? 'LOADING' : 'UNAVAILABLE'}</Tag>
+                            <Tag>{t('pages:sourceHealth2')}{readinessLoading ? 'LOADING' : 'UNAVAILABLE'}</Tag>
                         )}
                         {barsQuality.gapDetectionUnavailable ? (
-                            <Tag>gap detection unavailable</Tag>
+                            <Tag>{t('pages:gapDetectionUnavailable')}</Tag>
                         ) : null}
                     </Space>
                     {chartError ? (
                         <Alert
                             type="error"
                             showIcon
-                            message="Data quality unavailable"
-                            description="bars query failed; this view does not infer data readiness from a failed response."
+                            message={t('pages:dataQualityUnavailable')}
+                            description={t('pages:theBarsQueryFailedDataReadinessCannotBeInferredFromAFailedResponse')}
                         />
                     ) : null}
                     {!chartError && submittedQuery && bars.length === 0 ? (
                         <Alert
                             type="info"
                             showIcon
-                            message="No bars returned"
-                            description="当前查询窗口没有返回 bars；freshness、gap 和 qualityStatus 只能显示 no data / unavailable。"
+                            message={t('pages:noBarsReturned')}
+                            description={t('pages:noBarsWereReturnedForThisWindowFreshnessGapsAndQualityRemainNoDataUnavailable')}
                         />
                     ) : null}
                     {barsQuality.gapDetectionUnavailable ? (
                         <Alert
                             type="info"
                             showIcon
-                            message="Gap detection unavailable"
-                            description="当前 bars payload 无 qualityStatus，且周期或时间字段不足以稳定推断序列缺口；页面不会伪造 gap=0 或 source health=OK。"
+                            message={t('pages:gapDetectionUnavailable')}
+                            description={t('pages:qualitystatusAndSufficientIntervalOrTimeDataAreMissingThePageDoesNotFabricateGap0OrSourceHealthOk')}
                         />
                     ) : null}
                     {readinessUnavailable ? (
                         <Alert
                             type="warning"
                             showIcon
-                            message="MarketData source health unavailable"
+                            message={t('pages:marketDataSourceHealthUnavailable')}
                             description={readinessError
                                 ? `readiness API failed: ${readinessError}; using bars-derived fallback only.`
-                                : 'readiness API did not return a usable summary; using bars-derived fallback only.'}
+                                : t('pages:readinessApiReturnedNoUsableSummaryOnlyBarDerivedFallbackIsAvailable')}
                         />
                     ) : null}
                     {backendReadiness ? (
@@ -1903,7 +1914,7 @@ export function MarketdataPage() {
                             type={backendReadiness.status === 'FRESH' ? 'success' : backendReadiness.status === 'ERROR' ? 'error' : 'warning'}
                             showIcon
                             message={`MarketData readiness: ${backendReadiness.status}`}
-                            description={`${backendReadiness.sourceHealthReason} Backend support: ${backendReadiness.backendSupportLevel}. 本结论只表示行情数据诊断，不代表交易授权。`}
+                            description={t('pages:value1BackendSupportValue2ThisIsMarketDataDiagnosticsOnlyNotTradingAuthorization', {value1: backendReadiness.sourceHealthReason, value2: backendReadiness.backendSupportLevel})}
                         />
                     ) : (
                         <Alert
@@ -1915,9 +1926,9 @@ export function MarketdataPage() {
                     )}
                 </div>
             </Card>
-            <Card className="page-section" bordered={false} title="Bars 结果">
+            <Card className="page-section" bordered={false} title={t('pages:barResults')}>
                 {barsQuery.error ? (
-                    <Alert type="error" showIcon message="Marketdata bars 查询失败" description={formatApiError(barsQuery.error as AppApiError)} />
+                    <Alert type="error" showIcon message={t('pages:failedToQueryMarketDataBars')} description={formatApiError(barsQuery.error as AppApiError)} />
                 ) : (
                     <Table
                         rowKey={(record) => `${record.exchangeCode}-${record.marketType}-${record.symbol}-${record.interval}-${record.openTime}`}
@@ -1932,8 +1943,8 @@ export function MarketdataPage() {
             <Card
                 className="page-section"
                 bordered={false}
-                title="接入任务"
-                extra={<Button type="primary" loading={createJobMutation.isPending} onClick={() => jobForm.submit()}>创建任务</Button>}
+                title={t('pages:ingestionJobs')}
+                extra={<Button type="primary" loading={createJobMutation.isPending} onClick={() => jobForm.submit()}>{t('pages:createJob')}</Button>}
             >
                 <Form<CreateMarketdataIngestionJobFormValues>
                     form={jobForm}
@@ -1947,28 +1958,28 @@ export function MarketdataPage() {
                     onFinish={(values) => createJobMutation.mutate(normalizeIngestionJob(values))}
                 >
                     <Space align="start" size={16} wrap>
-                        <Form.Item label="交易所" name="exchangeCode">
+                        <Form.Item label={t('pages:exchange')} name="exchangeCode">
                             <Select style={{width: 140}} options={EXCHANGE_OPTIONS} />
                         </Form.Item>
-                        <Form.Item label="市场" name="marketType">
+                        <Form.Item label={t('pages:market')} name="marketType">
                             <Select style={{width: 120}} options={MARKET_TYPE_OPTIONS} />
                         </Form.Item>
-                        <Form.Item label="交易对" name="symbol">
+                        <Form.Item label={t('pages:tradingPair')} name="symbol">
                             <Select showSearch style={{width: 160}} options={SYMBOL_OPTIONS} />
                         </Form.Item>
-                        <Form.Item label="周期" name="interval">
+                        <Form.Item label={t('pages:interval')} name="interval">
                             <Select style={{width: 120}} options={INTERVAL_OPTIONS} />
                         </Form.Item>
-                        <Form.Item label="开始时间" name="startTime" rules={[{required: true, message: '请选择开始时间'}]}>
+                        <Form.Item label={t('pages:startTime')} name="startTime" rules={[{required: true, message: t('pages:selectAStartTime')}]}>
                             <DatePicker showTime style={{width: 220}} />
                         </Form.Item>
-                        <Form.Item label="结束时间" name="endTime" rules={[{required: true, message: '请选择结束时间'}]}>
+                        <Form.Item label={t('pages:endTime')} name="endTime" rules={[{required: true, message: t('pages:selectAnEndTime')}]}>
                             <DatePicker showTime style={{width: 220}} />
                         </Form.Item>
                     </Space>
                 </Form>
                 {jobsQuery.error ? (
-                    <Alert type="error" showIcon message="Marketdata ingestion jobs 查询失败" description={formatApiError(jobsQuery.error as AppApiError)} />
+                    <Alert type="error" showIcon message={t('pages:failedToQueryIngestionJobs')} description={formatApiError(jobsQuery.error as AppApiError)} />
                 ) : (
                     <Table
                         rowKey="jobId"
@@ -1983,10 +1994,10 @@ export function MarketdataPage() {
                     />
                 )}
             </Card>
-            <Card className="page-section" bordered={false} title="运行结果">
+            <Card className="page-section" bordered={false} title={t('pages:runResults')}>
                 {selectedJobId ? (
                     runsQuery.error ? (
-                        <Alert type="error" showIcon message="Marketdata ingestion runs 查询失败" description={formatApiError(runsQuery.error as AppApiError)} />
+                        <Alert type="error" showIcon message={t('pages:failedToQueryIngestionRuns')} description={formatApiError(runsQuery.error as AppApiError)} />
                     ) : (
                         <Table
                             rowKey="runId"
@@ -1998,21 +2009,20 @@ export function MarketdataPage() {
                         />
                     )
                 ) : (
-                    <Alert type="info" showIcon message="请选择或创建一个接入任务查看运行结果" />
+                    <Alert type="info" showIcon message={t('pages:selectOrCreateAnIngestionJobToViewRunResults')} />
                 )}
             </Card>
             <Card
                 className="page-section"
                 bordered={false}
-                title="Datasets"
+                title={t('pages:datasets')}
                 extra={(
                     <Button
                         type="primary"
                         loading={createDatasetMutation.isPending}
                         onClick={() => datasetForm.submit()}
                     >
-                        创建 Dataset
-                    </Button>
+                        {t('pages:createDataset')}</Button>
                 )}
             >
                 <Form<CreateMarketdataDatasetFormValues>
@@ -2031,31 +2041,31 @@ export function MarketdataPage() {
                     })}
                 >
                     <Space align="start" size={16} wrap>
-                        <Form.Item label="Dataset Name" name="datasetName">
+                        <Form.Item label={t('pages:datasetName')} name="datasetName">
                             <Input style={{width: 260}} />
                         </Form.Item>
-                        <Form.Item label="交易所" name="exchangeCode">
+                        <Form.Item label={t('pages:exchange')} name="exchangeCode">
                             <Select style={{width: 140}} options={EXCHANGE_OPTIONS} />
                         </Form.Item>
-                        <Form.Item label="市场" name="marketType">
+                        <Form.Item label={t('pages:market')} name="marketType">
                             <Select style={{width: 120}} options={MARKET_TYPE_OPTIONS} />
                         </Form.Item>
-                        <Form.Item label="交易对" name="symbol">
+                        <Form.Item label={t('pages:tradingPair')} name="symbol">
                             <Select showSearch style={{width: 160}} options={SYMBOL_OPTIONS} />
                         </Form.Item>
-                        <Form.Item label="周期" name="interval">
+                        <Form.Item label={t('pages:interval')} name="interval">
                             <Select style={{width: 120}} options={INTERVAL_OPTIONS} />
                         </Form.Item>
-                        <Form.Item label="开始时间" name="startTime" rules={[{required: true, message: '请选择开始时间'}]}>
+                        <Form.Item label={t('pages:startTime')} name="startTime" rules={[{required: true, message: t('pages:selectAStartTime')}]}>
                             <DatePicker showTime style={{width: 220}} />
                         </Form.Item>
-                        <Form.Item label="结束时间" name="endTime" rules={[{required: true, message: '请选择结束时间'}]}>
+                        <Form.Item label={t('pages:endTime')} name="endTime" rules={[{required: true, message: t('pages:selectAnEndTime')}]}>
                             <DatePicker showTime style={{width: 220}} />
                         </Form.Item>
                     </Space>
                 </Form>
                 {datasetsQuery.error ? (
-                    <Alert type="error" showIcon message="Marketdata datasets 查询失败" description={formatApiError(datasetsQuery.error as AppApiError)} />
+                    <Alert type="error" showIcon message={t('pages:failedToQueryMarketDataDatasets')} description={formatApiError(datasetsQuery.error as AppApiError)} />
                 ) : (
                     <Table
                         rowKey="datasetId"
@@ -2064,7 +2074,7 @@ export function MarketdataPage() {
                         loading={datasetsQuery.isLoading || datasetsQuery.isFetching}
                         pagination={{pageSize: 10, showSizeChanger: false}}
                         scroll={{x: 1900}}
-                        locale={{emptyText: '暂无 marketdata dataset，可先创建数据集。'}}
+                        locale={{emptyText: t('pages:noMarketDataDatasetsCreateOneFirst')}}
                     />
                 )}
             </Card>

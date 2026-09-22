@@ -34,6 +34,7 @@ import {TradingWorkbenchPage} from '@/pages/trading/TradingWorkbenchPage';
 import {RequireAuth} from '@/router/RequireAuth';
 import {appNavItems} from '@/router/navigation';
 import type {RouteHandle} from '@/types/navigation';
+import {t} from '@/i18n';
 
 function createHandle(menuKey: string): RouteHandle {
     const matched = appNavItems.find((item) => item.key === menuKey);
@@ -46,8 +47,8 @@ function createHandle(menuKey: string): RouteHandle {
     }
 
     return {
-        title: matched.title,
-        breadcrumb: matched.label,
+        get title() {return matched.title;},
+        get breadcrumb() {return matched.label;},
         menuKey: matched.key,
     };
 }
@@ -57,8 +58,8 @@ export const appRouter = createBrowserRouter([
         path: '/login',
         element: <LoginPage/>,
         handle: {
-            title: '登录',
-            breadcrumb: '登录',
+            get title() {return t('auth.submit');},
+            get breadcrumb() {return t('auth.submit');},
         } satisfies RouteHandle,
     },
     {
@@ -226,39 +227,39 @@ export const appRouter = createBrowserRouter([
         path: '/exception/auth',
         element: <AuthFailurePage/>,
         handle: {
-            title: '鉴权失败',
-            breadcrumb: '鉴权失败',
+            get title() {return t('exception.authFailure');},
+            get breadcrumb() {return t('exception.authFailure');},
         } satisfies RouteHandle,
     },
     {
         path: '/exception/forbidden',
         element: <ForbiddenPage/>,
         handle: {
-            title: '无访问权限',
-            breadcrumb: '无访问权限',
+            get title() {return t('exception.forbidden');},
+            get breadcrumb() {return t('exception.forbidden');},
         } satisfies RouteHandle,
     },
     {
         path: '/exception/error',
         element: <SystemErrorPage/>,
         handle: {
-            title: '系统错误',
-            breadcrumb: '系统错误',
+            get title() {return t('exception.system');},
+            get breadcrumb() {return t('exception.system');},
         } satisfies RouteHandle,
     },
     {
         path: '/exception/welcome',
         element: <WelcomePage/>,
         handle: {
-            title: '系统待初始化',
-            breadcrumb: '系统待初始化',
+            get title() {return t('exception.welcome');},
+            get breadcrumb() {return t('exception.welcome');},
         } satisfies RouteHandle,
     },
     {
         path: '*',
         element: <NotFoundPage/>,
         handle: {
-            title: '未找到页面',
+            get title() {return t('exception.notFound');},
             breadcrumb: '404',
         } satisfies RouteHandle,
     },

@@ -1,3 +1,5 @@
+import {t} from '@/i18n';
+import {useTranslation} from 'react-i18next';
 import {Button} from 'antd';
 import {useNavigate} from 'react-router-dom';
 
@@ -9,20 +11,19 @@ import {StandaloneSurface} from '@/components/standalone/StandaloneSurface';
  * 用统一异常表现层替代 AntD 默认 404 模板,与其余异常页同源。
  */
 export function NotFoundPage() {
+    useTranslation();
     const navigate = useNavigate();
 
     return (
-        <StandaloneSurface ariaLabel="页面未找到">
+        <StandaloneSurface ariaLabel={t('exception.notFound')}>
             <ExceptionView
                 tone="neutral"
                 code="404"
-                kicker="页面未找到"
-                title="找不到这个页面"
-                description="目标页面不存在,或当前路由尚未接入。"
+                kicker={t('exception.notFound')}
+                title={t('exception.notFoundTitle')}
+                description={t('exception.notFoundDescription')}
                 actions={
-                    <Button type="primary" onClick={() => navigate('/dashboard')}>
-                        返回控制台
-                    </Button>
+                    <Button type="primary" onClick={() => navigate('/dashboard')}>{t('exception.console')}</Button>
                 }
             />
         </StandaloneSurface>

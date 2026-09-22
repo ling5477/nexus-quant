@@ -1,0 +1,255 @@
+{
+  "language": "Language",
+  "loading": "Loading...",
+  "queryFailed": "Query failed",
+  "querySection": "Query",
+  "retry": "Retry",
+  "refresh": "Refresh",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "all": "All",
+  "enabled": "Enabled",
+  "disabled": "Disabled",
+  "shell": {
+    "subtitle": "Quantitative strategy operations console",
+    "console": "Trading Console",
+    "expand": "Expand menu",
+    "collapse": "Collapse menu",
+    "chooseAccount": "Select account context",
+    "default": " (default)",
+    "accounts": "Accounts",
+    "logout": "Sign out",
+    "anonymous": "Signed out",
+    "ungrouped": "Other",
+    "appTitle": "NexusQuant Console"
+  },
+  "auth": {
+    "entering": "Opening the console",
+    "restored": "Your session has been restored. Opening the protected workspace.",
+    "restoring": "Restoring your session",
+    "checking": "Checking your session. Please wait.",
+    "aria": "Sign in to NexusQuant",
+    "tagline": "Quantitative trading infrastructure console",
+    "lede": "Research, backtest, simulate, manage risk and audit trades in one controlled console.",
+    "capabilities": "NexusQuant capabilities",
+    "research": "Strategy research and backtesting",
+    "paper": "Paper trading",
+    "risk": "Pre-trade risk checks",
+    "audit": "End-to-end audit trails",
+    "promise": "LIVE trading is disabled by default. Every trading action passes risk checks and retains a complete audit trail.",
+    "title": "Sign in to the console",
+    "caption": "Enter your credentials to access the protected console",
+    "username": "Username",
+    "password": "Password",
+    "usernameRequired": "Enter your username",
+    "passwordRequired": "Enter your password",
+    "submit": "Sign in",
+    "security": "Safety controls",
+    "securityDescription": "LIVE trading is disabled by default. All trading operations are subject to risk checks, audit and environment isolation.",
+    "footer": "Controlled environment · PAPER by default · LIVE disabled"
+  },
+  "freshness": {
+    "fresh": "Fresh",
+    "stale": "Stale",
+    "very_stale": "Very stale",
+    "delayed": "Delayed",
+    "degraded": "Degraded",
+    "no_data": "No data",
+    "error": "Error",
+    "disabled": "Disabled"
+  },
+  "navigation": {
+    "dashboard": {
+      "label": "Overview",
+      "title": "Console overview",
+      "description": "View your session, environment and console navigation.",
+      "section": "Overview"
+    },
+    "accounts": {
+      "label": "Accounts",
+      "title": "Accounts and credentials",
+      "description": "Manage trading account contexts, the default account and credentials.",
+      "section": "Accounts and trading"
+    },
+    "trading": {
+      "label": "Trading workbench",
+      "title": "Trading workbench",
+      "description": "Place, cancel, reconcile, recover and query orders in the active account context.",
+      "section": "Accounts and trading"
+    },
+    "instruments": {
+      "label": "Instrument catalog",
+      "title": "Instrument catalog",
+      "description": "Browse and synchronize the instrument and symbol catalog.",
+      "section": "Market and reference data"
+    },
+    "marketdata": {
+      "label": "Market data",
+      "title": "Market data",
+      "description": "Query market data bars and their available range.",
+      "section": "Market and reference data"
+    },
+    "adapter-readiness": {
+      "label": "Adapter readiness",
+      "title": "Adapter readiness",
+      "description": "Inspect adapter capabilities and runtime readiness. No real trading; LIVE remains disabled.",
+      "section": "Market and reference data"
+    },
+    "runtime-readiness": {
+      "label": "Runtime boundaries",
+      "title": "Runtime readiness",
+      "description": "Inspect Paper-only operation, market data readiness, adapters and disabled LIVE trading.",
+      "section": "Market and reference data"
+    },
+    "strategy-validation": {
+      "label": "Strategy validation",
+      "title": "Local validation review",
+      "description": "Inspect local evidence, the durable review queue, case lifecycle and non-trading boundaries.",
+      "section": "Strategy operations"
+    },
+    "shadow-runs": {
+      "label": "Shadow runs",
+      "title": "Shadow runs",
+      "description": "Inspect local Shadow Run diagnostics, details and replay.",
+      "section": "Strategy operations"
+    },
+    "strategies": {
+      "label": "Strategies",
+      "title": "Strategy definitions",
+      "description": "Browse strategy definitions, details and available actions.",
+      "section": "Strategy operations"
+    },
+    "schedules": {
+      "label": "Schedules",
+      "title": "Schedules",
+      "description": "Browse schedules, scans and run orchestration.",
+      "section": "Strategy operations"
+    },
+    "runs": {
+      "label": "Runs",
+      "title": "Run history",
+      "description": "Query strategy runs, their status and details.",
+      "section": "Strategy operations"
+    },
+    "research": {
+      "label": "Research",
+      "title": "Research configurations",
+      "description": "Browse research parameters and configuration details.",
+      "section": "Research and backtesting"
+    },
+    "backtests": {
+      "label": "Backtests",
+      "title": "Backtest configurations",
+      "description": "Browse and create backtest configurations.",
+      "section": "Research and backtesting"
+    },
+    "evaluations": {
+      "label": "Evaluations",
+      "title": "Evaluation results",
+      "description": "Browse evaluations, metric summaries and details.",
+      "section": "Research and backtesting"
+    },
+    "publishes": {
+      "label": "Publications",
+      "title": "Publication results",
+      "description": "Browse publication results and audit trails.",
+      "section": "Research and backtesting"
+    },
+    "paper-trading": {
+      "label": "Paper trading",
+      "title": "Paper trading",
+      "description": "Create SIM/Paper Trading runs from published strategy versions and inspect their state.",
+      "section": "Strategy operations"
+    }
+  },
+  "exception": {
+    "sessionKicker": "Session expired",
+    "sessionTitle": "Your session has expired",
+    "sessionDescription": "Your session timed out. The console signed you out for security.",
+    "sessionNext": "Sign in again to continue.",
+    "identityKicker": "Identity check failed",
+    "identityTitle": "Unable to verify your identity",
+    "identityDescription": "Your identity could not be verified. The credentials may be invalid or the session revoked elsewhere.",
+    "identityNext": "Sign in again to establish a trusted session.",
+    "environmentKicker": "Environment access denied",
+    "environmentTitle": "Access to this environment is denied",
+    "environmentDescription": "Your account cannot access this environment. The console defaults to controlled PAPER operation.",
+    "environmentNext": "Ask your administrator to confirm your environment access and permissions.",
+    "authFailure": "Authentication failed",
+    "signInAgain": "Sign in again",
+    "backToLogin": "Back to sign in",
+    "unspecified": "Not specified",
+    "forbidden": "Access denied",
+    "forbiddenTitle": "You cannot access this page",
+    "forbiddenDescription": "Your account does not have the required role. The server has denied access.",
+    "missingRole": "Missing role",
+    "requestRole": "Ask your administrator for the required role, then return after access is granted.",
+    "console": "Back to console",
+    "switchAccount": "Switch account",
+    "system": "System error",
+    "systemTitle": "The console encountered an error",
+    "systemDescription": "The request could not be completed. Provide the available trace ID when contacting support.",
+    "occurred": "Occurred at",
+    "systemNext": "Return to the console to check the latest state. If the issue persists, provide the available trace ID.",
+    "previous": "Go back",
+    "noTrace": "Not provided",
+    "welcome": "Setup required",
+    "welcomeTitle": "The console has no data configured",
+    "welcomeDescription": "No account, strategy or market data is available yet. Complete one of these steps to begin.",
+    "firstStep": "First steps",
+    "createAccountDetail": "Create a Paper account to provide the capital context for simulation and backtesting.",
+    "importStrategyDetail": "Import a strategy definition and its publishable versions.",
+    "marketDataDetail": "Configure market data to synchronize the instrument catalog and historical bars.",
+    "createAccount": "Create Paper account",
+    "importStrategy": "Import strategy",
+    "marketData": "Configure market data",
+    "notFound": "Page not found",
+    "notFoundTitle": "This page could not be found",
+    "notFoundDescription": "The page does not exist or this route is not available yet."
+  },
+  "boundary": {
+    "paper": "Paper-only boundary",
+    "simulated": "Paper Trading is simulated.",
+    "order": "Paper order ≠ real order.",
+    "fill": "Paper fill ≠ real fill.",
+    "balance": "Paper balance/position ≠ real account balance/position.",
+    "risk": "Paper risk pass ≠ LIVE authorization.",
+    "authority": "Published strategy, Paper risk pass, readiness rows, and permission probe SKIPPED do not authorize LIVE trading.",
+    "runtime": "Runtime guarded: LIVE disabled",
+    "live": "LIVE disabled.",
+    "provider": "Real provider not implemented.",
+    "notReady": "NoReal/Fake/Stub/FutureReal not live-ready.",
+    "probe": "Permission probe SKIPPED / disabled is not verified."
+  },
+  "chart": {
+    "equity": "Total equity",
+    "position": "Position value",
+    "drawdown": "Drawdown",
+    "portfolioEquity": "Portfolio equity",
+    "initial": "Initial capital",
+    "portfolioDrawdown": "Portfolio drawdown",
+    "insufficient": "Insufficient data",
+    "empty": "No time series data",
+    "kline": "K-line",
+    "klineSource": "Kline source",
+    "klineEmpty": "No candlestick data",
+    "klineLoading": "Loading candlesticks",
+    "volume": "Volume",
+    "volumeSource": "Volume source",
+    "volumeEmpty": "No volume data",
+    "volumeLoading": "Loading volume",
+    "equityValue": "Portfolio equity: {{value}}",
+    "initialValue": "Initial capital: {{value}}",
+    "pnlValue": "Portfolio PnL: {{value}}",
+    "returnValue": "Return: {{value}}",
+    "runCounts": "Source runs: {{source}} · Missing runs: {{missing}}",
+    "drawdownValue": "Drawdown: {{value}}",
+    "peakValue": "Peak equity: {{value}}"
+  },
+  "risk": {
+    "info": "Information",
+    "warning": "Warning",
+    "danger": "Blocked",
+    "dismiss": "Dismiss"
+  }
+}

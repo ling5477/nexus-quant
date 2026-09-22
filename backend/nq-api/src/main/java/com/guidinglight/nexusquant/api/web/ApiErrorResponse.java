@@ -1,5 +1,6 @@
 package com.guidinglight.nexusquant.api.web;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -30,6 +31,17 @@ public record ApiErrorResponse(
         @Schema(description = "链路追踪 ID")
         String traceId,
         @ArraySchema(schema = @Schema(implementation = ApiFieldError.class), arraySchema = @Schema(description = "字段级错误列表"))
-        List<ApiFieldError> fieldErrors
+        List<ApiFieldError> fieldErrors,
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @Schema(description = "已登记错误的稳定编号；未登记时省略")
+        String errorId,
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @Schema(description = "已登记错误的稳定语义键；未登记时省略，既有 code 保持兼容")
+        String errorKey
 ) {
+    /** 保留既有构造器与未编号错误的 JSON 形状，避免安全链及旧调用方被迫迁移。 */
+    public ApiErrorResponse(Instant timestamp, int status, String error, String code, String message,
+            String path, String traceId, List<ApiFieldError> fieldErrors) {
+        this(timestamp, status, error, code, message, path, traceId, fieldErrors, null, null);
+    }
 }

@@ -1,0 +1,79 @@
+{
+  "orderVersionConflict": {
+    "title": "订单状态已更新",
+    "message": "订单已被其他操作更新，请刷新最新状态后重试。"
+  },
+  "conflict": {
+    "title": "操作状态已变化",
+    "message": "当前状态与操作前提不一致，请核对最新状态。"
+  },
+  "validation": {
+    "title": "请检查输入",
+    "message": "部分字段未通过校验，请修正后重新提交。"
+  },
+  "badRequest": {
+    "title": "请求无效",
+    "message": "请求参数或格式不正确。"
+  },
+  "unauthorized": {
+    "title": "需要登录",
+    "message": "登录已失效或凭证不正确，请重新登录。"
+  },
+  "forbidden": {
+    "title": "权限不足",
+    "message": "当前账户无权执行此操作。"
+  },
+  "notFound": {
+    "title": "未找到记录",
+    "message": "记录不存在或已不可用，请刷新列表确认。"
+  },
+  "rejected": {
+    "title": "操作未获准",
+    "message": "当前条件不满足此操作的要求。"
+  },
+  "internal": {
+    "title": "服务异常",
+    "message": "服务暂时无法完成请求，请保留追踪编号以便排查。"
+  },
+  "adminNotInitialized": {
+    "title": "管理员尚未初始化",
+    "message": "请联系管理员完成系统初始化后再登录。"
+  },
+  "admissionBlocked": {
+    "title": "准入检查未通过",
+    "message": "当前发布不满足 Shadow 创建要求，请检查准入结果。"
+  },
+  "admissionStale": {
+    "title": "准入事实已变化",
+    "message": "准入依据已更新，请重新获取预览并确认。"
+  },
+  "admissionGuard": {
+    "title": "准入校验尚未就绪",
+    "message": "系统尚未绑定已验证身份，当前操作不可执行。"
+  },
+  "reviewConflict": {
+    "title": "审查记录已更新",
+    "message": "其他操作已更新该审查记录，请刷新后重新确认。"
+  },
+  "idempotencyConflict": {
+    "title": "操作身份冲突",
+    "message": "同一操作标识已用于其他内容，请刷新并核对已有结果。"
+  },
+  "network": {
+    "title": "连接失败",
+    "message": "未能连接服务，操作结果可能尚未确认。"
+  },
+  "unknown": {
+    "title": "请求失败",
+    "message": "暂时无法完成请求，请保留追踪编号并联系支持。"
+  },
+  "actions": {
+    "refresh": "刷新最新状态后重新确认，系统不会自动重放操作。",
+    "correct": "检查输入和操作前提后重新确认。",
+    "signIn": "请重新登录后继续。",
+    "contact": "请联系管理员或支持人员，并提供追踪编号。",
+    "checkConnection": "检查网络并查询最新状态，确认结果后再决定是否重试。"
+  },
+  "fieldInvalid": "{{field}}：请检查此字段。",
+  "requestField": "请求"
+}

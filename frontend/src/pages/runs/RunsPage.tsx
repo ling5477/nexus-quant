@@ -1,3 +1,6 @@
+import {useLocalizedForm} from '@/i18n/useLocalizedForm';
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {
     Alert,
     Button,
@@ -34,7 +37,8 @@ import {containsIgnoreCase, formatDateTime, normalizeOptionalText} from '@/utils
 type RunRow = StrategyRunSummaryItem;
 
 export function RunsPage() {
-    const [form] = Form.useForm<StrategyRunListFilters>();
+    useTranslation('pages');
+    const [form] = useLocalizedForm<StrategyRunListFilters>();
     const [submittedFilters, setSubmittedFilters] = useState<StrategyRunListFilters>(defaultStrategyRunListFilters);
     const [searchVersion, setSearchVersion] = useState(0);
     const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
@@ -55,62 +59,61 @@ export function RunsPage() {
 
     const runColumns: ColumnsType<RunRow> = [
         {
-            title: '运行 ID',
+            title: t('pages:runId'),
             dataIndex: 'strategyRunId',
             key: 'strategyRunId',
             width: 220,
             render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
         },
         {
-            title: '策略 ID',
+            title: t('pages:strategyId'),
             dataIndex: 'strategyId',
             key: 'strategyId',
             width: 220,
             render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
         },
         {
-            title: '调度 ID',
+            title: t('pages:scheduleId'),
             dataIndex: 'scheduleJobId',
             key: 'scheduleJobId',
             width: 220,
             render: (value: string | null) => value ? <Typography.Text copyable>{value}</Typography.Text> : '-',
         },
         {
-            title: '触发方式',
+            title: t('pages:triggerType'),
             dataIndex: 'triggerType',
             key: 'triggerType',
             width: 140,
         },
         {
-            title: '状态',
+            title: t('pages:status'),
             dataIndex: 'status',
             key: 'status',
             width: 120,
             render: (value: string) => <Tag color="blue">{value}</Tag>,
         },
         {
-            title: '开始时间',
+            title: t('pages:startTime'),
             dataIndex: 'startedAt',
             key: 'startedAt',
             width: 180,
             render: (value: string) => formatDateTime(value),
         },
         {
-            title: '结束时间',
+            title: t('pages:endTime'),
             dataIndex: 'finishedAt',
             key: 'finishedAt',
             width: 180,
             render: (value: string | null) => formatDateTime(value),
         },
         {
-            title: '操作',
+            title: t('pages:actions'),
             key: 'action',
             fixed: 'right',
             width: 120,
             render: (_, record) => (
                 <Button type="link" onClick={() => setSelectedRunId(record.strategyRunId)}>
-                    查看详情
-                </Button>
+                    {t('pages:viewDetails')}</Button>
             ),
         },
     ];
@@ -134,52 +137,50 @@ export function RunsPage() {
     const renderRunDetail = (detail: StrategyRunDetailItem) => (
         <Space direction="vertical" size={16} style={{display: 'flex'}}>
             <Descriptions bordered column={2} size="small">
-                <Descriptions.Item label="运行 ID">{detail.strategyRunId}</Descriptions.Item>
-                <Descriptions.Item label="策略 ID">{detail.strategyId}</Descriptions.Item>
-                <Descriptions.Item label="调度 ID">{detail.scheduleJobId || '-'}</Descriptions.Item>
-                <Descriptions.Item label="请求 ID">{detail.requestId || '-'}</Descriptions.Item>
-                <Descriptions.Item label="触发方式">{detail.triggerType}</Descriptions.Item>
-                <Descriptions.Item label="状态">
+                <Descriptions.Item label={t('pages:runId')}>{detail.strategyRunId}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:strategyId')}>{detail.strategyId}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:scheduleId')}>{detail.scheduleJobId || '-'}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:requestId')}>{detail.requestId || '-'}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:triggerType')}>{detail.triggerType}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:status')}>
                     <Tag color="blue">{detail.status}</Tag>
                 </Descriptions.Item>
-                <Descriptions.Item label="交易所">{detail.exchangeCode}</Descriptions.Item>
-                <Descriptions.Item label="账户">{detail.accountId ?? '-'}</Descriptions.Item>
-                <Descriptions.Item label="交易环境">{detail.tradeEnv}</Descriptions.Item>
-                <Descriptions.Item label="开始时间">{formatDateTime(detail.startedAt)}</Descriptions.Item>
-                <Descriptions.Item label="结束时间">{formatDateTime(detail.finishedAt)}</Descriptions.Item>
-                <Descriptions.Item label="错误信息">{detail.errorMessage || '-'}</Descriptions.Item>
-                <Descriptions.Item label="订单数">{detail.orders.length}</Descriptions.Item>
-                <Descriptions.Item label="成交数">{detail.trades.length}</Descriptions.Item>
-                <Descriptions.Item label="账本摘要" span={2}>
+                <Descriptions.Item label={t('pages:exchange')}>{detail.exchangeCode}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:account')}>{detail.accountId ?? '-'}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:tradingEnvironment')}>{detail.tradeEnv}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:startTime')}>{formatDateTime(detail.startedAt)}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:endTime')}>{formatDateTime(detail.finishedAt)}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:errorDiagnostics')}>{detail.errorMessage || '-'}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:orderCount')}>{detail.orders.length}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:tradeCount2')}>{detail.trades.length}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:ledgerSummary')} span={2}>
                     <Typography.Paragraph style={{marginBottom: 0}}>
                         {detail.ledgerSummary || '-'}
                     </Typography.Paragraph>
                 </Descriptions.Item>
-                <Descriptions.Item label="风控摘要" span={2}>
+                <Descriptions.Item label={t('pages:riskSummary')} span={2}>
                     <Typography.Paragraph style={{marginBottom: 0}}>
                         {detail.riskSummary || '-'}
                     </Typography.Paragraph>
                 </Descriptions.Item>
-                <Descriptions.Item label="事件摘要" span={2}>
+                <Descriptions.Item label={t('pages:eventSummary')} span={2}>
                     <Typography.Paragraph style={{marginBottom: 0}}>
                         {detail.eventSummary || '-'}
                     </Typography.Paragraph>
                 </Descriptions.Item>
             </Descriptions>
-            <Card title="动作区" size="small">
+            <Card title={t('pages:actions2')} size="small">
                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
                     <Alert
                         type="info"
                         showIcon
-                        message="当前运行页在现有后端契约下只提供详情读取，没有独立的写动作 API。"
+                        message={t('pages:runDetailsAreReadOnlyUnderTheCurrentBackendContractNoWriteApiIsAvailableHere')}
                     />
                     <Space>
                         <Button type="primary" disabled>
-                            当前无可执行写动作
-                        </Button>
+                            {t('pages:noWriteActionsAvailable')}</Button>
                         <Button onClick={() => runDetailQuery.refetch()}>
-                            刷新详情
-                        </Button>
+                            {t('pages:refreshDetails')}</Button>
                     </Space>
                 </Space>
             </Card>
@@ -191,23 +192,21 @@ export function RunsPage() {
             <Space direction="vertical" size={16} style={{display: 'flex'}}>
                 <Card className="page-card" bordered={false}>
                     <PageHero
-                        title="运行记录"
-                        description="查看策略运行记录、触发方式、执行状态和风控摘要。当前页面按既有契约提供只读详情和刷新入口。"
-                        badge="Runs"
+                        title={t('pages:runRecords')}
+                        description={t('pages:viewStrategyRunsTriggersExecutionStatusAndRiskSummariesDetailsAreReadOnlyAndCanBeRefreshed')}
+                        badge={t('pages:runs')}
                     />
                 </Card>
                 <Card
                     className="page-section"
                     bordered={false}
-                    title="查询区"
+                    title={t('pages:filters')}
                     extra={(
                         <Space>
                             <Button type="primary" onClick={() => form.submit()}>
-                                查询
-                            </Button>
+                                {t('pages:search')}</Button>
                             <Button onClick={handleReset}>
-                                重置
-                            </Button>
+                                {t('pages:reset')}</Button>
                         </Space>
                     )}
                 >
@@ -219,23 +218,23 @@ export function RunsPage() {
                     >
                         <Row gutter={[16, 0]}>
                             <Col xs={24} md={12} xl={6}>
-                                <Form.Item label="策略 ID" name="strategyId">
-                                    <Input placeholder="可空"/>
+                                <Form.Item label={t('pages:strategyId')} name="strategyId">
+                                    <Input placeholder={t('pages:optional')}/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
-                                <Form.Item label="调度 ID" name="scheduleId">
-                                    <Input placeholder="可空"/>
+                                <Form.Item label={t('pages:scheduleId')} name="scheduleId">
+                                    <Input placeholder={t('pages:optional')}/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
-                                <Form.Item label="运行状态" name="status">
-                                    <Select allowClear placeholder="全部状态" options={RUN_STATUS_OPTIONS}/>
+                                <Form.Item label={t('pages:runStatus')} name="status">
+                                    <Select allowClear placeholder={t('pages:allStatuses')} options={RUN_STATUS_OPTIONS}/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
-                                <Form.Item label="触发方式" name="triggerType">
-                                    <Select allowClear placeholder="全部触发方式" options={RUN_TRIGGER_TYPE_OPTIONS}/>
+                                <Form.Item label={t('pages:triggerType')} name="triggerType">
+                                    <Select allowClear placeholder={t('pages:allTriggerTypes')} options={RUN_TRIGGER_TYPE_OPTIONS}/>
                                 </Form.Item>
                             </Col>
                         </Row>
@@ -244,22 +243,21 @@ export function RunsPage() {
                 <Card
                     className="page-section"
                     bordered={false}
-                    title="查询结果"
+                    title={t('pages:results')}
                     extra={hasSearched ?
-                        <Typography.Text type="secondary">共 {visibleItems.length} 条记录</Typography.Text> : null}
+                        <Typography.Text type="secondary">{t('pages:total')}{visibleItems.length} {t('pages:records')}</Typography.Text> : null}
                 >
                     {!hasSearched ? (
-                        <Empty description="请输入条件后执行查询。"/>
+                        <Empty description={t('pages:enterFiltersAndSearch')}/>
                     ) : runsQuery.error ? (
                         <Alert
                             type="error"
                             showIcon
-                            message="运行列表查询失败"
+                            message={t('pages:failedToQueryRuns')}
                             description={formatApiError(runsQuery.error as AppApiError)}
                             action={(
                                 <Button size="small" onClick={() => setSearchVersion((value) => value + 1)}>
-                                    重试
-                                </Button>
+                                    {t('pages:retry')}</Button>
                             )}
                         />
                     ) : (
@@ -271,7 +269,7 @@ export function RunsPage() {
                             pagination={{pageSize: 10, showSizeChanger: false}}
                             scroll={{x: 1500}}
                             locale={{
-                                emptyText: '当前筛选条件下没有匹配的运行记录。',
+                                emptyText: t('pages:noRunsMatchTheseFilters'),
                             }}
                         />
                     )}
@@ -280,17 +278,17 @@ export function RunsPage() {
             <Drawer
                 open={Boolean(selectedRunId)}
                 width={760}
-                title="运行详情"
+                title={t('pages:runDetails')}
                 onClose={() => setSelectedRunId(null)}
                 destroyOnClose
             >
                 {runDetailQuery.isLoading ? (
-                    <Alert type="info" showIcon message="正在加载运行详情..."/>
+                    <Alert type="info" showIcon message={t('pages:loadingRunDetails')}/>
                 ) : runDetailQuery.error ? (
                     <Alert
                         type="error"
                         showIcon
-                        message="运行详情加载失败"
+                        message={t('pages:failedToLoadRunDetails')}
                         description={formatApiError(runDetailQuery.error as AppApiError)}
                     />
                 ) : runDetailQuery.data ? renderRunDetail(runDetailQuery.data) : null}

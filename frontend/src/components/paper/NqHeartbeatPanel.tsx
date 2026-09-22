@@ -1,6 +1,8 @@
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {App, Button, Card} from 'antd';
 
-import {formatApiError} from '@/api/errors';
+import {showApiError} from '@/api/errors';
 import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqStatusTag, nqNumericColumn} from '@/components/nq';
 import {usePaperHeartbeatsQuery, useRunHeartbeatOnceMutation} from '@/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
@@ -18,6 +20,7 @@ interface NqHeartbeatPanelProps {
 }
 
 export function NqHeartbeatPanel({paperRunId}: NqHeartbeatPanelProps) {
+    useTranslation('pages');
     const {message} = App.useApp();
     const heartbeatsQuery = usePaperHeartbeatsQuery(paperRunId);
     const runHeartbeatOnceMutation = useRunHeartbeatOnceMutation();
@@ -28,18 +31,17 @@ export function NqHeartbeatPanel({paperRunId}: NqHeartbeatPanelProps) {
         <Card
             className="page-section"
             size="small"
-            title="心跳"
+            title={t('pages:heartbeat')}
             extra={(
                 <Button
                     size="small"
                     loading={runHeartbeatOnceMutation.isPending}
                     onClick={() => runHeartbeatOnceMutation.mutate(paperRunId, {
-                        onSuccess: () => message.success('心跳已记录。'),
-                        onError: (err) => message.error(formatApiError(err as AppApiError)),
+                        onSuccess: () => message.success(t('pages:heartbeatRecorded')),
+                        onError: (err) => showApiError(err as AppApiError, message),
                     })}
                 >
-                    执行心跳检查
-                </Button>
+                    {t('pages:runHeartbeatCheck')}</Button>
             )}
         >
             {heartbeatsQuery.isFetching && data.length === 0 ? (
@@ -47,7 +49,7 @@ export function NqHeartbeatPanel({paperRunId}: NqHeartbeatPanelProps) {
             ) : heartbeatsQuery.error ? (
                 <NqErrorState error={heartbeatsQuery.error as AppApiError} onRetry={() => heartbeatsQuery.refetch()}/>
             ) : data.length === 0 ? (
-                <NqEmptyState description="当前 Paper run 暂无心跳记录。"/>
+                <NqEmptyState description={t('pages:noHeartbeatRecordsForThisPaperRun')}/>
             ) : (
                 <NqDataTable<PaperRunHeartbeatItem>
                     rowKey="heartbeatId"
@@ -55,10 +57,10 @@ export function NqHeartbeatPanel({paperRunId}: NqHeartbeatPanelProps) {
                     dataSource={data}
                     scroll={{y: 240}}
                     columns={[
-                        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'STOPPED' ? 'danger' : undefined}/>},
-                        {title: '心跳时间', dataIndex: 'heartbeatTime', key: 'heartbeatTime', width: 170, render: (v: string) => formatDateTime(v)},
-                        nqNumericColumn({title: '延迟(s)', dataIndex: 'lagSeconds', key: 'lagSeconds', width: 90}),
-                        {title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 170, render: (v: string) => formatDateTime(v)},
+                        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'STOPPED' ? 'danger' : undefined}/>},
+                        {title: t('pages:heartbeatTime'), dataIndex: 'heartbeatTime', key: 'heartbeatTime', width: 170, render: (v: string) => formatDateTime(v)},
+                        nqNumericColumn({title: t('pages:latencyS'), dataIndex: 'lagSeconds', key: 'lagSeconds', width: 90}),
+                        {title: t('pages:createdAt'), dataIndex: 'createdAt', key: 'createdAt', width: 170, render: (v: string) => formatDateTime(v)},
                     ]}
                 />
             )}

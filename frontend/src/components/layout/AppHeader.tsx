@@ -15,6 +15,8 @@ import type {ExchangeAccountSummary} from '@/types/accounts';
 import {useAuthStore} from '@/store/auth-store';
 import {useAccountContextStore} from '@/store/account-context-store';
 import {appEnv} from '@/utils/env';
+import {useTranslation} from 'react-i18next';
+import {LanguageSelect} from '@/i18n/LanguageSelect';
 
 interface AppHeaderProps {
     collapsed: boolean;
@@ -22,6 +24,7 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
+    const {t} = useTranslation();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const accessToken = useAuthStore((state) => state.accessToken);
@@ -66,14 +69,14 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
 
     const accountItems = (accountsQuery.data ?? []).map((item: ExchangeAccountSummary) => ({
         key: String(item.exchangeAccountId),
-        label: `${item.exchangeCode} / ${item.tradeEnv} / ${item.accountAlias}${item.isDefault ? '（默认）' : ''}`,
+        label: `${item.exchangeCode} / ${item.tradeEnv} / ${item.accountAlias}${item.isDefault ? t('shell.default') : ''}`,
     }));
 
     const accountLabel = selectedExchangeAccountId && exchangeCode && tradeEnv
         ? `${exchangeCode} / ${tradeEnv} / ${accountAlias ?? '-'}（exchangeAccountId=${selectedExchangeAccountId}）`
         : currentUser?.defaultExchangeAccountId && currentUser.defaultExchangeCode && currentUser.defaultTradeEnv
             ? `${currentUser.defaultExchangeCode} / ${currentUser.defaultTradeEnv} / ${currentUser.defaultAccountAlias ?? '-'}（exchangeAccountId=${currentUser.defaultExchangeAccountId}）`
-            : '选择账户上下文';
+            : t('shell.chooseAccount');
 
     return (
         <header className="app-shell__header">
@@ -82,16 +85,17 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
                     type="text"
                     icon={collapsed ? <MenuUnfoldOutlined/> : <MenuFoldOutlined/>}
                     onClick={onToggleCollapsed}
-                    aria-label={collapsed ? '展开菜单' : '收起菜单'}
+                    aria-label={collapsed ? t('shell.expand') : t('shell.collapse')}
                 />
                 <div>
                     <Typography.Text strong>{appEnv.appTitle}</Typography.Text>
                     <br/>
                     {/* 副标题保持中性描述，不声明 Gate 阶段，避免阶段推进后文案过期 */}
-                    <Typography.Text type="secondary" style={{fontSize: 12}}>量化策略运营控制台</Typography.Text>
+                    <Typography.Text type="secondary" style={{fontSize: 12}}>{t('shell.subtitle')}</Typography.Text>
                 </div>
             </div>
             <div className="app-shell__header-right">
+                <LanguageSelect/>
                 <Tag color="cyan">{appEnv.envLabel}</Tag>
                 <Dropdown
                     menu={{
@@ -111,16 +115,16 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
                     </Button>
                 </Dropdown>
                 <Button onClick={() => navigate('/accounts')}>
-                    账户管理
+                    {t('shell.accounts')}
                 </Button>
                 <Space size={8} wrap>
                     {currentUser?.roles.map((role) => (
                         <Tag key={role}>{role}</Tag>
                     ))}
                 </Space>
-                <Typography.Text>{currentUser?.username ?? 'anonymous'}</Typography.Text>
+                <Typography.Text>{currentUser?.username ?? t('shell.anonymous')}</Typography.Text>
                 <Button icon={<LogoutOutlined/>} onClick={handleLogout}>
-                    退出登录
+                    {t('shell.logout')}
                 </Button>
             </div>
         </header>

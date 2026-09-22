@@ -1,9 +1,13 @@
 export interface ApiFieldError {
     field?: string;
     message?: string;
+    reason?: string;
+    rejectedValue?: unknown;
 }
 
 export interface ApiErrorResponse {
+    errorId?: string;
+    errorKey?: string;
     timestamp?: string;
     status?: number;
     error?: string;
@@ -15,6 +19,8 @@ export interface ApiErrorResponse {
 }
 
 export interface AppApiError extends Error {
+    errorId?: string;
+    errorKey?: string;
     status: number;
     code: string;
     traceId?: string;

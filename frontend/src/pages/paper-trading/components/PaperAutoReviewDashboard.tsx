@@ -1,3 +1,5 @@
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {Button, Card, Descriptions, Select, Space, Tag, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
@@ -42,8 +44,8 @@ import {EVAL_CONFIDENCE_TONE, RATING_LABEL_TEXT, RATING_LABEL_TONE} from './Pape
 
 /** 聚类专属 cause（执行 / 评估维度聚类）补充中文名；run primaryCause 复用执行诊断 cause 映射。 */
 const AUTO_REVIEW_EXTRA_CAUSE_LABEL: Record<string, string> = {
-    BACKTEST_DEVIATION_HIGH: 'Backtest 偏差大',
-    SAMPLE_INSUFFICIENT: '样本不足',
+    get BACKTEST_DEVIATION_HIGH() { return t('pages:highBacktestDeviation'); },
+    get SAMPLE_INSUFFICIENT() { return t('pages:insufficientSamples'); },
 };
 
 function autoReviewCauseLabel(cause: string): string {
@@ -76,32 +78,32 @@ type AutoReviewDimensionFilter = 'all' | 'run' | 'strategy' | 'publish' | 'clust
 type AutoReviewCauseFilter = string;
 
 const AUTO_REVIEW_SEVERITY_FILTER_OPTIONS: ReadonlyArray<{label: string; value: AutoReviewSeverityFilter}> = [
-    {label: '全部严重度', value: 'all'},
+    {get label() { return t('pages:allSeverities'); }, value: 'all'},
     {label: 'CRITICAL', value: 'CRITICAL'},
     {label: 'WARNING', value: 'WARNING'},
     {label: 'INFO', value: 'INFO'},
 ];
 
 const AUTO_REVIEW_DIMENSION_FILTER_OPTIONS: ReadonlyArray<{label: string; value: AutoReviewDimensionFilter}> = [
-    {label: '全部维度', value: 'all'},
-    {label: 'Run', value: 'run'},
-    {label: 'Strategy', value: 'strategy'},
-    {label: 'Publish', value: 'publish'},
-    {label: 'Cluster', value: 'cluster'},
+    {get label() { return t('pages:allDimensions'); }, value: 'all'},
+    {get label() { return t('pages:run'); }, value: 'run'},
+    {get label() { return t('pages:strategy'); }, value: 'strategy'},
+    {get label() { return t('pages:publish2'); }, value: 'publish'},
+    {get label() { return t('pages:cluster'); }, value: 'cluster'},
 ];
 
 const AUTO_REVIEW_CAUSE_FILTER_OPTIONS: ReadonlyArray<{label: string; value: AutoReviewCauseFilter}> = [
-    {label: '全部原因', value: 'all'},
-    {label: '无订单 NO_ORDER', value: 'NO_ORDER'},
-    {label: '有订单无成交 ORDER_NO_FILL', value: 'ORDER_NO_FILL'},
-    {label: '成交亏损 FILLED_LOSS', value: 'FILLED_LOSS'},
-    {label: '风控拦截 RISK_BLOCKED', value: 'RISK_BLOCKED'},
-    {label: '数据不足 DATA_INSUFFICIENT', value: 'DATA_INSUFFICIENT'},
-    {label: '高回撤 HIGH_DRAWDOWN', value: 'HIGH_DRAWDOWN'},
-    {label: '异常终态 FAILED_RUN', value: 'FAILED_RUN'},
-    {label: 'Backtest 偏差大 BACKTEST_DEVIATION_HIGH', value: 'BACKTEST_DEVIATION_HIGH'},
-    {label: '样本不足 SAMPLE_INSUFFICIENT', value: 'SAMPLE_INSUFFICIENT'},
-    {label: '健康 HEALTHY', value: 'HEALTHY'},
+    {get label() { return t('pages:allReasons'); }, value: 'all'},
+    {get label() { return t('pages:noOrdersNoOrder'); }, value: 'NO_ORDER'},
+    {get label() { return t('pages:unfilledOrdersOrderNoFill'); }, value: 'ORDER_NO_FILL'},
+    {get label() { return t('pages:tradingLossFilledLoss'); }, value: 'FILLED_LOSS'},
+    {get label() { return t('pages:riskBlockedRiskBlocked'); }, value: 'RISK_BLOCKED'},
+    {get label() { return t('pages:insufficientDataDataInsufficient'); }, value: 'DATA_INSUFFICIENT'},
+    {get label() { return t('pages:highDrawdownHighDrawdown'); }, value: 'HIGH_DRAWDOWN'},
+    {get label() { return t('pages:failedTerminalStateFailedRun'); }, value: 'FAILED_RUN'},
+    {get label() { return t('pages:highBacktestDeviationBacktestDeviationHigh'); }, value: 'BACKTEST_DEVIATION_HIGH'},
+    {get label() { return t('pages:insufficientSamplesSampleInsufficient'); }, value: 'SAMPLE_INSUFFICIENT'},
+    {get label() { return t('pages:healthyHealthy'); }, value: 'HEALTHY'},
 ];
 
 /** 字符串清单渲染为 tag 列表；空时显示给定空文案（如 suggestedActions 的「暂无建议动作」）。 */
@@ -132,6 +134,7 @@ function autoReviewBullets(items: string[] | undefined, emptyText: string) {
  * 仅 Paper-only 规则化复盘，不代表 LIVE 或真实交易表现，也不构成投资建议。
  */
 export function PaperAutoReviewDashboard({query}: {query: ReturnType<typeof usePaperAutoReviewsQuery>}) {
+    useTranslation('pages');
     const raw = query.data;
     const review: PaperAutoReviewsResponse | null =
         raw && !Array.isArray(raw) && (raw as PaperAutoReviewsResponse).overview
@@ -143,35 +146,34 @@ export function PaperAutoReviewDashboard({query}: {query: ReturnType<typeof useP
         && review.overview.publishReviewedCount === 0;
 
     return (
-      <section aria-label="Paper 自动复盘">
+      <section aria-label={t('pages:paperAutomatedReview')}>
         <Card
             className="page-section"
             bordered={false}
-            title="Paper 自动复盘"
-            extra={<Typography.Text type="secondary" style={{fontSize: 12}}>SIM/Paper only · Rules-based review</Typography.Text>}
+            title={t('pages:paperAutomatedReview')}
+            extra={<Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:simPaperOnlyRuleBasedReview')}</Typography.Text>}
         >
             <Space direction="vertical" size={12} style={{display: 'flex'}}>
                 <Typography.Text type="secondary" style={{fontSize: 12}}>
-                    基于 Paper 执行事实、诊断与策略评估的规则化复盘摘要。
-                </Typography.Text>
+                    {t('pages:ruleBasedReviewOfPaperExecutionFactsDiagnosticsAndStrategyEvaluations')}</Typography.Text>
                 <NqRiskBanner
                     level="info"
-                    message="把执行诊断与策略评估结果规则化归纳为组合 / 重点 run / 策略 / 发布的可读复盘摘要与问题聚类。"
-                    description="该复盘仅基于 Paper 模拟运行、诊断与策略评估结果。复盘由规则引擎生成，不接 AI / DH runtime。内容不代表 LIVE 或真实交易表现，也不构成投资建议。"
+                    message={t('pages:ruleBasedSummariesAndIssueGroupsDerivedFromExecutionDiagnosticsAndStrategyEvaluationsForPortfoliosFo')}
+                    description={t('pages:reviewsUseOnlySimulatedPaperRunsDiagnosticsAndEvaluationsARuleEngineGeneratesThemWithoutAiDhRuntimeT')}
                 />
                 {query.error ? (
                     <NqErrorState
-                        title="Paper 自动复盘加载失败"
+                        title={t('pages:failedToLoadPaperReviews')}
                         error={query.error as AppApiError}
-                        description="自动复盘不可用（旧后端可能尚未提供该接口）；其余 Paper 模块不受影响。"
+                        description={t('pages:automatedReviewsAreUnavailableOlderBackendsMayLackThisApiOtherPaperModulesAreUnaffected')}
                         onRetry={() => query.refetch()}
                     />
                 ) : query.isFetching && !review ? (
-                    <NqLoadingState message="加载 Paper 自动复盘中..."/>
+                    <NqLoadingState message={t('pages:loadingPaperReviews')}/>
                 ) : !review ? (
-                    <NqEmptyState description="暂无 Paper 自动复盘数据（接口未返回复盘结构）。"/>
+                    <NqEmptyState description={t('pages:noPaperReviewDataTheResponseContainsNoReviewStructure')}/>
                 ) : empty ? (
-                    <NqEmptyState description="暂无 Paper 自动复盘数据，创建并运行 Paper run 后自动生成规则化复盘。"/>
+                    <NqEmptyState description={t('pages:createAndExecuteAPaperRunToGenerateRuleBasedReviews')}/>
                 ) : (
                     <PaperAutoReviewBody review={review}/>
                 )}
@@ -182,6 +184,7 @@ export function PaperAutoReviewDashboard({query}: {query: ReturnType<typeof useP
 }
 
 function PaperAutoReviewBody({review}: {review: PaperAutoReviewsResponse}) {
+    useTranslation('pages');
     const overview = review.overview;
     const portfolioReview = review.portfolioReview;
     const runReviews = review.runReviews ?? [];
@@ -208,23 +211,23 @@ function PaperAutoReviewBody({review}: {review: PaperAutoReviewsResponse}) {
     const showClusters = dimensionFilter === 'all' || dimensionFilter === 'cluster';
 
     const runColumns: ColumnsType<PaperRunAutoReview> = [
-        {title: 'Paper Run', dataIndex: 'paperRunId', key: 'paperRunId', width: 150, render: (v: string) => <span className="nq-mono">{v}</span>},
-        {title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v}/>},
-        {title: '主因', key: 'primaryCause', width: 120, render: (_: unknown, r) => autoReviewCauseTag(r.primaryCause)},
-        {title: '严重度', key: 'severity', width: 110, render: (_: unknown, r) => <NqStatusTag status={r.severity} tone={EXECUTION_SEVERITY_TONE[r.severity]}/>},
-        {title: '可信度', key: 'confidence', width: 100, render: (_: unknown, r) => <NqStatusTag status={r.confidence} tone={EXECUTION_CONFIDENCE_TONE[r.confidence as PaperExecutionCauseConfidence] ?? 'neutral'}/>},
+        {title: t('pages:paperRun'), dataIndex: 'paperRunId', key: 'paperRunId', width: 150, render: (v: string) => <span className="nq-mono">{v}</span>},
+        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v}/>},
+        {title: t('pages:primaryCause'), key: 'primaryCause', width: 120, render: (_: unknown, r) => autoReviewCauseTag(r.primaryCause)},
+        {title: t('pages:severity2'), key: 'severity', width: 110, render: (_: unknown, r) => <NqStatusTag status={r.severity} tone={EXECUTION_SEVERITY_TONE[r.severity]}/>},
+        {title: t('pages:confidence'), key: 'confidence', width: 100, render: (_: unknown, r) => <NqStatusTag status={r.confidence} tone={EXECUTION_CONFIDENCE_TONE[r.confidence as PaperExecutionCauseConfidence] ?? 'neutral'}/>},
         nqNumericColumn({
-            title: '收益率', key: 'totalReturn', width: 100,
+            title: t('pages:returnRate'), key: 'totalReturn', width: 100,
             render: (_: unknown, r: PaperRunAutoReview) => r.totalReturn != null
                 ? <NqPercentText value={r.totalReturn as string | number} ratio colorBySign/> : '-',
         }),
         nqNumericColumn({
-            title: '最大回撤', key: 'maxDrawdown', width: 100,
+            title: t('pages:maximumDrawdown'), key: 'maxDrawdown', width: 100,
             render: (_: unknown, r: PaperRunAutoReview) => r.maxDrawdown != null
                 ? <NqPercentText value={r.maxDrawdown as string | number} ratio signed={false}/> : '-',
         }),
         {
-            title: '复盘', key: 'review', width: 320,
+            title: t('pages:review'), key: 'review', width: 320,
             render: (_: unknown, r) => (
                 <Space direction="vertical" size={2} style={{display: 'flex'}}>
                     <Typography.Text strong style={{fontSize: 12}}>{r.reviewHeadline}</Typography.Text>
@@ -232,20 +235,20 @@ function PaperAutoReviewBody({review}: {review: PaperAutoReviewsResponse}) {
                 </Space>
             ),
         },
-        {title: '关键事实', key: 'keyFacts', width: 220, render: (_: unknown, r) => autoReviewTagList(r.keyFacts, '-')},
-        {title: '可能原因', key: 'likelyReasons', width: 240, render: (_: unknown, r) => autoReviewBullets(r.likelyReasons, '-')},
-        {title: '建议排查动作', key: 'suggestedActions', width: 240, render: (_: unknown, r) => autoReviewTagList(r.suggestedActions, '暂无建议动作', 'blue')},
-        {title: '标签', key: 'tags', width: 180, render: (_: unknown, r) => autoReviewTagList(r.tags, '-')},
+        {title: t('pages:keyFacts'), key: 'keyFacts', width: 220, render: (_: unknown, r) => autoReviewTagList(r.keyFacts, '-')},
+        {title: t('pages:possibleCauses'), key: 'likelyReasons', width: 240, render: (_: unknown, r) => autoReviewBullets(r.likelyReasons, '-')},
+        {title: t('pages:recommendedDiagnosticActions'), key: 'suggestedActions', width: 240, render: (_: unknown, r) => autoReviewTagList(r.suggestedActions, t('pages:noRecommendedActions'), 'blue')},
+        {title: t('pages:tags'), key: 'tags', width: 180, render: (_: unknown, r) => autoReviewTagList(r.tags, '-')},
     ];
 
     const strategyReviewColumns: ColumnsType<PaperStrategyAutoReview> = [
-        {title: '策略版本', dataIndex: 'strategyVersionId', key: 'strategyVersionId', width: 160, render: (v: string) => <span className="nq-mono">{v}</span>},
-        {title: '评级', key: 'ratingLabel', width: 110, render: (_: unknown, r) => autoReviewRatingTag(r.ratingLabel)},
-        nqNumericColumn({title: '综合分', key: 'compositeScore', width: 90, render: (_: unknown, r: PaperStrategyAutoReview) => <span className="nq-num"><strong>{r.compositeScore}</strong></span>}),
-        {title: '可信度', key: 'evaluationConfidence', width: 100, render: (_: unknown, r) => <NqStatusTag status={r.evaluationConfidence} tone={EVAL_CONFIDENCE_TONE[r.evaluationConfidence as PaperStrategyEvaluationConfidence] ?? 'neutral'}/>},
-        {title: '主要短板', dataIndex: 'primaryWeakness', key: 'primaryWeakness', width: 130, render: (v: string) => <Typography.Text type="secondary" style={{fontSize: 12}}>{v}</Typography.Text>},
+        {title: t('pages:strategyVersions'), dataIndex: 'strategyVersionId', key: 'strategyVersionId', width: 160, render: (v: string) => <span className="nq-mono">{v}</span>},
+        {title: t('pages:rating'), key: 'ratingLabel', width: 110, render: (_: unknown, r) => autoReviewRatingTag(r.ratingLabel)},
+        nqNumericColumn({title: t('pages:overallScore'), key: 'compositeScore', width: 90, render: (_: unknown, r: PaperStrategyAutoReview) => <span className="nq-num"><strong>{r.compositeScore}</strong></span>}),
+        {title: t('pages:confidence'), key: 'evaluationConfidence', width: 100, render: (_: unknown, r) => <NqStatusTag status={r.evaluationConfidence} tone={EVAL_CONFIDENCE_TONE[r.evaluationConfidence as PaperStrategyEvaluationConfidence] ?? 'neutral'}/>},
+        {title: t('pages:mainWeaknesses'), dataIndex: 'primaryWeakness', key: 'primaryWeakness', width: 130, render: (v: string) => <Typography.Text type="secondary" style={{fontSize: 12}}>{v}</Typography.Text>},
         {
-            title: '复盘', key: 'review', width: 300,
+            title: t('pages:review'), key: 'review', width: 300,
             render: (_: unknown, r) => (
                 <Space direction="vertical" size={2} style={{display: 'flex'}}>
                     <Typography.Text strong style={{fontSize: 12}}>{r.reviewHeadline}</Typography.Text>
@@ -253,26 +256,26 @@ function PaperAutoReviewBody({review}: {review: PaperAutoReviewsResponse}) {
                 </Space>
             ),
         },
-        {title: '优势', key: 'strengths', width: 220, render: (_: unknown, r) => autoReviewTagList(r.strengths, '暂无突出优势', 'green')},
-        {title: '短板', key: 'weaknesses', width: 240, render: (_: unknown, r) => autoReviewBullets(r.weaknesses, '-')},
+        {title: t('pages:strengths'), key: 'strengths', width: 220, render: (_: unknown, r) => autoReviewTagList(r.strengths, t('pages:noNotableStrengths'), 'green')},
+        {title: t('pages:weaknesses'), key: 'weaknesses', width: 240, render: (_: unknown, r) => autoReviewBullets(r.weaknesses, '-')},
         {
-            title: '警告', key: 'warnings', width: 200,
+            title: t('pages:warnings'), key: 'warnings', width: 200,
             render: (_: unknown, r) => r.warnings.length > 0
                 ? <Space size={4} wrap>{r.warnings.map((w) => <Tag key={w} color="warning">{w}</Tag>)}</Space>
                 : <Typography.Text type="secondary">-</Typography.Text>,
         },
-        {title: '建议排查动作', key: 'suggestedActions', width: 240, render: (_: unknown, r) => autoReviewTagList(r.suggestedActions, '暂无建议动作', 'blue')},
+        {title: t('pages:recommendedDiagnosticActions'), key: 'suggestedActions', width: 240, render: (_: unknown, r) => autoReviewTagList(r.suggestedActions, t('pages:noRecommendedActions'), 'blue')},
     ];
 
     const publishReviewColumns: ColumnsType<PaperPublishAutoReview> = [
-        {title: '发布', dataIndex: 'publishId', key: 'publishId', width: 160, render: (v: string) => <span className="nq-mono">{v}</span>},
-        {title: '策略版本', dataIndex: 'strategyVersionId', key: 'strategyVersionId', width: 150, render: (v: string | null) => v ? <span className="nq-mono">{v}</span> : '-'},
-        {title: '评级', key: 'ratingLabel', width: 110, render: (_: unknown, r) => autoReviewRatingTag(r.ratingLabel)},
-        nqNumericColumn({title: '综合分', key: 'compositeScore', width: 90, render: (_: unknown, r: PaperPublishAutoReview) => <span className="nq-num"><strong>{r.compositeScore}</strong></span>}),
-        {title: '可信度', key: 'evaluationConfidence', width: 100, render: (_: unknown, r) => <NqStatusTag status={r.evaluationConfidence} tone={EVAL_CONFIDENCE_TONE[r.evaluationConfidence as PaperStrategyEvaluationConfidence] ?? 'neutral'}/>},
-        {title: '主要短板', dataIndex: 'primaryWeakness', key: 'primaryWeakness', width: 130, render: (v: string) => <Typography.Text type="secondary" style={{fontSize: 12}}>{v}</Typography.Text>},
+        {title: t('pages:publish2'), dataIndex: 'publishId', key: 'publishId', width: 160, render: (v: string) => <span className="nq-mono">{v}</span>},
+        {title: t('pages:strategyVersions'), dataIndex: 'strategyVersionId', key: 'strategyVersionId', width: 150, render: (v: string | null) => v ? <span className="nq-mono">{v}</span> : '-'},
+        {title: t('pages:rating'), key: 'ratingLabel', width: 110, render: (_: unknown, r) => autoReviewRatingTag(r.ratingLabel)},
+        nqNumericColumn({title: t('pages:overallScore'), key: 'compositeScore', width: 90, render: (_: unknown, r: PaperPublishAutoReview) => <span className="nq-num"><strong>{r.compositeScore}</strong></span>}),
+        {title: t('pages:confidence'), key: 'evaluationConfidence', width: 100, render: (_: unknown, r) => <NqStatusTag status={r.evaluationConfidence} tone={EVAL_CONFIDENCE_TONE[r.evaluationConfidence as PaperStrategyEvaluationConfidence] ?? 'neutral'}/>},
+        {title: t('pages:mainWeaknesses'), dataIndex: 'primaryWeakness', key: 'primaryWeakness', width: 130, render: (v: string) => <Typography.Text type="secondary" style={{fontSize: 12}}>{v}</Typography.Text>},
         {
-            title: '复盘', key: 'review', width: 300,
+            title: t('pages:review'), key: 'review', width: 300,
             render: (_: unknown, r) => (
                 <Space direction="vertical" size={2} style={{display: 'flex'}}>
                     <Typography.Text strong style={{fontSize: 12}}>{r.reviewHeadline}</Typography.Text>
@@ -280,28 +283,28 @@ function PaperAutoReviewBody({review}: {review: PaperAutoReviewsResponse}) {
                 </Space>
             ),
         },
-        {title: '优势', key: 'strengths', width: 200, render: (_: unknown, r) => autoReviewTagList(r.strengths, '暂无突出优势', 'green')},
-        {title: '短板', key: 'weaknesses', width: 220, render: (_: unknown, r) => autoReviewBullets(r.weaknesses, '-')},
+        {title: t('pages:strengths'), key: 'strengths', width: 200, render: (_: unknown, r) => autoReviewTagList(r.strengths, t('pages:noNotableStrengths'), 'green')},
+        {title: t('pages:weaknesses'), key: 'weaknesses', width: 220, render: (_: unknown, r) => autoReviewBullets(r.weaknesses, '-')},
         {
-            title: '警告', key: 'warnings', width: 180,
+            title: t('pages:warnings'), key: 'warnings', width: 180,
             render: (_: unknown, r) => r.warnings.length > 0
                 ? <Space size={4} wrap>{r.warnings.map((w) => <Tag key={w} color="warning">{w}</Tag>)}</Space>
                 : <Typography.Text type="secondary">-</Typography.Text>,
         },
-        {title: '建议排查动作', key: 'suggestedActions', width: 220, render: (_: unknown, r) => autoReviewTagList(r.suggestedActions, '暂无建议动作', 'blue')},
+        {title: t('pages:recommendedDiagnosticActions'), key: 'suggestedActions', width: 220, render: (_: unknown, r) => autoReviewTagList(r.suggestedActions, t('pages:noRecommendedActions'), 'blue')},
     ];
 
     const clusterColumns: ColumnsType<PaperIssueCluster> = [
-        {title: '聚类', dataIndex: 'clusterKey', key: 'clusterKey', width: 200, render: (v: string) => <span className="nq-mono">{v}</span>},
-        {title: '原因', key: 'cause', width: 140, render: (_: unknown, c) => autoReviewCauseTag(c.cause)},
-        {title: '严重度', key: 'severity', width: 110, render: (_: unknown, c) => <NqStatusTag status={c.severity} tone={EXECUTION_SEVERITY_TONE[c.severity]}/>},
-        nqNumericColumn({title: '数量', dataIndex: 'count', key: 'count', width: 80}),
+        {title: t('pages:clusters'), dataIndex: 'clusterKey', key: 'clusterKey', width: 200, render: (v: string) => <span className="nq-mono">{v}</span>},
+        {title: t('pages:reason'), key: 'cause', width: 140, render: (_: unknown, c) => autoReviewCauseTag(c.cause)},
+        {title: t('pages:severity2'), key: 'severity', width: 110, render: (_: unknown, c) => <NqStatusTag status={c.severity} tone={EXECUTION_SEVERITY_TONE[c.severity]}/>},
+        nqNumericColumn({title: t('pages:quantity'), dataIndex: 'count', key: 'count', width: 80}),
         {
-            title: '受影响 Run / 策略 / 发布', key: 'affected', width: 280,
+            title: t('pages:affectedRunsStrategiesPublishes'), key: 'affected', width: 280,
             render: (_: unknown, c) => (
                 <Space direction="vertical" size={2} style={{display: 'flex'}}>
                     <Typography.Text type="secondary" style={{fontSize: 12}}>
-                        Run {c.affectedRunIds.length} · 策略 {c.affectedStrategyVersionIds.length} · 发布 {c.affectedPublishIds.length}
+                        {t('pages:run')}{c.affectedRunIds.length} {t('pages:strategies')}{c.affectedStrategyVersionIds.length} {t('pages:publishes')}{c.affectedPublishIds.length}
                     </Typography.Text>
                     {c.affectedRunIds.length > 0
                         ? <Space size={4} wrap>{c.affectedRunIds.map((id) => <Tag key={id} className="nq-mono">{id}</Tag>)}</Space>
@@ -311,98 +314,98 @@ function PaperAutoReviewBody({review}: {review: PaperAutoReviewsResponse}) {
                 </Space>
             ),
         },
-        {title: '摘要', dataIndex: 'summary', key: 'summary', width: 300, render: (v: string) => <Typography.Text style={{fontSize: 12}}>{v}</Typography.Text>},
-        {title: '建议排查动作', dataIndex: 'suggestedAction', key: 'suggestedAction', width: 260, render: (v: string) => <Typography.Text type="secondary" style={{fontSize: 12}}>{v}</Typography.Text>},
+        {title: t('pages:summary'), dataIndex: 'summary', key: 'summary', width: 300, render: (v: string) => <Typography.Text style={{fontSize: 12}}>{v}</Typography.Text>},
+        {title: t('pages:recommendedDiagnosticActions'), dataIndex: 'suggestedAction', key: 'suggestedAction', width: 260, render: (v: string) => <Typography.Text type="secondary" style={{fontSize: 12}}>{v}</Typography.Text>},
     ];
 
     return (
         <Space direction="vertical" size={12} style={{display: 'flex'}}>
             {/* A) 复盘总览 */}
             <div className="nq-status-strip">
-                <NqMetricCard label="纳入复盘 run" value={String(overview.totalRuns)} footer="bounded Paper run"/>
-                <NqMetricCard label="已复盘 run" value={String(overview.reviewedRunCount)}/>
-                <NqMetricCard label="问题 run" value={String(overview.issueRunCount)} tone={overview.issueRunCount > 0 ? 'warning' : 'muted'}/>
-                <NqMetricCard label="健康 run" value={String(overview.healthyRunCount)} tone={overview.healthyRunCount > 0 ? 'success' : 'muted'}/>
-                <NqMetricCard label="关键问题" value={String(overview.criticalIssueCount)} tone={overview.criticalIssueCount > 0 ? 'danger' : 'muted'}/>
-                <NqMetricCard label="警告问题" value={String(overview.warningIssueCount)} tone={overview.warningIssueCount > 0 ? 'warning' : 'muted'}/>
-                <NqMetricCard label="已复盘策略" value={String(overview.strategyReviewedCount)}/>
-                <NqMetricCard label="已复盘发布" value={String(overview.publishReviewedCount)}/>
-                <NqMetricCard label="最集中问题" value={overview.topIssueCause != null ? autoReviewCauseLabel(overview.topIssueCause) : '-'}/>
-                <NqMetricCard label="最常见短板" value={overview.topWeakness ?? '-'}/>
-                <NqMetricCard label="生成时间" value={overview.generatedAt ? formatDateTime(overview.generatedAt) : '-'}/>
+                <NqMetricCard label={t('pages:runsIncludedInReviews')} value={String(overview.totalRuns)} footer={t('pages:boundedPaperRun')}/>
+                <NqMetricCard label={t('pages:reviewedRuns')} value={String(overview.reviewedRunCount)}/>
+                <NqMetricCard label={t('pages:runsWithIssues')} value={String(overview.issueRunCount)} tone={overview.issueRunCount > 0 ? 'warning' : 'muted'}/>
+                <NqMetricCard label={t('pages:healthyRuns')} value={String(overview.healthyRunCount)} tone={overview.healthyRunCount > 0 ? 'success' : 'muted'}/>
+                <NqMetricCard label={t('pages:criticalIssues')} value={String(overview.criticalIssueCount)} tone={overview.criticalIssueCount > 0 ? 'danger' : 'muted'}/>
+                <NqMetricCard label={t('pages:warningIssues')} value={String(overview.warningIssueCount)} tone={overview.warningIssueCount > 0 ? 'warning' : 'muted'}/>
+                <NqMetricCard label={t('pages:reviewedStrategies')} value={String(overview.strategyReviewedCount)}/>
+                <NqMetricCard label={t('pages:reviewedPublishes')} value={String(overview.publishReviewedCount)}/>
+                <NqMetricCard label={t('pages:mostConcentratedIssue')} value={overview.topIssueCause != null ? autoReviewCauseLabel(overview.topIssueCause) : '-'}/>
+                <NqMetricCard label={t('pages:mostCommonWeakness')} value={overview.topWeakness ?? '-'}/>
+                <NqMetricCard label={t('pages:generatedAt')} value={overview.generatedAt ? formatDateTime(overview.generatedAt) : '-'}/>
             </div>
 
             {/* B) Portfolio Review 摘要区 */}
-            <Card size="small" title="组合复盘摘要">
+            <Card size="small" title={t('pages:portfolioReviewSummary')}>
                 {portfolioReview ? (
-                    <div role="region" aria-label="Paper 自动复盘组合摘要">
+                    <div role="region" aria-label={t('pages:paperPortfolioAutomatedReviewSummary')}>
                         <Space direction="vertical" size={8} style={{display: 'flex'}}>
                             <Typography.Text strong style={{fontSize: 14}}>{portfolioReview.headline}</Typography.Text>
                             <Typography.Paragraph type="secondary" style={{fontSize: 12, marginBottom: 0}}>{portfolioReview.summary}</Typography.Paragraph>
                             <Descriptions bordered size="small" column={1}>
-                                <Descriptions.Item label="关键发现">{autoReviewBullets(portfolioReview.keyFindings, '无')}</Descriptions.Item>
-                                <Descriptions.Item label="风险亮点">{autoReviewTagList(portfolioReview.riskHighlights, '无', 'red')}</Descriptions.Item>
-                                <Descriptions.Item label="执行亮点">{autoReviewTagList(portfolioReview.executionHighlights, '无', 'orange')}</Descriptions.Item>
-                                <Descriptions.Item label="策略亮点">{autoReviewTagList(portfolioReview.strategyHighlights, '无', 'geekblue')}</Descriptions.Item>
-                                <Descriptions.Item label="Backtest 偏差">{autoReviewTagList(portfolioReview.backtestDeviationHighlights, '无', 'purple')}</Descriptions.Item>
-                                <Descriptions.Item label="建议排查动作">{autoReviewTagList(portfolioReview.suggestedNextActions, '暂无建议动作', 'blue')}</Descriptions.Item>
-                                <Descriptions.Item label="复盘局限">{autoReviewBullets(portfolioReview.limitations, '无')}</Descriptions.Item>
+                                <Descriptions.Item label={t('pages:keyFindings')}>{autoReviewBullets(portfolioReview.keyFindings, t('pages:none'))}</Descriptions.Item>
+                                <Descriptions.Item label={t('pages:riskHighlights')}>{autoReviewTagList(portfolioReview.riskHighlights, t('pages:none'), 'red')}</Descriptions.Item>
+                                <Descriptions.Item label={t('pages:executionHighlights')}>{autoReviewTagList(portfolioReview.executionHighlights, t('pages:none'), 'orange')}</Descriptions.Item>
+                                <Descriptions.Item label={t('pages:strategyHighlights')}>{autoReviewTagList(portfolioReview.strategyHighlights, t('pages:none'), 'geekblue')}</Descriptions.Item>
+                                <Descriptions.Item label={t('pages:backtestDeviation')}>{autoReviewTagList(portfolioReview.backtestDeviationHighlights, t('pages:none'), 'purple')}</Descriptions.Item>
+                                <Descriptions.Item label={t('pages:recommendedDiagnosticActions')}>{autoReviewTagList(portfolioReview.suggestedNextActions, t('pages:noRecommendedActions'), 'blue')}</Descriptions.Item>
+                                <Descriptions.Item label={t('pages:reviewLimitations')}>{autoReviewBullets(portfolioReview.limitations, t('pages:none'))}</Descriptions.Item>
                             </Descriptions>
                         </Space>
                     </div>
                 ) : (
-                    <NqEmptyState description="暂无组合复盘摘要。"/>
+                    <NqEmptyState description={t('pages:noPortfolioReviewSummary')}/>
                 )}
             </Card>
 
             {/* 复盘筛选：severity / cause 影响 Run Reviews 与 Issue Clusters；dimension 控制展示维度。 */}
             <Card
                 size="small"
-                title="复盘筛选"
+                title={t('pages:reviewFilters')}
                 extra={filtered ? (
-                    <Button size="small" type="link" onClick={() => {setSeverityFilter('all'); setCauseFilter('all'); setDimensionFilter('all');}}>查看全部</Button>
+                    <Button size="small" type="link" onClick={() => {setSeverityFilter('all'); setCauseFilter('all'); setDimensionFilter('all');}}>{t('pages:viewAll')}</Button>
                 ) : null}
             >
                 <div
                     role="group"
-                    aria-label="Paper 自动复盘筛选"
+                    aria-label={t('pages:paperAutomatedReviewFilters')}
                     style={{display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center'}}
                 >
-                    <Typography.Text type="secondary" style={{fontSize: 12}}>严重度</Typography.Text>
+                    <Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:severity2')}</Typography.Text>
                     <Select<AutoReviewSeverityFilter>
                         size="small" value={severityFilter} onChange={setSeverityFilter}
                         options={AUTO_REVIEW_SEVERITY_FILTER_OPTIONS as Array<{label: string; value: AutoReviewSeverityFilter}>}
                         style={{width: 150}} virtual={false}
                     />
-                    <Typography.Text type="secondary" style={{fontSize: 12}}>原因</Typography.Text>
+                    <Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:reason')}</Typography.Text>
                     <Select<AutoReviewCauseFilter>
                         size="small" value={causeFilter} onChange={setCauseFilter}
                         options={AUTO_REVIEW_CAUSE_FILTER_OPTIONS as Array<{label: string; value: AutoReviewCauseFilter}>}
                         style={{width: 280}} virtual={false}
                     />
-                    <Typography.Text type="secondary" style={{fontSize: 12}}>展示维度</Typography.Text>
+                    <Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:displayDimension')}</Typography.Text>
                     <Select<AutoReviewDimensionFilter>
                         size="small" value={dimensionFilter} onChange={setDimensionFilter}
                         options={AUTO_REVIEW_DIMENSION_FILTER_OPTIONS as Array<{label: string; value: AutoReviewDimensionFilter}>}
                         style={{width: 150}} virtual={false}
                     />
                     <Typography.Text type="secondary" style={{fontSize: 12}}>
-                        命中 Run {filteredRuns.length} / {runReviews.length} · 聚类 {filteredClusters.length} / {issueClusters.length}
+                        {t('pages:matchingRuns')}{filteredRuns.length} / {runReviews.length} {t('pages:clusters2')}{filteredClusters.length} / {issueClusters.length}
                     </Typography.Text>
                 </div>
             </Card>
 
             {/* C) Issue Clusters（受 severity / cause 筛选） */}
             {showClusters ? (
-                <Card size="small" title={filtered ? `问题聚类 · 当前筛选命中 ${filteredClusters.length} 条` : '问题聚类'}>
-                    <div role="region" aria-label="Paper 自动复盘问题聚类">
+                <Card size="small" title={filtered ? t('pages:issueClustersValue1MatchingItems', {value1: filteredClusters.length}) : t('pages:issueClusters')}>
+                    <div role="region" aria-label={t('pages:paperReviewIssueClusters')}>
                         <NqDataTable<PaperIssueCluster>
                             rowKey="clusterKey"
                             pagination={false}
                             dataSource={filteredClusters}
                             columns={clusterColumns}
                             scroll={{x: 1290, y: 320}}
-                            locale={{emptyText: '当前筛选条件下暂无匹配的问题聚类。'}}
+                            locale={{emptyText: t('pages:noIssueClustersMatchTheseFilters')}}
                         />
                     </div>
                 </Card>
@@ -410,15 +413,15 @@ function PaperAutoReviewBody({review}: {review: PaperAutoReviewsResponse}) {
 
             {/* D) Run Reviews（受 severity / cause 筛选） */}
             {showRuns ? (
-                <Card size="small" title={filtered ? `重点 Run 复盘 · 当前筛选命中 ${filteredRuns.length} 条` : '重点 Run 复盘'}>
-                    <div role="region" aria-label="Paper 自动复盘 Run 表">
+                <Card size="small" title={filtered ? t('pages:focusedRunReviewsValue1MatchingItems', {value1: filteredRuns.length}) : t('pages:focusedRunReviews')}>
+                    <div role="region" aria-label={t('pages:paperAutomatedRunReviewTable')}>
                         <NqDataTable<PaperRunAutoReview>
                             rowKey="paperRunId"
                             pagination={false}
                             dataSource={filteredRuns}
                             columns={runColumns}
                             scroll={{x: 2020, y: 360}}
-                            locale={{emptyText: '当前筛选条件下暂无匹配的 Run 复盘。'}}
+                            locale={{emptyText: t('pages:noRunReviewsMatchTheseFilters')}}
                         />
                     </div>
                 </Card>
@@ -426,15 +429,15 @@ function PaperAutoReviewBody({review}: {review: PaperAutoReviewsResponse}) {
 
             {/* E) Strategy Reviews */}
             {showStrategies ? (
-                <Card size="small" title="策略复盘">
-                    <div role="region" aria-label="Paper 自动复盘 Strategy 表">
+                <Card size="small" title={t('pages:strategyReviews')}>
+                    <div role="region" aria-label={t('pages:paperAutomatedStrategyReviewTable')}>
                         <NqDataTable<PaperStrategyAutoReview>
                             rowKey="strategyVersionId"
                             pagination={false}
                             dataSource={strategyReviews}
                             columns={strategyReviewColumns}
                             scroll={{x: 1900, y: 320}}
-                            locale={{emptyText: '暂无可复盘的策略版本。'}}
+                            locale={{emptyText: t('pages:noStrategyVersionsAvailableForReview')}}
                         />
                     </div>
                 </Card>
@@ -442,24 +445,22 @@ function PaperAutoReviewBody({review}: {review: PaperAutoReviewsResponse}) {
 
             {/* F) Publish Reviews */}
             {showPublishes ? (
-                <Card size="small" title="发布复盘">
-                    <div role="region" aria-label="Paper 自动复盘 Publish 表">
+                <Card size="small" title={t('pages:publishReviews')}>
+                    <div role="region" aria-label={t('pages:paperAutomatedPublishReviewTable')}>
                         <NqDataTable<PaperPublishAutoReview>
                             rowKey="publishId"
                             pagination={false}
                             dataSource={publishReviews}
                             columns={publishReviewColumns}
                             scroll={{x: 1960, y: 320}}
-                            locale={{emptyText: '暂无可复盘的发布。'}}
+                            locale={{emptyText: t('pages:noPublishesAvailableForReview')}}
                         />
                     </div>
                 </Card>
             ) : null}
 
             <Typography.Text type="secondary" style={{fontSize: 12}}>
-                该复盘由规则引擎生成，不接 AI / DH runtime；仅 Paper 模拟口径，不代表 LIVE 或真实交易表现，也不构成投资建议。
-                建议动作均为工程排查动作（检查数据 / 触发条件 / 撮合参数 / 风控阈值 / 增加样本 / 复核 Backtest 偏差）。
-            </Typography.Text>
+                {t('pages:aRuleEngineGeneratesPaperReviewsWithoutAiDhRuntimeTheyAreNotLivePerformanceOrInvestmentAdviceRecomme')}</Typography.Text>
         </Space>
     );
 }

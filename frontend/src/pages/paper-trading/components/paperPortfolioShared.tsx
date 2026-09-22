@@ -1,3 +1,5 @@
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {Space, Tag, Typography} from 'antd';
 import type React from 'react';
 import type {ReactNode} from 'react';
@@ -15,7 +17,7 @@ import type {PaperPortfolioRunRef} from '@/types/paper-trading';
 /** 把 run 引用清单渲染为紧凑 Tag 列表；空清单显示「无」，超过 12 条折叠为「等 N 个」。 */
 export function renderRunRefTags(runs: PaperPortfolioRunRef[]): ReactNode {
     if (runs.length === 0) {
-        return <Typography.Text type="secondary" style={{fontSize: 12}}>无</Typography.Text>;
+        return <Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:none')}</Typography.Text>;
     }
     return (
         <Space size={[6, 6]} wrap>
@@ -23,7 +25,7 @@ export function renderRunRefTags(runs: PaperPortfolioRunRef[]): ReactNode {
                 <Tag key={run.paperRunId} className="nq-mono" style={{fontSize: 11}}>{run.paperRunId}</Tag>
             ))}
             {runs.length > 12 ? (
-                <Typography.Text type="secondary" style={{fontSize: 12}}>等 {runs.length} 个</Typography.Text>
+                <Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:andOthers')}{runs.length} {t('pages:items')}</Typography.Text>
             ) : null}
         </Space>
     );
@@ -48,6 +50,7 @@ export function ClickableMetricCard({
     testId: string;
     isActive: boolean;
 }) {
+    useTranslation('pages');
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') onClick();
     };

@@ -1,5 +1,6 @@
 import {Card} from 'antd';
 import type {ReactNode} from 'react';
+import {useTranslation} from 'react-i18next';
 
 /**
  * NqFilterBar — 查询区统一容器。
@@ -15,9 +16,10 @@ interface NqFilterBarProps {
     children: ReactNode;
 }
 
-export function NqFilterBar({title = '查询区', actions, children}: NqFilterBarProps) {
+export function NqFilterBar({title, actions, children}: NqFilterBarProps) {
+    const {t} = useTranslation();
     return (
-        <Card className="page-section" bordered={false} title={title} extra={actions}>
+        <Card className="page-section" bordered={false} title={title ?? t('querySection')} extra={actions}>
             {children}
         </Card>
     );

@@ -48,16 +48,14 @@ async function resetDefaultAccountFixture(page: Page) {
 export async function loginToConsole(page: Page): Promise<E2EExchangeAccountFixture> {
     const defaultAccount = await resetDefaultAccountFixture(page);
 
-    // Why: B0.1 登录页重做为中文 v2 双区入口（账号/密码/登录），登录链路仍经过真实表单提交。
-    // 这里按用户可见 heading + 中文 label 定位，与 login-page-smoke 一致;旧英文 Username/Password/Sign in
-    // 已不存在(B0.1 改版),沿用旧选择器会导致所有页面级 e2e 在登录前置失败。
+    // 默认简体中文上下文按可见标签完成真实表单登录；双字按钮兼容 Ant Design 自动空格。
     await page.goto('/login');
     await expect(page.getByRole('heading', {name: 'NexusQuant'})).toBeVisible();
 
     // Why: 登录表单不预填默认凭证(登录泄露清理),E2E 始终显式填写。
     await page.getByLabel('账号').fill(username);
     await page.getByLabel('密码').fill(password);
-    await page.getByRole('button', {name: '登录'}).click();
+    await page.getByRole('button', {name: /登\s*录/}).click();
 
     // Why: 本地验收会先拉起后端再并发启动 Playwright worker，首页路由恢复偶发慢于默认 5 秒，
     // 这里显式放宽等待窗口，避免把真实登录成功误判成路由失败。

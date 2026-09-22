@@ -1,3 +1,5 @@
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {
     Alert,
     Button,
@@ -149,29 +151,29 @@ const OPERATIONAL_STATUS_FIELDS: Array<{
     area: string;
     source: string;
 }> = [
-    {key: 'liveStatus', area: 'LIVE status', source: 'GET /api/runtime/operational-readiness'},
-    {key: 'aiStatus', area: 'AI status', source: 'GET /api/runtime/operational-readiness'},
-    {key: 'dhRuntimeStatus', area: 'DH runtime status', source: 'GET /api/runtime/operational-readiness'},
-    {key: 'realProviderStatus', area: 'Real provider status', source: 'GET /api/runtime/operational-readiness'},
+    {key: 'liveStatus', get area() { return t('pages:liveStatus'); }, source: 'GET /api/runtime/operational-readiness'},
+    {key: 'aiStatus', get area() { return t('pages:aiStatus'); }, source: 'GET /api/runtime/operational-readiness'},
+    {key: 'dhRuntimeStatus', get area() { return t('pages:dhRuntimeStatus'); }, source: 'GET /api/runtime/operational-readiness'},
+    {key: 'realProviderStatus', get area() { return t('pages:realProviderStatus'); }, source: 'GET /api/runtime/operational-readiness'},
     {
         key: 'credentialExposureStatus',
-        area: 'Credential exposure status',
+        get area() { return t('pages:credentialExposureStatus'); },
         source: 'GET /api/runtime/operational-readiness'
     },
     {
         key: 'externalExchangeCallStatus',
-        area: 'External exchange call status',
+        get area() { return t('pages:externalExchangeCallStatus'); },
         source: 'GET /api/runtime/operational-readiness'
     },
-    {key: 'permissionProbeStatus', area: 'Permission probe status', source: 'GET /api/runtime/operational-readiness'},
-    {key: 'startupBoundaryStatus', area: 'Startup boundary status', source: 'GET /api/runtime/operational-readiness'},
-    {key: 'profileBoundaryStatus', area: 'Profile boundary status', source: 'GET /api/runtime/operational-readiness'},
+    {key: 'permissionProbeStatus', get area() { return t('pages:permissionProbeStatus'); }, source: 'GET /api/runtime/operational-readiness'},
+    {key: 'startupBoundaryStatus', get area() { return t('pages:startupBoundaryStatus'); }, source: 'GET /api/runtime/operational-readiness'},
+    {key: 'profileBoundaryStatus', get area() { return t('pages:profileBoundaryStatus'); }, source: 'GET /api/runtime/operational-readiness'},
     {
         key: 'configDiagnosticsStatus',
-        area: 'Config diagnostics status',
+        get area() { return t('pages:configurationDiagnosticsStatus'); },
         source: 'GET /api/runtime/operational-readiness'
     },
-    {key: 'logDiagnosticsStatus', area: 'Log diagnostics status', source: 'GET /api/runtime/operational-readiness'},
+    {key: 'logDiagnosticsStatus', get area() { return t('pages:logDiagnosticsStatus'); }, source: 'GET /api/runtime/operational-readiness'},
 ];
 
 function isOperationalReadinessStatusResponse(value: unknown): value is OperationalReadinessStatusResponse {
@@ -201,7 +203,7 @@ function unavailableOperationalStatus(): OperationalReadinessStatusResponse {
         status: 'UNAVAILABLE',
         ready: false,
         reasonCode: 'PENDING_BACKEND_SUPPORT',
-        reason: 'Operational readiness summary is unavailable; runtime UI remains fail-closed and no capability is treated as available.',
+        reason: t('pages:operationalReadinessIsUnavailableTheRuntimeUiRemainsFailClosedWithNoCapabilityTreatedAsAvailable'),
     };
 }
 
@@ -216,7 +218,7 @@ function buildOperationalReadinessItems(summary?: OperationalReadinessResponse):
             key: String(key),
             area,
             status: normalizedStatus,
-            source: summary ? source : 'Operational readiness summary unavailable',
+            source: summary ? source : t('pages:operationalReadinessSummaryUnavailable'),
             reasonCode: status.reasonCode || 'PENDING_BACKEND_SUPPORT',
             reason: status.reason || unavailable.reason,
             safeState: status.ready ? 'MANUAL_REVIEW_REQUIRED' : 'BLOCKED',
@@ -259,50 +261,50 @@ function buildRuntimeBlockers(items: AdapterReadinessItem[]): RuntimeBlocker[] {
     return [
         {
             key: 'live-disabled',
-            area: 'LIVE disabled',
+            area: t('pages:liveDisabled3'),
             status: 'LIVE_NOT_AUTHORIZED',
-            source: 'GateM runtime boundary',
-            impact: '不提供 LIVE 入口，不允许真实下单、撤单、转账或提现。',
+            source: t('pages:gatemRuntimeBoundary'),
+            impact: t('pages:noLiveEntryIsProvidedRealOrdersCancellationsTransfersAndWithdrawalsAreProhibited'),
             tone: 'danger',
         },
         {
             key: 'adapter-no-real',
-            area: 'Adapter no-real',
+            area: t('pages:adapterNoReal'),
             status: noRealRows.length > 0 ? 'NO_REAL' : 'PENDING_BACKEND_SUPPORT',
             source: 'GET /api/adapters/readiness',
-            impact: `NoReal / Fake / Stub / FutureReal 均保持阻断；当前矩阵 no-real rows=${noRealRows.length}。`,
+            impact: t('pages:norealFakeStubFuturerealRemainBlockedNoRealRowsValue1', {value1: noRealRows.length}),
             tone: noRealRows.length > 0 ? 'info' : 'warning',
         },
         {
             key: 'real-exchange',
-            area: 'OKX / Binance runtime',
+            area: t('pages:okxBinanceRuntime'),
             status: realExchangeRows.length > 0 ? 'NOT_READY' : 'PENDING_BACKEND_SUPPORT',
             source: 'GET /api/adapters/readiness',
-            impact: '真实交易所 adapter / RealClient / real provider 未实现，不能作为正式 provider 使用。',
+            impact: t('pages:realExchangeAdaptersRealclientAndRealProvidersAreNotImplementedAndCannotServeAsCanonicalProviders'),
             tone: 'danger',
         },
         {
             key: 'permission-probe',
-            area: 'Permission probe',
+            area: t('pages:permissionProbe'),
             status: permissionRows.length > 0 ? 'PERMISSION_PROBE_DISABLED / SKIPPED' : 'PENDING_BACKEND_SUPPORT',
-            source: 'Adapter readiness PERMISSION_PROBE row',
-            impact: '当前只展示 disabled / skipped 语义，不执行 permission probe POST，也不读取 credential。',
+            source: t('pages:adapterReadinessPermissionProbeRow'),
+            impact: t('pages:onlyDisabledSkippedStatesAreDisplayedNoPermissionProbePostOrCredentialReadsOccur'),
             tone: permissionRows.length > 0 ? 'warning' : 'danger',
         },
         {
             key: 'runtime-flags',
-            area: 'Central runtime flags',
+            area: t('pages:centralRuntimeFlags'),
             status: 'PENDING_BACKEND_SUPPORT',
-            source: 'No aggregate runtime flags API',
-            impact: '前端不能从缺失 API 推断 LIVE readiness；统一 runtime flags 等后端聚合支持。',
+            source: t('pages:noAggregateRuntimeFlagsApi'),
+            impact: t('pages:theFrontendCannotInferLiveReadinessFromMissingApisUnifiedRuntimeFlagsAwaitBackendAggregation'),
             tone: 'warning',
         },
         {
             key: 'paper-to-real-aggregate',
-            area: 'Paper-to-Real aggregate',
+            area: t('pages:paperToRealAggregate'),
             status: 'PENDING_BACKEND_SUPPORT',
-            source: 'No Paper-to-Real aggregate API',
-            impact: 'Paper-only readiness 与真实交易授权必须分开展示，当前不提供跨环境聚合通过态。',
+            source: t('pages:noPaperToRealAggregateApi'),
+            impact: t('pages:paperReadinessAndRealTradingAuthorizationRemainSeparateNoCrossEnvironmentAggregatePassIsOffered'),
             tone: 'warning',
         },
     ];
@@ -314,25 +316,25 @@ function isReadinessSignalUnexpected(item: AdapterReadinessItem): boolean {
 
 const venueColumns: ColumnsType<VenueSummary> = [
     {
-        title: 'Venue',
+        get title() { return t('pages:venue'); },
         dataIndex: 'venue',
         key: 'venue',
         width: 140,
         render: (venue: string, row) => (
             <Space size={8}>
                 <StatusTag label={venue} tone={row.tone} variant="pill"/>
-                {REAL_EXCHANGE_VENUES.has(venue) ? <Tag color="error">not authorized</Tag> : null}
+                {REAL_EXCHANGE_VENUES.has(venue) ? <Tag color="error">{t('pages:notAuthorized')}</Tag> : null}
             </Space>
         ),
     },
     {
-        title: 'Capabilities',
+        get title() { return t('pages:capabilities'); },
         dataIndex: 'capabilities',
         key: 'capabilities',
         width: 120,
     },
     {
-        title: 'Allowed',
+        get title() { return t('pages:allowed2'); },
         dataIndex: 'allowed',
         key: 'allowed',
         width: 110,
@@ -341,7 +343,7 @@ const venueColumns: ColumnsType<VenueSummary> = [
         ),
     },
     {
-        title: 'LIVE auth count',
+        get title() { return t('pages:liveAuthorizationCount'); },
         dataIndex: 'liveAuthorized',
         key: 'liveAuthorized',
         width: 150,
@@ -350,7 +352,7 @@ const venueColumns: ColumnsType<VenueSummary> = [
         ),
     },
     {
-        title: 'Statuses',
+        get title() { return t('pages:statuses'); },
         dataIndex: 'statuses',
         key: 'statuses',
         render: (statuses: string[]) => (
@@ -362,7 +364,7 @@ const venueColumns: ColumnsType<VenueSummary> = [
         ),
     },
     {
-        title: 'Reasons',
+        get title() { return t('pages:reasons2'); },
         dataIndex: 'reasons',
         key: 'reasons',
         render: (reasons: string[]) => (
@@ -380,7 +382,7 @@ const venueColumns: ColumnsType<VenueSummary> = [
 
 const blockerColumns: ColumnsType<RuntimeBlocker> = [
     {
-        title: 'Runtime blocker',
+        get title() { return t('pages:runtimeBlocker'); },
         dataIndex: 'area',
         key: 'area',
         width: 210,
@@ -392,7 +394,7 @@ const blockerColumns: ColumnsType<RuntimeBlocker> = [
         ),
     },
     {
-        title: 'Status',
+        get title() { return t('pages:status'); },
         dataIndex: 'status',
         key: 'status',
         width: 220,
@@ -401,7 +403,7 @@ const blockerColumns: ColumnsType<RuntimeBlocker> = [
         ),
     },
     {
-        title: 'Impact',
+        get title() { return t('pages:impact'); },
         dataIndex: 'impact',
         key: 'impact',
     },
@@ -418,65 +420,65 @@ const blockerColumns: ColumnsType<RuntimeBlocker> = [
 const runtimeReleaseMatrixRows: RuntimeReleaseMatrixRow[] = [
     {
         key: 'data-quality',
-        area: 'Data quality',
+        get area() { return t('pages:dataQuality'); },
         status: 'DIAGNOSTIC_ONLY',
-        meaning: '只表示行情数据诊断和缺口可见性。',
-        boundary: '数据质量通过不等于 trading authorization。',
+        get meaning() { return t('pages:marketDataDiagnosticsAndGapVisibilityOnly'); },
+        get boundary() { return t('pages:passingDataQualityDoesNotGrantTradingAuthorization'); },
         source: 'GET /api/marketdata/quality/overview',
     },
     {
         key: 'public-marketdata',
-        area: 'Public marketdata',
+        get area() { return t('pages:publicMarketData'); },
         status: 'READ_ONLY',
-        meaning: '只读公共行情；不得推导 private endpoint、signed request 或 provider trading readiness。',
-        boundary: 'Public marketdata readiness 不等于 LIVE 可用。',
-        source: 'MarketData readonly APIs',
+        get meaning() { return t('pages:publicMarketDataIsReadOnlyItDoesNotEstablishPrivateEndpointSignedRequestOrProviderTradingReadiness'); },
+        get boundary() { return t('pages:publicMarketDataReadinessDoesNotMeanLiveAvailability'); },
+        get source() { return t('pages:readOnlyMarketDataApis'); },
     },
     {
         key: 'permission-probe',
-        area: 'Permission probe',
+        get area() { return t('pages:permissionProbe'); },
         status: 'NOT_IMPLEMENTED / READ_ONLY_STATUS',
-        meaning: '仅展示未实现、disabled 或 skipped 状态；本页不执行 probe POST。',
-        boundary: 'SKIPPED / disabled 不代表权限通过。',
-        source: 'Operational / adapter readiness summary',
+        get meaning() { return t('pages:onlyUnimplementedDisabledOrSkippedStatesAreShownThisPageDoesNotPerformProbePostRequests'); },
+        get boundary() { return t('pages:skippedDisabledDoesNotMeanPermissionVerificationPassed'); },
+        get source() { return t('pages:operationalAdapterReadinessSummary'); },
     },
     {
         key: 'private-trading',
-        area: 'Private trading',
+        get area() { return t('pages:privateTrading'); },
         status: 'NOT_IMPLEMENTED',
-        meaning: '真实下单、撤单、转账、提现和 private trading adapter 均未实现。',
-        boundary: '不提供 write endpoint 或交易授权入口。',
-        source: 'GateP boundary',
+        get meaning() { return t('pages:realOrdersCancellationsTransfersWithdrawalsAndPrivateTradingAdaptersAreNotImplemented'); },
+        get boundary() { return t('pages:noWriteEndpointOrTradingAuthorizationEntryIsProvided'); },
+        get source() { return t('pages:gatepBoundary'); },
     },
     {
         key: 'live',
         area: 'LIVE',
         status: 'DISABLED',
-        meaning: 'LIVE 当前关闭。',
-        boundary: '不允许真实 LIVE 下单或资金操作。',
-        source: 'Current fact source',
+        get meaning() { return t('pages:liveIsDisabled'); },
+        get boundary() { return t('pages:realLiveOrdersAndFundOperationsAreProhibited'); },
+        get source() { return t('pages:currentFactSource'); },
     },
     {
         key: 'ai',
         area: 'AI',
         status: 'NOT_STARTED',
-        meaning: 'AI runtime、AI 信号、AI 自动交易未开始。',
-        boundary: '不把任何数据质量或 runtime 状态转换为 AI 建议或交易动作。',
-        source: 'Current fact source',
+        get meaning() { return t('pages:aiRuntimeSignalsAndAutomatedTradingHaveNotStarted'); },
+        get boundary() { return t('pages:dataQualityAndRuntimeStatesAreNotConvertedIntoAiAdviceOrTradingActions'); },
+        get source() { return t('pages:currentFactSource'); },
     },
     {
         key: 'dh-runtime',
-        area: 'DH runtime',
+        get area() { return t('pages:dhRuntime'); },
         status: 'NOT_INTEGRATED',
-        meaning: 'DH runtime 未集成到 NQ。',
-        boundary: 'DH 不允许启动 Paper Run、修改 NQ 交易状态或访问 credential。',
-        source: 'Current fact source',
+        get meaning() { return t('pages:dhRuntimeIsNotIntegratedIntoNq'); },
+        get boundary() { return t('pages:dhCannotStartPaperRunsModifyNqTradingStateOrAccessCredentials'); },
+        get source() { return t('pages:currentFactSource'); },
     },
 ];
 
 const runtimeReleaseMatrixColumns: ColumnsType<RuntimeReleaseMatrixRow> = [
     {
-        title: 'Matrix item',
+        get title() { return t('pages:matrixItem'); },
         dataIndex: 'area',
         key: 'area',
         width: 190,
@@ -488,19 +490,19 @@ const runtimeReleaseMatrixColumns: ColumnsType<RuntimeReleaseMatrixRow> = [
         ),
     },
     {
-        title: 'Status',
+        get title() { return t('pages:status'); },
         dataIndex: 'status',
         key: 'status',
         width: 240,
         render: (status: string) => <StatusTag label={status} tone={statusTone(status)} variant="pill"/>,
     },
     {
-        title: 'Meaning',
+        get title() { return t('pages:meaning'); },
         dataIndex: 'meaning',
         key: 'meaning',
     },
     {
-        title: 'Boundary',
+        get title() { return t('pages:boundary'); },
         dataIndex: 'boundary',
         key: 'boundary',
     },
@@ -508,7 +510,7 @@ const runtimeReleaseMatrixColumns: ColumnsType<RuntimeReleaseMatrixRow> = [
 
 const operationalColumns: ColumnsType<OperationalReadinessItem> = [
     {
-        title: 'Operational area',
+        get title() { return t('pages:operationalArea'); },
         dataIndex: 'area',
         key: 'area',
         width: 210,
@@ -520,7 +522,7 @@ const operationalColumns: ColumnsType<OperationalReadinessItem> = [
         ),
     },
     {
-        title: 'Status',
+        get title() { return t('pages:status'); },
         dataIndex: 'status',
         key: 'status',
         width: 220,
@@ -529,7 +531,7 @@ const operationalColumns: ColumnsType<OperationalReadinessItem> = [
         ),
     },
     {
-        title: 'Safe state',
+        get title() { return t('pages:safeState'); },
         dataIndex: 'safeState',
         key: 'safeState',
         width: 150,
@@ -538,26 +540,26 @@ const operationalColumns: ColumnsType<OperationalReadinessItem> = [
         ),
     },
     {
-        title: 'Reason code',
+        get title() { return t('pages:reasonCode'); },
         dataIndex: 'reasonCode',
         key: 'reasonCode',
         width: 230,
         render: (reasonCode: string) => <Tag color="warning">{reasonCode}</Tag>,
     },
     {
-        title: 'Safe reason',
+        get title() { return t('pages:safeReason'); },
         dataIndex: 'reason',
         key: 'reason',
     },
 ];
 
 const fakeDryRunOperationsColumns: ColumnsType<FakeDryRunOperationsRow> = [
-    {title: 'Operational fact', dataIndex: 'area', key: 'area', width: 210},
+    {get title() { return t('pages:operationalFact'); }, dataIndex: 'area', key: 'area', width: 210},
     {
-        title: 'Status', dataIndex: 'status', key: 'status', width: 230,
+        get title() { return t('pages:status'); }, dataIndex: 'status', key: 'status', width: 230,
         render: (status: string, row) => <StatusTag label={status} tone={row.tone} variant="pill"/>,
     },
-    {title: 'Sanitized detail', dataIndex: 'detail', key: 'detail'},
+    {get title() { return t('pages:sanitizedDetail'); }, dataIndex: 'detail', key: 'detail'},
 ];
 
 /**
@@ -569,6 +571,7 @@ const fakeDryRunOperationsColumns: ColumnsType<FakeDryRunOperationsRow> = [
  * 信号都不能被解释成真实交易授权；本页也不调用任何 POST / write endpoint。
  */
 export function RuntimeReadinessPage() {
+    useTranslation('pages');
     const readinessQuery = useAdapterReadinessQuery();
     const operationalReadinessQuery = useQuery({
         queryKey: operationalReadinessQueryKeys.status(),
@@ -586,20 +589,20 @@ export function RuntimeReadinessPage() {
     const operationalReadinessItems = buildOperationalReadinessItems(operationalReadinessSummary);
     const fakeOperations = operationalReadinessSummary?.fakeDryRunOperations;
     const fakeDryRunRows: FakeDryRunOperationsRow[] = fakeOperations ? [
-        {key: 'mode', area: 'Execution mode', status: fakeOperations.mode, detail: '仅 disposable/local fake dry-run；不授予生产启动。', tone: 'info'},
-        {key: 'kill', area: 'Kill switch', status: fakeOperations.killState, detail: `observed ${formatDateTime(fakeOperations.observedAt)}`, tone: fakeOperations.killState === 'ENGAGED' ? 'danger' : 'warning'},
-        {key: 'session', area: 'Session / approval', status: fakeOperations.sessionState, detail: `${fakeOperations.sessionId} / approval=${fakeOperations.approvalState}`, tone: statusTone(fakeOperations.sessionState)},
-        {key: 'risk', area: 'Risk binding', status: fakeOperations.riskDigest === '-' ? 'NOT_OBSERVED' : 'DIGEST_BOUND', detail: fakeOperations.riskDigest, tone: 'warning'},
-        {key: 'worker', area: 'Worker health', status: fakeOperations.workerHealth, detail: `worker=${fakeOperations.workerIdentity}`, tone: statusTone(fakeOperations.workerHealth)},
-        {key: 'release', area: 'Release identity', status: fakeOperations.releaseIdentity, detail: `digest=${fakeOperations.releaseDigest}`, tone: 'warning'},
-        {key: 'intent', area: 'Intent / receipt', status: fakeOperations.intentState, detail: `${fakeOperations.intentId} / receipt=${fakeOperations.receiptState}`, tone: ['UNKNOWN', 'FAILED'].includes(fakeOperations.intentState) ? 'danger' : statusTone(fakeOperations.intentState)},
+        {key: 'mode', area: t('pages:executionMode'), status: fakeOperations.mode, detail: t('pages:disposableLocalFakeDryRunsOnlyNoProductionStartAuthorization'), tone: 'info'},
+        {key: 'kill', area: t('pages:killSwitch'), status: fakeOperations.killState, detail: `observed ${formatDateTime(fakeOperations.observedAt)}`, tone: fakeOperations.killState === 'ENGAGED' ? 'danger' : 'warning'},
+        {key: 'session', area: t('pages:sessionApproval'), status: fakeOperations.sessionState, detail: `${fakeOperations.sessionId} / approval=${fakeOperations.approvalState}`, tone: statusTone(fakeOperations.sessionState)},
+        {key: 'risk', area: t('pages:riskBinding'), status: fakeOperations.riskDigest === '-' ? 'NOT_OBSERVED' : 'DIGEST_BOUND', detail: fakeOperations.riskDigest, tone: 'warning'},
+        {key: 'worker', area: t('pages:workerHealth'), status: fakeOperations.workerHealth, detail: `worker=${fakeOperations.workerIdentity}`, tone: statusTone(fakeOperations.workerHealth)},
+        {key: 'release', area: t('pages:releaseIdentity'), status: fakeOperations.releaseIdentity, detail: `digest=${fakeOperations.releaseDigest}`, tone: 'warning'},
+        {key: 'intent', area: t('pages:intentReceipt'), status: fakeOperations.intentState, detail: `${fakeOperations.intentId} / receipt=${fakeOperations.receiptState}`, tone: ['UNKNOWN', 'FAILED'].includes(fakeOperations.intentState) ? 'danger' : statusTone(fakeOperations.intentState)},
     ] : [];
     const unexpectedSignals = items.filter(isReadinessSignalUnexpected);
     const permissionRows = items.filter((item) => item.capability === 'PERMISSION_PROBE');
     const noRealRows = items.filter((item) => item.status === 'NO_REAL' || NO_REAL_VENUES.has(item.venue));
 
     const adapterMatrixDetail = readinessQuery.isError
-        ? 'readiness API unavailable'
+        ? t('pages:readinessApiUnavailable')
         : `${items.length} rows / allowed=${items.filter((item) => item.allowed).length} / liveAuthorized=${items.filter((item) => item.liveAuthorized).length}`;
     const probeStatus = permissionRows.length > 0 ? 'PERMISSION_PROBE_DISABLED / SKIPPED' : 'PENDING_BACKEND_SUPPORT';
 
@@ -607,35 +610,33 @@ export function RuntimeReadinessPage() {
         <Space direction="vertical" size={16} style={{display: 'flex'}} data-testid="runtime-readiness-overview">
             <Card className="page-card" variant="borderless">
                 <PageHero
-                    title="Runtime Readiness Overview"
-                    description="只读汇总 GateM 当前运行边界：Paper-only、MarketData readiness 入口、Adapter no-real、LIVE disabled、permission probe disabled / skipped，以及缺失后端聚合能力。"
+                    title={t('pages:runtimeReadinessOverview')}
+                    description={t('pages:readOnlyGatemBoundariesPaperOnlyMarketDataReadinessNoRealAdaptersLiveDisabledPermissionProbesDisable')}
                     badge="READONLY"
                 />
             </Card>
 
             <NqRiskBanner
                 level={unexpectedSignals.length > 0 || readinessQuery.isError ? 'danger' : 'warning'}
-                message={unexpectedSignals.length > 0 ? '发现 READY / allowed / liveAuthorized 信号，必须人工复核' : 'Runtime guard summary：Paper-only / fail-closed'}
+                message={unexpectedSignals.length > 0 ? t('pages:readyAllowedLiveauthorizedDetectedManualReviewRequired') : t('pages:runtimeGuardSummaryPaperOnlyFailClosed')}
                 description={(
                     <span>
-                        LIVE disabled；NoReal / Fake / Stub / FutureReal 均不代表真实交易能力；permission probe 只展示 disabled / skipped 语义。
-                        本页只消费 <Text code>GET /api/adapters/readiness</Text>，不调用 permission probe POST、采集、交易或任何 write endpoint。
-                    </span>
+                        {t('pages:liveIsDisabledNorealFakeStubFuturerealDoNotProvideRealTradingCapabilitiesPermissionProbesShowDisable')}<Text code>GET /api/adapters/readiness</Text>{t('pages:andDoesNotCallPermissionProbePostIngestionTradingOrAnyWriteEndpoint')}</span>
                 )}
             />
 
             <Card
                 className="page-section"
                 variant="borderless"
-                title="Runtime release matrix"
+                title={t('pages:runtimeReleaseMatrix')}
                 data-testid="runtime-release-matrix"
             >
                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
                     <Alert
                         type="warning"
                         showIcon
-                        message="Release matrix remains fail-closed"
-                        description="Data quality、public marketdata、permission probe、private trading、LIVE、AI 与 DH runtime 分开解释；任一诊断通过都不会被写成交易授权。"
+                        message={t('pages:releaseMatrixRemainsFailClosed')}
+                        description={t('pages:dataQualityPublicMarketDataPermissionProbesPrivateTradingLiveAiAndDhRuntimeAreSeparateCapabilitiesPa')}
                     />
                     <Table<RuntimeReleaseMatrixRow>
                         rowKey="key"
@@ -651,15 +652,15 @@ export function RuntimeReadinessPage() {
             <Card
                 className="page-section"
                 variant="borderless"
-                title="FAKE-ONLY dry-run operations"
+                title={t('pages:fakeOnlyDryRunOperations')}
                 data-testid="fake-dry-run-operations"
             >
                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
                     <Alert
                         type="warning"
                         showIcon
-                        message="FAKE-ONLY DRY-RUN / LIVE DISABLED"
-                        description="只读展示现有 kill、session、approval、risk、intent 与 receipt 事实。没有 durable worker/release fact 时明确显示 NOT_OBSERVED / NOT_RECORDED；本页没有 START、PLACE、CANCEL 或 DISENGAGE 操作。"
+                        message={t('pages:fakeOnlyDryRunLiveDisabled')}
+                        description={t('pages:readOnlyKillSessionApprovalRiskIntentAndReceiptFactsMissingDurableWorkerOrReleaseFactsRemainNotObser')}
                     />
                     <Space size={[8, 8]} wrap>
                         <StatusTag label="LIVE DISABLED" tone="danger" variant="pill"/>
@@ -674,7 +675,7 @@ export function RuntimeReadinessPage() {
                         pagination={false}
                         size="small"
                         scroll={{x: 900}}
-                        locale={{emptyText: 'Operational snapshot unavailable; runtime remains fail-closed'}}
+                        locale={{emptyText: t('pages:operationalSnapshotUnavailableRuntimeRemainsFailClosed')}}
                     />
                 </Space>
             </Card>
@@ -682,23 +683,23 @@ export function RuntimeReadinessPage() {
             <Row gutter={[16, 16]}>
                 <Col xs={24} sm={12} xl={6}>
                     <NqMetricCard
-                        label="LIVE status"
-                        value={<StatusTag label="LIVE disabled" tone="danger" variant="pill"/>}
+                        label={t('pages:liveStatus')}
+                        value={<StatusTag label={t('pages:liveDisabled3')} tone="danger" variant="pill"/>}
                         tone="danger"
-                        footer="no LIVE UI entry / no real trading"
+                        footer={t('pages:noLiveUiEntryNoRealTrading')}
                     />
                 </Col>
                 <Col xs={24} sm={12} xl={6}>
                     <NqMetricCard
-                        label="Paper ready"
+                        label={t('pages:paperReady')}
                         value={<StatusTag label="READY_FOR_PAPER_ONLY" tone="info" variant="pill"/>}
                         tone="default"
-                        footer="Paper-only boundary, not real authorization"
+                        footer={t('pages:paperOnlyBoundaryNotRealAuthorization')}
                     />
                 </Col>
                 <Col xs={24} sm={12} xl={6}>
                     <NqMetricCard
-                        label="Adapter no-real"
+                        label={t('pages:adapterNoReal')}
                         value={<StatusTag label={readinessQuery.isError ? 'UNAVAILABLE' : 'NO_REAL'}
                                           tone={readinessQuery.isError ? 'danger' : 'info'} variant="pill"/>}
                         tone={readinessQuery.isError ? 'danger' : 'default'}
@@ -708,11 +709,11 @@ export function RuntimeReadinessPage() {
                 </Col>
                 <Col xs={24} sm={12} xl={6}>
                     <NqMetricCard
-                        label="Permission probe"
+                        label={t('pages:permissionProbe')}
                         value={<StatusTag label={probeStatus} tone={permissionRows.length > 0 ? 'warning' : 'danger'}
                                           variant="pill"/>}
                         tone="warning"
-                        footer="skipped / disabled is not a pass state"
+                        footer={t('pages:skippedDisabledIsNotAPassState')}
                         loading={readinessQuery.isLoading}
                     />
                 </Col>
@@ -721,7 +722,7 @@ export function RuntimeReadinessPage() {
             <Card
                 className="page-section"
                 variant="borderless"
-                title="Operational Readiness"
+                title={t('pages:operationalReadiness')}
                 data-testid="operational-readiness-overview"
                 extra={(
                     <Space size={12} wrap>
@@ -734,10 +735,9 @@ export function RuntimeReadinessPage() {
                             onClick={() => operationalReadinessQuery.refetch()}
                             loading={operationalReadinessQuery.isFetching}
                         >
-                            刷新 operational summary
-                        </Button>
-                        <Link to={MARKETDATA_READINESS_PATH}>View MarketData readiness</Link>
-                        <Link to={DASHBOARD_RUNTIME_SUMMARY_PATH}>View Dashboard runtime summary</Link>
+                            {t('pages:refreshOperationalSummary')}</Button>
+                        <Link to={MARKETDATA_READINESS_PATH}>{t('pages:viewMarketDataReadiness')}</Link>
+                        <Link to={DASHBOARD_RUNTIME_SUMMARY_PATH}>{t('pages:viewDashboardRuntimeSummary')}</Link>
                     </Space>
                 )}
             >
@@ -746,11 +746,11 @@ export function RuntimeReadinessPage() {
                         type={operationalReadinessUnavailable ? 'error' : 'warning'}
                         showIcon
                         message={operationalReadinessUnavailable
-                            ? 'operational readiness summary unavailable'
-                            : 'Operational readiness summary is fail-closed'}
+                            ? t('pages:operationalReadinessSummaryUnavailable')
+                            : t('pages:operationalReadinessSummaryIsFailClosed')}
                         description={operationalReadinessUnavailable
-                            ? 'UNAVAILABLE / PENDING_BACKEND_SUPPORT：后端 safe summary 不可用或 payload 不完整，页面不显示任何可用能力。'
-                            : 'Actuator health is process health only, not LIVE authorization. Runtime UI does not prove real provider readiness, and Paper-only / SKIPPED / NoReal signals are not real-ready.'}
+                            ? t('pages:unavailablePendingBackendSupportTheSafeBackendSummaryIsUnavailableOrIncompleteNoCapabilitiesAreShown')
+                            : t('pages:actuatorHealthIsProcessHealthOnlyNotLiveAuthorizationRuntimeUiDoesNotEstablishRealProviderReadinessP')}
                     />
                     <Table<OperationalReadinessItem>
                         rowKey="key"
@@ -769,7 +769,7 @@ export function RuntimeReadinessPage() {
                     <Card
                         className="page-section"
                         variant="borderless"
-                        title="Adapter readiness matrix summary"
+                        title={t('pages:adapterReadinessMatrixSummary')}
                         extra={(
                             <Space size={12}>
                                 {readinessQuery.data?.generatedAt ? (
@@ -777,8 +777,7 @@ export function RuntimeReadinessPage() {
                                         type="secondary">generated {formatDateTime(readinessQuery.data.generatedAt)}</Text>
                                 ) : null}
                                 <Button onClick={() => readinessQuery.refetch()} loading={readinessQuery.isFetching}>
-                                    刷新只读快照
-                                </Button>
+                                    {t('pages:refreshReadOnlySnapshot')}</Button>
                             </Space>
                         )}
                     >
@@ -786,12 +785,10 @@ export function RuntimeReadinessPage() {
                             <Alert
                                 type="error"
                                 showIcon
-                                message="adapter readiness unavailable"
+                                message={t('pages:adapterReadinessUnavailable')}
                                 description={(
                                     <Paragraph style={{marginBottom: 0}}>
-                                        未能获取 adapter readiness；Runtime Overview 按 fail-closed 处理，不显示任何可用或
-                                        LIVE 授权。
-                                        <br/>
+                                        {t('pages:adapterReadinessCouldNotBeRetrievedTheOverviewRemainsFailClosedWithNoAvailableCapabilityOrLiveAuthor')}<br/>
                                         <Text
                                             type="secondary">{formatApiError(readinessQuery.error as AppApiError)}</Text>
                                     </Paragraph>
@@ -806,7 +803,7 @@ export function RuntimeReadinessPage() {
                                 pagination={false}
                                 size="small"
                                 scroll={{x: 900}}
-                                locale={{emptyText: 'No adapter readiness data; runtime remains fail-closed'}}
+                                locale={{emptyText: t('pages:noAdapterReadinessDataRuntimeRemainsFailClosed')}}
                             />
                         )}
                     </Card>
@@ -815,28 +812,28 @@ export function RuntimeReadinessPage() {
                     <Card
                         className="page-section"
                         variant="borderless"
-                        title="MarketData readiness card"
-                        extra={<Link to={MARKETDATA_READINESS_PATH}>Open MarketData</Link>}
+                        title={t('pages:marketDataReadiness')}
+                        extra={<Link to={MARKETDATA_READINESS_PATH}>{t('pages:openMarketData')}</Link>}
                     >
                         <Space direction="vertical" size={12} style={{display: 'flex'}}>
                             <DataFreshness
-                                source="MarketData readiness"
+                                source={t('pages:marketDataReadiness')}
                                 state="disabled"
                                 detail="PENDING_BACKEND_SUPPORT"
                             />
                             <Alert
                                 type="info"
                                 showIcon
-                                message="MarketData fresh 是 query-scoped DB freshness，不是 live exchange readiness"
-                                description="MarketData 页面已支持 /api/marketdata/readiness 的 FRESH / STALE / GAP / NO_DATA / UNKNOWN 展示；本 overview 当前没有全局 source-health aggregate，因此不伪造 READY。"
+                                message={t('pages:marketDataFreshnessIsScopedToTheDatabaseQueryItDoesNotEstablishLiveExchangeReadiness')}
+                                description={t('pages:theMarketDataPageDisplaysFreshStaleGapNoDataUnknownFromApiMarketdataReadinessNoGlobalSourceHealthAgg')}
                             />
                             <Space size={[8, 8]} wrap>
-                                <StatusTag label="MarketData fresh" tone="info" variant="pill"/>
+                                <StatusTag label={t('pages:marketDataFresh')} tone="info" variant="pill"/>
                                 <StatusTag label="NO_MIGRATION_MVP" tone="warning" variant="pill"/>
                                 <StatusTag label="PENDING_BACKEND_SUPPORT" tone="warning" variant="pill"/>
                             </Space>
                             <Button type="primary">
-                                <Link to={MARKETDATA_READINESS_PATH}>View MarketData readiness</Link>
+                                <Link to={MARKETDATA_READINESS_PATH}>{t('pages:viewMarketDataReadiness')}</Link>
                             </Button>
                         </Space>
                     </Card>
@@ -846,7 +843,7 @@ export function RuntimeReadinessPage() {
             <Row gutter={[16, 16]}>
                 <Col xs={24} xl={14}>
                     <Card className="page-section" variant="borderless"
-                          title="Runtime blockers / unavailable capabilities">
+                          title={t('pages:runtimeBlockersAndUnavailableCapabilities')}>
                         <Table<RuntimeBlocker>
                             rowKey="key"
                             columns={blockerColumns}
@@ -858,16 +855,16 @@ export function RuntimeReadinessPage() {
                     </Card>
                 </Col>
                 <Col xs={24} xl={10}>
-                    <Card className="page-section" variant="borderless" title="Boundary notes">
+                    <Card className="page-section" variant="borderless" title={t('pages:boundaryNotes')}>
                         <List
                             size="small"
                             dataSource={[
                                 `Adapter matrix detail: ${adapterMatrixDetail}`,
-                                'Paper ready means READY_FOR_PAPER_ONLY; it does not authorize LIVE.',
-                                'MarketData fresh means local DB freshness for a submitted query; UNKNOWN / API failure is not ready.',
-                                'Adapter no-real means NO_REAL / Fake / Stub / FutureReal remain blocked.',
-                                'LIVE readiness not implemented; RealClient / real provider / real exchange adapter not implemented.',
-                                'No permission probe POST, no ingestion run-once, no order, no cancel, no withdraw, no transfer.',
+                                t('pages:paperReadyMeansReadyForPaperOnlyItDoesNotAuthorizeLive'),
+                                t('pages:marketDataFreshnessAppliesToTheSubmittedLocalDatabaseQueryUnknownApiFailureIsNotReady'),
+                                t('pages:adapterNoRealMeansNoRealFakeStubFuturerealRemainBlocked'),
+                                t('pages:liveReadinessRealclientRealProvidersAndRealExchangeAdaptersAreNotImplemented'),
+                                t('pages:noPermissionProbePostIngestionRunOnceOrdersCancellationsWithdrawalsOrTransfers'),
                             ]}
                             renderItem={(item) => (
                                 <List.Item>

@@ -1,3 +1,5 @@
+import {t} from '@/i18n';
+import {useTranslation} from 'react-i18next';
 import {Alert, Space, Tag, Typography} from 'antd';
 
 import {NqStatusTag} from '@/components/nq/NqStatusTag';
@@ -16,25 +18,24 @@ interface RuntimeGuardBannerProps {
  * Paper-to-Real fail-closed guards.
  */
 export function RuntimeGuardBanner({variant}: RuntimeGuardBannerProps) {
+    useTranslation();
     if (variant === 'paper-boundary') {
         return (
             <Alert
                 data-testid="paper-real-boundary-banner"
                 type="warning"
                 showIcon
-                message="Paper-only boundary"
+                message={t('boundary.paper')}
                 description={(
                     <Space direction="vertical" size={8} style={{display: 'flex'}}>
-                        <Typography.Text>Paper Trading is simulated.</Typography.Text>
+                        <Typography.Text>{t('boundary.simulated')}</Typography.Text>
                         <Space size={[8, 8]} wrap>
-                            <Tag color="warning">Paper order ≠ real order.</Tag>
-                            <Tag color="warning">Paper fill ≠ real fill.</Tag>
-                            <Tag color="default">Paper balance/position ≠ real account balance/position.</Tag>
-                            <Tag color="error">Paper risk pass ≠ LIVE authorization.</Tag>
+                            <Tag color="warning">{t('boundary.order')}</Tag>
+                            <Tag color="warning">{t('boundary.fill')}</Tag>
+                            <Tag color="default">{t('boundary.balance')}</Tag>
+                            <Tag color="error">{t('boundary.risk')}</Tag>
                         </Space>
-                        <Typography.Text type="secondary">
-                            Published strategy, Paper risk pass, readiness rows, and permission probe SKIPPED do not authorize LIVE trading.
-                        </Typography.Text>
+                        <Typography.Text type="secondary">{t('boundary.authority')}</Typography.Text>
                     </Space>
                 )}
             />
@@ -46,7 +47,7 @@ export function RuntimeGuardBanner({variant}: RuntimeGuardBannerProps) {
             data-testid="runtime-guarded-live-disabled-banner"
             type="warning"
             showIcon
-            message="Runtime guarded: LIVE disabled"
+            message={t('boundary.runtime')}
             description={(
                 <Space direction="vertical" size={8} style={{display: 'flex'}}>
                     <Space size={[8, 8]} wrap>
@@ -55,10 +56,10 @@ export function RuntimeGuardBanner({variant}: RuntimeGuardBannerProps) {
                         <NqStatusTag status="PERMISSION_PROBE_DISABLED / SKIPPED" tone="neutral"/>
                         <NqStatusTag status="NO_REAL" tone="danger"/>
                     </Space>
-                    <Typography.Text>LIVE disabled.</Typography.Text>
-                    <Typography.Text>Real provider not implemented.</Typography.Text>
-                    <Typography.Text>NoReal/Fake/Stub/FutureReal not live-ready.</Typography.Text>
-                    <Typography.Text>Permission probe SKIPPED / disabled is not verified.</Typography.Text>
+                    <Typography.Text>{t('boundary.live')}</Typography.Text>
+                    <Typography.Text>{t('boundary.provider')}</Typography.Text>
+                    <Typography.Text>{t('boundary.notReady')}</Typography.Text>
+                    <Typography.Text>{t('boundary.probe')}</Typography.Text>
                 </Space>
             )}
         />

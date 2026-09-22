@@ -1,3 +1,5 @@
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {EyeOutlined, ReloadOutlined} from '@ant-design/icons';
 import {Button, Card, List, Segmented, Space, Table, Tag, Tooltip, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
@@ -87,17 +89,19 @@ function countValue(value: number | null | undefined): number {
 }
 
 function BoundaryFlag({label, enabled}: { label: string; enabled: boolean }) {
+    useTranslation('pages');
     return <Tag color={enabled ? 'success' : 'error'}>{label}: {enabled ? 'true' : 'false'}</Tag>;
 }
 
 function BoundaryTags({record}: { record: ShadowRunListItemResponse }) {
+    useTranslation('pages');
     return (
         <Space size={[4, 4]} wrap>
-            <BoundaryFlag label="No order submission" enabled={record.noOrderSubmission}/>
-            <BoundaryFlag label="No credential access" enabled={record.noCredentialAccess}/>
-            <BoundaryFlag label="No private endpoint" enabled={record.noPrivateEndpoint}/>
-            <BoundaryFlag label="No ledger mutation" enabled={record.noLedgerMutation}/>
-            <BoundaryFlag label="No account mutation" enabled={record.noAccountMutation}/>
+            <BoundaryFlag label={t('pages:noOrderSubmission')} enabled={record.noOrderSubmission}/>
+            <BoundaryFlag label={t('pages:noCredentialAccess')} enabled={record.noCredentialAccess}/>
+            <BoundaryFlag label={t('pages:noPrivateEndpoint')} enabled={record.noPrivateEndpoint}/>
+            <BoundaryFlag label={t('pages:noLedgerMutation')} enabled={record.noLedgerMutation}/>
+            <BoundaryFlag label={t('pages:noAccountMutation')} enabled={record.noAccountMutation}/>
         </Space>
     );
 }
@@ -126,17 +130,18 @@ function evidenceFreshnessState(metadata: ReadModelEvidenceMetadata | null | und
 }
 
 function EvidenceMetadataSummary({metadata}: { metadata?: ReadModelEvidenceMetadata | null }) {
+    useTranslation('pages');
     const source = metadata?.source?.trim() || 'UNKNOWN_SOURCE';
     const availability = metadata?.availability?.toUpperCase() || 'UNKNOWN';
     const freshness = metadata?.freshnessStatus?.toUpperCase() || 'UNKNOWN';
     const freshnessText = freshness === 'FRESH'
-        ? '新鲜'
-        : freshness === 'STALE' ? '已过期' : '无法判断新鲜度';
+        ? t('pages:fresh')
+        : freshness === 'STALE' ? t('pages:stale') : t('pages:freshnessUnknown');
 
     return (
         <Space data-testid="shadow-run-evidence-metadata" direction="vertical" size={6} style={{display: 'flex'}}>
             <DataFreshness
-                source={`数据来源：${source}`}
+                source={t('pages:dataSourceValue1', {value1: source})}
                 state={evidenceFreshnessState(metadata)}
                 detail={metadata?.ageSeconds == null ? freshnessText : `${freshnessText}；age ${metadata.ageSeconds}s`}
             />
@@ -144,10 +149,10 @@ function EvidenceMetadataSummary({metadata}: { metadata?: ReadModelEvidenceMetad
                 <Tag color={availability === 'AVAILABLE' && freshness === 'FRESH'
                     ? 'success'
                     : availability === 'PARTIAL' || freshness === 'STALE' ? 'warning' : availability === 'UNAVAILABLE' ? 'error' : 'default'}>
-                    可用性：{availability}
+                    {t('pages:availability')}{availability}
                 </Tag>
-                <Text>新鲜度：{freshness}（{freshnessText}）</Text>
-                <Text>最近计算时间：{metadata?.lastCalculatedAt ? formatDateTime(metadata.lastCalculatedAt) : '未提供'}</Text>
+                <Text>{t('pages:freshness')}{freshness}（{freshnessText}）</Text>
+                <Text>{t('pages:lastComputed')}{metadata?.lastCalculatedAt ? formatDateTime(metadata.lastCalculatedAt) : t('pages:notProvided')}</Text>
             </Space>
         </Space>
     );
@@ -164,44 +169,45 @@ type OverviewState = {
 function enumExplanation(status: string, category: 'run' | 'comparison' | 'severity'): string {
     const normalized = status.toUpperCase();
     const runStatus: Record<string, string> = {
-        CREATED: '已创建，仅表示本地 Shadow Run 事实存在。',
-        PRECHECKING: '预检查中，仅用于本地诊断流程。',
-        READY: '诊断运行就绪，不表示交易授权。',
-        RUNNING: '本地诊断运行中，不表示后台 scheduler 或 LIVE 交易启动。',
-        STOP_REQUESTED: '停止请求已记录。',
-        STOPPED: '已停止。',
-        COMPLETED: '已完成诊断运行，不表示盈利或交易通过。',
-        BLOCKED: '已阻断，需要查看 blockers / nextSteps。',
-        FAILED: '已失败，需要查看错误和证据锚点。',
-        CANCELLED: '已取消。',
+        CREATED: t('pages:createdOnlyALocalShadowRunFactExists'),
+        PRECHECKING: t('pages:preflightInProgressForLocalDiagnosticsOnly'),
+        READY: t('pages:diagnosticRunReadyNoTradingAuthorization'),
+        RUNNING: t('pages:localDiagnosticsRunningThisDoesNotStartASchedulerOrLiveTrading'),
+        STOP_REQUESTED: t('pages:stopRequestRecorded'),
+        STOPPED: t('pages:stopped'),
+        COMPLETED: t('pages:diagnosticRunCompletedNoClaimOfProfitOrTradingApproval'),
+        BLOCKED: t('pages:blockedReviewBlockersAndNextsteps'),
+        FAILED: t('pages:failedReviewErrorsAndEvidenceAnchors'),
+        CANCELLED: t('pages:cancelled'),
     };
     const comparisonStatus: Record<string, string> = {
-        CONSISTENT: '一致，仅表示证据层对照一致。',
-        DIVERGED: '偏离，需要继续检查 divergence reasons。',
-        PARTIAL: '部分可比，不可解释为通过。',
-        NOT_COMPARABLE: '不可比，证据不足或边界不满足。',
-        FAILED: '对照失败，需要查看 report 和 traceId。',
+        CONSISTENT: t('pages:consistentAtTheEvidenceComparisonLevelOnly'),
+        DIVERGED: t('pages:divergedInspectDivergenceReasons'),
+        PARTIAL: t('pages:partiallyComparableThisDoesNotMeanPassed'),
+        NOT_COMPARABLE: t('pages:notComparableDueToInsufficientEvidenceOrUnmetBoundaries'),
+        FAILED: t('pages:comparisonFailedInspectTheReportAndTraceid'),
     };
     const severityStatus: Record<string, string> = {
-        NONE: '无偏离。',
-        LOW: '低偏离，仅用于诊断排序。',
-        MEDIUM: '中等偏离，需要复核。',
-        HIGH: '高偏离，需要优先处理。',
-        CRITICAL: '严重偏离，需要阻断后续判断。',
-        UNKNOWN: '未知，通常表示缺少 consistency report。',
+        NONE: t('pages:noDivergence'),
+        LOW: t('pages:lowDivergenceDiagnosticPrioritizationOnly'),
+        MEDIUM: t('pages:mediumDivergenceReviewRequired'),
+        HIGH: t('pages:highDivergencePrioritizeReview'),
+        CRITICAL: t('pages:criticalDivergenceBlockSubsequentConclusions'),
+        UNKNOWN: t('pages:unknownUsuallyNoConsistencyReportIsAvailable'),
     };
     const dictionary = category === 'run'
         ? runStatus
         : category === 'comparison'
             ? comparisonStatus
             : severityStatus;
-    return `${status}：${dictionary[normalized] ?? '后端原始枚举，仅用于只读诊断展示，不表示交易授权。'}`;
+    return `${status}：${dictionary[normalized] ?? t('pages:rawBackendEnumForReadOnlyDiagnosticsNoTradingAuthorization')}`;
 }
 
 function StatusWithHint({status, category}: {
     status: string | null | undefined;
     category: 'run' | 'comparison' | 'severity'
 }) {
+    useTranslation('pages');
     const text = safeText(status);
     if (text === '-') {
         return <Text type="secondary">-</Text>;
@@ -234,39 +240,40 @@ function resolveOverviewState(overview: ShadowRunOverviewResponse): OverviewStat
     if (countValue(overview.failedRuns) > 0 || latestRunStatus.includes('FAILED') || latestComparisonStatus === 'FAILED') {
         return {
             level: 'danger',
-            message: 'Overview 存在失败诊断事实',
-            description: 'failed run 或 failed consistency 只表示本地诊断失败，需要检查 traceId / evidence anchors；不代表交易授权变化。',
+            message: t('pages:overviewContainsDiagnosticFailures'),
+            description: t('pages:failedRunsOrConsistencyChecksAreLocalDiagnosticFailuresInspectTraceidAndEvidenceAnchorsTradingAuthor'),
         };
     }
     if (countValue(overview.blockedRuns) > 0 || latestRunStatus.includes('BLOCKED')) {
         return {
             level: 'warning',
-            message: 'Overview 存在 blocked run',
-            description: 'blocked 表示本地诊断链路被阻断，需要查看 blockers 和 nextSteps；不是 LIVE 放行或策略批准。',
+            message: t('pages:overviewContainsBlockedRuns'),
+            description: t('pages:blockedMeansTheLocalDiagnosticChainIsBlockedReviewBlockersAndNextstepsThisIsNotLiveOrStrategyApprova'),
         };
     }
     if (hasDivergence(overview)) {
         return {
             level: 'warning',
-            message: 'Overview 存在 divergence',
-            description: 'divergence severity 只用于诊断排序；success / danger 颜色不表示盈利、下跌或交易方向。',
+            message: t('pages:overviewContainsDivergence'),
+            description: t('pages:divergenceSeverityPrioritizesDiagnosticsOnlySuccessAndDangerColorsDoNotIndicateReturnsOrMarketDirect'),
         };
     }
     if (hasStaleEvidence(overview)) {
         return {
             level: 'warning',
-            message: 'Overview 存在 stale evidence',
-            description: 'stale evidence 表示本地证据过期或缺失，需要重新检查只读 facts；不触发 runner 或交易动作。',
+            message: t('pages:overviewContainsStaleEvidence'),
+            description: t('pages:localEvidenceIsStaleOrMissingRecheckReadOnlyFactsNoRunnerOrTradingActionIsTriggered'),
         };
     }
     return {
         level: 'info',
-        message: 'Overview 已加载',
-        description: '当前摘要仅来自 read-only endpoint；可用于运营诊断，不是 trading authorization。',
+        message: t('pages:overviewLoaded'),
+        description: t('pages:thisReadOnlySummarySupportsOperationalDiagnosticsNotTradingAuthorization'),
     };
 }
 
 function BoundaryBadge({label, tooltip, color}: { label: string; tooltip: string; color?: string }) {
+    useTranslation('pages');
     return (
         <Tooltip title={tooltip}>
             <Tag color={color}>{label}</Tag>
@@ -275,52 +282,54 @@ function BoundaryBadge({label, tooltip, color}: { label: string; tooltip: string
 }
 
 function OverviewBoundaryBadges({overview}: { overview?: ShadowRunOverviewResponse }) {
-    const pending = overview ? '' : '；overview 尚未返回时按 fail-closed 文案展示';
+    useTranslation('pages');
+    const pending = overview ? '' : t('pages:unavailableOverviewDataIsShownFailClosed');
     return (
         <Space size={[8, 8]} wrap>
             <BoundaryBadge
                 color="error"
-                label="LIVE DISABLED（LIVE 关闭）"
-                tooltip={`liveDisabled=true 只表示 LIVE 被关闭，不是交易授权${pending}`}
+                label={t('pages:liveDisabled')}
+                tooltip={t('pages:livedisabledTrueMeansLiveIsDisabledNotTradingAuthorizationValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="Real provider NOT IMPLEMENTED（真实 provider 未实现）"
-                tooltip={`realProviderImplemented=false，前端不得展示真实 provider 可用状态${pending}`}
+                label={t('pages:realProviderNotImplemented')}
+                tooltip={t('pages:realproviderimplementedFalseRealProvidersMustNotBeShownAsAvailableValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="Private trading NOT IMPLEMENTED（私有交易未实现）"
-                tooltip={`privateTradingImplemented=false，不存在真实下单、撤单、转账或提现入口${pending}`}
+                label={t('pages:privateTradingNotImplemented')}
+                tooltip={t('pages:privatetradingimplementedFalseNoRealOrdersCancellationsTransfersOrWithdrawalsValue1', {value1: pending})}
             />
             <BoundaryBadge
                 color="warning"
-                label="Shadow Run is diagnostic only（仅诊断）"
-                tooltip={`diagnosticOnly=true，仅用于本地 Shadow Run 诊断事实查看${pending}`}
+                label={t('pages:shadowRunIsDiagnosticOnly')}
+                tooltip={t('pages:diagnosticonlyTrueLocalShadowRunDiagnosticFactsOnlyValue1', {value1: pending})}
             />
             <BoundaryBadge
                 color="error"
-                label="Not trading authorization（非交易授权）"
-                tooltip={`notTradingAuthorization=true，APPROVED 或 CONSISTENT 也不能解释为交易授权${pending}`}
+                label={t('pages:notTradingAuthorization')}
+                tooltip={t('pages:nottradingauthorizationTrueApprovedOrConsistentDoNotGrantTradingAuthorizationValue1', {value1: pending})}
             />
             <BoundaryBadge
-                label="AI/DH runtime not integrated（AI/DH runtime 未集成）"
-                tooltip={`aiDhRuntimeIntegrated=false，不表示 AI started 或 DH integrated${pending}`}
+                label={t('pages:aiDhRuntimeNotIntegrated')}
+                tooltip={t('pages:aidhruntimeintegratedFalseNeitherAiStartedNorDhIntegratedValue1', {value1: pending})}
             />
         </Space>
     );
 }
 
 function OverviewMetricStrip({overview, loading}: { overview?: ShadowRunOverviewResponse; loading: boolean }) {
+    useTranslation('pages');
     return (
         <Space size={[12, 12]} wrap>
-            <NqMetricCard label="总 run 数" value={countValue(overview?.totalRuns)} loading={loading}
-                          footer="read-only local facts"/>
-            <NqMetricCard label="运行中 run 数" value={countValue(overview?.runningRuns)} loading={loading}/>
-            <NqMetricCard label="阻断 run 数" value={countValue(overview?.blockedRuns)} loading={loading}
+            <NqMetricCard label={t('pages:totalRuns')} value={countValue(overview?.totalRuns)} loading={loading}
+                          footer={t('pages:readOnlyLocalFacts')}/>
+            <NqMetricCard label={t('pages:runningRuns')} value={countValue(overview?.runningRuns)} loading={loading}/>
+            <NqMetricCard label={t('pages:blockedRuns')} value={countValue(overview?.blockedRuns)} loading={loading}
                           tone={countValue(overview?.blockedRuns) > 0 ? 'warning' : 'default'}/>
-            <NqMetricCard label="失败 run 数" value={countValue(overview?.failedRuns)} loading={loading}
+            <NqMetricCard label={t('pages:failedRuns')} value={countValue(overview?.failedRuns)} loading={loading}
                           tone={countValue(overview?.failedRuns) > 0 ? 'danger' : 'default'}/>
-            <NqMetricCard label="完成 run 数" value={countValue(overview?.completedRuns)} loading={loading}/>
-            <NqMetricCard label="stale run 数" value={countValue(overview?.staleRuns)} loading={loading}
+            <NqMetricCard label={t('pages:completedRuns')} value={countValue(overview?.completedRuns)} loading={loading}/>
+            <NqMetricCard label={t('pages:staleRuns')} value={countValue(overview?.staleRuns)} loading={loading}
                           tone={countValue(overview?.staleRuns) > 0 ? 'warning' : 'default'}/>
         </Space>
     );
@@ -331,6 +340,7 @@ function OverviewMessageList({title, items, emptyText}: {
     items: OverviewMessage[];
     emptyText: string
 }) {
+    useTranslation('pages');
     if (items.length === 0) {
         return (
             <Space direction="vertical" size={4}>
@@ -359,23 +369,24 @@ function OverviewMessageList({title, items, emptyText}: {
                     </List.Item>
                 )}
             />
-            {items.length > 4 ? <Text type="secondary">另有 {items.length - 4} 条，仅保留摘要显示。</Text> : null}
+            {items.length > 4 ? <Text type="secondary">{t('pages:additional')}{items.length - 4} {t('pages:itemsSummaryViewOnly')}</Text> : null}
         </section>
     );
 }
 
 function OverviewNextSteps({items}: { items: ShadowRunOverviewNextStep[] }) {
+    useTranslation('pages');
     if (items.length === 0) {
         return (
             <Space direction="vertical" size={4}>
-                <Text strong>Next steps</Text>
-                <Text type="secondary">暂无 nextSteps；不能解释为已允许交易。</Text>
+                <Text strong>{t('pages:nextSteps')}</Text>
+                <Text type="secondary">{t('pages:noNextstepsThisDoesNotPermitTrading')}</Text>
             </Space>
         );
     }
     return (
-        <section aria-label="Shadow Run overview next steps">
-            <Text strong>Next steps</Text>
+        <section aria-label={t('pages:shadowRunOverviewNextSteps')}>
+            <Text strong>{t('pages:nextSteps')}</Text>
             <List
                 size="small"
                 dataSource={items.slice(0, 4)}
@@ -395,12 +406,13 @@ function OverviewNextSteps({items}: { items: ShadowRunOverviewNextStep[] }) {
                     </List.Item>
                 )}
             />
-            {items.length > 4 ? <Text type="secondary">另有 {items.length - 4} 条，仅保留摘要显示。</Text> : null}
+            {items.length > 4 ? <Text type="secondary">{t('pages:additional')}{items.length - 4} {t('pages:itemsSummaryViewOnly')}</Text> : null}
         </section>
     );
 }
 
 function OverviewEvidenceSummary({overview}: { overview: ShadowRunOverviewResponse }) {
+    useTranslation('pages');
     const anchors = overview.evidenceAnchors.slice(0, 4);
     return (
         <Space direction="vertical" size={8} style={{display: 'flex'}}>
@@ -409,7 +421,7 @@ function OverviewEvidenceSummary({overview}: { overview: ShadowRunOverviewRespon
                 <Text>traceId: {codeText(overview.traceId)}</Text>
             </Space>
             {anchors.length === 0 ? (
-                <Text type="secondary">暂无 evidence anchors；不能补造证据。</Text>
+                <Text type="secondary">{t('pages:noEvidenceAnchorsEvidenceMustNotBeFabricated')}</Text>
             ) : (
                 <List<ShadowRunOverviewEvidenceAnchor>
                     size="small"
@@ -428,7 +440,7 @@ function OverviewEvidenceSummary({overview}: { overview: ShadowRunOverviewRespon
                 />
             )}
             {overview.evidenceAnchors.length > 4
-                ? <Text type="secondary">另有 {overview.evidenceAnchors.length - 4} 个 evidence anchors。</Text>
+                ? <Text type="secondary">{t('pages:additional')}{overview.evidenceAnchors.length - 4} {t('pages:evidenceAnchors')}</Text>
                 : null}
         </Space>
     );
@@ -449,6 +461,7 @@ function ShadowRunOverviewSummary({
     error: unknown;
     onRetry: () => void;
 }) {
+    useTranslation('pages');
     const empty = overview ? overviewEmpty(overview) : false;
     const overviewState = overview ? resolveOverviewState(overview) : null;
 
@@ -456,34 +469,32 @@ function ShadowRunOverviewSummary({
         <Card
             className="page-section"
             variant="borderless"
-            title="Overview Summary"
+            title={t('pages:overviewSummary')}
             extra={(
                 <Button icon={<ReloadOutlined/>} loading={isFetching} onClick={onRetry}>
-                    刷新 overview
-                </Button>
+                    {t('pages:refreshOverview')}</Button>
             )}
         >
             <Space direction="vertical" size={14} style={{display: 'flex'}}>
                 <Text type="secondary">
-                    只读消费 GET /api/shadow-runs/overview；用于 Shadow Run 运营诊断，不新增 route、Dashboard v2 或写侧动作。
-                </Text>
+                    {t('pages:readOnlyGetApiShadowRunsOverviewForShadowRunDiagnosticsWithoutNewRoutesDashboardV2OrWriteActions')}</Text>
                 <OverviewBoundaryBadges overview={overview}/>
                 <EvidenceMetadataSummary metadata={overview?.evidenceMetadata}/>
                 <OverviewMetricStrip overview={overview} loading={isLoading}/>
 
                 {isLoading ? (
-                    <NqLoadingState message="Shadow Run overview loading"/>
+                    <NqLoadingState message={t('pages:loadingShadowRunOverview')}/>
                 ) : isError ? (
                     <NqErrorState
-                        title="Shadow Run overview 加载失败"
+                        title={t('pages:failedToLoadShadowRunOverview')}
                         error={asAppApiError(error)}
-                        description="overview 失败时不回退成空数据，也不展示任何可交易结论。"
+                        description={t('pages:aFailedOverviewIsNotShownAsEmptyDataOrATradableState')}
                         onRetry={onRetry}
                     />
                 ) : !overview ? (
-                    <NqEmptyState description="暂无 Shadow Run overview 响应；固定安全边界仍按 fail-closed 展示。"/>
+                    <NqEmptyState description={t('pages:noShadowRunOverviewResponseFixedSafetyBoundariesRemainFailClosed')}/>
                 ) : empty ? (
-                    <NqEmptyState description="暂无 Shadow Run 运行数据；Overview 仅显示 0 计数与固定安全边界。"/>
+                    <NqEmptyState description={t('pages:noShadowRunsTheOverviewShowsZeroCountsAndFixedSafetyBoundariesOnly')}/>
                 ) : (
                     <>
                         {overviewState ? (
@@ -497,7 +508,7 @@ function ShadowRunOverviewSummary({
                             <NqMetricCard
                                 label="latestRun.status"
                                 value={<StatusWithHint status={overview.latestRun?.status} category="run"/>}
-                                footer={overview.latestRun ? codeText(overview.latestRun.shadowRunId) : 'no latest run'}
+                                footer={overview.latestRun ? codeText(overview.latestRun.shadowRunId) : t('pages:noLatestRun')}
                             />
                             <NqMetricCard
                                 label="latestConsistency"
@@ -507,24 +518,24 @@ function ShadowRunOverviewSummary({
                                         category="comparison"
                                     />
                                 )}
-                                footer={overview.latestConsistency ? codeText(overview.latestConsistency.reportId) : 'no report'}
+                                footer={overview.latestConsistency ? codeText(overview.latestConsistency.reportId) : t('pages:noReport')}
                             />
                             <NqMetricCard
                                 label="divergenceSeverity"
                                 value={<StatusWithHint status={overview.divergenceSeverity} category="severity"/>}
-                                footer="diagnostic severity only"
+                                footer={t('pages:diagnosticSeverityOnly')}
                             />
                         </Space>
                         <Space direction="vertical" size={12} style={{display: 'flex'}}>
                             <OverviewMessageList
-                                title="Blockers"
+                                title={t('pages:blockers2')}
                                 items={overview.blockers}
-                                emptyText="暂无 blockers；不能解释为交易放行。"
+                                emptyText={t('pages:noBlockersThisDoesNotAuthorizeTrading')}
                             />
                             <OverviewMessageList
-                                title="Warnings"
+                                title={t('pages:warnings3')}
                                 items={overview.warnings}
-                                emptyText="暂无 warnings；仍需遵守固定安全边界。"
+                                emptyText={t('pages:noWarningsFixedSafetyBoundariesStillApply')}
                             />
                             <OverviewNextSteps items={overview.nextSteps}/>
                             <OverviewEvidenceSummary overview={overview}/>
@@ -545,6 +556,7 @@ function ShadowRunOverviewSummary({
  * 不触发 runner、scheduler、credential、private endpoint 或真实交易。
  */
 export function ShadowRunListPage() {
+    const {i18n: pageI18n} = useTranslation('pages');
     const navigate = useNavigate();
     const [statusFilter, setStatusFilter] = useState<string>('ALL');
     const queryParams = useMemo<ShadowRunListRequest>(() => ({
@@ -619,7 +631,7 @@ export function ShadowRunListPage() {
             ),
         },
         {
-            title: 'no-side-effect flags',
+            title: t('pages:noSideEffectFlags'),
             key: 'flags',
             width: 360,
             render: (_, record) => <BoundaryTags record={record}/>,
@@ -638,24 +650,22 @@ export function ShadowRunListPage() {
                         navigate(`/strategies/shadow-runs/${record.id}`);
                     }}
                 >
-                    查看 detail
-                </Button>
+                    {t('pages:viewDetails2')}</Button>
             ),
         },
-    ], [navigate]);
+    ], [navigate, pageI18n.resolvedLanguage]);
 
     return (
         <Space data-testid="shadow-run-list-page" direction="vertical" size={16} style={{display: 'flex'}}>
             <Card className="page-card" variant="borderless">
                 <NqPageHeader
-                    title="Shadow Run 列表"
-                    description="只读查看本地 Shadow Run diagnostic facts，并从列表进入 detail / replay 页面。"
-                    badge="影子运行 · 只读列表"
+                    title={t('pages:shadowRuns')}
+                    description={t('pages:viewLocalShadowDiagnosticsInReadOnlyModeAndOpenDetailsOrReplayFromTheList')}
+                    badge={t('pages:shadowRunsReadOnlyList')}
                     extra={(
                         <Button icon={<ReloadOutlined/>} loading={listQuery.isFetching}
                                 onClick={() => listQuery.refetch()}>
-                            刷新只读列表
-                        </Button>
+                            {t('pages:refreshReadOnlyList')}</Button>
                     )}
                 />
             </Card>
@@ -671,21 +681,21 @@ export function ShadowRunListPage() {
 
             <NqRiskBanner
                 level="warning"
-                message="Diagnostic only / No trading authorization"
-                description="Shadow Run list 只展示本地诊断事实；不启动 runner，不提交订单，不读取 credential，不调用 private endpoint，不修改 account / ledger / order。"
+                message={t('pages:diagnosticsOnlyNoTradingAuthorization')}
+                description={t('pages:thisListShowsLocalDiagnosticsOnlyItDoesNotStartRunnersSubmitOrdersReadCredentialsCallPrivateEndpoint')}
             />
 
             <Space size={[12, 12]} wrap>
-                <NqMetricCard label="查询窗口" value={`${rows.length} / ${listQuery.data?.total ?? 0}`}
-                              footer="bounded local facts"/>
+                <NqMetricCard label={t('pages:queryWindow')} value={`${rows.length} / ${listQuery.data?.total ?? 0}`}
+                              footer={t('pages:boundedLocalFacts')}/>
                 <NqMetricCard label="LIVE" value={<NqStatusTag status="DISABLED" tone="danger"/>}/>
                 <NqMetricCard label="AI" value={<NqStatusTag status="NOT STARTED" tone="neutral"/>}/>
-                <NqMetricCard label="DH runtime" value={<NqStatusTag status="NOT INTEGRATED" tone="neutral"/>}/>
+                <NqMetricCard label={t('pages:dhRuntime')} value={<NqStatusTag status="NOT INTEGRATED" tone="neutral"/>}/>
             </Space>
 
-            <Card className="page-section" variant="borderless" title="筛选">
+            <Card className="page-section" variant="borderless" title={t('pages:filter')}>
                 <Space direction="vertical" size={8} style={{display: 'flex'}}>
-                    <Text type="secondary">status 筛选只影响 GET /api/shadow-runs 查询，不触发任何写侧动作。</Text>
+                    <Text type="secondary">{t('pages:theStatusFilterAffectsGetApiShadowRunsOnlyAndTriggersNoWrites')}</Text>
                     <div data-testid="shadow-run-status-filter">
                         <Segmented
                             block
@@ -699,22 +709,22 @@ export function ShadowRunListPage() {
 
             {listQuery.isLoading ? (
                 <Card className="page-section" variant="borderless">
-                    <NqLoadingState message="Shadow Run list loading"/>
+                    <NqLoadingState message={t('pages:loadingShadowRuns')}/>
                 </Card>
             ) : listQuery.isError ? (
                 <Card className="page-section" variant="borderless">
                     <NqErrorState
-                        title="Shadow Run list 加载失败"
+                        title={t('pages:failedToLoadShadowRuns')}
                         error={asAppApiError(listQuery.error)}
                         onRetry={() => listQuery.refetch()}
                     />
                 </Card>
             ) : rows.length === 0 ? (
                 <Card className="page-section" variant="borderless">
-                    <NqEmptyState description="暂无 Shadow Run 列表数据；不能补造本地 facts 或解释为交易阻断已解除。"/>
+                    <NqEmptyState description={t('pages:noShadowRunListDataLocalFactsMustNotBeFabricatedOrInterpretedAsRemovalOfTradingBlocks')}/>
                 </Card>
             ) : (
-                <Card className="page-section" variant="borderless" title="Shadow Run facts">
+                <Card className="page-section" variant="borderless" title={t('pages:shadowRunFacts')}>
                     <Table<ShadowRunListItemResponse>
                         size="small"
                         rowKey="id"

@@ -1,6 +1,8 @@
 // DataFreshness.tsx — 数据源新鲜度与"看不见什么"(B0 / Design Tokens v2)
 // 灵感来自 World Monitor 的 intelligence gap:数据源断了不能静默隐藏,要显式标状态。
 
+import {useTranslation} from 'react-i18next';
+
 export type FreshnessState =
   | 'fresh' | 'stale' | 'very_stale' | 'delayed' | 'degraded' | 'no_data' | 'error' | 'disabled';
 
@@ -26,7 +28,8 @@ export interface DataFreshnessProps {
 }
 
 export function DataFreshness({ source, state, detail, inline = false }: DataFreshnessProps) {
-  const s = STATE[state];
+  const {t} = useTranslation();
+  const s = {...STATE[state], label: t(`freshness.${state}`)};
   return (
     <span
       title={`${source}: ${s.label}${detail ? ` (${detail})` : ''}`}

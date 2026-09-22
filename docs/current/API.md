@@ -1,5 +1,7 @@
 # Current API
 
+统一错误协议继续使用 `ApiErrorResponse`，保留 `timestamp/status/error/code/message/path/traceId/fieldErrors`，为已登记错误增加可省略的 `errorKey/errorId`。订单准备阶段 CAS 冲突保持 HTTP 409 / `code=STATE_CONFLICT`，附加 `errorKey=ORDER_VERSION_CONFLICT` / `errorId=NQ-TRD-1001`；其他旧错误 code 与未编号 JSON 形状保持原有契约。机器身份与本地化 UX 分离，字段原始诊断保留；完整兼容说明、真实调用路径和目录 ownership 见[错误目录](../error-catalog/README.md)。
+
 当前 API 文档以代码实际 controller 为准。本文记录当前 API 分类和已完成 GateH API 事实；GateI-PLAN 只新增规划入口，不实现接口。
 
 ## API 分类

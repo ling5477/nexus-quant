@@ -1,10 +1,13 @@
+import {useLocalizedForm} from '@/i18n/useLocalizedForm';
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {App, Alert, Button, Card, Descriptions, Drawer, Empty, Form, Input, Select, Space, Table, Tag, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 
 import {accountsApi} from '@/api/accounts';
-import {formatApiError} from '@/api/errors';
+import {formatApiError, showApiError} from '@/api/errors';
 import {accountQueryKeys, authQueryKeys} from '@/api/query-keys';
 import {PageHero} from '@/components/page/PageHero';
 import {useAuthStore} from '@/store/auth-store';
@@ -33,13 +36,14 @@ interface CredentialFormValues {
 }
 
 export function AccountsPage() {
+    useTranslation('pages');
     const {message} = App.useApp();
     const queryClient = useQueryClient();
     const accessToken = useAuthStore((state) => state.accessToken);
     const currentUser = useAuthStore((state) => state.currentUser);
     const selectedExchangeAccountId = useAccountContextStore((state) => state.selectedExchangeAccountId);
-    const [accountForm] = Form.useForm<AccountFormValues>();
-    const [credentialForm] = Form.useForm<CredentialFormValues>();
+    const [accountForm] = useLocalizedForm<AccountFormValues>();
+    const [credentialForm] = useLocalizedForm<CredentialFormValues>();
     const [accountDrawerMode, setAccountDrawerMode] = useState<'create' | 'edit' | null>(null);
     const [editingAccountId, setEditingAccountId] = useState<number | null>(null);
     const [credentialAccount, setCredentialAccount] = useState<ExchangeAccountSummary | null>(null);
@@ -74,66 +78,66 @@ export function AccountsPage() {
     const createAccountMutation = useMutation({
         mutationFn: accountsApi.create,
         onSuccess: async () => {
-            message.success('账户已创建');
+            message.success(t('pages:accountCreated'));
             setAccountDrawerMode(null);
             await invalidateAccounts();
         },
-        onError: (error) => message.error(formatApiError(error as AppApiError)),
+        onError: (error) => showApiError(error as AppApiError, message),
     });
 
     const updateAccountMutation = useMutation({
         mutationFn: ({accountId, payload}: { accountId: number; payload: { accountAlias: string; externalAccountRef?: string | null } }) => accountsApi.update(accountId, payload),
         onSuccess: async (_, variables) => {
-            message.success('账户已更新');
+            message.success(t('pages:accountUpdated'));
             setAccountDrawerMode(null);
             await invalidateAccounts(variables.accountId);
         },
-        onError: (error) => message.error(formatApiError(error as AppApiError)),
+        onError: (error) => showApiError(error as AppApiError, message),
     });
 
     const enableMutation = useMutation({
         mutationFn: accountsApi.enable,
         onSuccess: async (result) => {
-            message.success('账户已启用');
+            message.success(t('pages:accountEnabled'));
             await invalidateAccounts(result.exchangeAccountId);
         },
-        onError: (error) => message.error(formatApiError(error as AppApiError)),
+        onError: (error) => showApiError(error as AppApiError, message),
     });
 
     const disableMutation = useMutation({
         mutationFn: accountsApi.disable,
         onSuccess: async (result) => {
-            message.success('账户已停用');
+            message.success(t('pages:accountDisabled'));
             await invalidateAccounts(result.exchangeAccountId);
         },
-        onError: (error) => message.error(formatApiError(error as AppApiError)),
+        onError: (error) => showApiError(error as AppApiError, message),
     });
 
     const setDefaultMutation = useMutation({
         mutationFn: accountsApi.setDefault,
         onSuccess: async (result) => {
-            message.success('默认账户已更新');
+            message.success(t('pages:defaultAccountUpdated'));
             await invalidateAccounts(result.exchangeAccountId);
         },
-        onError: (error) => message.error(formatApiError(error as AppApiError)),
+        onError: (error) => showApiError(error as AppApiError, message),
     });
 
     const upsertCredentialMutation = useMutation({
         mutationFn: ({accountId, payload}: { accountId: number; payload: ExchangeAccountCredentialUpsertRequest }) => accountsApi.upsertCredential(accountId, payload),
         onSuccess: async (_, variables) => {
-            message.success('凭证已写入，当前状态为待校验');
+            message.success(t('pages:credentialsSavedAndAwaitingValidation'));
             await invalidateAccounts(variables.accountId);
         },
-        onError: (error) => message.error(formatApiError(error as AppApiError)),
+        onError: (error) => showApiError(error as AppApiError, message),
     });
 
     const verifyCredentialMutation = useMutation({
         mutationFn: accountsApi.verifyCredential,
         onSuccess: async (result) => {
-            message.success('测试连接（结构性校验）已完成');
+            message.success(t('pages:connectionTestStructuralValidationCompleted'));
             await invalidateAccounts(result.exchangeAccountId);
         },
-        onError: (error) => message.error(formatApiError(error as AppApiError)),
+        onError: (error) => showApiError(error as AppApiError, message),
     });
 
     useEffect(() => {
@@ -177,53 +181,53 @@ export function AccountsPage() {
 
     const columns: ColumnsType<ExchangeAccountSummary> = [
         {
-            title: 'Account ID',
+            title: t('pages:accountId'),
             dataIndex: 'exchangeAccountId',
             key: 'exchangeAccountId',
             width: 120,
         },
         {
-            title: '交易所',
+            title: t('pages:exchange'),
             dataIndex: 'exchangeCode',
             key: 'exchangeCode',
             width: 120,
         },
         {
-            title: '环境',
+            title: t('pages:environment'),
             dataIndex: 'tradeEnv',
             key: 'tradeEnv',
             width: 100,
             render: (value: string) => <Tag color={value === 'LIVE' ? 'red' : 'blue'}>{value}</Tag>,
         },
         {
-            title: '账户别名',
+            title: t('pages:accountAlias'),
             dataIndex: 'accountAlias',
             key: 'accountAlias',
             width: 180,
         },
         {
-            title: '兼容 legacyAccountId',
+            title: t('pages:compatibleLegacyaccountid'),
             dataIndex: 'legacyAccountId',
             key: 'legacyAccountId',
             width: 160,
             render: (value: number | null) => value ?? '-',
         },
         {
-            title: '默认账户',
+            title: t('pages:defaultAccount'),
             dataIndex: 'isDefault',
             key: 'isDefault',
             width: 120,
-            render: (value: boolean) => value ? <Tag color="success">默认</Tag> : '-',
+            render: (value: boolean) => value ? <Tag color="success">{t('pages:default')}</Tag> : '-',
         },
         {
-            title: '状态',
+            title: t('pages:status'),
             dataIndex: 'status',
             key: 'status',
             width: 120,
             render: (value: string) => <Tag color={value === 'ACTIVE' ? 'blue' : 'default'}>{value}</Tag>,
         },
         {
-            title: '操作',
+            title: t('pages:actions'),
             key: 'action',
             width: 320,
             render: (_, record) => (
@@ -232,22 +236,17 @@ export function AccountsPage() {
                         setEditingAccountId(record.exchangeAccountId);
                         setAccountDrawerMode('edit');
                     }}>
-                        编辑
-                    </Button>
+                        {t('pages:edit')}</Button>
                     <Button type="link" onClick={() => setCredentialAccount(record)}>
-                        凭证
-                    </Button>
+                        {t('pages:credentials')}</Button>
                     <Button type="link" disabled={record.isDefault || record.status !== 'ACTIVE'} onClick={() => setDefaultMutation.mutate(record.exchangeAccountId)}>
-                        设为默认
-                    </Button>
+                        {t('pages:setAsDefault')}</Button>
                     {record.status === 'ACTIVE' ? (
                         <Button type="link" danger onClick={() => disableMutation.mutate(record.exchangeAccountId)}>
-                            停用
-                        </Button>
+                            {t('pages:disable')}</Button>
                     ) : (
                         <Button type="link" onClick={() => enableMutation.mutate(record.exchangeAccountId)}>
-                            启用
-                        </Button>
+                            {t('pages:enable')}</Button>
                     )}
                 </Space>
             ),
@@ -256,37 +255,37 @@ export function AccountsPage() {
 
     const currentContextLabel = currentUser?.defaultExchangeAccountId
         ? `${currentUser.defaultExchangeCode} / ${currentUser.defaultTradeEnv} / ${currentUser.defaultAccountAlias}（exchangeAccountId=${currentUser.defaultExchangeAccountId}）`
-        : '当前没有默认账户上下文';
+        : t('pages:noDefaultAccountContext');
 
     return (
         <Space direction="vertical" size={16} style={{display: 'flex'}}>
             <Card className="page-card" bordered={false} extra={<Button type="primary" onClick={() => {
                 setEditingAccountId(null);
                 setAccountDrawerMode('create');
-            }}>新建账户</Button>}>
+            }}>{t('pages:createAccount')}</Button>}>
                 <PageHero
-                    title="账户与凭证管理"
-                    description="补齐账户创建、默认账户切换、凭证轮换与结构性校验的最小写侧闭环。"
+                    title={t('pages:accountsAndCredentials')}
+                    description={t('pages:createAccountsSelectADefaultAccountRotateCredentialsAndValidateTheirStructure')}
                     badge="RC1-4"
                 />
             </Card>
-            <Card className="page-section" bordered={false} title="当前上下文">
+            <Card className="page-section" bordered={false} title={t('pages:currentContext')}>
                 {currentUser?.defaultExchangeAccountId ? (
                     <Space direction="vertical" size={4}>
-                        <Typography.Text>当前默认账户上下文：{currentContextLabel}</Typography.Text>
-                        <Typography.Text type="secondary">account-context-store 当前选中：{selectedExchangeAccountId ?? '未同步'}</Typography.Text>
+                        <Typography.Text>{t('pages:currentDefaultAccountContext')}{currentContextLabel}</Typography.Text>
+                        <Typography.Text type="secondary">{t('pages:currentAccountContextStoreSelection')}{selectedExchangeAccountId ?? t('pages:notSynchronized')}</Typography.Text>
                     </Space>
                 ) : (
-                    <Alert type="info" showIcon message="当前未设置默认账户；设为默认账户后 header 与交易工作台会跟随后端真源刷新。"/>
+                    <Alert type="info" showIcon message={t('pages:noDefaultAccountIsSetSelectingOneRefreshesTheHeaderAndTradingWorkbenchFromTheBackendSourceOfTruth')}/>
                 )}
             </Card>
-            <Card className="page-section" bordered={false} title="账户列表">
+            <Card className="page-section" bordered={false} title={t('pages:accounts')}>
                 {accountsQuery.isLoading ? (
-                    <Alert type="info" showIcon message="正在加载账户列表..."/>
+                    <Alert type="info" showIcon message={t('pages:loadingAccounts')}/>
                 ) : accountsQuery.error ? (
-                    <Alert type="error" showIcon message="账户列表加载失败" description={formatApiError(accountsQuery.error as AppApiError)}/>
+                    <Alert type="error" showIcon message={t('pages:failedToLoadAccounts')} description={formatApiError(accountsQuery.error as AppApiError)}/>
                 ) : (accountsQuery.data?.length ?? 0) === 0 ? (
-                    <Empty description="当前用户尚未绑定任何 exchange account。"/>
+                    <Empty description={t('pages:noExchangeAccountIsLinkedToTheCurrentUser')}/>
                 ) : (
                     <Table
                         rowKey="exchangeAccountId"
@@ -300,7 +299,7 @@ export function AccountsPage() {
             <Drawer
                 open={accountDrawerMode !== null}
                 width={560}
-                title={accountDrawerMode === 'create' ? '新建账户' : '编辑账户'}
+                title={accountDrawerMode === 'create' ? t('pages:createAccount') : t('pages:editAccount')}
                 onClose={() => setAccountDrawerMode(null)}
                 destroyOnClose
             >
@@ -328,23 +327,22 @@ export function AccountsPage() {
                         }
                     }}
                 >
-                    <Form.Item label="交易所" name="exchangeCode" rules={[{required: true, message: '请选择交易所'}]}>
+                    <Form.Item label={t('pages:exchange')} name="exchangeCode" rules={[{required: true, message: t('pages:selectAnExchange')}]}>
                         <Select disabled={accountDrawerMode === 'edit'} options={[{label: 'OKX', value: 'OKX'}, {label: 'BINANCE', value: 'BINANCE'}]}/>
                     </Form.Item>
-                    <Form.Item label="环境" name="tradeEnv" rules={[{required: true, message: '请选择环境'}]}>
+                    <Form.Item label={t('pages:environment')} name="tradeEnv" rules={[{required: true, message: t('pages:selectAnEnvironment')}]}>
                         <Select disabled={accountDrawerMode === 'edit'} options={[{label: 'SIM', value: 'SIM'}, {label: 'LIVE', value: 'LIVE'}]}/>
                     </Form.Item>
-                    <Form.Item label="账户别名" name="accountAlias" rules={[{required: true, message: '请输入账户别名'}]}>
+                    <Form.Item label={t('pages:accountAlias')} name="accountAlias" rules={[{required: true, message: t('pages:enterAnAccountAlias')}]}>
                         <Input />
                     </Form.Item>
-                    <Form.Item label="外部账户引用" name="externalAccountRef">
-                        <Input placeholder="可空" />
+                    <Form.Item label={t('pages:externalAccountReference')} name="externalAccountRef">
+                        <Input placeholder={t('pages:optional')} />
                     </Form.Item>
                     <Space>
                         <Button type="primary" htmlType="submit" loading={createAccountMutation.isPending || updateAccountMutation.isPending}>
-                            保存
-                        </Button>
-                        <Button onClick={() => setAccountDrawerMode(null)}>取消</Button>
+                            {t('pages:save')}</Button>
+                        <Button onClick={() => setAccountDrawerMode(null)}>{t('pages:cancel')}</Button>
                     </Space>
                 </Form>
             </Drawer>
@@ -352,22 +350,22 @@ export function AccountsPage() {
             <Drawer
                 open={credentialAccount !== null}
                 width={620}
-                title={credentialAccount ? `凭证管理：${credentialAccount.accountAlias}` : '凭证管理'}
+                title={credentialAccount ? t('pages:credentialsForAccount', {account: credentialAccount.accountAlias}) : t('pages:manageCredentials')}
                 onClose={() => setCredentialAccount(null)}
                 destroyOnClose
             >
                 {credentialAccount && (
                     <Space direction="vertical" size={16} style={{display: 'flex'}}>
-                        <Descriptions bordered size="small" column={1} title="当前 active 凭证">
-                            <Descriptions.Item label="账户">{credentialAccount.exchangeCode} / {credentialAccount.tradeEnv} / {credentialAccount.accountAlias}</Descriptions.Item>
-                            <Descriptions.Item label="当前摘要">
-                                {activeCredentialQuery.isLoading ? '正在加载...' : activeCredentialQuery.data?.activeCredential ? `${activeCredentialQuery.data.activeCredential.credentialType} / ${activeCredentialQuery.data.activeCredential.maskedAccessKey}` : '当前无 active 凭证'}
+                        <Descriptions bordered size="small" column={1} title={t('pages:currentActiveCredentials')}>
+                            <Descriptions.Item label={t('pages:account')}>{credentialAccount.exchangeCode} / {credentialAccount.tradeEnv} / {credentialAccount.accountAlias}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:currentSummary')}>
+                                {activeCredentialQuery.isLoading ? t('pages:loading') : activeCredentialQuery.data?.activeCredential ? `${activeCredentialQuery.data.activeCredential.credentialType} / ${activeCredentialQuery.data.activeCredential.maskedAccessKey}` : t('pages:noActiveCredentials')}
                             </Descriptions.Item>
-                            <Descriptions.Item label="校验状态">
-                                {activeCredentialQuery.data?.activeCredential ? renderVerificationStatus(activeCredentialQuery.data.activeCredential) : '未配置'}
+                            <Descriptions.Item label={t('pages:validationStatus')}>
+                                {activeCredentialQuery.data?.activeCredential ? renderVerificationStatus(activeCredentialQuery.data.activeCredential) : t('pages:notConfigured')}
                             </Descriptions.Item>
-                            <Descriptions.Item label="最近校验结果">
-                                {activeCredentialQuery.data?.activeCredential?.lastVerificationError ?? '无'}
+                            <Descriptions.Item label={t('pages:latestValidationResult')}>
+                                {activeCredentialQuery.data?.activeCredential?.lastVerificationError ?? t('pages:none')}
                             </Descriptions.Item>
                         </Descriptions>
                         <Form
@@ -386,38 +384,36 @@ export function AccountsPage() {
                                 });
                             }}
                         >
-                            <Form.Item label="凭证类型" name="credentialType" rules={[{required: true, message: '请选择凭证类型'}]}>
+                            <Form.Item label={t('pages:credentialType')} name="credentialType" rules={[{required: true, message: t('pages:selectACredentialType')}]}>
                                 <Select options={credentialTypeOptions(credentialAccount.exchangeCode)} />
                             </Form.Item>
-                            <Form.Item label="API Key" name="apiKey" rules={[{required: true, message: '请输入 API Key'}]}>
+                            <Form.Item label={t('pages:apiKey')} name="apiKey" rules={[{required: true, message: t('pages:enterAnApiKey')}]}>
                                 <Input />
                             </Form.Item>
                             {(credentialType === 'OKX_API_V5' || credentialType === 'BINANCE_HMAC') ? (
-                                <Form.Item label="Secret Key" name="secretKey" rules={[{required: true, message: '请输入 Secret Key'}]}>
+                                <Form.Item label={t('pages:secretKey')} name="secretKey" rules={[{required: true, message: t('pages:enterASecretKey')}]}>
                                     <Input.Password />
                                 </Form.Item>
                             ) : null}
                             {credentialType === 'OKX_API_V5' ? (
-                                <Form.Item label="Passphrase" name="passphrase" rules={[{required: true, message: '请输入 Passphrase'}]}>
+                                <Form.Item label={t('pages:passphrase')} name="passphrase" rules={[{required: true, message: t('pages:enterAPassphrase')}]}>
                                     <Input.Password />
                                 </Form.Item>
                             ) : null}
                             {credentialType === 'BINANCE_ED25519' ? (
-                                <Form.Item label="Private Key PEM" name="privateKeyPem" rules={[{required: true, message: '请输入 Private Key PEM'}]}>
+                                <Form.Item label={t('pages:privateKeyPem')} name="privateKeyPem" rules={[{required: true, message: t('pages:enterThePrivateKeyPem')}]}>
                                     <Input.TextArea rows={6} />
                                 </Form.Item>
                             ) : null}
                             <Space>
                                 <Button type="primary" htmlType="submit" loading={upsertCredentialMutation.isPending}>
-                                    保存凭证
-                                </Button>
+                                    {t('pages:saveCredentials')}</Button>
                                 <Button
                                     onClick={() => verifyCredentialMutation.mutate(credentialAccount.exchangeAccountId)}
                                     loading={verifyCredentialMutation.isPending}
                                     disabled={!activeCredentialQuery.data?.activeCredential}
                                 >
-                                    测试连接（结构性校验）
-                                </Button>
+                                    {t('pages:testConnectionStructuralValidation')}</Button>
                             </Space>
                         </Form>
                     </Space>
@@ -450,11 +446,11 @@ function renderVerificationStatus(activeCredential: ExchangeAccountCredentialSum
                 ? 'default'
                 : 'processing';
     const label = activeCredential.verificationStatus === 'VERIFIED'
-        ? '已校验'
+        ? t('pages:validated')
         : activeCredential.verificationStatus === 'FAILED'
-            ? '校验失败'
+            ? t('pages:validationFailed')
             : activeCredential.verificationStatus === 'REVOKED'
-                ? '已失效'
-                : '待校验';
+                ? t('pages:expired')
+                : t('pages:awaitingValidation');
     return <Tag color={color}>{label}</Tag>;
 }

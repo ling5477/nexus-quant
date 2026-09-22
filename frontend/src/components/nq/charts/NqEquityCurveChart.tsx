@@ -1,3 +1,5 @@
+import {t} from '@/i18n';
+import {useTranslation} from 'react-i18next';
 import {useMemo} from 'react';
 
 import {useEChart} from '@/components/nq/charts/useEChart';
@@ -21,6 +23,7 @@ interface NqEquityCurveChartProps {
 }
 
 export function NqEquityCurveChart({data, height = 260}: NqEquityCurveChartProps) {
+    const {i18n} = useTranslation();
     const option = useMemo(() => {
         if (data.length === 0) {
             return null;
@@ -49,7 +52,7 @@ export function NqEquityCurveChart({data, height = 260}: NqEquityCurveChartProps
             },
             series: [
                 {
-                    name: '总权益',
+                    name: t('chart.equity'),
                     type: 'line',
                     showSymbol: false,
                     data: sorted.map((item) => Number(item.totalEquity)),
@@ -58,7 +61,7 @@ export function NqEquityCurveChart({data, height = 260}: NqEquityCurveChartProps
                     areaStyle: {color: nqColor.primary, opacity: 0.08},
                 },
                 {
-                    name: '持仓市值',
+                    name: t('chart.position'),
                     type: 'line',
                     showSymbol: false,
                     data: sorted.map((item) => Number(item.positionValue)),
@@ -67,7 +70,7 @@ export function NqEquityCurveChart({data, height = 260}: NqEquityCurveChartProps
                 },
             ],
         };
-    }, [data]);
+    }, [data, i18n.resolvedLanguage]);
 
     const containerRef = useEChart(option);
 

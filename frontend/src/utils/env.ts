@@ -1,3 +1,4 @@
+import {t} from '@/i18n';
 export interface AppEnv {
     appTitle: string;
     envLabel: string;
@@ -11,7 +12,7 @@ export interface AppEnv {
  * production/freeze 构建不能把本地环境标识当作默认可见文案，否则未注入 env 时会把阶段信息带进验收包。
  */
 export const appEnv: AppEnv = {
-    appTitle: import.meta.env.VITE_APP_TITLE?.trim() || 'NexusQuant Console',
+    get appTitle() { return import.meta.env.VITE_APP_TITLE?.trim() || t('shell.appTitle'); },
     envLabel: import.meta.env.VITE_APP_ENV_LABEL?.trim() || (import.meta.env.DEV ? 'DEV' : 'PAPER'),
     apiBaseUrl: import.meta.env.VITE_API_BASE_URL?.trim() || '/api',
 };

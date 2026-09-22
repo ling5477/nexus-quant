@@ -1,0 +1,79 @@
+{
+  "orderVersionConflict": {
+    "title": "Order updated",
+    "message": "The order was updated by another operation. Refresh the latest state before trying again."
+  },
+  "conflict": {
+    "title": "State changed",
+    "message": "The current state no longer matches this operation. Review the latest state."
+  },
+  "validation": {
+    "title": "Check your input",
+    "message": "Some fields failed validation. Correct them before submitting again."
+  },
+  "badRequest": {
+    "title": "Invalid request",
+    "message": "The request contains invalid parameters or an unsupported format."
+  },
+  "unauthorized": {
+    "title": "Sign in required",
+    "message": "Your session has expired or the credentials are incorrect. Sign in again."
+  },
+  "forbidden": {
+    "title": "Access denied",
+    "message": "Your account does not have permission to perform this operation."
+  },
+  "notFound": {
+    "title": "Record not found",
+    "message": "This record does not exist or is no longer available. Refresh the list to check."
+  },
+  "rejected": {
+    "title": "Operation rejected",
+    "message": "The current conditions do not meet the requirements for this operation."
+  },
+  "internal": {
+    "title": "Service unavailable",
+    "message": "The service could not complete the request. Keep the trace ID for support."
+  },
+  "adminNotInitialized": {
+    "title": "Administrator not initialized",
+    "message": "Contact an administrator to initialize the system before signing in."
+  },
+  "admissionBlocked": {
+    "title": "Admission blocked",
+    "message": "This release is not eligible for Shadow creation. Review the admission results."
+  },
+  "admissionStale": {
+    "title": "Admission facts changed",
+    "message": "The admission facts have changed. Reload the preview and confirm again."
+  },
+  "admissionGuard": {
+    "title": "Admission guard unavailable",
+    "message": "A verified identity has not been bound. This operation is unavailable."
+  },
+  "reviewConflict": {
+    "title": "Review updated",
+    "message": "Another operation updated this review. Refresh it before confirming again."
+  },
+  "idempotencyConflict": {
+    "title": "Operation identity conflict",
+    "message": "This operation identifier was used for different content. Refresh and review the existing result."
+  },
+  "network": {
+    "title": "Connection failed",
+    "message": "The service could not be reached. The operation outcome may be unconfirmed."
+  },
+  "unknown": {
+    "title": "Request failed",
+    "message": "The request could not be completed. Keep the trace ID and contact support."
+  },
+  "actions": {
+    "refresh": "Refresh the latest state and confirm again. The operation will not be replayed automatically.",
+    "correct": "Check your input and the operation requirements before confirming again.",
+    "signIn": "Sign in again to continue.",
+    "contact": "Contact your administrator or support and provide the trace ID.",
+    "checkConnection": "Check your connection and the latest state. Confirm the outcome before deciding whether to retry."
+  },
+  "fieldInvalid": "{{field}}: check this value.",
+  "requestField": "Request"
+}

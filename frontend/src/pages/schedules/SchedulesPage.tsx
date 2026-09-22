@@ -1,3 +1,6 @@
+import {useLocalizedForm} from '@/i18n/useLocalizedForm';
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {
     Alert,
     App,
@@ -19,7 +22,7 @@ import {
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
 
-import {formatApiError} from '@/api/errors';
+import {formatApiError, showApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
 import {BOOLEAN_FILTER_OPTIONS, SCHEDULE_STATUS_OPTIONS, SCHEDULE_TYPE_OPTIONS} from '@/constants/filter-options';
 import {
@@ -38,8 +41,9 @@ import {containsIgnoreCase, formatDateTime, matchesBooleanFilter, normalizeOptio
 type ScheduleRow = StrategyScheduleListItem;
 
 export function SchedulesPage() {
+    useTranslation('pages');
     const {message} = App.useApp();
-    const [form] = Form.useForm<StrategyScheduleListFilters>();
+    const [form] = useLocalizedForm<StrategyScheduleListFilters>();
     const [submittedFilters, setSubmittedFilters] = useState<StrategyScheduleListFilters>(defaultStrategyScheduleListFilters);
     const [searchVersion, setSearchVersion] = useState(0);
     const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
@@ -56,21 +60,21 @@ export function SchedulesPage() {
 
     const scheduleColumns: ColumnsType<ScheduleRow> = [
         {
-            title: '调度 ID',
+            title: t('pages:scheduleId'),
             dataIndex: 'scheduleJobId',
             key: 'scheduleJobId',
             width: 220,
             render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
         },
         {
-            title: '策略 ID',
+            title: t('pages:strategyId'),
             dataIndex: 'strategyId',
             key: 'strategyId',
             width: 220,
             render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
         },
         {
-            title: '调度类型',
+            title: t('pages:scheduleType'),
             dataIndex: 'scheduleType',
             key: 'scheduleType',
             width: 140,
@@ -83,42 +87,41 @@ export function SchedulesPage() {
             render: (value: string) => value || '-',
         },
         {
-            title: '状态',
+            title: t('pages:status'),
             dataIndex: 'status',
             key: 'status',
             width: 120,
             render: (value: string) => <Tag color="blue">{value}</Tag>,
         },
         {
-            title: '启用',
+            title: t('pages:enable'),
             dataIndex: 'enabled',
             key: 'enabled',
             width: 100,
-            render: (value: boolean) => <Tag color={value ? 'success' : 'default'}>{value ? '是' : '否'}</Tag>,
+            render: (value: boolean) => <Tag color={value ? 'success' : 'default'}>{value ? t('pages:yes') : t('pages:no')}</Tag>,
         },
         {
-            title: '最近触发',
+            title: t('pages:lastTriggered'),
             dataIndex: 'lastTriggeredAt',
             key: 'lastTriggeredAt',
             width: 180,
             render: (value: string | null) => formatDateTime(value),
         },
         {
-            title: '更新时间',
+            title: t('pages:updatedAt'),
             dataIndex: 'updatedAt',
             key: 'updatedAt',
             width: 180,
             render: (value: string) => formatDateTime(value),
         },
         {
-            title: '操作',
+            title: t('pages:actions'),
             key: 'action',
             fixed: 'right',
             width: 120,
             render: (_, record) => (
                 <Button type="link" onClick={() => setSelectedScheduleId(record.scheduleJobId)}>
-                    查看详情
-                </Button>
+                    {t('pages:viewDetails')}</Button>
             ),
         },
     ];
@@ -151,11 +154,11 @@ export function SchedulesPage() {
             },
             {
                 onSuccess: () => {
-                    message.success(enabled ? '调度已启用。' : '调度已停用。');
+                    message.success(enabled ? t('pages:scheduleEnabled') : t('pages:scheduleDisabled'));
                     scheduleDetailQuery.refetch();
                 },
                 onError: (error) => {
-                    message.error(formatApiError(error as AppApiError));
+                    showApiError(error as AppApiError, message);
                 },
             },
         );
@@ -166,23 +169,21 @@ export function SchedulesPage() {
             <Space direction="vertical" size={16} style={{display: 'flex'}}>
                 <Card className="page-card" bordered={false}>
                     <PageHero
-                        title="调度计划"
-                        description="按策略查看调度计划、运行状态和启停动作。freeze 期间只展示现有调度事实，不扩展新的调度能力。"
+                        title={t('pages:schedules')}
+                        description={t('pages:viewSchedulesRunStatusAndEnableOrDisableActionsByStrategyDuringTheFreezeOnlyExistingSchedulingCapabi')}
                         badge="Schedules"
                     />
                 </Card>
                 <Card
                     className="page-section"
                     bordered={false}
-                    title="查询区"
+                    title={t('pages:filters')}
                     extra={(
                         <Space>
                             <Button type="primary" onClick={() => form.submit()}>
-                                查询
-                            </Button>
+                                {t('pages:search')}</Button>
                             <Button onClick={handleReset}>
-                                重置
-                            </Button>
+                                {t('pages:reset')}</Button>
                         </Space>
                     )}
                 >
@@ -195,25 +196,25 @@ export function SchedulesPage() {
                         <Row gutter={[16, 0]}>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item
-                                    label="策略 ID"
+                                    label={t('pages:strategyId')}
                                     name="strategyId"
-                                    rules={[{required: true, message: '请输入 strategyId'}]}
+                                    rules={[{required: true, message: t('pages:enterStrategyid')}]}
                                 >
-                                    <Input placeholder="必填，例如：strategy-001"/>
+                                    <Input placeholder={t('pages:requiredForExampleStrategy001')}/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
-                                <Form.Item label="调度类型" name="scheduleType">
-                                    <Select allowClear placeholder="全部类型" options={SCHEDULE_TYPE_OPTIONS}/>
+                                <Form.Item label={t('pages:scheduleType')} name="scheduleType">
+                                    <Select allowClear placeholder={t('pages:allTypes')} options={SCHEDULE_TYPE_OPTIONS}/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
-                                <Form.Item label="状态" name="status">
-                                    <Select allowClear placeholder="全部状态" options={SCHEDULE_STATUS_OPTIONS}/>
+                                <Form.Item label={t('pages:status')} name="status">
+                                    <Select allowClear placeholder={t('pages:allStatuses')} options={SCHEDULE_STATUS_OPTIONS}/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
-                                <Form.Item label="启用状态" name="enabled">
+                                <Form.Item label={t('pages:enabledStatus')} name="enabled">
                                     <Select
                                         options={BOOLEAN_FILTER_OPTIONS}
                                     />
@@ -225,22 +226,21 @@ export function SchedulesPage() {
                 <Card
                     className="page-section"
                     bordered={false}
-                    title="查询结果"
+                    title={t('pages:results')}
                     extra={hasSearched ?
-                        <Typography.Text type="secondary">共 {visibleItems.length} 条记录</Typography.Text> : null}
+                        <Typography.Text type="secondary">{t('pages:total')}{visibleItems.length} {t('pages:records')}</Typography.Text> : null}
                 >
                     {!hasSearched ? (
-                        <Empty description="请输入策略 ID 后执行查询。"/>
+                        <Empty description={t('pages:enterAStrategyIdAndSearch')}/>
                     ) : schedulesQuery.error ? (
                         <Alert
                             type="error"
                             showIcon
-                            message="调度列表查询失败"
+                            message={t('pages:failedToQuerySchedules')}
                             description={formatApiError(schedulesQuery.error as AppApiError)}
                             action={(
                                 <Button size="small" onClick={() => setSearchVersion((value) => value + 1)}>
-                                    重试
-                                </Button>
+                                    {t('pages:retry')}</Button>
                             )}
                         />
                     ) : (
@@ -252,7 +252,7 @@ export function SchedulesPage() {
                             pagination={{pageSize: 10, showSizeChanger: false}}
                             scroll={{x: 1540}}
                             locale={{
-                                emptyText: '当前筛选条件下没有匹配的调度记录。',
+                                emptyText: t('pages:noSchedulesMatchTheseFilters'),
                             }}
                         />
                     )}
@@ -261,61 +261,61 @@ export function SchedulesPage() {
             <Drawer
                 open={Boolean(selectedScheduleId)}
                 width={720}
-                title="调度详情"
+                title={t('pages:scheduleDetails')}
                 onClose={() => setSelectedScheduleId(null)}
                 destroyOnClose
             >
                 {scheduleDetailQuery.isLoading ? (
-                    <Alert type="info" showIcon message="正在加载调度详情..."/>
+                    <Alert type="info" showIcon message={t('pages:loadingScheduleDetails')}/>
                 ) : scheduleDetailQuery.error ? (
                     <Alert
                         type="error"
                         showIcon
-                        message="调度详情加载失败"
+                        message={t('pages:failedToLoadScheduleDetails')}
                         description={formatApiError(scheduleDetailQuery.error as AppApiError)}
                     />
                 ) : scheduleDetailQuery.data ? (
                     <Space direction="vertical" size={16} style={{display: 'flex'}}>
                         <Descriptions bordered column={2} size="small">
                             <Descriptions.Item
-                                label="调度 ID">{scheduleDetailQuery.data.scheduleJobId}</Descriptions.Item>
-                            <Descriptions.Item label="策略 ID">{scheduleDetailQuery.data.strategyId}</Descriptions.Item>
+                                label={t('pages:scheduleId')}>{scheduleDetailQuery.data.scheduleJobId}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:strategyId')}>{scheduleDetailQuery.data.strategyId}</Descriptions.Item>
                             <Descriptions.Item
-                                label="调度类型">{scheduleDetailQuery.data.scheduleType}</Descriptions.Item>
+                                label={t('pages:scheduleType')}>{scheduleDetailQuery.data.scheduleType}</Descriptions.Item>
                             <Descriptions.Item
                                 label="Cron">{scheduleDetailQuery.data.cronExpr || '-'}</Descriptions.Item>
-                            <Descriptions.Item label="时区">{scheduleDetailQuery.data.timezone}</Descriptions.Item>
-                            <Descriptions.Item label="状态">
+                            <Descriptions.Item label={t('pages:timeZone')}>{scheduleDetailQuery.data.timezone}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:status')}>
                                 <Tag color="blue">{scheduleDetailQuery.data.status}</Tag>
                             </Descriptions.Item>
-                            <Descriptions.Item label="启用状态">
+                            <Descriptions.Item label={t('pages:enabledStatus')}>
                                 <Tag color={scheduleDetailQuery.data.enabled ? 'success' : 'default'}>
-                                    {scheduleDetailQuery.data.enabled ? '已启用' : '未启用'}
+                                    {scheduleDetailQuery.data.enabled ? t('pages:enabled') : t('pages:disabled')}
                                 </Tag>
                             </Descriptions.Item>
                             <Descriptions.Item
-                                label="最近触发">{formatDateTime(scheduleDetailQuery.data.lastTriggeredAt)}</Descriptions.Item>
+                                label={t('pages:lastTriggered')}>{formatDateTime(scheduleDetailQuery.data.lastTriggeredAt)}</Descriptions.Item>
                             <Descriptions.Item
-                                label="交易所">{scheduleDetailQuery.data.exchangeCode}</Descriptions.Item>
+                                label={t('pages:exchange')}>{scheduleDetailQuery.data.exchangeCode}</Descriptions.Item>
                             <Descriptions.Item
-                                label="账户">{scheduleDetailQuery.data.accountId ?? '-'}</Descriptions.Item>
-                            <Descriptions.Item label="交易环境">{scheduleDetailQuery.data.tradeEnv}</Descriptions.Item>
+                                label={t('pages:account')}>{scheduleDetailQuery.data.accountId ?? '-'}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:tradingEnvironment')}>{scheduleDetailQuery.data.tradeEnv}</Descriptions.Item>
                             <Descriptions.Item
-                                label="创建时间">{formatDateTime(scheduleDetailQuery.data.createdAt)}</Descriptions.Item>
+                                label={t('pages:createdAt')}>{formatDateTime(scheduleDetailQuery.data.createdAt)}</Descriptions.Item>
                             <Descriptions.Item
-                                label="更新时间">{formatDateTime(scheduleDetailQuery.data.updatedAt)}</Descriptions.Item>
-                            <Descriptions.Item label="窗口配置" span={2}>
+                                label={t('pages:updatedAt')}>{formatDateTime(scheduleDetailQuery.data.updatedAt)}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:windowConfiguration')} span={2}>
                                 <Typography.Paragraph style={{marginBottom: 0}}>
                                     {scheduleDetailQuery.data.windowConfig || '-'}
                                 </Typography.Paragraph>
                             </Descriptions.Item>
-                            <Descriptions.Item label="去重范围" span={2}>
+                            <Descriptions.Item label={t('pages:deduplicationScope')} span={2}>
                                 <Typography.Paragraph style={{marginBottom: 0}}>
                                     {scheduleDetailQuery.data.dedupScope || '-'}
                                 </Typography.Paragraph>
                             </Descriptions.Item>
                         </Descriptions>
-                        <Card title="动作区" size="small">
+                        <Card title={t('pages:actions2')} size="small">
                             <Space wrap>
                                 <Button
                                     type="primary"
@@ -323,19 +323,16 @@ export function SchedulesPage() {
                                     loading={updateStatusMutation.isPending}
                                     onClick={() => handleStatusUpdate(true)}
                                 >
-                                    启用调度
-                                </Button>
+                                    {t('pages:enableSchedule')}</Button>
                                 <Button
                                     danger
                                     disabled={!scheduleDetailQuery.data.enabled}
                                     loading={updateStatusMutation.isPending}
                                     onClick={() => handleStatusUpdate(false)}
                                 >
-                                    停用调度
-                                </Button>
+                                    {t('pages:disableSchedule')}</Button>
                                 <Button onClick={() => scheduleDetailQuery.refetch()}>
-                                    刷新详情
-                                </Button>
+                                    {t('pages:refreshDetails')}</Button>
                             </Space>
                         </Card>
                     </Space>

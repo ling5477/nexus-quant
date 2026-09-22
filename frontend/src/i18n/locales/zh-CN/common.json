@@ -1,0 +1,255 @@
+{
+  "language": "语言",
+  "loading": "加载中...",
+  "queryFailed": "查询失败",
+  "querySection": "查询区",
+  "retry": "重试",
+  "refresh": "刷新",
+  "cancel": "取消",
+  "confirm": "确认执行",
+  "all": "全部",
+  "enabled": "已启用",
+  "disabled": "未启用",
+  "shell": {
+    "subtitle": "量化策略运营控制台",
+    "console": "交易控制台",
+    "expand": "展开菜单",
+    "collapse": "收起菜单",
+    "chooseAccount": "选择账户上下文",
+    "default": "（默认）",
+    "accounts": "账户管理",
+    "logout": "退出登录",
+    "anonymous": "未登录",
+    "ungrouped": "未分组",
+    "appTitle": "NexusQuant 控制台"
+  },
+  "auth": {
+    "entering": "正在进入控制台",
+    "restored": "登录态已恢复,正在跳转到受保护区域。",
+    "restoring": "正在恢复登录状态",
+    "checking": "控制台正在校验当前登录状态，请稍候。",
+    "aria": "登录 NexusQuant 控制台",
+    "tagline": "量化交易基础设施控制台",
+    "lede": "在一个受控控制台内完成策略研究、回测、模拟交易、风控与审计的闭环。",
+    "capabilities": "NexusQuant 能力",
+    "research": "策略研究与回测",
+    "paper": "模拟交易(Paper)",
+    "risk": "风控前置拦截",
+    "audit": "全链路审计追踪",
+    "promise": "默认不启用 LIVE 交易;每一笔交易动作都先过风控,并保留完整审计追踪。",
+    "title": "登录控制台",
+    "caption": "输入账号凭证进入受保护控制台",
+    "username": "账号",
+    "password": "密码",
+    "usernameRequired": "请输入账号",
+    "passwordRequired": "请输入密码",
+    "submit": "登录",
+    "security": "安全边界",
+    "securityDescription": "本控制台默认不启用 LIVE 交易;所有交易相关操作都需经过风控、审计与环境隔离。",
+    "footer": "受控环境 · 默认 PAPER · LIVE 已禁用"
+  },
+  "freshness": {
+    "fresh": "最新",
+    "stale": "已过期",
+    "very_stale": "严重过期",
+    "delayed": "延迟",
+    "degraded": "降级",
+    "no_data": "无数据",
+    "error": "错误",
+    "disabled": "已禁用"
+  },
+  "navigation": {
+    "dashboard": {
+      "label": "控制台总览",
+      "title": "控制台总览",
+      "description": "查看当前登录态、环境标识与正式控制台入口导航。",
+      "section": "概览"
+    },
+    "accounts": {
+      "label": "账户管理",
+      "title": "账户与凭证管理",
+      "description": "管理当前用户的交易账户上下文、默认账户与凭证配置。",
+      "section": "账户与交易"
+    },
+    "trading": {
+      "label": "交易工作台",
+      "title": "交易工作台",
+      "description": "围绕正式账户上下文执行下单、撤单、对账、恢复与事实查询。",
+      "section": "账户与交易"
+    },
+    "instruments": {
+      "label": "交易标的目录",
+      "title": "交易标的目录",
+      "description": "查看并同步正式 instrument/symbol catalog。",
+      "section": "市场与主数据"
+    },
+    "marketdata": {
+      "label": "行情查询",
+      "title": "行情查询",
+      "description": "查询正式 marketdata bars 数据范围。",
+      "section": "市场与主数据"
+    },
+    "adapter-readiness": {
+      "label": "适配器就绪",
+      "title": "适配器就绪",
+      "description": "只读查看各交易所适配器与能力的运行时 readiness（No-Real / LIVE 禁用 / 不可真实交易）。",
+      "section": "市场与主数据"
+    },
+    "runtime-readiness": {
+      "label": "运行边界",
+      "title": "运行边界",
+      "description": "只读总览 Paper-only、MarketData readiness、Adapter no-real、LIVE disabled 与缺失后端聚合支持。",
+      "section": "市场与主数据"
+    },
+    "strategy-validation": {
+      "label": "策略验证",
+      "title": "本地验证审查工作台",
+      "description": "查看本地 validation evidence、durable review queue、case lifecycle 与非交易安全边界。",
+      "section": "策略运行"
+    },
+    "shadow-runs": {
+      "label": "Shadow 运行",
+      "title": "Shadow Run 列表",
+      "description": "只读查看本地 Shadow Run diagnostic facts，并进入 detail / replay 页面。",
+      "section": "策略运行"
+    },
+    "strategies": {
+      "label": "策略定义",
+      "title": "策略定义",
+      "description": "策略列表、策略详情和后续触发操作入口。",
+      "section": "策略运行"
+    },
+    "schedules": {
+      "label": "调度计划",
+      "title": "调度计划",
+      "description": "调度列表、扫描任务和运行编排入口。",
+      "section": "策略运行"
+    },
+    "runs": {
+      "label": "运行记录",
+      "title": "运行记录",
+      "description": "策略运行查询、状态追踪和详情入口。",
+      "section": "策略运行"
+    },
+    "research": {
+      "label": "研究配置",
+      "title": "研究配置",
+      "description": "研究参数列表和详情扩展点。",
+      "section": "研究与回测"
+    },
+    "backtests": {
+      "label": "回测配置",
+      "title": "回测配置",
+      "description": "回测配置列表与后续创建入口。",
+      "section": "研究与回测"
+    },
+    "evaluations": {
+      "label": "评估结果",
+      "title": "评估结果",
+      "description": "评估列表、指标摘要和详情扩展点。",
+      "section": "研究与回测"
+    },
+    "publishes": {
+      "label": "发布结果",
+      "title": "发布结果",
+      "description": "发布结果列表与链路审计入口。",
+      "section": "研究与回测"
+    },
+    "paper-trading": {
+      "label": "模拟交易",
+      "title": "模拟交易",
+      "description": "基于已发布策略版本创建 SIM/Paper Trading run，查看运行状态与最小事实。",
+      "section": "策略运行"
+    }
+  },
+  "exception": {
+    "sessionKicker": "会话已过期",
+    "sessionTitle": "登录态已过期",
+    "sessionDescription": "登录会话已超时,出于安全控制台已退出当前身份。",
+    "sessionNext": "重新登录后会回到你刚才访问的页面。",
+    "identityKicker": "身份校验失败",
+    "identityTitle": "身份校验未通过",
+    "identityDescription": "无法确认当前身份,可能是登录凭证损坏或已在别处注销。",
+    "identityNext": "请重新登录以重建受信任的登录态。",
+    "environmentKicker": "环境不允许访问",
+    "environmentTitle": "当前环境不允许访问",
+    "environmentDescription": "当前账号在此环境下没有访问权限(控制台默认仅开放受控 PAPER 环境)。",
+    "environmentNext": "请联系运维确认账号可用的环境与权限后再试。",
+    "authFailure": "鉴权失败",
+    "signInAgain": "重新登录",
+    "backToLogin": "返回登录页",
+    "unspecified": "未指定",
+    "forbidden": "无访问权限",
+    "forbiddenTitle": "你没有访问该页面的权限",
+    "forbiddenDescription": "当前账号缺少访问此功能所需的角色,因此被后端权限校验拦截。",
+    "missingRole": "缺少角色",
+    "requestRole": "请向管理员申请对应角色;获得授权后重新进入即可访问。",
+    "console": "返回控制台",
+    "switchAccount": "切换账号",
+    "system": "系统错误",
+    "systemTitle": "控制台遇到一个错误",
+    "systemDescription": "请求未能完成。请提供已有的追踪编号以便联系运维定位。",
+    "occurred": "发生时间",
+    "systemNext": "可返回控制台检查最新状态；若问题反复出现，请提供已有的追踪编号。",
+    "previous": "返回上一页",
+    "noTrace": "未提供",
+    "welcome": "系统待初始化",
+    "welcomeTitle": "控制台尚未配置数据",
+    "welcomeDescription": "当前还没有可用的账户、策略或行情数据。完成下面任一步即可开始。",
+    "firstStep": "第一步",
+    "createAccountDetail": "创建 Paper 账户:用于模拟交易与回测的资金上下文。",
+    "importStrategyDetail": "导入策略:登记策略定义与可发布的版本。",
+    "marketDataDetail": "配置市场数据:同步标的目录与历史行情。",
+    "createAccount": "创建 Paper 账户",
+    "importStrategy": "导入策略",
+    "marketData": "配置市场数据",
+    "notFound": "页面未找到",
+    "notFoundTitle": "找不到这个页面",
+    "notFoundDescription": "目标页面不存在,或当前路由尚未接入。"
+  },
+  "boundary": {
+    "paper": "仅限 Paper 模拟交易",
+    "simulated": "Paper Trading 为模拟交易。",
+    "order": "Paper 订单不等于真实订单。",
+    "fill": "Paper 成交不等于真实成交。",
+    "balance": "Paper 余额/持仓不等于真实账户余额/持仓。",
+    "risk": "Paper 风控通过不等于 LIVE 授权。",
+    "authority": "策略已发布、Paper 风控通过、readiness 记录或权限探测 SKIPPED 均不构成 LIVE 交易授权。",
+    "runtime": "运行受控：LIVE 已禁用",
+    "live": "LIVE 已禁用。",
+    "provider": "尚未实现真实 provider。",
+    "notReady": "NoReal/Fake/Stub/FutureReal 不具备 LIVE 就绪资格。",
+    "probe": "权限探测 SKIPPED / disabled 不代表已验证。"
+  },
+  "chart": {
+    "equity": "总权益",
+    "position": "持仓市值",
+    "drawdown": "回撤",
+    "portfolioEquity": "组合权益",
+    "initial": "初始资金",
+    "portfolioDrawdown": "组合回撤",
+    "insufficient": "数据不足",
+    "empty": "暂无时间序列数据",
+    "kline": "K 线",
+    "klineSource": "K 线数据源",
+    "klineEmpty": "暂无 K 线数据",
+    "klineLoading": "K 线加载中",
+    "volume": "成交量",
+    "volumeSource": "成交量数据源",
+    "volumeEmpty": "暂无成交量数据",
+    "volumeLoading": "成交量加载中",
+    "equityValue": "组合权益：{{value}}",
+    "initialValue": "初始资金：{{value}}",
+    "pnlValue": "组合 PnL：{{value}}",
+    "returnValue": "收益率：{{value}}",
+    "runCounts": "在册 run：{{source}} · 缺失 run：{{missing}}",
+    "drawdownValue": "回撤：{{value}}",
+    "peakValue": "资金峰值：{{value}}"
+  },
+  "risk": {
+    "info": "提示",
+    "warning": "警告",
+    "danger": "阻断",
+    "dismiss": "关闭"
+  }
+}

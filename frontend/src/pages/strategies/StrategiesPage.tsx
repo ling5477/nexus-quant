@@ -1,3 +1,6 @@
+import {useLocalizedForm} from '@/i18n/useLocalizedForm';
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {
     Alert,
     App,
@@ -19,7 +22,7 @@ import {
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
 
-import {formatApiError} from '@/api/errors';
+import {formatApiError, showApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
 import {
     BOOLEAN_FILTER_OPTIONS,
@@ -47,9 +50,10 @@ import {containsIgnoreCase, formatDateTime, matchesBooleanFilter, normalizeOptio
 type StrategyRow = StrategyDefinitionListItem;
 
 export function StrategiesPage() {
+    useTranslation('pages');
     const {message} = App.useApp();
-    const [form] = Form.useForm<StrategyListFilters>();
-    const [versionForm] = Form.useForm<StrategyVersionCreateRequest>();
+    const [form] = useLocalizedForm<StrategyListFilters>();
+    const [versionForm] = useLocalizedForm<StrategyVersionCreateRequest>();
     const [submittedFilters, setSubmittedFilters] = useState<StrategyListFilters>(defaultStrategyListFilters);
     const [searchVersion, setSearchVersion] = useState(0);
     const [selectedStrategyCode, setSelectedStrategyCode] = useState<string | null>(null);
@@ -70,98 +74,97 @@ export function StrategiesPage() {
 
     const strategyColumns: ColumnsType<StrategyRow> = [
         {
-            title: '策略编码',
+            title: t('pages:strategyCode'),
             dataIndex: 'strategyCode',
             key: 'strategyCode',
             width: 180,
         },
         {
-            title: '策略名称',
+            title: t('pages:strategyName'),
             dataIndex: 'strategyName',
             key: 'strategyName',
             width: 220,
         },
         {
-            title: '策略 ID',
+            title: t('pages:strategyId'),
             dataIndex: 'strategyId',
             key: 'strategyId',
             width: 220,
             render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
         },
         {
-            title: '类型',
+            title: t('pages:type'),
             dataIndex: 'strategyType',
             key: 'strategyType',
             width: 140,
         },
         {
-            title: '交易所',
+            title: t('pages:exchange'),
             dataIndex: 'exchangeCode',
             key: 'exchangeCode',
             width: 120,
         },
         {
-            title: '环境',
+            title: t('pages:environment'),
             dataIndex: 'tradeEnv',
             key: 'tradeEnv',
             width: 120,
         },
         {
-            title: '状态',
+            title: t('pages:status'),
             dataIndex: 'status',
             key: 'status',
             width: 120,
             render: (value: string) => <Tag color="blue">{value}</Tag>,
         },
         {
-            title: '启用',
+            title: t('pages:enable'),
             dataIndex: 'enabled',
             key: 'enabled',
             width: 100,
-            render: (value: boolean) => <Tag color={value ? 'success' : 'default'}>{value ? '是' : '否'}</Tag>,
+            render: (value: boolean) => <Tag color={value ? 'success' : 'default'}>{value ? t('pages:yes') : t('pages:no')}</Tag>,
         },
         {
-            title: '更新时间',
+            title: t('pages:updatedAt'),
             dataIndex: 'updatedAt',
             key: 'updatedAt',
             width: 180,
             render: (value: string) => formatDateTime(value),
         },
         {
-            title: '操作',
+            title: t('pages:actions'),
             key: 'action',
             fixed: 'right',
             width: 120,
             render: (_, record) => (
                 <Button type="link" onClick={() => setSelectedStrategyCode(record.strategyCode)}>
-                    查看详情
-                </Button>
+                    {t('pages:viewDetails')}</Button>
             ),
         },
     ];
 
     const versionColumns: ColumnsType<StrategyVersionItem> = [
         {
-            title: '版本 ID',
+            title: t('pages:versionId'),
             dataIndex: 'strategyVersionId',
             key: 'strategyVersionId',
             width: 220,
             render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
         },
         {
-            title: '版本号',
+            title: t('pages:versionNumber'),
             dataIndex: 'version',
             key: 'version',
             width: 90,
         },
         {
-            title: '版本名称',
+            title: t('pages:versionName'),
             dataIndex: 'versionName',
             key: 'versionName',
             width: 180,
         },
         {
-            title: '状态',
+            title: t('pages:status'),
             dataIndex: 'status',
             key: 'status',
             width: 110,
@@ -175,7 +178,7 @@ export function StrategiesPage() {
             render: (value: string) => <Typography.Text copyable ellipsis>{value}</Typography.Text>,
         },
         {
-            title: '创建时间',
+            title: t('pages:createdAt'),
             dataIndex: 'createdAt',
             key: 'createdAt',
             width: 180,
@@ -212,11 +215,11 @@ export function StrategiesPage() {
             },
             {
                 onSuccess: () => {
-                    message.success(enabled ? '策略已启用。' : '策略已停用。');
+                    message.success(enabled ? t('pages:strategyEnabled') : t('pages:strategyDisabled'));
                     strategyDetailQuery.refetch();
                 },
                 onError: (error) => {
-                    message.error(formatApiError(error as AppApiError));
+                    showApiError(error as AppApiError, message);
                 },
             },
         );
@@ -239,12 +242,12 @@ export function StrategiesPage() {
             },
             {
                 onSuccess: () => {
-                    message.success('策略版本已创建。');
+                    message.success(t('pages:strategyVersionCreated'));
                     versionForm.resetFields();
                     strategyVersionsQuery.refetch();
                 },
                 onError: (error) => {
-                    message.error(formatApiError(error as AppApiError));
+                    showApiError(error as AppApiError, message);
                 },
             },
         );
@@ -255,23 +258,21 @@ export function StrategiesPage() {
             <Space direction="vertical" size={16} style={{display: 'flex'}}>
                 <Card className="page-card" bordered={false}>
                     <PageHero
-                        title="策略定义"
-                        description="策略定义查询、详情查看与启停操作入口。页面保留策略状态、账户环境和版本快照，便于 freeze 期间审查可运行策略。"
+                        title={t('pages:strategyDefinitions')}
+                        description={t('pages:searchInspectEnableAndDisableStrategyDefinitionsStrategyStatusAccountEnvironmentAndVersionSnapshotsR')}
                         badge="Strategies"
                     />
                 </Card>
                 <Card
                     className="page-section"
                     bordered={false}
-                    title="查询区"
+                    title={t('pages:filters')}
                     extra={(
                         <Space>
                             <Button type="primary" onClick={() => form.submit()}>
-                                查询
-                            </Button>
+                                {t('pages:search')}</Button>
                             <Button onClick={handleReset}>
-                                重置
-                            </Button>
+                                {t('pages:reset')}</Button>
                         </Space>
                     )}
                 >
@@ -283,27 +284,27 @@ export function StrategiesPage() {
                     >
                         <Row gutter={[16, 0]}>
                             <Col xs={24} md={12} xl={6}>
-                                <Form.Item label="策略编码" name="strategyCode">
-                                    <Input placeholder="例如：alpha-grid-btc"/>
+                                <Form.Item label={t('pages:strategyCode')} name="strategyCode">
+                                    <Input placeholder={t('pages:forExampleAlphaGridBtc')}/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
-                                <Form.Item label="策略类型" name="strategyType">
-                                    <Select allowClear showSearch placeholder="全部类型" options={STRATEGY_TYPE_OPTIONS}/>
+                                <Form.Item label={t('pages:strategyType')} name="strategyType">
+                                    <Select allowClear showSearch placeholder={t('pages:allTypes')} options={STRATEGY_TYPE_OPTIONS}/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
-                                <Form.Item label="交易所" name="exchangeCode">
-                                    <Select allowClear placeholder="全部交易所" options={EXCHANGE_OPTIONS}/>
+                                <Form.Item label={t('pages:exchange')} name="exchangeCode">
+                                    <Select allowClear placeholder={t('pages:allExchanges')} options={EXCHANGE_OPTIONS}/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
-                                <Form.Item label="交易环境" name="tradeEnv">
-                                    <Select allowClear placeholder="全部环境" options={TRADE_ENV_OPTIONS}/>
+                                <Form.Item label={t('pages:tradingEnvironment')} name="tradeEnv">
+                                    <Select allowClear placeholder={t('pages:allEnvironments')} options={TRADE_ENV_OPTIONS}/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
-                                <Form.Item label="启用状态" name="enabled">
+                                <Form.Item label={t('pages:enabledStatus')} name="enabled">
                                     <Select
                                         options={BOOLEAN_FILTER_OPTIONS}
                                     />
@@ -315,22 +316,21 @@ export function StrategiesPage() {
                 <Card
                     className="page-section"
                     bordered={false}
-                    title="查询结果"
+                    title={t('pages:results')}
                     extra={hasSearched ?
-                        <Typography.Text type="secondary">共 {visibleItems.length} 条记录</Typography.Text> : null}
+                        <Typography.Text type="secondary">{t('pages:total')}{visibleItems.length} {t('pages:records')}</Typography.Text> : null}
                 >
                     {!hasSearched ? (
-                        <Empty description="点击查询后加载策略列表。"/>
+                        <Empty description={t('pages:searchToLoadStrategies')}/>
                     ) : strategiesQuery.error ? (
                         <Alert
                             type="error"
                             showIcon
-                            message="策略列表查询失败"
+                            message={t('pages:failedToQueryStrategies')}
                             description={formatApiError(strategiesQuery.error as AppApiError)}
                             action={(
                                 <Button size="small" onClick={() => setSearchVersion((value) => value + 1)}>
-                                    重试
-                                </Button>
+                                    {t('pages:retry')}</Button>
                             )}
                         />
                     ) : (
@@ -342,7 +342,7 @@ export function StrategiesPage() {
                             pagination={{pageSize: 10, showSizeChanger: false}}
                             scroll={{x: 1520}}
                             locale={{
-                                emptyText: '当前筛选条件下没有匹配的策略记录。',
+                                emptyText: t('pages:noStrategiesMatchTheseFilters'),
                             }}
                         />
                     )}
@@ -351,54 +351,54 @@ export function StrategiesPage() {
             <Drawer
                 open={Boolean(selectedStrategyCode)}
                 width={680}
-                title="策略详情"
+                title={t('pages:strategyDetails')}
                 onClose={() => setSelectedStrategyCode(null)}
                 destroyOnClose
             >
                 {strategyDetailQuery.isLoading ? (
-                    <Alert type="info" showIcon message="正在加载策略详情..."/>
+                    <Alert type="info" showIcon message={t('pages:loadingStrategyDetails')}/>
                 ) : strategyDetailQuery.error ? (
                     <Alert
                         type="error"
                         showIcon
-                        message="策略详情加载失败"
+                        message={t('pages:failedToLoadStrategyDetails')}
                         description={formatApiError(strategyDetailQuery.error as AppApiError)}
                     />
                 ) : strategyDetailQuery.data ? (
                     <Space direction="vertical" size={16} style={{display: 'flex'}}>
                         <Descriptions bordered column={2} size="small">
                             <Descriptions.Item
-                                label="策略编码">{strategyDetailQuery.data.strategyCode}</Descriptions.Item>
+                                label={t('pages:strategyCode')}>{strategyDetailQuery.data.strategyCode}</Descriptions.Item>
                             <Descriptions.Item
-                                label="策略名称">{strategyDetailQuery.data.strategyName}</Descriptions.Item>
-                            <Descriptions.Item label="策略 ID">{strategyDetailQuery.data.strategyId}</Descriptions.Item>
+                                label={t('pages:strategyName')}>{strategyDetailQuery.data.strategyName}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:strategyId')}>{strategyDetailQuery.data.strategyId}</Descriptions.Item>
                             <Descriptions.Item
-                                label="策略类型">{strategyDetailQuery.data.strategyType}</Descriptions.Item>
+                                label={t('pages:strategyType')}>{strategyDetailQuery.data.strategyType}</Descriptions.Item>
                             <Descriptions.Item
-                                label="交易所">{strategyDetailQuery.data.exchangeCode}</Descriptions.Item>
+                                label={t('pages:exchange')}>{strategyDetailQuery.data.exchangeCode}</Descriptions.Item>
                             <Descriptions.Item
-                                label="账户">{strategyDetailQuery.data.accountId ?? '-'}</Descriptions.Item>
-                            <Descriptions.Item label="交易环境">{strategyDetailQuery.data.tradeEnv}</Descriptions.Item>
-                            <Descriptions.Item label="状态">
+                                label={t('pages:account')}>{strategyDetailQuery.data.accountId ?? '-'}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:tradingEnvironment')}>{strategyDetailQuery.data.tradeEnv}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:status')}>
                                 <Tag color="blue">{strategyDetailQuery.data.status}</Tag>
                             </Descriptions.Item>
-                            <Descriptions.Item label="启用状态">
+                            <Descriptions.Item label={t('pages:enabledStatus')}>
                                 <Tag color={strategyDetailQuery.data.enabled ? 'success' : 'default'}>
-                                    {strategyDetailQuery.data.enabled ? '已启用' : '未启用'}
+                                    {strategyDetailQuery.data.enabled ? t('pages:enabled') : t('pages:disabled')}
                                 </Tag>
                             </Descriptions.Item>
-                            <Descriptions.Item label="版本">{strategyDetailQuery.data.version}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:version')}>{strategyDetailQuery.data.version}</Descriptions.Item>
                             <Descriptions.Item
-                                label="创建时间">{formatDateTime(strategyDetailQuery.data.createdAt)}</Descriptions.Item>
+                                label={t('pages:createdAt')}>{formatDateTime(strategyDetailQuery.data.createdAt)}</Descriptions.Item>
                             <Descriptions.Item
-                                label="更新时间">{formatDateTime(strategyDetailQuery.data.updatedAt)}</Descriptions.Item>
-                            <Descriptions.Item label="配置快照" span={2}>
+                                label={t('pages:updatedAt')}>{formatDateTime(strategyDetailQuery.data.updatedAt)}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:configurationSnapshot')} span={2}>
                                 <Typography.Paragraph style={{marginBottom: 0}}>
                                     {strategyDetailQuery.data.configSnapshot || '-'}
                                 </Typography.Paragraph>
                             </Descriptions.Item>
                         </Descriptions>
-                        <Card title="动作区" size="small">
+                        <Card title={t('pages:actions2')} size="small">
                             <Space wrap>
                                 <Button
                                     type="primary"
@@ -406,31 +406,28 @@ export function StrategiesPage() {
                                     loading={updateStatusMutation.isPending}
                                     onClick={() => handleStatusUpdate(true)}
                                 >
-                                    启用策略
-                                </Button>
+                                    {t('pages:enableStrategy')}</Button>
                                 <Button
                                     danger
                                     disabled={!strategyDetailQuery.data.enabled}
                                     loading={updateStatusMutation.isPending}
                                     onClick={() => handleStatusUpdate(false)}
                                 >
-                                    停用策略
-                                </Button>
+                                    {t('pages:disableStrategy')}</Button>
                                 <Button onClick={() => strategyDetailQuery.refetch()}>
-                                    刷新详情
-                                </Button>
+                                    {t('pages:refreshDetails')}</Button>
                             </Space>
                         </Card>
                         <Card
-                            title="策略版本"
+                            title={t('pages:strategyVersions')}
                             size="small"
-                            extra={<Button onClick={() => strategyVersionsQuery.refetch()}>刷新版本</Button>}
+                            extra={<Button onClick={() => strategyVersionsQuery.refetch()}>{t('pages:refreshVersions')}</Button>}
                         >
                             {strategyVersionsQuery.error ? (
                                 <Alert
                                     type="error"
                                     showIcon
-                                    message="策略版本查询失败"
+                                    message={t('pages:failedToQueryStrategyVersions')}
                                     description={formatApiError(strategyVersionsQuery.error as AppApiError)}
                                 />
                             ) : (
@@ -442,11 +439,11 @@ export function StrategiesPage() {
                                     loading={strategyVersionsQuery.isFetching}
                                     pagination={{pageSize: 5, showSizeChanger: false}}
                                     scroll={{x: 1000}}
-                                    locale={{emptyText: '当前策略还没有版本。'}}
+                                    locale={{emptyText: t('pages:thisStrategyHasNoVersions')}}
                                 />
                             )}
                         </Card>
-                        <Card title="创建策略版本" size="small">
+                        <Card title={t('pages:createStrategyVersion')} size="small">
                             <Form
                                 form={versionForm}
                                 layout="vertical"
@@ -460,15 +457,15 @@ export function StrategiesPage() {
                                 <Row gutter={[16, 0]}>
                                     <Col xs={24} md={12}>
                                         <Form.Item
-                                            label="版本名称"
+                                            label={t('pages:versionName')}
                                             name="versionName"
-                                            rules={[{required: true, message: '请输入版本名称'}]}
+                                            rules={[{required: true, message: t('pages:enterAVersionName')}]}
                                         >
-                                            <Input placeholder="例如：freeze baseline"/>
+                                            <Input placeholder={t('pages:forExampleFreezeBaseline')}/>
                                         </Form.Item>
                                     </Col>
                                     <Col xs={24} md={12}>
-                                        <Form.Item label="版本状态" name="status">
+                                        <Form.Item label={t('pages:versionStatus')} name="status">
                                             <Select
                                                 options={[
                                                     {label: 'DRAFT', value: 'DRAFT'},
@@ -479,17 +476,17 @@ export function StrategiesPage() {
                                         </Form.Item>
                                     </Col>
                                     <Col xs={24}>
-                                        <Form.Item label="参数快照 JSON" name="paramSnapshotJson">
+                                        <Form.Item label={t('pages:parameterSnapshotJson')} name="paramSnapshotJson">
                                             <Input.TextArea rows={3} placeholder='{"threshold":1}'/>
                                         </Form.Item>
                                     </Col>
                                     <Col xs={24}>
-                                        <Form.Item label="配置快照 JSON" name="configSnapshotJson">
-                                            <Input.TextArea rows={3} placeholder="留空则使用当前策略配置快照"/>
+                                        <Form.Item label={t('pages:configurationSnapshotJson')} name="configSnapshotJson">
+                                            <Input.TextArea rows={3} placeholder={t('pages:leaveEmptyToUseTheCurrentStrategyConfigurationSnapshot')}/>
                                         </Form.Item>
                                     </Col>
                                     <Col xs={24}>
-                                        <Form.Item label="来源快照 JSON" name="sourceSnapshotJson">
+                                        <Form.Item label={t('pages:sourceSnapshotJson')} name="sourceSnapshotJson">
                                             <Input.TextArea rows={3} placeholder='{"source":"manual"}'/>
                                         </Form.Item>
                                     </Col>
@@ -500,11 +497,9 @@ export function StrategiesPage() {
                                         htmlType="submit"
                                         loading={createVersionMutation.isPending}
                                     >
-                                        创建版本
-                                    </Button>
+                                        {t('pages:createVersion')}</Button>
                                     <Button onClick={() => versionForm.resetFields()}>
-                                        清空
-                                    </Button>
+                                        {t('pages:clear')}</Button>
                                 </Space>
                             </Form>
                         </Card>

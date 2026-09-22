@@ -37,7 +37,7 @@ test.describe('adapter readiness panel (real backend)', () => {
 
         await page.getByRole('menuitem', {name: '适配器就绪'}).click();
         await expect(page).toHaveURL(/\/adapter-readiness$/);
-        await expect(page.getByRole('heading', {name: 'Adapter Readiness'})).toBeVisible();
+        await expect(page.getByRole('heading', {name: '适配器就绪状态'})).toBeVisible();
 
         // 真实后端响应断言：来自后端、200、payload 即 fail-closed 矩阵、无敏感字段。
         const readinessResponse = await readinessResponsePromise;

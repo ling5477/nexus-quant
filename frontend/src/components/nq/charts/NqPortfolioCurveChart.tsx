@@ -1,3 +1,5 @@
+import {t} from '@/i18n';
+import {useTranslation} from 'react-i18next';
 import {useMemo} from 'react';
 
 import {useEChart} from '@/components/nq/charts/useEChart';
@@ -33,7 +35,7 @@ function toChartNumber(value: string | number | null): number | null {
 /** 比例值（如 -0.2353）→ 带符号百分比文案（如 -23.53%）；缺数据显示「数据不足」。 */
 function ratioToPercentText(value: string | number | null): string {
     const numeric = toChartNumber(value);
-    return numeric === null ? '数据不足' : `${formatNqNumber(numeric * 100, {precision: 2, signed: true})}%`;
+    return numeric === null ? t('chart.insufficient') : `${formatNqNumber(numeric * 100, {precision: 2, signed: true})}%`;
 }
 
 function sortByTime(points: PaperPortfolioCurvePoint[]): PaperPortfolioCurvePoint[] {
@@ -55,6 +57,7 @@ function tooltipPoint(params: unknown, sorted: PaperPortfolioCurvePoint[]): Pape
  * tooltip：组合权益 / 初始资金 / 组合 PnL / 收益率 / 在册 run · 缺失 run。
  */
 export function NqPortfolioEquityChart({points, height = 260}: PortfolioCurveChartProps) {
+    const {i18n} = useTranslation();
     const option = useMemo(() => {
         if (points.length === 0) {
             return null;
@@ -72,11 +75,11 @@ export function NqPortfolioEquityChart({points, height = 260}: PortfolioCurveCha
                     }
                     return [
                         formatDateTime(point.timestamp),
-                        `组合权益：${formatNqNumber(point.totalEquity, {precision: 2})}`,
-                        `初始资金：${formatNqNumber(point.totalInitialEquity, {precision: 2})}`,
-                        `组合 PnL：${formatNqNumber(point.totalPnl, {precision: 2, signed: true})}`,
-                        `收益率：${ratioToPercentText(point.totalReturn)}`,
-                        `在册 run：${point.sourceRunCount} · 缺失 run：${point.missingRunCount}`,
+                        t('chart.equityValue', {value: formatNqNumber(point.totalEquity, {precision: 2})}),
+                        t('chart.initialValue', {value: formatNqNumber(point.totalInitialEquity, {precision: 2})}),
+                        t('chart.pnlValue', {value: formatNqNumber(point.totalPnl, {precision: 2, signed: true})}),
+                        t('chart.returnValue', {value: ratioToPercentText(point.totalReturn)}),
+                        t('chart.runCounts', {source: point.sourceRunCount, missing: point.missingRunCount}),
                     ].join('<br/>');
                 },
             },
@@ -86,7 +89,7 @@ export function NqPortfolioEquityChart({points, height = 260}: PortfolioCurveCha
             },
             series: [
                 {
-                    name: '组合权益',
+                    name: t('chart.portfolioEquity'),
                     type: 'line',
                     showSymbol: false,
                     data: sorted.map((point) => toChartNumber(point.totalEquity)),
@@ -95,7 +98,7 @@ export function NqPortfolioEquityChart({points, height = 260}: PortfolioCurveCha
                     areaStyle: {color: nqColor.primary, opacity: 0.08},
                 },
                 {
-                    name: '初始资金',
+                    name: t('chart.initial'),
                     type: 'line',
                     showSymbol: false,
                     data: sorted.map((point) => toChartNumber(point.totalInitialEquity)),
@@ -104,7 +107,7 @@ export function NqPortfolioEquityChart({points, height = 260}: PortfolioCurveCha
                 },
             ],
         };
-    }, [points]);
+    }, [points, i18n.resolvedLanguage]);
 
     const containerRef = useEChart(option);
     return <div ref={containerRef} className="nq-chart" style={{height}}/>;
@@ -116,6 +119,7 @@ export function NqPortfolioEquityChart({points, height = 260}: PortfolioCurveCha
  * 与单 run NqDrawdownChart 阅读习惯一致。tooltip：回撤 / 资金峰值 / 组合权益。
  */
 export function NqPortfolioDrawdownChart({points, height = 180}: PortfolioCurveChartProps) {
+    const {i18n} = useTranslation();
     const option = useMemo(() => {
         if (points.length === 0) {
             return null;
@@ -133,9 +137,9 @@ export function NqPortfolioDrawdownChart({points, height = 180}: PortfolioCurveC
                     }
                     return [
                         formatDateTime(point.timestamp),
-                        `回撤：${ratioToPercentText(point.drawdown)}`,
-                        `资金峰值：${formatNqNumber(point.peakEquity, {precision: 2})}`,
-                        `组合权益：${formatNqNumber(point.totalEquity, {precision: 2})}`,
+                        t('chart.drawdownValue', {value: ratioToPercentText(point.drawdown)}),
+                        t('chart.peakValue', {value: formatNqNumber(point.peakEquity, {precision: 2})}),
+                        t('chart.equityValue', {value: formatNqNumber(point.totalEquity, {precision: 2})}),
                     ].join('<br/>');
                 },
             },
@@ -154,7 +158,7 @@ export function NqPortfolioDrawdownChart({points, height = 180}: PortfolioCurveC
             },
             series: [
                 {
-                    name: '组合回撤',
+                    name: t('chart.portfolioDrawdown'),
                     type: 'line',
                     showSymbol: false,
                     data: sorted.map((point) => {
@@ -167,7 +171,7 @@ export function NqPortfolioDrawdownChart({points, height = 180}: PortfolioCurveC
                 },
             ],
         };
-    }, [points]);
+    }, [points, i18n.resolvedLanguage]);
 
     const containerRef = useEChart(option);
     return <div ref={containerRef} className="nq-chart" style={{height}}/>;

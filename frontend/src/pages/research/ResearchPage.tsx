@@ -1,3 +1,6 @@
+import {useLocalizedForm} from '@/i18n/useLocalizedForm';
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
 import {
     Alert,
     App,
@@ -17,7 +20,7 @@ import {
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
 
-import {formatApiError} from '@/api/errors';
+import {formatApiError, showApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
 import {
     useCreateResearchMutation,
@@ -36,9 +39,10 @@ import {containsIgnoreCase, formatDateTime, normalizeOptionalText} from '@/utils
 type ResearchRow = ResearchConfigListItem;
 
 export function ResearchPage() {
+    useTranslation('pages');
     const {message} = App.useApp();
-    const [queryForm] = Form.useForm<ResearchListFilters>();
-    const [createForm] = Form.useForm<ResearchConfigCreateRequest>();
+    const [queryForm] = useLocalizedForm<ResearchListFilters>();
+    const [createForm] = useLocalizedForm<ResearchConfigCreateRequest>();
     const [submittedFilters, setSubmittedFilters] = useState<ResearchListFilters>(defaultResearchListFilters);
     const [searchVersion, setSearchVersion] = useState(0);
     const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null);
@@ -55,55 +59,54 @@ export function ResearchPage() {
 
     const researchColumns: ColumnsType<ResearchRow> = [
         {
-            title: '研究配置 ID',
+            title: t('pages:researchConfigurationId'),
             dataIndex: 'researchConfigId',
             key: 'researchConfigId',
             width: 220,
             render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
         },
         {
-            title: '源策略 ID',
+            title: t('pages:sourceStrategyId'),
             dataIndex: 'sourceStrategyId',
             key: 'sourceStrategyId',
             width: 220,
             render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
         },
         {
-            title: '名称',
+            title: t('pages:name'),
             dataIndex: 'name',
             key: 'name',
             width: 180,
         },
         {
-            title: '描述',
+            title: t('pages:description'),
             dataIndex: 'description',
             key: 'description',
             width: 260,
             render: (value: string) => value || '-',
         },
         {
-            title: '创建时间',
+            title: t('pages:createdAt'),
             dataIndex: 'createdAt',
             key: 'createdAt',
             width: 180,
             render: (value: string) => formatDateTime(value),
         },
         {
-            title: '更新时间',
+            title: t('pages:updatedAt'),
             dataIndex: 'updatedAt',
             key: 'updatedAt',
             width: 180,
             render: (value: string) => formatDateTime(value),
         },
         {
-            title: '操作',
+            title: t('pages:actions'),
             key: 'action',
             fixed: 'right',
             width: 120,
             render: (_, record) => (
                 <Button type="link" onClick={() => setSelectedConfigId(record.researchConfigId)}>
-                    查看详情
-                </Button>
+                    {t('pages:viewDetails')}</Button>
             ),
         },
     ];
@@ -136,13 +139,13 @@ export function ResearchPage() {
             },
             {
                 onSuccess: () => {
-                    message.success('研究配置已创建。');
+                    message.success(t('pages:researchConfigurationCreated'));
                     setCreateOpen(false);
                     createForm.resetFields();
                     setSearchVersion((value) => (value === 0 ? 1 : value + 1));
                 },
                 onError: (error) => {
-                    message.error(formatApiError(error as AppApiError));
+                    showApiError(error as AppApiError, message);
                 },
             },
         );
@@ -153,23 +156,21 @@ export function ResearchPage() {
             <Space direction="vertical" size={16} style={{display: 'flex'}}>
                 <Card className="page-card" bordered={false}>
                     <PageHero
-                        title="研究配置"
-                        description="查看研究配置、源策略关联和参数定义，并提供既有契约下的最小新建动作闭环。"
+                        title={t('pages:researchConfigurations')}
+                        description={t('pages:viewResearchConfigurationsLinkedSourceStrategiesAndParameterDefinitionsOrCreateAConfiguration')}
                         badge="Research"
                     />
                 </Card>
                 <Card
                     className="page-section"
                     bordered={false}
-                    title="查询区"
+                    title={t('pages:filters')}
                     extra={(
                         <Space>
                             <Button type="primary" onClick={() => queryForm.submit()}>
-                                查询
-                            </Button>
+                                {t('pages:search')}</Button>
                             <Button onClick={handleReset}>
-                                重置
-                            </Button>
+                                {t('pages:reset')}</Button>
                         </Space>
                     )}
                 >
@@ -181,18 +182,18 @@ export function ResearchPage() {
                     >
                         <Row gutter={[16, 0]}>
                             <Col xs={24} md={12} xl={8}>
-                                <Form.Item label="源策略 ID" name="sourceStrategyId">
-                                    <Input placeholder="按源策略 ID 筛选"/>
+                                <Form.Item label={t('pages:sourceStrategyId')} name="sourceStrategyId">
+                                    <Input placeholder={t('pages:filterBySourceStrategyId')}/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={8}>
-                                <Form.Item label="研究配置 ID" name="researchConfigId">
-                                    <Input placeholder="按研究配置 ID 筛选"/>
+                                <Form.Item label={t('pages:researchConfigurationId')} name="researchConfigId">
+                                    <Input placeholder={t('pages:filterByResearchConfigurationId')}/>
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={8}>
-                                <Form.Item label="名称" name="name">
-                                    <Input placeholder="按配置名称筛选"/>
+                                <Form.Item label={t('pages:name')} name="name">
+                                    <Input placeholder={t('pages:filterByConfigurationName')}/>
                                 </Form.Item>
                             </Col>
                         </Row>
@@ -201,38 +202,36 @@ export function ResearchPage() {
                 <Card
                     className="page-section"
                     bordered={false}
-                    title="动作区"
+                    title={t('pages:actions2')}
                     extra={(
                         <Button type="primary" onClick={() => setCreateOpen(true)}>
-                            新建研究配置
-                        </Button>
+                            {t('pages:createResearchConfiguration')}</Button>
                     )}
                 >
                     <Alert
                         type="info"
                         showIcon
-                        message="当前页面动作区仅接入最小 create 动作；详情抽屉展示为只读，避免扩成大而全编辑页。"
+                        message={t('pages:createAConfigurationFromTheActionsAreaTheDetailsDrawerIsReadOnly')}
                     />
                 </Card>
                 <Card
                     className="page-section"
                     bordered={false}
-                    title="查询结果"
+                    title={t('pages:results')}
                     extra={hasSearched ?
-                        <Typography.Text type="secondary">共 {visibleItems.length} 条记录</Typography.Text> : null}
+                        <Typography.Text type="secondary">{t('pages:total')}{visibleItems.length} {t('pages:records')}</Typography.Text> : null}
                 >
                     {!hasSearched ? (
-                        <Empty description="点击查询后加载研究配置列表。"/>
+                        <Empty description={t('pages:searchToLoadResearchConfigurations')}/>
                     ) : researchQuery.error ? (
                         <Alert
                             type="error"
                             showIcon
-                            message="研究配置列表查询失败"
+                            message={t('pages:failedToQueryResearchConfigurations')}
                             description={formatApiError(researchQuery.error as AppApiError)}
                             action={(
                                 <Button size="small" onClick={() => setSearchVersion((value) => value + 1)}>
-                                    重试
-                                </Button>
+                                    {t('pages:retry')}</Button>
                             )}
                         />
                     ) : (
@@ -244,7 +243,7 @@ export function ResearchPage() {
                             pagination={{pageSize: 10, showSizeChanger: false}}
                             scroll={{x: 1520}}
                             locale={{
-                                emptyText: '当前筛选条件下没有匹配的研究配置。',
+                                emptyText: t('pages:noResearchConfigurationsMatchTheseFilters'),
                             }}
                         />
                     )}
@@ -253,56 +252,55 @@ export function ResearchPage() {
             <Drawer
                 open={Boolean(selectedConfigId)}
                 width={760}
-                title="研究配置详情"
+                title={t('pages:researchConfigurationDetails')}
                 onClose={() => setSelectedConfigId(null)}
                 destroyOnClose
             >
                 {researchDetailQuery.isLoading ? (
-                    <Alert type="info" showIcon message="正在加载研究配置详情..."/>
+                    <Alert type="info" showIcon message={t('pages:loadingResearchConfigurationDetails')}/>
                 ) : researchDetailQuery.error ? (
                     <Alert
                         type="error"
                         showIcon
-                        message="研究配置详情加载失败"
+                        message={t('pages:failedToLoadResearchConfigurationDetails')}
                         description={formatApiError(researchDetailQuery.error as AppApiError)}
                     />
                 ) : researchDetailQuery.data ? (
                     <Space direction="vertical" size={16} style={{display: 'flex'}}>
                         <Descriptions bordered column={2} size="small">
                             <Descriptions.Item
-                                label="研究配置 ID">{researchDetailQuery.data.researchConfigId}</Descriptions.Item>
+                                label={t('pages:researchConfigurationId')}>{researchDetailQuery.data.researchConfigId}</Descriptions.Item>
                             <Descriptions.Item
-                                label="源策略 ID">{researchDetailQuery.data.sourceStrategyId}</Descriptions.Item>
-                            <Descriptions.Item label="名称">{researchDetailQuery.data.name}</Descriptions.Item>
+                                label={t('pages:sourceStrategyId')}>{researchDetailQuery.data.sourceStrategyId}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:name')}>{researchDetailQuery.data.name}</Descriptions.Item>
                             <Descriptions.Item
-                                label="描述">{researchDetailQuery.data.description || '-'}</Descriptions.Item>
+                                label={t('pages:description')}>{researchDetailQuery.data.description || '-'}</Descriptions.Item>
                             <Descriptions.Item
-                                label="创建时间">{formatDateTime(researchDetailQuery.data.createdAt)}</Descriptions.Item>
+                                label={t('pages:createdAt')}>{formatDateTime(researchDetailQuery.data.createdAt)}</Descriptions.Item>
                             <Descriptions.Item
-                                label="更新时间">{formatDateTime(researchDetailQuery.data.updatedAt)}</Descriptions.Item>
-                            <Descriptions.Item label="参数 Schema" span={2}>
+                                label={t('pages:updatedAt')}>{formatDateTime(researchDetailQuery.data.updatedAt)}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:parameterSchema')} span={2}>
                                 <Typography.Paragraph style={{marginBottom: 0}}>
                                     {researchDetailQuery.data.parameterSchema || '-'}
                                 </Typography.Paragraph>
                             </Descriptions.Item>
-                            <Descriptions.Item label="参数默认值" span={2}>
+                            <Descriptions.Item label={t('pages:parameterDefaults')} span={2}>
                                 <Typography.Paragraph style={{marginBottom: 0}}>
                                     {researchDetailQuery.data.parameterDefaults || '-'}
                                 </Typography.Paragraph>
                             </Descriptions.Item>
-                            <Descriptions.Item label="数据集规格" span={2}>
+                            <Descriptions.Item label={t('pages:datasetSpecification')} span={2}>
                                 <Typography.Paragraph style={{marginBottom: 0}}>
                                     {researchDetailQuery.data.datasetSpec || '-'}
                                 </Typography.Paragraph>
                             </Descriptions.Item>
                         </Descriptions>
-                        <Card title="动作区" size="small">
+                        <Card title={t('pages:actions2')} size="small">
                             <Space direction="vertical" size={12} style={{display: 'flex'}}>
                                 <Alert type="info" showIcon
-                                       message="当前无基于研究配置详情的写动作，创建入口在页面动作区。"/>
+                                       message={t('pages:researchConfigurationDetailsAreReadOnlyUseTheActionsAreaToCreateAConfiguration')}/>
                                 <Button onClick={() => researchDetailQuery.refetch()}>
-                                    刷新详情
-                                </Button>
+                                    {t('pages:refreshDetails')}</Button>
                             </Space>
                         </Card>
                     </Space>
@@ -311,40 +309,38 @@ export function ResearchPage() {
             <Drawer
                 open={createOpen}
                 width={720}
-                title="新建研究配置"
+                title={t('pages:createResearchConfiguration')}
                 onClose={() => setCreateOpen(false)}
                 destroyOnClose
             >
                 <Form form={createForm} layout="vertical" onFinish={handleCreate}>
-                    <Form.Item label="源策略 ID" name="sourceStrategyId"
-                               rules={[{required: true, message: '请输入 sourceStrategyId'}]}>
+                    <Form.Item label={t('pages:sourceStrategyId')} name="sourceStrategyId"
+                               rules={[{required: true, message: t('pages:enterSourcestrategyid')}]}>
                         <Input/>
                     </Form.Item>
-                    <Form.Item label="名称" name="name" rules={[{required: true, message: '请输入名称'}]}>
+                    <Form.Item label={t('pages:name')} name="name" rules={[{required: true, message: t('pages:enterAName')}]}>
                         <Input/>
                     </Form.Item>
-                    <Form.Item label="描述" name="description">
+                    <Form.Item label={t('pages:description')} name="description">
                         <Input.TextArea rows={3}/>
                     </Form.Item>
-                    <Form.Item label="参数 Schema" name="parameterSchema"
-                               rules={[{required: true, message: '请输入 parameterSchema'}]}>
+                    <Form.Item label={t('pages:parameterSchema')} name="parameterSchema"
+                               rules={[{required: true, message: t('pages:enterParameterschema')}]}>
                         <Input.TextArea rows={4}/>
                     </Form.Item>
-                    <Form.Item label="参数默认值" name="parameterDefaults"
-                               rules={[{required: true, message: '请输入 parameterDefaults'}]}>
+                    <Form.Item label={t('pages:parameterDefaults')} name="parameterDefaults"
+                               rules={[{required: true, message: t('pages:enterParameterdefaults')}]}>
                         <Input.TextArea rows={4}/>
                     </Form.Item>
-                    <Form.Item label="数据集规格" name="datasetSpec"
-                               rules={[{required: true, message: '请输入 datasetSpec'}]}>
+                    <Form.Item label={t('pages:datasetSpecification')} name="datasetSpec"
+                               rules={[{required: true, message: t('pages:enterDatasetspec')}]}>
                         <Input.TextArea rows={4}/>
                     </Form.Item>
                     <Space>
                         <Button type="primary" htmlType="submit" loading={createResearchMutation.isPending}>
-                            提交创建
-                        </Button>
+                            {t('pages:create')}</Button>
                         <Button onClick={() => setCreateOpen(false)}>
-                            取消
-                        </Button>
+                            {t('pages:cancel')}</Button>
                     </Space>
                 </Form>
             </Drawer>

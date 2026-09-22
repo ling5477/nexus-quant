@@ -5,17 +5,20 @@ import {Outlet, useMatches} from 'react-router-dom';
 import {AppHeader} from '@/components/layout/AppHeader';
 import {AppSiderMenu} from '@/components/layout/AppSiderMenu';
 import type {RouteHandle} from '@/types/navigation';
+import {useTranslation} from 'react-i18next';
+import {appNavItems} from '@/router/navigation';
 
 const {Sider, Content} = Layout;
 
 export function ConsoleLayout() {
+    useTranslation();
     const [collapsed, setCollapsed] = useState(false);
     const matches = useMatches();
     const breadcrumbItems = matches
         .map((match) => match.handle as RouteHandle | undefined)
         .filter((handle): handle is RouteHandle => Boolean(handle?.breadcrumb))
         .map((handle) => ({
-            title: handle.breadcrumb,
+            title: appNavItems.find((item) => item.key === handle.menuKey)?.label ?? handle.breadcrumb,
         }));
 
     return (

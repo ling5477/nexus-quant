@@ -2,6 +2,8 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {useQuery, type QueryKey} from '@tanstack/react-query';
 
 import type {FreshnessState} from '@/nq-design-system';
+import {useTranslation} from 'react-i18next';
+import {formatApiError} from '@/api/errors';
 
 /**
  * useLiveQuery — NQ Console 实时数据获取抽象(B0.3)。
@@ -14,7 +16,7 @@ import type {FreshnessState} from '@/nq-design-system';
  * 1) 仅 polling + 手动刷新,**不接 WebSocket / SSE**;传输层抽象在此,页面不感知实现;
  *    后期切 socket 时只改本 hook,调用方不变。
  * 2) 默认窗口失焦暂停轮询(pauseOnHidden),省资源。
- * 3) 失败不静默:errorReason 暴露给上层显式展示,不吞错误。queryFn 应抛出已脱敏的错误。
+ * 3) 失败不静默:errorReason 通过统一目录展示并保留追踪身份，不把诊断消息直接透给用户。
  */
 
 export type LiveStatus = 'loading' | 'fresh' | 'stale' | 'error' | 'disabled';
@@ -68,27 +70,8 @@ function now(): number {
     return typeof performance !== 'undefined' ? performance.now() : Date.now();
 }
 
-/** 错误脱敏:优先按 HTTP 状态归类,避免把内部栈/路径透出到 UI。 */
-function normalizeErrorReason(error: unknown): string {
-    const appError = error as {status?: number; message?: string};
-
-    if (typeof appError.status === 'number') {
-        if (appError.status === 401 || appError.status === 403) {
-            return '无访问权限或登录已过期';
-        }
-        if (appError.status >= 500) {
-            return '服务暂时不可用';
-        }
-        if (appError.status === 0) {
-            return '网络异常';
-        }
-        return `请求失败 (${appError.status})`;
-    }
-
-    return appError.message ? String(appError.message) : '请求失败';
-}
-
 export function useLiveQuery<T>(options: UseLiveQueryOptions<T>): UseLiveQueryResult<T> {
+    useTranslation('errors');
     const {queryKey, queryFn, pollingIntervalMs = 0, enabled = true, pauseOnHidden = true} = options;
     const staleAfterMs = options.staleAfterMs ?? (pollingIntervalMs > 0 ? pollingIntervalMs * 2 : 30_000);
 
@@ -142,7 +125,7 @@ export function useLiveQuery<T>(options: UseLiveQueryOptions<T>): UseLiveQueryRe
         status = Date.now() - lastUpdatedAt > staleAfterMs ? 'stale' : 'fresh';
     }
 
-    const errorReason = query.isError && query.error ? normalizeErrorReason(query.error) : null;
+    const errorReason = query.isError && query.error ? formatApiError(query.error) : null;
 
     const refresh = useCallback(() => {
         void query.refetch();
