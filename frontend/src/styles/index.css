@@ -7,6 +7,7 @@
  * 3) 数字字段使用 .nq-num（tabular-nums），ID/hash/traceId 使用 .nq-mono。
  */
 @import './tokens.css';
+@import '../nq-design-system/tokens/nq-tokens.css';
 
 * {
   box-sizing: border-box;
@@ -87,6 +88,23 @@ a {
   min-height: 100vh;
 }
 
+.app-shell__body { min-width: 0; }
+
+.app-shell__sider {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.app-shell__sider .ant-layout-sider-children {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-shell__nav { min-height: 0; overflow-y: auto; flex: 1; }
+.app-shell__drawer .ant-drawer-body { padding: 8px 0; }
+.app-shell__drawer .app-shell__nav { height: 100%; }
+
 .app-shell__sider.ant-layout-sider {
   background: var(--nq-color-bg-sunken);
   border-inline-end: 1px solid var(--nq-color-border-subtle);
@@ -96,29 +114,10 @@ a {
   display: flex;
   align-items: center;
   gap: var(--nq-space-md);
-  height: 56px;
+  height: 68px;
+  min-height: 68px;
   margin: 0 var(--nq-space-lg);
   color: var(--nq-color-text);
-}
-
-.app-shell__logo-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--nq-radius-md);
-  background: var(--nq-color-primary-bg);
-  border: 1px solid var(--nq-color-primary);
-  color: var(--nq-color-primary-hover);
-  font-size: var(--nq-font-size-sm);
-  font-weight: 700;
-}
-
-.app-shell__brand {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.3;
 }
 
 .app-shell__menu.ant-menu {
@@ -139,9 +138,9 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: var(--nq-space-lg);
-  min-height: 52px;
-  padding: 0 var(--nq-space-lg);
-  background: var(--nq-color-bg-panel);
+  min-height: 68px;
+  padding: var(--nq-space-md) var(--nq-space-lg);
+  background: var(--nq-color-bg-sunken);
   border-bottom: 1px solid var(--nq-color-border-subtle);
 }
 
@@ -152,10 +151,42 @@ a {
   gap: var(--nq-space-md);
 }
 
+.app-shell__header-left { flex: 0 0 auto; }
+.app-shell__header-right { flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
+.app-shell__header-right .ant-tag { margin-inline-end: 0; }
+.app-shell__context-title { max-width: 180px; }
+.app-shell__account-selector { max-width: 290px; min-width: 0; }
+.app-shell__account-label { overflow: hidden; text-overflow: ellipsis; }
+.app-shell__user { display: inline-flex; align-items: center; gap: 8px; }
+.app-shell__username { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-shell__user .ant-avatar { background: var(--nq-color-primary-active); color: var(--nq-color-text); }
+
+.app-shell__menu .ant-menu-item { height: 38px; line-height: 38px; }
+.app-shell__menu .ant-menu-item-group-title { font-size: 11px; padding-top: 16px; color: var(--nq-color-text-tertiary); }
+.app-shell__menu .ant-menu-item-selected { box-shadow: inset 2px 0 var(--nq-color-accent); }
+.app-shell__menu .ant-menu-item .anticon { font-size: 17px; }
+
+@media (max-width: 1350px) {
+  .app-shell__context-title { display: none; }
+}
+
+@media (max-width: 767px) {
+  .app-shell__header { align-items: flex-start; gap: 8px; }
+  .app-shell__header-right { gap: 8px; }
+  .app-shell__account-selector { max-width: min(260px, 65vw); }
+}
+
 .app-shell__main {
   display: flex;
   flex-direction: column;
   gap: var(--nq-space-md);
+}
+
+.nq-page-scaffold {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nq-space-lg);
+  min-width: 0;
 }
 
 .app-shell__breadcrumb {
@@ -197,6 +228,22 @@ a {
   flex-wrap: wrap;
 }
 
+.nq-page-header .ant-typography h3,
+.nq-page-header h3.ant-typography { font-size: 20px; }
+
+:where(button, a, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--nq-color-accent);
+  outline-offset: 3px;
+}
+
+.page-card, .page-section { border-radius: var(--nq-radius-lg); }
+.page-section .ant-card-head-title { font-weight: 600; }
+.page-section .ant-card-extra { max-width: 55%; overflow-wrap: anywhere; }
+.page-section .ant-card-head { flex-wrap: wrap; }
+
+/* 诊断字段名可能很长，详情表在自身容器滚动，不能撑宽整个工作台。 */
+.app-shell__content .ant-descriptions-view { overflow-x: auto; }
+
 .nq-metric-card {
   display: flex;
   flex-direction: column;
@@ -212,7 +259,7 @@ a {
 .nq-metric-card__label {
   font-size: var(--nq-font-size-sm);
   color: var(--nq-color-text-secondary);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .nq-metric-card__value {
@@ -235,6 +282,8 @@ a {
   font-size: var(--nq-font-size-xs);
   color: var(--nq-color-text-tertiary);
 }
+
+.nq-metric-card__value, .nq-metric-card__footer { overflow-wrap: anywhere; }
 
 /* 状态摘要条：横向一排迷你指标，用于详情页顶部 */
 .nq-status-strip {
@@ -266,236 +315,6 @@ a {
   box-shadow: inset 2px 0 0 var(--nq-color-primary);
 }
 
-/* ---------------------------------- */
-/* 登录页：专业控制台入口               */
-/* ---------------------------------- */
-
-.login-page {
-  position: relative;
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 464px);
-  overflow: hidden;
-  background: radial-gradient(circle at 18% 18%, rgba(84, 169, 255, 0.1), transparent 30%),
-  radial-gradient(circle at 78% 76%, rgba(61, 214, 140, 0.07), transparent 28%),
-  var(--nq-color-bg-page);
-}
-
-.login-page::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image: linear-gradient(rgba(219, 228, 238, 0.035) 1px, transparent 1px),
-  linear-gradient(90deg, rgba(219, 228, 238, 0.035) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.75), transparent 72%);
-}
-
-.login-page__identity,
-.login-page__panel {
-  position: relative;
-  z-index: 1;
-}
-
-.login-page__identity {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: var(--nq-space-xl);
-  min-width: 0;
-  padding: 64px;
-  border-right: 1px solid var(--nq-color-border-subtle);
-}
-
-.login-page__identity-main {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--nq-space-md);
-  max-width: 680px;
-}
-
-.login-page__brand-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--nq-radius-lg);
-  border: 1px solid rgba(84, 169, 255, 0.44);
-  background: var(--nq-color-bg-elevated);
-  color: var(--nq-color-paper);
-  font-family: var(--nq-font-family-mono), monospace;
-  font-size: var(--nq-font-size-lg);
-  font-weight: 700;
-  box-shadow: var(--nq-shadow-low);
-}
-
-.login-page__title.ant-typography {
-  margin: 0;
-  color: var(--nq-color-text);
-  font-size: 40px;
-  line-height: 1.1;
-  font-weight: 650;
-  letter-spacing: 0;
-}
-
-.login-page__subtitle.ant-typography {
-  color: var(--nq-color-text);
-  font-size: var(--nq-font-size-xl);
-  font-weight: 600;
-}
-
-.login-page__description.ant-typography {
-  max-width: 620px;
-  margin: 0;
-  color: var(--nq-color-text-secondary);
-  font-size: var(--nq-font-size-lg);
-}
-
-.login-page__capabilities {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(110px, 1fr));
-  gap: var(--nq-space-sm);
-  max-width: 760px;
-}
-
-.login-page__capability {
-  display: flex;
-  align-items: center;
-  gap: var(--nq-space-sm);
-  min-width: 0;
-  padding: var(--nq-space-md);
-  border: 1px solid var(--nq-color-border-subtle);
-  border-radius: var(--nq-radius-lg);
-  background: rgba(19, 26, 35, 0.78);
-  color: var(--nq-color-text-secondary);
-  font-size: var(--nq-font-size-sm);
-  line-height: 1.35;
-}
-
-.login-page__capability-icon {
-  display: inline-flex;
-  flex: 0 0 auto;
-  color: var(--nq-color-paper);
-  font-size: var(--nq-font-size-lg);
-}
-
-.login-page__posture {
-  display: flex;
-  flex-direction: column;
-  gap: var(--nq-space-md);
-  max-width: 760px;
-  padding: var(--nq-space-lg);
-  border: 1px solid var(--nq-color-border-subtle);
-  border-radius: var(--nq-radius-lg);
-  background: rgba(10, 14, 20, 0.72);
-  box-shadow: var(--nq-shadow-low);
-}
-
-.login-page__posture-heading {
-  display: flex;
-  align-items: center;
-  gap: var(--nq-space-sm);
-  color: var(--nq-color-text);
-  font-weight: 600;
-}
-
-.login-page__posture-heading .anticon {
-  color: var(--nq-color-warning);
-}
-
-.login-page__posture-badges,
-.login-page__environment-badges {
-  display: flex;
-  align-items: center;
-  gap: var(--nq-space-sm);
-  flex-wrap: wrap;
-}
-
-.login-page__panel {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--nq-space-xxl);
-}
-
-.login-page__card {
-  width: min(100%, 420px);
-  background: rgba(19, 26, 35, 0.96);
-  border: 1px solid var(--nq-color-border);
-  border-radius: var(--nq-radius-lg);
-  box-shadow: var(--nq-shadow-overlay);
-}
-
-.login-page__card .ant-card-body {
-  padding: var(--nq-space-xl);
-}
-
-.login-page__card-header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--nq-space-md);
-  margin-bottom: var(--nq-space-lg);
-}
-
-.login-page__card-title.ant-typography {
-  margin: 0 0 var(--nq-space-xs);
-  color: var(--nq-color-text);
-  font-size: var(--nq-font-size-xxl);
-  line-height: 1.2;
-  letter-spacing: 0;
-}
-
-.login-page__card-caption.ant-typography {
-  color: var(--nq-color-text-secondary);
-}
-
-.login-page__form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--nq-space-lg);
-}
-
-.login-page__card .ant-form-item-label > label {
-  color: var(--nq-color-text-secondary);
-  font-weight: 600;
-}
-
-.login-page__card .ant-input-affix-wrapper,
-.login-page__card .ant-input {
-  background: var(--nq-color-bg-sunken);
-  border-color: var(--nq-color-border-subtle);
-}
-
-.login-page__card .ant-input-affix-wrapper:hover,
-.login-page__card .ant-input-affix-wrapper-focused,
-.login-page__card .ant-input:hover,
-.login-page__card .ant-input:focus {
-  border-color: var(--nq-color-paper);
-  box-shadow: none;
-}
-
-.login-page__submit.ant-btn-primary {
-  border-color: var(--nq-color-text);
-  background: var(--nq-color-text);
-  color: var(--nq-color-bg-page);
-  font-weight: 700;
-}
-
-.login-page__submit.ant-btn-primary:not(:disabled):hover {
-  border-color: var(--nq-color-primary-hover);
-  background: var(--nq-color-primary-hover);
-  color: var(--nq-color-bg-page);
-}
-
-.login-page__security.ant-alert,
-.login-page__error.ant-alert {
-  border: 1px solid var(--nq-color-border-subtle);
-  border-radius: var(--nq-radius-lg);
-}
-
 .loading-screen {
   min-height: 100vh;
   display: flex;
@@ -510,53 +329,5 @@ a {
 }
 
 @media (max-width: 960px) {
-  .login-page {
-      grid-template-columns: 1fr;
-      min-height: auto;
-      overflow: visible;
-  }
-
-  .login-page::before {
-      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.75), transparent 72%);
-  }
-
-  .login-page__identity {
-      padding: 40px 24px 0;
-      border-right: none;
-  }
-
-  .login-page__title.ant-typography {
-      font-size: 32px;
-  }
-
-  .login-page__capabilities {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .login-page__panel {
-      padding: var(--nq-space-xl);
-  }
-
-  .app-shell__content {
-      padding: var(--nq-space-md);
-  }
-}
-
-@media (max-width: 560px) {
-  .login-page__identity {
-      padding: var(--nq-space-xl) var(--nq-space-lg) 0;
-  }
-
-  .login-page__capabilities {
-      grid-template-columns: 1fr;
-  }
-
-  .login-page__panel {
-      align-items: flex-start;
-      padding: var(--nq-space-lg);
-  }
-
-  .login-page__card .ant-card-body {
-      padding: var(--nq-space-lg);
-  }
+  .app-shell__content { padding: var(--nq-space-md); }
 }

@@ -1,66 +1,79 @@
-// AppShell.tsx — NQ Console 固定产品壳(B0 / Design Tokens v2)
-// 进入控制台后一律:固定框架 + 高密度内容 + 分层状态。登录页之外不做花哨头图。
-import type { ReactNode } from 'react';
-import { Layout } from 'antd';
-
-const { Sider, Header, Content } = Layout;
+import {useEffect, useState, type ReactNode} from 'react';
+import {Button, Drawer, Grid, Layout} from 'antd';
+import {MenuFoldOutlined, MenuUnfoldOutlined} from '@ant-design/icons';
+import {useTranslation} from 'react-i18next';
 
 export interface AppShellProps {
-  /** 侧边导航内容(导航项由调用方提供) */
-  nav: ReactNode;
-  brand?: ReactNode;
-  /** Top Bar 右侧集群:EnvironmentBadge / 风险摘要 / 告警 / 搜索 / 用户 */
-  topRight?: ReactNode;
-  /** 页头:标题 / 实体 ID / 状态 / 操作 */
-  pageHeader?: ReactNode;
-  /** 页级风险横幅(RiskBanner),页头与内容之间 */
-  riskBanner?: ReactNode;
-  children: ReactNode;
+    nav: ReactNode;
+    brand?: ReactNode;
+    topRight?: ReactNode;
+    header?: ReactNode;
+    pageHeader?: ReactNode;
+    riskBanner?: ReactNode;
+    collapsed?: boolean;
+    onCollapsedChange?: (value: boolean) => void;
+    children: ReactNode;
 }
 
-export function AppShell({ nav, brand, topRight, pageHeader, riskBanner, children }: AppShellProps) {
-  return (
-    <Layout style={{ minHeight: '100vh', background: 'var(--nq-bg-app)' }}>
-      <Sider
-        width={220}
-        style={{ background: 'var(--nq-bg-app)', borderRight: '1px solid var(--nq-border-subtle)' }}
-        breakpoint="lg"
-        collapsedWidth={56}
-      >
-        <div style={{ height: 48, display: 'flex', alignItems: 'center', padding: '0 16px', color: 'var(--nq-text-primary)', fontWeight: 600, borderBottom: '1px solid var(--nq-border-subtle)' }}>
-          {brand ?? 'NexusQuant'}
-        </div>
-        <nav style={{ padding: 8 }}>{nav}</nav>
-      </Sider>
+/** 正式控制台与设计预览共用产品壳；窄屏抽屉避免展开侧栏挤出业务内容。 */
+export function AppShell({nav, brand, topRight, header, pageHeader, riskBanner,
+    collapsed, onCollapsedChange, children}: AppShellProps) {
+    const {t} = useTranslation();
+    const screens = Grid.useBreakpoint();
+    const mobile = screens.md === false;
+    const [localCollapsed, setLocalCollapsed] = useState(false);
+    const isCollapsed = collapsed ?? localCollapsed;
 
-      <Layout style={{ background: 'var(--nq-bg-canvas)' }}>
-        <Header
-          style={{
-            height: 48, lineHeight: '48px', padding: '0 16px',
-            background: 'var(--nq-bg-app)',
-            borderBottom: '1px solid var(--nq-border-subtle)',
-            display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12,
-          }}
-        >
-          {topRight}
-        </Header>
+    const setCollapsed = (value: boolean) => {
+        setLocalCollapsed(value);
+        onCollapsedChange?.(value);
+    };
 
-        {pageHeader && (
-          <div
-            style={{
-              padding: '12px 24px', background: 'var(--nq-bg-canvas)',
-              borderBottom: '1px solid var(--nq-border-subtle)',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
-            }}
-          >
-            {pageHeader}
-          </div>
-        )}
+    useEffect(() => {
+        if (screens.lg === false) {
+            setLocalCollapsed(true);
+            onCollapsedChange?.(true);
+        }
+    }, [screens.lg, onCollapsedChange]);
 
-        {riskBanner && <div style={{ padding: '12px 24px 0' }}>{riskBanner}</div>}
+    const navigation = <nav className="app-shell__nav" aria-label={t('shell.console')}>{nav}</nav>;
 
-        <Content style={{ padding: 24, background: 'var(--nq-bg-canvas)' }}>{children}</Content>
-      </Layout>
-    </Layout>
-  );
+    return (
+        <Layout className="app-shell">
+            {mobile ? (
+                <Drawer
+                    title={brand ?? 'NexusQuant'}
+                    placement="left"
+                    width={264}
+                    open={!isCollapsed}
+                    onClose={() => setCollapsed(true)}
+                    className="app-shell__drawer"
+                >
+                    {navigation}
+                </Drawer>
+            ) : (
+                <Layout.Sider className="app-shell__sider" width={240} collapsedWidth={72} collapsed={isCollapsed}>
+                    <div className="app-shell__logo">{brand ?? 'NexusQuant'}</div>
+                    {navigation}
+                </Layout.Sider>
+            )}
+            <Layout className="app-shell__body">
+                {header ?? (
+                    <header className="app-shell__header">
+                        <Button type="text" aria-label={isCollapsed ? t('shell.expand') : t('shell.collapse')}
+                            icon={isCollapsed ? <MenuUnfoldOutlined/> : <MenuFoldOutlined/>}
+                            onClick={() => setCollapsed(!isCollapsed)}/>
+                        {topRight}
+                    </header>
+                )}
+                <Layout.Content className="app-shell__content">
+                    <div className="app-shell__main">
+                        {pageHeader}
+                        {riskBanner}
+                        {children}
+                    </div>
+                </Layout.Content>
+            </Layout>
+        </Layout>
+    );
 }

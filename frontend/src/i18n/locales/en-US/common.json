@@ -1,4 +1,15 @@
 {
+  "dashboardEvidence": {
+    "unknown": "Runtime observation unknown",
+    "incomplete": "Run-list, focused-run alert or heartbeat evidence is not fully confirmed. Loading, refreshes, failed queries and missing data do not establish health.",
+    "running": "Paper runs are active",
+    "scoped": "This query found no failed runs; the focused run has no open alerts and its latest heartbeat record is OK. This is a query snapshot, not proof of current real-time or global health, and grants no LIVE authority."
+  },
+  "designSystem": {
+    "demoTitle": "Visual System V3 diagnostics",
+    "brandAndExchanges": "Brand and exchange identities",
+    "visualIdentityOnly": "Visual identity does not imply an enabled exchange, account permission or LIVE readiness. Unknown exchanges retain their original codes."
+  },
   "language": "Language",
   "loading": "Loading...",
   "queryFailed": "Query failed",
@@ -30,6 +41,8 @@
     "checking": "Checking your session. Please wait.",
     "aria": "Sign in to NexusQuant",
     "tagline": "Quantitative trading infrastructure console",
+    "heroLead": "Trade with insight.",
+    "heroAccent": "Act with discipline.",
     "lede": "Research, backtest, simulate, manage risk and audit trades in one controlled console.",
     "capabilities": "NexusQuant capabilities",
     "research": "Strategy research and backtesting",

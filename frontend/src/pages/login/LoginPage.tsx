@@ -1,4 +1,4 @@
-import {LockOutlined, LoginOutlined, SafetyCertificateOutlined, UserOutlined} from '@ant-design/icons';
+import {AuditOutlined, ExperimentOutlined, LineChartOutlined, LockOutlined, LoginOutlined, SafetyCertificateOutlined, UserOutlined} from '@ant-design/icons';
 import {Alert, Button, Form, Input} from 'antd';
 import {useMutation} from '@tanstack/react-query';
 import {startTransition, useState} from 'react';
@@ -14,6 +14,7 @@ import {LanguageSelect} from '@/i18n/LanguageSelect';
 import {ApiErrorNotice} from '@/errors/ApiErrorNotice';
 import {readAuthError, clearAuthError} from '@/errors/auth-error';
 import {useLocalizedForm} from '@/i18n/useLocalizedForm';
+import {BrandLockup} from '@/nq-design-system/brand/BrandLockup';
 
 import './LoginPage.css';
 
@@ -26,11 +27,11 @@ interface LoginFormValues {
  * 左区叙事只允许四类信息:系统是什么、能做什么、风控/审计边界、为什么可信。
  * 不出现 Gate 名称、里程碑、DEV/PAPER/LOCAL 等交付语义(降到 footer 极小号元信息)。
  */
-const CAPABILITIES: string[] = [
-    'auth.research',
-    'auth.paper',
-    'auth.risk',
-    'auth.audit',
+const CAPABILITIES = [
+    {key: 'auth.research', icon: <ExperimentOutlined/>},
+    {key: 'auth.paper', icon: <LineChartOutlined/>},
+    {key: 'auth.risk', icon: <SafetyCertificateOutlined/>},
+    {key: 'auth.audit', icon: <AuditOutlined/>},
 ];
 
 /**
@@ -80,6 +81,12 @@ export function LoginPage() {
 
     return (
         <StandaloneSurface className="nq-login" ariaLabel={t('auth.aria')}>
+            <header className="nq-login__masthead">
+                <h1 className="nq-login__product-title" aria-label="NexusQuant">
+                    <BrandLockup caption={t('shell.subtitle')}/>
+                </h1>
+                <LanguageSelect/>
+            </header>
             <div className="nq-login__inner">
                 <ProductNarrative/>
                 <LoginCard
@@ -96,6 +103,10 @@ export function LoginPage() {
                     }}
                 />
             </div>
+            <footer className="nq-login__page-footer">
+                <span>NexusQuant</span>
+                <span>{t('auth.footer')}</span>
+            </footer>
         </StandaloneSurface>
     );
 }
@@ -107,18 +118,19 @@ function ProductNarrative() {
     const {t} = useTranslation();
     return (
         <section className="nq-login__narrative" aria-labelledby="nq-login-title">
-            <div className="nq-login__brand-mark" aria-hidden="true">NQ</div>
-            <h1 id="nq-login-title" className="nq-login__brand">NexusQuant</h1>
             <p className="nq-login__tagline">{t('auth.tagline')}</p>
+            <h2 id="nq-login-title" className="nq-login__headline">
+                {t('auth.heroLead')}<br/><span>{t('auth.heroAccent')}</span>
+            </h2>
             <p className="nq-login__lede">
                 {t('auth.lede')}
             </p>
 
             <ul className="nq-login__capabilities" aria-label={t('auth.capabilities')}>
-                {CAPABILITIES.map((item) => (
-                    <li className="nq-login__capability" key={item}>
-                        <span className="nq-login__capability-dot" aria-hidden="true"/>
-                        {t(item)}
+                {CAPABILITIES.map(({key, icon}) => (
+                    <li className="nq-login__capability" key={key}>
+                        <span className="nq-login__capability-icon" aria-hidden="true">{icon}</span>
+                        <span>{t(key)}</span>
                     </li>
                 ))}
             </ul>
@@ -146,7 +158,7 @@ function LoginCard({loading, error, onSubmit}: LoginCardProps) {
     return (
         <section className="nq-login__auth" aria-label={t('auth.title')}>
             <div className="nq-login__card">
-                <LanguageSelect/>
+                <div className="nq-login__card-brand"><BrandLockup caption={t('shell.console')}/></div>
                 <h2 className="nq-login__card-title">{t('auth.title')}</h2>
                 <p className="nq-login__card-caption">{t('auth.caption')}</p>
 
@@ -159,6 +171,7 @@ function LoginCard({loading, error, onSubmit}: LoginCardProps) {
                         rules={[{required: true, message: t('auth.usernameRequired')}]}
                     >
                         <Input
+                            size="large"
                             prefix={<UserOutlined/>}
                             autoComplete="username"
                             placeholder={t('auth.usernameRequired')}
@@ -170,6 +183,7 @@ function LoginCard({loading, error, onSubmit}: LoginCardProps) {
                         rules={[{required: true, message: t('auth.passwordRequired')}]}
                     >
                         <Input.Password
+                            size="large"
                             prefix={<LockOutlined/>}
                             autoComplete="current-password"
                             placeholder={t('auth.passwordRequired')}
@@ -196,7 +210,6 @@ function LoginCard({loading, error, onSubmit}: LoginCardProps) {
                     description={t('auth.securityDescription')}
                 />
 
-                <p className="nq-login__footer">{t('auth.footer')}</p>
             </div>
         </section>
     );

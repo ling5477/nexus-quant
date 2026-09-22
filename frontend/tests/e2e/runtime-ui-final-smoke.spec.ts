@@ -73,6 +73,7 @@ function buildReadinessItems(): ReadinessItem[] {
 
 async function seedRuntimeFinalSmokeStubs(page: Page): Promise<void> {
     await page.addInitScript(() => {
+        window.localStorage.setItem('nq.locale', 'zh-CN');
         window.localStorage.setItem('nexus-quant.console.auth', JSON.stringify({
             accessToken: 'runtime-ui-final-smoke-session',
             tokenType: 'Bearer',
@@ -134,6 +135,40 @@ async function expectNoFalseReadyCopy(page: Page): Promise<void> {
 }
 
 test.describe('runtime guarded UI final smoke', () => {
+    for (const scenario of ['missing-heartbeat', 'failed-alerts', 'ok-snapshot', 'failed-run', 'failed-list']) {
+        test(`dashboard evidence remains scoped: ${scenario}`, async ({page}) => {
+            await seedRuntimeFinalSmokeStubs(page);
+            const writes: string[] = [];
+            page.on('request', request => {
+                if (new URL(request.url()).pathname.startsWith('/api/') && request.method() !== 'GET') writes.push(request.url());
+            });
+            await page.route('**/api/paper-trading/runs', route => route.fulfill(scenario === 'failed-list'
+                ? {status: 503, json: {code: 'SERVICE_UNAVAILABLE', traceId: 'dashboard-list-failure'}}
+                : {json: [{paperRunId: 'dashboard-fixture', strategyVersionId: 'fixture-version', status: scenario === 'failed-run' ? 'FAILED' : 'RUNNING', updatedAt: '2026-09-22T09:00:00Z'}]}));
+            await page.route('**/api/paper-trading/runs/dashboard-fixture/heartbeats', route => route.fulfill({json: scenario === 'ok-snapshot'
+                ? [{heartbeatId: 'fixture-heartbeat', paperRunId: 'dashboard-fixture', status: 'OK', heartbeatTime: '2026-09-22T09:00:00Z'}] : []}));
+            if (scenario === 'failed-alerts') {
+                await page.route('**/api/paper-trading/runs/dashboard-fixture/alerts', route => route.fulfill({status: 503, json: {code: 'SERVICE_UNAVAILABLE', traceId: 'dashboard-alert-failure'}}));
+            }
+            await page.goto('/dashboard');
+            const expected = scenario === 'failed-list' ? '无法获取 Paper Trading 运行状态'
+                : scenario === 'failed-run' ? '存在 1 个 FAILED Paper Run'
+                : scenario === 'ok-snapshot' ? '存在运行中的 Paper Run' : '运行观测状态未知';
+            await expect(page.getByText(expected, {exact: true})).toBeVisible();
+            await expect(page.getByText('Paper Trading 运行正常', {exact: true})).toHaveCount(0);
+            if (scenario === 'ok-snapshot') await expect(page.getByText(/仅表示查询快照，不证明当前实时或全局健康/)).toBeVisible();
+            if (scenario === 'failed-alerts') {
+                await expect(page.getByText(/dashboard-alert-failure/).first()).toBeVisible();
+                await expect(page.locator('.nq-metric-card').filter({hasText: '未处理告警'}).locator('.nq-metric-card__value')).toHaveText('-');
+            }
+            if (scenario === 'failed-list') {
+                await expect(page.getByText(/dashboard-list-failure/).first()).toBeVisible();
+                await expect(page.locator('.nq-metric-card').filter({has: page.getByText('RUNNING', {exact: true})}).locator('.nq-metric-card__value')).toHaveText('-');
+            }
+            expect(writes).toEqual([]);
+        });
+    }
+
     test('covers dashboard, runtime, marketdata, paper and trading guards without write endpoint calls', async ({page}) => {
         const apiWrites: string[] = [];
         const apiRequests: string[] = [];
@@ -163,39 +198,39 @@ test.describe('runtime guarded UI final smoke', () => {
         await expect(page).toHaveURL(/\/dashboard$/);
         await expect(page.getByRole('heading', {name: '控制台总览'})).toBeVisible();
         const dashboardCard = page.getByTestId('dashboard-runtime-readiness-card');
-        await expect(dashboardCard).toContainText('Runtime Readiness');
-        await expect(dashboardCard).toContainText('Runtime guarded: LIVE disabled');
-        await expect(dashboardCard).toContainText('Real provider');
-        await expect(dashboardCard).toContainText('Not implemented');
-        await expect(dashboardCard).toContainText('Simulated only');
-        await expect(dashboardCard).toContainText('Skipped / NoReal');
-        await expect(dashboardCard).toContainText('NoReal/Fake/Stub/FutureReal not live-ready.');
-        await expect(dashboardCard).toContainText('Permission probe SKIPPED / disabled is not verified.');
-        await expect(dashboardCard.getByRole('link', {name: 'View Runtime Readiness'})).toHaveAttribute('href', '/runtime/readiness');
-        await expect(dashboardCard.getByRole('link', {name: 'View MarketData Readiness'})).toHaveAttribute('href', '/marketdata');
+        await expect(dashboardCard).toContainText('运行就绪状态');
+        await expect(dashboardCard).toContainText('运行边界受控：LIVE 已禁用');
+        await expect(dashboardCard).toContainText('真实 Provider');
+        await expect(dashboardCard).toContainText('未实现');
+        await expect(dashboardCard).toContainText('仅模拟');
+        await expect(dashboardCard).toContainText('跳过 / NoReal');
+        await expect(dashboardCard).toContainText('NoReal/Fake/Stub/FutureReal 不代表实盘就绪。');
+        await expect(dashboardCard).toContainText('SKIPPED 或已禁用的权限探测不代表验证通过。');
+        await expect(dashboardCard.getByRole('link', {name: '查看运行就绪状态'})).toHaveAttribute('href', '/runtime/readiness');
+        await expect(dashboardCard.getByRole('link', {name: '查看行情就绪状态'})).toHaveAttribute('href', '/marketdata');
         await expectNoFalseReadyCopy(page);
 
-        await dashboardCard.getByRole('link', {name: 'View MarketData Readiness'}).click();
+        await dashboardCard.getByRole('link', {name: '查看行情就绪状态'}).click();
         await expect(page).toHaveURL(/\/marketdata$/);
-        await expect(page.getByRole('heading', {name: 'Marketdata'})).toBeVisible();
+        await expect(page.getByRole('heading', {name: '行情数据'})).toBeVisible();
         await expect(page.getByTestId('marketdata-kline-readiness-view')).toBeVisible();
         await expect(page.getByTestId('marketdata-quality-readiness-view')).toBeVisible();
 
         await page.goto('/dashboard');
-        await page.getByTestId('dashboard-runtime-readiness-card').getByRole('link', {name: 'View Runtime Readiness'}).click();
+        await page.getByTestId('dashboard-runtime-readiness-card').getByRole('link', {name: '查看运行就绪状态'}).click();
         await expect(page).toHaveURL(/\/runtime\/readiness$/);
-        await expect(page.getByRole('heading', {name: 'Runtime Readiness Overview'})).toBeVisible();
-        await expect(page.getByText('LIVE disabled').first()).toBeVisible();
-        await expect(page.getByText('RealClient / real provider / real exchange adapter not implemented')).toBeVisible();
+        await expect(page.getByRole('heading', {name: '运行就绪总览'})).toBeVisible();
+        await expect(page.getByText('LIVE 已禁用').first()).toBeVisible();
+        await expect(page.getByText('LIVE 就绪、RealClient、真实 Provider 和真实交易所适配器均未实现。')).toBeVisible();
         await expect(page.getByText('READY_FOR_PAPER_ONLY').first()).toBeVisible();
         await expect(page.getByText('PERMISSION_PROBE_DISABLED / SKIPPED').first()).toBeVisible();
         await expect(page.getByText('NoReal / Fake / Stub / FutureReal').first()).toBeVisible();
         await expectNoFalseReadyCopy(page);
 
-        await page.getByRole('button', {name: 'View MarketData readiness'}).getByRole('link').click();
+        await page.getByRole('button', {name: '查看行情就绪状态'}).getByRole('link').click();
         await expect(page).toHaveURL(/\/marketdata\?exchangeCode=BINANCE&marketType=SPOT&symbol=BTC-USDT&interval=1m$/);
-        await expect(page.getByRole('heading', {name: 'Marketdata'})).toBeVisible();
-        await expect(page.getByTestId('marketdata-runtime-deep-link')).toContainText('Runtime readiness context applied');
+        await expect(page.getByRole('heading', {name: '行情数据'})).toBeVisible();
+        await expect(page.getByTestId('marketdata-runtime-deep-link')).toContainText('已应用运行就绪上下文');
         await expect(page.getByTestId('marketdata-runtime-deep-link')).toContainText('不会自动触发采集');
         await expectSelectValue(page, '交易所', 'BINANCE');
         await expectSelectValue(page, '市场', 'SPOT');
@@ -205,21 +240,21 @@ test.describe('runtime guarded UI final smoke', () => {
         await page.goto('/paper-trading');
         await expect(page).toHaveURL(/\/paper-trading\/runs$/);
         const paperBanner = page.getByTestId('paper-real-boundary-banner');
-        await expect(paperBanner).toContainText('Paper-only boundary');
-        await expect(paperBanner).toContainText('Paper Trading is simulated.');
-        await expect(paperBanner).toContainText('Paper order ≠ real order.');
-        await expect(paperBanner).toContainText('Paper risk pass ≠ LIVE authorization.');
-        await expect(paperBanner).toContainText('permission probe SKIPPED do not authorize LIVE trading.');
+        await expect(paperBanner).toContainText('仅限 Paper 模拟交易');
+        await expect(paperBanner).toContainText('Paper Trading 为模拟交易。');
+        await expect(paperBanner).toContainText('Paper 订单不等于真实订单。');
+        await expect(paperBanner).toContainText('Paper 风控通过不等于 LIVE 授权。');
+        await expect(paperBanner).toContainText('权限探测 SKIPPED 均不构成 LIVE 交易授权。');
         await expectNoFalseReadyCopy(page);
 
         await page.goto('/trading');
         await expect(page).toHaveURL(/\/trading$/);
         const tradingBanner = page.getByTestId('runtime-guarded-live-disabled-banner');
-        await expect(tradingBanner).toContainText('Runtime guarded: LIVE disabled');
-        await expect(tradingBanner).toContainText('LIVE disabled.');
-        await expect(tradingBanner).toContainText('Real provider not implemented.');
-        await expect(tradingBanner).toContainText('NoReal/Fake/Stub/FutureReal not live-ready.');
-        await expect(tradingBanner).toContainText('Permission probe SKIPPED / disabled is not verified.');
+        await expect(tradingBanner).toContainText('运行受控：LIVE 已禁用');
+        await expect(tradingBanner).toContainText('LIVE 已禁用。');
+        await expect(tradingBanner).toContainText('尚未实现真实 provider。');
+        await expect(tradingBanner).toContainText('NoReal/Fake/Stub/FutureReal 不具备 LIVE 就绪资格。');
+        await expect(tradingBanner).toContainText('权限探测 SKIPPED / disabled 不代表已验证。');
         await expectNoFalseReadyCopy(page);
 
         expect(apiWrites, 'runtime guarded UI final smoke must not call write endpoints').toEqual([]);

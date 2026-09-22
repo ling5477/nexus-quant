@@ -13,7 +13,10 @@ export type { RiskBannerProps, RiskSeverity } from './status/RiskBanner';
 export { DataFreshness } from './status/DataFreshness';
 export type { DataFreshnessProps, FreshnessState } from './status/DataFreshness';
 export { AppShell } from './shell/AppShell';
+export {NqPageScaffold} from './shell/NqPageScaffold';
 export type { AppShellProps } from './shell/AppShell';
+export {BrandLockup} from './brand/BrandLockup';
+export {ExchangeBadge, ExchangeIcon} from './brand/ExchangeBadge';
 export { NqKlineChart, NqVolumeChart } from './charts';
 export type { NqChartBaseProps, NqChartState, NqKlineBar } from './charts';
 

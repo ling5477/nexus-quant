@@ -20,6 +20,8 @@ import type {AppApiError} from '@/types/api';
 import type {PaperTradingRunItem} from '@/types/paper-trading';
 import {appEnv} from '@/utils/env';
 import {formatDateTime} from '@/utils/formatters';
+import './DashboardPage.css';
+import {hasCurrentFocusEvidence} from './dashboard-evidence';
 
 /**
  * DashboardPage — 安全总览。
@@ -94,7 +96,9 @@ export function DashboardPage() {
             .slice(0, 8);
     }, [alertsQuery.data, recoveryEventsQuery.data, pageI18n.resolvedLanguage]);
 
-    // 安全横幅级别：失败 run / CRITICAL 告警 > 未处理告警 / 心跳滞后 > 正常运行 > 无 run
+    const focusEvidenceAvailable = hasCurrentFocusEvidence(alertsQuery, heartbeatsQuery, latestHeartbeat?.status);
+    const runsAvailable = runsQuery.isSuccess;
+    // 已知异常优先；证据不全不报健康，完整焦点证据也不代表全局健康或实时授权。
     const banner = useMemo(() => {
         if (runsQuery.error) {
             return {
@@ -118,11 +122,22 @@ export function DashboardPage() {
             };
         }
         if (runningCount > 0) {
+            if (!focusEvidenceAvailable || runsQuery.isFetching) {
+                return {
+                    level: 'warning' as const,
+                    message: t('dashboardEvidence.unknown'),
+                    description: t('dashboardEvidence.incomplete'),
+                };
+            }
             return {
-                level: 'success' as const,
-                message: t('pages:paperTradingIsRunningNormally'),
-                description: t('pages:noFailedRunsOrUnresolvedAlertsTheHeartbeatIsNormal'),
+                level: 'info' as const,
+                message: t('dashboardEvidence.running'),
+                description: t('dashboardEvidence.scoped'),
             };
+        }
+
+        if (!runsAvailable || runsQuery.isFetching) {
+            return {level: 'info' as const, message: t('dashboardEvidence.unknown'), description: t('dashboardEvidence.incomplete')};
         }
 
         return {
@@ -130,13 +145,13 @@ export function DashboardPage() {
             message: t('pages:noActivePaperRun'),
             description: t('pages:theSystemIsIdleCreateAndStartAPaperRunOnThePaperTradingPage'),
         };
-    }, [failedCount, latestHeartbeat, openAlerts.length, openCriticalCount, runningCount, runsQuery.error, pageI18n.resolvedLanguage]);
+    }, [failedCount, latestHeartbeat, openAlerts.length, openCriticalCount, runningCount, runsQuery.error, runsQuery.isFetching, runsAvailable, focusEvidenceAvailable, pageI18n.resolvedLanguage]);
 
     const focusLoading = Boolean(focusRunId) && dailyReportsQuery.isPending;
 
     return (
-        <Space direction="vertical" size={12} style={{display: 'flex'}}>
-            <Card className="page-card" bordered={false}>
+        <div className="nq-dashboard">
+            <Card className="page-card nq-dashboard__heading" bordered={false}>
                 <NqPageHeader
                     title={t('pages:dashboard')}
                     description={t('pages:safetyOverviewOfSystemHealthTheCurrentEnvironmentPaperTradingStatusAndRiskSignals')}
@@ -149,41 +164,44 @@ export function DashboardPage() {
                         />
                     )}
                 />
+                {(runsQuery.error || heartbeatsQuery.error) && (
+                    <NqErrorState title={t('queryFailed')} error={(runsQuery.error ?? heartbeatsQuery.error) as AppApiError}/>
+                )}
             </Card>
 
-            <div className="nq-status-strip">
+            <div className="nq-status-strip nq-dashboard__metrics">
                 <NqMetricCard
                     label={t('pages:totalPaperRuns')}
-                    value={runsQuery.isPending ? '-' : formatNqNumber(runs.length, {precision: 0})}
+                    value={runsAvailable ? formatNqNumber(runs.length, {precision: 0}) : '-'}
                     loading={runsQuery.isPending}
                 />
                 <NqMetricCard
                     label="RUNNING"
-                    value={formatNqNumber(runningCount, {precision: 0})}
+                    value={runsAvailable ? formatNqNumber(runningCount, {precision: 0}) : '-'}
                     tone={runningCount > 0 ? 'success' : 'muted'}
                     loading={runsQuery.isPending}
                 />
                 <NqMetricCard
                     label="FAILED"
-                    value={formatNqNumber(failedCount, {precision: 0})}
+                    value={runsAvailable ? formatNqNumber(failedCount, {precision: 0}) : '-'}
                     tone={failedCount > 0 ? 'danger' : 'muted'}
                     loading={runsQuery.isPending}
                 />
                 <NqMetricCard
                     label={t('pages:runningStrategies')}
-                    value={formatNqNumber(runningStrategyCount, {precision: 0})}
+                    value={runsAvailable ? formatNqNumber(runningStrategyCount, {precision: 0}) : '-'}
                     loading={runsQuery.isPending}
                 />
                 <NqMetricCard
                     label={t('pages:unresolvedAlerts')}
-                    value={focusRunId ? formatNqNumber(openAlerts.length, {precision: 0}) : '-'}
+                    value={focusRunId && alertsQuery.isSuccess ? formatNqNumber(openAlerts.length, {precision: 0}) : '-'}
                     tone={openAlerts.length > 0 ? 'warning' : 'muted'}
                     footer={focusRunId ? t('pages:focusedRunScope') : t('pages:noPaperRuns')}
                     loading={Boolean(focusRunId) && alertsQuery.isPending}
                 />
                 <NqMetricCard
                     label={t('pages:heartbeatStatus')}
-                    value={latestHeartbeat ? <NqStatusTag status={latestHeartbeat.status}/> : '-'}
+                    value={heartbeatsQuery.isSuccess && latestHeartbeat ? <NqStatusTag status={latestHeartbeat.status}/> : '-'}
                     footer={latestHeartbeat ? formatDateTime(latestHeartbeat.heartbeatTime) : t('pages:focusedRunScope')}
                     loading={Boolean(focusRunId) && heartbeatsQuery.isPending}
                 />
@@ -191,7 +209,7 @@ export function DashboardPage() {
 
             <Card
                 data-testid="dashboard-runtime-readiness-card"
-                className="page-section"
+                className="page-section nq-dashboard__runtime"
                 bordered={false}
                 title={t('pages:runtimeReadiness')}
                 extra={<NqStatusTag status="LIVE_DISABLED" tone="danger"/>}
@@ -233,8 +251,8 @@ export function DashboardPage() {
                 </Space>
             </Card>
 
-            <Row gutter={[12, 12]}>
-                <Col xs={24} xl={14}>
+            <Row className="nq-dashboard__activity" gutter={[12, 12]}>
+                <Col span={24}>
                     <Card
                         className="page-section"
                         bordered={false}
@@ -245,7 +263,9 @@ export function DashboardPage() {
                             </Typography.Text>
                         ) : null}
                     >
-                        {!focusRun ? (
+                        {dailyReportsQuery.error ? (
+                            <NqErrorState title={t('queryFailed')} error={dailyReportsQuery.error as AppApiError}/>
+                        ) : !focusRun ? (
                             <NqEmptyState description={t('pages:createAndStartAPaperRunToSeeItsLatestDailyMetricsHere')}/>
                         ) : !latestDailyReport && !focusLoading ? (
                             <NqEmptyState description={t('pages:noDailyReportForTheFocusedRunGenerateOneFromPaperTradingDetails')}/>
@@ -287,12 +307,12 @@ export function DashboardPage() {
                         ) : null}
                     </Card>
                 </Col>
-                <Col xs={24} xl={10}>
+                <Col span={24}>
                     <Card className="page-section" bordered={false} title={t('pages:recentEvents')}>
                         {!focusRunId ? (
                             <NqEmptyState description={t('pages:noPaperRunsTheEventFeedIsEmpty')}/>
-                        ) : alertsQuery.error ? (
-                            <NqErrorState title={t('pages:failedToQueryEvents')} error={alertsQuery.error as AppApiError}/>
+                        ) : alertsQuery.error || recoveryEventsQuery.error ? (
+                            <NqErrorState title={t('pages:failedToQueryEvents')} error={(alertsQuery.error ?? recoveryEventsQuery.error) as AppApiError}/>
                         ) : recentEvents.length === 0 ? (
                             <NqEmptyState description={t('pages:noAlertsOrRecoveryEventsForTheFocusedRun')}/>
                         ) : (
@@ -319,7 +339,7 @@ export function DashboardPage() {
                 </Col>
             </Row>
 
-            <Card className="page-section" bordered={false} title={t('pages:workspaces')}>
+            <Card className="page-section nq-dashboard__workspaces" bordered={false} title={t('pages:workspaces')}>
                 <Row gutter={[12, 12]}>
                     {appNavItems
                         .filter((item) => item.key !== 'dashboard')
@@ -346,6 +366,6 @@ export function DashboardPage() {
                         ))}
                 </Row>
             </Card>
-        </Space>
+        </div>
     );
 }

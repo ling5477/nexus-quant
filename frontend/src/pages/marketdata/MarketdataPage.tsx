@@ -11,6 +11,8 @@ import {formatApiError, showApiError} from '@/api/errors';
 import {marketdataApi} from '@/api/marketdata';
 import {marketdataQueryKeys} from '@/api/query-keys';
 import {PageHero} from '@/components/page/PageHero';
+import {NqPageScaffold} from '@/nq-design-system/shell/NqPageScaffold';
+import {ExchangeBadge} from '@/nq-design-system/brand/ExchangeBadge';
 import {EXCHANGE_OPTIONS, INTERVAL_OPTIONS, MARKET_TYPE_OPTIONS, SYMBOL_OPTIONS} from '@/constants/filter-options';
 import {DataFreshness, NqKlineChart, NqVolumeChart, applyNqCssVars, type FreshnessState, type NqKlineBar} from '@/nq-design-system';
 import {useAccountContextStore} from '@/store/account-context-store';
@@ -1480,7 +1482,7 @@ export function MarketdataPage() {
         : t('pages:marketDataBars');
 
     return (
-        <Space direction="vertical" size={16} style={{display: 'flex'}}>
+        <NqPageScaffold>
             {contextHolder}
             <Card className="page-card" bordered={false}>
                 <PageHero
@@ -1547,7 +1549,7 @@ export function MarketdataPage() {
                         size="small"
                         column={{xs: 1, sm: 2, md: 3}}
                         items={[
-                            {key: 'exchange', label: t('pages:exchange'), children: <MetricText>{submittedQuery?.exchangeCode ?? '-'}</MetricText>},
+                            {key: 'exchange', label: t('pages:exchange'), children: <ExchangeBadge code={submittedQuery?.exchangeCode}/>},
                             {key: 'symbol', label: t('pages:instrument2'), children: <MetricText>{submittedQuery?.symbol ?? '-'}</MetricText>},
                             {key: 'interval', label: t('pages:timeframe'), children: <MetricText>{submittedQuery?.interval ?? '-'}</MetricText>},
                             {key: 'barCount', label: t('pages:barCount2'), children: <MetricText>{bars.length}</MetricText>},
@@ -1596,7 +1598,7 @@ export function MarketdataPage() {
                     <div
                         style={{
                             display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                            gridTemplateColumns: 'minmax(0, 1fr)',
                             gap: 16,
                         }}
                     >
@@ -2078,6 +2080,6 @@ export function MarketdataPage() {
                     />
                 )}
             </Card>
-        </Space>
+        </NqPageScaffold>
     );
 }

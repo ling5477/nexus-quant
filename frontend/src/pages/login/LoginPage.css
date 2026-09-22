@@ -1,177 +1,189 @@
-/* LoginPage.css — v2 登录页作用域样式。
-   约束:命名空间到 .nq-login,只读 var(--nq-*),不影响 v1 页面。
-   构图:整体居中、左右平衡的双区(由 .nq-standalone 负责整体居中)。 */
-
-.nq-login__inner {
-    width: 100%;
-    max-width: 980px;
-    display: grid;
-    grid-template-columns: 1.05fr 0.95fr;
-    gap: 56px;
-    align-items: center;
-}
-
-/* ---- 左区:产品叙事 ---- */
-.nq-login__narrative {
+/* 登录页使用已确认的背景；表单与文字独立渲染，装饰行情不代表实时数据。 */
+.nq-login {
+    min-height: 100svh;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    min-width: 0;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 28px 4.5vw 20px;
+    background-color: var(--nq-color-bg-page);
+    background-image: linear-gradient(90deg, color-mix(in srgb, var(--nq-color-bg-page) 16%, transparent), transparent 60%),
+        url('../../assets/brand/login-earth-kline-realistic-approved.webp');
+    background-size: cover;
+    background-position: center;
 }
 
-.nq-login__brand-mark {
-    display: inline-flex;
+.nq-login__masthead,
+.nq-login__page-footer {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 6px;
-    border: 1px solid var(--nq-primary);
-    background: var(--nq-bg-elevated);
-    color: var(--nq-primary);
-    font-family: var(--nq-font-mono);
-    font-size: 15px;
-    font-weight: 700;
+    gap: 20px;
 }
 
-.nq-login__brand {
-    margin: 4px 0 0;
-    font-size: 32px;
-    line-height: 1.15;
-    font-weight: 650;
-    color: var(--nq-text-primary);
+.nq-login__product-title { margin: 0; }
+.nq-login__masthead .nq-brand__name { font-size: clamp(16px, 1.6vw, 26px); }
+.nq-login__masthead .nq-brand__monogram { height: 46px; flex-basis: 46px; }
+.nq-login__masthead .nq-brand__caption { font-size: 12px; }
+
+.nq-login__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(350px, 29vw, 480px);
+    gap: 32px;
+    align-items: center;
+    flex: 1;
+    width: 100%;
+    padding: 40px 0;
+}
+
+.nq-login__narrative {
+    align-self: start;
+    min-width: 0;
+    max-width: 600px;
+    padding-top: clamp(16px, 5vh, 64px);
+    text-shadow: 0 2px 10px var(--nq-color-bg-page);
 }
 
 .nq-login__tagline {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--nq-text-secondary);
+    margin: 0 0 20px;
+    color: var(--nq-color-text-secondary);
+    font-size: 14px;
+    letter-spacing: 0.08em;
 }
 
+.nq-login__headline {
+    margin: 0 0 20px;
+    color: var(--nq-color-text);
+    font-size: clamp(34px, 3.6vw, 60px);
+    font-weight: 650;
+    line-height: 1.22;
+    letter-spacing: -0.035em;
+}
+
+.nq-login__headline span { color: var(--nq-color-accent); }
+
 .nq-login__lede {
+    max-width: 500px;
     margin: 0;
-    max-width: 420px;
-    font-size: 14px;
-    color: var(--nq-text-secondary);
+    color: var(--nq-color-text-secondary);
+    font-size: 16px;
+    line-height: 1.8;
 }
 
 .nq-login__capabilities {
-    list-style: none;
-    margin: 12px 0 0;
-    padding: 0;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px 20px;
-    width: 100%;
-    max-width: 420px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    list-style: none;
+    padding: 0;
+    margin: 30px 0 0;
 }
 
 .nq-login__capability {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: var(--nq-text-secondary);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    color: var(--nq-color-text);
+    font-size: 13px;
+    font-weight: 500;
 }
 
-.nq-login__capability-dot {
-    width: 6px;
-    height: 6px;
+.nq-login__capability-icon {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border: 1px solid var(--nq-color-border);
     border-radius: 50%;
-    background: var(--nq-primary);
-    flex: 0 0 auto;
+    background: color-mix(in srgb, var(--nq-color-bg-panel) 80%, transparent);
+    color: var(--nq-color-accent);
+    font-size: 21px;
 }
 
 .nq-login__promise {
     display: flex;
     align-items: flex-start;
     gap: 8px;
-    margin: 16px 0 0;
-    padding-top: 16px;
-    border-top: 1px solid var(--nq-border-subtle);
-    max-width: 440px;
-    font-size: 13px;
-    color: var(--nq-text-tertiary);
+    max-width: 500px;
+    margin: 24px 0 0;
+    color: var(--nq-color-text-secondary);
+    font-size: 12px;
+    line-height: 1.8;
 }
 
-.nq-login__promise .anticon {
-    margin-top: 2px;
-    color: var(--nq-success);
-    flex: 0 0 auto;
-}
+.nq-login__promise .anticon { margin-top: 4px; color: var(--nq-color-accent); }
 
-/* ---- 右区:认证卡片 ---- */
-.nq-login__auth {
-    display: flex;
-    justify-content: center;
-    min-width: 0;
-}
+.nq-login__auth { min-width: 0; }
 
 .nq-login__card {
-    width: 100%;
-    max-width: 380px;
-    padding: 24px;
-    background: var(--nq-bg-panel);
-    border: 1px solid var(--nq-border-subtle);
-    border-radius: 6px;
+    padding: clamp(24px, 2.4vw, 40px);
+    border: 1px solid var(--nq-color-border);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--nq-color-bg-sunken) 95%, transparent);
+    box-shadow: var(--nq-shadow-overlay);
 }
 
+.nq-login__card-brand { margin-bottom: 32px; }
+.nq-login__card-brand .nq-brand__name { font-size: 18px; }
+
 .nq-login__card-title {
-    margin: 0 0 4px;
-    font-size: 20px;
+    margin: 0 0 8px;
+    color: var(--nq-color-text);
+    font-size: 24px;
     font-weight: 600;
-    color: var(--nq-text-primary);
+    line-height: 1.35;
 }
 
 .nq-login__card-caption {
-    margin: 0 0 20px;
-    font-size: 13px;
-    color: var(--nq-text-tertiary);
+    margin: 0 0 24px;
+    color: var(--nq-color-text-secondary);
+    line-height: 1.7;
 }
 
-.nq-login__error,
-.nq-login__security {
-    margin-bottom: 16px;
-    border-radius: 4px;
+.nq-login__card .ant-form-item { margin-bottom: 20px; }
+.nq-login__card .ant-input-affix-wrapper { min-height: 46px; background: var(--nq-color-bg-elevated); }
+.nq-login__card .ant-input-prefix { color: var(--nq-color-text-secondary); margin-right: 12px; }
+.nq-login__card .ant-btn-primary {
+    min-height: 48px;
+    font-weight: 600;
+    background: linear-gradient(110deg, var(--nq-color-primary), var(--nq-color-primary-active));
 }
 
-.nq-login__security {
-    margin-top: 16px;
-    margin-bottom: 0;
-}
+.nq-login__security { margin-top: 24px; }
+.nq-login__error { margin-bottom: 20px; overflow-wrap: anywhere; }
 
-.nq-login__footer {
-    margin: 16px 0 0;
-    text-align: center;
+.nq-login__page-footer {
+    color: var(--nq-color-text-secondary);
     font-size: 11px;
-    color: var(--nq-text-disabled);
+    text-shadow: 0 1px 4px var(--nq-color-bg-page);
 }
 
-/* ---- 移动端:上下堆叠,认证卡片在首屏中央(置顶) ---- */
-@media (max-width: 880px) {
-    .nq-login__inner {
-        grid-template-columns: 1fr;
-        max-width: 420px;
-        gap: 28px;
-    }
+/* 窄屏优先表单；背景只是装饰，裁切不能导致凭证输入不可见。 */
+@media (max-width: 1100px) {
+    .nq-login__inner { grid-template-columns: minmax(0, 1fr) 350px; }
+    .nq-login__capabilities { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 350px; }
+    .nq-login__capability { flex-direction: row; align-items: center; }
+    .nq-login__lede { font-size: 14px; }
+}
 
-    .nq-login__auth {
-        order: 1;
-    }
-
+@media (max-width: 760px) {
+    .nq-login { padding: 20px; background-position: 58% center; background-attachment: fixed; }
+    .nq-login__masthead .nq-brand__caption { display: none; }
+    .nq-login__masthead .nq-brand__monogram { display: none; }
+    .nq-login__inner { display: flex; flex-direction: column; gap: 32px; padding: 32px 0; }
+    .nq-login__auth { order: 0; width: 100%; max-width: 440px; }
     .nq-login__narrative {
-        order: 2;
-        align-items: center;
-        text-align: center;
+        order: 1;
+        align-self: center;
+        max-width: 440px;
+        padding: 24px;
+        background: color-mix(in srgb, var(--nq-color-bg-sunken) 94%, transparent);
+        border-radius: var(--nq-radius-lg);
     }
-
-    .nq-login__capabilities {
-        justify-items: center;
-    }
-
-    .nq-login__brand {
-        font-size: 28px;
-    }
+    .nq-login__headline { font-size: 32px; }
+    .nq-login__capabilities { gap: 16px; }
+    .nq-login__capability { flex-direction: column; align-items: flex-start; }
+    .nq-login__card { padding: 24px; }
+    .nq-login__page-footer { flex-wrap: wrap; gap: 8px; }
 }

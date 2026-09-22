@@ -87,6 +87,7 @@ const SAMPLE_BARS: MarketdataBarFixture[] = [
 async function seedAuthAndMarketdataStubs(page: Page): Promise<void> {
     // Why: 该 smoke 是 no-backend MarketData chart readiness 验证，只预置登录态并 stub 只读 API。
     await page.addInitScript(() => {
+        window.localStorage.setItem('nq.locale', 'zh-CN');
         window.localStorage.setItem('nexus-quant.console.auth', JSON.stringify({
             accessToken: 'marketdata-chart-smoke-session',
             tokenType: 'Bearer',
@@ -154,17 +155,24 @@ test.describe('marketdata kline readiness view', () => {
         await fillQueryWindow(page);
         await page.getByRole('button', {name: /查\s*询/}).first().click();
 
-        const kline = chartPanel.getByTestId('nq-kline-chart').filter({hasText: 'OHLCV K-line'}).first();
-        const volume = chartPanel.getByTestId('nq-volume-chart').filter({hasText: 'Volume'}).first();
+        const kline = chartPanel.getByTestId('nq-kline-chart');
+        const volume = chartPanel.getByTestId('nq-volume-chart');
+        await expect(kline).toHaveCount(1);
+        await expect(volume).toHaveCount(1);
 
         await expect(kline.locator('canvas').first()).toBeVisible({timeout: 15_000});
         await expect(volume.locator('canvas').first()).toBeVisible({timeout: 15_000});
+        const priceBox = await kline.boundingBox();
+        const volumeBox = await volume.boundingBox();
+        expect(priceBox).not.toBeNull();
+        expect(volumeBox).not.toBeNull();
+        expect(volumeBox!.y).toBeGreaterThanOrEqual(priceBox!.y + priceBox!.height);
         await expect(chartPanel.getByText('BINANCE', {exact: true}).first()).toBeVisible();
         await expect(chartPanel.getByText('BTC-USDT', {exact: true}).first()).toBeVisible();
         await expect(chartPanel.getByText('1m', {exact: true}).first()).toBeVisible();
         await expect(chartPanel.getByText('4', {exact: true}).first()).toBeVisible();
         await expect(chartPanel.getByText('GAP_DETECTED')).toBeVisible();
-        await expect(chartPanel.getByText(/gap \/ qualityStatus: 1/)).toBeVisible();
+        await expect(chartPanel.getByText(/缺口 \/ qualityStatus：1/)).toBeVisible();
         await expect(page.getByText('Marketdata bars 查询失败')).toHaveCount(0);
     });
 });

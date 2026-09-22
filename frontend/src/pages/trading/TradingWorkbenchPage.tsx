@@ -27,6 +27,7 @@ import {useEffect, useMemo, useState} from 'react';
 import {formatApiError, showApiError} from '@/api/errors';
 import {RuntimeGuardBanner} from '@/components/nq';
 import {PageHero} from '@/components/page/PageHero';
+import {NqPageScaffold} from '@/nq-design-system/shell/NqPageScaffold';
 import {
     useCancelOrderMutation,
     usePlaceOrderMutation,
@@ -281,7 +282,7 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
 
     return (
         <>
-            <Space direction="vertical" size={16} style={{display: 'flex'}}>
+            <NqPageScaffold>
                 {legacyAlias ? (
                     <Alert
                         type="warning"
@@ -412,7 +413,7 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
                         </Card>
                     ) : null}
                 </Card>
-            </Space>
+            </NqPageScaffold>
 
             <Drawer open={detailOpen} width={860} title={t('pages:orderDetails')} onClose={() => setDetailOpen(false)} destroyOnClose>
                 {detailQuery.isLoading ? (

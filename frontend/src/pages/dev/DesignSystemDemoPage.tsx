@@ -1,6 +1,9 @@
 import {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {Button, ConfigProvider, Segmented} from 'antd';
 import {BarChart} from 'echarts/charts';
+import {useTranslation} from 'react-i18next';
+import {BrandLockup} from '@/nq-design-system/brand/BrandLockup';
+import {ExchangeBadge} from '@/nq-design-system/brand/ExchangeBadge';
 
 import {echarts} from '@/components/nq/charts/echarts-core';
 import {BacktestCurveChart} from '@/components/backtest/BacktestCurveChart';
@@ -233,6 +236,7 @@ function LiveQueryDemo() {
 }
 
 export function DesignSystemDemoPage() {
+    const {t} = useTranslation();
     const [convention, setConvention] = useState<MarketConvention>('INTL_CRYPTO');
     const [riskOpen, setRiskOpen] = useState(true);
     const [refreshTick, setRefreshTick] = useState(0);
@@ -242,6 +246,8 @@ export function DesignSystemDemoPage() {
     useLayoutEffect(() => {
         applyNqCssVars(convention);
         registerNqEchartsTheme(convention);
+        // 诊断页可切换惯例，离开时恢复业务默认，避免遗留全局涨跌色。
+        return () => applyNqCssVars();
     }, [convention]);
 
     const equityOption = useMemo(
@@ -292,7 +298,7 @@ export function DesignSystemDemoPage() {
         <ConfigProvider theme={nqAntdTheme}>
             <div className="nq-ds-demo nq-ds-demo--cjk">
                 <AppShell
-                    brand="NexusQuant"
+                    brand={<BrandLockup/>}
                     nav={
                         <div style={{display: 'flex', flexDirection: 'column', gap: 2}}>
                             {NAV_DEMOS.map((item) => (
@@ -320,7 +326,7 @@ export function DesignSystemDemoPage() {
                         <>
                             <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
                                 <span style={{fontSize: 16, fontWeight: 600, color: 'var(--nq-text-primary)'}}>
-                                    Design System v2 自检
+                                    {t('designSystem.demoTitle')}
                                 </span>
                                 <StatusTag label="B0 READY_NOW" tone="primary" variant="pill"/>
                             </div>
@@ -356,6 +362,14 @@ export function DesignSystemDemoPage() {
                     }
                 >
                     <div style={{display: 'flex', flexDirection: 'column', gap: 16}}>
+                        <section className="nq-ds-demo__section">
+                            <h3 className="nq-ds-demo__section-title">{t('designSystem.brandAndExchanges')}</h3>
+                            <div className="nq-ds-demo__row">
+                                <BrandLockup/>
+                                {['OKX', 'BINANCE', 'PAPER', 'UNKNOWN'].map(code => <ExchangeBadge key={code} code={code}/>)}
+                            </div>
+                            <p>{t('designSystem.visualIdentityOnly')}</p>
+                        </section>
                         <section className="nq-ds-demo__section">
                             <h3 className="nq-ds-demo__section-title">StatusTag — 实体状态(dot / pill)</h3>
                             <div className="nq-ds-demo__row">

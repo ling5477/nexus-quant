@@ -1,0 +1,22 @@
+/* 运行绩效与边界并排展示；所有数据继续由页面既有查询提供。 */
+.nq-dashboard {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+}
+
+.nq-dashboard__heading,
+.nq-dashboard__metrics,
+.nq-dashboard__workspaces { grid-column: 1 / -1; }
+
+.nq-dashboard__activity { grid-column: 1; grid-row: 3; min-width: 0; }
+.nq-dashboard__runtime { grid-column: 2; grid-row: 3; min-width: 0; }
+.nq-dashboard__runtime .nq-status-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.nq-dashboard__activity .ant-space { flex-wrap: wrap; }
+.nq-dashboard__workspaces .ant-card-hoverable { height: 100%; }
+
+@media (max-width: 1199px) {
+    .nq-dashboard { grid-template-columns: minmax(0, 1fr); }
+    .nq-dashboard__runtime, .nq-dashboard__activity { grid-column: 1; grid-row: auto; }
+}

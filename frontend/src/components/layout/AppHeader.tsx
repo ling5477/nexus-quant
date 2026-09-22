@@ -4,7 +4,7 @@ import {
     MenuFoldOutlined,
     MenuUnfoldOutlined,
 } from '@ant-design/icons';
-import {Button, Dropdown, Space, Tag, Typography} from 'antd';
+import {Avatar, Button, Dropdown, Space, Tag, Tooltip, Typography} from 'antd';
 import {useEffect} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
@@ -17,6 +17,7 @@ import {useAccountContextStore} from '@/store/account-context-store';
 import {appEnv} from '@/utils/env';
 import {useTranslation} from 'react-i18next';
 import {LanguageSelect} from '@/i18n/LanguageSelect';
+import {ExchangeIcon} from '@/nq-design-system/brand/ExchangeBadge';
 
 interface AppHeaderProps {
     collapsed: boolean;
@@ -69,6 +70,7 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
 
     const accountItems = (accountsQuery.data ?? []).map((item: ExchangeAccountSummary) => ({
         key: String(item.exchangeAccountId),
+        icon: <ExchangeIcon code={item.exchangeCode}/>,
         label: `${item.exchangeCode} / ${item.tradeEnv} / ${item.accountAlias}${item.isDefault ? t('shell.default') : ''}`,
     }));
 
@@ -87,7 +89,7 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
                     onClick={onToggleCollapsed}
                     aria-label={collapsed ? t('shell.expand') : t('shell.collapse')}
                 />
-                <div>
+                <div className="app-shell__context-title">
                     <Typography.Text strong>{appEnv.appTitle}</Typography.Text>
                     <br/>
                     {/* 副标题保持中性描述，不声明 Gate 阶段，避免阶段推进后文案过期 */}
@@ -110,8 +112,9 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
                     trigger={['click']}
                     disabled={accountItems.length === 0}
                 >
-                    <Button>
-                        {accountLabel} <DownOutlined/>
+                    <Button className="app-shell__account-selector" title={accountLabel} aria-label={accountLabel}>
+                        <ExchangeIcon code={selectedExchangeAccountId && exchangeCode && tradeEnv ? exchangeCode : currentUser?.defaultExchangeCode}/>
+                        <span className="app-shell__account-label">{accountLabel}</span> <DownOutlined/>
                     </Button>
                 </Dropdown>
                 <Button onClick={() => navigate('/accounts')}>
@@ -122,10 +125,15 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
                         <Tag key={role}>{role}</Tag>
                     ))}
                 </Space>
-                <Typography.Text>{currentUser?.username ?? t('shell.anonymous')}</Typography.Text>
-                <Button icon={<LogoutOutlined/>} onClick={handleLogout}>
-                    {t('shell.logout')}
-                </Button>
+                <span className="app-shell__user">
+                    <Avatar size={28}>{currentUser?.username?.slice(0, 1).toUpperCase() ?? '?'}</Avatar>
+                    <Typography.Text className="app-shell__username" title={currentUser?.username}>
+                        {currentUser?.username ?? t('shell.anonymous')}
+                    </Typography.Text>
+                </span>
+                <Tooltip title={t('shell.logout')}>
+                    <Button type="text" icon={<LogoutOutlined/>} aria-label={t('shell.logout')} onClick={handleLogout}/>
+                </Tooltip>
             </div>
         </header>
     );

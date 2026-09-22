@@ -28,6 +28,7 @@ import {useNavigate} from 'react-router-dom';
 import {formatApiError, showApiError} from '@/api/errors';
 import {marketdataApi} from '@/api/marketdata';
 import {PageHero} from '@/components/page/PageHero';
+import {NqPageScaffold} from '@/nq-design-system/shell/NqPageScaffold';
 import {
     useBindBacktestDatasetMutation,
     useBindBacktestStrategyVersionMutation,
@@ -287,7 +288,7 @@ export function BacktestsPage() {
 
     return (
         <>
-            <Space direction="vertical" size={16} style={{display: 'flex'}}>
+            <NqPageScaffold>
                 <Card className="page-card" bordered={false}>
                     <PageHero
                         title={t('pages:backtestConfigurations')}
@@ -382,7 +383,7 @@ export function BacktestsPage() {
                         />
                     )}
                 </Card>
-            </Space>
+            </NqPageScaffold>
             <Drawer
                 open={Boolean(selectedConfigId)}
                 width={760}

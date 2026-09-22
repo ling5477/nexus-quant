@@ -1,4 +1,15 @@
 {
+  "dashboardEvidence": {
+    "unknown": "运行观测状态未知",
+    "incomplete": "运行列表、焦点运行告警或心跳证据尚未完整确认；加载、刷新、查询失败及缺失数据均不代表健康。",
+    "running": "存在运行中的 Paper Run",
+    "scoped": "本次查询中未发现失败运行；焦点运行无未处理告警，最近心跳记录为 OK。仅表示查询快照，不证明当前实时或全局健康，也不授予 LIVE 权限。"
+  },
+  "designSystem": {
+    "demoTitle": "视觉系统 V3 自检",
+    "brandAndExchanges": "品牌与交易所标识",
+    "visualIdentityOnly": "标识仅用于视觉识别，不代表交易所已启用、账户权限或 LIVE 就绪；未知交易所保留原始代码。"
+  },
   "language": "语言",
   "loading": "加载中...",
   "queryFailed": "查询失败",
@@ -30,6 +41,8 @@
     "checking": "控制台正在校验当前登录状态，请稍候。",
     "aria": "登录 NexusQuant 控制台",
     "tagline": "量化交易基础设施控制台",
+    "heroLead": "量化，",
+    "heroAccent": "让交易更理性",
     "lede": "在一个受控控制台内完成策略研究、回测、模拟交易、风控与审计的闭环。",
     "capabilities": "NexusQuant 能力",
     "research": "策略研究与回测",

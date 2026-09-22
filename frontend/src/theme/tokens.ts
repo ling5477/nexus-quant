@@ -8,25 +8,26 @@
  * 2) 图表与 UI 不允许出现两套割裂配色：图表系列色必须从 `nqColor` 取值。
  */
 export const nqColor = {
-    bgPage: '#0d1219',
-    bgPanel: '#131a23',
-    bgElevated: '#18212c',
-    bgSunken: '#0a0e14',
-    bgHover: '#1b2531',
-    bgSelected: 'rgba(79, 124, 247, 0.14)',
+    bgPage: '#040d17',
+    bgPanel: '#071827',
+    bgElevated: '#0d2134',
+    bgSunken: '#05121f',
+    bgHover: '#102b42',
+    bgSelected: 'rgba(8, 120, 250, 0.18)',
 
-    border: '#263141',
-    borderSubtle: '#1d2734',
+    border: '#254863',
+    borderSubtle: '#173247',
 
-    text: '#dbe4ee',
-    textSecondary: '#93a1b4',
-    textTertiary: '#5d6b7e',
+    text: '#edf4fc',
+    textSecondary: '#a6bfd7',
+    textTertiary: '#7e9ab5',
     textDisabled: '#49566a',
 
-    primary: '#4f7cf7',
-    primaryHover: '#6b93f9',
-    primaryActive: '#3a63d8',
-    primaryBg: 'rgba(79, 124, 247, 0.12)',
+    primary: '#0878fa',
+    primaryHover: '#409cff',
+    primaryActive: '#0060d8',
+    primaryBg: 'rgba(8, 120, 250, 0.12)',
+    accent: '#00bcf2',
 
     success: '#3dd68c',
     info: '#54a9ff',
@@ -55,9 +56,9 @@ export const nqSpace = {
 } as const;
 
 export const nqRadius = {
-    sm: 2,
-    md: 4,
-    lg: 6,
+    sm: 4,
+    md: 6,
+    lg: 8,
 } as const;
 
 export const nqFont = {

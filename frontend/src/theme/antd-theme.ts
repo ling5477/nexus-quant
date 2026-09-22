@@ -65,8 +65,8 @@ export const nqAntdTheme: ThemeConfig = {
         Menu: {
             darkItemBg: 'transparent',
             darkSubMenuItemBg: 'transparent',
-            darkItemSelectedBg: nqColor.bgSelected,
-            darkItemSelectedColor: nqColor.primaryHover,
+            darkItemSelectedBg: nqColor.primaryActive,
+            darkItemSelectedColor: nqColor.text,
             itemBorderRadius: nqRadius.md,
             itemMarginBlock: 2,
         },
@@ -109,6 +109,8 @@ export const nqAntdTheme: ThemeConfig = {
         },
         Button: {
             fontWeight: 500,
+            primaryShadow: 'none',
+            defaultShadow: 'none',
         },
         Alert: {
             defaultPadding: '6px 12px',

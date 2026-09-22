@@ -1,4 +1,4 @@
-import {Menu, Typography} from 'antd';
+import {Menu} from 'antd';
 import {useLocation, useNavigate} from 'react-router-dom';
 
 import {appNavItems, resolveMenuKey} from '@/router/navigation';
@@ -7,9 +7,10 @@ import {useTranslation} from 'react-i18next';
 
 interface AppSiderMenuProps {
     collapsed: boolean;
+    onNavigate?: () => void;
 }
 
-export function AppSiderMenu({collapsed}: AppSiderMenuProps) {
+export function AppSiderMenu({collapsed, onNavigate}: AppSiderMenuProps) {
     const {t} = useTranslation();
     const location = useLocation();
     const navigate = useNavigate();
@@ -25,19 +26,6 @@ export function AppSiderMenu({collapsed}: AppSiderMenuProps) {
 
     return (
         <>
-            <div className="app-shell__logo">
-                <span className="app-shell__logo-mark">NQ</span>
-                {!collapsed ? (
-                    <div className="app-shell__brand">
-                        <Typography.Text strong style={{color: '#f8fbff'}}>
-                            NexusQuant
-                        </Typography.Text>
-                        <Typography.Text type="secondary" style={{color: 'rgba(248, 251, 255, 0.68)'}}>
-                            {t('shell.console')}
-                        </Typography.Text>
-                    </div>
-                ) : null}
-            </div>
             <Menu
                 mode="inline"
                 theme="dark"
@@ -56,6 +44,7 @@ export function AppSiderMenu({collapsed}: AppSiderMenuProps) {
                     const matched = appNavItems.find((item) => item.key === key);
                     if (matched) {
                         navigate(matched.path);
+                        onNavigate?.();
                     }
                 }}
             />

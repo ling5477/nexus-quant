@@ -1,108 +1,97 @@
-# NQ Frontend Design System v1
+# NQ 前端视觉系统
 
-> 任务来源：NQ-FRONTEND-DESIGN-SYSTEM-V1-AND-TRADING-UI-REFACTOR（2026-06-13）。
-> 定位：专业量化策略运营控制台 + Paper Trading 运行监控台。深色优先、高信息密度、小圆角、低阴影、1px 分割线、数字等宽。
-> 边界：本文件只描述前端视觉系统与组件约定，不涉及后端、AI、DH、LIVE 能力（均未开启 / 未集成）。
+> 当前实现说明，不是 Phase 验收或发布授权。视觉参考用于风格，页面内容以现有路由和业务数据为准。
 
-## 1. Token 体系
+## 统一入口
 
-### 1.1 双侧同源（强约束）
+- `frontend/src/theme/tokens.ts` 与 `frontend/src/styles/tokens.css` 是 TS / CSS 镜像，修改取值须同步。
+- `frontend/src/theme/antd-theme.ts` 由全局 AppProviders 注入；`nq-design-system/theme/nqAntdTheme.ts` 只做兼容导出，不维护第二套主题。
+- `nq-design-system/tokens/nq-tokens.ts` 从主 tokens 派生；旧 `--nq-*` 变量由全局导入的兼容 CSS 映射到 `--nq-color-*`。
+- 独立页不再另设 ConfigProvider 或注入另一套全局配色。诊断页切换行情 convention 后，离开时恢复默认值。
 
-| 文件 | 用途 |
+## 视觉基线
+
+| 项目 | 当前值 |
 | --- | --- |
-| `frontend/src/styles/tokens.css` | CSS variables（`--nq-*`），供全局样式与自研组件 CSS 使用 |
-| `frontend/src/theme/tokens.ts` | TS 常量（`nqColor` / `nqSpace` / `nqRadius` / `nqFont` / `nqShadow` / `nqMotion`），供 AntD ConfigProvider 与图表主题使用 |
+| 页面 / 面板 | `#040d17` / `#071827` |
+| 弹层 / 侧栏 | `#0d2134` / `#05121f` |
+| 主边框 / 次边框 | `#254863` / `#173247`，1px |
+| 主色 / 强调色 | `#0878fa` / `#00bcf2` |
+| 主文字 / 次文字 | `#edf4fc` / `#a6bfd7` |
+| 圆角 | 4 / 6 / 8px；登录品牌卡片单独为 12px |
+| 间距 | 4 / 8 / 12 / 16 / 24 / 32px |
+| 字号 | 正文 13px，页面标题 20px；数字 tabular-nums |
 
-两个文件互为镜像（命名一致、取值一致）。**修改任一侧必须同步另一侧**。选择镜像而非运行时读取，是为了避免样式表加载时序导致主题取值不稳定。
+保持 success / warning / danger 与涨跌颜色独立。业务 UI 默认 CN_STOCK（红涨绿跌）；INTL_CRYPTO 仅由支持该参数的图表/诊断显式选择。不要把登录背景装饰 K 线的蓝红配色用作业务颜色语义。
 
-### 1.2 颜色语义
+## 产品壳与页面容器
 
-| 语义 | Token | 取值 | 用途 |
-| --- | --- | --- | --- |
-| primary | `--nq-color-primary` | `#4f7cf7` | 品牌强调，替代 AntD 默认 `#1677ff` |
-| success | `--nq-color-success` | `#3dd68c` | RUNNING / ACTIVE / SUCCEEDED |
-| info | `--nq-color-info` | `#54a9ff` | PENDING / CREATED |
-| neutral | `--nq-color-neutral` | `#8b98ab` | PAUSED / SKIPPED / 普通信息 |
-| warning | `--nq-color-warning` | `#e8b339` | WARNING / DEGRADED / 风险提示 |
-| danger | `--nq-color-danger` | `#e5484d` | FAILED / BLOCKED / REJECTED / 熔断 / 强平 |
-| disabled | `--nq-color-disabled` | `#49566a` | 不可用状态 |
-| up | `--nq-color-up` | `#f23645` | 上涨 / 盈利（国内习惯红涨） |
-| down | `--nq-color-down` | `#089981` | 下跌 / 亏损（绿跌） |
-| paper | `--nq-color-paper` | `#54a9ff` | SIM / PAPER 环境标识 |
-| demo | `--nq-color-demo` | `#9d7bff` | DEMO 环境标识 |
-| live | `--nq-color-live` | `#e5484d` | LIVE 环境强警示（本阶段 LIVE 能力 disabled，仅视觉预留） |
+`ConsoleLayout` 使用唯一 `nq-design-system/shell/AppShell`，保留鉴权、路由 Outlet、菜单和面包屑。
+桌面侧栏宽 240px、收起宽 72px；窄屏使用可滚动 Drawer，选中导航后关闭。
+Header 保留真实账户上下文、运行环境标签、角色、语言和退出；账户长名称视觉省略，完整值保留于 title / aria-label。
+没有新增搜索、通知、实时运行指示等不存在的能力。
 
-背景分层：`bg-page #0d1219` → `bg-panel #131a23`（卡片）→ `bg-elevated #18212c`（弹层）→ `bg-sunken #0a0e14`（侧栏）。
-分割线：`border #263141`（主）/ `border-subtle #1d2734`（次），统一 1px。
+新增受保护页面使用 `NqPageScaffold`，不要再创建 AppShell 或 ConfigProvider。沿用已有 primitives：
 
-### 1.3 其余 token
+- `components/nq/NqPageHeader`：语义 heading、描述、操作和风险提示。
+- AntD Card 的 `page-card` / `page-section`：统一面板。
+- `NqFilterBar`、`NqDataTable`、`NqMetricCard`：查询、列表和指标。
+- `NqEmptyState` / `NqErrorState` / `NqLoadingState`：保持空、失败、加载的区别。
+- `NqStatusTag`、`NqEnvironmentBadge`、`NqRiskBanner`、`DataFreshness`：复用实体语义，不能用主题决定权限或健康状态。
+- `PageHero` 仍是兼容适配入口；不要复制状态映射。
 
-- spacing：4 / 8 / 12 / 16 / 24 / 32（`--nq-space-*`）。
-- radius：2 / 4 / 6（小圆角，AntD borderRadius=4）。
-- typography：正文 13px；mono 字体栈 `JetBrains Mono / Cascadia Mono / Consolas / ui-monospace`。
-- shadow：`--nq-shadow-low`（卡片）/ `--nq-shadow-overlay`（弹层），低阴影。
-- motion：0.1s / 0.2s / 0.3s + 标准缓动，无装饰性动画。
-- z-index：header 100 / overlay 1000 / toast 2000。
+```tsx
+import {Card} from 'antd';
+import {NqPageScaffold} from '@/nq-design-system/shell/NqPageScaffold';
+import {NqPageHeader} from '@/components/nq';
 
-## 2. AntD ConfigProvider
+// title、description 和内容由页面现有 i18n / 查询提供。
+<NqPageScaffold>
+  <Card className="page-card" bordered={false}>
+    <NqPageHeader title={title} description={description}/>
+  </Card>
+  <Card className="page-section" bordered={false}>{content}</Card>
+</NqPageScaffold>
+```
 
-主题入口：`frontend/src/theme/antd-theme.ts`（`nqAntdTheme`），由 `AppProviders` 注入。
+## 当前页面覆盖
 
-- `theme.darkAlgorithm` + 上述 token 锚定，覆盖默认蓝、大圆角、大留白。
-- 高密度：`fontSize 13`、`controlHeight 30`、Table cell padding 10/12（small 6/8）、Form `itemMarginBottom 12`。
-- 组件级覆盖：Layout / Menu / Table / Card / Tabs / Tag / Modal / Descriptions / Button / Alert。
-
-## 3. 图表主题
-
-- 入口：`frontend/src/theme/chart-theme.ts`（`buildNqLineChartBaseOption` + `nqChartSeriesPalette`）。
-- ECharts 按需注册统一收口在 `frontend/src/components/nq/charts/echarts-core.ts`，业务图表不得自行全量 import echarts。
-- 图表与 UI 同源取色，禁止图表内自定义第二套颜色。
-- Lightweight Charts（K 线）本轮未引入依赖，待 Backtest Detail 可视化轮次接入时同样必须读取本 token 体系。
-
-## 4. 数字排版规范
-
-- 数字字段（价格/数量/收益率/回撤/评分/成交量/仓位/延迟/滑点）：`.nq-num`（`tabular-nums` + `tnum`）。
-- 表格数字列：`nqNumericColumn()` 注入右对齐 + `.nq-col-num`。
-- ID / hash / traceId：`.nq-mono` 等宽字体。
-- 收益率/盈亏带正负号（`signed`），按正负着色 `colorBySign`（正=up 红，负=down 绿）。
-- 千分位 + 小数位统一：价格 4 位、金额/数量 2 位、百分比 2 位（`formatNqNumber`）。
-- 后端 `drawdown` / `dailyReturn` / `uptimeRatio` 为比例值（见 `DrawdownCalculator`），展示用 `NqPercentText ratio` 换算百分比。
-
-## 5. Nq 组件清单（`frontend/src/components/nq/`）
-
-| 组件 | 用途 |
+| 页面 | 接入情况 |
 | --- | --- |
-| `NqPageHeader` | 页面头部；标题必须保持 heading 语义（E2E 依赖 getByRole heading） |
-| `NqMetricCard` | 指标卡（tone：success/warning/danger/up/down/muted） |
-| `NqStatusTag` | 状态标签，内置状态→色调映射，语义冲突用 `tone` 覆盖；文本保持后端原值 |
-| `NqEnvironmentBadge` | SIM/PAPER 蓝、DEMO 紫、LIVE 红强警示 |
-| `NqRiskBanner` | 安全/风险横幅，禁止隐藏失败与风险信息 |
-| `NqFilterBar` | 查询区容器（标题默认「查询区」） |
-| `NqDataTable` / `nqNumericColumn` | 高密度表格包装 + 数字列 helper |
-| `NqPriceText` / `NqAmountText` / `NqPercentText` / `formatNqNumber` | 数字排版组件族 |
-| `NqEmptyState` / `NqErrorState` / `NqLoadingState` | 空/错/载入三态，空态文案由调用方保持业务口径 |
-| `NqDangerConfirmButton` | 危险操作二次确认（仅防误触，不承载权限/风控判断） |
-| `NqEquityCurveChart` / `NqDrawdownChart` | ECharts 权益/回撤曲线，读取 Design System token |
+| 登录 | 已确认背景，左侧品牌叙事、右侧表单；窄屏优先表单；认证逻辑不变 |
+| Dashboard | 既有查询；指标摘要、绩效/事件与运行边界分栏；无数据时不填充装饰图表 |
+| 策略定义、回测配置 | 共享壳/主题与 NqPageScaffold；保留查询、表单和 Drawer |
+| 账户、交易工作台、行情 | 使用 NqPageScaffold；账户表小屏内部横向滚动；行情 K 线主图与成交量上下排列，保留真实查询和质量状态 |
+| 账户、交易、行情、标的、运行就绪、策略验证/Shadow、调度、运行记录、研究、评估、发布、Paper 子路由 | 共享壳、主题、卡片和页头；不代表每页业务布局已深度重做 |
+| 诊断、异常独立页 | 使用全局主题；诊断图表样例不代表真实业务数据 |
 
-兼容层：`components/page/PageHero` 已收敛为 `NqPageHeader` 薄适配，存量页面自动统一头部；新页面直接使用 `NqPageHeader`。
+风险、监控、设置按现有功能入口表达，不因参考图而新增虚构路由。
 
-待补组件（下一轮）：`NqKlineChart`（依赖 lightweight-charts，回测详情轮次引入）、`NqAlertPanel` / `NqHeartbeatPanel` / `NqScheduleFirePanel` / `NqRecoveryPanel` / `NqStabilityCheckPanel`（Paper Trading 控制台深化轮次）。
+Dashboard 不以缺失、失败、刷新中的查询或未知心跳推断健康。运行列表和告警查询失败时，计数显示 `-`，不伪装为零；日报、心跳与事件查询失败使用现有错误展示并保留错误身份。完整的焦点运行证据也只描述查询快照，不代表当前实时或全局健康。
 
-## 6. 组件边界
+覆盖清单以 `frontend/src/router/routes.tsx` 为准：上述共享壳覆盖全部受保护路由。20 个列表/工作区入口包含四个 Paper 子页；Shadow 与回测详情继承相同壳和主题，未重写详情业务布局。`/dev/design-system` 是诊断样例，不是运行数据；独立异常页使用全局主题，不增加业务导航。
 
-- AntD 负责 Form / Input / Select / DatePicker / Modal / Drawer / Tabs / Tooltip / Popover / Dropdown / Menu / Pagination / Notification / Message。
-- ProComponents 只允许用于 admin / config / debug 页面；核心交易、Paper Trading、回测详情页不直接套 ProTable / ProForm。
-- 禁止引入 AG Grid、MUI / Chakra / Mantine / Element Plus / Naive UI / shadcn/ui、Tailwind 全量重写。
-- TanStack Table 仅在确有 headless 需求时再评估，当前未引入。
+## 图表与数字
 
-## 7. 页面视觉守则
+ECharts 使用 `theme/chart-theme.ts` / `nq-design-system/theme/nqEchartsTheme.ts`，按需注册。
+现有 Lightweight Charts 由 `NqKlineChart` / `NqVolumeChart` 和 `nqLwcOptions` 复用主 tokens；组件接收数据，不发起第二套查询。
+数字列沿用 `.nq-num`、`nqNumericColumn`；ID / traceId 用 `.nq-mono`。
+既有格式化组件分别保持精度、比例和空值契约，不能仅为视觉统一改变金额或百分比含义。
 
-必须：深色背景、紧凑卡片、清晰分区、状态色统一、数字右对齐、危险操作强提示、低阴影、小圆角、1px 分割线。
-禁止：大面积渐变、毛玻璃、3D 粒子、营销风首页、花哨动画、过度留白、各页面自定义配色。
+## 品牌素材与审批边界
 
-## 8. 本轮落地范围（2026-06-13）
+`BrandLockup` 使用已确认的蓝色丝带图标与 NEXUS QUANT 字标，覆盖展开/收起侧栏及登录页；favicon 通过 Vite 引用同一素材，不额外引入 PWA。
+图标为 `frontend/src/assets/brand/nq-ribbon-icon-approved.png`，来源生成文件 `exec-827d9a1d-2dc0-486c-a7b3-c8075fa96876.png`；保持用户确认的原图，不重新绘制。
+`ExchangeBadge` / `ExchangeIcon` 使用本地打包的 OKX、BINANCE 官方站点图标，覆盖账户列表、Header 账户选择和行情元数据；来源与校验值见[素材记录](../../frontend/src/assets/exchanges/README.md)。图标仅作装饰，保留交易所文字身份；PAPER 与未知代码使用通用图标，不推断能力、权限或授权。运行时不访问交易所 CDN，素材来源记录不等于品牌使用许可审查。
+任何新增生成背景/图标都必须先展示并获得用户确认，再接入代码。
 
-- Design System v1 全量落地（tokens / AntD 主题 / 图表主题 / 全局样式重写）。
-- Dashboard 重构为安全总览（系统健康横幅、Paper Run 汇总、焦点 run 绩效、最近事件、业务入口）。
-- Paper Trading 控制台视觉重构（状态摘要条、权益/回撤 ECharts、Nq 组件换装），E2E 文案选择器全部保留。
-- 其余页面（Backtest Detail、Strategy Center、Risk Center、Operation Center、Trading Workbench）通过 PageHero 适配层与全局主题获得基础换肤，深度重构留待后续轮次按优先级推进。
+当前登录素材原图为 `frontend/src/assets/brand/login-earth-kline-realistic-approved.png`，用户已确认自然回调版本；页面使用同尺寸、解码像素一致的无损 WebP。品牌组件和 favicon 使用同一确认原图的 128px / 32px PNG 衍生版本，原图保留，处理细节见[品牌素材记录](../../frontend/src/assets/brand/README.md)。
+来源生成文件：`exec-aecc0ce6-83ae-4587-abc1-a3800dc9bdbc.png`。
+SHA256：`94F4ABEB142A38AFB1AEB8A707119F5B8ACD626379808871F0C0E7F483E83D46`。
+背景是装饰图，不表示行情、收益或实时交易能力。沿用右侧登录卡片，末段 K 线可能被卡片遮挡；窄屏允许裁切背景，不允许裁切凭证输入。
+
+## 验证与限制
+
+修改后按影响验证 build、目标 E2E、中英文及代表视口。浏览器 fixture 只证明前端渲染和交互，不代替真实后端联调。
+保持 query keys、API payload、错误 code / traceId、权限、mutation 重试策略不变。
+本说明不宣称全站深度重构、品牌资产验收、独立审查、exact-head CI 或 Phase7 完成。

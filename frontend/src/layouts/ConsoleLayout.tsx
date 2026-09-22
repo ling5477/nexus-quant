@@ -1,4 +1,4 @@
-import {Breadcrumb, Layout} from 'antd';
+import {Breadcrumb} from 'antd';
 import {useState} from 'react';
 import {Outlet, useMatches} from 'react-router-dom';
 
@@ -7,11 +7,11 @@ import {AppSiderMenu} from '@/components/layout/AppSiderMenu';
 import type {RouteHandle} from '@/types/navigation';
 import {useTranslation} from 'react-i18next';
 import {appNavItems} from '@/router/navigation';
-
-const {Sider, Content} = Layout;
+import {AppShell} from '@/nq-design-system/shell/AppShell';
+import {BrandLockup} from '@/nq-design-system/brand/BrandLockup';
 
 export function ConsoleLayout() {
-    useTranslation();
+    const {t} = useTranslation();
     const [collapsed, setCollapsed] = useState(false);
     const matches = useMatches();
     const breadcrumbItems = matches
@@ -22,32 +22,17 @@ export function ConsoleLayout() {
         }));
 
     return (
-        <Layout className="app-shell">
-            <Sider
-                className="app-shell__sider"
-                width={260}
-                breakpoint="lg"
-                collapsible
-                collapsed={collapsed}
-                collapsedWidth={88}
-                trigger={null}
-                onBreakpoint={(broken) => {
-                    if (broken) {
-                        setCollapsed(true);
-                    }
-                }}
-            >
-                <AppSiderMenu collapsed={collapsed}/>
-            </Sider>
-            <Layout>
-                <AppHeader collapsed={collapsed} onToggleCollapsed={() => setCollapsed((value) => !value)}/>
-                <Content className="app-shell__content">
-                    <div className="app-shell__main">
-                        <Breadcrumb className="app-shell__breadcrumb" items={breadcrumbItems}/>
-                        <Outlet/>
-                    </div>
-                </Content>
-            </Layout>
-        </Layout>
+        <AppShell
+            collapsed={collapsed}
+            onCollapsedChange={setCollapsed}
+            brand={<BrandLockup compact={collapsed} caption={t('shell.console')}/>}
+            nav={<AppSiderMenu collapsed={collapsed} onNavigate={() => {
+                if (window.matchMedia('(max-width: 767px)').matches) setCollapsed(true);
+            }}/>}
+            header={<AppHeader collapsed={collapsed} onToggleCollapsed={() => setCollapsed((value) => !value)}/>}
+            pageHeader={<Breadcrumb className="app-shell__breadcrumb" items={breadcrumbItems}/>}
+        >
+            <Outlet/>
+        </AppShell>
     );
 }

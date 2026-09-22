@@ -9,7 +9,9 @@ import {useEffect, useState} from 'react';
 import {accountsApi} from '@/api/accounts';
 import {formatApiError, showApiError} from '@/api/errors';
 import {accountQueryKeys, authQueryKeys} from '@/api/query-keys';
-import {PageHero} from '@/components/page/PageHero';
+import {NqPageHeader} from '@/components/nq/NqPageHeader';
+import {NqPageScaffold} from '@/nq-design-system/shell/NqPageScaffold';
+import {ExchangeBadge} from '@/nq-design-system/brand/ExchangeBadge';
 import {useAuthStore} from '@/store/auth-store';
 import {useAccountContextStore} from '@/store/account-context-store';
 import type {
@@ -191,6 +193,7 @@ export function AccountsPage() {
             dataIndex: 'exchangeCode',
             key: 'exchangeCode',
             width: 120,
+            render: (value: string) => <ExchangeBadge code={value}/>,
         },
         {
             title: t('pages:environment'),
@@ -258,15 +261,16 @@ export function AccountsPage() {
         : t('pages:noDefaultAccountContext');
 
     return (
-        <Space direction="vertical" size={16} style={{display: 'flex'}}>
-            <Card className="page-card" bordered={false} extra={<Button type="primary" onClick={() => {
-                setEditingAccountId(null);
-                setAccountDrawerMode('create');
-            }}>{t('pages:createAccount')}</Button>}>
-                <PageHero
+        <NqPageScaffold>
+            <Card className="page-card" bordered={false}>
+                <NqPageHeader
                     title={t('pages:accountsAndCredentials')}
                     description={t('pages:createAccountsSelectADefaultAccountRotateCredentialsAndValidateTheirStructure')}
                     badge="RC1-4"
+                    extra={<Button type="primary" onClick={() => {
+                        setEditingAccountId(null);
+                        setAccountDrawerMode('create');
+                    }}>{t('pages:createAccount')}</Button>}
                 />
             </Card>
             <Card className="page-section" bordered={false} title={t('pages:currentContext')}>
@@ -291,6 +295,7 @@ export function AccountsPage() {
                         rowKey="exchangeAccountId"
                         columns={columns}
                         dataSource={accountsQuery.data}
+                        scroll={{x: 1100}}
                         pagination={{pageSize: 10, showSizeChanger: false}}
                     />
                 )}
@@ -419,7 +424,7 @@ export function AccountsPage() {
                     </Space>
                 )}
             </Drawer>
-        </Space>
+        </NqPageScaffold>
     );
 }
 

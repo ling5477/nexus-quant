@@ -24,6 +24,7 @@ import {useState} from 'react';
 
 import {formatApiError, showApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
+import {NqPageScaffold} from '@/nq-design-system/shell/NqPageScaffold';
 import {
     BOOLEAN_FILTER_OPTIONS,
     EXCHANGE_OPTIONS,
@@ -255,7 +256,7 @@ export function StrategiesPage() {
 
     return (
         <>
-            <Space direction="vertical" size={16} style={{display: 'flex'}}>
+            <NqPageScaffold>
                 <Card className="page-card" bordered={false}>
                     <PageHero
                         title={t('pages:strategyDefinitions')}
@@ -347,7 +348,7 @@ export function StrategiesPage() {
                         />
                     )}
                 </Card>
-            </Space>
+            </NqPageScaffold>
             <Drawer
                 open={Boolean(selectedStrategyCode)}
                 width={680}
