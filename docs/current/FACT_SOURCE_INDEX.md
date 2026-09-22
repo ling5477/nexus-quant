@@ -45,15 +45,15 @@
 
 - [C1 post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_C1_POST_CI_AUTHORITY_TRANSITION_TO_C2.md)：保留implementation、独立review、failed delivery和accepted exact-head CI，正式关闭P1-2并打开C2/P1-3入口；分类为`ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。该历史时点canonical blocking P1=1；后续C2与L4/L5/L6已接受，当前数量由STATUS表达，技术身份与authority synchronization commit分层；STATUS仍是唯一machine authority。
 
-- [Phase6 L4/L5/L6 final acceptance](../audit/evidence/GATEAUDIT_PHASE6_L5_L6_FINAL_ACCEPTANCE.md)：mandatory矩阵、四组technical/CI身份及本地raw hash/index；`ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。Phase6 ACCEPTED/COMPLETE，Phase7 NOT_STARTED；STATUS是唯一current authority，ROADMAP解释当前下一动作。历史证据中的NOT_STARTED/NOT_ACCEPTED仅代表原时点。
+- [Phase6 L4/L5/L6 final acceptance](../audit/evidence/GATEAUDIT_PHASE6_L5_L6_FINAL_ACCEPTANCE.md)：mandatory矩阵、四组technical/CI身份及本地raw hash/index；`ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。该 evidence 原时点为 Phase6 ACCEPTED/COMPLETE、Phase7 NOT_STARTED；当前 Phase7 已进入 `IN_PROGRESS / NOT_FROZEN`，STATUS 是唯一 current authority，ROADMAP 解释当前下一动作。历史证据中的 NOT_STARTED/NOT_ACCEPTED 仅代表原时点。
 
 - [前端本地化与错误目录](../error-catalog/README.md)：本批实现范围、兼容错误身份和本地化契约；[验证记录](../error-catalog/VERIFICATION.md)绑定 technical acceptance pair=`1b4c87129f2a79e13e379aa56501042ddd5bd42f / 35684433673`，9/9 SUCCESS；不是第二份运行时 catalog 或 current authority。
 
 - [NQ Console Visual System V3 acceptance](../audit/evidence/GATEAUDIT_FRONTEND_CONSOLE_VISUAL_SYSTEM_V3_ACCEPTANCE.md)：绑定 technical acceptance pair=`07453f8b16e798bd580070a3727aa9eb7e88a193 / 35720426791`，9/9 SUCCESS，并索引[前端视觉系统](FRONTEND_DESIGN_SYSTEM.md)；分类为 `ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。AntD deprecation 与 JS bundle-size warning 保持 observation；STATUS 仍是唯一 current machine authority。
 
-- [Phase7 final baseline plan](../audit/evidence/GATEAUDIT_PHASE7_FINAL_BASELINE_PLAN.md)：`ACCEPTED PLAN / PHASE7_NOT_STARTED`，定义 final acceptance matrix、residual disposition、archive/freeze/tag sequence，并把 UI V3 作为 accepted final-baseline input；分类为 `ACCEPTED_PLAN / NON_RUNTIME_AUTHORITY`，不表示 Phase7 已启动或已冻结。
+- [Phase7 final baseline plan](../audit/evidence/GATEAUDIT_PHASE7_FINAL_BASELINE_PLAN.md)：`ACCEPTED_PLAN / NON_RUNTIME_AUTHORITY`，定义 final acceptance matrix、residual disposition、archive/freeze/tag sequence，并把 UI V3 作为 accepted final-baseline input；其原始接受时点为 `PHASE7_NOT_STARTED`，当前 Phase7 已进入 `IN_PROGRESS / NOT_FROZEN`，但仍未冻结。
 
-- [Phase7-A final baseline inventory](../audit/evidence/GATEAUDIT_PHASE7_A_FINAL_BASELINE_INVENTORY.md)：固定 source HEAD/tree，汇总 21 行 acceptance owner、17 组 immutable technical/CI binding、candidate ancestry、17 行 residual、historical projection Phase7-B handoff、release-branch promotion requirement 与 B～F taxonomy preflight；分类为 `PHASE7_INVENTORY_EVIDENCE / NON_RUNTIME_AUTHORITY`。它不执行 projection repair、archive/freeze/tag，也不覆盖 STATUS machine authority。
+- [Phase7-A final baseline inventory](../audit/evidence/GATEAUDIT_PHASE7_A_FINAL_BASELINE_INVENTORY.md)：固定 source HEAD/tree，汇总 21 行 acceptance owner、17 组 immutable technical/CI binding、candidate ancestry、17 行 residual、historical projection Phase7-B handoff、release-branch promotion requirement 与 B～F historical taxonomy preflight；分类为 `PHASE7_INVENTORY_EVIDENCE / NON_RUNTIME_AUTHORITY`。Phase7-A immutable pair 仍为 `baa01f0f0034bb46a24f9fe8f62acf60bb56e3f6 / 35729125034`；后续 taxonomy normalization pair=`8868edb248b614e360377317c9c17e8f1d7d8404 / 35734048380 / 9 of 9 SUCCESS`，不替代 Phase7-A acceptance。它不执行 projection repair、archive/freeze/tag，也不覆盖 STATUS machine authority。
 
 ## 5. Agent / Governance
 
