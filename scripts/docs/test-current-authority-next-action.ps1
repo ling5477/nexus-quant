@@ -152,6 +152,21 @@ Assert-True (Test-GovernanceNextActionForWorkBatch $contract 'NOT_STARTED' 'Gene
 Assert-True (-not (Test-GovernanceNextActionForWorkBatch $contract 'IMPLEMENTED|PENDING_REVIEW' 'Generic-Batch' $finalBaselineInventory $null)) 'Review gate accepted final baseline inventory audit.'
 Write-Output 'PASS final-baseline-inventory=accepted-ci-green-and-not-started type=AUDIT'
 
+$phase7Actions = @(
+    @{ Phase = 'B'; Action = 'NQ-GATEAUDIT-PHASE7-B-RESIDUAL-DISPOSITION-AND-MANDATORY-CLOSURE-IMPLEMENTATION'; Type = 'IMPLEMENTATION'; Status = 'ACCEPTED|CI_GREEN' },
+    @{ Phase = 'C'; Action = 'NQ-GATEAUDIT-PHASE7-C-READINESS-REPOSITORY-AUDIT'; Type = 'AUDIT'; Status = 'ACCEPTED|CI_GREEN' },
+    @{ Phase = 'D'; Action = 'NQ-GATEAUDIT-PHASE7-D-CANONICAL-ARCHIVE-AND-CLOSEOUT-IMPLEMENTATION'; Type = 'IMPLEMENTATION'; Status = 'ACCEPTED|CI_GREEN' },
+    @{ Phase = 'E'; Action = 'NQ-GATEAUDIT-PHASE7-E-CANDIDATE-DELIVERY-AND-TAG'; Type = 'RELEASE'; Status = 'ACCEPTED|CI_GREEN' },
+    @{ Phase = 'F'; Action = 'NQ-GATEAUDIT-PHASE7-F-AUTHORITY-SYNCHRONIZATION-IMPLEMENTATION'; Type = 'IMPLEMENTATION'; Status = 'FROZEN|ACCEPTED|TAGGED' }
+)
+foreach ($case in $phase7Actions) {
+    $actualType = Get-GovernanceNextActionType $contract $case.Action
+    Assert-True ($actualType -ceq $case.Type) "Phase7 action type mismatch: phase=$($case.Phase) expected=$($case.Type) actual=$actualType"
+    Assert-True (Test-GovernanceNextActionForWorkBatch $contract $case.Status "Phase7-$($case.Phase)" $case.Action $null) "Phase7 predecessor status rejected: phase=$($case.Phase) status=$($case.Status)"
+    Write-Output "PHASE7_$($case.Phase)_TYPE=$actualType"
+    Write-Output "$($case.Phase)_COMPATIBLE=true"
+}
+
 foreach ($action in @('NQ-MODULE-INVENTORY', 'NQ-INVENTORY', 'NQ-GATEAUDIT-INVENTORY')) {
     Assert-True ((Get-GovernanceNextActionType $contract $action) -ceq 'UNKNOWN') "Generic inventory action was classified: $action"
     Assert-True (-not (Test-GovernanceNextActionForWorkBatch $contract 'ACCEPTED|CI_GREEN' 'Generic-Batch' $action $null)) "Generic inventory action was accepted: $action"
@@ -273,5 +288,5 @@ foreach ($forbidden in @('PlanPath', 'Attempt-13', 'GATEW-specific', 'GateV defa
     Assert-True (-not $checkerText.Contains($forbidden)) "Gate-specific checker residue found: $forbidden"
 }
 
-Write-Output 'SUMMARY current-authority-next-action positive-actions=9 ambiguous-actions=4 final-baseline-statuses=3 generic-inventory-negative=3 safety-negative=9 schema-negative=4 whitespace-negative=5 failed=0'
+Write-Output 'SUMMARY current-authority-next-action positive-actions=9 ambiguous-actions=4 final-baseline-statuses=3 phase7-normalized-actions=5 generic-inventory-negative=3 safety-negative=9 schema-negative=4 whitespace-negative=5 failed=0'
 exit 0

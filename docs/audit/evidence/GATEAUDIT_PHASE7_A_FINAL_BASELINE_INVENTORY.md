@@ -156,6 +156,18 @@ Canonical source 为 [L5 aggregate acceptance](phase6-l5/L5_AGGREGATE_QUALIFICAT
 
 因此不得把 Phase7-B 名称强写入 current authority。唯一 next action 采用 `NQ-GATEAUDIT-PHASE7-GOVERNANCE-TAXONOMY-NORMALIZATION-IMPLEMENTATION`；当前 classifier 输出 `IMPLEMENTATION / UNIQUE`，且在 Phase7-A `ACCEPTED|CI_GREEN` 后 `allowed=true`。该 normalization 必须一次性修正 B–F taxonomy，但本任务不自动启动、不 patch contract/checker/tests。`PHASE7_B_F_ACTION_TAXONOMY_PREFLIGHT_RECORDED=true`。
 
+上述表格保留 taxonomy normalization 前的真实历史分类结果。规范化后的 B–F canonical machine task IDs 由 [Phase7 final baseline plan](GATEAUDIT_PHASE7_FINAL_BASELINE_PLAN.md) 定义：
+
+| Phase | Canonical normalized task ID | Action type |
+| --- | --- | --- |
+| B | `NQ-GATEAUDIT-PHASE7-B-RESIDUAL-DISPOSITION-AND-MANDATORY-CLOSURE-IMPLEMENTATION` | `IMPLEMENTATION` |
+| C | `NQ-GATEAUDIT-PHASE7-C-READINESS-REPOSITORY-AUDIT` | `AUDIT` |
+| D | `NQ-GATEAUDIT-PHASE7-D-CANONICAL-ARCHIVE-AND-CLOSEOUT-IMPLEMENTATION` | `IMPLEMENTATION` |
+| E | `NQ-GATEAUDIT-PHASE7-E-CANDIDATE-DELIVERY-AND-TAG` | `RELEASE` |
+| F | `NQ-GATEAUDIT-PHASE7-F-AUTHORITY-SYNCHRONIZATION-IMPLEMENTATION` | `IMPLEMENTATION` |
+
+该 handoff 只更新后续任务定位，不改写 Phase7-A 原始 preflight、technical acceptance 或 immutable commit/CI pair。Phase7-C 仍须执行真正独立的 freeze-readiness assessment；Phase7-F 仍仅可在 Phase7-E annotated tag、remote readback 与 release verification 全部 PASS 后执行。
+
 ## 9. Verification and Assertions
 
 已执行且通过：current authority validator、next-action fixtures/classifier、accepted Git object checks、candidate ancestry checks、GitHub CI readback、canonical evidence existence checks、targeted doc links、stage-assets validator、精确 staged diff review 与 `git diff --check`。Phase7-A inventory delivery commit=`baa01f0f0034bb46a24f9fe8f62acf60bb56e3f6`；exact-head CI=`35729125034 / NQ CI Baseline / completed / success / 9 of 9`，headSha 精确相等。后续 docs-only authority synchronization commit 不替代该 immutable Phase7-A acceptance pair。Full Maven、frontend E2E、L6、load/stress/soak、Docker fault 与 real exchange 均 `NOT_RUN / NOT_REQUIRED`。

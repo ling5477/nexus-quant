@@ -109,7 +109,7 @@
 
 ### Phase7-B — Residual disposition and mandatory closure
 
-任务名：`NQ-GATEAUDIT-PHASE7-B-RESIDUAL-DISPOSITION-AND-MANDATORY-CLOSURE`。
+任务名：`NQ-GATEAUDIT-PHASE7-B-RESIDUAL-DISPOSITION-AND-MANDATORY-CLOSURE-IMPLEMENTATION`。
 
 - 固化上节 closure matrix；不得把 P2/P3/deferred/future 自动升级为 P1。
 - 执行 historical projection source↔Position/Snapshot baseline verification。读取任何非本地历史/生产数据前必须有明确 data-source 与 read authority；数据 repair 必须另有 mutation authorization。
@@ -120,7 +120,7 @@
 
 ### Phase7-C — Freeze readiness review
 
-任务名：`NQ-GATEAUDIT-PHASE7-C-FREEZE-READINESS-REVIEW`。
+任务名：`NQ-GATEAUDIT-PHASE7-C-READINESS-REPOSITORY-AUDIT`。
 
 - 独立于实现者核对 final matrix、mandatory closure、authority consistency、release branch contract、archive layout、historical preservation 与安全状态。
 - Entry：Phase7-A/B exit 全部满足；最终 candidate 无未解释 drift；P0/P1=0/0；release blocker=0。
@@ -129,7 +129,7 @@
 
 ### Phase7-D — Canonical archive and pre-tag closeout
 
-任务名：`NQ-GATEAUDIT-PHASE7-D-CANONICAL-ARCHIVE-AND-CLOSEOUT`。
+任务名：`NQ-GATEAUDIT-PHASE7-D-CANONICAL-ARCHIVE-AND-CLOSEOUT-IMPLEMENTATION`。
 
 - 创建 `docs/gates/gate-audit/**` strict archive；只复制/迁移必要 role 文档，其他 accepted/raw evidence 保持原路径并由 manifest/hash 引用。
 - 形成 freeze candidate commit，但 archive 内先写真实 source HEAD/tree 与 `freeze commit=TO_BE_BOUND_BY_GIT` 的非身份措辞；禁止放入虚构 SHA、run ID、tag object。提交产生后，使用不自引用的 delivery receipt/后续事实绑定。
@@ -139,7 +139,7 @@
 
 ### Phase7-E — Freeze candidate delivery and annotated tag
 
-任务名：`NQ-GATEAUDIT-PHASE7-E-FREEZE-CANDIDATE-DELIVERY-AND-TAG`。
+任务名：`NQ-GATEAUDIT-PHASE7-E-CANDIDATE-DELIVERY-AND-TAG`。
 
 - 这是单独 Git/release 授权任务。精确 staging → commit → push → release branch binding → exact-head CI → annotated tag → push tag → remote readback。
 - governance contract 的 release branch 是 `dev`。当前 audit HEAD 不是 `origin/dev` ancestor；最终 freeze candidate 必须以同一 commit 身份进入 `dev`。若 branch protection/PR 产生新的 merge commit，则该 merge commit 才是 freeze candidate，必须重新绑定 tree、archive manifest 与 exact-head CI；禁止给 audit pre-merge commit 打 tag 后宣称 dev 已冻结。
@@ -147,7 +147,7 @@
 
 ### Phase7-F — Post-tag authority synchronization
 
-任务名：`NQ-GATEAUDIT-PHASE7-F-POST-TAG-AUTHORITY-SYNCHRONIZATION`。
+任务名：`NQ-GATEAUDIT-PHASE7-F-AUTHORITY-SYNCHRONIZATION-IMPLEMENTATION`。
 
 - 只在 Phase7-E remote tag/readback PASS 后，将 STATUS 同步为 GateAUDIT=`FROZEN / ACCEPTED / TAGGED`，写入真实 tag、freeze commit 与已完成 Phase7 状态；ROADMAP/FACT_SOURCE_INDEX/导航做最小同步。
 - 该 post-tag docs commit 不替代 tagged freeze commit、tag object 或 accepted technical pairs。其自身按授权提交并跑 exact-head CI，但 tag 不移动、不 force update。

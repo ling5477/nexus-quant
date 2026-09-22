@@ -1363,7 +1363,7 @@
     },
     {
       "path": "scripts/docs/test-current-authority-next-action.ps1",
-      "sha256": "d358086c486fffd468d8a229ba514791a17b0d0ab7f2eac331e3db75bc22261f",
+      "sha256": "94365f79c0ca443fd215245009c5c63f4d3f37f2c4eb0b7618b2ce8732300f28",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",
