@@ -15226,3 +15226,13 @@ Attempt-01=`FAIL / CHANGES_REQUIRED`：P1-01=`INTERPROCESS_DURABILITY_CHECK_ABSE
 - P2 ordinary concurrent INSERT loser、P3 wildcard-import residual、historical projection repair、F005 attestation及inactive/future保留原OPEN/DEFERRED/NON_BLOCKING分类；历史5421ms rootCause仍UNKNOWN，FAIL/BLOCKED/remediation不改写。
 - 已通过：current-authority errors0、next-action正/负fixtures failed0、lifecycle20/20、stage-assets2028 scanned/175 exceptions/errors0、目标current/index/summary links75 checked/errors0/warnings0。phase/status按canonical矩阵与current正文核对一致；索引由已有link validator覆盖，没有新建validator。
 - code/production delta=0；未运行Full Maven、本地frontend E2E/integration、qualification或新独立技术审查。本次docs-only交付CI独立绑定新提交，不替换既有technical pair；远端交付结果以新exact-head run为准。
+
+
+## 2026-09-22 — Phase7-A final baseline inventory pre-CI verification
+
+- Source identity：branch=`audit/post-gatey-agent-baseline`，HEAD/tree=`02357cd904af787b410e6ad7cd0fd661980913e4 / ac39412c8ea7e71dd57469b02eafbb98b4050593`，tracking ref 与 HEAD 相同；source exact-head CI=`35725226989 / completed / success`。`origin/dev=4c19cb775ebb18b4288400a5a1a402145c2fe30a` 是 source ancestor，反向不是 ancestor，故记录 `PROMOTION_REQUIRED_BEFORE_PHASE7_E`，不做 merge/rebase/PR/dev push。
+- [Phase7-A inventory](../audit/evidence/GATEAUDIT_PHASE7_A_FINAL_BASELINE_INVENTORY.md)共21行：17组technical/CI、3组audit/analysis/disposition事实、1个remote governance event。17个accepted commit objects均存在且都是source HEAD ancestor；F008/F009独立implementation heads也存在且为ancestor。
+- GitHub只读回读17个历史run：workflow均=`NQ CI Baseline`，status/conclusion均=`completed/success`，每个headSha精确绑定自己的acceptance head；missing identity=0、invalid CI binding=0、authority conflict=0。current run `35725226989`没有替换任何历史pair。
+- Residual共17行且互斥分类：mandatory Phase7-B closure 1、deferred 1、non-blocking 7、retired 2、dormant 1、future 2、historical-only 1、observation 2。historical projection 的Trade/Ledger source、Position/Snapshot target、owner、comparison与read/repair authority已定义；未访问production/historical external data。
+- 当前 classifier 只读结果：B/D UNKNOWN、C/E AMBIGUOUS、F RELEASE但status-incompatible；future governance gap 不计产品P1。合法替代入口 `NQ-GATEAUDIT-PHASE7-GOVERNANCE-TAXONOMY-NORMALIZATION-IMPLEMENTATION`=`IMPLEMENTATION / UNIQUE / allowed`。治理合同、library、checker/tests均无修改。
+- Full Maven、frontend E2E、L6、load/stress/soak、Docker fault、real exchange均NOT_RUN/NOT_REQUIRED。最终 current-authority、fixtures、targeted links、stage-assets、staged diff与diff-check将在精确暂存后复核；本条为pre-CI，不能宣称exact-head acceptance。

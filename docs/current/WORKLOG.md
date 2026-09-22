@@ -20040,3 +20040,12 @@ GateN 最终状态：**FINALIZED / FROZEN / ACCEPTED / CLOSED / TAGGED**（最�
 - P2 ordinary concurrent INSERT loser、P3 wildcard-import residual、historical projection repair、F005 attestation及inactive/future保留原OPEN/DEFERRED/NON_BLOCKING分类；历史5421ms rootCause仍UNKNOWN，FAIL/BLOCKED/remediation不改写。
 - 已通过：current-authority errors0、next-action正/负fixtures failed0、lifecycle20/20、stage-assets2028 scanned/175 exceptions/errors0、目标current/index/summary links75 checked/errors0/warnings0。phase/status按canonical矩阵与current正文核对一致；索引由已有link validator覆盖，没有新建validator。
 - code/production delta=0；未运行Full Maven、本地frontend E2E/integration、qualification或新独立技术审查。本次docs-only交付CI独立绑定新提交，不替换既有technical pair；远端交付结果以新exact-head run为准。
+
+
+## 2026-09-22 — Phase7-A final baseline inventory implementation
+
+- 冻结source input为`02357cd904af787b410e6ad7cd0fd661980913e4 / tree ac39412c8ea7e71dd57469b02eafbb98b4050593`；保护既有AGENTS、agent policy、L6 evidence、storage analyzer、raw runs/metrics与output，未reset/clean/restore或宽泛暂存。
+- 新增[Phase7-A canonical inventory](../audit/evidence/GATEAUDIT_PHASE7_A_FINAL_BASELINE_INVENTORY.md)，按真实acceptance owner收敛21行，而非按文档数统计。逐项回读17个GitHub run和17个accepted technical heads，object/CI binding/ancestry全部有效；Phase1–3与F001 remote event保留N/A语义，不伪造application SHA/CI。
+- 建立compact evidence locator、technical ancestry matrix、17行residual matrix、historical projection Phase7-B最小输入、release-boundary facts及Phase7 B～F governance taxonomy preflight。历史FAIL/BLOCKED/remediation与5421ms UNKNOWN保持append-only；accepted phases不重开、不重跑。
+- Governance preflight发现future action naming/allowed-type gap，不阻断Phase7-A inventory。当前唯一合法next action先保持Phase7-A精确COMMIT；Phase7-A acceptance后转向已验证的`NQ-GATEAUDIT-PHASE7-GOVERNANCE-TAXONOMY-NORMALIZATION-IMPLEMENTATION`，不得直接写非法Phase7-B action。本任务未修改governance contract/library/checker/tests。
+- 当前machine work batch推进为`IMPLEMENTED|SELF_REVIEWED / NONE / NOT_RUN`，P0/P1=`0/0`。接下来仅精确暂存授权的Phase7-A docs/current文件、复核治理检查、commit/push并绑定新exact-head CI；未执行Phase7-B、projection read/repair、archive、freeze、tag、production DB或真实交易操作。

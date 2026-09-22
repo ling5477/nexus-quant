@@ -53,6 +53,8 @@
 
 - [Phase7 final baseline plan](../audit/evidence/GATEAUDIT_PHASE7_FINAL_BASELINE_PLAN.md)：`ACCEPTED PLAN / PHASE7_NOT_STARTED`，定义 final acceptance matrix、residual disposition、archive/freeze/tag sequence，并把 UI V3 作为 accepted final-baseline input；分类为 `ACCEPTED_PLAN / NON_RUNTIME_AUTHORITY`，不表示 Phase7 已启动或已冻结。
 
+- [Phase7-A final baseline inventory](../audit/evidence/GATEAUDIT_PHASE7_A_FINAL_BASELINE_INVENTORY.md)：固定 source HEAD/tree，汇总 21 行 acceptance owner、17 组 immutable technical/CI binding、candidate ancestry、17 行 residual、historical projection Phase7-B handoff、release-branch promotion requirement 与 B～F taxonomy preflight；分类为 `PHASE7_INVENTORY_EVIDENCE / NON_RUNTIME_AUTHORITY`。它不执行 projection repair、archive/freeze/tag，也不覆盖 STATUS machine authority。
+
 ## 5. Agent / Governance
 
 - 根 `AGENTS.md`：仓库级入口。

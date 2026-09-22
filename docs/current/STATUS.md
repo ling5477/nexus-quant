@@ -13,11 +13,11 @@ accepted_batch_status=ACCEPTED|CI_GREEN
 accepted_batch_implementation_commit=dbf9662add09388cd77ca7552de276bb019f0f74
 accepted_batch_acceptance_head=dbf9662add09388cd77ca7552de276bb019f0f74
 accepted_batch_ci_run=35043157675
-work_batch=NQ-GATEAUDIT-FRONTEND-CONSOLE-VISUAL-SYSTEM-V3-IMPLEMENTATION
-work_batch_status=ACCEPTED|CI_GREEN
-work_batch_commit=07453f8b16e798bd580070a3727aa9eb7e88a193
-work_batch_ci_run=35720426791
-next_action=NQ-GATEAUDIT-PHASE7-A-FINAL-BASELINE-INVENTORY
+work_batch=NQ-GATEAUDIT-PHASE7-A-FINAL-BASELINE-INVENTORY
+work_batch_status=IMPLEMENTED|SELF_REVIEWED
+work_batch_commit=NONE
+work_batch_ci_run=NOT_RUN
+next_action=NQ-GATEAUDIT-PHASE7-A-COMMIT
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -83,12 +83,13 @@ updated_commit=72fbf5e78f217a02b572a54fadb17dea204b594f
 
 ## 5. 下一允许动作
 
-- Phase6 L4/L5/L6=`ACCEPTED`，Phase6=`ACCEPTED / COMPLETE`。Frontend localization / Error UX / Error Catalog / stable error identity 前置工作包保持 `COMPLETED / ACCEPTED / CI_GREEN`，technical pair=`1b4c87129f2a79e13e379aa56501042ddd5bd42f / 35684433673`。最新工作包 NQ Console Visual System V3=`ACCEPTED / CI_GREEN`，P0=0/P1=0；固定 technical pair=`07453f8b16e798bd580070a3727aa9eb7e88a193 / 35720426791`，exact-head CI=`9/9 SUCCESS`，覆盖 AppShell/theme/page scaffold、登录、Dashboard、primary pages、已确认 NQ/交易所视觉素材、响应式修复与 Dashboard unknown-data correctness，见[UI V3 acceptance evidence](../audit/evidence/GATEAUDIT_FRONTEND_CONSOLE_VISUAL_SYSTEM_V3_ACCEPTANCE.md)。既有 AntD deprecation 与 JS bundle-size warning 保持 `OBSERVATION`，未伪装为 CLOSED。Phase7 canonical plan 已纳入 tracked baseline；下一动作=`NQ-GATEAUDIT-PHASE7-A-FINAL-BASELINE-INVENTORY`，类型=`AUDIT`，仅表示允许后续启动，Phase7 仍为 `NOT_STARTED`。
+- Phase6 L4/L5/L6=`ACCEPTED`，Phase6=`ACCEPTED / COMPLETE`。Frontend localization / Error UX / Error Catalog / stable error identity 前置工作包保持 `COMPLETED / ACCEPTED / CI_GREEN`，technical pair=`1b4c87129f2a79e13e379aa56501042ddd5bd42f / 35684433673`。NQ Console Visual System V3=`ACCEPTED / CI_GREEN`，P0=0/P1=0；固定 technical pair=`07453f8b16e798bd580070a3727aa9eb7e88a193 / 35720426791`，exact-head CI=`9/9 SUCCESS`，见[UI V3 acceptance evidence](../audit/evidence/GATEAUDIT_FRONTEND_CONSOLE_VISUAL_SYSTEM_V3_ACCEPTANCE.md)。Phase7-A final baseline inventory 已完成本地实现与自查，21 行 acceptance owner、17 组 technical/CI binding、ancestry、17 行 residual、projection handoff 与 release boundary 均已收敛，P0/P1=`0/0`；当前为 `IMPLEMENTED / SELF_REVIEWED`，下一动作仅为精确提交，尚未因本地结果写成 ACCEPTED。完整 inventory 见[Phase7-A evidence](../audit/evidence/GATEAUDIT_PHASE7_A_FINAL_BASELINE_INVENTORY.md)。
+- Phase7 B～F 当前 taxonomy 预检存在确定性 future-action gap：B/D=`UNKNOWN`，C/E=`AMBIGUOUS`，F 为 `RELEASE` 但在预期 predecessor status 下不允许。Phase7-A 接受后不得直接写非法 Phase7-B action；已验证的唯一后续入口是 `NQ-GATEAUDIT-PHASE7-GOVERNANCE-TAXONOMY-NORMALIZATION-IMPLEMENTATION`。本批不修改治理合同，也不启动 normalization。
 - L4历史technical pair保持`3d103cea2072b3c2d9d1009cc5841c18a958ee80 / 34501806297`；accepted_batch推进为Phase6聚合，绑定最后技术候选`dbf9662add09388cd77ca7552de276bb019f0f74 / 35043157675`（9/9 SUCCESS），不由本次docs提交替换。不重开已接受资格或技术审查。
 - 当前repository schema=`V51`，不推断生产schema；历史migration与接受身份保持不变。
 - P2 ordinary concurrent INSERT loser、P3 wildcard-import residual均为`OPEN / NON_BLOCKING`；不以L4 P0/P1=0宣称全部问题清零。其他历史非阻断残余不在本次重评，原记录保留于[pre-B0 evidence](../audit/evidence/GATEAUDIT_PHASE6_PRE_B0_CI_SAFETY_CURRENT_AUTHORITY_REMEDIATION.md)。
 - P1-1/PB1=`RETIRED_COMPATIBILITY_ONLY`，PB2=`DORMANT_NO_CURRENT_ENTRYPOINT`；14个历史inactive scenario与其他future obligations不计PASS。仅在路径重新canonical时重新评估reachability，不为覆盖率复活入口，详见[B6 aggregate evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_B6_AGGREGATE_QUALIFICATION_ACCEPTANCE.md)。
-- 本批只同步 UI V3 acceptance authority 并交付 Phase7 canonical plan；本次 docs commit 不替代 UI V3 technical pair，不启动 Phase7-A，不执行 archive/freeze/tag。生产、LIVE、真实 provider 和资金操作仍无授权。
+- 本批只交付 Phase7-A inventory 与必要 current authority transition；不替代任何历史 technical pair，不执行 Phase7-B、projection comparison/repair、archive、freeze 或 tag。生产、LIVE、真实 provider、生产数据库和资金操作仍无授权。
 
 ## 6. F009 acceptance provenance
 
