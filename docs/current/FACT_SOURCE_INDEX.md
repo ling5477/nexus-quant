@@ -55,6 +55,8 @@
 
 - [Phase7-A final baseline inventory](../audit/evidence/GATEAUDIT_PHASE7_A_FINAL_BASELINE_INVENTORY.md)：固定 source HEAD/tree，汇总 21 行 acceptance owner、17 组 immutable technical/CI binding、candidate ancestry、17 行 residual、historical projection Phase7-B handoff、release-branch promotion requirement 与 B～F historical taxonomy preflight；分类为 `PHASE7_INVENTORY_EVIDENCE / NON_RUNTIME_AUTHORITY`。Phase7-A immutable pair 仍为 `baa01f0f0034bb46a24f9fe8f62acf60bb56e3f6 / 35729125034`；后续 taxonomy normalization pair=`8868edb248b614e360377317c9c17e8f1d7d8404 / 35734048380 / 9 of 9 SUCCESS`，不替代 Phase7-A acceptance。它不执行 projection repair、archive/freeze/tag，也不覆盖 STATUS machine authority。
 
+- [Phase7-B historical projection baseline verification](../audit/evidence/GATEAUDIT_PHASE7_B_HISTORICAL_PROJECTION_BASELINE_VERIFICATION.md)：固定 immutable V46 source artifact hashes、PG16 offline restore identity、source-only Decimal oracle、Position/latest Snapshot exact comparison、无效 v1 attempt、独立 `REVIEW_ONLY` 与 17 行 residual closure；分类为 `ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。Immutable pair=`fea0f1ce228ac7079a7873393daba2d1294fec58 / 35748394188 / 9 of 9 SUCCESS`；结论=`CLOSED_BY_BASELINE_VERIFICATION / REPAIR_NOT_REQUIRED / MANDATORY_AFTER_0 / OTHER_RESIDUAL_RECLASSIFICATIONS_0`。raw dump/oracle output 不入 Git，本文不包含原始生产 row/ID 或 credential；STATUS 仍是唯一 current authority。
+
 ## 5. Agent / Governance
 
 - 根 `AGENTS.md`：仓库级入口。
