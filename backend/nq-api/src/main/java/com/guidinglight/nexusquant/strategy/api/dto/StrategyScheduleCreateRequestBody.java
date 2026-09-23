@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.strategy.api.web;
+package com.guidinglight.nexusquant.strategy.api.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;

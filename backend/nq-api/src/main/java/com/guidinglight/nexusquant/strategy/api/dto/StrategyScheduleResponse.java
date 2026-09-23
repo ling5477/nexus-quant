@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.strategy.api.web;
+package com.guidinglight.nexusquant.strategy.api.dto;
 
 import com.guidinglight.nexusquant.strategy.domain.StrategySchedule;
 import com.guidinglight.nexusquant.strategy.domain.StrategyScheduleStatus;
