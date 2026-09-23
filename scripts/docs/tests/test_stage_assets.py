@@ -656,7 +656,7 @@ class CompatibilityRelationshipTest(unittest.TestCase):
         caller = "backend/app/src/main/java/neutral/Consumer.java"
         self.write(caller, '''package neutral;
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionGuard;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.model.AdmissionGuard;
 public class Consumer {
  public static void main(String[] args) {
   if (ExactPilotBinding.DeploymentIdentity.RUNTIME_PROFILE.isEmpty()) throw new AssertionError();
