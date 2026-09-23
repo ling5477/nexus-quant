@@ -102,3 +102,13 @@ PHASE7_E=SUSPENDED
 ```
 
 唯一下一动作是 `NQ-GATEAUDIT-SQL-OWNERSHIP-REPOSITORY-AUDIT`（SQL Ownership and Duplication Audit），对 S10 的跨层/关键查询做对象级 owner 审查。本次不执行该 audit。S10 有可复验证据和最终处置后再计算 Phase7-E 资格，不需要重新执行 Phase4–6 qualification。既有 immutable archive 保持不变。
+
+## 6. 2026-09-23 S10 subsequent closure
+
+上述 `BLOCKED / SQL_OWNERSHIP_AND_DUPLICATION_SIGNOFF_PENDING`、S10=`EVIDENCE_GAP` 和 `REMAINING_GAPS=1` 是本追溯执行时的真实历史判断，原位保留。本节仅记录后续独立任务的接受事实，不回填当时尚不存在的证据。
+
+后续 [SQL ownership repository audit](GATEAUDIT_SQL_OWNERSHIP_REPOSITORY_AUDIT.md) 在源码 HEAD `2b565eca6e9e34f6faf856ccd05f49b43f37ed7b` 上完成对象级清单和 owner disposition；[独立 subagent review](GATEAUDIT_SQL_OWNERSHIP_REPOSITORY_INDEPENDENT_REVIEW.md) 首轮发现 9 个非 SQL `execute` 误计及 D07 条件描述，报告修订后同一 reviewer 对 delta 给出 PASS。最终清单为 435 个 runtime SQL 调用点、91 个 owner、28 个重复候选组、17 个 correctness-critical 组；未发现本范围内未归属 runtime SQL、第二个独立 correctness owner 或当前 correctness bypass。正式 evidence commit=`0e200e807a1347e5ec6acd24975fa3531a31c90d`；NQ CI Baseline run=`35828020513`，head 与 commit 精确相同，`completed / success / 9 of 9`。
+
+S10 的**最新** disposition=`COMPLETED`，关闭的是原始范围的对象级审计与签收缺口，并非要求清除全部已延期维护项。39 行的最新互斥计数为 `COMPLETED=5 / COVERED=15 / DEFERRED=17 / HISTORICAL=0 / NOT_APPLICABLE=0 / UNRECOVERABLE=2 / REAL_GAPS=0 / BLOCKING_GAPS=0 / REMAINING_GAPS=0 / UNCLASSIFIED=0`；`TRACEABILITY_TOTAL=39 / TOTAL_REQUIREMENTS=39`。其余 38 行分类不变；S10 从 EVIDENCE_GAP 转为 COMPLETED。最新结果=`PASS / ORIGINAL_SCOPE_FULLY_ACCOUNTED_FOR / TRACEABILITY_39_ACCOUNTED / UNCLASSIFIED_0 / REMAINING_GAPS_0`。
+
+`PHASE7_E_ELIGIBLE=false`，`PHASE7_E=SUSPENDED`：logging implementation 与本 SQL audit 发生于 Phase7-D pre-tag archive 之后，仍需新的 delta rebind/archive refresh。唯一下一动作=`NQ-GATEAUDIT-PHASE7-PRETAG-DELTA-REBIND-AND-ARCHIVE-REFRESH-IMPLEMENTATION`；现有 classifier=`IMPLEMENTATION / UNIQUE / PREDECESSOR_COMPATIBLE`。本次未执行该 implementation、promotion、freeze、tag、qualification 或生产操作。
