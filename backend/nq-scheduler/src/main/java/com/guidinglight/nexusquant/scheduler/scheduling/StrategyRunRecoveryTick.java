@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.scheduler.service;
+package com.guidinglight.nexusquant.scheduler.scheduling;
 
 import com.guidinglight.nexusquant.strategy.application.StrategyRunRecoveryService;
 import java.util.concurrent.Executors;

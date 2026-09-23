@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.scheduler.service;
+package com.guidinglight.nexusquant.scheduler.ws;
 
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsEventMapper;
 import com.guidinglight.nexusquant.contracts.event.AuditRecorded;

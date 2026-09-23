@@ -1,5 +1,6 @@
 package com.guidinglight.nexusquant.adapter.binance.model;
 
+
 import java.math.BigDecimal;
 import java.time.Instant;
 

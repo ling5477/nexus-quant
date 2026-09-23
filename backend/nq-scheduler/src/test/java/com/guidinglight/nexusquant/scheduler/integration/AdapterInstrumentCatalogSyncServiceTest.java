@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.scheduler.service;
+package com.guidinglight.nexusquant.scheduler.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;

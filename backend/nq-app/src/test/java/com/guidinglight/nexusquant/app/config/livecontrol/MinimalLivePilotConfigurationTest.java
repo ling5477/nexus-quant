@@ -17,7 +17,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults;
 import com.guidinglight.nexusquant.livecontrol.execution.infra.MinimalPilotTradingVenueGateway;
 import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
-import com.guidinglight.nexusquant.scheduler.service.TradeLedgerGateway;
+import com.guidinglight.nexusquant.scheduler.port.TradeLedgerGateway;
 import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 

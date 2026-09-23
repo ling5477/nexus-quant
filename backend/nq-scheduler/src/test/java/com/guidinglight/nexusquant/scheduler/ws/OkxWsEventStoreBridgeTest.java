@@ -16,7 +16,7 @@ import com.guidinglight.nexusquant.adapter.okx.service.OkxWsEventMapper;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.eventstore.infra.EventStoreAppender;
-import com.guidinglight.nexusquant.scheduler.service.OkxWsOrderAccelerationService;
+import com.guidinglight.nexusquant.scheduler.ws.OkxWsOrderAccelerationService;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;

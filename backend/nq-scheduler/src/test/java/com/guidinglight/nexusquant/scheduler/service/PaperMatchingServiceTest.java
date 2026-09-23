@@ -1,5 +1,11 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
+import com.guidinglight.nexusquant.scheduler.integration.AdapterBackedTradingVenueGateway;
+import com.guidinglight.nexusquant.scheduler.integration.PaperTradingAdapter;
+import com.guidinglight.nexusquant.scheduler.paper.PaperMatchingService;
+import com.guidinglight.nexusquant.scheduler.port.OrderExecutionGateway;
+import com.guidinglight.nexusquant.scheduler.port.TradeLedgerGateway;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.databind.ObjectMapper;

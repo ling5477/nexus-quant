@@ -16,7 +16,7 @@ import com.guidinglight.nexusquant.app.config.ExchangeAdapterConfiguration;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
-import com.guidinglight.nexusquant.scheduler.service.AdapterBackedTradingVenueGateway;
+import com.guidinglight.nexusquant.scheduler.integration.AdapterBackedTradingVenueGateway;
 import com.guidinglight.nexusquant.trading.application.CancelOrderRequest;
 import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
 import com.guidinglight.nexusquant.trading.application.port.TradingCancelGatewayResult;

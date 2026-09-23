@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.scheduler.service;
+package com.guidinglight.nexusquant.scheduler.integration;
 
 import com.guidinglight.nexusquant.adapter.api.model.AdapterCancelAck;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterCancelRequest;

@@ -11,7 +11,7 @@ import com.guidinglight.nexusquant.config.service.ConfigSnapshotService;
 import com.guidinglight.nexusquant.config.service.InMemoryConfigSnapshotService;
 import com.guidinglight.nexusquant.ledger.service.LedgerService;
 import com.guidinglight.nexusquant.ledger.service.NoopLedgerService;
-import com.guidinglight.nexusquant.scheduler.service.PaperTradingAdapter;
+import com.guidinglight.nexusquant.scheduler.integration.PaperTradingAdapter;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

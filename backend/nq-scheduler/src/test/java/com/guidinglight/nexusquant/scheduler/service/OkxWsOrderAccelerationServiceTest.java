@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
+import com.guidinglight.nexusquant.scheduler.ws.OkxWsOrderAccelerationService;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;

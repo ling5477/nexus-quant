@@ -1,4 +1,6 @@
-package com.guidinglight.nexusquant.scheduler.service;
+package com.guidinglight.nexusquant.scheduler.recovery;
+
+import com.guidinglight.nexusquant.scheduler.port.TradeLedgerGateway;
 
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;

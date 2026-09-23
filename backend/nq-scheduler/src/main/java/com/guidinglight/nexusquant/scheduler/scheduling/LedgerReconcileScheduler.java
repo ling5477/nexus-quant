@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.scheduler.service;
+package com.guidinglight.nexusquant.scheduler.scheduling;
 
 import com.guidinglight.nexusquant.observability.operational.OperationalObservation;
 import com.guidinglight.nexusquant.observability.operational.SafeOperationalObservation;

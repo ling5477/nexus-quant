@@ -6,7 +6,7 @@ import com.guidinglight.nexusquant.account.domain.CredentialPermissionExpectatio
 import com.guidinglight.nexusquant.account.infra.probe.NoRealExchangeCredentialPermissionProbePort;
 import com.guidinglight.nexusquant.account.infra.probe.OkxRealReadonlyPermissionProbePort;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
-import com.guidinglight.nexusquant.scheduler.service.OkxRecoveryService;
+import com.guidinglight.nexusquant.scheduler.recovery.OkxRecoveryService;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;

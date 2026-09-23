@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
+import com.guidinglight.nexusquant.scheduler.integration.AdapterBackedTradingVenueGateway;
+
 import com.guidinglight.nexusquant.adapter.api.model.*;
 import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
 import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;

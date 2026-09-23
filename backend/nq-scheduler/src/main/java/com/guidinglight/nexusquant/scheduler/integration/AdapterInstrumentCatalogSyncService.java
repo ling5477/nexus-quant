@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.scheduler.service;
+package com.guidinglight.nexusquant.scheduler.integration;
 
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceSymbolFilters;
 import com.guidinglight.nexusquant.adapter.binance.service.BinanceApiException;

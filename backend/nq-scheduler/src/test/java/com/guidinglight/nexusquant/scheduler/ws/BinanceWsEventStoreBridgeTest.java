@@ -15,7 +15,7 @@ import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsRawMessageListene
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.eventstore.infra.EventStoreAppender;
-import com.guidinglight.nexusquant.scheduler.service.BinanceWsOrderAccelerationService;
+import com.guidinglight.nexusquant.scheduler.ws.BinanceWsOrderAccelerationService;
 
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;

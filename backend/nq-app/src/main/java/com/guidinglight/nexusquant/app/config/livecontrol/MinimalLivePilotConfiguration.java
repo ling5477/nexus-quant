@@ -36,7 +36,7 @@ import com.guidinglight.nexusquant.trading.application.OrderLifecycleService;
 import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
 import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
-import com.guidinglight.nexusquant.scheduler.service.TradeLedgerGateway;
+import com.guidinglight.nexusquant.scheduler.port.TradeLedgerGateway;
 import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
 import com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;

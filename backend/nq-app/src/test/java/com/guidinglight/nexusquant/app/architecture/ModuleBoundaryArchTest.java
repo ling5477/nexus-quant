@@ -1,5 +1,6 @@
 package com.guidinglight.nexusquant.app.architecture;
 
+
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
@@ -44,12 +45,12 @@ class ModuleBoundaryArchTest {
     @ArchTest
     static final ArchRule trading_application_should_not_depend_on_runtime_concrete = noClasses()
             .that().resideInAPackage("..trading.application..")
-            .should().dependOnClassesThat().resideInAnyPackage("..trading.infra..", "..scheduler.service..");
+            .should().dependOnClassesThat().resideInAnyPackage("..trading.infra..", "..scheduler..");
 
     @ArchTest
     static final ArchRule app_trading_configuration_should_not_depend_on_trading_runtime_concrete = noClasses()
             .that().resideInAPackage("..app.config.trading..")
-            .should().dependOnClassesThat().resideInAnyPackage("..trading.infra..", "..scheduler.service..");
+            .should().dependOnClassesThat().resideInAnyPackage("..trading.infra..", "..scheduler..");
 
     @ArchTest
     static final ArchRule jdbc_repositories_and_query_adapters_should_reside_in_infra = classes()
@@ -101,7 +102,7 @@ class ModuleBoundaryArchTest {
                     "com.guidinglight.nexusquant.config.service.InMemoryConfigSnapshotService"
             )
             .orShould().dependOnClassesThat().haveFullyQualifiedName(
-                    "com.guidinglight.nexusquant.scheduler.service.PaperTradingAdapter"
+                    "com.guidinglight.nexusquant.scheduler.integration.PaperTradingAdapter"
             );
 
     @Test

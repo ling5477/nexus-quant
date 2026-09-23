@@ -29,7 +29,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.port.PilotScopeRepository;
 import com.guidinglight.nexusquant.livecontrol.execution.application.port.ExecutionIntentRepository;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.port.InstrumentCatalogReadPort;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
-import com.guidinglight.nexusquant.scheduler.service.TradeLedgerGateway;
+import com.guidinglight.nexusquant.scheduler.port.TradeLedgerGateway;
 import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
 import com.guidinglight.nexusquant.security.token.TokenService;
 import com.guidinglight.nexusquant.trading.application.OrderCommandService;

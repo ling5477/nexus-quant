@@ -491,7 +491,7 @@
     },
     {
       "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-      "sha256": "71c747480f40bbc33f6057da6e90779c1e3ef4a944239c51c16ad1f40b50bd3e",
+      "sha256": "cea94f5ac59e844c8ac3a2aa0d147d7f5666bbc7aa3c063cb535467a540bfab3",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-app / MinimalLivePilotConfiguration contract owner",
@@ -531,7 +531,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/ExchangeAdapterConfigurationReadinessTest.java",
-      "sha256": "f51aab7b67ede56dcb73acf585cfb83361bd8617db37d6bf8abb55ac90ec315d",
+      "sha256": "de8b78fac8e2e0c495178ac8a59853f7c31e9dfb079b9c1635e2fbda866a4b55",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -563,7 +563,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/account/OkxPrivateReadOnlyPermissionProbeSpringContextTest.java",
-      "sha256": "80390a9504fa8f5dd034a38eff70c7a09bb1904634800002298ead185e0f0000",
+      "sha256": "8ddafc27e1064526dad8b037cc82ee9f58e7ee64de4fe5815da64f9efd964fd2",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -579,7 +579,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfigurationTest.java",
-      "sha256": "74c6d98efd1684f0f1498ef99661d65754b85105c0ec1b6a03a9ad27c8aa703a",
+      "sha256": "c0878b8592f9c1615203ae481f92ae76de65fbb76a43e6707244530637dd145f",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -659,7 +659,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/TradingVenueGatewayReadinessRuntimeSmokeTest.java",
-      "sha256": "f6320b466bbd1894638096c59c1f51b1c28ff42e5883d4db102dca8523400889",
+      "sha256": "c9e9ed89fb9e9972b698685aea8ba25df85aea53f306500a6bd33ec55fbe4bbe",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -1226,8 +1226,8 @@
       "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
-      "path": "backend/nq-scheduler/src/test/java/com/guidinglight/nexusquant/scheduler/service/AdapterInstrumentCatalogSyncServiceTest.java",
-      "sha256": "13bcb93e0865ba9ef7dc727a4115917dc94adebdf7ae7af46af0146f687053c7",
+      "path": "backend/nq-scheduler/src/test/java/com/guidinglight/nexusquant/scheduler/integration/AdapterInstrumentCatalogSyncServiceTest.java",
+      "sha256": "c3d64482a49b3c95d0b814e34187388813676302537b7dabf7709b030bd82f80",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",

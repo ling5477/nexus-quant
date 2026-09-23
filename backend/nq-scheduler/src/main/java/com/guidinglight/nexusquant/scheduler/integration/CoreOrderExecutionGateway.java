@@ -1,4 +1,6 @@
-package com.guidinglight.nexusquant.scheduler.service;
+package com.guidinglight.nexusquant.scheduler.integration;
+
+import com.guidinglight.nexusquant.scheduler.port.OrderExecutionGateway;
 
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
