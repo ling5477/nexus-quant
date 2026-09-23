@@ -13,7 +13,7 @@ import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.application.service.OrderCommandService;
 import com.guidinglight.nexusquant.trading.application.service.OrderLifecycleService;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
-import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
+import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
 
 import java.time.Clock;
 import java.time.Instant;

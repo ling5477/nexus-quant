@@ -14,7 +14,7 @@ import com.guidinglight.nexusquant.contracts.command.PlaceOrderCommand;
 import com.guidinglight.nexusquant.contracts.event.CancelAck;
 import com.guidinglight.nexusquant.contracts.event.CancelReject;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
-import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
+import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.event.OrderAck;
 import com.guidinglight.nexusquant.contracts.event.OrderCreated;
 import com.guidinglight.nexusquant.contracts.event.OrderReject;

@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.livecontrol.deployment;
+package com.guidinglight.nexusquant.livecontrol.deployment.policy;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

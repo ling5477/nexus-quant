@@ -3,7 +3,7 @@ package com.guidinglight.nexusquant.trading.application;
 import com.guidinglight.nexusquant.trading.application.service.OrderCommandWriteService;
 
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
-import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
+import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.core.service.port.RiskEventRepository;
 import com.guidinglight.nexusquant.risk.application.port.RiskGate;

@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.livecontrol.deployment;
+package com.guidinglight.nexusquant.livecontrol.deployment.model;
 
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialSummary;
 

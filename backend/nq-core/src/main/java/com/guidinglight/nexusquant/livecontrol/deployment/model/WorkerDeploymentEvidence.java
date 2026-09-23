@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.livecontrol.deployment;
+package com.guidinglight.nexusquant.livecontrol.deployment.model;
 
 import java.util.Objects;
 import java.util.Set;

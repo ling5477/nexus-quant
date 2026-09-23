@@ -6,7 +6,7 @@ import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsClient;
 import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsConnectionListener;
 import com.guidinglight.nexusquant.contracts.event.AuditRecorded;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
-import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
+import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 

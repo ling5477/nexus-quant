@@ -12,7 +12,7 @@ import com.guidinglight.nexusquant.trading.application.service.OrderCommandServi
 import com.guidinglight.nexusquant.trading.application.service.OrderCommandWriteService;
 
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
-import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
+import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;

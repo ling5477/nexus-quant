@@ -7,7 +7,7 @@ import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClient;
 import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsClient;
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
 import com.guidinglight.nexusquant.livecontrol.application.port.PilotPrerequisiteObservationAuthority;
-import com.guidinglight.nexusquant.livecontrol.deployment.WorkerDeploymentAdmissionService;
+import com.guidinglight.nexusquant.livecontrol.deployment.service.WorkerDeploymentAdmissionService;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotExecutionProviderPort;
 import com.guidinglight.nexusquant.livecontrol.infra.KillSwitchGuardedProviderObservationAuthority;
 import com.guidinglight.nexusquant.risk.application.command.KillSwitchEngageCommand;

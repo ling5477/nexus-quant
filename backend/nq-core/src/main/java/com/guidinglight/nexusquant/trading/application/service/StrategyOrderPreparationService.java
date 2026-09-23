@@ -7,7 +7,7 @@ import com.guidinglight.nexusquant.trading.application.command.PlaceOrderRequest
 import com.guidinglight.nexusquant.trading.application.service.ExecutionCommandMapper;
 
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
-import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
+import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.strategy.domain.StrategyRunStatus;

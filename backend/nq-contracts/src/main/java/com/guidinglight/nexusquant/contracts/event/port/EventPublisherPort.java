@@ -1,4 +1,6 @@
-package com.guidinglight.nexusquant.contracts.event;
+package com.guidinglight.nexusquant.contracts.event.port;
+
+import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
 
 /**
  * EventPublisherPort 定义领域事件向事实链追加的最小共享端口。

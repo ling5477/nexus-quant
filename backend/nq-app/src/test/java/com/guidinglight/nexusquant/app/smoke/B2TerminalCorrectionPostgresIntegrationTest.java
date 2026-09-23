@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.app.smoke;
 
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
-import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
+import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
 import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;

@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.livecontrol.deployment;
+package com.guidinglight.nexusquant.livecontrol.deployment.model;
 
 /**
  * Scoped credential capability taxonomy。

@@ -1,4 +1,6 @@
-package com.guidinglight.nexusquant.livecontrol.deployment;
+package com.guidinglight.nexusquant.livecontrol.deployment.policy;
+
+import com.guidinglight.nexusquant.livecontrol.deployment.model.KillSwitchPropagationEnvelope;
 
 import com.guidinglight.nexusquant.risk.domain.model.KillSwitchSnapshot;
 import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;

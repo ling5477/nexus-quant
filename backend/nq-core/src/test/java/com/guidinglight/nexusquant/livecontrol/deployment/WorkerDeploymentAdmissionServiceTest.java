@@ -1,11 +1,20 @@
 package com.guidinglight.nexusquant.livecontrol.deployment;
 
-import com.guidinglight.nexusquant.livecontrol.deployment.WorkerDeploymentEvidence.ArtifactEvidence;
-import com.guidinglight.nexusquant.livecontrol.deployment.WorkerDeploymentEvidence.EndpointEvidence;
-import com.guidinglight.nexusquant.livecontrol.deployment.WorkerDeploymentEvidence.ProcessEvidence;
-import com.guidinglight.nexusquant.livecontrol.deployment.WorkerDeploymentEvidence.ReleaseEvidence;
-import com.guidinglight.nexusquant.livecontrol.deployment.WorkerDeploymentEvidence.WorkerPackageEvidence;
-import com.guidinglight.nexusquant.livecontrol.deployment.WorkerDeploymentEvidence.SessionBindingEvidence;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.KillSwitchPropagationEnvelope;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.ScopedCredentialCapability;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.ScopedCredentialReference;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.WorkerDeploymentEvidence;
+import com.guidinglight.nexusquant.livecontrol.deployment.policy.KillSwitchPropagationPolicy;
+import com.guidinglight.nexusquant.livecontrol.deployment.policy.PrivateReadonlyDiagnosticEndpointContract;
+import com.guidinglight.nexusquant.livecontrol.deployment.policy.ScopedCredentialCapabilityPolicy;
+import com.guidinglight.nexusquant.livecontrol.deployment.service.WorkerDeploymentAdmissionService;
+
+import com.guidinglight.nexusquant.livecontrol.deployment.model.WorkerDeploymentEvidence.ArtifactEvidence;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.WorkerDeploymentEvidence.EndpointEvidence;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.WorkerDeploymentEvidence.ProcessEvidence;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.WorkerDeploymentEvidence.ReleaseEvidence;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.WorkerDeploymentEvidence.WorkerPackageEvidence;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.WorkerDeploymentEvidence.SessionBindingEvidence;
 import com.guidinglight.nexusquant.risk.application.command.KillSwitchEngageCommand;
 import com.guidinglight.nexusquant.risk.domain.model.KillSwitchScope;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;

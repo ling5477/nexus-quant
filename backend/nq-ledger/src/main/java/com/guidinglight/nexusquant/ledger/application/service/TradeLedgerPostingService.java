@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.common.numeric.NumericPolicy;
 import com.guidinglight.nexusquant.common.numeric.NumericType;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
-import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
+import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.event.LedgerPostFailed;
 import com.guidinglight.nexusquant.contracts.event.LedgerPosted;
 import com.guidinglight.nexusquant.contracts.event.PositionUpdated;

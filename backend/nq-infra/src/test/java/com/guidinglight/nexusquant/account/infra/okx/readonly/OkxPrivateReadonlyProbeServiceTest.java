@@ -19,9 +19,9 @@ import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 import com.guidinglight.nexusquant.risk.domain.model.KillSwitchState;
 import com.guidinglight.nexusquant.risk.application.port.KillSwitchStateRepository;
 import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;
-import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialCapability;
-import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialCapabilityPolicy;
-import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialReference.RemoteIpVerificationStatus;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.ScopedCredentialCapability;
+import com.guidinglight.nexusquant.livecontrol.deployment.policy.ScopedCredentialCapabilityPolicy;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.ScopedCredentialReference.RemoteIpVerificationStatus;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;

@@ -26,7 +26,7 @@ import com.guidinglight.nexusquant.eventstore.infra.EventStoreAppender;
 import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
 import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
 import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
-import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
+import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
 
 import java.math.BigDecimal;
 import java.time.Instant;

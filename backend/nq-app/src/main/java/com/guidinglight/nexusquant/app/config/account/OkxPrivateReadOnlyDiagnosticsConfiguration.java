@@ -10,7 +10,7 @@ import com.guidinglight.nexusquant.adapter.okx.privateread.transport.JdkOkxPriva
 import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateReadTransport;
 import com.guidinglight.nexusquant.app.config.CapabilityPropertyResolver;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
-import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialCapabilityPolicy;
+import com.guidinglight.nexusquant.livecontrol.deployment.policy.ScopedCredentialCapabilityPolicy;
 
 import java.time.Clock;
 import java.time.Duration;

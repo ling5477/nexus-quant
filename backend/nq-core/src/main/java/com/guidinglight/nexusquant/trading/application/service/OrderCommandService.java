@@ -14,7 +14,7 @@ import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.contracts.command.CancelOrderCommand;
 import com.guidinglight.nexusquant.contracts.command.PlaceOrderCommand;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
-import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
+import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;

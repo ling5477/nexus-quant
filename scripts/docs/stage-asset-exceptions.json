@@ -475,7 +475,7 @@
     },
     {
       "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/account/OkxPrivateReadOnlyDiagnosticsConfiguration.java",
-      "sha256": "6b354cd6c8a4833b5eab7f17a5a47f8d9fb5d2e0d3ebb772c37e33c5730f22b1",
+      "sha256": "467f993d9c35bd57b2bc03a5cd3da556cc6b30befa05cc5f9e4e4a745ba7d407",
       "kind": "RETIRED_INPUT_REJECTION",
       "reason": "Retired input names occur only as deny-only keys or persisted permission expectation; old profiles/keys cannot select runtime composition.",
       "owner": "Runtime configuration owner",

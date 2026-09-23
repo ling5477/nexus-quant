@@ -1,8 +1,8 @@
 package com.guidinglight.nexusquant.livecontrol.deployment.infra.okx;
 
 import com.guidinglight.nexusquant.adapter.okx.provider.OkxSpotEndpointGuard;
-import com.guidinglight.nexusquant.livecontrol.deployment.PrivateReadonlyDiagnosticEndpointContract;
-import com.guidinglight.nexusquant.livecontrol.deployment.WorkerDeploymentEvidence.EndpointEvidence;
+import com.guidinglight.nexusquant.livecontrol.deployment.policy.PrivateReadonlyDiagnosticEndpointContract;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.WorkerDeploymentEvidence.EndpointEvidence;
 
 import java.util.Set;
 

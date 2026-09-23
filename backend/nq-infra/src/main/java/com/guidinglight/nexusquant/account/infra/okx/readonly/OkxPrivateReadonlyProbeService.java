@@ -13,10 +13,10 @@ import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadR
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 import com.guidinglight.nexusquant.risk.domain.model.KillSwitchSnapshot;
 import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;
-import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialCapabilityPolicy;
-import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialReference;
-import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialReference.RemoteIpVerificationStatus;
-import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialCapability;
+import com.guidinglight.nexusquant.livecontrol.deployment.policy.ScopedCredentialCapabilityPolicy;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.ScopedCredentialReference;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.ScopedCredentialReference.RemoteIpVerificationStatus;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.ScopedCredentialCapability;
 
 import java.time.Clock;
 import java.time.Instant;
