@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.adapter.okx.service;
 
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxWsMetricsSnapshot;
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsMetricsSnapshot;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;

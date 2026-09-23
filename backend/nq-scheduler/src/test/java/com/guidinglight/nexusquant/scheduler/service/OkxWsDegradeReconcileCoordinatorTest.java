@@ -9,7 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxWsConnectionListener;
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsConnectionListener;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.eventstore.infra.EventStoreAppender;

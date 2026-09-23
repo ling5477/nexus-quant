@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.adapter.okx.service;
+package com.guidinglight.nexusquant.adapter.okx.ws;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

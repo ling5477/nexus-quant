@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.scheduler.ws;
 
-import com.guidinglight.nexusquant.adapter.okx.service.OkxWsBusinessMessage;
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsBusinessMessage;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsEventMapper;
 import com.guidinglight.nexusquant.contracts.event.AuditRecorded;

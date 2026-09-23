@@ -9,8 +9,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxWsBusinessMessage;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxWsBusinessMessageListener;
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsBusinessMessage;
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsBusinessMessageListener;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
 import com.guidinglight.nexusquant.adapter.okx.service.OkxWsEventMapper;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;

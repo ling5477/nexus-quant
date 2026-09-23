@@ -1,5 +1,8 @@
 package com.guidinglight.nexusquant.adapter.okx.service;
 
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsBusinessMessage;
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsSubscription;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.adapter.okx.model.OkxApiCredentials;

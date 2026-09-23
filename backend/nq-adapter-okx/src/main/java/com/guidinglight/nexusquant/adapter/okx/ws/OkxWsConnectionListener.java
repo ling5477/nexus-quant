@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.adapter.okx.service;
+package com.guidinglight.nexusquant.adapter.okx.ws;
 
 /**
  * OkxWsConnectionListener 定义 WS 连接状态回调。

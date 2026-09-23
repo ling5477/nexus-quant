@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.adapter.okx.service;
+package com.guidinglight.nexusquant.adapter.okx.ws;
 
 /**
  * OkxWsBusinessMessageListener 定义 WS 业务消息回调。

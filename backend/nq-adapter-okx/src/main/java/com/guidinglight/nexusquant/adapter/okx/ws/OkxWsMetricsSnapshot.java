@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.adapter.okx.service;
+package com.guidinglight.nexusquant.adapter.okx.ws;
 
 /**
  * OkxWsMetricsSnapshot 表示 WS 治理层指标快照。
