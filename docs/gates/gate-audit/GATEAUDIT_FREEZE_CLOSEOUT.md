@@ -16,7 +16,7 @@ Phase7-C 已给出 `PASS / GATEAUDIT_FREEZE_READY / PRETAG_ARCHIVE_AUTHORIZED`�
 
 ## Post-Phase7-D delta rebind
 
-Phase7-D archive implementation=`4800ab1d9407eeb527182328263c0bae9e6c3087 / 35803472376`；authority sync=`c00291003cd0bb03688e054b3c38d7a6cd1c320b / 35804548427`。两者是历史接受身份，上方 Phase7-C source 也是历史输入，不是本 refresh 的最终候选。
+Phase7-D archive implementation=`4800ab1d9407eeb527182328263c0bae9e6c3087 / 35803472376`。其后同步提交及 CI 在下表单独登记。两者是历史接受身份，上方 Phase7-C source 也是历史输入，不是本 refresh 的最终候选。
 
 本 refresh 的进入点 HEAD=`6bc3fa75def9ffe31710d006359e0991d1a60bc1`、tree=`bfa570b5e9b37fdba9056d377b532f5c880d5d2b`、exact-head CI=`35828897070 / completed / success / 9 of 9`。从 Phase7-D authority head 到该进入点共 7 个提交：Original Scope 追溯及 logging 负证据，logging runtime 修复和目标测试，logging authority，同一源码树上的 SQL audit/独立审查，以及 SQL authority。除已接受的 logging 实现外，没有新增 runtime delta；没有 Java 交易逻辑、Flyway、schema、API、release contract、required CI 或 tag 名变更。全部新接受 head 均在进入点 ancestry 内，`UNACCOUNTED_DELTA=0`、`UNACCEPTED_RUNTIME_DELTA=0`、`ACCEPTED_HEAD_MISSING_FROM_ANCESTRY=0`。
 
@@ -35,6 +35,8 @@ Original Scope reconciliation 初次为 `BLOCKED / S10 EVIDENCE_GAP`，后由 [S
 `PRETAG_DELTA_REFRESH_COMPLETE` 只表示 archive 内容已将上述受控 delta 纳入候选。该 archive implementation commit 在生成前不能自引用；它及本轮 authority sync 的接受身份必须随后由 STATUS 绑定。Phase7-E 仅在这两次 exact-head CI 成功后成为**下一动作**，仍须按 release contract 对实际 `dev` candidate 独立验证。
 
 本次可选 CodeRabbit 审查在 WSL 0.7.5 的隔离 Git 副本中识别到 8 个改动 role，但连接审查服务时返回 `Connection failed: WebSocket closed`；`CODERABBIT_RESULT=NOT_COMPLETED_CONNECTION_FAILURE`，没有 CodeRabbit finding 数量或 PASS。确定性 pre-tag validator 与后续 exact-head CI 分别记录自己的结果，不冒充该审查。
+
+Archive refresh 首次提交 `5bf244b8f4dbf4d857cc6d2f45eeb23ead21f3fc` 的 exact-head CI `35831845804` 为 `completed / failure / 8 of 9`：Secret scanning 对新增文档中与 `authority` 同行的公开 Git commit SHA 报 `generic-api-key`，其余 8 个 job 成功。该失败原样保留，不将其追认为 PASS；后续仅调整这三处文档排版，保留完整身份，未修改 scanner、规则或 allowlist。新的修复提交与 CI 身份由交付事实单独绑定。
 
 ## Non-self-referential identity
 

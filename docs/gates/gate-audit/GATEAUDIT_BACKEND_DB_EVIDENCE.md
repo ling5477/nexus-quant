@@ -15,7 +15,7 @@ Canonical acceptance locator 为 [Phase6 final acceptance](../../audit/evidence/
 
 ## Post-Phase7-D SQL ownership audit
 
-[对象级 SQL audit](../../audit/evidence/GATEAUDIT_SQL_OWNERSHIP_REPOSITORY_AUDIT.md) 在源码 HEAD `2b565eca6e9e34f6faf856ccd05f49b43f37ed7b` 上登记 435 个 runtime SQL 调用点、91 个 owner、28 个重复候选组、17 个 correctness-critical 组；[独立复核](../../audit/evidence/GATEAUDIT_SQL_OWNERSHIP_REPOSITORY_INDEPENDENT_REVIEW.md) 首轮纠正 9 个事务包装/provider callback 误计和 D07 条件性文本重复，修订后 delta PASS。接受 pair=`0e200e807a1347e5ec6acd24975fa3531a31c90d / 35828020513`，authority pair=`6bc3fa75def9ffe31710d006359e0991d1a60bc1 / 35828897070`。在所列静态范围内，`UNOWNED_RUNTIME_SQL=0 / CORRECTNESS_OWNER_DUPLICATION=0 / CURRENT_CORRECTNESS_BYPASS=0`；该判断不重做 L4/L5/L6 并发资格，也不扩张旧 Paper/Binance 等路径的接受范围。本次没有 SQL、Flyway、schema、账务或 trading runtime 变更。
+[对象级 SQL audit](../../audit/evidence/GATEAUDIT_SQL_OWNERSHIP_REPOSITORY_AUDIT.md) 在源码 HEAD `2b565eca6e9e34f6faf856ccd05f49b43f37ed7b` 上登记 435 个 runtime SQL 调用点、91 个 owner、28 个重复候选组、17 个 correctness-critical 组；[独立复核](../../audit/evidence/GATEAUDIT_SQL_OWNERSHIP_REPOSITORY_INDEPENDENT_REVIEW.md) 首轮纠正 9 个事务包装/provider callback 误计和 D07 条件性文本重复，修订后 delta PASS。接受 pair=`0e200e807a1347e5ec6acd24975fa3531a31c90d / 35828020513`；后续同步身份见 [evidence matrix](GATEAUDIT_EVIDENCE_MATRIX.md)。在所列静态范围内，`UNOWNED_RUNTIME_SQL=0 / CORRECTNESS_OWNER_DUPLICATION=0 / CURRENT_CORRECTNESS_BYPASS=0`；该判断不重做 L4/L5/L6 并发资格，也不扩张旧 Paper/Binance 等路径的接受范围。本次没有 SQL、Flyway、schema、账务或 trading runtime 变更。
 
 ## Schema and migration boundary
 

@@ -11,7 +11,7 @@ Canonical runtime 由 Java scheduler、reconciliation、recovery、risk、execut
 - Historical failures、partial durations、remediation 与 5421ms cause=`UNKNOWN` 保持 append-only；后续成功不追认旧 attempt 为 PASS。
 - Kill switch 当前为 `ENGAGED`，LIVE=`DISABLED`，shadow trading=`NOT_ENABLED`。
 
-Phase7-D 后的唯一 runtime delta 是 [logging sensitive-data protection](../../audit/evidence/GATEAUDIT_LOGGING_SENSITIVE_DATA_PROTECTION_IMPLEMENTATION.md)：初始 [negative proof](../../audit/evidence/GATEAUDIT_LOGGING_SENSITIVE_DATA_NEGATIVE_PROOF_AUDIT.md) 在 prod console 最终输出发现 13/13 synthetic canary；修复后复验 0/13，technical pair=`48c1b1cd4c84e1429be82093e460984b6d1c805c / 35817828506`，authority pair=`2b565eca6e9e34f6faf856ccd05f49b43f37ed7b / 35820007679`。这只关闭敏感输出边界，不声称 JSON logging、rotation、retention、async MDC 或完整日志平台能力已实现；没有新增 scheduler、reconciliation、recovery 或 trading mutation path。
+Phase7-D 后的唯一 runtime delta 是 [logging sensitive-data protection](../../audit/evidence/GATEAUDIT_LOGGING_SENSITIVE_DATA_PROTECTION_IMPLEMENTATION.md)：初始 [negative proof](../../audit/evidence/GATEAUDIT_LOGGING_SENSITIVE_DATA_NEGATIVE_PROOF_AUDIT.md) 在 prod console 最终输出发现 13/13 synthetic canary；修复后复验 0/13，technical pair=`48c1b1cd4c84e1429be82093e460984b6d1c805c / 35817828506`；后续同步身份见 [evidence matrix](GATEAUDIT_EVIDENCE_MATRIX.md)。这只关闭敏感输出边界，不声称 JSON logging、rotation、retention、async MDC 或完整日志平台能力已实现；没有新增 scheduler、reconciliation、recovery 或 trading mutation path。
 
 ## Scheduling and recovery boundary
 
