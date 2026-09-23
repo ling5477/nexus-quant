@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.strategy.api.web;
 
+import com.guidinglight.nexusquant.strategy.api.dto.StrategyReleaseShadowRunMaterializationResponse;
+
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
 import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;

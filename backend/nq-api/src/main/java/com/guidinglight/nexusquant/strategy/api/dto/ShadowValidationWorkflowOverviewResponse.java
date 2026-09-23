@@ -1,21 +1,20 @@
-package com.guidinglight.nexusquant.monitoring.api.web;
+package com.guidinglight.nexusquant.strategy.api.dto;
 
-import com.guidinglight.nexusquant.monitoring.application.incidentreview.IncidentReplayReviewOverviewReadModel;
-import com.guidinglight.nexusquant.strategy.api.dto.ReadModelEvidenceMetadataResponse;
+import com.guidinglight.nexusquant.strategy.application.shadowvalidation.ShadowValidationWorkflowOverviewReadModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 
 /**
- * IncidentReplayReviewOverviewResponse 是 GateT-3 Incident / Replay Review overview 的 GET-only HTTP DTO。
+ * ShadowValidationWorkflowOverviewResponse 是 GateT-1 workflow overview 的 GET-only HTTP DTO。
  *
- * <p>该 DTO 只暴露 derived review item、evidence anchor 和固定 safety boundary。它不包含交易批准、
- * 实盘就绪、凭证、private provider payload、真实账户、真实订单、ledger mutation 或自动处置字段。
+ * <p>Why: 该 DTO 只暴露 derived operator item、evidence anchor 和 safety boundary。它不包含交易批准、
+ * 实盘就绪、凭证、private provider payload、真实账户、真实订单或 ledger mutation 字段。
  */
-@Schema(name = "IncidentReplayReviewOverviewResponse", description = "GateT-3 read-only incident replay review overview")
-public record IncidentReplayReviewOverviewResponse(
+@Schema(name = "ShadowValidationWorkflowOverviewResponse", description = "GateT-1 read-only shadow validation workflow overview")
+public record ShadowValidationWorkflowOverviewResponse(
         Instant generatedAt,
         ReadModelEvidenceMetadataResponse evidenceMetadata,
         boolean diagnosticOnly,
@@ -25,26 +24,23 @@ public record IncidentReplayReviewOverviewResponse(
         boolean realProviderImplemented,
         boolean privateTradingImplemented,
         boolean aiDhRuntimeIntegrated,
-        long totalReviewItems,
+        long totalOperatorItems,
         long intakeCount,
         long evidenceReviewCount,
-        long needsOperatorReviewCount,
-        long acknowledgedRecommendationCount,
-        long escalatedRecommendationCount,
-        long closedRecommendationCount,
+        long needsEvidenceCount,
+        long readyForOperatorReviewCount,
         long blockedCount,
-        IncidentReplayReviewItem latestReviewItem,
-        List<IncidentReplayReviewItem> reviewItems,
-        Map<String, Long> severityBuckets,
-        Map<String, Long> freshnessSummary,
+        long closedRecommendationCount,
+        OperatorItem latestOperatorItem,
+        List<OperatorItem> operatorItems,
         List<BoundaryMessage> blockers,
         List<BoundaryMessage> warnings,
         List<NextStep> nextSteps,
         List<EvidenceAnchor> evidenceAnchors,
         String traceId
 ) {
-    public static IncidentReplayReviewOverviewResponse from(IncidentReplayReviewOverviewReadModel model) {
-        return new IncidentReplayReviewOverviewResponse(
+    public static ShadowValidationWorkflowOverviewResponse from(ShadowValidationWorkflowOverviewReadModel model) {
+        return new ShadowValidationWorkflowOverviewResponse(
                 model.generatedAt(),
                 ReadModelEvidenceMetadataResponse.from(model.evidenceMetadata()),
                 model.diagnosticOnly(),
@@ -54,18 +50,15 @@ public record IncidentReplayReviewOverviewResponse(
                 model.realProviderImplemented(),
                 model.privateTradingImplemented(),
                 model.aiDhRuntimeIntegrated(),
-                model.totalReviewItems(),
+                model.totalOperatorItems(),
                 model.intakeCount(),
                 model.evidenceReviewCount(),
-                model.needsOperatorReviewCount(),
-                model.acknowledgedRecommendationCount(),
-                model.escalatedRecommendationCount(),
-                model.closedRecommendationCount(),
+                model.needsEvidenceCount(),
+                model.readyForOperatorReviewCount(),
                 model.blockedCount(),
-                IncidentReplayReviewItem.fromNullable(model.latestReviewItem()),
-                model.reviewItems().stream().map(IncidentReplayReviewItem::from).toList(),
-                model.severityBuckets(),
-                model.freshnessSummary(),
+                model.closedRecommendationCount(),
+                OperatorItem.fromNullable(model.latestOperatorItem()),
+                model.operatorItems().stream().map(OperatorItem::from).toList(),
                 model.blockers().stream().map(BoundaryMessage::from).toList(),
                 model.warnings().stream().map(BoundaryMessage::from).toList(),
                 model.nextSteps().stream().map(NextStep::from).toList(),
@@ -74,23 +67,24 @@ public record IncidentReplayReviewOverviewResponse(
         );
     }
 
-    /** IncidentReplayReviewItem 是 response 层 derived item，不是持久实体、review 记录或交易授权记录。 */
-    public record IncidentReplayReviewItem(
-            String reviewItemId,
+    /**
+     * OperatorItem 是 response 层的 derived item，不是持久实体或交易授权记录。
+     */
+    public record OperatorItem(
+            String operatorItemId,
             String sourceType,
             String sourceId,
-            String incidentEvidenceId,
-            String replayRecordId,
-            String shadowRunId,
+            String strategyVersionId,
+            UUID datasetId,
+            String evaluationReportId,
             String paperRunId,
-            String consistencyReportId,
-            String operatorItemId,
-            String reviewState,
-            String reviewDecision,
+            UUID shadowRunId,
+            UUID consistencyReportId,
+            String incidentEvidenceId,
+            String workflowState,
+            String validationDecision,
             String severity,
             String evidenceFreshness,
-            String summary,
-            List<String> limitations,
             List<BoundaryMessage> blockers,
             List<BoundaryMessage> warnings,
             List<NextStep> nextSteps,
@@ -105,27 +99,26 @@ public record IncidentReplayReviewOverviewResponse(
             boolean privateTradingImplemented,
             boolean aiDhRuntimeIntegrated
     ) {
-        private static IncidentReplayReviewItem fromNullable(IncidentReplayReviewOverviewReadModel.IncidentReplayReviewItem item) {
+        private static OperatorItem fromNullable(ShadowValidationWorkflowOverviewReadModel.OperatorItem item) {
             return item == null ? null : from(item);
         }
 
-        private static IncidentReplayReviewItem from(IncidentReplayReviewOverviewReadModel.IncidentReplayReviewItem item) {
-            return new IncidentReplayReviewItem(
-                    item.reviewItemId(),
+        private static OperatorItem from(ShadowValidationWorkflowOverviewReadModel.OperatorItem item) {
+            return new OperatorItem(
+                    item.operatorItemId(),
                     item.sourceType(),
                     item.sourceId(),
-                    item.incidentEvidenceId(),
-                    item.replayRecordId(),
-                    item.shadowRunId(),
+                    item.strategyVersionId(),
+                    item.datasetId(),
+                    item.evaluationReportId(),
                     item.paperRunId(),
+                    item.shadowRunId(),
                     item.consistencyReportId(),
-                    item.operatorItemId(),
-                    item.reviewState().name(),
-                    item.reviewDecision().name(),
+                    item.incidentEvidenceId(),
+                    item.workflowState().name(),
+                    item.validationDecision().name(),
                     item.severity().name(),
                     item.evidenceFreshness().name(),
-                    item.summary(),
-                    item.limitations(),
                     item.blockers().stream().map(BoundaryMessage::from).toList(),
                     item.warnings().stream().map(BoundaryMessage::from).toList(),
                     item.nextSteps().stream().map(NextStep::from).toList(),
@@ -143,7 +136,9 @@ public record IncidentReplayReviewOverviewResponse(
         }
     }
 
-    /** BoundaryMessage 描述 blocker / warning，不携带敏感材料。 */
+    /**
+     * BoundaryMessage 描述 blocker / warning，不携带敏感材料。
+     */
     public record BoundaryMessage(
             String code,
             String severity,
@@ -151,12 +146,14 @@ public record IncidentReplayReviewOverviewResponse(
             String sourceType,
             String sourceId
     ) {
-        private static BoundaryMessage from(IncidentReplayReviewOverviewReadModel.BoundaryMessage value) {
+        private static BoundaryMessage from(ShadowValidationWorkflowOverviewReadModel.BoundaryMessage value) {
             return new BoundaryMessage(value.code(), value.severity(), value.message(), value.sourceType(), value.sourceId());
         }
     }
 
-    /** NextStep 只描述后续人工复核或补证，不是交易执行指令。 */
+    /**
+     * NextStep 只描述后续人工复核或补证，不是交易执行指令。
+     */
     public record NextStep(
             String code,
             String owner,
@@ -164,12 +161,14 @@ public record IncidentReplayReviewOverviewResponse(
             String completionCondition,
             boolean boundaryCritical
     ) {
-        private static NextStep from(IncidentReplayReviewOverviewReadModel.NextStep value) {
+        private static NextStep from(ShadowValidationWorkflowOverviewReadModel.NextStep value) {
             return new NextStep(value.code(), value.owner(), value.action(), value.completionCondition(), value.boundaryCritical());
         }
     }
 
-    /** EvidenceAnchor 只定位本地 read-only fact source。 */
+    /**
+     * EvidenceAnchor 只定位本地 read-only fact source。
+     */
     public record EvidenceAnchor(
             String sourceType,
             String sourceId,
@@ -178,7 +177,7 @@ public record IncidentReplayReviewOverviewResponse(
             String traceId,
             String description
     ) {
-        private static EvidenceAnchor from(IncidentReplayReviewOverviewReadModel.EvidenceAnchor value) {
+        private static EvidenceAnchor from(ShadowValidationWorkflowOverviewReadModel.EvidenceAnchor value) {
             return new EvidenceAnchor(
                     value.sourceType(),
                     value.sourceId(),

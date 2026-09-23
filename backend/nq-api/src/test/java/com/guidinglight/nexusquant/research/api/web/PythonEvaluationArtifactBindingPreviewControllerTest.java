@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.research.api.web;
 
+import com.guidinglight.nexusquant.research.api.dto.PythonEvaluationArtifactBindingPreviewRequest;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;

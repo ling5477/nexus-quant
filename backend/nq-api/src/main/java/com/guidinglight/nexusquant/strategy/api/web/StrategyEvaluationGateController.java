@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.strategy.api.web;
 
+import com.guidinglight.nexusquant.strategy.api.dto.StrategyEvaluationGateResponse;
+
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateQuery;

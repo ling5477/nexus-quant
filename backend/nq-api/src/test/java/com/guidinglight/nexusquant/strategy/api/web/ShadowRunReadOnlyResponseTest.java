@@ -1,5 +1,12 @@
 package com.guidinglight.nexusquant.strategy.api.web;
 
+import com.guidinglight.nexusquant.strategy.api.dto.ShadowConsistencyReportResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.ShadowRunDetailResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.ShadowRunEventResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.ShadowRunListResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.ShadowRunOverviewResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.ShadowRunSnapshotResponse;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
