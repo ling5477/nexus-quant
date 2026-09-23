@@ -17,13 +17,15 @@ Source review covered production Java logger declarations/calls, MDC, `Authoriza
 
 ## Actual rendered-output proof
 
-The archived one-shot JUnit source is [GATEAUDIT_LOGGING_SENSITIVE_DATA_NEGATIVE_PROOF_REPRO.java.txt](GATEAUDIT_LOGGING_SENSITIVE_DATA_NEGATIVE_PROOF_REPRO.java.txt), SHA-256 `2f17c0aa9233ce682c123947079b0e00c1e5b26dc5a1cc1906844c5c5367e42b`. To reproduce in a disposable checkout at this candidate, copy it to `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/SensitiveLoggingNegativeProofTest.java` and run from `backend`:
+The archived one-shot JUnit source is [GATEAUDIT_LOGGING_SENSITIVE_DATA_NEGATIVE_PROOF_REPRO.java.txt](GATEAUDIT_LOGGING_SENSITIVE_DATA_NEGATIVE_PROOF_REPRO.java.txt), SHA-256 `1ac562acdb5927a03c03107ea5774197325715acf30cb9514319ebe5246c14a9`. To reproduce in a disposable checkout at this candidate, copy it to `backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/SensitiveLoggingNegativeProofTest.java` and run from `backend`:
 
 ```text
 mvn -pl nq-app -am '-Dtest=SensitiveLoggingNegativeProofTest' '-Dsurefire.failIfNoSpecifiedTests=false' test -q
 ```
 
 The test starts a minimal Spring context under exactly the `prod` profile, supplies only synthetic configuration values, asserts the production console pattern, locates Boot's actual root `ConsoleAppender`, and captures bytes *after* its `PatternLayoutEncoder`. It does not inspect raw `ILoggingEvent` or use a test-only sanitizer/filter/configuration. The first local attempt with no synthetic prod configuration was correctly rejected by `ProductionConfigurationApplicationContextInitializer`; that attempt has no negative-proof result. With synthetic configuration the focused test exited 0 and reported `NQ_LOGGING_NEGATIVE_CASES_TOTAL=13 LEAKED=13` (1 test, 0 failures/errors). Its assertion characterizes the current leak, not the desired security contract; the next implementation task must turn this into an absence assertion after remediation. No runtime source was modified.
+
+The first proof-delivery head `d74560f8bec1a88b87c0e5de7fcaed83a7377c87` has a retained [failed exact-head CI run 35814629202](https://github.com/ling5477/nexus-quant/actions/runs/35814629202): 8/9 jobs succeeded, Secret scanning rejected six unreviewed matches in the synthetic reproduction source. The source now assembles the same canary values at runtime from fixed fragments, without changing scanner rules or adding an allowlist. The focused production-profile proof was rerun after this evidence-only representation change and again returned 13/13 leaked. The failed run is not treated as green.
 
 | Case | Input shape | Rendered raw canary |
 | --- | --- | --- |
