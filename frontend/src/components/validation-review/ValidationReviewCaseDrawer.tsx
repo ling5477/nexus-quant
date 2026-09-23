@@ -5,7 +5,7 @@ import {App, Alert, Button, Descriptions, Drawer, Empty, Form, Input, Modal, Spa
 import {useEffect, useMemo, useState} from 'react';
 import {describeApiError, formatApiError} from '@/api/errors';
 
-import {NqStatusTag} from '@/components/nq';
+import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import {
     useValidationReviewDetailQuery,
     useValidationReviewEventsQuery,
@@ -139,8 +139,8 @@ export function ValidationReviewCaseDrawer({caseId, onClose}: ValidationReviewCa
                     {detailQuery.data ? (
                         <Descriptions bordered size="small" column={2}>
                             <Descriptions.Item label={t('pages:caseId')} span={2}><Text code copyable>{detailQuery.data.id}</Text></Descriptions.Item>
-                            <Descriptions.Item label={t('pages:state')}><NqStatusTag status={detailQuery.data.state}/></Descriptions.Item>
-                            <Descriptions.Item label={t('pages:severity2')}><NqStatusTag status={detailQuery.data.severity}/></Descriptions.Item>
+                            <Descriptions.Item label={t('pages:state')}><StatusTag status={detailQuery.data.state} title="" variant="pill"/></Descriptions.Item>
+                            <Descriptions.Item label={t('pages:severity2')}><StatusTag status={detailQuery.data.severity} title="" variant="pill"/></Descriptions.Item>
                             <Descriptions.Item label={t('pages:owner')}>{detailQuery.data.ownerId}</Descriptions.Item>
                             <Descriptions.Item label={t('pages:version')}>{detailQuery.data.version}</Descriptions.Item>
                             <Descriptions.Item label={t('pages:evidenceType')}>{detailQuery.data.evidenceType}</Descriptions.Item>

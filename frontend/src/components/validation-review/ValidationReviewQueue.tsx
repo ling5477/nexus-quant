@@ -5,7 +5,7 @@ import {ReloadOutlined} from '@ant-design/icons';
 import {Alert, Button, InputNumber, Select, Space, Table, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 
-import {NqStatusTag} from '@/components/nq';
+import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import type {AppApiError} from '@/types/api';
 import type {
     ValidationReviewCase,
@@ -49,14 +49,14 @@ const columns: ColumnsType<ValidationReviewCase> = [
         dataIndex: 'state',
         key: 'state',
         width: 140,
-        render: (value: string) => <NqStatusTag status={value}/>,
+        render: (value: string) => <StatusTag status={value} title="" variant="pill"/>,
     },
     {
         get title() { return t('pages:severity2'); },
         dataIndex: 'severity',
         key: 'severity',
         width: 120,
-        render: (value: string) => <NqStatusTag status={value}/>,
+        render: (value: string) => <StatusTag status={value} title="" variant="pill"/>,
     },
     {get title() { return t('pages:owner'); }, dataIndex: 'ownerId', key: 'ownerId', width: 100},
     {
