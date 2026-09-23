@@ -1,6 +1,6 @@
 # GateAUDIT Original Scope Traceability Reconciliation
 
-结论：`BLOCKED / TRACEABILITY_OR_IMPLEMENTATION_GAP`。本记录源于 2026-09-23 的有界静态追溯，并已在 clean remote-baseline worktree 复核 39 行及远端 identity；既有 Phase7-C/D 接受事实与 GateAUDIT freeze authority 不变。当前 machine next action 已路由至 logging negative-proof audit；`NQ-GATEAUDIT-PHASE7-E-CANDIDATE-DELIVERY-AND-TAG` 暂停，资格=`NOT_CONFIRMED`。未执行 Phase7-E、qualification、生产连接、真实交易或 tag。
+结论：`BLOCKED / LOGGING_SENSITIVE_DATA_PROTECTION_IMPLEMENTATION_GAP`。本记录源于 2026-09-23 的有界静态追溯，并已在 clean remote-baseline worktree 复核 39 行及远端 identity；随后 [logging negative proof](GATEAUDIT_LOGGING_SENSITIVE_DATA_NEGATIVE_PROOF_AUDIT.md) 用 synthetic canary 确认 L07 为实现缺口。S10 仍是证据/签收缺口。既有 Phase7-C/D 接受事实与 GateAUDIT freeze authority 不变；`NQ-GATEAUDIT-PHASE7-E-CANDIDATE-DELIVERY-AND-TAG` 暂停，资格=`NOT_CONFIRMED`。未执行 Phase7-E、qualification、生产连接、真实交易或 tag。
 
 ## 1. Baseline and source boundary
 
@@ -9,7 +9,7 @@
 - 已读最新提交中的 `STATUS`、`ROADMAP`、`FACT_SOURCE_INDEX`、Audit Bootstrap Charter、Phase7 plan/A/B、GateAUDIT evidence/residual/runtime matrix；`TESTING`、`WORKLOG` 按相关历史条目检查，二者分别约 15k/20k 行，未把 append-only ledger 当 machine authority。静态代码、F007/F009、frontend catalog、Phase6/L6 与 Git history 另作交叉核对。
 - 原始命名 `NQ-FULL-REPOSITORY-AUDIT-AND-CONSOLIDATION` 可从 GateY post-tag `ROADMAP` 和 Git `4c19cb7` 恢复；当时正式范围是全仓只读 inventory/audit，再分批收口死代码、重复实现、Gate 临时资产、架构、Spring composition、DB-model、tests/fixtures、scripts/deploy、docs/evidence/CI、frontend 结构债。仓库未找到两个精确任务名 `NQ-OBSERVABILITY-LOGGING-BASELINE`、`NQ-SQL-OWNERSHIP-AND-DUPLICATION-AUDIT` 的正式机器任务或接受 pair；本次任务书列出的细项作为待核销 scope，不倒推其当时全部为 P0/P1。L6 `ACTIVE_STABILITY.md` 明确把 log rotation 留给后续 logging baseline。
 
-下面的 `Y(audit)` 表示当时必须审计/分类，不表示每个 P2/P3 都必须在 freeze 前重构。`U` 表示无法恢复当时单项 mandatory 身份。`BLOCK` 是**本次附加资格**的阻断，不改写既有 Phase7-C 的 P0/P1=0 结论。代码静态负证据仅限所列源树和配置；未执行运行时泄密测试。Registry 字段映射：`ID=requirement_id`；`Original requirement / category` 包含原要求与类别；`Source` 是来源；`Mandatory then` 是 `mandatory_at_the_time`；`Final owner/disposition/evidence` 逐列给出；`Final evidence / current relevance` 同时记载现时相关性；`Gap / remaining action` 同时记载 `gap_status` 和补充说明。每行只有一个 final disposition。
+下面的 `Y(audit)` 表示当时必须审计/分类，不表示每个 P2/P3 都必须在 freeze 前重构。`U` 表示无法恢复当时单项 mandatory 身份。`BLOCK` 是**本次附加资格**的阻断，不改写既有 Phase7-C 的 P0/P1=0 结论。原始静态负证据仅限所列源树和配置；L07 的后续 synthetic runtime proof 单独见链接。Registry 字段映射：`ID=requirement_id`；`Original requirement / category` 包含原要求与类别；`Source` 是来源；`Mandatory then` 是 `mandatory_at_the_time`；`Final owner/disposition/evidence` 逐列给出；`Final evidence / current relevance` 同时记载现时相关性；`Gap / remaining action` 同时记载 `gap_status` 和补充说明。每行只有一个 final disposition。
 
 ## 2. Original Scope Traceability Matrix
 
@@ -36,7 +36,7 @@
 | L04 | rotation | L6 `ACTIVE_STABILITY.md` | N(L6); U(original) | observability/deployment | `DEFERRED_WITH_OWNER_AND_TRIGGER` | `LOG_ROTATION_NOT_YET_QUALIFIED` 明示 | 触发：logging baseline；需证明实际输出后端与轮转边界 | no |
 | L05 | retention | 本次 task scope | U | deployment owner | `DEFERRED_WITH_OWNER_AND_TRIGGER` | 无 app 级保留期配置/部署侧接受证据 | 触发：日志持久化部署合同 | no |
 | L06 | totalSizeCap / bounded storage | 本次 task scope | U | deployment owner | `DEFERRED_WITH_OWNER_AND_TRIGGER` | L6 量测日志增长，未证明长期容量上限 | 触发：日志持久化部署合同 | no |
-| L07 | Authorization/API key/JWT/password 全局敏感信息保护 | 本次 task scope；Charter secrets 边界 | Y(safety) | security + observability | `EVIDENCE_GAP` | Binance/marketdata 等局部 mask 存在；无全局 appender redactor 或完整负例证据；`ApiExceptionHandler` 将 unhandled exception 交给 logger | 先做有界、无真实凭证的可达日志泄漏负例证明；若可泄露，再分类 implementation gap。当前不能断言已泄漏 | **BLOCK** |
+| L07 | Authorization/API key/JWT/password 全局敏感信息保护 | 本次 task scope；Charter secrets 边界 | Y(safety) | security + observability | `IMPLEMENTATION_GAP` | [prod console negative proof](GATEAUDIT_LOGGING_SENSITIVE_DATA_NEGATIVE_PROOF_AUDIT.md)：13/13 synthetic canary 在最终渲染输出中可见，包括 Throwable cause；普通 SLF4J logger 可绕过局部 mask | 下一独立 implementation task 修复共享输出边界并复验；不宣称已发生真实生产凭证泄露 | **BLOCK** |
 | L08 | HTTP traceId / MDC | `TraceIdFilter`; `TraceIdContext` | Y(HTTP) | nq-observability/common | `COMPLETED` | Filter 生成/透传 `X-Trace-Id`、写 MDC、finally 清理；既有测试 | 未证明任意线程自动传播 | no |
 | L09 | async MDC propagation | 本次 task scope | U | async owner | `DEFERRED_WITH_OWNER_AND_TRIGGER` | 未见统一 TaskDecorator/context copy；仅若干入口手工 MDC | 触发：新增 async executor 或跨线程 trace contract | no |
 | L10 | scheduler/websocket/reconciliation trace | F007; static source | U | scheduler/adapters | `DEFERRED_WITH_OWNER_AND_TRIGGER` | validation scheduler、WS bridge/degrade coordinator 有手工 MDC；全入口贯通证明不足 | 触发：对应入口变更或跨线程 trace 作为验收条件 | no |
@@ -55,7 +55,7 @@
 | S09 | Flyway functions/constraints/indexes inventory | current DB schema; migrations V1–V51 | Y(audit) | migration owner | `COMPLETED` | 51 个 forward-only migration；schema constraints/indexes 在 migration 中，未改写历史 | migration 变更时按 PostgreSQL review/proof 合同 | no |
 | S10 | 完整 SQL ownership/duplication 专项签收 | 初始 DB-model broad scope；本次 SQL task | Y(this audit); original exact title U | persistence architecture owner | `EVIDENCE_GAP` | 未找到该精确任务的完整 inventory、跨表不变量多 owner 判定、重复映射逐对象处置及接受证据；L4/L5/L6 只覆盖选定 correctness SQL | 限定 SQL owner 审查并出具对象级 disposition；若发现真正 bypass，再单独最小实现整改 | **BLOCK** |
 
-互斥计数：`TOTAL_REQUIREMENTS=39 / COMPLETED=4 / COVERED=14 / DEFERRED=17 / HISTORICAL=0 / NOT_APPLICABLE=0 / UNRECOVERABLE=2 / REAL_GAPS=2 / BLOCKING_GAPS=2 / UNCLASSIFIED=0`。这里 `REAL_GAPS=2` 是**核销/证明缺口**；尚未证实生产泄密或正确性失效，不冒充 `P0/P1` implementation finding。
+互斥计数：`TOTAL_REQUIREMENTS=39 / COMPLETED=4 / COVERED=14 / DEFERRED=17 / HISTORICAL=0 / NOT_APPLICABLE=0 / UNRECOVERABLE=2 / REAL_GAPS=2 / BLOCKING_GAPS=2 / UNCLASSIFIED=0`。L07 已由 synthetic 最终输出证明为 `IMPLEMENTATION_GAP`，S10 仍为 `EVIDENCE_GAP`；未证实真实生产凭证泄露或 SQL 正确性失效，不冒充已确认 `P0/P1` 事故。
 
 ## 3. Logging reconciliation
 
@@ -65,7 +65,7 @@
 | Console output | `IMPLEMENTED` | `nq-app/application.yml` 文本 pattern；L02。 |
 | Rolling file / journald boundary | `MISSING` | 无已接受持久化 owner 合同；L03 deferred。 |
 | Rotation / retention / totalSizeCap | `MISSING` | 分别为 L04/L05/L06；L6 明示 rotation 未资格。 |
-| Global sanitization of Authorization/API key/JWT/password | `PARTIAL` | 局部 producer mask 存在；全局负例/coverage 缺失，L07 blocking proof gap。没有读取或打印真实凭证。 |
+| Global sanitization of Authorization/API key/JWT/password | `IMPLEMENTATION_GAP` | 局部 producer mask 存在；prod console 13/13 synthetic canary 最终输出泄漏，L07 保持阻断。没有读取或打印真实凭证。 |
 | HTTP traceId | `IMPLEMENTED` | Filter/MDC/finally 和既有 test；L08。 |
 | Async MDC; scheduler/WS/reconcile | `PARTIAL` | 手工入口可见，无全域跨线程证明；L09/L10。 |
 | ErrorCode/ErrorKey | `PARTIAL` | common enum、API selected identity、frontend catalog 已接受；非全错误编号；L11。 |
@@ -87,10 +87,10 @@
 
 Recovery boundary：current `ROADMAP`/Phase7 archive → Phase4 `TESTING`/`WORKLOG` → Phase4 closeout 前后 `git show` → `git log -G`/`git grep` → historical gate docs。Phase4 原 ledger 仅支持两个 ID 为 `P2 / DEFERRED`，没有可验证 title、原始 evidence、consumer 或 owner；`WORKLOG` 记录先前对 tracked refs、all refs、reflog、unreachable blobs 的负结果。本次未从 GateF `F-005` 或 Phase5 `P5-F005` 借用语义。两行维持 `SOURCE_IDENTITY_UNRECOVERABLE`；原 severity 以 ledger 的 P2 为限，原 mandatory 身份未知，后续 `RETIRED / ARCHIVE_ONLY` 属现行处置。
 
-本次矩阵所有行已分类，但 L07/S10 的证明和对象级签收未完成。因此结果只能是：
+本次矩阵所有行已分类，L07 负例已证明实现缺口，S10 对象级签收未完成。因此结果只能是：
 
 ```text
-BLOCKED / TRACEABILITY_OR_IMPLEMENTATION_GAP
+BLOCKED / LOGGING_SENSITIVE_DATA_PROTECTION_IMPLEMENTATION_GAP
 ORIGINAL_SCOPE_FULLY_ACCOUNTED_FOR=NO
 PHASE7_E_ELIGIBLE_BY_THIS_RECONCILIATION=NO
 CONFIRMED_CURRENT_P0=0
@@ -98,4 +98,4 @@ CONFIRMED_CURRENT_P1=0
 BLOCKING_GAPS=2
 ```
 
-下一次处理顺序：先用 synthetic secret canary 对 L07 做有界负例核验，若证明泄露则只修该可达入口并复验；之后对 S10 的跨层/关键查询做对象级 owner 审查。仅在两行有可复验证据和最终处置后重新计算矩阵，不需要重新执行 Phase4–6 qualification。本文件未 commit/push，未更新 current authority 或既有 immutable archive。
+下一次处理顺序：先单独修复 L07 的共享日志输出边界并用本 synthetic reproducer 复验；之后才对 S10 的跨层/关键查询做对象级 owner 审查。仅在两行有可复验证据和最终处置后重新计算矩阵，不需要重新执行 Phase4–6 qualification。既有 immutable archive 保持不变。

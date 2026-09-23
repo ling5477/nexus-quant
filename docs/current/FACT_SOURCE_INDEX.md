@@ -61,7 +61,8 @@
 
 - [GateAUDIT strict canonical archive](../gates/gate-audit/README.md)：13 个独立 substantive role（8 mandatory + 5 conditional）汇总 final acceptance matrix、Phase7 governance closure、完整 residual、边界与各领域证据；分类为 `PRETAG_CANONICAL_ARCHIVE / NON_RUNTIME_AUTHORITY`。Phase7-D immutable pair=`4800ab1d9407eeb527182328263c0bae9e6c3087 / 35803472376 / 9 of 9 SUCCESS`，pre-tag archive errors=`0`。Archive 内 `TO_BE_BOUND_BY_GIT / PENDING_DELIVERY / TAG_PENDING / NOT_CREATED` 保留非自引用生成时语义；当前接受身份由 STATUS 绑定。GateAUDIT 仍为 `IN_PROGRESS / NOT_FROZEN`，`nq-gateaudit-freeze` 未创建，Phase7-E/promotion/tag/release 未执行。
 
-- [Original Scope Traceability Reconciliation](../audit/evidence/GATEAUDIT_ORIGINAL_SCOPE_TRACEABILITY_RECONCILIATION.md)：39 项分类、未分类 0；logging 负例证明与 SQL ownership/duplication 签收两项仍待核销。分类为 `CURRENT_AUDIT_EVIDENCE / NON_RUNTIME_AUTHORITY`；不自行认定实现缺陷或 P1。STATUS 路由当前 logging audit，Phase7-E 资格尚未确认。
+- [Original Scope Traceability Reconciliation](../audit/evidence/GATEAUDIT_ORIGINAL_SCOPE_TRACEABILITY_RECONCILIATION.md)：39 项分类、未分类 0；L07 logging protection 实现缺口与 S10 SQL ownership/duplication 签收缺口两项仍待核销。分类为 `CURRENT_AUDIT_EVIDENCE / NON_RUNTIME_AUTHORITY`。STATUS 路由下一独立 logging implementation，Phase7-E 资格尚未确认。
+- [Logging sensitive-data negative proof](../audit/evidence/GATEAUDIT_LOGGING_SENSITIVE_DATA_NEGATIVE_PROOF_AUDIT.md)：在 `prod` profile 的 Spring Boot/Logback console encoder 最终 bytes 中，13/13 synthetic canary 可见，包括 Throwable nested cause；安全身份仍保留。分类为 `BLOCKED_AUDIT_EVIDENCE / NON_RUNTIME_AUTHORITY`；不证明真实凭证泄露，不替代后续 implementation/CI acceptance。
 
 ## 5. Agent / Governance
 

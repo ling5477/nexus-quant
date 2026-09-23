@@ -1,0 +1,99 @@
+package com.guidinglight.nexusquant.app;
+
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.core.ConsoleAppender;
+import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Profiles;
+
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class SensitiveLoggingNegativeProofTest {
+    @Configuration(proxyBeanMethods = false)
+    static class LoggingOnlyConfiguration {
+    }
+
+    @Test
+    void productionConsoleBoundaryRendersSyntheticCanaries() {
+        var app = new SpringApplication(LoggingOnlyConfiguration.class);
+        app.setDefaultProperties(Map.of(
+                "spring.main.web-application-type", "none",
+                "spring.config.location", "classpath:/application.yml,classpath:/application-prod.yml"
+        ));
+        try (var context = app.run(
+                "--spring.profiles.active=prod",
+                "--spring.datasource.url=jdbc:postgresql://127.0.0.1:5432/nq_synthetic",
+                "--spring.datasource.username=nq_synthetic",
+                "--spring.datasource.password=NQ_CANARY_DB_PASSWORD_19FD",
+                "--nq.security.secret=NQ_CANARY_SECRET_A62C",
+                "--nq.account.credentials.master-key=NQ_CANARY_SECRET_A62C"
+        )) {
+            assertTrue(context.getEnvironment().acceptsProfiles(Profiles.of("prod")));
+            var loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+            var root = loggerContext.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+            ConsoleAppender<?> console = null;
+            var appenders = root.iteratorForAppenders();
+            while (appenders.hasNext()) {
+                var candidate = appenders.next();
+                if (candidate instanceof ConsoleAppender<?> found) {
+                    console = found;
+                    break;
+                }
+            }
+            assertNotNull(console, "Production Boot console appender must exist");
+            var encoder = (PatternLayoutEncoder) console.getEncoder();
+            assertEquals("%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] trace_id=%X{trace_id} %logger - %msg%n", encoder.getPattern());
+            var rendered = new ByteArrayOutputStream();
+            console.setOutputStream(rendered);
+            var log = LoggerFactory.getLogger("com.guidinglight.nexusquant.api.web.ApiExceptionHandler");
+            var cases = new LinkedHashMap<String, String>();
+            cases.put("authorization_bearer", "Authorization: Bearer NQ_CANARY_BEARER_84EF");
+            cases.put("cookie", "Cookie: session=NQ_CANARY_COOKIE_924B");
+            cases.put("api_key", "apiKey=NQ_CANARY_API_KEY_7F91");
+            cases.put("secret", "secret:NQ_CANARY_SECRET_A62C");
+            cases.put("passphrase", "PASSphrase=NQ_CANARY_PASSPHRASE_D341");
+            cases.put("jwt", "{\"jwt\":\"NQ_CANARY_JWT_237A\"}");
+            cases.put("db_password", "password=NQ_CANARY_DB_PASSWORD_19FD");
+            cases.put("jdbc_url", "jdbc:postgresql://localhost:5432/nq?password=NQ_CANARY_DB_PASSWORD_19FD");
+            cases.put("map", Map.of("api_key", "NQ_CANARY_API_KEY_7F91").toString());
+            cases.put("dto_to_string", new Object() {
+                @Override public String toString() { return "CredentialDto(secret=NQ_CANARY_SECRET_A62C)"; }
+            }.toString());
+            cases.put("query_string", "/api?token=NQ_CANARY_JWT_237A");
+            MDC.put("trace_id", "trace-safe-123");
+            int leaked = 0;
+            for (var entry : cases.entrySet()) {
+                rendered.reset();
+                log.info("errorCode=NQ-TRD-1001 errorKey=ORDER_VERSION_CONFLICT eventType=TradeExecuted orderId=o-1 clientOrderId=c-1 strategyRunId=s-1 venue=OKX symbol=BTC-USDT payload={}", entry.getValue());
+                var output = rendered.toString(StandardCharsets.UTF_8);
+                var canary = entry.getValue().replaceAll(".*?(NQ_CANARY_[A-Z_0-9]+).*", "$1");
+                if (output.contains(canary)) leaked++;
+                assertTrue(output.contains("trace_id=trace-safe-123"));
+                assertTrue(output.contains("errorCode=NQ-TRD-1001"));
+                assertTrue(output.contains("errorKey=ORDER_VERSION_CONFLICT"));
+                assertTrue(output.contains("eventType=TradeExecuted"));
+                assertTrue(output.contains("orderId=o-1 clientOrderId=c-1 strategyRunId=s-1 venue=OKX symbol=BTC-USDT"));
+            }
+            rendered.reset();
+            log.error("exception probe", new IllegalStateException("password=NQ_CANARY_DB_PASSWORD_19FD"));
+            if (rendered.toString(StandardCharsets.UTF_8).contains("NQ_CANARY_DB_PASSWORD_19FD")) leaked++;
+            rendered.reset();
+            log.error("nested exception probe", new IllegalStateException("outer", new IllegalArgumentException("secret=NQ_CANARY_SECRET_A62C")));
+            if (rendered.toString(StandardCharsets.UTF_8).contains("NQ_CANARY_SECRET_A62C")) leaked++;
+            MDC.remove("trace_id");
+            System.err.println("NQ_LOGGING_NEGATIVE_CASES_TOTAL=13 LEAKED=" + leaked);
+            assertEquals(13, leaked, "Current production console must reproduce all thirteen synthetic leak vectors");
+        }
+    }
+}
