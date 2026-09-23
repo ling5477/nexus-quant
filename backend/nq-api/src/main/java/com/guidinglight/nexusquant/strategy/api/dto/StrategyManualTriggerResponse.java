@@ -2,7 +2,7 @@ package com.guidinglight.nexusquant.strategy.api.dto;
 
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.strategy.domain.StrategyRunStatus;
-import com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerResult;
+import com.guidinglight.nexusquant.strategy.application.result.StrategyManualTriggerResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**

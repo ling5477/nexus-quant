@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.strategy.api.dto;
 
-import com.guidinglight.nexusquant.strategy.application.StrategyScheduleScanBatchResult;
+import com.guidinglight.nexusquant.strategy.application.result.StrategyScheduleScanBatchResult;
 
 import java.util.List;
 import io.swagger.v3.oas.annotations.media.Schema;

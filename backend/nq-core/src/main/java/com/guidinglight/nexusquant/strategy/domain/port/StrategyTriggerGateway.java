@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.strategy.domain.port;
 
-import com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerRequest;
-import com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerResult;
+import com.guidinglight.nexusquant.strategy.application.command.StrategyManualTriggerRequest;
+import com.guidinglight.nexusquant.strategy.application.result.StrategyManualTriggerResult;
 
 /**
  * StrategyTriggerGateway 抽象手动 / 计划触发共用的运行启动入口。

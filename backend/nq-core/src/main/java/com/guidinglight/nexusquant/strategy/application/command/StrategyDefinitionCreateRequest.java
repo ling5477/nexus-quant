@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.strategy.application;
+package com.guidinglight.nexusquant.strategy.application.command;
 
 /**
  * StrategyDefinitionCreateRequest 表示创建策略定义的最小入口参数。

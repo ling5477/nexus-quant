@@ -1,5 +1,9 @@
 package com.guidinglight.nexusquant.strategy.application;
 
+import com.guidinglight.nexusquant.strategy.application.result.StrategyManualTriggerResult;
+
+import com.guidinglight.nexusquant.strategy.application.command.StrategyManualTriggerRequest;
+
 import com.guidinglight.nexusquant.contracts.model.OrderType;
 import com.guidinglight.nexusquant.strategy.domain.StrategyDispatchWork;
 import com.guidinglight.nexusquant.trading.domain.TradingVenue;

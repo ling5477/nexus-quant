@@ -371,7 +371,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/StrategyDefinitionController.java",
-      "sha256": "e6e52b5160226764cd96e462a4fff63dc2a46a6b6b1c85b176bb923cbc7faca3",
+      "sha256": "3a74b919fba14108e2af596770b7d9bd01e4cc55a7af4f6e784bbdcdb6f97370",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -795,7 +795,7 @@
     },
     {
       "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/StrategyScheduleService.java",
-      "sha256": "f87648f03d3a539d5e5fea6b605bc6d2d6292ad3a0a4a86660a969b21ebdc74f",
+      "sha256": "2ca0ae55eee4e00e443b3aeca929cbdbed06fd4bb0431f9e2f84da3bff674d43",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",

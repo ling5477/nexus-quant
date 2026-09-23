@@ -3,7 +3,7 @@ package com.guidinglight.nexusquant.app.smoke;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
-import com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerRequest;
+import com.guidinglight.nexusquant.strategy.application.command.StrategyManualTriggerRequest;
 import com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerService;
 import java.math.BigDecimal;
 import org.springframework.context.ConfigurableApplicationContext;

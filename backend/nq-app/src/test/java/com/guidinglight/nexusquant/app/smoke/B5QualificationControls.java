@@ -9,7 +9,7 @@ import com.guidinglight.nexusquant.scheduler.validationevidence.scheduling.Valid
 import com.guidinglight.nexusquant.strategy.application.validationoperations.runtimeevidence.ValidationOperationsRuntimeEvidenceOverviewQueryService;
 import com.guidinglight.nexusquant.strategy.application.StrategyRunRecoveryService;
 import com.guidinglight.nexusquant.strategy.application.StrategyScheduleScanService;
-import com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerRequest;
+import com.guidinglight.nexusquant.strategy.application.command.StrategyManualTriggerRequest;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyRunRecoveryRepository;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyTriggerGateway;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyRunRepository;

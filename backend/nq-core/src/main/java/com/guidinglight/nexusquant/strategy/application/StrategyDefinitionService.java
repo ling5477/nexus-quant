@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.strategy.application;
 
+import com.guidinglight.nexusquant.strategy.application.command.StrategyDefinitionCreateRequest;
+
 import com.guidinglight.nexusquant.strategy.domain.StrategyDefinition;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyDefinitionRepository;
 

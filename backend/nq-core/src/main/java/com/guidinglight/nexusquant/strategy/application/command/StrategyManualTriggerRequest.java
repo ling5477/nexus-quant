@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.strategy.application;
+package com.guidinglight.nexusquant.strategy.application.command;
 
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderType;

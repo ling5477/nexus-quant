@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.strategy.application;
+package com.guidinglight.nexusquant.strategy.application.command;
 
 /**
  * StrategyScheduleCreateRequest 表示创建计划配置的最小入口参数。

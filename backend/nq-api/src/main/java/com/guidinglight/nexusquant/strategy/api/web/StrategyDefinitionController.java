@@ -10,9 +10,9 @@ import com.guidinglight.nexusquant.strategy.api.dto.StrategyVersionResponse;
 
 import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.StrategyDefinitionCreateRequest;
+import com.guidinglight.nexusquant.strategy.application.command.StrategyDefinitionCreateRequest;
 import com.guidinglight.nexusquant.strategy.application.StrategyDefinitionService;
-import com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerRequest;
+import com.guidinglight.nexusquant.strategy.application.command.StrategyManualTriggerRequest;
 import com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerService;
 import com.guidinglight.nexusquant.strategy.application.StrategyVersionService;
 import com.guidinglight.nexusquant.strategy.application.command.StrategyVersionCreateRequest;

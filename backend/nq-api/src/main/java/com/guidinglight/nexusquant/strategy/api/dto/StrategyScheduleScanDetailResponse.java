@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.strategy.api.dto;
 
-import com.guidinglight.nexusquant.strategy.application.StrategyScheduleScanResult;
+import com.guidinglight.nexusquant.strategy.application.result.StrategyScheduleScanResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**

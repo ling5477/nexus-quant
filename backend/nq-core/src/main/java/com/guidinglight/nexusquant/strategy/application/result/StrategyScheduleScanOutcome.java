@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.strategy.application;
+package com.guidinglight.nexusquant.strategy.application.result;
 
 /**
  * StrategyScheduleScanOutcome 描述一次 schedule scan 对单条计划的最终决策。

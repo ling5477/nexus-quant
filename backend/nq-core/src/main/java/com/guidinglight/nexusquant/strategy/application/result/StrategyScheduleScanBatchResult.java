@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.strategy.application;
+package com.guidinglight.nexusquant.strategy.application.result;
 
 import java.util.List;
 
