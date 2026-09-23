@@ -1,0 +1,127 @@
+package com.guidinglight.nexusquant.app;
+
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.core.ConsoleAppender;
+import com.guidinglight.nexusquant.app.logging.SensitiveLogEncoder;
+import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Profiles;
+
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class SensitiveLoggingRedactionTest {
+    @Configuration(proxyBeanMethods = false)
+    static class LoggingOnlyConfiguration {
+    }
+
+    @Test
+    void productionConsoleBoundaryRedactsSyntheticCanaries() {
+        String apiKey = "NQ_CANARY_" + "API_KEY_7F91";
+        String secret = "NQ_CANARY_" + "SECRET_A62C";
+        String passphrase = "NQ_CANARY_" + "PASSPHRASE_D341";
+        String bearer = "NQ_CANARY_" + "BEARER_84EF";
+        String cookie = "NQ_CANARY_" + "COOKIE_924B";
+        String jwt = "NQ_CANARY_" + "JWT_237A";
+        String dbPassword = "NQ_CANARY_" + "DB_PASSWORD_19FD";
+        var app = new SpringApplication(LoggingOnlyConfiguration.class);
+        app.setDefaultProperties(Map.of(
+                "spring.main.web-application-type", "none",
+                "spring.config.location", "classpath:/application.yml,classpath:/application-prod.yml"
+        ));
+        try (var context = app.run(
+                "--spring.profiles.active=prod",
+                "--spring.datasource.url=jdbc:postgresql://127.0.0.1:5432/nq_synthetic",
+                "--spring.datasource.username=nq_synthetic",
+                "--spring.datasource.password=" + dbPassword,
+                "--nq.security.secret=" + secret,
+                "--nq.account.credentials.master-key=" + secret
+        )) {
+            assertTrue(context.getEnvironment().acceptsProfiles(Profiles.of("prod")));
+            var loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+            var root = loggerContext.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+            ConsoleAppender<?> console = null;
+            var appenders = root.iteratorForAppenders();
+            while (appenders.hasNext()) {
+                var candidate = appenders.next();
+                if (candidate instanceof ConsoleAppender<?> found) {
+                    console = found;
+                    break;
+                }
+            }
+            assertNotNull(console, "Production Boot console appender must exist");
+            var encoder = (PatternLayoutEncoder) console.getEncoder();
+            assertInstanceOf(SensitiveLogEncoder.class, encoder);
+            assertEquals("%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] trace_id=%X{trace_id} %logger - %msg%n", encoder.getPattern());
+            var rendered = new ByteArrayOutputStream();
+            console.setOutputStream(rendered);
+            var log = LoggerFactory.getLogger("com.guidinglight.nexusquant.api.web.ApiExceptionHandler");
+            var cases = new LinkedHashMap<String, String>();
+            cases.put("authorization_bearer", "Authorization: Bearer " + bearer);
+            cases.put("cookie", "Cookie: session=" + cookie);
+            cases.put("api_key", "apiKey=" + apiKey);
+            cases.put("secret", "secret:" + secret);
+            cases.put("passphrase", "PASSphrase=" + passphrase);
+            cases.put("jwt", "{\"jwt\":\"" + jwt + "\"}");
+            cases.put("db_password", "password=" + dbPassword);
+            cases.put("jdbc_url", "jdbc:postgresql://localhost:5432/nq?password=" + dbPassword);
+            cases.put("map", Map.of("api_key", apiKey).toString());
+            cases.put("dto_to_string", new Object() {
+                @Override public String toString() { return "CredentialDto(secret=" + secret + ")"; }
+            }.toString());
+            cases.put("query_string", "/api?token=" + jwt);
+            MDC.put("trace_id", "trace-safe-123");
+            int leaked = 0;
+            for (var entry : cases.entrySet()) {
+                rendered.reset();
+                log.info("errorCode=NQ-TRD-1001 errorKey=ORDER_VERSION_CONFLICT eventType=TradeExecuted orderId=o-1 clientOrderId=c-1 strategyRunId=s-1 venue=OKX symbol=BTC-USDT payload={}", entry.getValue());
+                var output = rendered.toString(StandardCharsets.UTF_8);
+                var canary = entry.getValue().replaceAll(".*?(NQ_CANARY_[A-Z_0-9]+).*", "$1");
+                if (output.contains(canary)) leaked++;
+                assertTrue(output.contains("trace_id=trace-safe-123"));
+                assertTrue(output.contains("errorCode=NQ-TRD-1001"));
+                assertTrue(output.contains("errorKey=ORDER_VERSION_CONFLICT"));
+                assertTrue(output.contains("eventType=TradeExecuted"));
+                assertTrue(output.contains("orderId=o-1 clientOrderId=c-1 strategyRunId=s-1 venue=OKX symbol=BTC-USDT"));
+                assertTrue(output.contains("[REDACTED]"));
+            }
+            rendered.reset();
+            log.error("exception probe", new IllegalStateException("password=" + dbPassword));
+            var throwableOutput = rendered.toString(StandardCharsets.UTF_8);
+            if (throwableOutput.contains(dbPassword)) leaked++;
+            assertTrue(throwableOutput.contains("IllegalStateException: password=[REDACTED]"));
+            assertTrue(throwableOutput.contains("SensitiveLoggingRedactionTest.java:"));
+            rendered.reset();
+            log.error("nested exception probe", new IllegalStateException("outer", new IllegalArgumentException("secret=" + secret)));
+            var nestedOutput = rendered.toString(StandardCharsets.UTF_8);
+            if (nestedOutput.contains(secret)) leaked++;
+            assertTrue(nestedOutput.contains("Caused by: java.lang.IllegalArgumentException: secret=[REDACTED]"));
+            rendered.reset();
+            var suppressed = new IllegalStateException("outer");
+            suppressed.addSuppressed(new IllegalArgumentException("apiSecret=" + secret));
+            log.error("suppressed exception probe", suppressed);
+            var suppressedOutput = rendered.toString(StandardCharsets.UTF_8);
+            assertTrue(suppressedOutput.contains("Suppressed: java.lang.IllegalArgumentException: apiSecret=[REDACTED]"));
+            assertTrue(suppressedOutput.contains("SensitiveLoggingRedactionTest.java:"));
+            assertTrue(!suppressedOutput.contains(secret));
+            rendered.reset();
+            log.info("tokenCount=2 passwordPolicy=strict secretary=available traceId=trace-safe-123");
+            assertTrue(rendered.toString(StandardCharsets.UTF_8)
+                    .contains("tokenCount=2 passwordPolicy=strict secretary=available traceId=trace-safe-123"));
+            MDC.remove("trace_id");
+            System.err.println("NQ_LOGGING_NEGATIVE_CASES_TOTAL=13 LEAKED=" + leaked);
+            assertEquals(0, leaked, "Production console must protect all thirteen synthetic leak vectors");
+        }
+    }
+}
