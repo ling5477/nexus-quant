@@ -1,12 +1,12 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-import {backtestsApi} from '@/api/backtests';
+import {backtestsApi} from '@/features/backtests/backtestsApi';
 import {backtestsQueryKeys} from '@/api/query-keys';
 import type {
     BacktestConfigCreateRequest,
     BacktestDatasetBindingRequest,
     BacktestStrategyVersionBindingRequest,
-} from '@/types/backtests';
+} from '@/features/backtests/backtestsTypes';
 
 export function useBacktestsListQuery(researchConfigId: string, searchVersion: number) {
     return useQuery({

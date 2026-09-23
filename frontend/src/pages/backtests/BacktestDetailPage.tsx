@@ -5,7 +5,7 @@ import {useEffect, useMemo, type ReactNode} from 'react';
 import {useQuery} from '@tanstack/react-query';
 import {useNavigate, useParams} from 'react-router-dom';
 
-import {backtestsApi} from '@/api/backtests';
+import {backtestsApi} from '@/features/backtests/backtestsApi';
 import {evaluationsApi} from '@/api/evaluations';
 import {formatApiError} from '@/api/errors';
 import {marketdataApi} from '@/api/marketdata';

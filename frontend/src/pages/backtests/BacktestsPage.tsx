@@ -37,14 +37,14 @@ import {
     useBacktestsListQuery,
     useCreateBacktestRunMutation,
     useCreateBacktestMutation,
-} from '@/hooks/useBacktestsListQuery';
+} from '@/features/backtests/useBacktestsListQuery';
 import type {AppApiError} from '@/types/api';
-import type {BacktestConfigCreateRequest} from '@/types/backtests';
+import type {BacktestConfigCreateRequest} from '@/features/backtests/backtestsTypes';
 import {
     type BacktestConfigListItem,
     type BacktestsListFilters,
     defaultBacktestsListFilters,
-} from '@/types/backtests';
+} from '@/features/backtests/backtestsTypes';
 import {containsIgnoreCase, formatDateTime, formatNumber, normalizeOptionalText} from '@/utils/formatters';
 
 type BacktestRow = BacktestConfigListItem;

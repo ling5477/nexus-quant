@@ -7,7 +7,7 @@ import type {
     BacktestRunDetailItem,
     BacktestStrategyVersionBindingRequest,
     SimPnlSnapshotItem,
-} from '@/types/backtests';
+} from '@/features/backtests/backtestsTypes';
 
 export const backtestsApi = {
     async list(researchConfigId?: string): Promise<BacktestConfigListItem[]> {
