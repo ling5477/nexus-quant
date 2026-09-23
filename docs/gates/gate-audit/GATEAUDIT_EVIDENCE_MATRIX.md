@@ -39,7 +39,12 @@ Matrix assertions：`FINAL_ACCEPTANCE_ROWS=21`，technical/CI rows=`17`，audit/
 | Phase7-B projection verification | `ACCEPTED / CI_GREEN` | `fea0f1ce228ac7079a7873393daba2d1294fec58 / 35748394188` | `CLOSED_BY_BASELINE_VERIFICATION / REPAIR_NOT_REQUIRED` |
 | Phase7-C readiness review | `ACCEPTED / CI_GREEN` | `82f1afc43664a327eea2fcfd7046bcef099e621b / 35761394744` | `PASS / GATEAUDIT_FREEZE_READY / PRETAG_ARCHIVE_AUTHORIZED` |
 | Phase7-C authority head | `COMPLETED / CI_GREEN` | `c6195b5cbdc2f2708079d48963c95c06ab885955 / 35762845196` | Phase7-D source head；不替代 Phase7-C immutable pair |
-| Phase7-D archive implementation | `PENDING_DELIVERY` | `TO_BE_BOUND_BY_GIT / PENDING_DELIVERY` | 本文件不能自引用未来 commit 或 CI |
+| Phase7-D archive implementation | `ACCEPTED / CI_GREEN` | `4800ab1d9407eeb527182328263c0bae9e6c3087 / 35803472376` | 历史 strict archive implementation；不替代后续 delta refresh |
+| Phase7-D authority sync | `ACCEPTED / CI_GREEN` | `c00291003cd0bb03688e054b3c38d7a6cd1c320b / 35804548427` | 本次 post-Phase7-D diff 的历史起点 |
+| Original Scope reconciliation | `COMPLETED / GAPS_0` | [39-row traceability](../../audit/evidence/GATEAUDIT_ORIGINAL_SCOPE_TRACEABILITY_RECONCILIATION.md) | 初次 `BLOCKED / S10 gap=1` 保留；SQL audit 接受后 39/39 分类、剩余缺口 0 |
+| Logging sensitive-data protection | `ACCEPTED / CI_GREEN` | `48c1b1cd4c84e1429be82093e460984b6d1c805c / 35817828506` | [negative proof](../../audit/evidence/GATEAUDIT_LOGGING_SENSITIVE_DATA_NEGATIVE_PROOF_AUDIT.md) 13/13 保留；[remediation](../../audit/evidence/GATEAUDIT_LOGGING_SENSITIVE_DATA_PROTECTION_IMPLEMENTATION.md) 后 0/13；authority `2b565eca6e9e34f6faf856ccd05f49b43f37ed7b / 35820007679` |
+| SQL ownership repository audit | `ACCEPTED / CI_GREEN` | `0e200e807a1347e5ec6acd24975fa3531a31c90d / 35828020513` | [audit](../../audit/evidence/GATEAUDIT_SQL_OWNERSHIP_REPOSITORY_AUDIT.md) 435 runtime sites、91 owner、28 duplicate groups、17 critical groups；[independent review](../../audit/evidence/GATEAUDIT_SQL_OWNERSHIP_REPOSITORY_INDEPENDENT_REVIEW.md) 初审 FAIL→修订→delta PASS；authority `6bc3fa75def9ffe31710d006359e0991d1a60bc1 / 35828897070` |
+| Pre-tag delta rebind/archive refresh | `PENDING_DELIVERY` | `TO_BE_BOUND_BY_GIT / PENDING_DELIVERY` | 本文件不自引用未来 refresh commit/CI；进入点为 `6bc3fa75def9ffe31710d006359e0991d1a60bc1` |
 | Phase7-E freeze candidate/tag | `NOT_CREATED` | `TO_BE_BOUND_BY_GIT / NOT_CREATED` | 必须先进入 `dev` 并取得新的 exact-head CI |
 
-Phase7-B 后 mandatory closure=`0`，Phase7-C P0/P1=`0/0`。Governance addendum 不增加或改写 21 行 capability matrix，也不把 docs-only authority synchronization 当作新的 technical acceptance。
+Phase7-B 后 mandatory closure=`0`，Phase7-C 与本次 delta 的 P0/P1=`0/0`。Governance addendum 不增加或改写 21 行 capability matrix，也不把 docs-only authority synchronization 当作新的 technical acceptance。`FINAL_ACCEPTANCE_ROWS=21` 保持；post-Phase7-D 的 7 个提交均有分类和接受边界，archive refresh 交付后才将其自身置为 ACCEPTED。

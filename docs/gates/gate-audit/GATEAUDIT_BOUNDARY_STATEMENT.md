@@ -1,6 +1,6 @@
 # GateAUDIT boundary statement
 
-GateAUDIT 的 accepted capability/governance baseline 不扩大生产或交易授权。Current safety facts 继续由 machine authority 拥有，本 archive 仅冻结其 Phase7-D source-time summary。
+GateAUDIT 的 accepted capability/governance baseline 不扩大生产或交易授权。Current safety facts 继续由 machine authority 拥有；以下状态已在本次 refresh 进入点 `6bc3fa75def9ffe31710d006359e0991d1a60bc1` 重新读取，不把 Phase7-D 历史 source-time summary 冒充当前状态。
 
 ```text
 LIVE=DISABLED
@@ -29,4 +29,7 @@ GateY minimal pilot 只作为 historical frozen fact：一次明确受控的 OKX
 
 Current machine state 仍为 `active_gate=GateAUDIT`、`active_gate_status=IN_PROGRESS|NOT_FROZEN`，current frozen gate 仍为 GateY。Phase7-D 的 `COMPLETE / PRETAG / TAG_PENDING` 仅表示 capability/governance closeout，不表示 GateAUDIT frozen、tagged 或 released。
 
+Phase7-D 后唯一 runtime implementation delta 是已接受的 logging 输出脱敏；SQL ownership audit、Original Scope reconciliation 与本 archive refresh 为 evidence/governance 变更。它们没有改动 release branch `dev`、required CI、canonical tag 名、13-role archive 合同、LIVE/kill 安全状态、生产 mutation、credential boundary、Flyway 历史、API contract、DB schema 或交易正确性实现。CodeRabbit 未运行于 SQL audit；其签收来自独立 subagent，初审 FAIL 与修订后 delta PASS 均保留。
+
 最终 freeze 必须等待实际 `dev` candidate、annotated local tag、remote tag、peeled target 与该 candidate 的 exact-head CI 一致。Phase7-D 不执行 promotion、merge、tag、release、deployment 或 LIVE。
+本 pre-tag refresh 也不执行上述发布动作；其交付只使 Phase7-E 成为后续唯一下一动作，不提前赋予 tag 或生产操作授权。

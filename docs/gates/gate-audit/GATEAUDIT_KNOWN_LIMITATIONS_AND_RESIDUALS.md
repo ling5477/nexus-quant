@@ -26,6 +26,12 @@ Canonical baseline 是 [Phase7-A residual matrix](../../audit/evidence/GATEAUDIT
 
 Phase7-B canonical result 位于 [historical projection verification](../../audit/evidence/GATEAUDIT_PHASE7_B_HISTORICAL_PROJECTION_BASELINE_VERIFICATION.md)：`MANDATORY_CLOSURE=0`、`OTHER_RESIDUAL_RECLASSIFICATIONS=0`。Phase7-C readiness P0/P1=`0/0` 不表示 P2/P3/deferred/future/historical identities 已消失。
 
+## Post-Phase7-D traceability disposition
+
+[Original Scope reconciliation](../../audit/evidence/GATEAUDIT_ORIGINAL_SCOPE_TRACEABILITY_RECONCILIATION.md) 的初次 `S10 EVIDENCE_GAP / REMAINING_GAPS=1` 保留为历史；[SQL ownership audit](../../audit/evidence/GATEAUDIT_SQL_OWNERSHIP_REPOSITORY_AUDIT.md) 与独立复核的接受身份关闭该**对象级审计签收**缺口，最新 `TRACEABILITY_TOTAL=39 / UNCLASSIFIED=0 / REMAINING_GAPS=0`。这不清除上表任何一行。`CANONICAL_RESIDUAL_ROWS=17`，原 17 行的分类与 owner 均未变。
+
+Original Scope 内 structured JSON、rotation、retention、async MDC、EventType 等仍按各自 `DEFERRED_WITH_OWNER_AND_TRIGGER` 保存于追溯记录，未被重复插入本 canonical residual matrix。Logging 修复前 13/13 synthetic 泄漏保留为负证据，修复后 0/13 只关闭敏感输出边界；SQL audit 另保留 2 个 P2、1 个 P3 维护项及 manual seed 既有 P2 边界，不以 `P0/P1=0` 将其误报为 CLOSED。
+
 ## Scope limitations
 
 GateAUDIT 没有证明或授权 generic LIVE、第二 pilot、多账户/多交易所、高可用、无限规模、超出 accepted duration 的 soak、自动 real-trading scheduling、AI/DH trading、transfer 或 withdraw。Repository schema/current code 事实不能外推 production deployment state；历史 production V46 也不能冒充当前 repository schema。

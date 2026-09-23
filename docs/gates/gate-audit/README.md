@@ -4,15 +4,16 @@
 
 ## 当前归档状态
 
-- source HEAD：`c6195b5cbdc2f2708079d48963c95c06ab885955`。
-- source tree：`3d6b9cef557b5707d2fbf41bbfb7cc3444bc9c11`。
-- source exact-head CI：`35762845196 / NQ CI Baseline / completed / success / 9 of 9`。
+- Phase7-D 历史 source HEAD/tree：`c6195b5cbdc2f2708079d48963c95c06ab885955 / 3d6b9cef557b5707d2fbf41bbfb7cc3444bc9c11`；当时 exact-head CI=`35762845196 / completed / success / 9 of 9`。
+- 本次 pre-tag delta refresh 进入点：`6bc3fa75def9ffe31710d006359e0991d1a60bc1`，tree=`bfa570b5e9b37fdba9056d377b532f5c880d5d2b`，exact-head CI=`35828897070 / completed / success / 9 of 9`。本 archive refresh 的提交与 CI 将在交付后由 current authority 绑定，不在本文件预填未来 SHA。
 - GateAUDIT capability/governance closeout：`COMPLETE / PRETAG / TAG_PENDING`。
 - GateAUDIT machine state：`IN_PROGRESS|NOT_FROZEN`；本目录不声明 `FROZEN`、`TAGGED` 或 `RELEASED`。
 - 当前 frozen gate 仍为 GateY；GateAUDIT archive 不替代 GateY 的 frozen authority。
 - canonical future tag：`nq-gateaudit-freeze`；本阶段未创建 local tag、remote tag 或 tag object。
 
 Phase7-D 只形成 pre-tag archive 和 closeout。最终 freeze candidate 必须是后续实际进入 `dev` 的 commit；若 promotion 或 PR merge 产生新 commit，该新 commit 才能成为 freeze candidate，并须重新绑定 tree、archive 与 exact-head CI。
+
+Phase7-D 后的 7 个提交已按 [freeze closeout](GATEAUDIT_FREEZE_CLOSEOUT.md) 与 [evidence matrix](GATEAUDIT_EVIDENCE_MATRIX.md) 重新对齐：Original Scope 39 项均有 disposition、logging 敏感信息修复与 SQL ownership audit 均绑定各自接受身份。`POST_PHASE7D_DELTA_RECONCILED=true`、`ARCHIVE_REFRESHED=true` 和 `PRETAG_CANDIDATE_REBOUND=true` 只指本次有界 pre-tag archive 候选；正式接受仍须本 refresh commit 的 exact-head CI 与后续 authority sync。Phase7-E 在该交付完成前保持暂停。
 
 ## Archive roles
 

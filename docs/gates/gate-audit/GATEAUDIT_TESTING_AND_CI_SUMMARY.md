@@ -29,16 +29,24 @@ Canonical qualification detail remains in [Phase6 final acceptance](../../audit/
 | Phase7-B projection verification | `fea0f1ce228ac7079a7873393daba2d1294fec58` | `35748394188` | immutable verification pair |
 | Phase7-C readiness review | `82f1afc43664a327eea2fcfd7046bcef099e621b` | `35761394744` | immutable review pair |
 | Phase7-C authority source head | `c6195b5cbdc2f2708079d48963c95c06ab885955` | `35762845196` | completed / success / 9 of 9；Phase7-D input |
+| Phase7-D archive implementation | `4800ab1d9407eeb527182328263c0bae9e6c3087` | `35803472376` | completed / success / 9 of 9；历史 archive pair |
+| Phase7-D authority sync | `c00291003cd0bb03688e054b3c38d7a6cd1c320b` | `35804548427` | completed / success / 9 of 9；本次 delta diff 起点 |
+| Logging implementation | `48c1b1cd4c84e1429be82093e460984b6d1c805c` | `35817828506` | completed / success / 9 of 9；prod console synthetic leakage 13/13→0/13 |
+| Logging authority sync | `2b565eca6e9e34f6faf856ccd05f49b43f37ed7b` | `35820007679` | completed / success / 9 of 9 |
+| SQL ownership audit | `0e200e807a1347e5ec6acd24975fa3531a31c90d` | `35828020513` | completed / success / 9 of 9；435 sites、91 owner、28 duplicate groups |
+| SQL authority sync / refresh entry | `6bc3fa75def9ffe31710d006359e0991d1a60bc1` | `35828897070` | completed / success / 9 of 9；post-Phase7-D delta 进入点 |
 
 ## Pending identities
 
 ```text
-PHASE7_D_ARCHIVE_COMMIT=TO_BE_BOUND_BY_GIT
-PHASE7_D_EXACT_HEAD_CI=PENDING_DELIVERY
+PHASE7_D_ARCHIVE_COMMIT=4800ab1d9407eeb527182328263c0bae9e6c3087
+PHASE7_D_EXACT_HEAD_CI=35803472376
+PRETAG_DELTA_REFRESH_COMMIT=TO_BE_BOUND_BY_GIT
+PRETAG_DELTA_REFRESH_CI=PENDING_DELIVERY
 PHASE7_E_FREEZE_COMMIT=NOT_CREATED
 PHASE7_E_FREEZE_EXACT_HEAD_CI=NOT_CREATED
 ANNOTATED_TAG_OBJECT=NOT_CREATED
 REMOTE_TAG=NOT_CREATED
 ```
 
-Phase7-D 本地只运行 archive/governance/docs/stage/secret/diff 专项验证，不重新运行 Full Maven、frontend E2E、L5、L6、historical projection oracle、PostgreSQL restore 或真实 provider。Phase7-D commit 仍必须取得自己的 `NQ CI Baseline / exact-head / completed / success / 9 of 9`，而 future Phase7-E 必须对实际 `dev` freeze candidate 再取得新 exact-head CI。
+Phase7-D 的 historical implementation 与 authority CI 均已独立通过。Logging 和 SQL audit 各有自己的 technical/evidence pair 与后续 authority pair；本 refresh 不重新运行 Full Maven、frontend E2E、L5/L6、historical projection oracle、PostgreSQL restore 或真实 provider。Archive refresh commit 仍须取得新的 `NQ CI Baseline / exact-head / completed / success / 9 of 9`；future Phase7-E 必须对实际 `dev` freeze candidate 再取得其自身的新 exact-head CI。
