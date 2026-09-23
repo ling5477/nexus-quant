@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.adapter.binance.service;
+package com.guidinglight.nexusquant.adapter.binance.time;
 
 /**
  * BinanceTimestampProvider 提供可注入的毫秒时间戳。

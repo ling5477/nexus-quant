@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.adapter.binance.service;
 
+import com.guidinglight.nexusquant.adapter.binance.time.BinanceTimestampProvider;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceApiCredentials;

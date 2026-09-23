@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.adapter.binance.service;
+package com.guidinglight.nexusquant.adapter.binance.time;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

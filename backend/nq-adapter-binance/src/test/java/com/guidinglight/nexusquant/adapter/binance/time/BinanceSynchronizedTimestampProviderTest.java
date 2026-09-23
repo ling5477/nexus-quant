@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.adapter.binance.service;
+package com.guidinglight.nexusquant.adapter.binance.time;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
