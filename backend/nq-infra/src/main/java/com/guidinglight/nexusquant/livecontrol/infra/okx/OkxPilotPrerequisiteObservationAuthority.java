@@ -6,8 +6,8 @@ import com.guidinglight.nexusquant.adapter.okx.provider.model.OkxPilotPrerequisi
 import com.guidinglight.nexusquant.adapter.okx.provider.model.OkxPilotPrerequisiteSnapshot;
 import com.guidinglight.nexusquant.adapter.okx.auth.OkxPrivateEnvironment;
 import com.guidinglight.nexusquant.adapter.okx.provider.model.OkxSpotProviderOperation;
-import com.guidinglight.nexusquant.livecontrol.application.PilotPrerequisiteObservationAuthority;
-import com.guidinglight.nexusquant.livecontrol.application.PilotPrerequisiteObservationAuthority.TrustedOperatorPilotBootstrap;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotPrerequisiteObservationAuthority;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotPrerequisiteObservationAuthority.TrustedOperatorPilotBootstrap;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionAuthorityType;

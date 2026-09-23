@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.strategy.api.dto;
 
-import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunListResult;
+import com.guidinglight.nexusquant.strategy.application.shadowrun.model.ShadowRunListResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;

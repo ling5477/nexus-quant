@@ -7,8 +7,8 @@ import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileSe
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunMaterializationActor;
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseShadowRunMaterializationService;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.model.ShadowRunMaterializationActor;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.service.StrategyReleaseShadowRunMaterializationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

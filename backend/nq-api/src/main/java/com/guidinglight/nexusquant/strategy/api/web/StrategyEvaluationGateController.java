@@ -4,8 +4,8 @@ import com.guidinglight.nexusquant.strategy.api.dto.StrategyEvaluationGateRespon
 
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateQuery;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateService;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateQuery;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.service.StrategyEvaluationGateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

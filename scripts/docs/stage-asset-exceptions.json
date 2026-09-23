@@ -251,7 +251,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/PaperShadowConsistencyDrilldownController.java",
-      "sha256": "bcde9887c224fe13a315ef77d9f71698255f1ef8e1ceb62d671a15a0caaabeca",
+      "sha256": "ce73ad4fc22371b9cc10438278d800af8b5493cf567a19aa97e89017fb0d196d",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -259,7 +259,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/dto/PaperShadowConsistencyDrilldownResponse.java",
-      "sha256": "2c0a31fdc0a86c1b53eff746fb56e1df85a9f172305fcad47565d686da02ffe2",
+      "sha256": "208e87a54c27a78fb71fe93b72113374acd3822de8e8109eb2d634b4c2672013",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -323,7 +323,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/dto/ShadowRunListResponse.java",
-      "sha256": "15c9aa2e0f4970f258454a61bc055c66023845b4237508a75e8ab2650781f08c",
+      "sha256": "fb1fb38207132b912bb5ceab238205ede1067086c8e27cc64e38211b0b1ece87",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -331,7 +331,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/dto/ShadowRunOverviewResponse.java",
-      "sha256": "87ecaa6b280154471752739db624a4756b1959fef5f183406171aec646c34528",
+      "sha256": "af4c4f24a7a0f80a11ed031da1921c113e19cb09805985f5dacc4138e2969a54",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -339,7 +339,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ShadowRunReadOnlyController.java",
-      "sha256": "e0034b1f318f735e9a772aa4c04bbdebec66ba233f5a9f87fcc13361439dfa88",
+      "sha256": "86390be6c325f89cea7009da0cdbd0503486afbd6793464ac5ceb66275954112",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -379,7 +379,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/StrategyEvaluationGateController.java",
-      "sha256": "61dba8859071902a4370adc057526d9be3349ef4a6c2df7f498b72d0adabe491",
+      "sha256": "4f125bf0ee3019807b7b478ca7b541a778dcdaf2f552a83c2fab30c85661b8ff",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -387,7 +387,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/StrategyValidationOverviewController.java",
-      "sha256": "417530d97e772659f5b9b20529b6a465816a5edfa717fb80703c4a0d5577c6eb",
+      "sha256": "112a9cbc2a108d8de0d84594666b71a218f356d872d204849d144526a599a03f",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -395,7 +395,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/dto/StrategyValidationOverviewResponse.java",
-      "sha256": "ebc1efffa9eafdf8c9700dd52387d684a8433915166a8a2fdb3aceaf5aaa657c",
+      "sha256": "6af2b8c56822877299bbb937591ca041d6dcff03786b5d290902bbcfb8955d39",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -491,7 +491,7 @@
     },
     {
       "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-      "sha256": "2b221d1f8ebf9ff031d22051ad5f3bbf2e83d37bb30929945546966862c5b502",
+      "sha256": "7d65703d97b6317e5e9832dd1a7b0242d4112ec76c5c5c0d77f5415a38355973",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-app / MinimalLivePilotConfiguration contract owner",
@@ -499,7 +499,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/admission/AdmissionGuardedMaterializationPostgresIntegrationTest.java",
-      "sha256": "e983d10f76fa3c7d98fb58ff779376c1760b6cf418e7aea2b41a1c1fad9cfe62",
+      "sha256": "e3512a8c2d25fe17b9a76460f86d46f0a60e69a13bb8a4bfcdad8c1b8b9c8515",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -507,7 +507,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/admission/AdmissionMaterializationGuardPostgresIntegrationTest.java",
-      "sha256": "226e39c79159be50df0621a074ecd49ccfa44691f11e218a3c15ea8613ed10eb",
+      "sha256": "9c955f8b5ec84b08825d0b2f3dab5f2b00fd54e679bac3f6f30b8a32cf989952",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -515,7 +515,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/architecture/PackageBoundaryArchTest.java",
-      "sha256": "94a73c2a3d2ebaf35cbc5f3e657fbc9f7e6483825f458cee659b9d3442a1988c",
+      "sha256": "87c1c35b4f5fd932667e68ded8f6168a2e8520bcfb7d6197b5e13a44b748a15f",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -579,7 +579,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfigurationTest.java",
-      "sha256": "c0878b8592f9c1615203ae481f92ae76de65fbb76a43e6707244530637dd145f",
+      "sha256": "afd835805703a7fa3c3fe8ea4d0f03be1ae5b77654a0d7912594a353d41be570",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -595,7 +595,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
-      "sha256": "1efe573b77a5e93a10a845ce10074fda06ca3454928bd528d56ebda7305dbacb",
+      "sha256": "785c43eb36a9757fb36a74d4e5e2cb2ba08772f4d4f9133f5be72d09b7a768f5",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -603,7 +603,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java",
-      "sha256": "00412fef8506bed491e398b0513d45a9bfd7bedf3cf12ffae724e14c2648b9ad",
+      "sha256": "eb7cfeb1a5e87e97f183ddfb8088d64dc58f8ae8aa45bdcb38c1ce66cf9f9292",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -643,7 +643,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/shadowrun/ShadowRunProvenancePostgresIntegrationTest.java",
-      "sha256": "0c5d4291229a0b17199d335e86c2e879930a56813d2d46d24c36e8c59a5e4893",
+      "sha256": "d969a3af4b7beb92cd7996f89a99ccbfc14dd07bee5cbf6f3fd7090cbf14f072",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -675,7 +675,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/web/StrategyReleaseShadowRunMaterializationSecurityWebMvcTest.java",
-      "sha256": "50850e1c74469a2202c76919c2a4505c64aaca432a31075353b34ed0f9f644ec",
+      "sha256": "7f56bb337ac07f9ddda95c7c8ce9073c082e4a24ba5ed29e94ef9d6fb89eadf2",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -802,8 +802,8 @@
       "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/evaluationgate/StrategyEvaluationGateService.java",
-      "sha256": "d411aa813fd5cb90b9b7a6fdd724d401a1ab5dd6597b6bea1f9564dc5fce7a63",
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/evaluationgate/service/StrategyEvaluationGateService.java",
+      "sha256": "b7343ec110d2978a52e27688a903033df59024f915e2854dd84817f29c433f02",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -818,24 +818,24 @@
       "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
     },
     {
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerService.java",
-      "sha256": "06387c431fb6116f1b37d4ba7118e2dcdf0a4fdd7fc03407e115f88b2ceb848e",
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerService.java",
+      "sha256": "fcf40628e6d03e3e1eb64a7f8a120478d2c0408d5c5720840077503b72c64f78",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-core / ShadowRunRunnerService contract owner",
       "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
     },
     {
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/AdmissionGuard.java",
-      "sha256": "da80ac33d1ac1aafa5415b8643247229ffff44f9a1b6fbdc1303762f8472ee36",
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/model/AdmissionGuard.java",
+      "sha256": "733cc6d1166fc3ef970e00e1288e7f7ea1dd6a50fa6a60cc668fdae1f94a7476",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-core / AdmissionGuard contract owner",
       "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
     },
     {
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriter.java",
-      "sha256": "aca660e52a455f88d603066776f4a12574969499ee44319ec8080e8b4b882a56",
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriter.java",
+      "sha256": "52b4df0d92401c3feb68d458eb9539eec7d728027fe74269513d8c951d60da08",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-core / ShadowRunMaterializationWriter contract owner",
@@ -874,24 +874,24 @@
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
     },
     {
-      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriterTest.java",
-      "sha256": "f7901b0fd4cdeec0db71e3d2dfabeb6193e413ed0c8d608dc0c930d5d232bde1",
+      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriterTest.java",
+      "sha256": "705816d54171fa0ec5d9a7b698ef8e0bbba462b0ae4176697bafe2617dc5f128",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
     },
     {
-      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/StrategyReleaseProductionServiceTest.java",
-      "sha256": "7f44251478f5c8018d7731ca5aba15f91bd6a02eef01beb09c26ed683d0e7476",
+      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/StrategyReleaseProductionServiceTest.java",
+      "sha256": "ae302bd88b74d05a09132ae8c6b9b1b8f92795f301bbbbf8663fcbe31c8aef08",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
     },
     {
-      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/StrategyReleaseShadowRunMaterializationServiceTest.java",
-      "sha256": "b4b4529127a1e9c144691cf1290ca039b9665acd9955ae4eac6def4e2a542d7d",
+      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/StrategyReleaseShadowRunMaterializationServiceTest.java",
+      "sha256": "daabee8417cb385a70903825074def3498b2aa2c937a08696bc572c4aae1e798",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -955,7 +955,7 @@
     },
     {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/MinimalPilotTradingVenueGateway.java",
-      "sha256": "289dcd53100ef33029da8205442e420338732209d7ab210ec29672ebfa63773c",
+      "sha256": "82f43c630bd4d506ef9caaf87798c0487b06dbb2c6a48d8de8982a297390f557",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-infra / MinimalPilotTradingVenueGateway contract owner",
@@ -971,7 +971,7 @@
     },
     {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/MinimalLivePilotControlService.java",
-      "sha256": "5d8fa29431e86f46b211c15a3147569cb24a1970ff1dc02190d3edb412a4c21e",
+      "sha256": "745facc28ec40704ed2850d015a312574e03d300b68c9ef0308a71804899efbf",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-infra / MinimalLivePilotControlService contract owner",
@@ -979,7 +979,7 @@
     },
     {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/okx/OkxPilotPrerequisiteObservationAuthority.java",
-      "sha256": "fca166cad86bb15817aa5f84e417d923dcea7facf2b31cd9546624c339ca0413",
+      "sha256": "d74784d580da13535d824b0a2d82e210b4a54eef48ffe09e5d0ec7d6e3ec1b0d",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-infra / OkxPilotPrerequisiteObservationAuthority contract owner",
@@ -1107,7 +1107,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/JdbcPilotScopeAuthorityResolverTest.java",
-      "sha256": "576f379ad5eee3f30bda7f54b64a8cac3912129f908792a1577f71d70a2d7a3c",
+      "sha256": "2a30f65de5d04eedb6dfd186f6fe83e86278dea403df294968d353148b9df503",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -1115,7 +1115,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/MinimalLivePilotControlServiceTest.java",
-      "sha256": "a1787a7cdd337552b9f881ccdb10f6b7bb41f9770fc103ac150636d70bfa8cbf",
+      "sha256": "c905f79d69bc42619f70ba4c43a35e09fc79aab32b735a43fe665ade1721e30b",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -1123,7 +1123,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/PilotScopeControlPlaneServiceTest.java",
-      "sha256": "3f679c4060ec8b82989ebfe3254e8c83b498ee720541f974f2dbb3d07e957b9c",
+      "sha256": "1d475d0ba1d7c92e8c2168f9642d58aa3d67dcc6d12dcd3a401751cf7da69983",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -1131,7 +1131,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/ReadOnlyQualificationObservationAuthorityTest.java",
-      "sha256": "a6fa76daac5bc504e256b0b427f4fee1f20d33fc9e3af88b4cd4aa5c072215fb",
+      "sha256": "a3ae61b8a2ba6d127b5deb731c3ea6e2bb24f4d898bc561e99d1141e5c7bc441",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -1155,7 +1155,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/strategy/infra/artifact/ServerControlledStrategyArtifactBindingResolverTest.java",
-      "sha256": "4cd2df401ee9f9f0491c232dbd57bda15654af850fa78b15ed341587e03e370b",
+      "sha256": "36764f6ff56cf8aab3eee7be165da6e21991f63c86aa76ed25c0d6f0353d01dc",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -1163,7 +1163,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcStrategyReleaseProvenanceRepositoryTest.java",
-      "sha256": "d30d20644e976b388ca24b062f8e32f7948cfac09525e73961ff2412d51d98b6",
+      "sha256": "f23438cb4cdab7ab49a3b076530697382ca709ab628e8516d256695576b18b82",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -3643,392 +3643,392 @@
           "contractMember": "Side"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingAuthority.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotBindingCommand.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingAuthority.java",
-          "callerMember": "ExactPilotBindingAuthority#resolveCurrent(AuthenticatedLiveControlActor,ExactPilotBinding,Instant)",
-          "contractMember": "AuthoritativeFacts"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingAuthority.java",
-          "callerMember": "ExactPilotBindingAuthority#resolveCurrent(AuthenticatedLiveControlActor,ExactPilotBinding,Instant)",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingAuthority.java",
-          "callerMember": "ExactPilotBindingAuthority#resolveForCreation(AuthenticatedLiveControlActor,ExactPilotBindingCommand,Instant)",
-          "contractMember": "AuthoritativeFacts"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingAuthority.java",
-          "callerMember": "ExactPilotBindingAuthority#resolveForCreation(AuthenticatedLiveControlActor,ExactPilotBindingCommand,Instant)",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingCommand.java",
-          "callerMember": "<unit>#<type>",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotBindingCommand.java",
           "callerMember": "ExactPilotBindingCommand#<init>(UUID,UUID,UUID,UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,ExactPilotBinding.Correlation,Instant)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotBindingCommand.java",
           "callerMember": "ExactPilotBindingCommand#<init>(UUID,UUID,UUID,UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,ExactPilotBinding.Correlation,Instant)",
           "contractMember": "Correlation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotBindingCommand.java",
           "callerMember": "ExactPilotBindingCommand#<init>(UUID,UUID,UUID,UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,ExactPilotBinding.Correlation,Instant)",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotBindingCommand.java",
           "callerMember": "ExactPilotBindingCommand#<init>(UUID,UUID,UUID,UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,ExactPilotBinding.Correlation,Instant)",
           "contractMember": "OrderEnvelope"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotBindingCommand.java",
           "callerMember": "ExactPilotBindingCommand#correlation",
           "contractMember": "Correlation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotBindingCommand.java",
           "callerMember": "ExactPilotBindingCommand#correlation",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotBindingCommand.java",
           "callerMember": "ExactPilotBindingCommand#order",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotBindingCommand.java",
           "callerMember": "ExactPilotBindingCommand#order",
           "contractMember": "OrderEnvelope"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingConsumptionCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotBindingConsumptionCommand.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingConsumptionCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotBindingConsumptionCommand.java",
           "callerMember": "ExactPilotBindingConsumptionCommand#<init>(UUID,UUID,ExactPilotBinding.OrderEnvelope,ExactPilotBinding.Correlation)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingConsumptionCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotBindingConsumptionCommand.java",
           "callerMember": "ExactPilotBindingConsumptionCommand#<init>(UUID,UUID,ExactPilotBinding.OrderEnvelope,ExactPilotBinding.Correlation)",
           "contractMember": "Correlation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingConsumptionCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotBindingConsumptionCommand.java",
           "callerMember": "ExactPilotBindingConsumptionCommand#<init>(UUID,UUID,ExactPilotBinding.OrderEnvelope,ExactPilotBinding.Correlation)",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingConsumptionCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotBindingConsumptionCommand.java",
           "callerMember": "ExactPilotBindingConsumptionCommand#<init>(UUID,UUID,ExactPilotBinding.OrderEnvelope,ExactPilotBinding.Correlation)",
           "contractMember": "OrderEnvelope"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingConsumptionCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotBindingConsumptionCommand.java",
           "callerMember": "ExactPilotBindingConsumptionCommand#correlation",
           "contractMember": "Correlation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingConsumptionCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotBindingConsumptionCommand.java",
           "callerMember": "ExactPilotBindingConsumptionCommand#correlation",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingConsumptionCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotBindingConsumptionCommand.java",
           "callerMember": "ExactPilotBindingConsumptionCommand#order",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingConsumptionCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotBindingConsumptionCommand.java",
           "callerMember": "ExactPilotBindingConsumptionCommand#order",
           "contractMember": "OrderEnvelope"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingControlPlane.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotScopeAuthorizationCommand.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingControlPlane.java",
-          "callerMember": "ExactPilotBindingControlPlane#create(AuthenticatedLiveControlActor,ExactPilotBindingCommand)",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingDraft.java",
-          "callerMember": "<unit>#<type>",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingDraft.java",
-          "callerMember": "ExactPilotBindingDraft#<init>(UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,ExactPilotBinding.Correlation,Instant)",
-          "contractMember": "<typed-use>"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingDraft.java",
-          "callerMember": "ExactPilotBindingDraft#<init>(UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,ExactPilotBinding.Correlation,Instant)",
-          "contractMember": "Correlation"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingDraft.java",
-          "callerMember": "ExactPilotBindingDraft#<init>(UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,ExactPilotBinding.Correlation,Instant)",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingDraft.java",
-          "callerMember": "ExactPilotBindingDraft#<init>(UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,ExactPilotBinding.Correlation,Instant)",
-          "contractMember": "OrderEnvelope"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingDraft.java",
-          "callerMember": "ExactPilotBindingDraft#correlation",
-          "contractMember": "Correlation"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingDraft.java",
-          "callerMember": "ExactPilotBindingDraft#correlation",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingDraft.java",
-          "callerMember": "ExactPilotBindingDraft#order",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingDraft.java",
-          "callerMember": "ExactPilotBindingDraft#order",
-          "contractMember": "OrderEnvelope"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingDraft.java",
-          "callerMember": "ExactPilotBindingDraft#toCommand(UUID,UUID,UUID)",
-          "contractMember": "<typed-use>"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingValidation.java",
-          "callerMember": "<unit>#<type>",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingValidation.java",
-          "callerMember": "ExactPilotBindingValidation#<init>(UUID,ExactPilotBinding.Lifecycle,Instant,List<Violation>,boolean)",
-          "contractMember": "<typed-use>"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingValidation.java",
-          "callerMember": "ExactPilotBindingValidation#<init>(UUID,ExactPilotBinding.Lifecycle,Instant,List<Violation>,boolean)",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingValidation.java",
-          "callerMember": "ExactPilotBindingValidation#<init>(UUID,ExactPilotBinding.Lifecycle,Instant,List<Violation>,boolean)",
-          "contractMember": "Lifecycle"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingValidation.java",
-          "callerMember": "ExactPilotBindingValidation#lifecycle",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotBindingValidation.java",
-          "callerMember": "ExactPilotBindingValidation#lifecycle",
-          "contractMember": "Lifecycle"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotScopeAuthorizationCommand.java",
-          "callerMember": "<unit>#<type>",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotScopeAuthorizationCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotScopeAuthorizationCommand.java",
           "callerMember": "ExactPilotScopeAuthorizationCommand#<init>(ExactPilotBinding.Correlation,ExactPilotBinding.Correlation,String,Instant,Instant)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotScopeAuthorizationCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotScopeAuthorizationCommand.java",
           "callerMember": "ExactPilotScopeAuthorizationCommand#<init>(ExactPilotBinding.Correlation,ExactPilotBinding.Correlation,String,Instant,Instant)",
           "contractMember": "Correlation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotScopeAuthorizationCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotScopeAuthorizationCommand.java",
           "callerMember": "ExactPilotScopeAuthorizationCommand#<init>(ExactPilotBinding.Correlation,ExactPilotBinding.Correlation,String,Instant,Instant)",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotScopeAuthorizationCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotScopeAuthorizationCommand.java",
           "callerMember": "ExactPilotScopeAuthorizationCommand#approverCorrelation",
           "contractMember": "Correlation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotScopeAuthorizationCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotScopeAuthorizationCommand.java",
           "callerMember": "ExactPilotScopeAuthorizationCommand#approverCorrelation",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotScopeAuthorizationCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotScopeAuthorizationCommand.java",
           "callerMember": "ExactPilotScopeAuthorizationCommand#creatorCorrelation",
           "contractMember": "Correlation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotScopeAuthorizationCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotScopeAuthorizationCommand.java",
           "callerMember": "ExactPilotScopeAuthorizationCommand#creatorCorrelation",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotScopeControlResult.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/MinimalLivePilotCommand.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotScopeControlResult.java",
-          "callerMember": "ExactPilotScopeControlResult#<init>(UUID,UUID,UUID,String,String,UUID,String,ExactPilotBinding.Lifecycle,boolean,boolean,boolean)",
-          "contractMember": "<typed-use>"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotScopeControlResult.java",
-          "callerMember": "ExactPilotScopeControlResult#<init>(UUID,UUID,UUID,String,String,UUID,String,ExactPilotBinding.Lifecycle,boolean,boolean,boolean)",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotScopeControlResult.java",
-          "callerMember": "ExactPilotScopeControlResult#<init>(UUID,UUID,UUID,String,String,UUID,String,ExactPilotBinding.Lifecycle,boolean,boolean,boolean)",
-          "contractMember": "Lifecycle"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotScopeControlResult.java",
-          "callerMember": "ExactPilotScopeControlResult#<init>(UUID,UUID,UUID,String,String,UUID,String,ExactPilotBinding.Lifecycle,boolean,boolean,boolean)",
-          "contractMember": "VERIFIED"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotScopeControlResult.java",
-          "callerMember": "ExactPilotScopeControlResult#lifecycle",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/ExactPilotScopeControlResult.java",
-          "callerMember": "ExactPilotScopeControlResult#lifecycle",
-          "contractMember": "Lifecycle"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/MinimalLivePilotCommand.java",
-          "callerMember": "<unit>#<type>",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/MinimalLivePilotCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/MinimalLivePilotCommand.java",
           "callerMember": "MinimalLivePilotCommand#<init>(long,long,String,ExactPilotBinding.Side,BigDecimal)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/MinimalLivePilotCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/MinimalLivePilotCommand.java",
           "callerMember": "MinimalLivePilotCommand#<init>(long,long,String,ExactPilotBinding.Side,BigDecimal)",
           "contractMember": "BUY"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/MinimalLivePilotCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/MinimalLivePilotCommand.java",
           "callerMember": "MinimalLivePilotCommand#<init>(long,long,String,ExactPilotBinding.Side,BigDecimal)",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/MinimalLivePilotCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/MinimalLivePilotCommand.java",
           "callerMember": "MinimalLivePilotCommand#<init>(long,long,String,ExactPilotBinding.Side,BigDecimal)",
           "contractMember": "Side"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/MinimalLivePilotCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/MinimalLivePilotCommand.java",
           "callerMember": "MinimalLivePilotCommand#side",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/MinimalLivePilotCommand.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/MinimalLivePilotCommand.java",
           "callerMember": "MinimalLivePilotCommand#side",
           "contractMember": "Side"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/PilotExecutionLeaseControlPlane.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotBindingDraft.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/PilotExecutionLeaseControlPlane.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotBindingDraft.java",
+          "callerMember": "ExactPilotBindingDraft#<init>(UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,ExactPilotBinding.Correlation,Instant)",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotBindingDraft.java",
+          "callerMember": "ExactPilotBindingDraft#<init>(UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,ExactPilotBinding.Correlation,Instant)",
+          "contractMember": "Correlation"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotBindingDraft.java",
+          "callerMember": "ExactPilotBindingDraft#<init>(UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,ExactPilotBinding.Correlation,Instant)",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotBindingDraft.java",
+          "callerMember": "ExactPilotBindingDraft#<init>(UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,ExactPilotBinding.Correlation,Instant)",
+          "contractMember": "OrderEnvelope"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotBindingDraft.java",
+          "callerMember": "ExactPilotBindingDraft#correlation",
+          "contractMember": "Correlation"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotBindingDraft.java",
+          "callerMember": "ExactPilotBindingDraft#correlation",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotBindingDraft.java",
+          "callerMember": "ExactPilotBindingDraft#order",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotBindingDraft.java",
+          "callerMember": "ExactPilotBindingDraft#order",
+          "contractMember": "OrderEnvelope"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotBindingDraft.java",
+          "callerMember": "ExactPilotBindingDraft#toCommand(UUID,UUID,UUID)",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotBindingValidation.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotBindingValidation.java",
+          "callerMember": "ExactPilotBindingValidation#<init>(UUID,ExactPilotBinding.Lifecycle,Instant,List<Violation>,boolean)",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotBindingValidation.java",
+          "callerMember": "ExactPilotBindingValidation#<init>(UUID,ExactPilotBinding.Lifecycle,Instant,List<Violation>,boolean)",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotBindingValidation.java",
+          "callerMember": "ExactPilotBindingValidation#<init>(UUID,ExactPilotBinding.Lifecycle,Instant,List<Violation>,boolean)",
+          "contractMember": "Lifecycle"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotBindingValidation.java",
+          "callerMember": "ExactPilotBindingValidation#lifecycle",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotBindingValidation.java",
+          "callerMember": "ExactPilotBindingValidation#lifecycle",
+          "contractMember": "Lifecycle"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotScopeControlResult.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotScopeControlResult.java",
+          "callerMember": "ExactPilotScopeControlResult#<init>(UUID,UUID,UUID,String,String,UUID,String,ExactPilotBinding.Lifecycle,boolean,boolean,boolean)",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotScopeControlResult.java",
+          "callerMember": "ExactPilotScopeControlResult#<init>(UUID,UUID,UUID,String,String,UUID,String,ExactPilotBinding.Lifecycle,boolean,boolean,boolean)",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotScopeControlResult.java",
+          "callerMember": "ExactPilotScopeControlResult#<init>(UUID,UUID,UUID,String,String,UUID,String,ExactPilotBinding.Lifecycle,boolean,boolean,boolean)",
+          "contractMember": "Lifecycle"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotScopeControlResult.java",
+          "callerMember": "ExactPilotScopeControlResult#<init>(UUID,UUID,UUID,String,String,UUID,String,ExactPilotBinding.Lifecycle,boolean,boolean,boolean)",
+          "contractMember": "VERIFIED"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotScopeControlResult.java",
+          "callerMember": "ExactPilotScopeControlResult#lifecycle",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/model/ExactPilotScopeControlResult.java",
+          "callerMember": "ExactPilotScopeControlResult#lifecycle",
+          "contractMember": "Lifecycle"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/ExactPilotBindingAuthority.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/ExactPilotBindingAuthority.java",
+          "callerMember": "ExactPilotBindingAuthority#resolveCurrent(AuthenticatedLiveControlActor,ExactPilotBinding,Instant)",
+          "contractMember": "AuthoritativeFacts"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/ExactPilotBindingAuthority.java",
+          "callerMember": "ExactPilotBindingAuthority#resolveCurrent(AuthenticatedLiveControlActor,ExactPilotBinding,Instant)",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/ExactPilotBindingAuthority.java",
+          "callerMember": "ExactPilotBindingAuthority#resolveForCreation(AuthenticatedLiveControlActor,ExactPilotBindingCommand,Instant)",
+          "contractMember": "AuthoritativeFacts"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/ExactPilotBindingAuthority.java",
+          "callerMember": "ExactPilotBindingAuthority#resolveForCreation(AuthenticatedLiveControlActor,ExactPilotBindingCommand,Instant)",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/ExactPilotBindingControlPlane.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/ExactPilotBindingControlPlane.java",
+          "callerMember": "ExactPilotBindingControlPlane#create(AuthenticatedLiveControlActor,ExactPilotBindingCommand)",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/PilotExecutionLeaseControlPlane.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/PilotExecutionLeaseControlPlane.java",
           "callerMember": "PilotExecutionLeaseControlPlane#bindPlace(AuthenticatedLiveControlActor,UUID,UUID,ExactPilotBinding,ExactPilotBinding.Correlation)",
           "contractMember": "Correlation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/PilotExecutionLeaseControlPlane.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/PilotExecutionLeaseControlPlane.java",
           "callerMember": "PilotExecutionLeaseControlPlane#bindPlace(AuthenticatedLiveControlActor,UUID,UUID,ExactPilotBinding,ExactPilotBinding.Correlation)",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/PilotExecutionLeaseControlPlane.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/PilotExecutionLeaseControlPlane.java",
           "callerMember": "PilotExecutionLeaseControlPlane#close(AuthenticatedLiveControlActor,UUID,PilotExecutionLease.Status,String,ExactPilotBinding.Correlation)",
           "contractMember": "Correlation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/PilotExecutionLeaseControlPlane.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/PilotExecutionLeaseControlPlane.java",
           "callerMember": "PilotExecutionLeaseControlPlane#close(AuthenticatedLiveControlActor,UUID,PilotExecutionLease.Status,String,ExactPilotBinding.Correlation)",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/PilotExecutionLeaseControlPlane.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/PilotExecutionLeaseControlPlane.java",
           "callerMember": "PilotExecutionLeaseControlPlane#createAndActivate(AuthenticatedLiveControlActor,ExactPilotBinding,BigDecimal,Instant,ExactPilotBinding.Correlation)",
           "contractMember": "Correlation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/PilotExecutionLeaseControlPlane.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/PilotExecutionLeaseControlPlane.java",
           "callerMember": "PilotExecutionLeaseControlPlane#createAndActivate(AuthenticatedLiveControlActor,ExactPilotBinding,BigDecimal,Instant,ExactPilotBinding.Correlation)",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/PilotExecutionLeaseControlPlane.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/PilotExecutionLeaseControlPlane.java",
           "callerMember": "PilotExecutionLeaseControlPlane#createReplacementAndActivate(AuthenticatedLiveControlActor,ExactPilotBinding,BigDecimal,Instant,ExactPilotBinding.Correlation,Authorization)",
           "contractMember": "Correlation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/PilotExecutionLeaseControlPlane.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/PilotExecutionLeaseControlPlane.java",
           "callerMember": "PilotExecutionLeaseControlPlane#createReplacementAndActivate(AuthenticatedLiveControlActor,ExactPilotBinding,BigDecimal,Instant,ExactPilotBinding.Correlation,Authorization)",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/PilotExecutionLeaseControlPlane.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/PilotExecutionLeaseControlPlane.java",
           "callerMember": "PilotExecutionLeaseControlPlane#prepareZeroIntentReplacement(AuthenticatedLiveControlActor,long,long,String,BigDecimal,ExactPilotBinding.Correlation)",
           "contractMember": "Correlation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/PilotExecutionLeaseControlPlane.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/PilotExecutionLeaseControlPlane.java",
           "callerMember": "PilotExecutionLeaseControlPlane#prepareZeroIntentReplacement(AuthenticatedLiveControlActor,long,long,String,BigDecimal,ExactPilotBinding.Correlation)",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/PilotExecutionLeaseControlPlane.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/PilotExecutionLeaseControlPlane.java",
           "callerMember": "PilotExecutionLeaseControlPlane#resumeConsumed(AuthenticatedLiveControlActor,PilotExecutionLease,ExactPilotBinding.Correlation)",
           "contractMember": "Correlation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/PilotExecutionLeaseControlPlane.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/PilotExecutionLeaseControlPlane.java",
           "callerMember": "PilotExecutionLeaseControlPlane#resumeConsumed(AuthenticatedLiveControlActor,PilotExecutionLease,ExactPilotBinding.Correlation)",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/PilotExecutionLeaseControlPlane.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/PilotExecutionLeaseControlPlane.java",
           "callerMember": "PilotExecutionLeaseControlPlane#suspendConsumedForRecovery(AuthenticatedLiveControlActor,PilotExecutionLease,String,ExactPilotBinding.Correlation)",
           "contractMember": "Correlation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/PilotExecutionLeaseControlPlane.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/PilotExecutionLeaseControlPlane.java",
           "callerMember": "PilotExecutionLeaseControlPlane#suspendConsumedForRecovery(AuthenticatedLiveControlActor,PilotExecutionLease,String,ExactPilotBinding.Correlation)",
           "contractMember": "ExactPilotBinding"
         },
@@ -4738,42 +4738,42 @@
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/livecontrol/application/MinimalLivePilotCommandTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/livecontrol/application/command/MinimalLivePilotCommandTest.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/livecontrol/application/MinimalLivePilotCommandTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/livecontrol/application/command/MinimalLivePilotCommandTest.java",
           "callerMember": "MinimalLivePilotCommandTest#acceptsOnlyFixedBuyBtcScopeWithinHardCap()",
           "contractMember": "BUY"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/livecontrol/application/MinimalLivePilotCommandTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/livecontrol/application/command/MinimalLivePilotCommandTest.java",
           "callerMember": "MinimalLivePilotCommandTest#acceptsOnlyFixedBuyBtcScopeWithinHardCap()",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/livecontrol/application/MinimalLivePilotCommandTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/livecontrol/application/command/MinimalLivePilotCommandTest.java",
           "callerMember": "MinimalLivePilotCommandTest#acceptsOnlyFixedBuyBtcScopeWithinHardCap()",
           "contractMember": "Side"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/livecontrol/application/MinimalLivePilotCommandTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/livecontrol/application/command/MinimalLivePilotCommandTest.java",
           "callerMember": "MinimalLivePilotCommandTest#rejectsMissingInvalidOrOverCapOperatorValues()",
           "contractMember": "BUY"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/livecontrol/application/MinimalLivePilotCommandTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/livecontrol/application/command/MinimalLivePilotCommandTest.java",
           "callerMember": "MinimalLivePilotCommandTest#rejectsMissingInvalidOrOverCapOperatorValues()",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/livecontrol/application/MinimalLivePilotCommandTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/livecontrol/application/command/MinimalLivePilotCommandTest.java",
           "callerMember": "MinimalLivePilotCommandTest#rejectsMissingInvalidOrOverCapOperatorValues()",
           "contractMember": "SELL"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/livecontrol/application/MinimalLivePilotCommandTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/livecontrol/application/command/MinimalLivePilotCommandTest.java",
           "callerMember": "MinimalLivePilotCommandTest#rejectsMissingInvalidOrOverCapOperatorValues()",
           "contractMember": "Side"
         },
@@ -7560,8 +7560,8 @@
       ]
     },
     {
-      "identity": "com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunRunnerService",
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerService.java",
+      "identity": "com.guidinglight.nexusquant.strategy.application.shadowrun.service.ShadowRunRunnerService",
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerService.java",
       "canonicalOwner": "nq-core / ShadowRunRunnerService contract owner",
       "migrationTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement.",
       "removalCondition": "Remove only after a separately authorized versioned migration replaces all approved source callers and proves stored/signed/public fact compatibility; then remove the member, edges and exception together.",
@@ -7572,160 +7572,170 @@
       ],
       "approvedCallers": [
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerService.java",
           "callerMember": "ShadowRunRunnerService#failIfPossible(RunCursor,List<ShadowRunRunnerStep>,ShadowRunRunnerCommand,RunnerDecision,RuntimeException)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerService.java",
           "callerMember": "ShadowRunRunnerService#failIfPossible(RunCursor,List<ShadowRunRunnerStep>,ShadowRunRunnerCommand,RunnerDecision,RuntimeException)",
           "contractMember": "RunCursor"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerService.java",
           "callerMember": "ShadowRunRunnerService#failIfPossible(RunCursor,List<ShadowRunRunnerStep>,ShadowRunRunnerCommand,RunnerDecision,RuntimeException)",
           "contractMember": "RunnerDecision"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerService.java",
           "callerMember": "ShadowRunRunnerService#newRun(ShadowRunRunnerCommand,RunnerDecision)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerService.java",
           "callerMember": "ShadowRunRunnerService#newRun(ShadowRunRunnerCommand,RunnerDecision)",
           "contractMember": "RunnerDecision"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerService.java",
           "callerMember": "ShadowRunRunnerService#resultFromCursor(RunCursor,List<ShadowRunRunnerStep>,RunnerDecision,String,String)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerService.java",
           "callerMember": "ShadowRunRunnerService#resultFromCursor(RunCursor,List<ShadowRunRunnerStep>,RunnerDecision,String,String)",
           "contractMember": "RunCursor"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerService.java",
           "callerMember": "ShadowRunRunnerService#resultFromCursor(RunCursor,List<ShadowRunRunnerStep>,RunnerDecision,String,String)",
           "contractMember": "RunnerDecision"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerService.java",
           "callerMember": "ShadowRunRunnerService#run(ShadowRunRunnerCommand)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerService.java",
           "callerMember": "ShadowRunRunnerService#run(ShadowRunRunnerCommand)",
           "contractMember": "RunCursor"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerService.java",
           "callerMember": "ShadowRunRunnerService#run(ShadowRunRunnerCommand)",
           "contractMember": "RunnerDecision"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerService.java",
           "callerMember": "ShadowRunRunnerService#runnerDecision(ShadowRunRunnerCommand)",
           "contractMember": "RunnerDecision"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerService.java",
           "callerMember": "ShadowRunRunnerService#transition(RunCursor,ShadowRunStatus,String,String,ShadowRunRunnerCommand)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerService.java",
           "callerMember": "ShadowRunRunnerService#transition(RunCursor,ShadowRunStatus,String,String,ShadowRunRunnerCommand)",
           "contractMember": "RunCursor"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerServiceTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerServiceTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "ShadowRunRunnerService"
+        },
+        {
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerServiceTest.java",
           "callerMember": "ShadowRunRunnerServiceTest#service(InMemoryShadowRunFactRepository)",
           "contractMember": "ShadowRunRunnerService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerServiceTest.java",
           "callerMember": "ShadowRunRunnerServiceTest#shouldBlockFromRunningWhenCallerSuppliesLocalBlocker()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerServiceTest.java",
           "callerMember": "ShadowRunRunnerServiceTest#shouldBlockFromRunningWhenCallerSuppliesLocalBlocker()",
           "contractMember": "ShadowRunRunnerService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerServiceTest.java",
           "callerMember": "ShadowRunRunnerServiceTest#shouldCompleteRunnerHappyPathAndWriteEventsAndSnapshots()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerServiceTest.java",
           "callerMember": "ShadowRunRunnerServiceTest#shouldCompleteRunnerHappyPathAndWriteEventsAndSnapshots()",
           "contractMember": "ShadowRunRunnerService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerServiceTest.java",
           "callerMember": "ShadowRunRunnerServiceTest#shouldExposeNoSideEffectGuardAndAvoidExternalExecutionDependencies()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerServiceTest.java",
           "callerMember": "ShadowRunRunnerServiceTest#shouldExposeNoSideEffectGuardAndAvoidExternalExecutionDependencies()",
           "contractMember": "ShadowRunRunnerService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerServiceTest.java",
           "callerMember": "ShadowRunRunnerServiceTest#shouldMoveRunToFailedAndRethrowWhenRuntimeSnapshotFails()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerServiceTest.java",
           "callerMember": "ShadowRunRunnerServiceTest#shouldMoveRunToFailedAndRethrowWhenRuntimeSnapshotFails()",
           "contractMember": "ShadowRunRunnerService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerServiceTest.java",
           "callerMember": "ShadowRunRunnerServiceTest#shouldRejectForbiddenSensitivePayloadBeforeCreatingRun()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerServiceTest.java",
           "callerMember": "ShadowRunRunnerServiceTest#shouldRejectForbiddenSensitivePayloadBeforeCreatingRun()",
           "contractMember": "ShadowRunRunnerService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerServiceTest.java",
           "callerMember": "ShadowRunRunnerServiceTest#shouldRejectMismatchedStructuredTraceIdBeforeCreatingRun()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerServiceTest.java",
           "callerMember": "ShadowRunRunnerServiceTest#shouldRejectMismatchedStructuredTraceIdBeforeCreatingRun()",
           "contractMember": "ShadowRunRunnerService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerServiceTest.java",
           "callerMember": "ShadowRunRunnerServiceTest#shouldUseIdempotencyKeyAndNeverForceTerminalRunBackToRunning()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerServiceTest.java",
           "callerMember": "ShadowRunRunnerServiceTest#shouldUseIdempotencyKeyAndNeverForceTerminalRunBackToRunning()",
           "contractMember": "ShadowRunRunnerService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunRunnerServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerServiceTest.java",
           "callerMember": "ShadowRunRunnerServiceTest#shouldWireRunnerInMinimalSpringContextWithoutOrderGatewayBean()",
           "contractMember": "ShadowRunRunnerService"
         }
       ]
     },
     {
-      "identity": "com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionGuard",
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/AdmissionGuard.java",
+      "identity": "com.guidinglight.nexusquant.strategy.strategyrelease.application.model.AdmissionGuard",
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/model/AdmissionGuard.java",
       "canonicalOwner": "nq-core / AdmissionGuard contract owner",
       "migrationTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement.",
       "removalCondition": "Remove only after a separately authorized versioned migration replaces all approved source callers and proves stored/signed/public fact compatibility; then remove the member, edges and exception together.",
@@ -7832,155 +7842,185 @@
           "contractMember": "AdmissionGuard"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/AdmissionGuard.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/model/AdmissionGuard.java",
           "callerMember": "AdmissionGuard#hasSupportedSchema()",
           "contractMember": "SUPPORTED_GUARD_SCHEMA_VERSION"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/AdmissionGuardFingerprinter.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/AdmissionGuardFingerprinter.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "AdmissionGuard"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/AdmissionGuardFingerprinter.java",
           "callerMember": "AdmissionGuardFingerprinter#fingerprint(StrategyReleaseAdmissionState,StrategyReleaseAdmissionPreviewFacts,Instant)",
           "contractMember": "AdmissionGuard"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/AdmissionGuardFingerprinter.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/AdmissionGuardFingerprinter.java",
           "callerMember": "AdmissionGuardFingerprinter#fingerprint(StrategyReleaseAdmissionState,StrategyReleaseAdmissionPreviewFacts,Instant)",
           "contractMember": "FINGERPRINT_SCHEMA_VERSION"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/AdmissionGuardFingerprinter.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/AdmissionGuardFingerprinter.java",
           "callerMember": "AdmissionGuardFingerprinter#fingerprint(StrategyReleaseAdmissionState,StrategyReleaseAdmissionPreviewFacts,Instant)",
           "contractMember": "SIDE_EFFECT_POLICY_VERSION"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/AdmissionGuardFingerprinter.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/AdmissionGuardFingerprinter.java",
           "callerMember": "AdmissionGuardFingerprinter#issue(StrategyReleaseAdmissionState,StrategyReleaseAdmissionPreviewFacts,Instant)",
           "contractMember": "AdmissionGuard"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/AdmissionGuardFingerprinter.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/AdmissionGuardFingerprinter.java",
           "callerMember": "AdmissionGuardFingerprinter#issue(StrategyReleaseAdmissionState,StrategyReleaseAdmissionPreviewFacts,Instant)",
           "contractMember": "SIDE_EFFECT_POLICY_VERSION"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriter.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriter.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "AdmissionGuard"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriter.java",
           "callerMember": "ShadowRunMaterializationWriter#materialize(ShadowRunCreationPlan,AdmissionGuard,long)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriter.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriter.java",
           "callerMember": "ShadowRunMaterializationWriter#materialize(ShadowRunCreationPlan,AdmissionGuard,long)",
           "contractMember": "AdmissionGuard"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriter.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriter.java",
           "callerMember": "ShadowRunMaterializationWriter#materializeUnderAdmissionLock(ShadowRunCreationPlan,AdmissionGuard,long)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriter.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriter.java",
           "callerMember": "ShadowRunMaterializationWriter#materializeUnderAdmissionLock(ShadowRunCreationPlan,AdmissionGuard,long)",
           "contractMember": "AdmissionGuard"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriter.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriter.java",
           "callerMember": "ShadowRunMaterializationWriter#materializeUnderAdmissionLock(ShadowRunCreationPlan,AdmissionGuard,long)",
           "contractMember": "SUPPORTED_GUARD_SCHEMA_VERSION"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriter.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriter.java",
           "callerMember": "ShadowRunMaterializationWriter#planMatchesGuard(ShadowRunCreationPlan,AdmissionGuard)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriter.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriter.java",
           "callerMember": "ShadowRunMaterializationWriter#planMatchesGuard(ShadowRunCreationPlan,AdmissionGuard)",
           "contractMember": "AdmissionGuard"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/StrategyReleaseAdmissionPreviewService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/StrategyReleaseAdmissionPreviewService.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "AdmissionGuard"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/StrategyReleaseAdmissionPreviewService.java",
           "callerMember": "StrategyReleaseAdmissionPreviewService#ensureBoundAndReadR0(StrategyRelease)",
           "contractMember": "AdmissionGuard"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/StrategyReleaseAdmissionPreviewService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/StrategyReleaseAdmissionPreviewService.java",
           "callerMember": "StrategyReleaseAdmissionPreviewService#ensureBoundAndReadR0(StrategyRelease)",
           "contractMember": "SUPPORTED_GUARD_SCHEMA_VERSION"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/StrategyReleaseAdmissionPreviewService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/StrategyReleaseAdmissionPreviewService.java",
           "callerMember": "StrategyReleaseAdmissionPreviewService#evaluate(String,String)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/StrategyReleaseAdmissionPreviewService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/StrategyReleaseAdmissionPreviewService.java",
           "callerMember": "StrategyReleaseAdmissionPreviewService#evaluate(String,String)",
           "contractMember": "AdmissionGuard"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/StrategyReleaseAdmissionPreviewService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/StrategyReleaseAdmissionPreviewService.java",
           "callerMember": "StrategyReleaseAdmissionPreviewService.AdmissionEvaluation#<init>(StrategyReleaseAdmissionPreview,ReleaseToShadowAdmissionDecision,AdmissionGuard)",
           "contractMember": "AdmissionGuard"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/StrategyReleaseAdmissionPreviewService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/StrategyReleaseAdmissionPreviewService.java",
           "callerMember": "StrategyReleaseAdmissionPreviewService.AdmissionEvaluation#guard",
           "contractMember": "AdmissionGuard"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/StrategyReleaseShadowRunMaterializationService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/StrategyReleaseShadowRunMaterializationService.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "AdmissionGuard"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/StrategyReleaseShadowRunMaterializationService.java",
           "callerMember": "StrategyReleaseShadowRunMaterializationService#materialize(String,String,ShadowRunMaterializationActor,String)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/StrategyReleaseShadowRunMaterializationService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/StrategyReleaseShadowRunMaterializationService.java",
           "callerMember": "StrategyReleaseShadowRunMaterializationService.MaterializationSink#materialize(ShadowRunCreationPlan,AdmissionGuard,long)",
           "contractMember": "AdmissionGuard"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriterTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriterTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "AdmissionGuard"
+        },
+        {
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriterTest.java",
           "callerMember": "ShadowRunMaterializationWriterTest#shouldMapPlanToCreatedRunAndAppendAudit()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriterTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriterTest.java",
           "callerMember": "ShadowRunMaterializationWriterTest#shouldReturnExistingRunWithoutDuplicateAudit()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriterTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriterTest.java",
           "callerMember": "ShadowRunMaterializationWriterTest#writer(ShadowRunFactRepository,ShadowRunCreationPlan)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriterTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriterTest.java",
           "callerMember": "ShadowRunMaterializationWriterTest#writer(ShadowRunFactRepository,ShadowRunCreationPlan)",
           "contractMember": "AdmissionGuard"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriterTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriterTest.java",
           "callerMember": "ShadowRunMaterializationWriterTest.WriterFixture#guard",
           "contractMember": "AdmissionGuard"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/StrategyReleaseShadowRunMaterializationServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/StrategyReleaseShadowRunMaterializationServiceTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "AdmissionGuard"
+        },
+        {
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/StrategyReleaseShadowRunMaterializationServiceTest.java",
           "callerMember": "StrategyReleaseShadowRunMaterializationServiceTest#eligible(ShadowRunCreationPlan)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/StrategyReleaseShadowRunMaterializationServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/StrategyReleaseShadowRunMaterializationServiceTest.java",
           "callerMember": "StrategyReleaseShadowRunMaterializationServiceTest#guard(ShadowRunCreationPlan)",
           "contractMember": "AdmissionGuard"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/StrategyReleaseShadowRunMaterializationServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/StrategyReleaseShadowRunMaterializationServiceTest.java",
           "callerMember": "StrategyReleaseShadowRunMaterializationServiceTest#guard(ShadowRunCreationPlan)",
           "contractMember": "SIDE_EFFECT_POLICY_VERSION"
         }
       ]
     },
     {
-      "identity": "com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunMaterializationWriter",
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriter.java",
+      "identity": "com.guidinglight.nexusquant.strategy.strategyrelease.application.service.ShadowRunMaterializationWriter",
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriter.java",
       "canonicalOwner": "nq-core / ShadowRunMaterializationWriter contract owner",
       "migrationTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement.",
       "removalCondition": "Remove only after a separately authorized versioned migration replaces all approved source callers and proves stored/signed/public fact compatibility; then remove the member, edges and exception together.",
@@ -8069,42 +8109,47 @@
           "contractMember": "ShadowRunMaterializationWriter"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/StrategyReleaseShadowRunMaterializationService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/StrategyReleaseShadowRunMaterializationService.java",
           "callerMember": "StrategyReleaseShadowRunMaterializationService#<init>(StrategyReleaseAdmissionPreviewService,ShadowRunMaterializationWriter)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/StrategyReleaseShadowRunMaterializationService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/StrategyReleaseShadowRunMaterializationService.java",
           "callerMember": "StrategyReleaseShadowRunMaterializationService#<init>(StrategyReleaseAdmissionPreviewService,ShadowRunMaterializationWriter)",
           "contractMember": "ShadowRunMaterializationWriter"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriterTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriterTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "ShadowRunMaterializationWriter"
+        },
+        {
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriterTest.java",
           "callerMember": "ShadowRunMaterializationWriterTest#shouldHaveNoRunnerSchedulerTradingOrNetworkDependency()",
           "contractMember": "ShadowRunMaterializationWriter"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriterTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriterTest.java",
           "callerMember": "ShadowRunMaterializationWriterTest#shouldMapPlanToCreatedRunAndAppendAudit()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriterTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriterTest.java",
           "callerMember": "ShadowRunMaterializationWriterTest#shouldReturnExistingRunWithoutDuplicateAudit()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriterTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriterTest.java",
           "callerMember": "ShadowRunMaterializationWriterTest#writer(ShadowRunFactRepository,ShadowRunCreationPlan)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriterTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriterTest.java",
           "callerMember": "ShadowRunMaterializationWriterTest#writer(ShadowRunFactRepository,ShadowRunCreationPlan)",
           "contractMember": "ShadowRunMaterializationWriter"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/ShadowRunMaterializationWriterTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriterTest.java",
           "callerMember": "ShadowRunMaterializationWriterTest.WriterFixture#writer",
           "contractMember": "ShadowRunMaterializationWriter"
         }

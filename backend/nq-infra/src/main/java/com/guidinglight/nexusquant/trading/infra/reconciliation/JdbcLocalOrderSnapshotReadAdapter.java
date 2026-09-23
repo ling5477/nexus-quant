@@ -1,8 +1,8 @@
 package com.guidinglight.nexusquant.trading.infra.reconciliation;
 
-import com.guidinglight.nexusquant.trading.application.reconciliation.LocalOrderSnapshot;
-import com.guidinglight.nexusquant.trading.application.reconciliation.LocalOrderSnapshotReadPort;
-import com.guidinglight.nexusquant.trading.application.reconciliation.ReconciliationRequest;
+import com.guidinglight.nexusquant.trading.application.reconciliation.model.LocalOrderSnapshot;
+import com.guidinglight.nexusquant.trading.application.reconciliation.port.LocalOrderSnapshotReadPort;
+import com.guidinglight.nexusquant.trading.application.reconciliation.command.ReconciliationRequest;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

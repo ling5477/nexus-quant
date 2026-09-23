@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingConsumption;
+import com.guidinglight.nexusquant.livecontrol.application.model.ExactPilotBindingConsumption;
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBindingCanonicalEncoder;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;

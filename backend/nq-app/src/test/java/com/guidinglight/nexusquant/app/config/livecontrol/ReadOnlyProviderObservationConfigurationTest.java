@@ -8,7 +8,7 @@ import com.guidinglight.nexusquant.adapter.okx.privateread.transport.JdkOkxPriva
 import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateReadTransport;
 import com.guidinglight.nexusquant.app.config.ExchangeAdapterConfiguration;
 import com.guidinglight.nexusquant.app.config.account.AccountCredentialRuntimeProperties;
-import com.guidinglight.nexusquant.livecontrol.application.PilotPrerequisiteObservationAuthority;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotPrerequisiteObservationAuthority;
 import com.guidinglight.nexusquant.livecontrol.deployment.WorkerDeploymentAdmissionService;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotExecutionProviderPort;
 import com.guidinglight.nexusquant.livecontrol.infra.KillSwitchGuardedProviderObservationAuthority;

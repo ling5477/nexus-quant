@@ -24,7 +24,7 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunSnapshotTy
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStateMachine;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStateTransitionException;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionMutationCoordinator;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.port.AdmissionMutationCoordinator;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.time.Instant;

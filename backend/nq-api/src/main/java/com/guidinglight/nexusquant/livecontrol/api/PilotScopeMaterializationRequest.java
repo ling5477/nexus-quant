@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.livecontrol.api;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.guidinglight.nexusquant.livecontrol.application.PilotScopeMaterializationCommand;
+import com.guidinglight.nexusquant.livecontrol.application.command.PilotScopeMaterializationCommand;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;

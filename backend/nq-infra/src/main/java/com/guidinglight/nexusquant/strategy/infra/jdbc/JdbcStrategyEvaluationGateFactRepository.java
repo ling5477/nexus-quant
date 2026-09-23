@@ -1,13 +1,13 @@
 package com.guidinglight.nexusquant.strategy.infra.jdbc;
 
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateFactRepository;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateFacts;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateFacts.DatasetFact;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateFacts.EvaluationFact;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateFacts.PaperEvidenceFact;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateFacts.PublishTraceFact;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateFacts.StrategyVersionFact;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateQuery;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.port.StrategyEvaluationGateFactRepository;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateFacts;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateFacts.DatasetFact;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateFacts.EvaluationFact;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateFacts.PaperEvidenceFact;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateFacts.PublishTraceFact;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateFacts.StrategyVersionFact;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateQuery;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.strategy.api.dto;
 
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionPreview;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.model.StrategyReleaseAdmissionPreview;
 
 import java.util.List;
 import java.util.UUID;

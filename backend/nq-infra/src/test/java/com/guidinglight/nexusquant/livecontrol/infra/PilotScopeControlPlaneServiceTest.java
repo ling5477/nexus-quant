@@ -1,11 +1,11 @@
 package com.guidinglight.nexusquant.livecontrol.infra;
 
-import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor;
-import com.guidinglight.nexusquant.livecontrol.application.PilotPrerequisiteObservationAuthority;
-import com.guidinglight.nexusquant.livecontrol.application.PilotScopeApprovalCommand;
-import com.guidinglight.nexusquant.livecontrol.application.PilotScopeAuthorityResolver;
-import com.guidinglight.nexusquant.livecontrol.application.PilotScopeMaterializationCommand;
-import com.guidinglight.nexusquant.livecontrol.application.MinimalPilotMaterializationCommand;
+import com.guidinglight.nexusquant.livecontrol.application.model.AuthenticatedLiveControlActor;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotPrerequisiteObservationAuthority;
+import com.guidinglight.nexusquant.livecontrol.application.command.PilotScopeApprovalCommand;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotScopeAuthorityResolver;
+import com.guidinglight.nexusquant.livecontrol.application.command.PilotScopeMaterializationCommand;
+import com.guidinglight.nexusquant.livecontrol.application.command.MinimalPilotMaterializationCommand;
 import com.guidinglight.nexusquant.livecontrol.application.port.LiveControlAuthorizationPort;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;

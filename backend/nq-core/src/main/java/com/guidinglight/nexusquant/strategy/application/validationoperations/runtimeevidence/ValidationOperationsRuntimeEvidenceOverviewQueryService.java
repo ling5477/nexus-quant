@@ -6,7 +6,7 @@ import com.guidinglight.nexusquant.strategy.application.pyartifactpreview.Python
 import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
 import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.Availability;
 import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.FreshnessStatus;
-import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewQueryService;
+import com.guidinglight.nexusquant.strategy.application.shadowrun.service.ShadowRunOverviewQueryService;
 import com.guidinglight.nexusquant.strategy.application.shadowvalidation.ShadowValidationWorkflowOverviewQueryService;
 import com.guidinglight.nexusquant.strategy.application.validationoperations.runtimeevidence.ValidationOperationsRuntimeEvidenceOverviewReadModel.RuntimeEvidenceSource;
 

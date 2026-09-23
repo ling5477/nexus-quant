@@ -1,9 +1,9 @@
 package com.guidinglight.nexusquant.strategy.api.dto;
 
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGate;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateEvidence;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateReason;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateScope;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGate;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateEvidence;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateReason;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateScope;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;

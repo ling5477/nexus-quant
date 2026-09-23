@@ -9,9 +9,9 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotScopeAuthorizationCommand;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotScopeControlPlane;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotScopeControlResult;
+import com.guidinglight.nexusquant.livecontrol.application.command.ExactPilotScopeAuthorizationCommand;
+import com.guidinglight.nexusquant.livecontrol.application.port.ExactPilotScopeControlPlane;
+import com.guidinglight.nexusquant.livecontrol.application.model.ExactPilotScopeControlResult;
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
 
 import java.math.BigDecimal;

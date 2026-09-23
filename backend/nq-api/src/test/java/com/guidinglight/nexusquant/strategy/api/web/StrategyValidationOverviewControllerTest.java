@@ -13,9 +13,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyValidationDecision;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyValidationOverviewQueryService;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyValidationOverviewReadModel;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyValidationDecision;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.service.StrategyValidationOverviewQueryService;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyValidationOverviewReadModel;
 
 import java.lang.reflect.Method;
 import java.time.Instant;

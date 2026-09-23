@@ -7,18 +7,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingAuthority;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingCommand;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingConsumptionCommand;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingValidation;
+import com.guidinglight.nexusquant.livecontrol.application.model.AuthenticatedLiveControlActor;
+import com.guidinglight.nexusquant.livecontrol.application.port.ExactPilotBindingAuthority;
+import com.guidinglight.nexusquant.livecontrol.application.command.ExactPilotBindingCommand;
+import com.guidinglight.nexusquant.livecontrol.application.command.ExactPilotBindingConsumptionCommand;
+import com.guidinglight.nexusquant.livecontrol.application.model.ExactPilotBindingValidation;
 import com.guidinglight.nexusquant.livecontrol.application.port.LiveControlAuthorizationPort;
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
 import com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSet;
 import com.guidinglight.nexusquant.livecontrol.domain.port.ExactPilotBindingRepository;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingConsumption;
+import com.guidinglight.nexusquant.livecontrol.application.model.ExactPilotBindingConsumption;
 
 import java.math.BigDecimal;
 import java.time.Instant;

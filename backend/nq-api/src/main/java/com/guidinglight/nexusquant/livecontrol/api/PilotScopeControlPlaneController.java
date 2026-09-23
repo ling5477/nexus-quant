@@ -4,8 +4,8 @@ import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileSe
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
-import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor;
-import com.guidinglight.nexusquant.livecontrol.application.PilotScopeControlPlane;
+import com.guidinglight.nexusquant.livecontrol.application.model.AuthenticatedLiveControlActor;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotScopeControlPlane;
 import com.guidinglight.nexusquant.livecontrol.domain.OperatorApproval;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopePreflightResult;
 

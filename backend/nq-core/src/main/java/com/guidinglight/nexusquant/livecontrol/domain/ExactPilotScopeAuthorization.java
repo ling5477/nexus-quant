@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.livecontrol.domain;
 
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingCommand;
+import com.guidinglight.nexusquant.livecontrol.application.command.ExactPilotBindingCommand;
 
 import java.time.Instant;
 import java.util.Objects;

@@ -95,7 +95,7 @@ class PackageBoundaryArchTest {
     @ArchTest
     static final ArchRule pilot_materialization_command_should_not_depend_on_observation_payloads = noClasses()
             .that().haveFullyQualifiedName(
-                    "com.guidinglight.nexusquant.livecontrol.application.PilotScopeMaterializationCommand"
+                    "com.guidinglight.nexusquant.livecontrol.application.command.PilotScopeMaterializationCommand"
             )
             .should().dependOnClassesThat().haveFullyQualifiedName(
                     "com.guidinglight.nexusquant.livecontrol.domain.PilotPrerequisiteObservation"
@@ -104,7 +104,7 @@ class PackageBoundaryArchTest {
     @ArchTest
     static final ArchRule pilot_materialization_command_should_not_depend_on_observation_sets = noClasses()
             .that().haveFullyQualifiedName(
-                    "com.guidinglight.nexusquant.livecontrol.application.PilotScopeMaterializationCommand"
+                    "com.guidinglight.nexusquant.livecontrol.application.command.PilotScopeMaterializationCommand"
             )
             .should().dependOnClassesThat().haveFullyQualifiedName(
                     "com.guidinglight.nexusquant.livecontrol.domain.PilotObservationSet"

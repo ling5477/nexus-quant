@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.strategy.api.dto;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewReadModel;
+import com.guidinglight.nexusquant.strategy.application.shadowrun.model.ShadowRunOverviewReadModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;

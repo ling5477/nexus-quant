@@ -1,11 +1,11 @@
 package com.guidinglight.nexusquant.strategy.application.shadowlivepreview;
 
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGate;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateEvidence;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateQuery;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateReason;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateService;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateStatus;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGate;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateEvidence;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateQuery;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateReason;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.service.StrategyEvaluationGateService;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateStatus;
 import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparison;
 import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonEvidence;
 import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonQuery;

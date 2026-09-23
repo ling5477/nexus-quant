@@ -2,7 +2,7 @@ package com.guidinglight.nexusquant.strategy.api.dto;
 
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunReleaseBindingMode;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunMaterializationResult;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.model.ShadowRunMaterializationResult;
 
 import java.time.Instant;
 import java.util.UUID;

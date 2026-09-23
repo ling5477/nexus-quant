@@ -1,10 +1,10 @@
 package com.guidinglight.nexusquant.app.config.livecontrol;
 
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingDraft;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotScopeAuthorizationCommand;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotScopeControlCommand;
-import com.guidinglight.nexusquant.livecontrol.application.PilotScopeApprovalCommand;
-import com.guidinglight.nexusquant.livecontrol.application.PilotScopeMaterializationCommand;
+import com.guidinglight.nexusquant.livecontrol.application.model.ExactPilotBindingDraft;
+import com.guidinglight.nexusquant.livecontrol.application.command.ExactPilotScopeAuthorizationCommand;
+import com.guidinglight.nexusquant.livecontrol.application.command.ExactPilotScopeControlCommand;
+import com.guidinglight.nexusquant.livecontrol.application.command.PilotScopeApprovalCommand;
+import com.guidinglight.nexusquant.livecontrol.application.command.PilotScopeMaterializationCommand;
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
 
 import java.math.BigDecimal;

@@ -16,8 +16,8 @@ import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateOrder
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadOperation;
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadRequest;
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadResult;
-import com.guidinglight.nexusquant.trading.application.reconciliation.ReconciliationRequest;
-import com.guidinglight.nexusquant.trading.application.reconciliation.RemoteSnapshotBatch;
+import com.guidinglight.nexusquant.trading.application.reconciliation.command.ReconciliationRequest;
+import com.guidinglight.nexusquant.trading.application.reconciliation.model.RemoteSnapshotBatch;
 
 import java.math.BigDecimal;
 import java.time.Instant;

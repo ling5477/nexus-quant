@@ -9,8 +9,8 @@ import com.guidinglight.nexusquant.strategy.api.dto.ShadowRunSnapshotResponse;
 
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewQueryService;
-import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunReadOnlyQueryService;
+import com.guidinglight.nexusquant.strategy.application.shadowrun.service.ShadowRunOverviewQueryService;
+import com.guidinglight.nexusquant.strategy.application.shadowrun.service.ShadowRunReadOnlyQueryService;
 import com.guidinglight.nexusquant.strategy.domain.port.ShadowRunListQuery;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
 import io.swagger.v3.oas.annotations.Operation;

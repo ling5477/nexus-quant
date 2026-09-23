@@ -4,7 +4,7 @@ import com.guidinglight.nexusquant.strategy.api.dto.PaperShadowConsistencyDrilld
 
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.shadowrun.PaperShadowConsistencyDrilldownQueryService;
+import com.guidinglight.nexusquant.strategy.application.shadowrun.service.PaperShadowConsistencyDrilldownQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

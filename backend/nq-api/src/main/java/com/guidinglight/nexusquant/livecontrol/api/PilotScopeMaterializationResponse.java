@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.livecontrol.api;
 
-import com.guidinglight.nexusquant.livecontrol.application.PilotScopeMaterializationResult;
+import com.guidinglight.nexusquant.livecontrol.application.model.PilotScopeMaterializationResult;
 
 import java.util.UUID;
 

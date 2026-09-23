@@ -4,7 +4,7 @@ import com.guidinglight.nexusquant.strategy.api.dto.StrategyReleaseAdmissionPrev
 
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionPreviewService;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.service.StrategyReleaseAdmissionPreviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

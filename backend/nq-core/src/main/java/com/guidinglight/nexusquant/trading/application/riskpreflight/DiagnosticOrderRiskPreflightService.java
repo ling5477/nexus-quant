@@ -2,8 +2,8 @@ package com.guidinglight.nexusquant.trading.application.riskpreflight;
 
 import com.guidinglight.nexusquant.trading.application.orderpreview.DryRunOrderPreviewResult;
 import com.guidinglight.nexusquant.trading.application.orderpreview.OrderPreviewStatus;
-import com.guidinglight.nexusquant.trading.application.reconciliation.ReconciliationResult;
-import com.guidinglight.nexusquant.trading.application.reconciliation.ReconciliationTaxonomy;
+import com.guidinglight.nexusquant.trading.application.reconciliation.model.ReconciliationResult;
+import com.guidinglight.nexusquant.trading.application.reconciliation.model.ReconciliationTaxonomy;
 import com.guidinglight.nexusquant.trading.application.riskpreflight.RiskPreflightFactBundle.CredentialMetadataSummary;
 import com.guidinglight.nexusquant.trading.application.riskpreflight.RiskPreflightFactBundle.LocalAccountMetadataSnapshot;
 import com.guidinglight.nexusquant.trading.application.riskpreflight.RiskPreflightFactBundle.MarketdataQualitySnapshot;

@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.livecontrol.api;
 
-import com.guidinglight.nexusquant.livecontrol.application.PilotScopeApprovalCommand;
+import com.guidinglight.nexusquant.livecontrol.application.command.PilotScopeApprovalCommand;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

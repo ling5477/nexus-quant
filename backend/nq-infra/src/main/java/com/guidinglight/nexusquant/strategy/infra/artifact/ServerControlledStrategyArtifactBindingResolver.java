@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseArtifactBindingResolver;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.port.StrategyReleaseArtifactBindingResolver;
 import com.guidinglight.nexusquant.strategy.strategyrelease.artifact.StrategyArtifactManifest;
 import com.guidinglight.nexusquant.strategy.strategyrelease.artifact.StrategyArtifactVerificationResult.FindingCode;
 

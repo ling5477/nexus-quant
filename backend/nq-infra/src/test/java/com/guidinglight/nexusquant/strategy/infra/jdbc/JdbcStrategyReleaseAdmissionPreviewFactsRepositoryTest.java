@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.strategy.infra.jdbc;
 
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionPreviewFacts;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.model.StrategyReleaseAdmissionPreviewFacts;
 
 import java.util.List;
 import java.util.Locale;

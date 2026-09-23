@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.strategy.infra.jdbc;
 
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseProvenanceFacts;
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseProvenanceRepository;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.model.StrategyReleaseProvenanceFacts;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.port.StrategyReleaseProvenanceRepository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

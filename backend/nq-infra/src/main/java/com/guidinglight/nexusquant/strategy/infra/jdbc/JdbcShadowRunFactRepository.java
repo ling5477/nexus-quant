@@ -19,7 +19,7 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStateMachi
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStateTransitionException;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatusUpdateResult;
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionMutationCoordinator;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.port.AdmissionMutationCoordinator;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

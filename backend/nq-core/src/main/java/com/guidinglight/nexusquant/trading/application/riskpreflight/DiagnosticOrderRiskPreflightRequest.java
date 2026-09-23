@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.trading.application.riskpreflight;
 
 import com.guidinglight.nexusquant.trading.application.orderpreview.DryRunOrderPreviewResult;
-import com.guidinglight.nexusquant.trading.application.reconciliation.ReconciliationResult;
+import com.guidinglight.nexusquant.trading.application.reconciliation.model.ReconciliationResult;
 
 import java.time.Instant;
 import java.util.Locale;

@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.strategy.api.dto;
 
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyValidationOverviewReadModel;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyValidationOverviewReadModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
