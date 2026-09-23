@@ -59,6 +59,8 @@
 
 - [Phase7-C freeze readiness review](../audit/evidence/GATEAUDIT_FREEZE_READINESS_REVIEW.md)：绑定 reviewed candidate=`e0fa7f7ff4fa6d0201adf5147056ec0e8a25abdc / tree 6fb0db732ea54775fdcc9e4823e36afc0146126a`、START/END fingerprint、13-file current convergence、Phase7-A/B immutable reuse、8 mandatory + 5 conditional archive role matrix、live release/tag/dev facts与 clean-candidate validators；分类为 `ACCEPTED_REVIEW_EVIDENCE / NON_RUNTIME_AUTHORITY`。Immutable pair=`82f1afc43664a327eea2fcfd7046bcef099e621b / 35761394744 / 9 of 9 SUCCESS`；结论=`PASS / GATEAUDIT_FREEZE_READY / PRETAG_ARCHIVE_AUTHORIZED / P0_0 / P1_0`，只授权 Phase7-D，不授权 promotion/tag/freeze/release。STATUS 仍是唯一 current authority。
 
+- [GateAUDIT strict canonical archive](../gates/gate-audit/README.md)：13 个独立 substantive role（8 mandatory + 5 conditional）汇总 final acceptance matrix、Phase7 governance closure、完整 residual、边界与各领域证据；分类为 `PRETAG_CANONICAL_ARCHIVE / NON_RUNTIME_AUTHORITY`。Phase7-D immutable pair=`4800ab1d9407eeb527182328263c0bae9e6c3087 / 35803472376 / 9 of 9 SUCCESS`，pre-tag archive errors=`0`。Archive 内 `TO_BE_BOUND_BY_GIT / PENDING_DELIVERY / TAG_PENDING / NOT_CREATED` 保留非自引用生成时语义；当前接受身份由 STATUS 绑定。GateAUDIT 仍为 `IN_PROGRESS / NOT_FROZEN`，`nq-gateaudit-freeze` 未创建，Phase7-E/promotion/tag/release 未执行。
+
 ## 5. Agent / Governance
 
 - 根 `AGENTS.md`：仓库级入口。
