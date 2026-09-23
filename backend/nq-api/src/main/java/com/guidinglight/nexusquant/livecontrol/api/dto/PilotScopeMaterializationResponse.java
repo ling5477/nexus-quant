@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.livecontrol.api;
+package com.guidinglight.nexusquant.livecontrol.api.dto;
 
 import com.guidinglight.nexusquant.livecontrol.application.model.PilotScopeMaterializationResult;
 

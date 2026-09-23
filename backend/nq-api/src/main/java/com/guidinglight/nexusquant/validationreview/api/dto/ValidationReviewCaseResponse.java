@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.validationreview.api.web;
+package com.guidinglight.nexusquant.validationreview.api.dto;
 
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewCase;
 import io.swagger.v3.oas.annotations.media.Schema;

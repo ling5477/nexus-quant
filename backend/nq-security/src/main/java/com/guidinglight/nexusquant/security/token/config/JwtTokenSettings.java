@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.security.token;
+package com.guidinglight.nexusquant.security.token.config;
 
 import java.time.Duration;
 

@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.monitoring.api.web;
+package com.guidinglight.nexusquant.monitoring.api.dto;
 
 import com.guidinglight.nexusquant.monitoring.application.incidentreview.model.IncidentReplayReviewOverviewReadModel;
 import com.guidinglight.nexusquant.strategy.api.dto.ReadModelEvidenceMetadataResponse;

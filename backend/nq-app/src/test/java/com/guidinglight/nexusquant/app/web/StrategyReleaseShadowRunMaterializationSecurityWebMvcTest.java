@@ -7,7 +7,7 @@ import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
 import com.guidinglight.nexusquant.observability.config.ObservabilityAutoConfiguration;
-import com.guidinglight.nexusquant.security.token.TokenClaims;
+import com.guidinglight.nexusquant.security.token.model.TokenClaims;
 import com.guidinglight.nexusquant.strategy.api.web.StrategyReleaseShadowRunMaterializationController;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunIdempotencyConflictException;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunReleaseBindingMode;

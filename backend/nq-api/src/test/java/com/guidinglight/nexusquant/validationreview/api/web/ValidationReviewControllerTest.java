@@ -21,7 +21,7 @@ import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileSe
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
-import com.guidinglight.nexusquant.security.token.TokenClaims;
+import com.guidinglight.nexusquant.security.token.model.TokenClaims;
 import com.guidinglight.nexusquant.validationreview.application.model.ValidationReviewAction;
 import com.guidinglight.nexusquant.validationreview.application.model.ValidationReviewActor;
 import com.guidinglight.nexusquant.validationreview.application.service.ValidationReviewOperationsService;

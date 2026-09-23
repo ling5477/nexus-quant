@@ -1,7 +1,9 @@
-package com.guidinglight.nexusquant.security.token;
+package com.guidinglight.nexusquant.security.token.service;
 
-import com.guidinglight.nexusquant.security.token.TokenClaims;
-import com.guidinglight.nexusquant.security.token.TokenService;
+import com.guidinglight.nexusquant.security.token.config.JwtTokenSettings;
+
+import com.guidinglight.nexusquant.security.token.model.TokenClaims;
+import com.guidinglight.nexusquant.security.token.port.TokenService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;

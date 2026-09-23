@@ -83,15 +83,15 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/monitoring/api/web/IncidentReplayOverviewController.java",
-      "sha256": "bf27be9b968d5ae7bae058948627fbe43bf2e5e5e9eb472d792519bc74e79062",
+      "sha256": "0949d49322b939f2784bf583bed9b894ef9f93fd0067666662338e13c699a44c",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
       "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/monitoring/api/web/IncidentReplayOverviewResponse.java",
-      "sha256": "ddcea48edf04e4a7abea0eacdb072fb0478968390181d288b01244ec841ed998",
+      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/monitoring/api/dto/IncidentReplayOverviewResponse.java",
+      "sha256": "14c566228d4cef43fb9665904b06892289f10dfc2ef01b57641d0a5e75d6b471",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -99,15 +99,15 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/monitoring/api/web/IncidentReplayReviewOverviewController.java",
-      "sha256": "4e97b6f2bdf421fc5ecdf0e96aecceb5222cd870e3805b5bd9fb6af06d6a59b1",
+      "sha256": "25b86ccaf4f85e07faa1ada02793fc348ba26ca62172e047485758b89a4df130",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
       "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/monitoring/api/web/IncidentReplayReviewOverviewResponse.java",
-      "sha256": "add534eb77b8f6b84a2acbb84f3c9168562a864306e3d57e4d4c96338375da7c",
+      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/monitoring/api/dto/IncidentReplayReviewOverviewResponse.java",
+      "sha256": "5d3f6407bfd9eabb818a975decd08aa6ecc2d38f0a4608efffde5709b55a9ea4",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -403,7 +403,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/validationreview/api/web/ValidationReviewController.java",
-      "sha256": "a25f0580242ea9f73b9684f3f2edc071a2069374d3d4d1b23f204b590cdb9875",
+      "sha256": "32b9563cf9122c35c038be5ae7ec08735bc738eb2d7f630ea31b4487dd6b5456",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -443,7 +443,7 @@
     },
     {
       "path": "backend/nq-api/src/test/java/com/guidinglight/nexusquant/trading/api/web/TradingPreflightControllerTest.java",
-      "sha256": "1cb80f644abd4c8a78e2199b88412333bbfbbf2c7643e446858deea95d9ea726",
+      "sha256": "dffb341380ebff95be8c195552f88cc93fb0c468e0b2aff38cfb81387c936a69",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -571,7 +571,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/env/ProductionSecretProfileRegressionTest.java",
-      "sha256": "8b21dc6c169a62a50bc746923b763663f6ba2d2dbb09d579ba4b0ac77620f825",
+      "sha256": "f39a3a2bfa1df48e1b573fc5a8e884571afc9545b12a7d6f2d58b37248e5d01d",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -675,7 +675,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/web/StrategyReleaseShadowRunMaterializationSecurityWebMvcTest.java",
-      "sha256": "7f56bb337ac07f9ddda95c7c8ce9073c082e4a24ba5ed29e94ef9d6fb89eadf2",
+      "sha256": "a054d58797e2891627b730f42849a25e2e1cfd5fbf6657393c957eb326332ccc",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",

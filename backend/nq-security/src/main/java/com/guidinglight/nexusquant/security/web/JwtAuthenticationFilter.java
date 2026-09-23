@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.security.web;
 
-import com.guidinglight.nexusquant.security.token.TokenClaims;
-import com.guidinglight.nexusquant.security.token.TokenService;
+import com.guidinglight.nexusquant.security.token.model.TokenClaims;
+import com.guidinglight.nexusquant.security.token.port.TokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.monitoring.api.web;
+package com.guidinglight.nexusquant.monitoring.api.dto;
 
 import com.guidinglight.nexusquant.monitoring.application.incident.IncidentReplayOverviewReadModel;
 import io.swagger.v3.oas.annotations.media.Schema;

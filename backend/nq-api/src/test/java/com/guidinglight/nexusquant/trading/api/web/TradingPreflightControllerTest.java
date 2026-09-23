@@ -15,7 +15,7 @@ import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileSe
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
-import com.guidinglight.nexusquant.security.token.TokenClaims;
+import com.guidinglight.nexusquant.security.token.model.TokenClaims;
 import com.guidinglight.nexusquant.trading.application.preflight.model.TradingPreflightCredentialTypeSummary;
 import com.guidinglight.nexusquant.trading.application.preflight.model.TradingPreflightReadiness;
 import com.guidinglight.nexusquant.trading.application.preflight.service.TradingPreflightReadinessService;

@@ -5,9 +5,9 @@ import com.guidinglight.nexusquant.auth.application.port.AuthService;
 import com.guidinglight.nexusquant.auth.application.command.LoginRequest;
 import com.guidinglight.nexusquant.auth.application.result.LoginResponse;
 import com.guidinglight.nexusquant.auth.domain.LocalUserAccount;
-import com.guidinglight.nexusquant.security.token.JwtTokenService;
-import com.guidinglight.nexusquant.security.token.TokenClaims;
-import com.guidinglight.nexusquant.security.token.TokenService;
+import com.guidinglight.nexusquant.security.token.service.JwtTokenService;
+import com.guidinglight.nexusquant.security.token.model.TokenClaims;
+import com.guidinglight.nexusquant.security.token.port.TokenService;
 
 import java.time.Instant;
 import java.util.List;

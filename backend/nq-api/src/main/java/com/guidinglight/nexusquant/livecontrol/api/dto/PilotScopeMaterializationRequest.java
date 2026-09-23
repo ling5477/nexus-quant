@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.livecontrol.api;
+package com.guidinglight.nexusquant.livecontrol.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.guidinglight.nexusquant.livecontrol.application.command.PilotScopeMaterializationCommand;
