@@ -8,7 +8,7 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderRequest;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
-import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
+import com.guidinglight.nexusquant.adapter.api.service.port.TradingAdapter;
 
 import java.time.Instant;
 import java.util.List;

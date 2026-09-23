@@ -8,8 +8,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.adapter.api.model.HistoricalKlineBar;
 import com.guidinglight.nexusquant.adapter.api.model.HistoricalKlineRequest;
-import com.guidinglight.nexusquant.adapter.api.service.HistoricalKlineAdapter;
-import com.guidinglight.nexusquant.adapter.api.service.HistoricalKlineAdapterException;
+import com.guidinglight.nexusquant.adapter.api.service.port.HistoricalKlineAdapter;
+import com.guidinglight.nexusquant.adapter.api.service.error.HistoricalKlineAdapterException;
 
 import java.math.BigDecimal;
 import java.net.URLEncoder;

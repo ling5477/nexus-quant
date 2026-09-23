@@ -12,7 +12,7 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterCancelRequest;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOpenOrdersQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderRequest;
-import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
+import com.guidinglight.nexusquant.adapter.api.service.port.TradingAdapter;
 import com.guidinglight.nexusquant.adapter.binance.trading.BinanceExchangeAdapter;
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClient;
 import com.guidinglight.nexusquant.adapter.okx.trading.OkxExchangeAdapter;

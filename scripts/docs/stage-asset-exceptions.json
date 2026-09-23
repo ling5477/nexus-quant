@@ -26,8 +26,8 @@
       "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
     },
     {
-      "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/PublicMarketDataOutboundPolicy.java",
-      "sha256": "dda57f3238994f9f6a61200e0fcbf3184c09b6a0a78b238f09b67871b5a0f57f",
+      "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/policy/PublicMarketDataOutboundPolicy.java",
+      "sha256": "a88e0c0daf2fde83b065f7c0c95f40f4a9440cfab139e3a39bd6890df7f589bf",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-adapter-api / PublicMarketDataOutboundPolicy contract owner",
@@ -43,7 +43,7 @@
     },
     {
       "path": "backend/nq-adapter-binance/src/main/java/com/guidinglight/nexusquant/adapter/binance/marketdata/BinanceHistoricalKlineAdapter.java",
-      "sha256": "e244a5a7f138de55af67d5db38ff6c0e0cafa7c51579e4661c9a932f2496f987",
+      "sha256": "1b6e8c99c235a7d9be9d226e6f93e6b65531ad605aef0a7f5277053fd4c12713",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -59,7 +59,7 @@
     },
     {
       "path": "backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/marketdata/OkxHistoricalKlineAdapter.java",
-      "sha256": "1eebea80fe4f8e25c401382b58ef8a61e1a21d247dd582cf660b8ee90d0ae105",
+      "sha256": "149dec0f71d17bad688adbdc52e3f8cd651a43a5a0e8074f3f78c3d340d13be4",
       "kind": "HISTORICAL_METADATA",
       "reason": "Only pre-existing diagnostic messages retain historical provenance. Bean registration uses the existing manual public outbound capability profile and enablement property; no active stage selector.",
       "owner": "Module owner",
@@ -531,7 +531,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/ExchangeAdapterConfigurationReadinessTest.java",
-      "sha256": "cff72bf701231370ffc338282fead6b528b2928ce60ee8a64fdfcb4f50e4921d",
+      "sha256": "8cf309db9ca7238ebe9360f4d7cf637ae80c9762d58707438588ef2a00645e99",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -555,7 +555,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/account/OkxPrivateReadOnlyDiagnosticsConfigurationTest.java",
-      "sha256": "9310de437518d083c8f70465a248da04125213414c8296fa35268324547151ce",
+      "sha256": "c141f5b7821b9f1c85cc64aba08ed0d880abae204fd3989310bbc9935e326223",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -659,7 +659,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/TradingVenueGatewayReadinessRuntimeSmokeTest.java",
-      "sha256": "896882631e0131750e027af6c5144888996fae974de4a6d1d84da49a4a111608",
+      "sha256": "9e500a685c879a8fe6e5cd0f7ecdb702a4c1bcf621cd5fdd02f4060f46564a1b",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -1622,192 +1622,192 @@
           "contractMember": "AdapterReadinessReason"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "AdapterReadinessReason"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluate(String,AdapterCapability)",
           "contractMember": "AdapterReadinessReason"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluate(String,AdapterCapability)",
           "contractMember": "FAKE_ADAPTER_DISABLED"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluate(String,AdapterCapability)",
           "contractMember": "STUB_ADAPTER_DISABLED"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluate(String,AdapterCapability)",
           "contractMember": "UNKNOWN_REQUIRES_REVIEW"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateExchange(String,AdapterCapability,Instant)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateExchange(String,AdapterCapability,Instant)",
           "contractMember": "AdapterReadinessReason"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateExchange(String,AdapterCapability,Instant)",
           "contractMember": "CREDENTIALS_MISSING"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateExchange(String,AdapterCapability,Instant)",
           "contractMember": "CREDENTIAL_UNCONFIGURED"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateExchange(String,AdapterCapability,Instant)",
           "contractMember": "ENDPOINT_DISABLED_SENTINEL"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateExchange(String,AdapterCapability,Instant)",
           "contractMember": "LIVE_DISABLED"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateExchange(String,AdapterCapability,Instant)",
           "contractMember": "LIVE_NOT_AUTHORIZED"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateExchange(String,AdapterCapability,Instant)",
           "contractMember": "PERMISSION_PROBE_DISABLED"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateExchange(String,AdapterCapability,Instant)",
           "contractMember": "REAL_PROVIDER_NOT_IMPLEMENTED"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateFutureReal(String,AdapterCapability,Instant)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateFutureReal(String,AdapterCapability,Instant)",
           "contractMember": "AdapterReadinessReason"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateFutureReal(String,AdapterCapability,Instant)",
           "contractMember": "FUTURE_REAL_DISABLED"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateFutureReal(String,AdapterCapability,Instant)",
           "contractMember": "LIVE_DISABLED"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateFutureReal(String,AdapterCapability,Instant)",
           "contractMember": "LIVE_NOT_AUTHORIZED"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateFutureReal(String,AdapterCapability,Instant)",
           "contractMember": "NO_REAL_PROVIDER"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateFutureReal(String,AdapterCapability,Instant)",
           "contractMember": "PERMISSION_PROBE_DISABLED"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateFutureReal(String,AdapterCapability,Instant)",
           "contractMember": "REAL_PROVIDER_NOT_IMPLEMENTED"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateNoopFamily(String,AdapterCapability,Instant)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateNoopFamily(String,AdapterCapability,Instant)",
           "contractMember": "AdapterReadinessReason"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateNoopFamily(String,AdapterCapability,Instant)",
           "contractMember": "NO_REAL_DISABLED"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateNoopFamily(String,AdapterCapability,Instant)",
           "contractMember": "NO_REAL_PROVIDER"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateNoopFamily(String,AdapterCapability,Instant)",
           "contractMember": "PAPER_ARTIFACT_NOT_REAL_AUTHORIZATION"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateNoopFamily(String,AdapterCapability,Instant)",
           "contractMember": "PERMISSION_PROBE_DISABLED"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateNoopFamily(String,AdapterCapability,Instant)",
           "contractMember": "READY_FOR_PAPER_ONLY"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateSyntheticAdapter(String,AdapterCapability,Instant,AdapterReadinessStatus,List<AdapterReadinessReason>,String)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateSyntheticAdapter(String,AdapterCapability,Instant,AdapterReadinessStatus,List<AdapterReadinessReason>,String)",
           "contractMember": "AdapterReadinessReason"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateSyntheticAdapter(String,AdapterCapability,Instant,AdapterReadinessStatus,List<AdapterReadinessReason>,String)",
           "contractMember": "NO_REAL_PROVIDER"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#evaluateSyntheticAdapter(String,AdapterCapability,Instant,AdapterReadinessStatus,List<AdapterReadinessReason>,String)",
           "contractMember": "PERMISSION_PROBE_DISABLED"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#unknownVenue(String,AdapterCapability,Instant)",
           "contractMember": "AdapterReadinessReason"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/DefaultAdapterReadinessService.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/DefaultAdapterReadinessService.java",
           "callerMember": "DefaultAdapterReadinessService#unknownVenue(String,AdapterCapability,Instant)",
           "contractMember": "UNKNOWN_REQUIRES_REVIEW"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/ReadinessGuardedMarketDataAdapter.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/ReadinessGuardedMarketDataAdapter.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "AdapterReadinessReason"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/ReadinessGuardedMarketDataAdapter.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/ReadinessGuardedMarketDataAdapter.java",
           "callerMember": "ReadinessGuardedMarketDataAdapter#failClosedAck(String,MarketDataSubscriptionRequest,AdapterReadinessDecision)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/ReadinessGuardedMarketDataAdapter.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/service/readiness/ReadinessGuardedMarketDataAdapter.java",
           "callerMember": "ReadinessGuardedMarketDataAdapter#failClosedAck(String,MarketDataSubscriptionRequest,AdapterReadinessDecision)",
           "contractMember": "AdapterReadinessReason"
         },
@@ -2069,8 +2069,8 @@
       ]
     },
     {
-      "identity": "com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundPolicy",
-      "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/PublicMarketDataOutboundPolicy.java",
+      "identity": "com.guidinglight.nexusquant.adapter.api.publicmarketdata.policy.PublicMarketDataOutboundPolicy",
+      "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/policy/PublicMarketDataOutboundPolicy.java",
       "canonicalOwner": "nq-adapter-api / PublicMarketDataOutboundPolicy contract owner",
       "migrationTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement.",
       "removalCondition": "Remove only after a separately authorized versioned migration replaces all approved source callers and proves stored/signed/public fact compatibility; then remove the member, edges and exception together.",
@@ -2079,38 +2079,53 @@
       ],
       "approvedCallers": [
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/JdkPublicMarketDataOutboundClient.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/transport/JdkPublicMarketDataOutboundClient.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/transport/JdkPublicMarketDataOutboundClient.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "PublicMarketDataOutboundPolicy"
+        },
+        {
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/transport/JdkPublicMarketDataOutboundClient.java",
           "callerMember": "JdkPublicMarketDataOutboundClient#<init>(URI,PublicMarketDataOutboundPolicy,PublicMarketDataOutboundSettings)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/JdkPublicMarketDataOutboundClient.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/transport/JdkPublicMarketDataOutboundClient.java",
           "callerMember": "JdkPublicMarketDataOutboundClient#<init>(URI,PublicMarketDataOutboundPolicy,PublicMarketDataOutboundSettings)",
           "contractMember": "PublicMarketDataOutboundPolicy"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/JdkPublicMarketDataOutboundClient.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/transport/JdkPublicMarketDataOutboundClient.java",
           "callerMember": "JdkPublicMarketDataOutboundClient#<init>(URI,PublicMarketDataOutboundPolicy,PublicMarketDataOutboundSettings,HttpClient,Clock,BackoffSleeper)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/JdkPublicMarketDataOutboundClient.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/transport/JdkPublicMarketDataOutboundClient.java",
           "callerMember": "JdkPublicMarketDataOutboundClient#<init>(URI,PublicMarketDataOutboundPolicy,PublicMarketDataOutboundSettings,HttpClient,Clock,BackoffSleeper)",
           "contractMember": "PublicMarketDataOutboundPolicy"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/JdkPublicMarketDataOutboundClient.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/transport/JdkPublicMarketDataOutboundClient.java",
           "callerMember": "JdkPublicMarketDataOutboundClient#fetch(PublicMarketDataOutboundRequest)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/JdkPublicMarketDataOutboundClient.java",
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/transport/JdkPublicMarketDataOutboundClient.java",
           "callerMember": "JdkPublicMarketDataOutboundClient#policy",
           "contractMember": "PublicMarketDataOutboundPolicy"
         },
         {
-          "path": "backend/nq-adapter-api/src/test/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/JdkPublicMarketDataOutboundClientTest.java",
-          "callerMember": "JdkPublicMarketDataOutboundClientTest#client(URI,PublicMarketDataOutboundSettings)",
+          "path": "backend/nq-adapter-api/src/test/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/PublicMarketDataOutboundPolicyTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-adapter-api/src/test/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/PublicMarketDataOutboundPolicyTest.java",
+          "callerMember": "<unit>#<type>",
           "contractMember": "PublicMarketDataOutboundPolicy"
         },
         {
@@ -2154,6 +2169,16 @@
           "contractMember": "<typed-use>"
         },
         {
+          "path": "backend/nq-adapter-api/src/test/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/transport/JdkPublicMarketDataOutboundClientTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "PublicMarketDataOutboundPolicy"
+        },
+        {
+          "path": "backend/nq-adapter-api/src/test/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/transport/JdkPublicMarketDataOutboundClientTest.java",
+          "callerMember": "JdkPublicMarketDataOutboundClientTest#client(URI,PublicMarketDataOutboundSettings)",
+          "contractMember": "PublicMarketDataOutboundPolicy"
+        },
+        {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/PublicMarketDataOutboundConfiguration.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "PublicMarketDataOutboundPolicy"
@@ -2162,6 +2187,11 @@
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/PublicMarketDataOutboundConfiguration.java",
           "callerMember": "PublicMarketDataOutboundConfiguration#publicMarketDataOutboundClient(String,String,String,String,int,String,String)",
           "contractMember": "PublicMarketDataOutboundPolicy"
+        },
+        {
+          "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/ManualPublicOutboundSmokeTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "<typed-use>"
         },
         {
           "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/ManualPublicOutboundSmokeTest.java",

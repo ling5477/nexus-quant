@@ -5,10 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.guidinglight.nexusquant.adapter.api.service.AdapterReadinessService;
-import com.guidinglight.nexusquant.adapter.api.service.DefaultAdapterReadinessService;
-import com.guidinglight.nexusquant.adapter.api.service.MarketDataAdapter;
-import com.guidinglight.nexusquant.adapter.api.service.ReadinessGuardedMarketDataAdapter;
+import com.guidinglight.nexusquant.adapter.api.service.port.AdapterReadinessService;
+import com.guidinglight.nexusquant.adapter.api.service.readiness.DefaultAdapterReadinessService;
+import com.guidinglight.nexusquant.adapter.api.service.port.MarketDataAdapter;
+import com.guidinglight.nexusquant.adapter.api.service.readiness.ReadinessGuardedMarketDataAdapter;
 import com.guidinglight.nexusquant.adapter.api.model.MarketDataSubscriptionAck;
 import com.guidinglight.nexusquant.adapter.api.model.MarketDataSubscriptionRequest;
 

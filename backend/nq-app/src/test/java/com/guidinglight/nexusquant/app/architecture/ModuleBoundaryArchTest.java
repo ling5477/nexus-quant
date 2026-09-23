@@ -90,10 +90,10 @@ class ModuleBoundaryArchTest {
             .that().resideInAPackage("..app.config..")
             .and().doNotHaveSimpleName("LocalTestFallbackConfiguration")
             .should().dependOnClassesThat().haveFullyQualifiedName(
-                    "com.guidinglight.nexusquant.adapter.api.service.NoopAccountAdapter"
+                    "com.guidinglight.nexusquant.adapter.api.service.compatibility.NoopAccountAdapter"
             )
             .orShould().dependOnClassesThat().haveFullyQualifiedName(
-                    "com.guidinglight.nexusquant.adapter.api.service.NoopMarketDataAdapter"
+                    "com.guidinglight.nexusquant.adapter.api.service.compatibility.NoopMarketDataAdapter"
             )
             .orShould().dependOnClassesThat().haveFullyQualifiedName(
                     "com.guidinglight.nexusquant.ledger.compatibility.NoopLedgerService"

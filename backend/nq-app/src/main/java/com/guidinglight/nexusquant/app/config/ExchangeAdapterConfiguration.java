@@ -1,9 +1,9 @@
 package com.guidinglight.nexusquant.app.config;
 
 import com.guidinglight.nexusquant.adapter.binance.trading.BinanceExchangeAdapter;
-import com.guidinglight.nexusquant.adapter.api.service.AdapterReadinessService;
-import com.guidinglight.nexusquant.adapter.api.service.DefaultAdapterReadinessService;
-import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
+import com.guidinglight.nexusquant.adapter.api.service.port.AdapterReadinessService;
+import com.guidinglight.nexusquant.adapter.api.service.readiness.DefaultAdapterReadinessService;
+import com.guidinglight.nexusquant.adapter.api.service.port.TradingAdapter;
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClient;
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsEventMapper;
 import com.guidinglight.nexusquant.adapter.okx.config.OkxBootstrapFallbackFactory;

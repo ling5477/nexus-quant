@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.adapter.api.dataquality;
 
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataRedactor;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.support.PublicMarketDataRedactor;
 
 import java.time.Instant;
 import java.util.Objects;

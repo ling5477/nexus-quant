@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.adapters.api;
 
 import com.guidinglight.nexusquant.adapter.api.model.AdapterCapability;
-import com.guidinglight.nexusquant.adapter.api.service.AdapterReadinessService;
+import com.guidinglight.nexusquant.adapter.api.service.port.AdapterReadinessService;
 import com.guidinglight.nexusquant.adapters.api.dto.AdapterReadinessItemResponse;
 import com.guidinglight.nexusquant.adapters.api.dto.AdapterReadinessResponse;
 

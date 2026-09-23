@@ -1,11 +1,11 @@
 package com.guidinglight.nexusquant.app.config;
 
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.DisabledPublicMarketDataOutboundClient;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.JdkPublicMarketDataOutboundClient;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundClient;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundPolicy;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundSettings;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataQualitySummary;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.transport.DisabledPublicMarketDataOutboundClient;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.transport.JdkPublicMarketDataOutboundClient;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.port.PublicMarketDataOutboundClient;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.policy.PublicMarketDataOutboundPolicy;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.config.PublicMarketDataOutboundSettings;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataQualitySummary;
 
 import java.net.URI;
 import java.time.Duration;

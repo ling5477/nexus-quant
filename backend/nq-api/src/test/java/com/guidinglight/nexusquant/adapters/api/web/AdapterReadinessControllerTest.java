@@ -8,7 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.guidinglight.nexusquant.adapter.api.service.DefaultAdapterReadinessService;
+import com.guidinglight.nexusquant.adapter.api.service.readiness.DefaultAdapterReadinessService;
 import com.guidinglight.nexusquant.adapters.api.AdapterReadinessStatusService;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;

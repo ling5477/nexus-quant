@@ -8,7 +8,7 @@ import com.guidinglight.nexusquant.adapter.okx.trading.OkxExchangeAdapter;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.guidinglight.nexusquant.adapter.api.service.AdapterReadinessService;
+import com.guidinglight.nexusquant.adapter.api.service.port.AdapterReadinessService;
 import com.guidinglight.nexusquant.adapter.okx.model.OkxApiCredentials;
 
 import java.net.http.HttpClient;
