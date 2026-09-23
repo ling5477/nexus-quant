@@ -7,7 +7,7 @@ import com.guidinglight.nexusquant.adapter.okx.service.OkxInstrumentsCache;
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
-import com.guidinglight.nexusquant.risk.service.RiskGate;
+import com.guidinglight.nexusquant.risk.application.port.RiskGate;
 import com.guidinglight.nexusquant.risk.service.PreTradeRiskService;
 import com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileService;
 import com.guidinglight.nexusquant.scheduler.service.AdapterBackedTradingVenueGateway;

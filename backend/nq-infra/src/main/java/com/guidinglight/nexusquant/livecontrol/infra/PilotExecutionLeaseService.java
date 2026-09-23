@@ -10,10 +10,10 @@ import com.guidinglight.nexusquant.livecontrol.domain.PilotExecutionLease;
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotExecutionLeaseRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotPrePlaceRecoveryRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotPrePlaceRecoveryRepository.Authorization;
-import com.guidinglight.nexusquant.risk.service.KillSwitchScope;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchScope;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
-import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
-import com.guidinglight.nexusquant.risk.service.PilotKillSwitchDisengageCommand;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;
+import com.guidinglight.nexusquant.risk.application.command.PilotKillSwitchDisengageCommand;
 
 import java.math.BigDecimal;
 import java.time.Clock;

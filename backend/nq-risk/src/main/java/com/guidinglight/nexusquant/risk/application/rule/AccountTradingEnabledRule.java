@@ -1,4 +1,6 @@
-package com.guidinglight.nexusquant.risk.service;
+package com.guidinglight.nexusquant.risk.application.rule;
+
+import com.guidinglight.nexusquant.risk.application.config.PreTradeRiskSettings;
 
 import com.guidinglight.nexusquant.contracts.model.RiskSeverity;
 import com.guidinglight.nexusquant.risk.model.RiskContext;
@@ -8,15 +10,15 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * SymbolEnabledRule 检查 venue 与 symbol 组合是否允许进入执行通道。
+ * AccountTradingEnabledRule 检查账户是否允许交易。
  */
-public class SymbolEnabledRule implements RiskRule {
+public class AccountTradingEnabledRule implements RiskRule {
 
-    private static final String RULE_CODE = "SYMBOL_NOT_ALLOWED";
+    private static final String RULE_CODE = "ACCOUNT_TRADING_DISABLED";
 
     private final PreTradeRiskSettings settings;
 
-    public SymbolEnabledRule(PreTradeRiskSettings settings) {
+    public AccountTradingEnabledRule(PreTradeRiskSettings settings) {
         this.settings = Objects.requireNonNull(settings, "settings must not be null");
     }
 
@@ -27,23 +29,23 @@ public class SymbolEnabledRule implements RiskRule {
 
     @Override
     public String ruleName() {
-        return "SymbolEnabledRule";
+        return "AccountTradingEnabledRule";
     }
 
     @Override
     public int order() {
-        return 30;
+        return 20;
     }
 
     @Override
     public Optional<RiskDecisionResult> evaluate(RiskContext context) {
-        if (settings.isSymbolEnabled(context.command().symbol())) {
+        if (settings.isAccountTradingEnabled(context.command().accountId())) {
             return Optional.empty();
         }
         return Optional.of(RiskDecisionResult.reject(
                 RULE_CODE,
                 ruleName(),
-                "symbol is not enabled for the target venue",
+                "account trading is disabled",
                 true,
                 RiskSeverity.HIGH,
                 context.traceId()

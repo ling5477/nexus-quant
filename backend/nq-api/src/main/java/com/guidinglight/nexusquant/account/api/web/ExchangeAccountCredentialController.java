@@ -12,7 +12,7 @@ import com.guidinglight.nexusquant.account.application.CredentialPermissionProbe
 import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialCommandService;
 import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialVerificationService;
 import com.guidinglight.nexusquant.account.application.command.CredentialPermissionProbeCommand;
-import com.guidinglight.nexusquant.auth.application.CurrentUserProfileService;
+import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
 import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCredentialRotateCommand;
 import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCredentialUpsertCommand;
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;

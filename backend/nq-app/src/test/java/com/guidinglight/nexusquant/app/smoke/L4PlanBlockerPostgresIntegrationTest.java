@@ -7,7 +7,7 @@ import static org.mockito.Mockito.*;
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
 import com.guidinglight.nexusquant.contracts.model.*;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
-import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;
 import com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileService;
 import com.guidinglight.nexusquant.trading.application.*;
 import com.guidinglight.nexusquant.trading.application.port.*;

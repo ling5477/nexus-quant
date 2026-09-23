@@ -1,4 +1,10 @@
-package com.guidinglight.nexusquant.risk.service;
+package com.guidinglight.nexusquant.risk.application.port;
+
+import com.guidinglight.nexusquant.risk.application.command.KillSwitchEngageCommand;
+import com.guidinglight.nexusquant.risk.application.command.PilotKillSwitchDisengageCommand;
+import com.guidinglight.nexusquant.risk.application.exception.KillSwitchVersionConflictException;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchScope;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchState;
 
 import java.util.Optional;
 

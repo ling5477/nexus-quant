@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.risk.service;
+package com.guidinglight.nexusquant.risk.application.config;
 
 import java.math.BigDecimal;
 import java.time.Duration;

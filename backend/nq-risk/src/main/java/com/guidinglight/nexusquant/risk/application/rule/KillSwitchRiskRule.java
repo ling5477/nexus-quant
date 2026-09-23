@@ -1,4 +1,7 @@
-package com.guidinglight.nexusquant.risk.service;
+package com.guidinglight.nexusquant.risk.application.rule;
+
+import com.guidinglight.nexusquant.risk.service.KillSwitchService;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchSnapshot;
 
 import com.guidinglight.nexusquant.contracts.model.RiskSeverity;
 import com.guidinglight.nexusquant.risk.model.RiskContext;

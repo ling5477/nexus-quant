@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.trading.application.preflight;
 
+import com.guidinglight.nexusquant.risk.application.port.RiskGate;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;

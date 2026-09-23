@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.livecontrol.api;
 
-import com.guidinglight.nexusquant.auth.application.CurrentUserProfileService;
+import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;

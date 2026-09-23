@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.risk.service;
+package com.guidinglight.nexusquant.risk.application.port;
 
 import com.guidinglight.nexusquant.risk.model.RiskContext;
 import com.guidinglight.nexusquant.risk.model.RiskDecisionResult;

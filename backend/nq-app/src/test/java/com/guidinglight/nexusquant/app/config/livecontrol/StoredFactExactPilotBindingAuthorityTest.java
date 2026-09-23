@@ -29,10 +29,10 @@ import com.guidinglight.nexusquant.livecontrol.domain.port.OperatorPilotAuthorit
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotScopeRepository;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.InstrumentCatalogItem;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.port.InstrumentCatalogReadPort;
-import com.guidinglight.nexusquant.risk.service.KillSwitchScope;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchScope;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
-import com.guidinglight.nexusquant.risk.service.KillSwitchSnapshot;
-import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchSnapshot;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionState;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionStateRepository;
 

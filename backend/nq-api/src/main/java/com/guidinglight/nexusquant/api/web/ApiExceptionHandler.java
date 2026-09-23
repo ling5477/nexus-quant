@@ -2,7 +2,7 @@ package com.guidinglight.nexusquant.api.web;
 
 import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialNotFoundException;
 import com.guidinglight.nexusquant.account.application.ExchangeAccountNotFoundException;
-import com.guidinglight.nexusquant.auth.application.AdminNotInitializedException;
+import com.guidinglight.nexusquant.auth.application.exception.AdminNotInitializedException;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunReadOnlyNotFoundException;

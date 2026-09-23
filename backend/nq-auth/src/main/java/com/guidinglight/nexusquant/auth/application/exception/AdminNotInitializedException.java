@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.auth.application;
+package com.guidinglight.nexusquant.auth.application.exception;
 
 /**
  * AdminNotInitializedException 表示当前数据库尚未初始化管理员。

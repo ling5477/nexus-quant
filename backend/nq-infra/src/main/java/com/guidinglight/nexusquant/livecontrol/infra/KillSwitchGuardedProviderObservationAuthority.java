@@ -6,7 +6,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationSet;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
-import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;
 
 import java.time.Instant;
 import java.util.Objects;

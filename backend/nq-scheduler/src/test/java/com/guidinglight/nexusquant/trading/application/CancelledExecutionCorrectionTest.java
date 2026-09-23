@@ -4,7 +4,7 @@ import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.core.service.port.RiskEventRepository;
-import com.guidinglight.nexusquant.risk.service.RiskGate;
+import com.guidinglight.nexusquant.risk.application.port.RiskGate;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
 import com.guidinglight.nexusquant.trading.domain.state.InMemoryOrderStateMachine;

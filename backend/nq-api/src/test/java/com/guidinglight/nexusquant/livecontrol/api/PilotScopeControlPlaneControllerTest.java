@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.guidinglight.nexusquant.auth.application.CurrentUserProfileService;
+import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
 import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor;

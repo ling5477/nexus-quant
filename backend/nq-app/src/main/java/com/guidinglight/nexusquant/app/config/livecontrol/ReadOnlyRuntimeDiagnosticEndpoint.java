@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.app.config.livecontrol;
 
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
-import com.guidinglight.nexusquant.risk.service.KillSwitchSnapshot;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchSnapshot;
 
 import java.time.Clock;
 import java.time.Instant;

@@ -17,8 +17,8 @@ import static com.guidinglight.nexusquant.trading.application.safety.Operational
 import static com.guidinglight.nexusquant.trading.application.safety.OperationalSafetyAssessmentStatus.PASS;
 import static com.guidinglight.nexusquant.trading.application.safety.OperationalSafetyAssessmentStatus.UNKNOWN;
 
-import com.guidinglight.nexusquant.risk.service.KillSwitchSnapshot;
-import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchSnapshot;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;
 import com.guidinglight.nexusquant.trading.application.safety.OperationalSafetyAssessmentFactBundle.HumanReviewEvidence;
 import com.guidinglight.nexusquant.trading.application.safety.OperationalSafetyAssessmentFactBundle.HumanReviewEvidenceStatus;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewState;

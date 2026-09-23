@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.risk.service;
+package com.guidinglight.nexusquant.risk.application.rule;
 
 import java.util.Comparator;
 import java.util.List;

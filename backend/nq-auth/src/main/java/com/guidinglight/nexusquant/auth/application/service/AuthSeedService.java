@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.auth.application;
+package com.guidinglight.nexusquant.auth.application.service;
 
 import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
 import com.guidinglight.nexusquant.auth.application.command.SeedUserCommand;

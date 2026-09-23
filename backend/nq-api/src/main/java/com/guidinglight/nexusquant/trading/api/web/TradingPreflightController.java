@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.trading.api.web;
 
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
-import com.guidinglight.nexusquant.auth.application.CurrentUserProfileService;
+import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
 import com.guidinglight.nexusquant.trading.api.dto.TradingPreflightReadinessResponse;

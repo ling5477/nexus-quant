@@ -10,7 +10,7 @@ import com.guidinglight.nexusquant.contracts.model.RiskSeverity;
 import com.guidinglight.nexusquant.core.service.port.RiskEventRepository;
 import com.guidinglight.nexusquant.risk.model.RiskContext;
 import com.guidinglight.nexusquant.risk.model.RiskDecisionResult;
-import com.guidinglight.nexusquant.risk.service.RiskGate;
+import com.guidinglight.nexusquant.risk.application.port.RiskGate;
 import com.guidinglight.nexusquant.trading.application.port.TradingCancelGatewayResult;
 import com.guidinglight.nexusquant.trading.application.port.TradingGatewayFailure;
 import com.guidinglight.nexusquant.trading.application.port.TradingGatewayResultCategory;

@@ -10,9 +10,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.guidinglight.nexusquant.risk.service.KillSwitchScope;
-import com.guidinglight.nexusquant.risk.service.KillSwitchSnapshot;
-import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchScope;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchSnapshot;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;
 import com.guidinglight.nexusquant.trading.application.safety.OperationalSafetyAssessmentFactBundle.HumanReviewEvidence;
 import com.guidinglight.nexusquant.trading.application.safety.OperationalSafetyAssessmentFactBundle.HumanReviewEvidenceStatus;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewCase;

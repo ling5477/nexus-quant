@@ -8,10 +8,10 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.guidinglight.nexusquant.risk.infra.jdbc.JdbcKillSwitchStateRepository;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
-import com.guidinglight.nexusquant.risk.service.KillSwitchSnapshot;
-import com.guidinglight.nexusquant.risk.service.KillSwitchStateRepository;
-import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
-import com.guidinglight.nexusquant.risk.service.KillSwitchVersionConflictException;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchSnapshot;
+import com.guidinglight.nexusquant.risk.application.port.KillSwitchStateRepository;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;
+import com.guidinglight.nexusquant.risk.application.exception.KillSwitchVersionConflictException;
 
 import java.time.Clock;
 import java.time.Instant;

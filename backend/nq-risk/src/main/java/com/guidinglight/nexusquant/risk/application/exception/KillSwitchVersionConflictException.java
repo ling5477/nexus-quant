@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.risk.service;
+package com.guidinglight.nexusquant.risk.application.exception;
 
 /**
  * Kill switch optimistic-lock 冲突。

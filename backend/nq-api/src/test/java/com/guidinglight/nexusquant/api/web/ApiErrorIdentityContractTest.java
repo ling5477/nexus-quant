@@ -8,7 +8,7 @@ import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.core.service.port.RiskEventRepository;
-import com.guidinglight.nexusquant.risk.service.RiskGate;
+import com.guidinglight.nexusquant.risk.application.port.RiskGate;
 import com.guidinglight.nexusquant.trading.application.CancelOrderRequest;
 import com.guidinglight.nexusquant.trading.application.OrderCommandService;
 import com.guidinglight.nexusquant.trading.application.OrderCommandWriteService;

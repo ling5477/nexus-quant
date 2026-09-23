@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.trading.application.safety;
 
-import com.guidinglight.nexusquant.risk.service.KillSwitchSnapshot;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchSnapshot;
 
 import java.time.Instant;
 import java.util.Objects;

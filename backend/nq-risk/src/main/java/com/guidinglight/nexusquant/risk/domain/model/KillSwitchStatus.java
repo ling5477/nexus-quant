@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.risk.service;
+package com.guidinglight.nexusquant.risk.domain.model;
 
 /**
  * Kill switch 的安全状态。

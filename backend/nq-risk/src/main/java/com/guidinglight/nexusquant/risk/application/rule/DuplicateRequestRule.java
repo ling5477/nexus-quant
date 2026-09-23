@@ -1,4 +1,6 @@
-package com.guidinglight.nexusquant.risk.service;
+package com.guidinglight.nexusquant.risk.application.rule;
+
+import com.guidinglight.nexusquant.risk.application.config.PreTradeRiskSettings;
 
 import com.guidinglight.nexusquant.contracts.model.RiskSeverity;
 import com.guidinglight.nexusquant.risk.model.RiskContext;

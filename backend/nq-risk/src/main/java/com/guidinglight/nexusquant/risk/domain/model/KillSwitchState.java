@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.risk.service;
+package com.guidinglight.nexusquant.risk.domain.model;
 
 import java.time.Instant;
 import java.util.Objects;

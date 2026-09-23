@@ -1,4 +1,6 @@
-package com.guidinglight.nexusquant.auth.application;
+package com.guidinglight.nexusquant.auth.application.service;
+
+import com.guidinglight.nexusquant.auth.application.port.AuthService;
 
 import com.guidinglight.nexusquant.auth.application.command.LoginRequest;
 import com.guidinglight.nexusquant.auth.application.result.LoginResponse;

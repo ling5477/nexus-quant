@@ -1,5 +1,10 @@
 package com.guidinglight.nexusquant.trading.application.riskpreflight;
 
+import com.guidinglight.nexusquant.risk.application.rule.DuplicateRequestRule;
+import com.guidinglight.nexusquant.risk.application.rule.KillSwitchRiskRule;
+import com.guidinglight.nexusquant.risk.application.rule.RateLimitRule;
+import com.guidinglight.nexusquant.risk.application.rule.RiskRuleRegistry;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;

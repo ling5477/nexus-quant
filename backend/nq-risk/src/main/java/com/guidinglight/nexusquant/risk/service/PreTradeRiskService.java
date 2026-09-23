@@ -1,5 +1,9 @@
 package com.guidinglight.nexusquant.risk.service;
 
+import com.guidinglight.nexusquant.risk.application.port.RiskGate;
+import com.guidinglight.nexusquant.risk.application.rule.RiskRule;
+import com.guidinglight.nexusquant.risk.application.rule.RiskRuleRegistry;
+
 import com.guidinglight.nexusquant.risk.model.RiskContext;
 import com.guidinglight.nexusquant.risk.model.RiskDecisionResult;
 

@@ -8,11 +8,11 @@ import com.guidinglight.nexusquant.livecontrol.application.PilotPrerequisiteObse
 import com.guidinglight.nexusquant.livecontrol.deployment.WorkerDeploymentAdmissionService;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotExecutionProviderPort;
 import com.guidinglight.nexusquant.livecontrol.infra.KillSwitchGuardedProviderObservationAuthority;
-import com.guidinglight.nexusquant.risk.service.KillSwitchEngageCommand;
-import com.guidinglight.nexusquant.risk.service.KillSwitchScope;
-import com.guidinglight.nexusquant.risk.service.KillSwitchState;
-import com.guidinglight.nexusquant.risk.service.KillSwitchStateRepository;
-import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
+import com.guidinglight.nexusquant.risk.application.command.KillSwitchEngageCommand;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchScope;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchState;
+import com.guidinglight.nexusquant.risk.application.port.KillSwitchStateRepository;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;
 import com.guidinglight.nexusquant.scheduler.service.AdapterInstrumentCatalogSyncService;
 import com.guidinglight.nexusquant.scheduler.service.BinanceRecoveryService;
 import com.guidinglight.nexusquant.scheduler.service.BinanceRestReconcileService;

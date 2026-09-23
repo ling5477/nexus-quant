@@ -16,7 +16,7 @@ import com.guidinglight.nexusquant.account.application.ExchangeAccountCredential
 import com.guidinglight.nexusquant.account.domain.CredentialPermissionProbeSummary;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialSummary;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
-import com.guidinglight.nexusquant.auth.application.CurrentUserProfileService;
+import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.security.token.TokenClaims;

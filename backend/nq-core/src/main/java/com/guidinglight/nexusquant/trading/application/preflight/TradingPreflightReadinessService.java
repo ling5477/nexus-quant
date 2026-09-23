@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.trading.application.preflight;
 
+import com.guidinglight.nexusquant.risk.application.port.RiskGate;
+
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialSummary;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialRepository;

@@ -1,4 +1,6 @@
-package com.guidinglight.nexusquant.risk.service;
+package com.guidinglight.nexusquant.risk.application.command;
+
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchScope;
 
 import java.time.Instant;
 import java.util.Objects;

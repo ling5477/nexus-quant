@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.app.config.auth;
 
-import com.guidinglight.nexusquant.auth.application.AuthSeedService;
+import com.guidinglight.nexusquant.auth.application.service.AuthSeedService;
 import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
 import com.guidinglight.nexusquant.auth.infra.jdbc.JdbcAuthUserRepository;
 

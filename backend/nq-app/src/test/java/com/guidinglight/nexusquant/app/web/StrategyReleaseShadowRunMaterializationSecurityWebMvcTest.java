@@ -2,7 +2,7 @@ package com.guidinglight.nexusquant.app.web;
 
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.app.config.auth.SecurityConfiguration;
-import com.guidinglight.nexusquant.auth.application.CurrentUserProfileService;
+import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;

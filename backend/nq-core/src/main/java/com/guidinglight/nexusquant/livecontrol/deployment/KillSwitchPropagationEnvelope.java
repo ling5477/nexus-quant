@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.livecontrol.deployment;
 
-import com.guidinglight.nexusquant.risk.service.KillSwitchSnapshot;
-import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchSnapshot;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

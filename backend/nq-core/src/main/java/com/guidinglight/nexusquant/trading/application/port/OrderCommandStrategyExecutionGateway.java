@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.trading.application.port;
 
+import com.guidinglight.nexusquant.risk.application.port.RiskGate;
+
 import com.guidinglight.nexusquant.strategy.domain.StrategyDispatchWork;
 import com.guidinglight.nexusquant.strategy.domain.StrategyRun;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionGateway;
