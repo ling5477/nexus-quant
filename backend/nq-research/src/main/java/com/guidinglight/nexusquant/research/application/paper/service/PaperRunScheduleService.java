@@ -1,4 +1,6 @@
-package com.guidinglight.nexusquant.research.application.paper;
+package com.guidinglight.nexusquant.research.application.paper.service;
+
+import com.guidinglight.nexusquant.research.application.paper.command.PaperRunScheduleCreateCommand;
 
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunHeartbeat;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunHeartbeatStatus;

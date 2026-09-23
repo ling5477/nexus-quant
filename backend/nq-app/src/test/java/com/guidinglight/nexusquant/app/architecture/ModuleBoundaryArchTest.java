@@ -96,7 +96,7 @@ class ModuleBoundaryArchTest {
                     "com.guidinglight.nexusquant.adapter.api.service.NoopMarketDataAdapter"
             )
             .orShould().dependOnClassesThat().haveFullyQualifiedName(
-                    "com.guidinglight.nexusquant.ledger.service.NoopLedgerService"
+                    "com.guidinglight.nexusquant.ledger.compatibility.NoopLedgerService"
             )
             .orShould().dependOnClassesThat().haveFullyQualifiedName(
                     "com.guidinglight.nexusquant.config.service.InMemoryConfigSnapshotService"

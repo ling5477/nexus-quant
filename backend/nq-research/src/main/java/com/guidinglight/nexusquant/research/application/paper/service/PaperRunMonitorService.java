@@ -1,4 +1,7 @@
-package com.guidinglight.nexusquant.research.application.paper;
+package com.guidinglight.nexusquant.research.application.paper.service;
+
+import com.guidinglight.nexusquant.research.application.paper.command.PaperRunAlertCreateCommand;
+import com.guidinglight.nexusquant.research.application.paper.command.PaperRunDailyReportGenerateCommand;
 
 import com.guidinglight.nexusquant.observability.operational.OperationalObservation;
 import com.guidinglight.nexusquant.observability.operational.SafeOperationalObservation;

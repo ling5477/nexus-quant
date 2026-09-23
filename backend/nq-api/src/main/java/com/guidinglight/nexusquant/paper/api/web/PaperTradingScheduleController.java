@@ -7,7 +7,7 @@ import com.guidinglight.nexusquant.paper.api.dto.PaperRunScheduleFireResponse;
 import com.guidinglight.nexusquant.paper.api.dto.PaperRunScheduleResponse;
 import com.guidinglight.nexusquant.paper.api.dto.PaperRunScheduleStatusUpdateRequestBody;
 import com.guidinglight.nexusquant.research.application.api.paper.PaperTradingApiService;
-import com.guidinglight.nexusquant.research.application.paper.PaperRunScheduleCreateCommand;
+import com.guidinglight.nexusquant.research.application.paper.command.PaperRunScheduleCreateCommand;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

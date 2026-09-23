@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.paper.api.dto;
 
-import com.guidinglight.nexusquant.research.application.paper.PaperAutoReview;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperAutoReview;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;

@@ -1,4 +1,6 @@
-package com.guidinglight.nexusquant.research.application.paper;
+package com.guidinglight.nexusquant.research.application.paper.service;
+
+import com.guidinglight.nexusquant.research.application.paper.command.PaperRunStabilityCheckGenerateCommand;
 
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunStabilityCheck;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunStabilityCheckStatus;

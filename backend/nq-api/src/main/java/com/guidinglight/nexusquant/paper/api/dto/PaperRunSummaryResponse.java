@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.paper.api.dto;
 
-import com.guidinglight.nexusquant.research.application.paper.PaperRunSummary;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperRunSummary;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;

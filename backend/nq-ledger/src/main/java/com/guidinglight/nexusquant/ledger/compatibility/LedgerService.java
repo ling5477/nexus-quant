@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.ledger.service;
+package com.guidinglight.nexusquant.ledger.compatibility;
 
 import com.guidinglight.nexusquant.ledger.model.LedgerEntry;
 import java.math.BigDecimal;

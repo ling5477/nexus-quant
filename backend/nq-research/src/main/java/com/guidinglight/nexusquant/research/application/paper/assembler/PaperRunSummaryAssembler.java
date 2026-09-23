@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.research.application.paper.assembler;
 
-import com.guidinglight.nexusquant.research.application.paper.PaperRunSummary;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperRunSummary;
 
 import com.guidinglight.nexusquant.research.domain.paper.EquityCurveSnapshot;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRiskCheckResult;

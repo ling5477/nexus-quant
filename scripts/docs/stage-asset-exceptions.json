@@ -187,7 +187,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/web/PaperTradingController.java",
-      "sha256": "fb6bfa34147c0172125529f0514f740cd9ac1e6092726f4f51731212fb67cdc6",
+      "sha256": "e92cbdcaab5e03ef6947fb0642b493909266d42a89156dd58e4e4309f4b2449f",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -195,7 +195,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/web/PaperTradingScheduleController.java",
-      "sha256": "2dbf0ed9ab4e446d7e585c99e045b578761cb11217fc3c959142ee0e3de1a6fc",
+      "sha256": "4a202e58acfcbea18e005c1e1eb5e81e05bfc73a6f8af699b0251a75fc50ad22",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",

@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.research.application.paper;
+package com.guidinglight.nexusquant.research.application.paper.model;
 
 import java.math.BigDecimal;
 import java.time.Instant;

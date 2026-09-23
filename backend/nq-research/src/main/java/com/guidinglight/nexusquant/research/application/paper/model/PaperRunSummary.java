@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.research.application.paper;
+package com.guidinglight.nexusquant.research.application.paper.model;
 
 import com.guidinglight.nexusquant.research.domain.paper.EquityCurveSnapshot;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRiskCheckResult;

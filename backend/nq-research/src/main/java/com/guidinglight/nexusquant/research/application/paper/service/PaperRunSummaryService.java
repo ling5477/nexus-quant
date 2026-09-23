@@ -1,4 +1,6 @@
-package com.guidinglight.nexusquant.research.application.paper;
+package com.guidinglight.nexusquant.research.application.paper.service;
+
+import com.guidinglight.nexusquant.research.application.paper.model.PaperRunSummary;
 
 import com.guidinglight.nexusquant.research.application.paper.assembler.PaperRunSummaryAssembler;
 

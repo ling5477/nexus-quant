@@ -1,17 +1,17 @@
 package com.guidinglight.nexusquant.research.application.paper.assembler;
 
-import com.guidinglight.nexusquant.research.application.paper.PaperPortfolioSummary;
-import com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluation;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperPortfolioSummary;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluation.DeviationLevel;
-import com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluation.EvaluationConfidence;
-import com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluation.RatingLabel;
-import com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluation.StrategyEvaluation;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation.DeviationLevel;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation.EvaluationConfidence;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation.RatingLabel;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation.StrategyEvaluation;
 import com.guidinglight.nexusquant.research.domain.publish.BacktestEvaluationView;
 
 import java.math.BigDecimal;

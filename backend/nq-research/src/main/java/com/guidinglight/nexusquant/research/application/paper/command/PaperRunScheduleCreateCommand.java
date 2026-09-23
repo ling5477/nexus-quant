@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.research.application.paper;
+package com.guidinglight.nexusquant.research.application.paper.command;
 
 public record PaperRunScheduleCreateCommand(
         String paperRunId,

@@ -22,7 +22,7 @@ import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
 import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
 import com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest;
-import com.guidinglight.nexusquant.ledger.service.TradeLedgerPostingService;
+import com.guidinglight.nexusquant.ledger.application.service.TradeLedgerPostingService;
 import com.guidinglight.nexusquant.ledger.service.port.TradeLedgerPort;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;

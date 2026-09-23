@@ -1,21 +1,21 @@
 package com.guidinglight.nexusquant.research.application.paper.assembler;
 
-import com.guidinglight.nexusquant.research.application.paper.PaperAutoReview;
-import com.guidinglight.nexusquant.research.application.paper.PaperExecutionDiagnostics;
-import com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluation;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperAutoReview;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperExecutionDiagnostics;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation;
 
-import com.guidinglight.nexusquant.research.application.paper.PaperAutoReview.IssueCluster;
-import com.guidinglight.nexusquant.research.application.paper.PaperAutoReview.Overview;
-import com.guidinglight.nexusquant.research.application.paper.PaperAutoReview.PortfolioReview;
-import com.guidinglight.nexusquant.research.application.paper.PaperAutoReview.PublishReview;
-import com.guidinglight.nexusquant.research.application.paper.PaperAutoReview.RunReview;
-import com.guidinglight.nexusquant.research.application.paper.PaperAutoReview.StrategyReview;
-import com.guidinglight.nexusquant.research.application.paper.PaperExecutionDiagnostics.Cause;
-import com.guidinglight.nexusquant.research.application.paper.PaperExecutionDiagnostics.RunDiagnostics;
-import com.guidinglight.nexusquant.research.application.paper.PaperExecutionDiagnostics.Severity;
-import com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluation.DeviationLevel;
-import com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluation.PublishEvaluation;
-import com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluation.StrategyEvaluation;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperAutoReview.IssueCluster;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperAutoReview.Overview;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperAutoReview.PortfolioReview;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperAutoReview.PublishReview;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperAutoReview.RunReview;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperAutoReview.StrategyReview;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperExecutionDiagnostics.Cause;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperExecutionDiagnostics.RunDiagnostics;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperExecutionDiagnostics.Severity;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation.DeviationLevel;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation.PublishEvaluation;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation.StrategyEvaluation;
 
 import java.math.BigDecimal;
 import java.time.Instant;

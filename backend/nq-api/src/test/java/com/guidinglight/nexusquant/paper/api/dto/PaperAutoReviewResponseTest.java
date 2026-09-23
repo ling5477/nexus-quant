@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.guidinglight.nexusquant.research.application.paper.PaperAutoReview;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperAutoReview;
 
 import java.math.BigDecimal;
 import java.time.Instant;
