@@ -48,7 +48,7 @@ test.describe('backtest dataset binding', () => {
             response.url().includes(`/api/backtest-configs/${configId}/dataset`)
             && response.request().method() === 'PATCH',
         );
-        await page.getByRole('combobox', {name: 'Dataset'}).click();
+        await page.getByRole('combobox', {name: /数据集/}).click();
         await page.getByText(dataset.datasetName).click();
         await page.getByRole('button', {name: '绑定 Dataset'}).click();
         const bindResponse = await bindResponsePromise;
@@ -57,6 +57,6 @@ test.describe('backtest dataset binding', () => {
         expect(bound.datasetId).toBe(dataset.datasetId);
 
         await expect(page.getByText(dataset.datasetId).first()).toBeVisible({timeout: 60_000});
-        await expect(page.getByText('Dataset Snapshot')).toBeVisible();
+        await expect(page.getByText('数据集快照', {exact: true})).toBeVisible();
     });
 });

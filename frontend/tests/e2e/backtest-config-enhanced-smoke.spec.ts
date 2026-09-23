@@ -28,10 +28,10 @@ test.describe('GateI-2 backtest config enhanced smoke', () => {
             .getByRole('button', {name: '查看详情'})
             .click();
         await expect(page.getByText('回测配置详情')).toBeVisible();
-        await expect(page.getByText('Strategy Version Snapshot')).toBeVisible();
-        await expect(page.getByText('Param Snapshot')).toBeVisible();
-        await expect(page.getByText('Dataset Snapshot')).toBeVisible();
-        await expect(page.getByText('Config Snapshot JSON')).toBeVisible();
+        await expect(page.getByText('策略版本快照', {exact: true})).toBeVisible();
+        await expect(page.getByText('参数快照', {exact: true})).toBeVisible();
+        await expect(page.getByText('数据集快照', {exact: true})).toBeVisible();
+        await expect(page.getByText('配置快照 JSON', {exact: true})).toBeVisible();
         await expect(page.getByText(fixture.strategyVersionId).first()).toBeVisible();
         await expect(page.getByText(fixture.datasetId).first()).toBeVisible();
 
@@ -45,10 +45,10 @@ test.describe('GateI-2 backtest config enhanced smoke', () => {
 
         await expect(page.getByText('回测运行详情', {exact: true})).toBeVisible();
         await expect(page.getByText(run.backtestRunId)).toBeVisible({timeout: 60_000});
-        await expect(page.getByText('Strategy Version Snapshot').last()).toBeVisible();
-        await expect(page.getByText('Dataset Snapshot').last()).toBeVisible();
-        await expect(page.getByText('Param Snapshot').last()).toBeVisible();
-        await expect(page.getByText('Config Snapshot').last()).toBeVisible();
+        await expect(page.getByText('策略版本快照', {exact: true}).last()).toBeVisible();
+        await expect(page.getByText('数据集快照', {exact: true}).last()).toBeVisible();
+        await expect(page.getByText('参数快照', {exact: true}).last()).toBeVisible();
+        await expect(page.getByText('配置快照', {exact: true}).last()).toBeVisible();
         await expect(page.getByText(fixture.datasetId).last()).toBeVisible();
     });
 });
