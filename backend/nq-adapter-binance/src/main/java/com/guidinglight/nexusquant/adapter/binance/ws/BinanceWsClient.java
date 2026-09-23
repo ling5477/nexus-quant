@@ -3,9 +3,9 @@ package com.guidinglight.nexusquant.adapter.binance.ws;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceApiException;
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceRequestSigner;
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceRuntimeConfig;
+import com.guidinglight.nexusquant.adapter.binance.error.BinanceApiException;
+import com.guidinglight.nexusquant.adapter.binance.signing.BinanceRequestSigner;
+import com.guidinglight.nexusquant.adapter.binance.config.BinanceRuntimeConfig;
 
 import java.net.URI;
 import java.net.http.HttpClient;

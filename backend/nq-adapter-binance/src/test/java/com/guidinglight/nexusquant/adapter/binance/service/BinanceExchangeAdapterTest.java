@@ -1,5 +1,12 @@
 package com.guidinglight.nexusquant.adapter.binance.service;
 
+import com.guidinglight.nexusquant.adapter.binance.http.BinanceHttpClient;
+import com.guidinglight.nexusquant.adapter.binance.marketdata.BinanceExchangeInfoClient;
+import com.guidinglight.nexusquant.adapter.binance.marketdata.BinanceFiltersCache;
+import com.guidinglight.nexusquant.adapter.binance.signing.BinanceRequestSigner;
+import com.guidinglight.nexusquant.adapter.binance.trading.BinanceExchangeAdapter;
+import com.guidinglight.nexusquant.adapter.binance.trading.BinanceOrderTrimmer;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

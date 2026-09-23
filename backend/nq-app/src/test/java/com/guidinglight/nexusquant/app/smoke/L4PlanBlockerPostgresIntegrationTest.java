@@ -14,7 +14,7 @@ import com.guidinglight.nexusquant.trading.application.port.*;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterTradeReport;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
+import com.guidinglight.nexusquant.adapter.okx.trading.OkxExchangeAdapter;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentCanonicalEncoder;
 import com.guidinglight.nexusquant.scheduler.integration.LedgerModuleTradeLedgerGateway;
 import java.math.BigDecimal;

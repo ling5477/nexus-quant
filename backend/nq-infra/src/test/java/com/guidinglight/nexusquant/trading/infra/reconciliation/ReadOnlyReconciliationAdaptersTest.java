@@ -11,11 +11,11 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateEnvironment;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateOrderSnapshot;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadOperation;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadRequest;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadResult;
+import com.guidinglight.nexusquant.adapter.okx.auth.OkxPrivateEnvironment;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateOrderSnapshot;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadOperation;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadRequest;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadResult;
 import com.guidinglight.nexusquant.trading.application.reconciliation.ReconciliationRequest;
 import com.guidinglight.nexusquant.trading.application.reconciliation.RemoteSnapshotBatch;
 

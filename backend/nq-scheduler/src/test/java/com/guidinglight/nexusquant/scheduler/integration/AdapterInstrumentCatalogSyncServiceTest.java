@@ -8,10 +8,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceApiException;
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceExchangeAdapter;
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceFiltersCache;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
+import com.guidinglight.nexusquant.adapter.binance.error.BinanceApiException;
+import com.guidinglight.nexusquant.adapter.binance.trading.BinanceExchangeAdapter;
+import com.guidinglight.nexusquant.adapter.binance.marketdata.BinanceFiltersCache;
+import com.guidinglight.nexusquant.adapter.okx.trading.OkxExchangeAdapter;
 import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService;
 
 import java.time.Clock;

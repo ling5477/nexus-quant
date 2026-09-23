@@ -11,8 +11,8 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceApiCredentials;
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceRequestSigner;
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceRuntimeConfig;
+import com.guidinglight.nexusquant.adapter.binance.signing.BinanceRequestSigner;
+import com.guidinglight.nexusquant.adapter.binance.config.BinanceRuntimeConfig;
 
 import java.net.URI;
 import java.net.http.WebSocket;

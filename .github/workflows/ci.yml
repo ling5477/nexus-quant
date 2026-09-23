@@ -1342,7 +1342,7 @@ jobs:
           placeholder='REPLACE_WITH_LOCAL|CHANGE_ME|DUMMY|dummy|FAKE|fake|test-only|example|EXAMPLE|placeholder|PLACEHOLDER|YOUR_|\$\{|getenv|process\.env|import\.meta\.env|Zm9v|<[A-Za-z]'
 
           # Precise allowlist: PEM-material rule on the 4 known Binance fake-key / protocol-constant files.
-          allow_pem='(adapter/binance/service/BinanceRuntimeConfigTest\.java|adapter/binance/service/BinanceRequestSignerTest\.java|adapter/binance/service/BinanceHttpClientTest\.java|adapter/binance/service/BinanceEd25519RequestSigner\.java)$'
+          allow_pem='(adapter/binance/service/BinanceRuntimeConfigTest\.java|adapter/binance/service/BinanceRequestSignerTest\.java|adapter/binance/service/BinanceHttpClientTest\.java|adapter/binance/signing/BinanceEd25519RequestSigner\.java)$'
 
           while IFS=' ' read -r name re; do
             [ -z "${name}" ] && continue

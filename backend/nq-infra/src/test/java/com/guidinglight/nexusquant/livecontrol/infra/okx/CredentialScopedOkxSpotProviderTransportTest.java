@@ -7,9 +7,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateRealTransport;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderOperation;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport;
+import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateRealTransport;
+import com.guidinglight.nexusquant.adapter.okx.provider.model.OkxSpotProviderOperation;
+import com.guidinglight.nexusquant.adapter.okx.provider.OkxSpotProviderTransport;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
 import com.guidinglight.nexusquant.livecontrol.domain.port.LiveControlRepository;
 

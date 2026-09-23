@@ -1,5 +1,8 @@
 package com.guidinglight.nexusquant.adapter.okx.service;
 
+import com.guidinglight.nexusquant.adapter.okx.http.OkxHttpClient;
+import com.guidinglight.nexusquant.adapter.okx.signing.OkxRequestSigner;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.databind.ObjectMapper;

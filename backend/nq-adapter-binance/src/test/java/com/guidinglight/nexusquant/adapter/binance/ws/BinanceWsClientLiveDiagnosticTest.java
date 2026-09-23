@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceApiCredentials;
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceRequestSigner;
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceRuntimeConfig;
+import com.guidinglight.nexusquant.adapter.binance.signing.BinanceRequestSigner;
+import com.guidinglight.nexusquant.adapter.binance.config.BinanceRuntimeConfig;
 
 import java.net.URI;
 import java.net.http.HttpClient;

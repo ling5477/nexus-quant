@@ -2,7 +2,7 @@ package com.guidinglight.nexusquant.app.config.livecontrol;
 
 import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClient;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsClient;
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
 import com.guidinglight.nexusquant.livecontrol.application.PilotPrerequisiteObservationAuthority;
 import com.guidinglight.nexusquant.livecontrol.deployment.WorkerDeploymentAdmissionService;

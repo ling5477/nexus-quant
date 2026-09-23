@@ -2,7 +2,7 @@ package com.guidinglight.nexusquant.scheduler.recovery;
 
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOpenOrdersQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceExchangeAdapter;
+import com.guidinglight.nexusquant.adapter.binance.trading.BinanceExchangeAdapter;
 import com.guidinglight.nexusquant.contracts.event.AuditRecorded;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;

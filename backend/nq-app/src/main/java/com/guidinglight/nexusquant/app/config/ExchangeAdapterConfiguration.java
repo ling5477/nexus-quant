@@ -1,15 +1,15 @@
 package com.guidinglight.nexusquant.app.config;
 
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceExchangeAdapter;
+import com.guidinglight.nexusquant.adapter.binance.trading.BinanceExchangeAdapter;
 import com.guidinglight.nexusquant.adapter.api.service.AdapterReadinessService;
 import com.guidinglight.nexusquant.adapter.api.service.DefaultAdapterReadinessService;
 import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClient;
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsEventMapper;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxBootstrapFallbackFactory;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxWsEventMapper;
+import com.guidinglight.nexusquant.adapter.okx.config.OkxBootstrapFallbackFactory;
+import com.guidinglight.nexusquant.adapter.okx.trading.OkxExchangeAdapter;
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsClient;
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsEventMapper;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -6,8 +6,8 @@ import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredential
 import com.guidinglight.nexusquant.account.infra.okx.readonly.JdbcOkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateReadonlyProbeService;
-import com.guidinglight.nexusquant.adapter.okx.service.JdkOkxPrivateReadTransport;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadTransport;
+import com.guidinglight.nexusquant.adapter.okx.privateread.transport.JdkOkxPrivateReadTransport;
+import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateReadTransport;
 import com.guidinglight.nexusquant.app.config.CapabilityPropertyResolver;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialCapabilityPolicy;

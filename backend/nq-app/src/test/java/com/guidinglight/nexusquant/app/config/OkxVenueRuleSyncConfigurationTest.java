@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxVenueRuleFactsReader;
+import com.guidinglight.nexusquant.adapter.okx.marketdata.OkxVenueRuleFactsReader;
 import com.guidinglight.nexusquant.app.marketdata.OkxVenueRuleFactsSyncService;
 import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService;
 import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogUpsertStats;

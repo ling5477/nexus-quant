@@ -11,7 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.account.application.CredentialPermissionProbeService;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateRealTransport;
+import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateRealTransport;
 import com.guidinglight.nexusquant.app.config.livecontrol.ExactPilotBindingConfiguration;
 import com.guidinglight.nexusquant.app.config.livecontrol.MinimalLivePilotConfiguration;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;

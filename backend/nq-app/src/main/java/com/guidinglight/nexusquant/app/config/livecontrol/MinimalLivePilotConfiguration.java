@@ -5,9 +5,9 @@ import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository
 import com.guidinglight.nexusquant.account.application.CredentialPermissionProbeService;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.jdbc.CanonicalLegacyAccountBridgeService;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadTransport;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotEndpointGuard;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderAdapter;
+import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateReadTransport;
+import com.guidinglight.nexusquant.adapter.okx.provider.OkxSpotEndpointGuard;
+import com.guidinglight.nexusquant.adapter.okx.provider.OkxSpotProviderAdapter;
 import com.guidinglight.nexusquant.livecontrol.application.LiveSessionControlService;
 import com.guidinglight.nexusquant.livecontrol.application.MinimalLivePilotCommand;
 import com.guidinglight.nexusquant.livecontrol.application.MinimalLivePilotControlPlane;

@@ -6,8 +6,8 @@ import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredential
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateReadonlyProbeService;
 import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadTransport;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
+import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateReadTransport;
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsClient;
 import com.guidinglight.nexusquant.app.config.ExchangeAdapterConfiguration;
 import com.guidinglight.nexusquant.risk.application.command.KillSwitchEngageCommand;
 import com.guidinglight.nexusquant.risk.domain.model.KillSwitchScope;

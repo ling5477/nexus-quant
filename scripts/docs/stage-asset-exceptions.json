@@ -3,7 +3,7 @@
   "exceptions": [
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "02e4ab025000ca1c2962d8b0ce67c1df362b2da3d52b707ca728c577c869c083",
+      "sha256": "dd39b346977f7d55a5274ad3fdc20eff39e5e111c07e9895ec4a5041e07fc73c",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",
@@ -42,8 +42,8 @@
       "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
-      "path": "backend/nq-adapter-binance/src/main/java/com/guidinglight/nexusquant/adapter/binance/service/BinanceHistoricalKlineAdapter.java",
-      "sha256": "d12877d85d69d69d2a3e6024e9d947fda8392b395e5a09b35b241c1c1841ce3b",
+      "path": "backend/nq-adapter-binance/src/main/java/com/guidinglight/nexusquant/adapter/binance/marketdata/BinanceHistoricalKlineAdapter.java",
+      "sha256": "e244a5a7f138de55af67d5db38ff6c0e0cafa7c51579e4661c9a932f2496f987",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -58,8 +58,8 @@
       "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
-      "path": "backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/service/OkxHistoricalKlineAdapter.java",
-      "sha256": "f1c916490bbd06fa584826ce95e928404b1e48f3e5590aa575059fa59e3c4075",
+      "path": "backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/marketdata/OkxHistoricalKlineAdapter.java",
+      "sha256": "1eebea80fe4f8e25c401382b58ef8a61e1a21d247dd582cf660b8ee90d0ae105",
       "kind": "HISTORICAL_METADATA",
       "reason": "Only pre-existing diagnostic messages retain historical provenance. Bean registration uses the existing manual public outbound capability profile and enablement property; no active stage selector.",
       "owner": "Module owner",
@@ -451,7 +451,7 @@
     },
     {
       "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/OkxVenueRuleSyncConfiguration.java",
-      "sha256": "5dc67585e72e8a46306e1adf250f1604afdfabe6a7145fdb35b521e2235d335f",
+      "sha256": "f99f68a4a711da3e156ef120c041383ee77d12e51ced7e6635f8b90b66f7ab29",
       "kind": "RETIRED_INPUT_REJECTION",
       "reason": "Retired input names occur only as deny-only keys or persisted permission expectation; old profiles/keys cannot select runtime composition.",
       "owner": "Runtime configuration owner",
@@ -475,7 +475,7 @@
     },
     {
       "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/account/OkxPrivateReadOnlyDiagnosticsConfiguration.java",
-      "sha256": "de6f30e11dba12292da738d2182e23c703cc998b289ee3253129c0bb55604da1",
+      "sha256": "6b354cd6c8a4833b5eab7f17a5a47f8d9fb5d2e0d3ebb772c37e33c5730f22b1",
       "kind": "RETIRED_INPUT_REJECTION",
       "reason": "Retired input names occur only as deny-only keys or persisted permission expectation; old profiles/keys cannot select runtime composition.",
       "owner": "Runtime configuration owner",
@@ -491,7 +491,7 @@
     },
     {
       "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-      "sha256": "cea94f5ac59e844c8ac3a2aa0d147d7f5666bbc7aa3c063cb535467a540bfab3",
+      "sha256": "2b221d1f8ebf9ff031d22051ad5f3bbf2e83d37bb30929945546966862c5b502",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-app / MinimalLivePilotConfiguration contract owner",
@@ -531,7 +531,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/ExchangeAdapterConfigurationReadinessTest.java",
-      "sha256": "de8b78fac8e2e0c495178ac8a59853f7c31e9dfb079b9c1635e2fbda866a4b55",
+      "sha256": "cff72bf701231370ffc338282fead6b528b2928ce60ee8a64fdfcb4f50e4921d",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -539,7 +539,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/OkxVenueRuleSyncConfigurationTest.java",
-      "sha256": "ce954e2a41ee2ab4b85281bb60880463d703939dd3e982d84626f45b8df4c2a6",
+      "sha256": "a424940b2df345177cd22abe8d31c29fe7db75f3efed5413dfb08847cee6b00d",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -555,7 +555,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/account/OkxPrivateReadOnlyDiagnosticsConfigurationTest.java",
-      "sha256": "2f2b5e18cdca29c5c43858db12512336a7299d4e396d7e178e49a753de18db00",
+      "sha256": "9310de437518d083c8f70465a248da04125213414c8296fa35268324547151ce",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -659,7 +659,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/TradingVenueGatewayReadinessRuntimeSmokeTest.java",
-      "sha256": "c9e9ed89fb9e9972b698685aea8ba25df85aea53f306500a6bd33ec55fbe4bbe",
+      "sha256": "896882631e0131750e027af6c5144888996fae974de4a6d1d84da49a4a111608",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -947,7 +947,7 @@
     },
     {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/account/infra/probe/OkxRealReadonlyPermissionProbePort.java",
-      "sha256": "2aa69843e6d14fcc61b005312a32bc6685f12ace5d840b98c7901c4a50c26d17",
+      "sha256": "4120abe618b67443291ebda6a4b09a070f1d7f96d6dada1a76771163e92373fa",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-infra / OkxRealReadonlyPermissionProbePort contract owner",
@@ -979,7 +979,7 @@
     },
     {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/okx/OkxPilotPrerequisiteObservationAuthority.java",
-      "sha256": "2ad7c23cd7cf01cde6f98d935c7031348a0112584bdb4be6e314003d07bf5e1c",
+      "sha256": "fca166cad86bb15817aa5f84e417d923dcea7facf2b31cd9546624c339ca0413",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-infra / OkxPilotPrerequisiteObservationAuthority contract owner",
@@ -987,7 +987,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/account/infra/probe/OkxRealReadonlyPermissionProbePortTest.java",
-      "sha256": "39d84029fe4d700ccb0d9ab568528612900f647eb774df45faf0fef106c0bcc8",
+      "sha256": "017ac2dffb767d122aaf67647c3ce38605abfda8de7ff16b2eabc3203a23b39f",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -1139,7 +1139,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/okx/OkxPilotPrerequisiteObservationAuthorityTest.java",
-      "sha256": "aa3e1fcb38b9aeec096fd4d65dab81cfa8bcb15c2e6338c600c1b16bc63e83e4",
+      "sha256": "b04292fa4d056c1abb6a5359f9e42f3c1fb0a9daa54ac233a89541b4dae76a5b",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -1227,7 +1227,7 @@
     },
     {
       "path": "backend/nq-scheduler/src/test/java/com/guidinglight/nexusquant/scheduler/integration/AdapterInstrumentCatalogSyncServiceTest.java",
-      "sha256": "c3d64482a49b3c95d0b814e34187388813676302537b7dabf7709b030bd82f80",
+      "sha256": "02d2ffba4c331c90f5bf8fa3f2d5ce7289776aba989f11ccdcb835aae73e9d08",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",

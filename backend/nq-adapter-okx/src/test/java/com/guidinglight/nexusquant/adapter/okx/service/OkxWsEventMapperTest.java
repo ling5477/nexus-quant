@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.adapter.okx.service;
 
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsEventMapper;
+
 import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsBusinessMessage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

@@ -2,10 +2,10 @@ package com.guidinglight.nexusquant.livecontrol.infra.okx;
 
 import com.guidinglight.nexusquant.account.infra.okx.readonly.JdbcOkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateEnvironment;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadTransport;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateRealTransport;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport;
+import com.guidinglight.nexusquant.adapter.okx.auth.OkxPrivateEnvironment;
+import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateReadTransport;
+import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateRealTransport;
+import com.guidinglight.nexusquant.adapter.okx.provider.OkxSpotProviderTransport;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
 import com.guidinglight.nexusquant.livecontrol.domain.port.LiveControlRepository;

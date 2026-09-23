@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceApiCredentials;
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceApiException;
+import com.guidinglight.nexusquant.adapter.binance.error.BinanceApiException;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 

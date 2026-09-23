@@ -7,9 +7,9 @@ import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialVerif
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialVerifier;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceApiCredentials;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceKeyType;
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceRequestSigner;
+import com.guidinglight.nexusquant.adapter.binance.signing.BinanceRequestSigner;
 import com.guidinglight.nexusquant.adapter.okx.model.OkxApiCredentials;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxRequestSigner;
+import com.guidinglight.nexusquant.adapter.okx.signing.OkxRequestSigner;
 
 import java.time.Instant;
 import java.util.Locale;

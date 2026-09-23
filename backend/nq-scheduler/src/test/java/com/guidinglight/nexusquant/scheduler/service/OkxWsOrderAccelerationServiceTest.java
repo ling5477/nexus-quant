@@ -8,7 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.guidinglight.nexusquant.adapter.okx.service.OkxWsEventMapper;
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsEventMapper;
 import com.guidinglight.nexusquant.contracts.event.CancelAck;
 import com.guidinglight.nexusquant.contracts.event.CancelReject;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;

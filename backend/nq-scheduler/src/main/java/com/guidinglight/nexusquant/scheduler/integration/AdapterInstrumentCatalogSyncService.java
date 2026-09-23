@@ -1,10 +1,10 @@
 package com.guidinglight.nexusquant.scheduler.integration;
 
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceSymbolFilters;
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceApiException;
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceExchangeAdapter;
+import com.guidinglight.nexusquant.adapter.binance.error.BinanceApiException;
+import com.guidinglight.nexusquant.adapter.binance.trading.BinanceExchangeAdapter;
 import com.guidinglight.nexusquant.adapter.okx.model.OkxInstrument;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
+import com.guidinglight.nexusquant.adapter.okx.trading.OkxExchangeAdapter;
 import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService;
 import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogSyncResult;
 import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogSyncService;

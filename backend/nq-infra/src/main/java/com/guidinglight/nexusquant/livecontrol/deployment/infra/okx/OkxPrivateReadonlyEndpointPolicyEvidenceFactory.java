@@ -2,8 +2,8 @@ package com.guidinglight.nexusquant.livecontrol.deployment.infra.okx;
 
 import com.guidinglight.nexusquant.adapter.api.model.EndpointPolicyDecision;
 import com.guidinglight.nexusquant.adapter.api.model.ExchangeCapability;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadRequest;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotEndpointGuard;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadRequest;
+import com.guidinglight.nexusquant.adapter.okx.provider.OkxSpotEndpointGuard;
 import com.guidinglight.nexusquant.livecontrol.deployment.PrivateReadonlyDiagnosticEndpointContract;
 import com.guidinglight.nexusquant.livecontrol.deployment.WorkerDeploymentEvidence.EndpointEvidence;
 import java.util.List;

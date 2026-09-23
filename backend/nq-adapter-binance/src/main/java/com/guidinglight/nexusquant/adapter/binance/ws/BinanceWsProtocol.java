@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.adapter.binance.ws;
 
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceApiException;
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceRuntimeConfig;
+import com.guidinglight.nexusquant.adapter.binance.error.BinanceApiException;
+import com.guidinglight.nexusquant.adapter.binance.config.BinanceRuntimeConfig;
 
 /**
  * BinanceWsProtocol 负责 Binance 私有 WS 的最小协议辅助。

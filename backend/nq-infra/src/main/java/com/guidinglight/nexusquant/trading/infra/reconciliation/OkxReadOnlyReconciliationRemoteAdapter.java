@@ -1,11 +1,11 @@
 package com.guidinglight.nexusquant.trading.infra.reconciliation;
 
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateEnvironment;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateFillSnapshot;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateOrderSnapshot;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadRequest;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadResult;
+import com.guidinglight.nexusquant.adapter.okx.auth.OkxPrivateEnvironment;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateFillSnapshot;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateOrderSnapshot;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadRequest;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadResult;
 import com.guidinglight.nexusquant.trading.application.reconciliation.ReconciliationRequest;
 import com.guidinglight.nexusquant.trading.application.reconciliation.RemoteOrderSnapshot;
 import com.guidinglight.nexusquant.trading.application.reconciliation.RemoteOrderSnapshotReadPort;

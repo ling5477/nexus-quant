@@ -5,7 +5,7 @@ import com.guidinglight.nexusquant.livecontrol.deployment.WorkerOperationSafetyG
 import com.guidinglight.nexusquant.livecontrol.deployment.KillSwitchPropagationPolicy;
 import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialCapabilityPolicy;
 import com.guidinglight.nexusquant.livecontrol.deployment.infra.okx.OkxPrivateReadonlyEndpointPolicyEvidenceFactory;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotEndpointGuard;
+import com.guidinglight.nexusquant.adapter.okx.provider.OkxSpotEndpointGuard;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 import com.guidinglight.nexusquant.strategy.strategyrelease.artifact.TrustedRootStrategyArtifactVerifier;
 import com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReader;

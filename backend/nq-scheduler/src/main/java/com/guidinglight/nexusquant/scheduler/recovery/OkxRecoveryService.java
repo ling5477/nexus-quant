@@ -2,8 +2,8 @@ package com.guidinglight.nexusquant.scheduler.recovery;
 
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxRuntimeConfig;
+import com.guidinglight.nexusquant.adapter.okx.trading.OkxExchangeAdapter;
+import com.guidinglight.nexusquant.adapter.okx.config.OkxRuntimeConfig;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
