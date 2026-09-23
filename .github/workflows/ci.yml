@@ -1272,7 +1272,7 @@ jobs:
             '''.*adapter[\\/]binance[\\/]service[\\/]BinanceRuntimeConfigTest\.java$''',
             '''.*adapter[\\/]binance[\\/]service[\\/]BinanceRequestSignerTest\.java$''',
             '''.*adapter[\\/]binance[\\/]service[\\/]BinanceHttpClientTest\.java$''',
-            '''.*adapter[\\/]binance[\\/]service[\\/]BinanceEd25519RequestSigner\.java$''',
+            '''.*adapter[\\/]binance[\\/]signing[\\/]BinanceEd25519RequestSigner\.java$''',
             # Frozen Gate-C diagnostic record: generic-api-key false positive on a non-secret
             # WebSocket client request UUID (client.request.id, ~line 325); the credential
             # fingerprint there is already masked. docs/gates is an immutable frozen archive.
