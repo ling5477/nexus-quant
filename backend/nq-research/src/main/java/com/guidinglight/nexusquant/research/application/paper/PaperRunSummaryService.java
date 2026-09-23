@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.research.application.paper;
 
+import com.guidinglight.nexusquant.research.application.paper.assembler.PaperRunSummaryAssembler;
+
 import com.guidinglight.nexusquant.research.domain.paper.PaperTradingRun;
 
 import java.time.Clock;

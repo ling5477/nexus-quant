@@ -1,4 +1,7 @@
-package com.guidinglight.nexusquant.research.application.paper;
+package com.guidinglight.nexusquant.research.application.paper.assembler;
+
+import com.guidinglight.nexusquant.research.application.paper.PaperPortfolioSummary;
+import com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluation;
 
 import com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluation.BacktestDeviation;
 import com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluation.DeviationLevel;

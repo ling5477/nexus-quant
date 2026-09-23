@@ -1,4 +1,8 @@
-package com.guidinglight.nexusquant.research.application.paper;
+package com.guidinglight.nexusquant.research.application.paper.assembler;
+
+import com.guidinglight.nexusquant.research.application.paper.PaperAutoReview;
+import com.guidinglight.nexusquant.research.application.paper.PaperExecutionDiagnostics;
+import com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluation;
 
 import com.guidinglight.nexusquant.research.application.paper.PaperAutoReview.IssueCluster;
 import com.guidinglight.nexusquant.research.application.paper.PaperAutoReview.Overview;

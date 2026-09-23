@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.research.application.paper;
 
+import com.guidinglight.nexusquant.research.application.paper.assembler.PaperStrategyEvaluationAssembler;
+
 import com.guidinglight.nexusquant.research.domain.BacktestPublishRecord;
 import com.guidinglight.nexusquant.research.domain.port.BacktestPublishRecordRepository;
 import com.guidinglight.nexusquant.research.domain.publish.BacktestEvaluationView;

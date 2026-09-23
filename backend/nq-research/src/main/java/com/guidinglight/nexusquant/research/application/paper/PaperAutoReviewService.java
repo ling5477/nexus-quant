@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.research.application.paper;
 
+import com.guidinglight.nexusquant.research.application.paper.assembler.PaperAutoReviewAssembler;
+
 import java.time.Instant;
 import java.util.Objects;
 

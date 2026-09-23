@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.research.application.paper;
 
+import com.guidinglight.nexusquant.research.application.paper.assembler.PaperExecutionDiagnosticsAssembler;
+
 import java.util.Objects;
 
 import org.springframework.stereotype.Service;
