@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.strategy.api.dto;
 
-import com.guidinglight.nexusquant.strategy.application.consistencyevidence.ConsistencyEvidenceOverviewReadModel;
+import com.guidinglight.nexusquant.strategy.application.consistencyevidence.model.ConsistencyEvidenceOverviewReadModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;

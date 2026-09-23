@@ -1,14 +1,14 @@
 package com.guidinglight.nexusquant.strategy.infra.jdbc;
 
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonFactRepository;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonFacts;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonFacts.DatasetFact;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonFacts.EvaluationFact;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonFacts.PaperRunFact;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonFacts.PublishTraceFact;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonFacts.ShadowRunFact;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonFacts.StrategyVersionFact;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonQuery;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.port.PaperShadowComparisonFactRepository;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonFacts;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonFacts.DatasetFact;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonFacts.EvaluationFact;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonFacts.PaperRunFact;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonFacts.PublishTraceFact;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonFacts.ShadowRunFact;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonFacts.StrategyVersionFact;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonQuery;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.livecontrol.infra;
 
-import com.guidinglight.nexusquant.account.application.CredentialPermissionProbeService;
+import com.guidinglight.nexusquant.account.application.service.CredentialPermissionProbeService;
 import com.guidinglight.nexusquant.account.application.command.CredentialPermissionProbeCommand;
 import com.guidinglight.nexusquant.account.domain.CredentialPermissionProbeSummary;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;

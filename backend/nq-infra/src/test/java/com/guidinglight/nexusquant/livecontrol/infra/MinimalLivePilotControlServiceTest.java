@@ -10,7 +10,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.guidinglight.nexusquant.account.application.CredentialPermissionProbeService;
+import com.guidinglight.nexusquant.account.application.service.CredentialPermissionProbeService;
 import com.guidinglight.nexusquant.account.application.command.CredentialPermissionProbeCommand;
 import com.guidinglight.nexusquant.account.domain.CredentialPermissionProbeSummary;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;

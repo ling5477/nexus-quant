@@ -2,7 +2,7 @@ package com.guidinglight.nexusquant.monitoring.api.web;
 
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.monitoring.application.incidentreview.IncidentReplayReviewOverviewQueryService;
+import com.guidinglight.nexusquant.monitoring.application.incidentreview.service.IncidentReplayReviewOverviewQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

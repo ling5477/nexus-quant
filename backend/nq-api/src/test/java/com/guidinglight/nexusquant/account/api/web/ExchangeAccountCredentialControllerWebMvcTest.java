@@ -10,9 +10,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.guidinglight.nexusquant.account.application.CredentialPermissionProbeService;
-import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialCommandService;
-import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialVerificationService;
+import com.guidinglight.nexusquant.account.application.service.CredentialPermissionProbeService;
+import com.guidinglight.nexusquant.account.application.service.ExchangeAccountCredentialCommandService;
+import com.guidinglight.nexusquant.account.application.service.ExchangeAccountCredentialVerificationService;
 import com.guidinglight.nexusquant.account.domain.CredentialPermissionProbeSummary;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialSummary;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;

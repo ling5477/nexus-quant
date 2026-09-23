@@ -8,9 +8,9 @@ import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountCredentialLife
 import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountCredentialRotateRequestBody;
 import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountCredentialSummaryResponse;
 import com.guidinglight.nexusquant.account.api.dto.ExchangeAccountCredentialUpsertRequestBody;
-import com.guidinglight.nexusquant.account.application.CredentialPermissionProbeService;
-import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialCommandService;
-import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialVerificationService;
+import com.guidinglight.nexusquant.account.application.service.CredentialPermissionProbeService;
+import com.guidinglight.nexusquant.account.application.service.ExchangeAccountCredentialCommandService;
+import com.guidinglight.nexusquant.account.application.service.ExchangeAccountCredentialVerificationService;
 import com.guidinglight.nexusquant.account.application.command.CredentialPermissionProbeCommand;
 import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
 import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCredentialRotateCommand;

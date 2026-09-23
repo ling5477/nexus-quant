@@ -4,8 +4,8 @@ import com.guidinglight.nexusquant.scheduler.recovery.BinanceRecoveryService;
 import com.guidinglight.nexusquant.scheduler.recovery.BinanceRestReconcileService;
 import com.guidinglight.nexusquant.scheduler.recovery.OkxRestReconcileService;
 
-import com.guidinglight.nexusquant.trading.application.RecoveryReport;
-import com.guidinglight.nexusquant.trading.application.RecoveryService;
+import com.guidinglight.nexusquant.trading.application.model.RecoveryReport;
+import com.guidinglight.nexusquant.trading.application.service.RecoveryService;
 import com.guidinglight.nexusquant.trading.application.maintenance.TradingMaintenanceService;
 
 import com.guidinglight.nexusquant.trading.domain.TradingVenue;

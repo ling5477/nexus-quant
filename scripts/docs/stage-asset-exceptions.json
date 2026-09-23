@@ -99,7 +99,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/monitoring/api/web/IncidentReplayReviewOverviewController.java",
-      "sha256": "6f7eec17283ce500cd3d29f8bd9edfe8135a3ac833fd9ca2dcabef031a443e5a",
+      "sha256": "cf67b12c577d8e99d82dc8ff1e4a62b81e5a61ea34378adb9e13893667429cea",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -107,7 +107,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/monitoring/api/web/IncidentReplayReviewOverviewResponse.java",
-      "sha256": "64947c42ef08d11415e7ae21b0ed91924d7b1e519d86fbcf275b62da8b22adf4",
+      "sha256": "add534eb77b8f6b84a2acbb84f3c9168562a864306e3d57e4d4c96338375da7c",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -219,7 +219,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/web/PythonEvaluationArtifactBindingPreviewController.java",
-      "sha256": "d42107d3d7ae297239344cf22bbb14eedd70f672c7899b6f0dcbfa7575c9e5d9",
+      "sha256": "3ccdaf2f146ce99e7da5d3a96aa48cf6d93f4b6f5dc3ee80d6bafa1669059262",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -227,7 +227,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ConsistencyEvidenceOverviewController.java",
-      "sha256": "7b679d5dc0f6c032a6ad8bdac3c3069f6a2b5abc94e4d36a1c68416fb7288115",
+      "sha256": "fb92b83bf607e63ce34165b3d10cff91b9c7a2e83ddf0bf1fcdc603b358e7c1f",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -235,7 +235,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/dto/ConsistencyEvidenceOverviewResponse.java",
-      "sha256": "94976a3a3cdb6e538cb97e62e556f66c740d3865455810b50bcebcf36b33313a",
+      "sha256": "49dac599440841a613d73cd7ffd54d1248450b3aa474f0238c1c98087b31963d",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -243,7 +243,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/PaperShadowComparisonController.java",
-      "sha256": "a8cccff462e933b0ef1ee788529c89eca1312438a50fa7d9b70f289aa8ba1ad8",
+      "sha256": "f37890ca6180c93c0170a36b4d83ce17d0603e55346965fde27e18598ec05b0a",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -267,7 +267,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/PythonEvaluationArtifactPreviewOverviewController.java",
-      "sha256": "d1dae9a99cdd3bf5b9ead6f46cd4d2e3e68eb7ce0a7013947bb4108e2795c962",
+      "sha256": "53058a5b3fa3b49565a6879e19f1a52dc30d7f75849adbeb6d8403febc5f6e55",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -275,7 +275,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/dto/PythonEvaluationArtifactPreviewOverviewResponse.java",
-      "sha256": "74f108c30410c43e98e08f45b118b2da29490b916a3ced893f496ad37cecb6f6",
+      "sha256": "71d893bb8841c0bb367034d451a6ee004e44cb4664add64d498e4b63651e4618",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -291,7 +291,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ShadowLivePreviewController.java",
-      "sha256": "92fbf4b1369d8c08f4c51371bf080fef34f4142258abd0629bdd3b45c54c77de",
+      "sha256": "69d9a0b3612ed17a3d2fb929afce2a99c90a38c0c3d0f7c155398b5eaa033fff",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -355,7 +355,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ShadowValidationWorkflowOverviewController.java",
-      "sha256": "437df137ce52a7f030c67f1ae84cdc4a4e4c47404d71f2758077b21f7f0f73c8",
+      "sha256": "ab5383d85cc27a67aca6baef3a555f0052093f672a5b999bc5355b2adb7bec20",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -363,7 +363,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/dto/ShadowValidationWorkflowOverviewResponse.java",
-      "sha256": "b2af157a95e794c38ab12dc5a9f2ccddd573c71a43a40d4707458b0d47dfc8fe",
+      "sha256": "b9e3a20098358427afa586f584bcfa606371958c71dc764f2d9747cad19d1d7c",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -403,7 +403,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/validationreview/api/web/ValidationReviewController.java",
-      "sha256": "a302c9d8ae7f43f0e130a831f5c3802d6afcb6f0d7aff210bab1aa065061b32e",
+      "sha256": "6248aaf208ae56170f488142b4291b80c989da5d945f65d9d5fd3b19b418e54c",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -419,7 +419,7 @@
     },
     {
       "path": "backend/nq-api/src/test/java/com/guidinglight/nexusquant/research/api/web/PythonEvaluationArtifactBindingPreviewControllerTest.java",
-      "sha256": "1cadc848ee45cd2e748415575c791af87008b7e3f9ff070e582fbb0ec25287c8",
+      "sha256": "15ccd7e600dc0bd80fe19ae0c78c034d69f835c3b18e9a7537ef16a59becec83",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -435,7 +435,7 @@
     },
     {
       "path": "backend/nq-api/src/test/java/com/guidinglight/nexusquant/strategy/api/web/PythonEvaluationArtifactPreviewOverviewControllerTest.java",
-      "sha256": "380fea3af559cdc935435edf63734c819574a844989114dd18d8e39d9af77983",
+      "sha256": "75bd10947467433c107d3efac592a56059a5ca38ce3cb5ba616feae94ecc8bbe",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -443,7 +443,7 @@
     },
     {
       "path": "backend/nq-api/src/test/java/com/guidinglight/nexusquant/trading/api/web/TradingPreflightControllerTest.java",
-      "sha256": "ec4cc76ab956acdad8fc15826b6557fc8fde47a110416a1a36528b7b98ab6b69",
+      "sha256": "1cb80f644abd4c8a78e2199b88412333bbfbbf2c7643e446858deea95d9ea726",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -467,7 +467,7 @@
     },
     {
       "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/account/AccountModuleConfiguration.java",
-      "sha256": "5c7a6265f78a8c1b75c18efbdaa2bf6f99237240e7b3bc309d9442181a028b8a",
+      "sha256": "e9445ef296c95d3ae3ea92f0a0ea24a82e403b1fd633a42b3cf1e82ac5171fdd",
       "kind": "RETIRED_INPUT_REJECTION",
       "reason": "Retired input names occur only as deny-only keys or persisted permission expectation; old profiles/keys cannot select runtime composition.",
       "owner": "Runtime configuration owner",
@@ -491,7 +491,7 @@
     },
     {
       "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-      "sha256": "7d65703d97b6317e5e9832dd1a7b0242d4112ec76c5c5c0d77f5415a38355973",
+      "sha256": "b8f648fdb132004988e4d242a6d09120936ded4d941571748f457470a3aa707c",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-app / MinimalLivePilotConfiguration contract owner",
@@ -659,7 +659,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/TradingVenueGatewayReadinessRuntimeSmokeTest.java",
-      "sha256": "9e500a685c879a8fe6e5cd0f7ecdb702a4c1bcf621cd5fdd02f4060f46564a1b",
+      "sha256": "2bae74e5cd3316ccc6987bd18dd0aeb03709c3f03e417d5bc3297c52f0d88a5d",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -738,8 +738,8 @@
       "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
-      "sha256": "c6c0b07758cd38f169eb15663f076c95ae071406b42f9e6798fef4dd5a2d8e76",
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
+      "sha256": "5a7aca2f7e2c5d0ba963250fe6426f5e23edc8a7171db9804fad40619d9f72d1",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-core / CredentialPermissionProbeService contract owner",
@@ -770,24 +770,24 @@
       "removalTrigger": "Only when the financial/safety contract itself is superseded."
     },
     {
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/application/MarketdataDatasetService.java",
-      "sha256": "d5b69f0225715b2114310befbe997214ee8872c4d0306b55741df5f8617b846c",
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/application/service/MarketdataDatasetService.java",
+      "sha256": "03f33e3d8043e32f8c7f152f7b3e73c209382dd5ccf4dd0cfc75f17284196719",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
       "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/application/MarketdataIngestionService.java",
-      "sha256": "d6d66c7ab604d629260a6b91d892694ce2dd6c25edd4250d3f3ccde54a50dca0",
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/application/service/MarketdataIngestionService.java",
+      "sha256": "80d503803edfee6ddd58a9b43f0d530b4d3caffb850348805110b7214ce36e07",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
       "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/IncidentReplayReviewOverviewQueryService.java",
-      "sha256": "c4905c38c001da7a37808a8bc2d8b5c7e21a3c1302171dba0b2d07422713c16a",
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/service/IncidentReplayReviewOverviewQueryService.java",
+      "sha256": "e6d756bf8ce71eaca0140062ec41a30fb89cfc94721d269987151e3d83a2a58d",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-core / IncidentReplayReviewOverviewQueryService contract owner",
@@ -810,8 +810,8 @@
       "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/PythonEvaluationArtifactPreviewOverviewQueryService.java",
-      "sha256": "92c59017558780239706827894232cf9d647830be0e64506ff93e914982f7570",
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/service/PythonEvaluationArtifactPreviewOverviewQueryService.java",
+      "sha256": "d6cd06e070f5d33ebd051927eef1b4f6715117cb8e50debf8ebdfd4e6dbbf319",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-core / PythonEvaluationArtifactPreviewOverviewQueryService contract owner",
@@ -842,32 +842,32 @@
       "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
     },
     {
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/preflight/TradingPreflightReadinessService.java",
-      "sha256": "c9cdaa85fc2eb9165c99f59d208aff8633e734c10039195f6f6068f1212543b0",
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/preflight/service/TradingPreflightReadinessService.java",
+      "sha256": "545fab899982c4e31e017e7e8ba39a161faa91fac6325f70330075d0e4d2628d",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
       "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
-      "sha256": "2d7ec73cbf4e5f7c6ca22ecdc206bccbfc61164dbbb576cd25dbf1a19c9a9620",
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
+      "sha256": "ff0d2c35464c1ccb8cc034be544dd67e46be670cec9fbc24fb7bb39a254c6603",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-core / OperationalSafetyAssessmentFactBundle contract owner",
       "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
     },
     {
-      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
-      "sha256": "34004a277fb475656ca904f64e4fe643cb96ff76f9cecb1d3be7817d3037fbaf",
+      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
+      "sha256": "87bb8a26a6a4958fb62da3fffa135e9b5451f84f1d9e0501c4764cf83003f61b",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
     },
     {
-      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactbinding/PythonEvaluationArtifactBindingServiceTest.java",
-      "sha256": "bff2b9f6a45a210e3a2b6eccb5f5d1eaf72c80b9aae5df85a0da4a8fdf44a041",
+      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactbinding/service/PythonEvaluationArtifactBindingServiceTest.java",
+      "sha256": "f83d17d6e00b252ff43852c01e558d2779efad11bb9cff934180504dd1e468e0",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -906,8 +906,8 @@
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
     },
     {
-      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
-      "sha256": "657f49eb28a4ad80344b4f25072ec5a1809e8b05e3a2a1a8d91d003c8d024abe",
+      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
+      "sha256": "40e03b2a000425ba0df5818870f3444fd31ad42e87cf9c1ed9a89390ffe11e74",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -955,7 +955,7 @@
     },
     {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/MinimalPilotTradingVenueGateway.java",
-      "sha256": "82f43c630bd4d506ef9caaf87798c0487b06dbb2c6a48d8de8982a297390f557",
+      "sha256": "e55fc5d1e7b8a5156e3d50c87289052593ad1cb88b0c6e9302f576d69d0bd56d",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-infra / MinimalPilotTradingVenueGateway contract owner",
@@ -971,7 +971,7 @@
     },
     {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/MinimalLivePilotControlService.java",
-      "sha256": "745facc28ec40704ed2850d015a312574e03d300b68c9ef0308a71804899efbf",
+      "sha256": "14d2634a9b2905c6bb8a18440017aefdadc1e0bd09358634a2dbcaab8e082a8b",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-infra / MinimalLivePilotControlService contract owner",
@@ -1115,7 +1115,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/MinimalLivePilotControlServiceTest.java",
-      "sha256": "c905f79d69bc42619f70ba4c43a35e09fc79aab32b735a43fe665ade1721e30b",
+      "sha256": "279f306d574a3ab22b85a51a5add0be4e298ff3f82bfa7e2379c884d5bd63faf",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -1171,7 +1171,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/validationreview/infra/jdbc/ValidationReviewRepositoryPostgresIntegrationTest.java",
-      "sha256": "735c7c5fa98567b7540107d1b71f4eee7f45afdd1b658619da8fefd7f8398e5a",
+      "sha256": "153ea9e6d124fe471a778a1ccce4b53f6df5953cf55cc0bf9c4cff67019b1cf2",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -2331,8 +2331,8 @@
       ]
     },
     {
-      "identity": "com.guidinglight.nexusquant.account.application.CredentialPermissionProbeService",
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+      "identity": "com.guidinglight.nexusquant.account.application.service.CredentialPermissionProbeService",
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
       "canonicalOwner": "nq-core / CredentialPermissionProbeService contract owner",
       "migrationTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement.",
       "removalCondition": "Remove only after a separately authorized versioned migration replaces all approved source callers and proves stored/signed/public fact compatibility; then remove the member, edges and exception together.",
@@ -2442,157 +2442,167 @@
           "contractMember": "CredentialPermissionProbeService"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#completed(ExchangeAccountSummary,ExchangeAccountCredentialSummary,String,String,String,CredentialPermissionExpectation,String,String,Instant)",
           "contractMember": "ProbePreparation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#finalizeProbe(ProbePreparation,ExchangeCredentialPermissionProbeResult)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#finalizeProbe(ProbePreparation,ExchangeCredentialPermissionProbeResult)",
           "contractMember": "ProbePreparation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#prepare(Long,Long,Long,String,String,CredentialPermissionProbeCommand,CredentialPermissionExpectation,String,String)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#prepare(Long,Long,Long,String,String,CredentialPermissionProbeCommand,CredentialPermissionExpectation,String,String)",
           "contractMember": "ProbePreparation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#probe(Long,Long,Long,String,CredentialPermissionProbeCommand,String)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#probe(Long,Long,Long,String,CredentialPermissionProbeCommand,String)",
           "contractMember": "ProbePreparation"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "CredentialPermissionProbeService"
+        },
+        {
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#assertNoFailedAuthIncrement(String)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#assertNoFailedAuthIncrement(String)",
           "contractMember": "CredentialPermissionProbeService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#assertSkippedWithoutPort(String,CredentialBuilder,String)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#auditFailureReturnsAtomicWritebackCategory()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#controlledReadonlyPortMayInspectLiveCredentialWithoutTradingAuthorization()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#executesPortBetweenTwoShortTransactions()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#failureWithoutPermissionObservationPreservesLastKnownRiskFacts()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#gateYExpectationIsTypedAndPersistedInSanitizedAudit()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#latestShouldNotCallPortOrReadMaterialAgain()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#latestShouldNotCallPortOrReadMaterialAgain()",
           "contractMember": "CredentialPermissionProbeService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#shouldKeepPermissionScopeNullWhenProbeDoesNotConfirmScope()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#shouldKeepPermissionScopeNullWhenProbeDoesNotConfirmScope()",
           "contractMember": "CredentialPermissionProbeService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#shouldRejectConcurrentInProgressProbe()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#shouldRejectConcurrentInProgressProbe()",
           "contractMember": "CredentialPermissionProbeService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#shouldSanitizeLastPermissionProbeError()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#shouldSanitizeLastPermissionProbeError()",
           "contractMember": "CredentialPermissionProbeService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#shouldSkipWhenPaperSafetyGateMissingOrWithdrawEnabledRisk()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#shouldWriteFailedAuditAndIncrementFailedAuthCountForAuthFailures()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#shouldWriteFailedAuditAndIncrementFailedAuthCountForAuthFailures()",
           "contractMember": "CredentialPermissionProbeService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#shouldWriteStartedAndSucceededAuditWithoutClearingFailedAuthCount()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#shouldWriteStartedAndSucceededAuditWithoutClearingFailedAuthCount()",
           "contractMember": "CredentialPermissionProbeService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#unknownPermissionExpectationFailsClosedBeforeCredentialOrTransactionAccess()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#writebackConflictNeverReturnsSuccess()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest.Fixture#service(ExchangeCredentialPermissionProbePort)",
           "contractMember": "CredentialPermissionProbeService"
         },
@@ -2726,107 +2736,107 @@
           "contractMember": "READ_ONLY_DIAGNOSTIC"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "CredentialPermissionExpectation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#appendAudit(ExchangeAccountCredentialSummary,String,String,String,String,String,String,String,String,boolean,CredentialPermissionExpectation)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#appendAudit(ExchangeAccountCredentialSummary,String,String,String,String,String,String,String,String,boolean,CredentialPermissionExpectation)",
           "contractMember": "CredentialPermissionExpectation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#appendAudit(ExchangeAccountCredentialSummary,String,String,String,String,String,String,String,String,boolean,String,String,CredentialPermissionExpectation,boolean,boolean,boolean,boolean)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#appendAudit(ExchangeAccountCredentialSummary,String,String,String,String,String,String,String,String,boolean,String,String,CredentialPermissionExpectation,boolean,boolean,boolean,boolean)",
           "contractMember": "CredentialPermissionExpectation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#auditMetadata(ExchangeAccountCredentialSummary,String,String,String,String,String,boolean,String,String,CredentialPermissionExpectation,boolean,boolean,boolean,boolean)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#auditMetadata(ExchangeAccountCredentialSummary,String,String,String,String,String,boolean,String,String,CredentialPermissionExpectation,boolean,boolean,boolean,boolean)",
           "contractMember": "CredentialPermissionExpectation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#completed(ExchangeAccountSummary,ExchangeAccountCredentialSummary,String,String,String,CredentialPermissionExpectation,String,String,Instant)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#completed(ExchangeAccountSummary,ExchangeAccountCredentialSummary,String,String,String,CredentialPermissionExpectation,String,String,Instant)",
           "contractMember": "CredentialPermissionExpectation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#finalizeProbe(ProbePreparation,ExchangeCredentialPermissionProbeResult)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#paperSafetyGatePassed(CredentialPermissionProbeCommand,CredentialPermissionExpectation)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#paperSafetyGatePassed(CredentialPermissionProbeCommand,CredentialPermissionExpectation)",
           "contractMember": "CredentialPermissionExpectation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#paperSafetyGatePassed(CredentialPermissionProbeCommand,CredentialPermissionExpectation)",
           "contractMember": "GATEY_PILOT_READINESS"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#paperSafetyGatePassed(CredentialPermissionProbeCommand,CredentialPermissionExpectation)",
           "contractMember": "READ_ONLY_DIAGNOSTIC"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#prepare(Long,Long,Long,String,String,CredentialPermissionProbeCommand,CredentialPermissionExpectation,String,String)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#prepare(Long,Long,Long,String,String,CredentialPermissionProbeCommand,CredentialPermissionExpectation,String,String)",
           "contractMember": "CredentialPermissionExpectation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#probe(Long,Long,Long,String,CredentialPermissionProbeCommand,String)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#probe(Long,Long,Long,String,CredentialPermissionProbeCommand,String)",
           "contractMember": "CredentialPermissionExpectation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#skip(ExchangeAccountSummary,ExchangeAccountCredentialSummary,String,String,String,CredentialPermissionExpectation,String,String,Instant)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#skip(ExchangeAccountSummary,ExchangeAccountCredentialSummary,String,String,String,CredentialPermissionExpectation,String,String,Instant)",
           "contractMember": "CredentialPermissionExpectation"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService.ProbePreparation#permissionExpectation",
           "contractMember": "CredentialPermissionExpectation"
         },
@@ -2886,17 +2896,17 @@
           "contractMember": "CredentialPermissionExpectation"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "CredentialPermissionExpectation"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest.#probe(ExchangeCredentialPermissionProbeRequest)",
           "contractMember": "CredentialPermissionExpectation"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/CredentialPermissionProbeServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest.#probe(ExchangeCredentialPermissionProbeRequest)",
           "contractMember": "GATEY_PILOT_READINESS"
         },
@@ -7315,8 +7325,8 @@
       ]
     },
     {
-      "identity": "com.guidinglight.nexusquant.monitoring.application.incidentreview.IncidentReplayReviewOverviewQueryService",
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/IncidentReplayReviewOverviewQueryService.java",
+      "identity": "com.guidinglight.nexusquant.monitoring.application.incidentreview.service.IncidentReplayReviewOverviewQueryService",
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/service/IncidentReplayReviewOverviewQueryService.java",
       "canonicalOwner": "nq-core / IncidentReplayReviewOverviewQueryService contract owner",
       "migrationTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement.",
       "removalCondition": "Remove only after a separately authorized versioned migration replaces all approved source callers and proves stored/signed/public fact compatibility; then remove the member, edges and exception together.",
@@ -7390,60 +7400,70 @@
           "contractMember": "IncidentReplayReviewOverviewQueryService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/IncidentReplayReviewOverviewQueryServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/service/IncidentReplayReviewOverviewQueryServiceTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/service/IncidentReplayReviewOverviewQueryServiceTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "IncidentReplayReviewOverviewQueryService"
+        },
+        {
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/service/IncidentReplayReviewOverviewQueryServiceTest.java",
           "callerMember": "IncidentReplayReviewOverviewQueryServiceTest#service(IncidentReplayReviewOverviewFacts)",
           "contractMember": "IncidentReplayReviewOverviewQueryService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/IncidentReplayReviewOverviewQueryServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/service/IncidentReplayReviewOverviewQueryServiceTest.java",
           "callerMember": "IncidentReplayReviewOverviewQueryServiceTest#shouldDeriveReviewItemsFromAlertRecoveryReplayShadowAndConsistencyFacts()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/IncidentReplayReviewOverviewQueryServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/service/IncidentReplayReviewOverviewQueryServiceTest.java",
           "callerMember": "IncidentReplayReviewOverviewQueryServiceTest#shouldFailClosedForPartialOrFutureEvidenceMetadata()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/IncidentReplayReviewOverviewQueryServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/service/IncidentReplayReviewOverviewQueryServiceTest.java",
           "callerMember": "IncidentReplayReviewOverviewQueryServiceTest#shouldFilterSensitiveOrMisleadingEvidenceText()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/IncidentReplayReviewOverviewQueryServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/service/IncidentReplayReviewOverviewQueryServiceTest.java",
           "callerMember": "IncidentReplayReviewOverviewQueryServiceTest#shouldGenerateDeterministicReviewItemIdAndOperatorAnchor()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/IncidentReplayReviewOverviewQueryServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/service/IncidentReplayReviewOverviewQueryServiceTest.java",
           "callerMember": "IncidentReplayReviewOverviewQueryServiceTest#shouldGenerateDeterministicReviewItemIdAndOperatorAnchor()",
           "contractMember": "IncidentReplayReviewOverviewQueryService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/IncidentReplayReviewOverviewQueryServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/service/IncidentReplayReviewOverviewQueryServiceTest.java",
           "callerMember": "IncidentReplayReviewOverviewQueryServiceTest#shouldIdentifyStaleEvidenceAndFailClosed()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/IncidentReplayReviewOverviewQueryServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/service/IncidentReplayReviewOverviewQueryServiceTest.java",
           "callerMember": "IncidentReplayReviewOverviewQueryServiceTest#shouldKeepHighCriticalAndAcknowledgeRecommendationsAsDiagnosticOnly()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/IncidentReplayReviewOverviewQueryServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/service/IncidentReplayReviewOverviewQueryServiceTest.java",
           "callerMember": "IncidentReplayReviewOverviewQueryServiceTest#shouldKeepServiceDependencyAwayFromRunnerAdapterAccountLedgerAndOrderPorts()",
           "contractMember": "IncidentReplayReviewOverviewQueryService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/IncidentReplayReviewOverviewQueryServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/service/IncidentReplayReviewOverviewQueryServiceTest.java",
           "callerMember": "IncidentReplayReviewOverviewQueryServiceTest#shouldReturnSafeOverviewForEmptyFactsWithoutCreatingReviewRecords()",
           "contractMember": "<typed-use>"
         }
       ]
     },
     {
-      "identity": "com.guidinglight.nexusquant.strategy.application.pyartifactpreview.PythonEvaluationArtifactPreviewOverviewQueryService",
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/PythonEvaluationArtifactPreviewOverviewQueryService.java",
+      "identity": "com.guidinglight.nexusquant.strategy.application.pyartifactpreview.service.PythonEvaluationArtifactPreviewOverviewQueryService",
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/service/PythonEvaluationArtifactPreviewOverviewQueryService.java",
       "canonicalOwner": "nq-core / PythonEvaluationArtifactPreviewOverviewQueryService contract owner",
       "migrationTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement.",
       "removalCondition": "Remove only after a separately authorized versioned migration replaces all approved source callers and proves stored/signed/public fact compatibility; then remove the member, edges and exception together.",
@@ -7513,12 +7533,12 @@
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/PythonEvaluationArtifactPreviewOverviewQueryService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/service/PythonEvaluationArtifactPreviewOverviewQueryService.java",
           "callerMember": "PythonEvaluationArtifactPreviewOverviewQueryService#evidenceAnchors(Instant,String)",
           "contractMember": "SUPPORTED_SCHEMA_VERSION"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/PythonEvaluationArtifactPreviewOverviewQueryService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/service/PythonEvaluationArtifactPreviewOverviewQueryService.java",
           "callerMember": "PythonEvaluationArtifactPreviewOverviewQueryService#schemaVersionSummary()",
           "contractMember": "SUPPORTED_SCHEMA_VERSION"
         },
@@ -7538,52 +7558,62 @@
           "contractMember": "PythonEvaluationArtifactPreviewOverviewQueryService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/service/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/service/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "PythonEvaluationArtifactPreviewOverviewQueryService"
+        },
+        {
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/service/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
           "callerMember": "PythonEvaluationArtifactPreviewOverviewQueryServiceTest#previewItem(boolean,boolean,boolean)",
           "contractMember": "PythonEvaluationArtifactPreviewOverviewQueryService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/service/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
           "callerMember": "PythonEvaluationArtifactPreviewOverviewQueryServiceTest#previewItem(boolean,boolean,boolean)",
           "contractMember": "SUPPORTED_SCHEMA_VERSION"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/service/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
           "callerMember": "PythonEvaluationArtifactPreviewOverviewQueryServiceTest#service()",
           "contractMember": "PythonEvaluationArtifactPreviewOverviewQueryService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/service/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
           "callerMember": "PythonEvaluationArtifactPreviewOverviewQueryServiceTest#shouldKeepBaselineDiagnosticOnlyAndNotRealPerformance()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/service/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
           "callerMember": "PythonEvaluationArtifactPreviewOverviewQueryServiceTest#shouldKeepServiceWithoutFileNetworkDatabasePythonOrTradingDependencies()",
           "contractMember": "PythonEvaluationArtifactPreviewOverviewQueryService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/service/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
           "callerMember": "PythonEvaluationArtifactPreviewOverviewQueryServiceTest#shouldRejectBlankTraceId()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/service/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
           "callerMember": "PythonEvaluationArtifactPreviewOverviewQueryServiceTest#shouldRejectBlankTraceId()",
           "contractMember": "PythonEvaluationArtifactPreviewOverviewQueryService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/service/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
           "callerMember": "PythonEvaluationArtifactPreviewOverviewQueryServiceTest#shouldReturnSafeNoFileBaselineOverview()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/service/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
           "callerMember": "PythonEvaluationArtifactPreviewOverviewQueryServiceTest#shouldReturnSafeNoFileBaselineOverview()",
           "contractMember": "PythonEvaluationArtifactPreviewOverviewQueryService"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/service/PythonEvaluationArtifactPreviewOverviewQueryServiceTest.java",
           "callerMember": "PythonEvaluationArtifactPreviewOverviewQueryServiceTest#shouldReturnSafeNoFileBaselineOverview()",
           "contractMember": "SUPPORTED_SCHEMA_VERSION"
         }
@@ -8186,8 +8216,8 @@
       ]
     },
     {
-      "identity": "com.guidinglight.nexusquant.trading.application.safety.OperationalSafetyAssessmentFactBundle",
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+      "identity": "com.guidinglight.nexusquant.trading.application.safety.model.OperationalSafetyAssessmentFactBundle",
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
       "canonicalOwner": "nq-core / OperationalSafetyAssessmentFactBundle contract owner",
       "migrationTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement.",
       "removalCondition": "Remove only after a separately authorized versioned migration replaces all approved source callers and proves stored/signed/public fact compatibility; then remove the member, edges and exception together.",
@@ -8204,382 +8234,382 @@
       ],
       "approvedCallers": [
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle#<init>(HumanReviewEvidence,OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle#<init>(HumanReviewEvidence,OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "HumanReviewEvidence"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle#humanReviewEvidence",
           "contractMember": "HumanReviewEvidence"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle.HumanReviewEvidence#<init>(UUID,long,String,String,String,ValidationReviewState,boolean,Instant,Instant,HumanReviewEvidenceStatus)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle.HumanReviewEvidence#<init>(UUID,long,String,String,String,ValidationReviewState,boolean,Instant,Instant,HumanReviewEvidenceStatus)",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_MISSING"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle.HumanReviewEvidence#<init>(UUID,long,String,String,String,ValidationReviewState,boolean,Instant,Instant,HumanReviewEvidenceStatus)",
           "contractMember": "HumanReviewEvidenceStatus"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle.HumanReviewEvidence#bind(Optional<ValidationReviewCase>,List<ValidationReviewEvent>,Instant)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle.HumanReviewEvidence#bind(Optional<ValidationReviewCase>,List<ValidationReviewEvent>,Instant)",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_CONFLICT"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle.HumanReviewEvidence#bind(Optional<ValidationReviewCase>,List<ValidationReviewEvent>,Instant)",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_PRESENT"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle.HumanReviewEvidence#bind(Optional<ValidationReviewCase>,List<ValidationReviewEvent>,Instant)",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_STALE"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle.HumanReviewEvidence#bind(Optional<ValidationReviewCase>,List<ValidationReviewEvent>,Instant)",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_TYPE"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle.HumanReviewEvidence#bind(Optional<ValidationReviewCase>,List<ValidationReviewEvent>,Instant)",
           "contractMember": "HUMAN_REVIEW_SUBJECT"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle.HumanReviewEvidence#bind(Optional<ValidationReviewCase>,List<ValidationReviewEvent>,Instant)",
           "contractMember": "HumanReviewEvidence"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle.HumanReviewEvidence#bind(Optional<ValidationReviewCase>,List<ValidationReviewEvent>,Instant)",
           "contractMember": "HumanReviewEvidenceStatus"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle.HumanReviewEvidence#missing(Instant)",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_MISSING"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle.HumanReviewEvidence#missing(Instant)",
           "contractMember": "HumanReviewEvidence"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle.HumanReviewEvidence#missing(Instant)",
           "contractMember": "HumanReviewEvidenceStatus"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle.HumanReviewEvidence#status",
           "contractMember": "HumanReviewEvidenceStatus"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle.HumanReviewEvidenceStatus#HUMAN_REVIEW_EVIDENCE_CONFLICT",
           "contractMember": "HumanReviewEvidenceStatus"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle.HumanReviewEvidenceStatus#HUMAN_REVIEW_EVIDENCE_MISSING",
           "contractMember": "HumanReviewEvidenceStatus"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle.HumanReviewEvidenceStatus#HUMAN_REVIEW_EVIDENCE_PRESENT",
           "contractMember": "HumanReviewEvidenceStatus"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentFactBundle.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentFactBundle.java",
           "callerMember": "OperationalSafetyAssessmentFactBundle.HumanReviewEvidenceStatus#HUMAN_REVIEW_EVIDENCE_STALE",
           "contractMember": "HumanReviewEvidenceStatus"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentRequest.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentRequest.java",
           "callerMember": "OperationalSafetyAssessmentRequest#<init>(KillSwitchSnapshot,OperationalSafetyAssessmentFactBundle,Instant)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentRequest.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentRequest.java",
           "callerMember": "OperationalSafetyAssessmentRequest#<init>(KillSwitchSnapshot,OperationalSafetyAssessmentFactBundle,Instant)",
           "contractMember": "OperationalSafetyAssessmentFactBundle"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentRequest.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/model/OperationalSafetyAssessmentRequest.java",
           "callerMember": "OperationalSafetyAssessmentRequest#facts",
           "contractMember": "OperationalSafetyAssessmentFactBundle"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentService.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_CONFLICT"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentService.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_MISSING"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentService.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_STALE"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentService.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "HumanReviewEvidence"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentService.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "HumanReviewEvidenceStatus"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentService.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "OperationalSafetyAssessmentFactBundle"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentService.java",
           "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,Instant,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentService.java",
           "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,Instant,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_CONFLICT"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentService.java",
           "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,Instant,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_MISSING"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentService.java",
           "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,Instant,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_PRESENT"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentService.java",
           "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,Instant,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_STALE"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentService.java",
           "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,Instant,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_TYPE"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentService.java",
           "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,Instant,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "HUMAN_REVIEW_SUBJECT"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentService.java",
           "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,Instant,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "HumanReviewEvidence"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentService.java",
           "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,Instant,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "HumanReviewEvidenceStatus"
         },
         {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentService.java",
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentService.java",
           "callerMember": "OperationalSafetyAssessmentService#evaluateHumanReview(HumanReviewEvidence,Instant,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "OperationalSafetyAssessmentFactBundle"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_TYPE"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "HUMAN_REVIEW_SUBJECT"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "HumanReviewEvidence"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "HumanReviewEvidenceStatus"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "OperationalSafetyAssessmentFactBundle"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#boundedConcurrentNoEgressSoakIsDeterministicAndReleasesExecutor()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#derivesPresentHumanReviewOnlyFromCompleteDurableEventChain()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#derivesPresentHumanReviewOnlyFromCompleteDurableEventChain()",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_CONFLICT"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#derivesPresentHumanReviewOnlyFromCompleteDurableEventChain()",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_MISSING"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#derivesPresentHumanReviewOnlyFromCompleteDurableEventChain()",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_PRESENT"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#derivesPresentHumanReviewOnlyFromCompleteDurableEventChain()",
           "contractMember": "HumanReviewEvidence"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#derivesPresentHumanReviewOnlyFromCompleteDurableEventChain()",
           "contractMember": "HumanReviewEvidenceStatus"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#engagedBaselineRemainsBlockedAndNeverAuthorizesTrading()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#facts(OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#facts(OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_PRESENT"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#facts(OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "HumanReviewEvidenceStatus"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#facts(OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,OperationalSafetyAssessmentStatus,Set<OperationalSafetyAssessmentFindingCode>)",
           "contractMember": "OperationalSafetyAssessmentFactBundle"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#humanReview(HumanReviewEvidenceStatus,boolean,Instant)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#humanReview(HumanReviewEvidenceStatus,boolean,Instant)",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_TYPE"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#humanReview(HumanReviewEvidenceStatus,boolean,Instant)",
           "contractMember": "HUMAN_REVIEW_SUBJECT"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#humanReview(HumanReviewEvidenceStatus,boolean,Instant)",
           "contractMember": "HumanReviewEvidence"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#humanReview(HumanReviewEvidenceStatus,boolean,Instant)",
           "contractMember": "HumanReviewEvidenceStatus"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#incidentDrillAlwaysReturnsBlockedOrUnknown(OperationalSafetyAssessmentFindingCode,KillSwitchSnapshot,OperationalSafetyAssessmentStatus)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#missingStaleAndConflictingHumanReviewEvidenceFailClosed()",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#missingStaleAndConflictingHumanReviewEvidenceFailClosed()",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_CONFLICT"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#missingStaleAndConflictingHumanReviewEvidenceFailClosed()",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_STALE"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#missingStaleAndConflictingHumanReviewEvidenceFailClosed()",
           "contractMember": "HumanReviewEvidence"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#missingStaleAndConflictingHumanReviewEvidenceFailClosed()",
           "contractMember": "HumanReviewEvidenceStatus"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#missingStaleAndConflictingHumanReviewEvidenceFailClosed()",
           "contractMember": "OperationalSafetyAssessmentFactBundle"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#request(KillSwitchSnapshot,OperationalSafetyAssessmentFactBundle)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#request(KillSwitchSnapshot,OperationalSafetyAssessmentFactBundle)",
           "contractMember": "OperationalSafetyAssessmentFactBundle"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#reviewCase()",
           "contractMember": "HUMAN_REVIEW_EVIDENCE_TYPE"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#reviewCase()",
           "contractMember": "HUMAN_REVIEW_SUBJECT"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#snapshot(KillSwitchStatus,String)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/OperationalSafetyAssessmentServiceTest.java",
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/safety/service/OperationalSafetyAssessmentServiceTest.java",
           "callerMember": "OperationalSafetyAssessmentServiceTest#unknownKillSwitchNeverBecomesPass()",
           "contractMember": "<typed-use>"
         }
@@ -9234,6 +9264,11 @@
           "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/MinimalLivePilotControlService.java",
           "callerMember": "MinimalLivePilotControlService#prepare(MinimalLivePilotCommand)",
           "contractMember": "SafeOrderParameters"
+        },
+        {
+          "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/MinimalLivePilotControlServiceTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "<typed-use>"
         },
         {
           "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/MinimalLivePilotControlServiceTest.java",

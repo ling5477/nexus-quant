@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.trading.application;
+package com.guidinglight.nexusquant.trading.application.result;
 
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 

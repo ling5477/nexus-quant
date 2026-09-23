@@ -1,9 +1,9 @@
 package com.guidinglight.nexusquant.trading.api.dto;
 
-import com.guidinglight.nexusquant.trading.application.preflight.TradingPreflightCredentialTypeSummary;
-import com.guidinglight.nexusquant.trading.application.preflight.TradingPreflightReadiness;
-import com.guidinglight.nexusquant.trading.application.preflight.TradingPreflightReason;
-import com.guidinglight.nexusquant.trading.application.preflight.TradingPreflightScope;
+import com.guidinglight.nexusquant.trading.application.preflight.model.TradingPreflightCredentialTypeSummary;
+import com.guidinglight.nexusquant.trading.application.preflight.model.TradingPreflightReadiness;
+import com.guidinglight.nexusquant.trading.application.preflight.model.TradingPreflightReason;
+import com.guidinglight.nexusquant.trading.application.preflight.model.TradingPreflightScope;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;

@@ -4,8 +4,8 @@ import com.guidinglight.nexusquant.scheduler.port.OrderExecutionGateway;
 
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
-import com.guidinglight.nexusquant.trading.application.OrderCommandService;
-import com.guidinglight.nexusquant.trading.application.OrderLifecycleService;
+import com.guidinglight.nexusquant.trading.application.service.OrderCommandService;
+import com.guidinglight.nexusquant.trading.application.service.OrderLifecycleService;
 
 import java.util.List;
 import java.util.Objects;

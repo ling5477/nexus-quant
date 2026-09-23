@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.api.web;
 
-import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialNotFoundException;
-import com.guidinglight.nexusquant.account.application.ExchangeAccountNotFoundException;
+import com.guidinglight.nexusquant.account.application.exception.ExchangeAccountCredentialNotFoundException;
+import com.guidinglight.nexusquant.account.application.exception.ExchangeAccountNotFoundException;
 import com.guidinglight.nexusquant.auth.application.exception.AdminNotInitializedException;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
@@ -12,7 +12,7 @@ import com.guidinglight.nexusquant.strategy.strategyrelease.application.exceptio
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.exception.ShadowRunMaterializationAuthorizationException;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.exception.ShadowRunMaterializationRejectedException;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewException;
-import com.guidinglight.nexusquant.trading.application.OrderVersionConflictException;
+import com.guidinglight.nexusquant.trading.application.exception.OrderVersionConflictException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.MDC;

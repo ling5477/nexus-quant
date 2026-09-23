@@ -1,9 +1,9 @@
 package com.guidinglight.nexusquant.research.api.dto;
 
-import com.guidinglight.nexusquant.strategy.application.pyartifactbinding.PythonEvaluationArtifactBindingEvidence;
-import com.guidinglight.nexusquant.strategy.application.pyartifactbinding.PythonEvaluationArtifactBindingPreview;
-import com.guidinglight.nexusquant.strategy.application.pyartifactbinding.PythonEvaluationArtifactBindingReason;
-import com.guidinglight.nexusquant.strategy.application.pyartifactbinding.PythonEvaluationArtifactBindingScope;
+import com.guidinglight.nexusquant.strategy.application.pyartifactbinding.model.PythonEvaluationArtifactBindingEvidence;
+import com.guidinglight.nexusquant.strategy.application.pyartifactbinding.model.PythonEvaluationArtifactBindingPreview;
+import com.guidinglight.nexusquant.strategy.application.pyartifactbinding.model.PythonEvaluationArtifactBindingReason;
+import com.guidinglight.nexusquant.strategy.application.pyartifactbinding.model.PythonEvaluationArtifactBindingScope;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;

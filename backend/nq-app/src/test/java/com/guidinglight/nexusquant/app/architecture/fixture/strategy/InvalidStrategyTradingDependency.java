@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.app.architecture.fixture.strategy;
 
-import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
+import com.guidinglight.nexusquant.trading.application.command.PlaceOrderRequest;
 
 /**
  * 仅供 ArchUnit negative regression 使用，证明 Strategy → Trading application 依赖会被拒绝。

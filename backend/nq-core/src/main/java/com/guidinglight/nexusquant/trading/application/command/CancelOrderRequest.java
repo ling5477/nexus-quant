@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.trading.application;
+package com.guidinglight.nexusquant.trading.application.command;
 
 import com.guidinglight.nexusquant.trading.domain.TradingVenue;
 

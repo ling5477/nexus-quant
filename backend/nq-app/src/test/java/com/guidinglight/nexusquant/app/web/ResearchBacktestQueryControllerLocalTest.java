@@ -16,7 +16,7 @@ import com.guidinglight.nexusquant.research.api.web.ResearchConfigController;
 import com.guidinglight.nexusquant.app.config.auth.SecurityConfiguration;
 import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.marketdata.application.MarketdataDatasetService;
+import com.guidinglight.nexusquant.marketdata.application.service.MarketdataDatasetService;
 import com.guidinglight.nexusquant.observability.config.ObservabilityAutoConfiguration;
 import com.guidinglight.nexusquant.research.domain.BacktestConfig;
 import com.guidinglight.nexusquant.research.domain.BacktestRun;

@@ -4,8 +4,8 @@ import com.guidinglight.nexusquant.strategy.api.dto.ShadowLivePreviewResponse;
 
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.ShadowLivePreviewQuery;
-import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.ShadowLivePreviewService;
+import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.model.ShadowLivePreviewQuery;
+import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.service.ShadowLivePreviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

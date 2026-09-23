@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.marketdata.api.dto;
 
-import com.guidinglight.nexusquant.marketdata.application.MarketdataFixtureIngestionResult;
+import com.guidinglight.nexusquant.marketdata.application.model.MarketdataFixtureIngestionResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;

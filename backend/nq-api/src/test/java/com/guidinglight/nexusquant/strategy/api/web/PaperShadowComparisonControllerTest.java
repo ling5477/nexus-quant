@@ -12,12 +12,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparison;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonEvidence;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonReason;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonScope;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonService;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonStatus;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparison;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonEvidence;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonReason;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonScope;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.service.PaperShadowComparisonService;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonStatus;
 
 import java.time.Instant;
 import java.util.List;

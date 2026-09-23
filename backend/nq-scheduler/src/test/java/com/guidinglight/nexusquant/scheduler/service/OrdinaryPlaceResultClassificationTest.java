@@ -4,7 +4,7 @@ import com.guidinglight.nexusquant.scheduler.integration.AdapterBackedTradingVen
 
 import com.guidinglight.nexusquant.adapter.api.model.*;
 import com.guidinglight.nexusquant.adapter.api.service.port.TradingAdapter;
-import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
+import com.guidinglight.nexusquant.trading.application.command.PlaceOrderRequest;
 import com.guidinglight.nexusquant.trading.application.port.TradingGatewayResultCategory;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;

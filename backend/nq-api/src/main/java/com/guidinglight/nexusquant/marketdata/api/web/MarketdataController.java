@@ -11,11 +11,11 @@ import com.guidinglight.nexusquant.marketdata.api.dto.MarketdataIngestionJobResp
 import com.guidinglight.nexusquant.marketdata.api.dto.MarketdataIngestionRunResponse;
 import com.guidinglight.nexusquant.marketdata.api.dto.MarketdataQualityOverviewResponse;
 import com.guidinglight.nexusquant.marketdata.api.dto.MarketdataReadinessResponse;
-import com.guidinglight.nexusquant.marketdata.application.MarketdataBarIngestService;
-import com.guidinglight.nexusquant.marketdata.application.MarketdataDatasetService;
-import com.guidinglight.nexusquant.marketdata.application.MarketdataIngestionService;
-import com.guidinglight.nexusquant.marketdata.application.MarketdataQualityOverviewService;
-import com.guidinglight.nexusquant.marketdata.application.MarketdataReadinessService;
+import com.guidinglight.nexusquant.marketdata.application.service.MarketdataBarIngestService;
+import com.guidinglight.nexusquant.marketdata.application.service.MarketdataDatasetService;
+import com.guidinglight.nexusquant.marketdata.application.service.MarketdataIngestionService;
+import com.guidinglight.nexusquant.marketdata.application.service.MarketdataQualityOverviewService;
+import com.guidinglight.nexusquant.marketdata.application.service.MarketdataReadinessService;
 import com.guidinglight.nexusquant.marketdata.application.command.CreateMarketdataDatasetCommand;
 import com.guidinglight.nexusquant.marketdata.application.command.CreateMarketdataIngestionJobCommand;
 import com.guidinglight.nexusquant.marketdata.application.command.FixtureMarketdataIngestionCommand;

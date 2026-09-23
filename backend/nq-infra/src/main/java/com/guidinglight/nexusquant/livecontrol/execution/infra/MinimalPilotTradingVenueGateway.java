@@ -17,8 +17,8 @@ import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentC
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentState;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptCanonicalEncoder;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptOutcome;
-import com.guidinglight.nexusquant.trading.application.CancelOrderRequest;
-import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
+import com.guidinglight.nexusquant.trading.application.command.CancelOrderRequest;
+import com.guidinglight.nexusquant.trading.application.command.PlaceOrderRequest;
 import com.guidinglight.nexusquant.trading.application.port.TradingCancelGatewayResult;
 import com.guidinglight.nexusquant.trading.application.port.TradingGatewayFailure;
 import com.guidinglight.nexusquant.trading.application.port.TradingGatewayResultCategory;

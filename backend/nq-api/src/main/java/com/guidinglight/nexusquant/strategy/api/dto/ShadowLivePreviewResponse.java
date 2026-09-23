@@ -1,10 +1,10 @@
 package com.guidinglight.nexusquant.strategy.api.dto;
 
-import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.ShadowLivePreview;
-import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.ShadowLivePreviewEvidence;
-import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.ShadowLivePreviewReason;
-import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.ShadowLivePreviewScope;
-import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.ShadowLivePreviewSideEffectPolicy;
+import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.model.ShadowLivePreview;
+import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.model.ShadowLivePreviewEvidence;
+import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.model.ShadowLivePreviewReason;
+import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.model.ShadowLivePreviewScope;
+import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.model.ShadowLivePreviewSideEffectPolicy;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;

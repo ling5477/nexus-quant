@@ -4,7 +4,7 @@ import com.guidinglight.nexusquant.strategy.api.dto.PythonEvaluationArtifactPrev
 
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.pyartifactpreview.PythonEvaluationArtifactPreviewOverviewQueryService;
+import com.guidinglight.nexusquant.strategy.application.pyartifactpreview.service.PythonEvaluationArtifactPreviewOverviewQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

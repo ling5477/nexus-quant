@@ -4,8 +4,8 @@ import com.guidinglight.nexusquant.strategy.api.dto.PaperShadowComparisonRespons
 
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonQuery;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonService;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonQuery;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.service.PaperShadowComparisonService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

@@ -6,10 +6,10 @@ import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileSe
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
-import com.guidinglight.nexusquant.validationreview.application.ValidationReviewAction;
-import com.guidinglight.nexusquant.validationreview.application.ValidationReviewActor;
-import com.guidinglight.nexusquant.validationreview.application.ValidationReviewOperationsService;
-import com.guidinglight.nexusquant.validationreview.application.ValidationReviewOperationalAuditService;
+import com.guidinglight.nexusquant.validationreview.application.model.ValidationReviewAction;
+import com.guidinglight.nexusquant.validationreview.application.model.ValidationReviewActor;
+import com.guidinglight.nexusquant.validationreview.application.service.ValidationReviewOperationsService;
+import com.guidinglight.nexusquant.validationreview.application.service.ValidationReviewOperationalAuditService;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewCaseQuery;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewSeverity;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewState;

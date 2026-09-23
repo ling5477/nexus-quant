@@ -5,8 +5,8 @@ import com.guidinglight.nexusquant.research.api.dto.PythonEvaluationArtifactBind
 
 import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.pyartifactbinding.PythonEvaluationArtifactBindingQuery;
-import com.guidinglight.nexusquant.strategy.application.pyartifactbinding.PythonEvaluationArtifactBindingService;
+import com.guidinglight.nexusquant.strategy.application.pyartifactbinding.model.PythonEvaluationArtifactBindingQuery;
+import com.guidinglight.nexusquant.strategy.application.pyartifactbinding.service.PythonEvaluationArtifactBindingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

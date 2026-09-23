@@ -1,9 +1,9 @@
 package com.guidinglight.nexusquant.strategy.api.dto;
 
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparison;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonEvidence;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonReason;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonScope;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparison;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonEvidence;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonReason;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonScope;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;

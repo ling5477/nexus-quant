@@ -13,11 +13,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.consistencyevidence.ConsistencyEvidenceComparisonStatus;
-import com.guidinglight.nexusquant.strategy.application.consistencyevidence.ConsistencyEvidenceDivergenceSeverity;
-import com.guidinglight.nexusquant.strategy.application.consistencyevidence.ConsistencyEvidenceFreshness;
-import com.guidinglight.nexusquant.strategy.application.consistencyevidence.ConsistencyEvidenceOverviewQueryService;
-import com.guidinglight.nexusquant.strategy.application.consistencyevidence.ConsistencyEvidenceOverviewReadModel;
+import com.guidinglight.nexusquant.strategy.application.consistencyevidence.model.ConsistencyEvidenceComparisonStatus;
+import com.guidinglight.nexusquant.strategy.application.consistencyevidence.model.ConsistencyEvidenceDivergenceSeverity;
+import com.guidinglight.nexusquant.strategy.application.consistencyevidence.model.ConsistencyEvidenceFreshness;
+import com.guidinglight.nexusquant.strategy.application.consistencyevidence.service.ConsistencyEvidenceOverviewQueryService;
+import com.guidinglight.nexusquant.strategy.application.consistencyevidence.model.ConsistencyEvidenceOverviewReadModel;
 import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
 import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.Availability;
 import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata.FreshnessStatus;

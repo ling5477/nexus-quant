@@ -14,12 +14,12 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
-import com.guidinglight.nexusquant.strategy.application.shadowvalidation.ShadowValidationWorkflowEvidenceFreshness;
-import com.guidinglight.nexusquant.strategy.application.shadowvalidation.ShadowValidationWorkflowOverviewQueryService;
-import com.guidinglight.nexusquant.strategy.application.shadowvalidation.ShadowValidationWorkflowOverviewReadModel;
-import com.guidinglight.nexusquant.strategy.application.shadowvalidation.ShadowValidationWorkflowSeverity;
-import com.guidinglight.nexusquant.strategy.application.shadowvalidation.ShadowValidationWorkflowState;
-import com.guidinglight.nexusquant.strategy.application.shadowvalidation.ShadowValidationWorkflowValidationDecision;
+import com.guidinglight.nexusquant.strategy.application.shadowvalidation.model.ShadowValidationWorkflowEvidenceFreshness;
+import com.guidinglight.nexusquant.strategy.application.shadowvalidation.service.ShadowValidationWorkflowOverviewQueryService;
+import com.guidinglight.nexusquant.strategy.application.shadowvalidation.model.ShadowValidationWorkflowOverviewReadModel;
+import com.guidinglight.nexusquant.strategy.application.shadowvalidation.model.ShadowValidationWorkflowSeverity;
+import com.guidinglight.nexusquant.strategy.application.shadowvalidation.model.ShadowValidationWorkflowState;
+import com.guidinglight.nexusquant.strategy.application.shadowvalidation.model.ShadowValidationWorkflowValidationDecision;
 
 import java.lang.reflect.Method;
 import java.time.Instant;

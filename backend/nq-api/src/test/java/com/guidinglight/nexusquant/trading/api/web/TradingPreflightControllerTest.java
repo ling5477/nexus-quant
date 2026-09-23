@@ -16,11 +16,11 @@ import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
 import com.guidinglight.nexusquant.security.token.TokenClaims;
-import com.guidinglight.nexusquant.trading.application.preflight.TradingPreflightCredentialTypeSummary;
-import com.guidinglight.nexusquant.trading.application.preflight.TradingPreflightReadiness;
-import com.guidinglight.nexusquant.trading.application.preflight.TradingPreflightReadinessService;
-import com.guidinglight.nexusquant.trading.application.preflight.TradingPreflightReason;
-import com.guidinglight.nexusquant.trading.application.preflight.TradingPreflightScope;
+import com.guidinglight.nexusquant.trading.application.preflight.model.TradingPreflightCredentialTypeSummary;
+import com.guidinglight.nexusquant.trading.application.preflight.model.TradingPreflightReadiness;
+import com.guidinglight.nexusquant.trading.application.preflight.service.TradingPreflightReadinessService;
+import com.guidinglight.nexusquant.trading.application.preflight.model.TradingPreflightReason;
+import com.guidinglight.nexusquant.trading.application.preflight.model.TradingPreflightScope;
 
 import java.time.Instant;
 import java.util.List;

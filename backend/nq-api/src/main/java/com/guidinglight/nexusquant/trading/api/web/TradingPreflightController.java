@@ -5,8 +5,8 @@ import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileSe
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
 import com.guidinglight.nexusquant.trading.api.dto.TradingPreflightReadinessResponse;
-import com.guidinglight.nexusquant.trading.application.preflight.TradingPreflightReadinessQuery;
-import com.guidinglight.nexusquant.trading.application.preflight.TradingPreflightReadinessService;
+import com.guidinglight.nexusquant.trading.application.preflight.model.TradingPreflightReadinessQuery;
+import com.guidinglight.nexusquant.trading.application.preflight.service.TradingPreflightReadinessService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

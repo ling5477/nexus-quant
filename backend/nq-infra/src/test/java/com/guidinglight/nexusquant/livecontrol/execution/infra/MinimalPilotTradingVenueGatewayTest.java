@@ -23,7 +23,7 @@ import com.guidinglight.nexusquant.livecontrol.execution.application.provider.Sp
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntent;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentState;
-import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
+import com.guidinglight.nexusquant.trading.application.command.PlaceOrderRequest;
 
 import java.math.BigDecimal;
 import java.time.Clock;

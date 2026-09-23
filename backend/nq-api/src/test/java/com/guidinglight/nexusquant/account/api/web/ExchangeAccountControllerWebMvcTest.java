@@ -10,8 +10,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.guidinglight.nexusquant.account.application.ExchangeAccountCommandService;
-import com.guidinglight.nexusquant.account.application.ExchangeAccountQueryService;
+import com.guidinglight.nexusquant.account.application.service.ExchangeAccountCommandService;
+import com.guidinglight.nexusquant.account.application.service.ExchangeAccountQueryService;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
