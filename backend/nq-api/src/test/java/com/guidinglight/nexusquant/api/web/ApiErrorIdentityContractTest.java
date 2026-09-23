@@ -1,5 +1,8 @@
 package com.guidinglight.nexusquant.api.web;
 
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiFieldError;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.account.application.service.ExchangeAccountQueryService;

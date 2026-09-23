@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.marketdata.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.marketdata.api.dto.CreateMarketdataIngestionJobRequest;
 import com.guidinglight.nexusquant.marketdata.api.dto.CreateMarketdataDatasetRequest;
 import com.guidinglight.nexusquant.marketdata.api.dto.FixtureMarketdataIngestionRequestBody;

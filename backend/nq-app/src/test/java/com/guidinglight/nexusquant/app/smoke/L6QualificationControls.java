@@ -16,7 +16,7 @@ import com.guidinglight.nexusquant.research.application.paper.command.PaperRunDa
 import com.zaxxer.hikari.HikariDataSource;
 import com.guidinglight.nexusquant.trading.application.service.OrderCommandService;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
-import com.guidinglight.nexusquant.scheduler.validationevidence.ValidationEvidenceRefreshService;
+import com.guidinglight.nexusquant.scheduler.validationevidence.service.ValidationEvidenceRefreshService;
 import com.guidinglight.nexusquant.strategy.application.validationoperations.runtimeevidence.ValidationOperationsRuntimeEvidenceOverviewQueryService;
 import com.guidinglight.nexusquant.strategy.application.validationoperations.runtimeevidence.ValidationOperationsRuntimeEvidenceOverviewReadModel;
 import io.micrometer.core.instrument.Counter;

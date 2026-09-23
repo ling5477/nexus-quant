@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.research.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.marketdata.application.service.MarketdataDatasetService;
 import com.guidinglight.nexusquant.research.application.api.backtest.BacktestConfigApiService;
 import com.guidinglight.nexusquant.research.api.dto.BacktestConfigCreateRequestBody;

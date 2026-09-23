@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.paper.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.paper.api.dto.PaperRunScheduleCreateRequestBody;
 import com.guidinglight.nexusquant.paper.api.dto.PaperRunScheduleFireResponse;

@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.monitoring.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.monitoring.application.incidentreview.service.IncidentReplayReviewOverviewQueryService;
 import io.swagger.v3.oas.annotations.Operation;

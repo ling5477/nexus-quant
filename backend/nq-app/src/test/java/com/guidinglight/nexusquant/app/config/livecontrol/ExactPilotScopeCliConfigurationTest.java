@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.app.config.livecontrol;
 
+import com.guidinglight.nexusquant.app.config.livecontrol.model.ExactPilotScopeCliInput;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;

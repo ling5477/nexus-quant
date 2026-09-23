@@ -8,7 +8,7 @@ import com.guidinglight.nexusquant.strategy.api.dto.StrategyManualTriggerRespons
 import com.guidinglight.nexusquant.strategy.api.dto.StrategyVersionCreateRequestBody;
 import com.guidinglight.nexusquant.strategy.api.dto.StrategyVersionResponse;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.strategy.application.StrategyDefinitionCreateRequest;
 import com.guidinglight.nexusquant.strategy.application.StrategyDefinitionService;

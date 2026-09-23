@@ -2,7 +2,7 @@ package com.guidinglight.nexusquant.strategy.api.web;
 
 import com.guidinglight.nexusquant.strategy.api.dto.ShadowLivePreviewResponse;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.model.ShadowLivePreviewQuery;
 import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.service.ShadowLivePreviewService;

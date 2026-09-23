@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.app.config.livecontrol;
 
+import com.guidinglight.nexusquant.app.config.livecontrol.endpoint.ReadOnlyRuntimeDiagnosticEndpoint;
+
 import com.guidinglight.nexusquant.adapter.api.service.port.TradingAdapter;
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClient;
 import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsClient;
@@ -21,7 +23,7 @@ import com.guidinglight.nexusquant.scheduler.recovery.OkxRecoveryService;
 import com.guidinglight.nexusquant.scheduler.recovery.OkxRestReconcileService;
 import com.guidinglight.nexusquant.scheduler.paper.PaperMatchingService;
 import com.guidinglight.nexusquant.scheduler.scheduling.SchedulerTradingMaintenanceService;
-import com.guidinglight.nexusquant.scheduler.validationevidence.ValidationEvidenceScheduler;
+import com.guidinglight.nexusquant.scheduler.validationevidence.scheduling.ValidationEvidenceScheduler;
 
 import java.io.PrintWriter;
 import java.io.IOException;

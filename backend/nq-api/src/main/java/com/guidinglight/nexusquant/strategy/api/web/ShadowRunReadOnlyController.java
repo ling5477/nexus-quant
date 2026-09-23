@@ -7,7 +7,7 @@ import com.guidinglight.nexusquant.strategy.api.dto.ShadowRunListResponse;
 import com.guidinglight.nexusquant.strategy.api.dto.ShadowRunOverviewResponse;
 import com.guidinglight.nexusquant.strategy.api.dto.ShadowRunSnapshotResponse;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.service.ShadowRunOverviewQueryService;
 import com.guidinglight.nexusquant.strategy.application.shadowrun.service.ShadowRunReadOnlyQueryService;

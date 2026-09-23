@@ -25,8 +25,8 @@ import com.guidinglight.nexusquant.scheduler.scheduling.LedgerReconcileScheduler
 import com.guidinglight.nexusquant.scheduler.recovery.OkxRecoveryService;
 import com.guidinglight.nexusquant.scheduler.recovery.OkxRestReconcileService;
 import com.guidinglight.nexusquant.scheduler.paper.PaperMatchingService;
-import com.guidinglight.nexusquant.scheduler.validationevidence.ValidationEvidenceScheduler;
-import com.guidinglight.nexusquant.scheduler.validationevidence.ValidationEvidenceSchedulerConfiguration;
+import com.guidinglight.nexusquant.scheduler.validationevidence.scheduling.ValidationEvidenceScheduler;
+import com.guidinglight.nexusquant.scheduler.validationevidence.config.ValidationEvidenceSchedulerConfiguration;
 
 import java.io.PrintWriter;
 import java.sql.Connection;

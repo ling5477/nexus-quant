@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.app.config.livecontrol;
 
+import com.guidinglight.nexusquant.app.config.livecontrol.model.ExactPilotScopeCliInput;
+
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.livecontrol.application.model.AuthenticatedLiveControlActor;

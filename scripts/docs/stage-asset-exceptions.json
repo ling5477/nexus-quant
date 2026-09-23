@@ -83,7 +83,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/monitoring/api/web/IncidentReplayOverviewController.java",
-      "sha256": "4a0a5b718bc4550e138ea9260a4107a05315e02354bf0253818f0de9e30f164b",
+      "sha256": "bf27be9b968d5ae7bae058948627fbe43bf2e5e5e9eb472d792519bc74e79062",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -99,7 +99,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/monitoring/api/web/IncidentReplayReviewOverviewController.java",
-      "sha256": "cf67b12c577d8e99d82dc8ff1e4a62b81e5a61ea34378adb9e13893667429cea",
+      "sha256": "4e97b6f2bdf421fc5ecdf0e96aecceb5222cd870e3805b5bd9fb6af06d6a59b1",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -187,7 +187,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/web/PaperTradingController.java",
-      "sha256": "e92cbdcaab5e03ef6947fb0642b493909266d42a89156dd58e4e4309f4b2449f",
+      "sha256": "28434e31ef85fe0b093613c3daef2437b717a790c43c9300582e584a1cc713b2",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -195,7 +195,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/web/PaperTradingScheduleController.java",
-      "sha256": "4a202e58acfcbea18e005c1e1eb5e81e05bfc73a6f8af699b0251a75fc50ad22",
+      "sha256": "1906787deff4ad5e0fae4c9b4bc8e0ef47fb4d66dc3dd3ac69fa7ebc31cb7c1a",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -203,7 +203,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/web/EvaluationController.java",
-      "sha256": "b7f33e7feebb57a3a2dea7741307ddaa4699c59e72d6ec6d0bbe1df76048d963",
+      "sha256": "ac3e8a2576d5149950afe77f1616062c99d41e365ca9b62625532c3a4c5ba8c3",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -211,7 +211,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/web/PublishController.java",
-      "sha256": "da6f223e77d0e50106d023a4e296d2713c23a1a7b9fd94173878a8646fa8f1ec",
+      "sha256": "942f06ed82f69b32f0d2dceea2cb55e0c8dd4d5d05dafc5fb0369f70a13e275e",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -219,7 +219,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/web/PythonEvaluationArtifactBindingPreviewController.java",
-      "sha256": "3ccdaf2f146ce99e7da5d3a96aa48cf6d93f4b6f5dc3ee80d6bafa1669059262",
+      "sha256": "82ff91896d3df329b2383c228d96def2025eb9c1bf436f1cda3e99a67fd484de",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -227,7 +227,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ConsistencyEvidenceOverviewController.java",
-      "sha256": "fb92b83bf607e63ce34165b3d10cff91b9c7a2e83ddf0bf1fcdc603b358e7c1f",
+      "sha256": "13e09582e0f0438c88b658d91d84126454425e9ee74c515eab27791c16b93a59",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -243,7 +243,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/PaperShadowComparisonController.java",
-      "sha256": "f37890ca6180c93c0170a36b4d83ce17d0603e55346965fde27e18598ec05b0a",
+      "sha256": "7575f86b4166fb2446f14d301074394c8a625f2096193def88b24e040cce38d6",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -251,7 +251,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/PaperShadowConsistencyDrilldownController.java",
-      "sha256": "ce73ad4fc22371b9cc10438278d800af8b5493cf567a19aa97e89017fb0d196d",
+      "sha256": "d7724f4b8d265ab83ae180a02b35363496b093a95aece8c0603a5b3d6836d5ad",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -267,7 +267,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/PythonEvaluationArtifactPreviewOverviewController.java",
-      "sha256": "53058a5b3fa3b49565a6879e19f1a52dc30d7f75849adbeb6d8403febc5f6e55",
+      "sha256": "40ba6065677ab462dea210c58fdaf9ba6a0d96eb19e8325ddd39a906a2738fe7",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -291,7 +291,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ShadowLivePreviewController.java",
-      "sha256": "69d9a0b3612ed17a3d2fb929afce2a99c90a38c0c3d0f7c155398b5eaa033fff",
+      "sha256": "0616b7bb623962a36f031a0c519bbc3fe74e2e08c9d29ba319b186685f786704",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -339,7 +339,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ShadowRunReadOnlyController.java",
-      "sha256": "86390be6c325f89cea7009da0cdbd0503486afbd6793464ac5ceb66275954112",
+      "sha256": "eb6b5fd0ccea7a466bf28ebba84dddd2b50bd9cb34e213b4c13d2fd574e9f2e2",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -355,7 +355,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ShadowValidationWorkflowOverviewController.java",
-      "sha256": "ab5383d85cc27a67aca6baef3a555f0052093f672a5b999bc5355b2adb7bec20",
+      "sha256": "3713c20437d4ee006cc098b136524e099fd4d2083be6197adbd3a38bffbff402",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -371,7 +371,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/StrategyDefinitionController.java",
-      "sha256": "b825b65ccc0fbff792646447d93166f7f93511adb7f8e13520220a611d4451e0",
+      "sha256": "e6e52b5160226764cd96e462a4fff63dc2a46a6b6b1c85b176bb923cbc7faca3",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -379,7 +379,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/StrategyEvaluationGateController.java",
-      "sha256": "4f125bf0ee3019807b7b478ca7b541a778dcdaf2f552a83c2fab30c85661b8ff",
+      "sha256": "b8f6b86aaa36bcdbbea71e5011e27973a14a45a640af5b44599b6a805ebeaa87",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -387,7 +387,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/StrategyValidationOverviewController.java",
-      "sha256": "112a9cbc2a108d8de0d84594666b71a218f356d872d204849d144526a599a03f",
+      "sha256": "da94dde772363f465bc796f3eb50621d1b1ca44c51522ee42424b0c08682b149",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -403,7 +403,7 @@
     },
     {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/validationreview/api/web/ValidationReviewController.java",
-      "sha256": "6248aaf208ae56170f488142b4291b80c989da5d945f65d9d5fd3b19b418e54c",
+      "sha256": "a25f0580242ea9f73b9684f3f2edc071a2069374d3d4d1b23f204b590cdb9875",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -3103,136 +3103,6 @@
       ],
       "approvedCallers": [
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotRuntimeIdentity.java",
-          "callerMember": "<unit>#<type>",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotRuntimeIdentity.java",
-          "callerMember": "ExactPilotRuntimeIdentity#<init>(ExactPilotBinding.DeploymentIdentity)",
-          "contractMember": "<typed-use>"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotRuntimeIdentity.java",
-          "callerMember": "ExactPilotRuntimeIdentity#<init>(ExactPilotBinding.DeploymentIdentity)",
-          "contractMember": "DeploymentIdentity"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotRuntimeIdentity.java",
-          "callerMember": "ExactPilotRuntimeIdentity#<init>(ExactPilotBinding.DeploymentIdentity)",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotRuntimeIdentity.java",
-          "callerMember": "ExactPilotRuntimeIdentity#deployment",
-          "contractMember": "DeploymentIdentity"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotRuntimeIdentity.java",
-          "callerMember": "ExactPilotRuntimeIdentity#deployment",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotRuntimeIdentity.java",
-          "callerMember": "ExactPilotRuntimeIdentity#from(ReadOnlyProviderObservationRuntimeIdentity,String,String,String)",
-          "contractMember": "DeploymentIdentity"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotRuntimeIdentity.java",
-          "callerMember": "ExactPilotRuntimeIdentity#from(ReadOnlyProviderObservationRuntimeIdentity,String,String,String)",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotScopeCliInput.java",
-          "callerMember": "<unit>#<type>",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotScopeCliInput.java",
-          "callerMember": "ExactPilotScopeCliInput.BindingInput#correlation",
-          "contractMember": "Correlation"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotScopeCliInput.java",
-          "callerMember": "ExactPilotScopeCliInput.BindingInput#correlation",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotScopeCliInput.java",
-          "callerMember": "ExactPilotScopeCliInput.BindingInput#orderType",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotScopeCliInput.java",
-          "callerMember": "ExactPilotScopeCliInput.BindingInput#orderType",
-          "contractMember": "OrderType"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotScopeCliInput.java",
-          "callerMember": "ExactPilotScopeCliInput.BindingInput#side",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotScopeCliInput.java",
-          "callerMember": "ExactPilotScopeCliInput.BindingInput#side",
-          "contractMember": "Side"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotScopeCliInput.java",
-          "callerMember": "ExactPilotScopeCliInput.BindingInput#toDraft()",
-          "contractMember": "<typed-use>"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotScopeCliInput.java",
-          "callerMember": "ExactPilotScopeCliInput.BindingInput#toDraft()",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotScopeCliInput.java",
-          "callerMember": "ExactPilotScopeCliInput.BindingInput#toDraft()",
-          "contractMember": "OrderEnvelope"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotScopeCliInput.java",
-          "callerMember": "ExactPilotScopeCliInput.PilotScopeInput#correlation",
-          "contractMember": "Correlation"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotScopeCliInput.java",
-          "callerMember": "ExactPilotScopeCliInput.PilotScopeInput#correlation",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotScopeCliInput.java",
-          "callerMember": "ExactPilotScopeCliInput.PilotScopeInput#toCommand()",
-          "contractMember": "<typed-use>"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotScopeCliInput.java",
-          "callerMember": "ExactPilotScopeCliInput.ScopeApprovalInput#approverCorrelation",
-          "contractMember": "Correlation"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotScopeCliInput.java",
-          "callerMember": "ExactPilotScopeCliInput.ScopeApprovalInput#approverCorrelation",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotScopeCliInput.java",
-          "callerMember": "ExactPilotScopeCliInput.ScopeApprovalInput#creatorCorrelation",
-          "contractMember": "Correlation"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotScopeCliInput.java",
-          "callerMember": "ExactPilotScopeCliInput.ScopeApprovalInput#creatorCorrelation",
-          "contractMember": "ExactPilotBinding"
-        },
-        {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotScopeCliInput.java",
-          "callerMember": "ExactPilotScopeCliInput.ScopeApprovalInput#toCommand()",
-          "contractMember": "<typed-use>"
-        },
-        {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "ExactPilotBinding"
@@ -3318,139 +3188,269 @@
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#requireExactOrder(ExactPilotBinding.OrderEnvelope,PilotObservationSet,RiskLimitSet,OperatorPilotAuthority,BigDecimal,Instant)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#requireExactOrder(ExactPilotBinding.OrderEnvelope,PilotObservationSet,RiskLimitSet,OperatorPilotAuthority,BigDecimal,Instant)",
           "contractMember": "AccountIdentity"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#requireExactOrder(ExactPilotBinding.OrderEnvelope,PilotObservationSet,RiskLimitSet,OperatorPilotAuthority,BigDecimal,Instant)",
           "contractMember": "EXCHANGE"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#requireExactOrder(ExactPilotBinding.OrderEnvelope,PilotObservationSet,RiskLimitSet,OperatorPilotAuthority,BigDecimal,Instant)",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#requireExactOrder(ExactPilotBinding.OrderEnvelope,PilotObservationSet,RiskLimitSet,OperatorPilotAuthority,BigDecimal,Instant)",
           "contractMember": "OrderEnvelope"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#requireExactOrder(ExactPilotBinding.OrderEnvelope,PilotObservationSet,RiskLimitSet,OperatorPilotAuthority,BigDecimal,Instant)",
           "contractMember": "OrderType"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#requireExactOrder(ExactPilotBinding.OrderEnvelope,PilotObservationSet,RiskLimitSet,OperatorPilotAuthority,BigDecimal,Instant)",
           "contractMember": "Side"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#resolve(AuthenticatedLiveControlActor,UUID,UUID,UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,Instant)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#resolve(AuthenticatedLiveControlActor,UUID,UUID,UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,Instant)",
           "contractMember": "AccountIdentity"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#resolve(AuthenticatedLiveControlActor,UUID,UUID,UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,Instant)",
           "contractMember": "AuthoritativeFacts"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#resolve(AuthenticatedLiveControlActor,UUID,UUID,UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,Instant)",
           "contractMember": "ENVIRONMENT"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#resolve(AuthenticatedLiveControlActor,UUID,UUID,UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,Instant)",
           "contractMember": "EXCHANGE"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#resolve(AuthenticatedLiveControlActor,UUID,UUID,UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,Instant)",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#resolve(AuthenticatedLiveControlActor,UUID,UUID,UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,Instant)",
           "contractMember": "ObservationIdentities"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#resolve(AuthenticatedLiveControlActor,UUID,UUID,UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,Instant)",
           "contractMember": "OperatorPilotAuthorityIdentity"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#resolve(AuthenticatedLiveControlActor,UUID,UUID,UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,Instant)",
           "contractMember": "OrderEnvelope"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#resolve(AuthenticatedLiveControlActor,UUID,UUID,UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,Instant)",
           "contractMember": "OrderType"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#resolve(AuthenticatedLiveControlActor,UUID,UUID,UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,Instant)",
           "contractMember": "REQUIRED_KILL_SWITCH_STATE"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#resolve(AuthenticatedLiveControlActor,UUID,UUID,UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,Instant)",
           "contractMember": "RiskPolicyIdentity"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#resolve(AuthenticatedLiveControlActor,UUID,UUID,UUID,ExactPilotBinding.OrderEnvelope,Instant,Instant,Instant)",
           "contractMember": "Side"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#resolveCurrent(AuthenticatedLiveControlActor,ExactPilotBinding,Instant)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#resolveCurrent(AuthenticatedLiveControlActor,ExactPilotBinding,Instant)",
           "contractMember": "AuthoritativeFacts"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#resolveCurrent(AuthenticatedLiveControlActor,ExactPilotBinding,Instant)",
           "contractMember": "ExactPilotBinding"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#resolveForCreation(AuthenticatedLiveControlActor,ExactPilotBindingCommand,Instant)",
           "contractMember": "<typed-use>"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#resolveForCreation(AuthenticatedLiveControlActor,ExactPilotBindingCommand,Instant)",
           "contractMember": "AuthoritativeFacts"
         },
         {
-          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthority.java",
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/authority/StoredFactExactPilotBindingAuthority.java",
           "callerMember": "StoredFactExactPilotBindingAuthority#resolveForCreation(AuthenticatedLiveControlActor,ExactPilotBindingCommand,Instant)",
           "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotRuntimeIdentity.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotRuntimeIdentity.java",
+          "callerMember": "ExactPilotRuntimeIdentity#<init>(ExactPilotBinding.DeploymentIdentity)",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotRuntimeIdentity.java",
+          "callerMember": "ExactPilotRuntimeIdentity#<init>(ExactPilotBinding.DeploymentIdentity)",
+          "contractMember": "DeploymentIdentity"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotRuntimeIdentity.java",
+          "callerMember": "ExactPilotRuntimeIdentity#<init>(ExactPilotBinding.DeploymentIdentity)",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotRuntimeIdentity.java",
+          "callerMember": "ExactPilotRuntimeIdentity#deployment",
+          "contractMember": "DeploymentIdentity"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotRuntimeIdentity.java",
+          "callerMember": "ExactPilotRuntimeIdentity#deployment",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotRuntimeIdentity.java",
+          "callerMember": "ExactPilotRuntimeIdentity#from(ReadOnlyProviderObservationRuntimeIdentity,String,String,String)",
+          "contractMember": "DeploymentIdentity"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotRuntimeIdentity.java",
+          "callerMember": "ExactPilotRuntimeIdentity#from(ReadOnlyProviderObservationRuntimeIdentity,String,String,String)",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotScopeCliInput.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotScopeCliInput.java",
+          "callerMember": "ExactPilotScopeCliInput.BindingInput#correlation",
+          "contractMember": "Correlation"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotScopeCliInput.java",
+          "callerMember": "ExactPilotScopeCliInput.BindingInput#correlation",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotScopeCliInput.java",
+          "callerMember": "ExactPilotScopeCliInput.BindingInput#orderType",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotScopeCliInput.java",
+          "callerMember": "ExactPilotScopeCliInput.BindingInput#orderType",
+          "contractMember": "OrderType"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotScopeCliInput.java",
+          "callerMember": "ExactPilotScopeCliInput.BindingInput#side",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotScopeCliInput.java",
+          "callerMember": "ExactPilotScopeCliInput.BindingInput#side",
+          "contractMember": "Side"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotScopeCliInput.java",
+          "callerMember": "ExactPilotScopeCliInput.BindingInput#toDraft()",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotScopeCliInput.java",
+          "callerMember": "ExactPilotScopeCliInput.BindingInput#toDraft()",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotScopeCliInput.java",
+          "callerMember": "ExactPilotScopeCliInput.BindingInput#toDraft()",
+          "contractMember": "OrderEnvelope"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotScopeCliInput.java",
+          "callerMember": "ExactPilotScopeCliInput.PilotScopeInput#correlation",
+          "contractMember": "Correlation"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotScopeCliInput.java",
+          "callerMember": "ExactPilotScopeCliInput.PilotScopeInput#correlation",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotScopeCliInput.java",
+          "callerMember": "ExactPilotScopeCliInput.PilotScopeInput#toCommand()",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotScopeCliInput.java",
+          "callerMember": "ExactPilotScopeCliInput.ScopeApprovalInput#approverCorrelation",
+          "contractMember": "Correlation"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotScopeCliInput.java",
+          "callerMember": "ExactPilotScopeCliInput.ScopeApprovalInput#approverCorrelation",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotScopeCliInput.java",
+          "callerMember": "ExactPilotScopeCliInput.ScopeApprovalInput#creatorCorrelation",
+          "contractMember": "Correlation"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotScopeCliInput.java",
+          "callerMember": "ExactPilotScopeCliInput.ScopeApprovalInput#creatorCorrelation",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/model/ExactPilotScopeCliInput.java",
+          "callerMember": "ExactPilotScopeCliInput.ScopeApprovalInput#toCommand()",
+          "contractMember": "<typed-use>"
         },
         {
           "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/livecontrol/ExactPilotScopeCliConfigurationTest.java",

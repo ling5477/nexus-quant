@@ -14,7 +14,7 @@ import com.guidinglight.nexusquant.trading.api.dto.TradeView;
 
 import com.guidinglight.nexusquant.account.application.service.ExchangeAccountQueryService;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;

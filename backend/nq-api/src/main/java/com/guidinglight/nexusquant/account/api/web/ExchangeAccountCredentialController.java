@@ -15,7 +15,7 @@ import com.guidinglight.nexusquant.account.application.command.CredentialPermiss
 import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
 import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCredentialRotateCommand;
 import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCredentialUpsertCommand;
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
 import io.swagger.v3.oas.annotations.Operation;

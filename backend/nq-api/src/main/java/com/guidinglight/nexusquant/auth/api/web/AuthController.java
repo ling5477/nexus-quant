@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.auth.api.web;
 
 import com.guidinglight.nexusquant.account.application.service.ExchangeAccountQueryService;
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.auth.api.dto.AuthLoginRequestBody;
 import com.guidinglight.nexusquant.auth.api.dto.AuthLoginResponse;
 import com.guidinglight.nexusquant.auth.api.dto.CurrentUserResponse;

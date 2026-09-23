@@ -2,7 +2,7 @@ package com.guidinglight.nexusquant.strategy.api.web;
 
 import com.guidinglight.nexusquant.strategy.api.dto.PaperShadowComparisonResponse;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonQuery;
 import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.service.PaperShadowComparisonService;

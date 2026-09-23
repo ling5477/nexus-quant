@@ -2,7 +2,7 @@ package com.guidinglight.nexusquant.strategy.api.web;
 
 import com.guidinglight.nexusquant.strategy.api.dto.ShadowValidationWorkflowOverviewResponse;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.strategy.application.shadowvalidation.service.ShadowValidationWorkflowOverviewQueryService;
 import io.swagger.v3.oas.annotations.Operation;

@@ -1,5 +1,9 @@
 package com.guidinglight.nexusquant.api.web;
 
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiFieldError;
+import com.guidinglight.nexusquant.api.web.model.ApiErrorIdentity;
+
 import com.guidinglight.nexusquant.account.application.exception.ExchangeAccountCredentialNotFoundException;
 import com.guidinglight.nexusquant.account.application.exception.ExchangeAccountNotFoundException;
 import com.guidinglight.nexusquant.auth.application.exception.AdminNotInitializedException;
