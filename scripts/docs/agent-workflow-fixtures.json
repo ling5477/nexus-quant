@@ -686,5 +686,137 @@
         "fullMavenDefault": false
       }
     }
+  ],
+  "jevCases": [
+    {
+      "id": "J1-first-network-failure",
+      "scenario": "同一 head 的 CI 首次网络请求失败；日志未区分环境与 CI 基础设施，尚无重试结论。",
+      "decisionType": "semantic_failure_classification",
+      "factsCollected": true,
+      "deterministicAnswer": false,
+      "unresolvedSemantic": true,
+      "boundedValue": true,
+      "independentReview": false,
+      "expectedCall": true
+    },
+    {
+      "id": "J2-ambiguous-concurrent-causes",
+      "scenario": "并发失败有两个合理根因，现有日志不能直接区分，只请求候选排序。",
+      "decisionType": "ambiguous_root_cause_ranking",
+      "factsCollected": true,
+      "deterministicAnswer": false,
+      "unresolvedSemantic": true,
+      "boundedValue": true,
+      "independentReview": false,
+      "expectedCall": true
+    },
+    {
+      "id": "J3-approved-targeted-review-focus",
+      "scenario": "确定性策略已要求独立审查，仅选择本次审查的重点。",
+      "decisionType": "targeted_review_focus",
+      "factsCollected": true,
+      "deterministicAnswer": false,
+      "unresolvedSemantic": true,
+      "boundedValue": true,
+      "independentReview": true,
+      "expectedCall": true
+    },
+    {
+      "id": "J4-flyway-deterministic",
+      "scenario": "Flyway migration 已由确定性迁移规则指向审查与验证。",
+      "decisionType": "targeted_review_focus",
+      "factsCollected": true,
+      "deterministicAnswer": true,
+      "unresolvedSemantic": false,
+      "boundedValue": false,
+      "independentReview": true,
+      "expectedCall": false
+    },
+    {
+      "id": "J5-trading-state-deterministic",
+      "scenario": "交易状态 mutation 已由正确性合同决定证明与审查。",
+      "decisionType": "targeted_review_focus",
+      "factsCollected": true,
+      "deterministicAnswer": true,
+      "unresolvedSemantic": false,
+      "boundedValue": false,
+      "independentReview": true,
+      "expectedCall": false
+    },
+    {
+      "id": "J6-ordinary-frontend-deterministic",
+      "scenario": "普通前端实现按既有前端能力路由。",
+      "decisionType": "task_classification",
+      "factsCollected": true,
+      "deterministicAnswer": true,
+      "unresolvedSemantic": false,
+      "boundedValue": false,
+      "independentReview": false,
+      "expectedCall": false
+    },
+    {
+      "id": "J7-docs-only-deterministic",
+      "scenario": "纯文档小改直接走最小验证。",
+      "decisionType": "workflow_routing",
+      "factsCollected": true,
+      "deterministicAnswer": true,
+      "unresolvedSemantic": false,
+      "boundedValue": false,
+      "independentReview": false,
+      "expectedCall": false
+    },
+    {
+      "id": "J8-release-delivery-deterministic",
+      "scenario": "发布交付由既有 release hard gate 决定。",
+      "decisionType": "release_ready",
+      "factsCollected": true,
+      "deterministicAnswer": true,
+      "unresolvedSemantic": false,
+      "boundedValue": false,
+      "independentReview": true,
+      "expectedCall": false
+    },
+    {
+      "id": "J9-review-not-required",
+      "scenario": "确定性策略未要求独立审查，Jev 不得自行触发。",
+      "decisionType": "targeted_review_focus",
+      "factsCollected": true,
+      "deterministicAnswer": false,
+      "unresolvedSemantic": true,
+      "boundedValue": true,
+      "independentReview": false,
+      "expectedCall": false
+    },
+    {
+      "id": "J10-insufficient-facts",
+      "scenario": "关键日志尚未收集，先补确定性事实。",
+      "decisionType": "retry_vs_escalate",
+      "factsCollected": false,
+      "deterministicAnswer": false,
+      "unresolvedSemantic": true,
+      "boundedValue": true,
+      "independentReview": false,
+      "expectedCall": false
+    },
+    {
+      "id": "J11-no-bounded-value",
+      "scenario": "虽有不确定性，但建议无法改善当前决定，Codex 直接处理。",
+      "decisionType": "retry_vs_escalate",
+      "factsCollected": true,
+      "deterministicAnswer": false,
+      "unresolvedSemantic": true,
+      "boundedValue": false,
+      "independentReview": false,
+      "expectedCall": false
+    }
+  ],
+  "jevAuthorityMutations": [
+    "active_authority",
+    "pass_fail_owner",
+    "release_owner",
+    "correctness_owner",
+    "broader_review_decision",
+    "default_call_yes",
+    "remove_abstain"
   ]
 }

@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
     [string] $PolicyPath = 'scripts/docs/agent-workflow-policy.json',
     [string] $FixturePath = 'scripts/docs/agent-workflow-fixtures.json',
@@ -99,23 +99,28 @@ function Assert-Policy($Policy, $Inventory) {
     }
     Assert-Strings $Policy.semanticRouting.changeKinds 'SEMANTIC_POLICY_INVALID'
     Assert-Strings $Policy.semanticRouting.effects 'SEMANTIC_POLICY_INVALID'
-    # Jev 只能在确定性路由之后给出建议；该合同不得承接安全或验收权威。
+    # Jev 仅在确定性规则留下有界语义问题时提供建议；合同不得承接路由、审查触发或验收权威。
     Assert-Condition ($Policy.PSObject.Properties.Name -ccontains 'jevRouting') 'JEV_ADVISORY_CONTRACT_MISSING'
     $jev = $Policy.jevRouting
-    Assert-Condition ($jev.mode -ceq 'SHADOW') 'JEV_AUTHORITY_WEAKENED'
-    Assert-Strings $jev.routingOrder 'JEV_ROUTING_INVALID'
-    Assert-Condition ($jev.routingOrder[0] -ceq 'DETERMINISTIC_FACTS' -and
-        $jev.routingOrder[1] -ceq 'DETERMINISTIC_RULE_IF_AVAILABLE' -and
-        $jev.routingOrder[-1] -ceq 'CODEX_SELECTS_ACTUAL_ROUTE') 'JEV_ROUTING_INVALID'
-    Assert-Strings $jev.allowedDecisions 'JEV_ADVISORY_CONTRACT_INVALID'
+    Assert-Condition ($jev.mode -ceq 'SHADOW' -and $jev.authority -ceq 'ADVISORY' -and $jev.defaultCall -ceq 'NO') 'JEV_AUTHORITY_WEAKENED'
+    Assert-SameSet $jev.routingOrder @('DETERMINISTIC_FACTS','DETERMINISTIC_RULE_IF_AVAILABLE','BOUNDED_SEMANTIC_JUDGMENT_IF_UNRESOLVED','JEV_ADVISORY_IF_USEFUL','CODEX_SELECTS_ACTUAL_ROUTE') 'JEV_ROUTING_INVALID'
+    Assert-Condition ($jev.routingOrder[0] -ceq 'DETERMINISTIC_FACTS' -and $jev.routingOrder[1] -ceq 'DETERMINISTIC_RULE_IF_AVAILABLE' -and $jev.routingOrder[-1] -ceq 'CODEX_SELECTS_ACTUAL_ROUTE') 'JEV_ROUTING_INVALID'
+    foreach ($gate in @('deterministicFactsRequired','deterministicPolicyFirst','skipWhenDeterministicAnswerExists','requiresUnresolvedSemanticJudgment','requiresBoundedAdvisoryValue','targetedReviewRequiresIndependentReview','neverTriggerReview','neverExpandReviewScope','neverTriggerReviewOfReview')) {
+        Assert-Condition ($jev.callGate.$gate -is [bool] -and $jev.callGate.$gate) 'JEV_CALL_GATE_WEAKENED'
+    }
+    Assert-SameSet $jev.allowedDecisions @('semantic_failure_classification','retry_vs_escalate','targeted_review_focus','ambiguous_root_cause_ranking') 'JEV_ADVISORY_CONTRACT_INVALID'
+    Assert-SameSet $jev.forbiddenDecisions @('task_classification','workflow_routing','reviewer_selection','select_relevant_existing_reviewer','broader_review_consideration','review_of_review') 'JEV_ADVISORY_CONTRACT_INVALID'
+    Assert-SameSet $jev.answerOptions.semantic_failure_classification @('IMPLEMENTATION_FAILURE','ENVIRONMENT_FAILURE','TEST_HARNESS_FAILURE','CI_INFRA_FAILURE','EVIDENCE_INSUFFICIENT','ABSTAIN') 'JEV_ANSWER_OPTIONS_INVALID'
+    Assert-SameSet $jev.answerOptions.retry_vs_escalate @('RETRY_ONCE','STOP_AND_ANALYZE','ESCALATE_TARGETED_REVIEW','ABSTAIN') 'JEV_ANSWER_OPTIONS_INVALID'
+    Assert-Condition ($jev.abstain.answer -ceq 'ABSTAIN' -and $jev.abstain.confidenceWhenUnavailable -ceq 'unavailable' -and $jev.abstain.neverFabricateConfidence -is [bool] -and $jev.abstain.neverFabricateConfidence) 'JEV_ABSTAIN_INVALID'
+    Assert-SameSet $jev.abstain.reasons @('EVIDENCE_INSUFFICIENT','DECISION_TYPE_OUT_OF_SCOPE','DETERMINISTIC_ANSWER_EXISTS','CANDIDATES_NOT_DISTINGUISHABLE','BELOW_AGREED_CONFIDENCE_THRESHOLD') 'JEV_ABSTAIN_INVALID'
     Assert-Strings $jev.forbiddenAuthority 'JEV_AUTHORITY_WEAKENED'
-    foreach ($boundary in @('pass_fail','ci_replacement','security_correctness','code_correctness_proof')) {
+    foreach ($boundary in @('pass_fail','finding_closure','remediation_verified','release_ready','deployment_ready','rollback_safe','mandatory_hard_gate_bypass','ci_replacement','test_replacement','git_evidence_replacement','postgresql_flyway_evidence_replacement','runtime_proof_replacement','security_correctness','database_correctness','migration_correctness','concurrency_correctness','code_correctness_proof','trading_correctness','accounting_correctness','live_authorization')) {
         Assert-Condition ($jev.forbiddenAuthority -ccontains $boundary) 'JEV_AUTHORITY_WEAKENED'
     }
-    Assert-Strings $jev.shadowReporting.requiredFields 'JEV_REPORTING_INVALID'
-    foreach ($field in @('jev_answer','actual_workflow_decision','final_outcome')) {
-        Assert-Condition ($jev.shadowReporting.requiredFields -ccontains $field) 'JEV_REPORTING_INVALID'
-    }
+    Assert-SameSet $jev.shadowReporting.requiredFields @('decision_type','deterministic_facts_summary','jev_answer','jev_confidence_or_unavailable','evidence_used','actual_workflow_decision','final_outcome','authority') 'JEV_REPORTING_INVALID'
+    Assert-Condition ($jev.shadowReporting.authorityValue -ceq 'ADVISORY') 'JEV_REPORTING_INVALID'
+    Assert-SameSet $jev.shadowReporting.evaluationFields @('decisionType','jevDecision','actualDecision','finalOutcome','agreement','abstained') 'JEV_REPORTING_INVALID'
     Assert-Strings $jev.integrationConstraints 'JEV_INTEGRATION_INVALID'
     foreach ($boundary in @('no_project_mcp_configuration','no_direct_typesafe_rest_api','no_api_key_read_print_or_repository_storage')) {
         Assert-Condition ($jev.integrationConstraints -ccontains $boundary) 'JEV_INTEGRATION_INVALID'
@@ -205,6 +210,22 @@ function Assert-SemanticCase($Policy, $Case) {
     foreach ($field in @('independentReview','testScope','repoWideAudit','fullMavenDefault')) {
         Assert-Condition ($actual.$field -ceq $Case.expected.$field) 'SEMANTIC_ROUTING_MISMATCH'
     }
+}
+
+# fixture 只验证调用门，不模拟 Jev 回答，也不把建议当作验收结果。
+function Resolve-JevCall($Policy, $Case) {
+    $jev = $Policy.jevRouting
+    if (-not $Case.factsCollected -or $Case.deterministicAnswer -or -not $Case.unresolvedSemantic -or -not $Case.boundedValue) { return $false }
+    if ($jev.allowedDecisions -cnotcontains $Case.decisionType) { return $false }
+    if ($Case.decisionType -ceq 'targeted_review_focus' -and -not $Case.independentReview) { return $false }
+    return $true
+}
+function Assert-JevCase($Policy, $Case) {
+    Assert-Condition ($Case.scenario -is [string] -and -not [string]::IsNullOrWhiteSpace($Case.scenario)) 'JEV_CASE_INVALID'
+    foreach ($field in @('factsCollected','deterministicAnswer','unresolvedSemantic','boundedValue','independentReview','expectedCall')) {
+        Assert-Condition ($Case.$field -is [bool]) 'JEV_CASE_INVALID'
+    }
+    Assert-Condition ((Resolve-JevCall $Policy $Case) -eq $Case.expectedCall) "JEV_CALL_MISMATCH id=$($Case.id)"
 }
 
 $policy = Read-Json $PolicyPath
@@ -302,3 +323,30 @@ foreach ($invalid in @(
     Assert-Condition ($errorCode -ceq $invalid.code) 'SEMANTIC_NEGATIVE_FAILED'
 }
 Write-Output "SUMMARY semantic=$($fixtures.semanticCases.Count) paraphrase=1 invalid-facts=3 dynamic-consolidation=PASS"
+
+Assert-Condition ($fixtures.jevCases -is [array] -and $fixtures.jevCases.Count -gt 0) 'JEV_CASES_MISSING'
+Assert-Strings @($fixtures.jevCases | ForEach-Object { $_.id }) 'DUPLICATE_JEV_CASE_ID'
+foreach ($case in $fixtures.jevCases) {
+    Assert-JevCase $policy $case
+    Write-Output "PASS jev-call=$($case.id) call=$($case.expectedCall)"
+}
+$requiredJevMutations = @('active_authority','pass_fail_owner','release_owner','correctness_owner','broader_review_decision','default_call_yes','remove_abstain')
+Assert-SameSet $fixtures.jevAuthorityMutations $requiredJevMutations 'JEV_MUTATION_COVERAGE_MISSING'
+foreach ($mutation in $fixtures.jevAuthorityMutations) {
+    $candidate = Copy-Data $policy
+    switch ($mutation) {
+        'active_authority' { $candidate.jevRouting.authority = 'ACTIVE' }
+        'pass_fail_owner' { $candidate.jevRouting.forbiddenAuthority = @($candidate.jevRouting.forbiddenAuthority | Where-Object { $_ -cne 'pass_fail' }) }
+        'release_owner' { $candidate.jevRouting.forbiddenAuthority = @($candidate.jevRouting.forbiddenAuthority | Where-Object { $_ -cne 'release_ready' }) }
+        'correctness_owner' { $candidate.jevRouting.forbiddenAuthority = @($candidate.jevRouting.forbiddenAuthority | Where-Object { $_ -cne 'code_correctness_proof' }) }
+        'broader_review_decision' { $candidate.jevRouting.allowedDecisions += 'broader_review_consideration' }
+        'default_call_yes' { $candidate.jevRouting.defaultCall = 'YES' }
+        'remove_abstain' { $candidate.jevRouting.abstain.answer = 'FORCED_CHOICE' }
+        default { throw 'UNKNOWN_JEV_MUTATION' }
+    }
+    $rejected = $false
+    try { Assert-Policy $candidate $inventory } catch { $rejected = $true }
+    Assert-Condition $rejected "JEV_MUTATION_NOT_REJECTED id=$mutation"
+    Write-Output "PASS jev-mutation=$mutation rejected=true"
+}
+Write-Output "SUMMARY jev-cases=$($fixtures.jevCases.Count) jev-mutations=$($fixtures.jevAuthorityMutations.Count) authority=ADVISORY default-call=NO"

@@ -268,25 +268,69 @@
   },
   "jevRouting": {
     "mode": "SHADOW",
-    "purpose": "Jev is an advisory-only semantic-routing input; it does not grant authority or change deterministic routing.",
+    "purpose": "Jev is a semantic judgment advisor after deterministic policy; it does not own routing, review requirements, or authority.",
+    "authority": "ADVISORY",
+    "defaultCall": "NO",
     "routingOrder": [
       "DETERMINISTIC_FACTS",
       "DETERMINISTIC_RULE_IF_AVAILABLE",
-      "BOUNDED_SEMANTIC_DECISION_IF_UNRESOLVED",
-      "JEV_ADVISORY_RESULT",
+      "BOUNDED_SEMANTIC_JUDGMENT_IF_UNRESOLVED",
+      "JEV_ADVISORY_IF_USEFUL",
       "CODEX_SELECTS_ACTUAL_ROUTE"
     ],
+    "callGate": {
+      "deterministicFactsRequired": true,
+      "deterministicPolicyFirst": true,
+      "skipWhenDeterministicAnswerExists": true,
+      "requiresUnresolvedSemanticJudgment": true,
+      "requiresBoundedAdvisoryValue": true,
+      "targetedReviewRequiresIndependentReview": true,
+      "neverTriggerReview": true,
+      "neverExpandReviewScope": true,
+      "neverTriggerReviewOfReview": true
+    },
     "allowedDecisions": [
+      "semantic_failure_classification",
+      "retry_vs_escalate",
+      "targeted_review_focus",
+      "ambiguous_root_cause_ranking"
+    ],
+    "forbiddenDecisions": [
       "task_classification",
       "workflow_routing",
       "reviewer_selection",
-      "targeted_review_selection",
-      "retry_vs_escalate",
-      "semantic_failure_classification",
-      "likely_environment_flaky_or_implementation_failure",
+      "select_relevant_existing_reviewer",
       "broader_review_consideration",
-      "select_relevant_existing_reviewer"
+      "review_of_review"
     ],
+    "answerOptions": {
+      "semantic_failure_classification": [
+        "IMPLEMENTATION_FAILURE",
+        "ENVIRONMENT_FAILURE",
+        "TEST_HARNESS_FAILURE",
+        "CI_INFRA_FAILURE",
+        "EVIDENCE_INSUFFICIENT",
+        "ABSTAIN"
+      ],
+      "retry_vs_escalate": [
+        "RETRY_ONCE",
+        "STOP_AND_ANALYZE",
+        "ESCALATE_TARGETED_REVIEW",
+        "ABSTAIN"
+      ]
+    },
+    "abstain": {
+      "answer": "ABSTAIN",
+      "reasons": [
+        "EVIDENCE_INSUFFICIENT",
+        "DECISION_TYPE_OUT_OF_SCOPE",
+        "DETERMINISTIC_ANSWER_EXISTS",
+        "CANDIDATES_NOT_DISTINGUISHABLE",
+        "BELOW_AGREED_CONFIDENCE_THRESHOLD"
+      ],
+      "confidenceWhenUnavailable": "unavailable",
+      "neverFabricateConfidence": true
+    },
     "forbiddenAuthority": [
       "pass_fail",
       "finding_closure",
@@ -304,18 +348,32 @@
       "database_correctness",
       "migration_correctness",
       "concurrency_correctness",
-      "code_correctness_proof"
+      "code_correctness_proof",
+      "trading_correctness",
+      "accounting_correctness",
+      "live_authorization"
     ],
     "shadowReporting": {
       "requiredFields": [
         "decision_type",
         "deterministic_facts_summary",
         "jev_answer",
-        "jev_probability",
+        "jev_confidence_or_unavailable",
+        "evidence_used",
         "actual_workflow_decision",
-        "final_outcome"
+        "final_outcome",
+        "authority"
       ],
-      "reportingRequirement": "When Jev is used, report its advisory decision beside the actual authoritative decision; no persistence mechanism is introduced by this policy."
+      "authorityValue": "ADVISORY",
+      "evaluationFields": [
+        "decisionType",
+        "jevDecision",
+        "actualDecision",
+        "finalOutcome",
+        "agreement",
+        "abstained"
+      ],
+      "reportingRequirement": "Only when Jev is called, report typed advisory output and the actual decision; outcomes are evidence-backed and no persistence is introduced."
     },
     "integrationConstraints": [
       "reuse_global_typesafe_skill_and_jev_mcp",
