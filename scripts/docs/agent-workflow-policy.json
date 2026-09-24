@@ -265,5 +265,64 @@
         ]
       }
     ]
+  },
+  "jevRouting": {
+    "mode": "SHADOW",
+    "purpose": "Jev is an advisory-only semantic-routing input; it does not grant authority or change deterministic routing.",
+    "routingOrder": [
+      "DETERMINISTIC_FACTS",
+      "DETERMINISTIC_RULE_IF_AVAILABLE",
+      "BOUNDED_SEMANTIC_DECISION_IF_UNRESOLVED",
+      "JEV_ADVISORY_RESULT",
+      "CODEX_SELECTS_ACTUAL_ROUTE"
+    ],
+    "allowedDecisions": [
+      "task_classification",
+      "workflow_routing",
+      "reviewer_selection",
+      "targeted_review_selection",
+      "retry_vs_escalate",
+      "semantic_failure_classification",
+      "likely_environment_flaky_or_implementation_failure",
+      "broader_review_consideration",
+      "select_relevant_existing_reviewer"
+    ],
+    "forbiddenAuthority": [
+      "pass_fail",
+      "finding_closure",
+      "remediation_verified",
+      "release_ready",
+      "deployment_ready",
+      "rollback_safe",
+      "mandatory_hard_gate_bypass",
+      "ci_replacement",
+      "test_replacement",
+      "git_evidence_replacement",
+      "postgresql_flyway_evidence_replacement",
+      "runtime_proof_replacement",
+      "security_correctness",
+      "database_correctness",
+      "migration_correctness",
+      "concurrency_correctness",
+      "code_correctness_proof"
+    ],
+    "shadowReporting": {
+      "requiredFields": [
+        "decision_type",
+        "deterministic_facts_summary",
+        "jev_answer",
+        "jev_probability",
+        "actual_workflow_decision",
+        "final_outcome"
+      ],
+      "reportingRequirement": "When Jev is used, report its advisory decision beside the actual authoritative decision; no persistence mechanism is introduced by this policy."
+    },
+    "integrationConstraints": [
+      "reuse_global_typesafe_skill_and_jev_mcp",
+      "no_project_mcp_configuration",
+      "no_direct_typesafe_rest_api",
+      "no_project_wrapper_or_new_module",
+      "no_api_key_read_print_or_repository_storage"
+    ]
   }
 }

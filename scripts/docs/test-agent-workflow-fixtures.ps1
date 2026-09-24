@@ -99,6 +99,27 @@ function Assert-Policy($Policy, $Inventory) {
     }
     Assert-Strings $Policy.semanticRouting.changeKinds 'SEMANTIC_POLICY_INVALID'
     Assert-Strings $Policy.semanticRouting.effects 'SEMANTIC_POLICY_INVALID'
+    # Jev 只能在确定性路由之后给出建议；该合同不得承接安全或验收权威。
+    Assert-Condition ($Policy.PSObject.Properties.Name -ccontains 'jevRouting') 'JEV_ADVISORY_CONTRACT_MISSING'
+    $jev = $Policy.jevRouting
+    Assert-Condition ($jev.mode -ceq 'SHADOW') 'JEV_AUTHORITY_WEAKENED'
+    Assert-Strings $jev.routingOrder 'JEV_ROUTING_INVALID'
+    Assert-Condition ($jev.routingOrder[0] -ceq 'DETERMINISTIC_FACTS' -and
+        $jev.routingOrder[1] -ceq 'DETERMINISTIC_RULE_IF_AVAILABLE' -and
+        $jev.routingOrder[-1] -ceq 'CODEX_SELECTS_ACTUAL_ROUTE') 'JEV_ROUTING_INVALID'
+    Assert-Strings $jev.allowedDecisions 'JEV_ADVISORY_CONTRACT_INVALID'
+    Assert-Strings $jev.forbiddenAuthority 'JEV_AUTHORITY_WEAKENED'
+    foreach ($boundary in @('pass_fail','ci_replacement','security_correctness','code_correctness_proof')) {
+        Assert-Condition ($jev.forbiddenAuthority -ccontains $boundary) 'JEV_AUTHORITY_WEAKENED'
+    }
+    Assert-Strings $jev.shadowReporting.requiredFields 'JEV_REPORTING_INVALID'
+    foreach ($field in @('jev_answer','actual_workflow_decision','final_outcome')) {
+        Assert-Condition ($jev.shadowReporting.requiredFields -ccontains $field) 'JEV_REPORTING_INVALID'
+    }
+    Assert-Strings $jev.integrationConstraints 'JEV_INTEGRATION_INVALID'
+    foreach ($boundary in @('no_project_mcp_configuration','no_direct_typesafe_rest_api','no_api_key_read_print_or_repository_storage')) {
+        Assert-Condition ($jev.integrationConstraints -ccontains $boundary) 'JEV_INTEGRATION_INVALID'
+    }
     Assert-Condition ($Policy.semanticRouting.rules -is [array] -and $Policy.semanticRouting.rules.Count -gt 0) 'SEMANTIC_POLICY_INVALID'
     foreach ($mapping in $Policy.semanticRouting.rules) {
         Assert-Strings $mapping.changeKinds 'SEMANTIC_POLICY_INVALID'
