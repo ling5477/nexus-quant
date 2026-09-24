@@ -48,7 +48,7 @@ export interface IncidentReplayEvidenceAnchor {
     checksum: string | null;
 }
 
-export interface IncidentReplayBoundaryMessage {
+interface IncidentReplayBoundaryMessage {
     code: string;
     severity: string;
     message: string;

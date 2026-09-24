@@ -1,5 +1,5 @@
 export type ExchangeCredentialType = 'OKX_API_V5' | 'BINANCE_HMAC' | 'BINANCE_ED25519';
-export type CredentialVerificationStatus = 'PENDING' | 'VERIFIED' | 'FAILED' | 'REVOKED';
+type CredentialVerificationStatus = 'PENDING' | 'VERIFIED' | 'FAILED' | 'REVOKED';
 
 export interface ExchangeAccountSummary {
     exchangeAccountId: number;

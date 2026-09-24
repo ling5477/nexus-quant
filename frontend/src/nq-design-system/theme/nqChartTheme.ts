@@ -9,15 +9,6 @@ import {nqColor, nqFont} from '@/theme/tokens';
  * 2) 这里只提供基础骨架（grid/axis/tooltip/系列色），业务图表组件负责数据映射。
  */
 
-/** 多系列默认取色顺序：品牌色优先，其后是语义色。 */
-export const nqChartSeriesPalette: string[] = [
-    nqColor.primary,
-    nqColor.warning,
-    nqColor.demo,
-    nqColor.info,
-    nqColor.success,
-];
-
 /** 折线/面积图共用的 ECharts 基础 option 片段（深色、高密度、1px 分割线）。 */
 export function buildNqLineChartBaseOption() {
     return {

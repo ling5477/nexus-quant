@@ -34,7 +34,7 @@ import type {
     TradeReplayRecordItem,
 } from '@/features/paper-trading/types/paper-trading';
 
-export interface PaperTradingListRequest {
+interface PaperTradingListRequest {
     publishId?: string;
     status?: string;
 }

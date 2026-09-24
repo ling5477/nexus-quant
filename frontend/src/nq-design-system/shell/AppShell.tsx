@@ -3,7 +3,7 @@ import {Button, Drawer, Grid, Layout} from 'antd';
 import {MenuFoldOutlined, MenuUnfoldOutlined} from '@ant-design/icons';
 import {useTranslation} from 'react-i18next';
 
-export interface AppShellProps {
+interface AppShellProps {
     nav: ReactNode;
     brand?: ReactNode;
     topRight?: ReactNode;

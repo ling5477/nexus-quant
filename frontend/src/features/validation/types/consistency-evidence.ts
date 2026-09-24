@@ -6,7 +6,7 @@
  * Consistency evidence item 是 derived / deterministic 诊断条目，不是持久 review 记录、交易授权、
  * runner command、credential view、真实 provider 状态或自动处置结果。
  */
-export type ConsistencyEvidenceComparisonStatus =
+type ConsistencyEvidenceComparisonStatus =
     'CONSISTENT'
     | 'DIVERGED'
     | 'PARTIAL'
@@ -19,7 +19,7 @@ export type ConsistencyEvidenceComparisonStatus =
  * Divergence severity 只表达诊断优先级。
  * HIGH / CRITICAL 不表示自动处置完成、行情方向、风控通过或交易授权。
  */
-export type ConsistencyEvidenceDivergenceSeverity =
+type ConsistencyEvidenceDivergenceSeverity =
     'NONE'
     | 'LOW'
     | 'MEDIUM'
@@ -32,7 +32,7 @@ export type ConsistencyEvidenceDivergenceSeverity =
  * Evidence freshness 只描述本地 evidence 新鲜度。
  * STALE / MISSING / PARTIAL / UNKNOWN 必须按 fail-closed 状态展示。
  */
-export type ConsistencyEvidenceFreshness =
+type ConsistencyEvidenceFreshness =
     'FRESH'
     | 'STALE'
     | 'MISSING'

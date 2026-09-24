@@ -17,7 +17,7 @@ const STATE: Record<FreshnessState, { color: string; label: string }> = {
   disabled:   { color: 'var(--nq-text-disabled)', label: 'Disabled' },
 };
 
-export interface DataFreshnessProps {
+interface DataFreshnessProps {
   /** 数据源名,例如 "OKX Market Data" */
   source: string;
   state: FreshnessState;

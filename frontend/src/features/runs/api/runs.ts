@@ -1,7 +1,7 @@
 import {apiClient} from '@/api/client';
 import type {StrategyRunDetailItem, StrategyRunSummaryItem} from '@/features/runs/types/runs';
 
-export interface StrategyRunListRequest {
+interface StrategyRunListRequest {
     strategyId?: string;
     scheduleId?: string;
 }

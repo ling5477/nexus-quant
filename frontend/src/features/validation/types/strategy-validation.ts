@@ -37,7 +37,7 @@ export interface StrategyValidationReason {
     message: string;
 }
 
-export type StrategyValidationDecision =
+type StrategyValidationDecision =
     'APPROVED'
     | 'REJECTED'
     | 'NEEDS_REVIEW'

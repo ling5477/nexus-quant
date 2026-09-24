@@ -1,5 +1,5 @@
 import {t} from '@/i18n';
-export interface AppEnv {
+interface AppEnv {
     appTitle: string;
     envLabel: string;
     apiBaseUrl: string;

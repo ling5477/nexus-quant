@@ -29,7 +29,7 @@ export interface OperationalReadinessResponse {
     fakeDryRunOperations: FakeDryRunOperationsResponse;
 }
 
-export interface FakeDryRunOperationsResponse {
+interface FakeDryRunOperationsResponse {
     observedAt: string;
     mode: string;
     liveState: string;

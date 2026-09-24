@@ -502,7 +502,7 @@ function DrilldownEvidenceAnchorsTable({items}: { items: PaperShadowConsistencyE
     );
 }
 
-export function PaperShadowConsistencyDrilldownPanel({
+function PaperShadowConsistencyDrilldownPanel({
                                                          drilldown,
                                                          loading,
                                                          error,
@@ -764,7 +764,7 @@ function ShadowRunDetailPanel({detail}: { detail: ShadowRunDetailResponse }) {
     );
 }
 
-export function ShadowRunEventTimeline({
+function ShadowRunEventTimeline({
                                            events,
                                            loading,
                                            error,
@@ -827,7 +827,7 @@ export function ShadowRunEventTimeline({
     );
 }
 
-export function ShadowRunSnapshotPanel({
+function ShadowRunSnapshotPanel({
                                            snapshots,
                                            loading,
                                            error,
@@ -955,7 +955,7 @@ export function ShadowRunSnapshotPanel({
     );
 }
 
-export function ShadowConsistencyReportPanel({
+function ShadowConsistencyReportPanel({
                                                  report,
                                                  loading,
                                                  error,

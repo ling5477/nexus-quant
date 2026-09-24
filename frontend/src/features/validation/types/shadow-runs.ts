@@ -7,7 +7,7 @@ import type {ReadModelEvidenceMetadata} from '@/features/validation/types/read-m
  * create / start / stop / execute / approve / trade 等写侧能力，也不得暴露 credential
  * material、private payload、real account/order 或交易授权字段。
  */
-export type JsonPrimitive = string | number | boolean | null;
+type JsonPrimitive = string | number | boolean | null;
 
 export type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
 
@@ -15,7 +15,7 @@ export interface JsonObject {
     [key: string]: JsonValue;
 }
 
-export interface ShadowRunSideEffectFlags {
+interface ShadowRunSideEffectFlags {
     noOrderSubmission: boolean;
     noCredentialAccess: boolean;
     noPrivateEndpoint: boolean;
@@ -62,7 +62,7 @@ export interface ShadowRunListResponse {
     total: number;
 }
 
-export type ShadowRunOverviewDivergenceSeverity = 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'UNKNOWN' | string;
+type ShadowRunOverviewDivergenceSeverity = 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'UNKNOWN' | string;
 
 /**
  * Shadow Run 总览响应.
@@ -98,7 +98,7 @@ export interface ShadowRunOverviewResponse {
     traceId: string;
 }
 
-export interface ShadowRunOverviewLatestRun {
+interface ShadowRunOverviewLatestRun {
     shadowRunId: string;
     strategyVersionId: string;
     datasetId: string;
@@ -117,7 +117,7 @@ export interface ShadowRunOverviewLatestRun {
     completedAt: string | null;
 }
 
-export interface ShadowRunOverviewLatestConsistency {
+interface ShadowRunOverviewLatestConsistency {
     reportId: string;
     shadowRunId: string;
     paperRunId: string | null;
@@ -161,7 +161,7 @@ export interface ShadowRunOverviewNextStep {
     blocking: boolean;
 }
 
-export type PaperShadowComparisonStatus =
+type PaperShadowComparisonStatus =
     'CONSISTENT'
     | 'DIVERGED'
     | 'PARTIAL'
@@ -171,7 +171,7 @@ export type PaperShadowComparisonStatus =
     | 'NO_REPORT'
     | string;
 
-export type PaperShadowConsistencyDivergenceSeverity =
+type PaperShadowConsistencyDivergenceSeverity =
     'NONE'
     | 'LOW'
     | 'MEDIUM'
@@ -212,7 +212,7 @@ export interface PaperShadowConsistencyDrilldownResponse {
     traceId: string;
 }
 
-export interface PaperShadowConsistencyShadowRun {
+interface PaperShadowConsistencyShadowRun {
     shadowRunId: string;
     strategyVersionId: string;
     datasetId: string;
@@ -233,7 +233,7 @@ export interface PaperShadowConsistencyShadowRun {
     completedAt: string | null;
 }
 
-export interface PaperShadowConsistencyLatestConsistency {
+interface PaperShadowConsistencyLatestConsistency {
     reportId: string;
     shadowRunId: string;
     paperRunId: string | null;
@@ -245,7 +245,7 @@ export interface PaperShadowConsistencyLatestConsistency {
     traceId: string | null;
 }
 
-export interface PaperShadowConsistencySnapshotSummary {
+interface PaperShadowConsistencySnapshotSummary {
     totalSnapshots: number;
     inputMarketdataSnapshots: number;
     strategyDecisionSnapshots: number;
@@ -255,7 +255,7 @@ export interface PaperShadowConsistencySnapshotSummary {
     latestSnapshotTypes: string[];
 }
 
-export interface PaperShadowConsistencyEventSummary {
+interface PaperShadowConsistencyEventSummary {
     totalEvents: number;
     latestEventAt: string | null;
     latestEventType: string | null;

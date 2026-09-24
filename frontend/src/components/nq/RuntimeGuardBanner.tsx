@@ -5,7 +5,7 @@ import {Alert, Space, Tag, Typography} from 'antd';
 
 
 
-export type RuntimeGuardBannerVariant = 'paper-boundary' | 'trading-workbench';
+type RuntimeGuardBannerVariant = 'paper-boundary' | 'trading-workbench';
 
 interface RuntimeGuardBannerProps {
     variant: RuntimeGuardBannerVariant;

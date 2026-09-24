@@ -13,7 +13,7 @@ export interface StrategyRunSummaryItem {
     errorMessage: string | null;
 }
 
-export interface StrategyRunOrderItem {
+interface StrategyRunOrderItem {
     orderId: string;
     symbol: string;
     side: string;
@@ -24,7 +24,7 @@ export interface StrategyRunOrderItem {
     createdAt: string;
 }
 
-export interface StrategyRunTradeItem {
+interface StrategyRunTradeItem {
     tradeId: string;
     orderId: string;
     symbol: string;

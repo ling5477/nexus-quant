@@ -1,7 +1,7 @@
 import {apiClient} from '@/api/client';
 import type {BacktestPublishDetailItem, BacktestPublishListItem, BacktestPublishRequest} from '@/features/publishes/types/publishes';
 
-export interface PublishListRequest {
+interface PublishListRequest {
     researchConfigId?: string;
     backtestConfigId?: string;
     strategyVersionId?: string;

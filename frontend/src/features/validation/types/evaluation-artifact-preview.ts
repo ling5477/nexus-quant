@@ -9,7 +9,7 @@
  */
 import type {ReadModelEvidenceMetadata} from '@/features/validation/types/read-model-evidence';
 
-export type ArtifactChecksumStatus =
+type ArtifactChecksumStatus =
     'VALID'
     | 'INVALID'
     | 'MISSING'
@@ -21,7 +21,7 @@ export type ArtifactChecksumStatus =
  * Artifact freshness only describes local diagnostic source freshness.
  * FRESH does not mean live execution readiness; STALE / MISSING / UNKNOWN must fail closed.
  */
-export type ArtifactFreshness =
+type ArtifactFreshness =
     'FRESH'
     | 'STALE'
     | 'MISSING'
@@ -32,7 +32,7 @@ export type ArtifactFreshness =
  * Metric summary status only describes offline diagnostic metric coverage.
  * FAKE_FIXTURE_ONLY must be rendered as test fixture data, not real strategy performance.
  */
-export type ArtifactMetricSummaryStatus =
+type ArtifactMetricSummaryStatus =
     'PRESENT'
     | 'INCOMPLETE'
     | 'FAKE_FIXTURE_ONLY'
@@ -49,7 +49,7 @@ export interface EvaluationArtifactPreviewEvidenceAnchor {
     description: string | null;
 }
 
-export interface EvaluationArtifactPreviewBoundaryMessage {
+interface EvaluationArtifactPreviewBoundaryMessage {
     code: string;
     severity: string;
     message: string;

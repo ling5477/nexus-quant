@@ -7,7 +7,7 @@
  * incident closeout, automatic remediation, trading authorization, credential
  * views, private provider facts, or real order/account state.
  */
-export type IncidentReplayReviewState =
+type IncidentReplayReviewState =
     'INTAKE'
     | 'EVIDENCE_REVIEW'
     | 'NEEDS_OPERATOR_REVIEW'
@@ -23,7 +23,7 @@ export type IncidentReplayReviewState =
  * mean the system already acknowledged, escalated, closed an incident, or
  * approved trading.
  */
-export type IncidentReplayReviewDecision =
+type IncidentReplayReviewDecision =
     'NO_DECISION'
     | 'REVIEW_NEEDED'
     | 'ACKNOWLEDGE_RECOMMENDED'
@@ -38,7 +38,7 @@ export type IncidentReplayReviewDecision =
  * HIGH / CRITICAL do not imply automatic remediation, market direction,
  * trading readiness, or authorization.
  */
-export type IncidentReplayReviewSeverity =
+type IncidentReplayReviewSeverity =
     'NONE'
     | 'INFO'
     | 'WARNING'
@@ -51,7 +51,7 @@ export type IncidentReplayReviewSeverity =
  * Evidence freshness only describes local evidence quality.
  * STALE / MISSING / PARTIAL / UNKNOWN must be rendered fail-closed.
  */
-export type IncidentReplayEvidenceFreshness =
+type IncidentReplayEvidenceFreshness =
     'FRESH'
     | 'STALE'
     | 'MISSING'
@@ -68,7 +68,7 @@ export interface IncidentReplayReviewEvidenceAnchor {
     description: string | null;
 }
 
-export interface IncidentReplayReviewBoundaryMessage {
+interface IncidentReplayReviewBoundaryMessage {
     code: string;
     severity: string;
     message: string;

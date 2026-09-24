@@ -31,7 +31,7 @@ export function MoneyCell({value, ...opts}: {value: string | number | null | und
   return <span style={NUM_STYLE}>{formatNqMoney(value, opts)}</span>;
 }
 
-export interface PercentCellProps extends NqPercentFormatOptions {
+interface PercentCellProps extends NqPercentFormatOptions {
   value: string | number | null | undefined;
   /** 是否按涨跌方向着色(默认 false:百分比未必是涨跌语义)。 */
   colorBySign?: boolean;
@@ -46,7 +46,7 @@ export function PercentCell({value, colorBySign = false, ...opts}: PercentCellPr
   return <span style={style}>{formatNqPercent(value, opts)}</span>;
 }
 
-export interface ChangeCellProps {
+interface ChangeCellProps {
   value: string | number | null | undefined;
   precision?: number;
   /** 以百分比展示(带 "%");ratio=true 时输入按比例值换算。 */
@@ -81,7 +81,7 @@ export function ChangeCell({value, precision = 2, percent = false, ratio = false
  * 状态列:把后端原始状态值映射为 StatusTag 的语义色(success/info/neutral/warning/danger)。
  * 渲染文本保持后端原值(审计 / E2E 依赖原文);同名状态语义冲突时用 tone 显式覆盖。
  */
-export interface StatusCellProps {
+interface StatusCellProps {
   status: string | null | undefined;
   /** 语义冲突时显式覆盖(例如告警的 OPEN 应为 danger)。 */
   tone?: StatusTone;

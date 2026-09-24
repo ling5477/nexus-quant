@@ -320,7 +320,7 @@ export interface PaperRunMonitorRunOnceResponse {
  * Paper run 只读聚合响应。
  * 详情区优先消费 summary 渲染复盘 / 诊断 / 时间线 / 关键指标；明细查询保留为表格数据源与 fallback。
  */
-export interface PaperRunSummaryCounts {
+interface PaperRunSummaryCounts {
     orderCount: number;
     tradeCount: number;
     fillCount: number;
@@ -329,7 +329,7 @@ export interface PaperRunSummaryCounts {
     recoveryEventCount: number;
 }
 
-export interface PaperRunSummaryLatest {
+interface PaperRunSummaryLatest {
     order: PaperTradingOrderItem | null;
     trade: PaperTradingTradeItem | null;
     position: PaperTradingPositionItem | null;
@@ -340,7 +340,7 @@ export interface PaperRunSummaryLatest {
     recoveryEvent: PaperRunRecoveryEventItem | null;
 }
 
-export interface PaperRunSummaryResultReview {
+interface PaperRunSummaryResultReview {
     finalStatus: string;
     runtimeDurationText: string;
     netPnl: string | number | null;
@@ -349,7 +349,7 @@ export interface PaperRunSummaryResultReview {
     conclusionLevel: 'info' | 'warning' | 'danger';
 }
 
-export interface PaperRunSummaryDiagnosis {
+interface PaperRunSummaryDiagnosis {
     type: string;
     severity: 'INFO' | 'WARNING' | 'BLOCKING';
     title: string;
@@ -357,7 +357,7 @@ export interface PaperRunSummaryDiagnosis {
     checkTarget: string;
 }
 
-export interface PaperRunSummaryTimelineEntry {
+interface PaperRunSummaryTimelineEntry {
     type: string;
     status: string;
     occurredAt: string;
@@ -365,7 +365,7 @@ export interface PaperRunSummaryTimelineEntry {
     description: string;
 }
 
-export interface PaperRunSummarySafety {
+interface PaperRunSummarySafety {
     environment: string;
     liveEnabled: boolean;
     realExchangeTouched: boolean;
@@ -387,7 +387,7 @@ export interface PaperRunSummaryResponse {
  * 跨多个 Paper run 聚合组合总览、策略/发布排行、Run 排行与数据质量；
  * 收益率 / 回撤为比例值，数据不足时为 null（不外推、不伪造收益率），仅代表 SIM/Paper。
  */
-export interface PaperPortfolioOverview {
+interface PaperPortfolioOverview {
     totalRuns: number;
     runningCount: number;
     stoppedCount: number;
@@ -461,7 +461,7 @@ export interface PaperPortfolioRunRef {
     hasFill?: boolean;
 }
 
-export interface PaperPortfolioHighlights {
+interface PaperPortfolioHighlights {
     topWinner: PaperPortfolioRunRef | null;
     worstDrawdown: PaperPortfolioRunRef | null;
     highestRisk: PaperPortfolioRunRef | null;
@@ -470,14 +470,14 @@ export interface PaperPortfolioHighlights {
     riskBlockedRuns: PaperPortfolioRunRef[];
 }
 
-export interface PaperPortfolioDataQuality {
+interface PaperPortfolioDataQuality {
     missingEquityRuns: PaperPortfolioRunRef[];
     dataInsufficientRuns: PaperPortfolioRunRef[];
     missingBacktestSourceRuns: PaperPortfolioRunRef[];
     missingPublishSourceRuns: PaperPortfolioRunRef[];
 }
 
-export interface PaperPortfolioSafety {
+interface PaperPortfolioSafety {
     environment: string;
     liveEnabled: boolean;
     realExchangeTouched: boolean;
@@ -500,7 +500,7 @@ export interface PaperPortfolioCurvePoint {
     missingRunCount: number;
 }
 
-export interface PaperPortfolioCurveCoverage {
+interface PaperPortfolioCurveCoverage {
     comparableRunCount: number;
     missingEquityRunCount: number;
     incompletePointCount: number;
@@ -548,7 +548,7 @@ export type PaperExecutionSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
 
 export type PaperExecutionCauseConfidence = 'HIGH' | 'MEDIUM' | 'LOW';
 
-export interface PaperExecutionDiagnosticsOverview {
+interface PaperExecutionDiagnosticsOverview {
     totalRuns: number;
     noOrderRunCount: number;
     orderNoFillRunCount: number;
@@ -608,7 +608,7 @@ export interface PaperExecutionGroupDiagnostic {
     causeConfidence: PaperExecutionCauseConfidence;
 }
 
-export interface PaperExecutionDiagnosticsSafety {
+interface PaperExecutionDiagnosticsSafety {
     environment: string;
     liveEnabled: boolean;
     realExchangeTouched: boolean;
@@ -642,7 +642,7 @@ export type PaperStrategyEvaluationConfidence = 'HIGH' | 'MEDIUM' | 'LOW';
 
 export type PaperBacktestDeviationLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'UNAVAILABLE';
 
-export interface PaperStrategyEvaluationOverview {
+interface PaperStrategyEvaluationOverview {
     strategyCount: number;
     publishCount: number;
     evaluatedRunCount: number;
@@ -656,7 +656,7 @@ export interface PaperStrategyEvaluationOverview {
     worstCompositeScore: number | null;
 }
 
-export interface PaperBacktestDeviation {
+interface PaperBacktestDeviation {
     backtestReturn: string | number | null;
     paperReturn: string | number | null;
     returnDeviation: string | number | null;
@@ -725,7 +725,7 @@ export interface PaperPublishEvaluationItem {
     backtestDeviation: PaperBacktestDeviation | null;
 }
 
-export interface PaperStrategyEvaluationRankings {
+interface PaperStrategyEvaluationRankings {
     topCompositeStrategies: string[];
     worstCompositeStrategies: string[];
     topReturnStrategies: string[];
@@ -735,7 +735,7 @@ export interface PaperStrategyEvaluationRankings {
     highRiskStrategies: string[];
 }
 
-export interface PaperStrategyEvaluationSafety {
+interface PaperStrategyEvaluationSafety {
     environment: string;
     liveEnabled: boolean;
     realExchangeTouched: boolean;
@@ -757,7 +757,7 @@ export interface PaperStrategyEvaluationsResponse {
  */
 export type PaperAutoReviewSeverity = 'CRITICAL' | 'WARNING' | 'INFO';
 
-export interface PaperAutoReviewOverview {
+interface PaperAutoReviewOverview {
     totalRuns: number;
     reviewedRunCount: number;
     issueRunCount: number;
@@ -771,7 +771,7 @@ export interface PaperAutoReviewOverview {
     generatedAt: string;
 }
 
-export interface PaperPortfolioReview {
+interface PaperPortfolioReview {
     headline: string;
     summary: string;
     keyFindings: string[];
@@ -843,7 +843,7 @@ export interface PaperIssueCluster {
     suggestedAction: string;
 }
 
-export interface PaperAutoReviewSafety {
+interface PaperAutoReviewSafety {
     paperOnly: boolean;
     rulesBased: boolean;
     noInvestmentAdvice: boolean;

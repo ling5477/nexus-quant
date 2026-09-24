@@ -9,7 +9,7 @@ import type {ReactNode} from 'react';
  * 2) tone 只表达语义（success/warning/danger/up/down/muted），取色来自 Design System tokens；
  * 3) 无数据时由调用方传 '-' 或使用 muted tone，不在组件内编造默认值。
  */
-export type NqMetricTone = 'default' | 'success' | 'warning' | 'danger' | 'up' | 'down' | 'muted';
+type NqMetricTone = 'default' | 'success' | 'warning' | 'danger' | 'up' | 'down' | 'muted';
 
 interface NqMetricCardProps {
     label: string;

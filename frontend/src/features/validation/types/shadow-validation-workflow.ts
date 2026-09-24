@@ -8,7 +8,7 @@ import type {ReadModelEvidenceMetadata} from '@/features/validation/types/read-m
  * Operator item 是 derived / deterministic 诊断条目，不是持久 review 实体、交易授权记录、
  * runner command、credential view 或真实 provider 状态。
  */
-export type ShadowValidationWorkflowState =
+type ShadowValidationWorkflowState =
     'INTAKE'
     | 'EVIDENCE_REVIEW'
     | 'NEEDS_EVIDENCE'
@@ -21,7 +21,7 @@ export type ShadowValidationWorkflowState =
  * Validation decision 只表达材料是否可进入人工复核。
  * `VALIDATION_READY` 不代表交易授权、LIVE 启用、策略批准或自动处置完成。
  */
-export type ShadowValidationDecision =
+type ShadowValidationDecision =
     'NO_DECISION'
     | 'VALIDATION_READY'
     | 'NEEDS_REVIEW'
@@ -34,7 +34,7 @@ export type ShadowValidationDecision =
  * Severity 只用于诊断优先级排序。
  * HIGH / CRITICAL 不映射为行情方向、盈亏、自动风控处置或交易状态。
  */
-export type ShadowValidationSeverity =
+type ShadowValidationSeverity =
     'NONE'
     | 'INFO'
     | 'WARNING'
@@ -47,7 +47,7 @@ export type ShadowValidationSeverity =
  * Evidence freshness 只描述本地 evidence 是否足够新鲜。
  * STALE / MISSING / PARTIAL 必须 fail-closed 展示为需要补证据。
  */
-export type ShadowValidationEvidenceFreshness =
+type ShadowValidationEvidenceFreshness =
     'FRESH'
     | 'STALE'
     | 'MISSING'

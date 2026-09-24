@@ -5,19 +5,6 @@ export interface ApiFieldError {
     rejectedValue?: unknown;
 }
 
-export interface ApiErrorResponse {
-    errorId?: string;
-    errorKey?: string;
-    timestamp?: string;
-    status?: number;
-    error?: string;
-    code?: string;
-    message?: string;
-    path?: string;
-    traceId?: string;
-    fieldErrors?: ApiFieldError[];
-}
-
 export interface AppApiError extends Error {
     errorId?: string;
     errorKey?: string;

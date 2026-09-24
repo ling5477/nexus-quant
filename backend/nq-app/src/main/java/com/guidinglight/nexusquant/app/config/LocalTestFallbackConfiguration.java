@@ -9,8 +9,6 @@ import com.guidinglight.nexusquant.adapter.api.service.compatibility.NoopMarketD
 import com.guidinglight.nexusquant.adapter.api.service.readiness.ReadinessGuardedAdapterFactory;
 import com.guidinglight.nexusquant.config.service.ConfigSnapshotService;
 import com.guidinglight.nexusquant.config.service.InMemoryConfigSnapshotService;
-import com.guidinglight.nexusquant.ledger.compatibility.LedgerService;
-import com.guidinglight.nexusquant.ledger.compatibility.NoopLedgerService;
 import com.guidinglight.nexusquant.scheduler.integration.PaperTradingAdapter;
 
 import org.springframework.context.annotation.Bean;
@@ -27,11 +25,6 @@ import org.springframework.context.annotation.Profile;
 @Configuration
 @Profile({"local", "test"})
 public class LocalTestFallbackConfiguration {
-
-    @Bean
-    public LedgerService ledgerService() {
-        return new NoopLedgerService();
-    }
 
     @Bean
     public ConfigSnapshotService configSnapshotService() {

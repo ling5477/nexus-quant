@@ -11,13 +11,13 @@ const TONE_VAR: Record<ExceptionTone, string> = {
     danger: 'var(--nq-danger)',
 };
 
-export interface ExceptionMetaItem {
+interface ExceptionMetaItem {
     label: string;
     /** 值;request id / 时间戳等标识用 mono 渲染由调用方控制。 */
     value: ReactNode;
 }
 
-export interface ExceptionViewProps {
+interface ExceptionViewProps {
     tone: ExceptionTone;
     /** 顶部可选的状态码,例如 404 / 403 / 500。 */
     code?: string;

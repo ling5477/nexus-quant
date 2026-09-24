@@ -25,7 +25,7 @@ const STATUS_TONE: Record<string, StatusTone> = {
 };
 
 /** 未映射状态始终回退为 neutral，不允许自动解释为成功。 */
-export function statusToneOf(status: string | null | undefined): StatusTone {
+function statusToneOf(status: string | null | undefined): StatusTone {
   const normalized = status?.trim().toUpperCase();
   if (!normalized) return 'neutral';
   if (STATUS_TONE[normalized]) return STATUS_TONE[normalized];
@@ -35,7 +35,7 @@ export function statusToneOf(status: string | null | undefined): StatusTone {
   return 'neutral';
 }
 
-export interface StatusTagProps {
+interface StatusTagProps {
   /** 后端原始状态，用于 canonical tone 映射。 */
   status?: string | null;
   /** 可选展示文案；领域页面可保留审计状态并附加稳定业务解释。 */

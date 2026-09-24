@@ -19,9 +19,9 @@ import {formatApiError} from '@/api/errors';
  * 3) 失败不静默:errorReason 通过统一目录展示并保留追踪身份，不把诊断消息直接透给用户。
  */
 
-export type LiveStatus = 'loading' | 'fresh' | 'stale' | 'error' | 'disabled';
+type LiveStatus = 'loading' | 'fresh' | 'stale' | 'error' | 'disabled';
 
-export interface UseLiveQueryOptions<T> {
+interface UseLiveQueryOptions<T> {
     queryKey: QueryKey;
     queryFn: () => Promise<T>;
     /** 轮询间隔(ms);0 或省略表示只手动刷新,不轮询。 */
@@ -34,7 +34,7 @@ export interface UseLiveQueryOptions<T> {
     pauseOnHidden?: boolean;
 }
 
-export interface UseLiveQueryResult<T> {
+interface UseLiveQueryResult<T> {
     data: T | undefined;
     /** 归一化状态。 */
     status: LiveStatus;
@@ -62,7 +62,7 @@ const STATUS_TO_FRESHNESS: Record<LiveStatus, FreshnessState> = {
 };
 
 /** 把归一化 LiveStatus 映射为 DataFreshness 的 FreshnessState。 */
-export function liveStatusToFreshness(status: LiveStatus): FreshnessState {
+function liveStatusToFreshness(status: LiveStatus): FreshnessState {
     return STATUS_TO_FRESHNESS[status];
 }
 

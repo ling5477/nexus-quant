@@ -12,7 +12,7 @@ const ENV_VAR: Record<NqEnv, string> = {
   AUDITED: 'var(--nq-env-audited)',
 };
 
-export interface EnvironmentBadgeProps {
+interface EnvironmentBadgeProps {
   env: NqEnv;
   size?: 'sm' | 'md';
 }

@@ -11,7 +11,7 @@ export interface NqNumberFormatOptions {
 }
 
 /** 空值判定:null / undefined / 空串 视为缺失。 */
-export function isNqEmpty(value: string | number | null | undefined): boolean {
+function isNqEmpty(value: string | number | null | undefined): boolean {
   return value === null || value === undefined || value === '';
 }
 
@@ -84,7 +84,7 @@ export function formatNqPercent(
   return `${formatNqNumber(scaled, {precision, signed})}%`;
 }
 
-export type NqDirection = 'up' | 'down' | 'flat';
+type NqDirection = 'up' | 'down' | 'flat';
 
 /**
  * 由数值符号判定涨跌方向(与行情惯例无关:>0=up,<0=down,0/缺失=flat)。

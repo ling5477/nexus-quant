@@ -1,7 +1,7 @@
 export type ErrorPresentation = 'GLOBAL_NOTIFICATION' | 'INLINE_FORM_ERROR' | 'PAGE_STATE_ERROR'
     | 'CONFLICT_ACTION_REQUIRED' | 'AUTH_REDIRECT_OR_PROMPT';
 
-export interface ErrorCatalogEntry {
+interface ErrorCatalogEntry {
     errorKey: string;
     errorId: string | null;
     httpStatus: readonly number[];
