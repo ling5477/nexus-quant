@@ -4,7 +4,7 @@ import {Alert, Button, Card, Space, Table, Tag, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 
 import {formatApiError} from '@/api/errors';
-import {PageHero} from '@/components/page/PageHero';
+import {NqPageHeader} from '@/components/nq/NqPageHeader';
 import {useAdapterReadinessQuery} from '@/hooks/useAdapterReadinessQuery';
 import type {AppApiError} from '@/types/api';
 import type {AdapterReadinessItem} from '@/types/adapter-readiness';
@@ -150,7 +150,7 @@ export function AdapterReadinessPage() {
     return (
         <Space direction="vertical" size={16} style={{display: 'flex'}}>
             <Card className="page-card" bordered={false}>
-                <PageHero
+                <NqPageHeader
                     title={t('pages:adapterReadiness')}
                     description={t('pages:readOnlyRuntimeReadinessForExchangeAdaptersAndCapabilitiesUnderTheNoRealLiveDisabledBaselineCapabili')}
                     badge={t('pages:readOnlySafetyBoundaries')}

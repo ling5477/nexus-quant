@@ -26,7 +26,7 @@ import {useEffect, useMemo, useState} from 'react';
 
 import {formatApiError, showApiError} from '@/api/errors';
 import {RuntimeGuardBanner} from '@/components/nq';
-import {PageHero} from '@/components/page/PageHero';
+import {NqPageHeader} from '@/components/nq/NqPageHeader';
 import {NqPageScaffold} from '@/nq-design-system/shell/NqPageScaffold';
 import {
     useCancelOrderMutation,
@@ -293,7 +293,7 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
                 ) : null}
 
                 <Card className="page-card" bordered={false}>
-                    <PageHero
+                    <NqPageHeader
                         title={t('pages:tradingWorkbench')}
                         description={t('pages:queryOrdersAndViewDetailsInTheExchangeaccountidContextWithSimLiveAndPrerequisiteRiskControlsVisible')}
                         badge="Trading"

@@ -21,7 +21,7 @@ import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
 
 import {formatApiError, showApiError} from '@/api/errors';
-import {PageHero} from '@/components/page/PageHero';
+import {NqPageHeader} from '@/components/nq/NqPageHeader';
 import {
     useCreateResearchMutation,
     useResearchDetailQuery,
@@ -155,7 +155,7 @@ export function ResearchPage() {
         <>
             <Space direction="vertical" size={16} style={{display: 'flex'}}>
                 <Card className="page-card" bordered={false}>
-                    <PageHero
+                    <NqPageHeader
                         title={t('pages:researchConfigurations')}
                         description={t('pages:viewResearchConfigurationsLinkedSourceStrategiesAndParameterDefinitionsOrCreateAConfiguration')}
                         badge="Research"

@@ -20,7 +20,7 @@ import {formatApiError} from '@/api/errors';
 import {operationalReadinessApi} from '@/features/runtime/api/operational-readiness';
 import {operationalReadinessQueryKeys} from '@/api/query-keys';
 import {NqMetricCard, ApplicationRiskAlert} from '@/components/nq';
-import {PageHero} from '@/components/page/PageHero';
+import {NqPageHeader} from '@/components/nq/NqPageHeader';
 import {useAdapterReadinessQuery} from '@/hooks/useAdapterReadinessQuery';
 import {DataFreshness, StatusTag, type StatusTone} from '@/nq-design-system';
 import type {AdapterReadinessItem} from '@/types/adapter-readiness';
@@ -609,7 +609,7 @@ export function RuntimeReadinessPage() {
     return (
         <Space direction="vertical" size={16} style={{display: 'flex'}} data-testid="runtime-readiness-overview">
             <Card className="page-card" variant="borderless">
-                <PageHero
+                <NqPageHeader
                     title={t('pages:runtimeReadinessOverview')}
                     description={t('pages:readOnlyGatemBoundariesPaperOnlyMarketDataReadinessNoRealAdaptersLiveDisabledPermissionProbesDisable')}
                     badge="READONLY"

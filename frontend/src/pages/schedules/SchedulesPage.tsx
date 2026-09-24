@@ -23,7 +23,7 @@ import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
 
 import {formatApiError, showApiError} from '@/api/errors';
-import {PageHero} from '@/components/page/PageHero';
+import {NqPageHeader} from '@/components/nq/NqPageHeader';
 import {BOOLEAN_FILTER_OPTIONS, SCHEDULE_STATUS_OPTIONS, SCHEDULE_TYPE_OPTIONS} from '@/constants/filter-options';
 import {
     useScheduleDetailQuery,
@@ -168,7 +168,7 @@ export function SchedulesPage() {
         <>
             <Space direction="vertical" size={16} style={{display: 'flex'}}>
                 <Card className="page-card" bordered={false}>
-                    <PageHero
+                    <NqPageHeader
                         title={t('pages:schedules')}
                         description={t('pages:viewSchedulesRunStatusAndEnableOrDisableActionsByStrategyDuringTheFreezeOnlyExistingSchedulingCapabi')}
                         badge="Schedules"

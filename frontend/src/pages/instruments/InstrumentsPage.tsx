@@ -8,7 +8,7 @@ import {useState} from 'react';
 
 import {formatApiError, showApiError} from '@/api/errors';
 import {instrumentsApi} from '@/features/instruments/api/instruments';
-import {PageHero} from '@/components/page/PageHero';
+import {NqPageHeader} from '@/components/nq/NqPageHeader';
 import {useAccountContextStore} from '@/store/account-context-store';
 import type {AppApiError} from '@/types/api';
 import type {InstrumentCatalogItem} from '@/features/instruments/types/instruments';
@@ -56,7 +56,7 @@ export function InstrumentsPage() {
     return (
         <Space direction="vertical" size={16} style={{display: 'flex'}}>
             <Card className="page-card" bordered={false}>
-                <PageHero
+                <NqPageHeader
                     title={t('pages:instruments')}
                     description={t('pages:canonicalInstrumentAndSymbolCatalogForPairSelectionPrecisionValidationAndMultiCurrencyWorkflows')}
                     badge="Catalog"

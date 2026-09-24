@@ -1,6 +1,6 @@
-import {Button, Card, Empty, Flex, Skeleton, Space, Table, Tag} from 'antd';
+import {Alert, Button, Card, Empty, Flex, Skeleton, Space, Table, Tag} from 'antd';
 
-import {PageHero} from '@/components/page/PageHero';
+import {NqPageHeader} from '@/components/nq/NqPageHeader';
 
 interface ListPageShellProps {
     title: string;
@@ -42,10 +42,10 @@ export function ListPageShell({title, description, tableTitle}: ListPageShellPro
     return (
         <Space direction="vertical" size={16} style={{display: 'flex'}}>
             <Card className="page-card" bordered={false}>
-                <PageHero
+                <NqPageHeader
                     title={title}
                     description={description}
-                    tip="当前页面已接入正式路由、菜单与控制台布局，查询区与列表区结构已就位。"
+                    tip={<Alert type="info" showIcon message="当前页面已接入正式路由、菜单与控制台布局，查询区与列表区结构已就位。"/>}
                 />
             </Card>
             <Card

@@ -10,7 +10,7 @@ import {useSearchParams} from 'react-router-dom';
 import {formatApiError, showApiError} from '@/api/errors';
 import {marketdataApi} from '@/api/marketdata';
 import {marketdataQueryKeys} from '@/api/query-keys';
-import {PageHero} from '@/components/page/PageHero';
+import {NqPageHeader} from '@/components/nq/NqPageHeader';
 import {NqPageScaffold} from '@/nq-design-system/shell/NqPageScaffold';
 import {ExchangeBadge} from '@/nq-design-system/brand/ExchangeBadge';
 import {EXCHANGE_OPTIONS, INTERVAL_OPTIONS, MARKET_TYPE_OPTIONS, SYMBOL_OPTIONS} from '@/constants/filter-options';
@@ -1485,7 +1485,7 @@ export function MarketdataPage() {
         <NqPageScaffold>
             {contextHolder}
             <Card className="page-card" bordered={false}>
-                <PageHero
+                <NqPageHeader
                     title={t('pages:marketData')}
                     description={t('pages:queryHistoricalSpotOhlcvManageIngestionJobsAndDatasetsWithinTheExchangesSymbolsAndIntervalsAcceptedF')}
                     badge={t('pages:marketData')}
