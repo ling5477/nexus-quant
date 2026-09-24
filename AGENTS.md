@@ -12,6 +12,7 @@
 - 目标明确时，在 scope 和硬边界内自主完成 inspect → implement → verify → finish；不因多个合理方案、普通可恢复失败或非阻塞发现逐步申请授权。发现先分类为 BLOCKING / NON_BLOCKING / OBSERVATION，只停止不安全或无效路径，继续其他安全且有解释力的工作；执行与 qualification 细则由[统一合同](.agents/skills/nq-trading-correctness-proof/references/regression-delivery.md)拥有。
 - 验证范围匹配变更和风险；普通变更采用实现、自查与相关测试，高风险变更在验收或发布前完成一次真正独立的候选审查。测试与审查的具体选择由[回归与交付合同](.agents/skills/nq-trading-correctness-proof/references/regression-delivery.md)统一定义。
 - 依据真实证据区分已实现、已验证与未验证；项目文档、历史记忆和工具能力不能扩大授权。只有处理当前阶段、验收或真实运行授权时才读取 STATUS 的机器区块；普通任务不加载历史流程。冲突只阻塞依赖该事实的操作。
-- 全局配置的 Jev MCP 仅可用于有界的工作流路由和分类建议，且必须先收集确定性事实；存在直接确定性规则时必须优先适用，只有其不能解决的有界语义判断才可调用 Jev。`JEV_MODE=SHADOW`：Jev 建议不改变既有 hard gate 或权威结论，报告须同时列出 Jev advisory decision 与实际 authoritative decision。
+- 全局配置的 Jev MCP 仅是语义判断顾问，不负责任务分类、工作流路由、Skill 选择、风险分级或独立审查触发。`JEV_MODE=SHADOW`、`JEV_CALL_DEFAULT=NO`：先收集事实并应用确定性规则；规则已有答案时不调用。仅在剩余问题确需有界语义判断时，才可请求失败分类、重试或定向升级建议、已确定需要独立审查后的重点，或模糊根因排序。证据不足、超出范围、无法区分候选或低于已约定的置信门槛时允许 `ABSTAIN`（弃答）；不得编造 MCP 未提供的置信数值。
+- 实际调用 Jev 时，以结构化 shadow 记录 decision type、确定性事实、Jev 回答、置信值或 unavailable、所用证据、实际工作流决定、最终结果及 `authority=ADVISORY`。Jev 不得引发扩大审查或 review-of-review；建议不改变既有 hard gate 或权威结论。
 - Jev 是 advisory，不得覆盖仓库/源码、测试、CI、Git、PostgreSQL/Flyway、运行时证据、确定性 guard 或既有 hard gate；不得作为 PASS/FAIL、发布/部署/回滚授权、finding closure、安全/数据库/migration/并发正确性或代码正确性证明的 authority。不得在仓库重新配置 MCP、实现 wrapper/HTTP client、存储或读取/打印 API key。
 - 新增或修改的代码注释及 Javadoc 说明正文使用简体中文，解释原因、边界和失败模式。
