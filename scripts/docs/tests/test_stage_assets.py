@@ -41,6 +41,78 @@ class StageAssetGuardTest(unittest.TestCase):
     def assert_rejected(self):
         self.assertTrue(guard.check(self.root)[0])
 
+    def active_gate(self, gate="GateZ"):
+        self.write("docs/current/STATUS.md", "<!-- nq-current-authority:start\n"
+                   "authority_schema=3\nactive_gate=" + gate + "\n"
+                   "nq-current-authority:end -->\n")
+
+    def test_only_current_active_gate_plan_path_is_admitted(self):
+        self.active_gate()
+        self.write("docs/current/GATEZ_PLAN.md", "# GateZ 当前计划\nGateZ-1 是后续工作。\n")
+        self.assertEqual([], guard.check(self.root)[0])
+        for path in ("docs/current/GATEY_PLAN.md", "docs/current/sub/GATEZ_PLAN.md",
+                     "docs/current/GATEZ_PLAN.md.ps1"):
+            with self.subTest(path=path):
+                self.write(path, "narrative")
+                self.assertIn("STAGE_ASSET_PATH: " + path, guard.check(self.root)[0])
+                (self.root / path).unlink()
+        self.active_gate("GateY")
+        self.assertIn("STAGE_ASSET_PATH: docs/current/GATEZ_PLAN.md", guard.check(self.root)[0])
+
+    def test_active_plan_authority_missing_or_malformed_fails_closed(self):
+        plan = "docs/current/GATEZ_PLAN.md"
+        self.write(plan, "# GateZ plan\n")
+        status = self.root / "docs/current/STATUS.md"
+        for content in (None, "active_gate=GateZ\n",
+                        "<!-- nq-current-authority:start\nauthority_schema=3\n"
+                        "nq-current-authority:end -->\n",
+                        "<!-- nq-current-authority:start\nactive_gate=gatez\n"
+                        "nq-current-authority:end -->\n",
+                        "<!-- nq-current-authority:start\nactive_gate=GateZ\n"
+                        "active_gate=GateY\nnq-current-authority:end -->\n",
+                        "<!-- nq-current-authority:start\nactive_gate=GateZ\n"
+                        "nq-current-authority:end -->\n"
+                        "<!-- nq-current-authority:start\nactive_gate=GateZ\n"
+                        "nq-current-authority:end -->\n",
+                        "<!-- nq-current-authority:start\nactive_gate=GateZ\n"
+                        "nq-current-authority:end -->\n"
+                        "<!-- nq-current-authority:start\nactive_gate=GateY\n",
+                        "<!-- nq-current-authority:start\nactive_gate=GateZ\n"
+                        "nq-current-authority:end -->\n"
+                        "nq-current-authority:end -->\n",
+                        "<!-- nq-current-authority:start\nactive_gate=GateZ\n"
+                        "nq-current-authority:end -->\nbad\rline\n"):
+            with self.subTest(content=content):
+                if content is None:
+                    status.unlink(missing_ok=True)
+                else:
+                    self.write("docs/current/STATUS.md", content)
+                self.assertIn("STAGE_ASSET_PATH: " + plan, guard.check(self.root)[0])
+
+    def test_active_plan_content_and_runtime_paths_remain_guarded(self):
+        self.active_gate()
+        plan = "docs/current/GATEZ_PLAN.md"
+        self.write(plan, "# GateZ plan\npwsh scripts/gatez/deploy.ps1\n")
+        self.assertIn("STAGE_SEMANTICS: " + plan, guard.check(self.root)[0])
+        self.write(plan, "# GateZ plan\n")
+        for path in ("scripts/gatez-install.ps1", "deploy/nq-gatez.service",
+                     ".github/workflows/gatez-qualification.yml",
+                     "backend/app/src/main/resources/application-gatez.yml",
+                     "backend/app/src/test/java/GateZPilotTest.java"):
+            with self.subTest(path=path):
+                self.write(path, "fixture")
+                self.assertIn("STAGE_ASSET_PATH: " + path, guard.check(self.root)[0])
+                (self.root / path).unlink()
+        self.write("backend/app/src/main/java/Runtime.java", '@Profile("gatez") class Runtime {}')
+        self.assertIn("ACTIVE_SPRING_STAGE_SELECTOR: backend/app/src/main/java/Runtime.java",
+                      guard.check(self.root)[0])
+
+    def test_historical_gate_plans_remain_historical(self):
+        self.active_gate()
+        for path in ("docs/current/GATEV_PLAN.md", "docs/current/GATEW_PLAN.md"):
+            self.write(path, "pwsh scripts/gatey/deploy.ps1\n")
+        self.assertEqual([], guard.check(self.root)[0])
+
     def test_empty_stable_tree_and_repeat_are_valid(self):
         self.assertEqual([], guard.check(self.root)[0])
         self.assertEqual(guard.check(self.root), guard.check(self.root))

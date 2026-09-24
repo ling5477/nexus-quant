@@ -63,6 +63,34 @@ def historical(path: str) -> bool:
     return path.startswith(HISTORICAL) or path in HISTORICAL_FILES or "/db/migration/" in path
 
 
+def current_active_gate_plan(root: Path) -> str | None:
+    """Only the unique canonical authority block can name an active plan file."""
+    status = root / "docs/current/STATUS.md"
+    if not status.is_file() or status.is_symlink():
+        return None
+    content = status.read_bytes().decode("utf-8-sig").replace("\r\n", "\n")
+    if "\r" in content:
+        return None
+    if (content.count("<!-- nq-current-authority:start") != 1
+            or content.count("nq-current-authority:end -->") != 1):
+        return None
+    blocks = re.findall(
+        r"(?ms)^<!-- nq-current-authority:start\n(.*?)\nnq-current-authority:end -->$", content
+    )
+    if len(blocks) != 1:
+        return None
+    fields = {}
+    for line in blocks[0].split("\n"):
+        match = re.fullmatch(r"([a-z][a-z0-9_]*)=([^\r\n]+)", line)
+        if not match or match[1] in fields or match[2] != match[2].strip():
+            return None
+        fields[match[1]] = match[2]
+    gate = fields.get("active_gate", "")
+    if not re.fullmatch(r"Gate[A-Z][A-Za-z0-9]*", gate):
+        return None
+    return "docs/current/" + gate.upper() + "_PLAN.md"
+
+
 def sources(root: Path) -> list[str]:
     """Walk active filesystem namespaces, including untracked/ignored runtime inputs."""
     result = []
@@ -102,11 +130,12 @@ def retired_caller_pattern(retired_paths: tuple[str, ...]) -> re.Pattern | None:
                       + r")(?![A-Za-z0-9_])")
 
 
-def inspect(root: Path, path: str, retired_paths: tuple[str, ...] = ()) -> dict | None:
+def inspect(root: Path, path: str, retired_paths: tuple[str, ...] = (),
+            active_plan: str | None = None) -> dict | None:
     # Stage-specific executable/configuration filenames can never be grandfathered.
     if path in retired_paths:
         return {"path": path, "kind": "RETIRED_ASSET_PATH", "sha256": ""}
-    if path not in SELF_FILES and has_stage(path):
+    if path not in SELF_FILES and has_stage(path) and path != active_plan:
         return {"path": path, "kind": "STAGE_ASSET_PATH", "sha256": ""}
     if path in SELF_FILES or historical(path) or SENSITIVE.search(path) or Path(path).suffix.lower() not in EXTENSIONS:
         return None
@@ -553,6 +582,7 @@ def check(root: Path, policy: dict | None = None) -> tuple[list[str], int, int]:
     used = set()
     errors = []
     paths = sources(root)
+    active_plan = current_active_gate_plan(root)
     input_errors, executable = executable_inputs(root, paths, safe_inputs)
     errors.extend(input_errors)
     paths = sorted(set(paths) | executable)
@@ -562,7 +592,7 @@ def check(root: Path, policy: dict | None = None) -> tuple[list[str], int, int]:
     errors.extend("UNAUTHORIZED_COMPATIBILITY_CALLER: " + " -> ".join(edge) for edge in sorted(actual - approved))
     errors.extend("STALE_COMPATIBILITY_CALLER: " + " -> ".join(edge) for edge in sorted(approved - actual))
     for path in paths:
-        risk = inspect(root, path, retired)
+        risk = inspect(root, path, retired, active_plan)
         if risk is None:
             continue
         expected = entries.get(path)
