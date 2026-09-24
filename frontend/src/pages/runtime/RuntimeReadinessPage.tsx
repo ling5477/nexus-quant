@@ -19,7 +19,7 @@ import {Link} from 'react-router-dom';
 import {formatApiError} from '@/api/errors';
 import {operationalReadinessApi} from '@/api/operational-readiness';
 import {operationalReadinessQueryKeys} from '@/api/query-keys';
-import {NqMetricCard, NqRiskBanner} from '@/components/nq';
+import {NqMetricCard, ApplicationRiskAlert} from '@/components/nq';
 import {PageHero} from '@/components/page/PageHero';
 import {useAdapterReadinessQuery} from '@/hooks/useAdapterReadinessQuery';
 import {DataFreshness, StatusTag, type StatusTone} from '@/nq-design-system';
@@ -616,7 +616,7 @@ export function RuntimeReadinessPage() {
                 />
             </Card>
 
-            <NqRiskBanner
+            <ApplicationRiskAlert
                 level={unexpectedSignals.length > 0 || readinessQuery.isError ? 'danger' : 'warning'}
                 message={unexpectedSignals.length > 0 ? t('pages:readyAllowedLiveauthorizedDetectedManualReviewRequired') : t('pages:runtimeGuardSummaryPaperOnlyFailClosed')}
                 description={(

@@ -5,7 +5,7 @@ import {Button, Card, Col, List, Row, Space, Tag, Typography} from 'antd';
 import {useMemo} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
 
-import {NqEmptyState, NqErrorState, NqMetricCard, NqPageHeader, NqPercentText, NqRiskBanner, formatNqNumber} from '@/components/nq';
+import {NqEmptyState, NqErrorState, NqMetricCard, NqPageHeader, NqPercentText, ApplicationRiskAlert, formatNqNumber} from '@/components/nq';
 import {
     usePaperAlertsQuery,
     usePaperDailyReportsQuery,
@@ -157,7 +157,7 @@ export function DashboardPage() {
                     description={t('pages:safetyOverviewOfSystemHealthTheCurrentEnvironmentPaperTradingStatusAndRiskSignals')}
                     badge={<Tag color="processing">{appEnv.envLabel}</Tag>}
                     tip={(
-                        <NqRiskBanner
+                        <ApplicationRiskAlert
                             level={banner.level}
                             message={banner.message}
                             description={t('pages:dashboardEnvironmentBoundary', {description: banner.description, environment: appEnv.envLabel})}
@@ -215,7 +215,7 @@ export function DashboardPage() {
                 extra={<StatusTag title="" variant="pill" status="LIVE_DISABLED" tone="danger"/>}
             >
                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
-                    <NqRiskBanner
+                    <ApplicationRiskAlert
                         level="warning"
                         message={t('pages:runtimeGuardedLiveDisabled')}
                         description={t('pages:theDashboardSummarizesRuntimeBoundariesAndHasNoTradingExecutionEntryPaperReadyDbFreshAndPermissionPr')}

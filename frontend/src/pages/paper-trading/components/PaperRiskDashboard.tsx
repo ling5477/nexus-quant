@@ -5,7 +5,7 @@ import {Button, Card, Collapse, Descriptions, Select, Space, Typography} from 'a
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
 
-import {NqAmountText, NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPercentText, NqPortfolioDrawdownChart, NqPortfolioEquityChart, NqRiskBanner, nqNumericColumn} from '@/components/nq';
+import {NqAmountText, NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPercentText, NqPortfolioDrawdownChart, NqPortfolioEquityChart, ApplicationRiskAlert, nqNumericColumn} from '@/components/nq';
 
 import {usePaperPortfolioSummaryQuery} from '@/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
@@ -301,7 +301,7 @@ export function PaperRiskDrawdownDashboard({query}: {query: ReturnType<typeof us
             extra={<Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:simPaperOnlyLiveDisabled')}</Typography.Text>}
         >
             <Space direction="vertical" size={12} style={{display: 'flex'}}>
-                <NqRiskBanner
+                <ApplicationRiskAlert
                     level="warning"
                     message={t('pages:inspectHighRiskPaperRunsMaximumDrawdownRiskBlocksMissingTradesAndInsufficientData')}
                     description={t('pages:thisRiskDashboardUsesPaperSimulationAndLocalExecutionFactsOnlyItDoesNotRepresentLiveOrRealTradingRis')}

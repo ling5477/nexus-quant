@@ -12,7 +12,7 @@ import {
     NqLoadingState,
     NqMetricCard,
     NqPercentText,
-    NqRiskBanner,
+    ApplicationRiskAlert,
     formatNqNumber,
     nqNumericColumn,
 } from '@/components/nq';
@@ -341,7 +341,7 @@ export function PaperStrategyRankingDashboard({query}: {query: ReturnType<typeof
             extra={<Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:simPaperOnlyLiveDisabled')}</Typography.Text>}
         >
             <Space direction="vertical" size={12} style={{display: 'flex'}}>
-                <NqRiskBanner
+                <ApplicationRiskAlert
                     level="info"
                     message={t('pages:compareSimulatedPerformanceAcrossPaperRunsByStrategyversionidPublishid')}
                     description={t('pages:rankingsUsePaperSimulationAndLocalExecutionFactsOnlyTheyDoNotRepresentLiveOrRealTradingPerformance')}

@@ -5,7 +5,7 @@ import {Button, Card, Select, Space, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
 
-import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPercentText, NqRiskBanner, nqNumericColumn} from '@/components/nq';
+import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPercentText, ApplicationRiskAlert, nqNumericColumn} from '@/components/nq';
 
 import {usePaperExecutionDiagnosticsQuery} from '@/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
@@ -115,7 +115,7 @@ export function PaperExecutionDiagnosticsDashboard({query}: {query: ReturnType<t
             <Space direction="vertical" size={12} style={{display: 'flex'}}>
                 <Typography.Text type="secondary" style={{fontSize: 12}}>
                     {t('pages:ruleBasedAttributionOfPaperExecutionFactsNotLiveOrRealTradingAdvice')}</Typography.Text>
-                <NqRiskBanner
+                <ApplicationRiskAlert
                     level="info"
                     message={t('pages:ruleBasedAttributionOfMissingOrdersUnfilledOrdersTradingLossesRiskBlocksAndInsufficientDataForEachPa')}
                     description={t('pages:diagnosticsUseSimulatedPaperRunsAndLocalExecutionFactsOnlyTheyAreRuleBasedExplanationsNotLivePerform')}

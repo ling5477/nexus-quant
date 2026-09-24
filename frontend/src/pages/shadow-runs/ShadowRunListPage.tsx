@@ -7,7 +7,7 @@ import type {ColumnsType} from 'antd/es/table';
 import {useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import {NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPageHeader, NqRiskBanner} from '@/components/nq';
+import {NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPageHeader, ApplicationRiskAlert} from '@/components/nq';
 import {useShadowRunListQuery, useShadowRunOverview} from '@/hooks/useShadowRunQueries';
 import {DataFreshness, type FreshnessState} from '@/nq-design-system/status/DataFreshness';
 import type {AppApiError} from '@/types/api';
@@ -490,7 +490,7 @@ function ShadowRunOverviewSummary({
                 ) : (
                     <>
                         {overviewState ? (
-                            <NqRiskBanner
+                            <ApplicationRiskAlert
                                 level={overviewState.level}
                                 message={overviewState.message}
                                 description={overviewState.description}
@@ -671,7 +671,7 @@ export function ShadowRunListPage() {
                 onRetry={() => overviewQuery.refetch()}
             />
 
-            <NqRiskBanner
+            <ApplicationRiskAlert
                 level="warning"
                 message={t('pages:diagnosticsOnlyNoTradingAuthorization')}
                 description={t('pages:thisListShowsLocalDiagnosticsOnlyItDoesNotStartRunnersSubmitOrdersReadCredentialsCallPrivateEndpoint')}

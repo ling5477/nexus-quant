@@ -5,7 +5,7 @@ import {Button, Card, Descriptions, Segmented, Select, Space, Tag, Typography} f
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
 
-import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPercentText, NqRiskBanner, nqNumericColumn} from '@/components/nq';
+import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPercentText, ApplicationRiskAlert, nqNumericColumn} from '@/components/nq';
 
 import {usePaperStrategyEvaluationsQuery} from '@/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
@@ -164,7 +164,7 @@ export function PaperStrategyEvaluationDashboard({query}: {query: ReturnType<typ
             <Space direction="vertical" size={12} style={{display: 'flex'}}>
                 <Typography.Text type="secondary" style={{fontSize: 12}}>
                     {t('pages:internalEvaluationOfPaperPerformanceExecutionQualitySampleSufficiencyAndBacktestDeviation')}</Typography.Text>
-                <NqRiskBanner
+                <ApplicationRiskAlert
                     level="info"
                     message={t('pages:evaluatePaperPerformanceDeviationsFromBacktestsSampleSufficiencyAndRiskAdjustedScoresByStrategyversi')}
                     description={t('pages:scoresAreInternalPaperHeuristicsNotInvestmentRatingsLivePerformanceOrInvestmentAdviceBacktestDeviati')}

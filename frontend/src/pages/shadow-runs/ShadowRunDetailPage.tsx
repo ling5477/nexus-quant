@@ -7,7 +7,7 @@ import type {ColumnsType} from 'antd/es/table';
 import {useEffect, useMemo, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
-import {NqEmptyState, NqErrorState, NqLoadingState, NqPageHeader, NqRiskBanner} from '@/components/nq';
+import {NqEmptyState, NqErrorState, NqLoadingState, NqPageHeader, ApplicationRiskAlert} from '@/components/nq';
 import {
     usePaperShadowConsistencyDrilldown,
     useShadowRunDetailQuery,
@@ -291,7 +291,7 @@ function BoundarySummary({detail}: { detail?: ShadowRunDetailResponse }) {
     return (
         <Card className="page-section" variant="borderless">
             <Space direction="vertical" size={12} style={{display: 'flex'}}>
-                <NqRiskBanner
+                <ApplicationRiskAlert
                     level="warning"
                     message={t('pages:diagnosticsOnlyNoTradingAuthorization')}
                     description={t('pages:shadowDetailAndReplayShowLocalDiagnosticFactsOnlyAConsistencyReportIsNotApprovalOrLiveReadinessAndDo')}

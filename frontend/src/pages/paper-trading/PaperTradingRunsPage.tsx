@@ -22,7 +22,7 @@ import {useEffect, useState, type ReactNode} from 'react';
 import {Link} from 'react-router-dom';
 
 import {showApiError} from '@/api/errors';
-import {NqAmountText, NqDangerConfirmButton, NqDataTable, NqEmptyState, NqEnvironmentBadge, NqErrorState, NqFilterBar, NqLoadingState, NqMetricCard, NqPageHeader, NqPercentText, NqPriceText, NqRiskBanner, nqNumericColumn} from '@/components/nq';
+import {NqAmountText, NqDangerConfirmButton, NqDataTable, NqEmptyState, TradingEnvironmentTag, NqErrorState, NqFilterBar, NqLoadingState, NqMetricCard, NqPageHeader, NqPercentText, NqPriceText, ApplicationRiskAlert, nqNumericColumn} from '@/components/nq';
 import {NqAlertPanel, NqHeartbeatPanel, NqRecoveryPanel, NqScheduleFirePanel, NqStabilityCheckPanel} from '@/components/paper';
 import {
     EXCHANGE_OPTIONS,
@@ -255,7 +255,7 @@ export function PaperTradingRunsPage() {
                     <span className="nq-mono nq-run-id" title={value}>{value}</span>
                     <Space size={6}>
                         <StatusTag title="" variant="pill" status={record.status}/>
-                        <NqEnvironmentBadge env={record.tradeEnv}/>
+                        <TradingEnvironmentTag env={record.tradeEnv}/>
                     </Space>
                     <Typography.Text type="secondary" style={{fontSize: 12}}>
                         {record.symbol} · {record.intervalCode} · {record.exchangeCode}
@@ -305,7 +305,7 @@ export function PaperTradingRunsPage() {
                         description={t('pages:createStartStopRecoverAndInspectIndividualPaperRunsPortfolioAnalysisExecutionDiagnosticsAndStrategyE')}
                         badge={t('pages:runExecutionLayer')}
                         tip={(
-                            <NqRiskBanner
+                            <ApplicationRiskAlert
                                 level="info"
                                 message={t('pages:theCurrentEnvironmentIsPaperSimLiveTradingIsDisabled')}
                                 description={t('pages:actionsAffectSimPaperRunsOnlyTheyDoNotPlaceOrCancelRealExchangeOrdersOrAccessCredentials')}
@@ -400,7 +400,7 @@ export function PaperTradingRunsPage() {
                                         <Space size={8} wrap style={{marginBottom: 12}}>
                                             <Typography.Text strong>{t('pages:runConsole')}</Typography.Text>
                                             <StatusTag title="" variant="pill" status={focusStatus}/>
-                                            <NqEnvironmentBadge env={selectedRow.tradeEnv}/>
+                                            <TradingEnvironmentTag env={selectedRow.tradeEnv}/>
                                             <Typography.Text type="secondary" className="nq-mono" style={{fontSize: 12}}>
                                                 {selectedRow.paperRunId}
                                             </Typography.Text>
@@ -429,7 +429,7 @@ export function PaperTradingRunsPage() {
                                                 tone={openAlertCount && openAlertCount > 0 ? 'warning' : 'muted'}
                                                 loading={summaryQuery.isPending}
                                             />
-                                            <NqMetricCard label={t('pages:tradingEnvironment')} value={<NqEnvironmentBadge env={selectedRow.tradeEnv}/>} footer={t('pages:liveDisabled2')}/>
+                                            <NqMetricCard label={t('pages:tradingEnvironment')} value={<TradingEnvironmentTag env={selectedRow.tradeEnv}/>} footer={t('pages:liveDisabled2')}/>
                                         </div>
 
                                         <Space size={8} wrap style={{marginTop: 12}}>

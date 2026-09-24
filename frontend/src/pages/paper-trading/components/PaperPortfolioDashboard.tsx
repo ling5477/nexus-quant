@@ -4,7 +4,7 @@ import {t} from '@/i18n';
 import {Card, Descriptions, Space, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 
-import {NqAmountText, NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPercentText, NqRiskBanner, nqNumericColumn} from '@/components/nq';
+import {NqAmountText, NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPercentText, ApplicationRiskAlert, nqNumericColumn} from '@/components/nq';
 import {usePaperPortfolioSummaryQuery} from '@/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
 import type {PaperPortfolioGroup, PaperPortfolioSummaryResponse} from '@/types/paper-trading';
@@ -63,7 +63,7 @@ export function PaperPortfolioDashboard({query}: {query: ReturnType<typeof usePa
             extra={<Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:simPaperOnlyLiveDisabled')}</Typography.Text>}
         >
             <Space direction="vertical" size={12} style={{display: 'flex'}}>
-                <NqRiskBanner
+                <ApplicationRiskAlert
                     level="info"
                     message={t('pages:readOnlyPortfolioPerformanceAcrossPaperRuns')}
                     description={t('pages:thisPortfolioDashboardUsesPaperSimulationAndLocalExecutionFactsOnlyItDoesNotRepresentLiveOrRealTradi')}
