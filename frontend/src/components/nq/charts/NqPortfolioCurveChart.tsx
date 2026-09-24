@@ -4,7 +4,7 @@ import {useMemo} from 'react';
 
 import {useEChart} from '@/components/nq/charts/useEChart';
 import {formatNqNumber} from '@/components/nq/NqNumericText';
-import {buildNqLineChartBaseOption} from '@/theme/chart-theme';
+import {buildNqLineChartBaseOption} from '@/nq-design-system/theme/nqChartTheme';
 import {nqColor} from '@/theme/tokens';
 import type {PaperPortfolioCurvePoint} from '@/types/paper-trading';
 import {formatDateTime} from '@/utils/formatters';

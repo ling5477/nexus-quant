@@ -6,7 +6,7 @@
 
 - 主 tokens：`@/theme/tokens`，与 `@/styles/tokens.css` 镜像。
 - `tokens/nq-tokens.ts` 派生兼容 API；`tokens/nq-tokens.css` 是全局别名，不再维护独立调色板。
-- `theme/nqAntdTheme.ts` 兼容导出全局主题。不得在页面另设一套 ConfigProvider。
+- `theme/nqAntdTheme.ts` 是全局 AntD 主题唯一实现，`theme/nqChartTheme.ts` 是图表基础样式；两者读取 `@/theme/tokens`，页面不得另设一套主题值。
 - `shell/AppShell.tsx`：共享桌面侧栏 / 窄屏 Drawer / header / content。
 - `shell/NqPageScaffold.tsx`：页面分区容器，统一间距和最小宽度；不拥有路由、权限或数据。
 - `brand/BrandLockup.tsx`：用户确认的蓝色丝带图标与 NEXUS QUANT 字标，覆盖侧栏和登录页；组件 / favicon 使用同一原图的 128px / 32px 衍生 PNG，见[品牌素材记录](../assets/brand/README.md)。
