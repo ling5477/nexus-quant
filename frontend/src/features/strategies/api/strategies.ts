@@ -4,7 +4,7 @@ import type {
     StrategyStatusUpdateRequest,
     StrategyVersionCreateRequest,
     StrategyVersionItem,
-} from '@/types/strategies';
+} from '@/features/strategies/types/strategies';
 
 export const strategiesApi = {
     async list(): Promise<StrategyDefinitionListItem[]> {

@@ -10,9 +10,9 @@ import {
     useRecoverMutation,
     useRetryFailedStepMutation,
     useRunMonitorOnceMutation,
-} from '@/hooks/usePaperTradingQuery';
+} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
-import type {PaperRunRecoveryEventItem} from '@/types/paper-trading';
+import type {PaperRunRecoveryEventItem} from '@/features/paper-trading/types/paper-trading';
 import {formatDateTime} from '@/utils/formatters';
 
 /**

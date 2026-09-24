@@ -1,5 +1,5 @@
 import {apiClient} from '@/api/client';
-import type {StrategyScheduleListItem, StrategyScheduleStatusUpdateRequest} from '@/types/schedules';
+import type {StrategyScheduleListItem, StrategyScheduleStatusUpdateRequest} from '@/features/schedules/types/schedules';
 
 export const schedulesApi = {
     async list(strategyId: string): Promise<StrategyScheduleListItem[]> {

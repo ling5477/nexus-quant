@@ -7,7 +7,7 @@ import {useState} from 'react';
 
 import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPercentText, ApplicationRiskAlert, nqNumericColumn} from '@/components/nq';
 
-import {usePaperStrategyEvaluationsQuery} from '@/hooks/usePaperTradingQuery';
+import {usePaperStrategyEvaluationsQuery} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
 import type {
     PaperBacktestDeviationLevel,
@@ -16,7 +16,7 @@ import type {
     PaperStrategyEvaluationItem,
     PaperStrategyEvaluationsResponse,
     PaperStrategyRatingLabel,
-} from '@/types/paper-trading';
+} from '@/features/paper-trading/types/paper-trading';
 import {formatDateTime} from '@/utils/formatters';
 
 import {toNullableNumber} from './paperFormatters';

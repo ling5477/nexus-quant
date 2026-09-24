@@ -16,13 +16,13 @@ import {
     formatNqNumber,
     nqNumericColumn,
 } from '@/components/nq';
-import {usePaperPortfolioSummaryQuery} from '@/hooks/usePaperTradingQuery';
+import {usePaperPortfolioSummaryQuery} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
 import type {
     PaperPortfolioGroup,
     PaperPortfolioRunRef,
     PaperPortfolioSummaryResponse,
-} from '@/types/paper-trading';
+} from '@/features/paper-trading/types/paper-trading';
 import {formatDateTime} from '@/utils/formatters';
 
 import {pnlTone, toNullableNumber} from './paperFormatters';

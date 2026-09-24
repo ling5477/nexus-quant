@@ -6,7 +6,7 @@ import {useEChart} from '@/components/nq/charts/useEChart';
 import {formatNqNumber} from '@/components/nq/NqNumericText';
 import {buildNqLineChartBaseOption} from '@/nq-design-system/theme/nqChartTheme';
 import {nqColor} from '@/theme/tokens';
-import type {EquityCurveSnapshotItem} from '@/types/paper-trading';
+import type {EquityCurveSnapshotItem} from '@/features/paper-trading/types/paper-trading';
 import {formatDateTime} from '@/utils/formatters';
 
 /**

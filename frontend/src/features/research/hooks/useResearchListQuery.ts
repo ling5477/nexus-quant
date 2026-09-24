@@ -1,8 +1,8 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-import {researchApi} from '@/api/research';
+import {researchApi} from '@/features/research/api/research';
 import {researchQueryKeys} from '@/api/query-keys';
-import type {ResearchConfigCreateRequest} from '@/types/research';
+import type {ResearchConfigCreateRequest} from '@/features/research/types/research';
 
 export function useResearchListQuery(sourceStrategyId: string, searchVersion: number) {
     return useQuery({

@@ -7,7 +7,7 @@ import {useState} from 'react';
 
 import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPercentText, ApplicationRiskAlert, nqNumericColumn} from '@/components/nq';
 
-import {usePaperExecutionDiagnosticsQuery} from '@/hooks/usePaperTradingQuery';
+import {usePaperExecutionDiagnosticsQuery} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
 import type {
     PaperExecutionCause,
@@ -17,7 +17,7 @@ import type {
     PaperExecutionGroupDiagnostic,
     PaperExecutionRunDiagnostic,
     PaperExecutionSeverity,
-} from '@/types/paper-trading';
+} from '@/features/paper-trading/types/paper-trading';
 
 // ---- GateK K2：Paper 执行诊断展示映射与筛选（消费 K1 endpoint，纯前端只读展示）----
 

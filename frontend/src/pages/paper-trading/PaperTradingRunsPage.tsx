@@ -51,7 +51,7 @@ import {
     useRunRiskOnceMutation,
     useStartPaperTradingRunMutation,
     useStopPaperTradingRunMutation,
-} from '@/hooks/usePaperTradingQuery';
+} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
 import {
     defaultPaperTradingListFilters,
@@ -67,7 +67,7 @@ import {
     type PaperTradingTradeItem,
     type PositionCurveSnapshotItem,
     type TradeReplayRecordItem,
-} from '@/types/paper-trading';
+} from '@/features/paper-trading/types/paper-trading';
 import {formatDateTime, normalizeOptionalText} from '@/utils/formatters';
 
 type PaperRunRow = PaperTradingRunItem;

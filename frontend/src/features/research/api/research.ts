@@ -1,5 +1,5 @@
 import {apiClient} from '@/api/client';
-import type {ResearchConfigCreateRequest, ResearchConfigListItem} from '@/types/research';
+import type {ResearchConfigCreateRequest, ResearchConfigListItem} from '@/features/research/types/research';
 
 export const researchApi = {
     async list(sourceStrategyId?: string): Promise<ResearchConfigListItem[]> {

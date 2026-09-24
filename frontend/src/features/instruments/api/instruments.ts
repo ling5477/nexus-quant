@@ -1,5 +1,5 @@
 import {apiClient} from '@/api/client';
-import type {InstrumentCatalogItem, InstrumentCatalogSyncResponse} from '@/types/instruments';
+import type {InstrumentCatalogItem, InstrumentCatalogSyncResponse} from '@/features/instruments/types/instruments';
 
 export const instrumentsApi = {
     async list(exchangeCode?: string): Promise<InstrumentCatalogItem[]> {

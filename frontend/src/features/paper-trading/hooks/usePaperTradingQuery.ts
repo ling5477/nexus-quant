@@ -1,8 +1,8 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-import {paperTradingApi} from '@/api/paper-trading';
+import {paperTradingApi} from '@/features/paper-trading/api/paper-trading';
 import {paperTradingQueryKeys} from '@/api/query-keys';
-import type {EmergencyStopRequest, PaperRunAlertAckRequest, PaperRunAlertCreateRequest, PaperRunDailyReportGenerateRequest, PaperRunRecoverRequest, PaperRunRetryFailedStepRequest, PaperRunScheduleCreateRequest, PaperRunScheduleStatusUpdateRequest, PaperRunStabilityCheckGenerateRequest, PaperTradingRunCreateRequest} from '@/types/paper-trading';
+import type {EmergencyStopRequest, PaperRunAlertAckRequest, PaperRunAlertCreateRequest, PaperRunDailyReportGenerateRequest, PaperRunRecoverRequest, PaperRunRetryFailedStepRequest, PaperRunScheduleCreateRequest, PaperRunScheduleStatusUpdateRequest, PaperRunStabilityCheckGenerateRequest, PaperTradingRunCreateRequest} from '@/features/paper-trading/types/paper-trading';
 
 interface UsePaperTradingListRequest {
     publishId?: string;

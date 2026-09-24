@@ -1,8 +1,8 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {scheduleQueryKeys} from '@/api/query-keys';
-import {schedulesApi} from '@/api/schedules';
-import type {StrategyScheduleStatusUpdateRequest} from '@/types/schedules';
+import {schedulesApi} from '@/features/schedules/api/schedules';
+import type {StrategyScheduleStatusUpdateRequest} from '@/features/schedules/types/schedules';
 
 export function useScheduleListQuery(strategyId: string, searchVersion: number) {
     return useQuery({

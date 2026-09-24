@@ -1,6 +1,6 @@
 import {Space} from 'antd';
 
-import {usePaperPortfolioSummaryQuery} from '@/hooks/usePaperTradingQuery';
+import {usePaperPortfolioSummaryQuery} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 
 import {PaperPortfolioDashboard} from './components/PaperPortfolioDashboard';
 import {PaperRiskDrawdownDashboard} from './components/PaperRiskDashboard';

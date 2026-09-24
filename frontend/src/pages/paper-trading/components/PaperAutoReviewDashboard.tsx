@@ -7,7 +7,7 @@ import {useState} from 'react';
 
 import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPercentText, ApplicationRiskAlert, nqNumericColumn} from '@/components/nq';
 
-import {usePaperAutoReviewsQuery} from '@/hooks/usePaperTradingQuery';
+import {usePaperAutoReviewsQuery} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
 import type {
     PaperAutoReviewSeverity,
@@ -20,7 +20,7 @@ import type {
     PaperStrategyAutoReview,
     PaperStrategyEvaluationConfidence,
     PaperStrategyRatingLabel,
-} from '@/types/paper-trading';
+} from '@/features/paper-trading/types/paper-trading';
 import {formatDateTime} from '@/utils/formatters';
 
 import {

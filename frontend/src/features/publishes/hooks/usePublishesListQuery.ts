@@ -1,8 +1,8 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
-import {publishesApi} from '@/api/publishes';
+import {publishesApi} from '@/features/publishes/api/publishes';
 import {publishesQueryKeys} from '@/api/query-keys';
-import type {BacktestPublishRequest} from '@/types/publishes';
+import type {BacktestPublishRequest} from '@/features/publishes/types/publishes';
 
 interface UsePublishesListQueryRequest {
     researchConfigId?: string;

@@ -13,9 +13,9 @@ import {
     usePaperSchedulesQuery,
     useRunScheduleOnceMutation,
     useUpdateScheduleStatusMutation,
-} from '@/hooks/usePaperTradingQuery';
+} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
-import type {PaperRunScheduleCreateRequest, PaperRunScheduleFireItem, PaperRunScheduleItem} from '@/types/paper-trading';
+import type {PaperRunScheduleCreateRequest, PaperRunScheduleFireItem, PaperRunScheduleItem} from '@/features/paper-trading/types/paper-trading';
 import {formatDateTime} from '@/utils/formatters';
 
 /**

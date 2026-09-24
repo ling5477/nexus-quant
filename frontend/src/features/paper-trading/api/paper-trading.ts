@@ -32,7 +32,7 @@ import type {
     PaperTradingTradeItem,
     PositionCurveSnapshotItem,
     TradeReplayRecordItem,
-} from '@/types/paper-trading';
+} from '@/features/paper-trading/types/paper-trading';
 
 export interface PaperTradingListRequest {
     publishId?: string;

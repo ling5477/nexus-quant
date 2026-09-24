@@ -4,7 +4,7 @@ import {Space, Tag, Typography} from 'antd';
 import type React from 'react';
 import type {ReactNode} from 'react';
 
-import type {PaperPortfolioRunRef} from '@/types/paper-trading';
+import type {PaperPortfolioRunRef} from '@/features/paper-trading/types/paper-trading';
 
 /**
  * paperPortfolioShared —— Portfolio / Risk / Strategy Ranking 三个 dashboard 共享的小型展示件。

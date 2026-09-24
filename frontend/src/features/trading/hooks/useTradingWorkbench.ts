@@ -1,6 +1,6 @@
 import {useMutation, useQuery} from '@tanstack/react-query';
 
-import {tradingWorkbenchApi} from '@/api/trading-workbench';
+import {tradingWorkbenchApi} from '@/features/trading/api/trading-workbench';
 import {tradingWorkbenchQueryKeys} from '@/api/query-keys';
 import type {AppApiError} from '@/types/api';
 import type {
@@ -13,7 +13,7 @@ import type {
     TradingOrderListResponse,
     TradingWorkbenchLookupRequest,
     TradingWorkbenchLookupResult,
-} from '@/types/trading-workbench';
+} from '@/features/trading/types/trading-workbench';
 
 async function swallowNotFound<T>(promise: Promise<T>): Promise<T | null> {
     try {

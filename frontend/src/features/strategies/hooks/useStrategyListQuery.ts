@@ -1,8 +1,8 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {strategyQueryKeys} from '@/api/query-keys';
-import {strategiesApi} from '@/api/strategies';
-import type {StrategyStatusUpdateRequest, StrategyVersionCreateRequest} from '@/types/strategies';
+import {strategiesApi} from '@/features/strategies/api/strategies';
+import type {StrategyStatusUpdateRequest, StrategyVersionCreateRequest} from '@/features/strategies/types/strategies';
 
 export function useStrategyListQuery(searchVersion: number) {
     return useQuery({

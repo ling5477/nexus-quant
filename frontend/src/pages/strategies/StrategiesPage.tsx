@@ -37,7 +37,7 @@ import {
     useCreateStrategyVersionMutation,
     useStrategyListQuery,
     useUpdateStrategyStatusMutation,
-} from '@/hooks/useStrategyListQuery';
+} from '@/features/strategies/hooks/useStrategyListQuery';
 import type {AppApiError} from '@/types/api';
 import {
     defaultStrategyListFilters,
@@ -45,7 +45,7 @@ import {
     type StrategyListFilters,
     type StrategyVersionCreateRequest,
     type StrategyVersionItem,
-} from '@/types/strategies';
+} from '@/features/strategies/types/strategies';
 import {containsIgnoreCase, formatDateTime, matchesBooleanFilter, normalizeOptionalText} from '@/utils/formatters';
 
 type StrategyRow = StrategyDefinitionListItem;

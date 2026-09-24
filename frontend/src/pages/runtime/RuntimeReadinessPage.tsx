@@ -17,7 +17,7 @@ import {useQuery} from '@tanstack/react-query';
 import {Link} from 'react-router-dom';
 
 import {formatApiError} from '@/api/errors';
-import {operationalReadinessApi} from '@/api/operational-readiness';
+import {operationalReadinessApi} from '@/features/runtime/api/operational-readiness';
 import {operationalReadinessQueryKeys} from '@/api/query-keys';
 import {NqMetricCard, ApplicationRiskAlert} from '@/components/nq';
 import {PageHero} from '@/components/page/PageHero';
@@ -28,7 +28,7 @@ import type {AppApiError} from '@/types/api';
 import type {
     OperationalReadinessResponse,
     OperationalReadinessStatusResponse,
-} from '@/types/operational-readiness';
+} from '@/features/runtime/types/operational-readiness';
 import {formatDateTime} from '@/utils/formatters';
 
 const {Paragraph, Text} = Typography;

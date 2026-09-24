@@ -1,6 +1,6 @@
 import {create} from 'zustand';
 
-import type {ExchangeAccountSummary} from '@/types/accounts';
+import type {ExchangeAccountSummary} from '@/features/accounts/types/accounts';
 
 type BootstrapStatus = 'idle' | 'loading' | 'ready';
 

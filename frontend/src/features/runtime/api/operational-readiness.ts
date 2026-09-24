@@ -1,5 +1,5 @@
 import {apiClient} from '@/api/client';
-import type {OperationalReadinessResponse} from '@/types/operational-readiness';
+import type {OperationalReadinessResponse} from '@/features/runtime/types/operational-readiness';
 
 /**
  * Operational readiness 只读 API 客户端。

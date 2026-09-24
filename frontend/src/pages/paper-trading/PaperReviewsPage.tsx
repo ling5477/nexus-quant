@@ -2,7 +2,7 @@ import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
 import {Alert, Space, Typography} from 'antd';
 
-import {usePaperAutoReviewsQuery, usePaperStrategyEvaluationsQuery} from '@/hooks/usePaperTradingQuery';
+import {usePaperAutoReviewsQuery, usePaperStrategyEvaluationsQuery} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 
 import {PaperAutoReviewDashboard} from './components/PaperAutoReviewDashboard';
 import {PaperStrategyEvaluationDashboard} from './components/PaperStrategyEvaluationDashboard';

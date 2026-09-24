@@ -26,14 +26,14 @@ import {
     useCreateResearchMutation,
     useResearchDetailQuery,
     useResearchListQuery,
-} from '@/hooks/useResearchListQuery';
+} from '@/features/research/hooks/useResearchListQuery';
 import type {AppApiError} from '@/types/api';
-import type {ResearchConfigCreateRequest} from '@/types/research';
+import type {ResearchConfigCreateRequest} from '@/features/research/types/research';
 import {
     defaultResearchListFilters,
     type ResearchConfigListItem,
     type ResearchListFilters,
-} from '@/types/research';
+} from '@/features/research/types/research';
 import {containsIgnoreCase, formatDateTime, normalizeOptionalText} from '@/utils/formatters';
 
 type ResearchRow = ResearchConfigListItem;

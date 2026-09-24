@@ -24,14 +24,14 @@ import {useState} from 'react';
 import {formatApiError} from '@/api/errors';
 import {PageHero} from '@/components/page/PageHero';
 import {RUN_STATUS_OPTIONS, RUN_TRIGGER_TYPE_OPTIONS} from '@/constants/filter-options';
-import {useRunDetailQuery, useRunListQuery} from '@/hooks/useRunListQuery';
+import {useRunDetailQuery, useRunListQuery} from '@/features/runs/hooks/useRunListQuery';
 import type {AppApiError} from '@/types/api';
 import {
     defaultStrategyRunListFilters,
     type StrategyRunDetailItem,
     type StrategyRunListFilters,
     type StrategyRunSummaryItem,
-} from '@/types/runs';
+} from '@/features/runs/types/runs';
 import {containsIgnoreCase, formatDateTime, normalizeOptionalText} from '@/utils/formatters';
 
 type RunRow = StrategyRunSummaryItem;

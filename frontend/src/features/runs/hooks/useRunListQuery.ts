@@ -1,7 +1,7 @@
 import {useQuery} from '@tanstack/react-query';
 
 import {runQueryKeys} from '@/api/query-keys';
-import {runsApi} from '@/api/runs';
+import {runsApi} from '@/features/runs/api/runs';
 
 interface UseRunListQueryRequest {
     strategyId?: string;

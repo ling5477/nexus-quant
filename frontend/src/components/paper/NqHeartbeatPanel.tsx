@@ -5,9 +5,9 @@ import {App, Button, Card} from 'antd';
 
 import {showApiError} from '@/api/errors';
 import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, nqNumericColumn} from '@/components/nq';
-import {usePaperHeartbeatsQuery, useRunHeartbeatOnceMutation} from '@/hooks/usePaperTradingQuery';
+import {usePaperHeartbeatsQuery, useRunHeartbeatOnceMutation} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
-import type {PaperRunHeartbeatItem} from '@/types/paper-trading';
+import type {PaperRunHeartbeatItem} from '@/features/paper-trading/types/paper-trading';
 import {formatDateTime} from '@/utils/formatters';
 
 /**

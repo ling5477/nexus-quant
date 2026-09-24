@@ -7,7 +7,7 @@ import type {
     ExchangeAccountDetail,
     ExchangeAccountSummary,
     UpdateExchangeAccountRequest,
-} from '@/types/accounts';
+} from '@/features/accounts/types/accounts';
 
 export const accountsApi = {
     async list(): Promise<ExchangeAccountSummary[]> {

@@ -35,7 +35,7 @@ import {
     useRecoveryMutation,
     useTradingOrderListQuery,
     useTradingWorkbenchLookupQuery,
-} from '@/hooks/useTradingWorkbench';
+} from '@/features/trading/hooks/useTradingWorkbench';
 import {useAccountContextStore} from '@/store/account-context-store';
 import type {AppApiError} from '@/types/api';
 import type {
@@ -49,7 +49,7 @@ import type {
     TradingOrderListRequest,
     TradingWorkbenchLookupRequest,
     TradingWorkbenchLookupResult,
-} from '@/types/trading-workbench';
+} from '@/features/trading/types/trading-workbench';
 import {formatDateTime, formatNumber, normalizeOptionalText} from '@/utils/formatters';
 
 type ActionDrawer = 'place' | 'cancel' | 'reconcile' | 'recovery' | null;

@@ -11,7 +11,7 @@ import type {
     ReconcileRunOnceRequest,
     RecoveryRunOnceRequest,
     TradeView,
-} from '@/types/trading-workbench';
+} from '@/features/trading/types/trading-workbench';
 
 export const tradingWorkbenchApi = {
     async listOrders(request: TradingOrderListRequest): Promise<TradingOrderListResponse> {

@@ -7,14 +7,14 @@ import {useState} from 'react';
 
 import {NqAmountText, NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPercentText, NqPortfolioDrawdownChart, NqPortfolioEquityChart, ApplicationRiskAlert, nqNumericColumn} from '@/components/nq';
 
-import {usePaperPortfolioSummaryQuery} from '@/hooks/usePaperTradingQuery';
+import {usePaperPortfolioSummaryQuery} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
 import type {
     PaperPortfolioCurve,
     PaperPortfolioCurvePoint,
     PaperPortfolioRunRef,
     PaperPortfolioSummaryResponse,
-} from '@/types/paper-trading';
+} from '@/features/paper-trading/types/paper-trading';
 import {formatDateTime} from '@/utils/formatters';
 
 import {toNullableNumber} from './paperFormatters';

@@ -1,4 +1,4 @@
-import {usePaperExecutionDiagnosticsQuery} from '@/hooks/usePaperTradingQuery';
+import {usePaperExecutionDiagnosticsQuery} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 
 import {PaperExecutionDiagnosticsDashboard} from './components/PaperExecutionDiagnosticsDashboard';
 

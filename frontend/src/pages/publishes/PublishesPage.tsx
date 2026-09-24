@@ -29,13 +29,13 @@ import {
     usePublishDetailQuery,
     usePublishMutation,
     usePublishesListQuery,
-} from '@/hooks/usePublishesListQuery';
+} from '@/features/publishes/hooks/usePublishesListQuery';
 import type {AppApiError} from '@/types/api';
 import {
     defaultPublishesListFilters,
     type BacktestPublishListItem,
     type PublishesListFilters,
-} from '@/types/publishes';
+} from '@/features/publishes/types/publishes';
 import {containsIgnoreCase, formatDateTime, normalizeOptionalText} from '@/utils/formatters';
 
 type PublishRow = BacktestPublishListItem;

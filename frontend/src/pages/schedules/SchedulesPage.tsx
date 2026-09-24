@@ -29,13 +29,13 @@ import {
     useScheduleDetailQuery,
     useScheduleListQuery,
     useUpdateScheduleStatusMutation,
-} from '@/hooks/useScheduleListQuery';
+} from '@/features/schedules/hooks/useScheduleListQuery';
 import type {AppApiError} from '@/types/api';
 import {
     defaultStrategyScheduleListFilters,
     type StrategyScheduleListFilters,
     type StrategyScheduleListItem,
-} from '@/types/schedules';
+} from '@/features/schedules/types/schedules';
 import {containsIgnoreCase, formatDateTime, matchesBooleanFilter, normalizeOptionalText} from '@/utils/formatters';
 
 type ScheduleRow = StrategyScheduleListItem;

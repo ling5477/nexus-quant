@@ -13,11 +13,11 @@ import {
     usePaperRecoveryEventsQuery,
     usePaperTradingListQuery,
     usePaperTradingRiskResultsQuery,
-} from '@/hooks/usePaperTradingQuery';
+} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 import {appNavItems} from '@/router/navigation';
 import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import type {AppApiError} from '@/types/api';
-import type {PaperTradingRunItem} from '@/types/paper-trading';
+import type {PaperTradingRunItem} from '@/features/paper-trading/types/paper-trading';
 import {appEnv} from '@/utils/env';
 import {formatDateTime} from '@/utils/formatters';
 import './DashboardPage.css';

@@ -5,9 +5,9 @@ import {Card, Descriptions, Space, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 
 import {NqAmountText, NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPercentText, ApplicationRiskAlert, nqNumericColumn} from '@/components/nq';
-import {usePaperPortfolioSummaryQuery} from '@/hooks/usePaperTradingQuery';
+import {usePaperPortfolioSummaryQuery} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
-import type {PaperPortfolioGroup, PaperPortfolioSummaryResponse} from '@/types/paper-trading';
+import type {PaperPortfolioGroup, PaperPortfolioSummaryResponse} from '@/features/paper-trading/types/paper-trading';
 import {formatDateTime} from '@/utils/formatters';
 
 import {pnlTone, toNullableNumber} from './paperFormatters';

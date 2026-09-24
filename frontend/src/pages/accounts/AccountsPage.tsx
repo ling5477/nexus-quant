@@ -6,7 +6,7 @@ import type {ColumnsType} from 'antd/es/table';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useState} from 'react';
 
-import {accountsApi} from '@/api/accounts';
+import {accountsApi} from '@/features/accounts/api/accounts';
 import {formatApiError, showApiError} from '@/api/errors';
 import {accountQueryKeys, authQueryKeys} from '@/api/query-keys';
 import {NqPageHeader} from '@/components/nq/NqPageHeader';
@@ -19,7 +19,7 @@ import type {
     ExchangeAccountCredentialUpsertRequest,
     ExchangeAccountSummary,
     ExchangeCredentialType,
-} from '@/types/accounts';
+} from '@/features/accounts/types/accounts';
 import type {AppApiError} from '@/types/api';
 
 interface AccountFormValues {
