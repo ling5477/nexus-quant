@@ -27,7 +27,7 @@ NexusQuant 当前由 Java 后端多模块、React 前端控制台、Python 离�
 
 ## 前端结构
 
-前端使用 React + TypeScript + Vite + React Router + TanStack Query + Axios + Zustand + Ant Design。正式 API 调用必须通过 `frontend/src/api/*` 封装。NQ Console 继续使用专业金融后台风格，不新增 AI / Agent / DH runtime 成熟页面 mock。
+前端使用 React + TypeScript + Vite + React Router + TanStack Query + Axios + Zustand + Ant Design。正式请求经 `frontend/src/api/client.ts`；共享 API 合同位于 `src/api`，单领域 API、类型和查询 hook 位于 `src/features/<owner>/`。Design System 的主题与通用组件位于 `src/nq-design-system`，应用业务组件位于 `src/components/nq`。NQ Console 继续使用专业金融后台风格，不新增 AI / Agent / DH runtime 成熟页面 mock。
 
 ## Python Research
 
@@ -39,7 +39,7 @@ NexusQuant 当前由 Java 后端多模块、React 前端控制台、Python 离�
 - `nq-core` 不依赖 JDBC。
 - `nq-infra` 承载 JDBC 和基础设施实现。
 - adapter 模块只做交易所适配，不把交易所模型泄漏为平台 application 主语义。
-- 前端 API 调用统一走 `frontend/src/api/*`。
+- 前端 HTTP 调用统一走 `frontend/src/api/client.ts`，由共享或领域 owner 的 API 模块封装。
 
 ## 固定禁止边界
 

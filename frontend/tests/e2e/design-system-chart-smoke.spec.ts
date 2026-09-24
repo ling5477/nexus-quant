@@ -33,8 +33,8 @@ test.describe('design system chart foundation smoke (B0.4)', () => {
         await page.getByText('红涨绿跌 (CN_STOCK)').click();
         const cnUpColor = await upSwatch.evaluate((el) => getComputedStyle(el).backgroundColor);
 
-        expect(intlUpColor).toBe('rgb(51, 214, 166)');
-        expect(cnUpColor).toBe('rgb(255, 92, 108)');
+        expect(intlUpColor).toBe('rgb(8, 153, 129)');
+        expect(cnUpColor).toBe('rgb(242, 54, 69)');
         expect(cnUpColor).not.toEqual(intlUpColor);
     });
 });

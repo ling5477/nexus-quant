@@ -296,7 +296,7 @@ test.describe('paper trading portfolio child route', () => {
 
         await page.goto('/paper-trading/portfolio');
 
-        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
+        await expect(page.getByRole('heading', {name: '模拟交易'}).first()).toBeVisible();
         const portfolioDashboard = page.getByRole('region', {name: 'Paper 组合看板'});
         const riskDashboard = page.getByRole('region', {name: 'Paper 风险与回撤驾驶舱'});
         const rankingDashboard = page.getByRole('region', {name: 'Paper 策略表现排行'});

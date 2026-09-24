@@ -28,7 +28,7 @@ test.describe('design system table smoke (B0.2)', () => {
         const downColor = await table.getByText('-642.18').evaluate((el) => getComputedStyle(el).color);
         expect(upColor).not.toEqual(downColor);
 
-        // 默认 INTL_CRYPTO:up = 绿 rgb(51,214,166)。
-        expect(upColor).toBe('rgb(51, 214, 166)');
+        // 诊断页初始 INTL_CRYPTO：上涨使用当前 token 的绿色。
+        expect(upColor).toBe('rgb(8, 153, 129)');
     });
 });

@@ -38,4 +38,4 @@
 - `nq-infra` 实现 core ports，但不反向定义业务语义。
 - adapter 模块只做交易所适配。
 - scheduler contract 与 scheduler implementation 分离。
-- 前端 API 调用统一走 `frontend/src/api/*` 封装。
+- 前端请求统一使用 `frontend/src/api/client.ts`；跨页面 API 合同留在 `src/api`，单领域 API、类型和查询 hook 由 `src/features/<owner>/` 持有。

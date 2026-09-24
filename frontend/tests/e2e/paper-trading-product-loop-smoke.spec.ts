@@ -334,7 +334,7 @@ async function seedAuthAndPaperLoopStubs(page: Page, seedRun = true): Promise<Pa
 }
 
 async function expectRunsIsExecutionOnly(page: Page): Promise<void> {
-    await expect(page.getByRole('heading', {name: '模拟交易'})).toBeVisible();
+    await expect(page.getByRole('heading', {name: '模拟交易'}).first()).toBeVisible();
     await expect(page.getByRole('region', {name: 'Paper 组合看板'})).toHaveCount(0);
     await expect(page.getByRole('region', {name: 'Paper 执行诊断'})).toHaveCount(0);
     await expect(page.getByRole('region', {name: 'Paper 策略评估', exact: true})).toHaveCount(0);
@@ -352,9 +352,9 @@ test.describe('paper trading runs slimmer', () => {
         await page.goto('/paper-trading');
 
         await expect(page).toHaveURL(/\/paper-trading\/runs$/);
-        await expect(page.getByRole('heading', {name: 'Paper Trading'})).toBeVisible();
+        await expect(page.getByRole('heading', {name: '模拟交易'}).first()).toBeVisible();
         await expect(page.getByLabel('Paper Trading 子路由导航')).toBeVisible();
-        await expect(page.getByText('SIM/Paper only').first()).toBeVisible();
+        await expect(page.getByText('仅 SIM / 模拟交易').first()).toBeVisible();
         await expect(page.getByText('LIVE 未开启').first()).toBeVisible();
         await expectRunsIsExecutionOnly(page);
 
@@ -399,12 +399,12 @@ test.describe('paper trading runs slimmer', () => {
         const dialog = page.getByRole('dialog', {name: /创建\s*Paper\s*Trading/});
         await expect(dialog).toBeVisible();
         await dialog.getByPlaceholder('发布记录 ID（publishId）').fill(paperRun.publishId);
-        await page.getByRole('button', {name: 'OK', exact: true}).click();
+        await dialog.getByRole('button', {name: /确\s*定/}).click();
 
         const detail = page.getByRole('region', {name: 'Paper Trading 详情'});
         await expect(detail.getByText(PAPER_RUN_ID).first()).toBeVisible();
         await expect(detail.getByText('CREATED').first()).toBeVisible();
-        await expect(detail.getByText('Paper Run ID')).toBeVisible();
+        await expect(detail.getByText('模拟运行 ID')).toBeVisible();
         await expect(detail.getByText('生命周期操作仅作用于当前 SIM/Paper run；LIVE 未开启，不会触发真实交易所。')).toBeVisible();
         await expect(detail.getByText('订单事实').first()).toBeVisible();
         await expect(detail.getByText('成交事实').first()).toBeVisible();
@@ -425,8 +425,8 @@ test.describe('paper trading runs slimmer', () => {
         await expect(detail.getByRole('columnheader', {name: '未实现盈亏'})).toBeVisible();
         await expect(detail.getByText('BTC-USDT').first()).toBeVisible();
         await detail.getByRole('tab', {name: '快照'}).click();
-        await expect(detail.getByText('Publish Snapshot')).toBeVisible();
-        await expect(detail.getByText('Strategy Version Snapshot')).toBeVisible();
+        await expect(detail.getByText('发布快照')).toBeVisible();
+        await expect(detail.getByText('策略版本快照')).toBeVisible();
 
         expect(harness.counters.portfolio).toBe(0);
         expect(harness.counters.diagnostics).toBe(0);
