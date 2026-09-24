@@ -1,3 +1,4 @@
+import {StatusTag, type StatusTone} from '@/nq-design-system/status/StatusTag';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
 import {EyeOutlined, ReloadOutlined} from '@ant-design/icons';
@@ -6,16 +7,7 @@ import type {ColumnsType} from 'antd/es/table';
 import {useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
-import {
-    NqEmptyState,
-    NqErrorState,
-    NqLoadingState,
-    NqMetricCard,
-    NqPageHeader,
-    NqRiskBanner,
-    NqStatusTag,
-    type NqStatusTone,
-} from '@/components/nq';
+import {NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPageHeader, NqRiskBanner} from '@/components/nq';
 import {useShadowRunListQuery, useShadowRunOverview} from '@/hooks/useShadowRunQueries';
 import {DataFreshness, type FreshnessState} from '@/nq-design-system/status/DataFreshness';
 import type {AppApiError} from '@/types/api';
@@ -59,7 +51,7 @@ function asAppApiError(error: unknown): AppApiError | null {
         : null;
 }
 
-function statusTone(status: string | null | undefined): NqStatusTone {
+function statusTone(status: string | null | undefined): StatusTone {
     const normalized = status?.toUpperCase() ?? '';
     if (normalized.includes('FAILED') || normalized.includes('BLOCKED') || normalized.includes('REJECTED')) {
         return 'danger';
@@ -214,7 +206,7 @@ function StatusWithHint({status, category}: {
     }
     return (
         <Tooltip title={enumExplanation(text, category)}>
-            <span><NqStatusTag status={text} tone={statusTone(text)}/></span>
+            <span><StatusTag title="" variant="pill" status={text} tone={statusTone(text)}/></span>
         </Tooltip>
     );
 }
@@ -359,7 +351,7 @@ function OverviewMessageList({title, items, emptyText}: {
                     <List.Item>
                         <Space direction="vertical" size={2} style={{display: 'flex'}}>
                             <Space size={[6, 6]} wrap>
-                                <NqStatusTag status={safeText(item.severity)} tone={statusTone(item.severity)}/>
+                                <StatusTag title="" variant="pill" status={safeText(item.severity)} tone={statusTone(item.severity)}/>
                                 {codeText(item.code)}
                                 <Text type="secondary">{safeText(item.sourceType)}</Text>
                                 {item.sourceId ? codeText(item.sourceId) : null}
@@ -581,7 +573,7 @@ export function ShadowRunListPage() {
             dataIndex: 'status',
             key: 'status',
             width: 150,
-            render: (value: string) => <NqStatusTag status={safeText(value)} tone={statusTone(value)}/>,
+            render: (value: string) => <StatusTag title="" variant="pill" status={safeText(value)} tone={statusTone(value)}/>,
         },
         {
             title: 'strategyVersionId',
@@ -688,9 +680,9 @@ export function ShadowRunListPage() {
             <Space size={[12, 12]} wrap>
                 <NqMetricCard label={t('pages:queryWindow')} value={`${rows.length} / ${listQuery.data?.total ?? 0}`}
                               footer={t('pages:boundedLocalFacts')}/>
-                <NqMetricCard label="LIVE" value={<NqStatusTag status="DISABLED" tone="danger"/>}/>
-                <NqMetricCard label="AI" value={<NqStatusTag status="NOT STARTED" tone="neutral"/>}/>
-                <NqMetricCard label={t('pages:dhRuntime')} value={<NqStatusTag status="NOT INTEGRATED" tone="neutral"/>}/>
+                <NqMetricCard label="LIVE" value={<StatusTag title="" variant="pill" status="DISABLED" tone="danger"/>}/>
+                <NqMetricCard label="AI" value={<StatusTag title="" variant="pill" status="NOT STARTED" tone="neutral"/>}/>
+                <NqMetricCard label={t('pages:dhRuntime')} value={<StatusTag title="" variant="pill" status="NOT INTEGRATED" tone="neutral"/>}/>
             </Space>
 
             <Card className="page-section" variant="borderless" title={t('pages:filter')}>

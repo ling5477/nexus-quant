@@ -7,8 +7,6 @@
 export {NqPageHeader} from '@/components/nq/NqPageHeader';
 export {NqMetricCard} from '@/components/nq/NqMetricCard';
 export type {NqMetricTone} from '@/components/nq/NqMetricCard';
-export {NqStatusTag} from '@/components/nq/NqStatusTag';
-export type {NqStatusTone} from '@/components/nq/NqStatusTag';
 export {NqEnvironmentBadge} from '@/components/nq/NqEnvironmentBadge';
 export {NqRiskBanner} from '@/components/nq/NqRiskBanner';
 export {RuntimeGuardBanner} from '@/components/nq/RuntimeGuardBanner';

@@ -1,3 +1,4 @@
+import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import {useLocalizedForm} from '@/i18n/useLocalizedForm';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
@@ -5,7 +6,7 @@ import {App, Button, Card, Form, Input, Modal, Space} from 'antd';
 import {useState} from 'react';
 
 import {showApiError} from '@/api/errors';
-import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqStatusTag, nqNumericColumn} from '@/components/nq';
+import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, nqNumericColumn} from '@/components/nq';
 import {
     useCreateScheduleMutation,
     usePaperFiresQuery,
@@ -68,7 +69,7 @@ export function NqScheduleFirePanel({paperRunId}: NqScheduleFirePanelProps) {
                         columns={[
                             {title: t('pages:name'), dataIndex: 'scheduleName', key: 'scheduleName', width: 140},
                             {title: 'Cron', dataIndex: 'cronExpr', key: 'cronExpr', width: 140, className: 'nq-mono'},
-                            {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v}/>},
+                            {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title="" variant="pill" status={v}/>},
                             {title: t('pages:lastTrigger'), dataIndex: 'lastFireTime', key: 'lastFireTime', width: 170, render: (v: string | null) => formatDateTime(v)},
                             {
                                 title: t('pages:actions'), key: 'action', width: 220, fixed: 'right',
@@ -114,7 +115,7 @@ export function NqScheduleFirePanel({paperRunId}: NqScheduleFirePanelProps) {
                                 dataSource={firesQuery.data ?? []}
                                 scroll={{y: 200}}
                                 columns={[
-                                    {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v}/>},
+                                    {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title="" variant="pill" status={v}/>},
                                     {title: t('pages:triggeredAt'), dataIndex: 'firedAt', key: 'firedAt', width: 170, render: (v: string) => formatDateTime(v)},
                                     nqNumericColumn({title: t('pages:durationMs'), dataIndex: 'durationMs', key: 'durationMs', width: 100}),
                                     {title: t('pages:error'), dataIndex: 'errorMessage', key: 'errorMessage'},

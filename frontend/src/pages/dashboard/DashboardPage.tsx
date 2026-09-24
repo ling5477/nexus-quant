@@ -5,7 +5,7 @@ import {Button, Card, Col, List, Row, Space, Tag, Typography} from 'antd';
 import {useMemo} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
 
-import {NqEmptyState, NqErrorState, NqMetricCard, NqPageHeader, NqPercentText, NqRiskBanner, NqStatusTag, formatNqNumber} from '@/components/nq';
+import {NqEmptyState, NqErrorState, NqMetricCard, NqPageHeader, NqPercentText, NqRiskBanner, formatNqNumber} from '@/components/nq';
 import {
     usePaperAlertsQuery,
     usePaperDailyReportsQuery,
@@ -201,7 +201,7 @@ export function DashboardPage() {
                 />
                 <NqMetricCard
                     label={t('pages:heartbeatStatus')}
-                    value={heartbeatsQuery.isSuccess && latestHeartbeat ? <NqStatusTag status={latestHeartbeat.status}/> : '-'}
+                    value={heartbeatsQuery.isSuccess && latestHeartbeat ? <StatusTag title="" variant="pill" status={latestHeartbeat.status}/> : '-'}
                     footer={latestHeartbeat ? formatDateTime(latestHeartbeat.heartbeatTime) : t('pages:focusedRunScope')}
                     loading={Boolean(focusRunId) && heartbeatsQuery.isPending}
                 />
@@ -212,7 +212,7 @@ export function DashboardPage() {
                 className="page-section nq-dashboard__runtime"
                 bordered={false}
                 title={t('pages:runtimeReadiness')}
-                extra={<NqStatusTag status="LIVE_DISABLED" tone="danger"/>}
+                extra={<StatusTag title="" variant="pill" status="LIVE_DISABLED" tone="danger"/>}
             >
                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
                     <NqRiskBanner
@@ -295,7 +295,7 @@ export function DashboardPage() {
                                 />
                                 <NqMetricCard
                                     label={t('pages:riskStatus')}
-                                    value={latestRiskResult ? <NqStatusTag status={latestRiskResult.status}/> : '-'}
+                                    value={latestRiskResult ? <StatusTag title="" variant="pill" status={latestRiskResult.status}/> : '-'}
                                     footer={latestRiskResult ? latestRiskResult.checkType : t('pages:noRiskCheckResults')}
                                     loading={Boolean(focusRunId) && riskResultsQuery.isPending}
                                 />
@@ -324,7 +324,7 @@ export function DashboardPage() {
                                         <Space size={8} style={{width: '100%', justifyContent: 'space-between'}}>
                                             <Space size={8}>
                                                 <Tag>{item.kind}</Tag>
-                                                <NqStatusTag status={item.status} tone={item.tone}/>
+                                                <StatusTag title="" variant="pill" status={item.status} tone={item.tone}/>
                                                 <Typography.Text>{item.title}</Typography.Text>
                                             </Space>
                                             <Typography.Text type="secondary" className="nq-num" style={{fontSize: 12}}>

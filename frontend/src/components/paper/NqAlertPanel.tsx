@@ -1,9 +1,10 @@
+import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
 import {App, Button, Card, Space} from 'antd';
 
 import {showApiError} from '@/api/errors';
-import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqStatusTag} from '@/components/nq';
+import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState} from '@/components/nq';
 import {
     useAckAlertMutation,
     useCreateAlertMutation,
@@ -76,8 +77,8 @@ export function NqAlertPanel({paperRunId}: NqAlertPanelProps) {
                     scroll={{y: 240}}
                     columns={[
                         {title: t('pages:type'), dataIndex: 'alertType', key: 'alertType', width: 140},
-                        {title: t('pages:severity'), dataIndex: 'severity', key: 'severity', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'CRITICAL' || v === 'HIGH' ? 'danger' : v === 'MEDIUM' ? 'warning' : 'neutral'}/>},
-                        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'OPEN' ? 'danger' : v === 'ACKED' ? 'warning' : 'success'}/>},
+                        {title: t('pages:severity'), dataIndex: 'severity', key: 'severity', width: 100, render: (v: string) => <StatusTag title="" variant="pill" status={v} tone={v === 'CRITICAL' || v === 'HIGH' ? 'danger' : v === 'MEDIUM' ? 'warning' : 'neutral'}/>},
+                        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title="" variant="pill" status={v} tone={v === 'OPEN' ? 'danger' : v === 'ACKED' ? 'warning' : 'success'}/>},
                         {title: t('pages:title'), dataIndex: 'title', key: 'title'},
                         {title: t('pages:source'), dataIndex: 'source', key: 'source', width: 100},
                         {title: t('pages:createdAt'), dataIndex: 'createdAt', key: 'createdAt', width: 170, render: (v: string) => formatDateTime(v)},

@@ -1,9 +1,10 @@
+import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
 import {App, Button, Card} from 'antd';
 
 import {showApiError} from '@/api/errors';
-import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqStatusTag, nqNumericColumn} from '@/components/nq';
+import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, nqNumericColumn} from '@/components/nq';
 import {usePaperHeartbeatsQuery, useRunHeartbeatOnceMutation} from '@/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
 import type {PaperRunHeartbeatItem} from '@/types/paper-trading';
@@ -57,7 +58,7 @@ export function NqHeartbeatPanel({paperRunId}: NqHeartbeatPanelProps) {
                     dataSource={data}
                     scroll={{y: 240}}
                     columns={[
-                        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'STOPPED' ? 'danger' : undefined}/>},
+                        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title="" variant="pill" status={v} tone={v === 'STOPPED' ? 'danger' : undefined}/>},
                         {title: t('pages:heartbeatTime'), dataIndex: 'heartbeatTime', key: 'heartbeatTime', width: 170, render: (v: string) => formatDateTime(v)},
                         nqNumericColumn({title: t('pages:latencyS'), dataIndex: 'lagSeconds', key: 'lagSeconds', width: 90}),
                         {title: t('pages:createdAt'), dataIndex: 'createdAt', key: 'createdAt', width: 170, render: (v: string) => formatDateTime(v)},

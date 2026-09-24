@@ -1,24 +1,12 @@
+import {StatusTag, type StatusTone} from '@/nq-design-system/status/StatusTag';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
 import {Button, Card, Collapse, Descriptions, Select, Space, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
 
-import {
-    NqAmountText,
-    NqDataTable,
-    NqEmptyState,
-    NqErrorState,
-    NqLoadingState,
-    NqMetricCard,
-    NqPercentText,
-    NqPortfolioDrawdownChart,
-    NqPortfolioEquityChart,
-    NqRiskBanner,
-    NqStatusTag,
-    nqNumericColumn,
-} from '@/components/nq';
-import type {NqStatusTone} from '@/components/nq';
+import {NqAmountText, NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPercentText, NqPortfolioDrawdownChart, NqPortfolioEquityChart, NqRiskBanner, nqNumericColumn} from '@/components/nq';
+
 import {usePaperPortfolioSummaryQuery} from '@/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
 import type {
@@ -89,7 +77,7 @@ function deriveNoTradeCause(
     run: PaperPortfolioRunRef,
     dataInsufficientIds: Set<string>,
     missingEquityIds: Set<string>,
-): {label: string; tone: NqStatusTone} {
+): {label: string; tone: StatusTone} {
     if (run.riskBlocked) {
         return {label: t('pages:riskBlocked'), tone: 'danger'};
     }
@@ -109,7 +97,7 @@ function deriveNoTradeCause(
  * 无交易 run 的执行进度细分（Loop-18）：基于后端 run 级 noOrder / orderNoFill 标记，
  * 区分「无订单」与「有订单无成交」；旧后端缺该标记时回退到「无成交」泛标签，不臆测。
  */
-function deriveExecProgress(run: PaperPortfolioRunRef): {label: string; tone: NqStatusTone; hint: string} {
+function deriveExecProgress(run: PaperPortfolioRunRef): {label: string; tone: StatusTone; hint: string} {
     if (run.orderNoFill) {
         return {label: t('pages:ordersWithoutFills'), tone: 'warning', hint: t('pages:matchingOrPriceConditionsNotMetOrInsufficientSimulatedLiquidity')};
     }
@@ -124,7 +112,7 @@ function deriveExecProgress(run: PaperPortfolioRunRef): {label: string; tone: Nq
 function riskRunColumns(): ColumnsType<PaperPortfolioRunRef> {
     return [
         {title: t('pages:paperRun'), dataIndex: 'paperRunId', key: 'paperRunId', width: 180, render: (v: string) => <span className="nq-mono">{v}</span>},
-        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <NqStatusTag status={v}/>},
+        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <StatusTag title="" variant="pill" status={v}/>},
         {
             title: t('pages:strategyVersionPublish'),
             key: 'lineage',
@@ -386,7 +374,7 @@ function filterRiskRuns(
 }
 
 /** Run 执行进度标记（通用，含有成交）：旧后端缺 order/fill 标记时回退「无成交」泛标签，不伪造。 */
-function runExecTag(run: PaperPortfolioRunRef): {label: string; tone: NqStatusTone} {
+function runExecTag(run: PaperPortfolioRunRef): {label: string; tone: StatusTone} {
     if (run.hasFill) {
         return {label: t('pages:withFills'), tone: 'success'};
     }
@@ -615,7 +603,7 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                                         width: 120,
                                         render: (_: unknown, run: PaperPortfolioRunRef) => {
                                             const t = runExecTag(run);
-                                            return <NqStatusTag status={t.label} tone={t.tone}/>;
+                                            return <StatusTag title="" variant="pill" status={t.label} tone={t.tone}/>;
                                         },
                                     },
                                 ]}
@@ -710,14 +698,14 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                         dataSource={highlights.noTradeRuns}
                         columns={[
                             {title: t('pages:paperRun'), dataIndex: 'paperRunId', key: 'paperRunId', width: 180, render: (v: string) => <span className="nq-mono">{v}</span>},
-                            {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <NqStatusTag status={v}/>},
+                            {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <StatusTag title="" variant="pill" status={v}/>},
                             {
                                 title: t('pages:possibleCauses'),
                                 key: 'cause',
                                 width: 120,
                                 render: (_: unknown, run: PaperPortfolioRunRef) => {
                                     const cause = deriveNoTradeCause(run, dataInsufficientIds, missingEquityIds);
-                                    return <NqStatusTag status={cause.label} tone={cause.tone}/>;
+                                    return <StatusTag title="" variant="pill" status={cause.label} tone={cause.tone}/>;
                                 },
                             },
                             {
@@ -729,7 +717,7 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                                     const prog = deriveExecProgress(run);
                                     return (
                                         <Space direction="vertical" size={0}>
-                                            <NqStatusTag status={prog.label} tone={prog.tone}/>
+                                            <StatusTag title="" variant="pill" status={prog.label} tone={prog.tone}/>
                                             <Typography.Text type="secondary" style={{fontSize: 11}}>{prog.hint}</Typography.Text>
                                         </Space>
                                     );

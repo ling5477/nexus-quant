@@ -1,9 +1,10 @@
+import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
 import {App, Button, Card, Space} from 'antd';
 
 import {showApiError} from '@/api/errors';
-import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqStatusTag} from '@/components/nq';
+import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState} from '@/components/nq';
 import {
     usePaperRecoveryEventsQuery,
     useRecoverMutation,
@@ -85,7 +86,7 @@ export function NqRecoveryPanel({paperRunId}: NqRecoveryPanelProps) {
                     scroll={{y: 240}}
                     columns={[
                         {title: t('pages:type'), dataIndex: 'recoveryType', key: 'recoveryType', width: 180},
-                        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <NqStatusTag status={v} tone={v === 'SUCCEEDED' ? 'success' : v === 'FAILED' ? 'danger' : v === 'SKIPPED' ? 'neutral' : 'info'}/>},
+                        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <StatusTag title="" variant="pill" status={v} tone={v === 'SUCCEEDED' ? 'success' : v === 'FAILED' ? 'danger' : v === 'SKIPPED' ? 'neutral' : 'info'}/>},
                         {title: t('pages:reason'), dataIndex: 'reason', key: 'reason'},
                         {title: t('pages:startTime'), dataIndex: 'startedAt', key: 'startedAt', width: 170, render: (v: string) => formatDateTime(v)},
                         {title: t('pages:completedAt'), dataIndex: 'finishedAt', key: 'finishedAt', width: 170, render: (v: string | null) => (v ? formatDateTime(v) : '-')},

@@ -1,9 +1,10 @@
+import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
 import {App, Button, Card, Space, Typography} from 'antd';
 
 import {showApiError} from '@/api/errors';
-import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqPercentText, NqStatusTag, nqNumericColumn} from '@/components/nq';
+import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqPercentText, nqNumericColumn} from '@/components/nq';
 import {useGenerateStabilityCheckMutation, usePaperStabilityChecksQuery} from '@/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
 import type {PaperRunStabilityCheckItem} from '@/types/paper-trading';
@@ -67,7 +68,7 @@ export function NqStabilityCheckPanel({paperRunId}: NqStabilityCheckPanelProps) 
                         dataSource={data}
                         scroll={{x: 920, y: 240}}
                         columns={[
-                            {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'PASSED' ? 'success' : v === 'PARTIAL' ? 'warning' : 'danger'}/>},
+                            {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title="" variant="pill" status={v} tone={v === 'PASSED' ? 'success' : v === 'PARTIAL' ? 'warning' : 'danger'}/>},
                             nqNumericColumn({title: t('pages:uptimeRate'), dataIndex: 'uptimeRatio', key: 'uptimeRatio', width: 100, render: (v) => <NqPercentText value={v as string} ratio signed={false}/>}),
                             nqNumericColumn({title: t('pages:heartbeat'), dataIndex: 'heartbeatCount', key: 'heartbeatCount', width: 80}),
                             nqNumericColumn({title: t('pages:alert'), dataIndex: 'alertCount', key: 'alertCount', width: 80}),

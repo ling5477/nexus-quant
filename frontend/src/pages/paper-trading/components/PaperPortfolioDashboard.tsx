@@ -1,20 +1,10 @@
+import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
 import {Card, Descriptions, Space, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 
-import {
-    NqAmountText,
-    NqDataTable,
-    NqEmptyState,
-    NqErrorState,
-    NqLoadingState,
-    NqMetricCard,
-    NqPercentText,
-    NqRiskBanner,
-    NqStatusTag,
-    nqNumericColumn,
-} from '@/components/nq';
+import {NqAmountText, NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPercentText, NqRiskBanner, nqNumericColumn} from '@/components/nq';
 import {usePaperPortfolioSummaryQuery} from '@/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
 import type {PaperPortfolioGroup, PaperPortfolioSummaryResponse} from '@/types/paper-trading';
@@ -189,7 +179,7 @@ function PaperPortfolioDashboardBody({portfolio}: {portfolio: PaperPortfolioSumm
                         <NqMetricCard
                             label={t('pages:highestRisk')}
                             value={highlights.highestRisk
-                                ? <NqStatusTag status={highlights.highestRisk.riskBlocked ? t('pages:riskBlocked') : t('pages:alert')} tone={highlights.highestRisk.riskBlocked ? 'danger' : 'warning'}/>
+                                ? <StatusTag title="" variant="pill" status={highlights.highestRisk.riskBlocked ? t('pages:riskBlocked') : t('pages:alert')} tone={highlights.highestRisk.riskBlocked ? 'danger' : 'warning'}/>
                                 : '-'}
                             footer={highlights.highestRisk ? highlights.highestRisk.paperRunId : t('pages:noData')}
                         />
