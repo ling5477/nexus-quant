@@ -1,6 +1,6 @@
 # Current Modules
 
-本文记录当前模块 owner 和职责边界，不决定 current Gate 或下一阶段。阶段状态必须读取 [STATUS.md](STATUS.md) 的机器可读 authority 区块。
+本文记录当前模块 owner 和职责边界，不决定当前工作或下一动作。阶段状态必须读取 [STATUS.md](STATUS.md) 的机器可读 authority 区块。
 
 ## 当前禁止误写的事实
 

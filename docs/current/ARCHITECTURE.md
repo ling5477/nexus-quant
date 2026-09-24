@@ -8,7 +8,7 @@
 - AI：`NOT STARTED`（未开始）。
 - DH runtime：`NOT INTEGRATED`（未集成）。
 - Integration-1：`NOT STARTED / mock-test-support only where applicable`（未开始 / 仅在适用处保留 mock 测试支撑）。
-- RealClient / real provider / private trading adapter：`NOT IMPLEMENTED`（未实现）。受控真实 private read-only permission diagnostic 基础设施已存在：只允许在显式 diagnostic profile 与全部 fail-closed safety 配置精确满足时选择；默认 runtime 使用 `NoReal`，尚未完成本轮 GateY-6C 真实 smoke，不构成交易授权。
+- RealClient / real provider / private trading adapter：`NOT IMPLEMENTED`（未实现）。受控真实 private read-only permission diagnostic 基础设施已存在：只允许在显式 diagnostic profile 与全部 fail-closed safety 配置精确满足时选择；默认 runtime 使用 `NoReal`。该诊断路径没有可供本页引用的当前真实 smoke 验收证据，不构成交易授权。
 
 ## 总体架构
 

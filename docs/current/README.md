@@ -1,17 +1,13 @@
 # Current Docs
 
-`docs/current/` 保存当前控制面。当前阶段唯一 authority 是 [STATUS.md](STATUS.md) 顶部的 `nq-current-authority` 机器可读区块；本文件只作为入口和简要摘要。
+`docs/current/` 保存当前控制面。当前状态唯一 authority 是 [STATUS.md](STATUS.md) 顶部的 `nq-current-authority` 机器可读区块；本文件只作为入口和简要摘要。
 
 ## 当前摘要
 
 <!-- nq-current-summary:start -->
-- 最近冻结 Gate 为 GateY：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-y/](../gates/gate-y/)，tag=`nq-gatey-freeze`。
-- GateY freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`；exact-head CI run=`33037514013 / completed / success / 11 jobs`。
-- Phase 3 findings=`P0 0 / P1 4 / P2 8 / P3 1`；F-001=`95b859ee... / 33347091147`、F-002=`0651a736... / 33387882472`、F-003=`327c2229... / 33399190770`、F-004=`18efc06c... / 33358364678`，均为 `ACCEPTED / CI_GREEN`。
-- Phase4 remaining disposition closeout=`COMPLETE / ACCEPTED / CI_GREEN`，immutable pair=`7ca1fc92... / 33405549149`，blocking P0/P1=`0/0`。
-- Phase5A/Phase5B及P5-F008/P5-F007/P5-F009已接受；F001远端enforcement已接受，Phase5 ACCEPTED/CLOSED，F005 attestation保持DEFERRED/NON_BLOCKING，Phase6 ACCEPTED/COMPLETE，L4/L5/L6已接受；各固定pair与安全边界以[STATUS.md](STATUS.md)为准。
-- GateAUDIT 当前阶段、accepted/work batch 与唯一 next action 必须从 [STATUS.md](STATUS.md) 的 `nq-current-authority` 读取，[ROADMAP.md](ROADMAP.md) 只解释下一允许工作；本摘要不复制动态 lifecycle 值。
-- Pilot final：PLACE=1、retry=0、CANCEL=0、activeLease=0、LIVE=false、kill=`ENGAGED`、Attempt-02 未创建。
+- 最近冻结的 GateAUDIT 已接受并打 tag；固定身份及 CI 以 [STATUS.md](STATUS.md) 为准，历史证据见 [strict archive](../gates/gate-audit/README.md)。
+- accepted batch、work batch 与唯一 next action 从 [STATUS.md](STATUS.md) 的机器区块读取；[ROADMAP.md](ROADMAP.md) 解释后续工作。
+- GateY pilot 的验收事实见 [STATUS.md](STATUS.md)；该历史验收不授予再次执行权。
 - Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
 
@@ -22,13 +18,13 @@
 | 唯一阶段状态 | [STATUS.md](STATUS.md) | 是 |
 | 下一允许动作 | [ROADMAP.md](ROADMAP.md) | 否 |
 | Authority 分层 | [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md) | 否；必须服从 STATUS |
-| GateY strict archive | [../gates/gate-y/README.md](../gates/gate-y/README.md) | 否；已冻结 historical evidence |
+| GateAUDIT strict archive | [../gates/gate-audit/README.md](../gates/gate-audit/README.md) | 否；已冻结 historical evidence |
 | API / Schema / 架构 | [API.md](API.md)、[DB_SCHEMA.md](DB_SCHEMA.md)、[ARCHITECTURE.md](ARCHITECTURE.md)、[MODULES.md](MODULES.md) | 否 |
 | Evidence ledger | [TESTING.md](TESTING.md) / [WORKLOG.md](WORKLOG.md) | 否；append-only |
 
 ## Historical Evidence
 
-- Gate archive：[../gates/](../gates/)；GateY 全部 process/task evidence 已进入 [GateY strict archive](../gates/gate-y/README.md)。
+- Gate archive：[../gates/](../gates/)；GateY pilot 的历史证据见 [GateY strict archive](../gates/gate-y/README.md)。
 - General archive：[../archive/](../archive/)。
 - Historical evidence 不覆盖 [STATUS.md](STATUS.md)，也不授权新的 runtime、pilot、LIVE、transfer/withdraw、AI 或 DH 操作。
 

@@ -94,4 +94,4 @@ SHA256：`94F4ABEB142A38AFB1AEB8A707119F5B8ACD626379808871F0C0E7F483E83D46`。
 
 修改后按影响验证 build、目标 E2E、中英文及代表视口。浏览器 fixture 只证明前端渲染和交互，不代替真实后端联调。
 保持 query keys、API payload、错误 code / traceId、权限、mutation 重试策略不变。
-本说明不宣称全站深度重构、品牌资产验收、独立审查、exact-head CI 或 Phase7 完成。
+本说明只描述前端设计系统，不作为全站深度重构、品牌资产验收、独立审查或 exact-head CI 的证据。

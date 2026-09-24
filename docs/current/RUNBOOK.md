@@ -61,7 +61,9 @@ python -m ruff check .
 - `/api/auth/login` 失败：确认后端已启动、DB migration 已完成、local admin 用户配置与认证数据源一致。
 - `/api/auth/me` 失败：确认请求携带 `<redacted-authorization-header-example>`，并先通过 `/api/auth/login` 获取 token。
 
-## 8. GateAUDIT current boundary
+<!-- nq-stage-history:start -->
+
+## 8. GateAUDIT accepted boundary records
 
 Phase5A、Phase5B、F008与F007已由各自immutable technical pair接受；F009已ACCEPTED / CLOSED，F001 remote enforcement已ACCEPTED / CLOSED（ruleset 22381941，dev effective 9/9），Phase5 ACCEPTED / CLOSED。
 
@@ -78,6 +80,8 @@ git diff --stat
 
 本节不运行真实交易所 HTTP / WebSocket，不读取 credential material，不启动 LIVE，不接 AI / DH runtime。F008/F007/F009 与 C1 保持已接受；C2=`ACCEPTED / CLOSED`，固定 pair=`612c2f5887a2e6b3a8b3138d9ae9b193c20e298f / 34183851797`。Phase6 L4/L5/L6已接受，Phase6=`ACCEPTED / COMPLETE`。当前 repository schema=`V51`；历史 Phase5B V46、C1 V47 的接受事实仍按原证据保留，不推断生产 schema。本节不重跑 C2/PostgreSQL、Full Maven 或 Playwright，也不重新执行已接受的 L4/L5/L6 qualification。
 
+<!-- nq-stage-history:end -->
+
 ## 9. Canonical production configuration
 
 - Canonical systemd unit在`ExecStart`中固定`nq.production-configuration=true`和`spring.profiles.active=prod`；不要移入可变`runtime.env`，也不要用`NQ_ENVIRONMENT=SIM`代替production identity。
@@ -92,7 +96,7 @@ git diff --stat
 
 release只使用`../../scripts/deployment/New-NqCanonicalRelease.ps1`；verify与外部admission使用同目录`Test-NqCanonicalRelease.ps1`和`Test-NqCanonicalReleaseAdmission.ps1`。install、activate、rollback、recover统一由`Install-NqCanonicalRelease.ps1`的既有Action contract承担；恢复使用`Invoke-NqCanonicalRestoreDrill.ps1`与PG16 contract。当前生产unit唯一为`../../deploy/canonical/nq-canonical.service`。本节是路径索引，不授予部署或真实服务操作权限。
 
-受控readonly生产图测试使用既有`scoped-okx-private-readonly` runtime mode，环境字段为`NQ_READONLY_DB_URL/USER/PASSWORD`、`NQ_RELEASE_ID`、`NQ_SOURCE_COMMIT`、`NQ_RELEASE_MANIFEST_SHA256`；值必须从显式测试或外部授权环境提供。本轮只用无连接fixture验证该mode；它不是第二条生产部署路径，不能与prod组合。所有历史stage profile和旧stage capability key均拒绝，普通local/test/ci/prod/paper语义不变。
+受控readonly生产图测试使用既有`scoped-okx-private-readonly` runtime mode，环境字段为`NQ_READONLY_DB_URL/USER/PASSWORD`、`NQ_RELEASE_ID`、`NQ_SOURCE_COMMIT`、`NQ_RELEASE_MANIFEST_SHA256`；值必须从显式测试或外部授权环境提供。无连接fixture只能验证该mode的本地边界；它不是第二条生产部署路径，不能与prod组合。所有历史stage profile和旧stage capability key均拒绝，普通local/test/ci/prod/paper语义不变。
 
 防回归命令（只读扫描与离线fixture）：
 
