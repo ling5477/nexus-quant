@@ -40,7 +40,11 @@ SENSITIVE = re.compile(
     r"|\.(?:key|pem|p12|jks|keystore)$|\.env(?:\.|$)|pgpass"
 )
 POLICY_PATH = "scripts/docs/stage-asset-exceptions.json"
-SELF_FILES = {"scripts/docs/check-stage-assets.py", "scripts/docs/tests/test_stage_assets.py", POLICY_PATH, JAVA_REFERENCES}
+SELF_FILES = {
+    "scripts/docs/check-stage-assets.py", "scripts/docs/tests/test_stage_assets.py", POLICY_PATH, JAVA_REFERENCES,
+    "scripts/docs/check-stage-semantic-leakage.py", "scripts/docs/stage-semantic-allowlist.json",
+    "scripts/docs/tests/test_stage_semantics.py",
+}
 JAVA_LEXEMES = re.compile(r'""".*?"""|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'|/\*.*?\*/|//[^\n]*', re.S)
 KINDS = {"NEGATIVE_REGRESSION", "FIXTURE_IDENTITY", "WIRE_COMPATIBILITY", "HISTORICAL_METADATA",
          "GOVERNANCE_CONTRACT", "DOMAIN_VOCABULARY", "RETIRED_INPUT_REJECTION"}
@@ -198,7 +202,8 @@ def load_policy(root: Path, policy: dict | None = None) -> tuple[dict[str, dict]
             if key in seen:
                 raise ValueError("DUPLICATE_APPROVED_CALLER")
             seen.add(key)
-    if {c["path"] for c in contracts} != {p for p, e in entries.items() if e["kind"] == "WIRE_COMPATIBILITY"}:
+    # 兼容调用边仍须受约束；当阶段文案清除后，该文件无需继续占用阶段例外。
+    if not {p for p, e in entries.items() if e["kind"] == "WIRE_COMPATIBILITY"}.issubset({c["path"] for c in contracts}):
         raise ValueError("COMPATIBILITY_EXCEPTION_COVERAGE_MISMATCH")
     safe_inputs = policy["safeControlPlaneInputs"]
     if not isinstance(safe_inputs, list):

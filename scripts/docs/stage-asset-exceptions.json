@@ -3,7 +3,7 @@
   "exceptions": [
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "0a93145577fccd4cc0d45e54ae74cd81486f5c956a9fbf1354e56157a294b86f",
+      "sha256": "d8bc57fe4ef6fe2cd24d2b4f9448be575c174657bdbfbeaa17b1196c7f23ca07",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",
@@ -21,29 +21,13 @@
       "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/model/AdapterReadinessReason.java",
       "sha256": "52ea529790b944be2740a037feb7bc3f768231e033d854eaba6107a619305a5d",
       "kind": "WIRE_COMPATIBILITY",
-      "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
+      "reason": "CAPABILITY_FORBIDDEN_IN_GATEL is an existing serialized readiness reason. Renaming it would change persisted and API-facing reason identity; comments no longer use stage names as runtime guidance.",
       "owner": "nq-adapter-api / AdapterReadinessReason contract owner",
-      "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
-    },
-    {
-      "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/policy/PublicMarketDataOutboundPolicy.java",
-      "sha256": "a88e0c0daf2fde83b065f7c0c95f40f4a9440cfab139e3a39bd6890df7f589bf",
-      "kind": "WIRE_COMPATIBILITY",
-      "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
-      "owner": "nq-adapter-api / PublicMarketDataOutboundPolicy contract owner",
       "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
     },
     {
       "path": "backend/nq-adapter-binance/pom.xml",
       "sha256": "2b52be068dcb28fb462bf79215fb813f404842c93ad49e936951e91c2580fb91",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-adapter-binance/src/main/java/com/guidinglight/nexusquant/adapter/binance/marketdata/BinanceHistoricalKlineAdapter.java",
-      "sha256": "1b6e8c99c235a7d9be9d226e6f93e6b65531ad605aef0a7f5277053fd4c12713",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
@@ -58,356 +42,12 @@
       "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
-      "path": "backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/marketdata/OkxHistoricalKlineAdapter.java",
-      "sha256": "149dec0f71d17bad688adbdc52e3f8cd651a43a5a0e8074f3f78c3d340d13be4",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Only pre-existing diagnostic messages retain historical provenance. Bean registration uses the existing manual public outbound capability profile and enablement property; no active stage selector.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/pom.xml",
-      "sha256": "0067130556585f8add7abb2d209cb3d135f3563d39ca2b3341fd83c102798796",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
       "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/account/api/dto/CredentialPermissionProbeRequestBody.java",
-      "sha256": "4a2ce569dd0452c34495496a17b5c1681136b0d82d3bbe923fdad94a8b1829bc",
+      "sha256": "81cc4755f2c4147d48a49735a79731d942e49858ae01cee3db1b8bf4b94956e0",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-api / CredentialPermissionProbeRequestBody contract owner",
       "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/monitoring/api/web/IncidentReplayOverviewController.java",
-      "sha256": "0949d49322b939f2784bf583bed9b894ef9f93fd0067666662338e13c699a44c",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/monitoring/api/dto/IncidentReplayOverviewResponse.java",
-      "sha256": "14c566228d4cef43fb9665904b06892289f10dfc2ef01b57641d0a5e75d6b471",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/monitoring/api/web/IncidentReplayReviewOverviewController.java",
-      "sha256": "25b86ccaf4f85e07faa1ada02793fc348ba26ca62172e047485758b89a4df130",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/monitoring/api/dto/IncidentReplayReviewOverviewResponse.java",
-      "sha256": "5d3f6407bfd9eabb818a975decd08aa6ecc2d38f0a4608efffde5709b55a9ea4",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/PaperTradingOrderResponse.java",
-      "sha256": "57d951610667f566e528cd1f0518dac084453e057096d2e3bc9f0c79c9740859",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/PaperTradingPositionResponse.java",
-      "sha256": "612db7f190066cebe1991404dbf1daa656fd51caceff69e5ce3d9ec0711b9d46",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/PaperTradingRunCreateRequestBody.java",
-      "sha256": "6ab973d606172798a8e1badbc799221306dfcb412f5eda2c86dd1f94bd78dfc3",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/PaperTradingRunResponse.java",
-      "sha256": "56b30b9c8952ecd1da15ba3f5ee2b96d5a3832d036092ae7bdd2a4b35c56ed7d",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/dto/PaperTradingTradeResponse.java",
-      "sha256": "ce583bb7445566e1ebde24c3020ce2ed53b53c3efcff6204015780191f874936",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/web/PaperAutoReviewController.java",
-      "sha256": "1aa743e96b085edd9ed6c0e0e5159936af2e4afcfa5dae0f26a25fc92a1f0c26",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/web/PaperExecutionDiagnosticsController.java",
-      "sha256": "8416fc3e884913fdad542b27d3306ef363bbf1fa1f316096af04438743a5398d",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/web/PaperPortfolioController.java",
-      "sha256": "c0db9142af790ceacefd193ff3a5bb360eeea690642dffd6d223560ce30d0022",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/web/PaperStrategyEvaluationController.java",
-      "sha256": "8bedbe9a7237465dd1c12b5eee8b490777631b2457ab4da449752a536a5bee4f",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/web/PaperTradingController.java",
-      "sha256": "28434e31ef85fe0b093613c3daef2437b717a790c43c9300582e584a1cc713b2",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/paper/api/web/PaperTradingScheduleController.java",
-      "sha256": "1906787deff4ad5e0fae4c9b4bc8e0ef47fb4d66dc3dd3ac69fa7ebc31cb7c1a",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/web/EvaluationController.java",
-      "sha256": "ac3e8a2576d5149950afe77f1616062c99d41e365ca9b62625532c3a4c5ba8c3",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/web/PublishController.java",
-      "sha256": "942f06ed82f69b32f0d2dceea2cb55e0c8dd4d5d05dafc5fb0369f70a13e275e",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/research/api/web/PythonEvaluationArtifactBindingPreviewController.java",
-      "sha256": "82ff91896d3df329b2383c228d96def2025eb9c1bf436f1cda3e99a67fd484de",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ConsistencyEvidenceOverviewController.java",
-      "sha256": "13e09582e0f0438c88b658d91d84126454425e9ee74c515eab27791c16b93a59",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/dto/ConsistencyEvidenceOverviewResponse.java",
-      "sha256": "49dac599440841a613d73cd7ffd54d1248450b3aa474f0238c1c98087b31963d",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/PaperShadowComparisonController.java",
-      "sha256": "7575f86b4166fb2446f14d301074394c8a625f2096193def88b24e040cce38d6",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/PaperShadowConsistencyDrilldownController.java",
-      "sha256": "d7724f4b8d265ab83ae180a02b35363496b093a95aece8c0603a5b3d6836d5ad",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/dto/PaperShadowConsistencyDrilldownResponse.java",
-      "sha256": "208e87a54c27a78fb71fe93b72113374acd3822de8e8109eb2d634b4c2672013",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/PythonEvaluationArtifactPreviewOverviewController.java",
-      "sha256": "40ba6065677ab462dea210c58fdaf9ba6a0d96eb19e8325ddd39a906a2738fe7",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/dto/PythonEvaluationArtifactPreviewOverviewResponse.java",
-      "sha256": "71d893bb8841c0bb367034d451a6ee004e44cb4664add64d498e4b63651e4618",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/dto/ShadowConsistencyReportResponse.java",
-      "sha256": "aedfae2cb9a805c3dd265a096833efe23677eca7f547305cc97c76455de06dbe",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ShadowLivePreviewController.java",
-      "sha256": "0616b7bb623962a36f031a0c519bbc3fe74e2e08c9d29ba319b186685f786704",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/dto/ShadowRunDetailResponse.java",
-      "sha256": "79398a19e06270e41dbb3d1b9e633d3ad3e1c62d1a40548fdd0f0171a2a5aa13",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/dto/ShadowRunEventResponse.java",
-      "sha256": "cbb998be1bc082a45f76decb7a9ea848cfee852d8962af74d14298955b0e9351",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/dto/ShadowRunListItemResponse.java",
-      "sha256": "7a10616200a7de4ca07ac0632d06796f71c1db4bd0a9fd4a96396eecd38cd847",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/dto/ShadowRunListResponse.java",
-      "sha256": "fb1fb38207132b912bb5ceab238205ede1067086c8e27cc64e38211b0b1ece87",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/dto/ShadowRunOverviewResponse.java",
-      "sha256": "af4c4f24a7a0f80a11ed031da1921c113e19cb09805985f5dacc4138e2969a54",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ShadowRunReadOnlyController.java",
-      "sha256": "eb6b5fd0ccea7a466bf28ebba84dddd2b50bd9cb34e213b4c13d2fd574e9f2e2",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/dto/ShadowRunSnapshotResponse.java",
-      "sha256": "3c1793c21340963b0573c54bc8e14aafb1b0029cf4bfcbe2e48e1566cd4c346d",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/ShadowValidationWorkflowOverviewController.java",
-      "sha256": "3713c20437d4ee006cc098b136524e099fd4d2083be6197adbd3a38bffbff402",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/dto/ShadowValidationWorkflowOverviewResponse.java",
-      "sha256": "b9e3a20098358427afa586f584bcfa606371958c71dc764f2d9747cad19d1d7c",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/StrategyDefinitionController.java",
-      "sha256": "3a74b919fba14108e2af596770b7d9bd01e4cc55a7af4f6e784bbdcdb6f97370",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/StrategyEvaluationGateController.java",
-      "sha256": "b8f6b86aaa36bcdbbea71e5011e27973a14a45a640af5b44599b6a805ebeaa87",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/web/StrategyValidationOverviewController.java",
-      "sha256": "da94dde772363f465bc796f3eb50621d1b1ca44c51522ee42424b0c08682b149",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/strategy/api/dto/StrategyValidationOverviewResponse.java",
-      "sha256": "6af2b8c56822877299bbb937591ca041d6dcff03786b5d290902bbcfb8955d39",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/validationreview/api/web/ValidationReviewController.java",
-      "sha256": "32b9563cf9122c35c038be5ae7ec08735bc738eb2d7f630ea31b4487dd6b5456",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
       "path": "backend/nq-api/src/test/java/com/guidinglight/nexusquant/research/api/web/BacktestRunControllerTest.java",
@@ -690,14 +330,6 @@
       "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
-      "path": "backend/nq-backtest/pom.xml",
-      "sha256": "3e67d99819beb9a8849f453adb35ce6cd1ee8b70642d4e4e99e4491d82df2182",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
       "path": "backend/nq-common/pom.xml",
       "sha256": "16a46c7f8e99344a640cbb9ce146682c29b089d53e2444b6f58ce5ae9c24c2f0",
       "kind": "HISTORICAL_METADATA",
@@ -765,49 +397,17 @@
       "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/application/provider/SpotProviderError.java",
       "sha256": "b3a5bd15ae9ce55e53342264385fb327d9630971cdcd571a66e93e6881476d43",
       "kind": "DOMAIN_VOCABULARY",
-      "reason": "Freeze denotes a financial/safety operation, not a historical development stage.",
+      "reason": "FREEZE_SYMBOL_AND_REVIEW is the typed provider error recommendation for instrument restrictions; FREEZE is a trading safety action, not a development stage.",
       "owner": "Domain owner",
       "removalTrigger": "Only when the financial/safety contract itself is superseded."
     },
     {
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/application/service/MarketdataDatasetService.java",
-      "sha256": "03f33e3d8043e32f8c7f152f7b3e73c209382dd5ccf4dd0cfc75f17284196719",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/application/service/MarketdataIngestionService.java",
-      "sha256": "80d503803edfee6ddd58a9b43f0d530b4d3caffb850348805110b7214ce36e07",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
       "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/service/IncidentReplayReviewOverviewQueryService.java",
-      "sha256": "e6d756bf8ce71eaca0140062ec41a30fb89cfc94721d269987151e3d83a2a58d",
+      "sha256": "cfb874039b68b1972d401972ca0591f3a3de258ed33151ade464114ed7c9d966",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-core / IncidentReplayReviewOverviewQueryService contract owner",
       "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
-    },
-    {
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/StrategyScheduleService.java",
-      "sha256": "2ca0ae55eee4e00e443b3aeca929cbdbed06fd4bb0431f9e2f84da3bff674d43",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/evaluationgate/service/StrategyEvaluationGateService.java",
-      "sha256": "b7343ec110d2978a52e27688a903033df59024f915e2854dd84817f29c433f02",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
       "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/service/PythonEvaluationArtifactPreviewOverviewQueryService.java",
@@ -920,14 +520,6 @@
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
-    },
-    {
-      "path": "backend/nq-eval/pom.xml",
-      "sha256": "f760c53097437f6d8defa0960d2d9e8325dbfaf855c729ec00f193070cac4a3e",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
       "path": "backend/nq-gateway/pom.xml",
@@ -1188,14 +780,6 @@
     {
       "path": "backend/nq-observability/pom.xml",
       "sha256": "f7252265042a3921f8e963a945f3dc170ead68c35e82902c390e05c81bd83a67",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-research/pom.xml",
-      "sha256": "f5b679cdc94a0523ac691d5a8a270ef5eef3d18c7e54db1587511c583511b5fd",
       "kind": "HISTORICAL_METADATA",
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",

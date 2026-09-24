@@ -1,0 +1,230 @@
+{
+  "schemaVersion": 1,
+  "exceptions": [
+    {
+      "path": "README.md",
+      "token": "GateAUDIT",
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
+      "lineSha256": "820d1399bae3e9d797ec7f35da5b541296b9f49cb898067682e5fba37bb3c908"
+    },
+    {
+      "path": "README.md",
+      "token": "GateAUDIT",
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
+      "lineSha256": "f0f4c0079e21c7a027baac3ea31c117c85b1ec9323c14e439f1a27eff2599df8"
+    },
+    {
+      "path": "README.md",
+      "token": "GateY",
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
+      "lineSha256": "32a64222c38c3afc274261856beacd1626c6732762b2b83c7c40bb7aebd3b689"
+    },
+    {
+      "path": "README.md",
+      "token": "GateY",
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
+      "lineSha256": "820d1399bae3e9d797ec7f35da5b541296b9f49cb898067682e5fba37bb3c908"
+    },
+    {
+      "path": "README.md",
+      "token": "GateY",
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
+      "lineSha256": "bb665e213caa7749bf6a19d748b8a5c8802f8ada14e88517aec303659bcbf038"
+    },
+    {
+      "path": "backend/nq-contracts/src/main/java/com/guidinglight/nexusquant/contracts/model/LedgerRefType.java",
+      "token": "FREEZE",
+      "category": "BUSINESS_DOMAIN_TERM",
+      "reason": "FREEZE is a ledger reference type for a trading safety event, not a development stage.",
+      "lineSha256": "b808a0532e0b2bf8397204a07d57e03da24442543789849c1e112526427adf6e"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/application/provider/SpotProviderError.java",
+      "token": "FREEZE",
+      "category": "BUSINESS_DOMAIN_TERM",
+      "reason": "FREEZE_SYMBOL_AND_REVIEW is a provider safety recommendation for restricted instruments and invalid order size.",
+      "lineSha256": "5748ab83c59828e1e170a98fe6a2611be6407ab099f779b2f80f65829d6f1272"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/application/provider/SpotProviderError.java",
+      "token": "FREEZE",
+      "category": "BUSINESS_DOMAIN_TERM",
+      "reason": "FREEZE_SYMBOL_AND_REVIEW is a provider safety recommendation for restricted instruments and invalid order size.",
+      "lineSha256": "8f8a85d7b7565c5d7b4f290da4c619686a709a878b06b0f4ea312a37e89f58c1"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/evaluationgate/service/StrategyEvaluationGateService.java",
+      "token": "this gate",
+      "category": "BUSINESS_DOMAIN_TERM",
+      "reason": "The phrase this gate refers to the runtime StrategyEvaluationGate decision and its data-freshness boundary.",
+      "lineSha256": "d2a1e9593680f530adc2560b9c31f3ba7ede81735e8a0590602dd4bc9fb9e329"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunRunnerService.java",
+      "token": "gate-r-4",
+      "category": "RUNTIME_COMPATIBILITY_IDENTIFIER",
+      "reason": "The policy version is persisted with shadow decision traces; changing it would alter stored policy identity.",
+      "lineSha256": "374c97368043ce8c0300049332a4f5d51fdadba97c197725a9b3a53ea7143850"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/model/AdmissionGuard.java",
+      "token": "gate-x5",
+      "category": "RUNTIME_COMPATIBILITY_IDENTIFIER",
+      "reason": "This public policy-version constant binds release materialization decisions and persisted provenance.",
+      "lineSha256": "7e2f74a5de5bbe24e7778cd05a72cf1be0430b0522cf87c89ac3947bb780d40f"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/strategyrelease/application/service/ShadowRunMaterializationWriter.java",
+      "token": "gate-x5",
+      "category": "RUNTIME_COMPATIBILITY_IDENTIFIER",
+      "reason": "The materialization writer persists this policy version; existing readers and tests consume its exact identity.",
+      "lineSha256": "629935dd8eefe23bab103363f95aa38d2276d89db3d542fa332896275aa57cdd"
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/jdbc/JdbcExecutionIntentRepository.java",
+      "token": "gate_y43",
+      "category": "RUNTIME_COMPATIBILITY_IDENTIFIER",
+      "reason": "The SQL function name is defined in immutable Flyway V43 and asserted by migration contract tests.",
+      "lineSha256": "017a1359879461739479aaf723efec0bb861f9ac272385312c22bf589c091f27"
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/MinimalLivePilotControlService.java",
+      "token": "GateY",
+      "category": "RUNTIME_COMPATIBILITY_IDENTIFIER",
+      "reason": "This reason text is recorded in durable pilot audit history; changing it would fragment historical evidence identity.",
+      "lineSha256": "ed5bfb8472ca807c0e81bd91aed1fbd4d7032b93fc8e3ec91dbbf0e3b8b6573e"
+    },
+    {
+      "path": "docs/current/README.md",
+      "token": "B6",
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
+      "lineSha256": "b8e6aa81a50b029784430b6c92c0799c522bde1c31e0125c2f0433f4051a34ed"
+    },
+    {
+      "path": "docs/current/README.md",
+      "token": "GateAUDIT",
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
+      "lineSha256": "990cb5289f4e018fe673a8aea97317c9eab1cbababe76de5f8106aa9c1b609f7"
+    },
+    {
+      "path": "docs/current/README.md",
+      "token": "GateAUDIT",
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
+      "lineSha256": "a0befe2ce9679a56413622bd48e7908fcc39c21578b9f060ad3c4df259e35548"
+    },
+    {
+      "path": "docs/current/README.md",
+      "token": "GateY",
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
+      "lineSha256": "005cd50898a1d3551a53dfe20fc697ec38c13b76a2b9cc6376bf6685c8c1da8b"
+    },
+    {
+      "path": "docs/current/README.md",
+      "token": "GateY",
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
+      "lineSha256": "1bb3c1fae399f474b4368410cbf645e7ee3ed9f02228be394c4f03b71ec9abd1"
+    },
+    {
+      "path": "docs/current/README.md",
+      "token": "L4",
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
+      "lineSha256": "b8e6aa81a50b029784430b6c92c0799c522bde1c31e0125c2f0433f4051a34ed"
+    },
+    {
+      "path": "docs/current/README.md",
+      "token": "L5",
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
+      "lineSha256": "b8e6aa81a50b029784430b6c92c0799c522bde1c31e0125c2f0433f4051a34ed"
+    },
+    {
+      "path": "docs/current/README.md",
+      "token": "L6",
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
+      "lineSha256": "b8e6aa81a50b029784430b6c92c0799c522bde1c31e0125c2f0433f4051a34ed"
+    },
+    {
+      "path": "docs/current/README.md",
+      "token": "Phase4",
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
+      "lineSha256": "b8e6aa81a50b029784430b6c92c0799c522bde1c31e0125c2f0433f4051a34ed"
+    },
+    {
+      "path": "docs/current/README.md",
+      "token": "Phase6",
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
+      "lineSha256": "b8e6aa81a50b029784430b6c92c0799c522bde1c31e0125c2f0433f4051a34ed"
+    },
+    {
+      "path": "frontend/src/assets/brand/README.md",
+      "token": "本轮",
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "This source-adjacent README records the user-approved brand image transformation and preserved original asset.",
+      "lineSha256": "c8bc1339638c84c5d6ea7e386a16fedc324efb6d73b4b68fa5c2ee1a16ab3c94"
+    }
+  ],
+  "historyRegions": [
+    {
+      "path": "docs/current/API.md",
+      "token": "nq-stage-history",
+      "regionIndex": 1,
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "Original API scope bullets preserve accepted implementation history; current route and authority statements are outside this pinned region.",
+      "sha256": "a8a424f742a65acc07827ab23726076b65fbe92088914a4a960e030bbe96cfa5"
+    },
+    {
+      "path": "docs/current/API.md",
+      "token": "nq-stage-history",
+      "regionIndex": 2,
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "Original read-only endpoint boundaries preserve historical acceptance scope; current route and authority statements are outside this pinned region.",
+      "sha256": "f3f7bc2ced586c9baca91a156c8deabca4bb5843f18b21685d1abc392c42083b"
+    },
+    {
+      "path": "docs/current/API.md",
+      "token": "nq-stage-history",
+      "regionIndex": 3,
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "Accepted API implementation records and candidate notes retain historical identifiers; exact region digest prevents silent new exclusions.",
+      "sha256": "ce5fb76835fd8bdcf01fc347b9d2b353b11e014a3862ccb3006154dfaab66aeb"
+    },
+    {
+      "path": "docs/current/DB_SCHEMA.md",
+      "token": "nq-stage-history",
+      "regionIndex": 1,
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "Versioned schema governance and credential implementation history are retained as historical facts; current migration inventory is above this pinned region.",
+      "sha256": "ee45e559cb1e3a3f7543aeccf2c58a24fa1d6b5934baf061a8991d46679aa630"
+    },
+    {
+      "path": "docs/current/DB_SCHEMA.md",
+      "token": "nq-stage-history",
+      "regionIndex": 2,
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "Migration-era structure descriptions retain accepted identities and old review states; current repository inventory is outside this pinned region.",
+      "sha256": "3f0068d299aabe1dd48df6f3874dfa7a40987f6920469c161f6b0c13136332b9"
+    },
+    {
+      "path": "docs/current/RUNBOOK.md",
+      "token": "nq-stage-history",
+      "regionIndex": 1,
+      "category": "HISTORICAL_REFERENCE",
+      "reason": "Accepted GateAUDIT boundary records are historical qualification facts; current operational commands are outside this pinned region.",
+      "sha256": "dd672ea747b091ad5d13a5afae18fcc4d6fb28a66e0aa95b625279f625b77ecb"
+    }
+  ]
+}
