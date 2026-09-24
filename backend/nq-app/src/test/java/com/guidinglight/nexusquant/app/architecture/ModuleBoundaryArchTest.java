@@ -1,5 +1,6 @@
 package com.guidinglight.nexusquant.app.architecture;
 
+
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
@@ -44,12 +45,12 @@ class ModuleBoundaryArchTest {
     @ArchTest
     static final ArchRule trading_application_should_not_depend_on_runtime_concrete = noClasses()
             .that().resideInAPackage("..trading.application..")
-            .should().dependOnClassesThat().resideInAnyPackage("..trading.infra..", "..scheduler.service..");
+            .should().dependOnClassesThat().resideInAnyPackage("..trading.infra..", "..scheduler..");
 
     @ArchTest
     static final ArchRule app_trading_configuration_should_not_depend_on_trading_runtime_concrete = noClasses()
             .that().resideInAPackage("..app.config.trading..")
-            .should().dependOnClassesThat().resideInAnyPackage("..trading.infra..", "..scheduler.service..");
+            .should().dependOnClassesThat().resideInAnyPackage("..trading.infra..", "..scheduler..");
 
     @ArchTest
     static final ArchRule jdbc_repositories_and_query_adapters_should_reside_in_infra = classes()
@@ -72,36 +73,33 @@ class ModuleBoundaryArchTest {
     static final ArchRule okx_spot_provider_contract_should_not_depend_on_real_http_or_credentials = noClasses()
             .that().haveSimpleNameStartingWith("OkxSpotProvider")
             .should().dependOnClassesThat().haveFullyQualifiedName(
-                    "com.guidinglight.nexusquant.adapter.okx.service.OkxHttpClient")
+                    "com.guidinglight.nexusquant.adapter.okx.http.OkxHttpClient")
             .orShould().dependOnClassesThat().haveFullyQualifiedName(
                     "com.guidinglight.nexusquant.adapter.okx.model.OkxApiCredentials")
             .orShould().dependOnClassesThat().haveFullyQualifiedName(
-                    "com.guidinglight.nexusquant.adapter.okx.service.OkxRequestSigner")
+                    "com.guidinglight.nexusquant.adapter.okx.signing.OkxRequestSigner")
             .orShould().dependOnClassesThat().haveFullyQualifiedName(
-                    "com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateRequestSigner")
+                    "com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateRequestSigner")
             .orShould().dependOnClassesThat().haveFullyQualifiedName(
-                    "com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateCredentialContext")
+                    "com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateCredentialContext")
             .orShould().dependOnClassesThat().haveFullyQualifiedName(
-                    "com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadTransport");
+                    "com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateReadTransport");
 
     @ArchTest
     static final ArchRule fallback_components_should_only_be_wired_from_local_test_fallback_configuration = noClasses()
             .that().resideInAPackage("..app.config..")
             .and().doNotHaveSimpleName("LocalTestFallbackConfiguration")
             .should().dependOnClassesThat().haveFullyQualifiedName(
-                    "com.guidinglight.nexusquant.adapter.api.service.NoopAccountAdapter"
+                    "com.guidinglight.nexusquant.adapter.api.service.compatibility.NoopAccountAdapter"
             )
             .orShould().dependOnClassesThat().haveFullyQualifiedName(
-                    "com.guidinglight.nexusquant.adapter.api.service.NoopMarketDataAdapter"
-            )
-            .orShould().dependOnClassesThat().haveFullyQualifiedName(
-                    "com.guidinglight.nexusquant.ledger.service.NoopLedgerService"
+                    "com.guidinglight.nexusquant.adapter.api.service.compatibility.NoopMarketDataAdapter"
             )
             .orShould().dependOnClassesThat().haveFullyQualifiedName(
                     "com.guidinglight.nexusquant.config.service.InMemoryConfigSnapshotService"
             )
             .orShould().dependOnClassesThat().haveFullyQualifiedName(
-                    "com.guidinglight.nexusquant.scheduler.service.PaperTradingAdapter"
+                    "com.guidinglight.nexusquant.scheduler.integration.PaperTradingAdapter"
             );
 
     @Test

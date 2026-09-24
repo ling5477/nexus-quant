@@ -1,3 +1,4 @@
+import {StatusTag, type StatusTone} from '@/nq-design-system/status/StatusTag';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
 import {ArrowLeftOutlined, ReloadOutlined} from '@ant-design/icons';
@@ -6,22 +7,14 @@ import type {ColumnsType} from 'antd/es/table';
 import {useEffect, useMemo, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 
-import {
-    NqEmptyState,
-    NqErrorState,
-    NqLoadingState,
-    NqPageHeader,
-    NqRiskBanner,
-    NqStatusTag,
-    type NqStatusTone,
-} from '@/components/nq';
+import {NqEmptyState, NqErrorState, NqLoadingState, NqPageHeader, ApplicationRiskAlert} from '@/components/nq';
 import {
     usePaperShadowConsistencyDrilldown,
     useShadowRunDetailQuery,
     useShadowRunEventsQuery,
     useShadowRunLatestConsistencyReportQuery,
     useShadowRunSnapshotsQuery,
-} from '@/hooks/useShadowRunQueries';
+} from '@/features/validation/hooks/useShadowRunQueries';
 import type {AppApiError} from '@/types/api';
 import type {
     JsonObject,
@@ -35,8 +28,9 @@ import type {
     ShadowRunDetailResponse,
     ShadowRunEventResponse,
     ShadowRunSnapshotResponse,
-} from '@/types/shadow-runs';
+} from '@/features/validation/types/shadow-runs';
 import {formatDateTime} from '@/utils/formatters';
+import {statusTone} from './statusTone';
 
 const {Text, Paragraph} = Typography;
 
@@ -148,23 +142,6 @@ function SafeJsonBlock({value, emptyText}: { value: unknown; emptyText: string }
     );
 }
 
-function statusTone(status: string | null | undefined): NqStatusTone {
-    const normalized = status?.toUpperCase() ?? '';
-    if (normalized.includes('FAILED') || normalized.includes('BLOCKED') || normalized.includes('REJECTED')) {
-        return 'danger';
-    }
-    if (normalized.includes('WARNING') || normalized.includes('PARTIAL') || normalized.includes('DIVERGED')) {
-        return 'warning';
-    }
-    if (normalized.includes('NOT_') || normalized.includes('UNKNOWN') || normalized.includes('MISSING')) {
-        return 'neutral';
-    }
-    if (normalized.includes('CONSISTENT') || normalized.includes('COMPLETED') || normalized.includes('READY')) {
-        return 'success';
-    }
-    return 'info';
-}
-
 function timelineColor(status: string | null | undefined): string {
     const tone = statusTone(status);
     if (tone === 'danger') {
@@ -200,7 +177,7 @@ type DrilldownStateKey = 'no-report' | 'failed' | 'blocked' | 'diverged' | 'stal
 interface DrilldownStateMeta {
     key: DrilldownStateKey;
     label: string;
-    tone: NqStatusTone;
+    tone: StatusTone;
     alertType: 'info' | 'warning' | 'error';
     description: string;
 }
@@ -298,7 +275,7 @@ function BoundarySummary({detail}: { detail?: ShadowRunDetailResponse }) {
     return (
         <Card className="page-section" variant="borderless">
             <Space direction="vertical" size={12} style={{display: 'flex'}}>
-                <NqRiskBanner
+                <ApplicationRiskAlert
                     level="warning"
                     message={t('pages:diagnosticsOnlyNoTradingAuthorization')}
                     description={t('pages:shadowDetailAndReplayShowLocalDiagnosticFactsOnlyAConsistencyReportIsNotApprovalOrLiveReadinessAndDo')}
@@ -370,7 +347,7 @@ function DrilldownMessageTable({
             dataIndex: 'severity',
             key: 'severity',
             width: 120,
-            render: (value: string) => <NqStatusTag status={value} tone={statusTone(value)}/>,
+            render: (value: string) => <StatusTag title="" variant="pill" status={value} tone={statusTone(value)}/>,
         },
         {
             title: 'message',
@@ -525,7 +502,7 @@ function DrilldownEvidenceAnchorsTable({items}: { items: PaperShadowConsistencyE
     );
 }
 
-export function PaperShadowConsistencyDrilldownPanel({
+function PaperShadowConsistencyDrilldownPanel({
                                                          drilldown,
                                                          loading,
                                                          error,
@@ -602,10 +579,10 @@ export function PaperShadowConsistencyDrilldownPanel({
                     />
                     <Descriptions size="small" bordered column={1}>
                         <Descriptions.Item label="comparisonStatus">
-                            <NqStatusTag status={usableDrilldown.comparisonStatus} tone={state.tone}/>
+                            <StatusTag title="" variant="pill" status={usableDrilldown.comparisonStatus} tone={state.tone}/>
                         </Descriptions.Item>
                         <Descriptions.Item label="divergenceSeverity">
-                            <NqStatusTag status={usableDrilldown.divergenceSeverity}
+                            <StatusTag title="" variant="pill" status={usableDrilldown.divergenceSeverity}
                                          tone={statusTone(usableDrilldown.divergenceSeverity)}/>
                         </Descriptions.Item>
                         <Descriptions.Item label="generatedAt">{formatDateTime(usableDrilldown.generatedAt)}</Descriptions.Item>
@@ -614,7 +591,7 @@ export function PaperShadowConsistencyDrilldownPanel({
                         </Descriptions.Item>
                         <Descriptions.Item label="traceId"><OptionalCode value={usableDrilldown.traceId}/></Descriptions.Item>
                         <Descriptions.Item label="shadowRun.status">
-                            <NqStatusTag status={usableDrilldown.shadowRun.status}
+                            <StatusTag title="" variant="pill" status={usableDrilldown.shadowRun.status}
                                          tone={statusTone(usableDrilldown.shadowRun.status)}/>
                         </Descriptions.Item>
                         <Descriptions.Item label="shadowRunId">
@@ -624,7 +601,7 @@ export function PaperShadowConsistencyDrilldownPanel({
                             <OptionalCode value={usableDrilldown.shadowRun.paperRunId}/>
                         </Descriptions.Item>
                         <Descriptions.Item label="authorizationBoundary">
-                            <NqStatusTag status={usableDrilldown.shadowRun.authorizationBoundary}
+                            <StatusTag title="" variant="pill" status={usableDrilldown.shadowRun.authorizationBoundary}
                                          tone={statusTone(usableDrilldown.shadowRun.authorizationBoundary)}/>
                         </Descriptions.Item>
                     </Descriptions>
@@ -737,10 +714,10 @@ function ShadowRunDetailPanel({detail}: { detail: ShadowRunDetailResponse }) {
                     <Descriptions.Item label="shadowRunId"><OptionalCode
                         value={detail.id}/></Descriptions.Item>
                     <Descriptions.Item label="status">
-                        <NqStatusTag status={detail.status} tone={statusTone(detail.status)}/>
+                        <StatusTag title="" variant="pill" status={detail.status} tone={statusTone(detail.status)}/>
                     </Descriptions.Item>
                     <Descriptions.Item label="authorizationBoundary">
-                        <NqStatusTag status={detail.authorizationBoundary}
+                        <StatusTag title="" variant="pill" status={detail.authorizationBoundary}
                                      tone={statusTone(detail.authorizationBoundary)}/>
                     </Descriptions.Item>
                     <Descriptions.Item label="strategyVersionId"><OptionalCode
@@ -787,7 +764,7 @@ function ShadowRunDetailPanel({detail}: { detail: ShadowRunDetailResponse }) {
     );
 }
 
-export function ShadowRunEventTimeline({
+function ShadowRunEventTimeline({
                                            events,
                                            loading,
                                            error,
@@ -828,7 +805,7 @@ export function ShadowRunEventTimeline({
                             children: (
                                 <Space direction="vertical" size={4}>
                                     <Space size={8} wrap>
-                                        <NqStatusTag status={event.eventType} tone={statusTone(event.eventType)}/>
+                                        <StatusTag title="" variant="pill" status={event.eventType} tone={statusTone(event.eventType)}/>
                                         <Text type="secondary">{formatDateTime(event.createdAt)}</Text>
                                         <Text code>{event.reasonCode ?? '-'}</Text>
                                     </Space>
@@ -850,7 +827,7 @@ export function ShadowRunEventTimeline({
     );
 }
 
-export function ShadowRunSnapshotPanel({
+function ShadowRunSnapshotPanel({
                                            snapshots,
                                            loading,
                                            error,
@@ -884,7 +861,7 @@ export function ShadowRunSnapshotPanel({
             dataIndex: 'snapshotType',
             key: 'snapshotType',
             width: 220,
-            render: (value: string) => <NqStatusTag status={value} tone={statusTone(value)}/>,
+            render: (value: string) => <StatusTag title="" variant="pill" status={value} tone={statusTone(value)}/>,
         },
         {
             title: 'sequenceNo',
@@ -958,7 +935,7 @@ export function ShadowRunSnapshotPanel({
                         {selectedSnapshot ? (
                             <Descriptions size="small" bordered column={1}>
                                 <Descriptions.Item label="snapshotType">
-                                    <NqStatusTag status={selectedSnapshot.snapshotType}
+                                    <StatusTag title="" variant="pill" status={selectedSnapshot.snapshotType}
                                                  tone={statusTone(selectedSnapshot.snapshotType)}/>
                                 </Descriptions.Item>
                                 <Descriptions.Item label="sequenceNo">{selectedSnapshot.sequenceNo}</Descriptions.Item>
@@ -978,7 +955,7 @@ export function ShadowRunSnapshotPanel({
     );
 }
 
-export function ShadowConsistencyReportPanel({
+function ShadowConsistencyReportPanel({
                                                  report,
                                                  loading,
                                                  error,
@@ -1034,7 +1011,7 @@ export function ShadowConsistencyReportPanel({
                         <Descriptions.Item label="paperRunId"><OptionalCode
                             value={report.paperRunId}/></Descriptions.Item>
                         <Descriptions.Item label="comparisonStatus">
-                            <NqStatusTag status={report.comparisonStatus} tone={statusTone(report.comparisonStatus)}/>
+                            <StatusTag title="" variant="pill" status={report.comparisonStatus} tone={statusTone(report.comparisonStatus)}/>
                         </Descriptions.Item>
                         <Descriptions.Item label="generatedAt">{formatDateTime(report.generatedAt)}</Descriptions.Item>
                         <Descriptions.Item label="traceId"><OptionalCode value={report.traceId}/></Descriptions.Item>

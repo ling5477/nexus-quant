@@ -6,7 +6,7 @@ import java.math.BigDecimal;
  * OkxInstrument 表示 OKX public instruments 的最小缓存条目。
  * <p>
  * Why:
- * GateC-1 要求下单前必须按 tickSz/lotSz/minSz 做 trim 与最小量校验，
+ * 交易所适配契约要求下单前必须按 tickSz/lotSz/minSz 做 trim 与最小量校验，
  * 因此 adapter 需要一个稳定的元数据快照，而不是每次下单都临时拼 JSON 字段。
  *
  * @param instId OKX 交易对，例如 BTC-USDT

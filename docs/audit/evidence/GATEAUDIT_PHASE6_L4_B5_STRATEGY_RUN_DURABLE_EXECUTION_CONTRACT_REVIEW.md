@@ -56,7 +56,7 @@ flowchart TD
 - [StrategyManualTriggerService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/StrategyManualTriggerService.java)：48–123、150–162。
 - [StrategyScheduleScanService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/StrategyScheduleScanService.java)：99–169、190–225、288–319。
 - [JdbcStrategyRunRepository](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcStrategyRunRepository.java)：36–96、133–162；[当前 no-send recovery](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcStrategyRunRecoveryRepository.java)；[schedule repository](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/strategy/infra/jdbc/JdbcStrategyScheduleRepository.java)。
-- [OrderCommandService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java)：87–142；[OrderCommandWriteService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java)：prepare、455–495、598–665。
+- [OrderCommandService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandService.java)：87–142；[OrderCommandWriteService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandWriteService.java)：prepare、455–495、598–665。
 - [V49](../../../backend/nq-infra/src/main/resources/db/migration/V49__ordinary_place_authorities.sql)：41–53、70–118；[V50](../../../backend/nq-infra/src/main/resources/db/migration/V50__strategy_window_admission.sql)：5–35。两者的历史文件都保持 immutable。
 
 ## 3. 执行输入审计：已有 snapshot 不等于 effective work
@@ -178,7 +178,7 @@ Strategy终结还要核对Trade上冗余保存的strategy_run_id与原Order/run�
 
 ### 6.3 取消终结不能从现有 CANCELLED推导：最小 typed finality fact
 
-[OkxRestReconcileService](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java)：164–178按终态分支扫描；216–235的 CANCELLED分支只补 fills/纠正完整执行；238–282才是 getOrder路径。`finalizeAcceptedCancelOrder`直接将取消请求接受写为 CANCELLED。因此现有字段/日志不足以证明未满量的 CANCELLED已达到venue终态，不能用一个新的 run writer猜测。
+[OkxRestReconcileService](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/recovery/OkxRestReconcileService.java)：164–178按终态分支扫描；216–235的 CANCELLED分支只补 fills/纠正完整执行；238–282才是 getOrder路径。`finalizeAcceptedCancelOrder`直接将取消请求接受写为 CANCELLED。因此现有字段/日志不足以证明未满量的 CANCELLED已达到venue终态，不能用一个新的 run writer猜测。
 
 必要补足为 Order拥有的 **`ordinary_order_cancel_finality`**，只记录这个缺失的 typed事实，不创造另一套订单状态机。key=order_id，三个字段见§10。writer是 canonical Order reconciliation application service，infra负责受限写入；Strategy finalizer只消费它。
 

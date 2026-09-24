@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.marketdata.infra.adapter;
 
 import com.guidinglight.nexusquant.adapter.api.model.HistoricalKlineRequest;
-import com.guidinglight.nexusquant.adapter.api.service.HistoricalKlineAdapter;
+import com.guidinglight.nexusquant.adapter.api.service.port.HistoricalKlineAdapter;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataIngestionJob;

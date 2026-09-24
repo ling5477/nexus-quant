@@ -1,8 +1,10 @@
 package com.guidinglight.nexusquant.strategy.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.PythonEvaluationArtifactPreviewOverviewResponse;
+
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.pyartifactpreview.PythonEvaluationArtifactPreviewOverviewQueryService;
+import com.guidinglight.nexusquant.strategy.application.pyartifactpreview.service.PythonEvaluationArtifactPreviewOverviewQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -19,9 +21,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * PythonEvaluationArtifactPreviewOverviewController 暴露 GateT-4 Evaluation Artifact preview 只读 API。
+ * PythonEvaluationArtifactPreviewOverviewController 暴露验证工作流 Evaluation Artifact preview 只读 API。
  *
- * <p>Why：GateT-4 只允许实现 `GET /api/strategy-validation/evaluation-artifacts/preview/overview`
+ * <p>Why：验证工作流只允许实现 `GET /api/strategy-validation/evaluation-artifacts/preview/overview`
  * 的 No-file baseline read model。本 controller 不接受 request body，不提供 POST/PUT/PATCH/DELETE，
  * 不接受 file path query，不提供 upload/import/bind/execute/validate-file 写侧入口，不读取 artifact 文件
  * 或 manifest，不执行 Python subprocess，不访问网络，不创建 Paper/Shadow/LIVE run，不启动 backtest、
@@ -32,7 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/strategy-validation/evaluation-artifacts/preview")
 @Tag(
         name = "Python Evaluation Artifact Preview API",
-        description = "GateT-4 Python Evaluation Artifact binding preview No-file baseline 只读接口。"
+ description = "无 artifact source 时的 Python Evaluation Artifact 绑定预览只读接口。"
 )
 public class PythonEvaluationArtifactPreviewOverviewController {
 
@@ -50,7 +52,7 @@ public class PythonEvaluationArtifactPreviewOverviewController {
     @GetMapping("/overview")
     @Operation(
             summary = "查询 Python Evaluation Artifact binding preview overview",
-            description = "返回 GateT-4 No-file baseline：当前没有 artifact source，且只表达只读诊断边界；"
+ description = "当前没有 artifact source 时返回只读诊断边界；"
                     + "不读取 artifact 文件、manifest、任意路径、上传文件或网络资源，不执行 Python，不写库，"
                     + "不创建 Paper/Shadow/LIVE run，不触发回测或交易。",
             security = @SecurityRequirement(name = "bearerAuth")

@@ -18,7 +18,7 @@ IMPLEMENTED / PENDING_INDEPENDENT_CORRECTNESS_REVIEW
 
 ## 最终生产行为与公开契约
 
-唯一 production candidate 文件：[OkxRestReconcileService.java](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java)。相对 Review-01 仅细化 Javadoc：单次扫描的订单候选总上限包含 CANCELLED，所有状态共享一次查询预算；执行逻辑字节不变。
+唯一 production candidate 文件：[OkxRestReconcileService.java](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/recovery/OkxRestReconcileService.java)。相对 Review-01 仅细化 Javadoc：单次扫描的订单候选总上限包含 CANCELLED，所有状态共享一次查询预算；执行逻辑字节不变。
 
 一次 `findOrdersByStatuses(statuses, limit)` 使用：
 
@@ -30,8 +30,8 @@ SENT / ACCEPTED / PARTIALLY_FILLED / CANCEL_REQUESTED / CANCEL_REJECTED / FILLED
 
 对外证据保持原样：
 
-- [ReconcileRunOnceRequest.java](../../../backend/nq-api/src/main/java/com/guidinglight/nexusquant/trading/api/web/ReconcileRunOnceRequest.java) 的 OpenAPI 描述仍为“单次扫描上限；为空时默认 100”。
-- [TradingVerificationController.java](../../../backend/nq-api/src/main/java/com/guidinglight/nexusquant/trading/api/web/TradingVerificationController.java) → [TradingMaintenanceService.java](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/maintenance/TradingMaintenanceService.java) → [SchedulerTradingMaintenanceService.java](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/SchedulerTradingMaintenanceService.java) 原样传递 limit；内置 scheduled、OkxRecoveryService 与 OkxWsDegradeReconcileCoordinator 调用也未改。
+- [ReconcileRunOnceRequest.java](../../../backend/nq-api/src/main/java/com/guidinglight/nexusquant/trading/api/dto/ReconcileRunOnceRequest.java) 的 OpenAPI 描述仍为“单次扫描上限；为空时默认 100”。
+- [TradingVerificationController.java](../../../backend/nq-api/src/main/java/com/guidinglight/nexusquant/trading/api/web/TradingVerificationController.java) → [TradingMaintenanceService.java](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/maintenance/TradingMaintenanceService.java) → [SchedulerTradingMaintenanceService.java](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/scheduling/SchedulerTradingMaintenanceService.java) 原样传递 limit；内置 scheduled、OkxRecoveryService 与 OkxWsDegradeReconcileCoordinator 调用也未改。
 - [TradingWorkbenchPage.tsx](../../../frontend/src/pages/trading/TradingWorkbenchPage.tsx) 的“扫描上限”、请求参数和默认值不变。
 
 CANCELLED 分支要求稳定 externalOrderId，否则记录 UNRESOLVED 并在任何 fill 查询和 Trade/Ledger 操作前返回。它复用 `reconcileFills` → canonical Trade 去重/TradeExecuted → existing Ledger convergence；不调用 getOrder、status alignment 或 Order lifecycle writer。部分成交后撤单仍为 CANCELLED，完整 OrderRecord/version 不变；recovery 无 PLACE、CANCEL、transfer、withdraw 或 kill switch 解除。

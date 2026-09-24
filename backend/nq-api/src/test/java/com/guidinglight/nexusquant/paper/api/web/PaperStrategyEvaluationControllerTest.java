@@ -13,11 +13,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.research.application.api.paper.PaperTradingApiService;
-import com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluation;
-import com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluation.BacktestDeviation;
-import com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluation.DeviationLevel;
-import com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluation.EvaluationConfidence;
-import com.guidinglight.nexusquant.research.application.paper.PaperStrategyEvaluation.RatingLabel;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation.BacktestDeviation;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation.DeviationLevel;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation.EvaluationConfidence;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation.RatingLabel;
 
 import java.math.BigDecimal;
 import java.time.Instant;

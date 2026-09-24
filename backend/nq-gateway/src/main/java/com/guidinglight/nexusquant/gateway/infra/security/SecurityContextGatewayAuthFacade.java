@@ -2,7 +2,7 @@ package com.guidinglight.nexusquant.gateway.infra.security;
 
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
 import com.guidinglight.nexusquant.gateway.application.GatewayRequestContext;
-import com.guidinglight.nexusquant.security.token.TokenClaims;
+import com.guidinglight.nexusquant.security.token.model.TokenClaims;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;

@@ -1,12 +1,12 @@
 package com.guidinglight.nexusquant.trading.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
-import com.guidinglight.nexusquant.auth.application.CurrentUserProfileService;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
+import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
 import com.guidinglight.nexusquant.trading.api.dto.TradingPreflightReadinessResponse;
-import com.guidinglight.nexusquant.trading.application.preflight.TradingPreflightReadinessQuery;
-import com.guidinglight.nexusquant.trading.application.preflight.TradingPreflightReadinessService;
+import com.guidinglight.nexusquant.trading.application.preflight.model.TradingPreflightReadinessQuery;
+import com.guidinglight.nexusquant.trading.application.preflight.service.TradingPreflightReadinessService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * TradingPreflightController 暴露只读账户权限与风险前置诊断 API。
  *
- * <p>Why: GateP Batch 4 需要一个安全事实面解释当前真实交易阻断原因。该 controller 只解析当前用户
+ * <p>Why: 运行前诊断 Batch 4 需要一个安全事实面解释当前真实交易阻断原因。该 controller 只解析当前用户
  * 与 query 参数后委托 read-only service，不调用下单、撤单、permission probe、adapter 或 credential material。
  */
 @Validated

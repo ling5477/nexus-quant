@@ -1,14 +1,14 @@
 package com.guidinglight.nexusquant.app.config.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.guidinglight.nexusquant.auth.application.CurrentUserProfileService;
-import com.guidinglight.nexusquant.auth.application.DbAuthService;
+import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
+import com.guidinglight.nexusquant.auth.application.service.DbAuthService;
 import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
-import com.guidinglight.nexusquant.auth.application.AuthService;
+import com.guidinglight.nexusquant.auth.application.port.AuthService;
 import com.guidinglight.nexusquant.app.security.web.ApiSecurityErrorWriter;
-import com.guidinglight.nexusquant.security.token.JwtTokenService;
-import com.guidinglight.nexusquant.security.token.JwtTokenSettings;
-import com.guidinglight.nexusquant.security.token.TokenService;
+import com.guidinglight.nexusquant.security.token.service.JwtTokenService;
+import com.guidinglight.nexusquant.security.token.config.JwtTokenSettings;
+import com.guidinglight.nexusquant.security.token.port.TokenService;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
 import com.guidinglight.nexusquant.gateway.infra.security.SecurityContextGatewayAuthFacade;
 import com.guidinglight.nexusquant.security.web.JwtAuthenticationFilter;

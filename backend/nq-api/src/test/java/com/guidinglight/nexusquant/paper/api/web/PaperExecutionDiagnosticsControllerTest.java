@@ -13,10 +13,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.research.application.api.paper.PaperTradingApiService;
-import com.guidinglight.nexusquant.research.application.paper.PaperExecutionDiagnostics;
-import com.guidinglight.nexusquant.research.application.paper.PaperExecutionDiagnostics.Cause;
-import com.guidinglight.nexusquant.research.application.paper.PaperExecutionDiagnostics.Confidence;
-import com.guidinglight.nexusquant.research.application.paper.PaperExecutionDiagnostics.Severity;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperExecutionDiagnostics;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperExecutionDiagnostics.Cause;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperExecutionDiagnostics.Confidence;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperExecutionDiagnostics.Severity;
 
 import java.math.BigDecimal;
 import java.time.Instant;

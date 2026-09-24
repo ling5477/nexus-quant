@@ -80,7 +80,7 @@ public record ShadowRun(
     }
 
     /**
-     * 兼容 GateX-2 之前的创建路径；旧路径没有已验证 artifact digest，因此只能创建
+     * 兼容策略发布准入之前的创建路径；旧路径没有已验证 artifact digest，因此只能创建
      * {@link ShadowRunReleaseBindingMode#LEGACY_UNBOUND} 或
      * {@link ShadowRunReleaseBindingMode#LEGACY_PUBLISH_ONLY} 事实，不能推测为 release-bound。
      */

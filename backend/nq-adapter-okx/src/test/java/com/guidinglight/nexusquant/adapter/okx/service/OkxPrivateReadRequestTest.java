@@ -1,5 +1,8 @@
 package com.guidinglight.nexusquant.adapter.okx.service;
 
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadOperation;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadRequest;
+
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

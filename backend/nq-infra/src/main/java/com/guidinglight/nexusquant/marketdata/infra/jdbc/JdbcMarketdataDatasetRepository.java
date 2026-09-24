@@ -9,7 +9,7 @@ import com.guidinglight.nexusquant.marketdata.domain.MarketdataDatasetCoverage;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataDatasetStatus;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataQualityStatus;
 import com.guidinglight.nexusquant.marketdata.domain.port.MarketdataDatasetRepository;
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionMutationCoordinator;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.port.AdmissionMutationCoordinator;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,7 +26,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 /**
- * JdbcMarketdataDatasetRepository 是 GateH-3 dataset 和 coverage 的 JDBC 实现。
+ * JdbcMarketdataDatasetRepository 是历史行情接入 dataset 和 coverage 的 JDBC 实现。
  * <p>
  * Why:
  * 覆盖率、缺口和非法 bar 统计依赖 `marketdata_bars` 聚合 SQL，必须留在 infra 层；

@@ -2,8 +2,6 @@ import type { Time } from 'lightweight-charts';
 
 import type { MarketConvention } from '../tokens/nq-tokens';
 
-export type NqChartState = 'ready' | 'loading' | 'empty' | 'error';
-
 export interface NqKlineBar {
   time: string | number | Time;
   open: number;

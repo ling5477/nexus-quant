@@ -1,4 +1,6 @@
-package com.guidinglight.nexusquant.trading.application;
+package com.guidinglight.nexusquant.trading.application.command;
+
+import static com.guidinglight.nexusquant.common.text.NullableText.firstNonBlank;
 
 import com.guidinglight.nexusquant.trading.domain.TradingVenue;
 
@@ -7,7 +9,7 @@ import com.guidinglight.nexusquant.trading.domain.TradingVenue;
  * <p>
  * Why:
  * 撤单既要支持通过 order_id 精确定位，也要支持 account_id + client_order_id 幂等定位，
- * 单独建模可以避免调用方拼装不一致导致误撤单；GateD 第二批还要求把 requestId、venue、symbol、
+ * 单独建模可以避免调用方拼装不一致导致误撤单；统一撤单契约还要求把 requestId、venue、symbol、
  * externalOrderId 等语义收口到 core，避免恢复链路再自行补字段。
  *
  * @param requestId       本次撤单请求 ID；未显式提供时回退为 traceId
@@ -33,7 +35,7 @@ public record CancelOrderRequest(
 ) {
 
     /**
-     * 兼容旧构造器，允许第二批 contracts/core 收敛与第一批调用方共存。
+     * 兼容旧构造器，允许新旧 contracts/core 调用方共存。
      */
     public CancelOrderRequest(
             String orderId,
@@ -47,31 +49,21 @@ public record CancelOrderRequest(
 
     public CancelOrderRequest {
         traceId = requireText(traceId, "traceId");
-        requestId = normalizeText(requestId, traceId);
+        requestId = firstNonBlank(requestId, traceId);
         venue = venue == null ? null : TradingVenue.parse(venue).name();
-        symbol = normalizeText(symbol, null);
-        clientOrderId = normalizeText(clientOrderId, null);
-        externalOrderId = normalizeText(externalOrderId, null);
+        symbol = firstNonBlank(symbol, null);
+        clientOrderId = firstNonBlank(clientOrderId, null);
+        externalOrderId = firstNonBlank(externalOrderId, null);
         reason = requireText(reason, "reason");
     }
 
     private static String requireText(String value, String fieldName) {
-        String normalized = normalizeText(value, null);
+        String normalized = firstNonBlank(value, null);
         if (normalized == null) {
             throw new IllegalArgumentException(fieldName + " must not be blank");
         }
         return normalized;
     }
 
-    private static String normalizeText(String value, String fallback) {
-        if (value != null && !value.isBlank()) {
-            return value.trim();
-        }
-        if (fallback != null && !fallback.isBlank()) {
-            return fallback.trim();
-        }
-        return null;
-    }
 }
-
 

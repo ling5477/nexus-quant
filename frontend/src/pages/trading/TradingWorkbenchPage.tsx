@@ -26,7 +26,7 @@ import {useEffect, useMemo, useState} from 'react';
 
 import {formatApiError, showApiError} from '@/api/errors';
 import {RuntimeGuardBanner} from '@/components/nq';
-import {PageHero} from '@/components/page/PageHero';
+import {NqPageHeader} from '@/components/nq/NqPageHeader';
 import {NqPageScaffold} from '@/nq-design-system/shell/NqPageScaffold';
 import {
     useCancelOrderMutation,
@@ -35,7 +35,7 @@ import {
     useRecoveryMutation,
     useTradingOrderListQuery,
     useTradingWorkbenchLookupQuery,
-} from '@/hooks/useTradingWorkbench';
+} from '@/features/trading/hooks/useTradingWorkbench';
 import {useAccountContextStore} from '@/store/account-context-store';
 import type {AppApiError} from '@/types/api';
 import type {
@@ -49,7 +49,7 @@ import type {
     TradingOrderListRequest,
     TradingWorkbenchLookupRequest,
     TradingWorkbenchLookupResult,
-} from '@/types/trading-workbench';
+} from '@/features/trading/types/trading-workbench';
 import {formatDateTime, formatNumber, normalizeOptionalText} from '@/utils/formatters';
 
 type ActionDrawer = 'place' | 'cancel' | 'reconcile' | 'recovery' | null;
@@ -293,7 +293,7 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
                 ) : null}
 
                 <Card className="page-card" bordered={false}>
-                    <PageHero
+                    <NqPageHeader
                         title={t('pages:tradingWorkbench')}
                         description={t('pages:queryOrdersAndViewDetailsInTheExchangeaccountidContextWithSimLiveAndPrerequisiteRiskControlsVisible')}
                         badge="Trading"

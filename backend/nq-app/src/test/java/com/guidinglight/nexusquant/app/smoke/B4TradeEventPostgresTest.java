@@ -6,7 +6,7 @@ import com.guidinglight.nexusquant.contracts.model.*;
 import com.guidinglight.nexusquant.eventstore.infra.EventStoreAppender;
 import com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest;
 import com.guidinglight.nexusquant.ledger.infra.jdbc.*;
-import com.guidinglight.nexusquant.ledger.service.TradeLedgerPostingService;
+import com.guidinglight.nexusquant.ledger.application.service.TradeLedgerPostingService;
 import com.guidinglight.nexusquant.ledger.service.port.TradeLedgerPort;
 import com.guidinglight.nexusquant.scheduler.infra.jdbc.JdbcTradeRepository;
 import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;

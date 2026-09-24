@@ -1,16 +1,16 @@
 package com.guidinglight.nexusquant.adapter.api.dataquality;
 
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataEndpointCategory;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundErrorCategory;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundRequest;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundResult;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataQualitySummary;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataEndpointCategory;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundErrorCategory;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundRequest;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundResult;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataQualitySummary;
 
 import java.time.Duration;
 import java.util.Objects;
 
 /**
- * DataQualitySourceHealthMapper 把 GateO O-1 结果映射成 O-2 Data Quality Center summary。
+ * DataQualitySourceHealthMapper 把公开行情出站策略结果映射成 O-2 Data Quality Center summary。
  *
  * <p>Why: O-1 outbound result 只是一次公开行情候选结果或 disabled/fallback 结果。O-2 必须把 success、
  * high latency、429、timeout、5xx、malformed response、disabled、fallback、stale 和 gap 分别映射成

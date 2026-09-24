@@ -1,5 +1,8 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
+import com.guidinglight.nexusquant.scheduler.recovery.OkxRestReconcileService;
+import com.guidinglight.nexusquant.scheduler.ws.OkxWsDegradeReconcileCoordinator;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -8,8 +11,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxWsConnectionListener;
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsClient;
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsConnectionListener;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.eventstore.infra.EventStoreAppender;

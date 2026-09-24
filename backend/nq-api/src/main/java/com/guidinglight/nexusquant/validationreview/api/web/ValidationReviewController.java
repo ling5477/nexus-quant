@@ -1,15 +1,19 @@
 package com.guidinglight.nexusquant.validationreview.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.validationreview.api.dto.ValidationReviewCaseResponse;
+import com.guidinglight.nexusquant.validationreview.api.dto.ValidationReviewEventResponse;
+import com.guidinglight.nexusquant.validationreview.api.dto.ValidationReviewLifecycleRequestBody;
+
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
-import com.guidinglight.nexusquant.auth.application.CurrentUserProfileService;
+import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
-import com.guidinglight.nexusquant.validationreview.application.ValidationReviewAction;
-import com.guidinglight.nexusquant.validationreview.application.ValidationReviewActor;
-import com.guidinglight.nexusquant.validationreview.application.ValidationReviewOperationsService;
-import com.guidinglight.nexusquant.validationreview.application.ValidationReviewOperationalAuditService;
+import com.guidinglight.nexusquant.validationreview.application.model.ValidationReviewAction;
+import com.guidinglight.nexusquant.validationreview.application.model.ValidationReviewActor;
+import com.guidinglight.nexusquant.validationreview.application.service.ValidationReviewOperationsService;
+import com.guidinglight.nexusquant.validationreview.application.service.ValidationReviewOperationalAuditService;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewCaseQuery;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewSeverity;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewState;
@@ -42,15 +46,15 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * GateV-2 durable validation review 的 query 与有限 lifecycle REST API。
+ * 人工复核 durable validation review 的 query 与有限 lifecycle REST API。
  *
  * <p>Controller 只从既有 authentication/profile context 解析 actor/roles；tenant 固定在 core，
- * 客户端无法覆盖 actor、owner、tenant、requestId 或 traceId。所有写侧复用 GateV-1 状态机与事务。
+ * 客户端无法覆盖 actor、owner、tenant、requestId 或 traceId。所有写侧复用人工复核状态机与事务。
  */
 @Validated
 @RestController
 @RequestMapping("/api/validation-review-cases")
-@Tag(name = "Validation Review API", description = "GateV-2 本地人工复核 lifecycle 接口。")
+@Tag(name = "Validation Review API", description = "本地人工复核 lifecycle 接口。")
 public class ValidationReviewController {
 
     public static final String IDEMPOTENCY_KEY_HEADER = "Idempotency-Key";
@@ -228,7 +232,7 @@ public class ValidationReviewController {
     }
 
     /**
-     * 执行 {@code RESOLVED -> CLOSED}；CLOSED 后的任何动作继续由 GateV-1 状态机拒绝。
+     * 执行 {@code RESOLVED -> CLOSED}；CLOSED 后的任何动作继续由人工复核状态机拒绝。
      *
      * @param caseId path case id
      * @param idempotencyKey case-local 幂等键

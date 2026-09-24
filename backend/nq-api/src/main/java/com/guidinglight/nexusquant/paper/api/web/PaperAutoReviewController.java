@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * PaperAutoReviewController —— Paper 规则化自动复盘只读聚合入口（GateK Batch K4）。
+ * PaperAutoReviewController —— Paper 规则化自动复盘只读聚合入口。
  *
  * 复用 K1 执行诊断与 K3 策略评估，规则化归纳组合 / 重点 run / 策略 / 发布复盘与问题聚类，供前端自动复盘视图消费。
  * 只读：不触发任何状态机、调度、回测、发布或外部调用；不接 AI / DH runtime；只覆盖 SIM/Paper，LIVE 未开启，
@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @ConditionalOnBean(PaperTradingApiService.class)
 @RequestMapping("/api/paper-trading/auto-reviews")
-@Tag(name = "Paper Auto Review API", description = "GateK Paper 规则化自动复盘只读聚合接口。")
+@Tag(name = "Paper Auto Review API", description = "Paper 规则化自动复盘只读聚合接口。")
 public class PaperAutoReviewController {
 
     private final PaperTradingApiService apiService;

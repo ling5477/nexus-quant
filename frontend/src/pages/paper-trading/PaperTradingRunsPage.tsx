@@ -1,3 +1,4 @@
+import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import {useLocalizedForm} from '@/i18n/useLocalizedForm';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
@@ -21,24 +22,8 @@ import {useEffect, useState, type ReactNode} from 'react';
 import {Link} from 'react-router-dom';
 
 import {showApiError} from '@/api/errors';
-import {
-    NqAmountText,
-    NqDangerConfirmButton,
-    NqDataTable,
-    NqEmptyState,
-    NqEnvironmentBadge,
-    NqErrorState,
-    NqFilterBar,
-    NqLoadingState,
-    NqMetricCard,
-    NqPageHeader,
-    NqPercentText,
-    NqPriceText,
-    NqRiskBanner,
-    NqStatusTag,
-    nqNumericColumn,
-} from '@/components/nq';
-import {NqAlertPanel, NqHeartbeatPanel, NqRecoveryPanel, NqScheduleFirePanel, NqStabilityCheckPanel} from '@/components/paper';
+import {NqAmountText, NqDangerConfirmButton, NqDataTable, NqEmptyState, TradingEnvironmentTag, NqErrorState, NqFilterBar, NqLoadingState, NqMetricCard, NqPageHeader, NqPercentText, NqPriceText, ApplicationRiskAlert, nqNumericColumn} from '@/components/nq';
+import {NqAlertPanel, NqHeartbeatPanel, NqRecoveryPanel, NqScheduleFirePanel, NqStabilityCheckPanel} from '@/features/paper-trading/components/index';
 import {
     EXCHANGE_OPTIONS,
     INTERVAL_OPTIONS,
@@ -66,7 +51,7 @@ import {
     useRunRiskOnceMutation,
     useStartPaperTradingRunMutation,
     useStopPaperTradingRunMutation,
-} from '@/hooks/usePaperTradingQuery';
+} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
 import {
     defaultPaperTradingListFilters,
@@ -82,7 +67,7 @@ import {
     type PaperTradingTradeItem,
     type PositionCurveSnapshotItem,
     type TradeReplayRecordItem,
-} from '@/types/paper-trading';
+} from '@/features/paper-trading/types/paper-trading';
 import {formatDateTime, normalizeOptionalText} from '@/utils/formatters';
 
 type PaperRunRow = PaperTradingRunItem;
@@ -133,11 +118,11 @@ function amountTone(value: string | number | null | undefined): 'up' | 'down' | 
 }
 
 /**
- * PaperTradingRunsPage 是 K5-C4 后的 `/paper-trading/runs` execution-only 页面。
+ * PaperTradingRunsPage 是 现有的 `/paper-trading/runs` execution-only 页面。
  *
  * Why:
- * K5-C1/C2/C3 已把组合分析、执行诊断、策略评估和自动复盘迁移到独立子路由；runs 继续挂旧完整页会让
- * portfolio / diagnostics / evaluation / review query 在执行入口首屏加载，违背本轮“runs 只做执行层”的边界。
+ * 独立子路由已承载组合分析、执行诊断、策略评估和自动复盘迁移到独立子路由；runs 继续挂旧完整页会让
+ * portfolio / diagnostics / evaluation / review query 在执行入口首屏加载，违背“runs 只做执行层”的边界。
  *
  * What / How:
  * 本页只实例化 run list、run detail、run summary、run fact tabs 与 lifecycle mutations。跨 run 分析能力只以
@@ -269,8 +254,8 @@ export function PaperTradingRunsPage() {
                 <Space direction="vertical" size={2} style={{width: '100%'}}>
                     <span className="nq-mono nq-run-id" title={value}>{value}</span>
                     <Space size={6}>
-                        <NqStatusTag status={record.status}/>
-                        <NqEnvironmentBadge env={record.tradeEnv}/>
+                        <StatusTag title="" variant="pill" status={record.status}/>
+                        <TradingEnvironmentTag env={record.tradeEnv}/>
                     </Space>
                     <Typography.Text type="secondary" style={{fontSize: 12}}>
                         {record.symbol} · {record.intervalCode} · {record.exchangeCode}
@@ -320,7 +305,7 @@ export function PaperTradingRunsPage() {
                         description={t('pages:createStartStopRecoverAndInspectIndividualPaperRunsPortfolioAnalysisExecutionDiagnosticsAndStrategyE')}
                         badge={t('pages:runExecutionLayer')}
                         tip={(
-                            <NqRiskBanner
+                            <ApplicationRiskAlert
                                 level="info"
                                 message={t('pages:theCurrentEnvironmentIsPaperSimLiveTradingIsDisabled')}
                                 description={t('pages:actionsAffectSimPaperRunsOnlyTheyDoNotPlaceOrCancelRealExchangeOrdersOrAccessCredentials')}
@@ -414,15 +399,15 @@ export function PaperTradingRunsPage() {
                                     <Card className="page-section" variant="borderless">
                                         <Space size={8} wrap style={{marginBottom: 12}}>
                                             <Typography.Text strong>{t('pages:runConsole')}</Typography.Text>
-                                            <NqStatusTag status={focusStatus}/>
-                                            <NqEnvironmentBadge env={selectedRow.tradeEnv}/>
+                                            <StatusTag title="" variant="pill" status={focusStatus}/>
+                                            <TradingEnvironmentTag env={selectedRow.tradeEnv}/>
                                             <Typography.Text type="secondary" className="nq-mono" style={{fontSize: 12}}>
                                                 {selectedRow.paperRunId}
                                             </Typography.Text>
                                         </Space>
 
                                         <div className="nq-status-strip">
-                                            <NqMetricCard label={t('pages:runStatus')} value={<NqStatusTag status={focusStatus}/>}/>
+                                            <NqMetricCard label={t('pages:runStatus')} value={<StatusTag title="" variant="pill" status={focusStatus}/>}/>
                                             <NqMetricCard label={t('pages:orderFacts')} value={orderCount === null ? '-' : String(orderCount)} loading={summaryQuery.isPending}/>
                                             <NqMetricCard label={t('pages:tradeFacts')} value={fillCount === null ? '-' : String(fillCount)} loading={summaryQuery.isPending}/>
                                             <NqMetricCard label={t('pages:positionFacts')} value={positionCount === null ? '-' : String(positionCount)} loading={summaryQuery.isPending}/>
@@ -434,7 +419,7 @@ export function PaperTradingRunsPage() {
                                             />
                                             <NqMetricCard
                                                 label={t('pages:riskControlLifecycle')}
-                                                value={latestRisk ? <NqStatusTag status={latestRisk.status} tone={latestRisk.status === 'PASSED' ? 'success' : latestRisk.status === 'REJECTED' ? 'danger' : 'warning'}/> : '-'}
+                                                value={latestRisk ? <StatusTag title="" variant="pill" status={latestRisk.status} tone={latestRisk.status === 'PASSED' ? 'success' : latestRisk.status === 'REJECTED' ? 'danger' : 'warning'}/> : '-'}
                                                 footer={latestRisk ? `${latestRisk.checkType} · ${latestRisk.severity}` : t('pages:noRiskChecks')}
                                                 loading={summaryQuery.isPending}
                                             />
@@ -444,7 +429,7 @@ export function PaperTradingRunsPage() {
                                                 tone={openAlertCount && openAlertCount > 0 ? 'warning' : 'muted'}
                                                 loading={summaryQuery.isPending}
                                             />
-                                            <NqMetricCard label={t('pages:tradingEnvironment')} value={<NqEnvironmentBadge env={selectedRow.tradeEnv}/>} footer={t('pages:liveDisabled2')}/>
+                                            <NqMetricCard label={t('pages:tradingEnvironment')} value={<TradingEnvironmentTag env={selectedRow.tradeEnv}/>} footer={t('pages:liveDisabled2')}/>
                                         </div>
 
                                         <Space size={8} wrap style={{marginTop: 12}}>
@@ -535,7 +520,7 @@ export function PaperTradingRunsPage() {
                                                                 scroll={{y: 180}}
                                                                 columns={[
                                                                     {title: t('pages:triggerType2'), dataIndex: 'triggerType', key: 'triggerType', width: 110},
-                                                                    {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'APPLIED' ? 'danger' : v === 'RESOLVED' ? 'success' : 'warning'}/>},
+                                                                    {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title="" variant="pill" status={v} tone={v === 'APPLIED' ? 'danger' : v === 'RESOLVED' ? 'success' : 'warning'}/>},
                                                                     {title: t('pages:triggeredAt'), dataIndex: 'triggeredAt', key: 'triggeredAt', width: 170, render: (v: string) => formatDateTime(v)},
                                                                 ]}
                                                             />
@@ -710,7 +695,7 @@ function RunFactsCard({
                                         {title: t('pages:type'), dataIndex: 'orderType', key: 'orderType', width: 80},
                                         nqNumericColumn({title: t('pages:quantity'), dataIndex: 'quantity', key: 'quantity', width: 100, render: (v) => <NqAmountText value={v as string}/>}),
                                         nqNumericColumn({title: t('pages:price'), dataIndex: 'price', key: 'price', width: 100, render: (v) => <NqPriceText value={v as string}/>}),
-                                        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v}/>},
+                                        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title="" variant="pill" status={v}/>},
                                         {title: t('pages:createdAt'), dataIndex: 'createdAt', key: 'createdAt', width: 170, render: (v: string) => formatDateTime(v)},
                                     ]}
                                 />
@@ -790,7 +775,7 @@ function RunFactsCard({
                                         scroll={{x: 900}}
                                         columns={[
                                             {title: t('pages:checkType'), dataIndex: 'checkType', key: 'checkType', width: 180},
-                                            {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v} tone={v === 'PASSED' ? 'success' : v === 'REJECTED' ? 'danger' : 'warning'}/>},
+                                            {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title="" variant="pill" status={v} tone={v === 'PASSED' ? 'success' : v === 'REJECTED' ? 'danger' : 'warning'}/>},
                                             {title: t('pages:severity'), dataIndex: 'severity', key: 'severity', width: 100},
                                             {title: t('pages:message'), dataIndex: 'message', key: 'message'},
                                             {title: t('pages:time'), dataIndex: 'createdAt', key: 'createdAt', width: 170, render: (v: string) => formatDateTime(v)},
@@ -935,7 +920,7 @@ function RunDailyReportPanel({paperRunId}: {paperRunId: string}) {
                         scroll={{x: 900, y: 240}}
                         columns={[
                             {title: t('pages:date'), dataIndex: 'reportDate', key: 'reportDate', width: 120},
-                            {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <NqStatusTag status={v} tone={v === 'GENERATED' ? 'success' : 'warning'}/>},
+                            {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <StatusTag title="" variant="pill" status={v} tone={v === 'GENERATED' ? 'success' : 'warning'}/>},
                             nqNumericColumn({title: t('pages:totalEquity'), dataIndex: 'totalEquity', key: 'totalEquity', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
                             nqNumericColumn({title: t('pages:dailyPnl'), dataIndex: 'dailyPnl', key: 'dailyPnl', width: 120, render: (v) => <NqAmountText value={v as string} signed colorBySign/>}),
                             nqNumericColumn({title: t('pages:dailyReturn2'), dataIndex: 'dailyReturn', key: 'dailyReturn', width: 110, render: (v) => <NqPercentText value={v as string} ratio colorBySign/>}),

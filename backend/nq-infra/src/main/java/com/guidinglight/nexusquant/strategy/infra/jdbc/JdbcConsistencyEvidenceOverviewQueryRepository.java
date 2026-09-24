@@ -21,7 +21,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 /**
- * JdbcConsistencyEvidenceOverviewQueryRepository 是 GateT-2 consistency evidence overview 的 JDBC read adapter。
+ * JdbcConsistencyEvidenceOverviewQueryRepository 是验证工作流 consistency evidence overview 的 JDBC read adapter。
  *
  * <p>职责：只通过 SELECT 读取 consistency report、Shadow Run、latest snapshot metadata 和 latest event metadata。
  * 该 adapter 不提供 create/update/delete/review/acknowledge 方法，不读取 credential/account/live order/ledger/

@@ -1,4 +1,4 @@
-// EnvironmentBadge.tsx — 环境/读写边界标识,Top Bar 常驻 + 操作区(B0 / Design Tokens v2)
+// EnvironmentBadge.tsx — 环境/读写边界标识,Top Bar 常驻 + 操作区(Design Tokens v2)
 // LIVE 必须在视觉上与 PAPER 明显不同(实心高危样式)。
 import type { CSSProperties } from 'react';
 
@@ -12,7 +12,7 @@ const ENV_VAR: Record<NqEnv, string> = {
   AUDITED: 'var(--nq-env-audited)',
 };
 
-export interface EnvironmentBadgeProps {
+interface EnvironmentBadgeProps {
   env: NqEnv;
   size?: 'sm' | 'md';
 }

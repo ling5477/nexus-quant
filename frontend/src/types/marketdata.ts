@@ -49,7 +49,7 @@ export interface MarketdataQualityOverviewQuery {
     to?: string;
 }
 
-export interface MarketdataQualityOverviewScope {
+interface MarketdataQualityOverviewScope {
     exchangeCode?: string | null;
     marketType?: string | null;
     symbol?: string | null;
@@ -67,7 +67,7 @@ export interface MarketdataQualityMetric {
     reason?: string | null;
 }
 
-export interface MarketdataQualityDataOriginSummary {
+interface MarketdataQualityDataOriginSummary {
     requestedDataOrigin?: string | null;
     effectiveDataOrigin: string;
     localDbBars: number;
@@ -76,7 +76,7 @@ export interface MarketdataQualityDataOriginSummary {
     supportLevel: string;
 }
 
-export interface MarketdataQualityDatasetCoverageSummary {
+interface MarketdataQualityDatasetCoverageSummary {
     datasetCount: number;
     expectedBars?: number | null;
     actualBars?: number | null;
@@ -116,7 +116,7 @@ export interface MarketdataQualityOverview {
     generatedAt: string;
 }
 
-export interface MarketdataQualityStatusSummary {
+interface MarketdataQualityStatusSummary {
     okCount: number;
     gapSignalCount: number;
     invalidCount: number;
@@ -124,7 +124,7 @@ export interface MarketdataQualityStatusSummary {
     statuses: Record<string, number>;
 }
 
-export type MarketdataReadinessStatus =
+type MarketdataReadinessStatus =
     | 'FRESH'
     | 'STALE'
     | 'VERY_STALE'
@@ -134,14 +134,14 @@ export type MarketdataReadinessStatus =
     | 'UNKNOWN'
     | 'NO_DATA';
 
-export type MarketdataReadinessSourceStatus =
+type MarketdataReadinessSourceStatus =
     | 'ENABLED'
     | 'DISABLED'
     | 'DEGRADED'
     | 'ERROR'
     | 'RATE_LIMITED';
 
-export type MarketdataReadinessSourceHealth =
+type MarketdataReadinessSourceHealth =
     | 'HEALTHY'
     | 'DEGRADED'
     | 'RATE_LIMITED'
@@ -149,20 +149,20 @@ export type MarketdataReadinessSourceHealth =
     | 'ERROR'
     | 'UNKNOWN';
 
-export type MarketdataReadinessGapStatus =
+type MarketdataReadinessGapStatus =
     | 'NONE'
     | 'PARTIAL'
     | 'GAP'
     | 'UNKNOWN';
 
-export type MarketdataReadinessDataOrigin =
+type MarketdataReadinessDataOrigin =
     | 'LOCAL_DB'
     | 'FIXTURE'
     | 'FAKE_SERVER'
     | 'PUBLIC_CANDIDATE'
     | 'UNKNOWN';
 
-export type MarketdataReadinessErrorCategory =
+type MarketdataReadinessErrorCategory =
     | 'NONE'
     | 'DISABLED'
     | 'POLICY_DENIED'

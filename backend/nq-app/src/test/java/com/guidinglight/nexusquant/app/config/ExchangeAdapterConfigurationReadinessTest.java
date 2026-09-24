@@ -1,5 +1,6 @@
 package com.guidinglight.nexusquant.app.config;
 
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -11,11 +12,11 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterCancelRequest;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOpenOrdersQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderRequest;
-import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceExchangeAdapter;
+import com.guidinglight.nexusquant.adapter.api.service.port.TradingAdapter;
+import com.guidinglight.nexusquant.adapter.binance.trading.BinanceExchangeAdapter;
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClient;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
+import com.guidinglight.nexusquant.adapter.okx.trading.OkxExchangeAdapter;
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsClient;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotExecutionProviderPort;
 
 import java.math.BigDecimal;

@@ -12,7 +12,7 @@ import static org.mockito.Mockito.when;
 
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
-import com.guidinglight.nexusquant.livecontrol.application.PilotExecutionLeaseControlPlane;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotExecutionLeaseControlPlane;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.port.ExactPilotBindingRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotExecutionLeaseRepository;
@@ -23,7 +23,7 @@ import com.guidinglight.nexusquant.livecontrol.execution.application.provider.Sp
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntent;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentState;
-import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
+import com.guidinglight.nexusquant.trading.application.command.PlaceOrderRequest;
 
 import java.math.BigDecimal;
 import java.time.Clock;

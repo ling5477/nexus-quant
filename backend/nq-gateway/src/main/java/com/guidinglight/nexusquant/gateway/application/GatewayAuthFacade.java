@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.gateway.application;
 
-import com.guidinglight.nexusquant.security.token.TokenClaims;
+import com.guidinglight.nexusquant.security.token.model.TokenClaims;
 
 import java.util.Optional;
 

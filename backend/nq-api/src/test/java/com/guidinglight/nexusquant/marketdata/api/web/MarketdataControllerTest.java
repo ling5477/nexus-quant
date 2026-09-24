@@ -14,12 +14,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.marketdata.application.MarketdataBarIngestService;
-import com.guidinglight.nexusquant.marketdata.application.MarketdataDatasetService;
-import com.guidinglight.nexusquant.marketdata.application.MarketdataFixtureIngestionResult;
-import com.guidinglight.nexusquant.marketdata.application.MarketdataIngestionService;
-import com.guidinglight.nexusquant.marketdata.application.MarketdataQualityOverviewService;
-import com.guidinglight.nexusquant.marketdata.application.MarketdataReadinessService;
+import com.guidinglight.nexusquant.marketdata.application.service.MarketdataBarIngestService;
+import com.guidinglight.nexusquant.marketdata.application.service.MarketdataDatasetService;
+import com.guidinglight.nexusquant.marketdata.application.model.MarketdataFixtureIngestionResult;
+import com.guidinglight.nexusquant.marketdata.application.service.MarketdataIngestionService;
+import com.guidinglight.nexusquant.marketdata.application.service.MarketdataQualityOverviewService;
+import com.guidinglight.nexusquant.marketdata.application.service.MarketdataReadinessService;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalMarketDataQuery;

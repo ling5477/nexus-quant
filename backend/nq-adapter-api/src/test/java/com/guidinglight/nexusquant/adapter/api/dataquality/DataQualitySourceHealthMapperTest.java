@@ -5,11 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataEndpointCategory;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundErrorCategory;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundRequest;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundResult;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataQualitySummary;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataEndpointCategory;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundErrorCategory;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundRequest;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundResult;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataQualitySummary;
 
 import java.lang.reflect.RecordComponent;
 import java.time.Duration;

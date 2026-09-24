@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.research.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.research.application.eval.api.BacktestRunApiService;
 import com.guidinglight.nexusquant.research.api.dto.BacktestEvaluationResponse;
 import com.guidinglight.nexusquant.research.api.dto.BacktestPublishRequestBody;

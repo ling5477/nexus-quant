@@ -1,13 +1,13 @@
 package com.guidinglight.nexusquant.account.infra.okx.readonly;
 
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateEnvironment;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadError;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadException;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadRequest;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadResult;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPilotPrerequisiteRequest;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPilotPrerequisiteSnapshot;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport;
+import com.guidinglight.nexusquant.adapter.okx.auth.OkxPrivateEnvironment;
+import com.guidinglight.nexusquant.adapter.okx.privateread.error.OkxPrivateReadError;
+import com.guidinglight.nexusquant.adapter.okx.privateread.error.OkxPrivateReadException;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadRequest;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadResult;
+import com.guidinglight.nexusquant.adapter.okx.provider.model.OkxPilotPrerequisiteRequest;
+import com.guidinglight.nexusquant.adapter.okx.provider.model.OkxPilotPrerequisiteSnapshot;
+import com.guidinglight.nexusquant.adapter.okx.provider.OkxSpotProviderTransport;
 
 /**
  * infrastructure 内同步 scoped decrypt executor；callback 只获得线程绑定、到期失效的 typed read session，

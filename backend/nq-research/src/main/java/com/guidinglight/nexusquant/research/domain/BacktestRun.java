@@ -6,9 +6,9 @@ import java.time.Instant;
  * BacktestRun 表示回测运行事实。
  * <p>
  * Why:
- * 回测运行必须独立于 GateE 的 strategy_runs、orders、trades，
+ * 回测运行必须独立于执行与补偿契约的 strategy_runs、orders、trades，
  * 否则后续模拟成交、评估结果和研究运行状态会与实盘/执行域事实混淆。
- * GateI-2 要求 run 在创建时固化 strategy version、dataset、参数和配置快照，
+ * 策略版本要求 run 在创建时固化 strategy version、dataset、参数和配置快照，
  * 因此这些字段是历史运行可复盘的输入事实，后续配置重新绑定不能改写。
  */
 public record BacktestRun(

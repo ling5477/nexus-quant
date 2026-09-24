@@ -38,7 +38,7 @@ production/migration/current authority delta=0；stage=0、commit=NONE、push=NO
 
 生产路径及机制：
 
-1. [TradeLedgerPostingService.updatePositionProjection](../../../../backend/nq-ledger/src/main/java/com/guidinglight/nexusquant/ledger/service/TradeLedgerPostingService.java)先读取当前Position，在Java中计算`current.qty + qtyChange`，再写入新绝对数量。
+1. [TradeLedgerPostingService.updatePositionProjection](../../../../backend/nq-ledger/src/main/java/com/guidinglight/nexusquant/ledger/application/service/TradeLedgerPostingService.java)先读取当前Position，在Java中计算`current.qty + qtyChange`，再写入新绝对数量。
 2. [JdbcLedgerPostingRepository.findPosition/upsertPosition](../../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/ledger/infra/jdbc/JdbcLedgerPostingRepository.java)读取不带FOR UPDATE或version，upsert冲突时执行`qty=EXCLUDED.qty`，没有CAS/原子增量或同账户品种串行化。
 3. 两个JVM处理不同Order时可读取相同旧Position，各算一次增量，再由后写覆盖先写。这与真实Trade总量12.0而Position11.7的丢更新事实一致。现有每Trade幂等早退不会从完整Trade事实重建已错的Position，因此正常重放不修复。
 
@@ -144,7 +144,7 @@ Docker Desktop 29.7.2 的 info、一次无网络 disposable container create/ins
 
 新生产问题：`P2 / CONCURRENT_SAME_FILL_INSERT_FALSE_OVERFILL / OPEN`，本次 qualification 被阻断。与既有普通 Order concurrent INSERT loser P2 是不同位置，后者及 wildcard-import P3 继续 OPEN / NON_BLOCKING。
 
-[Trade writer](../../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/scheduler/infra/jdbc/JdbcTradeRepository.java) 的 insert 在锁父 Order 后先求已提交成交总量，再执行 `executed + candidate.qty > original` 检查；该检查前未在同一锁边界识别已存在的相同 fill。[OKX reconcile](../../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java) 在锁外查不存在后调用 insertWithRequiredEvent，异常直接退出本轮 reconcile。
+[Trade writer](../../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/scheduler/infra/jdbc/JdbcTradeRepository.java) 的 insert 在锁父 Order 后先求已提交成交总量，再执行 `executed + candidate.qty > original` 检查；该检查前未在同一锁边界识别已存在的相同 fill。[OKX reconcile](../../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/recovery/OkxRestReconcileService.java) 在锁外查不存在后调用 insertWithRequiredEvent，异常直接退出本轮 reconcile。
 
 本次受影响 canonical Order 为 C3 failure 摘要中的 `SYNTH-L4:B5-L5C:R03:ORDER:001`：Order.qty=0.1、Venue accFillSz=0.1、唯一 durable Trade.qty=0.1、唯一同 fill。输家继续插入时把 winner 已提交的相同 effect 再计入数量检查，抛出 `RECONCILIATION_OVERFILL_OR_INVALID_QUANTITY`。没有真实 overfill，数据库唯一性未失守，也没有 Position lost update。
 

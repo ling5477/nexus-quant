@@ -3,7 +3,7 @@ package com.guidinglight.nexusquant.research.domain;
 import java.time.Instant;
 
 /**
- * BacktestPublishRecord 表示 GateF-5 的发布事实。
+ * BacktestPublishRecord 表示研究与回测契约的发布事实。
  */
 public record BacktestPublishRecord(
         String publishRecordId,

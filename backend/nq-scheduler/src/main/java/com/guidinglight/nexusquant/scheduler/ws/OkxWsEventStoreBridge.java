@@ -1,14 +1,14 @@
 package com.guidinglight.nexusquant.scheduler.ws;
 
-import com.guidinglight.nexusquant.adapter.okx.service.OkxWsBusinessMessage;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxWsEventMapper;
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsBusinessMessage;
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsClient;
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsEventMapper;
 import com.guidinglight.nexusquant.contracts.event.AuditRecorded;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
-import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
+import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
-import com.guidinglight.nexusquant.scheduler.service.OkxWsOrderAccelerationService;
+import com.guidinglight.nexusquant.scheduler.ws.OkxWsOrderAccelerationService;
 
 import java.time.Clock;
 import java.time.Instant;

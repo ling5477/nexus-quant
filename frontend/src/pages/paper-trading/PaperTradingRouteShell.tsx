@@ -18,12 +18,11 @@ function activePaperTradingRoute(pathname: string): string {
 }
 
 /**
- * PaperTradingRouteShell 只承载 K5-B 子路由壳。
+ * PaperTradingRouteShell 只承载模拟交易子路由壳。
  *
  * Why:
- * K5-B 的目标是先建立 `/paper-trading/*` 路由骨架，为 K5-C 逐模块迁移留出口。
- * 当前不迁移 Portfolio / Diagnostics / Reviews 业务模块，也不新增 query；Runs 子路由继续渲染旧完整页，
- * 以保持旧入口、侧边栏高亮和 product-loop E2E 行为兼容。
+ * 统一保留 `/paper-trading/*` 的导航、安全提示和旧入口重定向；组合、诊断、复盘与运行页由各自子路由拥有。
+ * 路由壳不发起业务 query，避免切换页面时提前加载其他子路由的数据。
  */
 export function PaperTradingRouteShell() {
     useTranslation('pages');

@@ -7,8 +7,8 @@ import com.guidinglight.nexusquant.contracts.event.AuditRecorded;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
-import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
-import com.guidinglight.nexusquant.scheduler.service.BinanceWsOrderAccelerationService;
+import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
+import com.guidinglight.nexusquant.scheduler.ws.BinanceWsOrderAccelerationService;
 
 import java.time.Clock;
 import java.time.Instant;

@@ -1,12 +1,16 @@
 package com.guidinglight.nexusquant.livecontrol.deployment;
 
-import com.guidinglight.nexusquant.risk.service.KillSwitchEngageCommand;
-import com.guidinglight.nexusquant.risk.service.KillSwitchScope;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.KillSwitchPropagationEnvelope;
+import com.guidinglight.nexusquant.livecontrol.deployment.policy.KillSwitchPropagationPolicy;
+import com.guidinglight.nexusquant.livecontrol.deployment.policy.WorkerOperationSafetyGate;
+
+import com.guidinglight.nexusquant.risk.application.command.KillSwitchEngageCommand;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchScope;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
-import com.guidinglight.nexusquant.risk.service.KillSwitchSnapshot;
-import com.guidinglight.nexusquant.risk.service.KillSwitchState;
-import com.guidinglight.nexusquant.risk.service.KillSwitchStateRepository;
-import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchSnapshot;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchState;
+import com.guidinglight.nexusquant.risk.application.port.KillSwitchStateRepository;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;
 
 import java.time.Clock;
 import java.time.Duration;

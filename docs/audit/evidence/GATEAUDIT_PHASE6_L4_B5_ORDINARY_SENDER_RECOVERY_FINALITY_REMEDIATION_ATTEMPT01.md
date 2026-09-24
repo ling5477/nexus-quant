@@ -42,10 +42,10 @@ finalize ACK with expected SENT/v2
 
 当前源码锚点：
 
-- [OrderCommandService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java)：86–135，prepare 返回后直接外发。
-- [OrderCommandWriteService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java)：prepare 提交 SENT；finalizeAcceptedPlaceOrder 只处理后续本地回执。
-- [OkxRecoveryService](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRecoveryService.java)：211–260，query NOT_FOUND → lifecycle terminalization。
-- [JdbcOrderRepository](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/jdbc/JdbcOrderRepository.java)：compareAndSetStatus；[OkxHttpClient](../../../backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/service/OkxHttpClient.java)：send/buildRequest。
+- [OrderCommandService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandService.java)：86–135，prepare 返回后直接外发。
+- [OrderCommandWriteService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandWriteService.java)：prepare 提交 SENT；finalizeAcceptedPlaceOrder 只处理后续本地回执。
+- [OkxRecoveryService](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/recovery/OkxRecoveryService.java)：211–260，query NOT_FOUND → lifecycle terminalization。
+- [JdbcOrderRepository](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/jdbc/JdbcOrderRepository.java)：compareAndSetStatus；[OkxHttpClient](../../../backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/http/OkxHttpClient.java)：send/buildRequest。
 
 ## 3. 现有机制与拒绝的伪修复
 

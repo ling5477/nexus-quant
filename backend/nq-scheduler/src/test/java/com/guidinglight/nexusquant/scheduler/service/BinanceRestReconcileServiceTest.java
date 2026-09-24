@@ -1,5 +1,8 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
+import com.guidinglight.nexusquant.scheduler.port.TradeLedgerGateway;
+import com.guidinglight.nexusquant.scheduler.recovery.BinanceRestReconcileService;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -12,12 +15,12 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterTradeReport;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceTradeFill;
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceExchangeAdapter;
+import com.guidinglight.nexusquant.adapter.binance.trading.BinanceExchangeAdapter;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
-import com.guidinglight.nexusquant.trading.application.OrderCommandService;
-import com.guidinglight.nexusquant.trading.application.OrderLifecycleService;
+import com.guidinglight.nexusquant.trading.application.service.OrderCommandService;
+import com.guidinglight.nexusquant.trading.application.service.OrderLifecycleService;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.eventstore.infra.EventStoreAppender;
 import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;

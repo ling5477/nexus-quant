@@ -3,7 +3,7 @@ package com.guidinglight.nexusquant.strategy.domain;
 import java.time.Instant;
 
 /**
- * StrategySchedule 表示 GateE-2.1 的最小计划配置事实。
+ * StrategySchedule 表示执行与补偿契约的最小计划配置事实。
  */
 public record StrategySchedule(
         String scheduleJobId,

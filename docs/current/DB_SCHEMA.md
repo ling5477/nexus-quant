@@ -2,17 +2,17 @@
 
 数据库结构以 Flyway migrations 为准。本文只记录当前数据库事实入口，不复制完整 DDL。
 
-## 工作树候选：V50 strategy window admission（待独立审查）
+## V50 strategy window admission 仓库结构
 
 [V50](../../backend/nq-infra/src/main/resources/db/migration/V50__strategy_window_admission.sql)在现有`strategy_runs`增加可空的`admission_schedule_id`（计划外键）和`admission_due_at`（CRON逻辑到期时刻）。部分唯一索引覆盖`strategy_id + account_id + admission_schedule_id + admission_due_at`，只覆盖新结构化admission；列对必须同时为空或同时非空，非空行必须为SCHEDULER。触发器禁止更换已消费的身份。不同到期时刻可独立认领，FAILED或恢复不会释放旧窗口。
 
 V1–V49不修改。历史行不设默认窗口、不推测回填，保留既存重复和NULL列；新writer对同策略/账户下精确匹配三种历史schedule请求格式的旧行保守返回duplicate。新唯一性保证要求所有扫描writer升级，迁移时须停止旧扫描进程，禁止旧/新scan二进制混跑；旧writer不会填写新列，不能作为安全回退版本。新旧迁移文件不授予生产执行权限。
 
-V50使用5秒DDL锁等待、30秒语句上限，超时失败不静默跳过；唯一索引需扫描表，生产规模和窗口须在获授权部署前评估。无down migration；回退应停止扫描并前向修复，不能通过删除admission身份或重写历史恢复执行。本候选尚未接受/交付，不声明生产已迁移。旧表和其他领域的既有版本说明保留如下。
+V50使用5秒DDL锁等待、30秒语句上限，超时失败不静默跳过；唯一索引需扫描表，生产规模和窗口须在获授权部署前评估。无down migration；回退应停止扫描并前向修复，不能通过删除admission身份或重写历史恢复执行。仓库中的 V50 不证明生产已迁移；原候选说明保留为历史范围记录。旧表和其他领域的既有版本说明保留如下。
 
-## 当前 repository schema：V48
+## 当前 repository migration inventory：V51
 
-当前 tracked Flyway inventory 已到 `V48`。本节只同步仓库结构，不声明生产已迁移，也不重跑历史或 C2 验收。下方按历史版本保留的 V42/V47 时点描述及既有验收事实不作改写。
+当前 tracked Flyway inventory 已到 `V51`，与 [STATUS.md](STATUS.md) 的 repository schema 记录一致；这不声明生产已迁移。下方 V43–V48 表格及按历史版本编排的段落保留当时的结构增量和验收事实；V49–V51 的仓库身份由 migration 文件本身确定。
 
 | Migration | 当前结构增量 |
 | --- | --- |
@@ -22,6 +22,9 @@ V50使用5秒DDL锁等待、30秒语句上限，超时失败不静默跳过；�
 | [V46](../../backend/nq-infra/src/main/resources/db/migration/V46__gate_y_attempt_level_terminal_lease_regeneration.sql) | attempt 层级 terminal lease regeneration 的唯一性、外键和触发器约束调整。 |
 | [V47](../../backend/nq-infra/src/main/resources/db/migration/V47__order_state_optimistic_concurrency.sql) | `orders.version` 持久化状态并发版本及非负约束，用于乐观并发控制。 |
 | [V48](../../backend/nq-infra/src/main/resources/db/migration/V48__reconciliation_scan_cursor.sql) | `reconciliation_scan_cursors` 按 venue 保存扫描进度，不保存订单、成交、账本或授权事实。 |
+| [V49](../../backend/nq-infra/src/main/resources/db/migration/V49__ordinary_place_authorities.sql) | ordinary PLACE authority 的持久化约束；不授予 LIVE 执行权限。 |
+| [V50](../../backend/nq-infra/src/main/resources/db/migration/V50__strategy_window_admission.sql) | strategy run 的结构化调度窗口身份与唯一性约束。 |
+| [V51](../../backend/nq-infra/src/main/resources/db/migration/V51__strategy_run_durable_execution.sql) | strategy run durable execution 结构；具体决策和约束以 migration 文件为准。 |
 
 ## 本地数据库规则
 
@@ -33,6 +36,8 @@ V50使用5秒DDL锁等待、30秒语句上限，超时失败不静默跳过；�
 ## 当前已有表域
 
 当前数据库已包含用户、账户、凭证、订单、成交、持仓、策略、调度、研究、回测、评估、发布、行情基础表。具体字段、索引、约束以 `backend/**/db/migration` 下的 Flyway migration 为准。
+
+<!-- nq-stage-history:start -->
 
 ## Schema Comment Governance
 
@@ -96,7 +101,15 @@ Batch 4-A 已接管 V28 新增的 `research_configs` / `backtest_configs` 生命
 - `archive_reason` 可空，应用层会限制长度并拒绝明显包含密钥、token、API secret、私钥、助记词等敏感材料的原因文本。
 - `updated_at` 仍只表示配置元数据最后更新时间；归档命令会同步更新 `updated_at`。
 
-## GateH-2 当前 Marketdata 结构
+<!-- nq-stage-history:end -->
+
+<!-- nq-stage-history:start -->
+
+## 历史实施增量（按迁移和验收身份编排）
+
+下列段落保留各版本实施时的结构说明与评审状态，不表示当前仍处于相应开发阶段；当前仓库迁移清单见上表，生产 schema 不由本页推定。
+
+## GateH-2 历史 Marketdata 结构增量
 
 GateH-2 新增 Flyway migration：
 
@@ -145,7 +158,7 @@ GateM-2E 未新增 migration、未修改历史 migration、未新增表、字段
 - `raw_payload_json` 保存单根 K 线的交易所原始 payload 快照，用于审计和排障。
 - `raw_summary_json` 保存单次运行统计摘要，不作为业务查询主结构。
 
-## GateH-3 当前 Dataset 与 Backtest 绑定结构
+## GateH-3 Dataset 与 Backtest 绑定结构增量
 
 GateH-3 新增 Flyway migration：
 
@@ -190,7 +203,7 @@ GateH-3 变更 `backtest_runs`：
 - GateH-3 不接合约、资金费率、深度、逐笔成交、链上数据、新闻资讯。
 - GateH-3 不新增美股/A 股适配。
 
-## GateI-1 当前 Strategy Version 与 Publish 结构
+## GateI-1 Strategy Version 与 Publish 结构增量
 
 GateI-1 新增 Flyway migration：
 
@@ -224,7 +237,7 @@ GateI-1 变更 `backtest_publish_records`：
 
 ## GateI DB Planning Entry
 
-## GateI-2 当前 Backtest Traceability 与 Evaluation 结构
+## GateI-2 Backtest Traceability 与 Evaluation 结构增量
 
 GateI-2 新增 Flyway migration：
 
@@ -267,7 +280,7 @@ GateI-2 不修改历史 migration，不新增无注释表，不新增无注释�
 
 ## GateI DB Planning Entry
 
-GateI DB 规划入口为 [GATEI_DB_PLAN.md](../gates/gate-i/GATEI_DB_PLAN.md)。GateI-1 已落地策略版本与发布绑定最小结构；GateI-2 已落地回测追溯与评估指标增强；GateI-3/4 尚未开始。
+GateI DB 规划入口为 [GATEI_DB_PLAN.md](../gates/gate-i/GATEI_DB_PLAN.md)。GateI-1 已落地策略版本与发布绑定最小结构；GateI-2 已落地回测追溯与评估指标增强；当时 GateI-3/4 尚未开始。
 
 GateI 后续规划重点：
 
@@ -736,7 +749,7 @@ Disposable PostgreSQL 17.7 已验证 V39→V40、V1→V40 full replay、Flyway v
 - lease identity/window/cap 不可变；状态只允许 frozen transition graph，version 必须逐次 +1。三表均使用 FK/unique/CHECK/index/trigger 与中文 COMMENT。
 - migration 使用 5s lock timeout、60s statement timeout；没有历史 backfill、现有交易表 rewrite、credential material、raw response 或资金 mutation。
 
-PostgreSQL 17.7 随机 schema 已验证 V39/V40→V42、fresh V1→V42、Flyway validate、direct SQL immutability、global single pilot 与 concurrent double PLACE exactly-one。生产尚未迁移到 V42；当前 source 状态为 `REVIEW ACCEPTED / READY TO COMMIT`，不等于 production schema accepted。
+PostgreSQL 17.7 随机 schema 已验证 V39/V40→V42、fresh V1→V42、Flyway validate、direct SQL immutability、global single pilot 与 concurrent double PLACE exactly-one。生产尚未迁移到 V42；实施时记录的 source 状态为 `REVIEW ACCEPTED / READY TO COMMIT`，不等于 production schema accepted。
 
 ## StrategyRun durable execution（V51 候选）
 
@@ -751,3 +764,5 @@ V51 新增 `strategy_run_dispatch_work`：run PK/FK、work schema version、defi
 `strategy_run_recovery_scan_cursor` 只存 singleton 扫描位置 `(started_at,run_id)`，每批最多 50，循环覆盖三个非终态；不代表 owner/lease/发送权。schedule.last_triggered_at 的新写入为 admission dueAt 水位，和 V50 run/work 同事务推进；禁止回退或无 admission 的盲写。事务 B 原子提交 effective 决定、DISPATCHING、Order、初始 V49 和原 RiskGate 事实；事务 C 从 Order/Trade 事实 CAS 原 run，新增唯一成功状态 SUCCEEDED。完整成交继续要求唯一有效 durable fills 累计量严格等于原 Order.qty，该字段已表示实际有效提交量；不引入 epsilon、不放松 overfill/partial-fill 或 B2 账务语义。V49 发送协议及 V1–V50 文件保持原合同。
 
 此为实施候选结构说明；迁移目标预检、完整验证和独立正确性审查结果以本轮 implementation evidence 为准，不能据此认为生产已升级。
+
+<!-- nq-stage-history:end -->

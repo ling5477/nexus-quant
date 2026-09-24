@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * IncidentReplayOverviewQueryService 组装 GateS-6 Incident / Replay overview read model。
+ * IncidentReplayOverviewQueryService 组装验证只读视图 Incident / Replay overview read model。
  *
  * <p>职责：只读聚合本地 Shadow / Paper / Replay evidence，输出 incident-like diagnostic
  * summary。该 service 不创建 incident、不创建 alert、不追加 event、不生成 replay、不调用 runner /
@@ -59,7 +59,7 @@ public class IncidentReplayOverviewQueryService {
      * notTradingAuthorization=true，不能解释为交易授权。
      *
      * @param traceId 当前请求 trace id
-     * @return GateS-6 read model
+     * @return 事件回放总览只读模型
      */
     @Transactional(readOnly = true)
     public IncidentReplayOverviewReadModel overview(String traceId) {

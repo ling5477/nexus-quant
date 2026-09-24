@@ -16,9 +16,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 /**
- * JdbcShadowValidationWorkflowOverviewQueryRepository 是 GateT-1 workflow overview 的 JDBC read adapter。
+ * JdbcShadowValidationWorkflowOverviewQueryRepository 是验证工作流 workflow overview 的 JDBC read adapter。
  *
- * <p>职责：只通过 SELECT bounded union 读取 GateS 已有本地事实表，包括 strategy/evaluation/publish/Paper、
+ * <p>职责：只通过 SELECT bounded union 读取验证只读视图已有本地事实表，包括 strategy/evaluation/publish/Paper、
  * Shadow、consistency 和 incident/replay 证据。该 adapter 不提供 create / update / delete / review /
  * acknowledge 方法，不读取 credential/account/live order/ledger/private trading 表，不调用 runner、scheduler
  * 或交易所 adapter。
@@ -296,7 +296,7 @@ public class JdbcShadowValidationWorkflowOverviewQueryRepository implements Shad
     }
 
     /**
-     * 加载 GateT-1 operator evidence facts。
+     * 加载验证工作流 operator evidence facts。
      *
      * <p>查询策略：以 bounded union 读取最新 20 条 operator evidence；不读取 raw JSONB payload，不读取
      * credential/account/live order/ledger/private provider 表，不执行 INSERT / UPDATE / DELETE。

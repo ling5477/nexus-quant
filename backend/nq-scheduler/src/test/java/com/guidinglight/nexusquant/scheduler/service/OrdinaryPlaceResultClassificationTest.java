@@ -1,8 +1,10 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
+import com.guidinglight.nexusquant.scheduler.integration.AdapterBackedTradingVenueGateway;
+
 import com.guidinglight.nexusquant.adapter.api.model.*;
-import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
-import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
+import com.guidinglight.nexusquant.adapter.api.service.port.TradingAdapter;
+import com.guidinglight.nexusquant.trading.application.command.PlaceOrderRequest;
 import com.guidinglight.nexusquant.trading.application.port.TradingGatewayResultCategory;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;

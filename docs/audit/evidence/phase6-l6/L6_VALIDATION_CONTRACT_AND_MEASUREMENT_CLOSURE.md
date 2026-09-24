@@ -60,7 +60,7 @@ Paper normal/CRITICAL/report链继续取得原合法fixture结果；不是ordina
 
 两个真实Validation scheduler回调均完成并记录：DEGRADED、availability=PARTIAL、freshnessStatus=UNKNOWN、blockerCount=1、warningCount=1、failureCategory=null。执行本身没有证实uncaught scheduler error；是额外来源不满足本次qualification合同。
 
-[ShadowRunOverviewQueryService](../../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/ShadowRunOverviewQueryService.java)的`evidenceMetadata`即使completeEvidence=true、availability=AVAILABLE，也固定向calculator传入`staleAfter=null`。[ReadModelEvidenceMetadataCalculator](../../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/readmodel/ReadModelEvidenceMetadataCalculator.java)明确规定：有权威时间且AVAILABLE，但阈值缺失时仍为UNKNOWN/STALE_THRESHOLD_NOT_DEFINED。
+[ShadowRunOverviewQueryService](../../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/shadowrun/service/ShadowRunOverviewQueryService.java)的`evidenceMetadata`即使completeEvidence=true、availability=AVAILABLE，也固定向calculator传入`staleAfter=null`。[ReadModelEvidenceMetadataCalculator](../../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/readmodel/ReadModelEvidenceMetadataCalculator.java)明确规定：有权威时间且AVAILABLE，但阈值缺失时仍为UNKNOWN/STALE_THRESHOLD_NOT_DEFINED。
 
 因此当前`SHADOW_RUNS`不能通过更多seed变成FRESH。no-file例外之外至少还有这个不可由数据fixture闭合的UNKNOWN；当前严格规则在真实运行中拒绝它。逐来源overview未在抛错前序列化，故这里对warning来源的归因是当前真实source/calculator代码推导，与runtime一个warning吻合；不把它冒充逐来源动态JSON。
 

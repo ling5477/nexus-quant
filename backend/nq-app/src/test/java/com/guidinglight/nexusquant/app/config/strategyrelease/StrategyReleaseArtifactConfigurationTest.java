@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.app.config.strategyrelease;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseArtifactBindingResolver;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.port.StrategyReleaseArtifactBindingResolver;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;

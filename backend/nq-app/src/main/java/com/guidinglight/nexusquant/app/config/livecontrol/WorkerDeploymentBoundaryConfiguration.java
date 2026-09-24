@@ -1,11 +1,11 @@
 package com.guidinglight.nexusquant.app.config.livecontrol;
 
-import com.guidinglight.nexusquant.livecontrol.deployment.WorkerDeploymentAdmissionService;
-import com.guidinglight.nexusquant.livecontrol.deployment.WorkerOperationSafetyGate;
-import com.guidinglight.nexusquant.livecontrol.deployment.KillSwitchPropagationPolicy;
-import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialCapabilityPolicy;
+import com.guidinglight.nexusquant.livecontrol.deployment.service.WorkerDeploymentAdmissionService;
+import com.guidinglight.nexusquant.livecontrol.deployment.policy.WorkerOperationSafetyGate;
+import com.guidinglight.nexusquant.livecontrol.deployment.policy.KillSwitchPropagationPolicy;
+import com.guidinglight.nexusquant.livecontrol.deployment.policy.ScopedCredentialCapabilityPolicy;
 import com.guidinglight.nexusquant.livecontrol.deployment.infra.okx.OkxPrivateReadonlyEndpointPolicyEvidenceFactory;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotEndpointGuard;
+import com.guidinglight.nexusquant.adapter.okx.provider.OkxSpotEndpointGuard;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 import com.guidinglight.nexusquant.strategy.strategyrelease.artifact.TrustedRootStrategyArtifactVerifier;
 import com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReader;

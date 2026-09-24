@@ -1,17 +1,18 @@
+import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import {t} from '@/i18n';
 import {useTranslation} from 'react-i18next';
 import {Alert, Space, Tag, Typography} from 'antd';
 
-import {NqStatusTag} from '@/components/nq/NqStatusTag';
 
-export type RuntimeGuardBannerVariant = 'paper-boundary' | 'trading-workbench';
+
+type RuntimeGuardBannerVariant = 'paper-boundary' | 'trading-workbench';
 
 interface RuntimeGuardBannerProps {
     variant: RuntimeGuardBannerVariant;
 }
 
 /**
- * RuntimeGuardBanner renders read-only GateM runtime boundary copy.
+ * RuntimeGuardBanner 展示只读的运行安全边界文案。
  *
  * Boundary: this component is informational only. It must not hide controls,
  * unlock controls, call APIs, or become a dismissible substitute for backend
@@ -51,10 +52,10 @@ export function RuntimeGuardBanner({variant}: RuntimeGuardBannerProps) {
             description={(
                 <Space direction="vertical" size={8} style={{display: 'flex'}}>
                     <Space size={[8, 8]} wrap>
-                        <NqStatusTag status="LIVE_DISABLED" tone="danger"/>
-                        <NqStatusTag status="REAL_PROVIDER_NOT_IMPLEMENTED" tone="warning"/>
-                        <NqStatusTag status="PERMISSION_PROBE_DISABLED / SKIPPED" tone="neutral"/>
-                        <NqStatusTag status="NO_REAL" tone="danger"/>
+                        <StatusTag title="" variant="pill" status="LIVE_DISABLED" tone="danger"/>
+                        <StatusTag title="" variant="pill" status="REAL_PROVIDER_NOT_IMPLEMENTED" tone="warning"/>
+                        <StatusTag title="" variant="pill" status="PERMISSION_PROBE_DISABLED / SKIPPED" tone="neutral"/>
+                        <StatusTag title="" variant="pill" status="NO_REAL" tone="danger"/>
                     </Space>
                     <Typography.Text>{t('boundary.live')}</Typography.Text>
                     <Typography.Text>{t('boundary.provider')}</Typography.Text>

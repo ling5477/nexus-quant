@@ -3,10 +3,10 @@ package com.guidinglight.nexusquant.strategy.domain;
 import java.time.Instant;
 
 /**
- * StrategyDefinition 表示 GateE-1.1 的策略定义事实。
+ * StrategyDefinition 表示执行与补偿契约的策略定义事实。
  * <p>
  * Why:
- * GateE-1.1 只解决“定义可管理”，因此模型只承载定义级字段、启停开关与配置快照，
+ * 执行与补偿契约只解决“定义可管理”，因此模型只承载定义级字段、启停开关与配置快照，
  * 不混入 strategyRun 或 schedule job 语义。
  */
 public record StrategyDefinition(

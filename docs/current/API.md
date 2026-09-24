@@ -2,7 +2,7 @@
 
 统一错误协议继续使用 `ApiErrorResponse`，保留 `timestamp/status/error/code/message/path/traceId/fieldErrors`，为已登记错误增加可省略的 `errorKey/errorId`。订单准备阶段 CAS 冲突保持 HTTP 409 / `code=STATE_CONFLICT`，附加 `errorKey=ORDER_VERSION_CONFLICT` / `errorId=NQ-TRD-1001`；其他旧错误 code 与未编号 JSON 形状保持原有契约。机器身份与本地化 UX 分离，字段原始诊断保留；完整兼容说明、真实调用路径和目录 ownership 见[错误目录](../error-catalog/README.md)。
 
-当前 API 文档以代码实际 controller 为准。本文记录当前 API 分类和已完成 GateH API 事实；GateI-PLAN 只新增规划入口，不实现接口。
+当前 API 事实以代码中的 controller 与 DTO 为准。下方分类描述现有接口能力；按 Gate 编号排列的段落保留实施时的范围和验收记录，其中的“当时状态”不表示当前接口尚未交付。当前运行与交易授权边界以 [STATUS.md](STATUS.md) 为准。
 
 ## API 分类
 
@@ -18,22 +18,22 @@
 - Publish API：发布候选、发布状态。
 - Instrument API：交易标的、交易所、市场类型、symbol catalog。
 - Marketdata API：行情基础 ingest/query 能力。
-- Marketdata Data Quality Center API：只读聚合本地 bars、dataset coverage 与 ingestion facts，供 GateP Batch 2 数据质量诊断使用。
-- Trading Preflight API：只读聚合单交易所账户、credential metadata、permission probe 状态、Data Quality diagnostic 和风险前置阻断原因，供 GateP Batch 4 解释真实交易为什么仍被阻断。
-- Strategy Evaluation Gate API：只读聚合 strategy version、dataset quality、evaluation、publish trace 与 SIM Paper evidence，供 GateQ-1 判断研究与评估证据是否可进入后续 Shadow review。
-- Paper Shadow Comparison API：只读聚合 strategy version、dataset quality、evaluation、publish trace、SIM Paper evidence 与 Shadow 未实现状态，供 GateQ-2 判断 Paper vs Shadow 对照证据准备度。
-- Shadow Live No-side-effect Preview API：只读聚合 GateQ-1 evaluation gate 与 GateQ-2 Paper/Shadow comparison 结果，供 GateQ-3 判断是否能生成 Shadow Live no-side-effect 预览计划。
-- Shadow Run Read-only API：只读查询本地 Shadow Run list、detail、events、snapshots 与 latest consistency report，供 GateR-6 / GateR-8 前端 list/detail/replay view 使用。
-- Shadow Run Overview API：只读聚合本地 Shadow Run overview、latest run、latest consistency、divergence severity、blockers / warnings / nextSteps 和 evidence anchors，供 GateS-1 最小后端 read model 使用。
-- Paper Shadow Consistency Drilldown API：围绕单个 `shadowRunId` 只读聚合 Shadow Run 主事实、latest consistency report、snapshot / event 摘要、blockers / warnings / nextSteps、evidence anchors 和安全边界 flags，供 GateS-2 最小后端 drilldown 使用。
-- Strategy Validation Overview API：只读聚合 strategy version、evaluation、publish、SIM Paper、Shadow Run 与 consistency evidence 的本地事实，供 GateS-3 Strategy Evaluation Gate runtime baseline 查看 validation-only 决策状态；不表示交易授权。
-- Incident Replay Overview API：只读聚合 Shadow / consistency / Paper alert / recovery / trade replay 本地诊断证据，供 GateS-6 Incident / Replay overview read model 使用；不表示交易授权、LIVE ready 或真实 incident runtime。
-- Shadow Validation Workflow API：只读聚合 GateS 本地事实并派生 Shadow Validation Workflow operator items，供 GateT-1 backend read model 使用；operator items 为 derived / deterministic，不持久化，不表示交易授权。
-- Incident Replay Review Workflow API：只读聚合 GateS-6、GateT-1、GateT-2 相关本地诊断事实并派生 Incident / Replay review items，供 GateT-3 backend read model 使用；review items 为 derived / deterministic，不持久化，不表示自动处置、真实 incident 已关闭或交易授权。
-- Python Evaluation Artifact Preview API：只读返回 GateT-4 No-file baseline overview，供 Strategy Validation / GateT validation operations 预览 Python offline EvaluationArtifact binding readiness；不读取 artifact 文件、不执行 Python、不导入 DB、不表示 ML ready、live execution ready 或交易授权。
-- GateQ-4 Python Evaluation Artifact Binding Preview API：只读校验 request body 中的 Python offline evaluation artifact，供 GateQ-4 生成 Java fact source binding preview，不导入、不上传、不写库。
+- Marketdata Data Quality Center API：只读聚合本地 bars、dataset coverage 与 ingestion facts，用于数据质量诊断。
+- Trading Preflight API：只读聚合单交易所账户、credential metadata、permission probe 状态、Data Quality diagnostic 和风险前置阻断原因，用于解释真实交易为什么仍被阻断。
+- Strategy Evaluation Gate API：只读聚合 strategy version、dataset quality、evaluation、publish trace 与 SIM Paper evidence，用于判断研究与评估证据是否足以进入 Shadow review。
+- Paper Shadow Comparison API：只读聚合 strategy version、dataset quality、evaluation、publish trace、SIM Paper evidence 与 Shadow 对照状态，用于判断 Paper vs Shadow 对照证据准备度。
+- Shadow Live No-side-effect Preview API：只读聚合 策略评估准入与 Paper/Shadow 对照结果，用于判断是否能生成 Shadow Live no-side-effect 预览计划。
+- Shadow Run Read-only API：只读查询本地 Shadow Run list、detail、events、snapshots 与 latest consistency report，供前端 list/detail/replay view 使用。
+- Shadow Run Overview API：只读聚合本地 Shadow Run overview、latest run、latest consistency、divergence severity、blockers / warnings / nextSteps 和 evidence anchors，形成只读总览模型。
+- Paper Shadow Consistency Drilldown API：围绕单个 `shadowRunId` 只读聚合 Shadow Run 主事实、latest consistency report、snapshot / event 摘要、blockers / warnings / nextSteps、evidence anchors 和安全边界 flags，形成只读明细模型。
+- Strategy Validation Overview API：只读聚合 strategy version、evaluation、publish、SIM Paper、Shadow Run 与 consistency evidence 的本地事实，供策略验证总览查看 validation-only 决策状态；不表示交易授权。
+- Incident Replay Overview API：只读聚合 Shadow / consistency / Paper alert / recovery / trade replay 本地诊断证据，形成事件回放只读总览；不表示交易授权、LIVE ready 或真实 incident runtime。
+- Shadow Validation Workflow API：只读聚合 本地验证事实并派生 Shadow Validation Workflow operator items，形成只读工作流模型；operator items 为 derived / deterministic，不持久化，不表示交易授权。
+- Incident Replay Review Workflow API：只读聚合 事件回放、验证工作流与一致性证据的本地诊断事实并派生 Incident / Replay review items，形成只读复核模型；review items 为 derived / deterministic，不持久化，不表示自动处置、真实 incident 已关闭或交易授权。
+- Python Evaluation Artifact Preview API：只读返回 无文件只读总览，供策略验证操作预览 Python offline EvaluationArtifact binding readiness；不读取 artifact 文件、不执行 Python、不导入 DB、不表示 ML ready、live execution ready 或交易授权。
+- Python Evaluation Artifact Binding Preview API：只读校验 request body 中的 Python offline evaluation artifact，用于生成 Java fact source binding preview，不导入、不上传、不写库。
 - Adapter Readiness API：只读查询 OKX / Binance / Noop 各能力当前 readiness（no-real / fail-closed），供前端展示当前不可实盘及原因。
-- Runtime Operational Readiness API：只读查询 GateM-6B 运行边界与禁用能力摘要（LIVE / AI / DH / real provider / startup / profile / config / log）。
+- Runtime Operational Readiness API：只读查询运行边界与禁用能力摘要（LIVE / AI / DH / real provider / startup / profile / config / log）。
 - Actuator / Health：Spring Boot actuator、健康检查。
 
 ## 当前边界
@@ -41,6 +41,9 @@
 - 正式 HTTP API 统一使用 `/api/**`。
 - 旧 `/__gated/**` 只允许出现在历史文档说明和归档证据中，不属于当前可执行 API；旧验收调用与阻断 stub 已退役；正式 capability 接口以本文 `/api/**` 契约为准。
 - AI 自动交易 API 当前不存在，也不允许在本次任务新增。
+<!-- nq-stage-history:start -->
+
+- 以下按 Gate 编号记录各接口最初实施时的范围；它们是历史范围说明，不能作为当前能力缺失或交易授权的依据。
 - GateH-1 只收口 Trading Workspace，不新增行情接入、dataset 绑定或 AI 自动交易接口。
 - GateH-2 只新增 OKX / Binance SPOT 历史 OHLCV K 线接入、接入任务与运行记录 API；不新增 dataset/backtest 绑定接口，不新增 AI 接口。
 - GateH-3 新增 marketdata dataset、quality refresh、backtest config dataset binding 与 backtest run dataset snapshot API；不新增 AI 接口。
@@ -49,6 +52,8 @@
 - GateM-5A 新增只读 adapter readiness status API；只读静态 readiness 决策，no-real / fail-closed，不接 AI、不接真实交易所、不读 credential、不启用 LIVE。
 - GateM-6B 新增只读 runtime operational readiness summary API；仅返回安全 DTO 摘要，不读取 raw env/config，不触发 adapter / permission probe / external exchange call，不启用 LIVE / AI / DH runtime / real provider。
 - GateP Batch 2 新增只读 Marketdata Data Quality Center overview API；只读取现有本地 DB 事实，不新增 migration，不改 ingestion 行为，不接 `DataOrigin.PUBLIC_OUTBOUND` runtime provider，不表示 trading authorization。
+
+<!-- nq-stage-history:end -->
 - NQ-DH-I1-NQ-LIMITED-RUNTIME-CLIENT-IMPLEMENTATION 已实现 NQ 内部 isolated limited dry-run client，但不新增 NQ API / Controller / OpenAPI / JSON Schema / contracts / golden_cases / fixture JSON。DH endpoint `POST /api/ai/decision-dry-runs` 属 DH-only inbound limited dry-run；当前 NQ API 文档不把它写成 NQ 已实现 HTTP API，也不表示 real HTTP、real provider、Integration-1 runtime 或 LIVE 已启动。
 - NQ-DH-I1-INTEGRATION1-MOCK-RUNTIME-CLOSE-REVIEW 已 `PASS / CLOSED / ACCEPTED / REVIEW_ONLY`；该关闭只代表 mock runtime / test-only 里程碑可进入 PR preparation，不新增 NQ API / Controller / OpenAPI / JSON Schema / contracts / golden_cases / fixture JSON，不表示 real HTTP、real provider、Integration-1 runtime 或 LIVE 已启动。
 
@@ -76,6 +81,8 @@ LIVE: DISABLED
 ```
 
 `LONG_BIAS / SHORT_BIAS` 只能作为 readonly bias 记录，不得映射为 `BUY / SELL`，不得进入 order / execution / risk / ledger / paper / live 链路。invalid schemaVersion、invalid signature、source alias / lowercase source、`BUY / SELL / PLACE_ORDER / CANCEL_ORDER` response 仍 fail-closed；real DH call、real HTTP、real provider、schema/contracts/golden_cases formalization 均仍需另起任务且当前不允许。
+<!-- nq-stage-history:start -->
+
 - GateP Batch 4 新增只读 Trading Preflight readiness API；只读取 account / credential summary 与 Data Quality overview，不读取 credential material，不调用 permission probe port / adapter / RiskGate / OrderCommandService，不写库，不触发真实交易所请求，不表示 trading authorization。
 - GateQ-1 新增只读 Strategy Evaluation Gate API；只读取 strategy version、dataset、evaluation、publish 与 SIM Paper 既有事实，不启动 Shadow Live runner，不启动 Paper run，不写数据库，不调用真实交易所，不启用 LIVE / AI / DH runtime，不表示 trading authorization、live enable 或 strategy live-ready。
 - GateQ-2 新增只读 Paper Shadow Comparison API；只读取 strategy version、dataset、evaluation、publish 与 SIM Paper 既有事实，并把 Shadow runner / Shadow run 当前建模为 `NOT_IMPLEMENTED`（未实现）/ `BLOCKED_SHADOW_NOT_IMPLEMENTED`（Shadow 未实现阻断）/ `NOT_AVAILABLE`（不可用）。该接口不启动 Shadow runner，不创建 shadow run，不启动 Paper run，不写数据库，不调用真实交易所，不启用 LIVE / AI / DH runtime，不表示 trading authorization、live enable 或 Shadow Live ready。
@@ -91,6 +98,14 @@ LIVE: DISABLED
 - GateT-2 新增 `GET /api/paper-shadow/consistency/evidence/overview` 最小后端 Consistency Evidence overview read model；只读取 `shadow_consistency_reports`、`shadow_runs`、`shadow_run_snapshots`、`shadow_run_events` 本地事实，不新增 migration，不新增 POST / PUT / PATCH / DELETE，不创建 consistency report / snapshot / event / paper run / shadow run，不启动 runner / scheduler，不调用真实交易所，不读取 credential material，不修改 account / ledger / order，不启用 LIVE / AI / DH runtime，不表示 trading authorization、trade approval、LIVE ready 或 Shadow trading enabled。
 - GateT-3 新增 `GET /api/incidents/replay/review/overview` 最小后端 Incident / Replay Review Workflow read model；只读取 `shadow_run_events`、`shadow_consistency_reports`、`shadow_runs`、`paper_run_alerts`、`paper_run_recovery_events`、`trade_replay_records` 本地诊断事实，不新增 migration，不新增 POST / PUT / PATCH / DELETE，不创建 review / acknowledge / escalation / closeout / incident / alert / replay 记录，不启动 runner / scheduler，不调用真实交易所，不读取 credential material，不修改 account / ledger / order，不启用 LIVE / AI / DH runtime，不表示 trading authorization、trade approval、LIVE ready、真实 incident closure 或自动处置。
 - GateT-4 新增 `GET /api/strategy-validation/evaluation-artifacts/preview/overview` 最小后端 Python Evaluation Artifact preview No-file baseline read model；不读取 artifact 文件、manifest、任意路径、上传文件、网络资源或 DB artifact catalog，不执行 Python subprocess，不新增 migration，不新增 POST / PUT / PATCH / DELETE，不接受 request body 或 file path query，不创建 Paper / Shadow / LIVE run，不启动 backtest / runner / scheduler，不调用真实交易所，不读取 credential material，不修改 account / ledger / order，不表示 ML ready、live execution ready、trading authorization、trade approval 或 LIVE ready。
+
+<!-- nq-stage-history:end -->
+
+<!-- nq-stage-history:start -->
+
+## 历史实施记录（按验收身份编排）
+
+本节按接口最初实施时的验收身份编排，保留当时的范围限制和状态记录；它们不是当前阶段状态。当前可用路由与响应合同以代码为准，运行和交易授权以 [STATUS.md](STATUS.md) 为准。
 
 ## GateR-6 / GateR-8 Shadow Run Read-only API
 
@@ -118,7 +133,7 @@ NQ-GATER-6-SHADOW-RUN-READ-ONLY-API-IMPLEMENTATION 当前状态：`IMPLEMENTED`�
 
 ## GateS-1 Shadow Run Overview Read-only API
 
-NQ-GATES-1-READ-MODEL-IMPLEMENTATION 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖最小后端 read model、GET-only Controller/DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试；不代表 GateS-1 `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不代表 frontend page、GateS 全域 overview、Strategy Validation runtime、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或真实 permission probe 已启动。
+NQ-GATES-1-READ-MODEL-IMPLEMENTATION 实施时记录的状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖最小后端 read model、GET-only Controller/DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试；不代表 GateS-1 `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不代表 frontend page、GateS 全域 overview、Strategy Validation runtime、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或真实 permission probe 已启动。
 
 - `GET /api/shadow-runs/overview`：只读聚合本地 Shadow Run overview。
   - Query：无请求参数；不接受 request body。
@@ -140,7 +155,7 @@ NQ-GATES-1-READ-MODEL-IMPLEMENTATION 当前状态：`IMPLEMENTED`（已实现）
 
 ## GateS-2 Paper Shadow Consistency Drilldown API
 
-NQ-GATES-2-PAPER-SHADOW-CONSISTENCY-DRILLDOWN-IMPLEMENTATION 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可进入提交前复核）。该状态只覆盖最小后端 GET-only drilldown endpoint、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试；不代表 GateS-2 `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不代表前端页面、Dashboard v2、Shadow runner、scheduler、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或真实 permission probe 已启动。
+NQ-GATES-2-PAPER-SHADOW-CONSISTENCY-DRILLDOWN-IMPLEMENTATION 实施时记录的状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可进入提交前复核）。该状态只覆盖最小后端 GET-only drilldown endpoint、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试；不代表 GateS-2 `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不代表前端页面、Dashboard v2、Shadow runner、scheduler、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或真实 permission probe 已启动。
 
 - `GET /api/paper-shadow/consistency/drilldown?shadowRunId={shadowRunId}`：只读聚合单个 Shadow Run 的 Paper vs Shadow consistency drilldown。
   - Query：`shadowRunId` 必填，类型为 UUID；不接受 request body。
@@ -164,7 +179,7 @@ NQ-GATES-2-PAPER-SHADOW-CONSISTENCY-DRILLDOWN-IMPLEMENTATION 当前状态：`IMP
 
 ## GateS-3 Strategy Validation Overview Read-only API
 
-NQ-GATES-3-STRATEGY-EVALUATION-GATE-RUNTIME-BASELINE 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可进入提交前复核）。该状态只覆盖最小后端 GET-only overview endpoint、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试；不代表 GateS-3 `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不代表前端页面、Dashboard v2、scheduler、runner、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或真实 permission probe 已启动。
+NQ-GATES-3-STRATEGY-EVALUATION-GATE-RUNTIME-BASELINE 实施时记录的状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可进入提交前复核）。该状态只覆盖最小后端 GET-only overview endpoint、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试；不代表 GateS-3 `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不代表前端页面、Dashboard v2、scheduler、runner、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或真实 permission probe 已启动。
 
 - `GET /api/strategy-validation/overview`：只读聚合 Strategy Evaluation Gate runtime baseline 概览。
   - Query：无请求参数；不接受 request body。
@@ -182,7 +197,7 @@ NQ-GATES-3-STRATEGY-EVALUATION-GATE-RUNTIME-BASELINE 当前状态：`IMPLEMENTED
 
 ## GateS-6 Incident Replay Overview Read-only API
 
-NQ-GATES-6-INCIDENT-REPLAY-READ-MODEL-IMPLEMENTATION 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可进入提交前复核）。该状态只覆盖最小后端 GET-only overview endpoint、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试；不代表 GateS-6 `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不代表前端页面、Dashboard v2、scheduler、runner、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或真实 permission probe 已启动。
+NQ-GATES-6-INCIDENT-REPLAY-READ-MODEL-IMPLEMENTATION 实施时记录的状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可进入提交前复核）。该状态只覆盖最小后端 GET-only overview endpoint、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试；不代表 GateS-6 `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不代表前端页面、Dashboard v2、scheduler、runner、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或真实 permission probe 已启动。
 
 - `GET /api/incidents/replay/overview`：只读聚合 Incident / Replay 诊断概览。
   - Query：无请求参数；不接受 request body。
@@ -201,7 +216,7 @@ NQ-GATES-6-INCIDENT-REPLAY-READ-MODEL-IMPLEMENTATION 当前状态：`IMPLEMENTED
 
 ## GateT-1 Shadow Validation Workflow Overview Read-only API
 
-NQ-GATET-1-SHADOW-VALIDATION-WORKFLOW-READ-MODEL-IMPLEMENTATION 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可进入提交前复核）。该状态只覆盖最小后端 GET-only overview endpoint、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试；不代表 GateT `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不代表前端 workbench、operator review 写侧、scheduler readiness、Python binding、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或真实 permission probe 已启动。
+NQ-GATET-1-SHADOW-VALIDATION-WORKFLOW-READ-MODEL-IMPLEMENTATION 实施时记录的状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可进入提交前复核）。该状态只覆盖最小后端 GET-only overview endpoint、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试；不代表 GateT `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不代表前端 workbench、operator review 写侧、scheduler readiness、Python binding、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或真实 permission probe 已启动。
 
 - `GET /api/shadow-validation/workflow/overview`：只读聚合 GateS 本地 facts 并派生 Shadow Validation Workflow operator items。
   - Query：无请求参数；不接受 request body。
@@ -220,7 +235,7 @@ NQ-GATET-1-SHADOW-VALIDATION-WORKFLOW-READ-MODEL-IMPLEMENTATION 当前状态：`
 
 ## GateT-2 Consistency Evidence Overview Read-only API
 
-NQ-GATET-2-CONSISTENCY-EVIDENCE-REFINEMENT-IMPLEMENTATION 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可进入提交前复核）。该状态只覆盖最小后端 GET-only overview endpoint、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试；不代表 GateT `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不代表 frontend workbench、evidence review / acknowledge 写侧、scheduler readiness、Python binding、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或真实 permission probe 已启动。
+NQ-GATET-2-CONSISTENCY-EVIDENCE-REFINEMENT-IMPLEMENTATION 实施时记录的状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可进入提交前复核）。该状态只覆盖最小后端 GET-only overview endpoint、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试；不代表 GateT `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不代表 frontend workbench、evidence review / acknowledge 写侧、scheduler readiness、Python binding、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或真实 permission probe 已启动。
 
 - `GET /api/paper-shadow/consistency/evidence/overview`：只读聚合 Paper vs Shadow consistency evidence overview。
   - Query：无请求参数；不接受 request body。
@@ -238,7 +253,7 @@ NQ-GATET-2-CONSISTENCY-EVIDENCE-REFINEMENT-IMPLEMENTATION 当前状态：`IMPLEM
 
 ## GateT-3 Incident Replay Review Workflow Overview Read-only API
 
-NQ-GATET-3-INCIDENT-REPLAY-REVIEW-WORKFLOW-IMPLEMENTATION 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可进入提交前复核）。该状态只覆盖最小后端 GET-only overview endpoint、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试；不代表 GateT `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不代表 frontend workbench、review / acknowledge / escalation / closeout 写侧、scheduler readiness、Python binding、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或真实 permission probe 已启动。
+NQ-GATET-3-INCIDENT-REPLAY-REVIEW-WORKFLOW-IMPLEMENTATION 实施时记录的状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可进入提交前复核）。该状态只覆盖最小后端 GET-only overview endpoint、DTO、core query service / query port、JDBC SELECT-only adapter 和后端测试；不代表 GateT `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不代表 frontend workbench、review / acknowledge / escalation / closeout 写侧、scheduler readiness、Python binding、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或真实 permission probe 已启动。
 
 - `GET /api/incidents/replay/review/overview`：只读聚合 GateS-6、GateT-1、GateT-2 相关本地诊断事实，并派生 Incident / Replay Review Workflow overview。
   - Query：无请求参数；不接受 request body。
@@ -258,7 +273,7 @@ NQ-GATET-3-INCIDENT-REPLAY-REVIEW-WORKFLOW-IMPLEMENTATION 当前状态：`IMPLEM
 
 ## GateT-4 Python Evaluation Artifact Preview No-file Baseline API
 
-NQ-GATET-4-PYTHON-EVALUATION-ARTIFACT-BINDING-PREVIEW-IMPLEMENTATION 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可进入提交前复核）。该状态只覆盖最小后端 GET-only No-file baseline overview endpoint、DTO、core read model / query service 和后端测试；不代表 GateT `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不代表 Manifest-only reader、artifact import、frontend workbench、scheduler readiness、Python runtime、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或真实 permission probe 已启动。
+NQ-GATET-4-PYTHON-EVALUATION-ARTIFACT-BINDING-PREVIEW-IMPLEMENTATION 实施时记录的状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可进入提交前复核）。该状态只覆盖最小后端 GET-only No-file baseline overview endpoint、DTO、core read model / query service 和后端测试；不代表 GateT `FROZEN`（已冻结）或 `ACCEPTED`（已接受），不代表 Manifest-only reader、artifact import、frontend workbench、scheduler readiness、Python runtime、LIVE、AI/DH runtime、RealClient、real provider、private trading adapter 或真实 permission probe 已启动。
 
 - `GET /api/strategy-validation/evaluation-artifacts/preview/overview`：返回 Python Evaluation Artifact binding preview 的安全空基线。
   - Query：无请求参数；不接受 request body；不接受 file path query；不提供 upload / import / bind / execute / validate-file 写侧入口。
@@ -277,7 +292,7 @@ NQ-GATET-4-PYTHON-EVALUATION-ARTIFACT-BINDING-PREVIEW-IMPLEMENTATION 当前状�
 
 ## GateQ-1 Strategy Evaluation Gate Read-only API
 
-NQ-GATEQ-1-STRATEGY-EVALUATION-GATE-READONLY-BASELINE 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖本轮后端只读 baseline，不代表 GateQ 整体已实现、冻结或接受。
+NQ-GATEQ-1-STRATEGY-EVALUATION-GATE-READONLY-BASELINE 实施时记录的状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖本轮后端只读 baseline，不代表 GateQ 整体已实现、冻结或接受。
 
 - `GET /api/strategies/evaluation-gate`：按当前本地 facts 聚合 strategy version、dataset quality、evaluation report、publish trace 与 SIM Paper evidence。该接口只读，不写库，不创建或启动 backtest / evaluation / publish / Paper / Shadow run，不调用 adapter，不访问外部网络，不读取 credential material，不启用 LIVE / AI / DH runtime。
   - Query：`strategyId` 可选，仅用于 scope 校验和回显；`strategyVersionId` 为核心查询字段，缺失时 fail-closed；`datasetId` 可选但缺失或不存在会阻断；`evaluationId`、`publishId`、`paperRunId` 均可选，repository 只在本地表中按 strategyVersion/publish/evaluation 尝试解析既有事实。
@@ -290,20 +305,20 @@ NQ-GATEQ-1-STRATEGY-EVALUATION-GATE-READONLY-BASELINE 当前状态：`IMPLEMENTE
 
 ## GateQ-2 Paper Shadow Comparison Read-only API
 
-NQ-GATEQ-2-PAPER-SHADOW-RUN-READONLY-MODEL-AND-DTO 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖本轮后端只读 baseline，不代表 GateQ 整体已实现、冻结或接受。
+NQ-GATEQ-2-PAPER-SHADOW-RUN-READONLY-MODEL-AND-DTO 实施时记录的状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖本轮后端只读 baseline，不代表 GateQ 整体已实现、冻结或接受。
 
 - `GET /api/strategies/paper-shadow/comparison`：按当前本地 facts 聚合 strategy version、dataset quality、evaluation report、publish trace、SIM Paper evidence 与 Shadow 未实现状态。该接口只读，不写库，不创建或启动 backtest / evaluation / publish / Paper / Shadow run，不调用 adapter，不访问外部网络，不读取 credential material，不启用 LIVE / AI / DH runtime。
-  - Query：`strategyId` 可选，仅用于 scope 校验和回显；`strategyVersionId` 为核心查询字段，缺失时 fail-closed；`datasetId`、`evaluationId`、`publishId`、`paperRunId`、`shadowRunId` 均可选，repository 只在现有本地表中按 strategyVersion / publish / evaluation 解析既有 facts。当前没有 shadow run 表或 shadow runner，生产 repository 固定返回 Shadow fact source `NOT_IMPLEMENTED`。
+  - Query：`strategyId` 可选，仅用于 scope 校验和回显；`strategyVersionId` 为核心查询字段，缺失时 fail-closed；`datasetId`、`evaluationId`、`publishId`、`paperRunId`、`shadowRunId` 均可选，repository 只在现有本地表中按 strategyVersion / publish / evaluation 解析既有 facts。该接口最初实施时尚无 shadow run 表或 shadow runner，生产 repository 固定返回 Shadow fact source `NOT_IMPLEMENTED`。
   - Response：`scope / strategyId / strategyVersionId / datasetId / evaluationId / publishId / paperRunId / shadowRunId / paperRunStatus / shadowRunStatus / comparisonStatus / evaluationGateStatus / paperEvidenceStatus / shadowEvidenceStatus / dataQualityStatus / comparable / requiredEvidence / missingEvidence / blockers / warnings / nextSteps / generatedAt`。
   - `comparisonStatus` 当前语义：`READY_FOR_COMPARISON`（只读对照证据可查看）、`BLOCKED_MISSING_STRATEGY_VERSION`（缺少或找不到策略版本）、`BLOCKED_EVALUATION_GATE`（evaluation gate 阻断）、`BLOCKED_MISSING_PAPER_RUN`（缺少可比较 Paper run）、`BLOCKED_SHADOW_NOT_IMPLEMENTED`（Shadow runner / fact source 未实现）、`BLOCKED_MISSING_SHADOW_RUN`（Shadow fact source 存在后缺少 Shadow run）、`BLOCKED_DATA_QUALITY`（数据质量不足）、`BLOCKED_TRACE_INCOMPLETE`（追溯链不完整）、`UNKNOWN`（未知）、`NOT_AVAILABLE`（不可用）、`NOT_IMPLEMENTED`（未实现）。
   - Fail-closed 规则：`strategyVersionId` 缺失、strategy version 不存在或不为 `ACTIVE`、strategyId 归属不匹配、dataset 缺失、dataset 非 `READY/OK` 或 coverage 有缺口/异常、evaluation 缺失或非 `SUCCEEDED`、publish trace 缺失或非 `SUCCEEDED`、SIM Paper run 缺失或不可比较、Shadow runner 未实现、Shadow run 缺失、trace chain 不完整，均返回阻断状态，不伪造 ready。
   - `READY_FOR_COMPARISON` 仅表示“Paper / Shadow 只读对照证据可查看”。它不代表交易授权、不代表 LIVE enable、不代表 Shadow Live ready、不允许启动 Shadow runner，也不允许真实下单、撤单、转账或提现。
-  - 当前生产行为：即使 strategy version / dataset / evaluation / publish / SIM Paper evidence 均满足，因 Shadow runner / Shadow fact source 未实现，仍返回 `BLOCKED_SHADOW_NOT_IMPLEMENTED`，`shadowRunStatus=NOT_IMPLEMENTED`，`shadowEvidenceStatus=NOT_IMPLEMENTED`，`comparable=false`。
+  - 该接口最初实施时的行为：即使 strategy version / dataset / evaluation / publish / SIM Paper evidence 均满足，因 Shadow runner / Shadow fact source 未实现，仍返回 `BLOCKED_SHADOW_NOT_IMPLEMENTED`，`shadowRunStatus=NOT_IMPLEMENTED`，`shadowEvidenceStatus=NOT_IMPLEMENTED`，`comparable=false`。
   - Response 不得包含 `tradingReady`、`liveReady`、`authorizedForTrading`、`apiKey`、`secret`、`token`、`passphrase`、`private key`、`encrypted_payload`、`decrypted_payload` 或 raw provider payload；也不得返回 `LIVE_READY`、`TRADE_APPROVED` 或 `AUTHORIZED` 放行语义。
 
 ## GateQ-3 Shadow Live No-side-effect Preview API
 
-NQ-GATEQ-3-SHADOW-LIVE-NO-SIDE-EFFECT-RUNNER-SKELETON 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖本轮 Shadow Live no-side-effect runner skeleton 与只读 preview API，不代表 GateQ 整体已冻结或接受，不代表真实 Shadow Live runner 已启动。
+NQ-GATEQ-3-SHADOW-LIVE-NO-SIDE-EFFECT-RUNNER-SKELETON 实施时记录的状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖本轮 Shadow Live no-side-effect runner skeleton 与只读 preview API，不代表 GateQ 整体已冻结或接受，不代表真实 Shadow Live runner 已启动。
 
 - `GET /api/strategies/shadow-live/preview`：按当前本地 facts 聚合 GateQ-1 Strategy Evaluation Gate 与 GateQ-2 Paper Shadow Comparison 的只读结果，返回 validation、readiness、trace preview、blocked reason、side-effect policy 和 next steps。该接口只读，不写库，不新增 shadow facts，不创建或启动 backtest / evaluation / publish / Paper / Shadow run，不执行策略，不生成真实订单，不调用 adapter，不访问外部网络，不读取 credential material，不启用 LIVE / AI / DH runtime。
   - Query：`strategyId` 可选，仅用于 scope 校验和回显；`strategyVersionId` 为核心查询字段，缺失时 fail-closed；`datasetId`、`evaluationId`、`publishId`、`paperRunId`、`shadowRunId` 均可选，service 只把它们传递给 GateQ-1 / GateQ-2 只读聚合，不创建任何新事实。
@@ -316,9 +331,9 @@ NQ-GATEQ-3-SHADOW-LIVE-NO-SIDE-EFFECT-RUNNER-SKELETON 当前状态：`IMPLEMENTE
   - Fail-closed 规则：缺少或无法解析 `strategyVersionId`、evaluation gate 未通过、Paper/Shadow comparison 阻断、dataset 不存在或数据质量不足、publish trace 不存在、Paper run 不存在或不可比较、Shadow facts 不存在、trace chain 不完整、任一 side-effect policy 不能证明 forbidden，均返回阻断或不可用状态，不伪造 ready。
   - Response 不得包含 `tradingReady`、`liveReady`、`authorizedForTrading`、`apiKey`、`secret`、`token`、`passphrase`、`private key`、`encrypted_payload`、`decrypted_payload` 或 raw provider payload；也不得返回 `LIVE_READY`、`TRADE_APPROVED` 或 `AUTHORIZED` 放行语义。
 
-## GateQ-4 Python Evaluation Artifact Binding Preview API
+## Python Evaluation Artifact Binding Preview API
 
-NQ-GATEQ-4-PYTHON-EVALUATION-ARTIFACT-JAVA-BINDING-CONTRACT 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖 Python offline evaluation artifact 到 Java fact source 的只读绑定预览契约 baseline，不代表 GateQ 整体冻结或接受。
+NQ-GATEQ-4-PYTHON-EVALUATION-ARTIFACT-JAVA-BINDING-CONTRACT 实施时记录的状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖 Python offline evaluation artifact 到 Java fact source 的只读绑定预览契约 baseline，不代表 GateQ 整体冻结或接受。
 
 - `POST /api/research/evaluation-artifacts/binding-preview`：只校验 request body 中的 Python offline evaluation artifact JSON 与 Java expected anchors，返回 binding preview。该接口只读 / dry-run / preview，不读取磁盘文件或真实路径，不新增 upload/import/persist endpoint，不写数据库，不把 artifact 转成 backtest_eval_reports、strategy evaluation、publish record 或 Paper evidence，不启动策略发布、Paper run 或 Shadow run，不外联，不读取 credential material，不启用 LIVE / AI / DH runtime。
   - Request body：`artifact / expectedDatasetId / expectedStrategyVersionId / expectedStrategyVersion / expectedEvaluationVersion / expectedChecksum / expectedParametersHash / source / dryRun`。`artifact` 必须是 JSON object；`source` 允许 `PYTHON_OFFLINE`（Python 离线来源）；`dryRun=false` 会 fail-closed，`dryRun` 缺失按 preview endpoint 固有 dry-run 处理。
@@ -433,7 +448,7 @@ GateO O-3E freeze review（2026-07-03）结论：`PASS`（通过）/ `ACCEPTED`�
 
 ## GateP Batch 2 Marketdata Data Quality Center Read-only API
 
-NQ-GATEP-BATCH-2-MARKET-DATA-DATA-QUALITY-CENTER-BACKEND-READONLY-SLICE 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖本轮后端只读切片，不代表 GateP 已实现、已冻结或已接受。
+NQ-GATEP-BATCH-2-MARKET-DATA-DATA-QUALITY-CENTER-BACKEND-READONLY-SLICE 实施时记录的状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖本轮后端只读切片，不代表 GateP 已实现、已冻结或已接受。
 
 - `GET /api/marketdata/quality/overview`：按本地 `marketdata_bars`、`marketdata_datasets`、`marketdata_dataset_coverage`、`marketdata_ingestion_jobs/runs` 聚合 Data Quality overview。该接口只读，不写库，不触发采集，不调用 adapter，不访问外部网络，不读取 credential，不启用 LIVE，不接 AI / DH runtime。
   - Query：`exchangeCode` 或别名 `exchange` 可选，二者同时提供时必须一致；`marketType` 可选，默认 `SPOT`；`symbol`、`interval`、`sourceType`、`dataOrigin`、`datasetId`、`from`、`to` 均可选；`interval` 使用既有 `1m / 5m / 15m / 1h / 4h / 1d`；`from/to` 使用 ISO-8601 instant。
@@ -446,7 +461,7 @@ NQ-GATEP-BATCH-2-MARKET-DATA-DATA-QUALITY-CENTER-BACKEND-READONLY-SLICE 当前�
 
 ## GateP Batch 4 Trading Preflight Readiness Read-only API
 
-NQ-GATEP-BATCH-4-SINGLE-VENUE-ACCOUNT-PERMISSION-AND-RISK-PREFLIGHT-READONLY-BASELINE 当前状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖本轮后端只读基线，不代表 GateP 已实现、已冻结或已接受。
+NQ-GATEP-BATCH-4-SINGLE-VENUE-ACCOUNT-PERMISSION-AND-RISK-PREFLIGHT-READONLY-BASELINE 实施时记录的状态：`IMPLEMENTED`（已实现）/ `SELF-REVIEWED`（已自审）/ `READY TO COMMIT`（可提交前复核）。该状态只覆盖本轮后端只读基线，不代表 GateP 已实现、已冻结或已接受。
 
 - `GET /api/trading/preflight/readiness`：按当前认证用户聚合单交易所 account metadata、active credential metadata、permission probe latest summary、Data Quality diagnostic 和风险前置阻断原因。该接口只读，不写库，不触发下单 / 撤单 / 转账 / 提现，不调用 adapter，不调用真实 permission probe，不访问外部网络，不读取 credential material，不启用 LIVE，不接 AI / DH runtime。
   - Query：`exchangeCode` 可选，默认 `OKX`；`accountId` 可选，传入时必须为正数；`marketType` 可选，默认 `SPOT`；`symbol`、`strategyId` 可选，仅作为诊断 scope 回显或 Data Quality 查询维度，不触发策略读取或执行。
@@ -740,3 +755,5 @@ run 状态为 `CREATED / DISPATCHING / RUNNING / SUCCEEDED / FAILED`。`SUCCEEDE
 恢复按最多 50 条的持久循环游标检查三个非终态，与计划 enabled/window/due 独立。启用 trading-components 且 `spring.task.scheduling.enabled` 非 false 时，启动及每个独立恢复 tick 执行一次；`nq.strategy.recovery.fixed-delay-ms` 默认 5000，范围 1000–60000。自动 resume-dispatch 只覆盖 ordinary OKX，始终经过原 Risk/Kill/V49 边界。legacy 无完整 work 不猜参数，已有唯一 Order 可按真实终结事实收敛；未决保留查询/人工处置责任。
 
 本节描述已实现、待独立正确性审查的 V51 工作树候选，不表示 B5 qualification、部署或真实交易授权已完成。
+
+<!-- nq-stage-history:end -->

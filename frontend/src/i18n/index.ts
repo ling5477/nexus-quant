@@ -7,7 +7,7 @@ import enErrors from './locales/en-US/errors.json';
 import zhPages from './locales/zh-CN/pages.json';
 import enPages from './locales/en-US/pages.json';
 
-export const LOCALE_STORAGE_KEY = 'nq.locale';
+const LOCALE_STORAGE_KEY = 'nq.locale';
 export type AppLocale = 'zh-CN' | 'en-US';
 export function readLocale(): AppLocale {
     try {

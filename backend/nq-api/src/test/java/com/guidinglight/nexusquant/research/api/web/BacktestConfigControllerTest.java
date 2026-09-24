@@ -12,7 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.guidinglight.nexusquant.research.application.api.backtest.BacktestConfigApiService;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.marketdata.application.MarketdataDatasetService;
+import com.guidinglight.nexusquant.marketdata.application.service.MarketdataDatasetService;
 import com.guidinglight.nexusquant.research.domain.BacktestConfig;
 
 import java.math.BigDecimal;

@@ -4,14 +4,14 @@ package com.guidinglight.nexusquant.adapter.api.model;
  * AdapterReadinessStatus 描述某个 adapter / venue / capability 的运行时就绪状态。
  * <p>
  * Why:
- * GateM-0 把 GateL 的 No-Real 文档边界落成运行时约束。调用方（交易入口、marketdata 入口、
+ * 适配器就绪策略把无真实连接安全边界的 No-Real 文档边界落成运行时约束。调用方（交易入口、marketdata 入口、
  * 前端或上层服务）需要一个明确的就绪状态，避免把 OKX / Binance / Noop 误判为 real-ready。
- * 当前阶段除非另起 Gate，否则任何真实交易能力都不会出现 {@link #READY}。除 {@code READY} 外的所有状态，
+ * 真实交易能力在未取得独立运行授权前不得进入 {@link #READY}。除 {@code READY} 外的所有状态，
  * 包括名称里带 paper-ready 的状态，都只表达“当前可解释地不可实盘”，不构成 LIVE 或真实交易授权。
  */
 public enum AdapterReadinessStatus {
 
-    /** 能力可用。GateM-0 内任何真实交易所能力都不允许进入该状态。 */
+    /** 能力可用。适配器就绪策略内任何真实交易所能力都不允许进入该状态。 */
     READY,
 
     /** 通用未就绪：OKX / Binance 当前默认走该状态（endpoint sentinel / credential 未配置 / LIVE 未授权）。 */

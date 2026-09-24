@@ -34,9 +34,9 @@ Synthetic Venue 因而将请求受理与撮合端取消生效分开。`CANCEL_EF
 
 直接生产链根因（只读定位，未修改）：
 
-- [OkxExchangeAdapter.java](../../../backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/service/OkxExchangeAdapter.java) `parseCancelAck`（613–636）：`sCode=0` 映射 accepted。
-- [OrderCommandWriteService.java](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java) `finalizeAcceptedCancelOrder`（446–460）：将受理 ACK 用 OCC 推进为 `CANCELLED`，没有确认取消已生效。
-- [OkxRestReconcileService.java](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java) `reconcileCancelledOrder`（211–232）：仅恢复 fills/ledger，不查询 venue order truth 或重新收敛 Order；`alignOrderStatus`（299）也跳过终态。本次 venue events 显示 CANCEL ACK 后只有 QUERY_FILLS，没有 QUERY_ORDER。
+- [OkxExchangeAdapter.java](../../../backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/trading/OkxExchangeAdapter.java) `parseCancelAck`（613–636）：`sCode=0` 映射 accepted。
+- [OrderCommandWriteService.java](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandWriteService.java) `finalizeAcceptedCancelOrder`（446–460）：将受理 ACK 用 OCC 推进为 `CANCELLED`，没有确认取消已生效。
+- [OkxRestReconcileService.java](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/recovery/OkxRestReconcileService.java) `reconcileCancelledOrder`（211–232）：仅恢复 fills/ledger，不查询 venue order truth 或重新收敛 Order；`alignOrderStatus`（299）也跳过终态。本次 venue events 显示 CANCEL ACK 后只有 QUERY_FILLS，没有 QUERY_ORDER。
 
 整改需另行获得 production 范围授权，并保留 C1 OCC/C2 有界扫描不变量。此 evidence 不指定重写状态机或新增 reconciliation 的方案。
 

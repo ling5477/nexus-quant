@@ -1,5 +1,5 @@
-// nqEchartsTheme.ts — ECharts 主题(权益/PnL/回撤/监控),从唯一来源派生(B0 / Design Tokens v2)
-// 说明:从 'echarts/core' 引入(与本仓库 src/components/nq/charts/echarts-core.ts 一致),
+// nqEchartsTheme.ts — ECharts 主题(权益/PnL/回撤/监控),从唯一来源派生(Design Tokens v2)
+// 说明:从 'echarts/core' 引入(与本仓库 src/nq-design-system/charts/echarts-core.ts 一致),
 // 复用同一个 echarts 核心注册表并保持 tree-shaking,避免引入全量 'echarts' 造成包体膨胀。
 import * as echarts from 'echarts/core';
 import { nqTokens as t, marketColors, DEFAULT_MARKET_CONVENTION, type MarketConvention } from '../tokens/nq-tokens';

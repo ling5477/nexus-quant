@@ -1,17 +1,29 @@
 package com.guidinglight.nexusquant.trading.api.web;
 
-import com.guidinglight.nexusquant.account.application.ExchangeAccountQueryService;
+import com.guidinglight.nexusquant.trading.api.dto.AccountBalanceView;
+import com.guidinglight.nexusquant.trading.api.dto.AccountView;
+import com.guidinglight.nexusquant.trading.api.dto.OperationTriggerResponse;
+import com.guidinglight.nexusquant.trading.api.dto.OrderCancelRequestBody;
+import com.guidinglight.nexusquant.trading.api.dto.OrderListResponse;
+import com.guidinglight.nexusquant.trading.api.dto.OrderSubmitRequest;
+import com.guidinglight.nexusquant.trading.api.dto.OrderView;
+import com.guidinglight.nexusquant.trading.api.dto.PositionView;
+import com.guidinglight.nexusquant.trading.api.dto.ReconcileRunOnceRequest;
+import com.guidinglight.nexusquant.trading.api.dto.RecoveryRunOnceRequest;
+import com.guidinglight.nexusquant.trading.api.dto.TradeView;
+
+import com.guidinglight.nexusquant.account.application.service.ExchangeAccountQueryService;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
-import com.guidinglight.nexusquant.trading.application.CancelOrderRequest;
-import com.guidinglight.nexusquant.trading.application.CancelOrderResult;
-import com.guidinglight.nexusquant.trading.application.OrderCommandService;
-import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
-import com.guidinglight.nexusquant.trading.application.PlaceOrderResult;
-import com.guidinglight.nexusquant.trading.application.RecoveryReport;
+import com.guidinglight.nexusquant.trading.application.command.CancelOrderRequest;
+import com.guidinglight.nexusquant.trading.application.result.CancelOrderResult;
+import com.guidinglight.nexusquant.trading.application.service.OrderCommandService;
+import com.guidinglight.nexusquant.trading.application.command.PlaceOrderRequest;
+import com.guidinglight.nexusquant.trading.application.result.PlaceOrderResult;
+import com.guidinglight.nexusquant.trading.application.model.RecoveryReport;
 import com.guidinglight.nexusquant.trading.application.maintenance.TradingMaintenanceService;
 import com.guidinglight.nexusquant.trading.application.query.TradingQueryFacade;
 import com.guidinglight.nexusquant.trading.domain.TradingVenue;
@@ -360,7 +372,7 @@ public class TradingVerificationController {
     /**
      * 强制把 HTTP 账户上下文限定为已登记的 exchange account。
      *
-     * <p>Why: GateH-1 后 `/trading` 不能再把任意数字当 legacy accountId 使用，
+     * <p>Why: 历史行情接入后 `/trading` 不能再把任意数字当 legacy accountId 使用，
      * 否则前端账户上下文、SIM / LIVE 边界和后端查询会重新分叉。</p>
      */
     private ExchangeAccountSummary requireExchangeAccount(Long exchangeAccountId) {
@@ -371,7 +383,7 @@ public class TradingVerificationController {
     /**
      * 对正式交易 mutating API 强制 LIVE disabled fail-closed。
      *
-     * <p>Why: 当前 GateM 仍禁止 LIVE 和真实交易所执行。即使账户上下文存在 `tradeEnv=LIVE`，
+     * <p>Why: 当前适配器就绪策略仍禁止 LIVE 和真实交易所执行。即使账户上下文存在 `tradeEnv=LIVE`，
      * HTTP 下单 / 撤单入口也不能把它传入 order command service 形成真实交易授权。</p>
      */
     private ExchangeAccountSummary requireLiveDisabledMutatingAccount(Long exchangeAccountId, String action) {

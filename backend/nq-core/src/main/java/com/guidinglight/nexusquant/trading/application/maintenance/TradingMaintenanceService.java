@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.trading.application.maintenance;
 
-import com.guidinglight.nexusquant.trading.application.RecoveryReport;
+import com.guidinglight.nexusquant.trading.application.model.RecoveryReport;
 
 /**
  * TradingMaintenanceService 对 reconcile / recovery 暴露 application-facing service。

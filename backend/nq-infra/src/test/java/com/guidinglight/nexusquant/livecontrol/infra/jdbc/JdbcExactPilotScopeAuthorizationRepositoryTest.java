@@ -8,7 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingCommand;
+import com.guidinglight.nexusquant.livecontrol.application.command.ExactPilotBindingCommand;
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotScopeAuthorization;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;

@@ -1,22 +1,13 @@
+import {StatusTag, type StatusTone} from '@/nq-design-system/status/StatusTag';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
 import {Button, Card, Descriptions, Segmented, Select, Space, Tag, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
 
-import {
-    NqDataTable,
-    NqEmptyState,
-    NqErrorState,
-    NqLoadingState,
-    NqMetricCard,
-    NqPercentText,
-    NqRiskBanner,
-    NqStatusTag,
-    nqNumericColumn,
-} from '@/components/nq';
-import type {NqStatusTone} from '@/components/nq';
-import {usePaperStrategyEvaluationsQuery} from '@/hooks/usePaperTradingQuery';
+import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPercentText, ApplicationRiskAlert, nqNumericColumn} from '@/components/nq';
+
+import {usePaperStrategyEvaluationsQuery} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
 import type {
     PaperBacktestDeviationLevel,
@@ -25,12 +16,12 @@ import type {
     PaperStrategyEvaluationItem,
     PaperStrategyEvaluationsResponse,
     PaperStrategyRatingLabel,
-} from '@/types/paper-trading';
+} from '@/features/paper-trading/types/paper-trading';
 import {formatDateTime} from '@/utils/formatters';
 
 import {toNullableNumber} from './paperFormatters';
 
-// ---- GateK K3B：Paper 策略评估展示映射、筛选与排序（消费 K3 endpoint，纯前端只读展示）----
+// ---- Paper 诊断与评估 K3B：Paper 策略评估展示映射、筛选与排序（消费 K3 endpoint，纯前端只读展示）----
 
 export const RATING_LABEL_TEXT: Record<PaperStrategyRatingLabel, string> = {
     get STRONG_PAPER_PERFORMER() { return t('pages:strongPerformance'); },
@@ -42,7 +33,7 @@ export const RATING_LABEL_TEXT: Record<PaperStrategyRatingLabel, string> = {
     get UNKNOWN() { return t('pages:unknown'); },
 };
 
-export const RATING_LABEL_TONE: Record<PaperStrategyRatingLabel, NqStatusTone> = {
+export const RATING_LABEL_TONE: Record<PaperStrategyRatingLabel, StatusTone> = {
     STRONG_PAPER_PERFORMER: 'success',
     WATCHLIST: 'info',
     HIGH_RISK: 'danger',
@@ -52,13 +43,13 @@ export const RATING_LABEL_TONE: Record<PaperStrategyRatingLabel, NqStatusTone> =
     UNKNOWN: 'neutral',
 };
 
-export const EVAL_CONFIDENCE_TONE: Record<PaperStrategyEvaluationConfidence, NqStatusTone> = {
+export const EVAL_CONFIDENCE_TONE: Record<PaperStrategyEvaluationConfidence, StatusTone> = {
     HIGH: 'success',
     MEDIUM: 'info',
     LOW: 'neutral',
 };
 
-const DEVIATION_LEVEL_TONE: Record<PaperBacktestDeviationLevel, NqStatusTone> = {
+const DEVIATION_LEVEL_TONE: Record<PaperBacktestDeviationLevel, StatusTone> = {
     LOW: 'success',
     MEDIUM: 'warning',
     HIGH: 'danger',
@@ -112,7 +103,7 @@ const EVAL_SORT_OPTIONS: ReadonlyArray<{label: string; value: EvalSortDim}> = [
 ];
 
 function ratingTag(rating: PaperStrategyRatingLabel) {
-    return <NqStatusTag status={RATING_LABEL_TEXT[rating] ?? rating} tone={RATING_LABEL_TONE[rating] ?? 'neutral'}/>;
+    return <StatusTag title="" variant="pill" status={RATING_LABEL_TEXT[rating] ?? rating} tone={RATING_LABEL_TONE[rating] ?? 'neutral'}/>;
 }
 
 /** 取评估行某排序维度的数值；不可比 / 缺失返回 null（恒排末尾，不伪造）。 */
@@ -149,7 +140,7 @@ function scoreCell(score: number | null) {
 }
 
 /**
- * PaperStrategyEvaluationDashboard —— Paper 策略评估（GateK Batch K3B）。
+ * PaperStrategyEvaluationDashboard —— Paper 策略评估。
  * 消费 K3 只读 endpoint /paper-trading/strategy-evaluations，把 strategy / publish 评分、ratingLabel、warnings、
  * Paper-vs-Backtest 偏差、compositeScore 展示出来，让用户从「策略排行」升级为「策略评估」。
  * 独立 query：加载 / 错误 / 空 / 兼容回退均限定本区域，不连累其他模块。评分为 Paper 内部启发式分、非真实投资评级、不构成投资建议。
@@ -173,7 +164,7 @@ export function PaperStrategyEvaluationDashboard({query}: {query: ReturnType<typ
             <Space direction="vertical" size={12} style={{display: 'flex'}}>
                 <Typography.Text type="secondary" style={{fontSize: 12}}>
                     {t('pages:internalEvaluationOfPaperPerformanceExecutionQualitySampleSufficiencyAndBacktestDeviation')}</Typography.Text>
-                <NqRiskBanner
+                <ApplicationRiskAlert
                     level="info"
                     message={t('pages:evaluatePaperPerformanceDeviationsFromBacktestsSampleSufficiencyAndRiskAdjustedScoresByStrategyversi')}
                     description={t('pages:scoresAreInternalPaperHeuristicsNotInvestmentRatingsLivePerformanceOrInvestmentAdviceBacktestDeviati')}
@@ -248,7 +239,7 @@ function PaperStrategyEvaluationBody({evaluation}: {evaluation: PaperStrategyEva
             render: (_: unknown, r: PaperStrategyEvaluationItem) => <span className="nq-num"><strong>{r.compositeScore}</strong></span>}),
         ...subScoreColumns,
         {title: t('pages:rating'), key: 'ratingLabel', width: 110, render: (_: unknown, r) => ratingTag(r.ratingLabel)},
-        {title: t('pages:confidence'), key: 'evaluationConfidence', width: 100, render: (_: unknown, r) => <NqStatusTag status={r.evaluationConfidence} tone={EVAL_CONFIDENCE_TONE[r.evaluationConfidence]}/>},
+        {title: t('pages:confidence'), key: 'evaluationConfidence', width: 100, render: (_: unknown, r) => <StatusTag title="" variant="pill" status={r.evaluationConfidence} tone={EVAL_CONFIDENCE_TONE[r.evaluationConfidence]}/>},
         {title: t('pages:mainWeaknesses'), dataIndex: 'primaryWeakness', key: 'primaryWeakness', width: 130, render: (v: string) => <Typography.Text type="secondary" style={{fontSize: 12}}>{v}</Typography.Text>},
         {
             title: t('pages:warnings'), key: 'warnings', width: 220,
@@ -281,7 +272,7 @@ function PaperStrategyEvaluationBody({evaluation}: {evaluation: PaperStrategyEva
         nqNumericColumn({title: t('pages:backtestDeviationScore'), key: 'backtestDeviationScore', width: 130,
             render: (_: unknown, r: PaperPublishEvaluationItem) => scoreCell(r.backtestDeviationScore)}),
         {title: t('pages:rating'), key: 'ratingLabel', width: 110, render: (_: unknown, r) => ratingTag(r.ratingLabel)},
-        {title: t('pages:confidence'), key: 'evaluationConfidence', width: 100, render: (_: unknown, r) => <NqStatusTag status={r.evaluationConfidence} tone={EVAL_CONFIDENCE_TONE[r.evaluationConfidence]}/>},
+        {title: t('pages:confidence'), key: 'evaluationConfidence', width: 100, render: (_: unknown, r) => <StatusTag title="" variant="pill" status={r.evaluationConfidence} tone={EVAL_CONFIDENCE_TONE[r.evaluationConfidence]}/>},
         {
             title: t('pages:warnings'), key: 'warnings', width: 200,
             render: (_: unknown, r) => r.warnings.length > 0
@@ -315,7 +306,7 @@ function PaperStrategyEvaluationBody({evaluation}: {evaluation: PaperStrategyEva
         {title: t('pages:deviationLevel'), key: 'deviationLevel', width: 120,
             render: (_: unknown, r: PaperStrategyEvaluationItem) => {
                 const level: PaperBacktestDeviationLevel = r.backtestDeviation?.deviationLevel ?? 'UNAVAILABLE';
-                return <NqStatusTag status={level} tone={DEVIATION_LEVEL_TONE[level]}/>;
+                return <StatusTag title="" variant="pill" status={level} tone={DEVIATION_LEVEL_TONE[level]}/>;
             }},
         {title: t('pages:explanation2'), key: 'deviationExplanation', width: 320,
             render: (_: unknown, r: PaperStrategyEvaluationItem) => (

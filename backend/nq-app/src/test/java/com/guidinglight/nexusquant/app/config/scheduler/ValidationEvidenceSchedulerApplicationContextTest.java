@@ -6,8 +6,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.guidinglight.nexusquant.scheduler.infra.lock.PostgresAdvisorySchedulerExecutionLock;
 import com.guidinglight.nexusquant.scheduler.lock.SchedulerExecutionLock;
-import com.guidinglight.nexusquant.scheduler.validationevidence.ValidationEvidenceScheduler;
-import com.guidinglight.nexusquant.scheduler.validationevidence.ValidationEvidenceSchedulerConfiguration;
+import com.guidinglight.nexusquant.scheduler.validationevidence.scheduling.ValidationEvidenceScheduler;
+import com.guidinglight.nexusquant.scheduler.validationevidence.config.ValidationEvidenceSchedulerConfiguration;
 import com.guidinglight.nexusquant.strategy.application.validationoperations.runtimeevidence.ValidationOperationsRuntimeEvidenceOverviewQueryService;
 
 import org.junit.jupiter.api.Test;

@@ -7,8 +7,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.research.domain.backtest.BacktestExecutionContext;
 import com.guidinglight.nexusquant.research.domain.backtest.BacktestExecutionRequest;
 import com.guidinglight.nexusquant.research.domain.backtest.BacktestExecutionResult;
-import com.guidinglight.nexusquant.marketdata.application.FixtureMarketdataDataset;
-import com.guidinglight.nexusquant.marketdata.application.FixtureMarketdataRegistry;
+import com.guidinglight.nexusquant.marketdata.application.model.FixtureMarketdataDataset;
+import com.guidinglight.nexusquant.marketdata.application.service.FixtureMarketdataRegistry;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalDatasetSpec;
@@ -48,10 +48,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * BacktestExecutionService 提供 GateF-3 的模拟执行事实链主链。
+ * BacktestExecutionService 提供研究与回测契约的模拟执行事实链主链。
  * <p>
  * Why:
- * GateF-3 不再满足于“遍历历史 bars 并写摘要”，而是必须形成独立的 sim_order / sim_trade / sim_position / sim_pnl 事实链，
+ * 模拟成交不再满足于“遍历历史 bars 并写摘要”，而是必须形成独立的 sim_order / sim_trade / sim_position / sim_pnl 事实链，
  * 同时继续与实盘执行域完全隔离。
  */
 @Service
@@ -158,7 +158,7 @@ public class BacktestExecutionService {
     /**
      * 显式启动回测运行。
      * Why:
-     * GateF-2 已经冻结“创建”和“执行”分离，本方法继续沿用该边界，但把执行内容升级成模拟事实链闭环。
+     * 研究与回测契约已经冻结“创建”和“执行”分离，本方法继续沿用该边界，但把执行内容升级成模拟事实链闭环。
      * 本次收口把“历史数据读取 / 逐 bar 计算”与“本地事实落库”拆成两个阶段，
      * 以避免中途异常留下半套 `sim_*` 数据。
      */

@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
 
-@Schema(name = "PaperTradingRunResponse", description = "GateI-3 Paper Trading run 接口响应体")
+@Schema(name = "PaperTradingRunResponse", description = "Paper Trading run 接口响应体")
 public record PaperTradingRunResponse(
         String paperRunId,
         String publishId,

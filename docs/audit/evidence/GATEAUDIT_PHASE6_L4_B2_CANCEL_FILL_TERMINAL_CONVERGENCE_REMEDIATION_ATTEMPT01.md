@@ -19,7 +19,7 @@
 
 原链路把 `sCode=0` 撤单受理 ACK 持久化成 CANCELLED，随后 CANCELLED 分支仅回补 Trade/Ledger，最后一笔成交虽已补齐却永远保留 CANCELLED。本轮按用户给定语义，以更强的 durable 成交事实纠正该终态；不重写普通状态机、不新增第二 reconciliation、不修改 ACK 的 C1 OCC 实现。
 
-新的 [OrderLifecycleService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderLifecycleService.java) `reconcileCancelledExecution(orderId, traceId)` 是专用对账入口；参数没有“已完全成交”布尔值、外部累计数量或任意目标状态。它经既有 OrderCommandService 委托到 Spring 事务代理的 [OrderCommandWriteService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java)。普通 markFilled/applyExternalStatus 仍经过原状态机并拒绝 CANCELLED → FILLED。
+新的 [OrderLifecycleService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderLifecycleService.java) `reconcileCancelledExecution(orderId, traceId)` 是专用对账入口；参数没有“已完全成交”布尔值、外部累计数量或任意目标状态。它经既有 OrderCommandService 委托到 Spring 事务代理的 [OrderCommandWriteService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandWriteService.java)。普通 markFilled/applyExternalStatus 仍经过原状态机并拒绝 CANCELLED → FILLED。
 
 [JdbcOrderRepository](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/jdbc/JdbcOrderRepository.java) 对该订单完整 durable Trades 集合验证 account、symbol、venue、trade_env、external identity、非空唯一 venue fill identity 和正数 qty，再精确累计 BigDecimal / PostgreSQL NUMERIC：
 
@@ -37,7 +37,7 @@ CAS 冲突后最多重新读取三次当前 Order 与完整 durable proof：已�
 
 为了关闭“两个响应预检都通过后并发写入超量”的窗口，[JdbcTradeRepository](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/scheduler/infra/jdbc/JdbcTradeRepository.java) 的 canonical insert 使用短 Spring 事务，取得同一订单行锁后重新验证 `durable sum + incoming qty <= original`，否则拒绝。锁内没有 venue I/O；沿用已有 Trade 唯一约束及 Ledger 幂等路径。未增加表、列、migration、游标或预算算法。
 
-[OkxRestReconcileService](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java) 在写入前验证 durable 集合与本轮 reports 的按身份去重并集；相同报告只处理一次，同身份却有数量/价格/fee/fee asset/timestamp 冲突则拒绝。已有 durable Trade 与新报告的 fee magnitude/currency 也必须一致。查询路径本来已有 order snapshot 时保留其状态对齐；原 CANCELLED 路径没有 order query，本轮不增加第二 truth source 或额外 venue 查询。
+[OkxRestReconcileService](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/recovery/OkxRestReconcileService.java) 在写入前验证 durable 集合与本轮 reports 的按身份去重并集；相同报告只处理一次，同身份却有数量/价格/fee/fee asset/timestamp 冲突则拒绝。已有 durable Trade 与新报告的 fee magnitude/currency 也必须一致。查询路径本来已有 order snapshot 时保留其状态对齐；原 CANCELLED 路径没有 order query，本轮不增加第二 truth source 或额外 venue 查询。
 
 ## C1/C2 与既有恢复契约
 

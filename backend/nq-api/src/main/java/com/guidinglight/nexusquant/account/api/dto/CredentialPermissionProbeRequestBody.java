@@ -16,7 +16,7 @@ public class CredentialPermissionProbeRequestBody {
     @Schema(description = "操作原因；不得包含 credential material")
     private String reason;
 
-    @Schema(description = "必须为 true；本轮只允许 dry run / no-real-exchange probe")
+    @Schema(description = "必须为 true；仅允许 dry run / no-real-exchange probe")
     private Boolean dryRun;
 
     @Schema(description = "严格 allowlist：PAPER/READ_ONLY_DIAGNOSTIC 或 GATEY_PILOT_READINESS；LIVE 拒绝")

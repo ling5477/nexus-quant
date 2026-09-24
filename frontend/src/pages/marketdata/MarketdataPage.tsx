@@ -10,7 +10,7 @@ import {useSearchParams} from 'react-router-dom';
 import {formatApiError, showApiError} from '@/api/errors';
 import {marketdataApi} from '@/api/marketdata';
 import {marketdataQueryKeys} from '@/api/query-keys';
-import {PageHero} from '@/components/page/PageHero';
+import {NqPageHeader} from '@/components/nq/NqPageHeader';
 import {NqPageScaffold} from '@/nq-design-system/shell/NqPageScaffold';
 import {ExchangeBadge} from '@/nq-design-system/brand/ExchangeBadge';
 import {EXCHANGE_OPTIONS, INTERVAL_OPTIONS, MARKET_TYPE_OPTIONS, SYMBOL_OPTIONS} from '@/constants/filter-options';
@@ -1057,7 +1057,7 @@ function QualityMetricTile({label, metric}: {label: string; metric?: MarketdataQ
 }
 
 /**
- * MarketdataQualityCenterPanel 消费 GateP Batch 2 只读 overview API。
+ * MarketdataQualityCenterPanel 消费数据质量诊断只读 overview API。
  *
  * Why:
  * 该区块把 Data Quality Center 与交易授权完全拆开：所有 UNKNOWN / NOT_AVAILABLE / NO_DATA / INCOMPLETE
@@ -1329,7 +1329,7 @@ export function MarketdataPage() {
     const [pendingJobId, setPendingJobId] = useState<string | null>(null);
     const [pendingDatasetId, setPendingDatasetId] = useState<string | null>(null);
 
-    // Chart foundation(B0.4) 使用 additive v2 CSS vars；页级注入不改全局 AppProviders。
+    // Chart foundation 使用 additive v2 CSS vars；页级注入不改全局 AppProviders。
     useEffect(() => {
         applyNqCssVars();
     }, []);
@@ -1485,7 +1485,7 @@ export function MarketdataPage() {
         <NqPageScaffold>
             {contextHolder}
             <Card className="page-card" bordered={false}>
-                <PageHero
+                <NqPageHeader
                     title={t('pages:marketData')}
                     description={t('pages:queryHistoricalSpotOhlcvManageIngestionJobsAndDatasetsWithinTheExchangesSymbolsAndIntervalsAcceptedF')}
                     badge={t('pages:marketData')}

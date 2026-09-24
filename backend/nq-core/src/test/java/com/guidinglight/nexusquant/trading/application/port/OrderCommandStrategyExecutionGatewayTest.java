@@ -5,8 +5,8 @@ import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionIntent;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionResult;
-import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
-import com.guidinglight.nexusquant.trading.application.PlaceOrderResult;
+import com.guidinglight.nexusquant.trading.application.command.PlaceOrderRequest;
+import com.guidinglight.nexusquant.trading.application.result.PlaceOrderResult;
 
 import java.math.BigDecimal;
 

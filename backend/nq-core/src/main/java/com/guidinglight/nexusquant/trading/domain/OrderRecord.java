@@ -122,7 +122,7 @@ public record OrderRecord(
      * 基于当前订单构造带外部订单号的新快照。
      * <p>
      * Why:
-     * GateC-0 要求 placeOrder 成功回执后立刻把 external_order_id 落库，
+     * 交易所适配契约要求 placeOrder 成功回执后立刻把 external_order_id 落库，
      * 这里用不可变快照避免调用方在内存里“半更新”导致状态与外部单号不一致。
      *
      * @param nextExternalOrderId 新的外部订单号

@@ -1,5 +1,8 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
+import com.guidinglight.nexusquant.scheduler.recovery.OkxRecoveryService;
+import com.guidinglight.nexusquant.scheduler.recovery.OkxRestReconcileService;
+
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -12,11 +15,11 @@ import static org.mockito.Mockito.when;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
+import com.guidinglight.nexusquant.adapter.okx.trading.OkxExchangeAdapter;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
-import com.guidinglight.nexusquant.trading.application.OrderCommandService;
+import com.guidinglight.nexusquant.trading.application.service.OrderCommandService;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.eventstore.infra.EventStoreAppender;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterError;

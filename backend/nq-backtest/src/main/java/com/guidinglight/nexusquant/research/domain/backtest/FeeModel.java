@@ -5,7 +5,7 @@ import java.math.RoundingMode;
 
 
 /**
- * FeeModel 提供 GateF-3 的最小手续费计算。
+ * FeeModel 提供研究与回测契约的最小手续费计算。
  * <p>
  * Why:
  * 手续费必须成为独立口径对象，后续费率模型扩展时才不需要回头拆模拟执行主链。

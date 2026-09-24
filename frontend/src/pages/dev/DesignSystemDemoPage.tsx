@@ -5,8 +5,8 @@ import {useTranslation} from 'react-i18next';
 import {BrandLockup} from '@/nq-design-system/brand/BrandLockup';
 import {ExchangeBadge} from '@/nq-design-system/brand/ExchangeBadge';
 
-import {echarts} from '@/components/nq/charts/echarts-core';
-import {BacktestCurveChart} from '@/components/backtest/BacktestCurveChart';
+import {echarts} from '@/nq-design-system/charts/echarts-core';
+import {BacktestCurveChart} from '@/features/backtests/BacktestCurveChart';
 import {useLiveQuery} from '@/hooks/useLiveQuery';
 import {
     AppShell,
@@ -40,13 +40,13 @@ import '@/nq-design-system/table/nq-table.css';
 import './DesignSystemDemoPage.css';
 
 /**
- * DesignSystemDemoPage — B0(Design Tokens v2)自检页(非业务页面)。
+ * DesignSystemDemoPage — Design Tokens v2 自检页(非业务页面)。
  *
  * 职责:在真实工程内验证已审定的 NQ Console Design System v2 基线:
  * tokens / AntD 主题 / ECharts 主题 / 四件状态组件 / AppShell / 行情惯例开关。
  *
  * 接线范围(scoped):v2 的 ConfigProvider(nqAntdTheme)、applyNqCssVars、
- * registerNqEchartsTheme 仅在本路由内激活,不改全局 AppProviders、不动 GateJ 冻结的 v1 页面。
+ * registerNqEchartsTheme 仅在本路由内激活,不改全局 AppProviders、不动 Paper 调度与组合冻结的 v1 页面。
  * applyNqCssVars 向 :root 注入 --nq-*(与 v1 的 --nq-color-* 命名空间不冲突)。
  */
 
@@ -162,7 +162,7 @@ function MiniChart({option, convention}: {option: Record<string, unknown>; conve
 }
 
 /**
- * LiveQueryDemo — useLiveQuery 自检(B0.3)。
+ * LiveQueryDemo — useLiveQuery 自检。
  * 用本地模拟源演示 polling / 手动刷新 / enabled,以及 fresh·stale·error·disabled·loading 归一化,
  * 并把归一化状态喂给 DataFreshness。不接真实后端 / WebSocket / SSE。
  */
@@ -328,7 +328,7 @@ export function DesignSystemDemoPage() {
                                 <span style={{fontSize: 16, fontWeight: 600, color: 'var(--nq-text-primary)'}}>
                                     {t('designSystem.demoTitle')}
                                 </span>
-                                <StatusTag label="B0 READY_NOW" tone="primary" variant="pill"/>
+                                <StatusTag label="READY_NOW" tone="primary" variant="pill"/>
                             </div>
                             <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
                                 <span style={{fontSize: 12, color: 'var(--nq-text-tertiary)'}}>行情惯例</span>
@@ -536,7 +536,7 @@ export function DesignSystemDemoPage() {
 
                         <section className="nq-ds-demo__section" data-testid="chart-foundation-section">
                             <h3 className="nq-ds-demo__section-title">
-                                K 线 / 成交量基础组件(B0.4) · 静态 mock 数据,不接真实 API / WebSocket / 交易入口
+                                K 线 / 成交量基础组件 · 静态 mock 数据,不接真实 API / WebSocket / 交易入口
                             </h3>
                             <div
                                 style={{

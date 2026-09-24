@@ -5,7 +5,7 @@ import java.util.Objects;
 /**
  * EndpointPolicyDecision 是无副作用 endpoint guard 的结果。
  *
- * <p>GateW-1 中 {@link #tradingAuthorization()} 永远为 {@code false}。公开读取被 policy 放行，
+ * <p>只读诊断中 {@link #tradingAuthorization()} 永远为 {@code false}。公开读取被 policy 放行，
  * 只表示可以交给既有 public transport 继续处理，绝不表示账户、订单或 LIVE 交易被授权。</p>
  *
  * @param allowed                是否允许进入后续 transport
@@ -26,7 +26,7 @@ public record EndpointPolicyDecision(
         Objects.requireNonNull(capability, "capability must not be null");
         Objects.requireNonNull(endpointAccessClass, "endpointAccessClass must not be null");
         Objects.requireNonNull(reason, "reason must not be null");
-        // GateW capability/guard 合同从不授予 trading authorization。
+        // 只读诊断 capability/guard 合同从不授予 trading authorization。
         tradingAuthorization = false;
     }
 

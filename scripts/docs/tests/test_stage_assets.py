@@ -547,6 +547,16 @@ class CompatibilityRelationshipTest(unittest.TestCase):
                          reason="Persisted wire identity", owner="Domain contract owner", removalTrigger="Versioned migration")
         return contract, exception
 
+    def test_contract_without_stage_text_keeps_caller_guard(self):
+        contract, _ = self.contract_fixture()
+        self.write(contract["path"], 'package sample; public class Contract { public static final String VALUE = "durable-v1"; }')
+        self.policy([], contracts=[contract])
+        self.assertEqual([], guard.check(self.root)[0])
+        caller = "backend/app/src/main/java/sample/NewConsumer.java"
+        self.write(caller, 'package sample; class NewConsumer { String read() { return Contract.VALUE; } }')
+        self.assertTrue(any(e.startswith("UNAUTHORIZED_COMPATIBILITY_CALLER:") and caller in e
+                            for e in guard.check(self.root)[0]))
+
     def test_exact_member_edges_authorize_existing_but_not_new_methods_or_files(self):
         contract, exception = self.contract_fixture()
         path = "backend/app/src/main/java/sample/Consumer.java"
@@ -656,7 +666,7 @@ class CompatibilityRelationshipTest(unittest.TestCase):
         caller = "backend/app/src/main/java/neutral/Consumer.java"
         self.write(caller, '''package neutral;
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionGuard;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.model.AdmissionGuard;
 public class Consumer {
  public static void main(String[] args) {
   if (ExactPilotBinding.DeploymentIdentity.RUNTIME_PROFILE.isEmpty()) throw new AssertionError();

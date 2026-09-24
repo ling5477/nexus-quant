@@ -8,11 +8,11 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
- * 将 GateY-3 durable intent identity 映射为 OKX provider client order identity。
+ * 将受控实盘执行 durable intent identity 映射为 OKX provider client order identity。
  *
  * <p>provider value 使用 UUID 的 32 位 lowercase hex 表示，因此映射是可逆且无截断的；同一
  * intent 在 replay/restart 后得到相同值，不同 intent 不会因摘要截断产生额外碰撞域。构造时同时
- * 校验 GateY-3 execution clientOrderId，任何篡改或把已有 provider value 绑定到另一 intent 都会
+ * 校验受控实盘执行 execution clientOrderId，任何篡改或把已有 provider value 绑定到另一 intent 都会
  * fail closed。</p>
  */
 public record ProviderClientOrderId(

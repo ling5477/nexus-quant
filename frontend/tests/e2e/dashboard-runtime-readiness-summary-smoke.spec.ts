@@ -73,20 +73,20 @@ test.describe('dashboard runtime readiness summary', () => {
         await expect(page.getByRole('heading', {name: '控制台总览'})).toBeVisible();
 
         const card = page.getByTestId('dashboard-runtime-readiness-card');
-        await expect(card).toContainText('Runtime Readiness');
-        await expect(card).toContainText('Runtime guarded: LIVE disabled');
+        await expect(card).toContainText('运行就绪状态');
+        await expect(card).toContainText('运行边界受控：LIVE 已禁用');
         await expect(card).toContainText('LIVE');
-        await expect(card).toContainText('Disabled');
-        await expect(card).toContainText('Real provider');
-        await expect(card).toContainText('Not implemented');
-        await expect(card).toContainText('Paper');
-        await expect(card).toContainText('Simulated only');
-        await expect(card).toContainText('Permission probe');
-        await expect(card).toContainText('Skipped / NoReal');
-        await expect(card).toContainText('NoReal/Fake/Stub/FutureReal not live-ready.');
-        await expect(card).toContainText('Permission probe SKIPPED / disabled is not verified.');
-        await expect(card.getByRole('link', {name: 'View Runtime Readiness'})).toHaveAttribute('href', '/runtime/readiness');
-        await expect(card.getByRole('link', {name: 'View MarketData Readiness'})).toHaveAttribute('href', '/marketdata');
+        await expect(card).toContainText('未启用');
+        await expect(card).toContainText('真实 Provider');
+        await expect(card).toContainText('未实现');
+        await expect(card).toContainText('模拟交易');
+        await expect(card).toContainText('仅模拟');
+        await expect(card).toContainText('权限探测');
+        await expect(card).toContainText('跳过 / NoReal');
+        await expect(card).toContainText('NoReal/Fake/Stub/FutureReal 不代表实盘就绪。');
+        await expect(card).toContainText('SKIPPED 或已禁用的权限探测不代表验证通过。');
+        await expect(card.getByRole('link', {name: '查看运行就绪状态'})).toHaveAttribute('href', '/runtime/readiness');
+        await expect(card.getByRole('link', {name: '查看行情就绪状态'})).toHaveAttribute('href', '/marketdata');
         await expect(card.getByText(/LIVE ready/i)).toHaveCount(0);
         await expect(card.getByText(/Permission probe verified/i)).toHaveCount(0);
 

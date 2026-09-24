@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.trading.application.port;
 
+import com.guidinglight.nexusquant.risk.application.port.RiskGate;
+
 import com.guidinglight.nexusquant.strategy.domain.StrategyDispatchWork;
 import com.guidinglight.nexusquant.strategy.domain.StrategyRun;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionGateway;
@@ -7,9 +9,9 @@ import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionIntent;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionResult;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyRunExecutionRepository;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyRunRepository;
-import com.guidinglight.nexusquant.trading.application.StrategyOrderExecutionService;
-import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
-import com.guidinglight.nexusquant.trading.application.PlaceOrderResult;
+import com.guidinglight.nexusquant.trading.application.service.StrategyOrderExecutionService;
+import com.guidinglight.nexusquant.trading.application.command.PlaceOrderRequest;
+import com.guidinglight.nexusquant.trading.application.result.PlaceOrderResult;
 import com.guidinglight.nexusquant.trading.domain.EffectiveOrderParameters;
 
 import java.util.Objects;

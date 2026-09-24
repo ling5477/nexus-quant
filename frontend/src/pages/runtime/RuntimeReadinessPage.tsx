@@ -17,10 +17,10 @@ import {useQuery} from '@tanstack/react-query';
 import {Link} from 'react-router-dom';
 
 import {formatApiError} from '@/api/errors';
-import {operationalReadinessApi} from '@/api/operational-readiness';
+import {operationalReadinessApi} from '@/features/runtime/api/operational-readiness';
 import {operationalReadinessQueryKeys} from '@/api/query-keys';
-import {NqMetricCard, NqRiskBanner} from '@/components/nq';
-import {PageHero} from '@/components/page/PageHero';
+import {NqMetricCard, ApplicationRiskAlert} from '@/components/nq';
+import {NqPageHeader} from '@/components/nq/NqPageHeader';
 import {useAdapterReadinessQuery} from '@/hooks/useAdapterReadinessQuery';
 import {DataFreshness, StatusTag, type StatusTone} from '@/nq-design-system';
 import type {AdapterReadinessItem} from '@/types/adapter-readiness';
@@ -28,7 +28,7 @@ import type {AppApiError} from '@/types/api';
 import type {
     OperationalReadinessResponse,
     OperationalReadinessStatusResponse,
-} from '@/types/operational-readiness';
+} from '@/features/runtime/types/operational-readiness';
 import {formatDateTime} from '@/utils/formatters';
 
 const {Paragraph, Text} = Typography;
@@ -139,7 +139,7 @@ function statusTone(status: string): StatusTone {
         case 'SKIPPED':
             return 'neutral';
         case 'READY':
-            // 当前 GateM baseline 不允许 READY 被解释为真实可交易，按高风险信号展示。
+            // 当前适配器就绪策略 baseline 不允许 READY 被解释为真实可交易，按高风险信号展示。
             return 'danger';
         default:
             return status.includes('READY') ? 'danger' : 'neutral';
@@ -410,7 +410,7 @@ const blockerColumns: ColumnsType<RuntimeBlocker> = [
 ];
 
 /**
- * Runtime release matrix 是 GateP Batch 3 的前端静态放行解释层。
+ * Runtime release matrix 是运行前诊断 Batch 3 的前端静态放行解释层。
  *
  * Why:
  * 当前没有任何 API 能把 Data Quality、public marketdata、permission probe、private trading、LIVE、AI、
@@ -563,7 +563,7 @@ const fakeDryRunOperationsColumns: ColumnsType<FakeDryRunOperationsRow> = [
 ];
 
 /**
- * RuntimeReadinessPage 是 GateM Runtime UI 5A 的只读运行边界总览。
+ * RuntimeReadinessPage 是适配器就绪策略 Runtime UI 5A的只读运行边界总览。
  *
  * Why:
  * 当前没有 central runtime flags / Paper-to-Real aggregate API，页面只能复用 adapter readiness 只读快照，
@@ -609,14 +609,14 @@ export function RuntimeReadinessPage() {
     return (
         <Space direction="vertical" size={16} style={{display: 'flex'}} data-testid="runtime-readiness-overview">
             <Card className="page-card" variant="borderless">
-                <PageHero
+                <NqPageHeader
                     title={t('pages:runtimeReadinessOverview')}
                     description={t('pages:readOnlyGatemBoundariesPaperOnlyMarketDataReadinessNoRealAdaptersLiveDisabledPermissionProbesDisable')}
                     badge="READONLY"
                 />
             </Card>
 
-            <NqRiskBanner
+            <ApplicationRiskAlert
                 level={unexpectedSignals.length > 0 || readinessQuery.isError ? 'danger' : 'warning'}
                 message={unexpectedSignals.length > 0 ? t('pages:readyAllowedLiveauthorizedDetectedManualReviewRequired') : t('pages:runtimeGuardSummaryPaperOnlyFailClosed')}
                 description={(

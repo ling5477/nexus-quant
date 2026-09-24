@@ -1,5 +1,9 @@
 package com.guidinglight.nexusquant.app.config.livecontrol;
 
+import com.guidinglight.nexusquant.app.config.livecontrol.authority.StoredFactExactPilotBindingAuthority;
+import com.guidinglight.nexusquant.app.config.livecontrol.model.ExactPilotRuntimeIdentity;
+import com.guidinglight.nexusquant.app.config.livecontrol.model.ReadOnlyProviderObservationRuntimeIdentity;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -12,8 +16,8 @@ import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialSumma
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialRepository;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
-import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingCommand;
+import com.guidinglight.nexusquant.livecontrol.application.model.AuthenticatedLiveControlActor;
+import com.guidinglight.nexusquant.livecontrol.application.command.ExactPilotBindingCommand;
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.OperatorApproval;
 import com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority;
@@ -29,12 +33,12 @@ import com.guidinglight.nexusquant.livecontrol.domain.port.OperatorPilotAuthorit
 import com.guidinglight.nexusquant.livecontrol.domain.port.PilotScopeRepository;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.InstrumentCatalogItem;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.port.InstrumentCatalogReadPort;
-import com.guidinglight.nexusquant.risk.service.KillSwitchScope;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchScope;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
-import com.guidinglight.nexusquant.risk.service.KillSwitchSnapshot;
-import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionState;
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionStateRepository;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchSnapshot;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.model.StrategyReleaseAdmissionState;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.port.StrategyReleaseAdmissionStateRepository;
 
 import java.math.BigDecimal;
 import java.time.Instant;

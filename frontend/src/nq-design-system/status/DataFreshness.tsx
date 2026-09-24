@@ -1,4 +1,4 @@
-// DataFreshness.tsx — 数据源新鲜度与"看不见什么"(B0 / Design Tokens v2)
+// DataFreshness.tsx — 数据源新鲜度与"看不见什么"(Design Tokens v2)
 // 灵感来自 World Monitor 的 intelligence gap:数据源断了不能静默隐藏,要显式标状态。
 
 import {useTranslation} from 'react-i18next';
@@ -17,7 +17,7 @@ const STATE: Record<FreshnessState, { color: string; label: string }> = {
   disabled:   { color: 'var(--nq-text-disabled)', label: 'Disabled' },
 };
 
-export interface DataFreshnessProps {
+interface DataFreshnessProps {
   /** 数据源名,例如 "OKX Market Data" */
   source: string;
   state: FreshnessState;

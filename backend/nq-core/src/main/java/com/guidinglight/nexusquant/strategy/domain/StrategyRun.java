@@ -3,7 +3,7 @@ package com.guidinglight.nexusquant.strategy.domain;
 import java.time.Instant;
 
 /**
- * StrategyRun 表示 GateE-1.2 的最小运行事实。
+ * StrategyRun 表示执行与补偿契约的最小运行事实。
  */
 public record StrategyRun(
         String strategyRunId,

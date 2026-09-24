@@ -389,12 +389,12 @@ test.describe('Shadow Run detail / replay read-only view', () => {
         await expect(evidenceMetadata).toContainText('LOCAL_DB_SHADOW_FACTS');
         await expect(evidenceMetadata).toContainText('可用性：PARTIAL');
         await expect(evidenceMetadata).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
-        await expect(view).toContainText('Diagnostic only / No trading authorization');
-        await expect(view).toContainText('No order submission: true');
-        await expect(view).toContainText('No credential access: true');
-        await expect(view).toContainText('No private endpoint: true');
-        await expect(view).toContainText('No ledger mutation: true');
-        await expect(view).toContainText('No account mutation: true');
+        await expect(view).toContainText('仅诊断 / 无交易授权');
+        await expect(view).toContainText('禁止订单提交: true');
+        await expect(view).toContainText('禁止凭证访问: true');
+        await expect(view).toContainText('禁止私有接口: true');
+        await expect(view).toContainText('禁止账本写入: true');
+        await expect(view).toContainText('禁止账户写入: true');
         await expect(view).toContainText('sv-gater-8');
         await expect(view).toContainText(DATASET_ID);
         await expect(view).toContainText('trace-shadow-gater-8');
@@ -432,14 +432,15 @@ test.describe('Shadow Run detail / replay read-only view', () => {
         stubOptions.listStatus = 500;
         await page.getByTestId('shadow-run-status-filter').getByText('CANCELLED', {exact: true}).click();
         await expect(view).toContainText('Shadow Run list 加载失败');
-        await expect(view).toContainText('shadow run list query failed');
+        await expect(view).toContainText('INTERNAL_ERROR · traceId: trace-shadow-error');
+        await expect(view).not.toContainText('shadow run list query failed');
         expectNoForbiddenRequests(requests);
 
         requests.length = 0;
         stubOptions.listStatus = undefined;
         stubOptions.delayListMs = 2_000;
         await page.getByTestId('shadow-run-status-filter').getByText('RUNNING', {exact: true}).click();
-        await expect(page.getByText('Shadow Run list loading')).toBeVisible();
+        await expect(page.getByText('正在加载影子运行列表')).toBeVisible();
         await expect(view).toContainText('暂无 Shadow Run 列表数据');
         expectNoForbiddenRequests(requests);
 
@@ -461,29 +462,29 @@ test.describe('Shadow Run detail / replay read-only view', () => {
 
         const view = page.getByTestId('shadow-run-detail-page');
         await expect(view).toBeVisible();
-        await expect(view.getByRole('heading', {name: 'Shadow Run detail / replay'})).toBeVisible();
+        await expect(view.getByRole('heading', {name: '影子运行详情 / 回放'})).toBeVisible();
 
-        await expect(view).toContainText('LIVE disabled');
-        await expect(view).toContainText('Diagnostic only');
-        await expect(view).toContainText('No order submission: true');
-        await expect(view).toContainText('No credential access: true');
-        await expect(view).toContainText('No private endpoint: true');
-        await expect(view).toContainText('No ledger mutation: true');
-        await expect(view).toContainText('No account mutation: true');
-        await expect(view).toContainText('no trading authorization');
+        await expect(view).toContainText('LIVE 已禁用');
+        await expect(view).toContainText('仅诊断');
+        await expect(view).toContainText('禁止订单提交: true');
+        await expect(view).toContainText('禁止凭证访问: true');
+        await expect(view).toContainText('禁止私有接口: true');
+        await expect(view).toContainText('禁止账本写入: true');
+        await expect(view).toContainText('禁止账户写入: true');
+        await expect(view).toContainText('无交易授权');
 
         await expect(view).toContainText('sv-gater-7');
         await expect(view).toContainText(DATASET_ID);
         await expect(view).toContainText('trace-shadow-gater-7');
 
-        const timeline = page.getByRole('region', {name: 'Shadow Run events timeline'});
+        const timeline = page.getByRole('region', {name: '影子运行事件时间线'});
         await expect(timeline).toBeVisible();
         await expect(timeline).toContainText('CREATED');
         await expect(timeline).toContainText('COMPLETED');
         const timelineText = await timeline.innerText();
         expect(timelineText.indexOf('CREATED')).toBeLessThan(timelineText.indexOf('COMPLETED'));
 
-        const snapshots = page.getByRole('region', {name: 'Shadow Run snapshots panel'});
+        const snapshots = page.getByRole('region', {name: '影子运行快照面板'});
         await expect(snapshots).toBeVisible();
         await expect(snapshots).toContainText('INPUT_MARKETDATA');
         await expect(snapshots).toContainText('ORDER_INTENT_PREVIEW');
@@ -495,7 +496,7 @@ test.describe('Shadow Run detail / replay read-only view', () => {
         await expect(snapshots).toContainText('previewOnly');
         await expect(snapshots).toContainText('visible-safe-value');
 
-        const report = page.getByRole('region', {name: 'Shadow consistency report panel'});
+        const report = page.getByRole('region', {name: '影子一致性报告面板'});
         await expect(report).toBeVisible();
         await expect(report).toContainText('CONSISTENT');
         await expect(report).toContainText('metricDelta');
@@ -535,10 +536,11 @@ test.describe('Shadow Run detail / replay read-only view', () => {
 
         await page.goto(shadowRunUrl());
 
-        await expect(page.getByText('Shadow Run detail loading')).toBeVisible();
+        await expect(page.getByText('正在加载影子运行详情')).toBeVisible();
         await expect(view).toContainText('Shadow Run 基本信息');
         await expect(view).toContainText('Consistency report 加载失败');
-        await expect(view).toContainText('latest consistency report query failed');
+        await expect(view).toContainText('INTERNAL_ERROR · traceId: trace-shadow-error');
+        await expect(view).not.toContainText('latest consistency report query failed');
         await expect(page.getByRole('button', {name: /start|stop|execute|rerun|approve|trade/i})).toHaveCount(0);
         expectNoForbiddenRequests(requests);
     });

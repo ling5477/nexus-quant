@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.research.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.research.api.dto.BacktestPublishRequestBody;
 import com.guidinglight.nexusquant.research.api.dto.BacktestPublishResponse;
@@ -28,17 +28,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * PublishController 提供 GateI-1 正式发布记录入口。
+ * PublishController 提供策略版本正式发布记录入口。
  *
  * Why:
  * 历史发布接口挂在 `/api/backtest-runs/{runId}/publish` 下，适合回测运行详情页。
- * GateI-1 需要独立 `/api/publishes` 入口展示发布记录与策略版本绑定关系，但仍复用既有发布服务和风控边界。
+ * 策略版本需要独立 `/api/publishes` 入口展示发布记录与策略版本绑定关系，但仍复用既有发布服务和风控边界。
  */
 @Validated
 @RestController
 @ConditionalOnBean(BacktestRunApiService.class)
 @RequestMapping("/api/publishes")
-@Tag(name = "Publish API", description = "GateI-1 发布版本管理接口。")
+@Tag(name = "Publish API", description = "发布版本管理接口。")
 public class PublishController {
 
     private final BacktestRunApiService backtestRunApiService;
@@ -54,7 +54,7 @@ public class PublishController {
      * @return 发布记录列表
      */
     @GetMapping
-    @Operation(summary = "查询发布记录列表", description = "返回 GateI-1 发布记录列表，可按策略版本过滤。")
+    @Operation(summary = "查询发布记录列表", description = "返回发布记录列表，可按策略版本过滤。")
     @ApiResponse(responseCode = "200", description = "查询成功")
     public List<BacktestPublishResponse> list(@RequestParam(required = false) String strategyVersionId) {
         TraceIdContext.getOrCreate();

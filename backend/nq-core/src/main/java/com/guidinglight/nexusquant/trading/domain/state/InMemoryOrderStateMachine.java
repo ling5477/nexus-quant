@@ -12,7 +12,7 @@ import java.util.Set;
  * InMemoryOrderStateMachine 提供 Gate A 最小状态机实现。
  * <p>
  * Why:
- * 即使本阶段不实现真实撮合，也需要一份可编译、可测试的状态迁移骨架，
+ * 即使没有真实撮合，也需要一份可编译、可测试的状态迁移骨架，
  * 用于冻结合法路径并防止模块随意绕过状态机。
  */
 public class InMemoryOrderStateMachine implements OrderStateMachine {

@@ -1,5 +1,12 @@
 package com.guidinglight.nexusquant.strategy.api.web;
 
+import com.guidinglight.nexusquant.strategy.api.dto.ShadowConsistencyReportResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.ShadowRunDetailResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.ShadowRunEventResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.ShadowRunListResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.ShadowRunOverviewResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.ShadowRunSnapshotResponse;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -9,8 +16,8 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
-import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewDivergenceSeverity;
-import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunOverviewReadModel;
+import com.guidinglight.nexusquant.strategy.application.shadowrun.model.ShadowRunOverviewDivergenceSeverity;
+import com.guidinglight.nexusquant.strategy.application.shadowrun.model.ShadowRunOverviewReadModel;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyComparisonStatus;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowConsistencyReport;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRun;
@@ -20,7 +27,7 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunEventType;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunSnapshot;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunSnapshotType;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
-import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunListResult;
+import com.guidinglight.nexusquant.strategy.application.shadowrun.model.ShadowRunListResult;
 
 import java.time.Instant;
 import java.util.List;

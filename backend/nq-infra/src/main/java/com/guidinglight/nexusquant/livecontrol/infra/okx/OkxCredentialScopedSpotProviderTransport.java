@@ -2,8 +2,8 @@ package com.guidinglight.nexusquant.livecontrol.infra.okx;
 
 import com.guidinglight.nexusquant.account.infra.okx.readonly.JdbcOkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateEnvironment;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport;
+import com.guidinglight.nexusquant.adapter.okx.auth.OkxPrivateEnvironment;
+import com.guidinglight.nexusquant.adapter.okx.provider.OkxSpotProviderTransport;
 
 import java.util.Objects;
 import java.util.List;

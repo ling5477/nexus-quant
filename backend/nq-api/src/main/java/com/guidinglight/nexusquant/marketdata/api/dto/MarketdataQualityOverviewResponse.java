@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * MarketdataQualityOverviewResponse 是 GateP Batch 2 Data Quality Center 的安全 HTTP 响应。
+ * MarketdataQualityOverviewResponse 是数据质量诊断 Data Quality Center 的安全 HTTP 响应。
  * <p>
  * Why:
  * 该 DTO 只暴露本地 DB 聚合后的数据质量诊断，不输出 raw payload、credential material、

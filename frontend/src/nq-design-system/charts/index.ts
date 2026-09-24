@@ -1,3 +1,3 @@
 export { NqKlineChart } from './NqKlineChart';
 export { NqVolumeChart } from './NqVolumeChart';
-export type { NqChartBaseProps, NqChartState, NqKlineBar } from './types';
+export type { NqChartBaseProps, NqKlineBar } from './types';

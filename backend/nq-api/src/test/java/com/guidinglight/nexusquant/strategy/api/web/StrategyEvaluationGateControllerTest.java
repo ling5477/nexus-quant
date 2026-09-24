@@ -12,13 +12,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGate;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateDecision;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateEvidence;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateReason;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateScope;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateService;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateStatus;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGate;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateDecision;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateEvidence;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateReason;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateScope;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.service.StrategyEvaluationGateService;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateStatus;
 
 import java.time.Instant;
 import java.util.List;

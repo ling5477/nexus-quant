@@ -1,15 +1,13 @@
 # NexusQuant
 
-NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/current/STATUS.md](docs/current/STATUS.md) 的 `nq-current-authority` 机器可读区块；本 README 只提供入口和短摘要。
+NexusQuant 是通用量化交易平台。当前状态唯一 authority 是 [docs/current/STATUS.md](docs/current/STATUS.md) 的 `nq-current-authority` 机器可读区块；本 README 只提供入口和短摘要。
 
 ## 当前摘要
 
 <!-- nq-current-summary:start -->
-- 最近冻结 Gate 为 GateY：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [docs/gates/gate-y/](docs/gates/gate-y/)，tag=`nq-gatey-freeze`。
-- GateAUDIT：`IN PROGRESS / NOT FROZEN`；Phase 0～3 已完成，Phase4=`COMPLETE / ACCEPTED / CI_GREEN`，closeout immutable pair=`7ca1fc92... / 33405549149`。
-- GateY freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`；exact-head CI run=`33037514013 / completed / success / 11 jobs`。
-- 当前accepted batch、work batch与唯一下一允许动作以[STATUS.md](docs/current/STATUS.md)和[ROADMAP.md](docs/current/ROADMAP.md)为准；入口不维护第二份动态阶段值。
-- Pilot final：PLACE=1、retry=0、CANCEL=0、activeLease=0、LIVE=false、kill=`ENGAGED`、Attempt-02 未创建。
+- 最近冻结的 GateAUDIT 已接受并打 tag；固定身份及 CI 以 [STATUS.md](docs/current/STATUS.md) 为准，历史证据见 [strict archive](docs/gates/gate-audit/README.md)。
+- accepted batch、work batch 与唯一下一允许动作以 [STATUS.md](docs/current/STATUS.md) 为准；[ROADMAP.md](docs/current/ROADMAP.md) 解释后续工作。
+- 已完成的 GateY pilot 事实见 [STATUS.md](docs/current/STATUS.md)；该历史验收不授予再次执行权。
 - Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
 
@@ -24,7 +22,7 @@ NexusQuant 是通用量化交易平台。当前阶段唯一 authority 是 [docs/
 
 ## Historical Evidence
 
-- GateY strict archive：[docs/gates/gate-y/](docs/gates/gate-y/)，包含 plan、work orders、全部 task evidence、失败/remediation 与最小实盘 pilot 证据；它是 historical evidence，不覆盖 current authority。
+- GateAUDIT strict archive：[docs/gates/gate-audit/](docs/gates/gate-audit/)；GateY pilot 历史证据见 [GateY strict archive](docs/gates/gate-y/)。这些历史证据不覆盖 current authority。
 - 其他 Gate archive：[docs/gates/](docs/gates/)；通用历史归档：[docs/archive/](docs/archive/)。
 
 ## Boundary

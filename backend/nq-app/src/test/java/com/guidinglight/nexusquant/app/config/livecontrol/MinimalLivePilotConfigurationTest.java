@@ -11,13 +11,13 @@ import static org.mockito.Mockito.when;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
-import com.guidinglight.nexusquant.livecontrol.application.MinimalLivePilotCommand;
-import com.guidinglight.nexusquant.livecontrol.application.MinimalLivePilotPermit;
+import com.guidinglight.nexusquant.livecontrol.application.command.MinimalLivePilotCommand;
+import com.guidinglight.nexusquant.livecontrol.application.model.MinimalLivePilotPermit;
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotProviderResults;
 import com.guidinglight.nexusquant.livecontrol.execution.infra.MinimalPilotTradingVenueGateway;
 import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
-import com.guidinglight.nexusquant.scheduler.service.TradeLedgerGateway;
+import com.guidinglight.nexusquant.scheduler.port.TradeLedgerGateway;
 import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 

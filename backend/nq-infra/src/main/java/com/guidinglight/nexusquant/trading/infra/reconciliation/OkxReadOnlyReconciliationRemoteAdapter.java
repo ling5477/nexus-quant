@@ -1,15 +1,15 @@
 package com.guidinglight.nexusquant.trading.infra.reconciliation;
 
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateEnvironment;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateFillSnapshot;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateOrderSnapshot;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadRequest;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadResult;
-import com.guidinglight.nexusquant.trading.application.reconciliation.ReconciliationRequest;
-import com.guidinglight.nexusquant.trading.application.reconciliation.RemoteOrderSnapshot;
-import com.guidinglight.nexusquant.trading.application.reconciliation.RemoteOrderSnapshotReadPort;
-import com.guidinglight.nexusquant.trading.application.reconciliation.RemoteSnapshotBatch;
+import com.guidinglight.nexusquant.adapter.okx.auth.OkxPrivateEnvironment;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateFillSnapshot;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateOrderSnapshot;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadRequest;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadResult;
+import com.guidinglight.nexusquant.trading.application.reconciliation.command.ReconciliationRequest;
+import com.guidinglight.nexusquant.trading.application.reconciliation.model.RemoteOrderSnapshot;
+import com.guidinglight.nexusquant.trading.application.reconciliation.port.RemoteOrderSnapshotReadPort;
+import com.guidinglight.nexusquant.trading.application.reconciliation.model.RemoteSnapshotBatch;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -21,9 +21,9 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * GateW-3 typed OKX remote read adapter。
+ * 带类型约束的 OKX 远端只读适配器。
  *
- * <p>复用 GateW-2 scoped credential executor 和 guarded GET transport；先核验 exact READ_ONLY，
+ * <p>复用只读诊断 scoped credential executor 和 guarded GET transport；先核验 exact READ_ONLY，
  * 再按每个 allowlisted symbol 各读取一页 pending/history/recent fills。该类不注册为 bean，默认/CI
  * 不会读取 credential 或发起网络；调用方也不能提供 path、method、body 或 retry 策略。</p>
  */

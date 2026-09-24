@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * PaperShadowConsistencyDrilldownFacts 是 GateS-2 SELECT-only repository 投影。
+ * PaperShadowConsistencyDrilldownFacts 是验证只读视图 SELECT-only repository 投影。
  *
  * <p>Why：application service 需要围绕单个 shadowRunId 组装 drilldown，但 core 不能依赖 JDBC。
  * 该 facts 只允许来自 `shadow_runs`、`shadow_run_events`、`shadow_run_snapshots`、

@@ -21,7 +21,7 @@ function chartTimeSortValue(time: Time): number {
   return Date.UTC(time.year, time.month - 1, time.day) / 1000;
 }
 
-export function toChartTime(value: NqKlineBar['time']): Time | null {
+function toChartTime(value: NqKlineBar['time']): Time | null {
   if (isFiniteNumber(value)) {
     return Math.floor(value) as UTCTimestamp;
   }

@@ -1,6 +1,6 @@
 # Current Modules
 
-本文记录当前模块 owner 和职责边界，不决定 current Gate 或下一阶段。阶段状态必须读取 [STATUS.md](STATUS.md) 的机器可读 authority 区块。
+本文记录当前模块 owner 和职责边界，不决定当前工作或下一动作。阶段状态必须读取 [STATUS.md](STATUS.md) 的机器可读 authority 区块。
 
 ## 当前禁止误写的事实
 
@@ -38,4 +38,4 @@
 - `nq-infra` 实现 core ports，但不反向定义业务语义。
 - adapter 模块只做交易所适配。
 - scheduler contract 与 scheduler implementation 分离。
-- 前端 API 调用统一走 `frontend/src/api/*` 封装。
+- 前端请求统一使用 `frontend/src/api/client.ts`；跨页面 API 合同留在 `src/api`，单领域 API、类型和查询 hook 由 `src/features/<owner>/` 持有。

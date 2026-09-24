@@ -1,8 +1,8 @@
 package com.guidinglight.nexusquant.trading.infra.reconciliation;
 
-import com.guidinglight.nexusquant.trading.application.reconciliation.LocalOrderSnapshot;
-import com.guidinglight.nexusquant.trading.application.reconciliation.LocalOrderSnapshotReadPort;
-import com.guidinglight.nexusquant.trading.application.reconciliation.ReconciliationRequest;
+import com.guidinglight.nexusquant.trading.application.reconciliation.model.LocalOrderSnapshot;
+import com.guidinglight.nexusquant.trading.application.reconciliation.port.LocalOrderSnapshotReadPort;
+import com.guidinglight.nexusquant.trading.application.reconciliation.command.ReconciliationRequest;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -13,7 +13,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 /**
- * GateW-3 本地订单快照窄适配器。
+ * 只读诊断本地订单快照窄适配器。
  *
  * <p>SQL 仅含 SELECT，按 account/exchange/environment/server-allowlisted symbols/time window 限定，
  * 并以 bounded LIMIT 收口；不注入混合读写 OrderRepository，也不更新 order/trade/ledger/audit/event。</p>

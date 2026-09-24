@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * IncidentReplayOverviewFacts 是 GateS-6 repository 层返回的 SELECT-only 聚合投影。
+ * IncidentReplayOverviewFacts 是验证只读视图 repository 层返回的 SELECT-only 聚合投影。
  *
  * <p>该 record 只承载本地 Shadow / Paper / Replay 事实计数和轻量 evidence 摘要，不包含
  * credential、真实账户、真实订单、ledger 或 private provider 配置。

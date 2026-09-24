@@ -5,7 +5,7 @@ import java.math.RoundingMode;
 
 
 /**
- * SlippageModel 提供 GateF-3 的最小滑点金额计算。
+ * SlippageModel 提供研究与回测契约的最小滑点金额计算。
  */
 public class SlippageModel {
 

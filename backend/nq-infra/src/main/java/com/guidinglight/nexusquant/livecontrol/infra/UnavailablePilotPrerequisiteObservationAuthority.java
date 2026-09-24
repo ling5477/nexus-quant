@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.livecontrol.infra;
 
-import com.guidinglight.nexusquant.livecontrol.application.PilotPrerequisiteObservationAuthority;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotPrerequisiteObservationAuthority;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationSet;
@@ -10,7 +10,7 @@ import java.time.Instant;
 
 import org.springframework.stereotype.Component;
 
-/** GateY-6D production 默认边界：真实 trusted observation source 未实现时永久 fail closed。 */
+/** 受控实盘执行 production 默认边界：真实 trusted observation source 未实现时永久 fail closed。 */
 @Component
 public final class UnavailablePilotPrerequisiteObservationAuthority
         implements PilotPrerequisiteObservationAuthority {

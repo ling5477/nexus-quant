@@ -1,9 +1,9 @@
 package com.guidinglight.nexusquant.livecontrol.infra;
 
-import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingAuthority;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingCommand;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotScopeAuthorizationCommand;
+import com.guidinglight.nexusquant.livecontrol.application.model.AuthenticatedLiveControlActor;
+import com.guidinglight.nexusquant.livecontrol.application.port.ExactPilotBindingAuthority;
+import com.guidinglight.nexusquant.livecontrol.application.command.ExactPilotBindingCommand;
+import com.guidinglight.nexusquant.livecontrol.application.command.ExactPilotScopeAuthorizationCommand;
 import com.guidinglight.nexusquant.livecontrol.application.port.LiveControlAuthorizationPort;
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotScopeAuthorization;

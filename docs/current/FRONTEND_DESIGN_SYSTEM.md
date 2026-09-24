@@ -5,7 +5,7 @@
 ## 统一入口
 
 - `frontend/src/theme/tokens.ts` 与 `frontend/src/styles/tokens.css` 是 TS / CSS 镜像，修改取值须同步。
-- `frontend/src/theme/antd-theme.ts` 由全局 AppProviders 注入；`nq-design-system/theme/nqAntdTheme.ts` 只做兼容导出，不维护第二套主题。
+- `frontend/src/nq-design-system/theme/nqAntdTheme.ts` 是全局 AppProviders 注入的唯一 AntD 主题实现；旧 `theme/antd-theme.ts` 入口已移除。
 - `nq-design-system/tokens/nq-tokens.ts` 从主 tokens 派生；旧 `--nq-*` 变量由全局导入的兼容 CSS 映射到 `--nq-color-*`。
 - 独立页不再另设 ConfigProvider 或注入另一套全局配色。诊断页切换行情 convention 后，离开时恢复默认值。
 
@@ -37,8 +37,8 @@ Header 保留真实账户上下文、运行环境标签、角色、语言和退�
 - AntD Card 的 `page-card` / `page-section`：统一面板。
 - `NqFilterBar`、`NqDataTable`、`NqMetricCard`：查询、列表和指标。
 - `NqEmptyState` / `NqErrorState` / `NqLoadingState`：保持空、失败、加载的区别。
-- `NqStatusTag`、`NqEnvironmentBadge`、`NqRiskBanner`、`DataFreshness`：复用实体语义，不能用主题决定权限或健康状态。
-- `PageHero` 仍是兼容适配入口；不要复制状态映射。
+- `nq-design-system/status` 的 `StatusTag`、`EnvironmentBadge`、`RiskBanner`、`DataFreshness`：复用各自展示语义，不能用主题决定权限或健康状态。
+- `components/nq` 的 `TradingEnvironmentTag` 与 `ApplicationRiskAlert` 保留不同的应用业务契约；页头直接使用 `NqPageHeader`，不再经 `PageHero` 兼容入口。
 
 ```tsx
 import {Card} from 'antd';
@@ -73,7 +73,7 @@ Dashboard 不以缺失、失败、刷新中的查询或未知心跳推断健康�
 
 ## 图表与数字
 
-ECharts 使用 `theme/chart-theme.ts` / `nq-design-system/theme/nqEchartsTheme.ts`，按需注册。
+ECharts 由 `nq-design-system/theme/nqEchartsTheme.ts` 注册，基础配置由同目录的 `nqChartTheme.ts` 提供。
 现有 Lightweight Charts 由 `NqKlineChart` / `NqVolumeChart` 和 `nqLwcOptions` 复用主 tokens；组件接收数据，不发起第二套查询。
 数字列沿用 `.nq-num`、`nqNumericColumn`；ID / traceId 用 `.nq-mono`。
 既有格式化组件分别保持精度、比例和空值契约，不能仅为视觉统一改变金额或百分比含义。
@@ -94,4 +94,4 @@ SHA256：`94F4ABEB142A38AFB1AEB8A707119F5B8ACD626379808871F0C0E7F483E83D46`。
 
 修改后按影响验证 build、目标 E2E、中英文及代表视口。浏览器 fixture 只证明前端渲染和交互，不代替真实后端联调。
 保持 query keys、API payload、错误 code / traceId、权限、mutation 重试策略不变。
-本说明不宣称全站深度重构、品牌资产验收、独立审查、exact-head CI 或 Phase7 完成。
+本说明只描述前端设计系统，不作为全站深度重构、品牌资产验收、独立审查或 exact-head CI 的证据。

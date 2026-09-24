@@ -53,7 +53,7 @@ public interface ResearchConfigRepository {
     /**
      * 查询包含归档配置的内部列表。
      * Why:
-     * 历史追溯、审计或内部测试可能需要读取 ARCHIVED，但本轮不新增外部 API 参数，
+     * 历史追溯、审计或内部测试可能需要读取 ARCHIVED，但该仓储不暴露外部 API 参数，
      * 因此该方法只作为仓储内部扩展点。
      *
      * @return 包含 ARCHIVED 的研究配置列表
@@ -78,7 +78,7 @@ public interface ResearchConfigRepository {
     /**
      * 按 sourceStrategyId 过滤研究配置，并允许内部调用显式包含归档记录。
      * Why:
-     * 外部 API 本轮不增加 includeArchived 参数；Repository 仍保留内部扩展点，
+     * 外部 API 不提供 includeArchived 参数；Repository 仍保留内部扩展点，
      * 防止历史追溯查询被默认列表过滤规则误伤。
      *
      * @param sourceStrategyId 上游策略定义 ID，可空

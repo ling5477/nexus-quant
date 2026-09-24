@@ -7,7 +7,6 @@
 
 from __future__ import annotations
 
-import json
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -15,6 +14,7 @@ from hashlib import sha256
 from pathlib import Path
 
 from nq_research.data.models import Bar
+from nq_research.serialization.canonical import stable_digest
 
 DATASET_SCHEMA_VERSION = "dataset-manifest.v1"
 QUALITY_OK = "OK"
@@ -124,7 +124,7 @@ def build_dataset_manifest_from_csv(
         "end_time": materialized[-1].close_time,
         "symbol": symbol,
     }
-    dataset_id = "ds_" + _stable_digest(identity)[:16]
+    dataset_id = "ds_" + stable_digest(identity)[:16]
     return DatasetManifest(
         dataset_id=dataset_id,
         source=source,
@@ -199,11 +199,6 @@ def _single_value(bars: list[Bar], attribute_name: str) -> str:
     if not value:
         raise ValueError(f"{attribute_name} must not be blank")
     return value
-
-
-def _stable_digest(payload: dict[str, object]) -> str:
-    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    return sha256(encoded).hexdigest()
 
 
 def _interval_to_timedelta(interval: str) -> timedelta | None:

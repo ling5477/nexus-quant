@@ -7,7 +7,7 @@ import java.util.UUID;
 import java.util.Locale;
 
 /**
- * ShadowValidationWorkflowOverviewFacts 是 GateT-1 repository 返回给 core 的 SELECT-only 投影。
+ * ShadowValidationWorkflowOverviewFacts 是验证工作流 repository 返回给 core 的 SELECT-only 投影。
  *
  * <p>该模型只承载 allowed local fact tables 的脱敏字段：strategy/evaluation/publish/Paper/Shadow/consistency
  * 和 incident/replay 证据锚点。它不得包含 credential material、真实账户余额、真实订单状态、ledger mutation

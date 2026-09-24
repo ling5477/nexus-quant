@@ -1,16 +1,16 @@
 package com.guidinglight.nexusquant.trading.api.dto;
 
-import com.guidinglight.nexusquant.trading.application.preflight.TradingPreflightCredentialTypeSummary;
-import com.guidinglight.nexusquant.trading.application.preflight.TradingPreflightReadiness;
-import com.guidinglight.nexusquant.trading.application.preflight.TradingPreflightReason;
-import com.guidinglight.nexusquant.trading.application.preflight.TradingPreflightScope;
+import com.guidinglight.nexusquant.trading.application.preflight.model.TradingPreflightCredentialTypeSummary;
+import com.guidinglight.nexusquant.trading.application.preflight.model.TradingPreflightReadiness;
+import com.guidinglight.nexusquant.trading.application.preflight.model.TradingPreflightReason;
+import com.guidinglight.nexusquant.trading.application.preflight.model.TradingPreflightScope;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
 import java.util.List;
 
 /**
- * TradingPreflightReadinessResponse 是 GateP Batch 4 只读 preflight API 的安全 HTTP DTO。
+ * TradingPreflightReadinessResponse 是交易前置诊断只读 preflight API 的安全 HTTP DTO。
  *
  * <p>Why: 响应只表达当前阻断/诊断状态，不返回 credential material、raw provider payload、
  * private endpoint 细节，也不提供 tradingReady / liveReady / authorizedForTrading 等授权字段。

@@ -1,27 +1,29 @@
 package com.guidinglight.nexusquant.app.config.livecontrol;
 
-import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
+import com.guidinglight.nexusquant.app.config.livecontrol.endpoint.ReadOnlyRuntimeDiagnosticEndpoint;
+
+import com.guidinglight.nexusquant.adapter.api.service.port.TradingAdapter;
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClient;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsClient;
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
-import com.guidinglight.nexusquant.livecontrol.application.PilotPrerequisiteObservationAuthority;
-import com.guidinglight.nexusquant.livecontrol.deployment.WorkerDeploymentAdmissionService;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotPrerequisiteObservationAuthority;
+import com.guidinglight.nexusquant.livecontrol.deployment.service.WorkerDeploymentAdmissionService;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotExecutionProviderPort;
 import com.guidinglight.nexusquant.livecontrol.infra.KillSwitchGuardedProviderObservationAuthority;
-import com.guidinglight.nexusquant.risk.service.KillSwitchEngageCommand;
-import com.guidinglight.nexusquant.risk.service.KillSwitchScope;
-import com.guidinglight.nexusquant.risk.service.KillSwitchState;
-import com.guidinglight.nexusquant.risk.service.KillSwitchStateRepository;
-import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
-import com.guidinglight.nexusquant.scheduler.service.AdapterInstrumentCatalogSyncService;
-import com.guidinglight.nexusquant.scheduler.service.BinanceRecoveryService;
-import com.guidinglight.nexusquant.scheduler.service.BinanceRestReconcileService;
-import com.guidinglight.nexusquant.scheduler.service.LedgerReconcileScheduler;
-import com.guidinglight.nexusquant.scheduler.service.OkxRecoveryService;
-import com.guidinglight.nexusquant.scheduler.service.OkxRestReconcileService;
-import com.guidinglight.nexusquant.scheduler.service.PaperMatchingService;
-import com.guidinglight.nexusquant.scheduler.service.SchedulerTradingMaintenanceService;
-import com.guidinglight.nexusquant.scheduler.validationevidence.ValidationEvidenceScheduler;
+import com.guidinglight.nexusquant.risk.application.command.KillSwitchEngageCommand;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchScope;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchState;
+import com.guidinglight.nexusquant.risk.application.port.KillSwitchStateRepository;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;
+import com.guidinglight.nexusquant.scheduler.integration.AdapterInstrumentCatalogSyncService;
+import com.guidinglight.nexusquant.scheduler.recovery.BinanceRecoveryService;
+import com.guidinglight.nexusquant.scheduler.recovery.BinanceRestReconcileService;
+import com.guidinglight.nexusquant.scheduler.scheduling.LedgerReconcileScheduler;
+import com.guidinglight.nexusquant.scheduler.recovery.OkxRecoveryService;
+import com.guidinglight.nexusquant.scheduler.recovery.OkxRestReconcileService;
+import com.guidinglight.nexusquant.scheduler.paper.PaperMatchingService;
+import com.guidinglight.nexusquant.scheduler.scheduling.SchedulerTradingMaintenanceService;
+import com.guidinglight.nexusquant.scheduler.validationevidence.scheduling.ValidationEvidenceScheduler;
 
 import java.io.PrintWriter;
 import java.io.IOException;

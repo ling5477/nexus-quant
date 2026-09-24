@@ -74,7 +74,7 @@ public interface OrderRepository {
      * 仅填充空的外部订单号，保持已有 identity 和 lifecycle version。
      * <p>
      * Why:
-     * GateC-0 要求回执成功后立刻落库 external_order_id，供后续 reconcile/恢复/WS 关联使用。
+     * 交易所适配契约要求回执成功后立刻落库 external_order_id，供后续 reconcile/恢复/WS 关联使用。
      *
      * @param orderId 系统订单 ID
      * @param externalOrderId 外部订单号

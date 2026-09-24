@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.auth.application;
 
+import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

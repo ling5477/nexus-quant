@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.strategy.domain.port;
 
 /**
- * StrategyValidationOverviewQueryPort 是 GateS-3 strategy validation overview 的只读查询端口。
+ * StrategyValidationOverviewQueryPort 是验证只读视图 strategy validation overview的只读查询端口。
  *
  * <p>该端口只允许读取本地 strategy/evaluation/publish/Paper/Shadow 事实，不提供写库、runner、
  * scheduler、adapter、credential、order、account 或 ledger 能力。

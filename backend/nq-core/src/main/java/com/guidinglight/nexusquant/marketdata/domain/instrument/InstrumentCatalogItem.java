@@ -24,7 +24,7 @@ import java.util.Locale;
  * @param minQuantity    最小下单数量
  * @param maxLimitQuantity 单笔限价单最大数量
  * @param maxMarketSize 单笔市价单最大数量
- * @param maxMarketSizeUnit 市价单最大数量单位；GateW-3 OKX Spot 仅允许 USDT
+ * @param maxMarketSizeUnit 市价单最大数量单位；只读诊断 OKX Spot 仅允许 USDT
  * @param maxLimitNotionalUsd 单笔限价单最大 USD amount
  * @param maxMarketNotionalUsd 单笔市价单最大 USD amount
  * @param source         数据来源
@@ -105,7 +105,7 @@ public record InstrumentCatalogItem(
     }
 
     /**
-     * 兼容 GateW-3 之前的完整持久化构造器；legacy 行的新事实字段保持 null，不能伪造 readiness。
+     * 兼容只读诊断之前的完整持久化构造器；legacy 行的新事实字段保持 null，不能伪造 readiness。
      */
     public InstrumentCatalogItem(
             Long instrumentId,

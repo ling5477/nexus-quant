@@ -1,11 +1,11 @@
 package com.guidinglight.nexusquant.app.config;
 
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.DisabledPublicMarketDataOutboundClient;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.JdkPublicMarketDataOutboundClient;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundClient;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundPolicy;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundSettings;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataQualitySummary;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.transport.DisabledPublicMarketDataOutboundClient;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.transport.JdkPublicMarketDataOutboundClient;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.port.PublicMarketDataOutboundClient;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.policy.PublicMarketDataOutboundPolicy;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.config.PublicMarketDataOutboundSettings;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataQualitySummary;
 
 import java.net.URI;
 import java.time.Duration;
@@ -20,7 +20,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 /**
- * PublicMarketDataOutboundConfiguration 是 GateO O-1 public outbound 的 Spring 装配边界。
+ * PublicMarketDataOutboundConfiguration 是公开行情出站策略 public outbound 的 Spring 装配边界。
  *
  * <p>Why: 默认 local/test/CI/paper/freeze 必须 no-egress，不得构造真实 HTTP client。只有
  * `public-marketdata-manual` profile 且 `nq.public-marketdata.outbound.enabled=true` 时，才装配

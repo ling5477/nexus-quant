@@ -147,7 +147,7 @@ public record ValidationReviewCase(
     }
 
     /**
-     * 校验 GateV 当前服务端单租户 scope。
+     * 校验人工复核当前服务端单租户 scope。
      *
      * @param tenantKey 可信 application context 提供的 tenant key
      */

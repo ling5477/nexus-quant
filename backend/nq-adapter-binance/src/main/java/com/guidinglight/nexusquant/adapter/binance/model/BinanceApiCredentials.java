@@ -33,7 +33,7 @@ public record BinanceApiCredentials(
      * 返回未配置占位凭证。
      * <p>
      * Why:
-     * No-real hardening (GateL-1B-B)：runtime config 默认不再从进程环境读取 credential material，
+     * No-real hardening (无真实连接安全边界)：runtime config 默认不再从进程环境读取 credential material，
      * 统一返回该占位凭证（{@link #isConfigured()} = false）。真实 credential 必须由后续 NQ credential
      * governance bridge 注入（另起 Gate），不得从 env / system property / .env 派生。
      *

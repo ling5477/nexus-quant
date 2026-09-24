@@ -1,5 +1,5 @@
 /* StandaloneSurface.css — 登录页/异常页 v2 全屏外壳作用域样式。
-   约束:全部命名空间到 .nq-standalone,只读 var(--nq-*),不影响 GateJ 冻结的 v1 页面。 */
+   约束:全部命名空间到 .nq-standalone,只读 var(--nq-*),不影响既有 v1 页面。 */
 
 .nq-standalone {
     min-height: 100vh;

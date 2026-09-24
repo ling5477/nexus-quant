@@ -22,16 +22,16 @@ import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
 
 import {formatApiError} from '@/api/errors';
-import {PageHero} from '@/components/page/PageHero';
+import {NqPageHeader} from '@/components/nq/NqPageHeader';
 import {RUN_STATUS_OPTIONS, RUN_TRIGGER_TYPE_OPTIONS} from '@/constants/filter-options';
-import {useRunDetailQuery, useRunListQuery} from '@/hooks/useRunListQuery';
+import {useRunDetailQuery, useRunListQuery} from '@/features/runs/hooks/useRunListQuery';
 import type {AppApiError} from '@/types/api';
 import {
     defaultStrategyRunListFilters,
     type StrategyRunDetailItem,
     type StrategyRunListFilters,
     type StrategyRunSummaryItem,
-} from '@/types/runs';
+} from '@/features/runs/types/runs';
 import {containsIgnoreCase, formatDateTime, normalizeOptionalText} from '@/utils/formatters';
 
 type RunRow = StrategyRunSummaryItem;
@@ -191,7 +191,7 @@ export function RunsPage() {
         <>
             <Space direction="vertical" size={16} style={{display: 'flex'}}>
                 <Card className="page-card" bordered={false}>
-                    <PageHero
+                    <NqPageHeader
                         title={t('pages:runRecords')}
                         description={t('pages:viewStrategyRunsTriggersExecutionStatusAndRiskSummariesDetailsAreReadOnlyAndCanBeRefreshed')}
                         badge={t('pages:runs')}

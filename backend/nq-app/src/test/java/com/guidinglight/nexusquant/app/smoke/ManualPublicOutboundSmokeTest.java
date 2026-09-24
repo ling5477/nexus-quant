@@ -7,14 +7,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.JdkPublicMarketDataOutboundClient;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataEndpointCategory;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundClient;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundDecision;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundErrorCategory;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundPolicy;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundRequest;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundResult;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.transport.JdkPublicMarketDataOutboundClient;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataEndpointCategory;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.port.PublicMarketDataOutboundClient;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundDecision;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundErrorCategory;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.policy.PublicMarketDataOutboundPolicy;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundRequest;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundResult;
 import com.guidinglight.nexusquant.app.config.PublicMarketDataOutboundConfiguration;
 import com.guidinglight.nexusquant.app.config.env.EnvSafetyGuardConfiguration;
 

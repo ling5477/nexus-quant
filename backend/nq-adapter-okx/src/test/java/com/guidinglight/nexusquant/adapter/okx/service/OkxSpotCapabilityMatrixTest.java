@@ -1,5 +1,8 @@
 package com.guidinglight.nexusquant.adapter.okx.service;
 
+import com.guidinglight.nexusquant.adapter.okx.provider.OkxSpotCapabilityMatrix;
+import com.guidinglight.nexusquant.adapter.okx.provider.model.OkxSpotCapabilityDefinition;
+
 import com.guidinglight.nexusquant.adapter.api.model.EndpointAccessClass;
 import com.guidinglight.nexusquant.adapter.api.model.EndpointGuardReason;
 import com.guidinglight.nexusquant.adapter.api.model.ExchangeCapability;

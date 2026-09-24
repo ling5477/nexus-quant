@@ -1,4 +1,6 @@
-package com.guidinglight.nexusquant.trading.application;
+package com.guidinglight.nexusquant.trading.application.command;
+
+import static com.guidinglight.nexusquant.common.text.NullableText.firstNonBlank;
 
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
@@ -12,7 +14,7 @@ import java.util.Set;
  * PlaceOrderRequest 表示下单编排入口参数。
  * <p>
  * Why:
- * GateD 需要把 contracts 强契约向 core 收口，避免 controller / scheduler / strategy runner
+ * 统一交易契约需要把 contracts 强契约向 core 收口，避免 controller / scheduler / strategy runner
  * 各自决定 requestId、idempotencyKey、source、quantity 的语义。
  *
  * @param requestId      本次执行请求 ID；用于区分同一幂等键上的不同触发
@@ -137,18 +139,18 @@ public record PlaceOrderRequest(
 
     public PlaceOrderRequest {
         traceId = requireText(traceId, "traceId");
-        requestId = normalizeText(requestId, traceId);
+        requestId = firstNonBlank(requestId, traceId);
         venue = TradingVenue.parse(venue).name();
         symbol = requireText(symbol, "symbol");
         clientOrderId = requireText(clientOrderId, "clientOrderId");
-        idempotencyKey = normalizeText(idempotencyKey, buildDefaultIdempotencyKey(accountId, clientOrderId));
-        source = normalizeText(source, defaultSource(strategyRunId));
-        timeInForce = normalizeText(timeInForce, defaultTimeInForce(type));
-        tradeEnv = normalizeText(tradeEnv, "SIM").toUpperCase(Locale.ROOT);
+        idempotencyKey = firstNonBlank(idempotencyKey, buildDefaultIdempotencyKey(accountId, clientOrderId));
+        source = firstNonBlank(source, defaultSource(strategyRunId));
+        timeInForce = firstNonBlank(timeInForce, defaultTimeInForce(type));
+        tradeEnv = firstNonBlank(tradeEnv, "SIM").toUpperCase(Locale.ROOT);
         if (!Set.of("SIM", "LIVE").contains(tradeEnv)) {
             throw new IllegalArgumentException("tradeEnv must be SIM or LIVE");
         }
-        executionScopeId = normalizeText(executionScopeId, null);
+        executionScopeId = firstNonBlank(executionScopeId, null);
     }
 
     private static String buildDefaultIdempotencyKey(Long accountId, String clientOrderId) {
@@ -164,22 +166,12 @@ public record PlaceOrderRequest(
     }
 
     private static String requireText(String value, String fieldName) {
-        String normalized = normalizeText(value, null);
+        String normalized = firstNonBlank(value, null);
         if (normalized == null) {
             throw new IllegalArgumentException(fieldName + " must not be blank");
         }
         return normalized;
     }
 
-    private static String normalizeText(String value, String fallback) {
-        if (value != null && !value.isBlank()) {
-            return value.trim();
-        }
-        if (fallback != null && !fallback.isBlank()) {
-            return fallback.trim();
-        }
-        return null;
-    }
 }
-
 

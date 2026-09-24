@@ -6,7 +6,7 @@ import java.util.Objects;
 /**
  * ReadModelEvidenceMetadata 统一描述只读诊断模型的证据来源、可用性与新鲜度。
  *
- * <p>Why: GateU 需要让多个 read model 使用同一组可审计语义，避免把 HTTP 响应生成时间误写为
+ * <p>Why: 证据元数据需要让多个 read model 使用同一组可审计语义，避免把 HTTP 响应生成时间误写为
  * 底层证据时间，也避免在缺少时间戳或阈值时默认展示为 FRESH。该值对象不访问数据库或网络，
  * 不携带 credential、真实账户/订单信息，也不表达交易授权。
  *

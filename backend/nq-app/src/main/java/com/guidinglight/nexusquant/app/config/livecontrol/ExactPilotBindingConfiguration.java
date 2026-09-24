@@ -1,11 +1,15 @@
 package com.guidinglight.nexusquant.app.config.livecontrol;
 
+import com.guidinglight.nexusquant.app.config.livecontrol.authority.StoredFactExactPilotBindingAuthority;
+import com.guidinglight.nexusquant.app.config.livecontrol.model.ExactPilotRuntimeIdentity;
+import com.guidinglight.nexusquant.app.config.livecontrol.model.ReadOnlyProviderObservationRuntimeIdentity;
+
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialRepository;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingAuthority;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingControlPlane;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotScopeControlPlane;
-import com.guidinglight.nexusquant.livecontrol.application.PilotScopeControlPlane;
+import com.guidinglight.nexusquant.livecontrol.application.port.ExactPilotBindingAuthority;
+import com.guidinglight.nexusquant.livecontrol.application.port.ExactPilotBindingControlPlane;
+import com.guidinglight.nexusquant.livecontrol.application.port.ExactPilotScopeControlPlane;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotScopeControlPlane;
 import com.guidinglight.nexusquant.livecontrol.application.port.LiveControlAuthorizationPort;
 import com.guidinglight.nexusquant.livecontrol.domain.port.ExactPilotBindingRepository;
 import com.guidinglight.nexusquant.livecontrol.domain.port.ExactPilotScopeAuthorizationRepository;
@@ -17,7 +21,7 @@ import com.guidinglight.nexusquant.livecontrol.infra.ExactPilotScopeAuthorizatio
 import com.guidinglight.nexusquant.livecontrol.infra.ExactPilotScopeControlSurfaceService;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.port.InstrumentCatalogReadPort;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseAdmissionStateRepository;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.port.StrategyReleaseAdmissionStateRepository;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

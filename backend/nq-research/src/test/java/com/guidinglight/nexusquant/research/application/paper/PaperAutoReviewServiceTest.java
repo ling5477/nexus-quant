@@ -1,5 +1,11 @@
 package com.guidinglight.nexusquant.research.application.paper;
 
+import com.guidinglight.nexusquant.research.application.paper.model.PaperAutoReview;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperAutoReviewService;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperExecutionDiagnosticsService;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperPortfolioService;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperStrategyEvaluationService;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;

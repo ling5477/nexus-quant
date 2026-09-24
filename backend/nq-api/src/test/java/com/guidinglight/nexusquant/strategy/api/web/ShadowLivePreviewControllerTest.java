@@ -12,13 +12,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.ShadowLivePreview;
-import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.ShadowLivePreviewEvidence;
-import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.ShadowLivePreviewReason;
-import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.ShadowLivePreviewScope;
-import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.ShadowLivePreviewService;
-import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.ShadowLivePreviewSideEffectPolicy;
-import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.ShadowLivePreviewStatus;
+import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.model.ShadowLivePreview;
+import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.model.ShadowLivePreviewEvidence;
+import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.model.ShadowLivePreviewReason;
+import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.model.ShadowLivePreviewScope;
+import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.service.ShadowLivePreviewService;
+import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.model.ShadowLivePreviewSideEffectPolicy;
+import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.model.ShadowLivePreviewStatus;
 
 import java.time.Instant;
 import java.util.List;

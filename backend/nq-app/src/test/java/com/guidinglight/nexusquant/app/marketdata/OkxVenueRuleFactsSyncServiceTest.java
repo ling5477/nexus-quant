@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.guidinglight.nexusquant.adapter.okx.model.OkxVenueRuleFact;
 import com.guidinglight.nexusquant.adapter.okx.model.OkxVenueRuleFactsSnapshot;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxVenueRuleFactsProvider;
+import com.guidinglight.nexusquant.adapter.okx.marketdata.OkxVenueRuleFactsProvider;
 import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService;
 import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogUpsertStats;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.InstrumentCatalogItem;

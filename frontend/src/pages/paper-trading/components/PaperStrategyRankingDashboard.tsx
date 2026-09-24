@@ -12,17 +12,17 @@ import {
     NqLoadingState,
     NqMetricCard,
     NqPercentText,
-    NqRiskBanner,
+    ApplicationRiskAlert,
     formatNqNumber,
     nqNumericColumn,
 } from '@/components/nq';
-import {usePaperPortfolioSummaryQuery} from '@/hooks/usePaperTradingQuery';
+import {usePaperPortfolioSummaryQuery} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
 import type {
     PaperPortfolioGroup,
     PaperPortfolioRunRef,
     PaperPortfolioSummaryResponse,
-} from '@/types/paper-trading';
+} from '@/features/paper-trading/types/paper-trading';
 import {formatDateTime} from '@/utils/formatters';
 
 import {pnlTone, toNullableNumber} from './paperFormatters';
@@ -313,7 +313,7 @@ function filterRankingRows(rows: PaperStrategyRankingRow[], filter: RankingFilte
 }
 
 /**
- * PaperStrategyRankingDashboard —— Paper 策略表现排行（GateJ 后产品化 Loop-16）。
+ * PaperStrategyRankingDashboard —— Paper 策略表现排行。
  * 复用 Loop-13 组合 summary 单请求结果（strategyGroups / publishGroups + highlights / dataQuality），
  * 从 strategyVersionId / publishId 维度只读派生表现排行与风险调整排序分（Paper 内部排序分，非真实投资评级）。
  * 仅代表 SIM/Paper 模拟，不读真实交易所账户余额，不代表 LIVE 或真实交易；数据不足不伪造排名。
@@ -341,7 +341,7 @@ export function PaperStrategyRankingDashboard({query}: {query: ReturnType<typeof
             extra={<Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:simPaperOnlyLiveDisabled')}</Typography.Text>}
         >
             <Space direction="vertical" size={12} style={{display: 'flex'}}>
-                <NqRiskBanner
+                <ApplicationRiskAlert
                     level="info"
                     message={t('pages:compareSimulatedPerformanceAcrossPaperRunsByStrategyversionidPublishid')}
                     description={t('pages:rankingsUsePaperSimulationAndLocalExecutionFactsOnlyTheyDoNotRepresentLiveOrRealTradingPerformance')}

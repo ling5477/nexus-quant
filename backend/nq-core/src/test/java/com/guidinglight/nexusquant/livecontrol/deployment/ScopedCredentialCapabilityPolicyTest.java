@@ -1,7 +1,11 @@
 package com.guidinglight.nexusquant.livecontrol.deployment;
 
-import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialCapabilityPolicy.Reason;
-import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialReference.RemoteIpVerificationStatus;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.ScopedCredentialCapability;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.ScopedCredentialReference;
+import com.guidinglight.nexusquant.livecontrol.deployment.policy.ScopedCredentialCapabilityPolicy;
+
+import com.guidinglight.nexusquant.livecontrol.deployment.policy.ScopedCredentialCapabilityPolicy.Reason;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.ScopedCredentialReference.RemoteIpVerificationStatus;
 
 import java.time.Duration;
 import java.time.Instant;

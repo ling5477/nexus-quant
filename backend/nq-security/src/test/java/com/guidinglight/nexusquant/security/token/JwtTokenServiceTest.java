@@ -1,10 +1,13 @@
 package com.guidinglight.nexusquant.security.token;
 
+import com.guidinglight.nexusquant.security.token.config.JwtTokenSettings;
+import com.guidinglight.nexusquant.security.token.service.JwtTokenService;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.guidinglight.nexusquant.security.token.TokenClaims;
+import com.guidinglight.nexusquant.security.token.model.TokenClaims;
 
 import java.time.Duration;
 import java.time.Instant;

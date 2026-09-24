@@ -4,13 +4,13 @@ import com.guidinglight.nexusquant.account.domain.ExchangeCredentialPermissionPr
 import com.guidinglight.nexusquant.account.domain.ExchangeCredentialPermissionProbeResult;
 import com.guidinglight.nexusquant.account.domain.CredentialPermissionExpectation;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxIpAllowlistStatus;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateEnvironment;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadError;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadException;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadOperation;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadRequest;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadResult;
+import com.guidinglight.nexusquant.adapter.okx.auth.OkxIpAllowlistStatus;
+import com.guidinglight.nexusquant.adapter.okx.auth.OkxPrivateEnvironment;
+import com.guidinglight.nexusquant.adapter.okx.privateread.error.OkxPrivateReadError;
+import com.guidinglight.nexusquant.adapter.okx.privateread.error.OkxPrivateReadException;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadOperation;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadRequest;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadResult;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;

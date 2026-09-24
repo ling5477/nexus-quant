@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.trading.application.port;
 
-import com.guidinglight.nexusquant.trading.application.CancelOrderRequest;
-import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
+import com.guidinglight.nexusquant.trading.application.command.CancelOrderRequest;
+import com.guidinglight.nexusquant.trading.application.command.PlaceOrderRequest;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.domain.EffectiveOrderParameters;
 

@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * MarketdataDatasetResponse 描述 GateH-3 数据集响应。
+ * MarketdataDatasetResponse 描述历史行情接入数据集响应。
  */
 public record MarketdataDatasetResponse(
         UUID datasetId,

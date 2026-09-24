@@ -24,7 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * BacktestEvaluationService 提供 GateF-4 的显式 evaluate 主链。
+ * BacktestEvaluationService 提供研究与回测契约的显式 evaluate 主链。
  */
 @Service
 public class BacktestEvaluationService {
@@ -184,7 +184,7 @@ public class BacktestEvaluationService {
     /**
      * 按评估报告 ID 查询详情。
      * Why:
-     * GateI-2 增加独立 Evaluation API，调用方可以从报告列表直接打开详情，
+     * 策略版本增加独立 Evaluation API，调用方可以从报告列表直接打开详情，
      * 不再必须先知道 backtestRunId。
      */
     public Optional<BacktestEvaluationReport> getByEvalReportId(String evalReportId) {
@@ -194,7 +194,7 @@ public class BacktestEvaluationService {
     /**
      * 查询评估报告列表。
      * Why:
-     * GateI-2 第一版只需要展示已生成报告的核心指标，不引入复杂分页或跨表聚合；
+     * 策略版本第一版只需要展示已生成报告的核心指标，不引入复杂分页或跨表聚合；
      * 页面需要 run 血缘时仍可通过 backtest run 详情读取完整输入快照。
      */
     public List<BacktestEvaluationReport> listAll() {

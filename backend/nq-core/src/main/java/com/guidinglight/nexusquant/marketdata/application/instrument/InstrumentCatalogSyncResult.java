@@ -7,7 +7,7 @@ import java.util.List;
  * InstrumentCatalogSyncResult 描述一次 instrument/symbol sync 的稳定输出。
  * <p>
  * Why:
- * GateH-PRE 需要把 symbol sync 变成可验证动作，而不是“启动时大概做了点什么”。
+ * 历史行情接入-PRE 需要把 symbol sync 变成可验证动作，而不是“启动时大概做了点什么”。
  * 这份结果会直接提供给 API、审计文档和后续前端运营入口。
  *
  * @param exchangeCodes 本次参与同步的交易所

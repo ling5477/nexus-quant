@@ -1,0 +1,354 @@
+import type {ReadModelEvidenceMetadata} from '@/features/validation/types/read-model-evidence';
+
+/**
+ * Shadow Run 只读前端类型.
+ *
+ * 这些类型只描述影子运行已有 GET API的响应结构。前端不得在这里扩展
+ * create / start / stop / execute / approve / trade 等写侧能力，也不得暴露 credential
+ * material、private payload、real account/order 或交易授权字段。
+ */
+type JsonPrimitive = string | number | boolean | null;
+
+export type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
+
+export interface JsonObject {
+    [key: string]: JsonValue;
+}
+
+interface ShadowRunSideEffectFlags {
+    noOrderSubmission: boolean;
+    noCredentialAccess: boolean;
+    noPrivateEndpoint: boolean;
+    noLedgerMutation: boolean;
+    noAccountMutation: boolean;
+    noExternalPrivateIo: boolean;
+}
+
+export interface ShadowRunListRequest {
+    status?: string | null;
+    strategyVersionId?: string | null;
+    datasetId?: string | null;
+    paperRunId?: string | null;
+    limit?: number;
+    offset?: number;
+}
+
+export interface ShadowRunListItemResponse {
+    id: string;
+    status: string;
+    strategyVersionId: string;
+    datasetId: string;
+    paperRunId: string | null;
+    authorizationBoundary: string;
+    traceId: string;
+    createdAt: string;
+    updatedAt: string;
+    startedAt: string | null;
+    completedAt: string | null;
+    blockersCount: number;
+    warningsCount: number;
+    nextStepsCount: number;
+    noOrderSubmission: boolean;
+    noCredentialAccess: boolean;
+    noPrivateEndpoint: boolean;
+    noLedgerMutation: boolean;
+    noAccountMutation: boolean;
+}
+
+export interface ShadowRunListResponse {
+    items: ShadowRunListItemResponse[];
+    limit: number;
+    offset: number;
+    total: number;
+}
+
+type ShadowRunOverviewDivergenceSeverity = 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'UNKNOWN' | string;
+
+/**
+ * Shadow Run 总览响应.
+ *
+ * Why:
+ * 该结构只承接 `GET /api/shadow-runs/overview` 的 read-only 运营诊断摘要。
+ * 字段名保持后端 DTO 原样，便于审计 trace 和 current docs 对齐；这里不得新增
+ * trading ready、trade approval、credential material、private endpoint payload 或真实账户/订单字段。
+ */
+export interface ShadowRunOverviewResponse {
+    generatedAt: string;
+    evidenceMetadata?: ReadModelEvidenceMetadata | null;
+    diagnosticOnly: boolean;
+    noSideEffect: boolean;
+    notTradingAuthorization: boolean;
+    liveDisabled: boolean;
+    realProviderImplemented: boolean;
+    privateTradingImplemented: boolean;
+    aiDhRuntimeIntegrated: boolean;
+    totalRuns: number;
+    runningRuns: number;
+    blockedRuns: number;
+    failedRuns: number;
+    completedRuns: number;
+    staleRuns: number;
+    latestRun: ShadowRunOverviewLatestRun | null;
+    latestConsistency: ShadowRunOverviewLatestConsistency | null;
+    divergenceSeverity: ShadowRunOverviewDivergenceSeverity;
+    blockers: ShadowRunOverviewBlocker[];
+    warnings: ShadowRunOverviewWarning[];
+    nextSteps: ShadowRunOverviewNextStep[];
+    evidenceAnchors: ShadowRunOverviewEvidenceAnchor[];
+    traceId: string;
+}
+
+interface ShadowRunOverviewLatestRun {
+    shadowRunId: string;
+    strategyVersionId: string;
+    datasetId: string;
+    paperRunId: string | null;
+    status: string;
+    authorizationBoundary: string;
+    noOrderSubmission: boolean;
+    noCredentialAccess: boolean;
+    noPrivateEndpoint: boolean;
+    noLedgerMutation: boolean;
+    noAccountMutation: boolean;
+    noExternalPrivateIo: boolean;
+    createdAt: string;
+    updatedAt: string;
+    startedAt: string | null;
+    completedAt: string | null;
+}
+
+interface ShadowRunOverviewLatestConsistency {
+    reportId: string;
+    shadowRunId: string;
+    paperRunId: string | null;
+    comparisonStatus: string;
+    metricDelta: JsonValue;
+    divergenceReasons: JsonValue;
+    limitations: JsonValue;
+    generatedAt: string;
+    traceId: string | null;
+}
+
+export interface ShadowRunOverviewEvidenceAnchor {
+    sourceType: string;
+    sourceId: string;
+    sourceVersion: string | null;
+    sourceTimestamp: string | null;
+    checksum: string | null;
+}
+
+export interface ShadowRunOverviewBlocker {
+    code: string;
+    severity: string;
+    message: string;
+    sourceType: string;
+    sourceId: string | null;
+}
+
+export interface ShadowRunOverviewWarning {
+    code: string;
+    severity: string;
+    message: string;
+    sourceType: string;
+    sourceId: string | null;
+}
+
+export interface ShadowRunOverviewNextStep {
+    code: string;
+    owner: string;
+    action: string;
+    expectedEvidence: string;
+    blocking: boolean;
+}
+
+type PaperShadowComparisonStatus =
+    'CONSISTENT'
+    | 'DIVERGED'
+    | 'PARTIAL'
+    | 'NOT_COMPARABLE'
+    | 'FAILED'
+    | 'STALE_EVIDENCE'
+    | 'NO_REPORT'
+    | string;
+
+type PaperShadowConsistencyDivergenceSeverity =
+    'NONE'
+    | 'LOW'
+    | 'MEDIUM'
+    | 'HIGH'
+    | 'CRITICAL'
+    | 'UNKNOWN'
+    | string;
+
+/**
+ * Paper/Shadow 一致性明细响应.
+ *
+ * Why:
+ * 该结构只承接 `GET /api/paper-shadow/consistency/drilldown` 的 read-only 诊断聚合。
+ * 前端不得在这里增加写侧命令、真实 provider 能力、交易放行语义或敏感材料字段。
+ */
+export interface PaperShadowConsistencyDrilldownResponse {
+    generatedAt: string;
+    diagnosticOnly: boolean;
+    noSideEffect: boolean;
+    notTradingAuthorization: boolean;
+    liveDisabled: boolean;
+    realProviderImplemented: boolean;
+    privateTradingImplemented: boolean;
+    aiDhRuntimeIntegrated: boolean;
+    shadowRun: PaperShadowConsistencyShadowRun;
+    latestConsistency: PaperShadowConsistencyLatestConsistency | null;
+    comparisonStatus: PaperShadowComparisonStatus;
+    divergenceSeverity: PaperShadowConsistencyDivergenceSeverity;
+    metricDelta: JsonValue;
+    divergenceReasons: JsonValue;
+    limitations: JsonValue;
+    snapshotSummary: PaperShadowConsistencySnapshotSummary;
+    eventSummary: PaperShadowConsistencyEventSummary;
+    blockers: PaperShadowConsistencyBlocker[];
+    warnings: PaperShadowConsistencyWarning[];
+    nextSteps: PaperShadowConsistencyNextStep[];
+    evidenceAnchors: PaperShadowConsistencyEvidenceAnchor[];
+    traceId: string;
+}
+
+interface PaperShadowConsistencyShadowRun {
+    shadowRunId: string;
+    strategyVersionId: string;
+    datasetId: string;
+    evaluationId: string | null;
+    publishId: string | null;
+    paperRunId: string | null;
+    status: string;
+    authorizationBoundary: string;
+    noOrderSubmission: boolean;
+    noCredentialAccess: boolean;
+    noPrivateEndpoint: boolean;
+    noLedgerMutation: boolean;
+    noAccountMutation: boolean;
+    noExternalPrivateIo: boolean;
+    createdAt: string;
+    updatedAt: string;
+    startedAt: string | null;
+    completedAt: string | null;
+}
+
+interface PaperShadowConsistencyLatestConsistency {
+    reportId: string;
+    shadowRunId: string;
+    paperRunId: string | null;
+    comparisonStatus: string;
+    metricDelta: JsonValue;
+    divergenceReasons: JsonValue;
+    limitations: JsonValue;
+    generatedAt: string;
+    traceId: string | null;
+}
+
+interface PaperShadowConsistencySnapshotSummary {
+    totalSnapshots: number;
+    inputMarketdataSnapshots: number;
+    strategyDecisionSnapshots: number;
+    riskPreflightSnapshots: number;
+    orderIntentPreviewSnapshots: number;
+    latestSnapshotAt: string | null;
+    latestSnapshotTypes: string[];
+}
+
+interface PaperShadowConsistencyEventSummary {
+    totalEvents: number;
+    latestEventAt: string | null;
+    latestEventType: string | null;
+    latestReasonCode: string | null;
+}
+
+export interface PaperShadowConsistencyEvidenceAnchor {
+    sourceType: string;
+    sourceId: string;
+    sourceVersion: string | null;
+    sourceTimestamp: string | null;
+    checksum: string | null;
+}
+
+export interface PaperShadowConsistencyBlocker {
+    code: string;
+    severity: string;
+    message: string;
+    sourceType: string;
+    sourceId: string | null;
+}
+
+export interface PaperShadowConsistencyWarning {
+    code: string;
+    severity: string;
+    message: string;
+    sourceType: string;
+    sourceId: string | null;
+}
+
+export interface PaperShadowConsistencyNextStep {
+    code: string;
+    owner: string;
+    action: string;
+    expectedEvidence: string;
+    blocking: boolean;
+}
+
+export interface ShadowRunDetailResponse {
+    id: string;
+    strategyVersionId: string;
+    datasetId: string;
+    evaluationId: string;
+    publishId: string;
+    paperRunId: string;
+    status: string;
+    windowStart: string;
+    windowEnd: string;
+    authorizationBoundary: string;
+    sideEffectFlags: ShadowRunSideEffectFlags;
+    blockers: JsonValue;
+    warnings: JsonValue;
+    nextSteps: JsonValue;
+    requestId: string;
+    traceId: string;
+    createdAt: string;
+    updatedAt: string;
+    startedAt: string | null;
+    stoppedAt: string | null;
+    completedAt: string | null;
+}
+
+export interface ShadowRunEventResponse {
+    eventType: string;
+    fromStatus: string | null;
+    toStatus: string | null;
+    reasonCode: string | null;
+    message: string | null;
+    metadata: JsonValue;
+    requestId: string | null;
+    traceId: string | null;
+    createdAt: string;
+}
+
+export interface ShadowRunSnapshotResponse {
+    snapshotType: string;
+    sequenceNo: number;
+    source: string;
+    schemaVersion: string;
+    checksum: string;
+    payload: JsonValue;
+    capturedAt: string;
+    traceId: string | null;
+}
+
+export interface ShadowConsistencyReportResponse {
+    id: string;
+    shadowRunId: string;
+    paperRunId: string;
+    comparisonStatus: string;
+    metricDelta: JsonValue;
+    divergenceReasons: JsonValue;
+    limitations: JsonValue;
+    generatedAt: string;
+    traceId: string | null;
+}

@@ -2,7 +2,7 @@ package com.guidinglight.nexusquant.livecontrol.execution.application.provider;
 
 import java.util.Objects;
 
-/** GateY provider 的脱敏错误决策；不携带 raw body、header、URL 或 credential。 */
+/** 受控实盘执行 provider的脱敏错误决策；不携带 raw body、header、URL 或 credential。 */
 public record SpotProviderError(
         Category category,
         Certainty certainty,
@@ -18,7 +18,7 @@ public record SpotProviderError(
         if (auditCode == null || !auditCode.matches("REAL_[A-Z0-9_]{2,64}")) {
             throw new IllegalArgumentException("auditCode must be a sanitized REAL_* code");
         }
-        // GateY-6B 不允许任何自动 mutation retry。
+        // 受控实盘执行不允许任何自动 mutation retry。
         mutationRetryable = false;
     }
 

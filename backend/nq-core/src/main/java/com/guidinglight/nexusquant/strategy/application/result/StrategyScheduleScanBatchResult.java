@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.strategy.application;
+package com.guidinglight.nexusquant.strategy.application.result;
 
 import java.util.List;
 
@@ -6,7 +6,7 @@ import java.util.List;
  * StrategyScheduleScanBatchResult 汇总一次 scanOnce 的批量结果。
  * <p>
  * Why:
- * GateE-2.2 需要同时返回统计摘要和逐条明细，便于测试与排障复核，
+ * 执行与补偿契约需要同时返回统计摘要和逐条明细，便于测试与排障复核，
  * 因此不能继续直接返回平铺列表。
  */
 public record StrategyScheduleScanBatchResult(

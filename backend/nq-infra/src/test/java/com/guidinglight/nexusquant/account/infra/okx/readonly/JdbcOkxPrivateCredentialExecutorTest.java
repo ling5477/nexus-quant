@@ -1,16 +1,16 @@
 package com.guidinglight.nexusquant.account.infra.okx.readonly;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateEnvironment;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadError;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadException;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadOperation;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadRequest;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadResult;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadTransport;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateRealTransport;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPilotPrerequisiteRequest;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPilotPrerequisiteSnapshot;
+import com.guidinglight.nexusquant.adapter.okx.auth.OkxPrivateEnvironment;
+import com.guidinglight.nexusquant.adapter.okx.privateread.error.OkxPrivateReadError;
+import com.guidinglight.nexusquant.adapter.okx.privateread.error.OkxPrivateReadException;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadOperation;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadRequest;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadResult;
+import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateReadTransport;
+import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateRealTransport;
+import com.guidinglight.nexusquant.adapter.okx.provider.model.OkxPilotPrerequisiteRequest;
+import com.guidinglight.nexusquant.adapter.okx.provider.model.OkxPilotPrerequisiteSnapshot;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 

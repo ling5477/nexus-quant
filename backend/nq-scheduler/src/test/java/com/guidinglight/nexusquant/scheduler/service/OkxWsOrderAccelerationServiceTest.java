@@ -1,12 +1,14 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
+import com.guidinglight.nexusquant.scheduler.ws.OkxWsOrderAccelerationService;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.guidinglight.nexusquant.adapter.okx.service.OkxWsEventMapper;
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsEventMapper;
 import com.guidinglight.nexusquant.contracts.event.CancelAck;
 import com.guidinglight.nexusquant.contracts.event.CancelReject;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
@@ -14,8 +16,8 @@ import com.guidinglight.nexusquant.contracts.event.OrderAck;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
-import com.guidinglight.nexusquant.trading.application.OrderCommandService;
-import com.guidinglight.nexusquant.trading.application.OrderLifecycleService;
+import com.guidinglight.nexusquant.trading.application.service.OrderCommandService;
+import com.guidinglight.nexusquant.trading.application.service.OrderLifecycleService;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.eventstore.infra.EventStoreAppender;
 

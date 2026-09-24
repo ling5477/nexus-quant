@@ -1,9 +1,11 @@
 package com.guidinglight.nexusquant.strategy.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.StrategyEvaluationGateResponse;
+
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateQuery;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateService;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateQuery;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.service.StrategyEvaluationGateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -22,7 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * StrategyEvaluationGateController 暴露 GateQ-1 Strategy Evaluation Gate 只读 API。
+ * StrategyEvaluationGateController 暴露策略验证 Strategy Evaluation Gate 只读 API。
  *
  * <p>Why: 该 controller 只解析 query 参数并委托 read-only service 聚合本地事实；它不会启动
  * Shadow Live runner、不会创建 Paper run、不会触发 evaluation/publish 写侧，也不会调用真实交易所或读取凭证。
@@ -30,7 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RestController
 @RequestMapping("/api/strategies/evaluation-gate")
-@Tag(name = "Strategy Evaluation Gate API", description = "GateQ-1 策略评估只读 gate 接口。")
+@Tag(name = "Strategy Evaluation Gate API", description = "策略评估只读 gate 接口。")
 public class StrategyEvaluationGateController {
 
     private final StrategyEvaluationGateService strategyEvaluationGateService;

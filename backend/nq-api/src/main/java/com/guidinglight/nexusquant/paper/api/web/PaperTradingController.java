@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.paper.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.paper.api.dto.EmergencyStopEventResponse;
 import com.guidinglight.nexusquant.paper.api.dto.EmergencyStopRequestBody;
@@ -27,12 +27,12 @@ import com.guidinglight.nexusquant.paper.api.dto.PaperRunStabilityCheckResponse;
 import com.guidinglight.nexusquant.paper.api.dto.PaperRunSummaryResponse;
 import com.guidinglight.nexusquant.paper.api.dto.TradeReplayRecordResponse;
 import com.guidinglight.nexusquant.research.application.api.paper.PaperTradingApiService;
-import com.guidinglight.nexusquant.research.application.paper.PaperRunAlertCreateCommand;
-import com.guidinglight.nexusquant.research.application.paper.PaperRunDailyReportGenerateCommand;
-import com.guidinglight.nexusquant.research.application.paper.PaperRunRecoverCommand;
-import com.guidinglight.nexusquant.research.application.paper.PaperRunRetryFailedStepCommand;
-import com.guidinglight.nexusquant.research.application.paper.PaperRunStabilityCheckGenerateCommand;
-import com.guidinglight.nexusquant.research.application.paper.PaperTradingRunCreateCommand;
+import com.guidinglight.nexusquant.research.application.paper.command.PaperRunAlertCreateCommand;
+import com.guidinglight.nexusquant.research.application.paper.command.PaperRunDailyReportGenerateCommand;
+import com.guidinglight.nexusquant.research.application.paper.command.PaperRunRecoverCommand;
+import com.guidinglight.nexusquant.research.application.paper.command.PaperRunRetryFailedStepCommand;
+import com.guidinglight.nexusquant.research.application.paper.command.PaperRunStabilityCheckGenerateCommand;
+import com.guidinglight.nexusquant.research.application.paper.command.PaperTradingRunCreateCommand;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -60,7 +60,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @ConditionalOnBean(PaperTradingApiService.class)
 @RequestMapping("/api/paper-trading/runs")
-@Tag(name = "Paper Trading API", description = "GateI-3 SIM/Paper Trading 运行闭环接口。")
+@Tag(name = "Paper Trading API", description = "SIM/Paper Trading 运行闭环接口。")
 public class PaperTradingController {
 
     private final PaperTradingApiService apiService;
@@ -470,7 +470,7 @@ public class PaperTradingController {
     }
 
     @GetMapping("/{paperRunId}/stability-checks")
-    @Operation(summary = "查询 Paper run 稳定性验收列表", description = "返回指定 Paper run 的稳定性验收列表（按 created_at 倒序）。第一版口径，非 GateJ-FREEZE 最终验收。")
+    @Operation(summary = "查询 Paper run 稳定性验收列表", description = "返回指定 Paper run 的稳定性验收列表（按 created_at 倒序）。")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "查询成功"),
             @ApiResponse(responseCode = "400", description = "参数无效", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
@@ -487,7 +487,7 @@ public class PaperTradingController {
     }
 
     @PostMapping("/{paperRunId}/stability-checks/generate")
-    @Operation(summary = "生成 Paper run 稳定性验收", description = "为指定 Paper run 生成一份稳定性验收，按 (paperRunId, checkWindowStart, checkWindowEnd) 幂等。第一版口径，非 GateJ-FREEZE 最终验收。")
+    @Operation(summary = "生成 Paper run 稳定性验收", description = "为指定 Paper run 生成一份稳定性验收，按 (paperRunId, checkWindowStart, checkWindowEnd) 幂等。")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "稳定性验收已生成"),
             @ApiResponse(responseCode = "400", description = "参数无效", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),

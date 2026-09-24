@@ -1,10 +1,10 @@
 package com.guidinglight.nexusquant.app.config.livecontrol;
 
-import com.guidinglight.nexusquant.adapter.api.service.TradingAdapter;
+import com.guidinglight.nexusquant.adapter.api.service.port.TradingAdapter;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.app.config.ExchangeAdapterConfiguration;
-import com.guidinglight.nexusquant.livecontrol.deployment.WorkerDeploymentAdmissionService;
-import com.guidinglight.nexusquant.livecontrol.deployment.WorkerOperationSafetyGate;
+import com.guidinglight.nexusquant.livecontrol.deployment.service.WorkerDeploymentAdmissionService;
+import com.guidinglight.nexusquant.livecontrol.deployment.policy.WorkerOperationSafetyGate;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 import com.guidinglight.nexusquant.strategy.strategyrelease.artifact.TrustedRootStrategyArtifactVerifier;
 import com.guidinglight.nexusquant.strategy.strategyrelease.artifact.VerifiedOpenStrategyArtifactReader;

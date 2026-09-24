@@ -17,7 +17,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 /**
- * JdbcStrategyRunQueryRepository 提供 GateE-2.3 的最小 JDBC 聚合查询。
+ * JdbcStrategyRunQueryRepository 提供执行与补偿契约的最小 JDBC 聚合查询。
  */
 @Repository
 public class JdbcStrategyRunQueryRepository implements StrategyRunQueryRepository {

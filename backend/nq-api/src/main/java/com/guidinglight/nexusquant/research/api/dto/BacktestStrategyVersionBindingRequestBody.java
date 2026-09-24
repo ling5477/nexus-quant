@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * BacktestStrategyVersionBindingRequestBody 描述 GateI-2 回测配置绑定策略版本的请求体。
+ * BacktestStrategyVersionBindingRequestBody 描述策略版本回测配置绑定策略版本的请求体。
  *
  * Why:
  * strategy version 绑定只需要稳定版本 ID，参数快照和版本快照由后端从 strategy_versions 读取并固化；

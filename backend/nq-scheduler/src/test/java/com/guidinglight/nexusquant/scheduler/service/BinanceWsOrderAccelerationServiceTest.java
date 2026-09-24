@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
+import com.guidinglight.nexusquant.scheduler.ws.BinanceWsOrderAccelerationService;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -16,8 +18,8 @@ import com.guidinglight.nexusquant.contracts.event.OrderReject;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
-import com.guidinglight.nexusquant.trading.application.OrderCommandService;
-import com.guidinglight.nexusquant.trading.application.OrderLifecycleService;
+import com.guidinglight.nexusquant.trading.application.service.OrderCommandService;
+import com.guidinglight.nexusquant.trading.application.service.OrderLifecycleService;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.eventstore.infra.EventStoreAppender;
 

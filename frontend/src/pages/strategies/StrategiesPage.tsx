@@ -23,7 +23,7 @@ import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
 
 import {formatApiError, showApiError} from '@/api/errors';
-import {PageHero} from '@/components/page/PageHero';
+import {NqPageHeader} from '@/components/nq/NqPageHeader';
 import {NqPageScaffold} from '@/nq-design-system/shell/NqPageScaffold';
 import {
     BOOLEAN_FILTER_OPTIONS,
@@ -37,7 +37,7 @@ import {
     useCreateStrategyVersionMutation,
     useStrategyListQuery,
     useUpdateStrategyStatusMutation,
-} from '@/hooks/useStrategyListQuery';
+} from '@/features/strategies/hooks/useStrategyListQuery';
 import type {AppApiError} from '@/types/api';
 import {
     defaultStrategyListFilters,
@@ -45,7 +45,7 @@ import {
     type StrategyListFilters,
     type StrategyVersionCreateRequest,
     type StrategyVersionItem,
-} from '@/types/strategies';
+} from '@/features/strategies/types/strategies';
 import {containsIgnoreCase, formatDateTime, matchesBooleanFilter, normalizeOptionalText} from '@/utils/formatters';
 
 type StrategyRow = StrategyDefinitionListItem;
@@ -258,7 +258,7 @@ export function StrategiesPage() {
         <>
             <NqPageScaffold>
                 <Card className="page-card" bordered={false}>
-                    <PageHero
+                    <NqPageHeader
                         title={t('pages:strategyDefinitions')}
                         description={t('pages:searchInspectEnableAndDisableStrategyDefinitionsStrategyStatusAccountEnvironmentAndVersionSnapshotsR')}
                         badge="Strategies"

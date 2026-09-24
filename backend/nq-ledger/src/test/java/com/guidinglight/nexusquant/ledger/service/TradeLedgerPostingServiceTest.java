@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.ledger.service;
 
+import com.guidinglight.nexusquant.ledger.application.service.TradeLedgerPostingService;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -10,7 +12,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.guidinglight.nexusquant.common.numeric.NumericPolicy;
 import com.guidinglight.nexusquant.common.numeric.NumericType;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
-import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
+import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.ledger.contracts.model.AccountSnapshotProjection;
 import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingEntry;

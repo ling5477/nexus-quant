@@ -5,7 +5,7 @@ import {QueryClient, QueryClientProvider, useQuery} from '@tanstack/react-query'
 
 import {authApi} from '@/api/auth';
 import {authQueryKeys} from '@/api/query-keys';
-import {nqAntdTheme} from '@/theme/antd-theme';
+import {nqAntdTheme} from '@/nq-design-system/theme/nqAntdTheme';
 import type {AppApiError} from '@/types/api';
 import {subscribeAppError} from '@/utils/error-events';
 import {useAuthStore} from '@/store/auth-store';

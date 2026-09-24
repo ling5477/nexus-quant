@@ -1,5 +1,6 @@
 package com.guidinglight.nexusquant.adapter.binance.model;
 
+
 import java.math.BigDecimal;
 import java.time.Instant;
 
@@ -7,7 +8,7 @@ import java.time.Instant;
  * BinanceTradeFill 表示 Binance `/api/v3/myTrades` 返回的一笔成交事实。
  *
  * Why:
- * GateC-2 的 REST reconcile 必须把 Binance 原始成交事实与 scheduler/ledger 解耦。
+ * 交易所适配契约的 REST reconcile 必须把 Binance 原始成交事实与 scheduler/ledger 解耦。
  * 这里保留 tradeId/orderId/fee/commissionAsset 等关键信息，后续 `BinanceRestReconcileService`
  * 只消费稳定模型，不直接依赖原始 JSON 字段名。
  *

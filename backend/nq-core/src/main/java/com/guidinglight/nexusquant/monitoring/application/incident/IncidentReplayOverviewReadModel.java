@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * IncidentReplayOverviewReadModel 是 GateS-6 Monitoring / Incident / Replay 只读响应合同。
+ * IncidentReplayOverviewReadModel 是验证只读视图 Monitoring / Incident / Replay 只读响应合同。
  *
  * <p>该模型聚合本地 Shadow、Paper alert/recovery 和 replay 事实，只表达 incident-like
  * diagnostic priority。它不是 incident 创建系统，不生成 replay，不表示交易授权或 LIVE readiness。

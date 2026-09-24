@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.paper.api.dto;
 
-import com.guidinglight.nexusquant.research.application.paper.PaperExecutionDiagnostics;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperExecutionDiagnostics;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
@@ -8,7 +8,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * PaperExecutionDiagnosticsResponse —— Paper 执行诊断只读聚合响应体（GateK Batch K1）。
+ * PaperExecutionDiagnosticsResponse —— Paper 执行诊断只读聚合响应体。
  *
  * 供前端执行诊断视图消费：诊断总览、主因分布、单 run 诊断、策略/发布维度聚合。
  * cause / severity / causeConfidence 以枚举名字符串序列化（前端按枚举值映射展示）。

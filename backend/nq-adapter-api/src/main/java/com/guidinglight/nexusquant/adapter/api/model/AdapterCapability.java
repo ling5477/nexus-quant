@@ -8,7 +8,7 @@ package com.guidinglight.nexusquant.adapter.api.model;
  * marketdata 类能力需要真实 provider；permission probe 需要真实 probe 实现。把这些分类固化为枚举属性，
  * 让 {@code AdapterReadinessService} 能稳定选择 fail-closed 原因，而不是散落 if/else。
  *
- * <p>三个属性仅用于 readiness 原因选择，不代表当前任何能力被授权。GateM-0 内所有真实能力均 fail-closed。
+ * <p>三个属性仅用于 readiness 原因选择，不代表当前任何能力被授权。适配器就绪策略内所有真实能力均 fail-closed。
  */
 public enum AdapterCapability {
 
@@ -26,7 +26,7 @@ public enum AdapterCapability {
     SUBSCRIBE_ORDERBOOK(false, false, true),
 
     /**
-     * 未指定 / 缺失能力的 fail-closed 占位（GateM-1 修正 GateM-0 P2-2）。
+     * 未指定 / 缺失能力的 fail-closed 占位（适配器就绪策略修正适配器就绪策略 P2-2）。
      * <p>
      * Why:
      * {@code AdapterReadinessDecision.capability} 不可为空，但调用方可能传入 null 或未声明具体能力。
@@ -57,7 +57,7 @@ public enum AdapterCapability {
     /**
      * 是否为会改变真实账户状态的下单 / 撤单类能力。
      *
-     * @return true 表示该能力需要 LIVE 授权；GateL baseline LIVE DISABLED 时必须 fail-closed
+     * @return true 表示该能力需要 LIVE 授权；无真实连接安全边界 baseline LIVE DISABLED 时必须 fail-closed
      */
     public boolean isLiveMutating() {
         return liveMutating;

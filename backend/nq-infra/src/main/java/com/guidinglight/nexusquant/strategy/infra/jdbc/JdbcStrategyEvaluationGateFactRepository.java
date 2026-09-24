@@ -1,13 +1,13 @@
 package com.guidinglight.nexusquant.strategy.infra.jdbc;
 
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateFactRepository;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateFacts;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateFacts.DatasetFact;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateFacts.EvaluationFact;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateFacts.PaperEvidenceFact;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateFacts.PublishTraceFact;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateFacts.StrategyVersionFact;
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyEvaluationGateQuery;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.port.StrategyEvaluationGateFactRepository;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateFacts;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateFacts.DatasetFact;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateFacts.EvaluationFact;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateFacts.PaperEvidenceFact;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateFacts.PublishTraceFact;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateFacts.StrategyVersionFact;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateQuery;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -23,9 +23,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 /**
- * JdbcStrategyEvaluationGateFactRepository 聚合 GateQ-1 evaluation gate 所需本地 DB 事实。
+ * JdbcStrategyEvaluationGateFactRepository 聚合策略验证 evaluation gate 所需本地 DB 事实。
  *
- * <p>Why: GateQ-1 只能复用现有 strategy_versions、marketdata_datasets、backtest_eval_reports、
+ * <p>Why: 策略验证只能复用现有 strategy_versions、marketdata_datasets、backtest_eval_reports、
  * backtest_publish_records 和 paper_trading_runs 事实。本 adapter 只执行 SELECT；不写库、不调用 nq-research
  * 写侧 service、不触发 Paper/Shadow runner、不访问外部网络、不读取 credential material。
  */

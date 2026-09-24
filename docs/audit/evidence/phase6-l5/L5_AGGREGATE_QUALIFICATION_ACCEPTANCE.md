@@ -114,7 +114,7 @@ Starting HEAD仍为`991187fe772ad8b03746a4a9ddfc3ea9010e5896`，branch未变；�
 
 Kill canonical owner为[KillSwitchService](../../../../backend/nq-risk/src/main/java/com/guidinglight/nexusquant/risk/service/KillSwitchService.java)；专用L5测试入口调用`engage(expectedVersion, L5_LOAD_STOP, L5_QUALIFICATION, l5-kill-transition)`，进入[JdbcKillSwitchStateRepository](../../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/risk/infra/jdbc/JdbcKillSwitchStateRepository.java)的真实事务、row lock/version CAS及append-only审计事件。未直接SQL更新运行期Kill、未改bean业务状态、未伪造RiskGate结果。只有fixture在NQ启动前初始化DISENGAGED，沿用B0封存与最小ENGAGE权限。
 
-[OrderCommandWriteService.preparePlaceOrder](../../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java)调用真实RiskGate；[KillSwitchRiskRule](../../../../backend/nq-risk/src/main/java/com/guidinglight/nexusquant/risk/service/KillSwitchRiskRule.java) order=10，读取durable snapshot并返回`KILL_SWITCH_TRIGGERED`。拒绝在V49发送资格与Venue调用之前返回。Kill是admission-time gate，不伪造CANCEL，也不拦截必要query/reconciliation或已存在run的bookkeeping。本轮没有重审B3或改Kill语义。
+[OrderCommandWriteService.preparePlaceOrder](../../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandWriteService.java)调用真实RiskGate；[KillSwitchRiskRule](../../../../backend/nq-risk/src/main/java/com/guidinglight/nexusquant/risk/application/rule/KillSwitchRiskRule.java) order=10，读取durable snapshot并返回`KILL_SWITCH_TRIGGERED`。拒绝在V49发送资格与Venue调用之前返回。Kill是admission-time gate，不伪造CANCEL，也不拦截必要query/reconciliation或已存在run的bookkeeping。本轮没有重审B3或改Kill语义。
 
 ### 一个代表运行及事实链
 

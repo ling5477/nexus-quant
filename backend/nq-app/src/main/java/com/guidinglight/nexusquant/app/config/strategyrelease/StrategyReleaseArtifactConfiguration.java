@@ -2,7 +2,7 @@ package com.guidinglight.nexusquant.app.config.strategyrelease;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.strategy.infra.artifact.ServerControlledStrategyArtifactBindingResolver;
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.StrategyReleaseArtifactBindingResolver;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.port.StrategyReleaseArtifactBindingResolver;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;

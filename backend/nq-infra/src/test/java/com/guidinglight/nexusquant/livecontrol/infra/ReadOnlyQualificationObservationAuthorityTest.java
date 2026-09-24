@@ -1,14 +1,14 @@
 package com.guidinglight.nexusquant.livecontrol.infra;
 
-import com.guidinglight.nexusquant.livecontrol.application.PilotPrerequisiteObservationAuthority;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotPrerequisiteObservationAuthority;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationSet;
-import com.guidinglight.nexusquant.risk.service.KillSwitchEngageCommand;
-import com.guidinglight.nexusquant.risk.service.KillSwitchScope;
+import com.guidinglight.nexusquant.risk.application.command.KillSwitchEngageCommand;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchScope;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
-import com.guidinglight.nexusquant.risk.service.KillSwitchState;
-import com.guidinglight.nexusquant.risk.service.KillSwitchStateRepository;
-import com.guidinglight.nexusquant.risk.service.KillSwitchStatus;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchState;
+import com.guidinglight.nexusquant.risk.application.port.KillSwitchStateRepository;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
 

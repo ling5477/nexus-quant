@@ -1,9 +1,11 @@
 package com.guidinglight.nexusquant.strategy.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.ShadowLivePreviewResponse;
+
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.ShadowLivePreviewQuery;
-import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.ShadowLivePreviewService;
+import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.model.ShadowLivePreviewQuery;
+import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.service.ShadowLivePreviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -22,15 +24,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * ShadowLivePreviewController 暴露 GateQ-3 Shadow Live no-side-effect preview API。
+ * ShadowLivePreviewController 暴露策略验证 Shadow Live no-side-effect preview API。
  *
- * <p>Why: controller 只解析 query 参数并委托 read-only service 聚合 GateQ-1/GateQ-2 本地事实；
+ * <p>Why: controller 只解析 query 参数并委托 read-only service 聚合策略评估准入/Paper/Shadow 对照本地事实；
  * 它不会启动 Shadow runner、不会创建 Paper/Shadow run、不会触发策略执行，也不会调用真实交易所或读取敏感材料。
  */
 @Validated
 @RestController
 @RequestMapping("/api/strategies/shadow-live/preview")
-@Tag(name = "Shadow Live Preview API", description = "GateQ-3 Shadow Live no-side-effect 只读预览接口。")
+@Tag(name = "Shadow Live Preview API", description = "Shadow Live no-side-effect 只读预览接口。")
 public class ShadowLivePreviewController {
 
     private final ShadowLivePreviewService shadowLivePreviewService;
@@ -48,9 +50,9 @@ public class ShadowLivePreviewController {
      * @param strategyId 可选策略定义 ID 或 strategyCode，仅用于 scope 校验和回显
      * @param strategyVersionId 必填语义字段；为空时 service fail-closed，而不是伪造 ready
      * @param datasetId 可选 datasetId；为空或质量不足时 fail-closed
-     * @param evaluationId 可选 evaluation report id；为空时由 GateQ-1/GateQ-2 只读 facts 尝试解析
-     * @param publishId 可选 publish record id；为空时由 GateQ-1/GateQ-2 只读 facts 尝试解析
-     * @param paperRunId 可选 Paper run id；为空时由 GateQ-1/GateQ-2 只读 facts 尝试解析 SIM evidence
+     * @param evaluationId 可选 evaluation report id；为空时由策略评估准入/Paper/Shadow 对照只读 facts 尝试解析
+     * @param publishId 可选 publish record id；为空时由策略评估准入/Paper/Shadow 对照只读 facts 尝试解析
+     * @param paperRunId 可选 Paper run id；为空时由策略评估准入/Paper/Shadow 对照只读 facts 尝试解析 SIM evidence
      * @param shadowRunId 可选 Shadow run id；当前生产 fact source 未实现时返回 NOT_AVAILABLE / blocked
      * @return 只读 preview 结果；READY_FOR_NO_SIDE_EFFECT_PREVIEW 也不代表交易授权或实盘放行
      */

@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
 /**
- * EnvSafetyGuardConfiguration 在 Spring 启动期执行 GateK Batch 5B-ENV fail-closed 校验。
+ * EnvSafetyGuardConfiguration 在 Spring 启动期执行 Paper 诊断 Batch 5B-ENV fail-closed 校验。
  *
  * <p>Why: CI/test/paper profile 必须默认阻断 LIVE、AI、DH runtime、real provider、real exchange
  * endpoint 和 exchange credential material。把 guard 放在 {@code nq-app} composition root，

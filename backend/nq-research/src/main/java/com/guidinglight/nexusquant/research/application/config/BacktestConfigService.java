@@ -24,7 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * BacktestConfigService 提供 GateF-1 的回测配置管理能力。
+ * BacktestConfigService 提供研究与回测契约的回测配置管理能力。
  * <p>
  * Why:
  * backtest_config 必须独立于 research_config 固化运行窗口与执行参数，
@@ -84,7 +84,7 @@ public class BacktestConfigService {
     /**
      * 创建回测配置。
      * Why:
-     * GateF-1 明确要求 backtest_config 归属于 research_config，因此创建时必须先验证 research_config 存在，
+     * 研究配置明确要求 backtest_config 归属于 research_config，因此创建时必须先验证 research_config 存在，
      * 避免产生孤儿配置并破坏后续回测运行血缘。Batch 4-A 后，只有 ACTIVE research_config
      * 可派生新的 backtest_config；DISABLED/ARCHIVED 仍可按 ID 读取用于历史追溯，但不能产生新运行输入。
      */
@@ -185,7 +185,7 @@ public class BacktestConfigService {
     /**
      * 绑定 marketdata dataset 到回测配置。
      * Why:
-     * GateH-3 需要把“配置选择的数据集”和“当时的数据集状态”同时固化；
+     * 行情数据集需要把“配置选择的数据集”和“当时的数据集状态”同时固化；
      * 此方法只更新 backtest_config，不启动回测，也不改变 executionSpec，避免把 dataset 绑定扩展成回测算法变更。
      *
      * @param backtestConfigId 回测配置 ID
@@ -213,7 +213,7 @@ public class BacktestConfigService {
     /**
      * 绑定策略版本到回测配置，并固化版本快照与参数快照。
      * Why:
-     * GateI-2 要求回测配置成为 backtest run 的稳定输入边界；这里仅更新配置事实，
+     * 策略版本要求回测配置成为 backtest run的稳定输入边界；这里仅更新配置事实，
      * 不启动回测、不改策略算法、不改回测算法。run 创建时会复制这些快照，保证历史运行可复盘。
      *
      * @param backtestConfigId 回测配置 ID

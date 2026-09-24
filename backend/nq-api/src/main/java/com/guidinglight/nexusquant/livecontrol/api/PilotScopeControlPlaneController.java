@@ -1,11 +1,15 @@
 package com.guidinglight.nexusquant.livecontrol.api;
 
-import com.guidinglight.nexusquant.auth.application.CurrentUserProfileService;
+import com.guidinglight.nexusquant.livecontrol.api.dto.PilotScopeApprovalRequest;
+import com.guidinglight.nexusquant.livecontrol.api.dto.PilotScopeMaterializationRequest;
+import com.guidinglight.nexusquant.livecontrol.api.dto.PilotScopeMaterializationResponse;
+
+import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
-import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor;
-import com.guidinglight.nexusquant.livecontrol.application.PilotScopeControlPlane;
+import com.guidinglight.nexusquant.livecontrol.application.model.AuthenticatedLiveControlActor;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotScopeControlPlane;
 import com.guidinglight.nexusquant.livecontrol.domain.OperatorApproval;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopePreflightResult;
 
@@ -26,7 +30,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * GateY-6D 最小 authenticated operator API。Controller 只做 typed mapping 与认证 identity 传递。
+ * 受控实盘执行最小 authenticated operator API。Controller 只做 typed mapping 与认证 identity 传递。
  */
 @Validated
 @RestController

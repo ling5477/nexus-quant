@@ -1,9 +1,11 @@
 package com.guidinglight.nexusquant.strategy.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.PaperShadowComparisonResponse;
+
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonQuery;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonService;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonQuery;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.service.PaperShadowComparisonService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -22,7 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * PaperShadowComparisonController 暴露 GateQ-2 Paper vs Shadow 只读 API。
+ * PaperShadowComparisonController 暴露策略验证 Paper vs Shadow 只读 API。
  *
  * <p>Why: controller 只解析 query 参数并委托 read-only service 聚合本地事实；它不会启动
  * Shadow runner、不会创建 Paper/Shadow run、不会触发 evaluation/publish 写侧，也不会调用真实交易所或读取敏感材料。
@@ -30,7 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RestController
 @RequestMapping("/api/strategies/paper-shadow/comparison")
-@Tag(name = "Paper Shadow Comparison API", description = "GateQ-2 Paper vs Shadow 只读对照接口。")
+@Tag(name = "Paper Shadow Comparison API", description = "Paper vs Shadow 只读对照接口。")
 public class PaperShadowComparisonController {
 
     private final PaperShadowComparisonService paperShadowComparisonService;

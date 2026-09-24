@@ -8,7 +8,7 @@ import java.util.UUID;
  * Strategy Artifact Manifest 的稳定 production contract。
  *
  * <p>字段故意限制为当前 publish/evaluation/dataset 链可稳定提供的 provenance 与 artifact 索引。
- * prototype 中的参数、风险预算和信号摘要尚无稳定 production 来源，因此本批次不将其提升为必填字段。
+ * prototype 中的参数、风险预算和信号摘要尚无稳定 production 来源，因此不能将其提升为必填字段。
  * record 允许反序列化后的空值进入 validator，由 verifier 统一返回安全 reason code，而不是泄漏解析细节。
  */
 public record StrategyArtifactManifest(

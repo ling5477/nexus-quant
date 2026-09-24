@@ -45,7 +45,7 @@ export default defineConfig({
         baseURL,
         actionTimeout: 30_000,
         navigationTimeout: 30_000,
-        // 二进制证据全部禁用:本轮不上传也不生成 trace/screenshot/video。
+        // 二进制证据全部禁用：CI 不上传也不生成 trace/screenshot/video。
         trace: 'off',
         screenshot: 'off',
         video: 'off',

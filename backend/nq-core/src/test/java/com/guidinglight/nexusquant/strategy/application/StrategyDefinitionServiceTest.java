@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.strategy.application;
 
+import com.guidinglight.nexusquant.strategy.application.command.StrategyDefinitionCreateRequest;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

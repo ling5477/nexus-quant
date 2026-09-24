@@ -157,7 +157,7 @@ export const appRouter = createBrowserRouter([
                         handle: createHandle('backtests'),
                     },
                     {
-                        // B1:回测详情可视化(权益/回撤/指标/快照),复用 backtests 菜单高亮。
+                        // 回测详情可视化(权益/回撤/指标/快照),复用 backtests 菜单高亮。
                         path: 'backtests/:backtestConfigId',
                         element: <BacktestDetailPage/>,
                         handle: createHandle('backtests'),
@@ -210,7 +210,7 @@ export const appRouter = createBrowserRouter([
     },
     {
         // Why:
-        // B0(Design Tokens v2)自检路由,非业务页面、不在侧导航中,自带 v2 ConfigProvider 作用域,
+        // Design Tokens v2 自检路由,非业务页面、不在侧导航中,自带 v2 ConfigProvider 作用域,
         // 不依赖登录/后端,便于本地与 build 后核对 v2 设计系统。后续做 v2 全局采用切片时可下线。
         path: '/dev/design-system',
         element: <DesignSystemDemoPage/>,
@@ -221,7 +221,7 @@ export const appRouter = createBrowserRouter([
     },
     {
         // Why:
-        // B0.1 异常页(v2),AppShell/RequireAuth 之外的公开展示路由,自带 v2 作用域、不依赖后端。
+        // 异常页(v2),AppShell/RequireAuth 之外的公开展示路由,自带 v2 作用域、不依赖后端。
         // 这里只承载异常的"原因 + 下一步"表现层;真实触发(会话过期跳转、403、错误边界、空态检测)
         // 接入这些页面属于后续切片,不在本批改动鉴权/错误处理逻辑。
         path: '/exception/auth',

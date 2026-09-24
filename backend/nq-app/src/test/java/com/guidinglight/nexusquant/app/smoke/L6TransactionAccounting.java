@@ -1,5 +1,6 @@
 package com.guidinglight.nexusquant.app.smoke;
 
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.lang.reflect.InvocationTargetException;

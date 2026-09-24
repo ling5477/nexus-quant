@@ -1,11 +1,11 @@
 package com.guidinglight.nexusquant.livecontrol.infra.okx;
 
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateEnvironment;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadRequest;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxPrivateReadResult;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderOperation;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxSpotProviderTransport;
+import com.guidinglight.nexusquant.adapter.okx.auth.OkxPrivateEnvironment;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadRequest;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadResult;
+import com.guidinglight.nexusquant.adapter.okx.provider.model.OkxSpotProviderOperation;
+import com.guidinglight.nexusquant.adapter.okx.provider.OkxSpotProviderTransport;
 import org.junit.jupiter.api.Test;
 import org.springframework.stereotype.Component;
 

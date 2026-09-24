@@ -6,7 +6,7 @@ import {
     queryFromSearchParams,
     StrategyValidationWorkspace,
 } from '@/features/validation/StrategyValidationWorkspace';
-import type {StrategyValidationQuery} from '@/types/strategy-validation';
+import type {StrategyValidationQuery} from '@/features/validation/types/strategy-validation';
 
 /**
  * 页面层只协调 URL、查询提交态与 feature composition；业务 section 和 server state 由 validation feature 持有。

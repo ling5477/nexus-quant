@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.account.infra.okx.readonly;
 
-import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialCapability;
-import com.guidinglight.nexusquant.livecontrol.deployment.ScopedCredentialReference.RemoteIpVerificationStatus;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.ScopedCredentialCapability;
+import com.guidinglight.nexusquant.livecontrol.deployment.model.ScopedCredentialReference.RemoteIpVerificationStatus;
 
 import java.time.Instant;
 import java.util.List;

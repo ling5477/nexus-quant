@@ -9,6 +9,8 @@
 - `dashboard / accounts / trading / instruments / marketdata / strategies / schedules / runs / research / backtests / evaluations / publishes` 页面域
 - Playwright 登录与关键工作区 smoke
 
+当前源码由 `src/nq-design-system` 持有通用主题、状态与图表基础设施，`src/components/nq` 持有应用业务组件，`src/features/<owner>` 持有单领域 API、类型、hook 与可复用面板，`src/pages` 负责路由组合。跨页面 API 合同和唯一 Axios client 位于 `src/api`；领域 API 仍经该 client 发起请求。设计系统的当前入口见 [说明](src/nq-design-system/README.md)。
+
 ## 1. 环境变量
 
 复制 `frontend/.env.example` 为 `frontend/.env`，按需调整：

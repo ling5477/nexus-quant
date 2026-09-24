@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * MarketdataDatasetRepository 定义 GateH-3 数据集与质量覆盖的持久化端口。
+ * MarketdataDatasetRepository 定义历史行情接入数据集与质量覆盖的持久化端口。
  * <p>
  * Why:
  * core 只表达 dataset 业务语义和端口，JDBC 统计 SQL 必须留在 infra，避免 `nq-core` 依赖数据库实现。

@@ -2,7 +2,7 @@ package com.guidinglight.nexusquant.app.marketdata;
 
 import com.guidinglight.nexusquant.adapter.okx.model.OkxVenueRuleFact;
 import com.guidinglight.nexusquant.adapter.okx.model.OkxVenueRuleFactsSnapshot;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxVenueRuleFactsProvider;
+import com.guidinglight.nexusquant.adapter.okx.marketdata.OkxVenueRuleFactsProvider;
 import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService;
 import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogUpsertStats;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.InstrumentCatalogItem;
@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * OkxVenueRuleFactsSyncService 编排 GateW-3 operator-triggered public metadata sync。
+ * OkxVenueRuleFactsSyncService 编排只读诊断 operator-triggered public metadata sync。
  *
  * <p>线程安全：依赖均为无共享可变状态或线程安全组件；每次调用只处理 server-side allowlist 中的 1..3
  * 个 OKX Spot symbols。副作用仅为 bounded UPSERT `instrument_catalog` 和脱敏日志；无 Controller、

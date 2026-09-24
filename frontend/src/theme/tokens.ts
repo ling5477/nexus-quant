@@ -40,7 +40,7 @@ export const nqColor = {
     up: '#f23645',
     down: '#089981',
 
-    // 环境语义：PAPER=蓝，DEMO=紫，LIVE=红色强警示（本阶段 LIVE 能力 disabled）
+    // 环境语义：PAPER=蓝，DEMO=紫，LIVE=红色强警示（LIVE 能力 disabled）
     paper: '#54a9ff',
     demo: '#9d7bff',
     live: '#e5484d',

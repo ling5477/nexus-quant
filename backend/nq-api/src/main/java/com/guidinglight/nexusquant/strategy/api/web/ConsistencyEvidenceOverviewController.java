@@ -1,8 +1,10 @@
 package com.guidinglight.nexusquant.strategy.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.ConsistencyEvidenceOverviewResponse;
+
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.consistencyevidence.ConsistencyEvidenceOverviewQueryService;
+import com.guidinglight.nexusquant.strategy.application.consistencyevidence.service.ConsistencyEvidenceOverviewQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -19,16 +21,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * ConsistencyEvidenceOverviewController 暴露 GateT-2 consistency evidence overview 只读 API。
+ * ConsistencyEvidenceOverviewController 暴露验证工作流 consistency evidence overview 只读 API。
  *
- * <p>Why：GateT-2 只允许实现 `GET /api/paper-shadow/consistency/evidence/overview` 的诊断 read model。
+ * <p>Why：验证工作流只允许实现 `GET /api/paper-shadow/consistency/evidence/overview`的诊断 read model。
  * 本 controller 不接受 request body，不提供 POST/PUT/PATCH/DELETE，不创建 consistency report，不启动
  * runner/scheduler，不调用真实交易所，不读取 credential，也不修改 account / order / ledger / Paper / Shadow 状态。
  */
 @Validated
 @RestController
 @RequestMapping("/api/paper-shadow/consistency/evidence")
-@Tag(name = "Consistency Evidence API", description = "GateT-2 Paper vs Shadow consistency evidence 只读接口。")
+@Tag(name = "Consistency Evidence API", description = "Paper vs Shadow consistency evidence 只读接口。")
 public class ConsistencyEvidenceOverviewController {
 
     private final ConsistencyEvidenceOverviewQueryService queryService;

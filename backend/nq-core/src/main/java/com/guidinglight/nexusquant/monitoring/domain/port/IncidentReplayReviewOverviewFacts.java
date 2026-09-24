@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * IncidentReplayReviewOverviewFacts 是 GateT-3 repository 返回给 core 的 SELECT-only 投影。
+ * IncidentReplayReviewOverviewFacts 是验证工作流 repository 返回给 core 的 SELECT-only 投影。
  *
  * <p>该模型只允许携带本地 Shadow / consistency / Paper alert / recovery / replay 的脱敏摘要和 id anchor。
  * 它不得包含 credential material、真实账户余额、真实订单状态、ledger mutation、private provider 配置或 raw JSONB payload。

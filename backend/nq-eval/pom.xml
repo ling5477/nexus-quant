@@ -12,7 +12,7 @@
 
     <artifactId>nq-eval</artifactId>
     <name>nq-eval</name>
-    <description>GateF-4 evaluation and reporting module.</description>
+    <description>Backtest evaluation and reporting module.</description>
     <packaging>jar</packaging>
 
     <dependencies>

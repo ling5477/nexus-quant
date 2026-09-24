@@ -1,10 +1,12 @@
 package com.guidinglight.nexusquant.app.config.livecontrol;
 
+import com.guidinglight.nexusquant.app.config.livecontrol.model.ExactPilotScopeCliInput;
+
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotScopeControlPlane;
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotScopeControlResult;
+import com.guidinglight.nexusquant.livecontrol.application.model.AuthenticatedLiveControlActor;
+import com.guidinglight.nexusquant.livecontrol.application.port.ExactPilotScopeControlPlane;
+import com.guidinglight.nexusquant.livecontrol.application.model.ExactPilotScopeControlResult;
 
 import java.nio.file.Files;
 import java.nio.file.LinkOption;

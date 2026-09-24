@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.adapter.okx.service;
 
+import com.guidinglight.nexusquant.adapter.okx.config.OkxRuntimeConfig;
+
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;

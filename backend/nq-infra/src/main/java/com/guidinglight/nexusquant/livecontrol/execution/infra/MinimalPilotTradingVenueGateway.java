@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.livecontrol.execution.infra;
 
-import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor;
-import com.guidinglight.nexusquant.livecontrol.application.PilotExecutionLeaseControlPlane;
+import com.guidinglight.nexusquant.livecontrol.application.model.AuthenticatedLiveControlActor;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotExecutionLeaseControlPlane;
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotExecutionLease;
@@ -17,8 +17,8 @@ import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentC
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentState;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptCanonicalEncoder;
 import com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionReceiptOutcome;
-import com.guidinglight.nexusquant.trading.application.CancelOrderRequest;
-import com.guidinglight.nexusquant.trading.application.PlaceOrderRequest;
+import com.guidinglight.nexusquant.trading.application.command.CancelOrderRequest;
+import com.guidinglight.nexusquant.trading.application.command.PlaceOrderRequest;
 import com.guidinglight.nexusquant.trading.application.port.TradingCancelGatewayResult;
 import com.guidinglight.nexusquant.trading.application.port.TradingGatewayFailure;
 import com.guidinglight.nexusquant.trading.application.port.TradingGatewayResultCategory;
@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * One-shot GateY pilot gateway。PLACE/CANCEL前均先持久化ExecutionIntent与lease动作绑定；
+ * One-shot 受控实盘执行 pilot gateway。PLACE/CANCEL前均先持久化ExecutionIntent与lease动作绑定；
  * provider未知结果只query，不会第二次调用PLACE。
  */
 public final class MinimalPilotTradingVenueGateway implements TradingVenueGateway {

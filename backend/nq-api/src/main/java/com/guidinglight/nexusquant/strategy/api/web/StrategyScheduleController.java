@@ -1,8 +1,13 @@
 package com.guidinglight.nexusquant.strategy.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.StrategyScheduleCreateRequestBody;
+import com.guidinglight.nexusquant.strategy.api.dto.StrategyScheduleResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.StrategyScheduleScanResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.StrategyScheduleStatusUpdateRequestBody;
+
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.StrategyScheduleCreateRequest;
+import com.guidinglight.nexusquant.strategy.application.command.StrategyScheduleCreateRequest;
 import com.guidinglight.nexusquant.strategy.application.StrategyScheduleScanService;
 import com.guidinglight.nexusquant.strategy.application.StrategyScheduleService;
 import io.swagger.v3.oas.annotations.Operation;

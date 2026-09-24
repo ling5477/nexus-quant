@@ -6,7 +6,7 @@ import java.util.Objects;
 /**
  * MarketdataReadinessBarFacts contains bounded aggregate facts read from marketdata_bars.
  * <p>
- * Why: GateM-2E readiness must be computed from local database facts only, keeping JDBC details in
+ * 原因：行情就绪状态只能由本地数据库事实计算，JDBC 细节保留在
  * infra while allowing application tests to exercise the status resolver without a database.
  */
 public record MarketdataReadinessBarFacts(

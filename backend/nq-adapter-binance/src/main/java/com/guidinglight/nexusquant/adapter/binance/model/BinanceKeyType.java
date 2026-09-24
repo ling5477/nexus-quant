@@ -6,7 +6,7 @@ import java.util.Locale;
  * BinanceKeyType 描述 Binance REST request security 当前启用的签名算法。
  * <p>
  * Why:
- * GateC-2 需要在不改变 core/ledger/risk 的前提下兼容 Binance 的多种密钥类型。
+ * 交易所适配契约需要在不改变 core/ledger/risk 的前提下兼容 Binance 的多种密钥类型。
  * 把算法选择显式建模成 enum，运行时配置、signer 分发与测试才能围绕同一语义收敛。
  */
 public enum BinanceKeyType {

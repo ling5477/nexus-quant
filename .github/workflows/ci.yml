@@ -62,6 +62,14 @@ jobs:
           python3 -m unittest discover -s scripts/docs/tests -p test_stage_assets.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Reject development stage semantics in long-lived sources
+        shell: pwsh
+        run: |
+          python3 ./scripts/docs/check-stage-semantic-leakage.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python3 -m unittest discover -s scripts/docs/tests -p test_stage_semantics.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Validate canonical delivery workflow contract
         shell: pwsh
         run: |
@@ -1272,7 +1280,7 @@ jobs:
             '''.*adapter[\\/]binance[\\/]service[\\/]BinanceRuntimeConfigTest\.java$''',
             '''.*adapter[\\/]binance[\\/]service[\\/]BinanceRequestSignerTest\.java$''',
             '''.*adapter[\\/]binance[\\/]service[\\/]BinanceHttpClientTest\.java$''',
-            '''.*adapter[\\/]binance[\\/]service[\\/]BinanceEd25519RequestSigner\.java$''',
+            '''.*adapter[\\/]binance[\\/]signing[\\/]BinanceEd25519RequestSigner\.java$''',
             # Frozen Gate-C diagnostic record: generic-api-key false positive on a non-secret
             # WebSocket client request UUID (client.request.id, ~line 325); the credential
             # fingerprint there is already masked. docs/gates is an immutable frozen archive.
@@ -1342,7 +1350,7 @@ jobs:
           placeholder='REPLACE_WITH_LOCAL|CHANGE_ME|DUMMY|dummy|FAKE|fake|test-only|example|EXAMPLE|placeholder|PLACEHOLDER|YOUR_|\$\{|getenv|process\.env|import\.meta\.env|Zm9v|<[A-Za-z]'
 
           # Precise allowlist: PEM-material rule on the 4 known Binance fake-key / protocol-constant files.
-          allow_pem='(adapter/binance/service/BinanceRuntimeConfigTest\.java|adapter/binance/service/BinanceRequestSignerTest\.java|adapter/binance/service/BinanceHttpClientTest\.java|adapter/binance/service/BinanceEd25519RequestSigner\.java)$'
+          allow_pem='(adapter/binance/service/BinanceRuntimeConfigTest\.java|adapter/binance/service/BinanceRequestSignerTest\.java|adapter/binance/service/BinanceHttpClientTest\.java|adapter/binance/signing/BinanceEd25519RequestSigner\.java)$'
 
           while IFS=' ' read -r name re; do
             [ -z "${name}" ] && continue

@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.paper.api.dto;
 
-import com.guidinglight.nexusquant.research.application.paper.PaperAutoReview;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperAutoReview;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
@@ -8,7 +8,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * PaperAutoReviewResponse —— Paper 规则化自动复盘只读聚合响应体（GateK Batch K4）。
+ * PaperAutoReviewResponse —— Paper 规则化自动复盘只读聚合响应体。
  *
  * 供前端自动复盘视图消费：总览、组合复盘、重点 run 复盘、策略/发布复盘与问题聚类。
  * primaryCause / severity / confidence / ratingLabel / cause 等以枚举名字符串序列化。

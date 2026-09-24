@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.monitoring.domain.port;
 
 /**
- * IncidentReplayOverviewQueryPort 是 GateS-6 Incident / Replay overview 的只读查询端口。
+ * IncidentReplayOverviewQueryPort 是验证只读视图 Incident / Replay overview的只读查询端口。
  *
  * <p>实现只能读取允许的本地事实表，不得创建 incident、alert、replay，也不得调用 runner、
  * scheduler、adapter、credential、order、account 或 ledger 服务。

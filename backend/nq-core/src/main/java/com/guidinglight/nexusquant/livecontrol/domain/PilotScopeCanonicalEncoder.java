@@ -5,7 +5,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * `pilot-scope.v1` byte-stable encoder；字段顺序由 GateY-6D 合同冻结。
+ * `pilot-scope.v1` byte-stable encoder；字段顺序由受控实盘执行合同冻结。
  */
 public final class PilotScopeCanonicalEncoder {
 

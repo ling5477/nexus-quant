@@ -9,9 +9,9 @@ import {useEffect} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 
-import {accountsApi} from '@/api/accounts';
+import {accountsApi} from '@/features/accounts/api/accounts';
 import {accountQueryKeys, authQueryKeys} from '@/api/query-keys';
-import type {ExchangeAccountSummary} from '@/types/accounts';
+import type {ExchangeAccountSummary} from '@/features/accounts/types/accounts';
 import {useAuthStore} from '@/store/auth-store';
 import {useAccountContextStore} from '@/store/account-context-store';
 import {appEnv} from '@/utils/env';

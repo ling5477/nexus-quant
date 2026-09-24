@@ -17,7 +17,7 @@ public interface BacktestEvaluationReportRepository {
     /**
      * 按评估报告 ID 查询详情。
      * Why:
-     * GateI-2 增加 `/api/evaluations/{evaluationId}` 独立入口，报告详情不能再只依赖 run ID 路由。
+     * 策略版本增加 `/api/evaluations/{evaluationId}` 独立入口，报告详情不能再只依赖 run ID 路由。
      *
      * @param evalReportId 评估报告 ID
      * @return 评估报告；不存在时为空
@@ -29,7 +29,7 @@ public interface BacktestEvaluationReportRepository {
     /**
      * 查询评估报告列表。
      * Why:
-     * GateI-2 前端评估页要直接展示核心指标，因此 repository 提供按 run 时间倒序的最小列表；
+     * 策略版本前端评估页要直接展示核心指标，因此 repository 提供按 run 时间倒序的最小列表；
      * 复杂分页和指标区间筛选留到后续批次。
      *
      * @return 评估报告列表

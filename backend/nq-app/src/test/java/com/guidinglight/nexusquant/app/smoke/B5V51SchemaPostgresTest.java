@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.app.smoke;
 
+import com.guidinglight.nexusquant.risk.application.port.RiskGate;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;

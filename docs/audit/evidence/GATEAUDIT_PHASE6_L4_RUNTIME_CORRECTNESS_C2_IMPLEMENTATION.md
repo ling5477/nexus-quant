@@ -14,7 +14,7 @@
 
 ## 根因与最小生产实现
 
-唯一 production 文件：[OkxRestReconcileService.java](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java)。
+唯一 production 文件：[OkxRestReconcileService.java](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/recovery/OkxRestReconcileService.java)。
 
 候选集从 `SENT / ACCEPTED / PARTIALLY_FILLED / CANCEL_REQUESTED / CANCEL_REJECTED / FILLED` 增加 `CANCELLED`，仍调用 `findOrdersByStatuses(statuses, limit)`。
 原盲区是 CANCELLED 未进入扫描，venue fill 无法到达 canonical Trade/Ledger owner。

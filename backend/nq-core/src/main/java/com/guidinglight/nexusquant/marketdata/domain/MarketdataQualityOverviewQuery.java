@@ -8,7 +8,7 @@ import java.util.UUID;
  * MarketdataQualityOverviewQuery 定义 Data Quality Center overview 的只读筛选条件。
  * <p>
  * Why:
- * GateP Batch 2 需要跨 symbol / interval / source / dataset 聚合现有事实，但不能因为筛选为空而
+ * 数据质量诊断需要跨 symbol / interval / source / dataset 聚合现有事实，但不能因为筛选为空而
  * 回退到真实 provider 或 credential。该 query 只表达本地 DB 读取边界。
  */
 public record MarketdataQualityOverviewQuery(

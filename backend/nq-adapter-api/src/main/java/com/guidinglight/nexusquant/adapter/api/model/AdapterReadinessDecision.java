@@ -8,15 +8,15 @@ import java.util.Objects;
  * AdapterReadinessDecision 是 readiness 评估的不可变结果。
  * <p>
  * Why:
- * GateM-0 需要把“某 venue 的某 capability 当前是否可用、是否 LIVE 授权、因为什么不可用”
+ * 适配器就绪策略需要把“某 venue 的某 capability 当前是否可用、是否 LIVE 授权、因为什么不可用”
  * 作为一个可审计、可传递的只读结果返回给调用方。该 record 在构造期强制 fail-closed 不变量，
  * 任何调用方都无法构造出“未就绪却 allowed=true”的决策，从而避免误判 real-ready。
  *
  * @param venue          统一交易所 / adapter 标识（如 OKX / BINANCE / NOOP）；不可为空
  * @param capability     被评估的能力维度；不可为空
  * @param status         规范化就绪状态；不可为空
- * @param allowed        是否允许该能力真实执行；GateM-0 内真实能力一律 false
- * @param liveAuthorized 是否已获 LIVE 授权；GateL baseline LIVE DISABLED，恒为 false
+ * @param allowed 是否允许该能力真实执行；适配器就绪策略内真实能力一律 false
+ * @param liveAuthorized 是否已获 LIVE 授权；无真实连接安全边界 baseline LIVE DISABLED，恒为 false
  * @param reasons        不可用 / 受限原因（非 READY 时必须非空）；构造期拷贝为不可变列表
  * @param checkedAt      评估时间戳；不可为空
  * @param message        可审计、可脱敏的简短说明；不可为空

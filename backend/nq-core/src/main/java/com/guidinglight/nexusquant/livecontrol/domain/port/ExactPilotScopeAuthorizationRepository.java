@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.livecontrol.domain.port;
 
-import com.guidinglight.nexusquant.livecontrol.application.ExactPilotBindingCommand;
+import com.guidinglight.nexusquant.livecontrol.application.command.ExactPilotBindingCommand;
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
 import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotScopeAuthorization;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;

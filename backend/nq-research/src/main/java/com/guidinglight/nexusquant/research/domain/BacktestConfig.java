@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.research.domain;
 
+import static com.guidinglight.nexusquant.common.text.NullableText.firstNonBlank;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Locale;
@@ -9,8 +11,8 @@ import java.util.Locale;
  * <p>
  * Why:
  * 回测配置从属于研究配置，但需要独立固化运行窗口、初始资金和执行参数，
- * 这样 GateF-2 以后接入真实运行链时，仍可以围绕同一个配置对象扩展，而不污染执行域对象。
- * GateI-2 在此基础上把 strategy version、参数快照、配置快照和 dataset 快照收口到配置事实，
+ * 这样回测执行以后接入真实运行链时，仍可以围绕同一个配置对象扩展，而不污染执行域对象。
+ * 策略版本在此基础上把 strategy version、参数快照、配置快照和 dataset 快照收口到配置事实，
  * 确保后续 run 创建时可以一次性固化完整输入，而不依赖运行时可变策略定义。
  * V28 以后 status/archive 字段只描述配置元数据生命周期；默认列表隐藏 ARCHIVED，
  * 按 ID 查询仍保留读取能力，以免破坏历史 run、evaluation 和 publish traceability。
@@ -45,8 +47,8 @@ public record BacktestConfig(
 
     public BacktestConfig {
         status = normalizeStatus(status);
-        archivedBy = normalizeNullableText(archivedBy);
-        archiveReason = normalizeNullableText(archiveReason);
+        archivedBy = firstNonBlank(archivedBy, null);
+        archiveReason = firstNonBlank(archiveReason, null);
         if (STATUS_ARCHIVED.equals(status)) {
             if (archivedAt == null) {
                 throw new IllegalArgumentException("archivedAt must not be null when status is ARCHIVED");
@@ -257,8 +259,4 @@ public record BacktestConfig(
         return normalized;
     }
 
-    private static String normalizeNullableText(String value) {
-        return value == null || value.isBlank() ? null : value.trim();
-    }
 }
-

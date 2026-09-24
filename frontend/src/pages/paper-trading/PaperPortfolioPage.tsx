@@ -1,13 +1,13 @@
 import {Space} from 'antd';
 
-import {usePaperPortfolioSummaryQuery} from '@/hooks/usePaperTradingQuery';
+import {usePaperPortfolioSummaryQuery} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 
 import {PaperPortfolioDashboard} from './components/PaperPortfolioDashboard';
 import {PaperRiskDrawdownDashboard} from './components/PaperRiskDashboard';
 import {PaperStrategyRankingDashboard} from './components/PaperStrategyRankingDashboard';
 
 /**
- * PaperPortfolioPage 是 K5-C1 的 `/paper-trading/portfolio` 真实子路由。
+ * PaperPortfolioPage 是 现有的 `/paper-trading/portfolio` 真实子路由。
  *
  * Why:
  * 本页只迁移 Portfolio 只读展示：组合总览、分组摘要、风险回撤、策略排行、数据质量和组合资金 / 回撤曲线。

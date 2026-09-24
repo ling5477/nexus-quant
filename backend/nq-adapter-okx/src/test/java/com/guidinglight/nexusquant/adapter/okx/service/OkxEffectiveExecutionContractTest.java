@@ -1,5 +1,9 @@
 package com.guidinglight.nexusquant.adapter.okx.service;
 
+import com.guidinglight.nexusquant.adapter.okx.http.OkxHttpClient;
+import com.guidinglight.nexusquant.adapter.okx.marketdata.OkxInstrumentsCache;
+import com.guidinglight.nexusquant.adapter.okx.trading.OkxExchangeAdapter;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderRequest;
 import com.sun.net.httpserver.HttpServer;

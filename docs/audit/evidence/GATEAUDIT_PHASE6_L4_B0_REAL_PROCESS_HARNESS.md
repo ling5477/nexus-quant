@@ -47,9 +47,9 @@ Final decision：`BLOCKED / PRODUCTION_TESTABILITY_GAP`。更精确的原因是�
 
 1. [V35 migration](../../../backend/nq-infra/src/main/resources/db/migration/V35__gate_w4_durable_kill_switch.sql) 为 fresh database 写入 `GLOBAL_TRADING / ENGAGED`。
 2. [TradingRuntimeConfiguration](../../../backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/trading/TradingRuntimeConfiguration.java) 的 riskGate 真实装配 KillSwitchRiskRule。
-3. [KillSwitchRiskRule.evaluate](../../../backend/nq-risk/src/main/java/com/guidinglight/nexusquant/risk/service/KillSwitchRiskRule.java) 对 blocksOperations 无条件返回 `KILL_SWITCH_TRIGGERED / REJECT`；没有 SIM 豁免。
-4. [OrderCommandWriteService.preparePlaceOrder](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java) 在拒绝时完成 `RISK_REJECTED` 并返回 completedResult。
-5. [OrderCommandService.placeOrder](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java) 遇 completedResult 直接返回，因此不会调用 TradingVenueGateway.placeOrder。
+3. [KillSwitchRiskRule.evaluate](../../../backend/nq-risk/src/main/java/com/guidinglight/nexusquant/risk/application/rule/KillSwitchRiskRule.java) 对 blocksOperations 无条件返回 `KILL_SWITCH_TRIGGERED / REJECT`；没有 SIM 豁免。
+4. [OrderCommandWriteService.preparePlaceOrder](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandWriteService.java) 在拒绝时完成 `RISK_REJECTED` 并返回 completedResult。
+5. [OrderCommandService.placeOrder](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandService.java) 遇 completedResult 直接返回，因此不会调用 TradingVenueGateway.placeOrder。
 6. Phase4 restart helper 的 RuntimeAccess.placeOrder 与 TradingChain fixture 都通过 SQL 将测试库 kill 改成 DISENGAGED 才执行成功路径。本轮不能复用该副作用，不能换成 mock RiskGate、伪造订单或写入 Trade/Ledger 终态。
 
 因此拒单 smoke 可以安全执行，但不满足用户要求的 venue acceptance → Trade/Ledger smoke。最小待澄清项是：`kill disengage = 0` 是否包含 disposable 测试库，或仅约束真实/生产状态。本轮按明确字面边界执行，没有自行把它缩小为生产范围。该问题不要求先改 production；若全环境禁令保持，当前任务要求的成功 smoke 无法完成。

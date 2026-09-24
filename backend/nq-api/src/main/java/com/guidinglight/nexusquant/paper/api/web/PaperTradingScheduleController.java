@@ -1,13 +1,13 @@
 package com.guidinglight.nexusquant.paper.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.paper.api.dto.PaperRunScheduleCreateRequestBody;
 import com.guidinglight.nexusquant.paper.api.dto.PaperRunScheduleFireResponse;
 import com.guidinglight.nexusquant.paper.api.dto.PaperRunScheduleResponse;
 import com.guidinglight.nexusquant.paper.api.dto.PaperRunScheduleStatusUpdateRequestBody;
 import com.guidinglight.nexusquant.research.application.api.paper.PaperTradingApiService;
-import com.guidinglight.nexusquant.research.application.paper.PaperRunScheduleCreateCommand;
+import com.guidinglight.nexusquant.research.application.paper.command.PaperRunScheduleCreateCommand;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -35,7 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @ConditionalOnBean(PaperTradingApiService.class)
 @RequestMapping("/api/paper-trading/schedules")
-@Tag(name = "Paper Trading Schedule API", description = "GateJ-1 Paper run 调度计划与触发记录接口。")
+@Tag(name = "Paper Trading Schedule API", description = "Paper run 调度计划与触发记录接口。")
 public class PaperTradingScheduleController {
 
     private final PaperTradingApiService apiService;

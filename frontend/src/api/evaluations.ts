@@ -1,7 +1,7 @@
 import {apiClient} from '@/api/client';
 import type {BacktestEvaluationDetailItem, BacktestEvaluationListItem} from '@/types/evaluations';
 
-export interface EvaluationListRequest {
+interface EvaluationListRequest {
     researchConfigId?: string;
     backtestConfigId?: string;
 }

@@ -13,10 +13,10 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 /**
- * JdbcSourceStrategySnapshotRepository 读取 GateF 允许消费的 strategy_definitions 快照。
+ * JdbcSourceStrategySnapshotRepository 读取研究与回测契约允许消费的 strategy_definitions 快照。
  * <p>
  * Why:
- * 研究域只需要复制策略定义事实，不应直接依赖 GateE 的 service 包或运行语义。
+ * 研究域只需要复制策略定义事实，不应直接依赖执行与补偿契约的 service 包或运行语义。
  */
 @Repository
 public class JdbcSourceStrategySnapshotRepository implements SourceStrategySnapshotRepository {

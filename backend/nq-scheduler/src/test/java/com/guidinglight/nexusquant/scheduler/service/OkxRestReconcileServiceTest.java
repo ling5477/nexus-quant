@@ -1,5 +1,8 @@
 package com.guidinglight.nexusquant.scheduler.service;
 
+import com.guidinglight.nexusquant.scheduler.port.TradeLedgerGateway;
+import com.guidinglight.nexusquant.scheduler.recovery.OkxRestReconcileService;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,17 +16,17 @@ import static org.mockito.Mockito.when;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterTradeReport;
 import com.guidinglight.nexusquant.adapter.okx.model.OkxFillRecord;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxExchangeAdapter;
+import com.guidinglight.nexusquant.adapter.okx.trading.OkxExchangeAdapter;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
-import com.guidinglight.nexusquant.trading.application.OrderCommandService;
-import com.guidinglight.nexusquant.trading.application.OrderLifecycleService;
+import com.guidinglight.nexusquant.trading.application.service.OrderCommandService;
+import com.guidinglight.nexusquant.trading.application.service.OrderLifecycleService;
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.eventstore.infra.EventStoreAppender;
 import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
 import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
 import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
-import com.guidinglight.nexusquant.contracts.event.EventPublisherPort;
+import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
 
 import java.math.BigDecimal;
 import java.time.Instant;

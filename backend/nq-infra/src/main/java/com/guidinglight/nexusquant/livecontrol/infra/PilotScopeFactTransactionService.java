@@ -1,8 +1,8 @@
 package com.guidinglight.nexusquant.livecontrol.infra;
 
-import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor;
-import com.guidinglight.nexusquant.livecontrol.application.LiveSessionControlService;
-import com.guidinglight.nexusquant.livecontrol.application.OperatorPilotAuthorityService;
+import com.guidinglight.nexusquant.livecontrol.application.model.AuthenticatedLiveControlActor;
+import com.guidinglight.nexusquant.livecontrol.application.service.LiveSessionControlService;
+import com.guidinglight.nexusquant.livecontrol.application.service.OperatorPilotAuthorityService;
 import com.guidinglight.nexusquant.livecontrol.application.port.LiveControlAuthorizationPort;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
@@ -28,7 +28,7 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * GateY-6D 四类短事务的 infra owner；只组合 stored facts，不接 credential、provider、worker 或 exchange mutation。
+ * 受控实盘执行四类短事务的 infra owner；只组合 stored facts，不接 credential、provider、worker 或 exchange mutation。
  */
 @Service
 public class PilotScopeFactTransactionService {

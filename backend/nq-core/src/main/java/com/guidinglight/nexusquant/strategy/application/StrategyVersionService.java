@@ -23,7 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * StrategyVersionService 提供 GateI-1 策略版本管理主链。
+ * StrategyVersionService 提供策略版本策略版本管理主链。
  *
  * Why:
  * 策略定义本身会随配置和启停变化而变化；回测、发布和后续 Paper run 需要引用稳定版本。

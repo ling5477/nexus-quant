@@ -123,9 +123,9 @@ C1 invariants：stale PLACE、stale CANCEL、ABA、pre-cancel 均 PASS。OrderCo
 本轮 production：
 
 - [OrderRepository](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/domain/port/OrderRepository.java)：增加扫描 reservation 合同。
-- [OrderCommandService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java)：转发专用 reservation。
+- [OrderCommandService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandService.java)：转发专用 reservation。
 - [JdbcOrderRepository](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/jdbc/JdbcOrderRepository.java)：短事务、row lock、循环查询和持久化推进。
-- [OkxRestReconcileService](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java)：调用新的 OKX reservation。
+- [OkxRestReconcileService](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/recovery/OkxRestReconcileService.java)：调用新的 OKX reservation。
 - V48 additive migration。
 
 测试：L4PlanBlocker、ReconciliationCursor（新增）、TradingChain、TradingRestartRecovery、OrderCommandServiceTest 的 in-memory fixture 显式拒绝 durable scan、OkxRestReconcileServiceTest 与 OperationalReconciliationMetricsTest 的 venue/reservation mock 合同。再加本文，总计本轮 13 个文件；原两份 C2 evidence 保留，整个候选相对 HEAD 有 15 个文件。

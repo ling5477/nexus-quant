@@ -18,7 +18,7 @@ import java.util.UUID;
  */
 public interface ValidationReviewRepository {
 
-    /** 创建本地 OPEN case；本轮不提供自动 materialization 或 HTTP 入口。 */
+    /** 创建本地 OPEN case；该端口不提供自动 materialization 或 HTTP 入口。 */
     ValidationReviewCase createCase(ValidationReviewCase reviewCase);
 
     /** 按 tenant + owner + case id 查询 OPERATOR scope。 */
@@ -37,12 +37,12 @@ public interface ValidationReviewRepository {
     /** 按 tenant + optional owner + filter + offset bounded 查询 ADMIN case 列表。 */
     List<ValidationReviewCase> listTenantCases(String tenantKey, ValidationReviewCaseQuery query);
 
-    /** GateV-1 compatibility helper；新 API 使用 query overload。 */
+    /** 人工复核 compatibility helper；新 API 使用 query overload。 */
     default List<ValidationReviewCase> listOwnedCases(String tenantKey, long ownerId, int limit) {
         return listOwnedCases(tenantKey, ownerId, new ValidationReviewCaseQuery(null, null, null, limit, 0));
     }
 
-    /** GateV-1 compatibility helper；新 API 使用 query overload。 */
+    /** 人工复核 compatibility helper；新 API 使用 query overload。 */
     default List<ValidationReviewCase> listTenantCases(String tenantKey, int limit) {
         return listTenantCases(tenantKey, new ValidationReviewCaseQuery(null, null, null, limit, 0));
     }

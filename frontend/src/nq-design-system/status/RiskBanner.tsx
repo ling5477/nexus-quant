@@ -1,8 +1,8 @@
 import {useTranslation} from 'react-i18next';
-// RiskBanner.tsx — 页级阻断/熔断/警报横幅(B0 / Design Tokens v2)。放页头下方,不可藏角落。
+// RiskBanner.tsx — 页级阻断/熔断/警报横幅(Design Tokens v2)。放页头下方,不可藏角落。
 import type { ReactNode } from 'react';
 
-export type RiskSeverity = 'info' | 'warning' | 'danger';
+type RiskSeverity = 'info' | 'warning' | 'danger';
 
 const SEV: Record<RiskSeverity, { color: string; label: string }> = {
   info: { color: 'var(--nq-info)', label: '提示' },
@@ -10,7 +10,7 @@ const SEV: Record<RiskSeverity, { color: string; label: string }> = {
   danger: { color: 'var(--nq-danger)', label: '阻断' },
 };
 
-export interface RiskBannerProps {
+interface RiskBannerProps {
   severity: RiskSeverity;
   /** 阻断/警报的可读原因。失败/阻断不靠 toast 一闪,要有常驻原因区。 */
   message: ReactNode;

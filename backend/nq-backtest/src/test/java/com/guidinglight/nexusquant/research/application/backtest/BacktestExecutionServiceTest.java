@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.guidinglight.nexusquant.marketdata.application.FixtureMarketdataRegistry;
+import com.guidinglight.nexusquant.marketdata.application.service.FixtureMarketdataRegistry;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalMarketDataQuery;

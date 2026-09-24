@@ -78,7 +78,7 @@ class EvaluationArtifact:
 
     用途：把 experiment metadata、dataset / strategy reference、参数集、指标摘要和边界声明
     固化为一个可写入本地 JSON 的研究产物。
-    Why：GateS-4 需要最小可复现 artifact baseline；checksum 和强制安全字段可防止后续把
+    Why：研究产物需要可复现的最小基线；checksum 和强制安全字段可防止后续把
     Python research 误接成 LIVE execution、交易授权或 Java production fact write。
     幂等：调用方固定 generated_at 和内容时，artifact_id、parameter_set_id 与 checksum 稳定。
     副作用：仅在 writer 被显式调用时写本地 JSON 文件；不访问网络或外部系统。

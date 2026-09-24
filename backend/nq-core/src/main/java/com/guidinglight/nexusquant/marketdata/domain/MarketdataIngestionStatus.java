@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.marketdata.domain;
 
 /**
- * MarketdataIngestionStatus 固定 GateH-2 接入任务和运行记录状态集合。
+ * MarketdataIngestionStatus 固定历史行情接入接入任务和运行记录状态集合。
  * <p>
  * Why:
  * DB check constraint、API 响应和 application service 必须共享同一套状态名，避免 controller 或 repository

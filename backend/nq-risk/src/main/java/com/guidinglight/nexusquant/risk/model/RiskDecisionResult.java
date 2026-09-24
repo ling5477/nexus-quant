@@ -7,7 +7,7 @@ import com.guidinglight.nexusquant.contracts.model.RiskSeverity;
  * RiskDecisionResult 表示风控结果。
  * <p>
  * Why:
- * GateD 要求风控拒绝必须输出 `ruleCode / ruleName / rejectReason / hardReject`，
+ * 统一交易契约要求风控拒绝必须输出 `ruleCode / ruleName / rejectReason / hardReject`，
  * 这样 core 才能把拒绝证据统一写入 audit_logs 与 event_store。
  */
 public record RiskDecisionResult(

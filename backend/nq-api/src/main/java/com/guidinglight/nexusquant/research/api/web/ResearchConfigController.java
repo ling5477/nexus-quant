@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.research.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.research.application.api.ResearchConfigApiService;
 import com.guidinglight.nexusquant.research.api.dto.ConfigArchiveRequestBody;
 import com.guidinglight.nexusquant.research.api.dto.ResearchConfigCreateRequestBody;

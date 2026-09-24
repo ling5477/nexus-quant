@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * MarketdataReadinessSummary is the stable read model returned by the GateM-2E readiness API.
+ * MarketdataReadinessSummary 是行情就绪 API 返回的稳定只读模型。
  * <p>
  * Why: clients need one response that separates source health, freshness, gap and quality evidence
  * while preserving fail-closed states for no-data and unknown evidence.

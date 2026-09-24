@@ -13,9 +13,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import java.util.stream.IntStream;
 
-import com.guidinglight.nexusquant.security.token.JwtTokenService;
-import com.guidinglight.nexusquant.security.token.JwtTokenSettings;
-import com.guidinglight.nexusquant.security.token.TokenClaims;
+import com.guidinglight.nexusquant.security.token.service.JwtTokenService;
+import com.guidinglight.nexusquant.security.token.config.JwtTokenSettings;
+import com.guidinglight.nexusquant.security.token.model.TokenClaims;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

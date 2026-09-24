@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.DisabledPublicMarketDataOutboundClient;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.JdkPublicMarketDataOutboundClient;
-import com.guidinglight.nexusquant.adapter.api.publicmarketdata.PublicMarketDataOutboundClient;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.transport.DisabledPublicMarketDataOutboundClient;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.transport.JdkPublicMarketDataOutboundClient;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.port.PublicMarketDataOutboundClient;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;

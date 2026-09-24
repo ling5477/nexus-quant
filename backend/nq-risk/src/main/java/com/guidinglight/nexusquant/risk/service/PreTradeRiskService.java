@@ -1,12 +1,16 @@
 package com.guidinglight.nexusquant.risk.service;
 
+import com.guidinglight.nexusquant.risk.application.port.RiskGate;
+import com.guidinglight.nexusquant.risk.application.rule.RiskRule;
+import com.guidinglight.nexusquant.risk.application.rule.RiskRuleRegistry;
+
 import com.guidinglight.nexusquant.risk.model.RiskContext;
 import com.guidinglight.nexusquant.risk.model.RiskDecisionResult;
 
 import java.util.Objects;
 
 /**
- * PreTradeRiskService 负责 GateD 的统一前置硬风控规则链。
+ * PreTradeRiskService 负责统一交易契约的统一前置硬风控规则链。
  */
 public class PreTradeRiskService implements RiskGate {
 

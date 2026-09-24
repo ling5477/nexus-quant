@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.paper.api.dto;
 
-import com.guidinglight.nexusquant.research.application.paper.PaperRunMonitorRunService;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperRunMonitorRunService;
 
 import java.time.Instant;
 import java.util.List;

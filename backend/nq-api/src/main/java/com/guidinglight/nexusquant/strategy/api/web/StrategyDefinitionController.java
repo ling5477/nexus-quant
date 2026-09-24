@@ -1,10 +1,18 @@
 package com.guidinglight.nexusquant.strategy.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.StrategyDefinitionCreateRequestBody;
+import com.guidinglight.nexusquant.strategy.api.dto.StrategyDefinitionResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.StrategyDefinitionStatusUpdateRequestBody;
+import com.guidinglight.nexusquant.strategy.api.dto.StrategyManualTriggerRequestBody;
+import com.guidinglight.nexusquant.strategy.api.dto.StrategyManualTriggerResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.StrategyVersionCreateRequestBody;
+import com.guidinglight.nexusquant.strategy.api.dto.StrategyVersionResponse;
+
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.StrategyDefinitionCreateRequest;
+import com.guidinglight.nexusquant.strategy.application.command.StrategyDefinitionCreateRequest;
 import com.guidinglight.nexusquant.strategy.application.StrategyDefinitionService;
-import com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerRequest;
+import com.guidinglight.nexusquant.strategy.application.command.StrategyManualTriggerRequest;
 import com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerService;
 import com.guidinglight.nexusquant.strategy.application.StrategyVersionService;
 import com.guidinglight.nexusquant.strategy.application.command.StrategyVersionCreateRequest;
@@ -139,7 +147,7 @@ public class StrategyDefinitionController {
     }
 
     @GetMapping("/{strategyCode}/versions")
-    @Operation(summary = "查询策略版本列表", description = "返回指定策略编码下的 GateI-1 策略版本列表。")
+    @Operation(summary = "查询策略版本列表", description = "返回指定策略编码下的策略版本列表。")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "查询成功"),
             @ApiResponse(responseCode = "400", description = "路径参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
@@ -192,6 +200,5 @@ public class StrategyDefinitionController {
         return StrategyVersionResponse.from(strategyVersionService.getById(strategyCode, versionId));
     }
 }
-
 
 

@@ -10,7 +10,7 @@ import java.util.List;
  * HistoricalKlineProvider 是 core 到交易所 adapter 的出站端口。
  * <p>
  * Why:
- * GateH-2 需要由 core 编排任务和幂等写库，但 OKX/Binance HTTP 细节必须留在 adapter 模块。
+ * 历史行情接入需要由 core 编排任务和幂等写库，但 OKX/Binance HTTP 细节必须留在 adapter 模块。
  * 该端口只返回平台统一的 HistoricalBar，避免 adapter payload 泄漏到 application service。
  */
 public interface HistoricalKlineProvider {

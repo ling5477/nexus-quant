@@ -1,16 +1,18 @@
 package com.guidinglight.nexusquant.livecontrol.api;
 
+import com.guidinglight.nexusquant.livecontrol.api.dto.PilotScopeMaterializationRequest;
+
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.guidinglight.nexusquant.auth.application.CurrentUserProfileService;
+import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
-import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor;
-import com.guidinglight.nexusquant.livecontrol.application.PilotScopeControlPlane;
+import com.guidinglight.nexusquant.livecontrol.application.model.AuthenticatedLiveControlActor;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotScopeControlPlane;
 import com.guidinglight.nexusquant.livecontrol.domain.PilotScopePreflightResult;
-import com.guidinglight.nexusquant.security.token.TokenClaims;
+import com.guidinglight.nexusquant.security.token.model.TokenClaims;
 
 import java.math.BigDecimal;
 import java.util.Arrays;

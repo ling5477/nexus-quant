@@ -1,14 +1,14 @@
 package com.guidinglight.nexusquant.strategy.infra.jdbc;
 
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonFactRepository;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonFacts;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonFacts.DatasetFact;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonFacts.EvaluationFact;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonFacts.PaperRunFact;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonFacts.PublishTraceFact;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonFacts.ShadowRunFact;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonFacts.StrategyVersionFact;
-import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.PaperShadowComparisonQuery;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.port.PaperShadowComparisonFactRepository;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonFacts;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonFacts.DatasetFact;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonFacts.EvaluationFact;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonFacts.PaperRunFact;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonFacts.PublishTraceFact;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonFacts.ShadowRunFact;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonFacts.StrategyVersionFact;
+import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonQuery;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -24,7 +24,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 /**
- * JdbcPaperShadowComparisonFactRepository 聚合 GateQ-2 Paper vs Shadow 只读对照所需本地 DB 事实。
+ * JdbcPaperShadowComparisonFactRepository 聚合策略验证 Paper vs Shadow 只读对照所需本地 DB 事实。
  *
  * <p>Why: 本 adapter 只能复用现有 strategy_versions、marketdata_datasets、backtest_eval_reports、
  * backtest_publish_records 和 paper_trading_runs。当前没有 shadow run 表或 runner，因此 shadow fact

@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
- * SimTrade 表示 GateF-3 的模拟成交事实。
+ * SimTrade 表示研究与回测契约的模拟成交事实。
  */
 public record SimTrade(
         String simTradeId,

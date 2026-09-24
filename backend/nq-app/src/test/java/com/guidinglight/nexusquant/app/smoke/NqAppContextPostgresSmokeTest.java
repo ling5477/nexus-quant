@@ -1,5 +1,6 @@
 package com.guidinglight.nexusquant.app.smoke;
 
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -7,7 +8,7 @@ import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClient;
-import com.guidinglight.nexusquant.adapter.okx.service.OkxWsClient;
+import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsClient;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeCredentialPermissionProbePort;
 import com.guidinglight.nexusquant.account.infra.probe.NoRealExchangeCredentialPermissionProbePort;
 import com.guidinglight.nexusquant.app.NexusQuantApplication;

@@ -1,5 +1,15 @@
 package com.guidinglight.nexusquant.strategy.application;
 
+import com.guidinglight.nexusquant.strategy.application.result.StrategyScheduleScanResult;
+
+import com.guidinglight.nexusquant.strategy.application.result.StrategyScheduleScanOutcome;
+
+import com.guidinglight.nexusquant.strategy.application.result.StrategyScheduleScanBatchResult;
+
+import com.guidinglight.nexusquant.strategy.application.result.StrategyManualTriggerResult;
+
+import com.guidinglight.nexusquant.strategy.application.command.StrategyManualTriggerRequest;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
@@ -25,12 +35,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Service;
 
 /**
- * StrategyScheduleScanService 实现 GateE-2.2 的最小 schedule scan / gate / dispatch 入口。
+ * StrategyScheduleScanService 实现执行与补偿契约的最小 schedule scan / gate / dispatch 入口。
  * <p>
  * 职责：
  * 1. 扫描全部 schedule 并返回结构化结果；
  * 2. 在真正触发前执行窗口、去重、单实例 busy 保护；
- * 3. 触发命中后仍然复用 GateE-1.2 的 StrategyManualTriggerService 主链。
+ * 3. 触发命中后仍然复用执行与补偿契约的 StrategyManualTriggerService 主链。
  * <p>
  * 边界：
  * 1. `windowConfig` 只决定“这次是否允许创建 run”，不接管下单后的生命周期；

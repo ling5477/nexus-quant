@@ -13,8 +13,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.strategy.application.pyartifactpreview.PythonEvaluationArtifactPreviewOverviewQueryService;
-import com.guidinglight.nexusquant.strategy.application.pyartifactpreview.PythonEvaluationArtifactPreviewOverviewReadModel;
+import com.guidinglight.nexusquant.strategy.application.pyartifactpreview.service.PythonEvaluationArtifactPreviewOverviewQueryService;
+import com.guidinglight.nexusquant.strategy.application.pyartifactpreview.model.PythonEvaluationArtifactPreviewOverviewReadModel;
 import com.guidinglight.nexusquant.strategy.application.readmodel.ReadModelEvidenceMetadata;
 
 import java.lang.reflect.Method;

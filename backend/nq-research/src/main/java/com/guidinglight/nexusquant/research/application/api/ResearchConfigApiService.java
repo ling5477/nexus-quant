@@ -14,7 +14,7 @@ import java.util.Objects;
  * ResearchConfigApiService 负责把 HTTP 请求映射到研究配置领域服务。
  * <p>
  * Why:
- * PRE-CLEAN-2 后，HTTP API 层只保留 controller/dto/web adapter，
+ * HTTP API 层只保留 controller/dto/web adapter，
  * 研究配置的控制器专用入参编排回到 `nq-research` application owner，避免 `nq-api` 演化成业务 façade。
  */
 @Service

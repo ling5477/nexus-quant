@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.strategyrelease.preparation;
 
-import com.guidinglight.nexusquant.strategy.application.evaluationgate.StrategyValidationDecision;
+import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyValidationDecision;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunAuthorizationBoundary;
 
 import org.junit.jupiter.api.Test;

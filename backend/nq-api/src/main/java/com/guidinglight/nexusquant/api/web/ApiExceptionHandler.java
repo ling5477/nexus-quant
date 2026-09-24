@@ -1,18 +1,22 @@
 package com.guidinglight.nexusquant.api.web;
 
-import com.guidinglight.nexusquant.account.application.ExchangeAccountCredentialNotFoundException;
-import com.guidinglight.nexusquant.account.application.ExchangeAccountNotFoundException;
-import com.guidinglight.nexusquant.auth.application.AdminNotInitializedException;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiFieldError;
+import com.guidinglight.nexusquant.api.web.model.ApiErrorIdentity;
+
+import com.guidinglight.nexusquant.account.application.exception.ExchangeAccountCredentialNotFoundException;
+import com.guidinglight.nexusquant.account.application.exception.ExchangeAccountNotFoundException;
+import com.guidinglight.nexusquant.auth.application.exception.AdminNotInitializedException;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
-import com.guidinglight.nexusquant.strategy.application.shadowrun.ShadowRunReadOnlyNotFoundException;
+import com.guidinglight.nexusquant.strategy.application.shadowrun.exception.ShadowRunReadOnlyNotFoundException;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunIdempotencyConflictException;
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionGuardUninitializedException;
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.AdmissionStaleException;
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunMaterializationAuthorizationException;
-import com.guidinglight.nexusquant.strategy.strategyrelease.application.ShadowRunMaterializationRejectedException;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.exception.AdmissionGuardUninitializedException;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.exception.AdmissionStaleException;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.exception.ShadowRunMaterializationAuthorizationException;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.exception.ShadowRunMaterializationRejectedException;
 import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewException;
-import com.guidinglight.nexusquant.trading.application.OrderVersionConflictException;
+import com.guidinglight.nexusquant.trading.application.exception.OrderVersionConflictException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.MDC;
@@ -116,7 +120,7 @@ public class ApiExceptionHandler {
     }
 
     /**
-     * 将 GateV-2 domain failures 映射到既有 ApiErrorResponse，不创建第二套 error envelope。
+     * 将人工复核 domain failures 映射到既有 ApiErrorResponse，不创建第二套 error envelope。
      */
     @ExceptionHandler(ValidationReviewException.class)
     public ResponseEntity<ApiErrorResponse> handleValidationReviewException(

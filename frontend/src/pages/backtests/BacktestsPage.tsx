@@ -27,7 +27,7 @@ import {useNavigate} from 'react-router-dom';
 
 import {formatApiError, showApiError} from '@/api/errors';
 import {marketdataApi} from '@/api/marketdata';
-import {PageHero} from '@/components/page/PageHero';
+import {NqPageHeader} from '@/components/nq/NqPageHeader';
 import {NqPageScaffold} from '@/nq-design-system/shell/NqPageScaffold';
 import {
     useBindBacktestDatasetMutation,
@@ -37,14 +37,14 @@ import {
     useBacktestsListQuery,
     useCreateBacktestRunMutation,
     useCreateBacktestMutation,
-} from '@/hooks/useBacktestsListQuery';
+} from '@/features/backtests/useBacktestsListQuery';
 import type {AppApiError} from '@/types/api';
-import type {BacktestConfigCreateRequest} from '@/types/backtests';
+import type {BacktestConfigCreateRequest} from '@/features/backtests/backtestsTypes';
 import {
     type BacktestConfigListItem,
     type BacktestsListFilters,
     defaultBacktestsListFilters,
-} from '@/types/backtests';
+} from '@/features/backtests/backtestsTypes';
 import {containsIgnoreCase, formatDateTime, formatNumber, normalizeOptionalText} from '@/utils/formatters';
 
 type BacktestRow = BacktestConfigListItem;
@@ -290,7 +290,7 @@ export function BacktestsPage() {
         <>
             <NqPageScaffold>
                 <Card className="page-card" bordered={false}>
-                    <PageHero
+                    <NqPageHeader
                         title={t('pages:backtestConfigurations')}
                         description={t('pages:viewBacktestConfigurationsDatasetBindingsAndStrategyVersionSnapshotsOrCreateAConfiguration')}
                         badge="Backtests"

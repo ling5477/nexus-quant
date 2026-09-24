@@ -31,7 +31,7 @@ public record HistoricalBar(
      * 兼容 RC1 fixture 与既有单测的构造器。
      * <p>
      * Why:
-     * GateH-2 把 `market_type`、成交额、成交笔数和质量状态纳入正式 bar 语义，但 RC1 已冻结的
+     * 历史行情接入把 `market_type`、成交额、成交笔数和质量状态纳入正式 bar 语义，但 RC1 已冻结的
      * fixture ingest 仍只提供基础 OHLCV。这里显式补默认值，避免调用方绕过新的 canonical 字段。
      */
     public HistoricalBar(

@@ -31,8 +31,6 @@ export const STRATEGY_TYPE_OPTIONS = ['GRID', 'BUY_AND_HOLD_FIXTURE', 'E2E_SMOKE
     value,
 }));
 
-export const STRATEGY_STATUS_OPTIONS = ['ENABLED', 'DISABLED'].map((value) => ({label: value, value}));
-
 export const SCHEDULE_TYPE_OPTIONS = ['CRON'].map((value) => ({label: value, value}));
 
 export const SCHEDULE_STATUS_OPTIONS = ['ENABLED', 'DISABLED'].map((value) => ({label: value, value}));

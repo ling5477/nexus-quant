@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.paper.api.dto;
 
-import com.guidinglight.nexusquant.research.application.paper.PaperPortfolioSummary;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperPortfolioSummary;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
@@ -8,7 +8,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * PaperPortfolioSummaryResponse —— Paper 组合看板只读聚合响应体（GateJ 后产品化 Loop-13）。
+ * PaperPortfolioSummaryResponse —— Paper 组合看板只读聚合响应体。
  *
  * 供前端组合看板消费：组合总览、策略/发布维度排行、Run 排行与数据质量提示。
  * safety 固定声明 SIM/Paper、LIVE 未开启、未触达真实交易所，不代表真实交易能力。

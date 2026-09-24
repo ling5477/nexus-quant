@@ -1,10 +1,10 @@
-// tableDensity.ts — NQ Console 表格密度 token(B0.2)。
+// tableDensity.ts — NQ Console 表格密度 token。
 // 与设计规范一致(NQ_DESIGN_TOKENS_V2.md §3):主表 32 · 次级事实表 28 · 摘要表 36。
 import {nqTokens} from '../tokens/nq-tokens';
 
 export type NqTableDensity = 'compact' | 'standard' | 'comfortable';
 
-export interface NqTableDensityToken {
+interface NqTableDensityToken {
   /** 行高(px)。 */
   rowHeight: number;
   /** 单元格上下内边距(px)。 */
@@ -29,7 +29,7 @@ export const NQ_TABLE_DENSITY: Record<NqTableDensity, NqTableDensityToken> = {
   comfortable: {rowHeight: 36, paddingBlock: 8, paddingInline: 12, fontSize: nqTokens.font.sizeBase, label: '宽松 36'},
 };
 
-export const NQ_DEFAULT_TABLE_DENSITY: NqTableDensity = 'standard';
+const NQ_DEFAULT_TABLE_DENSITY: NqTableDensity = 'standard';
 
 /**
  * 生成 NQ 表格 class:`nq-ds-table nq-ds-table--<density>`(配合 table/nq-table.css)。
@@ -37,16 +37,4 @@ export const NQ_DEFAULT_TABLE_DENSITY: NqTableDensity = 'standard';
  */
 export function nqTableClassName(density: NqTableDensity = NQ_DEFAULT_TABLE_DENSITY): string {
   return `nq-ds-table nq-ds-table--${density}`;
-}
-
-/**
- * AntD Table 的 components/token 适配:在页面迁移时,把密度档位映射成 AntD Table 的单元格内边距。
- * 仅返回数值,具体接入由页面在 ConfigProvider/Table 上消费,本切片不改任何业务页。
- */
-export function nqAntdTableCellPadding(density: NqTableDensity = NQ_DEFAULT_TABLE_DENSITY): {
-  cellPaddingBlock: number;
-  cellPaddingInline: number;
-} {
-  const token = NQ_TABLE_DENSITY[density];
-  return {cellPaddingBlock: token.paddingBlock, cellPaddingInline: token.paddingInline};
 }

@@ -3,7 +3,7 @@ package com.guidinglight.nexusquant.strategy.domain.port;
 import java.util.UUID;
 
 /**
- * PaperShadowConsistencyDrilldownQueryPort 是 GateS-2 consistency drilldown 的只读查询端口。
+ * PaperShadowConsistencyDrilldownQueryPort 是验证只读视图 consistency drilldown的只读查询端口。
  *
  * <p>实现必须只执行 SELECT；不得 INSERT/UPDATE/DELETE，不得创建 Shadow Run、event、snapshot 或
  * consistency report，不得调用 runner、scheduler、adapter、credential store、order、account 或 ledger 服务。

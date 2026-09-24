@@ -1,6 +1,9 @@
 package com.guidinglight.nexusquant.strategy.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.StrategyRunDetailResponse;
+import com.guidinglight.nexusquant.strategy.api.dto.StrategyRunSummaryResponse;
+
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.strategy.application.StrategyRunQueryService;
 import io.swagger.v3.oas.annotations.Operation;

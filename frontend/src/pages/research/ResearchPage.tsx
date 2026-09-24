@@ -21,19 +21,19 @@ import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
 
 import {formatApiError, showApiError} from '@/api/errors';
-import {PageHero} from '@/components/page/PageHero';
+import {NqPageHeader} from '@/components/nq/NqPageHeader';
 import {
     useCreateResearchMutation,
     useResearchDetailQuery,
     useResearchListQuery,
-} from '@/hooks/useResearchListQuery';
+} from '@/features/research/hooks/useResearchListQuery';
 import type {AppApiError} from '@/types/api';
-import type {ResearchConfigCreateRequest} from '@/types/research';
+import type {ResearchConfigCreateRequest} from '@/features/research/types/research';
 import {
     defaultResearchListFilters,
     type ResearchConfigListItem,
     type ResearchListFilters,
-} from '@/types/research';
+} from '@/features/research/types/research';
 import {containsIgnoreCase, formatDateTime, normalizeOptionalText} from '@/utils/formatters';
 
 type ResearchRow = ResearchConfigListItem;
@@ -155,7 +155,7 @@ export function ResearchPage() {
         <>
             <Space direction="vertical" size={16} style={{display: 'flex'}}>
                 <Card className="page-card" bordered={false}>
-                    <PageHero
+                    <NqPageHeader
                         title={t('pages:researchConfigurations')}
                         description={t('pages:viewResearchConfigurationsLinkedSourceStrategiesAndParameterDefinitionsOrCreateAConfiguration')}
                         badge="Research"

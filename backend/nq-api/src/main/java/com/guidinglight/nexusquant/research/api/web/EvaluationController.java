@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.research.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.research.api.dto.BacktestEvaluationResponse;
 import com.guidinglight.nexusquant.research.application.eval.api.BacktestRunApiService;
@@ -24,18 +24,18 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * EvaluationController 提供 GateI-2 独立评估报告查询入口。
+ * EvaluationController 提供策略版本独立评估报告查询入口。
  *
  * Why:
  * 历史评估接口挂在 `/api/backtest-runs/{runId}/evaluation` 下，适合 run 详情页。
- * GateI-2 需要 `/evaluations` 页面直接读取核心指标列表，因此新增只读 controller，
+ * 策略版本需要 `/evaluations` 页面直接读取核心指标列表，因此新增只读 controller，
  * 仍复用 eval application service，不在 API 层写 SQL，也不触发 AI 分析或 Paper Trading。
  */
 @Validated
 @RestController
 @ConditionalOnBean(BacktestRunApiService.class)
 @RequestMapping("/api/evaluations")
-@Tag(name = "Evaluation API", description = "GateI-2 评估报告查询接口。")
+@Tag(name = "Evaluation API", description = "评估报告查询接口。")
 public class EvaluationController {
 
     private final BacktestRunApiService backtestRunApiService;
@@ -52,7 +52,7 @@ public class EvaluationController {
      * @return 当前筛选范围内已生成的评估报告列表
      */
     @GetMapping
-    @Operation(summary = "查询评估报告列表", description = "按 researchConfigId / backtestConfigId 可选过滤并返回 GateI-2 评估报告核心指标列表。")
+    @Operation(summary = "查询评估报告列表", description = "按 researchConfigId / backtestConfigId 可选过滤并返回评估报告核心指标列表。")
     @ApiResponse(responseCode = "200", description = "查询成功")
     public List<BacktestEvaluationResponse> list(
             @RequestParam(required = false) String researchConfigId,

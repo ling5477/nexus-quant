@@ -5,7 +5,7 @@ import java.math.RoundingMode;
 
 
 /**
- * ExecutionPricingPolicy 提供 GateF-3 的最小成交定价规则。
+ * ExecutionPricingPolicy 提供研究与回测契约的最小成交定价规则。
  * <p>
  * Why:
  * 成交口径必须在代码里固定，本批统一采用“当前 bar close 成交”，避免测试和文档各说各话。

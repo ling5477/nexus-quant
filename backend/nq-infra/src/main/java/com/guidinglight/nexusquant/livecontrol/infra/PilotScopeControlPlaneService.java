@@ -1,14 +1,14 @@
 package com.guidinglight.nexusquant.livecontrol.infra;
 
-import com.guidinglight.nexusquant.livecontrol.application.AuthenticatedLiveControlActor;
-import com.guidinglight.nexusquant.livecontrol.application.PilotScopeApprovalCommand;
-import com.guidinglight.nexusquant.livecontrol.application.PilotScopeAuthorityResolver;
-import com.guidinglight.nexusquant.livecontrol.application.PilotScopeControlPlane;
-import com.guidinglight.nexusquant.livecontrol.application.PilotScopeMaterializationCommand;
-import com.guidinglight.nexusquant.livecontrol.application.PilotScopeMaterializationResult;
-import com.guidinglight.nexusquant.livecontrol.application.MinimalPilotMaterializationCommand;
-import com.guidinglight.nexusquant.livecontrol.application.PilotPrerequisiteObservationAuthority;
-import com.guidinglight.nexusquant.livecontrol.application.PilotPrerequisiteObservationAuthority.TrustedOperatorPilotBootstrap;
+import com.guidinglight.nexusquant.livecontrol.application.model.AuthenticatedLiveControlActor;
+import com.guidinglight.nexusquant.livecontrol.application.command.PilotScopeApprovalCommand;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotScopeAuthorityResolver;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotScopeControlPlane;
+import com.guidinglight.nexusquant.livecontrol.application.command.PilotScopeMaterializationCommand;
+import com.guidinglight.nexusquant.livecontrol.application.model.PilotScopeMaterializationResult;
+import com.guidinglight.nexusquant.livecontrol.application.command.MinimalPilotMaterializationCommand;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotPrerequisiteObservationAuthority;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotPrerequisiteObservationAuthority.TrustedOperatorPilotBootstrap;
 import com.guidinglight.nexusquant.livecontrol.application.port.LiveControlAuthorizationPort;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
@@ -36,7 +36,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 /**
- * GateY-6D application facade。仅构造并提交受版本约束的 prerequisite facts；没有 ExecutionIntent/provider/worker 依赖。
+ * 受控实盘执行 application facade。仅构造并提交受版本约束的 prerequisite facts；没有 ExecutionIntent/provider/worker 依赖。
  */
 @Service
 public class PilotScopeControlPlaneService implements PilotScopeControlPlane {

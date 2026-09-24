@@ -1,22 +1,13 @@
+import {StatusTag, type StatusTone} from '@/nq-design-system/status/StatusTag';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
 import {Button, Card, Descriptions, Select, Space, Tag, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
 
-import {
-    NqDataTable,
-    NqEmptyState,
-    NqErrorState,
-    NqLoadingState,
-    NqMetricCard,
-    NqPercentText,
-    NqRiskBanner,
-    NqStatusTag,
-    nqNumericColumn,
-} from '@/components/nq';
-import type {NqStatusTone} from '@/components/nq';
-import {usePaperAutoReviewsQuery} from '@/hooks/usePaperTradingQuery';
+import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPercentText, ApplicationRiskAlert, nqNumericColumn} from '@/components/nq';
+
+import {usePaperAutoReviewsQuery} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
 import type {
     PaperAutoReviewSeverity,
@@ -29,7 +20,7 @@ import type {
     PaperStrategyAutoReview,
     PaperStrategyEvaluationConfidence,
     PaperStrategyRatingLabel,
-} from '@/types/paper-trading';
+} from '@/features/paper-trading/types/paper-trading';
 import {formatDateTime} from '@/utils/formatters';
 
 import {
@@ -40,7 +31,7 @@ import {
 } from './PaperExecutionDiagnosticsDashboard';
 import {EVAL_CONFIDENCE_TONE, RATING_LABEL_TEXT, RATING_LABEL_TONE} from './PaperStrategyEvaluationDashboard';
 
-// ---- GateK K4B：Paper 规则化自动复盘展示映射与筛选（消费 K4 endpoint，纯前端只读展示）----
+// ---- Paper 诊断与评估 K4B：Paper 规则化自动复盘展示映射与筛选（消费 K4 endpoint，纯前端只读展示）----
 
 /** 聚类专属 cause（执行 / 评估维度聚类）补充中文名；run primaryCause 复用执行诊断 cause 映射。 */
 const AUTO_REVIEW_EXTRA_CAUSE_LABEL: Record<string, string> = {
@@ -53,20 +44,20 @@ function autoReviewCauseLabel(cause: string): string {
         ?? AUTO_REVIEW_EXTRA_CAUSE_LABEL[cause] ?? cause;
 }
 
-function autoReviewCauseTone(cause: string): NqStatusTone {
+function autoReviewCauseTone(cause: string): StatusTone {
     return EXECUTION_CAUSE_TONE[cause as PaperExecutionCause]
         ?? (cause === 'BACKTEST_DEVIATION_HIGH' ? 'danger' : cause === 'SAMPLE_INSUFFICIENT' ? 'warning' : 'neutral');
 }
 
 /** cause 标签（中文名 + 语义色），缺省回退原始枚举值，不伪造。 */
 function autoReviewCauseTag(cause: string) {
-    return <NqStatusTag status={autoReviewCauseLabel(cause)} tone={autoReviewCauseTone(cause)}/>;
+    return <StatusTag title="" variant="pill" status={autoReviewCauseLabel(cause)} tone={autoReviewCauseTone(cause)}/>;
 }
 
 /** ratingLabel 标签（复用策略评估评级中文名与语义色）。 */
 function autoReviewRatingTag(rating: string) {
     return (
-        <NqStatusTag
+        <StatusTag title="" variant="pill"
             status={RATING_LABEL_TEXT[rating as PaperStrategyRatingLabel] ?? rating}
             tone={RATING_LABEL_TONE[rating as PaperStrategyRatingLabel] ?? 'neutral'}
         />
@@ -127,7 +118,7 @@ function autoReviewBullets(items: string[] | undefined, emptyText: string) {
 }
 
 /**
- * PaperAutoReviewDashboard —— Paper 规则化自动复盘（GateK Batch K4B）。
+ * PaperAutoReviewDashboard —— Paper 规则化自动复盘。
  * 消费 K4 只读 endpoint /paper-trading/auto-reviews，把组合复盘、重点 run 复盘、策略 / 发布复盘与问题聚类展示出来，
  * 让用户从「诊断 + 评分」升级为「可读复盘」。复盘由规则引擎生成，不接 AI / DH runtime。
  * 独立 query：加载 / 错误 / 空 / 兼容回退均限定本区域，不连累组合看板、诊断、评估与排行。
@@ -156,7 +147,7 @@ export function PaperAutoReviewDashboard({query}: {query: ReturnType<typeof useP
             <Space direction="vertical" size={12} style={{display: 'flex'}}>
                 <Typography.Text type="secondary" style={{fontSize: 12}}>
                     {t('pages:ruleBasedReviewOfPaperExecutionFactsDiagnosticsAndStrategyEvaluations')}</Typography.Text>
-                <NqRiskBanner
+                <ApplicationRiskAlert
                     level="info"
                     message={t('pages:ruleBasedSummariesAndIssueGroupsDerivedFromExecutionDiagnosticsAndStrategyEvaluationsForPortfoliosFo')}
                     description={t('pages:reviewsUseOnlySimulatedPaperRunsDiagnosticsAndEvaluationsARuleEngineGeneratesThemWithoutAiDhRuntimeT')}
@@ -212,10 +203,10 @@ function PaperAutoReviewBody({review}: {review: PaperAutoReviewsResponse}) {
 
     const runColumns: ColumnsType<PaperRunAutoReview> = [
         {title: t('pages:paperRun'), dataIndex: 'paperRunId', key: 'paperRunId', width: 150, render: (v: string) => <span className="nq-mono">{v}</span>},
-        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <NqStatusTag status={v}/>},
+        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title="" variant="pill" status={v}/>},
         {title: t('pages:primaryCause'), key: 'primaryCause', width: 120, render: (_: unknown, r) => autoReviewCauseTag(r.primaryCause)},
-        {title: t('pages:severity2'), key: 'severity', width: 110, render: (_: unknown, r) => <NqStatusTag status={r.severity} tone={EXECUTION_SEVERITY_TONE[r.severity]}/>},
-        {title: t('pages:confidence'), key: 'confidence', width: 100, render: (_: unknown, r) => <NqStatusTag status={r.confidence} tone={EXECUTION_CONFIDENCE_TONE[r.confidence as PaperExecutionCauseConfidence] ?? 'neutral'}/>},
+        {title: t('pages:severity2'), key: 'severity', width: 110, render: (_: unknown, r) => <StatusTag title="" variant="pill" status={r.severity} tone={EXECUTION_SEVERITY_TONE[r.severity]}/>},
+        {title: t('pages:confidence'), key: 'confidence', width: 100, render: (_: unknown, r) => <StatusTag title="" variant="pill" status={r.confidence} tone={EXECUTION_CONFIDENCE_TONE[r.confidence as PaperExecutionCauseConfidence] ?? 'neutral'}/>},
         nqNumericColumn({
             title: t('pages:returnRate'), key: 'totalReturn', width: 100,
             render: (_: unknown, r: PaperRunAutoReview) => r.totalReturn != null
@@ -245,7 +236,7 @@ function PaperAutoReviewBody({review}: {review: PaperAutoReviewsResponse}) {
         {title: t('pages:strategyVersions'), dataIndex: 'strategyVersionId', key: 'strategyVersionId', width: 160, render: (v: string) => <span className="nq-mono">{v}</span>},
         {title: t('pages:rating'), key: 'ratingLabel', width: 110, render: (_: unknown, r) => autoReviewRatingTag(r.ratingLabel)},
         nqNumericColumn({title: t('pages:overallScore'), key: 'compositeScore', width: 90, render: (_: unknown, r: PaperStrategyAutoReview) => <span className="nq-num"><strong>{r.compositeScore}</strong></span>}),
-        {title: t('pages:confidence'), key: 'evaluationConfidence', width: 100, render: (_: unknown, r) => <NqStatusTag status={r.evaluationConfidence} tone={EVAL_CONFIDENCE_TONE[r.evaluationConfidence as PaperStrategyEvaluationConfidence] ?? 'neutral'}/>},
+        {title: t('pages:confidence'), key: 'evaluationConfidence', width: 100, render: (_: unknown, r) => <StatusTag title="" variant="pill" status={r.evaluationConfidence} tone={EVAL_CONFIDENCE_TONE[r.evaluationConfidence as PaperStrategyEvaluationConfidence] ?? 'neutral'}/>},
         {title: t('pages:mainWeaknesses'), dataIndex: 'primaryWeakness', key: 'primaryWeakness', width: 130, render: (v: string) => <Typography.Text type="secondary" style={{fontSize: 12}}>{v}</Typography.Text>},
         {
             title: t('pages:review'), key: 'review', width: 300,
@@ -272,7 +263,7 @@ function PaperAutoReviewBody({review}: {review: PaperAutoReviewsResponse}) {
         {title: t('pages:strategyVersions'), dataIndex: 'strategyVersionId', key: 'strategyVersionId', width: 150, render: (v: string | null) => v ? <span className="nq-mono">{v}</span> : '-'},
         {title: t('pages:rating'), key: 'ratingLabel', width: 110, render: (_: unknown, r) => autoReviewRatingTag(r.ratingLabel)},
         nqNumericColumn({title: t('pages:overallScore'), key: 'compositeScore', width: 90, render: (_: unknown, r: PaperPublishAutoReview) => <span className="nq-num"><strong>{r.compositeScore}</strong></span>}),
-        {title: t('pages:confidence'), key: 'evaluationConfidence', width: 100, render: (_: unknown, r) => <NqStatusTag status={r.evaluationConfidence} tone={EVAL_CONFIDENCE_TONE[r.evaluationConfidence as PaperStrategyEvaluationConfidence] ?? 'neutral'}/>},
+        {title: t('pages:confidence'), key: 'evaluationConfidence', width: 100, render: (_: unknown, r) => <StatusTag title="" variant="pill" status={r.evaluationConfidence} tone={EVAL_CONFIDENCE_TONE[r.evaluationConfidence as PaperStrategyEvaluationConfidence] ?? 'neutral'}/>},
         {title: t('pages:mainWeaknesses'), dataIndex: 'primaryWeakness', key: 'primaryWeakness', width: 130, render: (v: string) => <Typography.Text type="secondary" style={{fontSize: 12}}>{v}</Typography.Text>},
         {
             title: t('pages:review'), key: 'review', width: 300,
@@ -297,7 +288,7 @@ function PaperAutoReviewBody({review}: {review: PaperAutoReviewsResponse}) {
     const clusterColumns: ColumnsType<PaperIssueCluster> = [
         {title: t('pages:clusters'), dataIndex: 'clusterKey', key: 'clusterKey', width: 200, render: (v: string) => <span className="nq-mono">{v}</span>},
         {title: t('pages:reason'), key: 'cause', width: 140, render: (_: unknown, c) => autoReviewCauseTag(c.cause)},
-        {title: t('pages:severity2'), key: 'severity', width: 110, render: (_: unknown, c) => <NqStatusTag status={c.severity} tone={EXECUTION_SEVERITY_TONE[c.severity]}/>},
+        {title: t('pages:severity2'), key: 'severity', width: 110, render: (_: unknown, c) => <StatusTag title="" variant="pill" status={c.severity} tone={EXECUTION_SEVERITY_TONE[c.severity]}/>},
         nqNumericColumn({title: t('pages:quantity'), dataIndex: 'count', key: 'count', width: 80}),
         {
             title: t('pages:affectedRunsStrategiesPublishes'), key: 'affected', width: 280,

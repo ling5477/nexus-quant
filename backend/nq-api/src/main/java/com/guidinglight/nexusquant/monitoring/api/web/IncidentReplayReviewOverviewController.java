@@ -1,8 +1,10 @@
 package com.guidinglight.nexusquant.monitoring.api.web;
 
-import com.guidinglight.nexusquant.api.web.ApiErrorResponse;
+import com.guidinglight.nexusquant.monitoring.api.dto.IncidentReplayReviewOverviewResponse;
+
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
-import com.guidinglight.nexusquant.monitoring.application.incidentreview.IncidentReplayReviewOverviewQueryService;
+import com.guidinglight.nexusquant.monitoring.application.incidentreview.service.IncidentReplayReviewOverviewQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -19,9 +21,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * IncidentReplayReviewOverviewController 暴露 GateT-3 Incident / Replay Review overview 只读 API。
+ * IncidentReplayReviewOverviewController 暴露验证工作流 Incident / Replay Review overview 只读 API。
  *
- * <p>Why：GateT-3 只允许实现 `GET /api/incidents/replay/review/overview` 的人工诊断复核 read model。
+ * <p>Why：验证工作流只允许实现 `GET /api/incidents/replay/review/overview`的人工诊断复核 read model。
  * 本 controller 不接受 request body，不提供 POST/PUT/PATCH/DELETE，不创建 incident / alert / replay /
  * review / acknowledge / escalation / closeout，不启动 runner/scheduler，不调用真实交易所，不读取 credential，
  * 也不修改 account / order / ledger / Paper / Shadow 状态。
@@ -29,7 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RestController
 @RequestMapping("/api/incidents/replay/review")
-@Tag(name = "Incident Replay Review API", description = "GateT-3 Incident / Replay Review 只读接口。")
+@Tag(name = "Incident Replay Review API", description = "Incident / Replay Review 只读接口。")
 public class IncidentReplayReviewOverviewController {
 
     private final IncidentReplayReviewOverviewQueryService queryService;

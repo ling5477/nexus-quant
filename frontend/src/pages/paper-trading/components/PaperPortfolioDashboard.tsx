@@ -1,23 +1,13 @@
+import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
 import {Card, Descriptions, Space, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 
-import {
-    NqAmountText,
-    NqDataTable,
-    NqEmptyState,
-    NqErrorState,
-    NqLoadingState,
-    NqMetricCard,
-    NqPercentText,
-    NqRiskBanner,
-    NqStatusTag,
-    nqNumericColumn,
-} from '@/components/nq';
-import {usePaperPortfolioSummaryQuery} from '@/hooks/usePaperTradingQuery';
+import {NqAmountText, NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPercentText, ApplicationRiskAlert, nqNumericColumn} from '@/components/nq';
+import {usePaperPortfolioSummaryQuery} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
-import type {PaperPortfolioGroup, PaperPortfolioSummaryResponse} from '@/types/paper-trading';
+import type {PaperPortfolioGroup, PaperPortfolioSummaryResponse} from '@/features/paper-trading/types/paper-trading';
 import {formatDateTime} from '@/utils/formatters';
 
 import {pnlTone, toNullableNumber} from './paperFormatters';
@@ -52,7 +42,7 @@ function portfolioGroupColumns(keyTitle: string): ColumnsType<PaperPortfolioGrou
 }
 
 /**
- * PaperPortfolioDashboard —— Paper 组合看板（GateJ 后产品化 Loop-13）。
+ * PaperPortfolioDashboard —— Paper 组合看板。
  * 只读消费后端 /paper-trading/portfolio/summary 单请求聚合结果：组合总览、策略/发布排行、Run 排行与数据质量。
  * 仅代表 SIM/Paper 模拟运行表现，不代表 LIVE 或真实交易；数据不足时不伪造收益率。
  */
@@ -73,7 +63,7 @@ export function PaperPortfolioDashboard({query}: {query: ReturnType<typeof usePa
             extra={<Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:simPaperOnlyLiveDisabled')}</Typography.Text>}
         >
             <Space direction="vertical" size={12} style={{display: 'flex'}}>
-                <NqRiskBanner
+                <ApplicationRiskAlert
                     level="info"
                     message={t('pages:readOnlyPortfolioPerformanceAcrossPaperRuns')}
                     description={t('pages:thisPortfolioDashboardUsesPaperSimulationAndLocalExecutionFactsOnlyItDoesNotRepresentLiveOrRealTradi')}
@@ -189,7 +179,7 @@ function PaperPortfolioDashboardBody({portfolio}: {portfolio: PaperPortfolioSumm
                         <NqMetricCard
                             label={t('pages:highestRisk')}
                             value={highlights.highestRisk
-                                ? <NqStatusTag status={highlights.highestRisk.riskBlocked ? t('pages:riskBlocked') : t('pages:alert')} tone={highlights.highestRisk.riskBlocked ? 'danger' : 'warning'}/>
+                                ? <StatusTag title="" variant="pill" status={highlights.highestRisk.riskBlocked ? t('pages:riskBlocked') : t('pages:alert')} tone={highlights.highestRisk.riskBlocked ? 'danger' : 'warning'}/>
                                 : '-'}
                             footer={highlights.highestRisk ? highlights.highestRisk.paperRunId : t('pages:noData')}
                         />

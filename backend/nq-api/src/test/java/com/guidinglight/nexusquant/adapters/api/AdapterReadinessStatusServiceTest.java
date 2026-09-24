@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.guidinglight.nexusquant.adapter.api.model.AdapterCapability;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterReadinessDecision;
-import com.guidinglight.nexusquant.adapter.api.service.AdapterReadinessService;
-import com.guidinglight.nexusquant.adapter.api.service.DefaultAdapterReadinessService;
+import com.guidinglight.nexusquant.adapter.api.service.port.AdapterReadinessService;
+import com.guidinglight.nexusquant.adapter.api.service.readiness.DefaultAdapterReadinessService;
 import com.guidinglight.nexusquant.adapters.api.dto.AdapterReadinessItemResponse;
 import com.guidinglight.nexusquant.adapters.api.dto.AdapterReadinessResponse;
 

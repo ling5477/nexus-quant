@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.adapter.binance.service;
 
+import com.guidinglight.nexusquant.adapter.binance.trading.BinancePermissionProbeBoundary;
+
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

@@ -16,7 +16,7 @@ import org.springframework.stereotype.Repository;
  * JdbcStrategyVersionSnapshotQueryPort 从 `strategy_versions` 表读取发布所需快照。
  *
  * Why:
- * GateI-1 发布链路需要把 version snapshot 固化到 `backtest_publish_records`，
+ * 策略版本发布链路需要把 version snapshot 固化到 `backtest_publish_records`，
  * 但 research 模块不直接依赖 core 策略版本服务，因此由 infra adapter 提供只读桥接。
  */
 @Repository

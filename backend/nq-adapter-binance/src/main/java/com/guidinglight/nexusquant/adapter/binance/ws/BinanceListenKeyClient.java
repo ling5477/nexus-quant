@@ -3,7 +3,7 @@ package com.guidinglight.nexusquant.adapter.binance.ws;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceApiCredentials;
-import com.guidinglight.nexusquant.adapter.binance.service.BinanceApiException;
+import com.guidinglight.nexusquant.adapter.binance.error.BinanceApiException;
 
 import java.io.IOException;
 import java.net.URI;

@@ -20,7 +20,7 @@
 6. version owner 是 repository CAS（成功才加一）与对应的 `OrderRecord.withStatus` 返回映射；状态迁移审计 owner 是 `transitionOrderAttempt`。CAS 失利返回最新 durable Order，不刷新版本重试旧意图。
 7. 普通 `transitionOrder` 本身不额外发布 OrderStatusChanged；已有 command finalization/B2 correction 的发布职责保持原状。本轮不新增事件。Trade/TradeExecuted 的原子 owner 是 `insertWithRequiredEvent`，`ensureRequiredEvent` 负责既存缺口；Ledger/Position/Snapshot 沿用真实幂等记账事务。
 
-源码 owner：[OkxRestReconcileService](../../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java)、[OrderLifecycleService](../../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderLifecycleService.java)、[OrderCommandService](../../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java)、[OrderCommandWriteService](../../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java)，以及未修改的 OrderRepository/JdbcOrderRepository、JdbcTradeRepository 与 ledger 实现。
+源码 owner：[OkxRestReconcileService](../../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/recovery/OkxRestReconcileService.java)、[OrderLifecycleService](../../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderLifecycleService.java)、[OrderCommandService](../../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandService.java)、[OrderCommandWriteService](../../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandWriteService.java)，以及未修改的 OrderRepository/JdbcOrderRepository、JdbcTradeRepository 与 ledger 实现。
 
 ## 修复前复现与影响分类
 
