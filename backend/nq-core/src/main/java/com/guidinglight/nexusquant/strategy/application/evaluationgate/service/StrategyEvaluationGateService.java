@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.strategy.application.evaluationgate.service;
 
+import static com.guidinglight.nexusquant.common.text.NullableText.firstNonBlank;
+
 import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGate;
 import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateDecision;
 import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateEvidence;
@@ -445,12 +447,4 @@ public class StrategyEvaluationGateService {
         return new StrategyEvaluationGateReason(code, "WARNING", message);
     }
 
-    private String firstNonBlank(String... values) {
-        for (String value : values) {
-            if (value != null && !value.isBlank()) {
-                return value.trim();
-            }
-        }
-        return null;
-    }
 }

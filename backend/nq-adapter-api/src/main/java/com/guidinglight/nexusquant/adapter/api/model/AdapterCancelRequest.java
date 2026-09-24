@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.adapter.api.model;
 
+import static com.guidinglight.nexusquant.common.text.NullableText.firstNonBlank;
+
 /**
  * AdapterCancelRequest 描述统一撤单请求。
  * <p>
@@ -31,29 +33,20 @@ public record AdapterCancelRequest(
 
     public AdapterCancelRequest {
         traceId = requireText(traceId, "traceId");
-        requestId = normalizeText(requestId, traceId);
-        venue = normalizeText(venue, null);
-        symbol = normalizeText(symbol, null);
-        clientOrderId = normalizeText(clientOrderId, null);
-        externalOrderId = normalizeText(externalOrderId, null);
+        requestId = firstNonBlank(requestId, traceId);
+        venue = firstNonBlank(venue, null);
+        symbol = firstNonBlank(symbol, null);
+        clientOrderId = firstNonBlank(clientOrderId, null);
+        externalOrderId = firstNonBlank(externalOrderId, null);
         reason = requireText(reason, "reason");
     }
 
     private static String requireText(String value, String fieldName) {
-        String normalized = normalizeText(value, null);
+        String normalized = firstNonBlank(value, null);
         if (normalized == null) {
             throw new IllegalArgumentException(fieldName + " must not be blank");
         }
         return normalized;
     }
 
-    private static String normalizeText(String value, String fallback) {
-        if (value != null && !value.isBlank()) {
-            return value.trim();
-        }
-        if (fallback != null && !fallback.isBlank()) {
-            return fallback.trim();
-        }
-        return null;
-    }
 }

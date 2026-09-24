@@ -6,10 +6,10 @@
 
 from __future__ import annotations
 
-import json
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from hashlib import sha256
+
+from nq_research.serialization.canonical import stable_digest
 
 RUN_MODE_OFFLINE = "OFFLINE"
 EXPERIMENT_SCHEMA_VERSION = "experiment-metadata.v1"
@@ -91,7 +91,7 @@ def build_experiment_metadata(
         "strategy_id": strategy_id,
         "strategy_version": strategy_version,
     }
-    experiment_id = "exp_" + _stable_digest(identity)[:16]
+    experiment_id = "exp_" + stable_digest(identity)[:16]
     return ExperimentMetadata(
         experiment_id=experiment_id,
         dataset_id=dataset_id,
@@ -115,9 +115,4 @@ def build_parameters_hash(parameters: Mapping[str, str]) -> str:
     参数值按 key 排序并使用紧凑 JSON 编码，保证相同参数在不同调用顺序下哈希一致。
     """
 
-    return "params_" + _stable_digest(dict(parameters))[:16]
-
-
-def _stable_digest(payload: Mapping[str, object]) -> str:
-    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    return sha256(encoded).hexdigest()
+    return "params_" + stable_digest(dict(parameters))[:16]

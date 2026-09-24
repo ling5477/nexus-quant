@@ -7,34 +7,11 @@
  * 3) 盈亏配色遵循国内习惯：正=红（up），负=绿（down）。
  */
 
-export interface NqNumberFormatOptions {
-    /** 小数位数，按字段类型统一（价格 4、金额 2、百分比 2）。 */
-    precision?: number;
-    /** 是否显示正号（收益率/盈亏类字段必须带正负号）。 */
-    signed?: boolean;
-}
+import {formatNqNumber} from '@/nq-design-system/format/nqFormat';
 
-export function formatNqNumber(
-    value: string | number | null | undefined,
-    {precision = 2, signed = false}: NqNumberFormatOptions = {},
-): string {
-    if (value === null || value === undefined || value === '') {
-        return '-';
-    }
-
-    const numeric = Number(value);
-
-    if (!Number.isFinite(numeric)) {
-        return String(value);
-    }
-
-    const formatted = numeric.toLocaleString('zh-CN', {
-        minimumFractionDigits: precision,
-        maximumFractionDigits: precision,
-    });
-
-    return signed && numeric > 0 ? `+${formatted}` : formatted;
-}
+// 保留原出口，现有组件与页面共用设计系统的相同数字合同。
+export {formatNqNumber};
+export type {NqNumberFormatOptions} from '@/nq-design-system/format/nqFormat';
 
 interface NqNumericTextProps {
     value: string | number | null | undefined;

@@ -1,4 +1,4 @@
-import {StatusTag, type StatusTone} from '@/nq-design-system/status/StatusTag';
+import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
 import {EyeOutlined, ReloadOutlined} from '@ant-design/icons';
@@ -22,6 +22,7 @@ import type {
     ShadowRunOverviewWarning,
 } from '@/features/validation/types/shadow-runs';
 import {formatDateTime} from '@/utils/formatters';
+import {statusTone} from './statusTone';
 
 const {Text} = Typography;
 
@@ -49,23 +50,6 @@ function asAppApiError(error: unknown): AppApiError | null {
     return typeof candidate.status === 'number' && typeof candidate.code === 'string'
         ? error as AppApiError
         : null;
-}
-
-function statusTone(status: string | null | undefined): StatusTone {
-    const normalized = status?.toUpperCase() ?? '';
-    if (normalized.includes('FAILED') || normalized.includes('BLOCKED') || normalized.includes('REJECTED')) {
-        return 'danger';
-    }
-    if (normalized.includes('WARNING') || normalized.includes('PARTIAL') || normalized.includes('DIVERGED')) {
-        return 'warning';
-    }
-    if (normalized.includes('NOT_') || normalized.includes('UNKNOWN') || normalized.includes('MISSING')) {
-        return 'neutral';
-    }
-    if (normalized.includes('CONSISTENT') || normalized.includes('COMPLETED') || normalized.includes('READY')) {
-        return 'success';
-    }
-    return 'info';
 }
 
 function safeText(value: string | number | null | undefined): string {

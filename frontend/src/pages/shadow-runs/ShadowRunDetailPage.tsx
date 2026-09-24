@@ -30,6 +30,7 @@ import type {
     ShadowRunSnapshotResponse,
 } from '@/features/validation/types/shadow-runs';
 import {formatDateTime} from '@/utils/formatters';
+import {statusTone} from './statusTone';
 
 const {Text, Paragraph} = Typography;
 
@@ -139,23 +140,6 @@ function SafeJsonBlock({value, emptyText}: { value: unknown; emptyText: string }
             {pretty}
         </pre>
     );
-}
-
-function statusTone(status: string | null | undefined): StatusTone {
-    const normalized = status?.toUpperCase() ?? '';
-    if (normalized.includes('FAILED') || normalized.includes('BLOCKED') || normalized.includes('REJECTED')) {
-        return 'danger';
-    }
-    if (normalized.includes('WARNING') || normalized.includes('PARTIAL') || normalized.includes('DIVERGED')) {
-        return 'warning';
-    }
-    if (normalized.includes('NOT_') || normalized.includes('UNKNOWN') || normalized.includes('MISSING')) {
-        return 'neutral';
-    }
-    if (normalized.includes('CONSISTENT') || normalized.includes('COMPLETED') || normalized.includes('READY')) {
-        return 'success';
-    }
-    return 'info';
 }
 
 function timelineColor(status: string | null | undefined): string {

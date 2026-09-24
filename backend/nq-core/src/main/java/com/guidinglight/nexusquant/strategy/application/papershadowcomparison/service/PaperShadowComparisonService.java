@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.strategy.application.papershadowcomparison.service;
 
+import static com.guidinglight.nexusquant.common.text.NullableText.firstNonBlank;
+
 import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparison;
 import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonEvidence;
 import com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model.PaperShadowComparisonFacts;
@@ -542,12 +544,4 @@ public class PaperShadowComparisonService {
         return left != null && right != null && left.equalsIgnoreCase(right);
     }
 
-    private String firstNonBlank(String... values) {
-        for (String value : values) {
-            if (value != null && !value.isBlank()) {
-                return value.trim();
-            }
-        }
-        return null;
-    }
 }

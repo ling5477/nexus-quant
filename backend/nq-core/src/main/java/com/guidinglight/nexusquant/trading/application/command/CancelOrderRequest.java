@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.trading.application.command;
 
+import static com.guidinglight.nexusquant.common.text.NullableText.firstNonBlank;
+
 import com.guidinglight.nexusquant.trading.domain.TradingVenue;
 
 /**
@@ -47,31 +49,21 @@ public record CancelOrderRequest(
 
     public CancelOrderRequest {
         traceId = requireText(traceId, "traceId");
-        requestId = normalizeText(requestId, traceId);
+        requestId = firstNonBlank(requestId, traceId);
         venue = venue == null ? null : TradingVenue.parse(venue).name();
-        symbol = normalizeText(symbol, null);
-        clientOrderId = normalizeText(clientOrderId, null);
-        externalOrderId = normalizeText(externalOrderId, null);
+        symbol = firstNonBlank(symbol, null);
+        clientOrderId = firstNonBlank(clientOrderId, null);
+        externalOrderId = firstNonBlank(externalOrderId, null);
         reason = requireText(reason, "reason");
     }
 
     private static String requireText(String value, String fieldName) {
-        String normalized = normalizeText(value, null);
+        String normalized = firstNonBlank(value, null);
         if (normalized == null) {
             throw new IllegalArgumentException(fieldName + " must not be blank");
         }
         return normalized;
     }
 
-    private static String normalizeText(String value, String fallback) {
-        if (value != null && !value.isBlank()) {
-            return value.trim();
-        }
-        if (fallback != null && !fallback.isBlank()) {
-            return fallback.trim();
-        }
-        return null;
-    }
 }
-
 

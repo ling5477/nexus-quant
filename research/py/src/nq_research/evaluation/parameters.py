@@ -9,9 +9,10 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from hashlib import sha256
 from itertools import product
 from typing import TypeAlias
+
+from nq_research.serialization.canonical import stable_digest
 
 JsonValue: TypeAlias = str | int | float | bool | None | list["JsonValue"] | dict[str, "JsonValue"]
 
@@ -84,13 +85,6 @@ def build_parameter_set_id(parameters: Mapping[str, JsonValue]) -> str:
 
     ensure_json_serializable(dict(parameters))
     return "pset_" + stable_digest(dict(parameters))[:16]
-
-
-def stable_digest(payload: Mapping[str, JsonValue]) -> str:
-    """对 JSON payload 生成稳定 SHA-256 digest。"""
-
-    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    return sha256(encoded).hexdigest()
 
 
 def ensure_json_serializable(value: object) -> None:

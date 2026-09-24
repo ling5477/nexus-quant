@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.research.domain;
 
+import static com.guidinglight.nexusquant.common.text.NullableText.firstNonBlank;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Locale;
@@ -45,8 +47,8 @@ public record BacktestConfig(
 
     public BacktestConfig {
         status = normalizeStatus(status);
-        archivedBy = normalizeNullableText(archivedBy);
-        archiveReason = normalizeNullableText(archiveReason);
+        archivedBy = firstNonBlank(archivedBy, null);
+        archiveReason = firstNonBlank(archiveReason, null);
         if (STATUS_ARCHIVED.equals(status)) {
             if (archivedAt == null) {
                 throw new IllegalArgumentException("archivedAt must not be null when status is ARCHIVED");
@@ -257,8 +259,4 @@ public record BacktestConfig(
         return normalized;
     }
 
-    private static String normalizeNullableText(String value) {
-        return value == null || value.isBlank() ? null : value.trim();
-    }
 }
-

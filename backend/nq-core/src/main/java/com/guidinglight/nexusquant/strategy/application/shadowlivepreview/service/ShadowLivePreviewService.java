@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.strategy.application.shadowlivepreview.service;
 
+import static com.guidinglight.nexusquant.common.text.NullableText.firstNonBlank;
+
 import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.model.ShadowLivePreview;
 import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.model.ShadowLivePreviewEvidence;
 import com.guidinglight.nexusquant.strategy.application.shadowlivepreview.model.ShadowLivePreviewQuery;
@@ -488,12 +490,4 @@ public class ShadowLivePreviewService {
         return new ShadowLivePreviewReason(code, "WARNING", message);
     }
 
-    private String firstNonBlank(String... values) {
-        for (String value : values) {
-            if (value != null && !value.isBlank()) {
-                return value.trim();
-            }
-        }
-        return null;
-    }
 }

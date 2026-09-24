@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.contracts.command;
 
+import static com.guidinglight.nexusquant.common.text.NullableText.firstNonBlank;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
@@ -87,13 +89,13 @@ public record PlaceOrderCommand(
 
     public PlaceOrderCommand {
         traceId = requireText(traceId, "traceId");
-        requestId = normalizeText(requestId, traceId);
+        requestId = firstNonBlank(requestId, traceId);
         venue = requireText(venue, "venue");
         symbol = requireText(symbol, "symbol");
         clientOrderId = requireText(clientOrderId, "clientOrderId");
-        idempotencyKey = normalizeText(idempotencyKey, buildDefaultIdempotencyKey(accountId, clientOrderId));
-        timeInForce = normalizeText(timeInForce, "GTC");
-        source = normalizeText(source, defaultSource(strategyId));
+        idempotencyKey = firstNonBlank(idempotencyKey, buildDefaultIdempotencyKey(accountId, clientOrderId));
+        timeInForce = firstNonBlank(timeInForce, "GTC");
+        source = firstNonBlank(source, defaultSource(strategyId));
     }
 
     private static String buildDefaultIdempotencyKey(Long accountId, String clientOrderId) {
@@ -105,20 +107,11 @@ public record PlaceOrderCommand(
     }
 
     private static String requireText(String value, String fieldName) {
-        String normalized = normalizeText(value, null);
+        String normalized = firstNonBlank(value, null);
         if (normalized == null) {
             throw new IllegalArgumentException(fieldName + " must not be blank");
         }
         return normalized;
     }
 
-    private static String normalizeText(String value, String fallback) {
-        if (value != null && !value.isBlank()) {
-            return value.trim();
-        }
-        if (fallback != null && !fallback.isBlank()) {
-            return fallback.trim();
-        }
-        return null;
-    }
 }
