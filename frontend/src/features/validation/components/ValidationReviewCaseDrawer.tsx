@@ -1,6 +1,6 @@
 import {useLocalizedForm} from '@/i18n/useLocalizedForm';
 import {useTranslation} from 'react-i18next';
-import {t} from '@/i18n';
+import {t} from '@/i18n/index';
 import {App, Alert, Button, Descriptions, Drawer, Empty, Form, Input, Modal, Space, Timeline, Typography} from 'antd';
 import {useEffect, useMemo, useState} from 'react';
 import {describeApiError, formatApiError} from '@/api/errors';

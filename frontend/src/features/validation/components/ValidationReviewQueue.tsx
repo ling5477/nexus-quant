@@ -1,6 +1,6 @@
 import {useTranslation} from 'react-i18next';
 import {describeApiError, formatApiError} from '@/api/errors';
-import {t} from '@/i18n';
+import {t} from '@/i18n/index';
 import {ReloadOutlined} from '@ant-design/icons';
 import {Alert, Button, InputNumber, Select, Space, Table, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';

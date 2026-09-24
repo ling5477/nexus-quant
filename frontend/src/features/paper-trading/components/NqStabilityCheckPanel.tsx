@@ -1,10 +1,10 @@
 import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import {useTranslation} from 'react-i18next';
-import {t} from '@/i18n';
+import {t} from '@/i18n/index';
 import {App, Button, Card, Space, Typography} from 'antd';
 
 import {showApiError} from '@/api/errors';
-import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqPercentText, nqNumericColumn} from '@/components/nq';
+import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqPercentText, nqNumericColumn} from '@/components/nq/index';
 import {useGenerateStabilityCheckMutation, usePaperStabilityChecksQuery} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';
 import type {PaperRunStabilityCheckItem} from '@/features/paper-trading/types/paper-trading';

@@ -1,12 +1,12 @@
 import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import {useLocalizedForm} from '@/i18n/useLocalizedForm';
 import {useTranslation} from 'react-i18next';
-import {t} from '@/i18n';
+import {t} from '@/i18n/index';
 import {App, Button, Card, Form, Input, Modal, Space} from 'antd';
 import {useState} from 'react';
 
 import {showApiError} from '@/api/errors';
-import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, nqNumericColumn} from '@/components/nq';
+import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, nqNumericColumn} from '@/components/nq/index';
 import {
     useCreateScheduleMutation,
     usePaperFiresQuery,

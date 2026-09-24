@@ -1,11 +1,11 @@
 import {useTranslation} from 'react-i18next';
-import {t} from '@/i18n';
+import {t} from '@/i18n/index';
 import {Alert, Button, Card, Space, Typography} from 'antd';
 import {useMemo, useState} from 'react';
 import {useSearchParams} from 'react-router-dom';
 
-import {ValidationReviewCaseDrawer} from '@/components/validation-review/ValidationReviewCaseDrawer';
-import {ValidationReviewQueue} from '@/components/validation-review/ValidationReviewQueue';
+import {ValidationReviewCaseDrawer} from '@/features/validation/components/ValidationReviewCaseDrawer';
+import {ValidationReviewQueue} from '@/features/validation/components/ValidationReviewQueue';
 import {useValidationReviewListQuery} from '@/features/validation/hooks/useValidationReviewQueries';
 import {useAuthStore} from '@/store/auth-store';
 import type {AppApiError} from '@/types/api';

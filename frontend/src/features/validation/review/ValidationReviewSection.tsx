@@ -3,7 +3,7 @@ import {t} from '@/i18n';
 import {Card} from 'antd';
 
 import {PageHero} from '@/components/page/PageHero';
-import {ValidationReviewWorkbench} from '@/components/validation-review/ValidationReviewWorkbench';
+import {ValidationReviewWorkbench} from '@/features/validation/components/ValidationReviewWorkbench';
 
 /**
  * 保留 validation review 的页面标题与既有 durable review workbench 组合，不接管 URL 或 review 状态。

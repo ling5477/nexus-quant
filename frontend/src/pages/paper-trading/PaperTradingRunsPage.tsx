@@ -23,7 +23,7 @@ import {Link} from 'react-router-dom';
 
 import {showApiError} from '@/api/errors';
 import {NqAmountText, NqDangerConfirmButton, NqDataTable, NqEmptyState, TradingEnvironmentTag, NqErrorState, NqFilterBar, NqLoadingState, NqMetricCard, NqPageHeader, NqPercentText, NqPriceText, ApplicationRiskAlert, nqNumericColumn} from '@/components/nq';
-import {NqAlertPanel, NqHeartbeatPanel, NqRecoveryPanel, NqScheduleFirePanel, NqStabilityCheckPanel} from '@/components/paper';
+import {NqAlertPanel, NqHeartbeatPanel, NqRecoveryPanel, NqScheduleFirePanel, NqStabilityCheckPanel} from '@/features/paper-trading/components/index';
 import {
     EXCHANGE_OPTIONS,
     INTERVAL_OPTIONS,

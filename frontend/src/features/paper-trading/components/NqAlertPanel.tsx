@@ -1,10 +1,10 @@
 import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import {useTranslation} from 'react-i18next';
-import {t} from '@/i18n';
+import {t} from '@/i18n/index';
 import {App, Button, Card, Space} from 'antd';
 
 import {showApiError} from '@/api/errors';
-import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState} from '@/components/nq';
+import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState} from '@/components/nq/index';
 import {
     useAckAlertMutation,
     useCreateAlertMutation,
