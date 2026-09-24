@@ -26,7 +26,7 @@
 
 同一仓储的三个读取入口 `findByOrderId/findAllByOrderId/findByExchangeAndExchangeTradeId` 在查询中连接父订单，读取两侧环境；不一致抛 `TRADE_ORDER_ENVIRONMENT_MISMATCH`。这是拒绝读取损坏事实，不是过滤掉它后继续累计，也不自动 UPDATE历史Trade。完整数量证明原有 trade_env guard保留。
 
-[OkxRestReconcileService](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java) 捕获上述异常后，沿用 `OKX_LEDGER_RECOVERY_INCOMPLETE` canonical audit，reason=`TRADE_ORDER_ENVIRONMENT_MISMATCH`，随后抛错。拒绝发生在状态对齐、新Trade写入和Ledger重放前；未把该异常误记为数量分页截断。
+[OkxRestReconcileService](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/recovery/OkxRestReconcileService.java) 捕获上述异常后，沿用 `OKX_LEDGER_RECOVERY_INCOMPLETE` canonical audit，reason=`TRADE_ORDER_ENVIRONMENT_MISMATCH`，随后抛错。拒绝发生在状态对齐、新Trade写入和Ledger重放前；未把该异常误记为数量分页截断。
 
 Trade identity、exchangeTradeId唯一约束、数量/fee计算、Ledger posting规则、资产方向均未改变。发现的关联问题仅为环境传播/读取一致性，未扩展到账本模型整改。
 

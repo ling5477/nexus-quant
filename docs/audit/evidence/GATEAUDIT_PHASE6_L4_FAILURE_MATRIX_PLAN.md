@@ -460,10 +460,10 @@ graph TD
 
 | ID | 文件 | 行段 |
 | --- | --- | --- |
-| S01 | [OrderCommandService.java](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java) | 86-190 |
-| S02 | [OrderCommandWriteService.java](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java) | 93-260 |
-| S03 | [OrderCommandWriteService.java](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java) | 269-345 |
-| S04 | [OrderCommandWriteService.java](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java) | 402-595 |
+| S01 | [OrderCommandService.java](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandService.java) | 86-190 |
+| S02 | [OrderCommandWriteService.java](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandWriteService.java) | 93-260 |
+| S03 | [OrderCommandWriteService.java](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandWriteService.java) | 269-345 |
+| S04 | [OrderCommandWriteService.java](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandWriteService.java) | 402-595 |
 | S05 | [JdbcOrderRepository.java](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/jdbc/JdbcOrderRepository.java) | 54-144 |
 | S06 | [InMemoryOrderStateMachine.java](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/domain/state/InMemoryOrderStateMachine.java) | 18-83 |
 | S07 | [ExecutionIntentService.java](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/application/ExecutionIntentService.java) | 63-151 |
@@ -471,19 +471,19 @@ graph TD
 | S09 | [JdbcExecutionIntentRepository.java](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/jdbc/JdbcExecutionIntentRepository.java) | 194-341 |
 | S10 | [MinimalPilotTradingVenueGateway.java](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/MinimalPilotTradingVenueGateway.java) | 78-147 |
 | S11 | [MinimalPilotTradingVenueGateway.java](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/MinimalPilotTradingVenueGateway.java) | 150-267 |
-| S12 | [AdapterBackedTradingVenueGateway.java](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/AdapterBackedTradingVenueGateway.java) | 68-207 |
-| S13 | [OkxExchangeAdapter.java](../../../backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/service/OkxExchangeAdapter.java) | 130-224 |
-| S14 | [OkxSpotProviderAdapter.java](../../../backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/service/OkxSpotProviderAdapter.java) | 70-203 |
-| S15 | [OkxHttpClient.java](../../../backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/service/OkxHttpClient.java) | 45-150 |
-| S16 | [OkxRestReconcileService.java](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java) | 142-317 |
-| S17 | [OkxRestReconcileService.java](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java) | 320-425 |
-| S18 | [TradeLedgerPostingService.java](../../../backend/nq-ledger/src/main/java/com/guidinglight/nexusquant/ledger/service/TradeLedgerPostingService.java) | 77-147 |
-| S19 | [TradeLedgerPostingService.java](../../../backend/nq-ledger/src/main/java/com/guidinglight/nexusquant/ledger/service/TradeLedgerPostingService.java) | 199-247 |
+| S12 | [AdapterBackedTradingVenueGateway.java](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/integration/AdapterBackedTradingVenueGateway.java) | 68-207 |
+| S13 | [OkxExchangeAdapter.java](../../../backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/trading/OkxExchangeAdapter.java) | 130-224 |
+| S14 | [OkxSpotProviderAdapter.java](../../../backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/provider/OkxSpotProviderAdapter.java) | 70-203 |
+| S15 | [OkxHttpClient.java](../../../backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/http/OkxHttpClient.java) | 45-150 |
+| S16 | [OkxRestReconcileService.java](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/recovery/OkxRestReconcileService.java) | 142-317 |
+| S17 | [OkxRestReconcileService.java](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/recovery/OkxRestReconcileService.java) | 320-425 |
+| S18 | [TradeLedgerPostingService.java](../../../backend/nq-ledger/src/main/java/com/guidinglight/nexusquant/ledger/application/service/TradeLedgerPostingService.java) | 77-147 |
+| S19 | [TradeLedgerPostingService.java](../../../backend/nq-ledger/src/main/java/com/guidinglight/nexusquant/ledger/application/service/TradeLedgerPostingService.java) | 199-247 |
 | S20 | [JdbcTradeRepository.java](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/scheduler/infra/jdbc/JdbcTradeRepository.java) | 75-120 |
 | S21 | [JdbcLedgerPostingRepository.java](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/ledger/infra/jdbc/JdbcLedgerPostingRepository.java) | 35-145 |
 | S22 | [KillSwitchService.java](../../../backend/nq-risk/src/main/java/com/guidinglight/nexusquant/risk/service/KillSwitchService.java) | 29-90 |
-| S23 | [KillSwitchRiskRule.java](../../../backend/nq-risk/src/main/java/com/guidinglight/nexusquant/risk/service/KillSwitchRiskRule.java) | 39-54 |
-| S24 | [WorkerOperationSafetyGate.java](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/deployment/WorkerOperationSafetyGate.java) | 9-42 |
+| S23 | [KillSwitchRiskRule.java](../../../backend/nq-risk/src/main/java/com/guidinglight/nexusquant/risk/application/rule/KillSwitchRiskRule.java) | 39-54 |
+| S24 | [WorkerOperationSafetyGate.java](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/deployment/policy/WorkerOperationSafetyGate.java) | 9-42 |
 | S25 | [JdbcPilotExecutionLeaseRepository.java](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/jdbc/JdbcPilotExecutionLeaseRepository.java) | 72-192 |
 | S26 | [PilotExecutionLeaseService.java](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/PilotExecutionLeaseService.java) | 215-278 |
 | S27 | [PostgresAdvisorySchedulerExecutionLock.java](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/scheduler/infra/lock/PostgresAdvisorySchedulerExecutionLock.java) | 63-142 |
@@ -500,15 +500,15 @@ graph TD
 | T06 | [MinimalPilotTradingVenueGatewayTest.java](../../../backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/execution/infra/MinimalPilotTradingVenueGatewayTest.java) | 41-175 |
 | T07 | [KillSwitchRestartDurabilityPostgresIntegrationTest.java](../../../backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/risk/KillSwitchRestartDurabilityPostgresIntegrationTest.java) | 50-100 |
 | T08 | [PostgresAdvisorySchedulerExecutionLockPostgresIntegrationTest.java](../../../backend/nq-infra/src/test/java/com/guidinglight/nexusquant/scheduler/infra/lock/PostgresAdvisorySchedulerExecutionLockPostgresIntegrationTest.java) | 41-119 |
-| T09 | [OrderCommandServiceTest.java](../../../backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/OrderCommandServiceTest.java) | 36-217 |
+| T09 | [OrderCommandServiceTest.java](../../../backend/nq-core/src/test/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandServiceTest.java) | 36-217 |
 | T10 | [OkxRestReconcileServiceTest.java](../../../backend/nq-scheduler/src/test/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileServiceTest.java) | 40-300 |
 | T11 | [SpotProviderContractTest.java](../../../backend/nq-core/src/test/java/com/guidinglight/nexusquant/livecontrol/execution/provider/SpotProviderContractTest.java) | 50-138 |
 | T12 | [ExchangeNoOutboundGuard.java](../../../backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/ExchangeNoOutboundGuard.java) | 16-128 |
 | G01 | [governance-workflow-contract.json](../../../scripts/docs/governance-workflow-contract.json) | 42-84 |
 | G02 | [ROADMAP.md](../../../docs/current/ROADMAP.md) | 45-71 |
 | G03 | [STATUS.md](../../../docs/current/STATUS.md) | 3-35 |
-| S33 | [OkxRecoveryService.java](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRecoveryService.java) | 135-282 |
-| S34 | [PaperTradingAdapter.java](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/PaperTradingAdapter.java) | 23-87 |
+| S33 | [OkxRecoveryService.java](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/recovery/OkxRecoveryService.java) | 135-282 |
+| S34 | [PaperTradingAdapter.java](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/integration/PaperTradingAdapter.java) | 23-87 |
 | T13 | [PaperMatchingServiceTest.java](../../../backend/nq-scheduler/src/test/java/com/guidinglight/nexusquant/scheduler/service/PaperMatchingServiceTest.java) | 31-130 |
 | T14 | [OperationalReconciliationMetricsTest.java](../../../backend/nq-scheduler/src/test/java/com/guidinglight/nexusquant/scheduler/service/OperationalReconciliationMetricsTest.java) | 26-108 |
 
@@ -616,9 +616,9 @@ Canonical workflow为`.github/workflows/ci.yml / NQ CI Baseline`。该workflow�
 
 - [F009 caller graph](GATEAUDIT_PHASE5_F009_LEGACY_GATE_SPECIFIC_ACTIVE_ASSET_CONSOLIDATION_IMPLEMENTATION.md) 第4节明确旧GateY部署/pilot入口整体退役，current restart proof与canonical restore未使用这些caller。18个compatibility contracts仅保留exact approved edges；现有internal edge不自动授予新入口。
 - [MinimalLivePilotConfiguration](../../../backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java) 第65–83行是默认关闭的conditional composition；第276–289行是scope校验后resume，第367行才开始query。源码仍保留该条件图，本次没有证明它不可能激活；缺的是当前approved正常入口和等价复现，不能把“存在@Configuration”直接当成canonical acceptance。
-- [PilotExecutionLeaseControlPlane](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/PilotExecutionLeaseControlPlane.java) 第63–67行的resume仍接受compatibility Correlation；[lease owner](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/PilotExecutionLeaseService.java) 第241–263行保留原解除kill行为。
+- [PilotExecutionLeaseControlPlane](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/port/PilotExecutionLeaseControlPlane.java) 第63–67行的resume仍接受compatibility Correlation；[lease owner](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/PilotExecutionLeaseService.java) 第241–263行保留原解除kill行为。
 - [ExecutionIntentService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/application/ExecutionIntentService.java) 第23–26行自述fake/local orchestration；本次在Git-tracked production Java、资源配置及scripts/deploy/workflow执行入口检索，其名称仅见本类声明/构造器。没有把这个检索结论扩大为动态不可达证明。[repository](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/jdbc/JdbcExecutionIntentRepository.java) 的@Repository/稳定port不能补出缺失sender caller。
-- [ordinary gateway](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/AdapterBackedTradingVenueGateway.java) 第111行进入TradingAdapter.cancelOrder，未走typed NO_MUTATION_TERMINAL映射；[REST reconciliation](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java) 第148行后的扫描仍不含CANCELLED。
+- [ordinary gateway](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/integration/AdapterBackedTradingVenueGateway.java) 第111行进入TradingAdapter.cancelOrder，未走typed NO_MUTATION_TERMINAL映射；[REST reconciliation](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/recovery/OkxRestReconcileService.java) 第148行后的扫描仍不含CANCELLED。
 
 Containment：approved edges before=1559、after=1559，contracts=18；新approved edge=0，registry变更=0，exception scope扩展=0。registry SHA256=`cbbc9ba41d236296404eccae981b6c1392e5b8deb2e299ea3ab9bd078a0d7385`。失败提交原有14项unauthorized caller、STAGE_SEMANTICS及STALE_EXCEPTION尚未整改；这里的0指本次未新增授权，不冒充checker errors=0。
 

@@ -21,7 +21,7 @@
 
 ## 2. 原写语义与 proposed CAS
 
-当前 [OrderCommandWriteService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java) 580–590 行：先对旧 `OrderRecord.status` 做状态机校验，再调用 `void OrderRepository.updateStatus(...)`。
+当前 [OrderCommandWriteService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandWriteService.java) 580–590 行：先对旧 `OrderRecord.status` 做状态机校验，再调用 `void OrderRepository.updateStatus(...)`。
 
 当前 [JdbcOrderRepository](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/jdbc/JdbcOrderRepository.java) 的 SQL：
 
@@ -59,10 +59,10 @@ ABA 为 `CANCEL_REQUESTED → CANCEL_REJECTED → ACCEPTED → CANCEL_REQUESTED`
 ### 3.1 源码位置
 
 - [InMemoryOrderStateMachine](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/domain/state/InMemoryOrderStateMachine.java) 34–36、53–62 行：ACCEPTED 可进入 CANCEL_REQUESTED；CANCEL_REQUESTED 可到 CANCEL_REJECTED；CANCEL_REJECTED 可到 ACCEPTED 或再次 CANCEL_REQUESTED。
-- [OrderCommandService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java) 148–190 行：resolve、prepare、gateway、finalize 分离；只对 CANCELLED 作幂等短路，没有覆盖整个外调期间的每订单锁或 attempt generation 校验。
-- [OrderCommandWriteService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java) 402–425、497–543、551–556、580–610 行：prepare 与 finalize 分别是本地事务；拒绝 finalize 使用传入的旧快照，写迁移及拒绝事实；共享入口无轮次身份。
-- [OkxRestReconcileService](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java) 143–151、259–292 行：扫描 CANCEL_REQUESTED，遇到 ACCEPTED 先 rejectCancel 再 applyExternalStatus。
-- [OrderLifecycleService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderLifecycleService.java)：rejectCancel / acknowledge / applyExternalStatus 最终复用 ordinary command write owner。
+- [OrderCommandService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandService.java) 148–190 行：resolve、prepare、gateway、finalize 分离；只对 CANCELLED 作幂等短路，没有覆盖整个外调期间的每订单锁或 attempt generation 校验。
+- [OrderCommandWriteService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandWriteService.java) 402–425、497–543、551–556、580–610 行：prepare 与 finalize 分别是本地事务；拒绝 finalize 使用传入的旧快照，写迁移及拒绝事实；共享入口无轮次身份。
+- [OkxRestReconcileService](../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/recovery/OkxRestReconcileService.java) 143–151、259–292 行：扫描 CANCEL_REQUESTED，遇到 ACCEPTED 先 rejectCancel 再 applyExternalStatus。
+- [OrderLifecycleService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderLifecycleService.java)：rejectCancel / acknowledge / applyExternalStatus 最终复用 ordinary command write owner。
 - [OrderRecord](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/domain/OrderRecord.java)：当前快照没有 durable version/generation/transition token。
 
 ### 3.2 已有可执行证据的边界
@@ -264,7 +264,7 @@ mvn -o -f backend/pom.xml '-Dnq.l4.blockers.enabled=true' '-Dspring.datasource.u
 
 - [OrderRecord](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/domain/OrderRecord.java)
 - [OrderRepository](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/domain/port/OrderRepository.java)
-- [OrderCommandWriteService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java)
+- [OrderCommandWriteService](../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandWriteService.java)
 - [JdbcOrderRepository](../../../backend/nq-infra/src/main/java/com/guidinglight/nexusquant/trading/infra/jdbc/JdbcOrderRepository.java)
 - V47（链接见 A2.5）。
 

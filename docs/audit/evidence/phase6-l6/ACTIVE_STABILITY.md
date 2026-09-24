@@ -20,7 +20,7 @@ readiness命令：`mvn -f backend/pom.xml -pl nq-app -am test '-Dtest=L6ActiveSt
 
 真实运行在首个完整检查点验证2 Order/2 Trade/2 TradeExecuted/8 Ledger、2 SUCCEEDED StrategyRun、Position BTC0.2、latest BTC0.2/USDT0、actionable=0。随后新一分钟窗口产生另外两个StrategyRun；第二actor日志返回`RECONCILE 2`，第一actor在对账中抛出`IllegalStateException: invalid order transition: FILLED -> FILLED`，F007记录`okx_reconcile.FAILURE=1`，异常穿透stdin测试入口使该JVM退出。Maven=`1 test / 1 failure / 0 errors / 0 skips / BUILD FAILURE`。
 
-[OkxRestReconcileService.alignOrderStatus](../../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java)先查询currentStatus并排除同态/终态，之后才调用[OrderCommandWriteService.transitionOrder](../../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java)的事务回读。另一actor可在两次读取之间完成FILLED；`transitionOrderAttempt`先做状态机校验，后CAS，因此本次同态拒绝发生在CAS保护之前。这一调用链与真实异常一致，但没有冻结该并发时序的独立复现。
+[OkxRestReconcileService.alignOrderStatus](../../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/recovery/OkxRestReconcileService.java)先查询currentStatus并排除同态/终态，之后才调用[OrderCommandWriteService.transitionOrder](../../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandWriteService.java)的事务回读。另一actor可在两次读取之间完成FILLED；`transitionOrderAttempt`先做状态机校验，后CAS，因此本次同态拒绝发生在CAS保护之前。这一调用链与真实异常一致，但没有冻结该并发时序的独立复现。
 
 确认的是production对账调用异常；JVM退出是test launcher传播异常的结果，不能据此声称生产scheduler永久停止。故障后的完整DB/Venue快照未捕获，owned DB已由finally清理，不能推断所有4个订单已完成、最终无重复/无orphan，也不能把首个检查点外推为失败时最终事实。
 

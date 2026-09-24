@@ -37,9 +37,9 @@
 
 完整追踪本轮修改及必要持久化 owner：
 
-- [OkxRestReconcileService](../../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/service/OkxRestReconcileService.java)：`reconcileOnce → reconcileObservedFacts → reconcileSingleOrder/reconcileFilledOrder/reconcileCancelledOrder → reconcileFills → alignOrderStatus → ensureLedgerConvergence`。
-- [OrderLifecycleService](../../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderLifecycleService.java) 与 [OrderCommandService](../../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandService.java)：对账专用 facade；普通 lifecycle/admission/ACK 未转入同态 no-op。
-- [OrderCommandWriteService](../../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/OrderCommandWriteService.java)：`reconcileOrderStatus`、`transitionOrderAttempt`、`loadOrder`、普通 provider finalization 与 B2 correction 边界。
+- [OkxRestReconcileService](../../../../backend/nq-scheduler/src/main/java/com/guidinglight/nexusquant/scheduler/recovery/OkxRestReconcileService.java)：`reconcileOnce → reconcileObservedFacts → reconcileSingleOrder/reconcileFilledOrder/reconcileCancelledOrder → reconcileFills → alignOrderStatus → ensureLedgerConvergence`。
+- [OrderLifecycleService](../../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderLifecycleService.java) 与 [OrderCommandService](../../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandService.java)：对账专用 facade；普通 lifecycle/admission/ACK 未转入同态 no-op。
+- [OrderCommandWriteService](../../../../backend/nq-core/src/main/java/com/guidinglight/nexusquant/trading/application/service/OrderCommandWriteService.java)：`reconcileOrderStatus`、`transitionOrderAttempt`、`loadOrder`、普通 provider finalization 与 B2 correction 边界。
 - `JdbcOrderRepository.compareAndSetStatus`：`order_id + expected status + expected version` 条件，成功才 `version+1`；未改变 SQL/状态机。
 - `JdbcTradeRepository.insertWithRequiredEvent / ensureRequiredEvent`、`RequiredTradeEventStore.ensure`：Order/source 行锁、稳定 fill identity、TradeExecuted 原子写入/补齐；`TradeLedgerPostingService.postTrade` 与 `JdbcLedgerPostingRepository`：币种/品种锁、完整幂等分录判定、Ledger/Position/Snapshot 同事务。
 - 所有选中测试入口、B0Fixture/B0Processes、L6ConvergenceControls、B4TransactionFaults/B4PgWireProxyMain、B2SyntheticVenueMain，以及当前 Java 21/POM 配置。Spring 真实 RiskGate、write proxy、adapter gateway 的 child composition 检查实际通过。
