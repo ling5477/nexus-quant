@@ -6,7 +6,7 @@ import {BrandLockup} from '@/nq-design-system/brand/BrandLockup';
 import {ExchangeBadge} from '@/nq-design-system/brand/ExchangeBadge';
 
 import {echarts} from '@/nq-design-system/charts/echarts-core';
-import {BacktestCurveChart} from '@/components/backtest/BacktestCurveChart';
+import {BacktestCurveChart} from '@/features/backtests/BacktestCurveChart';
 import {useLiveQuery} from '@/hooks/useLiveQuery';
 import {
     AppShell,

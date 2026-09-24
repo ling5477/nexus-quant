@@ -10,7 +10,7 @@ import {evaluationsApi} from '@/api/evaluations';
 import {formatApiError} from '@/api/errors';
 import {marketdataApi} from '@/api/marketdata';
 import {backtestsQueryKeys, evaluationsQueryKeys} from '@/api/query-keys';
-import {BacktestCurveChart, type BacktestCurvePoint} from '@/components/backtest/BacktestCurveChart';
+import {BacktestCurveChart, type BacktestCurvePoint} from '@/features/backtests/BacktestCurveChart';
 import {useLiveQuery} from '@/hooks/useLiveQuery';
 import {
     ChangeCell,

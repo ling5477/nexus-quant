@@ -1,9 +1,9 @@
-import {t} from '@/i18n';
+import {t} from '@/i18n/index';
 import {useTranslation} from 'react-i18next';
 import {useEffect, useRef} from 'react';
 
 import {echarts} from '@/nq-design-system/charts/echarts-core';
-import {nqTokens, registerNqEchartsTheme} from '@/nq-design-system';
+import {nqTokens, registerNqEchartsTheme} from '@/nq-design-system/index';
 
 export interface BacktestCurvePoint {
     /** 时间轴标签(category)。 */
