@@ -32,7 +32,7 @@ import {useStrategyValidationWorkspaceQueries} from '@/features/validation/hooks
 import {StrategyReleaseAdmissionPreviewPanel} from '@/features/validation/StrategyReleaseAdmissionPreviewPanel';
 import {ValidationReviewSection} from '@/features/validation/review/ValidationReviewSection';
 import type {AppApiError} from '@/types/api';
-import type {ReadModelEvidenceMetadata} from '@/types/read-model-evidence';
+import type {ReadModelEvidenceMetadata} from '@/features/validation/types/read-model-evidence';
 import type {
     ConsistencyEvidenceAnchor,
     ConsistencyEvidenceBlocker,

@@ -1,4 +1,4 @@
-import type {ReadModelEvidenceMetadata} from '@/types/read-model-evidence';
+import type {ReadModelEvidenceMetadata} from '@/features/validation/types/read-model-evidence';
 
 /**
  * GateT-1 Shadow Validation Workflow frontend types.

@@ -7,7 +7,7 @@
  * strategy approvals, ML readiness, live execution readiness, trading authorization,
  * credential views, private provider facts, or real order/account state.
  */
-import type {ReadModelEvidenceMetadata} from '@/types/read-model-evidence';
+import type {ReadModelEvidenceMetadata} from '@/features/validation/types/read-model-evidence';
 
 export type ArtifactChecksumStatus =
     'VALID'

@@ -1,4 +1,4 @@
-import type {ReadModelEvidenceMetadata} from '@/types/read-model-evidence';
+import type {ReadModelEvidenceMetadata} from '@/features/validation/types/read-model-evidence';
 
 /**
  * GateR-7 Shadow Run read-only frontend types.

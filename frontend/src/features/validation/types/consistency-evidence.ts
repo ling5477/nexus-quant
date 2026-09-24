@@ -164,4 +164,4 @@ export interface ConsistencyEvidenceOverviewResponse {
     evidenceAnchors: ConsistencyEvidenceAnchor[];
     traceId: string;
 }
-import type {ReadModelEvidenceMetadata} from '@/types/read-model-evidence';
+import type {ReadModelEvidenceMetadata} from '@/features/validation/types/read-model-evidence';

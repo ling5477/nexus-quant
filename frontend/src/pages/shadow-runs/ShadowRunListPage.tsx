@@ -11,7 +11,7 @@ import {NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPageHeader, 
 import {useShadowRunListQuery, useShadowRunOverview} from '@/features/validation/hooks/useShadowRunQueries';
 import {DataFreshness, type FreshnessState} from '@/nq-design-system/status/DataFreshness';
 import type {AppApiError} from '@/types/api';
-import type {ReadModelEvidenceMetadata} from '@/types/read-model-evidence';
+import type {ReadModelEvidenceMetadata} from '@/features/validation/types/read-model-evidence';
 import type {
     ShadowRunListItemResponse,
     ShadowRunListRequest,

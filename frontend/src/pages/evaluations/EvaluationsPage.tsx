@@ -29,7 +29,7 @@ import {
     useEvaluateMutation,
     useEvaluationDetailQuery,
     useEvaluationsListQuery,
-} from '@/hooks/useEvaluationsListQuery';
+} from '@/pages/evaluations/useEvaluationsListQuery';
 import type {AppApiError} from '@/types/api';
 import {
     type BacktestEvaluationListItem,
