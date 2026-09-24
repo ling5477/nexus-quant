@@ -5,7 +5,8 @@ import {Button, Card, Collapse, Descriptions, Select, Space, Typography} from 'a
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
 
-import {NqAmountText, NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPercentText, NqPortfolioDrawdownChart, NqPortfolioEquityChart, ApplicationRiskAlert, nqNumericColumn} from '@/components/nq';
+import {NqAmountText, NqDataTable, NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPercentText, ApplicationRiskAlert, nqNumericColumn} from '@/components/nq';
+import {NqPortfolioDrawdownChart, NqPortfolioEquityChart} from '@/features/paper-trading/components/charts/NqPortfolioCurveChart';
 
 import {usePaperPortfolioSummaryQuery} from '@/features/paper-trading/hooks/usePaperTradingQuery';
 import type {AppApiError} from '@/types/api';

@@ -5,7 +5,7 @@ import {useTranslation} from 'react-i18next';
 import {BrandLockup} from '@/nq-design-system/brand/BrandLockup';
 import {ExchangeBadge} from '@/nq-design-system/brand/ExchangeBadge';
 
-import {echarts} from '@/components/nq/charts/echarts-core';
+import {echarts} from '@/nq-design-system/charts/echarts-core';
 import {BacktestCurveChart} from '@/components/backtest/BacktestCurveChart';
 import {useLiveQuery} from '@/hooks/useLiveQuery';
 import {

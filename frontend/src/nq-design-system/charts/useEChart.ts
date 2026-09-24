@@ -1,6 +1,6 @@
 import {useEffect, useRef} from 'react';
 
-import {echarts, type EChartsInstance} from '@/components/nq/charts/echarts-core';
+import {echarts, type EChartsInstance} from '@/nq-design-system/charts/echarts-core';
 
 /**
  * useEChart — ECharts 实例生命周期 hook。

@@ -2,7 +2,7 @@ import {t} from '@/i18n';
 import {useTranslation} from 'react-i18next';
 import {useEffect, useRef} from 'react';
 
-import {echarts} from '@/components/nq/charts/echarts-core';
+import {echarts} from '@/nq-design-system/charts/echarts-core';
 import {nqTokens, registerNqEchartsTheme} from '@/nq-design-system';
 
 export interface BacktestCurvePoint {

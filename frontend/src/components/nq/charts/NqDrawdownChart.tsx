@@ -2,7 +2,7 @@ import {t} from '@/i18n';
 import {useTranslation} from 'react-i18next';
 import {useMemo} from 'react';
 
-import {useEChart} from '@/components/nq/charts/useEChart';
+import {useEChart} from '@/nq-design-system/charts/useEChart';
 import {formatNqNumber} from '@/components/nq/NqNumericText';
 import {buildNqLineChartBaseOption} from '@/nq-design-system/theme/nqChartTheme';
 import {nqColor} from '@/theme/tokens';
