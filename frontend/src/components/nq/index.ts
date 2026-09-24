@@ -16,5 +16,3 @@ export {NqDataTable, nqNumericColumn} from '@/components/nq/NqDataTable';
 export {NqDangerConfirmButton} from '@/components/nq/NqDangerConfirmButton';
 export {NqAmountText, NqPercentText, NqPriceText, formatNqNumber} from '@/components/nq/NqNumericText';
 export {NqEmptyState, NqErrorState, NqLoadingState} from '@/components/nq/NqStates';
-export {NqEquityCurveChart} from '@/components/nq/charts/NqEquityCurveChart';
-export {NqDrawdownChart} from '@/components/nq/charts/NqDrawdownChart';
