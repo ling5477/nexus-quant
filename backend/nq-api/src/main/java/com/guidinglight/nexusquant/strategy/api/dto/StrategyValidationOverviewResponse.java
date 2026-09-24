@@ -8,13 +8,13 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * StrategyValidationOverviewResponse 是 GateS-3 runtime baseline 的 GET-only HTTP DTO。
+ * StrategyValidationOverviewResponse 是验证只读视图 runtime baseline 的 GET-only HTTP DTO。
  *
  * <p>Why: 该 DTO 只暴露 validation 层面的诊断状态和边界说明。它不包含 tradeApproved /
  * tradingReady / liveReady / authorizedForTrading 字段，不返回 credential、secret、token、passphrase、
  * private key、raw provider payload 或任何真实交易材料。
  */
-@Schema(name = "StrategyValidationOverviewResponse", description = "GateS-3 read-only strategy validation overview")
+@Schema(name = "StrategyValidationOverviewResponse", description = "read-only strategy validation overview")
 public record StrategyValidationOverviewResponse(
         Instant generatedAt,
         boolean diagnosticOnly,

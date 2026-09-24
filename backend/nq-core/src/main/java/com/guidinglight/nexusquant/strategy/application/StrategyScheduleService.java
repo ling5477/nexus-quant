@@ -18,7 +18,7 @@ import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Service;
 
 /**
- * StrategyScheduleService 提供 GateE-2.1 的计划配置管理能力。
+ * StrategyScheduleService 提供执行与补偿契约的计划配置管理能力。
  */
 @Service
 public class StrategyScheduleService {
@@ -80,7 +80,7 @@ public class StrategyScheduleService {
      * 列出当前所有计划配置。
      * <p>
      * Why:
-     * GateE-2.2 的 scanOnce 需要把 disabled schedule 也纳入结构化结果，
+     * 执行与补偿契约的 scanOnce 需要把 disabled schedule 也纳入结构化结果，
      * 否则无法返回 `skipped_disabled`。
      */
     public List<StrategySchedule> listAllSchedules() {
@@ -123,7 +123,7 @@ public class StrategyScheduleService {
         requireText(request.strategyId(), "strategyId");
         String scheduleType = requireText(request.scheduleType(), "scheduleType").toUpperCase();
         if (!"CRON".equals(scheduleType)) {
-            throw new IllegalArgumentException("scheduleType must be CRON in GateE-2.1");
+            throw new IllegalArgumentException("scheduleType must be CRON");
         }
         CronExpression.parse(requireText(request.cronExpr(), "cronExpr"));
         normalizeTimezone(request.timezone());

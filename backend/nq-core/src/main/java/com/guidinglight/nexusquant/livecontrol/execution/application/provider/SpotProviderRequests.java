@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-/** GateY provider application port 的封闭 typed request 集合。 */
+/** 受控实盘执行 provider application port的封闭 typed request 集合。 */
 public final class SpotProviderRequests {
     private static final Pattern INSTRUMENT = Pattern.compile("[A-Z0-9]{2,12}-[A-Z0-9]{2,12}");
     private static final int MAX_FILL_RECORDS = 100;

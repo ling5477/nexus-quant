@@ -12,7 +12,7 @@ import com.guidinglight.nexusquant.trading.domain.OrderRecord;
  * ExecutionCommandMapper 负责把 core 请求对象映射为冻结的 contracts 命令。
  * <p>
  * Why:
- * `OrderCommandService` 在 GateD 中应聚焦编排、状态机、审计与 adapter 路由；
+ * `OrderCommandService` 在统一交易契约中应聚焦编排、状态机、审计与 adapter 路由；
  * contracts 组装如果继续散落在 service 内，会让“执行编排”和“契约冻结”两类职责重新耦合。
  */
 final class ExecutionCommandMapper {

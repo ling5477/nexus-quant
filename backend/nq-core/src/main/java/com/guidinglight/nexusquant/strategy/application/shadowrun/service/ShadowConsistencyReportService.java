@@ -30,10 +30,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * GateR-5 Paper vs Shadow consistency report service。
+ * Paper/Shadow 一致性报告服务。
  *
  * <p>职责：把调用方提供的 Paper run summary 与 Shadow Run summary 做本地只读比较，生成并
- * 持久化 {@code shadow_consistency_reports}。Why：GateR-5 需要可审计的一致性复盘，但仍然
+ * 持久化 {@code shadow_consistency_reports}。Why：影子运行需要可审计的一致性复盘，但仍然
  * 禁止真实交易所访问、credential 读取、private endpoint、下单、撤单、转账、提现、真实账户/ledger
  * mutation、API 暴露、scheduler 和后台 runner。
  *

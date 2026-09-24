@@ -43,7 +43,7 @@ public class StrategyOrderPreparationService {
         var work = executions.findWork(runId).orElseThrow(() -> new IllegalStateException("LEGACY_STRATEGY_WORK_UNAVAILABLE"));
         var request = OrderCommandStrategyExecutionGateway.toPlaceOrderRequest(work, run);
         OrderCommandService.validateRequest(request);
-        // B5 自动继续只使用已有 ordinary OKX 协议，不能顺便扩大到其它发送能力。
+        // 自动续跑只允许既有 ordinary OKX 执行协议，防止恢复路径扩大发送能力。
         if (recovery && !"OKX".equals(request.venue())) throw new IllegalStateException("STRATEGY_MUTATION_PROTOCOL_UNAVAILABLE");
         executions.bindEffective(runId, parameters);
         var effective = executions.findEffective(runId).orElseThrow();

@@ -38,7 +38,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * IncidentReplayReviewOverviewQueryService 组装 GateT-3 Incident / Replay Review overview。
+ * IncidentReplayReviewOverviewQueryService 组装验证工作流 Incident / Replay Review overview。
  *
  * <p>职责：只读读取本地 incident / replay diagnostics，并派生 deterministic review item、
  * reviewState、reviewDecision、severity、freshness、blocker、warning、nextStep 和 evidence anchor。
@@ -90,7 +90,7 @@ public class IncidentReplayReviewOverviewQueryService {
      * acknowledge / escalation / closeout recommendation 写成已执行动作。
      *
      * @param traceId 当前请求 trace id
-     * @return GateT-3 incident replay review overview read model
+     * @return 事件回放复核总览只读模型
      */
     @Transactional(readOnly = true)
     public IncidentReplayReviewOverviewReadModel overview(String traceId) {
@@ -482,11 +482,11 @@ public class IncidentReplayReviewOverviewQueryService {
         addAnchor(anchors, "SHADOW_CONSISTENCY_REPORT", fact.consistencyReportId(), fact.sourceStatus(), fact.occurredAt(), traceId,
                 "Local consistency report anchor.");
         addAnchor(anchors, "OPERATOR_ITEM", operatorItemId, "DERIVED_FROM_GATET1_RULE", fact.occurredAt(), traceId,
-                "Derived GateT-1 operator item anchor; no persisted operator state is read or written.");
+                "Derived operator item anchor; no persisted operator state is read or written.");
         if ("CONSISTENCY_DIVERGENCE".equals(value(fact.sourceType())) && fact.consistencyReportId() != null) {
             addAnchor(anchors, "CONSISTENCY_EVIDENCE", consistencyEvidenceItemId(fact), "DERIVED_FROM_GATET2_RULE",
                     fact.occurredAt(), traceId,
-                    "Derived GateT-2 consistency evidence anchor; raw metricDelta is not copied.");
+                    "Derived consistency evidence anchor; raw metricDelta is not copied.");
         }
         return anchors;
     }

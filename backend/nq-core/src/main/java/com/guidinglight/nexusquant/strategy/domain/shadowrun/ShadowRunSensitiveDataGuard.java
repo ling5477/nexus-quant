@@ -9,7 +9,7 @@ import java.util.Set;
 /**
  * Shadow Run JSONB 结构性敏感字段保护。
  *
- * <p>这是 GateR-2 本地 fact model 的 fail-closed guard：它阻断明确的 credential、
+ * <p>这是影子运行本地 fact model 的 fail-closed guard：它阻断明确的 credential、
  * private endpoint、真实订单/账户余额字段名和授权语义字段名。它不是通用 secret scanner；
  * 后续 API/runner 层仍应继续做输入脱敏和 no-egress/no-credential guard。
  */

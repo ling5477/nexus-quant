@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * CancelOrderCommand 冻结撤单命令契约。
  * <p>
  * Why:
- * GateD 要求撤单命令与下单命令一样具备 requestId、venue、accountId、symbol 等可审计字段，
+ * 统一交易契约要求撤单命令与下单命令一样具备 requestId、venue、accountId、symbol 等可审计字段，
  * 这样恢复、reconcile、手工撤单才能共享同一份命令语义。
  *
  * @param requestId       本次撤单请求 ID；用于区分同一订单上的多次撤单尝试
@@ -32,7 +32,7 @@ public record CancelOrderCommand(
 ) {
 
     /**
-     * 兼容旧构造器，保证第二批 contracts 收敛不会强制所有调用点同步改造。
+     * 兼容旧构造器，避免统一撤单契约要求所有调用点同时改造。
      */
     public CancelOrderCommand(
             String orderId,

@@ -40,7 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Shadow Run 本地事实 JDBC adapter。
  *
- * <p>本 adapter 只写入 GateR-2 Shadow Run 本地 fact model。它不调用外部交易所、不读取
+ * <p>本 adapter 只写入 Shadow Run 本地 fact model。它不调用外部交易所、不读取
  * credential material、不写真实账户/资金/订单/ledger，也不启动 Shadow runner。
  */
 @Repository

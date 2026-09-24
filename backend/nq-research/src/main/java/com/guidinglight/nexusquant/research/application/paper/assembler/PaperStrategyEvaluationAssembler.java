@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 /**
- * PaperStrategyEvaluationAssembler —— 纯函数式 Paper 策略评估聚合器（GateK Batch K3）。
+ * PaperStrategyEvaluationAssembler —— 纯函数式 Paper 策略评估聚合器。
  *
  * 设计要点：
  * 1) 无任何 IO / 仓储 / 外呼依赖；输入为 {@link PaperPortfolioSummary.RunRef}（组合看板同口径单 run 事实）

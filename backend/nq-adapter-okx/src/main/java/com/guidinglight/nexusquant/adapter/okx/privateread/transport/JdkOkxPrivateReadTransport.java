@@ -53,7 +53,7 @@ import java.util.function.Supplier;
  * OKX global host 专用 credential-scoped typed transport。
  *
  * <p>复用同一 signer、JDK client、NEVER redirect、无自动 retry、bounded response 与单并发；
- * 既有 read-only API 保持不变，GateY-6E capability 不带 Spring/runtime wiring。</p>
+ * 既有 read-only API 保持不变，受控实盘执行 capability 不带 Spring/runtime wiring。</p>
  */
 public final class JdkOkxPrivateReadTransport implements OkxPrivateRealTransport {
 

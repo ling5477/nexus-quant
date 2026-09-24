@@ -47,7 +47,7 @@ public class OperationalReadinessService {
     /**
      * Returns the current safe operational readiness summary.
      *
-     * <p>Current GateM-6B baseline is intentionally not ready for real runtime use: LIVE is
+     * <p>当前运行就绪状态不表示真实运行能力：LIVE 仍处于
      * disabled, AI is not started, DH runtime is not integrated, real provider is not implemented,
      * external exchange calls are disabled, and profile/config/log details are exposed only as
      * redacted summary categories.

@@ -52,7 +52,7 @@ public interface BacktestConfigRepository {
     /**
      * 查询包含归档配置的内部列表。
      * Why:
-     * 历史追溯或内部审计可能需要读取 ARCHIVED；本轮不新增外部 API 参数，
+     * 历史追溯或内部审计可能需要读取 ARCHIVED；该仓储不暴露外部 API 参数，
      * 因此 includeArchived 只保留在 Repository 契约内。
      *
      * @return 包含 ARCHIVED 的回测配置列表
@@ -88,7 +88,7 @@ public interface BacktestConfigRepository {
     }
 
     /**
-     * 绑定 GateH-3 marketdata dataset 到回测配置。
+     * 绑定历史行情接入 marketdata dataset 到回测配置。
      * Why:
      * dataset 绑定只更新配置事实和快照，不启动回测、不修改回测算法；
      * 这样 run 创建时可以从配置固化 dataset_snapshot_json，用于后续复盘。
@@ -109,7 +109,7 @@ public interface BacktestConfigRepository {
     }
 
     /**
-     * 绑定 GateI-2 strategy version 到回测配置。
+     * 绑定 strategy version 到回测配置。
      * Why:
      * 策略版本、参数快照和版本快照必须在配置层先固化，run 创建时才能复制稳定输入；
      * 仓储只负责字段更新，不校验策略语义、不启动回测。
@@ -147,7 +147,7 @@ public interface BacktestConfigRepository {
     /**
      * 按 researchConfigId 过滤回测配置，并允许内部调用显式包含归档记录。
      * Why:
-     * 外部 API 本轮不增加 includeArchived 参数；Repository 保留内部扩展点，
+     * 外部 API 不提供 includeArchived 参数；Repository 保留内部扩展点，
      * 确保审计或历史追溯能绕过默认列表隐藏规则。
      *
      * @param researchConfigId 研究配置 ID，可空

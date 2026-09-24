@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
  * OkxInstrumentsCache 负责缓存 `public/instruments?instType=SPOT`。
  * <p>
  * Why:
- * GateC-1 要求下单前必须使用 instruments 做 trim，但测试和 Spring context 启动必须保持 no-outbound。
+ * 交易所适配契约要求下单前必须使用 instruments 做 trim，但测试和 Spring context 启动必须保持 no-outbound。
  * 因此 cache 构造期只建立本地状态，首次真正读取 symbol metadata 时再刷新，避免 Bean bootstrap 访问 OKX public endpoint。
  */
 public class OkxInstrumentsCache {

@@ -4,7 +4,7 @@ import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.Str
 import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyEvaluationGateQuery;
 
 /**
- * StrategyEvaluationGateFactRepository 暴露 GateQ-1 所需的本地只读事实查询。
+ * StrategyEvaluationGateFactRepository 暴露策略验证所需的本地只读事实查询。
  *
  * <p>Why: core 负责 gate 语义，infra 负责 SQL。该 port 只提供 SELECT 聚合入口，不提供写库、
  * 调度、外部 HTTP、credential material、adapter、Paper run 启动或 Shadow runner 能力。

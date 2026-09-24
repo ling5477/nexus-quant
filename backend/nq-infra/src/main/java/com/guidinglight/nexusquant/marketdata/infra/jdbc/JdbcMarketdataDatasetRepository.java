@@ -26,7 +26,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 /**
- * JdbcMarketdataDatasetRepository 是 GateH-3 dataset 和 coverage 的 JDBC 实现。
+ * JdbcMarketdataDatasetRepository 是历史行情接入 dataset 和 coverage 的 JDBC 实现。
  * <p>
  * Why:
  * 覆盖率、缺口和非法 bar 统计依赖 `marketdata_bars` 聚合 SQL，必须留在 infra 层；

@@ -9,7 +9,7 @@ import java.util.Optional;
  * StrategyVersionRepository 定义策略版本持久化端口。
  *
  * Why:
- * core 只依赖端口，不依赖 JDBC。GateI-1 的 SQL、索引和 upsert 细节由 infra adapter 承载。
+ * core 只依赖端口，不依赖 JDBC。策略版本的 SQL、索引和 upsert 细节由 infra adapter 承载。
  */
 public interface StrategyVersionRepository {
 

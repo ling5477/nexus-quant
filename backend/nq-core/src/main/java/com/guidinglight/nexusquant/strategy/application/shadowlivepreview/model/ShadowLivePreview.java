@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * ShadowLivePreview 是 GateQ-3 Shadow Live no-side-effect preview API 的 core read model。
+ * ShadowLivePreview 是策略验证 Shadow Live no-side-effect preview API 的 core read model。
  *
  * <p>Why: 该模型只返回 validation、readiness、trace preview、blocked reason、side-effect policy
  * 和 next steps。它不包含 tradingReady、liveReady、authorizedForTrading 字段，不保存敏感材料、

@@ -11,7 +11,7 @@ import java.util.UUID;
 /**
  * Shadow Run 侧只读比较输入。
  *
- * <p>职责：承载 runner / decision trace 已生成的 Shadow 摘要。Why：GateR-5 不启动 runner、
+ * <p>职责：承载 runner / decision trace 已生成的 Shadow 摘要。Why：影子运行不启动 runner、
  * 不执行策略、不调用真实交易所，也不读取 private endpoint；该输入只代表调用方提供的本地
  * Shadow facts 摘要，用于生成脱敏 consistency report。
  *

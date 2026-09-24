@@ -120,7 +120,7 @@ public class ApiExceptionHandler {
     }
 
     /**
-     * 将 GateV-2 domain failures 映射到既有 ApiErrorResponse，不创建第二套 error envelope。
+     * 将人工复核 domain failures 映射到既有 ApiErrorResponse，不创建第二套 error envelope。
      */
     @ExceptionHandler(ValidationReviewException.class)
     public ResponseEntity<ApiErrorResponse> handleValidationReviewException(

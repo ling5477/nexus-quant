@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
- * SimOrder 表示 GateF-3 的模拟订单事实。
+ * SimOrder 表示研究与回测契约的模拟订单事实。
  */
 public record SimOrder(
         String simOrderId,

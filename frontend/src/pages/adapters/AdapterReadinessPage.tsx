@@ -135,7 +135,7 @@ function buildColumns(): ColumnsType<AdapterReadinessItem> {
 }
 
 /**
- * AdapterReadinessPage 是 GateM-5B 的只读 adapter readiness 面板。
+ * AdapterReadinessPage 是适配器就绪策略的只读 adapter readiness 面板。
  *
  * Why:
  * 给运维 / 操作者一个明确入口，确认当前 OKX / Binance / Noop 各能力是否可实盘及原因。页面表达的核心事实：

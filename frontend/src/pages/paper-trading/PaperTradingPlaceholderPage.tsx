@@ -11,7 +11,7 @@ interface PaperTradingPlaceholderPageProps {
  * PaperTradingPlaceholderPage 是 K5-B 的静态占位页。
  *
  * Why:
- * Portfolio / Diagnostics / Reviews 的真实业务面板仍保留在 Runs 兼容页，避免本轮改变既有查询、缓存、
+ * Portfolio / Diagnostics / Reviews 的真实业务面板仍保留在 Runs 兼容页，避免改变既有查询、缓存、
  * selectedRow / factTab / focusRunId 状态和 mutation 行为。placeholder 不调用任何 API/query，只提示 K5-C
  * 后续迁移路径，并重复展示 Paper-only 安全边界。
  */

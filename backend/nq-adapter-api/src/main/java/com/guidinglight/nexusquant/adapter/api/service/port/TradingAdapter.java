@@ -12,10 +12,10 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
 import java.util.List;
 
 /**
- * TradingAdapter 冻结 GateD 的统一交易端口。
+ * TradingAdapter 冻结统一交易契约的统一交易端口。
  * <p>
  * Why:
- * GateD 要求 core 只看到统一的 place / cancel / query / list-open-orders 语义，
+ * 统一交易契约要求 core 只看到统一的 place / cancel / query / list-open-orders 语义，
  * 交易所方言必须留在 adapter 层内完成映射。
  */
 public interface TradingAdapter {

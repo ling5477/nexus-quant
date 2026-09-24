@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * One-shot GateY pilot gateway。PLACE/CANCEL前均先持久化ExecutionIntent与lease动作绑定；
+ * One-shot 受控实盘执行 pilot gateway。PLACE/CANCEL前均先持久化ExecutionIntent与lease动作绑定；
  * provider未知结果只query，不会第二次调用PLACE。
  */
 public final class MinimalPilotTradingVenueGateway implements TradingVenueGateway {

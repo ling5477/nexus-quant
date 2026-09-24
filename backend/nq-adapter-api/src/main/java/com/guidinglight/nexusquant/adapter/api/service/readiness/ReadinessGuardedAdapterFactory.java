@@ -8,10 +8,10 @@ import com.guidinglight.nexusquant.adapter.api.service.port.TradingAdapter;
  * ReadinessGuardedAdapterFactory 是把 readiness guard 装配到 adapter 的统一入口。
  * <p>
  * Why:
- * GateM-2 要在装配层（Spring configuration / factory / registry）把 {@link ReadinessGuardedMarketDataAdapter}
+ * 适配器就绪策略要在装配层（Spring configuration / factory / registry）把 {@link ReadinessGuardedMarketDataAdapter}
  * 与 {@link ReadinessGuardedTradingAdapter} 包到真实 / stub adapter 外层，让调用方默认拿到经过 readiness 守卫的
  * adapter，而不是孤立 decorator。本工厂把“包装”这一步集中成可复用、可单测的纯函数装配原语，避免装配点散落手写
- * decorator 构造。readiness guard 是外层权威，被包装的 delegate 是内层兜底（GateM-1 P2-2 收敛）。
+ * decorator 构造。readiness guard 是外层权威，被包装的 delegate 是内层兜底（适配器就绪策略 P2-2 收敛）。
  *
  * <p>无 IO、无 credential、无网络、无副作用。
  */

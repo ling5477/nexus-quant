@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * PaperExecutionDiagnosticsController —— Paper 执行诊断只读聚合入口（GateK Batch K1）。
+ * PaperExecutionDiagnosticsController —— Paper 执行诊断只读聚合入口。
  *
  * 对 bounded Paper run 做规则化执行归因（无订单 / 有订单无成交 / 成交亏损 / 风控拦截 / 数据不足 /
  * 高回撤 / 异常终态），并按 strategyVersionId / publishId 聚合，供前端执行诊断视图消费。
@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @ConditionalOnBean(PaperTradingApiService.class)
 @RequestMapping("/api/paper-trading/execution-diagnostics")
-@Tag(name = "Paper Execution Diagnostics API", description = "GateK Paper 执行诊断只读聚合接口。")
+@Tag(name = "Paper Execution Diagnostics API", description = "Paper 执行诊断只读聚合接口。")
 public class PaperExecutionDiagnosticsController {
 
     private final PaperTradingApiService apiService;

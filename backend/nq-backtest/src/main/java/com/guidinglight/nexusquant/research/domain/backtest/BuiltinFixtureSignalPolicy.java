@@ -10,7 +10,7 @@ import java.time.Instant;
 
 
 /**
- * BuiltinFixtureSignalPolicy 提供 GateF-3 的最小内建策略意图。
+ * BuiltinFixtureSignalPolicy 提供研究与回测契约的最小内建策略意图。
  * <p>
  * Why:
  * 本批不接 Python runtime bridge，但必须把 sim_* 事实链跑通，因此使用稳定可复现的内建 fixture 策略作为过渡。

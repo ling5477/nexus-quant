@@ -37,9 +37,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * ShadowValidationWorkflowOverviewQueryService 组装 GateT-1 Shadow Validation Workflow overview。
+ * ShadowValidationWorkflowOverviewQueryService 组装验证工作流 Shadow Validation Workflow overview。
  *
- * <p>职责：只读读取 GateS 已有本地事实，派生 operator item、state、decision、severity、freshness、
+ * <p>职责：只读读取验证只读视图已有本地事实，派生 operator item、state、decision、severity、freshness、
  * blocker、warning、nextStep 和 evidence anchor。该 service 不写库、不创建 review/acknowledge、不启动
  * runner/scheduler、不调用 adapter，不读取 credential，也不修改 account/order/ledger/Paper/Shadow 状态。
  */
@@ -83,7 +83,7 @@ public class ShadowValidationWorkflowOverviewQueryService {
      * 说明没有 operator item；不会抛 500，也不会伪造收益、胜率、可交易或授权状态。
      *
      * @param traceId 当前请求 trace id
-     * @return GateT-1 read model
+     * @return Shadow 验证工作流只读模型
      */
     @Transactional(readOnly = true)
     public ShadowValidationWorkflowOverviewReadModel overview(String traceId) {

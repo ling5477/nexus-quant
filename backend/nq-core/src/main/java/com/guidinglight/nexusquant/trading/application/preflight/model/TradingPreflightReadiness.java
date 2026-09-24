@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * TradingPreflightReadiness 是 GateP Batch 4 的只读账户权限与风险前置基线 read model。
+ * TradingPreflightReadiness 是运行前诊断 Batch 4 的只读账户权限与风险前置基线 read model。
  *
  * <p>Why: 该 read model 聚合当前本地事实，解释为什么真实交易仍被阻断。它不包含
  * tradingReady、liveReady、authorizedForTrading 等授权字段，也不触发 adapter、RiskGate、订单、

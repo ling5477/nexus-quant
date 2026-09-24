@@ -30,7 +30,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * OkxWsOrderAccelerationService 负责 GateC-1.1 的 WS 加速协同。
+ * OkxWsOrderAccelerationService 负责交易所适配契约的 WS 加速协同。
  * <p>
  * Why:
  * PR-W3 要求 WS 只用于加速 Ack/CancelAck/Reject 三类状态推进，且必须经过既有状态机入口，

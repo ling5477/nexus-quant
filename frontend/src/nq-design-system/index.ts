@@ -1,4 +1,4 @@
-// index.ts — NQ Console Design System (B0 / Design Tokens v2) 统一导出
+// index.ts — NQ Console Design System (Design Tokens v2) 统一导出
 export * from './tokens/nq-tokens';
 export * from './tokens/nq-css-vars';
 export { nqAntdTheme } from './theme/nqAntdTheme';
@@ -20,7 +20,7 @@ export {ExchangeBadge, ExchangeIcon} from './brand/ExchangeBadge';
 export { NqKlineChart, NqVolumeChart } from './charts';
 export type { NqChartBaseProps, NqChartState, NqKlineBar } from './charts';
 
-// 格式化(B0.2):纯函数 + 表格列组件
+// 格式化:纯函数 + 表格列组件
 export {
   isNqEmpty,
   formatNqNumber,
@@ -38,7 +38,7 @@ export type {
 export { NumberCell, MoneyCell, PercentCell, ChangeCell, StatusCell } from './format/cells';
 export type { PercentCellProps, ChangeCellProps, StatusCellProps } from './format/cells';
 
-// 表格密度(B0.2):token + class 助手(需 import './table/nq-table.css')
+// 表格密度:token + class 助手(需 import './table/nq-table.css')
 export {
   NQ_TABLE_DENSITY,
   NQ_DEFAULT_TABLE_DENSITY,

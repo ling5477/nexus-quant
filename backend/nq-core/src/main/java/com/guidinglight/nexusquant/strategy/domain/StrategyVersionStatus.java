@@ -1,11 +1,11 @@
 package com.guidinglight.nexusquant.strategy.domain;
 
 /**
- * StrategyVersionStatus 定义 GateI-1 策略版本生命周期。
+ * StrategyVersionStatus 定义策略版本策略版本生命周期。
  *
  * Why:
  * 策略定义的 enabled 表示运行开关，不能承担“可发布版本”的审计语义。
- * GateI-1 用独立状态表达版本是否仍在草稿、是否可被发布引用、是否已归档。
+ * 策略版本用独立状态表达版本是否仍在草稿、是否可被发布引用、是否已归档。
  */
 public enum StrategyVersionStatus {
     DRAFT,
@@ -30,7 +30,7 @@ public enum StrategyVersionStatus {
      * 策略版本状态是否构成 LIVE 启用授权。
      *
      * <p>Why:
-     * GateM-4 明确要求 strategy publish / ACTIVE 只能表示可被 backtest、evaluation、Paper 链路引用，
+     * 适配器就绪策略明确要求 strategy publish / ACTIVE 只能表示可被 backtest、evaluation、Paper 链路引用，
      * 不能被升级解释为 LIVE enabled。真实 LIVE 仍必须另起 Gate 并通过独立授权。</p>
      *
      * @return 当前所有版本状态都不授权 LIVE

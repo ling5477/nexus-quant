@@ -3,10 +3,10 @@ package com.guidinglight.nexusquant.strategy.application.shadowrun.model;
 import java.util.List;
 
 /**
- * GateR-4 Shadow Run risk preflight 只读快照模型。
+ * Shadow Run risk preflight 只读快照模型。
  *
  * <p>职责：表达本地风险预检的 allow / block / warn 结果。Why：Shadow Run 需要可复盘的风险
- * 输入和阻断原因，但 GateR-4 仍禁止真实风控放行、真实下单、private endpoint 和账户/ledger mutation。
+ * 输入和阻断原因，但影子运行仍禁止真实风控放行、真实下单、private endpoint 和账户/ledger mutation。
  *
  * @param allowed           是否允许本地 Shadow Run 继续到 completed；不表示真实交易允许
  * @param blocked           是否阻断本地 Shadow Run；为 true 时 runner 应进入 BLOCKED

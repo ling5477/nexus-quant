@@ -15,7 +15,7 @@ import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.core.env.Environment;
 
 /**
- * GateY qualification runtime 的只读诊断端点，复用唯一 runtime identity 与 durable kill snapshot。
+ * 受控实盘执行 qualification runtime的只读诊断端点，复用唯一 runtime identity 与 durable kill snapshot。
  *
  * <p>该端点只用于 loopback deployment health verification，不产生交易授权，不访问 credential 或
  * provider。无法从 production runtime 可靠观测的计数必须返回 {@code NOT_INSTRUMENTED}，不得伪造为零。</p>

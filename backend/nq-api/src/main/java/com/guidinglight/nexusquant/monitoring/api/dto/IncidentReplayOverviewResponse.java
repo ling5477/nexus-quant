@@ -7,13 +7,13 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * IncidentReplayOverviewResponse 是 GateS-6 Incident / Replay overview 的 GET-only HTTP DTO。
+ * IncidentReplayOverviewResponse 是验证只读视图 Incident / Replay overview 的 GET-only HTTP DTO。
  *
  * <p>Why: 该 DTO 只暴露 diagnostic-only、no-side-effect 的本地事实摘要；不包含 tradeApproved、
  * tradingReady、liveReady、authorizedForTrading 字段，不返回 credential、secret、token、passphrase、
  * private key、raw provider payload、真实账户或真实订单材料。
  */
-@Schema(name = "IncidentReplayOverviewResponse", description = "GateS-6 read-only incident replay overview")
+@Schema(name = "IncidentReplayOverviewResponse", description = "read-only incident replay overview")
 public record IncidentReplayOverviewResponse(
         Instant generatedAt,
         boolean diagnosticOnly,

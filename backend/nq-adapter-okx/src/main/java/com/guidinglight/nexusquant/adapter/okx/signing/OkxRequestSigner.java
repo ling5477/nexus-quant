@@ -14,7 +14,7 @@ import javax.crypto.spec.SecretKeySpec;
  * OkxRequestSigner 负责生成 OKX v5 的签名头。
  * <p>
  * Why:
- * GateC-1 的真实 REST 调用首先会死在签名错误上；把 pre-hash 与 HMAC-SHA256 逻辑单独收敛，
+ * 交易所适配契约的真实 REST 调用首先会死在签名错误上；把 pre-hash 与 HMAC-SHA256 逻辑单独收敛，
  * 才能对 GET query / POST body 做稳定单测，而不是在 adapter 里靠猜修 bug。
  */
 public class OkxRequestSigner {

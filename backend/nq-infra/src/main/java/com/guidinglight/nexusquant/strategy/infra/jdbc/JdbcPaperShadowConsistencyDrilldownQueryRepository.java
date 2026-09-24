@@ -29,7 +29,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 /**
- * JdbcPaperShadowConsistencyDrilldownQueryRepository 是 GateS-2 drilldown 的 JDBC read adapter。
+ * JdbcPaperShadowConsistencyDrilldownQueryRepository 是验证只读视图 drilldown 的 JDBC read adapter。
  *
  * <p>职责：围绕单个 `shadowRunId` 只读查询 Shadow Run 主事实、latest consistency report、
  * snapshot summary 和 event summary。所有 SQL 都是 SELECT；该 adapter 没有 create/update/delete 方法，

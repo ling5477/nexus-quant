@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.List;
 
 /**
- * GateW-3 internal-only risk preflight 请求。
+ * 只读诊断 internal-only risk preflight 请求。
  *
  * <p>preview/reconciliation 允许为 null，以显式表达 NOT_EVALUATED。该对象不是 Controller DTO，
  * 不包含 PlaceOrderCommand、credential material、provider endpoint 或 mutable entity。</p>

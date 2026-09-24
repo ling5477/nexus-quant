@@ -3,7 +3,7 @@ package com.guidinglight.nexusquant.marketdata.domain;
 /**
  * MarketdataBackendSupportLevel explains how much backend evidence supports a readiness response.
  * <p>
- * Why: GateM-2E deliberately avoids a migration, so clients must know the summary is derived from
+ * 原因：行情就绪聚合不依赖新增 migration，客户端必须知道摘要来源于
  * existing bars and ingestion tables rather than a persisted source-health table.
  */
 public enum MarketdataBackendSupportLevel {

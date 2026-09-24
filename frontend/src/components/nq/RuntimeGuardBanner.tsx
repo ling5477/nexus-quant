@@ -12,7 +12,7 @@ interface RuntimeGuardBannerProps {
 }
 
 /**
- * RuntimeGuardBanner renders read-only GateM runtime boundary copy.
+ * RuntimeGuardBanner 展示只读的运行安全边界文案。
  *
  * Boundary: this component is informational only. It must not hide controls,
  * unlock controls, call APIs, or become a dismissible substitute for backend

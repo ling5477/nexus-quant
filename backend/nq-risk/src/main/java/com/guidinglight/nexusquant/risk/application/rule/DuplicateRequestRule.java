@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * DuplicateRequestRule 使用 `accountId + idempotencyKey` 做重复请求拦截。
  * <p>
  * Why:
- * GateD 第二批已经把 `requestId / idempotencyKey` 收口进 contracts/core。
+ * 统一订单契约已把 `requestId / idempotencyKey` 收口进 contracts/core。
  * 这里必须改用稳定幂等键，而不是继续把“本次请求 ID”和“幂等键”混成一个概念。
  */
 public class DuplicateRequestRule implements RiskRule {

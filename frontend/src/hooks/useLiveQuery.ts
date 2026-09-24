@@ -6,13 +6,13 @@ import {useTranslation} from 'react-i18next';
 import {formatApiError} from '@/api/errors';
 
 /**
- * useLiveQuery — NQ Console 实时数据获取抽象(B0.3)。
+ * useLiveQuery — NQ Console 实时数据获取抽象。
  *
  * 职责:在 TanStack Query 之上统一 polling / manual refresh / enabled,并把查询状态归一化为
  * fresh / stale / error / disabled / loading,输出 lastUpdatedAt / latencyMs / errorReason,
  * 与 DataFreshness 等状态组件打通。
  *
- * 关键约束(GateK 前):
+ * 关键约束(Paper 诊断与评估前):
  * 1) 仅 polling + 手动刷新,**不接 WebSocket / SSE**;传输层抽象在此,页面不感知实现;
  *    后期切 socket 时只改本 hook,调用方不变。
  * 2) 默认窗口失焦暂停轮询(pauseOnHidden),省资源。

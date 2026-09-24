@@ -42,7 +42,7 @@ import java.util.Objects;
 import java.math.RoundingMode;
 
 /**
- * BinanceExchangeAdapter 是 GateC-2 的 Binance Spot REST-only 适配实现。
+ * BinanceExchangeAdapter 是交易所适配契约的 Binance Spot REST-only 适配实现。
  * <p>
  * Why:
  * Binance 的 symbol、filters、签名与错误码都属于交易所方言，必须封装在 `adapter-binance` 内。
@@ -117,7 +117,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
      * 统一下单入口。
      * <p>
      * Why:
-     * GateC-2 明确要求下单前必须完成 Binance filters trim，并在 timeout 时执行 query-confirm。
+     * 交易所适配契约明确要求下单前必须完成 Binance filters trim，并在 timeout 时执行 query-confirm。
      * 这些交易所差异都必须留在 adapter 中，不能把 `timestamp/recvWindow/newClientOrderId` 等细节泄漏给 core。
      */
     @Override
@@ -250,7 +250,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
      * 拉取 Binance myTrades，供 REST reconcile 写 trades 并触发 ledger。
      * <p>
      * Why:
-     * `TradingAdapter` 接口没有成交拉取方法，但 GateC-2 允许 Binance reconcile 直接依赖 adapter-binance。
+     * `TradingAdapter` 接口没有成交拉取方法，但交易所适配契约允许 Binance reconcile 直接依赖 adapter-binance。
      * 该方法仍然把 Binance 字段映射为稳定的 `BinanceTradeFill`，把交易所差异隔离在 adapter 模块内。
      */
     public List<AdapterTradeReport> listTradeReports(String symbol, String exchangeOrderId, String traceId) {
@@ -315,7 +315,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
     }
 
     /**
-     * GateM-3 runtime guard：nq-app 装配传入 readiness service 后，Binance trading 动作必须先 fail-closed。
+     * 适配器就绪策略 runtime guard：nq-app 装配传入 readiness service 后，Binance trading 动作必须先 fail-closed。
      * <p>
      * Why:
      * 该 guard 放在 validate / HTTP / cache 访问之前，确保当前 no-real / LIVE disabled / not-ready baseline 下
@@ -689,7 +689,7 @@ public class BinanceExchangeAdapter implements TradingAdapter {
     }
 
     /**
-     * GateL-1B-C 保留 adapter-api 的 rawPayload 字段以避免兼容性破坏，但 Binance order ack/snapshot
+     * 无真实连接安全边界保留 adapter-api 的 rawPayload 字段以避免兼容性破坏，但 Binance order ack/snapshot
      * producer 不再把 provider full body、headers、签名或异常诊断文本继续传给 core/API/audit。
      *
      * @return null 表示本 producer 明确抑制原始 provider payload；字段删除另起兼容性任务处理。

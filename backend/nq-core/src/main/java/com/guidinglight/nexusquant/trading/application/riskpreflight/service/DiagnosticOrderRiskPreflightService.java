@@ -22,7 +22,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * GateW-3 side-effect-free risk preflight evaluator。
+ * 无副作用的订单风险前置诊断器。
  *
  * <p>职责仅为组合调用方提供的 immutable preview、reconciliation 与 local metadata snapshots。
  * 本类不是 Spring bean，只有 injected Clock 依赖；没有 repository、HTTP、credential、risk registry、

@@ -9,7 +9,7 @@ import java.util.UUID;
 import java.util.Locale;
 
 /**
- * ConsistencyEvidenceOverviewFacts 是 GateT-2 repository 返回给 core 的 SELECT-only 投影。
+ * ConsistencyEvidenceOverviewFacts 是验证工作流 repository 返回给 core 的 SELECT-only 投影。
  *
  * <p>该模型只允许携带本地 consistency / shadow fact 的脱敏字段和 evidence anchor。它不得包含
  * credential material、真实账户余额、真实订单状态、ledger mutation、private provider 配置或 snapshot

@@ -1,5 +1,5 @@
 /**
- * GateT-4 Evaluation Artifact Preview frontend types.
+ * 评估产物预览前端类型.
  *
  * Why:
  * These types only model `GET /api/strategy-validation/evaluation-artifacts/preview/overview`.
@@ -109,7 +109,7 @@ export interface PythonEvaluationArtifactPreviewItem {
 }
 
 /**
- * Overview response is the only GateT-4 frontend DTO consumed by this slice.
+ * Overview response 是该功能唯一消费的前端 DTO。
  * The type intentionally contains no file path, upload/import request shape, raw artifact JSON,
  * credential, private provider, real account, real order, runner, scheduler, or trade field.
  */

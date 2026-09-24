@@ -11,7 +11,7 @@ import java.util.UUID;
 /**
  * Shadow consistency report 生成命令。
  *
- * <p>职责：聚合一次 Paper vs Shadow 只读比较所需输入。Why：GateR-5 service 只消费调用方
+ * <p>职责：聚合一次 Paper vs Shadow 只读比较所需输入。Why：影子运行 service 只消费调用方
  * 提供的本地摘要，不外联、不读取 credential、不查询真实账户或真实订单；缺失输入由 service
  * 写入 NOT_COMPARABLE / PARTIAL / FAILED report，而不是补造成功态。
  *

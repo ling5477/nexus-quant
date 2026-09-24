@@ -27,7 +27,7 @@ import org.springframework.http.HttpStatus;
  *
  * Why:
  * 回测运行 API 需要组合 `nq-research`、`nq-backtest` 和 `nq-eval` 的读取、评估与发布能力。
- * PRE-CLEAN-2 后，这类跨研究链路编排收回到 eval application owner，避免 `nq-api` 继续演化成业务 façade。
+ * 跨研究链路编排归属于 eval application owner，避免 `nq-api` 继续演化成业务 façade。
  */
 @Service
 public class BacktestRunApiService {
@@ -148,7 +148,7 @@ public class BacktestRunApiService {
     }
 
     /**
-     * 查询 GateI-2 评估报告列表。
+     * 查询策略版本评估报告列表。
      *
      * @return 已生成的评估报告列表
      */
@@ -175,7 +175,7 @@ public class BacktestRunApiService {
     }
 
     /**
-     * 发布回测结果，并可选绑定 GateI-1 策略版本。
+     * 发布回测结果，并可选绑定策略版本策略版本。
      *
      * @param backtestRunId 回测运行 ID
      * @param displayName 发布展示名，可空

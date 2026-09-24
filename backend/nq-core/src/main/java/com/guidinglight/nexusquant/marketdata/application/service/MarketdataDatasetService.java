@@ -22,10 +22,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * MarketdataDatasetService 提供 GateH-3 数据集创建、查询和质量刷新能力。
+ * MarketdataDatasetService 提供历史行情接入数据集创建、查询和质量刷新能力。
  * <p>
  * Why:
- * GateH-3 的 dataset 是 `marketdata_bars` 到回测配置之间的稳定契约；服务层负责固定 GateH-3 第一版范围、
+ * 行情数据集的 dataset 是 `marketdata_bars` 到回测配置之间的稳定契约；服务层负责固定行情数据集第一版范围、
  * 生成可审计 request 快照，并把覆盖统计结果写回 dataset 主表。它不启动回测，也不改变策略或交易逻辑。
  */
 @Service
@@ -201,7 +201,7 @@ public class MarketdataDatasetService {
     private String normalizeExchange(String value) {
         String normalized = requireText(value, "exchangeCode").toUpperCase();
         if (!SUPPORTED_EXCHANGES.contains(normalized)) {
-            throw new IllegalArgumentException("unsupported exchangeCode for GateH-3 dataset: " + value);
+            throw new IllegalArgumentException("unsupported exchangeCode for marketdata dataset: " + value);
         }
         return normalized;
     }
@@ -209,7 +209,7 @@ public class MarketdataDatasetService {
     private String normalizeMarketType(String value) {
         String normalized = requireText(value, "marketType").toUpperCase();
         if (!"SPOT".equals(normalized)) {
-            throw new IllegalArgumentException("GateH-3 dataset only supports SPOT");
+            throw new IllegalArgumentException("marketdata dataset only supports SPOT");
         }
         return normalized;
     }
@@ -217,7 +217,7 @@ public class MarketdataDatasetService {
     private String normalizeSymbol(String value) {
         String normalized = requireText(value, "symbol").toUpperCase();
         if (!SUPPORTED_SYMBOLS.contains(normalized)) {
-            throw new IllegalArgumentException("unsupported symbol for GateH-3 dataset: " + value);
+            throw new IllegalArgumentException("unsupported symbol for marketdata dataset: " + value);
         }
         return normalized;
     }
@@ -225,7 +225,7 @@ public class MarketdataDatasetService {
     private BarInterval normalizeInterval(String value) {
         String normalized = requireText(value, "interval");
         if (!SUPPORTED_INTERVALS.contains(normalized)) {
-            throw new IllegalArgumentException("unsupported interval for GateH-3 dataset: " + value);
+            throw new IllegalArgumentException("unsupported interval for marketdata dataset: " + value);
         }
         return BarInterval.fromWireValue(normalized);
     }

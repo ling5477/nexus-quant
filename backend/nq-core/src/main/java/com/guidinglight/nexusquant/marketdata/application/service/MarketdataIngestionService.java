@@ -27,7 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * MarketdataIngestionService 编排 GateH-2 历史 K 线接入最小闭环。
+ * MarketdataIngestionService 编排历史 K 线接入历史 K 线接入最小闭环。
  * <p>
  * Why:
  * 创建任务、断点续拉、交易所拉取、质量校验、幂等写入和运行统计必须在 application 层形成一个可测试流程；
@@ -68,7 +68,7 @@ public class MarketdataIngestionService {
     }
 
     /**
-     * 创建 GateH-2 历史 K 线接入任务。
+     * 创建历史 K 线接入历史 K 线接入任务。
      *
      * @param command HTTP 层映射后的任务请求，不允许为空
      * @return 已持久化的任务事实
@@ -176,7 +176,7 @@ public class MarketdataIngestionService {
                     stats.insertedCount(),
                     stats.updatedCount(),
                     skippedBars + stats.skippedCount(),
-                    skippedBars > 0 ? "some bars failed GateH-2 quality validation" : null,
+                    skippedBars > 0 ? "some bars failed historical kline quality validation" : null,
                     buildSummaryJson(fetchedBars.size(), stats.insertedCount(), stats.updatedCount(), skippedBars + stats.skippedCount()),
                     running.createdAt()
             );
@@ -246,7 +246,7 @@ public class MarketdataIngestionService {
     private String normalizeMarketType(String marketType) {
         String normalized = requireText(marketType, "marketType").toUpperCase(Locale.ROOT);
         if (!MARKET_TYPE_SPOT.equals(normalized)) {
-            throw new IllegalArgumentException("GateH-2 only supports SPOT marketType");
+            throw new IllegalArgumentException("historical kline ingestion only supports SPOT marketType");
         }
         return normalized;
     }

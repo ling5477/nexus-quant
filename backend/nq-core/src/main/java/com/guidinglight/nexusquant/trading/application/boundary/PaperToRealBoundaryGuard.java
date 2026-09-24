@@ -10,7 +10,7 @@ import java.util.Objects;
  * PaperToRealBoundaryGuard 固化 Paper artefact 不能进入真实交易授权路径的最小运行时边界。
  *
  * <p>Why:
- * GateM-4 要求 Paper run / Paper order / Paper fill / Paper position / Paper risk 只能作为
+ * 适配器就绪策略要求 Paper run / Paper order / Paper fill / Paper position / Paper risk 只能作为
  * SIM/Paper 内部事实使用，不能被误当成 LIVE / real trading authorization。本 guard 不判断 venue
  * 是否等于 PAPER，因为既有 Paper 回归仍会通过本地 stub venue 运行；它只拒绝带有 Paper artefact
  * 标识的来源、幂等键和对象 ID 进入正式 mutating path。</p>

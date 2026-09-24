@@ -9,7 +9,7 @@ import java.util.Optional;
  * RiskRule 抽象一条可排序、可审计的 pre-trade 风控规则。
  * <p>
  * Why:
- * GateD 要求风控在进入真实执行前统一注册并按固定顺序执行，不能继续把校验散落在 controller、core 或 adapter。
+ * 统一交易契约要求风控在进入真实执行前统一注册并按固定顺序执行，不能继续把校验散落在 controller、core 或 adapter。
  */
 public interface RiskRule {
 

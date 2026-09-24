@@ -13,7 +13,7 @@ import java.time.Instant;
  * <p>{@code payload} 只允许保存本地 public / preview / diagnostic facts，不允许 credential、private
  * endpoint payload、真实账户余额、真实订单或交易放行字段。
  */
-@Schema(name = "ShadowRunSnapshotResponse", description = "GateR-6 read-only Shadow Run snapshot")
+@Schema(name = "ShadowRunSnapshotResponse", description = "read-only Shadow Run snapshot")
 public record ShadowRunSnapshotResponse(
         String snapshotType,
         int sequenceNo,

@@ -29,13 +29,13 @@ import {formatDateTime} from '@/utils/formatters';
 import '@/nq-design-system/table/nq-table.css';
 
 /**
- * BacktestDetailPage — 回测详情可视化(B1)。
+ * BacktestDetailPage — 回测详情可视化。
  *
  * 数据来源(全部真实 API,缺则显式 unavailable,不编造):
  * - 配置/快照:GET /backtest-configs/{id}(策略版本 / 参数 / 数据集 / 配置快照 JSON)。
  * - 关键指标 + 交易/风险摘要:GET /evaluations?backtestConfigId + GET /evaluations/{id}。
  * - 数据集快照:GET /marketdata/datasets(按 config.datasetId 匹配 typed 字段)。
- * 权益/回撤时间序列(B1.1):GET /api/backtest-runs/{runId}/pnl-snapshots(表 sim_pnl_snapshots,真实序列)。
+ * 权益/回撤时间序列:GET /api/backtest-runs/{runId}/pnl-snapshots(表 sim_pnl_snapshots,真实序列)。
  *   runId 取自所选 evaluation.backtestRunId(保证曲线与指标同一 run);equity 直接映射,
  *   drawdown 客户端派生(equity − 运行峰值,≤0,口径同后端 DrawdownCalculator);无 run / 无快照显式 unavailable,不编造。
  * 实时性:回测为静态结果,使用 useLiveQuery 仅做 manual refresh + freshness,不轮询(pollingIntervalMs=0)。
@@ -68,7 +68,7 @@ export function BacktestDetailPage() {
     const {backtestConfigId} = useParams<{backtestConfigId: string}>();
     const configId = backtestConfigId ?? '';
 
-    // 进入页面注入 v2 CSS 变量(additive 的 --nq-*,与 v1 的 --nq-color-* 不冲突),供 B0.2 列组件读色/等宽。
+    // 进入页面注入 v2 CSS 变量(additive 的 --nq-*,与 v1 的 --nq-color-* 不冲突),供表格列组件读色/等宽。
     useEffect(() => {
         applyNqCssVars();
     }, []);
@@ -326,7 +326,7 @@ export function BacktestDetailPage() {
                             {t('pages:sourceGetApiBacktestRuns')}{'{runId}'}{t('pages:pnlSnapshotsSimPnlSnapshotsOrderedBySnapshottimeAscendingDrawdownIsDerivedAsEquityMinusTheRunningPea')}</Typography.Text>
                     </Card>
 
-                    {/* 交易 / 风险摘要(聚合,复用 B0.2 列组件) */}
+                    {/* 交易 / 风险摘要(聚合,复用表格列组件) */}
                     <Card className="page-section" variant="borderless" title={t('pages:tradeAndRiskSummary')}>
                         {!evaluation ? (
                             <Empty description={t('pages:noEvaluationDetails')}/>

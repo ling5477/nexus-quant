@@ -2007,7 +2007,7 @@ function normalizeStatus(status: string | null | undefined): string {
  * 状态展示必须 fail-closed。
  *
  * Why:
- * GateQ 的 READY_FOR_* 仅表示评审或只读预览阶段可继续，不是交易授权；UNKNOWN / NOT_AVAILABLE /
+ * 策略验证的 READY_FOR_* 仅表示评审或只读预览阶段可继续，不是交易授权；UNKNOWN / NOT_AVAILABLE /
  * NOT_IMPLEMENTED / BLOCKED_* 也不能用绿色成功态展示。
  */
 function statusPresentation(status: string | null | undefined): StatusPresentation {
@@ -2395,7 +2395,7 @@ function firstScope(
  * Evidence Matrix 聚合三个只读 GET 响应。
  *
  * Why:
- * GateQ-6 需要横向查看 requiredEvidence / missingEvidence / blockers / warnings / nextSteps；
+ * 策略验证需要横向查看 requiredEvidence / missingEvidence / blockers / warnings / nextSteps；
  * 聚合只发生在前端内存中，不发起写侧请求，也不补造后端没有返回的通过态。
  */
 function evidenceMatrixRows(source: string, data?: EvidenceSourceData): EvidenceMatrixRow[] {
@@ -3561,7 +3561,7 @@ function shadowWorkflowBlocked(overview: ShadowValidationWorkflowOverviewRespons
 }
 
 /**
- * GateT-1 workflow 面板状态按用户指定优先级 fail-closed 解析。
+ * Shadow 验证工作流 workflow 面板状态按用户指定优先级 fail-closed 解析。
  *
  * Why:
  * 前端不能把 ready-like 状态提前显示成正向结论；error / loading 由渲染分支优先处理，
@@ -6136,7 +6136,7 @@ function TraceabilityChain({
             label: t('pages:evaluationGate'),
             value: scope.evaluationId,
             status: gate?.gateStatus ?? comparison?.evaluationGateStatus ?? 'NOT_AVAILABLE',
-            source: 'GateQ-1 GET /api/strategies/evaluation-gate',
+            source: 'Strategy evaluation GET /api/strategies/evaluation-gate',
             detail: t('pages:theEvaluationGateProvidesReadOnlyEvidenceForShadowReviewNotStrategyApprovalOrTradingAuthorization'),
         },
         {
@@ -6160,7 +6160,7 @@ function TraceabilityChain({
             label: t('pages:paperShadowComparison'),
             value: scope.shadowRunId,
             status: comparison?.comparisonStatus ?? 'NOT_AVAILABLE',
-            source: 'GateQ-2 GET /api/strategies/paper-shadow/comparison',
+            source: 'Paper and Shadow comparison GET /api/strategies/paper-shadow/comparison',
             detail: t('pages:readOnlyComparisonIndicatesComparabilityOnlyMissingUnknownOrUnimplementedShadowDataIsNotSuccess'),
         },
         {
@@ -6168,7 +6168,7 @@ function TraceabilityChain({
             label: t('pages:shadowLivePreview'),
             value: scope.shadowRunId,
             status: preview?.previewStatus ?? comparison?.shadowRunStatus ?? 'NOT_AVAILABLE',
-            source: 'GateQ-3 GET /api/strategies/shadow-live/preview',
+            source: 'Shadow Live preview GET /api/strategies/shadow-live/preview',
             detail: t('pages:shadowLivePreviewHasNoSideEffectsAndExecutesNoStrategiesOrRealOrders'),
         },
         {
@@ -6176,7 +6176,7 @@ function TraceabilityChain({
             label: t('pages:pythonArtifactBindingPreview'),
             value: artifactPreview?.traceId ?? 'NO_FILE_BASELINE',
             status: artifactPreviewStatus,
-            source: 'GateT-4 GET /api/strategy-validation/evaluation-artifacts/preview/overview',
+            source: 'Evaluation artifact preview GET /api/strategy-validation/evaluation-artifacts/preview/overview',
             detail: t('pages:thisPageConsumesTheNoFileOverviewOnlyNoArtifactReadsUploadsImportsPythonExecutionOrJavaFactSourceWri'),
         },
     ];

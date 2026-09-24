@@ -20,7 +20,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 /**
- * JdbcMarketdataReadinessRepository aggregates GateM-2E readiness facts from existing local tables.
+ * JdbcMarketdataReadinessRepository 从既有本地表聚合行情就绪事实。
  * <p>
  * Why: readiness must use bounded DB reads only. This repository never calls exchange adapters,
  * WebSocket clients, ingestion commands or credential paths.

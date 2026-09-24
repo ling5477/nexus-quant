@@ -1,4 +1,4 @@
-// nqLwcOptions.ts — Lightweight Charts(K 线/行情主图)选项,从唯一来源派生(B0 / Design Tokens v2)
+// nqLwcOptions.ts — Lightweight Charts(K 线/行情主图)选项,从唯一来源派生(Design Tokens v2)
 // 说明:本文件只生成图表 chrome(坐标轴/网格/十字线)与 K 线涨跌色;
 // 颜色全部来自 nq-tokens,K 线涨跌色随行情惯例(convention)翻转。
 import { ColorType, type ChartOptions, type DeepPartial } from 'lightweight-charts';

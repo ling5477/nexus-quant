@@ -540,10 +540,10 @@ function ShadowRunOverviewSummary({
 }
 
 /**
- * GateR-8 / GateS-1 Shadow Run list page.
+ * Shadow Run 列表与总览页面.
  *
  * Why:
- * 这是 GateR-7 detail / replay 页面的只读入口，并在 GateS-1 增加 overview summary。
+ * 这是影子运行 detail / replay 页面的只读入口，并在 Shadow Run 总览增加 overview summary。
  * 页面只调用 GET overview/list/detail 链路，不提供 start / stop / execute / rerun / approve / trade 操作，
  * 不触发 runner、scheduler、credential、private endpoint 或真实交易。
  */

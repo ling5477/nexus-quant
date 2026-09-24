@@ -12,7 +12,7 @@ import java.util.Objects;
 import org.springframework.stereotype.Service;
 
 /**
- * PaperAutoReviewService —— Paper 规则化自动复盘只读聚合编排（GateK Batch K4）。
+ * PaperAutoReviewService —— Paper 规则化自动复盘只读聚合编排。
  *
  * 职责：复用 K1 {@link PaperExecutionDiagnosticsService#diagnose()} 与 K3
  * {@link PaperStrategyEvaluationService#evaluate()} 的只读派生结果（二者各自复用组合看板同一次批量读取），

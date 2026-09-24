@@ -42,10 +42,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * OrderCommandService 负责 GateD 的统一下单/撤单编排。
+ * OrderCommandService 负责统一交易契约的统一下单/撤单编排。
  * <p>
  * Why:
- * GateD 需要把 place / cancel 的入口继续保留在一个应用服务内，但也必须避免它重新长成“什么都做”的巨石。
+ * 统一交易契约需要把 place / cancel的入口继续保留在一个应用服务内，但也必须避免它重新长成“什么都做”的巨石。
  * 因此本类只负责执行编排、风控调用、venue gateway 调用、event_store 与审计写入；
  * 生命周期语义动作统一收口到 `OrderLifecycleService`，contracts 组装统一收口到 `ExecutionCommandMapper`。
  */
@@ -296,7 +296,7 @@ public class OrderCommandService {
      * 为已存在订单补写 external_order_id。
      * <p>
      * Why:
-     * GateC-1 的 query-confirm 与恢复流程可能在初始回执后才确认 ordId，
+     * 交易所适配契约的 query-confirm 与恢复流程可能在初始回执后才确认 ordId，
      * 这里统一通过 core 落库，避免 scheduler 直接写 orders 破坏审计口径。
      *
      * @param orderId         系统订单 ID
@@ -411,7 +411,7 @@ public class OrderCommandService {
     }
 
     private void validateCancelTargetSemantics(CancelOrderRequest request, OrderRecord target) {
-        // Why: GateD 要求撤单契约中的 venue / symbol / externalOrderId 具备真实语义，不能只是“可选摆设”。
+        // Why: 统一交易契约要求撤单契约中的 venue / symbol / externalOrderId 具备真实语义，不能只是“可选摆设”。
         if (request.accountId() != null && !request.accountId().equals(target.accountId())) {
             throw new IllegalArgumentException("accountId does not match cancel target");
         }

@@ -5,11 +5,11 @@ import java.util.Objects;
 /**
  * OperationalReadinessStatusResponse is one safe runtime boundary status item.
  *
- * <p>Why: GateM-6B needs a stable DTO instead of raw config maps. Each status carries a machine
+ * <p>原因：运行就绪状态使用稳定 DTO，避免暴露原始配置映射。每个状态携带机器可读的
  * status, a fail-closed readiness boolean, and a redacted reason code/message that can be shown to
  * operators without exposing runtime-sensitive values.
  *
- * @param status     normalized status string; never implies real trading readiness in current GateM
+ * @param status     规范化状态字符串；不表示真实交易就绪
  * @param ready      whether this item is ready for real runtime use; current 6B baseline is fail-closed
  * @param reasonCode stable safe reason code; no runtime value embedded
  * @param reason     short human-readable reason; no runtime value embedded

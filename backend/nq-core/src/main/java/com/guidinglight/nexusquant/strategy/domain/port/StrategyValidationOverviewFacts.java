@@ -7,7 +7,7 @@ import java.util.UUID;
 import java.util.Locale;
 
 /**
- * StrategyValidationOverviewFacts 是 GateS-3 read model 的 SELECT-only repository 投影。
+ * StrategyValidationOverviewFacts 是验证只读视图 read model 的 SELECT-only repository 投影。
  *
  * <p>它只承载 repository 从允许事实表读取到的最小聚合结果；core service 负责把这些事实转换成
  * validation decision、blocker、warning、nextStep 和安全边界。

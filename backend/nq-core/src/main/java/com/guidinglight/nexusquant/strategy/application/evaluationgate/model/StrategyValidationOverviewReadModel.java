@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * StrategyValidationOverviewReadModel 是 GateS-3 runtime baseline 的只读响应合同。
+ * StrategyValidationOverviewReadModel 是验证只读视图 runtime baseline的只读响应合同。
  *
  * <p>该模型只表达 validation 层面的证据状态和安全边界；即使 decision 为 APPROVED，也必须保留
  * notTradingAuthorization=true，不能被解释成交易授权、LIVE ready 或真实 provider ready。

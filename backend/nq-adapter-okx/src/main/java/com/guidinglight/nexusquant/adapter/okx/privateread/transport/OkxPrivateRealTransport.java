@@ -7,7 +7,7 @@ import com.guidinglight.nexusquant.adapter.okx.provider.model.OkxPilotPrerequisi
 import com.guidinglight.nexusquant.adapter.okx.provider.model.OkxPilotPrerequisiteSnapshot;
 
 /**
- * 复用既有 signer/client 的 credential-scoped GateY-6E capability。
+ * 复用既有 signer/client 的 credential-scoped 受控实盘执行 capability。
  *
  * <p>该 port 不包含 credential、host、path、method 或 generic execute escape hatch。</p>
  */

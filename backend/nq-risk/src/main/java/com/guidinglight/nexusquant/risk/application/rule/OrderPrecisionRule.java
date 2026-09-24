@@ -16,7 +16,7 @@ import java.util.Optional;
  * OrderPrecisionRule 统一校验价格、数量与订单类型的最小数值边界。
  * <p>
  * Why:
- * GateD 第一批先用平台默认精度兜底，避免不合法 scale 的请求直接打到 adapter，再在后续阶段接入交易所 symbol metadata。
+ * 平台默认精度用于兜底，避免不合法 scale 的请求直接打到 adapter，接入交易所 symbol metadata 时必须保持精度约束。
  */
 public class OrderPrecisionRule implements RiskRule {
 

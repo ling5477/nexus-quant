@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.trading.application.safety.model;
 
 /**
- * GateW-4 operational safety 的脱敏 reason code。
+ * 只读诊断 operational safety的脱敏 reason code。
  *
  * <p>这些值只解释诊断结果；不表示交易、LIVE、订单或资金操作获得授权。</p>
  */

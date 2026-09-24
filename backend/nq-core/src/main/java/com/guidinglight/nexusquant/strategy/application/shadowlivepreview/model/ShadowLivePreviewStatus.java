@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.strategy.application.shadowlivepreview.model;
 
 /**
- * ShadowLivePreviewStatus 是 GateQ-3 只读影子运行预览诊断状态。
+ * ShadowLivePreviewStatus 是策略验证只读影子运行预览诊断状态。
  *
  * <p>Why: 这些状态只表达 no-side-effect preview 能否生成，不表达交易授权、实盘可用、
  * 下单批准或 private trading 可用；不得新增 LIVE_READY、TRADE_APPROVED、AUTHORIZED 等放行语义。

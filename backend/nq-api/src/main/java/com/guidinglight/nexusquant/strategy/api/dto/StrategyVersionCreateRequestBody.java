@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Size;
 
 /**
- * StrategyVersionCreateRequestBody 描述 GateI-1 创建策略版本的 HTTP 请求体。
+ * StrategyVersionCreateRequestBody 描述策略版本创建策略版本的 HTTP 请求体。
  */
 @Schema(name = "StrategyVersionCreateRequestBody", description = "策略版本创建请求")
 public record StrategyVersionCreateRequestBody(

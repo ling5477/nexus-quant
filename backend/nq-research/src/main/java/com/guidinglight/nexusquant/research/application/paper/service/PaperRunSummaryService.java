@@ -13,7 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * PaperRunSummaryService —— Paper run 只读聚合编排（GateJ 后产品化 Loop-8）。
+ * PaperRunSummaryService —— Paper run 只读聚合编排。
  *
  * 职责：复用已有 Paper Trading 读服务拉取单个 run 的事实，委托 {@link PaperRunSummaryAssembler}
  * 归纳为 {@link PaperRunSummary}。

@@ -6,7 +6,7 @@ import java.util.Objects;
 /**
  * DhDryRunRuntimeProperties 固定 Integration-1 limited dry-run runtime client 的安全默认配置。
  *
- * <p>Why: NQ 侧 client 本轮只能用于 dev/test dry-run，默认必须同时被 feature flag、client flag、kill
+ * <p>Why: NQ 侧 client 仅可用于 dev/test dry-run，默认必须同时被 feature flag、client flag、kill
  * switch、endpoint、签名 secret 和 production gate 约束。缺失配置不能 fallback 成真实调用，只能 fail-closed 并写入
  * dry-run failure record。</p>
  *

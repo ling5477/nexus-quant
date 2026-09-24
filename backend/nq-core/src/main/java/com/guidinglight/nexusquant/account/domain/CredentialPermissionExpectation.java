@@ -5,7 +5,7 @@ import java.util.Locale;
 /**
  * credential permission probe 的强类型权限预期。
  *
- * <p>GateW 诊断只接受只读 key；GateY pilot readiness 要求 READ + TRADE，同时明确拒绝
+ * <p>只读诊断诊断只接受只读 key；受控实盘执行 pilot readiness 要求 READ + TRADE，同时明确拒绝
  * WITHDRAW。外部 mode 只能映射到这里列出的策略，未知值必须在 credential 访问前拒绝。</p>
  */
 public enum CredentialPermissionExpectation {

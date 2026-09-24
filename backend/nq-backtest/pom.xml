@@ -12,7 +12,7 @@
 
     <artifactId>nq-backtest</artifactId>
     <name>nq-backtest</name>
-    <description>GateF-2 minimal historical backtest execution module.</description>
+    <description>Historical backtest execution module.</description>
     <packaging>jar</packaging>
 
     <dependencies>

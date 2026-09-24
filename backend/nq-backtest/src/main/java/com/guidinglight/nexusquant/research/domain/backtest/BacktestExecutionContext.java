@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * BacktestExecutionContext 保存 GateF-3 单次 run 的最小执行上下文。
+ * BacktestExecutionContext 保存研究与回测契约单次 run的最小执行上下文。
  * <p>
  * Why:
  * 模拟订单、成交、持仓、PnL 更新需要共享同一组可变运行状态；

@@ -21,7 +21,7 @@ import org.springframework.scheduling.config.TaskManagementConfigUtils;
  * Validation Evidence Scheduler 的隔离装配边界。
  *
  * <p>Properties 始终绑定并 fail-fast；实际 scheduler 与 scheduling processor 只在显式 enabled=true
- * 时注册。自定义 processor 只处理本任务 Bean，避免启用 GateV-3 时意外启动仓库内既有 Paper、exchange、
+ * 时注册。自定义 processor 只处理本任务 Bean，避免启用人工复核时意外启动仓库内既有 Paper、exchange、
  * recovery 或 ledger 的历史 {@code @Scheduled} 方法。
  */
 @Configuration(proxyBeanMethods = false)

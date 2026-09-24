@@ -11,7 +11,7 @@ import java.util.Map;
  * BinanceRuntimeConfig 统一解析 Binance 运行时环境变量。
  * <p>
  * Why:
- * GateC-2 仍要求沿用 `NQ_*_ENV` 双环境切换与指纹脱敏策略。
+ * 交易所适配契约仍要求沿用 `NQ_*_ENV` 双环境切换与指纹脱敏策略。
  * 这里把 env 选择、超时、签名时间偏移、exchangeInfo 刷新窗口与凭证读取收敛到单点，
  * 避免后续 TradingAdapter / cache / ws client 各自散落读取环境变量。
  *
@@ -44,7 +44,7 @@ public record BinanceRuntimeConfig(
 ) {
 
     private static final String DEFAULT_ENV = "dome";
-    // Why: No-real hardening (GateL-1B-A) —— 默认 endpoint 必须是 no-real sentinel，禁止把 testnet/mainnet
+    // Why: No-real hardening (无真实连接安全边界) —— 默认 endpoint 必须是 no-real sentinel，禁止把 testnet/mainnet
     // host 写成代码级默认值。真实 Binance endpoint 只能通过显式 env（NQ_BINANCE_<DOME|REAL>_BASE_URL /
     // _WS_URL）opt-in；未配置一律 fail-closed。disabled:// 在请求期 loud fail-closed：REST 经
     // HttpRequest.Builder.uri()、WS 经 WebSocket.Builder.buildAsync() 对非 http(s)/ws(s) scheme 抛
@@ -89,7 +89,7 @@ public record BinanceRuntimeConfig(
                 Duration.ofMillis(readLong(env, "NQ_BINANCE_WS_HEARTBEAT_INTERVAL_MS", DEFAULT_WS_HEARTBEAT_INTERVAL_MS)),
                 Duration.ofMillis(readLong(env, "NQ_BINANCE_LISTENKEY_REFRESH_MS", DEFAULT_LISTENKEY_REFRESH_MS)),
                 Boolean.parseBoolean(read(env, "NQ_BINANCE_WS_DIAGNOSTIC_ENABLED", "false")),
-                // Why: No-real hardening (GateL-1B-B) —— runtime config 不再从进程环境（env / system property / .env）
+                // Why: No-real hardening (无真实连接安全边界) —— runtime config 不再从进程环境（env / system property / .env）
                 // 读取 credential material（apiKey/secret/private key/key type）。默认一律 unconfigured placeholder；
                 // 真实 credential 必须由后续 NQ credential governance bridge 按 owner/account/tenant/credential type/
                 // active version/permission scope 注入（另起 Gate），adapter 不得从全局进程环境派生。未配置时
@@ -149,7 +149,7 @@ public record BinanceRuntimeConfig(
 
     /**
      * Why:
-     * No-real hardening (GateL-1B-A)：WS 默认 / 空值必须 fail-closed 到 no-real sentinel，
+     * No-real hardening (无真实连接安全边界)：WS 默认 / 空值必须 fail-closed 到 no-real sentinel，
      * 禁止在 blank/legacy URL 情况下回退到 testnet/mainnet。显式配置按原样使用（仅去除尾部 `/`），
      * 真实 ws-api endpoint 只能由显式 env opt-in，不再由代码把 legacy `stream.../ws` host
      * 静默改写成真实 ws-api host（旧改写会构造真实网络 endpoint，违反 No-Real 边界）。

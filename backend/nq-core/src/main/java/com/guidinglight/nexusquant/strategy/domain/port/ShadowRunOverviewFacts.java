@@ -7,7 +7,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * ShadowRunOverviewFacts 是 GateS-1 read model 的 SELECT-only repository 投影。
+ * ShadowRunOverviewFacts 是验证只读视图 read model 的 SELECT-only repository 投影。
  *
  * <p>Why: core service 需要基于本地 Shadow Run facts 计算 overview、boundary flags 和
  * divergence severity。该投影只从 `shadow_runs`、`shadow_run_events`、

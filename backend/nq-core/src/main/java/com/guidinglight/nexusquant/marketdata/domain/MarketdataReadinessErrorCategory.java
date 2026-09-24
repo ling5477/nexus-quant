@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.marketdata.domain;
 
 /**
- * Stable readiness error categories aligned with GateO O-2 Data Quality diagnostics.
+ * 稳定的就绪错误类别与数据质量诊断保持一致。
  * <p>
  * Why: API clients need a safe classification without raw provider payload, credentials, headers or
  * private exchange details.

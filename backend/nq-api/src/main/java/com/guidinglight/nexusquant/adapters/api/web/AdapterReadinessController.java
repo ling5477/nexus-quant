@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
  * AdapterReadinessController 暴露只读 adapter readiness 状态查询。
  * <p>
  * Why:
- * GateM-5A 给后续前端一个入口，展示「OKX / Binance / Noop 当前能不能实盘、原因是什么」。该 controller 只读：
+ * 适配器就绪状态给后续前端一个入口，展示「OKX / Binance / Noop 当前能不能实盘、原因是什么」。该 controller 只读：
  * 委托 {@link AdapterReadinessStatusService} 聚合静态 readiness 决策，不触达真实交易所、不读取 credential、
  * 不触发 adapter delegate / 下单 / 撤单 / 行情订阅。当前 no-real / LIVE disabled baseline 下结果全部 fail-closed。
  */

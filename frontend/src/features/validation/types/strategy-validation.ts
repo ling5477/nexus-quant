@@ -1,8 +1,8 @@
 /**
- * GateQ-5 strategy validation read-only types.
+ * 策略验证只读类型.
  *
  * Why:
- * 这些类型只描述 GateQ-1 / GateQ-2 / GateQ-3 已有只读 API 的响应结构，前端不得在这里扩展
+ * 这些类型只描述策略评估准入 / Paper/Shadow 对照 / Shadow Live 只读预览已有只读 API 的响应结构，前端不得在这里扩展
  * trading authorization、LIVE enable、credential 或 runner write-side 字段。
  */
 export interface StrategyValidationQuery {
@@ -47,7 +47,7 @@ export type StrategyValidationDecision =
     | string;
 
 /**
- * GateS-3 Strategy Validation overview response.
+ * 策略验证总览响应.
  *
  * Why:
  * 该结构只承接 `GET /api/strategy-validation/overview` 的 read-only validation runtime baseline。

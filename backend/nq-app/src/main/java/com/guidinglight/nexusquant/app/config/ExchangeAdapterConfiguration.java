@@ -24,7 +24,7 @@ import org.springframework.context.annotation.Profile;
  * ExchangeAdapterConfiguration 负责真实交易所适配器与 WS 连接 Bean 装配。
  * <p>
  * Why:
- * PRE-CLEAN-2 后，`nq-app` 只决定 profile/Bean 选择，不再内联 OKX fallback HTTP stub 细节；
+ * `nq-app` 只决定 profile/Bean 选择，不再内联 OKX fallback HTTP stub 细节；
  * 具体 fallback adapter 构造已经下沉到 `nq-adapter-okx`。
  */
 @Configuration
@@ -33,7 +33,7 @@ public class ExchangeAdapterConfiguration {
     private static final Logger log = LoggerFactory.getLogger(ExchangeAdapterConfiguration.class);
 
     /**
-     * GateM 默认 readiness service 必须 always-on 且 fail-closed。
+     * 适配器就绪策略默认 readiness service 必须 always-on 且 fail-closed。
      * <p>
      * Why:
      * OKX / Binance trading Bean 已在 app 装配层依赖 readiness guard；即使未启用 local/test fallback profile，

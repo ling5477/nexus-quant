@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * PaperPortfolioSummary —— Paper 组合看板只读聚合事实源（GateJ 后产品化 Loop-13）。
+ * PaperPortfolioSummary —— Paper 组合看板只读聚合事实源。
  *
  * 职责：把多个 Paper run 的已有事实（run / equity 快照 / 日报 / 风控 / 告警 / 成交计数 / 来源）
  * 归纳为组合级总览、策略/发布维度排行、Run 排行与数据质量提示，供前端组合看板直接消费。
@@ -144,7 +144,7 @@ public record PaperPortfolioSummary(
     ) {}
 
     /**
-     * 组合级 equity / drawdown 时间序列（GateJ 后产品化 Loop-15，向后兼容新增）。
+     * 组合级 equity / drawdown 时间序列（向后兼容新增）。
      *
      * 口径（简化版组合曲线，非时间加权收益率）：
      * 1) 仅纳入「可比 run」（有 equity 快照且可回推初始资金，与单 run 同口径）。

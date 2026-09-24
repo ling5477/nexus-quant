@@ -1,5 +1,5 @@
 /**
- * GateT-3 Incident / Replay Review overview frontend types.
+ * 事件回放复核总览的前端类型.
  *
  * Why:
  * These types only model `GET /api/incidents/replay/review/overview`.
@@ -96,7 +96,7 @@ export interface IncidentReplayReviewNextStep {
 /**
  * Derived review item for display only.
  * Safety flags are repeated per item so the page can detect boundary drift and
- * fail closed if any item stops matching the GateT-3 no-side-effect contract.
+ * 任一条目不满足无副作用契约时必须拒绝。
  */
 export interface IncidentReplayReviewItem {
     reviewItemId: string;

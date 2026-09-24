@@ -140,7 +140,7 @@ def resolve_bars_path(path: Path) -> Path:
     """Resolve local fixture paths without relying on shell-level PYTHONPATH.
 
     Why:
-    PRE-CLEAN-3B validates the command from `research/py` using a historical
+    Legacy commands may be invoked from `research/py` with
     a parent-directory fixtures argument. The canonical fixture directory is now `research/py/fixtures`,
     so a missing historical fixture path is resolved by filename into the canonical local folder.
     """

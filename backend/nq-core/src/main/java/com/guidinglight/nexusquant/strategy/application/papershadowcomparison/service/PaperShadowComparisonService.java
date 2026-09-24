@@ -28,9 +28,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * PaperShadowComparisonService 编排 GateQ-2 Paper vs Shadow 只读对照 baseline。
+ * PaperShadowComparisonService 编排策略验证 Paper vs Shadow 只读对照 baseline。
  *
- * <p>Why: GateQ-2 只需要把已有 strategy version、dataset、evaluation、publish 和 Paper facts
+ * <p>Why: 策略验证只需要把已有 strategy version、dataset、evaluation、publish 和 Paper facts
  * 组合成可复盘的比较准备度，并显式返回 Shadow 未实现 / 缺失。该 service 不写库、不启动 Paper run、
  * 不启动 Shadow runner、不调用真实交易所、不读取敏感材料，也不输出交易授权。
  */

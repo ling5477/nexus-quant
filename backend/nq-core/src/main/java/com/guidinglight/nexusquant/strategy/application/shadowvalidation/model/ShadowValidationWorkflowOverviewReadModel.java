@@ -8,7 +8,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * ShadowValidationWorkflowOverviewReadModel 是 GateT-1 Shadow Validation Workflow 的只读响应合同。
+ * ShadowValidationWorkflowOverviewReadModel 是验证工作流 Shadow Validation Workflow的只读响应合同。
  *
  * <p>该模型只表达 operator 可复核的本地诊断 evidence。所有 operator item 均为 derived / deterministic，
  * 不持久化，不触发 runner / scheduler / adapter，也不代表交易授权。overview 与 item 级 safety flags 必须

@@ -32,7 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * MarketdataQualityOverviewService 编排 GateP Batch 2 Data Quality Center 只读聚合。
+ * MarketdataQualityOverviewService 编排数据质量诊断 Data Quality Center 只读聚合。
  * <p>
  * Why:
  * overview 需要组合 bars、dataset coverage 和 ingestion run 三类本地事实。Service 层集中业务语义：
@@ -100,7 +100,7 @@ public class MarketdataQualityOverviewService {
                 gapCount,
                 duplicateMetric(coverageFacts),
                 MarketdataQualityMetric.notAvailable(
-                        "当前 schema 未持久化跨 scope out-of-order 诊断；本轮不新增 migration。"
+                        "当前 schema 未持久化跨 scope out-of-order 诊断，因此该指标不可用。"
                 ),
                 staleMetric(barScopes, staleScopeCount),
                 latestBarTime(barScopes),

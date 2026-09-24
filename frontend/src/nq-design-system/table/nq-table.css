@@ -1,4 +1,4 @@
-/* nq-table.css — NQ Console 表格密度与列对齐基础样式(B0.2)。
+/* nq-table.css — NQ Console 表格密度与列对齐基础样式。
    约束:全部命名空间到 .nq-ds-table*,只读 var(--nq-*),不与 v1 的 .nq-table / .nq-col-num 冲突,
    不影响既有业务页面(它们不使用 .nq-ds-table* class)。
    用法:<table class="nq-ds-table nq-ds-table--standard">,数字/金额/百分比/涨跌列的 th+td 加 class="nq-ds-col-num"。 */

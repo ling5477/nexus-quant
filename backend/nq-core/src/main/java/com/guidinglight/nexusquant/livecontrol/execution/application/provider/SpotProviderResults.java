@@ -8,7 +8,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.time.Duration;
 
-/** GateY provider 的 normalized、sanitized 结果；不拥有 Order/Trade/Position/Ledger 真相。 */
+/** 受控实盘执行 provider 的 normalized、sanitized 结果；不拥有 Order/Trade/Position/Ledger 真相。 */
 public final class SpotProviderResults {
     private static final int MAX_FILL_REFERENCES = 100;
 

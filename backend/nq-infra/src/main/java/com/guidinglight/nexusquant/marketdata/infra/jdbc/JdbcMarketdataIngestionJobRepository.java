@@ -19,7 +19,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 /**
- * JdbcMarketdataIngestionJobRepository 提供 GateH-2 ingestion jobs/runs 的 JDBC 实现。
+ * JdbcMarketdataIngestionJobRepository 提供历史行情接入 ingestion jobs/runs 的 JDBC 实现。
  * <p>
  * Why:
  * application service 只处理任务语义；所有 SQL、JSONB cast、状态持久化和断点查询都集中在 infra。

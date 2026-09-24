@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
  * BinanceHistoricalKlineAdapter 负责 Binance SPOT historical klines 的协议适配。
  * <p>
  * Why:
- * GateH-2 只允许 Binance adapter 处理 Binance symbol/interval 映射和 payload 转换，不能把 `BTCUSDT`
+ * 历史行情接入只允许 Binance adapter 处理 Binance symbol/interval 映射和 payload 转换，不能把 `BTCUSDT`
  * 这类交易所私有符号泄漏到 controller、core service 或数据库幂等键。
  */
 @Component
@@ -125,14 +125,14 @@ public class BinanceHistoricalKlineAdapter implements HistoricalKlineAdapter {
 
     private void requireSpot(HistoricalKlineRequest request) {
         if (!"SPOT".equalsIgnoreCase(request.marketType())) {
-            throw new HistoricalKlineAdapterException("Binance GateH-2 adapter only supports SPOT");
+            throw new HistoricalKlineAdapterException("Binance historical kline adapter only supports SPOT");
         }
     }
 
     private String mapSymbol(String symbol) {
         String mapped = SYMBOLS.get(symbol == null ? "" : symbol.toUpperCase(Locale.ROOT));
         if (mapped == null) {
-            throw new HistoricalKlineAdapterException("unsupported Binance GateH-2 symbol: " + symbol);
+            throw new HistoricalKlineAdapterException("unsupported Binance historical kline symbol: " + symbol);
         }
         return mapped;
     }
@@ -140,7 +140,7 @@ public class BinanceHistoricalKlineAdapter implements HistoricalKlineAdapter {
     private String mapInterval(String interval) {
         String mapped = INTERVALS.get(interval == null ? "" : interval.toLowerCase(Locale.ROOT));
         if (mapped == null) {
-            throw new HistoricalKlineAdapterException("unsupported Binance GateH-2 interval: " + interval);
+            throw new HistoricalKlineAdapterException("unsupported Binance historical kline interval: " + interval);
         }
         return mapped;
     }

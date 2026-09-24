@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * OperationalReadinessController exposes the GateM-6B disabled capability summary.
+ * OperationalReadinessController 暴露禁用能力的只读摘要。
  *
  * <p>Why: {@code GET /api/runtime/operational-readiness} gives the UI and operators a safe,
  * read-only backend source for LIVE / AI / DH / real-provider / startup boundary status. It delegates

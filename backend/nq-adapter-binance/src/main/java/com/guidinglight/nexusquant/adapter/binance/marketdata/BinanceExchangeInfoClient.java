@@ -15,7 +15,7 @@ import java.util.Objects;
  * BinanceExchangeInfoClient 负责拉取并解析 Binance Spot `exchangeInfo`。
  * <p>
  * Why:
- * GateC-2 的下单前 trim 依赖交易所公开 filters，而这些规则在 Binance 中以 exchangeInfo + filters 数组表达。
+ * 交易所适配契约的下单前 trim 依赖交易所公开 filters，而这些规则在 Binance 中以 exchangeInfo + filters 数组表达。
  * 这里把原始 JSON 解析收敛到 adapter-binance 内，避免后续 TradingAdapter 再次散落处理交易所方言。
  */
 public class BinanceExchangeInfoClient {
@@ -159,7 +159,7 @@ public class BinanceExchangeInfoClient {
                 }
                 default -> {
                     // Why:
-                    // PR-C11 只关心下单前 trim 所需 filters，其余如 ICEBERG_PARTS/MAX_NUM_ORDERS 暂不参与计算。
+                    // 下单前 trim 只读取所需 filters，其余如 ICEBERG_PARTS/MAX_NUM_ORDERS 暂不参与计算。
                 }
             }
         }

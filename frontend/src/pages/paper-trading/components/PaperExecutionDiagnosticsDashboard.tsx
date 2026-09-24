@@ -19,7 +19,7 @@ import type {
     PaperExecutionSeverity,
 } from '@/features/paper-trading/types/paper-trading';
 
-// ---- GateK K2：Paper 执行诊断展示映射与筛选（消费 K1 endpoint，纯前端只读展示）----
+// ---- Paper 诊断与评估 K2：Paper 执行诊断展示映射与筛选（消费 K1 endpoint，纯前端只读展示）----
 
 /** cause 中文展示名（保留枚举值用于筛选与审计，展示层映射为业务可读名）。 */
 export const EXECUTION_CAUSE_LABEL: Record<PaperExecutionCause, string> = {
@@ -90,7 +90,7 @@ function executionCauseTag(cause: PaperExecutionCause) {
 }
 
 /**
- * PaperExecutionDiagnosticsDashboard —— Paper 执行诊断（GateK Batch K2）。
+ * PaperExecutionDiagnosticsDashboard —— Paper 执行诊断。
  * 消费 K1 只读 endpoint /paper-trading/execution-diagnostics，把规则化归因（cause / severity / confidence /
  * explanation / suggestedAction）展示出来，让用户从「事实筛选」升级为「原因诊断」。
  * 独立 query：加载 / 错误 / 空 / 兼容回退均限定在本区域，不连累组合看板、风险驾驶舱与策略排行。

@@ -141,14 +141,14 @@ public class OkxHistoricalKlineAdapter implements HistoricalKlineAdapter {
 
     private void requireSpot(HistoricalKlineRequest request) {
         if (!"SPOT".equalsIgnoreCase(request.marketType())) {
-            throw new HistoricalKlineAdapterException("OKX GateH-2 adapter only supports SPOT");
+            throw new HistoricalKlineAdapterException("OKX historical kline adapter only supports SPOT");
         }
     }
 
     private String mapSymbol(String symbol) {
         String mapped = SYMBOLS.get(symbol == null ? "" : symbol.toUpperCase(Locale.ROOT));
         if (mapped == null) {
-            throw new HistoricalKlineAdapterException("unsupported OKX GateH-2 symbol: " + symbol);
+            throw new HistoricalKlineAdapterException("unsupported OKX historical kline symbol: " + symbol);
         }
         return mapped;
     }
@@ -156,7 +156,7 @@ public class OkxHistoricalKlineAdapter implements HistoricalKlineAdapter {
     private String mapInterval(String interval) {
         String mapped = INTERVALS.get(interval == null ? "" : interval.toLowerCase(Locale.ROOT));
         if (mapped == null) {
-            throw new HistoricalKlineAdapterException("unsupported OKX GateH-2 interval: " + interval);
+            throw new HistoricalKlineAdapterException("unsupported OKX historical kline interval: " + interval);
         }
         return mapped;
     }

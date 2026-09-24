@@ -7,9 +7,9 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * GateV-2 可复用的内部 transition command。
+ * 人工复核可复用的内部 transition command。
  *
- * <p>tenant/owner 由可信 application context 构造；本轮没有 Controller，也不接受客户端 tenant override。
+ * <p>tenant/owner 由可信 application context 构造；该命令不依赖 Controller，也不接受客户端 tenant override。
  */
 public record ValidationReviewTransitionCommand(
         UUID reviewCaseId,

@@ -23,7 +23,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 /**
- * StrategyManualTriggerService 实现 GateE-1.2 的最小手动 trigger 主链。
+ * StrategyManualTriggerService 实现执行与补偿契约的最小手动 trigger 主链。
  */
 @Service
 public class StrategyManualTriggerService {

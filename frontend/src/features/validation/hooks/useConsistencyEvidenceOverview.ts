@@ -4,7 +4,7 @@ import {consistencyEvidenceApi} from '@/features/validation/api/consistency-evid
 import {consistencyEvidenceQueryKeys} from '@/api/query-keys';
 
 /**
- * GateT-2 Consistency Evidence read-only query hook.
+ * 一致性证据只读查询 hook.
  *
  * Why:
  * Consistency evidence overview 是诊断证据面板的只读事实源。关闭 retry 可以让 error 状态立即显式展示，

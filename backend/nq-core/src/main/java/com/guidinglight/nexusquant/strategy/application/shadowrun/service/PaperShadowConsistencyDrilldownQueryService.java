@@ -34,9 +34,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * PaperShadowConsistencyDrilldownQueryService 组装 GateS-2 Paper vs Shadow consistency drilldown。
+ * PaperShadowConsistencyDrilldownQueryService 组装验证只读视图 Paper vs Shadow consistency drilldown。
  *
- * <p>Why：GateS-2 需要按 shadowRunId 深挖 consistency 证据，但仍必须保持 GET-only、SELECT-only
+ * <p>Why：验证只读视图需要按 shadowRunId 深挖 consistency 证据，但仍必须保持 GET-only、SELECT-only
  * 和 no-side-effect。该 service 只依赖 {@link PaperShadowConsistencyDrilldownQueryPort}，不会依赖
  * runner、scheduler、adapter、credential、order、account 或 ledger 逻辑。
  */
@@ -72,7 +72,7 @@ public class PaperShadowConsistencyDrilldownQueryService {
      *
      * @param shadowRunId 本地 Shadow Run id
      * @param traceId     当前请求 trace id，只用于响应追踪
-     * @return GateS-2 drilldown read model
+     * @return Paper/Shadow 一致性明细只读模型
      */
     @Transactional(readOnly = true)
     public PaperShadowConsistencyDrilldownReadModel drilldown(UUID shadowRunId, String traceId) {

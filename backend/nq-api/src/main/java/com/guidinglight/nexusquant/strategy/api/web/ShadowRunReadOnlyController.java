@@ -35,7 +35,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * ShadowRunReadOnlyController 暴露 GateR-6 Shadow Run detail / replay 只读 API。
+ * ShadowRunReadOnlyController 暴露 Shadow Run detail / replay 只读 API。
  *
  * <p>Why: 后续前端 detail / replay view 需要读取本地 Shadow Run facts。本 controller 只处理 GET
  * 查询并委托 read-only query service；不提供 create / start / stop / cancel / rerun / execute endpoint，
@@ -44,7 +44,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RestController
 @RequestMapping("/api/shadow-runs")
-@Tag(name = "Shadow Run Read-only API", description = "GateR-6 Shadow Run detail / replay 只读诊断接口。")
+@Tag(name = "Shadow Run Read-only API", description = "Shadow Run detail / replay 只读诊断接口。")
 public class ShadowRunReadOnlyController {
 
     private final ShadowRunReadOnlyQueryService queryService;
@@ -106,7 +106,7 @@ public class ShadowRunReadOnlyController {
      * 入口，不创建 Shadow Run、不追加 event/snapshot/report、不启动 runner/scheduler、不调用真实交易所、
      * 不读取 credential，也不修改 account / ledger / order。
      *
-     * @return GateS-1 read-only overview；固定 not trading authorization
+     * @return 验证只读视图 read-only overview；固定 not trading authorization
      */
     @GetMapping("/overview")
     @Operation(

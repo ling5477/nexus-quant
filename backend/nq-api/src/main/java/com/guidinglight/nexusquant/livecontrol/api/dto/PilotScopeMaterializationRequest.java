@@ -15,7 +15,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/** GateY-6D exact typed materialization body；不接受 creator、credential material 或 generic JSON。 */
+/** 受控实盘执行 exact typed materialization body；不接受 creator、credential material 或 generic JSON。 */
 public record PilotScopeMaterializationRequest(
         @NotNull UUID sessionId,
         @NotNull UUID pilotScopeId,

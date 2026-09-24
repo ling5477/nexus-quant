@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.adapter.api.publicmarketdata.model;
 
 /**
- * PublicMarketDataEndpointCategory 定义 GateO O-1 允许或拒绝的公开行情 endpoint 类别。
+ * PublicMarketDataEndpointCategory 定义公开行情出站策略允许或拒绝的公开行情 endpoint 类别。
  *
  * <p>Why: public outbound 必须先经过类别级 allowlist/denylist，而不是让 service 直接拼 URL。
  * 当前 O-1 只允许 public REST 的 server time、instrument metadata、ticker 和 OHLCV/kline；

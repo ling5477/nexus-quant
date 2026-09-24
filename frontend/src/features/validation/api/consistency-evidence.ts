@@ -2,7 +2,7 @@ import {apiClient} from '@/api/client';
 import type {ConsistencyEvidenceOverviewResponse} from '@/features/validation/types/consistency-evidence';
 
 /**
- * 读取 GateT-2 Consistency Evidence overview。
+ * 读取验证工作流 Consistency Evidence overview。
  *
  * Why:
  * 该 client 只发起 GET 请求，复用统一 Axios 实例，不提供 create report / review / acknowledge /

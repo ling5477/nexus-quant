@@ -32,7 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * TradingPreflightReadinessService 生成单交易所账户权限与风险前置只读基线。
  *
- * <p>Why: GateP Batch 4 的目标是解释“为什么当前不能进入真实交易”，而不是执行真实 precheck。
+ * <p>Why: 运行前诊断 Batch 4 的目标是解释“为什么当前不能进入真实交易”，而不是执行真实 precheck。
  * 本 service 只读取 exchange account、credential summary 和 Marketdata Data Quality overview；
  * 它不会读取 credential material，不会调用 permission probe port / adapter / RiskGate / OrderCommandService，
  * 也不会发起外部网络 IO 或数据库写入。

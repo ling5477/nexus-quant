@@ -7,11 +7,11 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
- * OrderView 是 GateD 的最小订单查询视图。
+ * OrderView 是统一交易契约的最小订单查询视图。
  * <p>
  * Why:
- * 第三批只补齐最小验收所需读模型，因此先冻结订单主键、定位字段、数量价格、状态与 trace 这些
- * 与执行闭环直接相关的字段，不在本轮扩展成完整报表视图。
+ * 最小订单读模型固定订单主键、定位字段、数量价格、状态与 trace 这些
+ * 与执行闭环直接相关的字段，不承担完整报表视图职责。
  */
 public record OrderView(
         String orderId,

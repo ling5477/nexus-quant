@@ -33,9 +33,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * ShadowRunOverviewQueryService 计算 GateS-1 Shadow Run overview read model。
+ * ShadowRunOverviewQueryService 计算验证只读视图 Shadow Run overview read model。
  *
- * <p>Why: GateS-1 需要把 GateR 已落地的本地 Shadow Run facts 从单 run 查询推进到整体运行
+ * <p>Why: Shadow Run 总览需要把影子运行已落地的本地 Shadow Run facts 从单 run 查询推进到整体运行
  * 状态可观测。该 service 只依赖 {@link ShadowRunOverviewQueryPort} 的 SELECT-only 投影，
  * 固定返回 fail-closed 边界，不调用写侧 repository、runner、scheduler、adapter、credential、
  * order、account 或 ledger 逻辑。
@@ -72,7 +72,7 @@ public class ShadowRunOverviewQueryService {
      * 失败模式：空数据返回稳定 overview；缺 consistency report 时返回 `UNKNOWN` severity 和诊断 warning。
      *
      * @param traceId 当前请求 trace id，用于响应追踪，不用于幂等或授权
-     * @return GateS-1 overview read model
+     * @return Shadow Run 总览只读模型
      */
     @Transactional(readOnly = true)
     public ShadowRunOverviewReadModel overview(String traceId) {

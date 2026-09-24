@@ -15,7 +15,7 @@ import java.util.Objects;
 import org.springframework.stereotype.Service;
 
 /**
- * BacktestFactQueryService 提供 GateF-3 的 run 明细查询入口。
+ * BacktestFactQueryService 提供研究与回测契约的 run 明细查询入口。
  */
 @Service
 public class BacktestFactQueryService {

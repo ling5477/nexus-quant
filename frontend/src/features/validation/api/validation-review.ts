@@ -9,7 +9,7 @@ import type {
 const BASE_PATH = '/validation-review-cases';
 
 /**
- * GateV-2 validation review API client。
+ * 人工复核 API 客户端。
  *
  * Why：所有 URL、query 和 Idempotency-Key 都集中在此处，页面组件不能构造额外 endpoint，
  * 也不能提交 actor、owner、tenant、requestId、traceId 或交易相关字段。

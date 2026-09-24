@@ -18,7 +18,7 @@ import org.springframework.stereotype.Repository;
  * JdbcStrategyVersionRepository 是 `strategy_versions` 表的 JDBC adapter。
  *
  * Why:
- * GateI-1 要求 `nq-core` 不依赖 JDBC，因此所有 SQL、JSONB cast 和查询排序都留在 infra 层。
+ * 策略版本要求 `nq-core` 不依赖 JDBC，因此所有 SQL、JSONB cast 和查询排序都留在 infra 层。
  */
 @Repository
 public class JdbcStrategyVersionRepository implements StrategyVersionRepository {

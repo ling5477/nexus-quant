@@ -11,7 +11,7 @@ import com.guidinglight.nexusquant.livecontrol.domain.PilotScopePreflightResult;
 import java.util.UUID;
 
 /**
- * GateY-6D authenticated control-plane boundary。实现只物化 prerequisite facts，不得创建执行意图。
+ * 受控实盘执行 authenticated control-plane boundary。实现只物化 prerequisite facts，不得创建执行意图。
  */
 public interface PilotScopeControlPlane {
 

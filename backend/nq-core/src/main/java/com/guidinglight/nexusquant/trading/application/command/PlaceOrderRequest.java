@@ -12,7 +12,7 @@ import java.util.Set;
  * PlaceOrderRequest 表示下单编排入口参数。
  * <p>
  * Why:
- * GateD 需要把 contracts 强契约向 core 收口，避免 controller / scheduler / strategy runner
+ * 统一交易契约需要把 contracts 强契约向 core 收口，避免 controller / scheduler / strategy runner
  * 各自决定 requestId、idempotencyKey、source、quantity 的语义。
  *
  * @param requestId      本次执行请求 ID；用于区分同一幂等键上的不同触发

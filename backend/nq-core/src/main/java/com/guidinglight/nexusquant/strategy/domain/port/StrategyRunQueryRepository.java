@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * StrategyRunQueryRepository 定义 GateE-2.3 的最小运行查询端口。
+ * StrategyRunQueryRepository 定义执行与补偿契约的最小运行查询端口。
  */
 public interface StrategyRunQueryRepository {
 

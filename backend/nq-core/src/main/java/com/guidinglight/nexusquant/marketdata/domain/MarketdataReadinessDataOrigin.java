@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.marketdata.domain;
 
 /**
- * MarketdataReadinessDataOrigin mirrors the GateO O-2 DataQualitySummary origin vocabulary.
+ * MarketdataReadinessDataOrigin 与 DataQualitySummary 使用同一来源词汇。
  * <p>
  * Why: the readiness API exposes diagnostic data provenance only. These values do not prove public
  * outbound execution, real provider readiness, permission grants or trading authorization.

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * GateY-6D typed command。所有引用都必须是 exact identity/revision/digest；禁止 latest/current/HEAD。
+ * 受控实盘执行 typed command。所有引用都必须是 exact identity/revision/digest；禁止 latest/current/HEAD。
  */
 public record PilotScopeMaterializationCommand(
         UUID sessionId,

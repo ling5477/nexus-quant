@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * DataQualitySummary 是 GateO O-2 Data Quality Center 的安全只读 summary。
+ * DataQualitySummary 是数据质量汇总 Data Quality Center 的安全只读 summary。
  *
  * <p>Why: O-2 只把 O-1 public outbound / fake-server / fallback 结果归一成数据质量诊断，
  * 不新增 API、不连接真实交易所、不读取 credential，也不产生 trading authorization。本 record 只保存

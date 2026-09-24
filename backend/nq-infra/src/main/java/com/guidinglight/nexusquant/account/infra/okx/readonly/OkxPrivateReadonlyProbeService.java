@@ -26,7 +26,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * GateW-2 非持久化 probe：config 必须先于 balance，权限未知或包含 Trade/Withdraw 时 fail-closed。
+ * 只读诊断非持久化 probe：config 必须先于 balance，权限未知或包含 Trade/Withdraw 时 fail-closed。
  *
  * <p>本服务无 scheduler/runner/controller，不写 repository、audit、account、ledger、position 或 snapshot。</p>
  */
@@ -230,7 +230,7 @@ public final class OkxPrivateReadonlyProbeService {
     }
 
     /**
-     * GateW REAL readonly soak 的专用入口。该入口只允许在 GLOBAL_TRADING 持续 ENGAGED 时执行
+     * 只读诊断 REAL readonly soak的专用入口。该入口只允许在 GLOBAL_TRADING 持续 ENGAGED 时执行
      * 两个冻结的只读 operation；它不解除、不修改 kill switch，也不产生交易授权。
      */
     public OkxPrivateReadObservation probeWhileKillSwitchEngaged(

@@ -3,7 +3,7 @@ package com.guidinglight.nexusquant.adapter.okx.provider.model;
 import java.util.Set;
 
 /**
- * GateY-6B OKX Spot provider 的 exact operation allowlist。
+ * 受控实盘执行 OKX Spot provider 的 exact operation allowlist。
  *
  * <p>method/path 由 enum 固定，仅供 future transport implementation 审查；provider surface 不接受
  * raw method/path。该枚举存在不表示 credential、network、private trading 或 LIVE 已授权。</p>

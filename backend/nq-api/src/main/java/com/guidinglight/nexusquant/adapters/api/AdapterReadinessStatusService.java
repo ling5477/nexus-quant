@@ -18,8 +18,8 @@ import org.springframework.stereotype.Service;
  * AdapterReadinessStatusService 组装只读 adapter readiness 快照。
  * <p>
  * Why:
- * GateM-5A 要给前端一个只读入口，展示「当前各 venue × capability 是否可实盘、为什么不可」。本服务只对固定
- * venue / capability 矩阵逐项调用 {@link AdapterReadinessService#evaluate}（GateM-0 的纯静态 fail-closed 策略），
+ * 适配器就绪状态要给前端一个只读入口，展示「当前各 venue × capability 是否可实盘、为什么不可」。本服务只对固定
+ * venue / capability 矩阵逐项调用 {@link AdapterReadinessService#evaluate}（适配器就绪策略的纯静态 fail-closed 策略），
  * 把内部决策映射成对外 DTO。它**只读静态 readiness 决策**：不触达任何 adapter delegate，不发起 HTTP / socket、
  * 不读取文件 / env / credential、不触发下单 / 撤单 / 行情订阅。当前 baseline 下所有真实交易能力恒 allowed=false。
  *

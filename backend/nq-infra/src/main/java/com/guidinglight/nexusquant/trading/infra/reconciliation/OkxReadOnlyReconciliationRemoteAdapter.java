@@ -21,9 +21,9 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * GateW-3 typed OKX remote read adapter。
+ * 带类型约束的 OKX 远端只读适配器。
  *
- * <p>复用 GateW-2 scoped credential executor 和 guarded GET transport；先核验 exact READ_ONLY，
+ * <p>复用只读诊断 scoped credential executor 和 guarded GET transport；先核验 exact READ_ONLY，
  * 再按每个 allowlisted symbol 各读取一页 pending/history/recent fills。该类不注册为 bean，默认/CI
  * 不会读取 credential 或发起网络；调用方也不能提供 path、method、body 或 retry 策略。</p>
  */

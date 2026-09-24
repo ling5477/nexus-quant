@@ -1,5 +1,5 @@
-/* DesignSystemDemoPage.css — B0 v2 自检页作用域样式。
-   约束:所有规则都命名空间到 .nq-ds-demo,避免全局 import 影响 GateJ 冻结的 v1 页面。
+/* DesignSystemDemoPage.css — Design Tokens v2 自检页作用域样式。
+   约束:所有规则都命名空间到 .nq-ds-demo,避免全局 import 影响既有 v1 页面。
    颜色一律读 var(--nq-*)(由 applyNqCssVars 注入到 :root),不私配 hex。 */
 
 .nq-ds-demo {

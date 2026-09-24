@@ -7,7 +7,7 @@ import java.math.BigDecimal;
  * <p>
  * Why:
  * Binance 的价格、数量、最小名义金额规则分散在多个 filterType 中。
- * 这里先把与 GateC-2 下单前 trim 强相关的字段收敛成一个只读模型，
+ * 这里先把与交易所适配契约下单前 trim 强相关的字段收敛成一个只读模型，
  * 后续 TradingAdapter 只消费统一的规则对象，而不直接解析原始 JSON。
  *
  * @param exchangeSymbol             Binance 交易所原生 symbol，例如 BTCUSDT

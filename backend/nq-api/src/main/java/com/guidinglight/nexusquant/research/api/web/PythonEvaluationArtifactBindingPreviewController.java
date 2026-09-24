@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * PythonEvaluationArtifactBindingPreviewController 暴露 GateQ-4 Python artifact binding preview API。
+ * PythonEvaluationArtifactBindingPreviewController 暴露策略验证 Python artifact binding preview API。
  *
  * <p>Why: controller 只把 request body 转为 core query 并委托 read-only validator。它不会
  * 读取本地 artifact 文件、不会新增 import/upload endpoint、不会写数据库、不会启动策略、Paper run
@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RestController
 @RequestMapping("/api/research/evaluation-artifacts/binding-preview")
-@Tag(name = "Python Evaluation Artifact Binding Preview API", description = "GateQ-4 Python offline artifact 只读绑定预览接口。")
+@Tag(name = "Python Evaluation Artifact Binding Preview API", description = "Python offline artifact 只读绑定预览接口。")
 public class PythonEvaluationArtifactBindingPreviewController {
 
     private final PythonEvaluationArtifactBindingService bindingService;

@@ -6,7 +6,7 @@ import java.util.Set;
 /**
  * OkxPermissionProbeBoundary 固化 OKX permission probe 的 no-order/no-transfer 边界与错误分类。
  *
- * <p>Why: 本轮禁止真实交易所 HTTP，先把 adapter 层允许/禁止 endpoint 和脱敏错误分类做成
+ * <p>Why: 该边界禁止真实交易所 HTTP，并把 adapter 层允许/禁止 endpoint 和脱敏错误分类做成
  * 可测试边界。未来真实 port 实现只能调用 allowlisted read-only endpoint，且不得把 raw response
  * 传回 Service 或 audit metadata。</p>
  */

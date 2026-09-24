@@ -4,7 +4,7 @@ package com.guidinglight.nexusquant.adapter.api.model;
  * AdapterCancelRequest 描述统一撤单请求。
  * <p>
  * Why:
- * GateD 要求撤单定位方式与 requestId/reason 语义在 adapter-api 内统一冻结，
+ * 统一交易契约要求撤单定位方式与 requestId/reason 语义在 adapter-api 内统一冻结，
  * 以便后续 query-confirm、真实交易所 ordId 和 paper 本地单号都走同一入口。
  *
  * @param requestId       本次撤单请求 ID

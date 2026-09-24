@@ -28,7 +28,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 /**
  * 默认关闭、跨实例互斥的 Validation Evidence Scheduler。
  *
- * <p>该类只在显式 enabled 配置下由 configuration 注册。每次触发只通过 GateV-3A lock 执行一次
+ * <p>该类只在显式 enabled 配置下由 configuration 注册。每次触发只通过人工复核 lock 执行一次
  * read-only aggregate callback；不 retry、不创建额外线程池、不调用 HTTP、review lifecycle 或交易写侧。
  */
 public final class ValidationEvidenceScheduler {

@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.adapter.okx.privateread.error;
 
 /**
- * 脱敏、fail-closed 的 GateW-2 transport/probe 错误分类。
+ * 脱敏、fail-closed 的只读诊断 transport/probe 错误分类。
  */
 public enum OkxPrivateReadError {
     HTTP_UNAUTHORIZED,

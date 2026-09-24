@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * PythonEvaluationArtifactBindingPreviewResponse 是 GateQ-4 只读 binding preview HTTP DTO。
+ * PythonEvaluationArtifactBindingPreviewResponse 是策略验证只读 binding preview HTTP DTO。
  *
  * <p>Why: response 只暴露 validation / binding preview 证据、阻断和下一步。它不包含
  * tradingReady、liveReady、authorizedForTrading 字段，不返回敏感材料，也不表示 artifact 已入库。

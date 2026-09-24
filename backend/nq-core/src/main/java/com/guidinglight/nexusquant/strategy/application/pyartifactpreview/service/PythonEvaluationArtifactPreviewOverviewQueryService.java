@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * PythonEvaluationArtifactPreviewOverviewQueryService 组装 GateT-4 No-file baseline overview。
+ * PythonEvaluationArtifactPreviewOverviewQueryService 组装验证工作流 No-file baseline overview。
  *
  * <p>职责：返回 Python Evaluation Artifact binding preview 的安全空基线。该 service 只有 Clock 依赖，
  * 不依赖 repository、JDBC、文件路径、manifest reader、HTTP client、Python subprocess、runner、adapter、
@@ -54,7 +54,7 @@ public class PythonEvaluationArtifactPreviewOverviewQueryService {
      * 不是错误，也不是 ML ready 或 live execution ready。
      *
      * @param traceId 当前请求 trace id
-     * @return GateT-4 No-file baseline read model
+     * @return Python 评估产物的无文件只读预览模型
      */
     @Transactional(readOnly = true)
     public PythonEvaluationArtifactPreviewOverviewReadModel overview(String traceId) {

@@ -6,7 +6,7 @@ import java.util.Set;
 /**
  * BinancePermissionProbeBoundary 固化 Binance permission probe 的 no-order/no-transfer 边界与错误分类。
  *
- * <p>Why: 本轮只实现 adapter 层可测试边界，不接真实 Binance HTTP。未来真实 port 实现只能调用
+ * <p>Why: 该边界只实现 adapter 层可测试契约，不接真实 Binance HTTP。未来真实 port 实现只能调用
  * allowlisted read-only endpoint，并且不得把 signature、headers、raw response 或 credential material
  * 放入 ProbeResult、日志或 audit metadata。</p>
  */

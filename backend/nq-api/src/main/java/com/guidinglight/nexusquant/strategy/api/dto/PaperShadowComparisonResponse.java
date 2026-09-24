@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * PaperShadowComparisonResponse 是 GateQ-2 Paper vs Shadow 只读 HTTP DTO。
+ * PaperShadowComparisonResponse 是策略验证 Paper vs Shadow 只读 HTTP DTO。
  *
  * <p>Why: DTO 只暴露对照范围、证据状态、阻断原因和下一步提示。它不包含 tradingReady、
  * liveReady、authorizedForTrading 字段，不返回敏感材料、raw provider payload，也不表达 LIVE、

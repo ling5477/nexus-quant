@@ -1,4 +1,4 @@
-// cells.tsx — NQ Console 表格列格式组件(B0.2)。
+// cells.tsx — NQ Console 表格列格式组件。
 // 数字类用等宽 tabular-nums(右对齐由列 className .nq-ds-col-num 负责)。涨跌色读 var(--nq-up/--nq-down/--nq-flat),
 // 随行情惯例翻转,且与 success/danger 解耦。颜色一律读 var(--nq-*),不私配 hex。
 import type {CSSProperties} from 'react';

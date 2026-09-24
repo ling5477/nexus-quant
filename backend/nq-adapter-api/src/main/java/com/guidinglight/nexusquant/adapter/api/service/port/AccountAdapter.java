@@ -7,7 +7,7 @@ import com.guidinglight.nexusquant.adapter.api.model.PositionSnapshot;
 import java.util.List;
 
 /**
- * AccountAdapter 冻结 GateC 的统一账户端口。
+ * AccountAdapter 冻结交易所适配契约的统一账户端口。
  */
 public interface AccountAdapter {
 

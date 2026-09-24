@@ -35,7 +35,7 @@ public interface KillSwitchStateRepository {
 
     /**
      * 仅当数据库中同一 lease 为 ACTIVE 且尚未过期时切换为 DISENGAGED。
-     * 默认实现拒绝，只有显式 GateY pilot runtime adapter 可以开放该 capability。
+     * 默认实现拒绝，只有显式受控实盘执行 pilot runtime adapter 可以开放该 capability。
      */
     default KillSwitchState disengageForPilot(PilotKillSwitchDisengageCommand command) {
         throw new UnsupportedOperationException("pilot kill window is not implemented");

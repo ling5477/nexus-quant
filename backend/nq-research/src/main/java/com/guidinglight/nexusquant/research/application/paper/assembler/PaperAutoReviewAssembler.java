@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * PaperAutoReviewAssembler —— 纯函数式 Paper 自动复盘聚合器（GateK Batch K4）。
+ * PaperAutoReviewAssembler —— 纯函数式 Paper 自动复盘聚合器。
  *
  * 设计要点：
  * 1) 无任何 IO / 仓储 / 外呼 / AI 依赖；输入为 K1 {@link PaperExecutionDiagnostics} 与 K3

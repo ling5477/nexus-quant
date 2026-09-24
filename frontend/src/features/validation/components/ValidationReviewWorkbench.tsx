@@ -24,7 +24,7 @@ function normalizeReviewCaseId(value: string | null): string | null {
 }
 
 /**
- * GateV-4 Review Workbench orchestration。
+ * 人工复核工作台编排。
  *
  * 职责：连接 URL 恢复的 case selection、server-side queue filters、ADMIN owner scope、detail/events 和
  * lifecycle actions。后端仍是权限与状态机最终来源；本组件不创建 case、不保存服务端数据到 Zustand。

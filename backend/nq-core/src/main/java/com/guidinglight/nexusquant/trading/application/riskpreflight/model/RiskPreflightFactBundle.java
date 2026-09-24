@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * GateW-3 risk preflight 可消费的 credential-material-free 本地事实快照。
+ * 只读诊断 risk preflight 可消费的 credential-material-free 本地事实快照。
  *
  * <p>所有成员均由 internal server-side orchestration 构造。该合同不包含 API key、secret、
  * passphrase、private header、raw provider payload 或任意远端调用入口。</p>

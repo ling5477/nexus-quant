@@ -25,7 +25,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * BinanceWsDegradeReconcileCoordinator 负责 GateC-2.1 的 WS 断线降级策略。
+ * BinanceWsDegradeReconcileCoordinator 负责交易所适配契约的 WS 断线降级策略。
  * <p>
  * Why:
  * Binance WS 只能加速不能替代事实源；一旦断线、listenKey 失效或重连持续失败，

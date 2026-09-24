@@ -4,7 +4,7 @@ import com.guidinglight.nexusquant.adapter.api.model.EndpointAccessClass;
 import com.guidinglight.nexusquant.adapter.api.model.ExchangeCapability;
 
 /**
- * GateW 唯一允许的 OKX private read-only operation 集合。
+ * 只读诊断唯一允许的 OKX private read-only operation 集合。
  *
  * <p>method/path/access class 均由枚举固定，生产调用方不能注入任意 endpoint。</p>
  */

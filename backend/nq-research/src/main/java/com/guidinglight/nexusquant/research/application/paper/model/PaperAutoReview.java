@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * PaperAutoReview —— Paper 规则化自动复盘只读聚合事实源（GateK Batch K4）。
+ * PaperAutoReview —— Paper 规则化自动复盘只读聚合事实源。
  *
  * 职责：在 K1 执行诊断（{@link PaperExecutionDiagnostics}，回答「为什么异常」）与 K3 策略评估
  * （{@link PaperStrategyEvaluation}，回答「哪些策略好/差/样本不足/偏差大」）已产出结构化事实的基础上，

@@ -40,10 +40,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * GateR-4 Shadow Run runner skeleton。
+ * Shadow Run 本地运行骨架。
  *
  * <p>职责：把调用方提供的本地只读 payload、decision trace、risk snapshot 和 order intent
- * preview 组装为 Shadow Run 主事实、状态事件和四类快照。Why：GateR-4 需要结构化、可复盘的
+ * preview 组装为 Shadow Run 主事实、状态事件和四类快照。Why：影子运行需要结构化、可复盘的
  * 本地决策轨迹，但仍禁止真实策略执行、marketdata 外联、private endpoint、credential 读取、
  * 下单、账户/ledger mutation 和后台调度。
  *

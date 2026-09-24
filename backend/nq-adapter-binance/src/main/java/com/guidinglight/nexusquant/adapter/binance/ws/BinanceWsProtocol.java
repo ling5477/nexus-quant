@@ -43,7 +43,7 @@ final class BinanceWsProtocol {
      * 解析当前配置应使用的用户数据流 WebSocket API 地址。
      * <p>
      * Why:
-     * No-real hardening (GateL-1B-A)：这是 WS 连接路径实际使用的 endpoint 解析点。
+     * No-real hardening (无真实连接安全边界)：这是 WS 连接路径实际使用的 endpoint 解析点。
      * blank/missing WS URL 必须 fail-closed 到 no-real sentinel（`BinanceRuntimeConfig.DEFAULT_WS_URL`），
      * 禁止把 testnet/mainnet ws-api host 当成默认或回退；真实 ws-api endpoint 只能由显式 env opt-in。
      * 旧实现会把 legacy `stream.../ws` host 静默改写成真实 ws-api host，会在 guard 关闭时构造真实网络
@@ -69,7 +69,7 @@ final class BinanceWsProtocol {
      * 判断 listenKey 失败是否属于“官方端点已退役”的场景。
      * <p>
      * Why:
-     * GateC 当前唯一阻塞点是 `/api/v3/userDataStream -> 410 Gone`。
+     * 交易所适配契约当前唯一阻塞点是 `/api/v3/userDataStream -> 410 Gone`。
      * 命中该错误时应切换到官方 `ws-api` 订阅模型，而不是持续盲目重试旧端点。
      */
     static boolean shouldFallbackToWsApi(BinanceApiException exception) {

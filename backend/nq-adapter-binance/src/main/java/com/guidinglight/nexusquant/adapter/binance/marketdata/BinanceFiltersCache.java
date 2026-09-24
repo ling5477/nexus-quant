@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * BinanceFiltersCache 缓存 Spot exchangeInfo 中的 filters 元数据。
  * <p>
  * Why:
- * GateC-2 要求下单前先用交易所元数据做 trim；同时本 PR 仍处于无 key 阶段，
+ * 交易所适配契约要求下单前先用交易所元数据做 trim；同时本 PR 仍处于无 key 阶段，
  * 因此先实现“构造时预热 + TTL 惰性刷新”的最小可用缓存，不引入额外调度线程也能复用到后续 TradingAdapter。
  */
 public class BinanceFiltersCache {

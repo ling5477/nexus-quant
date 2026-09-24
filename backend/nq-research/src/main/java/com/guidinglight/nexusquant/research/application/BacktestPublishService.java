@@ -28,7 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * BacktestPublishService 提供 GateF-5 的显式发布主链。
+ * BacktestPublishService 提供研究与回测契约的显式发布主链。
  */
 @Service
 public class BacktestPublishService {

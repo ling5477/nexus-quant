@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * PythonEvaluationArtifactPreviewOverviewResponse 是 GateT-4 Python Evaluation Artifact preview 的 GET-only HTTP DTO。
+ * PythonEvaluationArtifactPreviewOverviewResponse 是验证工作流 Python Evaluation Artifact preview 的 GET-only HTTP DTO。
  *
  * <p>该 DTO 只暴露 No-file baseline 派生出的诊断边界、计数、摘要和证据锚点。它不包含 artifact raw JSON、
  * 本地路径、manifest、上传入口、交易批准、实盘就绪、凭证、private provider payload、真实账户、真实订单
@@ -16,7 +16,7 @@ import java.util.Map;
  */
 @Schema(
         name = "PythonEvaluationArtifactPreviewOverviewResponse",
-        description = "GateT-4 read-only Python Evaluation Artifact binding preview No-file baseline overview"
+ description = "read-only Python Evaluation Artifact binding preview when no artifact source is configured"
 )
 public record PythonEvaluationArtifactPreviewOverviewResponse(
         Instant generatedAt,

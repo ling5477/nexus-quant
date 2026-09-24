@@ -11,7 +11,7 @@ import java.util.List;
  * MarketdataQualityOverviewRepository 暴露 Data Quality Center 所需的本地只读事实。
  * <p>
  * Why:
- * GateP Batch 2 overview 需要读取 bars、dataset coverage 与 ingestion runs，但 core 不能依赖 JDBC。
+ * 数据质量诊断 overview 需要读取 bars、dataset coverage 与 ingestion runs，但 core 不能依赖 JDBC。
  * 该 port 不提供写方法、不提供 adapter/provider 方法，也不允许外部网络能力。
  */
 public interface MarketdataQualityOverviewRepository {

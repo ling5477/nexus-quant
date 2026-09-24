@@ -3,7 +3,7 @@ package com.guidinglight.nexusquant.strategy.domain;
 import java.time.Instant;
 
 /**
- * StrategyVersion 表示 GateI-1 的策略版本事实。
+ * StrategyVersion 表示策略版本的策略版本事实。
  *
  * Why:
  * `strategy_definitions` 记录当前策略定义和启停状态，但后续回测、发布和 Paper run

@@ -65,7 +65,7 @@ public final class DhDryRunRuntimeClient {
      * 构造 limited dry-run client。
      *
      * @param properties     disabled-by-default runtime 配置
-     * @param transport      fake/disabled transport；本轮不得是真实 HTTP 实现
+     * @param transport      fake/disabled transport；不得是真实 HTTP 实现
      * @param recorder       record-only recorder；不得写交易事实源
      * @param objectMapper   JSON serializer/parser
      * @param clock          可控时钟，用于生成 UTC Z timestamp 和测试

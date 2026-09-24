@@ -51,7 +51,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * OkxRestReconcileService 负责 GateC-1 的 REST-only 同步器。
+ * OkxRestReconcileService 负责交易所适配契约的 REST-only 同步器。
  * <p>
  * Why:
  * WS 还未接入时，非终态订单只能靠 `getOrder + fills` 推进；
@@ -153,7 +153,7 @@ public class OkxRestReconcileService {
         observation.record(OKX_RECONCILE, ATTEMPT, 1);
         try {
             int result = reconcileObservedFacts(limit);
-            // 成功表示本轮调用正常完成；订单未找到或账本拒绝等事实仍由独立 unresolved 指标表达。
+            // 成功表示当前调用正常完成；订单未找到或账本拒绝等事实仍由独立 unresolved 指标表达。
             observation.record(OKX_RECONCILE, SUCCESS, 1);
             return result;
         } catch (RuntimeException ex) {

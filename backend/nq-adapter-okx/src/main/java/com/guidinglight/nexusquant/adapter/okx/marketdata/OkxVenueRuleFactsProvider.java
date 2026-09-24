@@ -5,7 +5,7 @@ import com.guidinglight.nexusquant.adapter.okx.model.OkxVenueRuleFactsSnapshot;
 import java.util.Set;
 
 /**
- * OkxVenueRuleFactsProvider 是 GateW-3 public-only venue-rule 读取窄端口。
+ * OkxVenueRuleFactsProvider 是只读诊断 public-only venue-rule 读取窄端口。
  *
  * <p>端口只暴露 bounded public instrument snapshot，不暴露 raw endpoint、credential、private transport、
  * order/cancel 或其他交易能力。实现必须整批 fail-closed，不能返回部分 snapshot。</p>

@@ -25,7 +25,7 @@ import org.springframework.stereotype.Repository;
  * JdbcMarketdataQualityOverviewRepository 只读聚合 Data Quality Center 所需本地 DB 事实。
  * <p>
  * Why:
- * GateP Batch 2 的 overview 必须复用现有 `marketdata_bars`、dataset coverage 与 ingestion run 表；
+ * 数据质量诊断的 overview 必须复用现有 `marketdata_bars`、dataset coverage 与 ingestion run 表；
  * 本实现只有 SELECT，不写库、不调用 adapter、不读取 credential，也不会创建真实 public outbound provider。
  */
 @Repository

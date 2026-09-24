@@ -4,7 +4,7 @@ package com.guidinglight.nexusquant.adapter.binance.error;
  * BinanceApiException 表示 Binance REST 层面的结构化失败。
  *
  * Why:
- * GateC-2 需要把 http status、Binance code/msg、endpoint、trace_id 一次性带齐，
+ * 交易所适配契约需要把 http status、Binance code/msg、endpoint、trace_id 一次性带齐，
  * 这样后续接入 TradingAdapter 与 reconcile 时才能保留统一排障口径，而不是抛出泛化 RuntimeException。
  */
 public class BinanceApiException extends RuntimeException {

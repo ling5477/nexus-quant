@@ -7,7 +7,7 @@ import java.util.UUID;
 /**
  * StrategyEvaluationGateFacts 是 infra 层读取到的本地只读事实集合。
  *
- * <p>Why: GateQ-1 需要跨多个历史表聚合事实，但 core 不能依赖 JDBC，也不能调用 nq-research
+ * <p>Why: 策略评估准入需要跨多个历史表聚合事实，但 core 不能依赖 JDBC，也不能调用 nq-research
  * 的写侧服务。本 record 只承载 SELECT 得到的最小事实，用于 service 层 fail-closed 判定。
  */
 public record StrategyEvaluationGateFacts(

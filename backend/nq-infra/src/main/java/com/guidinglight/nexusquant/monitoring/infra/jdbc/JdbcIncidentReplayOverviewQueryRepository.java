@@ -15,7 +15,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 /**
- * JdbcIncidentReplayOverviewQueryRepository 是 GateS-6 Incident / Replay overview 的 JDBC read adapter。
+ * JdbcIncidentReplayOverviewQueryRepository 是验证只读视图 Incident / Replay overview 的 JDBC read adapter。
  *
  * <p>职责：只通过 SELECT 聚合 shadow_run_events、shadow_consistency_reports、paper_run_alerts、
  * paper_run_recovery_events 和 trade_replay_records 本地事实。该 adapter 不提供 create/update/delete，
@@ -99,7 +99,7 @@ public class JdbcIncidentReplayOverviewQueryRepository implements IncidentReplay
     }
 
     /**
-     * 加载 GateS-6 Incident / Replay overview facts。
+     * 加载验证只读视图 Incident / Replay overview facts。
      *
      * <p>所有 SQL 均为 SELECT：counts 只做 bounded 聚合，latest evidence 只取最近 8 条脱敏事实摘要。
      * 不读取 credential、account、live order、ledger 或 private provider 表。

@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 
 /**
- * CreateMarketdataDatasetRequest 是 GateH-3 创建数据集的 HTTP 请求体。
+ * CreateMarketdataDatasetRequest 是历史行情接入创建数据集的 HTTP 请求体。
  */
 public record CreateMarketdataDatasetRequest(
         @NotBlank(message = "datasetName must not be blank")

@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-@Schema(name = "PaperTradingRunCreateRequestBody", description = "GateI-3 创建 Paper Trading run 请求体")
+@Schema(name = "PaperTradingRunCreateRequestBody", description = "创建 Paper Trading run 请求体")
 public record PaperTradingRunCreateRequestBody(
         @NotBlank(message = "publishId must not be blank")
         @Size(max = 64)

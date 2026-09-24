@@ -16,7 +16,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * GateW-4 assessment 的已观测、无敏感信息事实集合。
+ * 只读诊断 assessment的已观测、无敏感信息事实集合。
  *
  * <p>调用方只能提供既有 evidence 的只读投影；本模型不创建 approval state、不读取数据库，
  * 也不持久化 assessment result。Human-review 绑定固定为 case id/version/type/subject/reference、
@@ -115,7 +115,7 @@ public record OperationalSafetyAssessmentFactBundle(
         }
 
         /**
-         * 从 tenant-scoped repository 返回的 case 与稳定升序 events 推导 GateW-4 binding。
+         * 从 tenant-scoped repository 返回的 case 与稳定升序 events 推导只读诊断 binding。
          *
          * <p>该方法不信任调用方提供的 completeness boolean：它逐项核对 case id、tenant、version、
          * from/to state、event 时间顺序和最终 lifecycle，并从 evidenceAnchor 读取 subject/reference。

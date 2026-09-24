@@ -5,7 +5,7 @@ import {strategyValidationApi} from '@/features/validation/api/strategy-validati
 import type {StrategyValidationQuery} from '@/features/validation/types/strategy-validation';
 
 /**
- * GateQ-5 页面查询 hooks。
+ * 策略验证页面查询 hooks。
  *
  * Why:
  * 三个查询都属于安全边界读模型；失败时页面必须 fail-closed 展示 error / unavailable，

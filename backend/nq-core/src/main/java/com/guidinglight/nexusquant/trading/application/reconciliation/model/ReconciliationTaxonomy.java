@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.trading.application.reconciliation.model;
 
-/** GateW-3 只读订单快照比较的封闭分类；分类本身不触发修复或状态迁移。 */
+/** 只读诊断只读订单快照比较的封闭分类；分类本身不触发修复或状态迁移。 */
 public enum ReconciliationTaxonomy {
     MATCHED,
     LOCAL_ONLY,

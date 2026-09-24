@@ -4,7 +4,7 @@ export type CredentialVerificationStatus = 'PENDING' | 'VERIFIED' | 'FAILED' | '
 export interface ExchangeAccountSummary {
     exchangeAccountId: number;
     /**
-     * legacyAccountId 仅用于 PRE-CLEAN 过渡兼容展示，不能再作为前端正式主上下文。
+     * legacyAccountId 仅用于旧账户身份的兼容展示，不能再作为前端正式主上下文。
      */
     legacyAccountId: number | null;
     exchangeCode: string;

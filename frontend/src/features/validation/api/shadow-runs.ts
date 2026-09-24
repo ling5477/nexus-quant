@@ -72,10 +72,10 @@ export async function getPaperShadowConsistencyDrilldown(shadowRunId: string): P
 }
 
 /**
- * GateR-7 Shadow Run API client。
+ * Shadow Run 只读 API 客户端。
  *
  * Why:
- * 只消费 GateR/GateS 已存在的 read-only GET API；不创建、不启动、不停止、不重跑 Shadow Run，
+ * 只消费影子运行/验证只读视图已存在的 read-only GET API；不创建、不启动、不停止、不重跑 Shadow Run，
  * 不读取 credential，不调用 private endpoint，不触发 runner、scheduler 或真实交易。
  */
 export const shadowRunsApi = {

@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-@Schema(name = "PaperTradingOrderResponse", description = "GateI-3 Paper Trading 订单事实响应体")
+@Schema(name = "PaperTradingOrderResponse", description = "Paper Trading 订单事实响应体")
 public record PaperTradingOrderResponse(
         String paperOrderId,
         String paperRunId,

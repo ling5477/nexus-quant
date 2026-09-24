@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.strategy.application.papershadowcomparison.model;
 
 /**
- * PaperShadowComparisonStatus 是 GateQ-2 Paper vs Shadow 只读对照的诊断状态。
+ * PaperShadowComparisonStatus 是策略验证 Paper vs Shadow 只读对照的诊断状态。
  *
  * <p>Why: 本枚举只表达证据是否足以进入只读对照查看。`READY_FOR_COMPARISON` 不是交易授权，
  * 也不得扩展出 LIVE_READY、TRADE_APPROVED、AUTHORIZED 等放行语义。

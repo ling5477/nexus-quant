@@ -12,7 +12,7 @@
 
     <artifactId>nq-research</artifactId>
     <name>nq-research</name>
-    <description>GateF-1 research and backtest skeleton module.</description>
+    <description>Research and backtest configuration module.</description>
     <packaging>jar</packaging>
 
     <dependencies>

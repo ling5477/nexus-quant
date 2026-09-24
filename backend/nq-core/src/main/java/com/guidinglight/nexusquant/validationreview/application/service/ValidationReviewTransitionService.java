@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * GateV-2 可复用的 durable review transition application boundary。
+ * 人工复核可复用的 durable review transition application boundary。
  *
  * <p>本 service 不暴露 HTTP，不自动创建 case；只把可信 tenant/owner scope 交给 repository，
  * 并确保 accepted case update 与 event append 共享事务。

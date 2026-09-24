@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 /**
- * PaperPortfolioService —— Paper 组合看板只读聚合编排（GateJ 后产品化 Loop-13）。
+ * PaperPortfolioService —— Paper 组合看板只读聚合编排。
  *
  * 职责：复用已有 Paper Trading 只读仓储拉取多个 run 的事实，委托 {@link PaperPortfolioAssembler}
  * 归纳为 {@link PaperPortfolioSummary}。
@@ -90,7 +90,7 @@ public class PaperPortfolioService {
 
     /**
      * 仅返回 bounded run 的 {@link PaperPortfolioSummary.RunRef} 列表，复用与 {@link #summarize()} 完全相同的
-     * 批量读取与单 run 派生口径（GateK 执行诊断 K1 消费）。无 run 时返回空列表。
+     * 批量读取与单 run 派生口径（Paper 诊断与评估执行诊断 K1 消费）。无 run 时返回空列表。
      * 与组合看板共用同一次批量读取语义，不引入 per-run 查询放大。
      */
     public List<PaperPortfolioSummary.RunRef> listRunRefs() {

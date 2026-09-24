@@ -139,7 +139,7 @@ function statusTone(status: string): StatusTone {
         case 'SKIPPED':
             return 'neutral';
         case 'READY':
-            // 当前 GateM baseline 不允许 READY 被解释为真实可交易，按高风险信号展示。
+            // 当前适配器就绪策略 baseline 不允许 READY 被解释为真实可交易，按高风险信号展示。
             return 'danger';
         default:
             return status.includes('READY') ? 'danger' : 'neutral';
@@ -410,7 +410,7 @@ const blockerColumns: ColumnsType<RuntimeBlocker> = [
 ];
 
 /**
- * Runtime release matrix 是 GateP Batch 3 的前端静态放行解释层。
+ * Runtime release matrix 是运行前诊断 Batch 3 的前端静态放行解释层。
  *
  * Why:
  * 当前没有任何 API 能把 Data Quality、public marketdata、permission probe、private trading、LIVE、AI、
@@ -563,7 +563,7 @@ const fakeDryRunOperationsColumns: ColumnsType<FakeDryRunOperationsRow> = [
 ];
 
 /**
- * RuntimeReadinessPage 是 GateM Runtime UI 5A 的只读运行边界总览。
+ * RuntimeReadinessPage 是适配器就绪策略 Runtime UI 5A的只读运行边界总览。
  *
  * Why:
  * 当前没有 central runtime flags / Paper-to-Real aggregate API，页面只能复用 adapter readiness 只读快照，

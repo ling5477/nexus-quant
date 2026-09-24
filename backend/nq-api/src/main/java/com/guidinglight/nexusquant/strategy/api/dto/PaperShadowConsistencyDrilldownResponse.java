@@ -9,12 +9,12 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * PaperShadowConsistencyDrilldownResponse 是 GateS-2 consistency drilldown 的 GET-only 响应 DTO。
+ * PaperShadowConsistencyDrilldownResponse 是验证只读视图 consistency drilldown 的 GET-only 响应 DTO。
  *
  * <p>该 DTO 只暴露本地只读诊断事实和安全边界 flags。它不包含 trade approval、LIVE ready、
  * real provider ready、credential material、private endpoint 原始载荷、真实账户余额、真实仓位或真实订单字段。
  */
-@Schema(name = "PaperShadowConsistencyDrilldownResponse", description = "GateS-2 read-only Paper vs Shadow consistency drilldown")
+@Schema(name = "PaperShadowConsistencyDrilldownResponse", description = "read-only Paper vs Shadow consistency drilldown")
 public record PaperShadowConsistencyDrilldownResponse(
         Instant generatedAt,
         boolean diagnosticOnly,

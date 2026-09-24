@@ -1,5 +1,5 @@
 /**
- * GateT-2 Consistency Evidence frontend types.
+ * 一致性证据前端类型.
  *
  * Why:
  * 这些类型只描述 `GET /api/paper-shadow/consistency/evidence/overview` 的 read-only response。
@@ -131,7 +131,7 @@ export interface ConsistencyEvidenceItem {
 }
 
 /**
- * Overview response 是 GateT-2 前端唯一消费的 Consistency Evidence DTO。
+ * Overview response 是验证工作流前端唯一消费的 Consistency Evidence DTO。
  * 本类型不包含写侧 client、交易按钮、credential 字段、private provider 字段或真实账户 / 订单字段。
  */
 export interface ConsistencyEvidenceOverviewResponse {

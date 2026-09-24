@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * IncidentReplayOverviewController 暴露 GateS-6 Incident / Replay overview 只读 API。
+ * IncidentReplayOverviewController 暴露验证只读视图 Incident / Replay overview 只读 API。
  *
  * <p>Why: 本 controller 只处理 GET overview 查询并委托 read-only service 聚合本地事实；它不会创建
  * incident、不会创建 alert、不会追加 event、不会生成 replay、不会启动 runner/scheduler，不调用真实交易所，
@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RestController
 @RequestMapping("/api/incidents/replay")
-@Tag(name = "Incident Replay API", description = "GateS-6 Monitoring / Incident / Replay 只读接口。")
+@Tag(name = "Incident Replay API", description = "Monitoring / Incident / Replay 只读接口。")
 public class IncidentReplayOverviewController {
 
     private final IncidentReplayOverviewQueryService queryService;

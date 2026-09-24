@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * TradingPreflightReadinessResponse 是 GateP Batch 4 只读 preflight API 的安全 HTTP DTO。
+ * TradingPreflightReadinessResponse 是交易前置诊断只读 preflight API 的安全 HTTP DTO。
  *
  * <p>Why: 响应只表达当前阻断/诊断状态，不返回 credential material、raw provider payload、
  * private endpoint 细节，也不提供 tradingReady / liveReady / authorizedForTrading 等授权字段。

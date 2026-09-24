@@ -49,7 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * OkxExchangeAdapter 是 GateC-1 的 OKX Spot REST-only 实现。
+ * OkxExchangeAdapter 是交易所适配契约的 OKX Spot REST-only 实现。
  * <p>
  * Why:
  * 交易所方言只能存在于 adapter-*，因此 OKX 的签名、字段映射、超时 query-confirm、
@@ -132,7 +132,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
      * 统一下单入口。
      * <p>
      * Why:
-     * GateC-1 要在 adapter 内完成 instruments trim、OKX 字段映射与 query-confirm，
+     * 交易所适配契约要在 adapter 内完成 instruments trim、OKX 字段映射与 query-confirm，
      * 避免 core 产生任何 OKX 方言或盲重试逻辑。
      */
     @Override
@@ -205,7 +205,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
         requireReady(AdapterCapability.CANCEL_ORDER);
         validateCancelRequest(request);
         // Why:
-        // GateD 当前只剩 ForceCancelTimeoutOnce 的真实消费点没有锁死，因此在 cancel 主路径入口
+        // 统一订单契约当前只剩 ForceCancelTimeoutOnce 的真实消费点没有锁死，因此在 cancel 主路径入口
         // 单独打点，确认请求是否真的进入了 adapter 的 cancel 编排，而不是在更上游就被短路。
         log.info(
                 "okx_cancel_path_entered trace_id={} client_order_id={} external_order_id={} symbol={}",
@@ -296,7 +296,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
      * 拉取 fills，供 OKX REST reconcile 与恢复流程使用。
      * <p>
      * Why:
-     * `TradingAdapter` 接口不包含 fills，但 GateC-1 的同步器明确允许依赖 `adapter-okx`，
+     * `TradingAdapter` 接口不包含 fills，但交易所适配契约的同步器明确允许依赖 `adapter-okx`，
      * 因此这里暴露 OKX 专属方法给 scheduler 消费，仍然把方言隔离在 adapter 模块内。
      */
     public List<OkxFillRecord> listFills(String symbol, String externalOrderId, String traceId) {
@@ -357,7 +357,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
     }
 
     /**
-     * GateM-3 runtime guard：nq-app 装配传入 readiness service 后，OKX trading 动作必须先 fail-closed。
+     * 适配器就绪策略 runtime guard：nq-app 装配传入 readiness service 后，OKX trading 动作必须先 fail-closed。
      * <p>
      * Why:
      * 该 guard 放在 validate / HTTP / cache 访问之前，确保当前 no-real / LIVE disabled / not-ready baseline 下
@@ -370,10 +370,10 @@ public class OkxExchangeAdapter implements TradingAdapter {
     }
 
     /**
-     * 仅用于 GateD 真实验收补证：在 OKX 已成功受理 place 请求后，一次性伪造本地超时并强制走 query-confirm。
+     * 仅用于统一订单契约真实验收补证：在 OKX 已成功受理 place 请求后，一次性伪造本地超时并强制走 query-confirm。
      * <p>
      * Why:
-     * 当前真实网络环境下很难稳定把 place 请求压进 `HttpTimeoutException`，但 GateD 冻结前必须补齐
+     * 当前真实网络环境下很难稳定把 place 请求压进 `HttpTimeoutException`，但统一订单契约冻结前必须补齐
      * `okx_query_confirm_place_*` 的真实执行证据。这里采用“请求已真实提交，再把本地返回改走 query-confirm”的
      * 一次性注入方案，只在显式开关开启时生效，默认关闭，不改变默认主链语义。
      */
@@ -406,7 +406,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
     }
 
     /**
-     * 仅用于 GateD 真实验收补证：在 OKX 已成功受理 cancel 请求后，一次性伪造本地超时并强制走 cancel query-confirm。
+     * 仅用于统一订单契约真实验收补证：在 OKX 已成功受理 cancel 请求后，一次性伪造本地超时并强制走 cancel query-confirm。
      * <p>
      * Why:
      * cancel timeout 分支的进入条件和 place 一样严格依赖 `HttpTimeoutException`；为避免持续靠真实网络抖动碰运气，
@@ -837,7 +837,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
 
     /**
      * Why:
-     * 订单快照里的价格和数量字段并不总是存在；GateD 第三批需要把这些字段映射到统一 snapshot，
+     * 订单快照里的价格和数量字段并不总是存在；统一订单快照必须显式映射这些字段，
      * 但不能在缺字段时直接把查询链路打挂，因此这里提供可空解析。
      */
     private BigDecimal decimalOrNull(JsonNode item, String field) {
@@ -1096,7 +1096,7 @@ public class OkxExchangeAdapter implements TradingAdapter {
     }
 
     /**
-     * GateL-1B-C 保留 adapter-api 的 rawPayload 字段以避免兼容性破坏，但 OKX order ack/snapshot
+     * 无真实连接安全边界保留 adapter-api 的 rawPayload 字段以避免兼容性破坏，但 OKX order ack/snapshot
      * producer 不再把 provider full body、headers、签名或异常诊断文本继续传给 core/API/audit。
      *
      * @return null 表示本 producer 明确抑制原始 provider payload；字段删除另起兼容性任务处理。

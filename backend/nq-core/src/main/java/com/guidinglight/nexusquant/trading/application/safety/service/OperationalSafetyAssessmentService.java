@@ -37,7 +37,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * GateW-4 internal-only operational safety assessment。
+ * 仅供内部使用的运行安全评估。
  *
  * <p>本 service 是无状态纯函数：没有 Spring bean、repository、credential、network、scheduler、
  * order、ledger 或 mutable cache 依赖。它只对调用方提供的 immutable facts 做保守分类，线程安全且
@@ -46,7 +46,7 @@ import java.util.Objects;
 public final class OperationalSafetyAssessmentService {
 
     /**
-     * 评估一次 GateW-4 operational safety snapshot。
+     * 评估一次只读诊断 operational safety snapshot。
      *
      * @param request 受控时间下的 kill-switch 与 hard-gate facts
      * @return diagnostic-only、read-only、no-side-effect 结果

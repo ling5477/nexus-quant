@@ -17,7 +17,7 @@ import org.springframework.http.HttpStatus;
  * BacktestConfigApiService 负责把 HTTP 请求映射到回测配置领域服务。
  *
  * Why:
- * 回测配置仍属于研究域事实。PRE-CLEAN-2 后，controller 侧的参数编排收回到 `nq-research`，
+ * 回测配置仍属于研究域事实。controller 侧的参数编排归属于 `nq-research`，
  * 这样 `nq-api` 只保留 HTTP 边界，`nq-app` 只保留启动与 wiring 职责。
  */
 @Service
@@ -89,7 +89,7 @@ public class BacktestConfigApiService {
     }
 
     /**
-     * 绑定 GateH-3 marketdata dataset 到回测配置。
+     * 绑定历史行情接入 marketdata dataset 到回测配置。
      *
      * @param backtestConfigId 回测配置 ID
      * @param datasetId dataset ID
@@ -105,7 +105,7 @@ public class BacktestConfigApiService {
     }
 
     /**
-     * 绑定 GateI-2 策略版本到回测配置。
+     * 绑定策略版本策略版本到回测配置。
      *
      * @param backtestConfigId 回测配置 ID
      * @param strategyVersionId 策略版本 ID

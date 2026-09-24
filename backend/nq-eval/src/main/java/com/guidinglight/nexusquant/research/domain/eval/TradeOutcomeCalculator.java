@@ -84,7 +84,7 @@ public class TradeOutcomeCalculator {
         /**
          * 计算盈亏比。
          * Why:
-         * GateI-2 需要评估报告直接展示 profit/loss ratio；亏损总额为 0 时返回 0，
+         * 策略版本需要评估报告直接展示 profit/loss ratio；亏损总额为 0 时返回 0，
          * 避免把无亏损样本误表达成无限大并影响前端数值展示。
          */
         public BigDecimal profitLossRatio() {

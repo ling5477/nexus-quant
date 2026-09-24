@@ -3,7 +3,7 @@ package com.guidinglight.nexusquant.strategy.application.pyartifactbinding.model
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * PythonEvaluationArtifactBindingQuery 是 GateQ-4 Python offline evaluation artifact 绑定预览查询模型。
+ * PythonEvaluationArtifactBindingQuery 是策略验证 Python offline evaluation artifact 绑定预览查询模型。
  *
  * <p>Why: Java 侧只验证 request body 中的 artifact JSON 与用户显式提供的 expected anchors，
  * 不读取本地路径、不导入文件、不写数据库，也不把 Python artifact 提升为 Java fact source。

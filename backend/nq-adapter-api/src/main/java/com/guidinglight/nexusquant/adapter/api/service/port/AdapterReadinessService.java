@@ -7,7 +7,7 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterReadinessDecision;
  * AdapterReadinessService 在运行时回答“某 venue 的某 capability 现在能不能用”。
  * <p>
  * Why:
- * GateM-0 把 GateL 的 No-Real 文档边界落成运行时约束。交易入口、marketdata 入口或上层服务
+ * 适配器就绪策略把无真实连接安全边界的 No-Real 文档边界落成运行时约束。交易入口、marketdata 入口或上层服务
  * 可以先调用本 service 做 service-level fail-closed guard，而不必立刻新增 HTTP API 或大改主链路。
  * 任何真实交易能力默认不可用；只有未来另起 Gate 接入真实 provider / credential / LIVE 授权后才可能变化。
  *
@@ -20,7 +20,7 @@ public interface AdapterReadinessService {
      *
      * @param venue      统一交易所 / adapter 标识（如 OKX / BINANCE / NOOP）；null / 未知按 fail-closed 处理
      * @param capability 被评估的能力维度；null 按 fail-closed 处理
-     * @return 不可变 readiness 决策；GateM-0 内真实能力一律 allowed=false
+     * @return 不可变 readiness 决策；适配器就绪策略内真实能力一律 allowed=false
      */
     AdapterReadinessDecision evaluate(String venue, AdapterCapability capability);
 

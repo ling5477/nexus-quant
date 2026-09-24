@@ -227,7 +227,7 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
         entries.add(createEntry(request, currency, leftDelta, "1", ts));
         entries.add(createEntry(request, currency, rightDelta, "2", ts));
         if (request.fee() != null && request.fee().compareTo(BigDecimal.ZERO) > 0) {
-            // Why: GateC 接入真实交易所后，fee 已经是稳定事实，不能再沿用 GateB 的“故意不平衡”占位逻辑。
+            // Why: 交易所适配契约接入真实交易所后，fee 已经是稳定事实，不能再沿用订单状态契约的“故意不平衡”占位逻辑。
             // 这里先用成对分录保证账本平衡与幂等，后续再按真实会计科目细化。
             entries.add(createEntry(
                     request,

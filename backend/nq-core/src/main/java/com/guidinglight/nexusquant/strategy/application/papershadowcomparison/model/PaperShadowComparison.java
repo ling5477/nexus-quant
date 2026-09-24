@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * PaperShadowComparison 是 GateQ-2 Paper vs Shadow 只读 API read model。
+ * PaperShadowComparison 是策略验证 Paper vs Shadow 只读 API read model。
  *
  * <p>Why: 该模型只聚合现有 strategy version、dataset、evaluation、publish、Paper run 事实，
  * 并显式表达 Shadow runner / Shadow run 当前缺失或未实现。它不包含 tradingReady、liveReady、

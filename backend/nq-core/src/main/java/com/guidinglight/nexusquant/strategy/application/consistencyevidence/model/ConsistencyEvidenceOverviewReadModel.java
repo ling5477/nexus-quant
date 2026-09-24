@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * ConsistencyEvidenceOverviewReadModel 是 GateT-2 consistency evidence overview 的只读响应合同。
+ * ConsistencyEvidenceOverviewReadModel 是验证工作流 consistency evidence overview的只读响应合同。
  *
  * <p>职责：聚合 Paper vs Shadow consistency evidence、派生 evidence item、severity / freshness bucket、
  * metric delta 摘要、blocker/warning/nextStep 和 evidence anchor。该模型不持久化 evidence item，

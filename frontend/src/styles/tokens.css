@@ -8,7 +8,7 @@
  *    修改任一侧时必须同步另一侧，AntD ConfigProvider 与 ECharts 主题读取 TS 侧。
  * 3) 语义色规则（详见 docs/current/FRONTEND_DESIGN_SYSTEM.md）：
  *    up = 上涨/盈利（国内习惯红涨），down = 下跌/亏损（绿跌）；
- *    live 仅作为环境强警示色，本阶段 LIVE 能力保持 disabled。
+ *    live 仅作为环境强警示色，LIVE 能力保持 disabled。
  */
 :root {
   color-scheme: dark;
@@ -51,7 +51,7 @@
   --nq-color-up: #f23645;
   --nq-color-down: #089981;
 
-  /* 环境语义：PAPER=蓝，DEMO=紫，LIVE=红色强警示（本阶段 LIVE 能力 disabled） */
+  /* 环境语义：PAPER=蓝，DEMO=紫，LIVE=红色强警示（LIVE 能力 disabled） */
   --nq-color-paper: #54a9ff;
   --nq-color-demo: #9d7bff;
   --nq-color-live: #e5484d;

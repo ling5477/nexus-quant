@@ -33,10 +33,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * ShadowLivePreviewService 编排 GateQ-3 Shadow Live no-side-effect runner skeleton。
+ * ShadowLivePreviewService 编排策略验证 Shadow Live no-side-effect runner skeleton。
  *
- * <p>Why: GateQ-3 只允许回答“是否可以生成只读影子运行预览计划”。本 service 复用 GateQ-1
- * evaluation gate 与 GateQ-2 Paper/Shadow comparison 的只读结果，不新增 repository，不写库，不外联，
+ * <p>Why: Shadow Live 只读预览只允许回答“是否可以生成只读影子运行预览计划”。本 service 复用策略评估准入
+ * evaluation gate 与策略验证 Paper/Shadow comparison的只读结果，不新增 repository，不写库，不外联，
  * 不读取敏感材料，不启动策略执行、Paper run 或 Shadow run，也不生成真实执行建议。
  */
 @Service
@@ -50,10 +50,10 @@ public class ShadowLivePreviewService {
     private final Clock clock;
 
     /**
-     * 生产构造器：注入 GateQ-1 / GateQ-2 只读 service。
+     * 生产构造器：注入策略评估准入 / Paper/Shadow 对照只读 service。
      *
-     * @param evaluationGateService GateQ-1 read-only service；不得启动 runner 或写侧流程
-     * @param paperShadowComparisonService GateQ-2 read-only service；不得创建 shadow facts
+     * @param evaluationGateService 策略验证 read-only service；不得启动 runner 或写侧流程
+     * @param paperShadowComparisonService 策略验证 read-only service；不得创建 shadow facts
      */
     @Autowired
     public ShadowLivePreviewService(
@@ -82,7 +82,7 @@ public class ShadowLivePreviewService {
     /**
      * 生成 Shadow Live no-side-effect 只读预览。
      *
-     * <p>幂等/副作用：该方法只调用 read-only GateQ-1 / GateQ-2 service 并组合响应；不会写数据库、
+     * <p>幂等/副作用：该方法只调用 read-only 策略评估准入 / Paper/Shadow 对照 service 并组合响应；不会写数据库、
      * 不会访问外部网络、不会读取敏感材料、不会启动策略执行、不会启动 Paper 或 Shadow run。
      *
      * @param query 查询范围；strategyVersionId 缺失时直接 fail-closed 且不访问下游 service

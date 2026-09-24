@@ -19,7 +19,7 @@ import java.util.Objects;
  * StructuralExchangeAccountCredentialVerifier 提供 RC1-4 首版结构性校验。
  * <p>
  * Why:
- * 本轮只要求“凭证格式/签名能力”真实成立，不要求真实连通外部交易所；
+ * 结构校验只要求“凭证格式/签名能力”真实成立，不要求真实连通外部交易所；
  * 因此这里复用现有 signer/runtime 构造逻辑做结构性校验，并把结果统一回写到 verification 状态流。
  */
 public class StructuralExchangeAccountCredentialVerifier implements ExchangeAccountCredentialVerifier {

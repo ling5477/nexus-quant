@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * GateW-4 operational safety 的只读诊断结果。
+ * 只读诊断 operational safety的只读诊断结果。
  *
  * <p>所有 boolean boundary 均固定为安全值；即使 {@code overallStatus=PASS}，也不产生交易授权。</p>
  */

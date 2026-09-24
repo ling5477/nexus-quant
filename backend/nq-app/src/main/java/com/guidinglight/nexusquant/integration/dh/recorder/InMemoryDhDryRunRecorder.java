@@ -9,7 +9,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * InMemoryDhDryRunRecorder 是测试隔离和默认禁用场景使用的内存 recorder。
  *
- * <p>Why: 本轮只需要证明 record-only 行为，不允许写 ledger、account、paper、live 或其他生产事实源。</p>
+ * <p>Why: 该 recorder 仅用于证明 record-only 行为，不允许写 ledger、account、paper、live 或其他生产事实源。</p>
  */
 public final class InMemoryDhDryRunRecorder implements DhDryRunRecorder {
 

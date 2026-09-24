@@ -19,7 +19,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Repository;
 
 /**
- * FixtureHistoricalMarketDataPort 提供 GateF-2 的样本历史行情读取实现。
+ * FixtureHistoricalMarketDataPort 提供回测执行的样本历史行情读取实现。
  * <p>
  * Why:
  * RC1-5 虽然把正式运行主读切到了 DB-backed port，但 fixture 仍然是最小 ingest 和部分回归测试的

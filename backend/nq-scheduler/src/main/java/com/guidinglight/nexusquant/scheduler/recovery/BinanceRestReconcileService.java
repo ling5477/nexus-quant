@@ -39,10 +39,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * BinanceRestReconcileService 负责 GateC-2 的 Binance REST-only 同步器。
+ * BinanceRestReconcileService 负责交易所适配契约的 Binance REST-only 同步器。
  * <p>
  * Why:
- * Binance 在 GateC-2 仍然坚持 REST-first：订单终态、成交同步、账本触发都以 REST query + myTrades 为事实来源。
+ * Binance 在交易所适配契约仍然坚持 REST-first：订单终态、成交同步、账本触发都以 REST query + myTrades 为事实来源。
  * 该服务复用 core 状态机与 ledger 幂等底座，但把 Binance 特有的 `myTrades/orderId/clientOrderId` 方言限制在
  * adapter-binance 与本服务内，避免 core/ledger/risk 出现 venue 分支。
  */

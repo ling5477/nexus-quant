@@ -1,5 +1,5 @@
 import {useTranslation} from 'react-i18next';
-// RiskBanner.tsx — 页级阻断/熔断/警报横幅(B0 / Design Tokens v2)。放页头下方,不可藏角落。
+// RiskBanner.tsx — 页级阻断/熔断/警报横幅(Design Tokens v2)。放页头下方,不可藏角落。
 import type { ReactNode } from 'react';
 
 export type RiskSeverity = 'info' | 'warning' | 'danger';

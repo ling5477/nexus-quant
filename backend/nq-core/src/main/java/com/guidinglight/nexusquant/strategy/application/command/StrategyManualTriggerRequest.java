@@ -8,7 +8,7 @@ import com.guidinglight.nexusquant.strategy.domain.StrategyDefinition;
 import java.math.BigDecimal;
 
 /**
- * StrategyManualTriggerRequest 表示 GateE-1.2 的最小手动 trigger 请求。
+ * StrategyManualTriggerRequest 表示执行与补偿契约的最小手动 trigger 请求。
  */
 public record StrategyManualTriggerRequest(
         String strategyId,

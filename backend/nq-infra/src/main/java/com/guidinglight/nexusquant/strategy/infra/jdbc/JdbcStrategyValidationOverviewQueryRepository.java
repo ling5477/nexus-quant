@@ -19,7 +19,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 /**
- * JdbcStrategyValidationOverviewQueryRepository 是 GateS-3 Strategy Validation overview 的 JDBC read adapter。
+ * JdbcStrategyValidationOverviewQueryRepository 是验证只读视图 Strategy Validation overview 的 JDBC read adapter。
  *
  * <p>职责：只通过 SELECT 聚合 strategy_versions、backtest_eval_reports、backtest_publish_records、
  * paper_trading_runs、shadow_runs 和 shadow_consistency_reports 的本地事实。该 adapter 不提供 create /
@@ -146,7 +146,7 @@ public class JdbcStrategyValidationOverviewQueryRepository implements StrategyVa
     }
 
     /**
-     * 加载 GateS-3 validation overview facts。
+     * 加载验证只读视图 validation overview facts。
      *
      * <p>查询策略：counts 使用聚合 SQL 计算，不把所有 strategy version 拉到 Java；latest decision 只按最新
      * evidence 取一条锚点。所有 SQL 都是 SELECT，不写库、不外联、不读取 credential/account/order/ledger。

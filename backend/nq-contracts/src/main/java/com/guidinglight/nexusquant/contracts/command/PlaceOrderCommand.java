@@ -8,7 +8,7 @@ import java.math.BigDecimal;
  * PlaceOrderCommand 冻结下单命令契约。
  * <p>
  * Why:
- * GateD 要求下单命令在 contracts 层显式携带 requestId、idempotencyKey、venue、accountId、symbol、
+ * 统一交易契约要求下单命令在 contracts 层显式携带 requestId、idempotencyKey、venue、accountId、symbol、
  * quantity、price 等核心语义，避免 core、risk、scheduler 各自补字段导致口径漂移。
  *
  * @param orderId        系统订单 ID
@@ -46,7 +46,7 @@ public record PlaceOrderCommand(
 ) {
 
     /**
-     * 兼容 GateD 第二批改造前的旧构造器，避免一次性改爆所有调用点。
+     * 兼容旧构造器，避免一次性改爆所有调用点。
      * <p>
      * Why:
      * 当前仓库仍存在旧签名的测试、回归脚本与事件序列化校验；先在 contracts 层提供兼容入口，

@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * GateY-6D 最小 authenticated operator API。Controller 只做 typed mapping 与认证 identity 传递。
+ * 受控实盘执行最小 authenticated operator API。Controller 只做 typed mapping 与认证 identity 传递。
  */
 @Validated
 @RestController

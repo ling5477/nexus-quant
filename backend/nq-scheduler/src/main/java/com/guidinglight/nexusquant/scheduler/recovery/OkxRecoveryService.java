@@ -36,10 +36,10 @@ import org.springframework.stereotype.Component;
 import org.slf4j.LoggerFactory;
 
 /**
- * OkxRecoveryService 负责 GateC-1 的 REST-only 恢复入口。
+ * OkxRecoveryService 负责交易所适配契约的 REST-only 恢复入口。
  * <p>
  * Why:
- * docs/gates/gate-c/RECOVERY_RUNBOOK.md 要求启动与定时恢复都先扫描本地非终态订单，
+ * 启动与定时恢复都必须先扫描本地非终态订单，
  * 再用 `orders-pending + getOrder + fills` 做 query-confirm，且绝不重复下单。
  * 这里复用 `OkxRestReconcileService`，把恢复行为收敛成同一条幂等路径。
  */

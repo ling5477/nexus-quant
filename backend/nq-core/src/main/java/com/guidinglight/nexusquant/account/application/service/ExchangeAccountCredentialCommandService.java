@@ -311,7 +311,7 @@ public class ExchangeAccountCredentialCommandService {
     /**
      * 临时禁用指定 credential，并追加 DISABLED 审计事件。
      *
-     * <p>Why: DISABLED 表示可后续单独设计恢复的临时停用状态，本轮不实现 enable；
+     * <p>Why: DISABLED 表示可后续单独设计恢复的临时停用状态，此处不提供 enable；
      * 对已经 REVOKED 或 ROTATED 的历史记录返回明确状态冲突，避免破坏审计语义。</p>
      */
     @Transactional

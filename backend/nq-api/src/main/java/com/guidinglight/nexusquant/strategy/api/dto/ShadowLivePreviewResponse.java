@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * ShadowLivePreviewResponse 是 GateQ-3 Shadow Live no-side-effect preview HTTP DTO。
+ * ShadowLivePreviewResponse 是策略验证 Shadow Live no-side-effect preview HTTP DTO。
  *
  * <p>Why: DTO 只暴露只读预览范围、证据状态、副作用禁止项、阻断原因和下一步提示。
  * 它不包含 tradingReady、liveReady、authorizedForTrading 字段，不返回敏感材料、raw provider
@@ -95,7 +95,7 @@ public record ShadowLivePreviewResponse(
         }
     }
 
-    /** SideEffectPolicy 描述本轮 preview hard boundary，全部为 FORBIDDEN。 */
+    /** SideEffectPolicy 描述preview 的副作用边界，全部为 FORBIDDEN。 */
     public record SideEffectPolicy(String code, String status, String message) {
         private static SideEffectPolicy from(ShadowLivePreviewSideEffectPolicy policy) {
             return new SideEffectPolicy(policy.code(), policy.status(), policy.message());

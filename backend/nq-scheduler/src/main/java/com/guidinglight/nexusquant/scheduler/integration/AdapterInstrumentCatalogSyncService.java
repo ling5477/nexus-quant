@@ -89,7 +89,7 @@ public class AdapterInstrumentCatalogSyncService implements InstrumentCatalogSyn
      * 执行交易所 instrument catalog 同步。
      * <p>
      * Why:
-     * GateJ-FREEZE 是稳定运行验收，不允许因为 Binance 地域限制、公网阻断或 exchangeInfo 临时失败
+     * Paper 组合能力需要保持稳定运行，不允许因为 Binance 地域限制、公网阻断或 exchangeInfo 临时失败
      * 把控制台操作升级成 500。`nq.instrument.catalog-sync.enabled=false` 时直接返回受控 409；
      * 外部 Binance 失败也转换为受控业务冲突，由 API 层统一输出稳定错误结构。
      *

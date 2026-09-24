@@ -8,7 +8,7 @@ import java.util.Objects;
  * RiskRuleRegistry 负责冻结风控规则顺序。
  * <p>
  * Why:
- * GateD 明确要求规则顺序稳定，否则重复请求、限频、数值校验的拒绝结果会因为注册顺序漂移而不可复盘。
+ * 统一交易契约明确要求规则顺序稳定，否则重复请求、限频、数值校验的拒绝结果会因为注册顺序漂移而不可复盘。
  */
 public class RiskRuleRegistry {
 

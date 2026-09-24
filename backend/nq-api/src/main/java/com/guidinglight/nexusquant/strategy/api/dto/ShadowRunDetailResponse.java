@@ -9,12 +9,12 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * ShadowRunDetailResponse 是 GateR-6 Shadow Run detail 只读 DTO。
+ * ShadowRunDetailResponse 是 Shadow Run detail 只读 DTO。
  *
  * <p>DTO 只暴露本地 Shadow Run fact、无副作用 flags 和脱敏 review 信息；不包含
  * apiKey、secret、credential material、real account/order、trading approval 或 LIVE ready 字段。
  */
-@Schema(name = "ShadowRunDetailResponse", description = "GateR-6 read-only Shadow Run detail")
+@Schema(name = "ShadowRunDetailResponse", description = "read-only Shadow Run detail")
 public record ShadowRunDetailResponse(
         UUID id,
         String strategyVersionId,

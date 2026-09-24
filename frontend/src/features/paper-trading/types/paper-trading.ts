@@ -317,7 +317,7 @@ export interface PaperRunMonitorRunOnceResponse {
 }
 
 /**
- * Paper run 只读聚合响应（GateJ 后产品化 Loop-8）。
+ * Paper run 只读聚合响应。
  * 详情区优先消费 summary 渲染复盘 / 诊断 / 时间线 / 关键指标；明细查询保留为表格数据源与 fallback。
  */
 export interface PaperRunSummaryCounts {
@@ -383,7 +383,7 @@ export interface PaperRunSummaryResponse {
 }
 
 /**
- * Paper 组合看板只读聚合响应（GateJ 后产品化 Loop-13）。
+ * Paper 组合看板只读聚合响应。
  * 跨多个 Paper run 聚合组合总览、策略/发布排行、Run 排行与数据质量；
  * 收益率 / 回撤为比例值，数据不足时为 null（不外推、不伪造收益率），仅代表 SIM/Paper。
  */
@@ -528,7 +528,7 @@ export interface PaperPortfolioSummaryResponse {
 }
 
 /**
- * Paper 执行诊断只读聚合响应（GateK Batch K1/K2）。
+ * Paper 执行诊断只读聚合响应。
  * 对 bounded Paper run 做规则化归因（无订单/有订单无成交/成交亏损/风控拦截/数据不足/高回撤/异常终态），
  * 并按 strategyVersionId / publishId 聚合定位问题集中点。仅 Paper-only 规则化归因，不构成真实投资建议。
  */
@@ -625,7 +625,7 @@ export interface PaperExecutionDiagnosticsResponse {
 }
 
 /**
- * Paper 策略评估只读聚合响应（GateK Batch K3/K3B）。
+ * Paper 策略评估只读聚合响应。
  * 从 strategyVersionId / publishId 维度评估 Paper 模拟表现、Paper vs Backtest 偏差、样本充足性与风险调整评分。
  * 评分为 0~100 Paper 内部启发式分，不是真实投资评级、不代表 LIVE 或真实交易表现、不构成投资建议。
  */
@@ -751,7 +751,7 @@ export interface PaperStrategyEvaluationsResponse {
 }
 
 /**
- * Paper 规则化自动复盘只读聚合响应（GateK Batch K4/K4B）。
+ * Paper 规则化自动复盘只读聚合响应。
  * 复用 K1 执行诊断与 K3 策略评估，把组合 / 重点 run / 策略 / 发布事实规则化归纳为复盘摘要并按问题类型聚类。
  * 复盘由规则引擎生成，不接 AI / DH runtime；仅 Paper 模拟口径，不代表 LIVE 或真实交易表现，也不构成投资建议。
  */

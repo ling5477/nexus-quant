@@ -15,7 +15,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 /**
- * StrategyDefinitionService 提供 GateE-1.1 的策略定义管理能力。
+ * StrategyDefinitionService 提供执行与补偿契约的策略定义管理能力。
  */
 @Service
 public class StrategyDefinitionService {

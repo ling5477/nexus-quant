@@ -10,7 +10,7 @@ import java.util.UUID;
 /**
  * Paper run 侧只读比较输入。
  *
- * <p>职责：承载调用方已经准备好的 Paper 运行摘要。Why：GateR-5 不主动查询 Paper 订单表、
+ * <p>职责：承载调用方已经准备好的 Paper 运行摘要。Why：影子运行不主动查询 Paper 订单表、
  * 真实交易所、账户余额或 ledger；调用方传入的 summary 是唯一比较来源，且 {@code summaryPayload}
  * 必须通过 Shadow Run sensitive guard，避免 credential、真实订单和交易授权语义进入 report。
  *

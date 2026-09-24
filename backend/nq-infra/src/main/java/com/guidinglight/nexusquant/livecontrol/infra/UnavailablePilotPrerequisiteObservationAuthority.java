@@ -10,7 +10,7 @@ import java.time.Instant;
 
 import org.springframework.stereotype.Component;
 
-/** GateY-6D production 默认边界：真实 trusted observation source 未实现时永久 fail closed。 */
+/** 受控实盘执行 production 默认边界：真实 trusted observation source 未实现时永久 fail closed。 */
 @Component
 public final class UnavailablePilotPrerequisiteObservationAuthority
         implements PilotPrerequisiteObservationAuthority {

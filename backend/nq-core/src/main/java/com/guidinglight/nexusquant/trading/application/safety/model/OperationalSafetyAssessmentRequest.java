@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Internal-only GateW-4 safety assessment 输入；不包含 credential、账户或订单 payload。
+ * Internal-only 只读诊断 safety assessment 输入；不包含 credential、账户或订单 payload。
  */
 public record OperationalSafetyAssessmentRequest(
         KillSwitchSnapshot killSwitchSnapshot,

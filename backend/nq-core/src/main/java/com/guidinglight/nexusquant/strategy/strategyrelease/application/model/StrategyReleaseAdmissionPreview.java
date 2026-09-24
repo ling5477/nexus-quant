@@ -13,7 +13,7 @@ import java.util.UUID;
  * Strategy Release-to-Shadow admission 的安全只读预览模型。
  *
  * <p>该模型不暴露 trusted root、path、storage key、raw manifest、creation plan、异常或 credential。
- * ELIGIBLE 仅表示 GateX-3 纯决策生成了内存 creation plan，不表示 Shadow Run 已创建或交易已授权。
+ * ELIGIBLE 仅表示策略发布准入纯决策生成了内存 creation plan，不表示 Shadow Run 已创建或交易已授权。
  */
 public record StrategyReleaseAdmissionPreview(
         String publishRecordId,

@@ -9,7 +9,7 @@ import java.util.Objects;
 import org.springframework.stereotype.Service;
 
 /**
- * PaperExecutionDiagnosticsService —— Paper 执行诊断只读聚合编排（GateK Batch K1）。
+ * PaperExecutionDiagnosticsService —— Paper 执行诊断只读聚合编排。
  *
  * 职责：复用 {@link PaperPortfolioService#listRunRefs()} 的批量只读事实（与组合看板同一次批量读取、同口径单 run 派生），
  * 委托 {@link PaperExecutionDiagnosticsAssembler} 归纳为 {@link PaperExecutionDiagnostics}。

@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.trading.application.riskpreflight.model;
 
 /**
- * GateW-3 diagnostic risk preflight 各独立维度的封闭状态。
+ * 只读诊断 diagnostic risk preflight 各独立维度的封闭状态。
  */
 public enum DiagnosticOrderRiskPreflightStatus {
     PASS,

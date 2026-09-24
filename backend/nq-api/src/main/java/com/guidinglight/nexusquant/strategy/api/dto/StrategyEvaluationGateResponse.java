@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * StrategyEvaluationGateResponse 是 GateQ-1 只读 Strategy Evaluation Gate HTTP DTO。
+ * StrategyEvaluationGateResponse 是策略验证只读 Strategy Evaluation Gate HTTP DTO。
  *
  * <p>Why: DTO 只暴露研究/评估准备度、证据缺口和阻断原因。它不包含 tradingReady / liveReady /
  * authorizedForTrading 字段，不返回 credential、secret、token、passphrase、private key、raw provider

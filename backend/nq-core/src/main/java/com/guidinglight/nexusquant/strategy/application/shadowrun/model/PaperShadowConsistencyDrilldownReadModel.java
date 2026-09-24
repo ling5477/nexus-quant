@@ -8,7 +8,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * PaperShadowConsistencyDrilldownReadModel 是 GateS-2 Paper vs Shadow consistency drilldown 的只读合同。
+ * PaperShadowConsistencyDrilldownReadModel 是验证只读视图 Paper vs Shadow consistency drilldown的只读合同。
  *
  * <p>职责：围绕单个 `shadowRunId` 聚合 Shadow Run 主事实、latest consistency report、snapshot/event
  * 摘要、证据锚点、blocker/warning/nextStep 和固定安全边界 flags。该 read model 不承载写侧命令，

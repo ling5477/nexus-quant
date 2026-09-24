@@ -9,10 +9,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * PreTradeRiskSettings 定义 GateD 第一批 pre-trade 风控规则所需的最小配置。
+ * PreTradeRiskSettings 定义pre-trade 风控规则所需的最小配置。
  * <p>
  * Why:
- * 当前阶段先收敛“统一规则入口 + 可验证默认值”，而不是提前引入复杂配置中心。
+ * 默认配置只提供统一规则入口和可验证默认值，不引入复杂配置中心。
  * 该对象负责把默认允许范围、数值阈值与限频窗口集中收口，避免规则把魔法值散落在实现里。
  */
 public record PreTradeRiskSettings(
@@ -29,7 +29,7 @@ public record PreTradeRiskSettings(
 ) {
 
     /**
-     * 构造一个适合 GateD 第一批实施的默认配置。
+     * 构造一个满足统一前置风控约束的默认配置。
      *
      * @return 默认配置
      */

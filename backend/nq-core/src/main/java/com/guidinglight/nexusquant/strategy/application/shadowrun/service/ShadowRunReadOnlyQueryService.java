@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Shadow Run read-only query service。
  *
- * <p>职责：为 GateR-6 HTTP detail / events / snapshots / latest consistency report 提供只读查询。
+ * <p>职责：为影子运行 HTTP detail / events / snapshots / latest consistency report 提供只读查询。
  * 该 service 只依赖 {@link ShadowRunFactRepository} 的查询方法；不会创建 Shadow Run、不会追加
  * event/snapshot/report、不会调用 runner、adapter、credential store、真实交易所，也不会修改真实
  * account / ledger / order。

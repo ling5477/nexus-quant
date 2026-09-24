@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * StrategyEvaluationGate 是 GateQ-1 后端只读 baseline 的 API read model。
+ * StrategyEvaluationGate 是策略验证后端只读 baseline 的 API read model。
  *
  * <p>Why: 该模型只聚合既有研究、评估、发布和 Paper 证据，回答“是否可进入后续 Shadow review”。
  * 它不包含 tradingReady / liveReady / authorizedForTrading 字段，也不保存 credential、secret、token、

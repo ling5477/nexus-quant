@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.strategy.domain.port;
 
 /**
- * ShadowRunOverviewQueryPort 是 GateS-1 Shadow Run overview 的只读查询端口。
+ * ShadowRunOverviewQueryPort 是验证只读视图 Shadow Run overview的只读查询端口。
  *
  * <p>用途：为 application service 提供本地 Shadow Run overview facts。实现必须只执行 SELECT，
  * 不得 INSERT/UPDATE/DELETE，不得创建 run/event/snapshot/report，不得调用 runner、scheduler、

@@ -6,11 +6,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 /**
- * ShadowRunListResponse 是 GateR-8 Shadow Run 只读列表响应。
+ * ShadowRunListResponse 是 Shadow Run 只读列表响应。
  *
  * <p>分页字段仅描述本地查询窗口；items 不包含写侧 action、credential、private payload 或交易授权字段。
  */
-@Schema(name = "ShadowRunListResponse", description = "GateR-8 read-only Shadow Run list response")
+@Schema(name = "ShadowRunListResponse", description = "read-only Shadow Run list response")
 public record ShadowRunListResponse(
         List<ShadowRunListItemResponse> items,
         int limit,

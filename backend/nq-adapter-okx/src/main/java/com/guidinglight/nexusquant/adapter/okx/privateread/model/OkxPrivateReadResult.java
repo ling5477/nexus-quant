@@ -65,7 +65,7 @@ public record OkxPrivateReadResult(
     }
 
     /**
-     * GateW-2 compatibility constructor.
+     * 兼容既有只读诊断调用方的构造器。
      */
     public OkxPrivateReadResult(
             OkxPrivateReadOperation operation,

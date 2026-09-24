@@ -35,7 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @ConditionalOnBean(PaperTradingApiService.class)
 @RequestMapping("/api/paper-trading/schedules")
-@Tag(name = "Paper Trading Schedule API", description = "GateJ-1 Paper run 调度计划与触发记录接口。")
+@Tag(name = "Paper Trading Schedule API", description = "Paper run 调度计划与触发记录接口。")
 public class PaperTradingScheduleController {
 
     private final PaperTradingApiService apiService;

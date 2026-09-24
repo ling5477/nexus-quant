@@ -6,9 +6,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 
 /**
- * MarketdataReadinessResponse is the GateO O-3B read-only readiness API payload.
+ * MarketdataReadinessResponse 是行情就绪聚合的只读 API 响应。
  * <p>
- * Why: the response keeps the existing GateM-2E fields and appends O-2 DataQualitySummary-aligned
+ * 原因：响应保留既有行情就绪字段，并追加与 DataQualitySummary 对齐的
  * diagnostics. exchange/exchangeCode and timeframe/interval are compatibility aliases; none of these
  * fields represent real provider readiness, private trading readiness, LIVE readiness or permission grants.
  */

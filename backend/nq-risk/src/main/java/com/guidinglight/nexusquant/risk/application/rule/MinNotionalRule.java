@@ -16,8 +16,8 @@ import java.util.Optional;
  * MinNotionalRule 校验订单最小名义金额。
  * <p>
  * Edge:
- * 对没有 price 的市价单，本轮不猜测参考价；只有当 minNotional > 0 且 price 缺失时才拒绝，
- * 这样既满足 GateD 文档“参考价必须明确”，也不破坏默认本地回归链路。
+ * 对没有 price 的市价单，该规则不猜测参考价；只有当 minNotional > 0 且 price 缺失时才拒绝，
+ * 这样既满足统一交易契约文档“参考价必须明确”，也不破坏默认本地回归链路。
  */
 public class MinNotionalRule implements RiskRule {
 

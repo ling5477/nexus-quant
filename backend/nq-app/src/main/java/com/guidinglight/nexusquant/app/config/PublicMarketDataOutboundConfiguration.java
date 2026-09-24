@@ -20,7 +20,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 /**
- * PublicMarketDataOutboundConfiguration 是 GateO O-1 public outbound 的 Spring 装配边界。
+ * PublicMarketDataOutboundConfiguration 是公开行情出站策略 public outbound 的 Spring 装配边界。
  *
  * <p>Why: 默认 local/test/CI/paper/freeze 必须 no-egress，不得构造真实 HTTP client。只有
  * `public-marketdata-manual` profile 且 `nq.public-marketdata.outbound.enabled=true` 时，才装配

@@ -25,7 +25,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Repository;
 
 /**
- * GateY-6D formal SoR resolver。数据库只读取脱敏 reference facts；runtime identity 来自 server-owned exact 配置。
+ * 受控实盘执行 formal SoR resolver。数据库只读取脱敏 reference facts；runtime identity 来自 server-owned exact 配置。
  */
 @Repository
 public class JdbcPilotScopeAuthorityResolver implements PilotScopeAuthorityResolver {

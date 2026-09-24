@@ -21,7 +21,7 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 
 /**
- * PaperStrategyEvaluationService —— Paper 策略评估只读聚合编排（GateK Batch K3）。
+ * PaperStrategyEvaluationService —— Paper 策略评估只读聚合编排。
  *
  * 职责：复用 {@link PaperPortfolioService#listRunRefs()} 的批量只读 run 事实（与组合看板 / 执行诊断同口径），
  * 再 join publish 记录与 Backtest 评估投影，委托 {@link PaperStrategyEvaluationAssembler} 归纳为

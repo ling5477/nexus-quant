@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * PaperExecutionDiagnosticsAssembler —— 纯函数式执行诊断聚合器（GateK Batch K1）。
+ * PaperExecutionDiagnosticsAssembler —— 纯函数式执行诊断聚合器。
  *
  * 设计要点：
  * 1) 无任何 IO / 仓储 / 外呼依赖，输入为 {@link PaperPortfolioSummary.RunRef}（由组合看板同口径单 run 派生而来），

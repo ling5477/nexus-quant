@@ -10,7 +10,7 @@ import java.util.Objects;
 import org.springframework.stereotype.Component;
 
 /**
- * ManualStrategyTriggerGateway 复用 GateE-1.2 的手动 trigger 主链给 schedule 入口调用。
+ * ManualStrategyTriggerGateway 复用执行与补偿契约的手动 trigger 主链给 schedule 入口调用。
  */
 @Component
 public class ManualStrategyTriggerGateway implements StrategyTriggerGateway {

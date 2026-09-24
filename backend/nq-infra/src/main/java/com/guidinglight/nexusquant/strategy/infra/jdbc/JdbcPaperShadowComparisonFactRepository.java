@@ -24,7 +24,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 /**
- * JdbcPaperShadowComparisonFactRepository 聚合 GateQ-2 Paper vs Shadow 只读对照所需本地 DB 事实。
+ * JdbcPaperShadowComparisonFactRepository 聚合策略验证 Paper vs Shadow 只读对照所需本地 DB 事实。
  *
  * <p>Why: 本 adapter 只能复用现有 strategy_versions、marketdata_datasets、backtest_eval_reports、
  * backtest_publish_records 和 paper_trading_runs。当前没有 shadow run 表或 runner，因此 shadow fact

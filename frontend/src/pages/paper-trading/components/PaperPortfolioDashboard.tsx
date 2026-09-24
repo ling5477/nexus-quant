@@ -42,7 +42,7 @@ function portfolioGroupColumns(keyTitle: string): ColumnsType<PaperPortfolioGrou
 }
 
 /**
- * PaperPortfolioDashboard —— Paper 组合看板（GateJ 后产品化 Loop-13）。
+ * PaperPortfolioDashboard —— Paper 组合看板。
  * 只读消费后端 /paper-trading/portfolio/summary 单请求聚合结果：组合总览、策略/发布排行、Run 排行与数据质量。
  * 仅代表 SIM/Paper 模拟运行表现，不代表 LIVE 或真实交易；数据不足时不伪造收益率。
  */

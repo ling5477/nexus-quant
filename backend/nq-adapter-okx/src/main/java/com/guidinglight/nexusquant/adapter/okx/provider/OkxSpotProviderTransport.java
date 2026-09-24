@@ -13,11 +13,11 @@ import java.util.UUID;
 import java.time.Duration;
 
 /**
- * GateY provider 的可注入 transport port。
+ * 受控实盘执行 provider的可注入 transport port。
  *
  * <p>接口只有五个 typed operation；没有 host、URL、method、path、header、credential 或通用
  * execute escape hatch。每个 command 都携带 response read limit；real transport 在分配或完整
- * 读取响应 body 前执行 byte/fill cap，metadata post-check 只作为第二道防线。GateY-6E 已提供
+ * 读取响应 body 前执行 byte/fill cap，metadata post-check 只作为第二道防线。受控实盘执行已提供
  * credential-scoped typed capability，但默认 Spring/worker runtime 仍不装配。</p>
  */
 public interface OkxSpotProviderTransport {

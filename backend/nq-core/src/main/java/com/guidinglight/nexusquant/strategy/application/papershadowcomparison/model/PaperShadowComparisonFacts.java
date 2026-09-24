@@ -7,7 +7,7 @@ import java.util.UUID;
 /**
  * PaperShadowComparisonFacts 是 infra 层读取到的本地只读事实集合。
  *
- * <p>Why: GateQ-2 需要跨 strategy version、dataset、evaluation、publish 和 Paper 表聚合事实，
+ * <p>Why: 策略验证需要跨 strategy version、dataset、evaluation、publish 和 Paper 表聚合事实，
  * 但 core 不能依赖 JDBC。Shadow run 当前没有表和 runner，生产 repository 必须返回 notImplemented，
  * 由 service fail-closed；测试 fixture 可构造 future read-only shadow fact 来固化 DTO 语义。
  */
@@ -165,7 +165,7 @@ public record PaperShadowComparisonFacts(
     /**
      * Shadow run 事实；当前生产路径固定为 notImplemented。
      *
-     * <p>Why: GateQ-2 需要 DTO baseline 先表达 Shadow 未实现与缺失语义，但本轮禁止新增 shadow
+     * <p>Why: Paper/Shadow 对照需要 DTO 明确表达 Shadow 未实现与证据缺失；此处不得新增 shadow
      * table、创建 shadow run 或写 shadow 状态。future fixture 仅用于测试 read model 语义。
      */
     public record ShadowRunFact(

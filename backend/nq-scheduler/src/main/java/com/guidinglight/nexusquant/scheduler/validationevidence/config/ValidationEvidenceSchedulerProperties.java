@@ -82,7 +82,7 @@ public class ValidationEvidenceSchedulerProperties implements InitializingBean {
     /**
      * 在 scheduler Bean 注册前验证全部边界。
      *
-     * <p>execution timeout 上限与已接受的 GateV-3A primitive 五分钟上限保持一致；这里不修改或复制锁实现。
+     * <p>execution timeout 上限与已接受的人工复核 primitive 五分钟上限保持一致；这里不修改或复制锁实现。
      */
     @Override
     public void afterPropertiesSet() {

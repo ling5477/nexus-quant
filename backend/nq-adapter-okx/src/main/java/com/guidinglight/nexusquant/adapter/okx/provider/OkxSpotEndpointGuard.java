@@ -17,7 +17,7 @@ import java.util.Set;
 /**
  * OkxSpotEndpointGuard 在 private transport 之前执行无 IO 的 default-deny 决策。
  *
- * <p>GateW-1 不建立 concrete private endpoint allowlist：所有 private read 都先被 runtime
+ * <p>只读诊断不建立 concrete private endpoint allowlist：所有 private read 都先被 runtime
  * disabled 拒绝；下单、撤单和资金动作永久拒绝。仅保留仓库既有 public marketdata path 的精确
  * GET allowlist，且 path 使用 URI 校验、大小写归一、重复斜线归一和 percent-encoded path 拒绝。
  * query string 从不参与 endpoint 分类，因此不能改变 public/private/mutating 判定。</p>
@@ -27,7 +27,7 @@ import java.util.Set;
  */
 public final class OkxSpotEndpointGuard {
 
-    // 仅复用仓库已有的 public marketdata 路径；private allowlist 在 GateW-1 故意为空。
+    // 仅复用仓库已有的 public marketdata 路径；private allowlist 在只读诊断故意为空。
     private static final Set<String> PUBLIC_READ_PATHS = Set.of(
             "/api/v5/public/instruments",
             "/api/v5/market/history-candles"
@@ -68,7 +68,7 @@ public final class OkxSpotEndpointGuard {
     }
 
     /**
-     * 只接受编译期封闭的 GateW-2 operation；调用方无法提供 method、path、host 或 query map。
+     * 只接受编译期封闭的只读诊断 operation；调用方无法提供 method、path、host 或 query map。
      */
     public EndpointPolicyDecision evaluatePrivateRead(OkxPrivateReadRequest request) {
         if (request == null) {
@@ -90,7 +90,7 @@ public final class OkxSpotEndpointGuard {
     }
 
     /**
-     * GateY provider contract 的独立 typed allowlist。这里只证明 operation contract 精确匹配，
+     * 受控实盘执行 provider contract的独立 typed allowlist。这里只证明 operation contract 精确匹配，
      * {@code runtimeAuthorized} 永远为 false；调用方不能提交 method、path、host 或 raw URL。
      */
     public OkxSpotProviderContractDecision evaluateProviderContract(OkxSpotProviderOperation operation) {

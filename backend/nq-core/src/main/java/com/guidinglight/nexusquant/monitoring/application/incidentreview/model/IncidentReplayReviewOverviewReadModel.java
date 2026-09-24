@@ -10,9 +10,9 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * IncidentReplayReviewOverviewReadModel 是 GateT-3 Incident / Replay Review Workflow 的只读响应合同。
+ * IncidentReplayReviewOverviewReadModel 是验证工作流 Incident / Replay Review Workflow的只读响应合同。
  *
- * <p>职责：从 GateS-6 Incident / Replay facts、GateT-1 operator anchor 和 GateT-2 consistency
+ * <p>职责：从事件回放总览 Incident / Replay facts、Shadow 验证工作流 operator anchor 和一致性证据总览 consistency
  * evidence anchor 派生 review item。该模型不持久化 review item，不创建 incident / alert / replay，
  * 不修改 Paper / Shadow / account / order / ledger 状态，不表示自动处置、真实 incident closeout 或交易授权。
  */

@@ -1,7 +1,7 @@
 import type {ReadModelEvidenceMetadata} from '@/features/validation/types/read-model-evidence';
 
 /**
- * GateT-1 Shadow Validation Workflow frontend types.
+ * Shadow 验证工作流前端类型.
  *
  * Why:
  * 这些类型只描述 `GET /api/shadow-validation/workflow/overview` 的 read-only response。
@@ -105,7 +105,7 @@ export interface ShadowValidationEvidenceAnchor {
 }
 
 /**
- * Operator item 是从 GateS 本地事实派生的人工复核视图项。
+ * Operator item 是从验证只读视图本地事实派生的人工复核视图项。
  * 所有 safety flags 必须按后端返回展示，任一 flags 漂移时页面应 fail-closed。
  */
 export interface ShadowValidationOperatorItem {
@@ -139,7 +139,7 @@ export interface ShadowValidationOperatorItem {
 }
 
 /**
- * Overview response 是 GateT-1 前端唯一消费的 Shadow Validation Workflow DTO。
+ * Overview response 是验证工作流前端唯一消费的 Shadow Validation Workflow DTO。
  * 本类型不包含 start / stop / execute / trade / credential / private provider 字段。
  */
 export interface ShadowValidationWorkflowOverviewResponse {

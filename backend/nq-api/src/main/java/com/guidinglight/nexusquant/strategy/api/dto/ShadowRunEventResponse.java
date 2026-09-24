@@ -12,7 +12,7 @@ import java.time.Instant;
  *
  * <p>{@code metadata} 必须已经过敏感字段 guard；DTO 不暴露 private payload、credential 或真实交易字段。
  */
-@Schema(name = "ShadowRunEventResponse", description = "GateR-6 read-only Shadow Run event")
+@Schema(name = "ShadowRunEventResponse", description = "read-only Shadow Run event")
 public record ShadowRunEventResponse(
         String eventType,
         String fromStatus,

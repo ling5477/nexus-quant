@@ -26,7 +26,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * BinanceRecoveryService 提供 GateD 当前阶段的 Binance 手动 recovery 入口。
+ * BinanceRecoveryService 提供Binance 手动 recovery 入口。
  * <p>
  * Why:
  * UC-D10 需要单独观察 Binance `recovery -> reconcile` 的最小闭环，但当前共享 `RecoveryService`
@@ -90,7 +90,7 @@ public class BinanceRecoveryService {
      * 执行一次 Binance recovery。
      * <p>
      * Why:
-     * Binance 当前阶段的恢复目标不是“重新下单”，而是把本地已存在的非终态订单重新对齐到外部事实：
+     * Binance 恢复的目标不是“重新下单”，而是把本地已存在的非终态订单重新对齐到外部事实：
      * 缺 external_order_id 就先回填，随后统一交给 reconcile 做状态与成交同步。
      *
      * @param traceId 本次恢复任务 traceId

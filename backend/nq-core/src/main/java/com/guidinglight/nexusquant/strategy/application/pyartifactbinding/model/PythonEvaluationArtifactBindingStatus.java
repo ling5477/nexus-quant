@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.strategy.application.pyartifactbinding.model;
 
 /**
- * PythonEvaluationArtifactBindingStatus 是 GateQ-4 绑定预览的 fail-closed 状态枚举。
+ * PythonEvaluationArtifactBindingStatus 是策略验证绑定预览的 fail-closed 状态枚举。
  *
  * <p>Why: 这些状态只表达 artifact 是否能进入只读 binding preview，不表达入库成功、
  * 策略发布、Paper/Shadow run 启动、LIVE 放行、AI/ML 就绪或交易授权。

@@ -9,13 +9,13 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * ShadowRunOverviewResponse 是 GateS-1 Shadow Run overview 的 GET-only 响应 DTO。
+ * ShadowRunOverviewResponse 是验证只读视图 Shadow Run overview 的 GET-only 响应 DTO。
  *
  * <p>该 DTO 只暴露本地 read model 诊断事实，固定表达 diagnosticOnly、noSideEffect 和
  * notTradingAuthorization。它不包含 trade approval、LIVE ready、real provider ready、credential
  * material、private endpoint payload 或真实账户/订单字段。
  */
-@Schema(name = "ShadowRunOverviewResponse", description = "GateS-1 read-only Shadow Run overview")
+@Schema(name = "ShadowRunOverviewResponse", description = "read-only Shadow Run overview")
 public record ShadowRunOverviewResponse(
         Instant generatedAt,
         ReadModelEvidenceMetadataResponse evidenceMetadata,

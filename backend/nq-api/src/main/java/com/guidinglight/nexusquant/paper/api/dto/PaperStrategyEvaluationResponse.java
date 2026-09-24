@@ -8,7 +8,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * PaperStrategyEvaluationResponse —— Paper 策略评估只读聚合响应体（GateK Batch K3）。
+ * PaperStrategyEvaluationResponse —— Paper 策略评估只读聚合响应体。
  *
  * 供前端策略评估视图消费：总览、strategy/publish 维度评分、Paper vs Backtest 偏差与各维度排行。
  * ratingLabel / evaluationConfidence / deviationLevel 以枚举名字符串序列化；评分为 0~100 Paper 内部启发式分。

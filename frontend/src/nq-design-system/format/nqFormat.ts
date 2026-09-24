@@ -1,4 +1,4 @@
-// nqFormat.ts — NQ Console 数字 / 金额 / 百分比 / 涨跌方向的纯格式化函数(B0.2)。
+// nqFormat.ts — NQ Console 数字 / 金额 / 百分比 / 涨跌方向的纯格式化函数。
 // 约束:空值统一显示 "-";数字用 zh-CN 千分位;颜色由消费层按 direction 读 var(--nq-*),此处不决定颜色。
 
 export interface NqNumberFormatOptions {

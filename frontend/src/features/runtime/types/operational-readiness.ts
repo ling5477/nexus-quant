@@ -1,10 +1,10 @@
 /**
- * Operational readiness safe summary types for GateM-6B
+ * 运行就绪安全摘要类型
  * `GET /api/runtime/operational-readiness`.
  *
  * Why:
  * The frontend only renders the backend's explicit safe DTO. These fields are status evidence,
- * not execution capability, and current GateM baseline keeps every item non-authorized.
+ * 不表示执行能力，所有条目均不得被解释为已授权。
  */
 export interface OperationalReadinessStatusResponse {
     status: string;

@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * StrategyValidationOverviewQueryService 组装 GateS-3 Strategy Evaluation Gate runtime baseline。
+ * StrategyValidationOverviewQueryService 组装验证只读视图 Strategy Evaluation Gate runtime baseline。
  *
  * <p>职责：只读聚合 strategy/evaluation/publish/Paper/Shadow 本地事实，输出 validation 层面的概览和
  * latest decision。该 service 不创建 evaluation report、不发布 strategy、不创建 Paper/Shadow run、不启动
@@ -56,7 +56,7 @@ public class StrategyValidationOverviewQueryService {
      * 只代表 validation 层面证据完整，仍固定 notTradingAuthorization=true。
      *
      * @param traceId 当前请求 trace id，只用于响应追踪
-     * @return GateS-3 read model
+     * @return 策略验证总览只读模型
      */
     @Transactional(readOnly = true)
     public StrategyValidationOverviewReadModel overview(String traceId) {

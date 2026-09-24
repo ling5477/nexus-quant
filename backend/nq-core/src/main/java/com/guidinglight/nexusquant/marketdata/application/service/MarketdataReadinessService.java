@@ -25,7 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * MarketdataReadinessService computes GateM-2E source health from local database facts only.
+ * MarketdataReadinessService 只根据本地数据库事实计算行情来源健康状态。
  * <p>
  * Why: the readiness endpoint must not trigger ingestion, call exchange adapters, read credentials or
  * infer live exchange health. Missing, stale or uncertain local evidence remains fail-closed.

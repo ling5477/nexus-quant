@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.trading.application.riskpreflight.model;
 
 /**
- * GateW-3 diagnostic risk preflight 的封闭 finding taxonomy。
+ * 只读诊断 diagnostic risk preflight的封闭 finding taxonomy。
  *
  * <p>这些 code 只描述本地诊断事实，不能表示真实风控通过或交易授权。</p>
  */

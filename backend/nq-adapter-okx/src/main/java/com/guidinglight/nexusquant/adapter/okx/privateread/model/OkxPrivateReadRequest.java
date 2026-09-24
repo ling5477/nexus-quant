@@ -40,7 +40,7 @@ public record OkxPrivateReadRequest(
     }
 
     /**
-     * 保留 GateW-2 构造合同；reconciliation operation 必须使用命名工厂。
+     * 保留只读诊断构造合同；reconciliation operation 必须使用命名工厂。
      */
     public OkxPrivateReadRequest(OkxPrivateReadOperation operation, List<String> currencies) {
         this(operation, currencies, null, null, null, 0, null);

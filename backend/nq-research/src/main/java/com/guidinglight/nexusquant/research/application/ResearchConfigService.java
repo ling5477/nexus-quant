@@ -19,11 +19,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * ResearchConfigService 提供 GateF-1 的研究配置管理能力。
+ * ResearchConfigService 提供研究与回测契约的研究配置管理能力。
  * <p>
  * Why:
- * GateF-1 需要先把“研究配置引用哪一个已冻结策略定义”固化下来，
- * 这样 GateF-2 开始建设回测执行链时，才能基于稳定快照而不是运行时可变定义继续扩展。
+ * 研究配置需要先把“研究配置引用哪一个已冻结策略定义”固化下来，
+ * 这样研究与回测契约开始建设回测执行链时，才能基于稳定快照而不是运行时可变定义继续扩展。
  */
 @Service
 public class ResearchConfigService {

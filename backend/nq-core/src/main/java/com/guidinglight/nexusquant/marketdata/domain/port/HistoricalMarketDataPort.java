@@ -6,7 +6,7 @@ import com.guidinglight.nexusquant.marketdata.domain.HistoricalMarketDataQuery;
 import java.util.List;
 
 /**
- * HistoricalMarketDataPort 定义 GateF-2 的历史行情输入端口。
+ * HistoricalMarketDataPort 定义回测执行的历史行情输入端口。
  */
 public interface HistoricalMarketDataPort {
 

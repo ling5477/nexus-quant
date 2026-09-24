@@ -1,5 +1,5 @@
 /**
- * GateU 统一 read-model evidence metadata。
+ * 证据元数据统一 read-model evidence metadata。
  *
  * Why:
  * 该类型只描述后端 GET-only 诊断响应中的来源、可用性与时间语义。metadata 缺失、UNKNOWN 或

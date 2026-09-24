@@ -14,7 +14,7 @@ import java.util.UUID;
  * <p>该 DTO 只返回 metricDelta、divergenceReasons 和 limitations 的脱敏诊断事实；comparisonStatus
  * 不是 approval、trading authorization 或 LIVE readiness。
  */
-@Schema(name = "ShadowConsistencyReportResponse", description = "GateR-6 read-only latest consistency report")
+@Schema(name = "ShadowConsistencyReportResponse", description = "read-only latest consistency report")
 public record ShadowConsistencyReportResponse(
         UUID id,
         UUID shadowRunId,

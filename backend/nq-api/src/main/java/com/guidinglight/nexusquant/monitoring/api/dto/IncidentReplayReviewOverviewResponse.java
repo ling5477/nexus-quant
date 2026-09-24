@@ -9,12 +9,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * IncidentReplayReviewOverviewResponse 是 GateT-3 Incident / Replay Review overview 的 GET-only HTTP DTO。
+ * IncidentReplayReviewOverviewResponse 是验证工作流 Incident / Replay Review overview 的 GET-only HTTP DTO。
  *
  * <p>该 DTO 只暴露 derived review item、evidence anchor 和固定 safety boundary。它不包含交易批准、
  * 实盘就绪、凭证、private provider payload、真实账户、真实订单、ledger mutation 或自动处置字段。
  */
-@Schema(name = "IncidentReplayReviewOverviewResponse", description = "GateT-3 read-only incident replay review overview")
+@Schema(name = "IncidentReplayReviewOverviewResponse", description = "read-only incident replay review overview")
 public record IncidentReplayReviewOverviewResponse(
         Instant generatedAt,
         ReadModelEvidenceMetadataResponse evidenceMetadata,

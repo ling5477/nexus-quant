@@ -34,7 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Durable validation review fact model 的 PostgreSQL JDBC adapter。
  *
- * <p>所有 case/event 查询都在 SQL 层携带 tenant/owner scope。Adapter 只写两张 GateV-1
+ * <p>所有 case/event 查询都在 SQL 层携带 tenant/owner scope。Adapter 只写两张人工复核
  * 本地 review 表，不访问交易所、credential、Paper、Shadow、risk、account、order 或 ledger 写侧。
  */
 @Repository

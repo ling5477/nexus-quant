@@ -6,7 +6,7 @@ import java.math.BigDecimal;
  * AdapterOrderRequest 描述发送到交易所适配层的统一下单请求。
  * <p>
  * Why:
- * GateD 要把 `nq-core -> nq-adapter-*` 的字段名冻结成同一套语义，
+ * 统一交易契约要把 `nq-core -> nq-adapter-*`的字段名冻结成同一套语义，
  * 否则 adapter 层仍会继续消费 `qty/type` 这类历史命名，导致 contracts/core/adapter
  * 三层口径再次漂移。
  */

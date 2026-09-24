@@ -1,5 +1,5 @@
 /**
- * Adapter readiness 只读视图类型，对应后端 GateM-5A `GET /api/adapters/readiness`。
+ * Adapter readiness 只读视图类型，对应后端适配器就绪策略 `GET /api/adapters/readiness`。
  *
  * Why:
  * 前端只消费后端静态 readiness 决策用于展示；当前 baseline 下所有真实交易能力 `allowed=false`，

@@ -25,10 +25,10 @@ export async function getStrategyValidationOverview(): Promise<StrategyValidatio
 }
 
 /**
- * GateQ-5 只读 API client。
+ * 策略验证只读 API client。
  *
  * Why:
- * 该 client 只消费 GateQ-1 / GateQ-2 / GateQ-3 既有 GET API；不新增写侧调用，不创建 Paper/Shadow run，
+ * 该 client 只消费策略评估准入 / Paper/Shadow 对照 / Shadow Live 只读预览既有 GET API；不新增写侧调用，不创建 Paper/Shadow run，
  * 不读取 credential，不调用 private endpoint，也不把任何 readiness 解释成交易授权。
  */
 export const strategyValidationApi = {

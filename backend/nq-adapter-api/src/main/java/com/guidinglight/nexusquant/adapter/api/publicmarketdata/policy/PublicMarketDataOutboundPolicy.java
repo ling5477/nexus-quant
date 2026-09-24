@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * PublicMarketDataOutboundPolicy 固化 GateO O-1 的 allowlist / denylist。
+ * PublicMarketDataOutboundPolicy 固化公开行情出站策略的 allowlist / denylist。
  *
  * <p>Why: public outbound 的安全边界不能依赖调用方记忆，也不能通过 URL 字符串散落判断。
  * 本策略先检查 endpoint category，再检查请求是否要求 authentication / signature，最后用路径关键字
@@ -89,7 +89,7 @@ public final class PublicMarketDataOutboundPolicy {
         if (!category.allowedByDefault()) {
             return PublicMarketDataOutboundDecision.deny(
                     category,
-                    "endpoint category is not in GateO O-1 public REST allowlist",
+                    "endpoint category is not in the public market data REST allowlist",
                     checkedAt);
         }
         if (isInvalidEndpointReference(request.endpointPath())) {

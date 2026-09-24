@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * PaperStrategyEvaluation —— Paper 策略评估只读聚合事实源（GateK Batch K3）。
+ * PaperStrategyEvaluation —— Paper 策略评估只读聚合事实源。
  *
  * 职责：在 K1/K2 已能解释「为什么执行异常」的基础上，从 strategyVersionId / publishId 维度评估
  * Paper 模拟表现、Paper vs Backtest 偏差、样本充足性与风险调整评分，回答「哪些策略更稳定 / 偏差最大 /

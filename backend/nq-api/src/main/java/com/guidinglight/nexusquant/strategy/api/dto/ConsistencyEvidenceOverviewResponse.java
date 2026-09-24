@@ -9,12 +9,12 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * ConsistencyEvidenceOverviewResponse 是 GateT-2 consistency evidence overview 的 GET-only HTTP DTO。
+ * ConsistencyEvidenceOverviewResponse 是验证工作流 consistency evidence overview 的 GET-only HTTP DTO。
  *
  * <p>该 DTO 只暴露 derived evidence item、metricDelta 摘要、evidence anchor 和固定 safety boundary。
  * 它不包含交易批准、实盘就绪、凭证、private provider payload、真实账户、真实订单或 ledger mutation 字段。
  */
-@Schema(name = "ConsistencyEvidenceOverviewResponse", description = "GateT-2 read-only consistency evidence overview")
+@Schema(name = "ConsistencyEvidenceOverviewResponse", description = "read-only consistency evidence overview")
 public record ConsistencyEvidenceOverviewResponse(
         Instant generatedAt,
         ReadModelEvidenceMetadataResponse evidenceMetadata,

@@ -4,7 +4,7 @@ import com.guidinglight.nexusquant.adapter.api.model.MarketDataSubscriptionAck;
 import com.guidinglight.nexusquant.adapter.api.model.MarketDataSubscriptionRequest;
 
 /**
- * MarketDataAdapter 冻结 GateC 的统一行情端口。
+ * MarketDataAdapter 冻结交易所适配契约的统一行情端口。
  */
 public interface MarketDataAdapter {
 

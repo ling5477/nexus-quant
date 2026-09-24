@@ -18,11 +18,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * BacktestRunService 提供 GateF-1 / GateF-2 的回测运行创建与查询能力。
+ * BacktestRunService 提供研究配置 / 回测执行的回测运行创建与查询能力。
  * <p>
  * Why:
- * GateF-1 的目标不是执行回测，而是先把 run 级事实和快照链路固化下来，
- * 让 GateF-2 以后接入市场数据与执行主链时，不需要再回头拆表或补血缘字段。
+ * 研究配置的目标不是执行回测，而是先把 run 级事实和快照链路固化下来，
+ * 让回测执行以后接入市场数据与执行主链时，不需要再回头拆表或补血缘字段。
  */
 @Service
 public class BacktestRunService {
@@ -65,7 +65,7 @@ public class BacktestRunService {
     /**
      * 创建回测运行。
      * Why:
-     * GateF-2 明确要求“创建 run”和“执行 run”拆成两个动作，因此这里仍只负责创建 CREATED 状态的 run，
+     * 研究与回测契约明确要求“创建 run”和“执行 run”拆成两个动作，因此这里仍只负责创建 CREATED 状态的 run，
      * 后续显式 `start` 动作再推动 PREPARING / RUNNING / SUCCEEDED / FAILED。
      * Batch 4-A 后，新 run 只能从 ACTIVE research/backtest config 创建；DISABLED 与 ARCHIVED
      * 仍可按 ID 查询用于历史追溯，但不能继续产生新的回测事实。
@@ -116,7 +116,7 @@ public class BacktestRunService {
     /**
      * 列出回测运行。
      * Why:
-     * GateF-1 只提供最小查询面，因此允许按 researchConfigId 或 backtestConfigId 做轻量过滤，
+     * 研究与回测契约只提供最小查询面，因此允许按 researchConfigId 或 backtestConfigId 做轻量过滤，
      * 不提前引入分页、复杂筛选和读侧聚合工程。
      */
     public List<BacktestRun> list(String researchConfigId, String backtestConfigId) {

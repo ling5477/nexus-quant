@@ -4,7 +4,7 @@ package com.guidinglight.nexusquant.adapter.okx.error;
  * OkxErrorCode 统一维护 OKX 业务错误码的规范化语义。
  * <p>
  * Why:
- * GateC 恢复流程需要对特定错误码（如 51603 订单不存在）做可审计降级；
+ * 交易所适配契约恢复流程需要对特定错误码（如 51603 订单不存在）做可审计降级；
  * 如果只传递原始字符串，调用方很难稳定识别可恢复错误并做分支处理。
  */
 public enum OkxErrorCode {

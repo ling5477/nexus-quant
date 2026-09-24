@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * PaperStrategyEvaluationController —— Paper 策略评估只读聚合入口（GateK Batch K3）。
+ * PaperStrategyEvaluationController —— Paper 策略评估只读聚合入口。
  *
  * 从 strategyVersionId / publishId 维度评估 Paper 模拟表现、Paper vs Backtest 偏差、样本充足性与风险调整评分，
  * 供前端策略评估视图消费。只读：不触发任何状态机、调度、回测、发布或外部调用；只覆盖 SIM/Paper，LIVE 未开启，
@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @ConditionalOnBean(PaperTradingApiService.class)
 @RequestMapping("/api/paper-trading/strategy-evaluations")
-@Tag(name = "Paper Strategy Evaluation API", description = "GateK Paper 策略评估只读聚合接口。")
+@Tag(name = "Paper Strategy Evaluation API", description = "Paper 策略评估只读聚合接口。")
 public class PaperStrategyEvaluationController {
 
     private final PaperTradingApiService apiService;

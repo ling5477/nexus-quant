@@ -17,7 +17,7 @@ import java.util.Objects;
  * Why:
  * Binance 的 tickSize / stepSize / notional 校验规则与 OKX 不同，
  * 这些交易所差异必须留在 adapter-binance 内，不能泄漏到 core。
- * 当前返回结构化 TrimResult，后续 PR-C12 再把 reject_code/reject_reason 接到审计与事件链。
+ * 当前返回结构化 TrimResult；拒绝代码与原因的审计映射由调用链负责。
  */
 public class BinanceOrderTrimmer {
 

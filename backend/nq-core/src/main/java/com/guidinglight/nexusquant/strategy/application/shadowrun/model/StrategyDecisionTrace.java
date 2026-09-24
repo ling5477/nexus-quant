@@ -8,7 +8,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * GateR-4 Shadow Run 策略决策轨迹模型。
+ * Shadow Run 策略决策轨迹模型。
  *
  * <p>职责：把调用方已经计算完成的本地策略决策整理为可复盘的只读 snapshot payload。
  * Why：runner skeleton 不执行真实策略、不读取行情 provider，也不推导交易授权；该模型只保存

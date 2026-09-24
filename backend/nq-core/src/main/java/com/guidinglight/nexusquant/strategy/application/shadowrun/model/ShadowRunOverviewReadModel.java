@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * ShadowRunOverviewReadModel 是 GateS-1 后端只读 overview 合同。
+ * ShadowRunOverviewReadModel 是验证只读视图后端只读 overview 合同。
  *
  * <p>职责：表达 Shadow Run 系统整体诊断状态、最新 run、最新 consistency report、边界阻断、
  * warning、next step 和证据锚点。该 read model 固定 diagnosticOnly/noSideEffect/

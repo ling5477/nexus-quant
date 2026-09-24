@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.strategy.application.shadowrun.model;
 
 /**
- * PaperShadowConsistencyDrilldownComparisonStatus 是 GateS-2 drilldown 响应层的一致性状态。
+ * PaperShadowConsistencyDrilldownComparisonStatus 是验证只读视图 drilldown 响应层的一致性状态。
  *
  * <p>Why：底层 `shadow_consistency_reports.comparison_status` 当前没有 `NO_REPORT` 或
  * `STALE_EVIDENCE`，但 drilldown 需要把“没有 report”和“证据不足”显式返回给前端和审查者。

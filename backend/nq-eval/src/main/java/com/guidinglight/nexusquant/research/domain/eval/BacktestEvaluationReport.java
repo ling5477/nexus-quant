@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
- * BacktestEvaluationReport 表示 GateF-4 的 run 级评估报告。
+ * BacktestEvaluationReport 表示研究与回测契约的 run 级评估报告。
  */
 public record BacktestEvaluationReport(
         String evalReportId,

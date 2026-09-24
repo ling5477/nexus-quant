@@ -35,7 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 /**
  * 以 publishRecordId 编排 Strategy Release-to-Shadow admission preview。
  *
- * <p>服务复用 production release verifier、canonical validation evaluator 与 GateX-3 admission service；
+ * <p>服务复用 production release verifier、canonical validation evaluator 与策略发布准入 admission service；
  * 只读取本地事实和 artifact，不写库、不创建/启动 Shadow Run、不调用交易/风控/ledger/credential/private API。
  */
 @Service

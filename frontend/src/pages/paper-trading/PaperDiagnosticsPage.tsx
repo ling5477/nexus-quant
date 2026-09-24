@@ -3,7 +3,7 @@ import {usePaperExecutionDiagnosticsQuery} from '@/features/paper-trading/hooks/
 import {PaperExecutionDiagnosticsDashboard} from './components/PaperExecutionDiagnosticsDashboard';
 
 /**
- * PaperDiagnosticsPage 是 K5-C2 的 `/paper-trading/diagnostics` 真实子路由。
+ * PaperDiagnosticsPage 是 现有的 `/paper-trading/diagnostics` 真实子路由。
  *
  * Why:
  * 本页只迁移 Execution Diagnostics 只读诊断视图。页面级唯一职责是实例化一次

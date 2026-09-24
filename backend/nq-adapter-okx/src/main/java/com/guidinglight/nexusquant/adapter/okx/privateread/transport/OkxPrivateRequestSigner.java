@@ -20,7 +20,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * GateW-2 专用 OKX V5 signer；method/path/query/body 均来自 typed request。
+ * 只读诊断专用 OKX V5 signer；method/path/query/body 均来自 typed request。
  */
 public final class OkxPrivateRequestSigner {
 

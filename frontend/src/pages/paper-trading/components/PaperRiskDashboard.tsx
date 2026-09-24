@@ -280,7 +280,7 @@ function PortfolioEquityCurveCard({curve}: {curve: PaperPortfolioCurve | null | 
 }
 
 /**
- * PaperRiskDrawdownDashboard —— Paper 风险与回撤驾驶舱（GateJ 后产品化 Loop-14）。
+ * PaperRiskDrawdownDashboard —— Paper 风险与回撤驾驶舱。
  * 复用 Loop-13 组合 summary 单请求结果，把「风险面」从组合看板中独立出来只读派生：
  * 风险总览、回撤分析（阈值分布 + 单 run 最大回撤排行）、风控与异常清单、无交易 / 数据不足清单、数据质量。
  * 仅代表 SIM/Paper 模拟运行，不读真实交易所账户余额，不代表 LIVE 或真实交易风险；数据不足不伪造回撤。

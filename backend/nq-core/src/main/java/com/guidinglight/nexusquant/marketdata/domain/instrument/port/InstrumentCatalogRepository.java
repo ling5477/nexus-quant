@@ -22,7 +22,7 @@ public interface InstrumentCatalogRepository extends InstrumentCatalogReadPort {
     InstrumentCatalogUpsertStats upsertAll(List<InstrumentCatalogItem> items, Instant syncedAt);
 
     /**
-     * 以 PostgreSQL UPSERT 持久化 1..3 条 GateW venue-rule current facts。
+     * 以 PostgreSQL UPSERT 持久化 1..3 条只读诊断 venue-rule current facts。
      *
      * <p>相同 checksum 仅刷新 observation/write timestamps；不同 checksum 覆盖当前 facts。
      * 该接口不保存 history，不接受全量交易所扫描。</p>

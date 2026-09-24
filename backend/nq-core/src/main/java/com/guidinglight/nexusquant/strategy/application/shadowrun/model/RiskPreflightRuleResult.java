@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.strategy.application.shadowrun.model;
 
 /**
- * GateR-4 risk preflight 单条规则结果。
+ * 影子运行 risk preflight 单条规则结果。
  *
  * <p>该结果只用于 Shadow Run 本地风险预览，不调用真实 risk engine，不放行真实交易，也不写真实订单。
  *

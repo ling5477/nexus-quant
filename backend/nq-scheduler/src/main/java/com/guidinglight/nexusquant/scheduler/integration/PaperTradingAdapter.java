@@ -17,8 +17,8 @@ import java.util.List;
  * PaperTradingAdapter 把 PAPER 改造成标准 TradingAdapter 实现。
  * <p>
  * Why:
- * GateC-0 要消除 core 中的 paper 专用下单链路，因此 PAPER 也必须先走 adapter-api，
- * 这样 GateC-1 接 OKX 时只是在同一端口上补真实实现，而不是重写整个编排。
+ * 交易所适配契约要消除 core 中的 paper 专用下单链路，因此 PAPER 也必须先走 adapter-api，
+ * 这样交易所适配契约接 OKX 时只是在同一端口上补真实实现，而不是重写整个编排。
  */
 public class PaperTradingAdapter implements TradingAdapter {
 

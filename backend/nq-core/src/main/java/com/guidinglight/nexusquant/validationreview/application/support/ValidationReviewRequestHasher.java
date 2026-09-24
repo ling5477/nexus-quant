@@ -19,7 +19,7 @@ import java.util.TreeSet;
 import java.util.UUID;
 
 /**
- * GateV-2 lifecycle request 的 deterministic canonical hash。
+ * 人工复核 lifecycle request 的 deterministic canonical hash。
  *
  * <p>对象 key 递归排序、数组顺序保留、编码固定 UTF-8；输入不含 requestId/traceId，因而不依赖
  * Map iteration、locale、timezone 或每次请求变化的链路字段。

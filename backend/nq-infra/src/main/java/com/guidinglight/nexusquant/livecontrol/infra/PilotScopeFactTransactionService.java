@@ -28,7 +28,7 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * GateY-6D 四类短事务的 infra owner；只组合 stored facts，不接 credential、provider、worker 或 exchange mutation。
+ * 受控实盘执行四类短事务的 infra owner；只组合 stored facts，不接 credential、provider、worker 或 exchange mutation。
  */
 @Service
 public class PilotScopeFactTransactionService {

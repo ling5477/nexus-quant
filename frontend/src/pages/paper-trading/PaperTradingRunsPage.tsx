@@ -118,11 +118,11 @@ function amountTone(value: string | number | null | undefined): 'up' | 'down' | 
 }
 
 /**
- * PaperTradingRunsPage 是 K5-C4 后的 `/paper-trading/runs` execution-only 页面。
+ * PaperTradingRunsPage 是 现有的 `/paper-trading/runs` execution-only 页面。
  *
  * Why:
- * K5-C1/C2/C3 已把组合分析、执行诊断、策略评估和自动复盘迁移到独立子路由；runs 继续挂旧完整页会让
- * portfolio / diagnostics / evaluation / review query 在执行入口首屏加载，违背本轮“runs 只做执行层”的边界。
+ * 独立子路由已承载组合分析、执行诊断、策略评估和自动复盘迁移到独立子路由；runs 继续挂旧完整页会让
+ * portfolio / diagnostics / evaluation / review query 在执行入口首屏加载，违背“runs 只做执行层”的边界。
  *
  * What / How:
  * 本页只实例化 run list、run detail、run summary、run fact tabs 与 lifecycle mutations。跨 run 分析能力只以

@@ -5,7 +5,7 @@ import java.util.UUID;
 /**
  * Durable validation review 的明确 domain/application failure。
  *
- * <p>错误码供 GateV-2 映射稳定 API 语义；本异常本身不访问数据库或执行任何副作用。
+ * <p>错误码供人工复核映射稳定 API 语义；本异常本身不访问数据库或执行任何副作用。
  */
 public class ValidationReviewException extends RuntimeException {
 

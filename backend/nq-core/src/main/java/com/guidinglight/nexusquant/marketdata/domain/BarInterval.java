@@ -3,7 +3,7 @@ package com.guidinglight.nexusquant.marketdata.domain;
 import java.time.Duration;
 
 /**
- * BarInterval 表示 GateF-2 最小历史 K 线周期。
+ * BarInterval 表示回测执行最小历史 K 线周期。
  * <p>
  * Why:
  * 回测输入需要独立于实时订阅语义描述时间粒度，因此这里显式收口为历史 bar 的 interval，

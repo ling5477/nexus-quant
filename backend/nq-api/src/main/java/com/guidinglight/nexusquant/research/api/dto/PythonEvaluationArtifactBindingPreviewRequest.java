@@ -3,7 +3,7 @@ package com.guidinglight.nexusquant.research.api.dto;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * PythonEvaluationArtifactBindingPreviewRequest 是 GateQ-4 binding preview 的 HTTP request DTO。
+ * PythonEvaluationArtifactBindingPreviewRequest 是策略验证 binding preview 的 HTTP request DTO。
  *
  * <p>Why: request 只携带 artifact JSON 与 Java 侧 expected anchors。它不接受本地文件路径，
  * 不表示 upload / import / persist，也不会触发策略发布、Paper run 或 Shadow run。

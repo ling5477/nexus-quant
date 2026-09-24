@@ -12,7 +12,7 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 /**
- * GateW-3 internal-only 请求。交易所、产品类型、symbol/page/record/window 上限均在构造时固定校验。
+ * 只读诊断 internal-only 请求。交易所、产品类型、symbol/page/record/window 上限均在构造时固定校验。
  */
 public record ReconciliationRequest(
         long accountId,

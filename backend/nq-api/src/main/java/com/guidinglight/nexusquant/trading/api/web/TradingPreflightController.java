@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * TradingPreflightController 暴露只读账户权限与风险前置诊断 API。
  *
- * <p>Why: GateP Batch 4 需要一个安全事实面解释当前真实交易阻断原因。该 controller 只解析当前用户
+ * <p>Why: 运行前诊断 Batch 4 需要一个安全事实面解释当前真实交易阻断原因。该 controller 只解析当前用户
  * 与 query 参数后委托 read-only service，不调用下单、撤单、permission probe、adapter 或 credential material。
  */
 @Validated

@@ -23,7 +23,7 @@ import java.util.Objects;
  * OkxHttpClient 负责统一构建 OKX REST 请求、超时与错误解析。
  * <p>
  * Why:
- * GateC-1 要避免在 adapter 的每个 endpoint 方法里重复拼 header、重复处理 HTTP 错误、重复吞掉定位信息。
+ * 交易所适配契约要避免在 adapter的每个 endpoint 方法里重复拼 header、重复处理 HTTP 错误、重复吞掉定位信息。
  * 把这些横切逻辑集中在这里，后续新增 endpoint 时才能复用同一排障口径。
  */
 public class OkxHttpClient {

@@ -42,7 +42,7 @@ import org.slf4j.MDC;
  * BinanceWsClient 负责 Binance 私有用户数据流的连接治理。
  * <p>
  * Why:
- * Binance 当前官方用户数据流已经迁移到 `ws-api` 订阅模型，但 GateC 的 BW2/BW3 仍依赖这个 client
+ * Binance 当前官方用户数据流已经迁移到 `ws-api` 订阅模型，但交易所适配契约的 BW2/BW3 仍依赖这个 client
  * 继续提供“连接治理 + 原始消息分发 + 断线回调”的稳定边界。
  * 因此该类在 adapter-binance 内兼容两种会话模式：
  * 1) 旧 listenKey 路径，仅作为历史兼容；
@@ -648,7 +648,7 @@ public class BinanceWsClient {
      * <p>
      * Why:
      * Binance ws-api 明确限制 `id` 只能是整数、`null` 或长度不超过 36 的短字符串。
-     * 本轮修复目标就是收敛到最稳妥的整数 id，避免再次触发 `-1135 Invalid 'id' in JSON request`。
+     * 请求 id 使用整数以避免再次触发协议拒绝，避免再次触发 `-1135 Invalid 'id' in JSON request`。
      */
     private long nextWsApiRequestId() {
         return wsRequestIdSequence.incrementAndGet();

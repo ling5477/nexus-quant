@@ -16,12 +16,12 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * ReadinessGuardedTradingAdapter 把 GateM-0 的 {@link AdapterReadinessService} 接到交易动作入口。
+ * ReadinessGuardedTradingAdapter 把适配器就绪策略的 {@link AdapterReadinessService} 接到交易动作入口。
  * <p>
  * Why:
- * GateM-1 要在真实下单 / 撤单 / 查单路径前置 readiness fail-closed，但不改 nq-core 主链路语义。
+ * 适配器就绪策略要在真实下单 / 撤单 / 查单路径前置 readiness fail-closed，但不改 nq-core 主链路语义。
  * 本类是一个 decorator：每个交易动作在调用真实 delegate 之前先 {@link AdapterReadinessService#requireReady}，
- * 未就绪时抛出 {@link IllegalStateException}，**绝不触达 delegate**。在 GateM baseline 下 readiness 恒为未就绪，
+ * 未就绪时抛出 {@link IllegalStateException}，**绝不触达 delegate**。在适配器就绪策略 baseline 下 readiness 恒为未就绪，
  * 因此真实下单 / 撤单永远 fail-closed（包括 LIVE DISABLED 时的 mutating 能力、未知 venue、credential 未配置）。
  *
  * <p>无 IO、无 credential、无网络、无副作用。requireReady 抛出的异常信息只含 venue / capability / status / message，

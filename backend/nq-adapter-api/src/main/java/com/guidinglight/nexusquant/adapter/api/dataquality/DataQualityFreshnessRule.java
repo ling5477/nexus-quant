@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * DataQualityFreshnessRule 维护 GateO O-2 的 freshness baseline。
+ * DataQualityFreshnessRule 维护数据质量汇总的 freshness baseline。
  *
  * <p>Why: O-2 需要一个可测试、可复用的后端规则来判断 1m/5m/1h/1d 数据是否陈旧；这些阈值是 NQ
  * safety baseline，不是交易所官方协议事实，也不产生交易授权。UI 或文档只能消费结果，不能各自写死阈值。</p>

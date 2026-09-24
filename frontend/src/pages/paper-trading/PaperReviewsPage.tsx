@@ -8,7 +8,7 @@ import {PaperAutoReviewDashboard} from './components/PaperAutoReviewDashboard';
 import {PaperStrategyEvaluationDashboard} from './components/PaperStrategyEvaluationDashboard';
 
 /**
- * PaperReviewsPage 是 K5-C3 的 `/paper-trading/reviews` 真实子路由。
+ * PaperReviewsPage 是 现有的 `/paper-trading/reviews` 真实子路由。
  *
  * Why:
  * Strategy Evaluation 与 Auto Review 都是跨 run 的只读复盘型聚合，不应继续挂在 runs 运行控制台首屏。

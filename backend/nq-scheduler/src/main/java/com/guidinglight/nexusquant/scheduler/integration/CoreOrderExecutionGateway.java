@@ -38,7 +38,7 @@ public class CoreOrderExecutionGateway implements OrderExecutionGateway {
 
     @Override
     public List<OrderRecord> findMatchableOrders(int limit) {
-        // Why: GateC-0 之后只有已经收到 adapter 回执的订单才允许进入后续同步/撮合。
+        // Why: 交易所适配契约之后只有已经收到 adapter 回执的订单才允许进入后续同步/撮合。
         return orderCommandService.findOrdersByStatuses(List.of(OrderStatus.ACCEPTED), limit);
     }
 

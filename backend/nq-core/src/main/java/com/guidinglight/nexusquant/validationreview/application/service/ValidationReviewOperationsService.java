@@ -28,10 +28,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * GateV-2 operator review query 与 lifecycle application service。
+ * 人工复核 operator review query 与 lifecycle application service。
  *
  * <p>职责限定为本地 validation review facts：查询始终把 tenant/owner scope 下推到 SQL；写侧复用
- * GateV-1 transition service/state machine/repository，并在同一事务追加 accepted operational audit。
+ * 人工复核 transition service/state machine/repository，并在同一事务追加 accepted operational audit。
  * 本 service 不创建 case，不访问 Strategy/Paper/Shadow/Risk/Account/Order/Ledger 或外部 provider。
  */
 @Service
@@ -51,7 +51,7 @@ public class ValidationReviewOperationsService {
      * 创建 production service，时间固定使用 UTC system clock。
      *
      * @param repository tenant/owner scoped durable review repository
-     * @param transitionService GateV-1 transition application boundary
+     * @param transitionService 复核状态迁移应用边界
      * @param auditLogRepository accepted transition 的既有 audit port
      * @param rejectedAuditService rejected attempt 的独立事务 audit writer
      * @param objectMapper canonical JSON 与 event metadata mapper

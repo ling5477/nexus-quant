@@ -43,7 +43,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * ConsistencyEvidenceOverviewQueryService 组装 GateT-2 consistency evidence overview。
+ * ConsistencyEvidenceOverviewQueryService 组装验证工作流 consistency evidence overview。
  *
  * <p>职责：只读读取本地 `shadow_consistency_reports` 等 consistency facts，派生 deterministic evidence item、
  * freshness、severity、metricDelta 摘要、blocker、warning、nextStep 和 evidence anchor。该 service 不写库、
@@ -96,7 +96,7 @@ public class ConsistencyEvidenceOverviewQueryService {
      * 交易建议、授权或自动处置。
      *
      * @param traceId 当前请求 trace id
-     * @return GateT-2 consistency evidence overview read model
+     * @return 一致性证据总览只读模型
      */
     @Transactional(readOnly = true)
     public ConsistencyEvidenceOverviewReadModel overview(String traceId) {

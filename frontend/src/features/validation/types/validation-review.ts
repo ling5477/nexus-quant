@@ -1,5 +1,5 @@
 /**
- * GateV-2 durable validation review 的前端 contract。
+ * 人工复核 durable validation review的前端 contract。
  *
  * 约束：字段与后端 response/request DTO 一一对应；不声明 evidence anchor、credential、
  * trading authorization 或服务端未公开的 trace/schema/checksum 字段。

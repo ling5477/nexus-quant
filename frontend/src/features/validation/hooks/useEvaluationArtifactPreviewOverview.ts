@@ -4,7 +4,7 @@ import {evaluationArtifactPreviewApi} from '@/features/validation/api/evaluation
 import {evaluationArtifactPreviewQueryKeys} from '@/api/query-keys';
 
 /**
- * GateT-4 Evaluation Artifact Preview read-only query hook.
+ * 评估产物预览只读查询 hook.
  *
  * Why:
  * Evaluation artifact preview 是 No-file baseline 诊断面板的只读事实源。关闭 retry 可以让

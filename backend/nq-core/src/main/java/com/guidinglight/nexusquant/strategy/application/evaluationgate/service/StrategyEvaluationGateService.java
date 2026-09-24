@@ -28,9 +28,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * StrategyEvaluationGateService 编排 GateQ-1 strategy evaluation gate 只读基线。
+ * StrategyEvaluationGateService 编排策略验证 strategy evaluation gate 只读基线。
  *
- * <p>Why: GateQ-1 需要把 strategy version、dataset quality、evaluation、publish trace 和 Paper evidence
+ * <p>Why: 策略验证需要把 strategy version、dataset quality、evaluation、publish trace 和 Paper evidence
  * 组合成一个 fail-closed 诊断结果。所有判定在 core 中完成，infra 只负责读取本地表；本 service 不启动
  * backtest / publish / Paper / Shadow，不写库，不调用交易所，不读取 credential material，也不输出交易授权。
  */
@@ -160,7 +160,7 @@ public class StrategyEvaluationGateService {
             return StrategyEvaluationGateStatus.BLOCKED_MISSING_STRATEGY_VERSION;
         }
         if (!strategyVersion.activeForEvaluation()) {
-            blockers.add(blocker("STRATEGY_VERSION_NOT_ACTIVE", "Strategy version must be ACTIVE for GateQ-1 review."));
+            blockers.add(blocker("STRATEGY_VERSION_NOT_ACTIVE", "Strategy version must be ACTIVE for evaluation review."));
             return StrategyEvaluationGateStatus.BLOCKED_MISSING_STRATEGY_VERSION;
         }
         if (!dataset.present()) {

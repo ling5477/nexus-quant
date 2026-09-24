@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * PythonEvaluationArtifactPreviewOverviewReadModel 是 GateT-4 No-file baseline 的只读响应合同。
+ * PythonEvaluationArtifactPreviewOverviewReadModel 是验证工作流 No-file baseline的只读响应合同。
  *
  * <p>职责：表达 Python offline EvaluationArtifact binding preview 的安全空基线。该模型只说明当前没有
  * artifact source，并固定 diagnostic-only / no-side-effect / not-trading-authorization 边界；不表示 artifact
@@ -88,7 +88,7 @@ public record PythonEvaluationArtifactPreviewOverviewReadModel(
     /**
      * PythonEvaluationArtifactPreviewItem 是后续 Manifest-only reader 才可能生成的 derived item。
      *
-     * <p>GateT-4 No-file baseline 返回空列表；字段预留用于后续只读 manifest/source review，不是 DB entity、
+     * <p>Python 评估产物预览 No-file baseline 返回空列表；字段预留用于后续只读 manifest/source review，不是 DB entity、
      * artifact import record、strategy evaluation result、publish approval 或交易授权记录。
      */
     public record PythonEvaluationArtifactPreviewItem(

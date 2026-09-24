@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * TradingQueryFacade 定义 GateD 的最小查询闭环入口。
+ * TradingQueryFacade 定义统一交易契约的最小查询闭环入口。
  * <p>
  * Why:
  * trading 查询 contract 属于应用层内部读侧端口，应该和内部 projection 一起由 core
@@ -17,7 +17,7 @@ public interface TradingQueryFacade {
     /**
      * 查询正式交易工作台订单列表。
      *
-     * <p>Why: GateH-1 要求 `/trading` 不再依赖手工输入单个 orderId，
+     * <p>Why: 历史行情接入要求 `/trading` 不再依赖手工输入单个 orderId，
      * 而是围绕强账户上下文展示订单列表。读侧仍由 infra 实现 SQL，避免 API 层直接访问数据库。</p>
      *
      * @param accountId legacy trading account id，由 API 层从正式 exchangeAccountId 解析得出

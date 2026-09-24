@@ -8,12 +8,12 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * ShadowValidationWorkflowOverviewResponse 是 GateT-1 workflow overview 的 GET-only HTTP DTO。
+ * ShadowValidationWorkflowOverviewResponse 是验证工作流 workflow overview 的 GET-only HTTP DTO。
  *
  * <p>Why: 该 DTO 只暴露 derived operator item、evidence anchor 和 safety boundary。它不包含交易批准、
  * 实盘就绪、凭证、private provider payload、真实账户、真实订单或 ledger mutation 字段。
  */
-@Schema(name = "ShadowValidationWorkflowOverviewResponse", description = "GateT-1 read-only shadow validation workflow overview")
+@Schema(name = "ShadowValidationWorkflowOverviewResponse", description = "read-only shadow validation workflow overview")
 public record ShadowValidationWorkflowOverviewResponse(
         Instant generatedAt,
         ReadModelEvidenceMetadataResponse evidenceMetadata,

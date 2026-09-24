@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * PaperPortfolioController —— Paper 组合看板只读聚合入口（GateJ 后产品化 Loop-13）。
+ * PaperPortfolioController —— Paper 组合看板只读聚合入口。
  *
  * 跨多个 Paper run 聚合组合总览、策略/发布维度排行、Run 排行与数据质量提示，供前端组合看板消费。
  * 只读：不触发任何状态机、调度、回测、发布或外部调用；只覆盖 SIM/Paper，LIVE 未开启。
@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @ConditionalOnBean(PaperTradingApiService.class)
 @RequestMapping("/api/paper-trading/portfolio")
-@Tag(name = "Paper Portfolio API", description = "GateJ 后 Paper 组合看板只读聚合接口。")
+@Tag(name = "Paper Portfolio API", description = "Paper 组合看板只读聚合接口。")
 public class PaperPortfolioController {
 
     private final PaperTradingApiService apiService;

@@ -31,7 +31,7 @@ import {
 } from './PaperExecutionDiagnosticsDashboard';
 import {EVAL_CONFIDENCE_TONE, RATING_LABEL_TEXT, RATING_LABEL_TONE} from './PaperStrategyEvaluationDashboard';
 
-// ---- GateK K4B：Paper 规则化自动复盘展示映射与筛选（消费 K4 endpoint，纯前端只读展示）----
+// ---- Paper 诊断与评估 K4B：Paper 规则化自动复盘展示映射与筛选（消费 K4 endpoint，纯前端只读展示）----
 
 /** 聚类专属 cause（执行 / 评估维度聚类）补充中文名；run primaryCause 复用执行诊断 cause 映射。 */
 const AUTO_REVIEW_EXTRA_CAUSE_LABEL: Record<string, string> = {
@@ -118,7 +118,7 @@ function autoReviewBullets(items: string[] | undefined, emptyText: string) {
 }
 
 /**
- * PaperAutoReviewDashboard —— Paper 规则化自动复盘（GateK Batch K4B）。
+ * PaperAutoReviewDashboard —— Paper 规则化自动复盘。
  * 消费 K4 只读 endpoint /paper-trading/auto-reviews，把组合复盘、重点 run 复盘、策略 / 发布复盘与问题聚类展示出来，
  * 让用户从「诊断 + 评分」升级为「可读复盘」。复盘由规则引擎生成，不接 AI / DH runtime。
  * 独立 query：加载 / 错误 / 空 / 兼容回退均限定本区域，不连累组合看板、诊断、评估与排行。

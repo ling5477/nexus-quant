@@ -16,7 +16,7 @@ public final class ValidationReviewStateMachine {
     private final Map<ValidationReviewState, Set<ValidationReviewState>> transitions =
             new EnumMap<>(ValidationReviewState.class);
 
-    /** 创建固定 GateV-1 合法流转图。 */
+    /** 创建固定人工复核合法流转图。 */
     public ValidationReviewStateMachine() {
         transitions.put(
                 ValidationReviewState.OPEN,

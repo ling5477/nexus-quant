@@ -12,7 +12,7 @@ import java.util.Map;
  * <p>
  * Why:
  * 模拟盘/实盘验收要求按 `NQ_OKX_ENV` 在 `DOME/REAL` 两套凭证之间切换，并且严禁把 secret/passphrase 打到日志里。
- * 第十九批开始，启动脚本会先把 dome/real 专属变量归一化成统一运行时变量；这里优先读取统一变量，再回退到历史 DOME/REAL 命名，
+ * 启动脚本先把 dome/real 专属变量归一化成统一运行时变量；这里优先读取统一变量，再回退到历史 DOME/REAL 命名，
  * 可以避免环境切换逻辑散落到 adapter 各处后失控。
  *
  * @param envName           当前环境名，仅允许 dome/real
@@ -91,7 +91,7 @@ public record OkxRuntimeConfig(
                 "NQ_OKX_WS_HEARTBEAT_INTERVAL_MS",
                 DEFAULT_WS_HEARTBEAT_INTERVAL_MS
         );
-        // Why: No-real hardening (GateL-1B-B) —— runtime config 不再从进程环境（env / system property / .env）
+        // Why: No-real hardening (无真实连接安全边界) —— runtime config 不再从进程环境（env / system property / .env）
         // 读取 credential material（apiKey/secret/passphrase）。默认一律 unconfigured placeholder；真实 credential
         // 必须由后续 NQ credential governance bridge 按 owner/account/tenant/credential type/active version/permission
         // scope 注入（另起 Gate），adapter 不得猜测 account/tenant 或从全局进程环境派生。未配置时 OkxHttpClient 对

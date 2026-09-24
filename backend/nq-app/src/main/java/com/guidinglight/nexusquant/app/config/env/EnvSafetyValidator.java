@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * EnvSafetyValidator 负责 GateK Batch 5B-ENV 的纯规则校验。
+ * EnvSafetyValidator 负责 Paper 诊断 Batch 5B-ENV 的纯规则校验。
  *
  * <p>Why: CI/test/profile 安全边界必须 fail closed，但启动期 guard 不应读取真实
  * {@code .env} 文件，也不能把 secret material 打到日志里。本类只接收调用方已经解析出的

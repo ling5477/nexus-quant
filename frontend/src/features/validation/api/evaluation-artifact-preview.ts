@@ -2,7 +2,7 @@ import {apiClient} from '@/api/client';
 import type {PythonEvaluationArtifactPreviewOverviewResponse} from '@/features/validation/types/evaluation-artifact-preview';
 
 /**
- * 读取 GateT-4 Python Evaluation Artifact Preview overview。
+ * 读取验证工作流 Python Evaluation Artifact Preview overview。
  *
  * Why:
  * 该 client 只发起 GET 请求，复用统一 Axios 实例，不提供 upload / import / bind /

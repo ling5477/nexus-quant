@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.marketdata.domain;
 
 /**
- * MarketdataDatasetStatus 描述 GateH-3 数据集生命周期状态。
+ * MarketdataDatasetStatus 描述历史行情接入数据集生命周期状态。
  * <p>
  * Why:
  * 数据集会被回测配置长期引用，因此状态必须独立于单次质量统计结果：

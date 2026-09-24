@@ -31,7 +31,7 @@ import org.springframework.transaction.support.TransactionOperations;
  *
  * <p>Why: permission probe 涉及 credential material、交易所权限与失败计数，必须先完成
  * owner/account/credential/Paper/LIVE/withdraw gate，Service 本身不得写 HTTP。真实交易所访问只能由
- * ExchangeCredentialPermissionProbePort 的 adapter 实现承载，本轮默认使用 no-real-exchange fake。</p>
+ * ExchangeCredentialPermissionProbePort 的 adapter 实现承载，默认使用 no-real-exchange fake。</p>
  */
 public class CredentialPermissionProbeService {
 

@@ -9,7 +9,7 @@ import java.util.Objects;
 /**
  * OkxSpotCapabilityDefinition 是 OKX Spot capability matrix 的单行不可变合同。
  *
- * <p>该类型不包含 endpoint URL、credential material、账户标识或 transport；它只描述 GateW-1
+ * <p>该类型不包含 endpoint URL、credential material、账户标识或 transport；它只描述只读诊断
  * 的能力分类和默认拒绝状态。</p>
  */
 public record OkxSpotCapabilityDefinition(

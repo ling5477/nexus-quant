@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.strategy.application.consistencyevidence.model;
 
 /**
- * ConsistencyEvidenceComparisonStatus 是 GateT-2 consistency evidence overview 的响应状态枚举。
+ * ConsistencyEvidenceComparisonStatus 是验证工作流 consistency evidence overview的响应状态枚举。
  *
  * <p>Why：底层 `shadow_consistency_reports.comparison_status` 当前只保存已生成 report 的比较状态。
  * Overview 需要额外表达 `NO_REPORT` 和 `UNKNOWN`，但这些值只属于 read model 诊断语义，不会回写

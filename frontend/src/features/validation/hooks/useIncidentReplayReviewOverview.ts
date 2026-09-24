@@ -4,7 +4,7 @@ import {incidentReplayReviewApi} from '@/features/validation/api/incident-replay
 import {incidentReplayReviewQueryKeys} from '@/api/query-keys';
 
 /**
- * GateT-3 Incident / Replay Review read-only query hook.
+ * 事件回放复核只读查询 hook.
  *
  * Why:
  * Review overview 是人工诊断复核面板的只读事实源。关闭 retry 可以让 error 状态立即显式展示，

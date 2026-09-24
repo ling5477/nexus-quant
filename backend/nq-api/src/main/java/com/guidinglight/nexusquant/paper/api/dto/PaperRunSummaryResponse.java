@@ -8,7 +8,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * PaperRunSummaryResponse —— Paper run 只读聚合响应体（GateJ 后产品化 Loop-8）。
+ * PaperRunSummaryResponse —— Paper run 只读聚合响应体。
  *
  * 供前端详情区优先消费：运行结果复盘、异常原因聚合、运行事件时间线与关键计数。
  * safety 固定声明 SIM/Paper、LIVE 未开启、未触达真实交易所，不代表真实交易能力。

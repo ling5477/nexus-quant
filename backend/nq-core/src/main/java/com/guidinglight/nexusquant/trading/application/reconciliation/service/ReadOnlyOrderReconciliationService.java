@@ -24,7 +24,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * GateW-3 internal-only 只读编排与纯比较器。
+ * 只读诊断 internal-only 只读编排与纯比较器。
  *
  * <p>该类不是 Spring bean，无 controller/scheduler/runner，不持有 write repository，也不执行 repair。
  * 相同 Clock、request 与端口快照会产生相同结果。</p>

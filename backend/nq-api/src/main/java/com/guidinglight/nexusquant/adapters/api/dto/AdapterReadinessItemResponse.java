@@ -10,7 +10,7 @@ import java.util.Objects;
  * AdapterReadinessItemResponse 是单个 venue × capability 的只读 readiness 视图。
  * <p>
  * Why:
- * GateM-5A 需要把 {@link AdapterReadinessDecision}（adapter-api 内部模型）映射为对外稳定的 API 响应，
+ * 适配器就绪策略需要把 {@link AdapterReadinessDecision}（adapter-api 内部模型）映射为对外稳定的 API 响应，
  * 避免前端直接依赖内部 record，也避免泄漏 adapter delegate / raw payload。该 DTO 只承载可审计、可脱敏字段：
  * venue / capability / status / allowed / liveAuthorized / reasons / message，全部来源于静态 readiness 决策，
  * 不包含 credential、apiKey、token、signature、passphrase 或 provider raw payload。

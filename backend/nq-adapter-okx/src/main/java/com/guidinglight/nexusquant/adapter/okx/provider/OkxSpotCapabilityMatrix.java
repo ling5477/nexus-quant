@@ -12,7 +12,7 @@ import java.util.EnumMap;
 import java.util.Map;
 
 /**
- * OkxSpotCapabilityMatrix 固化 GateW-1 对 OKX Spot 的类型化 capability matrix。
+ * OkxSpotCapabilityMatrix 固化只读诊断对 OKX Spot的类型化 capability matrix。
  *
  * <p>公开行情保持现有 public transport 合同；其 policy 放行不等于 real provider readiness 或
  * trading authorization。所有 private、mutating、资金动作和未知能力均保持 runtime disabled，

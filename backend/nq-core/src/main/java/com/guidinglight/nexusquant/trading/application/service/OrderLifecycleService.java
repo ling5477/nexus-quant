@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
  * OrderLifecycleService 为 scheduler / ws / recovery 提供语义化订单生命周期入口。
  * <p>
  * Why:
- * GateD 要求 scheduler 不再直接依赖“任意状态迁移”能力，而是通过显式生命周期动作推进状态。
+ * 统一交易契约要求 scheduler 不再直接依赖“任意状态迁移”能力，而是通过显式生命周期动作推进状态。
  * 这里仍复用 `OrderCommandService` 的状态机与审计实现，但把允许暴露给外部协调器的动作收口为有限集合。
  */
 @Service

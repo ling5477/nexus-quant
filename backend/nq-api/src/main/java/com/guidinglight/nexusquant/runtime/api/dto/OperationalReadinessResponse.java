@@ -7,7 +7,7 @@ import java.util.Objects;
  * OperationalReadinessResponse is the read-only response for
  * {@code GET /api/runtime/operational-readiness}.
  *
- * <p>Why: GateM-6B exposes only disabled capability and startup boundary summaries. The DTO is an
+ * <p>原因：运行就绪接口仅提供禁用能力与启动边界摘要；DTO 是
  * explicit contract and intentionally excludes raw env, raw config maps, provider payloads, and
  * runtime-sensitive material.
  *

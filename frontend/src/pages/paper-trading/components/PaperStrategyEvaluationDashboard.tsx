@@ -21,7 +21,7 @@ import {formatDateTime} from '@/utils/formatters';
 
 import {toNullableNumber} from './paperFormatters';
 
-// ---- GateK K3B：Paper 策略评估展示映射、筛选与排序（消费 K3 endpoint，纯前端只读展示）----
+// ---- Paper 诊断与评估 K3B：Paper 策略评估展示映射、筛选与排序（消费 K3 endpoint，纯前端只读展示）----
 
 export const RATING_LABEL_TEXT: Record<PaperStrategyRatingLabel, string> = {
     get STRONG_PAPER_PERFORMER() { return t('pages:strongPerformance'); },
@@ -140,7 +140,7 @@ function scoreCell(score: number | null) {
 }
 
 /**
- * PaperStrategyEvaluationDashboard —— Paper 策略评估（GateK Batch K3B）。
+ * PaperStrategyEvaluationDashboard —— Paper 策略评估。
  * 消费 K3 只读 endpoint /paper-trading/strategy-evaluations，把 strategy / publish 评分、ratingLabel、warnings、
  * Paper-vs-Backtest 偏差、compositeScore 展示出来，让用户从「策略排行」升级为「策略评估」。
  * 独立 query：加载 / 错误 / 空 / 兼容回退均限定本区域，不连累其他模块。评分为 Paper 内部启发式分、非真实投资评级、不构成投资建议。

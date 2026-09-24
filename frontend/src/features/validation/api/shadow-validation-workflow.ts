@@ -2,7 +2,7 @@ import {apiClient} from '@/api/client';
 import type {ShadowValidationWorkflowOverviewResponse} from '@/features/validation/types/shadow-validation-workflow';
 
 /**
- * 读取 GateT-1 Shadow Validation Workflow overview。
+ * 读取验证工作流 Shadow Validation Workflow overview。
  *
  * Why:
  * 该 client 只发起 GET 请求，复用统一 Axios 实例，不提供 review / acknowledge / approve / reject、

@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 
 /**
- * CreateMarketdataIngestionJobRequest 描述 GateH-2 创建历史 K 线接入任务的 HTTP 请求。
+ * CreateMarketdataIngestionJobRequest 描述历史 K 线接入创建历史 K 线接入任务的 HTTP 请求。
  */
 public record CreateMarketdataIngestionJobRequest(
         @NotBlank String exchangeCode,

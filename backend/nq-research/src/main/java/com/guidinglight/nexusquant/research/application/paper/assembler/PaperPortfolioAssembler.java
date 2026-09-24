@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * PaperPortfolioAssembler —— 纯函数式组合看板聚合器（GateJ 后产品化 Loop-13）。
+ * PaperPortfolioAssembler —— 纯函数式组合看板聚合器。
  *
  * 设计要点：
  * 1) 无任何 IO / 仓储 / 外呼依赖，全部在内存中派生，便于单测覆盖盈利 / 亏损高回撤 / 数据不足等分支。
@@ -75,7 +75,7 @@ public final class PaperPortfolioAssembler {
 
     /**
      * 仅派生单 run 的 {@link PaperPortfolioSummary.RunRef} 列表（顺序与输入一致），不做组合 / 分组 / 曲线聚合。
-     * 供 GateK 执行诊断（K1）复用同一套单 run 事实派生口径（执行进度三态 / 风控拦截 / 收益率 / 回撤），
+     * 供 Paper 诊断与评估执行诊断（K1）复用同一套单 run 事实派生口径（执行进度三态 / 风控拦截 / 收益率 / 回撤），
      * 避免诊断侧另起一份单 run 归因事实导致口径分叉。
      */
     public static List<PaperPortfolioSummary.RunRef> deriveRunRefs(List<RunInput> inputs) {

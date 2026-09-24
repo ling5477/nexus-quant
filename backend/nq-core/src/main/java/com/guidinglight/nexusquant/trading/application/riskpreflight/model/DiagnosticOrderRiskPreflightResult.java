@@ -7,7 +7,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * GateW-3 internal diagnostic risk preflight 结果。
+ * 只读诊断 internal diagnostic risk preflight 结果。
  *
  * <p>结果强制 executionReadiness=BLOCKED、tradingAuthorized=false，且四类 finding 互斥。
  * UNKNOWN/NOT_EVALUATED 永远不能被调用方折叠为交易就绪。</p>

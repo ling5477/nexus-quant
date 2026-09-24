@@ -9,10 +9,10 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * NoopAccountAdapter 提供 GateC-0 的最小账户 stub。
+ * NoopAccountAdapter 提供交易所适配契约的最小账户 stub。
  * <p>
  * Why:
- * GateC-0 的重点是链路解耦，不是先把余额/持仓接通；
+ * 交易所适配契约的重点是链路解耦，不是先把余额/持仓接通；
  * 因此返回空快照即可保证 router 与调用契约稳定。
  */
 public class NoopAccountAdapter implements AccountAdapter {

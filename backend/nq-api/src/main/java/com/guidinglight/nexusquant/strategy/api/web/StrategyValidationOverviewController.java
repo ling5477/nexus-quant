@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * StrategyValidationOverviewController 暴露 GateS-3 Strategy Evaluation Gate runtime baseline。
+ * StrategyValidationOverviewController 暴露验证只读视图 Strategy Evaluation Gate runtime baseline。
  *
  * <p>Why: 本 controller 只处理 GET overview 查询并委托 read-only service 聚合本地事实；它不会创建
  * evaluation report、不会 publish strategy、不会创建 Paper/Shadow run、不会启动 runner/scheduler，
@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RestController
 @RequestMapping("/api/strategy-validation")
-@Tag(name = "Strategy Validation API", description = "GateS-3 Strategy Evaluation Gate runtime baseline 只读接口。")
+@Tag(name = "Strategy Validation API", description = "Strategy Evaluation Gate runtime baseline 只读接口。")
 public class StrategyValidationOverviewController {
 
     private final StrategyValidationOverviewQueryService queryService;

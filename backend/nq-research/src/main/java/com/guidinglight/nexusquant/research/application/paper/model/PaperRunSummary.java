@@ -15,7 +15,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * PaperRunSummary —— Paper run 只读聚合事实源（GateJ 后产品化 Loop-8）。
+ * PaperRunSummary —— Paper run 只读聚合事实源。
  *
  * 职责：把单个 Paper run 的 run / orders / trades / positions / risk / equity / dailyReport /
  * alerts / recovery 等已有事实，归纳为前端详情区可直接消费的复盘、诊断、时间线与关键计数。

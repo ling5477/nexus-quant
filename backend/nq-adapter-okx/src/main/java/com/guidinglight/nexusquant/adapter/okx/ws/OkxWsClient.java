@@ -38,10 +38,10 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 /**
- * OkxWsClient 负责 GateC-1.1 的私有 WS 连接治理。
+ * OkxWsClient 负责交易所适配契约的私有 WS 连接治理。
  * <p>
  * Why:
- * WS 在 GateC-1.1 只能作为“加速层”，不能写业务表、不能推进状态机。
+ * WS 在交易所适配契约只能作为“加速层”，不能写业务表、不能推进状态机。
  * 该类只处理连接/login/订阅/心跳/重连/可观测性，并把业务消息分发给外部监听器。
  */
 public class OkxWsClient {

@@ -21,7 +21,7 @@ public interface BacktestRunRepository {
     /**
      * 更新回测执行状态、时间和摘要。
      * Why:
-     * GateF-2 需要把 backtest_run 当成最小执行事实载体，因此状态推进和摘要写回必须是同一条持久化链路。
+     * 研究与回测契约需要把 backtest_run 当成最小执行事实载体，因此状态推进和摘要写回必须是同一条持久化链路。
      */
     boolean updateExecution(
             String backtestRunId,

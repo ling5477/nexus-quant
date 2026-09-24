@@ -1,9 +1,9 @@
 import type {ReadModelEvidenceMetadata} from '@/features/validation/types/read-model-evidence';
 
 /**
- * GateR-7 Shadow Run read-only frontend types.
+ * Shadow Run 只读前端类型.
  *
- * 这些类型只描述 GateR-6 已有 GET API 的响应结构。前端不得在这里扩展
+ * 这些类型只描述影子运行已有 GET API的响应结构。前端不得在这里扩展
  * create / start / stop / execute / approve / trade 等写侧能力，也不得暴露 credential
  * material、private payload、real account/order 或交易授权字段。
  */
@@ -65,7 +65,7 @@ export interface ShadowRunListResponse {
 export type ShadowRunOverviewDivergenceSeverity = 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'UNKNOWN' | string;
 
 /**
- * GateS-1 Shadow Run overview response.
+ * Shadow Run 总览响应.
  *
  * Why:
  * 该结构只承接 `GET /api/shadow-runs/overview` 的 read-only 运营诊断摘要。
@@ -181,7 +181,7 @@ export type PaperShadowConsistencyDivergenceSeverity =
     | string;
 
 /**
- * GateS-2 Paper vs Shadow consistency drilldown response.
+ * Paper/Shadow 一致性明细响应.
  *
  * Why:
  * 该结构只承接 `GET /api/paper-shadow/consistency/drilldown` 的 read-only 诊断聚合。

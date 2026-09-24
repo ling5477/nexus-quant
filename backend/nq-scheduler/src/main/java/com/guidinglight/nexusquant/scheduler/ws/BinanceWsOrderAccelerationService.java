@@ -29,7 +29,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * BinanceWsOrderAccelerationService 负责 GateC-2.1 的 Binance WS 加速协同。
+ * BinanceWsOrderAccelerationService 负责交易所适配契约的 Binance WS 加速协同。
  * <p>
  * Why:
  * PR-BW3 只允许 WS 加速 `OrderAck/CancelAck/OrderReject/CancelReject`，

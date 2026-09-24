@@ -15,7 +15,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 /**
- * JdbcIncidentReplayReviewOverviewQueryRepository 是 GateT-3 Incident / Replay Review overview 的 JDBC read adapter。
+ * JdbcIncidentReplayReviewOverviewQueryRepository 是验证工作流 Incident / Replay Review overview 的 JDBC read adapter。
  *
  * <p>职责：只通过 SELECT 读取 shadow_run_events、shadow_consistency_reports、paper_run_alerts、
  * paper_run_recovery_events 和 trade_replay_records 的本地事实，并最小 join shadow_runs 取得 run anchor。

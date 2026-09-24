@@ -99,7 +99,7 @@ public record ShadowRunCreationPlan(
     /**
      * 将 operator 提供的标准 {@code Idempotency-Key} 绑定为一次 materialization command identity。
      *
-     * <p>Why：GateX-3 的 base key 只描述 immutable admission facts；加入独立 command identity 后，
+     * <p>Why：策略发布准入的 base key 只描述 immutable admission facts；加入独立 command identity 后，
      * 相同 command 重放仍命中同一 Shadow Run，而同一 release 的另一次合法人工创建可使用新 identity。
      * 原始 header 不进入数据库，持久化的仍是不可逆 SHA-256 identity。
      *

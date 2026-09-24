@@ -15,10 +15,10 @@ import java.util.Locale;
 import java.util.Objects;
 
 /**
- * DefaultAdapterReadinessService 是 GateM-0 的静态 fail-closed readiness 策略。
+ * DefaultAdapterReadinessService 是适配器就绪策略的静态 fail-closed readiness 策略。
  * <p>
  * Why:
- * 当前 GateL baseline 下没有真实 provider / RealClient / 真实 credential / LIVE 授权，因此 readiness
+ * 当前无真实连接安全边界 baseline 下没有真实 provider / RealClient / 真实 credential / LIVE 授权，因此 readiness
  * 不需要读取进程环境、credential 或访问网络——本实现是纯函数式的策略表：把已冻结的 No-Real 边界
  * （Noop 无真实能力、OKX/Binance endpoint sentinel + credential 未配置 + LIVE 未授权、未知一律复核）
  * 固化为运行时决策。任何真实交易能力恒为 allowed=false。
@@ -57,7 +57,7 @@ public final class DefaultAdapterReadinessService implements AdapterReadinessSer
     @Override
     public AdapterReadinessDecision evaluate(String venue, AdapterCapability capability) {
         Instant checkedAt = Instant.now(clock);
-        // capability 缺失或显式未指定：无法判断范围，fail-closed（GateM-1 修正 GateM-0 P2-2，
+        // capability 缺失或显式未指定：无法判断范围，fail-closed（适配器就绪策略修正适配器就绪策略 P2-2，
         // 不再用 PLACE_ORDER 占位误报为交易能力，统一用 UNSPECIFIED 自描述）。
         if (capability == null || capability == AdapterCapability.UNSPECIFIED) {
             return new AdapterReadinessDecision(

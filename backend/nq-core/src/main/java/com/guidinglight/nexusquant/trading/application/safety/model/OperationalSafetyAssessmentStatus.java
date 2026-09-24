@@ -1,7 +1,7 @@
 package com.guidinglight.nexusquant.trading.application.safety.model;
 
 /**
- * GateW-4 internal diagnostic assessment 的封闭状态集合。
+ * 只读诊断 internal diagnostic assessment的封闭状态集合。
  */
 public enum OperationalSafetyAssessmentStatus {
     PASS,

@@ -9,12 +9,12 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * ShadowRunListItemResponse 是 GateR-8 Shadow Run 列表 item 只读 DTO。
+ * ShadowRunListItemResponse 是 Shadow Run 列表 item 只读 DTO。
  *
  * <p>DTO 只暴露列表入口需要的本地 fact 摘要和 no-side-effect flags；不返回 JSON payload、
  * credential、private endpoint、真实账户/订单字段，也不包含 trading approval 语义。
  */
-@Schema(name = "ShadowRunListItemResponse", description = "GateR-8 read-only Shadow Run list item")
+@Schema(name = "ShadowRunListItemResponse", description = "read-only Shadow Run list item")
 public record ShadowRunListItemResponse(
         UUID id,
         String status,

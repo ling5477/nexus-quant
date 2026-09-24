@@ -12,7 +12,7 @@ import java.util.Objects;
 import org.springframework.stereotype.Service;
 
 /**
- * StrategyRunQueryService 提供 GateE-2.3 的最小运行结果查询面。
+ * StrategyRunQueryService 提供执行与补偿契约的最小运行结果查询面。
  * <p>
  * Why:
  * 运行结果不能让 controller 自己去拼 `strategy_runs / orders / trades`。

@@ -23,17 +23,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * PaperShadowConsistencyDrilldownController 暴露 GateS-2 Paper vs Shadow consistency drilldown 只读 API。
+ * PaperShadowConsistencyDrilldownController 暴露验证只读视图 Paper vs Shadow consistency drilldown 只读 API。
  *
  * <p>Why：`docs/current/GATES_1_READ_MODEL_WO.md` 已把
- * `GET /api/paper-shadow/consistency/drilldown` 作为 GateS-2 Paper vs Shadow 增强路径。
+ * `GET /api/paper-shadow/consistency/drilldown` 作为验证只读视图 Paper vs Shadow 增强路径。
  * 本 controller 只处理 GET 查询，不提供 POST/PUT/PATCH/DELETE，不创建 report，不启动 runner/scheduler，
  * 不调用真实交易所，不读取 credential，也不修改 account / ledger / order / paper facts。
  */
 @Validated
 @RestController
 @RequestMapping("/api/paper-shadow/consistency")
-@Tag(name = "Paper Shadow Consistency API", description = "GateS-2 Paper vs Shadow consistency 只读诊断接口。")
+@Tag(name = "Paper Shadow Consistency API", description = "Paper vs Shadow consistency 只读诊断接口。")
 public class PaperShadowConsistencyDrilldownController {
 
     private final PaperShadowConsistencyDrilldownQueryService queryService;

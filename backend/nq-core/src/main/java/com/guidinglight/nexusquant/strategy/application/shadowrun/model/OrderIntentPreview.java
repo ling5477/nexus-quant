@@ -1,10 +1,10 @@
 package com.guidinglight.nexusquant.strategy.application.shadowrun.model;
 
 /**
- * GateR-4 Shadow Run order intent preview 模型。
+ * Shadow Run order intent preview 模型。
  *
  * <p>职责：保存拟议订单意图的只读 preview。Why：后续一致性分析需要看到本地策略会产生怎样的
- * order intent，但 GateR-4 不允许提交订单、撤单、转账、提现、调用 private endpoint 或修改真实订单。
+ * order intent，但影子运行不允许提交订单、撤单、转账、提现、调用 private endpoint 或修改真实订单。
  *
  * @param previewOnly 必须为 true；false 表示调用方试图提交真实交易语义，必须拒绝
  * @param side        预览方向；只读字段，不得触发 BUY / SELL 执行

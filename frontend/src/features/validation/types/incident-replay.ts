@@ -1,5 +1,5 @@
 /**
- * GateS-6 Incident / Replay overview read-only frontend types.
+ * 事件回放总览的只读前端类型.
  *
  * Why:
  * 这些类型只承接 `GET /api/incidents/replay/overview` 的诊断 overview 响应；前端不得在这里扩展

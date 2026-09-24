@@ -372,7 +372,7 @@ public class TradingVerificationController {
     /**
      * 强制把 HTTP 账户上下文限定为已登记的 exchange account。
      *
-     * <p>Why: GateH-1 后 `/trading` 不能再把任意数字当 legacy accountId 使用，
+     * <p>Why: 历史行情接入后 `/trading` 不能再把任意数字当 legacy accountId 使用，
      * 否则前端账户上下文、SIM / LIVE 边界和后端查询会重新分叉。</p>
      */
     private ExchangeAccountSummary requireExchangeAccount(Long exchangeAccountId) {
@@ -383,7 +383,7 @@ public class TradingVerificationController {
     /**
      * 对正式交易 mutating API 强制 LIVE disabled fail-closed。
      *
-     * <p>Why: 当前 GateM 仍禁止 LIVE 和真实交易所执行。即使账户上下文存在 `tradeEnv=LIVE`，
+     * <p>Why: 当前适配器就绪策略仍禁止 LIVE 和真实交易所执行。即使账户上下文存在 `tradeEnv=LIVE`，
      * HTTP 下单 / 撤单入口也不能把它传入 order command service 形成真实交易授权。</p>
      */
     private ExchangeAccountSummary requireLiveDisabledMutatingAccount(Long exchangeAccountId, String action) {

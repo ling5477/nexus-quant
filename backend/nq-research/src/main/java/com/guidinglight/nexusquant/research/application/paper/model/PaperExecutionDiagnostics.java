@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * PaperExecutionDiagnostics —— Paper 执行诊断只读聚合事实源（GateK Batch K1）。
+ * PaperExecutionDiagnostics —— Paper 执行诊断只读聚合事实源。
  *
  * 职责：在 {@link PaperPortfolioSummary} 已有「发生了什么」的基础上，对每个 Paper run 做规则化归因，
  * 回答「为什么无订单 / 为什么有订单无成交 / 为什么成交但亏损 / 为什么风控拦截 / 为什么数据不足」，

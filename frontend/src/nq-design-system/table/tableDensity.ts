@@ -1,4 +1,4 @@
-// tableDensity.ts — NQ Console 表格密度 token(B0.2)。
+// tableDensity.ts — NQ Console 表格密度 token。
 // 与设计规范一致(NQ_DESIGN_TOKENS_V2.md §3):主表 32 · 次级事实表 28 · 摘要表 36。
 import {nqTokens} from '../tokens/nq-tokens';
 

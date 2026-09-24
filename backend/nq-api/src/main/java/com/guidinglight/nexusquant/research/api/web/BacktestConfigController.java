@@ -131,7 +131,7 @@ public class BacktestConfigController {
     }
 
     /**
-     * 绑定 GateH-3 marketdata dataset 到回测配置。
+     * 绑定历史行情接入 marketdata dataset 到回测配置。
      * Why:
      * controller 只负责 HTTP 参数边界和跨应用服务调用：dataset 详情由 marketdata application 生成快照，
      * backtest 配置由 research application 持久化绑定；这里不写 SQL、不启动回测、不改变回测算法。
@@ -159,7 +159,7 @@ public class BacktestConfigController {
     }
 
     /**
-     * 绑定 GateI-2 strategy version 到回测配置。
+     * 绑定 strategy version 到回测配置。
      * Why:
      * controller 不接收调用方自带快照，只传递 strategyVersionId 给 application service；
      * 版本快照、参数快照由后端从 `strategy_versions` 固化，避免前端伪造回测输入血缘。

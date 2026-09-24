@@ -30,7 +30,7 @@ public interface StrategyScheduleRepository {
      * 列出当前所有 schedule。
      * <p>
      * Why:
-     * GateE-2.2 的 scanOnce 需要返回 `skipped_disabled`，因此扫描入口不能只看 enabled schedules。
+     * 执行与补偿契约的 scanOnce 需要返回 `skipped_disabled`，因此扫描入口不能只看 enabled schedules。
      */
     List<StrategySchedule> listAll();
 

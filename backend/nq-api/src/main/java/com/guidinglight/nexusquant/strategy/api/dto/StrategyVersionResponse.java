@@ -7,7 +7,7 @@ import java.time.Instant;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- * StrategyVersionResponse 描述 GateI-1 策略版本响应。
+ * StrategyVersionResponse 描述策略版本策略版本响应。
  */
 @Schema(name = "StrategyVersionResponse", description = "策略版本响应")
 public record StrategyVersionResponse(

@@ -27,7 +27,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 /**
- * JdbcShadowRunOverviewQueryRepository 是 GateS-1 Shadow Run overview 的 JDBC read adapter。
+ * JdbcShadowRunOverviewQueryRepository 是验证只读视图 Shadow Run overview 的 JDBC read adapter。
  *
  * <p>职责：只通过 SELECT 聚合 `shadow_runs`、`shadow_run_events`、`shadow_run_snapshots`
  * 和 `shadow_consistency_reports` 的本地事实。该 adapter 不提供 create/update/delete 方法，不调用

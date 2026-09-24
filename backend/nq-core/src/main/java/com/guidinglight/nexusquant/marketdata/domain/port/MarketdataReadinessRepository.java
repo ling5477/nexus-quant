@@ -5,7 +5,7 @@ import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessIngestio
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataReadinessQuery;
 
 /**
- * MarketdataReadinessRepository exposes local DB aggregate facts for GateM-2E readiness.
+ * MarketdataReadinessRepository 提供行情就绪计算所需的本地数据库聚合事实。
  * <p>
  * Why: source health must remain a read-only local aggregation. This port intentionally has no
  * adapter/provider methods, no external network capability and no write operations.

@@ -13,14 +13,14 @@ import java.util.Objects;
  * NoopMarketDataAdapter 提供 no-real 阶段的行情 stub。
  * <p>
  * Why:
- * GateL-1B-D 要求调用方能区分真实市场数据订阅成功与 no-real / disabled / stub 状态。
+ * 无真实连接安全边界要求调用方能区分真实市场数据订阅成功与 no-real / disabled / stub 状态。
  * 因此本 adapter 只保留 contract wiring 能力，不把 bars、trades、order-book 任一路径伪装成
  * 普通 success，避免上层误判为真实 provider 已就绪或可用于 LIVE / future-real readiness。
  */
 public class NoopMarketDataAdapter implements MarketDataAdapter {
 
     /**
-     * GateL-1B-D 固定的 no-real disabled 错误码。
+     * 无真实连接安全边界固定的 no-real disabled 错误码。
      * <p>
      * Why:
      * 复用现有 AdapterError，不新增 DTO / enum / HTTP API；调用方可用该 code 区分 stub disabled
@@ -86,7 +86,7 @@ public class NoopMarketDataAdapter implements MarketDataAdapter {
     }
 
     private MarketDataSubscriptionAck ack(String channel, String traceId) {
-        // GateL-1B-D intentionally uses a terminal, non-retryable failure category for the noop stub.
+        // Noop stub 使用终止且不可重试的失败类别，避免调用方将其当成真实订阅成功。
         // Retrying cannot create a real subscription, and returning subscribed=true would make callers
         // treat the no-real adapter as a live market data provider.
         AdapterError error = new AdapterError(

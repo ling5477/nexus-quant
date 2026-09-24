@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * MarketdataQualityOverview 是 GateP Batch 2 Data Quality Center 的只读聚合 read model。
+ * MarketdataQualityOverview 是数据质量诊断 Data Quality Center 的只读聚合 read model。
  * <p>
  * Why:
  * 该模型跨 bars、dataset coverage 和 ingestion run 汇总本地事实，只表达数据质量诊断。

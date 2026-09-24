@@ -17,7 +17,7 @@ import java.util.Objects;
 /**
  * 执行一次 Validation Operations runtime evidence 只读聚合并生成脱敏摘要。
  *
- * <p>Why: scheduler 只能复用 GateU aggregate 的既有五来源语义，不能直接调用来源、Controller、HTTP、
+ * <p>Why: scheduler 只能复用证据元数据 aggregate的既有五来源语义，不能直接调用来源、Controller、HTTP、
  * repository 或任何写侧。方法严格调用 aggregate 一次；异常直接抛给 advisory lock primitive，避免伪造成功。
  */
 public final class ValidationEvidenceRefreshService {

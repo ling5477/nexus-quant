@@ -4,7 +4,7 @@ import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMark
 import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundResult;
 
 /**
- * PublicMarketDataOutboundClient 是 GateO O-1 public marketdata outbound 的最小抽象。
+ * PublicMarketDataOutboundClient 是公开行情出站策略 public marketdata outbound 的最小抽象。
  *
  * <p>Why: service 层不得直接散写 URL 或绕过 policy。实现必须先执行
  * {@link PublicMarketDataOutboundPolicy}，再决定是否访问 HTTP；测试可用 fake server/stub 验证，

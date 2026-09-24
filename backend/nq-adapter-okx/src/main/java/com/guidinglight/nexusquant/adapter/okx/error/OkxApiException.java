@@ -4,7 +4,7 @@ package com.guidinglight.nexusquant.adapter.okx.error;
  * OkxApiException 表示 OKX HTTP 调用或业务响应失败。
  * <p>
  * Why:
- * GateC-1 排障需要看到 http status、endpoint、OKX error code 与 traceId，
+ * 交易所适配契约排障需要看到 http status、endpoint、OKX error code 与 traceId，
  * 因此这里把最小定位信息集中在一个异常模型中，避免上层只能拿到模糊的 `IOException`。
  */
 public class OkxApiException extends RuntimeException {

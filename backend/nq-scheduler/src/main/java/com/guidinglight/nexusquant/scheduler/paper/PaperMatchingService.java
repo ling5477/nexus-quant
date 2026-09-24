@@ -37,10 +37,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * PaperMatchingService 负责 GateB/GateC-0 的本地 paper 成交同步。
+ * PaperMatchingService 负责订单状态契约/交易所适配契约的本地 paper 成交同步。
  * <p>
  * Why:
- * GateC-0 虽然仍保留 paper 本地成交能力用于回归，但 scheduler 不能再绕过 trading 边界假定订单可撮合。
+ * 交易所适配契约虽然仍保留 paper 本地成交能力用于回归，但 scheduler 不能再绕过 trading 边界假定订单可撮合。
  * 因此这里先向 `TradingVenueGateway` 查询统一订单快照，再决定是否继续执行本地成交与记账。
  */
 @Component
@@ -113,7 +113,7 @@ public class PaperMatchingService {
         int newTradeCount = 0;
         for (OrderRecord order : orders) {
             if (order.canonicalVenue() != TradingVenue.PAPER) {
-                // Why: GateC 实盘/模拟盘订单必须由各自 adapter + reconcile 驱动，不能再被 paper 本地撮合器碰到。
+                // Why: 交易所适配契约实盘/模拟盘订单必须由各自 adapter + reconcile 驱动，不能再被 paper 本地撮合器碰到。
                 continue;
             }
             try {
@@ -274,7 +274,7 @@ public class PaperMatchingService {
     }
 
     private BigDecimal resolveMarketPrice() {
-        // Gate B/GateC-0 不接真实行情网络，使用固定价格提供器保证本地验证可重复。
+        // Gate B/交易所适配契约不接真实行情网络，使用固定价格提供器保证本地验证可重复。
         return new BigDecimal("100.00000000");
     }
 

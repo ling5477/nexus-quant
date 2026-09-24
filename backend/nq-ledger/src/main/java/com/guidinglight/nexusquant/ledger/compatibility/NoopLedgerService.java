@@ -9,7 +9,7 @@ import java.util.List;
  * NoopLedgerService 提供无副作用占位实现。
  *
  * Why:
- * 该类在 PRE-CLEAN-1 中被明确标记为 local/test fallback only。
+ * 该类仅供本地和测试环境兜底使用。
  * 它保留是为了兼容本地/验证环境，不代表正式账本主链能力，后续搜索或规划不得把它当作生产实现。
  */
 public class NoopLedgerService implements LedgerService {

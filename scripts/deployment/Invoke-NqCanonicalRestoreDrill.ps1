@@ -140,7 +140,7 @@ function Assert-ContainerName([string]$Name) {
 }
 
 function Protect-DockerDiagnostic([string]$Text, [string[]]$Arguments) {
-    # 先移除本轮随机口令和传入的环境值；带凭证标记的整行不保留原文。
+    # 先移除临时随机口令和传入的环境值；带凭证标记的整行不保留原文。
     $safe = $Text.Replace($databasePassword, '<redacted>')
     for ($index = 0; $index -lt $Arguments.Count - 1; $index++) {
         if ($Arguments[$index] -in @('--env', '-e') -and $Arguments[$index + 1].Contains('=')) {

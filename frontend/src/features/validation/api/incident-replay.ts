@@ -7,7 +7,7 @@ export async function getIncidentReplayOverview(): Promise<IncidentReplayOvervie
 }
 
 /**
- * GateS-6 Incident / Replay API client。
+ * 事件回放总览 API 客户端。
  *
  * Why:
  * 该 client 只消费已存在的 GET-only overview endpoint；不创建 incident、不确认 alert、不启动 replay、

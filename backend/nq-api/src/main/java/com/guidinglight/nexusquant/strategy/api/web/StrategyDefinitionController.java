@@ -147,7 +147,7 @@ public class StrategyDefinitionController {
     }
 
     @GetMapping("/{strategyCode}/versions")
-    @Operation(summary = "查询策略版本列表", description = "返回指定策略编码下的 GateI-1 策略版本列表。")
+    @Operation(summary = "查询策略版本列表", description = "返回指定策略编码下的策略版本列表。")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "查询成功"),
             @ApiResponse(responseCode = "400", description = "路径参数非法", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
@@ -200,6 +200,5 @@ public class StrategyDefinitionController {
         return StrategyVersionResponse.from(strategyVersionService.getById(strategyCode, versionId));
     }
 }
-
 
 

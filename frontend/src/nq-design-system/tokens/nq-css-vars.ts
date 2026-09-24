@@ -1,4 +1,4 @@
-// nq-css-vars.ts — 从唯一来源生成 CSS 变量,避免手抄漂移(B0 / Design Tokens v2)
+// nq-css-vars.ts — 从唯一来源生成 CSS 变量,避免手抄漂移(Design Tokens v2)
 import { nqTokens, DEFAULT_MARKET_CONVENTION, type MarketConvention } from './nq-tokens';
 
 export function nqCssVars(convention: MarketConvention = DEFAULT_MARKET_CONVENTION): Record<string, string> {

@@ -3,7 +3,7 @@ package com.guidinglight.nexusquant.strategy.application.shadowlivepreview.model
 import java.util.UUID;
 
 /**
- * ShadowLivePreviewQuery 描述 GateQ-3 Shadow Live no-side-effect preview 的查询范围。
+ * ShadowLivePreviewQuery 描述策略验证 Shadow Live no-side-effect preview的查询范围。
  *
  * <p>Why: 本 query 只选择已有 strategy version、dataset、evaluation、publish、Paper 和 Shadow
  * 事实，不创建 shadow run、不启动 runner、不访问外部网络、不读取敏感材料，也不改变任何交易状态。
