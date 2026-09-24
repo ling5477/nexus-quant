@@ -8,6 +8,7 @@
 2. Git、代码、测试与 CI：能力与验证事实。
 3. [ROADMAP.md](ROADMAP.md)：下一允许动作，不覆盖 STATUS。
 4. [GOVERNANCE_WORKFLOW.md](GOVERNANCE_WORKFLOW.md)：通用 lifecycle/checker 说明，不决定 current Gate。
+5. [GATEZ_PLAN.md](GATEZ_PLAN.md)：GateZ 当前范围、第一里程碑与后续扩展，不覆盖 STATUS。
 
 冲突时输出 `BLOCKED / CURRENT_AUTHORITY_CONFLICT`；历史材料不得覆盖 current authority。
 
@@ -20,6 +21,8 @@
 - `TESTING.md`、`WORKLOG.md` 仅作为append-only evidence ledger。
 
 `GATEV_PLAN.md`、`GATEW_PLAN.md`、`NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md` 与 `docs/current/evidence/**` 均为 `HISTORICAL / NON_AUTHORITATIVE / RETAIN_IN_PLACE`。保留原路径是为了不改写append-only历史链接；其中阶段、状态和下一动作均为当时快照，不参与current authority、runtime routing、Skill routing或Phase4/5 disposition。
+
+[NQ V1 当前能力盘点](evidence/NQ-V1-CURRENT-CAPABILITY-ASSESSMENT-AND-NEXT-TASK.md)按原文件身份纳入，归类为 `SUPPORTING_ANALYSIS_SNAPSHOT / NON_RUNTIME_AUTHORITY`；其 `76caf387` 源码与 CI 身份只属于分析时点，文内旧 cleanup next action 不覆盖 STATUS。GateZ-1 的当前计划由 [GATEZ_PLAN.md](GATEZ_PLAN.md) 维护。
 
 ## 3. Capability Owners
 
@@ -45,7 +48,7 @@
 
 - [C1 post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_C1_POST_CI_AUTHORITY_TRANSITION_TO_C2.md)：保留implementation、独立review、failed delivery和accepted exact-head CI，正式关闭P1-2并打开C2/P1-3入口；分类为`ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。该历史时点canonical blocking P1=1；后续C2与L4/L5/L6已接受，当前数量由STATUS表达，技术身份与authority synchronization commit分层；STATUS仍是唯一machine authority。
 
-- [Phase6 L4/L5/L6 final acceptance](../audit/evidence/GATEAUDIT_PHASE6_L5_L6_FINAL_ACCEPTANCE.md)：mandatory矩阵、四组technical/CI身份及本地raw hash/index；`ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。该 evidence 原时点为 Phase6 ACCEPTED/COMPLETE、Phase7 NOT_STARTED；其中旧状态仅代表证据时点。后续 Phase7-E/F release 与冻结状态由当前 STATUS 表达，ROADMAP 记录 branch cleanup 下一动作。
+- [Phase6 L4/L5/L6 final acceptance](../audit/evidence/GATEAUDIT_PHASE6_L5_L6_FINAL_ACCEPTANCE.md)：mandatory矩阵、四组technical/CI身份及本地raw hash/index；`ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。该 evidence 原时点为 Phase6 ACCEPTED/COMPLETE、Phase7 NOT_STARTED；其中旧状态仅代表证据时点。后续 Phase7-E/F release 与冻结状态由当前 STATUS 表达，ROADMAP 记录 GateZ-1 下一动作。
 
 - [前端本地化与错误目录](../error-catalog/README.md)：本批实现范围、兼容错误身份和本地化契约；[验证记录](../error-catalog/VERIFICATION.md)绑定 technical acceptance pair=`1b4c87129f2a79e13e379aa56501042ddd5bd42f / 35684433673`，9/9 SUCCESS；不是第二份运行时 catalog 或 current authority。
 

@@ -7,6 +7,7 @@
 <!-- nq-current-summary:start -->
 - 最近冻结的 GateAUDIT 已接受并打 tag；固定身份及 CI 以 [STATUS.md](STATUS.md) 为准，历史证据见 [strict archive](../gates/gate-audit/README.md)。
 - accepted batch、work batch 与唯一 next action 从 [STATUS.md](STATUS.md) 的机器区块读取；[ROADMAP.md](ROADMAP.md) 解释后续工作。
+- 计划范围、第一业务里程碑和后续扩展见 [计划](GATEZ_PLAN.md)；下一实现尚未开始。
 - GateY pilot 的验收事实见 [STATUS.md](STATUS.md)；该历史验收不授予再次执行权。
 - Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
 <!-- nq-current-summary:end -->
@@ -17,6 +18,7 @@
 | --- | --- | --- |
 | 唯一阶段状态 | [STATUS.md](STATUS.md) | 是 |
 | 下一允许动作 | [ROADMAP.md](ROADMAP.md) | 否 |
+| 规划文件 | [GATEZ_PLAN.md](GATEZ_PLAN.md) | 否 |
 | Authority 分层 | [FACT_SOURCE_INDEX.md](FACT_SOURCE_INDEX.md) | 否；必须服从 STATUS |
 | GateAUDIT strict archive | [../gates/gate-audit/README.md](../gates/gate-audit/README.md) | 否；已冻结 historical evidence |
 | API / Schema / 架构 | [API.md](API.md)、[DB_SCHEMA.md](DB_SCHEMA.md)、[ARCHITECTURE.md](ARCHITECTURE.md)、[MODULES.md](MODULES.md) | 否 |
