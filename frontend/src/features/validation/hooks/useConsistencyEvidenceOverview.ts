@@ -1,6 +1,6 @@
 import {useQuery} from '@tanstack/react-query';
 
-import {consistencyEvidenceApi} from '@/api/consistency-evidence';
+import {consistencyEvidenceApi} from '@/features/validation/api/consistency-evidence';
 import {consistencyEvidenceQueryKeys} from '@/api/query-keys';
 
 /**

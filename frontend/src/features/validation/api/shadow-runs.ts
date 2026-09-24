@@ -8,7 +8,7 @@ import type {
     ShadowRunListResponse,
     ShadowRunOverviewResponse,
     ShadowRunSnapshotResponse,
-} from '@/types/shadow-runs';
+} from '@/features/validation/types/shadow-runs';
 
 function listParams(params: ShadowRunListRequest): Record<string, string | number> {
     const result: Record<string, string | number> = {};

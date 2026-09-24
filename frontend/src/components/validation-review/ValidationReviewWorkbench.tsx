@@ -6,10 +6,10 @@ import {useSearchParams} from 'react-router-dom';
 
 import {ValidationReviewCaseDrawer} from '@/components/validation-review/ValidationReviewCaseDrawer';
 import {ValidationReviewQueue} from '@/components/validation-review/ValidationReviewQueue';
-import {useValidationReviewListQuery} from '@/hooks/useValidationReviewQueries';
+import {useValidationReviewListQuery} from '@/features/validation/hooks/useValidationReviewQueries';
 import {useAuthStore} from '@/store/auth-store';
 import type {AppApiError} from '@/types/api';
-import type {ValidationReviewSeverity, ValidationReviewState} from '@/types/validation-review';
+import type {ValidationReviewSeverity, ValidationReviewState} from '@/features/validation/types/validation-review';
 
 const {Paragraph, Text, Title} = Typography;
 const PAGE_LIMIT = 20;

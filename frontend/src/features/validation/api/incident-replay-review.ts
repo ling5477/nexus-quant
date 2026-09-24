@@ -1,5 +1,5 @@
 import {apiClient} from '@/api/client';
-import type {IncidentReplayReviewOverviewResponse} from '@/types/incident-replay-review';
+import type {IncidentReplayReviewOverviewResponse} from '@/features/validation/types/incident-replay-review';
 
 /**
  * 读取 GateT-3 Incident / Replay Review overview。

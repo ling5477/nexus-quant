@@ -1,6 +1,6 @@
 import {useQuery} from '@tanstack/react-query';
 
-import {incidentReplayApi} from '@/api/incident-replay';
+import {incidentReplayApi} from '@/features/validation/api/incident-replay';
 import {incidentReplayQueryKeys} from '@/api/query-keys';
 
 /**

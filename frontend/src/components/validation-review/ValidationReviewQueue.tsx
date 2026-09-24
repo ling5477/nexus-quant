@@ -11,7 +11,7 @@ import type {
     ValidationReviewCase,
     ValidationReviewSeverity,
     ValidationReviewState,
-} from '@/types/validation-review';
+} from '@/features/validation/types/validation-review';
 import {formatDateTime} from '@/utils/formatters';
 
 const {Text} = Typography;

@@ -1,6 +1,6 @@
 import {useQuery} from '@tanstack/react-query';
 
-import {validationOperationsRuntimeEvidenceApi} from '@/api/validation-operations-runtime-evidence';
+import {validationOperationsRuntimeEvidenceApi} from '@/features/validation/api/validation-operations-runtime-evidence';
 import {validationOperationsRuntimeEvidenceQueryKeys} from '@/api/query-keys';
 
 /**

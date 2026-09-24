@@ -1,7 +1,7 @@
 import {useQuery} from '@tanstack/react-query';
 
 import {shadowValidationWorkflowQueryKeys} from '@/api/query-keys';
-import {shadowValidationWorkflowApi} from '@/api/shadow-validation-workflow';
+import {shadowValidationWorkflowApi} from '@/features/validation/api/shadow-validation-workflow';
 
 /**
  * GateT-1 Shadow Validation Workflow read-only query hook.

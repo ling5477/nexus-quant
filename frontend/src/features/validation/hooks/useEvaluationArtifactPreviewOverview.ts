@@ -1,6 +1,6 @@
 import {useQuery} from '@tanstack/react-query';
 
-import {evaluationArtifactPreviewApi} from '@/api/evaluation-artifact-preview';
+import {evaluationArtifactPreviewApi} from '@/features/validation/api/evaluation-artifact-preview';
 import {evaluationArtifactPreviewQueryKeys} from '@/api/query-keys';
 
 /**

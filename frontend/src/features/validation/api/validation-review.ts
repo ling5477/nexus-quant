@@ -4,7 +4,7 @@ import type {
     ValidationReviewEvent,
     ValidationReviewLifecycleCommand,
     ValidationReviewListRequest,
-} from '@/types/validation-review';
+} from '@/features/validation/types/validation-review';
 
 const BASE_PATH = '/validation-review-cases';
 

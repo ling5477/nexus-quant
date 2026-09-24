@@ -1,5 +1,5 @@
 import {apiClient} from '@/api/client';
-import type {PythonEvaluationArtifactPreviewOverviewResponse} from '@/types/evaluation-artifact-preview';
+import type {PythonEvaluationArtifactPreviewOverviewResponse} from '@/features/validation/types/evaluation-artifact-preview';
 
 /**
  * 读取 GateT-4 Python Evaluation Artifact Preview overview。

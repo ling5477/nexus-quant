@@ -1,6 +1,6 @@
 import {useQuery} from '@tanstack/react-query';
 
-import {incidentReplayReviewApi} from '@/api/incident-replay-review';
+import {incidentReplayReviewApi} from '@/features/validation/api/incident-replay-review';
 import {incidentReplayReviewQueryKeys} from '@/api/query-keys';
 
 /**

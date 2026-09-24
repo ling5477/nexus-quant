@@ -1,24 +1,24 @@
 import {useMemo} from 'react';
 
-import {useConsistencyEvidenceOverview} from '@/hooks/useConsistencyEvidenceOverview';
-import {useEvaluationArtifactPreviewOverview} from '@/hooks/useEvaluationArtifactPreviewOverview';
-import {useIncidentReplayOverview} from '@/hooks/useIncidentReplayOverview';
-import {useIncidentReplayReviewOverview} from '@/hooks/useIncidentReplayReviewOverview';
+import {useConsistencyEvidenceOverview} from '@/features/validation/hooks/useConsistencyEvidenceOverview';
+import {useEvaluationArtifactPreviewOverview} from '@/features/validation/hooks/useEvaluationArtifactPreviewOverview';
+import {useIncidentReplayOverview} from '@/features/validation/hooks/useIncidentReplayOverview';
+import {useIncidentReplayReviewOverview} from '@/features/validation/hooks/useIncidentReplayReviewOverview';
 import {
     usePaperShadowConsistencyDrilldown,
     useShadowRunOverview,
-} from '@/hooks/useShadowRunQueries';
-import {useShadowValidationWorkflowOverview} from '@/hooks/useShadowValidationWorkflowQueries';
-import {useStrategyReleaseAdmissionPreview} from '@/hooks/useStrategyReleaseQueries';
+} from '@/features/validation/hooks/useShadowRunQueries';
+import {useShadowValidationWorkflowOverview} from '@/features/validation/hooks/useShadowValidationWorkflowQueries';
+import {useStrategyReleaseAdmissionPreview} from '@/features/validation/hooks/useStrategyReleaseQueries';
 import {
     usePaperShadowComparisonQuery,
     useShadowLivePreviewQuery,
     useStrategyEvaluationGateQuery,
     useStrategyValidationOverview,
-} from '@/hooks/useStrategyValidationQueries';
-import {useValidationOperationsRuntimeEvidenceOverview} from '@/hooks/useValidationOperationsRuntimeEvidenceOverview';
-import type {StrategyValidationOverviewResponse, StrategyValidationQuery} from '@/types/strategy-validation';
-import type {ShadowRunOverviewResponse} from '@/types/shadow-runs';
+} from '@/features/validation/hooks/useStrategyValidationQueries';
+import {useValidationOperationsRuntimeEvidenceOverview} from '@/features/validation/hooks/useValidationOperationsRuntimeEvidenceOverview';
+import type {StrategyValidationOverviewResponse, StrategyValidationQuery} from '@/features/validation/types/strategy-validation';
+import type {ShadowRunOverviewResponse} from '@/features/validation/types/shadow-runs';
 
 function firstText(...values: Array<string | null | undefined>): string | null {
     const matched = values.find((value) => Boolean(value?.trim()));

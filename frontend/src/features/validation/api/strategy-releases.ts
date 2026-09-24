@@ -2,7 +2,7 @@ import {apiClient} from '@/api/client';
 import type {
     StrategyReleaseAdmissionPreviewResponse,
     StrategyReleaseShadowRunMaterializationResponse,
-} from '@/types/strategy-releases';
+} from '@/features/validation/types/strategy-releases';
 
 /** 只提交 publishRecordId 的 Release admission GET client。 */
 export async function getStrategyReleaseAdmissionPreview(

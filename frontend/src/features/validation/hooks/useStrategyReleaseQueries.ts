@@ -4,7 +4,7 @@ import {strategyReleaseQueryKeys} from '@/api/query-keys';
 import {
     getStrategyReleaseAdmissionPreview,
     materializeStrategyReleaseShadowRun,
-} from '@/api/strategy-releases';
+} from '@/features/validation/api/strategy-releases';
 
 /** 按 publishRecordId 隔离缓存的只读 admission preview query。 */
 export function useStrategyReleaseAdmissionPreview(publishRecordId: string | null) {

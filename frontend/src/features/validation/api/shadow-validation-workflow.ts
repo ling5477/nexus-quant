@@ -1,5 +1,5 @@
 import {apiClient} from '@/api/client';
-import type {ShadowValidationWorkflowOverviewResponse} from '@/types/shadow-validation-workflow';
+import type {ShadowValidationWorkflowOverviewResponse} from '@/features/validation/types/shadow-validation-workflow';
 
 /**
  * 读取 GateT-1 Shadow Validation Workflow overview。

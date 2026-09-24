@@ -1,5 +1,5 @@
 import {apiClient} from '@/api/client';
-import type {ValidationOperationsRuntimeEvidenceOverviewResponse} from '@/types/validation-operations-runtime-evidence';
+import type {ValidationOperationsRuntimeEvidenceOverviewResponse} from '@/features/validation/types/validation-operations-runtime-evidence';
 
 /**
  * 读取 Validation Operations Runtime Evidence Overview。

@@ -5,14 +5,14 @@ import {Alert, Button, Card, Descriptions, Modal, Skeleton, Space, Typography} f
 import {useEffect, useState} from 'react';
 
 import {describeApiError, formatApiError} from '@/api/errors';
-import {useStrategyReleaseShadowRunMaterialization} from '@/hooks/useStrategyReleaseQueries';
+import {useStrategyReleaseShadowRunMaterialization} from '@/features/validation/hooks/useStrategyReleaseQueries';
 import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import {useAuthStore} from '@/store/auth-store';
 import type {AppApiError} from '@/types/api';
 import type {
     StrategyReleaseAdmissionPreviewResponse,
     StrategyReleaseShadowRunMaterializationResponse,
-} from '@/types/strategy-releases';
+} from '@/features/validation/types/strategy-releases';
 
 const {Text} = Typography;
 

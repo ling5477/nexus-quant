@@ -8,7 +8,7 @@ import {useMemo, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
 import {NqEmptyState, NqErrorState, NqLoadingState, NqMetricCard, NqPageHeader, ApplicationRiskAlert} from '@/components/nq';
-import {useShadowRunListQuery, useShadowRunOverview} from '@/hooks/useShadowRunQueries';
+import {useShadowRunListQuery, useShadowRunOverview} from '@/features/validation/hooks/useShadowRunQueries';
 import {DataFreshness, type FreshnessState} from '@/nq-design-system/status/DataFreshness';
 import type {AppApiError} from '@/types/api';
 import type {ReadModelEvidenceMetadata} from '@/types/read-model-evidence';
@@ -20,7 +20,7 @@ import type {
     ShadowRunOverviewNextStep,
     ShadowRunOverviewResponse,
     ShadowRunOverviewWarning,
-} from '@/types/shadow-runs';
+} from '@/features/validation/types/shadow-runs';
 import {formatDateTime} from '@/utils/formatters';
 
 const {Text} = Typography;

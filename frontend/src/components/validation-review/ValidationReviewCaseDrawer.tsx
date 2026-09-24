@@ -10,13 +10,13 @@ import {
     useValidationReviewDetailQuery,
     useValidationReviewEventsQuery,
     useValidationReviewLifecycleMutation,
-} from '@/hooks/useValidationReviewQueries';
+} from '@/features/validation/hooks/useValidationReviewQueries';
 import type {AppApiError} from '@/types/api';
 import type {
     ValidationReviewAction,
     ValidationReviewLifecycleRequest,
     ValidationReviewState,
-} from '@/types/validation-review';
+} from '@/features/validation/types/validation-review';
 import {formatDateTime} from '@/utils/formatters';
 
 const {Paragraph, Text} = Typography;

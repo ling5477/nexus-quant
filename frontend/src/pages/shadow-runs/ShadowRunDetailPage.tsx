@@ -14,7 +14,7 @@ import {
     useShadowRunEventsQuery,
     useShadowRunLatestConsistencyReportQuery,
     useShadowRunSnapshotsQuery,
-} from '@/hooks/useShadowRunQueries';
+} from '@/features/validation/hooks/useShadowRunQueries';
 import type {AppApiError} from '@/types/api';
 import type {
     JsonObject,
@@ -28,7 +28,7 @@ import type {
     ShadowRunDetailResponse,
     ShadowRunEventResponse,
     ShadowRunSnapshotResponse,
-} from '@/types/shadow-runs';
+} from '@/features/validation/types/shadow-runs';
 import {formatDateTime} from '@/utils/formatters';
 
 const {Text, Paragraph} = Typography;

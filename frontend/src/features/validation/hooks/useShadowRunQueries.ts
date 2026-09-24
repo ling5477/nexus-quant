@@ -1,8 +1,8 @@
 import {useQuery} from '@tanstack/react-query';
 
 import {paperShadowQueryKeys, shadowRunsQueryKeys} from '@/api/query-keys';
-import {shadowRunsApi} from '@/api/shadow-runs';
-import type {ShadowRunListRequest} from '@/types/shadow-runs';
+import {shadowRunsApi} from '@/features/validation/api/shadow-runs';
+import type {ShadowRunListRequest} from '@/features/validation/types/shadow-runs';
 
 /**
  * GateR-7 Shadow Run read-only 查询 hooks。

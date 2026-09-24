@@ -1,5 +1,5 @@
 import {apiClient} from '@/api/client';
-import type {IncidentReplayOverviewResponse} from '@/types/incident-replay';
+import type {IncidentReplayOverviewResponse} from '@/features/validation/types/incident-replay';
 
 export async function getIncidentReplayOverview(): Promise<IncidentReplayOverviewResponse> {
     const {data} = await apiClient.get<IncidentReplayOverviewResponse>('/incidents/replay/overview');

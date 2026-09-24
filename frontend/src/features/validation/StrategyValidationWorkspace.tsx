@@ -41,7 +41,7 @@ import type {
     ConsistencyEvidenceNextStep,
     ConsistencyEvidenceOverviewResponse,
     ConsistencyEvidenceWarning,
-} from '@/types/consistency-evidence';
+} from '@/features/validation/types/consistency-evidence';
 import type {
     EvaluationArtifactPreviewBlocker,
     EvaluationArtifactPreviewEvidenceAnchor,
@@ -49,7 +49,7 @@ import type {
     EvaluationArtifactPreviewWarning,
     PythonEvaluationArtifactPreviewItem,
     PythonEvaluationArtifactPreviewOverviewResponse,
-} from '@/types/evaluation-artifact-preview';
+} from '@/features/validation/types/evaluation-artifact-preview';
 import type {
     IncidentReplayBlocker,
     IncidentReplayEvidenceAnchor,
@@ -58,7 +58,7 @@ import type {
     IncidentReplayOverviewResponse,
     IncidentReplaySeverity,
     IncidentReplayWarning,
-} from '@/types/incident-replay';
+} from '@/features/validation/types/incident-replay';
 import type {
     IncidentReplayReviewBlocker,
     IncidentReplayReviewEvidenceAnchor,
@@ -66,12 +66,12 @@ import type {
     IncidentReplayReviewNextStep,
     IncidentReplayReviewOverviewResponse,
     IncidentReplayReviewWarning,
-} from '@/types/incident-replay-review';
+} from '@/features/validation/types/incident-replay-review';
 import type {
     JsonValue,
     PaperShadowConsistencyDrilldownResponse,
     ShadowRunOverviewResponse,
-} from '@/types/shadow-runs';
+} from '@/features/validation/types/shadow-runs';
 import type {
     ShadowValidationBlocker,
     ShadowValidationEvidenceAnchor,
@@ -79,7 +79,7 @@ import type {
     ShadowValidationOperatorItem,
     ShadowValidationWarning,
     ShadowValidationWorkflowOverviewResponse,
-} from '@/types/shadow-validation-workflow';
+} from '@/features/validation/types/shadow-validation-workflow';
 import type {
     PaperShadowComparisonResponse,
     ShadowLivePreviewResponse,
@@ -95,11 +95,11 @@ import type {
     StrategyValidationReason,
     StrategyValidationScope,
     StrategyValidationWarning,
-} from '@/types/strategy-validation';
+} from '@/features/validation/types/strategy-validation';
 import type {
     ValidationOperationsRuntimeEvidenceOverviewResponse,
     ValidationOperationsRuntimeEvidenceSource,
-} from '@/types/validation-operations-runtime-evidence';
+} from '@/features/validation/types/validation-operations-runtime-evidence';
 import {formatDateTime} from '@/utils/formatters';
 
 const {Paragraph, Text} = Typography;

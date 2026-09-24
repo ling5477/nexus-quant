@@ -5,7 +5,7 @@ import type {
     StrategyEvaluationGateResponse,
     StrategyValidationOverviewResponse,
     StrategyValidationQuery,
-} from '@/types/strategy-validation';
+} from '@/features/validation/types/strategy-validation';
 
 type StrategyValidationParams = Partial<Record<keyof StrategyValidationQuery, string>>;
 

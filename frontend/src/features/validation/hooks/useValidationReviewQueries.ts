@@ -1,12 +1,12 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {validationReviewQueryKeys} from '@/api/query-keys';
-import {validationReviewApi} from '@/api/validation-review';
+import {validationReviewApi} from '@/features/validation/api/validation-review';
 import type {AppApiError} from '@/types/api';
 import type {
     ValidationReviewLifecycleCommand,
     ValidationReviewListRequest,
-} from '@/types/validation-review';
+} from '@/features/validation/types/validation-review';
 
 /** 查询服务端稳定排序、bounded pagination 的 review queue；失败不自动 retry。 */
 export function useValidationReviewListQuery(request: ValidationReviewListRequest) {

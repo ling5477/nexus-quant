@@ -1,8 +1,8 @@
 import {useQuery} from '@tanstack/react-query';
 
 import {strategyValidationQueryKeys} from '@/api/query-keys';
-import {strategyValidationApi} from '@/api/strategy-validation';
-import type {StrategyValidationQuery} from '@/types/strategy-validation';
+import {strategyValidationApi} from '@/features/validation/api/strategy-validation';
+import type {StrategyValidationQuery} from '@/features/validation/types/strategy-validation';
 
 /**
  * GateQ-5 页面查询 hooks。
