@@ -20,6 +20,46 @@ export interface PaperTradingRunItem {
     updatedAt: string;
 }
 
+export interface StrategySimRun {
+    paperRunId: string;
+    publishId: string;
+    strategyVersionId: string;
+    barContentSha256: string;
+    canonicalAccountId: number;
+    budget: string;
+}
+
+export interface StrategySimDecision {
+    decisionId: string;
+    paperRunId: string;
+    strategyVersionId: string;
+    inputSha256: string;
+    signalOpenTime: string;
+    executionOpenTime: string;
+    status: string;
+    reason: string;
+    side: string | null;
+    quantity: string | null;
+    executionPrice: string;
+    orderId: string | null;
+}
+
+export interface StrategySimFacts {
+    paperRunId: string;
+    publishId: string;
+    strategyVersionId: string;
+    inputSha256: string;
+    initialBudget: string;
+    cash: string;
+    positionQuantity: string;
+    markPrice: string;
+    equity: string;
+    pnl: string;
+    orders: Array<Record<string, unknown>>;
+    trades: Array<Record<string, unknown>>;
+    ledgerEntries: Array<Record<string, unknown>>;
+}
+
 export interface PaperTradingOrderItem {
     paperOrderId: string;
     paperRunId: string;

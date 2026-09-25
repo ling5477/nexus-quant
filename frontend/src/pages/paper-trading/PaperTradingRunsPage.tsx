@@ -24,6 +24,8 @@ import {Link} from 'react-router-dom';
 import {showApiError} from '@/api/errors';
 import {NqAmountText, NqDangerConfirmButton, NqDataTable, NqEmptyState, TradingEnvironmentTag, NqErrorState, NqFilterBar, NqLoadingState, NqMetricCard, NqPageHeader, NqPercentText, NqPriceText, ApplicationRiskAlert, nqNumericColumn} from '@/components/nq';
 import {NqAlertPanel, NqHeartbeatPanel, NqRecoveryPanel, NqScheduleFirePanel, NqStabilityCheckPanel} from '@/features/paper-trading/components/index';
+import {StrategySimPanel} from '@/features/paper-trading/components/StrategySimPanel';
+import {paperTradingApi} from '@/features/paper-trading/api/paper-trading';
 import {
     EXCHANGE_OPTIONS,
     INTERVAL_OPTIONS,
@@ -315,6 +317,15 @@ export function PaperTradingRunsPage() {
                 </Card>
 
                 <ExecutionNavigationCard/>
+                {import.meta.env.VITE_STRATEGY_SIM_ENABLED === 'true' && <StrategySimPanel
+                    selectedRun={focusRun ?? null}
+                    onCreated={(paperRunId) => {
+                        void paperTradingApi.detail(paperRunId).then((run) => {
+                            setSelectedRow(run);
+                            setSearchVersion((version) => version + 1);
+                        }).catch((error) => showApiError(error as AppApiError, message));
+                    }}
+                />}
 
                 <NqFilterBar
                     actions={(

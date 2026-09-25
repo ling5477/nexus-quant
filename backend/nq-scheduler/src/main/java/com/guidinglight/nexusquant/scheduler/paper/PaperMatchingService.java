@@ -35,6 +35,9 @@ import com.guidinglight.nexusquant.trading.domain.TradingVenue;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * PaperMatchingService 负责订单状态契约/交易所适配契约的本地 paper 成交同步。
@@ -61,6 +64,8 @@ public class PaperMatchingService {
     private final EventPublisherPort eventPublisherPort;
     private final AuditLogRepository auditLogRepository;
     private final TradingVenueGateway tradingVenueGateway;
+    private final StrategySimDecisionRepository strategySimDecisions;
+    private final TransactionTemplate transactionTemplate;
     private final Clock clock;
 
     /**
@@ -71,13 +76,16 @@ public class PaperMatchingService {
      * @param auditLogRepository    审计日志仓储
      * @param tradingVenueGateway   trading anti-corruption boundary
      */
+    @Autowired
     public PaperMatchingService(
             OrderExecutionGateway orderExecutionGateway,
             TradeRepository tradeRepository,
             TradeLedgerGateway tradeLedgerGateway,
             EventPublisherPort eventPublisherPort,
             AuditLogRepository auditLogRepository,
-            TradingVenueGateway tradingVenueGateway
+            TradingVenueGateway tradingVenueGateway,
+            StrategySimDecisionRepository strategySimDecisions,
+            PlatformTransactionManager transactionManager
     ) {
         this.orderExecutionGateway = Objects.requireNonNull(orderExecutionGateway, "orderExecutionGateway must not be null");
         this.tradeRepository = Objects.requireNonNull(tradeRepository, "tradeRepository must not be null");
@@ -88,7 +96,15 @@ public class PaperMatchingService {
                 tradingVenueGateway,
                 "tradingVenueGateway must not be null"
         );
+        this.strategySimDecisions = strategySimDecisions;
+        this.transactionTemplate = transactionManager == null ? null : new TransactionTemplate(transactionManager);
         this.clock = Clock.systemUTC();
+    }
+
+    public PaperMatchingService(OrderExecutionGateway orders, TradeRepository trades,
+            TradeLedgerGateway ledger, EventPublisherPort events, AuditLogRepository audit,
+            TradingVenueGateway venue) {
+        this(orders, trades, ledger, events, audit, venue, null, null);
     }
 
     /**
@@ -117,7 +133,11 @@ public class PaperMatchingService {
                 continue;
             }
             try {
-                if (matchSingleOrder(order)) {
+                boolean matched = order.clientOrderId().startsWith("coid-sim-")
+                        ? Objects.requireNonNull(strategySimDecisions, "strategy SIM decision repository unavailable")
+                            .withAccountMutex(order.accountId(), () -> matchInTransaction(order))
+                        : matchInTransaction(order);
+                if (matched) {
                     newTradeCount++;
                 }
             } catch (RuntimeException ex) {
@@ -133,7 +153,18 @@ public class PaperMatchingService {
         return newTradeCount;
     }
 
+    private boolean matchInTransaction(OrderRecord order) {
+        return transactionTemplate == null
+                ? matchSingleOrder(order)
+                : Boolean.TRUE.equals(transactionTemplate.execute(status -> matchSingleOrder(order)));
+    }
+
     private boolean matchSingleOrder(OrderRecord order) {
+        if (order.clientOrderId().startsWith("coid-sim-")) {
+            // 与 SIM 决策争用同一账户预算锁；成交和账本必须在同一事务提交。
+            Objects.requireNonNull(strategySimDecisions, "strategy SIM decision repository unavailable")
+                    .lockAccount(order.accountId());
+        }
         TradingOrderStatusSnapshot adapterSnapshot = tradingVenueGateway.getOrderStatus(order, order.traceId());
         // Why: 只有当 adapter 反馈的状态与本地状态一致时，scheduler 才允许继续做本地成交副作用，
         // 这样 paper 路径不再是“完全绕过 adapter 的专用链路”。
@@ -154,7 +185,15 @@ public class PaperMatchingService {
             return false;
         }
 
-        BigDecimal marketPrice = NumericPolicy.normalize(NumericType.PRICE, resolveMarketPrice());
+        boolean strategySimOrder = order.clientOrderId().startsWith("coid-sim-");
+        StrategySimDecisionRepository.DecisionView decision = strategySimOrder
+                ? Objects.requireNonNull(strategySimDecisions, "strategy SIM decision repository unavailable")
+                    .findByOrderId(order.orderId())
+                    .filter(value -> "ACCEPTED".equals(value.status()))
+                    .orElseThrow(() -> new IllegalStateException("STRATEGY_SIM_DECISION_NOT_MATERIALIZED"))
+                : null;
+        BigDecimal marketPrice = NumericPolicy.normalize(NumericType.PRICE,
+                decision == null ? resolveMarketPrice() : decision.executionPrice());
         if (!isExecutable(order, marketPrice)) {
             auditLogRepository.append(
                     "MATCHING",
@@ -172,7 +211,8 @@ public class PaperMatchingService {
         }
 
         Optional<PaperTradeRecord> existingTrade = tradeRepository.findByOrderId(order.orderId());
-        PaperTradeRecord trade = existingTrade.orElseGet(() -> createTrade(order, marketPrice));
+        PaperTradeRecord trade = existingTrade.orElseGet(() -> createTrade(order, marketPrice,
+                decision == null ? BigDecimal.ZERO : decision.feeRate()));
         if (existingTrade.isEmpty()) {
             tradeRepository.insert(trade);
             publishTradeEvent(order, trade);
@@ -214,6 +254,9 @@ public class PaperMatchingService {
                     trade.traceId(),
                     detail("trade_id", trade.tradeId(), "reason", postingResult.reason())
             );
+            if (strategySimOrder) {
+                throw new IllegalStateException("STRATEGY_SIM_LEDGER_POSTING_INCOMPLETE");
+            }
         }
 
         if (order.status() != OrderStatus.FILLED) {
@@ -222,10 +265,10 @@ public class PaperMatchingService {
         return existingTrade.isEmpty();
     }
 
-    private PaperTradeRecord createTrade(OrderRecord order, BigDecimal marketPrice) {
+    private PaperTradeRecord createTrade(OrderRecord order, BigDecimal marketPrice, BigDecimal feeRate) {
         BigDecimal price = NumericPolicy.normalize(NumericType.PRICE, resolveExecutionPrice(order, marketPrice));
         BigDecimal qty = NumericPolicy.normalize(NumericType.QTY, order.qty());
-        BigDecimal fee = NumericPolicy.normalize(NumericType.FEE, BigDecimal.ZERO);
+        BigDecimal fee = NumericPolicy.normalize(NumericType.FEE, price.multiply(qty).multiply(feeRate));
         return new PaperTradeRecord(
                 "trd-" + UUID.randomUUID(),
                 order.orderId(),

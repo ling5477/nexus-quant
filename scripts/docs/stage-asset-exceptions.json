@@ -802,14 +802,6 @@
       "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
-      "path": "backend/nq-scheduler/pom.xml",
-      "sha256": "19c08eb1303ed519a59507258d2a5beed3d9874b69baa344d593359ddf46450f",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
       "path": "backend/nq-scheduler/src/test/java/com/guidinglight/nexusquant/scheduler/integration/AdapterInstrumentCatalogSyncServiceTest.java",
       "sha256": "02d2ffba4c331c90f5bf8fa3f2d5ce7289776aba989f11ccdcb835aae73e9d08",
       "kind": "FIXTURE_IDENTITY",

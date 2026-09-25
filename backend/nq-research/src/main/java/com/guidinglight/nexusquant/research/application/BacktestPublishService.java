@@ -139,6 +139,12 @@ public class BacktestPublishService {
         Objects.requireNonNull(request, "request must not be null");
         Objects.requireNonNull(artifactLocator, "artifactLocator must not be null");
         Instant now = Instant.now(clock);
+        BacktestRun backtestRun = backtestRunService.getByBacktestRunId(request.backtestRunId());
+        // 已绑定版本的回测只能发布其实际运行的同一版本，包含幂等返回路径。
+        if (backtestRun.strategyVersionId() != null && !backtestRun.strategyVersionId().isBlank()
+                && !backtestRun.strategyVersionId().equals(request.strategyVersionId())) {
+            throw new IllegalArgumentException("PUBLISH_STRATEGY_VERSION_MISMATCH");
+        }
         BacktestPublishRecord existing = backtestPublishRecordRepository.findByBacktestRunId(request.backtestRunId()).orElse(null);
         boolean idempotentSucceeded = existing != null && existing.publishStatus() == PublishStatus.SUCCEEDED
                 && existing.targetStrategyDefinitionId() != null && !existing.targetStrategyDefinitionId().isBlank()
@@ -149,7 +155,6 @@ public class BacktestPublishService {
         }
         validateLocatorWrite(existing, artifactLocator);
 
-        var backtestRun = backtestRunService.getByBacktestRunId(request.backtestRunId());
         if (backtestRun.status() != BacktestRunStatus.SUCCEEDED) {
             return failPublish(existing, backtestRun, null, now, "RUN_NOT_SUCCEEDED", "backtest run must be SUCCEEDED");
         }
@@ -368,5 +373,4 @@ public class BacktestPublishService {
                 : exception.getMessage();
     }
 }
-
 

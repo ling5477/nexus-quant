@@ -2,6 +2,10 @@
 
 数据库结构以 Flyway migrations 为准。本文只记录当前数据库事实入口，不复制完整 DDL。
 
+## 策略 SIM 结构（V52，仓库迁移）
+
+[V52](../../backend/nq-infra/src/main/resources/db/migration/V52__strategy_sim_binding.sql) 在仓库中定义：`marketdata_bars.available_at` 记录来源可证明的可见时点，旧行读取侧按实际入库时间保守解释；`paper_trading_runs.canonical_account_id` 只关联新隔离 SIM 账户，历史 Paper run 保持空值。`strategy_sim_decisions` 保存冻结输入摘要、决策及 canonical strategy run / order 引用，不成为第二套订单或成交事实。约束与触发器保护决策身份、停止后的订单准入和已完成决策不可改写。隔离 PostgreSQL 的 V51→V52 升级与 validate 已通过；这不表示生产库已迁移或当前业务里程碑已验收。
+
 ## V50 strategy window admission 仓库结构
 
 [V50](../../backend/nq-infra/src/main/resources/db/migration/V50__strategy_window_admission.sql)在现有`strategy_runs`增加可空的`admission_schedule_id`（计划外键）和`admission_due_at`（CRON逻辑到期时刻）。部分唯一索引覆盖`strategy_id + account_id + admission_schedule_id + admission_due_at`，只覆盖新结构化admission；列对必须同时为空或同时非空，非空行必须为SCHEDULER。触发器禁止更换已消费的身份。不同到期时刻可独立认领，FAILED或恢复不会释放旧窗口。

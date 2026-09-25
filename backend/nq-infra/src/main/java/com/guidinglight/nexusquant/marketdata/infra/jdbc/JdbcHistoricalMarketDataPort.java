@@ -43,7 +43,8 @@ public class JdbcHistoricalMarketDataPort implements HistoricalMarketDataPort {
                                quote_volume,
                                trade_count,
                                quality_status,
-                               raw_payload_json
+                               raw_payload_json,
+                               COALESCE(available_at, ingested_at) AS available_at
                         FROM marketdata_bars
                         WHERE exchange_code = ?
                           AND market_type = ?
@@ -70,7 +71,8 @@ public class JdbcHistoricalMarketDataPort implements HistoricalMarketDataPort {
                         resultSet.getBigDecimal("quote_volume"),
                         resultSet.getObject("trade_count", Long.class),
                         resultSet.getString("quality_status"),
-                        resultSet.getString("raw_payload_json")
+                        resultSet.getString("raw_payload_json"),
+                        resultSet.getTimestamp("available_at").toInstant()
                 ),
                 query.exchangeCode(),
                 query.marketType(),
