@@ -6,6 +6,7 @@ import com.guidinglight.nexusquant.account.domain.CredentialPermissionExpectatio
 import com.guidinglight.nexusquant.account.infra.probe.NoRealExchangeCredentialPermissionProbePort;
 import com.guidinglight.nexusquant.account.infra.probe.OkxRealReadonlyPermissionProbePort;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
+import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService;
 import com.guidinglight.nexusquant.scheduler.recovery.OkxRecoveryService;
 
 import org.junit.jupiter.api.Test;
@@ -198,6 +199,11 @@ class OkxPrivateReadOnlyPermissionProbeSpringContextTest {
         @Bean
         KillSwitchService killSwitchService() {
             return mock(KillSwitchService.class);
+        }
+
+        @Bean
+        InstrumentCatalogService instrumentCatalogService() {
+            return mock(InstrumentCatalogService.class);
         }
     }
 

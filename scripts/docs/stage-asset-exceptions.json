@@ -115,7 +115,7 @@
     },
     {
       "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/account/OkxPrivateReadOnlyDiagnosticsConfiguration.java",
-      "sha256": "467f993d9c35bd57b2bc03a5cd3da556cc6b30befa05cc5f9e4e4a745ba7d407",
+      "sha256": "5aad341728e1604a6795788de74f53fdd4f61658406a426f739da969d21f9429",
       "kind": "RETIRED_INPUT_REJECTION",
       "reason": "Retired input names occur only as deny-only keys or persisted permission expectation; old profiles/keys cannot select runtime composition.",
       "owner": "Runtime configuration owner",
@@ -195,7 +195,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/account/OkxPrivateReadOnlyDiagnosticsConfigurationTest.java",
-      "sha256": "c141f5b7821b9f1c85cc64aba08ed0d880abae204fd3989310bbc9935e326223",
+      "sha256": "8a4222a36e65546147eaadbdb6393788848bca159ba6362d09dca6c1844bdd72",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -203,7 +203,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/account/OkxPrivateReadOnlyPermissionProbeSpringContextTest.java",
-      "sha256": "8ddafc27e1064526dad8b037cc82ee9f58e7ee64de4fe5815da64f9efd964fd2",
+      "sha256": "38e9be363915936cdf0db33e8f02afd8a5b7ed7d160b157b485042b4c840aa5a",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
