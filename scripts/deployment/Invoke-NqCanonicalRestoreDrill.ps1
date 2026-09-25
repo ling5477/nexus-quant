@@ -198,7 +198,13 @@ function Start-Postgres([string]$Name) {
     if ($result.Lines.Count -eq 0) { throw 'FAIL / DISPOSABLE_POSTGRES_START_FAILED' }
     for ($attempt = 1; $attempt -le 60; $attempt++) {
         $ready = Invoke-Docker -Operation 'WAIT_POSTGRES_READY' -Arguments @('exec', $Name, 'pg_isready', '--username', $databaseUser, '--dbname', $database) -AllowFailure
-        if ($ready.ExitCode -eq 0) { return }
+        if ($ready.ExitCode -eq 0) {
+            # pg_isready 只证明服务器接收连接；首次初始化期间目标数据库可能尚未创建。
+            $databaseReady = Invoke-Docker -Operation 'WAIT_POSTGRES_DATABASE' -Arguments @('exec', $Name,
+                'psql', '--no-psqlrc', '--username', $databaseUser, '--dbname', $database,
+                '--tuples-only', '--no-align', '--command', 'SELECT 1;') -AllowFailure
+            if ($databaseReady.ExitCode -eq 0 -and (($databaseReady.Lines -join '').Trim() -ceq '1')) { return }
+        }
         Start-Sleep -Seconds 1
     }
     throw 'FAIL / DISPOSABLE_POSTGRES_NOT_READY'

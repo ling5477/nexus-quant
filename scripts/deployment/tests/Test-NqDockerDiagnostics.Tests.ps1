@@ -9,7 +9,7 @@ $errors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile($drill, [ref]$tokens, [ref]$errors)
 if ($errors.Count -ne 0) { throw 'FAIL / RESTORE_SCRIPT_PARSE' }
 # 只载入生产脚本的两个诊断函数，负例不启动 Docker、数据库或 Maven。
-foreach ($name in @('Protect-DockerDiagnostic', 'Invoke-Docker')) {
+foreach ($name in @('Protect-DockerDiagnostic', 'Invoke-Docker', 'Assert-ContainerName', 'Start-Postgres')) {
     $definitions = @($ast.FindAll({ param($node)
         $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq $name
     }, $true))
@@ -80,6 +80,47 @@ exit $Code
         Assert-Diagnostic (-not $text.Contains($value)) 'process-output-secret-absent'
     }
     Write-Output 'PASS / DOCKER_DIAGNOSTIC_REGRESSION / native-stderr / nonzero / operation / stage / exitCode / redaction / empty-stderr / success / process-boundary'
+
+    $ExecutionMode = 'Docker'
+    $database = 'nq_canonical_restore'
+    $databaseUser = 'nq_restore_drill'
+    $PostgresImage = 'postgres:16-test-fixture'
+    $script:databaseProbeCount = 0
+    $script:forceDatabaseMissing = $false
+    $script:databaseProbeArgumentsValid = $true
+    $script:sleepCount = 0
+    function Invoke-Docker {
+        param([string[]]$Arguments, [switch]$AllowFailure, [string]$Operation)
+        switch ($Operation) {
+            'START_CONTAINER' { return [pscustomobject]@{ ExitCode=0; Lines=@('disposable-container-id') } }
+            'WAIT_POSTGRES_READY' { return [pscustomobject]@{ ExitCode=0; Lines=@('accepting connections') } }
+            'WAIT_POSTGRES_DATABASE' {
+                $script:databaseProbeCount++
+                if (($Arguments -join ' ') -notlike '*--dbname nq_canonical_restore*' -or
+                        ($Arguments -join ' ') -notlike '*--command SELECT 1;*') {
+                    $script:databaseProbeArgumentsValid = $false
+                }
+                if ($script:forceDatabaseMissing -or $script:databaseProbeCount -eq 1) {
+                    return [pscustomobject]@{ ExitCode=2; Lines=@() }
+                }
+                return [pscustomobject]@{ ExitCode=0; Lines=@('1') }
+            }
+            default { throw "FAIL / UNEXPECTED_DOCKER_OPERATION / $Operation" }
+        }
+    }
+    function Start-Sleep { param([int]$Seconds) $script:sleepCount++ }
+    $containerName = 'nq-canonical-source-' + ('0' * 32)
+    Start-Postgres $containerName
+    Assert-Diagnostic ($script:databaseProbeArgumentsValid -and $script:databaseProbeCount -eq 2 -and
+        $script:sleepCount -eq 1) 'waits-for-database-after-server-ready'
+    $script:databaseProbeCount = 0
+    $script:forceDatabaseMissing = $true
+    $script:sleepCount = 0
+    $caught = ''
+    try { Start-Postgres $containerName } catch { $caught = $_.Exception.Message }
+    Assert-Diagnostic ($caught -ceq 'FAIL / DISPOSABLE_POSTGRES_NOT_READY' -and
+        $script:databaseProbeCount -eq 60 -and $script:sleepCount -eq 60) 'missing-database-fails-bounded'
+    Write-Output 'PASS / DISPOSABLE_DATABASE_READINESS / transient-create-race / bounded-missing-database'
 } finally {
     if (Test-Path -LiteralPath $fixture) { Remove-Item -LiteralPath $fixture -Force }
 }
