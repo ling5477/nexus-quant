@@ -173,6 +173,13 @@ class AuthSecurityWebMvcTest {
     }
 
     @Test
+    void accountFactsObservationRequiresAuthentication() throws Exception {
+        mockMvc.perform(post("/api/exchange-accounts/1/credentials/2/account-facts/observe"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+    }
+
+    @Test
     void shouldRejectWrongPassword() throws Exception {
         mockMvc.perform(post("/api/auth/login")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-login-2")
@@ -359,5 +366,4 @@ class AuthSecurityWebMvcTest {
         return -1;
     }
 }
-
 

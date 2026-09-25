@@ -24,6 +24,8 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,8 +37,8 @@ import org.springframework.beans.factory.annotation.Value;
  * Bean 创建不读取 credential、不执行 probe、不访问网络，也不注册 scheduler/runner/mutating adapter。</p>
  */
 @Configuration
-@Profile({"okx-private-readonly-diagnostics",
-        "scoped-okx-private-readonly"})
+@Profile({"okx-private-readonly-diagnostics & !scoped-okx-private-readonly",
+        "scoped-okx-private-readonly & !okx-private-readonly-diagnostics"})
 @Conditional(
         OkxPrivateReadOnlyDiagnosticsConfiguration.OkxPrivateReadOnlyDiagnosticsEnabledCondition.class
 )
@@ -72,12 +74,16 @@ public class OkxPrivateReadOnlyDiagnosticsConfiguration {
             InstrumentCatalogService catalog,
             JdbcTemplate jdbcTemplate,
             OkxPrivateReadOnlyPermissionProbeProperties permissionProperties,
+            Environment environment,
             @Value("${nq.live-control.scoped-credential.maximum-permission-probe-age:PT1H}") String maximumProbeAge
     ) {
+        var permissionScope = environment.acceptsProfiles(Profiles.of("scoped-okx-private-readonly"))
+                ? ScopedCredentialCapabilityPolicy.PermissionScope.TRADE
+                : ScopedCredentialCapabilityPolicy.PermissionScope.READ_ONLY;
         return new OkxAccountFactsObservationService(accountRepository, credentialRepository,
                 executor, transport, killSwitch,
                 new ScopedCredentialCapabilityPolicy(parsePositiveDuration(maximumProbeAge)),
-                catalog, jdbcTemplate, Clock.systemUTC(), permissionProperties.expectedIp());
+                permissionScope, catalog, jdbcTemplate, Clock.systemUTC(), permissionProperties.expectedIp());
     }
 
     @Bean

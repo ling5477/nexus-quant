@@ -49,6 +49,7 @@ public final class OkxAccountFactsObservationService {
     private final OkxAccountFactsReadTransport transport;
     private final KillSwitchService killSwitch;
     private final ScopedCredentialCapabilityPolicy policy;
+    private final ScopedCredentialCapabilityPolicy.PermissionScope permissionScope;
     private final InstrumentCatalogService catalog;
     private final JdbcTemplate jdbc;
     private final Clock clock;
@@ -61,6 +62,7 @@ public final class OkxAccountFactsObservationService {
             OkxAccountFactsReadTransport transport,
             KillSwitchService killSwitch,
             ScopedCredentialCapabilityPolicy policy,
+            ScopedCredentialCapabilityPolicy.PermissionScope permissionScope,
             InstrumentCatalogService catalog,
             JdbcTemplate jdbc,
             Clock clock,
@@ -72,6 +74,7 @@ public final class OkxAccountFactsObservationService {
         this.transport = Objects.requireNonNull(transport);
         this.killSwitch = Objects.requireNonNull(killSwitch);
         this.policy = Objects.requireNonNull(policy);
+        this.permissionScope = Objects.requireNonNull(permissionScope);
         this.catalog = Objects.requireNonNull(catalog);
         this.jdbc = Objects.requireNonNull(jdbc);
         this.clock = Objects.requireNonNull(clock);
@@ -103,7 +106,7 @@ public final class OkxAccountFactsObservationService {
                     .orElseThrow(() -> new IllegalStateException("CREDENTIAL_REFERENCE_MISSING"));
             var reference = ScopedCredentialReference.fromSummary(ownerId, "OKX_SPOT",
                     ScopedCredentialCapability.PRIVATE_READONLY_DIAGNOSTIC, credential);
-            var decision = policy.evaluate(reference, started);
+            var decision = policy.evaluate(reference, started, permissionScope);
             if (decision.status() != ScopedCredentialCapabilityPolicy.Status.ALLOWED) {
                 return rejected(observationId, exchangeAccountId, credentialReference, started,
                         decision.reason().name());
@@ -132,8 +135,10 @@ public final class OkxAccountFactsObservationService {
         requireKill(initialKill);
         OkxPrivateReadResult configuration = session.execute(
                 OkxPrivateReadRequest.accountConfiguration(expectedIp), OkxPrivateEnvironment.PRODUCTION);
+        Set<String> requiredPermissions = permissionScope == ScopedCredentialCapabilityPolicy.PermissionScope.TRADE
+                ? Set.of("READ_ONLY", "TRADE") : Set.of("READ_ONLY");
         if (!configuration.complete()
-                || !Set.of("READ_ONLY").equals(configuration.normalizedPermissions())
+                || !requiredPermissions.equals(configuration.normalizedPermissions())
                 || configuration.ipAllowlistStatus() != OkxIpAllowlistStatus.MATCHED) {
             return rejected(observationId, account.exchangeAccountId(), credentialReference, now,
                     "REMOTE_PERMISSION_OR_IP_NOT_VERIFIED");
@@ -141,7 +146,8 @@ public final class OkxAccountFactsObservationService {
         AccountFactsSnapshot.Fact<String> mode = configuration.accountMode() == null
                 ? unknown(now, "ACCOUNT_MODE_NOT_RETURNED")
                 : observed(configuration.accountMode(), configuration.observedAt(), SOURCE, PRIVATE_TTL);
-        var permissions = observed(List.of("READ"), configuration.observedAt(), SOURCE, PRIVATE_TTL);
+        var permissions = observed(permissionScope == ScopedCredentialCapabilityPolicy.PermissionScope.TRADE
+                ? List.of("READ", "TRADE") : List.of("READ"), configuration.observedAt(), SOURCE, PRIVATE_TTL);
 
         Map<String, AccountFactsSnapshot.Fact<OkxPrivateBalanceFact>> balances = new HashMap<>();
         OkxPrivateReadResult balanceResult = null;

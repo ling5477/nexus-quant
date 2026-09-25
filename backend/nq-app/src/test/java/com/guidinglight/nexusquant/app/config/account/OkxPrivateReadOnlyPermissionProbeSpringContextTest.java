@@ -8,6 +8,7 @@ import com.guidinglight.nexusquant.account.infra.probe.OkxRealReadonlyPermission
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService;
 import com.guidinglight.nexusquant.scheduler.recovery.OkxRecoveryService;
+import com.guidinglight.nexusquant.app.config.livecontrol.ReadOnlyProviderObservationConfiguration;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -22,6 +23,7 @@ import org.springframework.context.ApplicationContext;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -154,6 +156,20 @@ class OkxPrivateReadOnlyPermissionProbeSpringContextTest {
                         "nq.env-safety.real-provider-enabled=false",
                         "nq.env-safety.no-outbound=false"
                 );
+        if (Arrays.asList(profiles).contains("scoped-okx-private-readonly")) {
+            runner = runner.withUserConfiguration(ReadOnlyProviderObservationConfiguration.class)
+                    .withPropertyValues(
+                            "nq.runtime.provider-observation.enabled=true",
+                            "nq.runtime.provider-observation.release-id=" + "1".repeat(40),
+                            "nq.runtime.provider-observation.source-commit=" + "1".repeat(40),
+                            "NQ_RELEASE_MANIFEST_SHA256=" + "2".repeat(64),
+                            "nq.runtime.provider-observation.capability-identity=read-only-provider-observation",
+                            "nq.runtime.provider-observation.order-submission-enabled=false",
+                            "nq.runtime.provider-observation.cancel-enabled=false",
+                            "nq.runtime.provider-observation.transfer-enabled=false",
+                            "nq.runtime.provider-observation.withdraw-enabled=false",
+                            "server.address=127.0.0.1");
+        }
         return overrides.length == 0 ? runner : runner.withPropertyValues(overrides);
     }
 
