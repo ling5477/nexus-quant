@@ -4,6 +4,12 @@
 
 当前 API 事实以代码中的 controller 与 DTO 为准。下方分类描述现有接口能力；按 Gate 编号排列的段落保留实施时的范围和验收记录，其中的“当时状态”不表示当前接口尚未交付。当前运行与交易授权边界以 [STATUS.md](STATUS.md) 为准。
 
+## 手动只读账户事实观察
+
+`POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/account-facts/observe` 仅在显式 `okx-private-readonly-diagnostics` profile、只读功能开关及全部环境安全开关满足时注册。请求经 `/api/**` 身份认证，服务端将当前用户、OKX LIVE account 与指定 ACTIVE credential reference 精确绑定；kill switch 必须保持 ENGAGED，远端 READ_ONLY 权限和预期 IP 必须经现有只读配置观察确认。默认启动、健康检查和前端轮询均不触发此入口。
+
+每次人工调用通过既有 JIT credential 生命周期执行固定 private GET，返回非持久化的脱敏 `AccountFactsSnapshot`：账户模式、已证明的读取权限、币种 total/available/frozen、BTC-USDT SPOT 实际账户费率、全 SPOT 未完成订单计数、适用仓位或 UNKNOWN、公开服务器时间、当前公开 instrument rule 身份，以及与本地 canonical 状态的只读偏差分类。每项保留状态、观察时间、来源及适用时的有效期限；缺失或无法确认的事实保持 UNKNOWN，不推断为零。响应不包含原始 credential、签名或私有响应，不写 Order、Trade、Ledger 或 SIM 账本。该能力尚未在现有服务器 runtime 上执行真实账户观察，不能据此宣称余额、费率或偏差已通过资格验证；LIVE 与交易 mutation 仍关闭。
+
 ## 手动公开行情冻结入口
 
 `POST /api/marketdata/public-captures` 仅在 `public-marketdata-manual` profile 且 `nq.public-marketdata.outbound.enabled=true` 时装配，并沿用 `/api/**` 的 ADMIN/OPERATOR 鉴权。请求体为 `start`、`end` UTC 整点；服务端固定 OKX SPOT / BTC-USDT / 1h，单次窗口 1–100 根已收盘 bar。响应给出 dataset ID、请求窗口、实际 `observedAt`、`CLOSED_HOURLY_BOUNDARY_V1` 回放可见时间假设、原始/规范化/实际消费 SHA-256，以及当前公开 instrument rule 的观察时间与身份。捕获及 dataset 不可变；再次采集产生新身份。公开规则仅表示采集时观察到的状态，费用与滑点须由后续回测配置显式给出非零实验假设。该入口不授予 LIVE 或真实交易权限。
