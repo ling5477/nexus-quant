@@ -2,6 +2,10 @@
 
 数据库结构以 Flyway migrations 为准。本文只记录当前数据库事实入口，不复制完整 DDL。
 
+## 公开行情冻结结构（V53–V54，仓库迁移）
+
+[V53](../../backend/nq-infra/src/main/resources/db/migration/V53__public_market_capture.sql) 增加 `public_market_captures`，以 dataset ID 保存 OKX 公开响应、请求窗口、实际 `observed_at`、原始/规范化/消费内容摘要、版本化回放可见时间假设、公开规则观察身份及冻结 bar；触发器拒绝捕获和对应 dataset 的更新、删除。[V54](../../backend/nq-infra/src/main/resources/db/migration/V54__public_market_rule_response_identity.sql) 另存公开规则的请求路径、原始响应和摘要，新捕获必须完整写入。旧 `marketdata_bars.available_at`、`ingested_at` 及既存 dataset 不回填、不重解释。隔离 PostgreSQL 已执行 V1→V54 与 Flyway validate；仓库迁移不表示生产库已迁移或本切片已验收。
+
 ## 策略 SIM 结构（V52，仓库迁移）
 
 [V52](../../backend/nq-infra/src/main/resources/db/migration/V52__strategy_sim_binding.sql) 在仓库中定义：`marketdata_bars.available_at` 记录来源可证明的可见时点，旧行读取侧按实际入库时间保守解释；`paper_trading_runs.canonical_account_id` 只关联新隔离 SIM 账户，历史 Paper run 保持空值。`strategy_sim_decisions` 保存冻结输入摘要、决策及 canonical strategy run / order 引用，不成为第二套订单或成交事实。约束与触发器保护决策身份、停止后的订单准入和已完成决策不可改写。隔离 PostgreSQL 的 V51→V52 升级与 validate 已通过；这不表示生产库已迁移或当前业务里程碑已验收。
@@ -14,9 +18,9 @@ V1–V49不修改。历史行不设默认窗口、不推测回填，保留既存
 
 V50使用5秒DDL锁等待、30秒语句上限，超时失败不静默跳过；唯一索引需扫描表，生产规模和窗口须在获授权部署前评估。无down migration；回退应停止扫描并前向修复，不能通过删除admission身份或重写历史恢复执行。仓库中的 V50 不证明生产已迁移；原候选说明保留为历史范围记录。旧表和其他领域的既有版本说明保留如下。
 
-## 当前 repository migration inventory：V51
+## 当前 repository migration inventory：V54
 
-当前 tracked Flyway inventory 已到 `V51`，与 [STATUS.md](STATUS.md) 的 repository schema 记录一致；这不声明生产已迁移。下方 V43–V48 表格及按历史版本编排的段落保留当时的结构增量和验收事实；V49–V51 的仓库身份由 migration 文件本身确定。
+当前候选 Flyway inventory 已到 `V54`；本切片的接受状态仍以 [STATUS.md](STATUS.md) 为准，且不声明生产已迁移。下方 V43–V48 表格及按历史版本编排的段落保留当时的结构增量和验收事实；V49–V54 的仓库身份由 migration 文件本身确定。
 
 | Migration | 当前结构增量 |
 | --- | --- |
@@ -29,6 +33,9 @@ V50使用5秒DDL锁等待、30秒语句上限，超时失败不静默跳过；�
 | [V49](../../backend/nq-infra/src/main/resources/db/migration/V49__ordinary_place_authorities.sql) | ordinary PLACE authority 的持久化约束；不授予 LIVE 执行权限。 |
 | [V50](../../backend/nq-infra/src/main/resources/db/migration/V50__strategy_window_admission.sql) | strategy run 的结构化调度窗口身份与唯一性约束。 |
 | [V51](../../backend/nq-infra/src/main/resources/db/migration/V51__strategy_run_durable_execution.sql) | strategy run durable execution 结构；具体决策和约束以 migration 文件为准。 |
+| [V52](../../backend/nq-infra/src/main/resources/db/migration/V52__strategy_sim_binding.sql) | 隔离策略 SIM 的冻结输入、决策和 canonical 关联。 |
+| [V53](../../backend/nq-infra/src/main/resources/db/migration/V53__public_market_capture.sql) | 不可变公开行情捕获、实际观察时间与独立回放可见时间假设。 |
+| [V54](../../backend/nq-infra/src/main/resources/db/migration/V54__public_market_rule_response_identity.sql) | 公开 instrument rule 原始响应身份及新捕获完整性要求。 |
 
 ## 本地数据库规则
 

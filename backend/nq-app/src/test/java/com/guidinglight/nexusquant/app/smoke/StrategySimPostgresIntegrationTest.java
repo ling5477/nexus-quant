@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
+import com.guidinglight.nexusquant.app.marketdata.PublicMarketReplayCaptureService;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.port.MarketdataBarRepository;
@@ -35,10 +36,14 @@ import com.guidinglight.nexusquant.strategy.application.StrategyVersionService;
 import com.guidinglight.nexusquant.strategy.application.command.StrategyVersionCreateRequest;
 
 import java.math.BigDecimal;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.http.HttpClient;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -54,6 +59,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+import com.sun.net.httpserver.HttpServer;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -433,6 +441,223 @@ class StrategySimPostgresIntegrationTest {
         } finally {
             Files.deleteIfExists(log);
         }
+    }
+
+    @Test
+    void capturedPublicInputDrivesFormalBacktestAndCanonicalSim() throws Exception {
+        byte[] raw;
+        try (var input = getClass().getResourceAsStream(
+                "/public-market-replay/okx-btc-usdt-1h-20260920-20260923.json")) {
+            raw = input.readAllBytes();
+        }
+        byte[] rawRule;
+        try (var input = getClass().getResourceAsStream(
+                "/public-market-replay/okx-btc-usdt-public-instrument-20260925.json")) {
+            rawRule = input.readAllBytes();
+        }
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/api/v5/market/history-candles", exchange -> {
+            exchange.sendResponseHeaders(200, raw.length);
+            try (var output = exchange.getResponseBody()) { output.write(raw); }
+        });
+        server.createContext("/api/v5/public/instruments", exchange -> {
+            exchange.sendResponseHeaders(200, rawRule.length);
+            try (var output = exchange.getResponseBody()) { output.write(rawRule); }
+        });
+        server.start();
+        PublicMarketReplayCaptureService.CaptureView capture;
+        try {
+            var service = new PublicMarketReplayCaptureService(HttpClient.newHttpClient(),
+                    URI.create("http://127.0.0.1:" + server.getAddress().getPort()), mapper, jdbc,
+                    new TransactionTemplate(new DataSourceTransactionManager(jdbc.getDataSource())),
+                    Clock.systemUTC());
+            capture = service.capture(Instant.parse("2026-09-20T00:00:00Z"),
+                    Instant.parse("2026-09-23T00:00:00Z"), "captured-public-replay-test");
+        } finally {
+            server.stop(0);
+        }
+        String snapshot = datasets.buildDatasetSnapshot(capture.datasetId());
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        Long account = jdbc.queryForObject("""
+                INSERT INTO accounts(account_code,venue,status)
+                VALUES (?,'OKX','ACTIVE') RETURNING account_id
+                """, Long.class, "PUBLIC-REPLAY-SOURCE-" + suffix);
+        String strategyId = "str-public-" + suffix;
+        String strategyCode = "public-sma-" + suffix;
+        Instant now = Instant.now();
+        definitions.insert(new StrategyDefinition(strategyId, strategyCode, "Public capture SMA",
+                SpotSmaTargetStrategy.EXECUTABLE, "OKX", account, "SIM", true,
+                "{}", 1, now, now));
+        var version = versions.create(new StrategyVersionCreateRequest(strategyCode, "v1", "ACTIVE",
+                "{\"window\":3,\"investedExposure\":\"1\"}", "{}",
+                "{\"executable\":\"SPOT_SMA_TARGET_V1\"}", "captured-public-replay-test"));
+        var research = researchConfigs.create(new ResearchConfigCreateRequest(strategyId,
+                "Public capture SMA research", "captured-public-replay", "{}", "{}", snapshot));
+        ObjectNode spec = mapper.createObjectNode();
+        spec.put("quantityStep", "0.00000001");
+        spec.put("priceTick", "0.1");
+        spec.put("minimumQuantity", "0.00001");
+        spec.put("minimumNotional", "5");
+        spec.put("minimumNotionalSource", "EXPERIMENT_ASSUMPTION");
+        spec.put("feeRate", "0.001");
+        spec.put("feeAssumptionVersion", "PUBLIC_SIM_FEE_V1");
+        spec.put("slippageBps", "10");
+        spec.put("slippageAssumptionVersion", "PUBLIC_SIM_SLIPPAGE_V1");
+        spec.put("costSource", "EXPERIMENT_ASSUMPTION");
+        spec.put("ruleSha256", capture.ruleSha256());
+        spec.put("rulePolicy", "CURRENTLY_OBSERVED_PUBLIC_RULES");
+        var config = backtestConfigs.create(new BacktestConfigCreateRequest(
+                research.researchConfigId(), "Public capture SMA backtest", "captured-public-replay",
+                capture.start(), capture.end().minusMillis(1), new BigDecimal("100"),
+                spec.toString(), "{}"));
+        backtestConfigs.bindDataset(config.backtestConfigId(), capture.datasetId().toString(), snapshot);
+        backtestConfigs.bindStrategyVersion(config.backtestConfigId(), version.strategyVersionId());
+        var backtest = backtestRuns.create(new BacktestRunStartRequest(config.backtestConfigId()));
+        assertEquals("SUCCEEDED", backtestExecution.startRun(backtest.backtestRunId()).resultStatus().name());
+        assertEquals("SUCCEEDED", evaluations.evaluate(backtest.backtestRunId()).evaluationStatus().name());
+        var publish = publishing.publish(new BacktestPublishRequest(backtest.backtestRunId(),
+                "Public capture SMA publish", version.strategyVersionId()));
+        assertEquals("SUCCEEDED", publish.publishStatus().name());
+        // 隔离随机 schema 的 SIM 风控开关只为本测试短暂打开，外部运行状态不受影响。
+        jdbc.update("""
+                UPDATE kill_switch_states SET status='DISENGAGED', version=version+1,
+                    reason_code='PUBLIC_REPLAY_TEST_ONLY', source='STRATEGY_SIM_TEST',
+                    updated_at=now(), updated_by='test', trace_id='public-replay-test'
+                WHERE scope='GLOBAL_TRADING'
+                """);
+        var created = sim.create(publish.publishRecordId(), new BigDecimal("100"),
+                "captured-public-replay-test");
+        assertEquals(version.strategyVersionId(), created.strategyVersionId());
+        assertEquals(capture.consumedSha256(), created.barContentSha256());
+        runs.start(created.paperRunId());
+        boolean accepted = false;
+        for (int i = 0; i < capture.barCount(); i++) {
+            var decision = sim.advance(created.paperRunId());
+            if ("ACCEPTED".equals(decision.status())) {
+                matching.matchOnce(100);
+                accepted = true;
+                break;
+            }
+        }
+        assertTrue(accepted);
+        var facts = sim.facts(created.paperRunId());
+        assertEquals("SIM", jdbc.queryForObject(
+                "SELECT trade_env FROM paper_trading_runs WHERE paper_run_id=?",
+                String.class, created.paperRunId()));
+        assertEquals(0L, jdbc.queryForObject(
+                "SELECT count(*) FROM orders WHERE account_id=? AND trade_env='LIVE'",
+                Long.class, created.canonicalAccountId()));
+        assertTrue(facts.orders().size() >= 1);
+        assertTrue(facts.trades().size() >= 1);
+        assertTrue(facts.positionQuantity().signum() > 0);
+        assertTrue(facts.cash().signum() >= 0);
+        assertTrue(facts.ledgerEntries().size() >= 1);
+        assertEquals(0, facts.equity().subtract(facts.initialBudget()).compareTo(facts.pnl()));
+        var backtestFirstTrade = jdbc.queryForMap("""
+                SELECT side,quantity,trade_price,fee_amount,slippage_amount,traded_at
+                FROM sim_trades WHERE backtest_run_id=? ORDER BY traded_at,sim_trade_id LIMIT 1
+                """, backtest.backtestRunId());
+        var simFirstTrade = facts.trades().getFirst();
+        var simFirstOrder = facts.orders().getFirst();
+        var firstDecision = sim.decisions(created.paperRunId()).stream()
+                .filter(decision -> "ACCEPTED".equals(decision.status())).findFirst().orElseThrow();
+        assertEquals(backtestFirstTrade.get("side"), simFirstOrder.get("side"));
+        assertEquals(0, ((BigDecimal) backtestFirstTrade.get("quantity"))
+                .compareTo(new BigDecimal(simFirstTrade.get("qty").toString())));
+        assertEquals(0, ((BigDecimal) backtestFirstTrade.get("trade_price"))
+                .compareTo(new BigDecimal(simFirstTrade.get("price").toString())));
+        BigDecimal backtestFee = (BigDecimal) backtestFirstTrade.get("fee_amount");
+        BigDecimal simFee = new BigDecimal(simFirstTrade.get("fee").toString());
+        // canonical ledger 以 8 位费用精度入账；回测保留 18 位，差额只能是该舍入边界。
+        assertTrue(backtestFee.subtract(simFee).abs().compareTo(new BigDecimal("0.00000001")) <= 0);
+        assertTrue(firstDecision.executionOpenTime().isAfter(firstDecision.signalAvailableAt()));
+        assertEquals(((Timestamp) backtestFirstTrade.get("traded_at")).toInstant(),
+                firstDecision.executionOpenTime());
+        var backtestAtFirstExecution = jdbc.queryForMap("""
+                SELECT cash_balance,position_market_value,net_pnl
+                FROM sim_pnl_snapshots WHERE backtest_run_id=? AND snapshot_time=?
+                """, backtest.backtestRunId(),
+                Timestamp.from(firstDecision.executionOpenTime().plusSeconds(3600)));
+        BigDecimal backtestPosition = (BigDecimal) backtestFirstTrade.get("quantity");
+        assertEquals(0, backtestPosition.compareTo(facts.positionQuantity()));
+        BigDecimal backtestCash = (BigDecimal) backtestAtFirstExecution.get("cash_balance");
+        BigDecimal backtestPnl = (BigDecimal) backtestAtFirstExecution.get("net_pnl");
+        assertTrue(backtestCash.subtract(facts.cash()).abs().compareTo(
+                new BigDecimal("0.00000001").multiply(BigDecimal.valueOf(facts.trades().size()))) <= 0);
+        // 回测按首笔执行 bar 收盘标记，增量 SIM 按执行事件开盘标记；差额由标记价格和账本舍入解释。
+        BigDecimal explainedPnlDifference = backtestCash.subtract(facts.cash())
+                .add((BigDecimal) backtestAtFirstExecution.get("position_market_value"))
+                .subtract(facts.positionQuantity().multiply(facts.markPrice()));
+        assertTrue(backtestPnl.subtract(facts.pnl()).subtract(explainedPnlDifference).abs()
+                .compareTo(new BigDecimal("0.00000001")) <= 0);
+
+        var replayBacktest = backtestRuns.create(new BacktestRunStartRequest(config.backtestConfigId()));
+        assertEquals("SUCCEEDED", backtestExecution.startRun(replayBacktest.backtestRunId())
+                .resultStatus().name());
+        assertEquals("SUCCEEDED", evaluations.evaluate(replayBacktest.backtestRunId())
+                .evaluationStatus().name());
+        var replayPublish = publishing.publish(new BacktestPublishRequest(replayBacktest.backtestRunId(),
+                "Public capture SMA replay", version.strategyVersionId()));
+        assertEquals("SUCCEEDED", replayPublish.publishStatus().name());
+        var replayCreated = sim.create(replayPublish.publishRecordId(), new BigDecimal("100"),
+                "captured-public-replay-test");
+        assertEquals(created.strategyVersionId(), replayCreated.strategyVersionId());
+        assertEquals(created.barContentSha256(), replayCreated.barContentSha256());
+        runs.start(replayCreated.paperRunId());
+        boolean replayAccepted = false;
+        for (int i = 0; i < capture.barCount(); i++) {
+            var decision = sim.advance(replayCreated.paperRunId());
+            if ("ACCEPTED".equals(decision.status())) {
+                matching.matchOnce(100);
+                replayAccepted = true;
+                break;
+            }
+        }
+        assertTrue(replayAccepted);
+        var replayFacts = sim.facts(replayCreated.paperRunId());
+        assertEquals(stablePublicDecisions(created.paperRunId()),
+                stablePublicDecisions(replayCreated.paperRunId()));
+        assertEquals(facts.orders().size(), replayFacts.orders().size());
+        assertEquals(facts.trades().size(), replayFacts.trades().size());
+        assertEquals(0, facts.cash().compareTo(replayFacts.cash()));
+        assertEquals(0, facts.positionQuantity().compareTo(replayFacts.positionQuantity()));
+        assertEquals(0, facts.pnl().compareTo(replayFacts.pnl()));
+        assertEquals(jdbc.queryForList("""
+                SELECT side,quantity,trade_price,fee_amount,slippage_amount,traded_at
+                FROM sim_trades WHERE backtest_run_id=? ORDER BY traded_at,side,quantity
+                """, backtest.backtestRunId()), jdbc.queryForList("""
+                SELECT side,quantity,trade_price,fee_amount,slippage_amount,traded_at
+                FROM sim_trades WHERE backtest_run_id=? ORDER BY traded_at,side,quantity
+                """, replayBacktest.backtestRunId()));
+        System.out.println("PUBLIC_REPLAY_CHAIN dataset=" + capture.datasetId()
+                + " version=" + version.strategyVersionId() + " backtest=" + backtest.backtestRunId()
+                + " sim=" + created.paperRunId() + " replayBacktest=" + replayBacktest.backtestRunId()
+                + " replaySim=" + replayCreated.paperRunId() + " consumed=" + capture.consumedSha256()
+                + " orders=" + facts.orders().size() + " trades=" + facts.trades().size()
+                + " ledger=" + facts.ledgerEntries().size() + " pnl=" + facts.pnl()
+                + " backtestCash=" + backtestCash + " simCash=" + facts.cash()
+                + " backtestPosition=" + backtestPosition + " simPosition=" + facts.positionQuantity()
+                + " backtestPnl=" + backtestPnl + " simPnl=" + facts.pnl()
+                + " pnlDifferenceOwner=MARK_TIME_AND_LEDGER_ROUNDING"
+                + " firstSignal=" + firstDecision.signalAvailableAt()
+                + " firstExecution=" + firstDecision.executionOpenTime()
+                + " firstSide=" + simFirstOrder.get("side")
+                + " firstQuantity=" + simFirstTrade.get("qty")
+                + " firstPrice=" + simFirstTrade.get("price")
+                + " backtestFee=" + backtestFee + " simFee=" + simFee
+                + " feeDifferenceOwner=CANONICAL_LEDGER_8DP_ROUNDING"
+                + " backtestSlippage=" + backtestFirstTrade.get("slippage_amount"));
+    }
+
+    private List<String> stablePublicDecisions(String paperRunId) {
+        return sim.decisions(paperRunId).stream().map(decision -> String.join("|",
+                String.valueOf(decision.strategyVersionId()), String.valueOf(decision.inputSha256()),
+                String.valueOf(decision.executionBarSha256()),
+                String.valueOf(decision.signalOpenTime()), String.valueOf(decision.signalAvailableAt()),
+                String.valueOf(decision.executionOpenTime()), String.valueOf(decision.status()),
+                String.valueOf(decision.reason()), String.valueOf(decision.side()),
+                String.valueOf(decision.quantity()), String.valueOf(decision.executionPrice()),
+                String.valueOf(decision.feeRate()), String.valueOf(decision.slippageBps()))).toList();
     }
 
     @Test

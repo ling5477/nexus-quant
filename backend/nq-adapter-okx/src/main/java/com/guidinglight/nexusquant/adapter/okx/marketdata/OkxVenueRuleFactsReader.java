@@ -44,8 +44,15 @@ public final class OkxVenueRuleFactsReader implements OkxVenueRuleFactsProvider 
      */
     @Override
     public OkxVenueRuleFactsSnapshot fetch(Set<String> allowlistedSymbols, String traceId) {
-        Set<String> normalizedSymbols = normalizeSymbols(allowlistedSymbols);
         JsonNode payload = publicHttpClient.get(INSTRUMENTS_ENDPOINT, traceId);
+        return parseSnapshot(payload, allowlistedSymbols, Instant.now(clock));
+    }
+
+    /** 从已捕获的公开响应解析同一份规则事实，供可重放捕获保存原始响应身份。 */
+    public static OkxVenueRuleFactsSnapshot parseSnapshot(
+            JsonNode payload, Set<String> allowlistedSymbols, Instant observedAt) {
+        Set<String> normalizedSymbols = normalizeSymbols(allowlistedSymbols);
+        Objects.requireNonNull(observedAt, "observedAt must not be null");
         if (!"0".equals(payload.path("code").asText())) {
             throw new IllegalStateException("OKX public instruments returned non-success code");
         }
@@ -70,7 +77,6 @@ public final class OkxVenueRuleFactsReader implements OkxVenueRuleFactsProvider 
             missing.removeAll(seenSymbols);
             throw new IllegalStateException("OKX public instruments missing allowlisted symbols: " + missing);
         }
-        Instant observedAt = Instant.now(clock);
         List<OkxVenueRuleFact> facts = parsedFacts.stream()
                 .map(parsed -> parsed.toFact(observedAt))
                 .toList();

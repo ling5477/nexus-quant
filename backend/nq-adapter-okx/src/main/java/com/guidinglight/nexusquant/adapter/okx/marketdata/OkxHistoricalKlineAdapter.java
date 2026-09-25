@@ -1,8 +1,6 @@
 package com.guidinglight.nexusquant.adapter.okx.marketdata;
 
-import com.guidinglight.nexusquant.adapter.okx.config.OkxRuntimeConfig;
 import com.guidinglight.nexusquant.adapter.okx.http.OkxHttpClient;
-import com.guidinglight.nexusquant.adapter.okx.signing.OkxRequestSigner;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,6 +24,8 @@ import java.util.stream.StreamSupport;
 import org.springframework.stereotype.Component;
 import org.springframework.context.annotation.Profile;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * OkxHistoricalKlineAdapter 负责 OKX SPOT history-candles 的协议适配。
@@ -65,16 +65,15 @@ public class OkxHistoricalKlineAdapter implements HistoricalKlineAdapter {
 
     private final OkxHttpClient client;
 
-    public OkxHistoricalKlineAdapter() {
+    @Autowired
+    public OkxHistoricalKlineAdapter(
+            @Value("${nq.public-marketdata.outbound.base-url:http://127.0.0.1:0}") String baseUrl,
+            @Value("${nq.public-marketdata.outbound.total-request-timeout:PT8S}") Duration timeout) {
         this(new OkxHttpClient(
                 HttpClient.newHttpClient(),
                 new ObjectMapper(),
-                OkxRuntimeConfig.fromSystemEnv().baseUrl(),
-                OkxRuntimeConfig.fromSystemEnv().timeout(),
-                new OkxRequestSigner(),
-                () -> Instant.now().toString(),
-                null,
-                false
+                baseUrl,
+                timeout
         ));
     }
 

@@ -4,6 +4,10 @@
 
 当前 API 事实以代码中的 controller 与 DTO 为准。下方分类描述现有接口能力；按 Gate 编号排列的段落保留实施时的范围和验收记录，其中的“当时状态”不表示当前接口尚未交付。当前运行与交易授权边界以 [STATUS.md](STATUS.md) 为准。
 
+## 手动公开行情冻结入口
+
+`POST /api/marketdata/public-captures` 仅在 `public-marketdata-manual` profile 且 `nq.public-marketdata.outbound.enabled=true` 时装配，并沿用 `/api/**` 的 ADMIN/OPERATOR 鉴权。请求体为 `start`、`end` UTC 整点；服务端固定 OKX SPOT / BTC-USDT / 1h，单次窗口 1–100 根已收盘 bar。响应给出 dataset ID、请求窗口、实际 `observedAt`、`CLOSED_HOURLY_BOUNDARY_V1` 回放可见时间假设、原始/规范化/实际消费 SHA-256，以及当前公开 instrument rule 的观察时间与身份。捕获及 dataset 不可变；再次采集产生新身份。公开规则仅表示采集时观察到的状态，费用与滑点须由后续回测配置显式给出非零实验假设。该入口不授予 LIVE 或真实交易权限。
+
 ## 隔离策略 SIM 接口（默认关闭）
 
 开启服务端 `nq.strategy-sim.enabled=true` 后，`/api/paper-trading/strategy-sim/runs` 提供创建、`/{paperRunId}/start`、`/stop`、`/advance`、`/decisions` 和 `/facts`。创建仅接受已成功发布的 `publishId` 与隔离预算；方向和数量来自冻结策略及服务端 sizing。`advance` 每次保存一个可解释决策，已接受订单仍经过 canonical Risk / Execution；`facts` 返回关联的订单、成交、账本、现金、持仓及按最近已处理事件可见价格标记的 PnL。前端入口另由 `VITE_STRATEGY_SIM_ENABLED=true` 显式开启。默认不开启自动决策，不授予 LIVE 或真实交易权限。
