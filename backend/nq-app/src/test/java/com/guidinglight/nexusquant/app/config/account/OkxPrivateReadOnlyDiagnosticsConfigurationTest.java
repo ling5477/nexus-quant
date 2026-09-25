@@ -7,6 +7,12 @@ import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredenti
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateReadonlyProbeService;
 import com.guidinglight.nexusquant.adapter.api.service.port.TradingAdapter;
 import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateReadTransport;
+import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxAccountFactsReadTransport;
+import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateRealTransport;
+import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxAccountFactsObservationService;
+import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService;
+import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
+import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
 import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsClient;
 import com.guidinglight.nexusquant.app.config.ExchangeAdapterConfiguration;
 import com.guidinglight.nexusquant.risk.application.command.KillSwitchEngageCommand;
@@ -32,6 +38,7 @@ import java.time.ZoneOffset;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
 
 class OkxPrivateReadOnlyDiagnosticsConfigurationTest {
 
@@ -68,8 +75,15 @@ class OkxPrivateReadOnlyDiagnosticsConfigurationTest {
             assertFalse(context.getBeansOfType(OkxPrivateReadTransport.class).isEmpty());
             assertFalse(context.getBeansOfType(OkxPrivateCredentialExecutor.class).isEmpty());
             assertFalse(context.getBeansOfType(OkxPrivateReadonlyProbeService.class).isEmpty());
+            assertFalse(context.getBeansOfType(OkxAccountFactsObservationService.class).isEmpty());
+            assertFalse(context.getBeansOfType(OkxAccountFactsController.class).isEmpty());
+            assertTrue(context.getBean(OkxPrivateReadTransport.class) instanceof OkxAccountFactsReadTransport);
+            assertFalse(context.getBean(OkxPrivateReadTransport.class) instanceof OkxPrivateRealTransport);
             assertTrue(context.getBeansOfType(TradingAdapter.class).isEmpty());
             assertTrue(context.getBeansOfType(OkxWsClient.class).isEmpty());
+            assertTrue(mockingDetails(context.getBean(JdbcTemplate.class)).getInvocations().stream()
+                    .noneMatch(invocation -> invocation.getMethod().getName().matches(
+                            "query|queryForObject|queryForList|update|execute|call")));
         }
     }
 
@@ -178,6 +192,7 @@ class OkxPrivateReadOnlyDiagnosticsConfigurationTest {
         context.getEnvironment().getPropertySources().addFirst(new MapPropertySource("readonly-diagnostics-test", properties));
         context.register(
                 OkxPrivateReadOnlyDiagnosticsConfiguration.class,
+                OkxAccountFactsController.class,
                 ExchangeAdapterConfiguration.class,
                 Dependencies.class
         );
@@ -189,6 +204,8 @@ class OkxPrivateReadOnlyDiagnosticsConfigurationTest {
         assertTrue(context.getBeansOfType(OkxPrivateReadTransport.class).isEmpty());
         assertTrue(context.getBeansOfType(OkxPrivateCredentialExecutor.class).isEmpty());
         assertTrue(context.getBeansOfType(OkxPrivateReadonlyProbeService.class).isEmpty());
+        assertTrue(context.getBeansOfType(OkxAccountFactsObservationService.class).isEmpty());
+        assertTrue(context.getBeansOfType(OkxAccountFactsController.class).isEmpty());
     }
 
     @Configuration
@@ -211,6 +228,26 @@ class OkxPrivateReadOnlyDiagnosticsConfigurationTest {
         @Bean
         ExchangeAccountCredentialRepository exchangeAccountCredentialRepository() {
             return mock(ExchangeAccountCredentialRepository.class);
+        }
+
+        @Bean
+        InstrumentCatalogService instrumentCatalogService() {
+            return mock(InstrumentCatalogService.class);
+        }
+
+        @Bean
+        GatewayAuthFacade gatewayAuthFacade() {
+            return mock(GatewayAuthFacade.class);
+        }
+
+        @Bean
+        CurrentUserProfileService currentUserProfileService() {
+            return mock(CurrentUserProfileService.class);
+        }
+
+        @Bean
+        OkxPrivateReadOnlyPermissionProbeProperties permissionProperties() {
+            return new OkxPrivateReadOnlyPermissionProbeProperties(true, "203.0.113.8");
         }
 
         @Bean

@@ -14,13 +14,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class OkxPrivateReadRequestTest {
 
     @Test
-    void exposesOnlyFiveFixedPrivateReadOperations() {
-        assertEquals(5, OkxPrivateReadOperation.values().length);
+    void exposesOnlyEightFixedPrivateReadOperations() {
+        assertEquals(8, OkxPrivateReadOperation.values().length);
         assertEquals("GET", OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ.method());
         assertEquals("/api/v5/account/config", OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ.path());
         assertEquals("GET", OkxPrivateReadOperation.OKX_ACCOUNT_BALANCE_READ.method());
         assertEquals("/api/v5/account/balance", OkxPrivateReadOperation.OKX_ACCOUNT_BALANCE_READ.path());
+        assertEquals("/api/v5/account/balance", OkxPrivateReadOperation.OKX_ALL_ACCOUNT_BALANCES_READ.path());
+        assertEquals("/api/v5/account/trade-fee", OkxPrivateReadOperation.OKX_SPOT_ACCOUNT_FEE_READ.path());
         assertEquals("/api/v5/trade/orders-pending", OkxPrivateReadOperation.OKX_SPOT_OPEN_ORDERS_READ.path());
+        assertEquals("/api/v5/trade/orders-pending", OkxPrivateReadOperation.OKX_ALL_SPOT_OPEN_ORDERS_READ.path());
         assertEquals("/api/v5/trade/orders-history", OkxPrivateReadOperation.OKX_SPOT_ORDER_HISTORY_READ.path());
         assertEquals("/api/v5/trade/fills", OkxPrivateReadOperation.OKX_SPOT_RECENT_FILLS_READ.path());
     }
@@ -33,6 +36,10 @@ class OkxPrivateReadRequestTest {
         assertEquals(
                 "/api/v5/trade/orders-pending?instType=SPOT&instId=BTC-USDT&limit=100",
                 OkxPrivateReadRequest.openOrders("btc-usdt", 100).pathWithQuery()
+        );
+        assertEquals(
+                "/api/v5/trade/orders-pending?instType=SPOT&limit=100",
+                OkxPrivateReadRequest.allSpotOpenOrders(100).pathWithQuery()
         );
         assertEquals(
                 "/api/v5/trade/orders-history?instType=SPOT&instId=BTC-USDT&begin=1783987200000&end=1783990800000&limit=50",

@@ -83,9 +83,9 @@ class JdkOkxPrivateReadTransportTest {
 
         assertTrue(result.complete());
         assertFalse(result.ipAllowlistConfigured());
-        assertEquals(9, OkxPrivateReadResult.class.getRecordComponents().length);
         assertTrue(Arrays.stream(OkxPrivateReadResult.class.getRecordComponents())
-                .noneMatch(component -> component.getType().equals(String.class)));
+                .noneMatch(component -> component.getName().matches("apiKey|secretKey|passphrase|signature|rawPayload")));
+        assertEquals("OkxPrivateReadResult[REDACTED]", result.toString());
     }
 
     @Test
@@ -129,7 +129,7 @@ class JdkOkxPrivateReadTransportTest {
     }
 
     @Test
-    void parsesOnlyAssetCountAndMarksMissingBalanceFieldsPartial() {
+    void marksMissingBalanceFieldsPartialWithoutExposingPartialAmounts() {
         JdkOkxPrivateReadTransport transport = transport((uri, headers, timeout) -> response(200,
                 "{\"code\":\"0\",\"data\":[{\"details\":["
                         + "{\"ccy\":\"BTC\",\"cashBal\":\"1\",\"availBal\":\"1\",\"frozenBal\":\"0\",\"uTime\":\"1\"},"
@@ -143,6 +143,69 @@ class JdkOkxPrivateReadTransportTest {
 
         assertEquals(2, result.assetCount());
         assertFalse(result.complete());
+        assertTrue(result.balances().isEmpty());
+    }
+
+    @Test
+    void parsesExactBtcUsdtAmountsAndNeverTurnsMissingCurrencyIntoZero() {
+        JdkOkxPrivateReadTransport transport = transport((uri, headers, timeout) -> response(200,
+                "{\"code\":\"0\",\"data\":[{\"details\":["
+                        + "{\"ccy\":\"USDT\",\"cashBal\":\"12.345678901\",\"availBal\":\"10.345678901\",\"frozenBal\":\"2\",\"uTime\":\"1786881600000\"}]}]}"));
+        OkxPrivateReadResult result = execute(transport,
+                OkxPrivateReadRequest.accountBalance(List.of("BTC", "USDT")),
+                OkxPrivateEnvironment.PRODUCTION);
+        assertTrue(result.complete());
+        assertEquals(1, result.balances().size());
+        assertEquals("USDT", result.balances().getFirst().currency());
+        assertEquals("12.345678901", result.balances().getFirst().total().toPlainString());
+        assertTrue(result.balances().stream().noneMatch(item -> "BTC".equals(item.currency())));
+    }
+
+    @Test
+    void allAccountBalancesUsesFixedGetAndKeepsZeroAndUnexpectedAsset() {
+        AtomicReference<URI> requested = new AtomicReference<>();
+        JdkOkxPrivateReadTransport transport = transport((uri, headers, timeout) -> {
+            requested.set(uri);
+            return response(200, "{\"code\":\"0\",\"data\":[{\"details\":["
+                    + "{\"ccy\":\"BTC\",\"cashBal\":\"0\",\"availBal\":\"0\",\"frozenBal\":\"0\",\"uTime\":\"1786881600000\"},"
+                    + "{\"ccy\":\"USDC\",\"cashBal\":\"1.25\",\"availBal\":\"1.25\",\"frozenBal\":\"0\",\"uTime\":\"1786881600000\"}]}]}");
+        });
+        OkxPrivateReadResult result = execute(transport, OkxPrivateReadRequest.allAccountBalances(),
+                OkxPrivateEnvironment.PRODUCTION);
+        assertEquals(URI.create("https://openapi.okx.com/api/v5/account/balance"), requested.get());
+        assertTrue(result.complete());
+        assertEquals(2, result.balances().size());
+        assertEquals(0, result.balances().getFirst().total().signum());
+        assertEquals("USDC", result.balances().get(1).currency());
+    }
+
+    @Test
+    void parsesActualSpotAccountFeeOnlyFromExactTypedGet() {
+        AtomicReference<URI> requested = new AtomicReference<>();
+        JdkOkxPrivateReadTransport transport = transport((uri, headers, timeout) -> {
+            requested.set(uri);
+            return response(200, "{\"code\":\"0\",\"data\":[{\"level\":\"Lv1\","
+                    + "\"maker\":\"-0.0008\",\"taker\":\"-0.001\",\"ts\":\"1786881600000\"}]}");
+        });
+        OkxPrivateReadResult result = execute(transport,
+                OkxPrivateReadRequest.spotAccountFee("BTC-USDT"), OkxPrivateEnvironment.PRODUCTION);
+        assertEquals(URI.create("https://openapi.okx.com/api/v5/account/trade-fee?instType=SPOT&instId=BTC-USDT"),
+                requested.get());
+        assertTrue(result.complete());
+        assertEquals("-0.0008", result.fee().makerRate().toPlainString());
+        assertEquals("-0.001", result.fee().takerRate().toPlainString());
+        assertEquals("OkxPrivateFeeFact[REDACTED]", result.fee().toString());
+        assertThrows(IllegalArgumentException.class, () -> OkxPrivateReadRequest.spotAccountFee("BTC-USDT/evil"));
+    }
+
+    @Test
+    void missingFeeFieldsRemainUnknown() {
+        JdkOkxPrivateReadTransport transport = transport((uri, headers, timeout) -> response(200,
+                "{\"code\":\"0\",\"data\":[{\"level\":\"Lv1\",\"maker\":\"-0.0008\"}]}"));
+        OkxPrivateReadResult result = execute(transport,
+                OkxPrivateReadRequest.spotAccountFee("BTC-USDT"), OkxPrivateEnvironment.PRODUCTION);
+        assertFalse(result.complete());
+        assertEquals(null, result.fee());
     }
 
     @Test
