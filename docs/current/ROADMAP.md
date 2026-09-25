@@ -176,7 +176,7 @@ C1接受身份：implementation=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd`；既
 
 ## 下一允许动作
 
-GateZ 当前范围、验收边界和后续扩展见 [GATEZ_PLAN.md](GATEZ_PLAN.md)。GateZ-1 已通过 PR #24 合并及 dev exact-head CI；本轮未执行生产或 LIVE 交易。公开 OKX SPOT / BTC-USDT / 1h 历史行情可重放回测到隔离 SIM smoke 已由 PR #27 合并，合并后 dev exact-head CI 9/9 SUCCESS；该公开 smoke 不涉及私有 API、真实账户或 LIVE。随后 OKX 只读账户事实实现由 PR #30 合并，technical merge/exact-head CI=`5a8cfb7e10b192efea1b804d9e6b6c0e1a637bd3 / 36158986349 / 9 of 9 SUCCESS`；服务器尚未部署新 runtime，真实余额、实际账户费率与账户偏差仍为 UNKNOWN，历史时点真实规则亦未证明。当前机器 next_action 仅指取得 canonical 部署授权后完成只读资格验证。
+GateZ 当前范围、验收边界和后续扩展见 [GATEZ_PLAN.md](GATEZ_PLAN.md)。GateZ-1 已通过 PR #24 合并及 dev exact-head CI；本轮未执行生产或 LIVE 交易。公开 OKX SPOT / BTC-USDT / 1h 历史行情可重放回测到隔离 SIM smoke 已由 PR #27 合并，合并后 dev exact-head CI 9/9 SUCCESS；该公开 smoke 不涉及私有 API、真实账户或 LIVE。随后 OKX 只读账户事实基础实现由 PR #30 合并，technical merge/exact-head CI=`5a8cfb7e10b192efea1b804d9e6b6c0e1a637bd3 / 36158986349 / 9 of 9 SUCCESS`；服务器现有 TRADE 凭证的隔离只读运行路径由 PR #32 合并，technical merge/exact-head CI=`6c190f6857029b999d721cd1a2863dda836ae6a4 / 36169678171 / 9 of 9 SUCCESS`。服务器尚未部署新 runtime，真实余额、实际账户费率与账户偏差仍为 UNKNOWN，历史时点真实规则亦未证明。当前机器 next_action 仅指取得 canonical 部署授权后完成只读资格验证。
 
 - Phase5B immutable technical acceptance pair=`a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848`；不得由本次current-fact synchronization commit或其CI替代。
 - F008 immutable technical acceptance pair=`614359fc7f25227f736fbb1c11c7d584da1f0627 / 33978394774`；implementation=`716199a7cb836a5eaf43a88b0de6db0f47a75e91`，后续head属于`accepted CI test-harness compatibility remediation`，不是新的implementation finding。详见[post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F008_POST_CI_AUTHORITY_ACCEPTANCE.md)。
