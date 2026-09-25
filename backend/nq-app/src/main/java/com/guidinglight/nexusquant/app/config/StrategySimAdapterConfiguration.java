@@ -1,6 +1,6 @@
 package com.guidinglight.nexusquant.app.config;
 
-import com.guidinglight.nexusquant.scheduler.integration.PaperTradingAdapter;
+import com.guidinglight.nexusquant.scheduler.integration.SimTradingAdapter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Profile;
 @ConditionalOnProperty(prefix = "nq.strategy-sim", name = "enabled", havingValue = "true")
 public class StrategySimAdapterConfiguration {
     @Bean
-    public PaperTradingAdapter paperTradingAdapter() {
-        return new PaperTradingAdapter();
+    public SimTradingAdapter simTradingAdapter() {
+        return new SimTradingAdapter();
     }
 }
