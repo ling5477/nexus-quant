@@ -58,6 +58,21 @@ class ScopedCredentialCapabilityPolicyTest {
     }
 
     @Test
+    void accountFactsTradeScopeRequiresFreshVerifiedTradeWithoutWithdraw() {
+        var scope = ScopedCredentialCapabilityPolicy.PermissionScope.TRADE;
+        assertEquals(ScopedCredentialCapabilityPolicy.Status.ALLOWED,
+                policy.evaluate(withPermission("TRADE", false), NOW, scope).status());
+        assertEquals(Reason.REMOTE_PERMISSION_SCOPE_MISMATCH,
+                policy.evaluate(withPermission("READ_ONLY", false), NOW, scope).reason());
+        assertEquals(Reason.REMOTE_PERMISSION_SCOPE_MISMATCH,
+                policy.evaluate(withPermission("TRADE", true), NOW, scope).reason());
+        var stale = copy(reference(ScopedCredentialCapability.PRIVATE_READONLY_DIAGNOSTIC),
+                "ACTIVE", true, "TRADE", false, true,
+                RemoteIpVerificationStatus.REMOTE_PERMISSION_IP_VERIFIED, NOW.minus(Duration.ofHours(2)));
+        assertEquals(Reason.PERMISSION_PROBE_STALE, policy.evaluate(stale, NOW, scope).reason());
+    }
+
+    @Test
     void shouldRejectWrongVenueInvalidReferenceRevokedAndExpiredWithoutLeakingRawScope() {
         ScopedCredentialReference valid = reference(ScopedCredentialCapability.PRIVATE_READONLY_DIAGNOSTIC);
         ScopedCredentialReference wrongVenue = new ScopedCredentialReference(

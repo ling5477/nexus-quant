@@ -145,6 +145,7 @@ class ReadOnlyRuntimeDiagnosticEndpointTest {
                 new KillSwitchService(repository, clock),
                 environment,
                 clock,
+                () -> true,
                 () -> mutationRuntimeBound
         );
     }

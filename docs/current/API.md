@@ -6,7 +6,7 @@
 
 ## 手动只读账户事实观察
 
-`POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/account-facts/observe` 仅在显式 `okx-private-readonly-diagnostics` profile、只读功能开关及全部环境安全开关满足时注册。请求经 `/api/**` 身份认证，服务端将当前用户、OKX LIVE account 与指定 ACTIVE credential reference 精确绑定；kill switch 必须保持 ENGAGED，远端 READ_ONLY 权限和预期 IP 必须经现有只读配置观察确认。默认启动、健康检查和前端轮询均不触发此入口。
+`POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/account-facts/observe` 仅在显式 `okx-private-readonly-diagnostics` 或 `scoped-okx-private-readonly` 单一 profile、只读功能开关及全部环境安全开关满足时注册；两者同时启用时拒绝装配。请求经 `/api/**` 身份认证，服务端将当前用户、OKX LIVE account 与指定 ACTIVE credential reference 精确绑定；kill switch 必须保持 ENGAGED。前者要求近期验证的远端 READ_ONLY 权限；后者仅为使用服务器现有 TRADE 凭证执行固定只读 GET，要求近期验证的 READ 与 TRADE、禁用 WITHDRAW，以及匹配的预期 IP。两种模式都先核对已存脱敏权限元数据，再以 `GET /api/v5/account/config` 确认当前远端权限；元数据过期时需先经既有只读 permission probe 刷新。默认启动、健康检查和前端轮询均不触发此入口。
 
 每次人工调用通过既有 JIT credential 生命周期执行固定 private GET，返回非持久化的脱敏 `AccountFactsSnapshot`：账户模式、已证明的读取权限、币种 total/available/frozen、BTC-USDT SPOT 实际账户费率、全 SPOT 未完成订单计数、适用仓位或 UNKNOWN、公开服务器时间、当前公开 instrument rule 身份，以及与本地 canonical 状态的只读偏差分类。每项保留状态、观察时间、来源及适用时的有效期限；缺失或无法确认的事实保持 UNKNOWN，不推断为零。响应不包含原始 credential、签名或私有响应，不写 Order、Trade、Ledger 或 SIM 账本。该能力尚未在现有服务器 runtime 上执行真实账户观察，不能据此宣称余额、费率或偏差已通过资格验证；LIVE 与交易 mutation 仍关闭。
 

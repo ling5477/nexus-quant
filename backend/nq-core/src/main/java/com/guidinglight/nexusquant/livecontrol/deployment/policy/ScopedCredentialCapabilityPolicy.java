@@ -29,8 +29,14 @@ public final class ScopedCredentialCapabilityPolicy {
     }
 
     public Decision evaluate(ScopedCredentialReference reference, Instant now) {
+        return evaluate(reference, now, PermissionScope.READ_ONLY);
+    }
+
+    /** 账户事实只读运行模式可按明确权限范围校验已有凭证；不改变默认只读策略。 */
+    public Decision evaluate(ScopedCredentialReference reference, Instant now, PermissionScope permissionScope) {
         if (reference == null) return Decision.denied(Reason.CREDENTIAL_REFERENCE_MISSING);
         Objects.requireNonNull(now, "now must not be null");
+        Objects.requireNonNull(permissionScope, "permissionScope must not be null");
         if (!reference.capability().privateReadonlyDiagnosticCallable()) {
             return Decision.denied(reference.capability() == ScopedCredentialCapability.FORBIDDEN
                     ? Reason.CAPABILITY_FORBIDDEN : Reason.FUTURE_CAPABILITY_NOT_CALLABLE);
@@ -52,12 +58,13 @@ public final class ScopedCredentialCapabilityPolicy {
             return Decision.denied(Reason.CREDENTIAL_NOT_VERIFIED);
         }
         if (!"SUCCEEDED".equals(reference.permissionProbeStatus())
-                || !reference.remotelyVerifiedReadOnly()
+                || reference.remotelyVerifiedReadOnly() != (permissionScope == PermissionScope.READ_ONLY)
                 || !Objects.equals(
-                        ScopedCredentialReference.digestPermissionScope("READ_ONLY"),
+                        ScopedCredentialReference.digestPermissionScope(permissionScope.name()),
                         reference.permissionScopeDigest())
                 || reference.withdrawEnabled()) {
-            return Decision.denied(Reason.REMOTE_PERMISSION_NOT_READ_ONLY);
+            return Decision.denied(permissionScope == PermissionScope.READ_ONLY
+                    ? Reason.REMOTE_PERMISSION_NOT_READ_ONLY : Reason.REMOTE_PERMISSION_SCOPE_MISMATCH);
         }
         if (!reference.ipAllowlistConfigured()) {
             return Decision.denied(Reason.IP_ALLOWLIST_NOT_CONFIGURED);
@@ -94,6 +101,8 @@ public final class ScopedCredentialCapabilityPolicy {
 
     public enum Status { ALLOWED, DENIED }
 
+    public enum PermissionScope { READ_ONLY, TRADE }
+
     public enum Reason {
         CREDENTIAL_REFERENCE_MISSING,
         CREDENTIAL_REFERENCE_INVALID,
@@ -104,6 +113,7 @@ public final class ScopedCredentialCapabilityPolicy {
         CREDENTIAL_REVOKED_OR_ROTATED,
         CREDENTIAL_NOT_VERIFIED,
         REMOTE_PERMISSION_NOT_READ_ONLY,
+        REMOTE_PERMISSION_SCOPE_MISMATCH,
         IP_ALLOWLIST_NOT_CONFIGURED,
         REMOTE_PERMISSION_IP_NOT_VERIFIED,
         REMOTE_PERMISSION_IP_NOT_VERIFIABLE,

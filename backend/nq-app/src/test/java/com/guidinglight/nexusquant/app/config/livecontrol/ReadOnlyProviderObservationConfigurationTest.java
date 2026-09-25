@@ -6,6 +6,7 @@ import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredenti
 import com.guidinglight.nexusquant.adapter.api.service.port.TradingAdapter;
 import com.guidinglight.nexusquant.adapter.okx.privateread.transport.JdkOkxPrivateReadTransport;
 import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateReadTransport;
+import com.guidinglight.nexusquant.app.config.livecontrol.endpoint.ReadOnlyRuntimeDiagnosticEndpoint;
 import com.guidinglight.nexusquant.app.config.ExchangeAdapterConfiguration;
 import com.guidinglight.nexusquant.app.config.account.AccountCredentialRuntimeProperties;
 import com.guidinglight.nexusquant.livecontrol.application.port.PilotPrerequisiteObservationAuthority;
@@ -120,6 +121,8 @@ class ReadOnlyProviderObservationConfigurationTest {
                     assertEquals(0, context.getBeansOfType(ValidationEvidenceScheduler.class).size());
                     assertEquals(0, context.getBean(CountingDataSource.class).connectionAttempts.get());
                     assertEquals(0, context.getBean(CountingKillSwitchRepository.class).reads.get());
+                    assertTrue(context.getBean(ReadOnlyRuntimeDiagnosticEndpoint.class)
+                            .read().providerObservationEnabled());
                 });
     }
 

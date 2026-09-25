@@ -30,6 +30,7 @@ public final class ReadOnlyRuntimeDiagnosticEndpoint {
     private final KillSwitchService killSwitchService;
     private final Environment environment;
     private final Clock clock;
+    private final BooleanSupplier providerObservationBound;
     private final BooleanSupplier mutationRuntimeBound;
     private final Instant startedAt;
 
@@ -38,12 +39,15 @@ public final class ReadOnlyRuntimeDiagnosticEndpoint {
             KillSwitchService killSwitchService,
             Environment environment,
             Clock clock,
+            BooleanSupplier providerObservationBound,
             BooleanSupplier mutationRuntimeBound
     ) {
         this.identity = Objects.requireNonNull(identity, "identity must not be null");
         this.killSwitchService = Objects.requireNonNull(killSwitchService, "killSwitchService must not be null");
         this.environment = Objects.requireNonNull(environment, "environment must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
+        this.providerObservationBound = Objects.requireNonNull(
+                providerObservationBound, "providerObservationBound must not be null");
         this.mutationRuntimeBound = Objects.requireNonNull(
                 mutationRuntimeBound,
                 "mutationRuntimeBound must not be null"
@@ -73,7 +77,7 @@ public final class ReadOnlyRuntimeDiagnosticEndpoint {
                 deploymentProfile,
                 identity.capability(),
                 identity.bindAddress(),
-                true,
+                providerObservationBound.getAsBoolean(),
                 tradingComponents == null || tradingComponents,
                 live == null || live,
                 kill.status().name(),

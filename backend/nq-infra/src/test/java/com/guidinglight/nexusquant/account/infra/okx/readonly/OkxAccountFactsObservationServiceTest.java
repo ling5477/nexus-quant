@@ -98,6 +98,32 @@ class OkxAccountFactsObservationServiceTest {
     }
 
     @Test
+    void scopedTradeCredentialCanOnlyReachFixedReadsAfterExactPermissionCheck() {
+        setupAllowed("TRADE");
+        executor.tradePermission = true;
+        when(transport.readServerTime()).thenReturn(NOW);
+        AccountFactsSnapshot snapshot = service(ScopedCredentialCapabilityPolicy.PermissionScope.TRADE)
+                .observe(7, 8, 9);
+        assertEquals(List.of("READ", "TRADE"), snapshot.permissions().value());
+        assertEquals(AccountFactsSnapshot.Status.OBSERVED, snapshot.balances().get("USDT").status());
+        assertEquals(List.of(
+                OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ,
+                OkxPrivateReadOperation.OKX_ALL_ACCOUNT_BALANCES_READ,
+                OkxPrivateReadOperation.OKX_SPOT_ACCOUNT_FEE_READ,
+                OkxPrivateReadOperation.OKX_ALL_SPOT_OPEN_ORDERS_READ), executor.operations);
+    }
+
+    @Test
+    void scopedTradeCredentialRejectsRemotePermissionMismatchBeforeFinancialReads() {
+        setupAllowed("TRADE");
+        AccountFactsSnapshot snapshot = service(ScopedCredentialCapabilityPolicy.PermissionScope.TRADE)
+                .observe(7, 8, 9);
+        assertEquals(AccountFactsSnapshot.Status.REJECTED, snapshot.status());
+        assertEquals(List.of(OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ), executor.operations);
+        verifyNoInteractions(transport, jdbc);
+    }
+
+    @Test
     void matchingCanonicalSnapshotAndNoExternalOrderClassifiesMatch() {
         legacyAccountId = 42L;
         executor.includeBtc = true;
@@ -185,19 +211,28 @@ class OkxAccountFactsObservationServiceTest {
     }
 
     private OkxAccountFactsObservationService service() {
+        return service(ScopedCredentialCapabilityPolicy.PermissionScope.READ_ONLY);
+    }
+
+    private OkxAccountFactsObservationService service(
+            ScopedCredentialCapabilityPolicy.PermissionScope permissionScope) {
         return new OkxAccountFactsObservationService(accounts, credentials, executor, transport,
-                kill, new ScopedCredentialCapabilityPolicy(Duration.ofHours(1)), catalog, jdbc,
+                kill, new ScopedCredentialCapabilityPolicy(Duration.ofHours(1)), permissionScope, catalog, jdbc,
                 Clock.fixed(NOW, ZoneOffset.UTC), "203.0.113.8");
     }
 
     private void setupAllowed() {
+        setupAllowed("READ_ONLY");
+    }
+
+    private void setupAllowed(String permissionScope) {
         when(kill.snapshot()).thenReturn(kill(KillSwitchStatus.ENGAGED));
         when(accounts.findByIdForOwner(7L, 8L)).thenReturn(Optional.of(new ExchangeAccountSummary(
                 8L, legacyAccountId, 7L, "OKX", "LIVE", "account", null, true, "ACTIVE")));
         when(credentials.findByCredentialIdForOwner(7L, 8L, 9L)).thenReturn(Optional.of(
                 new ExchangeAccountCredentialSummary(9L, 8L, "OKX_API_V5", "masked", "ACTIVE",
                         "VERIFIED", true, null, null, null, NOW, null, NOW,
-                        "SUCCEEDED", "READ_ONLY", false, "PASSED", 0,
+                        "SUCCEEDED", permissionScope, false, "PASSED", 0,
                         NOW.minusSeconds(30), null)));
         when(catalog.findByExchangeAndSymbols(eq("OKX"), any())).thenReturn(List.of());
     }

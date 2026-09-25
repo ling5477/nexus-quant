@@ -18,7 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 /** 仅在显式只读 profile 中注册，人工 POST 才触发私有观察。 */
 @Validated
 @RestController
-@Profile("okx-private-readonly-diagnostics")
+@Profile({"okx-private-readonly-diagnostics & !scoped-okx-private-readonly",
+        "scoped-okx-private-readonly & !okx-private-readonly-diagnostics"})
 @Conditional(OkxPrivateReadOnlyDiagnosticsConfiguration.OkxPrivateReadOnlyDiagnosticsEnabledCondition.class)
 @ConditionalOnProperty(prefix = "nq.env-safety",
         name = {"ci", "live-enabled", "real-exchange-enabled", "real-client-enabled", "real-provider-enabled"},
@@ -26,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @ConditionalOnProperty(prefix = "nq.env-safety", name = "no-outbound",
         havingValue = "false", matchIfMissing = false)
 @RequestMapping("/api/exchange-accounts/{accountId}/credentials/{credentialId}/account-facts")
-public final class OkxAccountFactsController {
+public class OkxAccountFactsController {
     private final OkxAccountFactsObservationService service;
     private final GatewayAuthFacade auth;
     private final CurrentUserProfileService users;

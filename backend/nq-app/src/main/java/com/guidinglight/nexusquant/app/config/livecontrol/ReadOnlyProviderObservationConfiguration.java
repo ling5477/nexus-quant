@@ -77,12 +77,16 @@ public class ReadOnlyProviderObservationConfiguration {
     }
 
     @Bean
+    @ConditionalOnProperty(prefix = "nq.okx.private-readonly-diagnostics", name = "enabled",
+            havingValue = "false", matchIfMissing = true)
     @ConditionalOnMissingBean(OkxPrivateReadTransport.class)
     public OkxPrivateReadTransport readOnlyProviderObservationTransport(ObjectMapper objectMapper) {
         return new JdkOkxPrivateReadTransport(objectMapper, Clock.systemUTC());
     }
 
     @Bean
+    @ConditionalOnProperty(prefix = "nq.okx.private-readonly-diagnostics", name = "enabled",
+            havingValue = "false", matchIfMissing = true)
     public OkxPrivateCredentialExecutor readOnlyProviderObservationCredentialExecutor(
             JdbcTemplate jdbcTemplate,
             ObjectMapper objectMapper,
@@ -95,6 +99,8 @@ public class ReadOnlyProviderObservationConfiguration {
 
     @Bean
     @Primary
+    @ConditionalOnProperty(prefix = "nq.okx.private-readonly-diagnostics", name = "enabled",
+            havingValue = "false", matchIfMissing = true)
     public PilotPrerequisiteObservationAuthority readOnlyProviderObservationAuthority(
             OkxPrivateCredentialExecutor credentialExecutor,
             KillSwitchService killSwitchService,
@@ -121,6 +127,9 @@ public class ReadOnlyProviderObservationConfiguration {
             Environment environment,
             ListableBeanFactory beanFactory
     ) {
+        BooleanSupplier providerObservationBound = () ->
+                beanFactory.getBeanNamesForType(
+                        KillSwitchGuardedProviderObservationAuthority.class, false, false).length > 0;
         BooleanSupplier mutationRuntimeBound = () ->
                 beanFactory.getBeanNamesForType(SpotExecutionProviderPort.class, false, false).length > 0
                         || beanFactory.getBeanNamesForType(TradingAdapter.class, false, false).length > 0;
@@ -129,6 +138,7 @@ public class ReadOnlyProviderObservationConfiguration {
                 killSwitchService,
                 environment,
                 Clock.systemUTC(),
+                providerObservationBound,
                 mutationRuntimeBound
         );
     }
