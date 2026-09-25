@@ -883,7 +883,7 @@
     },
     {
       "path": "scripts/deployment/Invoke-NqCanonicalRestoreDrill.ps1",
-      "sha256": "ad7fcdfe3903153f5efa86ca93359aa24fbcdd69d03a534f1fd8c9448c620cc4",
+      "sha256": "208f6ca11f35d741b97949b1b79f6acebeb94c2a6f1ec998e2600d723d4d2c7a",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",
