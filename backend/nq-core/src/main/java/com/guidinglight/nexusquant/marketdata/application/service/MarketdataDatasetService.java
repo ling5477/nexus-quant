@@ -125,6 +125,9 @@ public class MarketdataDatasetService {
      */
     public MarketdataDataset refreshQuality(UUID datasetId) {
         MarketdataDataset dataset = getDataset(datasetId);
+        if ("OKX_PUBLIC_CAPTURE".equals(dataset.source())) {
+            throw new IllegalStateException("PUBLIC_CAPTURE_DATASET_IMMUTABLE");
+        }
         Instant now = Instant.now(clock);
         MarketdataDatasetCoverage coverage = marketdataDatasetRepository.calculateCoverage(dataset, now);
         marketdataDatasetRepository.insertCoverage(coverage);
@@ -154,8 +157,9 @@ public class MarketdataDatasetService {
             ObjectNode snapshot = objectMapper.createObjectNode();
             snapshot.put("datasetId", dataset.datasetId().toString());
             snapshot.put("datasetName", dataset.datasetName());
-            snapshot.put("provider", "db");
-            snapshot.put("resourcePath", SOURCE);
+            boolean publicCapture = "OKX_PUBLIC_CAPTURE".equals(dataset.source());
+            snapshot.put("provider", publicCapture ? "public-capture" : "db");
+            snapshot.put("resourcePath", publicCapture ? dataset.datasetId().toString() : SOURCE);
             snapshot.put("exchangeCode", dataset.exchangeCode());
             snapshot.put("marketType", dataset.marketType());
             snapshot.put("symbol", dataset.symbol());
@@ -167,7 +171,11 @@ public class MarketdataDatasetService {
             snapshot.put("barCount", dataset.barCount());
             snapshot.put("gapCount", dataset.gapCount());
             snapshot.put("source", dataset.source());
-            snapshot.put("snapshotAt", Instant.now(clock).toString());
+            if (publicCapture) {
+                snapshot.set("capture", objectMapper.readTree(dataset.requestJson()));
+            } else {
+                snapshot.put("snapshotAt", Instant.now(clock).toString());
+            }
             return objectMapper.writeValueAsString(snapshot);
         } catch (JsonProcessingException ex) {
             throw new IllegalStateException("failed to build dataset snapshot", ex);

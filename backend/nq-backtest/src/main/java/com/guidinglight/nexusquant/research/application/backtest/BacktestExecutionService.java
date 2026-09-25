@@ -33,6 +33,8 @@ import com.guidinglight.nexusquant.research.application.config.BacktestConfigSer
 import com.guidinglight.nexusquant.research.application.BacktestRunService;
 import com.guidinglight.nexusquant.research.application.ResearchConfigService;
 import com.guidinglight.nexusquant.strategy.domain.SpotBarIdentity;
+import com.guidinglight.nexusquant.strategy.domain.PublicReplayAssumptionIdentity;
+import com.guidinglight.nexusquant.strategy.domain.PublicReplayRuleIdentity;
 import com.guidinglight.nexusquant.strategy.domain.SpotSmaTargetStrategy;
 import com.guidinglight.nexusquant.strategy.domain.SpotTargetSizer;
 
@@ -186,6 +188,10 @@ public class BacktestExecutionService {
         List<String> decisionReasons = new ArrayList<>();
         try {
             executionRequest = buildExecutionRequest(currentRun, backtestConfig, researchConfig);
+            if ("public-capture".equals(executionRequest.datasetSpec().provider())) {
+                validatePublicCaptureAssumptions(currentRun.datasetSnapshotJson(),
+                        executionRequest.executionSpecJson());
+            }
             executionContext = new BacktestExecutionContext(
                     currentRun.backtestRunId(),
                     executionRequest.datasetSpec().symbol(),
@@ -193,6 +199,9 @@ public class BacktestExecutionService {
             );
             boolean frozenVersion = currentRun.strategyVersionId() != null
                     && !currentRun.strategyVersionId().isBlank();
+            if ("public-capture".equals(executionRequest.datasetSpec().provider()) && !frozenVersion) {
+                throw new IllegalStateException("PUBLIC_CAPTURE_REQUIRES_FROZEN_STRATEGY_VERSION");
+            }
             HistoricalMarketDataQuery query = frozenVersion
                     ? new HistoricalMarketDataQuery(executionRequest.datasetSpec(),
                             executionRequest.datasetSpec().exchangeCode(), "SPOT",
@@ -216,6 +225,11 @@ public class BacktestExecutionService {
 
             if (frozenVersion) {
                 inputIdentity = SpotBarIdentity.capture(bars, objectMapper);
+                if ("public-capture".equals(executionRequest.datasetSpec().provider())
+                        && !inputIdentity.sha256().equals(readJson(currentRun.datasetSnapshotJson())
+                                .path("capture").path("consumedSha256").asText())) {
+                    throw new IllegalStateException("PUBLIC_CAPTURE_CONSUMED_IDENTITY_MISMATCH");
+                }
                 simulateFrozenFacts(currentRun, executionRequest, executionContext, bars,
                         simulatedOrders, simulatedTrades, simulatedPositions, simulatedPnlSnapshots,
                         decisionReasons);
@@ -453,6 +467,33 @@ public class BacktestExecutionService {
                 requiredDecimal(spec, "priceTick"), requiredDecimal(spec, "minimumQuantity"),
                 requiredDecimal(spec, "minimumNotional"), requiredDecimal(spec, "feeRate"),
                 requiredDecimal(spec, "slippageBps"));
+    }
+
+    private void validatePublicCaptureAssumptions(String datasetSnapshotJson, String executionSpecJson) {
+        JsonNode capture = readJson(datasetSnapshotJson).path("capture");
+        JsonNode rule = capture.path("rule");
+        JsonNode spec = readJson(executionSpecJson);
+        if (!"CLOSED_HOURLY_BOUNDARY_V1".equals(capture.path("replayVisibilityVersion").asText())
+                || !"EXPERIMENT_ASSUMPTION".equals(capture.path("replayVisibilitySource").asText())
+                || !"CURRENTLY_OBSERVED_PUBLIC_RULES".equals(rule.path("policy").asText())
+                || !"LIVE".equals(rule.path("state").asText())
+                || !capture.path("ruleSha256").asText().equals(PublicReplayRuleIdentity.sha256(rule))
+                || !capture.path("ruleSha256").asText().equals(spec.path("ruleSha256").asText())
+                || !"CURRENTLY_OBSERVED_PUBLIC_RULES".equals(spec.path("rulePolicy").asText())
+                || !"EXPERIMENT_ASSUMPTION".equals(spec.path("costSource").asText())
+                || spec.path("feeAssumptionVersion").asText().isBlank()
+                || spec.path("slippageAssumptionVersion").asText().isBlank()
+                || !"EXPERIMENT_ASSUMPTION".equals(spec.path("minimumNotionalSource").asText())) {
+            throw new IllegalStateException("PUBLIC_CAPTURE_RULE_OR_COST_IDENTITY_INVALID");
+        }
+        if (requiredDecimal(spec, "priceTick").compareTo(requiredDecimal(rule, "tickSize")) != 0
+                || requiredDecimal(spec, "quantityStep").compareTo(requiredDecimal(rule, "lotSize")) != 0
+                || requiredDecimal(spec, "minimumQuantity").compareTo(requiredDecimal(rule, "minimumSize")) != 0
+                || requiredDecimal(spec, "minimumNotional").signum() <= 0
+                || requiredDecimal(spec, "feeRate").signum() <= 0
+                || requiredDecimal(spec, "slippageBps").signum() <= 0) {
+            throw new IllegalStateException("PUBLIC_CAPTURE_RULE_OR_COST_VALUE_INVALID");
+        }
     }
 
     private BigDecimal requiredDecimal(JsonNode node, String field) {
@@ -746,6 +787,10 @@ public class BacktestExecutionService {
             summary.set("strategyParameters", readJson(run.paramSnapshotJson()));
             summary.set("datasetSnapshot", readJson(run.datasetSnapshotJson()));
             summary.set("costAndRuleAssumptions", readJson(executionRequest.executionSpecJson()));
+            if ("public-capture".equals(executionRequest.datasetSpec().provider())) {
+                summary.put("costAndRuleSha256", PublicReplayAssumptionIdentity.sha256(
+                        readJson(executionRequest.executionSpecJson())));
+            }
             summary.put("barContentSha256", inputIdentity.sha256());
             summary.set("consumedBars", readJson(inputIdentity.canonicalJson()));
             summary.put("firstBarOpenTime", bars.getFirst().openTime().toString());

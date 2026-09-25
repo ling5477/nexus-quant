@@ -21,6 +21,7 @@ import com.guidinglight.nexusquant.research.domain.port.BacktestRunRepository;
 import com.guidinglight.nexusquant.strategy.application.StrategyManualTriggerService;
 import com.guidinglight.nexusquant.strategy.application.command.StrategyManualTriggerRequest;
 import com.guidinglight.nexusquant.strategy.domain.SpotBarIdentity;
+import com.guidinglight.nexusquant.strategy.domain.PublicReplayAssumptionIdentity;
 import com.guidinglight.nexusquant.strategy.domain.SpotSmaTargetStrategy;
 import com.guidinglight.nexusquant.strategy.domain.SpotTargetSizer;
 import com.guidinglight.nexusquant.strategy.domain.StrategyDefinition;
@@ -110,6 +111,14 @@ public class StrategySimRunService {
         ObjectNode config = mapper.createObjectNode();
         config.put("budget", budget.toPlainString());
         config.set("costAndRuleAssumptions", summary.path("costAndRuleAssumptions"));
+        if ("public-capture".equals(summary.path("datasetProvider").asText())) {
+            String costSha = PublicReplayAssumptionIdentity.sha256(
+                    summary.path("costAndRuleAssumptions"));
+            if (!costSha.equals(summary.path("costAndRuleSha256").asText())) {
+                throw new IllegalStateException("SIM_PUBLIC_COST_IDENTITY_INVALID");
+            }
+            config.put("costAndRuleSha256", costSha);
+        }
         config.put("barContentSha256", summary.path("barContentSha256").asText());
         PaperTradingRun run = paperRuns.create(new PaperTradingRunCreateCommand(
                 publishId, "SIM", "OKX", "SPOT", "BTC-USDT", bars.getFirst().interval().wireValue(),
@@ -176,6 +185,13 @@ public class StrategySimRunService {
         if (!summary.path("costAndRuleAssumptions").equals(
                 runConfig.path("costAndRuleAssumptions"))) {
             throw new IllegalStateException("SIM_COST_ASSUMPTION_DRIFT");
+        }
+        if ("public-capture".equals(summary.path("datasetProvider").asText())
+                && (!summary.path("costAndRuleSha256").asText().equals(
+                        runConfig.path("costAndRuleSha256").asText())
+                || !summary.path("costAndRuleSha256").asText().equals(
+                        PublicReplayAssumptionIdentity.sha256(runConfig.path("costAndRuleAssumptions"))))) {
+            throw new IllegalStateException("SIM_PUBLIC_COST_IDENTITY_DRIFT");
         }
         for (int index = 0; index < bars.size(); index++) {
             HistoricalBar signalBar = bars.get(index);
