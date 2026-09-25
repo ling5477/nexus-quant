@@ -42,7 +42,7 @@ class StrategySimMigrationPostgresTest {
                         100,100,100,100,1,'IMPORT','2026-01-01T00:10:00Z')
                     """);
             Flyway after = Flyway.configure().dataSource(source).schemas(schema)
-                    .locations("classpath:db/migration").load();
+                    .locations("classpath:db/migration").target("52").load();
             assertEquals(1, after.migrate().migrationsExecuted);
             after.validate();
             assertEquals("52", after.info().current().getVersion().getVersion());
