@@ -22,7 +22,7 @@ GateZ-1 以隔离 PostgreSQL 和合成 bars 验证算法及 canonical SIM 事实
 
 ## 已接受切片：公开市场数据可重放 smoke
 
-任务 ID：`NQ-GATEZ-PUBLIC-MARKET-REPLAY-SMOKE`，状态=`ACCEPTED / CI_GREEN`；技术 PR #27 merge/exact-head CI=`b253dc19124d26cd8b2aab5685d773adc03e3687 / 36141910575 / 9 of 9 SUCCESS`。在**非生产、隔离 SIM** 中，真实 OKX SPOT / BTC-USDT / 1h 公开历史响应的 72 根连续已收盘 bar 已保存为不可变输入，并驱动同一冻结 `StrategyVersion` 的回测、评价、发布和 SIM。公开行情窗口上限仍为 500 根；请求窗口、原始响应、观察时间、回放可见时间假设、摘要、规则和成本身份可追溯。下一切片尚未选定，以 [STATUS.md](STATUS.md) 的 `next_action=NONE` 为准。
+任务 ID：`NQ-GATEZ-PUBLIC-MARKET-REPLAY-SMOKE`，状态=`ACCEPTED / CI_GREEN`；技术 PR #27 merge/exact-head CI=`b253dc19124d26cd8b2aab5685d773adc03e3687 / 36141910575 / 9 of 9 SUCCESS`。在**非生产、隔离 SIM** 中，真实 OKX SPOT / BTC-USDT / 1h 公开历史响应的 72 根连续已收盘 bar 已保存为不可变输入，并驱动同一冻结 `StrategyVersion` 的回测、评价、发布和 SIM。公开行情窗口上限仍为 500 根；请求窗口、原始响应、观察时间、回放可见时间假设、摘要、规则和成本身份可追溯。后续 OKX 账户事实只读观察的当前状态与机器下一动作以 [STATUS.md](STATUS.md) 为准。
 
 当前代码入口：`OkxHistoricalKlineAdapter` 已在显式 `public-marketdata-manual` profile 与 outbound 开关下读取公开 `history-candles`；`MarketdataIngestionService`、`MarketdataDatasetService`、`MarketdataController` 和 Marketdata/Backtests 页面提供摄取、数据集与回测绑定；`SpotBarIdentity` 冻结策略实际消费的 bar 字节与 digest，`StrategySimRunService` 核对版本、dataset 与 digest。`OkxVenueRuleFactsReader` 可读取公开 SPOT instrument facts，并有观察时间、checksum 与 freshness 校验。现有 `JdbcMarketdataBarRepository` 对公开历史摄取将 `available_at` 写成摄取时间，读取端使用 `COALESCE(available_at, ingested_at)`；故现有记录不能直接证明历史收盘时可见，也不能未经处理就作为逐 bar 交易回放时钟。
 
@@ -36,9 +36,15 @@ GateZ-1 以隔离 PostgreSQL 和合成 bars 验证算法及 canonical SIM 事实
 
 候选比较与延期触发：A（公开市场数据可重放 smoke）具有现成消费者，直接关闭合成输入后的真实性缺口，**本轮选中**。B（共享因子）目前只有 `SPOT_SMA_TARGET_V1` 一条已核实可执行策略，Python 样例独立；出现两个真实复用消费者再选。C（组合资金分配）需至少两条真实策略及同账户资本竞争需求；GateZ-1 并发测试本身不满足。D（隔离执行 worker）待主 JVM 执行耦合产生可测可靠性或隔离问题、且有明确部署消费者。E（多策略调度）待第二可用策略、统一调度需求及资本 owner 明确；既有 schedule scan 消费显式订单 trigger。F（OOS/benchmark/trial 增量）待公开可重放输入和明确研究决策问题出现，再选择最小验证；不提前建 Trial Ledger 或统计平台。B–F 均有未来价值，但当前触发条件未满足。
 
+## 当前切片：OKX 账户事实只读观察
+
+任务 ID：`NQ-GATEZ-OKX-ACCOUNT-FACTS-READONLY-QUALIFICATION-IMPLEMENTATION`。实现已通过 PR #30 合并，technical merge/exact-head CI=`5a8cfb7e10b192efea1b804d9e6b6c0e1a637bd3 / 36158986349 / 9 of 9 SUCCESS`；独立 SECURITY + CORRECTNESS 审查 P0/P1/P2=`0/0/0`。实现复用 Java Control Plane 的 OKX private GET transport、JIT credential executor、权限/IP 观察和当前公开 instrument rule，增加显式人工调用的非持久化 `AccountFactsSnapshot`。固定 GET 覆盖账户配置、全币种余额、BTC-USDT SPOT 私有账户费率和全 SPOT 未完成订单；公开 GET 读取服务器时间。对本地 canonical 订单与余额只读比较，未知、过期或不适用事实按各自状态保留。默认启动不读取 credential 或发出 private 请求；不新增 Order、Trade、Ledger 写入或 migration。
+
+当前结论=`IMPLEMENTATION_ACCEPTED / SERVER_QUALIFICATION_PENDING_DEPLOYMENT_AUTHORIZATION`。服务器现有旧 runtime 无法执行新入口，尚未调用服务器 credential 取得 USDT/BTC 余额、实际账户费率、订单、仓位或偏差；上述真实账户事实仍为 UNKNOWN。部署须遵守 canonical release/deployment 合同并另获明确授权，之后才可进行零 mutation 预检和真实只读资格验证。此 CI 结果不代表 `REAL_ACCOUNT_READONLY_FACTS_QUALIFIED`。当前机器下一动作以 [STATUS.md](STATUS.md) 为准；LIVE 保持 DISABLED，kill switch 保持 ENGAGED。
+
 ## 不变边界
 
-Java Control Plane 仍是唯一 canonical trading authority；所有交易 mutation 经过既有 Risk / Execution 路径，Order / Trade / Ledger 各只有一个事实源。Python 仅做离线研究与可追溯 artifact，不直接交易。AI / DH 不获得 LIVE 权限。GateZ-1 只用隔离 SIM；`LIVE=DISABLED`、kill switch=`ENGAGED`，不授权真实 PLACE / CANCEL、私有 API、生产部署或资金移动。
+Java Control Plane 仍是唯一 canonical trading authority；所有交易 mutation 经过既有 Risk / Execution 路径，Order / Trade / Ledger 各只有一个事实源。Python 仅做离线研究与可追溯 artifact，不直接交易。AI / DH 不获得 LIVE 权限。GateZ-1 与公开行情 smoke 只用隔离 SIM，不授权私有 API。本次账户事实观察只授权服务器现有 credential 的 private GET；canonical 生产部署另需明确授权。`LIVE=DISABLED`、kill switch=`ENGAGED`，真实 PLACE / CANCEL、账户 mutation 与资金移动仍被禁止。
 
 ## 后续 GateZ 扩展
 
