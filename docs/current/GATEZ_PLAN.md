@@ -4,7 +4,7 @@
 
 ## 第一里程碑：单策略现货回测到 SIM 闭环
 
-里程碑 ID：`NQ-GATEZ-1-SPOT-ONE-STRATEGY-BACKTEST-TO-SIM-CLOSED-LOOP`。当前唯一实现入口的机器 action 为 `NQ-GATEZ-1-SPOT-ONE-STRATEGY-BACKTEST-TO-SIM-CLOSED-LOOP-IMPLEMENTATION`。GateZ-1 尚未实施或验收。
+里程碑 ID：`NQ-GATEZ-1-SPOT-ONE-STRATEGY-BACKTEST-TO-SIM-CLOSED-LOOP`。GateZ-1 已在 PR #24 合并，`dev` merge/exact-head CI 为 `09b7e1cd9c68033b54b75cf361cdda70b584f3a4 / 36111701008 / 9 of 9 SUCCESS`；当前机器状态与下一动作以 [STATUS.md](STATUS.md) 为准。
 
 代表样例限定为 **OKX SPOT / BTC-USDT**，在隔离环境中走完：
 
@@ -18,7 +18,7 @@ GateZ-1 必须用实际冻结的策略定义和参数执行回测与 SIM；固�
 
 隔离 SIM 验收须覆盖同版身份、费用一次性入账、重复触发幂等、资金竞争并发、stop、过期数据与恢复，并用 canonical Order / Trade / Position / Cash / Ledger 事实追溯 PnL。研究侧 Paper 页面可读取或关联这些事实，但不得另造第二套 Paper Order、Trade、Position 或 Ledger authority。既有历史记录须保持可读。可复用现有页面与接口，只补闭环所需入口及可解释结果。
 
-GateZ-1 的实施和验证是下一轮独立任务。若没有合格公开历史 bars，先以明确标识的合成输入证明算法，再在非生产环境使用公开数据做业务 smoke；不能把合成结果称为交易所历史实测。真实余额、费率、规则或可用数据未知时，应明确输出未知或不可交易，不默认为零成本或已合规。当前设计依据为 [NQ V1 能力盘点](evidence/NQ-V1-CURRENT-CAPABILITY-ASSESSMENT-AND-NEXT-TASK.md)，该报告是 `76caf387` 的分析快照，不是 machine authority。
+GateZ-1 以隔离 PostgreSQL 和合成 bars 验证算法及 canonical SIM 事实；这些结果不称为交易所历史实测。非生产公开历史 bars 的业务 smoke、真实余额、真实费率与交易所规则仍需单独取证；未知输入不默认为零成本或已合规。设计依据为 [NQ V1 能力盘点](evidence/NQ-V1-CURRENT-CAPABILITY-ASSESSMENT-AND-NEXT-TASK.md)，该报告是 `76caf387` 的分析快照，不是 machine authority。下一 GateZ 业务切片尚未决定，先执行范围计划，不在此预设实现目标。
 
 ## 不变边界
 

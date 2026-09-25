@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gateaudit-freeze
 last_frozen_gate_commit=a4cf8516382b47112852fc3f8dd9e5a65a80f993
 active_gate=GateZ
 active_gate_status=IN_PROGRESS|NOT_FROZEN
-accepted_batch=NQ-GATEAUDIT-PHASE7-PRETAG-DELTA-REBIND-AND-ARCHIVE-REFRESH-IMPLEMENTATION
+accepted_batch=NQ-GATEZ-1-SPOT-ONE-STRATEGY-BACKTEST-TO-SIM-CLOSED-LOOP-IMPLEMENTATION
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=c91f26487caf92f963fab36486efa2aebe666ccb
-accepted_batch_acceptance_head=c91f26487caf92f963fab36486efa2aebe666ccb
-accepted_batch_ci_run=35832860696
+accepted_batch_implementation_commit=9ada1f76151e3f9f7ec6fe732004a4ce7af04b7d
+accepted_batch_acceptance_head=09b7e1cd9c68033b54b75cf361cdda70b584f3a4
+accepted_batch_ci_run=36111701008
 work_batch=NQ-GATEZ-1-SPOT-ONE-STRATEGY-BACKTEST-TO-SIM-CLOSED-LOOP
-work_batch_status=NOT_STARTED
-work_batch_commit=NONE
-work_batch_ci_run=NOT_RUN
-next_action=NQ-GATEZ-1-SPOT-ONE-STRATEGY-BACKTEST-TO-SIM-CLOSED-LOOP-IMPLEMENTATION
+work_batch_status=ACCEPTED|CI_GREEN
+work_batch_commit=09b7e1cd9c68033b54b75cf361cdda70b584f3a4
+work_batch_ci_run=36111701008
+next_action=NQ-GATEZ-NEXT-SLICE-PLAN
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -35,7 +35,7 @@ nq-current-authority:end -->
 
 - GateY：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-y/README.md](../gates/gate-y/README.md)，freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`，annotated tag=`nq-gatey-freeze`，tag object=`c84f412e1da652e85158c5478997945d3065e575`，peeled commit 与 freeze commit 一致。
 - GateAUDIT：`FROZEN / ACCEPTED / TAGGED`；freeze commit=`a4cf8516382b47112852fc3f8dd9e5a65a80f993`，tree=`557bb3fa6549732cc5bdf2d40251c31a963f83a0`，annotated tag=`nq-gateaudit-freeze`，tag object=`4ee65d68471c5e25874ab6a08c3e9fc420f667b7`，peeled commit=`a4cf8516382b47112852fc3f8dd9e5a65a80f993`。`dev` exact-head CI=`35840126216 / push / completed / success / 9 of 9`；release checker 与 release-mode archive checker 均 `PASS / errors=0`。13-role archive 保持 pre-tag snapshot 语义；post-tag freeze 由 Git tag 与本 current authority 表达。Phase7-E 与 Phase7-F authority synchronization 已完成；post-GateAUDIT Git cleanup 按用户接受的 disposition 为 `COMPLETE`，保留的历史本地分支及 worktree 属于非阻断残余。
-- GateZ：`IN_PROGRESS / NOT_FROZEN`，当前仅建立[计划](GATEZ_PLAN.md)；GateZ-1 尚未实施或验收。唯一下一实现动作由顶部 machine `next_action` 指定。
+- GateZ：`IN_PROGRESS / NOT_FROZEN`。[GateZ-1 单策略现货回测到隔离 SIM 闭环](GATEZ_PLAN.md)已实施并接受；下一业务切片尚待确定，顶部 machine `next_action` 仅指向范围决策。
 - GateY-6F：`ACCEPTED / CI GREEN / MINIMAL LIVE PILOT VERIFIED`（已接受 / CI 已通过 / 最小实盘 pilot 已验证）；production pilot release=`8e3dd0cf6104eb85f36a0e434ca51ea9d903705a`，CI run=`32978280738 / completed / success / 10 jobs`。
 - GateY-FREEZE：`ACCEPTED / CI GREEN / TAGGED`（已接受 / CI 已通过 / 已打 tag）；exact-head CI run=`33037514013 / completed / success / 11 jobs / bad=0`，archive/release post-tag checker errors=0。
 - GateAUDIT-0C-R3-DOC-LINK-LINUX-REMEDIATION：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；immutable acceptance pair=`40e1077e1fe735a3d250f094caaa24e437e8ea3f / 33306024232`，blocking jobs=`11/11 SUCCESS`。Linux CI 已关闭 P1-01 authority fixture、P1-02 Java verifier 与 doc-link hidden-root portability finding；P0=0、P1=0。
@@ -91,11 +91,11 @@ updated_commit=a4cf8516382b47112852fc3f8dd9e5a65a80f993
 - Phase7-D canonical archive and closeout=`ACCEPTED / CI_GREEN`，immutable pair=`4800ab1d9407eeb527182328263c0bae9e6c3087 / 35803472376 / 9 of 9 SUCCESS`；[strict canonical archive](../gates/gate-audit/README.md) 包含 8 mandatory + 5 conditional roles，pre-tag validation errors=`0`。archive 中的 `PRETAG / TAG_PENDING` 是冻结前生成时的历史语义，原位保留；Phase7-E 随后完成同一 SHA 的 `dev` fast-forward、push CI 与 annotated tag，Phase7-F 将结果同步到 current authority。
 - Logging sensitive-data protection pair=`48c1b1cd4c84e1429be82093e460984b6d1c805c / 35817828506`，修复前 13/13 synthetic 泄漏和修复后 0/13 证明原位保留；SQL ownership audit pair=`0e200e807a1347e5ec6acd24975fa3531a31c90d / 35828020513`，初审 FAIL、修订后 delta PASS 均见[独立复核](../audit/evidence/GATEAUDIT_SQL_OWNERSHIP_REPOSITORY_INDEPENDENT_REVIEW.md)。[Original Scope reconciliation](../audit/evidence/GATEAUDIT_ORIGINAL_SCOPE_TRACEABILITY_RECONCILIATION.md) 最新为 TOTAL=39 / UNCLASSIFIED=0 / REMAINING_GAPS=0；17-row canonical residual 未重分类。
 - Pre-tag delta rebind/archive refresh=`ACCEPTED / CI_GREEN`，进入点=`6bc3fa75def9ffe31710d006359e0991d1a60bc1`，最终 implementation pair=`c91f26487caf92f963fab36486efa2aebe666ccb / 35832860696 / 9 of 9 SUCCESS`。[13-role archive](../gates/gate-audit/README.md) 纳入 Phase7-D 后 7 个提交，唯一 runtime delta 是已接受的 logging 修复；21-row capability matrix 和 17-row residual 原位保留。首次 refresh 提交 `5bf244b8f4dbf4d857cc6d2f45eeb23ead21f3fc / 35831845804` 的 secret scan 失败（8/9）保留在 [closeout](../gates/gate-audit/GATEAUDIT_FREEZE_CLOSEOUT.md)，后续仅修正文档排版，未修改规则。`POST_PHASE7D_DELTA_RECONCILED=true / ARCHIVE_REFRESHED=true / PRETAG_CANDIDATE_REBOUND=true / P0=0 / P1=0`。Phase7-E 已完成；freeze commit 与 tag identity 见本 STATUS 当前 GateAUDIT 条目。
-- L4历史technical pair保持`3d103cea2072b3c2d9d1009cc5841c18a958ee80 / 34501806297`；Phase6 aggregate pair=`dbf9662add09388cd77ca7552de276bb019f0f74 / 35043157675`及全部历史 owner identity 不变。accepted_batch 仍绑定已接受的 pre-tag refresh technical pair；当前 work_batch 为尚未开始的 GateZ-1；logging、SQL audit 与 Phase7-D 各自的接受 pair 保留在对应 evidence，不替代历史 technical qualification、Phase7-A inventory、taxonomy normalization、Phase7-B 或 Phase7-C pair。
-- 当前repository schema=`V51`，不推断生产schema；历史migration与接受身份保持不变。
+- L4历史technical pair保持`3d103cea2072b3c2d9d1009cc5841c18a958ee80 / 34501806297`；Phase6 aggregate pair=`dbf9662add09388cd77ca7552de276bb019f0f74 / 35043157675`及全部历史 owner identity 不变。当前 accepted_batch 与 work_batch 绑定 GateZ-1：实现提交=`9ada1f76151e3f9f7ec6fe732004a4ce7af04b7d`，CI 修复提交=`a3f9f58de872a55ca0bda1a989ec1e69794c6dad`，PR #24 merge/exact-head pair=`09b7e1cd9c68033b54b75cf361cdda70b584f3a4 / 36111701008 / 9 of 9 SUCCESS`。GateAUDIT pre-tag refresh technical pair=`c91f26487caf92f963fab36486efa2aebe666ccb / 35832860696`仍保留为历史接受身份。
+- 当前 repository schema=`V52`，仅表示已合并代码及隔离 PostgreSQL/CI 的迁移事实，不推断生产 schema；历史 migration 与接受身份保持不变。
 - P2 ordinary concurrent INSERT loser、P3 wildcard-import residual均为`OPEN / NON_BLOCKING`；不以L4 P0/P1=0宣称全部问题清零。其他历史非阻断残余不在本次重评，原记录保留于[pre-B0 evidence](../audit/evidence/GATEAUDIT_PHASE6_PRE_B0_CI_SAFETY_CURRENT_AUTHORITY_REMEDIATION.md)。
 - P1-1/PB1=`RETIRED_COMPATIBILITY_ONLY`，PB2=`DORMANT_NO_CURRENT_ENTRYPOINT`；14个历史inactive scenario与其他future obligations不计PASS。仅在路径重新canonical时重新评估reachability，不为覆盖率复活入口，详见[B6 aggregate evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_B6_AGGREGATE_QUALIFICATION_ACCEPTANCE.md)。
-- Phase7-F post-tag authority sync 已将 GateAUDIT 冻结；最后一个 immutable technical accepted pair 仍为 pre-tag refresh `c91f26487caf92f963fab36486efa2aebe666ccb / 35832860696`，freeze commit `a4cf8516382b47112852fc3f8dd9e5a65a80f993` 不伪装成新 technical pair。用户接受的 post-GateAUDIT Git cleanup disposition 与当前远端三分支拓扑相容；GateZ-0 只同步计划与 authority，GateZ-1=`NOT_STARTED / NONE / NOT_RUN`；LIVE=`DISABLED`、kill switch=`ENGAGED`。
+- Phase7-F post-tag authority sync 已将 GateAUDIT 冻结；其最后一个 immutable technical accepted pair 为 pre-tag refresh `c91f26487caf92f963fab36486efa2aebe666ccb / 35832860696`，freeze commit `a4cf8516382b47112852fc3f8dd9e5a65a80f993` 不伪装成新 technical pair。GateZ-1 已由 PR #24 合并并通过合并后 `dev` exact-head CI；LIVE=`DISABLED`、kill switch=`ENGAGED`，未发生真实交易或生产部署。
 
 ## 6. F009 acceptance provenance
 
