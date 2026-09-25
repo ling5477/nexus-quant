@@ -19,16 +19,35 @@ public record OkxPrivateReadResult(
         List<OkxPrivateFillSnapshot> fills,
         boolean ipAllowlistConfigured,
         OkxIpAllowlistStatus ipAllowlistStatus,
-        Instant observedAt
+        Instant observedAt,
+        String accountMode,
+        List<OkxPrivateBalanceFact> balances,
+        OkxPrivateFeeFact fee
 ) {
     public OkxPrivateReadResult {
         Objects.requireNonNull(operation, "operation must not be null");
         normalizedPermissions = Set.copyOf(normalizedPermissions == null ? Set.of() : normalizedPermissions);
         orders = List.copyOf(orders == null ? List.of() : orders);
         fills = List.copyOf(fills == null ? List.of() : fills);
+        balances = List.copyOf(balances == null ? List.of() : balances);
         Objects.requireNonNull(ipAllowlistStatus, "ipAllowlistStatus must not be null");
         Objects.requireNonNull(observedAt, "observedAt must not be null");
         if (assetCount < 0) throw new IllegalArgumentException("assetCount must not be negative");
+    }
+
+    public OkxPrivateReadResult(
+            OkxPrivateReadOperation operation,
+            Set<String> normalizedPermissions,
+            int assetCount,
+            boolean complete,
+            List<OkxPrivateOrderSnapshot> orders,
+            List<OkxPrivateFillSnapshot> fills,
+            boolean ipAllowlistConfigured,
+            OkxIpAllowlistStatus ipAllowlistStatus,
+            Instant observedAt
+    ) {
+        this(operation, normalizedPermissions, assetCount, complete, orders, fills,
+                ipAllowlistConfigured, ipAllowlistStatus, observedAt, null, List.of(), null);
     }
 
     /**
@@ -75,5 +94,10 @@ public record OkxPrivateReadResult(
     ) {
         this(operation, normalizedPermissions, assetCount, complete, List.of(), List.of(),
                 false, OkxIpAllowlistStatus.NOT_CHECKED, Instant.EPOCH);
+    }
+
+    @Override
+    public String toString() {
+        return "OkxPrivateReadResult[REDACTED]";
     }
 }

@@ -11,6 +11,8 @@ import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateFillS
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateOrderSnapshot;
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadOperation;
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadRequest;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateBalanceFact;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateFeeFact;
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadResult;
 import com.guidinglight.nexusquant.adapter.okx.provider.OkxSpotEndpointGuard;
 import com.guidinglight.nexusquant.adapter.okx.provider.OkxSpotProviderTransport;
@@ -274,7 +276,10 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateRealTransport
             if (operation == OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ) {
                 return parseConfiguration(data.get(0), request);
             }
-            return parseBalance(data.get(0), operation);
+            if (operation == OkxPrivateReadOperation.OKX_SPOT_ACCOUNT_FEE_READ) {
+                return parseFee(data.get(0), request);
+            }
+            return parseBalance(data.get(0), request);
         } catch (OkxPrivateReadException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -309,7 +314,11 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateRealTransport
                 List.of(),
                 ipAllowlistConfigured,
                 ipStatus,
-                clock.instant()
+                clock.instant(),
+                text(row, "acctLv") != null && text(row, "acctLv").matches("[1-4]")
+                        ? text(row, "acctLv") : null,
+                List.of(),
+                null
         );
     }
 
@@ -339,22 +348,50 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateRealTransport
         return matched ? OkxIpAllowlistStatus.MATCHED : OkxIpAllowlistStatus.MISMATCHED;
     }
 
-    private OkxPrivateReadResult parseBalance(JsonNode row, OkxPrivateReadOperation operation) {
+    private OkxPrivateReadResult parseBalance(JsonNode row, OkxPrivateReadRequest request) {
+        OkxPrivateReadOperation operation = request.operation();
         JsonNode details = row.path("details");
         if (!details.isArray()) {
             return result(operation, Set.of(), 0, false, List.of(), List.of());
         }
-        boolean complete = !details.isEmpty();
-        int count = 0;
+        boolean complete = !details.isEmpty() && details.size() <= 100;
+        List<OkxPrivateBalanceFact> balances = new ArrayList<>();
+        Set<String> seen = new java.util.HashSet<>();
         for (JsonNode detail : details) {
-            count++;
-            complete &= validCurrency(text(detail, "ccy"))
-                    && validDecimal(text(detail, "cashBal"))
-                    && validDecimal(text(detail, "availBal"))
-                    && validDecimal(text(detail, "frozenBal"))
-                    && validTimestamp(text(detail, "uTime"));
+            String currency = text(detail, "ccy");
+            BigDecimal total = decimal(text(detail, "cashBal"));
+            BigDecimal available = decimal(text(detail, "availBal"));
+            BigDecimal frozen = decimal(text(detail, "frozenBal"));
+            Instant updatedAt = epochMillis(text(detail, "uTime"));
+            if (!validCurrency(currency)
+                    || (operation != OkxPrivateReadOperation.OKX_ALL_ACCOUNT_BALANCES_READ
+                            && !request.currencies().contains(currency))
+                    || !seen.add(currency) || total == null || available == null || frozen == null
+                    || updatedAt == null) {
+                complete = false;
+                break;
+            }
+            balances.add(new OkxPrivateBalanceFact(currency, total, available, frozen, updatedAt));
         }
-        return result(operation, Set.of(), count, complete, List.of(), List.of());
+        return new OkxPrivateReadResult(operation, Set.of(), details.size(),
+                complete, List.of(), List.of(), false, OkxIpAllowlistStatus.NOT_CHECKED,
+                clock.instant(), null, complete ? balances : List.of(), null);
+    }
+
+    private OkxPrivateReadResult parseFee(JsonNode row, OkxPrivateReadRequest request) {
+        BigDecimal maker = decimal(text(row, "maker"));
+        BigDecimal taker = decimal(text(row, "taker"));
+        Instant timestamp = epochMillis(text(row, "ts"));
+        String tier = text(row, "level");
+        if (maker == null || taker == null || timestamp == null || tier == null
+                || !tier.matches("[A-Za-z0-9_-]{1,32}")) {
+            return result(request.operation(), Set.of(), 0, false, List.of(), List.of());
+        }
+        OkxPrivateFeeFact fee = new OkxPrivateFeeFact(
+                request.instrumentId(), maker, taker, tier, timestamp);
+        return new OkxPrivateReadResult(request.operation(), Set.of(), 0, true,
+                List.of(), List.of(), false, OkxIpAllowlistStatus.NOT_CHECKED,
+                clock.instant(), null, List.of(), fee);
     }
 
     private OkxPrivateReadResult parseReconciliation(OkxPrivateReadRequest request, JsonNode data) {
@@ -394,7 +431,10 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateRealTransport
         BigDecimal filled = decimal(text(row, "accFillSz"));
         if (blankToNull(orderId) == null
                 || !"SPOT".equals(instrumentType)
-                || !request.instrumentId().equals(instrumentId)
+                || (request.instrumentId() == null
+                        ? request.operation() != OkxPrivateReadOperation.OKX_ALL_SPOT_OPEN_ORDERS_READ
+                            || instrumentId == null || !instrumentId.matches("[A-Z0-9]{2,12}-[A-Z0-9]{2,12}")
+                        : !request.instrumentId().equals(instrumentId))
                 || !Set.of("buy", "sell").contains(side)
                 || orderType == null || state == null
                 || (rawPrice != null && !rawPrice.isBlank() && price == null)

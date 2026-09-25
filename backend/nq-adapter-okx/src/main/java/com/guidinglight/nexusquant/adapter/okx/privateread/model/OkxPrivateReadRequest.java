@@ -67,10 +67,31 @@ public record OkxPrivateReadRequest(
         );
     }
 
+    public static OkxPrivateReadRequest allAccountBalances() {
+        return new OkxPrivateReadRequest(
+                OkxPrivateReadOperation.OKX_ALL_ACCOUNT_BALANCES_READ,
+                List.of(), null, null, null, 0, null
+        );
+    }
+
+    public static OkxPrivateReadRequest spotAccountFee(String instrumentId) {
+        return new OkxPrivateReadRequest(
+                OkxPrivateReadOperation.OKX_SPOT_ACCOUNT_FEE_READ,
+                List.of(), instrumentId, null, null, 0, null
+        );
+    }
+
     public static OkxPrivateReadRequest openOrders(String instrumentId, int limit) {
         return new OkxPrivateReadRequest(
                 OkxPrivateReadOperation.OKX_SPOT_OPEN_ORDERS_READ,
                 List.of(), instrumentId, null, null, limit, null
+        );
+    }
+
+    public static OkxPrivateReadRequest allSpotOpenOrders(int limit) {
+        return new OkxPrivateReadRequest(
+                OkxPrivateReadOperation.OKX_ALL_SPOT_OPEN_ORDERS_READ,
+                List.of(), null, null, null, limit, null
         );
     }
 
@@ -95,8 +116,13 @@ public record OkxPrivateReadRequest(
         return switch (operation) {
             case OKX_ACCOUNT_CONFIGURATION_READ -> operation.path();
             case OKX_ACCOUNT_BALANCE_READ -> operation.path() + "?ccy=" + String.join(",", currencies);
+            case OKX_ALL_ACCOUNT_BALANCES_READ -> operation.path();
+            case OKX_SPOT_ACCOUNT_FEE_READ -> operation.path()
+                    + "?instType=SPOT&instId=" + instrumentId;
             case OKX_SPOT_OPEN_ORDERS_READ -> operation.path()
                     + "?instType=SPOT&instId=" + instrumentId + "&limit=" + limit;
+            case OKX_ALL_SPOT_OPEN_ORDERS_READ -> operation.path()
+                    + "?instType=SPOT&limit=" + limit;
             case OKX_SPOT_ORDER_HISTORY_READ, OKX_SPOT_RECENT_FILLS_READ -> operation.path()
                     + "?instType=SPOT&instId=" + instrumentId
                     + "&begin=" + begin.toEpochMilli() + "&end=" + end.toEpochMilli() + "&limit=" + limit;
@@ -105,7 +131,9 @@ public record OkxPrivateReadRequest(
 
     public boolean reconciliationOperation() {
         return switch (operation) {
-            case OKX_SPOT_OPEN_ORDERS_READ, OKX_SPOT_ORDER_HISTORY_READ, OKX_SPOT_RECENT_FILLS_READ -> true;
+            case OKX_SPOT_OPEN_ORDERS_READ, OKX_ALL_SPOT_OPEN_ORDERS_READ,
+                    OKX_SPOT_ORDER_HISTORY_READ,
+                    OKX_SPOT_RECENT_FILLS_READ -> true;
             default -> false;
         };
     }
@@ -144,7 +172,8 @@ public record OkxPrivateReadRequest(
 
     private static String canonicalInstrument(OkxPrivateReadOperation operation, String candidate) {
         boolean required = switch (operation) {
-            case OKX_SPOT_OPEN_ORDERS_READ, OKX_SPOT_ORDER_HISTORY_READ, OKX_SPOT_RECENT_FILLS_READ -> true;
+            case OKX_SPOT_ACCOUNT_FEE_READ, OKX_SPOT_OPEN_ORDERS_READ,
+                    OKX_SPOT_ORDER_HISTORY_READ, OKX_SPOT_RECENT_FILLS_READ -> true;
             default -> false;
         };
         if (!required) {
@@ -175,7 +204,9 @@ public record OkxPrivateReadRequest(
 
     private static int canonicalLimit(OkxPrivateReadOperation operation, int candidate) {
         if (operation == OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ
-                || operation == OkxPrivateReadOperation.OKX_ACCOUNT_BALANCE_READ) {
+                || operation == OkxPrivateReadOperation.OKX_ACCOUNT_BALANCE_READ
+                || operation == OkxPrivateReadOperation.OKX_ALL_ACCOUNT_BALANCES_READ
+                || operation == OkxPrivateReadOperation.OKX_SPOT_ACCOUNT_FEE_READ) {
             if (candidate != 0) throw new IllegalArgumentException("operation does not accept record limit");
             return 0;
         }

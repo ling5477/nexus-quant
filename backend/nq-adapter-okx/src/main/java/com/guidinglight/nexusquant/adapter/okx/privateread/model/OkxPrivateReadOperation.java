@@ -18,7 +18,19 @@ public enum OkxPrivateReadOperation {
             ExchangeCapability.PRIVATE_ACCOUNT_BALANCE_READ,
             "/api/v5/account/balance"
     ),
+    OKX_ALL_ACCOUNT_BALANCES_READ(
+            ExchangeCapability.PRIVATE_ACCOUNT_BALANCE_READ,
+            "/api/v5/account/balance"
+    ),
+    OKX_SPOT_ACCOUNT_FEE_READ(
+            ExchangeCapability.PRIVATE_ACCOUNT_FEE_READ,
+            "/api/v5/account/trade-fee"
+    ),
     OKX_SPOT_OPEN_ORDERS_READ(
+            ExchangeCapability.PRIVATE_OPEN_ORDERS_READ,
+            "/api/v5/trade/orders-pending"
+    ),
+    OKX_ALL_SPOT_OPEN_ORDERS_READ(
             ExchangeCapability.PRIVATE_OPEN_ORDERS_READ,
             "/api/v5/trade/orders-pending"
     ),

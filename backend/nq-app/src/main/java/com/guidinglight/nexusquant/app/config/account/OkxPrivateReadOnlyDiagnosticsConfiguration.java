@@ -6,10 +6,12 @@ import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredential
 import com.guidinglight.nexusquant.account.infra.okx.readonly.JdbcOkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateReadonlyProbeService;
-import com.guidinglight.nexusquant.adapter.okx.privateread.transport.JdkOkxPrivateReadTransport;
+import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxAccountFactsObservationService;
+import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxAccountFactsReadTransport;
 import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateReadTransport;
 import com.guidinglight.nexusquant.app.config.CapabilityPropertyResolver;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
+import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService;
 import com.guidinglight.nexusquant.livecontrol.deployment.policy.ScopedCredentialCapabilityPolicy;
 
 import java.time.Clock;
@@ -56,8 +58,26 @@ public class OkxPrivateReadOnlyDiagnosticsConfiguration {
     static final String LEGACY_PREFIX = "nq.gatew.okx-private-readonly";
 
     @Bean
-    public OkxPrivateReadTransport okxPrivateReadOnlyTransport(ObjectMapper objectMapper) {
-        return new JdkOkxPrivateReadTransport(objectMapper, Clock.systemUTC());
+    public OkxAccountFactsReadTransport okxPrivateReadOnlyTransport(ObjectMapper objectMapper) {
+        return new OkxAccountFactsReadTransport(objectMapper, Clock.systemUTC());
+    }
+
+    @Bean
+    public OkxAccountFactsObservationService okxAccountFactsObservationService(
+            ExchangeAccountRepository accountRepository,
+            ExchangeAccountCredentialRepository credentialRepository,
+            OkxPrivateCredentialExecutor executor,
+            OkxAccountFactsReadTransport transport,
+            KillSwitchService killSwitch,
+            InstrumentCatalogService catalog,
+            JdbcTemplate jdbcTemplate,
+            OkxPrivateReadOnlyPermissionProbeProperties permissionProperties,
+            @Value("${nq.live-control.scoped-credential.maximum-permission-probe-age:PT1H}") String maximumProbeAge
+    ) {
+        return new OkxAccountFactsObservationService(accountRepository, credentialRepository,
+                executor, transport, killSwitch,
+                new ScopedCredentialCapabilityPolicy(parsePositiveDuration(maximumProbeAge)),
+                catalog, jdbcTemplate, Clock.systemUTC(), permissionProperties.expectedIp());
     }
 
     @Bean
