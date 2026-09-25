@@ -13,11 +13,11 @@ accepted_batch_status=ACCEPTED|CI_GREEN
 accepted_batch_implementation_commit=9ada1f76151e3f9f7ec6fe732004a4ce7af04b7d
 accepted_batch_acceptance_head=09b7e1cd9c68033b54b75cf361cdda70b584f3a4
 accepted_batch_ci_run=36111701008
-work_batch=NQ-GATEZ-1-SPOT-ONE-STRATEGY-BACKTEST-TO-SIM-CLOSED-LOOP
-work_batch_status=ACCEPTED|CI_GREEN
-work_batch_commit=09b7e1cd9c68033b54b75cf361cdda70b584f3a4
-work_batch_ci_run=36111701008
-next_action=NQ-GATEZ-NEXT-SLICE-PLAN
+work_batch=NQ-GATEZ-PUBLIC-MARKET-REPLAY-SMOKE
+work_batch_status=NOT_STARTED
+work_batch_commit=NONE
+work_batch_ci_run=NOT_RUN
+next_action=NQ-GATEZ-PUBLIC-MARKET-REPLAY-SMOKE-IMPLEMENTATION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -35,7 +35,7 @@ nq-current-authority:end -->
 
 - GateY：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-y/README.md](../gates/gate-y/README.md)，freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`，annotated tag=`nq-gatey-freeze`，tag object=`c84f412e1da652e85158c5478997945d3065e575`，peeled commit 与 freeze commit 一致。
 - GateAUDIT：`FROZEN / ACCEPTED / TAGGED`；freeze commit=`a4cf8516382b47112852fc3f8dd9e5a65a80f993`，tree=`557bb3fa6549732cc5bdf2d40251c31a963f83a0`，annotated tag=`nq-gateaudit-freeze`，tag object=`4ee65d68471c5e25874ab6a08c3e9fc420f667b7`，peeled commit=`a4cf8516382b47112852fc3f8dd9e5a65a80f993`。`dev` exact-head CI=`35840126216 / push / completed / success / 9 of 9`；release checker 与 release-mode archive checker 均 `PASS / errors=0`。13-role archive 保持 pre-tag snapshot 语义；post-tag freeze 由 Git tag 与本 current authority 表达。Phase7-E 与 Phase7-F authority synchronization 已完成；post-GateAUDIT Git cleanup 按用户接受的 disposition 为 `COMPLETE`，保留的历史本地分支及 worktree 属于非阻断残余。
-- GateZ：`IN_PROGRESS / NOT_FROZEN`。[GateZ-1 单策略现货回测到隔离 SIM 闭环](GATEZ_PLAN.md)已实施并接受；下一业务切片尚待确定，顶部 machine `next_action` 仅指向范围决策。
+- GateZ：`IN_PROGRESS / NOT_FROZEN`。[GateZ-1 单策略现货回测到隔离 SIM 闭环](GATEZ_PLAN.md)已实施并接受；唯一下一切片为 OKX 公开历史行情可重放 smoke，尚未实施，顶部 machine `next_action` 指向其实现。
 - GateY-6F：`ACCEPTED / CI GREEN / MINIMAL LIVE PILOT VERIFIED`（已接受 / CI 已通过 / 最小实盘 pilot 已验证）；production pilot release=`8e3dd0cf6104eb85f36a0e434ca51ea9d903705a`，CI run=`32978280738 / completed / success / 10 jobs`。
 - GateY-FREEZE：`ACCEPTED / CI GREEN / TAGGED`（已接受 / CI 已通过 / 已打 tag）；exact-head CI run=`33037514013 / completed / success / 11 jobs / bad=0`，archive/release post-tag checker errors=0。
 - GateAUDIT-0C-R3-DOC-LINK-LINUX-REMEDIATION：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；immutable acceptance pair=`40e1077e1fe735a3d250f094caaa24e437e8ea3f / 33306024232`，blocking jobs=`11/11 SUCCESS`。Linux CI 已关闭 P1-01 authority fixture、P1-02 Java verifier 与 doc-link hidden-root portability finding；P0=0、P1=0。
