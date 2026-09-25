@@ -4,11 +4,11 @@
 
 ## 公开行情冻结结构（V53–V54，仓库迁移）
 
-[V53](../../backend/nq-infra/src/main/resources/db/migration/V53__public_market_capture.sql) 增加 `public_market_captures`，以 dataset ID 保存 OKX 公开响应、请求窗口、实际 `observed_at`、原始/规范化/消费内容摘要、版本化回放可见时间假设、公开规则观察身份及冻结 bar；触发器拒绝捕获和对应 dataset 的更新、删除。[V54](../../backend/nq-infra/src/main/resources/db/migration/V54__public_market_rule_response_identity.sql) 另存公开规则的请求路径、原始响应和摘要，新捕获必须完整写入。旧 `marketdata_bars.available_at`、`ingested_at` 及既存 dataset 不回填、不重解释。隔离 PostgreSQL 已执行 V1→V54 与 Flyway validate；仓库迁移不表示生产库已迁移或本切片已验收。
+[V53](../../backend/nq-infra/src/main/resources/db/migration/V53__public_market_capture.sql) 增加 `public_market_captures`，以 dataset ID 保存 OKX 公开响应、请求窗口、实际 `observed_at`、原始/规范化/消费内容摘要、版本化回放可见时间假设、公开规则观察身份及冻结 bar；触发器拒绝捕获和对应 dataset 的更新、删除。[V54](../../backend/nq-infra/src/main/resources/db/migration/V54__public_market_rule_response_identity.sql) 另存公开规则的请求路径、原始响应和摘要，新捕获必须完整写入。旧 `marketdata_bars.available_at`、`ingested_at` 及既存 dataset 不回填、不重解释。隔离 PostgreSQL 已执行 V1→V54 与 Flyway validate；本切片的接受由合并后 `dev` exact-head CI `b253dc19124d26cd8b2aab5685d773adc03e3687 / 36141910575 / 9 of 9 SUCCESS` 支撑，不表示生产库已迁移。
 
 ## 策略 SIM 结构（V52，仓库迁移）
 
-[V52](../../backend/nq-infra/src/main/resources/db/migration/V52__strategy_sim_binding.sql) 在仓库中定义：`marketdata_bars.available_at` 记录来源可证明的可见时点，旧行读取侧按实际入库时间保守解释；`paper_trading_runs.canonical_account_id` 只关联新隔离 SIM 账户，历史 Paper run 保持空值。`strategy_sim_decisions` 保存冻结输入摘要、决策及 canonical strategy run / order 引用，不成为第二套订单或成交事实。约束与触发器保护决策身份、停止后的订单准入和已完成决策不可改写。隔离 PostgreSQL 的 V51→V52 升级与 validate 已通过；这不表示生产库已迁移或当前业务里程碑已验收。
+[V52](../../backend/nq-infra/src/main/resources/db/migration/V52__strategy_sim_binding.sql) 在仓库中定义：`marketdata_bars.available_at` 记录来源可证明的可见时点，旧行读取侧按实际入库时间保守解释；`paper_trading_runs.canonical_account_id` 只关联新隔离 SIM 账户，历史 Paper run 保持空值。`strategy_sim_decisions` 保存冻结输入摘要、决策及 canonical strategy run / order 引用，不成为第二套订单或成交事实。约束与触发器保护决策身份、停止后的订单准入和已完成决策不可改写。隔离 PostgreSQL 的 V51→V52 升级与 validate 已通过；该迁移测试本身不表示生产库已迁移，业务里程碑验收以 [STATUS.md](STATUS.md) 为准。
 
 ## V50 strategy window admission 仓库结构
 
@@ -20,7 +20,7 @@ V50使用5秒DDL锁等待、30秒语句上限，超时失败不静默跳过；�
 
 ## 当前 repository migration inventory：V54
 
-当前候选 Flyway inventory 已到 `V54`；本切片的接受状态仍以 [STATUS.md](STATUS.md) 为准，且不声明生产已迁移。下方 V43–V48 表格及按历史版本编排的段落保留当时的结构增量和验收事实；V49–V54 的仓库身份由 migration 文件本身确定。
+当前仓库 Flyway inventory 已到 `V54`；本切片的接受状态以 [STATUS.md](STATUS.md) 为准，且不声明生产已迁移。下方 V43–V48 表格及按历史版本编排的段落保留当时的结构增量和验收事实；V49–V54 的仓库身份由 migration 文件本身确定。
 
 | Migration | 当前结构增量 |
 | --- | --- |
