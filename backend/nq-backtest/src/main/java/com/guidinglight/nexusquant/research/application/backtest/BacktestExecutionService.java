@@ -32,6 +32,9 @@ import com.guidinglight.nexusquant.research.domain.ResearchConfig;
 import com.guidinglight.nexusquant.research.application.config.BacktestConfigService;
 import com.guidinglight.nexusquant.research.application.BacktestRunService;
 import com.guidinglight.nexusquant.research.application.ResearchConfigService;
+import com.guidinglight.nexusquant.strategy.domain.SpotBarIdentity;
+import com.guidinglight.nexusquant.strategy.domain.SpotSmaTargetStrategy;
+import com.guidinglight.nexusquant.strategy.domain.SpotTargetSizer;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -179,35 +182,47 @@ public class BacktestExecutionService {
         List<SimTrade> simulatedTrades = new ArrayList<>();
         Map<String, SimPosition> simulatedPositions = new LinkedHashMap<>();
         List<SimPnlSnapshot> simulatedPnlSnapshots = new ArrayList<>();
+        SpotBarIdentity.Snapshot inputIdentity = null;
+        List<String> decisionReasons = new ArrayList<>();
         try {
             executionRequest = buildExecutionRequest(currentRun, backtestConfig, researchConfig);
             executionContext = new BacktestExecutionContext(
                     currentRun.backtestRunId(),
                     executionRequest.datasetSpec().symbol(),
-                    backtestConfig.initialCapital()
+                    executionRequest.initialCapital()
             );
-            bars = historicalMarketDataPort.loadBars(new HistoricalMarketDataQuery(
-                    executionRequest.datasetSpec(),
-                    executionRequest.datasetSpec().exchangeCode(),
-                    executionRequest.datasetSpec().symbol(),
-                    executionRequest.datasetSpec().interval(),
-                    executionRequest.startTime(),
-                    executionRequest.endTime()
-            ));
+            boolean frozenVersion = currentRun.strategyVersionId() != null
+                    && !currentRun.strategyVersionId().isBlank();
+            HistoricalMarketDataQuery query = frozenVersion
+                    ? new HistoricalMarketDataQuery(executionRequest.datasetSpec(),
+                            executionRequest.datasetSpec().exchangeCode(), "SPOT",
+                            executionRequest.datasetSpec().symbol(), executionRequest.datasetSpec().interval(),
+                            executionRequest.startTime(), executionRequest.endTime(), 0, 500)
+                    : new HistoricalMarketDataQuery(executionRequest.datasetSpec(),
+                            executionRequest.datasetSpec().exchangeCode(), executionRequest.datasetSpec().symbol(),
+                            executionRequest.datasetSpec().interval(), executionRequest.startTime(),
+                            executionRequest.endTime());
+            bars = historicalMarketDataPort.loadBars(query);
             if (bars.isEmpty()) {
                 throw new IllegalStateException("no historical bars found for requested window");
             }
+            if (frozenVersion && "db".equalsIgnoreCase(executionRequest.datasetSpec().provider())
+                    && !historicalMarketDataPort.loadBars(new HistoricalMarketDataQuery(
+                            executionRequest.datasetSpec(), executionRequest.datasetSpec().exchangeCode(), "SPOT",
+                            executionRequest.datasetSpec().symbol(), executionRequest.datasetSpec().interval(),
+                            executionRequest.startTime(), executionRequest.endTime(), 1, 500)).isEmpty()) {
+                throw new IllegalStateException("frozen backtest bar limit exceeded");
+            }
 
-            simulateFacts(
-                    currentRun.backtestRunId(),
-                    executionRequest,
-                    executionContext,
-                    bars,
-                    simulatedOrders,
-                    simulatedTrades,
-                    simulatedPositions,
-                    simulatedPnlSnapshots
-            );
+            if (frozenVersion) {
+                inputIdentity = SpotBarIdentity.capture(bars, objectMapper);
+                simulateFrozenFacts(currentRun, executionRequest, executionContext, bars,
+                        simulatedOrders, simulatedTrades, simulatedPositions, simulatedPnlSnapshots,
+                        decisionReasons);
+            } else {
+                simulateFacts(currentRun.backtestRunId(), executionRequest, executionContext, bars,
+                        simulatedOrders, simulatedTrades, simulatedPositions, simulatedPnlSnapshots);
+            }
 
             Instant executionFinishedAt = Instant.now(clock);
             String summaryJson = buildSuccessSummary(
@@ -218,7 +233,10 @@ public class BacktestExecutionService {
                     executionFinishedAt,
                     simulatedOrders,
                     simulatedTrades,
-                    simulatedPnlSnapshots
+                    simulatedPnlSnapshots,
+                    currentRun,
+                    inputIdentity,
+                    decisionReasons
             );
             backtestExecutionPersistenceService.persistSuccess(
                     currentRun.backtestRunId(),
@@ -360,11 +378,107 @@ public class BacktestExecutionService {
         }
     }
 
+    private void simulateFrozenFacts(
+            BacktestRun run,
+            BacktestExecutionRequest request,
+            BacktestExecutionContext context,
+            List<HistoricalBar> bars,
+            List<SimOrder> orders,
+            List<SimTrade> trades,
+            Map<String, SimPosition> positions,
+            List<SimPnlSnapshot> pnl,
+            List<String> reasons
+    ) {
+        JsonNode version = readJson(run.strategyVersionSnapshotJson());
+        SpotSmaTargetStrategy strategy = SpotSmaTargetStrategy.fromSnapshot(
+                run.strategyVersionSnapshotJson(), objectMapper);
+        if (!run.strategyVersionId().equals(strategy.strategyVersionId())
+                || !version.path("paramSnapshotJson").equals(readJson(run.paramSnapshotJson()))) {
+            throw new IllegalStateException("FROZEN_STRATEGY_SNAPSHOT_MISMATCH");
+        }
+        SpotTargetSizer.Rules rules = frozenRules(request.executionSpecJson());
+        List<SpotSmaTargetStrategy.Decision> pendingSignals = new ArrayList<>();
+        for (int index = 0; index < bars.size(); index++) {
+            HistoricalBar bar = bars.get(index);
+            // 延迟可见的信号保留到首次严格晚于可见时间的开盘，不能被新 bar 覆盖。
+            for (int pendingIndex = 0; pendingIndex < pendingSignals.size();) {
+                SpotSmaTargetStrategy.Decision executableSignal = pendingSignals.get(pendingIndex);
+                if (!executableSignal.availableAt().isBefore(bar.openTime())) {
+                    pendingIndex++;
+                    continue;
+                }
+                pendingSignals.remove(pendingIndex);
+                if (bar.openTime().isAfter(executableSignal.availableAt().plus(
+                        bar.interval().duration().multipliedBy(2)))) {
+                    reasons.add(executableSignal.availableAt() + ":STALE_DATA");
+                } else {
+                    SimPosition current = context.currentPosition();
+                    BigDecimal quantity = current == null ? BigDecimal.ZERO : current.quantity();
+                    SpotTargetSizer.Result sizing = SpotTargetSizer.size(executableSignal.targetExposure(),
+                            new SpotTargetSizer.State(context.cashBalance(), quantity,
+                                    BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, bar.openPrice()), rules);
+                    reasons.add(executableSignal.availableAt() + ":" + sizing.reason());
+                    if (sizing.executable()) {
+                        String side = sizing.side();
+                        SimOrder order = createFilledOrder(run.backtestRunId(), bar.symbol(), side,
+                                sizing.quantity(), sizing.fillPrice(), bar.openTime());
+                        orders.add(order);
+                        SimTrade trade = new SimTrade("st-" + UUID.randomUUID(), order.simOrderId(),
+                                run.backtestRunId(), bar.symbol(), side, sizing.quantity(),
+                                sizing.fillPrice(), sizing.fee(), sizing.slippageCost(),
+                                bar.openTime(), bar.openTime(), bar.openTime());
+                        trades.add(trade);
+                        SimPosition position = updatePosition(context.currentPosition(), trade, bar.openTime());
+                        positions.put(position.symbol(), position);
+                        context.applyAtSlippedFillPrice(trade, position);
+                    }
+                }
+            }
+            SpotSmaTargetStrategy.Decision latestSignal = strategy.evaluate(bars.subList(0, index + 1));
+            if ("INSUFFICIENT_HISTORY".equals(latestSignal.reason())) {
+                reasons.add(bar.availableAt() + ":INSUFFICIENT_HISTORY");
+            } else {
+                pendingSignals.add(latestSignal);
+            }
+            pnl.add(createPnlSnapshot(context, bar.availableAt(), bar.closePrice()));
+        }
+        for (SpotSmaTargetStrategy.Decision pending : pendingSignals) {
+            reasons.add(pending.availableAt() + ":NO_LATER_TRADABLE_EVENT");
+        }
+    }
+
+    private SpotTargetSizer.Rules frozenRules(String executionSpecJson) {
+        JsonNode spec = readJson(executionSpecJson);
+        return new SpotTargetSizer.Rules(requiredDecimal(spec, "quantityStep"),
+                requiredDecimal(spec, "priceTick"), requiredDecimal(spec, "minimumQuantity"),
+                requiredDecimal(spec, "minimumNotional"), requiredDecimal(spec, "feeRate"),
+                requiredDecimal(spec, "slippageBps"));
+    }
+
+    private BigDecimal requiredDecimal(JsonNode node, String field) {
+        JsonNode value = node.path(field);
+        if (value.isMissingNode() || value.isNull() || value.asText().isBlank()) {
+            throw new IllegalArgumentException("missing explicit SIM assumption: " + field);
+        }
+        return new BigDecimal(value.asText());
+    }
+
     private BacktestExecutionRequest buildExecutionRequest(
             BacktestRun backtestRun,
             BacktestConfig backtestConfig,
             ResearchConfig researchConfig
     ) {
+        if (backtestRun.strategyVersionId() != null && !backtestRun.strategyVersionId().isBlank()) {
+            JsonNode frozenConfig = readJson(backtestRun.configSnapshotJson());
+            HistoricalDatasetSpec frozenDataset = parseDatasetSpec(backtestRun.datasetSnapshotJson());
+            return new BacktestExecutionRequest(backtestRun.backtestRunId(), backtestRun.researchConfigId(),
+                    backtestRun.backtestConfigId(), backtestRun.sourceStrategyId(),
+                    SpotSmaTargetStrategy.EXECUTABLE, backtestRun.strategyVersionSnapshotJson(), frozenDataset,
+                    Instant.parse(requiredText(frozenConfig, "startTime", "startTime")),
+                    Instant.parse(requiredText(frozenConfig, "endTime", "endTime")),
+                    new BigDecimal(requiredText(frozenConfig, "initialCapital", "initialCapital")),
+                    frozenConfig.path("executionSpec").toString());
+        }
         HistoricalDatasetSpec datasetSpec = parseDatasetSpec(resolveExecutionDatasetSpec(backtestConfig, researchConfig));
         return new BacktestExecutionRequest(
                 backtestRun.backtestRunId(),
@@ -597,7 +711,10 @@ public class BacktestExecutionService {
             Instant executionFinishedAt,
             List<SimOrder> simulatedOrders,
             List<SimTrade> simulatedTrades,
-            List<SimPnlSnapshot> simulatedPnlSnapshots
+            List<SimPnlSnapshot> simulatedPnlSnapshots,
+            BacktestRun run,
+            SpotBarIdentity.Snapshot inputIdentity,
+            List<String> decisionReasons
     ) {
         SimPnlSnapshot finalSnapshot = simulatedPnlSnapshots.getLast();
         SimPosition finalPosition = executionContext.currentPosition();
@@ -623,6 +740,18 @@ public class BacktestExecutionService {
         summary.put("resultStatus", BacktestRunStatus.SUCCEEDED.name());
         summary.put("executionStartedAt", executionStartedAt.toString());
         summary.put("executionFinishedAt", executionFinishedAt.toString());
+        if (inputIdentity != null) {
+            summary.put("strategyVersionId", run.strategyVersionId());
+            summary.put("strategyChecksum", readJson(run.strategyVersionSnapshotJson()).path("checksum").asText());
+            summary.set("strategyParameters", readJson(run.paramSnapshotJson()));
+            summary.set("datasetSnapshot", readJson(run.datasetSnapshotJson()));
+            summary.set("costAndRuleAssumptions", readJson(executionRequest.executionSpecJson()));
+            summary.put("barContentSha256", inputIdentity.sha256());
+            summary.set("consumedBars", readJson(inputIdentity.canonicalJson()));
+            summary.put("firstBarOpenTime", bars.getFirst().openTime().toString());
+            summary.put("lastBarCloseTime", bars.getLast().closeTime().toString());
+            summary.set("decisionReasons", objectMapper.valueToTree(decisionReasons));
+        }
         return summary.toString();
     }
 
@@ -709,6 +838,3 @@ public class BacktestExecutionService {
                 : exception.getMessage();
     }
 }
-
-
-

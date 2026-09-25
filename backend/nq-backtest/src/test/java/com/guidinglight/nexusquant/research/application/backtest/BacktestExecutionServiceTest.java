@@ -93,6 +93,85 @@ class BacktestExecutionServiceTest {
     }
 
     @Test
+    void frozenVersionTradesOnlyAtNextBarOpenAndRecordsConsumedInput() throws Exception {
+        List<HistoricalBar> bars = List.of(
+                spotBar(0, "100", "100"), spotBar(1, "100", "101"),
+                spotBar(2, "101", "102"), spotBar(3, "103", "104"));
+        Scenario scenario = createScenario(query -> bars);
+        BacktestRun legacy = scenario.createRun("""
+                {"provider":"fixture","datasetId":"synthetic-strategy-sim","exchangeCode":"OKX",
+                 "symbol":"BTC-USDT","interval":"1m","resourcePath":"synthetic"}
+                """);
+        String parameters = "{\"window\":3,\"investedExposure\":\"1\"}";
+        String version = """
+                {"strategyVersionId":"sv-1","checksum":"sha-1","status":"ACTIVE",
+                 "paramSnapshotJson":{"window":3,"investedExposure":"1"},
+                 "sourceSnapshotJson":{"executable":"SPOT_SMA_TARGET_V1"}}
+                """;
+        String config = """
+                {"startTime":"2026-01-01T00:00:00Z","endTime":"2026-01-01T00:03:59Z",
+                 "initialCapital":"100","executionSpec":{"quantityStep":"0.0001","priceTick":"0.01",
+                 "minimumQuantity":"0.0001","minimumNotional":"10","feeRate":"0.001","slippageBps":"10"}}
+                """;
+        scenario.backtestRunRepository.insert(new BacktestRun(legacy.backtestRunId(),
+                legacy.backtestConfigId(), legacy.researchConfigId(), legacy.sourceStrategyId(),
+                legacy.strategySnapshot(), "sv-1", version, parameters, config, config,
+                "{\"provider\":\"fixture\",\"datasetId\":\"synthetic-strategy-sim\",\"exchangeCode\":\"OKX\",\"symbol\":\"BTC-USDT\",\"interval\":\"1m\",\"resourcePath\":\"synthetic\"}",
+                BacktestRunStatus.CREATED, legacy.requestedAt(), null, null, null, null,
+                "{}", legacy.createdAt(), legacy.updatedAt()));
+
+        scenario.backtestExecutionService.startRun(legacy.backtestRunId());
+        List<SimTrade> trades = scenario.simTradeRepository.listByBacktestRunId(legacy.backtestRunId());
+        assertEquals(1, trades.size());
+        assertEquals(Instant.parse("2026-01-01T00:03:00Z"), trades.getFirst().tradedAt());
+        assertEquals(0, new BigDecimal("103.11").compareTo(trades.getFirst().tradePrice()));
+        BacktestRun completed = scenario.backtestRunService.getByBacktestRunId(legacy.backtestRunId());
+        var summary = objectMapper.readTree(completed.summaryJson());
+        assertEquals("sv-1", summary.path("strategyVersionId").asText());
+        assertEquals(4, summary.path("consumedBars").size());
+        assertEquals(64, summary.path("barContentSha256").asText().length());
+        assertTrue(new BigDecimal(summary.path("totalSlippage").asText()).signum() > 0);
+        BigDecimal notional = trades.getFirst().tradePrice().multiply(trades.getFirst().quantity());
+        assertEquals(0, new BigDecimal("100").subtract(notional).subtract(trades.getFirst().feeAmount())
+                .compareTo(new BigDecimal(summary.path("finalCashBalance").asText())));
+    }
+
+    @Test
+    void delayedFrozenSignalWaitsForFirstLaterTradableOpen() {
+        List<HistoricalBar> bars = List.of(spotBar(0, "100", "100"), spotBar(1, "101", "101"),
+                availableAt(spotBar(2, "102", "102"), "2026-01-01T00:03:00Z"),
+                availableAt(spotBar(3, "103", "103"), "2026-01-01T00:04:00Z"),
+                spotBar(4, "104", "104"));
+        Scenario scenario = createScenario(query -> bars);
+        BacktestRun legacy = scenario.createRun("""
+                {"provider":"fixture","datasetId":"synthetic-strategy-sim","exchangeCode":"OKX",
+                 "symbol":"BTC-USDT","interval":"1m","resourcePath":"synthetic"}
+                """);
+        String parameters = "{\"window\":3,\"investedExposure\":\"1\"}";
+        String version = """
+                {"strategyVersionId":"sv-1","checksum":"sha-1","status":"ACTIVE",
+                 "paramSnapshotJson":{"window":3,"investedExposure":"1"},
+                 "sourceSnapshotJson":{"executable":"SPOT_SMA_TARGET_V1"}}
+                """;
+        String config = """
+                {"startTime":"2026-01-01T00:00:00Z","endTime":"2026-01-01T00:04:59Z",
+                 "initialCapital":"100","executionSpec":{"quantityStep":"0.0001","priceTick":"0.01",
+                  "minimumQuantity":"0.0001","minimumNotional":"10","feeRate":"0.001","slippageBps":"10"}}
+                """;
+        scenario.backtestRunRepository.insert(new BacktestRun(legacy.backtestRunId(),
+                legacy.backtestConfigId(), legacy.researchConfigId(), legacy.sourceStrategyId(),
+                legacy.strategySnapshot(), "sv-1", version, parameters, config, config,
+                "{\"provider\":\"fixture\",\"datasetId\":\"synthetic-strategy-sim\",\"exchangeCode\":\"OKX\",\"symbol\":\"BTC-USDT\",\"interval\":\"1m\",\"resourcePath\":\"synthetic\"}",
+                BacktestRunStatus.CREATED, legacy.requestedAt(), null, null, null, null,
+                "{}", legacy.createdAt(), legacy.updatedAt()));
+
+        scenario.backtestExecutionService.startRun(legacy.backtestRunId());
+        List<SimTrade> trades = scenario.simTradeRepository.listByBacktestRunId(legacy.backtestRunId());
+        assertEquals(1, trades.size());
+        assertEquals(Instant.parse("2026-01-01T00:04:00Z"), trades.getFirst().tradedAt());
+    }
+
+    @Test
     void shouldForwardExchangeCodeWhenDatasetSpecUsesDbProvider() {
         CapturingHistoricalMarketDataPort historicalMarketDataPort = new CapturingHistoricalMarketDataPort(List.of(
                 bar("2025-01-01T00:00:00Z", "2025-01-01T00:00:59Z", "43000", "43010", "10")
@@ -325,6 +404,7 @@ class BacktestExecutionServiceTest {
                 backtestConfigService,
                 backtestRunService,
                 backtestExecutionService,
+                backtestRunRepository,
                 simOrderRepository,
                 simTradeRepository,
                 simPositionRepository,
@@ -347,6 +427,21 @@ class BacktestExecutionServiceTest {
         );
     }
 
+    private HistoricalBar spotBar(int minute, String open, String close) {
+        Instant start = Instant.parse("2026-01-01T00:00:00Z").plusSeconds(minute * 60L);
+        return new HistoricalBar("OKX", "SPOT", "BTC-USDT", BarInterval.ONE_MINUTE,
+                start, start.plusSeconds(59), new BigDecimal(open), new BigDecimal(close),
+                new BigDecimal(open), new BigDecimal(close), BigDecimal.ONE,
+                null, null, "OK", "{}", start.plusSeconds(59));
+    }
+
+    private HistoricalBar availableAt(HistoricalBar bar, String timestamp) {
+        return new HistoricalBar(bar.exchangeCode(), bar.marketType(), bar.symbol(), bar.interval(),
+                bar.openTime(), bar.closeTime(), bar.openPrice(), bar.highPrice(), bar.lowPrice(),
+                bar.closePrice(), bar.volume(), bar.quoteVolume(), bar.tradeCount(),
+                bar.qualityStatus(), bar.rawPayloadJson(), Instant.parse(timestamp));
+    }
+
     private static final class CapturingHistoricalMarketDataPort implements HistoricalMarketDataPort {
         private final List<HistoricalBar> bars;
         private HistoricalMarketDataQuery lastQuery;
@@ -367,6 +462,7 @@ class BacktestExecutionServiceTest {
             BacktestConfigService backtestConfigService,
             BacktestRunService backtestRunService,
             BacktestExecutionService backtestExecutionService,
+            InMemoryBacktestRunRepository backtestRunRepository,
             InMemorySimOrderRepository simOrderRepository,
             InMemorySimTradeRepository simTradeRepository,
             InMemorySimPositionRepository simPositionRepository,
@@ -485,7 +581,12 @@ class BacktestExecutionServiceTest {
                     current.researchConfigId(),
                     current.sourceStrategyId(),
                     current.strategySnapshot(),
+                    current.strategyVersionId(),
+                    current.strategyVersionSnapshotJson(),
+                    current.paramSnapshotJson(),
                     current.backtestConfigSnapshot(),
+                    current.configSnapshotJson(),
+                    current.datasetSnapshotJson(),
                     status,
                     current.requestedAt(),
                     startedAt,
@@ -600,7 +701,3 @@ class BacktestExecutionServiceTest {
         }
     }
 }
-
-
-
-

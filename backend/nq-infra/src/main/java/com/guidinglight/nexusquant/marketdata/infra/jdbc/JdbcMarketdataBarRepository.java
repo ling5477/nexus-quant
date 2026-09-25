@@ -55,8 +55,9 @@ public class JdbcMarketdataBarRepository implements MarketdataBarRepository {
                                 source,
                                 quality_status,
                                 raw_payload_json,
+                                available_at,
                                 ingested_at
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?)
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?)
                             ON CONFLICT (exchange_code, market_type, symbol, "interval", open_time) DO UPDATE
                             SET close_time = EXCLUDED.close_time,
                                 open_price = EXCLUDED.open_price,
@@ -69,6 +70,7 @@ public class JdbcMarketdataBarRepository implements MarketdataBarRepository {
                                 source = EXCLUDED.source,
                                 quality_status = EXCLUDED.quality_status,
                                 raw_payload_json = EXCLUDED.raw_payload_json,
+                                available_at = EXCLUDED.available_at,
                                 ingested_at = EXCLUDED.ingested_at
                             RETURNING xmax = 0
                             """,
@@ -89,6 +91,8 @@ public class JdbcMarketdataBarRepository implements MarketdataBarRepository {
                     source,
                     bar.qualityStatus(),
                     bar.rawPayloadJson() == null || bar.rawPayloadJson().isBlank() ? "{}" : bar.rawPayloadJson(),
+                    Timestamp.from("FIXTURE_SYNC".equals(source) && bar.availableAt() != null
+                            ? bar.availableAt() : ingestedAt),
                     Timestamp.from(ingestedAt)
             );
             if (Boolean.TRUE.equals(inserted)) {

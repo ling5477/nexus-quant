@@ -1,6 +1,9 @@
 import {apiClient} from '@/api/client';
 import type {
     EmergencyStopEventItem,
+    StrategySimDecision,
+    StrategySimFacts,
+    StrategySimRun,
     EmergencyStopRequest,
     EquityCurveSnapshotItem,
     PaperRiskCheckResultItem,
@@ -40,6 +43,22 @@ interface PaperTradingListRequest {
 }
 
 export const paperTradingApi = {
+    async createStrategySim(publishId: string, budget: string): Promise<StrategySimRun> {
+        const {data} = await apiClient.post<StrategySimRun>('/paper-trading/strategy-sim/runs', {publishId, budget});
+        return data;
+    },
+    async advanceStrategySim(paperRunId: string): Promise<StrategySimDecision> {
+        const {data} = await apiClient.post<StrategySimDecision>(`/paper-trading/strategy-sim/runs/${paperRunId}/advance`);
+        return data;
+    },
+    async strategySimDecisions(paperRunId: string): Promise<StrategySimDecision[]> {
+        const {data} = await apiClient.get<StrategySimDecision[]>(`/paper-trading/strategy-sim/runs/${paperRunId}/decisions`);
+        return data;
+    },
+    async strategySimFacts(paperRunId: string): Promise<StrategySimFacts> {
+        const {data} = await apiClient.get<StrategySimFacts>(`/paper-trading/strategy-sim/runs/${paperRunId}/facts`);
+        return data;
+    },
     async list(request: PaperTradingListRequest): Promise<PaperTradingRunItem[]> {
         const {data} = await apiClient.get<PaperTradingRunItem[]>('/paper-trading/runs', {
             params: request,

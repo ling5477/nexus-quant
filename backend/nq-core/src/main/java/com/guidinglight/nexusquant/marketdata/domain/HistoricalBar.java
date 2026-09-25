@@ -25,8 +25,18 @@ public record HistoricalBar(
         BigDecimal quoteVolume,
         Long tradeCount,
         String qualityStatus,
-        String rawPayloadJson
+        String rawPayloadJson,
+        Instant availableAt
 ) {
+    /** 旧调用方没有来源可见时间时维持历史构造行为；正式 DB 读取必须传入实际入库可见时间。 */
+    public HistoricalBar(String exchangeCode, String marketType, String symbol, BarInterval interval,
+                         Instant openTime, Instant closeTime, BigDecimal openPrice, BigDecimal highPrice,
+                         BigDecimal lowPrice, BigDecimal closePrice, BigDecimal volume, BigDecimal quoteVolume,
+                         Long tradeCount, String qualityStatus, String rawPayloadJson) {
+        this(exchangeCode, marketType, symbol, interval, openTime, closeTime, openPrice, highPrice,
+                lowPrice, closePrice, volume, quoteVolume, tradeCount, qualityStatus, rawPayloadJson, closeTime);
+    }
+
     /**
      * 兼容 RC1 fixture 与既有单测的构造器。
      * <p>
@@ -61,7 +71,8 @@ public record HistoricalBar(
                 null,
                 null,
                 "OK",
-                "{}"
+                "{}",
+                closeTime
         );
     }
 }

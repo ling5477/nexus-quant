@@ -4,6 +4,10 @@
 
 当前 API 事实以代码中的 controller 与 DTO 为准。下方分类描述现有接口能力；按 Gate 编号排列的段落保留实施时的范围和验收记录，其中的“当时状态”不表示当前接口尚未交付。当前运行与交易授权边界以 [STATUS.md](STATUS.md) 为准。
 
+## 隔离策略 SIM 接口（默认关闭）
+
+开启服务端 `nq.strategy-sim.enabled=true` 后，`/api/paper-trading/strategy-sim/runs` 提供创建、`/{paperRunId}/start`、`/stop`、`/advance`、`/decisions` 和 `/facts`。创建仅接受已成功发布的 `publishId` 与隔离预算；方向和数量来自冻结策略及服务端 sizing。`advance` 每次保存一个可解释决策，已接受订单仍经过 canonical Risk / Execution；`facts` 返回关联的订单、成交、账本、现金、持仓及按最近已处理事件可见价格标记的 PnL。前端入口另由 `VITE_STRATEGY_SIM_ENABLED=true` 显式开启。默认不开启自动决策，不授予 LIVE 或真实交易权限。
+
 ## API 分类
 
 - Auth API：登录、当前用户、token 相关接口。

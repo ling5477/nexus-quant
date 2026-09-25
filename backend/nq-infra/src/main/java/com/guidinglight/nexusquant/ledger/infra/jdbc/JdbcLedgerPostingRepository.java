@@ -89,8 +89,21 @@ public class JdbcLedgerPostingRepository implements LedgerPostingRepository {
     @Override
     public BigDecimal currentBalance(Long accountId, String currency) {
         BigDecimal balance = jdbcTemplate.queryForObject(
-                "SELECT COALESCE(SUM(delta), 0) FROM ledger_entries WHERE account_id = ? AND currency = ?",
+                """
+                SELECT COALESCE(SUM(CASE
+                    WHEN EXISTS (SELECT 1 FROM paper_trading_runs r
+                                 WHERE r.canonical_account_id = ? AND r.trade_env = 'SIM')
+                    THEN CASE
+                        WHEN e.ref_type = 'SIM_FUNDING_CASH' OR
+                             (e.ref_type = 'TRADE' AND
+                              (right(e.idempotency_key, 9) = ':LEDGER:1' OR
+                               right(e.idempotency_key, 13) = ':LEDGER:FEE_1'))
+                        THEN e.delta ELSE 0 END
+                    ELSE e.delta END), 0)
+                FROM ledger_entries e WHERE e.account_id = ? AND e.currency = ?
+                """,
                 BigDecimal.class,
+                accountId,
                 accountId,
                 currency
         );
@@ -210,4 +223,3 @@ public class JdbcLedgerPostingRepository implements LedgerPostingRepository {
         );
     }
 }
-

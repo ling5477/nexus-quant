@@ -88,8 +88,19 @@ public final class BacktestExecutionContext {
         latestSnapshotTime = simTrade.tradedAt();
     }
 
+    /** 新版成交价已经包含滑点，现金只扣成交额和费用；滑点金额仅用于解释结果。 */
+    public void applyAtSlippedFillPrice(SimTrade simTrade, SimPosition updatedPosition) {
+        BigDecimal notional = simTrade.tradePrice().multiply(simTrade.quantity());
+        cashBalance = "BUY".equals(simTrade.side())
+                ? normalize(cashBalance.subtract(notional).subtract(simTrade.feeAmount()))
+                : normalize(cashBalance.add(notional).subtract(simTrade.feeAmount()));
+        totalFee = normalize(totalFee.add(simTrade.feeAmount()));
+        totalSlippage = normalize(totalSlippage.add(simTrade.slippageAmount()));
+        currentPosition = updatedPosition;
+        latestSnapshotTime = simTrade.tradedAt();
+    }
+
     private BigDecimal normalize(BigDecimal value) {
         return value.setScale(18, RoundingMode.HALF_UP);
     }
 }
-
