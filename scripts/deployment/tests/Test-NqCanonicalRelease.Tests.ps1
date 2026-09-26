@@ -142,6 +142,63 @@ function Get-AuthorityStateFingerprint([string]$Root){
     ($records-join'|')+'|current='+(Get-TestCurrentReleaseId $Root)
 }
 
+function New-BootstrapFixture([string]$Name,[bool]$CurrentBeforeInstall=$true){
+    $root=Join-Path $tempRoot $Name
+    $releases=Join-Path $root 'releases';$sha='a'*40
+    [IO.Directory]::CreateDirectory((Join-Path $releases $sha))|Out-Null
+    [IO.File]::WriteAllText((Join-Path $releases "$sha/legacy-marker"),'unmanaged',$utf8)
+    $trusted=Join-Path $root 'trusted-release-admission';[IO.Directory]::CreateDirectory($trusted)|Out-Null
+    Copy-Item -LiteralPath $policyAdmissionPath -Destination (Join-Path $trusted "$($cleanRelease.releaseId).json")
+    Copy-Item -LiteralPath $policyDigestPath -Destination (Join-Path $trusted "$($cleanRelease.releaseId).sha256")
+    $current=Join-Path $root 'current'
+    if($CurrentBeforeInstall){& /usr/bin/ln '-s' '--' "releases/$sha" $current}
+    $installAction=if($CurrentBeforeInstall){'install-for-bootstrap'}else{'install'}
+    $installed=& $installer -Action $installAction -InstallationRoot $root -SourceRoot $cleanRelease.releaseRoot `
+        -ExpectedSourceCommit $cleanPolicy.Head -ConfirmDisposable -TestProductionPolicy
+    if(-not$CurrentBeforeInstall){& /usr/bin/ln '-s' '--' "releases/$sha" $current}
+    $databaseState=Join-Path $root 'database-state.json'
+    $null=& $installer -Action observe-database -InstallationRoot $root -DatabaseStatePath $databaseState `
+        -TestDatabaseSchemaVersion $repositorySchema -TestPostgresqlMajor 16 -ConfirmDisposable
+    [pscustomobject]@{Root=$root;Current=$current;LegacySha=$sha;ReleaseId=[string]$installed.releaseId;DatabaseState=$databaseState;Trusted=$trusted}
+}
+
+function Invoke-BootstrapFixture($Fixture,[string]$Fault='NONE',[string]$Commit=''){
+    if([string]::IsNullOrWhiteSpace($Commit)){$Commit=[string]$cleanPolicy.Head}
+    & $installer -Action bootstrap-current -InstallationRoot $Fixture.Root -ReleaseId $Fixture.ReleaseId `
+        -DatabaseStatePath $Fixture.DatabaseState -ExpectedSourceCommit $Commit -ConfirmDisposable -TestProductionPolicy -TestFault $Fault
+}
+
+function Start-BootstrapWorker($Fixture,[int]$LockHold=0,[int]$PreparationHold=0,[int]$RecordHold=0){
+    $psi=[Diagnostics.ProcessStartInfo]::new();$psi.FileName=(Get-Process -Id $PID).Path
+    $psi.UseShellExecute=$false;$psi.RedirectStandardOutput=$true;$psi.RedirectStandardError=$true;$psi.CreateNoWindow=$true
+    foreach($argument in @('-NoProfile','-File',$concurrencyWorker,'-InstallerPath',$installer,'-Operation','BOOTSTRAP',
+        '-InstallationRoot',$Fixture.Root,'-ReleaseId',$Fixture.ReleaseId,'-DatabaseStatePath',$Fixture.DatabaseState,
+        '-ExpectedSourceCommit',$cleanPolicy.Head,'-LockTimeoutSeconds','15','-HoldMilliseconds',[string]$LockHold,
+        '-PreparationHoldMilliseconds',[string]$PreparationHold,'-RecordHoldMilliseconds',[string]$RecordHold)){[void]$psi.ArgumentList.Add($argument)}
+    [Diagnostics.Process]::Start($psi)
+}
+
+function Wait-PreparedBootstrap([string]$Root,[int]$TimeoutSeconds=10){
+    $path=Join-Path $Root 'activation-journal.json';$deadline=[DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    while([DateTime]::UtcNow-lt$deadline){
+        if(Test-Path -LiteralPath $path -PathType Leaf){
+            try{$journal=Get-Content -LiteralPath $path -Raw|ConvertFrom-Json;if([string]$journal.state-ceq'PREPARED'){return}}catch{}
+        }
+        Start-Sleep -Milliseconds 25
+    }
+    throw 'PREPARED_BOOTSTRAP_NOT_OBSERVED'
+}
+
+function Wait-BootstrapRecordWithoutJournal([string]$Root,[int]$TimeoutSeconds=10){
+    $recordPath=Join-Path $Root 'bootstrap-predecessor.json';$journalPath=Join-Path $Root 'activation-journal.json'
+    $deadline=[DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    while([DateTime]::UtcNow-lt$deadline){
+        if((Test-Path -LiteralPath $recordPath -PathType Leaf)-and-not(Test-Path -LiteralPath $journalPath -PathType Leaf)){return}
+        Start-Sleep -Milliseconds 25
+    }
+    throw 'ORPHAN_BOOTSTRAP_RECORD_NOT_OBSERVED'
+}
+
 function Rebind-JarArtifact([string]$ReleaseRoot) {
     $manifestPath=Join-Path $ReleaseRoot 'release-manifest.json'
     $manifest=Get-Content -LiteralPath $manifestPath -Raw|ConvertFrom-Json
@@ -175,6 +232,129 @@ try {
     $policyPreflight=& (Join-Path $cleanPolicy.Root 'scripts/deployment/Install-NqCanonicalRelease.ps1') -Action preflight -InstallationRoot $policyInstall -SourceRoot $cleanRelease.releaseRoot -ExpectedSourceCommit $cleanPolicy.Head -ConfirmDisposable -TestProductionPolicy
     if([string]$policyPreflight.decision-cne'PASS / NQ_CANONICAL_INSTALL_PREFLIGHT'){throw 'EXTERNAL_ADMISSION_PRODUCTION_POLICY_FAILED'}
     Complete-Case 'external-exact-head-admission-production-policy-pass'
+    if($IsLinux){
+        $bootstrap=New-BootstrapFixture 'legacy-bootstrap-positive'
+        Expect-Rejected {& $installer -Action preflight -InstallationRoot $bootstrap.Root -ConfirmDisposable} 'legacy-current-normal-preflight-still-rejected' 'BLOCKED / RELEASE_ID_INVALID'
+        Expect-Rejected {& $installer -Action install -InstallationRoot $bootstrap.Root -SourceRoot $cleanRelease.releaseRoot -ConfirmDisposable -TestProductionPolicy} 'legacy-current-normal-install-still-rejected' 'BLOCKED / RELEASE_ID_INVALID'
+        Expect-Rejected {& $installer -Action verify -InstallationRoot $bootstrap.Root -ReleaseId $bootstrap.ReleaseId -ExpectedSourceCommit $cleanPolicy.Head -ConfirmDisposable -TestProductionPolicy} 'legacy-current-normal-verify-still-rejected' 'BLOCKED / RELEASE_ID_INVALID'
+        Expect-Rejected {& $installer -Action recover -InstallationRoot $bootstrap.Root -ConfirmDisposable -TestProductionPolicy} 'legacy-current-normal-recover-still-rejected' 'BLOCKED / RELEASE_ID_INVALID'
+        $bootResult=Invoke-BootstrapFixture $bootstrap
+        if([string]$bootResult.currentReleaseId-cne$bootstrap.ReleaseId-or(Get-TestCurrentReleaseId $bootstrap.Root)-cne$bootstrap.ReleaseId){throw 'BOOTSTRAP_POINTER_RESULT_INVALID'}
+        $bootHead=Get-Content (Join-Path $bootstrap.Root 'activation-head.json') -Raw|ConvertFrom-Json
+        $bootJournal=Get-Content (Join-Path $bootstrap.Root 'activation-journal.json') -Raw|ConvertFrom-Json
+        $bootRecord=Get-Content (Join-Path $bootstrap.Root 'bootstrap-predecessor.json') -Raw|ConvertFrom-Json
+        if([long]$bootHead.generation-ne1-or[string]$bootHead.currentReleaseId-cne$bootstrap.ReleaseId-or
+           [string]$bootHead.previousReleaseId-cne'NONE'-or[string]$bootJournal.operation-cne'BOOTSTRAP_CURRENT'-or
+           [string]$bootJournal.state-cne'COMPLETED'-or[string]$bootRecord.predecessorKind-cne'UNMANAGED_NON_CANONICAL'-or
+           [string]$bootRecord.legacySourceSha-cne$bootstrap.LegacySha){throw 'BOOTSTRAP_AUTHORITY_INVALID'}
+        $null=& $installer -Action recover -InstallationRoot $bootstrap.Root -ConfirmDisposable -TestProductionPolicy
+        Expect-Rejected {& $installer -Action rollback -InstallationRoot $bootstrap.Root -DatabaseStatePath $bootstrap.DatabaseState -ExpectedSourceCommit $cleanPolicy.Head -ConfirmDisposable -TestProductionPolicy} 'legacy-predecessor-not-automatic-rollback-target' 'BLOCKED / TRUSTED_LAST_ACTIVATION_INVALID'
+        Expect-Rejected {Invoke-BootstrapFixture $bootstrap} 'bootstrap-one-time-after-canonical-head' 'BLOCKED / EXISTING_CANONICAL_ACTIVATION_HISTORY'
+        Complete-Case 'linux-legacy-to-canonical-atomic-bootstrap-and-signed-predecessor'
+        $null=& $installer -Action activate -InstallationRoot $bootstrap.Root -ReleaseId $bootstrap.ReleaseId -DatabaseStatePath $bootstrap.DatabaseState -ExpectedSourceCommit $cleanPolicy.Head -ConfirmDisposable -TestProductionPolicy
+        $laterHead=Get-Content (Join-Path $bootstrap.Root 'activation-head.json') -Raw|ConvertFrom-Json
+        if([long]$laterHead.generation-ne2-or[string]$laterHead.bootstrapPredecessorDigest-cnotmatch'^[0-9a-f]{64}$'-or[string]$laterHead.bootstrapTransactionId-cne[string]$bootRecord.transactionId){throw 'BOOTSTRAP_PREDECESSOR_ANCHOR_NOT_CARRIED'}
+        Complete-Case 'bootstrap-predecessor-anchor-survives-later-canonical-activation'
+
+        foreach($fault in @('AUTHORITY_PREWRITE','RECORD_PREWRITE','PREPARATION','POINTER_SWAP','COMPLETION_WRITE','HEAD_WRITE')){
+            $fixture=New-BootstrapFixture ("legacy-bootstrap-fault-"+$fault)
+            Expect-Rejected {Invoke-BootstrapFixture $fixture $fault} ("bootstrap-fault-injected-"+$fault)
+            $pointer=Get-TestCurrentReleaseId $fixture.Root
+            $expected=if($fault-in@('COMPLETION_WRITE','HEAD_WRITE')){$fixture.ReleaseId}else{$fixture.LegacySha}
+            if($pointer-cne$expected){throw "BOOTSTRAP_FAULT_POINTER_INVALID / $fault"}
+            if($fault-ceq'PREPARATION'){
+                Expect-Rejected {& $installer -Action recover -InstallationRoot $fixture.Root -ConfirmDisposable -TestProductionPolicy} 'prepared-legacy-normal-recover-blocked' 'BLOCKED / RELEASE_ID_INVALID'
+            }
+            if($fault-in@('RECORD_PREWRITE','HEAD_WRITE')){
+                Expect-Rejected {Invoke-BootstrapFixture $fixture 'NONE' ('f'*40)} ("bootstrap-retry-wrong-commit-rejected-"+$fault) 'BLOCKED / BOOTSTRAP_SOURCE_CONFLICT'
+            }
+            $retried=Invoke-BootstrapFixture $fixture
+            if([string]$retried.state-cne'COMPLETED'-or(Get-TestCurrentReleaseId $fixture.Root)-cne$fixture.ReleaseId){throw "BOOTSTRAP_RETRY_FAILED / $fault"}
+            Complete-Case ("bootstrap-recovery-"+$fault)
+        }
+
+        foreach($shape in @('sha39','sha41','uppercase','nonhex','outside','traversal','missing','target-symlink','writable-target')){
+            $fixture=New-BootstrapFixture ("legacy-bootstrap-shape-"+$shape) $false
+            $legacyPath=Join-Path (Join-Path $fixture.Root 'releases') $fixture.LegacySha
+            Remove-Item -LiteralPath $fixture.Current -Force
+            if($shape-ceq'sha39'){$link='releases/'+('a'*39)}
+            elseif($shape-ceq'sha41'){$link='releases/'+('a'*41)}
+            elseif($shape-ceq'uppercase'){$link='releases/'+('A'*40)}
+            elseif($shape-ceq'nonhex'){$link='releases/'+('g'*40)}
+            elseif($shape-ceq'outside'){$link=Join-Path $tempRoot 'outside-legacy';[IO.Directory]::CreateDirectory($link)|Out-Null}
+            elseif($shape-ceq'traversal'){$link='releases/../'+$fixture.LegacySha}
+            elseif($shape-ceq'missing'){$link='releases/'+('b'*40)}
+            elseif($shape-ceq'target-symlink'){$moved=Join-Path $fixture.Root 'moved-legacy';Move-Item $legacyPath $moved;& /usr/bin/ln '-s' '--' $moved $legacyPath;$link='releases/'+$fixture.LegacySha}
+            else{& /usr/bin/chmod 0777 '--' $legacyPath;$link='releases/'+$fixture.LegacySha}
+            & /usr/bin/ln '-s' '--' $link $fixture.Current
+            Expect-Rejected {Invoke-BootstrapFixture $fixture} ("bootstrap-legacy-shape-rejected-"+$shape) 'BLOCKED / LEGACY_CURRENT_IDENTITY_INVALID'
+        }
+        $missingTarget=New-BootstrapFixture 'legacy-bootstrap-missing-canonical'
+        Move-Item -LiteralPath (Join-Path (Join-Path $missingTarget.Root 'releases') $missingTarget.ReleaseId) -Destination (Join-Path $tempRoot 'removed-canonical')
+        Expect-Rejected {Invoke-BootstrapFixture $missingTarget} 'bootstrap-canonical-target-missing-rejected'
+        $unadmitted=New-BootstrapFixture 'legacy-bootstrap-unadmitted'
+        Remove-Item -LiteralPath (Join-Path $unadmitted.Trusted "$($unadmitted.ReleaseId).json") -Force
+        Expect-Rejected {Invoke-BootstrapFixture $unadmitted} 'bootstrap-unadmitted-target-rejected' 'BLOCKED / EXTERNAL_ADMISSION_ROOT_REQUIRED'
+        $invalidTarget=New-BootstrapFixture 'legacy-bootstrap-invalid-canonical'
+        [IO.File]::AppendAllText((Join-Path (Join-Path (Join-Path $invalidTarget.Root 'releases') $invalidTarget.ReleaseId) 'frontend/index.html'),'tampered',$utf8)
+        Expect-Rejected {Invoke-BootstrapFixture $invalidTarget} 'bootstrap-invalid-canonical-target-rejected'
+        $wrongCommit=New-BootstrapFixture 'legacy-bootstrap-wrong-commit'
+        Expect-Rejected {Invoke-BootstrapFixture $wrongCommit 'NONE' ('f'*40)} 'bootstrap-wrong-source-commit-rejected'
+        $wrongSchema=New-BootstrapFixture 'legacy-bootstrap-wrong-schema'
+        $null=& $installer -Action observe-database -InstallationRoot $wrongSchema.Root -DatabaseStatePath $wrongSchema.DatabaseState -TestDatabaseSchemaVersion $incompatibleSchema -TestPostgresqlMajor 16 -ConfirmDisposable
+        Expect-Rejected {Invoke-BootstrapFixture $wrongSchema} 'bootstrap-schema-mismatch-rejected' 'BLOCKED / RELEASE_DATABASE_SCHEMA_INCOMPATIBLE'
+        $stale=New-BootstrapFixture 'legacy-bootstrap-stale-database'
+        $null=& $installer -Action observe-database -InstallationRoot $stale.Root -DatabaseStatePath $stale.DatabaseState -TestDatabaseSchemaVersion $repositorySchema -TestPostgresqlMajor 16 -TestDatabaseObservedAtOffsetMinutes -30 -ConfirmDisposable
+        Expect-Rejected {Invoke-BootstrapFixture $stale} 'bootstrap-stale-database-state-rejected' 'BLOCKED / DATABASE_STATE_STALE'
+        $wrongMajor=New-BootstrapFixture 'legacy-bootstrap-wrong-major'
+        Expect-Rejected {& $installer -Action observe-database -InstallationRoot $wrongMajor.Root -DatabaseStatePath $wrongMajor.DatabaseState -TestDatabaseSchemaVersion $repositorySchema -TestPostgresqlMajor 17 -ConfirmDisposable} 'bootstrap-database-major-observation-rejected' 'BLOCKED / UNSUPPORTED_POSTGRESQL_MAJOR'
+        $invalidDatabase=New-BootstrapFixture 'legacy-bootstrap-invalid-database-integrity'
+        [IO.File]::AppendAllText($invalidDatabase.DatabaseState,'tampered',$utf8)
+        Expect-Rejected {Invoke-BootstrapFixture $invalidDatabase} 'bootstrap-database-integrity-rejected'
+        $failedMigration=New-BootstrapFixture 'legacy-bootstrap-failed-migration'
+        $null=& $installer -Action observe-database -InstallationRoot $failedMigration.Root -DatabaseStatePath $failedMigration.DatabaseState -TestDatabaseSchemaVersion $repositorySchema -TestPostgresqlMajor 16 -TestDatabaseFailedMigrationCount 1 -ConfirmDisposable
+        Expect-Rejected {Invoke-BootstrapFixture $failedMigration} 'bootstrap-failed-flyway-history-rejected' 'BLOCKED / DATABASE_MIGRATION_HISTORY_INVALID'
+        $history=New-BootstrapFixture 'legacy-bootstrap-incompatible-history'
+        [IO.File]::WriteAllText((Join-Path $history.Root 'activation-head.json'),'{}',$utf8)
+        Expect-Rejected {Invoke-BootstrapFixture $history} 'bootstrap-existing-incompatible-authority-rejected'
+        $conflict=New-BootstrapFixture 'legacy-bootstrap-prepared-conflict'
+        Expect-Rejected {Invoke-BootstrapFixture $conflict 'PREPARATION'} 'bootstrap-prepared-conflict-created'
+        Expect-Rejected {& $installer -Action bootstrap-current -InstallationRoot $conflict.Root -ReleaseId 'nq-ffffffffffff-ffffffffffffffff' -DatabaseStatePath $conflict.DatabaseState -ExpectedSourceCommit $cleanPolicy.Head -ConfirmDisposable -TestProductionPolicy} 'bootstrap-different-target-retry-rejected' 'BLOCKED / BOOTSTRAP_TARGET_CONFLICT'
+        [IO.File]::AppendAllText((Join-Path $bootstrap.Root 'bootstrap-predecessor.json'),'tampered',$utf8)
+        Expect-Rejected {& $installer -Action recover -InstallationRoot $bootstrap.Root -ConfirmDisposable -TestProductionPolicy} 'bootstrap-predecessor-integrity-after-later-activation-rejected'
+
+        $recordCrash=New-BootstrapFixture 'legacy-bootstrap-record-crash'
+        $recordWorker=Start-BootstrapWorker $recordCrash 0 0 30000
+        Wait-BootstrapRecordWithoutJournal $recordCrash.Root
+        $recordWorker.Kill($true);$recordWorker.WaitForExit()
+        if((Get-TestCurrentReleaseId $recordCrash.Root)-cne$recordCrash.LegacySha){throw 'RECORD_CRASH_CHANGED_LEGACY_POINTER'}
+        $recordRecovered=Invoke-BootstrapFixture $recordCrash
+        if([string]$recordRecovered.state-cne'COMPLETED'){throw 'ORPHAN_RECORD_CRASH_RECOVERY_FAILED'}
+        Complete-Case 'process-crash-between-predecessor-and-journal-recovers'
+
+        $crash=New-BootstrapFixture 'legacy-bootstrap-process-crash'
+        $crashWorker=Start-BootstrapWorker $crash 0 30000
+        Wait-PreparedBootstrap $crash.Root
+        $crashWorker.Kill($true);$crashWorker.WaitForExit()
+        if((Get-TestCurrentReleaseId $crash.Root)-cne$crash.LegacySha){throw 'PREPARED_CRASH_CHANGED_LEGACY_POINTER'}
+        $crashRecovered=Invoke-BootstrapFixture $crash
+        if([string]$crashRecovered.state-cne'COMPLETED'){throw 'PREPARED_PROCESS_CRASH_RECOVERY_FAILED'}
+        Complete-Case 'process-crash-with-prepared-bootstrap-recovers'
+
+        $parallel=New-BootstrapFixture 'legacy-bootstrap-concurrent'
+        $first=Start-BootstrapWorker $parallel 8000 0
+        Wait-LockHeld (Join-Path $parallel.Root '.activation-operation.lock') 5
+        foreach($action in @('bootstrap-current','activate','rollback','recover')){
+            $callParameters=@{Action=$action;InstallationRoot=$parallel.Root;ConfirmDisposable=$true;TestProductionPolicy=$true;OperationLockTimeoutSeconds=1;ExpectedSourceCommit=$cleanPolicy.Head}
+            if($action-in@('bootstrap-current','activate')){$callParameters.ReleaseId=$parallel.ReleaseId;$callParameters.DatabaseStatePath=$parallel.DatabaseState}
+            if($action-ceq'rollback'){$callParameters.DatabaseStatePath=$parallel.DatabaseState}
+            Expect-Rejected {& $installer @callParameters} ("bootstrap-lock-serializes-"+$action) 'BLOCKED / ACTIVATION_OPERATION_LOCK_TIMEOUT'
+        }
+        $firstResult=Wait-ConcurrencyWorker $first 20
+        if($firstResult.ExitCode-ne0-or-not[bool]$firstResult.Payload.success){throw 'BOOTSTRAP_LOCK_HOLDER_FAILED'}
+        if((Get-TestCurrentReleaseId $parallel.Root)-cne$parallel.ReleaseId){throw 'BOOTSTRAP_CONCURRENT_POINTER_INVALID'}
+        Complete-Case 'bootstrap-vs-bootstrap-activate-rollback-recover-single-writer'
+    }
     $untrustedInstall=Join-Path $tempRoot 'policy-untrusted-install'
     Expect-Rejected { & (Join-Path $cleanPolicy.Root 'scripts/deployment/Install-NqCanonicalRelease.ps1') -Action preflight -InstallationRoot $untrustedInstall -SourceRoot $cleanRelease.releaseRoot -ExpectedSourceCommit $cleanPolicy.Head -AdmissionRootPath $policyAdmissionPath -ExpectedAdmissionSha256 $policyAdmission.admissionSha256 -ConfirmDisposable -TestProductionPolicy } 'caller-provided-admission-root-without-trusted-placement-rejected'
     Expect-Rejected { Invoke-PolicyBuild $cleanPolicy 'release-spoof' ('f'*40) } 'spoofed-source-commit-rejected'
