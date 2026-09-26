@@ -2,7 +2,6 @@ package com.guidinglight.nexusquant.app.config.livecontrol;
 
 import com.guidinglight.nexusquant.app.config.livecontrol.authority.StoredFactExactPilotBindingAuthority;
 import com.guidinglight.nexusquant.app.config.livecontrol.model.ExactPilotRuntimeIdentity;
-import com.guidinglight.nexusquant.app.config.livecontrol.model.ReadOnlyProviderObservationRuntimeIdentity;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -109,11 +108,10 @@ class StoredFactExactPilotBindingAuthorityTest {
                 KillSwitchScope.GLOBAL_TRADING, KillSwitchStatus.ENGAGED, 1, "PILOT_LOCKED",
                 "DURABLE_STORE", NOW.minusSeconds(600), NOW, "kill-trace"));
 
-        ExactPilotRuntimeIdentity runtimeIdentity = ExactPilotRuntimeIdentity.from(
-                new ReadOnlyProviderObservationRuntimeIdentity(
-                        "1".repeat(40), "1".repeat(40),
-                        ReadOnlyProviderObservationRuntimeIdentity.CAPABILITY, "127.0.0.1", 21),
-                DIGEST_C, "server-a", ExactPilotBinding.DeploymentIdentity.RUNTIME_PROFILE);
+        // 历史 exact-pilot 持久事实保留原身份；该 fixture 不通过当前 scoped runtime 构造。
+        ExactPilotRuntimeIdentity runtimeIdentity = new ExactPilotRuntimeIdentity(
+                new ExactPilotBinding.DeploymentIdentity("1".repeat(40), "1".repeat(40),
+                        DIGEST_C, "server-a", ExactPilotBinding.DeploymentIdentity.RUNTIME_PROFILE));
         StoredFactExactPilotBindingAuthority authority = new StoredFactExactPilotBindingAuthority(
                 liveRepository, scopeRepository, accountRepository, credentialRepository,
                 admissionRepository, operatorAuthorityRepository, instrumentCatalog, killSwitchService,
@@ -201,11 +199,10 @@ class StoredFactExactPilotBindingAuthorityTest {
         when(killSwitchService.snapshot()).thenReturn(new KillSwitchSnapshot(
                 KillSwitchScope.GLOBAL_TRADING, KillSwitchStatus.ENGAGED, 1, "PILOT_LOCKED",
                 "DURABLE_STORE", NOW.minusSeconds(600), NOW, "kill-trace"));
-        ExactPilotRuntimeIdentity runtimeIdentity = ExactPilotRuntimeIdentity.from(
-                new ReadOnlyProviderObservationRuntimeIdentity(
-                        "1".repeat(40), "1".repeat(40),
-                        ReadOnlyProviderObservationRuntimeIdentity.CAPABILITY, "127.0.0.1", 21),
-                DIGEST_C, "server-a", ExactPilotBinding.DeploymentIdentity.RUNTIME_PROFILE);
+        // 历史 exact-pilot 持久事实保留原身份；该 fixture 不通过当前 scoped runtime 构造。
+        ExactPilotRuntimeIdentity runtimeIdentity = new ExactPilotRuntimeIdentity(
+                new ExactPilotBinding.DeploymentIdentity("1".repeat(40), "1".repeat(40),
+                        DIGEST_C, "server-a", ExactPilotBinding.DeploymentIdentity.RUNTIME_PROFILE));
         StoredFactExactPilotBindingAuthority authority = new StoredFactExactPilotBindingAuthority(
                 liveRepository, scopeRepository, accountRepository, credentialRepository,
                 admissionRepository, operatorAuthorityRepository, instrumentCatalog, killSwitchService,

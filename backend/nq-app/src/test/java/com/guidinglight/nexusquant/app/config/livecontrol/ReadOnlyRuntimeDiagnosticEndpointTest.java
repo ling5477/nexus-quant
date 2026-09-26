@@ -52,7 +52,8 @@ class ReadOnlyRuntimeDiagnosticEndpointTest {
         ReadOnlyRuntimeDiagnosticEndpoint.RuntimeDiagnostic second = endpoint.read();
 
         assertEquals("1111111111111111111111111111111111111111", first.sourceCommit());
-        assertEquals(first.sourceCommit(), first.releaseId());
+        assertEquals("nq-111111111111-2222222222222222", first.releaseId());
+        assertEquals("2".repeat(64), first.releaseManifestSha256());
         assertEquals(21, first.javaMajor());
         assertEquals("scoped-okx-private-readonly", first.qualificationProfile());
         assertEquals("read-only-provider-observation", first.capabilityIdentity());
@@ -136,8 +137,9 @@ class ReadOnlyRuntimeDiagnosticEndpointTest {
                 .withProperty("nq.env-safety.live-enabled", Boolean.toString(liveEnabled));
         return new ReadOnlyRuntimeDiagnosticEndpoint(
                 new ReadOnlyProviderObservationRuntimeIdentity(
+                        "nq-111111111111-2222222222222222",
                         "1111111111111111111111111111111111111111",
-                        "1111111111111111111111111111111111111111",
+                        "2".repeat(64),
                         ReadOnlyProviderObservationRuntimeIdentity.CAPABILITY,
                         "127.0.0.1",
                         21

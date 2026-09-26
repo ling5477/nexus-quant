@@ -30,6 +30,7 @@ info:
   nq:
     release-id: ${NQ_RELEASE_ID}
     source-commit: ${NQ_SOURCE_COMMIT}
+    release-manifest-sha256: ${NQ_RELEASE_MANIFEST_SHA256}
     # 与显式 readonly capability 绑定；不提供生产部署入口。
     qualification-profile: scoped-okx-private-readonly
 

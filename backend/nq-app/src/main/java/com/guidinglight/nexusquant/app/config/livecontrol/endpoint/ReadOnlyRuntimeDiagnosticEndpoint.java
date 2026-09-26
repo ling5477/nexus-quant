@@ -73,6 +73,7 @@ public final class ReadOnlyRuntimeDiagnosticEndpoint {
         return new RuntimeDiagnostic(
                 identity.sourceCommit(),
                 identity.releaseId(),
+                identity.releaseManifestSha256(),
                 identity.javaMajor(),
                 deploymentProfile,
                 identity.capability(),
@@ -124,6 +125,7 @@ public final class ReadOnlyRuntimeDiagnosticEndpoint {
     public record RuntimeDiagnostic(
             String sourceCommit,
             String releaseId,
+            String releaseManifestSha256,
             int javaMajor,
             String qualificationProfile,
             String capabilityIdentity,

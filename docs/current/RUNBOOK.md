@@ -98,6 +98,8 @@ release只使用`../../scripts/deployment/New-NqCanonicalRelease.ps1`；verify�
 
 受控readonly生产图测试使用既有`scoped-okx-private-readonly` runtime mode，环境字段为`NQ_READONLY_DB_URL/USER/PASSWORD`、`NQ_RELEASE_ID`、`NQ_SOURCE_COMMIT`、`NQ_RELEASE_MANIFEST_SHA256`；值必须从显式测试或外部授权环境提供。无连接fixture只能验证该mode的本地边界；它不是第二条生产部署路径，不能与prod组合。所有历史stage profile和旧stage capability key均拒绝，普通local/test/ci/prod/paper语义不变。
 
+该 scoped runtime 的 `NQ_RELEASE_ID` 只接受 `nq-<12 位小写源码前缀>-<16 位小写制品身份>`，`NQ_SOURCE_COMMIT` 保留完整 40 位小写 Git commit，且前 12 位必须与 release ID 匹配；`NQ_RELEASE_MANIFEST_SHA256` 必须为 64 位小写摘要。诊断分别回读三者。此检查仅证明身份结构一致，完整制品真实性仍由 manifest、外部 `EXACT_HEAD_CI` admission 与 canonical installer 验证；raw SHA 和 `nq-test-*` 不能作为该生产 runtime 的 release ID。
+
 账户事实观察若使用服务器现有 TRADE 凭证，只能在上述单一 scoped profile、显式只读功能开关及 LIVE/真实交易 provider 关闭条件下人工触发。先用既有 `permission-probe` 只读 OKX config 并刷新本地脱敏权限元数据；仅 `SUCCEEDED / TRADE / WITHDRAW=false / IP PASSED` 且未过期时，账户事实入口才解密绑定凭证，并再次用固定 GET 核对远端权限。普通 diagnostics profile 仍只接受 READ_ONLY 凭证。canonical prod unit 固定 `{prod}`，不能通过叠加 profile 执行此观察；在服务器启动 scoped runtime 或切换 release 均属于需单独授权的部署动作。
 
 ### Legacy current 到 canonical current 的一次性生产步骤（待单独授权）

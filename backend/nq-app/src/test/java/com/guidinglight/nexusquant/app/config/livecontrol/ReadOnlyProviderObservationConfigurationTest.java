@@ -42,6 +42,8 @@ import java.util.logging.Logger;
 import javax.sql.DataSource;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
@@ -51,6 +53,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -159,7 +162,7 @@ class ReadOnlyProviderObservationConfigurationTest {
     private static String[] qualificationProperties() {
         return new String[]{
                 "nq.runtime.provider-observation.enabled=true",
-                "nq.runtime.provider-observation.release-id=" + COMMIT,
+                "nq.runtime.provider-observation.release-id=nq-111111111111-2222222222222222",
                 "nq.runtime.provider-observation.source-commit=" + COMMIT,
                 "NQ_RELEASE_MANIFEST_SHA256=" + "2".repeat(64),
                 "nq.runtime.provider-observation.capability-identity=read-only-provider-observation",
@@ -176,6 +179,26 @@ class ReadOnlyProviderObservationConfigurationTest {
                 "nq.validation-operations.scheduler.enabled=false",
                 "server.address=127.0.0.1"
         };
+    }
+
+    static java.util.stream.Stream<org.junit.jupiter.params.provider.Arguments> invalidContextIdentities() {
+        // TestPropertyValues 会裁剪边界空白；原始换行拒绝由值对象测试直接证明。
+        return ReadOnlyProviderObservationRuntimeIdentityTest.invalidIdentities()
+                .filter(arguments -> arguments.get()[0] == null
+                        || !arguments.get()[0].toString().endsWith("\n"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidContextIdentities")
+    void invalidIdentityCannotStartScopedContext(String release, String commit, String manifest) {
+        runner.withInitializer(context -> context.getEnvironment()
+                        .setActiveProfiles("scoped-okx-private-readonly"))
+                .withPropertyValues(qualificationProperties())
+                .withPropertyValues(
+                        "nq.runtime.provider-observation.release-id=" + (release == null ? "" : release),
+                        "nq.runtime.provider-observation.source-commit=" + (commit == null ? "" : commit),
+                        "NQ_RELEASE_MANIFEST_SHA256=" + (manifest == null ? "" : manifest))
+                .run(context -> assertNotNull(context.getStartupFailure()));
     }
 
     static final class FutureSensitiveConsumer {
