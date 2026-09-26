@@ -160,7 +160,7 @@ class OkxPrivateReadOnlyPermissionProbeSpringContextTest {
             runner = runner.withUserConfiguration(ReadOnlyProviderObservationConfiguration.class)
                     .withPropertyValues(
                             "nq.runtime.provider-observation.enabled=true",
-                            "nq.runtime.provider-observation.release-id=" + "1".repeat(40),
+                            "nq.runtime.provider-observation.release-id=nq-111111111111-2222222222222222",
                             "nq.runtime.provider-observation.source-commit=" + "1".repeat(40),
                             "NQ_RELEASE_MANIFEST_SHA256=" + "2".repeat(64),
                             "nq.runtime.provider-observation.capability-identity=read-only-provider-observation",

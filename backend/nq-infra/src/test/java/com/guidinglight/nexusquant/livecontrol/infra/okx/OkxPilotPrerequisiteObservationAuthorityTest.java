@@ -40,8 +40,25 @@ class OkxPilotPrerequisiteObservationAuthorityTest {
     private static final long OWNER_ID = 7L;
     private static final long ACCOUNT_ID = 9L;
     private static final long CREDENTIAL_ID = 42L;
-    private static final String RELEASE_ID = "1".repeat(40);
+    private static final String RELEASE_ID = "nq-111111111111-2222222222222222";
     private static final String MANIFEST_SHA256 = "2".repeat(64);
+
+    @Test
+    void canonicalReleaseConstructionIsSideEffectFreeAndRejectsLegacyIdentity() {
+        CapturingExecutor executor = new CapturingExecutor(snapshot(0));
+        InstrumentCatalogService catalog = new InstrumentCatalogService(new InMemoryCatalogRepository());
+        new OkxPilotPrerequisiteObservationAuthority(executor, catalog, RELEASE_ID, MANIFEST_SHA256);
+        for (String invalid : new String[]{null, "1".repeat(40), "nq-test-111111111111-2222222222222222",
+                "NQ-111111111111-2222222222222222", "arbitrary"}) {
+            assertThrows(IllegalArgumentException.class, () ->
+                    new OkxPilotPrerequisiteObservationAuthority(executor, catalog, invalid, MANIFEST_SHA256));
+        }
+        for (String invalid : new String[]{null, "", "2".repeat(63), "A".repeat(64)}) {
+            assertThrows(IllegalArgumentException.class, () ->
+                    new OkxPilotPrerequisiteObservationAuthority(executor, catalog, RELEASE_ID, invalid));
+        }
+        assertEquals(0, executor.calls.get());
+    }
 
     @Test
     void createsCanonicalCompleteV2ObservationSetFromExactJitCredentialScope() {

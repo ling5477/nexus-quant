@@ -123,7 +123,7 @@ class OkxPrivateReadOnlyDiagnosticsConfigurationTest {
             assertTrue(context.getBeansOfType(OkxPrivateRealTransport.class).isEmpty());
             assertEquals(1, context.getBeansOfType(ReadOnlyProviderObservationRuntimeIdentity.class).size());
             assertEquals(1, context.getBeansOfType(ReadOnlyRuntimeDiagnosticEndpoint.class).size());
-            assertFalse(context.getBean(ReadOnlyRuntimeDiagnosticEndpoint.class).read().providerObservationEnabled());
+            assertTrue(context.getBean(ReadOnlyRuntimeDiagnosticEndpoint.class).read().providerObservationEnabled());
             assertTrue(context.getBeansOfType(PilotPrerequisiteObservationAuthority.class).isEmpty());
             JdbcOkxPrivateCredentialExecutor executor =
                     (JdbcOkxPrivateCredentialExecutor) context.getBean(OkxPrivateCredentialExecutor.class);
@@ -144,6 +144,7 @@ class OkxPrivateReadOnlyDiagnosticsConfigurationTest {
                 new String[]{"okx-private-readonly-diagnostics", "scoped-okx-private-readonly"},
                 STABLE_PREFIX, true, false)) {
             assertPrivateBeansAbsent(context);
+            assertFalse(context.getBean(ReadOnlyRuntimeDiagnosticEndpoint.class).read().providerObservationEnabled());
         }
     }
 
@@ -243,7 +244,7 @@ class OkxPrivateReadOnlyDiagnosticsConfigurationTest {
         boolean scoped = profiles != null && Arrays.asList(profiles).contains("scoped-okx-private-readonly");
         if (scoped) {
             properties.put("nq.runtime.provider-observation.enabled", true);
-            properties.put("nq.runtime.provider-observation.release-id", "1".repeat(40));
+            properties.put("nq.runtime.provider-observation.release-id", "nq-111111111111-2222222222222222");
             properties.put("nq.runtime.provider-observation.source-commit", "1".repeat(40));
             properties.put("NQ_RELEASE_MANIFEST_SHA256", "2".repeat(64));
             properties.put("nq.runtime.provider-observation.capability-identity", "read-only-provider-observation");

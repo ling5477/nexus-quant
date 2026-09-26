@@ -6,6 +6,8 @@ import com.guidinglight.nexusquant.app.config.livecontrol.model.ReadOnlyProvider
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.JdbcOkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
+import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxAccountFactsObservationService;
+import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxAccountFactsReadTransport;
 import com.guidinglight.nexusquant.adapter.api.service.port.TradingAdapter;
 import com.guidinglight.nexusquant.adapter.okx.privateread.transport.JdkOkxPrivateReadTransport;
 import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateReadTransport;
@@ -69,11 +71,12 @@ public class ReadOnlyProviderObservationConfiguration {
     public ReadOnlyProviderObservationRuntimeIdentity readOnlyProviderObservationRuntimeIdentity(
             @Value("${nq.runtime.provider-observation.release-id}") String releaseId,
             @Value("${nq.runtime.provider-observation.source-commit}") String sourceCommit,
+            @Value("${NQ_RELEASE_MANIFEST_SHA256}") String releaseManifestSha256,
             @Value("${nq.runtime.provider-observation.capability-identity}") String capability,
             @Value("${server.address}") String bindAddress
     ) {
         return new ReadOnlyProviderObservationRuntimeIdentity(
-                releaseId, sourceCommit, capability, bindAddress, Runtime.version().feature());
+                releaseId, sourceCommit, releaseManifestSha256, capability, bindAddress, Runtime.version().feature());
     }
 
     @Bean
@@ -106,13 +109,12 @@ public class ReadOnlyProviderObservationConfiguration {
             KillSwitchService killSwitchService,
             InstrumentCatalogService
                     instrumentCatalogService,
-            ReadOnlyProviderObservationRuntimeIdentity runtimeIdentity,
-            @Value("${NQ_RELEASE_MANIFEST_SHA256}") String releaseManifestSha256
+            ReadOnlyProviderObservationRuntimeIdentity runtimeIdentity
     ) {
         return new KillSwitchGuardedProviderObservationAuthority(
                 new OkxPilotPrerequisiteObservationAuthority(
                         credentialExecutor, instrumentCatalogService,
-                        runtimeIdentity.releaseId(), releaseManifestSha256),
+                        runtimeIdentity.releaseId(), runtimeIdentity.releaseManifestSha256()),
                 killSwitchService
         );
     }
@@ -129,7 +131,13 @@ public class ReadOnlyProviderObservationConfiguration {
     ) {
         BooleanSupplier providerObservationBound = () ->
                 beanFactory.getBeanNamesForType(
-                        KillSwitchGuardedProviderObservationAuthority.class, false, false).length > 0;
+                        KillSwitchGuardedProviderObservationAuthority.class, false, false).length > 0
+                        || (beanFactory.getBeanNamesForType(
+                                OkxAccountFactsObservationService.class, false, false).length == 1
+                            && beanFactory.getBeanNamesForType(
+                                OkxAccountFactsReadTransport.class, false, false).length == 1
+                            && beanFactory.getBeanNamesForType(
+                                OkxPrivateCredentialExecutor.class, false, false).length == 1);
         BooleanSupplier mutationRuntimeBound = () ->
                 beanFactory.getBeanNamesForType(SpotExecutionProviderPort.class, false, false).length > 0
                         || beanFactory.getBeanNamesForType(TradingAdapter.class, false, false).length > 0;

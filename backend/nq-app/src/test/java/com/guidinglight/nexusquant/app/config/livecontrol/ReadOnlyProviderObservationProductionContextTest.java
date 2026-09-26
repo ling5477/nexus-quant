@@ -3,6 +3,10 @@ package com.guidinglight.nexusquant.app.config.livecontrol;
 import com.guidinglight.nexusquant.app.config.livecontrol.endpoint.ReadOnlyRuntimeDiagnosticEndpoint;
 
 import com.guidinglight.nexusquant.adapter.api.service.port.TradingAdapter;
+import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
+import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxAccountFactsObservationService;
+import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxAccountFactsReadTransport;
+import com.guidinglight.nexusquant.livecontrol.infra.UnavailablePilotPrerequisiteObservationAuthority;
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClient;
 import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsClient;
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
@@ -93,8 +97,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "nq.security.access-token-ttl=PT30M",
         "nq.runtime.trading-components.enabled=false",
         "nq.runtime.provider-observation.enabled=true",
+        "nq.okx.private-readonly-diagnostics.enabled=true",
+        "nq.okx.private-readonly-diagnostics.order-submission-enabled=false",
+        "nq.okx.private-readonly-diagnostics.transfer-enabled=false",
+        "nq.okx.private-readonly-diagnostics.withdraw-enabled=false",
         "nq.runtime.provider-observation.deployment-profile=scoped-okx-private-readonly",
-        "nq.runtime.provider-observation.release-id=1111111111111111111111111111111111111111",
+        "nq.runtime.provider-observation.release-id=nq-111111111111-2222222222222222",
         "nq.runtime.provider-observation.source-commit=1111111111111111111111111111111111111111",
         "NQ_RELEASE_MANIFEST_SHA256=2222222222222222222222222222222222222222222222222222222222222222",
         "nq.runtime.provider-observation.capability-identity=read-only-provider-observation",
@@ -136,10 +144,13 @@ class ReadOnlyProviderObservationProductionContextTest {
     @Test
     void fullProductionComponentScanStartsWithOnlyTrustedReadAuthority() {
         assertNotNull(context);
-        assertEquals(1, context.getBeansOfType(KillSwitchGuardedProviderObservationAuthority.class).size());
+        assertEquals(0, context.getBeansOfType(KillSwitchGuardedProviderObservationAuthority.class).size());
+        assertEquals(1, context.getBeansOfType(OkxPrivateCredentialExecutor.class).size());
+        assertEquals(1, context.getBeansOfType(OkxAccountFactsReadTransport.class).size());
+        assertEquals(1, context.getBeansOfType(OkxAccountFactsObservationService.class).size());
         assertEquals(1, context.getBeansOfType(ReadOnlyRuntimeDiagnosticEndpoint.class).size());
         assertInstanceOf(
-                KillSwitchGuardedProviderObservationAuthority.class,
+                UnavailablePilotPrerequisiteObservationAuthority.class,
                 context.getBean(PilotPrerequisiteObservationAuthority.class)
         );
 
@@ -169,7 +180,9 @@ class ReadOnlyProviderObservationProductionContextTest {
                 .andExpect(jsonPath("$.sourceCommit")
                         .value("1111111111111111111111111111111111111111"))
                 .andExpect(jsonPath("$.releaseId")
-                        .value("1111111111111111111111111111111111111111"))
+                        .value("nq-111111111111-2222222222222222"))
+                .andExpect(jsonPath("$.releaseManifestSha256")
+                        .value("2".repeat(64)))
                 .andExpect(jsonPath("$.javaMajor").value(21))
                 .andExpect(jsonPath("$.qualificationProfile").value("scoped-okx-private-readonly"))
                 .andExpect(jsonPath("$.capabilityIdentity").value("read-only-provider-observation"))

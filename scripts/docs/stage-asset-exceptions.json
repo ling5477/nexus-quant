@@ -195,7 +195,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/account/OkxPrivateReadOnlyDiagnosticsConfigurationTest.java",
-      "sha256": "4c312a4edf550ea947f318a83abb03961def69f1686dea5b31fed24b304087b1",
+      "sha256": "78335f5b519d427b719fd01a2e3c22dbea6cfbeb65d5291f3c1aa475a0ceb409",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -203,7 +203,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/account/OkxPrivateReadOnlyPermissionProbeSpringContextTest.java",
-      "sha256": "b185f9a1432ec8fcadb9563e98a203ec4349e3bc7484e5c3bc517ad537f553fd",
+      "sha256": "36b01e0a75618068adafcae6ac9f1728dc7d76b2fe903b47a67b125c68e140c8",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -571,7 +571,7 @@
     },
     {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/okx/OkxPilotPrerequisiteObservationAuthority.java",
-      "sha256": "d74784d580da13535d824b0a2d82e210b4a54eef48ffe09e5d0ec7d6e3ec1b0d",
+      "sha256": "d7b3c21c8dc7415a9c4b241d1cdac07d67973e72bf0dc99b7f4efac77d878789",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-infra / OkxPilotPrerequisiteObservationAuthority contract owner",
@@ -731,7 +731,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/okx/OkxPilotPrerequisiteObservationAuthorityTest.java",
-      "sha256": "b04292fa4d056c1abb6a5359f9e42f3c1fb0a9daa54ac233a89541b4dae76a5b",
+      "sha256": "a41a7e27402b9df7849dbd301364b16731448aab1ed9da607844a334881f4432",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -8918,7 +8918,7 @@
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/ReadOnlyProviderObservationConfiguration.java",
-          "callerMember": "ReadOnlyProviderObservationConfiguration#readOnlyProviderObservationAuthority(OkxPrivateCredentialExecutor,KillSwitchService,InstrumentCatalogService,ReadOnlyProviderObservationRuntimeIdentity,String)",
+          "callerMember": "ReadOnlyProviderObservationConfiguration#readOnlyProviderObservationAuthority(OkxPrivateCredentialExecutor,KillSwitchService,InstrumentCatalogService,ReadOnlyProviderObservationRuntimeIdentity)",
           "contractMember": "OkxPilotPrerequisiteObservationAuthority"
         },
         {
@@ -9139,6 +9139,11 @@
         {
           "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/okx/OkxPilotPrerequisiteObservationAuthorityTest.java",
           "callerMember": "OkxPilotPrerequisiteObservationAuthorityTest#authority(CapturingExecutor)",
+          "contractMember": "OkxPilotPrerequisiteObservationAuthority"
+        },
+        {
+          "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/okx/OkxPilotPrerequisiteObservationAuthorityTest.java",
+          "callerMember": "OkxPilotPrerequisiteObservationAuthorityTest#canonicalReleaseConstructionIsSideEffectFreeAndRejectsLegacyIdentity()",
           "contractMember": "OkxPilotPrerequisiteObservationAuthority"
         },
         {

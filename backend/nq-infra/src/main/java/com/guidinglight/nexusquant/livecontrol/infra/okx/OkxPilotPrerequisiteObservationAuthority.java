@@ -77,8 +77,8 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
         this.credentialExecutor = Objects.requireNonNull(credentialExecutor, "credentialExecutor must not be null");
         this.instrumentCatalogService = Objects.requireNonNull(
                 instrumentCatalogService, "instrumentCatalogService must not be null");
-        if (releaseId == null || !releaseId.matches("[0-9a-f]{40}")) {
-            throw new IllegalArgumentException("releaseId must be an exact commit");
+        if (releaseId == null || !releaseId.matches("nq-[0-9a-f]{12}-[0-9a-f]{16}")) {
+            throw new IllegalArgumentException("releaseId must be a canonical release identity");
         }
         if (releaseManifestSha256 == null || !releaseManifestSha256.matches("[0-9a-f]{64}")) {
             throw new IllegalArgumentException("releaseManifestSha256 must be lowercase SHA-256");
