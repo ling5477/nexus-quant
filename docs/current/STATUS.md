@@ -13,11 +13,11 @@ accepted_batch_status=ACCEPTED|CI_GREEN
 accepted_batch_implementation_commit=1dafcbdf36774c3febfc7ac0499149ec8566afd9
 accepted_batch_acceptance_head=b253dc19124d26cd8b2aab5685d773adc03e3687
 accepted_batch_ci_run=36141910575
-work_batch=NQ-GATEZ-OKX-ACCOUNT-FACTS-READONLY-QUALIFICATION-IMPLEMENTATION
-work_batch_status=BLOCKED
-work_batch_commit=6c190f6857029b999d721cd1a2863dda836ae6a4
-work_batch_ci_run=36169678171
-next_action=NQ-GATEZ-OKX-ACCOUNT-FACTS-READONLY-QUALIFICATION-UNBLOCK-DEPLOYMENT-AUTHORIZATION
+work_batch=NQ-GATEZ-OKX-ACCOUNT-FACTS-READONLY-CANONICAL-CURRENT-BOOTSTRAP-IMPLEMENTATION
+work_batch_status=ACCEPTED|CI_GREEN
+work_batch_commit=6181d0c06e993ed2c21e0e338c6ce0af025562b7
+work_batch_ci_run=36211818734
+next_action=NQ-GATEZ-OKX-ACCOUNT-FACTS-READONLY-SERVER-DEPLOYMENT-AND-QUALIFICATION-RELEASE
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -35,7 +35,7 @@ nq-current-authority:end -->
 
 - GateY：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-y/README.md](../gates/gate-y/README.md)，freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`，annotated tag=`nq-gatey-freeze`，tag object=`c84f412e1da652e85158c5478997945d3065e575`，peeled commit 与 freeze commit 一致。
 - GateAUDIT：`FROZEN / ACCEPTED / TAGGED`；freeze commit=`a4cf8516382b47112852fc3f8dd9e5a65a80f993`，tree=`557bb3fa6549732cc5bdf2d40251c31a963f83a0`，annotated tag=`nq-gateaudit-freeze`，tag object=`4ee65d68471c5e25874ab6a08c3e9fc420f667b7`，peeled commit=`a4cf8516382b47112852fc3f8dd9e5a65a80f993`。`dev` exact-head CI=`35840126216 / push / completed / success / 9 of 9`；release checker 与 release-mode archive checker 均 `PASS / errors=0`。13-role archive 保持 pre-tag snapshot 语义；post-tag freeze 由 Git tag 与本 current authority 表达。Phase7-E 与 Phase7-F authority synchronization 已完成；post-GateAUDIT Git cleanup 按用户接受的 disposition 为 `COMPLETE`，保留的历史本地分支及 worktree 属于非阻断残余。
-- GateZ：`IN_PROGRESS / NOT_FROZEN`。[GateZ-1 单策略现货回测到隔离 SIM 闭环](GATEZ_PLAN.md)与 OKX 公开历史行情可重放 smoke 均已实施并接受。OKX 真实账户只读事实基础实现由 PR #30 合并，technical merge/exact-head CI=`5a8cfb7e10b192efea1b804d9e6b6c0e1a637bd3 / 36158986349 / 9 of 9 SUCCESS`；服务器现有 TRADE 凭证的隔离只读运行路径由 PR #32 合并，technical merge/exact-head CI=`6c190f6857029b999d721cd1a2863dda836ae6a4 / 36169678171 / 9 of 9 SUCCESS`，独立审查 P0/P1=`0/0`。服务器现有 runtime 尚无新能力，真实账户资格验证等待 canonical 部署授权；余额、账户费率及偏差保持 UNKNOWN。机器 `BLOCKED` 只指这一剩余资格步骤，已接受批次仍为公开行情 smoke。LIVE=`DISABLED`，kill switch=`ENGAGED`。
+- GateZ：`IN_PROGRESS / NOT_FROZEN`。[GateZ-1 单策略现货回测到隔离 SIM 闭环](GATEZ_PLAN.md)与 OKX 公开历史行情可重放 smoke 均已实施并接受。OKX 真实账户只读事实基础实现由 PR #30 合并，technical merge/exact-head CI=`5a8cfb7e10b192efea1b804d9e6b6c0e1a637bd3 / 36158986349 / 9 of 9 SUCCESS`；服务器现有 TRADE 凭证的隔离只读运行路径由 PR #32 合并，technical merge/exact-head CI=`6c190f6857029b999d721cd1a2863dda836ae6a4 / 36169678171 / 9 of 9 SUCCESS`，独立审查 P0/P1=`0/0`。一次性 legacy pure-SHA current 到 canonical current 的显式 bootstrap 已由 PR #34 合并，technical merge/exact-head CI=`6181d0c06e993ed2c21e0e338c6ce0af025562b7 / 36211818734 / 9 of 9 SUCCESS`；本地 Linux disposable proof 与独立定向审查已通过。状态为 `CANONICAL_POINTER_MIGRATION_READY / SERVER_DEPLOYMENT_PENDING_EXPLICIT_AUTHORIZATION`。服务器未在本轮复核或变更，真实账户资格验证仍待另行授权部署；余额、账户费率及偏差保持 UNKNOWN。已接受批次仍为公开行情 smoke。LIVE=`DISABLED`，kill switch=`ENGAGED`。
 - GateY-6F：`ACCEPTED / CI GREEN / MINIMAL LIVE PILOT VERIFIED`（已接受 / CI 已通过 / 最小实盘 pilot 已验证）；production pilot release=`8e3dd0cf6104eb85f36a0e434ca51ea9d903705a`，CI run=`32978280738 / completed / success / 10 jobs`。
 - GateY-FREEZE：`ACCEPTED / CI GREEN / TAGGED`（已接受 / CI 已通过 / 已打 tag）；exact-head CI run=`33037514013 / completed / success / 11 jobs / bad=0`，archive/release post-tag checker errors=0。
 - GateAUDIT-0C-R3-DOC-LINK-LINUX-REMEDIATION：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；immutable acceptance pair=`40e1077e1fe735a3d250f094caaa24e437e8ea3f / 33306024232`，blocking jobs=`11/11 SUCCESS`。Linux CI 已关闭 P1-01 authority fixture、P1-02 Java verifier 与 doc-link hidden-root portability finding；P0=0、P1=0。

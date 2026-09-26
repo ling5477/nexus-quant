@@ -40,7 +40,7 @@ GateZ-1 以隔离 PostgreSQL 和合成 bars 验证算法及 canonical SIM 事实
 
 任务 ID：`NQ-GATEZ-OKX-ACCOUNT-FACTS-READONLY-QUALIFICATION-IMPLEMENTATION`。实现已通过 PR #30 合并，technical merge/exact-head CI=`5a8cfb7e10b192efea1b804d9e6b6c0e1a637bd3 / 36158986349 / 9 of 9 SUCCESS`；独立 SECURITY + CORRECTNESS 审查 P0/P1/P2=`0/0/0`。实现复用 Java Control Plane 的 OKX private GET transport、JIT credential executor、权限/IP 观察和当前公开 instrument rule，增加显式人工调用的非持久化 `AccountFactsSnapshot`。固定 GET 覆盖账户配置、全币种余额、BTC-USDT SPOT 私有账户费率和全 SPOT 未完成订单；公开 GET 读取服务器时间。对本地 canonical 订单与余额只读比较，未知、过期或不适用事实按各自状态保留。默认启动不读取 credential 或发出 private 请求；不新增 Order、Trade、Ledger 写入或 migration。
 
-当前结论=`IMPLEMENTATION_ACCEPTED / SERVER_QUALIFICATION_PENDING_DEPLOYMENT_AUTHORIZATION`。服务器现有旧 runtime 无法执行新入口，尚未调用服务器 credential 取得 USDT/BTC 余额、实际账户费率、订单、仓位或偏差；上述真实账户事实仍为 UNKNOWN。部署须遵守 canonical release/deployment 合同并另获明确授权，之后才可进行零 mutation 预检和真实只读资格验证。此 CI 结果不代表 `REAL_ACCOUNT_READONLY_FACTS_QUALIFIED`。当前机器下一动作以 [STATUS.md](STATUS.md) 为准；LIVE 保持 DISABLED，kill switch 保持 ENGAGED。
+当前结论=`IMPLEMENTATION_ACCEPTED / CANONICAL_POINTER_MIGRATION_READY / SERVER_DEPLOYMENT_PENDING_EXPLICIT_AUTHORIZATION`。一次性 canonical current bootstrap 已由 PR #34 合并，technical merge/exact-head CI=`6181d0c06e993ed2c21e0e338c6ce0af025562b7 / 36211818734 / 9 of 9 SUCCESS`；生产执行步骤见 [RUNBOOK.md](RUNBOOK.md)。按用户提供的现状，服务器旧 runtime 无法执行新入口；本轮未作现场复核，尚未调用服务器 credential 取得 USDT/BTC 余额、实际账户费率、订单、仓位或偏差；上述真实账户事实仍为 UNKNOWN。部署须遵守 canonical release/deployment 合同并另获明确授权，之后才可进行零 mutation 预检和真实只读资格验证。此 CI 结果不代表 `REAL_ACCOUNT_READONLY_FACTS_QUALIFIED`。当前机器下一动作以 [STATUS.md](STATUS.md) 为准；LIVE 保持 DISABLED，kill switch 保持 ENGAGED。
 
 ## 不变边界
 
