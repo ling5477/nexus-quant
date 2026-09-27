@@ -3,7 +3,7 @@
   "exceptions": [
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "d19c277004e642796f7c096dd7907990ed5cb44e9bb44fd0512a7c374c9cc8e0",
+      "sha256": "4b17ce5e46c8b6811e0d9aa4838164d56cd97b4e99b3e1843a466fc4db696b94",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",
@@ -131,7 +131,7 @@
     },
     {
       "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-      "sha256": "b8f648fdb132004988e4d242a6d09120936ded4d941571748f457470a3aa707c",
+      "sha256": "fbffa35d002aa2893436bb21a346256ff43420d0b95472df94928988328c6cb4",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-app / MinimalLivePilotConfiguration contract owner",
