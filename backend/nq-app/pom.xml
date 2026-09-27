@@ -161,6 +161,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <skip>false</skip>
+                    <mainClass>com.guidinglight.nexusquant.app.NexusQuantApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>

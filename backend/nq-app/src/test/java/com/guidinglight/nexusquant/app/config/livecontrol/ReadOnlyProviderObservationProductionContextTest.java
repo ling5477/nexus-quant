@@ -10,6 +10,8 @@ import com.guidinglight.nexusquant.livecontrol.infra.UnavailablePilotPrerequisit
 import com.guidinglight.nexusquant.adapter.binance.ws.BinanceWsClient;
 import com.guidinglight.nexusquant.adapter.okx.ws.OkxWsClient;
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
+import com.guidinglight.nexusquant.auth.application.service.ExistingUserPasswordRotationService;
+import com.guidinglight.nexusquant.auth.domain.port.ExistingUserPasswordRotationRepository;
 import com.guidinglight.nexusquant.livecontrol.application.port.PilotPrerequisiteObservationAuthority;
 import com.guidinglight.nexusquant.livecontrol.deployment.service.WorkerDeploymentAdmissionService;
 import com.guidinglight.nexusquant.livecontrol.execution.application.provider.SpotExecutionProviderPort;
@@ -144,6 +146,8 @@ class ReadOnlyProviderObservationProductionContextTest {
     @Test
     void fullProductionComponentScanStartsWithOnlyTrustedReadAuthority() {
         assertNotNull(context);
+        assertEquals(0, context.getBeansOfType(ExistingUserPasswordRotationService.class).size());
+        assertEquals(0, context.getBeansOfType(ExistingUserPasswordRotationRepository.class).size());
         assertEquals(0, context.getBeansOfType(KillSwitchGuardedProviderObservationAuthority.class).size());
         assertEquals(1, context.getBeansOfType(OkxPrivateCredentialExecutor.class).size());
         assertEquals(1, context.getBeansOfType(OkxAccountFactsReadTransport.class).size());
