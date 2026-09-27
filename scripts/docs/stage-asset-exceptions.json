@@ -923,7 +923,7 @@
     },
     {
       "path": "scripts/docs/governance-workflow-contract.json",
-      "sha256": "6c534b8b44ccc85fe7636dc6fef6c44aba2a59a1a8d2f0facbada62e73abe318",
+      "sha256": "62b659c1d90b3daa1ef5dd7745d8c822ed997fa235297488ada88714d53341e7",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",
@@ -939,7 +939,7 @@
     },
     {
       "path": "scripts/docs/test-current-authority-next-action.ps1",
-      "sha256": "94365f79c0ca443fd215245009c5c63f4d3f37f2c4eb0b7618b2ce8732300f28",
+      "sha256": "3ddc2d6bd44df30f740580fd477ff55c5f5769ab679f4cc488947351c7e11195",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",

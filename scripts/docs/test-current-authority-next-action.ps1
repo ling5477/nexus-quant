@@ -125,6 +125,7 @@ $positiveActions = @(
     @{ Action = 'NQ-FULL-REPOSITORY-AUDIT-AND-CONSOLIDATION'; Type = 'AUDIT' },
     @{ Action = 'NQ-FINAL-BASELINE-INVENTORY'; Type = 'AUDIT' },
     @{ Action = 'NQ-GATEAUDIT-PHASE7-A-FINAL-BASELINE-INVENTORY'; Type = 'AUDIT' },
+    @{ Action = 'NQ-GATEZ-PUBLIC-MARKET-FULL-WINDOW-SIM-REPLAY'; Type = 'IMPLEMENTATION' },
     @{ Action = 'NONE'; Type = 'NONE' }
 )
 foreach ($case in $positiveActions) {
@@ -151,6 +152,8 @@ Assert-True (Test-GovernanceNextActionForWorkBatch $contract 'ACCEPTED|CI_GREEN'
 Assert-True (Test-GovernanceNextActionForWorkBatch $contract 'NOT_STARTED' 'Generic-Batch' $finalBaselineInventory $null) 'Not-started work batch rejected final baseline inventory audit.'
 Assert-True (-not (Test-GovernanceNextActionForWorkBatch $contract 'IMPLEMENTED|PENDING_REVIEW' 'Generic-Batch' $finalBaselineInventory $null)) 'Review gate accepted final baseline inventory audit.'
 Write-Output 'PASS final-baseline-inventory=accepted-ci-green-and-not-started type=AUDIT'
+Assert-True (Test-GovernanceNextActionForWorkBatch $contract 'ACCEPTED|CI_GREEN' 'Generic-Batch' 'NQ-GATEZ-PUBLIC-MARKET-FULL-WINDOW-SIM-REPLAY' $null) 'Accepted work batch rejected full-window SIM replay.'
+Assert-True (-not (Test-GovernanceNextActionForWorkBatch $contract 'IMPLEMENTED|PENDING_REVIEW' 'Generic-Batch' 'NQ-GATEZ-PUBLIC-MARKET-FULL-WINDOW-SIM-REPLAY' $null)) 'Review gate accepted full-window SIM replay.'
 
 $phase7Actions = @(
     @{ Phase = 'B'; Action = 'NQ-GATEAUDIT-PHASE7-B-RESIDUAL-DISPOSITION-AND-MANDATORY-CLOSURE-IMPLEMENTATION'; Type = 'IMPLEMENTATION'; Status = 'ACCEPTED|CI_GREEN' },
@@ -288,5 +291,5 @@ foreach ($forbidden in @('PlanPath', 'Attempt-13', 'GATEW-specific', 'GateV defa
     Assert-True (-not $checkerText.Contains($forbidden)) "Gate-specific checker residue found: $forbidden"
 }
 
-Write-Output 'SUMMARY current-authority-next-action positive-actions=9 ambiguous-actions=4 final-baseline-statuses=3 phase7-normalized-actions=5 generic-inventory-negative=3 safety-negative=9 schema-negative=4 whitespace-negative=5 failed=0'
+Write-Output 'SUMMARY current-authority-next-action positive-actions=10 ambiguous-actions=4 final-baseline-statuses=3 phase7-normalized-actions=5 generic-inventory-negative=3 safety-negative=9 schema-negative=4 whitespace-negative=5 failed=0'
 exit 0
