@@ -1,0 +1,24 @@
+{
+  "releaseId": "nq-f7a5faa782e5-20670623964ad074",
+  "sourceCommit": "f7a5faa782e55a87f263f7fefba4b717599396d9",
+  "sourceTree": "git-tree:b67852a6ea363a8ea8ad7b86368827dbc2e0876e",
+  "releaseManifestSha256": "f364e593c450303c0da8b9ebaa2633875c46cdeeb5c55037611c4a3c845fb070",
+  "requiredSchemaTarget": "V54",
+  "admissionSha256": "4334ae3433eb5853f89c7baddf51028b102095d63eb6fb3a58620bf0474539df",
+  "admissionMode": "EXACT_HEAD_CI",
+  "executionIdentity": "36302559099:1",
+  "exactHeadCiRun": "36302559099",
+  "workflowName": "NQ CI Baseline",
+  "jarSha256": "252812f43b860bf9b5a1b13ba2e04ac79249bf0cfcd69181f88f68ac0c91749a",
+  "migrationInventorySha256": "1824d55741b8b7c1d4c56877edbbe63963466f7e798c392132eda6934cb5e955",
+  "previousReleaseId": "nq-e9df23f079f0-5a401cd983263e6d",
+  "previousSourceCommit": "e9df23f079f0aaec1eff5b38269f4b18c7e9dae3",
+  "productionPrecheckSha256": "700df374bcb23391addf15a8178a14a634c45e67b56fffe0829eae1d9dc73d7e",
+  "ciRunJsonSha256": "def48909785a0b03bb486b606c461cd89a1393779b6fc1d326f7c0e18497d898",
+  "publishedCiJsonSha256": "ff47b5073e21c5e9d598af08833f0365a5dbbd10d2d2e7b7411c40c251f8de7f",
+  "helperSha256": {
+    "deploy-release.py": "7568fda281da98ceb502738cd5fa8f729e07033dba95da4b724b44f9e3e2b854",
+    "ValidateCurrentSchema.java": "f547d09c7c445f09d1993eaa6a72950299815e473c7bd06b712949e26ae141bc",
+    "unpack-release.py": "78ad67370b450c1764cb18f7976b06582fe093525459a4fea7b1d8f2d2a17126"
+  }
+}
