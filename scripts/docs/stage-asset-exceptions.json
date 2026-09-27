@@ -115,7 +115,7 @@
     },
     {
       "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/account/OkxPrivateReadOnlyDiagnosticsConfiguration.java",
-      "sha256": "99211e6a3a5e0aa7dab281af4d20efe5c0cedf1007fcc5616e7a92a8429c0d4a",
+      "sha256": "79d73ffe10f686601c40084544a63190c8a088d14fd7fa1344b5aa4316776001",
       "kind": "RETIRED_INPUT_REJECTION",
       "reason": "Retired input names occur only as deny-only keys or persisted permission expectation; old profiles/keys cannot select runtime composition.",
       "owner": "Runtime configuration owner",
@@ -539,7 +539,7 @@
     },
     {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/account/infra/probe/OkxRealReadonlyPermissionProbePort.java",
-      "sha256": "4120abe618b67443291ebda6a4b09a070f1d7f96d6dada1a76771163e92373fa",
+      "sha256": "e11ebf7bda71eb955020d2b26b6309ecf883e3a67eedc29c85192b5aaadd4c16",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-infra / OkxRealReadonlyPermissionProbePort contract owner",
@@ -9143,11 +9143,6 @@
         },
         {
           "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/okx/OkxPilotPrerequisiteObservationAuthorityTest.java",
-          "callerMember": "OkxPilotPrerequisiteObservationAuthorityTest#canonicalReleaseConstructionIsSideEffectFreeAndRejectsLegacyIdentity()",
-          "contractMember": "OkxPilotPrerequisiteObservationAuthority"
-        },
-        {
-          "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/okx/OkxPilotPrerequisiteObservationAuthorityTest.java",
           "callerMember": "OkxPilotPrerequisiteObservationAuthorityTest#authority(CapturingExecutor,InMemoryCatalogRepository)",
           "contractMember": "OkxPilotPrerequisiteObservationAuthority"
         },
@@ -9169,6 +9164,11 @@
         {
           "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/okx/OkxPilotPrerequisiteObservationAuthorityTest.java",
           "callerMember": "OkxPilotPrerequisiteObservationAuthorityTest#bootstrapsOperatorScopeAndObservationsFromExactlyOneTrustedSnapshot()",
+          "contractMember": "OkxPilotPrerequisiteObservationAuthority"
+        },
+        {
+          "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/okx/OkxPilotPrerequisiteObservationAuthorityTest.java",
+          "callerMember": "OkxPilotPrerequisiteObservationAuthorityTest#canonicalReleaseConstructionIsSideEffectFreeAndRejectsLegacyIdentity()",
           "contractMember": "OkxPilotPrerequisiteObservationAuthority"
         },
         {
