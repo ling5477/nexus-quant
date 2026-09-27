@@ -81,7 +81,7 @@
       { "name": "COMMIT", "pattern": "(?i)(^|-)COMMIT(?:-|$)" },
       { "name": "UNBLOCK", "pattern": "(?i)(^|-)(UNBLOCK|RESUME)(?:-|$)" },
       { "name": "PLAN", "pattern": "(?i)(^|-)PLAN(?:-|$)" },
-      { "name": "IMPLEMENTATION", "pattern": "(?i)(^|-)IMPLEMENTATION(?:-|$)" },
+      { "name": "IMPLEMENTATION", "pattern": "(?i)(^|-)IMPLEMENTATION(?:-|$)|(^|-)SIM-REPLAY(?:-|$)" },
       { "name": "NONE", "pattern": "^NONE$" }
     ],
     "safetyProfileRequiredFields": [

@@ -90,7 +90,7 @@ repository topology / shared capability consolidation = MERGED / PR #21 / dev CI
   ↓
 GateZ = IN_PROGRESS / NOT_FROZEN
   ↓
-GateZ-1 = ACCEPTED / CI_GREEN; public market replay smoke = ACCEPTED / CI_GREEN; account divergence root cause = historical BLOCKED; account snapshot provenance = ACCEPTED / CI_GREEN; next_action = NQ-GATEZ-ACCOUNT-DIVERGENCE-READONLY-REQUALIFICATION-PLAN
+GateZ-1 = ACCEPTED / CI_GREEN; public market replay smoke = ACCEPTED / CI_GREEN; account divergence root cause = historical BLOCKED; account snapshot provenance = ACCEPTED / CI_GREEN; account reconciliation model remediation = ACCEPTED / CI_GREEN; next_action = NQ-GATEZ-PUBLIC-MARKET-FULL-WINDOW-SIM-REPLAY
 ```
 
 ## Phase4 accepted foundation
@@ -178,7 +178,9 @@ C1接受身份：implementation=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd`；既
 
 本轮账户差异根因检查技术 PR #42 已合并，`dev=f7a5faa782e55a87f263f7fefba4b717599396d9` 的 exact-head CI `36302559099` 为 9/9 SUCCESS；新 release 已普通 install/activate、PG16/V54 只读 validate 通过且迁移执行数 0。唯一新 OKX 观察返回 `UNKNOWN / BALANCE_SEMANTIC_MISMATCH`；采集器原始结果为 `QUALIFICATION_BLOCKED_COLLECTOR_ATTRIBUTEERROR`。外部 7 种正余额资产中有 5 种没有本地快照行，本地 BTC/USDT 快照已超过 31 天，但余额同义性及时间因果尚未证明。当时下一步 `NQ-GATEZ-ACCOUNT-SNAPSHOT-SEMANTICS-UNBLOCK`：先定义并证明账户快照的 LIVE/SIM 归属、余额口径与新鲜度来源，再以新候选决定是否需要一次新的只读资格验证；本轮证据不得推导为 `ACCOUNT_DIVERGENCE=EXPLAINED`。详见[只读根因检查证据](evidence/gate-z/OKX_ACCOUNT_DIVERGENCE_READONLY_ROOT_CAUSE.md)。
 
-账户快照 provenance 解阻已通过技术 PR #44：`dev=5197b128131aa21be7705ee6cf3619db3cec00bb / exact-head CI 36314244328 / 9 of 9 SUCCESS`。生产 PG16/V54 先完成 canonical backup 与隔离恢复，然后唯一执行 V55；Flyway validate 为 V55/pending=0/failed=0，历史两行的新 provenance 字段全为 NULL，旧字段指纹不变。release `nq-5197b128131a-39f54b083d7e0571` 已普通 install/activate，终态 LIVE=DISABLED、kill=ENGAGED。原正式 divergence collector 源码尚未找回，`COLLECTOR_SOURCE_UNAVAILABLE / DEFERRED_NON_BLOCKING_FOR_SNAPSHOT_SEMANTICS`；本次没有新的 OKX private observation，也不将历史 divergence 改判为 EXPLAINED。当前机器 next_action 为 `NQ-GATEZ-ACCOUNT-DIVERGENCE-READONLY-REQUALIFICATION-PLAN`；详见[生产 V55 与 release 证据](evidence/gate-z/ACCOUNT_SNAPSHOT_PROVENANCE_PRODUCTION_V55.md)。
+账户快照 provenance 解阻已通过技术 PR #44：`dev=5197b128131aa21be7705ee6cf3619db3cec00bb / exact-head CI 36314244328 / 9 of 9 SUCCESS`。生产 PG16/V54 先完成 canonical backup 与隔离恢复，然后唯一执行 V55；Flyway validate 为 V55/pending=0/failed=0，历史两行的新 provenance 字段全为 NULL，旧字段指纹不变。release `nq-5197b128131a-39f54b083d7e0571` 已普通 install/activate，终态 LIVE=DISABLED、kill=ENGAGED。原正式 divergence collector 源码尚未找回，`COLLECTOR_SOURCE_UNAVAILABLE / DEFERRED_NON_BLOCKING_FOR_SNAPSHOT_SEMANTICS`；本次没有新的 OKX private observation，也不将历史 divergence 改判为 EXPLAINED。当时机器 next_action 指向 `NQ-GATEZ-ACCOUNT-DIVERGENCE-READONLY-REQUALIFICATION-PLAN`；详见[生产 V55 与 release 证据](evidence/gate-z/ACCOUNT_SNAPSHOT_PROVENANCE_PRODUCTION_V55.md)。
+
+账户只读对账模型已由技术 PR #46 修复并通过合并后 `dev=dc0b01e5653d6718a00b0d667bc2440c47b49b55 / exact-head CI 36326961228 / 9 of 9 SUCCESS`：全账户余额、额外资产、BTC dust、未归属外部订单和非现货仓位归外部上下文；NQ managed reconciliation 只读比较已证明归属的同义 LIVE 活跃订单。历史真实只读账户事实资格保持有效，本任务未重新观察 OKX、未部署、未改变 LIVE 与 kill 边界。账户语义阻塞关闭后，唯一下一任务为 `NQ-GATEZ-PUBLIC-MARKET-FULL-WINDOW-SIM-REPLAY`，继续验证既有 72-bar 全窗口 SIM 决策稳定性 P2。
 
 GateZ 当前范围、验收边界和后续扩展见 [GATEZ_PLAN.md](GATEZ_PLAN.md)。2026-09-27 的新只读资格验证已通过：`REAL_ACCOUNT_READONLY_FACTS_QUALIFIED`。coverage unblock 技术 PR #40 的合并提交/精确 HEAD CI 为 `e9df23f079f0aaec1eff5b38269f4b18c7e9dae3 / 36295009039 / 9 of 9 SUCCESS`；canonical release=`nq-e9df23f079f0-5a401cd983263e6d` 已普通 install/activate，PG16/V54 validate 通过，migration 执行数为 0。复用现有 owner 登录来源，密码、角色和 owner 链未变；permission probe 为 `SUCCEEDED / TRADE / WITHDRAW=false / IP PASSED`。新 snapshot 的模式 2、BTC/USDT 与全部返回余额、positions、挂单、费率、交易所时间、当前公开规则和偏差均为 OBSERVED；positions=`NO_ACTIVE_POSITION / 0`，open orders=`0`，divergence=`DIVERGED`，完整分类不要求 MATCH。观察时间为 `2026-09-27T05:38:23.820031102Z`；私有事实 60s、公开规则 24h，验收时全部新鲜，历史快照不能作为后续实时输入。成功轮 10 次固定 GET、其他 endpoint 0、交易 mutation 0，五类 canonical 交易事实数量及内容不变。runtime 已停止，Java/MainPID=0，LIVE=DISABLED，kill=ENGAGED。首轮采集器阶段计数错误导致的失败原位保留，修正后以独立 run 身份重新验证；不追认旧失败为成功。详情见[模式 2 与公开规则只读资格证据](evidence/gate-z/OKX_ACCOUNT_FACTS_READONLY_COVERAGE.md)。 该资格验证的当时机器 next_action=`NONE`；本轮根因检查已更新当前 next_action。此项资格没有授权 LIVE、解除 kill switch 或账户/交易数据修复。
 
@@ -207,9 +209,9 @@ GateZ 当前范围、验收边界和后续扩展见 [GATEZ_PLAN.md](GATEZ_PLAN.m
 
 ## Persistent boundary
 
-- `LIVE=DISABLED`、kill switch=`ENGAGED`；仅本次已有授权允许在服务器使用现有 credential 进行只读 private API 观察。禁止再次 pilot、PLACE、CANCEL、transfer、withdraw、credential/生产数据库写入或未经授权的生产部署。
+- `LIVE=DISABLED`、kill switch=`ENGAGED`；历史只读观察资格不授权本轮或后续再次访问 OKX；新的真实观察须另获当前授权。禁止再次 pilot、PLACE、CANCEL、transfer、withdraw、credential/生产数据库写入或未经授权的生产部署。
 - GateY frozen archive与published tags不可改写。
-- P5-F001/P5-F007/P5-F008/P5-F009均为`ACCEPTED / CLOSED`；Phase5已关闭，Phase6 ACCEPTED/COMPLETE，L4 ACCEPTED，L5/L6 ACCEPTED，Phase7-A 至 Phase7-F 已完成，GateAUDIT=`FROZEN / ACCEPTED / TAGGED`；GateZ-1 与公开行情回放 smoke 均已接受，当前 next_action 为 `NQ-GATEZ-ACCOUNT-DIVERGENCE-READONLY-REQUALIFICATION-PLAN`；此前公开行情 smoke 的接受身份保持不变。remote enforcement为APPLIED/VERIFIED/ACCEPTED，platform attestation保持DEFERRED/NON_BLOCKING。
+- P5-F001/P5-F007/P5-F008/P5-F009均为`ACCEPTED / CLOSED`；Phase5已关闭，Phase6 ACCEPTED/COMPLETE，L4 ACCEPTED，L5/L6 ACCEPTED，Phase7-A 至 Phase7-F 已完成，GateAUDIT=`FROZEN / ACCEPTED / TAGGED`；GateZ-1 与公开行情回放 smoke 均已接受，当前 next_action 为 `NQ-GATEZ-PUBLIC-MARKET-FULL-WINDOW-SIM-REPLAY`；此前公开行情 smoke 的接受身份保持不变。remote enforcement为APPLIED/VERIFIED/ACCEPTED，platform attestation保持DEFERRED/NON_BLOCKING。
 
 ## F009 accepted delivery lineage
 
