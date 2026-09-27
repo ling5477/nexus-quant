@@ -1,0 +1,1 @@
+{"simTradeCount": 1, "snapshotCount": 2, "liveTradeCount": 0, "legacyAccountId": 1, "latestSnapshotAt": "2026-08-26T09:06:52.602+00:00", "snapshotCurrencies": ["BTC", "USDT"], "simFundingLedgerCount": 0, "observedAt": "2026-09-27T08:28:40.197709+00:00", "decision": "READONLY_CANONICAL_SEMANTIC_DIAGNOSTIC"}

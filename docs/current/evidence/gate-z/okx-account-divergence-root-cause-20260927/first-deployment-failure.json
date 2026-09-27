@@ -1,0 +1,8 @@
+{
+  "decision": "DEPLOYMENT_STOPPED",
+  "errorType": "RuntimeError",
+  "line": 21,
+  "completedSteps": [],
+  "current": "/opt/nexus-quant/releases/nq-e9df23f079f0-5a401cd983263e6d",
+  "runtimeStarted": false
+}
