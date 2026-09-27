@@ -67,6 +67,14 @@ public final class OkxCurrentPublicRuleReader implements AutoCloseable {
 
     /** 单次请求取得完整当前规则；并发、超时、部分响应和规则不完整均返回 UNKNOWN。 */
     public AccountFactsSnapshot.Fact<String> observe() {
+        var detailed = observeDetailed();
+        return new AccountFactsSnapshot.Fact<>(detailed.status(),
+                detailed.value() == null ? null : detailed.value().identity(),
+                detailed.observedAt(), detailed.expiresAt(), detailed.source(), detailed.reason());
+    }
+
+    /** 同一条公开规则同时提供身份与可交易最小数量，避免 dust 判定使用旧 catalog。 */
+    public AccountFactsSnapshot.Fact<CurrentRule> observeDetailed() {
         Instant started = clock.instant();
         if (!concurrency.tryAcquire()) {
             return unknown(started, "PUBLIC_RULE_REQUEST_IN_PROGRESS");
@@ -99,7 +107,8 @@ public final class OkxCurrentPublicRuleReader implements AutoCloseable {
                 return new AccountFactsSnapshot.Fact<>(Status.STALE, null, observedAt, expiresAt,
                         OkxVenueRuleContract.SOURCE, "PUBLIC_RULE_OBSERVATION_STALE");
             }
-            return new AccountFactsSnapshot.Fact<>(Status.OBSERVED, "OKX:" + INSTRUMENT + ":" + checksum,
+            return new AccountFactsSnapshot.Fact<>(Status.OBSERVED,
+                    new CurrentRule("OKX:" + INSTRUMENT + ":" + checksum, factMinimumSize(snapshot.facts().getFirst())),
                     observedAt, expiresAt, OkxVenueRuleContract.SOURCE, "CURRENTLY_OBSERVED_PUBLIC_RULE");
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
@@ -165,7 +174,19 @@ public final class OkxCurrentPublicRuleReader implements AutoCloseable {
                 fact.nextRuleEffectiveAt(), null, null, null);
     }
 
-    private static AccountFactsSnapshot.Fact<String> unknown(Instant at, String reason) {
+    private static BigDecimal factMinimumSize(OkxVenueRuleFact fact) {
+        return fact.minimumSize();
+    }
+
+    public record CurrentRule(String identity, BigDecimal minimumSize) {
+        public CurrentRule {
+            Objects.requireNonNull(identity);
+            Objects.requireNonNull(minimumSize);
+            if (minimumSize.signum() <= 0) throw new IllegalArgumentException("minimum size must be positive");
+        }
+    }
+
+    private static <T> AccountFactsSnapshot.Fact<T> unknown(Instant at, String reason) {
         return new AccountFactsSnapshot.Fact<>(Status.UNKNOWN, null, at, null, OkxVenueRuleContract.SOURCE, reason);
     }
 

@@ -10,6 +10,8 @@
 
 每次人工调用通过既有 JIT credential 生命周期执行固定 private GET，返回非持久化的脱敏 `AccountFactsSnapshot`：账户模式、已证明的读取权限、币种 total/available/frozen、BTC-USDT SPOT 实际账户费率、全 SPOT 未完成订单计数、typed 仓位集合、公开服务器时间、当前公开 instrument rule 身份，以及与本地 canonical 状态的只读偏差分类。每项保留状态、观察时间、来源及适用时的有效期限；缺失或无法确认的事实保持 UNKNOWN，不推断为零。响应不包含原始 credential、签名或私有响应，不写 Order、Trade、Ledger 或 SIM 账本。实际服务器观察的接受状态以 [STATUS.md](STATUS.md) 及其引用的当次证据为准；LIVE 与交易 mutation 仍关闭。
 
+`divergence` 继续提供 `MATCH / DIVERGED / UNKNOWN` 兼容聚合；新增 `divergenceReport` 提供 observation/account 身份、外部与本地规范化事实 SHA-256、同次公开规则身份及最小数量、比较时间、稳定分类和逐项状态/时间/摘要。BTC/USDT 总额按相同币种精确比较；本地 `account_snapshots` 可用/冻结由成交账务投影生成，只有两侧均无挂单且明确无冻结、可用等于总额时才可比，其余返回 `BALANCE_SEMANTIC_MISMATCH / UNKNOWN`。同一旧账户存在 SIM 成交或 SIM 注资时也禁止给出 LIVE 余额 MATCH。canonical 快照超过 60 秒诊断比较窗口时标注 `CANONICAL_FACT_STALE / UNKNOWN`，仅证明时间条件，不推断它必然造成金额差异。缺失、过期、部分响应、重复订单或语义不明均保持 UNKNOWN；报告不持久化，也不执行同步或修复。余额与订单的明细摘要不含凭证和原始 provider 响应；账户金额仍只在已认证 owner 的原有观察响应中出现。
+
 `positions` 由 `Fact<String>` 改为 `Fact<List<OkxPrivatePositionFact>>`，JSON 的 `value` 为对象数组；消费方须按 `status` 判断，不能继续按字符串解析。对象字段为 `instrumentType / instrumentId / marginMode / positionSide / positionQuantity / positionCurrency / marginCurrency / providerUpdatedAt`。模式 1 保持 NOT_APPLICABLE，且不发送 positions GET；模式 2 经固定无参 `GET /api/v5/account/positions` 获取完整集合，空集或全部零仓位为 OBSERVED / NO_ACTIVE_POSITION。上限 100 条，超限、畸形、重复或内部矛盾均保持 UNKNOWN，禁止截断；模式 3/4 保持 UNKNOWN / ACCOUNT_MODE_NOT_YET_QUALIFIED。
 
 模式 2 只有全部所需账户、仓位、余额、全账户 LIVE 活跃订单和本地 canonical 快照完整且未过期时才分类。非零 MARGIN / SWAP / FUTURES / OPTION / EVENTS 仓位为 DIVERGED / EXTERNAL_NON_SPOT_POSITION_PRESENT；这些数量不加入独立的 `spotBtcExposure`。无非零仓位时依次比较非 BTC/USDT 资产、订单身份与数量/价格、BTC/USDT total/available/frozen；本地余额按最新发布的 `snapshot_id` 选择，SIM 订单不参与。完整相等才为 MATCH，任何缺失为 UNKNOWN；JDBC 比较后再次检查 freshness 与 kill identity。
