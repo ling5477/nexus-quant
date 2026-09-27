@@ -19,7 +19,7 @@ import org.springframework.jdbc.core.RowMapper;
 class JdbcLedgerReconcileRepositoryTest {
 
     @Test
-    void shouldExcludePositionBackedSnapshotsFromLedgerMissingBranch() {
+    void shouldSelectReconciliationSourceFromSnapshotBasisAndEnvironment() {
         JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
         when(jdbcTemplate.query(anyString(), any(RowMapper.class))).thenReturn(List.<LedgerReconcileDiff>of());
 
@@ -30,8 +30,10 @@ class JdbcLedgerReconcileRepositoryTest {
         ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
         verify(jdbcTemplate).query(sqlCaptor.capture(), any(RowMapper.class));
         String sql = sqlCaptor.getValue();
-        assertTrue(sql.contains("split_part(p.symbol, '-', 1)"));
-        assertTrue(sql.contains("position_qty = s.balance"));
+        assertTrue(sql.contains("s.balance_basis='POSITION_PROJECTION'"));
+        assertTrue(sql.contains("t.trade_env=s.trade_env"));
+        assertTrue(sql.contains("SIM_FUNDING_CASH"));
+        assertTrue(sql.contains("SNAPSHOT_PROVENANCE_UNKNOWN"));
     }
 }
 

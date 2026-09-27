@@ -86,7 +86,8 @@ public final class L5ProjectionProcessMain {
                 """, (row, index) -> new TradeLedgerRequest(row.getString("trade_id"), row.getString("order_id"),
                 row.getLong("account_id"), row.getString("symbol"), OrderSide.valueOf(row.getString("side")),
                 row.getBigDecimal("price"), row.getBigDecimal("qty"), row.getBigDecimal("fee"),
-                row.getString("fee_currency"), row.getString("trace_id"), row.getTimestamp("ts").toInstant()), tradeId);
+                row.getString("fee_currency"), row.getString("trace_id"), row.getTimestamp("ts").toInstant(),
+                row.getString("trade_env")), tradeId);
     }
 
     public static void main(String[] args) throws Exception {

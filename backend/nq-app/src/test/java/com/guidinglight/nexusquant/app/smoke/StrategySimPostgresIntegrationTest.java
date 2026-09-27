@@ -87,6 +87,8 @@ import org.springframework.test.context.TestPropertySource;
 class StrategySimPostgresIntegrationTest {
     private static String schema;
     private static String baseUrl;
+    private static String databaseUser;
+    private static String databasePassword;
     private static DriverManagerDataSource admin;
 
     @DynamicPropertySource
@@ -94,8 +96,12 @@ class StrategySimPostgresIntegrationTest {
         baseUrl = System.getProperty("nq.strategy-sim.pg.url", "");
         if (!baseUrl.startsWith("jdbc:postgresql://127.0.0.1:"))
             throw new IllegalArgumentException("disposable loopback PostgreSQL URL required");
+        databaseUser = System.getProperty("nq.strategy-sim.pg.user", "postgres");
+        databasePassword = System.getProperty("nq.strategy-sim.pg.password", "disposable");
+        if (databaseUser.isBlank() || databasePassword.isBlank())
+            throw new IllegalArgumentException("disposable PostgreSQL credentials required");
         schema = "strategy_sim_sim_" + UUID.randomUUID().toString().replace("-", "");
-        admin = new DriverManagerDataSource(baseUrl, "postgres", "disposable");
+        admin = new DriverManagerDataSource(baseUrl, databaseUser, databasePassword);
         JdbcTemplate jdbc = new JdbcTemplate(admin);
         jdbc.execute("CREATE SCHEMA " + schema);
         Flyway flyway = Flyway.configure().dataSource(admin).schemas(schema)
@@ -103,8 +109,8 @@ class StrategySimPostgresIntegrationTest {
         flyway.migrate();
         flyway.validate();
         registry.add("spring.datasource.url", () -> baseUrl + "?currentSchema=" + schema);
-        registry.add("spring.datasource.username", () -> "postgres");
-        registry.add("spring.datasource.password", () -> "disposable");
+        registry.add("spring.datasource.username", () -> databaseUser);
+        registry.add("spring.datasource.password", () -> databasePassword);
         registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
     }
 
@@ -145,6 +151,13 @@ class StrategySimPostgresIntegrationTest {
         var created = sim.create(fixture.publishId(), new BigDecimal("100.00000000"), "synthetic-test");
         assertEquals(fixture.versionId(), created.strategyVersionId());
         assertEquals(fixture.digest(), created.barContentSha256());
+        assertEquals(1, jdbc.queryForObject("""
+                SELECT count(*) FROM account_snapshots s JOIN paper_trading_runs r
+                  ON r.canonical_account_id=s.account_id
+                WHERE r.paper_run_id=? AND s.trade_env='SIM'
+                  AND s.balance_basis='LEDGER_CASH_PROJECTION'
+                  AND s.balance_scope='NQ_MANAGED_ACCOUNT' AND s.recorded_at IS NOT NULL
+                """, Integer.class, created.paperRunId()));
         runs.start(created.paperRunId());
         assertEquals("NO_SIGNAL", sim.advance(created.paperRunId()).status());
         assertEquals("NO_SIGNAL", sim.advance(created.paperRunId()).status());
@@ -160,6 +173,12 @@ class StrategySimPostgresIntegrationTest {
         assertTrue(facts.cash().signum() >= 0);
         assertEquals(0, new BigDecimal("103").compareTo(facts.markPrice()));
         assertEquals(6, facts.ledgerEntries().size());
+        assertEquals(0, jdbc.queryForObject("""
+                SELECT count(*) FROM account_snapshots s JOIN paper_trading_runs r
+                  ON r.canonical_account_id=s.account_id
+                WHERE r.paper_run_id=? AND (s.trade_env<>'SIM' OR s.balance_scope<>'NQ_MANAGED_ACCOUNT'
+                    OR s.balance_basis IS NULL OR s.recorded_at IS NULL)
+                """, Integer.class, created.paperRunId()));
         assertEquals("FILLED", facts.orders().getFirst().get("status"));
         var trade = facts.trades().getFirst();
         BigDecimal tradedPrice = new BigDecimal(trade.get("price").toString());
@@ -420,8 +439,8 @@ class StrategySimPostgresIntegrationTest {
             ProcessBuilder builder = new ProcessBuilder(executable, "-cp", classpath,
                     StrategySimRestartProbeMain.class.getName(), mode, baseUrl, schema, paperRunId);
             builder.environment().put("SPRING_DATASOURCE_URL", baseUrl + "?currentSchema=" + schema);
-            builder.environment().put("SPRING_DATASOURCE_USERNAME", "postgres");
-            builder.environment().put("SPRING_DATASOURCE_PASSWORD", "disposable");
+            builder.environment().put("SPRING_DATASOURCE_USERNAME", databaseUser);
+            builder.environment().put("SPRING_DATASOURCE_PASSWORD", databasePassword);
             builder.redirectErrorStream(true).redirectOutput(log.toFile());
             Process process = builder.start();
             try {

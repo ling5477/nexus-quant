@@ -244,7 +244,8 @@ public class PaperMatchingService {
                 trade.fee(),
                 trade.feeCurrency(),
                 trade.traceId(),
-                trade.ts()
+                trade.ts(),
+                order.tradeEnv()
         ));
         if (!postingResult.posted()) {
             auditLogRepository.append(

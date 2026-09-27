@@ -291,7 +291,8 @@ public class BinanceRestReconcileService {
                     tradeReport.fee(),
                     tradeReport.feeAsset(),
                     order.traceId(),
-                    tradeReport.tradeTs()
+                    tradeReport.tradeTs(),
+                    order.tradeEnv()
             ));
             if (!postingResult.posted()) {
                 log.warn(

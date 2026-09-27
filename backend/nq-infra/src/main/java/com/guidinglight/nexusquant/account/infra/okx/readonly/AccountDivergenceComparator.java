@@ -126,12 +126,8 @@ final class AccountDivergenceComparator {
             AccountFactsSnapshot.Fact<String> publicRule, BigDecimal minimumSize,
             List<AccountDivergenceReport.Item> items, List<String> externalDigest,
             List<String> canonicalDigest) {
-        List<Map<String, Object>> localBalances = jdbc.queryForList("""
-                SELECT DISTINCT ON (currency) snapshot_id, currency, balance, available, frozen, ts, created_at
-                FROM account_snapshots WHERE account_id=?
-                ORDER BY currency, snapshot_id DESC
-                LIMIT 101
-                """, legacyAccountId);
+        JdbcAccountSnapshotReader snapshotReader = new JdbcAccountSnapshotReader(jdbc);
+        List<JdbcAccountSnapshotReader.Snapshot> localBalances = snapshotReader.latest(legacyAccountId, "LIVE");
         List<Map<String, Object>> localOrders = jdbc.queryForList("""
                 SELECT o.order_id, o.client_order_id, o.exchange_order_id, o.exchange_code, o.venue,
                        o.symbol, o.side, o.type, o.price, o.qty, o.status, o.created_at, o.updated_at,
@@ -152,42 +148,34 @@ final class AccountDivergenceComparator {
             return report(observationId, exchangeAccountId, legacyAccountId, externalObservedAt, at,
                     externalDigest, canonicalDigest, publicRule, minimumSize, items);
         }
-        // account_snapshots 没有 trade_env；混入 SIM 写入时不能证明余额属于 LIVE。
-        Boolean simFacts = jdbc.queryForObject("""
-                SELECT EXISTS(SELECT 1 FROM trades WHERE account_id=? AND trade_env='SIM')
-                    OR EXISTS(SELECT 1 FROM ledger_entries WHERE account_id=?
-                              AND ref_type IN ('SIM_FUNDING_CASH','SIM_FUNDING_CONTRA'))
-                """, Boolean.class, legacyAccountId, legacyAccountId);
-        if (!Boolean.FALSE.equals(simFacts)) {
-            unknown(items, "BALANCE", null, "BALANCE_SEMANTIC_MISMATCH", at);
-            return report(observationId, exchangeAccountId, legacyAccountId, externalObservedAt, at,
-                    externalDigest, canonicalDigest, publicRule, minimumSize, items);
+        // NQ 投影只覆盖本系统管理的状态；没有全账户同步合同前禁止数值比对。
+        boolean legacyUnknown = snapshotReader.hasUnknownHistory(legacyAccountId);
+        for (var fact : balances.entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()) {
+            var value = fact.getValue().value();
+            externalDigest.add("balance|" + fact.getKey() + "|" + decimal(value.total()) + "|"
+                    + decimal(value.available()) + "|" + decimal(value.frozen()) + "|" + value.providerUpdatedAt());
         }
-        compareBalances(items, externalDigest, canonicalDigest, balances, localBalances, at, minimumSize,
-                orders.value().isEmpty() && localOrders.isEmpty());
+        for (var snapshot : localBalances) {
+            canonicalDigest.add("balance|" + snapshot.currency() + "|" + snapshot.snapshotId() + "|"
+                    + snapshot.tradeEnv() + "|" + snapshot.balanceBasis() + "|" + snapshot.balanceScope()
+                    + "|" + snapshot.sourceEventAt() + "|" + snapshot.recordedAt());
+        }
+        AccountBalanceComparability.Decision balanceDecision =
+                AccountBalanceComparability.assess(localBalances, legacyUnknown, at);
+        boolean notProviderEquivalent = balanceDecision.eligibility()
+                == AccountBalanceComparability.Eligibility.NOT_PROVIDER_EQUIVALENT;
+        items.add(item(notProviderEquivalent
+                        ? Classification.VENUE_BALANCE_NOT_SEMANTICALLY_COMPARABLE
+                        : Classification.BALANCE_SEMANTIC_MISMATCH,
+                "BALANCE", null, Status.OBSERVED,
+                notProviderEquivalent ? Status.OBSERVED : Status.UNKNOWN, externalObservedAt,
+                localBalances.isEmpty() ? null : localBalances.getFirst().recordedAt(),
+                balanceDecision.reason(), null, null));
         compareOrders(items, externalDigest, canonicalDigest, orders, localOrders, at);
-        BigDecimal canonicalBtc = localBalances.stream()
-                .filter(row -> "BTC".equals(row.get("currency")))
-                .map(row -> number(row.get("balance"))).filter(Objects::nonNull).findFirst().orElse(null);
         for (var row : localPositions) {
             canonicalDigest.add("spot-position|" + row.get("symbol") + "|" + decimalValue(row.get("qty"))
                     + "|" + decimalValue(row.get("available_qty")) + "|"
                     + decimalValue(row.get("frozen_qty")) + "|" + instant(row.get("updated_at")));
-            if ("BTC-USDT".equals(row.get("symbol")) && canonicalBtc != null
-                    && !same(canonicalBtc, row.get("qty"))) {
-                Instant positionAt = instant(row.get("updated_at"));
-                if (positionAt == null || positionAt.isAfter(at)
-                        || positionAt.isBefore(at.minus(MAX_CANONICAL_AGE))) {
-                    items.add(item(Classification.CANONICAL_FACT_STALE, "POSITION", "BTC-USDT",
-                            Status.NOT_APPLICABLE, Status.STALE, null, positionAt,
-                            "LOCAL_POSITION_OUTSIDE_COMPARISON_WINDOW_CAUSE_UNPROVEN", null, null));
-                } else {
-                    items.add(item(Classification.POSITION_MISMATCH, "POSITION", "BTC-USDT",
-                            Status.NOT_APPLICABLE, Status.OBSERVED, null, positionAt,
-                            "LOCAL_SPOT_POSITION_AND_BTC_SNAPSHOT_DIFFER", null,
-                            digest(decimal(canonicalBtc) + "|" + decimalValue(row.get("qty")))));
-                }
-            }
         }
         if ("2".equals(mode.value())) {
             if (positions.value().stream().noneMatch(p -> p.positionQuantity().signum() != 0)) {
@@ -208,91 +196,6 @@ final class AccountDivergenceComparator {
 
         return report(observationId, exchangeAccountId, legacyAccountId, externalObservedAt, at,
                 externalDigest, canonicalDigest, publicRule, minimumSize, items);
-    }
-
-    private static void compareBalances(List<AccountDivergenceReport.Item> items, List<String> externalDigest,
-            List<String> canonicalDigest, Map<String, AccountFactsSnapshot.Fact<OkxPrivateBalanceFact>> external,
-            List<Map<String, Object>> local, Instant at, BigDecimal minimumSize, boolean noOpenOrders) {
-        Map<String, Map<String, Object>> byAsset = new HashMap<>();
-        for (var row : local) {
-            String asset = (String) row.get("currency");
-            if (asset == null || byAsset.put(asset, row) != null) {
-                unknown(items, "BALANCE", asset, "CANONICAL_ASSET_DUPLICATE", at);
-                return;
-            }
-            canonicalDigest.add("balance|" + asset + "|" + row.get("snapshot_id") + "|"
-                    + decimalValue(row.get("balance")) + "|" + decimalValue(row.get("available")) + "|"
-                    + decimalValue(row.get("frozen")) + "|" + instant(row.get("ts")));
-        }
-        for (var entry : external.entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()) {
-            String asset = entry.getKey();
-            var fact = entry.getValue();
-            var value = fact.value();
-            String normalized = decimal(value.total()) + "|" + decimal(value.available()) + "|"
-                    + decimal(value.frozen());
-            externalDigest.add("balance|" + asset + "|" + normalized + "|" + value.providerUpdatedAt());
-            var row = byAsset.get(asset);
-            if (row == null) {
-                if (TARGET_ASSETS.contains(asset)) {
-                    items.add(item(Classification.BALANCE_FACT_MISSING, "BALANCE", asset, Status.OBSERVED,
-                            Status.UNKNOWN, fact.observedAt(), null, "CANONICAL_BALANCE_MISSING",
-                            digest(normalized), null));
-                } else if (value.total().signum() > 0) {
-                    items.add(item(Classification.UNEXPECTED_EXTERNAL_ASSET, "BALANCE", asset, Status.OBSERVED,
-                            Status.UNKNOWN, fact.observedAt(), null, "POSITIVE_EXTERNAL_ASSET_OUTSIDE_CANONICAL_SCOPE",
-                            digest(normalized), null));
-                }
-                continue;
-            }
-            BigDecimal total = number(row.get("balance"));
-            BigDecimal available = number(row.get("available"));
-            BigDecimal frozen = number(row.get("frozen"));
-            Instant canonicalAt = instant(row.get("ts"));
-            if (total == null || available == null || frozen == null || canonicalAt == null) {
-                unknown(items, "BALANCE", asset, "CANONICAL_BALANCE_MALFORMED", at);
-                continue;
-            }
-            if (canonicalAt.isAfter(at) || canonicalAt.isBefore(at.minus(MAX_CANONICAL_AGE))) {
-                items.add(item(Classification.CANONICAL_FACT_STALE, "BALANCE", asset, Status.OBSERVED,
-                        Status.STALE, fact.observedAt(), canonicalAt,
-                        "CANONICAL_SNAPSHOT_OUTSIDE_COMPARISON_WINDOW_CAUSE_UNPROVEN", null, null));
-            }
-            if (value.total().compareTo(total) != 0) {
-                String localValue = decimal(total) + "|" + decimal(available) + "|" + decimal(frozen);
-                boolean dust = "BTC".equals(asset) && minimumSize != null && value.total().signum() > 0
-                        && value.total().compareTo(minimumSize) < 0 && total.signum() == 0;
-                items.add(item(dust ? Classification.EXTERNAL_DUST_BALANCE : Classification.BALANCE_MISMATCH,
-                        "BALANCE", asset, Status.OBSERVED,
-                        Status.OBSERVED, fact.observedAt(), canonicalAt,
-                        dust ? "POSITIVE_BTC_BELOW_CURRENT_MINIMUM_SIZE" : "TOTAL_EXACT_DIFFERENCE",
-                        digest(normalized), digest(localValue)));
-            }
-            // 本地可用/冻结由成交投影生成，只有双方均无挂单且两侧均明确无冻结时才有同义口径。
-            if (!noOpenOrders || value.frozen().signum() != 0 || frozen.signum() != 0
-                    || value.available().compareTo(value.total()) != 0 || available.compareTo(total) != 0) {
-                items.add(item(Classification.BALANCE_SEMANTIC_MISMATCH, "BALANCE", asset,
-                        Status.OBSERVED, Status.UNKNOWN, fact.observedAt(), canonicalAt,
-                        "AVAILABLE_FROZEN_PROJECTION_NOT_PROVIDER_EQUIVALENT", null, null));
-            }
-        }
-        for (var entry : byAsset.entrySet()) {
-            if (!external.containsKey(entry.getKey())) {
-                var row = entry.getValue();
-                BigDecimal total = number(row.get("balance"));
-                if (total != null && total.signum() > 0) {
-                    Instant canonicalAt = instant(row.get("ts"));
-                    boolean stale = canonicalAt == null || canonicalAt.isAfter(at)
-                            || canonicalAt.isBefore(at.minus(MAX_CANONICAL_AGE));
-                    items.add(item(stale ? Classification.CANONICAL_FACT_STALE
-                                    : Classification.UNEXPECTED_LOCAL_ASSET,
-                            "BALANCE", entry.getKey(), Status.UNKNOWN,
-                            stale ? Status.STALE : Status.OBSERVED, null, canonicalAt,
-                            stale ? "LOCAL_ASSET_SNAPSHOT_OUTSIDE_COMPARISON_WINDOW_CAUSE_UNPROVEN"
-                                    : "POSITIVE_CANONICAL_ASSET_NOT_RETURNED_EXTERNALLY",
-                            null, digest(decimal(total))));
-                }
-            }
-        }
     }
 
     private static void compareOrders(List<AccountDivergenceReport.Item> items, List<String> externalDigest,
@@ -397,6 +300,7 @@ final class AccountDivergenceComparator {
         } else if (divergences.size() == 1) {
             aggregate = divergences.getFirst().classification();
         } else {
+            // 已知其他差异与余额不可比并存时，保留各明细并报告复合结果。
             aggregate = Classification.MULTIPLE_DIVERGENCES;
         }
         return new AccountDivergenceReport(id, accountId, legacyId, externalAt, at,
@@ -417,10 +321,6 @@ final class AccountDivergenceComparator {
             String reason, Instant at) {
         items.add(item(Classification.UNKNOWN, dimension, asset, Status.UNKNOWN, Status.UNKNOWN,
                 at, null, reason, null, null));
-    }
-
-    private static BigDecimal number(Object value) {
-        return value instanceof BigDecimal decimal ? decimal : null;
     }
 
     private static boolean same(BigDecimal left, Object right) {

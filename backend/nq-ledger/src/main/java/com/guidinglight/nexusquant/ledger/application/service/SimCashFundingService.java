@@ -33,6 +33,7 @@ public class SimCashFundingService implements SimCashFundingPort {
             throw new IllegalArgumentException("invalid isolated SIM funding request");
         }
         repository.lockSnapshotCurrencies(accountId, List.of("USDT"));
+        repository.assertAccountEnvironment(accountId, "SIM");
         String cashKey = paperRunId + ":SIM_FUND:CASH";
         String contraKey = paperRunId + ":SIM_FUND:CONTRA";
         boolean cashExists = repository.existsByIdempotencyKey(cashKey);
@@ -41,32 +42,34 @@ public class SimCashFundingService implements SimCashFundingPort {
             throw new IllegalStateException("INCOMPLETE_SIM_FUNDING");
         }
         if (cashExists) {
-            BigDecimal current = repository.currentBalance(accountId, "USDT");
+            BigDecimal current = repository.currentBalance(accountId, "USDT", "SIM");
             if (current.signum() < 0) throw new IllegalStateException("NEGATIVE_SIM_CASH");
             return current;
         }
-        if (repository.currentBalance(accountId, "USDT").signum() != 0) {
+        if (repository.currentBalance(accountId, "USDT", "SIM").signum() != 0) {
             throw new IllegalStateException("SIM_FUNDING_REQUIRES_EMPTY_ACCOUNT");
         }
         Instant now = Instant.now();
         insert(accountId, budget, "SIM_FUNDING_CASH", cashKey, paperRunId, traceId, now);
         insert(accountId, budget.negate(), "SIM_FUNDING_CONTRA", contraKey, paperRunId, traceId, now);
         repository.insertAccountSnapshot(new AccountSnapshotProjection(accountId, "USDT", budget,
-                budget, BigDecimal.ZERO, now, traceId));
+                budget, BigDecimal.ZERO, now, traceId, "SIM",
+                com.guidinglight.nexusquant.ledger.contracts.model.AccountBalanceBasis.LEDGER_CASH_PROJECTION));
         return budget;
     }
 
     @Override
     public BigDecimal cashBalance(long accountId) {
-        return repository.currentBalance(accountId, "USDT");
+        repository.assertAccountEnvironment(accountId, "SIM");
+        return repository.currentBalance(accountId, "USDT", "SIM");
     }
 
     private void insert(long accountId, BigDecimal delta, String refType, String key,
                         String paperRunId, String traceId, Instant now) {
         String entryId = "le-" + UUID.randomUUID();
         BigDecimal balanceAfter = "SIM_FUNDING_CONTRA".equals(refType)
-                ? repository.currentBalance(accountId, "USDT")
-                : repository.currentBalance(accountId, "USDT").add(delta);
+                ? repository.currentBalance(accountId, "USDT", "SIM")
+                : repository.currentBalance(accountId, "USDT", "SIM").add(delta);
         repository.insertEntry(new LedgerPostingEntry(entryId, accountId, "USDT", delta,
                 balanceAfter,
                 delta.signum() >= 0 ? LedgerDirection.CREDIT : LedgerDirection.DEBIT,

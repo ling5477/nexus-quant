@@ -166,21 +166,24 @@ public class JdbcTradingQueryFacade implements TradingQueryFacade {
         if (accountId == null || accountId <= 0) {
             return Optional.empty();
         }
-        // 成交时间可能逆序；唯一生产 writer 在币种锁内分配并提交 snapshot_id，故按发布顺序取当前值。
+        // 成交时间可能逆序；按发布顺序取每个环境的最新值，旧行的空环境原样保留。
         List<AccountBalanceQueryView> balances = jdbcTemplate.query(
                 """
-                        SELECT latest.currency, latest.balance, latest.available, latest.frozen, latest.ts, latest.trace_id
+                        SELECT latest.currency, latest.balance, latest.available, latest.frozen, latest.ts,
+                               latest.trace_id, latest.trade_env, latest.balance_basis,
+                               latest.balance_scope, latest.recorded_at
                         FROM (
                             SELECT snapshot_id, account_id, currency, balance, available, frozen, ts, trace_id,
+                                   trade_env, balance_basis, balance_scope, recorded_at,
                                    ROW_NUMBER() OVER (
-                                       PARTITION BY account_id, currency
+                                       PARTITION BY account_id, currency, trade_env
                                        ORDER BY snapshot_id DESC
                                    ) AS rn
                             FROM account_snapshots
                             WHERE account_id = ?
                         ) latest
                         WHERE latest.rn = 1
-                        ORDER BY latest.currency
+                        ORDER BY latest.currency, latest.trade_env NULLS FIRST
                         """,
                 (resultSet, rowNum) -> new AccountBalanceQueryView(
                         resultSet.getString("currency"),
@@ -188,7 +191,11 @@ public class JdbcTradingQueryFacade implements TradingQueryFacade {
                         resultSet.getBigDecimal("available"),
                         resultSet.getBigDecimal("frozen"),
                         toInstant(resultSet.getTimestamp("ts")),
-                        resultSet.getString("trace_id")
+                        resultSet.getString("trace_id"),
+                        resultSet.getString("trade_env"),
+                        resultSet.getString("balance_basis"),
+                        resultSet.getString("balance_scope"),
+                        toInstant(resultSet.getTimestamp("recorded_at"))
                 ),
                 accountId
         );

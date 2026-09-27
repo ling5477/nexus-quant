@@ -670,7 +670,8 @@ public class OkxRestReconcileService {
                     trade.fee(),
                     trade.feeCurrency(),
                     trade.traceId(),
-                    trade.ts()
+                    trade.ts(),
+                    order.tradeEnv()
             ));
         } catch (RuntimeException ex) {
             auditLedgerFailure(order, trade.tradeId(), ex.getClass().getSimpleName());

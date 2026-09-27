@@ -702,6 +702,22 @@ jobs:
             -Dnq.app.context.smoke.user="${NQ_FLYWAY_DB_USER}" \
             -Dnq.app.context.smoke.password="${NQ_FLYWAY_DB_PASSWORD}"
 
+      - name: Verify account snapshot semantics on PostgreSQL
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -f backend/pom.xml -pl nq-app -am test \
+            -Dtest=AccountSnapshotSemanticsPostgresIntegrationTest,OkxAccountFactsPostgresIntegrationTest,StrategySimPostgresIntegrationTest \
+            -Dsurefire.failIfNoSpecifiedTests=false \
+            -Dnq.postgres.smoke.required=true \
+            -Dnq.postgres.smoke.url="${NQ_FLYWAY_DB_URL}" \
+            -Dnq.postgres.smoke.user="${NQ_FLYWAY_DB_USER}" \
+            -Dnq.postgres.smoke.password="${NQ_FLYWAY_DB_PASSWORD}" \
+            -Dnq.strategy-sim.pg.required=true \
+            -Dnq.strategy-sim.pg.url="jdbc:postgresql://127.0.0.1:5432/nq_ci" \
+            -Dnq.strategy-sim.pg.user="${NQ_FLYWAY_DB_USER}" \
+            -Dnq.strategy-sim.pg.password="${NQ_FLYWAY_DB_PASSWORD}"
+
       - name: Run current-schema backup and restore drill
         shell: pwsh
         env:

@@ -635,7 +635,8 @@ class TradingChainPostgresIntegrationTest {
                 trade.fee(),
                 trade.feeCurrency(),
                 trade.traceId(),
-                trade.ts()
+                trade.ts(),
+                order.tradeEnv()
         ));
         assertTrue(result.posted());
     }
