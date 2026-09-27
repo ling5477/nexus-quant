@@ -102,7 +102,7 @@ release只使用`../../scripts/deployment/New-NqCanonicalRelease.ps1`；verify�
 
 账户事实观察若使用服务器现有 TRADE 凭证，只能在上述单一 scoped profile、显式只读功能开关及 LIVE/真实交易 provider 关闭条件下人工触发。先用既有 `permission-probe` 只读 OKX config 并刷新本地脱敏权限元数据；仅 `SUCCEEDED / TRADE / WITHDRAW=false / IP PASSED` 且未过期时，账户事实入口才解密绑定凭证，并再次用固定 GET 核对远端权限。普通 diagnostics profile 仍只接受 READ_ONLY 凭证。canonical prod unit 固定 `{prod}`，不能通过叠加 profile 执行此观察；在服务器启动 scoped runtime 或切换 release 均属于需单独授权的部署动作。
 
-当前生产已完成一次性 bootstrap，并于 2026-09-27 通过普通 install/activate 切换到修复后的 canonical release；身份与受控运行结果见[当前证据](evidence/gate-z/OKX_READONLY_RUNTIME_IDENTITY.md)。后续不得重复 bootstrap。当前阻断为 owner 登录来源与 canonical 数据库不匹配；只能使用目标 owner 的有效既有受控凭据，不得重置密码、签发替代 token 或修改 API Key 权限来完成本次资格验证。
+当前生产已完成一次性 bootstrap，并于 2026-09-27 通过普通 install/activate 切换到修复后的 canonical release；身份与受控运行结果见[当前证据](evidence/gate-z/OKX_READONLY_RUNTIME_IDENTITY.md)。后续不得重复 bootstrap。2026-09-27 后续在用户明确授权下，已通过下述窄维护入口为现有 owner 建立 root-only 持久登录来源，正常登录与 permission probe 均通过。当前阻断转为模式 2 的仓位/偏差覆盖及公开规则身份缺失；原采集器主机预期错误的失败证据保留，详见[最新恢复与观察结果](evidence/gate-z/OWNER_CREDENTIAL_READONLY_OBSERVATION.md)。不得为补齐事实修改账户模式、API Key 权限或 canonical 交易事实；再次维护密码仍须对应明确授权。
 
 ### 现有用户密码的一次性维护
 
