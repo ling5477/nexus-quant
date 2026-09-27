@@ -22,6 +22,21 @@ class OkxSpotEndpointGuardTest {
     private final OkxSpotEndpointGuard guard = new OkxSpotEndpointGuard();
 
     @Test
+    void positionsAreAllowedOnlyThroughTypedReadWithoutTradingAuthority() {
+        EndpointPolicyDecision decision = guard.evaluatePrivateRead(OkxPrivateReadRequest.accountPositions());
+        assertTrue(decision.allowed());
+        assertEquals(ExchangeCapability.PRIVATE_ACCOUNT_POSITIONS_READ, decision.capability());
+        assertEquals(EndpointAccessClass.PRIVATE_READ_ONLY, decision.endpointAccessClass());
+        assertFalse(decision.tradingAuthorization());
+        for (String method : List.of("GET", "POST", "PUT", "DELETE")) {
+            for (String endpoint : List.of("/api/v5/account/positions", "/api/v5/account/positions-history",
+                    "/api/v5/account/set-position-mode", "/api/v5/asset/transfer", "/api/v5/asset/withdrawal")) {
+                assertFalse(guard.evaluate(ExchangeCapability.PRIVATE_ACCOUNT_POSITIONS_READ, method, endpoint).allowed());
+            }
+        }
+    }
+
+    @Test
     void shouldAllowKnownPublicReadWithoutGrantingTradingAuthorization() {
         EndpointPolicyDecision decision = guard.evaluate(
                 ExchangeCapability.PUBLIC_MARKET_DATA,

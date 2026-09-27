@@ -15,8 +15,8 @@ import java.util.Map;
  * OkxSpotCapabilityMatrix 固化只读诊断对 OKX Spot的类型化 capability matrix。
  *
  * <p>公开行情保持现有 public transport 合同；其 policy 放行不等于 real provider readiness 或
- * trading authorization。所有 private、mutating、资金动作和未知能力均保持 runtime disabled，
- * 后续 Gate 不得通过修改调用方字符串绕过该矩阵。</p>
+ * trading authorization。已实现的 private read 仍须经过封闭的 typed request；mutating、资金动作
+ * 和未知能力保持 runtime disabled，调用方字符串不能扩大该矩阵。</p>
  */
 public final class OkxSpotCapabilityMatrix {
 
@@ -67,6 +67,10 @@ public final class OkxSpotCapabilityMatrix {
         definitions.put(
                 ExchangeCapability.PRIVATE_ACCOUNT_FEE_READ,
                 implementedPrivateRead(ExchangeCapability.PRIVATE_ACCOUNT_FEE_READ)
+        );
+        definitions.put(
+                ExchangeCapability.PRIVATE_ACCOUNT_POSITIONS_READ,
+                implementedPrivateRead(ExchangeCapability.PRIVATE_ACCOUNT_POSITIONS_READ)
         );
         definitions.put(
                 ExchangeCapability.PRIVATE_OPEN_ORDERS_READ,

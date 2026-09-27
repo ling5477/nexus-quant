@@ -11,7 +11,7 @@ import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxAccountF
 import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateReadTransport;
 import com.guidinglight.nexusquant.app.config.CapabilityPropertyResolver;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
-import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService;
+import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxCurrentPublicRuleReader;
 import com.guidinglight.nexusquant.livecontrol.deployment.policy.ScopedCredentialCapabilityPolicy;
 
 import java.time.Clock;
@@ -65,13 +65,18 @@ public class OkxPrivateReadOnlyDiagnosticsConfiguration {
     }
 
     @Bean
+    public OkxCurrentPublicRuleReader okxCurrentPublicRuleReader() {
+        return new OkxCurrentPublicRuleReader(Clock.systemUTC());
+    }
+
+    @Bean
     public OkxAccountFactsObservationService okxAccountFactsObservationService(
             ExchangeAccountRepository accountRepository,
             ExchangeAccountCredentialRepository credentialRepository,
             OkxPrivateCredentialExecutor executor,
             OkxAccountFactsReadTransport transport,
             KillSwitchService killSwitch,
-            InstrumentCatalogService catalog,
+            OkxCurrentPublicRuleReader publicRuleReader,
             JdbcTemplate jdbcTemplate,
             OkxPrivateReadOnlyPermissionProbeProperties permissionProperties,
             Environment environment,
@@ -83,7 +88,7 @@ public class OkxPrivateReadOnlyDiagnosticsConfiguration {
         return new OkxAccountFactsObservationService(accountRepository, credentialRepository,
                 executor, transport, killSwitch,
                 new ScopedCredentialCapabilityPolicy(parsePositiveDuration(maximumProbeAge)),
-                permissionScope, catalog, jdbcTemplate, Clock.systemUTC(), permissionProperties.expectedIp());
+                permissionScope, publicRuleReader, jdbcTemplate, Clock.systemUTC(), permissionProperties.expectedIp());
     }
 
     @Bean

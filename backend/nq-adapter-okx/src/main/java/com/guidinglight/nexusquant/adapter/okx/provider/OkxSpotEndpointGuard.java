@@ -17,8 +17,8 @@ import java.util.Set;
 /**
  * OkxSpotEndpointGuard 在 private transport 之前执行无 IO 的 default-deny 决策。
  *
- * <p>只读诊断不建立 concrete private endpoint allowlist：所有 private read 都先被 runtime
- * disabled 拒绝；下单、撤单和资金动作永久拒绝。仅保留仓库既有 public marketdata path 的精确
+ * <p>字符串入口始终拒绝 private read；仅封闭的 typed request 可通过 private 只读入口。
+ * 下单、撤单和资金动作不能通过该只读入口。公开入口仅保留既有 public marketdata path 的精确
  * GET allowlist，且 path 使用 URI 校验、大小写归一、重复斜线归一和 percent-encoded path 拒绝。
  * query string 从不参与 endpoint 分类，因此不能改变 public/private/mutating 判定。</p>
  *
@@ -27,7 +27,7 @@ import java.util.Set;
  */
 public final class OkxSpotEndpointGuard {
 
-    // 仅复用仓库已有的 public marketdata 路径；private allowlist 在只读诊断故意为空。
+    // 字符串入口仅允许既有公开路径，private 仓位等能力必须提供封闭的 typed request。
     private static final Set<String> PUBLIC_READ_PATHS = Set.of(
             "/api/v5/public/instruments",
             "/api/v5/market/history-candles"

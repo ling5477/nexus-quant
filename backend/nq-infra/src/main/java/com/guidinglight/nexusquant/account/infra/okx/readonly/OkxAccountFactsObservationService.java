@@ -9,13 +9,13 @@ import com.guidinglight.nexusquant.adapter.okx.auth.OkxPrivateEnvironment;
 import com.guidinglight.nexusquant.adapter.okx.privateread.error.OkxPrivateReadException;
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateBalanceFact;
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateOrderSnapshot;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivatePositionFact;
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadRequest;
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadResult;
 import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxAccountFactsReadTransport;
 import com.guidinglight.nexusquant.livecontrol.deployment.model.ScopedCredentialCapability;
 import com.guidinglight.nexusquant.livecontrol.deployment.model.ScopedCredentialReference;
 import com.guidinglight.nexusquant.livecontrol.deployment.policy.ScopedCredentialCapabilityPolicy;
-import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService;
 import com.guidinglight.nexusquant.risk.domain.model.KillSwitchSnapshot;
 import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
@@ -41,7 +41,6 @@ public final class OkxAccountFactsObservationService {
     private static final String INSTRUMENT = "BTC-USDT";
     private static final Duration PRIVATE_TTL = Duration.ofMinutes(1);
     private static final Duration FEE_PROVIDER_TTL = Duration.ofHours(1);
-    private static final Duration RULE_TTL = Duration.ofHours(24);
 
     private final ExchangeAccountRepository accounts;
     private final ExchangeAccountCredentialRepository credentials;
@@ -50,7 +49,7 @@ public final class OkxAccountFactsObservationService {
     private final KillSwitchService killSwitch;
     private final ScopedCredentialCapabilityPolicy policy;
     private final ScopedCredentialCapabilityPolicy.PermissionScope permissionScope;
-    private final InstrumentCatalogService catalog;
+    private final OkxCurrentPublicRuleReader publicRuleReader;
     private final JdbcTemplate jdbc;
     private final Clock clock;
     private final String expectedIp;
@@ -63,7 +62,7 @@ public final class OkxAccountFactsObservationService {
             KillSwitchService killSwitch,
             ScopedCredentialCapabilityPolicy policy,
             ScopedCredentialCapabilityPolicy.PermissionScope permissionScope,
-            InstrumentCatalogService catalog,
+            OkxCurrentPublicRuleReader publicRuleReader,
             JdbcTemplate jdbc,
             Clock clock,
             String expectedIp
@@ -75,7 +74,7 @@ public final class OkxAccountFactsObservationService {
         this.killSwitch = Objects.requireNonNull(killSwitch);
         this.policy = Objects.requireNonNull(policy);
         this.permissionScope = Objects.requireNonNull(permissionScope);
-        this.catalog = Objects.requireNonNull(catalog);
+        this.publicRuleReader = Objects.requireNonNull(publicRuleReader);
         this.jdbc = Objects.requireNonNull(jdbc);
         this.clock = Objects.requireNonNull(clock);
         this.expectedIp = expectedIp;
@@ -218,20 +217,55 @@ public final class OkxAccountFactsObservationService {
                 ? observed(btc.value().total(), btc.observedAt(), SOURCE, PRIVATE_TTL)
                 : unknown(now, "BTC_EXPOSURE_UNKNOWN");
         boolean simpleSpotAccount = "1".equals(mode.value()) && mode.status() == Status.OBSERVED;
-        AccountFactsSnapshot.Fact<String> positions = simpleSpotAccount
+        AccountFactsSnapshot.Fact<List<OkxPrivatePositionFact>> positions = simpleSpotAccount
                 ? new AccountFactsSnapshot.Fact<>(Status.NOT_APPLICABLE, null, now, null,
                         "OKX_SPOT", "DERIVATIVE_POSITIONS_NOT_APPLICABLE")
-                : unknown(now, "ACCOUNT_MODE_REQUIRES_POSITION_OBSERVATION");
-        var rule = publicRule(now);
-        var divergence = classifyDivergence(account.legacyAccountId(), mode, balances, externalOrders, now);
-        Status status = balances.values().stream().allMatch(f -> f.status() == Status.OBSERVED)
-                && openOrders.status() == Status.OBSERVED
-                && mode.status() == Status.OBSERVED
-                && fee.status() == Status.OBSERVED
-                && exchangeTime.status() == Status.OBSERVED
-                && rule.status() == Status.OBSERVED
+                : unknown(now, "ACCOUNT_MODE_NOT_YET_QUALIFIED");
+        if (mode.status() == Status.OBSERVED && "2".equals(mode.value())) {
+            try {
+                requireKill(initialKill);
+                var result = session.execute(OkxPrivateReadRequest.accountPositions(),
+                        OkxPrivateEnvironment.PRODUCTION);
+                if (result.complete()) {
+                    var facts = List.copyOf(result.positions());
+                    positions = new AccountFactsSnapshot.Fact<>(Status.OBSERVED, facts,
+                            result.observedAt(), result.observedAt().plus(PRIVATE_TTL), SOURCE,
+                            facts.stream().anyMatch(p -> p.positionQuantity().signum() != 0)
+                                    ? "ACTIVE_POSITION_PRESENT" : "NO_ACTIVE_POSITION");
+                } else {
+                    positions = unknown(now, "POSITION_RESPONSE_PARTIAL");
+                }
+            } catch (OkxPrivateReadException ex) {
+                positions = unknown(now, ex.category().name());
+            }
+        }
+        requireKill(initialKill);
+        var rule = publicRuleReader.observe();
+        requireKill(initialKill);
+        Instant comparisonAt = clock.instant();
+        var divergence = classifyDivergence(account.legacyAccountId(), mode, positions,
+                balances, openOrders.statusAt(comparisonAt) == Status.OBSERVED ? externalOrders : null, comparisonAt);
+        // 本地查询也会消耗时间；返回前重验 kill 与外部输入，不能给过期比较续期。
+        requireKill(initialKill);
+        Instant completed = clock.instant();
+        if (mode.statusAt(completed) == Status.STALE
+                || openOrders.statusAt(completed) == Status.STALE
+                || balances.values().stream().anyMatch(f -> f.statusAt(completed) == Status.STALE)
+                || ("2".equals(mode.value()) && positions.statusAt(completed) == Status.STALE)
+                || divergence.statusAt(completed) == Status.STALE) {
+            divergence = unknown(completed, "ACCOUNT_FACTS_EXPIRED_DURING_COMPARISON");
+        }
+        Status status = balances.values().stream().allMatch(f -> f.statusAt(completed) == Status.OBSERVED)
+                && openOrders.statusAt(completed) == Status.OBSERVED
+                && mode.statusAt(completed) == Status.OBSERVED
+                && permissions.statusAt(completed) == Status.OBSERVED
+                && exposure.statusAt(completed) == Status.OBSERVED
+                && fee.statusAt(completed) == Status.OBSERVED
+                && exchangeTime.statusAt(completed) == Status.OBSERVED
+                && rule.statusAt(completed) == Status.OBSERVED
                 && divergence.status() == Status.OBSERVED
-                && positions.status() == Status.NOT_APPLICABLE ? Status.OBSERVED : Status.UNKNOWN;
+                && (positions.status() == Status.NOT_APPLICABLE
+                    || positions.statusAt(completed) == Status.OBSERVED) ? Status.OBSERVED : Status.UNKNOWN;
         return new AccountFactsSnapshot(observationId, "OKX", account.exchangeAccountId(),
                 credentialReference, now,
                 observed("ACTIVE", now, "NQ_CREDENTIAL_METADATA", PRIVATE_TTL),
@@ -240,58 +274,57 @@ public final class OkxAccountFactsObservationService {
                 status == Status.OBSERVED ? "PRIVATE_READ_ONLY" : "PARTIAL_ACCOUNT_FACTS");
     }
 
-    private AccountFactsSnapshot.Fact<String> publicRule(Instant now) {
-        try {
-            var items = catalog.findByExchangeAndSymbols("OKX", List.of(INSTRUMENT));
-            if (items.size() != 1 || items.getFirst().ruleChecksum() == null
-                    || items.getFirst().observedAt() == null) {
-                return unknown(now, "PUBLIC_RULE_IDENTITY_UNAVAILABLE");
-            }
-            var item = items.getFirst();
-            if (item.observedAt().isAfter(now)
-                    || item.observedAt().plus(RULE_TTL).isBefore(now)) {
-                return new AccountFactsSnapshot.Fact<>(Status.STALE,
-                        "OKX:" + INSTRUMENT + ":" + item.ruleChecksum(), item.observedAt(),
-                        item.observedAt().plus(RULE_TTL), "NQ_PUBLIC_INSTRUMENT_RULE",
-                        "PUBLIC_RULE_OBSERVATION_STALE");
-            }
-            return observed("OKX:" + INSTRUMENT + ":" + item.ruleChecksum(),
-                    item.observedAt(), "NQ_PUBLIC_INSTRUMENT_RULE", RULE_TTL);
-        } catch (RuntimeException ex) {
-            return unknown(now, "PUBLIC_RULE_READ_FAILED");
-        }
-    }
-
     private AccountFactsSnapshot.Fact<String> classifyDivergence(
             Long legacyAccountId,
             AccountFactsSnapshot.Fact<String> accountMode,
+            AccountFactsSnapshot.Fact<List<OkxPrivatePositionFact>> positions,
             Map<String, AccountFactsSnapshot.Fact<OkxPrivateBalanceFact>> balances,
             List<OkxPrivateOrderSnapshot> externalOrders,
             Instant now
     ) {
-        if (accountMode.status() != Status.OBSERVED || !"1".equals(accountMode.value())) {
-            return unknown(now, "POSITION_COMPARISON_UNAVAILABLE_FOR_ACCOUNT_MODE");
+        if (accountMode.statusAt(now) != Status.OBSERVED
+                || !Set.of("1", "2").contains(accountMode.value())) {
+            return unknown(now, "ACCOUNT_MODE_NOT_YET_QUALIFIED");
+        }
+        boolean modeTwo = "2".equals(accountMode.value());
+        if (modeTwo && positions.statusAt(now) != Status.OBSERVED) {
+            return unknown(now, "POSITION_OBSERVATION_INCOMPLETE");
         }
         if (legacyAccountId == null || externalOrders == null) {
             return unknown(now, "CANONICAL_OR_EXTERNAL_FACT_INCOMPLETE");
         }
-        if (balances.entrySet().stream().anyMatch(entry -> !Set.of("BTC", "USDT").contains(entry.getKey())
+        boolean unexpectedAsset = balances.entrySet().stream().anyMatch(entry -> !Set.of("BTC", "USDT").contains(entry.getKey())
                 && entry.getValue().status() == Status.OBSERVED
-                && entry.getValue().value().total().signum() > 0)) {
+                && entry.getValue().value().total().signum() > 0);
+        if (!modeTwo && unexpectedAsset) {
             return observed("DIVERGED", now, "NQ_CANONICAL_READ_COMPARISON", PRIVATE_TTL);
         }
-        if (balances.values().stream().anyMatch(f -> f.status() != Status.OBSERVED)) {
+        if (balances.values().stream().anyMatch(f -> f.statusAt(now) != Status.OBSERVED)) {
             return unknown(now, "CANONICAL_OR_EXTERNAL_FACT_INCOMPLETE");
         }
         try {
             List<String> localOrders = jdbc.queryForList("""
                     SELECT client_order_id FROM orders
-                    WHERE account_id=? AND symbol=?
+                    WHERE account_id=? AND trade_env='LIVE'
                       AND status IN ('SENT','ACCEPTED','SUBMITTING','ACKED','PARTIALLY_FILLED',
                                      'CANCEL_REQUESTED','CANCEL_REJECTED')
                     LIMIT 1001
-                    """, String.class, legacyAccountId, INSTRUMENT);
+                    """, String.class, legacyAccountId);
             if (localOrders.size() > 1000) return unknown(now, "CANONICAL_ORDERS_OVER_LIMIT");
+            // 模式 2 的结论必须建立在完整本地余额上，不能把仓位或空订单单独当作完整比较。
+            List<Map<String, Object>> localBalances = jdbc.queryForList("""
+                    SELECT DISTINCT ON (currency) currency, balance, available, frozen
+                    FROM account_snapshots
+                    WHERE account_id=? AND currency IN ('USDT','BTC')
+                    ORDER BY currency, snapshot_id DESC
+                    """, legacyAccountId);
+            if (modeTwo && localBalances.size() != 2) return unknown(now, "CANONICAL_BALANCE_INCOMPLETE");
+            if (modeTwo && positions.value().stream().anyMatch(p -> p.positionQuantity().signum() != 0)) {
+                return new AccountFactsSnapshot.Fact<>(Status.OBSERVED, "DIVERGED", now,
+                        now.plus(PRIVATE_TTL), "NQ_CANONICAL_READ_COMPARISON",
+                        "EXTERNAL_NON_SPOT_POSITION_PRESENT");
+            }
+            if (unexpectedAsset) return observed("DIVERGED", now, "NQ_CANONICAL_READ_COMPARISON", PRIVATE_TTL);
             Set<String> externalIds = new java.util.HashSet<>();
             if (externalOrders.stream().anyMatch(order -> !INSTRUMENT.equals(order.instrumentId())
                     || order.clientOrderId() == null
@@ -301,12 +334,36 @@ public final class OkxAccountFactsObservationService {
             if (!externalIds.equals(Set.copyOf(localOrders))) {
                 return observed("DIVERGED", now, "NQ_CANONICAL_READ_COMPARISON", PRIVATE_TTL);
             }
-            List<Map<String, Object>> localBalances = jdbc.queryForList("""
-                    SELECT DISTINCT ON (currency) currency, balance
-                    FROM account_snapshots
-                    WHERE account_id=? AND currency IN ('USDT','BTC')
-                    ORDER BY currency, ts DESC, snapshot_id DESC
-                    """, legacyAccountId);
+            if (modeTwo && !externalOrders.isEmpty()) {
+                List<Map<String, Object>> details = jdbc.queryForList("""
+                        SELECT o.client_order_id, o.exchange_order_id, o.exchange_code, o.symbol,
+                               o.side, o.type, o.price, o.qty,
+                               COALESCE((SELECT SUM(t.qty) FROM trades t WHERE t.order_id=o.order_id),0) AS filled
+                        FROM orders o
+                        WHERE o.account_id=? AND o.trade_env='LIVE'
+                          AND o.status IN ('SENT','ACCEPTED','SUBMITTING','ACKED','PARTIALLY_FILLED',
+                                           'CANCEL_REQUESTED','CANCEL_REJECTED')
+                        LIMIT 1001
+                        """, legacyAccountId);
+                if (details.size() != externalOrders.size()) return unknown(now, "CANONICAL_ORDERS_CHANGED");
+                Map<String, OkxPrivateOrderSnapshot> byId = new HashMap<>();
+                externalOrders.forEach(order -> byId.put(order.clientOrderId(), order));
+                for (Map<String, Object> local : details) {
+                    var external = byId.remove((String) local.get("client_order_id"));
+                    if (external == null) return unknown(now, "CANONICAL_ORDERS_CHANGED");
+                    if (!"OKX".equals(local.get("exchange_code"))
+                            || !Objects.equals(external.exchangeOrderId(), local.get("exchange_order_id"))
+                            || !Objects.equals(external.instrumentId(), local.get("symbol"))
+                            || !external.side().equalsIgnoreCase((String) local.get("side"))
+                            || !external.orderType().equalsIgnoreCase((String) local.get("type"))
+                            || !sameDecimal(external.originalQuantity(), local.get("qty"))
+                            || !sameDecimal(external.filledQuantity(), local.get("filled"))
+                            || ("limit".equals(external.orderType())
+                                && !sameDecimal(external.price(), local.get("price")))) {
+                        return observed("DIVERGED", now, "NQ_CANONICAL_READ_COMPARISON", PRIVATE_TTL);
+                    }
+                }
+            }
             if (localBalances.size() != 2) return unknown(now, "CANONICAL_BALANCE_INCOMPLETE");
             for (Map<String, Object> local : localBalances) {
                 String currency = (String) local.get("currency");
@@ -314,7 +371,9 @@ public final class OkxAccountFactsObservationService {
                 if (external == null || external.value() == null) {
                     return unknown(now, "CANONICAL_BALANCE_SCOPE_MISMATCH");
                 }
-                if (external.value().total().compareTo((BigDecimal) local.get("balance")) != 0) {
+                if (!sameDecimal(external.value().total(), local.get("balance"))
+                        || (modeTwo && (!sameDecimal(external.value().available(), local.get("available"))
+                            || !sameDecimal(external.value().frozen(), local.get("frozen"))))) {
                     return observed("DIVERGED", now, "NQ_CANONICAL_READ_COMPARISON", PRIVATE_TTL);
                 }
             }
@@ -322,6 +381,10 @@ public final class OkxAccountFactsObservationService {
         } catch (RuntimeException ex) {
             return unknown(now, "CANONICAL_COMPARISON_UNAVAILABLE");
         }
+    }
+
+    private static boolean sameDecimal(BigDecimal external, Object local) {
+        return external != null && local instanceof BigDecimal value && external.compareTo(value) == 0;
     }
 
     private void requireKill(KillSwitchSnapshot initial) {
@@ -340,7 +403,7 @@ public final class OkxAccountFactsObservationService {
                 unknown, unknown, OkxAccountFactsObservationService.<List<String>>unknown(at, reason),
                 Map.of("USDT", OkxAccountFactsObservationService.<OkxPrivateBalanceFact>unknown(at, reason),
                         "BTC", OkxAccountFactsObservationService.<OkxPrivateBalanceFact>unknown(at, reason)),
-                OkxAccountFactsObservationService.<String>unknown(at, "ACCOUNT_MODE_NOT_OBSERVED"),
+                OkxAccountFactsObservationService.<List<OkxPrivatePositionFact>>unknown(at, "ACCOUNT_MODE_NOT_OBSERVED"),
                 OkxAccountFactsObservationService.<BigDecimal>unknown(at, reason),
                 OkxAccountFactsObservationService.<Integer>unknown(at, reason),
                 OkxAccountFactsObservationService.<com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateFeeFact>unknown(at, reason),
