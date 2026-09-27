@@ -102,9 +102,11 @@ release只使用`../../scripts/deployment/New-NqCanonicalRelease.ps1`；verify�
 
 账户事实观察若使用服务器现有 TRADE 凭证，只能在上述单一 scoped profile、显式只读功能开关及 LIVE/真实交易 provider 关闭条件下人工触发。先用既有 `permission-probe` 只读 OKX config 并刷新本地脱敏权限元数据；仅 `SUCCEEDED / TRADE / WITHDRAW=false / IP PASSED` 且未过期时，账户事实入口才解密绑定凭证，并再次用固定 GET 核对远端权限。普通 diagnostics profile 仍只接受 READ_ONLY 凭证。canonical prod unit 固定 `{prod}`，不能通过叠加 profile 执行此观察；在服务器启动 scoped runtime 或切换 release 均属于需单独授权的部署动作。
 
-### Legacy current 到 canonical current 的一次性生产步骤（待单独授权）
+当前生产已完成一次性 bootstrap，并于 2026-09-27 通过普通 install/activate 切换到修复后的 canonical release；身份与受控运行结果见[当前证据](evidence/gate-z/OKX_READONLY_RUNTIME_IDENTITY.md)。后续不得重复 bootstrap。当前阻断为 owner 登录来源与 canonical 数据库不匹配；只能使用目标 owner 的有效既有受控凭据，不得重置密码、签发替代 token 或修改 API Key 权限来完成本次资格验证。
 
-以下步骤必须绑定下一次实际交付的 `sourceCommit`、`releaseId`、release manifest SHA-256、EXACT_HEAD_CI admission SHA-256 和合并后 `dev` exact-head CI；这些值从同一个已验收候选及外部 admission 取得，不从旧服务器 SHA 推导。每一步记录命令、时间、脱敏结果和操作者，保留失败事实；不得记录 credential、环境文件或 key 内容。当前工作没有在生产执行这些步骤。
+### Legacy current 到 canonical current 的一次性生产步骤（已完成，保留合同）
+
+一次性执行时必须绑定当时实际交付的 `sourceCommit`、`releaseId`、release manifest SHA-256、EXACT_HEAD_CI admission SHA-256 和合并后 `dev` exact-head CI；这些值从同一个已验收候选及外部 admission 取得，不从旧服务器 SHA 推导。每一步记录命令、时间、脱敏结果和操作者，保留失败事实；不得记录 credential、环境文件或 key 内容。实际已执行范围与结果以上述当前证据为准；未执行的观察步骤不能记为成功。
 
 1. **A / 只读 precheck**：在 `/opt/nexus-quant` 读取 `readlink current`、`readlink -f current`、`stat` 当前链接、目标与 `releases` 目录、release 目录名、`systemctl is-active`，只检查 `activation-journal.json`、`activation-head.json`、`.activation-authority.key` 是否存在。确认服务停止、LIVE 关闭及 kill switch engaged；任何身份、owner、mode 或既有 canonical history 冲突均停止。不要读取 key、`runtime.env` 或 `secrets.env`。
 2. **B–C / 候选及 admission**：从合并后精确 HEAD 的 CI 取得 deployable canonical release 与外部 `EXACT_HEAD_CI` admission，核对 manifest 的 `releaseId`、source commit/tree、artifact digest、requiredSchemaTarget、PostgreSQL major。由受信部署系统将 `<releaseId>.json` 与 `<releaseId>.sha256` 放到 `/etc/nexus-quant/release-admission/`，按 installer 既有 root/0644 信任要求验证；不得复制、改名或伪造旧 SHA release 的 manifest/admission。
