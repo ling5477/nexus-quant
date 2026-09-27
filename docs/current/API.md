@@ -8,7 +8,13 @@
 
 `POST /api/exchange-accounts/{accountId}/credentials/{credentialId}/account-facts/observe` 仅在显式 `okx-private-readonly-diagnostics` 或 `scoped-okx-private-readonly` 单一 profile、只读功能开关及全部环境安全开关满足时注册；两者同时启用时拒绝装配。请求经 `/api/**` 身份认证，服务端将当前用户、OKX LIVE account 与指定 ACTIVE credential reference 精确绑定；kill switch 必须保持 ENGAGED。前者要求近期验证的远端 READ_ONLY 权限；后者仅为使用服务器现有 TRADE 凭证执行固定只读 GET，要求近期验证的 READ 与 TRADE、禁用 WITHDRAW，以及匹配的预期 IP。两种模式都先核对已存脱敏权限元数据，再以 `GET /api/v5/account/config` 确认当前远端权限；元数据过期时需先经既有只读 permission probe 刷新。默认启动、健康检查和前端轮询均不触发此入口。
 
-每次人工调用通过既有 JIT credential 生命周期执行固定 private GET，返回非持久化的脱敏 `AccountFactsSnapshot`：账户模式、已证明的读取权限、币种 total/available/frozen、BTC-USDT SPOT 实际账户费率、全 SPOT 未完成订单计数、适用仓位或 UNKNOWN、公开服务器时间、当前公开 instrument rule 身份，以及与本地 canonical 状态的只读偏差分类。每项保留状态、观察时间、来源及适用时的有效期限；缺失或无法确认的事实保持 UNKNOWN，不推断为零。响应不包含原始 credential、签名或私有响应，不写 Order、Trade、Ledger 或 SIM 账本。该能力尚未在现有服务器 runtime 上执行真实账户观察，不能据此宣称余额、费率或偏差已通过资格验证；LIVE 与交易 mutation 仍关闭。
+每次人工调用通过既有 JIT credential 生命周期执行固定 private GET，返回非持久化的脱敏 `AccountFactsSnapshot`：账户模式、已证明的读取权限、币种 total/available/frozen、BTC-USDT SPOT 实际账户费率、全 SPOT 未完成订单计数、typed 仓位集合、公开服务器时间、当前公开 instrument rule 身份，以及与本地 canonical 状态的只读偏差分类。每项保留状态、观察时间、来源及适用时的有效期限；缺失或无法确认的事实保持 UNKNOWN，不推断为零。响应不包含原始 credential、签名或私有响应，不写 Order、Trade、Ledger 或 SIM 账本。实际服务器观察的接受状态以 [STATUS.md](STATUS.md) 及其引用的当次证据为准；LIVE 与交易 mutation 仍关闭。
+
+`positions` 由 `Fact<String>` 改为 `Fact<List<OkxPrivatePositionFact>>`，JSON 的 `value` 为对象数组；消费方须按 `status` 判断，不能继续按字符串解析。对象字段为 `instrumentType / instrumentId / marginMode / positionSide / positionQuantity / positionCurrency / marginCurrency / providerUpdatedAt`。模式 1 保持 NOT_APPLICABLE，且不发送 positions GET；模式 2 经固定无参 `GET /api/v5/account/positions` 获取完整集合，空集或全部零仓位为 OBSERVED / NO_ACTIVE_POSITION。上限 100 条，超限、畸形、重复或内部矛盾均保持 UNKNOWN，禁止截断；模式 3/4 保持 UNKNOWN / ACCOUNT_MODE_NOT_YET_QUALIFIED。
+
+模式 2 只有全部所需账户、仓位、余额、全账户 LIVE 活跃订单和本地 canonical 快照完整且未过期时才分类。非零 MARGIN / SWAP / FUTURES / OPTION / EVENTS 仓位为 DIVERGED / EXTERNAL_NON_SPOT_POSITION_PRESENT；这些数量不加入独立的 `spotBtcExposure`。无非零仓位时依次比较非 BTC/USDT 资产、订单身份与数量/价格、BTC/USDT total/available/frozen；本地余额按最新发布的 `snapshot_id` 选择，SIM 订单不参与。完整相等才为 MATCH，任何缺失为 UNKNOWN；JDBC 比较后再次检查 freshness 与 kill identity。
+
+当前公开规则仅在人工 observation 中通过无凭证固定 `GET /api/v5/public/instruments?instType=SPOT&instId=BTC-USDT` 读取，不在启动期间请求，也不写 instrument catalog。沿用 canonical parser、rule contract 和 checksum，返回 `OKX:BTC-USDT:<sha256>`、source=`OKX_PUBLIC_INSTRUMENTS`、reason=`CURRENTLY_OBSERVED_PUBLIC_RULE` 及 24h 有效期。该身份不代表历史回放窗口的规则；失败、过期或不完整不回退到旧规则。所有外联保持固定 host、超时、响应大小和单并发边界，无自动重试。
 
 ## 手动公开行情冻结入口
 

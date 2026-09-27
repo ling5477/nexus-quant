@@ -18,7 +18,7 @@ GateZ-1 必须用实际冻结的策略定义和参数执行回测与 SIM；固�
 
 隔离 SIM 验收须覆盖同版身份、费用一次性入账、重复触发幂等、资金竞争并发、stop、过期数据与恢复，并用 canonical Order / Trade / Position / Cash / Ledger 事实追溯 PnL。研究侧 Paper 页面可读取或关联这些事实，但不得另造第二套 Paper Order、Trade、Position 或 Ledger authority。既有历史记录须保持可读。可复用现有页面与接口，只补闭环所需入口及可解释结果。
 
-GateZ-1 以隔离 PostgreSQL 和合成 bars 验证算法及 canonical SIM 事实；这些结果不称为交易所历史实测。后续公开历史 bars 的非生产业务 smoke 已单独完成；真实余额、真实账户费率与历史时点交易所规则仍为 UNKNOWN，未知输入不默认为零成本或已合规。设计依据为 [NQ V1 能力盘点](evidence/NQ-V1-CURRENT-CAPABILITY-ASSESSMENT-AND-NEXT-TASK.md)，该报告是 `76caf387` 的分析快照，不是 machine authority。
+GateZ-1 以隔离 PostgreSQL 和合成 bars 验证算法及 canonical SIM 事实；这些结果不称为交易所历史实测。后续公开历史 bars 的非生产业务 smoke 已单独完成；该历史 SIM 证明不提供真实账户余额、费率或历史时点交易所规则，未知输入不默认为零成本或已合规；后续账户只读资格见下节。设计依据为 [NQ V1 能力盘点](evidence/NQ-V1-CURRENT-CAPABILITY-ASSESSMENT-AND-NEXT-TASK.md)，该报告是 `76caf387` 的分析快照，不是 machine authority。
 
 ## 已接受切片：公开市场数据可重放 smoke
 
@@ -30,7 +30,7 @@ GateZ-1 以隔离 PostgreSQL 和合成 bars 验证算法及 canonical SIM 事实
 
 实现复用既有 dataset 绑定和冻结 consumed bars，并新增 forward-only V53–V54，以不同字段保存**公开响应实际观察时间**与**历史回放可见时间假设及其来源**；未覆盖原始观察时间、重解释旧记录或改写已执行 migration。公开 instrument rules 是本次观察事实，并非历史窗口当时的规则；费用与滑点是显式非零冻结假设，并非真实账户费率。Python research 无运行时职责。
 
-隔离 PostgreSQL 17.7 已迁移并 validate 至 V54；真实公开响应窗口为 2026-09-20T00:00:00Z–2026-09-23T00:00:00Z。两次 Backtest 与两次至首笔 canonical fill 的 SIM smoke 使用相同冻结 dataset、`StrategyVersion` 和成本身份；每次 1 Order、1 Trade、6 Ledger entries，现金与 PnL 的差异由 canonical 账本舍入及估值时点解释。数据质量、身份、规则、预算、stop、重启恢复和 SIM/LIVE 隔离负例通过，独立只读审查 P0/P1=`0/0`。剩余 P2：尚未证明全部 72 根的 SIM 决策稳定；真实账户费率、历史时点真实规则和真实余额仍为 UNKNOWN。公开响应与回放证据见 [TESTING.md](TESTING.md) 的 2026-09-25 候选记录；该历史记录原位保留。
+隔离 PostgreSQL 17.7 已迁移并 validate 至 V54；真实公开响应窗口为 2026-09-20T00:00:00Z–2026-09-23T00:00:00Z。两次 Backtest 与两次至首笔 canonical fill 的 SIM smoke 使用相同冻结 dataset、`StrategyVersion` 和成本身份；每次 1 Order、1 Trade、6 Ledger entries，现金与 PnL 的差异由 canonical 账本舍入及估值时点解释。数据质量、身份、规则、预算、stop、重启恢复和 SIM/LIVE 隔离负例通过，独立只读审查 P0/P1=`0/0`。剩余 P2：尚未证明全部 72 根的 SIM 决策稳定；该历史 smoke 不提供真实账户费率、历史时点真实规则或真实余额；后续当前账户只读观察不追溯改变历史输入。公开响应与回放证据见 [TESTING.md](TESTING.md) 的 2026-09-25 候选记录；该历史记录原位保留。
 
 本切片不读取私有 API、真实余额或账户费率，不触发真实 PLACE/CANCEL、LIVE、生产数据库或部署，不建立第二套 Paper 事实源、第二策略、Factor Library、portfolio/scheduling、worker 或通用研究平台。回滚边界为本切片新增的公开数据/回放能力及其独立非生产证据；已执行 migration 不回退，GateZ-1 已接受技术身份保持不变。
 
@@ -38,9 +38,9 @@ GateZ-1 以隔离 PostgreSQL 和合成 bars 验证算法及 canonical SIM 事实
 
 ## 当前切片：OKX 账户事实只读观察
 
-任务 ID：`NQ-GATEZ-OKX-ACCOUNT-FACTS-READONLY-QUALIFICATION-IMPLEMENTATION`。实现已通过 PR #30 合并，technical merge/exact-head CI=`5a8cfb7e10b192efea1b804d9e6b6c0e1a637bd3 / 36158986349 / 9 of 9 SUCCESS`；独立 SECURITY + CORRECTNESS 审查 P0/P1/P2=`0/0/0`。实现复用 Java Control Plane 的 OKX private GET transport、JIT credential executor、权限/IP 观察和当前公开 instrument rule，增加显式人工调用的非持久化 `AccountFactsSnapshot`。固定 GET 覆盖账户配置、全币种余额、BTC-USDT SPOT 私有账户费率和全 SPOT 未完成订单；公开 GET 读取服务器时间。对本地 canonical 订单与余额只读比较，未知、过期或不适用事实按各自状态保留。默认启动不读取 credential 或发出 private 请求；不新增 Order、Trade、Ledger 写入或 migration。
+基础实现任务 ID：`NQ-GATEZ-OKX-ACCOUNT-FACTS-READONLY-QUALIFICATION-IMPLEMENTATION`，已通过 PR #30 合并，technical merge/exact-head CI=`5a8cfb7e10b192efea1b804d9e6b6c0e1a637bd3 / 36158986349 / 9 of 9 SUCCESS`；独立 SECURITY + CORRECTNESS 审查 P0/P1/P2=`0/0/0`。后续 coverage unblock 已通过 PR #40 合并，technical merge/exact-head CI=`e9df23f079f0aaec1eff5b38269f4b18c7e9dae3 / 36295009039 / 9 of 9 SUCCESS`。实现复用 Java Control Plane 的 OKX private GET transport、JIT credential executor、权限/IP 观察，提供显式人工调用的非持久化 `AccountFactsSnapshot`。固定 GET 覆盖账户配置、全币种余额、BTC-USDT SPOT 私有账户费率、全 SPOT 未完成订单，以及模式 2 的完整 typed positions；公开 GET 读取服务器时间及当前 BTC-USDT SPOT instrument rule，不写 catalog。模式 1 不读取 positions，模式 3/4 保持未资格化；模式 2 的非零非现货仓位可得到完整 DIVERGED，不能与 BTC 现货数量相加。本地 canonical 最新余额、全账户 LIVE 活跃订单与外部事实只有完整且未过期才比较；返回前复查 kill identity。默认启动不读取 credential 或发出 private/public rule 请求；不新增 Order、Trade、Ledger 写入或 migration。字段兼容性及 freshness 详见 [API.md](API.md)。
 
-当前结论=`CANONICAL_OWNER_CREDENTIAL_PROVISIONED / CANONICAL_OWNER_AUTHENTICATED / OKX_PERMISSION_PROBE_PASS / NO_TRADING_MUTATION / QUALIFICATION_BLOCKED_PARTIAL_ACCOUNT_FACTS`。现有用户窄密码轮换由 PR #38 合并，technical merge/exact-head CI=`ba43b961c3f5a2ec3579f239f4fdc8c8bcf762c3 / 36289608733 / 9 of 9 SUCCESS`，独立认证审查通过。2026-09-27 已通过正式维护入口仅更新 canonical user 2 的 password_hash/updated_at，角色、启用状态和 owner 链不变；新受控登录来源已保留，正常登录及 `/api/auth/me` owner 绑定通过。permission probe=`SUCCEEDED / TRADE / WITHDRAW=false / IP PASSED`，一次账户事实观察取得余额、现货挂单、费率及交易所时间；实际账户模式 2 的仓位与偏差仍 UNKNOWN，public instrument rule 身份缺失，总体为 `UNKNOWN / PARTIAL_ACCOUNT_FACTS`。采集脚本误写主机预期导致的失败原样保留；部署制品固定 openapi.okx.com 与实际 8 次 GET 已事后核对，交易事实内容未变。runtime 已停止，LIVE=DISABLED，kill=ENGAGED；不声明 `REAL_ACCOUNT_READONLY_FACTS_QUALIFIED`。详情见[owner 凭据恢复与只读观察](evidence/gate-z/OWNER_CREDENTIAL_READONLY_OBSERVATION.md)。
+2026-09-27 的新只读资格验证已通过：`REAL_ACCOUNT_READONLY_FACTS_QUALIFIED`。coverage unblock 技术 PR #40 的合并提交/精确 HEAD CI 为 `e9df23f079f0aaec1eff5b38269f4b18c7e9dae3 / 36295009039 / 9 of 9 SUCCESS`；canonical release=`nq-e9df23f079f0-5a401cd983263e6d` 已普通 install/activate，PG16/V54 validate 通过，migration 执行数为 0。复用现有 owner 登录来源，密码、角色和 owner 链未变；permission probe 为 `SUCCEEDED / TRADE / WITHDRAW=false / IP PASSED`。新 snapshot 的模式 2、BTC/USDT 与全部返回余额、positions、挂单、费率、交易所时间、当前公开规则和偏差均为 OBSERVED；positions=`NO_ACTIVE_POSITION / 0`，open orders=`0`，divergence=`DIVERGED`，完整分类不要求 MATCH。观察时间为 `2026-09-27T05:38:23.820031102Z`；私有事实 60s、公开规则 24h，验收时全部新鲜，历史快照不能作为后续实时输入。成功轮 10 次固定 GET、其他 endpoint 0、交易 mutation 0，五类 canonical 交易事实数量及内容不变。runtime 已停止，Java/MainPID=0，LIVE=DISABLED，kill=ENGAGED。首轮采集器阶段计数错误导致的失败原位保留，修正后以独立 run 身份重新验证；不追认旧失败为成功。详情见[模式 2 与公开规则只读资格证据](evidence/gate-z/OKX_ACCOUNT_FACTS_READONLY_COVERAGE.md)。
 
 ## 不变边界
 
