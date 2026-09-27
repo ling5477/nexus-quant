@@ -81,6 +81,12 @@ class B4TradeEventPostgresTest {
         try(var pg=B0Processes.Pg.start();var f=new Fixture(pg,"LIVE")) {
             // 历史 source-only API + canonical Ledger 形成分离事务状态；进程版另用真实旧 producer 窗口证明。
             f.trades.insert(f.trade);assertTrue(f.ledger.postTrade(f.request()).posted());
+            assertEquals(0, f.jdbc.queryForObject("""
+                    SELECT count(*) FROM account_snapshots
+                    WHERE trade_env<>'LIVE' OR balance_scope<>'NQ_MANAGED_ACCOUNT'
+                       OR balance_basis NOT IN ('POSITION_PROJECTION','LEDGER_CASH_PROJECTION')
+                       OR recorded_at IS NULL
+                    """, Integer.class));
             String ledger=f.ledgerSnapshot();assertEquals(0,f.events());
             f.reject("event_store");assertThrows(RuntimeException.class,()->f.trades.ensureRequiredEvent(f.trade.tradeId()));
             assertEquals(ledger,f.ledgerSnapshot());assertEquals(0,f.events());
@@ -95,6 +101,12 @@ class B4TradeEventPostgresTest {
             assertEquals(0,f.count("positions"));assertEquals(event,f.eventSnapshot());
             f.allow("ledger_entries");f.trades.ensureRequiredEvent(f.trade.tradeId());
             assertTrue(f.ledger.postTrade(f.request()).posted());assertEquals(4,f.count("ledger_entries"));
+            assertEquals(0, f.jdbc.queryForObject("""
+                    SELECT count(*) FROM account_snapshots
+                    WHERE trade_env<>'SIM' OR balance_scope<>'NQ_MANAGED_ACCOUNT'
+                       OR balance_basis NOT IN ('POSITION_PROJECTION','LEDGER_CASH_PROJECTION')
+                       OR recorded_at IS NULL
+                    """, Integer.class));
             String ledger=f.ledgerSnapshot();assertTrue(f.ledger.postTrade(f.request()).idempotentHit());
             assertEquals(ledger,f.ledgerSnapshot());assertEquals(event,f.eventSnapshot());
             System.out.println("B4_PG_PASS event_ledger_independent_recovery");
@@ -145,7 +157,7 @@ class B4TradeEventPostgresTest {
         int events(){return jdbc.queryForObject("SELECT count(*) FROM event_store WHERE event_type='TradeExecuted'",Integer.class);}
         String eventSnapshot(){return jdbc.queryForObject("SELECT coalesce(jsonb_agg(to_jsonb(e) ORDER BY event_id)::text,'[]') FROM event_store e WHERE event_type='TradeExecuted'",String.class);}
         String ledgerSnapshot(){return jdbc.queryForObject("SELECT jsonb_build_object('entries',(SELECT jsonb_agg(to_jsonb(e) ORDER BY entry_id) FROM ledger_entries e),'events',(SELECT jsonb_agg(to_jsonb(e) ORDER BY ledger_event_id) FROM ledger_events e),'positions',(SELECT jsonb_agg(to_jsonb(p)) FROM positions p),'snapshots',(SELECT jsonb_agg(to_jsonb(s) ORDER BY snapshot_id) FROM account_snapshots s))::text",String.class);}
-        TradeLedgerRequest request(){return new TradeLedgerRequest(trade.tradeId(),trade.orderId(),trade.accountId(),trade.symbol(),OrderSide.BUY,trade.price(),trade.qty(),trade.fee(),trade.feeCurrency(),trade.traceId(),trade.ts());}
+        TradeLedgerRequest request(){return new TradeLedgerRequest(trade.tradeId(),trade.orderId(),trade.accountId(),trade.symbol(),OrderSide.BUY,trade.price(),trade.qty(),trade.fee(),trade.feeCurrency(),trade.traceId(),trade.ts(),jdbc.queryForObject("SELECT trade_env FROM orders WHERE order_id=?",String.class,trade.orderId()));}
         void legacyEvent(BigDecimal qty){
             var payload=new TradeExecuted(trade.tradeId(),trade.orderId(),"b4-client",trade.accountId(),trade.symbol(),"OKX",trade.exchange(),trade.externalOrderId(),trade.exchangeTradeId(),trade.price(),qty,trade.fee(),trade.feeCurrency(),trade.ts());
             app.getBean(EventStoreAppender.class).append(TopicNames.TRADE_EVENT_V1,new EventEnvelope<>("b4-legacy-event","TradeExecuted",1,trade.ts(),"nq-scheduler.okx-rest-reconcile",trade.traceId(),"b4-client",payload));

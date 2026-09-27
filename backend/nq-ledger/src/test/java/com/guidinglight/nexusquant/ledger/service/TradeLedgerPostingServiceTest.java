@@ -1,10 +1,12 @@
 package com.guidinglight.nexusquant.ledger.service;
 
 import com.guidinglight.nexusquant.ledger.application.service.TradeLedgerPostingService;
+import com.guidinglight.nexusquant.ledger.application.service.SimCashFundingService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -64,6 +66,8 @@ class TradeLedgerPostingServiceTest {
         assertEquals(2, postingRepository.ledgerEventCount());
         assertEquals(new BigDecimal("0.01000000"), postingRepository.positionQty("BTC-USDT"));
         assertEquals(2, postingRepository.accountSnapshotCount());
+        assertEquals("SIM", postingRepository.accountSnapshots.get("BTC").tradeEnv());
+        assertEquals("SIM", postingRepository.accountSnapshots.get("USDT").tradeEnv());
         assertEquals(new BigDecimal("0.01000000"), postingRepository.accountSnapshotBalance("BTC"));
         assertEquals(new BigDecimal("0.01000000"), postingRepository.accountSnapshotAvailable("BTC"));
         assertEquals(NumericPolicy.normalize(NumericType.QTY, BigDecimal.ZERO), postingRepository.accountSnapshotFrozen("BTC"));
@@ -104,6 +108,30 @@ class TradeLedgerPostingServiceTest {
         assertEquals(2, eventStoreJdbcTemplate.updateCount());
     }
 
+    @Test
+    void simFundingPublishesExplicitCashProjection() {
+        InMemoryLedgerPostingRepository repository = new InMemoryLedgerPostingRepository();
+        new SimCashFundingService(repository).fundOnce(1001L, "paper-run-1", BigDecimal.TEN, "synthetic");
+        AccountSnapshotProjection snapshot = repository.accountSnapshots.get("USDT");
+        assertEquals("SIM", snapshot.tradeEnv());
+        assertEquals(com.guidinglight.nexusquant.ledger.contracts.model.AccountBalanceBasis.LEDGER_CASH_PROJECTION,
+                snapshot.balanceBasis());
+    }
+
+    @Test
+    void absentTradeEnvironmentRejectsBeforePosting() {
+        InMemoryLedgerPostingRepository repository = new InMemoryLedgerPostingRepository();
+        TradeLedgerPostingService service = new TradeLedgerPostingService(repository,
+                new RecordingLedgerRiskAuditRepository(), new RecordingEventPublisherPort(new RecordingJdbcTemplate()),
+                objectMapper());
+        TradeLedgerRequest valid = baseRequest("trd-unknown", BigDecimal.ZERO);
+        TradeLedgerRequest unknown = new TradeLedgerRequest(valid.tradeId(), valid.orderId(), valid.accountId(),
+                valid.symbol(), valid.side(), valid.price(), valid.qty(), valid.fee(), valid.feeCurrency(),
+                valid.traceId(), valid.ts(), null);
+        assertThrows(IllegalArgumentException.class, () -> service.postTrade(unknown));
+        assertEquals(0, repository.entryCount());
+    }
+
     private TradeLedgerRequest baseRequest(String tradeId, BigDecimal fee) {
         return new TradeLedgerRequest(
                 tradeId,
@@ -116,7 +144,8 @@ class TradeLedgerPostingServiceTest {
                 fee,
                 "USDT",
                 "trc-" + tradeId,
-                Instant.parse("2026-02-25T12:00:00Z")
+                Instant.parse("2026-02-25T12:00:00Z"),
+                "SIM"
         );
     }
 
@@ -130,6 +159,9 @@ class TradeLedgerPostingServiceTest {
 
         @Override
         public void lockSnapshotCurrencies(Long accountId, List<String> currencies) { }
+
+        @Override
+        public void assertAccountEnvironment(Long accountId, String tradeEnv) { }
 
         @Override
         public void lockPosition(Long accountId, String symbol, String traceId) { }
@@ -151,7 +183,7 @@ class TradeLedgerPostingServiceTest {
         }
 
         @Override
-        public BigDecimal currentBalance(Long accountId, String currency) {
+        public BigDecimal currentBalance(Long accountId, String currency, String tradeEnv) {
             return entriesByIdempotencyKey.values().stream()
                     .filter(entry -> entry.accountId().equals(accountId) && entry.currency().equals(currency))
                     .map(LedgerPostingEntry::delta)

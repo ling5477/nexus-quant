@@ -29,80 +29,55 @@ public class JdbcLedgerReconcileRepository implements LedgerReconcileRepository 
     public List<LedgerReconcileDiff> findDiffs() {
         return jdbcTemplate.query(
                 """
-                        SELECT
-                            lb.account_id AS account_id,
-                            lb.currency AS currency,
-                            lb.ledger_balance AS ledger_balance,
-                            lb.snapshot_balance AS snapshot_balance,
-                            lb.ledger_balance - lb.snapshot_balance AS diff_amount,
-                            CASE
-                                WHEN lb.snapshot_exists = 0 THEN 'SNAPSHOT_MISSING'
-                                ELSE 'BALANCE_MISMATCH'
-                            END AS reason
-                        FROM (
-                            SELECT
-                                le.account_id,
-                                le.currency,
-                                COALESCE(SUM(le.delta), 0) AS ledger_balance,
-                                COALESCE((
-                                    SELECT s.balance
-                                    FROM account_snapshots s
-                                    WHERE s.account_id = le.account_id
-                                      AND s.currency = le.currency
-                                    ORDER BY s.snapshot_id DESC
-                                    LIMIT 1
-                                ), 0) AS snapshot_balance,
-                                CASE
-                                    WHEN EXISTS (
-                                        SELECT 1
-                                        FROM account_snapshots sx
-                                        WHERE sx.account_id = le.account_id
-                                          AND sx.currency = le.currency
-                                    ) THEN 1
-                                    ELSE 0
-                                END AS snapshot_exists
-                            FROM ledger_entries le
-                            GROUP BY le.account_id, le.currency
-                        ) lb
-                        WHERE lb.snapshot_exists = 0
-                           OR lb.ledger_balance <> lb.snapshot_balance
+                        WITH latest_typed AS (
+                            SELECT DISTINCT ON (account_id, currency, trade_env)
+                                   account_id, currency, trade_env, balance_basis, balance
+                            FROM account_snapshots
+                            WHERE trade_env IS NOT NULL
+                            ORDER BY account_id, currency, trade_env, snapshot_id DESC
+                        ), checked AS (
+                            SELECT s.account_id, s.currency, s.trade_env, s.balance_basis,
+                                   s.balance AS snapshot_balance,
+                                   CASE WHEN s.balance_basis='POSITION_PROJECTION' THEN
+                                       (SELECT COALESCE(SUM(p.qty), 0) FROM positions p
+                                        WHERE p.account_id=s.account_id
+                                          AND split_part(replace(p.symbol, '/', '-'), '-', 1)=s.currency)
+                                   ELSE
+                                       (SELECT COALESCE(SUM(CASE
+                                           WHEN e.ref_type='SIM_FUNDING_CASH' AND s.trade_env='SIM' THEN e.delta
+                                           WHEN e.ref_type='TRADE' AND EXISTS (
+                                               SELECT 1 FROM trades t
+                                               WHERE t.trade_id=e.ref_id AND t.trade_env=s.trade_env)
+                                           THEN CASE WHEN s.trade_env='SIM' THEN
+                                               CASE WHEN right(e.idempotency_key, 9)=':LEDGER:1'
+                                                         OR right(e.idempotency_key, 13)=':LEDGER:FEE_1'
+                                                    THEN e.delta ELSE 0 END
+                                               ELSE e.delta END
+                                           ELSE 0 END), 0)
+                                        FROM ledger_entries e
+                                        WHERE e.account_id=s.account_id AND e.currency=s.currency)
+                                   END AS ledger_balance
+                            FROM latest_typed s
+                        )
+                        SELECT c.account_id, c.currency, c.ledger_balance, c.snapshot_balance,
+                               c.ledger_balance-c.snapshot_balance AS diff_amount,
+                               'BALANCE_MISMATCH_' || c.trade_env || '_' || c.balance_basis AS reason
+                        FROM checked c WHERE c.ledger_balance<>c.snapshot_balance
                         UNION ALL
-                        SELECT
-                            s.account_id AS account_id,
-                            s.currency AS currency,
-                            0 AS ledger_balance,
-                            s.balance AS snapshot_balance,
-                            0 - s.balance AS diff_amount,
-                            'LEDGER_MISSING' AS reason
+                        SELECT s.account_id, s.currency, NULL::numeric, NULL::numeric, NULL::numeric,
+                               'SNAPSHOT_PROVENANCE_UNKNOWN' AS reason
                         FROM account_snapshots s
-                        WHERE s.snapshot_id = (
-                                SELECT s2.snapshot_id
-                                FROM account_snapshots s2
-                                WHERE s2.account_id = s.account_id
-                                  AND s2.currency = s.currency
-                                ORDER BY s2.snapshot_id DESC
-                                LIMIT 1
-                        )
-                          AND NOT EXISTS (
-                                SELECT 1
-                                FROM ledger_entries le2
-                                WHERE le2.account_id = s.account_id
-                                  AND le2.currency = s.currency
-                        )
-                          AND NOT EXISTS (
-                                SELECT 1
-                                FROM (
-                                    SELECT
-                                        p.account_id,
-                                        split_part(p.symbol, '-', 1) AS currency,
-                                        COALESCE(SUM(p.qty), 0) AS position_qty
-                                    FROM positions p
-                                    GROUP BY p.account_id, split_part(p.symbol, '-', 1)
-                                ) pb
-                                WHERE pb.account_id = s.account_id
-                                  AND pb.currency = s.currency
-                                  AND pb.position_qty = s.balance
-                        )
+                        WHERE s.trade_env IS NULL
+                          AND s.snapshot_id=(SELECT MAX(x.snapshot_id) FROM account_snapshots x
+                                             WHERE x.account_id=s.account_id AND x.currency=s.currency
+                                               AND x.trade_env IS NULL)
+                        UNION ALL
+                        SELECT le.account_id, le.currency, SUM(le.delta), 0::numeric, SUM(le.delta),
+                               'SNAPSHOT_MISSING' AS reason
+                        FROM ledger_entries le
+                        WHERE NOT EXISTS (SELECT 1 FROM account_snapshots s
+                                          WHERE s.account_id=le.account_id AND s.currency=le.currency)
+                        GROUP BY le.account_id, le.currency
                         ORDER BY account_id, currency
                         """,
                 DIFF_ROW_MAPPER
@@ -120,4 +95,3 @@ public class JdbcLedgerReconcileRepository implements LedgerReconcileRepository 
         );
     }
 }
-

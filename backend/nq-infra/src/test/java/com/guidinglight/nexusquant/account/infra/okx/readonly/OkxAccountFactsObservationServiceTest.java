@@ -128,7 +128,7 @@ class OkxAccountFactsObservationServiceTest {
     }
 
     @Test
-    void matchingCanonicalSnapshotAndNoExternalOrderClassifiesMatch() {
+    void matchingNumbersDoNotQualifyManagedProjectionAsVenueBalance() {
         legacyAccountId = 42L;
         executor.includeBtc = true;
         executor.unlockedUsdt = true;
@@ -136,11 +136,11 @@ class OkxAccountFactsObservationServiceTest {
         currentRule();
         when(transport.readServerTime()).thenReturn(NOW);
         stubCanonical(List.of(), canonicalBalances());
-        assertEquals("MATCH", service().observe(7, 8, 9).divergence().value());
+        assertEquals("NOT_COMPARABLE", service().observe(7, 8, 9).divergence().value());
     }
 
     @Test
-    void unmatchedExternalOpenOrderClassifiesDivergedWithoutImportingIt() {
+    void unmatchedExternalOpenOrderRemainsVisibleWithoutImportingIt() {
         legacyAccountId = 42L;
         executor.includeBtc = true;
         executor.externalOpenOrder = true;
@@ -149,7 +149,7 @@ class OkxAccountFactsObservationServiceTest {
         when(transport.readServerTime()).thenReturn(NOW);
         stubCanonical(List.of(), canonicalBalances());
         AccountFactsSnapshot snapshot = service().observe(7, 8, 9);
-        assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.divergence().status());
+        assertEquals("DIVERGED", snapshot.divergence().value());
         assertTrue(snapshot.divergenceReport().items().stream().anyMatch(item ->
                 item.classification() == AccountDivergenceReport.Classification.EXTERNAL_OPEN_ORDER_ONLY));
         assertEquals(1, snapshot.openOrderCount().value());
@@ -218,14 +218,14 @@ class OkxAccountFactsObservationServiceTest {
     }
 
     @Test
-    void modeTwoEmptySnapshotContinuesExactComparisonAndObservesAllFacts() {
+    void modeTwoEmptyPositionSnapshotObservesFactsWithoutBalanceEquivalence() {
         modeTwoMatching();
         var snapshot = service().observe(7, 8, 9);
         assertEquals(AccountFactsSnapshot.Status.OBSERVED, snapshot.positions().status());
         assertEquals(List.of(), snapshot.positions().value());
         assertEquals("NO_ACTIVE_POSITION", snapshot.positions().reason());
-        assertEquals("MATCH", snapshot.divergence().value());
-        assertEquals(AccountFactsSnapshot.Status.OBSERVED, snapshot.status());
+        assertEquals("NOT_COMPARABLE", snapshot.divergence().value());
+        assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.status());
         assertEquals(BigDecimal.ZERO, snapshot.spotBtcExposure().value());
         assertEquals(1, executor.operations.stream()
                 .filter(op -> op == OkxPrivateReadOperation.OKX_ACCOUNT_POSITIONS_READ).count());
@@ -239,18 +239,19 @@ class OkxAccountFactsObservationServiceTest {
         var snapshot = service().observe(7, 8, 9);
         assertEquals(AccountFactsSnapshot.Status.OBSERVED, snapshot.positions().status());
         assertEquals("DIVERGED", snapshot.divergence().value());
-        assertEquals("EXTERNAL_NON_SPOT_POSITION_PRESENT", snapshot.divergence().reason());
+        assertTrue(snapshot.divergenceReport().items().stream().anyMatch(item ->
+                item.classification() == AccountDivergenceReport.Classification.EXTERNAL_NON_SPOT_POSITION_PRESENT));
         assertEquals(BigDecimal.ZERO, snapshot.spotBtcExposure().value());
-        assertEquals(AccountFactsSnapshot.Status.OBSERVED, snapshot.status());
+        assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.status());
     }
 
     @Test
-    void modeTwoZeroPositionIsObservedWithoutFalseDivergence() {
+    void modeTwoZeroPositionDoesNotCreateFalseDivergence() {
         modeTwoMatching();
         executor.positions = List.of(position("SWAP", "0"));
         var snapshot = service().observe(7, 8, 9);
         assertEquals("NO_ACTIVE_POSITION", snapshot.positions().reason());
-        assertEquals("MATCH", snapshot.divergence().value());
+        assertEquals("NOT_COMPARABLE", snapshot.divergence().value());
     }
 
     @Test
@@ -279,8 +280,9 @@ class OkxAccountFactsObservationServiceTest {
         executor.positions = List.of(position("SWAP", "1"));
         assertEquals(AccountFactsSnapshot.Status.UNKNOWN, service().observe(7, 8, 9).divergence().status());
         executor.includeBtc = true;
-        when(jdbc.queryForList(anyString(), eq(42L))).thenReturn(List.of());
-        assertEquals("CANONICAL_BALANCE_MISSING", service().observe(7, 8, 9).divergence().reason());
+        when(jdbc.query(anyString(), org.mockito.ArgumentMatchers.<org.springframework.jdbc.core.RowMapper<JdbcAccountSnapshotReader.Snapshot>>any(),
+                eq(42L), eq("LIVE"))).thenReturn(List.of());
+        assertEquals("LIVE_SNAPSHOT_MISSING", service().observe(7, 8, 9).divergence().reason());
     }
 
     @Test
@@ -330,6 +332,12 @@ class OkxAccountFactsObservationServiceTest {
         });
         when(jdbc.queryForObject(anyString(), eq(Boolean.class), eq(42L), eq(42L)))
                 .thenReturn(false);
+        when(jdbc.queryForObject(anyString(), eq(Boolean.class), eq(42L))).thenReturn(false);
+        when(jdbc.query(anyString(), org.mockito.ArgumentMatchers.<org.springframework.jdbc.core.RowMapper<JdbcAccountSnapshotReader.Snapshot>>any(),
+                eq(42L), eq("LIVE"))).thenReturn(balances.stream().map(row -> new JdbcAccountSnapshotReader.Snapshot(
+                (Long) row.get("snapshot_id"), (String) row.get("currency"), (BigDecimal) row.get("balance"),
+                (BigDecimal) row.get("available"), (BigDecimal) row.get("frozen"), NOW, NOW,
+                "LIVE", "LEDGER_CASH_PROJECTION", "NQ_MANAGED_ACCOUNT")).toList());
     }
 
     private static List<Map<String, Object>> canonicalBalances() {

@@ -17,6 +17,9 @@ public interface LedgerPostingRepository {
     /** 在读取投影前锁住本次发布涉及的账户币种，锁必须保持到整个记账事务结束。 */
     void lockSnapshotCurrencies(Long accountId, List<String> currencies);
 
+    /** 账户历史环境无法证明或已有另一环境事实时拒绝生成带环境标签的新投影。 */
+    void assertAccountEnvironment(Long accountId, String tradeEnv);
+
     /** 原子初始化并锁定账户品种行，首次并发成交也不能绕过互斥。 */
     void lockPosition(Long accountId, String symbol, String traceId);
 
@@ -25,7 +28,7 @@ public interface LedgerPostingRepository {
 
     boolean existsByIdempotencyKey(String idempotencyKey);
 
-    BigDecimal currentBalance(Long accountId, String currency);
+    BigDecimal currentBalance(Long accountId, String currency, String tradeEnv);
 
     void insertEntry(LedgerPostingEntry entry);
 

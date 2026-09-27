@@ -40,7 +40,7 @@ class PublicMarketReplayPostgresIntegrationTest {
                 .locations("classpath:db/migration").cleanDisabled(true).load();
         flyway.migrate();
         flyway.validate();
-        assertEquals("54", flyway.info().current().getVersion().getVersion());
+        assertEquals("55", flyway.info().current().getVersion().getVersion());
         DriverManagerDataSource dataSource = new DriverManagerDataSource(url, "postgres", "");
         JdbcTemplate jdbc = new JdbcTemplate(dataSource);
         ObjectMapper mapper = new ObjectMapper();

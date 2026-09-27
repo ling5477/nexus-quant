@@ -481,7 +481,7 @@ public class MinimalLivePilotConfiguration {
             var posted = ledger.postTrade(new TradeLedgerRequest(
                     trade.tradeId(), trade.orderId(), trade.accountId(), trade.symbol(),
                     OrderSide.valueOf(order.side()),
-                    trade.price(), trade.qty(), trade.fee(), trade.feeCurrency(), traceId, trade.ts()));
+                    trade.price(), trade.qty(), trade.fee(), trade.feeCurrency(), traceId, trade.ts(), order.tradeEnv()));
             if (!posted.posted() && !posted.idempotentHit()) {
                 throw new IllegalStateException("REAL_ORDER_RECONCILIATION_DIVERGENCE");
             }

@@ -23,6 +23,7 @@ public record TradeLedgerRequest(
         BigDecimal fee,
         String feeCurrency,
         String traceId,
-        Instant ts
+        Instant ts,
+        String tradeEnv
 ) {
 }

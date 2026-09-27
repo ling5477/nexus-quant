@@ -38,8 +38,12 @@ public class JdbcLedgerPostingRepository implements LedgerPostingRepository {
                 || !"read committed".equals(jdbcTemplate.queryForObject("SHOW transaction_isolation", String.class))) {
             throw new IllegalStateException("PROJECTION_REQUIRES_READ_COMMITTED_TRANSACTION");
         }
-        // 币种快照没有常驻 head 行；事务级 advisory lock 同样覆盖首条快照，进程死亡自动释放。
-        // 按实际锁键排序避免多币种死锁；哈希碰撞只会增加等待，不会漏锁。最多 base/quote/fee 三种。
+        // 账户环境是跨币种不变量；先取账户锁，避免两个环境在不同币种并发首次写入时都通过检查。
+        Long accountKey = jdbcTemplate.queryForObject("SELECT hashtextextended(?, 0)", Long.class,
+                "nq:account-environment:" + accountId);
+        jdbcTemplate.queryForObject("SELECT pg_advisory_xact_lock(?)", Object.class, accountKey);
+        // 币种快照没有常驻 head 行；事务级锁覆盖首条快照，进程死亡自动释放。
+        // 按锁键排序避免多币种死锁；哈希碰撞只会增加等待，不会漏锁。最多 base/quote/fee 三种。
         if (currencies.isEmpty() || currencies.size() > 3) {
             throw new IllegalArgumentException("projection currency lock budget exceeded");
         }
@@ -48,6 +52,41 @@ public class JdbcLedgerPostingRepository implements LedgerPostingRepository {
                 "nq:account-snapshot:" + accountId + ":" + currency)).distinct().sorted().toList();
         for (Long key : keys) {
             jdbcTemplate.queryForObject("SELECT pg_advisory_xact_lock(?)", Object.class, key);
+        }
+    }
+
+    @Override
+    public void assertAccountEnvironment(Long accountId, String tradeEnv) {
+        if (!"SIM".equals(tradeEnv) && !"LIVE".equals(tradeEnv)) {
+            throw new IllegalArgumentException("trade environment must be explicit");
+        }
+        // 旧快照和不同环境的仓位可能共用同一账户；无法拆分时不得发布伪精确的环境投影。
+        Boolean ambiguous = jdbcTemplate.queryForObject("""
+                SELECT EXISTS (SELECT 1 FROM account_snapshots
+                               WHERE account_id=? AND (trade_env IS NULL OR trade_env<>?))
+                    OR EXISTS (SELECT 1 FROM trades WHERE account_id=? AND trade_env<>?)
+                    OR (?='LIVE' AND EXISTS (SELECT 1 FROM ledger_entries
+                                             WHERE account_id=? AND ref_type LIKE 'SIM_FUNDING_%'))
+                    OR EXISTS (
+                        SELECT 1 FROM positions p
+                        WHERE p.account_id=? AND NOT EXISTS (
+                            SELECT 1 FROM account_snapshots s
+                            WHERE s.account_id=p.account_id AND s.trade_env=?
+                              AND s.balance_basis='POSITION_PROJECTION'
+                              AND s.currency=split_part(replace(p.symbol, '/', '-'), '-', 1)
+                              AND s.snapshot_id=(
+                                  SELECT MAX(latest.snapshot_id) FROM account_snapshots latest
+                                  WHERE latest.account_id=s.account_id AND latest.currency=s.currency)
+                              AND s.balance=(
+                                  SELECT SUM(other.qty) FROM positions other
+                                  WHERE other.account_id=p.account_id
+                                    AND split_part(replace(other.symbol, '/', '-'), '-', 1)=s.currency)
+                        )
+                    )
+                """, Boolean.class, accountId, tradeEnv, accountId, tradeEnv, tradeEnv, accountId,
+                accountId, tradeEnv);
+        if (!Boolean.FALSE.equals(ambiguous)) {
+            throw new IllegalStateException("ACCOUNT_ENVIRONMENT_PROVENANCE_AMBIGUOUS");
         }
     }
 
@@ -87,23 +126,28 @@ public class JdbcLedgerPostingRepository implements LedgerPostingRepository {
     }
 
     @Override
-    public BigDecimal currentBalance(Long accountId, String currency) {
+    public BigDecimal currentBalance(Long accountId, String currency, String tradeEnv) {
+        if (!"SIM".equals(tradeEnv) && !"LIVE".equals(tradeEnv)) {
+            throw new IllegalArgumentException("trade environment must be explicit");
+        }
         BigDecimal balance = jdbcTemplate.queryForObject(
                 """
                 SELECT COALESCE(SUM(CASE
-                    WHEN EXISTS (SELECT 1 FROM paper_trading_runs r
-                                 WHERE r.canonical_account_id = ? AND r.trade_env = 'SIM')
-                    THEN CASE
-                        WHEN e.ref_type = 'SIM_FUNDING_CASH' OR
-                             (e.ref_type = 'TRADE' AND
-                              (right(e.idempotency_key, 9) = ':LEDGER:1' OR
-                               right(e.idempotency_key, 13) = ':LEDGER:FEE_1'))
-                        THEN e.delta ELSE 0 END
-                    ELSE e.delta END), 0)
+                    WHEN e.ref_type='SIM_FUNDING_CASH' AND ?='SIM' THEN e.delta
+                    WHEN e.ref_type='TRADE' AND EXISTS (
+                        SELECT 1 FROM trades t WHERE t.trade_id=e.ref_id AND t.trade_env=?)
+                    THEN CASE WHEN ?='SIM' THEN
+                        CASE WHEN right(e.idempotency_key, 9)=':LEDGER:1'
+                               OR right(e.idempotency_key, 13)=':LEDGER:FEE_1'
+                             THEN e.delta ELSE 0 END
+                        ELSE e.delta END
+                    ELSE 0 END), 0)
                 FROM ledger_entries e WHERE e.account_id = ? AND e.currency = ?
                 """,
                 BigDecimal.class,
-                accountId,
+                tradeEnv,
+                tradeEnv,
+                tradeEnv,
                 accountId,
                 currency
         );
@@ -155,16 +199,19 @@ public class JdbcLedgerPostingRepository implements LedgerPostingRepository {
         jdbcTemplate.update(
                 """
                         INSERT INTO account_snapshots (
-                            account_id, currency, balance, available, frozen, ts, trace_id
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                            account_id, currency, balance, available, frozen, ts, trace_id,
+                            trade_env, balance_basis, balance_scope, recorded_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'NQ_MANAGED_ACCOUNT', clock_timestamp())
                         """,
                 snapshot.accountId(),
                 snapshot.currency(),
                 snapshot.balance(),
                 snapshot.available(),
                 snapshot.frozen(),
-                Timestamp.from(snapshot.snapshotTs()),
-                snapshot.traceId()
+                Timestamp.from(snapshot.sourceEventAt()),
+                snapshot.traceId(),
+                snapshot.tradeEnv(),
+                snapshot.balanceBasis().name()
         );
     }
 

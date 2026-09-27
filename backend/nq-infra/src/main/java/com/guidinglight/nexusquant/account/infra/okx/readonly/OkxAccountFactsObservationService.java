@@ -253,7 +253,9 @@ public final class OkxAccountFactsObservationService {
                 ? OkxAccountFactsObservationService.<String>unknown(comparisonAt,
                     report.items().isEmpty() ? "CANONICAL_OR_EXTERNAL_FACT_INCOMPLETE" : report.items().getFirst().reason())
                 : new AccountFactsSnapshot.Fact<>(Status.OBSERVED,
-                    report.aggregate() == AccountDivergenceReport.Classification.MATCH ? "MATCH" : "DIVERGED",
+                    report.aggregate() == AccountDivergenceReport.Classification.MATCH ? "MATCH"
+                        : report.aggregate() == AccountDivergenceReport.Classification.VENUE_BALANCE_NOT_SEMANTICALLY_COMPARABLE
+                            ? "NOT_COMPARABLE" : "DIVERGED",
                     comparisonAt, comparisonAt.plus(PRIVATE_TTL), "NQ_CANONICAL_READ_COMPARISON",
                     report.aggregate() == AccountDivergenceReport.Classification.MATCH ? null
                         : report.aggregate().name());
@@ -277,6 +279,8 @@ public final class OkxAccountFactsObservationService {
                 && exchangeTime.statusAt(completed) == Status.OBSERVED
                 && rule.statusAt(completed) == Status.OBSERVED
                 && divergence.status() == Status.OBSERVED
+                && report != null && report.items().stream().noneMatch(item -> item.classification()
+                    == AccountDivergenceReport.Classification.VENUE_BALANCE_NOT_SEMANTICALLY_COMPARABLE)
                 && (positions.status() == Status.NOT_APPLICABLE
                     || positions.statusAt(completed) == Status.OBSERVED) ? Status.OBSERVED : Status.UNKNOWN;
         return new AccountFactsSnapshot(observationId, "OKX", account.exchangeAccountId(),

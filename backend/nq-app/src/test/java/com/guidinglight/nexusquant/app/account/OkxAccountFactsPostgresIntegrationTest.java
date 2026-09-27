@@ -108,10 +108,10 @@ class OkxAccountFactsPostgresIntegrationTest {
         admin = new JdbcTemplate(dataSource);
         admin.setQueryTimeout(30);
         Flyway flyway = Flyway.configure().dataSource(dataSource).locations("classpath:db/migration")
-                .schemas(schema).defaultSchema(schema).createSchemas(true).target("54").load();
+                .schemas(schema).defaultSchema(schema).createSchemas(true).target("55").load();
         flyway.migrate();
         flyway.validate();
-        assertEquals("54", flyway.info().current().getVersion().getVersion());
+        assertEquals("55", flyway.info().current().getVersion().getVersion());
         jdbc = new JdbcTemplate(new DriverManagerDataSource(
                 url + "?connectTimeout=5&socketTimeout=30&currentSchema=" + schema, user, password));
         jdbc.setQueryTimeout(15);
@@ -175,41 +175,46 @@ class OkxAccountFactsPostgresIntegrationTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void emptyOrZeroPositionsMatchCompleteCanonicalFacts(boolean includeZeroPosition) {
+    void emptyOrZeroPositionsDoNotQualifyManagedBalanceScope(boolean includeZeroPosition) {
         noActiveOrders();
         executor.positions = includeZeroPosition ? List.of(position("0")) : List.of();
         AccountFactsSnapshot result = observeWithoutCanonicalMutation();
         assertEquals(OBSERVED, result.positions().status());
         assertEquals("NO_ACTIVE_POSITION", result.positions().reason());
         assertEquals(executor.positions, result.positions().value());
-        assertEquals("MATCH", result.divergence().value());
-        assertEquals(OBSERVED, result.status());
+        assertNotComparableDivergence(result, "NQ_MANAGED_PROJECTION_NOT_WHOLE_VENUE_EQUIVALENT");
+        assertEquals(UNKNOWN, result.status());
         assertEquals(BTC, result.spotBtcExposure().value());
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"2", "-2"})
-    void nonzeroPositionsDivergeWithoutChangingSpotExposure(String quantity) {
+    void nonzeroPositionsRemainVisibleWhileBalanceIsNotComparable(String quantity) {
         noActiveOrders();
         executor.positions = List.of(position(quantity));
         AccountFactsSnapshot result = observeWithoutCanonicalMutation();
+        assertEquals(OBSERVED, result.divergence().status());
         assertEquals("DIVERGED", result.divergence().value());
-        assertEquals("EXTERNAL_NON_SPOT_POSITION_PRESENT", result.divergence().reason());
+        assertEquals(AccountDivergenceReport.Classification.MULTIPLE_DIVERGENCES,
+                result.divergenceReport().aggregate());
+        assertHasClassification(result,
+                AccountDivergenceReport.Classification.VENUE_BALANCE_NOT_SEMANTICALLY_COMPARABLE);
         assertHasClassification(result, AccountDivergenceReport.Classification.EXTERNAL_NON_SPOT_POSITION_PRESENT);
-        assertEquals(OBSERVED, result.status());
+        assertEquals(UNKNOWN, result.status());
         assertEquals(BTC, result.spotBtcExposure().value());
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"BTC", "USDT"})
-    void differentBalanceDiverges(String currency) {
+    void differentBalanceCannotBeComparedWithoutEquivalentScope(String currency) {
         noActiveOrders();
         if ("BTC".equals(currency)) executor.btc = BTC.add(BigDecimal.ONE);
         else executor.usdt = USDT.add(BigDecimal.ONE);
         AccountFactsSnapshot result = observeWithoutCanonicalMutation();
-        assertEquals("DIVERGED", result.divergence().value());
-        assertHasClassification(result, AccountDivergenceReport.Classification.BALANCE_MISMATCH);
-        assertEquals(OBSERVED, result.status());
+        assertNotComparableDivergence(result, "NQ_MANAGED_PROJECTION_NOT_WHOLE_VENUE_EQUIVALENT");
+        assertTrue(result.divergenceReport().items().stream().noneMatch(item ->
+                item.classification() == AccountDivergenceReport.Classification.BALANCE_MISMATCH));
+        assertEquals(UNKNOWN, result.status());
     }
 
     @Test
@@ -220,11 +225,11 @@ class OkxAccountFactsPostgresIntegrationTest {
     }
 
     @Test
-    void emptyOrderSetsMatchOnlyWithCompleteCanonicalBalances() {
+    void emptyOrderSetsDoNotQualifyBalanceComparison() {
         noActiveOrders();
         AccountFactsSnapshot result = observeWithoutCanonicalMutation();
-        assertEquals("MATCH", result.divergence().value());
-        assertEquals(OBSERVED, result.status());
+        assertNotComparableDivergence(result, "NQ_MANAGED_PROJECTION_NOT_WHOLE_VENUE_EQUIVALENT");
+        assertEquals(UNKNOWN, result.status());
     }
 
     @Test
@@ -233,7 +238,7 @@ class OkxAccountFactsPostgresIntegrationTest {
         AccountFactsSnapshot result = observeWithoutCanonicalMutation();
         assertHasClassification(result, AccountDivergenceReport.Classification.EXTERNAL_OPEN_ORDER_ONLY);
         assertHasClassification(result, AccountDivergenceReport.Classification.LOCAL_ACTIVE_ORDER_ONLY);
-        assertEquals(AccountDivergenceReport.Classification.UNKNOWN,
+        assertEquals(AccountDivergenceReport.Classification.MULTIPLE_DIVERGENCES,
                 result.divergenceReport().aggregate());
     }
 
@@ -246,44 +251,45 @@ class OkxAccountFactsPostgresIntegrationTest {
     }
 
     @Test
-    void sameTotalWithDifferentAvailableAndFrozenBalanceIsSemanticallyUnknown() {
+    void sameTotalWithDifferentAvailableAndFrozenBalanceIsNotComparable() {
         noActiveOrders();
         jdbc.update("""
                 UPDATE account_snapshots SET available=balance-0.1, frozen=0.1
                 WHERE account_id=? AND currency='USDT'
                 """, legacyAccountId);
         AccountFactsSnapshot result = observeWithoutCanonicalMutation();
-        assertEquals(UNKNOWN, result.divergence().status());
-        assertHasClassification(result, AccountDivergenceReport.Classification.BALANCE_SEMANTIC_MISMATCH);
+        assertNotComparableDivergence(result, "NQ_MANAGED_PROJECTION_NOT_WHOLE_VENUE_EQUIVALENT");
     }
 
     @Test
-    void currentMinimumSizeClassifiesPositiveBtcResidualWithoutRoundingToZero() {
+    void currentMinimumSizePreservesBtcFactWithoutInventingDivergence() {
         jdbc.update("UPDATE account_snapshots SET balance=0, available=0 WHERE account_id=? AND currency='BTC'",
                 legacyAccountId);
         executor.btc = new BigDecimal("0.00000001");
         AccountFactsSnapshot result = observeWithoutCanonicalMutation();
-        assertHasClassification(result, AccountDivergenceReport.Classification.EXTERNAL_DUST_BALANCE);
+        assertNotComparableDivergence(result, "NQ_MANAGED_PROJECTION_NOT_WHOLE_VENUE_EQUIVALENT");
+        assertTrue(result.divergenceReport().items().stream().noneMatch(item ->
+                item.classification() == AccountDivergenceReport.Classification.EXTERNAL_DUST_BALANCE));
         assertEquals(new BigDecimal("0.00000001"), result.balances().get("BTC").value().total());
     }
 
     @Test
-    void positiveUnexpectedAssetIsNotSilentlyDiscarded() {
+    void positiveExternalAssetIsPreservedWithoutWholeAccountClaim() {
         noActiveOrders();
         executor.usdc = BigDecimal.ONE;
         AccountFactsSnapshot result = observeWithoutCanonicalMutation();
-        assertHasClassification(result, AccountDivergenceReport.Classification.UNEXPECTED_EXTERNAL_ASSET);
-        assertEquals("DIVERGED", result.divergence().value());
+        assertNotComparableDivergence(result, "NQ_MANAGED_PROJECTION_NOT_WHOLE_VENUE_EQUIVALENT");
+        assertTrue(result.divergenceReport().items().stream().noneMatch(item ->
+                item.classification() == AccountDivergenceReport.Classification.UNEXPECTED_EXTERNAL_ASSET));
     }
 
     @Test
-    void equalButOldCanonicalSnapshotsCannotMatch() {
+    void oldSourceEventDoesNotProveStaleProjection() {
         noActiveOrders();
         jdbc.update("UPDATE account_snapshots SET ts=? WHERE account_id=?",
                 Timestamp.from(NOW.minusSeconds(120)), legacyAccountId);
         AccountFactsSnapshot result = observeWithoutCanonicalMutation();
-        assertEquals(UNKNOWN, result.divergence().status());
-        assertHasClassification(result, AccountDivergenceReport.Classification.CANONICAL_FACT_STALE);
+        assertNotComparableDivergence(result, "NQ_MANAGED_PROJECTION_NOT_WHOLE_VENUE_EQUIVALENT");
     }
 
     @Test
@@ -295,13 +301,14 @@ class OkxAccountFactsPostgresIntegrationTest {
     }
 
     @Test
-    void localPositionAndSnapshotMismatchIsVisible() {
+    void localPositionAndSnapshotAreNotComparedAsVenueEquivalence() {
         noActiveOrders();
         jdbc.update("UPDATE positions SET qty=0.5, updated_at=? WHERE account_id=? AND symbol='BTC-USDT'",
                 Timestamp.from(NOW), legacyAccountId);
         AccountFactsSnapshot result = observeWithoutCanonicalMutation();
-        assertHasClassification(result, AccountDivergenceReport.Classification.POSITION_MISMATCH);
-        assertEquals("DIVERGED", result.divergence().value());
+        assertNotComparableDivergence(result, "NQ_MANAGED_PROJECTION_NOT_WHOLE_VENUE_EQUIVALENT");
+        assertTrue(result.divergenceReport().items().stream().noneMatch(item ->
+                item.classification() == AccountDivergenceReport.Classification.POSITION_MISMATCH));
     }
 
     @Test
@@ -317,12 +324,11 @@ class OkxAccountFactsPostgresIntegrationTest {
     }
 
     @Test
-    void staleLocalOnlyAssetCannotBeCalledCurrentDivergence() {
+    void olderLocalAssetDoesNotBecomeVenueDivergence() {
         noActiveOrders();
         insertSnapshot(legacyAccountId, "USDC", BigDecimal.ONE, NOW.minusSeconds(120));
         AccountFactsSnapshot result = observeWithoutCanonicalMutation();
-        assertEquals(UNKNOWN, result.divergence().status());
-        assertHasClassification(result, AccountDivergenceReport.Classification.CANONICAL_FACT_STALE);
+        assertNotComparableDivergence(result, "NQ_MANAGED_PROJECTION_NOT_WHOLE_VENUE_EQUIVALENT");
         assertTrue(result.divergenceReport().items().stream().noneMatch(item ->
                 item.classification() == AccountDivergenceReport.Classification.UNEXPECTED_LOCAL_ASSET));
     }
@@ -340,14 +346,13 @@ class OkxAccountFactsPostgresIntegrationTest {
     }
 
     @Test
-    void twoTotalDifferencesRetainTwoItems() {
+    void twoNumericDifferencesDoNotBypassSemanticGate() {
         noActiveOrders();
         executor.btc = BTC.add(BigDecimal.ONE);
         executor.usdt = USDT.add(BigDecimal.ONE);
         AccountFactsSnapshot result = observeWithoutCanonicalMutation();
-        assertEquals(AccountDivergenceReport.Classification.MULTIPLE_DIVERGENCES,
-                result.divergenceReport().aggregate());
-        assertEquals(2, result.divergenceReport().items().stream()
+        assertNotComparableDivergence(result, "NQ_MANAGED_PROJECTION_NOT_WHOLE_VENUE_EQUIVALENT");
+        assertEquals(0, result.divergenceReport().items().stream()
                 .filter(item -> item.classification() == AccountDivergenceReport.Classification.BALANCE_MISMATCH)
                 .count());
     }
@@ -385,18 +390,18 @@ class OkxAccountFactsPostgresIntegrationTest {
                 VALUES (?, ?, ?, 'BTC-USDT', 'OKX', 'OKX', ?, 'SIM', 10, 0.1, 0, 'USDT', 'synthetic', ?)
                 """, UUID.randomUUID().toString(), simOrder, legacyAccountId,
                 UUID.randomUUID().toString(), Timestamp.from(NOW));
-        assertUnknownDivergence(observeWithoutCanonicalMutation(), "BALANCE_SEMANTIC_MISMATCH");
+        assertNotComparableDivergence(observeWithoutCanonicalMutation(), "NQ_MANAGED_PROJECTION_NOT_WHOLE_VENUE_EQUIVALENT");
     }
 
     @Test
-    void latestPublishedSnapshotWinsEvenWhenItsBusinessTimestampIsOlder() {
+    void latestPublishedSnapshotWithOlderEventStillCannotMatchVenue() {
         noActiveOrders();
         insertSnapshot(legacyAccountId, "BTC", new BigDecimal("0.75"), NOW.minusSeconds(60));
         jdbc.update("UPDATE positions SET updated_at=? WHERE account_id=? AND symbol='BTC-USDT'",
                 Timestamp.from(NOW), legacyAccountId);
         AccountFactsSnapshot result = observeWithoutCanonicalMutation();
-        assertEquals("DIVERGED", result.divergence().value());
-        assertEquals(OBSERVED, result.status());
+        assertNotComparableDivergence(result, "NQ_MANAGED_PROJECTION_NOT_WHOLE_VENUE_EQUIVALENT");
+        assertEquals(UNKNOWN, result.status());
     }
 
     @Test
@@ -410,7 +415,7 @@ class OkxAccountFactsPostgresIntegrationTest {
     void localSimOrderDoesNotEnterLiveAccountComparison() {
         noActiveOrders();
         insertOrder(legacyAccountId, "sim-" + UUID.randomUUID(), "BTC-USDT", "SIM", "ACCEPTED");
-        assertEquals("MATCH", observeWithoutCanonicalMutation().divergence().value());
+        assertNotComparableDivergence(observeWithoutCanonicalMutation(), "NQ_MANAGED_PROJECTION_NOT_WHOLE_VENUE_EQUIVALENT");
     }
 
     @ParameterizedTest
@@ -435,10 +440,24 @@ class OkxAccountFactsPostgresIntegrationTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"BTC", "USDT"})
-    void missingCanonicalCurrencyStaysUnknown(String currency) {
+    void missingCanonicalCurrencyStaysSemanticallyUnknown(String currency) {
         noActiveOrders();
         jdbc.update("DELETE FROM account_snapshots WHERE account_id=? AND currency=?", legacyAccountId, currency);
-        assertUnknownDivergence(observeWithoutCanonicalMutation(), "CANONICAL_BALANCE_MISSING");
+        assertNotComparableDivergence(observeWithoutCanonicalMutation(), "NQ_MANAGED_PROJECTION_NOT_WHOLE_VENUE_EQUIVALENT");
+    }
+
+    @Test
+    void legacySnapshotKeepsComparisonUnknownDespiteTaggedLiveProjection() {
+        noActiveOrders();
+        jdbc.update("""
+                INSERT INTO account_snapshots (account_id, currency, balance, available, frozen, ts, trace_id)
+                VALUES (?, 'BTC', 1, 1, 0, ?, 'legacy-unknown')
+                """, legacyAccountId, Timestamp.from(NOW.minusSeconds(120)));
+        AccountFactsSnapshot result = observeWithoutCanonicalMutation();
+        assertUnknownDivergence(result, "LEGACY_SNAPSHOT_ENVIRONMENT_UNKNOWN");
+        assertEquals(AccountDivergenceReport.Classification.BALANCE_SEMANTIC_MISMATCH,
+                result.divergenceReport().items().stream()
+                        .filter(item -> "BALANCE".equals(item.dimension())).findFirst().orElseThrow().classification());
     }
 
     @Test
@@ -446,7 +465,7 @@ class OkxAccountFactsPostgresIntegrationTest {
         noActiveOrders();
         executor.positions = List.of(position("2"));
         jdbc.update("DELETE FROM account_snapshots WHERE account_id=?", legacyAccountId);
-        assertUnknownDivergence(observeWithoutCanonicalMutation(), "CANONICAL_BALANCE_MISSING");
+        assertUnknownDivergence(observeWithoutCanonicalMutation(), "LIVE_SNAPSHOT_MISSING");
     }
 
     private AccountFactsSnapshot observeWithoutCanonicalMutation() {
@@ -490,6 +509,19 @@ class OkxAccountFactsPostgresIntegrationTest {
         assertEquals(UNKNOWN, result.status());
     }
 
+    private static void assertNotComparableDivergence(AccountFactsSnapshot result, String reason) {
+        assertEquals(OBSERVED, result.divergence().status());
+        assertEquals("NOT_COMPARABLE", result.divergence().value());
+        assertEquals(AccountDivergenceReport.Classification.VENUE_BALANCE_NOT_SEMANTICALLY_COMPARABLE.name(),
+                result.divergence().reason());
+        assertEquals(AccountDivergenceReport.Classification.VENUE_BALANCE_NOT_SEMANTICALLY_COMPARABLE,
+                result.divergenceReport().aggregate());
+        assertTrue(result.divergenceReport().items().stream().anyMatch(item ->
+                item.classification() == AccountDivergenceReport.Classification.VENUE_BALANCE_NOT_SEMANTICALLY_COMPARABLE
+                        && reason.equals(item.reason())));
+        assertEquals(UNKNOWN, result.status());
+    }
+
     private static void assertHasClassification(AccountFactsSnapshot result,
             AccountDivergenceReport.Classification classification) {
         assertTrue(result.divergenceReport() != null && result.divergenceReport().items().stream()
@@ -514,9 +546,11 @@ class OkxAccountFactsPostgresIntegrationTest {
 
     private static void insertSnapshot(long accountId, String currency, BigDecimal value, Instant at) {
         jdbc.update("""
-                INSERT INTO account_snapshots (account_id, currency, balance, available, frozen, ts, trace_id)
-                VALUES (?, ?, ?, ?, 0, ?, 'synthetic')
-                """, accountId, currency, value, value, Timestamp.from(at));
+                INSERT INTO account_snapshots (account_id, currency, balance, available, frozen, ts, trace_id,
+                    trade_env, balance_basis, balance_scope, recorded_at)
+                VALUES (?, ?, ?, ?, 0, ?, 'synthetic', 'LIVE', 'LEDGER_CASH_PROJECTION',
+                    'NQ_MANAGED_ACCOUNT', ?)
+                """, accountId, currency, value, value, Timestamp.from(at), Timestamp.from(NOW.minusSeconds(1)));
     }
 
     private static OkxPrivatePositionFact position(String quantity) {

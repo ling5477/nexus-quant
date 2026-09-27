@@ -306,7 +306,8 @@ class TradingVerificationControllerLocalTest {
                                 new BigDecimal("0.01400000"),
                                 new BigDecimal("0.00000000"),
                                 Instant.parse("2026-03-12T08:00:01Z"),
-                                "trc-account-9"
+                                "trc-account-9", "LIVE", "POSITION_PROJECTION", "NQ_MANAGED_ACCOUNT",
+                                Instant.parse("2026-03-12T08:00:02Z")
                         ),
                         new AccountBalanceQueryView(
                                 "USDT",
@@ -314,7 +315,8 @@ class TradingVerificationControllerLocalTest {
                                 new BigDecimal("0.00000000"),
                                 new BigDecimal("0.00000000"),
                                 Instant.parse("2026-03-12T08:00:01Z"),
-                                "trc-account-9"
+                                "trc-account-9", "SIM", "LEDGER_CASH_PROJECTION", "NQ_MANAGED_ACCOUNT",
+                                Instant.parse("2026-03-12T08:00:02Z")
                         )
                 ),
                 "trc-account-9"
@@ -335,7 +337,11 @@ class TradingVerificationControllerLocalTest {
         mockMvc.perform(get("/api/trading/accounts/1001")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-local-6"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.balances.length()").value(2));
+                .andExpect(jsonPath("$.balances.length()").value(2))
+                .andExpect(jsonPath("$.balances[0].tradeEnv").value("LIVE"))
+                .andExpect(jsonPath("$.balances[0].balanceBasis").value("POSITION_PROJECTION"))
+                .andExpect(jsonPath("$.balances[1].tradeEnv").value("SIM"))
+                .andExpect(jsonPath("$.balances[1].recordedAt").exists());
         verify(tradingQueryFacade).queryOrder("ord-9", "trc-local-6");
         verify(tradingQueryFacade).queryLatestTrade("ord-9", "trc-local-6");
         verify(tradingQueryFacade).queryPosition(1001L, "BTC-USDT", "trc-local-6");
@@ -489,5 +495,4 @@ class TradingVerificationControllerLocalTest {
         )));
     }
 }
-
 

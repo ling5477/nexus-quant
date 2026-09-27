@@ -12,6 +12,14 @@ public record AccountBalanceQueryView(
         BigDecimal available,
         BigDecimal frozen,
         Instant snapshotTs,
-        String traceId
+        String traceId,
+        String tradeEnv,
+        String balanceBasis,
+        String balanceScope,
+        Instant recordedAt
 ) {
+    public AccountBalanceQueryView(String currency, BigDecimal balance, BigDecimal available,
+            BigDecimal frozen, Instant snapshotTs, String traceId) {
+        this(currency, balance, available, frozen, snapshotTs, traceId, null, null, null, null);
+    }
 }

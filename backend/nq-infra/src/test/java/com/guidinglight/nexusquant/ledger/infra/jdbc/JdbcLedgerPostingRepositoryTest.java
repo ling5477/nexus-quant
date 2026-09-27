@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.guidinglight.nexusquant.contracts.model.LedgerDirection;
 import com.guidinglight.nexusquant.ledger.contracts.model.AccountSnapshotProjection;
+import com.guidinglight.nexusquant.ledger.contracts.model.AccountBalanceBasis;
 import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingEntry;
 import com.guidinglight.nexusquant.ledger.contracts.model.PositionProjection;
 
@@ -36,7 +37,7 @@ class JdbcLedgerPostingRepositoryTest {
         JdbcLedgerPostingRepository repository = new JdbcLedgerPostingRepository(jdbcTemplate);
 
         assertTrue(repository.existsByIdempotencyKey("idem-1"));
-        assertEquals(new BigDecimal("12.34"), repository.currentBalance(1001L, "USDT"));
+        assertEquals(new BigDecimal("12.34"), repository.currentBalance(1001L, "USDT", "SIM"));
         assertTrue(repository.findPosition(1001L, "BTC-USDT").isPresent());
 
         repository.insertEntry(new LedgerPostingEntry(
@@ -60,7 +61,9 @@ class JdbcLedgerPostingRepositoryTest {
                 new BigDecimal("12.34"),
                 BigDecimal.ZERO,
                 Instant.parse("2026-03-28T11:00:01Z"),
-                "trc-ledger-1"
+                "trc-ledger-1",
+                "SIM",
+                AccountBalanceBasis.LEDGER_CASH_PROJECTION
         ));
         repository.upsertPosition(new PositionProjection(
                 1001L,
@@ -82,7 +85,7 @@ class JdbcLedgerPostingRepositoryTest {
         JdbcLedgerPostingRepository repository = new JdbcLedgerPostingRepository(jdbcTemplate);
 
         assertFalse(repository.existsByIdempotencyKey("missing"));
-        assertEquals(BigDecimal.ZERO, repository.currentBalance(1001L, "USDT"));
+        assertEquals(BigDecimal.ZERO, repository.currentBalance(1001L, "USDT", "SIM"));
     }
 
     private static final class RecordingJdbcTemplate extends JdbcTemplate {

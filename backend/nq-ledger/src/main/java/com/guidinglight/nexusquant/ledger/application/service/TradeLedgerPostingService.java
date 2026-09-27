@@ -16,6 +16,7 @@ import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
 import com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest;
 import com.guidinglight.nexusquant.ledger.contracts.model.AccountSnapshotProjection;
+import com.guidinglight.nexusquant.ledger.contracts.model.AccountBalanceBasis;
 import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingEntry;
 import com.guidinglight.nexusquant.ledger.contracts.model.PositionProjection;
 import com.guidinglight.nexusquant.ledger.service.port.TradeLedgerPort;
@@ -98,8 +99,9 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
         if (request.feeCurrency() != null && !request.feeCurrency().isBlank()) {
             currencies.add(request.feeCurrency());
         }
-        // 先锁币种、再锁品种；所有读取、幂等判定和快照发布均在同一提交边界内。
+        // 先锁账户及币种、再锁品种；所有读取、幂等判定和快照发布均在同一提交边界内。
         ledgerPostingRepository.lockSnapshotCurrencies(request.accountId(), currencies);
+        ledgerPostingRepository.assertAccountEnvironment(request.accountId(), request.tradeEnv());
         ledgerPostingRepository.lockPosition(request.accountId(), request.symbol(), request.traceId());
         long postedEntries = entries.stream()
                 .filter(entry -> ledgerPostingRepository.existsByIdempotencyKey(entry.idempotencyKey())).count();
@@ -112,7 +114,7 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
         }
 
         for (LedgerPostingEntry entry : entries) {
-            BigDecimal balanceAfter = ledgerPostingRepository.currentBalance(entry.accountId(), entry.currency())
+            BigDecimal balanceAfter = ledgerPostingRepository.currentBalance(entry.accountId(), entry.currency(), request.tradeEnv())
                     .add(entry.delta());
             LedgerPostingEntry persistedEntry = new LedgerPostingEntry(
                     entry.entryId(),
@@ -326,9 +328,9 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
                         NumericPolicy.normalize(NumericType.QTY, asset.qty()),
                         NumericPolicy.normalize(NumericType.QTY, asset.availableQty()),
                         NumericPolicy.normalize(NumericType.QTY, asset.qty().subtract(asset.availableQty())),
-                        snapshotTs, request.traceId()));
+                        snapshotTs, request.traceId(), request.tradeEnv(), AccountBalanceBasis.POSITION_PROJECTION));
             } else {
-                appendLedgerBackedSnapshot(snapshots, request.accountId(), currency, snapshotTs, request.traceId());
+                appendLedgerBackedSnapshot(snapshots, request.accountId(), currency, snapshotTs, request.traceId(), request.tradeEnv());
             }
         }
 
@@ -342,14 +344,15 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
             Long accountId,
             String currency,
             Instant snapshotTs,
-            String traceId
+            String traceId,
+            String tradeEnv
     ) {
         if (currency == null || currency.isBlank() || snapshots.containsKey(currency)) {
             return;
         }
         BigDecimal balance = NumericPolicy.normalize(
                 NumericType.AMOUNT,
-                ledgerPostingRepository.currentBalance(accountId, currency)
+                ledgerPostingRepository.currentBalance(accountId, currency, tradeEnv)
         );
         snapshots.put(
                 currency,
@@ -360,7 +363,9 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
                         balance,
                         NumericPolicy.normalize(NumericType.AMOUNT, BigDecimal.ZERO),
                         snapshotTs,
-                        traceId
+                        traceId,
+                        tradeEnv,
+                        AccountBalanceBasis.LEDGER_CASH_PROJECTION
                 )
         );
     }
@@ -455,6 +460,9 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
         }
         if (request.traceId() == null || request.traceId().isBlank()) {
             throw new IllegalArgumentException("traceId must not be blank");
+        }
+        if (request.tradeEnv() == null || !java.util.Set.of("SIM", "LIVE").contains(request.tradeEnv())) {
+            throw new IllegalArgumentException("trade environment must be explicit");
         }
     }
 

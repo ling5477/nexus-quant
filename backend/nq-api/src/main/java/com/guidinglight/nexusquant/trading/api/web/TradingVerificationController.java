@@ -237,7 +237,11 @@ public class TradingVerificationController {
                                         balance.available(),
                                         balance.frozen(),
                                         balance.snapshotTs(),
-                                        balance.traceId()
+                                        balance.traceId(),
+                                        balance.tradeEnv(),
+                                        balance.balanceBasis(),
+                                        balance.balanceScope(),
+                                        balance.recordedAt()
                                 ))
                                 .toList(),
                         queryView.traceId()

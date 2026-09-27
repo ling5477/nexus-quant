@@ -7,8 +7,7 @@ import java.time.Instant;
  * AccountBalanceView 表示账户某一币种的最新快照。
  * <p>
  * Why:
- * 账户只读查询仅把最新 `account_snapshots` 暴露给本地验收与 smoke，便于确认
- * ledger/快照链路是否落库，因此该视图只保留每个币种一条最新余额记录。
+ * 账户只读查询按币种及环境暴露最新投影；空 provenance 明确代表旧行来源未知。
  */
 public record AccountBalanceView(
         String currency,
@@ -16,8 +15,15 @@ public record AccountBalanceView(
         BigDecimal available,
         BigDecimal frozen,
         Instant snapshotTs,
-        String traceId
+        String traceId,
+        String tradeEnv,
+        String balanceBasis,
+        String balanceScope,
+        Instant recordedAt
 ) {
+    public AccountBalanceView(String currency, BigDecimal balance, BigDecimal available,
+            BigDecimal frozen, Instant snapshotTs, String traceId) {
+        this(currency, balance, available, frozen, snapshotTs, traceId, null, null, null, null);
+    }
 }
-
 
