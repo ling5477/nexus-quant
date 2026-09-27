@@ -49,7 +49,8 @@ class ExistingUserPasswordRotationPostgresTest {
         if (!required) {
             assumeTrue(url != null, "Requires explicit disposable PostgreSQL source");
         }
-        assertTrue(url != null && url.startsWith("jdbc:postgresql://127.0.0.1:") && !url.contains("?"));
+        assertTrue(url != null && (url.startsWith("jdbc:postgresql://127.0.0.1:")
+                || url.startsWith("jdbc:postgresql://localhost:")) && !url.contains("?"));
         String user = System.getProperty("nq.postgres.smoke.user");
         String password = System.getProperty("nq.postgres.smoke.password");
         admin = new JdbcTemplate(new DriverManagerDataSource(url, user, password));
