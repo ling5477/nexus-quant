@@ -106,6 +106,8 @@ release只使用`../../scripts/deployment/New-NqCanonicalRelease.ps1`；verify�
 
 2026-09-27 的账户差异根因检查已将技术 PR #42 的 release `nq-f7a5faa782e5-20670623964ad074` 普通 install/activate；PG16/V54 只读 validate 通过、migration 执行数 0。唯一一次新观察返回 `UNKNOWN / BALANCE_SEMANTIC_MISMATCH`，正式采集器在解析 `UNKNOWN` 字段的空 `expiresAt` 时触发 `AttributeError`，原始验收为 `QUALIFICATION_BLOCKED_COLLECTOR_ATTRIBUTEERROR`。补充同次只读诊断确认 7 种外部正余额资产、5 种无本地快照行、本地 BTC/USDT 快照已超过 31 天；这些事实不证明余额同义或时间因果。已确认固定 GET 10 次、交易 mutation 0、五类 canonical 交易事实内容未变；最终 runtime 停止、Java/MainPID=0、LIVE=DISABLED、kill=ENGAGED。保留原失败，不以事后分析追认 PASS；下一次正式采集必须在单独解阻账户快照语义并固定新候选后进行。详情见[只读根因检查证据](evidence/gate-z/OKX_ACCOUNT_DIVERGENCE_READONLY_ROOT_CAUSE.md)。
 
+2026-09-27 的账户快照 provenance 解阻已按授权部署：技术 PR #44 的 `dev=5197b128131aa21be7705ee6cf3619db3cec00bb / exact-head CI 36314244328 / 9 of 9 SUCCESS`，release=`nq-5197b128131a-39f54b083d7e0571`。生产先完成 canonical V54 backup 与隔离 PG16 恢复，再唯一执行 V55；Flyway validate 为 V55/pending=0/failed=0，两条历史快照的新 provenance 字段保持 NULL，旧字段指纹不变。普通 install/activate 后 `/current` 与 activation head/journal 一致；最终无 Java 进程、LIVE=DISABLED、kill=ENGAGED。此次没有发起 OKX private observation。原正式 divergence collector 源码不可用，标记 `COLLECTOR_SOURCE_UNAVAILABLE / DEFERRED_NON_BLOCKING_FOR_SNAPSHOT_SEMANTICS`；后续只读再资格化须先找回原脚本并固定新运行身份，不可用等价脚本代替。详见[生产 V55 与 release 证据](evidence/gate-z/ACCOUNT_SNAPSHOT_PROVENANCE_PRODUCTION_V55.md)。
+
 ### 现有用户密码的一次性维护
 
 仅在已明确授权恢复现有用户登录时，使用已通过合并后精确 HEAD CI、manifest 与 admission 校验的制品。`ExistingUserPasswordRotationMain` 是独立 Java 维护入口，不启动 Spring、HTTP、Flyway、seed 或交易组件；普通 `java -jar` 启动不会执行密码维护。禁止使用 bootstrap-admin 或临时 SQL 替代窄更新端口。
