@@ -5,6 +5,7 @@ import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialRepository;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.AccountFactsSnapshot;
+import com.guidinglight.nexusquant.account.infra.okx.readonly.AccountDivergenceReport;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxAccountFactsObservationService;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxCurrentPublicRuleReader;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
@@ -166,14 +167,16 @@ class OkxAccountFactsPostgresIntegrationTest {
                         "ACTIVE", "VERIFIED", true, null, null, null, NOW, null, NOW,
                         "SUCCEEDED", "READ_ONLY", false, "PASSED", 0, NOW.minusSeconds(30), null)));
         when(transport.readServerTime()).thenReturn(NOW);
-        when(publicRules.observe()).thenReturn(new AccountFactsSnapshot.Fact<>(OBSERVED,
-                "synthetic-current-rule", NOW, NOW.plusSeconds(60), "SYNTHETIC_PUBLIC_RULE", null));
+        when(publicRules.observeDetailed()).thenReturn(new AccountFactsSnapshot.Fact<>(OBSERVED,
+                new OkxCurrentPublicRuleReader.CurrentRule("synthetic-current-rule", new BigDecimal("0.00001")),
+                NOW, NOW.plusSeconds(60), "SYNTHETIC_PUBLIC_RULE", null));
         executor.orders = List.of(externalOrder(clientOrderId));
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
     void emptyOrZeroPositionsMatchCompleteCanonicalFacts(boolean includeZeroPosition) {
+        noActiveOrders();
         executor.positions = includeZeroPosition ? List.of(position("0")) : List.of();
         AccountFactsSnapshot result = observeWithoutCanonicalMutation();
         assertEquals(OBSERVED, result.positions().status());
@@ -187,10 +190,12 @@ class OkxAccountFactsPostgresIntegrationTest {
     @ParameterizedTest
     @ValueSource(strings = {"2", "-2"})
     void nonzeroPositionsDivergeWithoutChangingSpotExposure(String quantity) {
+        noActiveOrders();
         executor.positions = List.of(position(quantity));
         AccountFactsSnapshot result = observeWithoutCanonicalMutation();
         assertEquals("DIVERGED", result.divergence().value());
         assertEquals("EXTERNAL_NON_SPOT_POSITION_PRESENT", result.divergence().reason());
+        assertHasClassification(result, AccountDivergenceReport.Classification.EXTERNAL_NON_SPOT_POSITION_PRESENT);
         assertEquals(OBSERVED, result.status());
         assertEquals(BTC, result.spotBtcExposure().value());
     }
@@ -198,24 +203,25 @@ class OkxAccountFactsPostgresIntegrationTest {
     @ParameterizedTest
     @ValueSource(strings = {"BTC", "USDT"})
     void differentBalanceDiverges(String currency) {
+        noActiveOrders();
         if ("BTC".equals(currency)) executor.btc = BTC.add(BigDecimal.ONE);
         else executor.usdt = USDT.add(BigDecimal.ONE);
         AccountFactsSnapshot result = observeWithoutCanonicalMutation();
         assertEquals("DIVERGED", result.divergence().value());
+        assertHasClassification(result, AccountDivergenceReport.Classification.BALANCE_MISMATCH);
         assertEquals(OBSERVED, result.status());
     }
 
     @Test
     void missingExternalOrderDiverges() {
         executor.orders = List.of();
-        assertEquals("DIVERGED", observeWithoutCanonicalMutation().divergence().value());
+        assertHasClassification(observeWithoutCanonicalMutation(),
+                AccountDivergenceReport.Classification.LOCAL_ACTIVE_ORDER_ONLY);
     }
 
     @Test
     void emptyOrderSetsMatchOnlyWithCompleteCanonicalBalances() {
-        executor.orders = List.of();
-        jdbc.update("UPDATE orders SET status='REJECTED' WHERE account_id=? AND client_order_id=?",
-                legacyAccountId, clientOrderId);
+        noActiveOrders();
         AccountFactsSnapshot result = observeWithoutCanonicalMutation();
         assertEquals("MATCH", result.divergence().value());
         assertEquals(OBSERVED, result.status());
@@ -224,28 +230,170 @@ class OkxAccountFactsPostgresIntegrationTest {
     @Test
     void unmatchedExternalOrderDiverges() {
         executor.orders = List.of(externalOrder("unmatched-synthetic-client"));
-        assertEquals("DIVERGED", observeWithoutCanonicalMutation().divergence().value());
+        AccountFactsSnapshot result = observeWithoutCanonicalMutation();
+        assertHasClassification(result, AccountDivergenceReport.Classification.EXTERNAL_OPEN_ORDER_ONLY);
+        assertHasClassification(result, AccountDivergenceReport.Classification.LOCAL_ACTIVE_ORDER_ONLY);
+        assertEquals(AccountDivergenceReport.Classification.UNKNOWN,
+                result.divergenceReport().aggregate());
     }
 
     @Test
     void sameOrderIdentityWithDifferentQuantityDiverges() {
         jdbc.update("UPDATE orders SET qty=2 WHERE account_id=? AND client_order_id=?",
                 legacyAccountId, clientOrderId);
-        assertEquals("DIVERGED", observeWithoutCanonicalMutation().divergence().value());
+        assertHasClassification(observeWithoutCanonicalMutation(),
+                AccountDivergenceReport.Classification.ORDER_QUANTITY_MISMATCH);
     }
 
     @Test
-    void sameTotalWithDifferentAvailableAndFrozenBalanceDiverges() {
+    void sameTotalWithDifferentAvailableAndFrozenBalanceIsSemanticallyUnknown() {
+        noActiveOrders();
         jdbc.update("""
                 UPDATE account_snapshots SET available=balance-0.1, frozen=0.1
                 WHERE account_id=? AND currency='USDT'
                 """, legacyAccountId);
-        assertEquals("DIVERGED", observeWithoutCanonicalMutation().divergence().value());
+        AccountFactsSnapshot result = observeWithoutCanonicalMutation();
+        assertEquals(UNKNOWN, result.divergence().status());
+        assertHasClassification(result, AccountDivergenceReport.Classification.BALANCE_SEMANTIC_MISMATCH);
+    }
+
+    @Test
+    void currentMinimumSizeClassifiesPositiveBtcResidualWithoutRoundingToZero() {
+        jdbc.update("UPDATE account_snapshots SET balance=0, available=0 WHERE account_id=? AND currency='BTC'",
+                legacyAccountId);
+        executor.btc = new BigDecimal("0.00000001");
+        AccountFactsSnapshot result = observeWithoutCanonicalMutation();
+        assertHasClassification(result, AccountDivergenceReport.Classification.EXTERNAL_DUST_BALANCE);
+        assertEquals(new BigDecimal("0.00000001"), result.balances().get("BTC").value().total());
+    }
+
+    @Test
+    void positiveUnexpectedAssetIsNotSilentlyDiscarded() {
+        noActiveOrders();
+        executor.usdc = BigDecimal.ONE;
+        AccountFactsSnapshot result = observeWithoutCanonicalMutation();
+        assertHasClassification(result, AccountDivergenceReport.Classification.UNEXPECTED_EXTERNAL_ASSET);
+        assertEquals("DIVERGED", result.divergence().value());
+    }
+
+    @Test
+    void equalButOldCanonicalSnapshotsCannotMatch() {
+        noActiveOrders();
+        jdbc.update("UPDATE account_snapshots SET ts=? WHERE account_id=?",
+                Timestamp.from(NOW.minusSeconds(120)), legacyAccountId);
+        AccountFactsSnapshot result = observeWithoutCanonicalMutation();
+        assertEquals(UNKNOWN, result.divergence().status());
+        assertHasClassification(result, AccountDivergenceReport.Classification.CANONICAL_FACT_STALE);
+    }
+
+    @Test
+    void localSentAndExternalLiveCannotMatchStateClass() {
+        jdbc.update("UPDATE orders SET status='SENT' WHERE account_id=? AND client_order_id=?",
+                legacyAccountId, clientOrderId);
+        assertHasClassification(observeWithoutCanonicalMutation(),
+                AccountDivergenceReport.Classification.ORDER_STATE_MISMATCH);
+    }
+
+    @Test
+    void localPositionAndSnapshotMismatchIsVisible() {
+        noActiveOrders();
+        jdbc.update("UPDATE positions SET qty=0.5, updated_at=? WHERE account_id=? AND symbol='BTC-USDT'",
+                Timestamp.from(NOW), legacyAccountId);
+        AccountFactsSnapshot result = observeWithoutCanonicalMutation();
+        assertHasClassification(result, AccountDivergenceReport.Classification.POSITION_MISMATCH);
+        assertEquals("DIVERGED", result.divergence().value());
+    }
+
+    @Test
+    void exchangeOrderIdChangesCanonicalFactIdentity() {
+        AccountFactsSnapshot before = observeWithoutCanonicalMutation();
+        jdbc.update("UPDATE orders SET exchange_order_id=? WHERE account_id=? AND client_order_id=?",
+                "changed-" + clientOrderId, legacyAccountId, clientOrderId);
+        executor.operations.clear();
+        AccountFactsSnapshot after = observeWithoutCanonicalMutation();
+        assertHasClassification(after, AccountDivergenceReport.Classification.ORDER_IDENTITY_MISMATCH);
+        assertTrue(!before.divergenceReport().canonicalFactIdentity()
+                .equals(after.divergenceReport().canonicalFactIdentity()));
+    }
+
+    @Test
+    void staleLocalOnlyAssetCannotBeCalledCurrentDivergence() {
+        noActiveOrders();
+        insertSnapshot(legacyAccountId, "USDC", BigDecimal.ONE, NOW.minusSeconds(120));
+        AccountFactsSnapshot result = observeWithoutCanonicalMutation();
+        assertEquals(UNKNOWN, result.divergence().status());
+        assertHasClassification(result, AccountDivergenceReport.Classification.CANONICAL_FACT_STALE);
+        assertTrue(result.divergenceReport().items().stream().noneMatch(item ->
+                item.classification() == AccountDivergenceReport.Classification.UNEXPECTED_LOCAL_ASSET));
+    }
+
+    @Test
+    void venueChangeChangesCanonicalFactIdentity() {
+        AccountFactsSnapshot before = observeWithoutCanonicalMutation();
+        jdbc.update("UPDATE orders SET venue='BINANCE' WHERE account_id=? AND client_order_id=?",
+                legacyAccountId, clientOrderId);
+        executor.operations.clear();
+        AccountFactsSnapshot after = observeWithoutCanonicalMutation();
+        assertHasClassification(after, AccountDivergenceReport.Classification.ORDER_IDENTITY_MISMATCH);
+        assertTrue(!before.divergenceReport().canonicalFactIdentity()
+                .equals(after.divergenceReport().canonicalFactIdentity()));
+    }
+
+    @Test
+    void twoTotalDifferencesRetainTwoItems() {
+        noActiveOrders();
+        executor.btc = BTC.add(BigDecimal.ONE);
+        executor.usdt = USDT.add(BigDecimal.ONE);
+        AccountFactsSnapshot result = observeWithoutCanonicalMutation();
+        assertEquals(AccountDivergenceReport.Classification.MULTIPLE_DIVERGENCES,
+                result.divergenceReport().aggregate());
+        assertEquals(2, result.divergenceReport().items().stream()
+                .filter(item -> item.classification() == AccountDivergenceReport.Classification.BALANCE_MISMATCH)
+                .count());
+    }
+
+    @Test
+    void changedLimitPriceHasSpecificClassification() {
+        jdbc.update("UPDATE orders SET price=11 WHERE account_id=? AND client_order_id=?",
+                legacyAccountId, clientOrderId);
+        assertHasClassification(observeWithoutCanonicalMutation(),
+                AccountDivergenceReport.Classification.ORDER_PRICE_MISMATCH);
+    }
+
+    @Test
+    void changedSideHasIdentityClassification() {
+        jdbc.update("UPDATE orders SET side='SELL' WHERE account_id=? AND client_order_id=?",
+                legacyAccountId, clientOrderId);
+        assertHasClassification(observeWithoutCanonicalMutation(),
+                AccountDivergenceReport.Classification.ORDER_IDENTITY_MISMATCH);
+    }
+
+    @Test
+    void duplicateProviderOrderIsUnknown() {
+        executor.orders = List.of(externalOrder(clientOrderId), externalOrder(clientOrderId));
+        AccountFactsSnapshot result = observeWithoutCanonicalMutation();
+        assertEquals(UNKNOWN, result.divergence().status());
+        assertHasClassification(result, AccountDivergenceReport.Classification.UNKNOWN);
+    }
+
+    @Test
+    void simTradeOnMappedAccountBlocksBalanceSemanticClaim() {
+        String simOrder = insertOrder(legacyAccountId, "sim-" + UUID.randomUUID(), "BTC-USDT", "SIM", "FILLED");
+        jdbc.update("""
+                INSERT INTO trades (trade_id, order_id, account_id, symbol, exchange, exchange_code,
+                    exchange_trade_id, trade_env, price, qty, fee, fee_currency, trace_id, ts)
+                VALUES (?, ?, ?, 'BTC-USDT', 'OKX', 'OKX', ?, 'SIM', 10, 0.1, 0, 'USDT', 'synthetic', ?)
+                """, UUID.randomUUID().toString(), simOrder, legacyAccountId,
+                UUID.randomUUID().toString(), Timestamp.from(NOW));
+        assertUnknownDivergence(observeWithoutCanonicalMutation(), "BALANCE_SEMANTIC_MISMATCH");
     }
 
     @Test
     void latestPublishedSnapshotWinsEvenWhenItsBusinessTimestampIsOlder() {
+        noActiveOrders();
         insertSnapshot(legacyAccountId, "BTC", new BigDecimal("0.75"), NOW.minusSeconds(60));
+        jdbc.update("UPDATE positions SET updated_at=? WHERE account_id=? AND symbol='BTC-USDT'",
+                Timestamp.from(NOW), legacyAccountId);
         AccountFactsSnapshot result = observeWithoutCanonicalMutation();
         assertEquals("DIVERGED", result.divergence().value());
         assertEquals(OBSERVED, result.status());
@@ -254,11 +402,13 @@ class OkxAccountFactsPostgresIntegrationTest {
     @Test
     void localLiveOrderForAnotherSymbolDiverges() {
         insertOrder(legacyAccountId, "eth-" + UUID.randomUUID(), "ETH-USDT", "LIVE", "ACCEPTED");
-        assertEquals("DIVERGED", observeWithoutCanonicalMutation().divergence().value());
+        assertHasClassification(observeWithoutCanonicalMutation(),
+                AccountDivergenceReport.Classification.LOCAL_ACTIVE_ORDER_ONLY);
     }
 
     @Test
     void localSimOrderDoesNotEnterLiveAccountComparison() {
+        noActiveOrders();
         insertOrder(legacyAccountId, "sim-" + UUID.randomUUID(), "BTC-USDT", "SIM", "ACCEPTED");
         assertEquals("MATCH", observeWithoutCanonicalMutation().divergence().value());
     }
@@ -286,15 +436,17 @@ class OkxAccountFactsPostgresIntegrationTest {
     @ParameterizedTest
     @ValueSource(strings = {"BTC", "USDT"})
     void missingCanonicalCurrencyStaysUnknown(String currency) {
+        noActiveOrders();
         jdbc.update("DELETE FROM account_snapshots WHERE account_id=? AND currency=?", legacyAccountId, currency);
-        assertUnknownDivergence(observeWithoutCanonicalMutation(), "CANONICAL_BALANCE_INCOMPLETE");
+        assertUnknownDivergence(observeWithoutCanonicalMutation(), "CANONICAL_BALANCE_MISSING");
     }
 
     @Test
     void nonzeroPositionCannotHideMissingCanonicalBalance() {
+        noActiveOrders();
         executor.positions = List.of(position("2"));
         jdbc.update("DELETE FROM account_snapshots WHERE account_id=?", legacyAccountId);
-        assertUnknownDivergence(observeWithoutCanonicalMutation(), "CANONICAL_BALANCE_INCOMPLETE");
+        assertUnknownDivergence(observeWithoutCanonicalMutation(), "CANONICAL_BALANCE_MISSING");
     }
 
     private AccountFactsSnapshot observeWithoutCanonicalMutation() {
@@ -316,6 +468,12 @@ class OkxAccountFactsPostgresIntegrationTest {
         }
     }
 
+    private void noActiveOrders() {
+        executor.orders = List.of();
+        jdbc.update("UPDATE orders SET status='REJECTED' WHERE account_id=? AND client_order_id=?",
+                legacyAccountId, clientOrderId);
+    }
+
     private static Map<String, List<String>> canonicalContent() {
         Map<String, List<String>> result = new LinkedHashMap<>();
         for (String table : CANONICAL_TABLES) {
@@ -330,6 +488,12 @@ class OkxAccountFactsPostgresIntegrationTest {
         assertNull(result.divergence().value());
         assertEquals(reason, result.divergence().reason());
         assertEquals(UNKNOWN, result.status());
+    }
+
+    private static void assertHasClassification(AccountFactsSnapshot result,
+            AccountDivergenceReport.Classification classification) {
+        assertTrue(result.divergenceReport() != null && result.divergenceReport().items().stream()
+                .anyMatch(item -> item.classification() == classification), classification.name());
     }
 
     private static long insertAccount() {
@@ -389,6 +553,7 @@ class OkxAccountFactsPostgresIntegrationTest {
     private static final class SyntheticExecutor implements OkxPrivateCredentialExecutor {
         private BigDecimal btc = BTC;
         private BigDecimal usdt = USDT;
+        private BigDecimal usdc;
         private List<OkxPrivatePositionFact> positions = List.of();
         private List<OkxPrivateOrderSnapshot> orders = List.of();
         private boolean completePositions = true;
@@ -419,10 +584,16 @@ class OkxAccountFactsPostgresIntegrationTest {
                 case OKX_ACCOUNT_CONFIGURATION_READ -> new OkxPrivateReadResult(request.operation(),
                         Set.of("READ_ONLY"), 0, true, List.of(), List.of(), true,
                         OkxIpAllowlistStatus.MATCHED, NOW, "2", List.of(), null);
-                case OKX_ALL_ACCOUNT_BALANCES_READ -> new OkxPrivateReadResult(request.operation(), Set.of(),
-                        2, true, List.of(), List.of(), false, OkxIpAllowlistStatus.NOT_CHECKED, NOW, null,
-                        List.of(new OkxPrivateBalanceFact("BTC", btc, btc, BigDecimal.ZERO, NOW),
-                                new OkxPrivateBalanceFact("USDT", usdt, usdt, BigDecimal.ZERO, NOW)), null);
+                case OKX_ALL_ACCOUNT_BALANCES_READ -> {
+                    List<OkxPrivateBalanceFact> balances = new ArrayList<>(List.of(
+                            new OkxPrivateBalanceFact("BTC", btc, btc, BigDecimal.ZERO, NOW),
+                            new OkxPrivateBalanceFact("USDT", usdt, usdt, BigDecimal.ZERO, NOW)));
+                    if (usdc != null) balances.add(new OkxPrivateBalanceFact("USDC", usdc, usdc,
+                            BigDecimal.ZERO, NOW));
+                    yield new OkxPrivateReadResult(request.operation(), Set.of(), balances.size(), true,
+                            List.of(), List.of(), false, OkxIpAllowlistStatus.NOT_CHECKED, NOW, null,
+                            balances, null);
+                }
                 case OKX_SPOT_ACCOUNT_FEE_READ -> new OkxPrivateReadResult(request.operation(), Set.of(),
                         0, true, List.of(), List.of(), false, OkxIpAllowlistStatus.NOT_CHECKED, NOW, null, List.of(),
                         new OkxPrivateFeeFact("BTC-USDT", new BigDecimal("-0.0008"),

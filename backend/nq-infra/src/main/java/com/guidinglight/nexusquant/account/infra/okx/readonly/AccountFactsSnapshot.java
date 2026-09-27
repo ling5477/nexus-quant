@@ -29,6 +29,7 @@ public record AccountFactsSnapshot(
         Fact<Instant> exchangeTime,
         Fact<String> publicInstrumentRuleIdentity,
         Fact<String> divergence,
+        AccountDivergenceReport divergenceReport,
         Status status,
         String reason
 ) {

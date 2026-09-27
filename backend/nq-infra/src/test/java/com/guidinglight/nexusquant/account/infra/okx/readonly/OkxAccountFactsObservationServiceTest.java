@@ -131,13 +131,11 @@ class OkxAccountFactsObservationServiceTest {
     void matchingCanonicalSnapshotAndNoExternalOrderClassifiesMatch() {
         legacyAccountId = 42L;
         executor.includeBtc = true;
+        executor.unlockedUsdt = true;
         setupAllowed();
+        currentRule();
         when(transport.readServerTime()).thenReturn(NOW);
-        when(jdbc.queryForList(anyString(), eq(String.class), eq(42L)))
-                .thenReturn(List.of());
-        when(jdbc.queryForList(anyString(), eq(42L))).thenReturn(List.of(
-                Map.of("currency", "BTC", "balance", BigDecimal.ZERO, "available", BigDecimal.ZERO, "frozen", BigDecimal.ZERO),
-                Map.of("currency", "USDT", "balance", new BigDecimal("12.5"), "available", new BigDecimal("10.5"), "frozen", new BigDecimal("2"))));
+        stubCanonical(List.of(), canonicalBalances());
         assertEquals("MATCH", service().observe(7, 8, 9).divergence().value());
     }
 
@@ -147,11 +145,13 @@ class OkxAccountFactsObservationServiceTest {
         executor.includeBtc = true;
         executor.externalOpenOrder = true;
         setupAllowed();
+        currentRule();
         when(transport.readServerTime()).thenReturn(NOW);
-        when(jdbc.queryForList(anyString(), eq(String.class), eq(42L)))
-                .thenReturn(List.of());
+        stubCanonical(List.of(), canonicalBalances());
         AccountFactsSnapshot snapshot = service().observe(7, 8, 9);
-        assertEquals("DIVERGED", snapshot.divergence().value());
+        assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.divergence().status());
+        assertTrue(snapshot.divergenceReport().items().stream().anyMatch(item ->
+                item.classification() == AccountDivergenceReport.Classification.EXTERNAL_OPEN_ORDER_ONLY));
         assertEquals(1, snapshot.openOrderCount().value());
     }
 
@@ -160,10 +160,12 @@ class OkxAccountFactsObservationServiceTest {
         legacyAccountId = 42L;
         executor.includeBtc = true;
         setupAllowed();
+        currentRule();
         when(transport.readServerTime()).thenReturn(NOW);
-        when(jdbc.queryForList(anyString(), eq(String.class), eq(42L)))
-                .thenReturn(List.of("local-active-order"));
-        assertEquals("DIVERGED", service().observe(7, 8, 9).divergence().value());
+        stubCanonical(List.of(canonicalOrder("local-active-order")), canonicalBalances());
+        var snapshot = service().observe(7, 8, 9);
+        assertTrue(snapshot.divergenceReport().items().stream().anyMatch(item ->
+                item.classification() == AccountDivergenceReport.Classification.LOCAL_ACTIVE_ORDER_ONLY));
     }
 
     @Test
@@ -174,7 +176,7 @@ class OkxAccountFactsObservationServiceTest {
         when(transport.readServerTime()).thenReturn(NOW);
         AccountFactsSnapshot snapshot = service().observe(7, 8, 9);
         assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.positions().status());
-        assertEquals("ACCOUNT_MODE_NOT_YET_QUALIFIED", snapshot.divergence().reason());
+        assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.divergence().status());
         assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.status());
         verifyNoInteractions(jdbc);
     }
@@ -191,13 +193,13 @@ class OkxAccountFactsObservationServiceTest {
     }
 
     @Test
-    void unexpectedSpotAssetClassifiesDivergedEvenWhenBtcIsUnreported() {
+    void unexpectedSpotAssetCannotHideMissingBtc() {
         legacyAccountId = 42L;
         executor.unexpectedAsset = true;
         setupAllowed();
         when(transport.readServerTime()).thenReturn(NOW);
         AccountFactsSnapshot snapshot = service().observe(7, 8, 9);
-        assertEquals("DIVERGED", snapshot.divergence().value());
+        assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.divergence().status());
         assertEquals("USDC", snapshot.balances().get("USDC").value().currency());
     }
 
@@ -278,18 +280,20 @@ class OkxAccountFactsObservationServiceTest {
         assertEquals(AccountFactsSnapshot.Status.UNKNOWN, service().observe(7, 8, 9).divergence().status());
         executor.includeBtc = true;
         when(jdbc.queryForList(anyString(), eq(42L))).thenReturn(List.of());
-        assertEquals("CANONICAL_BALANCE_INCOMPLETE", service().observe(7, 8, 9).divergence().reason());
+        assertEquals("CANONICAL_BALANCE_MISSING", service().observe(7, 8, 9).divergence().reason());
     }
 
     @Test
     void staleOrMissingCurrentPublicRulePreventsAggregateObserved() {
         modeTwoMatching();
-        when(publicRuleReader.observe()).thenReturn(new AccountFactsSnapshot.Fact<>(
-                AccountFactsSnapshot.Status.STALE, "OKX:BTC-USDT:" + "a".repeat(64),
+        when(publicRuleReader.observeDetailed()).thenReturn(new AccountFactsSnapshot.Fact<>(
+                AccountFactsSnapshot.Status.STALE,
+                new OkxCurrentPublicRuleReader.CurrentRule("OKX:BTC-USDT:" + "a".repeat(64),
+                        new BigDecimal("0.00001")),
                 NOW.minus(Duration.ofDays(2)), NOW.minus(Duration.ofDays(1)),
                 "OKX_PUBLIC_INSTRUMENTS", "PUBLIC_RULE_OBSERVATION_STALE"));
         assertEquals(AccountFactsSnapshot.Status.UNKNOWN, service().observe(7, 8, 9).status());
-        when(publicRuleReader.observe()).thenReturn(new AccountFactsSnapshot.Fact<>(
+        when(publicRuleReader.observeDetailed()).thenReturn(new AccountFactsSnapshot.Fact<>(
                 AccountFactsSnapshot.Status.UNKNOWN, null, NOW, null,
                 "OKX_PUBLIC_INSTRUMENTS", "PUBLIC_RULE_READ_FAILED"));
         assertEquals(AccountFactsSnapshot.Status.UNKNOWN, service().observe(7, 8, 9).status());
@@ -311,19 +315,49 @@ class OkxAccountFactsObservationServiceTest {
         legacyAccountId = 42L;
         executor.accountMode = "2";
         executor.includeBtc = true;
+        executor.unlockedUsdt = true;
         setupAllowed();
         currentRule();
         when(transport.readServerTime()).thenReturn(NOW);
-        when(jdbc.queryForList(anyString(), eq(String.class), eq(42L)))
-                .thenReturn(List.of());
-        when(jdbc.queryForList(anyString(), eq(42L))).thenReturn(List.of(
-                Map.of("currency", "BTC", "balance", BigDecimal.ZERO, "available", BigDecimal.ZERO, "frozen", BigDecimal.ZERO),
-                Map.of("currency", "USDT", "balance", new BigDecimal("12.5"), "available", new BigDecimal("10.5"), "frozen", new BigDecimal("2"))));
+        stubCanonical(List.of(), canonicalBalances());
+    }
+
+    private void stubCanonical(List<Map<String, Object>> orders, List<Map<String, Object>> balances) {
+        when(jdbc.queryForList(anyString(), eq(42L))).thenAnswer(invocation -> {
+            String sql = invocation.getArgument(0);
+            return sql.contains("FROM account_snapshots") ? balances
+                    : sql.contains("FROM positions") ? List.of() : orders;
+        });
+        when(jdbc.queryForObject(anyString(), eq(Boolean.class), eq(42L), eq(42L)))
+                .thenReturn(false);
+    }
+
+    private static List<Map<String, Object>> canonicalBalances() {
+        return List.of(
+                Map.of("snapshot_id", 1L, "currency", "BTC", "balance", BigDecimal.ZERO,
+                        "available", BigDecimal.ZERO, "frozen", BigDecimal.ZERO,
+                        "ts", java.sql.Timestamp.from(NOW), "created_at", java.sql.Timestamp.from(NOW)),
+                Map.of("snapshot_id", 2L, "currency", "USDT", "balance", new BigDecimal("12.5"),
+                        "available", new BigDecimal("12.5"), "frozen", BigDecimal.ZERO,
+                        "ts", java.sql.Timestamp.from(NOW), "created_at", java.sql.Timestamp.from(NOW)));
+    }
+
+    private static Map<String, Object> canonicalOrder(String id) {
+        return Map.ofEntries(Map.entry("order_id", id), Map.entry("client_order_id", id),
+                Map.entry("exchange_order_id", id), Map.entry("exchange_code", "OKX"),
+                Map.entry("venue", "OKX"), Map.entry("symbol", "BTC-USDT"), Map.entry("side", "BUY"),
+                Map.entry("type", "LIMIT"), Map.entry("price", BigDecimal.TEN),
+                Map.entry("qty", BigDecimal.ONE), Map.entry("status", "ACCEPTED"),
+                Map.entry("filled", BigDecimal.ZERO),
+                Map.entry("created_at", java.sql.Timestamp.from(NOW)),
+                Map.entry("updated_at", java.sql.Timestamp.from(NOW)));
     }
 
     private void currentRule() {
-        when(publicRuleReader.observe()).thenReturn(new AccountFactsSnapshot.Fact<>(
-                AccountFactsSnapshot.Status.OBSERVED, "OKX:BTC-USDT:" + "a".repeat(64), NOW,
+        when(publicRuleReader.observeDetailed()).thenReturn(new AccountFactsSnapshot.Fact<>(
+                AccountFactsSnapshot.Status.OBSERVED,
+                new OkxCurrentPublicRuleReader.CurrentRule("OKX:BTC-USDT:" + "a".repeat(64),
+                        new BigDecimal("0.00001")), NOW,
                 NOW.plus(Duration.ofHours(24)), "OKX_PUBLIC_INSTRUMENTS", "CURRENTLY_OBSERVED_PUBLIC_RULE"));
     }
 
@@ -332,9 +366,10 @@ class OkxAccountFactsObservationServiceTest {
         modeTwoMatching();
         observationClock = mock(Clock.class);
         when(observationClock.instant()).thenReturn(NOW);
-        when(jdbc.queryForList(anyString(), eq(String.class), eq(42L))).thenAnswer(invocation -> {
+        when(jdbc.queryForList(anyString(), eq(42L))).thenAnswer(invocation -> {
             when(observationClock.instant()).thenReturn(NOW.plusSeconds(61));
-            return List.of();
+            String sql = invocation.getArgument(0);
+            return sql.contains("FROM account_snapshots") ? canonicalBalances() : List.of();
         });
         var snapshot = service().observe(7, 8, 9);
         assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.status());
@@ -347,11 +382,12 @@ class OkxAccountFactsObservationServiceTest {
     @ValueSource(booleans = {false, true})
     void killStateOrVersionChangeDuringComparisonRejectsResult(boolean remainEngaged) {
         modeTwoMatching();
-        when(jdbc.queryForList(anyString(), eq(String.class), eq(42L))).thenAnswer(invocation -> {
+        when(jdbc.queryForList(anyString(), eq(42L))).thenAnswer(invocation -> {
             when(kill.snapshot()).thenReturn(new KillSwitchSnapshot(KillSwitchScope.GLOBAL_TRADING,
                     remainEngaged ? KillSwitchStatus.ENGAGED : KillSwitchStatus.DISENGAGED, 2,
                     "TEST", "TEST", NOW, NOW, "trace"));
-            return List.of();
+            String sql = invocation.getArgument(0);
+            return sql.contains("FROM account_snapshots") ? canonicalBalances() : List.of();
         });
         var snapshot = service().observe(7, 8, 9);
         assertEquals(AccountFactsSnapshot.Status.REJECTED, snapshot.status());
@@ -391,7 +427,7 @@ class OkxAccountFactsObservationServiceTest {
                         "VERIFIED", true, null, null, null, NOW, null, NOW,
                         "SUCCEEDED", permissionScope, false, "PASSED", 0,
                         NOW.minusSeconds(30), null)));
-        when(publicRuleReader.observe()).thenReturn(new AccountFactsSnapshot.Fact<>(
+        when(publicRuleReader.observeDetailed()).thenReturn(new AccountFactsSnapshot.Fact<>(
                 AccountFactsSnapshot.Status.UNKNOWN, null, NOW, null,
                 "OKX_PUBLIC_INSTRUMENTS", "PUBLIC_RULE_IDENTITY_UNAVAILABLE"));
     }
@@ -406,6 +442,7 @@ class OkxAccountFactsObservationServiceTest {
         boolean tradePermission;
         boolean includeBtc;
         boolean unexpectedAsset;
+        boolean unlockedUsdt;
         boolean externalOpenOrder;
         boolean staleFee;
         boolean partialPositions;
@@ -440,7 +477,8 @@ class OkxAccountFactsObservationServiceTest {
                 case OKX_ALL_ACCOUNT_BALANCES_READ -> {
                     List<OkxPrivateBalanceFact> items = new ArrayList<>();
                     items.add(new OkxPrivateBalanceFact("USDT", new BigDecimal("12.5"),
-                            new BigDecimal("10.5"), new BigDecimal("2"), NOW));
+                            unlockedUsdt ? new BigDecimal("12.5") : new BigDecimal("10.5"),
+                            unlockedUsdt ? BigDecimal.ZERO : new BigDecimal("2"), NOW));
                     if (includeBtc) items.add(new OkxPrivateBalanceFact("BTC",
                             BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, NOW));
                     if (unexpectedAsset) items.add(new OkxPrivateBalanceFact("USDC",
