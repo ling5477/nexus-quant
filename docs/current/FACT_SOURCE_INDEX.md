@@ -35,6 +35,8 @@
 
 ## 4. Evidence Ledgers
 
+- [OKX 模式 2 与当前公开规则只读资格](evidence/gate-z/OKX_ACCOUNT_FACTS_READONLY_COVERAGE.md)：绑定 PR #40 的技术合并/CI、canonical release、两次独立 run 和最终完整只读观察；分类为 `ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。不覆盖 STATUS，也不授予 LIVE 或交易权限。
+
 - [TESTING.md](TESTING.md)：append-only 验证证据。
 - [WORKLOG.md](WORKLOG.md)：append-only 工作证据。
 
