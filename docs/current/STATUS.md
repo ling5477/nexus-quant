@@ -13,11 +13,11 @@ accepted_batch_status=ACCEPTED|CI_GREEN
 accepted_batch_implementation_commit=b15406019be0b9d5158a7acc83cf80a4bce8f2ed
 accepted_batch_acceptance_head=e9df23f079f0aaec1eff5b38269f4b18c7e9dae3
 accepted_batch_ci_run=36295009039
-work_batch=NQ-GATEZ-OKX-ACCOUNT-DIVERGENCE-READONLY-ROOT-CAUSE
-work_batch_status=BLOCKED
-work_batch_commit=f7a5faa782e55a87f263f7fefba4b717599396d9
-work_batch_ci_run=36302559099
-next_action=NQ-GATEZ-ACCOUNT-SNAPSHOT-SEMANTICS-UNBLOCK
+work_batch=NQ-GATEZ-ACCOUNT-SNAPSHOT-SEMANTICS-UNBLOCK
+work_batch_status=ACCEPTED|CI_GREEN
+work_batch_commit=5197b128131aa21be7705ee6cf3619db3cec00bb
+work_batch_ci_run=36314244328
+next_action=NQ-GATEZ-ACCOUNT-DIVERGENCE-READONLY-REQUALIFICATION-PLAN
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -37,6 +37,7 @@ nq-current-authority:end -->
 - GateAUDIT：`FROZEN / ACCEPTED / TAGGED`；freeze commit=`a4cf8516382b47112852fc3f8dd9e5a65a80f993`，tree=`557bb3fa6549732cc5bdf2d40251c31a963f83a0`，annotated tag=`nq-gateaudit-freeze`，tag object=`4ee65d68471c5e25874ab6a08c3e9fc420f667b7`，peeled commit=`a4cf8516382b47112852fc3f8dd9e5a65a80f993`。`dev` exact-head CI=`35840126216 / push / completed / success / 9 of 9`；release checker 与 release-mode archive checker 均 `PASS / errors=0`。13-role archive 保持 pre-tag snapshot 语义；post-tag freeze 由 Git tag 与本 current authority 表达。Phase7-E 与 Phase7-F authority synchronization 已完成；post-GateAUDIT Git cleanup 按用户接受的 disposition 为 `COMPLETE`，保留的历史本地分支及 worktree 属于非阻断残余。
 - GateZ：`IN_PROGRESS / NOT_FROZEN`。GateZ-1 与公开市场数据可重放 smoke 保持已接受；一次性 bootstrap、runtime identity 修复及 owner 登录能力保留。2026-09-27 的新只读资格验证已通过：`REAL_ACCOUNT_READONLY_FACTS_QUALIFIED`。coverage unblock 技术 PR #40 的合并提交/精确 HEAD CI 为 `e9df23f079f0aaec1eff5b38269f4b18c7e9dae3 / 36295009039 / 9 of 9 SUCCESS`；canonical release=`nq-e9df23f079f0-5a401cd983263e6d` 已普通 install/activate，PG16/V54 validate 通过，migration 执行数为 0。复用现有 owner 登录来源，密码、角色和 owner 链未变；permission probe 为 `SUCCEEDED / TRADE / WITHDRAW=false / IP PASSED`。新 snapshot 的模式 2、BTC/USDT 与全部返回余额、positions、挂单、费率、交易所时间、当前公开规则和偏差均为 OBSERVED；positions=`NO_ACTIVE_POSITION / 0`，open orders=`0`，divergence=`DIVERGED`，完整分类不要求 MATCH。观察时间为 `2026-09-27T05:38:23.820031102Z`；私有事实 60s、公开规则 24h，验收时全部新鲜，历史快照不能作为后续实时输入。成功轮 10 次固定 GET、其他 endpoint 0、交易 mutation 0，五类 canonical 交易事实数量及内容不变。runtime 已停止，Java/MainPID=0，LIVE=DISABLED，kill=ENGAGED。首轮采集器阶段计数错误导致的失败原位保留，修正后以独立 run 身份重新验证；不追认旧失败为成功。详情见[模式 2 与公开规则只读资格证据](evidence/gate-z/OKX_ACCOUNT_FACTS_READONLY_COVERAGE.md)。
 - GateZ 账户差异根因检查：技术 PR #42 合并于 `f7a5faa782e55a87f263f7fefba4b717599396d9`，其 `dev` exact-head CI `36302559099` 为 9/9 SUCCESS；release `nq-f7a5faa782e5-20670623964ad074` 已普通 install/activate，PG16/V54 只读 validate 通过，migration 执行数 0。本轮唯一新 OKX 观察的 typed 结果为 `UNKNOWN / BALANCE_SEMANTIC_MISMATCH`：本地账户快照无 SIM/LIVE 环境语义，不能与 OKX 余额同口径比较。确认 7 种外部正余额资产、其中 5 种无本地快照行；BTC 为正且低于当次公开最小数量；本地 BTC/USDT 快照为 2026-08-26，时间因果未证明。正式采集器因空 `expiresAt` 触发 `AttributeError`，原始验收为 `QUALIFICATION_BLOCKED_COLLECTOR_ATTRIBUTEERROR`，不追认 PASS，也不标记 `ACCOUNT_DIVERGENCE=EXPLAINED`。10 次固定 GET、交易 mutation 0、五类 canonical 交易事实内容未变；终态 Java/MainPID=0、LIVE=DISABLED、kill=ENGAGED。先解决快照余额的 LIVE/SIM 语义与新鲜度来源，再决定是否有精确金额差；详见[本轮只读根因检查证据](evidence/gate-z/OKX_ACCOUNT_DIVERGENCE_READONLY_ROOT_CAUSE.md)。
+- GateZ 账户快照 provenance：技术 PR #44 的 `dev=5197b128131aa21be7705ee6cf3619db3cec00bb / exact-head CI 36314244328 / 9 of 9 SUCCESS` 已接受。PG16/V54 的 canonical backup 与隔离恢复通过后，生产仅执行 V55，Flyway validate 为 V55/pending=0/failed=0；两条历史快照的新 provenance 字段仍全为 NULL，旧字段指纹不变。`nq-5197b128131a-39f54b083d7e0571` 已普通 install/activate，`/current` 与 activation head/journal 一致，终态无 Java 进程、LIVE=DISABLED、kill=ENGAGED。没有新的 OKX private observation；collector 原正式源码未找回，状态为 `COLLECTOR_SOURCE_UNAVAILABLE / DEFERRED_NON_BLOCKING_FOR_SNAPSHOT_SEMANTICS`。既有 divergence 仍为 UNKNOWN，不追认 `ACCOUNT_DIVERGENCE=EXPLAINED`。详见[生产 V55 与 release 证据](evidence/gate-z/ACCOUNT_SNAPSHOT_PROVENANCE_PRODUCTION_V55.md)。
 - GateY-6F：`ACCEPTED / CI GREEN / MINIMAL LIVE PILOT VERIFIED`（已接受 / CI 已通过 / 最小实盘 pilot 已验证）；production pilot release=`8e3dd0cf6104eb85f36a0e434ca51ea9d903705a`，CI run=`32978280738 / completed / success / 10 jobs`。
 - GateY-FREEZE：`ACCEPTED / CI GREEN / TAGGED`（已接受 / CI 已通过 / 已打 tag）；exact-head CI run=`33037514013 / completed / success / 11 jobs / bad=0`，archive/release post-tag checker errors=0。
 - GateAUDIT-0C-R3-DOC-LINK-LINUX-REMEDIATION：`ACCEPTED / CI GREEN`（已接受 / CI 已通过）；immutable acceptance pair=`40e1077e1fe735a3d250f094caaa24e437e8ea3f / 33306024232`，blocking jobs=`11/11 SUCCESS`。Linux CI 已关闭 P1-01 authority fixture、P1-02 Java verifier 与 doc-link hidden-root portability finding；P0=0、P1=0。

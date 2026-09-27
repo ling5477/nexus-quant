@@ -37,6 +37,7 @@
 
 - [OKX 模式 2 与当前公开规则只读资格](evidence/gate-z/OKX_ACCOUNT_FACTS_READONLY_COVERAGE.md)：绑定 PR #40 的技术合并/CI、canonical release、两次独立 run 和最终完整只读观察；分类为 `ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。不覆盖 STATUS，也不授予 LIVE 或交易权限。
 - [OKX 账户差异只读根因检查](evidence/gate-z/OKX_ACCOUNT_DIVERGENCE_READONLY_ROOT_CAUSE.md)：绑定 PR #42 技术合并/CI、canonical release、唯一新观察、`UNKNOWN / BALANCE_SEMANTIC_MISMATCH`、原始采集器失败与安全终态；分类为 `BLOCKED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。存在性差异已确认，精确余额根因与时间因果未证明；不覆盖 STATUS，也不授予交易或账户修复权限。
+- [账户快照 provenance 生产 V55 与 release](evidence/gate-z/ACCOUNT_SNAPSHOT_PROVENANCE_PRODUCTION_V55.md)：绑定 PR #44 精确 HEAD CI、canonical backup/隔离恢复、生产唯一 V55、历史 UNKNOWN 行保护、普通 activation 与安全终态；分类为 `ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。未执行新 OKX private observation；collector 源码缺失的延期事实不覆盖 STATUS，也不授予交易权限。
 
 - [TESTING.md](TESTING.md)：append-only 验证证据。
 - [WORKLOG.md](WORKLOG.md)：append-only 工作证据。
