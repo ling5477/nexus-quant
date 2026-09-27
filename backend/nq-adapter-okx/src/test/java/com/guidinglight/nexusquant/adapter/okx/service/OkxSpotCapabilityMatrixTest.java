@@ -37,6 +37,7 @@ class OkxSpotCapabilityMatrixTest {
         Set<ExchangeCapability> implementedPrivateReads = Set.of(
                 ExchangeCapability.PRIVATE_ACCOUNT_CONFIGURATION_READ,
                 ExchangeCapability.PRIVATE_ACCOUNT_BALANCE_READ,
+                ExchangeCapability.PRIVATE_ACCOUNT_POSITIONS_READ,
                 ExchangeCapability.PRIVATE_OPEN_ORDERS_READ,
                 ExchangeCapability.PRIVATE_ORDER_HISTORY_READ,
                 ExchangeCapability.PRIVATE_RECENT_FILLS_READ

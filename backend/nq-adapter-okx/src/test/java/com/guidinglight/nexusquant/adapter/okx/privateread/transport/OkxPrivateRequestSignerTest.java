@@ -18,6 +18,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class OkxPrivateRequestSignerTest {
 
     @Test
+    void positionsSignatureBindsFixedGetPathWithoutQueryOrBody() {
+        OkxPrivateRequestSigner signer = new OkxPrivateRequestSigner(
+                Clock.fixed(Instant.parse("2026-07-13T00:00:00Z"), ZoneOffset.UTC));
+        try (OkxPrivateCredentialContext credential = credential()) {
+            assertEquals("xBLM+9B8grAk3rivkt7Cb3X4V1yUE733g89PImzrYQc=",
+                    signer.signatureForTest(OkxPrivateReadRequest.accountPositions(), credential));
+        }
+    }
+
+    @Test
     void matchesFixedClockVectorAndIncludesDeterministicQuery() {
         Clock clock = Clock.fixed(Instant.parse("2026-07-13T00:00:00Z"), ZoneOffset.UTC);
         OkxPrivateRequestSigner signer = new OkxPrivateRequestSigner(clock);

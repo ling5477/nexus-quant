@@ -9,18 +9,21 @@ import com.guidinglight.nexusquant.adapter.okx.auth.OkxPrivateEnvironment;
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateBalanceFact;
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateFeeFact;
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateOrderSnapshot;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivatePositionFact;
+import com.guidinglight.nexusquant.adapter.okx.privateread.error.OkxPrivateReadException;
+import com.guidinglight.nexusquant.adapter.okx.privateread.error.OkxPrivateReadError;
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadOperation;
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadRequest;
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadResult;
 import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxAccountFactsReadTransport;
 import com.guidinglight.nexusquant.livecontrol.deployment.policy.ScopedCredentialCapabilityPolicy;
-import com.guidinglight.nexusquant.marketdata.application.instrument.InstrumentCatalogService;
-import com.guidinglight.nexusquant.marketdata.domain.instrument.InstrumentCatalogItem;
 import com.guidinglight.nexusquant.risk.domain.model.KillSwitchScope;
 import com.guidinglight.nexusquant.risk.domain.model.KillSwitchSnapshot;
 import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.math.BigDecimal;
@@ -49,9 +52,10 @@ class OkxAccountFactsObservationServiceTest {
     private final ExchangeAccountCredentialRepository credentials = mock(ExchangeAccountCredentialRepository.class);
     private final KillSwitchService kill = mock(KillSwitchService.class);
     private final OkxAccountFactsReadTransport transport = mock(OkxAccountFactsReadTransport.class);
-    private final InstrumentCatalogService catalog = mock(InstrumentCatalogService.class);
+    private final OkxCurrentPublicRuleReader publicRuleReader = mock(OkxCurrentPublicRuleReader.class);
     private final JdbcTemplate jdbc = mock(JdbcTemplate.class);
     private final CapturingExecutor executor = new CapturingExecutor();
+    private Clock observationClock = Clock.fixed(NOW, ZoneOffset.UTC);
     private Long legacyAccountId;
 
     @Test
@@ -129,11 +133,11 @@ class OkxAccountFactsObservationServiceTest {
         executor.includeBtc = true;
         setupAllowed();
         when(transport.readServerTime()).thenReturn(NOW);
-        when(jdbc.queryForList(anyString(), eq(String.class), eq(42L), eq("BTC-USDT")))
+        when(jdbc.queryForList(anyString(), eq(String.class), eq(42L)))
                 .thenReturn(List.of());
         when(jdbc.queryForList(anyString(), eq(42L))).thenReturn(List.of(
-                Map.of("currency", "BTC", "balance", BigDecimal.ZERO),
-                Map.of("currency", "USDT", "balance", new BigDecimal("12.5"))));
+                Map.of("currency", "BTC", "balance", BigDecimal.ZERO, "available", BigDecimal.ZERO, "frozen", BigDecimal.ZERO),
+                Map.of("currency", "USDT", "balance", new BigDecimal("12.5"), "available", new BigDecimal("10.5"), "frozen", new BigDecimal("2"))));
         assertEquals("MATCH", service().observe(7, 8, 9).divergence().value());
     }
 
@@ -144,7 +148,7 @@ class OkxAccountFactsObservationServiceTest {
         executor.externalOpenOrder = true;
         setupAllowed();
         when(transport.readServerTime()).thenReturn(NOW);
-        when(jdbc.queryForList(anyString(), eq(String.class), eq(42L), eq("BTC-USDT")))
+        when(jdbc.queryForList(anyString(), eq(String.class), eq(42L)))
                 .thenReturn(List.of());
         AccountFactsSnapshot snapshot = service().observe(7, 8, 9);
         assertEquals("DIVERGED", snapshot.divergence().value());
@@ -157,20 +161,20 @@ class OkxAccountFactsObservationServiceTest {
         executor.includeBtc = true;
         setupAllowed();
         when(transport.readServerTime()).thenReturn(NOW);
-        when(jdbc.queryForList(anyString(), eq(String.class), eq(42L), eq("BTC-USDT")))
+        when(jdbc.queryForList(anyString(), eq(String.class), eq(42L)))
                 .thenReturn(List.of("local-active-order"));
         assertEquals("DIVERGED", service().observe(7, 8, 9).divergence().value());
     }
 
     @Test
-    void nonSimpleAccountKeepsPositionsAndDivergenceUnknown() {
-        executor.accountMode = "2";
+    void unqualifiedAccountModeKeepsPositionsAndDivergenceUnknown() {
+        executor.accountMode = "3";
         executor.includeBtc = true;
         setupAllowed();
         when(transport.readServerTime()).thenReturn(NOW);
         AccountFactsSnapshot snapshot = service().observe(7, 8, 9);
         assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.positions().status());
-        assertEquals("POSITION_COMPARISON_UNAVAILABLE_FOR_ACCOUNT_MODE", snapshot.divergence().reason());
+        assertEquals("ACCOUNT_MODE_NOT_YET_QUALIFIED", snapshot.divergence().reason());
         assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.status());
         verifyNoInteractions(jdbc);
     }
@@ -180,10 +184,7 @@ class OkxAccountFactsObservationServiceTest {
         executor.includeBtc = true;
         setupAllowed();
         when(transport.readServerTime()).thenReturn(NOW);
-        InstrumentCatalogItem rule = mock(InstrumentCatalogItem.class);
-        when(rule.ruleChecksum()).thenReturn("a".repeat(64));
-        when(rule.observedAt()).thenReturn(NOW);
-        when(catalog.findByExchangeAndSymbols(eq("OKX"), any())).thenReturn(List.of(rule));
+        currentRule();
         AccountFactsSnapshot snapshot = service().observe(7, 8, 9);
         assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.divergence().status());
         assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.status());
@@ -214,11 +215,167 @@ class OkxAccountFactsObservationServiceTest {
         return service(ScopedCredentialCapabilityPolicy.PermissionScope.READ_ONLY);
     }
 
+    @Test
+    void modeTwoEmptySnapshotContinuesExactComparisonAndObservesAllFacts() {
+        modeTwoMatching();
+        var snapshot = service().observe(7, 8, 9);
+        assertEquals(AccountFactsSnapshot.Status.OBSERVED, snapshot.positions().status());
+        assertEquals(List.of(), snapshot.positions().value());
+        assertEquals("NO_ACTIVE_POSITION", snapshot.positions().reason());
+        assertEquals("MATCH", snapshot.divergence().value());
+        assertEquals(AccountFactsSnapshot.Status.OBSERVED, snapshot.status());
+        assertEquals(BigDecimal.ZERO, snapshot.spotBtcExposure().value());
+        assertEquals(1, executor.operations.stream()
+                .filter(op -> op == OkxPrivateReadOperation.OKX_ACCOUNT_POSITIONS_READ).count());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"SWAP", "FUTURES", "MARGIN", "OPTION", "EVENTS"})
+    void modeTwoNonZeroPositionDivergesWithoutConflatingSpotUnits(String type) {
+        modeTwoMatching();
+        executor.positions = List.of(position(type, "1"));
+        var snapshot = service().observe(7, 8, 9);
+        assertEquals(AccountFactsSnapshot.Status.OBSERVED, snapshot.positions().status());
+        assertEquals("DIVERGED", snapshot.divergence().value());
+        assertEquals("EXTERNAL_NON_SPOT_POSITION_PRESENT", snapshot.divergence().reason());
+        assertEquals(BigDecimal.ZERO, snapshot.spotBtcExposure().value());
+        assertEquals(AccountFactsSnapshot.Status.OBSERVED, snapshot.status());
+    }
+
+    @Test
+    void modeTwoZeroPositionIsObservedWithoutFalseDivergence() {
+        modeTwoMatching();
+        executor.positions = List.of(position("SWAP", "0"));
+        var snapshot = service().observe(7, 8, 9);
+        assertEquals("NO_ACTIVE_POSITION", snapshot.positions().reason());
+        assertEquals("MATCH", snapshot.divergence().value());
+    }
+
+    @Test
+    void modeTwoPositionFailureAndPartialSnapshotPreventMatch() {
+        modeTwoMatching();
+        for (var failure : List.of(OkxPrivateReadError.RESPONSE_CONTRACT_MISMATCH,
+                OkxPrivateReadError.POSITION_RESPONSE_OVER_LIMIT, OkxPrivateReadError.HTTP_RATE_LIMITED)) {
+            executor.positionFailure = failure;
+            var snapshot = service().observe(7, 8, 9);
+            assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.positions().status());
+            assertEquals(failure.name(), snapshot.positions().reason());
+            assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.divergence().status());
+            assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.status());
+        }
+        executor.positionFailure = null;
+        executor.partialPositions = true;
+        var partial = service().observe(7, 8, 9);
+        assertEquals("POSITION_RESPONSE_PARTIAL", partial.positions().reason());
+        assertEquals(AccountFactsSnapshot.Status.UNKNOWN, partial.status());
+    }
+
+    @Test
+    void modeTwoMissingBalancesCannotMatchOrClaimCompleteDivergence() {
+        modeTwoMatching();
+        executor.includeBtc = false;
+        executor.positions = List.of(position("SWAP", "1"));
+        assertEquals(AccountFactsSnapshot.Status.UNKNOWN, service().observe(7, 8, 9).divergence().status());
+        executor.includeBtc = true;
+        when(jdbc.queryForList(anyString(), eq(42L))).thenReturn(List.of());
+        assertEquals("CANONICAL_BALANCE_INCOMPLETE", service().observe(7, 8, 9).divergence().reason());
+    }
+
+    @Test
+    void staleOrMissingCurrentPublicRulePreventsAggregateObserved() {
+        modeTwoMatching();
+        when(publicRuleReader.observe()).thenReturn(new AccountFactsSnapshot.Fact<>(
+                AccountFactsSnapshot.Status.STALE, "OKX:BTC-USDT:" + "a".repeat(64),
+                NOW.minus(Duration.ofDays(2)), NOW.minus(Duration.ofDays(1)),
+                "OKX_PUBLIC_INSTRUMENTS", "PUBLIC_RULE_OBSERVATION_STALE"));
+        assertEquals(AccountFactsSnapshot.Status.UNKNOWN, service().observe(7, 8, 9).status());
+        when(publicRuleReader.observe()).thenReturn(new AccountFactsSnapshot.Fact<>(
+                AccountFactsSnapshot.Status.UNKNOWN, null, NOW, null,
+                "OKX_PUBLIC_INSTRUMENTS", "PUBLIC_RULE_READ_FAILED"));
+        assertEquals(AccountFactsSnapshot.Status.UNKNOWN, service().observe(7, 8, 9).status());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"3", "4"})
+    void unqualifiedModesDoNotReadPositionsOrClaimAggregateObserved(String mode) {
+        modeTwoMatching();
+        executor.accountMode = mode;
+        var snapshot = service().observe(7, 8, 9);
+        assertEquals("ACCOUNT_MODE_NOT_YET_QUALIFIED", snapshot.positions().reason());
+        assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.status());
+        assertTrue(executor.operations.stream().noneMatch(op ->
+                op == OkxPrivateReadOperation.OKX_ACCOUNT_POSITIONS_READ));
+    }
+
+    private void modeTwoMatching() {
+        legacyAccountId = 42L;
+        executor.accountMode = "2";
+        executor.includeBtc = true;
+        setupAllowed();
+        currentRule();
+        when(transport.readServerTime()).thenReturn(NOW);
+        when(jdbc.queryForList(anyString(), eq(String.class), eq(42L)))
+                .thenReturn(List.of());
+        when(jdbc.queryForList(anyString(), eq(42L))).thenReturn(List.of(
+                Map.of("currency", "BTC", "balance", BigDecimal.ZERO, "available", BigDecimal.ZERO, "frozen", BigDecimal.ZERO),
+                Map.of("currency", "USDT", "balance", new BigDecimal("12.5"), "available", new BigDecimal("10.5"), "frozen", new BigDecimal("2"))));
+    }
+
+    private void currentRule() {
+        when(publicRuleReader.observe()).thenReturn(new AccountFactsSnapshot.Fact<>(
+                AccountFactsSnapshot.Status.OBSERVED, "OKX:BTC-USDT:" + "a".repeat(64), NOW,
+                NOW.plus(Duration.ofHours(24)), "OKX_PUBLIC_INSTRUMENTS", "CURRENTLY_OBSERVED_PUBLIC_RULE"));
+    }
+
+    @Test
+    void comparisonCrossingPrivateTtlCannotReturnObservedOrFreshMatch() {
+        modeTwoMatching();
+        observationClock = mock(Clock.class);
+        when(observationClock.instant()).thenReturn(NOW);
+        when(jdbc.queryForList(anyString(), eq(String.class), eq(42L))).thenAnswer(invocation -> {
+            when(observationClock.instant()).thenReturn(NOW.plusSeconds(61));
+            return List.of();
+        });
+        var snapshot = service().observe(7, 8, 9);
+        assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.status());
+        assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.divergence().status());
+        assertEquals("ACCOUNT_FACTS_EXPIRED_DURING_COMPARISON", snapshot.divergence().reason());
+        assertEquals(AccountFactsSnapshot.Status.STALE, snapshot.positions().statusAt(NOW.plusSeconds(61)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void killStateOrVersionChangeDuringComparisonRejectsResult(boolean remainEngaged) {
+        modeTwoMatching();
+        when(jdbc.queryForList(anyString(), eq(String.class), eq(42L))).thenAnswer(invocation -> {
+            when(kill.snapshot()).thenReturn(new KillSwitchSnapshot(KillSwitchScope.GLOBAL_TRADING,
+                    remainEngaged ? KillSwitchStatus.ENGAGED : KillSwitchStatus.DISENGAGED, 2,
+                    "TEST", "TEST", NOW, NOW, "trace"));
+            return List.of();
+        });
+        var snapshot = service().observe(7, 8, 9);
+        assertEquals(AccountFactsSnapshot.Status.REJECTED, snapshot.status());
+        assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.divergence().status());
+    }
+
+    private static OkxPrivatePositionFact position(String type, String quantity) {
+        String instrument = switch (type) {
+            case "MARGIN" -> "BTC-USDT";
+            case "FUTURES" -> "BTC-USDT-261225";
+            case "OPTION" -> "BTC-USD-261225-100000-C";
+            case "EVENTS" -> "BTC-USDT-EVENTS";
+            default -> "BTC-USDT-SWAP";
+        };
+        return new OkxPrivatePositionFact(type, instrument,
+                "cross", "net", new BigDecimal(quantity), "MARGIN".equals(type) ? "BTC" : null,
+                "USDT", NOW);
+    }
+
     private OkxAccountFactsObservationService service(
             ScopedCredentialCapabilityPolicy.PermissionScope permissionScope) {
         return new OkxAccountFactsObservationService(accounts, credentials, executor, transport,
-                kill, new ScopedCredentialCapabilityPolicy(Duration.ofHours(1)), permissionScope, catalog, jdbc,
-                Clock.fixed(NOW, ZoneOffset.UTC), "203.0.113.8");
+                kill, new ScopedCredentialCapabilityPolicy(Duration.ofHours(1)), permissionScope, publicRuleReader, jdbc,
+                observationClock, "203.0.113.8");
     }
 
     private void setupAllowed() {
@@ -234,7 +391,9 @@ class OkxAccountFactsObservationServiceTest {
                         "VERIFIED", true, null, null, null, NOW, null, NOW,
                         "SUCCEEDED", permissionScope, false, "PASSED", 0,
                         NOW.minusSeconds(30), null)));
-        when(catalog.findByExchangeAndSymbols(eq("OKX"), any())).thenReturn(List.of());
+        when(publicRuleReader.observe()).thenReturn(new AccountFactsSnapshot.Fact<>(
+                AccountFactsSnapshot.Status.UNKNOWN, null, NOW, null,
+                "OKX_PUBLIC_INSTRUMENTS", "PUBLIC_RULE_IDENTITY_UNAVAILABLE"));
     }
 
     private static KillSwitchSnapshot kill(KillSwitchStatus status) {
@@ -249,6 +408,9 @@ class OkxAccountFactsObservationServiceTest {
         boolean unexpectedAsset;
         boolean externalOpenOrder;
         boolean staleFee;
+        boolean partialPositions;
+        OkxPrivateReadError positionFailure;
+        List<OkxPrivatePositionFact> positions = List.of();
         String accountMode = "1";
         final List<OkxPrivateReadOperation> operations = new ArrayList<>();
 
@@ -298,6 +460,12 @@ class OkxAccountFactsObservationServiceTest {
                                 "BTC-USDT", "buy", "limit", new BigDecimal("10"), BigDecimal.ONE,
                                 BigDecimal.ZERO, "live", NOW, request.operation())) : List.of(),
                         List.of(), NOW);
+                case OKX_ACCOUNT_POSITIONS_READ -> {
+                    if (positionFailure != null) throw new OkxPrivateReadException(positionFailure);
+                    yield new OkxPrivateReadResult(request.operation(), Set.of(), 0, !partialPositions,
+                            List.of(), List.of(), false, OkxIpAllowlistStatus.NOT_CHECKED,
+                            NOW, null, List.of(), null, positions);
+                }
                 default -> throw new AssertionError("unexpected operation");
             };
         }

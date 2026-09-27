@@ -14,18 +14,38 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class OkxPrivateReadRequestTest {
 
     @Test
-    void exposesOnlyEightFixedPrivateReadOperations() {
-        assertEquals(8, OkxPrivateReadOperation.values().length);
+    void exposesOnlyNineFixedPrivateReadOperations() {
+        assertEquals(9, OkxPrivateReadOperation.values().length);
         assertEquals("GET", OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ.method());
         assertEquals("/api/v5/account/config", OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ.path());
         assertEquals("GET", OkxPrivateReadOperation.OKX_ACCOUNT_BALANCE_READ.method());
         assertEquals("/api/v5/account/balance", OkxPrivateReadOperation.OKX_ACCOUNT_BALANCE_READ.path());
         assertEquals("/api/v5/account/balance", OkxPrivateReadOperation.OKX_ALL_ACCOUNT_BALANCES_READ.path());
         assertEquals("/api/v5/account/trade-fee", OkxPrivateReadOperation.OKX_SPOT_ACCOUNT_FEE_READ.path());
+        assertEquals("/api/v5/account/positions", OkxPrivateReadOperation.OKX_ACCOUNT_POSITIONS_READ.path());
         assertEquals("/api/v5/trade/orders-pending", OkxPrivateReadOperation.OKX_SPOT_OPEN_ORDERS_READ.path());
         assertEquals("/api/v5/trade/orders-pending", OkxPrivateReadOperation.OKX_ALL_SPOT_OPEN_ORDERS_READ.path());
         assertEquals("/api/v5/trade/orders-history", OkxPrivateReadOperation.OKX_SPOT_ORDER_HISTORY_READ.path());
         assertEquals("/api/v5/trade/fills", OkxPrivateReadOperation.OKX_SPOT_RECENT_FILLS_READ.path());
+    }
+
+    @Test
+    void positionsRequestHasNoCallerControlledFilterWindowLimitOrIp() {
+        OkxPrivateReadRequest request = OkxPrivateReadRequest.accountPositions();
+        assertEquals("GET", request.operation().method());
+        assertEquals("/api/v5/account/positions", request.pathWithQuery());
+        OkxPrivateReadOperation operation = OkxPrivateReadOperation.OKX_ACCOUNT_POSITIONS_READ;
+        assertThrows(IllegalArgumentException.class, () -> new OkxPrivateReadRequest(operation, List.of("BTC")));
+        assertThrows(IllegalArgumentException.class, () -> new OkxPrivateReadRequest(
+                operation, List.of(), "BTC-USDT", null, null, 0, null));
+        assertThrows(IllegalArgumentException.class, () -> new OkxPrivateReadRequest(
+                operation, List.of(), null, Instant.EPOCH, null, 0, null));
+        assertThrows(IllegalArgumentException.class, () -> new OkxPrivateReadRequest(
+                operation, List.of(), null, null, Instant.EPOCH, 0, null));
+        assertThrows(IllegalArgumentException.class, () -> new OkxPrivateReadRequest(
+                operation, List.of(), null, null, null, 100, null));
+        assertThrows(IllegalArgumentException.class, () -> new OkxPrivateReadRequest(
+                operation, List.of(), null, null, null, 0, "127.0.0.1"));
     }
 
     @Test

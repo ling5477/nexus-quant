@@ -74,6 +74,11 @@ public record OkxPrivateReadRequest(
         );
     }
 
+    /** 读取完整账户仓位集合；不接受筛选或分页参数，避免把局部结果当作无仓位。 */
+    public static OkxPrivateReadRequest accountPositions() {
+        return new OkxPrivateReadRequest(OkxPrivateReadOperation.OKX_ACCOUNT_POSITIONS_READ, List.of());
+    }
+
     public static OkxPrivateReadRequest spotAccountFee(String instrumentId) {
         return new OkxPrivateReadRequest(
                 OkxPrivateReadOperation.OKX_SPOT_ACCOUNT_FEE_READ,
@@ -116,7 +121,7 @@ public record OkxPrivateReadRequest(
         return switch (operation) {
             case OKX_ACCOUNT_CONFIGURATION_READ -> operation.path();
             case OKX_ACCOUNT_BALANCE_READ -> operation.path() + "?ccy=" + String.join(",", currencies);
-            case OKX_ALL_ACCOUNT_BALANCES_READ -> operation.path();
+            case OKX_ALL_ACCOUNT_BALANCES_READ, OKX_ACCOUNT_POSITIONS_READ -> operation.path();
             case OKX_SPOT_ACCOUNT_FEE_READ -> operation.path()
                     + "?instType=SPOT&instId=" + instrumentId;
             case OKX_SPOT_OPEN_ORDERS_READ -> operation.path()
@@ -206,6 +211,7 @@ public record OkxPrivateReadRequest(
         if (operation == OkxPrivateReadOperation.OKX_ACCOUNT_CONFIGURATION_READ
                 || operation == OkxPrivateReadOperation.OKX_ACCOUNT_BALANCE_READ
                 || operation == OkxPrivateReadOperation.OKX_ALL_ACCOUNT_BALANCES_READ
+                || operation == OkxPrivateReadOperation.OKX_ACCOUNT_POSITIONS_READ
                 || operation == OkxPrivateReadOperation.OKX_SPOT_ACCOUNT_FEE_READ) {
             if (candidate != 0) throw new IllegalArgumentException("operation does not accept record limit");
             return 0;

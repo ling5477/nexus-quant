@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.account.infra.okx.readonly;
 
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateBalanceFact;
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateFeeFact;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivatePositionFact;
 
 import java.time.Instant;
 import java.math.BigDecimal;
@@ -21,7 +22,7 @@ public record AccountFactsSnapshot(
         Fact<String> accountMode,
         Fact<List<String>> permissions,
         Map<String, Fact<OkxPrivateBalanceFact>> balances,
-        Fact<String> positions,
+        Fact<List<OkxPrivatePositionFact>> positions,
         Fact<BigDecimal> spotBtcExposure,
         Fact<Integer> openOrderCount,
         Fact<OkxPrivateFeeFact> fee,

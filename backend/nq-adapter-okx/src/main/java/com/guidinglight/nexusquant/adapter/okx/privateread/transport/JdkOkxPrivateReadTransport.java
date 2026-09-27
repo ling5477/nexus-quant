@@ -13,6 +13,7 @@ import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadO
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadRequest;
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateBalanceFact;
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateFeeFact;
+import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivatePositionFact;
 import com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateReadResult;
 import com.guidinglight.nexusquant.adapter.okx.provider.OkxSpotEndpointGuard;
 import com.guidinglight.nexusquant.adapter.okx.provider.OkxSpotProviderTransport;
@@ -22,6 +23,7 @@ import com.guidinglight.nexusquant.adapter.okx.provider.OkxSpotProviderContractD
 import com.guidinglight.nexusquant.adapter.okx.provider.model.OkxSpotProviderOperation;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.adapter.api.model.EndpointPolicyDecision;
 
@@ -61,10 +63,12 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateRealTransport
 
     public static final URI GLOBAL_HOST = URI.create("https://openapi.okx.com");
     public static final int MAX_RESPONSE_BYTES = 256 * 1024;
+    public static final int MAX_POSITION_FACTS = 100;
     private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(2);
     private static final Duration MAX_CONNECT_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration DEFAULT_REQUEST_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration MAX_REQUEST_TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration MAX_POSITION_CLOCK_SKEW = Duration.ofSeconds(30);
     private static final Pattern CURRENCY = Pattern.compile("[A-Z0-9]{2,12}");
 
     private final OkxSpotEndpointGuard endpointGuard;
@@ -254,12 +258,25 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateRealTransport
     private OkxPrivateReadResult parse(OkxPrivateReadRequest request, byte[] payload) {
         try {
             OkxPrivateReadOperation operation = request.operation();
-            JsonNode root = objectMapper.readTree(payload);
+            // 仓位响应中的重复字段或尾随 JSON 可能隐藏非零仓位，必须在形成事实前整体拒绝。
+            JsonNode root = operation == OkxPrivateReadOperation.OKX_ACCOUNT_POSITIONS_READ
+                    ? objectMapper.readerFor(JsonNode.class)
+                            .with(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY,
+                                    DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+                            .readValue(payload)
+                    : objectMapper.readTree(payload);
+            if (operation == OkxPrivateReadOperation.OKX_ACCOUNT_POSITIONS_READ
+                    && (root == null || !root.isObject() || !root.path("code").isTextual())) {
+                throw new OkxPrivateReadException(OkxPrivateReadError.RESPONSE_CONTRACT_MISMATCH);
+            }
             String providerCode = text(root, "code");
             if (!"0".equals(providerCode)) {
                 throw new OkxPrivateReadException(providerError(providerCode));
             }
             JsonNode data = root.path("data");
+            if (operation == OkxPrivateReadOperation.OKX_ACCOUNT_POSITIONS_READ) {
+                return parsePositions(data);
+            }
             if (!data.isArray()) {
                 return result(operation, Set.of(), 0, false, List.of(), List.of());
             }
@@ -392,6 +409,67 @@ public final class JdkOkxPrivateReadTransport implements OkxPrivateRealTransport
         return new OkxPrivateReadResult(request.operation(), Set.of(), 0, true,
                 List.of(), List.of(), false, OkxIpAllowlistStatus.NOT_CHECKED,
                 clock.instant(), null, List.of(), fee);
+    }
+
+    private OkxPrivateReadResult parsePositions(JsonNode data) {
+        if (!data.isArray()) {
+            throw new OkxPrivateReadException(OkxPrivateReadError.PARTIAL_RESPONSE);
+        }
+        if (data.size() > MAX_POSITION_FACTS) {
+            throw new OkxPrivateReadException(OkxPrivateReadError.POSITION_RESPONSE_OVER_LIMIT);
+        }
+        List<OkxPrivatePositionFact> positions = new ArrayList<>(data.size());
+        Set<String> positionIds = new java.util.HashSet<>();
+        Set<String> positionKeys = new java.util.HashSet<>();
+        Map<String, Boolean> instrumentSideModes = new java.util.HashMap<>();
+        Instant observedAt = clock.instant();
+        for (JsonNode row : data) {
+            if (!row.isObject()) {
+                throw new OkxPrivateReadException(OkxPrivateReadError.RESPONSE_CONTRACT_MISMATCH);
+            }
+            String positionId = positionText(row, "posId");
+            String quantity = positionText(row, "pos");
+            String updatedAt = positionText(row, "uTime");
+            if (positionId == null || !positionId.matches("[1-9][0-9]{0,63}")
+                    || !positionIds.add(positionId)
+                    || quantity == null || !quantity.matches("-?(?:0|[1-9][0-9]{0,37})(?:\\.[0-9]{1,18})?")
+                    || updatedAt == null || !updatedAt.matches("[1-9][0-9]{0,18}")
+                    || (row.has("posCcy") && !row.path("posCcy").isTextual())) {
+                throw new OkxPrivateReadException(OkxPrivateReadError.RESPONSE_CONTRACT_MISMATCH);
+            }
+            String positionCurrency = positionText(row, "posCcy");
+            // posCcy 只适用于 MARGIN；其他产品的空字符串转换成明确的无该字段语义。
+            if (positionCurrency != null && positionCurrency.isEmpty()) positionCurrency = null;
+            OkxPrivatePositionFact position;
+            try {
+                position = new OkxPrivatePositionFact(
+                        positionText(row, "instType"), positionText(row, "instId"),
+                        positionText(row, "mgnMode"), positionText(row, "posSide"),
+                        new BigDecimal(quantity), positionCurrency, positionText(row, "ccy"),
+                        Instant.ofEpochMilli(Long.parseLong(updatedAt)));
+            } catch (RuntimeException ex) {
+                // 校验异常不得把 provider 字段或 payload 带出 transport。
+                throw new OkxPrivateReadException(OkxPrivateReadError.RESPONSE_CONTRACT_MISMATCH);
+            }
+            String instrumentKey = position.instrumentType() + ":" + position.instrumentId()
+                    + ":" + position.marginMode() + ":" + position.marginCurrency();
+            Boolean priorNetMode = instrumentSideModes.putIfAbsent(instrumentKey, "net".equals(position.positionSide()));
+            if (position.providerUpdatedAt().isAfter(observedAt.plus(MAX_POSITION_CLOCK_SKEW))
+                    || !positionKeys.add(instrumentKey + ":" + position.positionSide())
+                    || (priorNetMode != null && priorNetMode != "net".equals(position.positionSide()))) {
+                throw new OkxPrivateReadException(OkxPrivateReadError.RESPONSE_CONTRACT_MISMATCH);
+            }
+            positions.add(position);
+        }
+        // 无筛选、无分页的成功空集合才表示完整无仓位；超限或任意坏行从不返回部分事实。
+        return new OkxPrivateReadResult(OkxPrivateReadOperation.OKX_ACCOUNT_POSITIONS_READ, Set.of(), 0, true,
+                List.of(), List.of(), false, OkxIpAllowlistStatus.NOT_CHECKED,
+                observedAt, null, List.of(), null, positions);
+    }
+
+    private static String positionText(JsonNode row, String field) {
+        JsonNode value = row.get(field);
+        return value != null && value.isTextual() ? value.textValue() : null;
     }
 
     private OkxPrivateReadResult parseReconciliation(OkxPrivateReadRequest request, JsonNode data) {

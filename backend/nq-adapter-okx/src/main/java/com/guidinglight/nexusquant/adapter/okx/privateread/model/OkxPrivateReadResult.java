@@ -8,7 +8,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * transport 已脱敏解析结果；不含 raw response、header、UID 或余额数值。
+ * transport 已脱敏解析结果；仅保留所需业务事实，不含原始响应、认证头或 UID。
  */
 public record OkxPrivateReadResult(
         OkxPrivateReadOperation operation,
@@ -22,7 +22,8 @@ public record OkxPrivateReadResult(
         Instant observedAt,
         String accountMode,
         List<OkxPrivateBalanceFact> balances,
-        OkxPrivateFeeFact fee
+        OkxPrivateFeeFact fee,
+        List<OkxPrivatePositionFact> positions
 ) {
     public OkxPrivateReadResult {
         Objects.requireNonNull(operation, "operation must not be null");
@@ -30,9 +31,33 @@ public record OkxPrivateReadResult(
         orders = List.copyOf(orders == null ? List.of() : orders);
         fills = List.copyOf(fills == null ? List.of() : fills);
         balances = List.copyOf(balances == null ? List.of() : balances);
+        positions = List.copyOf(positions == null ? List.of() : positions);
         Objects.requireNonNull(ipAllowlistStatus, "ipAllowlistStatus must not be null");
         Objects.requireNonNull(observedAt, "observedAt must not be null");
         if (assetCount < 0) throw new IllegalArgumentException("assetCount must not be negative");
+        if (positions.size() > 100 || (!complete && !positions.isEmpty())
+                || (operation != OkxPrivateReadOperation.OKX_ACCOUNT_POSITIONS_READ && !positions.isEmpty())) {
+            throw new IllegalArgumentException("invalid OKX position result");
+        }
+    }
+
+    /** 既有账户事实构造器保持兼容；仓位只能由独立的完整只读结果提供。 */
+    public OkxPrivateReadResult(
+            OkxPrivateReadOperation operation,
+            Set<String> normalizedPermissions,
+            int assetCount,
+            boolean complete,
+            List<OkxPrivateOrderSnapshot> orders,
+            List<OkxPrivateFillSnapshot> fills,
+            boolean ipAllowlistConfigured,
+            OkxIpAllowlistStatus ipAllowlistStatus,
+            Instant observedAt,
+            String accountMode,
+            List<OkxPrivateBalanceFact> balances,
+            OkxPrivateFeeFact fee
+    ) {
+        this(operation, normalizedPermissions, assetCount, complete, orders, fills,
+                ipAllowlistConfigured, ipAllowlistStatus, observedAt, accountMode, balances, fee, List.of());
     }
 
     public OkxPrivateReadResult(
