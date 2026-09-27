@@ -682,7 +682,7 @@ jobs:
           set -euo pipefail
 
           mvn -f backend/pom.xml -pl nq-infra -am test \
-            -Dtest=JdbcRepositoryPostgresSmokeTest \
+            -Dtest=JdbcRepositoryPostgresSmokeTest,ExistingUserPasswordRotationPostgresTest \
             -Dsurefire.failIfNoSpecifiedTests=false \
             -Dnq.postgres.smoke.required=true \
             -Dnq.postgres.smoke.url="${NQ_FLYWAY_DB_URL}" \

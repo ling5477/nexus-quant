@@ -104,6 +104,24 @@ release只使用`../../scripts/deployment/New-NqCanonicalRelease.ps1`；verify�
 
 当前生产已完成一次性 bootstrap，并于 2026-09-27 通过普通 install/activate 切换到修复后的 canonical release；身份与受控运行结果见[当前证据](evidence/gate-z/OKX_READONLY_RUNTIME_IDENTITY.md)。后续不得重复 bootstrap。当前阻断为 owner 登录来源与 canonical 数据库不匹配；只能使用目标 owner 的有效既有受控凭据，不得重置密码、签发替代 token 或修改 API Key 权限来完成本次资格验证。
 
+### 现有用户密码的一次性维护
+
+仅在已明确授权恢复现有用户登录时，使用已通过合并后精确 HEAD CI、manifest 与 admission 校验的制品。`ExistingUserPasswordRotationMain` 是独立 Java 维护入口，不启动 Spring、HTTP、Flyway、seed 或交易组件；普通 `java -jar` 启动不会执行密码维护。禁止使用 bootstrap-admin 或临时 SQL 替代窄更新端口。
+
+先在受控环境中核对精确 userId、username、enabled、角色及账户/credential owner 绑定，并在内存中将当前 BCrypt hash 转为 SHA-256 fingerprint。请求文件和两个密码来源文件都必须是 root 所有的普通文件、权限严格为 `0600`，所有父目录必须由 root 所有且不可被 group/other 写入；不接受软链接。新密码为 16–72 字符、UTF-8 至多 72 字节，不能包含控制字符或复用旧密码。建议服务器生成 48 字符高熵 ASCII secret 并保存在批准的持久 secret source；不在聊天、参数、Git、CI、日志或 evidence 中传递其内容。
+
+受保护的 JSON 请求只包含 `databaseUrl`（显式 loopback PostgreSQL URL，不含 query）、`databaseUser`、`databasePasswordFile`、`newPasswordFile`、`exactUserId`、`expectedUsername`、`expectedHashSha256`。三个文件路径必须不同。调用形式如下，其中参数仅为动作和请求文件路径：
+
+```text
+java -Dloader.main=com.guidinglight.nexusquant.app.maintenance.ExistingUserPasswordRotationMain \
+  -cp <verified-release>/app/nq-app.jar org.springframework.boot.loader.launch.PropertiesLauncher \
+  --execute-existing-user-password-rotation <protected-absolute-request-path>
+```
+
+成功输出仅为 `PASSWORD_ROTATED` 与 userId。repository 在单一事务中只更新 `users.password_hash/updated_at`，WHERE 同时绑定 id、username、enabled=true 和完整旧 hash；影响行数必须恰为一。身份或旧 hash 变化即拒绝，重复调用同一请求返回 `STALE_AUTH_IDENTITY`，没有自动重试。失败输出不包含异常详情或输入值；连接/语句均有超时。基础设施错误可能发生在 commit 响应丢失之后，必须先只读核对 hash fingerprint，再决定后续动作，不能盲目重新轮换。
+
+执行后回读全部身份、角色、owner 关联，确认仅密码 hash 和更新时间发生预期变化。然后通过正常 `/api/auth/login` 和 `/api/auth/me` 验证目标 owner；旧会话 token 的撤销不属于此密码恢复能力，执行前应保持应用停止，成功后由既有 token 到期合同约束。新密码作为唯一可用登录来源保留在批准的受控文件中，临时数据库密码副本和请求文件在验证成功后删除；不得自动删除用户唯一可用登录凭据。
+
 ### Legacy current 到 canonical current 的一次性生产步骤（已完成，保留合同）
 
 一次性执行时必须绑定当时实际交付的 `sourceCommit`、`releaseId`、release manifest SHA-256、EXACT_HEAD_CI admission SHA-256 和合并后 `dev` exact-head CI；这些值从同一个已验收候选及外部 admission 取得，不从旧服务器 SHA 推导。每一步记录命令、时间、脱敏结果和操作者，保留失败事实；不得记录 credential、环境文件或 key 内容。实际已执行范围与结果以上述当前证据为准；未执行的观察步骤不能记为成功。
