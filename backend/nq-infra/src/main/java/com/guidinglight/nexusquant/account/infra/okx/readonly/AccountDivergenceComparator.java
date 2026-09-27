@@ -14,7 +14,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -26,14 +25,12 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.guidinglight.nexusquant.account.infra.okx.readonly.AccountDivergenceReport.Classification;
+import static com.guidinglight.nexusquant.account.infra.okx.readonly.AccountDivergenceReport.Role;
 import static com.guidinglight.nexusquant.account.infra.okx.readonly.AccountFactsSnapshot.Status;
 
-/** 只读比较已解析的外部事实与已映射的 LIVE 本地账户事实。 */
+/** 只读比较 NQ 管理的 LIVE 订单；全账户事实仅形成独立上下文。 */
 final class AccountDivergenceComparator {
-    private static final Set<String> TARGET_ASSETS = Set.of("BTC", "USDT");
     private static final int MAX_ORDERS = 1000;
-    private static final int MAX_ASSETS = 100;
-    private static final Duration MAX_CANONICAL_AGE = Duration.ofMinutes(1);
     private final JdbcTemplate jdbc;
 
     AccountDivergenceComparator(JdbcTemplate jdbc) {
@@ -41,7 +38,7 @@ final class AccountDivergenceComparator {
     }
 
     AccountDivergenceReport compare(UUID observationId, long exchangeAccountId, Long legacyAccountId,
-            Instant externalObservedAt, Instant at, AccountFactsSnapshot.Fact<String> mode,
+            Instant externalObservedAt, Instant at,
             AccountFactsSnapshot.Fact<List<OkxPrivatePositionFact>> positions,
             Map<String, AccountFactsSnapshot.Fact<OkxPrivateBalanceFact>> balances,
             AccountFactsSnapshot.Fact<List<OkxPrivateOrderSnapshot>> orders,
@@ -49,51 +46,28 @@ final class AccountDivergenceComparator {
         List<AccountDivergenceReport.Item> items = new ArrayList<>();
         List<String> externalDigest = new ArrayList<>();
         List<String> canonicalDigest = new ArrayList<>();
-        if (legacyAccountId != null && legacyAccountId > 0) {
-            canonicalDigest.add("account-mapping|" + exchangeAccountId + "|" + legacyAccountId + "|LIVE|OKX");
-        }
-        if (mode.statusAt(at) != Status.OBSERVED || !Set.of("1", "2").contains(mode.value())) {
-            unknown(items, "ACCOUNT_MODE", null, "ACCOUNT_MODE_NOT_YET_QUALIFIED", at);
-        } else if ("2".equals(mode.value()) && positions.statusAt(at) != Status.OBSERVED) {
-            unknown(items, "POSITION", null, "POSITION_OBSERVATION_INCOMPLETE", at);
-        }
+        addExternalContext(items, externalDigest, balances, positions, minimumSize, externalObservedAt, at);
         if (legacyAccountId == null || legacyAccountId <= 0) {
             unknown(items, "ACCOUNT", null, "CANONICAL_ACCOUNT_MAPPING_MISSING", at);
+        } else {
+            canonicalDigest.add("account-mapping|" + exchangeAccountId + "|" + legacyAccountId + "|LIVE|OKX");
         }
         if (orders.statusAt(at) != Status.OBSERVED || orders.value() == null) {
-            if (orders.statusAt(at) == Status.STALE) {
-                items.add(item(Classification.EXTERNAL_FACT_STALE, "ORDER", null, Status.STALE,
-                        Status.UNKNOWN, orders.observedAt(), null, "EXTERNAL_OPEN_ORDERS_STALE", null, null));
-            } else {
-                unknown(items, "ORDER", null, "EXTERNAL_OPEN_ORDERS_INCOMPLETE", at);
-            }
+            unknown(items, "ORDER", null, orders.statusAt(at) == Status.STALE
+                    ? "EXTERNAL_OPEN_ORDERS_STALE" : "EXTERNAL_OPEN_ORDERS_INCOMPLETE", at);
+        } else if (orders.value().size() > MAX_ORDERS) {
+            unknown(items, "ORDER", null, "EXTERNAL_OPEN_ORDERS_OVER_LIMIT", at);
         }
-        if (publicRule.statusAt(at) != Status.OBSERVED) {
-            unknown(items, "RULE", null, "PUBLIC_RULE_INCOMPLETE", at);
-        }
-        for (String asset : TARGET_ASSETS) {
-            var fact = balances.get(asset);
-            if (fact == null || fact.statusAt(at) != Status.OBSERVED) {
-                items.add(item(fact != null && fact.statusAt(at) == Status.STALE
-                                ? Classification.EXTERNAL_FACT_STALE : Classification.BALANCE_FACT_MISSING,
-                        "BALANCE", asset, fact == null ? Status.UNKNOWN : fact.statusAt(at), Status.UNKNOWN,
-                        fact == null ? at : fact.observedAt(), null, "EXTERNAL_BALANCE_INCOMPLETE", null, null));
-            }
-        }
-        if (balances.size() > MAX_ASSETS || balances.values().stream().anyMatch(f -> f.statusAt(at) != Status.OBSERVED)) {
-            unknown(items, "BALANCE", null, "EXTERNAL_ASSET_SET_INCOMPLETE", at);
-        }
-        if (!items.isEmpty()) {
-            return report(observationId, exchangeAccountId, legacyAccountId, externalObservedAt, at,
-                    externalDigest, canonicalDigest, publicRule, minimumSize, items);
+        if (items.stream().anyMatch(item -> item.role() == Role.MANAGED_RECONCILIATION)) {
+            return report(observationId, exchangeAccountId, legacyAccountId, externalObservedAt,
+                    at, externalDigest, canonicalDigest, publicRule, minimumSize, items);
         }
         try {
             var dataSource = jdbc.getDataSource();
             if (dataSource == null) {
-                // 只用于不提供 DataSource 的合成 Mockito fixture；真实 JDBC 必须进入一致性事务。
+                // 合成 Mockito fixture 不提供 DataSource；真实 JDBC 必须使用一致性只读事务。
                 return readCanonical(observationId, exchangeAccountId, legacyAccountId, externalObservedAt,
-                        at, mode, positions, balances, orders, publicRule, minimumSize,
-                        items, externalDigest, canonicalDigest);
+                        at, orders, publicRule, minimumSize, items, externalDigest, canonicalDigest);
             }
             var manager = new DataSourceTransactionManager(dataSource);
             manager.setEnforceReadOnly(true);
@@ -104,177 +78,217 @@ final class AccountDivergenceComparator {
             transaction.setTimeout(20);
             return Objects.requireNonNull(transaction.execute(status ->
                     readCanonical(observationId, exchangeAccountId, legacyAccountId, externalObservedAt,
-                            at, mode, positions, balances, orders, publicRule, minimumSize,
-                            items, externalDigest, canonicalDigest)));
+                            at, orders, publicRule, minimumSize, items, externalDigest, canonicalDigest)));
         } catch (RuntimeException ex) {
-            // SQL、事务与数据错误不进入 API；局部比较结果不得掩盖失败。
-            items.clear();
-            externalDigest.clear();
+            // 局部 JDBC 结果不能掩盖比较失败；外部上下文仍保留其独立观察身份。
+            items.removeIf(item -> item.role() == Role.MANAGED_RECONCILIATION);
             canonicalDigest.clear();
             unknown(items, "CANONICAL", null, "CANONICAL_COMPARISON_UNAVAILABLE", at);
-            return report(observationId, exchangeAccountId, legacyAccountId, externalObservedAt, at,
-                    externalDigest, canonicalDigest, publicRule, minimumSize, items);
+            return report(observationId, exchangeAccountId, legacyAccountId, externalObservedAt,
+                    at, externalDigest, canonicalDigest, publicRule, minimumSize, items);
         }
     }
 
     private AccountDivergenceReport readCanonical(UUID observationId, long exchangeAccountId,
             Long legacyAccountId, Instant externalObservedAt, Instant at,
-            AccountFactsSnapshot.Fact<String> mode,
-            AccountFactsSnapshot.Fact<List<OkxPrivatePositionFact>> positions,
-            Map<String, AccountFactsSnapshot.Fact<OkxPrivateBalanceFact>> balances,
             AccountFactsSnapshot.Fact<List<OkxPrivateOrderSnapshot>> orders,
             AccountFactsSnapshot.Fact<String> publicRule, BigDecimal minimumSize,
             List<AccountDivergenceReport.Item> items, List<String> externalDigest,
             List<String> canonicalDigest) {
-        JdbcAccountSnapshotReader snapshotReader = new JdbcAccountSnapshotReader(jdbc);
-        List<JdbcAccountSnapshotReader.Snapshot> localBalances = snapshotReader.latest(legacyAccountId, "LIVE");
         List<Map<String, Object>> localOrders = jdbc.queryForList("""
                 SELECT o.order_id, o.client_order_id, o.exchange_order_id, o.exchange_code, o.venue,
-                       o.symbol, o.side, o.type, o.price, o.qty, o.status, o.created_at, o.updated_at,
+                       o.symbol, o.side, o.type, o.price, o.qty, o.status, o.updated_at,
                        COALESCE((SELECT SUM(t.qty) FROM trades t WHERE t.order_id=o.order_id
                            AND t.trade_env='LIVE'),0) AS filled
                 FROM orders o WHERE o.account_id=? AND o.trade_env='LIVE'
+                  AND UPPER(o.exchange_code)='OKX' AND UPPER(o.venue)='OKX'
                   AND o.status IN ('SENT','ACCEPTED','SUBMITTING','ACKED','PARTIALLY_FILLED',
                                    'CANCEL_REQUESTED','CANCEL_REJECTED')
                 ORDER BY o.order_id LIMIT 1001
                 """, legacyAccountId);
-        List<Map<String, Object>> localPositions = jdbc.queryForList("""
-                SELECT symbol, qty, available_qty, frozen_qty, updated_at
-                FROM positions WHERE account_id=? ORDER BY symbol LIMIT 101
-                """, legacyAccountId);
-        if (localBalances.size() > MAX_ASSETS || localOrders.size() > MAX_ORDERS
-                || localPositions.size() > MAX_ASSETS) {
-            unknown(items, "CANONICAL", null, "CANONICAL_FACTS_OVER_LIMIT", at);
-            return report(observationId, exchangeAccountId, legacyAccountId, externalObservedAt, at,
-                    externalDigest, canonicalDigest, publicRule, minimumSize, items);
+        if (localOrders.size() > MAX_ORDERS) {
+            unknown(items, "ORDER", null, "CANONICAL_ORDERS_OVER_LIMIT", at);
+        } else {
+            compareOrders(items, externalDigest, canonicalDigest, orders, localOrders, at);
         }
-        // NQ 投影只覆盖本系统管理的状态；没有全账户同步合同前禁止数值比对。
-        boolean legacyUnknown = snapshotReader.hasUnknownHistory(legacyAccountId);
-        for (var fact : balances.entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()) {
-            var value = fact.getValue().value();
-            externalDigest.add("balance|" + fact.getKey() + "|" + decimal(value.total()) + "|"
-                    + decimal(value.available()) + "|" + decimal(value.frozen()) + "|" + value.providerUpdatedAt());
-        }
-        for (var snapshot : localBalances) {
-            canonicalDigest.add("balance|" + snapshot.currency() + "|" + snapshot.snapshotId() + "|"
-                    + snapshot.tradeEnv() + "|" + snapshot.balanceBasis() + "|" + snapshot.balanceScope()
-                    + "|" + snapshot.sourceEventAt() + "|" + snapshot.recordedAt());
-        }
-        AccountBalanceComparability.Decision balanceDecision =
-                AccountBalanceComparability.assess(localBalances, legacyUnknown, at);
-        boolean notProviderEquivalent = balanceDecision.eligibility()
-                == AccountBalanceComparability.Eligibility.NOT_PROVIDER_EQUIVALENT;
-        items.add(item(notProviderEquivalent
-                        ? Classification.VENUE_BALANCE_NOT_SEMANTICALLY_COMPARABLE
-                        : Classification.BALANCE_SEMANTIC_MISMATCH,
-                "BALANCE", null, Status.OBSERVED,
-                notProviderEquivalent ? Status.OBSERVED : Status.UNKNOWN, externalObservedAt,
-                localBalances.isEmpty() ? null : localBalances.getFirst().recordedAt(),
-                balanceDecision.reason(), null, null));
-        compareOrders(items, externalDigest, canonicalDigest, orders, localOrders, at);
-        for (var row : localPositions) {
-            canonicalDigest.add("spot-position|" + row.get("symbol") + "|" + decimalValue(row.get("qty"))
-                    + "|" + decimalValue(row.get("available_qty")) + "|"
-                    + decimalValue(row.get("frozen_qty")) + "|" + instant(row.get("updated_at")));
-        }
-        if ("2".equals(mode.value())) {
-            if (positions.value().stream().noneMatch(p -> p.positionQuantity().signum() != 0)) {
-                items.add(item(Classification.MATCH, "POSITION", null, Status.OBSERVED,
-                        Status.NOT_APPLICABLE, positions.observedAt(), null,
-                        "NO_EXTERNAL_NON_SPOT_POSITION", null, null));
+        return report(observationId, exchangeAccountId, legacyAccountId, externalObservedAt,
+                at, externalDigest, canonicalDigest, publicRule, minimumSize, items);
+    }
+
+    private static void addExternalContext(List<AccountDivergenceReport.Item> items,
+            List<String> digest, Map<String, AccountFactsSnapshot.Fact<OkxPrivateBalanceFact>> balances,
+            AccountFactsSnapshot.Fact<List<OkxPrivatePositionFact>> positions, BigDecimal minimumSize,
+            Instant externalAt, Instant at) {
+        boolean completeBalances = !balances.isEmpty();
+        for (var entry : balances.entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()) {
+            var fact = entry.getValue();
+            if (fact.statusAt(at) != Status.OBSERVED || fact.value() == null) {
+                completeBalances = false;
+                continue;
             }
-            for (OkxPrivatePositionFact position : positions.value()) {
-                externalDigest.add("position|" + position.instrumentId() + "|" + decimal(position.positionQuantity()));
+            var value = fact.value();
+            digest.add("balance|" + entry.getKey() + "|" + decimal(value.total()) + "|"
+                    + decimal(value.available()) + "|" + decimal(value.frozen()) + "|"
+                    + value.providerUpdatedAt());
+            if (value.total().signum() > 0 && !Set.of("BTC", "USDT").contains(entry.getKey())) {
+                items.add(item(Role.EXTERNAL_CONTEXT, Classification.EXTERNAL_UNMANAGED_ASSET,
+                        "BALANCE", entry.getKey(), Status.OBSERVED, Status.NOT_APPLICABLE,
+                        fact.observedAt(), null, "OUTSIDE_NQ_MANAGED_SCOPE",
+                        digest(entry.getKey()), null));
+            }
+            if ("BTC".equals(entry.getKey()) && value.total().signum() > 0
+                    && minimumSize != null && minimumSize.signum() > 0
+                    && value.total().compareTo(minimumSize) < 0) {
+                items.add(item(Role.EXTERNAL_CONTEXT, Classification.EXTERNAL_DUST,
+                        "BALANCE", "BTC", Status.OBSERVED, Status.NOT_APPLICABLE,
+                        fact.observedAt(), null, "POSITIVE_BELOW_CURRENT_MINIMUM_SIZE",
+                        digest(decimal(value.total())), null));
+            }
+        }
+        items.add(item(Role.EXTERNAL_CONTEXT, Classification.VENUE_BALANCE_NOT_SEMANTICALLY_COMPARABLE,
+                "BALANCE", null, completeBalances ? Status.OBSERVED : Status.UNKNOWN,
+                Status.NOT_APPLICABLE, externalAt, null,
+                "NQ_MANAGED_PROJECTION_NOT_WHOLE_VENUE_EQUIVALENT", null, null));
+        if (positions.statusAt(at) == Status.OBSERVED && positions.value() != null) {
+            for (var position : positions.value()) {
+                digest.add("position|" + position.instrumentType() + "|" + position.instrumentId()
+                        + "|" + decimal(position.positionQuantity()));
                 if (position.positionQuantity().signum() != 0) {
-                    items.add(item(Classification.EXTERNAL_NON_SPOT_POSITION_PRESENT, "POSITION",
-                            position.instrumentId(), Status.OBSERVED, Status.NOT_APPLICABLE,
+                    items.add(item(Role.EXTERNAL_CONTEXT, Classification.EXTERNAL_NON_SPOT_EXPOSURE,
+                            "POSITION", position.instrumentId(), Status.OBSERVED, Status.NOT_APPLICABLE,
                             positions.observedAt(), null, "NONZERO_NON_SPOT_POSITION",
                             digest(decimal(position.positionQuantity())), null));
                 }
             }
         }
-
-        return report(observationId, exchangeAccountId, legacyAccountId, externalObservedAt, at,
-                externalDigest, canonicalDigest, publicRule, minimumSize, items);
     }
 
-    private static void compareOrders(List<AccountDivergenceReport.Item> items, List<String> externalDigest,
-            List<String> canonicalDigest, AccountFactsSnapshot.Fact<List<OkxPrivateOrderSnapshot>> externalFact,
+    private static void compareOrders(List<AccountDivergenceReport.Item> items,
+            List<String> externalDigest, List<String> canonicalDigest,
+            AccountFactsSnapshot.Fact<List<OkxPrivateOrderSnapshot>> externalFact,
             List<Map<String, Object>> local, Instant at) {
-        Map<String, OkxPrivateOrderSnapshot> external = new HashMap<>();
+        Map<String, OkxPrivateOrderSnapshot> byClient = new HashMap<>();
+        Map<String, OkxPrivateOrderSnapshot> byExchange = new HashMap<>();
         for (var order : externalFact.value()) {
-            String id = order.clientOrderId();
-            if (id == null || id.isBlank() || external.putIfAbsent(id, order) != null) {
+            String clientId = order.clientOrderId();
+            String exchangeId = order.exchangeOrderId();
+            if (exchangeId == null || exchangeId.isBlank()
+                    || byExchange.putIfAbsent(exchangeId, order) != null
+                    || (clientId != null && !clientId.isBlank()
+                        && byClient.putIfAbsent(clientId, order) != null)) {
                 unknown(items, "ORDER", order.instrumentId(), "EXTERNAL_ORDER_IDENTITY_DUPLICATE", at);
                 return;
             }
-            externalDigest.add("order|" + id + "|" + order.exchangeOrderId() + "|"
-                    + order.instrumentId() + "|" + order.side() + "|"
-                    + order.orderType() + "|" + decimal(order.originalQuantity()) + "|"
+            externalDigest.add("order|" + clientId + "|" + exchangeId + "|"
+                    + order.instrumentId() + "|" + order.side() + "|" + order.orderType()
+                    + "|" + decimal(order.originalQuantity()) + "|"
                     + decimal(order.filledQuantity()) + "|" + decimal(order.price()) + "|" + order.status());
         }
-        Set<String> localIds = new HashSet<>();
+        Set<String> localClientIds = new HashSet<>();
+        Set<String> localExchangeIds = new HashSet<>();
+        Set<OkxPrivateOrderSnapshot> claimed = new HashSet<>();
         for (var row : local) {
-            String id = (String) row.get("client_order_id");
-            if (id == null || !localIds.add(id)) {
-                unknown(items, "ORDER", (String) row.get("symbol"), "CANONICAL_ORDER_IDENTITY_DUPLICATE", at);
-                return;
-            }
-            canonicalDigest.add("order|" + id + "|" + row.get("exchange_order_id") + "|"
-                    + row.get("exchange_code") + "|" + row.get("venue") + "|"
-                    + row.get("symbol") + "|" + row.get("side") + "|"
-                    + row.get("type") + "|" + decimalValue(row.get("qty")) + "|"
-                    + decimalValue(row.get("filled")) + "|" + decimalValue(row.get("price")) + "|"
-                    + row.get("status"));
-            var outside = external.remove(id);
+            String clientId = (String) row.get("client_order_id");
+            String exchangeId = (String) row.get("exchange_order_id");
+            String symbol = (String) row.get("symbol");
             Instant canonicalAt = instant(row.get("updated_at"));
-            if (outside == null) {
-                items.add(item(Classification.LOCAL_ACTIVE_ORDER_ONLY, "ORDER", (String) row.get("symbol"),
-                        Status.UNKNOWN, Status.OBSERVED, null, canonicalAt, "ACTIVE_LIVE_ORDER_ABSENT_EXTERNALLY",
-                        null, digest(id)));
+            if (clientId == null || clientId.isBlank() || exchangeId == null || exchangeId.isBlank()) {
+                unknown(items, "ORDER", symbol, "CANONICAL_ORDER_IDENTITY_INCOMPLETE", at);
                 continue;
             }
-            Instant observed = outside.observedAt();
-            if (!"OKX".equals(row.get("exchange_code")) || !"OKX".equals(row.get("venue"))
-                    || !Objects.equals(outside.exchangeOrderId(), row.get("exchange_order_id"))
-                    || !Objects.equals(outside.instrumentId(), row.get("symbol"))
-                    || !equalsIgnoreCase(outside.side(), row.get("side"))
-                    || !equalsIgnoreCase(outside.orderType(), row.get("type"))) {
-                items.add(item(Classification.ORDER_IDENTITY_MISMATCH, "ORDER", outside.instrumentId(),
-                        Status.OBSERVED, Status.OBSERVED, observed, canonicalAt,
-                        "VENUE_INSTRUMENT_SIDE_TYPE_OR_EXCHANGE_ID_DIFFERS", digest(id), digest(id)));
+            if (!localClientIds.add(clientId) || !localExchangeIds.add(exchangeId)) {
+                unknown(items, "ORDER", symbol, "CANONICAL_ORDER_IDENTITY_DUPLICATE", at);
+                continue;
             }
-            if (!same(outside.originalQuantity(), row.get("qty"))
-                    || !same(outside.filledQuantity(), row.get("filled"))) {
-                items.add(item(Classification.ORDER_QUANTITY_MISMATCH, "ORDER", outside.instrumentId(),
-                        Status.OBSERVED, Status.OBSERVED, observed, canonicalAt,
-                        "ORIGINAL_OR_FILLED_QUANTITY_DIFFERS", digest(decimal(outside.originalQuantity()) + "|"
-                                + decimal(outside.filledQuantity())), digest(decimalValue(row.get("qty")) + "|"
-                                + decimalValue(row.get("filled")))));
+            canonicalDigest.add("order|" + clientId + "|" + exchangeId + "|" + symbol
+                    + "|" + row.get("side") + "|" + row.get("type") + "|"
+                    + decimalValue(row.get("qty")) + "|" + decimalValue(row.get("filled"))
+                    + "|" + decimalValue(row.get("price")) + "|" + row.get("status"));
+            if (canonicalAt == null || canonicalAt.isAfter(externalFact.observedAt())) {
+                unknown(items, "ORDER", symbol, "CANONICAL_ORDER_AFTER_EXTERNAL_OBSERVATION", at);
+                continue;
             }
-            if ("limit".equalsIgnoreCase(outside.orderType()) && !same(outside.price(), row.get("price"))) {
-                items.add(item(Classification.ORDER_PRICE_MISMATCH, "ORDER", outside.instrumentId(),
-                        Status.OBSERVED, Status.OBSERVED, observed, canonicalAt, "LIMIT_PRICE_DIFFERS",
-                        digest(decimal(outside.price())), digest(decimalValue(row.get("price")))));
+            var byClientOrder = byClient.get(clientId);
+            var byExchangeOrder = byExchange.get(exchangeId);
+            if (byClientOrder != null && byClientOrder != byExchangeOrder
+                    || byExchangeOrder != null && byExchangeOrder.clientOrderId() != null
+                        && !clientId.equals(byExchangeOrder.clientOrderId())) {
+                unknown(items, "ORDER", symbol, "ORDER_OWNERSHIP_IDENTITY_CONFLICT", at);
+                continue;
             }
+            OkxPrivateOrderSnapshot outside = byClientOrder != null ? byClientOrder : byExchangeOrder;
             String localState = (String) row.get("status");
+            if (outside != null) claimed.add(outside);
+            if (Set.of("SUBMITTING", "SENT", "CANCEL_REQUESTED", "CANCEL_REJECTED")
+                    .contains(Objects.toString(localState, ""))) {
+                unknown(items, "ORDER", symbol, "TRANSITIONAL_ORDER_STATE_UNPROVEN", at);
+                continue;
+            }
+            if (outside == null) {
+                items.add(item(Role.MANAGED_RECONCILIATION, Classification.LOCAL_ACTIVE_ORDER_ONLY,
+                        "ORDER", symbol, Status.OBSERVED, Status.OBSERVED,
+                        externalFact.observedAt(), canonicalAt, "LOCAL_MANAGED_ORDER_MISSING_EXTERNALLY",
+                        null, digest(clientId + "|" + exchangeId)));
+                continue;
+            }
+            if (outside.clientOrderId() != null && !clientId.equals(outside.clientOrderId())) {
+                unknown(items, "ORDER", symbol, "ORDER_OWNERSHIP_IDENTITY_CONFLICT", at);
+                continue;
+            }
+            int before = items.size();
+            boolean sameInstrument = Objects.equals(outside.instrumentId(), symbol);
+            boolean sameType = equalsIgnoreCase(outside.orderType(), row.get("type"));
+            if (!sameInstrument || !sameType || !equalsIgnoreCase(outside.side(), row.get("side"))) {
+                items.add(item(Role.MANAGED_RECONCILIATION, Classification.ORDER_IDENTITY_MISMATCH,
+                        "ORDER", symbol, Status.OBSERVED, Status.OBSERVED,
+                        outside.observedAt(), canonicalAt, "MANAGED_ORDER_INSTRUMENT_SIDE_OR_TYPE_DIFFERS",
+                        digest(clientId), digest(clientId)));
+            }
+            if (sameInstrument && sameType) {
+                if (!"limit".equalsIgnoreCase(outside.orderType())) {
+                    // 市价等类型的 sz 单位未被当前订单合同证明，不能用相同数字推断一致或差异。
+                    unknown(items, "ORDER", symbol, "MANAGED_ORDER_QUANTITY_UNIT_UNPROVEN", at);
+                } else {
+                    if (!same(outside.originalQuantity(), row.get("qty"))
+                            || !same(outside.filledQuantity(), row.get("filled"))) {
+                        items.add(item(Role.MANAGED_RECONCILIATION, Classification.ORDER_QUANTITY_MISMATCH,
+                                "ORDER", symbol, Status.OBSERVED, Status.OBSERVED,
+                                outside.observedAt(), canonicalAt, "ORIGINAL_OR_FILLED_QUANTITY_DIFFERS",
+                                digest(decimal(outside.originalQuantity()) + "|" + decimal(outside.filledQuantity())),
+                                digest(decimalValue(row.get("qty")) + "|" + decimalValue(row.get("filled")))));
+                    }
+                    if (!same(outside.price(), row.get("price"))) {
+                        items.add(item(Role.MANAGED_RECONCILIATION, Classification.ORDER_PRICE_MISMATCH,
+                                "ORDER", symbol, Status.OBSERVED, Status.OBSERVED,
+                                outside.observedAt(), canonicalAt, "LIMIT_PRICE_DIFFERS",
+                                digest(decimal(outside.price())), digest(decimalValue(row.get("price")))));
+                    }
+                }
+            }
             String externalState = outside.status().toLowerCase(java.util.Locale.ROOT);
-            boolean stateEquivalent = switch (localState == null ? "" : localState) {
-                case "ACCEPTED", "ACKED" -> "live".equals(externalState);
-                case "PARTIALLY_FILLED" -> "partially_filled".equals(externalState);
-                default -> false;
-            };
-            if (!stateEquivalent) {
-                items.add(item(Classification.ORDER_STATE_MISMATCH, "ORDER", outside.instrumentId(),
-                        Status.OBSERVED, Status.OBSERVED, observed, canonicalAt,
-                        "ACTIVE_ORDER_STATE_CLASS_DIFFERS_OR_UNPROVEN",
-                        digest(outside.status()), digest(Objects.toString(localState, "NULL"))));
+            if (!Set.of("live", "partially_filled").contains(externalState)) {
+                unknown(items, "ORDER", symbol, "EXTERNAL_ORDER_STATE_UNPROVEN", at);
+            } else if (!(Set.of("ACCEPTED", "ACKED").contains(localState) && "live".equals(externalState))
+                    && !("PARTIALLY_FILLED".equals(localState) && "partially_filled".equals(externalState))) {
+                items.add(item(Role.MANAGED_RECONCILIATION, Classification.ORDER_STATE_MISMATCH,
+                        "ORDER", symbol, Status.OBSERVED, Status.OBSERVED,
+                        outside.observedAt(), canonicalAt, "MANAGED_ACTIVE_ORDER_STATE_CLASS_DIFFERS",
+                        digest(externalState), digest(localState)));
+            }
+            if (items.size() == before) {
+                items.add(item(Role.MANAGED_RECONCILIATION, Classification.MATCH,
+                        "ORDER", symbol, Status.OBSERVED, Status.OBSERVED,
+                        outside.observedAt(), canonicalAt, "MANAGED_ORDER_MATCH",
+                        digest(clientId), digest(clientId)));
             }
         }
-        for (var outside : external.values()) {
-            items.add(item(Classification.EXTERNAL_OPEN_ORDER_ONLY, "ORDER", outside.instrumentId(),
-                    Status.OBSERVED, Status.UNKNOWN, outside.observedAt(), null,
-                    "EXTERNAL_OPEN_ORDER_ABSENT_LOCALLY", digest(outside.clientOrderId()), null));
+        for (var outside : externalFact.value()) {
+            if (!claimed.contains(outside)) {
+                items.add(item(Role.EXTERNAL_CONTEXT, Classification.EXTERNAL_ORDER_OWNERSHIP_UNKNOWN,
+                        "ORDER", outside.instrumentId(), Status.OBSERVED, Status.NOT_APPLICABLE,
+                        outside.observedAt(), null, "EXTERNAL_ORDER_OWNERSHIP_UNPROVEN",
+                        digest(outside.exchangeOrderId()), null));
+            }
         }
     }
 
@@ -283,26 +297,17 @@ final class AccountDivergenceComparator {
             AccountFactsSnapshot.Fact<String> rule, BigDecimal minimumSize,
             List<AccountDivergenceReport.Item> items) {
         List<AccountDivergenceReport.Item> sorted = items.stream().sorted(Comparator
-                .comparing((AccountDivergenceReport.Item item) -> item.dimension())
+                .comparing((AccountDivergenceReport.Item item) -> item.role().name())
+                .thenComparing(AccountDivergenceReport.Item::dimension)
                 .thenComparing(item -> Objects.toString(item.assetOrInstrument(), ""))
                 .thenComparing(item -> item.classification().name())).toList();
-        Classification aggregate;
-        List<AccountDivergenceReport.Item> divergences = sorted.stream()
-                .filter(item -> item.classification() != Classification.MATCH).toList();
-        if (divergences.stream().anyMatch(item -> item.classification() == Classification.UNKNOWN
-                || item.classification() == Classification.BALANCE_FACT_MISSING
-                || item.classification() == Classification.BALANCE_SEMANTIC_MISMATCH
-                || item.classification() == Classification.EXTERNAL_FACT_STALE
-                || item.classification() == Classification.CANONICAL_FACT_STALE)) {
-            aggregate = Classification.UNKNOWN;
-        } else if (divergences.isEmpty()) {
-            aggregate = Classification.MATCH;
-        } else if (divergences.size() == 1) {
-            aggregate = divergences.getFirst().classification();
-        } else {
-            // 已知其他差异与余额不可比并存时，保留各明细并报告复合结果。
-            aggregate = Classification.MULTIPLE_DIVERGENCES;
-        }
+        List<AccountDivergenceReport.Item> managed = sorted.stream()
+                .filter(item -> item.role() == Role.MANAGED_RECONCILIATION).toList();
+        Classification aggregate = managed.stream().anyMatch(item -> item.classification() == Classification.UNKNOWN)
+                ? Classification.UNKNOWN
+                : managed.stream().anyMatch(item -> item.classification() != Classification.MATCH)
+                    ? Classification.DIVERGED
+                    : managed.isEmpty() ? Classification.NOT_APPLICABLE : Classification.MATCH;
         return new AccountDivergenceReport(id, accountId, legacyId, externalAt, at,
                 external.isEmpty() ? null : digestJoined(external),
                 canonical.isEmpty() ? null : digestJoined(canonical),
@@ -310,16 +315,18 @@ final class AccountDivergenceComparator {
                 rule.statusAt(at) == Status.OBSERVED ? minimumSize : null, aggregate, sorted);
     }
 
-    private static AccountDivergenceReport.Item item(Classification classification, String dimension,
-            String asset, Status external, Status canonical, Instant externalAt, Instant canonicalAt,
-            String reason, String externalIdentity, String canonicalIdentity) {
-        return new AccountDivergenceReport.Item(classification, dimension, asset, external, canonical,
-                externalAt, canonicalAt, reason, externalIdentity, canonicalIdentity);
+    private static AccountDivergenceReport.Item item(Role role, Classification classification,
+            String dimension, String asset, Status external, Status canonical,
+            Instant externalAt, Instant canonicalAt, String reason,
+            String externalIdentity, String canonicalIdentity) {
+        return new AccountDivergenceReport.Item(role, classification, dimension, asset,
+                external, canonical, externalAt, canonicalAt, reason, externalIdentity, canonicalIdentity);
     }
 
-    private static void unknown(List<AccountDivergenceReport.Item> items, String dimension, String asset,
-            String reason, Instant at) {
-        items.add(item(Classification.UNKNOWN, dimension, asset, Status.UNKNOWN, Status.UNKNOWN,
+    private static void unknown(List<AccountDivergenceReport.Item> items, String dimension,
+            String asset, String reason, Instant at) {
+        items.add(item(Role.MANAGED_RECONCILIATION, Classification.UNKNOWN,
+                dimension, asset, Status.UNKNOWN, Status.UNKNOWN,
                 at, null, reason, null, null));
     }
 
@@ -350,7 +357,8 @@ final class AccountDivergenceComparator {
 
     private static String digest(String value) {
         try {
-            byte[] bytes = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+            byte[] bytes = MessageDigest.getInstance("SHA-256")
+                    .digest(value.getBytes(StandardCharsets.UTF_8));
             return java.util.HexFormat.of().formatHex(bytes);
         } catch (NoSuchAlgorithmException ex) {
             throw new IllegalStateException("SHA-256 unavailable", ex);

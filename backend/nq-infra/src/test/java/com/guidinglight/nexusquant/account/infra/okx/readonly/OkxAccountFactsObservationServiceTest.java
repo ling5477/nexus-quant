@@ -136,7 +136,7 @@ class OkxAccountFactsObservationServiceTest {
         currentRule();
         when(transport.readServerTime()).thenReturn(NOW);
         stubCanonical(List.of(), canonicalBalances());
-        assertEquals("NOT_COMPARABLE", service().observe(7, 8, 9).divergence().value());
+        assertEquals("NOT_APPLICABLE", service().observe(7, 8, 9).divergence().value());
     }
 
     @Test
@@ -149,9 +149,10 @@ class OkxAccountFactsObservationServiceTest {
         when(transport.readServerTime()).thenReturn(NOW);
         stubCanonical(List.of(), canonicalBalances());
         AccountFactsSnapshot snapshot = service().observe(7, 8, 9);
-        assertEquals("DIVERGED", snapshot.divergence().value());
+        assertEquals("NOT_APPLICABLE", snapshot.divergence().value());
         assertTrue(snapshot.divergenceReport().items().stream().anyMatch(item ->
-                item.classification() == AccountDivergenceReport.Classification.EXTERNAL_OPEN_ORDER_ONLY));
+                item.classification() == AccountDivergenceReport.Classification.EXTERNAL_ORDER_OWNERSHIP_UNKNOWN
+                        && item.role() == AccountDivergenceReport.Role.EXTERNAL_CONTEXT));
         assertEquals(1, snapshot.openOrderCount().value());
     }
 
@@ -182,14 +183,14 @@ class OkxAccountFactsObservationServiceTest {
     }
 
     @Test
-    void unknownDivergencePreventsAggregateObservedEvenWhenOtherFactsAreFresh() {
+    void unknownManagedComparisonDoesNotDowngradeCompleteObservation() {
         executor.includeBtc = true;
         setupAllowed();
         when(transport.readServerTime()).thenReturn(NOW);
         currentRule();
         AccountFactsSnapshot snapshot = service().observe(7, 8, 9);
         assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.divergence().status());
-        assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.status());
+        assertEquals(AccountFactsSnapshot.Status.OBSERVED, snapshot.status());
     }
 
     @Test
@@ -199,7 +200,7 @@ class OkxAccountFactsObservationServiceTest {
         setupAllowed();
         when(transport.readServerTime()).thenReturn(NOW);
         AccountFactsSnapshot snapshot = service().observe(7, 8, 9);
-        assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.divergence().status());
+        assertEquals("NOT_APPLICABLE", snapshot.divergence().value());
         assertEquals("USDC", snapshot.balances().get("USDC").value().currency());
     }
 
@@ -224,8 +225,8 @@ class OkxAccountFactsObservationServiceTest {
         assertEquals(AccountFactsSnapshot.Status.OBSERVED, snapshot.positions().status());
         assertEquals(List.of(), snapshot.positions().value());
         assertEquals("NO_ACTIVE_POSITION", snapshot.positions().reason());
-        assertEquals("NOT_COMPARABLE", snapshot.divergence().value());
-        assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.status());
+        assertEquals("NOT_APPLICABLE", snapshot.divergence().value());
+        assertEquals(AccountFactsSnapshot.Status.OBSERVED, snapshot.status());
         assertEquals(BigDecimal.ZERO, snapshot.spotBtcExposure().value());
         assertEquals(1, executor.operations.stream()
                 .filter(op -> op == OkxPrivateReadOperation.OKX_ACCOUNT_POSITIONS_READ).count());
@@ -233,16 +234,17 @@ class OkxAccountFactsObservationServiceTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"SWAP", "FUTURES", "MARGIN", "OPTION", "EVENTS"})
-    void modeTwoNonZeroPositionDivergesWithoutConflatingSpotUnits(String type) {
+    void modeTwoNonZeroPositionIsExternalContextWithoutConflatingSpotUnits(String type) {
         modeTwoMatching();
         executor.positions = List.of(position(type, "1"));
         var snapshot = service().observe(7, 8, 9);
         assertEquals(AccountFactsSnapshot.Status.OBSERVED, snapshot.positions().status());
-        assertEquals("DIVERGED", snapshot.divergence().value());
+        assertEquals("NOT_APPLICABLE", snapshot.divergence().value());
         assertTrue(snapshot.divergenceReport().items().stream().anyMatch(item ->
-                item.classification() == AccountDivergenceReport.Classification.EXTERNAL_NON_SPOT_POSITION_PRESENT));
+                item.classification() == AccountDivergenceReport.Classification.EXTERNAL_NON_SPOT_EXPOSURE
+                        && item.role() == AccountDivergenceReport.Role.EXTERNAL_CONTEXT));
         assertEquals(BigDecimal.ZERO, snapshot.spotBtcExposure().value());
-        assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.status());
+        assertEquals(AccountFactsSnapshot.Status.OBSERVED, snapshot.status());
     }
 
     @Test
@@ -251,7 +253,7 @@ class OkxAccountFactsObservationServiceTest {
         executor.positions = List.of(position("SWAP", "0"));
         var snapshot = service().observe(7, 8, 9);
         assertEquals("NO_ACTIVE_POSITION", snapshot.positions().reason());
-        assertEquals("NOT_COMPARABLE", snapshot.divergence().value());
+        assertEquals("NOT_APPLICABLE", snapshot.divergence().value());
     }
 
     @Test
@@ -263,7 +265,7 @@ class OkxAccountFactsObservationServiceTest {
             var snapshot = service().observe(7, 8, 9);
             assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.positions().status());
             assertEquals(failure.name(), snapshot.positions().reason());
-            assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.divergence().status());
+            assertEquals("NOT_APPLICABLE", snapshot.divergence().value());
             assertEquals(AccountFactsSnapshot.Status.UNKNOWN, snapshot.status());
         }
         executor.positionFailure = null;
@@ -278,11 +280,11 @@ class OkxAccountFactsObservationServiceTest {
         modeTwoMatching();
         executor.includeBtc = false;
         executor.positions = List.of(position("SWAP", "1"));
-        assertEquals(AccountFactsSnapshot.Status.UNKNOWN, service().observe(7, 8, 9).divergence().status());
+        assertEquals("NOT_APPLICABLE", service().observe(7, 8, 9).divergence().value());
         executor.includeBtc = true;
         when(jdbc.query(anyString(), org.mockito.ArgumentMatchers.<org.springframework.jdbc.core.RowMapper<JdbcAccountSnapshotReader.Snapshot>>any(),
                 eq(42L), eq("LIVE"))).thenReturn(List.of());
-        assertEquals("LIVE_SNAPSHOT_MISSING", service().observe(7, 8, 9).divergence().reason());
+        assertEquals("NOT_APPLICABLE", service().observe(7, 8, 9).divergence().value());
     }
 
     @Test

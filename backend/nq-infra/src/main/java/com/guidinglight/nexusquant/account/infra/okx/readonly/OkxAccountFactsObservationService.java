@@ -147,6 +147,7 @@ public final class OkxAccountFactsObservationService {
                 : observed(configuration.accountMode(), configuration.observedAt(), SOURCE, PRIVATE_TTL);
         var permissions = observed(permissionScope == ScopedCredentialCapabilityPolicy.PermissionScope.TRADE
                 ? List.of("READ", "TRADE") : List.of("READ"), configuration.observedAt(), SOURCE, PRIVATE_TTL);
+        var ipAllowlist = observed("MATCHED", configuration.observedAt(), SOURCE, PRIVATE_TTL);
 
         Map<String, AccountFactsSnapshot.Fact<OkxPrivateBalanceFact>> balances = new HashMap<>();
         OkxPrivateReadResult balanceResult = null;
@@ -247,18 +248,24 @@ public final class OkxAccountFactsObservationService {
         requireKill(initialKill);
         Instant comparisonAt = clock.instant();
         var report = new AccountDivergenceComparator(jdbc).compare(observationId, account.exchangeAccountId(),
-                account.legacyAccountId(), now, comparisonAt, mode, positions, balances, externalOrders,
-                rule, detailedRule.value() == null ? null : detailedRule.value().minimumSize());
+                account.legacyAccountId(), now, comparisonAt, positions, balances, externalOrders,
+                rule, rule.statusAt(comparisonAt) == Status.OBSERVED && detailedRule.value() != null
+                        ? detailedRule.value().minimumSize() : null);
         var divergence = report.aggregate() == AccountDivergenceReport.Classification.UNKNOWN
                 ? OkxAccountFactsObservationService.<String>unknown(comparisonAt,
-                    report.items().isEmpty() ? "CANONICAL_OR_EXTERNAL_FACT_INCOMPLETE" : report.items().getFirst().reason())
+                    report.items().stream()
+                            .filter(item -> item.role() == AccountDivergenceReport.Role.MANAGED_RECONCILIATION
+                                    && item.classification() == AccountDivergenceReport.Classification.UNKNOWN)
+                            .map(AccountDivergenceReport.Item::reason).findFirst()
+                            .orElse("MANAGED_RECONCILIATION_INCOMPLETE"))
                 : new AccountFactsSnapshot.Fact<>(Status.OBSERVED,
-                    report.aggregate() == AccountDivergenceReport.Classification.MATCH ? "MATCH"
-                        : report.aggregate() == AccountDivergenceReport.Classification.VENUE_BALANCE_NOT_SEMANTICALLY_COMPARABLE
-                            ? "NOT_COMPARABLE" : "DIVERGED",
+                    report.aggregate().name(),
                     comparisonAt, comparisonAt.plus(PRIVATE_TTL), "NQ_CANONICAL_READ_COMPARISON",
                     report.aggregate() == AccountDivergenceReport.Classification.MATCH ? null
                         : report.aggregate().name());
+        var externalContextItems = report.items().stream()
+                .filter(item -> item.role() != AccountDivergenceReport.Role.MANAGED_RECONCILIATION)
+                .toList();
         // 本地查询也会消耗时间；返回前重验 kill 与外部输入，不能给过期比较续期。
         requireKill(initialKill);
         Instant completed = clock.instant();
@@ -278,16 +285,26 @@ public final class OkxAccountFactsObservationService {
                 && fee.statusAt(completed) == Status.OBSERVED
                 && exchangeTime.statusAt(completed) == Status.OBSERVED
                 && rule.statusAt(completed) == Status.OBSERVED
-                && divergence.status() == Status.OBSERVED
-                && report != null && report.items().stream().noneMatch(item -> item.classification()
-                    == AccountDivergenceReport.Classification.VENUE_BALANCE_NOT_SEMANTICALLY_COMPARABLE)
                 && (positions.status() == Status.NOT_APPLICABLE
                     || positions.statusAt(completed) == Status.OBSERVED) ? Status.OBSERVED : Status.UNKNOWN;
+        var credentialStatus = observed("ACTIVE", now, "NQ_CREDENTIAL_METADATA", PRIVATE_TTL);
+        var accessStatus = new AccountFactsSnapshot.AccountAccessStatus(
+                mode.statusAt(completed) == Status.OBSERVED && Set.of("1", "2").contains(mode.value())
+                        ? Status.OBSERVED : Status.UNKNOWN,
+                credentialStatus, permissions, mode, ipAllowlist);
+        // 托管比较过期时仍保留已读取的外部事实；各 Fact 的有效期由消费者重新检查。
+        var externalContext = new AccountFactsSnapshot.ExternalAccountContext(externalContextItems);
+        var managedReconciliation = new AccountFactsSnapshot.NqManagedStateReconciliation(
+                report == null ? AccountDivergenceReport.Classification.UNKNOWN : report.aggregate(),
+                report == null ? List.of() : report.items().stream()
+                    .filter(item -> item.role() == AccountDivergenceReport.Role.MANAGED_RECONCILIATION)
+                    .toList());
         return new AccountFactsSnapshot(observationId, "OKX", account.exchangeAccountId(),
                 credentialReference, now,
-                observed("ACTIVE", now, "NQ_CREDENTIAL_METADATA", PRIVATE_TTL),
+                credentialStatus,
                 mode, permissions, balances, positions, exposure,
-                openOrders, fee, exchangeTime, rule, divergence, report, status,
+                openOrders, fee, exchangeTime, rule, divergence, report,
+                accessStatus, externalContext, managedReconciliation, status,
                 status == Status.OBSERVED ? "PRIVATE_READ_ONLY" : "PARTIAL_ACCOUNT_FACTS");
     }
 
@@ -312,6 +329,11 @@ public final class OkxAccountFactsObservationService {
                 OkxAccountFactsObservationService.<Integer>unknown(at, reason),
                 OkxAccountFactsObservationService.<com.guidinglight.nexusquant.adapter.okx.privateread.model.OkxPrivateFeeFact>unknown(at, reason),
                 OkxAccountFactsObservationService.<Instant>unknown(at, reason), unknown, unknown, null,
+                new AccountFactsSnapshot.AccountAccessStatus(Status.REJECTED, unknown,
+                        OkxAccountFactsObservationService.<List<String>>unknown(at, reason), unknown, unknown),
+                new AccountFactsSnapshot.ExternalAccountContext(List.of()),
+                new AccountFactsSnapshot.NqManagedStateReconciliation(
+                        AccountDivergenceReport.Classification.UNKNOWN, List.of()),
                 Status.REJECTED, reason);
     }
 
