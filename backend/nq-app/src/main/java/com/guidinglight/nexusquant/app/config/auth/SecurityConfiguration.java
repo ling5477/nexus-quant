@@ -131,6 +131,8 @@ public class SecurityConfiguration {
                                 "/actuator/readonlyproviderobservation"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/**").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/api/scheduler/jobs/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/scheduler/jobs/*/run-once").hasRole("ADMIN")
                         .requestMatchers("/api/**").hasAnyRole("ADMIN", "OPERATOR")
                         .anyRequest().permitAll()
                 )
@@ -138,5 +140,4 @@ public class SecurityConfiguration {
         return http.build();
     }
 }
-
 

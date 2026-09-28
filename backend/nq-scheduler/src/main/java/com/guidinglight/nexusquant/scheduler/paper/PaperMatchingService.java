@@ -32,7 +32,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import com.guidinglight.nexusquant.trading.domain.TradingVenue;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -110,10 +109,6 @@ public class PaperMatchingService {
     /**
      * 定时执行 paper 撮合。
      */
-    @Scheduled(
-            fixedDelayString = "${nq.paper.matching.fixed-delay-ms:2000}",
-            initialDelayString = "${nq.paper.matching.initial-delay-ms:2000}"
-    )
     public void scheduledMatch() {
         matchOnce(DEFAULT_LIMIT);
     }

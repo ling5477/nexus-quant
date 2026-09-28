@@ -23,7 +23,6 @@ import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 
 /**
  * 默认关闭、跨实例互斥的 Validation Evidence Scheduler。
@@ -69,10 +68,6 @@ public final class ValidationEvidenceScheduler {
     /**
      * Spring 调度入口；duration placeholders 与已验证的 properties 使用相同前缀和默认值。
      */
-    @Scheduled(
-            fixedDelayString = "${nq.validation-operations.scheduler.fixed-delay:PT5M}",
-            initialDelayString = "${nq.validation-operations.scheduler.initial-delay:PT30S}"
-    )
     public void scheduledRefresh() {
         runOnce();
     }

@@ -28,10 +28,7 @@ import com.guidinglight.nexusquant.adapter.api.model.AdapterOpenOrdersQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.context.annotation.Profile;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.slf4j.LoggerFactory;
 
@@ -103,7 +100,6 @@ public class OkxRecoveryService implements RecoveryService {
     /**
      * 上下文刷新后触发一次启动恢复。
      */
-    @EventListener(ContextRefreshedEvent.class)
     public void onContextRefreshed() {
         if (!recoveryEnabled) {
             // Why: local 验收首先要保证 nq-app 能启动到登录阶段；
@@ -122,10 +118,6 @@ public class OkxRecoveryService implements RecoveryService {
     /**
      * 定时执行恢复，覆盖长时间运行中的未知状态窗口。
      */
-    @Scheduled(
-            fixedDelayString = "${nq.okx.recovery.fixed-delay-ms:15000}",
-            initialDelayString = "${nq.okx.recovery.initial-delay-ms:15000}"
-    )
     public void scheduledRecovery() {
         if (!recoveryEnabled) {
             return;

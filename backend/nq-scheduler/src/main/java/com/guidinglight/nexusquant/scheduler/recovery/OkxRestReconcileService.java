@@ -46,7 +46,6 @@ import java.util.Map;
 import com.guidinglight.nexusquant.trading.domain.TradingVenue;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -135,10 +134,6 @@ public class OkxRestReconcileService {
     /**
      * 定时执行 OKX REST reconcile。
      */
-    @Scheduled(
-            fixedDelayString = "${nq.okx.reconcile.fixed-delay-ms:5000}",
-            initialDelayString = "${nq.okx.reconcile.initial-delay-ms:5000}"
-    )
     public void scheduledReconcile() {
         reconcileOnce(DEFAULT_LIMIT);
     }

@@ -31,6 +31,13 @@ import com.guidinglight.nexusquant.scheduler.paper.StrategySimRunService;
 import com.guidinglight.nexusquant.scheduler.paper.ContinuousSimRepository;
 import com.guidinglight.nexusquant.scheduler.paper.ContinuousSimRunService;
 import com.guidinglight.nexusquant.scheduler.paper.PaperMatchingService;
+import com.guidinglight.nexusquant.scheduler.control.ScheduledJobManagementService;
+import com.guidinglight.nexusquant.scheduler.control.ScheduledJobControlRepository;
+import com.guidinglight.nexusquant.scheduler.control.ScheduledJobRegistry;
+import com.guidinglight.nexusquant.scheduler.control.SchedulerDispatcher;
+import com.guidinglight.nexusquant.scheduler.infra.lock.PostgresAdvisorySchedulerExecutionLock;
+import com.guidinglight.nexusquant.scheduler.scheduling.LedgerReconcileScheduler;
+import com.guidinglight.nexusquant.scheduler.validationevidence.scheduling.ValidationEvidenceScheduler;
 import com.guidinglight.nexusquant.strategy.domain.SpotBarIdentity;
 import com.guidinglight.nexusquant.strategy.domain.SpotSmaTargetStrategy;
 import com.guidinglight.nexusquant.strategy.domain.PublicReplayAssumptionIdentity;
@@ -70,10 +77,19 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.beans.factory.support.StaticListableBeanFactory;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.scheduling.annotation.ScheduledAnnotationBeanPostProcessor;
 import org.springframework.transaction.support.TransactionTemplate;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import com.sun.net.httpserver.HttpServer;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -83,12 +99,14 @@ import org.springframework.test.context.TestPropertySource;
 
 /** 一次性 PostgreSQL 中验证合成研究服务链与隔离 SIM 的 canonical 事实。 */
 @EnabledIfSystemProperty(named = "nq.strategy-sim.pg.required", matches = "true")
-@ActiveProfiles("ci-app-smoke")
+@ActiveProfiles({"ci-app-smoke", "public-marketdata-manual"})
+@Import(StrategySimPostgresIntegrationTest.SchedulerFeedConfiguration.class)
 @SpringBootTest(classes = NexusQuantApplication.class, webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ContextConfiguration(initializers = NqAppContextPostgresSmokeTest.NoOutboundInitializer.class)
 @TestPropertySource(properties = {
         "spring.flyway.enabled=false", "spring.sql.init.mode=never", "spring.task.scheduling.enabled=false",
         "nq.runtime.trading-components.enabled=true", "nq.strategy-sim.enabled=true",
+        "nq.continuous-sim.enabled=true", "nq.public-marketdata.outbound.enabled=false",
         "nq.auth.bootstrap-admin.enabled=false", "nq.instrument.catalog-sync.enabled=false",
         "nq.okx.recovery.enabled=false", "nq.okx.ws.enabled=false", "nq.binance.ws.enabled=false",
         "nq.account.credentials.verification-mode=STRUCTURAL",
@@ -98,6 +116,7 @@ import org.springframework.test.context.TestPropertySource;
         "nq.security.access-token-ttl=PT30M"
 })
 class StrategySimPostgresIntegrationTest {
+    private static final AtomicReference<ClosedBarMarketFeed.Observation> schedulerObservation = new AtomicReference<>();
     private static String schema;
     private static String independentSchema;
     private static String counterfactualSchema;
@@ -149,6 +168,10 @@ class StrategySimPostgresIntegrationTest {
     @Autowired private ContinuousSimRepository continuousProgress;
     @Autowired private PaperTradingRunService runs;
     @Autowired private PaperMatchingService matching;
+    @Autowired private ContinuousSimRunService scheduledContinuous;
+    @Autowired private ScheduledJobManagementService scheduledJobs;
+    @Autowired private SchedulerDispatcher schedulerDispatcher;
+    @Autowired private ConfigurableApplicationContext applicationContext;
     @Autowired private MarketdataBarRepository marketdataBars;
     @Autowired private MarketdataDatasetService datasets;
     @Autowired private StrategyDefinitionRepository definitions;
@@ -181,7 +204,7 @@ class StrategySimPostgresIntegrationTest {
                     observed.rule(), observed.quote());
         };
         ContinuousSimRunService driver = new ContinuousSimRunService(continuousProgress, sim,
-                runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(2), java.time.ZoneOffset.UTC), false);
+                runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(2), java.time.ZoneOffset.UTC));
         try {
             var created = driver.start(fixture.publishId(), new BigDecimal("100"));
             String runId = created.paperRunId();
@@ -231,26 +254,248 @@ class StrategySimPostgresIntegrationTest {
                     Timestamp.from(hourBar(4, "104").closeTime()),
                     ContinuousSimRepository.contentSha(hourBar(4, "104")), runId);
             ContinuousSimRunService restarted = new ContinuousSimRunService(continuousProgress, sim,
-                    runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(3), java.time.ZoneOffset.UTC), false);
+                    runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(3), java.time.ZoneOffset.UTC));
+            restarted.pollOnce(runId);
+            assertEquals(firstNew.openTime(), restarted.status(runId).lastProcessedBar(),
+                    restarted.status(runId).toString());
+            assertEquals(1, sim.facts(runId).orders().size());
+            assertEquals(1, sim.facts(runId).trades().size());
+            assertEquals(ledgerBefore, sim.facts(runId).ledgerEntries().size());
+            restarted.stop(runId);
+            Instant secondTime = Instant.parse("2026-09-25T07:01:00Z");
+            current.set(observation(secondTime, secondTime.plusSeconds(1), List.of(
+                    hourBar(4, "104"), firstNew,
+                    availableAt(hourBar(6, "106"), secondTime.toString()))));
+            restarted.pollOnce(runId);
+            assertEquals(firstNew.openTime(), restarted.status(runId).lastProcessedBar());
+        } finally {
+            schedulerObservation.set(null);
+        }
+    }
+
+    @Test
+    void springSchedulerClosesContinuousSimEconomicFactsWithoutManualMatching() throws Exception {
+        var processors = applicationContext.getBeansOfType(ScheduledAnnotationBeanPostProcessor.class);
+        assertEquals(1, processors.size());
+        assertEquals(1, processors.values().iterator().next().getScheduledTasks().size());
+        Fixture fixture = seedPublicHourly();
+        jdbc.update("""
+                UPDATE kill_switch_states SET status='DISENGAGED', version=version+1,
+                    reason_code='SYNTHETIC_TEST_ONLY', source='STRATEGY_SIM_TEST',
+                    updated_at=now(), updated_by='test', trace_id='scheduler-test'
+                WHERE scope='GLOBAL_TRADING'
+                """);
+        Instant firstTime = Instant.parse("2026-09-25T06:01:00Z");
+        HistoricalBar newBar = availableAt(hourBar(5, "105"), firstTime.toString());
+        schedulerObservation.set(observation(firstTime, firstTime.plusSeconds(1),
+                List.of(hourBar(3, "103"), hourBar(4, "104"), newBar)));
+        String runId = scheduledContinuous.start(fixture.publishId(), new BigDecimal("100")).paperRunId();
+        try {
+            assertEquals(0, sim.facts(runId).orders().size());
+            var poll = scheduledJobs.detail("CONTINUOUS_SIM_POLL");
+            scheduledJobs.patch("CONTINUOUS_SIM_POLL", true, null, poll.version(), "scheduler-test", "scheduler-test");
+            awaitFact(() -> sim.facts(runId).orders().size() == 1);
+            assertEquals("ACCEPTED", sim.facts(runId).orders().getFirst().get("status"));
+            assertEquals(0, sim.facts(runId).trades().size());
+            var matchingControl = scheduledJobs.detail("PAPER_MATCHING");
+            scheduledJobs.patch("PAPER_MATCHING", true, null, matchingControl.version(), "scheduler-test", "scheduler-test");
+            awaitFact(() -> sim.facts(runId).trades().size() == 1);
+            var facts = sim.facts(runId);
+            assertEquals("FILLED", facts.orders().getFirst().get("status"));
+            assertEquals(1, facts.trades().size());
+            assertTradeAccounting(runId, 1, facts.ledgerEntries().size());
+            Thread.sleep(2_500);
+            assertEquals(1, sim.facts(runId).trades().size());
+            assertEquals(facts.ledgerEntries().size(), sim.facts(runId).ledgerEntries().size());
+            var beforeDisable = scheduledJobs.detail("PAPER_MATCHING");
+            scheduledJobs.patch("PAPER_MATCHING", false, null, beforeDisable.version(),
+                    "scheduler-test", "scheduler-test");
+            String secondRunId = scheduledContinuous.start(fixture.publishId(), new BigDecimal("100")).paperRunId();
             try {
-                restarted.pollOnce(runId);
-                assertEquals(firstNew.openTime(), restarted.status(runId).lastProcessedBar(),
-                        restarted.status(runId).toString());
-                assertEquals(1, sim.facts(runId).orders().size());
-                assertEquals(1, sim.facts(runId).trades().size());
-                assertEquals(ledgerBefore, sim.facts(runId).ledgerEntries().size());
-                restarted.stop(runId);
-                Instant secondTime = Instant.parse("2026-09-25T07:01:00Z");
-                current.set(observation(secondTime, secondTime.plusSeconds(1), List.of(
-                        hourBar(4, "104"), firstNew,
-                        availableAt(hourBar(6, "106"), secondTime.toString()))));
-                restarted.pollOnce(runId);
-                assertEquals(firstNew.openTime(), restarted.status(runId).lastProcessedBar());
+                var nextPoll = scheduledJobs.detail("CONTINUOUS_SIM_POLL");
+                scheduledJobs.patch("CONTINUOUS_SIM_POLL", true, 30_000L, nextPoll.version(),
+                        "scheduler-test", "scheduler-test");
+                awaitFact(() -> sim.facts(secondRunId).orders().size() == 1);
+                Thread.sleep(2_200);
+                assertEquals("ACCEPTED", sim.facts(secondRunId).orders().getFirst().get("status"));
+                assertEquals(0, sim.facts(secondRunId).trades().size());
+                var disabledMatch = scheduledJobs.detail("PAPER_MATCHING");
+                scheduledJobs.patch("PAPER_MATCHING", true, null, disabledMatch.version(),
+                        "scheduler-test", "scheduler-test");
+                awaitFact(() -> sim.facts(secondRunId).trades().size() == 1);
+                var secondFacts = sim.facts(secondRunId);
+                assertEquals("FILLED", secondFacts.orders().getFirst().get("status"));
+                assertTradeAccounting(secondRunId, 1, secondFacts.ledgerEntries().size());
             } finally {
-                restarted.destroy();
+                scheduledContinuous.stop(secondRunId);
             }
         } finally {
-            driver.destroy();
+            var poll = scheduledJobs.detail("CONTINUOUS_SIM_POLL");
+            scheduledJobs.patch("CONTINUOUS_SIM_POLL", false, 300_000L, poll.version(), "scheduler-test", "scheduler-test");
+            var match = scheduledJobs.detail("PAPER_MATCHING");
+            scheduledJobs.patch("PAPER_MATCHING", false, null, match.version(), "scheduler-test", "scheduler-test");
+            scheduledContinuous.stop(runId);
+            schedulerObservation.set(null);
+        }
+    }
+
+    @Test
+    void schedulerControlsEnforceRegistryDelayVersionAndStaticCapability() throws Exception {
+        assertEquals(8, scheduledJobs.list().size());
+        assertThrows(IllegalArgumentException.class, () -> scheduledJobs.detail("UNKNOWN_JOB"));
+        assertThrows(IllegalStateException.class, () -> scheduledJobs.runOnce(
+                "OKX_RECOVERY", "scheduler-test", "scheduler-test"));
+        var old = scheduledJobs.detail("PAPER_MATCHING");
+        try {
+            assertEquals(false, old.enabled());
+            assertThrows(IllegalArgumentException.class, () -> scheduledJobs.patch(
+                    "PAPER_MATCHING", true, 400L, old.version(), "scheduler-test", "scheduler-test"));
+            assertThrows(IllegalArgumentException.class, () -> scheduledJobs.patch(
+                    "PAPER_MATCHING", true, -1L, old.version(), "scheduler-test", "scheduler-test"));
+            assertThrows(IllegalArgumentException.class, () -> scheduledJobs.patch(
+                    "PAPER_MATCHING", true, 60_001L, old.version(), "scheduler-test", "scheduler-test"));
+            assertThrows(IllegalStateException.class, () -> scheduledJobs.patch(
+                    "OKX_RECOVERY", true, null, scheduledJobs.detail("OKX_RECOVERY").version(),
+                    "scheduler-test", "scheduler-test"));
+            var enabled = scheduledJobs.patch("PAPER_MATCHING", true, 1_000L, old.version(),
+                    "scheduler-test", "scheduler-test");
+            assertEquals(1_000L, enabled.fixedDelayMs());
+            assertNotNull(enabled.nextRunAt());
+            awaitFact(() -> {
+                var current = scheduledJobs.detail("PAPER_MATCHING");
+                return current.lastFinishedAt() != null
+                        && current.lastFinishedAt().isAfter(enabled.updatedAt());
+            });
+            var executed = scheduledJobs.detail("PAPER_MATCHING");
+            long actualDelay = java.time.Duration.between(
+                    executed.lastFinishedAt(), executed.nextRunAt()).toMillis();
+            assertTrue(actualDelay >= 999 && actualDelay <= 1_001);
+            assertThrows(IllegalStateException.class, () -> scheduledJobs.patch(
+                    "PAPER_MATCHING", false, null, old.version(), "scheduler-test", "scheduler-test"));
+            var disabled = scheduledJobs.patch("PAPER_MATCHING", false, null, executed.version(),
+                    "scheduler-test", "scheduler-test");
+            assertEquals(false, disabled.enabled());
+            assertEquals(null, disabled.nextRunAt());
+            Thread.sleep(2_200);
+            assertEquals(disabled.lastStartedAt(), scheduledJobs.detail("PAPER_MATCHING").lastStartedAt());
+            try (ConfigurableApplicationContext restarted = new SpringApplicationBuilder(NexusQuantApplication.class)
+                    .profiles("ci-app-smoke").web(WebApplicationType.NONE)
+                    .initializers(new NqAppContextPostgresSmokeTest.NoOutboundInitializer())
+                    .properties(Map.ofEntries(
+                            Map.entry("spring.datasource.url", baseUrl + "?currentSchema=" + schema),
+                            Map.entry("spring.datasource.username", databaseUser),
+                            Map.entry("spring.datasource.password", databasePassword),
+                            Map.entry("spring.flyway.enabled", "false"),
+                            Map.entry("spring.sql.init.mode", "never"),
+                            Map.entry("nq.runtime.trading-components.enabled", "true"),
+                            Map.entry("nq.strategy-sim.enabled", "true"),
+                            Map.entry("nq.auth.bootstrap-admin.enabled", "false"),
+                            Map.entry("nq.instrument.catalog-sync.enabled", "false"),
+                            Map.entry("nq.okx.recovery.enabled", "false"),
+                            Map.entry("nq.okx.ws.enabled", "false"),
+                            Map.entry("nq.binance.ws.enabled", "false"),
+                            Map.entry("nq.account.credentials.verification-mode", "STRUCTURAL"),
+                            Map.entry("nq.account.credentials.master-key", "strategy-sim-synthetic-master-key-123456789"),
+                            Map.entry("nq.security.issuer", "nexus-quant-strategy-sim-synthetic"),
+                            Map.entry("nq.security.secret", "strategy-sim-synthetic-secret-123456789"),
+                            Map.entry("nq.security.access-token-ttl", "PT30M")))
+                    .run("--spring.datasource.url=" + baseUrl + "?currentSchema=" + schema,
+                            "--spring.datasource.username=" + databaseUser,
+                            "--spring.datasource.password=" + databasePassword,
+                            "--spring.flyway.enabled=false")) {
+                var persisted = restarted.getBean(ScheduledJobManagementService.class).detail("PAPER_MATCHING");
+                assertEquals(false, persisted.enabled());
+                assertEquals(disabled.lastStartedAt(), persisted.lastStartedAt());
+                assertEquals(disabled.lastStatus(), persisted.lastStatus());
+                assertEquals(null, persisted.nextRunAt());
+            }
+        } finally {
+            var current = scheduledJobs.detail("PAPER_MATCHING");
+            scheduledJobs.patch("PAPER_MATCHING", false, old.fixedDelayMs(), current.version(),
+                    "scheduler-test", "scheduler-test");
+        }
+    }
+
+    @Test
+    void twoDispatcherInstancesHoldOnePaperMatchingExecutionLock() throws Exception {
+        PaperMatchingService fakeMatching = mock(PaperMatchingService.class);
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            entered.countDown();
+            assertTrue(release.await(10, TimeUnit.SECONDS));
+            return 0;
+        }).when(fakeMatching).matchOnce(100);
+        StaticListableBeanFactory beans = new StaticListableBeanFactory();
+        beans.addBean("matching", fakeMatching);
+        ScheduledJobRegistry registry = new ScheduledJobRegistry(
+                beans.getBeanProvider(ContinuousSimRunService.class),
+                beans.getBeanProvider(PaperMatchingService.class),
+                beans.getBeanProvider(LedgerReconcileScheduler.class),
+                beans.getBeanProvider(ValidationEvidenceScheduler.class));
+        var source = jdbc.getDataSource();
+        var tx = new DataSourceTransactionManager(source);
+        var first = new SchedulerDispatcher(registry, new ScheduledJobControlRepository(new JdbcTemplate(source)),
+                new PostgresAdvisorySchedulerExecutionLock(new JdbcTemplate(source), tx), tx);
+        var second = new SchedulerDispatcher(registry, new ScheduledJobControlRepository(new JdbcTemplate(source)),
+                new PostgresAdvisorySchedulerExecutionLock(new JdbcTemplate(source), tx), tx);
+        first.bootstrap();
+        second.bootstrap();
+        try (var workers = Executors.newSingleThreadExecutor()) {
+            var running = workers.submit(() -> first.runOnce("PAPER_MATCHING"));
+            assertTrue(entered.await(5, TimeUnit.SECONDS));
+            assertEquals(SchedulerDispatcher.ExecutionOutcome.SKIPPED, second.runOnce("PAPER_MATCHING"));
+            release.countDown();
+            assertEquals(SchedulerDispatcher.ExecutionOutcome.SUCCESS, running.get(5, TimeUnit.SECONDS));
+            verify(fakeMatching, times(1)).matchOnce(100);
+        } finally {
+            release.countDown();
+        }
+    }
+
+    @Test
+    void staleRunWithUnavailableCapabilityAdvancesWithoutExecuting() {
+        jdbc.update("""
+                UPDATE scheduled_job_controls
+                SET enabled=true, active_run_id=?, last_started_at=now()-interval '6 minutes',
+                    next_run_at=now()-interval '1 second', last_status='RUNNING'
+                WHERE job_key='OKX_RECOVERY'
+                """, UUID.randomUUID());
+        try {
+            schedulerDispatcher.scheduledTick();
+            var state = scheduledJobs.detail("OKX_RECOVERY");
+            assertEquals("SKIPPED", state.lastStatus());
+            assertEquals("CAPABILITY_UNAVAILABLE", state.lastErrorCode());
+            assertEquals(null, state.activeRunId());
+            assertTrue(state.nextRunAt().isAfter(Instant.now()));
+        } finally {
+            jdbc.update("""
+                    UPDATE scheduled_job_controls
+                    SET enabled=false, active_run_id=NULL, next_run_at=NULL,
+                        last_status='NEVER_RUN', last_error_code=NULL,
+                        last_started_at=NULL, last_finished_at=NULL
+                    WHERE job_key='OKX_RECOVERY'
+                    """);
+        }
+    }
+
+    private static void awaitFact(java.util.function.BooleanSupplier condition) throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+        while (!condition.getAsBoolean() && System.nanoTime() < deadline) Thread.sleep(100);
+        assertTrue(condition.getAsBoolean(), "Spring scheduler did not close the expected fact chain");
+    }
+
+    @TestConfiguration(proxyBeanMethods = false)
+    static class SchedulerFeedConfiguration {
+        @Bean
+        ClosedBarMarketFeed schedulerFixtureFeed() {
+            return (firstOpen, maximumBars) -> {
+                var observed = schedulerObservation.get();
+                if (observed == null) throw new IllegalStateException("SCHEDULER_FIXTURE_NOT_READY");
+                return new ClosedBarMarketFeed.Observation(observed.serverTime(), observed.observedAt(),
+                        observed.bars().stream().filter(bar -> !bar.openTime().isBefore(firstOpen)).toList(),
+                        observed.rule(), observed.quote());
+            };
         }
     }
 
@@ -276,7 +521,7 @@ class StrategySimPostgresIntegrationTest {
                     observed.rule(), observed.quote());
         };
         ContinuousSimRunService driver = new ContinuousSimRunService(continuousProgress, sim,
-                runs, feed, jdbc, Clock.fixed(firstTime, java.time.ZoneOffset.UTC), false);
+                runs, feed, jdbc, Clock.fixed(firstTime, java.time.ZoneOffset.UTC));
         try {
             String runId = driver.start(fixture.publishId(), new BigDecimal("100")).paperRunId();
             driver.pollOnce(runId);
@@ -315,7 +560,6 @@ class StrategySimPostgresIntegrationTest {
             assertEquals(3, sim.decisions(runId).size());
             assertEquals(ordersBeforeRevision, sim.facts(runId).orders().size());
         } finally {
-            driver.destroy();
         }
     }
 
@@ -334,7 +578,7 @@ class StrategySimPostgresIntegrationTest {
                     observed.rule(), observed.quote());
         };
         ContinuousSimRunService driver = new ContinuousSimRunService(continuousProgress, sim,
-                runs, feed, jdbc, Clock.fixed(observedAt, java.time.ZoneOffset.UTC), false);
+                runs, feed, jdbc, Clock.fixed(observedAt, java.time.ZoneOffset.UTC));
         try {
             String runId = driver.start(fixture.publishId(), new BigDecimal("100")).paperRunId();
             driver.pollOnce(runId);
@@ -349,7 +593,6 @@ class StrategySimPostgresIntegrationTest {
             assertEquals(0, sim.facts(runId).orders().size());
             driver.stop(runId);
         } finally {
-            driver.destroy();
         }
     }
 
@@ -360,7 +603,7 @@ class StrategySimPostgresIntegrationTest {
         ClosedBarMarketFeed feed = (firstOpen, maximumBars) -> observation(now, now.plusSeconds(1),
                 List.of(hourBar(3, "103"), hourBar(4, "104")));
         ContinuousSimRunService driver = new ContinuousSimRunService(continuousProgress, sim,
-                runs, feed, jdbc, Clock.fixed(now, java.time.ZoneOffset.UTC), false);
+                runs, feed, jdbc, Clock.fixed(now, java.time.ZoneOffset.UTC));
         List<String> ids = new ArrayList<>();
         try {
             for (int i = 0; i < 8; i++) {
@@ -382,7 +625,6 @@ class StrategySimPostgresIntegrationTest {
             for (String id : ids) {
                 if (!"STOPPED".equals(driver.status(id).status())) driver.stop(id);
             }
-            driver.destroy();
         }
     }
 
