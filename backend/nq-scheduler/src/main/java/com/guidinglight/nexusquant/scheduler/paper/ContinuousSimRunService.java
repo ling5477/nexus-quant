@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -41,6 +42,7 @@ public class ContinuousSimRunService implements DisposableBean {
     private final Clock clock;
     private final ScheduledExecutorService scheduler;
 
+    @Autowired
     public ContinuousSimRunService(ContinuousSimRepository progress, StrategySimRunService sim,
             PaperTradingRunService paperRuns, ClosedBarMarketFeed feed, JdbcTemplate jdbc) {
         this(progress, sim, paperRuns, feed, jdbc, Clock.systemUTC(), true);
