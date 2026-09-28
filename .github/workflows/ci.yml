@@ -486,7 +486,7 @@ jobs:
             -Dtest='ContinuousSimMigrationPostgresTest,OkxClosedBarMarketFeedTest,StrategySimPostgresIntegrationTest#continuous*' \
             -Dsurefire.failIfNoSpecifiedTests=false \
             -Dnq.strategy-sim.pg.required=true \
-            -Dnq.strategy-sim.pg.url="${NQ_FLYWAY_DB_URL}" \
+            -Dnq.strategy-sim.pg.url="jdbc:postgresql://127.0.0.1:5432/nq_ci" \
             -Dnq.strategy-sim.pg.user="${NQ_FLYWAY_DB_USER}" \
             -Dnq.strategy-sim.pg.password="${NQ_FLYWAY_DB_PASSWORD}"
 
