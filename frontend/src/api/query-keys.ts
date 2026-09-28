@@ -13,6 +13,11 @@ export const operationalReadinessQueryKeys = {
     status: () => [...operationalReadinessQueryKeys.all, 'status'] as const,
 };
 
+export const schedulerQueryKeys = {
+    all: ['scheduler-jobs'] as const,
+    list: () => [...schedulerQueryKeys.all, 'list'] as const,
+};
+
 export const marketdataQueryKeys = {
     all: ['marketdata'] as const,
     barsAll: () => [...marketdataQueryKeys.all, 'bars'] as const,

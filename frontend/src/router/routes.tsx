@@ -24,6 +24,7 @@ import {PaperTradingRunsPage} from '@/pages/paper-trading/PaperTradingRunsPage';
 import {PublishesPage} from '@/pages/publishes/PublishesPage';
 import {ResearchPage} from '@/pages/research/ResearchPage';
 import {RuntimeReadinessPage} from '@/pages/runtime/RuntimeReadinessPage';
+import {SchedulerJobsPage} from '@/pages/scheduler/SchedulerJobsPage';
 import {RunsPage} from '@/pages/runs/RunsPage';
 import {ShadowRunDetailPage} from '@/pages/shadow-runs/ShadowRunDetailPage';
 import {ShadowRunListPage} from '@/pages/shadow-runs/ShadowRunListPage';
@@ -115,6 +116,11 @@ export const appRouter = createBrowserRouter([
                         path: 'runtime/readiness',
                         element: <RuntimeReadinessPage/>,
                         handle: createHandle('runtime-readiness'),
+                    },
+                    {
+                        path: 'system/scheduler',
+                        element: <SchedulerJobsPage/>,
+                        handle: createHandle('scheduler-jobs'),
                     },
                     {
                         path: 'strategies/validation',

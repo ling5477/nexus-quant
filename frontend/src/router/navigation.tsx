@@ -169,6 +169,15 @@ export const appNavItems: AppNavItem[] = [
         get description() { return t('navigation.paper-trading.description'); },
         get section() { return t('navigation.paper-trading.section'); },
     },
+    {
+        key: 'scheduler-jobs',
+        path: '/system/scheduler',
+        get label() { return t('navigation.scheduler-jobs.label'); },
+        icon: <ScheduleOutlined/>,
+        get title() { return t('navigation.scheduler-jobs.title'); },
+        get description() { return t('navigation.scheduler-jobs.description'); },
+        get section() { return t('navigation.scheduler-jobs.section'); },
+    },
 ];
 
 export function resolveMenuKey(pathname: string): string {
