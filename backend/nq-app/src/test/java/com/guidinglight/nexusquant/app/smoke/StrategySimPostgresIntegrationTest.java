@@ -220,7 +220,8 @@ class StrategySimPostgresIntegrationTest {
                     Integer.class, runId));
             assertEquals(1, sim.facts(runId).orders().size());
             assertEquals(0, new BigDecimal("105").compareTo(sim.facts(runId).markPrice()));
-            assertEquals(1, matching.matchOnce(100));
+            // 撮合器会同时处理同一隔离 schema 中其他测试留下的订单；只按本 run 断言经济事实。
+            matching.matchOnce(100);
             assertEquals(1, sim.facts(runId).trades().size());
             int ledgerBefore = sim.facts(runId).ledgerEntries().size();
             // 模拟经济事实已提交、游标确认丢失；重建 driver 后必须认领既有决策。
