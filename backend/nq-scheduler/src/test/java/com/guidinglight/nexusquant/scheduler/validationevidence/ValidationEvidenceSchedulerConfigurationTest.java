@@ -5,7 +5,6 @@ import com.guidinglight.nexusquant.scheduler.validationevidence.config.Validatio
 import com.guidinglight.nexusquant.scheduler.validationevidence.scheduling.ValidationEvidenceScheduler;
 import com.guidinglight.nexusquant.scheduler.validationevidence.service.ValidationEvidenceRefreshService;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -24,10 +23,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.scheduling.annotation.ScheduledAnnotationBeanPostProcessor;
 import org.springframework.scheduling.config.TaskManagementConfigUtils;
 
-/** 验证默认不注册 scheduler，显式开启时只注册本任务的 scheduled method。 */
+/** 验证 Validation Evidence 配置仅注册运行 Bean，不再拥有独立 scheduling processor。 */
 class ValidationEvidenceSchedulerConfigurationTest {
 
     @Test
@@ -45,7 +43,7 @@ class ValidationEvidenceSchedulerConfigurationTest {
     }
 
     @Test
-    void shouldRegisterOnlyValidationSchedulerWhenExplicitlyEnabled() {
+    void shouldRegisterValidationJobWithoutScopedProcessorWhenExplicitlyEnabled() {
         ValidationOperationsRuntimeEvidenceOverviewQueryService queryService = mock(
                 ValidationOperationsRuntimeEvidenceOverviewQueryService.class
         );
@@ -58,11 +56,7 @@ class ValidationEvidenceSchedulerConfigurationTest {
         try (AnnotationConfigApplicationContext context = context(properties, queryService, executionLock)) {
             assertNotNull(context.getBean(ValidationEvidenceScheduler.class));
             assertNotNull(context.getBean(ValidationEvidenceRefreshService.class));
-            ScheduledAnnotationBeanPostProcessor processor = context.getBean(
-                    TaskManagementConfigUtils.SCHEDULED_ANNOTATION_PROCESSOR_BEAN_NAME,
-                    ScheduledAnnotationBeanPostProcessor.class
-            );
-            assertEquals(1, processor.getScheduledTasks().size());
+            assertFalse(context.containsBean(TaskManagementConfigUtils.SCHEDULED_ANNOTATION_PROCESSOR_BEAN_NAME));
             verifyNoInteractions(queryService, executionLock);
         }
     }

@@ -32,7 +32,6 @@ import java.util.UUID;
 
 import com.guidinglight.nexusquant.trading.domain.TradingVenue;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
@@ -106,10 +105,6 @@ public class BinanceRestReconcileService {
     /**
      * 定时执行 Binance REST reconcile。
      */
-    @Scheduled(
-            fixedDelayString = "${nq.binance.reconcile.fixed-delay-ms:5000}",
-            initialDelayString = "${nq.binance.reconcile.initial-delay-ms:5000}"
-    )
     public void scheduledReconcile() {
         reconcileOnce(DEFAULT_LIMIT);
     }

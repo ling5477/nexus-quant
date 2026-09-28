@@ -15,12 +15,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
@@ -32,7 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Profile("public-marketdata-manual")
 @ConditionalOnProperty(prefix = "nq.continuous-sim", name = "enabled", havingValue = "true")
-public class ContinuousSimRunService implements DisposableBean {
+public class ContinuousSimRunService {
     private static final Duration HOUR = Duration.ofHours(1);
     private final ContinuousSimRepository progress;
     private final StrategySimRunService sim;
@@ -40,30 +36,22 @@ public class ContinuousSimRunService implements DisposableBean {
     private final ClosedBarMarketFeed feed;
     private final JdbcTemplate jdbc;
     private final Clock clock;
-    private final ScheduledExecutorService scheduler;
 
     @Autowired
     public ContinuousSimRunService(ContinuousSimRepository progress, StrategySimRunService sim,
             PaperTradingRunService paperRuns, ClosedBarMarketFeed feed, JdbcTemplate jdbc) {
-        this(progress, sim, paperRuns, feed, jdbc, Clock.systemUTC(), true);
+        this(progress, sim, paperRuns, feed, jdbc, Clock.systemUTC());
     }
 
     public ContinuousSimRunService(ContinuousSimRepository progress, StrategySimRunService sim,
             PaperTradingRunService paperRuns, ClosedBarMarketFeed feed, JdbcTemplate jdbc,
-            Clock clock, boolean startScheduler) {
+            Clock clock) {
         this.progress = Objects.requireNonNull(progress);
         this.sim = Objects.requireNonNull(sim);
         this.paperRuns = Objects.requireNonNull(paperRuns);
         this.feed = Objects.requireNonNull(feed);
         this.jdbc = Objects.requireNonNull(jdbc);
         this.clock = Objects.requireNonNull(clock);
-        this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread thread = new Thread(r, "nq-continuous-sim-poll");
-            thread.setDaemon(true);
-            return thread;
-        });
-        if (startScheduler) scheduler.scheduleWithFixedDelay(this::scheduledTick,
-                30, 300, TimeUnit.SECONDS);
     }
 
     @Transactional(timeout = 30)
@@ -230,12 +218,17 @@ public class ContinuousSimRunService implements DisposableBean {
         return "SIM_EXECUTION_BLOCKED";
     }
 
-    private void scheduledTick() {
-        try {
-            for (String runId : progress.activeIds()) pollOnce(runId);
-        } catch (RuntimeException ignored) {
-            // 单轮异常由 run 状态记录；下轮仍可处理其他 run。
+    /** Dispatcher 每轮最多处理仓储返回的八条活跃 run；单条失败不阻断其余 run。 */
+    public void pollActiveOnce() {
+        RuntimeException firstFailure = null;
+        for (String runId : progress.activeIds()) {
+            try {
+                pollOnce(runId);
+            } catch (RuntimeException failure) {
+                if (firstFailure == null) firstFailure = failure;
+            }
         }
+        if (firstFailure != null) throw firstFailure;
     }
 
     private Status withRunLock(String runId, boolean skipWhenBusy, Supplier<Status> action) {
@@ -262,11 +255,6 @@ public class ContinuousSimRunService implements DisposableBean {
         } catch (SQLException ex) {
             throw new IllegalStateException("CONTINUOUS_SIM_LOCK_UNAVAILABLE", ex);
         }
-    }
-
-    @Override
-    public void destroy() {
-        scheduler.shutdownNow();
     }
 
     public record Status(String paperRunId, String status, Instant startedAt, Instant lastPollAt,

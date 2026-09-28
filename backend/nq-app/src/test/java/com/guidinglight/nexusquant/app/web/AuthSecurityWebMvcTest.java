@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -36,6 +37,10 @@ import com.guidinglight.nexusquant.strategy.application.StrategyScheduleService;
 import com.guidinglight.nexusquant.trading.application.maintenance.TradingMaintenanceService;
 import com.guidinglight.nexusquant.observability.config.ObservabilityAutoConfiguration;
 import com.guidinglight.nexusquant.security.web.JwtAuthenticationFilter;
+import com.guidinglight.nexusquant.scheduler.api.web.ScheduledJobController;
+import com.guidinglight.nexusquant.scheduler.control.ScheduledJobManagementService;
+import com.guidinglight.nexusquant.scheduler.control.ScheduledJobControl;
+import com.guidinglight.nexusquant.scheduler.control.SchedulerDispatcher;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -89,7 +94,8 @@ import jakarta.servlet.Filter;
         "nq.security.users[3].roles[0]=VIEWER",
         "nq.security.users[3].enabled=false"
 })
-@WebMvcTest(controllers = {AuthController.class, TradingVerificationController.class})
+@WebMvcTest(controllers = {AuthController.class, TradingVerificationController.class,
+        ScheduledJobController.class})
 class AuthSecurityWebMvcTest {
 
     @Autowired
@@ -124,6 +130,8 @@ class AuthSecurityWebMvcTest {
     private AuthUserRepository authUserRepository;
     @MockitoBean
     private ExchangeAccountQueryService exchangeAccountQueryService;
+    @MockitoBean
+    private ScheduledJobManagementService scheduledJobManagementService;
 
     @BeforeEach
     void setUpAuthRepository() {
@@ -334,6 +342,39 @@ class AuthSecurityWebMvcTest {
                 .andExpect(jsonPath("$.orderId").value("ord-1"));
     }
 
+    @Test
+    void schedulerManagementRequiresAdminWhileAuthenticatedReadersCanGet() throws Exception {
+        when(scheduledJobManagementService.list()).thenReturn(List.of());
+        var row = new ScheduledJobControl("PAPER_MATCHING", false, 2_000L, null,
+                null, null, "NEVER_RUN", null, 0, 1L, null, "admin", Instant.now());
+        when(scheduledJobManagementService.patch(eq("PAPER_MATCHING"), eq(true), eq(null),
+                eq(0L), eq("admin"), any())).thenReturn(row);
+        when(scheduledJobManagementService.runOnce(eq("PAPER_MATCHING"), eq("admin"), any()))
+                .thenReturn(SchedulerDispatcher.ExecutionOutcome.SKIPPED);
+        String viewer = loginAndExtractToken("viewer", "ChangeMe123!");
+        String operator = loginAndExtractToken("operator", "ChangeMe123!");
+        String admin = loginAndExtractToken("admin", "ChangeMe123!");
+        mockMvc.perform(get("/api/scheduler/jobs")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + viewer))
+                .andExpect(status().isOk());
+        mockMvc.perform(patch("/api/scheduler/jobs/PAPER_MATCHING")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + operator)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"enabled\":true,\"expectedVersion\":0}"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/scheduler/jobs/PAPER_MATCHING/run-once")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + operator))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(patch("/api/scheduler/jobs/PAPER_MATCHING")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"enabled\":true,\"expectedVersion\":0}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/scheduler/jobs/PAPER_MATCHING/run-once")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + admin))
+                .andExpect(status().isOk());
+    }
+
     private String loginAndExtractToken(String username, String password) throws Exception {
         String body = mockMvc.perform(post("/api/auth/login")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-login-helper-" + username)
@@ -366,4 +407,3 @@ class AuthSecurityWebMvcTest {
         return -1;
     }
 }
-

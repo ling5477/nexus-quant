@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
@@ -75,10 +74,6 @@ public class LedgerReconcileScheduler {
     /**
      * 周期执行最小对账任务。
      */
-    @Scheduled(
-            fixedDelayString = "${nq.ledger.reconcile.fixed-delay-ms:30000}",
-            initialDelayString = "${nq.ledger.reconcile.initial-delay-ms:5000}"
-    )
     public void scheduledReconcile() {
         reconcileOnce();
     }

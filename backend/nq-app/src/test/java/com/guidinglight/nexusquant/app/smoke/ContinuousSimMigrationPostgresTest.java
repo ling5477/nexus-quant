@@ -32,7 +32,7 @@ class ContinuousSimMigrationPostgresTest {
             before.migrate();
             before.validate();
             Flyway after = Flyway.configure().dataSource(source).schemas(schema)
-                    .locations("classpath:db/migration").load();
+                    .locations("classpath:db/migration").target("56").load();
             assertEquals(1, after.migrate().migrationsExecuted);
             after.validate();
             assertEquals("56", after.info().current().getVersion().getVersion());

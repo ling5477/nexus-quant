@@ -379,7 +379,7 @@ class TradingRestartRecoveryPostgresIntegrationTest {
                         .load();
                 flyway.migrate();
                 flyway.validate();
-                assertEquals("56", flyway.info().current().getVersion().getVersion());
+                assertEquals("57", flyway.info().current().getVersion().getVersion());
                 assertEquals(0, flyway.info().pending().length);
                 return new RestartDatabase(caseId, maintenanceUrl, databaseUrl, user, password, databaseName);
             } catch (Exception | AssertionError ex) {
