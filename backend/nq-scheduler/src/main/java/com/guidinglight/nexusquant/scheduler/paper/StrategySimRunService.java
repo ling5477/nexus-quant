@@ -25,6 +25,7 @@ import com.guidinglight.nexusquant.strategy.domain.PublicReplayAssumptionIdentit
 import com.guidinglight.nexusquant.strategy.domain.SpotSmaTargetStrategy;
 import com.guidinglight.nexusquant.strategy.domain.SpotTargetSizer;
 import com.guidinglight.nexusquant.strategy.domain.StrategyDefinition;
+import com.guidinglight.nexusquant.strategy.domain.StrategyRunStatus;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyDefinitionRepository;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionGateway;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyRunExecutionRepository;
@@ -200,6 +201,8 @@ public class StrategySimRunService {
                 if ("DECIDING".equals(existing.get().reason())) {
                     return finishAcceptedDecision(existing.get(), run, lock.accountId());
                 }
+                settleCanonicalRun(existing.get(), lock.accountId(),
+                        "public-capture".equals(summary.path("datasetProvider").asText()));
                 continue;
             }
             SpotSmaTargetStrategy.Decision signal = strategy.evaluate(bars.subList(0, index + 1));
@@ -287,7 +290,30 @@ public class StrategySimRunService {
             }
             return decisions.findByWindow(paperRunId, signalBar.openTime()).orElseThrow();
         }
-        throw new IllegalStateException("NO_NEW_SIM_DECISION");
+        // 同一已完成 logical run 的重复推进只返回最后的 durable 决策，不创建第二套经济事实。
+        return decisions.findByWindow(paperRunId, bars.getLast().openTime()).orElseThrow();
+    }
+
+    private void settleCanonicalRun(StrategySimDecisionRepository.DecisionView decision, long accountId,
+            boolean requireTerminalExecution) {
+        if (decision.strategyRunId() == null || decision.orderId() == null) return;
+        String status = jdbc.queryForObject("""
+                SELECT status FROM orders WHERE order_id=? AND account_id=? AND trade_env='SIM'
+                """, String.class, decision.orderId(), accountId);
+        if (!"FILLED".equals(status) && !"RISK_REJECTED".equals(status)
+                && !"REJECTED".equals(status)) {
+            // 公开冻结回放先等待上一执行事件终结，避免调度快慢改变后续资金和仓位输入。
+            if (requireTerminalExecution) throw new IllegalStateException("SIM_PREVIOUS_EXECUTION_PENDING");
+            return;
+        }
+        // 只有 canonical Order/Trade 已达终态才收敛 run；下一 bar 不得绕过活动 run 准入锁。
+        strategyWork.project(decision.strategyRunId());
+        StrategyRunStatus projected = strategyRuns.findByStrategyRunId(decision.strategyRunId())
+                .orElseThrow().status();
+        if (("FILLED".equals(status) && projected != StrategyRunStatus.SUCCEEDED)
+                || (!"FILLED".equals(status) && projected != StrategyRunStatus.FAILED)) {
+            throw new IllegalStateException("SIM_CANONICAL_RUN_NOT_TERMINAL");
+        }
     }
 
     public List<StrategySimDecisionRepository.DecisionView> decisions(String paperRunId) {
@@ -422,6 +448,11 @@ public class StrategySimRunService {
     }
 
     private List<HistoricalBar> validatedBars(BacktestRun backtest, JsonNode summary) {
+        JsonNode dataset = read(backtest.datasetSnapshotJson());
+        if ("public-capture".equals(dataset.path("provider").asText())
+                != "public-capture".equals(summary.path("datasetProvider").asText())) {
+            throw new IllegalStateException("SIM_DATASET_PROVIDER_MISMATCH");
+        }
         JsonNode stored = summary.path("consumedBars");
         if (!stored.isArray() || stored.isEmpty() || stored.size() > 500) {
             throw new IllegalStateException("BACKTEST_INPUT_IDENTITY_INVALID");
@@ -440,14 +471,38 @@ public class StrategySimRunService {
         }
         if (!summary.path("barContentSha256").asText().equals(
                 SpotBarIdentity.capture(bars, mapper).sha256())
+                || summary.path("barCount").asInt(-1) != bars.size()
                 || !"OKX".equals(summary.path("exchangeCode").asText())
                 || !"BTC-USDT".equals(summary.path("symbol").asText())
+                || !summary.path("interval").asText().equals(bars.getFirst().interval().wireValue())
                 || !"OKX".equals(bars.getFirst().exchangeCode())
                 || !"BTC-USDT".equals(bars.getFirst().symbol())
                 || bars.stream().anyMatch(bar -> !"OKX".equals(bar.exchangeCode())
-                        || !"SPOT".equals(bar.marketType()) || !"BTC-USDT".equals(bar.symbol()))
+                        || !"SPOT".equals(bar.marketType()) || !"BTC-USDT".equals(bar.symbol())
+                        || bar.interval() != bars.getFirst().interval())
                 || !backtest.strategyVersionId().equals(summary.path("strategyVersionId").asText())) {
             throw new IllegalStateException("SIM_SCOPE_OR_VERSION_INVALID");
+        }
+        if ("public-capture".equals(summary.path("datasetProvider").asText())) {
+            JsonNode capture = dataset.path("capture");
+            JsonNode assumptions = summary.path("costAndRuleAssumptions");
+            if (!"public-capture".equals(dataset.path("provider").asText())
+                    || !"OKX_PUBLIC_CAPTURE".equals(dataset.path("source").asText())
+                    || !"1h".equals(dataset.path("interval").asText())
+                    || !"1h".equals(summary.path("interval").asText())
+                    || dataset.path("barCount").asInt(-1) != bars.size()
+                    || !summary.path("barContentSha256").asText()
+                            .equals(capture.path("consumedSha256").asText())
+                    || !"CLOSED_HOURLY_BOUNDARY_V1".equals(
+                            capture.path("replayVisibilityVersion").asText())
+                    || !"EXPERIMENT_ASSUMPTION".equals(
+                            capture.path("replayVisibilitySource").asText())
+                    || !capture.path("ruleSha256").asText()
+                            .equals(assumptions.path("ruleSha256").asText())
+                    || !"CURRENTLY_OBSERVED_PUBLIC_RULES".equals(
+                            assumptions.path("rulePolicy").asText())) {
+                throw new IllegalStateException("SIM_PUBLIC_CAPTURE_IDENTITY_INVALID");
+            }
         }
         return List.copyOf(bars);
     }

@@ -212,7 +212,8 @@ public class PaperMatchingService {
 
         Optional<PaperTradeRecord> existingTrade = tradeRepository.findByOrderId(order.orderId());
         PaperTradeRecord trade = existingTrade.orElseGet(() -> createTrade(order, marketPrice,
-                decision == null ? BigDecimal.ZERO : decision.feeRate()));
+                decision == null ? BigDecimal.ZERO : decision.feeRate(),
+                decision == null ? clock.instant() : decision.executionOpenTime()));
         if (existingTrade.isEmpty()) {
             tradeRepository.insert(trade);
             publishTradeEvent(order, trade);
@@ -266,10 +267,12 @@ public class PaperMatchingService {
         return existingTrade.isEmpty();
     }
 
-    private PaperTradeRecord createTrade(OrderRecord order, BigDecimal marketPrice, BigDecimal feeRate) {
+    private PaperTradeRecord createTrade(OrderRecord order, BigDecimal marketPrice, BigDecimal feeRate,
+                                        Instant executionTime) {
         BigDecimal price = NumericPolicy.normalize(NumericType.PRICE, resolveExecutionPrice(order, marketPrice));
         BigDecimal qty = NumericPolicy.normalize(NumericType.QTY, order.qty());
         BigDecimal fee = NumericPolicy.normalize(NumericType.FEE, price.multiply(qty).multiply(feeRate));
+        // 策略 SIM 的本地成交也需稳定 venue fill 身份，供 canonical run 从 Trade 证明终态。
         return new PaperTradeRecord(
                 "trd-" + UUID.randomUUID(),
                 order.orderId(),
@@ -277,13 +280,13 @@ public class PaperMatchingService {
                 order.symbol(),
                 order.venue(),
                 order.externalOrderId(),
-                null,
+                order.clientOrderId().startsWith("coid-sim-") ? "paper-fill-" + order.orderId() : null,
                 price,
                 qty,
                 fee,
                 resolveFeeCurrency(order.symbol()),
                 order.traceId(),
-                Instant.now(clock)
+                executionTime
         );
     }
 
