@@ -30,13 +30,19 @@ GateZ-1 以隔离 PostgreSQL 和合成 bars 验证算法及 canonical SIM 事实
 
 实现复用既有 dataset 绑定和冻结 consumed bars，并新增 forward-only V53–V54，以不同字段保存**公开响应实际观察时间**与**历史回放可见时间假设及其来源**；未覆盖原始观察时间、重解释旧记录或改写已执行 migration。公开 instrument rules 是本次观察事实，并非历史窗口当时的规则；费用与滑点是显式非零冻结假设，并非真实账户费率。Python research 无运行时职责。
 
-隔离 PostgreSQL 17.7 已迁移并 validate 至 V54；真实公开响应窗口为 2026-09-20T00:00:00Z–2026-09-23T00:00:00Z。两次 Backtest 与两次至首笔 canonical fill 的 SIM smoke 使用相同冻结 dataset、`StrategyVersion` 和成本身份；每次 1 Order、1 Trade、6 Ledger entries，现金与 PnL 的差异由 canonical 账本舍入及估值时点解释。数据质量、身份、规则、预算、stop、重启恢复和 SIM/LIVE 隔离负例通过，独立只读审查 P0/P1=`0/0`。剩余 P2：尚未证明全部 72 根的 SIM 决策稳定；该历史 smoke 不提供真实账户费率、历史时点真实规则或真实余额；后续当前账户只读观察不追溯改变历史输入。公开响应与回放证据见 [TESTING.md](TESTING.md) 的 2026-09-25 候选记录；该历史记录原位保留。
+隔离 PostgreSQL 17.7 已迁移并 validate 至 V54；真实公开响应窗口为 2026-09-20T00:00:00Z–2026-09-23T00:00:00Z。两次 Backtest 与两次至首笔 canonical fill 的 SIM smoke 使用相同冻结 dataset、`StrategyVersion` 和成本身份；每次 1 Order、1 Trade、6 Ledger entries，现金与 PnL 的差异由 canonical 账本舍入及估值时点解释。数据质量、身份、规则、预算、stop、重启恢复和 SIM/LIVE 隔离负例通过，独立只读审查 P0/P1=`0/0`。该历史 smoke 当时剩余 P2：尚未证明全部 72 根的 SIM 决策稳定；此 P2 已由下述全窗口回放后续关闭。该历史 smoke 不提供真实账户费率、历史时点真实规则或真实余额；后续当前账户只读观察不追溯改变历史输入。公开响应与回放证据见 [TESTING.md](TESTING.md) 的 2026-09-25 候选记录；该历史记录原位保留。
 
 本切片不读取私有 API、真实余额或账户费率，不触发真实 PLACE/CANCEL、LIVE、生产数据库或部署，不建立第二套 Paper 事实源、第二策略、Factor Library、portfolio/scheduling、worker 或通用研究平台。回滚边界为本切片新增的公开数据/回放能力及其独立非生产证据；已执行 migration 不回退，GateZ-1 已接受技术身份保持不变。
 
 候选比较与延期触发：A（公开市场数据可重放 smoke）具有现成消费者，直接关闭合成输入后的真实性缺口，**本轮选中**。B（共享因子）目前只有 `SPOT_SMA_TARGET_V1` 一条已核实可执行策略，Python 样例独立；出现两个真实复用消费者再选。C（组合资金分配）需至少两条真实策略及同账户资本竞争需求；GateZ-1 并发测试本身不满足。D（隔离执行 worker）待主 JVM 执行耦合产生可测可靠性或隔离问题、且有明确部署消费者。E（多策略调度）待第二可用策略、统一调度需求及资本 owner 明确；既有 schedule scan 消费显式订单 trigger。F（OOS/benchmark/trial 增量）待公开可重放输入和明确研究决策问题出现，再选择最小验证；不提前建 Trial Ledger 或统计平台。B–F 均有未来价值，但当前触发条件未满足。
 
-## 当前切片：OKX 账户事实只读观察
+## 已接受切片：公开市场 72 根全窗口 SIM 回放
+
+任务 ID：`NQ-GATEZ-PUBLIC-MARKET-FULL-WINDOW-SIM-REPLAY`，状态=`ACCEPTED / CI_GREEN`；技术 PR #48 的 merge/exact-head CI=`1ace052903b6bf70af41f1cf77c72b5157e3c6c8 / 36370231759 / 9 of 9 SUCCESS`。复用先前冻结的 OKX SPOT / BTC-USDT / 1h、2026-09-20T00:00:00Z–2026-09-23T00:00:00Z 公开输入；未重新获取行情。PG16/V55 的两套独立 schema 从头运行 72/72 根，逐根决策及 canonical Order/Trade/Ledger、现金/仓位/PnL 轨迹在业务语义归一化后完全相等；实际每次 22 Order、22 Trade、90 Ledger entries。持久化执行 bar 提供 SIM 订单准入与成交业务时钟；信号只读取已收盘前缀，成交使用后续可交易 bar 的开盘事件。第三套隔离 schema 从头回放 bar 60 变异，验证先前信号与已发生经济事件不变；重复推进不产生第二套经济事实。缺失、重复、乱序、未收盘 bar 和输入身份漂移均 fail closed；`FULL_WINDOW_SIM_DECISION_STABILITY_P2=CLOSED`。
+
+公开 instrument rule 仍为采集时观察的冻结回放假设，不能证明该历史窗口的实际规则；费用与滑点是显式非零实验假设，不是真实账户费率。此验收没有 OKX API、凭证、生产数据库/部署或真实交易动作；无 migration，LIVE=`DISABLED`、kill=`ENGAGED`。唯一机器下一动作以 [STATUS.md](STATUS.md) 为准。
+
+## 已接受切片：OKX 账户事实只读观察
 
 基础实现任务 ID：`NQ-GATEZ-OKX-ACCOUNT-FACTS-READONLY-QUALIFICATION-IMPLEMENTATION`，已通过 PR #30 合并，technical merge/exact-head CI=`5a8cfb7e10b192efea1b804d9e6b6c0e1a637bd3 / 36158986349 / 9 of 9 SUCCESS`；独立 SECURITY + CORRECTNESS 审查 P0/P1/P2=`0/0/0`。后续 coverage unblock 已通过 PR #40 合并，technical merge/exact-head CI=`e9df23f079f0aaec1eff5b38269f4b18c7e9dae3 / 36295009039 / 9 of 9 SUCCESS`。实现复用 Java Control Plane 的 OKX private GET transport、JIT credential executor、权限/IP 观察，提供显式人工调用的非持久化 `AccountFactsSnapshot`。固定 GET 覆盖账户配置、全币种余额、BTC-USDT SPOT 私有账户费率、全 SPOT 未完成订单，以及模式 2 的完整 typed positions；公开 GET 读取服务器时间及当前 BTC-USDT SPOT instrument rule，不写 catalog。模式 1 不读取 positions，模式 3/4 保持未资格化；模式 2 的非零非现货仓位保留为外部上下文，不能与 BTC 现货数量相加，也不直接构成托管 DIVERGED。当前托管对账仅比较同账户、LIVE、OKX 且已证明身份的活跃订单；全账户余额与 NQ managed ledger projection 不同义，不能据此判 MATCH 或 DIVERGED。返回前复查 freshness 与 kill identity。默认启动不读取 credential 或发出 private/public rule 请求；不新增 Order、Trade、Ledger 写入或 migration。字段兼容性及 freshness 详见 [API.md](API.md)。
 
