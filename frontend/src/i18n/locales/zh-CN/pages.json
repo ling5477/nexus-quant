@@ -2288,5 +2288,16 @@
   "strategySimCanonicalFacts": "订单 / 成交 / 账本分录",
   "strategySimOpenTrading": "查看交易工作台",
   "strategySimDecisions": "策略决策与阻断原因",
-  "strategySimNoDecisions": "尚无决策"
+  "strategySimNoDecisions": "尚无决策",
+  "continuousSimStart": "启动连续模拟",
+  "continuousSimStop": "停止连续处理",
+  "continuousSimResume": "恢复连续处理",
+  "continuousSimStatus": "连续运行状态",
+  "continuousSimLastBar": "最后处理的 K 线",
+  "continuousSimNextBar": "下一预期 K 线",
+  "continuousSimLastAvailable": "最新可用 K 线",
+  "continuousSimGapStart": "缺口起点",
+  "continuousSimLastDecision": "最近决策",
+  "continuousSimReason": "等待或阻断原因",
+  "continuousSimLastPoll": "最后轮询"
 }

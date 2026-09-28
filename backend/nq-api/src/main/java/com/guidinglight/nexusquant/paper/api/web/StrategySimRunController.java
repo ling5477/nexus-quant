@@ -5,6 +5,7 @@ import com.guidinglight.nexusquant.paper.api.dto.PaperTradingRunResponse;
 import com.guidinglight.nexusquant.research.application.paper.service.PaperTradingRunService;
 import com.guidinglight.nexusquant.scheduler.paper.StrategySimDecisionRepository;
 import com.guidinglight.nexusquant.scheduler.paper.StrategySimRunService;
+import com.guidinglight.nexusquant.scheduler.paper.ContinuousSimRunService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -14,6 +15,8 @@ import java.util.List;
 import java.util.Objects;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,10 +33,50 @@ import org.springframework.web.bind.annotation.RestController;
 public class StrategySimRunController {
     private final StrategySimRunService sim;
     private final PaperTradingRunService runs;
+    private final ObjectProvider<ContinuousSimRunService> continuous;
+
+    @Autowired
+    public StrategySimRunController(StrategySimRunService sim, PaperTradingRunService runs,
+            ObjectProvider<ContinuousSimRunService> continuous) {
+        this.sim = Objects.requireNonNull(sim);
+        this.runs = Objects.requireNonNull(runs);
+        this.continuous = Objects.requireNonNull(continuous);
+    }
 
     public StrategySimRunController(StrategySimRunService sim, PaperTradingRunService runs) {
         this.sim = Objects.requireNonNull(sim);
         this.runs = Objects.requireNonNull(runs);
+        this.continuous = null;
+    }
+
+    @PostMapping("/continuous")
+    public ContinuousSimRunService.Status startContinuous(@Valid @RequestBody CreateRequest request) {
+        TraceIdContext.getOrCreate();
+        return driver().start(request.publishId(), request.budget());
+    }
+
+    @PostMapping("/{paperRunId}/continuous/stop")
+    public ContinuousSimRunService.Status stopContinuous(@PathVariable @NotBlank String paperRunId) {
+        TraceIdContext.getOrCreate();
+        return driver().stop(paperRunId);
+    }
+
+    @PostMapping("/{paperRunId}/continuous/resume")
+    public ContinuousSimRunService.Status resumeContinuous(@PathVariable @NotBlank String paperRunId) {
+        TraceIdContext.getOrCreate();
+        return driver().resume(paperRunId);
+    }
+
+    @GetMapping("/{paperRunId}/continuous")
+    public ContinuousSimRunService.Status continuousStatus(@PathVariable @NotBlank String paperRunId) {
+        ContinuousSimRunService available = driver();
+        return available.has(paperRunId) ? available.status(paperRunId) : null;
+    }
+
+    private ContinuousSimRunService driver() {
+        ContinuousSimRunService available = continuous == null ? null : continuous.getIfAvailable();
+        if (available == null) throw new IllegalStateException("CONTINUOUS_SIM_DISABLED");
+        return available;
     }
 
     @PostMapping

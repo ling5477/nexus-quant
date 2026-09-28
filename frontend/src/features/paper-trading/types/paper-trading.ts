@@ -29,6 +29,22 @@ export interface StrategySimRun {
     budget: string;
 }
 
+export interface ContinuousSimStatus {
+    paperRunId: string;
+    status: 'RUNNING' | 'STALLED' | 'STOPPED';
+    startedAt: string;
+    lastPollAt: string | null;
+    lastSuccessfulPollAt: string | null;
+    lastProcessedBar: string;
+    nextExpectedBar: string;
+    lastObservedBar: string;
+    gapStartBar: string | null;
+    lastDecisionId: string | null;
+    lastDecisionStatus: string | null;
+    blockReason: string | null;
+    consecutivePollFailures: number;
+}
+
 export interface StrategySimDecision {
     decisionId: string;
     paperRunId: string;

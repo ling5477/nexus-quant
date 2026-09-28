@@ -4,6 +4,7 @@ import type {
     StrategySimDecision,
     StrategySimFacts,
     StrategySimRun,
+    ContinuousSimStatus,
     EmergencyStopRequest,
     EquityCurveSnapshotItem,
     PaperRiskCheckResultItem,
@@ -45,6 +46,22 @@ interface PaperTradingListRequest {
 export const paperTradingApi = {
     async createStrategySim(publishId: string, budget: string): Promise<StrategySimRun> {
         const {data} = await apiClient.post<StrategySimRun>('/paper-trading/strategy-sim/runs', {publishId, budget});
+        return data;
+    },
+    async startContinuousSim(publishId: string, budget: string): Promise<ContinuousSimStatus> {
+        const {data} = await apiClient.post<ContinuousSimStatus>('/paper-trading/strategy-sim/runs/continuous', {publishId, budget});
+        return data;
+    },
+    async continuousSimStatus(paperRunId: string): Promise<ContinuousSimStatus | null> {
+        const {data} = await apiClient.get<ContinuousSimStatus | null>(`/paper-trading/strategy-sim/runs/${paperRunId}/continuous`);
+        return data || null;
+    },
+    async stopContinuousSim(paperRunId: string): Promise<ContinuousSimStatus> {
+        const {data} = await apiClient.post<ContinuousSimStatus>(`/paper-trading/strategy-sim/runs/${paperRunId}/continuous/stop`);
+        return data;
+    },
+    async resumeContinuousSim(paperRunId: string): Promise<ContinuousSimStatus> {
+        const {data} = await apiClient.post<ContinuousSimStatus>(`/paper-trading/strategy-sim/runs/${paperRunId}/continuous/resume`);
         return data;
     },
     async advanceStrategySim(paperRunId: string): Promise<StrategySimDecision> {
