@@ -114,6 +114,12 @@
       "description": "Inspect Paper-only operation, market data readiness, adapters and disabled LIVE trading.",
       "section": "Market and reference data"
     },
+    "scheduler-jobs": {
+      "label": "Scheduler jobs",
+      "title": "Scheduler jobs",
+      "description": "Inspect fixed background jobs, controls and recent results.",
+      "section": "System administration"
+    },
     "strategy-validation": {
       "label": "Strategy validation",
       "title": "Local validation review",
