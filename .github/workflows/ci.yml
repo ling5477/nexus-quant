@@ -478,6 +478,18 @@ jobs:
           javac -cp "${classpath}" "${smoke_dir}/FlywaySmoke.java"
           java -cp "${smoke_dir}:${classpath}" FlywaySmoke
 
+      - name: Prove continuous SIM on isolated PostgreSQL schemas
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -f backend/pom.xml -pl nq-app -am test \
+            -Dtest='ContinuousSimMigrationPostgresTest,OkxClosedBarMarketFeedTest,StrategySimPostgresIntegrationTest#continuous*' \
+            -Dsurefire.failIfNoSpecifiedTests=false \
+            -Dnq.strategy-sim.pg.required=true \
+            -Dnq.strategy-sim.pg.url="jdbc:postgresql://127.0.0.1:5432/nq_ci" \
+            -Dnq.strategy-sim.pg.user="${NQ_FLYWAY_DB_USER}" \
+            -Dnq.strategy-sim.pg.password="${NQ_FLYWAY_DB_PASSWORD}"
+
       - name: Generate PostgreSQL schema artifacts
         shell: bash
         run: |

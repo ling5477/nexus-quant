@@ -4,6 +4,9 @@ spring:
       on-profile: public-marketdata-manual
 
 nq:
+  continuous-sim:
+    # 连续策略 SIM 需与公开行情出站、策略 SIM 分别显式启用，缺一项即不装配轮询器。
+    enabled: ${NQ_CONTINUOUS_SIM_ENABLED:false}
   env-safety:
     # Why: manual public marketdata 只允许公开行情受控外联，不得顺带打开 LIVE、AI、DH、RealClient 或 real provider。
     live-enabled: ${NQ_LIVE_ENABLED:false}

@@ -2288,5 +2288,16 @@
   "strategySimCanonicalFacts": "Orders / trades / ledger entries",
   "strategySimOpenTrading": "Open trading workbench",
   "strategySimDecisions": "Decisions and blocking reasons",
-  "strategySimNoDecisions": "No decisions yet"
+  "strategySimNoDecisions": "No decisions yet",
+  "continuousSimStart": "Start continuous SIM",
+  "continuousSimStop": "Stop continuous processing",
+  "continuousSimResume": "Resume continuous processing",
+  "continuousSimStatus": "Continuous run status",
+  "continuousSimLastBar": "Last processed bar",
+  "continuousSimNextBar": "Next expected bar",
+  "continuousSimLastAvailable": "Latest available bar",
+  "continuousSimGapStart": "Gap starts at",
+  "continuousSimLastDecision": "Latest decision",
+  "continuousSimReason": "Wait or block reason",
+  "continuousSimLastPoll": "Last poll"
 }

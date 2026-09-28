@@ -349,9 +349,12 @@ class TradingRestartRecoveryPostgresIntegrationTest {
         }
 
         static RestartDatabase create(String scenario) throws Exception {
-            String baseUrl = requiredEnvironment("SPRING_DATASOURCE_URL");
-            String user = requiredEnvironment("SPRING_DATASOURCE_USERNAME");
-            String password = System.getenv().getOrDefault("SPRING_DATASOURCE_PASSWORD", "");
+            String baseUrl = System.getProperty("nq.restart.pg.url");
+            if (baseUrl == null || baseUrl.isBlank()) baseUrl = requiredEnvironment("SPRING_DATASOURCE_URL");
+            String user = System.getProperty("nq.restart.pg.user");
+            if (user == null || user.isBlank()) user = requiredEnvironment("SPRING_DATASOURCE_USERNAME");
+            String password = System.getProperty("nq.restart.pg.password");
+            if (password == null) password = System.getenv().getOrDefault("SPRING_DATASOURCE_PASSWORD", "");
             return create(scenario, baseUrl, user, password);
         }
 
@@ -376,7 +379,7 @@ class TradingRestartRecoveryPostgresIntegrationTest {
                         .load();
                 flyway.migrate();
                 flyway.validate();
-                assertEquals("55", flyway.info().current().getVersion().getVersion());
+                assertEquals("56", flyway.info().current().getVersion().getVersion());
                 assertEquals(0, flyway.info().pending().length);
                 return new RestartDatabase(caseId, maintenanceUrl, databaseUrl, user, password, databaseName);
             } catch (Exception | AssertionError ex) {

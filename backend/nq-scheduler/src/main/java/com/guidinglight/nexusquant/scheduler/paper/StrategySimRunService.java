@@ -9,6 +9,7 @@ import com.guidinglight.nexusquant.contracts.model.OrderType;
 import com.guidinglight.nexusquant.ledger.service.port.SimCashFundingPort;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
+import com.guidinglight.nexusquant.marketdata.domain.port.ClosedBarMarketFeed;
 import com.guidinglight.nexusquant.research.application.paper.command.PaperTradingRunCreateCommand;
 import com.guidinglight.nexusquant.research.application.paper.service.PaperTradingRunService;
 import com.guidinglight.nexusquant.research.domain.BacktestPublishRecord;
@@ -38,6 +39,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
@@ -45,6 +47,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -66,6 +69,7 @@ public class StrategySimRunService {
     private final StrategyExecutionGateway execution;
     private final StrategyRunRepository strategyRuns;
     private final StrategyRunExecutionRepository strategyWork;
+    private final ContinuousSimRepository continuous;
 
     public StrategySimRunService(JdbcTemplate jdbc, ObjectMapper mapper, PaperTradingRunService paperRuns,
             BacktestPublishRecordRepository publishes, BacktestRunRepository backtests,
@@ -73,6 +77,17 @@ public class StrategySimRunService {
             StrategyManualTriggerService trigger, StrategyDefinitionRepository definitions,
             StrategyExecutionGateway execution, StrategyRunRepository strategyRuns,
             StrategyRunExecutionRepository strategyWork) {
+        this(jdbc, mapper, paperRuns, publishes, backtests, funding, decisions, trigger,
+                definitions, execution, strategyRuns, strategyWork, null);
+    }
+
+    @Autowired
+    public StrategySimRunService(JdbcTemplate jdbc, ObjectMapper mapper, PaperTradingRunService paperRuns,
+            BacktestPublishRecordRepository publishes, BacktestRunRepository backtests,
+            SimCashFundingPort funding, StrategySimDecisionRepository decisions,
+            StrategyManualTriggerService trigger, StrategyDefinitionRepository definitions,
+            StrategyExecutionGateway execution, StrategyRunRepository strategyRuns,
+            StrategyRunExecutionRepository strategyWork, ContinuousSimRepository continuous) {
         this.jdbc = Objects.requireNonNull(jdbc);
         this.mapper = Objects.requireNonNull(mapper);
         this.paperRuns = Objects.requireNonNull(paperRuns);
@@ -85,6 +100,7 @@ public class StrategySimRunService {
         this.execution = Objects.requireNonNull(execution);
         this.strategyRuns = Objects.requireNonNull(strategyRuns);
         this.strategyWork = Objects.requireNonNull(strategyWork);
+        this.continuous = continuous;
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED, timeout = 30)
@@ -142,6 +158,9 @@ public class StrategySimRunService {
     }
 
     public StrategySimDecisionRepository.DecisionView advance(String paperRunId) {
+        if (continuous != null && continuous.exists(paperRunId)) {
+            throw new IllegalStateException("CONTINUOUS_SIM_MANUAL_ADVANCE_REJECTED");
+        }
         List<RunLock> locks = jdbc.query("""
                 SELECT status,trade_env,exchange_code,market_type,symbol,canonical_account_id
                 FROM paper_trading_runs WHERE paper_run_id=?
@@ -155,10 +174,39 @@ public class StrategySimRunService {
                 || !"BTC-USDT".equals(lock.symbol()) || lock.accountId() == null) {
             throw new IllegalStateException("SIM_RUN_NOT_ACTIVE_OR_UNBOUND");
         }
-        return decisions.withAccountMutex(lock.accountId(), () -> advanceLocked(paperRunId, lock));
+        return decisions.withAccountMutex(lock.accountId(), () -> advanceLocked(paperRunId, lock, null, null, null, null));
     }
 
-    private StrategySimDecisionRepository.DecisionView advanceLocked(String paperRunId, RunLock lock) {
+    /** 连续模式只复用既有 canonical 决策与稳定订单身份；游标确认由调用方完成。 */
+    public StrategySimDecisionRepository.DecisionView advanceContinuous(String paperRunId,
+            List<HistoricalBar> observedBars, Instant afterOpenTime, ClosedBarMarketFeed.Rule rule,
+            ClosedBarMarketFeed.Quote quote) {
+        if (continuous == null || !continuous.exists(paperRunId)
+                || "STOPPED".equals(continuous.get(paperRunId).status())) {
+            throw new IllegalStateException("CONTINUOUS_SIM_NOT_RUNNING");
+        }
+        List<RunLock> locks = jdbc.query("""
+                SELECT status,trade_env,exchange_code,market_type,symbol,canonical_account_id
+                FROM paper_trading_runs WHERE paper_run_id=?
+                """, (rs, row) -> new RunLock(rs.getString("status"), rs.getString("trade_env"),
+                rs.getString("exchange_code"), rs.getString("market_type"), rs.getString("symbol"),
+                rs.getObject("canonical_account_id", Long.class)), paperRunId);
+        if (locks.size() != 1 || locks.getFirst().accountId() == null
+                || !"RUNNING".equals(locks.getFirst().status())
+                || !"SIM".equals(locks.getFirst().tradeEnv())
+                || !"OKX".equals(locks.getFirst().exchangeCode())
+                || !"SPOT".equals(locks.getFirst().marketType())
+                || !"BTC-USDT".equals(locks.getFirst().symbol())) {
+            throw new IllegalStateException("CONTINUOUS_SIM_SCOPE_INVALID");
+        }
+        RunLock lock = locks.getFirst();
+        return decisions.withAccountMutex(lock.accountId(), () ->
+                advanceLocked(paperRunId, lock, observedBars, afterOpenTime, rule, quote));
+    }
+
+    private StrategySimDecisionRepository.DecisionView advanceLocked(String paperRunId, RunLock lock,
+            List<HistoricalBar> observedBars, Instant afterOpenTime, ClosedBarMarketFeed.Rule liveRule,
+            ClosedBarMarketFeed.Quote quote) {
         PaperTradingRun run = paperRuns.getById(paperRunId);
         if (run.status() != com.guidinglight.nexusquant.research.domain.paper.PaperTradingRunStatus.RUNNING) {
             throw new IllegalStateException("SIM_RUN_NOT_ACTIVE_OR_UNBOUND");
@@ -169,7 +217,7 @@ public class StrategySimRunService {
             throw new IllegalStateException("SIM_DATASET_IDENTITY_DRIFT");
         }
         JsonNode summary = read(backtest.summaryJson());
-        List<HistoricalBar> bars = validatedBars(backtest, summary);
+        List<HistoricalBar> bars = observedBars == null ? validatedBars(backtest, summary) : observedBars;
         SpotSmaTargetStrategy strategy = SpotSmaTargetStrategy.fromSnapshot(run.strategyVersionSnapshotJson(), mapper);
         strategy.evaluate(bars);
         if (!strategy.strategyVersionId().equals(run.strategyVersionId())
@@ -178,11 +226,20 @@ public class StrategySimRunService {
             throw new IllegalStateException("SIM_STRATEGY_VERSION_DRIFT");
         }
         JsonNode runConfig = read(run.configSnapshotJson());
-        if (!summary.path("barContentSha256").asText().equals(
+        if (observedBars == null && !summary.path("barContentSha256").asText().equals(
                 runConfig.path("barContentSha256").asText())) {
             throw new IllegalStateException("SIM_INPUT_IDENTITY_DRIFT");
         }
-        SpotTargetSizer.Rules rules = rules(runConfig.path("costAndRuleAssumptions"));
+        SpotTargetSizer.Rules frozenRules = rules(runConfig.path("costAndRuleAssumptions"));
+        SpotTargetSizer.Rules rules = frozenRules;
+        if (observedBars != null) {
+            if (liveRule == null || !"LIVE".equals(liveRule.state())) {
+                throw new IllegalStateException("VENUE_RULE_UNAVAILABLE");
+            }
+            rules = new SpotTargetSizer.Rules(liveRule.lotSize(), liveRule.tickSize(),
+                    liveRule.minimumSize(), frozenRules.minimumNotional(),
+                    frozenRules.feeRate(), frozenRules.slippageBps());
+        }
         if (!summary.path("costAndRuleAssumptions").equals(
                 runConfig.path("costAndRuleAssumptions"))) {
             throw new IllegalStateException("SIM_COST_ASSUMPTION_DRIFT");
@@ -196,6 +253,7 @@ public class StrategySimRunService {
         }
         for (int index = 0; index < bars.size(); index++) {
             HistoricalBar signalBar = bars.get(index);
+            if (afterOpenTime != null && !signalBar.openTime().isAfter(afterOpenTime)) continue;
             var existing = decisions.findByWindow(paperRunId, signalBar.openTime());
             if (existing.isPresent()) {
                 if ("DECIDING".equals(existing.get().reason())) {
@@ -203,18 +261,35 @@ public class StrategySimRunService {
                 }
                 settleCanonicalRun(existing.get(), lock.accountId(),
                         "public-capture".equals(summary.path("datasetProvider").asText()));
+                if (observedBars != null) return existing.get();
                 continue;
             }
             SpotSmaTargetStrategy.Decision signal = strategy.evaluate(bars.subList(0, index + 1));
             HistoricalBar executionBar = null;
-            for (int later = index + 1; later < bars.size(); later++) {
-                if (bars.get(later).openTime().isAfter(signalBar.closeTime())
-                        && signal.availableAt() != null
-                        && bars.get(later).openTime().isAfter(signal.availableAt())) {
-                    executionBar = bars.get(later);
-                    break;
+            if (observedBars == null) {
+                for (int later = index + 1; later < bars.size(); later++) {
+                    if (bars.get(later).openTime().isAfter(signalBar.closeTime())
+                            && signal.availableAt() != null
+                            && bars.get(later).openTime().isAfter(signal.availableAt())) {
+                        executionBar = bars.get(later);
+                        break;
+                    }
                 }
             }
+            boolean freshContinuousQuote = observedBars != null && quote != null
+                    && signalBar.equals(bars.getLast()) && signal.availableAt() != null
+                    && quote.observedAt().isAfter(signal.availableAt())
+                    && quote.observedAt().isAfter(signalBar.closeTime())
+                    && !liveRule.observedAt().isAfter(signalBar.closeTime().plus(Duration.ofMinutes(15)))
+                    && !quote.observedAt().isAfter(signalBar.closeTime().plus(Duration.ofMinutes(15)))
+                    && quote.price() != null && quote.price().signum() > 0;
+            boolean staleContinuousSignal = observedBars != null
+                    && (signal.availableAt() == null
+                    || signal.availableAt().isAfter(signalBar.closeTime().plus(Duration.ofMinutes(15)))
+                    || liveRule.observedAt().isAfter(signalBar.closeTime().plus(Duration.ofMinutes(15)))
+                    || !signalBar.equals(bars.getLast()));
+            // 新信号等待实际可见的公开价格；迟到的补缺只留下不可交易决策。
+            if (observedBars != null && !freshContinuousQuote && !staleContinuousSignal) return null;
             String decisionId = sha256(paperRunId + ":" + strategy.strategyVersionId()
                     + ":" + signalBar.openTime());
             SpotBarIdentity.Snapshot input = SpotBarIdentity.capture(bars.subList(0, index + 1), mapper);
@@ -224,14 +299,23 @@ public class StrategySimRunService {
             snapshot.set("signalBars", read(input.canonicalJson()));
             if (execution == null) snapshot.putNull("executionBar");
             else snapshot.set("executionBar", read(execution.canonicalJson()).get(0));
+            if (freshContinuousQuote) {
+                ObjectNode quoteNode = mapper.createObjectNode();
+                quoteNode.put("observedAt", quote.observedAt().toString());
+                quoteNode.put("price", quote.price().toPlainString());
+                snapshot.set("executionQuote", quoteNode);
+            }
             String status = "NO_SIGNAL";
             String reason = signal.reason();
             SpotTargetSizer.Result sizing = null;
             if (!"INSUFFICIENT_HISTORY".equals(signal.reason())) {
-                if (executionBar == null) {
+                if (staleContinuousSignal) {
+                    status = "NOT_TRADABLE";
+                    reason = "STALE_DATA";
+                } else if (executionBar == null && !freshContinuousQuote) {
                     status = "NOT_TRADABLE";
                     reason = "NO_LATER_TRADABLE_EVENT";
-                } else if (executionBar.openTime().isAfter(signal.availableAt().plus(
+                } else if (executionBar != null && executionBar.openTime().isAfter(signal.availableAt().plus(
                         signalBar.interval().duration().multipliedBy(2)))) {
                     status = "NOT_TRADABLE";
                     reason = "STALE_DATA";
@@ -268,18 +352,21 @@ public class StrategySimRunService {
                     }
                     sizing = SpotTargetSizer.size(signal.targetExposure(),
                             new SpotTargetSizer.State(cash, position, pendingBuy, pendingSell,
-                                    pendingBuyCost, executionBar.openPrice()), rules);
+                            pendingBuyCost, freshContinuousQuote ? quote.price() : executionBar.openPrice()), rules);
                     status = sizing.executable() ? "ACCEPTED" : "NOT_TRADABLE";
                     reason = sizing.reason();
                 }
             }
             BigDecimal fillPrice = sizing == null || !sizing.executable()
-                    ? executionBar == null ? null : executionBar.openPrice() : sizing.fillPrice();
+                    ? freshContinuousQuote ? quote.price()
+                        : executionBar == null ? null : executionBar.openPrice() : sizing.fillPrice();
             decisions.insert(new StrategySimDecisionRepository.DecisionWrite(decisionId, paperRunId,
                     lock.accountId(), strategy.strategyVersionId(), strategy.checksum(),
                     signalBar.openTime(), signal.availableAt() == null ? signalBar.availableAt() : signal.availableAt(),
-                    executionBar == null ? null : executionBar.openTime(), input.sha256(),
-                    execution == null ? null : execution.sha256(), snapshot.toString(),
+                    freshContinuousQuote ? quote.observedAt()
+                        : executionBar == null ? null : executionBar.openTime(), input.sha256(),
+                    freshContinuousQuote ? sha256(quote.observedAt() + ":" + quote.price().stripTrailingZeros().toPlainString())
+                        : execution == null ? null : execution.sha256(), snapshot.toString(),
                     signal.targetExposure(), "DECIDING", sizing == null ? null : sizing.side(),
                     sizing == null ? null : sizing.quantity(), fillPrice, rules.feeRate(), rules.slippageBps()),
                     "ACCEPTED".equals(status) ? "NOT_TRADABLE" : status,
@@ -291,7 +378,9 @@ public class StrategySimRunService {
             return decisions.findByWindow(paperRunId, signalBar.openTime()).orElseThrow();
         }
         // 同一已完成 logical run 的重复推进只返回最后的 durable 决策，不创建第二套经济事实。
-        return decisions.findByWindow(paperRunId, bars.getLast().openTime()).orElseThrow();
+        return observedBars == null
+                ? decisions.findByWindow(paperRunId, bars.getLast().openTime()).orElseThrow()
+                : null;
     }
 
     private void settleCanonicalRun(StrategySimDecisionRepository.DecisionView decision, long accountId,
@@ -375,6 +464,28 @@ public class StrategySimRunService {
                 run.strategyVersionSnapshotJson(), 1, run.createdAt(), run.createdAt());
     }
 
+    /** 新连续 run 以发布时冻结窗口作 SMA 预热，不重放该窗口的经济事实。 */
+    public ContinuousSeed continuousSeed(String paperRunId) {
+        PaperTradingRun run = paperRuns.getById(paperRunId);
+        BacktestPublishRecord publish = publishes.findByPublishRecordId(run.publishId()).orElseThrow();
+        BacktestRun backtest = boundBacktest(publish);
+        JsonNode summary = read(backtest.summaryJson());
+        List<HistoricalBar> bars = validatedBars(backtest, summary);
+        SpotSmaTargetStrategy strategy = SpotSmaTargetStrategy.fromSnapshot(run.strategyVersionSnapshotJson(), mapper);
+        if (!"OKX".equals(run.exchangeCode()) || !"BTC-USDT".equals(run.symbol())
+                || !"SPOT".equals(run.marketType()) || !"1h".equals(run.intervalCode())
+                || !"SIM".equals(run.tradeEnv()) || !"public-capture".equals(summary.path("datasetProvider").asText())
+                || !strategy.strategyVersionId().equals(run.strategyVersionId())
+                || !sameFrozenStrategy(strategy,
+                    SpotSmaTargetStrategy.fromSnapshot(backtest.strategyVersionSnapshotJson(), mapper))) {
+            throw new IllegalStateException("CONTINUOUS_SIM_SEED_INVALID");
+        }
+        JsonNode costs = read(run.configSnapshotJson()).path("costAndRuleAssumptions");
+        rules(costs);
+        return new ContinuousSeed(bars, strategy.strategyVersionId(), strategy.checksum(),
+                PublicReplayAssumptionIdentity.sha256(costs));
+    }
+
     @Transactional(readOnly = true, timeout = 10)
     public FactsView facts(String paperRunId) {
         PaperTradingRun run = paperRuns.getById(paperRunId);
@@ -392,7 +503,8 @@ public class StrategySimRunService {
                 read(run.configSnapshotJson()).path("barContentSha256").asText())) {
             throw new IllegalStateException("SIM_INPUT_IDENTITY_DRIFT");
         }
-        List<HistoricalBar> bars = validatedBars(backtest, summary);
+        List<HistoricalBar> bars = continuous != null && continuous.exists(paperRunId)
+                ? continuous.recentBars(paperRunId) : validatedBars(backtest, summary);
         BigDecimal cash = funding.cashBalance(accountId);
         BigDecimal quantity = jdbc.queryForObject("""
                 SELECT COALESCE(MAX(qty),0) FROM positions
@@ -401,6 +513,7 @@ public class StrategySimRunService {
         // 增量回放只按已处理决策可见的事件估值，不泄露冻结数据集后续 bar 的价格。
         Instant latestEvent = null;
         boolean latestIsExecution = false;
+        StrategySimDecisionRepository.DecisionView latestDecision = null;
         BigDecimal mark = BigDecimal.ZERO;
         for (var decision : decisions.listByRun(paperRunId)) {
             Instant eventTime = decision.executionOpenTime() == null
@@ -408,13 +521,27 @@ public class StrategySimRunService {
             boolean executionEvent = decision.executionOpenTime() != null;
             if (latestEvent == null || eventTime.isAfter(latestEvent)
                     || (eventTime.equals(latestEvent) && executionEvent && !latestIsExecution)) {
-                Instant barOpenTime = decision.executionOpenTime() == null
-                        ? decision.signalOpenTime() : decision.executionOpenTime();
-                HistoricalBar eventBar = bars.stream()
-                        .filter(bar -> bar.openTime().equals(barOpenTime)).findFirst().orElseThrow();
-                mark = decision.executionOpenTime() == null ? eventBar.closePrice() : eventBar.openPrice();
+                latestDecision = decision;
                 latestEvent = eventTime;
                 latestIsExecution = executionEvent;
+            }
+        }
+        if (latestDecision != null) {
+            if (continuous != null && continuous.exists(paperRunId)
+                    && latestDecision.executionOpenTime() != null) {
+                String quotePrice = jdbc.queryForObject("""
+                        SELECT input_snapshot_json->'executionQuote'->>'price'
+                        FROM strategy_sim_decisions WHERE decision_id=?
+                        """, String.class, latestDecision.decisionId());
+                if (quotePrice == null) throw new IllegalStateException("SIM_EXECUTION_QUOTE_MISSING");
+                mark = new BigDecimal(quotePrice);
+            } else {
+                Instant barOpenTime = latestDecision.executionOpenTime() == null
+                        ? latestDecision.signalOpenTime() : latestDecision.executionOpenTime();
+                HistoricalBar eventBar = bars.stream()
+                        .filter(bar -> bar.openTime().equals(barOpenTime)).findFirst().orElseThrow();
+                mark = latestDecision.executionOpenTime() == null
+                        ? eventBar.closePrice() : eventBar.openPrice();
             }
         }
         BigDecimal budget = decimal(read(run.configSnapshotJson()), "budget");
@@ -549,6 +676,8 @@ public class StrategySimRunService {
     public record RunView(String paperRunId, String publishId, String strategyVersionId,
                           String barContentSha256, long canonicalAccountId, BigDecimal budget,
                           SpotTargetSizer.Rules rules) { }
+    public record ContinuousSeed(List<HistoricalBar> bars, String strategyVersionId,
+                                 String strategyChecksum, String costSha256) { }
     public record FactsView(String paperRunId, long canonicalAccountId, String publishId,
                             String strategyVersionId, String inputSha256, BigDecimal initialBudget,
                             BigDecimal cash, BigDecimal positionQuantity, BigDecimal markPrice,

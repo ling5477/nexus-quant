@@ -12,6 +12,7 @@ import com.guidinglight.nexusquant.app.NexusQuantApplication;
 import com.guidinglight.nexusquant.app.marketdata.PublicMarketReplayCaptureService;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
+import com.guidinglight.nexusquant.marketdata.domain.port.ClosedBarMarketFeed;
 import com.guidinglight.nexusquant.marketdata.domain.port.MarketdataBarRepository;
 import com.guidinglight.nexusquant.marketdata.application.command.CreateMarketdataDatasetCommand;
 import com.guidinglight.nexusquant.marketdata.application.service.MarketdataDatasetService;
@@ -27,9 +28,12 @@ import com.guidinglight.nexusquant.research.application.config.BacktestConfigSer
 import com.guidinglight.nexusquant.research.application.eval.BacktestEvaluationService;
 import com.guidinglight.nexusquant.research.application.paper.service.PaperTradingRunService;
 import com.guidinglight.nexusquant.scheduler.paper.StrategySimRunService;
+import com.guidinglight.nexusquant.scheduler.paper.ContinuousSimRepository;
+import com.guidinglight.nexusquant.scheduler.paper.ContinuousSimRunService;
 import com.guidinglight.nexusquant.scheduler.paper.PaperMatchingService;
 import com.guidinglight.nexusquant.strategy.domain.SpotBarIdentity;
 import com.guidinglight.nexusquant.strategy.domain.SpotSmaTargetStrategy;
+import com.guidinglight.nexusquant.strategy.domain.PublicReplayAssumptionIdentity;
 import com.guidinglight.nexusquant.strategy.domain.StrategyDefinition;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyDefinitionRepository;
 import com.guidinglight.nexusquant.strategy.application.StrategyVersionService;
@@ -54,6 +58,7 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.AfterAll;
@@ -141,6 +146,7 @@ class StrategySimPostgresIntegrationTest {
     @Autowired private JdbcTemplate jdbc;
     @Autowired private ObjectMapper mapper;
     @Autowired private StrategySimRunService sim;
+    @Autowired private ContinuousSimRepository continuousProgress;
     @Autowired private PaperTradingRunService runs;
     @Autowired private PaperMatchingService matching;
     @Autowired private MarketdataBarRepository marketdataBars;
@@ -153,6 +159,232 @@ class StrategySimPostgresIntegrationTest {
     @Autowired private BacktestExecutionService backtestExecution;
     @Autowired private BacktestEvaluationService evaluations;
     @Autowired private BacktestPublishService publishing;
+
+    @Test
+    void continuousClosedBarPersistsCursorAndRecoversLostAcknowledgmentWithoutDuplicateFacts() throws Exception {
+        Fixture fixture = seedPublicHourly();
+        jdbc.update("""
+                UPDATE kill_switch_states SET status='DISENGAGED', version=version+1,
+                    reason_code='SYNTHETIC_TEST_ONLY', source='STRATEGY_SIM_TEST',
+                    updated_at=now(), updated_by='test', trace_id='continuous-sim-test'
+                WHERE scope='GLOBAL_TRADING'
+                """);
+        Instant firstTime = Instant.parse("2026-09-25T06:01:00Z");
+        HistoricalBar firstNew = availableAt(hourBar(5, "105"), firstTime.toString());
+        AtomicReference<ClosedBarMarketFeed.Observation> current = new AtomicReference<>(
+                observation(firstTime, firstTime.plusSeconds(1), List.of(
+                        hourBar(3, "103"), hourBar(4, "104"), firstNew)));
+        ClosedBarMarketFeed feed = (firstOpen, maximumBars) -> {
+            var observed = current.get();
+            return new ClosedBarMarketFeed.Observation(observed.serverTime(), observed.observedAt(),
+                    observed.bars().stream().filter(bar -> !bar.openTime().isBefore(firstOpen)).toList(),
+                    observed.rule(), observed.quote());
+        };
+        ContinuousSimRunService driver = new ContinuousSimRunService(continuousProgress, sim,
+                runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(2), java.time.ZoneOffset.UTC), false);
+        try {
+            var created = driver.start(fixture.publishId(), new BigDecimal("100"));
+            String runId = created.paperRunId();
+            assertEquals("CONTINUOUS_SIM_MANUAL_ADVANCE_REJECTED",
+                    assertThrows(IllegalStateException.class, () -> sim.advance(runId)).getMessage());
+            jdbc.execute("""
+                    CREATE FUNCTION continuous_sim_test_fail() RETURNS trigger LANGUAGE plpgsql AS $$
+                    BEGIN RAISE EXCEPTION 'synthetic decision insert failure'; END; $$
+                    """);
+            jdbc.execute("""
+                    CREATE TRIGGER continuous_sim_test_fail_before_insert
+                    BEFORE INSERT ON strategy_sim_decisions FOR EACH ROW
+                    EXECUTE FUNCTION continuous_sim_test_fail()
+                    """);
+            try {
+                assertEquals("STALLED", driver.pollOnce(runId).status());
+                assertEquals(hourBar(4, "104").openTime(), driver.status(runId).lastProcessedBar());
+                assertEquals(0, sim.decisions(runId).size());
+                assertEquals(0, sim.facts(runId).orders().size());
+            } finally {
+                jdbc.execute("DROP TRIGGER continuous_sim_test_fail_before_insert ON strategy_sim_decisions");
+                jdbc.execute("DROP FUNCTION continuous_sim_test_fail()");
+            }
+            CountDownLatch release = new CountDownLatch(1);
+            try (var workers = Executors.newFixedThreadPool(2)) {
+                var a = workers.submit(() -> { release.await(); return driver.pollOnce(runId); });
+                var b = workers.submit(() -> { release.await(); return driver.pollOnce(runId); });
+                release.countDown();
+                a.get(20, TimeUnit.SECONDS);
+                b.get(20, TimeUnit.SECONDS);
+            }
+            assertEquals(firstNew.openTime(), driver.status(runId).lastProcessedBar(),
+                    driver.status(runId).toString());
+            assertEquals(1, jdbc.queryForObject(
+                    "SELECT count(*) FROM strategy_sim_decisions WHERE paper_run_id=?",
+                    Integer.class, runId));
+            assertEquals(1, sim.facts(runId).orders().size());
+            assertEquals(0, new BigDecimal("105").compareTo(sim.facts(runId).markPrice()));
+            // 撮合器会同时处理同一隔离 schema 中其他测试留下的订单；只按本 run 断言经济事实。
+            matching.matchOnce(100);
+            assertEquals(1, sim.facts(runId).trades().size());
+            int ledgerBefore = sim.facts(runId).ledgerEntries().size();
+            // 模拟经济事实已提交、游标确认丢失；重建 driver 后必须认领既有决策。
+            jdbc.update("UPDATE continuous_sim_runs SET last_processed_open_time=?,last_processed_close_time=?,"
+                    + "last_processed_sha256=? WHERE paper_run_id=?",
+                    Timestamp.from(hourBar(4, "104").openTime()),
+                    Timestamp.from(hourBar(4, "104").closeTime()),
+                    ContinuousSimRepository.contentSha(hourBar(4, "104")), runId);
+            ContinuousSimRunService restarted = new ContinuousSimRunService(continuousProgress, sim,
+                    runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(3), java.time.ZoneOffset.UTC), false);
+            try {
+                restarted.pollOnce(runId);
+                assertEquals(firstNew.openTime(), restarted.status(runId).lastProcessedBar(),
+                        restarted.status(runId).toString());
+                assertEquals(1, sim.facts(runId).orders().size());
+                assertEquals(1, sim.facts(runId).trades().size());
+                assertEquals(ledgerBefore, sim.facts(runId).ledgerEntries().size());
+                restarted.stop(runId);
+                Instant secondTime = Instant.parse("2026-09-25T07:01:00Z");
+                current.set(observation(secondTime, secondTime.plusSeconds(1), List.of(
+                        hourBar(4, "104"), firstNew,
+                        availableAt(hourBar(6, "106"), secondTime.toString()))));
+                restarted.pollOnce(runId);
+                assertEquals(firstNew.openTime(), restarted.status(runId).lastProcessedBar());
+            } finally {
+                restarted.destroy();
+            }
+        } finally {
+            driver.destroy();
+        }
+    }
+
+    private ClosedBarMarketFeed.Observation observation(Instant serverTime, Instant quoteTime,
+            List<HistoricalBar> bars) {
+        return new ClosedBarMarketFeed.Observation(serverTime, serverTime, bars,
+                new ClosedBarMarketFeed.Rule(serverTime, "LIVE", new BigDecimal("0.01"),
+                        new BigDecimal("0.0001"), new BigDecimal("0.0001")),
+                new ClosedBarMarketFeed.Quote(quoteTime, new BigDecimal("105")));
+    }
+
+    @Test
+    void continuousWaitsForCloseAndBlocksGapAndHistoricalRevision() {
+        Fixture fixture = seedPublicHourly();
+        Instant firstTime = Instant.parse("2026-09-25T05:10:00Z");
+        AtomicReference<ClosedBarMarketFeed.Observation> current = new AtomicReference<>(
+                observation(firstTime, firstTime.plusSeconds(1), List.of(
+                        hourBar(3, "103"), hourBar(4, "104"))));
+        ClosedBarMarketFeed feed = (firstOpen, maximumBars) -> {
+            var observed = current.get();
+            return new ClosedBarMarketFeed.Observation(observed.serverTime(), observed.observedAt(),
+                    observed.bars().stream().filter(bar -> !bar.openTime().isBefore(firstOpen)).toList(),
+                    observed.rule(), observed.quote());
+        };
+        ContinuousSimRunService driver = new ContinuousSimRunService(continuousProgress, sim,
+                runs, feed, jdbc, Clock.fixed(firstTime, java.time.ZoneOffset.UTC), false);
+        try {
+            String runId = driver.start(fixture.publishId(), new BigDecimal("100")).paperRunId();
+            driver.pollOnce(runId);
+            assertEquals(hourBar(4, "104").openTime(), driver.status(runId).lastProcessedBar());
+            assertEquals(0, sim.decisions(runId).size());
+            Instant gapTime = Instant.parse("2026-09-25T08:01:00Z");
+            HistoricalBar fifth = availableAt(hourBar(5, "105"), gapTime.toString());
+            HistoricalBar sixth = availableAt(hourBar(6, "106"), gapTime.toString());
+            HistoricalBar seventh = availableAt(hourBar(7, "107"), gapTime.toString());
+            current.set(observation(gapTime, gapTime.plusSeconds(1), List.of(
+                    hourBar(3, "103"), hourBar(4, "104"), fifth, seventh)));
+            assertEquals("STALLED", driver.pollOnce(runId).status());
+            assertEquals("EXPECTED_BAR_MISSING", driver.status(runId).blockReason());
+            assertEquals(hourBar(6, "106").openTime(), driver.status(runId).gapStartBar());
+            assertEquals(hourBar(7, "107").openTime(), driver.status(runId).lastObservedBar());
+            assertEquals(0, sim.decisions(runId).size());
+            current.set(observation(gapTime, gapTime.plusSeconds(1), List.of(
+                    hourBar(4, "104"), fifth, sixth, seventh)));
+            driver.pollOnce(runId);
+            assertEquals(seventh.openTime(), driver.status(runId).lastProcessedBar());
+            assertEquals(List.of(fifth.openTime(), sixth.openTime(), seventh.openTime()),
+                    jdbc.queryForList("SELECT signal_open_time FROM strategy_sim_decisions "
+                            + "WHERE paper_run_id=? ORDER BY signal_open_time",
+                            Timestamp.class, runId).stream().map(Timestamp::toInstant).toList());
+            int ordersBeforeRevision = sim.facts(runId).orders().size();
+            Instant revisionTime = Instant.parse("2026-09-25T09:01:00Z");
+            current.set(observation(revisionTime, revisionTime.plusSeconds(1), List.of(
+                    sixth, availableAt(hourBar(7, "108"), gapTime.toString()),
+                    availableAt(hourBar(8, "109"), revisionTime.toString()))));
+            driver.pollOnce(runId);
+            assertEquals("STOPPED", driver.status(runId).status());
+            assertEquals("DATA_REVISION_DETECTED", driver.status(runId).blockReason());
+            assertEquals("DATA_REVISION_DETECTED",
+                    assertThrows(IllegalStateException.class, () -> driver.resume(runId)).getMessage());
+            assertEquals(seventh.openTime(), driver.status(runId).lastProcessedBar());
+            assertEquals(3, sim.decisions(runId).size());
+            assertEquals(ordersBeforeRevision, sim.facts(runId).orders().size());
+        } finally {
+            driver.destroy();
+        }
+    }
+
+    @Test
+    void continuousOlderQuoteWaitsThenExpiresWithoutRetroactiveOrder() {
+        Fixture fixture = seedPublicHourly();
+        Instant observedAt = Instant.parse("2026-09-25T06:01:00Z");
+        HistoricalBar fifth = availableAt(hourBar(5, "105"), observedAt.toString());
+        AtomicReference<ClosedBarMarketFeed.Observation> current = new AtomicReference<>(
+                observation(observedAt, observedAt.minusSeconds(1), List.of(
+                        hourBar(3, "103"), hourBar(4, "104"), fifth)));
+        ClosedBarMarketFeed feed = (firstOpen, maximumBars) -> {
+            var observed = current.get();
+            return new ClosedBarMarketFeed.Observation(observed.serverTime(), observed.observedAt(),
+                    observed.bars().stream().filter(bar -> !bar.openTime().isBefore(firstOpen)).toList(),
+                    observed.rule(), observed.quote());
+        };
+        ContinuousSimRunService driver = new ContinuousSimRunService(continuousProgress, sim,
+                runs, feed, jdbc, Clock.fixed(observedAt, java.time.ZoneOffset.UTC), false);
+        try {
+            String runId = driver.start(fixture.publishId(), new BigDecimal("100")).paperRunId();
+            driver.pollOnce(runId);
+            assertEquals(hourBar(4, "104").openTime(), driver.status(runId).lastProcessedBar());
+            assertEquals(0, sim.decisions(runId).size());
+            Instant tooLate = Instant.parse("2026-09-25T06:16:00Z");
+            current.set(observation(tooLate, tooLate.minusSeconds(1), List.of(
+                    hourBar(3, "103"), hourBar(4, "104"), fifth)));
+            driver.pollOnce(runId);
+            assertEquals(fifth.openTime(), driver.status(runId).lastProcessedBar());
+            assertEquals("STALE_DATA", sim.decisions(runId).getFirst().reason());
+            assertEquals(0, sim.facts(runId).orders().size());
+            driver.stop(runId);
+        } finally {
+            driver.destroy();
+        }
+    }
+
+    @Test
+    void continuousAdmissionRejectsNinthActiveRunBeforeFunding() {
+        Fixture fixture = seedPublicHourly();
+        Instant now = Instant.parse("2026-09-25T06:01:00Z");
+        ClosedBarMarketFeed feed = (firstOpen, maximumBars) -> observation(now, now.plusSeconds(1),
+                List.of(hourBar(3, "103"), hourBar(4, "104")));
+        ContinuousSimRunService driver = new ContinuousSimRunService(continuousProgress, sim,
+                runs, feed, jdbc, Clock.fixed(now, java.time.ZoneOffset.UTC), false);
+        List<String> ids = new ArrayList<>();
+        try {
+            for (int i = 0; i < 8; i++) {
+                ids.add(driver.start(fixture.publishId(), new BigDecimal("100")).paperRunId());
+            }
+            int accountsBefore = jdbc.queryForObject("SELECT count(*) FROM accounts WHERE venue='PAPER'",
+                    Integer.class);
+            assertEquals("CONTINUOUS_SIM_CAPACITY_EXCEEDED", assertThrows(IllegalStateException.class,
+                    () -> driver.start(fixture.publishId(), new BigDecimal("100"))).getMessage());
+            assertEquals(accountsBefore, jdbc.queryForObject(
+                    "SELECT count(*) FROM accounts WHERE venue='PAPER'", Integer.class));
+            assertEquals(8, continuousProgress.activeIds().size());
+            driver.stop(ids.getFirst());
+            ids.add(driver.start(fixture.publishId(), new BigDecimal("100")).paperRunId());
+            assertEquals("CONTINUOUS_SIM_CAPACITY_EXCEEDED", assertThrows(IllegalStateException.class,
+                    () -> driver.resume(ids.getFirst())).getMessage());
+            assertEquals(8, continuousProgress.activeIds().size());
+        } finally {
+            for (String id : ids) {
+                if (!"STOPPED".equals(driver.status(id).status())) driver.stop(id);
+            }
+            driver.destroy();
+        }
+    }
 
     @Test
     void syntheticBudgetCreatesOneCanonicalFillAndLedgerWithoutPrivateProvider() {
@@ -1319,6 +1551,15 @@ class StrategySimPostgresIntegrationTest {
     }
 
     private Fixture seed(List<HistoricalBar> bars) {
+        return seed(bars, false);
+    }
+
+    private Fixture seedPublicHourly() {
+        return seed(List.of(hourBar(0, "100"), hourBar(1, "101"), hourBar(2, "102"),
+                hourBar(3, "103"), hourBar(4, "104")), true);
+    }
+
+    private Fixture seed(List<HistoricalBar> bars, boolean publicCapture) {
         String id = UUID.randomUUID().toString().substring(0, 8);
         String strategyId = "str-gz-" + id;
         String strategyCode = "gz-" + id;
@@ -1363,16 +1604,31 @@ class StrategySimPostgresIntegrationTest {
         summary.put("strategyVersionId", versionId);
         summary.put("exchangeCode", "OKX");
         summary.put("symbol", "BTC-USDT");
-        summary.put("interval", "1m");
+        summary.put("interval", publicCapture ? "1h" : "1m");
         summary.put("barCount", bars.size());
         summary.put("barContentSha256", identity.sha256());
         summary.set("consumedBars", read(identity.canonicalJson()));
-        summary.set("costAndRuleAssumptions", read("""
+        ObjectNode assumptions = (ObjectNode) read("""
                 {"quantityStep":"0.0001","priceTick":"0.01","minimumQuantity":"0.0001",
                  "minimumNotional":"5","feeRate":"0.001","slippageBps":"10"}
-                """));
-        String dataset = "{\"provider\":\"synthetic\",\"datasetId\":\"gz-" + id
-                + "\",\"exchangeCode\":\"OKX\",\"symbol\":\"BTC-USDT\",\"interval\":\"1m\"}";
+                """);
+        String dataset;
+        if (publicCapture) {
+            assumptions.put("ruleSha256", "b".repeat(64));
+            assumptions.put("rulePolicy", "CURRENTLY_OBSERVED_PUBLIC_RULES");
+            summary.put("datasetProvider", "public-capture");
+            summary.put("costAndRuleSha256", PublicReplayAssumptionIdentity.sha256(assumptions));
+            dataset = "{\"provider\":\"public-capture\",\"source\":\"OKX_PUBLIC_CAPTURE\","
+                    + "\"interval\":\"1h\",\"barCount\":" + bars.size() + ",\"capture\":{"
+                    + "\"consumedSha256\":\"" + identity.sha256() + "\","
+                    + "\"replayVisibilityVersion\":\"CLOSED_HOURLY_BOUNDARY_V1\","
+                    + "\"replayVisibilitySource\":\"EXPERIMENT_ASSUMPTION\","
+                    + "\"ruleSha256\":\"" + "b".repeat(64) + "\"}}";
+        } else {
+            dataset = "{\"provider\":\"synthetic\",\"datasetId\":\"gz-" + id
+                    + "\",\"exchangeCode\":\"OKX\",\"symbol\":\"BTC-USDT\",\"interval\":\"1m\"}";
+        }
+        summary.set("costAndRuleAssumptions", assumptions);
         jdbc.update("""
                 INSERT INTO backtest_runs(backtest_run_id,backtest_config_id,research_config_id,
                     source_strategy_id,status,strategy_snapshot,backtest_config_snapshot,summary_json,
@@ -1398,6 +1654,14 @@ class StrategySimPostgresIntegrationTest {
         return new HistoricalBar("OKX", "SPOT", "BTC-USDT", BarInterval.ONE_MINUTE,
                 start, start.plusSeconds(59), value, value, value, value, BigDecimal.ONE,
                 null, null, "OK", "{}", start.plusSeconds(59));
+    }
+
+    private HistoricalBar hourBar(int hour, String price) {
+        Instant start = Instant.parse("2026-09-25T00:00:00Z").plusSeconds(hour * 3600L);
+        BigDecimal value = new BigDecimal(price);
+        return new HistoricalBar("OKX", "SPOT", "BTC-USDT", BarInterval.ONE_HOUR,
+                start, start.plusSeconds(3600).minusMillis(1), value, value, value, value,
+                BigDecimal.ONE, null, null, "OK", "{}", start.plusSeconds(3600).minusMillis(1));
     }
 
     private HistoricalBar availableAt(HistoricalBar bar, String timestamp) {
