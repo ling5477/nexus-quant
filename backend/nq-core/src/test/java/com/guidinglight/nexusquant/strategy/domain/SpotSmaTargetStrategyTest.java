@@ -44,6 +44,18 @@ class SpotSmaTargetStrategyTest {
                 () -> strategy.evaluate(List.of(bar(0, "100"), bar(0, "100"))));
         assertThrows(IllegalArgumentException.class,
                 () -> strategy.evaluate(List.of(bar(1, "101"), bar(0, "100"))));
+        HistoricalBar interval = new HistoricalBar("OKX", "SPOT", "BTC-USDT", BarInterval.ONE_HOUR,
+                bar(1, "101").openTime(), bar(1, "101").closeTime(), BigDecimal.ONE,
+                BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE,
+                null, null, "OK", "{}", bar(1, "101").availableAt());
+        assertEquals("MISSING_OR_MIXED_BAR", assertThrows(IllegalArgumentException.class,
+                () -> strategy.evaluate(List.of(bar(0, "100"), interval))).getMessage());
+        HistoricalBar unclosed = new HistoricalBar("OKX", "SPOT", "BTC-USDT", BarInterval.ONE_MINUTE,
+                bar(0, "100").openTime(), bar(0, "100").closeTime(), BigDecimal.ONE,
+                BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE,
+                null, null, "OPEN", "{}", bar(0, "100").availableAt());
+        assertEquals("INVALID_BAR", assertThrows(IllegalArgumentException.class,
+                () -> strategy.evaluate(List.of(unclosed))).getMessage());
         HistoricalBar late = new HistoricalBar("OKX", "SPOT", "BTC-USDT", BarInterval.ONE_MINUTE,
                 Instant.parse("2026-01-01T00:00:00Z"), Instant.parse("2026-01-01T00:00:59Z"),
                 new BigDecimal("100"), new BigDecimal("100"), new BigDecimal("100"),

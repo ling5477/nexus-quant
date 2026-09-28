@@ -52,7 +52,8 @@ public class StrategySimDecisionRepository {
 
     public Optional<DecisionView> findByWindow(String paperRunId, Instant signalOpenTime) {
         List<DecisionView> rows = jdbc.query("""
-                SELECT decision_id,paper_run_id,strategy_version_id,input_sha256,execution_bar_sha256,
+                SELECT decision_id,paper_run_id,strategy_version_id,strategy_checksum,target_exposure,
+                       input_sha256,execution_bar_sha256,
                        signal_open_time,signal_available_at,execution_open_time,status,reason,
                        side,quantity,execution_price,fee_rate,slippage_bps,strategy_run_id,order_id
                 FROM strategy_sim_decisions WHERE paper_run_id=? AND signal_open_time=?
@@ -62,7 +63,8 @@ public class StrategySimDecisionRepository {
 
     public Optional<DecisionView> findByOrderId(String orderId) {
         List<DecisionView> rows = jdbc.query("""
-                SELECT decision_id,paper_run_id,strategy_version_id,input_sha256,execution_bar_sha256,
+                SELECT decision_id,paper_run_id,strategy_version_id,strategy_checksum,target_exposure,
+                       input_sha256,execution_bar_sha256,
                        signal_open_time,signal_available_at,execution_open_time,status,reason,
                        side,quantity,execution_price,fee_rate,slippage_bps,strategy_run_id,order_id
                 FROM strategy_sim_decisions WHERE order_id=?
@@ -72,7 +74,8 @@ public class StrategySimDecisionRepository {
 
     public List<DecisionView> listByRun(String paperRunId) {
         return jdbc.query("""
-                SELECT decision_id,paper_run_id,strategy_version_id,input_sha256,execution_bar_sha256,
+                SELECT decision_id,paper_run_id,strategy_version_id,strategy_checksum,target_exposure,
+                       input_sha256,execution_bar_sha256,
                        signal_open_time,signal_available_at,execution_open_time,status,reason,
                        side,quantity,execution_price,fee_rate,slippage_bps,strategy_run_id,order_id
                 FROM strategy_sim_decisions WHERE paper_run_id=? ORDER BY signal_open_time DESC LIMIT 500
@@ -106,7 +109,8 @@ public class StrategySimDecisionRepository {
 
     private static DecisionView map(java.sql.ResultSet rs) throws java.sql.SQLException {
         return new DecisionView(rs.getString("decision_id"), rs.getString("paper_run_id"),
-                rs.getString("strategy_version_id"), rs.getString("input_sha256"),
+                rs.getString("strategy_version_id"), rs.getString("strategy_checksum"),
+                rs.getBigDecimal("target_exposure"), rs.getString("input_sha256"),
                 rs.getString("execution_bar_sha256"), rs.getTimestamp("signal_open_time").toInstant(),
                 rs.getTimestamp("signal_available_at").toInstant(),
                 rs.getTimestamp("execution_open_time") == null ? null
@@ -125,6 +129,7 @@ public class StrategySimDecisionRepository {
                                 BigDecimal executionPrice, BigDecimal feeRate, BigDecimal slippageBps) { }
 
     public record DecisionView(String decisionId, String paperRunId, String strategyVersionId,
+                               String strategyChecksum, BigDecimal targetExposure,
                                String inputSha256, String executionBarSha256, Instant signalOpenTime,
                                Instant signalAvailableAt, Instant executionOpenTime, String status,
                                String reason, String side, BigDecimal quantity, BigDecimal executionPrice,

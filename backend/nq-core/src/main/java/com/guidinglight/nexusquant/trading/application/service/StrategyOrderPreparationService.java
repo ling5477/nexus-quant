@@ -11,6 +11,7 @@ import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.strategy.domain.StrategyRunStatus;
+import com.guidinglight.nexusquant.trading.application.port.StrategySimReplayClockPort;
 import com.guidinglight.nexusquant.trading.application.port.OrderCommandStrategyExecutionGateway;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
 import com.guidinglight.nexusquant.trading.domain.port.StrategyOrderBindingRepository;
@@ -28,13 +29,16 @@ public class StrategyOrderPreparationService {
     private final OrderRepository orders;
     private final OrderCommandWriteService writes;
     private final EventPublisherPort events;
+    private final StrategySimReplayClockPort replayClock;
 
     public StrategyOrderPreparationService(StrategyOrderBindingRepository executions, OrderRepository orders,
-            OrderCommandWriteService writes, EventPublisherPort events) {
+            OrderCommandWriteService writes, EventPublisherPort events,
+            StrategySimReplayClockPort replayClock) {
         this.executions = executions;
         this.orders = orders;
         this.writes = writes;
         this.events = events;
+        this.replayClock = replayClock;
     }
 
     @Transactional(timeout = 5)
@@ -70,7 +74,10 @@ public class StrategyOrderPreparationService {
         if (!executions.beginDispatch(runId)) throw new IllegalStateException("strategy run cannot begin dispatch");
         String orderId = "ord-" + UUID.randomUUID();
         var command = ExecutionCommandMapper.toPlaceCommand(request, orderId);
-        Instant now = Instant.now();
+        // 策略 SIM 订单的风控窗口必须跟随冻结执行 bar；其他订单沿用正常请求时间。
+        Instant now = request.clientOrderId().startsWith("coid-sim-")
+                ? replayClock.executionTime(request.accountId(), request.clientOrderId())
+                : Instant.now();
         events.append(TopicNames.ORDER_COMMAND_V1, new EventEnvelope<>("evt-" + UUID.randomUUID(),
                 command.getClass().getSimpleName(), 1, now, "nq-core.strategy-order-preparation",
                 request.traceId(), request.clientOrderId(), command));
